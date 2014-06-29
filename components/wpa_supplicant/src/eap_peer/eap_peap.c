@@ -71,6 +71,15 @@ struct eap_peap_data {
 };
 
 
+static void eap_peap_free_key(struct eap_peap_data *data)
+{
+	if (data->key_data) {
+		bin_clear_free(data->key_data, EAP_TLS_KEY_LEN);
+		data->key_data = NULL;
+	}
+}
+
+
 static int
 eap_peap_parse_phase1(struct eap_peap_data *data,
 		      const char *phase1)
@@ -198,7 +207,7 @@ eap_peap_deinit(struct eap_sm *sm, void *priv)
 		data->phase2_method->deinit(sm, data->phase2_priv);
 	os_free(data->phase2_types);
 	eap_peer_tls_ssl_deinit(sm, &data->ssl);
-	os_free(data->key_data);
+	eap_peap_free_key(data);
 	os_free(data->session_id);
 	wpabuf_free(data->pending_phase2_req);
 	wpabuf_free(data->pending_resp);
@@ -1178,7 +1187,7 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 		if (tls_connection_established(sm->ssl_ctx, data->ssl.conn)) {
 			char label[24] = {0};
 			wpa_printf(MSG_DEBUG, "EAP-PEAP: TLS done, proceed to Phase 2");
-			os_free(data->key_data);
+			eap_peap_free_key(data);
 			/* draft-josefsson-ppext-eap-tls-eap-05.txt
 			 * specifies that PEAPv1 would use "client PEAP
 			 * encryption" as the label. However, most existing
@@ -1294,8 +1303,7 @@ static void *
 eap_peap_init_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_peap_data *data = priv;
-	os_free(data->key_data);
-	data->key_data = NULL;
+	eap_peap_free_key(data);
 	os_free(data->session_id);
 	data->session_id = NULL;
 	if (eap_peer_tls_reauth_init(sm, &data->ssl)) {

@@ -316,6 +316,15 @@ int eap_peer_register_methods(void)
 	return ret;
 }
 
+static void eap_sm_free_key(struct eap_sm *sm)
+{
+	if (sm->eapKeyData) {
+		bin_clear_free(sm->eapKeyData, sm->eapKeyDataLen);
+		sm->eapKeyData = NULL;
+	}
+}
+
+
 void eap_deinit_prev_method(struct eap_sm *sm, const char *txt)
 {
 	if (sm->m == NULL || sm->eap_method_priv == NULL)
@@ -826,6 +835,7 @@ void eap_sm_abort(struct eap_sm *sm)
 {
 	wpabuf_free(sm->lastRespData);
 	sm->lastRespData = NULL;
+	eap_sm_free_key(sm);
 }
 
 /**
