@@ -71,6 +71,8 @@ int (*esp_crt_bundle_attach_fn)(void *conf);
 void eap_peer_config_deinit(struct eap_sm *sm);
 void eap_peer_blob_deinit(struct eap_sm *sm);
 void eap_deinit_prev_method(struct eap_sm *sm, const char *txt);
+static void eap_sm_request(struct eap_sm *sm, enum wpa_ctrl_req_type field,
+			   const char *msg, size_t msglen);
 
 #ifdef EAP_PEER_METHOD
 static struct eap_method *eap_methods = NULL;
@@ -713,10 +715,10 @@ _out:
 	return ret;
 }
 
-#if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
 static void eap_sm_request(struct eap_sm *sm, enum wpa_ctrl_req_type field,
 			   const char *msg, size_t msglen)
 {
+#if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
 	struct eap_peer_config *config;
 
 	if (sm == NULL)
@@ -741,14 +743,14 @@ static void eap_sm_request(struct eap_sm *sm, enum wpa_ctrl_req_type field,
 	case WPA_CTRL_REQ_EAP_PASSPHRASE:
 		config->pending_req_passphrase++;
 		break;
+	case WPA_CTRL_REQ_EXT_CERT_CHECK:
+		break;
 	default:
 		return;
 	}
 
-}
-#else /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
-#define eap_sm_request(sm, type, msg, msglen) do { } while (0)
 #endif /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
+}
 
 const char * eap_sm_get_method_name(struct eap_sm *sm)
 {

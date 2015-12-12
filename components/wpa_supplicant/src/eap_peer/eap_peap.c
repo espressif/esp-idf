@@ -1,6 +1,6 @@
 /*
  * EAP peer method: EAP-PEAP (draft-josefsson-pppext-eap-tls-eap-10.txt)
- * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2015, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -59,6 +59,7 @@ struct eap_peap_data {
 	size_t id_len;
 
 	struct wpabuf *pending_phase2_req;
+	struct wpabuf *pending_resp;
 	enum { NO_BINDING, OPTIONAL_BINDING, REQUIRE_BINDING } crypto_binding;
 	int crypto_binding_used;
 	u8 binding_nonce[32];
@@ -200,6 +201,7 @@ eap_peap_deinit(struct eap_sm *sm, void *priv)
 	os_free(data->key_data);
 	os_free(data->session_id);
 	wpabuf_free(data->pending_phase2_req);
+	wpabuf_free(data->pending_resp);
 	os_free(data);
 }
 
@@ -1122,6 +1124,34 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 		wpabuf_set(&msg, pos, left);
 		res = eap_peap_decrypt(sm, data, ret, req, &msg, &resp);
 	} else {
+		if (sm->waiting_ext_cert_check && data->pending_resp) {
+			struct eap_peer_config *config = eap_get_config(sm);
+
+			if (config->pending_ext_cert_check ==
+			    EXT_CERT_CHECK_GOOD) {
+				wpa_printf(MSG_DEBUG,
+					   "EAP-PEAP: External certificate check succeeded - continue handshake");
+				resp = data->pending_resp;
+				data->pending_resp = NULL;
+				sm->waiting_ext_cert_check = 0;
+				return resp;
+			}
+
+			if (config->pending_ext_cert_check ==
+			    EXT_CERT_CHECK_BAD) {
+				wpa_printf(MSG_DEBUG,
+					   "EAP-PEAP: External certificate check failed - force authentication failure");
+				ret->methodState = METHOD_DONE;
+				ret->decision = DECISION_FAIL;
+				sm->waiting_ext_cert_check = 0;
+				return NULL;
+			}
+
+			wpa_printf(MSG_DEBUG,
+				   "EAP-PEAP: Continuing to wait external server certificate validation");
+			return NULL;
+		}
+
 		res = eap_peer_tls_process_helper(sm, &data->ssl,
 						  EAP_TYPE_PEAP,
 						  data->peap_version, id, pos,
@@ -1134,6 +1164,16 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 			ret->decision = DECISION_FAIL;
 			return resp;
 		}
+
+
+		if (sm->waiting_ext_cert_check) {
+			wpa_printf(MSG_DEBUG,
+				   "EAP-PEAP: Waiting external server certificate validation");
+			wpabuf_free(data->pending_resp);
+			data->pending_resp = resp;
+			return NULL;
+		}
+
 
 		if (tls_connection_established(sm->ssl_ctx, data->ssl.conn)) {
 			char label[24] = {0};
@@ -1244,6 +1284,8 @@ eap_peap_deinit_for_reauth(struct eap_sm *sm, void *priv)
 	struct eap_peap_data *data = priv;
 	wpabuf_free(data->pending_phase2_req);
 	data->pending_phase2_req = NULL;
+	wpabuf_free(data->pending_resp);
+	data->pending_resp = NULL;
 	data->crypto_binding_used = 0;
 }
 
