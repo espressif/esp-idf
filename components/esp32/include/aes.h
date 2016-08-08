@@ -1,5 +1,5 @@
 /**
- * \file aes_alt.h
+ * \file esp_aes.h
  *
  * \brief AES block cipher
  *
@@ -21,8 +21,8 @@
  *  
  */
  
-#ifndef AES_ALT_H
-#define AES_ALT_H
+#ifndef ESP_AES_H
+#define ESP_AES_H
 
 #include "c_types.h"
 #include "rom/ets_sys.h"
@@ -31,8 +31,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define ESP_AES_C
 
 /* padlock.c and aesni.c rely on these values! */
 #define AES_ENCRYPT     1
@@ -61,23 +59,21 @@ typedef struct
     uint32_t *rk;               /*!<  AES round keys    */
 	KEY_CTX enc;
 	KEY_CTX dec;	
-}aes_context;
-
-typedef aes_context	AES_CTX;
+}aes_context, AES_CTX;
 
 /**
  * \brief          Initialize AES context
  *
  * \param ctx      AES context to be initialized
  */
-void aes_init( AES_CTX *ctx );
+void esp_aes_init( AES_CTX *ctx );
 
 /**
  * \brief          Clear AES context
  *
  * \param ctx      AES context to be cleared
  */
-void aes_free( AES_CTX *ctx );
+void esp_aes_free( AES_CTX *ctx );
 
 /**
  * \brief          AES key schedule (encryption)
@@ -88,7 +84,7 @@ void aes_free( AES_CTX *ctx );
  *
  * \return         0 if successful, or ERR_AES_INVALID_KEY_LENGTH
  */
-int aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,unsigned int keybits );
+int esp_aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,unsigned int keybits );
 
 /**
  * \brief          AES key schedule (decryption)
@@ -99,7 +95,7 @@ int aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,unsigned int keybits 
  *
  * \return         0 if successful, or ERR_AES_INVALID_KEY_LENGTH
  */
-int aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,unsigned int keybits );
+int esp_aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,unsigned int keybits );
 
 /**
  * \brief          AES-ECB block encryption/decryption
@@ -111,7 +107,7 @@ int aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,unsigned int keybits 
  *
  * \return         0 if successful
  */
-int aes_crypt_ecb( AES_CTX *ctx,int mode,const unsigned char input[16],unsigned char output[16] );
+int esp_aes_crypt_ecb( AES_CTX *ctx,int mode,const unsigned char input[16],unsigned char output[16] );
 
 /**
  * \brief          AES-CBC buffer encryption/decryption
@@ -135,7 +131,7 @@ int aes_crypt_ecb( AES_CTX *ctx,int mode,const unsigned char input[16],unsigned 
  *
  * \return         0 if successful, or ERR_AES_INVALID_INPUT_LENGTH
  */
-int aes_crypt_cbc( AES_CTX *ctx,
+int esp_aes_crypt_cbc( AES_CTX *ctx,
 					   int mode, 
 					   size_t length,
 					   unsigned char iv[16],
@@ -148,7 +144,7 @@ int aes_crypt_cbc( AES_CTX *ctx,
  *
  * Note: Due to the nature of CFB you should use the same key schedule for
  * both encryption and decryption. So a context initialized with
- * aes_setkey_enc() for both AES_ENCRYPT and AES_DECRYPT.
+ * esp_aes_setkey_enc() for both AES_ENCRYPT and AES_DECRYPT.
  *
  * \note           Upon exit, the content of the IV is updated so that you can
  *                 call the function same function again on the following
@@ -168,7 +164,7 @@ int aes_crypt_cbc( AES_CTX *ctx,
  *
  * \return         0 if successful
  */
-int aes_crypt_cfb128( AES_CTX *ctx,
+int esp_aes_crypt_cfb128( AES_CTX *ctx,
 	                       int mode,
 	                       size_t length,
 	                       size_t *iv_off,
@@ -181,7 +177,7 @@ int aes_crypt_cfb128( AES_CTX *ctx,
  *
  * Note: Due to the nature of CFB you should use the same key schedule for
  * both encryption and decryption. So a context initialized with
- * aes_setkey_enc() for both AES_ENCRYPT and AES_DECRYPT.
+ * esp_aes_setkey_enc() for both AES_ENCRYPT and AES_DECRYPT.
  *
  * \note           Upon exit, the content of the IV is updated so that you can
  *                 call the function same function again on the following
@@ -200,7 +196,7 @@ int aes_crypt_cfb128( AES_CTX *ctx,
  *
  * \return         0 if successful
  */
-int aes_crypt_cfb8( AES_CTX *ctx,
+int esp_aes_crypt_cfb8( AES_CTX *ctx,
 	                    int mode,
 	                    size_t length,
 	                    unsigned char iv[16],
@@ -214,7 +210,7 @@ int aes_crypt_cfb8( AES_CTX *ctx,
  *
  * Note: Due to the nature of CTR you should use the same key schedule for
  * both encryption and decryption. So a context initialized with
- * aes_setkey_enc() for both AES_ENCRYPT and AES_DECRYPT.
+ * esp_aes_setkey_enc() for both AES_ENCRYPT and AES_DECRYPT.
  *
  * \param ctx           AES context
  * \param length        The length of the data
@@ -229,7 +225,7 @@ int aes_crypt_cfb8( AES_CTX *ctx,
  *
  * \return         0 if successful
  */
-int aes_crypt_ctr( AES_CTX *ctx,
+int esp_aes_crypt_ctr( AES_CTX *ctx,
                        size_t length,
                        size_t *nc_off,
                        unsigned char nonce_counter[16],
@@ -247,7 +243,7 @@ int aes_crypt_ctr( AES_CTX *ctx,
  * \param input     Plaintext block
  * \param output    Output (ciphertext) block
  */
-void aes_encrypt( AES_CTX *ctx, const unsigned char input[16],unsigned char output[16] );
+void esp_aes_encrypt( AES_CTX *ctx, const unsigned char input[16],unsigned char output[16] );
 
 /**
  * \brief           Internal AES block decryption function
@@ -258,7 +254,7 @@ void aes_encrypt( AES_CTX *ctx, const unsigned char input[16],unsigned char outp
  * \param input     Ciphertext block
  * \param output    Output (plaintext) block
  */
-void aes_decrypt( AES_CTX *ctx, const unsigned char input[16], unsigned char output[16] );
+void esp_aes_decrypt( AES_CTX *ctx, const unsigned char input[16], unsigned char output[16] );
 
 #ifdef __cplusplus
 }

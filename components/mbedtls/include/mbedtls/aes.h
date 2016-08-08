@@ -276,27 +276,7 @@ void mbedtls_aes_decrypt( mbedtls_aes_context *ctx,
 #endif
 
 #else  /* MBEDTLS_AES_ALT */
-#include "port/aes_alt.h"
-
-typedef AES_CTX mbedtls_aes_context;
-
-#define mbedtls_aes_init 			aes_init
-#define mbedtls_aes_free 			aes_free
-#define mbedtls_aes_setkey_enc 		aes_setkey_enc
-#define mbedtls_aes_setkey_dec 		aes_setkey_dec
-#define mbedtls_aes_crypt_ecb 		aes_crypt_ecb
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-#define mbedtls_aes_crypt_cbc 		aes_crypt_cbc
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CFB)
-#define mbedtls_aes_crypt_cfb128 	aes_crypt_cfb128
-#define mbedtls_aes_crypt_cfb8 		aes_crypt_cfb8
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CTR)
-#define mbedtls_aes_crypt_ctr		aes_crypt_ctr
-#endif
-#define mbedtls_aes_encrypt 		aes_encrypt
-#define mbedtls_aes_decrypt			aes_decrypt
+#include "aes_alt.h"
 #endif /* MBEDTLS_AES_ALT */
 
 #ifdef __cplusplus

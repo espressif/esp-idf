@@ -20,8 +20,8 @@
  *
  */
  
-#ifndef BIGNUM_ALT_H
-#define BIGNUM_ALT_H
+#ifndef _ESP_BIGNUM_H
+#define _ESP_BIGNUM_H
 
 #include "c_types.h"
 #include "rom/ets_sys.h"
@@ -42,9 +42,9 @@
 
 #define MPI_CHK(f) do { if( ( ret = f ) != 0 ) goto cleanup; } while( 0 )
 #if defined(MPI_DEBUG_ALT)
-#define mpi_printf	ets_printf
+#define esp_mpi_printf	ets_printf
 #else
-#define mpi_printf	
+#define esp_mpi_printf	
 #endif
 /*
  * Maximum size MPIs are allowed to grow to in number of limbs.
@@ -78,8 +78,8 @@
 #define MPI_MAX_BITS                              ( 8 * MPI_MAX_SIZE )    /**< Maximum number of bits for usable MPIs. */
 
 /*
- * When reading from files with mpi_read_file() and writing to files with
- * mpi_write_file() the buffer should have space
+ * When reading from files with esp_mpi_read_file() and writing to files with
+ * esp_mpi_write_file() the buffer should have space
  * for a (short) label, the MPI (in the provided radix), the newline
  * characters and the '\0'.
  *
@@ -108,8 +108,8 @@
 #if ( ! defined(HAVE_INT32) && \
         defined(_MSC_VER) && defined(_M_AMD64) )
   #define HAVE_INT64
-  typedef  int64_t mpi_sint;
-  typedef uint64_t mpi_uint;
+  typedef  int64_t esp_mpi_sint;
+  typedef uint64_t esp_mpi_uint;
 #else
   #if ( ! defined(HAVE_INT32) &&               \
         defined(__GNUC__) && (                          \
@@ -119,15 +119,15 @@
         (defined(__sparc__) && defined(__arch64__))  || \
         defined(__s390x__) || defined(__mips64) ) )
      #define HAVE_INT64
-     typedef  int64_t mpi_sint;
-     typedef uint64_t mpi_uint;
+     typedef  int64_t esp_mpi_sint;
+     typedef uint64_t esp_mpi_uint;
      /* t_udbl defined as 128-bit unsigned int */
      typedef unsigned int t_udbl __attribute__((mode(TI)));
      #define HAVE_UDBL
   #else
      #define HAVE_INT32
-     typedef  int32_t mpi_sint;
-     typedef uint32_t mpi_uint;
+     typedef  int32_t esp_mpi_sint;
+     typedef uint32_t esp_mpi_uint;
      typedef uint64_t t_udbl;
      #define HAVE_UDBL
   #endif /* !HAVE_INT32 && __GNUC__ && 64-bit platform */
@@ -144,9 +144,8 @@ typedef struct
 {
     int s;              /*!<  integer sign      */
     size_t n;           /*!<  total # of limbs  */
-    mpi_uint *p;          /*!<  pointer to limbs  */
-}
-mpi;
+    esp_mpi_uint *p;          /*!<  pointer to limbs  */
+}mpi, MPI_CTX;
 
 /**
  * \brief           Initialize one MPI (make internal references valid)
@@ -155,14 +154,14 @@ mpi;
  *
  * \param X         One MPI to initialize.
  */
-void mpi_init( mpi *X );
+void esp_mpi_init( mpi *X );
 
 /**
  * \brief          Unallocate one MPI
  *
  * \param X        One MPI to unallocate.
  */
-void mpi_free( mpi *X );
+void esp_mpi_free( mpi *X );
 
 /**
  * \brief          Enlarge to the specified number of limbs
@@ -173,7 +172,7 @@ void mpi_free( mpi *X );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_grow( mpi *X, size_t nblimbs );
+int esp_mpi_grow( mpi *X, size_t nblimbs );
 
 /**
  * \brief          Resize down, keeping at least the specified number of limbs
@@ -184,7 +183,7 @@ int mpi_grow( mpi *X, size_t nblimbs );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_shrink( mpi *X, size_t nblimbs );
+int esp_mpi_shrink( mpi *X, size_t nblimbs );
 
 /**
  * \brief          Copy the contents of Y into X
@@ -195,7 +194,7 @@ int mpi_shrink( mpi *X, size_t nblimbs );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_copy( mpi *X, const mpi *Y );
+int esp_mpi_copy( mpi *X, const mpi *Y );
 
 /**
  * \brief          Swap the contents of X and Y
@@ -203,7 +202,7 @@ int mpi_copy( mpi *X, const mpi *Y );
  * \param X        First MPI value
  * \param Y        Second MPI value
  */
-void mpi_swap( mpi *X, mpi *Y );
+void esp_mpi_swap( mpi *X, mpi *Y );
 
 /**
  * \brief          Safe conditional assignement X = Y if assign is 1
@@ -216,13 +215,13 @@ void mpi_swap( mpi *X, mpi *Y );
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed,
  *
  * \note           This function is equivalent to
- *                      if( assign ) mpi_copy( X, Y );
+ *                      if( assign ) esp_mpi_copy( X, Y );
  *                 except that it avoids leaking any information about whether
  *                 the assignment was done or not (the above code may leak
  *                 information through branch prediction and/or memory access
  *                 patterns analysis).
  */
-int mpi_safe_cond_assign( mpi *X, const mpi *Y, unsigned char assign );
+int esp_mpi_safe_cond_assign( mpi *X, const mpi *Y, unsigned char assign );
 
 /**
  * \brief          Safe conditional swap X <-> Y if swap is 1
@@ -235,13 +234,13 @@ int mpi_safe_cond_assign( mpi *X, const mpi *Y, unsigned char assign );
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed,
  *
  * \note           This function is equivalent to
- *                      if( assign ) mpi_swap( X, Y );
+ *                      if( assign ) esp_mpi_swap( X, Y );
  *                 except that it avoids leaking any information about whether
  *                 the assignment was done or not (the above code may leak
  *                 information through branch prediction and/or memory access
  *                 patterns analysis).
  */
-int mpi_safe_cond_swap( mpi *X, mpi *Y, unsigned char assign );
+int esp_mpi_safe_cond_swap( mpi *X, mpi *Y, unsigned char assign );
 
 /**
  * \brief          Set value from integer
@@ -252,7 +251,7 @@ int mpi_safe_cond_swap( mpi *X, mpi *Y, unsigned char assign );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_lset( mpi *X, mpi_sint z );
+int esp_mpi_lset( mpi *X, esp_mpi_sint z );
 
 /**
  * \brief          Get a specific bit from X
@@ -262,7 +261,7 @@ int mpi_lset( mpi *X, mpi_sint z );
  *
  * \return         Either a 0 or a 1
  */
-int mpi_get_bit( const mpi *X, size_t pos );
+int esp_mpi_get_bit( const mpi *X, size_t pos );
 
 /**
  * \brief          Set a bit of X to a specific value of 0 or 1
@@ -278,7 +277,7 @@ int mpi_get_bit( const mpi *X, size_t pos );
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed,
  *                 ERR_MPI_BAD_INPUT_DATA if val is not 0 or 1
  */
-int mpi_set_bit( mpi *X, size_t pos, unsigned char val );
+int esp_mpi_set_bit( mpi *X, size_t pos, unsigned char val );
 
 /**
  * \brief          Return the number of zero-bits before the least significant
@@ -288,7 +287,7 @@ int mpi_set_bit( mpi *X, size_t pos, unsigned char val );
  *
  * \param X        MPI to use
  */
-size_t mpi_lsb( const mpi *X );
+size_t esp_mpi_lsb( const mpi *X );
 
 /**
  * \brief          Return the number of bits up to and including the most
@@ -298,14 +297,14 @@ size_t mpi_lsb( const mpi *X );
  *
  * \param X        MPI to use
  */
-size_t mpi_bitlen( const mpi *X );
+size_t esp_mpi_bitlen( const mpi *X );
 
 /**
  * \brief          Return the total size in bytes
  *
  * \param X        MPI to use
  */
-size_t mpi_size( const mpi *X );
+size_t esp_mpi_size( const mpi *X );
 
 /**
  * \brief          Import from an ASCII string
@@ -316,7 +315,7 @@ size_t mpi_size( const mpi *X );
  *
  * \return         0 if successful, or a ERR_MPI_XXX error code
  */
-int mpi_read_string( mpi *X, int radix, const char *s );
+int esp_mpi_read_string( mpi *X, int radix, const char *s );
 
 /**
  * \brief          Export into an ASCII string
@@ -334,7 +333,7 @@ int mpi_read_string( mpi *X, int radix, const char *s );
  * \note           Call this function with buflen = 0 to obtain the
  *                 minimum required buffer size in *olen.
  */
-int mpi_write_string( const mpi *X, int radix,
+int esp_mpi_write_string( const mpi *X, int radix,
                               char *buf, size_t buflen, size_t *olen );
 
 #if defined(FS_IO)
@@ -349,7 +348,7 @@ int mpi_write_string( const mpi *X, int radix,
  *                 the file read buffer is too small or a
  *                 ERR_MPI_XXX error code
  */
-int mpi_read_file( mpi *X, int radix, FILE *fin );
+int esp_mpi_read_file( mpi *X, int radix, FILE *fin );
 
 /**
  * \brief          Write X into an opened file, or stdout if fout is NULL
@@ -363,7 +362,7 @@ int mpi_read_file( mpi *X, int radix, FILE *fin );
  *
  * \note           Set fout == NULL to print X on the console.
  */
-int mpi_write_file( const char *p, const mpi *X, int radix, FILE *fout );
+int esp_mpi_write_file( const char *p, const mpi *X, int radix, FILE *fout );
 #endif /* FS_IO */
 
 /**
@@ -376,7 +375,7 @@ int mpi_write_file( const char *p, const mpi *X, int radix, FILE *fout );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_read_binary( mpi *X, const unsigned char *buf, size_t buflen );
+int esp_mpi_read_binary( mpi *X, const unsigned char *buf, size_t buflen );
 
 /**
  * \brief          Export X into unsigned binary data, big endian.
@@ -390,7 +389,7 @@ int mpi_read_binary( mpi *X, const unsigned char *buf, size_t buflen );
  * \return         0 if successful,
  *                 ERR_MPI_BUFFER_TOO_SMALL if buf isn't large enough
  */
-int mpi_write_binary( const mpi *X, unsigned char *buf, size_t buflen );
+int esp_mpi_write_binary( const mpi *X, unsigned char *buf, size_t buflen );
 
 /**
  * \brief          Left-shift: X <<= count
@@ -401,7 +400,7 @@ int mpi_write_binary( const mpi *X, unsigned char *buf, size_t buflen );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_shift_l( mpi *X, size_t count );
+int esp_mpi_shift_l( mpi *X, size_t count );
 
 /**
  * \brief          Right-shift: X >>= count
@@ -412,7 +411,7 @@ int mpi_shift_l( mpi *X, size_t count );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_shift_r( mpi *X, size_t count );
+int esp_mpi_shift_r( mpi *X, size_t count );
 
 /**
  * \brief          Compare unsigned values
@@ -424,7 +423,7 @@ int mpi_shift_r( mpi *X, size_t count );
  *                -1 if |X| is lesser  than |Y| or
  *                 0 if |X| is equal to |Y|
  */
-int mpi_cmp_abs( const mpi *X, const mpi *Y );
+int esp_mpi_cmp_abs( const mpi *X, const mpi *Y );
 
 /**
  * \brief          Compare signed values
@@ -436,7 +435,7 @@ int mpi_cmp_abs( const mpi *X, const mpi *Y );
  *                -1 if X is lesser  than Y or
  *                 0 if X is equal to Y
  */
-int mpi_cmp_mpi( const mpi *X, const mpi *Y );
+int esp_mpi_cmp_mpi( const mpi *X, const mpi *Y );
 
 /**
  * \brief          Compare signed values
@@ -448,7 +447,7 @@ int mpi_cmp_mpi( const mpi *X, const mpi *Y );
  *                -1 if X is lesser  than z or
  *                 0 if X is equal to z
  */
-int mpi_cmp_int( const mpi *X, mpi_sint z );
+int esp_mpi_cmp_int( const mpi *X, esp_mpi_sint z );
 
 /**
  * \brief          Unsigned addition: X = |A| + |B|
@@ -460,7 +459,7 @@ int mpi_cmp_int( const mpi *X, mpi_sint z );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_add_abs( mpi *X, const mpi *A, const mpi *B );
+int esp_mpi_add_abs( mpi *X, const mpi *A, const mpi *B );
 
 /**
  * \brief          Unsigned subtraction: X = |A| - |B|
@@ -472,7 +471,7 @@ int mpi_add_abs( mpi *X, const mpi *A, const mpi *B );
  * \return         0 if successful,
  *                 ERR_MPI_NEGATIVE_VALUE if B is greater than A
  */
-int mpi_sub_abs( mpi *X, const mpi *A, const mpi *B );
+int esp_mpi_sub_abs( mpi *X, const mpi *A, const mpi *B );
 
 /**
  * \brief          Signed addition: X = A + B
@@ -484,7 +483,7 @@ int mpi_sub_abs( mpi *X, const mpi *A, const mpi *B );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_add_mpi( mpi *X, const mpi *A, const mpi *B );
+int esp_mpi_add_mpi( mpi *X, const mpi *A, const mpi *B );
 
 /**
  * \brief          Signed subtraction: X = A - B
@@ -496,7 +495,7 @@ int mpi_add_mpi( mpi *X, const mpi *A, const mpi *B );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_sub_mpi( mpi *X, const mpi *A, const mpi *B );
+int esp_mpi_sub_mpi( mpi *X, const mpi *A, const mpi *B );
 
 /**
  * \brief          Signed addition: X = A + b
@@ -508,7 +507,7 @@ int mpi_sub_mpi( mpi *X, const mpi *A, const mpi *B );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_add_int( mpi *X, const mpi *A, mpi_sint b );
+int esp_mpi_add_int( mpi *X, const mpi *A, esp_mpi_sint b );
 
 /**
  * \brief          Signed subtraction: X = A - b
@@ -520,7 +519,7 @@ int mpi_add_int( mpi *X, const mpi *A, mpi_sint b );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_sub_int( mpi *X, const mpi *A, mpi_sint b );
+int esp_mpi_sub_int( mpi *X, const mpi *A, esp_mpi_sint b );
 
 /**
  * \brief          Baseline multiplication: X = A * B
@@ -532,7 +531,7 @@ int mpi_sub_int( mpi *X, const mpi *A, mpi_sint b );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_mul_mpi( mpi *X, const mpi *A, const mpi *B );
+int esp_mpi_mul_mpi( mpi *X, const mpi *A, const mpi *B );
 
 /**
  * \brief          Baseline multiplication: X = A * b
@@ -546,7 +545,7 @@ int mpi_mul_mpi( mpi *X, const mpi *A, const mpi *B );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_mul_int( mpi *X, const mpi *A, mpi_uint b );
+int esp_mpi_mul_int( mpi *X, const mpi *A, esp_mpi_uint b );
 
 /**
  * \brief          Division by mpi: A = Q * B + R
@@ -562,7 +561,7 @@ int mpi_mul_int( mpi *X, const mpi *A, mpi_uint b );
  *
  * \note           Either Q or R can be NULL.
  */
-int mpi_div_mpi( mpi *Q, mpi *R, const mpi *A, const mpi *B );
+int esp_mpi_div_mpi( mpi *Q, mpi *R, const mpi *A, const mpi *B );
 
 /**
  * \brief          Division by int: A = Q * b + R
@@ -578,7 +577,7 @@ int mpi_div_mpi( mpi *Q, mpi *R, const mpi *A, const mpi *B );
  *
  * \note           Either Q or R can be NULL.
  */
-int mpi_div_int( mpi *Q, mpi *R, const mpi *A, mpi_sint b );
+int esp_mpi_div_int( mpi *Q, mpi *R, const mpi *A, esp_mpi_sint b );
 
 /**
  * \brief          Modulo: R = A mod B
@@ -592,12 +591,12 @@ int mpi_div_int( mpi *Q, mpi *R, const mpi *A, mpi_sint b );
  *                 ERR_MPI_DIVISION_BY_ZERO if B == 0,
  *                 ERR_MPI_NEGATIVE_VALUE if B < 0
  */
-int mpi_mod_mpi( mpi *R, const mpi *A, const mpi *B );
+int esp_mpi_mod_mpi( mpi *R, const mpi *A, const mpi *B );
 
 /**
  * \brief          Modulo: r = A mod b
  *
- * \param r        Destination mpi_uint
+ * \param r        Destination esp_mpi_uint
  * \param A        Left-hand MPI
  * \param b        Integer to divide by
  *
@@ -606,7 +605,7 @@ int mpi_mod_mpi( mpi *R, const mpi *A, const mpi *B );
  *                 ERR_MPI_DIVISION_BY_ZERO if b == 0,
  *                 ERR_MPI_NEGATIVE_VALUE if b < 0
  */
-int mpi_mod_int( mpi_uint *r, const mpi *A, mpi_sint b );
+int esp_mpi_mod_int( esp_mpi_uint *r, const mpi *A, esp_mpi_sint b );
 
 /**
  * \brief          Sliding-window exponentiation: X = A^E mod N
@@ -626,7 +625,7 @@ int mpi_mod_int( mpi_uint *r, const mpi *A, mpi_sint b );
  *                 multiple calls, which speeds up things a bit. It can
  *                 be set to NULL if the extra performance is unneeded.
  */
-int mpi_exp_mod( mpi *X, const mpi *A, const mpi *E, const mpi *N, mpi *_RR );
+int esp_mpi_exp_mod( mpi *X, const mpi *A, const mpi *E, const mpi *N, mpi *_RR );
 
 /**
  * \brief          Fill an MPI X with size bytes of random
@@ -639,7 +638,7 @@ int mpi_exp_mod( mpi *X, const mpi *A, const mpi *E, const mpi *N, mpi *_RR );
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_fill_random( mpi *X, size_t size,
+int esp_mpi_fill_random( mpi *X, size_t size,
                      int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng );
 
@@ -653,7 +652,7 @@ int mpi_fill_random( mpi *X, size_t size,
  * \return         0 if successful,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
-int mpi_gcd( mpi *G, const mpi *A, const mpi *B );
+int esp_mpi_gcd( mpi *G, const mpi *A, const mpi *B );
 
 /**
  * \brief          Modular inverse: X = A^-1 mod N
@@ -667,7 +666,7 @@ int mpi_gcd( mpi *G, const mpi *A, const mpi *B );
  *                 ERR_MPI_BAD_INPUT_DATA if N is negative or nil
                    ERR_MPI_NOT_ACCEPTABLE if A has no inverse mod N
  */
-int mpi_inv_mod( mpi *X, const mpi *A, const mpi *N );
+int esp_mpi_inv_mod( mpi *X, const mpi *A, const mpi *N );
 
 /**
  * \brief          Miller-Rabin primality test
@@ -680,7 +679,7 @@ int mpi_inv_mod( mpi *X, const mpi *A, const mpi *N );
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed,
  *                 ERR_MPI_NOT_ACCEPTABLE if X is not prime
  */
-int mpi_is_prime( const mpi *X,
+int esp_mpi_is_prime( const mpi *X,
                   int (*f_rng)(void *, unsigned char *, size_t),
                   void *p_rng );
 
@@ -698,7 +697,7 @@ int mpi_is_prime( const mpi *X,
  *                 ERR_MPI_ALLOC_FAILED if memory allocation failed,
  *                 ERR_MPI_BAD_INPUT_DATA if nbits is < 3
  */
-int mpi_gen_prime( mpi *X, size_t nbits, int dh_flag,
+int esp_mpi_gen_prime( mpi *X, size_t nbits, int dh_flag,
                    int (*f_rng)(void *, unsigned char *, size_t),
                    void *p_rng );
 #endif
