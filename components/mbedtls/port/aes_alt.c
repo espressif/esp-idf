@@ -30,6 +30,7 @@
 #if defined(ESP_AES_C)
 
 #include <string.h>
+#include "multi_thread.h"
 
 /* Implementation that should never be optimized out by the compiler */
 static void aes_zeroize( void *v, size_t n ) {
@@ -39,7 +40,11 @@ static void aes_zeroize( void *v, size_t n ) {
 void aes_init( AES_CTX *ctx )
 {
     memset( ctx, 0, sizeof( AES_CTX ) );
+
+    AES_LOCK();
+    AES_TAKE();
 	ets_aes_enable();
+	AES_UNLOCK();
 }
 
 void aes_free( AES_CTX *ctx )
@@ -48,7 +53,12 @@ void aes_free( AES_CTX *ctx )
         return;
 
     aes_zeroize( ctx, sizeof( AES_CTX ) );
-	ets_aes_disable();
+
+    AES_LOCK();
+    AES_GIVE();
+    if (false == AES_IS_USED())
+	    ets_aes_disable();
+	AES_UNLOCK();
 }
 
 /*
@@ -58,6 +68,7 @@ int aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,
                     unsigned int keybits )
 {
 	enum AES_BITS	keybit;
+	uint16 keybyte = keybits / 8;
 	switch (keybits){
 		case 128:
 			keybit = AES128;
@@ -69,6 +80,12 @@ int aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,
 			keybit = AES256;
 			break;
 		default : return( ERR_AES_INVALID_KEY_LENGTH );
+	}
+	if (ctx->enc.flag == false){
+		ctx->enc.flag = true;
+		ctx->enc.keybites = keybits;
+		memset(ctx->enc.key, 0, sizeof(ctx->enc.key));
+		memcpy(ctx->enc.key, key, keybyte);
 	}
 	ets_aes_setkey_enc(key, keybit);
 	return 0;
@@ -81,6 +98,7 @@ int aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,
                     unsigned int keybits )
 {
 	enum AES_BITS	keybit;
+	uint16 keybyte = keybits / 8;
 	switch (keybits){
 		case 128:
 			keybit = AES128;
@@ -93,9 +111,30 @@ int aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,
 			break;
 		default : return( ERR_AES_INVALID_KEY_LENGTH );
 	}
+	if (ctx->dec.flag == false){
+		ctx->dec.flag = true;
+		ctx->dec.keybites = keybits;
+		memset(ctx->dec.key, 0, sizeof(ctx->dec.key));
+		memcpy(ctx->dec.key, key, keybyte);
+	}
 	ets_aes_setkey_dec(key, keybit);
 	return 0;
 
+}
+
+static void aes_process_enable(AES_CTX *ctx, int mode)
+{
+	if( mode == AES_ENCRYPT ){
+		aes_setkey_enc(ctx, ctx->enc.key, ctx->enc.keybites);
+	}else{
+		aes_setkey_dec(ctx, ctx->dec.key, ctx->dec.keybites);
+	}
+	return;
+}
+
+static void aes_process_disable(AES_CTX *ctx, int mode)
+{
+	
 }
 
 /*
@@ -155,7 +194,10 @@ int aes_crypt_cbc( AES_CTX *ctx,
 
     if( length % 16 )
         return( ERR_AES_INVALID_INPUT_LENGTH );
-	
+
+    AES_LOCK();
+
+	aes_process_enable(ctx, mode);
 	if( mode == AES_DECRYPT )
     {
         while( length > 0 )
@@ -188,6 +230,10 @@ int aes_crypt_cbc( AES_CTX *ctx,
             length -= 16;
         }
     }
+	aes_process_disable(ctx, mode);
+
+	AES_UNLOCK();
+
 	return 0;
 }
 
@@ -204,7 +250,10 @@ int aes_crypt_cfb128( AES_CTX *ctx,
 {
 	int c;
 	size_t n = *iv_off;
-	
+
+	AES_LOCK();
+
+	aes_process_enable(ctx, mode);
 	if( mode == AES_DECRYPT )
 	{
 		while( length-- )
@@ -233,6 +282,9 @@ int aes_crypt_cfb128( AES_CTX *ctx,
 	}
 	
 	*iv_off = n;
+	aes_process_disable(ctx, mode);
+
+	AES_UNLOCK();
 
 	return 0;
 }
@@ -249,7 +301,10 @@ int aes_crypt_cfb8( AES_CTX *ctx,
 {
 	unsigned char c;
 	unsigned char ov[17];
-	
+
+	AES_LOCK();
+
+	aes_process_enable(ctx, mode);
 	while( length-- )
 	{
 		memcpy( ov, iv, 16 );
@@ -265,6 +320,9 @@ int aes_crypt_cfb8( AES_CTX *ctx,
 	
 		memcpy( iv, ov + 1, 16 );
 	}
+	aes_process_disable(ctx, mode);
+	
+	AES_UNLOCK();
 
 	return 0;
 }
@@ -283,6 +341,10 @@ int aes_crypt_ctr( AES_CTX *ctx,
 	int c, i;
     size_t n = *nc_off;
 
+    AES_LOCK();
+
+	aes_process_enable(ctx, AES_ENCRYPT);
+
     while( length-- )
     {
         if( n == 0 ) {
@@ -299,6 +361,10 @@ int aes_crypt_ctr( AES_CTX *ctx,
     }
 
     *nc_off = n;
+	aes_process_disable(ctx, AES_ENCRYPT);
+
+	AES_UNLOCK();
+
 	return 0;
 }
 

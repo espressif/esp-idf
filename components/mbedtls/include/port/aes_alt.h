@@ -41,6 +41,12 @@ extern "C" {
 #define ERR_AES_INVALID_KEY_LENGTH                -0x0020  /**< Invalid key length. */
 #define ERR_AES_INVALID_INPUT_LENGTH              -0x0022  /**< Invalid data input length. */
 
+typedef struct{
+	bool  flag;
+	uint16 keybites;
+    uint8 key[32];
+}key_context, KEY_CTX;
+
 /**
  * \brief          AES context structure
  *
@@ -53,7 +59,8 @@ typedef struct
 {
     int nr;                     /*!<  number of rounds  */
     uint32_t *rk;               /*!<  AES round keys    */
-    uint32_t buf[68];           /*!<  unaligned data    */
+	KEY_CTX enc;
+	KEY_CTX dec;	
 }aes_context;
 
 typedef aes_context	AES_CTX;

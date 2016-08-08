@@ -27,6 +27,7 @@
 
 #if defined(ESP_SHA1_C)
 #include <string.h>
+#include "multi_thread.h"
 
 /* Implementation that should never be optimized out by the compiler */
 static void sha1_zeroize( void *v, size_t n ) {
@@ -36,7 +37,11 @@ static void sha1_zeroize( void *v, size_t n ) {
 void sha1_init( SHA1_CTX *ctx )
 {
     memset( ctx, 0, sizeof( SHA1_CTX ) );
+
+    SHA1_LOCK();
+    SHA1_TAKE();
 	ets_sha_enable();	
+	SHA1_UNLOCK();
 }
 
 void sha1_free( SHA1_CTX *ctx )
@@ -45,7 +50,12 @@ void sha1_free( SHA1_CTX *ctx )
         return;
 
     sha1_zeroize( ctx, sizeof( SHA1_CTX ) );
-	ets_sha_disable();
+
+    SHA1_LOCK();
+    SHA1_GIVE();
+    if (false == SHA1_IS_USED())
+	    ets_sha_disable();
+	SHA1_UNLOCK();
 }
 
 void sha1_clone( SHA1_CTX *dst, const SHA1_CTX *src )
@@ -63,7 +73,10 @@ void sha1_process(SHA1_CTX *ctx, const unsigned char data[64])
  */
 void sha1_starts( SHA1_CTX *ctx )
 {
+	SHA1_LOCK();
 	ets_sha_init(&ctx->context);
+	SHA1_UNLOCK();
+
 	ctx->context_type = SHA1;
 }
 
@@ -72,6 +85,7 @@ void sha1_starts( SHA1_CTX *ctx )
  */
 void sha1_update( SHA1_CTX *ctx, const unsigned char *input, size_t ilen )
 {
+	SHA1_LOCK();
 	ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
 
@@ -81,6 +95,7 @@ void sha1_update( SHA1_CTX *ctx, const unsigned char *input, size_t ilen )
 void sha1_finish( SHA1_CTX *ctx, unsigned char output[20] )
 {
 	ets_sha_finish(&ctx->context, ctx->context_type, output);
+	SHA1_UNLOCK();
 }
 
 /*

@@ -109,7 +109,17 @@ void mbedtls_sha256_process( mbedtls_sha256_context *ctx, const unsigned char da
 #endif
 
 #else  /* MBEDTLS_SHA256_ALT */
-#include "sha256_alt.h"
+#include "port/sha256_alt.h"
+
+typedef SHA256_CTX mbedtls_sha256_context;
+
+#define mbedtls_sha256_init   sha256_init
+#define mbedtls_sha256_clone  sha256_clone
+#define mbedtls_sha256_starts sha256_starts
+#define mbedtls_sha256_update sha256_update
+#define mbedtls_sha256_finish sha256_finish
+#define mbedtls_sha256_free   sha256_free
+#define mbedtls_sha256_process sha256_process
 #endif /* MBEDTLS_SHA256_ALT */
 
 #ifdef __cplusplus

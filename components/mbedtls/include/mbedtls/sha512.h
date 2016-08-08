@@ -106,7 +106,17 @@ void mbedtls_sha512_finish( mbedtls_sha512_context *ctx, unsigned char output[64
 #endif
 
 #else  /* MBEDTLS_SHA512_ALT */
-#include "sha512_alt.h"
+#include "port/sha512_alt.h"
+
+typedef SHA512_CTX	mbedtls_sha512_context;
+
+#define mbedtls_sha512_init   sha512_init
+#define mbedtls_sha512_clone  sha512_clone
+#define mbedtls_sha512_starts sha512_starts
+#define mbedtls_sha512_update sha512_update
+#define mbedtls_sha512_finish sha512_finish
+#define mbedtls_sha512_free   sha512_free
+
 #endif /* MBEDTLS_SHA512_ALT */
 
 #ifdef __cplusplus

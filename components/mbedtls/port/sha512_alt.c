@@ -26,6 +26,7 @@
 
 #if defined(ESP_SHA512_C)
 #include <string.h>
+#include "multi_thread.h"
 
 /* Implementation that should never be optimized out by the compiler */
 static void sha512_zeroize( void *v, size_t n ) {
@@ -35,7 +36,11 @@ static void sha512_zeroize( void *v, size_t n ) {
 void sha512_init( SHA512_CTX *ctx )
 {
     memset( ctx, 0, sizeof( SHA512_CTX ) );
+
+    SHA512_LOCK();
+    SHA512_TAKE();
 	ets_sha_enable();
+	SHA512_UNLOCK();
 }
 
 void sha512_free( SHA512_CTX *ctx )
@@ -44,7 +49,12 @@ void sha512_free( SHA512_CTX *ctx )
         return;
 
     sha512_zeroize( ctx, sizeof( SHA512_CTX ) );
-	ets_sha_disable();
+
+    SHA512_LOCK();
+    SHA512_GIVE();
+    if (false == SHA512_IS_USED())
+	    ets_sha_disable();
+	SHA512_UNLOCK();
 }
 
 void sha512_clone( SHA512_CTX *dst, const SHA512_CTX *src )
@@ -57,7 +67,9 @@ void sha512_clone( SHA512_CTX *dst, const SHA512_CTX *src )
  */
 void sha512_starts( SHA512_CTX *ctx, int is384 )
 {
+	SHA512_LOCK();
 	ets_sha_init(&ctx->context);
+	SHA512_UNLOCK();
     if( is384 == 0 )
     {
         /* SHA-512 */
@@ -75,6 +87,7 @@ void sha512_starts( SHA512_CTX *ctx, int is384 )
  */
 void sha512_update( SHA512_CTX *ctx, const unsigned char *input,size_t ilen )
 {
+	SHA512_LOCK();
     ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
 
@@ -84,6 +97,7 @@ void sha512_update( SHA512_CTX *ctx, const unsigned char *input,size_t ilen )
 void sha512_finish( SHA512_CTX *ctx, unsigned char output[64] )
 {
     ets_sha_finish(&ctx->context, ctx->context_type, output);
+    SHA512_UNLOCK();
 }
 
 /*

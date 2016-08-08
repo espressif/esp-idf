@@ -38,6 +38,7 @@
 #if defined(ESP_BIGNUM_ALT)
 #include <string.h>
 #include <stdlib.h>
+#include "multi_thread.h"
 
 /* Implementation that should never be optimized out by the compiler */
 static void mpi_zeroize( void *v, size_t n ) {
@@ -68,7 +69,10 @@ void mpi_init( mpi *X )
     X->s = 1;
     X->n = 0;
     X->p = NULL;
+    BIGNUM_LOCK();
+    BIGNUM_TAKE();
 	ets_bigint_enable();
+	BIGNUM_UNLOCK();
 }
 
 /*
@@ -88,7 +92,11 @@ void mpi_free( mpi *X )
     X->s = 1;
     X->n = 0;
     X->p = NULL;
-	ets_bigint_disable();
+    BIGNUM_LOCK();
+    BIGNUM_GIVE();
+    if (false == BIGNUM_IS_USED())
+	    ets_bigint_disable();
+	BIGNUM_UNLOCK();
 }
 
 /*
@@ -1035,12 +1043,14 @@ int mpi_mul_mpi( mpi *X, const mpi *A, const mpi *B )
 //    for( i++; j > 0; j-- )
     mpi_mul_hlp( i - 1, A->p, X->p + j - 1, B->p[j - 1] );
 
+    BIGNUM_LOCK();
 	if (ets_bigint_mult_prepare(A->p, B->p, n)){
 		ets_bigint_wait_finish();
 		ets_bigint_mult_getz(X->p, n);
 	} else{
 		mpi_printf("Baseline multiplication failed\n");
 	}
+	BIGNUM_UNLOCK();
 
     X->s = A->s * B->s;
 
@@ -1406,6 +1416,7 @@ static void mpi_montmul( mpi *A, const mpi *B, const mpi *N, mpi_uint mm,
     n = N->n;
     m = ( B->n < n ) ? B->n : n;
 
+    BIGNUM_LOCK();
 	if (ets_bigint_montgomery_mult_prepare(N->p, B->p, d, m, n, false)) {
         ets_bigint_wait_finish();
 
@@ -1413,6 +1424,7 @@ static void mpi_montmul( mpi *A, const mpi *B, const mpi *N, mpi_uint mm,
     } else{
 		mpi_printf("Montgomery multiplication failed\n");
 	}
+	BIGNUM_UNLOCK();
 
 }
 

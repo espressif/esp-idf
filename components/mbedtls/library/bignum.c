@@ -58,6 +58,8 @@
 #define mbedtls_free       free
 #endif
 
+#if !defined(MBEDTLS_BIGNUM_ALT)
+
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_mpi_zeroize( mbedtls_mpi_uint *v, size_t n ) {
     volatile mbedtls_mpi_uint *p = v; while( n-- ) *p++ = 0;
@@ -2264,6 +2266,7 @@ cleanup:
 }
 
 #endif /* MBEDTLS_GENPRIME */
+#endif /* MBEDTLS_BIGNUM_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
 

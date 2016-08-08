@@ -100,6 +100,8 @@
 #define MBEDTLS_LN_2_DIV_LN_10_SCALE100                 332
 #define MBEDTLS_MPI_RW_BUFFER_SIZE             ( ((MBEDTLS_MPI_MAX_BITS_SCALE100 + MBEDTLS_LN_2_DIV_LN_10_SCALE100 - 1) / MBEDTLS_LN_2_DIV_LN_10_SCALE100) + 10 + 6 )
 
+#if !defined(MBEDTLS_BIGNUM_ALT)
+
 /*
  * Define the base integer type, architecture-wise.
  *
@@ -702,6 +704,54 @@ int mbedtls_mpi_is_prime( const mbedtls_mpi *X,
 int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
                    int (*f_rng)(void *, unsigned char *, size_t),
                    void *p_rng );
+#else /* MBEDTLS_BIGNUM_ALT */
+#include "port/bignum_alt.h"
+
+typedef mpi	mbedtls_mpi;
+
+#define mbedtls_mpi_init 				mpi_init
+#define mbedtls_mpi_free				mpi_free
+#define mbedtls_mpi_grow				mpi_grow
+#define mbedtls_mpi_shrink				mpi_shrink
+#define mbedtls_mpi_copy				mpi_copy
+#define mbedtls_mpi_swap				mpi_swap
+#define mbedtls_mpi_safe_cond_assign	mpi_safe_cond_assign
+#define mbedtls_mpi_safe_cond_swap		mpi_safe_cond_swap
+#define mbedtls_mpi_lset				mpi_lset
+#define mbedtls_mpi_get_bit				mpi_get_bit
+#define mbedtls_mpi_set_bit				mpi_set_bit
+#define mbedtls_mpi_lsb					mpi_lsb
+#define mbedtls_mpi_bitlen				mpi_bitlen
+#define mbedtls_mpi_size				mpi_size
+#define mbedtls_mpi_read_string			mpi_read_string
+#define mbedtls_mpi_write_string		mpi_write_string
+#define mbedtls_mpi_read_binary			mpi_read_binary
+#define mbedtls_mpi_write_binary		mpi_write_binary
+#define mbedtls_mpi_shift_l				mpi_shift_l
+#define mbedtls_mpi_shift_r				mpi_shift_r
+#define mbedtls_mpi_cmp_abs				mpi_cmp_abs
+#define mbedtls_mpi_cmp_mpi				mpi_cmp_mpi
+#define mbedtls_mpi_cmp_int				mpi_cmp_int
+#define mbedtls_mpi_add_abs				mpi_add_abs
+#define mbedtls_mpi_sub_abs				mpi_sub_abs
+#define mbedtls_mpi_add_mpi				mpi_add_mpi
+#define mbedtls_mpi_sub_mpi				mpi_sub_mpi
+#define mbedtls_mpi_add_int				mpi_add_int
+#define mbedtls_mpi_sub_int				mpi_sub_int
+#define mbedtls_mpi_mul_mpi				mpi_mul_mpi
+#define mbedtls_mpi_mul_int				mpi_mul_int
+#define mbedtls_mpi_div_mpi				mpi_div_mpi
+#define mbedtls_mpi_div_int				mpi_div_int
+#define mbedtls_mpi_mod_mpi				mpi_mod_mpi
+#define mbedtls_mpi_mod_int				mpi_mod_int
+#define mbedtls_mpi_exp_mod				mpi_exp_mod
+#define mbedtls_mpi_fill_random			mpi_fill_random
+#define mbedtls_mpi_gcd					mpi_gcd
+#define mbedtls_mpi_inv_mod				mpi_inv_mod
+#define mbedtls_mpi_is_prime 			mpi_is_prime 
+#define mbedtls_mpi_gen_prime 			mpi_gen_prime
+
+#endif /* MBEDTLS_BIGNUM_ALT */
 
 /**
  * \brief          Checkup routine

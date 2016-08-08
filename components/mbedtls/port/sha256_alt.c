@@ -27,6 +27,7 @@
 
 #if defined(ESP_SHA256_C)
 #include <string.h>
+#include "multi_thread.h"
 
 /* Implementation that should never be optimized out by the compiler */
 static void sha256_zeroize( void *v, size_t n ) {
@@ -36,7 +37,11 @@ static void sha256_zeroize( void *v, size_t n ) {
 void sha256_init( SHA256_CTX *ctx )
 {
     memset( ctx, 0, sizeof( SHA256_CTX ) );
+
+    SHA256_LOCK();
+    SHA256_TAKE();
 	ets_sha_enable();
+	SHA256_UNLOCK();
 }
 
 void sha256_process(SHA256_CTX *ctx, const unsigned char data[64])
@@ -50,7 +55,12 @@ void sha256_free( SHA256_CTX *ctx )
         return;
 
     sha256_zeroize( ctx, sizeof( SHA256_CTX ) );
-	ets_sha_disable();
+
+    SHA256_LOCK();
+    SHA256_GIVE();
+    if (false == SHA256_IS_USED())
+	    ets_sha_disable();
+	SHA256_UNLOCK();
 }
 
 void sha256_clone( SHA256_CTX *dst, const SHA256_CTX *src )
@@ -63,7 +73,10 @@ void sha256_clone( SHA256_CTX *dst, const SHA256_CTX *src )
  */
 void sha256_starts( SHA256_CTX *ctx, int is224 )
 {
+	SHA256_LOCK();
     ets_sha_init(&ctx->context);
+    SHA256_UNLOCK();
+
 	if( is224 == 0 )
     {
         /* SHA-256 */
@@ -79,6 +92,7 @@ void sha256_starts( SHA256_CTX *ctx, int is224 )
  */
 void sha256_update( SHA256_CTX *ctx, const unsigned char *input, size_t ilen )
 {
+	SHA256_LOCK();
 	ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
 
@@ -88,6 +102,7 @@ void sha256_update( SHA256_CTX *ctx, const unsigned char *input, size_t ilen )
 void sha256_finish( SHA256_CTX *ctx, unsigned char output[32] )
 {
 	ets_sha_finish(&ctx->context, ctx->context_type, output);
+	SHA256_UNLOCK();
 }
 
 /*
