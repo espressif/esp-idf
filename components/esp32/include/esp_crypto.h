@@ -1,5 +1,5 @@
-#ifndef _MULTI_THREAD_H_
-#define _MULTI_THREAD_H_
+#ifndef _MULTI_CRYPTO_H_
+#define _MULTI_CRYPTO_H_
 
 #include "c_types.h"
 #include "rom/ets_sys.h"
@@ -16,21 +16,21 @@ enum {
 	MUTEX_MAX_NUM,
 };
 
-int esp_thread_init(void);
+int esp_crypto_init(void);
 
-void esp_thread_lock(unsigned int num);
-void esp_thread_unlock(unsigned int num);
+void esp_crypto_lock(unsigned int num);
+void esp_crypto_unlock(unsigned int num);
 
-void esp_thread_take(unsigned int num);
-void esp_thread_give(unsigned int num);
-bool esp_thread_is_used(unsigned int num);
+void esp_crypto_take(unsigned int num);
+void esp_crypto_give(unsigned int num);
+bool esp_crypto_is_used(unsigned int num);
 
-#define MUTEX_LOCK(num) esp_thread_lock(num)
-#define MUTEX_UNLOCK(num) esp_thread_unlock(num)
+#define MUTEX_LOCK(num) esp_crypto_lock(num)
+#define MUTEX_UNLOCK(num) esp_crypto_unlock(num)
 
-#define SIG_TAKE(num) esp_thread_take(num)
-#define SIG_GIVE(num) esp_thread_give(num)
-#define SIG_IS_USED(num) esp_thread_is_used(num)
+#define SIG_TAKE(num) esp_crypto_take(num)
+#define SIG_GIVE(num) esp_crypto_give(num)
+#define SIG_IS_USED(num) esp_crypto_is_used(num)
 
 #define AES_LOCK() MUTEX_LOCK(AES_MUTEX)
 #define AES_UNLOCK() MUTEX_UNLOCK(AES_MUTEX)
@@ -53,4 +53,4 @@ bool esp_thread_is_used(unsigned int num);
 }
 #endif
 
-#endif /* esp_thread.h */
+#endif /* esp_crypto.h */

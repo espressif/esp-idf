@@ -23,15 +23,14 @@
  *  http://www.itl.nist.gov/fipspubs/fip180-1.htm
  */
 
-#include "sha.h"
-
 #include <string.h>
-#include "esp_thread.h"
+#include "sha.h"
+#include "esp_crypto.h"
 
 /* Implementation that should never be optimized out by the compiler */
-static void esp_sha_zeroize( void *v, size_t n ) {
-    volatile unsigned char *p = v; while( n-- ) *p++ = 0;
-}
+//static void bzero( void *v, size_t n ) {
+//    volatile unsigned char *p = v; while( n-- ) *p++ = 0;
+//}
 
 void esp_sha1_init( SHA1_CTX *ctx )
 {
@@ -48,7 +47,7 @@ void esp_sha1_free( SHA1_CTX *ctx )
     if( ctx == NULL )
         return;
 
-    esp_sha_zeroize( ctx, sizeof( SHA1_CTX ) );
+    bzero( ctx, sizeof( SHA1_CTX ) );
 
     SHA_LOCK();
     SHA_GIVE();
@@ -74,7 +73,6 @@ void esp_sha1_starts( SHA1_CTX *ctx )
 {
 	SHA_LOCK();
 	ets_sha_init(&ctx->context);
-	SHA_UNLOCK();
 
 	ctx->context_type = SHA1;
 }
@@ -84,7 +82,6 @@ void esp_sha1_starts( SHA1_CTX *ctx )
  */
 void esp_sha1_update( SHA1_CTX *ctx, const unsigned char *input, size_t ilen )
 {
-	SHA_LOCK();
 	ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
 
@@ -133,7 +130,7 @@ void esp_sha256_free( SHA256_CTX *ctx )
     if( ctx == NULL )
         return;
 
-    esp_sha_zeroize( ctx, sizeof( SHA256_CTX ) );
+    bzero( ctx, sizeof( SHA256_CTX ) );
 
     SHA_LOCK();
     SHA_GIVE();
@@ -154,7 +151,6 @@ void esp_sha256_starts( SHA256_CTX *ctx, int is224 )
 {
 	SHA_LOCK();
     ets_sha_init(&ctx->context);
-    SHA_UNLOCK();
 
 	if( is224 == 0 )
     {
@@ -171,7 +167,6 @@ void esp_sha256_starts( SHA256_CTX *ctx, int is224 )
  */
 void esp_sha256_update( SHA256_CTX *ctx, const unsigned char *input, size_t ilen )
 {
-	SHA_LOCK();
 	ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
 
@@ -215,7 +210,7 @@ void esp_sha512_free( SHA512_CTX *ctx )
     if( ctx == NULL )
         return;
 
-    esp_sha_zeroize( ctx, sizeof( SHA512_CTX ) );
+    bzero( ctx, sizeof( SHA512_CTX ) );
 
     SHA_LOCK();
     SHA_GIVE();
@@ -236,7 +231,7 @@ void esp_sha512_starts( SHA512_CTX *ctx, int is384 )
 {
 	SHA_LOCK();
 	ets_sha_init(&ctx->context);
-	SHA_UNLOCK();
+
     if( is384 == 0 )
     {
         /* SHA-512 */
@@ -254,7 +249,6 @@ void esp_sha512_starts( SHA512_CTX *ctx, int is384 )
  */
 void esp_sha512_update( SHA512_CTX *ctx, const unsigned char *input,size_t ilen )
 {
-	SHA_LOCK();
     ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
 

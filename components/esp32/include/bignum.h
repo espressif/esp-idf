@@ -27,9 +27,9 @@
 #include "rom/ets_sys.h"
 #include "rom/bigint.h"
 
-#define ESP_BIGNUM_ALT
+
 #define MPI_DEBUG_ALT
-#if defined(ESP_BIGNUM_ALT)
+
 
 #define ERR_MPI_FILE_IO_ERROR                     -0x0002  /**< An error occurred while reading from or writing to a file. */
 #define ERR_MPI_BAD_INPUT_DATA                    -0x0004  /**< Bad input parameters to function. */
@@ -700,7 +700,7 @@ int esp_mpi_is_prime( const mpi *X,
 int esp_mpi_gen_prime( mpi *X, size_t nbits, int dh_flag,
                    int (*f_rng)(void *, unsigned char *, size_t),
                    void *p_rng );
-#endif
+
 
 #endif
 

@@ -33,17 +33,16 @@
  *      https://gmplib.org/manual/index.html
  *
  */
-#include "bignum.h"
 
-#if defined(ESP_BIGNUM_ALT)
 #include <string.h>
 #include <stdlib.h>
-#include "esp_thread.h"
+#include "bignum.h"
+#include "esp_crypto.h"
 
 /* Implementation that should never be optimized out by the compiler */
-static void esp_mpi_zeroize( void *v, size_t n ) {
-    volatile unsigned char *p = v; while( n-- ) *p++ = 0;
-}
+//static void bzero( void *v, size_t n ) {
+//    volatile unsigned char *p = v; while( n-- ) *p++ = 0;
+//}
 
 #define ciL    (sizeof(esp_mpi_uint))         /* chars in limb  */
 #define biL    (ciL << 3)               /* bits  in limb  */
@@ -85,7 +84,7 @@ void esp_mpi_free( mpi *X )
 
     if( X->p != NULL )
     {
-        esp_mpi_zeroize( X->p, X->n * ciL );
+        bzero( X->p, X->n * ciL );
         free( X->p );
     }
 
@@ -117,7 +116,7 @@ int esp_mpi_grow( mpi *X, size_t nblimbs )
         if( X->p != NULL )
         {
             memcpy( p, X->p, X->n * ciL );
-            esp_mpi_zeroize( X->p, X->n * ciL );
+            bzero( X->p, X->n * ciL );
             free( X->p );
         }
 
@@ -155,7 +154,7 @@ int esp_mpi_shrink( mpi *X, size_t nblimbs )
     if( X->p != NULL )
     {
         memcpy( p, X->p, i * ciL );
-        esp_mpi_zeroize( X->p, X->n * ciL );
+        bzero( X->p, X->n * ciL );
         free( X->p );
     }
 
@@ -1015,11 +1014,76 @@ static void esp_mpi_mul_hlp( size_t i, esp_mpi_uint *s, esp_mpi_uint *d, esp_mpi
 /*
  * Baseline multiplication: X = A * B  (HAC 14.12)
  */
+
+static int mul_pram_alloc( mpi *X, const mpi *A, const mpi *B, char **pA, char **pB, char **pX, size_t *bites)
+{
+    char *sa, *sb, *sx;
+	int algn;
+	int words, bytes;
+	int abytes, bbytes, cbytes;
+
+	if (A->n > B->n)
+		words = A->n;
+	else
+		words = B->n;
+
+	bytes = (words / 16 + ((words % 16) ? 1 : 0 )) * 16 * 4 * 2;
+
+	abytes = A->n * 4;	
+	bbytes = B->n * 4;
+
+	sa = malloc(bytes);
+	if (!sa) {
+       return -1;
+	}
+
+	sb = malloc(bytes);
+	if (!sb) {
+	   free(sa);
+       return -1;
+	}
+
+	sx = malloc(bytes);
+	if (!sx) {
+	   free(sa);
+	   free(sb);
+       return -1;
+	}
+
+	memcpy(sa, A->p, abytes);
+	memset(sa + abytes, 0, bytes - abytes);
+
+	memcpy(sb, B->p, bbytes);
+	memset(sb + bbytes, 0, bytes - bbytes);
+
+	*pA = sa;
+	*pB = sb;
+
+	*pX = sx;
+
+	*bites = bytes * 4;
+
+	return 0;
+}
+
+void mul_pram_free(char **pA, char **pB, char **pX)
+{
+    free(*pA);
+	*pA = NULL;
+	
+    free(*pB);
+	*pB = NULL;
+	
+	free(*pX);
+	*pX = NULL;
+}
+
 int esp_mpi_mul_mpi( mpi *X, const mpi *A, const mpi *B )
 {
-    int ret;
+    int ret = -1;
     size_t i, j;
-	size_t n = 0;
+	char *s1 = NULL, *s2 = NULL, *dest = NULL;
+	size_t bites;
    
     mpi TA, TB;
 
@@ -1039,20 +1103,27 @@ int esp_mpi_mul_mpi( mpi *X, const mpi *A, const mpi *B )
     MPI_CHK( esp_mpi_grow( X, i + j ) );
     MPI_CHK( esp_mpi_lset( X, 0 ) );
 
-	n = j;
-//    for( i++; j > 0; j-- )
-    esp_mpi_mul_hlp( i - 1, A->p, X->p + j - 1, B->p[j - 1] );
+	if (mul_pram_alloc(X, A, B, &s1, &s2, &dest, &bites)) {
+       goto cleanup;
+	}
 
-    BIGNUM_LOCK();
-	if (ets_bigint_mult_prepare(A->p, B->p, n)){
-		ets_bigint_wait_finish();
-		ets_bigint_mult_getz(X->p, n);
+    BIGNUM_LOCK(); 
+	if (ets_bigint_mult_prepare((uint32_t *)s1, (uint32_t *)s2, bites)){
+		ets_bigint_wait_finish();		
+		if (ets_bigint_mult_getz((uint32_t *)dest, bites) == true) {
+			memcpy(X->p, dest, (i + j) * 4);
+			ret = 0;
+		} else {
+            esp_mpi_printf("ets_bigint_mult_getz failed\n");
+		}
 	} else{
 		esp_mpi_printf("Baseline multiplication failed\n");
 	}
 	BIGNUM_UNLOCK();
 
     X->s = A->s * B->s;
+
+	mul_pram_free(&s1, &s2, &dest);
 
 cleanup:
 

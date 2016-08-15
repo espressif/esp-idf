@@ -1237,9 +1237,8 @@ int mbedtls_aes_self_test( int verbose )
     unsigned char stream_block[16];
 #endif
     mbedtls_aes_context ctx;
-
-    memset( key, 0, 32 );
-    mbedtls_aes_init( &ctx );
+	
+	memset( key, 0, 32 );
 
     /*
      * ECB mode
@@ -1255,6 +1254,8 @@ int mbedtls_aes_self_test( int verbose )
 
         memset( buf, 0, 16 );
 
+    	mbedtls_aes_init( &ctx );
+
         if( v == MBEDTLS_AES_DECRYPT )
         {
             mbedtls_aes_setkey_dec( &ctx, key, 128 + u * 64 );
@@ -1267,6 +1268,7 @@ int mbedtls_aes_self_test( int verbose )
                 if( verbose != 0 )
                     mbedtls_printf( "failed\n" );
 
+				mbedtls_aes_free( &ctx );
                 ret = 1;
                 goto exit;
             }
@@ -1283,6 +1285,8 @@ int mbedtls_aes_self_test( int verbose )
                 if( verbose != 0 )
                     mbedtls_printf( "failed\n" );
 
+				mbedtls_aes_free( &ctx );
+
                 ret = 1;
                 goto exit;
             }
@@ -1290,6 +1294,8 @@ int mbedtls_aes_self_test( int verbose )
 
         if( verbose != 0 )
             mbedtls_printf( "passed\n" );
+
+		mbedtls_aes_free( &ctx );
     }
 
     if( verbose != 0 )
@@ -1312,6 +1318,8 @@ int mbedtls_aes_self_test( int verbose )
         memset( prv, 0, 16 );
         memset( buf, 0, 16 );
 
+		mbedtls_aes_init( &ctx );
+
         if( v == MBEDTLS_AES_DECRYPT )
         {
             mbedtls_aes_setkey_dec( &ctx, key, 128 + u * 64 );
@@ -1323,6 +1331,8 @@ int mbedtls_aes_self_test( int verbose )
             {
                 if( verbose != 0 )
                     mbedtls_printf( "failed\n" );
+
+				mbedtls_aes_free( &ctx );
 
                 ret = 1;
                 goto exit;
@@ -1348,6 +1358,8 @@ int mbedtls_aes_self_test( int verbose )
                 if( verbose != 0 )
                     mbedtls_printf( "failed\n" );
 
+				mbedtls_aes_free( &ctx );
+
                 ret = 1;
                 goto exit;
             }
@@ -1355,6 +1367,8 @@ int mbedtls_aes_self_test( int verbose )
 
         if( verbose != 0 )
             mbedtls_printf( "passed\n" );
+
+		mbedtls_aes_free( &ctx );
     }
 
     if( verbose != 0 )
@@ -1376,6 +1390,8 @@ int mbedtls_aes_self_test( int verbose )
 
         memcpy( iv,  aes_test_cfb128_iv, 16 );
         memcpy( key, aes_test_cfb128_key[u], 16 + u * 8 );
+
+		mbedtls_aes_init( &ctx );
 
         offset = 0;
         mbedtls_aes_setkey_enc( &ctx, key, 128 + u * 64 );
@@ -1432,6 +1448,8 @@ int mbedtls_aes_self_test( int verbose )
 
         memcpy( nonce_counter, aes_test_ctr_nonce_counter[u], 16 );
         memcpy( key, aes_test_ctr_key[u], 16 );
+
+		mbedtls_aes_init( &ctx );
 
         offset = 0;
         mbedtls_aes_setkey_enc( &ctx, key, 128 );
