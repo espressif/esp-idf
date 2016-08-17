@@ -1,0 +1,7 @@
+# Name,   Type, SubType, Offset,   Size
+factory,  0,    0,       0x10000,  1M
+ota_0,    0,    ota_0,   ,         1M
+ota_1,    0,    ota_1,   ,         1M
+rfdata,   data, rf,      ,         256K
+wifidata, data, wifi,    ,         256K
+otadata,  data, ota,     ,         256K

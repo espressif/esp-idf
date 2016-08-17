@@ -1,0 +1,14 @@
+menu "LWIP"
+
+config LWIP_MAX_SOCKETS
+	int "Max number of open sockets"
+	range 1 16
+	default 4
+	help
+		Sockets take up a certain amount of memory, and allowing fewer
+		sockets to be open at the same time conserves memory. Specify
+		the maximum amount of sockets here.
+
+endmenu
+
+

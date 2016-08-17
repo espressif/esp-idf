@@ -1,0 +1,63 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig/kconfig-language.txt.
+#
+mainmenu "Espressif ESP32 SDK Configuration"
+
+
+menu "SDK tool configuration"
+config TOOLPREFIX
+	string "Compiler toolchain path/prefix"
+	default "xtensa-esp32-elf-"
+	help
+		The prefix/path that is used to call the toolchain. The default setting assumes
+		a crosstool-ng gcc setup that is in your PATH.
+
+config PYTHON
+    string "Python 2 interpreter"
+	default "python"
+	help
+	    The executable name/path that is used to run python. On some systems Python 2.x
+		may need to be invoked as python2.
+
+config MEMMAP_BT
+	bool "Reserve space for Bluetooth stack"
+	default "n"
+	help
+		The Bluetooth stack uses memory that cannot be used as generic memory anymore. This
+		reserves the space for that within the memory map of the compiled binary.
+
+config MEMMAP_SMP
+	bool "Reserve memory for two cores"
+	default "y"
+	help
+		The ESP32 contains two cores. If you plan to only use one, you can disable this item
+		to save some memory. (ToDo: Make this automatically depend on unicore support)
+
+config MEMMAP_TRACEMEM
+	bool "Use TRAX tracing feature"
+	default "n"
+	help
+		The ESP32 contains a feature which allows you to trace the execution path the processor
+		has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
+		of memory that can't be used for general purposes anymore. Disable this if you do not know
+		what this is.
+
+config MEMMAP_SPISRAM
+	bool "Use external SPI SRAM chip as main memory"
+	default "n"
+	help
+		The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the 
+		main memory map. Enable this if you have this hardware and want to use it in the same
+		way as on-chip RAM.
+
+endmenu
+
+source "$COMPONENT_KCONFIGS_PROJBUILD"
+
+menu "Component config"
+source "$COMPONENT_KCONFIGS"
+endmenu
+
+
+

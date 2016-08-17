@@ -1,0 +1,25 @@
+# Component support for esptool.py. Doesn't do much by itself,
+# components have their own flash targets that can use these variables.
+ESPPORT ?= $(CONFIG_ESPTOOLPY_PORT)
+ESPBAUD ?= $(CONFIG_ESPTOOLPY_BAUD)
+
+PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
+
+# two commands that can be used from other components
+# to invoke esptool.py (with or without serial port args)
+#
+# NB: esptool.py lives in the sdk/bin directory not the component directory
+ESPTOOLPY := $(PYTHON) $(SDK_PATH)/bin/esptool.py --chip esp32
+ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD)
+
+PROJECT_FLASH_COMMAND=$(ESPTOOLPY_SERIAL) write_flash $(CONFIG_APP_OFFSET) $(PROJECT_BIN)
+
+$(PROJECT_BIN): $(PROJECT_ELF)
+	$(Q) $(ESPTOOLPY) elf2image -o $@ $<
+
+flash: $(PROJECT_BIN)
+	@echo "Flashing project app to $(CONFIG_APP_OFFSET)..."
+	$(Q) $(PROJECT_FLASH_COMMAND)
+
+# convenience target to flash bootloader, partitions, app all at once
+flash_all: bootloader-flash partition_table-flash flash

@@ -1,0 +1,47 @@
+
+
+TARGET_DIR=$(PWD)/.build
+ROM_ELF_FILE ?= /tmp/eagle.pro.rom.out
+
+all: newlib check_common_syms
+
+newlib_xtensa-2.2.0:
+	git submodule update --init
+
+newlib: newlib_xtensa-2.2.0
+
+newlib:
+	cd newlib_xtensa-2.2.0 && \
+	./configure \
+		--with-newlib \
+		--enable-multilib \
+		--disable-newlib-io-c99-formats \
+		--disable-newlib-supplied-syscalls  \
+		--enable-newlib-nano-formatted-io \
+		--enable-newlib-reent-small \
+		--enable-target-optspace \
+		--program-transform-name="s&^&xtensa-esp108-elf-&" \
+		--disable-option-checking \
+		--with-target-subdir=xtensa-esp108-elf \
+		--target=xtensa-esp108-elf \
+		--prefix=$(TARGET_DIR) \
+	&& CROSS_CFLAGS="-DSIGNAL_PROVIDED -DABORT_PROVIDED -DMALLOC_PROVIDED" make all install || true
+	cp -r $(TARGET_DIR)/xtensa-esp108-elf/{include,lib} ./
+	cp lib/libc.a lib/libc_rom.a
+	xtensa-esp108-elf-ar d lib/libc_rom.a lib_a-nano-vfprintf_float.o
+	xtensa-esp108-elf-ar d lib/libc_rom.a lib_a-nano-vfscanf_float.o
+	while read obj; do xtensa-esp108-elf-ar d lib/libc.a $$obj; done <libc_discard.list
+	
+
+clean:
+	rm -rf newlib_xtensa-2.2.0 .build include lib
+
+check_common_syms:
+	@# get symbols in libc.a, except for _printf_float and _scanf_float
+	@xtensa-esp108-elf-nm lib/libc.a | grep -v -E "\W+U\W+" | awk '{print $$3}' | grep -v -E '^$$' | grep -v '_printf_float' | grep -v '_scanf_float' | sort >libc.syms
+	@# get symbols in ROM
+	@xtensa-esp108-elf-nm $(ROM_ELF_FILE) | grep -v -E '\W+U\W+' | awk '{print $$3}' | sort >rom.syms
+	@# check that there are no common symbols
+	@test $$(comm -12 rom.syms libc.syms | tee common.syms | wc -l) -eq 0
+
+.PHONY: all clean newlib

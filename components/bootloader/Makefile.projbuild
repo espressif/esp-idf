@@ -1,0 +1,45 @@
+#
+# Bootloader component
+#
+# The bootloader is not a real component that gets linked into the project.
+# Instead it is an entire standalone project ( in src/) that gets built in 
+# the upper projects build directory. This Makefile.projbuild provides the 
+# glue to  build the bootloader project from the original project. It 
+# basically runs Make in the src/ directory but it needs to zero some variables
+# the SDK makefile exports first, to not let them interfere.
+#
+
+BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)
+EXTRA_CLEAN_TARGETS+=bootloader-clean
+BOOTLOADER_BIN=$(BUILD_DIR_BASE)/bootloader.bin
+
+.PHONY: bootloader-clean bootloader-flash bootloader
+
+$(BOOTLOADER_BIN): $(COMPONENT_PATH)/src/sdkconfig
+	$(Q) PROJECT_PATH= \
+	COMPONENT_LDFLAGS= \
+	COMPONENT_INCLUDES= \
+	LDFLAGS= \
+	CFLAGS= \
+	BUILD_DIR_BASE=$(BUILD_DIR_BASE)/bootloader \
+	make -C $(BOOTLOADER_COMPONENT_PATH)/src MAKEFLAGS= V=$(V) TARGET_BIN_LAYOUT="$(BOOTLOADER_TARGET_BIN_LAYOUT)"
+
+bootloader-clean:
+	$(Q) PROJECT_PATH= \
+	COMPONENT_LDFLAGS= \
+	COMPONENT_INCLUDES= \
+	LDFLAGS= \
+	CFLAGS= \
+	BUILD_DIR_BASE=$(BUILD_DIR_BASE)/bootloader \
+	make -C $(BOOTLOADER_COMPONENT_PATH)/src clean MAKEFLAGS= V=$(V)
+
+bootloader: $(BUILD_DIR_BASE)/bootloader.bin
+
+# synchronise the project level config to the component's
+# config
+$(COMPONENT_PATH)/src/sdkconfig: $(PROJECT_PATH)/sdkconfig
+	$(Q) cp $< $@
+
+# bootloader-flash calls flash in the bootloader dummy project
+bootloader-flash: $(BOOTLOADER_BIN)
+	make -C $(BOOTLOADER_COMPONENT_PATH)/src flash MAKEFLAGS= V=$(V) CONFIG_APP_OFFSET=0x1000

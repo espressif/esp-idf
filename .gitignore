@@ -1,0 +1,14 @@
+.config
+*.o
+*.pyc
+
+# gtags
+GTAGS
+GRTAGS
+GPATH
+
+# emacs temp file suffixes
+*~
+.#*
+\#*#
+

@@ -1,0 +1,265 @@
+The build structure of the Espressif IoT Development Framework explained.
+
+An ESP-IDF project can be seen as an almagation of a number of components.
+For example, for a webserver that shows the current humidity, we would
+have:
+- The ESP32 base libraries (libc, rom bindings etc)
+- The WiFi drivers
+- A TCP/IP stack
+- The FreeRTOS operating system
+- A webserver
+- A driver for an humidity sensor
+- Main code tying it all together
+
+ESP-IDF makes these components explicit and configurable. To do that, when a project
+is compiled, the build environment will look up all the components in the
+SDK directories, the project directories and optionally custom other component
+directories. It then allows the user to configure compile-time options using
+a friendly text-based menu system to customize the SDK as well as other components
+to the requirements of the project. After the components are customized, the
+build process will compile everything into an output file, which can then be uploaded
+into a board in a way that can also be defined by components.
+
+A project in this sense is defined as a directory under which all the files required
+to build it live, excluding the SDK files and the toolchain. A simple project
+tree looks like this:
+
+- myProject/ - build/
+             - components/ - component1/ - Makefile
+                                         - Kconfig
+                                         - src1.c
+                           - component2/ - Makefile
+                                         - Kconfig
+                                         - src1.c
+             - main/       - src1.c
+                           - src2.c
+             - Makefile
+
+
+As we can see, a project consists of a components/ subdirectory containing its
+components as well as one or more directories containing the project-specific
+sources; by default a single directory called 'main' is assumed. The project
+directory will also have a Makefile where the projects name as well as optionally
+other options are defined. After compilation, the project directory will contain
+a 'build'-directory containing all of the objects, libraries and other generated 
+files as well as the final binary.
+
+Components also have a Makefile containing various definititions influencing
+the build process of the component as well as the project it's used in, as
+well as a Kconfig file defining the compile-time options that are settable 
+by means of the menu system.
+
+
+Project makefile variables that can be set by the programmer:
+PROJECT_NAME: Mandatory. Name for the project
+BUILD_DIR_BASE: Set the directory where all objects/libraries/binaries end up in.
+	Defaults to $(PROJECT_PATH)/build
+COMPONENT_DIRS: Search path for components. Defaults to the component/ directories
+	in the SDK path and the project path.
+COMPONENTS: A list of component names. Defaults to all the component found in the
+	COMPONENT_DIRS directory
+EXTRA_COMPONENT_DIRS: Defaults to unset. Use this to add directories to the default
+	COMPONENT_DIRS.
+SRCDIRS: Directories under the project dir containing project-specific sources. 
+	Defaults to 'main'. These are treated as 'lite' components: they do not have
+	include directories that are passed to the compilation pass of all components and
+	they do not have a Kconfig option.
+
+
+Component makefile variables that can be set by the programmer:
+COMPONENT_ADD_INCLUDEDIRS: Relative path to include directories to be added to
+	the entire project
+COMPONENT_PRIV_INCLUDEDIRS: Relative path to include directories that are only used
+	when compiling this specific component
+COMPONENT_DEPENDS: Names of any components that need to be compiled before this component.
+COMPONENT_ADD_LDFLAGS: Ld flags to add for this project. Defaults to -l$(COMPONENT_NAME).
+	Add libraries etc in the current directory as $(abspath libwhatever.a)
+COMPONENT_EXTRA_INCLUDES: Any extra include paths. These will be prefixed with '-I' and
+	passed to the compiler; please put absolute paths here.
+COMPONENT_SRCDIRS: Relative directories to look in for sources. Defaults to '.', the current 
+	directory (the root of the component) only. Use this to specify any subdirectories. Note
+	that specifying this overwrites the default action of compiling everything in the 
+	components root dir; to keep this behaviour please also add '.' as a directory in this
+	list.
+COMPONENT_OBJS: Object files to compile. Defaults to the .o variants of all .c and .S files
+	that are found in COMPONENT_SRCDIRS.
+COMPONENT_EXTRA_CLEAN: Files that are generated using rules in the components Makefile
+	that also need to be cleaned
+COMPONENT_BUILDRECIPE: Recipe to build the component. Optional. Defaults to building all
+	COMPONENT_OBJS and linking them into lib(componentname).a
+COMPONENT_CLEANRECIPE: Recipe to clean the component. Optional. Defaults to removing
+	all built objects and libraries.
+COMPONENT_BUILD_DIR: Equals the cwd of the component build, which is the build dir
+	of the component (where all the .o etc files should be created).
+
+
+These variables are already set early on in the Makefile and the values in it will
+be usable in component or project Makefiles:
+CC, LD, AR, OBJCOPY: Xtensa gcc tools
+HOSTCC, HOSTLD etc: Host gcc tools
+LDFLAGS, CFLAGS: Set to usable values as defined in SDK Makefile
+PROJECT_NAME: Name of the project, as set in project makefile
+PROJECT_PATH: Path to the root of the project folder
+COMPONENTS: Name of the components to be included
+CONFIG_*: Values set by 'make menuconfig' also have corresponding Makefile variables.
+
+For components, there also are these defines:
+COMPONENT_PATH: Absolute path to the root of the source tree of the component we're
+	compiling
+COMPONENT_LIBRARY: The full path to the static library the components compilation pass
+	is supposed to generate
+
+
+How this works:
+The Make process is always invoked from the project directory by the
+user; invoking it anywhere else gives an error. This is what happens if
+we build a binary:
+
+The Makefile first determines how it was included. It determines it was
+included as a  project file in this case and will continue to figure out
+various paths as well as the components available to it. It will also
+collect the ldflags and includes that the components specify they need.
+It does this by running a dummy Make on the components with a target that
+will output these values.
+
+The Makefile will then create targets to build the lib*.a libraries of
+all components and make the elf target depend on this. The targets
+invoke Make on the makefiles of the components in a subshell: this way
+the components have full freedom to do whatever is necessary to build
+the library without influencing other components. By default, the
+component includes the utility makefile $(SDK_PATH)/make/component.mk.
+This provides default targets and configurations that will work
+out-of-the-box for most projects.
+
+For components that have parts that need to be run when building of the
+project is done, you can create a file called Makefile.projbuild in the
+component root directory. This  file will be included in the main
+Makefile. For the menu, there's an equivalent: if you want to include
+options not in the 'components' submenu, create a Kconfig.projbuild and
+it will be included in the main menu of menuconfig. Take good care when
+(re)defining stuff here: because it's included with all the other
+.projbuild files, it's possible to overwrite variables or re-declare
+targets defined in the SDK makefile/Kconfig and  other .projbuild files
+
+
+WRITING COMPONENT MAKEFILES
+
+A component consists of a directory which doubles as the name for the
+component: a component named 'httpd' lives in a directory called 'httpd'
+Because components usually live under the project directory (although
+they can also reside in an other folder), the path to this may be
+something like  /home/myuser/projects/myprojects/components/httpd .
+
+One of the things that most components will have is a Makefile,
+containing instructions on how to build the component. Because the
+build environment tries to set reasonable defaults that will work most
+of the time, a component Makefile can be pretty small. At the absolute
+minimum, it will just include the SDK component makefile, which adds
+component functionality:
+
+----8<----
+include $(SDK_PATH)/make/component.mk
+---->8----
+
+This will take all the .c and .S files in the component root and compile
+them into  object files, finally linking them into a library.
+Subdirectories are ignored; if your project has sources in subdirectories
+instead of in the root of the component, you can tell that to the build
+system by setting COMPONENT_SRCDIRS:
+
+----8<----
+COMPONENT_SRCDIRS := src1 src2
+include $(SDK_PATH)/make/component.mk
+---->8----
+
+This will compile all source files in the src1/ and src2/ subdirectories
+instead.
+
+The standard component.mk logic adds all .S and .c files in the source
+directories as sources to be compiled unconditionally. It is possible
+to circumvent that logic and hardcode the objects to be compiled by
+manually setting the COMPONENT_OBJS variable to the name of the
+objects that need to be generated:
+
+----8<----
+COMPONENT_OBJS := file1.o file2.o thing/filea.o thing/fileb.o anotherthing/main.o
+include $(SDK_PATH)/make/component.mk
+---->8----
+
+This can also be used in order to conditionally compile some files
+dependent on the options selected in the Makefile:
+
+Kconfig:
+----8<----
+config FOO_ENABLE_BAR
+	bool "Enable the BAR feature."
+	help
+		This enables the BAR feature of the FOO component.
+---->8----
+
+Makefile:
+----8<----
+COMPONENT_OBJS := foo_a.o foo_b.o $(if $(CONFIG_FOO_ENABLE_BAR),foo_bar.o foo_bar_interface.o)
+include $(SDK_PATH)/make/component.mk
+---->8----
+
+Some components will have a situation where a source file isn't supplied
+with the  component itself but has to be generated from another file. Say
+our component has a header file that consists of the converted binary
+data of a BMP file, converted using a hypothetical tool called bmp2h. The
+header file is then included in as C source file called graphics_lib.c.
+
+----8<----
+COMPONENT_EXTRA_CLEAN := logo.h
+
+graphics_lib.o: logo.h
+
+logo.h: $(COMPONENT_PATH)/logo.bmp
+	bmp2h -i $^ -o $@
+
+include $(SDK_PATH)/make/component.mk
+---->8----
+
+In this example, graphics_lib.o and logo.h will be generated in the
+current directory (the build directory) while logo.bmp comes with the
+component and resides under the component path. Because logo.h is a
+generated file, it needs to be cleaned when make clean is called which
+why it is added to the COMPONENT_EXTRA_CLEAN variable.
+
+
+This will work just fine, but there's one last cosmetic improvement that
+can be done. The SDK make system tries to make the make process somewhat
+easier on the  eyes by hiding the commands (unless you run make with the
+V=1 switch) and this does  not do that yet. Here's an improved version
+that will output in the same style as  the rest of the make process:
+
+----8<----
+COMPONENT_EXTRA_CLEAN := test_tjpgd_logo.h
+
+graphics_lib.o: logo.h
+
+logo.h: $(COMPONENT_PATH)/logo.bmp
+	$(vecho) BMP2H $@
+	$(Q) bmp2h -i $^ -o $@
+
+include $(SDK_PATH)/make/component.mk
+---->8----
+
+Obviously, there are cases where all these recipes are insufficient for a
+certain component, for example when the component is basically a wrapper
+around another third-party component not originally intended to be
+compiled under this build system. In that case, it's possible to forego
+the build  system entirely by setting COMPONENT_OWNBUILDTARGET and
+possibly  COMPONENT_OWNCLEANTARGET and defining your own build- and clean
+target. The build target can do anything as long as it creates
+$(COMPONENT_LIBRARY) for the main file to link into the project binary, 
+and even that is not necessary: if the COMPONENT_ADD_LDFLAGS variable
+is set, the component can instruct the linker to do anything else as well.
+
+
+
+
+
+
+
+

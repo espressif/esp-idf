@@ -1,0 +1,50 @@
+menu "Partition Table"
+
+choice
+	prompt "Partition Table"
+	default PARTITION_TABLE_SINGLE_APP
+	help
+		The partition table to flash to the ESP32. The partition table
+		determines where apps, data and other resources are expected to
+		be found.
+
+		The predefined partition table CSV descriptions can be found
+		in the components/partition_table directory. Otherwise it's
+		possible to create a new custom partition CSV for your application.
+
+config PARTITION_TABLE_SINGLE_APP
+	bool "Single factory app, no OTA"
+config PARTITION_TABLE_TWO_OTA
+	bool "Factory app, two OTA definitions"
+config PARTITION_TABLE_CUSTOM
+	bool "Custom partition table CSV"
+endchoice
+
+config PARTITION_TABLE_CUSTOM_FILENAME
+	string "Custom partition CSV file" if PARTITION_TABLE_CUSTOM
+	default partitions.csv
+	help
+		Name of the custom partition CSV filename. This path is evaluated
+		relative to the project root directory.
+
+config PARTITION_TABLE_CUSTOM_APP_BIN_OFFSET
+	hex "App offset in flash" if PARTITION_TABLE_CUSTOM
+	default 0x10000
+	help
+		If using a custom partition table, specify the offset in the flash
+		where 'make flash' should write the built app.
+
+config PARTITION_TABLE_FILENAME
+	   string
+	   default partitions_singleapp.csv if PARTITION_TABLE_SINGLE_APP
+	   default partitions_two_ota.csv if PARTITION_TABLE_TWO_OTA
+	   default PARTITION_TABLE_CUSTOM_FILENAME if PARTITION_TABLE_CUSTOM
+
+config APP_OFFSET
+	   hex
+	   default PARTITION_TABLE_CUSTOM_APP_BIN_OFFSET if PARTITION_TABLE_CUSTOM
+	   default 0x10000 # this is the factory app offset used by the default tables
+
+endmenu
+
+

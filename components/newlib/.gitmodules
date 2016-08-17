@@ -1,0 +1,4 @@
+[submodule "newlib_xtensa-2.2.0"]
+	path = newlib_xtensa-2.2.0
+	url = ssh://git@gitlab.espressif.cn:27227/igrokhotkov/newlib_xtensa-2.2.0.git
+	ignore = dirty

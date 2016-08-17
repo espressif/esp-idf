@@ -1,0 +1,125 @@
+menu "FreeRTOS"
+
+# This is actually also handled in the ESP32 startup code, not only in FreeRTOS.
+config FREERTOS_UNICORE
+	bool "Run FreeRTOS only on first core"
+	default n
+	help
+		This version of FreeRTOS normally takes control of all cores of 
+		the CPU. Select this if you only want to start it on the first core.
+		This is needed when e.g. another process needs complete control
+		over the second core.
+
+
+choice FREERTOS_CORETIMER
+	prompt "Xtensa timer to use as the FreeRTOS tick source"
+	default CONFIG_FREERTOS_CORETIMER_0
+	help
+		FreeRTOS needs a timer with an associated interrupt to use as
+		the main tick source to increase counters, run timers and do
+		pre-emptive multitasking with. There are multiple timers available
+		to do this, with different interrupt priorities. Check 
+
+config FREERTOS_CORETIMER_0
+	bool "Timer 0 (int 6, level 1)"
+	help
+		Select this to use timer 0
+
+config FREERTOS_CORETIMER_1
+	bool "Timer 1 (int 15, level 3)"
+	help
+		Select this to use timer 1
+
+config FREERTOS_CORETIMER_2
+	bool "Timer 2 (int 16, level 5)"
+	help
+		Select this to use timer 2
+
+endchoice
+
+config FREERTOS_HZ
+	int "Tick rate (Hz)"
+	range 1 10000
+	default 100
+	help
+		Select the tick rate at which FreeRTOS does pre-emptive context switching.
+
+choice FREERTOS_CHECK_STACKOVERFLOW
+	prompt "Check for stack overflow"
+	default FREERTOS_CHECK_STACKOVERFLOW_QUICK
+	help
+		FreeRTOS can check for stack overflows in threads and trigger an user function
+		called vApplicationStackOverflowHook when this happens.
+
+config FREERTOS_CHECK_STACKOVERFLOW_NONE
+	bool "No checking"
+	help
+		Do not check for stack overflows (configCHECK_FOR_STACK_OVERFLOW=0)
+
+config FREERTOS_CHECK_STACKOVERFLOW_PTRVAL
+	bool "Check by stack pointer value"
+	help
+		Check for stack overflows on each context switch by checking if
+		the stack pointer is in a valid range. Quick but does not detect
+		stack overflows that happened between context switches
+		(configCHECK_FOR_STACK_OVERFLOW=1)
+
+config FREERTOS_CHECK_STACKOVERFLOW_CANARY
+	bool "Check using canary bytes"
+	help
+		Places some magic bytes at the end of the stack area and on each 
+		context switch, check if these bytes are still intact. More thorough
+		than just checking the pointer, but also slightly slower.
+		(configCHECK_FOR_STACK_OVERFLOW=2)
+endchoice
+
+config CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
+	int "Amount of thread local storage pointers"
+	range 0 256
+	default 0
+	help
+		FreeRTOS has the ability to store per-thread pointers in the task
+		control block. This controls the amount of pointers available;
+		0 turns off this functionality.
+
+#This still needs to be implemented.
+choice FREERTOS_PANIC
+	prompt "Panic handler behaviour"
+	default FREERTOS_PANIC_PRINT_REBOOT
+	help
+		If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is 
+		invoked. Configure the panic handlers action here.
+
+config FREERTOS_PANIC_PRINT_HALT
+	bool "Print registers and halt"
+	help
+		Outputs the relevant registers over the serial port and halt the 
+		processor. Needs a manual reset to restart.
+
+config FREERTOS_PANIC_PRINT_REBOOT
+	bool "Print registers and reboot"
+	help
+		Outputs the relevant registers over the serial port and immediately
+		reset the processor.
+
+config FREERTOS_PANIC_SILENT_REBOOT
+	bool "Silent reboot"
+	help
+		Just resets the processor without outputting anything
+
+config FREERTOS_PANIC_GDBSTUB
+	bool "Invoke GDBStub"
+	help
+		Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
+		of the crash.
+endchoice
+
+config FREERTOS_DEBUG_OCDAWARE
+	bool "Make exception and panic handlers JTAG/OCD aware"
+	default y
+	help
+		The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
+		instead of panicking, have the debugger stop on the offending instruction.
+
+
+endmenu

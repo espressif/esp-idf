@@ -1,0 +1,39 @@
+menu "WiFi config"
+
+config WIFI_ENABLED
+    bool "Enable low-level WiFi stack"
+    default "y"
+    help
+        This compiles in the low-level WiFi stack.
+
+config WIFI_AUTO_STARTUP
+    bool "Start WiFi with system startup"
+    default "y"
+    depends on WIFI_ENABLED
+    help
+        By default, WiFi is started with system startup, you can turn off this
+        feature and start by yourself.
+
+config WIFI_AUTO_CONNECT
+    bool "Enable auto connect"
+    default "y"
+    depends on WIFI_ENABLED
+    help
+        If station is enabled, and station config is set, this will enable WiFi
+        station auto connect when WiFi startup.
+
+config WIFI_ENENT_QUEUE_SIZE
+    int "WiFi event queue size"
+    default 32
+    depends on WIFI_ENABLED
+    help
+        Config WiFi event queue size in different application.
+
+config WIFI_EVENT_TASK_STACK_SIZE
+    int "WiFi event task stack size"
+    default 2048
+    depends on WIFI_ENABLED
+    help
+        Config WiFi event task stack size in different application.
+
+endmenu

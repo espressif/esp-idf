@@ -1,0 +1,3 @@
+[submodule "components/esp32/lib"]
+	path = components/esp32/lib
+	url = ssh://git@github.com:espressif/esp32-wifi-lib.git

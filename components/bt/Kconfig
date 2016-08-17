@@ -1,0 +1,23 @@
+menu "BT config"
+visible if MEMMAP_BT
+
+
+config BT_ENABLED
+	bool "Enable low-level BT stack"
+	depends on MEMMAP_BT
+	help
+		This compiles in the low-level BT stack.
+
+config BT_BTLE
+	bool "Enable BTLE"
+	depends on BT_ENABLED
+	help
+		This compiles BTLE support
+
+config BT_BT
+	bool "Enable classic BT"
+	depends on BT_ENABLED
+	help
+		This enables classic BT support
+
+endmenu

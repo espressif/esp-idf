@@ -1,0 +1,49 @@
+menu "Serial flasher config"
+
+config ESPTOOLPY_PORT
+	string "Default serial port"
+	default "/dev/ttyUSB0"
+	help
+		The serial port that's connected to the ESP chip. This can be overridden by setting the ESPPORT
+		environment variable.
+
+choice ESPTOOLPY_BAUD
+	prompt "Default baud rate"
+	default ESPTOOLPY_BAUD_115200B
+	help
+		Default baud rate to use while communicating with the ESP chip. Can be overridden by
+		setting the ESPBAUD variable.
+
+config ESPTOOLPY_BAUD_115200B
+	bool "115200 baud"
+config ESPTOOLPY_BAUD_230400B
+	bool "230400 baud"
+config ESPTOOLPY_BAUD_921600B
+	bool "921600 baud"
+config ESPTOOLPY_BAUD_2MB
+	bool "2Mbaud"
+config ESPTOOLPY_BAUD_OTHER
+    bool "Other baud rate"
+endchoice
+
+config ESPTOOLPY_BAUD_OTHER_VAL
+	int "Other baud rate value" if ESPTOOLPY_BAUD_OTHER
+	default 115200
+
+config ESPTOOLPY_BAUD
+	int
+	default 115200 if ESPTOOLPY_BAUD_115200B
+	default 230400 if ESPTOOLPY_BAUD_230400B
+	default 921600 if ESPTOOLPY_BAUD_921600B
+	default 2000000 if ESPTOOLPY_BAUD_2MB
+	default ESPTOOLPY_BAUD_OTHER_VAL if ESPTOOLPY_BAUD_OTHER
+
+config ESPTOOLPY_COMPRESSED
+	bool "Use compressed upload"
+	default "y"
+	help
+		The flasher tool can send data compressed using zlib, letting the ROM on the ESP chip
+		decompress it on the fly before flashing it. For most payloads, this should result in a
+		speed increase.
+
+endmenu
