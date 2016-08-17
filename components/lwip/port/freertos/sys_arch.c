@@ -482,8 +482,8 @@ sys_arch_assert(const char *file, int line)
 */
 sys_sem_t* sys_thread_sem(void)
 {
-  extern void* xTaskGetLwipSem(void);
-  return (sys_sem_t*)(xTaskGetLwipSem());
+  sys_sem_t *sem = (sys_sem_t*)xTaskGetPerTaskData();
+  return sem;
 }
 
 void sys_delay_ms(uint32_t ms)

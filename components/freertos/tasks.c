@@ -84,6 +84,7 @@ task.h is included from an application file. */
 #include "timers.h"
 #include "StackMacros.h"
 #include "portmacro.h"
+#include "semphr.h"
 
 /* Lint e961 and e750 are suppressed as a MISRA exception justified because the
 MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined for the
@@ -204,6 +205,10 @@ typedef struct tskTaskControlBlock
 		volatile uint32_t ulNotifiedValue;
 		volatile eNotifyValue eNotifyState;
 	#endif
+
+#if (configESP32_PER_TASK_DATA == 1)
+	void *data;
+#endif
 
 } tskTCB;
 
@@ -606,6 +611,9 @@ BaseType_t i;
 
 	if( pxNewTCB != NULL )
 	{
+#if (configESP32_PER_TASK_DATA == 1)
+		pxNewTCB->data = NULL;
+#endif
 		#if( portUSING_MPU_WRAPPERS == 1 )
 			/* Should the task be created in privileged mode? */
 			BaseType_t xRunPrivileged;
@@ -791,6 +799,11 @@ BaseType_t i;
 			being deleted. */
 			pxTCB = prvGetTCBFromHandle( xTaskToDelete );
 
+#if (configESP32_PER_TASK_DATA == 1)
+			if (pxTCB->data){
+				vSemaphoreDelete( pxTCB->data );
+			}
+#endif
 			/* Remove task from the ready list and place in the	termination list.
 			This will stop the task from be scheduled.  The idle task will check
 			the termination list and free up any memory allocated by the
@@ -4580,7 +4593,21 @@ TickType_t uxReturn;
 #endif /* configUSE_TASK_NOTIFICATIONS */
 
 /*-----------------------------------------------------------*/
+#if (configESP32_PER_TASK_DATA == 1)
+void* xTaskGetPerTaskData(void)
+{
+	TCB_t *pxTCB = (TCB_t*)(xTaskGetCurrentTaskHandle());
+	if (pxTCB){
+		if (!pxTCB->data){
+			vSemaphoreCreateBinary(pxTCB->data);
+		}
+		return (void*)(&pxTCB->data);
+        }
 
+	return NULL;
+}
+#endif /* configESP32_PER_TASK_DATA */
+/*-----------------------------------------------------------*/
 
 #ifdef FREERTOS_MODULE_TEST
 	#include "tasks_test_access_functions.h"

@@ -405,7 +405,7 @@ do{\
 
 /** The global array of available sockets */
 static struct lwip_sock sockets[NUM_SOCKETS];
-#ifdef LWIP_THREAD_SAFE
+#if LWIP_THREAD_SAFE
 static bool sockets_init_flag = false;
 #endif
 /** The global list of tasks waiting for select */
