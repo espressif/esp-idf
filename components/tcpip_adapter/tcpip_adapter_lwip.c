@@ -388,7 +388,7 @@ esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if)
     return ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED;
 }
 
-esp_err_t tcpip_dep_dhcpc_stop(tcpip_adapter_if_t tcpip_if)
+esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if)
 {
     /* only support sta now, need to support ethernet */
     if (tcpip_if != TCPIP_ADAPTER_IF_STA || tcpip_if >= TCPIP_ADAPTER_IF_MAX) {
