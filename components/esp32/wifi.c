@@ -56,6 +56,8 @@ do{\
     }\
 } while(0)
 
+
+
 static void esp_wifi_task(void *pvParameters)
 {
     esp_err_t err;
@@ -65,29 +67,35 @@ static void esp_wifi_task(void *pvParameters)
     do {
         err = esp_wifi_init(&cfg);
         if (err != ESP_OK) {
+            WIFI_DEBUG("esp_wifi_init fail, ret=%d\n", err);
             break;
         }
 
         if (startup_cb) {
             err = (*startup_cb)();
             if (err != ESP_OK) {
+                WIFI_DEBUG("startup_cb fail, ret=%d\n", err);
                 break;
             }
         }
 
         err = esp_wifi_start();
-        if (err != ESP_OK) {    // TODO: if already started, it's also OK
+        if (err != ESP_OK) {
+            WIFI_DEBUG("esp_wifi_start fail, ret=%d\n", err);
             break;
         }
 
 #if CONFIG_WIFI_AUTO_CONNECT
         wifi_mode_t mode;
-
-        esp_wifi_get_mode(&mode);
+        err = esp_wifi_get_mode(&mode);
+        if (err != ESP_OK){
+            WIFI_DEBUG("esp_wifi_get_mode fail, ret=%d\n", err);
+        }
 
         if (mode == WIFI_MODE_STA || mode == WIFI_MODE_APSTA) {
             err = esp_wifi_connect();
             if (err != ESP_OK) {
+                WIFI_DEBUG("esp_wifi_connect fail, ret=%d\n", err);
                 break;
             }
         }
@@ -95,6 +103,7 @@ static void esp_wifi_task(void *pvParameters)
     } while (0);
 
     if (err != ESP_OK) {
+        WIFI_DEBUG("wifi startup fail, deinit\n");
         esp_wifi_deinit();
     }
 
