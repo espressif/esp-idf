@@ -122,26 +122,26 @@ Sizes and offsets can be specified as decimal numbers, hex numbers with the pref
 
 ## Generating Binary Partition Table
 
-The partition table which is flashed to the ESP32 is in a binary format, not CSV. The tool components/partition_table/gen_esp32part.py is used to convert between CSV and binary formats.
+The partition table which is flashed to the ESP32 is in a binary format, not CSV. The tool bin/gen_esp32part.py is used to convert between CSV and binary formats.
 
 If you configure the partition table CSV name in `make menuconfig` and then `make partition_table`, this conversion is done for you.
 
 To convert CSV to Binary manually:
 
 ``` shell
-python components/partition_table/gen_esp32part.py --verify input_partitions.csv binary_partitions.bin
+python bin/gen_esp32part.py --verify input_partitions.csv binary_partitions.bin
 ```
 
 To convert binary format back to CSV:
 
 ``` shell
-python components/partition_table/gen_esp32part.py --verify binary_partitions.bin input_partitions.csv
+python bin/gen_esp32part.py --verify binary_partitions.bin input_partitions.csv
 ```
 
 To display the contents of a binary partition table on stdout (this is how the summaries displayed when running `make partition_table` are generated:
 
 ``` shell
-python components/partition_table/gen_esp32part.py binary_partitions.bin
+python bin/gen_esp32part.py binary_partitions.bin
 ```
 
 `gen_esp32part.py` takes one optional argument, `--verify`, which will also verify the partition table during conversion (checking for overlapping partitions, unaligned partitions, etc.)
