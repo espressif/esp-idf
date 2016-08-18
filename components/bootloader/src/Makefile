@@ -10,3 +10,6 @@ COMPONENTS := esptool_py
 #adding it in the main/Makefile directory.
 
 include $(SDK_PATH)/make/project.mk
+
+# override configured app offset, as bootloader "app" is at 0x1000
+CONFIG_APP_OFFSET := 0x1000

@@ -16,12 +16,13 @@ all: project
 # disable built-in make rules, makes debugging saner
 MAKEFLAGS +=-rR
 
-# Figure out PROJECT_PATH if not set, check for unacceptable Makefile entry points
+# Figure out PROJECT_PATH if not set
 ifeq ("$(PROJECT_PATH)","")
 #The path to the project: we assume the Makefile including this file resides
 #in the root of that directory.
 PROJECT_PATH := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 export PROJECT_PATH
+endif
 
 #The directory where we put all objects/libraries/binaries. The project Makefile can
 #configure this if needed.
@@ -59,6 +60,8 @@ COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(c
 
 # Assemble global list of include dirs (COMPONENT_INCLUDES), and
 # LDFLAGS args (COMPONENT_LDFLAGS) supplied by each component.
+COMPONENT_INCLUDES :=
+COMPONENT_LDFLAGS :=
 #
 # Also add any inter-component dependencies for each component.
 
@@ -72,7 +75,7 @@ COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(c
 #
 # Debugging this? Replace $(shell with $(error and you'll see the full command as-run.
 define GetVariable
-$(shell "$(MAKE)" -s --no-print-directory -C $(1) get_variable COMPONENT_INCLUDES=dummy COMPONENT_LDFLAGS=dummy PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
+$(shell "$(MAKE)" -s --no-print-directory -C $(1) get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
 endef
 
 ifeq ("$(COMPONENT_INCLUDES)","")
@@ -129,6 +132,7 @@ export CC CXX LD AR OBJCOPY
 PYTHON=$(call dequote,$(CONFIG_PYTHON))
 
 PROJECT_ELF:=$(BUILD_DIR_BASE)/$(PROJECT_NAME).elf
+PROJECT_MAP:=$(PROJECT_ELF:.elf=.map)
 PROJECT_BIN:=$(PROJECT_ELF:.elf=.bin)
 
 # Include any Makefile.projbuild file letting components add
@@ -139,10 +143,13 @@ COMPONENT_PATH := $(1)
 endef
 $(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefile,$(componentpath))))
 
+# once we know component paths, we can include the config
+include $(SDK_PATH)/make/project_config.mk
+
 # ELF depends on the -build target of every component
 $(PROJECT_ELF): $(addsuffix -build,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(vecho) LD $(notdir $@)
-	$(Q) $(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(patsubst %.elf,%.map,$@)
+	$(Q) $(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(PROJECT_MAP)
 
 # Generation of $(PROJECT_BIN) from $(PROJECT_ELF) is added by the esptool
 # component's Makefile.projbuild
@@ -174,12 +181,9 @@ $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponent
 $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTarget,$(component),build,$(PROJECT_PATH)/build/include/sdkconfig.h)))
 $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTarget,$(component),clean)))
 
-include $(SDK_PATH)/make/project_config.mk
-
 clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE))) $(EXTRA_CLEAN_TARGETS)
 	$(vecho) RM $(PROJECT_ELF)
-	$(Q) rm -f $(PROJECT_ELF)
+	$(Q) rm -f $(PROJECT_ELF) $(PROJECT_BIN) $(PROJECT_MAP)
 	$(Q) rm -rf $(PROJECT_PATH)/build/include/config $(PROJECT_PATH)/build/include/sdkconfig.h
 
-endif
 

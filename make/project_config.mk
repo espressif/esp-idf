@@ -12,6 +12,7 @@ $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
 	MAKEFLAGS="" \
 	CFLAGS="" \
 	LDFLAGS="" \
+	CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
 menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(SDK_PATH)/Kconfig $(BUILD_DIR_BASE)
