@@ -83,5 +83,6 @@ Use ``cd`` to change to the project directory (not the SDK directory.) Type ``ma
 If you'd like to use the Eclipse IDE instead of running ``make``, check out the Eclipse setup guide in this directory.
 
 
+.. _Eclipse: eclipse-setup.rst
 .. _MSYS2: https://msys2.github.io/
 .. _github: https://github.com/espressif/esp-idf-template
