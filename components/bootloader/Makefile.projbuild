@@ -35,6 +35,8 @@ bootloader-clean:
 	make -C $(BOOTLOADER_COMPONENT_PATH)/src clean MAKEFLAGS= V=$(V)
 
 bootloader: $(BOOTLOADER_BIN)
+	@echo "Bootloader built. Default flash command is:"
+	@echo "$(ESPTOOLPY_SERIAL) write_flash 0x1000 $(BOOTLOADER_BIN)"
 
 # synchronise the project level config to the component's
 # config
