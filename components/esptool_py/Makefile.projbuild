@@ -12,14 +12,15 @@ PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
 ESPTOOLPY := $(PYTHON) $(SDK_PATH)/bin/esptool.py --chip esp32
 ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD)
 
-PROJECT_FLASH_COMMAND=$(ESPTOOLPY_SERIAL) write_flash $(CONFIG_APP_OFFSET) $(PROJECT_BIN)
+APP_FLASH_COMMAND=$(ESPTOOLPY_SERIAL) write_flash $(CONFIG_APP_OFFSET) $(APP_BIN)
+ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_APP_OFFSET) $(APP_BIN)
 
-$(PROJECT_BIN): $(PROJECT_ELF)
+$(APP_BIN): $(APP_ELF)
 	$(Q) $(ESPTOOLPY) elf2image -o $@ $<
 
-flash: $(PROJECT_BIN)
+flash: all_binaries
 	@echo "Flashing project app to $(CONFIG_APP_OFFSET)..."
-	$(Q) $(PROJECT_FLASH_COMMAND)
+	$(Q) $(ESPTOOLPY_SERIAL) write_flash $(ESPTOOL_ALL_FLASH_ARGS)
 
-# convenience target to flash bootloader, partitions, app all at once
-flash_all: bootloader-flash partition_table-flash flash
+app-flash: $(APP_BIN)
+	$(Q) $(APP_FLASH_COMMAND)

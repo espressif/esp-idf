@@ -10,7 +10,6 @@
 #
 
 BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)
-EXTRA_CLEAN_TARGETS += bootloader-clean
 BOOTLOADER_BUILD_DIR=$(BUILD_DIR_BASE)/bootloader
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
 
@@ -23,7 +22,7 @@ $(BOOTLOADER_BIN): $(COMPONENT_PATH)/src/sdkconfig
 	LDFLAGS= \
 	CFLAGS= \
 	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
-	make -C $(BOOTLOADER_COMPONENT_PATH)/src MAKEFLAGS= V=$(V) TARGET_BIN_LAYOUT="$(BOOTLOADER_TARGET_BIN_LAYOUT)"
+	make -C $(BOOTLOADER_COMPONENT_PATH)/src MAKEFLAGS= V=$(V) TARGET_BIN_LAYOUT="$(BOOTLOADER_TARGET_BIN_LAYOUT)" $(BOOTLOADER_BIN)
 
 bootloader-clean:
 	$(Q) PROJECT_PATH= \
@@ -34,9 +33,15 @@ bootloader-clean:
 	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
 	make -C $(BOOTLOADER_COMPONENT_PATH)/src clean MAKEFLAGS= V=$(V)
 
+clean: bootloader-clean
+
 bootloader: $(BOOTLOADER_BIN)
 	@echo "Bootloader built. Default flash command is:"
 	@echo "$(ESPTOOLPY_SERIAL) write_flash 0x1000 $(BOOTLOADER_BIN)"
+
+all_binaries: $(BOOTLOADER_BIN)
+
+ESPTOOL_ALL_FLASH_ARGS += 0x1000 $(BOOTLOADER_BIN)
 
 # synchronise the project level config to the component's
 # config

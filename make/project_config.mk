@@ -59,6 +59,7 @@ $(AUTO_CONF_REGEN_TARGET) $(PROJECT_PATH)/build/include/sdkconfig.h: $(PROJECT_P
 
 clean: config-clean
 .PHONY: config-clean
-EXTRA_CLEAN_TARGETS += config-clean
 config-clean:
+	$(vecho RM CONFIG)
 	$(MAKE) -C $(KCONFIG_TOOL_DIR) clean
+	$(Q) rm -rf $(PROJECT_PATH)/build/include/config $(PROJECT_PATH)/build/include/sdkconfig.h

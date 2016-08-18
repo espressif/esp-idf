@@ -8,27 +8,30 @@
 
 # Compiling your project
 
-`make app`
+`make all`
 
-# Flashing the Bootloader
+... will compile app, bootloader and generate a partition table based on the config.
 
-ESP32 has a bootloader in ROM which runs after reset, but ESP-IDF also uses a second stage software bootloader. The ROM bootloader loads the software bootloader, which then loads the firmware app of the ESP32. The software bootloader must be flashed to offset 0x5000 in the flash.
+# Flashing your project
 
-To build the software bootloader, navigate to your project's top-level directory and run:
+When `make all` finishes, it will print a command line to use esptool.py to flash the chip. However you can also do this from make by running:
 
-``` shell
-make bootloader
-```
+`make flash`
 
-If you've configured the serial port details in `make menuconfig`, then
+This will flash the entire project (app, bootloader and partition table) to a new chip. The settings for serial port flashing can be configured with `make menuconfig`.
 
-``` shell
-make bootloader-flash
-```
+You don't need to run `make all` before running `make flash`, `make flash` will automatically rebuild anything which needs it.
 
-... will automatically run esptool.py to flash the image. Otherwise, you can customise the `esptool.py` command that is printed out as part of `make bootloader`.
+# Compiling & Flashing Just the App
 
-You only need to flash the ESP32 bootloader once.
+After the initial flash, you may just want to build and flash just your app, not the bootloader and partition table:
+
+* `make app` - build just the app.
+* `make app-flash` - flash just the app.
+
+`make app-flash` will automatically rebuild the app if it needs it.
+
+(There's no downside to reflashing the bootloader and partition table each time, if they haven't changed.)
 
 # The Partition Table
 

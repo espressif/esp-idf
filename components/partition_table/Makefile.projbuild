@@ -8,8 +8,6 @@
 #
 .PHONY: partition_table partition_table-flash partition_table-clean
 
-EXTRA_CLEAN_TARGETS+=partition_table-clean
-
 # NB: gen_esp32part.py lives in the sdk/bin/ dir not component dir
 GEN_ESP32PART := $(PYTHON) $(SDK_PATH)/bin/gen_esp32part.py -q
 
@@ -24,7 +22,10 @@ $(PARTITION_TABLE_BIN): $(PARTITION_TABLE_CSV_PATH)
 	@echo "Building partitions from $(PARTITION_TABLE_CSV_PATH)..."
 	$(Q) $(GEN_ESP32PART) $< $@
 
+all_binaries: $(PARTITION_TABLE_BIN)
+
 PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash 0x4000 $(PARTITION_TABLE_BIN)
+ESPTOOL_ALL_FLASH_ARGS += 0x4000 $(PARTITION_TABLE_BIN)
 
 partition_table: $(PARTITION_TABLE_BIN)
 	@echo "Partition table binary generated. Contents:"
@@ -40,3 +41,5 @@ partition_table-flash: $(PARTITION_TABLE_BIN)
 
 partition_table-clean:
 	$(Q) rm -f $(PARTITION_TABLE_BIN)
+
+clean: partition_table-clean
