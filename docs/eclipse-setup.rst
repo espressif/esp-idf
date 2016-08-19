@@ -3,7 +3,7 @@ Installing Eclipse IDE
 
 The Eclipse IDE gives you a graphical integrated development environment for writing, compiling and debugging ESP-IDF projects.
 
-* Start by installing the SDK for your platform (see Windows, OS X, Linux).
+* Start by installing the esp-idf for your platform (see files in this directory with steps for Windows, OS X, Linux).
 
 * Download the Eclipse Installer for your platform from eclipse.org_.
 
@@ -23,7 +23,7 @@ Import New Project
 
 * In the dialog that pops up, choose "C/C++" -> "Existing Code as Makefile Project" and click Next.
 
-* On the next page, enter "Existing Code Location" to be the directory of your SDK project. Don't specify the path to the SDK itself.
+* On the next page, enter "Existing Code Location" to be the directory of your IDF project. Don't specify the path to the ESP-IDF directory itself.
 
 * On the same page, under "Toolchain for Indexer Settings" choose "Cross GCC". Then click Finish.
 
@@ -35,7 +35,7 @@ Project Properties
 
 * Click on the "Environment" properties page under "C/C++ Build". Click "Add..." and enter name ``V`` and value ``1``.
 
-* Click "Add..." again, and enter name ``SDK_PATH``. The value should be the full path where the ESP32 SDK is installed. *Windows users: Use forward-slashes not backslashes for this path, ie C:/Users/MyUser/Development/SDK*.
+* Click "Add..." again, and enter name ``SDK_PATH``. The value should be the full path where ESP-IDF is installed. *Windows users: Use forward-slashes not backslashes for this path, ie C:/Users/MyUser/Development/esp-idf*.
 
 *Windows users only, follow these two additional steps:*
 

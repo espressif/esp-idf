@@ -4,7 +4,7 @@
 # This Makefile should, at the very least, just include $(SDK_PATH)/make/component.mk. By default, 
 # this will take the sources in the src/ directory, compile them and link them into 
 # lib(subdirectory_name).a in the build directory. This behaviour is entirely configurable,
-# please read the SDK documents if you need to do this.
+# please read the esp-idf build system document if you need to do this.
 #
 
 COMPONENT_ADD_LDFLAGS := -L $(abspath .) -lmain -T eagle.bootloader.ld -T $(SDK_PATH)/components/esp32/ld/eagle.fpga32.rom.addr.v7.ld 

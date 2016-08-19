@@ -2,7 +2,7 @@
 # For a description of the syntax of this configuration file,
 # see kconfig/kconfig-language.txt.
 #
-mainmenu "Espressif ESP32 SDK Configuration"
+mainmenu "Espressif IoT Development Framework Configuration"
 
 
 menu "SDK tool configuration"

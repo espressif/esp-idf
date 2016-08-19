@@ -6,7 +6,7 @@
 # the upper projects build directory. This Makefile.projbuild provides the 
 # glue to  build the bootloader project from the original project. It 
 # basically runs Make in the src/ directory but it needs to zero some variables
-# the SDK makefile exports first, to not let them interfere.
+# the ESP-IDF project.mk makefile exports first, to not let them interfere.
 #
 
 BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)

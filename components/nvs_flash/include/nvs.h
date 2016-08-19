@@ -49,9 +49,9 @@ typedef enum {
 /**
  * @brief      Open non-volatile storage with a given namespace
  *
- * Multiple SDK and application modules can store their key-value pairs in the
- * NVS module. In order to reduce possible conflicts on key names, each module
- * can use its own namespace.
+ * Multiple internal ESP-IDF and third party application modules can store
+ * their key-value pairs in the NVS module. In order to reduce possible
+ * conflicts on key names, each module can use its own namespace.
  *
  * @param[in]  name        Namespace name. Maximal length is determined by the
  *                         underlying implementation, but is guaranteed to be

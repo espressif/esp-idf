@@ -13,15 +13,15 @@ have:
 
 ESP-IDF makes these components explicit and configurable. To do that, when a project
 is compiled, the build environment will look up all the components in the
-SDK directories, the project directories and optionally custom other component
+ESP-IDF directories, the project directories and optionally custom other component
 directories. It then allows the user to configure compile-time options using
-a friendly text-based menu system to customize the SDK as well as other components
+a friendly text-based menu system to customize the ESP-IDF as well as other components
 to the requirements of the project. After the components are customized, the
 build process will compile everything into an output file, which can then be uploaded
 into a board in a way that can also be defined by components.
 
 A project in this sense is defined as a directory under which all the files required
-to build it live, excluding the SDK files and the toolchain. A simple project
+to build it live, excluding the ESP-IDF files and the toolchain. A simple project
 tree looks like this:
 
 - myProject/ - build/
@@ -55,7 +55,7 @@ PROJECT_NAME: Mandatory. Name for the project
 BUILD_DIR_BASE: Set the directory where all objects/libraries/binaries end up in.
 	Defaults to $(PROJECT_PATH)/build
 COMPONENT_DIRS: Search path for components. Defaults to the component/ directories
-	in the SDK path and the project path.
+	in the ESP-IDF path and the project path.
 COMPONENTS: A list of component names. Defaults to all the component found in the
 	COMPONENT_DIRS directory
 EXTRA_COMPONENT_DIRS: Defaults to unset. Use this to add directories to the default
@@ -97,7 +97,7 @@ These variables are already set early on in the Makefile and the values in it wi
 be usable in component or project Makefiles:
 CC, LD, AR, OBJCOPY: Xtensa gcc tools
 HOSTCC, HOSTLD etc: Host gcc tools
-LDFLAGS, CFLAGS: Set to usable values as defined in SDK Makefile
+LDFLAGS, CFLAGS: Set to usable values as defined in ESP-IDF Makefile
 PROJECT_NAME: Name of the project, as set in project makefile
 PROJECT_PATH: Path to the root of the project folder
 COMPONENTS: Name of the components to be included
@@ -139,7 +139,7 @@ options not in the 'components' submenu, create a Kconfig.projbuild and
 it will be included in the main menu of menuconfig. Take good care when
 (re)defining stuff here: because it's included with all the other
 .projbuild files, it's possible to overwrite variables or re-declare
-targets defined in the SDK makefile/Kconfig and  other .projbuild files
+targets defined in the ESP-IDF makefile/Kconfig and  other .projbuild files
 
 
 WRITING COMPONENT MAKEFILES
@@ -154,7 +154,7 @@ One of the things that most components will have is a Makefile,
 containing instructions on how to build the component. Because the
 build environment tries to set reasonable defaults that will work most
 of the time, a component Makefile can be pretty small. At the absolute
-minimum, it will just include the SDK component makefile, which adds
+minimum, it will just include the ESP-IDF component makefile, which adds
 component functionality:
 
 ----8<----
@@ -228,7 +228,7 @@ why it is added to the COMPONENT_EXTRA_CLEAN variable.
 
 
 This will work just fine, but there's one last cosmetic improvement that
-can be done. The SDK make system tries to make the make process somewhat
+can be done. The make system tries to make the make process somewhat
 easier on the  eyes by hiding the commands (unless you run make with the
 V=1 switch) and this does  not do that yet. Here's an improved version
 that will output in the same style as  the rest of the make process:

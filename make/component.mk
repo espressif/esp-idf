@@ -1,4 +1,5 @@
-# Main SDK Makefile
+# Component common makefile
+#
 # This Makefile gets included in the Makefile of all the components to set the correct include paths etc.
 # PWD is the build directory of the component and the top Makefile is the one in the
 # component source dir.
@@ -10,12 +11,12 @@
 
 #
 # This Makefile requires the environment variable SDK_PATH to be set
-# to the directory where the SDK (containing the make directory with
-# this file) is located
+# to the top-level directory where ESP-IDF is located (the directory
+# containing this 'make' directory).
 #
 
 ifeq ("$(PROJECT_PATH)","")
-$(error Make was invoked from $(CURDIR). However please do not run make from the sdk or a component directory; invoke make from the project directory. See SDK README for details.)
+$(error Make was invoked from $(CURDIR). However please do not run make from the sdk or a component directory; invoke make from the project directory. See the ESP-IDF README for details.)
 endif
 
 # Find the path to the component

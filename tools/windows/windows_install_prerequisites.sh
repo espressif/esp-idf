@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Setup script to configure an MSYS2 environment for ESP32 SDK.
+# Setup script to configure an MSYS2 environment for Espressif IoT Development Framework (ESP-IDF).
 # See docs/windows-setup.rst for details.
 
 if [ "$OSTYPE" != "msys" ]; then
@@ -47,12 +47,12 @@ pacman --noconfirm -R unzip
 pacman --noconfirm -Scc
 
 echo "************************************************"
-echo "MSYS2 environment is now ready to use ESP32 SDK."
+echo "MSYS2 environment is now ready to use ESP-IDF."
 echo "Run 'source /etc/profile' to add the toolchain to"
 echo "your path. Execute 'msys_shell.cmd' to launch an"
 echo "MSYS terminal."
 echo
-echo "Once ESP32 SDK is downloaded/checked out, set the"
+echo "Once ESP-IDF is downloaded/checked out, set the"
 echo "environment variable SDK_PATH in /etc/profile to"
 echo "point to the directory."
 echo "************************************************"
