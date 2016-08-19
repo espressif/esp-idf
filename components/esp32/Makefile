@@ -6,16 +6,32 @@
 # lib(subdirectory_name).a in the build directory. This behaviour is entirely configurable,
 # please read the esp-idf build system document if you need to do this.
 #
+-include $(PROJECT_PATH)/build/include/config/auto.conf
 
 LIBS := crypto core net80211 phy rtc pp wpa wps
+
+ifeq ($(CONFIG_MEMMAP_BT),y)
+    ifeq ($(CONFIG_MEMMAP_TRACEMEM),y)
+        LINKER_SCRIPTS = -T esp32.bt.trace.ld
+    else
+        LINKER_SCRIPTS = -T esp32.bt.ld
+    endif
+else
+    ifeq ($(CONFIG_MEMMAP_TRACEMEM),y)
+        LINKER_SCRIPTS = -T esp32.trace.ld
+    else
+        LINKER_SCRIPTS = -T esp32.ld
+    endif
+endif
+
+LINKER_SCRIPTS += -T esp32.common.ld -T esp32.rom.ld
 
 COMPONENT_ADD_LDFLAGS := -lesp32 \
                            $(abspath libhal.a) \
                            -L$(abspath lib) \
                            $(addprefix -l,$(LIBS)) \
                           -L $(abspath ld) \
-                          -T eagle.fpga32.v7.ld \
-                          -T eagle.fpga32.rom.addr.v7.ld
+                          $(LINKER_SCRIPTS)
 
 include $(IDF_PATH)/make/component.mk
 
