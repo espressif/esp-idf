@@ -77,9 +77,9 @@ This array is *NOT* const because it gets modified depending on what pools are/a
 */
 static HeapRegionTagged_t regions[]={
 	{ (uint8_t *)0x3F800000, 0x20000, 15, 0}, //SPI SRAM, if available
-//	{ (uint8_t *)0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- can be used for BT <- THIS POOL DOESN'T WORK for some reason! Hw seems fine. ToDo: Figure out.
+	{ (uint8_t *)0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
 	{ (uint8_t *)0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- can be used for BT
-	{ (uint8_t *)0x3FFB8000, 0x8000, 0, 0}, //pool 14
+	{ (uint8_t *)0x3FFB8000, 0x8000, 0, 0}, //pool 14 <- can be used for BT
 	{ (uint8_t *)0x3FFC0000, 0x2000, 0, 0}, //pool 10-13, mmu page 0
 	{ (uint8_t *)0x3FFC2000, 0x2000, 0, 0}, //pool 10-13, mmu page 1
 	{ (uint8_t *)0x3FFC4000, 0x2000, 0, 0}, //pool 10-13, mmu page 2
@@ -158,7 +158,6 @@ static void disable_mem_region(void *from, void *to) {
 ToDo: These are very dependent on the linker script, and the logic involving this works only
 because we're not using the SPI flash yet! If we enable that, this will break. ToDo: Rewrite by then.
 */
-extern int _init_start, _text_end;
 extern int _bss_start, _heap_start;
 
 /*
@@ -170,12 +169,11 @@ Same with loading of apps. Same with using SPI RAM.
 void heap_alloc_caps_init() {
 	int i;
 	//Disable the bits of memory where this code is loaded.
-	disable_mem_region(&_init_start, &_text_end);
 	disable_mem_region(&_bss_start, &_heap_start);
 	disable_mem_region((void*)0x3ffae000, (void*)0x3ffb0000); //knock out ROM data region
-	disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe8000); //knock out ROM data region
 	disable_mem_region((void*)0x40070000, (void*)0x40078000); //CPU0 cache region
 	disable_mem_region((void*)0x40078000, (void*)0x40080000); //CPU1 cache region
+	disable_mem_region((void*)0x40080000, (void*)0x400a0000); //pool 2-5
 #if 0
 	enable_spi_sram();
 #else
