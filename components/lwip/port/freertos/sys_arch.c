@@ -475,15 +475,55 @@ sys_arch_assert(const char *file, int line)
   while(1);
 }
 
-/* This is a super hacky thread-local-storage repository
-   FreeRTOS 8.2.3 & up have thread local storage in the
-   OS, which is how we should do this. Once we upgrade FreeRTOS,
-   we can drop this hacky store and use the FreeRTOS TLS API.
-*/
-sys_sem_t* sys_thread_sem(void)
+/* 
+ * get per thread semphore
+ */
+sys_sem_t* sys_thread_sem_get(void)
 {
-  sys_sem_t *sem = (sys_sem_t*)xTaskGetPerTaskData();
+  sys_sem_t *sem = (sys_sem_t*)pvTaskGetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), 0);
+  if (!sem){
+    sem = sys_thread_sem_init();
+  }
+  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem_get s=%p\n", sem));
   return sem;
+}
+
+sys_sem_t* sys_thread_sem_init(void)
+{
+  sys_sem_t *sem = (sys_sem_t*)malloc(sizeof(sys_sem_t*));
+
+  if (!sem){
+    printf("sem f1\n");
+    return 0;
+  }
+
+  *sem = xSemaphoreCreateBinary();
+  if (!(*sem)){
+    free(sem);
+    printf("sem f2\n");
+    return 0;
+  }
+
+  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem init %p %p\n", sem, *sem));
+  vTaskSetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), 0, sem);
+
+  return sem;
+}
+
+void sys_thread_sem_deinit(void)
+{
+  sys_sem_t *sem = sys_thread_sem_get();
+  if (sem && *sem){
+    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem del:%p %p\n", sem, *sem));
+    vSemaphoreDelete(*sem);
+  }
+
+  if (sem){
+    free(sem);
+  }
+
+  vTaskSetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), 0, 0);
+  return;
 }
 
 void sys_delay_ms(uint32_t ms)
