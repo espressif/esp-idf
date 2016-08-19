@@ -44,21 +44,9 @@ Important: Just having this toolchain is *not enough* to use ESP-IDF on Windows.
 Step 2: Getting the SDK from github
 ===================================
 
-Option 1: Direct Download
--------------------------
-
-This is the quick option to get up and running with the SDK, but you'll have to re-download in order to update the SDK.
-
-Navigate to the github repository and click Download. Unzip the SDK somewhere that you need to use it.
-
-Option 2: Using git
--------------------
-
-It takes longer to check out the SDK directly from git, but you'll have the option of using ``git pull`` to update the SDK sources.
-
 Open an MSYS2 terminal window by running ``C:\msys32\msys2_shell.cmd``. The environment in this window is a bash shell.
 
-Change to the directory you want to clone the SDK into by typing a command like this one: ``cd "C:/path/to/dir"`` (note the forward-slashes in the path). Then type ``git clone https://github.com/espressif/esp-idf.git``
+Change to the directory you want to clone the SDK into by typing a command like this one: ``cd "C:/path/to/dir"`` (note the forward-slashes in the path). Then type ``git clone --recursive https://github.com/espressif/esp-idf.git``
 
 If you'd rather use a Windows UI tool to manage your git repositories, this is also possible. A wide range are available.
 
