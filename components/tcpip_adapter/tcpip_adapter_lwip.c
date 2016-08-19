@@ -211,17 +211,16 @@ esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
         ip4_addr_set(&esp_ip[tcpip_if].gw, ip_2_ip4(&netif->gw));
 
         //notify event
-        evt.event_id = SYSTEM_EVENT_STA_GOTIP;
-        memcpy(&evt.event_info.got_ip.ip, &esp_ip[tcpip_if].ip, sizeof(evt.event_info.got_ip.ip));
-        memcpy(&evt.event_info.got_ip.netmask, &esp_ip[tcpip_if].netmask, sizeof(evt.event_info.got_ip.netmask));
-        memcpy(&evt.event_info.got_ip.gw, &esp_ip[tcpip_if].gw, sizeof(evt.event_info.got_ip.gw));
-        esp_event_send(&evt);
+        if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY) ) {
+            evt.event_id = SYSTEM_EVENT_STA_GOTIP;
+            memcpy(&evt.event_info.got_ip.ip, &esp_ip[tcpip_if].ip, sizeof(evt.event_info.got_ip.ip));
+            memcpy(&evt.event_info.got_ip.netmask, &esp_ip[tcpip_if].netmask, sizeof(evt.event_info.got_ip.netmask));
+            memcpy(&evt.event_info.got_ip.gw, &esp_ip[tcpip_if].gw, sizeof(evt.event_info.got_ip.gw));
+            esp_event_send(&evt);
 
-        printf("ip: %s, ", inet_ntoa(esp_ip[tcpip_if].ip));
-        printf("mask: %s, ", inet_ntoa(esp_ip[tcpip_if].netmask));
-        printf("gw: %s\n", inet_ntoa(esp_ip[tcpip_if].gw));
-
-        if (ip_2_ip4(&netif->ip_addr) != IP4_ADDR_ANY) {
+            printf("ip: %s, ", inet_ntoa(esp_ip[tcpip_if].ip));
+            printf("mask: %s, ", inet_ntoa(esp_ip[tcpip_if].netmask));
+            printf("gw: %s\n", inet_ntoa(esp_ip[tcpip_if].gw));
         }
     } else {
         TCPIP_ADAPTER_DEBUG("ip unchanged\n");
