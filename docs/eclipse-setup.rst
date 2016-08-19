@@ -21,7 +21,7 @@ Import New Project
 
 * Once Eclipse is running, choose File -> Import...
 
-* In the dialog that pops up, choose "C/C++" -> "EXisting Code as Makefile Project" and click Next.
+* In the dialog that pops up, choose "C/C++" -> "Existing Code as Makefile Project" and click Next.
 
 * On the next page, enter "Existing Code Location" to be the directory of your SDK project. Don't specify the path to the SDK itself.
 
@@ -39,7 +39,7 @@ Project Properties
 
 *Windows users only, follow these two additional steps:*
 
-* On the same Environment property page, edit the PATH environment variable and append ";C:\msys32\usr\bin;C:\msys32\mingw32\bin;C:\msys32\opt\xtensa-esp32-elf\bin" to the end of the default value. (If you installed msys32 to a different directory then you'll need to change these paths to match.)
+* On the same Environment property page, edit the PATH environment variable and append ``;C:\msys32\usr\bin;C:\msys32\mingw32\bin;C:\msys32\opt\xtensa-esp32-elf\bin`` to the end of the default value. (If you installed msys32 to a different directory then you'll need to change these paths to match.)
 
 * Click on the "C/C++ Build" top-level properties page then uncheck "Use default build command" and enter this for the custom build command: ``bash ${SDK_PATH}/bin/eclipse_windows_make.sh``.
 
@@ -60,7 +60,7 @@ Flash from Eclipse
 
 You can integrate the "make flash" target into your Eclipse project to flash using esptool.py from the Eclipse UI:
 
-* Right-click the "esp-idf-tests" project in Project Explorer (important to make sure you don't select a subdirectory of the project or Eclipse may find the wrong Makefile.)
+* Right-click your project in Project Explorer (important to make sure you don't select a subdirectory of the project or Eclipse may find the wrong Makefile.)
 
 * Select Make Targets -> Create from the context menu.
 

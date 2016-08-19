@@ -12,6 +12,7 @@ $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
 	MAKEFLAGS="" \
 	CFLAGS="" \
 	LDFLAGS="" \
+	CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
 menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(SDK_PATH)/Kconfig $(BUILD_DIR_BASE)
@@ -30,7 +31,7 @@ endif
 
 # Work out of whether we have to build the Kconfig makefile
 # (auto.conf), or if we're in a situation where we don't need it
-NON_CONFIG_TARGETS := clean %-clean get_variable
+NON_CONFIG_TARGETS := clean %-clean get_variable help
 AUTO_CONF_REGEN_TARGET := $(PROJECT_PATH)/build/include/config/auto.conf
 
 # disable AUTO_CONF_REGEN_TARGET if all targets are non-config targets
@@ -58,6 +59,7 @@ $(AUTO_CONF_REGEN_TARGET) $(PROJECT_PATH)/build/include/sdkconfig.h: $(PROJECT_P
 
 clean: config-clean
 .PHONY: config-clean
-EXTRA_CLEAN_TARGETS += config-clean
 config-clean:
+	$(vecho RM CONFIG)
 	$(MAKE) -C $(KCONFIG_TOOL_DIR) clean
+	$(Q) rm -rf $(PROJECT_PATH)/build/include/config $(PROJECT_PATH)/build/include/sdkconfig.h

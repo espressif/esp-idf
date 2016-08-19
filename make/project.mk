@@ -10,18 +10,41 @@
 # Makefile is located.
 #
 
-.PHONY: build-components menuconfig all build clean
-all: project
+.PHONY: build-components menuconfig all build clean all_binaries
+all: all_binaries # other components will add dependencies to 'all_binaries'
+	@echo "To flash all build output, run 'make flash' or:"
+	@echo $(ESPTOOLPY_SERIAL) write_flash $(ESPTOOL_ALL_FLASH_ARGS)
+
+# (the reason all_binaries is used instead of 'all' is so that the flash target
+# can build everything without triggering the per-component "to flash..."
+# output targets.)
+
+help:
+	@echo "Welcome to Espressif IDF build system. Some useful make targets:"
+	@echo ""
+	@echo "make menuconfig - Configure IDF project"
+	@echo ""
+	@echo "make all - Build app, bootloader, partition table"
+	@echo "make flash - Flash all components to a fresh chip"
+	@echo "make clean - Remove all build output"
+	@echo ""
+	@echo "make app - Build just the app"
+	@echo "make app-flash - Flash just the app"
+	@echo "make app-clean - Clean just the app"
+	@echo ""
+	@echo "See also 'make bootloader', 'make bootloader-flash', 'make bootloader-clean', "
+	@echo "'make partition_table', etc, etc."
 
 # disable built-in make rules, makes debugging saner
 MAKEFLAGS +=-rR
 
-# Figure out PROJECT_PATH if not set, check for unacceptable Makefile entry points
+# Figure out PROJECT_PATH if not set
 ifeq ("$(PROJECT_PATH)","")
 #The path to the project: we assume the Makefile including this file resides
 #in the root of that directory.
 PROJECT_PATH := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 export PROJECT_PATH
+endif
 
 #The directory where we put all objects/libraries/binaries. The project Makefile can
 #configure this if needed.
@@ -59,26 +82,26 @@ COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(c
 
 # Assemble global list of include dirs (COMPONENT_INCLUDES), and
 # LDFLAGS args (COMPONENT_LDFLAGS) supplied by each component.
+COMPONENT_INCLUDES :=
+COMPONENT_LDFLAGS :=
 #
 # Also add any inter-component dependencies for each component.
 
 # Extract a variable from a child make process
 #
 # $(1) - path to directory to invoke make in
-# $(2) - name of variable to print via the getvariable target (passed in GET_VARIABLE)
+# $(2) - name of variable to print via the get_variable target (passed in GET_VARIABLE)
 #
 # needs 'sed' processing of stdout because make sometimes echoes other stuff on stdout,
 # even if asked not to.
 #
 # Debugging this? Replace $(shell with $(error and you'll see the full command as-run.
 define GetVariable
-$(shell "$(MAKE)" -s --no-print-directory -C $(1) get_variable COMPONENT_INCLUDES=dummy COMPONENT_LDFLAGS=dummy PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
+$(shell "$(MAKE)" -s --no-print-directory -C $(1) get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
 endef
 
-ifeq ("$(COMPONENT_INCLUDES)","")
 COMPONENT_INCLUDES := $(abspath $(foreach comp,$(COMPONENT_PATHS_BUILDABLE),$(addprefix $(comp)/, \
 	$(call GetVariable,$(comp),COMPONENT_ADD_INCLUDEDIRS))))
-endif
 
 #Also add project include path, for sdk includes
 COMPONENT_INCLUDES += $(PROJECT_PATH)/build/include/
@@ -86,11 +109,9 @@ export COMPONENT_INCLUDES
 
 #COMPONENT_LDFLAGS has a list of all flags that are needed to link the components together. It's collected
 #in the same way as COMPONENT_INCLUDES is.
-ifeq ("$(COMPONENT_LDFLAGS)","")
 COMPONENT_LDFLAGS := $(foreach comp,$(COMPONENT_PATHS_BUILDABLE), \
 	$(call GetVariable,$(comp),COMPONENT_ADD_LDFLAGS))
 export COMPONENT_LDFLAGS
-endif
 
 # Generate component dependency targets from dependencies lists
 # each component gains a target of its own <name>-build with dependencies
@@ -128,8 +149,10 @@ export CC CXX LD AR OBJCOPY
 
 PYTHON=$(call dequote,$(CONFIG_PYTHON))
 
-PROJECT_ELF:=$(BUILD_DIR_BASE)/$(PROJECT_NAME).elf
-PROJECT_BIN:=$(PROJECT_ELF:.elf=.bin)
+# the app is the main executable built by the project
+APP_ELF:=$(BUILD_DIR_BASE)/$(PROJECT_NAME).elf
+APP_MAP:=$(APP_ELF:.elf=.map)
+APP_BIN:=$(APP_ELF:.elf=.bin)
 
 # Include any Makefile.projbuild file letting components add
 # configuration at the project level
@@ -139,17 +162,21 @@ COMPONENT_PATH := $(1)
 endef
 $(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefile,$(componentpath))))
 
+# once we know component paths, we can include the config
+include $(SDK_PATH)/make/project_config.mk
+
 # ELF depends on the -build target of every component
-$(PROJECT_ELF): $(addsuffix -build,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
+$(APP_ELF): $(addsuffix -build,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(vecho) LD $(notdir $@)
-	$(Q) $(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(patsubst %.elf,%.map,$@)
+	$(Q) $(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
-# Generation of $(PROJECT_BIN) from $(PROJECT_ELF) is added by the esptool
+# Generation of $(APP_BIN) from $(APP_ELF) is added by the esptool
 # component's Makefile.projbuild
-
-project: $(PROJECT_BIN)
+app: $(APP_BIN)
 	@echo "App built. Default flash app command is:"
-	@echo $(PROJECT_FLASH_COMMAND) # PROJECT_FLASH_COMMAND is set in esptool_py's Makefile.projbuild
+	@echo $(APP_FLASH_COMMAND) # APP_FLASH_COMMAND is set in esptool_py's Makefile.projbuild
+
+all_binaries: $(APP_BIN)
 
 $(BUILD_DIR_BASE):
 	mkdir -p $(BUILD_DIR_BASE)
@@ -174,12 +201,10 @@ $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponent
 $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTarget,$(component),build,$(PROJECT_PATH)/build/include/sdkconfig.h)))
 $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTarget,$(component),clean)))
 
-include $(SDK_PATH)/make/project_config.mk
+app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
+	$(vecho) RM $(APP_ELF)
+	$(Q) rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE))) $(EXTRA_CLEAN_TARGETS)
-	$(vecho) RM $(PROJECT_ELF)
-	$(Q) rm -f $(PROJECT_ELF)
-	$(Q) rm -rf $(PROJECT_PATH)/build/include/config $(PROJECT_PATH)/build/include/sdkconfig.h
+clean: app-clean
 
-endif
 
