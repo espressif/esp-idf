@@ -79,6 +79,7 @@ static system_event_handle_t g_system_event_handle_table[] = {
     {SYSTEM_EVENT_STA_CONNECTED,       system_event_sta_connected_handle_default},
     {SYSTEM_EVENT_STA_DISCONNECTED,    system_event_sta_disconnected_handle_default},
     {SYSTEM_EVENT_STA_AUTHMODE_CHANGE, NULL},
+    {SYSTEM_EVENT_STA_GOTIP,           NULL},
     {SYSTEM_EVENT_AP_START,            system_event_ap_start_handle_default},
     {SYSTEM_EVENT_AP_STOP,             system_event_ap_stop_handle_default},
     {SYSTEM_EVENT_AP_STACONNECTED,     NULL},
@@ -161,6 +162,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     system_event_sta_connected_t *connected; 
     system_event_sta_disconnected_t *disconnected;
     system_event_sta_authmode_change_t *auth_change;
+    system_event_sta_gotip_t *got_ip;
     system_event_ap_staconnected_t *staconnected;
     system_event_ap_stadisconnected_t *stadisconnected;
     system_event_ap_probe_req_rx_t *ap_probereqrecved;
@@ -201,6 +203,10 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
         case SYSTEM_EVENT_STA_AUTHMODE_CHANGE:
             auth_change = &event->event_info.auth_change;
             os_printf("SYSTEM_EVENT_STA_AUTHMODE_CHNAGE\nold_mode:%d, new_mode:%d\n", auth_change->old_mode, auth_change->new_mode);
+            break;
+        case SYSTEM_EVENT_STA_GOTIP:
+            got_ip = &event->event_info.got_ip;
+            os_printf("SYSTEM_EVENT_STA_GOTIP\n");
             break;
         case SYSTEM_EVENT_AP_START:
             os_printf("SYSTEM_EVENT_AP_START\n");

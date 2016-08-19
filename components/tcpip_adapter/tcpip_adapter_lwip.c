@@ -27,6 +27,8 @@
 
 #include "apps/dhcpserver.h"
 
+#include "esp_event.h"
+
 static struct netif *esp_netif[TCPIP_ADAPTER_IF_MAX];
 static struct ip_info esp_ip[TCPIP_ADAPTER_IF_MAX];
 
@@ -183,6 +185,7 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, struct ip_info 
 esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
 {
     tcpip_adapter_if_t tcpip_if;
+    system_event_t evt;
 
     if (!netif) {
         TCPIP_ADAPTER_DEBUG("null netif=%p\n", netif);
@@ -208,6 +211,12 @@ esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
         ip4_addr_set(&esp_ip[tcpip_if].gw, ip_2_ip4(&netif->gw));
 
         //notify event
+        evt.event_id = SYSTEM_EVENT_STA_GOTIP;
+        memcpy(&evt.event_info.got_ip.ip, &esp_ip[tcpip_if].ip, sizeof(evt.event_info.got_ip.ip));
+        memcpy(&evt.event_info.got_ip.netmask, &esp_ip[tcpip_if].netmask, sizeof(evt.event_info.got_ip.netmask));
+        memcpy(&evt.event_info.got_ip.gw, &esp_ip[tcpip_if].gw, sizeof(evt.event_info.got_ip.gw));
+        esp_event_send(&evt);
+
         printf("ip: %s, ", inet_ntoa(esp_ip[tcpip_if].ip));
         printf("mask: %s, ", inet_ntoa(esp_ip[tcpip_if].netmask));
         printf("gw: %s\n", inet_ntoa(esp_ip[tcpip_if].gw));
