@@ -64,10 +64,10 @@ typedef struct sys_mbox_s {
 
 void sys_arch_assert(const char *file, int line);
 uint32_t system_get_time(void);
-sys_sem_t* sys_thread_sem(void);
 void sys_delay_ms(uint32_t ms);
-void* xTaskGetPerTaskData(void);
-
+sys_sem_t* sys_thread_sem_init(void);
+void sys_thread_sem_deinit(void);
+sys_sem_t* sys_thread_sem_get(void);
 
 
 #endif /* __SYS_ARCH_H__ */
