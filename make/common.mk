@@ -10,8 +10,8 @@
 
 ifeq ("$(LDFLAGS)","")
 LDFLAGS = -nostdlib \
-	-L$(SDK_PATH)/lib \
-	-L$(SDK_PATH)/ld \
+	-L$(IDF_PATH)/lib \
+	-L$(IDF_PATH)/ld \
 	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(SRCDIRS)) \
 	-u call_user_start_cpu0	\
 	-Wl,--gc-sections	\

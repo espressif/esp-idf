@@ -5,4 +5,4 @@ define COMPONENT_BUILDRECIPE
 	#Nothing to do; this does not generate a library.
 endef
 
-include $(SDK_PATH)/make/component.mk
+include $(IDF_PATH)/make/component.mk

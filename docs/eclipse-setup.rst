@@ -35,13 +35,13 @@ Project Properties
 
 * Click on the "Environment" properties page under "C/C++ Build". Click "Add..." and enter name ``V`` and value ``1``.
 
-* Click "Add..." again, and enter name ``SDK_PATH``. The value should be the full path where ESP-IDF is installed. *Windows users: Use forward-slashes not backslashes for this path, ie C:/Users/MyUser/Development/esp-idf*.
+* Click "Add..." again, and enter name ``IDF_PATH``. The value should be the full path where ESP-IDF is installed. *Windows users: Use forward-slashes not backslashes for this path, ie C:/Users/MyUser/Development/esp-idf*.
 
 *Windows users only, follow these two additional steps:*
 
 * On the same Environment property page, edit the PATH environment variable and append ``;C:\msys32\usr\bin;C:\msys32\mingw32\bin;C:\msys32\opt\xtensa-esp32-elf\bin`` to the end of the default value. (If you installed msys32 to a different directory then you'll need to change these paths to match.)
 
-* Click on the "C/C++ Build" top-level properties page then uncheck "Use default build command" and enter this for the custom build command: ``bash ${SDK_PATH}/bin/eclipse_windows_make.sh``.
+* Click on the "C/C++ Build" top-level properties page then uncheck "Use default build command" and enter this for the custom build command: ``bash ${IDF_PATH}/bin/eclipse_windows_make.sh``.
 
 *All users, continue with these steps:*
 

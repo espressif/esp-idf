@@ -6,7 +6,7 @@
 #
 
 #
-# This Makefile requires the environment variable SDK_PATH to be set to the directory where this
+# This Makefile requires the environment variable IDF_PATH to be set to the directory where this
 # Makefile is located.
 #
 
@@ -52,7 +52,7 @@ BUILD_DIR_BASE ?= $(PROJECT_PATH)/build
 
 #Component directories. These directories are searched for components.
 #The project Makefile can override these component dirs, or define extra component directories.
-COMPONENT_DIRS ?= $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(SDK_PATH)/components
+COMPONENT_DIRS ?= $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components
 export COMPONENT_DIRS
 
 #The project Makefile can define a list of components, but if it does not do this we just take
@@ -130,7 +130,7 @@ $(foreach comp,$(COMPONENT_PATHS_BUILDABLE), $(eval $(call GenerateComponentDepe
 export PROJECT_PATH
 
 #Include functionality common to both project & component
--include $(SDK_PATH)/make/common.mk
+-include $(IDF_PATH)/make/common.mk
 
 #Set host compiler and binutils
 HOSTCC := $(CC)
@@ -163,7 +163,7 @@ endef
 $(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefile,$(componentpath))))
 
 # once we know component paths, we can include the config
-include $(SDK_PATH)/make/project_config.mk
+include $(IDF_PATH)/make/project_config.mk
 
 # ELF depends on the -build target of every component
 $(APP_ELF): $(addsuffix -build,$(notdir $(COMPONENT_PATHS_BUILDABLE)))

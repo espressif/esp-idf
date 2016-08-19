@@ -127,7 +127,7 @@ all components and make the elf target depend on this. The targets
 invoke Make on the makefiles of the components in a subshell: this way
 the components have full freedom to do whatever is necessary to build
 the library without influencing other components. By default, the
-component includes the utility makefile $(SDK_PATH)/make/component.mk.
+component includes the utility makefile $(IDF_PATH)/make/component.mk.
 This provides default targets and configurations that will work
 out-of-the-box for most projects.
 
@@ -158,7 +158,7 @@ minimum, it will just include the ESP-IDF component makefile, which adds
 component functionality:
 
 ----8<----
-include $(SDK_PATH)/make/component.mk
+include $(IDF_PATH)/make/component.mk
 ---->8----
 
 This will take all the .c and .S files in the component root and compile
@@ -169,7 +169,7 @@ system by setting COMPONENT_SRCDIRS:
 
 ----8<----
 COMPONENT_SRCDIRS := src1 src2
-include $(SDK_PATH)/make/component.mk
+include $(IDF_PATH)/make/component.mk
 ---->8----
 
 This will compile all source files in the src1/ and src2/ subdirectories
@@ -183,7 +183,7 @@ objects that need to be generated:
 
 ----8<----
 COMPONENT_OBJS := file1.o file2.o thing/filea.o thing/fileb.o anotherthing/main.o
-include $(SDK_PATH)/make/component.mk
+include $(IDF_PATH)/make/component.mk
 ---->8----
 
 This can also be used in order to conditionally compile some files
@@ -200,7 +200,7 @@ config FOO_ENABLE_BAR
 Makefile:
 ----8<----
 COMPONENT_OBJS := foo_a.o foo_b.o $(if $(CONFIG_FOO_ENABLE_BAR),foo_bar.o foo_bar_interface.o)
-include $(SDK_PATH)/make/component.mk
+include $(IDF_PATH)/make/component.mk
 ---->8----
 
 Some components will have a situation where a source file isn't supplied
@@ -217,7 +217,7 @@ graphics_lib.o: logo.h
 logo.h: $(COMPONENT_PATH)/logo.bmp
 	bmp2h -i $^ -o $@
 
-include $(SDK_PATH)/make/component.mk
+include $(IDF_PATH)/make/component.mk
 ---->8----
 
 In this example, graphics_lib.o and logo.h will be generated in the
@@ -242,7 +242,7 @@ logo.h: $(COMPONENT_PATH)/logo.bmp
 	$(vecho) BMP2H $@
 	$(Q) bmp2h -i $^ -o $@
 
-include $(SDK_PATH)/make/component.mk
+include $(IDF_PATH)/make/component.mk
 ---->8----
 
 Obviously, there are cases where all these recipes are insufficient for a

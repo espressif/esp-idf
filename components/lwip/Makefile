@@ -8,4 +8,4 @@ COMPONENT_SRCDIRS := api apps core/ipv4 core/ipv6 core netif port/freertos port/
 
 EXTRA_CFLAGS := -Wno-error=address -Waddress -DLWIP_ESP8266
 
-include $(SDK_PATH)/make/component.mk
+include $(IDF_PATH)/make/component.mk

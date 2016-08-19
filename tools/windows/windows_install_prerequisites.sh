@@ -53,7 +53,7 @@ echo "your path. Execute 'msys_shell.cmd' to launch an"
 echo "MSYS terminal."
 echo
 echo "Once ESP-IDF is downloaded/checked out, set the"
-echo "environment variable SDK_PATH in /etc/profile to"
+echo "environment variable IDF_PATH in /etc/profile to"
 echo "point to the directory."
 echo "************************************************"
 echo

@@ -5,7 +5,7 @@ COMPONENT_KCONFIGS := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(compon
 COMPONENT_KCONFIGS_PROJBUILD := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(component)/Kconfig.projbuild))
 
 #For doing make menuconfig etc
-KCONFIG_TOOL_DIR=$(SDK_PATH)/tools/kconfig
+KCONFIG_TOOL_DIR=$(IDF_PATH)/tools/kconfig
 
 # clear MAKEFLAGS as the menuconfig makefile uses implicit compile rules
 $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
@@ -15,13 +15,13 @@ $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
 	CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
-menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(SDK_PATH)/Kconfig $(BUILD_DIR_BASE)
+menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
 	$(vecho) MENUCONFIG
 	$(Q) KCONFIG_AUTOHEADER=$(PROJECT_PATH)/build/include/sdkconfig.h \
 	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
 	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" \
 	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)" \
-	$(KCONFIG_TOOL_DIR)/mconf $(SDK_PATH)/Kconfig
+	$(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
 
 ifeq ("$(wildcard $(PROJECT_PATH)/sdkconfig)","")
 #No sdkconfig found. Need to run menuconfig to make this if we need it.
@@ -51,7 +51,7 @@ $(AUTO_CONF_REGEN_TARGET) $(PROJECT_PATH)/build/include/sdkconfig.h: $(PROJECT_P
 	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
 	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" \
 	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)" \
-	$(KCONFIG_TOOL_DIR)/conf --silentoldconfig $(SDK_PATH)/Kconfig
+	$(KCONFIG_TOOL_DIR)/conf --silentoldconfig $(IDF_PATH)/Kconfig
 	$(Q) touch $(AUTO_CONF_REGEN_TARGET) $(PROJECT_PATH)/build/include/sdkconfig.h
 # touch to ensure both output files are newer - as 'conf' can also update sdkconfig (a dependency). Without this,
 # sometimes you can get an infinite make loop on Windows where sdkconfig always gets regenerated newer

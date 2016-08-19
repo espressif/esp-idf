@@ -64,7 +64,7 @@ Step 4: Configuring the project
 
 Open an MSYS2 terminal window by running ``C:\msys32\msys2_shell.cmd``. The environment in this window is a bash shell.
 
-Type a command like this to set the path to ESP-IDF directory: ``export SDK_PATH="C:/path/to/esp-idf"`` (note the forward-slashes not back-slashes for the path). If you don't want to run this command every time you open an MSYS2 window, create a new file in ``C:/msys32/etc/profile.d/`` and paste this line in - then it will be run each time you open an MYS2 terminal.
+Type a command like this to set the path to ESP-IDF directory: ``export IDF_PATH="C:/path/to/esp-idf"`` (note the forward-slashes not back-slashes for the path). If you don't want to run this command every time you open an MSYS2 window, create a new file in ``C:/msys32/etc/profile.d/`` and paste this line in - then it will be run each time you open an MYS2 terminal.
 
 Use ``cd`` to change to the project directory (not the ESP-IDF directory.) Type ``make menuconfig`` to configure your project, then ``make`` to build it, ``make clean`` to remove built files, and ``make flash`` to flash (use the menuconfig to set the serial port for flashing.)
 

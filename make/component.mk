@@ -10,7 +10,7 @@
 #
 
 #
-# This Makefile requires the environment variable SDK_PATH to be set
+# This Makefile requires the environment variable IDF_PATH to be set
 # to the top-level directory where ESP-IDF is located (the directory
 # containing this 'make' directory).
 #
@@ -23,7 +23,7 @@ endif
 COMPONENT_PATH := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 export COMPONENT_PATH
 
-include $(SDK_PATH)/make/common.mk
+include $(IDF_PATH)/make/common.mk
 
 #Some of these options are overridable by the components Makefile.
 
