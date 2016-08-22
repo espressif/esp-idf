@@ -33,7 +33,7 @@ public:
         return mData;
     }
 
-    Tenum get(size_t index)
+    Tenum get(size_t index) const
     {
         assert(index >= 0 && index < Nitems);
         size_t wordIndex = index / ITEMS_PER_WORD;

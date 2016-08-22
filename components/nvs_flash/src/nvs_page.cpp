@@ -536,7 +536,7 @@ esp_err_t Page::alterPageState(PageState state)
     return ESP_OK;
 }
 
-esp_err_t Page::readEntry(size_t index, Item& dst)
+esp_err_t Page::readEntry(size_t index, Item& dst) const
 {
     auto rc = spi_flash_read(getEntryAddress(index), reinterpret_cast<uint32_t*>(&dst), sizeof(dst));
     if (rc != ESP_OK) {
@@ -658,7 +658,7 @@ void Page::invalidateCache()
     mFindInfo = CachedFindInfo();
 }
     
-void Page::debugDump()
+void Page::debugDump() const
 {
     printf("state=%x addr=%x seq=%d\nfirstUsed=%d nextFree=%d used=%d erased=%d\n", mState, mBaseAddress, mSeqNumber, static_cast<int>(mFirstUsedEntry), static_cast<int>(mNextFreeEntry), mUsedEntryCount, mErasedEntryCount);
     size_t skip = 0;
