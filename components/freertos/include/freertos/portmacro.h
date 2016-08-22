@@ -147,11 +147,17 @@ typedef struct {
 #define portMUX_VAL_MASK		0x000000FF
 #define portMUX_VAL_SHIFT		0
 
-//Keep this in sync with the portMUX_TYPE struct definition
+//Keep this in sync with the portMUX_TYPE struct definition please.
 #ifdef portMUX_DEBUG
-#define portMUX_INITIALIZER_UNLOCKED { portMUX_MAGIC_VAL|portMUX_FREE_VAL }
+#define portMUX_INITIALIZER_UNLOCKED { 					\
+		.mux = portMUX_MAGIC_VAL|portMUX_FREE_VAL 		\
+	}
 #else
-#define portMUX_INITIALIZER_UNLOCKED { portMUX_MAGIC_VAL|portMUX_FREE_VAL, "(never locked)", -1 }
+#define portMUX_INITIALIZER_UNLOCKED { 					\
+		.mux = portMUX_MAGIC_VAL|portMUX_FREE_VAL, 		\
+		.lastLockedFn = "(never locked)", 				\
+		.lastLockedLine = -1							\
+	}
 #endif
 
 /* Critical section management. NW-TODO: replace XTOS_SET_INTLEVEL with more efficient version, if any? */
