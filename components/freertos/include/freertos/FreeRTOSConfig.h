@@ -98,7 +98,8 @@
 
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 
-#define XT_CLOCK_FREQ 13000000
+/* TODO: config freq by menuconfig */
+#define XT_CLOCK_FREQ 80000000
 
 /* Required for configuration-dependent settings */
 #include "xtensa_config.h"
