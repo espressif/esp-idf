@@ -1,0 +1,11 @@
+build_template_app:
+  image: espressif/esp32-ci-env
+
+  variables:
+    SDK_PATH: "$CI_PROJECT_DIR"
+    IDF_PATH: "$CI_PROJECT_DIR"
+
+  script:
+    - git clone https://github.com/espressif/esp-idf-template.git
+    - cd esp-idf-template
+    - make all
