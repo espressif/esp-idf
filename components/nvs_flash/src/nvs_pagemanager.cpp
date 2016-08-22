@@ -91,6 +91,7 @@ esp_err_t PageManager::requestNewPage()
     Page* newPage = &mPageList.back();
 
     Page* erasedPage = maxErasedItemsPageIt;
+    size_t usedEntries = erasedPage->getUsedEntryCount();
     err = erasedPage->markFreeing();
     if (err != ESP_OK) {
         return err;
@@ -108,6 +109,8 @@ esp_err_t PageManager::requestNewPage()
     if (err != ESP_OK) {
         return err;
     }
+    
+    assert(usedEntries == newPage->getUsedEntryCount());
 
     mPageList.erase(maxErasedItemsPageIt);
     mFreePageList.push_back(erasedPage);

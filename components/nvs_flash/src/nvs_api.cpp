@@ -45,6 +45,12 @@ static intrusive_list<HandleEntry> s_nvs_handles;
 static uint32_t s_nvs_next_handle = 1;
 static nvs::Storage s_nvs_storage;
 
+extern "C" void nvs_dump()
+{
+    Lock lock;
+    s_nvs_storage.debugDump();
+}
+
 extern "C" esp_err_t nvs_flash_init(uint32_t baseSector, uint32_t sectorCount)
 {
     Lock::init();

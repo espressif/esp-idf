@@ -13,6 +13,11 @@
 // limitations under the License.
 #include "nvs_storage.hpp"
 
+#ifndef ESP_PLATFORM
+#include <map>
+#include <sstream>
+#endif
+
 namespace nvs
 {
 
@@ -56,6 +61,9 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
     mNamespaceUsage.set(0, true);
     mNamespaceUsage.set(255, true);
     mState = StorageState::ACTIVE;
+#ifndef ESP_PLATFORM
+    debugCheck();
+#endif
     return ESP_OK;
 }
 
@@ -75,29 +83,46 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
     Page& page = getCurrentPage();
     err = page.writeItem(nsIndex, datatype, key, data, dataSize);
     if (err == ESP_ERR_NVS_PAGE_FULL) {
-        page.markFull();
+        if (page.state() != Page::PageState::FULL) {
+            err = page.markFull();
+            if (err != ESP_OK) {
+                return err;
+            }
+        }
         err = mPageManager.requestNewPage();
         if (err != ESP_OK) {
             return err;
         }
 
         err = getCurrentPage().writeItem(nsIndex, datatype, key, data, dataSize);
+        if (err == ESP_ERR_NVS_PAGE_FULL) {
+            return ESP_ERR_NVS_NOT_ENOUGH_SPACE;
+        }
         if (err != ESP_OK) {
             return err;
         }
     }
+    else if (err != ESP_OK) {
+        return err;
+    }
 
     if (findPage) {
-        if (findPage->state() == Page::PageState::UNINITIALIZED) {
+        if (findPage->state() == Page::PageState::UNINITIALIZED ||
+            findPage->state() == Page::PageState::INVALID) {
             auto err = findItem(nsIndex, datatype, key, findPage, item);
             assert(err == ESP_OK);
         }
         err = findPage->eraseItem(nsIndex, datatype, key);
+        if (err == ESP_ERR_FLASH_OP_FAIL) {
+            return ESP_ERR_NVS_REMOVE_FAILED;
+        }
         if (err != ESP_OK) {
             return err;
         }
     }
-
+#ifndef ESP_PLATFORM
+    debugCheck();
+#endif
     return ESP_OK;
 }
 
@@ -191,5 +216,36 @@ esp_err_t Storage::getItemDataSize(uint8_t nsIndex, ItemType datatype, const cha
     dataSize = item.varLength.dataSize;
     return ESP_OK;
 }
+
+void Storage::debugDump()
+{
+    for (auto p = mPageManager.begin(); p != mPageManager.end(); ++p) {
+        p->debugDump();
+    }
+}
+
+#ifndef ESP_PLATFORM
+void Storage::debugCheck()
+{
+    std::map<std::string, Page*> keys;
+    
+    for (auto p = mPageManager.begin(); p != mPageManager.end(); ++p) {
+        size_t itemIndex = 0;
+        Item item;
+        while (p->findItem(Page::NS_ANY, ItemType::ANY, nullptr, itemIndex, item) == ESP_OK) {
+            std::stringstream keyrepr;
+            keyrepr << static_cast<unsigned>(item.nsIndex) << "_" << static_cast<unsigned>(item.datatype) << "_" << item.key;
+            std::string keystr = keyrepr.str();
+            if (keys.find(keystr) != std::end(keys)) {
+                printf("Duplicate key: %s\n", keystr.c_str());
+                debugDump();
+                assert(0);
+            }
+            keys.insert(std::make_pair(keystr, static_cast<Page*>(p)));
+            itemIndex += item.span;
+        }
+    }
+}
+#endif //ESP_PLATFORM
 
 }

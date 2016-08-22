@@ -17,6 +17,7 @@
 #else
 #include "crc.h"
 #endif
+#include <cstdio>
 
 
 namespace nvs
