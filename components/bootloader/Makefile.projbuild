@@ -33,7 +33,7 @@ clean: bootloader-clean
 
 bootloader: $(BOOTLOADER_BIN)
 	@echo "Bootloader built. Default flash command is:"
-	@echo "$(ESPTOOLPY_SERIAL) write_flash 0x1000 $(BOOTLOADER_BIN)"
+	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $(BOOTLOADER_BIN)"
 
 all_binaries: $(BOOTLOADER_BIN)
 
