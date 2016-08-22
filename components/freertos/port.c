@@ -298,7 +298,6 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 	uint32_t cnt=(1<<16);
 	if ( (mux->mux & portMUX_MAGIC_MASK) != portMUX_MAGIC_VAL ) {
 		ets_printf("ERROR: vPortCPUAcquireMutex: mux %p is uninitialized (0x%X)! Called from %s line %d.\n", mux, mux->mux, fnName, line);
-		asm("break.n 1");
 		mux->mux=portMUX_FREE_VAL;
 	}
 #endif
