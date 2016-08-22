@@ -460,6 +460,8 @@ int8_t *pcAllocatedBuffer;
 			vListInitialise( &( pxNewQueue->xTasksWaitingToSend ) );
 			vListInitialise( &( pxNewQueue->xTasksWaitingToReceive ) );
 
+			vPortCPUInitializeMutex(&pxNewQueue->mux);
+
 			traceCREATE_MUTEX( pxNewQueue );
 
 			/* Start with the semaphore in the expected state. */

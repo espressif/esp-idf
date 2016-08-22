@@ -147,6 +147,19 @@ typedef struct {
 #define portMUX_VAL_MASK		0x000000FF
 #define portMUX_VAL_SHIFT		0
 
+//Keep this in sync with the portMUX_TYPE struct definition please.
+#ifdef portMUX_DEBUG
+#define portMUX_INITIALIZER_UNLOCKED { 					\
+		.mux = portMUX_MAGIC_VAL|portMUX_FREE_VAL 		\
+	}
+#else
+#define portMUX_INITIALIZER_UNLOCKED { 					\
+		.mux = portMUX_MAGIC_VAL|portMUX_FREE_VAL, 		\
+		.lastLockedFn = "(never locked)", 				\
+		.lastLockedLine = -1							\
+	}
+#endif
+
 /* Critical section management. NW-TODO: replace XTOS_SET_INTLEVEL with more efficient version, if any? */
 // These cannot be nested. They should be used with a lot of care and cannot be called from interrupt level.
 #define portDISABLE_INTERRUPTS()      do { XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); portbenchmarkINTERRUPT_DISABLE(); } while (0)

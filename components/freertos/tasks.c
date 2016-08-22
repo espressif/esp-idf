@@ -273,8 +273,8 @@ PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended[ portNUM_PROCES
 PRIVILEGED_DATA static portBASE_TYPE xMutexesInitialised = pdFALSE;
 /* For now, we use just one mux for all the critical sections. ToDo: give evrything a bit more granularity;
   that could improve performance by not needlessly spinning in spinlocks for unrelated resources. */
-PRIVILEGED_DATA static portMUX_TYPE xTaskQueueMutex;
-PRIVILEGED_DATA static portMUX_TYPE xTickCountMutex;
+PRIVILEGED_DATA static portMUX_TYPE xTaskQueueMutex = portMUX_INITIALIZER_UNLOCKED;
+PRIVILEGED_DATA static portMUX_TYPE xTickCountMutex = portMUX_INITIALIZER_UNLOCKED;
 
 #if ( configGENERATE_RUN_TIME_STATS == 1 )
 

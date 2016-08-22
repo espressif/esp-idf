@@ -155,7 +155,7 @@ typedef struct A_BLOCK_LINK
 } BlockLink_t;
 
 //Mux to protect the memory status data
-static portMUX_TYPE xMallocMutex;
+static portMUX_TYPE xMallocMutex = portMUX_INITIALIZER_UNLOCKED;
 
 /*-----------------------------------------------------------*/
 

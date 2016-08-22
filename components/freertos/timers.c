@@ -170,7 +170,7 @@ PRIVILEGED_DATA static List_t *pxOverflowTimerList;
 PRIVILEGED_DATA static QueueHandle_t xTimerQueue = NULL;
 
 /* Mux. We use a single mux for all the timers for now. ToDo: maybe increase granularity here? */
-PRIVILEGED_DATA portMUX_TYPE xTimerMux;
+PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
 #if ( INCLUDE_xTimerGetTimerDaemonTaskHandle == 1 )
 
