@@ -123,7 +123,7 @@ typedef struct xEventGroupDefinition
 
 
 /* Again: one mux for all events. Maybe this can be made more granular. ToDo: look into that. -JD */
-static portMUX_TYPE xEventGroupMux;
+static portMUX_TYPE xEventGroupMux = portMUX_INITIALIZER_UNLOCKED;
 static BaseType_t xMuxInitialized = pdFALSE;
 
 
