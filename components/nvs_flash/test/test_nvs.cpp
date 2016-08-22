@@ -554,11 +554,6 @@ public:
         static_assert(nKeys == sizeof(types) / sizeof(types[0]), "");
         static_assert(nKeys == sizeof(values) / sizeof(values[0]), "");
         
-        
-        auto generateRandomString = [](char* dst, size_t size) {
-            size_t len = 0;
-        };
-        
         auto randomRead = [&](size_t index) -> esp_err_t {
             switch (types[index]) {
                 case ItemType::I32:

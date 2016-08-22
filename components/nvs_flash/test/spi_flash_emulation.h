@@ -74,7 +74,7 @@ public:
             return false;
         }
         
-        if (mFailCountdown != SIZE_T_MAX && mFailCountdown-- == 0) {
+        if (mFailCountdown != SIZE_MAX && mFailCountdown-- == 0) {
             return false;
         }
 
@@ -108,7 +108,7 @@ public:
             return false;
         }
         
-        if (mFailCountdown != SIZE_T_MAX && mFailCountdown-- == 0) {
+        if (mFailCountdown != SIZE_MAX && mFailCountdown-- == 0) {
             return false;
         }
 
@@ -203,7 +203,7 @@ protected:
     size_t mLowerSectorBound = 0;
     size_t mUpperSectorBound = 0;
     
-    size_t mFailCountdown = SIZE_T_MAX;
+    size_t mFailCountdown = SIZE_MAX;
 
 };
 
