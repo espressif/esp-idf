@@ -158,15 +158,6 @@ static esp_err_t esp_wifi_post_event_to_user(system_event_t *event)
 
 static esp_err_t esp_system_event_debug(system_event_t *event)
 {
-    system_event_sta_scan_done_t *scan_done;
-    system_event_sta_connected_t *connected; 
-    system_event_sta_disconnected_t *disconnected;
-    system_event_sta_authmode_change_t *auth_change;
-    system_event_sta_gotip_t *got_ip;
-    system_event_ap_staconnected_t *staconnected;
-    system_event_ap_stadisconnected_t *stadisconnected;
-    system_event_ap_probe_req_rx_t *ap_probereqrecved;
-
     if (event == NULL) {
         os_printf("Error: event is null!\n");
         return ESP_FAIL;
@@ -175,66 +166,102 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     os_printf("received event: ");
     switch (event->event_id) {
         case SYSTEM_EVENT_WIFI_READY:
+        {
             os_printf("SYSTEM_EVENT_WIFI_READY\n");
             break;
+        }
         case SYSTEM_EVENT_SCAN_DONE:
+        {
+            system_event_sta_scan_done_t *scan_done;
             scan_done = &event->event_info.scan_done;
             os_printf("SYSTEM_EVENT_SCAN_DONE\nstatus:%d, number:%d\n", \
                 scan_done->status, scan_done->number);
             break;
+        }
         case SYSTEM_EVENT_STA_START:
+        {
             os_printf("SYSTEM_EVENT_STA_START\n");
             break;
+        }
         case SYSTEM_EVENT_STA_STOP:
+        {
             os_printf("SYSTEM_EVENT_STA_STOP\n");
             break;
+        }
         case SYSTEM_EVENT_STA_CONNECTED:
+        {
+            system_event_sta_connected_t *connected; 
             connected = &event->event_info.connected;
             os_printf("SYSTEM_EVENT_STA_CONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, channel:%d\n", \
                 connected->ssid, connected->ssid_len, connected->bssid[0], connected->bssid[0], connected->bssid[1], \
                 connected->bssid[3], connected->bssid[4], connected->bssid[5], connected->channel);
             break;
+        }
         case SYSTEM_EVENT_STA_DISCONNECTED:
+        {
+            system_event_sta_disconnected_t *disconnected;
             disconnected = &event->event_info.disconnected;
             os_printf("SYSTEM_EVENT_STA_DISCONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, reason:%d\n", \
                 disconnected->ssid, disconnected->ssid_len, disconnected->bssid[0], disconnected->bssid[0], disconnected->bssid[1], \
                 disconnected->bssid[3], disconnected->bssid[4], disconnected->bssid[5], disconnected->reason);
             break;
+        }
         case SYSTEM_EVENT_STA_AUTHMODE_CHANGE:
+        {
+            system_event_sta_authmode_change_t *auth_change;
             auth_change = &event->event_info.auth_change;
             os_printf("SYSTEM_EVENT_STA_AUTHMODE_CHNAGE\nold_mode:%d, new_mode:%d\n", auth_change->old_mode, auth_change->new_mode);
             break;
+        }
         case SYSTEM_EVENT_STA_GOTIP:
+        {
+            system_event_sta_gotip_t *got_ip;
             got_ip = &event->event_info.got_ip;
             os_printf("SYSTEM_EVENT_STA_GOTIP\n");
             break;
+        }
         case SYSTEM_EVENT_AP_START:
+        {
             os_printf("SYSTEM_EVENT_AP_START\n");
             break;
+        }
         case SYSTEM_EVENT_AP_STOP:
+        {
             os_printf("SYSTEM_EVENT_AP_STOP\n");
             break;
+        }
         case SYSTEM_EVENT_AP_STACONNECTED:
+        {
+            system_event_ap_staconnected_t *staconnected;
             staconnected = &event->event_info.sta_connected;
             os_printf("SYSTEM_EVENT_AP_STACONNECTED\nmac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d\n", \
                 staconnected->mac[0], staconnected->mac[0], staconnected->mac[1], \
                 staconnected->mac[3], staconnected->mac[4], staconnected->mac[5], staconnected->aid);
             break;
+        }
         case SYSTEM_EVENT_AP_STADISCONNECTED:
+        {
+            system_event_ap_stadisconnected_t *stadisconnected;
             stadisconnected = &event->event_info.sta_disconnected;
             os_printf("SYSTEM_EVENT_AP_STADISCONNECTED\nmac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d\n", \
                 stadisconnected->mac[0], stadisconnected->mac[0], stadisconnected->mac[1], \
                 stadisconnected->mac[3], stadisconnected->mac[4], stadisconnected->mac[5], stadisconnected->aid);
             break;
+        }
         case SYSTEM_EVENT_AP_PROBEREQRECVED:
+        {
+            system_event_ap_probe_req_rx_t *ap_probereqrecved;
             ap_probereqrecved = &event->event_info.ap_probereqrecved;
             os_printf("SYSTEM_EVENT_AP_PROBEREQRECVED\nrssi:%d, mac:%02x:%02x:%02x:%02x:%02x:%02x\n", \
                 ap_probereqrecved->rssi, ap_probereqrecved->mac[0], ap_probereqrecved->mac[0], ap_probereqrecved->mac[1], \
                 ap_probereqrecved->mac[3], ap_probereqrecved->mac[4], ap_probereqrecved->mac[5]);
             break;
+        }
         default:
+        {
             os_printf("Error: no such kind of event!\n");
             break;
+        }
     }
 
     return ESP_OK;
