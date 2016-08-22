@@ -153,9 +153,7 @@ TEST_CASE("when page is full, adding an element fails", "[nvs]")
         snprintf(name, sizeof(name), "i%ld", i);
         CHECK(page.writeItem(1, name, i) == ESP_OK);
     }
-    CHECK(page.state() == Page::PageState::FULL);
     CHECK(page.writeItem(1, "foo", 64UL) == ESP_ERR_NVS_PAGE_FULL);
-    CHECK(page.state() == Page::PageState::FULL);
 }
 
 TEST_CASE("page maintains its seq number")
@@ -527,162 +525,194 @@ TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][.][long]")
     }
 }
 
-template<typename TGen>
-esp_err_t doRandomThings(nvs_handle handle, TGen gen, size_t count) {
+extern "C" void nvs_dump();
+
+class RandomTest {
     
-    const char* keys[] = {"foo", "bar", "longkey_0123456", "another key", "param1", "param2", "param3", "param4", "param5"};
-    const ItemType types[] = {ItemType::I32, ItemType::I32, ItemType::U64, ItemType::U64, ItemType::SZ, ItemType::SZ, ItemType::SZ, ItemType::SZ, ItemType::SZ};
-    
+    static const size_t nKeys = 9;
     int32_t v1 = 0, v2 = 0;
     uint64_t v3 = 0, v4 = 0;
-    const size_t strBufLen = 1024;
+    static const size_t strBufLen = 1024;
     char v5[strBufLen], v6[strBufLen], v7[strBufLen], v8[strBufLen], v9[strBufLen];
-    
-    void* values[] = {&v1, &v2, &v3, &v4, &v5, &v6, &v7, &v8, &v9};
-    
-    const size_t nKeys = sizeof(keys) / sizeof(keys[0]);
-    static_assert(nKeys == sizeof(types) / sizeof(types[0]), "");
-    static_assert(nKeys == sizeof(values) / sizeof(values[0]), "");
-    
     bool written[nKeys];
-    std::fill_n(written, nKeys, false);
     
-    auto generateRandomString = [](char* dst, size_t size) {
-        size_t len = 0;
-    };
-    
-    auto randomRead = [&](size_t index) -> esp_err_t {
-        switch (types[index]) {
-            case ItemType::I32:
-            {
-                int32_t val;
-                auto err = nvs_get_i32(handle, keys[index], &val);
-                if (err == ESP_ERR_FLASH_OP_FAIL) {
-                    return err;
-                }
-                if (!written[index]) {
-                    REQUIRE(err == ESP_ERR_NVS_NOT_FOUND);
-                }
-                else {
-                    REQUIRE(val == *reinterpret_cast<int32_t*>(values[index]));
-                }
-                break;
-            }
-                
-            case ItemType::U64:
-            {
-                uint64_t val;
-                auto err = nvs_get_u64(handle, keys[index], &val);
-                if (err == ESP_ERR_FLASH_OP_FAIL) {
-                    return err;
-                }
-                if (!written[index]) {
-                    REQUIRE(err == ESP_ERR_NVS_NOT_FOUND);
-                }
-                else {
-                    REQUIRE(val == *reinterpret_cast<uint64_t*>(values[index]));
-                }
-                break;
-            }
-                
-            case ItemType::SZ:
-            {
-                char buf[strBufLen];
-                size_t len = strBufLen;
-                auto err = nvs_get_str(handle, keys[index], buf, &len);
-                if (err == ESP_ERR_FLASH_OP_FAIL) {
-                    return err;
-                }
-                if (!written[index]) {
-                    REQUIRE(err == ESP_ERR_NVS_NOT_FOUND);
-                }
-                else {
-                    REQUIRE(strncmp(buf, reinterpret_cast<const char*>(values[index]), strBufLen));
-                }
-                break;
-            }
-                
-            default:
-                assert(0);
-        }
-        return ESP_OK;
-    };
-    
-    auto randomWrite = [&](size_t index) -> esp_err_t {
-        switch (types[index]) {
-            case ItemType::I32:
-            {
-                int32_t val = static_cast<int32_t>(gen());
-                *reinterpret_cast<int32_t*>(values[index]) = val;
-                
-                auto err = nvs_set_i32(handle, keys[index], val);
-                if (err == ESP_ERR_FLASH_OP_FAIL) {
-                    return err;
-                }
-                REQUIRE(err == ESP_OK);
-                written[index] = true;
-                break;
-            }
-                
-            case ItemType::U64:
-            {
-                uint64_t val = static_cast<uint64_t>(gen());
-                *reinterpret_cast<uint64_t*>(values[index]) = val;
-                
-                auto err = nvs_set_u64(handle, keys[index], val);
-                if (err == ESP_ERR_FLASH_OP_FAIL) {
-                    return err;
-                }
-                REQUIRE(err == ESP_OK);
-                written[index] = true;
-                break;
-            }
-                
-            case ItemType::SZ:
-            {
-                char buf[strBufLen];
-                size_t len = strBufLen;
-                
-                size_t strLen = gen() % (strBufLen - 1);
-                std::generate_n(buf, strLen, [&]() -> char {
-                    const char c = static_cast<char>(gen() % 127);
-                    return (c < 32) ? 32 : c;
-                });
-                
-                auto err = nvs_set_str(handle, keys[index], buf);
-                if (err == ESP_ERR_FLASH_OP_FAIL) {
-                    return err;
-                }
-                REQUIRE(err == ESP_OK);
-                written[index] = true;
-                break;
-            }
-                
-            default:
-                assert(0);
-        }
-        return ESP_OK;
-    };
-    
-    
-    for (size_t i = 0; i < count; ++i) {
-        size_t index = gen() % nKeys;
-        switch (gen() % 3) {
-            case 0:  // read, 1/3
-                if (randomRead(index) == ESP_ERR_FLASH_OP_FAIL) {
-                    return ESP_ERR_FLASH_OP_FAIL;
-                }
-                break;
-                
-            default: // write, 2/3
-                if (randomWrite(index) == ESP_ERR_FLASH_OP_FAIL) {
-                    return ESP_ERR_FLASH_OP_FAIL;
-                }
-                break;
-        }
+public:
+    RandomTest()
+    {
+        std::fill_n(written, nKeys, false);
     }
-    return ESP_OK;
-}
+
+    template<typename TGen>
+    esp_err_t doRandomThings(nvs_handle handle, TGen gen, size_t& count) {
+    
+        const char* keys[] = {"foo", "bar", "longkey_0123456", "another key", "param1", "param2", "param3", "param4", "param5"};
+        const ItemType types[] = {ItemType::I32, ItemType::I32, ItemType::U64, ItemType::U64, ItemType::SZ, ItemType::SZ, ItemType::SZ, ItemType::SZ, ItemType::SZ};
+        
+        void* values[] = {&v1, &v2, &v3, &v4, &v5, &v6, &v7, &v8, &v9};
+        
+        const size_t nKeys = sizeof(keys) / sizeof(keys[0]);
+        static_assert(nKeys == sizeof(types) / sizeof(types[0]), "");
+        static_assert(nKeys == sizeof(values) / sizeof(values[0]), "");
+        
+        
+        auto generateRandomString = [](char* dst, size_t size) {
+            size_t len = 0;
+        };
+        
+        auto randomRead = [&](size_t index) -> esp_err_t {
+            switch (types[index]) {
+                case ItemType::I32:
+                {
+                    int32_t val;
+                    auto err = nvs_get_i32(handle, keys[index], &val);
+                    if (err == ESP_ERR_FLASH_OP_FAIL) {
+                        return err;
+                    }
+                    if (!written[index]) {
+                        REQUIRE(err == ESP_ERR_NVS_NOT_FOUND);
+                    }
+                    else {
+                        REQUIRE(err == ESP_OK);
+                        REQUIRE(val == *reinterpret_cast<int32_t*>(values[index]));
+                    }
+                    break;
+                }
+                    
+                case ItemType::U64:
+                {
+                    uint64_t val;
+                    auto err = nvs_get_u64(handle, keys[index], &val);
+                    if (err == ESP_ERR_FLASH_OP_FAIL) {
+                        return err;
+                    }
+                    if (!written[index]) {
+                        REQUIRE(err == ESP_ERR_NVS_NOT_FOUND);
+                    }
+                    else {
+                        REQUIRE(err == ESP_OK);
+                        REQUIRE(val == *reinterpret_cast<uint64_t*>(values[index]));
+                    }
+                    break;
+                }
+                    
+                case ItemType::SZ:
+                {
+                    char buf[strBufLen];
+                    size_t len = strBufLen;
+                    auto err = nvs_get_str(handle, keys[index], buf, &len);
+                    if (err == ESP_ERR_FLASH_OP_FAIL) {
+                        return err;
+                    }
+                    if (!written[index]) {
+                        REQUIRE(err == ESP_ERR_NVS_NOT_FOUND);
+                    }
+                    else {
+                        REQUIRE(err == ESP_OK);
+                        REQUIRE(strncmp(buf, reinterpret_cast<const char*>(values[index]), strBufLen) == 0);
+                    }
+                    break;
+                }
+                    
+                default:
+                    assert(0);
+            }
+            return ESP_OK;
+        };
+        
+        auto randomWrite = [&](size_t index) -> esp_err_t {
+            switch (types[index]) {
+                case ItemType::I32:
+                {
+                    int32_t val = static_cast<int32_t>(gen());
+                    
+                    auto err = nvs_set_i32(handle, keys[index], val);
+                    if (err == ESP_ERR_FLASH_OP_FAIL) {
+                        return err;
+                    }
+                    if (err == ESP_ERR_NVS_REMOVE_FAILED) {
+                        written[index] = true;
+                        *reinterpret_cast<int32_t*>(values[index]) = val;
+                        return ESP_ERR_FLASH_OP_FAIL;
+                    }
+                    REQUIRE(err == ESP_OK);
+                    written[index] = true;
+                    *reinterpret_cast<int32_t*>(values[index]) = val;
+                    break;
+                }
+                    
+                case ItemType::U64:
+                {
+                    uint64_t val = static_cast<uint64_t>(gen());
+                    
+                    auto err = nvs_set_u64(handle, keys[index], val);
+                    if (err == ESP_ERR_FLASH_OP_FAIL) {
+                        return err;
+                    }
+                    if (err == ESP_ERR_NVS_REMOVE_FAILED) {
+                        written[index] = true;
+                        *reinterpret_cast<uint64_t*>(values[index]) = val;
+                        return ESP_ERR_FLASH_OP_FAIL;
+                    }
+                    REQUIRE(err == ESP_OK);
+                    written[index] = true;
+                    *reinterpret_cast<uint64_t*>(values[index]) = val;
+                    break;
+                }
+                    
+                case ItemType::SZ:
+                {
+                    char buf[strBufLen];
+                    size_t len = strBufLen;
+                    
+                    size_t strLen = gen() % (strBufLen - 1);
+                    std::generate_n(buf, strLen, [&]() -> char {
+                        const char c = static_cast<char>(gen() % 127);
+                        return (c < 32) ? 32 : c;
+                    });
+                    buf[strLen] = 0;
+                    
+                    auto err = nvs_set_str(handle, keys[index], buf);
+                    if (err == ESP_ERR_FLASH_OP_FAIL) {
+                        return err;
+                    }
+                    if (err == ESP_ERR_NVS_REMOVE_FAILED) {
+                        written[index] = true;
+                        strlcpy(reinterpret_cast<char*>(values[index]), buf, strBufLen);
+                        return ESP_ERR_FLASH_OP_FAIL;
+                    }
+                    REQUIRE(err == ESP_OK);
+                    written[index] = true;
+                    strlcpy(reinterpret_cast<char*>(values[index]), buf, strBufLen);
+                    break;
+                }
+                    
+                default:
+                    assert(0);
+            }
+            return ESP_OK;
+        };
+        
+        
+        for (; count != 0; --count) {
+            size_t index = gen() % nKeys;
+            switch (gen() % 3) {
+                case 0:  // read, 1/3
+                    if (randomRead(index) == ESP_ERR_FLASH_OP_FAIL) {
+                        return ESP_ERR_FLASH_OP_FAIL;
+                    }
+                    break;
+                    
+                default: // write, 2/3
+                    if (randomWrite(index) == ESP_ERR_FLASH_OP_FAIL) {
+                        return ESP_ERR_FLASH_OP_FAIL;
+                    }
+                    break;
+            }
+        }
+        return ESP_OK;
+    }
+};
+
 
 TEST_CASE("monkey test", "[nvs][monkey]")
 {
@@ -693,6 +723,7 @@ TEST_CASE("monkey test", "[nvs][monkey]")
     
     SpiFlashEmulator emu(10);
     emu.randomize(seed);
+    emu.clearStats();
     
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
@@ -702,9 +733,66 @@ TEST_CASE("monkey test", "[nvs][monkey]")
     
     nvs_handle handle;
     TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
+    RandomTest test;
+    size_t count = 1000;
+    CHECK(test.doRandomThings(handle, gen, count) == ESP_OK);
+    
+    s_perf << "Monkey test: nErase=" << emu.getEraseOps() << " nWrite=" << emu.getWriteOps() << std::endl;
+}
 
-    CHECK(doRandomThings(handle, gen, 10000) == ESP_OK);
+TEST_CASE("test recovery from sudden poweroff", "[nvs][recovery]")
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    uint32_t seed = 3;
+    gen.seed(seed);
+    const size_t iter_count = 2000;
+    
+    SpiFlashEmulator emu(10);
+    
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+    
+    size_t totalOps = 0;
+    int lastPercent = -1;
+    for (uint32_t errDelay = 4; ; ++errDelay) {
+        INFO(errDelay);
+        emu.randomize(seed);
+        emu.clearStats();
+        emu.failAfter(errDelay);
+        RandomTest test;
+        
+        if (totalOps != 0) {
+            int percent = errDelay * 100 / totalOps;
+            if (percent != lastPercent) {
+                printf("%d/%d (%d%%)\r\n", errDelay, static_cast<int>(totalOps), percent);
+                lastPercent = percent;
+            }
+        }
+        
+        TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
 
+        nvs_handle handle;
+        TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
+        
+        size_t count = iter_count;
+        if(test.doRandomThings(handle, gen, count) != ESP_ERR_FLASH_OP_FAIL) {
+            nvs_close(handle);
+            break;
+        }
+        nvs_close(handle);
+        
+        TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+        TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
+        auto res = test.doRandomThings(handle, gen, count);
+        if (res != ESP_OK) {
+            nvs_dump();
+            CHECK(0);
+        }
+        nvs_close(handle);
+        totalOps = emu.getEraseOps() + emu.getWriteOps();
+    }
 }
 
 TEST_CASE("dump all performance data", "[nvs]")

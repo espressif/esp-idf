@@ -73,6 +73,10 @@ public:
                 dstAddr + size > mData.size() * 4) {
             return false;
         }
+        
+        if (mFailCountdown != SIZE_T_MAX && mFailCountdown-- == 0) {
+            return false;
+        }
 
         for (size_t i = 0; i < size / 4; ++i) {
             uint32_t sv = src[i];
@@ -101,6 +105,10 @@ public:
         
         if (sectorNumber < mLowerSectorBound || sectorNumber >= mUpperSectorBound) {
             WARN("invalid flash operation detected: erase sector=" << sectorNumber);
+            return false;
+        }
+        
+        if (mFailCountdown != SIZE_T_MAX && mFailCountdown-- == 0) {
             return false;
         }
 
@@ -173,6 +181,10 @@ public:
         mLowerSectorBound = lowerSector;
         mUpperSectorBound = upperSector;
     }
+    
+    void failAfter(uint32_t count) {
+        mFailCountdown = count;
+    }
 
 protected:
     static size_t getReadOpTime(uint32_t bytes);
@@ -190,6 +202,8 @@ protected:
     mutable size_t mTotalTime = 0;
     size_t mLowerSectorBound = 0;
     size_t mUpperSectorBound = 0;
+    
+    size_t mFailCountdown = SIZE_T_MAX;
 
 };
 

@@ -40,7 +40,7 @@ public:
 
     bool operator==(const CachedFindInfo& other) const
     {
-        return mKeyPtr == other.mKeyPtr && mType == other.mType && mNsIndex == other.mNsIndex;
+        return mKeyPtr != nullptr && mKeyPtr == other.mKeyPtr && mType == other.mType && mNsIndex == other.mNsIndex;
     }
 
     void setItemIndex(uint32_t index)

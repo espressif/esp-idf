@@ -36,6 +36,7 @@ typedef uint32_t nvs_handle;
 #define ESP_ERR_NVS_NOT_ENOUGH_SPACE    (ESP_ERR_NVS_BASE + 0x05)
 #define ESP_ERR_NVS_INVALID_NAME        (ESP_ERR_NVS_BASE + 0x06)
 #define ESP_ERR_NVS_INVALID_HANDLE      (ESP_ERR_NVS_BASE + 0x07)
+#define ESP_ERR_NVS_REMOVE_FAILED       (ESP_ERR_NVS_BASE + 0x08)
 #define ESP_ERR_NVS_KEY_TOO_LONG        (ESP_ERR_NVS_BASE + 0x09)
 #define ESP_ERR_NVS_PAGE_FULL           (ESP_ERR_NVS_BASE + 0x0a)
 #define ESP_ERR_NVS_INVALID_STATE       (ESP_ERR_NVS_BASE + 0x0b)
@@ -92,6 +93,10 @@ esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_ha
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
  *             - ESP_ERR_NVS_NOT_ENOUGH_SPACE if there is not enough space in the
  *               underlying storage to save the value
+ *             - ESP_ERR_NVS_REMOVE_FAILED if the value wasn't updated because flash
+ *               write operation has failed. The value was written however, and
+ *               update will be finished after re-initialization of nvs, provided that
+ *               flash operation doesn't fail again.
  */
 esp_err_t nvs_set_i8  (nvs_handle handle, const char* key, int8_t value);
 esp_err_t nvs_set_u8  (nvs_handle handle, const char* key, uint8_t value);
