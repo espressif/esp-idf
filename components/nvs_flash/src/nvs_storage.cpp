@@ -44,6 +44,7 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
         return err;
     }
 
+    // load namespaces list
     clearNamespaces();
     std::fill_n(mNamespaceUsage.data(), mNamespaceUsage.byteSize() / 4, 0);
     for (auto it = mPageManager.begin(); it != mPageManager.end(); ++it) {
@@ -56,6 +57,7 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
             item.getValue(entry->mIndex);
             mNamespaces.push_back(entry);
             mNamespaceUsage.set(entry->mIndex, true);
+            itemIndex += item.span;
         }
     }
     mNamespaceUsage.set(0, true);
