@@ -37,7 +37,10 @@ $(OUTPUT_DIR):
 test: $(TEST_PROGRAM)
 	./$(TEST_PROGRAM)
 
-$(COVERAGE_FILES): $(TEST_PROGRAM) test
+long-test: $(TEST_PROGRAM)
+	./$(TEST_PROGRAM) [list],[enumtable],[spi_flash_emu],[nvs],[long]
+
+$(COVERAGE_FILES): $(TEST_PROGRAM) long-test
 
 coverage.info: $(COVERAGE_FILES)
 	find ../src/ -name "*.gcno" -exec gcov -r -pb {} +

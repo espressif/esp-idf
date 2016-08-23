@@ -735,7 +735,7 @@ TEST_CASE("monkey test", "[nvs][monkey]")
     s_perf << "Monkey test: nErase=" << emu.getEraseOps() << " nWrite=" << emu.getWriteOps() << std::endl;
 }
 
-TEST_CASE("test recovery from sudden poweroff", "[nvs][recovery]")
+TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey]")
 {
     std::random_device rd;
     std::mt19937 gen(rd());
