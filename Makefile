@@ -5,5 +5,5 @@
 
 PROJECT_NAME := app-template
 
-include $(SDK_PATH)/make/project.mk
+include $(IDF_PATH)/make/project.mk
 
