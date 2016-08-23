@@ -1,40 +1,50 @@
 Step 0: Prerequisites
 =====================
 
-Getting MacPorts or homebrew
-----------------------------
+Install some packages
+---------------------
 
-Whether you compile the toolchain from source or download binary toolchain, there are some dependencies which need to be installed on macOS first. These dependencies are installed with one of the package managers: homebrew or MacPorts. If you have these already, you can skip the following instructions.
+To compile with ESP-IDF you need to get the following packages:
 
-- Install XCode from Mac App Store
-- Open Terminal.app and run ``xcode-select --install``
-- Run ``sudo xcodebuild -license`` and agree to XCode license
-- Install MacPorts_ or homebrew_
+- Ubuntu::
+    
+    sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial 
 
-.. _homebrew: http://brew.sh/
-.. _MacPorts: https://www.macports.org/install.php
+- Debian::
+
+    TODO
+
+- Arch::
+    
+    TODO
 
 
 Step 1: Download binary toolchain for the ESP32
 ==================================================
 
-ESP32 toolchain for macOS is available for download from Espressif website:
+ESP32 toolchain for Linux is available for download from Espressif website:
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-59.tar.gz
+- for 64-bit Linux::
+
+    https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-59.tar.gz
+
+- for 32-bit Linux::
+
+    https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-59.tar.gz
 
 Download this file, then extract it to the location you prefer, for example::
 
     mkdir -p ~/esp
     cd ~/esp
-    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-59.tar.gz
+    tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-59.tar.gz
 
 The toolchain will be extracted into ``~/esp/xtensa-esp32-elf/`` directory.
 
-To use it, you will need to update your ``PATH`` environment variable in ``~/.profile`` file. To make ``xtensa-esp32-elf`` available for all terminal sessions, add the following line to your ``~/.profile`` file::
+To use it, you will need to update your ``PATH`` environment variable in ``~/.bash_profile`` file. To make ``xtensa-esp32-elf`` available for all terminal sessions, add the following line to your ``~/.bash_profile`` file::
 
     export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin
 
-Alternatively, you may create an alias for the above command. This way you can get the toolchain only when you need it. To do this, add different line to your ``~/.profile`` file::
+Alternatively, you may create an alias for the above command. This way you can get the toolchain only when you need it. To do this, add different line to your ``~/.bash_profile`` file::
 
     alias get_esp32="export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin"
 
@@ -59,24 +69,17 @@ In any case, here are the steps to compile the toolchain yourself.
 
 - Install dependencies:
 
-  - with MacPorts::
+  - Ubuntu::
 
-        sudo port install gsed gawk binutils gperf grep gettext ncurses
+        sudo apt-get install gawk gperf grep gettext ncurses python python-dev automake bison flex texinfo help2man libtool
 
-  - with homebrew (*TODO: provide list of packages for homebrew*)
+  - Debian::
 
-Create a case-sensitive filesystem image::
+        TODO
 
-    hdiutil create ~/esp/crosstool.dmg -volname "ctng" -size 10g -fs "Case-sensitive HFS+"
+  - Arch::
 
-Mount it::
-
-    hdiutil mount ~/esp/crosstool.dmg
-
-Create a symlink to your work directory::
-
-    cd ~/esp
-    ln -s /Volumes/ctng crosstool-NG
+        TODO
 
 Download ``crosstool-NG`` and build it::
 
@@ -139,10 +142,6 @@ At this point you may configure the serial port to be used for uploading. Run::
     make menuconfig
 
 Then navigate to "Serial flasher config" submenu and change value of "Default serial port" to match the serial port you will use. Also take a moment to explore other options which are configurable in ``menuconfig``.
-
-If you don't know device name for the  serial port of your development board, run this command two times, first with the board unplugged, then with the board plugged in. The port which appears the second time is the one you need::
-
-    ls /dev/tty.*
 
 Now you can build and flash the application. Run::
 
