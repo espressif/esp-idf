@@ -19,7 +19,8 @@
 struct TestNode : public intrusive_list_node<TestNode> {
     TestNode(const char* name_ = "", int num_ = 0) : num(num_)
     {
-        strlcpy(name, name_, sizeof(name));
+        strncpy(name, name_, sizeof(name) - 1);
+        name[sizeof(name) - 1] = 0;
     }
     char name[32];
     int num;

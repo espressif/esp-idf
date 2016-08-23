@@ -18,7 +18,7 @@
 #include "crc.h"
 #endif
 #include <cstdio>
-
+#include <cstring>
 
 namespace nvs
 {
@@ -156,8 +156,8 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
     std::fill_n(reinterpret_cast<uint32_t*>(item.key),  sizeof(item.key)  / 4, 0xffffffff);
     std::fill_n(reinterpret_cast<uint32_t*>(item.data), sizeof(item.data) / 4, 0xffffffff);
 
-    strlcpy(item.key, key, Item::MAX_KEY_LENGTH + 1);
-
+    strncpy(item.key, key, sizeof(item.key) - 1);
+    item.key[sizeof(item.key) - 1] = 0;
 
     if (datatype != ItemType::SZ && datatype != ItemType::BLOB) {
         memcpy(item.data, data, dataSize);

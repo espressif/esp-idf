@@ -62,7 +62,7 @@ TEST_CASE("crc32 behaves as expected", "[nvs]")
     CHECK(crc32_1 != item2.calculateCrc32());
 
     item2 = item1;
-    strlcpy(item2.key, "foo", Item::MAX_KEY_LENGTH);
+    strncpy(item2.key, "foo", Item::MAX_KEY_LENGTH);
     CHECK(crc32_1 != item2.calculateCrc32());
 }
 
@@ -672,12 +672,12 @@ public:
                     }
                     if (err == ESP_ERR_NVS_REMOVE_FAILED) {
                         written[index] = true;
-                        strlcpy(reinterpret_cast<char*>(values[index]), buf, strBufLen);
+                        strncpy(reinterpret_cast<char*>(values[index]), buf, strBufLen);
                         return ESP_ERR_FLASH_OP_FAIL;
                     }
                     REQUIRE(err == ESP_OK);
                     written[index] = true;
-                    strlcpy(reinterpret_cast<char*>(values[index]), buf, strBufLen);
+                    strncpy(reinterpret_cast<char*>(values[index]), buf, strBufLen);
                     break;
                 }
                     

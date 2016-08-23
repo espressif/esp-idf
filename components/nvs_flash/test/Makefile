@@ -29,7 +29,7 @@ COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
 $(OBJ_FILES): %.o: %.cpp
 
 $(TEST_PROGRAM): $(OBJ_FILES)
-	gcc $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES)
+	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES)
 
 $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)

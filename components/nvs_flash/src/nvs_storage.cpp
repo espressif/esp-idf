@@ -161,7 +161,8 @@ esp_err_t Storage::createOrOpenNamespace(const char* nsName, bool canCreate, uin
         
         NamespaceEntry* entry = new NamespaceEntry;
         entry->mIndex = ns;
-        strlcpy(entry->mName, nsName, sizeof(entry->mName));
+        strncpy(entry->mName, nsName, sizeof(entry->mName) - 1);
+        entry->mName[sizeof(entry->mName) - 1] = 0;
         mNamespaces.push_back(entry);
 
     } else {
