@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Espressif ESP32 SDK Configuration
+# Espressif IoT Development Framework Configuration
 #
 
 #
@@ -42,13 +42,14 @@ CONFIG_APP_OFFSET=0x10000
 #
 
 #
-# WiFi config
+# ESP32-specific config
 #
 CONFIG_WIFI_ENABLED=y
 CONFIG_WIFI_AUTO_STARTUP=y
 CONFIG_WIFI_AUTO_CONNECT=y
 CONFIG_WIFI_ENENT_QUEUE_SIZE=32
 CONFIG_WIFI_EVENT_TASK_STACK_SIZE=2048
+CONFIG_NEWLIB_STDOUT_ADDCR=y
 
 #
 # FreeRTOS
@@ -72,3 +73,7 @@ CONFIG_FREERTOS_DEBUG_OCDAWARE=y
 # LWIP
 #
 CONFIG_LWIP_MAX_SOCKETS=4
+
+#
+# FreeRTOS
+#
