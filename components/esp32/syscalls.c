@@ -20,11 +20,10 @@
 #include <sys/reent.h>
 #include <stdlib.h>
 #include "rom/libc_stubs.h"
+#include "rom/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/task.h"
-
-int uart_tx_one_char(uint8_t c);
 
 void abort() {
     do
