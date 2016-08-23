@@ -38,7 +38,7 @@ static tcpip_adapter_dhcp_status_t dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
 
 static esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif);
 
-#define TCPIP_ADAPTER_DEBUG  ets_printf
+#define TCPIP_ADAPTER_DEBUG  printf
 
 void tcpip_adapter_init(void)
 {

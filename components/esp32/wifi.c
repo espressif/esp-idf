@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "esp_err.h"
 #include "esp_wifi.h"
@@ -23,30 +24,11 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
-//#include "tcpip_adapter.h"
-
-#define ESP32_WORKAROUND 1
-
 #if CONFIG_WIFI_ENABLED
-
-#ifdef ESP32_WORKAROUND
-
-SemaphoreHandle_t stdio_mutex_tx = NULL;
-#define os_printf(fmt, ...) do {\
-    if (!stdio_mutex_tx) {\
-        stdio_mutex_tx = xSemaphoreCreateMutex();\
-    }\
-\
-    xSemaphoreTake(stdio_mutex_tx, portMAX_DELAY);\
-    ets_printf(fmt, ##__VA_ARGS__);\
-    xSemaphoreGive(stdio_mutex_tx);\
-} while (0)
-
-#endif
 
 static wifi_startup_cb_t startup_cb;
 
-#define WIFI_DEBUG  os_printf
+#define WIFI_DEBUG  printf
 #define WIFI_API_CALL_CHECK(info, api_call, ret) \
 do{\
     esp_err_t __err = (api_call);\

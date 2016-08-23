@@ -459,7 +459,7 @@ dhcp_fine_tmr(void)
 #if 0
       if (DHCP_MAXRTX != 0) {
     	  if (netif->dhcp->tries >= DHCP_MAXRTX){
-			  //os_printf("DHCP timeout\n");
+			  //printf("DHCP timeout\n");
 			  if (netif->dhcp_event != NULL)
 				  netif->dhcp_event();
 			  break;

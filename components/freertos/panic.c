@@ -35,7 +35,7 @@ overflow handler also is in here.
 */
 
 #if !CONFIG_FREERTOS_PANIC_SILENT_REBOOT
-//os_printf may be broken, so we fix our own printing fns...
+//printf may be broken, so we fix our own printing fns...
 inline static void panicPutchar(char c) {
 	while (((READ_PERI_REG(UART_STATUS_REG(0))>>UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT)>=126) ;
 	WRITE_PERI_REG(UART_FIFO_REG(0), c);

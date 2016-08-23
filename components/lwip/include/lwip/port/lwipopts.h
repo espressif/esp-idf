@@ -222,7 +222,6 @@ extern unsigned long os_random(void);
  * (2 * TCP_MSS) for things to work well
  */
 #ifdef PERF
-
 extern unsigned char misc_prof_get_tcpw(void);
 extern unsigned char misc_prof_get_tcp_snd_buf(void);
 #define TCP_WND                         (misc_prof_get_tcpw()*TCP_MSS)
@@ -470,7 +469,7 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
 /**
  * SOCKETS_DEBUG: Enable debugging in sockets.c.
  */
-#define SOCKETS_DEBUG                   LWIP_DBG_OFF
+#define SOCKETS_DEBUG                   LWIP_DBG_ON
 
 /**
  * ICMP_DEBUG: Enable debugging in icmp.c.

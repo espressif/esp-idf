@@ -88,8 +88,8 @@ bool dhcp_search_ip_on_mac(u8_t *mac, ip4_addr_t *ip);
 #define DHCPS_DEBUG 1
 #if DHCPS_DEBUG    	
 #define log_info(message, ...)   do { \
-		os_printf((message), ##__VA_ARGS__);   \
-		os_printf("\n");		  \
+		printf((message), ##__VA_ARGS__);   \
+		printf("\n");		  \
 	  } while(0);
 	
 #else
