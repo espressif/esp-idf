@@ -196,6 +196,10 @@ class ESPROM(object):
         else:  # otherwise, just return the 'val' field which comes from the reply header (this is used by read_reg)
             return val
 
+    def flush_input(self):
+        self._port.flushInput()
+        self._slip_reader = slip_reader(self._port)
+
     def sync(self):
         """ Perform a connection test """
         self.command(ESPROM.ESP_SYNC, '\x07\x07\x12\x20' + 32 * '\x55')
@@ -223,8 +227,7 @@ class ESPROM(object):
             last_exception = None
             for _ in xrange(4):
                 try:
-                    self._port.flushInput()
-                    self._slip_reader = slip_reader(self._port)
+                    self.flush_input()
                     self._port.flushOutput()
                     self.sync()
                     self._port.timeout = 5
@@ -377,6 +380,9 @@ class ESP8266ROM(ESPROM):
         '4MB-c1':0x60,
         '4MB-c2':0x70}
 
+    def change_baud(self, baud):
+        pass # no change baud command on ESP8266 ROM
+
     def chip_id(self):
         """ Read Chip ID from OTP ROM - see http://esp8266-re.foogod.com/wiki/System_get_chip_id_%28IoT_RTOS_SDK_0.9.9%29 """
         id0 = self.read_reg(self.ESP_OTP_MAC0)
@@ -523,13 +529,13 @@ class ESP32ROM(ESP31ROM):
         # the MD5 command is special (
         return self.check_command('calculate md5sum', self.ESP_SPI_FLASH_MD5, struct.pack('<IIII', addr, size, 0, 0))
 
-    def changebaud(self, baud):
+    def change_baud(self, baud):
         print "Changing baud rate to %d" % baud
         self.command(self.ESP_CHANGE_BAUDRATE, struct.pack('<II', baud, 0))
         print "Changed."
-        time.sleep(0.05)  # get rid of crap sent during baud rate change
-        self._port.flushInput()
         self._port.baudrate = baud
+        time.sleep(0.05)  # get rid of crap sent during baud rate change
+        self.flush_input()
 
     def flash_spi_attach_req(self,ucIsHspi,ucIsLegacy):
         """Send SPI attach command
@@ -1672,6 +1678,10 @@ def main():
             'esp32': ESP32ROM,
         }[args.chip]
         esp = chip_constructor_fun(args.port, initial_baud)
+        # try to set a higher baud, this is a no-op if we need to
+        # wait for the flasher stub to kick in before doing this.
+        esp.change_baud(args.baud)
+
         operation_func(esp, args)
     else:
         operation_func(args)

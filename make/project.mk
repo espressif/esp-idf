@@ -13,7 +13,7 @@
 .PHONY: build-components menuconfig all build clean all_binaries
 all: all_binaries # other components will add dependencies to 'all_binaries'
 	@echo "To flash all build output, run 'make flash' or:"
-	@echo $(ESPTOOLPY_SERIAL) write_flash $(ESPTOOL_ALL_FLASH_ARGS)
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 # (the reason all_binaries is used instead of 'all' is so that the flash target
 # can build everything without triggering the per-component "to flash..."
@@ -174,7 +174,7 @@ $(APP_ELF): $(addsuffix -build,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 # component's Makefile.projbuild
 app: $(APP_BIN)
 	@echo "App built. Default flash app command is:"
-	@echo $(APP_FLASH_COMMAND) # APP_FLASH_COMMAND is set in esptool_py's Makefile.projbuild
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
 
 all_binaries: $(APP_BIN)
 
