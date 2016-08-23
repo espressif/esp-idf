@@ -138,6 +138,13 @@ int _open_r(struct _reent *r, const char * path, int flags, int mode) {
 ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size) {
     const char* p = (const char*) data;
     if (fd == STDOUT_FILENO) {
+        /* THIS IS A HACK!!! The stdout "file" should be locked while
+           this code is called (it's locked fflush.c:280 before
+           __sflush_r is called.) It shouldn't be necessary to
+           re-lock, but due to some unknown bug it is...
+        */
+        static _lock_t stdout_lock;
+        _lock_acquire_recursive(&stdout_lock);
         while(size--) {
 #if CONFIG_NEWLIB_STDOUT_ADDCR
             if (*p=='\n') {
@@ -147,6 +154,7 @@ ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size) {
             uart_tx_one_char(*p);
             ++p;
         }
+        _lock_release_recursive(&stdout_lock);
     }
     return size;
 }
