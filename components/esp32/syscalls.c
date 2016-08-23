@@ -134,9 +134,14 @@ int _open_r(struct _reent *r, const char * path, int flags, int mode) {
 }
 
 ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size) {
-	const char* p = (const char*) data;
+    const char* p = (const char*) data;
     if (fd == STDOUT_FILENO) {
         while(size--) {
+#if CONFIG_NEWLIB_STDOUT_ADDCR
+            if (*p=='\n') {
+                uart_tx_one_char('\r');
+            }
+#endif
             uart_tx_one_char(*p);
             ++p;
         }

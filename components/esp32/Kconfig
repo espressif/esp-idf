@@ -1,4 +1,4 @@
-menu "WiFi config"
+menu "ESP32-specific config"
 
 config WIFI_ENABLED
     bool "Enable low-level WiFi stack"
@@ -35,5 +35,16 @@ config WIFI_EVENT_TASK_STACK_SIZE
     depends on WIFI_ENABLED
     help
         Config WiFi event task stack size in different application.
+
+
+config NEWLIB_STDOUT_ADDCR
+	bool "Standard-out output adds carriage return before newline"
+	default y
+	help
+		Most people are used to end their printf strings with a newline. If this
+		is sent as is to the serial port, most terminal programs will only move the
+		cursor one line down, not also move it to the beginning of the line. This
+		is usually done by an added CR character. Enabling this will make the
+		standard output code automatically add a CR character before a LF.
 
 endmenu
