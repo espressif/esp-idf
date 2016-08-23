@@ -1,0 +1,37 @@
+stages:
+  - build
+#  - test
+  - deploy
+
+
+build_template_app:
+  stage: build
+  image: espressif/esp32-ci-env
+
+  variables:
+    SDK_PATH: "$CI_PROJECT_DIR"
+    IDF_PATH: "$CI_PROJECT_DIR"
+    GIT_STRATEGY: clone
+
+  script:
+    - git clone https://github.com/espressif/esp-idf-template.git
+    - cd esp-idf-template
+    - make all
+
+push_master_to_github:
+  stage: deploy
+  only:
+    - master
+  when: on_success
+  image: espressif/esp32-ci-env
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $GH_PUSH_KEY >> ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    - git remote add github git@github.com:espressif/esp-idf.git
+    - git push github HEAD:master
