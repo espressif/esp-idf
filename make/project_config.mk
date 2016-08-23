@@ -28,10 +28,18 @@ ifeq ("$(wildcard $(PROJECT_PATH)/sdkconfig)","")
 $(PROJECT_PATH)/sdkconfig: menuconfig
 endif
 
+defconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
+	$(vecho) DEFCONFIG
+	$(Q) mkdir -p $(PROJECT_PATH)/build/include/config
+	$(Q) KCONFIG_AUTOHEADER=$(PROJECT_PATH)/build/include/sdkconfig.h \
+	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
+	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" \
+	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)" \
+	$(KCONFIG_TOOL_DIR)/conf --olddefconfig $(IDF_PATH)/Kconfig
 
 # Work out of whether we have to build the Kconfig makefile
 # (auto.conf), or if we're in a situation where we don't need it
-NON_CONFIG_TARGETS := clean %-clean get_variable help
+NON_CONFIG_TARGETS := clean %-clean get_variable help menuconfig defconfig
 AUTO_CONF_REGEN_TARGET := $(PROJECT_PATH)/build/include/config/auto.conf
 
 # disable AUTO_CONF_REGEN_TARGET if all targets are non-config targets
