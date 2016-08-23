@@ -249,7 +249,7 @@ void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMOR
 
 /*
  * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
- * *addr to compare, and if it's the same, will set *addr to set. It will return the old value 
+ * *mux to compare, and if it's the same, will set *mux to set. It will return the old value
  * of *addr.
  *
  * Note: the NOPs are needed on the ESP31 processor but superfluous on the ESP32.
