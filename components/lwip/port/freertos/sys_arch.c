@@ -231,6 +231,10 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
   err_t xReturn;
 
+  if (msg == NULL){
+    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("&msg=%p\n", &msg));
+  }
+
   if (xQueueSend((*mbox)->os_mbox, &msg, (portTickType)0) == pdPASS) {
     xReturn = ERR_OK;
   } else {
@@ -384,7 +388,7 @@ sys_mbox_free(sys_mbox_t *mbox)
 
   LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:free mbox\n"));
 
-#if 0 //ESP32_WORKAROUND
+#if 1 //ESP32_WORKAROUND
   if (uxQueueMessagesWaiting((*mbox)->os_mbox)) {
     xQueueReset((*mbox)->os_mbox);
     /* Line for breakpoint.  Should never break here! */
@@ -434,6 +438,7 @@ sys_now(void)
   return xTaskGetTickCount();
 }
 
+static portMUX_TYPE g_lwip_mux = portMUX_INITIALIZER_UNLOCKED;
 /*
   This optional function does a "fast" critical region protection and returns
   the previous protection level. This function is only called during very short
@@ -450,7 +455,10 @@ sys_now(void)
 sys_prot_t
 sys_arch_protect(void)
 {
-//  vTaskEnterCritical();
+#if 1//ESP32_WORKAROUND
+  //vTaskEnterCritical();
+  portENTER_CRITICAL(&g_lwip_mux);
+#endif
   return (sys_prot_t) 1;
 }
 
@@ -465,7 +473,10 @@ void
 sys_arch_unprotect(sys_prot_t pval)
 {
   (void) pval;
-//  vTaskExitCritical();
+#if 1 //ESP32_WORKAROUND
+  //vTaskExitCritical();
+  portEXIT_CRITICAL(&g_lwip_mux);
+#endif
 }
 
 /*-----------------------------------------------------------------------------------*/
