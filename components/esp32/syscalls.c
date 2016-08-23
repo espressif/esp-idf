@@ -19,9 +19,12 @@
 #include <errno.h>
 #include <sys/reent.h>
 #include <stdlib.h>
+#include "esp_attr.h"
 #include "rom/libc_stubs.h"
 #include "rom/uart.h"
+#include "soc/cpu.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "freertos/portmacro.h"
 #include "freertos/task.h"
 
@@ -157,37 +160,210 @@ ssize_t _read_r(struct _reent *r, int fd, void * dst, size_t size) {
     return 0;
 }
 
-// TODO: implement locks via FreeRTOS mutexes
-void _lock_init(_lock_t *lock) {
+/* Notes on our newlib lock implementation:
+ *
+ * - lock_t is int. This value which is an index into a lock table entry,
+ *   with a high bit flag for "lock initialised".
+ * - Lock table is a table of FreeRTOS mutexes.
+ * - Locks are no-ops until the FreeRTOS scheduler is running.
+ * - Writing to the lock table is protected by a spinlock.
+ *
+ */
+
+/* Maybe make this configurable?
+   It's MAXFDs plus a few static locks. */
+#define LOCK_TABLE_SIZE 32
+
+static xSemaphoreHandle lock_table[LOCK_TABLE_SIZE];
+static portMUX_TYPE lock_table_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+#define LOCK_INDEX_INITIALISED_FLAG (1<<31)
+
+/* Utility function to look up a particular lock in the lock table and
+ * return a pointer to its xSemaphoreHandle entry. */
+static inline IRAM_ATTR xSemaphoreHandle *get_lock_table_entry(_lock_t *lock)
+{
+    if (*lock & LOCK_INDEX_INITIALISED_FLAG) {
+        return &lock_table[*lock & ~LOCK_INDEX_INITIALISED_FLAG];
+    }
+    return NULL;
 }
 
-void _lock_init_recursive(_lock_t *lock) {
+static inline IRAM_ATTR bool get_scheduler_started(void)
+{
+    int s = xTaskGetSchedulerState();
+    return s != taskSCHEDULER_NOT_STARTED;
 }
 
-void _lock_close(_lock_t *lock) {
+/* Initialise the given lock by inserting a new mutex semaphore of
+   type mutex_type into the lock table.
+*/
+static void IRAM_ATTR lock_init_generic(_lock_t *lock, uint8_t mutex_type) {
+    if (!get_scheduler_started()) {
+        return; /* nothing to do until the scheduler is running */
+    }
+
+    portENTER_CRITICAL(&lock_table_spinlock);
+    if (*lock & LOCK_INDEX_INITIALISED_FLAG) {
+         /* Lock already initialised (either we didn't check earlier,
+          or it got initialised while we were waiting for the
+          spinlock.) */
+        configASSERT(*get_lock_table_entry(lock) != NULL);
+    }
+    else
+    {
+        /* Create a new semaphore and save it in the lock table.
+
+           this is a bit of an API violation, as we're calling the
+           private function xQueueCreateMutex(x) directly instead of
+           the xSemaphoreCreateMutex / xSemaphoreCreateRecursiveMutex
+           wrapper functions...
+
+           The better alternative would be to pass pointers to one of
+           the two xSemaphoreCreate___Mutex functions, but as FreeRTOS
+           implements these as macros instead of inline functions
+           (*party like it's 1998!*) it's not possible to do this
+           without writing wrappers. Doing it this way seems much less
+           spaghetti-like.
+        */
+        xSemaphoreHandle new_sem = xQueueCreateMutex(mutex_type);
+        if (!new_sem) {
+            abort(); /* No more semaphores available or OOM */
+        }
+        bool success = false;
+        for (int i = 0; i < LOCK_TABLE_SIZE && !success; i++) {
+            if (lock_table[i] == 0) {
+                lock_table[i] = new_sem;
+                *lock = i | LOCK_INDEX_INITIALISED_FLAG;
+                success = true;
+            }
+        }
+        if (!success) {
+            abort(); /* we have more locks than lock table entries */
+        }
+    }
+    portEXIT_CRITICAL(&lock_table_spinlock);
 }
 
-void _lock_close_recursive(_lock_t *lock) {
+void IRAM_ATTR _lock_init(_lock_t *lock) {
+    lock_init_generic(lock, queueQUEUE_TYPE_MUTEX);
 }
 
-void _lock_acquire(_lock_t *lock) {
+void IRAM_ATTR _lock_init_recursive(_lock_t *lock) {
+    lock_init_generic(lock, queueQUEUE_TYPE_RECURSIVE_MUTEX);
 }
 
-void _lock_acquire_recursive(_lock_t *lock) {
+/* Free the mutex semaphore pointed to by *lock, and zero out
+   the entry in the lock table.
+
+   Note that FreeRTOS doesn't account for deleting mutexes while they
+   are held, and neither do we... so take care not to delete newlib
+   locks while they may be held by other tasks!
+*/
+void IRAM_ATTR _lock_close(_lock_t *lock) {
+    if (*lock & LOCK_INDEX_INITIALISED_FLAG) {
+        portENTER_CRITICAL(&lock_table_spinlock);
+        xSemaphoreHandle *h = get_lock_table_entry(lock);
+#if (INCLUDE_xSemaphoreGetMutexHolder == 1)
+        configASSERT(xSemaphoreGetMutexHolder(*h) != NULL); /* mutex should not be held */
+#endif
+        vSemaphoreDelete(*h);
+        *h = NULL;
+        *lock = 0;
+        portEXIT_CRITICAL(&lock_table_spinlock);
+    }
 }
 
-int _lock_try_acquire(_lock_t *lock) {
-    return 0;
+/* Acquire the mutex semaphore indexed by lock, wait up to delay ticks.
+   mutex_type is queueQUEUE_TYPE_RECURSIVE_MUTEX or queueQUEUE_TYPE_MUTEX
+*/
+static int IRAM_ATTR lock_acquire_generic(_lock_t *lock, uint32_t delay, uint8_t mutex_type) {
+    xSemaphoreHandle *h = get_lock_table_entry(lock);
+    if (!h) {
+        if (!get_scheduler_started()) {
+            return 0; /* locking is a no-op before scheduler is up, so this "succeeds" */
+        }
+        /* lazy initialise lock - might have had a static initializer in newlib (that we don't use),
+           or _lock_init might have been called before the scheduler was running... */
+        lock_init_generic(lock, mutex_type);
+    }
+    h = get_lock_table_entry(lock);
+    configASSERT(h != NULL);
+
+    BaseType_t success;
+    if (cpu_in_interrupt_context()) {
+        /* In ISR Context */
+        if (mutex_type == queueQUEUE_TYPE_RECURSIVE_MUTEX) {
+            abort(); /* recursive mutexes make no sense in ISR context */
+        }
+        BaseType_t higher_task_woken = false;
+        success = xSemaphoreTakeFromISR(*h, &higher_task_woken);
+        if (!success && delay > 0) {
+            abort(); /* Tried to block on mutex from ISR, couldn't... rewrite your program to avoid libc interactions in ISRs! */
+        }
+        /* TODO: deal with higher_task_woken */
+    }
+    else {
+        /* In task context */
+        if (mutex_type == queueQUEUE_TYPE_RECURSIVE_MUTEX) {
+            success = xSemaphoreTakeRecursive(*h, delay);
+        } else {
+            success = xSemaphoreTake(*h, delay);
+        }
+    }
+
+    return (success == pdTRUE) ? 0 : -1;
 }
 
-int _lock_try_acquire_recursive(_lock_t *lock) {
-    return 0;
+void IRAM_ATTR _lock_acquire(_lock_t *lock) {
+    lock_acquire_generic(lock, portMAX_DELAY, queueQUEUE_TYPE_MUTEX);
 }
 
-void _lock_release(_lock_t *lock) {
+void IRAM_ATTR _lock_acquire_recursive(_lock_t *lock) {
+    lock_acquire_generic(lock, portMAX_DELAY, queueQUEUE_TYPE_RECURSIVE_MUTEX);
 }
 
-void _lock_release_recursive(_lock_t *lock) {
+int IRAM_ATTR _lock_try_acquire(_lock_t *lock) {
+    return lock_acquire_generic(lock, 0, queueQUEUE_TYPE_MUTEX);
+}
+
+int IRAM_ATTR _lock_try_acquire_recursive(_lock_t *lock) {
+    return lock_acquire_generic(lock, 0, queueQUEUE_TYPE_RECURSIVE_MUTEX);
+}
+
+/* Release the mutex semaphore indexed by lock.
+   mutex_type is queueQUEUE_TYPE_RECURSIVE_MUTEX or queueQUEUE_TYPE_MUTEX
+*/
+static void IRAM_ATTR lock_release_generic(_lock_t *lock, uint8_t mutex_type) {
+    xSemaphoreHandle *h = get_lock_table_entry(lock);
+    if (h == NULL) {
+        /* This is probably because the scheduler isn't running yet,
+           or the scheduler just started running and some code was
+           "holding" a not-yet-initialised lock... */
+        return;
+    }
+
+    if (cpu_in_interrupt_context()) {
+        if (mutex_type == queueQUEUE_TYPE_RECURSIVE_MUTEX) {
+            abort(); /* indicates logic bug, it shouldn't be possible to lock recursively in ISR */
+        }
+        BaseType_t higher_task_woken = false;
+        xSemaphoreGiveFromISR(*h, &higher_task_woken);
+    } else {
+        if (mutex_type == queueQUEUE_TYPE_RECURSIVE_MUTEX) {
+            xSemaphoreGiveRecursive(*h);
+        } else {
+            xSemaphoreGive(*h);
+        }
+    }
+}
+
+void IRAM_ATTR _lock_release(_lock_t *lock) {
+    lock_release_generic(lock, queueQUEUE_TYPE_MUTEX);
+}
+
+void IRAM_ATTR _lock_release_recursive(_lock_t *lock) {
+    lock_release_generic(lock, queueQUEUE_TYPE_RECURSIVE_MUTEX);
 }
 
 static struct _reent s_reent;
@@ -238,7 +414,7 @@ static struct syscall_stub_table s_stub_table = {
     ._lock_init = &_lock_init,
     ._lock_init_recursive = &_lock_init_recursive,
     ._lock_close = &_lock_close,
-    ._lock_close_recursive = &_lock_close_recursive,
+    ._lock_close_recursive = &_lock_close,
     ._lock_acquire = &_lock_acquire,
     ._lock_acquire_recursive = &_lock_acquire_recursive,
     ._lock_try_acquire = &_lock_try_acquire,
