@@ -18,9 +18,9 @@ Whether you compile the toolchain from source or download binary toolchain, ther
 Step 1: Download binary toolchain for the ESP32
 ==================================================
 
-ESP32 toolchain for macOS is available for download from Espresif website:
+ESP32 toolchain for macOS is available for download from Espressif website:
 
-http://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-59.tar.gz
+https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-59.tar.gz
 
 Download this file, then extract it to the location you prefer, for example::
 
@@ -42,6 +42,20 @@ Then when you need the toolchain you can type ``get_esp32`` on the command line 
 
 Alternative Step 1: Compile the toolchain from source using crosstool-NG
 ========================================================================
+
+Instead of downloading binary toolchain from Espressif website (Step 1 above) you may build the toolchain yourself. 
+
+If you can't think of a reason why you need to build it yourself, then probably it's better to stick with the binary version. However, here are some of the reasons why you might want to compile it from source:
+
+- if you want to customize toolchain build configuration
+
+- if you want to hack gcc or newlib or libstdc++
+
+- if you are curious and/or have time to spare
+
+- if you don't trust binaries downloaded from the Internet
+
+In any case, here are the steps to compile the toolchain yourself.
 
 - Install dependencies:
 
@@ -105,7 +119,7 @@ The easiest way to start a project is to download the template project from GitH
     cd ~/esp
     git clone https://github.com/espressif/esp-idf-template.git myapp
 
-This will download ``esp-idf-template`` project into ``~/esp/esp32app`` directory.
+This will download ``esp-idf-template`` project into ``~/esp/myapp`` directory.
 
 
 Step 4: Building and flashing the application
@@ -113,7 +127,7 @@ Step 4: Building and flashing the application
 
 In Terminal.app, go to the application directory which was obtained on the previous step::
 
-    cd ~/esp/esp-idf-template
+    cd ~/esp/myapp
 
 Type a command like this to set the path to ESP-IDF directory:: 
 
@@ -124,6 +138,10 @@ At this point you may configure the serial port to be used for uploading. Run::
     make menuconfig
 
 Then navigate to "Serial flasher config" submenu and change value of "Default serial port" to match the serial port you will use. Also take a moment to explore other options which are configurable in ``menuconfig``.
+
+If you don't know device name for the  serial port of your development board, run this command two times, first with the board unplugged, then with the board plugged in. The port which appears the second time is the one you need::
+
+    ls /dev/tty.*
 
 Now you can build and flash the application. Run::
 
