@@ -19,6 +19,7 @@
 #include <stdbool.h>
 
 #include "esp_err.h"
+#include "rom/queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -219,6 +220,15 @@ typedef union {
 esp_err_t esp_wifi_set_config(wifi_interface_t ifx, wifi_config_t *conf);
 
 esp_err_t esp_wifi_get_config(wifi_interface_t ifx, wifi_config_t *conf);
+
+struct station_info {
+    STAILQ_ENTRY(station_info) next;
+    uint8_t bssid[6];
+};
+
+esp_err_t esp_wifi_get_station_list(struct station_info **station);
+
+esp_err_t esp_wifi_free_station_list(void);
 
 typedef esp_err_t (*wifi_rxcb_t)(void *buffer, uint16_t len, void* eb);
 

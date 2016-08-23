@@ -1211,6 +1211,25 @@ u32_t wifi_softap_get_dhcps_lease_time(void) // minute
 {
     return dhcps_lease_time;
 }
+
+/* Search ip address based on mac address */
+bool dhcp_search_ip_on_mac(u8_t *mac, ip4_addr_t *ip)
+{
+    struct dhcps_pool *pdhcps_pool = NULL;
+    list_node *pback_node = NULL;
+    bool ret = false;
+    
+    for (pback_node = plist; pback_node != NULL;pback_node = pback_node->pnext) {
+        pdhcps_pool = pback_node->pnode;
+        if (memcmp(pdhcps_pool->mac, mac, sizeof(pdhcps_pool->mac)) == 0){
+            memcpy(&ip->addr, &pdhcps_pool->ip.addr, sizeof(pdhcps_pool->ip.addr));
+            ret = true;
+            break;
+        }
+    }
+   
+    return ret;
+}
 #else
 #include <stdio.h>
 #include <sys/types.h>
@@ -2476,6 +2495,7 @@ bool wifi_softap_set_dhcps_lease_time(u32_t minute)
 {
     return false;
 }
+
 
 #endif   /*ifdef  LWIP_ESP8266*/
 

@@ -455,4 +455,49 @@ wifi_interface_t tcpip_adapter_get_wifi_if(void *dev)
 
     return WIFI_IF_MAX;
 }
+
+esp_err_t tcpip_adapter_get_sta_list(struct station_info *sta_info, struct station_list **sta_list)
+{
+    struct station_info *info = sta_info;
+    struct station_list *list;
+    STAILQ_HEAD(, station_list) list_head;
+
+    if (sta_list == NULL)
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+
+    STAILQ_INIT(&list_head);
+
+    while (info != NULL) {
+        list = (struct station_list *)malloc(sizeof(struct station_list));
+        memset(list, 0, sizeof (struct station_list));
+
+        if (list == NULL) {
+            return ESP_ERR_TCPIP_ADAPTER_NO_MEM;
+        }
+
+        memcpy(list->mac, info->bssid, 6);
+        dhcp_search_ip_on_mac(list->mac, &list->ip);
+        STAILQ_INSERT_TAIL(&list_head, list, next);
+      
+        info = STAILQ_NEXT(info, next);
+    }
+
+    *sta_list = STAILQ_FIRST(&list_head);
+
+    return ESP_OK;
+}
+
+esp_err_t tcpip_adapter_free_sta_list(struct station_list *sta_list)
+{
+    struct station_list *list = sta_list;
+
+    while (sta_list != NULL) {
+        list = sta_list;
+        sta_list = STAILQ_NEXT(sta_list, next);
+        free(list);
+    }
+
+    return ESP_OK;
+}
+
 #endif
