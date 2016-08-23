@@ -65,7 +65,21 @@ typedef int sys_prot_t;
 
 #include <stdio.h>
 
-#define LWIP_PLATFORM_DIAG(x)   do {printf x;} while(0)
+//#define LWIP_PLATFORM_DIAG(x)   do {printf x;} while(0)
+#if 1//def ESP32_WORKAROUND
+extern SemaphoreHandle_t stdio_mutex_tx;
+#define LWIP_PLATFORM_DIAG(message)\
+do{\
+    if (!stdio_mutex_tx) {\
+        stdio_mutex_tx = xSemaphoreCreateMutex();\
+    }\
+\
+    xSemaphoreTake(stdio_mutex_tx, portMAX_DELAY);\
+    ets_printf message;\
+    xSemaphoreGive(stdio_mutex_tx);\
+} while(0)
+#endif
+
 #define LWIP_PLATFORM_ASSERT(x) do {printf(x); sys_arch_assert(__FILE__, __LINE__);} while(0)
 
 //#define LWIP_DEBUG

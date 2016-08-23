@@ -292,8 +292,10 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
     }
   } else { // block forever for a message.
     while (1){
-
-      if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY)){
+      LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch: fetch mbox=%p os_mbox=%p lock=%p\n", mbox, (*mbox)->os_mbox, (*mbox)->lock));
+      //if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY)){
+      if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), 3000/portTICK_RATE_MS)){ //ESP32_WORKAROUND
+        LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch:mbox rx msg=%p\n", (*msg)));
         break;
       }
 
@@ -348,13 +350,15 @@ sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
 void
 sys_mbox_free(sys_mbox_t *mbox)
 {
-  uint8_t count = 0;
+#define MAX_POLL_CNT 100
+#define PER_POLL_DELAY 20
+  uint16_t count = 0;
   bool post_null = true;
 
   LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free: set alive false\n"));
   (*mbox)->alive = false;
 
-  while ( count++ < 10 ){
+  while ( count++ < MAX_POLL_CNT ){ //ESP32_WORKAROUND
     LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:try lock=%d\n", count));
     if (!sys_mutex_trylock( &(*mbox)->lock )){
       LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:get lock ok %d\n", count));
@@ -372,14 +376,15 @@ sys_mbox_free(sys_mbox_t *mbox)
       }
     }
 
-    if (count == 10){
+    if (count == (MAX_POLL_CNT-1)){
       printf("WARNING: mbox %p had a consumer who never unblocked. Leaking!\n", (*mbox)->os_mbox);
     }
-    sys_delay_ms(20);
+    sys_delay_ms(PER_POLL_DELAY);
   }
 
   LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:free mbox\n"));
 
+#if 0 //ESP32_WORKAROUND
   if (uxQueueMessagesWaiting((*mbox)->os_mbox)) {
     xQueueReset((*mbox)->os_mbox);
     /* Line for breakpoint.  Should never break here! */
@@ -390,6 +395,7 @@ sys_mbox_free(sys_mbox_t *mbox)
   sys_mutex_free(&(*mbox)->lock);
   free(*mbox);
   *mbox = NULL;
+#endif
 }
 
 /*-----------------------------------------------------------------------------------*/
