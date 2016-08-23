@@ -61,7 +61,7 @@ Internals
 Log of key-value pairs
 ~~~~~~~~~~~~~~~~~~~~~~
 
-NVS stores key-value pairs sequentially, with new key-value pairs being added at the end. When a value of any given key has to be updated, old key-value pair is marked as erased and new key-value pair is added at the end of the log.
+NVS stores key-value pairs sequentially, with new key-value pairs being added at the end. When a value of any given key has to be updated, new key-value pair is added at the end of the log and old key-value pair is marked as erased.
 
 Pages and entries
 ~~~~~~~~~~~~~~~~~
@@ -69,10 +69,10 @@ Pages and entries
 NVS library uses two main entities in its operation: pages and entries. Page is a logical structure which stores a portion of the overall log. Logical page corresponds to one physical sector of flash memory. Pages which are in use have a *sequence number* associated with them. Sequence numbers impose an ordering on pages. Higher sequence numbers correspond to pages which were created later. Each page can be in one of the following states:
 
 Empty/uninitialized
-    Flash storage for the page is empty (all bytes are ``0xff``). Page isn't used to store any data at this point and doesn’t have 
+    Flash storage for the page is empty (all bytes are ``0xff``). Page isn't used to store any data at this point and doesn’t have a sequence number.
 
 Active
-    Flash storage is initialized, page header has been written to flash, page has a valid sequence number. Page has some empty entries and data can be written there. Normally only one page can be in this state.
+    Flash storage is initialized, page header has been written to flash, page has a valid sequence number. Page has some empty entries and data can be written there. At most one page can be in this state at any given moment.
 
 Full
     Flash storage is in a consistent state and is filled with key-value pairs.
@@ -213,7 +213,7 @@ As mentioned above, each key-value pair belongs to one of the namespaces. Namesp
     +-------------------------------------------+
     | NS=0 Type=uint8_t Key="pwm" Value=2       |   Entry describing namespace "pwm"
     +-------------------------------------------+
-    | NS=0 Type=uint16_t Key="channel" Value=20 |   Key "channel" in namespace "pwm"
+    | NS=2 Type=uint16_t Key="channel" Value=20 |   Key "channel" in namespace "pwm"
     +-------------------------------------------+
 
 

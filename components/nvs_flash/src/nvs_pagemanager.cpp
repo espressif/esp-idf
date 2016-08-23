@@ -53,6 +53,58 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
         assert(mPageList.back().getSeqNumber(lastSeqNo) == ESP_OK);
         mSeqNumber = lastSeqNo + 1;
     }
+    
+    // if power went out after a new item for the given key was written,
+    // but before the old one was erased, we end up with a duplicate item
+    Page& lastPage = back();
+    size_t lastItemIndex = SIZE_MAX;
+    Item item;
+    size_t itemIndex = 0;
+    while (lastPage.findItem(Page::NS_ANY, ItemType::ANY, nullptr, itemIndex, item) == ESP_OK) {
+        itemIndex += item.span;
+        lastItemIndex = itemIndex;
+    }
+    
+    if (lastItemIndex != SIZE_MAX) {
+        auto last = PageManager::TPageListIterator(&lastPage);
+        for (auto it = begin(); it != last; ++it) {
+            if (it->eraseItem(item.nsIndex, item.datatype, item.key) == ESP_OK) {
+                break;
+            }
+        }
+    }
+
+    // check if power went out while page was being freed
+    for (auto it = begin(); it!= end(); ++it) {
+        if (it->state() == Page::PageState::FREEING) {
+            Page* newPage = &mPageList.back();
+            if(newPage->state() != Page::PageState::ACTIVE) {
+                auto err = activatePage();
+                if (err != ESP_OK) {
+                    return err;
+                }
+                newPage = &mPageList.back();
+            }
+            while (true) {
+                auto err = it->moveItem(*newPage);
+                if (err == ESP_ERR_NVS_NOT_FOUND) {
+                    break;
+                } else if (err != ESP_OK) {
+                    return err;
+                }
+            }
+            
+            auto err = it->erase();
+            if (err != ESP_OK) {
+                return err;
+            }
+            
+            Page* p = static_cast<Page*>(it);
+            mPageList.erase(it);
+            mFreePageList.push_back(p);
+            break;
+        }
+    }
 
     return ESP_OK;
 }
@@ -91,6 +143,7 @@ esp_err_t PageManager::requestNewPage()
     Page* newPage = &mPageList.back();
 
     Page* erasedPage = maxErasedItemsPageIt;
+    size_t usedEntries = erasedPage->getUsedEntryCount();
     err = erasedPage->markFreeing();
     if (err != ESP_OK) {
         return err;
@@ -108,6 +161,8 @@ esp_err_t PageManager::requestNewPage()
     if (err != ESP_OK) {
         return err;
     }
+    
+    assert(usedEntries == newPage->getUsedEntryCount());
 
     mPageList.erase(maxErasedItemsPageIt);
     mFreePageList.push_back(erasedPage);

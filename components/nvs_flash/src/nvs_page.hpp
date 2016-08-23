@@ -40,7 +40,7 @@ public:
 
     bool operator==(const CachedFindInfo& other) const
     {
-        return mKeyPtr == other.mKeyPtr && mType == other.mType && mNsIndex == other.mNsIndex;
+        return mKeyPtr != nullptr && mKeyPtr == other.mKeyPtr && mType == other.mType && mNsIndex == other.mNsIndex;
     }
 
     void setItemIndex(uint32_t index)
@@ -162,7 +162,7 @@ public:
 
     void invalidateCache();
     
-    void debugDump();
+    void debugDump() const;
 
 protected:
 
@@ -195,7 +195,7 @@ protected:
 
     esp_err_t alterPageState(PageState state);
 
-    esp_err_t readEntry(size_t index, Item& dst);
+    esp_err_t readEntry(size_t index, Item& dst) const;
 
     esp_err_t writeEntry(const Item& item);
 
@@ -210,7 +210,7 @@ protected:
         return static_cast<uint8_t>(type) & 0x0f;
     }
 
-    uint32_t getEntryAddress(size_t entry)
+    uint32_t getEntryAddress(size_t entry) const
     {
         assert(entry < ENTRY_COUNT);
         return mBaseAddress + ENTRY_DATA_OFFSET + static_cast<uint32_t>(entry) * ENTRY_SIZE;

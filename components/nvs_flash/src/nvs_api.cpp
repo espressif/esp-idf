@@ -45,11 +45,18 @@ static intrusive_list<HandleEntry> s_nvs_handles;
 static uint32_t s_nvs_next_handle = 1;
 static nvs::Storage s_nvs_storage;
 
+extern "C" void nvs_dump()
+{
+    Lock lock;
+    s_nvs_storage.debugDump();
+}
+
 extern "C" esp_err_t nvs_flash_init(uint32_t baseSector, uint32_t sectorCount)
 {
     Lock::init();
     Lock lock;
     NVS_DEBUGV("%s %d %d\r\n", __func__, baseSector, sectorCount);
+    s_nvs_handles.clear();
     return s_nvs_storage.init(baseSector, sectorCount);
 }
 
@@ -254,12 +261,15 @@ static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, cons
         return err;
     }
 
-    if (length != nullptr && out_value == nullptr) {
+    if (length == nullptr) {
+        return ESP_ERR_NVS_INVALID_LENGTH;
+    }
+    else if (out_value == nullptr) {
         *length = dataSize;
         return ESP_OK;
     }
-
-    if (length == nullptr || *length < dataSize) {
+    else if (*length < dataSize) {
+        *length = dataSize;
         return ESP_ERR_NVS_INVALID_LENGTH;
     }
 
