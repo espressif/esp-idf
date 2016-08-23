@@ -10,7 +10,7 @@
 # Makefile is located.
 #
 
-.PHONY: build-components menuconfig all build clean all_binaries
+.PHONY: build-components menuconfig defconfig all build clean all_binaries
 all: all_binaries # other components will add dependencies to 'all_binaries'
 	@echo "To flash all build output, run 'make flash' or:"
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
@@ -23,6 +23,7 @@ help:
 	@echo "Welcome to Espressif IDF build system. Some useful make targets:"
 	@echo ""
 	@echo "make menuconfig - Configure IDF project"
+	@echo "make defconfig - Set defaults for all new configuration options"
 	@echo ""
 	@echo "make all - Build app, bootloader, partition table"
 	@echo "make flash - Flash all components to a fresh chip"
