@@ -118,8 +118,11 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 // portbenchmark
 #include "portbenchmark.h"
 
+#include "sdkconfig.h"
 
 #define portMUX_DEBUG
+#define portFIRST_TASK_HOOK CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
+
 
 typedef struct {
 	volatile uint32_t mux;

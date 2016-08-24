@@ -121,5 +121,12 @@ config FREERTOS_DEBUG_OCDAWARE
 		The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
 		instead of panicking, have the debugger stop on the offending instruction.
 
+config FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
+	bool "Stop program on scheduler start when JTAG/OCD is detected"
+	depends on FREERTOS_DEBUG_OCDAWARE
+	default y
+	help
+		If JTAG/OCD is connected, stop execution when the scheduler is started and the first
+		task is executed.
 
 endmenu
