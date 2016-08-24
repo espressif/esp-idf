@@ -92,23 +92,28 @@ void IRAM_ATTR call_start_cpu0()
     //Clear bss
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
 
-	/* completely reset MMU for both CPUs
-	   (in case serial bootloader was running) */
-	Cache_Read_Disable(0);
-	Cache_Read_Disable(1);
-	Cache_Flush(0);
-	Cache_Flush(1);
-	mmu_init(0);
-	mmu_init(1);
-	/* (above steps probably unnecessary for most serial bootloader
-	   usage, all that's absolutely needed is that we unmask DROM0
-	   cache on the following two lines - normal ROM boot exits with
-	   DROM0 cache unmasked, but serial bootloader exits with it
-	   masked. However can't hurt to be thorough and reset
-	   everything.)
-	*/
-	REG_CLR_BIT(PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
-	REG_CLR_BIT(APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
+    /* completely reset MMU for both CPUs
+       (in case serial bootloader was running) */
+    Cache_Read_Disable(0);
+    Cache_Read_Disable(1);
+    Cache_Flush(0);
+    Cache_Flush(1);
+    mmu_init(0);
+    REG_SET_BIT(APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+    mmu_init(1);
+    REG_CLR_BIT(APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+    /* (above steps probably unnecessary for most serial bootloader
+       usage, all that's absolutely needed is that we unmask DROM0
+       cache on the following two lines - normal ROM boot exits with
+       DROM0 cache unmasked, but serial bootloader exits with it
+       masked. However can't hurt to be thorough and reset
+       everything.)
+
+       The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are
+       necessary to work around a hardware bug.
+    */
+    REG_CLR_BIT(PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
+    REG_CLR_BIT(APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
 
     bootloader_main();
 }
