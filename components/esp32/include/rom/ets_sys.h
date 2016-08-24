@@ -232,10 +232,10 @@ void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 
 
 #define ETS_INTR_ENABLE(inum) \
-	ets_isr_unmask((1<<inum))
+        xt_ints_on((1<<inum))
 
 #define ETS_INTR_DISABLE(inum) \
-	ets_isr_mask((1<<inum))
+        xt_ints_off((1<<inum))
 
 #define ETS_CCOMPARE_INTR_ENBALE() \
     ETS_INTR_ENABLE(ETS_CCOMPARE_INUM)
