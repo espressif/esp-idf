@@ -13,9 +13,9 @@ BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)
 BOOTLOADER_BUILD_DIR=$(BUILD_DIR_BASE)/bootloader
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
 
-.PHONY: bootloader-clean bootloader-flash bootloader
+.PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
 
-$(BOOTLOADER_BIN): $(COMPONENT_PATH)/src/sdkconfig
+$(BOOTLOADER_BIN):
 	$(Q) PROJECT_PATH= \
 	LDFLAGS= \
 	CFLAGS= \
