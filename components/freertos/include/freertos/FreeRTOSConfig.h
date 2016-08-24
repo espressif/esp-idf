@@ -222,6 +222,8 @@
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
 
+#define INCLUDE_xSemaphoreGetMutexHolder    1
+
 /* The priority at which the tick interrupt runs.  This should probably be
    kept at 1. */
 #define configKERNEL_INTERRUPT_PRIORITY		1
