@@ -142,6 +142,17 @@ void panicHandler(XtExcFrame *frame) {
 	commonErrorHandler(frame);
 }
 
+static void setFirstBreakpoint(uint32_t pc) {
+	asm(
+		"wsr.ibreaka0 %0\n" \
+		"rsr.ibreakenable a3\n" \
+		"movi a4,1\n" \
+		"or a4, a4, a3\n" \
+		"wsr.ibreakenable a4\n" \
+		::"r"(pc):"a3","a4");
+	return;
+}
+
 void xt_unhandled_exception(XtExcFrame *frame) {
 	int *regs=(int*)frame;
 	int x;
@@ -158,14 +169,7 @@ void xt_unhandled_exception(XtExcFrame *frame) {
 		panicPutStr(". Setting bp and returning..\r\n");
 		//Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
 		//will kick in exactly at the context the error happened.
-		asm(
-			"wsr.ibreaka0 %0\n" \
-			"rsr.ibreakenable a3\n" \
-			"movi a4,1\n" \
-			"or a4, a4, a3\n" \
-			"wsr.ibreakenable a4\n" \
-			::"r"(regs[1]):"a3","a4");
-		return;
+		setFirstBreakpoint(regs[1]);
 	}
 	panicPutStr(". Exception was unhandled.\r\n");
 	commonErrorHandler(frame);
@@ -208,4 +212,10 @@ void commonErrorHandler(XtExcFrame *frame) {
 	panicPutStr("CPU halted.\r\n");
 	while(1);
 #endif
+}
+
+
+void setBreakpointIfJtag(void *fn) {
+	if (!inOCDMode()) return;
+	setFirstBreakpoint((uint32_t)fn);
 }
