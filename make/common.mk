@@ -35,13 +35,18 @@ CXXFLAGS = -DESP_PLATFORM -Og -std=gnu++11 -g3 \
 endif
 
 #Handling of V=1/VERBOSE=1 flag
+#
+# if V=1, $(summary) does nothing and $(details) will echo extra details
+# if V is unset or not 1, $(summary) echoes a summary and $(details) does nothing
 V ?= $(VERBOSE)
 ifeq ("$(V)","1")
 Q :=
-vecho := @true
+summary := @true
+details := @echo
 else
 Q := @
-vecho := @echo
+summary := @echo
+details := @true
 endif
 
 # General make utilities

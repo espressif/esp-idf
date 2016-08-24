@@ -203,7 +203,7 @@ $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponent
 $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTarget,$(component),clean)))
 
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
-	$(vecho) RM $(APP_ELF)
+	$(summary) RM $(APP_ELF)
 	$(Q) rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
 clean: app-clean

@@ -71,14 +71,14 @@ build: $(COMPONENT_LIBRARY)
 #Build the archive. We remove the archive first, otherwise ar will get confused if we update
 #an archive when multiple filenames have the same name (src1/test.o and src2/test.o)
 $(COMPONENT_LIBRARY): $(COMPONENT_OBJS)
-	$(vecho) AR $@
+	$(summary) AR $@
 	$(Q) rm -f $@
 	$(Q) $(AR) cru $@ $(COMPONENT_OBJS)
 endif
 
 ifeq ("$(COMPONENT_OWNCLEANTARGET)", "")
 clean:
-	$(vecho) RM $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EXTRA_CLEAN)
+	$(summary) RM $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EXTRA_CLEAN)
 	$(Q) rm -f $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EXTRA_CLEAN)
 endif
 
@@ -92,15 +92,15 @@ CXXFLAGS+=-MMD
 define GenerateCompileTargets
 # $(1) - directory containing source files, relative to $(COMPONENT_PATH)
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c | $(1)
-	$$(vecho) CC $$@
+	$$(summary) CC $$@
 	$$(Q) $$(CC) $$(CFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp | $(1)
-	$$(vecho) CC $$@
+	$$(summary) CC $$@
 	$$(Q) $$(CXX) $$(CXXFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S | $(1)
-	$$(vecho) CC $$@
+	$$(summary) CC $$@
 	$$(Q) $$(CC) $$(CFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
 # CWD is build dir, create the build subdirectory if it doesn't exist
