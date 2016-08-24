@@ -1175,6 +1175,11 @@ constant. */
 	void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue ) PRIVILEGED_FUNCTION;
 	void *pvTaskGetThreadLocalStoragePointer( TaskHandle_t xTaskToQuery, BaseType_t xIndex ) PRIVILEGED_FUNCTION;
 
+	#if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS ) 
+		typedef void (*TlsDeleteCallbackFunction_t)( int, void * ); 
+		void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue , TlsDeleteCallbackFunction_t xDelCallback);
+	#endif
+
 #endif
 
 /**

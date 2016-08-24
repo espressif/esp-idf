@@ -73,7 +73,7 @@ config FREERTOS_CHECK_STACKOVERFLOW_CANARY
 		(configCHECK_FOR_STACK_OVERFLOW=2)
 endchoice
 
-config CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
+config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 	int "Amount of thread local storage pointers"
 	range 0 256
 	default 0

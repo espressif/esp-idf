@@ -24,3 +24,9 @@ means that when you set a handler for an interrupt, it will get triggered if
 the interrupt is triggered on both CPU0 as well as on CPU1. This is something
 we may change in future FreeRTOS-esp32 releases.
 
+- This FreeRTOS version has the task local storage backported from the 8.2.x
+versions. It, however, has an addition: you can also set a callback when you 
+set the pointer. This callback will be called by the idle task, with the 
+pointer as an argument, when the thread is destroyed. This depends on the idle
+task getting CPU time; when a thread is hogging the CPU without yielding,
+the idle thread won't be called and the delete callback won't be called either.
