@@ -6,7 +6,7 @@ Windows doesn't have a built-in "make" environment, so as well as installing the
 
 The quick setup is to download the Windows all-in-one toolchain & MSYS zip file from dl.espressif.com:
 
-http://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20160816.zip
+https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20160816.zip
 
 Unzip the zip file to C:\ and it will create an "msys32" directory with a pre-prepared environment.
 
@@ -35,7 +35,7 @@ Another Alternative Step 1: Just download a toolchain
 
 If you already have an MSYS2 install or want to do things differently, you can download just the toolchain here:
 
-http://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-59.zip
+https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-59.zip
 
 If you followed one of the above options for Step 1, you won't need this download.
 
