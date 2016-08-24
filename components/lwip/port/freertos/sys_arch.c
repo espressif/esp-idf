@@ -213,7 +213,7 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 
   (*mbox)->alive = true;
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("new *mbox ok\n"));
+  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p mbox_lock=%p\n", *mbox, (*mbox)->os_mbox, (*mbox)->lock));
   return ERR_OK;
 }
 
@@ -231,13 +231,10 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
   err_t xReturn;
 
-  if (msg == NULL){
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("&msg=%p\n", &msg));
-  }
-
   if (xQueueSend((*mbox)->os_mbox, &msg, (portTickType)0) == pdPASS) {
     xReturn = ERR_OK;
   } else {
+    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("trypost mbox=%p fail\n", (*mbox)->os_mbox));
     xReturn = ERR_MEM;
   }
 
@@ -295,10 +292,11 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
       ulReturn = SYS_ARCH_TIMEOUT;
     }
   } else { // block forever for a message.
+    
     while (1){
       LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch: fetch mbox=%p os_mbox=%p lock=%p\n", mbox, (*mbox)->os_mbox, (*mbox)->lock));
-      //if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY)){
-      if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), 3000/portTICK_RATE_MS)){ //ESP32_WORKAROUND
+      if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY)){
+      //if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), 3000/portTICK_RATE_MS)){ //ESP32_WORKAROUND
         LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch:mbox rx msg=%p\n", (*msg)));
         break;
       }
@@ -388,7 +386,6 @@ sys_mbox_free(sys_mbox_t *mbox)
 
   LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:free mbox\n"));
 
-#if 1 //ESP32_WORKAROUND
   if (uxQueueMessagesWaiting((*mbox)->os_mbox)) {
     xQueueReset((*mbox)->os_mbox);
     /* Line for breakpoint.  Should never break here! */
@@ -399,7 +396,6 @@ sys_mbox_free(sys_mbox_t *mbox)
   sys_mutex_free(&(*mbox)->lock);
   free(*mbox);
   *mbox = NULL;
-#endif
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -492,17 +488,35 @@ sys_arch_assert(const char *file, int line)
   while(1);
 }
 
+#define SYS_TLS_INDEX CONFIG_LWIP_THREAD_LOCAL_STORAGE_INDEX
 /* 
  * get per thread semphore
  */
 sys_sem_t* sys_thread_sem_get(void)
 {
-  sys_sem_t *sem = (sys_sem_t*)pvTaskGetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), 0);
+  sys_sem_t *sem = (sys_sem_t*)pvTaskGetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX);
   if (!sem){
     sem = sys_thread_sem_init();
   }
   LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem_get s=%p\n", sem));
   return sem;
+}
+
+static void sys_thread_tls_free(int index, void* data)
+{
+  sys_sem_t *sem = (sys_sem_t*)(data);
+
+  if (sem && *sem){
+    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem del, i=%d sem=%p\n", index, *sem));
+    ets_printf("sem del:%p\n", *sem);
+    vSemaphoreDelete(*sem);
+  }
+
+  if (sem){
+    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem pointer del, i=%d sem_p=%p\n", index, sem));
+    ets_printf("sem pointer del:%p\n", sem);
+    free(sem);
+  }
 }
 
 sys_sem_t* sys_thread_sem_init(void)
@@ -521,25 +535,19 @@ sys_sem_t* sys_thread_sem_init(void)
     return 0;
   }
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem init %p %p\n", sem, *sem));
-  vTaskSetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), 0, sem);
+  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem init sem_p=%p sem=%p cb=%p\n", sem, *sem, sys_thread_tls_free));
+  vTaskSetThreadLocalStoragePointerAndDelCallback(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX, sem, (TlsDeleteCallbackFunction_t)sys_thread_tls_free);
 
   return sem;
 }
 
 void sys_thread_sem_deinit(void)
 {
-  sys_sem_t *sem = sys_thread_sem_get();
-  if (sem && *sem){
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem del:%p %p\n", sem, *sem));
-    vSemaphoreDelete(*sem);
-  }
+  sys_sem_t *sem = (sys_sem_t*)pvTaskGetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX);
 
-  if (sem){
-    free(sem);
-  }
+  sys_thread_tls_free(SYS_TLS_INDEX, (void*)sem);
+  vTaskSetThreadLocalStoragePointerAndDelCallback(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX, 0, 0);
 
-  vTaskSetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), 0, 0);
   return;
 }
 
