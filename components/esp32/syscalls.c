@@ -138,12 +138,20 @@ int _open_r(struct _reent *r, const char * path, int flags, int mode) {
 ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size) {
     const char* p = (const char*) data;
     if (fd == STDOUT_FILENO) {
-        /* THIS IS A HACK!!! The stdout "file" should be locked while
-           this code is called (it's locked fflush.c:280 before
-           __sflush_r is called.) It shouldn't be necessary to
-           re-lock, but due to some unknown bug it is...
+        static _lock_t stdout_lock; /* lazily initialised */
+        /* Even though newlib does stream locking on stdout, we need
+           a dedicated stdout UART lock...
+
+           This is because each task has its own _reent structure with
+           unique FILEs for stdin/stdout/stderr, so these are
+           per-thread (lazily initialised by __sinit the first time a
+           stdio function is used, see findfp.c:235.
+
+           It seems like overkill to allocate a FILE-per-task and lock
+           a thread-local stream, but I see no easy way to fix this
+           (pre-__sinit_, tasks have "fake" FILEs ie __sf_fake_stdout
+           which aren't fully valid.)
         */
-        static _lock_t stdout_lock;
         _lock_acquire_recursive(&stdout_lock);
         while(size--) {
 #if CONFIG_NEWLIB_STDOUT_ADDCR
