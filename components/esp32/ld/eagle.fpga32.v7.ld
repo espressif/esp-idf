@@ -106,6 +106,7 @@ SECTIONS
     KEEP(*(.sdata2.*))
     KEEP(*(.gnu.linkonce.s2.*))
     KEEP(*(.jcr))
+    *(.dram1 .dram1.*)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
     _heap_start = ABSOLUTE(.);
