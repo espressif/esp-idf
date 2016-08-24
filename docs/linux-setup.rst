@@ -6,17 +6,13 @@ Install some packages
 
 To compile with ESP-IDF you need to get the following packages:
 
-- Ubuntu::
+- Ubuntu and Debian::
     
     sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial 
 
-- Debian::
-
-    TODO
-
 - Arch::
     
-    TODO
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
 
 
 Step 1: Download binary toolchain for the ESP32
@@ -99,7 +95,7 @@ Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. Follo
 Step 2: Getting ESP-IDF from github
 ===================================
 
-Open Terminal.app, navigate to the directory you want to clone ESP-IDF and clone it using ``git clone`` command::
+Open terminal, navigate to the directory you want to clone ESP-IDF and clone it using ``git clone`` command::
 
     cd ~/esp
     git clone --recursive https://github.com/espressif/esp-idf.git
@@ -129,7 +125,7 @@ This will download ``esp-idf-template`` project into ``~/esp/myapp`` directory.
 Step 4: Building and flashing the application
 =============================================
 
-In Terminal.app, go to the application directory which was obtained on the previous step::
+In terminal, go to the application directory which was obtained on the previous step::
 
     cd ~/esp/myapp
 
@@ -142,6 +138,8 @@ At this point you may configure the serial port to be used for uploading. Run::
     make menuconfig
 
 Then navigate to "Serial flasher config" submenu and change value of "Default serial port" to match the serial port you will use. Also take a moment to explore other options which are configurable in ``menuconfig``.
+
+Special note for Arch Linux users: navigate to "SDK tool configuration" and change the name of "Python 2 interpreter" from ``python`` to ``python2``.
 
 Now you can build and flash the application. Run::
 
