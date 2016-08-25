@@ -64,6 +64,8 @@ void uartAttach();
 void ets_set_appcpu_boot_addr(uint32_t ent);
 int ets_getAppEntry();
 
+static bool app_cpu_started = false;
+
 void IRAM_ATTR call_user_start_cpu0() {
 	//Kill wdt
 	REG_CLR_BIT(0x3ff4808c, BIT(10)); //RTCCNTL+8C RTC_WDTCONFIG0 RTC_
@@ -114,53 +116,34 @@ void IRAM_ATTR call_user_start_cpu0() {
 	heap_alloc_caps_init();
 
 	ets_printf("Pro cpu up.\n");
+    
 #ifndef CONFIG_FREERTOS_UNICORE
-	ets_printf("Running app cpu, entry point is %p\n", call_user_start_cpu1);
-	ets_delay_us(60000);
+	ets_printf("Starting app cpu, entry point is %p\n", call_user_start_cpu1);
 
 	SET_PERI_REG_MASK(APPCPU_CTRL_REG_B, DPORT_APPCPU_CLKGATE_EN);
+	CLEAR_PERI_REG_MASK(APPCPU_CTRL_REG_C, DPORT_APPCPU_RUNSTALL);
 	SET_PERI_REG_MASK(APPCPU_CTRL_REG_A, DPORT_APPCPU_RESETTING);
 	CLEAR_PERI_REG_MASK(APPCPU_CTRL_REG_A, DPORT_APPCPU_RESETTING);
-
-
-	for (int i=0; i<20; i++) ets_delay_us(40000);
 	ets_set_appcpu_boot_addr((uint32_t)call_user_start_cpu1);
 
-	ets_delay_us(10000);
-	
-//	while (ets_getAppEntry()==(int)call_user_start_cpu1) ;
-	//Because of Reasons (tm), the pro cpu cannot use the SPI flash while the app cpu is booting.
-//	while(((READ_PERI_REG(RTC_STORE7))&BIT(31)) == 0) ; // check APP boot complete flag
-	ets_delay_us(50000);
-	ets_delay_us(50000);
-	ets_printf("\n\nBack to pro cpu.\n");
+	while (!app_cpu_started) {
+		ets_delay_us(100);
+	}
 #else
 	CLEAR_PERI_REG_MASK(APPCPU_CTRL_REG_B, DPORT_APPCPU_CLKGATE_EN);
 #endif
+	ets_printf("Pro cpu start user code\n");
 	user_start_cpu0();
 }
 
 
-extern int xPortGetCoreID();
-
 extern int _init_start;
 
-/*
-We arrive here because the pro CPU pulled us from reset. IRAM is in place, cache is still disabled, we can execute C code.
-*/
 void IRAM_ATTR call_user_start_cpu1() {
-	//We need to do this ASAP because otherwise the structure to catch the SYSCALL instruction, which
-	//we abuse to do ROM calls, won't work.
-
 	asm volatile (\
 		"wsr	%0, vecbase\n" \
 		::"r"(&_init_start));
 
-	//Enable SPI flash
-//	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_SD_DATA3_SPIWP); // swap PIN SDDATA3 from uart1 to spi, because cache need spi
-
-	ets_printf("App cpu up\n");
-	
 	//Make page 0 access raise an exception
 	//Also some other unused pages so we can catch weirdness
 	//ToDo: this but nicer.
@@ -192,16 +175,15 @@ void IRAM_ATTR call_user_start_cpu1() {
 		"isync\n" \
 		:::"a4","a5");
 	
+	ets_printf("App cpu up.\n");
+	app_cpu_started = 1;
 	user_start_cpu1();
 }
-
-
 
 extern volatile int port_xSchedulerRunning;
 extern int xPortStartScheduler();
 
 void user_start_cpu1(void) {
-	ets_printf("App cpu is running!\n");
 	//Wait for the freertos initialization is finished on CPU0
 	while (port_xSchedulerRunning == 0) ;
 	ets_printf("Core0 started initializing FreeRTOS. Jumping to scheduler.\n");
@@ -221,11 +203,12 @@ static void do_global_ctors(void) {
 
 
 void user_start_cpu0(void) {
-	esp_err_t ret;
-
 	ets_setup_syscalls();
 	do_global_ctors();
 
+	// TODO: consider ethernet interface
+
+#if CONFIG_WIFI_ENABLED
 #if 1 //workaround
     for (uint8_t i = 5; i < 8; i++) {
         ets_printf("erase sector %d\n", i);
@@ -233,8 +216,8 @@ void user_start_cpu0(void) {
     }
 #endif
     ets_printf("nvs_flash_init\n");
-    ret = nvs_flash_init(5, 3);
-    if (ESP_OK != ret) {
+    esp_err_t ret = nvs_flash_init(5, 3);
+    if (ret != ESP_OK) {
         ets_printf("nvs_flash_init fail, ret=%d\n", ret);
     }
 
@@ -242,9 +225,8 @@ void user_start_cpu0(void) {
 
     esp_event_init(NULL);
 
-	// TODO: consider ethernet interface
-#if CONFIG_WIFI_ENABLED
     tcpip_adapter_init();
+
 #endif
 
 #if CONFIG_WIFI_ENABLED && CONFIG_WIFI_AUTO_STARTUP
