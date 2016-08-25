@@ -120,13 +120,12 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 
 #include "sdkconfig.h"
 
-#define portMUX_DEBUG
 #define portFIRST_TASK_HOOK CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
 
 
 typedef struct {
 	volatile uint32_t mux;
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	const char *lastLockedFn;
 	int lastLockedLine;
 #endif
@@ -151,7 +150,7 @@ typedef struct {
 #define portMUX_VAL_SHIFT		0
 
 //Keep this in sync with the portMUX_TYPE struct definition please.
-#ifdef portMUX_DEBUG
+#ifndef CONFIG_FREERTOS_PORTMUX_DEBUG
 #define portMUX_INITIALIZER_UNLOCKED { 					\
 		.mux = portMUX_MAGIC_VAL|portMUX_FREE_VAL 		\
 	}
@@ -169,13 +168,6 @@ typedef struct {
 #define portENABLE_INTERRUPTS()       do { portbenchmarkINTERRUPT_RESTORE(0); XTOS_SET_INTLEVEL(0); } while (0)
 
 #define portCRITICAL_NESTING_IN_TCB 1 
-
-
-/*
-Enable this to enable mux debugging. With this on, the mux code will warn you for deadlocks
-and double releases etc.
-*/
-#define portMUX_DEBUG
 
 /*
 Modifications to portENTER_CRITICAL:
@@ -198,7 +190,7 @@ This all assumes that interrupts are either entirely disabled or enabled. Interr
 will break this scheme.
 */
 void vPortCPUInitializeMutex(portMUX_TYPE *mux);
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *function, int line);
 portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *function, int line);
 void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line );

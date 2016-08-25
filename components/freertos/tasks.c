@@ -3754,14 +3754,14 @@ scheduler will re-enable the interrupts instead. */
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 
 
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line )
 #else
 	void vTaskEnterCritical( portMUX_TYPE *mux )
 #endif
 	{
 		portDISABLE_INTERRUPTS();
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		vPortCPUAcquireMutex( mux, function, line );
 #else
 		vPortCPUAcquireMutex( mux );
@@ -3794,13 +3794,13 @@ scheduler will re-enable the interrupts instead. */
 
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	void vTaskExitCritical( portMUX_TYPE *mux, const char *function, int line )
 #else
 	void vTaskExitCritical( portMUX_TYPE *mux )
 #endif
 	{
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		vPortCPUReleaseMutex( mux, function, line );
 #else
 		vPortCPUReleaseMutex( mux );
