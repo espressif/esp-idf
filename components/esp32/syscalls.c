@@ -258,7 +258,7 @@ void IRAM_ATTR _lock_close(_lock_t *lock) {
         configASSERT(xSemaphoreGetMutexHolder(h) == NULL); /* mutex should not be held */
 #endif
         vSemaphoreDelete(h);
-        h = NULL;
+        *lock = 0;
     }
     portEXIT_CRITICAL(&lock_init_spinlock);
 }
@@ -275,9 +275,9 @@ static int IRAM_ATTR lock_acquire_generic(_lock_t *lock, uint32_t delay, uint8_t
         /* lazy initialise lock - might have had a static initializer in newlib (that we don't use),
            or _lock_init might have been called before the scheduler was running... */
         lock_init_generic(lock, mutex_type);
+        h = (xSemaphoreHandle)(*lock);
+        configASSERT(h != NULL);
     }
-    h = (xSemaphoreHandle)(*lock); /* re-check after lock_init_generic */
-    configASSERT(h != NULL);
 
     BaseType_t success;
     if (cpu_in_interrupt_context()) {
