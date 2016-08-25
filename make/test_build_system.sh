@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Build system tests
+# Test the build system for basic consistency
 #
 # Just a bash script that tests some likely make failure scenarios in a row
 # Creates its own test build directory under TMP and cleans it up when done.
@@ -131,6 +131,18 @@ function assert_built()
 	done
 }
 
+# Test if a file has been rebuilt.
+function file_was_rebuilt()
+{
+	# can't use [ a -ot b ] here as -ot only gives second resolution
+	# but stat -c %y seems to be microsecond at least for tmpfs, ext4..
+	if [ "$(stat -c %y ${SNAPSHOT}/$1)" != "$(stat -c %y ${BUILD}/$1)" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 # verify all the arguments passed in were rebuilt relative to the snapshot
 function assert_rebuilt()
 {
@@ -139,7 +151,7 @@ function assert_rebuilt()
 		if [ ! -f "${SNAPSHOT}/$1" ]; then
 			failure "File $1 should have been original build snapshot"
 		fi
-		if [ ! "${SNAPSHOT}/$1" -ot "${BUILD}/$1" ]; then
+		if ! file_was_rebuilt "$1"; then
 			failure "File $1 should have been rebuilt"
 		fi
 		shift
@@ -155,7 +167,7 @@ function assert_not_rebuilt()
 		if [ ! -f "${SNAPSHOT}/$1" ]; then
 			failure "File $1 should be in snapshot build directory"
 		fi
-		if [ "${SNAPSHOT}/$1" -ot "${BUILD}/$1" ]; then
+		if file_was_rebuilt "$1"; then
 			failure "File $1 should not have been rebuilt"
 		fi
 		shift
