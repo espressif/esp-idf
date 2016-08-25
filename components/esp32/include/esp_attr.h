@@ -20,16 +20,10 @@
 //and all variables in shared RAM. This can be redirected to IRAM if
 //needed using these macros.
 
-//Forces data and flash into IRAM instead of flash / shared RAM
+// Forces code into IRAM instead of flash
 #define IRAM_ATTR __attribute__((section(".iram1")))
-#define DRAM_ATTR __attribute__((section(".dram1")))
 
-//Forces data and flash into the IRAM section of a specific core.
-//Normally, you shouldn't have to use this: the linker will take care of
-//only linking in the functions for that specific core.
-#define IRAM_C0_ATTR __attribute__((section(".iram1pro")))
-#define DRAM_C0_ATTR __attribute__((section(".iram1pro")))
-#define IRAM_C1_ATTR __attribute__((section(".dram1app")))
-#define DRAM_C1_ATTR __attribute__((section(".dram1app")))
+// Forces data into DRAM instead of flash
+#define DRAM_ATTR __attribute__((section(".dram1")))
 
 #endif /* __ESP_ATTR_H__ */
