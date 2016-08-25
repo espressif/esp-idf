@@ -31,7 +31,7 @@ test_build_system:
   variables:
     IDF_PATH: "$CI_PROJECT_DIR"
   script:
-    - ./make/build_system_tests.sh
+    - ./make/test_build_system.sh
 
 push_master_to_github:
   stage: deploy
