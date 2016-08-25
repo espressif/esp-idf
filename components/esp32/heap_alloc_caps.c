@@ -171,17 +171,19 @@ void heap_alloc_caps_init() {
 	//Disable the bits of memory where this code is loaded.
 	disable_mem_region(&_bss_start, &_heap_start);
 	disable_mem_region((void*)0x3ffae000, (void*)0x3ffb0000); //knock out ROM data region
-	disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe8000); //knock out ROM data region
 	disable_mem_region((void*)0x40070000, (void*)0x40078000); //CPU0 cache region
 	disable_mem_region((void*)0x40078000, (void*)0x40080000); //CPU1 cache region
 	disable_mem_region((void*)0x40080000, (void*)0x400a0000); //pool 2-5
+
+	// TODO: this region should be checked, since we don't need to knock out all region finally
+	disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe8000); //knock out ROM data region
 
 #if CONFIG_MEMMAP_BT
 	disable_mem_region((void*)0x3ffb0000, (void*)0x3ffc0000); //knock out BT data region
 #endif
 
 #if CONFIG_MEMMAP_TRACEMEM
-    disable_mem_region((void*)0x3fff8000, (void*)0x40000000); //knock out trace mem region
+	disable_mem_region((void*)0x3fff8000, (void*)0x40000000); //knock out trace mem region
 #endif
 
 #if 0
