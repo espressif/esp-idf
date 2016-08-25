@@ -30,6 +30,9 @@ function run_tests()
 	git clone ${ESP_IDF_TEMPLATE_GIT} template
 	cd template
 
+	print_status "Updating template config..."
+	make defconfig || exit $?
+
 	BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
 	APP_BINS="app-template.elf app-template.bin"
 
