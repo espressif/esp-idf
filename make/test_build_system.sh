@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Build system tests
+# Test the build system for basic consistency
 #
 # Just a bash script that tests some likely make failure scenarios in a row
 # Creates its own test build directory under TMP and cleans it up when done.
