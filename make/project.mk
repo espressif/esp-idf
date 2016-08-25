@@ -166,9 +166,15 @@ $(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefil
 # once we know component paths, we can include the config
 include $(IDF_PATH)/make/project_config.mk
 
-# ELF depends on the -build target of every component
-$(APP_ELF): $(addsuffix -build,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
-	$(vecho) LD $(notdir $@)
+# A "component" library is any library in the LDFLAGS where
+# the name of the library is also a name of the component
+APP_LIBRARIES = $(patsubst -l%,%,$(filter -l%,$(LDFLAGS)))
+COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)),$(APP_LIBRARIES))
+
+# ELF depends on the library archive files for COMPONENT_LIBRARIES
+# the rules to build these are emitted as part of GenerateComponentTarget below
+$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a)
+	$(summary) LD $(notdir $@)
 	$(Q) $(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
 # Generation of $(APP_BIN) from $(APP_ELF) is added by the esptool
@@ -182,28 +188,34 @@ all_binaries: $(APP_BIN)
 $(BUILD_DIR_BASE):
 	mkdir -p $(BUILD_DIR_BASE)
 
-define GenerateComponentTarget
+define GenerateComponentPhonyTarget
 # $(1) - path to component dir
 # $(2) - target to generate (build, clean)
-# $(3) - optional dependencies to add
 .PHONY: $(notdir $(1))-$(2)
-$(notdir $(1))-$(2): $(3) | $(BUILD_DIR_BASE)/$(notdir $(1))
+$(notdir $(1))-$(2): | $(BUILD_DIR_BASE)/$(notdir $(1))
 	@+$(MAKE) -C $(BUILD_DIR_BASE)/$(notdir $(1)) -f $(1)/Makefile COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(notdir $(1)) $(2)
 endef
 
-define GenerateComponentBuildDirTarget
+define GenerateComponentTargets
 # $(1) - path to component dir
 $(BUILD_DIR_BASE)/$(notdir $(1)):
 	@mkdir -p $(BUILD_DIR_BASE)/$(notdir $(1))
+
+# tell make it can build any component's library by invoking the recursive -build target
+# (this target exists for all components even ones which don't build libraries, but it's
+# only invoked for the targets whose libraries appear in COMPONENT_LIBRARIES and hence the
+# APP_ELF dependencies.)
+$(BUILD_DIR_BASE)/$(notdir $(1))/lib$(notdir $(1)).a: $(notdir $(1))-build
+	$(details) echo "$$^ responsible for $$@" # echo which build target built this file
 endef
 
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentBuildDirTarget,$(component))))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTargets,$(component))))
 
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTarget,$(component),build,$(PROJECT_PATH)/build/include/sdkconfig.h)))
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTarget,$(component),clean)))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),build)))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),clean)))
 
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
-	$(vecho) RM $(APP_ELF)
+	$(summary) RM $(APP_ELF)
 	$(Q) rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
 clean: app-clean

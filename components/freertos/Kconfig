@@ -147,4 +147,12 @@ config FREERTOS_ASSERT_DISABLE
 
 endchoice
 
+config FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
+	bool "Stop program on scheduler start when JTAG/OCD is detected"
+	depends on FREERTOS_DEBUG_OCDAWARE
+	default y
+	help
+		If JTAG/OCD is connected, stop execution when the scheduler is started and the first
+		task is executed.
+
 endmenu

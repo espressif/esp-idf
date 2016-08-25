@@ -445,6 +445,11 @@ to its original value when it is released. */
 	extern void vApplicationTickHook( void );
 #endif
 
+#if  portFIRST_TASK_HOOK
+	extern void vPortFirstTaskHook(TaskFunction_t taskfn);
+#endif
+
+
 /* File private functions. --------------------------------*/
 
 /*
@@ -707,6 +712,12 @@ BaseType_t i;
 						/* Schedule if nothing is scheduled yet, or overwrite a task of lower prio. */
 						if ( pxCurrentTCB[i] == NULL || pxCurrentTCB[i]->uxPriority <= uxPriority )
 						{
+#if portFIRST_TASK_HOOK
+							if ( i == 0) {
+								vPortFirstTaskHook(pxTaskCode);
+							}
+#endif /* configFIRST_TASK_HOOK */
+
 							pxCurrentTCB[i] = pxNewTCB;
 							break;
 						}

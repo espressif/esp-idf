@@ -25,6 +25,14 @@ test_nvs_on_host:
     - cd components/nvs_flash/test
     - make test
 
+test_build_system:
+  stage: test
+  image: espressif/esp32-ci-env
+  variables:
+    IDF_PATH: "$CI_PROJECT_DIR"
+  script:
+    - ./make/build_system_tests.sh
+
 push_master_to_github:
   stage: deploy
   only:

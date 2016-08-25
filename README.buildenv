@@ -239,7 +239,7 @@ COMPONENT_EXTRA_CLEAN := test_tjpgd_logo.h
 graphics_lib.o: logo.h
 
 logo.h: $(COMPONENT_PATH)/logo.bmp
-	$(vecho) BMP2H $@
+	$(summary) BMP2H $@
 	$(Q) bmp2h -i $^ -o $@
 
 include $(IDF_PATH)/make/component.mk
