@@ -110,12 +110,12 @@ esp_err_t tcpip_adapter_set_mac(tcpip_adapter_if_t tcpip_if, uint8_t *mac);
 #endif
 
 esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
-esp_err_t tcpip_adapter_dhcps_option(u8_t opt_op, u8_t opt_id, void* opt_val, u32_t opt_len);
+esp_err_t tcpip_adapter_dhcps_option(uint8_t opt_op, uint8_t opt_id, void* opt_val, uint32_t opt_len);
 esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if);
 esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if);
 
 esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
-esp_err_t tcpip_adapter_dhcpc_option(u8_t opt_op, u8_t opt_id, void* opt_val, u32_t opt_len);
+esp_err_t tcpip_adapter_dhcpc_option(uint8_t opt_op, uint8_t opt_id, void* opt_val, uint32_t opt_len);
 esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if);
 esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
 

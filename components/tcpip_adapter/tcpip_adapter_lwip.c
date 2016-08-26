@@ -297,7 +297,7 @@ esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adap
     return ESP_OK;
 }
 
-esp_err_t tcpip_adapter_dhcps_option(u8_t opt_op, u8_t opt_id, void* opt_val, u32_t opt_len)
+esp_err_t tcpip_adapter_dhcps_option(uint8_t opt_op, uint8_t opt_id, void* opt_val, uint32_t opt_len)
 {
 	void* opt_info = dhcps_option_info(opt_id, opt_len);
 	if (opt_info == NULL || opt_val == NULL)
@@ -309,13 +309,13 @@ esp_err_t tcpip_adapter_dhcps_option(u8_t opt_op, u8_t opt_id, void* opt_val, u3
 
 		switch (opt_id){
 			case IP_ADDRESS_LEASE_TIME:
-				*(u32_t*)opt_val = *(u32_t*)opt_info;
+				*(uint32_t*)opt_val = *(uint32_t*)opt_info;
 				break;
 			case REQUESTED_IP_ADDRESS:
 				memcpy(opt_val, opt_info, opt_len);
 				break;
 			case ROUTER_SOLICITATION_ADDRESS:				
-				*(u8_t *)opt_val = (*(u8_t *)opt_info) & OFFER_ROUTER;
+				*(uint8_t *)opt_val = (*(uint8_t *)opt_info) & OFFER_ROUTER;
 				break;
 			default:
 				break;
@@ -326,14 +326,14 @@ esp_err_t tcpip_adapter_dhcps_option(u8_t opt_op, u8_t opt_id, void* opt_val, u3
 
 		switch (opt_id){
 			case IP_ADDRESS_LEASE_TIME:	
-				if (*(u32_t*)opt_val != 0)
-					*(u32_t*)opt_info = *(u32_t*)opt_val;
+				if (*(uint32_t*)opt_val != 0)
+					*(uint32_t*)opt_info = *(uint32_t*)opt_val;
 				else
-					*(u32_t*)opt_info = DHCPS_LEASE_TIME_DEF;	
+					*(uint32_t*)opt_info = DHCPS_LEASE_TIME_DEF;	
 				break;
 			case REQUESTED_IP_ADDRESS:{
 					struct ip_info info;
-					u32_t softap_ip = 0;u32_t start_ip = 0;u32_t end_ip = 0;
+					uint32_t softap_ip = 0;uint32_t start_ip = 0;uint32_t end_ip = 0;
 					struct dhcps_lease *poll = opt_val;
 
 					memset(&info, 0x00, sizeof(struct ip_info));
@@ -360,7 +360,7 @@ esp_err_t tcpip_adapter_dhcps_option(u8_t opt_op, u8_t opt_id, void* opt_val, u3
 				}
 				break;
 			case ROUTER_SOLICITATION_ADDRESS:				
-				*(u8_t *)opt_info = (*(u8_t *)opt_val) & OFFER_ROUTER;
+				*(uint8_t *)opt_info = (*(uint8_t *)opt_val) & OFFER_ROUTER;
 				break;
 			default:
 				break;
@@ -432,8 +432,9 @@ esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adap
     return ESP_OK;
 }
 
-esp_err_t tcpip_adapter_dhcpc_option(u8_t opt_op, u8_t opt_id, void* opt_val, u32_t opt_len)
+esp_err_t tcpip_adapter_dhcpc_option(uint8_t opt_op, uint8_t opt_id, void* opt_val, uint32_t opt_len)
 {
+	//TODO: when dhcp request timeout,change the retry count
 	return ESP_OK;
 }
 
