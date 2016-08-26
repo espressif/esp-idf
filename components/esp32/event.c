@@ -116,10 +116,17 @@ esp_err_t system_event_sta_stop_handle_default(system_event_t *event)
 
 esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
 {
+    tcpip_adapter_dhcp_status_t status;
+	
     WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t)tcpip_adapter_sta_input), ESP_OK);
 
     tcpip_adapter_up(TCPIP_ADAPTER_IF_STA);
-    tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+
+    tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_STA, &status);
+
+    if (status == TCPIP_ADAPTER_DHCP_INIT) {
+        tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+    }
 
     return ESP_OK;
 }

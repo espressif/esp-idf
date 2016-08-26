@@ -147,7 +147,10 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
             dhcp_release(esp_netif[tcpip_if]);
             dhcp_stop(esp_netif[tcpip_if]);
             dhcp_cleanup(esp_netif[tcpip_if]);
-            dhcpc_status = TCPIP_ADAPTER_DHCP_STOPED;
+
+            if (dhcpc_status != TCPIP_ADAPTER_DHCP_STOPED) {
+                dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
+            }
         } else {
             netif_set_down(esp_netif[tcpip_if]);
             netif_set_addr(esp_netif[tcpip_if], IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
