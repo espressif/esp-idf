@@ -38,7 +38,7 @@ static tcpip_adapter_dhcp_status_t dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
 
 static esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif);
 
-#define TCPIP_ADAPTER_DEBUG  printf
+#define TCPIP_ADAPTER_DEBUG(...) 
 
 void tcpip_adapter_init(void)
 {
@@ -225,9 +225,7 @@ esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
             memcpy(&evt.event_info.got_ip.gw, &esp_ip[tcpip_if].gw, sizeof(evt.event_info.got_ip.gw));
             esp_event_send(&evt);
 
-            printf("ip: %s, ", inet_ntoa(esp_ip[tcpip_if].ip));
-            printf("mask: %s, ", inet_ntoa(esp_ip[tcpip_if].netmask));
-            printf("gw: %s\n", inet_ntoa(esp_ip[tcpip_if].gw));
+            printf("ip: %s, mask: %s, gw: %s", inet_ntoa(esp_ip[tcpip_if].ip), inet_ntoa(esp_ip[tcpip_if].netmask), inet_ntoa(esp_ip[tcpip_if].gw));
         }
     } else {
         TCPIP_ADAPTER_DEBUG("ip unchanged\n");
