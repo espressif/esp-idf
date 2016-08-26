@@ -76,18 +76,18 @@ typedef enum {
 
 /*op*/
 typedef enum{
-	TCPIP_ADAPTER_OP_START = 0,
-	TCPIP_ADAPTER_OP_SET,
-	TCPIP_ADAPTER_OP_GET,
-	TCPIP_ADAPTER_OP_MAX
-}tcpip_adapter_option_mode;
+    TCPIP_ADAPTER_OP_START = 0,
+    TCPIP_ADAPTER_OP_SET,
+    TCPIP_ADAPTER_OP_GET,
+    TCPIP_ADAPTER_OP_MAX
+} tcpip_adapter_option_mode;
 
 typedef enum{
-	TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS = 32,
-	TCPIP_ADAPTER_REQUESTED_IP_ADDRESS = 50,
-	TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME = 51,	
-	TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME = 52,
-}tcpip_adapter_option_id;
+    TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS = 32,
+    TCPIP_ADAPTER_REQUESTED_IP_ADDRESS = 50,
+    TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME = 51,
+    TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME = 52,
+} tcpip_adapter_option_id;
 
 void tcpip_adapter_init(void);
 
@@ -110,12 +110,12 @@ esp_err_t tcpip_adapter_set_mac(tcpip_adapter_if_t tcpip_if, uint8_t *mac);
 #endif
 
 esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
-esp_err_t tcpip_adapter_dhcps_option(uint8_t opt_op, uint8_t opt_id, void* opt_val, uint32_t opt_len);
+esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len);
 esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if);
 esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if);
 
 esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
-esp_err_t tcpip_adapter_dhcpc_option(uint8_t opt_op, uint8_t opt_id, void* opt_val, uint32_t opt_len);
+esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len);
 esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if);
 esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
 
