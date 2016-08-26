@@ -76,7 +76,7 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, struct 
         netif_set_up(esp_netif[tcpip_if]);
 
         if (dhcps_status == TCPIP_ADAPTER_DHCP_INIT) {
-            dhcps_start(esp_netif[tcpip_if]);
+            dhcps_start(esp_netif[tcpip_if], info);
             printf("dhcp server start:(ip: %s, mask: %s, gw: %s)\n", inet_ntoa(info->ip), inet_ntoa(info->netmask), inet_ntoa(info->gw));
             dhcps_status = TCPIP_ADAPTER_DHCP_STARTED;
         }
@@ -302,6 +302,99 @@ esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adap
     return ESP_OK;
 }
 
+esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len)
+{
+    void *opt_info = dhcps_option_info(opt_id, opt_len);
+
+    if (opt_info == NULL || opt_val == NULL) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    if (opt_op == TCPIP_ADAPTER_OP_GET) {
+        if (dhcps_status == TCPIP_ADAPTER_DHCP_STOPED) {
+            return ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPED;
+        }
+
+        switch (opt_id) {
+            case IP_ADDRESS_LEASE_TIME:
+            {
+                *(uint32_t*)opt_val = *(uint32_t*)opt_info;
+                break;
+            }
+            case REQUESTED_IP_ADDRESS:
+            {
+                memcpy(opt_val, opt_info, opt_len);
+                break;
+            }
+            case ROUTER_SOLICITATION_ADDRESS:
+            {
+                *(uint8_t *)opt_val = (*(uint8_t *)opt_info) & OFFER_ROUTER;
+                break;
+            }
+            default:
+                break;
+        }
+    } else if (opt_op == TCPIP_ADAPTER_OP_SET) {
+        if (dhcps_status == TCPIP_ADAPTER_DHCP_STARTED) {
+            return ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED;
+        }
+
+        switch (opt_id) {
+            case IP_ADDRESS_LEASE_TIME:
+            {
+                if (*(uint32_t*)opt_val != 0)
+                    *(uint32_t*)opt_info = *(uint32_t*)opt_val;
+                else
+                    *(uint32_t*)opt_info = DHCPS_LEASE_TIME_DEF;    
+                break;
+            }
+            case REQUESTED_IP_ADDRESS:
+            {
+                struct ip_info info;
+                uint32_t softap_ip = 0;
+                uint32_t start_ip = 0;
+                uint32_t end_ip = 0;
+                struct dhcps_lease *poll = opt_val;
+
+                memset(&info, 0x00, sizeof(struct ip_info));
+                tcpip_adapter_get_ip_info(WIFI_IF_AP, &info);
+                softap_ip = htonl(info.ip.addr);
+                start_ip = htonl(poll->start_ip.addr);
+                end_ip = htonl(poll->end_ip.addr);
+
+                /*config ip information can't contain local ip*/
+                if ((start_ip <= softap_ip) && (softap_ip <= end_ip))
+                       return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+
+                /*config ip information must be in the same segment as the local ip*/
+                softap_ip >>= 8;
+                if ((start_ip >> 8 != softap_ip)
+                    || (end_ip >> 8 != softap_ip)) {
+                       return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+                }
+
+                if (end_ip - start_ip > DHCPS_MAX_LEASE) {
+                       return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+                }
+
+                memcpy(opt_info, opt_val, opt_len);
+                break;
+            }
+            case ROUTER_SOLICITATION_ADDRESS:
+            {
+                *(uint8_t *)opt_info = (*(uint8_t *)opt_val) & OFFER_ROUTER;
+                break;
+            }
+            default:
+                break;
+        }
+    } else {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if)
 {
     /* only support ap now */
@@ -314,7 +407,9 @@ esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if)
         struct netif *p_netif = esp_netif[tcpip_if];
 
         if (p_netif != NULL && netif_is_up(p_netif)) {
-            dhcps_start(p_netif);
+            struct ip_info default_ip;
+            tcpip_adapter_get_ip_info(WIFI_IF_AP, &default_ip);
+            dhcps_start(p_netif, &default_ip);
             dhcps_status = TCPIP_ADAPTER_DHCP_STARTED;
             TCPIP_ADAPTER_DEBUG("dhcp server start successfully\n");
             return ESP_OK;
@@ -360,6 +455,12 @@ esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adap
 {
     *status = dhcpc_status;
 
+    return ESP_OK;
+}
+
+esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len)
+{
+    // TODO: when dhcp request timeout,change the retry count
     return ESP_OK;
 }
 

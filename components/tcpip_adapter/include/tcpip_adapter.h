@@ -32,6 +32,15 @@ struct ip_info {
     ip4_addr_t gw;
 };
 
+/*   Defined in esp_misc.h */
+struct dhcps_lease {
+	bool enable;
+	ip4_addr_t start_ip;
+	ip4_addr_t end_ip;
+};
+
+typedef struct dhcps_lease tcpip_adapter_dhcps_lease;
+
 #endif
 
 #if CONFIG_DHCP_STA_LIST 
@@ -65,6 +74,21 @@ typedef enum {
     TCPIP_ADAPTER_DHCP_STATUS_MAX
 } tcpip_adapter_dhcp_status_t;
 
+/*op*/
+typedef enum{
+    TCPIP_ADAPTER_OP_START = 0,
+    TCPIP_ADAPTER_OP_SET,
+    TCPIP_ADAPTER_OP_GET,
+    TCPIP_ADAPTER_OP_MAX
+} tcpip_adapter_option_mode;
+
+typedef enum{
+    TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS = 32,
+    TCPIP_ADAPTER_REQUESTED_IP_ADDRESS = 50,
+    TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME = 51,
+    TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME = 52,
+} tcpip_adapter_option_id;
+
 void tcpip_adapter_init(void);
 
 esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, struct ip_info *info);
@@ -86,15 +110,13 @@ esp_err_t tcpip_adapter_set_mac(tcpip_adapter_if_t tcpip_if, uint8_t *mac);
 #endif
 
 esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
-
+esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len);
 esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if);
-
 esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if);
 
 esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
-
+esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len);
 esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if);
-
 esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
 
 esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void* eb);
