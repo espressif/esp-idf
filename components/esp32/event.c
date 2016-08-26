@@ -31,7 +31,7 @@
 static xQueueHandle g_event_handler = NULL;
 static system_event_cb_t g_event_handler_cb;
 
-#define WIFI_DEBUG  printf
+#define WIFI_DEBUG(...) 
 #define WIFI_API_CALL_CHECK(info, api_call, ret) \
 do{\
     esp_err_t __err = (api_call);\
@@ -154,36 +154,35 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
         return ESP_FAIL;
     }
 
-    printf("received event: ");
+    WIFI_DEBUG("received event: ");
     switch (event->event_id) {
         case SYSTEM_EVENT_WIFI_READY:
         {
-            printf("SYSTEM_EVENT_WIFI_READY\n");
+            WIFI_DEBUG("SYSTEM_EVENT_WIFI_READY\n");
             break;
         }
         case SYSTEM_EVENT_SCAN_DONE:
         {
             system_event_sta_scan_done_t *scan_done;
             scan_done = &event->event_info.scan_done;
-            printf("SYSTEM_EVENT_SCAN_DONE\nstatus:%d, number:%d\n", \
-                scan_done->status, scan_done->number);
+            WIFI_DEBUG("SYSTEM_EVENT_SCAN_DONE\nstatus:%d, number:%d\n",  scan_done->status, scan_done->number);
             break;
         }
         case SYSTEM_EVENT_STA_START:
         {
-            printf("SYSTEM_EVENT_STA_START\n");
+            WIFI_DEBUG("SYSTEM_EVENT_STA_START\n");
             break;
         }
         case SYSTEM_EVENT_STA_STOP:
         {
-            printf("SYSTEM_EVENT_STA_STOP\n");
+            WIFI_DEBUG("SYSTEM_EVENT_STA_STOP\n");
             break;
         }
         case SYSTEM_EVENT_STA_CONNECTED:
         {
             system_event_sta_connected_t *connected; 
             connected = &event->event_info.connected;
-            printf("SYSTEM_EVENT_STA_CONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, channel:%d\n", \
+            WIFI_DEBUG("SYSTEM_EVENT_STA_CONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, channel:%d\n", \
                 connected->ssid, connected->ssid_len, connected->bssid[0], connected->bssid[0], connected->bssid[1], \
                 connected->bssid[3], connected->bssid[4], connected->bssid[5], connected->channel);
             break;
@@ -192,7 +191,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
         {
             system_event_sta_disconnected_t *disconnected;
             disconnected = &event->event_info.disconnected;
-            printf("SYSTEM_EVENT_STA_DISCONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, reason:%d\n", \
+            WIFI_DEBUG("SYSTEM_EVENT_STA_DISCONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, reason:%d\n", \
                 disconnected->ssid, disconnected->ssid_len, disconnected->bssid[0], disconnected->bssid[0], disconnected->bssid[1], \
                 disconnected->bssid[3], disconnected->bssid[4], disconnected->bssid[5], disconnected->reason);
             break;
@@ -201,31 +200,31 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
         {
             system_event_sta_authmode_change_t *auth_change;
             auth_change = &event->event_info.auth_change;
-            printf("SYSTEM_EVENT_STA_AUTHMODE_CHNAGE\nold_mode:%d, new_mode:%d\n", auth_change->old_mode, auth_change->new_mode);
+            WIFI_DEBUG("SYSTEM_EVENT_STA_AUTHMODE_CHNAGE\nold_mode:%d, new_mode:%d\n", auth_change->old_mode, auth_change->new_mode);
             break;
         }
         case SYSTEM_EVENT_STA_GOTIP:
         {
             system_event_sta_gotip_t *got_ip;
             got_ip = &event->event_info.got_ip;
-            printf("SYSTEM_EVENT_STA_GOTIP\n");
+            WIFI_DEBUG("SYSTEM_EVENT_STA_GOTIP\n");
             break;
         }
         case SYSTEM_EVENT_AP_START:
         {
-            printf("SYSTEM_EVENT_AP_START\n");
+            WIFI_DEBUG("SYSTEM_EVENT_AP_START\n");
             break;
         }
         case SYSTEM_EVENT_AP_STOP:
         {
-            printf("SYSTEM_EVENT_AP_STOP\n");
+            WIFI_DEBUG("SYSTEM_EVENT_AP_STOP\n");
             break;
         }
         case SYSTEM_EVENT_AP_STACONNECTED:
         {
             system_event_ap_staconnected_t *staconnected;
             staconnected = &event->event_info.sta_connected;
-            printf("SYSTEM_EVENT_AP_STACONNECTED\nmac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d\n", \
+            WIFI_DEBUG("SYSTEM_EVENT_AP_STACONNECTED\nmac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d\n", \
                 staconnected->mac[0], staconnected->mac[0], staconnected->mac[1], \
                 staconnected->mac[3], staconnected->mac[4], staconnected->mac[5], staconnected->aid);
             break;
@@ -234,7 +233,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
         {
             system_event_ap_stadisconnected_t *stadisconnected;
             stadisconnected = &event->event_info.sta_disconnected;
-            printf("SYSTEM_EVENT_AP_STADISCONNECTED\nmac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d\n", \
+            WIFI_DEBUG("SYSTEM_EVENT_AP_STADISCONNECTED\nmac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d\n", \
                 stadisconnected->mac[0], stadisconnected->mac[0], stadisconnected->mac[1], \
                 stadisconnected->mac[3], stadisconnected->mac[4], stadisconnected->mac[5], stadisconnected->aid);
             break;
@@ -243,7 +242,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
         {
             system_event_ap_probe_req_rx_t *ap_probereqrecved;
             ap_probereqrecved = &event->event_info.ap_probereqrecved;
-            printf("SYSTEM_EVENT_AP_PROBEREQRECVED\nrssi:%d, mac:%02x:%02x:%02x:%02x:%02x:%02x\n", \
+            WIFI_DEBUG("SYSTEM_EVENT_AP_PROBEREQRECVED\nrssi:%d, mac:%02x:%02x:%02x:%02x:%02x:%02x\n", \
                 ap_probereqrecved->rssi, ap_probereqrecved->mac[0], ap_probereqrecved->mac[0], ap_probereqrecved->mac[1], \
                 ap_probereqrecved->mac[3], ap_probereqrecved->mac[4], ap_probereqrecved->mac[5]);
             break;
@@ -268,9 +267,9 @@ static esp_err_t esp_system_event_handler(system_event_t *event)
     esp_system_event_debug(event);
     if ((event->event_id < SYSTEM_EVENT_MAX) && (event->event_id == g_system_event_handle_table[event->event_id].event_id)){
         if (g_system_event_handle_table[event->event_id].event_handle){
-            printf("enter default callback\n");
+            WIFI_DEBUG("enter default callback\n");
             g_system_event_handle_table[event->event_id].event_handle(event);
-            printf("exit default callback\n");
+            WIFI_DEBUG("exit default callback\n");
         }
     } else {
         printf("mismatch or invalid event, id=%d\n", event->event_id);
@@ -306,8 +305,8 @@ esp_err_t esp_event_send(system_event_t *event)
     
     ret = xQueueSendToBack((xQueueHandle)g_event_handler, event, 0);
     if (pdPASS != ret){
-        if (event) ets_printf("e=%d f\n", event->event_id);
-        else ets_printf("e null\n");
+        if (event) printf("e=%d f\n", event->event_id);
+        else printf("e null\n");
         return ESP_FAIL;
     }
 

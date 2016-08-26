@@ -28,7 +28,7 @@
 
 static wifi_startup_cb_t startup_cb;
 
-#define WIFI_DEBUG  printf
+#define WIFI_DEBUG(...) 
 #define WIFI_API_CALL_CHECK(info, api_call, ret) \
 do{\
     esp_err_t __err = (api_call);\
