@@ -139,7 +139,7 @@ esp_err_t tcpip_adapter_up(tcpip_adapter_if_t tcpip_if)
 esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
 {
     if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
-        if (esp_netif[tcpip_if] == NULL){
+        if (esp_netif[tcpip_if] == NULL) {
             return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
         }
 
@@ -155,6 +155,10 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
             netif_set_down(esp_netif[tcpip_if]);
             netif_set_addr(esp_netif[tcpip_if], IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
         }
+
+        ip4_addr_set_zero(&esp_ip[tcpip_if].ip);
+        ip4_addr_set_zero(&esp_ip[tcpip_if].gw);
+        ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
     }
 
     return ESP_OK;
