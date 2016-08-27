@@ -31,7 +31,7 @@ void ets_aes_enable(void);
 
 void ets_aes_disable(void);
 
-void ets_set_endian(bool key_word_swap, bool key_byte_swap,
+void ets_aes_set_endian(bool key_word_swap, bool key_byte_swap,
                     bool in_word_swap, bool in_byte_swap,
                     bool out_word_swap, bool out_byte_swap);
 
