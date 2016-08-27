@@ -188,7 +188,7 @@ esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]);
 
 typedef void (* wifi_promiscuous_cb_t)(void *buf, uint16_t len);
 
-wifi_promiscuous_cb_t wifi_set_promiscuous_rx_cb(wifi_promiscuous_cb_t cb);
+esp_err_t esp_wifi_set_promiscuous_rx_cb(wifi_promiscuous_cb_t cb);
 
 esp_err_t esp_wifi_set_promiscuous(uint8_t enable);
 
