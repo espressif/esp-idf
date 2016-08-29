@@ -77,6 +77,8 @@ typedef struct{
 }sntp_tm_type;
 
 void sntp_convert_time(sntp_time_t GMT_Time);
-
+bool sntp_set_timezone(s8_t timezone);
+char* sntp_get_real_time(sntp_time_t t);
+u32_t sntp_get_current_timestamp(void);
 #endif
 
