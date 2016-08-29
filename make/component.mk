@@ -83,8 +83,8 @@ clean:
 endif
 
 #Also generate dependency files
-CFLAGS+=-MMD
-CXXFLAGS+=-MMD
+CFLAGS+=-MMD -MP
+CXXFLAGS+=-MMD -MP
 #Include all dependency files already generated
 -include $(COMPONENT_OBJS:.o=.d)
 
