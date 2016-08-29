@@ -469,7 +469,7 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
 /**
  * SOCKETS_DEBUG: Enable debugging in sockets.c.
  */
-#define SOCKETS_DEBUG                   LWIP_DBG_ON
+#define SOCKETS_DEBUG                   LWIP_DBG_OFF
 
 /**
  * ICMP_DEBUG: Enable debugging in icmp.c.
@@ -505,9 +505,9 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
  * DHCP_DEBUG: Enable debugging in dhcp.c.
  */
 #define DHCP_DEBUG                      LWIP_DBG_OFF
-#define LWIP_DEBUG                      1
-#define TCP_DEBUG                       LWIP_DBG_ON
-#define THREAD_SAFE_DEBUG               LWIP_DBG_ON
+#define LWIP_DEBUG                      0
+#define TCP_DEBUG                       LWIP_DBG_OFF
+#define THREAD_SAFE_DEBUG               LWIP_DBG_OFF
 #define LWIP_THREAD_SAFE                1
 
 #define CHECKSUM_CHECK_UDP              0
