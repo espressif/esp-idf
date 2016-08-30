@@ -66,7 +66,7 @@ static char hostname[16];
 static char hostname[16];
 #endif
 #ifdef PERF
-uint32 g_rx_alloc_pbuf_fail_cnt = 0;
+uint32_t g_rx_alloc_pbuf_fail_cnt = 0;
 #endif
 
 /**
