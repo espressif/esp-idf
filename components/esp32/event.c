@@ -64,7 +64,7 @@ static system_event_handle_t g_system_event_handle_table[] = {
     {SYSTEM_EVENT_STA_CONNECTED,       system_event_sta_connected_handle_default},
     {SYSTEM_EVENT_STA_DISCONNECTED,    system_event_sta_disconnected_handle_default},
     {SYSTEM_EVENT_STA_AUTHMODE_CHANGE, NULL},
-    {SYSTEM_EVENT_STA_GOTIP,           NULL},
+    {SYSTEM_EVENT_STA_GOTIP,           system_event_sta_gotip_default},
     {SYSTEM_EVENT_AP_START,            system_event_ap_start_handle_default},
     {SYSTEM_EVENT_AP_STOP,             system_event_ap_stop_handle_default},
     {SYSTEM_EVENT_AP_STACONNECTED,     NULL},

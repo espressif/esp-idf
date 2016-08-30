@@ -221,6 +221,7 @@ extern unsigned long os_random(void);
  * TCP_WND: The size of a TCP window.  This must be at least
  * (2 * TCP_MSS) for things to work well
  */
+#define PERF 1
 #ifdef PERF
 extern unsigned char misc_prof_get_tcpw(void);
 extern unsigned char misc_prof_get_tcp_snd_buf(void);

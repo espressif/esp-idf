@@ -69,12 +69,14 @@ static void esp_wifi_task(void *pvParameters)
 
 #if CONFIG_WIFI_AUTO_CONNECT
         wifi_mode_t mode;
+        bool auto_connect;
         err = esp_wifi_get_mode(&mode);
         if (err != ESP_OK){
             WIFI_DEBUG("esp_wifi_get_mode fail, ret=%d\n", err);
         }
 
-        if (mode == WIFI_MODE_STA || mode == WIFI_MODE_APSTA) {
+        err = esp_wifi_get_auto_connect(&auto_connect);
+        if ((mode == WIFI_MODE_STA || mode == WIFI_MODE_APSTA) && auto_connect) {
             err = esp_wifi_connect();
             if (err != ESP_OK) {
                 WIFI_DEBUG("esp_wifi_connect fail, ret=%d\n", err);
