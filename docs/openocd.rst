@@ -28,7 +28,7 @@ devices and give a good throughput. We also tested a J-link-compatible and an Ea
 somewhat slower.
 
 The minimal signalling to get a working JTAG connection are TDI, TDO, TCK, TMS and Gnd. Some JTAG debuggers also need a connection 
-from the ESP32 power line to a line called e.g. Vtar to set the working voltage. SRST can optionally be connected to the /reset of 
+from the ESP32 power line to a line called e.g. Vtar to set the working voltage. SRST can optionally be connected to the CH_PD of 
 the ESP32, although for now, support in OpenOCD for that line is pretty minimal.
 
 Installing OpenOCD
@@ -81,10 +81,11 @@ You should now see something like this::
 Connecting a debugger to OpenOCD
 --------------------------------
 
-OpenOCD should now be ready to accept gdb connections. If you have compiled the ESP32 toolchain using Crosstool-NG, you 
-should already have xtensa-esp32-elf-gdb, a version of gdb that can be used for this. First, make sure the project
-you want to debug is compiled and flashed into the ESP32s SPI flash. Then, in a different console than OpenOCD is running
-in, invoke gdb. For example, for the template app, you would do this like such::
+OpenOCD should now be ready to accept gdb connections. If you have compiled the ESP32 toolchain using Crosstool-NG, or
+if you have downloaded a precompiled toolchain from the Espressif website, you should already have xtensa-esp32-elf-gdb, 
+a version of gdb that can be used for this. First, make sure the project you want to debug is compiled and flashed 
+into the ESP32s SPI flash. Then, in a different console than OpenOCD is running in, invoke gdb. For example, for the 
+template app, you would do this like such::
 
     cd esp-idf-template
     xtensa-esp32-elf-gdb -ex 'target remote localhost:3333' ./build/app-template.elf 
@@ -121,4 +122,9 @@ The ESP-IDF code has the option of compiling in various support options for Open
 is started and break the system if a panic or unhandled exception is thrown. Please see the ``make menuconfig`` menu for more
 details.
 
-
+Normally, under OpenOCD, a board can be reset by entering 'mon reset' or 'mon reset halt' into gdb. For
+the ESP32, these commands work more or less, but have side effects. First of all, an OpenOCD reset only
+resets the CPU cores, not the peripherals, which may lead to undefined behaviour if software assumes the
+after-reset state of peripherals. Secondly, 'mon reset halt' stops before FreeRTOS is initialized. 
+OpenOCD assumes (in the default configuration, you can change this by editing esp32.cfg) a running 
+FreeRTOS and may get confused.
