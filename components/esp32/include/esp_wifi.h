@@ -122,6 +122,10 @@ esp_err_t esp_wifi_connect(void);
 
 esp_err_t esp_wifi_disconnect(void);
 
+esp_err_t esp_wifi_clear_fast_connect(void);
+
+esp_err_t esp_wifi_kick_station(uint16_t aid);
+
 typedef struct {
     char *ssid;          /**< SSID of AP */
     uint8_t *bssid;      /**< MAC address of AP */
@@ -129,7 +133,7 @@ typedef struct {
     bool show_hidden;   /**< enable to scan AP whose SSID is hidden */
 } wifi_scan_config_t;
 
-esp_err_t esp_wifi_scan_start(wifi_scan_config_t *conf);
+esp_err_t esp_wifi_scan_start(wifi_scan_config_t *conf, bool block);
 
 esp_err_t esp_wifi_scan_stop(void);
 
@@ -229,6 +233,8 @@ struct station_info {
 esp_err_t esp_wifi_get_station_list(struct station_info **station);
 
 esp_err_t esp_wifi_free_station_list(void);
+
+esp_err_t esp_wifi_set_storage(uint8_t storage);
 
 typedef esp_err_t (*wifi_rxcb_t)(void *buffer, uint16_t len, void* eb);
 

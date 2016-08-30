@@ -48,6 +48,7 @@ typedef struct {
 typedef struct {
     uint32_t status;          /**< status of scanning APs*/
     uint8_t  number;
+    uint8_t  scan_id;
 } system_event_sta_scan_done_t;
 
 typedef struct {
