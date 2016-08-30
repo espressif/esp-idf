@@ -38,7 +38,7 @@ static tcpip_adapter_dhcp_status_t dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
 
 static esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif);
 
-#define TCPIP_ADAPTER_DEBUG(...) 
+#define TCPIP_ADAPTER_DEBUG(...)
 
 void tcpip_adapter_init(void)
 {
@@ -236,9 +236,24 @@ esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
 esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, struct ip_info *if_ip)
 {
     struct netif *p_netif;
+    tcpip_adapter_dhcp_status_t status;
 
     if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || if_ip == NULL) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    if (tcpip_if == TCPIP_ADAPTER_IF_AP) {
+        tcpip_adapter_dhcps_get_status(tcpip_if, &status);
+
+        if (status != TCPIP_ADAPTER_DHCP_STOPED) {
+            return ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPED;
+        }
+    } else if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
+        tcpip_adapter_dhcpc_get_status(tcpip_if, &status);
+
+        if (status != TCPIP_ADAPTER_DHCP_STOPED) {
+            return ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPED;
+        }
     }
 
     ip4_addr_copy(esp_ip[tcpip_if].ip, if_ip->ip);
@@ -477,7 +492,7 @@ esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if)
         if (p_netif != NULL) {
             if (netif_is_up(p_netif)) {
                 TCPIP_ADAPTER_DEBUG("dhcp client init ip/mask/gw to all-0\n");
-                ip_addr_set_zero(&p_netif->ip_addr);;
+                ip_addr_set_zero(&p_netif->ip_addr);
                 ip_addr_set_zero(&p_netif->netmask);
                 ip_addr_set_zero(&p_netif->gw);
             }
