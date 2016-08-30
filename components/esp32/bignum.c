@@ -1018,9 +1018,9 @@ static void esp_mpi_mul_hlp( size_t i, esp_mpi_uint *s, esp_mpi_uint *d, esp_mpi
 static int mul_pram_alloc( mpi *X, const mpi *A, const mpi *B, char **pA, char **pB, char **pX, size_t *bites)
 {
     char *sa, *sb, *sx;
-	int algn;
+//	int algn;
 	int words, bytes;
-	int abytes, bbytes, cbytes;
+	int abytes, bbytes;
 
 	if (A->n > B->n)
 		words = A->n;
@@ -2177,7 +2177,4 @@ cleanup:
 
     return( ret );
 }
-
-
-#endif /* ESP_BIGNUM_ALT */
 

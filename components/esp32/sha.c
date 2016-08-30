@@ -205,6 +205,11 @@ void esp_sha512_init( SHA512_CTX *ctx )
 	SHA_UNLOCK();
 }
 
+void esp_sha512_process( SHA512_CTX *ctx, const unsigned char data[128] )
+{
+
+}
+
 void esp_sha512_free( SHA512_CTX *ctx )
 {
     if( ctx == NULL )

@@ -23,7 +23,7 @@
 #ifndef _ESP_BIGNUM_H
 #define _ESP_BIGNUM_H
 
-#include "c_types.h"
+#include "esp_types.h"
 #include "rom/ets_sys.h"
 #include "rom/bigint.h"
 

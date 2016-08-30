@@ -64,7 +64,7 @@ int esp_aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,
                     unsigned int keybits )
 {
 	enum AES_BITS	keybit;
-	uint16 keybyte = keybits / 8;
+	uint16_t keybyte = keybits / 8;
 	switch (keybits){
 		case 128:
 			keybit = AES128;
@@ -95,7 +95,7 @@ int esp_aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,
                     unsigned int keybits )
 {
 	enum AES_BITS	keybit;
-	uint16 keybyte = keybits / 8;
+	uint16_t keybyte = keybits / 8;
 	switch (keybits){
 		case 128:
 			keybit = AES128;

@@ -6,7 +6,7 @@
 #ifndef _ESP_SHA_H_
 #define _ESP_SHA_H_
 
-#include "c_types.h"
+#include "esp_types.h"
 #include "rom/ets_sys.h"
 #include "rom/sha.h"
 
@@ -163,6 +163,8 @@ typedef sha_context SHA512_CTX;
  * \param ctx      SHA-512 context to be initialized
  */
 void esp_sha512_init( SHA512_CTX *ctx );
+
+void esp_sha512_process( SHA512_CTX *ctx, const unsigned char data[128] );
 
 /**
  * \brief          Clear SHA-512 context

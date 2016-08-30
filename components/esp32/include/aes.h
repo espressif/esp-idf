@@ -24,7 +24,7 @@
 #ifndef ESP_AES_H
 #define ESP_AES_H
 
-#include "c_types.h"
+#include "esp_types.h"
 #include "rom/ets_sys.h"
 #include "rom/aes.h"
 
@@ -41,8 +41,8 @@ extern "C" {
 
 typedef struct{
 	bool  flag;
-	uint16 keybites;
-    uint8 key[32];
+	uint16_t keybites;
+    uint8_t key[32];
 }key_context, KEY_CTX;
 
 /**

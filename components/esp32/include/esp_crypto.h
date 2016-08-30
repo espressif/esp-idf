@@ -1,7 +1,7 @@
 #ifndef _MULTI_CRYPTO_H_
 #define _MULTI_CRYPTO_H_
 
-#include "c_types.h"
+#include "esp_types.h"
 #include "rom/ets_sys.h"
 
 #ifdef __cplusplus
