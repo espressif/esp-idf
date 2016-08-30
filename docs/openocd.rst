@@ -118,9 +118,9 @@ Because gdb only sees the system from the point of view of the selected CPU, onl
 and the task running on the CPU gdb is connected to, will be shown correctly. The task that was active on the other
 cpu can be inspected, but its state may be wildly inconsistent.
 
-The ESP-IDF code has the option of compiling in various support options for OpenOCD: it can stop execution when the first thread
-is started and break the system if a panic or unhandled exception is thrown. Please see the ``make menuconfig`` menu for more
-details.
+The ESP-IDF code has the option of compiling in various support options for OpenOCD: it can stop execution when the first 
+thread is started and break the system if a panic or unhandled exception is thrown. Both options are enabled by default 
+but can be disabled using the esp-idf configuration menu. Please see the ``make menuconfig`` menu for more details.
 
 Normally, under OpenOCD, a board can be reset by entering 'mon reset' or 'mon reset halt' into gdb. For
 the ESP32, these commands work more or less, but have side effects. First of all, an OpenOCD reset only
