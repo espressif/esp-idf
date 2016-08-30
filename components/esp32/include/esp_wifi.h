@@ -234,6 +234,10 @@ typedef esp_err_t (*wifi_rxcb_t)(void *buffer, uint16_t len, void* eb);
 
 esp_err_t esp_wifi_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn);
 
+esp_err_t esp_wifi_set_auto_connect(bool en);
+
+esp_err_t esp_wifi_get_auto_connect(bool *en);
+
 #ifdef __cplusplus
 }
 #endif
