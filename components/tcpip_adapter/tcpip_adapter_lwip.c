@@ -224,8 +224,7 @@ esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
             memcpy(&evt.event_info.got_ip.netmask, &esp_ip[tcpip_if].netmask, sizeof(evt.event_info.got_ip.netmask));
             memcpy(&evt.event_info.got_ip.gw, &esp_ip[tcpip_if].gw, sizeof(evt.event_info.got_ip.gw));
             esp_event_send(&evt);
-
-            printf("ip: %s, mask: %s, gw: %s", inet_ntoa(esp_ip[tcpip_if].ip), inet_ntoa(esp_ip[tcpip_if].netmask), inet_ntoa(esp_ip[tcpip_if].gw));
+            printf("ip: %s, mask: %s, gw: %s\n", inet_ntoa(esp_ip[tcpip_if].ip), inet_ntoa(esp_ip[tcpip_if].netmask), inet_ntoa(esp_ip[tcpip_if].gw));
         }
     } else {
         TCPIP_ADAPTER_DEBUG("ip unchanged\n");
