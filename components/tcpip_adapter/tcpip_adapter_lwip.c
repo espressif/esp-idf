@@ -77,7 +77,11 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, struct 
 
         if (dhcps_status == TCPIP_ADAPTER_DHCP_INIT) {
             dhcps_start(esp_netif[tcpip_if], info);
-            printf("dhcp server start:(ip: %s, mask: %s, gw: %s)\n", inet_ntoa(info->ip), inet_ntoa(info->netmask), inet_ntoa(info->gw));
+
+            printf("dhcp server start:(ip: %s, ", inet_ntoa(info->ip));
+            printf("mask: %s, ", inet_ntoa(info->netmask));
+            printf("gw: %s)\n", inet_ntoa(info->gw));
+
             dhcps_status = TCPIP_ADAPTER_DHCP_STARTED;
         }
     }
@@ -161,31 +165,6 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
     return ESP_OK;
 }
 
-esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, struct ip_info *if_ip)
-{
-    struct netif *p_netif;
-
-    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || if_ip == NULL) {
-        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
-    }
-
-    p_netif = esp_netif[tcpip_if];
-
-    if (p_netif != NULL && netif_is_up(p_netif)) {
-        ip4_addr_set(&if_ip->ip, ip_2_ip4(&p_netif->ip_addr));
-        ip4_addr_set(&if_ip->netmask, ip_2_ip4(&p_netif->netmask));
-        ip4_addr_set(&if_ip->gw, ip_2_ip4(&p_netif->gw));
-
-        return ESP_OK;
-    }
-
-    ip4_addr_copy(if_ip->ip, esp_ip[tcpip_if].ip);
-    ip4_addr_copy(if_ip->gw, esp_ip[tcpip_if].gw);
-    ip4_addr_copy(if_ip->netmask, esp_ip[tcpip_if].netmask);
-
-    return ESP_OK;
-}
-
 esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
 {
     tcpip_adapter_if_t tcpip_if;
@@ -220,12 +199,41 @@ esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
             memcpy(&evt.event_info.got_ip.ip, &esp_ip[tcpip_if].ip, sizeof(evt.event_info.got_ip.ip));
             memcpy(&evt.event_info.got_ip.netmask, &esp_ip[tcpip_if].netmask, sizeof(evt.event_info.got_ip.netmask));
             memcpy(&evt.event_info.got_ip.gw, &esp_ip[tcpip_if].gw, sizeof(evt.event_info.got_ip.gw));
+
             esp_event_send(&evt);
-            printf("ip: %s, mask: %s, gw: %s\n", inet_ntoa(esp_ip[tcpip_if].ip), inet_ntoa(esp_ip[tcpip_if].netmask), inet_ntoa(esp_ip[tcpip_if].gw));
+
+            printf("ip: %s, ", inet_ntoa(esp_ip[tcpip_if].ip));
+            printf("mask: %s, ", inet_ntoa(esp_ip[tcpip_if].netmask));
+            printf("gw: %s\n", inet_ntoa(esp_ip[tcpip_if].gw));
         }
     } else {
         TCPIP_ADAPTER_DEBUG("ip unchanged\n");
     }
+
+    return ESP_OK;
+}
+
+esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, struct ip_info *if_ip)
+{
+    struct netif *p_netif;
+
+    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || if_ip == NULL) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    p_netif = esp_netif[tcpip_if];
+
+    if (p_netif != NULL && netif_is_up(p_netif)) {
+        ip4_addr_set(&if_ip->ip, ip_2_ip4(&p_netif->ip_addr));
+        ip4_addr_set(&if_ip->netmask, ip_2_ip4(&p_netif->netmask));
+        ip4_addr_set(&if_ip->gw, ip_2_ip4(&p_netif->gw));
+
+        return ESP_OK;
+    }
+
+    ip4_addr_copy(if_ip->ip, esp_ip[tcpip_if].ip);
+    ip4_addr_copy(if_ip->gw, esp_ip[tcpip_if].gw);
+    ip4_addr_copy(if_ip->netmask, esp_ip[tcpip_if].netmask);
 
     return ESP_OK;
 }
@@ -305,13 +313,6 @@ esp_err_t tcpip_adapter_set_mac(tcpip_adapter_if_t tcpip_if, uint8_t mac[6])
     return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
 }
 #endif
-
-esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status)
-{
-    *status = dhcps_status;
-
-    return ESP_OK;
-}
 
 esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len)
 {
@@ -406,6 +407,13 @@ esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode opt_op, tcpip_ada
     return ESP_OK;
 }
 
+esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status)
+{
+    *status = dhcps_status;
+
+    return ESP_OK;
+}
+
 esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if)
 {
     /* only support ap now */
@@ -462,16 +470,16 @@ esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if)
     return ESP_OK;
 }
 
+esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len)
+{
+    // TODO: when dhcp request timeout,change the retry count
+    return ESP_OK;
+}
+
 esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status)
 {
     *status = dhcpc_status;
 
-    return ESP_OK;
-}
-
-esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len)
-{
-    // TODO: when dhcp request timeout,change the retry count
     return ESP_OK;
 }
 
