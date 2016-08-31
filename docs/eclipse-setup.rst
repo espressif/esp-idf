@@ -41,7 +41,7 @@ Project Properties
 
 * On the same Environment property page, edit the PATH environment variable and prepend ``C:\msys32\usr\bin;C:\msys32\mingw32\bin;C:\msys32\opt\xtensa-esp32-elf\bin;`` at the **beginning** of the default value. (If you installed msys32 to a different directory then you'll need to change these paths to match.)
 
-* Click on the "C/C++ Build" top-level properties page then uncheck "Use default build command" and enter this for the custom build command: ``bash ${IDF_PATH}/bin/eclipse_windows_make.sh``.
+* Click on the "C/C++ Build" top-level properties page then uncheck "Use default build command" and enter this for the custom build command: ``bash ${IDF_PATH}/tools/windows/eclipse_make.sh``.
 
 *All users, continue with these steps:*
 
