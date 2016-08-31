@@ -26,30 +26,68 @@
 extern "C" {
 #endif
 
+/** \defgroup rtc_apis, rtc registers and memory related apis
+  * @brief rtc apis
+  */
+
+/** @addtogroup rtc_apis
+  * @{
+  */
+
+/**************************************************************************************
+  *                                       Note:                                       *
+  *       Some Rtc memory and registers are used, in ROM or in internal library.      *
+  *          Please do not use reserved or used rtc memory or registers.              *
+  *                                                                                   *
+  *************************************************************************************
+  *                          RTC  Memory & Store Register usage                       
+  *************************************************************************************
+  *     rtc memory addr         type    size            usage
+  *     0x3ff61000(0x50000000)  Slow    SIZE_CP         Co-Processor code/Reset Entry
+  *     0x3ff61000+SIZE_CP      Slow    7936-SIZE_CP
+  *     0x3ff62f00              Slow    256             Reserved
+  *
+  *     0x3ff80000(0x400c0000)  Fast    8192            deep sleep entry code
+  *
+  *************************************************************************************
+  *     Rtc store registers     usage
+  *     RTC_STORE0
+  *     RTC_STORE1
+  *     RTC_STORE2
+  *     RTC_STORE3
+  *     RTC_STORE4              Reserved
+  *     RTC_STORE5              External Xtal Frequency
+  *     RTC_STORE6              FAST_RTC_MEMORY_ENTRY
+  *     RTC_STORE7              FAST_RTC_MEMORY_CRC
+  *************************************************************************************
+  */
+#define RTC_ENTRY_ADDR RTC_STORE6
+#define RTC_MEMORY_CRC RTC_STORE7
+
+
 typedef enum {
-    AWAKE = 0,              //CPU ON
+    AWAKE = 0,             //<CPU ON
     LIGHT_SLEEP = BIT0,    //CPU waiti, PLL ON.  We don't need explicitly set this mode.
     DEEP_SLEEP  = BIT1     //CPU OFF, PLL OFF, only specific timer could wake up
 } SLEEP_MODE;
 
 typedef enum {
     NO_MEAN                =  0,
-    POWERON_RESET          =  1,    //1  Vbat power on reset, RTC reset
-//    EXT_SYS_RESET        =  2,    //4  External System reset, RTC reset
-    SW_RESET               =  3,    //6  Software warm reset
-    OWDT_RESET             =  4,    //5  Watch dog reset
-    DEEPSLEEP_RESET        =  5,    //2  Deep sleep timer reach reset.
-    SDIO_RESET             =  6,    //3  Deep sleep Pbint power on reset [boot]
-    TG0WDT_SYS_RESET       =  7,
-    TG1WDT_SYS_RESET       =  8,
-    RTCWDT_SYS_RESET       =  9,
-    INTRUSION_RESET        = 10,
-    TGWDT_CPU_RESET        = 11,
-    SW_CPU_RESET           = 12,
-    RTCWDT_CPU_RESET       = 13,
-    EXT_CPU_RESET          = 14,
-    RTCWDT_BROWN_OUT_RESET = 15,
-    RTCWDT_RTC_RESET = 16
+    POWERON_RESET          =  1,    /**<1, Vbat power on reset*/
+    SW_RESET               =  3,    /**<3, Software reset digital core*/
+    OWDT_RESET             =  4,    /**<4, Legacy watch dog reset digital core*/
+    DEEPSLEEP_RESET        =  5,    /**<3, Deep Sleep reset digital core*/
+    SDIO_RESET             =  6,    /**<6, Reset by SLC module, reset digital core*/
+    TG0WDT_SYS_RESET       =  7,    /**<7, Timer Group0 Watch dog reset digital core*/
+    TG1WDT_SYS_RESET       =  8,    /**<8, Timer Group1 Watch dog reset digital core*/
+    RTCWDT_SYS_RESET       =  9,    /**<9, RTC Watch dog Reset digital core*/
+    INTRUSION_RESET        = 10,    /**<10, Instrusion tested to reset CPU*/
+    TGWDT_CPU_RESET        = 11,    /**<11, Time Group reset CPU*/
+    SW_CPU_RESET           = 12,    /**<12, Software reset CPU*/
+    RTCWDT_CPU_RESET       = 13,    /**<13, RTC Watch dog Reset CPU*/
+    EXT_CPU_RESET          = 14,    /**<14, for APP CPU, reseted by PRO CPU*/
+    RTCWDT_BROWN_OUT_RESET = 15,    /**<15, Reset when the vdd voltage is not stable*/
+    RTCWDT_RTC_RESET = 16	    /**<16, RTC Watch dog reset digital core and rtc module*/
 } RESET_REASON;
 
 typedef enum {
@@ -100,65 +138,65 @@ typedef enum {
     RTC_TIME_VALID_INT_EN = RTC_TIME_VALID_INT
 }RTC_INT_EN;
 
-
-
-// Alive memory is a special memory block which could restore data during system
-// deep sleep.  power management and wlan profile data may need put into this
-// memory area.
-// Should create a dram segment in link script.
-#define ALIVE_MEMORY_ADDR
-#define ALIVE_MEMORY_SIZE       (1024 * 2)
-
-void rtc_hw_init(void);
-
+/**
+  * @brief  Get the reset reason for CPU.
+  *
+  * @param  int cpu_no : CPU no.
+  *
+  * @return RESET_REASON
+  */
 RESET_REASON rtc_get_reset_reason(int cpu_no);
+
+/**
+  * @brief  Get the wakeup cause for CPU.
+  *
+  * @param  int cpu_no : CPU no.
+  *
+  * @return WAKEUP_REASON
+  */
+WAKEUP_REASON rtc_get_wakeup_cause(void);
+
+/**
+  * @brief Get CRC for Fast RTC Memory.
+  *
+  * @param  uint32_t start_addr : 0 - 0x7ff for Fast RTC Memory.
+  *
+  * @param  uint32_t crc_len : 0 - 0x7ff, 0 for 1 byte, 0x7ff for 0x800 byte.
+  *
+  * @return uint32_t : CRC32 result
+  */
+uint32_t calc_rtc_memory_crc(uint32_t start_addr, uint32_t crc_len);
+
+/**
+  * @brief Set CRC of Fast RTC memory 0-0x7ff into RTC STORE7.
+  *
+  * @param  None
+  *
+  * @return None
+  */
+void set_rtc_memory_crc(void);
+
+/**
+  * @brief Software Reset digital core.
+  *
+  * @param  None
+  *
+  * @return None
+  */
 void software_reset(void);
+
+/**
+  * @brief Software Reset digital core.
+  *
+  * @param  int cpu_no : The CPU to reset, 0 for PRO CPU, 1 for APP CPU.
+  *
+  * @return None
+  */
 void software_reset_cpu(int cpu_no);
-void rtc_select_apb_bridge(bool sel);
-void rtc_set_sleep_mode(SLEEP_MODE mode, uint32_t sleep_sec, uint32_t wakeup_mode);
 
-uint8_t ets_rtc_recovery(void);
-
-#define MAX_DEEPSLEEP_DURATION      (0xffffffff / RTC_CLK_FREQ)  
-#define SECOND_TO_RTC_TICK(second) ((second)*RTC_CLK_FREQ)  //32KHz
-#define CALIB_VALUE_TO_RTC_TICK(microsecond, clk_mkz, n_rtc,nclk) ((microsecond)*(clk_mkz)*(n_rtc)/(nclk))  //32KHz
-#define RTC_TICK_TO_SECOND(tick) ((tick)/RTC_CLK_FREQ )
-#define GET_CURRENT_TICK() (READ_PERI_REG(RTC_TIME))
-#define SET_WAKEUP_TICK(tick) (WRITE_PERI_REG(RTC_TIMER0, tick))
-
-//#define GET_WAKEUP_CAUSE()              GET_PERI_REG_BITS2(RTC_STATE1, RTC_CNTL_WAKEUP_CAUSE, RTC_CNTL_WAKEUP_CAUSE_S)
-#define DISABLE_RTC_INT(int_type)       CLEAR_PERI_REG_MASK(RTC_INT_ENA, int_type)
-#define ENABLE_RTC_INT(int_type)        SET_PERI_REG_MASK(RTC_INT_ENA, int_type)
-#define CLR_RTC_INT(int_type)           SET_PERI_REG_MASK(RTC_INT_CLR, int_type)
-#define GET_RTC_INT_CAUSE()             GET_PERI_REG_BITS(RTC_INT_RAW, RTC_INT_RAW_MSB,RTC_INT_RAW_LSB)
-
-void rtc_register_deepsleep_timer(ETSTimer *timer, uint32_t tmout);
-void rtc_disable_deepsleep_timer(void);
-
-void rtc_enter_sleep(void);
-void ets_rtc_int_register(void);
-void dtm_set_intr_mask(uint32_t mask);
-uint32_t dtm_get_intr_mask(void);
-void dtm_set_params(uint32_t sleep_mode, uint32_t sleep_tm_ms, uint32_t wakeup_tm_ms, uint32_t sleep_times, uint32_t rxbcn_len);
-void save_rxbcn_mactime(uint32_t rxbcn_mactime);
-void save_tsf_us(uint32_t tsf_us);
-
-typedef void (* ets_idle_cb_t)(void *arg);
-
-typedef uint32_t (* ETS_GET_MACTIME)(void);
-typedef void   (* ETS_WAKEUP_INIT)(void);
-
-void dtm_params_init(ETS_GET_MACTIME get_mactime, ETS_WAKEUP_INIT wakeup_init);
-
-void ets_set_idle_cb(ets_idle_cb_t func, void *arg);
-
-void ets_enter_sleep(void);
-
-void rtc_intr_handler(void *);
- 
-#define ETS_SLEEP_START(pfunc, parg) ets_set_idle_cb((pfunc), (parg));
-
-#define ETS_SLEEP_END() ets_set_idle_cb(NULL, NULL);
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }

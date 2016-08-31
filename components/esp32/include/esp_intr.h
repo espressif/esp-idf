@@ -61,8 +61,8 @@ extern "C" {
 #define ESP_GPIO_INTR_ATTACH(func, arg) \
     xt_set_interrupt_handler(ETS_GPIO_INUM, (func), (void *)(arg))
 
-#define ESP_UART_INTR_ATTACH(func, arg) \
-    xt_set_interrupt_handler(ETS_UART_INUM, (func), (void *)(arg))
+#define ESP_UART0_INTR_ATTACH(func, arg) \
+    xt_set_interrupt_handler(ETS_UART0_INUM, (func), (void *)(arg))
 
 #define ESP_WDT_INTR_ATTACH(func, arg) \
     xt_set_interrupt_handler(ETS_WDT_INUM, (func), (void *)(arg))
@@ -142,11 +142,11 @@ extern "C" {
 #define ESP_BB_INTR_DISABLE() \
     ESP_INTR_DISABLE(ETS_BB_INUM)
 
-#define ESP_UART_INTR_ENABLE() \
-    ESP_INTR_ENABLE(ETS_UART_INUM)
+#define ESP_UART0_INTR_ENABLE() \
+    ESP_INTR_ENABLE(ETS_UART0_INUM)
 
-#define ESP_UART_INTR_DISABLE() \
-    ESP_INTR_DISABLE(ETS_UART_INUM)
+#define ESP_UART0_INTR_DISABLE() \
+    ESP_INTR_DISABLE(ETS_UART0_INUM)
 
 #define ESP_LEDC_INTR_ENABLE() \
     ESP_INTR_ENABLE(ETS_LEDC_INUM)

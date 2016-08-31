@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+//TODO: add comment here
 void ets_bigint_enable(void);
 
 void ets_bigint_disable(void);

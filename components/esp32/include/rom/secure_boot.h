@@ -34,6 +34,10 @@ void ets_secure_boot_rd_iv(uint32_t *buf);
 
 void ets_secure_boot_rd_abstract(uint32_t *buf);
 
+bool ets_secure_boot_check_start(uint8_t abs_index, uint32_t iv_addr);
+
+int ets_secure_boot_check_finish(uint32_t *abstract);
+
 #ifdef __cplusplus
 }
 #endif

@@ -22,6 +22,14 @@
 extern "C" {
 #endif
 
+/** \defgroup uart_apis, uart configuration and communication related apis
+  * @brief uart apis
+  */
+
+/** @addtogroup uart_apis
+  * @{
+  */
+
 #define RX_BUFF_SIZE                     0x100
 #define TX_BUFF_SIZE                     100
 
@@ -153,32 +161,250 @@ typedef struct{
     int              received;
 } UartDevice;
 
-void Uart_Init(uint8_t uart_no, uint32_t clock) ROMFN_ATTR;
-STATUS UartTxString(uint8_t* pString) ROMFN_ATTR;
-STATUS UartRxString(uint8_t* pString, uint8_t MaxStrlen) ROMFN_ATTR;
+/**
+  * @brief Init uart device struct value and reset uart0/uart1 rx.
+  *        Please do not call this function in SDK.
+  *
+  * @param  None
+  *
+  * @return None
+  */
+void uartAttach();
 
-STATUS uart_tx_one_char(uint8_t TxChar) ROMFN_ATTR;//for print
-STATUS uart_tx_one_char2(uint8_t TxChar) ROMFN_ATTR;//for send message
-STATUS uart_rx_one_char(uint8_t* pRxChar) ROMFN_ATTR;
-char uart_rx_one_char_block(void) ROMFN_ATTR;
-void uart_rx_intr_handler(void * para) ROMFN_ATTR;
-STATUS uart_rx_readbuff( RcvMsgBuff* pRxBuff, uint8_t* pRxByte) ROMFN_ATTR;
-STATUS UartGetCmdLn(uint8_t * pCmdLn) ROMFN_ATTR;
-UartDevice * GetUartDevice() ROMFN_ATTR;
+/**
+  * @brief Init uart0 or uart1 for UART download booting mode.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, else for UART1.
+  *
+  * @param  uint32_t clock : clock used by uart module, to adjust baudrate.
+  *
+  * @return None
+  */
+void Uart_Init(uint8_t uart_no, uint32_t clock);
 
-void uartToggleInterrupt(bool en) ROMFN_ATTR;
+/**
+  * @brief Modify uart baudrate.
+  *        This function will reset RX/TX fifo for uart.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @param  uint32_t DivLatchValue : (clock << 4)/baudrate.
+  *
+  * @return None
+  */
+void uart_div_modify(uint8_t uart_no, uint32_t DivLatchValue);
 
-STATUS SendMsg(uint8_t *pData, uint16_t DataLen) ROMFN_ATTR;
+/**
+  * @brief Init uart0 or uart1 for UART download booting mode.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @param  uint8_t is_sync : 0, only one UART module, easy to detect, wait until detected;
+  *                           1, two UART modules, hard to detect, detect and return.
+  *
+  * @return None
+  */
+int uart_baudrate_detect(uint8_t uart_no, uint8_t is_sync);
 
-STATUS RcvMsg(uint8_t *pData, uint16_t MaxDataLen, uint8_t is_sync) ROMFN_ATTR;
+/**
+  * @brief Switch printf channel of uart_tx_one_char.
+  *        Please do not call this function when printf.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @return None
+  */
+void uart_tx_switch(uint8_t uart_no);
 
-void uartAttach() ROMFN_ATTR;
-void uart_div_modify(uint8_t uart_no, uint32_t DivLatchValue) ROMFN_ATTR;
-int uart_baudrate_detect(uint8_t uart_no, uint8_t is_sync) ROMFN_ATTR;
-void uart_buff_switch(uint8_t uart_no)  ROMFN_ATTR;
-void uart_tx_flush(uint8_t uart_no) ROMFN_ATTR;
-void uart_tx_wait_idle(uint8_t uart_no) ROMFN_ATTR;
+/**
+  * @brief Switch message exchange channel for UART download booting.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @return None
+  */
+void uart_buff_switch(uint8_t uart_no);
+
+/**
+  * @brief Output a char to printf channel, wait until fifo not full.
+  *
+  * @param  None
+  *
+  * @return OK.
+  */
+STATUS uart_tx_one_char(uint8_t TxChar);
+
+/**
+  * @brief Output a char to message exchange channel, wait until fifo not full.
+  *        Please do not call this function in SDK.
+  *
+  * @param  None
+  *
+  * @return OK.
+  */
+STATUS uart_tx_one_char2(uint8_t TxChar);//for send message
+
+/**
+  * @brief Wait until uart tx full empty.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @return None.
+  */
+void uart_tx_flush(uint8_t uart_no);
+
+/**
+  * @brief Wait until uart tx full empty and the last char send ok.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @return None.
+  */
+void uart_tx_wait_idle(uint8_t uart_no);
+
+/**
+  * @brief Get an input char from message channel.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t* pRxChar : the pointer to store the char.
+  *
+  * @return OK for successful.
+  *         FAIL for failed.
+  */
+STATUS uart_rx_one_char(uint8_t* pRxChar);
+
+/**
+  * @brief Get an input char to message channel, wait until successful.
+  *        Please do not call this function in SDK.
+  *
+  * @param  None
+  *
+  * @return char : input char value.
+  */
+char uart_rx_one_char_block(void);
+
+/**
+  * @brief Get an input string line from message channel.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t* pString : the pointer to store the string.
+  *
+  * @param  uint8_t MaxStrlen : the max string length, incude '\0'.
+  *
+  * @return OK.
+  */
+STATUS UartRxString(uint8_t* pString, uint8_t MaxStrlen);
+
+/**
+  * @brief Process uart recevied information in the interrupt handler.
+  *        Please do not call this function in SDK.
+  *
+  * @param  void * para : the message receive buffer.
+  *
+  * @return None
+  */
+void uart_rx_intr_handler(void * para);
+
+/**
+  * @brief Get an char from receive buffer.
+  *        Please do not call this function in SDK.
+  *
+  * @param  RcvMsgBuff* pRxBuff : the pointer to the struct that include receive buffer.
+  *
+  * @param  uint8_t* pRxByte : the pointer to store the char.
+  *
+  * @return OK for successful.
+  *         FAIL for failed.
+  */
+STATUS uart_rx_readbuff( RcvMsgBuff* pRxBuff, uint8_t* pRxByte);
+
+/**
+  * @brief Get all chars from receive buffer.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t * pCmdLn : the pointer to store the string.
+  *
+  * @return OK for successful.
+  *         FAIL for failed.
+  */
+STATUS UartGetCmdLn(uint8_t * pCmdLn);
+
+/**
+  * @brief Get uart configuration struct.
+  *        Please do not call this function in SDK.
+  *
+  * @param  None
+  *
+  * @return UartDevice * : uart configuration struct pointer.
+  */
+UartDevice * GetUartDevice();
+
+/**
+  * @brief Send an packet to download tool, with ESC char.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t * p : the pointer to output string.
+  *
+  * @param  int len : the string length.
+  *
+  * @return None.
+  */
+void send_packet(uint8_t *p, int len);
+
+/**
+  * @brief Receive an packet from download tool, with ESC char.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t * p : the pointer to input string.
+  *
+  * @param  int len : If string length > len, the string will be truncated.
+  *
+  * @param  uint8_t is_sync : 0, only one UART module;
+  *                           1, two UART modules.
+  *
+  * @return int : the length of the string.
+  */
+int recv_packet(uint8_t *p, int len, uint8_t is_sync);
+
+
+/**
+  * @brief Send an packet to download tool, with ESC char.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t * pData : the pointer to input string.
+  *
+  * @param  uint16_t DataLen : the string length.
+  *
+  * @return OK for successful.
+  *         FAIL for failed.
+  */
+STATUS SendMsg(uint8_t *pData, uint16_t DataLen);
+
+
+/**
+  * @brief Receive an packet from download tool, with ESC char.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t * pData : the pointer to input string.
+  *
+  * @param  uint16_t MaxDataLen : If string length > MaxDataLen, the string will be truncated.
+  *
+  * @param  uint8_t is_sync : 0, only one UART module;
+  *                           1, two UART modules.
+  *
+  * @return OK for successful.
+  *         FAIL for failed.
+  */
+STATUS RcvMsg(uint8_t *pData, uint16_t MaxDataLen, uint8_t is_sync);
+
 extern UartDevice UartDev;
+
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }

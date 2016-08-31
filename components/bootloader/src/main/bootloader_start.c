@@ -294,7 +294,7 @@ void bootloader_main()
     log_notice( "compile time %s\n", __TIME__ );
     /* close watch dog here */
     REG_CLR_BIT( RTC_WDTCONFIG0, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
-    REG_CLR_BIT( WDTCONFIG0, TIMERS_WDT_FLASHBOOT_MOD_EN );
+    REG_CLR_BIT( WDTCONFIG0(0), TIMERS_WDT_FLASHBOOT_MOD_EN );
     SPIUnlock();
     /*register first sector in drom0 page 0 */
     boot_cache_redirect( 0, 0x5000 );

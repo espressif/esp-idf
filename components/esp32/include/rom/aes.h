@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+//TODO, add comment for aes apis
 enum AES_BITS {
     AES128,
     AES192,

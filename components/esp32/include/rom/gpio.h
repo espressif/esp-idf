@@ -25,6 +25,15 @@
 extern "C" {
 #endif
 
+/** \defgroup gpio_apis, uart configuration and communication related apis
+  * @brief gpio apis
+  */
+
+/** @addtogroup gpio_apis
+  * @{
+  */
+
+
 #define GPIO_REG_READ(reg)              READ_PERI_REG(reg)
 #define GPIO_REG_WRITE(reg, val)        WRITE_PERI_REG(reg, val)
 #define GPIO_PIN_COUNT                  40
@@ -46,9 +55,6 @@ typedef enum{
       GPIO_PIN_INTR_HILEVEL = 5
 }GPIO_INT_TYPE;
 
-#define GREEN_LED_ON()  GPIO_OUTPUT_SET(GPIO_ID_PIN(1) , 0)
-#define GREEN_LED_OFF() GPIO_OUTPUT_SET(GPIO_ID_PIN(1) , 1)
-
 #define GPIO_OUTPUT_SET(gpio_no, bit_value) \
         ((gpio_no < 32) ? gpio_output_set(bit_value<<gpio_no, (bit_value ? 0 : 1)<<gpio_no, 1<<gpio_no,0) : \
                          gpio_output_set_high(bit_value<<(gpio_no - 32), (bit_value ? 0 : 1)<<(gpio_no - 32), 1<<(gpio_no -32),0))
@@ -58,82 +64,235 @@ typedef enum{
 /* GPIO interrupt handler, registered through gpio_intr_handler_register */
 typedef void (* gpio_intr_handler_fn_t)(uint32_t intr_mask, bool high, void *arg);
 
+/**
+  * @brief Initialize GPIO. This includes reading the GPIO Configuration DataSet
+  *        to initialize "output enables" and pin configurations for each gpio pin.
+  *        Please do not call this function in SDK.
+  *
+  * @param  None
+  *
+  * @return None
+  */
+void gpio_init(void);
 
-/*
- * Initialize GPIO.  This includes reading the GPIO Configuration DataSet
- * to initialize "output enables" and pin configurations for each gpio pin.
- * Must be called once during startup.
- */
-void gpio_init(void) ROMFN_ATTR;
+/**
+  * @brief Change GPIO(0-31) pin output by setting, clearing, or disabling pins, GPIO0<->BIT(0).
+  *         There is no particular ordering guaranteed; so if the order of writes is significant, 
+  *         calling code should divide a single call into multiple calls.
+  *
+  * @param  uint32_t set_mask : the gpios that need high level.
+  *
+  * @param  uint32_t clear_mask : the gpios that need low level.
+  *
+  * @param  uint32_t enable_mask : the gpios that need be changed.
+  *
+  * @param  uint32_t disable_mask : the gpios that need diable output.
+  *
+  * @return None
+  */
+void gpio_output_set(uint32_t set_mask, uint32_t clear_mask, uint32_t enable_mask, uint32_t disable_mask);
 
-/*
- * Change GPIO pin output by setting, clearing, or disabling pins.
- * In general, it is expected that a bit will be set in at most one
- * of these masks.  If a bit is clear in all masks, the output state
- * remains unchanged.
- *
- * There is no particular ordering guaranteed; so if the order of
- * writes is significant, calling code should divide a single call
- * into multiple calls.
- */
-void gpio_output_set(uint32_t set_mask,
-        uint32_t clear_mask,
-        uint32_t enable_mask,
-        uint32_t disable_mask) ROMFN_ATTR;
-void gpio_output_set_high(uint32_t set_mask,
-        uint32_t clear_mask,
-        uint32_t enable_mask,
-        uint32_t disable_mask) ROMFN_ATTR;
-/*
- * Sample the value of GPIO input pins and returns a bitmask.
- */
-uint32_t gpio_input_get(void) ROMFN_ATTR;
-uint32_t gpio_input_get_high(void) ROMFN_ATTR;
+/**
+  * @brief Change GPIO(32-39) pin output by setting, clearing, or disabling pins, GPIO32<->BIT(0).
+  *         There is no particular ordering guaranteed; so if the order of writes is significant, 
+  *         calling code should divide a single call into multiple calls.
+  *
+  * @param  uint32_t set_mask : the gpios that need high level.
+  *
+  * @param  uint32_t clear_mask : the gpios that need low level.
+  *
+  * @param  uint32_t enable_mask : the gpios that need be changed.
+  *
+  * @param  uint32_t disable_mask : the gpios that need diable output.
+  *
+  * @return None
+  */
+void gpio_output_set_high(uint32_t set_mask, uint32_t clear_mask, uint32_t enable_mask, uint32_t disable_mask);
 
-/*
- * Set the specified GPIO register to the specified value.
- * This is a very general and powerful interface that is not
- * expected to be used during normal operation.  It is intended
- * mainly for debug, or for unusual requirements.
- */
-void gpio_register_set(uint32_t reg_id, uint32_t value) ROMFN_ATTR;
+/**
+  * @brief Sample the value of GPIO input pins(0-31) and returns a bitmask.
+  * 
+  * @param None
+  * 
+  * @return uint32_t : bitmask for GPIO input pins, BIT(0) for GPIO0.
+  */
+uint32_t gpio_input_get(void);
 
-/* Get the current value of the specified GPIO register. */
-uint32_t gpio_register_get(uint32_t reg_id) ROMFN_ATTR;
+/**
+  * @brief Sample the value of GPIO input pins(32-39) and returns a bitmask.
+  * 
+  * @param None
+  * 
+  * @return uint32_t : bitmask for GPIO input pins, BIT(0) for GPIO32.
+  */
+uint32_t gpio_input_get_high(void);
 
-/*
- * Register an application-specific interrupt handler for GPIO pin
- * interrupts.  Once the interrupt handler is called, it will not 
- * be called again until after a call to gpio_intr_ack.  Any GPIO
- * interrupts that occur during the interim are masked.
- *
- * The application-specific handler is called with a mask of
- * pending GPIO interrupts.  After processing pin interrupts, the
- * application-specific handler may wish to use gpio_intr_pending
- * to check for any additional pending interrupts before it returns.
- */
-void gpio_intr_handler_register(gpio_intr_handler_fn_t fn, void *arg) ROMFN_ATTR;
+/**
+  * @brief Register an application-specific interrupt handler for GPIO pin interrupts.
+  *        Once the interrupt handler is called, it will not be called again until after a call to gpio_intr_ack.
+  *        Please do not call this function in SDK.
+  * 
+  * @param gpio_intr_handler_fn_t fn : gpio application-specific interrupt handler
+  * 
+  * @param void *arg : gpio application-specific interrupt handler argument.
+  * 
+  * @return None
+  */
+void gpio_intr_handler_register(gpio_intr_handler_fn_t fn, void *arg);
 
-/* Determine which GPIO interrupts are pending. */
-uint32_t gpio_intr_pending(void) ROMFN_ATTR;
-uint32_t gpio_intr_pending_high(void) ROMFN_ATTR;
+/**
+  * @brief Get gpio interrupts which happens but not processed.
+  *        Please do not call this function in SDK.
+  * 
+  * @param None
+  * 
+  * @return uint32_t : bitmask for GPIO pending interrupts, BIT(0) for GPIO0.
+  */
+uint32_t gpio_intr_pending(void);
 
-/*
- * Acknowledge GPIO interrupts.
- * Intended to be called from the gpio_intr_handler_fn.
- */
-void gpio_intr_ack(uint32_t ack_mask) ROMFN_ATTR;
-void gpio_intr_ack_high(uint32_t ack_mask) ROMFN_ATTR;
+/**
+  * @brief Get gpio interrupts which happens but not processed.
+  *        Please do not call this function in SDK.
+  * 
+  * @param None
+  * 
+  * @return uint32_t : bitmask for GPIO pending interrupts, BIT(0) for GPIO32.
+  */
+uint32_t gpio_intr_pending_high(void);
 
-void gpio_pin_wakeup_enable(uint32_t i, GPIO_INT_TYPE intr_state) ROMFN_ATTR;
+/**
+  * @brief Ack gpio interrupts to process pending interrupts.
+  *        Please do not call this function in SDK.
+  * 
+  * @param uint32_t ack_mask: bitmask for GPIO ack interrupts, BIT(0) for GPIO0.
+  * 
+  * @return None
+  */
+void gpio_intr_ack(uint32_t ack_mask);
 
-void gpio_pin_wakeup_disable() ROMFN_ATTR;
+/**
+  * @brief Ack gpio interrupts to process pending interrupts.
+  *        Please do not call this function in SDK.
+  * 
+  * @param uint32_t ack_mask: bitmask for GPIO ack interrupts, BIT(0) for GPIO32.
+  * 
+  * @return None
+  */
+void gpio_intr_ack_high(uint32_t ack_mask);
 
-//extern void gpio_module_install(struct gpio_api *api);
+/**
+  * @brief Set GPIO to wakeup the ESP32.
+  *        Please do not call this function in SDK.
+  * 
+  * @param uint32_t i: gpio number.
+  * 
+  * @param GPIO_INT_TYPE intr_state : only GPIO_PIN_INTR_LOLEVEL\GPIO_PIN_INTR_HILEVEL can be used
+  * 
+  * @return None
+  */
+void gpio_pin_wakeup_enable(uint32_t i, GPIO_INT_TYPE intr_state);
 
-void gpio_matrix_in(uint32_t gpio, uint32_t signal_idx, bool inv) ROMFN_ATTR;
+/**
+  * @brief disable GPIOs to wakeup the ESP32.
+  *        Please do not call this function in SDK.
+  * 
+  * @param None
+  * 
+  * @return None
+  */
+void gpio_pin_wakeup_disable();
 
-void gpio_matrix_out(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_inv) ROMFN_ATTR;
+/**
+  * @brief set gpio input to a signal, one gpio can input to several signals.
+  * 
+  * @param uint32_t gpio : gpio number, 0~0x27
+  *                        gpio == 0x30, input 0 to signal
+  *                        gpio == 0x34, ???
+  *                        gpio == 0x38, input 1 to signal
+  *
+  * @param uint32_t signal_idx : signal index.
+  * 
+  * @param bool inv : the signal is inv or not 
+  * 
+  * @return None
+  */
+void gpio_matrix_in(uint32_t gpio, uint32_t signal_idx, bool inv);
+
+/**
+  * @brief set signal output to gpio, one signal can output to several gpios.
+  * 
+  * @param uint32_t gpio : gpio number, 0~0x27
+  *
+  * @param uint32_t signal_idx : signal index.
+  *                        signal_idx == 0x100, cancel output put to the gpio
+  * 
+  * @param bool out_inv : the signal output is inv or not 
+  * 
+  * @param bool oen_inv : the signal output enable is inv or not 
+  * 
+  * @return None
+  */
+void gpio_matrix_out(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_inv);
+
+/**
+  * @brief Select pad as a gpio function from IOMUX.
+  * 
+  * @param uint32_t gpio_num : gpio number, 0~0x27
+  * 
+  * @return None
+  */
+void gpio_pad_select_gpio(uint8_t gpio_num);
+
+/**
+  * @brief Set pad driver capability.
+  * 
+  * @param uint32_t gpio_num : gpio number, 0~0x27
+  *  
+  * @param uint8_t drv : 0-3
+  *  
+  * @return None
+  */
+void gpio_pad_set_drv(uint8_t gpio_num, uint8_t drv);
+
+/**
+  * @brief Pull up the pad from gpio number.
+  * 
+  * @param uint32_t gpio_num : gpio number, 0~0x27
+  *  
+  * @return None
+  */
+void gpio_pad_pullup(uint8_t gpio_num);
+
+/**
+  * @brief Pull down the pad from gpio number.
+  * 
+  * @param uint32_t gpio_num : gpio number, 0~0x27
+  *  
+  * @return None
+  */
+void gpio_pad_pulldown(uint8_t gpio_num);
+
+/**
+  * @brief Unhold the pad from gpio number.
+  * 
+  * @param uint32_t gpio_num : gpio number, 0~0x27
+  *  
+  * @return None
+  */
+void gpio_pad_unhold(uint8_t gpio_num);
+
+/**
+  * @brief Hold the pad from gpio number.
+  * 
+  * @param uint32_t gpio_num : gpio number, 0~0x27
+  *  
+  * @return None
+  */
+void gpio_pad_hold(uint8_t gpio_num);
+
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }
