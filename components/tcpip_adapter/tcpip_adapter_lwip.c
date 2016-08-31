@@ -542,7 +542,7 @@ esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if)
             TCPIP_ADAPTER_DEBUG("dhcp client if not ready\n");
             return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
         }
-    } else if (dhcps_status == TCPIP_ADAPTER_DHCP_STOPED) {
+    } else if (dhcpc_status == TCPIP_ADAPTER_DHCP_STOPED) {
         TCPIP_ADAPTER_DEBUG("dhcp client already stoped\n");
         return ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPED;
     }
