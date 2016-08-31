@@ -107,7 +107,7 @@ esp_err_t esp_wifi_startup(wifi_startup_cb_t cb, void *ctx)
     startup_cb = cb;
     startup_ctx = ctx;
 
-    xTaskCreatePinnedToCore(esp_wifi_task, "wifiTask", 4096, NULL, 5, NULL, 0);// TODO: rearrange task priority
+    xTaskCreatePinnedToCore(esp_wifi_task, "wifiTask", 4096, NULL, configMAX_PRIORITIES-7, NULL, 0);
 
     return ESP_OK;
 }

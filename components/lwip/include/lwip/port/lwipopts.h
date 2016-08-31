@@ -330,7 +330,7 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
  * The priority value itself is platform-dependent, but is passed to
  * sys_thread_new() when the thread is created.
  */
-#define TCPIP_THREAD_PRIO               (configMAX_PRIORITIES-5)
+#define TCPIP_THREAD_PRIO               (configMAX_PRIORITIES-7)
 
 /**
  * TCPIP_MBOX_SIZE: The mailbox size for the tcpip thread messages

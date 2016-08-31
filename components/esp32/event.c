@@ -359,7 +359,7 @@ esp_err_t esp_event_init(system_event_cb_t cb, void *ctx)
 
     g_event_handler = xQueueCreate(CONFIG_WIFI_ENENT_QUEUE_SIZE, sizeof(system_event_t));
 
-    xTaskCreatePinnedToCore(esp_system_event_task, "eventTask", CONFIG_WIFI_EVENT_TASK_STACK_SIZE, NULL, 5, NULL, 0); // TODO: rearrange task priority
+    xTaskCreatePinnedToCore(esp_system_event_task, "eventTask", CONFIG_WIFI_EVENT_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES-4, NULL, 0);
     return ESP_OK;
 }
 
