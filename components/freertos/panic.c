@@ -150,7 +150,6 @@ static void setFirstBreakpoint(uint32_t pc) {
 		"or a4, a4, a3\n" \
 		"wsr.ibreakenable a4\n" \
 		::"r"(pc):"a3","a4");
-	return;
 }
 
 void xt_unhandled_exception(XtExcFrame *frame) {
@@ -170,6 +169,7 @@ void xt_unhandled_exception(XtExcFrame *frame) {
 		//Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
 		//will kick in exactly at the context the error happened.
 		setFirstBreakpoint(regs[1]);
+		return;
 	}
 	panicPutStr(". Exception was unhandled.\r\n");
 	commonErrorHandler(frame);
