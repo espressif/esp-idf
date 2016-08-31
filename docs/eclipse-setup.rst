@@ -60,7 +60,7 @@ Flash from Eclipse
 
 You can integrate the "make flash" target into your Eclipse project to flash using esptool.py from the Eclipse UI:
 
-* Right-click your project in Project Explorer (important to make sure you don't select a subdirectory of the project or Eclipse may find the wrong Makefile.)
+* Right-click your project in Project Explorer (important to make sure you select the project, not a directory in the project, or Eclipse may find the wrong Makefile.)
 
 * Select Make Targets -> Create from the context menu.
 
@@ -73,3 +73,8 @@ Note that you will need to use "make menuconfig" to set the serial port and othe
 Follow the same steps to add ``bootloader`` and ``partition_table`` targets, if necessary.
 
 .. _eclipse.org: http://www.eclipse.org/
+
+Eclipse Troubleshooting
+-----------------------
+
+* ``*** Make was invoked from ... However please do not run make from the sdk or a component directory; ...`` - Eclipse will detect any directory with a Makefile in it as being a possible directory to run "make" in. All component directories also contain a Makefile (the wrong one), so it is important when using Project -> Make Target to always select the top-level project directory in Project Explorer.
