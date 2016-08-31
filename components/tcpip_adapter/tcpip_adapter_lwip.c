@@ -130,6 +130,8 @@ esp_err_t tcpip_adapter_up(tcpip_adapter_if_t tcpip_if)
             return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
         }
 
+        /* use last obtained ip, or static ip */
+        netif_set_addr(esp_netif[tcpip_if], &esp_ip[tcpip_if].ip, &esp_ip[tcpip_if].netmask, &esp_ip[tcpip_if].gw);
         netif_set_up(esp_netif[tcpip_if]);
     }
 
@@ -151,14 +153,9 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
             if (dhcpc_status != TCPIP_ADAPTER_DHCP_STOPED) {
                 dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
             }
-        } else {
-            netif_set_down(esp_netif[tcpip_if]);
-            netif_set_addr(esp_netif[tcpip_if], IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
         }
-
-        ip4_addr_set_zero(&esp_ip[tcpip_if].ip);
-        ip4_addr_set_zero(&esp_ip[tcpip_if].gw);
-        ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
+        
+        netif_set_down(esp_netif[tcpip_if]);
     }
 
     return ESP_OK;
@@ -495,6 +492,10 @@ esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if)
                 ip_addr_set_zero(&p_netif->ip_addr);
                 ip_addr_set_zero(&p_netif->netmask);
                 ip_addr_set_zero(&p_netif->gw);
+            } else {
+                TCPIP_ADAPTER_DEBUG("dhcp client re init\n");
+                dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
+                return ESP_OK;
             }
 
             if (dhcp_start(p_netif) != ERR_OK) {
