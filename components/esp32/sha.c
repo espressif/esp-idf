@@ -69,7 +69,7 @@ void esp_sha1_process(SHA1_CTX *ctx, const unsigned char data[64])
 /*
  * SHA-1 context setup
  */
-void esp_sha1_starts( SHA1_CTX *ctx )
+void esp_sha1_start( SHA1_CTX *ctx )
 {
 	SHA_LOCK();
 	ets_sha_init(&ctx->context);
@@ -102,7 +102,7 @@ void esp_sha1_output( const unsigned char *input, size_t ilen, unsigned char out
     SHA1_CTX ctx;
 
     esp_sha1_init( &ctx );
-    esp_sha1_starts( &ctx );
+    esp_sha1_start( &ctx );
     esp_sha1_update( &ctx, input, ilen );
     esp_sha1_finish( &ctx, output );
     esp_sha1_free( &ctx );
@@ -147,7 +147,7 @@ void esp_sha256_clone( SHA256_CTX *dst, const SHA256_CTX *src )
 /*
  * SHA-256 context setup
  */
-void esp_sha256_starts( SHA256_CTX *ctx, int is224 )
+void esp_sha256_start( SHA256_CTX *ctx, int is224 )
 {
 	SHA_LOCK();
     ets_sha_init(&ctx->context);
@@ -187,7 +187,7 @@ void esp_sha256_output( const unsigned char *input, size_t ilen, unsigned char o
     SHA256_CTX ctx;
 
     esp_sha256_init( &ctx );
-    esp_sha256_starts( &ctx, is224 );
+    esp_sha256_start( &ctx, is224 );
     esp_sha256_update( &ctx, input, ilen );
     esp_sha256_finish( &ctx, output );
     esp_sha256_free( &ctx );
@@ -232,7 +232,7 @@ void esp_sha512_clone( SHA512_CTX *dst, const SHA512_CTX *src )
 /*
  * SHA-512 context setup
  */
-void esp_sha512_starts( SHA512_CTX *ctx, int is384 )
+void esp_sha512_start( SHA512_CTX *ctx, int is384 )
 {
 	SHA_LOCK();
 	ets_sha_init(&ctx->context);
@@ -274,7 +274,7 @@ void esp_sha512_output( const unsigned char *input, size_t ilen,unsigned char ou
     SHA512_CTX ctx;
 
     esp_sha512_init( &ctx );
-    esp_sha512_starts( &ctx, is384 );
+    esp_sha512_start( &ctx, is384 );
     esp_sha512_update( &ctx, input, ilen );
     esp_sha512_finish( &ctx, output );
     esp_sha512_free( &ctx );

@@ -40,8 +40,8 @@ extern "C" {
 #define ERR_AES_INVALID_INPUT_LENGTH              -0x0022  /**< Invalid data input length. */
 
 typedef struct{
-	bool  flag;
-	uint16_t keybites;
+	bool  keyflag;
+	uint16_t keybits;
     uint8_t key[32];
 }key_context, KEY_CTX;
 

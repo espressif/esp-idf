@@ -17,7 +17,7 @@ extern "C" {
 typedef SHA1_CTX mbedtls_sha1_context;
 
 #define mbedtls_sha1_init   esp_sha1_init
-#define mbedtls_sha1_starts esp_sha1_starts
+#define mbedtls_sha1_starts esp_sha1_start
 #define mbedtls_sha1_clone  esp_sha1_clone
 #define mbedtls_sha1_update esp_sha1_update
 #define mbedtls_sha1_finish esp_sha1_finish

@@ -77,9 +77,9 @@ int esp_aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,
 			break;
 		default : return( ERR_AES_INVALID_KEY_LENGTH );
 	}
-	if (ctx->enc.flag == false){
-		ctx->enc.flag = true;
-		ctx->enc.keybites = keybits;
+	if (ctx->enc.keyflag == false){
+		ctx->enc.keyflag = true;
+		ctx->enc.keybits = keybits;
 		memset(ctx->enc.key, 0, sizeof(ctx->enc.key));
 		memcpy(ctx->enc.key, key, keybyte);
 	} else {
@@ -108,9 +108,9 @@ int esp_aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,
 			break;
 		default : return( ERR_AES_INVALID_KEY_LENGTH );
 	}
-	if (ctx->dec.flag == false){
-		ctx->dec.flag = true;
-		ctx->dec.keybites = keybits;
+	if (ctx->dec.keyflag == false){
+		ctx->dec.keyflag = true;
+		ctx->dec.keybits = keybits;
 		memset(ctx->dec.key, 0, sizeof(ctx->dec.key));
 		memcpy(ctx->dec.key, key, keybyte);
 	} else {
@@ -123,9 +123,9 @@ int esp_aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,
 static void esp_aes_process_enable(AES_CTX *ctx, int mode)
 {
 	if( mode == AES_ENCRYPT ){
-		esp_aes_setkey_enc(ctx, ctx->enc.key, ctx->enc.keybites);
+		esp_aes_setkey_enc(ctx, ctx->enc.key, ctx->enc.keybits);
 	}else{
-		esp_aes_setkey_dec(ctx, ctx->dec.key, ctx->dec.keybites);
+		esp_aes_setkey_dec(ctx, ctx->dec.key, ctx->dec.keybits);
 	}
 	return;
 }

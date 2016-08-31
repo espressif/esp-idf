@@ -1,8 +1,17 @@
-/* 
- * copyright (c) 2010 - 2012 Espressif System 
- * 
- * esf Link List Descriptor
- */
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #ifndef _ESP_SHA_H_
 #define _ESP_SHA_H_
 
@@ -53,7 +62,7 @@ void esp_sha1_process(SHA1_CTX *ctx, const unsigned char data[64]);
  *
  * \param ctx      context to be initialized
  */
-void esp_sha1_starts( SHA1_CTX *ctx );
+void esp_sha1_start( SHA1_CTX *ctx );
 
 /**
  * \brief          SHA-1 process buffer
@@ -120,7 +129,7 @@ void esp_sha256_clone( SHA256_CTX *dst, const SHA256_CTX *src );
  * \param ctx      context to be initialized
  * \param is224    0 = use SHA256, 1 = use SHA224
  */
-void esp_sha256_starts( SHA256_CTX *ctx, int is224 );
+void esp_sha256_start( SHA256_CTX *ctx, int is224 );
 
 /**
  * \brief          SHA-256 process buffer
@@ -187,7 +196,7 @@ void esp_sha512_clone( SHA512_CTX *dst, const SHA512_CTX *src );
  * \param ctx      context to be initialized
  * \param is384    0 = use SHA512, 1 = use SHA384
  */
-void esp_sha512_starts( SHA512_CTX *ctx, int is384 );
+void esp_sha512_start( SHA512_CTX *ctx, int is384 );
 
 /**
  * \brief          SHA-512 process buffer
