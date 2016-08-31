@@ -26,7 +26,7 @@ function run_tests()
 	print_status "Checking prerequisites"
 	[ -z ${IDF_PATH} ] && echo "IDF_PATH is not set. Need path to esp-idf installation." && exit 2
 
-	print_status "Cloning template..."
+	print_status "Cloning template from ${ESP_IDF_TEMPLATE_GIT}..."
 	git clone ${ESP_IDF_TEMPLATE_GIT} template
 	cd template
 
