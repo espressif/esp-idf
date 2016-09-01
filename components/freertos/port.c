@@ -251,7 +251,7 @@ void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMOR
 
 /*
  * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
- * *addr to compare, and if it's the same, will set *addr to set. It will return the old value 
+ * *mux to compare, and if it's the same, will set *mux to set. It will return the old value
  * of *addr.
  *
  * Note: the NOPs are needed on the ESP31 processor but superfluous on the ESP32.
@@ -276,7 +276,7 @@ uint32_t uxPortCompareSet(volatile uint32_t *mux, uint32_t compare, uint32_t set
  * For kernel use: Initialize a per-CPU mux. Mux will be initialized unlocked.
  */
 void vPortCPUInitializeMutex(portMUX_TYPE *mux) {
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	ets_printf("Initializing mux %p\n", mux);
 	mux->lastLockedFn="(never locked)";
 	mux->lastLockedLine=-1;
@@ -288,7 +288,7 @@ void vPortCPUInitializeMutex(portMUX_TYPE *mux) {
 /*
  * For kernel use: Acquire a per-CPU mux. Spinlocks, so don't hold on to these muxes for too long.
  */
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *fnName, int line) {
 #else
 void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
@@ -296,7 +296,7 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 	uint32_t res;
 	uint32_t recCnt;
 	unsigned int irqStatus;
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	uint32_t cnt=(1<<16);
 	if ( (mux->mux & portMUX_MAGIC_MASK) != portMUX_MAGIC_VAL ) {
 		ets_printf("ERROR: vPortCPUAcquireMutex: mux %p is uninitialized (0x%X)! Called from %s line %d.\n", mux, mux->mux, fnName, line);
@@ -313,21 +313,21 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 			//Mux was already locked by us. Just bump the recurse count by one.
 			recCnt=(res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT;
 			recCnt++;
-#ifdef portMUX_DEBUG_RECURSIVE
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG_RECURSIVE
 			ets_printf("Recursive lock: recCnt=%d last non-recursive lock %s line %d, curr %s line %d\n", recCnt, mux->lastLockedFn, mux->lastLockedLine, fnName, line);
 #endif
 			mux->mux=portMUX_MAGIC_VAL|(recCnt<<portMUX_CNT_SHIFT)|(xPortGetCoreID()<<portMUX_VAL_SHIFT);
 			break;
 		}
-		cnt--;
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+        cnt--;
 		if (cnt==0) {
 			ets_printf("Timeout on mux! last non-recursive lock %s line %d, curr %s line %d\n", mux->lastLockedFn, mux->lastLockedLine, fnName, line);
 			ets_printf("Mux value %X\n", mux->mux);
 		}
 #endif
 	} while (res!=portMUX_FREE_VAL);
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	if (res==portMUX_FREE_VAL) { //initial lock
 		mux->lastLockedFn=fnName;
 		mux->lastLockedLine=line;
@@ -340,7 +340,7 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
  * For kernel use: Release a per-CPU mux. Returns true if everything is OK, false if mux
  * was already unlocked or is locked by a different core.
  */
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *fnName, int line) {
 #else
 portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
@@ -351,7 +351,7 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 	portBASE_TYPE ret=pdTRUE;
 //	ets_printf("Unlock %p\n", mux);
 	irqStatus=portENTER_CRITICAL_NESTED();
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	const char *lastLockedFn=mux->lastLockedFn;
 	int lastLockedLine=mux->lastLockedLine;
 	mux->lastLockedFn=fnName;
@@ -362,13 +362,13 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 	res=uxPortCompareSet(&mux->mux, (xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL, portMUX_FREE_VAL);
 
 	if ( res == portMUX_FREE_VAL ) {
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p was already unlocked!\n", mux);
 		ets_printf("Last non-recursive unlock %s line %d, curr unlock %s line %d\n", lastLockedFn, lastLockedLine, fnName, line);
 #endif
 		ret=pdFALSE;
 	} else if ( ((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT) != xPortGetCoreID() ) {
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p wasn't locked by this core (%d) but by core %d (ret=%x, mux=%x).\n", mux, xPortGetCoreID(), ((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT), res, mux->mux);
 		ets_printf("Last non-recursive lock %s line %d\n", lastLockedFn, lastLockedLine);
 		ets_printf("Called by %s line %d\n", fnName, line);
@@ -378,7 +378,7 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 		//We locked this, but the reccount isn't zero. Decrease refcount and continue.
 		recCnt=(res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT;
 		recCnt--;
-#ifdef portMUX_DEBUG_RECURSIVE
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG_RECURSIVE
 		ets_printf("Recursive unlock: recCnt=%d last locked %s line %d, curr %s line %d\n", recCnt, lastLockedFn, lastLockedLine, fnName, line);
 #endif
 		mux->mux=portMUX_MAGIC_VAL|(recCnt<<portMUX_CNT_SHIFT)|(xPortGetCoreID()<<portMUX_VAL_SHIFT);

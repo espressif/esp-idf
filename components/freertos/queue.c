@@ -483,14 +483,15 @@ int8_t *pcAllocatedBuffer;
 
 	void* xQueueGetMutexHolder( QueueHandle_t xSemaphore )
 	{
-	void *pxReturn;
+		Queue_t * const pxQueue = ( Queue_t * ) xSemaphore;
+		void *pxReturn;
 
 		/* This function is called by xSemaphoreGetMutexHolder(), and should not
 		be called directly.  Note:  This is a good way of determining if the
 		calling task is the mutex holder, but not a good way of determining the
 		identity of the mutex holder, as the holder may change between the
 		following critical section exiting and the function returning. */
-		taskENTER_CRITICAL();
+		taskENTER_CRITICAL(&pxQueue->mux);
 		{
 			if( ( ( Queue_t * ) xSemaphore )->uxQueueType == queueQUEUE_IS_MUTEX )
 			{
@@ -501,7 +502,7 @@ int8_t *pcAllocatedBuffer;
 				pxReturn = NULL;
 			}
 		}
-		taskEXIT_CRITICAL();
+		taskEXIT_CRITICAL(&pxQueue->mux);
 
 		return pxReturn;
 	} /*lint !e818 xSemaphore cannot be a pointer to const because it is a typedef. */
