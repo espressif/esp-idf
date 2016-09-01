@@ -175,7 +175,7 @@ void
 #ifdef LWIP_ESP8266
 wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
 #else
-wlanif_input(struct netif *netif, void *buffer, uint16 len)
+wlanif_input(struct netif *netif, void *buffer, uint16_t len)
 #endif
 {
   struct pbuf *p;
