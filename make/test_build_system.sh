@@ -29,6 +29,7 @@ function run_tests()
 	print_status "Cloning template from ${ESP_IDF_TEMPLATE_GIT}..."
 	git clone ${ESP_IDF_TEMPLATE_GIT} template
 	cd template
+	git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
 
 	print_status "Updating template config..."
 	make defconfig || exit $?
