@@ -29,56 +29,43 @@
  * Author: Fr�d�ric Bernon, Simon Goldschmidt
  *
  */
-#ifndef LWIP_HDR_APPS_SNTP_TIME_H
-#define LWIP_HDR_APPS_SNTP_TIME_H
+#ifndef LWIP_HDR_APPS_SNTP_H
+#define LWIP_HDR_APPS_SNTP_H
 
-#include "lwip/opt.h"
-#include "lwip/timers.h"
+#include "apps/sntp/sntp_opts.h"
+#include "lwip/ip_addr.h"
 
-#define SECSPERMIN	60L
-#define MINSPERHOUR	60L
-#define HOURSPERDAY	24L
-#define SECSPERHOUR	(SECSPERMIN * MINSPERHOUR)
-#define SECSPERDAY	(SECSPERHOUR * HOURSPERDAY)
-#define DAYSPERWEEK	7
-#define MONSPERYEAR	12
-
-#define YEAR_BASE	1900
-#define EPOCH_YEAR      1970
-#define EPOCH_WDAY      4
-#define EPOCH_YEARS_SINCE_LEAP 2
-#define EPOCH_YEARS_SINCE_CENTURY 70
-#define EPOCH_YEARS_SINCE_LEAP_CENTURY 370
-
-#define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
-
-typedef long sntp_time_t;
-
-typedef struct{
-  int	tm_sec;
-  int	tm_min;
-  int	tm_hour;
-  int	tm_mday;
-  int	tm_mon;
-  int	tm_year;
-  int	tm_wday;
-  int	tm_yday;
-  int	tm_isdst;
-}sntp_tm;
-
-typedef struct{
-  char ch;
-  int m;
-  int n;
-  int d;
-  int s;
-  sntp_time_t change;
-  int offset;
-}sntp_tm_type;
-
-void sntp_convert_time(sntp_time_t GMT_Time);
-bool sntp_set_timezone(s8_t timezone);
-char* sntp_get_real_time(sntp_time_t t);
-u32_t sntp_get_current_timestamp(void);
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+/* SNTP operating modes: default is to poll using unicast.
+   The mode has to be set before calling sntp_init(). */
+#define SNTP_OPMODE_POLL            0
+#define SNTP_OPMODE_LISTENONLY      1
+void sntp_setoperatingmode(u8_t operating_mode);
+u8_t sntp_getoperatingmode(void);
+
+void sntp_init(void);
+void sntp_stop(void);
+u8_t sntp_enabled(void);
+
+void sntp_setserver(u8_t idx, const ip_addr_t *addr);
+ip_addr_t sntp_getserver(u8_t idx);
+
+#if SNTP_SERVER_DNS
+void sntp_setservername(u8_t idx, char *server);
+char *sntp_getservername(u8_t idx);
+#endif /* SNTP_SERVER_DNS */
+
+#if SNTP_GET_SERVERS_FROM_DHCP
+void sntp_servermode_dhcp(int set_servers_from_dhcp);
+#else /* SNTP_GET_SERVERS_FROM_DHCP */
+#define sntp_servermode_dhcp(x)
+#endif /* SNTP_GET_SERVERS_FROM_DHCP */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* LWIP_HDR_APPS_SNTP_H */

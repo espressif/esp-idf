@@ -45,7 +45,7 @@
  * Author: Frédéric Bernon, Simon Goldschmidt
  */
 
-#include "apps/sntp.h"
+#include "apps/sntp/sntp.h"
 
 #include "lwip/opt.h"
 #include "lwip/timers.h"
@@ -223,7 +223,7 @@ sntp_process(u32_t *receive_timestamp)
   /* change system time and/or the update the RTC clock */
   SNTP_SET_SYSTEM_TIME(t);
   /* display local time from GMT time */
-  sntp_convert_time(t);
+
   LWIP_DEBUGF(SNTP_DEBUG_TRACE, ("sntp_process: %s", ctime(&tim)));
 #endif /* SNTP_CALC_TIME_US */
   LWIP_UNUSED_ARG(tim);
