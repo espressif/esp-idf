@@ -234,7 +234,12 @@ esp_err_t esp_wifi_get_station_list(struct station_info **station);
 
 esp_err_t esp_wifi_free_station_list(void);
 
-esp_err_t esp_wifi_set_storage(uint8_t storage);
+typedef enum {
+    WIFI_STORAGE_RAM,
+    WIFI_STORAGE_FLASH,
+} wifi_storage_t;
+
+esp_err_t esp_wifi_set_storage(wifi_storage_t storage);
 
 typedef esp_err_t (*wifi_rxcb_t)(void *buffer, uint16_t len, void* eb);
 
