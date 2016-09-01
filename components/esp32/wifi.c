@@ -19,6 +19,7 @@
 #include "esp_err.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
+#include "esp_task.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -107,7 +108,7 @@ esp_err_t esp_wifi_startup(wifi_startup_cb_t cb, void *ctx)
     startup_cb = cb;
     startup_ctx = ctx;
 
-    xTaskCreatePinnedToCore(esp_wifi_task, "wifiTask", 4096, NULL, configMAX_PRIORITIES-7, NULL, 0);
+    xTaskCreatePinnedToCore(esp_wifi_task, "wifiTask", ESP_TASK_WIFI_STARTUP_STACK, NULL, ESP_TASK_WIFI_STARTUP_PRIO, NULL, 0);
 
     return ESP_OK;
 }
