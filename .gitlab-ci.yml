@@ -3,6 +3,9 @@ stages:
   - test
   - deploy
 
+before_script:
+  - git submodule update --init --recursive
+
 build_template_app:
   stage: build
   image: espressif/esp32-ci-env
