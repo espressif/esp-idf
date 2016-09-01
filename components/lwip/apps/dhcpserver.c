@@ -700,34 +700,39 @@ static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
 			first_address.addr = dhcps_poll.start_ip.addr;
 			client_address.addr = client_address_plus.addr;
 			renew = false;
+			
+            if (plist != NULL){
+			    for (pback_node = plist; pback_node != NULL;pback_node = pback_node->pnext) {
+				    pdhcps_pool = pback_node->pnode;
+				    if (memcmp(pdhcps_pool->mac, m->chaddr, sizeof(pdhcps_pool->mac)) == 0){
+					    if (memcmp(&pdhcps_pool->ip.addr, m->ciaddr, sizeof(pdhcps_pool->ip.addr)) == 0) {
+					        renew = true;
+					    }
+					    client_address.addr = pdhcps_pool->ip.addr;
+					    pdhcps_pool->lease_timer = dhcps_lease_time;
+					    pnode = pback_node;
+					    goto POOL_CHECK;
+				    } else if (pdhcps_pool->ip.addr == client_address_plus.addr){
+					    addr_tmp.addr = htonl(client_address_plus.addr);
+					    addr_tmp.addr++;
+					    client_address_plus.addr = htonl(addr_tmp.addr);
+					    client_address.addr = client_address_plus.addr;
+				    }
 
-			for (pback_node = plist; pback_node != NULL;pback_node = pback_node->pnext) {
-				pdhcps_pool = pback_node->pnode;
-				if (memcmp(pdhcps_pool->mac, m->chaddr, sizeof(pdhcps_pool->mac)) == 0){
-					if (memcmp(&pdhcps_pool->ip.addr, m->ciaddr, sizeof(pdhcps_pool->ip.addr)) == 0) {
-					    renew = true;
-					}
-					client_address.addr = pdhcps_pool->ip.addr;
-					pdhcps_pool->lease_timer = dhcps_lease_time;
-					pnode = pback_node;
-					goto POOL_CHECK;
-				} else if (pdhcps_pool->ip.addr == client_address_plus.addr){
-					addr_tmp.addr = htonl(client_address_plus.addr);
-					addr_tmp.addr++;
-					client_address_plus.addr = htonl(addr_tmp.addr);
-					client_address.addr = client_address_plus.addr;
-				}
-
-				if(flag == false) { // search the fisrt unused ip
-                                    if(first_address.addr < pdhcps_pool->ip.addr) {
-                                        flag = true;
-                                    } else {
-                                        addr_tmp.addr = htonl(first_address.addr);
-                                        addr_tmp.addr++;
-                                        first_address.addr = htonl(addr_tmp.addr);
-                                    }
-				}
+				    if (flag == false) { // search the fisrt unused ip
+                        if (first_address.addr < pdhcps_pool->ip.addr) {
+                          flag = true;
+                        } else {
+                          addr_tmp.addr = htonl(first_address.addr);
+                          addr_tmp.addr++;
+                          first_address.addr = htonl(addr_tmp.addr);
+                        }
+				   }
+			    }
+			} else {
+                client_address.addr = dhcps_poll.start_ip.addr;
 			}
+			
 			if (client_address_plus.addr > dhcps_poll.end_ip.addr) {
 			    client_address.addr = first_address.addr;
 			}
