@@ -68,6 +68,14 @@ static int net_prepare( void )
     return( 0 );
 }
 
+static int mbedtls_net_errno(int fd)
+{
+	int sock_errno = 0; 
+	u32_t optlen = sizeof(sock_errno); 
+	getsockopt(fd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen); 
+	return sock_errno;
+}
+
 /*
  * Initialize a context
  */
@@ -225,8 +233,8 @@ static int net_would_block( const mbedtls_net_context *ctx )
     if( ( fcntl( ctx->fd, F_GETFL, 0) & O_NONBLOCK ) != O_NONBLOCK )
         return( 0 );
 
-	int error = 0;
-	get_errno(ctx->fd, &error);
+	int error = mbedtls_net_errno(ctx->fd);
+	
     switch( error )
     {
 #if defined EAGAIN
@@ -393,7 +401,7 @@ int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
     int ret;
     int fd = ((mbedtls_net_context *) ctx)->fd;
     int error = 0;
-	get_errno(fd, &error);
+	
     if( fd < 0 )
         return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
 
@@ -404,6 +412,7 @@ int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
         if( net_would_block( ctx ) != 0 )
             return( MBEDTLS_ERR_SSL_WANT_READ );
 
+		error = mbedtls_net_errno(fd);
 #if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
     !defined(EFI32)
         if( WSAGetLastError() == WSAECONNRESET )
@@ -475,7 +484,6 @@ int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
     int fd = ((mbedtls_net_context *) ctx)->fd;
 
 	int error = 0;
-	get_errno(fd, &error);
 
     if( fd < 0 )
         return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
@@ -487,6 +495,7 @@ int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
         if( net_would_block( ctx ) != 0 )
             return( MBEDTLS_ERR_SSL_WANT_WRITE );
 
+		error = mbedtls_net_errno(fd);
 #if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
     !defined(EFI32)
         if( WSAGetLastError() == WSAECONNRESET )
