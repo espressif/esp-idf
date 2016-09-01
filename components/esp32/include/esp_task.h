@@ -27,6 +27,7 @@
  * 5. Make sure esp_task.h is consistent between wifi lib and idf
  */
 
+#define ESP_TASK_PRIO_MAX (configMAX_PRIORITIES)
 #define ESP_TASK_PRIO_MIN (0)
 
 /* Wifi library task */
