@@ -514,7 +514,7 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_IP               0
 
-#define HEAP_HIGHWAT                    6*1024
+#define HEAP_HIGHWAT                    20*1024
 
 #define LWIP_NETCONN_FULLDUPLEX         1
 #define LWIP_NETCONN_SEM_PER_THREAD     1
