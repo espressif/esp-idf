@@ -15,7 +15,7 @@
  */
 
 /*
- * Copyright (c) 2007-2009 Frédéric Bernon, Simon Goldschmidt
+ * Copyright (c) 2007-2009 FrÃ©dÃ©ric Bernon, Simon Goldschmidt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -42,7 +42,7 @@
  *
  * This file is part of the lwIP TCP/IP stack.
  *
- * Author: Frédéric Bernon, Simon Goldschmidt
+ * Author: FrÃ©dÃ©ric Bernon, Simon Goldschmidt
  */
 
 #include "apps/sntp/sntp.h"

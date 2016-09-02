@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009 Fr�d�ric Bernon, Simon Goldschmidt
+ * Copyright (c) 2007-2009 Frédéric Bernon, Simon Goldschmidt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -26,7 +26,7 @@
  *
  * This file is part of the lwIP TCP/IP stack.
  *
- * Author: Fr�d�ric Bernon, Simon Goldschmidt
+ * Author: Frédéric Bernon, Simon Goldschmidt
  *
  */
 #ifndef LWIP_HDR_APPS_SNTP_OPTS_H
