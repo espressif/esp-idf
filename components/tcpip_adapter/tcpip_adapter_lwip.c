@@ -36,9 +36,6 @@ static struct ip_info esp_ip[TCPIP_ADAPTER_IF_MAX];
 static tcpip_adapter_dhcp_status_t dhcps_status = TCPIP_ADAPTER_DHCP_INIT;
 static tcpip_adapter_dhcp_status_t dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
 
-
-static esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif);
-
 #define TCPIP_ADAPTER_DEBUG(...)
 
 void tcpip_adapter_init(void)
@@ -156,57 +153,13 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
             if (dhcpc_status != TCPIP_ADAPTER_DHCP_STOPPED) {
                 dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
             }
+
+            ip4_addr_set_zero(&esp_ip[tcpip_if].ip);
+            ip4_addr_set_zero(&esp_ip[tcpip_if].gw);
+            ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
         }
         
         netif_set_down(esp_netif[tcpip_if]);
-    }
-
-    return ESP_OK;
-}
-
-esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
-{
-    tcpip_adapter_if_t tcpip_if;
-    system_event_t evt;
-
-    if (!netif) {
-        TCPIP_ADAPTER_DEBUG("null netif=%p\n", netif);
-        return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
-    }
-
-    if (netif == esp_netif[TCPIP_ADAPTER_IF_STA]) {
-        tcpip_if = TCPIP_ADAPTER_IF_STA;
-    } else if (netif == esp_netif[TCPIP_ADAPTER_IF_AP]){
-        tcpip_if = TCPIP_ADAPTER_IF_AP;
-    } else {
-        TCPIP_ADAPTER_DEBUG("invalid netif=%p\n", netif);
-        return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
-    }
-
-    //check whether IP is changed
-    if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), &esp_ip[tcpip_if].ip) ||
-         !ip4_addr_cmp(ip_2_ip4(&netif->gw), &esp_ip[tcpip_if].gw) ||
-         !ip4_addr_cmp(ip_2_ip4(&netif->netmask), &esp_ip[tcpip_if].netmask) ) {
-
-        ip4_addr_set(&esp_ip[tcpip_if].ip, ip_2_ip4(&netif->ip_addr));
-        ip4_addr_set(&esp_ip[tcpip_if].netmask, ip_2_ip4(&netif->netmask));
-        ip4_addr_set(&esp_ip[tcpip_if].gw, ip_2_ip4(&netif->gw));
-
-        //notify event
-        if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY) ) {
-            evt.event_id = SYSTEM_EVENT_STA_GOTIP;
-            memcpy(&evt.event_info.got_ip.ip, &esp_ip[tcpip_if].ip, sizeof(evt.event_info.got_ip.ip));
-            memcpy(&evt.event_info.got_ip.netmask, &esp_ip[tcpip_if].netmask, sizeof(evt.event_info.got_ip.netmask));
-            memcpy(&evt.event_info.got_ip.gw, &esp_ip[tcpip_if].gw, sizeof(evt.event_info.got_ip.gw));
-
-            esp_event_send(&evt);
-
-            printf("ip: %s, ", inet_ntoa(esp_ip[tcpip_if].ip));
-            printf("mask: %s, ", inet_ntoa(esp_ip[tcpip_if].netmask));
-            printf("gw: %s\n", inet_ntoa(esp_ip[tcpip_if].gw));
-        }
-    } else {
-        TCPIP_ADAPTER_DEBUG("ip unchanged\n");
     }
 
     return ESP_OK;
@@ -475,6 +428,46 @@ esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode opt_op, tcpip_ada
     return ESP_OK;
 }
 
+static void tcpip_adapter_dhcpc_cb(void)
+{
+    struct netif *netif = esp_netif[TCPIP_ADAPTER_IF_STA];
+    struct ip_info *ip_info = &esp_ip[TCPIP_ADAPTER_IF_STA];
+    system_event_t evt;
+
+    if (!netif) {
+        TCPIP_ADAPTER_DEBUG("null netif=%p\n", netif);
+        return;
+    }
+
+    if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY) ) {
+        //check whether IP is changed
+        if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), &ip_info->ip) ||
+             !ip4_addr_cmp(ip_2_ip4(&netif->netmask), &ip_info->netmask) ||
+             !ip4_addr_cmp(ip_2_ip4(&netif->gw), &ip_info->gw) ) {
+
+            ip4_addr_set(&ip_info->ip, ip_2_ip4(&netif->ip_addr));
+            ip4_addr_set(&ip_info->netmask, ip_2_ip4(&netif->netmask));
+            ip4_addr_set(&ip_info->gw, ip_2_ip4(&netif->gw));
+
+            //notify event
+            evt.event_id = SYSTEM_EVENT_STA_GOTIP;
+            memcpy(&evt.event_info.got_ip.ip, &ip_info->ip, sizeof(evt.event_info.got_ip.ip));
+            memcpy(&evt.event_info.got_ip.netmask, &ip_info->netmask, sizeof(evt.event_info.got_ip.netmask));
+            memcpy(&evt.event_info.got_ip.gw, &ip_info->gw, sizeof(evt.event_info.got_ip.gw));
+
+            esp_event_send(&evt);
+
+            printf("ip: %s, ", inet_ntoa(ip_info->ip));
+            printf("mask: %s, ", inet_ntoa(ip_info->netmask));
+            printf("gw: %s\n", inet_ntoa(ip_info->gw));
+        } else {
+            TCPIP_ADAPTER_DEBUG("ip unchanged\n");
+        }
+    }
+
+    return;
+}
+
 esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status)
 {
     *status = dhcpc_status;
@@ -509,6 +502,8 @@ esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if)
                 TCPIP_ADAPTER_DEBUG("dhcp client start failed\n");
                 return ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED;
             }
+
+            dhcp_set_cb(p_netif, tcpip_adapter_dhcpc_cb);
 
             TCPIP_ADAPTER_DEBUG("dhcp client start successfully\n");
             dhcpc_status = TCPIP_ADAPTER_DHCP_STARTED;

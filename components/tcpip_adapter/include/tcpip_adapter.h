@@ -34,9 +34,9 @@ struct ip_info {
 
 /* Also used by dhcpserver.h  */
 struct dhcps_lease {
-	bool enable;
-	ip4_addr_t start_ip;
-	ip4_addr_t end_ip;
+    bool enable;
+    ip4_addr_t start_ip;
+    ip4_addr_t end_ip;
 };
 
 typedef struct dhcps_lease tcpip_adapter_dhcps_lease;
