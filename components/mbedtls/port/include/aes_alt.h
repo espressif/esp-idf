@@ -18,9 +18,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  
+ *
  */
- 
+
 #ifndef AES_ALT_H
 #define AES_ALT_H
 
@@ -33,23 +33,23 @@ extern "C" {
 
 typedef AES_CTX mbedtls_aes_context;
 
-#define mbedtls_aes_init 			esp_aes_init
-#define mbedtls_aes_free 			esp_aes_free
-#define mbedtls_aes_setkey_enc 		esp_aes_setkey_enc
-#define mbedtls_aes_setkey_dec 		esp_aes_setkey_dec
-#define mbedtls_aes_crypt_ecb 		esp_aes_crypt_ecb
+#define mbedtls_aes_init            esp_aes_init
+#define mbedtls_aes_free            esp_aes_free
+#define mbedtls_aes_setkey_enc      esp_aes_setkey_enc
+#define mbedtls_aes_setkey_dec      esp_aes_setkey_dec
+#define mbedtls_aes_crypt_ecb       esp_aes_crypt_ecb
 #if defined(MBEDTLS_CIPHER_MODE_CBC)
-#define mbedtls_aes_crypt_cbc 		esp_aes_crypt_cbc
+#define mbedtls_aes_crypt_cbc       esp_aes_crypt_cbc
 #endif
 #if defined(MBEDTLS_CIPHER_MODE_CFB)
-#define mbedtls_aes_crypt_cfb128 	esp_aes_crypt_cfb128
-#define mbedtls_aes_crypt_cfb8 		esp_aes_crypt_cfb8
+#define mbedtls_aes_crypt_cfb128    esp_aes_crypt_cfb128
+#define mbedtls_aes_crypt_cfb8      esp_aes_crypt_cfb8
 #endif
 #if defined(MBEDTLS_CIPHER_MODE_CTR)
-#define mbedtls_aes_crypt_ctr		esp_aes_crypt_ctr
+#define mbedtls_aes_crypt_ctr       esp_aes_crypt_ctr
 #endif
-#define mbedtls_aes_encrypt 		esp_aes_encrypt
-#define mbedtls_aes_decrypt			esp_aes_decrypt
+#define mbedtls_aes_encrypt         esp_aes_encrypt
+#define mbedtls_aes_decrypt         esp_aes_decrypt
 #endif /* MBEDTLS_AES_ALT */
 
 #ifdef __cplusplus

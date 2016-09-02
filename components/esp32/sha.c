@@ -38,22 +38,26 @@ void esp_sha1_init( SHA1_CTX *ctx )
 
     SHA_LOCK();
     SHA_TAKE();
-	ets_sha_enable();	
-	SHA_UNLOCK();
+    ets_sha_enable();
+    SHA_UNLOCK();
 }
 
 void esp_sha1_free( SHA1_CTX *ctx )
 {
-    if( ctx == NULL )
+    if ( ctx == NULL ) {
         return;
+    }
 
     bzero( ctx, sizeof( SHA1_CTX ) );
 
     SHA_LOCK();
     SHA_GIVE();
-    if (false == SHA_IS_USED())
-	    ets_sha_disable();
-	SHA_UNLOCK();
+
+    if (false == SHA_IS_USED()) {
+        ets_sha_disable();
+    }
+
+    SHA_UNLOCK();
 }
 
 void esp_sha1_clone( SHA1_CTX *dst, const SHA1_CTX *src )
@@ -71,10 +75,10 @@ void esp_sha1_process(SHA1_CTX *ctx, const unsigned char data[64])
  */
 void esp_sha1_start( SHA1_CTX *ctx )
 {
-	SHA_LOCK();
-	ets_sha_init(&ctx->context);
+    SHA_LOCK();
+    ets_sha_init(&ctx->context);
 
-	ctx->context_type = SHA1;
+    ctx->context_type = SHA1;
 }
 
 /*
@@ -82,7 +86,7 @@ void esp_sha1_start( SHA1_CTX *ctx )
  */
 void esp_sha1_update( SHA1_CTX *ctx, const unsigned char *input, size_t ilen )
 {
-	ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
+    ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
 
 /*
@@ -90,8 +94,8 @@ void esp_sha1_update( SHA1_CTX *ctx, const unsigned char *input, size_t ilen )
  */
 void esp_sha1_finish( SHA1_CTX *ctx, unsigned char output[20] )
 {
-	ets_sha_finish(&ctx->context, ctx->context_type, output);
-	SHA_UNLOCK();
+    ets_sha_finish(&ctx->context, ctx->context_type, output);
+    SHA_UNLOCK();
 }
 
 /*
@@ -116,8 +120,8 @@ void esp_sha256_init( SHA256_CTX *ctx )
 
     SHA_LOCK();
     SHA_TAKE();
-	ets_sha_enable();
-	SHA_UNLOCK();
+    ets_sha_enable();
+    SHA_UNLOCK();
 }
 
 void esp_sha256_process(SHA256_CTX *ctx, const unsigned char data[64])
@@ -127,16 +131,20 @@ void esp_sha256_process(SHA256_CTX *ctx, const unsigned char data[64])
 
 void esp_sha256_free( SHA256_CTX *ctx )
 {
-    if( ctx == NULL )
+    if ( ctx == NULL ) {
         return;
+    }
 
     bzero( ctx, sizeof( SHA256_CTX ) );
 
     SHA_LOCK();
     SHA_GIVE();
-    if (false == SHA_IS_USED())
-	    ets_sha_disable();
-	SHA_UNLOCK();
+
+    if (false == SHA_IS_USED()) {
+        ets_sha_disable();
+    }
+
+    SHA_UNLOCK();
 }
 
 void esp_sha256_clone( SHA256_CTX *dst, const SHA256_CTX *src )
@@ -149,17 +157,16 @@ void esp_sha256_clone( SHA256_CTX *dst, const SHA256_CTX *src )
  */
 void esp_sha256_start( SHA256_CTX *ctx, int is224 )
 {
-	SHA_LOCK();
+    SHA_LOCK();
     ets_sha_init(&ctx->context);
 
-	if( is224 == 0 )
-    {
+    if ( is224 == 0 ) {
         /* SHA-256 */
-		ctx->context_type = SHA256;
-	}else{
-		/* SHA-224 */
-		ctx->context_type = SHA224;
-	}	
+        ctx->context_type = SHA256;
+    } else {
+        /* SHA-224 */
+        ctx->context_type = SHA224;
+    }
 }
 
 /*
@@ -167,7 +174,7 @@ void esp_sha256_start( SHA256_CTX *ctx, int is224 )
  */
 void esp_sha256_update( SHA256_CTX *ctx, const unsigned char *input, size_t ilen )
 {
-	ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
+    ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
 
 /*
@@ -175,8 +182,8 @@ void esp_sha256_update( SHA256_CTX *ctx, const unsigned char *input, size_t ilen
  */
 void esp_sha256_finish( SHA256_CTX *ctx, unsigned char output[32] )
 {
-	ets_sha_finish(&ctx->context, ctx->context_type, output);
-	SHA_UNLOCK();
+    ets_sha_finish(&ctx->context, ctx->context_type, output);
+    SHA_UNLOCK();
 }
 
 /*
@@ -201,8 +208,8 @@ void esp_sha512_init( SHA512_CTX *ctx )
 
     SHA_LOCK();
     SHA_TAKE();
-	ets_sha_enable();
-	SHA_UNLOCK();
+    ets_sha_enable();
+    SHA_UNLOCK();
 }
 
 void esp_sha512_process( SHA512_CTX *ctx, const unsigned char data[128] )
@@ -212,16 +219,20 @@ void esp_sha512_process( SHA512_CTX *ctx, const unsigned char data[128] )
 
 void esp_sha512_free( SHA512_CTX *ctx )
 {
-    if( ctx == NULL )
+    if ( ctx == NULL ) {
         return;
+    }
 
     bzero( ctx, sizeof( SHA512_CTX ) );
 
     SHA_LOCK();
     SHA_GIVE();
-    if (false == SHA_IS_USED())
-	    ets_sha_disable();
-	SHA_UNLOCK();
+
+    if (false == SHA_IS_USED()) {
+        ets_sha_disable();
+    }
+
+    SHA_UNLOCK();
 }
 
 void esp_sha512_clone( SHA512_CTX *dst, const SHA512_CTX *src )
@@ -234,16 +245,13 @@ void esp_sha512_clone( SHA512_CTX *dst, const SHA512_CTX *src )
  */
 void esp_sha512_start( SHA512_CTX *ctx, int is384 )
 {
-	SHA_LOCK();
-	ets_sha_init(&ctx->context);
+    SHA_LOCK();
+    ets_sha_init(&ctx->context);
 
-    if( is384 == 0 )
-    {
+    if ( is384 == 0 ) {
         /* SHA-512 */
         ctx->context_type = SHA2_512;
-    }
-    else
-    {
+    } else {
         /* SHA-384 */
         ctx->context_type = SHA2_384;
     }
@@ -252,7 +260,7 @@ void esp_sha512_start( SHA512_CTX *ctx, int is384 )
 /*
  * SHA-512 process buffer
  */
-void esp_sha512_update( SHA512_CTX *ctx, const unsigned char *input,size_t ilen )
+void esp_sha512_update( SHA512_CTX *ctx, const unsigned char *input, size_t ilen )
 {
     ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
@@ -269,7 +277,7 @@ void esp_sha512_finish( SHA512_CTX *ctx, unsigned char output[64] )
 /*
  * output = SHA-512( input buffer )
  */
-void esp_sha512_output( const unsigned char *input, size_t ilen,unsigned char output[64], int is384 )
+void esp_sha512_output( const unsigned char *input, size_t ilen, unsigned char output[64], int is384 )
 {
     SHA512_CTX ctx;
 

@@ -39,100 +39,112 @@ void esp_aes_init( AES_CTX *ctx )
 
     AES_LOCK();
     AES_TAKE();
-	ets_aes_enable();
-	AES_UNLOCK();
+    ets_aes_enable();
+    AES_UNLOCK();
 }
 
 void esp_aes_free( AES_CTX *ctx )
 {
-    if( ctx == NULL )
+    if ( ctx == NULL ) {
         return;
+    }
 
     bzero( ctx, sizeof( AES_CTX ) );
 
     AES_LOCK();
     AES_GIVE();
-    if (false == AES_IS_USED())
-	    ets_aes_disable();
-	AES_UNLOCK();
+
+    if (false == AES_IS_USED()) {
+        ets_aes_disable();
+    }
+
+    AES_UNLOCK();
 }
 
 /*
  * AES key schedule (encryption)
  */
 int esp_aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,
-                    unsigned int keybits )
+                        unsigned int keybits )
 {
-	enum AES_BITS	keybit;
-	uint16_t keybyte = keybits / 8;
-	switch (keybits){
-		case 128:
-			keybit = AES128;
-			break;
-		case 192:
-			keybit = AES192;
-			break;
-		case 256:
-			keybit = AES256;
-			break;
-		default : return( ERR_AES_INVALID_KEY_LENGTH );
-	}
-	if (ctx->enc.keyflag == false){
-		ctx->enc.keyflag = true;
-		ctx->enc.keybits = keybits;
-		memset(ctx->enc.key, 0, sizeof(ctx->enc.key));
-		memcpy(ctx->enc.key, key, keybyte);
-	} else {
-		ets_aes_setkey_enc(key, keybit);
-	}
-	return 0;
+    enum AES_BITS   keybit;
+    uint16_t keybyte = keybits / 8;
+
+    switch (keybits) {
+    case 128:
+        keybit = AES128;
+        break;
+    case 192:
+        keybit = AES192;
+        break;
+    case 256:
+        keybit = AES256;
+        break;
+    default:
+        return ( ERR_AES_INVALID_KEY_LENGTH );
+    }
+
+    if (ctx->enc.keyflag == false) {
+        ctx->enc.keyflag = true;
+        ctx->enc.keybits = keybits;
+        memset(ctx->enc.key, 0, sizeof(ctx->enc.key));
+        memcpy(ctx->enc.key, key, keybyte);
+    } else {
+        ets_aes_setkey_enc(key, keybit);
+    }
+
+    return 0;
 }
 
 /*
  * AES key schedule (decryption)
  */
 int esp_aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,
-                    unsigned int keybits )
+                        unsigned int keybits )
 {
-	enum AES_BITS	keybit;
-	uint16_t keybyte = keybits / 8;
-	switch (keybits){
-		case 128:
-			keybit = AES128;
-			break;
-		case 192:
-			keybit = AES192;
-			break;
-		case 256:
-			keybit = AES256;
-			break;
-		default : return( ERR_AES_INVALID_KEY_LENGTH );
-	}
-	if (ctx->dec.keyflag == false){
-		ctx->dec.keyflag = true;
-		ctx->dec.keybits = keybits;
-		memset(ctx->dec.key, 0, sizeof(ctx->dec.key));
-		memcpy(ctx->dec.key, key, keybyte);
-	} else {
-		ets_aes_setkey_dec(key, keybit);
-	}
-	return 0;
+    enum AES_BITS   keybit;
+    uint16_t keybyte = keybits / 8;
 
+    switch (keybits) {
+    case 128:
+        keybit = AES128;
+        break;
+    case 192:
+        keybit = AES192;
+        break;
+    case 256:
+        keybit = AES256;
+        break;
+    default:
+        return ( ERR_AES_INVALID_KEY_LENGTH );
+    }
+
+    if (ctx->dec.keyflag == false) {
+        ctx->dec.keyflag = true;
+        ctx->dec.keybits = keybits;
+        memset(ctx->dec.key, 0, sizeof(ctx->dec.key));
+        memcpy(ctx->dec.key, key, keybyte);
+    } else {
+        ets_aes_setkey_dec(key, keybit);
+    }
+
+    return 0;
 }
 
 static void esp_aes_process_enable(AES_CTX *ctx, int mode)
 {
-	if( mode == AES_ENCRYPT ){
-		esp_aes_setkey_enc(ctx, ctx->enc.key, ctx->enc.keybits);
-	}else{
-		esp_aes_setkey_dec(ctx, ctx->dec.key, ctx->dec.keybits);
-	}
-	return;
+    if ( mode == AES_ENCRYPT ) {
+        esp_aes_setkey_enc(ctx, ctx->enc.key, ctx->enc.keybits);
+    } else {
+        esp_aes_setkey_dec(ctx, ctx->dec.key, ctx->dec.keybits);
+    }
+
+    return;
 }
 
 static void esp_aes_process_disable(AES_CTX *ctx, int mode)
 {
-	
+
 }
 
 /*
@@ -140,11 +152,12 @@ static void esp_aes_process_disable(AES_CTX *ctx, int mode)
  */
 
 void esp_aes_encrypt( AES_CTX *ctx,
-                          const unsigned char input[16],
-                          unsigned char output[16] )
+                      const unsigned char input[16],
+                      unsigned char output[16] )
 {
-	ets_aes_crypt(input, output);
-	return ;
+    ets_aes_crypt(input, output);
+
+    return ;
 }
 
 
@@ -153,11 +166,12 @@ void esp_aes_encrypt( AES_CTX *ctx,
  */
 
 void esp_aes_decrypt( AES_CTX *ctx,
-                          const unsigned char input[16],
-                          unsigned char output[16] )
+                      const unsigned char input[16],
+                      unsigned char output[16] )
 {
-	ets_aes_crypt(input, output);
-	return ;
+    ets_aes_crypt(input, output);
+
+    return ;
 }
 
 
@@ -165,24 +179,25 @@ void esp_aes_decrypt( AES_CTX *ctx,
  * AES-ECB block encryption/decryption
  */
 int esp_aes_crypt_ecb( AES_CTX *ctx,
-                    int mode,
-                    const unsigned char input[16],
-                    unsigned char output[16] )
+                       int mode,
+                       const unsigned char input[16],
+                       unsigned char output[16] )
 {
-	AES_LOCK();
-	
-	esp_aes_process_enable(ctx, mode);
+    AES_LOCK();
 
-	if( mode == AES_ENCRYPT )
+    esp_aes_process_enable(ctx, mode);
+
+    if ( mode == AES_ENCRYPT ) {
         esp_aes_encrypt( ctx, input, output );
-    else
+    } else {
         esp_aes_decrypt( ctx, input, output );
+    }
 
-	esp_aes_process_disable(ctx, mode);
-	
-	AES_UNLOCK();
-	
-	return 0;
+    esp_aes_process_disable(ctx, mode);
+
+    AES_UNLOCK();
+
+    return 0;
 }
 
 
@@ -190,27 +205,27 @@ int esp_aes_crypt_ecb( AES_CTX *ctx,
  * AES-CBC buffer encryption/decryption
  */
 int esp_aes_crypt_cbc( AES_CTX *ctx,
-                    int mode,
-                    size_t length,
-                    unsigned char iv[16],
-                    const unsigned char *input,
-                    unsigned char *output )
+                       int mode,
+                       size_t length,
+                       unsigned char iv[16],
+                       const unsigned char *input,
+                       unsigned char *output )
 {
-	int i;
+    int i;
     unsigned char temp[16];
 
-    if( length % 16 )
-        return( ERR_AES_INVALID_INPUT_LENGTH );
+    if ( length % 16 ) {
+        return ( ERR_AES_INVALID_INPUT_LENGTH );
+    }
 
-	if( mode == AES_DECRYPT )
-    {
-        while( length > 0 )
-        {
+    if ( mode == AES_DECRYPT ) {
+        while ( length > 0 ) {
             memcpy( temp, input, 16 );
             esp_aes_crypt_ecb( ctx, mode, input, output );
 
-            for( i = 0; i < 16; i++ )
+            for ( i = 0; i < 16; i++ ) {
                 output[i] = (unsigned char)( output[i] ^ iv[i] );
+            }
 
             memcpy( iv, temp, 16 );
 
@@ -218,13 +233,11 @@ int esp_aes_crypt_cbc( AES_CTX *ctx,
             output += 16;
             length -= 16;
         }
-    }
-    else
-    {
-        while( length > 0 )
-        {
-            for( i = 0; i < 16; i++ )
+    } else {
+        while ( length > 0 ) {
+            for ( i = 0; i < 16; i++ ) {
                 output[i] = (unsigned char)( input[i] ^ iv[i] );
+            }
 
             esp_aes_crypt_ecb( ctx, mode, output, output );
             memcpy( iv, output, 16 );
@@ -235,85 +248,83 @@ int esp_aes_crypt_cbc( AES_CTX *ctx,
         }
     }
 
-	return 0;
+    return 0;
 }
 
 /*
  * AES-CFB128 buffer encryption/decryption
  */
 int esp_aes_crypt_cfb128( AES_CTX *ctx,
-                       int mode,
-                       size_t length,
-                       size_t *iv_off,
-                       unsigned char iv[16],
-                       const unsigned char *input,
-                       unsigned char *output )
+                          int mode,
+                          size_t length,
+                          size_t *iv_off,
+                          unsigned char iv[16],
+                          const unsigned char *input,
+                          unsigned char *output )
 {
-	int c;
-	size_t n = *iv_off;
+    int c;
+    size_t n = *iv_off;
 
-	if( mode == AES_DECRYPT )
-	{
-		while( length-- )
-		{
-			if( n == 0 )
-				esp_aes_crypt_ecb( ctx, AES_ENCRYPT, iv, iv );
+    if ( mode == AES_DECRYPT ) {
+        while ( length-- ) {
+            if ( n == 0 ) {
+                esp_aes_crypt_ecb( ctx, AES_ENCRYPT, iv, iv );
+            }
 
-				c = *input++;
-				*output++ = (unsigned char)( c ^ iv[n] );
-				iv[n] = (unsigned char) c;
-	
-				n = ( n + 1 ) & 0x0F;
-		}
-	}
-	else
-	{
-		while( length-- )
-		{
-			if( n == 0 )
-				esp_aes_crypt_ecb( ctx, AES_ENCRYPT, iv, iv );
-	
-				iv[n] = *output++ = (unsigned char)( iv[n] ^ *input++ );
-	
-				n = ( n + 1 ) & 0x0F;
-		}
-	}
-	
-	*iv_off = n;
+            c = *input++;
+            *output++ = (unsigned char)( c ^ iv[n] );
+            iv[n] = (unsigned char) c;
 
-	return 0;
+            n = ( n + 1 ) & 0x0F;
+        }
+    } else {
+        while ( length-- ) {
+            if ( n == 0 ) {
+                esp_aes_crypt_ecb( ctx, AES_ENCRYPT, iv, iv );
+            }
+
+            iv[n] = *output++ = (unsigned char)( iv[n] ^ *input++ );
+
+            n = ( n + 1 ) & 0x0F;
+        }
+    }
+
+    *iv_off = n;
+
+    return 0;
 }
 
 /*
  * AES-CFB8 buffer encryption/decryption
  */
 int esp_aes_crypt_cfb8( AES_CTX *ctx,
-                       int mode,
-                       size_t length,
-                       unsigned char iv[16],
-                       const unsigned char *input,
-                       unsigned char *output )
+                        int mode,
+                        size_t length,
+                        unsigned char iv[16],
+                        const unsigned char *input,
+                        unsigned char *output )
 {
-	unsigned char c;
-	unsigned char ov[17];
+    unsigned char c;
+    unsigned char ov[17];
 
-	while( length-- )
-	{
-		memcpy( ov, iv, 16 );
-		esp_aes_crypt_ecb( ctx, AES_ENCRYPT, iv, iv );
-	
-		if( mode == AES_DECRYPT )
-			ov[16] = *input;
-	
-		c = *output++ = (unsigned char)( iv[0] ^ *input++ );
+    while ( length-- ) {
+        memcpy( ov, iv, 16 );
+        esp_aes_crypt_ecb( ctx, AES_ENCRYPT, iv, iv );
 
-		if( mode == AES_ENCRYPT )
-			ov[16] = c;
-	
-		memcpy( iv, ov + 1, 16 );
-	}
+        if ( mode == AES_DECRYPT ) {
+            ov[16] = *input;
+        }
 
-	return 0;
+        c = *output++ = (unsigned char)( iv[0] ^ *input++ );
+
+        if ( mode == AES_ENCRYPT ) {
+            ov[16] = c;
+        }
+
+        memcpy( iv, ov + 1, 16 );
+    }
+
+    return 0;
 }
 
 /*
@@ -326,18 +337,18 @@ int esp_aes_crypt_ctr( AES_CTX *ctx,
                        unsigned char stream_block[16],
                        const unsigned char *input,
                        unsigned char *output )
-{	
-	int c, i;
+{
+    int c, i;
     size_t n = *nc_off;
 
-    while( length-- )
-    {
-        if( n == 0 ) {
+    while ( length-- ) {
+        if ( n == 0 ) {
             esp_aes_crypt_ecb( ctx, AES_ENCRYPT, nonce_counter, stream_block );
 
-            for( i = 16; i > 0; i-- )
-                if( ++nonce_counter[i - 1] != 0 )
+            for ( i = 16; i > 0; i-- )
+                if ( ++nonce_counter[i - 1] != 0 ) {
                     break;
+                }
         }
         c = *input++;
         *output++ = (unsigned char)( c ^ stream_block[n] );
@@ -347,6 +358,6 @@ int esp_aes_crypt_ctr( AES_CTX *ctx,
 
     *nc_off = n;
 
-	return 0;
+    return 0;
 }
 

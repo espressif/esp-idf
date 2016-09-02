@@ -26,9 +26,9 @@ extern "C" {
 /**
  * \brief          SHA-1 context structure
  */
-typedef struct{
-	SHA_CTX context;
-	int context_type;
+typedef struct {
+    SHA_CTX context;
+    int context_type;
 } sha_context;
 
 typedef sha_context SHA1_CTX;
@@ -91,8 +91,8 @@ void esp_sha1_finish( SHA1_CTX *ctx, unsigned char output[20] );
 void esp_sha1_output( const unsigned char *input, size_t ilen, unsigned char output[20] );
 
 ///
-#define SHA256	SHA2_256
-#define SHA224	4
+#define SHA256  SHA2_256
+#define SHA224  4
 
 /**
  * \brief          SHA-256 context structure

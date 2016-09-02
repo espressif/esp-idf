@@ -56,24 +56,26 @@ static int net_prepare( void )
     !defined(EFI32)
     WSADATA wsaData;
 
-    if( wsa_init_done == 0 )
-    {
-        if( WSAStartup( MAKEWORD(2,0), &wsaData ) != 0 )
-            return( MBEDTLS_ERR_NET_SOCKET_FAILED );
+    if ( wsa_init_done == 0 ) {
+        if ( WSAStartup( MAKEWORD(2, 0), &wsaData ) != 0 ) {
+            return ( MBEDTLS_ERR_NET_SOCKET_FAILED );
+        }
 
         wsa_init_done = 1;
     }
 #else
 #endif
-    return( 0 );
+    return ( 0 );
 }
 
 static int mbedtls_net_errno(int fd)
 {
-	int sock_errno = 0; 
-	u32_t optlen = sizeof(sock_errno); 
-	getsockopt(fd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen); 
-	return sock_errno;
+    int sock_errno = 0;
+    u32_t optlen = sizeof(sock_errno);
+
+    getsockopt(fd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+
+    return sock_errno;
 }
 
 /*
@@ -92,8 +94,9 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host, const char 
     int ret;
     struct addrinfo hints, *addr_list, *cur;
 
-    if( ( ret = net_prepare() ) != 0 )
-        return( ret );
+    if ( ( ret = net_prepare() ) != 0 ) {
+        return ( ret );
+    }
 
     /* Do name resolution with both IPv6 and IPv4 */
     memset( &hints, 0, sizeof( hints ) );
@@ -101,23 +104,21 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host, const char 
     hints.ai_socktype = proto == MBEDTLS_NET_PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM;
     hints.ai_protocol = proto == MBEDTLS_NET_PROTO_UDP ? IPPROTO_UDP : IPPROTO_TCP;
 
-    if( getaddrinfo( host, port, &hints, &addr_list ) != 0 )
-        return( MBEDTLS_ERR_NET_UNKNOWN_HOST );
+    if ( getaddrinfo( host, port, &hints, &addr_list ) != 0 ) {
+        return ( MBEDTLS_ERR_NET_UNKNOWN_HOST );
+    }
 
     /* Try the sockaddrs until a connection succeeds */
     ret = MBEDTLS_ERR_NET_UNKNOWN_HOST;
-    for( cur = addr_list; cur != NULL; cur = cur->ai_next )
-    {
+    for ( cur = addr_list; cur != NULL; cur = cur->ai_next ) {
         ctx->fd = (int) socket( cur->ai_family, cur->ai_socktype,
-                            cur->ai_protocol );
-        if( ctx->fd < 0 )
-        {
+                                cur->ai_protocol );
+        if ( ctx->fd < 0 ) {
             ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
             continue;
         }
 
-        if( connect( ctx->fd, cur->ai_addr, cur->ai_addrlen ) == 0 )
-        {
+        if ( connect( ctx->fd, cur->ai_addr, cur->ai_addrlen ) == 0 ) {
             ret = 0;
             break;
         }
@@ -128,7 +129,7 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host, const char 
 
     freeaddrinfo( addr_list );
 
-    return( ret );
+    return ( ret );
 }
 
 /*
@@ -139,8 +140,9 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
     int n, ret;
     struct addrinfo hints, *addr_list, *cur;
 
-    if( ( ret = net_prepare() ) != 0 )
-        return( ret );
+    if ( ( ret = net_prepare() ) != 0 ) {
+        return ( ret );
+    }
 
     /* Bind to IPv6 and/or IPv4, but only in the desired protocol */
     memset( &hints, 0, sizeof( hints ) );
@@ -148,48 +150,43 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
     hints.ai_socktype = proto == MBEDTLS_NET_PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM;
     hints.ai_protocol = proto == MBEDTLS_NET_PROTO_UDP ? IPPROTO_UDP : IPPROTO_TCP;
 
-    if( getaddrinfo( bind_ip, port, &hints, &addr_list ) != 0 )
-        return( MBEDTLS_ERR_NET_UNKNOWN_HOST );
+    if ( getaddrinfo( bind_ip, port, &hints, &addr_list ) != 0 ) {
+        return ( MBEDTLS_ERR_NET_UNKNOWN_HOST );
+    }
 
     /* Try the sockaddrs until a binding succeeds */
     ret = MBEDTLS_ERR_NET_UNKNOWN_HOST;
-    for( cur = addr_list; cur != NULL; cur = cur->ai_next )
-    {
+    for ( cur = addr_list; cur != NULL; cur = cur->ai_next ) {
         ctx->fd = (int) socket( cur->ai_family, cur->ai_socktype,
-                            cur->ai_protocol );
-        if( ctx->fd < 0 )
-        {
+                                cur->ai_protocol );
+        if ( ctx->fd < 0 ) {
             ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
             continue;
         }
 
-		/*SO_REUSEADDR option dafault is disable in source code(lwip)*/
+        /*SO_REUSEADDR option dafault is disable in source code(lwip)*/
 #if SO_REUSE
         n = 1;
-        if( setsockopt( ctx->fd, SOL_SOCKET, SO_REUSEADDR,
-                        (const char *) &n, sizeof( n ) ) != 0 )
-        {
+        if ( setsockopt( ctx->fd, SOL_SOCKET, SO_REUSEADDR,
+                         (const char *) &n, sizeof( n ) ) != 0 ) {
             close( ctx->fd );
             ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
             continue;
         }
 #endif
-		/*bind interface dafault don't process the addr is 0xffffffff for TCP Protocol*/
-		struct sockaddr_in *serv_addr = NULL;
-		serv_addr = (struct sockaddr_in *)cur->ai_addr;		
-		serv_addr->sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
-        if( bind( ctx->fd, (struct sockaddr *)serv_addr, cur->ai_addrlen ) != 0 )
-        {
+        /*bind interface dafault don't process the addr is 0xffffffff for TCP Protocol*/
+        struct sockaddr_in *serv_addr = NULL;
+        serv_addr = (struct sockaddr_in *)cur->ai_addr;
+        serv_addr->sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
+        if ( bind( ctx->fd, (struct sockaddr *)serv_addr, cur->ai_addrlen ) != 0 ) {
             close( ctx->fd );
             ret = MBEDTLS_ERR_NET_BIND_FAILED;
             continue;
         }
 
         /* Listen only makes sense for TCP */
-        if( proto == MBEDTLS_NET_PROTO_TCP )
-        {
-            if( listen( ctx->fd, MBEDTLS_NET_LISTEN_BACKLOG ) != 0 )
-            {
+        if ( proto == MBEDTLS_NET_PROTO_TCP ) {
+            if ( listen( ctx->fd, MBEDTLS_NET_LISTEN_BACKLOG ) != 0 ) {
                 close( ctx->fd );
                 ret = MBEDTLS_ERR_NET_LISTEN_FAILED;
                 continue;
@@ -203,7 +200,7 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 
     freeaddrinfo( addr_list );
 
-    return( ret );
+    return ( ret );
 
 }
 
@@ -216,7 +213,7 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 static int net_would_block( const mbedtls_net_context *ctx )
 {
     ((void) ctx);
-    return( WSAGetLastError() == WSAEWOULDBLOCK );
+    return ( WSAGetLastError() == WSAEWOULDBLOCK );
 }
 #else
 /*
@@ -230,22 +227,22 @@ static int net_would_block( const mbedtls_net_context *ctx )
     /*
      * Never return 'WOULD BLOCK' on a non-blocking socket
      */
-    if( ( fcntl( ctx->fd, F_GETFL, 0) & O_NONBLOCK ) != O_NONBLOCK )
-        return( 0 );
+    if ( ( fcntl( ctx->fd, F_GETFL, 0) & O_NONBLOCK ) != O_NONBLOCK ) {
+        return ( 0 );
+    }
 
-	int error = mbedtls_net_errno(ctx->fd);
-	
-    switch( error )
-    {
+    int error = mbedtls_net_errno(ctx->fd);
+
+    switch ( error ) {
 #if defined EAGAIN
-        case EAGAIN:
+    case EAGAIN:
 #endif
 #if defined EWOULDBLOCK && EWOULDBLOCK != EAGAIN
-        case EWOULDBLOCK:
+    case EWOULDBLOCK:
 #endif
-            return( 1 );
+        return ( 1 );
     }
-    return( 0 );
+    return ( 0 );
 }
 #endif /* ( _WIN32 || _WIN32_WCE ) && !EFIX64 && !EFI32 */
 
@@ -265,21 +262,17 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
     socklen_t type_len = (socklen_t) sizeof( type );
 
     /* Is this a TCP or UDP socket? */
-    if( getsockopt( bind_ctx->fd, SOL_SOCKET, SO_TYPE,
-                    (void *) &type, (socklen_t *) &type_len ) != 0 ||
-        ( type != SOCK_STREAM && type != SOCK_DGRAM ) )
-    {
-        return( MBEDTLS_ERR_NET_ACCEPT_FAILED );
+    if ( getsockopt( bind_ctx->fd, SOL_SOCKET, SO_TYPE,
+                     (void *) &type, (socklen_t *) &type_len ) != 0 ||
+            ( type != SOCK_STREAM && type != SOCK_DGRAM ) ) {
+        return ( MBEDTLS_ERR_NET_ACCEPT_FAILED );
     }
 
-    if( type == SOCK_STREAM )
-    {
+    if ( type == SOCK_STREAM ) {
         /* TCP: actual accept() */
         ret = client_ctx->fd = (int) accept( bind_ctx->fd,
                                              (struct sockaddr *) &client_addr, &n );
-    }
-    else
-    {
+    } else {
         /* UDP: wait for a message, but keep it in the queue */
         char buf[1] = { 0 };
 
@@ -287,65 +280,62 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
                         (struct sockaddr *) &client_addr, &n );
 
 #if defined(_WIN32)
-        if( ret == SOCKET_ERROR &&
-            WSAGetLastError() == WSAEMSGSIZE )
-        {
+        if ( ret == SOCKET_ERROR &&
+                WSAGetLastError() == WSAEMSGSIZE ) {
             /* We know buf is too small, thanks, just peeking here */
             ret = 0;
         }
 #endif
     }
 
-    if( ret < 0 )
-    {
-        if( net_would_block( bind_ctx ) != 0 )
-            return( MBEDTLS_ERR_SSL_WANT_READ );
+    if ( ret < 0 ) {
+        if ( net_would_block( bind_ctx ) != 0 ) {
+            return ( MBEDTLS_ERR_SSL_WANT_READ );
+        }
 
-        return( MBEDTLS_ERR_NET_ACCEPT_FAILED );
+        return ( MBEDTLS_ERR_NET_ACCEPT_FAILED );
     }
 
     /* UDP: hijack the listening socket to communicate with the client,
      * then bind a new socket to accept new connections */
-    if( type != SOCK_STREAM )
-    {
+    if ( type != SOCK_STREAM ) {
         struct sockaddr_in local_addr;
         int one = 1;
 
-        if( connect( bind_ctx->fd, (struct sockaddr *) &client_addr, n ) != 0 )
-            return( MBEDTLS_ERR_NET_ACCEPT_FAILED );
+        if ( connect( bind_ctx->fd, (struct sockaddr *) &client_addr, n ) != 0 ) {
+            return ( MBEDTLS_ERR_NET_ACCEPT_FAILED );
+        }
 
         client_ctx->fd = bind_ctx->fd;
         bind_ctx->fd   = -1; /* In case we exit early */
 
         n = sizeof( struct sockaddr_in );
-        if( getsockname( client_ctx->fd,
-                         (struct sockaddr *) &local_addr, &n ) != 0 ||
-            ( bind_ctx->fd = (int) socket( AF_INET,
-                                           SOCK_DGRAM, IPPROTO_UDP ) ) < 0 ||
-            setsockopt( bind_ctx->fd, SOL_SOCKET, SO_REUSEADDR,
-                        (const char *) &one, sizeof( one ) ) != 0 )
-        {
-            return( MBEDTLS_ERR_NET_SOCKET_FAILED );
+        if ( getsockname( client_ctx->fd,
+                          (struct sockaddr *) &local_addr, &n ) != 0 ||
+                ( bind_ctx->fd = (int) socket( AF_INET,
+                                               SOCK_DGRAM, IPPROTO_UDP ) ) < 0 ||
+                setsockopt( bind_ctx->fd, SOL_SOCKET, SO_REUSEADDR,
+                            (const char *) &one, sizeof( one ) ) != 0 ) {
+            return ( MBEDTLS_ERR_NET_SOCKET_FAILED );
         }
 
-        if( bind( bind_ctx->fd, (struct sockaddr *) &local_addr, n ) != 0 )
-        {
-            return( MBEDTLS_ERR_NET_BIND_FAILED );
+        if ( bind( bind_ctx->fd, (struct sockaddr *) &local_addr, n ) != 0 ) {
+            return ( MBEDTLS_ERR_NET_BIND_FAILED );
         }
     }
 
-    if( client_ip != NULL )
-    {
-            struct sockaddr_in *addr4 = (struct sockaddr_in *) &client_addr;
-            *ip_len = sizeof( addr4->sin_addr.s_addr );
+    if ( client_ip != NULL ) {
+        struct sockaddr_in *addr4 = (struct sockaddr_in *) &client_addr;
+        *ip_len = sizeof( addr4->sin_addr.s_addr );
 
-            if( buf_size < *ip_len )
-                return( MBEDTLS_ERR_NET_BUFFER_TOO_SMALL );
+        if ( buf_size < *ip_len ) {
+            return ( MBEDTLS_ERR_NET_BUFFER_TOO_SMALL );
+        }
 
-            memcpy( client_ip, &addr4->sin_addr.s_addr, *ip_len );
+        memcpy( client_ip, &addr4->sin_addr.s_addr, *ip_len );
     }
 
-    return( 0 );
+    return ( 0 );
 }
 
 /*
@@ -356,9 +346,9 @@ int mbedtls_net_set_block( mbedtls_net_context *ctx )
 #if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
     !defined(EFI32)
     u_long n = 0;
-    return( ioctlsocket( ctx->fd, FIONBIO, &n ) );
+    return ( ioctlsocket( ctx->fd, FIONBIO, &n ) );
 #else
-    return( fcntl( ctx->fd, F_SETFL, fcntl( ctx->fd, F_GETFL, 0 ) & ~O_NONBLOCK ) );
+    return ( fcntl( ctx->fd, F_SETFL, fcntl( ctx->fd, F_GETFL, 0 ) & ~O_NONBLOCK ) );
 #endif
 }
 
@@ -367,9 +357,9 @@ int mbedtls_net_set_nonblock( mbedtls_net_context *ctx )
 #if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
     !defined(EFI32)
     u_long n = 1;
-    return( ioctlsocket( ctx->fd, FIONBIO, &n ) );
+    return ( ioctlsocket( ctx->fd, FIONBIO, &n ) );
 #else
-    return( fcntl( ctx->fd, F_SETFL, fcntl( ctx->fd, F_GETFL, 0 ) | O_NONBLOCK ) );
+    return ( fcntl( ctx->fd, F_SETFL, fcntl( ctx->fd, F_GETFL, 0 ) | O_NONBLOCK ) );
 #endif
 }
 
@@ -401,49 +391,54 @@ int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
     int ret;
     int fd = ((mbedtls_net_context *) ctx)->fd;
     int error = 0;
-	
-    if( fd < 0 )
-        return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
+
+    if ( fd < 0 ) {
+        return ( MBEDTLS_ERR_NET_INVALID_CONTEXT );
+    }
 
     ret = (int) read( fd, buf, len );
 
-    if( ret < 0 )
-    {
-        if( net_would_block( ctx ) != 0 )
-            return( MBEDTLS_ERR_SSL_WANT_READ );
+    if ( ret < 0 ) {
+        if ( net_would_block( ctx ) != 0 ) {
+            return ( MBEDTLS_ERR_SSL_WANT_READ );
+        }
 
-		error = mbedtls_net_errno(fd);
+        error = mbedtls_net_errno(fd);
 #if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
     !defined(EFI32)
-        if( WSAGetLastError() == WSAECONNRESET )
-            return( MBEDTLS_ERR_NET_CONN_RESET );
+        if ( WSAGetLastError() == WSAECONNRESET ) {
+            return ( MBEDTLS_ERR_NET_CONN_RESET );
+        }
 #else
-        if( error == EPIPE || error == ECONNRESET )
-            return( MBEDTLS_ERR_NET_CONN_RESET );
+        if ( error == EPIPE || error == ECONNRESET ) {
+            return ( MBEDTLS_ERR_NET_CONN_RESET );
+        }
 
-        if( error == EINTR )
-            return( MBEDTLS_ERR_SSL_WANT_READ );
+        if ( error == EINTR ) {
+            return ( MBEDTLS_ERR_SSL_WANT_READ );
+        }
 #endif
 
-        return( MBEDTLS_ERR_NET_RECV_FAILED );
+        return ( MBEDTLS_ERR_NET_RECV_FAILED );
     }
 
-    return( ret );
+    return ( ret );
 }
 
 /*
  * Read at most 'len' characters, blocking for at most 'timeout' ms
  */
 int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf, size_t len,
-                      uint32_t timeout )
+                              uint32_t timeout )
 {
     int ret;
     struct timeval tv;
     fd_set read_fds;
     int fd = ((mbedtls_net_context *) ctx)->fd;
 
-    if( fd < 0 )
-        return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
+    if ( fd < 0 ) {
+        return ( MBEDTLS_ERR_NET_INVALID_CONTEXT );
+    }
 
     FD_ZERO( &read_fds );
     FD_SET( fd, &read_fds );
@@ -454,25 +449,27 @@ int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf, size_t len,
     ret = select( fd + 1, &read_fds, NULL, NULL, timeout == 0 ? NULL : &tv );
 
     /* Zero fds ready means we timed out */
-    if( ret == 0 )
-        return( MBEDTLS_ERR_SSL_TIMEOUT );
+    if ( ret == 0 ) {
+        return ( MBEDTLS_ERR_SSL_TIMEOUT );
+    }
 
-    if( ret < 0 )
-    {
+    if ( ret < 0 ) {
 #if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
     !defined(EFI32)
-        if( WSAGetLastError() == WSAEINTR )
-            return( MBEDTLS_ERR_SSL_WANT_READ );
+        if ( WSAGetLastError() == WSAEINTR ) {
+            return ( MBEDTLS_ERR_SSL_WANT_READ );
+        }
 #else
-        if( errno == EINTR )
-            return( MBEDTLS_ERR_SSL_WANT_READ );
+        if ( errno == EINTR ) {
+            return ( MBEDTLS_ERR_SSL_WANT_READ );
+        }
 #endif
 
-        return( MBEDTLS_ERR_NET_RECV_FAILED );
+        return ( MBEDTLS_ERR_NET_RECV_FAILED );
     }
 
     /* This call will not block */
-    return( mbedtls_net_recv( ctx, buf, len ) );
+    return ( mbedtls_net_recv( ctx, buf, len ) );
 }
 
 /*
@@ -483,35 +480,39 @@ int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
     int ret;
     int fd = ((mbedtls_net_context *) ctx)->fd;
 
-	int error = 0;
+    int error = 0;
 
-    if( fd < 0 )
-        return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
+    if ( fd < 0 ) {
+        return ( MBEDTLS_ERR_NET_INVALID_CONTEXT );
+    }
 
     ret = (int) write( fd, buf, len );
 
-    if( ret < 0 )
-    {
-        if( net_would_block( ctx ) != 0 )
-            return( MBEDTLS_ERR_SSL_WANT_WRITE );
+    if ( ret < 0 ) {
+        if ( net_would_block( ctx ) != 0 ) {
+            return ( MBEDTLS_ERR_SSL_WANT_WRITE );
+        }
 
-		error = mbedtls_net_errno(fd);
+        error = mbedtls_net_errno(fd);
 #if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
     !defined(EFI32)
-        if( WSAGetLastError() == WSAECONNRESET )
-            return( MBEDTLS_ERR_NET_CONN_RESET );
+        if ( WSAGetLastError() == WSAECONNRESET ) {
+            return ( MBEDTLS_ERR_NET_CONN_RESET );
+        }
 #else
-        if( error == EPIPE || error == ECONNRESET )
-            return( MBEDTLS_ERR_NET_CONN_RESET );
+        if ( error == EPIPE || error == ECONNRESET ) {
+            return ( MBEDTLS_ERR_NET_CONN_RESET );
+        }
 
-        if( error == EINTR )
-            return( MBEDTLS_ERR_SSL_WANT_WRITE );
+        if ( error == EINTR ) {
+            return ( MBEDTLS_ERR_SSL_WANT_WRITE );
+        }
 #endif
 
-        return( MBEDTLS_ERR_NET_SEND_FAILED );
+        return ( MBEDTLS_ERR_NET_SEND_FAILED );
     }
 
-    return( ret );
+    return ( ret );
 }
 
 /*
@@ -519,8 +520,9 @@ int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
  */
 void mbedtls_net_free( mbedtls_net_context *ctx )
 {
-    if( ctx->fd == -1 )
+    if ( ctx->fd == -1 ) {
         return;
+    }
 
     shutdown( ctx->fd, 2 );
     close( ctx->fd );

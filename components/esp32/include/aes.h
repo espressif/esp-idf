@@ -18,9 +18,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  
+ *
  */
- 
+
 #ifndef ESP_AES_H
 #define ESP_AES_H
 
@@ -39,11 +39,11 @@ extern "C" {
 #define ERR_AES_INVALID_KEY_LENGTH                -0x0020  /**< Invalid key length. */
 #define ERR_AES_INVALID_INPUT_LENGTH              -0x0022  /**< Invalid data input length. */
 
-typedef struct{
-	bool  keyflag;
-	uint16_t keybits;
+typedef struct {
+    bool  keyflag;
+    uint16_t keybits;
     uint8_t key[32];
-}key_context, KEY_CTX;
+} key_context, KEY_CTX;
 
 /**
  * \brief          AES context structure
@@ -53,13 +53,12 @@ typedef struct{
  *                 - to simplify key expansion in the 256-bit case by
  *                 generating an extra round key
  */
-typedef struct
-{
+typedef struct {
     int nr;                     /*!<  number of rounds  */
     uint32_t *rk;               /*!<  AES round keys    */
-	KEY_CTX enc;
-	KEY_CTX dec;	
-}aes_context, AES_CTX;
+    KEY_CTX enc;
+    KEY_CTX dec;
+} aes_context, AES_CTX;
 
 /**
  * \brief          Initialize AES context
@@ -84,7 +83,7 @@ void esp_aes_free( AES_CTX *ctx );
  *
  * \return         0 if successful, or ERR_AES_INVALID_KEY_LENGTH
  */
-int esp_aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,unsigned int keybits );
+int esp_aes_setkey_enc( AES_CTX *ctx, const unsigned char *key, unsigned int keybits );
 
 /**
  * \brief          AES key schedule (decryption)
@@ -95,7 +94,7 @@ int esp_aes_setkey_enc( AES_CTX *ctx, const unsigned char *key,unsigned int keyb
  *
  * \return         0 if successful, or ERR_AES_INVALID_KEY_LENGTH
  */
-int esp_aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,unsigned int keybits );
+int esp_aes_setkey_dec( AES_CTX *ctx, const unsigned char *key, unsigned int keybits );
 
 /**
  * \brief          AES-ECB block encryption/decryption
@@ -107,7 +106,7 @@ int esp_aes_setkey_dec( AES_CTX *ctx, const unsigned char *key,unsigned int keyb
  *
  * \return         0 if successful
  */
-int esp_aes_crypt_ecb( AES_CTX *ctx,int mode,const unsigned char input[16],unsigned char output[16] );
+int esp_aes_crypt_ecb( AES_CTX *ctx, int mode, const unsigned char input[16], unsigned char output[16] );
 
 /**
  * \brief          AES-CBC buffer encryption/decryption
@@ -132,11 +131,11 @@ int esp_aes_crypt_ecb( AES_CTX *ctx,int mode,const unsigned char input[16],unsig
  * \return         0 if successful, or ERR_AES_INVALID_INPUT_LENGTH
  */
 int esp_aes_crypt_cbc( AES_CTX *ctx,
-					   int mode, 
-					   size_t length,
-					   unsigned char iv[16],
-					   const unsigned char *input, 
-					   unsigned char *output );
+                       int mode,
+                       size_t length,
+                       unsigned char iv[16],
+                       const unsigned char *input,
+                       unsigned char *output );
 
 
 /**
@@ -165,12 +164,12 @@ int esp_aes_crypt_cbc( AES_CTX *ctx,
  * \return         0 if successful
  */
 int esp_aes_crypt_cfb128( AES_CTX *ctx,
-	                       int mode,
-	                       size_t length,
-	                       size_t *iv_off,
-	                       unsigned char iv[16],
-	                       const unsigned char *input,
-	                       unsigned char *output );
+                          int mode,
+                          size_t length,
+                          size_t *iv_off,
+                          unsigned char iv[16],
+                          const unsigned char *input,
+                          unsigned char *output );
 
 /**
  * \brief          AES-CFB8 buffer encryption/decryption.
@@ -197,11 +196,11 @@ int esp_aes_crypt_cfb128( AES_CTX *ctx,
  * \return         0 if successful
  */
 int esp_aes_crypt_cfb8( AES_CTX *ctx,
-	                    int mode,
-	                    size_t length,
-	                    unsigned char iv[16],
-	                    const unsigned char *input,
-	                    unsigned char *output );
+                        int mode,
+                        size_t length,
+                        unsigned char iv[16],
+                        const unsigned char *input,
+                        unsigned char *output );
 
 /**
  * \brief               AES-CTR buffer encryption/decryption
@@ -243,7 +242,7 @@ int esp_aes_crypt_ctr( AES_CTX *ctx,
  * \param input     Plaintext block
  * \param output    Output (ciphertext) block
  */
-void esp_aes_encrypt( AES_CTX *ctx, const unsigned char input[16],unsigned char output[16] );
+void esp_aes_encrypt( AES_CTX *ctx, const unsigned char input[16], unsigned char output[16] );
 
 /**
  * \brief           Internal AES block decryption function
