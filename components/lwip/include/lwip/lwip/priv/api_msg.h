@@ -188,9 +188,9 @@ struct dns_api_msg {
 
 #if LWIP_NETCONN_SEM_PER_THREAD
 #ifdef LWIP_ESP8266
-#define LWIP_NETCONN_THREAD_SEM_GET() sys_thread_sem()
-#define LWIP_NETCONN_THREAD_SEM_ALLOC()
-#define LWIP_NETCONN_THREAD_SEM_FREE() 
+#define LWIP_NETCONN_THREAD_SEM_GET() sys_thread_sem_get()
+#define LWIP_NETCONN_THREAD_SEM_ALLOC() sys_thread_sem_init()
+#define LWIP_NETCONN_THREAD_SEM_FREE() sys_thread_sem_deinit()
 #endif
 #endif
 

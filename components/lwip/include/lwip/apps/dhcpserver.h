@@ -77,6 +77,7 @@ extern u32_t dhcps_lease_time;
 void dhcps_start(struct netif *netif);
 void dhcps_stop(struct netif *netif);
 
+bool dhcp_search_ip_on_mac(u8_t *mac, ip4_addr_t *ip);
 #else
 #include "lwip/opt.h"
 
@@ -87,8 +88,8 @@ void dhcps_stop(struct netif *netif);
 #define DHCPS_DEBUG 1
 #if DHCPS_DEBUG    	
 #define log_info(message, ...)   do { \
-		os_printf((message), ##__VA_ARGS__);   \
-		os_printf("\n");		  \
+		printf((message), ##__VA_ARGS__);   \
+		printf("\n");		  \
 	  } while(0);
 	
 #else

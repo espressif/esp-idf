@@ -27,6 +27,8 @@
 
 #include "apps/dhcpserver.h"
 
+#include "esp_event.h"
+
 static struct netif *esp_netif[TCPIP_ADAPTER_IF_MAX];
 static struct ip_info esp_ip[TCPIP_ADAPTER_IF_MAX];
 
@@ -36,7 +38,7 @@ static tcpip_adapter_dhcp_status_t dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
 
 static esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif);
 
-#define TCPIP_ADAPTER_DEBUG  ets_printf
+#define TCPIP_ADAPTER_DEBUG  printf
 
 void tcpip_adapter_init(void)
 {
@@ -137,7 +139,7 @@ esp_err_t tcpip_adapter_up(tcpip_adapter_if_t tcpip_if)
 esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
 {
     if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
-        if (esp_netif[tcpip_if] == NULL){
+        if (esp_netif[tcpip_if] == NULL) {
             return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
         }
 
@@ -145,11 +147,18 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
             dhcp_release(esp_netif[tcpip_if]);
             dhcp_stop(esp_netif[tcpip_if]);
             dhcp_cleanup(esp_netif[tcpip_if]);
-            dhcpc_status = TCPIP_ADAPTER_DHCP_STOPED;
+
+            if (dhcpc_status != TCPIP_ADAPTER_DHCP_STOPED) {
+                dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
+            }
         } else {
             netif_set_down(esp_netif[tcpip_if]);
             netif_set_addr(esp_netif[tcpip_if], IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
         }
+
+        ip4_addr_set_zero(&esp_ip[tcpip_if].ip);
+        ip4_addr_set_zero(&esp_ip[tcpip_if].gw);
+        ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
     }
 
     return ESP_OK;
@@ -183,6 +192,7 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, struct ip_info 
 esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
 {
     tcpip_adapter_if_t tcpip_if;
+    system_event_t evt;
 
     if (!netif) {
         TCPIP_ADAPTER_DEBUG("null netif=%p\n", netif);
@@ -208,11 +218,16 @@ esp_err_t tcpip_adapter_addr_change_cb(struct netif *netif)
         ip4_addr_set(&esp_ip[tcpip_if].gw, ip_2_ip4(&netif->gw));
 
         //notify event
-        printf("ip: %s, ", inet_ntoa(esp_ip[tcpip_if].ip));
-        printf("mask: %s, ", inet_ntoa(esp_ip[tcpip_if].netmask));
-        printf("gw: %s\n", inet_ntoa(esp_ip[tcpip_if].gw));
+        if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY) ) {
+            evt.event_id = SYSTEM_EVENT_STA_GOTIP;
+            memcpy(&evt.event_info.got_ip.ip, &esp_ip[tcpip_if].ip, sizeof(evt.event_info.got_ip.ip));
+            memcpy(&evt.event_info.got_ip.netmask, &esp_ip[tcpip_if].netmask, sizeof(evt.event_info.got_ip.netmask));
+            memcpy(&evt.event_info.got_ip.gw, &esp_ip[tcpip_if].gw, sizeof(evt.event_info.got_ip.gw));
+            esp_event_send(&evt);
 
-        if (ip_2_ip4(&netif->ip_addr) != IP4_ADDR_ANY) {
+            printf("ip: %s, ", inet_ntoa(esp_ip[tcpip_if].ip));
+            printf("mask: %s, ", inet_ntoa(esp_ip[tcpip_if].netmask));
+            printf("gw: %s\n", inet_ntoa(esp_ip[tcpip_if].gw));
         }
     } else {
         TCPIP_ADAPTER_DEBUG("ip unchanged\n");
@@ -388,7 +403,7 @@ esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if)
     return ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED;
 }
 
-esp_err_t tcpip_dep_dhcpc_stop(tcpip_adapter_if_t tcpip_if)
+esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if)
 {
     /* only support sta now, need to support ethernet */
     if (tcpip_if != TCPIP_ADAPTER_IF_STA || tcpip_if >= TCPIP_ADAPTER_IF_MAX) {
@@ -447,4 +462,49 @@ wifi_interface_t tcpip_adapter_get_wifi_if(void *dev)
 
     return WIFI_IF_MAX;
 }
+
+esp_err_t tcpip_adapter_get_sta_list(struct station_info *sta_info, struct station_list **sta_list)
+{
+    struct station_info *info = sta_info;
+    struct station_list *list;
+    STAILQ_HEAD(, station_list) list_head;
+
+    if (sta_list == NULL)
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+
+    STAILQ_INIT(&list_head);
+
+    while (info != NULL) {
+        list = (struct station_list *)malloc(sizeof(struct station_list));
+        memset(list, 0, sizeof (struct station_list));
+
+        if (list == NULL) {
+            return ESP_ERR_TCPIP_ADAPTER_NO_MEM;
+        }
+
+        memcpy(list->mac, info->bssid, 6);
+        dhcp_search_ip_on_mac(list->mac, &list->ip);
+        STAILQ_INSERT_TAIL(&list_head, list, next);
+      
+        info = STAILQ_NEXT(info, next);
+    }
+
+    *sta_list = STAILQ_FIRST(&list_head);
+
+    return ESP_OK;
+}
+
+esp_err_t tcpip_adapter_free_sta_list(struct station_list *sta_list)
+{
+    struct station_list *list = sta_list;
+
+    while (sta_list != NULL) {
+        list = sta_list;
+        sta_list = STAILQ_NEXT(sta_list, next);
+        free(list);
+    }
+
+    return ESP_OK;
+}
+
 #endif

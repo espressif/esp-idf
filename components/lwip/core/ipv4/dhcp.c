@@ -459,7 +459,7 @@ dhcp_fine_tmr(void)
 #if 0
       if (DHCP_MAXRTX != 0) {
     	  if (netif->dhcp->tries >= DHCP_MAXRTX){
-			  //os_printf("DHCP timeout\n");
+			  //printf("DHCP timeout\n");
 			  if (netif->dhcp_event != NULL)
 				  netif->dhcp_event();
 			  break;
@@ -1539,7 +1539,7 @@ again:
         break;
       case(DHCP_OPTION_DNS_SERVER):
         /* special case: there might be more than one server */
-        LWIP_ERROR("len % 4 == 0", len % 4 == 0, return ERR_VAL;);
+        //LWIP_ERROR("len % 4 == 0", len % 4 == 0, return ERR_VAL;);
         /* limit number of DNS servers */
         decode_len = LWIP_MIN(len, 4 * DNS_MAX_SERVERS);
         LWIP_ERROR("len >= decode_len", len >= decode_len, return ERR_VAL;);
@@ -1595,7 +1595,7 @@ decode_next:
         pbuf_copy_partial(q, &value, copy_len, val_offset);
         if (decode_len > 4) {
           /* decode more than one u32_t */
-          LWIP_ERROR("decode_len % 4 == 0", decode_len % 4 == 0, return ERR_VAL;);
+          //LWIP_ERROR("decode_len % 4 == 0", decode_len % 4 == 0, return ERR_VAL;);
           dhcp_got_option(dhcp, decode_idx);
           dhcp_set_option_value(dhcp, decode_idx, htonl(value));
           decode_len -= 4;

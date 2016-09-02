@@ -32,6 +32,7 @@ typedef enum {
     SYSTEM_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
     SYSTEM_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected to AP */
     SYSTEM_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
+    SYSTEM_EVENT_STA_GOTIP,
     SYSTEM_EVENT_AP_START,                 /**< ESP32 softap start */
     SYSTEM_EVENT_AP_STOP,                  /**< ESP32 softap start */
     SYSTEM_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
@@ -39,6 +40,10 @@ typedef enum {
     SYSTEM_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
     SYSTEM_EVENT_MAX
 } system_event_id_t;
+
+typedef struct {
+    uint32_t addr;
+} esp_ip_addr_t;
 
 typedef struct {
     uint32_t status;          /**< status of scanning APs*/
@@ -65,6 +70,12 @@ typedef struct {
 } system_event_sta_authmode_change_t;
 
 typedef struct {
+    esp_ip_addr_t ip;
+    esp_ip_addr_t netmask;
+    esp_ip_addr_t gw;
+} system_event_sta_gotip_t;
+
+typedef struct {
     uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
     uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
 } system_event_ap_staconnected_t;
@@ -84,6 +95,7 @@ typedef union {
     system_event_sta_disconnected_t            disconnected;       /**< ESP32 station disconnected to AP */
     system_event_sta_scan_done_t               scan_done;          /**< ESP32 station scan (APs) done */
     system_event_sta_authmode_change_t         auth_change;        /**< the auth mode of AP ESP32 station connected to changed */
+    system_event_sta_gotip_t                   got_ip;
     system_event_ap_staconnected_t             sta_connected;      /**< a station connected to ESP32 soft-AP */
     system_event_ap_stadisconnected_t          sta_disconnected;   /**< a station disconnected to ESP32 soft-AP */
     system_event_ap_probe_req_rx_t             ap_probereqrecved;  /**< ESP32 softAP receive probe request packet */

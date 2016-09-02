@@ -783,6 +783,10 @@ V8 if desired. */
 	#define xList List_t
 #endif /* configENABLE_BACKWARD_COMPATIBILITY */
 
+#ifndef configESP32_PER_TASK_DATA
+	#define configESP32_PER_TASK_DATA 1
+#endif
+
 #ifdef __cplusplus
 }
 #endif
