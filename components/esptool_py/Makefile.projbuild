@@ -3,6 +3,7 @@
 ESPPORT ?= $(CONFIG_ESPTOOLPY_PORT)
 ESPBAUD ?= $(CONFIG_ESPTOOLPY_BAUD)
 ESPFLASHMODE ?= $(CONFIG_ESPTOOLPY_FLASHMODE)
+ESPFLASHFREQ ?= $(CONFIG_ESPTOOLPY_FLASHFREQ)
 
 PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
 
@@ -13,12 +14,12 @@ PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
 ESPTOOLPY := $(PYTHON) $(IDF_PATH)/bin/esptool.py --chip esp32
 ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD)
 
-ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z) --flash_mode $(ESPFLASHMODE)
+ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z) --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ)
 
 ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_APP_OFFSET) $(APP_BIN)
 
 $(APP_BIN): $(APP_ELF)
-	$(Q) $(ESPTOOLPY) elf2image --flash_mode $(ESPFLASHMODE) -o $@ $<
+	$(Q) $(ESPTOOLPY) elf2image --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) -o $@ $<
 
 flash: all_binaries
 	@echo "Flashing project app to $(CONFIG_APP_OFFSET)..."

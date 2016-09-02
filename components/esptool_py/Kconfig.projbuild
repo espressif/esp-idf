@@ -70,4 +70,28 @@ config ESPTOOLPY_FLASHMODE
 	default "dio" if ESPTOOLPY_FLASHMODE_DIO
 	default "dout" if ESPTOOLPY_FLASHMODE_DOUT
 
+
+choice ESPTOOLPY_FLASHFREQ
+	prompt "Flash SPI speed"
+	default ESPTOOLPY_FLASHFREQ_40M
+	help
+		The SPI flash frequency to be used.
+
+config ESPTOOLPY_FLASHFREQ_80M
+	bool "80 MHz"
+config ESPTOOLPY_FLASHFREQ_40M
+	bool "40 MHz"
+config ESPTOOLPY_FLASHFREQ_26M
+	bool "26 MHz"
+config ESPTOOLPY_FLASHFREQ_20M
+	bool "20 MHz"
+endchoice
+
+config ESPTOOLPY_FLASHFREQ
+	string
+	default "80m" if ESPTOOLPY_FLASHFREQ_80M
+	default "40m" if ESPTOOLPY_FLASHFREQ_40M
+	default "26m" if ESPTOOLPY_FLASHFREQ_26M
+	default "20m" if ESPTOOLPY_FLASHFREQ_20M
+
 endmenu
