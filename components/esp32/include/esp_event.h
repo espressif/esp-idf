@@ -32,7 +32,7 @@ typedef enum {
     SYSTEM_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
     SYSTEM_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected to AP */
     SYSTEM_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
-    SYSTEM_EVENT_STA_GOTIP,
+    SYSTEM_EVENT_STA_GOTIP,                /**< ESP32 station received IP address */
     SYSTEM_EVENT_AP_START,                 /**< ESP32 softap start */
     SYSTEM_EVENT_AP_STOP,                  /**< ESP32 softap start */
     SYSTEM_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */

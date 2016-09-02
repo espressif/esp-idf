@@ -217,9 +217,7 @@ void user_start_cpu0(void) {
 
     esp_event_init(NULL);
 
-    // TODO: consider ethernet interface
     tcpip_adapter_init();
-
 #endif
 
 #if CONFIG_WIFI_ENABLED && CONFIG_WIFI_AUTO_STARTUP

@@ -296,7 +296,6 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
     while (1){
       LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch: fetch mbox=%p os_mbox=%p lock=%p\n", mbox, (*mbox)->os_mbox, (*mbox)->lock));
       if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY)){
-      //if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), 3000/portTICK_RATE_MS)){ //ESP32_WORKAROUND
         LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch:mbox rx msg=%p\n", (*msg)));
         break;
       }
@@ -451,10 +450,7 @@ static portMUX_TYPE g_lwip_mux = portMUX_INITIALIZER_UNLOCKED;
 sys_prot_t
 sys_arch_protect(void)
 {
-#if 1//ESP32_WORKAROUND
-  //vTaskEnterCritical();
   portENTER_CRITICAL(&g_lwip_mux);
-#endif
   return (sys_prot_t) 1;
 }
 
@@ -469,10 +465,7 @@ void
 sys_arch_unprotect(sys_prot_t pval)
 {
   (void) pval;
-#if 1 //ESP32_WORKAROUND
-  //vTaskExitCritical();
   portEXIT_CRITICAL(&g_lwip_mux);
-#endif
 }
 
 /*-----------------------------------------------------------------------------------*/
