@@ -148,7 +148,7 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
             dhcp_stop(esp_netif[tcpip_if]);
             dhcp_cleanup(esp_netif[tcpip_if]);
 
-            if (dhcpc_status != TCPIP_ADAPTER_DHCP_STOPED) {
+            if (dhcpc_status != TCPIP_ADAPTER_DHCP_STOPPED) {
                 dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
             }
         } else {
@@ -348,13 +348,13 @@ esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if)
             TCPIP_ADAPTER_DEBUG("dhcp server if not ready\n");
             return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
         }
-    } else if (dhcps_status == TCPIP_ADAPTER_DHCP_STOPED) {
+    } else if (dhcps_status == TCPIP_ADAPTER_DHCP_STOPPED) {
         TCPIP_ADAPTER_DEBUG("dhcp server already stoped\n");
-        return ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPED;
+        return ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED;
     }
 
     TCPIP_ADAPTER_DEBUG("dhcp server stop successfully\n");
-    dhcps_status = TCPIP_ADAPTER_DHCP_STOPED;
+    dhcps_status = TCPIP_ADAPTER_DHCP_STOPPED;
     return ESP_OK;
 }
 
@@ -420,13 +420,13 @@ esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if)
             TCPIP_ADAPTER_DEBUG("dhcp client if not ready\n");
             return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
         }
-    } else if (dhcps_status == TCPIP_ADAPTER_DHCP_STOPED) {
+    } else if (dhcps_status == TCPIP_ADAPTER_DHCP_STOPPED) {
         TCPIP_ADAPTER_DEBUG("dhcp client already stoped\n");
-        return ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPED;
+        return ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED;
     }
 
     TCPIP_ADAPTER_DEBUG("dhcp client stop successfully\n");
-    dhcpc_status = TCPIP_ADAPTER_DHCP_STOPED;
+    dhcpc_status = TCPIP_ADAPTER_DHCP_STOPPED;
     return ESP_OK;
 }
 
