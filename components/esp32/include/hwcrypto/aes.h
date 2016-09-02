@@ -1,9 +1,11 @@
 /**
  * \file esp_aes.h
  *
- * \brief AES block cipher
+ * \brief AES block cipher, ESP32 hardware accelerated version
+ * Based on mbedTLS version.
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
+ *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -25,7 +27,6 @@
 #define ESP_AES_H
 
 #include "esp_types.h"
-#include "rom/ets_sys.h"
 #include "rom/aes.h"
 
 #ifdef __cplusplus
@@ -40,8 +41,7 @@ extern "C" {
 #define ERR_AES_INVALID_INPUT_LENGTH              -0x0022  /**< Invalid data input length. */
 
 typedef struct {
-    bool  keyflag;
-    uint16_t keybits;
+    enum AES_BITS aesbits;
     uint8_t key[32];
 } key_context, KEY_CTX;
 
@@ -59,6 +59,27 @@ typedef struct {
     KEY_CTX enc;
     KEY_CTX dec;
 } aes_context, AES_CTX;
+
+/**
+ * \brief Lock access to AES hardware unit
+ *
+ * AES hardware unit can only be used by one
+ * consumer at a time.
+ *
+ * esp_aes_xxx API calls automatically manage locking & unlocking of
+ * hardware, this function is only needed if you want to call
+ * ets_aes_xxx functions directly.
+ */
+void esp_aes_acquire_hardware( void );
+
+/**
+ * \brief Unlock access to AES hardware unit
+ *
+ * esp_aes_xxx API calls automatically manage locking & unlocking of
+ * hardware, this function is only needed if you want to call
+ * ets_aes_xxx functions directly.
+ */
+void esp_aes_release_hardware( void );
 
 /**
  * \brief          Initialize AES context

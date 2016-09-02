@@ -15,9 +15,9 @@
 #ifndef _ESP_SHA_H_
 #define _ESP_SHA_H_
 
-#include "esp_types.h"
-#include "rom/ets_sys.h"
 #include "rom/sha.h"
+
+#include "esp_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,10 +28,31 @@ extern "C" {
  */
 typedef struct {
     SHA_CTX context;
-    int context_type;
+    enum SHA_TYPE context_type; /* defined in rom/sha.h */
 } sha_context;
 
 typedef sha_context SHA1_CTX;
+
+/**
+ * \brief Lock access to SHA hardware unit
+ *
+ * SHA hardware unit can only be used by one
+ * consumer at a time.
+ *
+ * esp_sha_xxx API calls automatically manage locking & unlocking of
+ * hardware, this function is only needed if you want to call
+ * ets_sha_xxx functions directly.
+ */
+void esp_sha_acquire_hardware( void );
+
+/**
+ * \brief Unlock access to SHA hardware unit
+ *
+ * esp_sha_xxx API calls automatically manage locking & unlocking of
+ * hardware, this function is only needed if you want to call
+ * ets_sha_xxx functions directly.
+ */
+void esp_sha_release_hardware( void );
 
 /**
  * \brief          Initialize SHA-1 context
@@ -54,8 +75,6 @@ void esp_sha1_free( SHA1_CTX *ctx );
  * \param src      The context to be cloned
  */
 void esp_sha1_clone( SHA1_CTX *dst, const SHA1_CTX *src );
-
-void esp_sha1_process(SHA1_CTX *ctx, const unsigned char data[64]);
 
 /**
  * \brief          SHA-1 context setup
@@ -92,7 +111,7 @@ void esp_sha1_output( const unsigned char *input, size_t ilen, unsigned char out
 
 ///
 #define SHA256  SHA2_256
-#define SHA224  4
+#define SHA224  4 /* TODO: check this */
 
 /**
  * \brief          SHA-256 context structure
@@ -113,7 +132,6 @@ void esp_sha256_init( SHA256_CTX *ctx );
  * \param ctx      SHA-256 context to be cleared
  */
 void esp_sha256_free( SHA256_CTX *ctx );
-void esp_sha256_process(SHA256_CTX *ctx, const unsigned char data[64]);
 
 /**
  * \brief          Clone (the state of) a SHA-256 context
@@ -172,8 +190,6 @@ typedef sha_context SHA512_CTX;
  * \param ctx      SHA-512 context to be initialized
  */
 void esp_sha512_init( SHA512_CTX *ctx );
-
-void esp_sha512_process( SHA512_CTX *ctx, const unsigned char data[128] );
 
 /**
  * \brief          Clear SHA-512 context

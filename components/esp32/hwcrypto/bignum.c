@@ -1,7 +1,9 @@
 /*
- *  Multi-precision integer library
+ *  ESP32 hardware accelerated multi-precision integer functions
+ *  based on mbedTLS implementation
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
+ *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -36,8 +38,10 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include "bignum.h"
-#include "esp_crypto.h"
+#include <sys/lock.h>
+#include "hwcrypto/bignum.h"
+#include "rom/ets_sys.h"
+#include "rom/bigint.h"
 
 /* Implementation that should never be optimized out by the compiler */
 //static void bzero( void *v, size_t n ) {
@@ -57,6 +61,22 @@
 #define BITS_TO_LIMBS(i)  ( (i) / biL + ( (i) % biL != 0 ) )
 #define CHARS_TO_LIMBS(i) ( (i) / ciL + ( (i) % ciL != 0 ) )
 
+static _lock_t mpi_lock;
+
+void esp_mpi_acquire_hardware( void )
+{
+    /* newlib locks lazy initialize on ESP-IDF */
+    _lock_acquire(&mpi_lock);
+    ets_bigint_enable();
+}
+
+void esp_mpi_release_hardware( void )
+{
+    ets_bigint_disable();
+    _lock_release(&mpi_lock);
+}
+
+
 /*
  * Initialize one MPI
  */
@@ -68,10 +88,6 @@ void esp_mpi_init( mpi *X )
     X->s = 1;
     X->n = 0;
     X->p = NULL;
-    BIGNUM_LOCK();
-    BIGNUM_TAKE();
-	ets_bigint_enable();
-	BIGNUM_UNLOCK();
 }
 
 /*
@@ -91,11 +107,6 @@ void esp_mpi_free( mpi *X )
     X->s = 1;
     X->n = 0;
     X->p = NULL;
-    BIGNUM_LOCK();
-    BIGNUM_GIVE();
-    if (false == BIGNUM_IS_USED())
-	    ets_bigint_disable();
-	BIGNUM_UNLOCK();
 }
 
 /*
@@ -1107,7 +1118,7 @@ int esp_mpi_mul_mpi( mpi *X, const mpi *A, const mpi *B )
        goto cleanup;
 	}
 
-    BIGNUM_LOCK(); 
+    esp_mpi_acquire_hardware();
 	if (ets_bigint_mult_prepare((uint32_t *)s1, (uint32_t *)s2, bites)){
 		ets_bigint_wait_finish();		
 		if (ets_bigint_mult_getz((uint32_t *)dest, bites) == true) {
@@ -1119,7 +1130,7 @@ int esp_mpi_mul_mpi( mpi *X, const mpi *A, const mpi *B )
 	} else{
 		esp_mpi_printf("Baseline multiplication failed\n");
 	}
-	BIGNUM_UNLOCK();
+    esp_mpi_release_hardware();
 
     X->s = A->s * B->s;
 
@@ -1487,7 +1498,7 @@ static void esp_mpi_montmul( mpi *A, const mpi *B, const mpi *N, esp_mpi_uint mm
     n = N->n;
     m = ( B->n < n ) ? B->n : n;
 
-    BIGNUM_LOCK();
+    esp_mpi_acquire_hardware();
 	if (ets_bigint_montgomery_mult_prepare(N->p, B->p, d, m, n, false)) {
         ets_bigint_wait_finish();
 
@@ -1495,7 +1506,7 @@ static void esp_mpi_montmul( mpi *A, const mpi *B, const mpi *N, esp_mpi_uint mm
     } else{
 		esp_mpi_printf("Montgomery multiplication failed\n");
 	}
-	BIGNUM_UNLOCK();
+    esp_mpi_release_hardware();
 
 }
 

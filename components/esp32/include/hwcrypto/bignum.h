@@ -1,9 +1,11 @@
 /**
  * \file bignum_alt.h
  *
- * \brief  Multi-precision integer library
+ * \brief  Multi-precision integer library, ESP32 hardware accelerated version
+ * Based on mbedTLS version.
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
+ *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -19,13 +21,11 @@
  *  limitations under the License.
  *
  */
- 
+
 #ifndef _ESP_BIGNUM_H
 #define _ESP_BIGNUM_H
 
 #include "esp_types.h"
-#include "rom/ets_sys.h"
-#include "rom/bigint.h"
 
 
 #define MPI_DEBUG_ALT
@@ -146,6 +146,27 @@ typedef struct
     size_t n;           /*!<  total # of limbs  */
     esp_mpi_uint *p;          /*!<  pointer to limbs  */
 }mpi, MPI_CTX;
+
+/**
+ * \brief Lock access to MPI hardware unit
+ *
+ * MPI hardware unit can only be used by one
+ * consumer at a time.
+ *
+ * esp_mpi_xxx API calls automatically manage locking & unlocking of
+ * hardware, this function is only needed if you want to call
+ * ets_bigint_xxx functions directly.
+ */
+void esp_mpi_acquire_hardware( void );
+
+/**
+ * \brief Unlock access to MPI hardware unit
+ *
+ * esp_mpi_xxx API calls automatically manage locking & unlocking of
+ * hardware, this function is only needed if you want to call
+ * ets_bigint_xxx functions directly.
+ */
+void esp_mpi_release_hardware( void );
 
 /**
  * \brief           Initialize one MPI (make internal references valid)
