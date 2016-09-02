@@ -315,14 +315,6 @@ netif_add(struct netif *netif,
   return netif;
 }
 
-typedef int (*netif_addr_change_cb_t)(struct netif *netif);
-static netif_addr_change_cb_t g_netif_addr_change_cb = NULL;
-
-void netif_reg_addr_change_cb(void *cb)
-{
-    g_netif_addr_change_cb = (netif_addr_change_cb_t)cb;
-}
-
 #if LWIP_IPV4
 /**
  * Change IP address configuration for a network interface (including netmask
@@ -341,9 +333,6 @@ netif_set_addr(struct netif *netif, const ip4_addr_t *ipaddr, const ip4_addr_t *
   netif_set_gw(netif, gw);
   /* set ipaddr last to ensure netmask/gw have been set when status callback is called */
   netif_set_ipaddr(netif, ipaddr);
-  if (g_netif_addr_change_cb){
-      g_netif_addr_change_cb(netif);
-  }
 }
 
 #endif /* LWIP_IPV4*/

@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <stdio.h>
 #include <string.h>
 
@@ -53,8 +54,6 @@ void tcpip_adapter_init(void)
         IP4_ADDR(&esp_ip[TCPIP_ADAPTER_IF_AP].gw, 192, 168 , 4, 1);
         IP4_ADDR(&esp_ip[TCPIP_ADAPTER_IF_AP].netmask, 255, 255 , 255, 0);
     }
-
-    netif_reg_addr_change_cb(tcpip_adapter_addr_change_cb);
 }
 
 esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, struct ip_info *info)
