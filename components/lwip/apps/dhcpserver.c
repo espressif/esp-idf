@@ -69,7 +69,7 @@ enum dyc_dhcps_flags{
 #define DHCPS_DEBUG          0
 #define DHCPS_LOG printf
 
-#define DYC_DHCP_CRASH //os_printf
+#define DYC_DHCP_CRASH //printf
 
 
 #define MAX_STATION_NUM      8
@@ -376,7 +376,7 @@ u32_t magic_cookie_temp = magic_cookie;
 
 //extern bool system_get_string_from_flash(void *flash_str, void* ram_str,uint8 ram_str_len);
 //system_get_string_from_flash((void *)(&magic_cookie), (void *)(&magic_cookie_temp),4);
-//os_printf("ck_tmp3:%08X\n",magic_cookie_temp);
+//printf("ck_tmp3:%08X\n",magic_cookie_temp);
 
         //memcpy((char *) m->options, &magic_cookie, sizeof(magic_cookie));
         memcpy((char *) m->options, &magic_cookie_temp, sizeof(magic_cookie_temp));
@@ -698,7 +698,7 @@ static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
 //u32 magic_cookie_temp = magic_cookie;
 //extern bool system_get_string_from_flash(void *flash_str, void* ram_str,uint8 ram_str_len);
 //system_get_string_from_flash((void *)(&magic_cookie), (void *)(&magic_cookie_temp),4);
-//os_printf("ck_tmp4:%08X\n",magic_cookie_temp);
+//printf("ck_tmp4:%08X\n",magic_cookie_temp);
 
 		if(memcmp((char *)m->options,
                     &magic_cookie,
@@ -726,7 +726,7 @@ static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
 			for (pback_node = plist; pback_node != NULL;pback_node = pback_node->pnext) {
 				pdhcps_pool = pback_node->pnode;
 				if (memcmp(pdhcps_pool->mac, m->chaddr, sizeof(pdhcps_pool->mac)) == 0){
-//									os_printf("the same device request ip\n");
+//									printf("the same device request ip\n");
 					if (memcmp(&pdhcps_pool->ip.addr, m->ciaddr, sizeof(pdhcps_pool->ip.addr)) == 0) {
 					    renew = true;
 					}
@@ -736,7 +736,7 @@ static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
 					goto POOL_CHECK;
 				} else if (pdhcps_pool->ip.addr == client_address_plus.addr){
 //									client_address.addr = client_address_plus.addr;
-//									os_printf("the ip addr has been request\n");
+//									printf("the ip addr has been request\n");
 					addr_tmp.addr = htonl(client_address_plus.addr);
 					addr_tmp.addr++;
 					client_address_plus.addr = htonl(addr_tmp.addr);
@@ -967,7 +967,7 @@ static void wifi_softap_init_dhcps_lease(u32_t ip)
 		dhcps_lease.start_ip.addr = htonl(dhcps_lease.start_ip.addr);
 		dhcps_lease.end_ip.addr= htonl(dhcps_lease.end_ip.addr);
 	}
-//	os_printf("start_ip = 0x%x, end_ip = 0x%x\n",dhcps_lease.start_ip, dhcps_lease.end_ip);
+//	printf("start_ip = 0x%x, end_ip = 0x%x\n",dhcps_lease.start_ip, dhcps_lease.end_ip);
 }
 
 
@@ -1210,6 +1210,25 @@ bool wifi_softap_reset_dhcps_lease_time(void)
 u32_t wifi_softap_get_dhcps_lease_time(void) // minute
 {
     return dhcps_lease_time;
+}
+
+/* Search ip address based on mac address */
+bool dhcp_search_ip_on_mac(u8_t *mac, ip4_addr_t *ip)
+{
+    struct dhcps_pool *pdhcps_pool = NULL;
+    list_node *pback_node = NULL;
+    bool ret = false;
+    
+    for (pback_node = plist; pback_node != NULL;pback_node = pback_node->pnext) {
+        pdhcps_pool = pback_node->pnode;
+        if (memcmp(pdhcps_pool->mac, mac, sizeof(pdhcps_pool->mac)) == 0){
+            memcpy(&ip->addr, &pdhcps_pool->ip.addr, sizeof(pdhcps_pool->ip.addr));
+            ret = true;
+            break;
+        }
+    }
+   
+    return ret;
 }
 #else
 #include <stdio.h>
@@ -2476,6 +2495,7 @@ bool wifi_softap_set_dhcps_lease_time(u32_t minute)
 {
     return false;
 }
+
 
 #endif   /*ifdef  LWIP_ESP8266*/
 

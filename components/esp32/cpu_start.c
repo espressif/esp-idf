@@ -206,15 +206,7 @@ void user_start_cpu0(void) {
 	ets_setup_syscalls();
 	do_global_ctors();
 
-	// TODO: consider ethernet interface
-
 #if CONFIG_WIFI_ENABLED
-#if 1 //workaround
-    for (uint8_t i = 5; i < 8; i++) {
-        ets_printf("erase sector %d\n", i);
-        spi_flash_erase_sector(i);
-    }
-#endif
     ets_printf("nvs_flash_init\n");
     esp_err_t ret = nvs_flash_init(5, 3);
     if (ret != ESP_OK) {
@@ -226,7 +218,6 @@ void user_start_cpu0(void) {
     esp_event_init(NULL);
 
     tcpip_adapter_init();
-
 #endif
 
 #if CONFIG_WIFI_ENABLED && CONFIG_WIFI_AUTO_STARTUP

@@ -20,14 +20,25 @@
 #include "esp_wifi.h"
 
 #define CONFIG_TCPIP_LWIP 1
+#define CONFIG_DHCP_STA_LIST 1
 
 #if CONFIG_TCPIP_LWIP
 #include "lwip/ip_addr.h"
+#include "rom/queue.h"
 
 struct ip_info {
     ip4_addr_t ip;
     ip4_addr_t netmask;
     ip4_addr_t gw;
+};
+
+#endif
+
+#if CONFIG_DHCP_STA_LIST 
+struct station_list {
+    STAILQ_ENTRY(station_list) next;
+    uint8_t mac[6];
+    ip4_addr_t ip;
 };
 #endif
 
@@ -37,7 +48,8 @@ struct ip_info {
 #define ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY          ESP_ERR_TCPIP_ADAPTER_BASE + 0x01
 #define ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED    ESP_ERR_TCPIP_ADAPTER_BASE + 0x02
 #define ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED  ESP_ERR_TCPIP_ADAPTER_BASE + 0x03
-#define ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPED   ESP_ERR_TCPIP_ADAPTER_BASE + 0x04
+#define ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED  ESP_ERR_TCPIP_ADAPTER_BASE + 0x04
+#define ESP_ERR_TCPIP_ADAPTER_NO_MEM                ESP_ERR_TCPIP_ADAPTER_BASE + 0x05
 
 /* will add ethernet interface */
 typedef enum {
@@ -49,7 +61,7 @@ typedef enum {
 typedef enum {
     TCPIP_ADAPTER_DHCP_INIT = 0,
     TCPIP_ADAPTER_DHCP_STARTED,
-    TCPIP_ADAPTER_DHCP_STOPED,
+    TCPIP_ADAPTER_DHCP_STOPPED,
     TCPIP_ADAPTER_DHCP_STATUS_MAX
 } tcpip_adapter_dhcp_status_t;
 
@@ -95,6 +107,9 @@ esp_err_t tcpip_adapter_output(tcpip_adapter_if_t tcpip_if, void *buffer, uint16
 #endif
 
 wifi_interface_t tcpip_adapter_get_wifi_if(void *dev);
+
+esp_err_t tcpip_adapter_get_sta_list(struct station_info *sta_info, struct station_list **sta_list);
+esp_err_t tcpip_adapter_free_sta_list(struct station_list *sta_list);
 
 #endif /*  _TCPIP_ADAPTER_H_ */
 
