@@ -163,6 +163,7 @@ typedef struct tskTaskControlBlock
 
 	#if ( portCRITICAL_NESTING_IN_TCB == 1 )
 		UBaseType_t 	uxCriticalNesting; 	/*< Holds the critical section nesting depth for ports that do not maintain their own count in the port layer. */
+		uint32_t		uxOldInterruptState; /*< Interrupt state before the outer taskEnterCritical was called */
 	#endif
 
 	#if ( configUSE_TRACE_FACILITY == 1 )
@@ -2595,8 +2596,7 @@ BaseType_t xReturn;
 
 	/* THIS FUNCTION MUST BE CALLED FROM A CRITICAL SECTION.  It can also be
 	called from a critical section within an ISR. */
-//That makes the taskENTER_CRITICALs here unnecessary, right? -JD
-//	taskENTER_CRITICAL(&xTaskQueueMutex);
+	taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 	/* The event list is sorted in priority order, so the first in the list can
 	be removed as it is known to be the highest priority.  Remove the TCB from
 	the delayed list, and add it to the ready list.
@@ -2654,7 +2654,7 @@ BaseType_t xReturn;
 		prvResetNextTaskUnblockTime();
 	}
 	#endif
-//	taskEXIT_CRITICAL(&xTaskQueueMutex);
+	taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 
 	return xReturn;
 }
@@ -3761,7 +3761,7 @@ scheduler will re-enable the interrupts instead. */
 	void vTaskEnterCritical( portMUX_TYPE *mux )
 #endif
 	{
-		portDISABLE_INTERRUPTS();
+		portENTER_CRITICAL_NESTED(uxOldInterruptState);
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		vPortCPUAcquireMutex( mux, function, line );
 #else
@@ -3814,7 +3814,7 @@ scheduler will re-enable the interrupts instead. */
 
 				if( pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting == 0U )
 				{
-					portENABLE_INTERRUPTS();
+					portEXIT_CRITICAL_NESTED(uxOldInterruptState);
 				}
 				else
 				{
