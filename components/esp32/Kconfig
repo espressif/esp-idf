@@ -6,6 +6,9 @@ config WIFI_ENABLED
     help
         This compiles in the low-level WiFi stack.
 
+		Temporarily, this option requires that FreeRTOS runs in single core mode.
+	depends on FREERTOS_UNICORE
+
 config WIFI_AUTO_STARTUP
     bool "Start WiFi with system startup"
     default "y"
