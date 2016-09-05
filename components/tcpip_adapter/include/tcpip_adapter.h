@@ -32,7 +32,7 @@ struct ip_info {
     ip4_addr_t gw;
 };
 
-/*   Defined in esp_misc.h */
+/* Also used by dhcpserver.h  */
 struct dhcps_lease {
 	bool enable;
 	ip4_addr_t start_ip;

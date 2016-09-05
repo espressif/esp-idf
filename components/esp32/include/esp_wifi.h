@@ -144,7 +144,7 @@ typedef struct {
     uint8_t ssid[32];                     /**< SSID of AP */
     uint8_t primary;                      /**< channel of AP */
     wifi_second_chan_t second;            /**< second channel of AP */
-    signed char rssi;                         /**< single strength of AP */
+    signed char rssi;                     /**< signal strength of AP */
     wifi_auth_mode_t authmode;            /**< authmode of AP */
 }wifi_ap_list_t;
 

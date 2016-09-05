@@ -165,13 +165,6 @@ typedef enum
 } dhcp_msg_option;
 
 
-/*   Defined in esp_misc.h */
-//struct dhcps_lease {
-//	bool enable;
-//	ip4_addr_t start_ip;
-//	ip4_addr_t end_ip;
-//};
-
 enum dhcps_offer_option{
 	OFFER_START = 0x00,
 	OFFER_ROUTER = 0x01,
@@ -194,6 +187,8 @@ typedef struct _list_node{
 
 typedef u32_t dhcps_time_t;
 typedef u8_t dhcps_offer_t;
+
+/* struct dhcps_lease defined in tcpip_adapter.h */
 typedef struct dhcps_lease dhcps_lease_t;
 
 typedef struct _dhcps_options{
