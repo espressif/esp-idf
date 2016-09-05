@@ -3761,7 +3761,10 @@ scheduler will re-enable the interrupts instead. */
 	void vTaskEnterCritical( portMUX_TYPE *mux )
 #endif
 	{
-		portENTER_CRITICAL_NESTED(uxOldInterruptState);
+		if( xSchedulerRunning != pdFALSE )
+		{
+			portENTER_CRITICAL_NESTED(pxCurrentTCB[ xPortGetCoreID() ]->uxOldInterruptState);
+		}
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		vPortCPUAcquireMutex( mux, function, line );
 #else
@@ -3814,7 +3817,7 @@ scheduler will re-enable the interrupts instead. */
 
 				if( pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting == 0U )
 				{
-					portEXIT_CRITICAL_NESTED(uxOldInterruptState);
+					portEXIT_CRITICAL_NESTED(pxCurrentTCB[ xPortGetCoreID() ]->uxOldInterruptState);
 				}
 				else
 				{
