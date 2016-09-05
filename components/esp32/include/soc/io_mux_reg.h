@@ -105,7 +105,7 @@
 #define PERIPHS_IO_MUX_MTDI_U             (DR_REG_IO_MUX_BASE +0x34)
 #define FUNC_MTDI_EMAC_TXD3                         5
 #define FUNC_MTDI_SD_DATA2                          4
-#define FUNC_MTDI_HS2_DATA2                         3 
+#define FUNC_MTDI_HS2_DATA2                         3
 #define FUNC_MTDI_GPIO12                            2
 #define FUNC_MTDI_HSPIQ                             1
 #define FUNC_MTDI_MTDI                              0

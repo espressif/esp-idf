@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef _ROM_SPI_FLASH_H_
 #define _ROM_SPI_FLASH_H_
 
@@ -36,31 +37,31 @@ extern "C" {
 /*************************************************************
  *                            Note
  *************************************************************
- * 1. ESP32 chip have 4 SPI slave/master, however, SPI0 is 
- *    used as an SPI master to access Flash and ext-SRAM by 
- *    Cache module. It will support Decryto read for Flash, 
- *    read/write for ext-SRAM. And SPI1 is also used as an 
- *    SPI master for Flash read/write and ext-SRAM read/write. 
+ * 1. ESP32 chip have 4 SPI slave/master, however, SPI0 is
+ *    used as an SPI master to access Flash and ext-SRAM by
+ *    Cache module. It will support Decryto read for Flash,
+ *    read/write for ext-SRAM. And SPI1 is also used as an
+ *    SPI master for Flash read/write and ext-SRAM read/write.
  *    It will support Encrypto write for Flash.
  * 2. As an SPI master, SPI support Highest clock to 80M,
- *    however, Flash with 80M Clock should be configured 
- *    for different Flash chips. If you want to use 80M 
- *    clock We should use the SPI that is certified by 
- *    Espressif. However, the certification is not started 
+ *    however, Flash with 80M Clock should be configured
+ *    for different Flash chips. If you want to use 80M
+ *    clock We should use the SPI that is certified by
+ *    Espressif. However, the certification is not started
  *    at the time, so please use 40M clock at the moment.
- * 3. SPI Flash can use 2 lines or 4 lines mode. If you 
- *    use 2 lines mode, you can save two pad SPIHD and 
- *    SPIWP for gpio. ESP32 support configured SPI pad for 
- *    Flash, the configuration is stored in efuse and flash. 
+ * 3. SPI Flash can use 2 lines or 4 lines mode. If you
+ *    use 2 lines mode, you can save two pad SPIHD and
+ *    SPIWP for gpio. ESP32 support configured SPI pad for
+ *    Flash, the configuration is stored in efuse and flash.
  *    However, the configurations of pads should be certified
- *    by Espressif. If you use this function, please use 40M 
+ *    by Espressif. If you use this function, please use 40M
  *    clock at the moment.
- * 4. ESP32 support to use Common SPI command to configure 
+ * 4. ESP32 support to use Common SPI command to configure
  *    Flash to QIO mode, if you failed to configure with fix
  *    command. With Common SPI Command, ESP32 can also provide
  *    a way to use same Common SPI command groups on different
  *    Flash chips.
- * 5. This functions are not protected by packeting, Please use the 
+ * 5. This functions are not protected by packeting, Please use the
  *************************************************************
  */
 
@@ -131,7 +132,7 @@ typedef enum {
     SPI_FLASH_RESULT_TIMEOUT
 } SpiFlashOpResult;
 
-typedef struct{
+typedef struct {
     uint32_t deviceId;
     uint32_t chip_size;    // chip size in bytes
     uint32_t block_size;
@@ -151,7 +152,7 @@ typedef struct {
 
 /**
   * @brief Fix the bug in SPI hardware communication with Flash/Ext-SRAM in High Speed.
-  *	   Please do not call this function in SDK.
+  *    Please do not call this function in SDK.
   *
   * @param  uint8_t spi: 0 for SPI0(Cache Access), 1 for SPI1(Flash read/write).
   *
@@ -163,11 +164,11 @@ void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
 
 /**
   * @brief Select SPI Flash to QIO mode when WP pad is read from Flash.
-  *	   Please do not call this function in SDK.
+  *    Please do not call this function in SDK.
   *
   * @param  uint8_t wp_gpio_num: WP gpio number.
   *
-  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping 
+  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
   *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
   *
   * @return None
@@ -176,27 +177,27 @@ void SelectSpiQIO(uint8_t wp_gpio_num, uint32_t ishspi);
 
 /**
   * @brief Set SPI Flash pad drivers.
-  *	   Please do not call this function in SDK.
+  *    Please do not call this function in SDK.
   *
   * @param  uint8_t wp_gpio_num: WP gpio number.
   *
-  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping 
+  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
   *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
   *
-  * @param  uint8_t* drvs: drvs[0]-bit[3:0] for cpiclk, bit[7:4] for spiq, drvs[1]-bit[3:0] for spid, drvs[1]-bit[7:4] for spid
-  *			   drvs[2]-bit[3:0] for spihd, drvs[2]-bit[7:4] for spiwp.
+  * @param  uint8_t *drvs: drvs[0]-bit[3:0] for cpiclk, bit[7:4] for spiq, drvs[1]-bit[3:0] for spid, drvs[1]-bit[7:4] for spid
+  *            drvs[2]-bit[3:0] for spihd, drvs[2]-bit[7:4] for spiwp.
   *                        Values usually read from falsh by rom code, function usually callde by rom code.
   *                        if value with bit(3) set, the value is valid, bit[2:0] is the real value.
   *
   * @return None
   */
-void SetSpiDrvs(uint8_t wp_gpio_num, uint32_t ishspi, uint8_t* drvs);
+void SetSpiDrvs(uint8_t wp_gpio_num, uint32_t ishspi, uint8_t *drvs);
 
 /**
   * @brief Select SPI Flash function for pads.
-  *	   Please do not call this function in SDK.
+  *    Please do not call this function in SDK.
   *
-  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping 
+  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
   *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
   *
   * @return None
@@ -205,9 +206,9 @@ void SelectSpiFunction(uint32_t ishspi);
 
 /**
   * @brief SPI Flash init, clock divisor is 4, use 1 line Slow read mode.
-  *	   Please do not call this function in SDK.
+  *    Please do not call this function in SDK.
   *
-  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping 
+  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
   *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
   *
   * @param  uint8_t legacy: In legacy mode, more SPI command is used in line.
@@ -216,64 +217,61 @@ void SelectSpiFunction(uint32_t ishspi);
   */
 void spi_flash_attach(uint32_t ishspi, bool legacy);
 
-
-//void spi_cache_sram_init();
-
 /**
   * @brief SPI Read Flash status register. We use CMD 0x05.
-  *	   Please do not call this function in SDK.
+  *    Please do not call this function in SDK.
   *
-  * @param  SpiFlashChip * spi : The information for Flash, which is exported from ld file.
+  * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
   *
-  * @param  uint32_t* status : The pointer to which to return the Flash status value. 
+  * @param  uint32_t *status : The pointer to which to return the Flash status value.
   *
   * @return SPI_FLASH_RESULT_OK : read OK.
   *         SPI_FLASH_RESULT_ERR : read error.
   *         SPI_FLASH_RESULT_TIMEOUT : read timeout.
   */
-SpiFlashOpResult SPI_read_status(SpiFlashChip * spi, uint32_t * status);
+SpiFlashOpResult SPI_read_status(SpiFlashChip *spi, uint32_t *status);
 
 /**
   * @brief SPI Read Flash status register high 16 bit. We use CMD 0x35.
   *        Please do not call this function in SDK.
   *
-  * @param  SpiFlashChip * spi : The information for Flash, which is exported from ld file.
+  * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
   *
-  * @param  uint32_t* status : The pointer to which to return the Flash status value. 
+  * @param  uint32_t *status : The pointer to which to return the Flash status value.
   *
   * @return SPI_FLASH_RESULT_OK : read OK.
   *         SPI_FLASH_RESULT_ERR : read error.
   *         SPI_FLASH_RESULT_TIMEOUT : read timeout.
   */
-SpiFlashOpResult SPI_read_status_high(SpiFlashChip * spi, uint32_t * status);
+SpiFlashOpResult SPI_read_status_high(SpiFlashChip *spi, uint32_t *status);
 
 /**
   * @brief Write status to Falsh status register.
   *        Please do not call this function in SDK.
   *
-  * @param  SpiFlashChip * spi : The information for Flash, which is exported from ld file.
+  * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
   *
-  * @param  uint32_t status_value : Value to . 
+  * @param  uint32_t status_value : Value to .
   *
   * @return SPI_FLASH_RESULT_OK : write OK.
   *         SPI_FLASH_RESULT_ERR : write error.
   *         SPI_FLASH_RESULT_TIMEOUT : write timeout.
   */
-SpiFlashOpResult SPI_write_status(SpiFlashChip * spi, uint32_t status_value);
+SpiFlashOpResult SPI_write_status(SpiFlashChip *spi, uint32_t status_value);
 
 /**
-  * @brief Use a command to Read Flash status register. 
+  * @brief Use a command to Read Flash status register.
   *        Please do not call this function in SDK.
   *
-  * @param  SpiFlashChip * spi : The information for Flash, which is exported from ld file.
+  * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
   *
-  * @param  uint32_t* status : The pointer to which to return the Flash status value. 
+  * @param  uint32_t*status : The pointer to which to return the Flash status value.
   *
   * @return SPI_FLASH_RESULT_OK : read OK.
   *         SPI_FLASH_RESULT_ERR : read error.
   *         SPI_FLASH_RESULT_TIMEOUT : read timeout.
   */
-SpiFlashOpResult SPI_user_command_read(uint32_t * status, uint8_t cmd);
+SpiFlashOpResult SPI_user_command_read(uint32_t *status, uint8_t cmd);
 
 /**
   * @brief Config SPI Flash read mode when init.
@@ -319,13 +317,13 @@ SpiFlashOpResult SPIClkConfig(uint8_t freqdiv, uint8_t spi);
   * @brief Send CommonCmd to Flash so that is can go into QIO mode, some Flash use different CMD.
   *        Please do not call this function in SDK.
   *
-  * @param  SpiCommonCmd * cmd : A struct to show the action of a command.
+  * @param  SpiCommonCmd *cmd : A struct to show the action of a command.
   *
   * @return uint16_t  0 : do not send command any more.
   *                   1 : go to the next command.
-  *                   n > 1 : skip (n - 1) commands. 
+  *                   n > 1 : skip (n - 1) commands.
   */
-uint16_t SPI_Common_Command(SpiCommonCmd * cmd);
+uint16_t SPI_Common_Command(SpiCommonCmd *cmd);
 
 /**
   * @brief Unlock SPI write protect.
@@ -337,7 +335,7 @@ uint16_t SPI_Common_Command(SpiCommonCmd * cmd);
   *         SPI_FLASH_RESULT_ERR : Unlock error.
   *         SPI_FLASH_RESULT_TIMEOUT : Unlock timeout.
   */
-SpiFlashOpResult SPIUnlock();
+SpiFlashOpResult SPIUnlock(void);
 
 /**
   * @brief SPI write protect.
@@ -349,7 +347,7 @@ SpiFlashOpResult SPIUnlock();
   *         SPI_FLASH_RESULT_ERR : Lock error.
   *         SPI_FLASH_RESULT_TIMEOUT : Lock timeout.
   */
-SpiFlashOpResult SPILock();
+SpiFlashOpResult SPILock(void);
 
 /**
   * @brief Update SPI Flash parameter.
@@ -425,11 +423,11 @@ SpiFlashOpResult SPIEraseArea(uint32_t start_addr, uint32_t area_len);
 
 /**
   * @brief Write Data to Flash, you should Erase it yourself if need.
-  *        Please do not call this function in SDK. 
+  *        Please do not call this function in SDK.
   *
   * @param  uint32_t dest_addr : Address to write, should be 4 bytes aligned.
   *
-  * @param  const uint32_t* src : The pointer to data which is to write.
+  * @param  const uint32_t *src : The pointer to data which is to write.
   *
   * @param  uint32_t len : Length to write, should be 4 bytes aligned.
   *
@@ -437,15 +435,15 @@ SpiFlashOpResult SPIEraseArea(uint32_t start_addr, uint32_t area_len);
   *         SPI_FLASH_RESULT_ERR : Write error.
   *         SPI_FLASH_RESULT_TIMEOUT : Write timeout.
   */
-SpiFlashOpResult SPIWrite(uint32_t dest_addr, const uint32_t* src, int32_t len);
+SpiFlashOpResult SPIWrite(uint32_t dest_addr, const uint32_t *src, int32_t len);
 
 /**
   * @brief Read Data from Flash, you should Erase it yourself if need.
-  *        Please do not call this function in SDK. 
+  *        Please do not call this function in SDK.
   *
   * @param  uint32_t src_addr : Address to read, should be 4 bytes aligned.
   *
-  * @param  uint32_t* data : The buf to read the data.
+  * @param  uint32_t *dest : The buf to read the data.
   *
   * @param  uint32_t len : Length to read, should be 4 bytes aligned.
   *
@@ -453,49 +451,49 @@ SpiFlashOpResult SPIWrite(uint32_t dest_addr, const uint32_t* src, int32_t len);
   *         SPI_FLASH_RESULT_ERR : Read error.
   *         SPI_FLASH_RESULT_TIMEOUT : Read timeout.
   */
-SpiFlashOpResult SPIRead(uint32_t src_addr, uint32_t* dest, int32_t len);
+SpiFlashOpResult SPIRead(uint32_t src_addr, uint32_t *dest, int32_t len);
 
 /**
   * @brief SPI1 go into encrypto mode.
-  *        Please do not call this function in SDK. 
+  *        Please do not call this function in SDK.
   *
   * @param  None
   *
   * @return None
   */
-void SPI_Write_Encrypt_Enable();
+void SPI_Write_Encrypt_Enable(void);
 
 /**
   * @brief Prepare 32 Bytes data to encrpto writing, you should Erase it yourself if need.
-  *        Please do not call this function in SDK. 
+  *        Please do not call this function in SDK.
   *
   * @param  uint32_t flash_addr : Address to write, should be 32 bytes aligned.
   *
-  * @param  uint32_t* data : The pointer to data which is to write.
+  * @param  uint32_t *data : The pointer to data which is to write.
   *
   * @return SPI_FLASH_RESULT_OK : Prepare OK.
   *         SPI_FLASH_RESULT_ERR : Prepare error.
   *         SPI_FLASH_RESULT_TIMEOUT : Prepare timeout.
   */
-SpiFlashOpResult SPI_Prepare_Encrypt_Data(uint32_t flash_addr, uint32_t* data);
+SpiFlashOpResult SPI_Prepare_Encrypt_Data(uint32_t flash_addr, uint32_t *data);
 
 /**
   * @brief SPI1 go out of encrypto mode.
-  *        Please do not call this function in SDK. 
+  *        Please do not call this function in SDK.
   *
   * @param  None
   *
   * @return None
   */
-void SPI_Write_Encrypt_Disable();
+void SPI_Write_Encrypt_Disable(void);
 
 /**
   * @brief Encrpto writing data to flash, you should Erase it yourself if need.
-  *        Please do not call this function in SDK. 
+  *        Please do not call this function in SDK.
   *
   * @param  uint32_t flash_addr : Address to write, should be 32 bytes aligned.
   *
-  * @param  uint32_t* data : The pointer to data which is to write.
+  * @param  uint32_t *data : The pointer to data which is to write.
   *
   * @param  uint32_t len : Length to write, should be 32 bytes aligned.
   *
@@ -503,7 +501,7 @@ void SPI_Write_Encrypt_Disable();
   *         SPI_FLASH_RESULT_ERR : Encrypto write error.
   *         SPI_FLASH_RESULT_TIMEOUT : Encrypto write timeout.
   */
-SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, uint32_t* data, uint32_t len);
+SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, uint32_t *data, uint32_t len);
 
 /**
   * @}

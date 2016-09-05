@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef _ROM_AES_H_
 #define _ROM_AES_H_
 
@@ -33,8 +34,8 @@ void ets_aes_enable(void);
 void ets_aes_disable(void);
 
 void ets_aes_set_endian(bool key_word_swap, bool key_byte_swap,
-                    bool in_word_swap, bool in_byte_swap,
-                    bool out_word_swap, bool out_byte_swap);
+                        bool in_word_swap, bool in_byte_swap,
+                        bool out_word_swap, bool out_byte_swap);
 
 bool ets_aes_setkey_enc(const uint8_t *key, enum AES_BITS bits);
 

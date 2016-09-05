@@ -36,10 +36,10 @@ extern "C" {
   *                                NOTE
   *   Many functions in this header files can't be run in FreeRTOS.
   *   Please see the comment of the Functions.
-  *   There are also some functions that doesn't work on FreeRTOS 
+  *   There are also some functions that doesn't work on FreeRTOS
   *   without listed in the header, such as:
   *   xtos functions start with "_xtos_" in ld file.
-  *   
+  *
   ***********************************************************************
   */
 
@@ -51,24 +51,23 @@ extern "C" {
   * @{
   */
 
-
 typedef enum {
-    ETS_OK     = 0,/**< return successful in ets*/
-    ETS_FAILED = 1/**< return failed in ets*/
+    ETS_OK     = 0, /**< return successful in ets*/
+    ETS_FAILED = 1  /**< return failed in ets*/
 } ETS_STATUS;
 
 typedef uint32_t ETSSignal;
 typedef uint32_t ETSParam;
 
-typedef struct ETSEventTag ETSEvent;/**< Event transmit/receive in ets*/
+typedef struct ETSEventTag ETSEvent;    /**< Event transmit/receive in ets*/
 
 struct ETSEventTag {
-    ETSSignal sig;/**< Event signal, in same task, different Event with different signal*/
-    ETSParam  par;/**< Event parameter, sometimes without usage, then will be set as 0*/
+    ETSSignal sig;  /**< Event signal, in same task, different Event with different signal*/
+    ETSParam  par;  /**< Event parameter, sometimes without usage, then will be set as 0*/
 };
 
-typedef void (*ETSTask)(ETSEvent *e);/**< Type of the Task processer*/
-typedef void (* ets_idle_cb_t)(void *arg);/**< Type of the system idle callback*/
+typedef void (*ETSTask)(ETSEvent *e);       /**< Type of the Task processer*/
+typedef void (* ets_idle_cb_t)(void *arg);  /**< Type of the system idle callback*/
 
 /**
   * @brief  Start the Espressif Task Scheduler, which is an infinit loop. Please do not add code after it.
@@ -117,7 +116,8 @@ void ets_task(ETSTask task, uint8_t prio, ETSEvent *queue, uint8_t qlen);
   * @return ETS_OK     : post successful
   * @return ETS_FAILED : post failed
   */
-ETS_STATUS ets_post(uint8_t prio, ETSSignal sig, ETSParam  par);
+ETS_STATUS ets_post(uint8_t prio, ETSSignal sig, ETSParam par);
+
 /**
   * @}
   */
@@ -130,8 +130,7 @@ ETS_STATUS ets_post(uint8_t prio, ETSSignal sig, ETSParam  par);
   * @{
   */
 
-
-extern const char* const exc_cause_table[40];///**< excption cause that defined by the core.*/
+extern const char *const exc_cause_table[40];   ///**< excption cause that defined by the core.*/
 
 /**
   * @brief  Set Pro cpu Entry code, code can be called in PRO CPU when booting is not completed.
@@ -168,7 +167,7 @@ void ets_set_appcpu_boot_addr(uint32_t start);
   *
   * @param  uint32_t pos : Flash physical address.
   *
-  * @param  uint32_t*  entry_addr: the pointer of an variable that can store Entry code address.
+  * @param  uint32_t *entry_addr: the pointer of an variable that can store Entry code address.
   *
   * @param  bool jump : Jump into the code in the function or not.
   *
@@ -184,7 +183,7 @@ ETS_STATUS ets_unpack_flash_code_legacy(uint32_t pos, uint32_t *entry_addr, bool
   *
   * @param  uint32_t pos : Flash physical address.
   *
-  * @param  uint32_t*  entry_addr: the pointer of an variable that can store Entry code address.
+  * @param  uint32_t *entry_addr: the pointer of an variable that can store Entry code address.
   *
   * @param  bool jump : Jump into the code in the function or not.
   *
@@ -196,10 +195,10 @@ ETS_STATUS ets_unpack_flash_code_legacy(uint32_t pos, uint32_t *entry_addr, bool
   * @return ETS_FAILED : unpack failed
   */
 ETS_STATUS ets_unpack_flash_code(uint32_t pos, uint32_t *entry_addr, bool jump, bool sb_need_check, bool config);
+
 /**
   * @}
   */
-
 
 /** \defgroup ets_printf_apis, ets_printf related apis used in ets
   * @brief ets printf apis
@@ -214,7 +213,7 @@ ETS_STATUS ets_unpack_flash_code(uint32_t pos, uint32_t *entry_addr, bool jump, 
   *         Can not print float point data format, or longlong data format.
   *         So we maybe only use this in ROM.
   *
-  * @param  const char* fmt : See printf.
+  * @param  const char *fmt : See printf.
   *
   * @param  ... : See printf.
   *
@@ -275,7 +274,6 @@ void ets_install_uart_printf(void);
   * @}
   */
 
-
 /** \defgroup ets_timer_apis, ets_timer related apis used in ets
   * @brief ets timer apis
   */
@@ -286,11 +284,11 @@ void ets_install_uart_printf(void);
 typedef void ETSTimerFunc(void *timer_arg);/**< timer handler*/
 
 typedef struct _ETSTIMER_ {
-    struct _ETSTIMER_    *timer_next;/**< timer linker*/
-    uint32_t              timer_expire;/**< abstruct time when timer expire*/
-    uint32_t              timer_period;/**< timer period, 0 means timer is not periodic repeated*/
-    ETSTimerFunc         *timer_func;/**< timer handler*/
-    void                 *timer_arg;/**< timer handler argument*/
+    struct _ETSTIMER_    *timer_next;   /**< timer linker*/
+    uint32_t              timer_expire; /**< abstruct time when timer expire*/
+    uint32_t              timer_period; /**< timer period, 0 means timer is not periodic repeated*/
+    ETSTimerFunc         *timer_func;   /**< timer handler*/
+    void                 *timer_arg;    /**< timer handler argument*/
 } ETSTimer;
 
 /**
@@ -393,7 +391,7 @@ void ets_update_cpu_frequency(uint32_t ticks_per_us);
   *
   * @return uint32_t : CPU ticks per us record in ets.
   */
-uint32_t ets_get_cpu_frequency();
+uint32_t ets_get_cpu_frequency(void);
 
 /**
   * @brief  Get xtal_freq/analog_8M*256 value calibrated in rtc module.
@@ -402,26 +400,24 @@ uint32_t ets_get_cpu_frequency();
   *
   * @return uint32_t : xtal_freq/analog_8M*256.
   */
-uint32_t ets_get_xtal_scale();
+uint32_t ets_get_xtal_scale(void);
 
 /**
   * @brief  Get xtal_freq value, If value not stored in RTC_STORE5, than store.
   *
   * @param  None
   *
-  * @return uint32_t : if rtc store the value (RTC_STORE5 high 16 bits and low 16 bits with same value), read from rtc register. 
+  * @return uint32_t : if rtc store the value (RTC_STORE5 high 16 bits and low 16 bits with same value), read from rtc register.
   *                         clock = (REG_READ(RTC_STORE5) & 0xffff) << 12;
-  *		       else if analog_8M in efuse 
+  *            else if analog_8M in efuse
   *                         clock = ets_get_xtal_scale() * 15625 * ets_efuse_get_8M_clock() / 40;
   *                    else clock = 26M.
   */
-uint32_t ets_get_detected_xtal_freq();
+uint32_t ets_get_detected_xtal_freq(void);
 
 /**
   * @}
   */
-
-
 
 /** \defgroup ets_intr_apis, ets interrupt configure related apis
   * @brief ets intr apis
@@ -506,7 +502,7 @@ void ets_waiti0(void);
 /**
   * @brief  Attach an CPU interrupt to a hardware source.
   *         We have 4 steps to use an interrupt:
-  *         1.Attach hardware interrupt source to CPU. 	intr_matrix_set(0, ETS_WIFI_MAC_INTR_SOURCE, ETS_WMAC_INUM);
+  *         1.Attach hardware interrupt source to CPU.  intr_matrix_set(0, ETS_WIFI_MAC_INTR_SOURCE, ETS_WMAC_INUM);
   *         2.Set interrupt handler.                    xt_set_interrupt_handler(ETS_WMAC_INUM, func, NULL);
   *         3.Enable interrupt for CPU.                 xt_ints_on(1 << ETS_WMAC_INUM);
   *         4.Enable interrupt in the module.
@@ -548,7 +544,7 @@ void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 
 #define ETS_TG0_T0_INTR_ATTACH(func, arg) \
         ETS_ISR_ATTACH(ETS_TG0_T0_INUM, (func), (void *)(arg))
-        
+
 #define ETS_GPIO_INTR_ATTACH(func, arg) \
         ETS_ISR_ATTACH(ETS_GPIO_INUM, (func), (void *)(arg))
 
@@ -557,7 +553,7 @@ void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 
 #define ETS_WDT_INTR_ATTACH(func, arg) \
         ETS_ISR_ATTACH(ETS_WDT_INUM, (func), (void *)(arg))
-    
+
 #define ETS_SLC_INTR_ATTACH(func, arg) \
         ETS_ISR_ATTACH(ETS_SLC_INUM, (func), (void *)(arg))
 
@@ -578,7 +574,7 @@ void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 
 #define ETS_GPIO_INTR_DISABLE() \
         ETS_INTR_DISABLE(ETS_GPIO_INUM)
-       
+
 #define ETS_WDT_INTR_ENABLE() \
         ETS_INTR_ENABLE(ETS_WDT_INUM)
 
@@ -596,12 +592,11 @@ void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 
 #define ETS_SLC_INTR_DISABLE() \
         ETS_INTR_DISABLE(ETS_SLC_INUM)
-
 #endif
+
 /**
   * @}
   */
-
 
 #ifndef MAC2STR
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
@@ -609,6 +604,7 @@ void intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 #endif
 
 #define ETS_MEM_BAR() asm volatile ( "" : : : "memory" )
+
 /**
   * @}
   */

@@ -11,8 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef _ROM_EFUSE_H_
 #define _ROM_EFUSE_H_
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,8 +23,8 @@ extern "C" {
 
 /** \defgroup efuse_APIs efuse APIs
   * @brief     ESP32 efuse read/write APIs
-  * @attention 
-  *            
+  * @attention
+  *
   */
 
 /** @addtogroup efuse_APIs
@@ -35,7 +38,7 @@ extern "C" {
   *
   * @return null
   */
-void ets_efuse_read_op(viid);
+void ets_efuse_read_op(void);
 
 /**
   * @brief  Do a efuse write operation, to update efuse write registers to efuse, then you need call ets_efuse_read_op again.
@@ -54,34 +57,32 @@ void ets_efuse_program_op(void);
   *
   * @return u32: 1 for 100KHZ.
   */
-u32 ets_efuse_get_8M_clock(void);
+uint32_t ets_efuse_get_8M_clock(void);
 
 /**
   * @brief  Read spi pad configuration, show gpio number of flash pad, includes 5 pads.
   *
   * @param  null
   *
-  * @return uint32_t: 0, invalid, flash pad decided by strapping 
-  *		 else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
+  * @return uint32_t: 0, invalid, flash pad decided by strapping
+  *      else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
   */
-
 uint32_t ets_efuse_get_spiconfig(void);
 
 /**
   * @brief  A crc8 algorithm used in efuse check.
   *
-  * @param  unsigned char const * p : Pointer to original data.
+  * @param  unsigned char const *p : Pointer to original data.
   *
   * @param  unsigned int len : Data length in byte.
   *
   * @return unsigned char: Crc value.
   */
-unsigned char esp_crc8(unsigned char const * p, unsigned int len);
+unsigned char esp_crc8(unsigned char const *p, unsigned int len);
 
 /**
   * @}
   */
-
 
 #ifdef __cplusplus
 }

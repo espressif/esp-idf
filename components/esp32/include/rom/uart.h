@@ -60,9 +60,9 @@ extern "C" {
 #define  UART_RCV_ERR_FLAG               BIT7
 
 //send and receive message frame head
-#define FRAME_FLAG                         0x7E
+#define FRAME_FLAG                       0x7E
 
-typedef enum{
+typedef enum {
     UART_LINE_STATUS_INT_FLAG  = 0x06,
     UART_RCV_FIFO_INT_FLAG     = 0x04,
     UART_RCV_TMOUT_INT_FLAG    = 0x0C,
@@ -90,9 +90,9 @@ typedef enum {
 } UartStopBitsNum;
 
 typedef enum {
-     NONE_BITS = 0,
-     ODD_BITS  = 2,
-     EVEN_BITS = 3
+    NONE_BITS = 0,
+    ODD_BITS  = 2,
+    EVEN_BITS = 3
 
 } UartParityMode;
 
@@ -121,7 +121,7 @@ typedef enum {
 typedef enum {
     EMPTY,
     UNDER_WRITE,
-    WRITE_OVER 
+    WRITE_OVER
 } RcvMsgBuffState;
 
 typedef struct {
@@ -129,9 +129,9 @@ typedef struct {
     uint8_t *pRcvMsgBuff;
     uint8_t *pWritePos;
     uint8_t *pReadPos;
-    uint8_t  TrigLvl; //JLU: may need to pad
+    uint8_t  TrigLvl;
     RcvMsgBuffState BuffState;
-}RcvMsgBuff;
+} RcvMsgBuff;
 
 typedef struct {
     uint32_t  TrxBuffSize;
@@ -146,7 +146,7 @@ typedef enum {
     RCV_ESC_CHAR,
 } RcvMsgState;
 
-typedef struct{
+typedef struct {
     UartBautRate     baut_rate;
     UartBitsNum4Char data_bits;
     UartExistParity  exist_parity;
@@ -169,7 +169,7 @@ typedef struct{
   *
   * @return None
   */
-void uartAttach();
+void uartAttach(void);
 
 /**
   * @brief Init uart0 or uart1 for UART download booting mode.
@@ -269,12 +269,12 @@ void uart_tx_wait_idle(uint8_t uart_no);
   * @brief Get an input char from message channel.
   *        Please do not call this function in SDK.
   *
-  * @param  uint8_t* pRxChar : the pointer to store the char.
+  * @param  uint8_t *pRxChar : the pointer to store the char.
   *
   * @return OK for successful.
   *         FAIL for failed.
   */
-STATUS uart_rx_one_char(uint8_t* pRxChar);
+STATUS uart_rx_one_char(uint8_t *pRxChar);
 
 /**
   * @brief Get an input char to message channel, wait until successful.
@@ -290,47 +290,47 @@ char uart_rx_one_char_block(void);
   * @brief Get an input string line from message channel.
   *        Please do not call this function in SDK.
   *
-  * @param  uint8_t* pString : the pointer to store the string.
+  * @param  uint8_t *pString : the pointer to store the string.
   *
   * @param  uint8_t MaxStrlen : the max string length, incude '\0'.
   *
   * @return OK.
   */
-STATUS UartRxString(uint8_t* pString, uint8_t MaxStrlen);
+STATUS UartRxString(uint8_t *pString, uint8_t MaxStrlen);
 
 /**
   * @brief Process uart recevied information in the interrupt handler.
   *        Please do not call this function in SDK.
   *
-  * @param  void * para : the message receive buffer.
+  * @param  void *para : the message receive buffer.
   *
   * @return None
   */
-void uart_rx_intr_handler(void * para);
+void uart_rx_intr_handler(void *para);
 
 /**
   * @brief Get an char from receive buffer.
   *        Please do not call this function in SDK.
   *
-  * @param  RcvMsgBuff* pRxBuff : the pointer to the struct that include receive buffer.
+  * @param  RcvMsgBuff *pRxBuff : the pointer to the struct that include receive buffer.
   *
-  * @param  uint8_t* pRxByte : the pointer to store the char.
+  * @param  uint8_t *pRxByte : the pointer to store the char.
   *
   * @return OK for successful.
   *         FAIL for failed.
   */
-STATUS uart_rx_readbuff( RcvMsgBuff* pRxBuff, uint8_t* pRxByte);
+STATUS uart_rx_readbuff( RcvMsgBuff *pRxBuff, uint8_t *pRxByte);
 
 /**
   * @brief Get all chars from receive buffer.
   *        Please do not call this function in SDK.
   *
-  * @param  uint8_t * pCmdLn : the pointer to store the string.
+  * @param  uint8_t *pCmdLn : the pointer to store the string.
   *
   * @return OK for successful.
   *         FAIL for failed.
   */
-STATUS UartGetCmdLn(uint8_t * pCmdLn);
+STATUS UartGetCmdLn(uint8_t *pCmdLn);
 
 /**
   * @brief Get uart configuration struct.
@@ -340,13 +340,13 @@ STATUS UartGetCmdLn(uint8_t * pCmdLn);
   *
   * @return UartDevice * : uart configuration struct pointer.
   */
-UartDevice * GetUartDevice();
+UartDevice *GetUartDevice(void);
 
 /**
-  * @brief Send an packet to download tool, with ESC char.
+  * @brief Send an packet to download tool, with SLIP escaping.
   *        Please do not call this function in SDK.
   *
-  * @param  uint8_t * p : the pointer to output string.
+  * @param  uint8_t *p : the pointer to output string.
   *
   * @param  int len : the string length.
   *
@@ -355,10 +355,10 @@ UartDevice * GetUartDevice();
 void send_packet(uint8_t *p, int len);
 
 /**
-  * @brief Receive an packet from download tool, with ESC char.
+  * @brief Receive an packet from download tool, with SLIP escaping.
   *        Please do not call this function in SDK.
   *
-  * @param  uint8_t * p : the pointer to input string.
+  * @param  uint8_t *p : the pointer to input string.
   *
   * @param  int len : If string length > len, the string will be truncated.
   *
@@ -369,12 +369,11 @@ void send_packet(uint8_t *p, int len);
   */
 int recv_packet(uint8_t *p, int len, uint8_t is_sync);
 
-
 /**
-  * @brief Send an packet to download tool, with ESC char.
+  * @brief Send an packet to download tool, with SLIP escaping.
   *        Please do not call this function in SDK.
   *
-  * @param  uint8_t * pData : the pointer to input string.
+  * @param  uint8_t *pData : the pointer to input string.
   *
   * @param  uint16_t DataLen : the string length.
   *
@@ -383,12 +382,11 @@ int recv_packet(uint8_t *p, int len, uint8_t is_sync);
   */
 STATUS SendMsg(uint8_t *pData, uint16_t DataLen);
 
-
 /**
-  * @brief Receive an packet from download tool, with ESC char.
+  * @brief Receive an packet from download tool, with SLIP escaping.
   *        Please do not call this function in SDK.
   *
-  * @param  uint8_t * pData : the pointer to input string.
+  * @param  uint8_t *pData : the pointer to input string.
   *
   * @param  uint16_t MaxDataLen : If string length > MaxDataLen, the string will be truncated.
   *

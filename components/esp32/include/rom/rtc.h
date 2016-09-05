@@ -40,12 +40,12 @@ extern "C" {
   *          Please do not use reserved or used rtc memory or registers.              *
   *                                                                                   *
   *************************************************************************************
-  *                          RTC  Memory & Store Register usage                       
+  *                          RTC  Memory & Store Register usage
   *************************************************************************************
   *     rtc memory addr         type    size            usage
   *     0x3ff61000(0x50000000)  Slow    SIZE_CP         Co-Processor code/Reset Entry
-  *     0x3ff61000+SIZE_CP      Slow    7936-SIZE_CP
-  *     0x3ff62f00              Slow    256             Reserved
+  *     0x3ff61000+SIZE_CP      Slow    6144-SIZE_CP
+  *     0x3ff62800              Slow    2048            Reserved
   *
   *     0x3ff80000(0x400c0000)  Fast    8192            deep sleep entry code
   *
@@ -87,7 +87,7 @@ typedef enum {
     RTCWDT_CPU_RESET       = 13,    /**<13, RTC Watch dog Reset CPU*/
     EXT_CPU_RESET          = 14,    /**<14, for APP CPU, reseted by PRO CPU*/
     RTCWDT_BROWN_OUT_RESET = 15,    /**<15, Reset when the vdd voltage is not stable*/
-    RTCWDT_RTC_RESET = 16	    /**<16, RTC Watch dog reset digital core and rtc module*/
+    RTCWDT_RTC_RESET       = 16     /**<16, RTC Watch dog reset digital core and rtc module*/
 } RESET_REASON;
 
 typedef enum {
@@ -136,7 +136,7 @@ typedef enum {
     SDIO_IDLE_INT_EN      = SDIO_IDLE_INT,
     RTC_WDT_INT_EN        = RTC_WDT_INT,
     RTC_TIME_VALID_INT_EN = RTC_TIME_VALID_INT
-}RTC_INT_EN;
+} RTC_INT_EN;
 
 /**
   * @brief  Get the reset reason for CPU.

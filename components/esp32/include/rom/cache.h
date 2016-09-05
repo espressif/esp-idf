@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef _ROM_CACHE_H_
 #define _ROM_CACHE_H_
 
@@ -44,7 +45,7 @@ void mmu_init(int cpu_no);
   *
   * @param  int pod : process identifier. Range 0~7.
   *
-  * @param  unsigned int vaddr : virtual address in CPU address space. 
+  * @param  unsigned int vaddr : virtual address in CPU address space.
   *                              Can be IRam0, IRam1, IRom0 and DRom0 memory address.
   *                              Should be aligned by psize.
   *
@@ -73,7 +74,7 @@ unsigned int cache_flash_mmu_set(int cpu_no, int pid, unsigned int vaddr, unsign
   *
   * @param  int pod : process identifier. Range 0~7.
   *
-  * @param  unsigned int vaddr : virtual address in CPU address space. 
+  * @param  unsigned int vaddr : virtual address in CPU address space.
   *                              Can be IRam0, IRam1, IRom0 and DRom0 memory address.
   *                              Should be aligned by psize.
   *
@@ -92,7 +93,6 @@ unsigned int cache_flash_mmu_set(int cpu_no, int pid, unsigned int vaddr, unsign
   *                   4 : mmu table to be written is out of range
   *                   5 : vaddr is out of range
   */
-
 unsigned int cache_sram_mmu_set(int cpu_no, int pid, unsigned int vaddr, unsigned int paddr, int psize, int num);
 
 /**
