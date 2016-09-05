@@ -138,10 +138,10 @@ void esp_sha256_start( SHA256_CTX *ctx, int is224 )
 
     if ( is224 == 0 ) {
         /* SHA-256 */
-        ctx->context_type = SHA256;
+        ctx->context_type = SHA2_256;
     } else {
-        /* SHA-224 */
-        ctx->context_type = SHA224;
+        /* SHA-224 is not supported! */
+        ctx->context_type = SHA_INVALID;
     }
 }
 
@@ -158,7 +158,13 @@ void esp_sha256_update( SHA256_CTX *ctx, const unsigned char *input, size_t ilen
  */
 void esp_sha256_finish( SHA256_CTX *ctx, unsigned char output[32] )
 {
-    ets_sha_finish(&ctx->context, ctx->context_type, output);
+    if ( ctx->context_type == SHA2_256 ) {
+        ets_sha_finish(&ctx->context, ctx->context_type, output);
+    } else {
+        /* No hardware SHA-224 support, but mbedTLS API doesn't allow failure.
+           For now, zero the output to make it clear it's not valid. */
+        bzero( output, 28 );
+    }
     esp_sha_release_hardware();
 }
 

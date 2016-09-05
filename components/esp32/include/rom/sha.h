@@ -37,7 +37,8 @@ enum SHA_TYPE {
     SHA1 = 0,
     SHA2_256,
     SHA2_384,
-    SHA2_512
+    SHA2_512,
+    SHA_INVALID = -1,
 };
 
 void ets_sha_init(SHA_CTX *ctx);

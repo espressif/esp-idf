@@ -109,10 +109,6 @@ void esp_sha1_finish( SHA1_CTX *ctx, unsigned char output[20] );
  */
 void esp_sha1_output( const unsigned char *input, size_t ilen, unsigned char output[20] );
 
-///
-#define SHA256  SHA2_256
-#define SHA224  4 /* TODO: check this */
-
 /**
  * \brief          SHA-256 context structure
  */
