@@ -105,8 +105,15 @@ esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if)
         dhcps_stop(esp_netif[tcpip_if]);    // TODO: dhcps checks status by its self
         dhcps_status = TCPIP_ADAPTER_DHCP_INIT;
     } else if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
+        dhcp_release(esp_netif[tcpip_if]);
         dhcp_stop(esp_netif[tcpip_if]);
+        dhcp_cleanup(esp_netif[tcpip_if]);
+
         dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
+
+        ip4_addr_set_zero(&esp_ip[tcpip_if].ip);
+        ip4_addr_set_zero(&esp_ip[tcpip_if].gw);
+        ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
     }
 
     netif_remove(esp_netif[tcpip_if]);
@@ -144,20 +151,16 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
             return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
         }
 
-        if (esp_netif[tcpip_if]->dhcp != NULL) {
-            dhcp_release(esp_netif[tcpip_if]);
+        if (dhcpc_status == TCPIP_ADAPTER_DHCP_STARTED) {
             dhcp_stop(esp_netif[tcpip_if]);
-            dhcp_cleanup(esp_netif[tcpip_if]);
 
-            if (dhcpc_status != TCPIP_ADAPTER_DHCP_STOPPED) {
-                dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
-            }
+            dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
 
             ip4_addr_set_zero(&esp_ip[tcpip_if].ip);
             ip4_addr_set_zero(&esp_ip[tcpip_if].gw);
             ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
         }
-        
+
         netif_set_down(esp_netif[tcpip_if]);
     }
 
@@ -194,7 +197,8 @@ esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
     struct netif *p_netif;
     tcpip_adapter_dhcp_status_t status;
 
-    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || ip_info == NULL) {
+    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || ip_info == NULL ||
+            ip4_addr_isany_val(ip_info->ip) || ip4_addr_isany_val(ip_info->netmask) || ip4_addr_isany_val(ip_info->gw)) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
     }
 
@@ -430,8 +434,6 @@ esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode_t opt_op, tcpip_a
 static void tcpip_adapter_dhcpc_cb(void)
 {
     struct netif *netif = esp_netif[TCPIP_ADAPTER_IF_STA];
-    tcpip_adapter_ip_info_t *ip_info = &esp_ip[TCPIP_ADAPTER_IF_STA];
-    system_event_t evt;
 
     if (!netif) {
         TCPIP_ADAPTER_DEBUG("null netif=%p\n", netif);
@@ -439,10 +441,13 @@ static void tcpip_adapter_dhcpc_cb(void)
     }
 
     if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY) ) {
+        tcpip_adapter_ip_info_t *ip_info = &esp_ip[TCPIP_ADAPTER_IF_STA];
+
         //check whether IP is changed
         if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), &ip_info->ip) ||
              !ip4_addr_cmp(ip_2_ip4(&netif->netmask), &ip_info->netmask) ||
              !ip4_addr_cmp(ip_2_ip4(&netif->gw), &ip_info->gw) ) {
+            system_event_t evt;
 
             ip4_addr_set(&ip_info->ip, ip_2_ip4(&netif->ip_addr));
             ip4_addr_set(&ip_info->netmask, ip_2_ip4(&netif->netmask));
@@ -478,6 +483,10 @@ esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if)
 
     if (dhcpc_status != TCPIP_ADAPTER_DHCP_STARTED) {
         struct netif *p_netif = esp_netif[tcpip_if];
+
+        ip4_addr_set_zero(&esp_ip[tcpip_if].ip);
+        ip4_addr_set_zero(&esp_ip[tcpip_if].gw);
+        ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
 
         if (p_netif != NULL) {
             if (netif_is_up(p_netif)) {
@@ -525,6 +534,10 @@ esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if)
 
         if (p_netif != NULL) {
             dhcp_stop(p_netif);
+
+            ip4_addr_set_zero(&esp_ip[tcpip_if].ip);
+            ip4_addr_set_zero(&esp_ip[tcpip_if].gw);
+            ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
         } else {
             TCPIP_ADAPTER_DEBUG("dhcp client if not ready\n");
             return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
