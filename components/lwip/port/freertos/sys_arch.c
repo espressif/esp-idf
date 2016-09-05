@@ -501,13 +501,11 @@ static void sys_thread_tls_free(int index, void* data)
 
   if (sem && *sem){
     LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem del, i=%d sem=%p\n", index, *sem));
-    ets_printf("sem del:%p\n", *sem);
     vSemaphoreDelete(*sem);
   }
 
   if (sem){
     LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem pointer del, i=%d sem_p=%p\n", index, sem));
-    ets_printf("sem pointer del:%p\n", sem);
     free(sem);
   }
 }
