@@ -3614,6 +3614,7 @@ In fact, nothing below this line has/is.
 		{
 			if( pxTCB->uxPriority < pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
 			{
+				taskENTER_CRITICAL(&xTaskQueueMutex);
 				/* Adjust the mutex holder state to account for its new
 				priority.  Only reset the event list item value if the value is
 				not	being used for anything else. */
@@ -3648,6 +3649,8 @@ In fact, nothing below this line has/is.
 					/* Just inherit the priority. */
 					pxTCB->uxPriority = pxCurrentTCB[ xPortGetCoreID() ]->uxPriority;
 				}
+
+				taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 				traceTASK_PRIORITY_INHERIT( pxTCB, pxCurrentTCB[ xPortGetCoreID() ]->uxPriority );
 			}
@@ -3686,6 +3689,7 @@ In fact, nothing below this line has/is.
 				/* Only disinherit if no other mutexes are held. */
 				if( pxTCB->uxMutexesHeld == ( UBaseType_t ) 0 )
 				{
+					taskENTER_CRITICAL(&xTaskQueueMutex);
 					/* A task can only have an inhertied priority if it holds
 					the mutex.  If the mutex is held by a task then it cannot be
 					given from an interrupt, and if a mutex is given by the
@@ -3720,6 +3724,7 @@ In fact, nothing below this line has/is.
 					switch should occur when the last mutex is returned whether
 					a task is waiting on it or not. */
 					xReturn = pdTRUE;
+					taskEXIT_CRITICAL(&xTaskQueueMutex);
 				}
 				else
 				{
