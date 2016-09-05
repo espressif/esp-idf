@@ -3763,7 +3763,7 @@ scheduler will re-enable the interrupts instead. */
 	{
 		if( xSchedulerRunning != pdFALSE )
 		{
-			portENTER_CRITICAL_NESTED(pxCurrentTCB[ xPortGetCoreID() ]->uxOldInterruptState);
+			pxCurrentTCB[ xPortGetCoreID() ]->uxOldInterruptState=portENTER_CRITICAL_NESTED();
 		}
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		vPortCPUAcquireMutex( mux, function, line );
@@ -3775,16 +3775,23 @@ scheduler will re-enable the interrupts instead. */
 		{
 			( pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting )++;
 
+
 			/* This is not the interrupt safe version of the enter critical
 			function so	assert() if it is being called from an interrupt
 			context.  Only API functions that end in "FromISR" can be used in an
 			interrupt.  Only assert if the critical nesting count is 1 to
 			protect against recursive calls if the assert function also uses a
 			critical section. */
+			/* DISABLED in the esp32 port - because of SMP, vTaskEnterCritical
+			has to be used in way more places than before, and some are called
+			both from ISR as well as non-ISR code, thus we re-organized 
+			vTaskEnterCritical to also work in ISRs. */
+#if 0
 			if( pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting == 1 )
 			{
 				portASSERT_IF_IN_ISR();
 			}
+#endif
 
 		}
 		else
