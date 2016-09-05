@@ -143,15 +143,20 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
         tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
     } else if (status == TCPIP_ADAPTER_DHCP_STOPPED) {
         tcpip_adapter_ip_info_t sta_ip;
-        system_event_t evt;
 
         tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &sta_ip);
 
-        //notify event
-        evt.event_id = SYSTEM_EVENT_STA_GOTIP;
-        memcpy(&evt.event_info.got_ip.ip_info, &sta_ip, sizeof(tcpip_adapter_ip_info_t));
+        if (!(ip4_addr_isany_val(sta_ip.ip) || ip4_addr_isany_val(sta_ip.netmask) || ip4_addr_isany_val(sta_ip.gw))) {
+            system_event_t evt;
 
-        esp_event_send(&evt);
+            //notify event
+            evt.event_id = SYSTEM_EVENT_STA_GOTIP;
+            memcpy(&evt.event_info.got_ip.ip_info, &sta_ip, sizeof(tcpip_adapter_ip_info_t));
+
+            esp_event_send(&evt);
+        } else {
+            WIFI_DEBUG("invalid static ip\n");
+        }
     }
 
     return ESP_OK;
