@@ -17,6 +17,8 @@
 
 #include <stdint.h>
 
+#include "rom/queue.h"
+
 #include "esp_wifi.h"
 
 #define CONFIG_TCPIP_LWIP 1
@@ -24,7 +26,13 @@
 
 #if CONFIG_TCPIP_LWIP
 #include "lwip/ip_addr.h"
-#include "rom/queue.h"
+
+#define IP2STR(ipaddr) ip4_addr1_16(ipaddr), \
+    ip4_addr2_16(ipaddr), \
+    ip4_addr3_16(ipaddr), \
+    ip4_addr4_16(ipaddr)
+
+#define IPSTR "%d.%d.%d.%d"
 
 struct ip_info {
     ip4_addr_t ip;

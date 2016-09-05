@@ -74,9 +74,8 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, struct 
         if (dhcps_status == TCPIP_ADAPTER_DHCP_INIT) {
             dhcps_start(esp_netif[tcpip_if], info);
 
-            printf("dhcp server start:(ip: %s, ", inet_ntoa(info->ip));
-            printf("mask: %s, ", inet_ntoa(info->netmask));
-            printf("gw: %s)\n", inet_ntoa(info->gw));
+            printf("dhcp server start:(ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR ")\n",
+                    IP2STR(&info->ip), IP2STR(&info->netmask), IP2STR(&info->gw));
 
             dhcps_status = TCPIP_ADAPTER_DHCP_STARTED;
         }
@@ -456,10 +455,6 @@ static void tcpip_adapter_dhcpc_cb(void)
             memcpy(&evt.event_info.got_ip.gw, &ip_info->gw, sizeof(evt.event_info.got_ip.gw));
 
             esp_event_send(&evt);
-
-            printf("ip: %s, ", inet_ntoa(ip_info->ip));
-            printf("mask: %s, ", inet_ntoa(ip_info->netmask));
-            printf("gw: %s\n", inet_ntoa(ip_info->gw));
         } else {
             TCPIP_ADAPTER_DEBUG("ip unchanged\n");
         }

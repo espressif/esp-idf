@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "esp_err.h"
 #include "esp_wifi.h"
@@ -77,6 +78,12 @@ static esp_err_t system_event_sta_gotip_default(system_event_t *event)
 {
     extern esp_err_t esp_wifi_set_sta_ip(void);
     WIFI_API_CALL_CHECK("esp_wifi_set_sta_ip", esp_wifi_set_sta_ip(), ESP_OK);
+
+    printf("ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR "\n",
+            IP2STR(&event->event_info.got_ip.ip),
+            IP2STR(&event->event_info.got_ip.netmask),
+            IP2STR(&event->event_info.got_ip.gw));
+
     return ESP_OK;
 }
 
@@ -134,6 +141,19 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
 
     if (status == TCPIP_ADAPTER_DHCP_INIT) {
         tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+    } else if (status == TCPIP_ADAPTER_DHCP_STOPPED) {
+        struct ip_info ip_info;
+        system_event_t evt;
+
+        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info);
+
+        //notify event
+        evt.event_id = SYSTEM_EVENT_STA_GOTIP;
+        memcpy(&evt.event_info.got_ip.ip, &ip_info.ip, sizeof(evt.event_info.got_ip.ip));
+        memcpy(&evt.event_info.got_ip.netmask, &ip_info.netmask, sizeof(evt.event_info.got_ip.netmask));
+        memcpy(&evt.event_info.got_ip.gw, &ip_info.gw, sizeof(evt.event_info.got_ip.gw));
+
+        esp_event_send(&evt);
     }
 
     return ESP_OK;
