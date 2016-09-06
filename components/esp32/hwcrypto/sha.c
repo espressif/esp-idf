@@ -50,6 +50,18 @@ void esp_sha_release_hardware( void )
     _lock_release(&sha_lock);
 }
 
+/* Generic esp_shaX_update implementation */
+static void esp_sha_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen, size_t block_size)
+{
+    /* Feed the SHA engine one block at a time */
+    while(ilen > 0) {
+        size_t chunk_len = (ilen > block_size) ? block_size : ilen;
+        ets_sha_update(&ctx->context, ctx->context_type, input, chunk_len * 8);
+        input += chunk_len;
+        ilen -= chunk_len;
+    }
+}
+
 void esp_sha1_init( esp_sha_context *ctx )
 {
     bzero( ctx, sizeof( esp_sha_context ) );
@@ -83,7 +95,7 @@ void esp_sha1_start( esp_sha_context *ctx )
  */
 void esp_sha1_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen )
 {
-    ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
+    esp_sha_update(ctx, input, ilen, 64);
 }
 
 /*
@@ -148,7 +160,7 @@ void esp_sha256_start( esp_sha_context *ctx, int is224 )
  */
 void esp_sha256_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen )
 {
-    ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
+    esp_sha_update(ctx, input, ilen, 64);
 }
 
 /*
@@ -223,7 +235,7 @@ void esp_sha512_start( esp_sha_context *ctx, int is384 )
  */
 void esp_sha512_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen )
 {
-    ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
+    esp_sha_update(ctx, input, ilen, 128);
 }
 
 /*
