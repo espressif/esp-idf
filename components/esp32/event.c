@@ -190,9 +190,9 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
         {
             system_event_sta_connected_t *connected; 
             connected = &event->event_info.connected;
-            WIFI_DEBUG("SYSTEM_EVENT_STA_CONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, channel:%d\n", \
+            WIFI_DEBUG("SYSTEM_EVENT_STA_CONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, channel:%d, authmode:%d\n", \
                 connected->ssid, connected->ssid_len, connected->bssid[0], connected->bssid[0], connected->bssid[1], \
-                connected->bssid[3], connected->bssid[4], connected->bssid[5], connected->channel);
+                connected->bssid[3], connected->bssid[4], connected->bssid[5], connected->channel, connected->authmode);
             break;
         }
         case SYSTEM_EVENT_STA_DISCONNECTED:

@@ -56,6 +56,7 @@ typedef struct {
     uint8_t ssid_len;         /**< SSID length of connected AP */
     uint8_t bssid[6];         /**< BSSID of connected AP*/
     uint8_t channel;          /**< channel of connected AP*/
+    uint8_t authmode;
 } system_event_sta_connected_t;
 
 typedef struct {
