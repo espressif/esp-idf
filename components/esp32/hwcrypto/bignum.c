@@ -1,4 +1,7 @@
-/*
+/**
+ * \brief  Multi-precision integer library, ESP32 hardware accelerated version
+ * Based on mbedTLS version.
+ *
  *  ESP32 hardware accelerated multi-precision integer functions
  *  based on mbedTLS implementation
  *

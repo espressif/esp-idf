@@ -50,21 +50,21 @@ void esp_sha_release_hardware( void )
     _lock_release(&sha_lock);
 }
 
-void esp_sha1_init( SHA1_CTX *ctx )
+void esp_sha1_init( esp_sha_context *ctx )
 {
-    bzero( ctx, sizeof( SHA1_CTX ) );
+    bzero( ctx, sizeof( esp_sha_context ) );
 }
 
-void esp_sha1_free( SHA1_CTX *ctx )
+void esp_sha1_free( esp_sha_context *ctx )
 {
     if ( ctx == NULL ) {
         return;
     }
 
-    bzero( ctx, sizeof( SHA1_CTX ) );
+    bzero( ctx, sizeof( esp_sha_context ) );
 }
 
-void esp_sha1_clone( SHA1_CTX *dst, const SHA1_CTX *src )
+void esp_sha1_clone( esp_sha_context *dst, const esp_sha_context *src )
 {
     *dst = *src;
 }
@@ -72,7 +72,7 @@ void esp_sha1_clone( SHA1_CTX *dst, const SHA1_CTX *src )
 /*
  * SHA-1 context setup
  */
-void esp_sha1_start( SHA1_CTX *ctx )
+void esp_sha1_start( esp_sha_context *ctx )
 {
     esp_sha_acquire_hardware();
     ctx->context_type = SHA1;
@@ -81,7 +81,7 @@ void esp_sha1_start( SHA1_CTX *ctx )
 /*
  * SHA-1 process buffer
  */
-void esp_sha1_update( SHA1_CTX *ctx, const unsigned char *input, size_t ilen )
+void esp_sha1_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen )
 {
     ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
@@ -89,18 +89,16 @@ void esp_sha1_update( SHA1_CTX *ctx, const unsigned char *input, size_t ilen )
 /*
  * SHA-1 final digest
  */
-void esp_sha1_finish( SHA1_CTX *ctx, unsigned char output[20] )
+void esp_sha1_finish( esp_sha_context *ctx, unsigned char output[20] )
 {
     ets_sha_finish(&ctx->context, ctx->context_type, output);
     esp_sha_release_hardware();
 }
 
-/*
- * output = SHA-1( input buffer )
- */
-void esp_sha1_output( const unsigned char *input, size_t ilen, unsigned char output[20] )
+/* Full SHA-1 calculation */
+void esp_sha1( const unsigned char *input, size_t ilen, unsigned char output[20] )
 {
-    SHA1_CTX ctx;
+    esp_sha_context ctx;
 
     esp_sha1_init( &ctx );
     esp_sha1_start( &ctx );
@@ -109,21 +107,21 @@ void esp_sha1_output( const unsigned char *input, size_t ilen, unsigned char out
     esp_sha1_free( &ctx );
 }
 
-void esp_sha256_init( SHA256_CTX *ctx )
+void esp_sha256_init( esp_sha_context *ctx )
 {
-    bzero( ctx, sizeof( SHA256_CTX ) );
+    bzero( ctx, sizeof( esp_sha_context ) );
 }
 
-void esp_sha256_free( SHA256_CTX *ctx )
+void esp_sha256_free( esp_sha_context *ctx )
 {
     if ( ctx == NULL ) {
         return;
     }
 
-    bzero( ctx, sizeof( SHA256_CTX ) );
+    bzero( ctx, sizeof( esp_sha_context ) );
 }
 
-void esp_sha256_clone( SHA256_CTX *dst, const SHA256_CTX *src )
+void esp_sha256_clone( esp_sha_context *dst, const esp_sha_context *src )
 {
     *dst = *src;
 }
@@ -131,7 +129,7 @@ void esp_sha256_clone( SHA256_CTX *dst, const SHA256_CTX *src )
 /*
  * SHA-256 context setup
  */
-void esp_sha256_start( SHA256_CTX *ctx, int is224 )
+void esp_sha256_start( esp_sha_context *ctx, int is224 )
 {
     esp_sha_acquire_hardware();
     ets_sha_init(&ctx->context);
@@ -148,7 +146,7 @@ void esp_sha256_start( SHA256_CTX *ctx, int is224 )
 /*
  * SHA-256 process buffer
  */
-void esp_sha256_update( SHA256_CTX *ctx, const unsigned char *input, size_t ilen )
+void esp_sha256_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen )
 {
     ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
@@ -156,7 +154,7 @@ void esp_sha256_update( SHA256_CTX *ctx, const unsigned char *input, size_t ilen
 /*
  * SHA-256 final digest
  */
-void esp_sha256_finish( SHA256_CTX *ctx, unsigned char output[32] )
+void esp_sha256_finish( esp_sha_context *ctx, unsigned char output[32] )
 {
     if ( ctx->context_type == SHA2_256 ) {
         ets_sha_finish(&ctx->context, ctx->context_type, output);
@@ -169,11 +167,11 @@ void esp_sha256_finish( SHA256_CTX *ctx, unsigned char output[32] )
 }
 
 /*
- * output = SHA-256( input buffer )
+ * Full SHA-256 calculation
  */
-void esp_sha256_output( const unsigned char *input, size_t ilen, unsigned char output[32], int is224 )
+void esp_sha256( const unsigned char *input, size_t ilen, unsigned char output[32], int is224 )
 {
-    SHA256_CTX ctx;
+    esp_sha_context ctx;
 
     esp_sha256_init( &ctx );
     esp_sha256_start( &ctx, is224 );
@@ -184,21 +182,21 @@ void esp_sha256_output( const unsigned char *input, size_t ilen, unsigned char o
 
 
 /////
-void esp_sha512_init( SHA512_CTX *ctx )
+void esp_sha512_init( esp_sha_context *ctx )
 {
-    memset( ctx, 0, sizeof( SHA512_CTX ) );
+    memset( ctx, 0, sizeof( esp_sha_context ) );
 }
 
-void esp_sha512_free( SHA512_CTX *ctx )
+void esp_sha512_free( esp_sha_context *ctx )
 {
     if ( ctx == NULL ) {
         return;
     }
 
-    bzero( ctx, sizeof( SHA512_CTX ) );
+    bzero( ctx, sizeof( esp_sha_context ) );
 }
 
-void esp_sha512_clone( SHA512_CTX *dst, const SHA512_CTX *src )
+void esp_sha512_clone( esp_sha_context *dst, const esp_sha_context *src )
 {
     *dst = *src;
 }
@@ -206,7 +204,7 @@ void esp_sha512_clone( SHA512_CTX *dst, const SHA512_CTX *src )
 /*
  * SHA-512 context setup
  */
-void esp_sha512_start( SHA512_CTX *ctx, int is384 )
+void esp_sha512_start( esp_sha_context *ctx, int is384 )
 {
     esp_sha_acquire_hardware();
     ets_sha_init(&ctx->context);
@@ -223,7 +221,7 @@ void esp_sha512_start( SHA512_CTX *ctx, int is384 )
 /*
  * SHA-512 process buffer
  */
-void esp_sha512_update( SHA512_CTX *ctx, const unsigned char *input, size_t ilen )
+void esp_sha512_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen )
 {
     ets_sha_update(&ctx->context, ctx->context_type, input, ilen * 8);
 }
@@ -231,18 +229,18 @@ void esp_sha512_update( SHA512_CTX *ctx, const unsigned char *input, size_t ilen
 /*
  * SHA-512 final digest
  */
-void esp_sha512_finish( SHA512_CTX *ctx, unsigned char output[64] )
+void esp_sha512_finish( esp_sha_context *ctx, unsigned char output[64] )
 {
     ets_sha_finish(&ctx->context, ctx->context_type, output);
     esp_sha_release_hardware();
 }
 
 /*
- * output = SHA-512( input buffer )
+ * Full SHA-512 calculation
  */
-void esp_sha512_output( const unsigned char *input, size_t ilen, unsigned char output[64], int is384 )
+void esp_sha512( const unsigned char *input, size_t ilen, unsigned char output[64], int is384 )
 {
-    SHA512_CTX ctx;
+    esp_sha_context ctx;
 
     esp_sha512_init( &ctx );
     esp_sha512_start( &ctx, is384 );
