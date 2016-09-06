@@ -75,12 +75,15 @@ endchoice
 
 config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 	int "Amount of thread local storage pointers"
-	range 0 256
-	default 0
+	range 0 256 if !WIFI_ENABLED
+	range 1 256 if WIFI_ENABLED
+	default 1
 	help
 		FreeRTOS has the ability to store per-thread pointers in the task
 		control block. This controls the amount of pointers available;
 		0 turns off this functionality.
+
+		If using the WiFi stack, this value must be at least 1.
 
 #This still needs to be implemented.
 choice FREERTOS_PANIC

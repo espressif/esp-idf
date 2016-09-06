@@ -122,6 +122,10 @@ esp_err_t esp_wifi_connect(void);
 
 esp_err_t esp_wifi_disconnect(void);
 
+esp_err_t esp_wifi_clear_fast_connect(void);
+
+esp_err_t esp_wifi_kick_station(uint16_t aid);
+
 typedef struct {
     char *ssid;          /**< SSID of AP */
     uint8_t *bssid;      /**< MAC address of AP */
@@ -129,7 +133,7 @@ typedef struct {
     bool show_hidden;   /**< enable to scan AP whose SSID is hidden */
 } wifi_scan_config_t;
 
-esp_err_t esp_wifi_scan_start(wifi_scan_config_t *conf);
+esp_err_t esp_wifi_scan_start(wifi_scan_config_t *conf, bool block);
 
 esp_err_t esp_wifi_scan_stop(void);
 
@@ -140,7 +144,7 @@ typedef struct {
     uint8_t ssid[32];                     /**< SSID of AP */
     uint8_t primary;                      /**< channel of AP */
     wifi_second_chan_t second;            /**< second channel of AP */
-    char    rssi;                         /**< single strength of AP */
+    signed char rssi;                     /**< signal strength of AP */
     wifi_auth_mode_t authmode;            /**< authmode of AP */
 }wifi_ap_list_t;
 
@@ -188,7 +192,7 @@ esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]);
 
 typedef void (* wifi_promiscuous_cb_t)(void *buf, uint16_t len);
 
-wifi_promiscuous_cb_t wifi_set_promiscuous_rx_cb(wifi_promiscuous_cb_t cb);
+esp_err_t esp_wifi_set_promiscuous_rx_cb(wifi_promiscuous_cb_t cb);
 
 esp_err_t esp_wifi_set_promiscuous(uint8_t enable);
 
@@ -230,9 +234,20 @@ esp_err_t esp_wifi_get_station_list(struct station_info **station);
 
 esp_err_t esp_wifi_free_station_list(void);
 
+typedef enum {
+    WIFI_STORAGE_RAM,
+    WIFI_STORAGE_FLASH,
+} wifi_storage_t;
+
+esp_err_t esp_wifi_set_storage(wifi_storage_t storage);
+
 typedef esp_err_t (*wifi_rxcb_t)(void *buffer, uint16_t len, void* eb);
 
 esp_err_t esp_wifi_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn);
+
+esp_err_t esp_wifi_set_auto_connect(bool en);
+
+esp_err_t esp_wifi_get_auto_connect(bool *en);
 
 #ifdef __cplusplus
 }

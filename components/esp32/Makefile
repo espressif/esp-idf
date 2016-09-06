@@ -46,8 +46,11 @@ $(ALL_LIB_FILES):
 	@echo "Warning: Missing libraries in components/esp32/lib/ submodule. Going to try running 'git submodule update --init' in esp-idf root directory..."
 	cd ${IDF_PATH} && git submodule update --init
 
-# adding $(ALL_LIB_FILES) as a build dependency here is a hack to make
-# sure they get evaluated. Once TW6630 lands and we have library file
-# dependencies available at the project level, we can probably lose
-# this.
-build: $(ALL_LIB_FILES)
+# this is a hack to make sure the app is re-linked if the binary
+# libraries change or are updated. If they change, the main esp32
+# library will be rebuild by AR andthis will trigger a re-linking of
+# the entire app.
+#
+# It would be better for components to be able to expose any of these
+# non-standard dependencies via get_variable, but this will do for now.
+$(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
