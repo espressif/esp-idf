@@ -21,6 +21,8 @@
 #include "esp_err.h"
 #include "esp_wifi.h"
 
+#include "tcpip_adapter.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,10 +43,6 @@ typedef enum {
     SYSTEM_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
     SYSTEM_EVENT_MAX
 } system_event_id_t;
-
-typedef struct {
-    uint32_t addr;
-} esp_ip_addr_t;
 
 typedef struct {
     uint32_t status;          /**< status of scanning APs*/
@@ -73,10 +71,8 @@ typedef struct {
 } system_event_sta_authmode_change_t;
 
 typedef struct {
-    esp_ip_addr_t ip;
-    esp_ip_addr_t netmask;
-    esp_ip_addr_t gw;
-} system_event_sta_gotip_t;
+    tcpip_adapter_ip_info_t ip_info;
+} system_event_sta_got_ip_t;
 
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
@@ -98,7 +94,7 @@ typedef union {
     system_event_sta_disconnected_t            disconnected;       /**< ESP32 station disconnected to AP */
     system_event_sta_scan_done_t               scan_done;          /**< ESP32 station scan (APs) done */
     system_event_sta_authmode_change_t         auth_change;        /**< the auth mode of AP ESP32 station connected to changed */
-    system_event_sta_gotip_t                   got_ip;
+    system_event_sta_got_ip_t                  got_ip;
     system_event_ap_staconnected_t             sta_connected;      /**< a station connected to ESP32 soft-AP */
     system_event_ap_stadisconnected_t          sta_disconnected;   /**< a station disconnected to ESP32 soft-AP */
     system_event_ap_probe_req_rx_t             ap_probereqrecved;  /**< ESP32 softAP receive probe request packet */

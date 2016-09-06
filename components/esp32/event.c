@@ -80,16 +80,16 @@ static esp_err_t system_event_sta_gotip_default(system_event_t *event)
     WIFI_API_CALL_CHECK("esp_wifi_set_sta_ip", esp_wifi_set_sta_ip(), ESP_OK);
 
     printf("ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR "\n",
-            IP2STR(&event->event_info.got_ip.ip),
-            IP2STR(&event->event_info.got_ip.netmask),
-            IP2STR(&event->event_info.got_ip.gw));
+            IP2STR(&event->event_info.got_ip.ip_info.ip),
+            IP2STR(&event->event_info.got_ip.ip_info.netmask),
+            IP2STR(&event->event_info.got_ip.ip_info.gw));
 
     return ESP_OK;
 }
 
 esp_err_t system_event_ap_start_handle_default(system_event_t *event)
 {
-    struct ip_info ap_ip;
+    tcpip_adapter_ip_info_t ap_ip;
     uint8_t ap_mac[6];
 
     WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
@@ -112,7 +112,7 @@ esp_err_t system_event_ap_stop_handle_default(system_event_t *event)
 
 esp_err_t system_event_sta_start_handle_default(system_event_t *event)
 {
-    struct ip_info sta_ip;
+    tcpip_adapter_ip_info_t sta_ip;
     uint8_t sta_mac[6];
 
     WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(WIFI_IF_STA, sta_mac), ESP_OK);
@@ -142,16 +142,14 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
     if (status == TCPIP_ADAPTER_DHCP_INIT) {
         tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
     } else if (status == TCPIP_ADAPTER_DHCP_STOPPED) {
-        struct ip_info ip_info;
+        tcpip_adapter_ip_info_t sta_ip;
         system_event_t evt;
 
-        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info);
+        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &sta_ip);
 
         //notify event
         evt.event_id = SYSTEM_EVENT_STA_GOTIP;
-        memcpy(&evt.event_info.got_ip.ip, &ip_info.ip, sizeof(evt.event_info.got_ip.ip));
-        memcpy(&evt.event_info.got_ip.netmask, &ip_info.netmask, sizeof(evt.event_info.got_ip.netmask));
-        memcpy(&evt.event_info.got_ip.gw, &ip_info.gw, sizeof(evt.event_info.got_ip.gw));
+        memcpy(&evt.event_info.got_ip.ip_info, &sta_ip, sizeof(tcpip_adapter_ip_info_t));
 
         esp_event_send(&evt);
     }
@@ -233,7 +231,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
         }
         case SYSTEM_EVENT_STA_GOTIP:
         {
-            system_event_sta_gotip_t *got_ip;
+            system_event_sta_got_ip_t *got_ip;
             got_ip = &event->event_info.got_ip;
             WIFI_DEBUG("SYSTEM_EVENT_STA_GOTIP\n");
             break;
