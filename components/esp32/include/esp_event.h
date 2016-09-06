@@ -56,7 +56,7 @@ typedef struct {
     uint8_t ssid_len;         /**< SSID length of connected AP */
     uint8_t bssid[6];         /**< BSSID of connected AP*/
     uint8_t channel;          /**< channel of connected AP*/
-    uint8_t authmode;
+    wifi_auth_mode_t authmode;
 } system_event_sta_connected_t;
 
 typedef struct {
@@ -67,8 +67,8 @@ typedef struct {
 } system_event_sta_disconnected_t;
 
 typedef struct {
-    uint8_t old_mode;         /**< the old auth mode of AP */
-    uint8_t new_mode;         /**< the new auth mode of AP */
+    wifi_auth_mode_t old_mode;         /**< the old auth mode of AP */
+    wifi_auth_mode_t new_mode;         /**< the new auth mode of AP */
 } system_event_sta_authmode_change_t;
 
 typedef struct {
