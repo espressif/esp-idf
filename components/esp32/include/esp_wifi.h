@@ -12,6 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+/*               Notes about WiFi Programming
+ *
+ *  The esp32 wifi programming model can be dipcts as following picture:
+ *
+ *
+ *                            default handler              user handler
+ *  -------------             ---------------             ---------------        
+ *  |           |   event     |             | callback or |             |       
+ *  |   tcpip   | --------->  |    event    | ----------> | application |  
+ *  |   stack   |             |     task    |  event      |    task     |
+ *  |-----------|             |-------------|             |-------------|
+ *                                  /|\                          |
+ *                                   |                           |
+ *                            event  |                           |
+ *                                   |                           |
+ *                                   |                           |
+ *                             ---------------                   |
+ *                             |             |                   |
+ *                             | WiFi Driver |/__________________|
+ *                             |             |\     API call
+ *                             |             |
+ *                             |-------------|
+ * 
+ * The wifi driver can be consider as black box, it knows nothing about the high layer code, such as
+ * TCPIP stack, application task, event task etc, all it can do is to receive API call from high laeyer
+ * or post event queue to a specified Queue, which is initilized by API esp_wifi_init(). 
+ *
+ * The event task is a daemon task, which receives events from WiFi driver or from other subsystem, such
+ * as TCPIP stack, event task will call the default callback function on receiving the event. For example,
+ * on receiving event SYSTEM_EVENT_STA_CONNECTED, it will call tcpip_adapter_start() to start the DHCP
+ * client in it's default handler. 
+ *
+ * Application can register it's owner event callback function by API esp_event_init, then the application callback
+ * function will be called after the default callback. Also, if application don't want to excute the callback
+ * in event task, what it need to do is to post the related event to application task in the application callback function.
+ * 
+ * The application task (code) generally mix all these thing together, it call APIs to init the system/wifi and
+ * handle the events when necessary.
+ * 
+ */
+
 #ifndef __ESP_WIFI_H__
 #define __ESP_WIFI_H__
 
