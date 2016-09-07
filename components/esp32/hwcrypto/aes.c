@@ -114,23 +114,17 @@ int esp_aes_setkey_dec( esp_aes_context *ctx, const unsigned char *key,
 }
 
 /*
- * Inner AES-ECB function. Call only when protected by esp_aes_acquire_hardware().
+ * Helper function to copy key from esp_aes_context buffer
+ * to hardware key registers.
  *
- * Optimisation to prevent overhead of locking each time when
- * encrypting many blocks in sequence.
+ * Only call when protected by esp_aes_acquire_hardware().
  */
-static int esp_aes_crypt_ecb_inner( esp_aes_context *ctx,
-                       int mode,
-                       const unsigned char input[16],
-                       unsigned char output[16] )
+static inline int esp_aes_setkey_hardware( esp_aes_context *ctx, int mode)
 {
     if ( mode == ESP_AES_ENCRYPT ) {
         ets_aes_setkey_enc(ctx->enc.key, ctx->enc.aesbits);
-        ets_aes_crypt(input, output);
     } else {
         ets_aes_setkey_dec(ctx->enc.key, ctx->enc.aesbits);
-        /* TODO: previous commit esp_aes_decrypt function calls this but this is not correct! */
-        ets_aes_crypt(input, output);
     }
     return 0;
 }
@@ -143,7 +137,8 @@ void esp_aes_encrypt( esp_aes_context *ctx,
                       unsigned char output[16] )
 {
     esp_aes_acquire_hardware();
-    esp_aes_crypt_ecb_inner(ctx, ESP_AES_ENCRYPT, input, output);
+    esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
+    ets_aes_crypt(input, output);
     esp_aes_release_hardware();
 }
 
@@ -156,7 +151,8 @@ void esp_aes_decrypt( esp_aes_context *ctx,
                       unsigned char output[16] )
 {
     esp_aes_acquire_hardware();
-    esp_aes_crypt_ecb_inner(ctx, ESP_AES_DECRYPT, input, output);
+    esp_aes_setkey_hardware(ctx, ESP_AES_DECRYPT);
+    ets_aes_crypt(input, output);
     esp_aes_release_hardware();
 }
 
@@ -170,7 +166,8 @@ int esp_aes_crypt_ecb( esp_aes_context *ctx,
                        unsigned char output[16] )
 {
     esp_aes_acquire_hardware();
-    esp_aes_crypt_ecb_inner(ctx, mode, input, output);
+    esp_aes_setkey_hardware(ctx, mode);
+    ets_aes_crypt(input, output);
     esp_aes_release_hardware();
     return 0;
 }
@@ -194,11 +191,12 @@ int esp_aes_crypt_cbc( esp_aes_context *ctx,
     }
 
     esp_aes_acquire_hardware();
+    esp_aes_setkey_hardware(ctx, mode);
 
     if ( mode == ESP_AES_DECRYPT ) {
         while ( length > 0 ) {
             memcpy( temp, input, 16 );
-            esp_aes_crypt_ecb_inner( ctx, mode, input, output );
+            ets_aes_crypt(input, output);
 
             for ( i = 0; i < 16; i++ ) {
                 output[i] = (unsigned char)( output[i] ^ iv[i] );
@@ -216,7 +214,7 @@ int esp_aes_crypt_cbc( esp_aes_context *ctx,
                 output[i] = (unsigned char)( input[i] ^ iv[i] );
             }
 
-            esp_aes_crypt_ecb_inner( ctx, mode, output, output );
+            ets_aes_crypt(output, output);
             memcpy( iv, output, 16 );
 
             input  += 16;
@@ -245,11 +243,12 @@ int esp_aes_crypt_cfb128( esp_aes_context *ctx,
     size_t n = *iv_off;
 
     esp_aes_acquire_hardware();
+    esp_aes_setkey_hardware(ctx, mode);
 
     if ( mode == ESP_AES_DECRYPT ) {
         while ( length-- ) {
             if ( n == 0 ) {
-                esp_aes_crypt_ecb_inner( ctx, ESP_AES_ENCRYPT, iv, iv );
+                ets_aes_crypt(iv, iv );
             }
 
             c = *input++;
@@ -261,7 +260,7 @@ int esp_aes_crypt_cfb128( esp_aes_context *ctx,
     } else {
         while ( length-- ) {
             if ( n == 0 ) {
-                esp_aes_crypt_ecb_inner( ctx, ESP_AES_ENCRYPT, iv, iv );
+                ets_aes_crypt(iv, iv );
             }
 
             iv[n] = *output++ = (unsigned char)( iv[n] ^ *input++ );
@@ -291,10 +290,11 @@ int esp_aes_crypt_cfb8( esp_aes_context *ctx,
     unsigned char ov[17];
 
     esp_aes_acquire_hardware();
+    esp_aes_setkey_hardware(ctx, mode);
 
     while ( length-- ) {
         memcpy( ov, iv, 16 );
-        esp_aes_crypt_ecb_inner( ctx, ESP_AES_ENCRYPT, iv, iv );
+        ets_aes_crypt(iv, iv);
 
         if ( mode == ESP_AES_DECRYPT ) {
             ov[16] = *input;
@@ -329,10 +329,11 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
     size_t n = *nc_off;
 
     esp_aes_acquire_hardware();
+    esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
 
     while ( length-- ) {
         if ( n == 0 ) {
-            esp_aes_crypt_ecb_inner( ctx, ESP_AES_ENCRYPT, nonce_counter, stream_block );
+            ets_aes_crypt(nonce_counter, stream_block);
 
             for ( i = 16; i > 0; i-- )
                 if ( ++nonce_counter[i - 1] != 0 ) {
