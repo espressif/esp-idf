@@ -46,4 +46,52 @@ config ESPTOOLPY_COMPRESSED
 		decompress it on the fly before flashing it. For most payloads, this should result in a
 		speed increase.
 
+choice ESPTOOLPY_FLASHMODE
+	prompt "Flash SPI mode"
+	default ESPTOOLPY_FLASHMODE_QIO
+	help
+		Mode the flash chip is flashed in, as well as the default mode for the
+		binary to run in.
+
+config ESPTOOLPY_FLASHMODE_QIO
+	bool "QIO"
+config ESPTOOLPY_FLASHMODE_QOUT
+	bool "QOUT"
+config ESPTOOLPY_FLASHMODE_DIO
+	bool "DIO"
+config ESPTOOLPY_FLASHMODE_DOUT
+	bool "DOUT"
+endchoice
+
+config ESPTOOLPY_FLASHMODE
+	string
+	default "qio" if ESPTOOLPY_FLASHMODE_QIO
+	default "qout" if ESPTOOLPY_FLASHMODE_QOUT
+	default "dio" if ESPTOOLPY_FLASHMODE_DIO
+	default "dout" if ESPTOOLPY_FLASHMODE_DOUT
+
+
+choice ESPTOOLPY_FLASHFREQ
+	prompt "Flash SPI speed"
+	default ESPTOOLPY_FLASHFREQ_40M
+	help
+		The SPI flash frequency to be used.
+
+config ESPTOOLPY_FLASHFREQ_80M
+	bool "80 MHz"
+config ESPTOOLPY_FLASHFREQ_40M
+	bool "40 MHz"
+config ESPTOOLPY_FLASHFREQ_26M
+	bool "26 MHz"
+config ESPTOOLPY_FLASHFREQ_20M
+	bool "20 MHz"
+endchoice
+
+config ESPTOOLPY_FLASHFREQ
+	string
+	default "80m" if ESPTOOLPY_FLASHFREQ_80M
+	default "40m" if ESPTOOLPY_FLASHFREQ_40M
+	default "26m" if ESPTOOLPY_FLASHFREQ_26M
+	default "20m" if ESPTOOLPY_FLASHFREQ_20M
+
 endmenu
