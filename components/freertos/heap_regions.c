@@ -132,6 +132,7 @@ task.h is included from an application file. */
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "heap_regions_debug.h"
 
 #undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 
@@ -171,7 +172,7 @@ static void prvInsertBlockIntoFreeList( BlockLink_t *pxBlockToInsert );
 
 /* The size of the structure placed at the beginning of each allocated memory
 block must by correctly byte aligned. */
-static const uint32_t uxHeapStructSize	= ( ( sizeof ( BlockLink_t ) + ( portBYTE_ALIGNMENT - 1 ) ) & ~portBYTE_ALIGNMENT_MASK );
+static const uint32_t uxHeapStructSize	= ( ( sizeof ( BlockLink_t ) + BLOCK_HEAD_LEN + BLOCK_TAIL_LEN + ( portBYTE_ALIGNMENT - 1 ) ) & ~portBYTE_ALIGNMENT_MASK );
 
 /* Create a couple of list links to mark the start and end of the list. */
 static BlockLink_t xStart, *pxEnd = NULL;
@@ -238,6 +239,13 @@ void *pvReturn = NULL;
 				while( ( ( pxBlock->xTag != tag ) ||  ( pxBlock->xBlockSize < xWantedSize ) ) && ( pxBlock->pxNextFreeBlock != NULL ) )
 				{
 //					ets_printf("Block %x -> %x\n", (uint32_t)pxBlock, (uint32_t)pxBlock->pxNextFreeBlock);
+
+                                        #if (configENABLE_MEMORY_DEBUG == 1)
+                                        {
+                                            mem_check_block(pxBlock);
+                                        }
+                                        #endif
+
 					pxPreviousBlock = pxBlock;
 					pxBlock = pxBlock->pxNextFreeBlock;
 				}
@@ -248,7 +256,7 @@ void *pvReturn = NULL;
 				{
 					/* Return the memory space pointed to - jumping over the
 					BlockLink_t structure at its start. */
-					pvReturn = ( void * ) ( ( ( uint8_t * ) pxPreviousBlock->pxNextFreeBlock ) + uxHeapStructSize );
+					pvReturn = ( void * ) ( ( ( uint8_t * ) pxPreviousBlock->pxNextFreeBlock ) + uxHeapStructSize - BLOCK_TAIL_LEN - BLOCK_HEAD_LEN);
 
 					/* This block is being returned for use so must be taken out
 					of the list of free blocks. */
@@ -256,19 +264,27 @@ void *pvReturn = NULL;
 
 					/* If the block is larger than required it can be split into
 					two. */
+
 					if( ( pxBlock->xBlockSize - xWantedSize ) > heapMINIMUM_BLOCK_SIZE )
 					{
 						/* This block is to be split into two.  Create a new
 						block following the number of bytes requested. The void
 						cast is used to prevent byte alignment warnings from the
 						compiler. */
-						pxNewBlockLink = ( void * ) ( ( ( uint8_t * ) pxBlock ) + xWantedSize );
+						pxNewBlockLink = ( void * ) ( ( ( uint8_t * ) pxBlock ) + xWantedSize);
 
 						/* Calculate the sizes of two blocks split from the
 						single block. */
 						pxNewBlockLink->xBlockSize = pxBlock->xBlockSize - xWantedSize;
 						pxNewBlockLink->xTag = tag;
 						pxBlock->xBlockSize = xWantedSize;
+
+                                                #if (configENABLE_MEMORY_DEBUG == 1)
+                                                {
+                                                    mem_init_dog(pxNewBlockLink);
+                                                }
+                                                #endif
+
 
 						/* Insert the new block into the list of free blocks. */
 						prvInsertBlockIntoFreeList( ( pxNewBlockLink ) );
@@ -293,6 +309,13 @@ void *pvReturn = NULL;
 					by the application and has no "next" block. */
 					pxBlock->xBlockSize |= xBlockAllocatedBit;
 					pxBlock->pxNextFreeBlock = NULL;
+
+                                        #if (configENABLE_MEMORY_DEBUG == 1)
+                                        {
+                                            mem_init_dog(pxBlock);
+                                            mem_malloc_block(pxBlock);
+                                        }
+                                        #endif
 				}
 				else
 				{
@@ -340,10 +363,19 @@ BlockLink_t *pxLink;
 	{
 		/* The memory being freed will have an BlockLink_t structure immediately
 		before it. */
-		puc -= uxHeapStructSize;
+		puc -= (uxHeapStructSize - BLOCK_TAIL_LEN - BLOCK_HEAD_LEN) ;
 
 		/* This casting is to keep the compiler from issuing warnings. */
 		pxLink = ( void * ) puc;
+
+                #if (configENABLE_MEMORY_DEBUG == 1)
+                {
+                    taskENTER_CRITICAL(&xMallocMutex);
+                    mem_check_block(pxLink);
+                    mem_free_block(pxLink);
+                    taskEXIT_CRITICAL(&xMallocMutex);
+                }
+                #endif
 
 		/* Check the block is actually allocated. */
 		configASSERT( ( pxLink->xBlockSize & xBlockAllocatedBit ) != 0 );
@@ -497,7 +529,7 @@ const HeapRegionTagged_t *pxHeapRegion;
 		{
 			/* xStart is used to hold a pointer to the first item in the list of
 			free blocks.  The void cast is used to prevent compiler warnings. */
-			xStart.pxNextFreeBlock = ( BlockLink_t * ) pucAlignedHeap;
+			xStart.pxNextFreeBlock = ( BlockLink_t * ) (pucAlignedHeap + BLOCK_HEAD_LEN);
 			xStart.xBlockSize = ( size_t ) 0;
 		}
 		else
@@ -519,7 +551,7 @@ const HeapRegionTagged_t *pxHeapRegion;
 		ulAddress = ( ( uint32_t ) pucAlignedHeap ) + xTotalRegionSize;
 		ulAddress -= uxHeapStructSize;
 		ulAddress &= ~portBYTE_ALIGNMENT_MASK;
-		pxEnd = ( BlockLink_t * ) ulAddress;
+		pxEnd = ( BlockLink_t * ) (ulAddress + BLOCK_HEAD_LEN);
 		pxEnd->xBlockSize = 0;
 		pxEnd->pxNextFreeBlock = NULL;
 		pxEnd->xTag = -1;
@@ -527,8 +559,8 @@ const HeapRegionTagged_t *pxHeapRegion;
 		/* To start with there is a single free block in this region that is
 		sized to take up the entire heap region minus the space taken by the
 		free block structure. */
-		pxFirstFreeBlockInRegion = ( BlockLink_t * ) pucAlignedHeap;
-		pxFirstFreeBlockInRegion->xBlockSize = ulAddress - ( uint32_t ) pxFirstFreeBlockInRegion;
+		pxFirstFreeBlockInRegion = ( BlockLink_t * ) (pucAlignedHeap + BLOCK_HEAD_LEN);
+		pxFirstFreeBlockInRegion->xBlockSize = ulAddress - ( uint32_t ) pxFirstFreeBlockInRegion + BLOCK_HEAD_LEN;
 		pxFirstFreeBlockInRegion->pxNextFreeBlock = pxEnd;
 		pxFirstFreeBlockInRegion->xTag=pxHeapRegion->xTag;
 
@@ -545,6 +577,13 @@ const HeapRegionTagged_t *pxHeapRegion;
 		xDefinedRegions++;
 		xRegIdx++;
 		pxHeapRegion = &( pxHeapRegions[ xRegIdx ] );
+
+                #if (configENABLE_MEMORY_DEBUG == 1)
+                {
+                    mem_init_dog(pxFirstFreeBlockInRegion);
+                    mem_init_dog(pxEnd);
+                }
+                #endif
 	}
 
 	xMinimumEverFreeBytesRemaining = xTotalHeapSize;
@@ -555,5 +594,12 @@ const HeapRegionTagged_t *pxHeapRegion;
 
 	/* Work out the position of the top bit in a size_t variable. */
 	xBlockAllocatedBit = ( ( size_t ) 1 ) << ( ( sizeof( size_t ) * heapBITS_PER_BYTE ) - 1 );
+
+        #if (configENABLE_MEMORY_DEBUG == 1)
+        {
+            mem_debug_init(uxHeapStructSize, &xStart, pxEnd, &xMallocMutex, xBlockAllocatedBit);
+            mem_check_all(0);
+        }
+        #endif
 }
 
