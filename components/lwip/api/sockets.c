@@ -389,18 +389,18 @@ static void lwip_socket_drop_registered_memberships(int s);
 
 #ifdef LWIP_ESP8266
 extern size_t system_get_free_heap_size(void);
-
-#define DELAY_WHEN_MEMORY_NOT_ENOUGH() \
+extern bool esp_wifi_tx_is_stop(void);
+#define ESP32_TX_FLOW_CTRL() \
 do{\
   uint8_t _wait_delay = 0;\
-  while (system_get_free_heap_size() < HEAP_HIGHWAT){\
+  while ((system_get_free_heap_size() < HEAP_HIGHWAT) || esp_wifi_tx_is_stop()){\
      vTaskDelay(_wait_delay/portTICK_RATE_MS);\
      if (_wait_delay < 64) _wait_delay *= 2;\
   }\
 }while(0)
 
 #else
-#define DELAY_WHEN_MEMORY_NOT_ENOUGH() 
+#define ESP32_TX_FLOW_CTRL() 
 #endif
 
 /** The global array of available sockets */
@@ -1219,7 +1219,7 @@ lwip_send(int s, const void *data, size_t size, int flags)
 #endif /* (LWIP_UDP || LWIP_RAW) */
   }
 
-  DELAY_WHEN_MEMORY_NOT_ENOUGH();
+  ESP32_TX_FLOW_CTRL();
 
   write_flags = NETCONN_COPY |
     ((flags & MSG_MORE)     ? NETCONN_MORE      : 0) |
@@ -1402,7 +1402,7 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
 #endif /* LWIP_TCP */
   }
 
-  DELAY_WHEN_MEMORY_NOT_ENOUGH();
+  ESP32_TX_FLOW_CTRL();
 
   if ((to != NULL) && !SOCK_ADDR_TYPE_MATCH(to, sock)) {
     /* sockaddr does not match socket type (IPv4/IPv6) */
