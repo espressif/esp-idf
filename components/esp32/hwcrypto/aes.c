@@ -124,7 +124,7 @@ static inline int esp_aes_setkey_hardware( esp_aes_context *ctx, int mode)
     if ( mode == ESP_AES_ENCRYPT ) {
         ets_aes_setkey_enc(ctx->enc.key, ctx->enc.aesbits);
     } else {
-        ets_aes_setkey_dec(ctx->enc.key, ctx->enc.aesbits);
+        ets_aes_setkey_dec(ctx->dec.key, ctx->dec.aesbits);
     }
     return 0;
 }
@@ -243,7 +243,7 @@ int esp_aes_crypt_cfb128( esp_aes_context *ctx,
     size_t n = *iv_off;
 
     esp_aes_acquire_hardware();
-    esp_aes_setkey_hardware(ctx, mode);
+    esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
 
     if ( mode == ESP_AES_DECRYPT ) {
         while ( length-- ) {
@@ -290,7 +290,7 @@ int esp_aes_crypt_cfb8( esp_aes_context *ctx,
     unsigned char ov[17];
 
     esp_aes_acquire_hardware();
-    esp_aes_setkey_hardware(ctx, mode);
+    esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
 
     while ( length-- ) {
         memcpy( ov, iv, 16 );
