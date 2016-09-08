@@ -44,10 +44,17 @@ void _free_r(struct _reent *r, void* ptr) {
     return vPortFree(ptr);
 }
 
-// TODO: improve realloc to grow buffer in place if possible
 void* _realloc_r(struct _reent *r, void* ptr, size_t size) {
-	void* new_chunk = pvPortMalloc(size);
-	if (new_chunk) {
+	void* new_chunk;
+	if (size == 0) {
+		if (ptr) {
+			vPortFree(ptr);
+		}
+		return NULL;
+	}
+
+	new_chunk = pvPortMalloc(size);
+	if (new_chunk && ptr) {
 		memcpy(new_chunk, ptr, size);
 		vPortFree(ptr);
 	}
