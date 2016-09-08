@@ -17,17 +17,6 @@
 #include "lwip/ip_addr.h"
 //#include "esp_common.h"
 #define USE_DNS
-/* Here for now until needed in other places in lwIP */
-#ifndef isprint
-#define in_range(c, lo, up)  ((u8_t)c >= lo && (u8_t)c <= up)
-#define isprint(c)           in_range(c, 0x20, 0x7f)
-#define isdigit(c)           in_range(c, '0', '9')
-#define isxdigit(c)          (isdigit(c) || in_range(c, 'a', 'f') || in_range(c, 'A', 'F'))
-#define islower(c)           in_range(c, 'a', 'z')
-#define isspace(c)           (c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v')
-#endif
-
-#ifdef LWIP_ESP8266
 
 typedef struct dhcps_state{
         s16_t state;
@@ -164,6 +153,12 @@ typedef enum
     CLASSLESS_ROUTE = 121,
 } dhcp_msg_option;
 
+/*   Defined in esp_misc.h */
+typedef struct {
+	bool enable;
+	ip4_addr_t start_ip;
+	ip4_addr_t end_ip;
+} dhcps_lease_t;
 
 enum dhcps_offer_option{
 	OFFER_START = 0x00,
@@ -188,22 +183,18 @@ typedef struct _list_node{
 typedef u32_t dhcps_time_t;
 typedef u8_t dhcps_offer_t;
 
-/* struct dhcps_lease defined in tcpip_adapter.h */
-typedef struct dhcps_lease dhcps_lease_t;
-
-typedef struct _dhcps_options{
+typedef struct {
 	dhcps_offer_t dhcps_offer;
 	dhcps_time_t  dhcps_time;
 	dhcps_lease_t dhcps_poll;
-}dhcps_options_t;
+} dhcps_options_t;
 
-#define   dhcps_router_enabled(offer)	((offer & OFFER_ROUTER) != 0)
-void dhcps_start(struct netif *netif, struct ip_info *info);
+#define dhcps_router_enabled(offer) ((offer & OFFER_ROUTER) != 0)
+
+void dhcps_start(struct netif *netif, ip4_addr_t ip);
 void dhcps_stop(struct netif *netif);
 void *dhcps_option_info(u8_t op_id, u32_t opt_len);
 bool dhcp_search_ip_on_mac(u8_t *mac, ip4_addr_t *ip);
-
-#endif
 
 #endif
 

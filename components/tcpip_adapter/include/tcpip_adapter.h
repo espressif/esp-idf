@@ -17,6 +17,8 @@
 
 #include <stdint.h>
 
+#include "rom/queue.h"
+
 #include "esp_wifi.h"
 
 #define CONFIG_TCPIP_LWIP 1
@@ -24,24 +26,22 @@
 
 #if CONFIG_TCPIP_LWIP
 #include "lwip/ip_addr.h"
-#include "rom/queue.h"
+#include "apps/dhcpserver.h"
 
-struct ip_info {
+#define IP2STR(ipaddr) ip4_addr1_16(ipaddr), \
+    ip4_addr2_16(ipaddr), \
+    ip4_addr3_16(ipaddr), \
+    ip4_addr4_16(ipaddr)
+
+#define IPSTR "%d.%d.%d.%d"
+
+typedef struct {
     ip4_addr_t ip;
     ip4_addr_t netmask;
     ip4_addr_t gw;
-};
+} tcpip_adapter_ip_info_t;
 
-/* Also used by dhcpserver.h  */
-struct dhcps_lease {
-	bool enable;
-	ip4_addr_t start_ip;
-	ip4_addr_t end_ip;
-};
-
-typedef struct dhcps_lease tcpip_adapter_dhcps_lease;
-
-#endif
+typedef dhcps_lease_t tcpip_adapter_dhcps_lease_t;
 
 #if CONFIG_DHCP_STA_LIST 
 struct station_list {
@@ -49,6 +49,8 @@ struct station_list {
     uint8_t mac[6];
     ip4_addr_t ip;
 };
+#endif
+
 #endif
 
 #define ESP_ERR_TCPIP_ADAPTER_BASE      0x5000      // base should be moved to esp_err.h
@@ -75,24 +77,23 @@ typedef enum {
     TCPIP_ADAPTER_DHCP_STATUS_MAX
 } tcpip_adapter_dhcp_status_t;
 
-/*op*/
 typedef enum{
     TCPIP_ADAPTER_OP_START = 0,
     TCPIP_ADAPTER_OP_SET,
     TCPIP_ADAPTER_OP_GET,
     TCPIP_ADAPTER_OP_MAX
-} tcpip_adapter_option_mode;
+} tcpip_adapter_option_mode_t;
 
 typedef enum{
-    TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS = 32,
-    TCPIP_ADAPTER_REQUESTED_IP_ADDRESS = 50,
-    TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME = 51,
-    TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME = 52,
-} tcpip_adapter_option_id;
+    TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS   = 32,
+    TCPIP_ADAPTER_REQUESTED_IP_ADDRESS          = 50,
+    TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME         = 51,
+    TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME         = 52,
+} tcpip_adapter_option_id_t;
 
 void tcpip_adapter_init(void);
 
-esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, struct ip_info *info);
+esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
 
 esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if);
 
@@ -100,9 +101,9 @@ esp_err_t tcpip_adapter_up(tcpip_adapter_if_t tcpip_if);
 
 esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if);
 
-esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, struct ip_info *if_ip);
+esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
 
-esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, struct ip_info *if_ip);
+esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
 
 #if 0
 esp_err_t tcpip_adapter_get_mac(tcpip_adapter_if_t tcpip_if, uint8_t *mac);
@@ -111,23 +112,17 @@ esp_err_t tcpip_adapter_set_mac(tcpip_adapter_if_t tcpip_if, uint8_t *mac);
 #endif
 
 esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
-esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len);
+esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len);
 esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if);
 esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if);
 
 esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
-esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode opt_op, tcpip_adapter_option_id opt_id, void *opt_val, uint32_t opt_len);
+esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len);
 esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if);
 esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
 
-esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void* eb);
-esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void* eb);
-
-#if 0
-//esp_err_t tcpip_dep_input(wifi_interface_t wifi_if, void *buffer, uint16 len);
-
-esp_err_t tcpip_adapter_output(tcpip_adapter_if_t tcpip_if, void *buffer, uint16_t len);
-#endif
+esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void *eb);
+esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void *eb);
 
 wifi_interface_t tcpip_adapter_get_wifi_if(void *dev);
 

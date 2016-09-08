@@ -94,6 +94,10 @@ struct dhcp
   ip_addr_t offered_si_addr;
   char boot_file_name[DHCP_FILE_LEN];
 #endif /* LWIP_DHCP_BOOTPFILE */
+
+  /* Espressif add start. */
+  void (*cb)(void); /* callback for dhcp, add a parameter to show dhcp status if needed */
+  /* Espressif add end. */
 };
 
 /* MUST be compiled with "pack structs" or equivalent! */
@@ -140,6 +144,10 @@ void dhcp_set_struct(struct netif *netif, struct dhcp *dhcp);
 /** Remove a struct dhcp previously set to the netif using dhcp_set_struct() */
 #define dhcp_remove_struct(netif) do { (netif)->dhcp = NULL; } while(0)
 void dhcp_cleanup(struct netif *netif);
+/* Espressif add start. */
+/** set callback for DHCP */
+void dhcp_set_cb(struct netif *netif, void (*cb)(void));
+/* Espressif add end. */
 /** start DHCP configuration */
 err_t dhcp_start(struct netif *netif);
 /** enforce early lease renewal (not needed normally)*/

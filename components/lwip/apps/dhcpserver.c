@@ -266,9 +266,9 @@ static u8_t *add_offer_options(u8_t *optptr)
     *optptr++ = ip4_addr4(&ipadd);
 
     if (dhcps_router_enabled(dhcps_offer)) {
-        struct ip_info if_ip;
+        tcpip_adapter_ip_info_t if_ip;
         //bzero(&if_ip, sizeof(struct ip_info));
-        memset(&if_ip , 0x00, sizeof(struct ip_info));
+        memset(&if_ip , 0x00, sizeof(tcpip_adapter_ip_info_t));
 
         tcpip_adapter_get_ip_info(WIFI_IF_AP, &if_ip);
 
@@ -1024,10 +1024,9 @@ static void dhcps_poll_set(u32_t ip)
  *              : info  -- The current ip info
  * Returns      : none
 *******************************************************************************/
-void dhcps_start(struct netif *netif, struct ip_info *info)
+void dhcps_start(struct netif *netif, ip4_addr_t ip)
 {
     struct netif *apnetif = netif;
-
 
     if (apnetif->dhcps_pcb != NULL) {
         udp_remove(apnetif->dhcps_pcb);
@@ -1035,7 +1034,7 @@ void dhcps_start(struct netif *netif, struct ip_info *info)
 
     pcb_dhcps = udp_new();
 
-    if (pcb_dhcps == NULL || info == NULL) {
+    if (pcb_dhcps == NULL || ip4_addr_isany_val(ip)) {
         printf("dhcps_start(): could not obtain pcb\n");
     }
 
@@ -1043,7 +1042,7 @@ void dhcps_start(struct netif *netif, struct ip_info *info)
 
     IP4_ADDR(&broadcast_dhcps, 255, 255, 255, 255);
 
-    server_address = info->ip;
+    server_address.addr = ip.addr;
     dhcps_poll_set(server_address.addr);
 
     client_address_plus.addr = dhcps_poll.start_ip.addr;
