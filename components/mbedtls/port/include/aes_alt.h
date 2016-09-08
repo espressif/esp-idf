@@ -29,9 +29,9 @@ extern "C" {
 #endif
 
 #if defined(MBEDTLS_AES_ALT)
-#include "aes.h"
+#include "hwcrypto/aes.h"
 
-typedef AES_CTX mbedtls_aes_context;
+typedef esp_aes_context mbedtls_aes_context;
 
 #define mbedtls_aes_init            esp_aes_init
 #define mbedtls_aes_free            esp_aes_free

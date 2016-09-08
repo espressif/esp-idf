@@ -8,6 +8,8 @@
 #
 -include $(PROJECT_PATH)/build/include/config/auto.conf
 
+COMPONENT_SRCDIRS := . hwcrypto
+
 LIBS := crypto core net80211 phy rtc pp wpa wps
 
 ifeq ($(CONFIG_MEMMAP_BT),y)
