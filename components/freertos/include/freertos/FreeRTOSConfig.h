@@ -222,6 +222,10 @@
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
 
+#ifndef configENABLE_MEMORY_DEBUG
+#define configENABLE_MEMORY_DEBUG 0
+#endif
+
 #define INCLUDE_xSemaphoreGetMutexHolder    1
 
 /* The priority at which the tick interrupt runs.  This should probably be

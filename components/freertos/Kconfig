@@ -158,6 +158,12 @@ config FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
 		If JTAG/OCD is connected, stop execution when the scheduler is started and the first
 		task is executed.
 
+menuconfig ENABLE_MEMORY_DEBUG
+	bool "Enable heap memory debug"
+	default n
+	help
+		Enable this option to show malloc heap block and memory crash detect
+
 menuconfig FREERTOS_DEBUG_INTERNALS
 	bool "Debug FreeRTOS internals"
 	default n
