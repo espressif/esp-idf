@@ -39,9 +39,9 @@ Project Properties
 
 *Windows users only, follow these two additional steps:*
 
-* On the same Environment property page, edit the PATH environment variable and append ``;C:\msys32\usr\bin;C:\msys32\mingw32\bin;C:\msys32\opt\xtensa-esp32-elf\bin`` to the end of the default value. (If you installed msys32 to a different directory then you'll need to change these paths to match.)
+* On the same Environment property page, edit the PATH environment variable. Delete the existing value and replace it with ``C:\msys32\usr\bin;C:\msys32\mingw32\bin;C:\msys32\opt\xtensa-esp32-elf\bin`` (If you installed msys32 to a different directory then you'll need to change these paths to match).
 
-* Click on the "C/C++ Build" top-level properties page then uncheck "Use default build command" and enter this for the custom build command: ``bash ${IDF_PATH}/bin/eclipse_windows_make.sh``.
+* Click on the "C/C++ Build" top-level properties page then uncheck "Use default build command" and enter this for the custom build command: ``bash ${IDF_PATH}/tools/windows/eclipse_make.sh``.
 
 *All users, continue with these steps:*
 
@@ -60,7 +60,7 @@ Flash from Eclipse
 
 You can integrate the "make flash" target into your Eclipse project to flash using esptool.py from the Eclipse UI:
 
-* Right-click your project in Project Explorer (important to make sure you don't select a subdirectory of the project or Eclipse may find the wrong Makefile.)
+* Right-click your project in Project Explorer (important to make sure you select the project, not a directory in the project, or Eclipse may find the wrong Makefile.)
 
 * Select Make Targets -> Create from the context menu.
 
@@ -73,3 +73,8 @@ Note that you will need to use "make menuconfig" to set the serial port and othe
 Follow the same steps to add ``bootloader`` and ``partition_table`` targets, if necessary.
 
 .. _eclipse.org: http://www.eclipse.org/
+
+Eclipse Troubleshooting
+-----------------------
+
+* ``*** Make was invoked from ... However please do not run make from the sdk or a component directory; ...`` - Eclipse will detect any directory with a Makefile in it as being a possible directory to run "make" in. All component directories also contain a Makefile (the wrong one), so it is important when using Project -> Make Target to always select the top-level project directory in Project Explorer.
