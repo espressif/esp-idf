@@ -388,9 +388,9 @@ static void lwip_socket_drop_registered_memberships(int s);
 #endif /* LWIP_IGMP */
 
 #ifdef LWIP_ESP8266
-extern size_t system_get_free_heap_size(void);
-extern bool esp_wifi_tx_is_stop(void);
-inline void esp32_tx_flow_ctrl(void)
+//extern size_t system_get_free_heap_size(void);
+//extern bool esp_wifi_tx_is_stop(void);
+static inline void esp32_tx_flow_ctrl(void)
 {
   uint8_t _wait_delay = 0;
 
