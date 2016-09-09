@@ -388,8 +388,18 @@ static void lwip_socket_drop_registered_memberships(int s);
 #endif /* LWIP_IGMP */
 
 #ifdef LWIP_ESP8266
-//extern size_t system_get_free_heap_size(void);
-//extern bool esp_wifi_tx_is_stop(void);
+
+/* Since esp_wifi_tx_is_stop/system_get_free_heap_size are not an public wifi API, so extern them here*/
+extern size_t system_get_free_heap_size(void);
+extern bool esp_wifi_tx_is_stop(void);
+
+/* Please be notified that this flow control is just a workaround for fixing wifi Q full issue. 
+ * Under UDP/TCP pressure test, we found that the sockets may cause wifi tx queue full if the socket
+ * sending speed is faster than the wifi sending speed, it will finally cause the packet to be dropped
+ * in wifi layer, it's not acceptable in some application. That's why we introdue the tx flow control here.
+ * However, current solution is just a workaround, we need to consider the return value of wifi tx interface,
+ * and feedback the return value to lwip and let lwip do the flow control itself.
+ */ 
 static inline void esp32_tx_flow_ctrl(void)
 {
   uint8_t _wait_delay = 0;

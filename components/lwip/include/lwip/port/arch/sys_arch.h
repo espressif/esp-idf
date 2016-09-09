@@ -68,9 +68,5 @@ void sys_delay_ms(uint32_t ms);
 sys_sem_t* sys_thread_sem_init(void);
 void sys_thread_sem_deinit(void);
 sys_sem_t* sys_thread_sem_get(void);
-
-size_t system_get_free_heap_size(void);
-bool esp_wifi_tx_is_stop(void);
-
 #endif /* __SYS_ARCH_H__ */
 
