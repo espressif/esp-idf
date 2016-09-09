@@ -396,13 +396,13 @@ int mbedtls_sha1_self_test( int verbose )
     unsigned char sha1sum[20];
     mbedtls_sha1_context ctx;
 
+    mbedtls_sha1_init( &ctx );
+
     /*
      * SHA-1
      */
     for( i = 0; i < 3; i++ )
     {
-    	mbedtls_sha1_init( &ctx );
-	
         if( verbose != 0 )
             mbedtls_printf( "  SHA-1 test #%d: ", i + 1 );
 
@@ -426,22 +426,19 @@ int mbedtls_sha1_self_test( int verbose )
             if( verbose != 0 )
                 mbedtls_printf( "failed\n" );
 
-			mbedtls_sha1_free( &ctx );
-
             ret = 1;
             goto exit;
         }
 
         if( verbose != 0 )
             mbedtls_printf( "passed\n" );
-
-		mbedtls_sha1_free( &ctx );
     }
 
     if( verbose != 0 )
         mbedtls_printf( "\n" );
 
 exit:
+    mbedtls_sha1_free( &ctx );
 
     return( ret );
 }

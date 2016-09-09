@@ -449,12 +449,12 @@ int mbedtls_sha512_self_test( int verbose )
     unsigned char sha512sum[64];
     mbedtls_sha512_context ctx;
 
+    mbedtls_sha512_init( &ctx );
+
     for( i = 0; i < 6; i++ )
     {
         j = i % 3;
         k = i < 3;
-
-		mbedtls_sha512_init( &ctx );
 
         if( verbose != 0 )
             mbedtls_printf( "  SHA-%d test #%d: ", 512 - k * 128, j + 1 );
@@ -479,23 +479,19 @@ int mbedtls_sha512_self_test( int verbose )
             if( verbose != 0 )
                 mbedtls_printf( "failed\n" );
 
-			mbedtls_sha512_free( &ctx );
-
             ret = 1;
             goto exit;
         }
 
         if( verbose != 0 )
             mbedtls_printf( "passed\n" );
-
-		mbedtls_sha512_free( &ctx );
     }
 
     if( verbose != 0 )
         mbedtls_printf( "\n" );
 
 exit:
-    
+    mbedtls_sha512_free( &ctx );
 
     return( ret );
 }

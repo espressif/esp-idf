@@ -393,12 +393,12 @@ int mbedtls_sha256_self_test( int verbose )
     unsigned char sha256sum[32];
     mbedtls_sha256_context ctx;
 
+    mbedtls_sha256_init( &ctx );
+
     for( i = 0; i < 6; i++ )
     {
         j = i % 3;
         k = i < 3;
-
-        mbedtls_sha256_init( &ctx );
 
         if( verbose != 0 )
             mbedtls_printf( "  SHA-%d test #%d: ", 256 - k * 32, j + 1 );
@@ -423,22 +423,19 @@ int mbedtls_sha256_self_test( int verbose )
             if( verbose != 0 )
                 mbedtls_printf( "failed\n" );
 
-			mbedtls_sha256_free( &ctx );
-
             ret = 1;
             goto exit;
         }
 
         if( verbose != 0 )
             mbedtls_printf( "passed\n" );
-
-		mbedtls_sha256_free( &ctx );
     }
 
     if( verbose != 0 )
         mbedtls_printf( "\n" );
 
 exit:
+    mbedtls_sha256_free( &ctx );
 
     return( ret );
 }
