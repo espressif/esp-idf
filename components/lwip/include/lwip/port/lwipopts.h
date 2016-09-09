@@ -34,6 +34,8 @@
 
 #include <stdlib.h>
 
+/* Enable all Espressif-only options */
+#define LWIP_ESP8266
 
 /*
    -----------------------------------------------
