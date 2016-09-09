@@ -106,12 +106,25 @@
 #include "xtensa_config.h"
 
 
-#if 1
+/* configASSERT behaviour */
 #ifndef __ASSEMBLER__
 #include "rom/ets_sys.h"
-#define configASSERT(a) if (!(a)) ets_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__, __FUNCTION__)
+
+#if defined(CONFIG_FREERTOS_ASSERT_DISABLE)
+#define configASSERT(a) /* assertions disabled */
+#elif defined(CONFIG_FREERTOS_ASSERT_FAIL_PRINT_CONTINUE)
+#define configASSERT(a) if (!(a)) {                                     \
+        ets_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
+                   __FUNCTION__);                                       \
+    }
+#else /* CONFIG_FREERTOS_ASSERT_FAIL_ABORT */
+#define configASSERT(a) if (!(a)) {                                     \
+        ets_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
+                   __FUNCTION__);                                       \
+        abort();                                                        \
+        }
 #endif
-#endif
+#endif /* def __ASSEMBLER__ */
 
 
 /*-----------------------------------------------------------
@@ -208,6 +221,12 @@
 #define INCLUDE_vTaskDelayUntil				1
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
+
+#ifndef configENABLE_MEMORY_DEBUG
+#define configENABLE_MEMORY_DEBUG 0
+#endif
+
+#define INCLUDE_xSemaphoreGetMutexHolder    1
 
 /* The priority at which the tick interrupt runs.  This should probably be
    kept at 1. */

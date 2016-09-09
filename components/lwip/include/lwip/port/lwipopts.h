@@ -34,6 +34,8 @@
 
 #include <stdlib.h>
 
+/* Enable all Espressif-only options */
+#define LWIP_ESP8266
 
 /*
    -----------------------------------------------
@@ -221,8 +223,8 @@ extern unsigned long os_random(void);
  * TCP_WND: The size of a TCP window.  This must be at least
  * (2 * TCP_MSS) for things to work well
  */
+#define PERF 1
 #ifdef PERF
-
 extern unsigned char misc_prof_get_tcpw(void);
 extern unsigned char misc_prof_get_tcp_snd_buf(void);
 #define TCP_WND                         (misc_prof_get_tcpw()*TCP_MSS)
@@ -506,15 +508,15 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
  * DHCP_DEBUG: Enable debugging in dhcp.c.
  */
 #define DHCP_DEBUG                      LWIP_DBG_OFF
-//#define LWIP_DEBUG                      1
-//#define TCP_DEBUG                     LWIP_DBG_ON
+#define LWIP_DEBUG                      0
+#define TCP_DEBUG                       LWIP_DBG_OFF
 #define THREAD_SAFE_DEBUG               LWIP_DBG_OFF
 #define LWIP_THREAD_SAFE                1
 
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_IP               0
 
-#define HEAP_HIGHWAT                    6*1024
+#define HEAP_HIGHWAT                    20*1024
 
 #define LWIP_NETCONN_FULLDUPLEX         1
 #define LWIP_NETCONN_SEM_PER_THREAD     1

@@ -35,7 +35,7 @@ overflow handler also is in here.
 */
 
 #if !CONFIG_FREERTOS_PANIC_SILENT_REBOOT
-//os_printf may be broken, so we fix our own printing fns...
+//printf may be broken, so we fix our own printing fns...
 inline static void panicPutchar(char c) {
 	while (((READ_PERI_REG(UART_STATUS_REG(0))>>UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT)>=126) ;
 	WRITE_PERI_REG(UART_FIFO_REG(0), c);
@@ -142,6 +142,16 @@ void panicHandler(XtExcFrame *frame) {
 	commonErrorHandler(frame);
 }
 
+static void setFirstBreakpoint(uint32_t pc) {
+	asm(
+		"wsr.ibreaka0 %0\n" \
+		"rsr.ibreakenable a3\n" \
+		"movi a4,1\n" \
+		"or a4, a4, a3\n" \
+		"wsr.ibreakenable a4\n" \
+		::"r"(pc):"a3","a4");
+}
+
 void xt_unhandled_exception(XtExcFrame *frame) {
 	int *regs=(int*)frame;
 	int x;
@@ -158,13 +168,7 @@ void xt_unhandled_exception(XtExcFrame *frame) {
 		panicPutStr(". Setting bp and returning..\r\n");
 		//Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
 		//will kick in exactly at the context the error happened.
-		asm(
-			"wsr.ibreaka0 %0\n" \
-			"rsr.ibreakenable a3\n" \
-			"movi a4,1\n" \
-			"or a4, a4, a3\n" \
-			"wsr.ibreakenable a4\n" \
-			::"r"(regs[1]):"a3","a4");
+		setFirstBreakpoint(regs[1]);
 		return;
 	}
 	panicPutStr(". Exception was unhandled.\r\n");
@@ -208,4 +212,10 @@ void commonErrorHandler(XtExcFrame *frame) {
 	panicPutStr("CPU halted.\r\n");
 	while(1);
 #endif
+}
+
+
+void setBreakpointIfJtag(void *fn) {
+	if (!inOCDMode()) return;
+	setFirstBreakpoint((uint32_t)fn);
 }

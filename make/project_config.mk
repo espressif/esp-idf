@@ -16,7 +16,7 @@ $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
 menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
-	$(vecho) MENUCONFIG
+	$(summary) MENUCONFIG
 	$(Q) KCONFIG_AUTOHEADER=$(PROJECT_PATH)/build/include/sdkconfig.h \
 	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
 	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" \
@@ -29,7 +29,7 @@ $(PROJECT_PATH)/sdkconfig: menuconfig
 endif
 
 defconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
-	$(vecho) DEFCONFIG
+	$(summary) DEFCONFIG
 	$(Q) mkdir -p $(PROJECT_PATH)/build/include/config
 	$(Q) KCONFIG_AUTOHEADER=$(PROJECT_PATH)/build/include/sdkconfig.h \
 	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
@@ -53,7 +53,7 @@ endif
 endif
 
 $(AUTO_CONF_REGEN_TARGET) $(PROJECT_PATH)/build/include/sdkconfig.h: $(PROJECT_PATH)/sdkconfig $(KCONFIG_TOOL_DIR)/conf $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD)
-	$(vecho) GENCONFIG
+	$(summary) GENCONFIG
 	$(Q) mkdir -p $(PROJECT_PATH)/build/include/config
 	$(Q) cd build; KCONFIG_AUTOHEADER="$(PROJECT_PATH)/build/include/sdkconfig.h" \
 	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
@@ -68,6 +68,6 @@ $(AUTO_CONF_REGEN_TARGET) $(PROJECT_PATH)/build/include/sdkconfig.h: $(PROJECT_P
 clean: config-clean
 .PHONY: config-clean
 config-clean:
-	$(vecho RM CONFIG)
+	$(summary RM CONFIG)
 	$(MAKE) -C $(KCONFIG_TOOL_DIR) clean
 	$(Q) rm -rf $(PROJECT_PATH)/build/include/config $(PROJECT_PATH)/build/include/sdkconfig.h

@@ -3,6 +3,9 @@ stages:
   - test
   - deploy
 
+before_script:
+  - git submodule update --init --recursive
+
 build_template_app:
   stage: build
   image: espressif/esp32-ci-env
@@ -15,6 +18,10 @@ build_template_app:
   script:
     - git clone https://github.com/espressif/esp-idf-template.git
     - cd esp-idf-template
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default
+    # branch
+    - git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
     - make defconfig
     - make all
 
@@ -24,6 +31,14 @@ test_nvs_on_host:
   script:
     - cd components/nvs_flash/test
     - make test
+
+test_build_system:
+  stage: test
+  image: espressif/esp32-ci-env
+  variables:
+    IDF_PATH: "$CI_PROJECT_DIR"
+  script:
+    - ./make/test_build_system.sh
 
 push_master_to_github:
   stage: deploy

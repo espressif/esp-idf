@@ -75,6 +75,8 @@
 	#error "include FreeRTOS.h must appear in source files before include task.h"
 #endif
 
+#include <limits.h>
+
 #include "list.h"
 #include "portmacro.h"
 
@@ -91,7 +93,7 @@ extern "C" {
 #define tskKERNEL_VERSION_MINOR 2
 #define tskKERNEL_VERSION_BUILD 0
 
-#define tskNO_AFFINITY portNUM_PROCESSORS
+#define tskNO_AFFINITY INT_MAX
 
 /**
  * task. h

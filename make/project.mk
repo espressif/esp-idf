@@ -1,13 +1,13 @@
 #
 # Main Project Makefile
-# This Makefile is included directly from the user project Makefile in order to call the Makefiles of all the
-#   components (in a separate make process) to build all the libraries, then links them together
-#   into the final file. If so, PWD is the project dir (we assume).
+# This Makefile is included directly from the user project Makefile in order to call the component.mk
+# makefiles of all components (in a separate make process) to build all the libraries, then links them
+# together into the final file. If so, PWD is the project dir (we assume).
 #
 
 #
-# This Makefile requires the environment variable IDF_PATH to be set to the directory where this
-# Makefile is located.
+# This makefile requires the environment variable IDF_PATH to be set to the top-level esp-idf directory
+# where this file is located.
 #
 
 .PHONY: build-components menuconfig defconfig all build clean all_binaries
@@ -77,9 +77,9 @@ SRCDIRS ?= main
 COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)))))
 COMPONENT_PATHS += $(abspath $(SRCDIRS))
 
-#A component is buildable if it has a Makefile; we assume that a 'make -C $(component dir) build' results in a
-#lib$(componentname).a. 
-COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/Makefile),$(cp)))
+#A component is buildable if it has a component.mk makefile; we assume that a
+# 'make -C $(component dir) -f component.mk build' results in a lib$(componentname).a
+COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
 
 # Assemble global list of include dirs (COMPONENT_INCLUDES), and
 # LDFLAGS args (COMPONENT_LDFLAGS) supplied by each component.
@@ -98,7 +98,7 @@ COMPONENT_LDFLAGS :=
 #
 # Debugging this? Replace $(shell with $(error and you'll see the full command as-run.
 define GetVariable
-$(shell "$(MAKE)" -s --no-print-directory -C $(1) get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
+$(shell "$(MAKE)" -s --no-print-directory -C $(1) -f component.mk get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
 endef
 
 COMPONENT_INCLUDES := $(abspath $(foreach comp,$(COMPONENT_PATHS_BUILDABLE),$(addprefix $(comp)/, \
@@ -166,9 +166,15 @@ $(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefil
 # once we know component paths, we can include the config
 include $(IDF_PATH)/make/project_config.mk
 
-# ELF depends on the -build target of every component
-$(APP_ELF): $(addsuffix -build,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
-	$(vecho) LD $(notdir $@)
+# A "component" library is any library in the LDFLAGS where
+# the name of the library is also a name of the component
+APP_LIBRARIES = $(patsubst -l%,%,$(filter -l%,$(LDFLAGS)))
+COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)),$(APP_LIBRARIES))
+
+# ELF depends on the library archive files for COMPONENT_LIBRARIES
+# the rules to build these are emitted as part of GenerateComponentTarget below
+$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a)
+	$(summary) LD $(notdir $@)
 	$(Q) $(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
 # Generation of $(APP_BIN) from $(APP_ELF) is added by the esptool
@@ -182,28 +188,34 @@ all_binaries: $(APP_BIN)
 $(BUILD_DIR_BASE):
 	mkdir -p $(BUILD_DIR_BASE)
 
-define GenerateComponentTarget
+define GenerateComponentPhonyTarget
 # $(1) - path to component dir
 # $(2) - target to generate (build, clean)
-# $(3) - optional dependencies to add
 .PHONY: $(notdir $(1))-$(2)
-$(notdir $(1))-$(2): $(3) | $(BUILD_DIR_BASE)/$(notdir $(1))
-	@+$(MAKE) -C $(BUILD_DIR_BASE)/$(notdir $(1)) -f $(1)/Makefile COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(notdir $(1)) $(2)
+$(notdir $(1))-$(2): | $(BUILD_DIR_BASE)/$(notdir $(1))
+	@+$(MAKE) -C $(BUILD_DIR_BASE)/$(notdir $(1)) -f $(1)/component.mk COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(notdir $(1)) $(2)
 endef
 
-define GenerateComponentBuildDirTarget
+define GenerateComponentTargets
 # $(1) - path to component dir
 $(BUILD_DIR_BASE)/$(notdir $(1)):
 	@mkdir -p $(BUILD_DIR_BASE)/$(notdir $(1))
+
+# tell make it can build any component's library by invoking the recursive -build target
+# (this target exists for all components even ones which don't build libraries, but it's
+# only invoked for the targets whose libraries appear in COMPONENT_LIBRARIES and hence the
+# APP_ELF dependencies.)
+$(BUILD_DIR_BASE)/$(notdir $(1))/lib$(notdir $(1)).a: $(notdir $(1))-build
+	$(details) "Target '$$^' responsible for '$$@'" # echo which build target built this file
 endef
 
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentBuildDirTarget,$(component))))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTargets,$(component))))
 
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTarget,$(component),build,$(PROJECT_PATH)/build/include/sdkconfig.h)))
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTarget,$(component),clean)))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),build)))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),clean)))
 
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
-	$(vecho) RM $(APP_ELF)
+	$(summary) RM $(APP_ELF)
 	$(Q) rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
 clean: app-clean

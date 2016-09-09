@@ -84,6 +84,7 @@ task.h is included from an application file. */
 #include "timers.h"
 #include "StackMacros.h"
 #include "portmacro.h"
+#include "semphr.h"
 
 /* Lint e961 and e750 are suppressed as a MISRA exception justified because the
 MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined for the
@@ -445,6 +446,11 @@ to its original value when it is released. */
 	extern void vApplicationTickHook( void );
 #endif
 
+#if  portFIRST_TASK_HOOK
+	extern void vPortFirstTaskHook(TaskFunction_t taskfn);
+#endif
+
+
 /* File private functions. --------------------------------*/
 
 /*
@@ -707,6 +713,12 @@ BaseType_t i;
 						/* Schedule if nothing is scheduled yet, or overwrite a task of lower prio. */
 						if ( pxCurrentTCB[i] == NULL || pxCurrentTCB[i]->uxPriority <= uxPriority )
 						{
+#if portFIRST_TASK_HOOK
+							if ( i == 0) {
+								vPortFirstTaskHook(pxTaskCode);
+							}
+#endif /* configFIRST_TASK_HOOK */
+
 							pxCurrentTCB[i] = pxNewTCB;
 							break;
 						}
@@ -3743,14 +3755,14 @@ scheduler will re-enable the interrupts instead. */
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 
 
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line )
 #else
 	void vTaskEnterCritical( portMUX_TYPE *mux )
 #endif
 	{
 		portDISABLE_INTERRUPTS();
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		vPortCPUAcquireMutex( mux, function, line );
 #else
 		vPortCPUAcquireMutex( mux );
@@ -3783,13 +3795,13 @@ scheduler will re-enable the interrupts instead. */
 
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	void vTaskExitCritical( portMUX_TYPE *mux, const char *function, int line )
 #else
 	void vTaskExitCritical( portMUX_TYPE *mux )
 #endif
 	{
-#ifdef portMUX_DEBUG
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		vPortCPUReleaseMutex( mux, function, line );
 #else
 		vPortCPUReleaseMutex( mux );
@@ -4567,9 +4579,6 @@ TickType_t uxReturn;
 	}
 
 #endif /* configUSE_TASK_NOTIFICATIONS */
-
-/*-----------------------------------------------------------*/
-
 
 #ifdef FREERTOS_MODULE_TEST
 	#include "tasks_test_access_functions.h"

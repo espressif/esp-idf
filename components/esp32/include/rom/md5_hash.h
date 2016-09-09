@@ -15,14 +15,16 @@
 #ifndef _ROM_MD5_HASH_H_
 #define _ROM_MD5_HASH_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct MD5Context {
-	uint32 buf[4];
-	uint32 bits[2];
-	uint8 in[64];
+	uint32_t buf[4];
+	uint32_t bits[2];
+	uint8_t in[64];
 };
 
 void MD5Init(struct MD5Context *context);

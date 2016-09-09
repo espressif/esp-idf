@@ -213,7 +213,7 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 
   (*mbox)->alive = true;
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("new *mbox ok\n"));
+  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p mbox_lock=%p\n", *mbox, (*mbox)->os_mbox, (*mbox)->lock));
   return ERR_OK;
 }
 
@@ -234,6 +234,7 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
   if (xQueueSend((*mbox)->os_mbox, &msg, (portTickType)0) == pdPASS) {
     xReturn = ERR_OK;
   } else {
+    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("trypost mbox=%p fail\n", (*mbox)->os_mbox));
     xReturn = ERR_MEM;
   }
 
@@ -291,9 +292,11 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
       ulReturn = SYS_ARCH_TIMEOUT;
     }
   } else { // block forever for a message.
+    
     while (1){
-
+      LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch: fetch mbox=%p os_mbox=%p lock=%p\n", mbox, (*mbox)->os_mbox, (*mbox)->lock));
       if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY)){
+        LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch:mbox rx msg=%p\n", (*msg)));
         break;
       }
 
@@ -348,13 +351,15 @@ sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
 void
 sys_mbox_free(sys_mbox_t *mbox)
 {
-  uint8_t count = 0;
+#define MAX_POLL_CNT 100
+#define PER_POLL_DELAY 20
+  uint16_t count = 0;
   bool post_null = true;
 
   LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free: set alive false\n"));
   (*mbox)->alive = false;
 
-  while ( count++ < 10 ){
+  while ( count++ < MAX_POLL_CNT ){ //ESP32_WORKAROUND
     LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:try lock=%d\n", count));
     if (!sys_mutex_trylock( &(*mbox)->lock )){
       LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:get lock ok %d\n", count));
@@ -372,10 +377,10 @@ sys_mbox_free(sys_mbox_t *mbox)
       }
     }
 
-    if (count == 10){
+    if (count == (MAX_POLL_CNT-1)){
       printf("WARNING: mbox %p had a consumer who never unblocked. Leaking!\n", (*mbox)->os_mbox);
     }
-    sys_delay_ms(20);
+    sys_delay_ms(PER_POLL_DELAY);
   }
 
   LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:free mbox\n"));
@@ -428,6 +433,7 @@ sys_now(void)
   return xTaskGetTickCount();
 }
 
+static portMUX_TYPE g_lwip_mux = portMUX_INITIALIZER_UNLOCKED;
 /*
   This optional function does a "fast" critical region protection and returns
   the previous protection level. This function is only called during very short
@@ -444,7 +450,7 @@ sys_now(void)
 sys_prot_t
 sys_arch_protect(void)
 {
-//  vTaskEnterCritical();
+  portENTER_CRITICAL(&g_lwip_mux);
   return (sys_prot_t) 1;
 }
 
@@ -459,7 +465,7 @@ void
 sys_arch_unprotect(sys_prot_t pval)
 {
   (void) pval;
-//  vTaskExitCritical();
+  portEXIT_CRITICAL(&g_lwip_mux);
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -475,15 +481,65 @@ sys_arch_assert(const char *file, int line)
   while(1);
 }
 
-/* This is a super hacky thread-local-storage repository
-   FreeRTOS 8.2.3 & up have thread local storage in the
-   OS, which is how we should do this. Once we upgrade FreeRTOS,
-   we can drop this hacky store and use the FreeRTOS TLS API.
-*/
-sys_sem_t* sys_thread_sem(void)
+#define SYS_TLS_INDEX CONFIG_LWIP_THREAD_LOCAL_STORAGE_INDEX
+/* 
+ * get per thread semphore
+ */
+sys_sem_t* sys_thread_sem_get(void)
 {
-  extern void* xTaskGetLwipSem(void);
-  return (sys_sem_t*)(xTaskGetLwipSem());
+  sys_sem_t *sem = (sys_sem_t*)pvTaskGetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX);
+  if (!sem){
+    sem = sys_thread_sem_init();
+  }
+  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem_get s=%p\n", sem));
+  return sem;
+}
+
+static void sys_thread_tls_free(int index, void* data)
+{
+  sys_sem_t *sem = (sys_sem_t*)(data);
+
+  if (sem && *sem){
+    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem del, i=%d sem=%p\n", index, *sem));
+    vSemaphoreDelete(*sem);
+  }
+
+  if (sem){
+    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem pointer del, i=%d sem_p=%p\n", index, sem));
+    free(sem);
+  }
+}
+
+sys_sem_t* sys_thread_sem_init(void)
+{
+  sys_sem_t *sem = (sys_sem_t*)malloc(sizeof(sys_sem_t*));
+
+  if (!sem){
+    printf("sem f1\n");
+    return 0;
+  }
+
+  *sem = xSemaphoreCreateBinary();
+  if (!(*sem)){
+    free(sem);
+    printf("sem f2\n");
+    return 0;
+  }
+
+  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem init sem_p=%p sem=%p cb=%p\n", sem, *sem, sys_thread_tls_free));
+  vTaskSetThreadLocalStoragePointerAndDelCallback(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX, sem, (TlsDeleteCallbackFunction_t)sys_thread_tls_free);
+
+  return sem;
+}
+
+void sys_thread_sem_deinit(void)
+{
+  sys_sem_t *sem = (sys_sem_t*)pvTaskGetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX);
+
+  sys_thread_tls_free(SYS_TLS_INDEX, (void*)sem);
+  vTaskSetThreadLocalStoragePointerAndDelCallback(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX, 0, 0);
+
+  return;
 }
 
 void sys_delay_ms(uint32_t ms)
