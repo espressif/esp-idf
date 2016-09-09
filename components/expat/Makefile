@@ -10,6 +10,6 @@ COMPONENT_ADD_INCLUDEDIRS := port/include include/expat
 
 COMPONENT_SRCDIRS := library port
 
-EXTRA_CFLAGS := -Wno-error=address -Waddress -DHAVE_EXPAT_CONFIG_H
+CFLAGS += -Wno-error=address -Waddress -DHAVE_EXPAT_CONFIG_H
 
 include $(IDF_PATH)/make/component.mk

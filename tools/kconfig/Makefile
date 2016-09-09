@@ -18,6 +18,10 @@ endif
 # We need this, in case the user has it in its environment
 unexport CONFIG_
 
+# Unset some environment variables set in the project environment
+CFLAGS :=
+CPPFLAGS :=
+LDFLAGS :=
 
 default: mconf conf
 
