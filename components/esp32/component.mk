@@ -1,7 +1,7 @@
 #
 # Component Makefile
 #
-# This Makefile should, at the very least, just include $(IDF_PATH)/make/component.mk. By default, 
+# This Makefile should, at the very least, just include $(IDF_PATH)/make/component_common.mk. By default, 
 # this will take the sources in this directory, compile them and link them into 
 # lib(subdirectory_name).a in the build directory. This behaviour is entirely configurable,
 # please read the esp-idf build system document if you need to do this.
@@ -35,7 +35,7 @@ COMPONENT_ADD_LDFLAGS := -lesp32 \
                           -L $(abspath ld) \
                           $(LINKER_SCRIPTS)
 
-include $(IDF_PATH)/make/component.mk
+include $(IDF_PATH)/make/component_common.mk
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 

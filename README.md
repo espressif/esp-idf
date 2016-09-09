@@ -49,3 +49,11 @@ The simplest way to use the partition table is to `make menuconfig` and choose o
 In both cases the factory app is flashed at offset 0x10000. If you `make partition_table` then it will print a summary of the partition table.
 
 For more details about partition tables and how to create custom variations, view the `docs/partition_tables.rst` file.
+
+# Resources
+
+* The [docs directory of the esp-idf repository](https://github.com/espressif/esp-idf/tree/master/docs) contains esp-idf documentation.
+
+* The [esp32.com forum](http://esp32.com/) is a place to ask questions and find community resources.
+
+* [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
