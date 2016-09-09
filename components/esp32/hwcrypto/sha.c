@@ -86,8 +86,9 @@ void esp_sha1_clone( esp_sha_context *dst, const esp_sha_context *src )
  */
 void esp_sha1_start( esp_sha_context *ctx )
 {
-    esp_sha_acquire_hardware();
     ctx->context_type = SHA1;
+    esp_sha_acquire_hardware();
+    ets_sha_init(&ctx->context);
 }
 
 /*
@@ -143,12 +144,11 @@ void esp_sha256_clone( esp_sha_context *dst, const esp_sha_context *src )
  */
 void esp_sha256_start( esp_sha_context *ctx, int is224 )
 {
-    esp_sha_acquire_hardware();
-    ets_sha_init(&ctx->context);
-
     if ( is224 == 0 ) {
         /* SHA-256 */
         ctx->context_type = SHA2_256;
+        esp_sha_acquire_hardware();
+        ets_sha_init(&ctx->context);
     } else {
         /* SHA-224 is not supported! */
         ctx->context_type = SHA_INVALID;
@@ -160,7 +160,10 @@ void esp_sha256_start( esp_sha_context *ctx, int is224 )
  */
 void esp_sha256_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen )
 {
-    esp_sha_update(ctx, input, ilen, 64);
+    if( ctx->context_type == SHA2_256 ) {
+        esp_sha_update(ctx, input, ilen, 64);
+    }
+    /* SHA-224 is a no-op */
 }
 
 /*
@@ -170,12 +173,12 @@ void esp_sha256_finish( esp_sha_context *ctx, unsigned char output[32] )
 {
     if ( ctx->context_type == SHA2_256 ) {
         ets_sha_finish(&ctx->context, ctx->context_type, output);
+        esp_sha_release_hardware();
     } else {
         /* No hardware SHA-224 support, but mbedTLS API doesn't allow failure.
            For now, zero the output to make it clear it's not valid. */
         bzero( output, 28 );
     }
-    esp_sha_release_hardware();
 }
 
 /*
@@ -218,9 +221,6 @@ void esp_sha512_clone( esp_sha_context *dst, const esp_sha_context *src )
  */
 void esp_sha512_start( esp_sha_context *ctx, int is384 )
 {
-    esp_sha_acquire_hardware();
-    ets_sha_init(&ctx->context);
-
     if ( is384 == 0 ) {
         /* SHA-512 */
         ctx->context_type = SHA2_512;
@@ -228,6 +228,8 @@ void esp_sha512_start( esp_sha_context *ctx, int is384 )
         /* SHA-384 */
         ctx->context_type = SHA2_384;
     }
+    esp_sha_acquire_hardware();
+    ets_sha_init(&ctx->context);
 }
 
 /*
