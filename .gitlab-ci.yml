@@ -23,7 +23,7 @@ build_template_app:
     # branch
     - git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
     - make defconfig
-    - make all
+    - make all V=1
 
 test_nvs_on_host:
   stage: test
