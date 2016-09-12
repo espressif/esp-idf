@@ -9,6 +9,12 @@ MEMORY
   iram0_2_seg (RX) :                 org = 0x400D0018, len = 0x330000  /* Even though the segment name is iram, it is actually mapped to flash */
   dram0_0_seg (RW) :                 org = 0x3FFC0000, len = 0x38000   /* Shared RAM, minus rom bss/data/stack.*/
   drom0_0_seg (R) :                  org = 0x3F400010, len = 0x800000
+
+  /* RTC fast memory (executable). Persists over deep sleep.
+   */
+  rtc_iram_seg(RWX) :                org = 0x400C0000, len = 0x2000
+  /* RTC slow memory (data accessible). Persists over deep sleep. */
+  rtc_slow_seg(RW)  :                org = 0x50000000, len = 0x2000
 }
 
 _heap_end = 0x3FFF8000;

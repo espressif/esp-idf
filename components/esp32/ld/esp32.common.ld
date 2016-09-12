@@ -102,7 +102,7 @@ SECTIONS
     _rodata_start = ABSOLUTE(.);
     *(.rodata)
     *(.rodata.*)
-	*(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
+    *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
     *(.rodata1)
     __XT_EXCEPTION_TABLE_ = ABSOLUTE(.);
@@ -132,7 +132,7 @@ SECTIONS
     *(.dynamic)
     *(.gnu.version_d)
     _rodata_end = ABSOLUTE(.);
-	/* Literals are also RO data. */
+    /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
     *(.lit4.*)
@@ -153,4 +153,16 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _etext = .;
   } >iram0_2_seg
+
+  .rtc.text :
+  {
+    . = ALIGN(4);
+    *(.rtc.literal .rtc.text)
+  } >rtc_iram_seg
+
+  .rtc.data :
+  {
+    *(.rtc.data)
+    *(.rtc.rodata)
+  } > rtc_slow_seg
 }
