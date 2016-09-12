@@ -59,9 +59,7 @@ build_ssc:
     expire_in: 6 mos
 
   script:
-    # use gitlab wifi lib instead of github wifi lib
-    - git clone ssh://git@gitlab.espressif.cn:27227/idf/esp32-wifi-lib.git
-    - cp esp32-wifi-lib/* components/esp32/lib/
+    - git submodule update --init --recursive
     - git clone ssh://git@gitlab.espressif.cn:27227/yinling/SSC.git
     - cd SSC
     - make defconfig
