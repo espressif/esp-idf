@@ -36,15 +36,14 @@
     the flash operation. In the dual-core setup this is slightly more complicated.
     We need to make sure that the other CPU doesn't run any code from flash.
 
-    SPI flash driver starts two tasks (spi_flash_op_block_task), one pinned to
-    each CPU. Each task is associated with its own semaphore.
 
-    When SPI flash API is called on CPU A (can be PRO or APP), we wake up the task
-    on CPU B by "giving" the semaphore associated with it. Tasks resumes, disables
-    cache on CPU B, and acknowledges that it has taken the semaphore by setting
-    a flag (s_flash_op_can_start). Flash API function running on CPU A waits for
-    this flag to be set. Once the flag is set, it disables cache on CPU A and
-    starts flash operation.
+    When SPI flash API is called on CPU A (can be PRO or APP), we start
+    spi_flash_op_block_func function on CPU B using esp_ipc_call API. This API
+    wakes up high priority task on CPU B and tells it to execute given function,
+    in this case spi_flash_op_block_func. This function disables cache on CPU B and
+    signals that cache is disabled by setting s_flash_op_can_start flag.
+    Then the task on CPU A disables cache as well, and proceeds to execute flash
+    operation.
 
     While flash operation is running, interrupts can still run on CPU B.
     We assume that all interrupt code is placed into RAM.
@@ -52,8 +51,7 @@
     Once flash operation is complete, function on CPU A sets another flag,
     s_flash_op_complete, to let the task on CPU B know that it can re-enable
     cache and release the CPU. Then the function on CPU A re-enables the cache on
-    CPU A as well and returns control to the calling code. Task on CPU B returns
-    to suspended state by "taking" the semaphore.
+    CPU A as well and returns control to the calling code.
 
     Additionally, all API functions are protected with a mutex (s_flash_op_mutex).
 

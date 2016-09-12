@@ -25,6 +25,8 @@ typedef void (*esp_ipc_func_t)(void* arg);
  * FreeRTOS provides several APIs which can be used to communicate between
  * different tasks, including tasks running on different CPUs.
  * This module provides additional APIs to run some code on the other CPU.
+ *
+ * These APIs can only be used when FreeRTOS scheduler is running.
  */
 
 
@@ -56,6 +58,7 @@ void esp_ipc_init();
  * @param arg arbitrary argument to be passed into function
  *
  * @return ESP_ERR_INVALID_ARG if cpu_id is invalid
+ *         ESP_ERR_INVALID_STATE if FreeRTOS scheduler is not running
  *         ESP_OK otherwise
  */
 esp_err_t esp_ipc_call(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
@@ -75,6 +78,7 @@ esp_err_t esp_ipc_call(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
  * @param arg arbitrary argument to be passed into function
  *
  * @return ESP_ERR_INVALID_ARG if cpu_id is invalid
+ *         ESP_ERR_INVALID_STATE if FreeRTOS scheduler is not running
  *         ESP_OK otherwise
  */
 esp_err_t esp_ipc_call_blocking(uint32_t cpu_id, esp_ipc_func_t func, void* arg);

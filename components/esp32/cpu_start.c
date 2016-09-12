@@ -190,7 +190,6 @@ void IRAM_ATTR user_start_cpu1(void) {
 	    ;
 	}
 	ets_printf("Starting scheduler on APP CPU.\n");
-	// Start the scheduler on APP CPU
 	xPortStartScheduler();
 }
 
