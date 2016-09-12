@@ -4,7 +4,7 @@
 #
 # Use this script like this:
 #
-# source ${IDF_PATH}/add_path.sh
+# . ${IDF_PATH}/add_path.sh
 #
 if [ -z ${IDF_PATH} ]; then
 	echo "IDF_PATH must be set before including this script."
