@@ -459,7 +459,7 @@ dhcp_fine_tmr(void)
 #if 0
       if (DHCP_MAXRTX != 0) {
     	  if (netif->dhcp->tries >= DHCP_MAXRTX){
-			  //os_printf("DHCP timeout\n");
+			  //printf("DHCP timeout\n");
 			  if (netif->dhcp_event != NULL)
 				  netif->dhcp_event();
 			  break;
@@ -709,6 +709,24 @@ void dhcp_cleanup(struct netif *netif)
     netif->dhcp = NULL;
   }
 }
+
+/* Espressif add start. */
+
+/** Set callback for dhcp, reversed parameter for future use.
+ *
+ * @param netif the netif from which to remove the struct dhcp
+ * @param cb    callback for chcp
+ */
+void dhcp_set_cb(struct netif *netif, void (*cb)(void))
+{
+  LWIP_ASSERT("netif != NULL", netif != NULL);
+
+  if (netif->dhcp != NULL) {
+    netif->dhcp->cb = cb;
+  }
+}
+
+/* Espressif add end. */
 
 /**
  * Start DHCP negotiation for a network interface.
@@ -1117,32 +1135,19 @@ dhcp_bind(struct netif *netif)
   }
 #endif /* LWIP_DHCP_AUTOIP_COOP */
 
-  /* Espressif add start. */
-  /* back up old ip/netmask/gw */
-  ip4_addr_t ip, mask, gw;
-  ip4_addr_set(&ip, ip_2_ip4(&netif->ip_addr));
-  ip4_addr_set(&mask, ip_2_ip4(&netif->netmask));
-  ip4_addr_set(&gw, ip_2_ip4(&netif->gw));
-  /* Espressif add end. */
-
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_STATE, ("dhcp_bind(): IP: 0x%08"X32_F" SN: 0x%08"X32_F" GW: 0x%08"X32_F"\n",
     ip4_addr_get_u32(&dhcp->offered_ip_addr), ip4_addr_get_u32(&sn_mask), ip4_addr_get_u32(&gw_addr)));
   netif_set_addr(netif, &dhcp->offered_ip_addr, &sn_mask, &gw_addr);
   /* interface is used by routing now that an address is set */
 
-#ifdef LWIP_ESP8266
-    /* use old ip/mask/gw to check whether ip/mask/gw changed */
-//    extern void system_station_got_ip_set(ip4_addr_t *ip, ip4_addr_t *mask, ip4_addr_t *gw);
-//    system_station_got_ip_set(&ip, &mask, &gw);
-#endif
-
-  /* use old ip/mask/gw to check whether ip/mask/gw changed */
-//  extern void system_station_got_ip_set(ip4_addr_t *ip, ip4_addr_t *mask, ip4_addr_t *gw);
-//  system_station_got_ip_set(&ip, &mask, &gw);
-
   /* netif is now bound to DHCP leased address */
   dhcp_set_state(dhcp, DHCP_STATE_BOUND);
 
+  /* Espressif add start. */
+  if (dhcp->cb != NULL) {
+      dhcp->cb();
+  }
+  /* Espressif add end. */
 }
 
 /**
@@ -1539,7 +1544,7 @@ again:
         break;
       case(DHCP_OPTION_DNS_SERVER):
         /* special case: there might be more than one server */
-        LWIP_ERROR("len % 4 == 0", len % 4 == 0, return ERR_VAL;);
+        //LWIP_ERROR("len % 4 == 0", len % 4 == 0, return ERR_VAL;);
         /* limit number of DNS servers */
         decode_len = LWIP_MIN(len, 4 * DNS_MAX_SERVERS);
         LWIP_ERROR("len >= decode_len", len >= decode_len, return ERR_VAL;);
@@ -1595,7 +1600,7 @@ decode_next:
         pbuf_copy_partial(q, &value, copy_len, val_offset);
         if (decode_len > 4) {
           /* decode more than one u32_t */
-          LWIP_ERROR("decode_len % 4 == 0", decode_len % 4 == 0, return ERR_VAL;);
+          //LWIP_ERROR("decode_len % 4 == 0", decode_len % 4 == 0, return ERR_VAL;);
           dhcp_got_option(dhcp, decode_idx);
           dhcp_set_option_value(dhcp, decode_idx, htonl(value));
           decode_len -= 4;

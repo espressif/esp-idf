@@ -35,6 +35,7 @@
 #define __ARCH_CC_H__
 
 #include <stdint.h>
+#include <errno.h>
 
 #include "arch/sys_arch.h"
 
@@ -71,7 +72,5 @@ typedef int sys_prot_t;
 //#define LWIP_DEBUG
 #define LWIP_NOASSERT
 //#define LWIP_ERROR
-
-#define LWIP_PROVIDE_ERRNO
 
 #endif /* __ARCH_CC_H__ */

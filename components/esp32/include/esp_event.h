@@ -19,6 +19,9 @@
 #include <stdbool.h>
 
 #include "esp_err.h"
+#include "esp_wifi.h"
+
+#include "tcpip_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +35,7 @@ typedef enum {
     SYSTEM_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
     SYSTEM_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected to AP */
     SYSTEM_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
+    SYSTEM_EVENT_STA_GOTIP,                /**< ESP32 station received IP address */
     SYSTEM_EVENT_AP_START,                 /**< ESP32 softap start */
     SYSTEM_EVENT_AP_STOP,                  /**< ESP32 softap start */
     SYSTEM_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
@@ -43,6 +47,7 @@ typedef enum {
 typedef struct {
     uint32_t status;          /**< status of scanning APs*/
     uint8_t  number;
+    uint8_t  scan_id;
 } system_event_sta_scan_done_t;
 
 typedef struct {
@@ -50,6 +55,7 @@ typedef struct {
     uint8_t ssid_len;         /**< SSID length of connected AP */
     uint8_t bssid[6];         /**< BSSID of connected AP*/
     uint8_t channel;          /**< channel of connected AP*/
+    wifi_auth_mode_t authmode;
 } system_event_sta_connected_t;
 
 typedef struct {
@@ -60,9 +66,13 @@ typedef struct {
 } system_event_sta_disconnected_t;
 
 typedef struct {
-    uint8_t old_mode;         /**< the old auth mode of AP */
-    uint8_t new_mode;         /**< the new auth mode of AP */
+    wifi_auth_mode_t old_mode;         /**< the old auth mode of AP */
+    wifi_auth_mode_t new_mode;         /**< the new auth mode of AP */
 } system_event_sta_authmode_change_t;
+
+typedef struct {
+    tcpip_adapter_ip_info_t ip_info;
+} system_event_sta_got_ip_t;
 
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
@@ -84,6 +94,7 @@ typedef union {
     system_event_sta_disconnected_t            disconnected;       /**< ESP32 station disconnected to AP */
     system_event_sta_scan_done_t               scan_done;          /**< ESP32 station scan (APs) done */
     system_event_sta_authmode_change_t         auth_change;        /**< the auth mode of AP ESP32 station connected to changed */
+    system_event_sta_got_ip_t                  got_ip;
     system_event_ap_staconnected_t             sta_connected;      /**< a station connected to ESP32 soft-AP */
     system_event_ap_stadisconnected_t          sta_disconnected;   /**< a station disconnected to ESP32 soft-AP */
     system_event_ap_probe_req_rx_t             ap_probereqrecved;  /**< ESP32 softAP receive probe request packet */

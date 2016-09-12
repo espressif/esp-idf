@@ -62,7 +62,7 @@ static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
 
 /* global variables */
 #ifdef PERF
-uint32 g_rx_post_mbox_fail_cnt = 0;
+uint32_t g_rx_post_mbox_fail_cnt = 0;
 #endif
 static tcpip_init_done_fn tcpip_init_done;
 static void *tcpip_init_done_arg;

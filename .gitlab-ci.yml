@@ -9,6 +9,8 @@ before_script:
 build_template_app:
   stage: build
   image: espressif/esp32-ci-env
+  tags:
+    - build
 
   variables:
     SDK_PATH: "$CI_PROJECT_DIR"
@@ -18,12 +20,61 @@ build_template_app:
   script:
     - git clone https://github.com/espressif/esp-idf-template.git
     - cd esp-idf-template
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default
+    # branch
+    - git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
     - make defconfig
     - make all
+
+
+.build_gitlab: &build_template
+  stage: build
+  tags:
+    - build
+  image: espressif/esp32-ci-env
+
+  variables:
+    SDK_PATH: "$CI_PROJECT_DIR"
+    IDF_PATH: "$CI_PROJECT_DIR"
+    GIT_STRATEGY: clone
+
+  # add gitlab key to build docker
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $GITLAB_KEY >> ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
+build_ssc:
+  <<: *build_template
+  artifacts:
+    paths:
+      - ./SSC/build/*.bin
+      - ./SSC/build/*.elf
+      - ./SSC/build/*.map
+      - ./SSC/build/bootloader/*.bin
+    expire_in: 6 mos
+
+  script:
+    # use gitlab wifi lib instead of github wifi lib
+    - git clone ssh://git@gitlab.espressif.cn:27227/idf/esp32-wifi-lib.git
+    - cp esp32-wifi-lib/* components/esp32/lib/
+    - git clone ssh://git@gitlab.espressif.cn:27227/yinling/SSC.git
+    - cd SSC
+    - make defconfig
+    - chmod +x gen_misc_ng.sh
+    - ./gen_misc_ng.sh
+
+
 
 test_nvs_on_host:
   stage: test
   image: espressif/esp32-ci-env
+  tags:
+    - nvs_host_test
   script:
     - cd components/nvs_flash/test
     - make test
@@ -31,15 +82,58 @@ test_nvs_on_host:
 test_build_system:
   stage: test
   image: espressif/esp32-ci-env
+  tags:
+    - build_test
   variables:
     IDF_PATH: "$CI_PROJECT_DIR"
   script:
     - ./make/test_build_system.sh
 
+
+
+# template for test jobs
+.test_template: &test_template
+  stage: test
+  when: on_success
+  only:
+    - master
+
+  variables:
+    # need user to set SDK_NAME and CONFIG_FILE (may need to set BIN_PATH and APP_NAME later) in before_script
+    SCRIPT_PATH: /home/gitlab-runner/auto_test_script
+    BIN_PATH: ${CI_PROJECT_DIR}/SSC/build/
+    APP_NAME: ssc
+    LOG_PATH: $CI_PROJECT_DIR/$CI_BUILD_REF
+    
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+    expire_in: 6 mos
+    
+  script:
+    - cd $SCRIPT_PATH
+    - python CIRunner.py -l $LOG_PATH -c $SDK_NAME/$CONFIG_FILE bin_path $APP_NAME $BIN_PATH
+
+sanity_test:
+  <<: *test_template
+  tags:
+    - ESP32
+    - SSC_T1_1
+    - SSC_T2_1
+    - SSC_T1_WAN
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - CONFIG_FILE=sanity_test.yml
+
+
+
 push_master_to_github:
   stage: deploy
   only:
     - master
+  tags:
+    - deploy
   when: on_success
   image: espressif/esp32-ci-env
   variables:

@@ -505,7 +505,7 @@ int lwip_fcntl(int s, int cmd, int val);
 #if LWIP_COMPAT_SOCKETS
 #if LWIP_COMPAT_SOCKETS != 2
 
-#ifdef LWIP_THREAD_SAFE
+#if LWIP_THREAD_SAFE
 
 int lwip_accept_r(int s, struct sockaddr *addr, socklen_t *addrlen);
 int lwip_bind_r(int s, const struct sockaddr *name, socklen_t namelen);

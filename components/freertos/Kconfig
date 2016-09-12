@@ -75,12 +75,15 @@ endchoice
 
 config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 	int "Amount of thread local storage pointers"
-	range 0 256
-	default 0
+	range 0 256 if !WIFI_ENABLED
+	range 1 256 if WIFI_ENABLED
+	default 1
 	help
 		FreeRTOS has the ability to store per-thread pointers in the task
 		control block. This controls the amount of pointers available;
 		0 turns off this functionality.
+
+		If using the WiFi stack, this value must be at least 1.
 
 #This still needs to be implemented.
 choice FREERTOS_PANIC
@@ -154,6 +157,12 @@ config FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
 	help
 		If JTAG/OCD is connected, stop execution when the scheduler is started and the first
 		task is executed.
+
+menuconfig ENABLE_MEMORY_DEBUG
+	bool "Enable heap memory debug"
+	default n
+	help
+		Enable this option to show malloc heap block and memory crash detect
 
 menuconfig FREERTOS_DEBUG_INTERNALS
 	bool "Debug FreeRTOS internals"
