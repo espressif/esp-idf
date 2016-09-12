@@ -65,7 +65,7 @@ static system_event_handle_t g_system_event_handle_table[] = {
     {SYSTEM_EVENT_STA_CONNECTED,       system_event_sta_connected_handle_default},
     {SYSTEM_EVENT_STA_DISCONNECTED,    system_event_sta_disconnected_handle_default},
     {SYSTEM_EVENT_STA_AUTHMODE_CHANGE, NULL},
-    {SYSTEM_EVENT_STA_GOTIP,           system_event_sta_gotip_default},
+    {SYSTEM_EVENT_STA_GOT_IP,           system_event_sta_gotip_default},
     {SYSTEM_EVENT_AP_START,            system_event_ap_start_handle_default},
     {SYSTEM_EVENT_AP_STOP,             system_event_ap_stop_handle_default},
     {SYSTEM_EVENT_AP_STACONNECTED,     NULL},
@@ -150,7 +150,7 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
             system_event_t evt;
 
             //notify event
-            evt.event_id = SYSTEM_EVENT_STA_GOTIP;
+            evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
             memcpy(&evt.event_info.got_ip.ip_info, &sta_ip, sizeof(tcpip_adapter_ip_info_t));
 
             esp_event_send(&evt);
@@ -234,7 +234,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
             WIFI_DEBUG("SYSTEM_EVENT_STA_AUTHMODE_CHNAGE\nold_mode:%d, new_mode:%d\n", auth_change->old_mode, auth_change->new_mode);
             break;
         }
-        case SYSTEM_EVENT_STA_GOTIP:
+        case SYSTEM_EVENT_STA_GOT_IP:
         {
             system_event_sta_got_ip_t *got_ip;
             got_ip = &event->event_info.got_ip;

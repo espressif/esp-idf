@@ -28,24 +28,24 @@ extern "C" {
 #endif
 
 typedef enum {
-    SYSTEM_EVENT_WIFI_READY = 0,           /**< ESP32 wifi ready */
+    SYSTEM_EVENT_WIFI_READY = 0,           /**< ESP32 WiFi ready */
     SYSTEM_EVENT_SCAN_DONE,                /**< ESP32 finish scanning AP */
     SYSTEM_EVENT_STA_START,                /**< ESP32 station start */
-    SYSTEM_EVENT_STA_STOP,                 /**< ESP32 station start */
+    SYSTEM_EVENT_STA_STOP,                 /**< ESP32 station stop */
     SYSTEM_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
-    SYSTEM_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected to AP */
+    SYSTEM_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected from AP */
     SYSTEM_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
-    SYSTEM_EVENT_STA_GOTIP,                /**< ESP32 station received IP address */
-    SYSTEM_EVENT_AP_START,                 /**< ESP32 softap start */
-    SYSTEM_EVENT_AP_STOP,                  /**< ESP32 softap start */
+    SYSTEM_EVENT_STA_GOT_IP,               /**< ESP32 station got IP from connected AP */
+    SYSTEM_EVENT_AP_START,                 /**< ESP32 soft-AP start */
+    SYSTEM_EVENT_AP_STOP,                  /**< ESP32 soft-AP stop */
     SYSTEM_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
-    SYSTEM_EVENT_AP_STADISCONNECTED,       /**< a station disconnected to ESP32 soft-AP */
+    SYSTEM_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
     SYSTEM_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
     SYSTEM_EVENT_MAX
 } system_event_id_t;
 
 typedef struct {
-    uint32_t status;          /**< status of scanning APs*/
+    uint32_t status;          /**< status of scanning APs */
     uint8_t  number;
     uint8_t  scan_id;
 } system_event_sta_scan_done_t;
@@ -94,10 +94,10 @@ typedef union {
     system_event_sta_disconnected_t            disconnected;       /**< ESP32 station disconnected to AP */
     system_event_sta_scan_done_t               scan_done;          /**< ESP32 station scan (APs) done */
     system_event_sta_authmode_change_t         auth_change;        /**< the auth mode of AP ESP32 station connected to changed */
-    system_event_sta_got_ip_t                  got_ip;
+    system_event_sta_got_ip_t                  got_ip;             /**< ESP32 station got IP */
     system_event_ap_staconnected_t             sta_connected;      /**< a station connected to ESP32 soft-AP */
     system_event_ap_stadisconnected_t          sta_disconnected;   /**< a station disconnected to ESP32 soft-AP */
-    system_event_ap_probe_req_rx_t             ap_probereqrecved;  /**< ESP32 softAP receive probe request packet */
+    system_event_ap_probe_req_rx_t             ap_probereqrecved;  /**< ESP32 soft-AP receive probe request packet */
 } system_event_info_t;
 
 typedef struct {
@@ -118,8 +118,8 @@ typedef esp_err_t (*system_event_cb_t)(system_event_t *event);
 /**
   * @brief  Set application specified event callback function
   *
-  * @attention 1. If cb is NULL, means application don't need to handle 
-  *               If cb is not NULL, it will be call when a event is received, after the default event callback is completed
+  * @attention 1. If cb is NULL, means application don't need to handle
+  *               If cb is not NULL, it will be call when an event is received, after the default event callback is completed
   *
   * @param  system_event_cb_t cb : callback
   *
@@ -131,28 +131,27 @@ system_event_cb_t esp_event_set_cb(system_event_cb_t cb);
 /**
   * @brief  Send a event to event task
   *
-  * @attention 1. Other task/module, such as TCPIP modudle, can call this API to send a event to event task
-  *               
+  * @attention 1. Other task/modules, such as the TCPIP module, can call this API to send an event to event task
+  *
   *
   * @param  system_event_t * event : event
   *
   * @return ESP_OK : succeed
   * @return others : fail
   */
-esp_err_t esp_event_send(system_event_t * event);
-
+esp_err_t esp_event_send(system_event_t *event);
 
 /**
   * @brief  Get the event handler
   *
-  * @attention : currently this API returns event queue handler, generally this handler is used to 
-  *              
+  * @attention : currently this API returns event queue handler, generally this handler is used to
+  *
   *
   * @param  null
   *
-  * @return void* : event queue pointer 
+  * @return void* : event queue pointer
   */
-void* esp_event_get_handler(void);
+void *esp_event_get_handler(void);
 
 /**
   * @brief  Init the event module
