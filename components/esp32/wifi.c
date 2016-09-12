@@ -54,7 +54,7 @@ static void esp_wifi_task(void *pvParameters)
         }
 
         if (startup_cb) {
-            err = (*startup_cb)();
+            err = (*startup_cb)(NULL);
             if (err != ESP_OK) {
                 WIFI_DEBUG("startup_cb fail, ret=%d\n", err);
                 break;

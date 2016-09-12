@@ -198,7 +198,7 @@ static void do_global_ctors(void) {
         (*p)();
 }
 
-extern esp_err_t app_main();
+extern esp_err_t app_main(void *param);
 
 void user_start_cpu0(void) {
 	ets_setup_syscalls();
@@ -223,7 +223,7 @@ void user_start_cpu0(void) {
 #include "esp_wifi.h"
 	esp_wifi_startup(app_main);
 #else
-	app_main();
+	app_main(NULL);
 #endif
 
 	ets_printf("Starting scheduler on PRO CPU.\n");

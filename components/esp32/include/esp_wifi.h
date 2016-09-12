@@ -153,7 +153,7 @@ typedef enum {
   * @return ESP_OK : succeed
   * @return others : fail
   */
-typedef esp_err_t (* wifi_startup_cb_t)(void);
+typedef esp_err_t (* wifi_startup_cb_t)(void *param);
 void esp_wifi_startup(wifi_startup_cb_t cb);
 
 typedef struct {

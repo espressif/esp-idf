@@ -108,12 +108,12 @@ typedef struct {
 /**
   * @brief  Application specified event callback function
   *
-  * @param  system_event_t *event : event type defined in this file
+  * @param  void *param : parameter passed to callback function
   *
   * @return ESP_OK : succeed
   * @return others : fail
   */
-typedef esp_err_t (*system_event_cb_t)(system_event_t *event);
+typedef esp_err_t (*system_event_cb_t)(void *param);
 
 /**
   * @brief  Set application specified event callback function
@@ -123,8 +123,7 @@ typedef esp_err_t (*system_event_cb_t)(system_event_t *event);
   *
   * @param  system_event_cb_t cb : callback
   *
-  * @return ESP_OK : succeed
-  * @return others : fail
+  * @return system_event_cb_t : old callback
   */
 system_event_cb_t esp_event_set_cb(system_event_cb_t cb);
 
