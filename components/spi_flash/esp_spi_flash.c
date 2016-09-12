@@ -12,16 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdlib.h>
+#include <assert.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
-
-#include <esp_spi_flash.h>
 #include <rom/spi_flash.h>
 #include <rom/cache.h>
-#include <esp_attr.h>
+#include <soc/soc.h>
 #include <soc/dport_reg.h>
 #include "sdkconfig.h"
+#include "esp_ipc.h"
+#include "esp_attr.h"
+#include "esp_spi_flash.h"
+
 
 /*
     Driver for SPI flash read/write/erase operations
@@ -42,7 +46,7 @@
     this flag to be set. Once the flag is set, it disables cache on CPU A and
     starts flash operation.
 
-    While flash operation is running, interrupts can still run on CPU B. 
+    While flash operation is running, interrupts can still run on CPU B.
     We assume that all interrupt code is placed into RAM.
 
     Once flash operation is complete, function on CPU A sets another flag,
@@ -58,93 +62,94 @@
 */
 
 static esp_err_t spi_flash_translate_rc(SpiFlashOpResult rc);
-extern void Cache_Flush(int);
+static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_state);
+static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
+
+static uint32_t s_flash_op_cache_state[2];
+
+#ifndef CONFIG_FREERTOS_UNICORE
+static SemaphoreHandle_t s_flash_op_mutex;
+static bool s_flash_op_can_start = false;
+static bool s_flash_op_complete = false;
+#endif //CONFIG_FREERTOS_UNICORE
+
 
 #ifndef CONFIG_FREERTOS_UNICORE
 
-static TaskHandle_t s_flash_op_tasks[2];
-static SemaphoreHandle_t s_flash_op_mutex;
-static SemaphoreHandle_t s_flash_op_sem[2];
-static bool s_flash_op_can_start = false;
-static bool s_flash_op_complete = false;
-
-
-// Task whose duty is to block other tasks from running on a given CPU
-static void IRAM_ATTR spi_flash_op_block_task(void* arg)
+static void IRAM_ATTR spi_flash_op_block_func(void* arg)
 {
+    // Disable scheduler on this CPU
+    vTaskSuspendAll();
     uint32_t cpuid = (uint32_t) arg;
-    while (true) {
-        // Wait for flash operation to be initiated.
-        // This will be indicated by giving the semaphore corresponding to
-        // this CPU.
-        if (xSemaphoreTake(s_flash_op_sem[cpuid], portMAX_DELAY) != pdTRUE) {
-            // TODO: when can this happen?
-            abort();
-        }
-        // Disable cache on this CPU
-        Cache_Read_Disable(cpuid);
-        // Signal to the flash API function that flash operation can start
-        s_flash_op_can_start = true;
-        while (!s_flash_op_complete) {
-            // until we have a way to use interrupts for inter-CPU communication,
-            // busy loop here and wait for the other CPU to finish flash operation
-        }
-        // Flash operation is complete, re-enable cache
-        Cache_Read_Enable(cpuid);
+    // Disable cache so that flash operation can start
+    spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
+    s_flash_op_can_start = true;
+    while (!s_flash_op_complete) {
+        // until we have a way to use interrupts for inter-CPU communication,
+        // busy loop here and wait for the other CPU to finish flash operation
     }
-    // TODO: currently this is unreachable code. Introduce spi_flash_uninit 
-    // function which will signal to both tasks that they can shut down.
-    // Not critical at this point, we don't have a use case for stopping
-    // SPI flash driver yet.
-    // Also need to delete the semaphore here.
-    vTaskDelete(NULL);
+    // Flash operation is complete, re-enable cache
+    spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
+    // Re-enable scheduler
+    xTaskResumeAll();
 }
 
 void spi_flash_init()
 {
-    s_flash_op_can_start = false;
-    s_flash_op_complete = false;
-    s_flash_op_sem[0] = xSemaphoreCreateBinary();
-    s_flash_op_sem[1] = xSemaphoreCreateBinary();
     s_flash_op_mutex = xSemaphoreCreateMutex();
-    // Start two tasks, one on each CPU, with max priorities
-    // TODO: optimize stack usage. Stack size 512 is too small.
-    xTaskCreatePinnedToCore(spi_flash_op_block_task, "flash_op_pro", 1024, (void*) 0,
-                            configMAX_PRIORITIES - 1, &s_flash_op_tasks[0], 0);
-    xTaskCreatePinnedToCore(spi_flash_op_block_task, "flash_op_app", 1024, (void*) 1,
-                            configMAX_PRIORITIES - 1, &s_flash_op_tasks[1], 1);
 }
 
 static void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
     // Take the API lock
     xSemaphoreTake(s_flash_op_mutex, portMAX_DELAY);
+
     const uint32_t cpuid = xPortGetCoreID();
-    uint32_t other_cpuid = !cpuid;
-    s_flash_op_can_start = false;
-    s_flash_op_complete = false;
-    // Signal to the spi_flash_op_block_task on the other CPU that we need it to
-    // disable cache there and block other tasks from executing.
-    xSemaphoreGive(s_flash_op_sem[other_cpuid]);
-    while (!s_flash_op_can_start) {
-        // Busy loop and wait for spi_flash_op_block_task to take the semaphore on the
-        // other CPU.
+    const uint32_t other_cpuid = !cpuid;
+
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        // Scheduler hasn't been started yet, so we don't need to worry
+        // about cached code running on the APP CPU.
+        spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
+    } else {
+        // Signal to the spi_flash_op_block_task on the other CPU that we need it to
+        // disable cache there and block other tasks from executing.
+        s_flash_op_can_start = false;
+        s_flash_op_complete = false;
+        esp_ipc_call(other_cpuid, &spi_flash_op_block_func, (void*) other_cpuid);
+        while (!s_flash_op_can_start) {
+            // Busy loop and wait for spi_flash_op_block_func to disable cache
+            // on the other CPU
+        }
+        // Disable scheduler on CPU cpuid
+        vTaskSuspendAll();
+        // This is guaranteed to run on CPU <cpuid> because the other CPU is now
+        // occupied by highest priority task
+        assert(xPortGetCoreID() == cpuid);
     }
-    vTaskSuspendAll();
     // Disable cache on this CPU as well
-    Cache_Read_Disable(cpuid);
+    spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
 }
 
 static void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 {
-    uint32_t cpuid = xPortGetCoreID();
-    // Signal to spi_flash_op_block_task that flash operation is complete
-    s_flash_op_complete = true;
+    const uint32_t cpuid = xPortGetCoreID();
+    const uint32_t other_cpuid = !cpuid;
+
     // Re-enable cache on this CPU
-    Cache_Read_Enable(cpuid);
+    spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
+
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        // Scheduler is not running yet — just re-enable cache on APP CPU
+        spi_flash_restore_cache(other_cpuid, s_flash_op_cache_state[other_cpuid]);
+    } else {
+        // Signal to spi_flash_op_block_task that flash operation is complete
+        s_flash_op_complete = true;
+        // Resume tasks on the current CPU
+        xTaskResumeAll();
+    }
     // Release API lock
     xSemaphoreGive(s_flash_op_mutex);
-    xTaskResumeAll();
 }
 
 #else  // CONFIG_FREERTOS_UNICORE
@@ -157,14 +162,12 @@ void spi_flash_init()
 static void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
     vTaskSuspendAll();
-    Cache_Read_Disable(0);
-    Cache_Read_Disable(1);
+    spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
 
 static void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 {
-    Cache_Read_Enable(0);
-    Cache_Read_Enable(1);
+    spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
     xTaskResumeAll();
 }
 
@@ -179,8 +182,6 @@ esp_err_t IRAM_ATTR spi_flash_erase_sector(uint16_t sec)
     if (rc == SPI_FLASH_RESULT_OK) {
         rc = SPIEraseSector(sec);
     }
-    Cache_Flush(0);
-    Cache_Flush(1);
     spi_flash_enable_interrupts_caches_and_other_cpu();
     return spi_flash_translate_rc(rc);
 }
@@ -193,8 +194,6 @@ esp_err_t IRAM_ATTR spi_flash_write(uint32_t dest_addr, const uint32_t *src, uin
     if (rc == SPI_FLASH_RESULT_OK) {
         rc = SPIWrite(dest_addr, src, (int32_t) size);
     }
-    Cache_Flush(0);
-    Cache_Flush(1);
     spi_flash_enable_interrupts_caches_and_other_cpu();
     return spi_flash_translate_rc(rc);
 }
@@ -204,8 +203,6 @@ esp_err_t IRAM_ATTR spi_flash_read(uint32_t src_addr, uint32_t *dest, uint32_t s
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
     rc = SPIRead(src_addr, dest, (int32_t) size);
-    Cache_Flush(0);
-    Cache_Flush(1);
     spi_flash_enable_interrupts_caches_and_other_cpu();
     return spi_flash_translate_rc(rc);
 }
@@ -220,5 +217,35 @@ static esp_err_t spi_flash_translate_rc(SpiFlashOpResult rc)
     case SPI_FLASH_RESULT_ERR:
     default:
         return ESP_ERR_FLASH_OP_FAIL;
+    }
+}
+
+static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_state)
+{
+    uint32_t ret = 0;
+    if (cpuid == 0) {
+        ret |= GET_PERI_REG_BITS2(PRO_CACHE_CTRL1_REG, 0x1f, 0);
+        while (GET_PERI_REG_BITS2(PRO_DCACHE_DBUG_REG0, DPORT_PRO_CACHE_STATE, DPORT_PRO_CACHE_STATE_S) != 1) {
+            ;
+        }
+        SET_PERI_REG_BITS(PRO_CACHE_CTRL_REG, 1, 0, DPORT_PRO_CACHE_ENABLE_S);
+    } else {
+        ret |= GET_PERI_REG_BITS2(APP_CACHE_CTRL1_REG, 0x1f, 0);
+        while (GET_PERI_REG_BITS2(APP_DCACHE_DBUG_REG0, DPORT_APP_CACHE_STATE, DPORT_APP_CACHE_STATE_S) != 1) {
+            ;
+        }
+        SET_PERI_REG_BITS(APP_CACHE_CTRL_REG, 1, 0, DPORT_APP_CACHE_ENABLE_S);
+    }
+    *saved_state = ret;
+}
+
+static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
+{
+    if (cpuid == 0) {
+        SET_PERI_REG_BITS(PRO_CACHE_CTRL_REG, 1, 1, DPORT_PRO_CACHE_ENABLE_S);
+        SET_PERI_REG_BITS(PRO_CACHE_CTRL1_REG, 0x1f, saved_state, 0);
+    } else {
+        SET_PERI_REG_BITS(APP_CACHE_CTRL_REG, 1, 1, DPORT_APP_CACHE_ENABLE_S);
+        SET_PERI_REG_BITS(APP_CACHE_CTRL1_REG, 0x1f, saved_state, 0);
     }
 }
