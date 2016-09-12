@@ -55,7 +55,7 @@ void ets_efuse_program_op(void);
   *
   * @param  null
   *
-  * @return u32: 1 for 100KHZ.
+  * @return u32: 1 for 100KHZ, range is 0 to 255.
   */
 uint32_t ets_efuse_get_8M_clock(void);
 
@@ -68,6 +68,27 @@ uint32_t ets_efuse_get_8M_clock(void);
   *      else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
   */
 uint32_t ets_efuse_get_spiconfig(void);
+
+#define EFUSE_SPICONFIG_RET_SPICLK_MASK         0x3f
+#define EFUSE_SPICONFIG_RET_SPICLK_SHIFT        0
+#define EFUSE_SPICONFIG_RET_SPICLK(ret)         (((ret) >> EFUSE_SPICONFIG_RET_SPICLK_SHIFT) & EFUSE_SPICONFIG_RET_SPICLK_MASK)
+
+#define EFUSE_SPICONFIG_RET_SPIQ_MASK           0x3f
+#define EFUSE_SPICONFIG_RET_SPIQ_SHIFT          6
+#define EFUSE_SPICONFIG_RET_SPIQ(ret)           (((ret) >> EFUSE_SPICONFIG_RET_SPIQ_SHIFT) & EFUSE_SPICONFIG_RET_SPIQ_MASK)
+
+#define EFUSE_SPICONFIG_RET_SPID_MASK           0x3f
+#define EFUSE_SPICONFIG_RET_SPID_SHIFT          12
+#define EFUSE_SPICONFIG_RET_SPID(ret)           (((ret) >> EFUSE_SPICONFIG_RET_SPID_SHIFT) & EFUSE_SPICONFIG_RET_SPID_MASK)
+
+#define EFUSE_SPICONFIG_RET_SPICS0_MASK         0x3f
+#define EFUSE_SPICONFIG_RET_SPICS0_SHIFT        18
+#define EFUSE_SPICONFIG_RET_SPICS0(ret)         (((ret) >> EFUSE_SPICONFIG_RET_SPICS0_SHIFT) & EFUSE_SPICONFIG_RET_SPICS0_MASK)
+
+
+#define EFUSE_SPICONFIG_RET_SPIHD_MASK          0x3f
+#define EFUSE_SPICONFIG_RET_SPIHD_SHIFT         24
+#define EFUSE_SPICONFIG_RET_SPIHD(ret)          (((ret) >> EFUSE_SPICONFIG_RET_SPIHD_SHIFT) & EFUSE_SPICONFIG_RET_SPIHD_MASK)
 
 /**
   * @brief  A crc8 algorithm used in efuse check.
