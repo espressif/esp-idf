@@ -276,8 +276,6 @@ void bootloader_main()
 {
     //Run start routine.
     /*ESP32 2ND bootload start here*/
-
-
     log_info( "\n" );
     log_info( "**************************************" );
     log_info( "*       hello espressif ESP32!       *" );
