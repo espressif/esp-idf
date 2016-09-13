@@ -51,15 +51,6 @@ build_template_app:
     IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
 
-  # add gitlab key to build docker
-  before_script:
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GITLAB_KEY >> ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-
 build_ssc:
   <<: *build_template
   artifacts:
@@ -76,8 +67,6 @@ build_ssc:
     - make defconfig
     - chmod +x gen_misc_ng.sh
     - ./gen_misc_ng.sh
-
-
 
 test_nvs_on_host:
   stage: test
