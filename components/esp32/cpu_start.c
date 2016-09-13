@@ -198,7 +198,7 @@ static void do_global_ctors(void) {
         (*p)();
 }
 
-extern esp_err_t app_main(void *param);
+extern esp_err_t app_main(void *ctx);
 
 void user_start_cpu0(void) {
 	ets_setup_syscalls();
@@ -214,14 +214,14 @@ void user_start_cpu0(void) {
 
     system_init();
 
-    esp_event_init(NULL);
+    esp_event_init(NULL, NULL);
 
     tcpip_adapter_init();
 #endif
 
 #if CONFIG_WIFI_ENABLED && CONFIG_WIFI_AUTO_STARTUP
 #include "esp_wifi.h"
-	esp_wifi_startup(app_main);
+	esp_wifi_startup(app_main, NULL);
 #else
 	app_main(NULL);
 #endif

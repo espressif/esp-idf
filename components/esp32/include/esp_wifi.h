@@ -149,12 +149,14 @@ typedef enum {
   *               be called firstly
   *
   * @param  wifi_startup_cb_t cb : application specific callback function
+  * @param  void *ctx : reversed for user
   *
   * @return ESP_OK : succeed
   * @return others : fail
   */
-typedef esp_err_t (* wifi_startup_cb_t)(void *param);
-void esp_wifi_startup(wifi_startup_cb_t cb);
+typedef esp_err_t (* wifi_startup_cb_t)(void *ctx);
+
+esp_err_t esp_wifi_startup(wifi_startup_cb_t cb, void *ctx);
 
 typedef struct {
     void    *event_q;                 /**< WiFi event q handler, it's a freeRTOS queue */

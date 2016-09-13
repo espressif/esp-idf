@@ -108,12 +108,13 @@ typedef struct {
 /**
   * @brief  Application specified event callback function
   *
-  * @param  void *param : parameter passed to callback function
+  * @param  void *ctx : reversed for user
+  * @param  system_event_t *event : event type defined in this file
   *
   * @return ESP_OK : succeed
   * @return others : fail
   */
-typedef esp_err_t (*system_event_cb_t)(void *param);
+typedef esp_err_t (*system_event_cb_t)(void *ctx, system_event_t *event);
 
 /**
   * @brief  Set application specified event callback function
@@ -122,16 +123,16 @@ typedef esp_err_t (*system_event_cb_t)(void *param);
   *               If cb is not NULL, it will be call when an event is received, after the default event callback is completed
   *
   * @param  system_event_cb_t cb : callback
+  * @param  void *ctx : reversed for user
   *
   * @return system_event_cb_t : old callback
   */
-system_event_cb_t esp_event_set_cb(system_event_cb_t cb);
+system_event_cb_t esp_event_set_cb(system_event_cb_t cb, void *ctx);
 
 /**
   * @brief  Send a event to event task
   *
   * @attention 1. Other task/modules, such as the TCPIP module, can call this API to send an event to event task
-  *
   *
   * @param  system_event_t * event : event
   *
@@ -145,7 +146,6 @@ esp_err_t esp_event_send(system_event_t *event);
   *
   * @attention : currently this API returns event queue handler, generally this handler is used to
   *
-  *
   * @param  null
   *
   * @return void* : event queue pointer
@@ -157,11 +157,12 @@ void *esp_event_get_handler(void);
   *         Create the event handler and task
   *
   * @param  system_event_cb_t cb : application specified event callback, it can be modified by call esp_event_set_cb
+  * @param  void *ctx : reversed for user
   *
   * @return ESP_OK : succeed
   * @return others : fail
   */
-esp_err_t esp_event_init(system_event_cb_t cb);
+esp_err_t esp_event_init(system_event_cb_t cb, void *ctx);
 
 #ifdef __cplusplus
 }
