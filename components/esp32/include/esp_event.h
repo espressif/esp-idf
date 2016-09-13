@@ -108,7 +108,7 @@ typedef struct {
 /**
   * @brief  Application specified event callback function
   *
-  * @param  void *ctx : reversed for user
+  * @param  void *ctx : reserved for user
   * @param  system_event_t *event : event type defined in this file
   *
   * @return ESP_OK : succeed
@@ -123,7 +123,7 @@ typedef esp_err_t (*system_event_cb_t)(void *ctx, system_event_t *event);
   *               If cb is not NULL, it will be call when an event is received, after the default event callback is completed
   *
   * @param  system_event_cb_t cb : callback
-  * @param  void *ctx : reversed for user
+  * @param  void *ctx : reserved for user
   *
   * @return system_event_cb_t : old callback
   */
@@ -144,11 +144,12 @@ esp_err_t esp_event_send(system_event_t *event);
 /**
   * @brief  Get the event handler
   *
-  * @attention : currently this API returns event queue handler, generally this handler is used to
+  * @attention : currently this API returns event queue handler, by this event queue,
+  *              users can notice when WiFi has done something like scanning done, connected to AP or disconnected from AP.
   *
   * @param  null
   *
-  * @return void* : event queue pointer
+  * @return void * : event queue pointer
   */
 void *esp_event_get_handler(void);
 
@@ -157,7 +158,7 @@ void *esp_event_get_handler(void);
   *         Create the event handler and task
   *
   * @param  system_event_cb_t cb : application specified event callback, it can be modified by call esp_event_set_cb
-  * @param  void *ctx : reversed for user
+  * @param  void *ctx : reserved for user
   *
   * @return ESP_OK : succeed
   * @return others : fail

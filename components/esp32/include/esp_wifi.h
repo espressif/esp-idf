@@ -149,7 +149,7 @@ typedef enum {
   *               be called firstly
   *
   * @param  wifi_startup_cb_t cb : application specific callback function
-  * @param  void *ctx : reversed for user
+  * @param  void *ctx : reserved for user
   *
   * @return ESP_OK : succeed
   * @return others : fail
