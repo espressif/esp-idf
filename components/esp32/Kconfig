@@ -1,5 +1,25 @@
 menu "ESP32-specific config"
 
+choice ESP32_DEFAULT_CPU_FREQ_MHZ
+    prompt "CPU frequency"
+    default ESP32_DEFAULT_CPU_FREQ_240
+    help
+        CPU frequency to be set on application startup.
+
+config ESP32_DEFAULT_CPU_FREQ_80
+    bool "80 MHz"
+config ESP32_DEFAULT_CPU_FREQ_160
+    bool "160 MHz"
+config ESP32_DEFAULT_CPU_FREQ_240
+    bool "240 MHz"
+endchoice
+
+config ESP32_DEFAULT_CPU_FREQ_MHZ
+    int
+    default 80 if ESP32_DEFAULT_CPU_FREQ_80
+    default 160 if ESP32_DEFAULT_CPU_FREQ_160
+    default 240 if ESP32_DEFAULT_CPU_FREQ_240
+
 config WIFI_ENABLED
     bool "Enable low-level WiFi stack"
     default "y"
