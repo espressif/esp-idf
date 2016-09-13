@@ -3766,9 +3766,13 @@ scheduler will re-enable the interrupts instead. */
 	void vTaskEnterCritical( portMUX_TYPE *mux )
 #endif
 	{
+		BaseType_t oldInterruptLevel=0;
 		if( xSchedulerRunning != pdFALSE )
 		{
-			pxCurrentTCB[ xPortGetCoreID() ]->uxOldInterruptState=portENTER_CRITICAL_NESTED();
+			//Interrupts may already be disabled (because we're doing this recursively) but we can't get the interrupt level after
+			//vPortCPUAquireMutex, because it also may mess with interrupts. Get it here first, then later figure out if we're nesting
+			//and save for real there.
+			oldInterruptLevel=portENTER_CRITICAL_NESTED();
 		}
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		vPortCPUAcquireMutex( mux, function, line );
@@ -3780,13 +3784,20 @@ scheduler will re-enable the interrupts instead. */
 		{
 			( pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting )++;
 
+			if( xSchedulerRunning != pdFALSE && pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting == 1 )
+			{
+				//This is the first time we get called. Save original interrupt level.
+				pxCurrentTCB[ xPortGetCoreID() ]->uxOldInterruptState=oldInterruptLevel;
+			}
 
-			/* This is not the interrupt safe version of the enter critical
+			/* Original FreeRTOS comment, saved for reference:
+			This is not the interrupt safe version of the enter critical
 			function so	assert() if it is being called from an interrupt
 			context.  Only API functions that end in "FromISR" can be used in an
 			interrupt.  Only assert if the critical nesting count is 1 to
 			protect against recursive calls if the assert function also uses a
 			critical section. */
+
 			/* DISABLED in the esp32 port - because of SMP, vTaskEnterCritical
 			has to be used in way more places than before, and some are called
 			both from ISR as well as non-ISR code, thus we re-organized 
