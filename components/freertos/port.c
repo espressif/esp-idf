@@ -248,13 +248,16 @@ void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMOR
 #endif
 
 
+void vPortAssertIfInISR()
+{
+	configASSERT(port_interruptNesting[xPortGetCoreID()]==0)
+}
+
 
 /*
  * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
  * *mux to compare, and if it's the same, will set *mux to set. It will return the old value
  * of *addr.
- *
- * Note: the NOPs are needed on the ESP31 processor but superfluous on the ESP32.
  *
  * Warning: From the ISA docs: in some (unspecified) cases, the s32c1i instruction may return the
  * *bitwise inverse* of the old mem if the mem wasn't written. This doesn't seem to happen on the

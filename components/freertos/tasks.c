@@ -163,6 +163,7 @@ typedef struct tskTaskControlBlock
 
 	#if ( portCRITICAL_NESTING_IN_TCB == 1 )
 		UBaseType_t 	uxCriticalNesting; 	/*< Holds the critical section nesting depth for ports that do not maintain their own count in the port layer. */
+		uint32_t		uxOldInterruptState; /*< Interrupt state before the outer taskEnterCritical was called */
 	#endif
 
 	#if ( configUSE_TRACE_FACILITY == 1 )
@@ -2595,8 +2596,7 @@ BaseType_t xReturn;
 
 	/* THIS FUNCTION MUST BE CALLED FROM A CRITICAL SECTION.  It can also be
 	called from a critical section within an ISR. */
-//That makes the taskENTER_CRITICALs here unnecessary, right? -JD
-//	taskENTER_CRITICAL(&xTaskQueueMutex);
+	taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 	/* The event list is sorted in priority order, so the first in the list can
 	be removed as it is known to be the highest priority.  Remove the TCB from
 	the delayed list, and add it to the ready list.
@@ -2654,7 +2654,7 @@ BaseType_t xReturn;
 		prvResetNextTaskUnblockTime();
 	}
 	#endif
-//	taskEXIT_CRITICAL(&xTaskQueueMutex);
+	taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 
 	return xReturn;
 }
@@ -3614,6 +3614,7 @@ In fact, nothing below this line has/is.
 		{
 			if( pxTCB->uxPriority < pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
 			{
+				taskENTER_CRITICAL(&xTaskQueueMutex);
 				/* Adjust the mutex holder state to account for its new
 				priority.  Only reset the event list item value if the value is
 				not	being used for anything else. */
@@ -3648,6 +3649,8 @@ In fact, nothing below this line has/is.
 					/* Just inherit the priority. */
 					pxTCB->uxPriority = pxCurrentTCB[ xPortGetCoreID() ]->uxPriority;
 				}
+
+				taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 				traceTASK_PRIORITY_INHERIT( pxTCB, pxCurrentTCB[ xPortGetCoreID() ]->uxPriority );
 			}
@@ -3686,6 +3689,7 @@ In fact, nothing below this line has/is.
 				/* Only disinherit if no other mutexes are held. */
 				if( pxTCB->uxMutexesHeld == ( UBaseType_t ) 0 )
 				{
+					taskENTER_CRITICAL(&xTaskQueueMutex);
 					/* A task can only have an inhertied priority if it holds
 					the mutex.  If the mutex is held by a task then it cannot be
 					given from an interrupt, and if a mutex is given by the
@@ -3720,6 +3724,7 @@ In fact, nothing below this line has/is.
 					switch should occur when the last mutex is returned whether
 					a task is waiting on it or not. */
 					xReturn = pdTRUE;
+					taskEXIT_CRITICAL(&xTaskQueueMutex);
 				}
 				else
 				{
@@ -3761,7 +3766,14 @@ scheduler will re-enable the interrupts instead. */
 	void vTaskEnterCritical( portMUX_TYPE *mux )
 #endif
 	{
-		portDISABLE_INTERRUPTS();
+		BaseType_t oldInterruptLevel=0;
+		if( xSchedulerRunning != pdFALSE )
+		{
+			//Interrupts may already be disabled (because we're doing this recursively) but we can't get the interrupt level after
+			//vPortCPUAquireMutex, because it also may mess with interrupts. Get it here first, then later figure out if we're nesting
+			//and save for real there.
+			oldInterruptLevel=portENTER_CRITICAL_NESTED();
+		}
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		vPortCPUAcquireMutex( mux, function, line );
 #else
@@ -3772,16 +3784,30 @@ scheduler will re-enable the interrupts instead. */
 		{
 			( pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting )++;
 
-			/* This is not the interrupt safe version of the enter critical
+			if( xSchedulerRunning != pdFALSE && pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting == 1 )
+			{
+				//This is the first time we get called. Save original interrupt level.
+				pxCurrentTCB[ xPortGetCoreID() ]->uxOldInterruptState=oldInterruptLevel;
+			}
+
+			/* Original FreeRTOS comment, saved for reference:
+			This is not the interrupt safe version of the enter critical
 			function so	assert() if it is being called from an interrupt
 			context.  Only API functions that end in "FromISR" can be used in an
 			interrupt.  Only assert if the critical nesting count is 1 to
 			protect against recursive calls if the assert function also uses a
 			critical section. */
+
+			/* DISABLED in the esp32 port - because of SMP, vTaskEnterCritical
+			has to be used in way more places than before, and some are called
+			both from ISR as well as non-ISR code, thus we re-organized 
+			vTaskEnterCritical to also work in ISRs. */
+#if 0
 			if( pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting == 1 )
 			{
 				portASSERT_IF_IN_ISR();
 			}
+#endif
 
 		}
 		else
@@ -3814,7 +3840,7 @@ scheduler will re-enable the interrupts instead. */
 
 				if( pxCurrentTCB[ xPortGetCoreID() ]->uxCriticalNesting == 0U )
 				{
-					portENABLE_INTERRUPTS();
+					portEXIT_CRITICAL_NESTED(pxCurrentTCB[ xPortGetCoreID() ]->uxOldInterruptState);
 				}
 				else
 				{

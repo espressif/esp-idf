@@ -29,6 +29,15 @@ extern "C" {
 #define SPI_FLASH_SEC_SIZE  4096    /**< SPI Flash sector size */
 
 /**
+ * @brief  Initialize SPI flash access driver
+ *
+ *  This function must be called exactly once, before any other 
+ *  spi_flash_* functions are called.
+ *
+ */
+void spi_flash_init();
+
+/**
  * @brief  Erase the Flash sector.
  *
  * @param  uint16 sec : Sector number, the count starts at sector 0, 4KB per sector.
