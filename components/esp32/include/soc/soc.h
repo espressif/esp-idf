@@ -52,6 +52,9 @@
 #define BIT0     0x00000001
 //}}
 
+#define PRO_CPU_NUM (0)
+#define APP_CPU_NUM (1)
+
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
 #define ETS_CACHED_ADDR(addr) (addr) 
@@ -138,46 +141,47 @@
 //}}
 
 #define DR_REG_DPORT_BASE                       0x3ff00000
-#define DR_REG_UART_BASE 0x3ff40000
-#define DR_REG_SPI1_BASE 0x3ff42000
-#define DR_REG_SPI0_BASE 0x3ff43000
-#define DR_REG_GPIO_BASE 0x3ff44000
-#define DR_REG_FE2_BASE 0x3ff45000
-#define DR_REG_FE_BASE 0x3ff46000
-#define DR_REG_TIMER_BASE 0x3ff47000
-#define DR_REG_RTCCNTL_BASE 0x3ff48000
-#define DR_REG_RTCIO_BASE 0x3ff48400
-
-#define DR_REG_RTCMEM0_BASE 0x3ff61000
-#define DR_REG_RTCMEM1_BASE 0x3ff62000
-#define DR_REG_RTCMEM2_BASE 0x3ff63000
-
-#define DR_REG_IO_MUX_BASE 0x3ff49000
-#define DR_REG_WDG_BASE 0x3ff4A000
-#define DR_REG_HINF_BASE 0x3ff4B000
-#define DR_REG_UHCI1_BASE 0x3ff4C000
-#define DR_REG_I2C_BASE 0x3ff4E000
-#define DR_REG_I2S_BASE 0x3ff4F000 
-#define DR_REG_I2S1_BASE 0x3ff6D000 
-#define DR_REG_UART1_BASE 0x3ff50000
-#define DR_REG_BT_BASE 0x3ff51000
-#define DR_REG_I2C_EXT_BASE 0x3ff53000
-#define DR_REG_UHCI0_BASE 0x3ff54000
-#define DR_REG_SLCHOST_BASE 0x3ff55000
-#define DR_REG_RMT_BASE 0x3ff56000
-#define DR_REG_PCNT_BASE 0x3ff57000
-#define DR_REG_SLC_BASE 0x3ff58000
-#define DR_REG_LEDC_BASE 0x3ff59000
-#define DR_REG_EFUSE_BASE 0x3ff5A000
-#define DR_REG_SPI_ENCRYPT_BASE 0x3ff5B000
-#define DR_REG_BB_BASE 0x3ff5C000
-#define DR_REG_PWM_BASE 0x3ff5E000
-#define DR_REG_TIMERS_BASE(i) (0x3ff5F000 + i * (0x1000))
-#define DR_REG_GPIO_SD_BASE 0x3ff44f00
-
-//}}
-#define REG_SPI_BASE(i)                     (DR_REG_SPI0_BASE - i*(0x1000))
-#define PERIPHS_TIMER_BASEDDR			DR_REG_TIMER_BASE
+#define DR_REG_UART_BASE                        0x3ff40000
+#define DR_REG_SPI1_BASE                        0x3ff42000
+#define DR_REG_SPI0_BASE                        0x3ff43000
+#define DR_REG_GPIO_BASE                        0x3ff44000
+#define DR_REG_GPIO_SD_BASE                     0x3ff44f00
+#define DR_REG_FE2_BASE                         0x3ff45000
+#define DR_REG_FE_BASE                          0x3ff46000
+#define DR_REG_RTCCNTL_BASE                     0x3ff48000
+#define DR_REG_RTCIO_BASE                       0x3ff48400
+#define DR_REG_SARADC_BASE                      0x3ff48800
+#define DR_REG_IO_MUX_BASE                      0x3ff49000
+#define DR_REG_RTCMEM0_BASE                     0x3ff61000
+#define DR_REG_RTCMEM1_BASE                     0x3ff62000
+#define DR_REG_RTCMEM2_BASE                     0x3ff63000
+#define DR_REG_HINF_BASE                        0x3ff4B000
+#define DR_REG_UHCI1_BASE                       0x3ff4C000
+#define DR_REG_I2S_BASE                         0x3ff4F000
+#define DR_REG_UART1_BASE                       0x3ff50000
+#define DR_REG_BT_BASE                          0x3ff51000
+#define DR_REG_I2C_EXT_BASE                     0x3ff53000
+#define DR_REG_UHCI0_BASE                       0x3ff54000
+#define DR_REG_SLCHOST_BASE                     0x3ff55000
+#define DR_REG_RMT_BASE                         0x3ff56000
+#define DR_REG_PCNT_BASE                        0x3ff57000
+#define DR_REG_SLC_BASE                         0x3ff58000
+#define DR_REG_LEDC_BASE                        0x3ff59000
+#define DR_REG_EFUSE_BASE                       0x3ff5A000
+#define DR_REG_SPI_ENCRYPT_BASE                 0x3ff5B000
+#define DR_REG_PWM_BASE                         0x3ff5E000
+#define DR_REG_TIMERGROUP0_BASE                 0x3ff5F000
+#define DR_REG_TIMERGROUP1_BASE                 0x3ff60000
+#define DR_REG_SPI2_BASE                        0x3ff64000
+#define DR_REG_SPI3_BASE                        0x3ff65000
+#define DR_REG_I2C1_EXT_BASE                    0x3ff67000
+#define DR_REG_SDMMC_BASE                       0x3ff68000
+#define DR_REG_EMAC_BASE                        0x3ff69000
+#define DR_REG_PWM1_BASE                        0x3ff6C000
+#define DR_REG_I2S1_BASE                        0x3ff6D000
+#define DR_REG_UART2_BASE                       0x3ff6E000
+#define DR_REG_PWM2_BASE                        0x3ff6F000
+#define DR_REG_PWM3_BASE                        0x3ff70000
 #define PERIPHS_SPI_ENCRYPT_BASEADDR		DR_REG_SPI_ENCRYPT_BASE
 
 //Interrupt hardware source table
@@ -302,7 +306,7 @@
 #define ETS_SLC_INUM                            1
 #define ETS_UART0_INUM                          5
 #define ETS_UART1_INUM                          5
-
+//Other interrupt number should be managed by the user
 
 
 #endif /* _ESP32_SOC_H_ */
