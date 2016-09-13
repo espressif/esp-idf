@@ -203,7 +203,7 @@ extern esp_err_t app_main(void *ctx);
 
 void user_start_cpu0(void) {
 	esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
-	uart_div_modify(0, (80000000 << 4) / 115200);
+	uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
 	ets_setup_syscalls();
 	do_global_ctors();
 	esp_ipc_init();
