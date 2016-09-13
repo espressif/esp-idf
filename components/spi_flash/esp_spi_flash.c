@@ -14,6 +14,9 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
+#include <stdio.h>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -71,6 +74,20 @@ static bool s_flash_op_can_start = false;
 static bool s_flash_op_complete = false;
 #endif //CONFIG_FREERTOS_UNICORE
 
+typedef struct {
+    uint32_t count;
+    uint32_t time;
+} counter_t;
+
+typedef struct {
+    counter_t read;
+    counter_t write;
+    counter_t erase;
+    counter_t read_inner;
+    counter_t write_inner;
+} spi_flash_counters_t;
+
+static spi_flash_counters_t s_flash_stats;
 
 #ifndef CONFIG_FREERTOS_UNICORE
 
@@ -177,6 +194,9 @@ static void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 
 #endif // CONFIG_FREERTOS_UNICORE
 
+#define COUNTER_START()     uint32_t ts_begin = xthal_get_ccount()
+#define COUNTER_STOP(counter)  do{ (counter)->count++; (counter)->time += (xthal_get_ccount() - ts_begin) / (XT_CLOCK_FREQ / 1000000); } while(0)
+
 
 SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
 {
@@ -193,6 +213,7 @@ SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
 
 esp_err_t IRAM_ATTR spi_flash_erase_sector(uint16_t sec)
 {
+    COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
     rc = spi_flash_unlock();
@@ -200,27 +221,38 @@ esp_err_t IRAM_ATTR spi_flash_erase_sector(uint16_t sec)
         rc = SPIEraseSector(sec);
     }
     spi_flash_enable_interrupts_caches_and_other_cpu();
+    COUNTER_STOP(&s_flash_stats.erase);
     return spi_flash_translate_rc(rc);
 }
 
 esp_err_t IRAM_ATTR spi_flash_write(uint32_t dest_addr, const uint32_t *src, uint32_t size)
 {
+    COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
     rc = spi_flash_unlock();
     if (rc == SPI_FLASH_RESULT_OK) {
+        COUNTER_START();
         rc = SPIWrite(dest_addr, src, (int32_t) size);
+        COUNTER_STOP(&s_flash_stats.write_inner);
     }
     spi_flash_enable_interrupts_caches_and_other_cpu();
+    COUNTER_STOP(&s_flash_stats.write);
     return spi_flash_translate_rc(rc);
 }
 
 esp_err_t IRAM_ATTR spi_flash_read(uint32_t src_addr, uint32_t *dest, uint32_t size)
 {
+    COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
-    rc = SPIRead(src_addr, dest, (int32_t) size);
+    {
+        COUNTER_START();
+        rc = SPIRead(src_addr, dest, (int32_t) size);
+        COUNTER_STOP(&s_flash_stats.read_inner);
+    }
     spi_flash_enable_interrupts_caches_and_other_cpu();
+    COUNTER_STOP(&s_flash_stats.read);
     return spi_flash_translate_rc(rc);
 }
 
@@ -269,4 +301,23 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
         SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL_REG, 1, 1, DPORT_APP_CACHE_ENABLE_S);
         SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
     }
+}
+
+static void dump_counter(counter_t* counter, const char* name)
+{
+    printf("%s  count=%8d\ttime=%8dms\n", name, counter->count, counter->time/1000);
+}
+
+void spi_flash_reset_stats()
+{
+    memset(&s_flash_stats, 0, sizeof(s_flash_stats));
+}
+
+void spi_flash_dump_stats()
+{
+    dump_counter(&s_flash_stats.read,  "read       ");
+    dump_counter(&s_flash_stats.write, "write      ");
+    dump_counter(&s_flash_stats.read_inner,  "read_inner ");
+    dump_counter(&s_flash_stats.write_inner, "write_inner");
+    dump_counter(&s_flash_stats.erase, "erase      ");
 }

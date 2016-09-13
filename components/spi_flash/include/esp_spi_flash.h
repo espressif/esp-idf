@@ -69,6 +69,11 @@ esp_err_t spi_flash_write(uint32_t des_addr, const uint32_t *src_addr, uint32_t 
 esp_err_t spi_flash_read(uint32_t src_addr, uint32_t *des_addr, uint32_t size);
 
 
+void spi_flash_reset_stats();
+
+void spi_flash_dump_stats();
+
+
 #ifdef __cplusplus
 }
 #endif
