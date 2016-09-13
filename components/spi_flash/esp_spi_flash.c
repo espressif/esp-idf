@@ -103,11 +103,14 @@ static void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
     xSemaphoreTake(s_flash_op_mutex, portMAX_DELAY);
 
     const uint32_t cpuid = xPortGetCoreID();
-    const uint32_t other_cpuid = !cpuid;
+    const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
 
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
-        // Scheduler hasn't been started yet, so we don't need to worry
-        // about cached code running on the APP CPU.
+        // Scheduler hasn't been started yet, it means that spi_flash API is being
+        // called from the 2nd stage bootloader or from user_start_cpu0, i.e. from
+        // PRO CPU. APP CPU is either in reset or spinning inside user_start_cpu1,
+        // which is in IRAM. So it is safe to disable cache for the other_cpuid here.
+        assert(other_cpuid == 1);
         spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
     } else {
         // Signal to the spi_flash_op_block_task on the other CPU that we need it to
@@ -132,13 +135,16 @@ static void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 static void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 {
     const uint32_t cpuid = xPortGetCoreID();
-    const uint32_t other_cpuid = !cpuid;
+    const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
 
     // Re-enable cache on this CPU
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
 
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
-        // Scheduler is not running yet — just re-enable cache on APP CPU
+        // Scheduler is not running yet — this means we are running on PRO CPU.
+        // other_cpuid is APP CPU, and it is either in reset or is spinning in
+        // user_start_cpu1, which is in IRAM. So we can simply reenable cache.
+        assert(other_cpuid == 1);
         spi_flash_restore_cache(other_cpuid, s_flash_op_cache_state[other_cpuid]);
     } else {
         // Signal to spi_flash_op_block_task that flash operation is complete
@@ -218,17 +224,21 @@ static esp_err_t spi_flash_translate_rc(SpiFlashOpResult rc)
     }
 }
 
+static const uint32_t cache_mask  = DPORT_APP_CACHE_MASK_OPSDRAM | DPORT_APP_CACHE_MASK_DROM0 |
+        DPORT_APP_CACHE_MASK_DRAM1 | DPORT_APP_CACHE_MASK_IROM0 |
+        DPORT_APP_CACHE_MASK_IRAM1 | DPORT_APP_CACHE_MASK_IRAM0;
+
 static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_state)
 {
     uint32_t ret = 0;
     if (cpuid == 0) {
-        ret |= GET_PERI_REG_BITS2(PRO_CACHE_CTRL1_REG, 0x1f, 0);
+        ret |= GET_PERI_REG_BITS2(PRO_CACHE_CTRL1_REG, cache_mask, 0);
         while (GET_PERI_REG_BITS2(PRO_DCACHE_DBUG_REG0, DPORT_PRO_CACHE_STATE, DPORT_PRO_CACHE_STATE_S) != 1) {
             ;
         }
         SET_PERI_REG_BITS(PRO_CACHE_CTRL_REG, 1, 0, DPORT_PRO_CACHE_ENABLE_S);
     } else {
-        ret |= GET_PERI_REG_BITS2(APP_CACHE_CTRL1_REG, 0x1f, 0);
+        ret |= GET_PERI_REG_BITS2(APP_CACHE_CTRL1_REG, cache_mask, 0);
         while (GET_PERI_REG_BITS2(APP_DCACHE_DBUG_REG0, DPORT_APP_CACHE_STATE, DPORT_APP_CACHE_STATE_S) != 1) {
             ;
         }
@@ -241,9 +251,9 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
 {
     if (cpuid == 0) {
         SET_PERI_REG_BITS(PRO_CACHE_CTRL_REG, 1, 1, DPORT_PRO_CACHE_ENABLE_S);
-        SET_PERI_REG_BITS(PRO_CACHE_CTRL1_REG, 0x1f, saved_state, 0);
+        SET_PERI_REG_BITS(PRO_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
     } else {
         SET_PERI_REG_BITS(APP_CACHE_CTRL_REG, 1, 1, DPORT_APP_CACHE_ENABLE_S);
-        SET_PERI_REG_BITS(APP_CACHE_CTRL1_REG, 0x1f, saved_state, 0);
+        SET_PERI_REG_BITS(APP_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
     }
 }
