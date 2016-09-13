@@ -19,7 +19,7 @@
 #define REG_I2S_BASE( i ) ( DR_REG_I2S_BASE + ((i)*0x1E000))
 
 
-#define I2SCONF_REG(i)          (REG_I2S_BASE(i) + 0x0008)
+#define I2S_CONF_REG(i)          (REG_I2S_BASE(i) + 0x0008)
 /* I2S_SIG_LOOPBACK : R/W ;bitpos:[18] ;default: 1'b0 ; */
 /*description: */
 #define I2S_SIG_LOOPBACK  (BIT(18))
@@ -135,7 +135,7 @@
 #define I2S_TX_RESET_V  0x1
 #define I2S_TX_RESET_S  0
 
-#define I2SINT_RAW_REG(i)          (REG_I2S_BASE(i) + 0x000c)
+#define I2S_INT_RAW_REG(i)          (REG_I2S_BASE(i) + 0x000c)
 /* I2S_OUT_TOTAL_EOF_INT_RAW : RO ;bitpos:[16] ;default: 1'b0 ; */
 /*description: */
 #define I2S_OUT_TOTAL_EOF_INT_RAW  (BIT(16))
@@ -239,7 +239,7 @@
 #define I2S_RX_TAKE_DATA_INT_RAW_V  0x1
 #define I2S_RX_TAKE_DATA_INT_RAW_S  0
 
-#define I2SINT_ST_REG(i)          (REG_I2S_BASE(i) + 0x0010)
+#define I2S_INT_ST_REG(i)          (REG_I2S_BASE(i) + 0x0010)
 /* I2S_OUT_TOTAL_EOF_INT_ST : RO ;bitpos:[16] ;default: 1'b0 ; */
 /*description: */
 #define I2S_OUT_TOTAL_EOF_INT_ST  (BIT(16))
@@ -343,7 +343,7 @@
 #define I2S_RX_TAKE_DATA_INT_ST_V  0x1
 #define I2S_RX_TAKE_DATA_INT_ST_S  0
 
-#define I2SINT_ENA_REG(i)          (REG_I2S_BASE(i) + 0x0014)
+#define I2S_INT_ENA_REG(i)          (REG_I2S_BASE(i) + 0x0014)
 /* I2S_OUT_TOTAL_EOF_INT_ENA : R/W ;bitpos:[16] ;default: 1'b0 ; */
 /*description: */
 #define I2S_OUT_TOTAL_EOF_INT_ENA  (BIT(16))
@@ -447,7 +447,7 @@
 #define I2S_RX_TAKE_DATA_INT_ENA_V  0x1
 #define I2S_RX_TAKE_DATA_INT_ENA_S  0
 
-#define I2SINT_CLR_REG(i)          (REG_I2S_BASE(i) + 0x0018)
+#define I2S_INT_CLR_REG(i)          (REG_I2S_BASE(i) + 0x0018)
 /* I2S_OUT_TOTAL_EOF_INT_CLR : WO ;bitpos:[16] ;default: 1'b0 ; */
 /*description: */
 #define I2S_OUT_TOTAL_EOF_INT_CLR  (BIT(16))
@@ -551,7 +551,7 @@
 #define I2S_TAKE_DATA_INT_CLR_V  0x1
 #define I2S_TAKE_DATA_INT_CLR_S  0
 
-#define I2STIMING_REG(i)          (REG_I2S_BASE(i) + 0x001c)
+#define I2S_TIMING_REG(i)          (REG_I2S_BASE(i) + 0x001c)
 /* I2S_TX_BCK_IN_INV : R/W ;bitpos:[24] ;default: 1'b0 ; */
 /*description: */
 #define I2S_TX_BCK_IN_INV  (BIT(24))
@@ -681,7 +681,7 @@
 #define I2S_RX_DATA_NUM_V  0x3F
 #define I2S_RX_DATA_NUM_S  0
 
-#define I2SRXEOF_NUM_REG(i)          (REG_I2S_BASE(i) + 0x0024)
+#define I2S_RXEOF_NUM_REG(i)          (REG_I2S_BASE(i) + 0x0024)
 /* I2S_RX_EOF_NUM : R/W ;bitpos:[31:0] ;default: 32'd64 ; */
 /*description: */
 #define I2S_RX_EOF_NUM  0xFFFFFFFF
@@ -689,7 +689,7 @@
 #define I2S_RX_EOF_NUM_V  0xFFFFFFFF
 #define I2S_RX_EOF_NUM_S  0
 
-#define I2SCONF_SIGLE_DATA_REG(i)          (REG_I2S_BASE(i) + 0x0028)
+#define I2S_CONF_SIGLE_DATA_REG(i)          (REG_I2S_BASE(i) + 0x0028)
 /* I2S_SIGLE_DATA : R/W ;bitpos:[31:0] ;default: 32'd0 ; */
 /*description: */
 #define I2S_SIGLE_DATA  0xFFFFFFFF
@@ -697,7 +697,7 @@
 #define I2S_SIGLE_DATA_V  0xFFFFFFFF
 #define I2S_SIGLE_DATA_S  0
 
-#define I2SCONF_CHAN_REG(i)          (REG_I2S_BASE(i) + 0x002c)
+#define I2S_CONF_CHAN_REG(i)          (REG_I2S_BASE(i) + 0x002c)
 /* I2S_RX_CHAN_MOD : R/W ;bitpos:[4:3] ;default: 2'b0 ; */
 /*description: */
 #define I2S_RX_CHAN_MOD  0x00000003
@@ -711,7 +711,7 @@
 #define I2S_TX_CHAN_MOD_V  0x7
 #define I2S_TX_CHAN_MOD_S  0
 
-#define I2SOUT_LINK_REG(i)          (REG_I2S_BASE(i) + 0x0030)
+#define I2S_OUT_LINK_REG(i)          (REG_I2S_BASE(i) + 0x0030)
 /* I2S_OUTLINK_PARK : RO ;bitpos:[31] ;default: 1'h0 ; */
 /*description: */
 #define I2S_OUTLINK_PARK  (BIT(31))
@@ -743,7 +743,7 @@
 #define I2S_OUTLINK_ADDR_V  0xFFFFF
 #define I2S_OUTLINK_ADDR_S  0
 
-#define I2SIN_LINK_REG(i)          (REG_I2S_BASE(i) + 0x0034)
+#define I2S_IN_LINK_REG(i)          (REG_I2S_BASE(i) + 0x0034)
 /* I2S_INLINK_PARK : RO ;bitpos:[31] ;default: 1'h0 ; */
 /*description: */
 #define I2S_INLINK_PARK  (BIT(31))
@@ -1231,7 +1231,7 @@
 #define I2S_SCO_WITH_I2S_EN_V  0x1
 #define I2S_SCO_WITH_I2S_EN_S  0
 
-#define I2SCONF1_REG(i)          (REG_I2S_BASE(i) + 0x00a0)
+#define I2S_CONF1_REG(i)          (REG_I2S_BASE(i) + 0x00a0)
 /* I2S_TX_ZEROS_RM_EN : R/W ;bitpos:[9] ;default: 1'd0 ; */
 /*description: */
 #define I2S_TX_ZEROS_RM_EN  (BIT(9))
@@ -1295,7 +1295,7 @@
 #define I2S_FIFO_FORCE_PD_V  0x1
 #define I2S_FIFO_FORCE_PD_S  0
 
-#define I2SCONF2_REG(i)          (REG_I2S_BASE(i) + 0x00a8)
+#define I2S_CONF2_REG(i)          (REG_I2S_BASE(i) + 0x00a8)
 /* I2S_INTER_VALID_EN : R/W ;bitpos:[7] ;default: 1'b0 ; */
 /*description: */
 #define I2S_INTER_VALID_EN  (BIT(7))
