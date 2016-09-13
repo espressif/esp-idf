@@ -7,7 +7,7 @@ before_script:
   # add gitlab ssh key
   - mkdir -p ~/.ssh
   - chmod 700 ~/.ssh
-  - echo -n $GITLAB_KEY >> ~/.ssh/id_rsa_base64
+  - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
   - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
@@ -125,8 +125,9 @@ sanity_test:
     - CONFIG_FILE=sanity_test.yml
 
 
-
 push_master_to_github:
+  before_script: 
+    - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
   only:
     - master
@@ -139,7 +140,7 @@ push_master_to_github:
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo -n $GH_PUSH_KEY >> ~/.ssh/id_rsa_base64
+    - echo -n $GH_PUSH_KEY > ~/.ssh/id_rsa_base64
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
