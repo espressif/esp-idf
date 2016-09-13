@@ -178,11 +178,24 @@ static void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 #endif // CONFIG_FREERTOS_UNICORE
 
 
+SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
+{
+    static bool unlocked = false;
+    if (!unlocked) {
+        SpiFlashOpResult rc = SPIUnlock();
+        if (rc != SPI_FLASH_RESULT_OK) {
+            return rc;
+        }
+        unlocked = true;
+    }
+    return SPI_FLASH_RESULT_OK;
+}
+
 esp_err_t IRAM_ATTR spi_flash_erase_sector(uint16_t sec)
 {
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
-    rc = SPIUnlock();
+    rc = spi_flash_unlock();
     if (rc == SPI_FLASH_RESULT_OK) {
         rc = SPIEraseSector(sec);
     }
@@ -194,7 +207,7 @@ esp_err_t IRAM_ATTR spi_flash_write(uint32_t dest_addr, const uint32_t *src, uin
 {
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
-    rc = SPIUnlock();
+    rc = spi_flash_unlock();
     if (rc == SPI_FLASH_RESULT_OK) {
         rc = SPIWrite(dest_addr, src, (int32_t) size);
     }
