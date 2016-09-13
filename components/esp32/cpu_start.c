@@ -18,6 +18,7 @@
 #include "esp_err.h"
 
 #include "rom/ets_sys.h"
+#include "rom/uart.h"
 
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
@@ -58,11 +59,6 @@ extern int _iram_text_end;
 We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
 flash cache is down and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
 */
-
-void Uart_Init(int no);
-void uartAttach();
-void ets_set_appcpu_boot_addr(uint32_t ent);
-int ets_getAppEntry();
 
 static bool app_cpu_started = false;
 
