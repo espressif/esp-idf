@@ -4,6 +4,18 @@ stages:
   - deploy
 
 before_script:
+  # add gitlab ssh key
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - echo -n $GITLAB_KEY >> ~/.ssh/id_rsa_base64
+  - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+  - chmod 600 ~/.ssh/id_rsa
+  - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
+  # if testing master branch, use github wifi libs.
+  # if testing other branches, use gitlab wifi libs (as maybe changes aren't merged to master yet)
+  - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-wifi-lib%ssh://git@gitlab.espressif.cn:27227/idf/esp32-wifi-lib%" .gitmodules
+  # fetch all submodules
   - git submodule update --init --recursive
 
 build_template_app:
@@ -59,7 +71,6 @@ build_ssc:
     expire_in: 6 mos
 
   script:
-    - git submodule update --init --recursive
     - git clone ssh://git@gitlab.espressif.cn:27227/yinling/SSC.git
     - cd SSC
     - make defconfig
