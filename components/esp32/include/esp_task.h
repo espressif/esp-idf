@@ -1,6 +1,3 @@
-#ifndef _ESP_TASK_H_
-#define _ESP_TASK_H_
-
 // Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 /* Notes:
  * 1. Put all task priority and stack size definition in this file
  * 2. If the task priority is less than 10, use ESP_TASK_PRIO_MIN + X style,
@@ -26,6 +22,11 @@
  *    greater than 0
  * 5. Make sure esp_task.h is consistent between wifi lib and idf
  */
+
+#ifndef _ESP_TASK_H_
+#define _ESP_TASK_H_
+
+#include "sdkconfig.h"
 
 #define ESP_TASK_PRIO_MAX (configMAX_PRIORITIES)
 #define ESP_TASK_PRIO_MIN (0)
@@ -44,7 +45,7 @@
 
 /* idf task */
 #define ESP_TASKD_EVENT_PRIO          (ESP_TASK_PRIO_MAX - 5)
-#define ESP_TASKD_EVENT_STACK         2048
+#define ESP_TASKD_EVENT_STACK         CONFIG_SYSTEM_EVENT_TASK_STACK_SIZE
 #define ESP_TASK_WIFI_STARTUP_PRIO    (ESP_TASK_PRIO_MAX - 7)
 #define ESP_TASK_WIFI_STARTUP_STACK   4096
 #define ESP_TASK_TCPIP_PRIO           (ESP_TASK_PRIO_MAX - 7)
