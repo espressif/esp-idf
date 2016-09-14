@@ -24,6 +24,7 @@
 #include "rom/crc.h"
 
 #include "soc/soc.h"
+#include "soc/cpu.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/efuse_reg.h"
@@ -60,36 +61,7 @@ void IRAM_ATTR set_cache_and_start_app(uint32_t drom_addr,
 
 void IRAM_ATTR call_start_cpu0()
 {
-    //Make page 0 access raise an exception
-    //Also some other unused pages so we can catch weirdness
-    //ToDo: this but nicer.
-    asm volatile (\
-                  "movi a4,0x00000000\n" \
-                  "movi a5,0xf\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0x80000000\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0xa0000000\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0xc0000000\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0xe0000000\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0x20000000\n" \
-                  "movi a5,0x0\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0x40000000\n" \
-                  "movi a5,0x2\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "isync\n" \
-                  :::"a4","a5");
+    cpu_configure_region_protection();
 
     //Clear bss
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
