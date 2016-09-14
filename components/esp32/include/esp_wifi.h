@@ -706,8 +706,8 @@ typedef enum {
   *
   */
 typedef enum {
-	WIFI_VND_IE_ID_0,
-	WIFI_VND_IE_ID_1,
+    WIFI_VND_IE_ID_0,
+    WIFI_VND_IE_ID_1,
 } wifi_vendor_ie_id_t;
 
 /**
