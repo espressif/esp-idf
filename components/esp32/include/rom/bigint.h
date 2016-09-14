@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef _ROM_BIGINT_H_
 #define _ROM_BIGINT_H_
 
@@ -21,6 +22,7 @@
 extern "C" {
 #endif
 
+//TODO: add comment here
 void ets_bigint_enable(void);
 
 void ets_bigint_disable(void);

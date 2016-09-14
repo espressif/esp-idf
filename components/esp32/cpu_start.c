@@ -18,6 +18,7 @@
 #include "esp_err.h"
 
 #include "rom/ets_sys.h"
+#include "rom/uart.h"
 
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
@@ -36,6 +37,8 @@
 #include "esp_spi_flash.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
+#include "esp_spi_flash.h"
+#include "esp_ipc.h"
 
 static void IRAM_ATTR user_start_cpu0(void);
 static void IRAM_ATTR call_user_start_cpu1();
@@ -58,11 +61,6 @@ extern int _iram_text_end;
 We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
 flash cache is down and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
 */
-
-void Uart_Init(int no);
-void uartAttach();
-void ets_set_appcpu_boot_addr(uint32_t ent);
-int ets_getAppEntry();
 
 static bool app_cpu_started = false;
 
@@ -180,53 +178,55 @@ void IRAM_ATTR call_user_start_cpu1() {
 	user_start_cpu1();
 }
 
-extern volatile int port_xSchedulerRunning;
-extern int xPortStartScheduler();
+extern volatile int port_xSchedulerRunning[2];
 
-void user_start_cpu1(void) {
-	//Wait for the freertos initialization is finished on CPU0
-	while (port_xSchedulerRunning == 0) ;
-	ets_printf("Core0 started initializing FreeRTOS. Jumping to scheduler.\n");
-	//Okay, start the scheduler!
+void IRAM_ATTR user_start_cpu1(void) {
+	// Wait for FreeRTOS initialization to finish on PRO CPU
+	while (port_xSchedulerRunning[0] == 0) {
+	    ;
+	}
+	ets_printf("Starting scheduler on APP CPU.\n");
 	xPortStartScheduler();
 }
 
 extern void (*__init_array_start)(void);
 extern void (*__init_array_end)(void);
 
-extern esp_err_t app_main();
 static void do_global_ctors(void) {
     void (**p)(void);
     for(p = &__init_array_start; p != &__init_array_end; ++p)
         (*p)();
 }
 
+extern esp_err_t app_main(void *ctx);
 
 void user_start_cpu0(void) {
 	ets_setup_syscalls();
 	do_global_ctors();
+	esp_ipc_init();
+	spi_flash_init();
 
 #if CONFIG_WIFI_ENABLED
-    ets_printf("nvs_flash_init\n");
     esp_err_t ret = nvs_flash_init(5, 3);
     if (ret != ESP_OK) {
-        ets_printf("nvs_flash_init fail, ret=%d\n", ret);
+        printf("nvs_flash_init failed, ret=%d\n", ret);
     }
 
     system_init();
 
-    esp_event_init(NULL);
+    esp_event_init(NULL, NULL);
 
     tcpip_adapter_init();
 #endif
 
 #if CONFIG_WIFI_ENABLED && CONFIG_WIFI_AUTO_STARTUP
 #include "esp_wifi.h"
-	esp_wifi_startup(app_main);
+	esp_wifi_startup(app_main, NULL);
 #else
-	app_main();
+	app_main(NULL);
 #endif
 
+	ets_printf("Starting scheduler on PRO CPU.\n");
 	vTaskStartScheduler();
 }
 

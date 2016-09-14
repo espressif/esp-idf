@@ -49,6 +49,23 @@ summary := @echo
 details := @true
 endif
 
+# Pseudo-target to handle the case where submodules need to be
+# re-initialised.
+#
+# $(eval $(call SubmoduleRequiredForFiles,FILENAMES)) to create a target that
+# automatically runs 'git submodule update --init' if those files
+# are missing, and fails if this is not possible.
+define SubmoduleRequiredForFiles
+$(1):
+	@echo "WARNING: Missing submodule for $$@..."
+	$(Q) [ -d ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
+	$(Q) [ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule --init' in esp-idf root directory."; exit 1)
+	@echo "Attempting 'git submodule update --init' in esp-idf root directory..."
+	cd ${IDF_PATH} && git submodule update --init
+endef
+
+
+
 # General make utilities
 
 # convenience variable for printing an 80 asterisk wide separator line

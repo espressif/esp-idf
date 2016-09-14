@@ -167,6 +167,9 @@ typedef struct {
 #define portDISABLE_INTERRUPTS()      do { XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); portbenchmarkINTERRUPT_DISABLE(); } while (0)
 #define portENABLE_INTERRUPTS()       do { portbenchmarkINTERRUPT_RESTORE(0); XTOS_SET_INTLEVEL(0); } while (0)
 
+#define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
+void vPortAssertIfInISR();
+
 #define portCRITICAL_NESTING_IN_TCB 1 
 
 /*
@@ -213,6 +216,7 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux);
 
 // Cleaner and preferred solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
+//NOT SMP-COMPATIBLE! Use only if all you want is to disable the interrupts locally!
 static inline unsigned portENTER_CRITICAL_NESTED() { unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); portbenchmarkINTERRUPT_DISABLE(); return state; }
 #define portEXIT_CRITICAL_NESTED(state)   do { portbenchmarkINTERRUPT_RESTORE(state); XTOS_RESTORE_JUST_INTLEVEL(state); } while (0)
 

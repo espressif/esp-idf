@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,9 +27,12 @@
 
 #if CONFIG_WIFI_ENABLED
 
-static wifi_startup_cb_t startup_cb;
+static bool wifi_startup_flag = false;
 
-#define WIFI_DEBUG(...) 
+static wifi_startup_cb_t startup_cb;
+static void *startup_ctx;
+
+#define WIFI_DEBUG(...)
 #define WIFI_API_CALL_CHECK(info, api_call, ret) \
 do{\
     esp_err_t __err = (api_call);\
@@ -54,7 +58,7 @@ static void esp_wifi_task(void *pvParameters)
         }
 
         if (startup_cb) {
-            err = (*startup_cb)();
+            err = (*startup_cb)(startup_ctx);
             if (err != ESP_OK) {
                 WIFI_DEBUG("startup_cb fail, ret=%d\n", err);
                 break;
@@ -71,7 +75,7 @@ static void esp_wifi_task(void *pvParameters)
         wifi_mode_t mode;
         bool auto_connect;
         err = esp_wifi_get_mode(&mode);
-        if (err != ESP_OK){
+        if (err != ESP_OK) {
             WIFI_DEBUG("esp_wifi_get_mode fail, ret=%d\n", err);
         }
 
@@ -94,9 +98,17 @@ static void esp_wifi_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-void esp_wifi_startup(wifi_startup_cb_t cb)
+esp_err_t esp_wifi_startup(wifi_startup_cb_t cb, void *ctx)
 {
+    if (wifi_startup_flag) {
+        return ESP_FAIL;
+    }
+
     startup_cb = cb;
+    startup_ctx = ctx;
+
     xTaskCreatePinnedToCore(esp_wifi_task, "wifiTask", 4096, NULL, 5, NULL, 0);// TODO: rearrange task priority
+
+    return ESP_OK;
 }
 #endif

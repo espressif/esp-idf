@@ -9,7 +9,7 @@
 .PHONY: partition_table partition_table-flash partition_table-clean
 
 # NB: gen_esp32part.py lives in the sdk/bin/ dir not component dir
-GEN_ESP32PART := $(PYTHON) $(IDF_PATH)/bin/gen_esp32part.py -q
+GEN_ESP32PART := $(PYTHON) $(COMPONENT_PATH)/gen_esp32part.py -q
 
 # Path to partition CSV file is relative to project path for custom
 # partition CSV files, but relative to component dir otherwise.$
