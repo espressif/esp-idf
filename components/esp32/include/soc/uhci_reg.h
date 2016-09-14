@@ -859,7 +859,7 @@
 #define UHCI_AHB_TESTADDR_V  0x3
 #define UHCI_AHB_TESTADDR_S  4
 /* UHCI_AHB_TESTMODE : R/W ;bitpos:[2:0] ;default: 3'b0 ; */
-/*description: bit2 is ahb bus test enable £¬bit1 is used to choose wrtie(1)
+/*description: bit2 is ahb bus test enable ,bit1 is used to choose wrtie(1)
  or read(0) mode. bit0 is used to choose test only once(1) or continue(0)*/
 #define UHCI_AHB_TESTMODE  0x00000007
 #define UHCI_AHB_TESTMODE_M  ((UHCI_AHB_TESTMODE_V)<<(UHCI_AHB_TESTMODE_S))

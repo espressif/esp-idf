@@ -90,7 +90,7 @@
 #define UART_SW_XOFF_INT_RAW_V  0x1
 #define UART_SW_XOFF_INT_RAW_S  10
 /* UART_SW_XON_INT_RAW : RO ;bitpos:[9] ;default: 1'b0 ; */
-/*description: This interrupt raw bit turns to high level when receiver recevies
+/*description: This interrupt raw bit turns to high level when receiver receives
  xoff char with uart_sw_flow_con_en is set to 1.*/
 #define UART_SW_XON_INT_RAW  (BIT(9))
 #define UART_SW_XON_INT_RAW_M  (BIT(9))
@@ -617,20 +617,20 @@
 
 #define UART_CONF0_REG(i)          (REG_UART_BASE(i) + 0x20)
 /* UART_TICK_REF_ALWAYS_ON : R/W ;bitpos:[27] ;default: 1'b1 ; */
-/*description: This register is used to select the clock.1��apb clock��ref_tick*/
+/*description: This register is used to select the clock.1.apb clock 0:ref_tick*/
 #define UART_TICK_REF_ALWAYS_ON  (BIT(27))
 #define UART_TICK_REF_ALWAYS_ON_M  (BIT(27))
 #define UART_TICK_REF_ALWAYS_ON_V  0x1
 #define UART_TICK_REF_ALWAYS_ON_S  27
 /* UART_ERR_WR_MASK : R/W ;bitpos:[26] ;default: 1'b0 ; */
-/*description: 1��receiver stops storing data int fifo when data is wrong.
- 0��receiver stores the data even if the  received data is wrong.*/
+/*description: 1.receiver stops storing data int fifo when data is wrong.
+ 0.receiver stores the data even if the  received data is wrong.*/
 #define UART_ERR_WR_MASK  (BIT(26))
 #define UART_ERR_WR_MASK_M  (BIT(26))
 #define UART_ERR_WR_MASK_V  0x1
 #define UART_ERR_WR_MASK_S  26
 /* UART_CLK_EN : R/W ;bitpos:[25] ;default: 1'h0 ; */
-/*description: 1��force clock on for registers��support clock only when write registers*/
+/*description: 1.force clock on for registers.support clock only when write registers*/
 #define UART_CLK_EN  (BIT(25))
 #define UART_CLK_EN_M  (BIT(25))
 #define UART_CLK_EN_V  0x1
@@ -714,8 +714,8 @@
 #define UART_IRDA_TX_INV_V  0x1
 #define UART_IRDA_TX_INV_S  12
 /* UART_IRDA_WCTL : R/W ;bitpos:[11] ;default: 1'b0 ; */
-/*description: 1��the irda transmitter's 11th bit is the same to the 10th bit.
- 0��set irda transmitter's 11th bit to 0.*/
+/*description: 1.the irda transmitter's 11th bit is the same to the 10th bit.
+ 0.set irda transmitter's 11th bit to 0.*/
 #define UART_IRDA_WCTL  (BIT(11))
 #define UART_IRDA_WCTL_M  (BIT(11))
 #define UART_IRDA_WCTL_V  0x1
@@ -800,7 +800,7 @@
 #define UART_RX_FLOW_EN_V  0x1
 #define UART_RX_FLOW_EN_S  23
 /* UART_RX_FLOW_THRHD : R/W ;bitpos:[22:16] ;default: 7'h0 ; */
-/*description: when receiver receives more data than its threshold value��
+/*description: when receiver receives more data than its threshold value.
  receiver produce signal to tell the transmitter stop transferring data. the threshold value is (rx_flow_thrhd_h3 rx_flow_thrhd).*/
 #define UART_RX_FLOW_THRHD  0x0000007F
 #define UART_RX_FLOW_THRHD_M  ((UART_RX_FLOW_THRHD_V)<<(UART_RX_FLOW_THRHD_S))
@@ -808,13 +808,13 @@
 #define UART_RX_FLOW_THRHD_S  16
 /* UART_TXFIFO_EMPTY_THRHD : R/W ;bitpos:[14:8] ;default: 7'h60 ; */
 /*description: when the data amount in transmitter fifo is less than its threshold
- value�� it will produce txfifo_empty_int_raw interrupt. the threshold value is (tx_mem_empty_thrhd txfifo_empty_thrhd)*/
+ value. it will produce txfifo_empty_int_raw interrupt. the threshold value is (tx_mem_empty_thrhd txfifo_empty_thrhd)*/
 #define UART_TXFIFO_EMPTY_THRHD  0x0000007F
 #define UART_TXFIFO_EMPTY_THRHD_M  ((UART_TXFIFO_EMPTY_THRHD_V)<<(UART_TXFIFO_EMPTY_THRHD_S))
 #define UART_TXFIFO_EMPTY_THRHD_V  0x7F
 #define UART_TXFIFO_EMPTY_THRHD_S  8
 /* UART_RXFIFO_FULL_THRHD : R/W ;bitpos:[6:0] ;default: 7'h60 ; */
-/*description: When receiver receives more data than its threshold value��receiver
+/*description: When receiver receives more data than its threshold value.receiver
  will produce rxfifo_full_int_raw interrupt.the threshold value is (rx_flow_thrhd_h3 rxfifo_full_thrhd).*/
 #define UART_RXFIFO_FULL_THRHD  0x0000007F
 #define UART_RXFIFO_FULL_THRHD_M  ((UART_RXFIFO_FULL_THRHD_V)<<(UART_RXFIFO_FULL_THRHD_S))
@@ -824,7 +824,7 @@
 #define UART_LOWPULSE_REG(i)          (REG_UART_BASE(i) + 0x28)
 /* UART_LOWPULSE_MIN_CNT : RO ;bitpos:[19:0] ;default: 20'hFFFFF ; */
 /*description: This register stores the value of the minimum duration time for
- the low level pulse�� it is used in baudrate-detect process.*/
+ the low level pulse. it is used in baudrate-detect process.*/
 #define UART_LOWPULSE_MIN_CNT  0x000FFFFF
 #define UART_LOWPULSE_MIN_CNT_M  ((UART_LOWPULSE_MIN_CNT_V)<<(UART_LOWPULSE_MIN_CNT_S))
 #define UART_LOWPULSE_MIN_CNT_V  0xFFFFF
@@ -833,7 +833,7 @@
 #define UART_HIGHPULSE_REG(i)          (REG_UART_BASE(i) + 0x2C)
 /* UART_HIGHPULSE_MIN_CNT : RO ;bitpos:[19:0] ;default: 20'hFFFFF ; */
 /*description: This register stores  the value of the maxinum duration time
- for the high level pulse�� it is used in baudrate-detect process.*/
+ for the high level pulse. it is used in baudrate-detect process.*/
 #define UART_HIGHPULSE_MIN_CNT  0x000FFFFF
 #define UART_HIGHPULSE_MIN_CNT_M  ((UART_HIGHPULSE_MIN_CNT_V)<<(UART_HIGHPULSE_MIN_CNT_S))
 #define UART_HIGHPULSE_MIN_CNT_V  0xFFFFF
@@ -841,7 +841,7 @@
 
 #define UART_RXD_CNT_REG(i)          (REG_UART_BASE(i) + 0x30)
 /* UART_RXD_EDGE_CNT : RO ;bitpos:[9:0] ;default: 10'h0 ; */
-/*description: This register stores the count of rxd edge change�� it is used
+/*description: This register stores the count of rxd edge change. it is used
  in baudrate-detect process.*/
 #define UART_RXD_EDGE_CNT  0x000003FF
 #define UART_RXD_EDGE_CNT_M  ((UART_RXD_EDGE_CNT_V)<<(UART_RXD_EDGE_CNT_S))
@@ -850,13 +850,13 @@
 
 #define UART_FLOW_CONF_REG(i)          (REG_UART_BASE(i) + 0x34)
 /* UART_SEND_XOFF : R/W ;bitpos:[5] ;default: 1'b0 ; */
-/*description: Set this bit to send xoff char�� it is cleared by hardware automatically.*/
+/*description: Set this bit to send xoff char. it is cleared by hardware automatically.*/
 #define UART_SEND_XOFF  (BIT(5))
 #define UART_SEND_XOFF_M  (BIT(5))
 #define UART_SEND_XOFF_V  0x1
 #define UART_SEND_XOFF_S  5
 /* UART_SEND_XON : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: Set this bit to send xon char�� it is cleared by hardware automatically.*/
+/*description: Set this bit to send xon char. it is cleared by hardware automatically.*/
 #define UART_SEND_XON  (BIT(4))
 #define UART_SEND_XON_M  (BIT(4))
 #define UART_SEND_XON_V  0x1
@@ -889,7 +889,7 @@
 
 #define UART_SLEEP_CONF_REG(i)          (REG_UART_BASE(i) + 0x38)
 /* UART_ACTIVE_THRESHOLD : R/W ;bitpos:[9:0] ;default: 10'hf0 ; */
-/*description: When the input rxd edge changes more than this register value��
+/*description: When the input rxd edge changes more than this register value.
  the uart is active from light sleeping mode.*/
 #define UART_ACTIVE_THRESHOLD  0x000003FF
 #define UART_ACTIVE_THRESHOLD_M  ((UART_ACTIVE_THRESHOLD_V)<<(UART_ACTIVE_THRESHOLD_S))
@@ -911,14 +911,14 @@
 #define UART_XON_CHAR_S  16
 /* UART_XOFF_THRESHOLD : R/W ;bitpos:[15:8] ;default: 8'he0 ; */
 /*description: When the data amount in receiver's fifo is less than this register
- value�� it will send a xon char with uart_sw_flow_con_en set to 1.*/
+ value. it will send a xon char with uart_sw_flow_con_en set to 1.*/
 #define UART_XOFF_THRESHOLD  0x000000FF
 #define UART_XOFF_THRESHOLD_M  ((UART_XOFF_THRESHOLD_V)<<(UART_XOFF_THRESHOLD_S))
 #define UART_XOFF_THRESHOLD_V  0xFF
 #define UART_XOFF_THRESHOLD_S  8
 /* UART_XON_THRESHOLD : R/W ;bitpos:[7:0] ;default: 8'h0 ; */
 /*description: when the data amount in receiver's fifo is more than this register
- value�� it will send a xoff char with uart_sw_flow_con_en set to 1.*/
+ value. it will send a xoff char with uart_sw_flow_con_en set to 1.*/
 #define UART_XON_THRESHOLD  0x000000FF
 #define UART_XON_THRESHOLD_M  ((UART_XON_THRESHOLD_V)<<(UART_XON_THRESHOLD_S))
 #define UART_XON_THRESHOLD_V  0xFF
@@ -940,7 +940,7 @@
 #define UART_TX_IDLE_NUM_S  10
 /* UART_RX_IDLE_THRHD : R/W ;bitpos:[9:0] ;default: 10'h100 ; */
 /*description: when receiver takes more time than this register value to receive
- a byte data�� it will produce frame end signal for uhci to stop receiving data.*/
+ a byte data. it will produce frame end signal for uhci to stop receiving data.*/
 #define UART_RX_IDLE_THRHD  0x000003FF
 #define UART_RX_IDLE_THRHD_M  ((UART_RX_IDLE_THRHD_V)<<(UART_RX_IDLE_THRHD_S))
 #define UART_RX_IDLE_THRHD_V  0x3FF
@@ -995,7 +995,7 @@
 #define UART_AT_CMD_PRECNT_REG(i)          (REG_UART_BASE(i) + 0x48)
 /* UART_PRE_IDLE_NUM : R/W ;bitpos:[23:0] ;default: 24'h186a00 ; */
 /*description: This register is used to configure the idle duration time before
- the first at_cmd is received by receiver�� when the the duration is less than this register value it will not take the next data received as at_cmd char.*/
+ the first at_cmd is received by receiver. when the the duration is less than this register value it will not take the next data received as at_cmd char.*/
 #define UART_PRE_IDLE_NUM  0x00FFFFFF
 #define UART_PRE_IDLE_NUM_M  ((UART_PRE_IDLE_NUM_V)<<(UART_PRE_IDLE_NUM_S))
 #define UART_PRE_IDLE_NUM_V  0xFFFFFF
@@ -1004,7 +1004,7 @@
 #define UART_AT_CMD_POSTCNT_REG(i)          (REG_UART_BASE(i) + 0x4c)
 /* UART_POST_IDLE_NUM : R/W ;bitpos:[23:0] ;default: 24'h186a00 ; */
 /*description: This register is used to configure the duration time between
- the last at_cmd and the next data�� when the duration is less than this register value  it will not take the previous data as at_cmd char.*/
+ the last at_cmd and the next data. when the duration is less than this register value  it will not take the previous data as at_cmd char.*/
 #define UART_POST_IDLE_NUM  0x00FFFFFF
 #define UART_POST_IDLE_NUM_M  ((UART_POST_IDLE_NUM_V)<<(UART_POST_IDLE_NUM_S))
 #define UART_POST_IDLE_NUM_V  0xFFFFFF
@@ -1013,7 +1013,7 @@
 #define UART_AT_CMD_GAPTOUT_REG(i)          (REG_UART_BASE(i) + 0x50)
 /* UART_RX_GAP_TOUT : R/W ;bitpos:[23:0] ;default: 24'h1e00 ; */
 /*description: This register is used to configure the duration time between
- the at_cmd chars�� when the duration time is less than this register value it will not take the datas as continous at_cmd chars.*/
+ the at_cmd chars. when the duration time is less than this register value it will not take the datas as continous at_cmd chars.*/
 #define UART_RX_GAP_TOUT  0x00FFFFFF
 #define UART_RX_GAP_TOUT_M  ((UART_RX_GAP_TOUT_V)<<(UART_RX_GAP_TOUT_S))
 #define UART_RX_GAP_TOUT_V  0xFFFFFF
@@ -1086,7 +1086,7 @@
 #define UART_RX_SIZE_V  0xF
 #define UART_RX_SIZE_S  3
 /* UART_MEM_PD : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: Set this bit to power down mem��when reg_mem_pd registers in
+/*description: Set this bit to power down mem.when reg_mem_pd registers in
  the 3 uarts are all set to 1  mem will enter low power mode.*/
 #define UART_MEM_PD  (BIT(0))
 #define UART_MEM_PD_M  (BIT(0))
@@ -1125,7 +1125,7 @@
 
 #define UART_POSPULSE_REG(i)          (REG_UART_BASE(i) + 0x68)
 /* UART_POSEDGE_MIN_CNT : RO ;bitpos:[19:0] ;default: 20'hFFFFF ; */
-/*description: This register stores the count of rxd posedge edge�� it is used
+/*description: This register stores the count of rxd posedge edge. it is used
  in boudrate-detect process.*/
 #define UART_POSEDGE_MIN_CNT  0x000FFFFF
 #define UART_POSEDGE_MIN_CNT_M  ((UART_POSEDGE_MIN_CNT_V)<<(UART_POSEDGE_MIN_CNT_S))
@@ -1134,7 +1134,7 @@
 
 #define UART_NEGPULSE_REG(i)          (REG_UART_BASE(i) + 0x6c)
 /* UART_NEGEDGE_MIN_CNT : RO ;bitpos:[19:0] ;default: 20'hFFFFF ; */
-/*description: This register stores the count of rxd negedge edge�� it is used
+/*description: This register stores the count of rxd negedge edge. it is used
  in boudrate-detect process.*/
 #define UART_NEGEDGE_MIN_CNT  0x000FFFFF
 #define UART_NEGEDGE_MIN_CNT_M  ((UART_NEGEDGE_MIN_CNT_V)<<(UART_NEGEDGE_MIN_CNT_S))

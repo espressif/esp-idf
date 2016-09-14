@@ -187,7 +187,7 @@
 #define SPI_FREAD_QUAD_V  0x1
 #define SPI_FREAD_QUAD_S  20
 /* SPI_RESANDRES : R/W ;bitpos:[15] ;default: 1'b1 ; */
-/*description: The Device ID is read out to SPI_RD_STATUS register£¬ this bit
+/*description: The Device ID is read out to SPI_RD_STATUS register, this bit
  combine with spi_flash_res bit. 1: enable 0: disable.*/
 #define SPI_RESANDRES  (BIT(15))
 #define SPI_RESANDRES_M  (BIT(15))
@@ -243,19 +243,19 @@
 
 #define SPI_RD_STATUS_REG(i)          (REG_SPI_BASE(i) + 0x10)
 /* SPI_STATUS_EXT : R/W ;bitpos:[31:24] ;default: 8'h00 ; */
-/*description: In the slave mode£¬it is the status for master to read out.*/
+/*description: In the slave mode,it is the status for master to read out.*/
 #define SPI_STATUS_EXT  0x000000FF
 #define SPI_STATUS_EXT_M  ((SPI_STATUS_EXT_V)<<(SPI_STATUS_EXT_S))
 #define SPI_STATUS_EXT_V  0xFF
 #define SPI_STATUS_EXT_S  24
 /* SPI_WB_MODE : R/W ;bitpos:[23:16] ;default: 8'h00 ; */
-/*description: Mode bits in the flash fast read mode£¬ it is combined with spi_fastrd_mode bit.*/
+/*description: Mode bits in the flash fast read mode, it is combined with spi_fastrd_mode bit.*/
 #define SPI_WB_MODE  0x000000FF
 #define SPI_WB_MODE_M  ((SPI_WB_MODE_V)<<(SPI_WB_MODE_S))
 #define SPI_WB_MODE_V  0xFF
 #define SPI_WB_MODE_S  16
 /* SPI_STATUS : R/W ;bitpos:[15:0] ;default: 16'b0 ; */
-/*description: In the slave mode£¬ it is the status for master to read out.*/
+/*description: In the slave mode, it is the status for master to read out.*/
 #define SPI_STATUS  0x0000FFFF
 #define SPI_STATUS_M  ((SPI_STATUS_V)<<(SPI_STATUS_S))
 #define SPI_STATUS_V  0xFFFF
@@ -302,27 +302,27 @@
 #define SPI_MISO_DELAY_MODE_V  0x3
 #define SPI_MISO_DELAY_MODE_S  16
 /* SPI_CK_OUT_HIGH_MODE : R/W ;bitpos:[15:12] ;default: 4'h0 ; */
-/*description: modify spi clock duty ratio when the value is lager than 8£¬
+/*description: modify spi clock duty ratio when the value is lager than 8,
  the bits are combined with spi_clkcnt_N bits and spi_clkcnt_H bits.*/
 #define SPI_CK_OUT_HIGH_MODE  0x0000000F
 #define SPI_CK_OUT_HIGH_MODE_M  ((SPI_CK_OUT_HIGH_MODE_V)<<(SPI_CK_OUT_HIGH_MODE_S))
 #define SPI_CK_OUT_HIGH_MODE_V  0xF
 #define SPI_CK_OUT_HIGH_MODE_S  12
 /* SPI_CK_OUT_LOW_MODE : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
-/*description: modify spi clock duty ratio when the value is lager than 8£¬
+/*description: modify spi clock duty ratio when the value is lager than 8,
  the bits are combined with spi_clkcnt_N bits and spi_clkcnt_L bits.*/
 #define SPI_CK_OUT_LOW_MODE  0x0000000F
 #define SPI_CK_OUT_LOW_MODE_M  ((SPI_CK_OUT_LOW_MODE_V)<<(SPI_CK_OUT_LOW_MODE_S))
 #define SPI_CK_OUT_LOW_MODE_V  0xF
 #define SPI_CK_OUT_LOW_MODE_S  8
 /* SPI_HOLD_TIME : R/W ;bitpos:[7:4] ;default: 4'h1 ; */
-/*description: delay cycles of cs pin by spi clock£¬ this bits combined with spi_cs_hold bit.*/
+/*description: delay cycles of cs pin by spi clock, this bits combined with spi_cs_hold bit.*/
 #define SPI_HOLD_TIME  0x0000000F
 #define SPI_HOLD_TIME_M  ((SPI_HOLD_TIME_V)<<(SPI_HOLD_TIME_S))
 #define SPI_HOLD_TIME_V  0xF
 #define SPI_HOLD_TIME_S  4
 /* SPI_SETUP_TIME : R/W ;bitpos:[3:0] ;default: 4'h1 ; */
-/*description: (cycles-1) of ¡°prepare¡± phase by spi clock£¬ this bits combined
+/*description: (cycles-1) of ¡°prepare¡± phase by spi clock, this bits combined
  with spi_cs_setup bit.*/
 #define SPI_SETUP_TIME  0x0000000F
 #define SPI_SETUP_TIME_M  ((SPI_SETUP_TIME_V)<<(SPI_SETUP_TIME_S))
@@ -622,19 +622,19 @@
 #define SPI_CK_DIS_V  0x1
 #define SPI_CK_DIS_S  5
 /* SPI_CS2_DIS : R/W ;bitpos:[2] ;default: 1'b1 ; */
-/*description: SPI CS2 pin enable£¬ 1: disable CS2£¬ 0: spi_cs2 signal is from/to CS2 pin*/
+/*description: SPI CS2 pin enable, 1: disable CS2, 0: spi_cs2 signal is from/to CS2 pin*/
 #define SPI_CS2_DIS  (BIT(2))
 #define SPI_CS2_DIS_M  (BIT(2))
 #define SPI_CS2_DIS_V  0x1
 #define SPI_CS2_DIS_S  2
 /* SPI_CS1_DIS : R/W ;bitpos:[1] ;default: 1'b1 ; */
-/*description: SPI CS1 pin enable£¬ 1: disable CS1£¬ 0: spi_cs1 signal is from/to CS1 pin*/
+/*description: SPI CS1 pin enable, 1: disable CS1, 0: spi_cs1 signal is from/to CS1 pin*/
 #define SPI_CS1_DIS  (BIT(1))
 #define SPI_CS1_DIS_M  (BIT(1))
 #define SPI_CS1_DIS_V  0x1
 #define SPI_CS1_DIS_S  1
 /* SPI_CS0_DIS : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: SPI CS0 pin enable£¬ 1: disable CS0£¬ 0: spi_cs0 signal is from/to CS0 pin*/
+/*description: SPI CS0 pin enable, 1: disable CS0, 0: spi_cs0 signal is from/to CS0 pin*/
 #define SPI_CS0_DIS  (BIT(0))
 #define SPI_CS0_DIS_M  (BIT(0))
 #define SPI_CS0_DIS_V  0x1
@@ -642,7 +642,7 @@
 
 #define SPI_SLAVE_REG(i)          (REG_SPI_BASE(i) + 0x38)
 /* SPI_SYNC_RESET : R/W ;bitpos:[31] ;default: 1'b0 ; */
-/*description: Software reset enable£¬ reset the spi clock line cs line and data lines.*/
+/*description: Software reset enable, reset the spi clock line cs line and data lines.*/
 #define SPI_SYNC_RESET  (BIT(31))
 #define SPI_SYNC_RESET_M  (BIT(31))
 #define SPI_SYNC_RESET_V  0x1

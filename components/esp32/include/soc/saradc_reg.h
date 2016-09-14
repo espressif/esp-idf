@@ -525,15 +525,15 @@
 #define SARADC_XPD_HALL_FORCE_V  0x1
 #define SARADC_XPD_HALL_FORCE_S  26
 /* SARADC_TOUCH_OUT_1EN : R/W ;bitpos:[25] ;default: 1'b1 ; */
-/*description: 1: wakeup interrupt is generated if SET1 is ��touched��  0:
- wakeup interrupt is generated only if SET1 & SET2 is both ��touched��*/
+/*description: 1: wakeup interrupt is generated if SET1 is "touched"  0:
+ wakeup interrupt is generated only if SET1 & SET2 is both "touched"*/
 #define SARADC_TOUCH_OUT_1EN  (BIT(25))
 #define SARADC_TOUCH_OUT_1EN_M  (BIT(25))
 #define SARADC_TOUCH_OUT_1EN_V  0x1
 #define SARADC_TOUCH_OUT_1EN_S  25
 /* SARADC_TOUCH_OUT_SEL : R/W ;bitpos:[24] ;default: 1'b0 ; */
 /*description: 1: when the counter is greater then the threshold  the touch
- pad is considered as ��touched��  0: when the counter is less than the threshold  the touch pad is considered as ��touched��*/
+ pad is considered as "touched"  0: when the counter is less than the threshold  the touch pad is considered as "touched"*/
 #define SARADC_TOUCH_OUT_SEL  (BIT(24))
 #define SARADC_TOUCH_OUT_SEL_M  (BIT(24))
 #define SARADC_TOUCH_OUT_SEL_V  0x1
@@ -730,7 +730,7 @@
 #define SARADC_TOUCH_MEAS_DONE_V  0x1
 #define SARADC_TOUCH_MEAS_DONE_S  10
 /* SARADC_TOUCH_MEAS_EN : RO ;bitpos:[9:0] ;default: 10'h0 ; */
-/*description: 10-bit register to indicate which pads are ��touched��*/
+/*description: 10-bit register to indicate which pads are "touched"*/
 #define SARADC_TOUCH_MEAS_EN  0x000003FF
 #define SARADC_TOUCH_MEAS_EN_M  ((SARADC_TOUCH_MEAS_EN_V)<<(SARADC_TOUCH_MEAS_EN_S))
 #define SARADC_TOUCH_MEAS_EN_V  0x3FF
@@ -739,14 +739,14 @@
 #define SARADC_SAR_TOUCH_ENABLE_REG          (DR_REG_SARADC_BASE + 0x008c)
 /* SARADC_TOUCH_PAD_OUTEN1 : R/W ;bitpos:[29:20] ;default: 10'h3ff ; */
 /*description: Bitmap defining SET1 for generating wakeup interrupt. SET1 is
- ��touched�� only if at least one of touch pad in SET1 is ��touched��.*/
+ "touched" only if at least one of touch pad in SET1 is "touched".*/
 #define SARADC_TOUCH_PAD_OUTEN1  0x000003FF
 #define SARADC_TOUCH_PAD_OUTEN1_M  ((SARADC_TOUCH_PAD_OUTEN1_V)<<(SARADC_TOUCH_PAD_OUTEN1_S))
 #define SARADC_TOUCH_PAD_OUTEN1_V  0x3FF
 #define SARADC_TOUCH_PAD_OUTEN1_S  20
 /* SARADC_TOUCH_PAD_OUTEN2 : R/W ;bitpos:[19:10] ;default: 10'h3ff ; */
 /*description: Bitmap defining SET2 for generating wakeup interrupt. SET2 is
- ��touched�� only if at least one of touch pad in SET2 is ��touched��.*/
+ "touched" only if at least one of touch pad in SET2 is "touched".*/
 #define SARADC_TOUCH_PAD_OUTEN2  0x000003FF
 #define SARADC_TOUCH_PAD_OUTEN2_M  ((SARADC_TOUCH_PAD_OUTEN2_V)<<(SARADC_TOUCH_PAD_OUTEN2_S))
 #define SARADC_TOUCH_PAD_OUTEN2_V  0x3FF
