@@ -67,7 +67,7 @@ static bool app_cpu_started = false;
 void IRAM_ATTR call_user_start_cpu0()
 {
     //Kill wdt
-    REG_CLR_BIT(RTC_WDTCONFIG0, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
+    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
     REG_CLR_BIT(0x6001f048, BIT(14)); //DR_REG_BB_BASE+48
 
     cpu_configure_region_protection();

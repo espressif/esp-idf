@@ -11,7 +11,7 @@ COMPONENTS := esptool_py bootloader log
 # IS_BOOTLOADER_BUILD tells the component Makefile.projbuild to be a no-op
 IS_BOOTLOADER_BUILD := 1
 
-#We cannot include the esp32 component directly but we need its includes. This is fixed by
-EXTRA_CFLAGS := -D BOOTLOADER_BUILD=1 -I $(IDF_PATH)/components/esp32/include 
+#We cannot include the esp32 component directly but we need its includes. 
+#This is fixed by adding CFLAGS from Makefile.projbuild
 
 include $(IDF_PATH)/make/project.mk
