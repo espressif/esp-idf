@@ -10,8 +10,6 @@ KCONFIG_TOOL_DIR=$(IDF_PATH)/tools/kconfig
 # clear MAKEFLAGS as the menuconfig makefile uses implicit compile rules
 $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
 	MAKEFLAGS="" \
-	CFLAGS="" \
-	LDFLAGS="" \
 	CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 

@@ -96,7 +96,7 @@ bool secure_boot_generate(uint32_t bin_len){
  */
 bool secure_boot(void){ 
 	uint32_t bin_len = 0;
-	if (REG_READ(EFUSE_BLK0_RDATA6) & EFUSE_RD_ABS_DONE_0)
+	if (REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0)
 	{     
 		ESP_LOGD(TAG, "already secure boot !");
 		return true;
@@ -113,15 +113,15 @@ bool secure_boot(void){
 		}  
 	}  
 
-	REG_SET_BIT(EFUSE_BLK0_WDATA6, EFUSE_RD_ABS_DONE_0); 
-	REG_WRITE(EFUSE_CONF, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */     
-	REG_WRITE(EFUSE_CMD,  0x02);    /* efuse_pgm_cmd */    
-	while (REG_READ(EFUSE_CMD));    /* wait for efuse_pagm_cmd=0 */   
-	ESP_LOGI(TAG, "burn abstract_done_0");
-	REG_WRITE(EFUSE_CONF, 0x5AA5);  /* efuse_read_op_ena, release force */   
-	REG_WRITE(EFUSE_CMD,  0x01);    /* efuse_read_cmd */     
-	while (REG_READ(EFUSE_CMD));    /* wait for efuse_read_cmd=0 */       
-	ESP_LOGD(TAG, "read EFUSE_BLK0_RDATA6 %x\n", REG_READ(EFUSE_BLK0_RDATA6));
+	REG_SET_BIT(EFUSE_BLK0_WDATA6_REG, EFUSE_RD_ABS_DONE_0); 
+	REG_WRITE(EFUSE_CONF_REG, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */     
+	REG_WRITE(EFUSE_CMD_REG,  0x02);    /* efuse_pgm_cmd */    
+	while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_pagm_cmd=0 */   
+	ESP_LOGW(TAG, "burn abstract_done_0\n");   
+	REG_WRITE(EFUSE_CONF_REG, 0x5AA5);  /* efuse_read_op_ena, release force */   
+	REG_WRITE(EFUSE_CMD_REG,  0x01);    /* efuse_read_cmd */     
+	while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */       
+	ESP_LOGI(TAG, "read EFUSE_BLK0_RDATA6 %x\n", REG_READ(EFUSE_BLK0_RDATA6_REG)); 
 	return true;
 
 }

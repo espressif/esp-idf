@@ -29,7 +29,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/timers_reg.h"
+#include "soc/timer_group_reg.h"
 
 #include "sdkconfig.h"
 
@@ -73,9 +73,9 @@ void IRAM_ATTR call_start_cpu0()
     Cache_Flush(0);
     Cache_Flush(1);
     mmu_init(0);
-    REG_SET_BIT(APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+    REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
     mmu_init(1);
-    REG_CLR_BIT(APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+    REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
     /* (above steps probably unnecessary for most serial bootloader
        usage, all that's absolutely needed is that we unmask DROM0
        cache on the following two lines - normal ROM boot exits with
@@ -86,8 +86,8 @@ void IRAM_ATTR call_start_cpu0()
        The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are
        necessary to work around a hardware bug.
     */
-    REG_CLR_BIT(PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
-    REG_CLR_BIT(APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
+    REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
+    REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
 
     bootloader_main();
 }
@@ -258,8 +258,8 @@ void bootloader_main()
 
     ESP_LOGI(TAG, "compile time " __TIME__ );
     /* close watch dog here */
-    REG_CLR_BIT( RTC_WDTCONFIG0, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
-    REG_CLR_BIT( WDTCONFIG0(0), TIMERS_WDT_FLASHBOOT_MOD_EN );
+    REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
+    REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
     SPIUnlock();
     /*register first sector in drom0 page 0 */
     boot_cache_redirect( 0, 0x5000 );
@@ -452,8 +452,8 @@ void IRAM_ATTR set_cache_and_start_app(
     ESP_LOGV(TAG, "rc=%d", rc );
     rc = cache_flash_mmu_set( 1, 0, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count );
     ESP_LOGV(TAG, "rc=%d", rc );
-    REG_CLR_BIT( PRO_CACHE_CTRL1_REG, (DPORT_PRO_CACHE_MASK_IRAM0) | (DPORT_PRO_CACHE_MASK_IRAM1 & 0) | (DPORT_PRO_CACHE_MASK_IROM0 & 0) | DPORT_PRO_CACHE_MASK_DROM0 | DPORT_PRO_CACHE_MASK_DRAM1 );
-    REG_CLR_BIT( APP_CACHE_CTRL1_REG, (DPORT_APP_CACHE_MASK_IRAM0) | (DPORT_APP_CACHE_MASK_IRAM1 & 0) | (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 | DPORT_APP_CACHE_MASK_DRAM1 );
+    REG_CLR_BIT( DPORT_PRO_CACHE_CTRL1_REG, (DPORT_PRO_CACHE_MASK_IRAM0) | (DPORT_PRO_CACHE_MASK_IRAM1 & 0) | (DPORT_PRO_CACHE_MASK_IROM0 & 0) | DPORT_PRO_CACHE_MASK_DROM0 | DPORT_PRO_CACHE_MASK_DRAM1 );
+    REG_CLR_BIT( DPORT_APP_CACHE_CTRL1_REG, (DPORT_APP_CACHE_MASK_IRAM0) | (DPORT_APP_CACHE_MASK_IRAM1 & 0) | (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 | DPORT_APP_CACHE_MASK_DRAM1 );
     Cache_Read_Enable( 0 );
     Cache_Read_Enable( 1 );
 

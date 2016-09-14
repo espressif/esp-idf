@@ -1,7 +1,6 @@
 /**
- * \file config.h
  *
- * \brief Configuration options (set of defines)
+ * \brief Default mbedTLS configuration options for esp-idf
  *
  *  This set of compile-time options may be used to enable
  *  or disable features selectively, and reduce the global
@@ -225,7 +224,6 @@
  * Uncomment a macro to enable alternate implementation of the corresponding
  * module.
  */
-//#define MBEDTLS_AES_ALT
 //#define MBEDTLS_ARC4_ALT
 //#define MBEDTLS_BLOWFISH_ALT
 //#define MBEDTLS_CAMELLIA_ALT
@@ -235,9 +233,26 @@
 //#define MBEDTLS_MD4_ALT
 //#define MBEDTLS_MD5_ALT
 //#define MBEDTLS_RIPEMD160_ALT
+
+/* The following units have ESP32 hardware support,
+   uncommenting each _ALT macro will use the
+   hardware-accelerated implementation. */
+#define MBEDTLS_AES_ALT
+
+/* Currently hardware SHA does not work with TLS handshake,
+   due to concurrency issue. Internal TW#7111. */
 //#define MBEDTLS_SHA1_ALT
 //#define MBEDTLS_SHA256_ALT
 //#define MBEDTLS_SHA512_ALT
+
+/* The following MPI (bignum) functions have ESP32 hardware support,
+   Uncommenting these macros will use the hardware-accelerated
+   implementations.
+
+   Disabled as number of limbs limited by bug. Internal TW#7112.
+*/
+//#define MBEDTLS_MPI_EXP_MOD_ALT
+//#define MBEDTLS_MPI_MUL_MPI_ALT
 
 /**
  * \def MBEDTLS_MD2_PROCESS_ALT
@@ -297,7 +312,7 @@
  *
  * Uncomment this macro to store the AES tables in ROM.
  */
-//#define MBEDTLS_AES_ROM_TABLES
+#define MBEDTLS_AES_ROM_TABLES
 
 /**
  * \def MBEDTLS_CAMELLIA_SMALL_MEMORY
@@ -2465,7 +2480,8 @@
 //#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES      50 /**< Maximum entries in cache */
 
 /* SSL options */
-//#define MBEDTLS_SSL_MAX_CONTENT_LEN             16384 /**< Maxium fragment length in bytes, determines the size of each of the two internal I/O buffers */
+
+#define MBEDTLS_SSL_MAX_CONTENT_LEN             5120 /**< Maxium fragment length in bytes, determines the size of each of the two internal I/O buffers */
 //#define MBEDTLS_SSL_DEFAULT_TICKET_LIFETIME     86400 /**< Lifetime of session tickets (if enabled) */
 //#define MBEDTLS_PSK_MAX_LEN               32 /**< Max size of TLS pre-shared keys, in bytes (default 256 bits) */
 //#define MBEDTLS_SSL_COOKIE_TIMEOUT        60 /**< Default expiration delay of DTLS cookies, in seconds if HAVE_TIME, or in number of cookies issued */
@@ -2506,6 +2522,6 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
-#include "check_config.h"
+#include "mbedtls/check_config.h"
 
 #endif /* MBEDTLS_CONFIG_H */

@@ -1,3 +1,10 @@
+/*
+  ROM functions for hardware SHA support.
+
+  It is not recommended to use these functions directly,
+  use the wrapper functions in hwcrypto/sha.h instead.
+
+ */
 // Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +37,8 @@ enum SHA_TYPE {
     SHA1 = 0,
     SHA2_256,
     SHA2_384,
-    SHA2_512
+    SHA2_512,
+    SHA_INVALID = -1,
 };
 
 void ets_sha_init(SHA_CTX *ctx);

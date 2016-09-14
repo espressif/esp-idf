@@ -245,17 +245,17 @@ static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_st
 {
     uint32_t ret = 0;
     if (cpuid == 0) {
-        ret |= GET_PERI_REG_BITS2(PRO_CACHE_CTRL1_REG, cache_mask, 0);
-        while (GET_PERI_REG_BITS2(PRO_DCACHE_DBUG_REG0, DPORT_PRO_CACHE_STATE, DPORT_PRO_CACHE_STATE_S) != 1) {
+        ret |= GET_PERI_REG_BITS2(DPORT_PRO_CACHE_CTRL1_REG, cache_mask, 0);
+        while (GET_PERI_REG_BITS2(DPORT_PRO_DCACHE_DBUG0_REG, DPORT_PRO_CACHE_STATE, DPORT_PRO_CACHE_STATE_S) != 1) {
             ;
         }
-        SET_PERI_REG_BITS(PRO_CACHE_CTRL_REG, 1, 0, DPORT_PRO_CACHE_ENABLE_S);
+        SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 0, DPORT_PRO_CACHE_ENABLE_S);
     } else {
-        ret |= GET_PERI_REG_BITS2(APP_CACHE_CTRL1_REG, cache_mask, 0);
-        while (GET_PERI_REG_BITS2(APP_DCACHE_DBUG_REG0, DPORT_APP_CACHE_STATE, DPORT_APP_CACHE_STATE_S) != 1) {
+        ret |= GET_PERI_REG_BITS2(DPORT_APP_CACHE_CTRL1_REG, cache_mask, 0);
+        while (GET_PERI_REG_BITS2(DPORT_APP_DCACHE_DBUG0_REG, DPORT_APP_CACHE_STATE, DPORT_APP_CACHE_STATE_S) != 1) {
             ;
         }
-        SET_PERI_REG_BITS(APP_CACHE_CTRL_REG, 1, 0, DPORT_APP_CACHE_ENABLE_S);
+        SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL_REG, 1, 0, DPORT_APP_CACHE_ENABLE_S);
     }
     *saved_state = ret;
 }
@@ -263,10 +263,10 @@ static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_st
 static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
     if (cpuid == 0) {
-        SET_PERI_REG_BITS(PRO_CACHE_CTRL_REG, 1, 1, DPORT_PRO_CACHE_ENABLE_S);
-        SET_PERI_REG_BITS(PRO_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
+        SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 1, DPORT_PRO_CACHE_ENABLE_S);
+        SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
     } else {
-        SET_PERI_REG_BITS(APP_CACHE_CTRL_REG, 1, 1, DPORT_APP_CACHE_ENABLE_S);
-        SET_PERI_REG_BITS(APP_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
+        SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL_REG, 1, 1, DPORT_APP_CACHE_ENABLE_S);
+        SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
     }
 }
