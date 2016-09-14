@@ -39,11 +39,11 @@
 #include "esp_event.h"
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
+#include "esp_log.h"
 
 static void IRAM_ATTR user_start_cpu0(void);
 static void IRAM_ATTR call_user_start_cpu1();
 static void IRAM_ATTR user_start_cpu1(void);
-void Cache_Read_Enable();
 extern void ets_setup_syscalls(void);
 
 
@@ -56,6 +56,8 @@ extern int _iram_romjumptable_start;
 extern int _iram_romjumptable_end;
 extern int _iram_text_start;
 extern int _iram_text_end;
+
+static const char* TAG = "cpu_start";
 
 /*
 We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
@@ -110,13 +112,13 @@ void IRAM_ATTR call_user_start_cpu0() {
 
 	memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
 
-	//Initialize heap allocator
+	// Initialize heap allocator
 	heap_alloc_caps_init();
 
-	ets_printf("Pro cpu up.\n");
+	ESP_EARLY_LOGI(TAG, "Pro cpu up.");
     
 #ifndef CONFIG_FREERTOS_UNICORE
-	ets_printf("Starting app cpu, entry point is %p\n", call_user_start_cpu1);
+	ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_user_start_cpu1);
 
 	SET_PERI_REG_MASK(APPCPU_CTRL_REG_B, DPORT_APPCPU_CLKGATE_EN);
 	CLEAR_PERI_REG_MASK(APPCPU_CTRL_REG_C, DPORT_APPCPU_RUNSTALL);
@@ -128,9 +130,10 @@ void IRAM_ATTR call_user_start_cpu0() {
 		ets_delay_us(100);
 	}
 #else
+	ESP_EARLY_LOGI(TAG, "Single core mode");
 	CLEAR_PERI_REG_MASK(APPCPU_CTRL_REG_B, DPORT_APPCPU_CLKGATE_EN);
 #endif
-	ets_printf("Pro cpu start user code\n");
+	ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
 	user_start_cpu0();
 }
 
@@ -173,7 +176,7 @@ void IRAM_ATTR call_user_start_cpu1() {
 		"isync\n" \
 		:::"a4","a5");
 	
-	ets_printf("App cpu up.\n");
+	ESP_EARLY_LOGI(TAG, "App cpu up.");
 	app_cpu_started = 1;
 	user_start_cpu1();
 }
@@ -185,7 +188,7 @@ void IRAM_ATTR user_start_cpu1(void) {
 	while (port_xSchedulerRunning[0] == 0) {
 	    ;
 	}
-	ets_printf("Starting scheduler on APP CPU.\n");
+	ESP_LOGI(TAG, "Starting scheduler on APP CPU.");
 	xPortStartScheduler();
 }
 
@@ -201,7 +204,7 @@ static void do_global_ctors(void) {
 extern esp_err_t app_main(void *ctx);
 
 void user_start_cpu0(void) {
-	ets_setup_syscalls();
+    ets_setup_syscalls();
 	do_global_ctors();
 	esp_ipc_init();
 	spi_flash_init();
@@ -209,7 +212,7 @@ void user_start_cpu0(void) {
 #if CONFIG_WIFI_ENABLED
     esp_err_t ret = nvs_flash_init(5, 3);
     if (ret != ESP_OK) {
-        printf("nvs_flash_init failed, ret=%d\n", ret);
+        ESP_LOGE(TAG, "nvs_flash_init failed, ret=%d", ret);
     }
 
     system_init();
@@ -226,7 +229,7 @@ void user_start_cpu0(void) {
 	app_main(NULL);
 #endif
 
-	ets_printf("Starting scheduler on PRO CPU.\n");
+	ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
 	vTaskStartScheduler();
 }
 

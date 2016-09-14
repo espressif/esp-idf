@@ -1,33 +1,3 @@
 menu "Bootloader config"
 
-choice BOOTLOADER_LOG_LEVEL
-   bool "Bootloader log verbosity"
-   default BOOTLOADER_LOG_LEVEL_NOTICE
-   help
-       Specify how much output to see in the bootloader logs.
-
-       Note that if MTDO is HIGH on reset, all early boot output
-       (including bootloader logs) are suppressed.
-config BOOTLOADER_LOG_LEVEL_NONE
-   bool "No output"
-config BOOTLOADER_LOG_LEVEL_ERROR
-   bool "Error"
-config BOOTLOADER_LOG_LEVEL_WARN
-   bool "Warning"
-config BOOTLOADER_LOG_LEVEL_INFO
-   bool "Info"
-config BOOTLOADER_LOG_LEVEL_NOTICE
-   bool "Notice"
-config BOOTLOADER_LOG_LEVEL_DEBUG
-   bool "Debug"
-endchoice
-
-config BOOTLOADER_LOG_COLORS
-   bool "Use ANSI terminal colors in bootloader log output"
-   default "y"
-   help
-      Enable ANSI terminal color codes in bootloader output.
-
-      In order to view these, your terminal program must support ANSI color codes.
-
 endmenu

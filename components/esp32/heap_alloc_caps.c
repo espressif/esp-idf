@@ -17,6 +17,9 @@
 
 #include "heap_alloc_caps.h"
 #include "spiram.h"
+#include "esp_log.h"
+
+static const char* TAG = "heap_alloc_caps";
 
 /*
 This file, combined with a region allocator that supports tags, solves the problem that the ESP32 has RAM that's 
@@ -147,7 +150,7 @@ static void disable_mem_region(void *from, void *to) {
 			regions[i].xSizeInBytes-=(uint8_t *)regEnd-(uint8_t *)from;
 		} else if (regStart<from && regEnd>to) {
 			//Range punches a hole in the region! We do not support this.
-			ets_printf("%s: region %d: hole punching is not supported!\n", i);
+			ESP_EARLY_LOGE(TAG, "region %d: hole punching is not supported!", i);
 			regions[i].xTag=-1; //Just disable memory region. That'll teach them!
 		}
 	}
@@ -204,12 +207,13 @@ void heap_alloc_caps_init() {
 		}
 	}
 
-#if 1 //Change to 1 to show the regions the heap allocator is initialized with.
-	ets_printf("Initializing heap allocator:\n");
+	ESP_EARLY_LOGI(TAG, "Initializing heap allocator:");
 	for (i=0; regions[i].xSizeInBytes!=0; i++) {
-		if ( regions[i].xTag != -1 ) ets_printf("Region %02d: %08X len %08X tag %d\n", i, (int)regions[i].pucStartAddress, regions[i].xSizeInBytes, regions[i].xTag);
+		if (regions[i].xTag != -1) {
+		    ESP_EARLY_LOGI(TAG, "Region %02d: %08X len %08X tag %d", i,
+		            (int)regions[i].pucStartAddress, regions[i].xSizeInBytes, regions[i].xTag);
+		}
 	}
-#endif
 	//Initialize the malloc implementation.
 	vPortDefineHeapRegionsTagged( regions );
 }

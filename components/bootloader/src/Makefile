@@ -4,7 +4,7 @@
 #
 
 PROJECT_NAME := bootloader
-COMPONENTS := esptool_py bootloader
+COMPONENTS := esptool_py bootloader log
 
 # The bootloader pseudo-component is also included in this build, for its Kconfig.projbuild to be included.
 #
@@ -12,6 +12,6 @@ COMPONENTS := esptool_py bootloader
 IS_BOOTLOADER_BUILD := 1
 
 #We cannot include the esp32 component directly but we need its includes. This is fixed by
-#adding it in the main/Makefile directory.
+EXTRA_CFLAGS := -D BOOTLOADER_BUILD=1 -I $(IDF_PATH)/components/esp32/include 
 
 include $(IDF_PATH)/make/project.mk
