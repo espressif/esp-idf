@@ -19,6 +19,7 @@
 #include "esp_err.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
+#include "esp_task.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -357,9 +358,9 @@ esp_err_t esp_event_init(system_event_cb_t cb, void *ctx)
     g_event_handler_cb = cb;
     g_event_ctx = ctx;
 
-    g_event_handler = xQueueCreate(CONFIG_WIFI_ENENT_QUEUE_SIZE, sizeof(system_event_t));
+    g_event_handler = xQueueCreate(CONFIG_SYSTEM_EVENT_QUEUE_SIZE, sizeof(system_event_t));
 
-    xTaskCreatePinnedToCore(esp_system_event_task, "eventTask", CONFIG_WIFI_EVENT_TASK_STACK_SIZE, NULL, 5, NULL, 0); // TODO: rearrange task priority
+    xTaskCreatePinnedToCore(esp_system_event_task, "eventTask", ESP_TASKD_EVENT_STACK, NULL, ESP_TASKD_EVENT_PRIO, NULL, 0);
     return ESP_OK;
 }
 

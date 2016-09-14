@@ -24,19 +24,19 @@ config WIFI_AUTO_CONNECT
         If station is enabled, and station config is set, this will enable WiFi
         station auto connect when WiFi startup.
 
-config WIFI_ENENT_QUEUE_SIZE
-    int "WiFi event queue size"
+config SYSTEM_EVENT_QUEUE_SIZE
+    int "system event queue size"
     default 32
     depends on WIFI_ENABLED
     help
-        Config WiFi event queue size in different application.
+        Config system event queue size in different application.
 
-config WIFI_EVENT_TASK_STACK_SIZE
-    int "WiFi event task stack size"
+config SYSTEM_EVENT_TASK_STACK_SIZE
+    int "system event task stack size"
     default 2048
     depends on WIFI_ENABLED
     help
-        Config WiFi event task stack size in different application.
+        Config system event task stack size in different application.
 
 
 config NEWLIB_STDOUT_ADDCR
