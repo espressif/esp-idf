@@ -101,7 +101,7 @@ bool flash_encrypt_write(uint32_t pos, uint32_t len)
 bool flash_encrypt(bootloader_state_t *bs)
 {
    uint32_t bin_len = 0;
-   uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0, EFUSE_FLASH_CRYPT_CNT);
+   uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_FLASH_CRYPT_CNT);
    uint8_t count = bitcount(flash_crypt_cnt);
    int i = 0;
    log_debug("flash crypt cnt %x, count %d\n", flash_crypt_cnt, count); 
@@ -174,14 +174,14 @@ bool flash_encrypt(bootloader_state_t *bs)
            log_error("encrypt ota binfo error"); 
            return false;
        }  
-       REG_SET_FIELD(EFUSE_BLK0_WDATA0, EFUSE_FLASH_CRYPT_CNT, 0x04);   
-       REG_WRITE(EFUSE_CONF, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */     
-       REG_WRITE(EFUSE_CMD,  0x02);    /* efuse_pgm_cmd */     
-       while (REG_READ(EFUSE_CMD));    /* wait for efuse_pagm_cmd=0 */
+       REG_SET_FIELD(EFUSE_BLK0_WDATA0_REG, EFUSE_FLASH_CRYPT_CNT, 0x04);   
+       REG_WRITE(EFUSE_CONF_REG, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */     
+       REG_WRITE(EFUSE_CMD_REG,  0x02);    /* efuse_pgm_cmd */     
+       while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_pagm_cmd=0 */
        log_warn("burn  flash_crypt_cnt\n");   
-       REG_WRITE(EFUSE_CONF, 0x5AA5);  /* efuse_read_op_ena, release force */   
-       REG_WRITE(EFUSE_CMD,  0x01);    /* efuse_read_cmd */     
-       while (REG_READ(EFUSE_CMD));    /* wait for efuse_read_cmd=0 */  
+       REG_WRITE(EFUSE_CONF_REG, 0x5AA5);  /* efuse_read_op_ena, release force */   
+       REG_WRITE(EFUSE_CMD_REG,  0x01);    /* efuse_read_cmd */     
+       while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */  
        return true;
    } else {   
        log_info("flash already encrypted.\n"); 

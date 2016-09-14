@@ -20,7 +20,7 @@
 
 #include "esp_attr.h"
 
-#include "soc/spi_register.h"
+#include "soc/spi_reg.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -21,7 +21,7 @@
 //ToDo: Clean up includes and sync to real rtos
 #include "rom/ets_sys.h"
 
-#include "soc/uart_register.h"
+#include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
 
 #include "gdbstub.h"
