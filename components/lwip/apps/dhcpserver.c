@@ -1070,9 +1070,8 @@ void dhcps_stop(struct netif *netif)
         return;
     }
 
-    udp_disconnect(pcb_dhcps);
-
     if (apnetif->dhcps_pcb != NULL) {
+        udp_disconnect(apnetif->dhcps_pcb);
         udp_remove(apnetif->dhcps_pcb);
         apnetif->dhcps_pcb = NULL;
     }
