@@ -11,19 +11,23 @@ PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
 # to invoke esptool.py (with or without serial port args)
 #
 # NB: esptool.py lives in the sdk/bin directory not the component directory
-ESPTOOLPY := $(PYTHON) $(IDF_PATH)/bin/esptool.py --chip esp32
+ESPTOOLPY_SRC := $(COMPONENT_PATH)/esptool/esptool.py
+ESPTOOLPY := $(PYTHON) $(ESPTOOLPY_SRC) --chip esp32
 ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD)
 
-ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z) --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ)
+# the no-stub argument is temporary until esptool.py fully supports compressed uploads
+ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) $(if $(CONFIG_ESPTOOLPY_COMPRESSED),--no-stub) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z) --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ)
 
 ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_APP_OFFSET) $(APP_BIN)
 
-$(APP_BIN): $(APP_ELF)
+$(APP_BIN): $(APP_ELF) $(ESPTOOLPY_SRC)
 	$(Q) $(ESPTOOLPY) elf2image --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) -o $@ $<
 
-flash: all_binaries
+flash: all_binaries $(ESPTOOLPY_SRC)
 	@echo "Flashing project app to $(CONFIG_APP_OFFSET)..."
 	$(Q) $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
-app-flash: $(APP_BIN)
+app-flash: $(APP_BIN) $(ESPTOOLPY_SRC)
 	$(Q) $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+
+$(eval $(call SubmoduleRequiredForFiles,$(ESPTOOLPY_SRC)))
