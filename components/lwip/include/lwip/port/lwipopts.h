@@ -33,6 +33,7 @@
 #define __LWIPOPTS_H__
 
 #include <stdlib.h>
+#include "esp_task.h"
 
 /* Enable all Espressif-only options */
 #define LWIP_ESP8266
@@ -323,14 +324,14 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
  * The stack size value itself is platform-dependent, but is passed to
  * sys_thread_new() when the thread is created.
  */
-#define TCPIP_THREAD_STACKSIZE          2048
+#define TCPIP_THREAD_STACKSIZE          ESP_TASK_TCPIP_STACK
 
 /**
  * TCPIP_THREAD_PRIO: The priority assigned to the main tcpip thread.
  * The priority value itself is platform-dependent, but is passed to
  * sys_thread_new() when the thread is created.
  */
-#define TCPIP_THREAD_PRIO               (configMAX_PRIORITIES - 7)
+#define TCPIP_THREAD_PRIO               ESP_TASK_TCPIP_PRIO
 
 /**
  * TCPIP_MBOX_SIZE: The mailbox size for the tcpip thread messages
