@@ -238,16 +238,21 @@
    uncommenting each _ALT macro will use the
    hardware-accelerated implementation. */
 #define MBEDTLS_AES_ALT
-#define MBEDTLS_SHA1_ALT
-#define MBEDTLS_SHA256_ALT
-#define MBEDTLS_SHA512_ALT
+
+/* Currently hardware SHA does not work with TLS handshake,
+   due to concurrency issue. Internal TW#7111. */
+//#define MBEDTLS_SHA1_ALT
+//#define MBEDTLS_SHA256_ALT
+//#define MBEDTLS_SHA512_ALT
 
 /* The following MPI (bignum) functions have ESP32 hardware support,
    Uncommenting these macros will use the hardware-accelerated
    implementations.
+
+   Disabled as number of limbs limited by bug. Internal TW#7112.
 */
-#define MBEDTLS_MPI_EXP_MOD_ALT
-#define MBEDTLS_MPI_MUL_MPI_ALT
+//#define MBEDTLS_MPI_EXP_MOD_ALT
+//#define MBEDTLS_MPI_MUL_MPI_ALT
 
 /**
  * \def MBEDTLS_MD2_PROCESS_ALT
