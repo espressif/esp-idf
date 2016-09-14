@@ -58,6 +58,8 @@
 #define mbedtls_free       free
 #endif
 
+#if !defined(MBEDTLS_BIGNUM_ALT)
+
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_mpi_zeroize( mbedtls_mpi_uint *v, size_t n ) {
     volatile mbedtls_mpi_uint *p = v; while( n-- ) *p++ = 0;
@@ -1162,6 +1164,7 @@ void mpi_mul_hlp( size_t i, mbedtls_mpi_uint *s, mbedtls_mpi_uint *d, mbedtls_mp
     while( c != 0 );
 }
 
+#if !defined(MBEDTLS_MPI_MUL_MPI_ALT)
 /*
  * Baseline multiplication: X = A * B  (HAC 14.12)
  */
@@ -1198,6 +1201,7 @@ cleanup:
 
     return( ret );
 }
+#endif
 
 /*
  * Baseline multiplication: X = A * b
@@ -1596,6 +1600,7 @@ static int mpi_montred( mbedtls_mpi *A, const mbedtls_mpi *N, mbedtls_mpi_uint m
     return( mpi_montmul( A, &U, N, mm, T ) );
 }
 
+#if !defined(MBEDTLS_MPI_EXP_MOD_ALT)
 /*
  * Sliding-window exponentiation: X = A^E mod N  (HAC 14.85)
  */
@@ -1803,6 +1808,7 @@ cleanup:
 
     return( ret );
 }
+#endif
 
 /*
  * Greatest common divisor: G = gcd(A, B)  (HAC 14.54)
@@ -2264,6 +2270,7 @@ cleanup:
 }
 
 #endif /* MBEDTLS_GENPRIME */
+#endif /* MBEDTLS_BIGNUM_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
 

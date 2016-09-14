@@ -6,8 +6,10 @@
 # lib(subdirectory_name).a in the build directory. This behaviour is entirely configurable,
 # please read the SDK documents if you need to do this.
 #
-COMPONENT_ADD_INCLUDEDIRS := include port/include
+COMPONENT_ADD_INCLUDEDIRS := port/include include/expat
 
 COMPONENT_SRCDIRS := library port
 
-include $(IDF_PATH)/make/component.mk
+CFLAGS += -Wno-error=address -Waddress -DHAVE_EXPAT_CONFIG_H
+
+include $(IDF_PATH)/make/component_common.mk
