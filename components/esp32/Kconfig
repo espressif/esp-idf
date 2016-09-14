@@ -24,7 +24,7 @@ config WIFI_AUTO_CONNECT
         If station is enabled, and station config is set, this will enable WiFi
         station auto connect when WiFi startup.
 
-config SYSTEM_ENENT_QUEUE_SIZE
+config SYSTEM_EVENT_QUEUE_SIZE
     int "system event queue size"
     default 32
     depends on WIFI_ENABLED

@@ -358,7 +358,7 @@ esp_err_t esp_event_init(system_event_cb_t cb, void *ctx)
     g_event_handler_cb = cb;
     g_event_ctx = ctx;
 
-    g_event_handler = xQueueCreate(CONFIG_SYSTEM_ENENT_QUEUE_SIZE, sizeof(system_event_t));
+    g_event_handler = xQueueCreate(CONFIG_SYSTEM_EVENT_QUEUE_SIZE, sizeof(system_event_t));
 
     xTaskCreatePinnedToCore(esp_system_event_task, "eventTask", ESP_TASKD_EVENT_STACK, NULL, ESP_TASKD_EVENT_PRIO, NULL, 0);
     return ESP_OK;
