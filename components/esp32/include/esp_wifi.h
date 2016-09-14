@@ -694,53 +694,53 @@ esp_err_t esp_wifi_get_auto_connect(bool *en);
   *
   */
 typedef enum {
-    VND_IE_TYPE_BEACON,
-    VND_IE_TYPE_PROBE_REQ,
-    VND_IE_TYPE_PROBE_RESP,
-    VND_IE_TYPE_ASSOC_REQ,
-    VND_IE_TYPE_ASSOC_RESP,
-}vendor_ie_type_t;
+    WIFI_VND_IE_TYPE_BEACON,
+    WIFI_VND_IE_TYPE_PROBE_REQ,
+    WIFI_VND_IE_TYPE_PROBE_RESP,
+    WIFI_VND_IE_TYPE_ASSOC_REQ,
+    WIFI_VND_IE_TYPE_ASSOC_RESP,
+} wifi_vendor_ie_type_t;
 
 /**
   * @brief     Vendor IE index
   *
   */
 typedef enum {
-    VND_IE_ID_0,
-    VND_IE_ID_1,
-}vendor_ie_id_t;
+	WIFI_VND_IE_ID_0,
+	WIFI_VND_IE_ID_1,
+} wifi_vendor_ie_id_t;
 
 /**
   * @brief     Set vendor specific element
   *
   * @param     bool enable : enable or not
-  * @param     vendor_ie_type_t type : 0 - VND_IE_TYPE_BEACON
-  *                           1 - VND_IE_TYPE_PROBE_REQ
-  *                           2 - VND_IE_TYPE_PROBE_RESP
-  *                           3 - VND_IE_TYPE_ASSOC_REQ
-  *                           4 - VND_IE_TYPE_ASSOC_RESP
-  * @param     vendor_ie_id_t idx : 0 - VND_IE_ID_0
-                                    1 - VND_IE_ID_1
+  * @param     wifi_vendor_ie_type_t type : 0 - WIFI_VND_IE_TYPE_BEACON
+  *                           1 - WIFI_VND_IE_TYPE_PROBE_REQ
+  *                           2 - WIFI_VND_IE_TYPE_PROBE_RESP
+  *                           3 - WIFI_VND_IE_TYPE_ASSOC_REQ
+  *                           4 - WIFI_VND_IE_TYPE_ASSOC_RESP
+  * @param     wifi_vendor_ie_id_t idx : 0 - WIFI_VND_IE_ID_0
+                                    1 - WIFI_VND_IE_ID_1
   * @param     uint8_t *vnd_ie : pointer to a vendor specific element
   *
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_set_vendor_ie(bool enable, vendor_ie_type_t type, vendor_ie_id_t idx, uint8_t *vnd_ie);
+esp_err_t esp_wifi_set_vendor_ie(bool enable, wifi_vendor_ie_type_t type, wifi_vendor_ie_id_t idx, uint8_t *vnd_ie);
 
 /**
   * @brief     Define function pointer for vendor specific element callback
   * @param     void *ctx : reserved
-  * @param     vendor_ie_type_t type : 0 - VND_IE_TYPE_BEACON
-  *                           1 - VND_IE_TYPE_PROBE_REQ
-  *                           2 - VND_IE_TYPE_PROBE_RESP
-  *                           3 - VND_IE_TYPE_ASSOC_REQ
-  *                           4 - VND_IE_TYPE_ASSOC_RESP
+  * @param     wifi_vendor_ie_type_t type : 0 - WIFI_VND_IE_TYPE_BEACON
+  *                           1 - WIFI_VND_IE_TYPE_PROBE_REQ
+  *                           2 - WIFI_VND_IE_TYPE_PROBE_RESP
+  *                           3 - WIFI_VND_IE_TYPE_ASSOC_REQ
+  *                           4 - WIFI_VND_IE_TYPE_ASSOC_RESP
   * @param     const uint8_t sa[6] : source address
   * @param     const uint8_t *vnd_ie : pointer to a vendor specific element
   * @param     int rssi : received signal strength indication
   */
-typedef void (*esp_vendor_ie_cb_t) (void *ctx, vendor_ie_type_t type, const uint8_t sa[6], const uint8_t *vnd_ie, int rssi);
+typedef void (*esp_vendor_ie_cb_t) (void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const uint8_t *vnd_ie, int rssi);
 
 /**
   * @brief     Set vendor specific element callback
