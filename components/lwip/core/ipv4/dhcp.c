@@ -712,10 +712,10 @@ void dhcp_cleanup(struct netif *netif)
 
 /* Espressif add start. */
 
-/** Set callback for dhcp, reversed parameter for future use.
+/** Set callback for dhcp, reserved parameter for future use.
  *
  * @param netif the netif from which to remove the struct dhcp
- * @param cb    callback for chcp
+ * @param cb    callback for dhcp
  */
 void dhcp_set_cb(struct netif *netif, void (*cb)(void))
 {

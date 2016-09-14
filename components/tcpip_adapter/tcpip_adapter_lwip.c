@@ -454,7 +454,7 @@ static void tcpip_adapter_dhcpc_cb(void)
             ip4_addr_set(&ip_info->gw, ip_2_ip4(&netif->gw));
 
             //notify event
-            evt.event_id = SYSTEM_EVENT_STA_GOTIP;
+            evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
             memcpy(&evt.event_info.got_ip.ip_info, ip_info, sizeof(tcpip_adapter_ip_info_t));
 
             esp_event_send(&evt);
