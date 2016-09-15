@@ -38,7 +38,7 @@ extern "C" {
 #define GPIO_PIN_COUNT                  40
 #define GPIO_ID_PIN0                    0
 #define GPIO_ID_PIN(n)                  (GPIO_ID_PIN0+(n))
-#define GPIO_PIN_ADDR(i)                (GPIO_PIN0 + i*4)
+#define GPIO_PIN_ADDR(i)                (GPIO_PIN0_REG + i*4)
 
 #define GPIO_ID_IS_PIN_REGISTER(reg_id) \
     ((reg_id >= GPIO_ID_PIN0) && (reg_id <= GPIO_ID_PIN(GPIO_PIN_COUNT-1)))
