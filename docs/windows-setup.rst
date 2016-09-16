@@ -50,6 +50,8 @@ Change to the directory you want to clone the SDK into by typing a command like 
 
 If you'd rather use a Windows UI tool to manage your git repositories, this is also possible. A wide range are available.
 
+*NOTE*: While cloning submodules, the ``git clone`` command may print some output starting ``': not a valid identifier...``. This is a `known issue`_ but the git clone still succeeds without any problems.
+
 Step 3: Starting a project
 ==========================
 
@@ -76,3 +78,4 @@ If you'd like to use the Eclipse IDE instead of running ``make``, check out the 
 .. _Eclipse: eclipse-setup.rst
 .. _MSYS2: https://msys2.github.io/
 .. _github: https://github.com/espressif/esp-idf-template
+.. _known issue: https://github.com/espressif/esp-idf/issues/11
