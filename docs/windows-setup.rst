@@ -59,6 +59,8 @@ The easiest way to start a project is to download the Getting Started project fr
 
 The process is the same as for checking out the ESP-IDF from github. Change to the parent directory and run ``git clone https://github.com/espressif/esp-idf-template.git``.
 
+**IMPORTANT:** The esp-idf build system does not support spaces in paths to esp-idf or to projects.
+
 Step 4: Configuring the project
 ===============================
 
