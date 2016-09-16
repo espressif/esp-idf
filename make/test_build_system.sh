@@ -80,6 +80,22 @@ function run_tests()
 		 failure "Files weren't cleaned: ${ALL_BUILD_FILES}"
 	fi
 
+	print_status "Can still clean build if all text files are CRLFs"
+	make clean
+	find . -exec unix2dos {} \; # CRLFify template dir
+	# make a copy of esp-idf and CRLFify it
+	CRLF_ESPIDF=${TESTDIR}/esp-idf-crlf
+	mkdir -p ${CRLF_ESPIDF}
+	cp -rv ${IDF_PATH}/* ${CRLF_ESPIDF}
+	# don't CRLFify executable files, as Linux will fail to execute them
+	find ${CRLF_ESPIDF} -type f ! -perm 755 -exec unix2dos {} \;
+	make IDF_PATH=${CRLF_ESPIDF}
+	# do the same checks we do for the clean build
+	assert_built ${APP_BINS} ${BOOTLOADER_BINS} partitions_singleapp.bin
+	[ -f ${BUILD}/partition*.bin ] || failure "A partition table should have been built in CRLF mode"
+
+	# NOTE: If adding new tests, add them above this CRLF test...
+
 	print_status "All tests completed"
 	if [ -n "${FAILURES}" ]; then
 		echo "Some failures were detected:"
