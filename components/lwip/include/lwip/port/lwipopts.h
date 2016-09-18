@@ -405,7 +405,7 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
 /**
  * SO_REUSE==1: Enable SO_REUSEADDR option.
  */
-#define SO_REUSE                        0
+#define SO_REUSE                        1
 
 /*
    ----------------------------------------
