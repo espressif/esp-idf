@@ -158,13 +158,14 @@ LDFLAGS ?= -nostdlib \
 # files, set CFLAGS += in your component's Makefile.projbuild
 
 # CPPFLAGS used by an compile pass that uses the C preprocessor
-CPPFLAGS = -DESP_PLATFORM -Og -g3 -Wpointer-arith -Werror -Wno-error=unused-function -Wno-error=unused-but-set-variable -Wno-error=unused-variable -Wall -ffunction-sections -fdata-sections -mlongcalls -nostdlib -MMD -MP
+CPPFLAGS = -DESP_PLATFORM -Og -g3 -Wpointer-arith -Werror -Wno-error=unused-function -Wno-error=unused-but-set-variable \
+		-Wno-error=unused-variable -Wall -ffunction-sections -fdata-sections -mlongcalls -nostdlib -MMD -MP
 
 # C flags use by C only
-CFLAGS = $(CPPFLAGS) -std=gnu99 -g3 -fno-inline-functions
+CFLAGS = $(CPPFLAGS) -std=gnu99 -g3 -fstrict-volatile-bitfields
 
 # CXXFLAGS uses by C++ only
-CXXFLAGS = $(CPPFLAGS) -Og -std=gnu++11 -g3 -fno-exceptions
+CXXFLAGS = $(CPPFLAGS) -Og -std=gnu++11 -g3 -fno-exceptions -fstrict-volatile-bitfields
 
 export CFLAGS CPPFLAGS CXXFLAGS
 
