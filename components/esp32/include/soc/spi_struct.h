@@ -420,7 +420,7 @@ typedef volatile struct {
         uint32_t val;
     }dma_status;
     union {
-        struct {_int_clr
+        struct {
             uint32_t inlink_dscr_empty:  1;                 /*The enable bit for lack of enough inlink descriptors.*/
             uint32_t outlink_dscr_error: 1;                 /*The enable bit for outlink descriptor error.*/
             uint32_t inlink_dscr_error:  1;                 /*The enable bit for inlink descriptor error.*/
