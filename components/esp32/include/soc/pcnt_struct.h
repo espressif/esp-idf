@@ -13,149 +13,149 @@
 // limitations under the License.
 #ifndef _SOC_PCNT_STRUCT_H_
 #define _SOC_PCNT_STRUCT_H_
-typedef struct {
+typedef volatile struct {
     struct{
         union {
             struct {
-                volatile uint32_t filter_thres:  10;         /*This register is used to filter pulse whose width is smaller than this value for unit0.*/
-                volatile uint32_t filter_en:      1;         /*This is the enable bit for filtering input signals for unit0.*/
-                volatile uint32_t thr_zero_en:    1;         /*This is the enable bit for comparing unit0's count with 0 value.*/
-                volatile uint32_t thr_h_lim_en:   1;         /*This is the enable bit for  comparing unit0's count with thr_h_lim value.*/
-                volatile uint32_t thr_l_lim_en:   1;         /*This is the enable bit for comparing unit0's count with thr_l_lim  value.*/
-                volatile uint32_t thr_thres0_en:  1;         /*This is the enable bit for comparing unit0's count with  thres0 value.*/
-                volatile uint32_t thr_thres1_en:  1;         /*This is the enable bit for  comparing  unit0's count with thres1 value .*/
-                volatile uint32_t ch0_neg_mode:   2;         /*This register is used to control the mode of channel0's input neg-edge signal for unit0. 2'd1：increase at the negedge of input signal    2'd2:decrease at the negedge of input signal    others:forbidden*/
-                volatile uint32_t ch0_pos_mode:   2;         /*This register is used to control the mode of channel0's input pos-edge signal for unit0. 2'd1：increase at the posedge of input signal    2'd2:decrease at the posedge of input signal    others:forbidden*/
-                volatile uint32_t ch0_hctrl_mode: 2;         /*This register is used to control the mode of channel0's high control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
-                volatile uint32_t ch0_lctrl_mode: 2;         /*This register is used to control the mode of channel0's low control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
-                volatile uint32_t ch1_neg_mode:   2;         /*This register is used to control the mode of channel1's input neg-edge signal for unit0. 2'd1：increase at the negedge of input signal    2'd2:decrease at the negedge of input signal    others:forbidden*/
-                volatile uint32_t ch1_pos_mode:   2;         /*This register is used to control the mode of channel1's input pos-edge signal for unit0. 2'd1：increase at the posedge of input signal    2'd2:decrease at the posedge of input signal    others:forbidden*/
-                volatile uint32_t ch1_hctrl_mode: 2;         /*This register is used to control the mode of channel1's high control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
-                volatile uint32_t ch1_lctrl_mode: 2;         /*This register is used to control the mode of channel1's low control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
+                uint32_t filter_thres:  10;         /*This register is used to filter pulse whose width is smaller than this value for unit0.*/
+                uint32_t filter_en:      1;         /*This is the enable bit for filtering input signals for unit0.*/
+                uint32_t thr_zero_en:    1;         /*This is the enable bit for comparing unit0's count with 0 value.*/
+                uint32_t thr_h_lim_en:   1;         /*This is the enable bit for  comparing unit0's count with thr_h_lim value.*/
+                uint32_t thr_l_lim_en:   1;         /*This is the enable bit for comparing unit0's count with thr_l_lim  value.*/
+                uint32_t thr_thres0_en:  1;         /*This is the enable bit for comparing unit0's count with  thres0 value.*/
+                uint32_t thr_thres1_en:  1;         /*This is the enable bit for  comparing  unit0's count with thres1 value .*/
+                uint32_t ch0_neg_mode:   2;         /*This register is used to control the mode of channel0's input neg-edge signal for unit0. 2'd1：increase at the negedge of input signal    2'd2:decrease at the negedge of input signal    others:forbidden*/
+                uint32_t ch0_pos_mode:   2;         /*This register is used to control the mode of channel0's input pos-edge signal for unit0. 2'd1：increase at the posedge of input signal    2'd2:decrease at the posedge of input signal    others:forbidden*/
+                uint32_t ch0_hctrl_mode: 2;         /*This register is used to control the mode of channel0's high control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
+                uint32_t ch0_lctrl_mode: 2;         /*This register is used to control the mode of channel0's low control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
+                uint32_t ch1_neg_mode:   2;         /*This register is used to control the mode of channel1's input neg-edge signal for unit0. 2'd1：increase at the negedge of input signal    2'd2:decrease at the negedge of input signal    others:forbidden*/
+                uint32_t ch1_pos_mode:   2;         /*This register is used to control the mode of channel1's input pos-edge signal for unit0. 2'd1：increase at the posedge of input signal    2'd2:decrease at the posedge of input signal    others:forbidden*/
+                uint32_t ch1_hctrl_mode: 2;         /*This register is used to control the mode of channel1's high control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
+                uint32_t ch1_lctrl_mode: 2;         /*This register is used to control the mode of channel1's low control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
             };
-            volatile uint32_t val;
+            uint32_t val;
         }conf0;
         union {
             struct {
-                volatile uint32_t cnt_thres0:16;             /*This register is used to configure thres0 value for unit0.*/
-                volatile uint32_t cnt_thres1:16;             /*This register is used to configure thres1 value for unit0.*/
+                uint32_t cnt_thres0:16;             /*This register is used to configure thres0 value for unit0.*/
+                uint32_t cnt_thres1:16;             /*This register is used to configure thres1 value for unit0.*/
             };
-            volatile uint32_t val;
+            uint32_t val;
         }conf1;
         union {
             struct {
-                volatile uint32_t cnt_h_lim:16;              /*This register is used to configure thr_h_lim value for unit0.*/
-                volatile uint32_t cnt_l_lim:16;              /*This register is used to configure thr_l_lim value for unit0.*/
+                uint32_t cnt_h_lim:16;              /*This register is used to configure thr_h_lim value for unit0.*/
+                uint32_t cnt_l_lim:16;              /*This register is used to configure thr_l_lim value for unit0.*/
             };
-            volatile uint32_t val;
+            uint32_t val;
         }conf2;
     }conf_unit[8];
     union {
         struct {
-            volatile uint32_t cnt_val   : 16;                /*This register stores the current pulse count value for unit0.*/
-            volatile uint32_t reserved16: 16;
+            uint32_t cnt_val   : 16;                /*This register stores the current pulse count value for unit0.*/
+            uint32_t reserved16: 16;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }cnt_unit[8];
     union {
         struct {
-            volatile uint32_t cnt_thr_event_u0_int_raw: 1;   /*This is the interrupt raw bit for channel0 event.*/
-            volatile uint32_t cnt_thr_event_u1_int_raw: 1;   /*This is the interrupt raw bit for channel1 event.*/
-            volatile uint32_t cnt_thr_event_u2_int_raw: 1;   /*This is the interrupt raw bit for channel2 event.*/
-            volatile uint32_t cnt_thr_event_u3_int_raw: 1;   /*This is the interrupt raw bit for channel3 event.*/
-            volatile uint32_t cnt_thr_event_u4_int_raw: 1;   /*This is the interrupt raw bit for channel4 event.*/
-            volatile uint32_t cnt_thr_event_u5_int_raw: 1;   /*This is the interrupt raw bit for channel5 event.*/
-            volatile uint32_t cnt_thr_event_u6_int_raw: 1;   /*This is the interrupt raw bit for channel6 event.*/
-            volatile uint32_t cnt_thr_event_u7_int_raw: 1;   /*This is the interrupt raw bit for channel7 event.*/
-            volatile uint32_t reserved8:               24;
+            uint32_t cnt_thr_event_u0_int_raw: 1;   /*This is the interrupt raw bit for channel0 event.*/
+            uint32_t cnt_thr_event_u1_int_raw: 1;   /*This is the interrupt raw bit for channel1 event.*/
+            uint32_t cnt_thr_event_u2_int_raw: 1;   /*This is the interrupt raw bit for channel2 event.*/
+            uint32_t cnt_thr_event_u3_int_raw: 1;   /*This is the interrupt raw bit for channel3 event.*/
+            uint32_t cnt_thr_event_u4_int_raw: 1;   /*This is the interrupt raw bit for channel4 event.*/
+            uint32_t cnt_thr_event_u5_int_raw: 1;   /*This is the interrupt raw bit for channel5 event.*/
+            uint32_t cnt_thr_event_u6_int_raw: 1;   /*This is the interrupt raw bit for channel6 event.*/
+            uint32_t cnt_thr_event_u7_int_raw: 1;   /*This is the interrupt raw bit for channel7 event.*/
+            uint32_t reserved8:               24;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }int_raw;
     union {
         struct {
-            volatile uint32_t cnt_thr_event_u0_int_st: 1;    /*This is the  interrupt status bit for channel0 event.*/
-            volatile uint32_t cnt_thr_event_u1_int_st: 1;    /*This is the  interrupt status bit for channel1 event.*/
-            volatile uint32_t cnt_thr_event_u2_int_st: 1;    /*This is the  interrupt status bit for channel2 event.*/
-            volatile uint32_t cnt_thr_event_u3_int_st: 1;    /*This is the  interrupt status bit for channel3 event.*/
-            volatile uint32_t cnt_thr_event_u4_int_st: 1;    /*This is the  interrupt status bit for channel4 event.*/
-            volatile uint32_t cnt_thr_event_u5_int_st: 1;    /*This is the  interrupt status bit for channel5 event.*/
-            volatile uint32_t cnt_thr_event_u6_int_st: 1;    /*This is the  interrupt status bit for channel6 event.*/
-            volatile uint32_t cnt_thr_event_u7_int_st: 1;    /*This is the  interrupt status bit for channel7 event.*/
-            volatile uint32_t reserved8:              24;
+            uint32_t cnt_thr_event_u0_int_st: 1;    /*This is the  interrupt status bit for channel0 event.*/
+            uint32_t cnt_thr_event_u1_int_st: 1;    /*This is the  interrupt status bit for channel1 event.*/
+            uint32_t cnt_thr_event_u2_int_st: 1;    /*This is the  interrupt status bit for channel2 event.*/
+            uint32_t cnt_thr_event_u3_int_st: 1;    /*This is the  interrupt status bit for channel3 event.*/
+            uint32_t cnt_thr_event_u4_int_st: 1;    /*This is the  interrupt status bit for channel4 event.*/
+            uint32_t cnt_thr_event_u5_int_st: 1;    /*This is the  interrupt status bit for channel5 event.*/
+            uint32_t cnt_thr_event_u6_int_st: 1;    /*This is the  interrupt status bit for channel6 event.*/
+            uint32_t cnt_thr_event_u7_int_st: 1;    /*This is the  interrupt status bit for channel7 event.*/
+            uint32_t reserved8:              24;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }int_st;
     union {
         struct {
-            volatile uint32_t cnt_thr_event_u0_int_ena: 1;   /*This is the  interrupt enable bit for channel0 event.*/
-            volatile uint32_t cnt_thr_event_u1_int_ena: 1;   /*This is the  interrupt enable bit for channel1 event.*/
-            volatile uint32_t cnt_thr_event_u2_int_ena: 1;   /*This is the  interrupt enable bit for channel2 event.*/
-            volatile uint32_t cnt_thr_event_u3_int_ena: 1;   /*This is the  interrupt enable bit for channel3 event.*/
-            volatile uint32_t cnt_thr_event_u4_int_ena: 1;   /*This is the  interrupt enable bit for channel4 event.*/
-            volatile uint32_t cnt_thr_event_u5_int_ena: 1;   /*This is the  interrupt enable bit for channel5 event.*/
-            volatile uint32_t cnt_thr_event_u6_int_ena: 1;   /*This is the  interrupt enable bit for channel6 event.*/
-            volatile uint32_t cnt_thr_event_u7_int_ena: 1;   /*This is the  interrupt enable bit for channel7 event.*/
-            volatile uint32_t reserved8:               24;
+            uint32_t cnt_thr_event_u0_int_ena: 1;   /*This is the  interrupt enable bit for channel0 event.*/
+            uint32_t cnt_thr_event_u1_int_ena: 1;   /*This is the  interrupt enable bit for channel1 event.*/
+            uint32_t cnt_thr_event_u2_int_ena: 1;   /*This is the  interrupt enable bit for channel2 event.*/
+            uint32_t cnt_thr_event_u3_int_ena: 1;   /*This is the  interrupt enable bit for channel3 event.*/
+            uint32_t cnt_thr_event_u4_int_ena: 1;   /*This is the  interrupt enable bit for channel4 event.*/
+            uint32_t cnt_thr_event_u5_int_ena: 1;   /*This is the  interrupt enable bit for channel5 event.*/
+            uint32_t cnt_thr_event_u6_int_ena: 1;   /*This is the  interrupt enable bit for channel6 event.*/
+            uint32_t cnt_thr_event_u7_int_ena: 1;   /*This is the  interrupt enable bit for channel7 event.*/
+            uint32_t reserved8:               24;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }int_ena;
     union {
         struct {
-            volatile uint32_t cnt_thr_event_u0_int_clr: 1;   /*Set this bit to clear channel0 event interrupt.*/
-            volatile uint32_t cnt_thr_event_u1_int_clr: 1;   /*Set this bit to clear channel1 event interrupt.*/
-            volatile uint32_t cnt_thr_event_u2_int_clr: 1;   /*Set this bit to clear channel2 event interrupt.*/
-            volatile uint32_t cnt_thr_event_u3_int_clr: 1;   /*Set this bit to clear channel3 event interrupt.*/
-            volatile uint32_t cnt_thr_event_u4_int_clr: 1;   /*Set this bit to clear channel4 event interrupt.*/
-            volatile uint32_t cnt_thr_event_u5_int_clr: 1;   /*Set this bit to clear channel5 event interrupt.*/
-            volatile uint32_t cnt_thr_event_u6_int_clr: 1;   /*Set this bit to clear channel6 event interrupt.*/
-            volatile uint32_t cnt_thr_event_u7_int_clr: 1;   /*Set this bit to clear channel7 event interrupt.*/
-            volatile uint32_t reserved8:               24;
+            uint32_t cnt_thr_event_u0_int_clr: 1;   /*Set this bit to clear channel0 event interrupt.*/
+            uint32_t cnt_thr_event_u1_int_clr: 1;   /*Set this bit to clear channel1 event interrupt.*/
+            uint32_t cnt_thr_event_u2_int_clr: 1;   /*Set this bit to clear channel2 event interrupt.*/
+            uint32_t cnt_thr_event_u3_int_clr: 1;   /*Set this bit to clear channel3 event interrupt.*/
+            uint32_t cnt_thr_event_u4_int_clr: 1;   /*Set this bit to clear channel4 event interrupt.*/
+            uint32_t cnt_thr_event_u5_int_clr: 1;   /*Set this bit to clear channel5 event interrupt.*/
+            uint32_t cnt_thr_event_u6_int_clr: 1;   /*Set this bit to clear channel6 event interrupt.*/
+            uint32_t cnt_thr_event_u7_int_clr: 1;   /*Set this bit to clear channel7 event interrupt.*/
+            uint32_t reserved8:               24;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }int_clr;
-    volatile uint32_t status_unit[8];
+    uint32_t status_unit[8];
     union {
         struct {
-            volatile uint32_t cnt_rst_u0:   1;               /*Set this bit to clear unit0's counter.*/
-            volatile uint32_t cnt_pause_u0: 1;               /*Set this bit to pause unit0's counter.*/
-            volatile uint32_t cnt_rst_u1:   1;               /*Set this bit to clear unit1's counter.*/
-            volatile uint32_t cnt_pause_u1: 1;               /*Set this bit to pause unit1's counter.*/
-            volatile uint32_t cnt_rst_u2:   1;               /*Set this bit to clear unit2's counter.*/
-            volatile uint32_t cnt_pause_u2: 1;               /*Set this bit to pause unit2's counter.*/
-            volatile uint32_t cnt_rst_u3:   1;               /*Set this bit to clear unit3's counter.*/
-            volatile uint32_t cnt_pause_u3: 1;               /*Set this bit to pause unit3's counter.*/
-            volatile uint32_t cnt_rst_u4:   1;               /*Set this bit to clear unit4's counter.*/
-            volatile uint32_t cnt_pause_u4: 1;               /*Set this bit to pause unit4's counter.*/
-            volatile uint32_t cnt_rst_u5:   1;               /*Set this bit to clear unit5's counter.*/
-            volatile uint32_t cnt_pause_u5: 1;               /*Set this bit to pause unit5's counter.*/
-            volatile uint32_t cnt_rst_u6:   1;               /*Set this bit to clear unit6's counter.*/
-            volatile uint32_t cnt_pause_u6: 1;               /*Set this bit to pause unit6's counter.*/
-            volatile uint32_t cnt_rst_u7:   1;               /*Set this bit to clear unit7's counter.*/
-            volatile uint32_t cnt_pause_u7: 1;               /*Set this bit to pause unit7's counter.*/
-            volatile uint32_t clk_en:       1;
-            volatile uint32_t reserved17:  15;
+            uint32_t cnt_rst_u0:   1;               /*Set this bit to clear unit0's counter.*/
+            uint32_t cnt_pause_u0: 1;               /*Set this bit to pause unit0's counter.*/
+            uint32_t cnt_rst_u1:   1;               /*Set this bit to clear unit1's counter.*/
+            uint32_t cnt_pause_u1: 1;               /*Set this bit to pause unit1's counter.*/
+            uint32_t cnt_rst_u2:   1;               /*Set this bit to clear unit2's counter.*/
+            uint32_t cnt_pause_u2: 1;               /*Set this bit to pause unit2's counter.*/
+            uint32_t cnt_rst_u3:   1;               /*Set this bit to clear unit3's counter.*/
+            uint32_t cnt_pause_u3: 1;               /*Set this bit to pause unit3's counter.*/
+            uint32_t cnt_rst_u4:   1;               /*Set this bit to clear unit4's counter.*/
+            uint32_t cnt_pause_u4: 1;               /*Set this bit to pause unit4's counter.*/
+            uint32_t cnt_rst_u5:   1;               /*Set this bit to clear unit5's counter.*/
+            uint32_t cnt_pause_u5: 1;               /*Set this bit to pause unit5's counter.*/
+            uint32_t cnt_rst_u6:   1;               /*Set this bit to clear unit6's counter.*/
+            uint32_t cnt_pause_u6: 1;               /*Set this bit to pause unit6's counter.*/
+            uint32_t cnt_rst_u7:   1;               /*Set this bit to clear unit7's counter.*/
+            uint32_t cnt_pause_u7: 1;               /*Set this bit to pause unit7's counter.*/
+            uint32_t clk_en:       1;
+            uint32_t reserved17:  15;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }ctrl;
-    volatile uint32_t reserved_b4;
-    volatile uint32_t reserved_b8;
-    volatile uint32_t reserved_bc;
-    volatile uint32_t reserved_c0;
-    volatile uint32_t reserved_c4;
-    volatile uint32_t reserved_c8;
-    volatile uint32_t reserved_cc;
-    volatile uint32_t reserved_d0;
-    volatile uint32_t reserved_d4;
-    volatile uint32_t reserved_d8;
-    volatile uint32_t reserved_dc;
-    volatile uint32_t reserved_e0;
-    volatile uint32_t reserved_e4;
-    volatile uint32_t reserved_e8;
-    volatile uint32_t reserved_ec;
-    volatile uint32_t reserved_f0;
-    volatile uint32_t reserved_f4;
-    volatile uint32_t reserved_f8;
-    volatile uint32_t date;                                  /**/
+    uint32_t reserved_b4;
+    uint32_t reserved_b8;
+    uint32_t reserved_bc;
+    uint32_t reserved_c0;
+    uint32_t reserved_c4;
+    uint32_t reserved_c8;
+    uint32_t reserved_cc;
+    uint32_t reserved_d0;
+    uint32_t reserved_d4;
+    uint32_t reserved_d8;
+    uint32_t reserved_dc;
+    uint32_t reserved_e0;
+    uint32_t reserved_e4;
+    uint32_t reserved_e8;
+    uint32_t reserved_ec;
+    uint32_t reserved_f0;
+    uint32_t reserved_f4;
+    uint32_t reserved_f8;
+    uint32_t date;                                  /**/
 } pcnt_dev_t;
-extern volatile pcnt_dev_t PCNT;
+extern pcnt_dev_t PCNT;
 #endif  /* _SOC_PCNT_STRUCT_H_ */

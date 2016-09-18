@@ -13,36 +13,36 @@
 // limitations under the License.
 #ifndef _SOC_GPIO_SD_STRUCT_H_
 #define _SOC_GPIO_SD_STRUCT_H_
-typedef struct {
+typedef volatile struct {
     union {
         struct {
-            volatile uint32_t sd_in:       8;
-            volatile uint32_t prescale:    8;
-            volatile uint32_t reserved16: 16;
+            uint32_t sd_in:       8;
+            uint32_t prescale:    8;
+            uint32_t reserved16: 16;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }sigmadelta[8];
     union {
         struct {
-            volatile uint32_t reserved0: 31;
-            volatile uint32_t clk_en:     1;
+            uint32_t reserved0: 31;
+            uint32_t clk_en:     1;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }sigmadelta_cg;
     union {
         struct {
-            volatile uint32_t reserved0: 31;
-            volatile uint32_t spi_swap:   1;
+            uint32_t reserved0: 31;
+            uint32_t spi_swap:   1;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }sigmadelta_misc;
     union {
         struct {
-            volatile uint32_t date:      28;
-            volatile uint32_t reserved28: 4;
+            uint32_t date:      28;
+            uint32_t reserved28: 4;
         };
-        volatile uint32_t val;
+        uint32_t val;
     }sigmadelta_version;
 } gpio_sd_dev_t;
-extern volatile gpio_sd_dev_t SIGMADELTA;
+extern gpio_sd_dev_t SIGMADELTA;
 #endif  /* _SOC_GPIO_SD_STRUCT_H_ */
