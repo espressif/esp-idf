@@ -222,7 +222,9 @@
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
 
-#ifndef configENABLE_MEMORY_DEBUG
+#if CONFIG_ENABLE_MEMORY_DEBUG
+#define configENABLE_MEMORY_DEBUG 1
+#else
 #define configENABLE_MEMORY_DEBUG 0
 #endif
 
