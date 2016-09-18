@@ -52,169 +52,169 @@ typedef volatile struct {
     uint32_t apb_mem_addr_ch[8];                        /*The ram relative address in channel0-7 by apb fifo access*/
     union {
         struct {
-            uint32_t ch0_tx_end_int_raw:       1;       /*The interrupt raw bit for channel 0 turns to high level when the transmit process is done.*/
-            uint32_t ch0_rx_end_int_raw:       1;       /*The interrupt raw bit for channel 0 turns to high level when the receive process is done.*/
-            uint32_t ch0_err_int_raw:          1;       /*The interrupt raw bit for channel 0 turns to high level when channel 0 detects some errors.*/
-            uint32_t ch1_tx_end_int_raw:       1;       /*The interrupt raw bit for channel 1 turns to high level when the transmit process is done.*/
-            uint32_t ch1_rx_end_int_raw:       1;       /*The interrupt raw bit for channel 1 turns to high level when the receive process is done.*/
-            uint32_t ch1_err_int_raw:          1;       /*The interrupt raw bit for channel 1 turns to high level when channel 1 detects some errors.*/
-            uint32_t ch2_tx_end_int_raw:       1;       /*The interrupt raw bit for channel 2 turns to high level when the transmit process is done.*/
-            uint32_t ch2_rx_end_int_raw:       1;       /*The interrupt raw bit for channel 2 turns to high level when the receive process is done.*/
-            uint32_t ch2_err_int_raw:          1;       /*The interrupt raw bit for channel 2 turns to high level when channel 2 detects some errors.*/
-            uint32_t ch3_tx_end_int_raw:       1;       /*The interrupt raw bit for channel 3 turns to high level when the transmit process is done.*/
-            uint32_t ch3_rx_end_int_raw:       1;       /*The interrupt raw bit for channel 3 turns to high level when the receive process is done.*/
-            uint32_t ch3_err_int_raw:          1;       /*The interrupt raw bit for channel 3 turns to high level when channel 3 detects some errors.*/
-            uint32_t ch4_tx_end_int_raw:       1;       /*The interrupt raw bit for channel 4 turns to high level when the transmit process is done.*/
-            uint32_t ch4_rx_end_int_raw:       1;       /*The interrupt raw bit for channel 4 turns to high level when the receive process is done.*/
-            uint32_t ch4_err_int_raw:          1;       /*The interrupt raw bit for channel 4 turns to high level when channel 4 detects some errors.*/
-            uint32_t ch5_tx_end_int_raw:       1;       /*The interrupt raw bit for channel 5 turns to high level when the transmit process is done.*/
-            uint32_t ch5_rx_end_int_raw:       1;       /*The interrupt raw bit for channel 5 turns to high level when the receive process is done.*/
-            uint32_t ch5_err_int_raw:          1;       /*The interrupt raw bit for channel 5 turns to high level when channel 5 detects some errors.*/
-            uint32_t ch6_tx_end_int_raw:       1;       /*The interrupt raw bit for channel 6 turns to high level when the transmit process is done.*/
-            uint32_t ch6_rx_end_int_raw:       1;       /*The interrupt raw bit for channel 6 turns to high level when the receive process is done.*/
-            uint32_t ch6_err_int_raw:          1;       /*The interrupt raw bit for channel 6 turns to high level when channel 6 detects some errors.*/
-            uint32_t ch7_tx_end_int_raw:       1;       /*The interrupt raw bit for channel 7 turns to high level when the transmit process is done.*/
-            uint32_t ch7_rx_end_int_raw:       1;       /*The interrupt raw bit for channel 7 turns to high level when the receive process is done.*/
-            uint32_t ch7_err_int_raw:          1;       /*The interrupt raw bit for channel 7 turns to high level when channel 7 detects some errors.*/
-            uint32_t ch0_tx_thr_event_int_raw: 1;       /*The interrupt raw bit for channel 0 turns to high level when transmitter in channel0  have send data more than  reg_rmt_tx_lim_ch0  after detecting this interrupt  software can updata the old data with new data.*/
-            uint32_t ch1_tx_thr_event_int_raw: 1;       /*The interrupt raw bit for channel 1 turns to high level when transmitter in channel1  have send data more than  reg_rmt_tx_lim_ch1  after detecting this interrupt  software can updata the old data with new data.*/
-            uint32_t ch2_tx_thr_event_int_raw: 1;       /*The interrupt raw bit for channel 2 turns to high level when transmitter in channel2  have send data more than  reg_rmt_tx_lim_ch2  after detecting this interrupt  software can updata the old data with new data.*/
-            uint32_t ch3_tx_thr_event_int_raw: 1;       /*The interrupt raw bit for channel 3 turns to high level when transmitter in channel3  have send data more than  reg_rmt_tx_lim_ch3  after detecting this interrupt  software can updata the old data with new data.*/
-            uint32_t ch4_tx_thr_event_int_raw: 1;       /*The interrupt raw bit for channel 4 turns to high level when transmitter in channel4  have send data more than  reg_rmt_tx_lim_ch4  after detecting this interrupt  software can updata the old data with new data.*/
-            uint32_t ch5_tx_thr_event_int_raw: 1;       /*The interrupt raw bit for channel 5 turns to high level when transmitter in channel5  have send data more than  reg_rmt_tx_lim_ch5  after detecting this interrupt  software can updata the old data with new data.*/
-            uint32_t ch6_tx_thr_event_int_raw: 1;       /*The interrupt raw bit for channel 6 turns to high level when transmitter in channel6  have send data more than  reg_rmt_tx_lim_ch6  after detecting this interrupt  software can updata the old data with new data.*/
-            uint32_t ch7_tx_thr_event_int_raw: 1;       /*The interrupt raw bit for channel 7 turns to high level when transmitter in channel7  have send data more than  reg_rmt_tx_lim_ch7  after detecting this interrupt  software can updata the old data with new data.*/
+            uint32_t ch0_tx_end:       1;               /*The interrupt raw bit for channel 0 turns to high level when the transmit process is done.*/
+            uint32_t ch0_rx_end:       1;               /*The interrupt raw bit for channel 0 turns to high level when the receive process is done.*/
+            uint32_t ch0_err:          1;               /*The interrupt raw bit for channel 0 turns to high level when channel 0 detects some errors.*/
+            uint32_t ch1_tx_end:       1;               /*The interrupt raw bit for channel 1 turns to high level when the transmit process is done.*/
+            uint32_t ch1_rx_end:       1;               /*The interrupt raw bit for channel 1 turns to high level when the receive process is done.*/
+            uint32_t ch1_err:          1;               /*The interrupt raw bit for channel 1 turns to high level when channel 1 detects some errors.*/
+            uint32_t ch2_tx_end:       1;               /*The interrupt raw bit for channel 2 turns to high level when the transmit process is done.*/
+            uint32_t ch2_rx_end:       1;               /*The interrupt raw bit for channel 2 turns to high level when the receive process is done.*/
+            uint32_t ch2_err:          1;               /*The interrupt raw bit for channel 2 turns to high level when channel 2 detects some errors.*/
+            uint32_t ch3_tx_end:       1;               /*The interrupt raw bit for channel 3 turns to high level when the transmit process is done.*/
+            uint32_t ch3_rx_end:       1;               /*The interrupt raw bit for channel 3 turns to high level when the receive process is done.*/
+            uint32_t ch3_err:          1;               /*The interrupt raw bit for channel 3 turns to high level when channel 3 detects some errors.*/
+            uint32_t ch4_tx_end:       1;               /*The interrupt raw bit for channel 4 turns to high level when the transmit process is done.*/
+            uint32_t ch4_rx_end:       1;               /*The interrupt raw bit for channel 4 turns to high level when the receive process is done.*/
+            uint32_t ch4_err:          1;               /*The interrupt raw bit for channel 4 turns to high level when channel 4 detects some errors.*/
+            uint32_t ch5_tx_end:       1;               /*The interrupt raw bit for channel 5 turns to high level when the transmit process is done.*/
+            uint32_t ch5_rx_end:       1;               /*The interrupt raw bit for channel 5 turns to high level when the receive process is done.*/
+            uint32_t ch5_err:          1;               /*The interrupt raw bit for channel 5 turns to high level when channel 5 detects some errors.*/
+            uint32_t ch6_tx_end:       1;               /*The interrupt raw bit for channel 6 turns to high level when the transmit process is done.*/
+            uint32_t ch6_rx_end:       1;               /*The interrupt raw bit for channel 6 turns to high level when the receive process is done.*/
+            uint32_t ch6_err:          1;               /*The interrupt raw bit for channel 6 turns to high level when channel 6 detects some errors.*/
+            uint32_t ch7_tx_end:       1;               /*The interrupt raw bit for channel 7 turns to high level when the transmit process is done.*/
+            uint32_t ch7_rx_end:       1;               /*The interrupt raw bit for channel 7 turns to high level when the receive process is done.*/
+            uint32_t ch7_err:          1;               /*The interrupt raw bit for channel 7 turns to high level when channel 7 detects some errors.*/
+            uint32_t ch0_tx_thr_event: 1;               /*The interrupt raw bit for channel 0 turns to high level when transmitter in channel0  have send data more than  reg_rmt_tx_lim_ch0  after detecting this interrupt  software can updata the old data with new data.*/
+            uint32_t ch1_tx_thr_event: 1;               /*The interrupt raw bit for channel 1 turns to high level when transmitter in channel1  have send data more than  reg_rmt_tx_lim_ch1  after detecting this interrupt  software can updata the old data with new data.*/
+            uint32_t ch2_tx_thr_event: 1;               /*The interrupt raw bit for channel 2 turns to high level when transmitter in channel2  have send data more than  reg_rmt_tx_lim_ch2  after detecting this interrupt  software can updata the old data with new data.*/
+            uint32_t ch3_tx_thr_event: 1;               /*The interrupt raw bit for channel 3 turns to high level when transmitter in channel3  have send data more than  reg_rmt_tx_lim_ch3  after detecting this interrupt  software can updata the old data with new data.*/
+            uint32_t ch4_tx_thr_event: 1;               /*The interrupt raw bit for channel 4 turns to high level when transmitter in channel4  have send data more than  reg_rmt_tx_lim_ch4  after detecting this interrupt  software can updata the old data with new data.*/
+            uint32_t ch5_tx_thr_event: 1;               /*The interrupt raw bit for channel 5 turns to high level when transmitter in channel5  have send data more than  reg_rmt_tx_lim_ch5  after detecting this interrupt  software can updata the old data with new data.*/
+            uint32_t ch6_tx_thr_event: 1;               /*The interrupt raw bit for channel 6 turns to high level when transmitter in channel6  have send data more than  reg_rmt_tx_lim_ch6  after detecting this interrupt  software can updata the old data with new data.*/
+            uint32_t ch7_tx_thr_event: 1;               /*The interrupt raw bit for channel 7 turns to high level when transmitter in channel7  have send data more than  reg_rmt_tx_lim_ch7  after detecting this interrupt  software can updata the old data with new data.*/
         };
         uint32_t val;
     }int_raw;
     union {
         struct {
-            uint32_t ch0_tx_end_int_st:       1;        /*The interrupt  state bit for channel 0's mt_ch0_tx_end_int_raw when mt_ch0_tx_end_int_ena is set to 0.*/
-            uint32_t ch0_rx_end_int_st:       1;        /*The interrupt  state bit for channel 0's rmt_ch0_rx_end_int_raw when  rmt_ch0_rx_end_int_ena is set to 0.*/
-            uint32_t ch0_err_int_st:          1;        /*The interrupt  state bit for channel 0's rmt_ch0_err_int_raw when  rmt_ch0_err_int_ena is set to 0.*/
-            uint32_t ch1_tx_end_int_st:       1;        /*The interrupt  state bit for channel 1's mt_ch1_tx_end_int_raw when mt_ch1_tx_end_int_ena is set to 1.*/
-            uint32_t ch1_rx_end_int_st:       1;        /*The interrupt  state bit for channel 1's rmt_ch1_rx_end_int_raw when  rmt_ch1_rx_end_int_ena is set to 1.*/
-            uint32_t ch1_err_int_st:          1;        /*The interrupt  state bit for channel 1's rmt_ch1_err_int_raw when  rmt_ch1_err_int_ena is set to 1.*/
-            uint32_t ch2_tx_end_int_st:       1;        /*The interrupt  state bit for channel 2's mt_ch2_tx_end_int_raw when mt_ch2_tx_end_int_ena is set to 1.*/
-            uint32_t ch2_rx_end_int_st:       1;        /*The interrupt  state bit for channel 2's rmt_ch2_rx_end_int_raw when  rmt_ch2_rx_end_int_ena is set to 1.*/
-            uint32_t ch2_err_int_st:          1;        /*The interrupt  state bit for channel 2's rmt_ch2_err_int_raw when  rmt_ch2_err_int_ena is set to 1.*/
-            uint32_t ch3_tx_end_int_st:       1;        /*The interrupt  state bit for channel 3's mt_ch3_tx_end_int_raw when mt_ch3_tx_end_int_ena is set to 1.*/
-            uint32_t ch3_rx_end_int_st:       1;        /*The interrupt  state bit for channel 3's rmt_ch3_rx_end_int_raw when  rmt_ch3_rx_end_int_ena is set to 1.*/
-            uint32_t ch3_err_int_st:          1;        /*The interrupt  state bit for channel 3's rmt_ch3_err_int_raw when  rmt_ch3_err_int_ena is set to 1.*/
-            uint32_t ch4_tx_end_int_st:       1;        /*The interrupt  state bit for channel 4's mt_ch4_tx_end_int_raw when mt_ch4_tx_end_int_ena is set to 1.*/
-            uint32_t ch4_rx_end_int_st:       1;        /*The interrupt  state bit for channel 4's rmt_ch4_rx_end_int_raw when  rmt_ch4_rx_end_int_ena is set to 1.*/
-            uint32_t ch4_err_int_st:          1;        /*The interrupt  state bit for channel 4's rmt_ch4_err_int_raw when  rmt_ch4_err_int_ena is set to 1.*/
-            uint32_t ch5_tx_end_int_st:       1;        /*The interrupt  state bit for channel 5's mt_ch5_tx_end_int_raw when mt_ch5_tx_end_int_ena is set to 1.*/
-            uint32_t ch5_rx_end_int_st:       1;        /*The interrupt  state bit for channel 5's rmt_ch5_rx_end_int_raw when  rmt_ch5_rx_end_int_ena is set to 1.*/
-            uint32_t ch5_err_int_st:          1;        /*The interrupt  state bit for channel 5's rmt_ch5_err_int_raw when  rmt_ch5_err_int_ena is set to 1.*/
-            uint32_t ch6_tx_end_int_st:       1;        /*The interrupt  state bit for channel 6's mt_ch6_tx_end_int_raw when mt_ch6_tx_end_int_ena is set to 1.*/
-            uint32_t ch6_rx_end_int_st:       1;        /*The interrupt  state bit for channel 6's rmt_ch6_rx_end_int_raw when  rmt_ch6_rx_end_int_ena is set to 1.*/
-            uint32_t ch6_err_int_st:          1;        /*The interrupt  state bit for channel 6's rmt_ch6_err_int_raw when  rmt_ch6_err_int_ena is set to 1.*/
-            uint32_t ch7_tx_end_int_st:       1;        /*The interrupt  state bit for channel 7's mt_ch7_tx_end_int_raw when mt_ch7_tx_end_int_ena is set to 1.*/
-            uint32_t ch7_rx_end_int_st:       1;        /*The interrupt  state bit for channel 7's rmt_ch7_rx_end_int_raw when  rmt_ch7_rx_end_int_ena is set to 1.*/
-            uint32_t ch7_err_int_st:          1;        /*The interrupt  state bit for channel 7's rmt_ch7_err_int_raw when  rmt_ch7_err_int_ena is set to 1.*/
-            uint32_t ch0_tx_thr_event_int_st: 1;        /*The interrupt state bit  for channel 0's rmt_ch0_tx_thr_event_int_raw when mt_ch0_tx_thr_event_int_ena is set to 1.*/
-            uint32_t ch1_tx_thr_event_int_st: 1;        /*The interrupt state bit  for channel 1's rmt_ch1_tx_thr_event_int_raw when mt_ch1_tx_thr_event_int_ena is set to 1.*/
-            uint32_t ch2_tx_thr_event_int_st: 1;        /*The interrupt state bit  for channel 2's rmt_ch2_tx_thr_event_int_raw when mt_ch2_tx_thr_event_int_ena is set to 1.*/
-            uint32_t ch3_tx_thr_event_int_st: 1;        /*The interrupt state bit  for channel 3's rmt_ch3_tx_thr_event_int_raw when mt_ch3_tx_thr_event_int_ena is set to 1.*/
-            uint32_t ch4_tx_thr_event_int_st: 1;        /*The interrupt state bit  for channel 4's rmt_ch4_tx_thr_event_int_raw when mt_ch4_tx_thr_event_int_ena is set to 1.*/
-            uint32_t ch5_tx_thr_event_int_st: 1;        /*The interrupt state bit  for channel 5's rmt_ch5_tx_thr_event_int_raw when mt_ch5_tx_thr_event_int_ena is set to 1.*/
-            uint32_t ch6_tx_thr_event_int_st: 1;        /*The interrupt state bit  for channel 6's rmt_ch6_tx_thr_event_int_raw when mt_ch6_tx_thr_event_int_ena is set to 1.*/
-            uint32_t ch7_tx_thr_event_int_st: 1;        /*The interrupt state bit  for channel 7's rmt_ch7_tx_thr_event_int_raw when mt_ch7_tx_thr_event_int_ena is set to 1.*/
+            uint32_t ch0_tx_end:       1;                /*The interrupt  state bit for channel 0's mt_ch0_tx_end_int_raw when mt_ch0_tx_end_int_ena is set to 0.*/
+            uint32_t ch0_rx_end:       1;                /*The interrupt  state bit for channel 0's rmt_ch0_rx_end_int_raw when  rmt_ch0_rx_end_int_ena is set to 0.*/
+            uint32_t ch0_err:          1;                /*The interrupt  state bit for channel 0's rmt_ch0_err_int_raw when  rmt_ch0_err_int_ena is set to 0.*/
+            uint32_t ch1_tx_end:       1;                /*The interrupt  state bit for channel 1's mt_ch1_tx_end_int_raw when mt_ch1_tx_end_int_ena is set to 1.*/
+            uint32_t ch1_rx_end:       1;                /*The interrupt  state bit for channel 1's rmt_ch1_rx_end_int_raw when  rmt_ch1_rx_end_int_ena is set to 1.*/
+            uint32_t ch1_err:          1;                /*The interrupt  state bit for channel 1's rmt_ch1_err_int_raw when  rmt_ch1_err_int_ena is set to 1.*/
+            uint32_t ch2_tx_end:       1;                /*The interrupt  state bit for channel 2's mt_ch2_tx_end_int_raw when mt_ch2_tx_end_int_ena is set to 1.*/
+            uint32_t ch2_rx_end:       1;                /*The interrupt  state bit for channel 2's rmt_ch2_rx_end_int_raw when  rmt_ch2_rx_end_int_ena is set to 1.*/
+            uint32_t ch2_err:          1;                /*The interrupt  state bit for channel 2's rmt_ch2_err_int_raw when  rmt_ch2_err_int_ena is set to 1.*/
+            uint32_t ch3_tx_end:       1;                /*The interrupt  state bit for channel 3's mt_ch3_tx_end_int_raw when mt_ch3_tx_end_int_ena is set to 1.*/
+            uint32_t ch3_rx_end:       1;                /*The interrupt  state bit for channel 3's rmt_ch3_rx_end_int_raw when  rmt_ch3_rx_end_int_ena is set to 1.*/
+            uint32_t ch3_err:          1;                /*The interrupt  state bit for channel 3's rmt_ch3_err_int_raw when  rmt_ch3_err_int_ena is set to 1.*/
+            uint32_t ch4_tx_end:       1;                /*The interrupt  state bit for channel 4's mt_ch4_tx_end_int_raw when mt_ch4_tx_end_int_ena is set to 1.*/
+            uint32_t ch4_rx_end:       1;                /*The interrupt  state bit for channel 4's rmt_ch4_rx_end_int_raw when  rmt_ch4_rx_end_int_ena is set to 1.*/
+            uint32_t ch4_err:          1;                /*The interrupt  state bit for channel 4's rmt_ch4_err_int_raw when  rmt_ch4_err_int_ena is set to 1.*/
+            uint32_t ch5_tx_end:       1;                /*The interrupt  state bit for channel 5's mt_ch5_tx_end_int_raw when mt_ch5_tx_end_int_ena is set to 1.*/
+            uint32_t ch5_rx_end:       1;                /*The interrupt  state bit for channel 5's rmt_ch5_rx_end_int_raw when  rmt_ch5_rx_end_int_ena is set to 1.*/
+            uint32_t ch5_err:          1;                /*The interrupt  state bit for channel 5's rmt_ch5_err_int_raw when  rmt_ch5_err_int_ena is set to 1.*/
+            uint32_t ch6_tx_end:       1;                /*The interrupt  state bit for channel 6's mt_ch6_tx_end_int_raw when mt_ch6_tx_end_int_ena is set to 1.*/
+            uint32_t ch6_rx_end:       1;                /*The interrupt  state bit for channel 6's rmt_ch6_rx_end_int_raw when  rmt_ch6_rx_end_int_ena is set to 1.*/
+            uint32_t ch6_err:          1;                /*The interrupt  state bit for channel 6's rmt_ch6_err_int_raw when  rmt_ch6_err_int_ena is set to 1.*/
+            uint32_t ch7_tx_end:       1;                /*The interrupt  state bit for channel 7's mt_ch7_tx_end_int_raw when mt_ch7_tx_end_int_ena is set to 1.*/
+            uint32_t ch7_rx_end:       1;                /*The interrupt  state bit for channel 7's rmt_ch7_rx_end_int_raw when  rmt_ch7_rx_end_int_ena is set to 1.*/
+            uint32_t ch7_err:          1;                /*The interrupt  state bit for channel 7's rmt_ch7_err_int_raw when  rmt_ch7_err_int_ena is set to 1.*/
+            uint32_t ch0_tx_thr_event: 1;                /*The interrupt state bit  for channel 0's rmt_ch0_tx_thr_event_int_raw when mt_ch0_tx_thr_event_int_ena is set to 1.*/
+            uint32_t ch1_tx_thr_event: 1;                /*The interrupt state bit  for channel 1's rmt_ch1_tx_thr_event_int_raw when mt_ch1_tx_thr_event_int_ena is set to 1.*/
+            uint32_t ch2_tx_thr_event: 1;                /*The interrupt state bit  for channel 2's rmt_ch2_tx_thr_event_int_raw when mt_ch2_tx_thr_event_int_ena is set to 1.*/
+            uint32_t ch3_tx_thr_event: 1;                /*The interrupt state bit  for channel 3's rmt_ch3_tx_thr_event_int_raw when mt_ch3_tx_thr_event_int_ena is set to 1.*/
+            uint32_t ch4_tx_thr_event: 1;                /*The interrupt state bit  for channel 4's rmt_ch4_tx_thr_event_int_raw when mt_ch4_tx_thr_event_int_ena is set to 1.*/
+            uint32_t ch5_tx_thr_event: 1;                /*The interrupt state bit  for channel 5's rmt_ch5_tx_thr_event_int_raw when mt_ch5_tx_thr_event_int_ena is set to 1.*/
+            uint32_t ch6_tx_thr_event: 1;                /*The interrupt state bit  for channel 6's rmt_ch6_tx_thr_event_int_raw when mt_ch6_tx_thr_event_int_ena is set to 1.*/
+            uint32_t ch7_tx_thr_event: 1;                /*The interrupt state bit  for channel 7's rmt_ch7_tx_thr_event_int_raw when mt_ch7_tx_thr_event_int_ena is set to 1.*/
         };
         uint32_t val;
     }int_st;
     union {
         struct {
-            uint32_t ch0_tx_end_int_ena:       1;       /*Set this bit to enable rmt_ch0_tx_end_int_st.*/
-            uint32_t ch0_rx_end_int_ena:       1;       /*Set this bit to enable rmt_ch0_rx_end_int_st.*/
-            uint32_t ch0_err_int_ena:          1;       /*Set this bit to enable rmt_ch0_err_int_st.*/
-            uint32_t ch1_tx_end_int_ena:       1;       /*Set this bit to enable rmt_ch1_tx_end_int_st.*/
-            uint32_t ch1_rx_end_int_ena:       1;       /*Set this bit to enable rmt_ch1_rx_end_int_st.*/
-            uint32_t ch1_err_int_ena:          1;       /*Set this bit to enable rmt_ch1_err_int_st.*/
-            uint32_t ch2_tx_end_int_ena:       1;       /*Set this bit to enable rmt_ch2_tx_end_int_st.*/
-            uint32_t ch2_rx_end_int_ena:       1;       /*Set this bit to enable rmt_ch2_rx_end_int_st.*/
-            uint32_t ch2_err_int_ena:          1;       /*Set this bit to enable rmt_ch2_err_int_st.*/
-            uint32_t ch3_tx_end_int_ena:       1;       /*Set this bit to enable rmt_ch3_tx_end_int_st.*/
-            uint32_t ch3_rx_end_int_ena:       1;       /*Set this bit to enable rmt_ch3_rx_end_int_st.*/
-            uint32_t ch3_err_int_ena:          1;       /*Set this bit to enable rmt_ch3_err_int_st.*/
-            uint32_t ch4_tx_end_int_ena:       1;       /*Set this bit to enable rmt_ch4_tx_end_int_st.*/
-            uint32_t ch4_rx_end_int_ena:       1;       /*Set this bit to enable rmt_ch4_rx_end_int_st.*/
-            uint32_t ch4_err_int_ena:          1;       /*Set this bit to enable rmt_ch4_err_int_st.*/
-            uint32_t ch5_tx_end_int_ena:       1;       /*Set this bit to enable rmt_ch5_tx_end_int_st.*/
-            uint32_t ch5_rx_end_int_ena:       1;       /*Set this bit to enable rmt_ch5_rx_end_int_st.*/
-            uint32_t ch5_err_int_ena:          1;       /*Set this bit to enable rmt_ch5_err_int_st.*/
-            uint32_t ch6_tx_end_int_ena:       1;       /*Set this bit to enable rmt_ch6_tx_end_int_st.*/
-            uint32_t ch6_rx_end_int_ena:       1;       /*Set this bit to enable rmt_ch6_rx_end_int_st.*/
-            uint32_t ch6_err_int_ena:          1;       /*Set this bit to enable rmt_ch6_err_int_st.*/
-            uint32_t ch7_tx_end_int_ena:       1;       /*Set this bit to enable rmt_ch7_tx_end_int_st.*/
-            uint32_t ch7_rx_end_int_ena:       1;       /*Set this bit to enable rmt_ch7_rx_end_int_st.*/
-            uint32_t ch7_err_int_ena:          1;       /*Set this bit to enable rmt_ch7_err_int_st.*/
-            uint32_t ch0_tx_thr_event_int_ena: 1;       /*Set this bit to enable rmt_ch0_tx_thr_event_int_st.*/
-            uint32_t ch1_tx_thr_event_int_ena: 1;       /*Set this bit to enable rmt_ch1_tx_thr_event_int_st.*/
-            uint32_t ch2_tx_thr_event_int_ena: 1;       /*Set this bit to enable rmt_ch2_tx_thr_event_int_st.*/
-            uint32_t ch3_tx_thr_event_int_ena: 1;       /*Set this bit to enable rmt_ch3_tx_thr_event_int_st.*/
-            uint32_t ch4_tx_thr_event_int_ena: 1;       /*Set this bit to enable rmt_ch4_tx_thr_event_int_st.*/
-            uint32_t ch5_tx_thr_event_int_ena: 1;       /*Set this bit to enable rmt_ch5_tx_thr_event_int_st.*/
-            uint32_t ch6_tx_thr_event_int_ena: 1;       /*Set this bit to enable rmt_ch6_tx_thr_event_int_st.*/
-            uint32_t ch7_tx_thr_event_int_ena: 1;       /*Set this bit to enable rmt_ch7_tx_thr_event_int_st.*/
+            uint32_t ch0_tx_end:       1;               /*Set this bit to enable rmt_ch0_tx_end_int_st.*/
+            uint32_t ch0_rx_end:       1;               /*Set this bit to enable rmt_ch0_rx_end_int_st.*/
+            uint32_t ch0_err:          1;               /*Set this bit to enable rmt_ch0_err_int_st.*/
+            uint32_t ch1_tx_end:       1;               /*Set this bit to enable rmt_ch1_tx_end_int_st.*/
+            uint32_t ch1_rx_end:       1;               /*Set this bit to enable rmt_ch1_rx_end_int_st.*/
+            uint32_t ch1_err:          1;               /*Set this bit to enable rmt_ch1_err_int_st.*/
+            uint32_t ch2_tx_end:       1;               /*Set this bit to enable rmt_ch2_tx_end_int_st.*/
+            uint32_t ch2_rx_end:       1;               /*Set this bit to enable rmt_ch2_rx_end_int_st.*/
+            uint32_t ch2_err:          1;               /*Set this bit to enable rmt_ch2_err_int_st.*/
+            uint32_t ch3_tx_end:       1;               /*Set this bit to enable rmt_ch3_tx_end_int_st.*/
+            uint32_t ch3_rx_end:       1;               /*Set this bit to enable rmt_ch3_rx_end_int_st.*/
+            uint32_t ch3_err:          1;               /*Set this bit to enable rmt_ch3_err_int_st.*/
+            uint32_t ch4_tx_end:       1;               /*Set this bit to enable rmt_ch4_tx_end_int_st.*/
+            uint32_t ch4_rx_end:       1;               /*Set this bit to enable rmt_ch4_rx_end_int_st.*/
+            uint32_t ch4_err:          1;               /*Set this bit to enable rmt_ch4_err_int_st.*/
+            uint32_t ch5_tx_end:       1;               /*Set this bit to enable rmt_ch5_tx_end_int_st.*/
+            uint32_t ch5_rx_end:       1;               /*Set this bit to enable rmt_ch5_rx_end_int_st.*/
+            uint32_t ch5_err:          1;               /*Set this bit to enable rmt_ch5_err_int_st.*/
+            uint32_t ch6_tx_end:       1;               /*Set this bit to enable rmt_ch6_tx_end_int_st.*/
+            uint32_t ch6_rx_end:       1;               /*Set this bit to enable rmt_ch6_rx_end_int_st.*/
+            uint32_t ch6_err:          1;               /*Set this bit to enable rmt_ch6_err_int_st.*/
+            uint32_t ch7_tx_end:       1;               /*Set this bit to enable rmt_ch7_tx_end_int_st.*/
+            uint32_t ch7_rx_end:       1;               /*Set this bit to enable rmt_ch7_rx_end_int_st.*/
+            uint32_t ch7_err:          1;               /*Set this bit to enable rmt_ch7_err_int_st.*/
+            uint32_t ch0_tx_thr_event: 1;               /*Set this bit to enable rmt_ch0_tx_thr_event_int_st.*/
+            uint32_t ch1_tx_thr_event: 1;               /*Set this bit to enable rmt_ch1_tx_thr_event_int_st.*/
+            uint32_t ch2_tx_thr_event: 1;               /*Set this bit to enable rmt_ch2_tx_thr_event_int_st.*/
+            uint32_t ch3_tx_thr_event: 1;               /*Set this bit to enable rmt_ch3_tx_thr_event_int_st.*/
+            uint32_t ch4_tx_thr_event: 1;               /*Set this bit to enable rmt_ch4_tx_thr_event_int_st.*/
+            uint32_t ch5_tx_thr_event: 1;               /*Set this bit to enable rmt_ch5_tx_thr_event_int_st.*/
+            uint32_t ch6_tx_thr_event: 1;               /*Set this bit to enable rmt_ch6_tx_thr_event_int_st.*/
+            uint32_t ch7_tx_thr_event: 1;               /*Set this bit to enable rmt_ch7_tx_thr_event_int_st.*/
         };
         uint32_t val;
     }int_ena;
     union {
         struct {
-            uint32_t ch0_tx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch0_rx_end_int_raw..*/
-            uint32_t ch0_rx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch0_tx_end_int_raw.*/
-            uint32_t ch0_err_int_clr:          1;       /*Set this bit to clear the  rmt_ch0_err_int_raw.*/
-            uint32_t ch1_tx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch1_rx_end_int_raw..*/
-            uint32_t ch1_rx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch1_tx_end_int_raw.*/
-            uint32_t ch1_err_int_clr:          1;       /*Set this bit to clear the  rmt_ch1_err_int_raw.*/
-            uint32_t ch2_tx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch2_rx_end_int_raw..*/
-            uint32_t ch2_rx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch2_tx_end_int_raw.*/
-            uint32_t ch2_err_int_clr:          1;       /*Set this bit to clear the  rmt_ch2_err_int_raw.*/
-            uint32_t ch3_tx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch3_rx_end_int_raw..*/
-            uint32_t ch3_rx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch3_tx_end_int_raw.*/
-            uint32_t ch3_err_int_clr:          1;       /*Set this bit to clear the  rmt_ch3_err_int_raw.*/
-            uint32_t ch4_tx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch4_rx_end_int_raw..*/
-            uint32_t ch4_rx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch4_tx_end_int_raw.*/
-            uint32_t ch4_err_int_clr:          1;       /*Set this bit to clear the  rmt_ch4_err_int_raw.*/
-            uint32_t ch5_tx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch5_rx_end_int_raw..*/
-            uint32_t ch5_rx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch5_tx_end_int_raw.*/
-            uint32_t ch5_err_int_clr:          1;       /*Set this bit to clear the  rmt_ch5_err_int_raw.*/
-            uint32_t ch6_tx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch6_rx_end_int_raw..*/
-            uint32_t ch6_rx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch6_tx_end_int_raw.*/
-            uint32_t ch6_err_int_clr:          1;       /*Set this bit to clear the  rmt_ch6_err_int_raw.*/
-            uint32_t ch7_tx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch7_rx_end_int_raw..*/
-            uint32_t ch7_rx_end_int_clr:       1;       /*Set this bit to clear the rmt_ch7_tx_end_int_raw.*/
-            uint32_t ch7_err_int_clr:          1;       /*Set this bit to clear the  rmt_ch7_err_int_raw.*/
-            uint32_t ch0_tx_thr_event_int_clr: 1;       /*Set this bit to clear the  rmt_ch0_tx_thr_event_int_raw interrupt.*/
-            uint32_t ch1_tx_thr_event_int_clr: 1;       /*Set this bit to clear the  rmt_ch1_tx_thr_event_int_raw interrupt.*/
-            uint32_t ch2_tx_thr_event_int_clr: 1;       /*Set this bit to clear the  rmt_ch2_tx_thr_event_int_raw interrupt.*/
-            uint32_t ch3_tx_thr_event_int_clr: 1;       /*Set this bit to clear the  rmt_ch3_tx_thr_event_int_raw interrupt.*/
-            uint32_t ch4_tx_thr_event_int_clr: 1;       /*Set this bit to clear the  rmt_ch4_tx_thr_event_int_raw interrupt.*/
-            uint32_t ch5_tx_thr_event_int_clr: 1;       /*Set this bit to clear the  rmt_ch5_tx_thr_event_int_raw interrupt.*/
-            uint32_t ch6_tx_thr_event_int_clr: 1;       /*Set this bit to clear the  rmt_ch6_tx_thr_event_int_raw interrupt.*/
-            uint32_t ch7_tx_thr_event_int_clr: 1;       /*Set this bit to clear the  rmt_ch7_tx_thr_event_int_raw interrupt.*/
+            uint32_t ch0_tx_end:       1;               /*Set this bit to clear the rmt_ch0_rx_end_int_raw..*/
+            uint32_t ch0_rx_end:       1;               /*Set this bit to clear the rmt_ch0_tx_end_int_raw.*/
+            uint32_t ch0_err:          1;               /*Set this bit to clear the  rmt_ch0_err_int_raw.*/
+            uint32_t ch1_tx_end:       1;               /*Set this bit to clear the rmt_ch1_rx_end_int_raw..*/
+            uint32_t ch1_rx_end:       1;               /*Set this bit to clear the rmt_ch1_tx_end_int_raw.*/
+            uint32_t ch1_err:          1;               /*Set this bit to clear the  rmt_ch1_err_int_raw.*/
+            uint32_t ch2_tx_end:       1;               /*Set this bit to clear the rmt_ch2_rx_end_int_raw..*/
+            uint32_t ch2_rx_end:       1;               /*Set this bit to clear the rmt_ch2_tx_end_int_raw.*/
+            uint32_t ch2_err:          1;               /*Set this bit to clear the  rmt_ch2_err_int_raw.*/
+            uint32_t ch3_tx_end:       1;               /*Set this bit to clear the rmt_ch3_rx_end_int_raw..*/
+            uint32_t ch3_rx_end:       1;               /*Set this bit to clear the rmt_ch3_tx_end_int_raw.*/
+            uint32_t ch3_err:          1;               /*Set this bit to clear the  rmt_ch3_err_int_raw.*/
+            uint32_t ch4_tx_end:       1;               /*Set this bit to clear the rmt_ch4_rx_end_int_raw..*/
+            uint32_t ch4_rx_end:       1;               /*Set this bit to clear the rmt_ch4_tx_end_int_raw.*/
+            uint32_t ch4_err:          1;               /*Set this bit to clear the  rmt_ch4_err_int_raw.*/
+            uint32_t ch5_tx_end:       1;               /*Set this bit to clear the rmt_ch5_rx_end_int_raw..*/
+            uint32_t ch5_rx_end:       1;               /*Set this bit to clear the rmt_ch5_tx_end_int_raw.*/
+            uint32_t ch5_err:          1;               /*Set this bit to clear the  rmt_ch5_err_int_raw.*/
+            uint32_t ch6_tx_end:       1;               /*Set this bit to clear the rmt_ch6_rx_end_int_raw..*/
+            uint32_t ch6_rx_end:       1;               /*Set this bit to clear the rmt_ch6_tx_end_int_raw.*/
+            uint32_t ch6_err:          1;               /*Set this bit to clear the  rmt_ch6_err_int_raw.*/
+            uint32_t ch7_tx_end:       1;               /*Set this bit to clear the rmt_ch7_rx_end_int_raw..*/
+            uint32_t ch7_rx_end:       1;               /*Set this bit to clear the rmt_ch7_tx_end_int_raw.*/
+            uint32_t ch7_err:          1;               /*Set this bit to clear the  rmt_ch7_err_int_raw.*/
+            uint32_t ch0_tx_thr_event: 1;               /*Set this bit to clear the  rmt_ch0_tx_thr_event_int_raw interrupt.*/
+            uint32_t ch1_tx_thr_event: 1;               /*Set this bit to clear the  rmt_ch1_tx_thr_event_int_raw interrupt.*/
+            uint32_t ch2_tx_thr_event: 1;               /*Set this bit to clear the  rmt_ch2_tx_thr_event_int_raw interrupt.*/
+            uint32_t ch3_tx_thr_event: 1;               /*Set this bit to clear the  rmt_ch3_tx_thr_event_int_raw interrupt.*/
+            uint32_t ch4_tx_thr_event: 1;               /*Set this bit to clear the  rmt_ch4_tx_thr_event_int_raw interrupt.*/
+            uint32_t ch5_tx_thr_event: 1;               /*Set this bit to clear the  rmt_ch5_tx_thr_event_int_raw interrupt.*/
+            uint32_t ch6_tx_thr_event: 1;               /*Set this bit to clear the  rmt_ch6_tx_thr_event_int_raw interrupt.*/
+            uint32_t ch7_tx_thr_event: 1;               /*Set this bit to clear the  rmt_ch7_tx_thr_event_int_raw interrupt.*/
         };
         uint32_t val;
     }int_clr;
     union {
         struct {
-            uint32_t carrier_low: 16;                   /*This register is used to configure carrier wave's low level value for channel0-7.*/
-            uint32_t carrier_high:16;                   /*This register is used to configure carrier wave's high level value for channel0-7.*/
+            uint32_t low: 16;                           /*This register is used to configure carrier wave's low level value for channel0-7.*/
+            uint32_t high:16;                           /*This register is used to configure carrier wave's high level value for channel0-7.*/
         };
         uint32_t val;
     }carrier_duty_ch[8];
     union {
         struct {
-            uint32_t tx_lim: 9;                         /*When channel0-7 sends more than reg_rmt_tx_lim_ch0 data then channel0-7 produce the relative interrupt.*/
+            uint32_t limit: 9;                          /*When channel0-7 sends more than reg_rmt_tx_lim_ch0 data then channel0-7 produce the relative interrupt.*/
             uint32_t reserved9: 23;
         };
         uint32_t val;
     }tx_lim_ch[8];
     union {
         struct {
-            uint32_t apb_fifo_mask:  1;                 /*Set this bit to disable apb fifo access*/
+            uint32_t fifo_mask:  1;                     /*Set this bit to disable apb fifo access*/
             uint32_t mem_tx_wrap_en: 1;                 /*when data need to be send is more than channel's mem can store  then set this bit to enable reuse of mem this bit is used together with reg_rmt_tx_lim_chn.*/
             uint32_t reserved2:     30;
         };

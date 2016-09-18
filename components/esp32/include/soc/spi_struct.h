@@ -188,79 +188,79 @@ typedef volatile struct {
     }pin;
     union {
         struct {
-            uint32_t slv_rd_buf_done:  1;                   /*The interrupt raw bit for the completion of read-buffer operation in the slave mode.*/
-            uint32_t slv_wr_buf_done:  1;                   /*The interrupt raw bit for the completion of write-buffer operation in the slave mode.*/
-            uint32_t slv_rd_sta_done:  1;                   /*The interrupt raw bit for the completion of read-status operation in the slave mode.*/
-            uint32_t slv_wr_sta_done:  1;                   /*The interrupt raw bit for the completion of write-status operation in the slave mode.*/
-            uint32_t trans_done:       1;                   /*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode.*/
-            uint32_t int_en:           5;                   /*Interrupt enable bits for the below 5 sources*/
-            uint32_t cs_i_mode:        2;                   /*In the slave mode  this bits used to synchronize the input spi cs signal and eliminate spi cs  jitter.*/
-            uint32_t reserved12:       5;                   /*reserved*/
-            uint32_t slv_last_command: 3;                   /*In the slave mode it is the value of command.*/
-            uint32_t slv_last_state:   3;                   /*In the slave mode it is the state of spi state machine.*/
-            uint32_t trans_cnt:        4;                   /*The operations counter in both the master mode and the slave mode. 4: read-status*/
-            uint32_t slv_cmd_define:   1;                   /*1: slave mode commands are defined in SPI_SLAVE3.  0: slave mode commands are fixed as: 1: write-status 2: write-buffer and 3: read-buffer.*/
-            uint32_t slv_wr_rd_sta_en: 1;                   /*write and read status enable  in the slave mode*/
-            uint32_t slv_wr_rd_buf_en: 1;                   /*write and read buffer enable in the slave mode*/
-            uint32_t slave_mode:       1;                   /*1: slave mode 0: master mode.*/
-            uint32_t sync_reset:       1;                   /*Software reset enable, reset the spi clock line cs line and data lines.*/
+            uint32_t rd_buf_done:  1;                       /*The interrupt raw bit for the completion of read-buffer operation in the slave mode.*/
+            uint32_t wr_buf_done:  1;                       /*The interrupt raw bit for the completion of write-buffer operation in the slave mode.*/
+            uint32_t rd_sta_done:  1;                       /*The interrupt raw bit for the completion of read-status operation in the slave mode.*/
+            uint32_t wr_sta_done:  1;                       /*The interrupt raw bit for the completion of write-status operation in the slave mode.*/
+            uint32_t trans_done:   1;                       /*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode.*/
+            uint32_t int_en:       5;                       /*Interrupt enable bits for the below 5 sources*/
+            uint32_t cs_i_mode:    2;                       /*In the slave mode  this bits used to synchronize the input spi cs signal and eliminate spi cs  jitter.*/
+            uint32_t reserved12:   5;                       /*reserved*/
+            uint32_t last_command: 3;                       /*In the slave mode it is the value of command.*/
+            uint32_t last_state:   3;                       /*In the slave mode it is the state of spi state machine.*/
+            uint32_t trans_cnt:    4;                       /*The operations counter in both the master mode and the slave mode. 4: read-status*/
+            uint32_t cmd_define:   1;                       /*1: slave mode commands are defined in SPI_SLAVE3.  0: slave mode commands are fixed as: 1: write-status 2: write-buffer and 3: read-buffer.*/
+            uint32_t wr_rd_sta_en: 1;                       /*write and read status enable  in the slave mode*/
+            uint32_t wr_rd_buf_en: 1;                       /*write and read buffer enable in the slave mode*/
+            uint32_t slave_mode:   1;                       /*1: slave mode 0: master mode.*/
+            uint32_t sync_reset:   1;                       /*Software reset enable, reset the spi clock line cs line and data lines.*/
         };
         uint32_t val;
     }slave;
     union {
         struct {
-            uint32_t slv_rdbuf_dummy_en:  1;                /*In the slave mode it is the enable bit of dummy phase for read-buffer operations.*/
-            uint32_t slv_wrbuf_dummy_en:  1;                /*In the slave mode it is the enable bit of dummy phase for write-buffer operations.*/
-            uint32_t slv_rdsta_dummy_en:  1;                /*In the slave mode it is the enable bit of dummy phase for read-status operations.*/
-            uint32_t slv_wrsta_dummy_en:  1;                /*In the slave mode it is the enable bit of dummy phase for write-status operations.*/
-            uint32_t slv_wr_addr_bitlen:  6;                /*In the slave mode it is the address length in bits for write-buffer operation. The register value shall be (bit_num-1).*/
-            uint32_t slv_rd_addr_bitlen:  6;                /*In the slave mode it is the address length in bits for read-buffer operation. The register value shall be (bit_num-1).*/
-            uint32_t reserved16:          9;                /*reserved*/
-            uint32_t slv_status_readback: 1;                /*In the slave mode  1:read register of SPI_SLV_WR_STATUS  0: read register of SPI_RD_STATUS.*/
-            uint32_t slv_status_fast_en:  1;                /*In the slave mode enable fast read status.*/
-            uint32_t slv_status_bitlen:   5;                /*In the slave mode it is the length of status bit.*/
+            uint32_t rdbuf_dummy_en:  1;                    /*In the slave mode it is the enable bit of dummy phase for read-buffer operations.*/
+            uint32_t wrbuf_dummy_en:  1;                    /*In the slave mode it is the enable bit of dummy phase for write-buffer operations.*/
+            uint32_t rdsta_dummy_en:  1;                    /*In the slave mode it is the enable bit of dummy phase for read-status operations.*/
+            uint32_t wrsta_dummy_en:  1;                    /*In the slave mode it is the enable bit of dummy phase for write-status operations.*/
+            uint32_t wr_addr_bitlen:  6;                    /*In the slave mode it is the address length in bits for write-buffer operation. The register value shall be (bit_num-1).*/
+            uint32_t rd_addr_bitlen:  6;                    /*In the slave mode it is the address length in bits for read-buffer operation. The register value shall be (bit_num-1).*/
+            uint32_t reserved16:      9;                    /*reserved*/
+            uint32_t status_readback: 1;                    /*In the slave mode  1:read register of SPI_SLV_WR_STATUS  0: read register of SPI_RD_STATUS.*/
+            uint32_t status_fast_en:  1;                    /*In the slave mode enable fast read status.*/
+            uint32_t status_bitlen:   5;                    /*In the slave mode it is the length of status bit.*/
         };
         uint32_t val;
     }slave1;
     union {
         struct {
-            uint32_t slv_rdsta_dummy_cyclelen: 8;           /*In the slave mode it is the length in spi_clk cycles of dummy phase for read-status operations. The register value shall be (cycle_num-1).*/
-            uint32_t slv_wrsta_dummy_cyclelen: 8;           /*In the slave mode it is the length in spi_clk cycles of dummy phase for write-status operations. The register value shall be (cycle_num-1).*/
-            uint32_t slv_rdbuf_dummy_cyclelen: 8;           /*In the slave mode it is the length in spi_clk cycles of dummy phase for read-buffer operations. The register value shall be (cycle_num-1).*/
-            uint32_t slv_wrbuf_dummy_cyclelen: 8;           /*In the slave mode it is the length in spi_clk cycles of dummy phase for write-buffer operations. The register value shall be (cycle_num-1).*/
+            uint32_t rdsta_dummy_cyclelen: 8;               /*In the slave mode it is the length in spi_clk cycles of dummy phase for read-status operations. The register value shall be (cycle_num-1).*/
+            uint32_t wrsta_dummy_cyclelen: 8;               /*In the slave mode it is the length in spi_clk cycles of dummy phase for write-status operations. The register value shall be (cycle_num-1).*/
+            uint32_t rdbuf_dummy_cyclelen: 8;               /*In the slave mode it is the length in spi_clk cycles of dummy phase for read-buffer operations. The register value shall be (cycle_num-1).*/
+            uint32_t wrbuf_dummy_cyclelen: 8;               /*In the slave mode it is the length in spi_clk cycles of dummy phase for write-buffer operations. The register value shall be (cycle_num-1).*/
         };
         uint32_t val;
     }slave2;
     union {
         struct {
-            uint32_t slv_rdbuf_cmd_value: 8;                /*In the slave mode it is the value of read-buffer command.*/
-            uint32_t slv_wrbuf_cmd_value: 8;                /*In the slave mode it is the value of write-buffer command.*/
-            uint32_t slv_rdsta_cmd_value: 8;                /*In the slave mode it is the value of read-status command.*/
-            uint32_t slv_wrsta_cmd_value: 8;                /*In the slave mode it is the value of write-status command.*/
+            uint32_t rdbuf_cmd_value: 8;                    /*In the slave mode it is the value of read-buffer command.*/
+            uint32_t wrbuf_cmd_value: 8;                    /*In the slave mode it is the value of write-buffer command.*/
+            uint32_t rdsta_cmd_value: 8;                    /*In the slave mode it is the value of read-status command.*/
+            uint32_t wrsta_cmd_value: 8;                    /*In the slave mode it is the value of write-status command.*/
         };
         uint32_t val;
     }slave3;
     union {
         struct {
-            uint32_t slv_wrbuf_dbitlen:24;                  /*In the slave mode it is the length in bits for write-buffer operations. The register value shall be (bit_num-1).*/
-            uint32_t reserved24:        8;                  /*reserved*/
+            uint32_t bit_len:    24;                        /*In the slave mode it is the length in bits for write-buffer operations. The register value shall be (bit_num-1).*/
+            uint32_t reserved24:  8;                        /*reserved*/
         };
         uint32_t val;
     }slv_wrbuf_dlen;
     union {
         struct {
-            uint32_t slv_rdbuf_dbitlen:24;                  /*In the slave mode it is the length in bits for read-buffer operations. The register value shall be (bit_num-1).*/
-            uint32_t reserved24:        8;                  /*reserved*/
+            uint32_t bit_len:    24;                        /*In the slave mode it is the length in bits for read-buffer operations. The register value shall be (bit_num-1).*/
+            uint32_t reserved24:  8;                        /*reserved*/
         };
         uint32_t val;
     }slv_rdbuf_dlen;
     union {
         struct {
-            uint32_t cache_req_en:        1;                /*For SPI0  Cache access enable  1: enable  0:disable.*/
-            uint32_t cache_usr_cmd_4byte: 1;                /*For SPI0  cache  read flash with 4 bytes command  1: enable  0:disable.*/
-            uint32_t cache_flash_usr_cmd: 1;                /*For SPI0  cache  read flash for user define command  1: enable  0:disable.*/
-            uint32_t cache_flash_pes_en:  1;                /*For SPI0  spi1 send suspend command before cache read flash  1: enable  0:disable.*/
-            uint32_t reserved4:          28;                /*reserved*/
+            uint32_t req_en:        1;                      /*For SPI0  Cache access enable  1: enable  0:disable.*/
+            uint32_t usr_cmd_4byte: 1;                      /*For SPI0  cache  read flash with 4 bytes command  1: enable  0:disable.*/
+            uint32_t flash_usr_cmd: 1;                      /*For SPI0  cache  read flash for user define command  1: enable  0:disable.*/
+            uint32_t flash_pes_en:  1;                      /*For SPI0  spi1 send suspend command before cache read flash  1: enable  0:disable.*/
+            uint32_t reserved4:    28;                      /*reserved*/
         };
         uint32_t val;
     }cache_fctrl;
@@ -282,27 +282,27 @@ typedef volatile struct {
     }cache_sctrl;
     union {
         struct {
-            uint32_t sram_dio:   1;                         /*For SPI0 SRAM DIO mode enable .  SRAM DIO enable command will be send when the bit is set. The bit will be cleared once the operation done.*/
-            uint32_t sram_qio:   1;                         /*For SPI0 SRAM QIO mode enable .  SRAM QIO enable command will be send when the bit is set. The bit will be cleared once the operation done.*/
-            uint32_t reserved2:  2;                         /*For SPI0 SRAM write enable . SRAM write operation will be triggered when the bit is set. The bit will be cleared once the operation done.*/
-            uint32_t sram_rstio: 1;                         /*For SPI0 SRAM IO mode reset enable. SRAM IO mode reset operation will be triggered when the bit is set. The bit will be cleared once the operation done*/
-            uint32_t reserved5: 27;                         /*reserved*/
+            uint32_t dio:       1;                          /*For SPI0 SRAM DIO mode enable .  SRAM DIO enable command will be send when the bit is set. The bit will be cleared once the operation done.*/
+            uint32_t qio:       1;                          /*For SPI0 SRAM QIO mode enable .  SRAM QIO enable command will be send when the bit is set. The bit will be cleared once the operation done.*/
+            uint32_t reserved2: 2;                          /*For SPI0 SRAM write enable . SRAM write operation will be triggered when the bit is set. The bit will be cleared once the operation done.*/
+            uint32_t rst_io:    1;                          /*For SPI0 SRAM IO mode reset enable. SRAM IO mode reset operation will be triggered when the bit is set. The bit will be cleared once the operation done*/
+            uint32_t reserved5:27;                          /*reserved*/
         };
         uint32_t val;
     }sram_cmd;
     union {
         struct {
-            uint32_t cache_sram_usr_rd_cmd_value: 16;       /*For SPI0 When cache mode is enable it is the read command value of command phase for SRAM.*/
-            uint32_t reserved16:                  12;       /*reserved*/
-            uint32_t cache_sram_usr_rd_cmd_bitlen: 4;       /*For SPI0 When cache mode is enable it is the length in bits of command phase for SRAM. The register value shall be (bit_num-1).*/
+            uint32_t usr_rd_cmd_value:   16;                /*For SPI0 When cache mode is enable it is the read command value of command phase for SRAM.*/
+            uint32_t reserved16:         12;                /*reserved*/
+            uint32_t usr_rd_cmd_bitlen:   4;                /*For SPI0 When cache mode is enable it is the length in bits of command phase for SRAM. The register value shall be (bit_num-1).*/
         };
         uint32_t val;
     }sram_drd_cmd;
     union {
         struct {
-            uint32_t cache_sram_usr_wr_cmd_value: 16;       /*For SPI0 When cache mode is enable it is the write command value of command phase for SRAM.*/
-            uint32_t reserved16:                  12;       /*reserved*/
-            uint32_t cache_sram_usr_wr_cmd_bitlen: 4;       /*For SPI0 When cache mode is enable it is the in bits of command phase  for SRAM. The register value shall be (bit_num-1).*/
+            uint32_t usr_wr_cmd_value: 16;                  /*For SPI0 When cache mode is enable it is the write command value of command phase for SRAM.*/
+            uint32_t reserved16:       12;                  /*reserved*/
+            uint32_t usr_wr_cmd_bitlen: 4;                  /*For SPI0 When cache mode is enable it is the in bits of command phase  for SRAM. The register value shall be (bit_num-1).*/
         };
         uint32_t val;
     }sram_dwr_cmd;
@@ -390,92 +390,92 @@ typedef volatile struct {
     }dma_conf;
     union {
         struct {
-            uint32_t outlink_addr:   20;                    /*The address of the first outlink descriptor.*/
-            uint32_t reserved20:      8;                    /*reserved*/
-            uint32_t outlink_stop:    1;                    /*Set the bit to stop to use outlink descriptor.*/
-            uint32_t outlink_start:   1;                    /*Set the bit to start to use outlink descriptor.*/
-            uint32_t outlink_restart: 1;                    /*Set the bit to mount on new outlink descriptors.*/
-            uint32_t reserved31:      1;                    /*reserved*/
+            uint32_t addr:        20;                       /*The address of the first outlink descriptor.*/
+            uint32_t reserved20:   8;                       /*reserved*/
+            uint32_t stop:         1;                       /*Set the bit to stop to use outlink descriptor.*/
+            uint32_t start:        1;                       /*Set the bit to start to use outlink descriptor.*/
+            uint32_t restart:      1;                       /*Set the bit to mount on new outlink descriptors.*/
+            uint32_t reserved31:   1;                       /*reserved*/
         };
         uint32_t val;
     }dma_out_link;
     union {
         struct {
-            uint32_t inlink_addr:    20;                    /*The address of the first inlink descriptor.*/
-            uint32_t inlink_auto_ret: 1;                    /*when the bit is set  inlink descriptor returns to the next descriptor while a packet is wrong*/
-            uint32_t reserved21:      7;                    /*reserved*/
-            uint32_t inlink_stop:     1;                    /*Set the bit to stop to use inlink descriptor.*/
-            uint32_t inlink_start:    1;                    /*Set the bit to start to use inlink descriptor.*/
-            uint32_t inlink_restart:  1;                    /*Set the bit to mount on new inlink descriptors.*/
-            uint32_t reserved31:      1;                    /*reserved*/
+            uint32_t addr:       20;                        /*The address of the first inlink descriptor.*/
+            uint32_t auto_ret:    1;                        /*when the bit is set  inlink descriptor returns to the next descriptor while a packet is wrong*/
+            uint32_t reserved21:  7;                        /*reserved*/
+            uint32_t stop:        1;                        /*Set the bit to stop to use inlink descriptor.*/
+            uint32_t start:       1;                        /*Set the bit to start to use inlink descriptor.*/
+            uint32_t restart:     1;                        /*Set the bit to mount on new inlink descriptors.*/
+            uint32_t reserved31:  1;                        /*reserved*/
         };
         uint32_t val;
     }dma_in_link;
     union {
         struct {
-            uint32_t dma_rx_en:  1;                         /*spi dma read data status bit.*/
-            uint32_t dma_tx_en:  1;                         /*spi dma write data status bit.*/
+            uint32_t rx_en:      1;                         /*spi dma read data status bit.*/
+            uint32_t tx_en:      1;                         /*spi dma write data status bit.*/
             uint32_t reserved2: 30;                         /*spi dma read data from memory count.*/
         };
         uint32_t val;
     }dma_status;
     union {
-        struct {
-            uint32_t inlink_dscr_empty_int_ena:  1;         /*The enable bit for lack of enough inlink descriptors.*/
-            uint32_t outlink_dscr_error_int_ena: 1;         /*The enable bit for outlink descriptor error.*/
-            uint32_t inlink_dscr_error_int_ena:  1;         /*The enable bit for inlink descriptor error.*/
-            uint32_t in_done_int_ena:            1;         /*The enable bit for completing usage of a inlink descriptor.*/
-            uint32_t in_err_eof_int_ena:         1;         /*The enable bit for receiving error.*/
-            uint32_t in_suc_eof_int_ena:         1;         /*The enable bit for completing receiving all the packets from host.*/
-            uint32_t out_done_int_ena:           1;         /*The enable bit for completing usage of a outlink descriptor .*/
-            uint32_t out_eof_int_ena:            1;         /*The enable bit for sending a packet to host done.*/
-            uint32_t out_total_eof_int_ena:      1;         /*The enable bit for sending all the packets to host done.*/
-            uint32_t reserved9:                 23;         /*reserved*/
+        struct {_int_clr
+            uint32_t inlink_dscr_empty:  1;                 /*The enable bit for lack of enough inlink descriptors.*/
+            uint32_t outlink_dscr_error: 1;                 /*The enable bit for outlink descriptor error.*/
+            uint32_t inlink_dscr_error:  1;                 /*The enable bit for inlink descriptor error.*/
+            uint32_t in_done:            1;                 /*The enable bit for completing usage of a inlink descriptor.*/
+            uint32_t in_err_eof:         1;                 /*The enable bit for receiving error.*/
+            uint32_t in_suc_eof:         1;                 /*The enable bit for completing receiving all the packets from host.*/
+            uint32_t out_done:           1;                 /*The enable bit for completing usage of a outlink descriptor .*/
+            uint32_t out_eof:            1;                 /*The enable bit for sending a packet to host done.*/
+            uint32_t out_total_eof:      1;                 /*The enable bit for sending all the packets to host done.*/
+            uint32_t reserved9:         23;                 /*reserved*/
         };
         uint32_t val;
     }dma_int_ena;
     union {
         struct {
-            uint32_t inlink_dscr_empty_int_raw:  1;         /*The raw bit for lack of enough inlink descriptors.*/
-            uint32_t outlink_dscr_error_int_raw: 1;         /*The raw bit for outlink descriptor error.*/
-            uint32_t inlink_dscr_error_int_raw:  1;         /*The raw bit for inlink descriptor error.*/
-            uint32_t in_done_int_raw:            1;         /*The raw bit for completing usage of a inlink descriptor.*/
-            uint32_t in_err_eof_int_raw:         1;         /*The raw bit for receiving error.*/
-            uint32_t in_suc_eof_int_raw:         1;         /*The raw bit for completing receiving all the packets from host.*/
-            uint32_t out_done_int_raw:           1;         /*The raw bit for completing usage of a outlink descriptor.*/
-            uint32_t out_eof_int_raw:            1;         /*The raw bit for sending a packet to host done.*/
-            uint32_t out_total_eof_int_raw:      1;         /*The raw bit for sending all the packets to host done.*/
-            uint32_t reserved9:                 23;         /*reserved*/
+            uint32_t inlink_dscr_empty:  1;                 /*The raw bit for lack of enough inlink descriptors.*/
+            uint32_t outlink_dscr_error: 1;                 /*The raw bit for outlink descriptor error.*/
+            uint32_t inlink_dscr_error:  1;                 /*The raw bit for inlink descriptor error.*/
+            uint32_t in_done:            1;                 /*The raw bit for completing usage of a inlink descriptor.*/
+            uint32_t in_err_eof:         1;                 /*The raw bit for receiving error.*/
+            uint32_t in_suc_eof:         1;                 /*The raw bit for completing receiving all the packets from host.*/
+            uint32_t out_done:           1;                 /*The raw bit for completing usage of a outlink descriptor.*/
+            uint32_t out_eof:            1;                 /*The raw bit for sending a packet to host done.*/
+            uint32_t out_total_eof:      1;                 /*The raw bit for sending all the packets to host done.*/
+            uint32_t reserved9:         23;                 /*reserved*/
         };
         uint32_t val;
     }dma_int_raw;
     union {
         struct {
-            uint32_t inlink_dscr_empty_int_st:  1;          /*The status bit for lack of enough inlink descriptors.*/
-            uint32_t outlink_dscr_error_int_st: 1;          /*The status bit for outlink descriptor error.*/
-            uint32_t inlink_dscr_error_int_st:  1;          /*The status bit for inlink descriptor error.*/
-            uint32_t in_done_int_st:            1;          /*The status bit for completing usage of a inlink descriptor.*/
-            uint32_t in_err_eof_int_st:         1;          /*The status bit for receiving error.*/
-            uint32_t in_suc_eof_int_st:         1;          /*The status bit for completing receiving all the packets from host.*/
-            uint32_t out_done_int_st:           1;          /*The status bit for completing usage of a outlink descriptor.*/
-            uint32_t out_eof_int_st:            1;          /*The status bit for sending a packet to host done.*/
-            uint32_t out_total_eof_int_st:      1;          /*The status bit for sending all the packets to host done.*/
-            uint32_t reserved9:                23;          /*reserved*/
+            uint32_t inlink_dscr_empty:  1;                  /*The status bit for lack of enough inlink descriptors.*/
+            uint32_t outlink_dscr_error: 1;                  /*The status bit for outlink descriptor error.*/
+            uint32_t inlink_dscr_error:  1;                  /*The status bit for inlink descriptor error.*/
+            uint32_t in_done:            1;                  /*The status bit for completing usage of a inlink descriptor.*/
+            uint32_t in_err_eof:         1;                  /*The status bit for receiving error.*/
+            uint32_t in_suc_eof:         1;                  /*The status bit for completing receiving all the packets from host.*/
+            uint32_t out_done:           1;                  /*The status bit for completing usage of a outlink descriptor.*/
+            uint32_t out_eof:            1;                  /*The status bit for sending a packet to host done.*/
+            uint32_t out_total_eof:      1;                  /*The status bit for sending all the packets to host done.*/
+            uint32_t reserved9:         23;                  /*reserved*/
         };
         uint32_t val;
     }dma_int_st;
     union {
         struct {
-            uint32_t inlink_dscr_empty_int_clr:  1;         /*The clear bit for lack of enough inlink descriptors.*/
-            uint32_t outlink_dscr_error_int_clr: 1;         /*The clear bit for outlink descriptor error.*/
-            uint32_t inlink_dscr_error_int_clr:  1;         /*The clear bit for inlink descriptor error.*/
-            uint32_t in_done_int_clr:            1;         /*The clear bit for completing usage of a inlink descriptor.*/
-            uint32_t in_err_eof_int_clr:         1;         /*The clear bit for receiving error.*/
-            uint32_t in_suc_eof_int_clr:         1;         /*The clear bit for completing receiving all the packets from host.*/
-            uint32_t out_done_int_clr:           1;         /*The clear bit for completing usage of a outlink descriptor.*/
-            uint32_t out_eof_int_clr:            1;         /*The clear bit for sending a packet to host done.*/
-            uint32_t out_total_eof_int_clr:      1;         /*The clear bit for sending all the packets to host done.*/
-            uint32_t reserved9:                 23;         /*reserved*/
+            uint32_t inlink_dscr_empty:  1;                 /*The clear bit for lack of enough inlink descriptors.*/
+            uint32_t outlink_dscr_error: 1;                 /*The clear bit for outlink descriptor error.*/
+            uint32_t inlink_dscr_error:  1;                 /*The clear bit for inlink descriptor error.*/
+            uint32_t in_done:            1;                 /*The clear bit for completing usage of a inlink descriptor.*/
+            uint32_t in_err_eof:         1;                 /*The clear bit for receiving error.*/
+            uint32_t in_suc_eof:         1;                 /*The clear bit for completing receiving all the packets from host.*/
+            uint32_t out_done:           1;                 /*The clear bit for completing usage of a outlink descriptor.*/
+            uint32_t out_eof:            1;                 /*The clear bit for sending a packet to host done.*/
+            uint32_t out_total_eof:      1;                 /*The clear bit for sending all the packets to host done.*/
+            uint32_t reserved9:         23;                 /*reserved*/
         };
         uint32_t val;
     }dma_int_clr;

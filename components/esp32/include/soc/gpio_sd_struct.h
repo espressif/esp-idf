@@ -16,33 +16,33 @@
 typedef volatile struct {
     union {
         struct {
-            uint32_t sd_in:       8;
+            uint32_t duty:        8;
             uint32_t prescale:    8;
             uint32_t reserved16: 16;
         };
         uint32_t val;
-    }sigmadelta[8];
+    }channel[8];
     union {
         struct {
             uint32_t reserved0: 31;
             uint32_t clk_en:     1;
         };
         uint32_t val;
-    }sigmadelta_cg;
+    }cg;
     union {
         struct {
             uint32_t reserved0: 31;
             uint32_t spi_swap:   1;
         };
         uint32_t val;
-    }sigmadelta_misc;
+    }misc;
     union {
         struct {
             uint32_t date:      28;
             uint32_t reserved28: 4;
         };
         uint32_t val;
-    }sigmadelta_version;
+    }version;
 } gpio_sd_dev_t;
 extern gpio_sd_dev_t SIGMADELTA;
 #endif  /* _SOC_GPIO_SD_STRUCT_H_ */

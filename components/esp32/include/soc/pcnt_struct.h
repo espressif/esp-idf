@@ -59,57 +59,57 @@ typedef volatile struct {
     }cnt_unit[8];
     union {
         struct {
-            uint32_t cnt_thr_event_u0_int_raw: 1;   /*This is the interrupt raw bit for channel0 event.*/
-            uint32_t cnt_thr_event_u1_int_raw: 1;   /*This is the interrupt raw bit for channel1 event.*/
-            uint32_t cnt_thr_event_u2_int_raw: 1;   /*This is the interrupt raw bit for channel2 event.*/
-            uint32_t cnt_thr_event_u3_int_raw: 1;   /*This is the interrupt raw bit for channel3 event.*/
-            uint32_t cnt_thr_event_u4_int_raw: 1;   /*This is the interrupt raw bit for channel4 event.*/
-            uint32_t cnt_thr_event_u5_int_raw: 1;   /*This is the interrupt raw bit for channel5 event.*/
-            uint32_t cnt_thr_event_u6_int_raw: 1;   /*This is the interrupt raw bit for channel6 event.*/
-            uint32_t cnt_thr_event_u7_int_raw: 1;   /*This is the interrupt raw bit for channel7 event.*/
-            uint32_t reserved8:               24;
+            uint32_t cnt_thr_event_u0: 1;           /*This is the interrupt raw bit for channel0 event.*/
+            uint32_t cnt_thr_event_u1: 1;           /*This is the interrupt raw bit for channel1 event.*/
+            uint32_t cnt_thr_event_u2: 1;           /*This is the interrupt raw bit for channel2 event.*/
+            uint32_t cnt_thr_event_u3: 1;           /*This is the interrupt raw bit for channel3 event.*/
+            uint32_t cnt_thr_event_u4: 1;           /*This is the interrupt raw bit for channel4 event.*/
+            uint32_t cnt_thr_event_u5: 1;           /*This is the interrupt raw bit for channel5 event.*/
+            uint32_t cnt_thr_event_u6: 1;           /*This is the interrupt raw bit for channel6 event.*/
+            uint32_t cnt_thr_event_u7: 1;           /*This is the interrupt raw bit for channel7 event.*/
+            uint32_t reserved8:       24;
         };
         uint32_t val;
     }int_raw;
     union {
         struct {
-            uint32_t cnt_thr_event_u0_int_st: 1;    /*This is the  interrupt status bit for channel0 event.*/
-            uint32_t cnt_thr_event_u1_int_st: 1;    /*This is the  interrupt status bit for channel1 event.*/
-            uint32_t cnt_thr_event_u2_int_st: 1;    /*This is the  interrupt status bit for channel2 event.*/
-            uint32_t cnt_thr_event_u3_int_st: 1;    /*This is the  interrupt status bit for channel3 event.*/
-            uint32_t cnt_thr_event_u4_int_st: 1;    /*This is the  interrupt status bit for channel4 event.*/
-            uint32_t cnt_thr_event_u5_int_st: 1;    /*This is the  interrupt status bit for channel5 event.*/
-            uint32_t cnt_thr_event_u6_int_st: 1;    /*This is the  interrupt status bit for channel6 event.*/
-            uint32_t cnt_thr_event_u7_int_st: 1;    /*This is the  interrupt status bit for channel7 event.*/
-            uint32_t reserved8:              24;
+            uint32_t cnt_thr_event_u0: 1;            /*This is the  interrupt status bit for channel0 event.*/
+            uint32_t cnt_thr_event_u1: 1;            /*This is the  interrupt status bit for channel1 event.*/
+            uint32_t cnt_thr_event_u2: 1;            /*This is the  interrupt status bit for channel2 event.*/
+            uint32_t cnt_thr_event_u3: 1;            /*This is the  interrupt status bit for channel3 event.*/
+            uint32_t cnt_thr_event_u4: 1;            /*This is the  interrupt status bit for channel4 event.*/
+            uint32_t cnt_thr_event_u5: 1;            /*This is the  interrupt status bit for channel5 event.*/
+            uint32_t cnt_thr_event_u6: 1;            /*This is the  interrupt status bit for channel6 event.*/
+            uint32_t cnt_thr_event_u7: 1;            /*This is the  interrupt status bit for channel7 event.*/
+            uint32_t reserved8:       24;
         };
         uint32_t val;
     }int_st;
     union {
         struct {
-            uint32_t cnt_thr_event_u0_int_ena: 1;   /*This is the  interrupt enable bit for channel0 event.*/
-            uint32_t cnt_thr_event_u1_int_ena: 1;   /*This is the  interrupt enable bit for channel1 event.*/
-            uint32_t cnt_thr_event_u2_int_ena: 1;   /*This is the  interrupt enable bit for channel2 event.*/
-            uint32_t cnt_thr_event_u3_int_ena: 1;   /*This is the  interrupt enable bit for channel3 event.*/
-            uint32_t cnt_thr_event_u4_int_ena: 1;   /*This is the  interrupt enable bit for channel4 event.*/
-            uint32_t cnt_thr_event_u5_int_ena: 1;   /*This is the  interrupt enable bit for channel5 event.*/
-            uint32_t cnt_thr_event_u6_int_ena: 1;   /*This is the  interrupt enable bit for channel6 event.*/
-            uint32_t cnt_thr_event_u7_int_ena: 1;   /*This is the  interrupt enable bit for channel7 event.*/
-            uint32_t reserved8:               24;
+            uint32_t cnt_thr_event_u0: 1;           /*This is the  interrupt enable bit for channel0 event.*/
+            uint32_t cnt_thr_event_u1: 1;           /*This is the  interrupt enable bit for channel1 event.*/
+            uint32_t cnt_thr_event_u2: 1;           /*This is the  interrupt enable bit for channel2 event.*/
+            uint32_t cnt_thr_event_u3: 1;           /*This is the  interrupt enable bit for channel3 event.*/
+            uint32_t cnt_thr_event_u4: 1;           /*This is the  interrupt enable bit for channel4 event.*/
+            uint32_t cnt_thr_event_u5: 1;           /*This is the  interrupt enable bit for channel5 event.*/
+            uint32_t cnt_thr_event_u6: 1;           /*This is the  interrupt enable bit for channel6 event.*/
+            uint32_t cnt_thr_event_u7: 1;           /*This is the  interrupt enable bit for channel7 event.*/
+            uint32_t reserved8:       24;
         };
         uint32_t val;
     }int_ena;
     union {
         struct {
-            uint32_t cnt_thr_event_u0_int_clr: 1;   /*Set this bit to clear channel0 event interrupt.*/
-            uint32_t cnt_thr_event_u1_int_clr: 1;   /*Set this bit to clear channel1 event interrupt.*/
-            uint32_t cnt_thr_event_u2_int_clr: 1;   /*Set this bit to clear channel2 event interrupt.*/
-            uint32_t cnt_thr_event_u3_int_clr: 1;   /*Set this bit to clear channel3 event interrupt.*/
-            uint32_t cnt_thr_event_u4_int_clr: 1;   /*Set this bit to clear channel4 event interrupt.*/
-            uint32_t cnt_thr_event_u5_int_clr: 1;   /*Set this bit to clear channel5 event interrupt.*/
-            uint32_t cnt_thr_event_u6_int_clr: 1;   /*Set this bit to clear channel6 event interrupt.*/
-            uint32_t cnt_thr_event_u7_int_clr: 1;   /*Set this bit to clear channel7 event interrupt.*/
-            uint32_t reserved8:               24;
+            uint32_t cnt_thr_event_u0: 1;           /*Set this bit to clear channel0 event interrupt.*/
+            uint32_t cnt_thr_event_u1: 1;           /*Set this bit to clear channel1 event interrupt.*/
+            uint32_t cnt_thr_event_u2: 1;           /*Set this bit to clear channel2 event interrupt.*/
+            uint32_t cnt_thr_event_u3: 1;           /*Set this bit to clear channel3 event interrupt.*/
+            uint32_t cnt_thr_event_u4: 1;           /*Set this bit to clear channel4 event interrupt.*/
+            uint32_t cnt_thr_event_u5: 1;           /*Set this bit to clear channel5 event interrupt.*/
+            uint32_t cnt_thr_event_u6: 1;           /*Set this bit to clear channel6 event interrupt.*/
+            uint32_t cnt_thr_event_u7: 1;           /*Set this bit to clear channel7 event interrupt.*/
+            uint32_t reserved8:       24;
         };
         uint32_t val;
     }int_clr;

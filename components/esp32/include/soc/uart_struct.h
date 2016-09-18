@@ -16,122 +16,122 @@
 typedef volatile struct {
     union {
         struct {
-            uint32_t fifo_rw_byte: 8;             /*This register stores one byte data  read by rx fifo.*/
-            uint32_t reserved8:     24;
+            uint32_t rw_byte:    8;                 /*This register stores one byte data  read by rx fifo.*/
+            uint32_t reserved8: 24;
         };
         uint32_t val;
     }fifo;
     union {
         struct {
-            uint32_t rxfifo_full_int_raw:      1;   /*This interrupt raw bit turns to high level when receiver receives more data than (rx_flow_thrhd_h3 rx_flow_thrhd).*/
-            uint32_t txfifo_empty_int_raw:     1;   /*This interrupt raw bit turns to high level when the amount of data in transmitter's fifo is less than ((tx_mem_cnttxfifo_cnt) .*/
-            uint32_t parity_err_int_raw:       1;   /*This interrupt raw bit turns to high level when receiver detects the parity error of data.*/
-            uint32_t frm_err_int_raw:          1;   /*This interrupt raw bit turns to high level when receiver detects data's frame error .*/
-            uint32_t rxfifo_ovf_int_raw:       1;   /*This interrupt raw bit turns to high level when receiver receives more data than the fifo can store.*/
-            uint32_t dsr_chg_int_raw:          1;   /*This interrupt raw bit turns to high level when receiver detects the edge change of dsrn signal.*/
-            uint32_t cts_chg_int_raw:          1;   /*This interrupt raw bit turns to high level when receiver detects the edge change of ctsn signal.*/
-            uint32_t brk_det_int_raw:          1;   /*This interrupt raw bit turns to high level when receiver detects the 0 after the stop bit.*/
-            uint32_t rxfifo_tout_int_raw:      1;   /*This interrupt raw bit turns to high level when receiver takes more time than rx_tout_thrhd to receive a byte.*/
-            uint32_t sw_xon_int_raw:           1;   /*This interrupt raw bit turns to high level when receiver receives xoff char with uart_sw_flow_con_en is set to 1.*/
-            uint32_t sw_xoff_int_raw:          1;   /*This interrupt raw bit turns to high level when receiver receives xon char with uart_sw_flow_con_en is set to 1.*/
-            uint32_t glitch_det_int_raw:       1;   /*This interrupt raw bit turns to high level when receiver detects the start bit.*/
-            uint32_t tx_brk_done_int_raw:      1;   /*This interrupt raw bit turns to high level when transmitter completes  sending  0 after all the data in transmitter's fifo are send.*/
-            uint32_t tx_brk_idle_done_int_raw: 1;   /*This interrupt raw bit turns to high level when transmitter has kept the shortest duration after the  last data has been send.*/
-            uint32_t tx_done_int_raw:          1;   /*This interrupt raw bit turns to high level when transmitter has send all the data in fifo.*/
-            uint32_t rs485_parity_err_int_raw: 1;   /*This interrupt raw bit turns to high level when rs485 detects the parity error.*/
-            uint32_t rs485_frm_err_int_raw:    1;   /*This interrupt raw bit turns to high level when rs485 detects the data frame error.*/
-            uint32_t rs485_clash_int_raw:      1;   /*This interrupt raw bit turns to high level when rs485 detects the clash between transmitter and receiver.*/
-            uint32_t at_cmd_char_det_int_raw:  1;   /*This interrupt raw bit turns to high level when receiver detects the configured at_cmd chars.*/
-            uint32_t reserved19:              13;
+            uint32_t rxfifo_full:      1;           /*This interrupt raw bit turns to high level when receiver receives more data than (rx_flow_thrhd_h3 rx_flow_thrhd).*/
+            uint32_t txfifo_empty:     1;           /*This interrupt raw bit turns to high level when the amount of data in transmitter's fifo is less than ((tx_mem_cnttxfifo_cnt) .*/
+            uint32_t parity_err:       1;           /*This interrupt raw bit turns to high level when receiver detects the parity error of data.*/
+            uint32_t frm_err:          1;           /*This interrupt raw bit turns to high level when receiver detects data's frame error .*/
+            uint32_t rxfifo_ovf:       1;           /*This interrupt raw bit turns to high level when receiver receives more data than the fifo can store.*/
+            uint32_t dsr_chg:          1;           /*This interrupt raw bit turns to high level when receiver detects the edge change of dsrn signal.*/
+            uint32_t cts_chg:          1;           /*This interrupt raw bit turns to high level when receiver detects the edge change of ctsn signal.*/
+            uint32_t brk_det:          1;           /*This interrupt raw bit turns to high level when receiver detects the 0 after the stop bit.*/
+            uint32_t rxfifo_tout:      1;           /*This interrupt raw bit turns to high level when receiver takes more time than rx_tout_thrhd to receive a byte.*/
+            uint32_t sw_xon:           1;           /*This interrupt raw bit turns to high level when receiver receives xoff char with uart_sw_flow_con_en is set to 1.*/
+            uint32_t sw_xoff:          1;           /*This interrupt raw bit turns to high level when receiver receives xon char with uart_sw_flow_con_en is set to 1.*/
+            uint32_t glitch_det:       1;           /*This interrupt raw bit turns to high level when receiver detects the start bit.*/
+            uint32_t tx_brk_done:      1;           /*This interrupt raw bit turns to high level when transmitter completes  sending  0 after all the data in transmitter's fifo are send.*/
+            uint32_t tx_brk_idle_done: 1;           /*This interrupt raw bit turns to high level when transmitter has kept the shortest duration after the  last data has been send.*/
+            uint32_t tx_done:          1;           /*This interrupt raw bit turns to high level when transmitter has send all the data in fifo.*/
+            uint32_t rs485_parity_err: 1;           /*This interrupt raw bit turns to high level when rs485 detects the parity error.*/
+            uint32_t rs485_frm_err:    1;           /*This interrupt raw bit turns to high level when rs485 detects the data frame error.*/
+            uint32_t rs485_clash:      1;           /*This interrupt raw bit turns to high level when rs485 detects the clash between transmitter and receiver.*/
+            uint32_t at_cmd_char_det:  1;           /*This interrupt raw bit turns to high level when receiver detects the configured at_cmd chars.*/
+            uint32_t reserved19:      13;
         };
         uint32_t val;
     }int_raw;
     union {
         struct {
-            uint32_t rxfifo_full_int_st:      1;    /*This is the status bit for rxfifo_full_int_raw when rxfifo_full_int_ena is set to 1.*/
-            uint32_t txfifo_empty_int_st:     1;    /*This is the status bit for  txfifo_empty_int_raw  when txfifo_empty_int_ena is set to 1.*/
-            uint32_t parity_err_int_st:       1;    /*This is the status bit for parity_err_int_raw when parity_err_int_ena is set to 1.*/
-            uint32_t frm_err_int_st:          1;    /*This is the status bit for frm_err_int_raw when fm_err_int_ena is set to 1.*/
-            uint32_t rxfifo_ovf_int_st:       1;    /*This is the status bit for rxfifo_ovf_int_raw when rxfifo_ovf_int_ena is set to 1.*/
-            uint32_t dsr_chg_int_st:          1;    /*This is the status bit for dsr_chg_int_raw when dsr_chg_int_ena is set to 1.*/
-            uint32_t cts_chg_int_st:          1;    /*This is the status bit for cts_chg_int_raw when cts_chg_int_ena is set to 1.*/
-            uint32_t brk_det_int_st:          1;    /*This is the status bit for brk_det_int_raw when brk_det_int_ena is set to 1.*/
-            uint32_t rxfifo_tout_int_st:      1;    /*This is the status bit for rxfifo_tout_int_raw when rxfifo_tout_int_ena is set to 1.*/
-            uint32_t sw_xon_int_st:           1;    /*This is the status bit for sw_xon_int_raw when sw_xon_int_ena is set to 1.*/
-            uint32_t sw_xoff_int_st:          1;    /*This is the status bit for sw_xoff_int_raw when sw_xoff_int_ena is set to 1.*/
-            uint32_t glitch_det_int_st:       1;    /*This is the status bit for glitch_det_int_raw when glitch_det_int_ena is set to 1.*/
-            uint32_t tx_brk_done_int_st:      1;    /*This is the status bit for tx_brk_done_int_raw when tx_brk_done_int_ena is set to 1.*/
-            uint32_t tx_brk_idle_done_int_st: 1;    /*This is the status bit for tx_brk_idle_done_int_raw when tx_brk_idle_done_int_ena is set to 1.*/
-            uint32_t tx_done_int_st:          1;    /*This is the status bit for tx_done_int_raw when tx_done_int_ena is set to 1.*/
-            uint32_t rs485_parity_err_int_st: 1;    /*This is the status bit for rs485_parity_err_int_raw when rs485_parity_int_ena is set to 1.*/
-            uint32_t rs485_frm_err_int_st:    1;    /*This is the status bit for rs485_fm_err_int_raw when rs485_fm_err_int_ena is set to 1.*/
-            uint32_t rs485_clash_int_st:      1;    /*This is the status bit for rs485_clash_int_raw when rs485_clash_int_ena is set to 1.*/
-            uint32_t at_cmd_char_det_int_st:  1;    /*This is the status bit for at_cmd_det_int_raw when at_cmd_char_det_int_ena is set to 1.*/
-            uint32_t reserved19:             13;
+            uint32_t rxfifo_full:      1;            /*This is the status bit for rxfifo_full_int_raw when rxfifo_full_int_ena is set to 1.*/
+            uint32_t txfifo_empty:     1;            /*This is the status bit for  txfifo_empty_int_raw  when txfifo_empty_int_ena is set to 1.*/
+            uint32_t parity_err:       1;            /*This is the status bit for parity_err_int_raw when parity_err_int_ena is set to 1.*/
+            uint32_t frm_err:          1;            /*This is the status bit for frm_err_int_raw when fm_err_int_ena is set to 1.*/
+            uint32_t rxfifo_ovf:       1;            /*This is the status bit for rxfifo_ovf_int_raw when rxfifo_ovf_int_ena is set to 1.*/
+            uint32_t dsr_chg:          1;            /*This is the status bit for dsr_chg_int_raw when dsr_chg_int_ena is set to 1.*/
+            uint32_t cts_chg:          1;            /*This is the status bit for cts_chg_int_raw when cts_chg_int_ena is set to 1.*/
+            uint32_t brk_det:          1;            /*This is the status bit for brk_det_int_raw when brk_det_int_ena is set to 1.*/
+            uint32_t rxfifo_tout:      1;            /*This is the status bit for rxfifo_tout_int_raw when rxfifo_tout_int_ena is set to 1.*/
+            uint32_t sw_xon:           1;            /*This is the status bit for sw_xon_int_raw when sw_xon_int_ena is set to 1.*/
+            uint32_t sw_xoff:          1;            /*This is the status bit for sw_xoff_int_raw when sw_xoff_int_ena is set to 1.*/
+            uint32_t glitch_det:       1;            /*This is the status bit for glitch_det_int_raw when glitch_det_int_ena is set to 1.*/
+            uint32_t tx_brk_done:      1;            /*This is the status bit for tx_brk_done_int_raw when tx_brk_done_int_ena is set to 1.*/
+            uint32_t tx_brk_idle_done: 1;            /*This is the status bit for tx_brk_idle_done_int_raw when tx_brk_idle_done_int_ena is set to 1.*/
+            uint32_t tx_done:          1;            /*This is the status bit for tx_done_int_raw when tx_done_int_ena is set to 1.*/
+            uint32_t rs485_parity_err: 1;            /*This is the status bit for rs485_parity_err_int_raw when rs485_parity_int_ena is set to 1.*/
+            uint32_t rs485_frm_err:    1;            /*This is the status bit for rs485_fm_err_int_raw when rs485_fm_err_int_ena is set to 1.*/
+            uint32_t rs485_clash:      1;            /*This is the status bit for rs485_clash_int_raw when rs485_clash_int_ena is set to 1.*/
+            uint32_t at_cmd_char_det:  1;            /*This is the status bit for at_cmd_det_int_raw when at_cmd_char_det_int_ena is set to 1.*/
+            uint32_t reserved19:      13;
         };
         uint32_t val;
     }int_st;
     union {
         struct {
-            uint32_t rxfifo_full_int_ena:      1;   /*This is the enable bit for rxfifo_full_int_st register.*/
-            uint32_t txfifo_empty_int_ena:     1;   /*This is the enable bit for rxfifo_full_int_st register.*/
-            uint32_t parity_err_int_ena:       1;   /*This is the enable bit for parity_err_int_st register.*/
-            uint32_t frm_err_int_ena:          1;   /*This is the enable bit for frm_err_int_st register.*/
-            uint32_t rxfifo_ovf_int_ena:       1;   /*This is the enable bit for rxfifo_ovf_int_st register.*/
-            uint32_t dsr_chg_int_ena:          1;   /*This is the enable bit for dsr_chg_int_st register.*/
-            uint32_t cts_chg_int_ena:          1;   /*This is the enable bit for cts_chg_int_st register.*/
-            uint32_t brk_det_int_ena:          1;   /*This is the enable bit for brk_det_int_st register.*/
-            uint32_t rxfifo_tout_int_ena:      1;   /*This is the enable bit for rxfifo_tout_int_st register.*/
-            uint32_t sw_xon_int_ena:           1;   /*This is the enable bit for sw_xon_int_st register.*/
-            uint32_t sw_xoff_int_ena:          1;   /*This is the enable bit for sw_xoff_int_st register.*/
-            uint32_t glitch_det_int_ena:       1;   /*This is the enable bit for glitch_det_int_st register.*/
-            uint32_t tx_brk_done_int_ena:      1;   /*This is the enable bit for tx_brk_done_int_st register.*/
-            uint32_t tx_brk_idle_done_int_ena: 1;   /*This is the enable bit for tx_brk_idle_done_int_st register.*/
-            uint32_t tx_done_int_ena:          1;   /*This is the enable bit for tx_done_int_st register.*/
-            uint32_t rs485_parity_err_int_ena: 1;   /*This is the enable bit for rs485_parity_err_int_st register.*/
-            uint32_t rs485_frm_err_int_ena:    1;   /*This is the enable bit for rs485_parity_err_int_st register.*/
-            uint32_t rs485_clash_int_ena:      1;   /*This is the enable bit for rs485_clash_int_st register.*/
-            uint32_t at_cmd_char_det_int_ena:  1;   /*This is the enable bit for at_cmd_char_det_int_st register.*/
-            uint32_t reserved19:              13;
+            uint32_t rxfifo_full:      1;           /*This is the enable bit for rxfifo_full_int_st register.*/
+            uint32_t txfifo_empty:     1;           /*This is the enable bit for rxfifo_full_int_st register.*/
+            uint32_t parity_err:       1;           /*This is the enable bit for parity_err_int_st register.*/
+            uint32_t frm_err:          1;           /*This is the enable bit for frm_err_int_st register.*/
+            uint32_t rxfifo_ovf:       1;           /*This is the enable bit for rxfifo_ovf_int_st register.*/
+            uint32_t dsr_chg:          1;           /*This is the enable bit for dsr_chg_int_st register.*/
+            uint32_t cts_chg:          1;           /*This is the enable bit for cts_chg_int_st register.*/
+            uint32_t brk_det:          1;           /*This is the enable bit for brk_det_int_st register.*/
+            uint32_t rxfifo_tout:      1;           /*This is the enable bit for rxfifo_tout_int_st register.*/
+            uint32_t sw_xon:           1;           /*This is the enable bit for sw_xon_int_st register.*/
+            uint32_t sw_xoff:          1;           /*This is the enable bit for sw_xoff_int_st register.*/
+            uint32_t glitch_det:       1;           /*This is the enable bit for glitch_det_int_st register.*/
+            uint32_t tx_brk_done:      1;           /*This is the enable bit for tx_brk_done_int_st register.*/
+            uint32_t tx_brk_idle_done: 1;           /*This is the enable bit for tx_brk_idle_done_int_st register.*/
+            uint32_t tx_done:          1;           /*This is the enable bit for tx_done_int_st register.*/
+            uint32_t rs485_parity_err: 1;           /*This is the enable bit for rs485_parity_err_int_st register.*/
+            uint32_t rs485_frm_err:    1;           /*This is the enable bit for rs485_parity_err_int_st register.*/
+            uint32_t rs485_clash:      1;           /*This is the enable bit for rs485_clash_int_st register.*/
+            uint32_t at_cmd_char_det:  1;           /*This is the enable bit for at_cmd_char_det_int_st register.*/
+            uint32_t reserved19:      13;
         };
         uint32_t val;
     }int_ena;
     union {
         struct {
-            uint32_t rxfifo_full_int_clr:      1;   /*Set this bit to clear the rxfifo_full_int_raw interrupt.*/
-            uint32_t txfifo_empty_int_clr:     1;   /*Set this bit to clear txfifo_empty_int_raw interrupt.*/
-            uint32_t parity_err_int_clr:       1;   /*Set this bit to clear parity_err_int_raw interrupt.*/
-            uint32_t frm_err_int_clr:          1;   /*Set this bit to clear frm_err_int_raw interrupt.*/
-            uint32_t rxfifo_ovf_int_clr:       1;   /*Set this bit to clear rxfifo_ovf_int_raw interrupt.*/
-            uint32_t dsr_chg_int_clr:          1;   /*Set this bit to clear the dsr_chg_int_raw interrupt.*/
-            uint32_t cts_chg_int_clr:          1;   /*Set this bit to clear the cts_chg_int_raw interrupt.*/
-            uint32_t brk_det_int_clr:          1;   /*Set this bit to clear the brk_det_int_raw interrupt.*/
-            uint32_t rxfifo_tout_int_clr:      1;   /*Set this bit to clear the rxfifo_tout_int_raw interrupt.*/
-            uint32_t sw_xon_int_clr:           1;   /*Set this bit to clear the sw_xon_int_raw interrupt.*/
-            uint32_t sw_xoff_int_clr:          1;   /*Set this bit to clear the sw_xon_int_raw interrupt.*/
-            uint32_t glitch_det_int_clr:       1;   /*Set this bit to clear the glitch_det_int_raw interrupt.*/
-            uint32_t tx_brk_done_int_clr:      1;   /*Set this bit to clear the tx_brk_done_int_raw interrupt..*/
-            uint32_t tx_brk_idle_done_int_clr: 1;   /*Set this bit to clear the tx_brk_idle_done_int_raw interrupt.*/
-            uint32_t tx_done_int_clr:          1;   /*Set this bit to clear the tx_done_int_raw interrupt.*/
-            uint32_t rs485_parity_err_int_clr: 1;   /*Set this bit to clear the rs485_parity_err_int_raw interrupt.*/
-            uint32_t rs485_frm_err_int_clr:    1;   /*Set this bit to clear the rs485_frm_err_int_raw interrupt.*/
-            uint32_t rs485_clash_int_clr:      1;   /*Set this bit to clear the rs485_clash_int_raw interrupt.*/
-            uint32_t at_cmd_char_det_int_clr:  1;   /*Set this bit to clear the at_cmd_char_det_int_raw interrupt.*/
-            uint32_t reserved19:              13;
+            uint32_t rxfifo_full:      1;           /*Set this bit to clear the rxfifo_full_int_raw interrupt.*/
+            uint32_t txfifo_empty:     1;           /*Set this bit to clear txfifo_empty_int_raw interrupt.*/
+            uint32_t parity_err:       1;           /*Set this bit to clear parity_err_int_raw interrupt.*/
+            uint32_t frm_err:          1;           /*Set this bit to clear frm_err_int_raw interrupt.*/
+            uint32_t rxfifo_ovf:       1;           /*Set this bit to clear rxfifo_ovf_int_raw interrupt.*/
+            uint32_t dsr_chg:          1;           /*Set this bit to clear the dsr_chg_int_raw interrupt.*/
+            uint32_t cts_chg:          1;           /*Set this bit to clear the cts_chg_int_raw interrupt.*/
+            uint32_t brk_det:          1;           /*Set this bit to clear the brk_det_int_raw interrupt.*/
+            uint32_t rxfifo_tout:      1;           /*Set this bit to clear the rxfifo_tout_int_raw interrupt.*/
+            uint32_t sw_xon:           1;           /*Set this bit to clear the sw_xon_int_raw interrupt.*/
+            uint32_t sw_xoff:          1;           /*Set this bit to clear the sw_xon_int_raw interrupt.*/
+            uint32_t glitch_det:       1;           /*Set this bit to clear the glitch_det_int_raw interrupt.*/
+            uint32_t tx_brk_done:      1;           /*Set this bit to clear the tx_brk_done_int_raw interrupt..*/
+            uint32_t tx_brk_idle_done: 1;           /*Set this bit to clear the tx_brk_idle_done_int_raw interrupt.*/
+            uint32_t tx_done:          1;           /*Set this bit to clear the tx_done_int_raw interrupt.*/
+            uint32_t rs485_parity_err: 1;           /*Set this bit to clear the rs485_parity_err_int_raw interrupt.*/
+            uint32_t rs485_frm_err:    1;           /*Set this bit to clear the rs485_frm_err_int_raw interrupt.*/
+            uint32_t rs485_clash:      1;           /*Set this bit to clear the rs485_clash_int_raw interrupt.*/
+            uint32_t at_cmd_char_det:  1;           /*Set this bit to clear the at_cmd_char_det_int_raw interrupt.*/
+            uint32_t reserved19:      13;
         };
         uint32_t val;
     }int_clr;
     union {
         struct {
-            uint32_t clkdiv:     20;                /*The register value is  the  integer part of the frequency divider's factor.*/
-            uint32_t clkdiv_frag: 4;                /*The register  value is the decimal part of the frequency divider's factor.*/
+            uint32_t div_int:    20;                /*The register value is  the  integer part of the frequency divider's factor.*/
+            uint32_t div_frag:    4;                /*The register  value is the decimal part of the frequency divider's factor.*/
             uint32_t reserved24:  8;
         };
         uint32_t val;
     }clk_div;
     union {
         struct {
-            uint32_t auto_baud_en: 1;                /*This is the enable bit for detecting baudrate.*/
+            uint32_t en: 1;                         /*This is the enable bit for detecting baudrate.*/
             uint32_t reserved1:   7;
             uint32_t glitch_filt: 8;                /*when input pulse width is lower then this value ignore this pulse.this register is used in auto-baud detect process.*/
             uint32_t reserved16: 16;
@@ -164,7 +164,7 @@ typedef volatile struct {
             uint32_t sw_rts:             1;         /*This register is used to configure the software rts signal which is used in software flow control.*/
             uint32_t sw_dtr:             1;         /*This register is used to configure the software dtr signal which is used in software flow control..*/
             uint32_t txd_brk:            1;         /*Set this bit to enable transmitter to  send 0 when the process of sending data is done.*/
-            uint32_t irda_dplx:          1;         /*Set this bit to enable irda loopback mode.*/
+            uint32_t irda_dplx:          1;         /*Set this bit to enable irda loop-back mode.*/
             uint32_t irda_tx_en:         1;         /*This is the start enable bit for irda transmitter.*/
             uint32_t irda_wctl:          1;         /*1：the irda transmitter's 11th bit is the same to the 10th bit. 0：set irda transmitter's 11th bit to 0.*/
             uint32_t irda_tx_inv:        1;         /*Set this bit to inverse the level value of  irda transmitter's level.*/
@@ -202,21 +202,21 @@ typedef volatile struct {
     }conf1;
     union {
         struct {
-            uint32_t lowpulse_min_cnt:20;           /*This register stores the value of the minimum duration time for the low level pulse， it is used in baudrate-detect process.*/
-            uint32_t reserved20:      12;
+            uint32_t min_cnt:     20;               /*This register stores the value of the minimum duration time for the low level pulse， it is used in baudrate-detect process.*/
+            uint32_t reserved20:  12;
         };
         uint32_t val;
     }lowpulse;
     union {
         struct {
-            uint32_t highpulse_min_cnt:20;          /*This register stores  the value of the maximum duration time for the high level pulse， it is used in baudrate-detect process.*/
-            uint32_t reserved20:       12;
+            uint32_t min_cnt:     20;               /*This register stores  the value of the maximum duration time for the high level pulse， it is used in baudrate-detect process.*/
+            uint32_t reserved20:  12;
         };
         uint32_t val;
     }highpulse;
     union {
         struct {
-            uint32_t rxd_edge_cnt:10;               /*This register stores the count of rxd edge change， it is used in baudrate-detect process.*/
+            uint32_t edge_cnt:    10;               /*This register stores the count of rxd edge change， it is used in baudrate-detect process.*/
             uint32_t reserved10:  22;
         };
         uint32_t val;
@@ -260,13 +260,13 @@ typedef volatile struct {
     }idle_conf;
     union {
         struct {
-            uint32_t rs485_en:         1;           /*Set this bit to choose rs485 mode.*/
+            uint32_t en:               1;           /*Set this bit to choose rs485 mode.*/
             uint32_t dl0_en:           1;           /*Set this bit to delay the stop bit by 1 bit.*/
             uint32_t dl1_en:           1;           /*Set this bit to delay the stop bit by 1 bit.*/
-            uint32_t rs485tx_rx_en:    1;           /*Set this bit to enable loop-back transmitter's output data signal to receiver's input data signal.*/
-            uint32_t rs485rxby_tx_en:  1;           /*1: enable rs485's transmitter to send data when rs485's receiver is busy. 0:rs485's transmitter should not send data when its receiver is busy.*/
-            uint32_t rs485_rx_dly_num: 1;           /*This register is used to delay the receiver's internal data signal.*/
-            uint32_t rs485_tx_dly_num: 4;           /*This register is used to delay the transmitter's internal data signal.*/
+            uint32_t tx_rx_en:         1;           /*Set this bit to enable loop-back transmitter's output data signal to receiver's input data signal.*/
+            uint32_t rx_busy_tx_en:    1;           /*1: enable rs485's transmitter to send data when rs485's receiver is busy. 0:rs485's transmitter should not send data when its receiver is busy.*/
+            uint32_t rx_dly_num:       1;           /*This register is used to delay the receiver's internal data signal.*/
+            uint32_t tx_dly_num:       4;           /*This register is used to delay the transmitter's internal data signal.*/
             uint32_t reserved10:      22;
         };
         uint32_t val;
@@ -294,7 +294,7 @@ typedef volatile struct {
     }at_cmd_gaptout;
     union {
         struct {
-            uint32_t at_cmd_char: 8;                /*This register is used to configure the content of at_cmd char.*/
+            uint32_t data:        8;                /*This register is used to configure the content of at_cmd char.*/
             uint32_t char_num:    8;                /*This register is used to configure the number of continuous at_cmd chars received by receiver.*/
             uint32_t reserved16: 16;
         };
@@ -320,44 +320,44 @@ typedef volatile struct {
     }mem_conf;
     union {
         struct {
-            uint32_t mem_tx_status:24;
+            uint32_t status:24;
             uint32_t reserved24:    8;
         };
         uint32_t val;
     }mem_tx_status;
     union {
         struct {
-            uint32_t mem_rx_status:24;
+            uint32_t status:24;
             uint32_t reserved24:    8;
         };
         uint32_t val;
     }mem_rx_status;
     union {
         struct {
-            uint32_t rx_mem_cnt: 3;                 /*refer to the rxfifo_cnt's description.*/
-            uint32_t tx_mem_cnt: 3;                 /*refer to the txfifo_cnt's description.*/
+            uint32_t rx_cnt: 3;                      /*refer to the rxfifo_cnt's description.*/
+            uint32_t tx_cnt: 3;                      /*refer to the txfifo_cnt's description.*/
             uint32_t reserved6: 26;
         };
         uint32_t val;
     }mem_cnt_status;
     union {
         struct {
-            uint32_t posedge_min_cnt:20;            /*This register stores the count of rxd pos-edge edge， it is used in baudrate-detect process.*/
-            uint32_t reserved20:     12;
+            uint32_t min_cnt:     20;                 /*This register stores the count of rxd pos-edge edge， it is used in baudrate-detect process.*/
+            uint32_t reserved20:  12;
         };
         uint32_t val;
     }pospulse;
     union {
         struct {
-            uint32_t negedge_min_cnt:20;            /*This register stores the count of rxd neg-edge edge， it is used in baudrate-detect process.*/
-            uint32_t reserved20:     12;
+            uint32_t min_cnt:     20;                 /*This register stores the count of rxd neg-edge edge， it is used in baudrate-detect process.*/
+            uint32_t reserved20:  12;
         };
         uint32_t val;
     }negpulse;
     uint32_t reserved_70;
     uint32_t reserved_74;
-    uint32_t date;                                  /**/
-    uint32_t id;                                    /**/
+    uint32_t date;                                    /**/
+    uint32_t id;                                      /**/
 } uart_dev_t;
 extern uart_dev_t UART0;
 extern uart_dev_t UART1;

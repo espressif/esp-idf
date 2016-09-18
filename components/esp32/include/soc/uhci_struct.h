@@ -46,168 +46,168 @@ typedef volatile struct {
     }conf0;
     union {
         struct {
-            uint32_t rx_start_int_raw:           1;        /*when a separator char has been send  it will produce uhci_rx_start_int interrupt.*/
-            uint32_t tx_start_int_raw:           1;        /*when DMA detects a separator char it will produce uhci_tx_start_int interrupt.*/
-            uint32_t rx_hung_int_raw:            1;        /*when DMA takes a lot of time to receive a data   it will produce uhci_rx_hung_int interrupt.*/
-            uint32_t tx_hung_int_raw:            1;        /*when DMA takes a lot of time to read a data from RAM  it will produce uhci_tx_hung_int interrupt.*/
-            uint32_t in_done_int_raw:            1;        /*when a in link descriptor has been completed it will produce uhci_in_done_int interrupt.*/
-            uint32_t in_suc_eof_int_raw:         1;        /*when a data packet has been received  it will produce uhci_in_suc_eof_int interrupt.*/
-            uint32_t in_err_eof_int_raw:         1;        /*when there are some errors about eof in in link descriptor  it will produce uhci_in_err_eof_int interrupt.*/
-            uint32_t out_done_int_raw:           1;        /*when a out link descriptor is completed  it will produce uhci_out_done_int interrupt.*/
-            uint32_t out_eof_int_raw:            1;        /*when the current descriptor's eof bit is 1  it will produce uhci_out_eof_int interrupt.*/
-            uint32_t in_dscr_err_int_raw:        1;        /*when there are some errors about the out link descriptor  it will produce uhci_in_dscr_err_int interrupt.*/
-            uint32_t out_dscr_err_int_raw:       1;        /*when there are some errors about the in link descriptor  it will produce uhci_out_dscr_err_int interrupt.*/
-            uint32_t in_dscr_empty_int_raw:      1;        /*when there are not enough in links for DMA it will produce uhci_in_dscr_err_int interrupt.*/
-            uint32_t outlink_eof_err_int_raw:    1;        /*when there are some errors about eof in outlink descriptor  it will produce uhci_outlink_eof_err_int interrupt.*/
-            uint32_t out_total_eof_int_raw:      1;        /*When all data have been send  it will produce uhci_out_total_eof_int interrupt.*/
-            uint32_t send_s_q_int_raw:           1;        /*When use single send registers to send a short packets it will produce this interrupt when dma has send the short packet.*/
-            uint32_t send_a_q_int_raw:           1;        /*When use always_send registers to send a series of short packets it will produce this interrupt when dma has send the short packet.*/
-            uint32_t dma_infifo_full_wm_int_raw: 1;
-            uint32_t reserved17:                15;
+            uint32_t rx_start:            1;               /*when a separator char has been send  it will produce uhci_rx_start_int interrupt.*/
+            uint32_t tx_start:            1;               /*when DMA detects a separator char it will produce uhci_tx_start_int interrupt.*/
+            uint32_t rx_hung:             1;               /*when DMA takes a lot of time to receive a data   it will produce uhci_rx_hung_int interrupt.*/
+            uint32_t tx_hung:             1;               /*when DMA takes a lot of time to read a data from RAM  it will produce uhci_tx_hung_int interrupt.*/
+            uint32_t in_done:             1;               /*when a in link descriptor has been completed it will produce uhci_in_done_int interrupt.*/
+            uint32_t in_suc_eof:          1;               /*when a data packet has been received  it will produce uhci_in_suc_eof_int interrupt.*/
+            uint32_t in_err_eof:          1;               /*when there are some errors about eof in in link descriptor  it will produce uhci_in_err_eof_int interrupt.*/
+            uint32_t out_done:            1;               /*when a out link descriptor is completed  it will produce uhci_out_done_int interrupt.*/
+            uint32_t out_eof:             1;               /*when the current descriptor's eof bit is 1  it will produce uhci_out_eof_int interrupt.*/
+            uint32_t in_dscr_err:         1;               /*when there are some errors about the out link descriptor  it will produce uhci_in_dscr_err_int interrupt.*/
+            uint32_t out_dscr_err:        1;               /*when there are some errors about the in link descriptor  it will produce uhci_out_dscr_err_int interrupt.*/
+            uint32_t in_dscr_empty:       1;               /*when there are not enough in links for DMA it will produce uhci_in_dscr_err_int interrupt.*/
+            uint32_t outlink_eof_err:     1;               /*when there are some errors about eof in outlink descriptor  it will produce uhci_outlink_eof_err_int interrupt.*/
+            uint32_t out_total_eof:       1;               /*When all data have been send  it will produce uhci_out_total_eof_int interrupt.*/
+            uint32_t send_s_q:            1;               /*When use single send registers to send a short packets it will produce this interrupt when dma has send the short packet.*/
+            uint32_t send_a_q:            1;               /*When use always_send registers to send a series of short packets it will produce this interrupt when dma has send the short packet.*/
+            uint32_t dma_in_fifo_full_wm: 1;
+            uint32_t reserved17:         15;
         };
         uint32_t val;
     }int_raw;
     union {
         struct {
-            uint32_t rx_start_int_st:           1;
-            uint32_t tx_start_int_st:           1;
-            uint32_t rx_hung_int_st:            1;
-            uint32_t tx_hung_int_st:            1;
-            uint32_t in_done_int_st:            1;
-            uint32_t in_suc_eof_int_st:         1;
-            uint32_t in_err_eof_int_st:         1;
-            uint32_t out_done_int_st:           1;
-            uint32_t out_eof_int_st:            1;
-            uint32_t in_dscr_err_int_st:        1;
-            uint32_t out_dscr_err_int_st:       1;
-            uint32_t in_dscr_empty_int_st:      1;
-            uint32_t outlink_eof_err_int_st:    1;
-            uint32_t out_total_eof_int_st:      1;
-            uint32_t send_s_q_int_st:           1;
-            uint32_t send_a_q_int_st:           1;
-            uint32_t dma_infifo_full_wm_int_st: 1;
-            uint32_t reserved17:               15;
+            uint32_t rx_start:            1;
+            uint32_t tx_start:            1;
+            uint32_t rx_hung:             1;
+            uint32_t tx_hung:             1;
+            uint32_t in_done:             1;
+            uint32_t in_suc_eof:          1;
+            uint32_t in_err_eof:          1;
+            uint32_t out_done:            1;
+            uint32_t out_eof:             1;
+            uint32_t in_dscr_err:         1;
+            uint32_t out_dscr_err:        1;
+            uint32_t in_dscr_empty:       1;
+            uint32_t outlink_eof_err:     1;
+            uint32_t out_total_eof:       1;
+            uint32_t send_s_q:            1;
+            uint32_t send_a_q:            1;
+            uint32_t dma_in_fifo_full_wm: 1;
+            uint32_t reserved17:         15;
         };
         uint32_t val;
     }int_st;
     union {
         struct {
-            uint32_t rx_start_int_ena:           1;
-            uint32_t tx_start_int_ena:           1;
-            uint32_t rx_hung_int_ena:            1;
-            uint32_t tx_hung_int_ena:            1;
-            uint32_t in_done_int_ena:            1;
-            uint32_t in_suc_eof_int_ena:         1;
-            uint32_t in_err_eof_int_ena:         1;
-            uint32_t out_done_int_ena:           1;
-            uint32_t out_eof_int_ena:            1;
-            uint32_t in_dscr_err_int_ena:        1;
-            uint32_t out_dscr_err_int_ena:       1;
-            uint32_t in_dscr_empty_int_ena:      1;
-            uint32_t outlink_eof_err_int_ena:    1;
-            uint32_t out_total_eof_int_ena:      1;
-            uint32_t send_s_q_int_ena:           1;
-            uint32_t send_a_q_int_ena:           1;
-            uint32_t dma_infifo_full_wm_int_ena: 1;
-            uint32_t reserved17:                15;
+            uint32_t rx_start:            1;
+            uint32_t tx_start:            1;
+            uint32_t rx_hung:             1;
+            uint32_t tx_hung:             1;
+            uint32_t in_done:             1;
+            uint32_t in_suc_eof:          1;
+            uint32_t in_err_eof:          1;
+            uint32_t out_done:            1;
+            uint32_t out_eof:             1;
+            uint32_t in_dscr_err:         1;
+            uint32_t out_dscr_err:        1;
+            uint32_t in_dscr_empty:       1;
+            uint32_t outlink_eof_err:     1;
+            uint32_t out_total_eof:       1;
+            uint32_t send_s_q:            1;
+            uint32_t send_a_q:            1;
+            uint32_t dma_in_fifo_full_wm: 1;
+            uint32_t reserved17:         15;
         };
         uint32_t val;
     }int_ena;
     union {
         struct {
-            uint32_t rx_start_int_clr:           1;
-            uint32_t tx_start_int_clr:           1;
-            uint32_t rx_hung_int_clr:            1;
-            uint32_t tx_hung_int_clr:            1;
-            uint32_t in_done_int_clr:            1;
-            uint32_t in_suc_eof_int_clr:         1;
-            uint32_t in_err_eof_int_clr:         1;
-            uint32_t out_done_int_clr:           1;
-            uint32_t out_eof_int_clr:            1;
-            uint32_t in_dscr_err_int_clr:        1;
-            uint32_t out_dscr_err_int_clr:       1;
-            uint32_t in_dscr_empty_int_clr:      1;
-            uint32_t outlink_eof_err_int_clr:    1;
-            uint32_t out_total_eof_int_clr:      1;
-            uint32_t send_s_q_int_clr:           1;
-            uint32_t send_a_q_int_clr:           1;
-            uint32_t dma_infifo_full_wm_int_clr: 1;
-            uint32_t reserved17:                15;
+            uint32_t rx_start:            1;
+            uint32_t tx_start:            1;
+            uint32_t rx_hung:             1;
+            uint32_t tx_hung:             1;
+            uint32_t in_done:             1;
+            uint32_t in_suc_eof:          1;
+            uint32_t in_err_eof:          1;
+            uint32_t out_done:            1;
+            uint32_t out_eof:             1;
+            uint32_t in_dscr_err:         1;
+            uint32_t out_dscr_err:        1;
+            uint32_t in_dscr_empty:       1;
+            uint32_t outlink_eof_err:     1;
+            uint32_t out_total_eof:       1;
+            uint32_t send_s_q:            1;
+            uint32_t send_a_q:            1;
+            uint32_t dma_in_fifo_full_wm: 1;
+            uint32_t reserved17:         15;
         };
         uint32_t val;
     }int_clr;
     union {
         struct {
-            uint32_t out_full:   1;                        /*1:DMA out link descriptor's fifo is full.*/
-            uint32_t out_empty:  1;                        /*1:DMA in link descriptor's fifo is empty.*/
+            uint32_t full:       1;                      /*1:DMA out link descriptor's fifo is full.*/
+            uint32_t empty:      1;                      /*1:DMA in link descriptor's fifo is empty.*/
             uint32_t reserved2: 30;
         };
         uint32_t val;
     }dma_out_status;
     union {
         struct {
-            uint32_t outfifo_wdata: 9;                     /*This is the data need to be pushed into out link descriptor's fifo.*/
-            uint32_t reserved9:     7;
-            uint32_t outfifo_push:  1;                     /*Set this bit to push data in out link descriptor's fifo.*/
-            uint32_t reserved17:   15;
+            uint32_t fifo_wdata: 9;                      /*This is the data need to be pushed into out link descriptor's fifo.*/
+            uint32_t reserved9:  7;
+            uint32_t fifo_push:  1;                      /*Set this bit to push data in out link descriptor's fifo.*/
+            uint32_t reserved17:15;
         };
         uint32_t val;
     }dma_out_push;
     union {
         struct {
-            uint32_t in_full:      1;
-            uint32_t in_empty:     1;
+            uint32_t full:         1;
+            uint32_t empty:        1;
             uint32_t reserved2:    2;
-            uint32_t rx_err_cause: 3;                      /*This register stores the errors caused in out link descriptor's data packet.*/
+            uint32_t rx_err_cause: 3;                    /*This register stores the errors caused in out link descriptor's data packet.*/
             uint32_t reserved7:   25;
         };
         uint32_t val;
     }dma_in_status;
     union {
         struct {
-            uint32_t infifo_rdata:12;                      /*This register stores the data pop from in link descriptor's fifo.*/
+            uint32_t fifo_rdata:  12;                    /*This register stores the data pop from in link descriptor's fifo.*/
             uint32_t reserved12:   4;
-            uint32_t infifo_pop:   1;                      /*Set this bit to pop data in in link descriptor's fifo.*/
+            uint32_t fifo_pop:     1;                    /*Set this bit to pop data in in link descriptor's fifo.*/
             uint32_t reserved17:  15;
         };
         uint32_t val;
     }dma_in_pop;
     union {
         struct {
-            uint32_t outlink_addr:   20;                   /*This register stores the least 20 bits of the first out link descriptor's address.*/
-            uint32_t reserved20:      8;
-            uint32_t outlink_stop:    1;                   /*Set this bit to stop dealing with the out link descriptors.*/
-            uint32_t outlink_start:   1;                   /*Set this bit to start dealing with the out link descriptors.*/
-            uint32_t outlink_restart: 1;                   /*Set this bit to mount on new out link descriptors*/
-            uint32_t outlink_park:    1;                   /*1： the out link descriptor's fsm is in idle state. 0:the out link descriptor's fsm is working.*/
+            uint32_t addr:         20;                   /*This register stores the least 20 bits of the first out link descriptor's address.*/
+            uint32_t reserved20:    8;
+            uint32_t stop:          1;                   /*Set this bit to stop dealing with the out link descriptors.*/
+            uint32_t start:         1;                   /*Set this bit to start dealing with the out link descriptors.*/
+            uint32_t restart:       1;                   /*Set this bit to mount on new out link descriptors*/
+            uint32_t park:          1;                   /*1： the out link descriptor's fsm is in idle state. 0:the out link descriptor's fsm is working.*/
         };
         uint32_t val;
     }dma_out_link;
     union {
         struct {
-            uint32_t inlink_addr:    20;                   /*This register stores the least 20 bits of the first in link descriptor's address.*/
-            uint32_t inlink_auto_ret: 1;                   /*1:when a packet is wrong in link descriptor returns to the descriptor which is lately used.*/
-            uint32_t reserved21:      7;
-            uint32_t inlink_stop:     1;                   /*Set this bit to stop dealing with the in link descriptors.*/
-            uint32_t inlink_start:    1;                   /*Set this bit to start dealing with the in link descriptors.*/
-            uint32_t inlink_restart:  1;                   /*Set this bit to mount on new in link descriptors*/
-            uint32_t inlink_park:     1;                   /*1:the in link descriptor's fsm is in idle state.   0:the in link descriptor's fsm is working*/
+            uint32_t addr:       20;                     /*This register stores the least 20 bits of the first in link descriptor's address.*/
+            uint32_t auto_ret:    1;                     /*1:when a packet is wrong in link descriptor returns to the descriptor which is lately used.*/
+            uint32_t reserved21:  7;
+            uint32_t stop:        1;                     /*Set this bit to stop dealing with the in link descriptors.*/
+            uint32_t start:       1;                     /*Set this bit to start dealing with the in link descriptors.*/
+            uint32_t restart:     1;                     /*Set this bit to mount on new in link descriptors*/
+            uint32_t park:        1;                     /*1:the in link descriptor's fsm is in idle state.   0:the in link descriptor's fsm is working*/
         };
         uint32_t val;
     }dma_in_link;
     union {
         struct {
-            uint32_t check_sum_en:         1;              /*Set this bit to enable decoder to check  check_sum in packet header.*/
-            uint32_t check_seq_en:         1;              /*Set this bit to enable decoder to check seq num in packet header.*/
-            uint32_t crc_disable:          1;              /*Set this bit to disable crc calculation.*/
-            uint32_t save_head:            1;              /*Set this bit to save packet header .*/
-            uint32_t tx_check_sum_re:      1;              /*Set this bit to enable hardware replace check_sum in packet header automatically.*/
-            uint32_t tx_ack_num_re:        1;              /*Set this bit to enable hardware replace ack num in packet header automatically.*/
-            uint32_t check_owner:          1;              /*Set this bit to check the owner bit in link descriptor.*/
-            uint32_t wait_sw_start:        1;              /*Set this bit to enable software way to add packet header.*/
-            uint32_t sw_start:             1;              /*Set this bit to start inserting the packet header.*/
-            uint32_t dma_infifo_full_thrs:12;              /*when data amount in link descriptor's fifo is more than this register value  it will produce uhci_dma_infifo_full_wm_int interrupt.*/
-            uint32_t reserved21:          11;
+            uint32_t check_sum_en:          1;            /*Set this bit to enable decoder to check  check_sum in packet header.*/
+            uint32_t check_seq_en:          1;            /*Set this bit to enable decoder to check seq num in packet header.*/
+            uint32_t crc_disable:           1;            /*Set this bit to disable crc calculation.*/
+            uint32_t save_head:             1;            /*Set this bit to save packet header .*/
+            uint32_t tx_check_sum_re:       1;            /*Set this bit to enable hardware replace check_sum in packet header automatically.*/
+            uint32_t tx_ack_num_re:         1;            /*Set this bit to enable hardware replace ack num in packet header automatically.*/
+            uint32_t check_owner:           1;            /*Set this bit to check the owner bit in link descriptor.*/
+            uint32_t wait_sw_start:         1;            /*Set this bit to enable software way to add packet header.*/
+            uint32_t sw_start:              1;            /*Set this bit to start inserting the packet header.*/
+            uint32_t dma_in_fifo_full_thrs:12;            /*when data amount in link descriptor's fifo is more than this register value  it will produce uhci_dma_in_fifo_full_wm_int interrupt.*/
+            uint32_t reserved21:           11;
         };
         uint32_t val;
     }conf1;
@@ -219,10 +219,10 @@ typedef volatile struct {
     uint32_t dma_out_eof_bfr_des_addr;                     /*This register stores the address of out link descriptor when there are some errors in this descriptor.*/
     union {
         struct {
-            uint32_t ahb_testmode: 3;                      /*bit2 is ahb bus test enable ，bit1 is used to choose write(1) or read(0) mode. bit0 is used to choose test only once(1) or continue(0)*/
-            uint32_t reserved3:    1;
-            uint32_t ahb_testaddr: 2;                      /*The two bits represent ahb bus address bit[20:19]*/
-            uint32_t reserved6:   26;
+            uint32_t test_mode:   3;                       /*bit2 is ahb bus test enable ，bit1 is used to choose write(1) or read(0) mode. bit0 is used to choose test only once(1) or continue(0)*/
+            uint32_t reserved3:   1;
+            uint32_t test_addr:   2;                       /*The two bits represent ahb bus address bit[20:19]*/
+            uint32_t reserved6:  26;
         };
         uint32_t val;
     }ahb_test;
@@ -271,7 +271,7 @@ typedef volatile struct {
         uint32_t val;
     }quick_sent;
     struct{
-        uint32_t w_data[2];                                 /*This register stores the content of short packet's dword*/
+        uint32_t w_data[2];                                /*This register stores the content of short packet's dword*/
     }q_data[7];
     union {
         struct {
@@ -284,34 +284,34 @@ typedef volatile struct {
     }esc_conf0;
     union {
         struct {
-            uint32_t esc_seq0:       8;                    /*This register stores the first substitute char used to replace the separate char.*/
-            uint32_t esc_seq0_char0: 8;                    /*This register stores the first char used to replace reg_esc_seq0 in data.*/
-            uint32_t esc_seq0_char1: 8;                    /*This register stores the second char used to replace the reg_esc_seq0 in data*/
-            uint32_t reserved24:     8;
+            uint32_t seq0:       8;                        /*This register stores the first substitute char used to replace the separate char.*/
+            uint32_t seq0_char0: 8;                        /*This register stores the first char used to replace reg_esc_seq0 in data.*/
+            uint32_t seq0_char1: 8;                        /*This register stores the second char used to replace the reg_esc_seq0 in data*/
+            uint32_t reserved24: 8;
         };
         uint32_t val;
     }esc_conf1;
     union {
         struct {
-            uint32_t esc_seq1:       8;                    /*This register stores the flow control char to turn on the flow_control*/
-            uint32_t esc_seq1_char0: 8;                    /*This register stores the first char used to replace the reg_esc_seq1 in data.*/
-            uint32_t esc_seq1_char1: 8;                    /*This register stores the second char used to replace the reg_esc_seq1 in data.*/
-            uint32_t reserved24:     8;
+            uint32_t seq1:       8;                        /*This register stores the flow control char to turn on the flow_control*/
+            uint32_t seq1_char0: 8;                        /*This register stores the first char used to replace the reg_esc_seq1 in data.*/
+            uint32_t seq1_char1: 8;                        /*This register stores the second char used to replace the reg_esc_seq1 in data.*/
+            uint32_t reserved24: 8;
         };
         uint32_t val;
     }esc_conf2;
     union {
         struct {
-            uint32_t esc_seq2:       8;                    /*This register stores the flow_control char to turn off the flow_control*/
-            uint32_t esc_seq2_char0: 8;                    /*This register stores the first char used to replace the reg_esc_seq2 in data.*/
-            uint32_t esc_seq2_char1: 8;                    /*This register stores  the second char used to replace the reg_esc_seq2 in data.*/
-            uint32_t reserved24:     8;
+            uint32_t seq2:       8;                        /*This register stores the flow_control char to turn off the flow_control*/
+            uint32_t seq2_char0: 8;                        /*This register stores the first char used to replace the reg_esc_seq2 in data.*/
+            uint32_t seq2_char1: 8;                        /*This register stores  the second char used to replace the reg_esc_seq2 in data.*/
+            uint32_t reserved24: 8;
         };
         uint32_t val;
     }esc_conf3;
     union {
         struct {
-            uint32_t pkt_thrs:  13;                        /*when the amount of packet payload is larger than this value the process of receiving data is done.*/
+            uint32_t thrs:      13;                        /*when the amount of packet payload is larger than this value the process of receiving data is done.*/
             uint32_t reserved13:19;
         };
         uint32_t val;

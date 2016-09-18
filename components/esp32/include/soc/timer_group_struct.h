@@ -28,35 +28,35 @@ typedef volatile struct {
             };
             uint32_t val;
         }config;
-        uint32_t timer_cnt_low;                       /*Register to store timer 0/1 time-base counter current value lower 32 bits.*/
-        uint32_t timer_cnt_high;                      /*Register to store timer 0 time-base counter current value higher 32 bits.*/
-        uint32_t timer_update;                        /*Write any value will trigger a timer 0 time-base counter value update (timer 0 current value will be stored in registers above)*/
-        uint32_t timer_alarm_low;                     /*Timer 0 time-base counter value lower 32 bits that will trigger the alarm*/
-        uint32_t timer_alarm_high;                    /*Timer 0 time-base counter value higher 32 bits that will trigger the alarm*/
-        uint32_t timer_load_low;                      /*Lower 32 bits of the value that will load into timer 0 time-base counter*/
-        uint32_t timer_load_high;                     /*higher 32 bits of the value that will load into timer 0 time-base counter*/
-        uint32_t timer_reload;                        /*Write any value will trigger timer 0 time-base counter reload*/
+        uint32_t cnt_low;                             /*Register to store timer 0/1 time-base counter current value lower 32 bits.*/
+        uint32_t cnt_high;                            /*Register to store timer 0 time-base counter current value higher 32 bits.*/
+        uint32_t update;                              /*Write any value will trigger a timer 0 time-base counter value update (timer 0 current value will be stored in registers above)*/
+        uint32_t alarm_low;                           /*Timer 0 time-base counter value lower 32 bits that will trigger the alarm*/
+        uint32_t alarm_high;                          /*Timer 0 time-base counter value higher 32 bits that will trigger the alarm*/
+        uint32_t load_low;                            /*Lower 32 bits of the value that will load into timer 0 time-base counter*/
+        uint32_t load_high;                           /*higher 32 bits of the value that will load into timer 0 time-base counter*/
+        uint32_t reload;                              /*Write any value will trigger timer 0 time-base counter reload*/
     }hw_timer[2];
     union {
         struct {
-            uint32_t reserved0:           14;
-            uint32_t wdt_flashboot_mod_en: 1;         /*When set  flash boot protection is enabled*/
-            uint32_t wdt_sys_reset_length: 3;         /*length of system reset selection. 0: 100ns  1: 200ns  2: 300ns  3: 400ns  4: 500ns  5: 800ns  6: 1.6us  7: 3.2us*/
-            uint32_t wdt_cpu_reset_length: 3;         /*length of CPU reset selection. 0: 100ns  1: 200ns  2: 300ns  3: 400ns  4: 500ns  5: 800ns  6: 1.6us  7: 3.2us*/
-            uint32_t wdt_level_int_en:     1;         /*When set  level type interrupt generation is enabled*/
-            uint32_t wdt_edge_int_en:      1;         /*When set  edge type interrupt generation is enabled*/
-            uint32_t wdt_stg3:             2;         /*Stage 3 configuration. 0: off  1: interrupt  2: reset CPU  3: reset system*/
-            uint32_t wdt_stg2:             2;         /*Stage 2 configuration. 0: off  1: interrupt  2: reset CPU  3: reset system*/
-            uint32_t wdt_stg1:             2;         /*Stage 1 configuration. 0: off  1: interrupt  2: reset CPU  3: reset system*/
-            uint32_t wdt_stg0:             2;         /*Stage 0 configuration. 0: off  1: interrupt  2: reset CPU  3: reset system*/
-            uint32_t wdt_en:               1;         /*When set  SWDT is enabled*/
+            uint32_t reserved0:       14;
+            uint32_t flashboot_mod_en: 1;             /*When set  flash boot protection is enabled*/
+            uint32_t sys_reset_length: 3;             /*length of system reset selection. 0: 100ns  1: 200ns  2: 300ns  3: 400ns  4: 500ns  5: 800ns  6: 1.6us  7: 3.2us*/
+            uint32_t cpu_reset_length: 3;             /*length of CPU reset selection. 0: 100ns  1: 200ns  2: 300ns  3: 400ns  4: 500ns  5: 800ns  6: 1.6us  7: 3.2us*/
+            uint32_t level_int_en:     1;             /*When set  level type interrupt generation is enabled*/
+            uint32_t edge_int_en:      1;             /*When set  edge type interrupt generation is enabled*/
+            uint32_t stg3:             2;             /*Stage 3 configuration. 0: off  1: interrupt  2: reset CPU  3: reset system*/
+            uint32_t stg2:             2;             /*Stage 2 configuration. 0: off  1: interrupt  2: reset CPU  3: reset system*/
+            uint32_t stg1:             2;             /*Stage 1 configuration. 0: off  1: interrupt  2: reset CPU  3: reset system*/
+            uint32_t stg0:             2;             /*Stage 0 configuration. 0: off  1: interrupt  2: reset CPU  3: reset system*/
+            uint32_t en:               1;             /*When set  SWDT is enabled*/
         };
         uint32_t val;
     }wdt_config0;
     union {
         struct {
             uint32_t reserved0:       16;
-            uint32_t wdt_clk_prescale:16;             /*SWDT clock prescale value. Period = 12.5ns * value stored in this register*/
+            uint32_t clk_prescale:16;             /*SWDT clock prescale value. Period = 12.5ns * value stored in this register*/
         };
         uint32_t val;
     }wdt_config1;
@@ -69,41 +69,41 @@ typedef volatile struct {
     union {
         struct {
             uint32_t reserved0:             12;
-            uint32_t rtc_cali_start_cycling: 1;
-            uint32_t rtc_cali_clk_sel:       2;
-            uint32_t rtc_cali_rdy:           1;
-            uint32_t rtc_cali_max:          15;
-            uint32_t rtc_cali_start:         1;
+            uint32_t start_cycling: 1;
+            uint32_t clk_sel:       2;
+            uint32_t rdy:           1;
+            uint32_t max:          15;
+            uint32_t start:         1;
         };
         uint32_t val;
     }rtc_cali_cfg;
     union {
         struct {
             uint32_t reserved0:      7;
-            uint32_t rtc_cali_value:25;
+            uint32_t value:25;
         };
         uint32_t val;
     }rtc_cali_cfg1;
     union {
         struct {
             uint32_t reserved0:         7;
-            uint32_t lact_rtc_only:     1;
-            uint32_t lact_cpst_en:      1;
-            uint32_t lact_lac_en:       1;
-            uint32_t lact_alarm_en:     1;
-            uint32_t lact_level_int_en: 1;
-            uint32_t lact_edge_int_en:  1;
-            uint32_t lact_divider:     16;
-            uint32_t lact_autoreload:   1;
-            uint32_t lact_increase:     1;
-            uint32_t lact_en:           1;
+            uint32_t rtc_only:     1;
+            uint32_t cpst_en:      1;
+            uint32_t lac_en:       1;
+            uint32_t alarm_en:     1;
+            uint32_t level_int_en: 1;
+            uint32_t edge_int_en:  1;
+            uint32_t divider:     16;
+            uint32_t autoreload:   1;
+            uint32_t increase:     1;
+            uint32_t en:           1;
         };
         uint32_t val;
     }lactconfig;
     union {
         struct {
             uint32_t reserved0:         6;
-            uint32_t lact_rtc_step_len:26;
+            uint32_t step_len:26;
         };
         uint32_t val;
     }lactrtc;
@@ -117,41 +117,41 @@ typedef volatile struct {
     uint32_t lactload;                                /**/
     union {
         struct {
-            uint32_t t0_int_ena:   1;                 /*interrupt when timer0 alarm*/
-            uint32_t t1_int_ena:   1;                 /*interrupt when timer1 alarm*/
-            uint32_t wdt_int_ena:  1;                 /*Interrupt when an interrupt stage timeout*/
-            uint32_t lact_int_ena: 1;
-            uint32_t reserved4:   28;
+            uint32_t t0:         1;                   /*interrupt when timer0 alarm*/
+            uint32_t t1:         1;                   /*interrupt when timer1 alarm*/
+            uint32_t wdt:        1;                   /*Interrupt when an interrupt stage timeout*/
+            uint32_t lact:       1;
+            uint32_t reserved4: 28;
         };
         uint32_t val;
-    }int_ena_timers;
+    }int_ena;
     union {
         struct {
-            uint32_t t0_int_raw:   1;                 /*interrupt when timer0 alarm*/
-            uint32_t t1_int_raw:   1;                 /*interrupt when timer1 alarm*/
-            uint32_t wdt_int_raw:  1;                 /*Interrupt when an interrupt stage timeout*/
-            uint32_t lact_int_raw: 1;
-            uint32_t reserved4:   28;
+            uint32_t t0:        1;                    /*interrupt when timer0 alarm*/
+            uint32_t t1:        1;                    /*interrupt when timer1 alarm*/
+            uint32_t wdt:       1;                    /*Interrupt when an interrupt stage timeout*/
+            uint32_t lact:      1;
+            uint32_t reserved4:28;
         };
         uint32_t val;
-    }int_raw_timers;
+    }int_raw;
     union {
         struct {
-            uint32_t t0_int_st:   1;                  /*interrupt when timer0 alarm*/
-            uint32_t t1_int_st:   1;                  /*interrupt when timer1 alarm*/
-            uint32_t wdt_int_st:  1;                  /*Interrupt when an interrupt stage timeout*/
-            uint32_t lact_int_st: 1;
-            uint32_t reserved4:  28;
+            uint32_t t0:         1;                   /*interrupt when timer0 alarm*/
+            uint32_t t1:         1;                   /*interrupt when timer1 alarm*/
+            uint32_t wdt:        1;                   /*Interrupt when an interrupt stage timeout*/
+            uint32_t lact:       1;
+            uint32_t reserved4: 28;
         };
         uint32_t val;
     }int_st_timers;
     union {
         struct {
-            uint32_t t0_int_clr:   1;                 /*interrupt when timer0 alarm*/
-            uint32_t t1_int_clr:   1;                 /*interrupt when timer1 alarm*/
-            uint32_t wdt_int_clr:  1;                 /*Interrupt when an interrupt stage timeout*/
-            uint32_t lact_int_clr: 1;
-            uint32_t reserved4:   28;
+            uint32_t t0:         1;                   /*interrupt when timer0 alarm*/
+            uint32_t t1:         1;                   /*interrupt when timer1 alarm*/
+            uint32_t wdt:        1;                   /*Interrupt when an interrupt stage timeout*/
+            uint32_t lact:       1;
+            uint32_t reserved4: 28;
         };
         uint32_t val;
     }int_clr_timers;
@@ -185,7 +185,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t reserved0: 31;
-            uint32_t clk_en:     1;                   /*Force clock enable for this regfile*/
+            uint32_t en:     1;                   /*Force clock enable for this regfile*/
         };
         uint32_t val;
     }clk;

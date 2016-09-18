@@ -43,93 +43,93 @@ typedef volatile struct {
     }conf;
     union {
         struct {
-            uint32_t rx_take_data_int_raw:  1;
-            uint32_t tx_put_data_int_raw:   1;
-            uint32_t rx_wfull_int_raw:      1;
-            uint32_t rx_rempty_int_raw:     1;
-            uint32_t tx_wfull_int_raw:      1;
-            uint32_t tx_rempty_int_raw:     1;
-            uint32_t rx_hung_int_raw:       1;
-            uint32_t tx_hung_int_raw:       1;
-            uint32_t in_done_int_raw:       1;
-            uint32_t in_suc_eof_int_raw:    1;
-            uint32_t in_err_eof_int_raw:    1;
-            uint32_t out_done_int_raw:      1;
-            uint32_t out_eof_int_raw:       1;
-            uint32_t in_dscr_err_int_raw:   1;
-            uint32_t out_dscr_err_int_raw:  1;
-            uint32_t in_dscr_empty_int_raw: 1;
-            uint32_t out_total_eof_int_raw: 1;
-            uint32_t reserved17:           15;
+            uint32_t rx_take_data:  1;
+            uint32_t tx_put_data:   1;
+            uint32_t rx_wfull:      1;
+            uint32_t rx_rempty:     1;
+            uint32_t tx_wfull:      1;
+            uint32_t tx_rempty:     1;
+            uint32_t rx_hung:       1;
+            uint32_t tx_hung:       1;
+            uint32_t in_done:       1;
+            uint32_t in_suc_eof:    1;
+            uint32_t in_err_eof:    1;
+            uint32_t out_done:      1;
+            uint32_t out_eof:       1;
+            uint32_t in_dscr_err:   1;
+            uint32_t out_dscr_err:  1;
+            uint32_t in_dscr_empty: 1;
+            uint32_t out_total_eof: 1;
+            uint32_t reserved17:   15;
         };
         uint32_t val;
     }int_raw;
     union {
         struct {
-            uint32_t rx_take_data_int_st:  1;
-            uint32_t tx_put_data_int_st:   1;
-            uint32_t rx_wfull_int_st:      1;
-            uint32_t rx_rempty_int_st:     1;
-            uint32_t tx_wfull_int_st:      1;
-            uint32_t tx_rempty_int_st:     1;
-            uint32_t rx_hung_int_st:       1;
-            uint32_t tx_hung_int_st:       1;
-            uint32_t in_done_int_st:       1;
-            uint32_t in_suc_eof_int_st:    1;
-            uint32_t in_err_eof_int_st:    1;
-            uint32_t out_done_int_st:      1;
-            uint32_t out_eof_int_st:       1;
-            uint32_t in_dscr_err_int_st:   1;
-            uint32_t out_dscr_err_int_st:  1;
-            uint32_t in_dscr_empty_int_st: 1;
-            uint32_t out_total_eof_int_st: 1;
-            uint32_t reserved17:          15;
+            uint32_t rx_take_data:  1;
+            uint32_t tx_put_data:   1;
+            uint32_t rx_wfull:      1;
+            uint32_t rx_rempty:     1;
+            uint32_t tx_wfull:      1;
+            uint32_t tx_rempty:     1;
+            uint32_t rx_hung:       1;
+            uint32_t tx_hung:       1;
+            uint32_t in_done:       1;
+            uint32_t in_suc_eof:    1;
+            uint32_t in_err_eof:    1;
+            uint32_t out_done:      1;
+            uint32_t out_eof:       1;
+            uint32_t in_dscr_err:   1;
+            uint32_t out_dscr_err:  1;
+            uint32_t in_dscr_empty: 1;
+            uint32_t out_total_eof: 1;
+            uint32_t reserved17:   15;
         };
         uint32_t val;
     }int_st;
     union {
         struct {
-            uint32_t rx_take_data_int_ena:  1;
-            uint32_t tx_put_data_int_ena:   1;
-            uint32_t rx_wfull_int_ena:      1;
-            uint32_t rx_rempty_int_ena:     1;
-            uint32_t tx_wfull_int_ena:      1;
-            uint32_t tx_rempty_int_ena:     1;
-            uint32_t rx_hung_int_ena:       1;
-            uint32_t tx_hung_int_ena:       1;
-            uint32_t in_done_int_ena:       1;
-            uint32_t in_suc_eof_int_ena:    1;
-            uint32_t in_err_eof_int_ena:    1;
-            uint32_t out_done_int_ena:      1;
-            uint32_t out_eof_int_ena:       1;
-            uint32_t in_dscr_err_int_ena:   1;
-            uint32_t out_dscr_err_int_ena:  1;
-            uint32_t in_dscr_empty_int_ena: 1;
-            uint32_t out_total_eof_int_ena: 1;
-            uint32_t reserved17:           15;
+            uint32_t rx_take_data:  1;
+            uint32_t tx_put_data:   1;
+            uint32_t rx_wfull:      1;
+            uint32_t rx_rempty:     1;
+            uint32_t tx_wfull:      1;
+            uint32_t tx_rempty:     1;
+            uint32_t rx_hung:       1;
+            uint32_t tx_hung:       1;
+            uint32_t in_done:       1;
+            uint32_t in_suc_eof:    1;
+            uint32_t in_err_eof:    1;
+            uint32_t out_done:      1;
+            uint32_t out_eof:       1;
+            uint32_t in_dscr_err:   1;
+            uint32_t out_dscr_err:  1;
+            uint32_t in_dscr_empty: 1;
+            uint32_t out_total_eof: 1;
+            uint32_t reserved17:   15;
         };
         uint32_t val;
     }int_ena;
     union {
         struct {
-            uint32_t take_data_int_clr:     1;
-            uint32_t put_data_int_clr:      1;
-            uint32_t rx_wfull_int_clr:      1;
-            uint32_t rx_rempty_int_clr:     1;
-            uint32_t tx_wfull_int_clr:      1;
-            uint32_t tx_rempty_int_clr:     1;
-            uint32_t rx_hung_int_clr:       1;
-            uint32_t tx_hung_int_clr:       1;
-            uint32_t in_done_int_clr:       1;
-            uint32_t in_suc_eof_int_clr:    1;
-            uint32_t in_err_eof_int_clr:    1;
-            uint32_t out_done_int_clr:      1;
-            uint32_t out_eof_int_clr:       1;
-            uint32_t in_dscr_err_int_clr:   1;
-            uint32_t out_dscr_err_int_clr:  1;
-            uint32_t in_dscr_empty_int_clr: 1;
-            uint32_t out_total_eof_int_clr: 1;
-            uint32_t reserved17:           15;
+            uint32_t take_data:     1;
+            uint32_t put_data:      1;
+            uint32_t rx_wfull:      1;
+            uint32_t rx_rempty:     1;
+            uint32_t tx_wfull:      1;
+            uint32_t tx_rempty:     1;
+            uint32_t rx_hung:       1;
+            uint32_t tx_hung:       1;
+            uint32_t in_done:       1;
+            uint32_t in_suc_eof:    1;
+            uint32_t in_err_eof:    1;
+            uint32_t out_done:      1;
+            uint32_t out_eof:       1;
+            uint32_t in_dscr_err:   1;
+            uint32_t out_dscr_err:  1;
+            uint32_t in_dscr_empty: 1;
+            uint32_t out_total_eof: 1;
+            uint32_t reserved17:   15;
         };
         uint32_t val;
     }int_clr;
@@ -178,23 +178,23 @@ typedef volatile struct {
     }conf_chan;
     union {
         struct {
-            uint32_t outlink_addr:   20;
-            uint32_t reserved20:      8;
-            uint32_t outlink_stop:    1;
-            uint32_t outlink_start:   1;
-            uint32_t outlink_restart: 1;
-            uint32_t outlink_park:    1;
+            uint32_t addr:       20;
+            uint32_t reserved20:  8;
+            uint32_t stop:        1;
+            uint32_t start:       1;
+            uint32_t restart:     1;
+            uint32_t park:        1;
         };
         uint32_t val;
     }out_link;
     union {
         struct {
-            uint32_t inlink_addr:   20;
-            uint32_t reserved20:     8;
-            uint32_t inlink_stop:    1;
-            uint32_t inlink_start:   1;
-            uint32_t inlink_restart: 1;
-            uint32_t inlink_park:    1;
+            uint32_t addr:       20;
+            uint32_t reserved20:  8;
+            uint32_t stop:        1;
+            uint32_t start:       1;
+            uint32_t restart:     1;
+            uint32_t park:        1;
         };
         uint32_t val;
     }in_link;
@@ -203,10 +203,10 @@ typedef volatile struct {
     uint32_t out_eof_bfr_des_addr;
     union {
         struct {
-            uint32_t ahb_testmode: 3;
-            uint32_t reserved3:    1;
-            uint32_t ahb_testaddr: 2;
-            uint32_t reserved6:   26;
+            uint32_t mode:       3;
+            uint32_t reserved3:  1;
+            uint32_t addr:       2;
+            uint32_t reserved6: 26;
         };
         uint32_t val;
     }ahb_test;
@@ -238,19 +238,19 @@ typedef volatile struct {
     }lc_conf;
     union {
         struct {
-            uint32_t out_fifo_wdata: 9;
-            uint32_t reserved9:      7;
-            uint32_t out_fifo_push:  1;
-            uint32_t reserved17:    15;
+            uint32_t wdata:      9;
+            uint32_t reserved9:  7;
+            uint32_t push:       1;
+            uint32_t reserved17: 15;
         };
         uint32_t val;
     }out_fifo_push;
     union {
         struct {
-            uint32_t in_fifo_rdata:12;
-            uint32_t reserved12:    4;
-            uint32_t in_fifo_pop:   1;
-            uint32_t reserved17:   15;
+            uint32_t rdata:      12;
+            uint32_t reserved12:  4;
+            uint32_t pop:         1;
+            uint32_t reserved17: 15;
         };
         uint32_t val;
     }in_fifo_pop;
@@ -258,10 +258,10 @@ typedef volatile struct {
     uint32_t lc_state1;
     union {
         struct {
-            uint32_t lc_fifo_timeout:       8;
-            uint32_t lc_fifo_timeout_shift: 3;
-            uint32_t lc_fifo_timeout_ena:   1;
-            uint32_t reserved12:           20;
+            uint32_t fifo_timeout:       8;
+            uint32_t fifo_timeout_shift: 3;
+            uint32_t fifo_timeout_ena:   1;
+            uint32_t reserved12:        20;
         };
         uint32_t val;
     }lc_hung_conf;
@@ -269,15 +269,15 @@ typedef volatile struct {
     uint32_t reserved_7c;
     union {
         struct {
-            uint32_t cvsd_y_max:16;
-            uint32_t cvsd_y_min:16;
+            uint32_t y_max:16;
+            uint32_t y_min:16;
         };
         uint32_t val;
     }cvsd_conf0;
     union {
         struct {
-            uint32_t cvsd_sigma_max:16;
-            uint32_t cvsd_sigma_min:16;
+            uint32_t sigma_max:16;
+            uint32_t sigma_min:16;
         };
         uint32_t val;
     }cvsd_conf1;
@@ -323,23 +323,23 @@ typedef volatile struct {
     }plc_conf2;
     union {
         struct {
-            uint32_t esco_en:                1;
-            uint32_t esco_chan_mod:          1;
-            uint32_t esco_cvsd_dec_pack_err: 1;
-            uint32_t esco_cvsd_pack_len_8k:  5;
-            uint32_t esco_cvsd_inf_en:       1;
-            uint32_t cvsd_dec_start:         1;
-            uint32_t cvsd_dec_reset:         1;
-            uint32_t plc_en:                 1;
-            uint32_t plc2dma_en:             1;
-            uint32_t reserved13:            19;
+            uint32_t en:                1;
+            uint32_t chan_mod:          1;
+            uint32_t cvsd_dec_pack_err: 1;
+            uint32_t cvsd_pack_len_8k:  5;
+            uint32_t cvsd_inf_en:       1;
+            uint32_t cvsd_dec_start:    1;
+            uint32_t cvsd_dec_reset:    1;
+            uint32_t plc_en:            1;
+            uint32_t plc2dma_en:        1;
+            uint32_t reserved13:       19;
         };
         uint32_t val;
     }esco_conf0;
     union {
         struct {
-            uint32_t sco_with_en:    1;
-            uint32_t sco_no_en:      1;
+            uint32_t with_en:        1;
+            uint32_t no_en:          1;
             uint32_t cvsd_enc_start: 1;
             uint32_t cvsd_enc_reset: 1;
             uint32_t reserved4:     28;
@@ -388,7 +388,7 @@ typedef volatile struct {
             uint32_t clkm_div_b:   6;
             uint32_t clkm_div_a:   6;
             uint32_t clk_en:       1;
-            uint32_t clka_ena:     1;
+            uint32_t clka_en:      1;
             uint32_t reserved22:  10;
         };
         uint32_t val;
@@ -405,19 +405,19 @@ typedef volatile struct {
     }sample_rate_conf;
     union {
         struct {
-            uint32_t tx_pdm_en:                  1;
-            uint32_t rx_pdm_en:                  1;
-            uint32_t pcm2pdm_conv_en:            1;
-            uint32_t pdm2pcm_conv_en:            1;
-            uint32_t tx_pdm_sinc_osr2:           4;
-            uint32_t tx_pdm_prescale:            8;
-            uint32_t tx_pdm_hp_in_shift:         2;
-            uint32_t tx_pdm_lp_in_shift:         2;
-            uint32_t tx_pdm_sinc_in_shift:       2;
-            uint32_t tx_pdm_sigmadelta_in_shift: 2;
-            uint32_t rx_pdm_sinc_dsr_16_en:      1;
-            uint32_t tx_pdm_hp_bypass:           1;
-            uint32_t reserved26:                 6;
+            uint32_t tx_pdm_en:              1;
+            uint32_t rx_pdm_en:              1;
+            uint32_t pcm2pdm_conv_en:        1;
+            uint32_t pdm2pcm_conv_en:        1;
+            uint32_t tx_sinc_osr2:           4;
+            uint32_t tx_prescale:            8;
+            uint32_t tx_hp_in_shift:         2;
+            uint32_t tx_lp_in_shift:         2;
+            uint32_t tx_sinc_in_shift:       2;
+            uint32_t tx_sigmadelta_in_shift: 2;
+            uint32_t rx_sinc_dsr_16_en:      1;
+            uint32_t txhp_bypass:            1;
+            uint32_t reserved26:             6;
         };
         uint32_t val;
     }pdm_conf;
