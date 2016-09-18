@@ -68,8 +68,17 @@ extern "C" {
  * from _EARLY version to normal version on the fly. Unfortunately, ets_vprintf in ROM
  * has been inlined by the compiler into ets_printf, so it is not accessible outside.)
  *
+ * To override default verbosity level at file or component scope, define LOG_LOCAL_LEVEL macro.
+ * At file scope, define it before including esp_log.h, e.g.:
  *
- * To configure logging output per module, add calls to esp_log_set_level function:
+ *      #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+ *      #include "esp_log.h"
+ *
+ * At component scope, define it in component makefile:
+ *
+ *      CFLAGS += -D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG
+ *
+ * To configure logging output per module at runtime, add calls to esp_log_set_level function:
  *
  *      esp_log_set_level("*", ESP_LOG_ERROR);        // set all components to ERROR level
  *      esp_log_set_level("wifi", ESP_LOG_WARN);      // enable WARN logs from WiFi stack
@@ -162,68 +171,50 @@ uint32_t esp_log_timestamp();
 #define LOG_RESET_COLOR
 #endif //CONFIG_LOG_COLORS
 
+#ifndef LOG_LOCAL_LEVEL
+#ifndef BOOTLOADER_BUILD
+#define LOG_LOCAL_LEVEL  ((esp_log_level_t) CONFIG_LOG_DEFAULT_LEVEL)
+#else
+#define LOG_LOCAL_LEVEL  ((esp_log_level_t) CONFIG_LOG_BOOTLOADER_LEVEL)
+#endif
+#endif
+
 #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%d) %s: " format LOG_RESET_COLOR "\n"
 
-#if (CONFIG_LOG_DEFAULT_LEVEL >= ESP_LOG_ERROR)
-#define ESP_EARLY_LOGE( tag, format, ... )  ets_printf(LOG_FORMAT(E, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_EARLY_LOGE( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_ERROR) { ets_printf(LOG_FORMAT(E, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #ifndef BOOTLOADER_BUILD
-#define ESP_LOGE( tag, format, ... )  esp_log_write(ESP_LOG_ERROR, tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_LOGE( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_ERROR) { esp_log_write(ESP_LOG_ERROR, tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #else
 #define ESP_LOGE( tag, format, ... )  ESP_EARLY_LOGE( tag, format, ##__VA_ARGS__)
 #endif  // BOOTLOADER_BUILD
-#else
-#define ESP_LOGE( tag, format, ... )
-#define ESP_EARLY_LOGE( tag, format, ... )
-#endif
 
-#if (CONFIG_LOG_DEFAULT_LEVEL >= ESP_LOG_WARN)
-#define ESP_EARLY_LOGW( tag, format, ... )  ets_printf(LOG_FORMAT(W, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_EARLY_LOGW( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_WARN) { ets_printf(LOG_FORMAT(W, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #ifndef BOOTLOADER_BUILD
-#define ESP_LOGW( tag, format, ... )  esp_log_write(ESP_LOG_WARN, tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_LOGW( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_WARN) { esp_log_write(ESP_LOG_WARN, tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #else
 #define ESP_LOGW( tag, format, ... )  ESP_EARLY_LOGW( tag, format, ##__VA_ARGS__)
 #endif  // BOOTLOADER_BUILD
-#else
-#define ESP_LOGW( tag, format, ... )
-#define ESP_EARLY_LOGW( tag, format, ... )
-#endif
 
-#if (CONFIG_LOG_DEFAULT_LEVEL >= ESP_LOG_INFO)
-#define ESP_EARLY_LOGI( tag, format, ... )  ets_printf(LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_EARLY_LOGI( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) { ets_printf(LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #ifndef BOOTLOADER_BUILD
-#define ESP_LOGI( tag, format, ... )  esp_log_write(ESP_LOG_INFO, tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_LOGI( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) { esp_log_write(ESP_LOG_INFO, tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #else
 #define ESP_LOGI( tag, format, ... )  ESP_EARLY_LOGI( tag, format, ##__VA_ARGS__)
 #endif  //BOOTLOADER_BUILD
-#else
-#define ESP_LOGI( tag, format, ... )
-#define ESP_EARLY_LOGI( tag, format, ... )
-#endif
 
-
-#if (CONFIG_LOG_DEFAULT_LEVEL >= ESP_LOG_DEBUG)
-#define ESP_EARLY_LOGD( tag, format, ... )  ets_printf(LOG_FORMAT(D, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_EARLY_LOGD( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG) { ets_printf(LOG_FORMAT(D, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #ifndef BOOTLOADER_BUILD
-#define ESP_LOGD( tag, format, ... )  esp_log_write(ESP_LOG_DEBUG, tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_LOGD( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG) { esp_log_write(ESP_LOG_DEBUG, tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #else
 #define ESP_LOGD( tag, format, ... )  ESP_EARLY_LOGD(tag, format, ##__VA_ARGS__)
 #endif  // BOOTLOADER_BUILD
-#else
-#define ESP_LOGD( tag, format, ... )
-#define ESP_EARLY_LOGD( tag, format, ... )
-#endif
 
-#if (CONFIG_LOG_DEFAULT_LEVEL >= ESP_LOG_VERBOSE)
-#define ESP_EARLY_LOGV( tag, format, ... )  ets_printf(LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_EARLY_LOGV( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_VERBOSE) { ets_printf(LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #ifndef BOOTLOADER_BUILD
-#define ESP_LOGV( tag, format, ... )  esp_log_write(ESP_LOG_VERBOSE, tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__)
+#define ESP_LOGV( tag, format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_VERBOSE) { esp_log_write(ESP_LOG_VERBOSE, tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
 #else
 #define ESP_LOGV( tag, format, ... )  ESP_EARLY_LOGV(tag, format, ##__VA_ARGS__)
 #endif  // BOOTLOADER_BUILD
-#else
-#define ESP_LOGV( tag, format, ... )
-#define ESP_EARLY_LOGV( tag, format, ... )
-#endif
 
 #ifdef __cplusplus
 }

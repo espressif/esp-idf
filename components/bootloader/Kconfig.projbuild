@@ -1,3 +1,31 @@
 menu "Bootloader config"
+choice LOG_BOOTLOADER_LEVEL
+   bool "Bootloader log verbosity"
+   default LOG_BOOTLOADER_LEVEL_WARN
+   help
+       Specify how much output to see in bootloader logs.
+
+config LOG_BOOTLOADER_LEVEL_NONE
+   bool "No output"
+config LOG_BOOTLOADER_LEVEL_ERROR
+   bool "Error"
+config LOG_BOOTLOADER_LEVEL_WARN
+   bool "Warning"
+config LOG_BOOTLOADER_LEVEL_INFO
+   bool "Info"
+config LOG_BOOTLOADER_LEVEL_DEBUG
+   bool "Debug"
+config LOG_BOOTLOADER_LEVEL_VERBOSE
+   bool "Verbose"
+endchoice
+
+config LOG_BOOTLOADER_LEVEL
+	int
+	default 0 if LOG_BOOTLOADER_LEVEL_NONE
+	default 1 if LOG_BOOTLOADER_LEVEL_ERROR
+	default 2 if LOG_BOOTLOADER_LEVEL_WARN
+	default 3 if LOG_BOOTLOADER_LEVEL_INFO
+	default 4 if LOG_BOOTLOADER_LEVEL_DEBUG
+	default 5 if LOG_BOOTLOADER_LEVEL_VERBOSE
 
 endmenu
