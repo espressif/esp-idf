@@ -300,7 +300,7 @@ uint32_t IRAM_ATTR esp_log_timestamp()
     if (base == 0) {
         base = esp_log_early_timestamp();
     }
-    return base + xTaskGetTickCount() * configTICK_RATE_HZ;
+    return base + xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
 }
 
 #else
