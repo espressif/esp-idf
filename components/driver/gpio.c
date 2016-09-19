@@ -211,11 +211,11 @@ static esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 {
     if(gpio_num >= 34) {
-        GPIO_ERROR("io_num=%d only input\n",gpio_num);
+        GPIO_ERROR("io_num=%d can only be input\n",gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
     if(gpio_num >= GPIO_PIN_COUNT || GPIO_PIN_MUX_REG[gpio_num] == 0) {
-        GPIO_ERROR("io_num=%d not exits\n",gpio_num);
+        GPIO_ERROR("io_num=%d does not exist\n",gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
     if(gpio_num < 32) {
@@ -316,7 +316,7 @@ esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_direction_t direction)
                 gpio_output_disable(gpio_num);
                 break;
             default:
-                GPIO_ERROR("Unkown direction type,gpio_num=%u,direction=%u\n",gpio_num,direction);
+                GPIO_ERROR("Unknown direction type,gpio_num=%u,direction=%u\n",gpio_num,direction);
                 ret = ESP_ERR_INVALID_ARG;
                 break;
         }
@@ -397,7 +397,7 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
             }
             PIN_FUNC_SELECT(io_reg, GPIO_FUNC_SEL); /*function number 2 is GPIO_FUNC for each pin */
         } else if(bit_valid && (io_reg == 0)) {
-            GPIO_WARNING("io_num=%d not exits\n",io_num);
+            GPIO_WARNING("io_num=%d does not exist\n",io_num);
         }
         io_num++;
     } while(io_num < GPIO_PIN_COUNT);
