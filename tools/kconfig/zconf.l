@@ -114,8 +114,8 @@ n	[A-Za-z0-9_-]
 		zconflval.string = text;
 		return T_WORD;
 	}
-	.	warn_ignored_character(*yytext);
-	\n	{
+	[^\r\n]  warn_ignored_character(*yytext);
+	\r?\n	{
 		BEGIN(INITIAL);
 		current_file->lineno++;
 		return T_EOL;
@@ -139,7 +139,7 @@ n	[A-Za-z0-9_-]
 		new_string();
 		BEGIN(STRING);
 	}
-	\n	BEGIN(INITIAL); current_file->lineno++; return T_EOL;
+	\r?\n	BEGIN(INITIAL); current_file->lineno++; return T_EOL;
 	({n}|[/.])+	{
 		const struct kconf_id *id = kconf_id_lookup(yytext, yyleng);
 		if (id && id->flags & TF_PARAM) {
@@ -184,7 +184,7 @@ n	[A-Za-z0-9_-]
 		} else
 			append_string(yytext, 1);
 	}
-	\n	{
+	\r?\n	{
 		printf("%s:%d:warning: multi-line strings not supported\n", zconf_curname(), zconf_lineno());
 		current_file->lineno++;
 		BEGIN(INITIAL);
@@ -218,16 +218,16 @@ n	[A-Za-z0-9_-]
 			append_string("        ", ts);
 		}
 	}
-	[ \t]*\n/[^ \t\n] {
+	[ \t]*\r?\n/[^ \t\r\n] {
 		current_file->lineno++;
 		zconf_endhelp();
 		return T_HELPTEXT;
 	}
-	[ \t]*\n	{
+	[ \t]*\r?\n	{
 		current_file->lineno++;
 		append_string("\n", 1);
 	}
-	[^ \t\n].* {
+	[^ \t\r?\n].* {
 		while (yyleng) {
 			if ((yytext[yyleng-1] != ' ') && (yytext[yyleng-1] != '\t'))
 				break;
