@@ -26,7 +26,7 @@ else
     endif
 endif
 
-LINKER_SCRIPTS += -T esp32.common.ld -T esp32.rom.ld
+LINKER_SCRIPTS += -T esp32.common.ld -T esp32.rom.ld -T esp32.peripherals.ld
 
 COMPONENT_ADD_LDFLAGS := -lesp32 \
                            $(abspath libhal.a) \
