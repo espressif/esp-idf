@@ -85,6 +85,7 @@ task.h is included from an application file. */
 #include "StackMacros.h"
 #include "portmacro.h"
 #include "semphr.h"
+#include "sys/reent.h"
 
 /* Lint e961 and e750 are suppressed as a MISRA exception justified because the
 MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined for the
@@ -3489,6 +3490,9 @@ TCB_t *pxNewTCB;
 
 #if ( INCLUDE_vTaskDelete == 1 )
 
+	// TODO: move this to newlib component and provide a header file
+	extern void _extra_cleanup_r(struct _reent* r);
+
 	static void prvDeleteTCB( TCB_t *pxTCB )
 	{
 		/* This call is required specifically for the TriCore port.  It must be
@@ -3500,6 +3504,7 @@ TCB_t *pxNewTCB;
 		to the task to free any memory allocated at the application level. */
 		#if ( configUSE_NEWLIB_REENTRANT == 1 )
 		{
+			pxTCB->xNewLib_reent.__cleanup = &_extra_cleanup_r;
 			_reclaim_reent( &( pxTCB->xNewLib_reent ) );
 		}
 		#endif /* configUSE_NEWLIB_REENTRANT */
