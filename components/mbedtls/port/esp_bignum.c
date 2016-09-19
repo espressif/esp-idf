@@ -207,98 +207,80 @@ static int mpi_montred( mbedtls_mpi *A, const mbedtls_mpi *N, mbedtls_mpi_uint m
     return( mpi_montmul( A, &U, N, mm, T ) );
 }
 
+#if defined(MBEDTLS_MPI_MUL_MPI_ALT) /* MBEDTLS_MPI_MUL_MPI_ALT */
 
-/* Allocate parameters used by hardware MPI multiply,
- and copy mbedtls_mpi structures into them */
-static int mul_pram_alloc(const mbedtls_mpi *A, const mbedtls_mpi *B, char **pA, char **pB, char **pX, size_t *bites)
+/* Number of words used to hold 'mpi', rounded up to nearest
+   16 words (512 bits) to match hardware support
+*/
+static inline size_t hardware_words_needed(const mbedtls_mpi *mpi)
 {
-    char *sa, *sb, *sx;
-//	int algn;
-	int words, bytes;
-	int abytes, bbytes;
-
-	if (A->n > B->n)
-		words = A->n;
-	else
-		words = B->n;
-
-	bytes = (words / 16 + ((words % 16) ? 1 : 0 )) * 16 * 4 * 2;
-
-	abytes = A->n * 4;	
-	bbytes = B->n * 4;
-
-	sa = malloc(bytes);
-	if (!sa) {
-       return -1;
-	}
-
-	sb = malloc(bytes);
-	if (!sb) {
-	   free(sa);
-       return -1;
-	}
-
-	sx = malloc(bytes);
-	if (!sx) {
-	   free(sa);
-	   free(sb);
-       return -1;
-	}
-
-	memcpy(sa, A->p, abytes);
-	memset(sa + abytes, 0, bytes - abytes);
-
-	memcpy(sb, B->p, bbytes);
-	memset(sb + bbytes, 0, bytes - bbytes);
-
-	*pA = sa;
-	*pB = sb;
-
-	*pX = sx;
-
-	*bites = bytes * 4;
-
-	return 0;
+    size_t res;
+    for(res = mpi->n; res > 0; res-- ) {
+        if( mpi->p[res - 1] != 0 )
+            break;
+    }
+    res = (res + 0xF) & ~0xF;
+    return res;
 }
-
-#if defined(MBEDTLS_MPI_MUL_MPI_ALT)
 
 int mbedtls_mpi_mul_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B )
 {
     int ret = -1;
-    size_t i, j;
-	char *s1 = NULL, *s2 = NULL, *dest = NULL;
-	size_t bites;
+    size_t words_a, words_b, words_x, words_mult;
 
     mbedtls_mpi TA, TB;
 
     mbedtls_mpi_init( &TA ); mbedtls_mpi_init( &TB );
 
-    if( X == A ) { MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TA, A ) ); A = &TA; }
-    if( X == B ) { MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TB, B ) ); B = &TB; }
+    /* Count words needed for A & B in hardware */
+    words_a = hardware_words_needed(A);
+    words_b = hardware_words_needed(B);
 
-    for( i = A->n; i > 0; i-- )
-        if( A->p[i - 1] != 0 )
-            break;
+    /* Take a copy of A if either X == A OR if A isn't long enough
+       to hold the number of words needed for hardware.
 
-    for( j = B->n; j > 0; j-- )
-        if( B->p[j - 1] != 0 )
-            break;
+       (can't grow A directly as it is const)
 
-    MBEDTLS_MPI_CHK( mbedtls_mpi_grow( X, i + j ) );
+       TODO: growing the input operands is only necessary because the
+       ROM functions only take one length argument. It should be
+       possible for us to just copy the used data only into the
+       hardware buffers, and set the remaining bits to zero - saving
+       RAM. But we need to reimplement ets_bigint_mult_prepare() in
+       software for this.
+    */
+    if( X == A || A->n < words_a) {
+        MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TA, A ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_grow( &TA, words_a) );
+        A = &TA;
+    }
+    /* Same for B */
+    if( X == B || B->n < words_b ) {
+        MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TB, B ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_grow( &TB, words_b) );
+        B = &TB;
+    }
+
+    /* Result X has to have room for double the larger operand */
+    words_mult = (words_a > words_b ? words_a : words_b);
+    words_x = words_mult * 2;
+    MBEDTLS_MPI_CHK( mbedtls_mpi_grow( X, words_x ) );
+    /* TODO: check if lset here is necessary, hardware should zero */
     MBEDTLS_MPI_CHK( mbedtls_mpi_lset( X, 0 ) );
 
-	if (mul_pram_alloc(A, B, &s1, &s2, &dest, &bites)) {
-       goto cleanup;
-	}
-
     esp_mpi_acquire_hardware();
-	if (ets_bigint_mult_prepare((uint32_t *)s1, (uint32_t *)s2, bites)){
-		ets_bigint_wait_finish();
-		if (ets_bigint_mult_getz((uint32_t *)dest, bites) == true) {
-			memcpy(X->p, dest, (i + j) * 4);
-			ret = 0;
-		} else {
+
+    if(words_mult * 32 > 2048) {
+        printf("WARNING: %d bit operands (%d bits * %d bits) too large for hardware unit\n", words_mult * 32, mbedtls_mpi_bitlen(A), mbedtls_mpi_bitlen(B));
+    }
+
+    if (ets_bigint_mult_prepare(A->p, B->p, words_mult * 32)) {
+        ets_bigint_wait_finish();
+        /* NB: argument to bigint_mult_getz is length of inputs, double this number (words_x) is
+           copied to output X->p.
+        */
+        if (ets_bigint_mult_getz(X->p, words_mult * 32) == true) {
+            ret = 0;
+        } else {
             printf("ets_bigint_mult_getz failed\n");
 		}
 	} else{
@@ -307,11 +289,6 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
     esp_mpi_release_hardware();
 
     X->s = A->s * B->s;
-
-    free(s1);
-    free(s2);
-    free(dest);
-
 cleanup:
 
     mbedtls_mpi_free( &TB ); mbedtls_mpi_free( &TA );

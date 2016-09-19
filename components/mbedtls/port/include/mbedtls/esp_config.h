@@ -253,8 +253,8 @@
 
    Disabled as number of limbs limited by bug. Internal TW#7112.
 */
-//#define MBEDTLS_MPI_EXP_MOD_ALT
-//#define MBEDTLS_MPI_MUL_MPI_ALT
+#define MBEDTLS_MPI_EXP_MOD_ALT
+#define MBEDTLS_MPI_MUL_MPI_ALT
 
 /**
  * \def MBEDTLS_MD2_PROCESS_ALT
