@@ -20,7 +20,7 @@ typedef volatile struct {
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }fifo;
+    } fifo;
     union {
         struct {
             uint32_t rxfifo_full:      1;           /*This interrupt raw bit turns to high level when receiver receives more data than (rx_flow_thrhd_h3 rx_flow_thrhd).*/
@@ -45,7 +45,7 @@ typedef volatile struct {
             uint32_t reserved19:      13;
         };
         uint32_t val;
-    }int_raw;
+    } int_raw;
     union {
         struct {
             uint32_t rxfifo_full:      1;            /*This is the status bit for rxfifo_full_int_raw when rxfifo_full_int_ena is set to 1.*/
@@ -70,7 +70,7 @@ typedef volatile struct {
             uint32_t reserved19:      13;
         };
         uint32_t val;
-    }int_st;
+    } int_st;
     union {
         struct {
             uint32_t rxfifo_full:      1;           /*This is the enable bit for rxfifo_full_int_st register.*/
@@ -95,7 +95,7 @@ typedef volatile struct {
             uint32_t reserved19:      13;
         };
         uint32_t val;
-    }int_ena;
+    } int_ena;
     union {
         struct {
             uint32_t rxfifo_full:      1;           /*Set this bit to clear the rxfifo_full_int_raw interrupt.*/
@@ -120,7 +120,7 @@ typedef volatile struct {
             uint32_t reserved19:      13;
         };
         uint32_t val;
-    }int_clr;
+    } int_clr;
     union {
         struct {
             uint32_t div_int:    20;                /*The register value is  the  integer part of the frequency divider's factor.*/
@@ -128,7 +128,7 @@ typedef volatile struct {
             uint32_t reserved24:  8;
         };
         uint32_t val;
-    }clk_div;
+    } clk_div;
     union {
         struct {
             uint32_t en: 1;                         /*This is the enable bit for detecting baudrate.*/
@@ -137,7 +137,7 @@ typedef volatile struct {
             uint32_t reserved16: 16;
         };
         uint32_t val;
-    }auto_baud;
+    } auto_baud;
     union {
         struct {
             uint32_t rxfifo_cnt: 8;                 /*(rx_mem_cnt rxfifo_cnt) stores the byte number of valid data in receiver's fifo. rx_mem_cnt register stores the 3 most significant bits  rxfifo_cnt stores the 8 least significant bits.*/
@@ -154,7 +154,7 @@ typedef volatile struct {
             uint32_t txd:        1;                 /*This register represent the  level value of the internal uart rxd signal.*/
         };
         uint32_t val;
-    }status;
+    } status;
     union {
         struct {
             uint32_t parity:             1;         /*This register is used to configure the parity check mode.  0:even 1:odd*/
@@ -186,7 +186,7 @@ typedef volatile struct {
             uint32_t reserved28:         4;
         };
         uint32_t val;
-    }conf0;
+    } conf0;
     union {
         struct {
             uint32_t rxfifo_full_thrhd:  7;         /*When receiver receives more data than its threshold value，receiver will produce rxfifo_full_int_raw interrupt.the threshold value is (rx_flow_thrhd_h3 rxfifo_full_thrhd).*/
@@ -199,28 +199,28 @@ typedef volatile struct {
             uint32_t rx_tout_en:         1;         /*This is the enable bit for uart receiver's timeout function.*/
         };
         uint32_t val;
-    }conf1;
+    } conf1;
     union {
         struct {
             uint32_t min_cnt:     20;               /*This register stores the value of the minimum duration time for the low level pulse， it is used in baudrate-detect process.*/
             uint32_t reserved20:  12;
         };
         uint32_t val;
-    }lowpulse;
+    } lowpulse;
     union {
         struct {
             uint32_t min_cnt:     20;               /*This register stores  the value of the maximum duration time for the high level pulse， it is used in baudrate-detect process.*/
             uint32_t reserved20:  12;
         };
         uint32_t val;
-    }highpulse;
+    } highpulse;
     union {
         struct {
             uint32_t edge_cnt:    10;               /*This register stores the count of rxd edge change， it is used in baudrate-detect process.*/
             uint32_t reserved10:  22;
         };
         uint32_t val;
-    }rxd_cnt;
+    } rxd_cnt;
     union {
         struct {
             uint32_t sw_flow_con_en: 1;             /*Set this bit to enable software  flow control. it is used with register sw_xon or sw_xoff .*/
@@ -232,14 +232,14 @@ typedef volatile struct {
             uint32_t reserved6:     26;
         };
         uint32_t val;
-    }flow_conf;
+    } flow_conf;
     union {
         struct {
             uint32_t active_threshold:10;           /*When the input rxd edge changes more than this register value， the uart is active from light sleeping mode.*/
             uint32_t reserved10:      22;
         };
         uint32_t val;
-    }sleep_conf;
+    } sleep_conf;
     union {
         struct {
             uint32_t xon_threshold:  8;             /*when the data amount in receiver's fifo is more than this register value， it will send a xoff char with uart_sw_flow_con_en set to 1.*/
@@ -248,7 +248,7 @@ typedef volatile struct {
             uint32_t xoff_char:      8;             /*This register stores the xoff flow control char.*/
         };
         uint32_t val;
-    }swfc_conf;
+    } swfc_conf;
     union {
         struct {
             uint32_t rx_idle_thrhd:10;              /*when receiver takes more time than this register value to receive a byte data， it will produce frame end signal for uhci to stop receiving data.*/
@@ -257,7 +257,7 @@ typedef volatile struct {
             uint32_t reserved28:    4;
         };
         uint32_t val;
-    }idle_conf;
+    } idle_conf;
     union {
         struct {
             uint32_t en:               1;           /*Set this bit to choose rs485 mode.*/
@@ -270,28 +270,28 @@ typedef volatile struct {
             uint32_t reserved10:      22;
         };
         uint32_t val;
-    }rs485_conf;
+    } rs485_conf;
     union {
         struct {
             uint32_t pre_idle_num:24;               /*This register is used to configure the idle duration time before the first at_cmd is received by receiver， when the the duration is less than this register value it will not take the next data received as at_cmd char.*/
             uint32_t reserved24:   8;
         };
         uint32_t val;
-    }at_cmd_precnt;
+    } at_cmd_precnt;
     union {
         struct {
             uint32_t post_idle_num:24;              /*This register is used to configure the duration time between the last at_cmd and the next data， when the duration is less than this register value  it will not take the previous data as at_cmd char.*/
             uint32_t reserved24:    8;
         };
         uint32_t val;
-    }at_cmd_postcnt;
+    } at_cmd_postcnt;
     union {
         struct {
             uint32_t rx_gap_tout:24;                /*This register is used to configure the duration time between the at_cmd chars， when the duration time is less than this register value it will not take the data as continous at_cmd chars.*/
             uint32_t reserved24:  8;
         };
         uint32_t val;
-    }at_cmd_gaptout;
+    } at_cmd_gaptout;
     union {
         struct {
             uint32_t data:        8;                /*This register is used to configure the content of at_cmd char.*/
@@ -299,7 +299,7 @@ typedef volatile struct {
             uint32_t reserved16: 16;
         };
         uint32_t val;
-    }at_cmd_char;
+    } at_cmd_char;
     union {
         struct {
             uint32_t mem_pd:             1;         /*Set this bit to power down memory，when reg_mem_pd registers in the 3 uarts are all set to 1  memory will enter low power mode.*/
@@ -317,21 +317,21 @@ typedef volatile struct {
             uint32_t reserved31:         1;
         };
         uint32_t val;
-    }mem_conf;
+    } mem_conf;
     union {
         struct {
             uint32_t status:24;
             uint32_t reserved24:    8;
         };
         uint32_t val;
-    }mem_tx_status;
+    } mem_tx_status;
     union {
         struct {
             uint32_t status:24;
             uint32_t reserved24:    8;
         };
         uint32_t val;
-    }mem_rx_status;
+    } mem_rx_status;
     union {
         struct {
             uint32_t rx_cnt: 3;                      /*refer to the rxfifo_cnt's description.*/
@@ -339,21 +339,21 @@ typedef volatile struct {
             uint32_t reserved6: 26;
         };
         uint32_t val;
-    }mem_cnt_status;
+    } mem_cnt_status;
     union {
         struct {
             uint32_t min_cnt:     20;                 /*This register stores the count of rxd pos-edge edge， it is used in baudrate-detect process.*/
             uint32_t reserved20:  12;
         };
         uint32_t val;
-    }pospulse;
+    } pospulse;
     union {
         struct {
             uint32_t min_cnt:     20;                 /*This register stores the count of rxd neg-edge edge， it is used in baudrate-detect process.*/
             uint32_t reserved20:  12;
         };
         uint32_t val;
-    }negpulse;
+    } negpulse;
     uint32_t reserved_70;
     uint32_t reserved_74;
     uint32_t date;                                    /**/

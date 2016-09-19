@@ -40,7 +40,7 @@ typedef volatile struct {
             uint32_t reserved19:    13;
         };
         uint32_t val;
-    }conf;
+    } conf;
     union {
         struct {
             uint32_t rx_take_data:  1;
@@ -63,7 +63,7 @@ typedef volatile struct {
             uint32_t reserved17:   15;
         };
         uint32_t val;
-    }int_raw;
+    } int_raw;
     union {
         struct {
             uint32_t rx_take_data:  1;
@@ -86,7 +86,7 @@ typedef volatile struct {
             uint32_t reserved17:   15;
         };
         uint32_t val;
-    }int_st;
+    } int_st;
     union {
         struct {
             uint32_t rx_take_data:  1;
@@ -109,7 +109,7 @@ typedef volatile struct {
             uint32_t reserved17:   15;
         };
         uint32_t val;
-    }int_ena;
+    } int_ena;
     union {
         struct {
             uint32_t take_data:     1;
@@ -132,7 +132,7 @@ typedef volatile struct {
             uint32_t reserved17:   15;
         };
         uint32_t val;
-    }int_clr;
+    } int_clr;
     union {
         struct {
             uint32_t tx_bck_in_delay:   2;
@@ -152,7 +152,7 @@ typedef volatile struct {
             uint32_t reserved25:        7;
         };
         uint32_t val;
-    }timing;
+    } timing;
     union {
         struct {
             uint32_t rx_data_num:          6;
@@ -165,7 +165,7 @@ typedef volatile struct {
             uint32_t reserved21:          11;
         };
         uint32_t val;
-    }fifo_conf;
+    } fifo_conf;
     uint32_t rx_eof_num;
     uint32_t conf_single_data;
     union {
@@ -175,7 +175,7 @@ typedef volatile struct {
             uint32_t reserved5:  27;
         };
         uint32_t val;
-    }conf_chan;
+    } conf_chan;
     union {
         struct {
             uint32_t addr:       20;
@@ -186,7 +186,7 @@ typedef volatile struct {
             uint32_t park:        1;
         };
         uint32_t val;
-    }out_link;
+    } out_link;
     union {
         struct {
             uint32_t addr:       20;
@@ -197,7 +197,7 @@ typedef volatile struct {
             uint32_t park:        1;
         };
         uint32_t val;
-    }in_link;
+    } in_link;
     uint32_t out_eof_des_addr;
     uint32_t in_eof_des_addr;
     uint32_t out_eof_bfr_des_addr;
@@ -209,7 +209,7 @@ typedef volatile struct {
             uint32_t reserved6: 26;
         };
         uint32_t val;
-    }ahb_test;
+    } ahb_test;
     uint32_t in_link_dscr;
     uint32_t in_link_dscr_bf0;
     uint32_t in_link_dscr_bf1;
@@ -235,7 +235,7 @@ typedef volatile struct {
             uint32_t reserved14:        18;
         };
         uint32_t val;
-    }lc_conf;
+    } lc_conf;
     union {
         struct {
             uint32_t wdata:      9;
@@ -244,7 +244,7 @@ typedef volatile struct {
             uint32_t reserved17: 15;
         };
         uint32_t val;
-    }out_fifo_push;
+    } out_fifo_push;
     union {
         struct {
             uint32_t rdata:      12;
@@ -253,7 +253,7 @@ typedef volatile struct {
             uint32_t reserved17: 15;
         };
         uint32_t val;
-    }in_fifo_pop;
+    } in_fifo_pop;
     uint32_t lc_state0;
     uint32_t lc_state1;
     union {
@@ -264,7 +264,7 @@ typedef volatile struct {
             uint32_t reserved12:        20;
         };
         uint32_t val;
-    }lc_hung_conf;
+    } lc_hung_conf;
     uint32_t reserved_78;
     uint32_t reserved_7c;
     union {
@@ -273,14 +273,14 @@ typedef volatile struct {
             uint32_t y_min:16;
         };
         uint32_t val;
-    }cvsd_conf0;
+    } cvsd_conf0;
     union {
         struct {
             uint32_t sigma_max:16;
             uint32_t sigma_min:16;
         };
         uint32_t val;
-    }cvsd_conf1;
+    } cvsd_conf1;
     union {
         struct {
             uint32_t cvsd_k:     3;
@@ -290,7 +290,7 @@ typedef volatile struct {
             uint32_t reserved19:13;
         };
         uint32_t val;
-    }cvsd_conf2;
+    } cvsd_conf2;
     union {
         struct {
             uint32_t good_pack_max:    6;
@@ -302,7 +302,7 @@ typedef volatile struct {
             uint32_t reserved28:       4;
         };
         uint32_t val;
-    }plc_conf0;
+    } plc_conf0;
     union {
         struct {
             uint32_t bad_cef_atten_para:       8;
@@ -312,7 +312,7 @@ typedef volatile struct {
             uint32_t slide_win_len:            8;
         };
         uint32_t val;
-    }plc_conf1;
+    } plc_conf1;
     union {
         struct {
             uint32_t cvsd_seg_mod: 2;
@@ -320,7 +320,7 @@ typedef volatile struct {
             uint32_t reserved7:   25;
         };
         uint32_t val;
-    }plc_conf2;
+    } plc_conf2;
     union {
         struct {
             uint32_t en:                1;
@@ -335,7 +335,7 @@ typedef volatile struct {
             uint32_t reserved13:       19;
         };
         uint32_t val;
-    }esco_conf0;
+    } esco_conf0;
     union {
         struct {
             uint32_t with_en:        1;
@@ -345,7 +345,7 @@ typedef volatile struct {
             uint32_t reserved4:     28;
         };
         uint32_t val;
-    }sco_conf0;
+    } sco_conf0;
     union {
         struct {
             uint32_t tx_pcm_conf:    3;
@@ -357,7 +357,7 @@ typedef volatile struct {
             uint32_t reserved10:    22;
         };
         uint32_t val;
-    }conf1;
+    } conf1;
     union {
         struct {
             uint32_t fifo_force_pd:    1;
@@ -367,7 +367,7 @@ typedef volatile struct {
             uint32_t reserved4:       28;
         };
         uint32_t val;
-    }pd_conf;
+    } pd_conf;
     union {
         struct {
             uint32_t camera_en:           1;
@@ -381,7 +381,7 @@ typedef volatile struct {
             uint32_t reserved8:          24;
         };
         uint32_t val;
-    }conf2;
+    } conf2;
     union {
         struct {
             uint32_t clkm_div_num: 8;
@@ -392,7 +392,7 @@ typedef volatile struct {
             uint32_t reserved22:  10;
         };
         uint32_t val;
-    }clkm_conf;
+    } clkm_conf;
     union {
         struct {
             uint32_t tx_bck_div_num: 6;
@@ -402,7 +402,7 @@ typedef volatile struct {
             uint32_t reserved24:     8;
         };
         uint32_t val;
-    }sample_rate_conf;
+    } sample_rate_conf;
     union {
         struct {
             uint32_t tx_pdm_en:              1;
@@ -420,7 +420,7 @@ typedef volatile struct {
             uint32_t reserved26:             6;
         };
         uint32_t val;
-    }pdm_conf;
+    } pdm_conf;
     union {
         struct {
             uint32_t tx_pdm_fs: 10;
@@ -428,7 +428,7 @@ typedef volatile struct {
             uint32_t reserved20:12;
         };
         uint32_t val;
-    }pdm_freq_conf;
+    } pdm_freq_conf;
     union {
         struct {
             uint32_t tx_idle:            1;
@@ -437,7 +437,7 @@ typedef volatile struct {
             uint32_t reserved3:         29;
         };
         uint32_t val;
-    }state;
+    } state;
     uint32_t reserved_c0;
     uint32_t reserved_c4;
     uint32_t reserved_c8;
