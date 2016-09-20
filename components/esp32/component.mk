@@ -8,6 +8,8 @@
 #
 -include $(PROJECT_PATH)/build/include/config/auto.conf
 
+COMPONENT_SRCDIRS := . hwcrypto
+
 LIBS := crypto core net80211 phy rtc pp wpa wps
 
 ifeq ($(CONFIG_MEMMAP_BT),y)
@@ -24,7 +26,7 @@ else
     endif
 endif
 
-LINKER_SCRIPTS += -T esp32.common.ld -T esp32.rom.ld
+LINKER_SCRIPTS += -T esp32.common.ld -T esp32.rom.ld -T esp32.peripherals.ld
 
 COMPONENT_ADD_LDFLAGS := -lesp32 \
                            $(abspath libhal.a) \

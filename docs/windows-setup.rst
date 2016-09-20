@@ -50,6 +50,8 @@ Change to the directory you want to clone the SDK into by typing a command like 
 
 If you'd rather use a Windows UI tool to manage your git repositories, this is also possible. A wide range are available.
 
+*NOTE*: While cloning submodules, the ``git clone`` command may print some output starting ``': not a valid identifier...``. This is a `known issue`_ but the git clone still succeeds without any problems.
+
 Step 3: Starting a project
 ==========================
 
@@ -58,6 +60,8 @@ ESP-IDF by itself does not build a binary to run on the ESP32. The binary "app" 
 The easiest way to start a project is to download the Getting Started project from github_.
 
 The process is the same as for checking out the ESP-IDF from github. Change to the parent directory and run ``git clone https://github.com/espressif/esp-idf-template.git``.
+
+**IMPORTANT:** The esp-idf build system does not support spaces in paths to esp-idf or to projects.
 
 Step 4: Configuring the project
 ===============================
@@ -74,3 +78,4 @@ If you'd like to use the Eclipse IDE instead of running ``make``, check out the 
 .. _Eclipse: eclipse-setup.rst
 .. _MSYS2: https://msys2.github.io/
 .. _github: https://github.com/espressif/esp-idf-template
+.. _known issue: https://github.com/espressif/esp-idf/issues/11

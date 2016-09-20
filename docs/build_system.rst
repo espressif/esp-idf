@@ -60,7 +60,7 @@ influencing the build process of the component as well as the project it's used
 in. Components may also include a Kconfig file defining the compile-time options that are
 settable by means of the menu system.
 
-Project makefile variables that can be set by the programmer::
+Project Makefile variables that can be set by the programmer::
 
    PROJECT_NAME: Mandatory. Name for the project
    BUILD_DIR_BASE: Set the directory where all objects/libraries/binaries end up in.
@@ -76,17 +76,20 @@ Project makefile variables that can be set by the programmer::
 	  include directories that are passed to the compilation pass of all components and
 	  they do not have a Kconfig option.
 
-Component makefile variables that can be set by the programmer::
+Component-specific component.mk variables that can be set by the programmer::
 
     COMPONENT_ADD_INCLUDEDIRS: Relative path to include directories to be added to
-	    the entire project
+	    the entire project. If an include directory is only needed to compile this
+	    specific component, don't add it here.
     COMPONENT_PRIV_INCLUDEDIRS: Relative path to include directories that are only used
-	    when compiling this specific component
+	    when compiling this specific component.
     COMPONENT_DEPENDS: Names of any components that need to be compiled before this component.
-    COMPONENT_ADD_LDFLAGS: Ld flags to add for this project. Defaults to -l$(COMPONENT_NAME).
+    COMPONENT_ADD_LDFLAGS: LD flags to add for the entire project. Defaults to -l$(COMPONENT_NAME).
 	    Add libraries etc in the current directory as $(abspath libwhatever.a)
-    COMPONENT_EXTRA_INCLUDES: Any extra include paths. These will be prefixed with '-I' and
-	    passed to the compiler; please put absolute paths here.
+    COMPONENT_EXTRA_INCLUDES: Any extra include paths used when compiling the component's
+	    source files. These will be prefixed with '-I' and passed to the compiler.
+		Similar to COMPONENT_PRIV_INCLUDEDIRS, but these paths are passed as-is instead of
+		expanded relative to the component directory.
     COMPONENT_SRCDIRS: Relative directories to look in for sources. Defaults to '.', the current
 	    directory (the root of the component) only. Use this to specify any subdirectories. Note
    	    that specifying this overwrites the default action of compiling everything in the
@@ -113,6 +116,10 @@ be usable in component or project Makefiles::
     PROJECT_PATH: Path to the root of the project folder
     COMPONENTS: Name of the components to be included
     CONFIG_*: All values set by 'make menuconfig' have corresponding Makefile variables.
+
+Inside your component's component.mk makefile, you can override or add to these variables
+as necessary. The changes are isolated from other components (see Makefile.projbuild below
+if you want to share these changes with all other components.)
 
 For components, there also are these defines::
 
@@ -152,10 +159,16 @@ details to add to "menuconfig" for this component.
 Makefile.projbuild
 ------------------
 
-For components that have parts that need to be run when building of the
-project is done, you can create a file called Makefile.projbuild in the
-component root directory. This  file will be included in the main
-Makefile.
+For components that have parts that need to be evaluated in the top-level
+project context, you can create a file called Makefile.projbuild in the
+component root directory. These files is included into the project's
+top-level Makefile.
+
+For example, if your component needs to add to CFLAGS for the entire
+project (not just for its own source files) then you can set
+``CFLAGS +=`` in Makefile.projbuild. Note that this isn't necessary for
+adding include directories to the project, you can set
+``COMPONENT_ADD_INCLUDEDIRS`` (see above) in the component.mk.
 
 
 KConfig.projbuild
@@ -180,10 +193,13 @@ Because components usually live under the project directory (although
 they can also reside in an other folder), the path to this may be
 something like  /home/myuser/projects/myprojects/components/httpd .
 
+Components can have any name (unique to the project) but the name
+cannot contain spaces (esp-idf does not support spaces in paths).
+
 One of the things that most components will have is a component.mk makefile,
 containing instructions on how to build the component. Because the
 build environment tries to set reasonable defaults that will work most
-of the time, component.mk can be very small. 
+of the time, component.mk can be very small.
 
 Simplest component.mk
 =====================

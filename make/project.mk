@@ -133,6 +133,42 @@ export PROJECT_PATH
 #Include functionality common to both project & component
 -include $(IDF_PATH)/make/common.mk
 
+# Set default LDFLAGS
+
+LDFLAGS ?= -nostdlib \
+	-L$(IDF_PATH)/lib \
+	-L$(IDF_PATH)/ld \
+	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(SRCDIRS)) \
+	-u call_user_start_cpu0	\
+	-Wl,--gc-sections	\
+	-Wl,-static	\
+	-Wl,--start-group	\
+	$(COMPONENT_LDFLAGS) \
+	-lgcc \
+	-Wl,--end-group \
+	-Wl,-EL
+
+# Set default CPPFLAGS, CFLAGS, CXXFLAGS
+#
+# These are exported so that components can use them when compiling.
+#
+# If you need your component to add CFLAGS/etc for it's own source compilation only, set CFLAGS += in your component's Makefile.
+#
+# If you need your component to add CFLAGS/etc globally for all source
+# files, set CFLAGS += in your component's Makefile.projbuild
+
+# CPPFLAGS used by an compile pass that uses the C preprocessor
+CPPFLAGS = -DESP_PLATFORM -Og -g3 -Wpointer-arith -Werror -Wno-error=unused-function -Wno-error=unused-but-set-variable \
+		-Wno-error=unused-variable -Wall -ffunction-sections -fdata-sections -mlongcalls -nostdlib -MMD -MP
+
+# C flags use by C only
+CFLAGS = $(CPPFLAGS) -std=gnu99 -g3 -fstrict-volatile-bitfields
+
+# CXXFLAGS uses by C++ only
+CXXFLAGS = $(CPPFLAGS) -Og -std=gnu++11 -g3 -fno-exceptions -fstrict-volatile-bitfields
+
+export CFLAGS CPPFLAGS CXXFLAGS
+
 #Set host compiler and binutils
 HOSTCC := $(CC)
 HOSTLD := $(LD)
@@ -158,6 +194,7 @@ APP_BIN:=$(APP_ELF:.elf=.bin)
 # Include any Makefile.projbuild file letting components add
 # configuration at the project level
 define includeProjBuildMakefile
+$(if $(V),$(if $(wildcard $(1)/Makefile.projbuild),$(info including $(1)/Makefile.projbuild...)))
 COMPONENT_PATH := $(1)
 -include $(1)/Makefile.projbuild
 endef

@@ -25,7 +25,7 @@ export COMPONENT_PATH
 
 include $(IDF_PATH)/make/common.mk
 
-#Some of these options are overridable by the components Makefile.
+#Some of these options are overridable by the component's component.mk Makefile
 
 #Name of the component
 COMPONENT_NAME ?= $(lastword $(subst /, ,$(realpath $(COMPONENT_PATH))))
@@ -58,7 +58,8 @@ COMPONENT_ADD_LDFLAGS ?= -l$(COMPONENT_NAME)
 OWN_INCLUDES:=$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS) $(COMPONENT_PRIV_INCLUDEDIRS)))
 COMPONENT_INCLUDES := $(OWN_INCLUDES) $(filter-out $(OWN_INCLUDES),$(COMPONENT_INCLUDES))
 
-#This target is used to collect variable values from inside the main makefile
+#This target is used to collect variable values from inside project.mk
+# see project.mk GetVariable macro for details.
 get_variable:
 	@echo "$(GET_VARIABLE)=$(call $(GET_VARIABLE)) "
 
@@ -82,9 +83,6 @@ clean:
 	$(Q) rm -f $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EXTRA_CLEAN)
 endif
 
-#Also generate dependency files
-CFLAGS+=-MMD -MP
-CXXFLAGS+=-MMD -MP
 #Include all dependency files already generated
 -include $(COMPONENT_OBJS:.o=.d)
 

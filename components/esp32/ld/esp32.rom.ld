@@ -1835,5 +1835,3 @@ PROVIDE ( _xtos_syscall_handler = 0x40000790 );
 PROVIDE ( _xtos_unhandled_exception = 0x4000c024 );
 PROVIDE ( _xtos_unhandled_interrupt = 0x4000c01c );
 PROVIDE ( _xtos_vpri_enabled = 0x3ffe0654 );
-
-PROVIDE ( I2S0 = 0x6000F000 );

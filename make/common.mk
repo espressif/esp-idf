@@ -8,32 +8,6 @@
 # see project_config.mk for details.)
 -include $(PROJECT_PATH)/build/include/config/auto.conf
 
-ifeq ("$(LDFLAGS)","")
-LDFLAGS = -nostdlib \
-	-L$(IDF_PATH)/lib \
-	-L$(IDF_PATH)/ld \
-	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(SRCDIRS)) \
-	-u call_user_start_cpu0	\
-	-Wl,--gc-sections	\
-	-Wl,-static	\
-	-Wl,--start-group	\
-	$(COMPONENT_LDFLAGS) \
-	-lgcc \
-	-Wl,--end-group
-endif
-
-ifeq ("$(CFLAGS)","")
-CFLAGS = -DESP_PLATFORM -Og -std=gnu99 -g3 \
-	-Wpointer-arith -Werror -Wno-error=unused-function -Wno-error=unused-but-set-variable -Wno-error=unused-variable \
-	-Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -Wall -ffunction-sections -fdata-sections $(EXTRA_CFLAGS)
-endif
-
-ifeq ("$(CXXFLAGS)","")
-CXXFLAGS = -DESP_PLATFORM -Og -std=gnu++11 -g3 \
-	-Wpointer-arith -Werror -Wno-error=unused-function -Wno-error=unused-but-set-variable -Wno-error=unused-variable \
-	-Wl,-EL -nostdlib -mlongcalls -Wall -ffunction-sections -fdata-sections $(EXTRA_CFLAGS) -fno-exceptions 
-endif
-
 #Handling of V=1/VERBOSE=1 flag
 #
 # if V=1, $(summary) does nothing and $(details) will echo extra details
