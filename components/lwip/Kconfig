@@ -20,7 +20,7 @@ config LWIP_SO_REUSE
 	bool "Enable SO_REUSEADDR option"
 	default 0
 	help
-		Enabling this option allows to bind to a port which remains in 
+		Enabling this option allows binding to a port which remains in 
 		TIME_WAIT.
 
 endmenu
