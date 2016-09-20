@@ -68,4 +68,14 @@ static inline void cpu_configure_region_protection()
 }
 
 
+
+/*
+ * @brief Set CPU frequency to the value defined in menuconfig
+ *
+ * Called from cpu_start.c, not intended to be called from other places.
+ * This is a temporary function which will be replaced once dynamic
+ * CPU frequency changing is implemented.
+ */
+void esp_set_cpu_freq();
+
 #endif

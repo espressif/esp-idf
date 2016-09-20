@@ -100,7 +100,7 @@
 #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS 1
 
 /* TODO: config freq by menuconfig */
-#define XT_CLOCK_FREQ 80000000
+#define XT_CLOCK_FREQ (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
 
 /* Required for configuration-dependent settings */
 #include "xtensa_config.h"
