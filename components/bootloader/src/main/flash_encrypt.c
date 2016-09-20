@@ -106,7 +106,7 @@ bool flash_encrypt(bootloader_state_t *bs)
    uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_FLASH_CRYPT_CNT);
    uint8_t count = bitcount(flash_crypt_cnt);
    int i = 0;
-   ESP_LOGD(TAG, "flash encrypt cnt %x, bitcount %d\n", flash_crypt_cnt, count);
+   ESP_LOGD(TAG, "flash encrypt cnt %x, bitcount %d", flash_crypt_cnt, count);
 
    if ((count % 2) == 0) {    
        boot_cache_redirect( 0, 64*1024);
@@ -135,7 +135,7 @@ bool flash_encrypt(bootloader_state_t *bs)
 
         /* encrypt write factory bin  */
        if(bs->factory.offset != 0x00) {
-           ESP_LOGD(TAG, "have factory bin\n");
+           ESP_LOGD(TAG, "have factory bin");
            boot_cache_redirect(bs->factory.offset, bs->factory.size);
            bin_len = get_bin_len((uint32_t)MEM_CACHE(bs->factory.offset&0xffff));
            if(bin_len != 0) {           
@@ -147,7 +147,7 @@ bool flash_encrypt(bootloader_state_t *bs)
        }
         /* encrypt write test bin  */
        if(bs->test.offset != 0x00) {
-           ESP_LOGD(TAG, "have test bin\n");
+           ESP_LOGD(TAG, "have test bin");
            boot_cache_redirect(bs->test.offset, bs->test.size);
            bin_len = get_bin_len((uint32_t)MEM_CACHE(bs->test.offset&0xffff));
            if(bin_len != 0) {
@@ -160,7 +160,7 @@ bool flash_encrypt(bootloader_state_t *bs)
         /* encrypt write ota bin  */
        for (i = 0;i<16;i++) {
            if(bs->ota[i].offset != 0x00) {
-               ESP_LOGD(TAG, "have ota[%d] bin\n",i);
+               ESP_LOGD(TAG, "have ota[%d] bin",i);
                boot_cache_redirect(bs->ota[i].offset, bs->ota[i].size);
                bin_len = get_bin_len((uint32_t)MEM_CACHE(bs->ota[i].offset&0xffff));
                if(bin_len != 0) {    
@@ -180,7 +180,7 @@ bool flash_encrypt(bootloader_state_t *bs)
        REG_WRITE(EFUSE_CONF_REG, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */     
        REG_WRITE(EFUSE_CMD_REG,  0x02);    /* efuse_pgm_cmd */     
        while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_pagm_cmd=0 */
-       ESP_LOGW(TAG, "burn  flash_crypt_cnt\n");   
+       ESP_LOGW(TAG, "burn  flash_crypt_cnt");   
        REG_WRITE(EFUSE_CONF_REG, 0x5AA5);  /* efuse_read_op_ena, release force */   
        REG_WRITE(EFUSE_CMD_REG,  0x01);    /* efuse_read_cmd */     
        while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */  

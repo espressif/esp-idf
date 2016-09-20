@@ -117,11 +117,11 @@ bool secure_boot(void){
 	REG_WRITE(EFUSE_CONF_REG, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */     
 	REG_WRITE(EFUSE_CMD_REG,  0x02);    /* efuse_pgm_cmd */    
 	while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_pagm_cmd=0 */   
-	ESP_LOGW(TAG, "burn abstract_done_0\n");   
+	ESP_LOGW(TAG, "burn abstract_done_0");   
 	REG_WRITE(EFUSE_CONF_REG, 0x5AA5);  /* efuse_read_op_ena, release force */   
 	REG_WRITE(EFUSE_CMD_REG,  0x01);    /* efuse_read_cmd */     
 	while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */       
-	ESP_LOGI(TAG, "read EFUSE_BLK0_RDATA6 %x\n", REG_READ(EFUSE_BLK0_RDATA6_REG)); 
+	ESP_LOGI(TAG, "read EFUSE_BLK0_RDATA6 %x", REG_READ(EFUSE_BLK0_RDATA6_REG)); 
 	return true;
 
 }
