@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include "esp_task.h"
+#include "sdkconfig.h"
 
 /* Enable all Espressif-only options */
 #define LWIP_ESP8266
@@ -404,8 +405,9 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
 
 /**
  * SO_REUSE==1: Enable SO_REUSEADDR option.
+ * This option is set via menuconfig.
  */
-#define SO_REUSE                        1
+#define SO_REUSE                        CONFIG_LWIP_SO_REUSE
 
 /*
    ----------------------------------------
