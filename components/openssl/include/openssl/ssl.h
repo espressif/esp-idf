@@ -1,7 +1,7 @@
 #ifndef HEADER_SSL_H
 #define HEADER_SSL_H
 
-#include "ssl_types.h"
+#include "internal/ssl_types.h"
 
 /*
 {
@@ -186,6 +186,15 @@ const SSL_METHOD* SSLv3_client_method(void);
  */
 const SSL_METHOD* TLSv1_1_client_method(void);
 
+/*
+ * TLSv1_1_client_method - create the target SSL context client method
+ *
+ * @param none
+ *
+ * @return the TLSV1.2 version SSL context client method
+ */
+const SSL_METHOD* TLSv1_2_client_method(void);
+
 
 /*
  * SSLv23_server_method - create the target SSL context server method
@@ -204,6 +213,15 @@ const SSL_METHOD* SSLv23_server_method(void);
  * @return the TLSV1.1 version SSL context server method
  */
 const SSL_METHOD* TLSv1_1_server_method(void);
+
+/*
+ * TLSv1_1_server_method - create the target SSL context server method
+ *
+ * @param none
+ *
+ * @return the TLSV1.2 version SSL context server method
+ */
+const SSL_METHOD* TLSv1_2_server_method(void);
 
 /*
  * TLSv1_server_method - create the target SSL context server method
@@ -774,7 +792,7 @@ int SSL_get_wfd(const SSL *ssl);
  * SSL_set_read_ahead - set the SSL if we can read as many as data
  *
  * @param ssl - SSL point
- * @param yes - enbale the function
+ * @param yes - enable the function
  *
  * @return none
  */
@@ -813,7 +831,9 @@ long SSL_CTX_get_read_ahead(SSL_CTX *ctx);
  *
  * @param ssl - SSL point
  *
- * @return SSL context ahead signal
+ * @return
+ *         1 : there are bytes to be read
+ *         0 : no data
  */
 int SSL_has_pending(const SSL *ssl);
 
@@ -840,7 +860,7 @@ int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x);//loads the certificate x int
  *         1 : OK
  *         0 : failed
  */
-int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len, unsigned char *d);
+int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len, const unsigned char *d);
 
 /*
  * SSL_CTX_use_certificate_file - load the certification file into SSL context
@@ -879,7 +899,7 @@ int SSL_CTX_use_certificate_chain_file(SSL_CTX *ctx, const char *file);
  *         1 : OK
  *         0 : failed
  */
-int SSL_CTX_use_PrivateKey_ASN1(int pk, SSL_CTX *ctx, unsigned char *d,  long len);//adds the private key of type pk stored at memory location d (length len) to ctx
+int SSL_CTX_use_PrivateKey_ASN1(int pk, SSL_CTX *ctx, const unsigned char *d,  long len);//adds the private key of type pk stored at memory location d (length len) to ctx
 
 /*
  * SSL_CTX_use_certificate_file - load the private key file into SSL context
@@ -1647,5 +1667,6 @@ const char *SSL_get_psk_identity_hint(SSL *ssl);
  * @return identity
  */
 const char *SSL_get_psk_identity(SSL *ssl);
+
 
 #endif
