@@ -367,6 +367,23 @@ void IRAM_ATTR _lock_release_recursive(_lock_t *lock) {
     lock_release_generic(lock, queueQUEUE_TYPE_RECURSIVE_MUTEX);
 }
 
+// This function is not part on newlib API, it is defined in libc/stdio/local.h
+// It is called as part of _reclaim_reent via a pointer in __cleanup member 
+// of struct _reent.
+// This function doesn't call _fclose_r for _stdin, _stdout, _stderr members
+// of struct reent. Not doing so causes a memory leak each time a task is
+// terminated. We replace __cleanup member with _extra_cleanup_r (below) to work
+// around this.
+extern void _cleanup_r(struct _reent* r);
+
+void _extra_cleanup_r(struct _reent* r)
+{
+    _cleanup_r(r);
+    _fclose_r(r, r->_stdout);
+    _fclose_r(r, r->_stderr);
+    _fclose_r(r, r->_stdin);
+}
+
 static struct _reent s_reent;
 
 /*
