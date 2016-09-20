@@ -250,10 +250,8 @@
 /* The following MPI (bignum) functions have ESP32 hardware support,
    Uncommenting these macros will use the hardware-accelerated
    implementations.
-
-   Disabled as number of limbs limited by bug. Internal TW#7112.
 */
-#define MBEDTLS_MPI_EXP_MOD_ALT
+//#define MBEDTLS_MPI_EXP_MOD_ALT
 #define MBEDTLS_MPI_MUL_MPI_ALT
 
 /**
