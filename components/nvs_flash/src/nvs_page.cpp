@@ -671,7 +671,12 @@ esp_err_t Page::erase()
         mState = PageState::INVALID;
         return rc;
     }
-    return load(sector);
+    mUsedEntryCount = 0;
+    mErasedEntryCount = 0;
+    mFirstUsedEntry = INVALID_ENTRY;
+    mNextFreeEntry = INVALID_ENTRY;
+    mState = PageState::UNINITIALIZED;
+    return ESP_OK;
 }
 
 esp_err_t Page::markFreeing()
