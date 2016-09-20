@@ -16,6 +16,7 @@
 #include <limits.h>
 
 #include "esp_attr.h"
+#include "esp_log.h"
 
 #include "rom/cache.h"
 #include "rom/ets_sys.h"
@@ -23,6 +24,7 @@
 #include "rom/crc.h"
 
 #include "soc/soc.h"
+#include "soc/cpu.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/efuse_reg.h"
@@ -31,11 +33,12 @@
 
 #include "sdkconfig.h"
 
-#include "bootloader_log.h"
 #include "bootloader_config.h"
 
 extern int _bss_start;
 extern int _bss_end;
+
+static const char* TAG = "boot";
 /*
 We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
 flash cache is down and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
@@ -58,36 +61,7 @@ void IRAM_ATTR set_cache_and_start_app(uint32_t drom_addr,
 
 void IRAM_ATTR call_start_cpu0()
 {
-    //Make page 0 access raise an exception
-    //Also some other unused pages so we can catch weirdness
-    //ToDo: this but nicer.
-    asm volatile (\
-                  "movi a4,0x00000000\n" \
-                  "movi a5,0xf\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0x80000000\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0xa0000000\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0xc0000000\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0xe0000000\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0x20000000\n" \
-                  "movi a5,0x0\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "movi a4,0x40000000\n" \
-                  "movi a5,0x2\n" \
-                  "wdtlb a5,a4\n" \
-                  "witlb a5,a4\n" \
-                  "isync\n" \
-                  :::"a4","a5");
+    cpu_configure_region_protection();
 
     //Clear bss
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
@@ -130,7 +104,7 @@ uint32_t get_bin_len(uint32_t pos)
 {   
     uint32_t len = 8 + 16;
     uint8_t i;
-    log_debug("pos %d %x\n",pos,*(uint8_t *)pos);
+    ESP_LOGD(TAG, "pos %d %x",pos,*(uint8_t *)pos);
     if(0xE9 != *(uint8_t *)pos) {
         return 0;
     }
@@ -142,7 +116,7 @@ uint32_t get_bin_len(uint32_t pos)
     } else {
         len += 16;
     }
-    log_debug("bin length = %d\n", len);
+    ESP_LOGD(TAG, "bin length = %d", len);
     return len;
 }
 
@@ -161,7 +135,7 @@ void boot_cache_redirect( uint32_t pos, size_t size )
     uint32_t count = (size + 0xffff) / 0x10000;
     Cache_Read_Disable( 0 );
     Cache_Flush( 0 );
-    log_debug( "mmu set paddr=%08x count=%d", pos_aligned, count );
+    ESP_LOGD(TAG, "mmu set paddr=%08x count=%d", pos_aligned, count );
     cache_flash_mmu_set( 0, 0, 0x3f400000, pos_aligned, 64, count );
     Cache_Read_Enable( 0 );
 }
@@ -183,13 +157,13 @@ bool load_partition_table(bootloader_state_t* bs, uint32_t addr)
     int index = 0;
     char *partition_usage;
 
-    log_info("Partition Table:");
-    log_info("## Label            Usage          Type ST Offset   Length");
+    ESP_LOGI(TAG, "Partition Table:");
+    ESP_LOGI(TAG, "## Label            Usage          Type ST Offset   Length");
 
     while (addr < end) {
-        log_debug("load partition table entry from %x(%08x)", addr, MEM_CACHE(addr));
+        ESP_LOGD(TAG, "load partition table entry from %x(%08x)", addr, MEM_CACHE(addr));
         memcpy(&partition, MEM_CACHE(addr), sizeof(partition));
-        log_debug("type=%x subtype=%x", partition.type, partition.subtype);
+        ESP_LOGD(TAG, "type=%x subtype=%x", partition.type, partition.subtype);
         partition_usage = "unknown";
 
         if (partition.magic == PARTITION_MAGIC) { /* valid partition definition */
@@ -244,14 +218,14 @@ bool load_partition_table(bootloader_state_t* bs, uint32_t addr)
         }
 
         /* print partition type info */
-        log_info("%2d %-16s %-16s %02x %02x %08x %08x", index, partition.label, partition_usage,
+        ESP_LOGI(TAG, "%2d %-16s %-16s %02x %02x %08x %08x", index, partition.label, partition_usage,
                  partition.type, partition.subtype,
                  partition.pos.offset, partition.pos.size);
         index++;
         addr += sizeof(partition);
     }
 
-    log_info("End of partition table");
+    ESP_LOGI(TAG,"End of partition table");
     return true;
 }
 
@@ -274,14 +248,7 @@ static bool ota_select_valid(const ota_select *s)
 
 void bootloader_main()
 {
-    //Run start routine.
-    /*ESP32 2ND bootload start here*/
-    log_info( "\n" );
-    log_info( "**************************************" );
-    log_info( "*       hello espressif ESP32!       *" );
-    log_info( "*        2nd boot is running!        *" );
-    log_info( "*            version (%s)          *", BOOT_VERSION);
-    log_info( "**************************************");
+    ESP_LOGI(TAG, "Espressif ESP32 2nd stage bootloader v. %s", BOOT_VERSION);
 
     struct flash_hdr    fhdr;
     bootloader_state_t bs;
@@ -289,7 +256,7 @@ void bootloader_main()
     ota_select sa,sb;
     memset(&bs, 0, sizeof(bs));
 
-    log_notice( "compile time %s\n", __TIME__ );
+    ESP_LOGI(TAG, "compile time " __TIME__ );
     /* close watch dog here */
     REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
@@ -302,14 +269,14 @@ void bootloader_main()
     print_flash_info(&fhdr);
 
     if (!load_partition_table(&bs, PARTITION_ADD)) {
-        log_error("load partition table error!");
+        ESP_LOGE(TAG, "load partition table error!");
         return;
     }
 
     partition_pos_t load_part_pos;
 
     if (bs.ota_info.offset != 0) {              // check if partition table has OTA info partition
-        //log_error("OTA info sector handling is not implemented");
+        //ESP_LOGE("OTA info sector handling is not implemented");
         boot_cache_redirect(bs.ota_info.offset, bs.ota_info.size );
         memcpy(&sa,MEM_CACHE(bs.ota_info.offset & 0x0000ffff),sizeof(sa));
         memcpy(&sb,MEM_CACHE((bs.ota_info.offset + 0x1000)&0x0000ffff) ,sizeof(sb));
@@ -325,13 +292,13 @@ void bootloader_main()
             spiRet1 = SPIEraseSector(bs.ota_info.offset/0x1000);       
             spiRet2 = SPIEraseSector(bs.ota_info.offset/0x1000+1);       
             if (spiRet1 != SPI_FLASH_RESULT_OK || spiRet2 != SPI_FLASH_RESULT_OK ) {  
-                log_error(SPI_ERROR_LOG);
+                ESP_LOGE(TAG, SPI_ERROR_LOG);
                 return;
             } 
             spiRet1 = SPIWrite(bs.ota_info.offset,(uint32_t *)&sa,sizeof(ota_select));
             spiRet2 = SPIWrite(bs.ota_info.offset + 0x1000,(uint32_t *)&sb,sizeof(ota_select));
             if (spiRet1 != SPI_FLASH_RESULT_OK || spiRet2 != SPI_FLASH_RESULT_OK ) {  
-                log_error(SPI_ERROR_LOG);
+                ESP_LOGE(TAG, SPI_ERROR_LOG);
                 return;
             } 
             Cache_Read_Enable(0);  
@@ -344,7 +311,7 @@ void bootloader_main()
             }else if(ota_select_valid(&sb)) {
                 load_part_pos = bs.ota[(sb.ota_seq - 1) % bs.app_count];
             }else {
-                log_error("ota data partition info error");
+                ESP_LOGE(TAG, "ota data partition info error");
                 return;
             }
         }
@@ -353,15 +320,15 @@ void bootloader_main()
     } else if (bs.test.offset != 0) {           // otherwise, look for test app parition
         load_part_pos = bs.test;
     } else {                                    // nothing to load, bail out
-        log_error("nothing to load");
+        ESP_LOGE(TAG, "nothing to load");
         return;
     }
 
-    log_info("Loading app partition at offset %08x", load_part_pos);
+    ESP_LOGI(TAG, "Loading app partition at offset %08x", load_part_pos);
     if(fhdr.secury_boot_flag == 0x01) {
         /* protect the 2nd_boot  */    
         if(false == secure_boot()){
-            log_error("secure boot failed");
+            ESP_LOGE(TAG, "secure boot failed");
             return;
         }
     }
@@ -369,7 +336,7 @@ void bootloader_main()
     if(fhdr.encrypt_flag == 0x01) {
         /* encrypt flash */            
         if (false == flash_encrypt(&bs)) {
-           log_error("flash encrypt failed");
+           ESP_LOGE(TAG, "flash encrypt failed");
            return;
         }
     }
@@ -395,7 +362,7 @@ void unpack_load_app(const partition_pos_t* partition)
     uint32_t irom_load_addr = 0;
     uint32_t irom_size = 0;
 
-    log_debug("bin_header: %u %u %u %u %08x\n", image_header.magic,
+    ESP_LOGD(TAG, "bin_header: %u %u %u %u %08x", image_header.magic,
               image_header.blocks,
               image_header.spi_mode,
               image_header.spi_size,
@@ -420,7 +387,7 @@ void unpack_load_app(const partition_pos_t* partition)
         }
 
         if (address >= DROM_LOW && address < DROM_HIGH) {
-            log_debug("found drom section, map from %08x to %08x\n", pos,
+            ESP_LOGD(TAG, "found drom section, map from %08x to %08x", pos,
                       section_header.load_addr);
             drom_addr = partition->offset + pos - sizeof(section_header);
             drom_load_addr = section_header.load_addr;
@@ -430,7 +397,7 @@ void unpack_load_app(const partition_pos_t* partition)
         }
 
         if (address >= IROM_LOW && address < IROM_HIGH) {
-            log_debug("found irom section, map from %08x to %08x\n", pos,
+            ESP_LOGD(TAG, "found irom section, map from %08x to %08x", pos,
                       section_header.load_addr);
             irom_addr = partition->offset + pos - sizeof(section_header);
             irom_load_addr = section_header.load_addr;
@@ -439,7 +406,7 @@ void unpack_load_app(const partition_pos_t* partition)
             map = true;
         }
 
-        log_notice("section %d: paddr=0x%08x vaddr=0x%08x size=0x%05x (%6d) %s", section_index, pos, section_header.load_addr, section_header.data_len, section_header.data_len, (load)?"load":(map)?"map":"");
+        ESP_LOGI(TAG, "section %d: paddr=0x%08x vaddr=0x%08x size=0x%05x (%6d) %s", section_index, pos, section_header.load_addr, section_header.data_len, section_header.data_len, (load)?"load":(map)?"map":"");
 
         if (!load) {
             pos += section_header.data_len;
@@ -468,29 +435,29 @@ void IRAM_ATTR set_cache_and_start_app(
     uint32_t irom_size, 
     uint32_t entry_addr)
 {
-    log_debug("configure drom and irom and start\n");
+    ESP_LOGD(TAG, "configure drom and irom and start");
     Cache_Read_Disable( 0 );
     Cache_Read_Disable( 1 );
     Cache_Flush( 0 );
     Cache_Flush( 1 );
     uint32_t drom_page_count = (drom_size + 64*1024 - 1) / (64*1024); // round up to 64k
-    log_debug( "d mmu set paddr=%08x vaddr=%08x size=%d n=%d \n", drom_addr & 0xffff0000, drom_load_addr & 0xffff0000, drom_size, drom_page_count );
+    ESP_LOGV(TAG, "d mmu set paddr=%08x vaddr=%08x size=%d n=%d", drom_addr & 0xffff0000, drom_load_addr & 0xffff0000, drom_size, drom_page_count );
     int rc = cache_flash_mmu_set( 0, 0, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count );
-    log_debug( "rc=%d", rc );
+    ESP_LOGV(TAG, "rc=%d", rc );
     rc = cache_flash_mmu_set( 1, 0, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count );
-    log_debug( "rc=%d", rc );
+    ESP_LOGV(TAG, "rc=%d", rc );
     uint32_t irom_page_count = (irom_size + 64*1024 - 1) / (64*1024); // round up to 64k
-    log_debug( "i mmu set paddr=%08x vaddr=%08x size=%d n=%d\n", irom_addr & 0xffff0000, irom_load_addr & 0xffff0000, irom_size, irom_page_count );
+    ESP_LOGV(TAG, "i mmu set paddr=%08x vaddr=%08x size=%d n=%d", irom_addr & 0xffff0000, irom_load_addr & 0xffff0000, irom_size, irom_page_count );
     rc = cache_flash_mmu_set( 0, 0, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count );
-    log_debug( "rc=%d", rc );
+    ESP_LOGV(TAG, "rc=%d", rc );
     rc = cache_flash_mmu_set( 1, 0, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count );
-    log_debug( "rc=%d", rc );
+    ESP_LOGV(TAG, "rc=%d", rc );
     REG_CLR_BIT( DPORT_PRO_CACHE_CTRL1_REG, (DPORT_PRO_CACHE_MASK_IRAM0) | (DPORT_PRO_CACHE_MASK_IRAM1 & 0) | (DPORT_PRO_CACHE_MASK_IROM0 & 0) | DPORT_PRO_CACHE_MASK_DROM0 | DPORT_PRO_CACHE_MASK_DRAM1 );
     REG_CLR_BIT( DPORT_APP_CACHE_CTRL1_REG, (DPORT_APP_CACHE_MASK_IRAM0) | (DPORT_APP_CACHE_MASK_IRAM1 & 0) | (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 | DPORT_APP_CACHE_MASK_DRAM1 );
     Cache_Read_Enable( 0 );
     Cache_Read_Enable( 1 );
 
-    log_notice("start: 0x%08x\n", entry_addr);
+    ESP_LOGD(TAG, "start: 0x%08x", entry_addr);
     typedef void (*entry_t)(void);
     entry_t entry = ((entry_t) entry_addr);
 
@@ -506,11 +473,11 @@ void print_flash_info(struct flash_hdr* pfhdr)
 
     struct flash_hdr fhdr = *pfhdr;
 
-    log_debug( "[D]: magic %02x\n", fhdr.magic );
-    log_debug( "[D]: blocks %02x\n", fhdr.blocks );
-    log_debug( "[D]: spi_mode %02x\n", fhdr.spi_mode );
-    log_debug( "[D]: spi_speed %02x\n", fhdr.spi_speed );
-    log_debug( "[D]: spi_size %02x\n", fhdr.spi_size );
+    ESP_LOGD(TAG, "magic %02x", fhdr.magic );
+    ESP_LOGD(TAG, "blocks %02x", fhdr.blocks );
+    ESP_LOGD(TAG, "spi_mode %02x", fhdr.spi_mode );
+    ESP_LOGD(TAG, "spi_speed %02x", fhdr.spi_speed );
+    ESP_LOGD(TAG, "spi_size %02x", fhdr.spi_size );
 
     const char* str;
     switch ( fhdr.spi_speed ) {
@@ -534,7 +501,7 @@ void print_flash_info(struct flash_hdr* pfhdr)
         str = "20MHz";
         break;
     }
-    log_notice( "  SPI Speed      : %s", str );
+    ESP_LOGI(TAG, "SPI Speed      : %s", str );
 
     
 
@@ -566,7 +533,7 @@ void print_flash_info(struct flash_hdr* pfhdr)
         str = "DIO";
         break;
     }
-    log_notice( "  SPI Mode       : %s", str );
+    ESP_LOGI(TAG, "SPI Mode       : %s", str );
 
     
 
@@ -595,6 +562,6 @@ void print_flash_info(struct flash_hdr* pfhdr)
         str = "1MB";
         break;
     }
-    log_notice( "  SPI Flash Size : %s", str );
+    ESP_LOGI(TAG, "SPI Flash Size : %s", str );
 #endif
 }
