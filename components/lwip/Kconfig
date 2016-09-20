@@ -16,6 +16,13 @@ config LWIP_THREAD_LOCAL_STORAGE_INDEX
 		Specify the thread-local-storage-pointer index for lwip
 		use.
 
+config LWIP_SO_REUSE
+	bool "Enable SO_REUSEADDR option"
+	default 0
+	help
+		Enabling this option allows to bind to a port which remains in 
+		TIME_WAIT.
+
 endmenu
 
 
