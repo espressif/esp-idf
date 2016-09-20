@@ -95,6 +95,7 @@ test_build_system:
   when: on_success
   only:
     - master
+    - triggers
 
   variables:
     # need user to set SDK_NAME and CONFIG_FILE (may need to set BIN_PATH and APP_NAME later) in before_script
