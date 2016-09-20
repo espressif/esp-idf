@@ -23,6 +23,7 @@
 #include "esp_spi_flash.h"
 #include "compressed_enum_table.hpp"
 #include "intrusive_list.h"
+#include "nvs_item_hash_list.hpp"
 
 namespace nvs
 {
@@ -229,6 +230,7 @@ protected:
     uint16_t mErasedEntryCount = 0;
 
     CachedFindInfo mFindInfo;
+    HashList mHashList;
 
     static const uint32_t HEADER_OFFSET = 0;
     static const uint32_t ENTRY_TABLE_OFFSET = HEADER_OFFSET + 32;

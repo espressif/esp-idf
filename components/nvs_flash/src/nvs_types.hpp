@@ -76,8 +76,26 @@ public:
     };
 
     static const size_t MAX_KEY_LENGTH = sizeof(key) - 1;
+    
+    Item(uint8_t nsIndex, ItemType datatype, uint8_t span, const char* key_)
+    : nsIndex(nsIndex), datatype(datatype), span(span), reserved(0xff)
+    {
+        std::fill_n(reinterpret_cast<uint32_t*>(key),  sizeof(key)  / 4, 0xffffffff);
+        std::fill_n(reinterpret_cast<uint32_t*>(data), sizeof(data) / 4, 0xffffffff);
+        if (key_) {
+            strncpy(key, key_, sizeof(key) - 1);
+            key[sizeof(key) - 1] = 0;
+        } else {
+            key[0] = 0;
+        }
+    }
+    
+    Item()
+    {
+    }
 
-    uint32_t calculateCrc32();
+    uint32_t calculateCrc32() const;
+    uint32_t calculateCrc32WithoutValue() const;
     static uint32_t calculateCrc32(const uint8_t* data, size_t size);
 
     void getKey(char* dst, size_t dstSize)
