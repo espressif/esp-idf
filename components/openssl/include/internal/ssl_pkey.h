@@ -8,4 +8,6 @@ EVP_PKEY *d2i_PrivateKey(int type,
                          const unsigned char **pp,
                          long length);
 
+void EVP_PKEY_free(EVP_PKEY *x);
+
 #endif

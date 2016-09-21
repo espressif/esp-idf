@@ -1,6 +1,8 @@
 #include "ssl_pm.h"
 #include "ssl_dbg.h"
 
+#include <string.h>
+
 /* mbedtls include */
 #include "mbedtls/platform.h"
 #include "mbedtls/net.h"
@@ -55,7 +57,7 @@ void* ssl_zalloc(size_t size)
 
 void *ssl_malloc(size_t size)
 {
-    return zalloc(size);
+    return ssl_zalloc(size);
 }
 
 void ssl_free(void *p)
@@ -140,7 +142,7 @@ int ssl_pm_new(SSL *ssl)
 
         ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, &x509_pm->x509_crt, &pkey_pm->pkey);
         if (ret)
-            SSL_ERR(ret, failed4, "mbedtls_ssl_conf_own_cert:[%d]\n", ret);
+            SSL_ERR(ret, failed3, "mbedtls_ssl_conf_own_cert:[%d]\n", ret);
     }
 
     ret = mbedtls_ssl_setup(&ssl_pm->ssl, &ssl_pm->conf);

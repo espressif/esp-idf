@@ -6,12 +6,80 @@
 
 #define SSL_SEND_DATA_MAX_LENGTH 1460
 
-static int ossl_statem_in_error(const SSL *ssl)
+int ossl_statem_in_error(const SSL *ssl)
 {
     if (ssl->statem.state == MSG_FLOW_ERROR)
         return 1;
 
     return 0;
+}
+
+/*
+ * SSL_want - get the SSL specifical statement
+ *
+ * @param ssl - SSL point
+ *
+ * @return specifical statement
+ */
+int SSL_want(const SSL *ssl)
+{
+    return 0;
+}
+
+/*
+ * SSL_want_nothing - check if SSL want nothing
+ *
+ * @param ssl - SSL point
+ *
+ * @return
+ *         1 : yes
+ *         0 : no
+ */
+int SSL_want_nothing(const SSL *ssl)
+{
+    return (SSL_want(ssl) == SSL_NOTHING);
+}
+
+/*
+ * SSL_want_read - check if SSL want to read
+ *
+ * @param ssl - SSL point
+ *
+ * @return
+ *         1 : yes
+ *         0 : no
+ */
+int SSL_want_read(const SSL *ssl)
+{
+    return (SSL_want(ssl) == SSL_READING);
+}
+
+/*
+ * SSL_want_read - check if SSL want to write
+ *
+ * @param ssl - SSL point
+ *
+ * @return
+ *         1 : yes
+ *         0 : no
+ */
+int SSL_want_write(const SSL *ssl)
+{
+    return (SSL_want(ssl) == SSL_WRITING);
+}
+
+/*
+ * SSL_want_read - check if SSL want to lookup X509 certification
+ *
+ * @param ssl - SSL point
+ *
+ * @return
+ *         1 : yes
+ *         0 : no
+ */
+int SSL_want_x509_lookup(const SSL *ssl)
+{
+    return (SSL_want(ssl) == SSL_WRITING);
 }
 
 /*
@@ -1153,7 +1221,7 @@ char *SSL_state_string(const SSL *ssl)
 
     SSL_ASSERT(ssl);
 
-    if (ossl_state_in_error(ssl))
+    if (ossl_statem_in_error(ssl))
         str = "SSLERR";
     else
     {

@@ -1,4 +1,5 @@
 #include "ssl_cert.h"
+#include "ssl_dbg.h"
 #include "ssl_pm.h"
 
 CERT *ssl_cert_new(void)

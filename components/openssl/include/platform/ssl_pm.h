@@ -2,7 +2,8 @@
 #define _SSL_PM_H_
 
 #include "ssl_types.h"
-#include "esp_common.h"
+#include "esp_types.h"
+#include "esp_system.h"
 
 void* ssl_zalloc(size_t size);
 void *ssl_malloc(size_t size);
