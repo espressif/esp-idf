@@ -26,8 +26,6 @@
 extern "C" {
 #endif
 
-extern const uint32_t GPIO_PIN_MUX_REG[40];
-
 #define GPIO_SEL_0              (BIT(0))                         /* Pin 0 selected */
 #define GPIO_SEL_1              (BIT(1))                         /* Pin 1 selected */
 #define GPIO_SEL_2              (BIT(2))                         /* Pin 2 selected */
@@ -115,6 +113,12 @@ extern const uint32_t GPIO_PIN_MUX_REG[40];
 #define GPIO_ID_PIN(n)              (GPIO_ID_PIN0 + (n))
 #define GPIO_PIN_ADDR(i)            (GPIO_PIN0_REG + i * 4)
 
+#define GPIO_MODE_DEF_INPUT           (BIT0)
+#define GPIO_MODE_DEF_OUTPUT          (BIT1)
+#define GPIO_MODE_DEF_OD              (BIT2)
+
+extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
+
 typedef enum {
     GPIO_NUM_0 = 0,
     GPIO_NUM_1 = 1,
@@ -166,11 +170,11 @@ typedef enum {
 } gpio_int_type_t;
 
 typedef enum {
-    GPIO_MODE_INPUT = (BIT0),                           /* GPIO mode : input only                           */
-    GPIO_MODE_OUTPUT = (BIT1),                          /* GPIO mode : output only mode                     */
-    GPIO_MODE_OUTPUT_OD = ((BIT1)|(BIT2)),              /* GPIO mode : output only with open-drain mode     */
-    GPIO_MODE_INPUT_OUTPUT_OD = ((BIT0)|(BIT1)|(BIT2)), /* GPIO mode : output and input with open-drain mode*/
-    GPIO_MODE_INPUT_OUTPUT = ((BIT0)|(BIT1)),           /* GPIO mode : output and input mode                */
+    GPIO_MODE_INPUT = GPIO_MODE_DEF_INPUT,                                                         /* GPIO mode : input only                           */
+    GPIO_MODE_OUTPUT = GPIO_MODE_DEF_OUTPUT,                                                       /* GPIO mode : output only mode                     */
+    GPIO_MODE_OUTPUT_OD = ((GPIO_MODE_DEF_OUTPUT)|(GPIO_MODE_DEF_OD)),                             /* GPIO mode : output only with open-drain mode     */
+    GPIO_MODE_INPUT_OUTPUT_OD = ((GPIO_MODE_DEF_INPUT)|(GPIO_MODE_DEF_OUTPUT)|(GPIO_MODE_DEF_OD)), /* GPIO mode : output and input with open-drain mode*/
+    GPIO_MODE_INPUT_OUTPUT = ((GPIO_MODE_DEF_INPUT)|(GPIO_MODE_DEF_OUTPUT)),                       /* GPIO mode : output and input mode                */
 } gpio_mode_t;
 
 typedef enum {
@@ -190,13 +194,6 @@ typedef struct {
     gpio_pulldown_t pull_down_en;   /* GPIO pull-down                                       */
     gpio_int_type_t intr_type;      /* GPIO interrupt type                                  */
 } gpio_config_t;
-
-typedef enum {
-    GPIO_DIR_OUTPUT_ONLY,          /* GPIO output         */
-    GPIO_DIR_INPUT_ONLY,           /* GPIO input          */
-    GPIO_DIR_INPUT_AND_OUTPUT,     /* GPIO input + output */
-    GPIO_DIR_DISABLE_IO,           /* GPIO disable        */
-} gpio_direction_t;
 
 typedef enum {
     GPIO_LOW_LEVEL = 0,
@@ -242,21 +239,59 @@ typedef void (*gpio_event_callback)(gpio_num_t gpio_intr_num);
  *                 pGPIOConfig.pull_down_en   : Enable or Disable pull-down
  *                 pGPIOConfig.intr_type : Configure GPIO interrupt trigger type
  * @return	       ESP_OK: success ;
- *                 ESP_ERR_INVALID_ARG: parameters error
- *                 ESP_FAIL : GPIO mutex error
+ *                 ESP_ERR_INVALID_ARG: parameter error
+ *                 ESP_FAIL : GPIO error
  *
  */
 esp_err_t gpio_config(gpio_config_t *pGPIOConfig);
+
+
+/**
+ * @brief      GPIO set interrupt trigger type
+ *
+ * @parameter[in]  gpio_num : GPIO number.
+ *                            If you want to set output level of GPIO16, gpio_num should be GPIO_NUM_16 (16);
+ * @parameter[in]  intr_type: interrupt type, select from gpio_int_type_t
+ *
+ * @return         ESP_OK   : success
+ *                 ESP_ERR_INVALID_ARG: parameter error
+ *
+ */
+esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type);
+
+/**
+ * @brief      enable GPIO module interrupt signal
+ *
+ * @parameter[in]  gpio_num : GPIO number.
+ *                            If you want to set output level of GPIO16, gpio_num should be GPIO_NUM_16 (16);
+ *
+ * @return         ESP_OK   : success
+ *                 ESP_ERR_INVALID_ARG: parameter error
+ *
+ */
+esp_err_t gpio_intr_enable(gpio_num_t gpio_num);
+
+/**
+ * @brief      disable GPIO module interrupt signal
+ *
+ * @parameter[in]  gpio_num : GPIO number.
+ *                            If you want to set output level of GPIO16, gpio_num should be GPIO_NUM_16 (16);
+ *
+ * @return         ESP_OK   : success
+ *                 ESP_ERR_INVALID_ARG: parameter error
+ *
+ */
+esp_err_t gpio_intr_disable(gpio_num_t gpio_num);
 
 /**
  * @brief	   GPIO set output level
  *
  * @parameter[in]  gpio_num : GPIO number.
- *                            If you want to set output level of GPIO16, gpio_num should be  GPIO_NUM_16 (16);
+ *                            If you want to set output level of GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @parameter[in]  level    : Output level. 0: low ; 1: high
  *
  * @return	       ESP_OK   : success
- *                 ESP_FAIL : GPIO mutex error
+ *                 ESP_FAIL : GPIO error
  *
  */
 esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level);
@@ -265,7 +300,7 @@ esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level);
  * @brief	   GPIO get input level
  *
  * @parameter[in]  gpio_num : GPIO number.
- *                            If you want to get level of pin GPIO16, gpio_num should be  GPIO_NUM_16 (16);
+ *                            If you want to get level of pin GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
  * @return	    0  : the GPIO input level is 0
  *              1  : the GPIO input level is 1
@@ -278,29 +313,29 @@ int gpio_get_level(gpio_num_t gpio_num);
  *
  * Configure GPIO direction,such as output_only,input_only,output_and_input
  *
- * @parameter[in]  gpio_num : Configure GPIO pins number,it should  GPIO number.
- *                            If you want to set direction of GPIO16, gpio_num should be  GPIO_NUM_16 (16);
- * @parameter[in]  direction: Configure GPIO direction,such as output_only,input_only,...
+ * @parameter[in]  gpio_num : Configure GPIO pins number,it should be GPIO number.
+ *                            If you want to set direction of GPIO16, gpio_num should be GPIO_NUM_16 (16);
+ * @parameter[in]  mode     : Configure GPIO direction,such as output_only,input_only,...
  *
  * @return	       ESP_OK   : success
  *                 ESP_ERR_INVALID_ARG : fail
- *                 ESP_FAIL : GPIO mutex error
+ *                 ESP_FAIL : GPIO error
  *
  */
-esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_direction_t direction);
+esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 
 /**
  * @brief	   GPIO set pull
  *
  * User this Function,configure GPIO pull mode,such as pull-up,pull-down
  *
- * @parameter[in]  gpio_num : Configure GPIO pins number,it should  GPIO number.
+ * @parameter[in]  gpio_num : Configure GPIO pins number,it should be GPIO number.
  *                            If you want to set pull up or down mode for GPIO16,gpio_num should be GPIO_NUM_16 (16);
  * @parameter[in]  pull     : Configure GPIO pull up/down mode,such as pullup_only,pulldown_only,pullup_and_pulldown,...
  *
  * @return	       ESP_OK   : success
  *                 ESP_ERR_INVALID_ARG : fail
- *                 ESP_FAIL : GPIO mutex error
+ *                 ESP_FAIL : GPIO error
  *
  */
 esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
@@ -313,7 +348,7 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
  * Second , enable the GPIO input,if you use pin_func_as_gpio,you can use gpio_set_direction function
  * Third ,  call gpio_matrix_in function
  *
- * @parameter[in]  GPIO       : Configure GPIO pins number,it should  GPIO number.
+ * @parameter[in]  GPIO       : Configure GPIO pins number,it should be GPIO number.
  *                              If you want to configure GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @parameter[in]  signal_idx : the signal_idx,find the signal index from gpio_sig_map.h
  *
@@ -351,17 +386,28 @@ void gpio_matrix_out(uint32_t GPIO, uint32_t signal_idx, bool out_inv, bool oen_
  *          Users should know that which CPU is running and then pick a INUM that is not used by system.
  *          We can find the information of INUM and interrupt level in soc.h.
  *          TODO: to move INUM options to menu_config
- * @parameter   uint8_t gpio_intr_num     : GPIO interrupt number,check the info in soc.h, and please see the core-isa.h for more details
+ * @parameter   uint32_t gpio_intr_num     : GPIO interrupt number,check the info in soc.h, and please see the core-isa.h for more details
  * @parameter   void (* fn)(void* )       : interrupt handler function.
  *                                          Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
  * @parameter   void * arg                : parameter for handler function
  *
  * @return      ESP_OK : success ;
- *              ESP_FAIL: gpio_mutex error
+ *              ESP_FAIL: gpio_ error
  */
-esp_err_t gpio_intr_handler_register(uint8_t gpio_intr_num, void (*fn)(void*), void * arg);
+esp_err_t gpio_intr_handler_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg);
 
 
+
+
+/**
+ * ***************        ATTENTION       ********************/
+/**
+ *
+ * Each GPIO have their separated registers, so we don't have to use
+ * lock for multi-task issues.
+ * Please make sure that there would be no such situation, in which,
+ * different tasks read-then-write the same GPIO register.
+ */
 
 
 /*----------EXAMPLE TO CONIFGURE GPIO AS OUTPUT ------------ */
@@ -424,8 +470,6 @@ esp_err_t gpio_intr_handler_register(uint8_t gpio_intr_num, void (*fn)(void*), v
  *     gpio_matrix_in( 22, EXT_I2C_SDA_I_IDX, 0);             //set input signal for io_matrix
  *
  */
-
-
 
 /**
  * @}
