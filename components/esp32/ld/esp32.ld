@@ -43,8 +43,12 @@ MEMORY
    */
   rtc_iram_seg(RWX) :                org = 0x400C0000, len = 0x2000
 
-  /* RTC slow memory (data accessible). Persists over deep sleep. */
-  rtc_slow_seg(RW)  :                org = 0x50000000, len = 0x2000
+  /* RTC slow memory (data accessible). Persists over deep sleep.
+
+     Start of RTC slow memory is reserved for ULP co-processor code + data, if enabled.
+  */
+  rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ULP_COPROC_RESERVE_MEM,
+                                     len = 0x2000 - CONFIG_ULP_COPROC_RESERVE_MEM
 }
 
 /* Heap ends at top of dram0_0_seg */
