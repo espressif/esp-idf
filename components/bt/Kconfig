@@ -21,3 +21,9 @@ config BT_ENABLED
 #		This enables classic BT support
 
 endmenu
+
+# Memory reserved at start of DRAM for Bluetooth stack
+config BT_RESERVE_DRAM
+    hex
+	default 0x10000 if MEMMAP_BT
+	default 0
