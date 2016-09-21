@@ -66,7 +66,9 @@ In any case, here are the steps to compile the toolchain yourself.
 
         sudo port install gsed gawk binutils gperf grep gettext ncurses
 
-  - with homebrew (*TODO: provide list of packages for homebrew*)
+  - with homebrew
+
+        brew install gnu-sed gawk binutils gperf grep gettext ncurses
 
 Create a case-sensitive filesystem image::
 
