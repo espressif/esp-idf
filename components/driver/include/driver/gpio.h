@@ -20,6 +20,7 @@
 #include "soc/gpio_struct.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/io_mux_reg.h"
+#include "rom/gpio.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -108,15 +109,11 @@ extern "C" {
 #define GPIO_PRO_CPU_NMI_INTR_ENA  (BIT(3))
 #define GPIO_SDIO_EXT_INTR_ENA     (BIT(4))
 
-#define GPIO_PIN_COUNT              40
-#define GPIO_ID_PIN0                0
-#define GPIO_ID_PIN(n)              (GPIO_ID_PIN0 + (n))
-#define GPIO_PIN_ADDR(i)            (GPIO_PIN0_REG + i * 4)
-
 #define GPIO_MODE_DEF_INPUT           (BIT0)
 #define GPIO_MODE_DEF_OUTPUT          (BIT1)
 #define GPIO_MODE_DEF_OD              (BIT2)
 
+#define GPIO_PIN_COUNT              40
 extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
 
 typedef enum {
@@ -160,13 +157,13 @@ typedef enum {
 } gpio_num_t;
 
 typedef enum {
-    GPIO_PIN_INTR_DISABLE = 0,     /* disable GPIO interrupt                             */
-    GPIO_PIN_INTR_POSEDGE = 1,     /* GPIO interrupt type : rising edge                  */
-    GPIO_PIN_INTR_NEGEDGE = 2,     /* GPIO interrupt type : falling edge                 */
-    GPIO_PIN_INTR_ANYEDGE = 3,     /* GPIO interrupt type : both rising and falling edge */
-    GPIO_PIN_INTR_LOW_LEVEL = 4,   /* GPIO interrupt type : input low level trigger      */
-    GPIO_PIN_INTR_HIGH_LEVEL = 5,  /* GPIO interrupt type : input high level trigger     */
-    GPIO_PIN_INTR_MAX,
+    GPIO_INTR_DISABLE = 0,     /* disable GPIO interrupt                             */
+    GPIO_INTR_POSEDGE = 1,     /* GPIO interrupt type : rising edge                  */
+    GPIO_INTR_NEGEDGE = 2,     /* GPIO interrupt type : falling edge                 */
+    GPIO_INTR_ANYEDGE = 3,     /* GPIO interrupt type : both rising and falling edge */
+    GPIO_INTR_LOW_LEVEL = 4,   /* GPIO interrupt type : input low level trigger      */
+    GPIO_INTR_HIGH_LEVEL = 5,  /* GPIO interrupt type : input high level trigger     */
+    GPIO_INTR_MAX,
 } gpio_int_type_t;
 
 typedef enum {
@@ -341,44 +338,26 @@ esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 
 /**
- * @brief	    bind input signal to the GPIO
- *
- * bind input signal to the GPIO,when you want to bind the signal to the GPIO
- * First , configure the pad as GPIO,use the gpio_config function or pin_func_as_gpio function
- * Second , enable the GPIO input,if you use pin_func_as_gpio,you can use gpio_set_direction function
- * Third ,  call gpio_matrix_in function
- *
- * @parameter[in]  GPIO       : Configure GPIO pins number,it should be GPIO number.
- *                              If you want to configure GPIO16, gpio_num should be GPIO_NUM_16 (16);
- * @parameter[in]  signal_idx : the signal_idx,find the signal index from gpio_sig_map.h
- *
- * @parameter[in]  inverse    : the signal input inverse, default inverse=0
- *
- * @return	  None
- *
- */
-void gpio_matrix_in(uint32_t GPIO, uint32_t signal_idx, bool inverse) ROMFN_ATTR;
+  * @brief enable GPIO wake-up function.
+  *
+  * @param gpio_num_t gpio_num : GPIO number.
+  *
+  * @param gpio_int_type_t intr_type : only GPIO_INTR_LOLEVEL\GPIO_INTR_HILEVEL can be used
+  *
+  * @return ESP_OK: success
+  *         ESP_ERR_INVALID_ARG: parameter error
+  */
+esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 
 /**
- * @brief	    bind output signal to the GPIO
- *
- * bind output signal to the GPIO,when you want to bind the signal to the GPIO
- * First , configure the pad as GPIO,use the gpio_config function or pin_func_as_gpio function
- * Second , enable the GPIO output,if you use pin_func_as_gpio,you can use gpio_set_direction function
- * Third ,  call gpio_matrix_out function
- *
- * @parameter[in]  GPIO       : Configure GPIO pins number,it should GPIO number.
- *                              If you want to configure GPIO16,gpio_num should be GPIO_NUM_16 (16);
- * @parameter[in]  signal_idx : the signal_idx,find the signal index from gpio_sig_map.h
- *
- * @parameter[in]  out_inv    : the signal output inverse, default out_inv=0
- *
- * @parameter[in]  oen_inv    : the signal output enable inverse, default oen_inv=0
- *
- * @return	  None
- *
- */
-void gpio_matrix_out(uint32_t GPIO, uint32_t signal_idx, bool out_inv, bool oen_inv) ROMFN_ATTR;
+  * @brief disable GPIO wake-up function.
+  *
+  * @param gpio_num_t gpio_num: GPIO number
+  *
+  * @return ESP_OK: success
+  *         ESP_ERR_INVALID_ARG: parameter error
+  */
+esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
 
 /**
  * @brief   register GPIO interrupt handler, the handler is an ISR.
@@ -392,27 +371,24 @@ void gpio_matrix_out(uint32_t GPIO, uint32_t signal_idx, bool out_inv, bool oen_
  * @parameter   void * arg                : parameter for handler function
  *
  * @return      ESP_OK : success ;
- *              ESP_FAIL: gpio_ error
+ *              ESP_FAIL: gpio error
  */
-esp_err_t gpio_intr_handler_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg);
-
-
-
+esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg);
 
 /**
  * ***************        ATTENTION       ********************/
 /**
  *
- * Each GPIO have their separated registers, so we don't have to use
- * lock for multi-task issues.
- * Please make sure that there would be no such situation, in which,
- * different tasks read-then-write the same GPIO register.
+ * Each GPIO has its own separate configuration register, so we do not use
+ * a lock to serialize access to them. This works under the assumption that
+ * no situation will occur where two tasks try to configure the same GPIO
+ * pin simultaneously. It is up to the application developer to guarantee this.
  */
 
 
 /*----------EXAMPLE TO CONIFGURE GPIO AS OUTPUT ------------ */
 /*     gpio_config_t io_conf;
- *     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;             //disable interrupt
+ *     io_conf.intr_type = GPIO_INTR_DISABLE;             //disable interrupt
  *     io_conf.mode = GPIO_MODE_OUTPUT;                       //set as output mode
  *     io_conf.pin_bit_mask = GPIO_SEL_18 | GPIO_SEL_19;      //bit mask of the pins that you want to set,e.g.GPIO18/19
  *     io_conf.pull_down_en = 0;                              //disable pull-down mode
@@ -420,14 +396,14 @@ esp_err_t gpio_intr_handler_register(uint32_t gpio_intr_num, void (*fn)(void*), 
  *     gpio_config(&io_conf);                                 //configure GPIO with the given settings
  **/
 /*----------EXAMPLE TO CONIFGURE GPIO AS OUTPUT ------------ */
-/*     io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;             //set posedge interrupt
+/*     io_conf.intr_type = GPIO_INTR_POSEDGE;             //set posedge interrupt
  *     io_conf.mode = GPIO_MODE_INPUT;                        //set as input
  *     io_conf.pin_bit_mask = GPIO_SEL_4 | GPIO_SEL_5;        //bit mask of the pins that you want to set, e.g.,GPIO4/5
  *     io_conf.pull_down_en = 0;                              //disable pull-down mode
  *     io_conf.pull_up_en = 1;                                //enable pull-up mode
  *     gpio_config(&io_conf);                                 //configure GPIO with the given settings
  *----------EXAMPLE TO SET ISR HANDLER ----------------------*/
-/*     gpio_intr_handler_register(18,gpio_intr_test,NULL);    //hook the isr handler for GPIO interrupt
+/*     gpio_isr_register(18,gpio_intr_test,NULL);    //hook the isr handler for GPIO interrupt
  *                                                            //the first parameter is INUM, you can pick one form interrupt level 1/2 which is not used by the system.
  *                                                            //NOTE1:user should arrange the INUMs that used, better not to use a same INUM for different interrupt.
  *                                                            //NOTE2:do not pick the INUM that already occupied by the system.
@@ -446,20 +422,20 @@ esp_err_t gpio_intr_handler_register(uint32_t gpio_intr_num, void (*fn)(void*), 
  *  do {
  *      if(gpio_num < 32) {
  *          if(gpio_intr_status & BIT(gpio_num)) { //gpio0-gpio31
- *              ets_printf("Intr Gpio%d ,val: %d\n",gpio_num,gpio_get_level(gpio_num));
- *              //This is a 'isr' handler, you should post an event to process it in RTOS queue.
+ *              ets_printf("Intr GPIO%d ,val: %d\n",gpio_num,gpio_get_level(gpio_num));
+ *              //This is an isr handler, you should post an event to process it in RTOS queue.
  *          }
  *      } else {
  *          if(gpio_intr_status_h & BIT(gpio_num - 32)) {
- *              ets_printf("Intr Gpio%d, val : %d\n",gpio_num,gpio_get_level(gpio_num));
- *              //This is a 'isr' handler, you should post an event to process it in RTOS queue.
+ *              ets_printf("Intr GPIO%d, val : %d\n",gpio_num,gpio_get_level(gpio_num));
+ *              //This is an isr handler, you should post an event to process it in RTOS queue.
  *          }
  *      }
  *  } while(++gpio_num < GPIO_PIN_COUNT);
  *}
  *----EXAMPLE OF I2C CONFIG AND PICK SIGNAL FOR IO MATRIX---*/
 /*     gpio_config_t io_conf;
- *     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;             //disable interrupt
+ *     io_conf.intr_type = GPIO_INTR_DISABLE;                 //disable interrupt
  *     io_conf.mode = GPIO_MODE_INPUT_OUTPUT_OD;              //set as output mode
  *     io_conf.pin_bit_mask = GPIO_SEL_21 | GPIO_SEL_22;      //bit mask of the pins that you want to set,e.g.GPIO21/22
  *     io_conf.pull_down_en = 0;                              //disable pull-down mode

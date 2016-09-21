@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <esp_types.h>
-#include "rom/ets_sys.h"
 #include "esp_err.h"
 #include "esp_intr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
-#include "soc/soc.h"
 #include "driver/gpio.h"
+#include "soc/soc.h"
 
 //TODO: move debug options to menuconfig
 #define GPIO_DBG_ENABLE     (0)
@@ -105,7 +104,7 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
     if(!is_valid_gpio(gpio_num))
         return ESP_ERR_INVALID_ARG;
-    if(intr_type >= GPIO_PIN_INTR_MAX) {
+    if(intr_type >= GPIO_INTR_MAX) {
         GPIO_ERROR("Unknown GPIO intr:%u\n",intr_type);
         return ESP_ERR_INVALID_ARG;
     }
@@ -320,7 +319,7 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
     return ESP_OK;
 }
 
-esp_err_t gpio_intr_handler_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg)
+esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg)
 {
     if(fn == NULL)
         return ESP_ERR_INVALID_ARG;
@@ -332,12 +331,12 @@ esp_err_t gpio_intr_handler_register(uint32_t gpio_intr_num, void (*fn)(void*), 
 }
 
 /*only level interrupt can be used for wake-up function*/
-esp_err_t gpio_pin_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
+esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
     if(!is_valid_gpio(gpio_num))
         return ESP_ERR_INVALID_ARG;
     esp_err_t ret = ESP_OK;
-    if((intr_type == GPIO_PIN_INTR_LOW_LEVEL) || (intr_type == GPIO_PIN_INTR_HIGH_LEVEL)) {
+    if((intr_type == GPIO_INTR_LOW_LEVEL) || (intr_type == GPIO_INTR_HIGH_LEVEL)) {
         GPIO.pin[gpio_num].int_type = intr_type;
         GPIO.pin[gpio_num].wakeup_enable = 0x1;
     } else {
@@ -347,7 +346,7 @@ esp_err_t gpio_pin_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
     return ret;
 }
 
-esp_err_t gpio_pin_wakeup_disable(gpio_num_t gpio_num)
+esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num)
 {
     if(!is_valid_gpio(gpio_num))
         return ESP_ERR_INVALID_ARG;
