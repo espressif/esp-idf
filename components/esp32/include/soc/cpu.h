@@ -76,6 +76,6 @@ static inline void cpu_configure_region_protection()
  * This is a temporary function which will be replaced once dynamic
  * CPU frequency changing is implemented.
  */
-void esp_set_cpu_freq();
+void esp_set_cpu_freq(void);
 
 #endif

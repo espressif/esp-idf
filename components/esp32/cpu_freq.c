@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include "rom/ets_sys.h"
+#include "rom/uart.h"
 #include "sdkconfig.h"
 
 typedef enum{
@@ -42,10 +43,15 @@ extern void rtc_set_cpu_freq(xtal_freq_t xtal_freq, cpu_freq_t cpu_freq);
  * components which want to be notified of CPU frequency
  * changes.
  */
-void esp_set_cpu_freq()
+void esp_set_cpu_freq(void)
 {
     uint32_t freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ;
     phy_get_romfunc_addr();
+
+    // freq will be changed to 40MHz in rtc_init_lite,
+    // wait uart tx finish, otherwise some uart output will be lost
+    uart_tx_wait_idle(0);
+
     rtc_init_lite();
     cpu_freq_t freq = CPU_80M;
     switch(freq_mhz) {
@@ -62,6 +68,11 @@ void esp_set_cpu_freq()
             freq = CPU_80M;
             break;
     }
+
+    // freq will be changed to freq in rtc_set_cpu_freq,
+    // wait uart tx finish, otherwise some uart output will be lost
+    uart_tx_wait_idle(0);
+
     rtc_set_cpu_freq(XTAL_AUTO, freq);
     ets_update_cpu_frequency(freq_mhz);
 }
