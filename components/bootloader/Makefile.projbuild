@@ -45,4 +45,7 @@ $(COMPONENT_PATH)/src/sdkconfig: $(PROJECT_PATH)/sdkconfig
 bootloader-flash: $(BOOTLOADER_BIN)
 	$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src flash MAKEFLAGS= V=$(V)
 
+else
+CFLAGS += -D BOOTLOADER_BUILD=1 -I $(IDF_PATH)/components/esp32/include 
+
 endif

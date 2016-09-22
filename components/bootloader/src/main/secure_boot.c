@@ -16,6 +16,7 @@
 
 #include "esp_attr.h"
 #include "esp_types.h"
+#include "esp_log.h"
 
 #include "rom/cache.h"
 #include "rom/ets_sys.h"
@@ -29,12 +30,13 @@
 
 #include "sdkconfig.h"
 
-#include "bootloader_log.h"
 #include "bootloader_config.h"
+
+static const char* TAG = "secure_boot";
 
 /**
  *  @function :     secure_boot_generate
- *  @description:   generate boot abstruct & iv 
+ *  @description:   generate boot abstract & iv
  *
  *  @inputs:        bool
  */
@@ -53,17 +55,17 @@ bool secure_boot_generate(uint32_t bin_len){
 	spiRet = SPIEraseSector(0);
 	if (spiRet != SPI_FLASH_RESULT_OK)
 	{   
-		log_error(SPI_ERROR_LOG);
+		ESP_LOGE(TAG, SPI_ERROR_LOG);
 		return false;
 	}
 	/* write iv to flash, 0x0000, 128 bytes (1024 bits) */
 	spiRet = SPIWrite(0, buf, 128);
 	if (spiRet != SPI_FLASH_RESULT_OK) 
 	{
-		log_error(SPI_ERROR_LOG);
+		ESP_LOGE(TAG, SPI_ERROR_LOG);
 		return false;
 	}
-	log_debug("write iv to flash.\n");
+	ESP_LOGD(TAG, "write iv to flash.");
 	Cache_Read_Enable(0);
 	/* read 4K code image from flash, for test */
 	for (i = 0; i < bin_len; i+=128) {
@@ -77,10 +79,10 @@ bool secure_boot_generate(uint32_t bin_len){
 	/* write abstract to flash, 0x0080, 64 bytes (512 bits) */
 	spiRet = SPIWrite(0x80, buf, 64);
 	if (spiRet != SPI_FLASH_RESULT_OK) {
-		log_error(SPI_ERROR_LOG);
+		ESP_LOGE(TAG, SPI_ERROR_LOG);
 		return false;
 	}
-	log_debug("write abstract to flash.\n");
+	ESP_LOGD(TAG, "write abstract to flash.");
 	Cache_Read_Enable(0);
 	return true;
 }
@@ -88,7 +90,7 @@ bool secure_boot_generate(uint32_t bin_len){
 
 /**
  *  @function :     secure_boot
- *  @description:   protect boot code inflash
+ *  @description:   protect boot code in flash
  *
  *  @inputs:        bool
  */
@@ -96,17 +98,17 @@ bool secure_boot(void){
 	uint32_t bin_len = 0;
 	if (REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0)
 	{     
-		log_info("already secure boot !\n"); 
+		ESP_LOGD(TAG, "already secure boot !");
 		return true;
 	} else {  
 		boot_cache_redirect( 0, 64*1024);
 		bin_len = get_bin_len((uint32_t)MEM_CACHE(0x1000));
 		if (bin_len == 0) {
-			log_error("boot len is error");
+			ESP_LOGE(TAG, "boot len is error");
 			return false;
 		}
 		if (false == secure_boot_generate(bin_len)){
-			log_error("secure boot generate failed");
+			ESP_LOGE(TAG, "secure boot generate failed");
 			return false;
 		}  
 	}  
@@ -115,11 +117,11 @@ bool secure_boot(void){
 	REG_WRITE(EFUSE_CONF_REG, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */     
 	REG_WRITE(EFUSE_CMD_REG,  0x02);    /* efuse_pgm_cmd */    
 	while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_pagm_cmd=0 */   
-	log_warn("burn abstract_done_0\n");   
+	ESP_LOGW(TAG, "burn abstract_done_0");   
 	REG_WRITE(EFUSE_CONF_REG, 0x5AA5);  /* efuse_read_op_ena, release force */   
 	REG_WRITE(EFUSE_CMD_REG,  0x01);    /* efuse_read_cmd */     
 	while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */       
-	log_debug("read EFUSE_BLK0_RDATA6 %x\n", REG_READ(EFUSE_BLK0_RDATA6_REG)); 
+	ESP_LOGI(TAG, "read EFUSE_BLK0_RDATA6 %x", REG_READ(EFUSE_BLK0_RDATA6_REG)); 
 	return true;
 
 }
