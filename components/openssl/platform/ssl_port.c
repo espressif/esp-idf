@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
 #include "ssl_port.h"
+#include "string.h"
 #include "malloc.h"
 
 /*********************************************************************************************/
@@ -42,6 +42,11 @@ void ssl_free(void *p)
 void* ssl_memcpy(void *to, const void *from, size_t size)
 {
     return memcpy(to, from, size);
+}
+
+size_t ssl_strlen(const char *src)
+{
+    return strlen(src);
 }
 
 void ssl_speed_up_enter(void)

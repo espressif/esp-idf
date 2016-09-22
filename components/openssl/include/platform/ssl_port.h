@@ -20,7 +20,9 @@
 void* ssl_zalloc(size_t size);
 void *ssl_malloc(size_t size);
 void ssl_free(void *p);
+
 void* ssl_memcpy(void *to, const void *from, size_t size);
+size_t ssl_strlen(const char *src);
 
 void ssl_speed_up_enter(void);
 void ssl_speed_up_exit(void);

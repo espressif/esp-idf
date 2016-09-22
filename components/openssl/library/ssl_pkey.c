@@ -107,3 +107,58 @@ failed2:
 failed1:
     return NULL;
 }
+
+/*
+ * SSL_CTX_use_certificate - set the SSL context private key
+ *
+ * @param ctx - SSL context point
+ * @param x   - private key point
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
+{
+    SSL_ASSERT(ctx);
+    SSL_ASSERT(pkey);
+
+    ctx->cert->pkey = pkey;
+
+    return 1;
+}
+
+/*
+ * SSL_CTX_use_PrivateKey_ASN1 - load private key into the SSL context
+ *
+ * @param type - private key type
+ * @param ctx  - SSL context point
+ * @param d    - private key context point
+ * @param len  - private key context bytes
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_CTX_use_PrivateKey_ASN1(int type, SSL_CTX *ctx,
+                                const unsigned char *d, long len)
+{
+    int ret;
+    EVP_PKEY *pkey;
+
+    pkey = d2i_PrivateKey(0, &ctx->cert->pkey, &d, len);
+    if (!pkey)
+        SSL_RET(failed1, "d2i_PrivateKey\n");
+
+    ret = SSL_CTX_use_PrivateKey(ctx, pkey);
+    if (!ret)
+        SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
+
+    return 1;
+
+failed2:
+    EVP_PKEY_free(pkey);
+failed1:
+    return 0;
+}
+

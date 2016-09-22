@@ -16,8 +16,6 @@
 #include "ssl_port.h"
 #include "ssl_dbg.h"
 
-#include <string.h>
-
 /* mbedtls include */
 #include "mbedtls/platform.h"
 #include "mbedtls/net.h"
@@ -69,7 +67,9 @@ int ssl_pm_new(SSL *ssl)
     struct ssl_pm *ssl_pm;
     int ret;
 
-    char *pers;
+    const unsigned char pers[] = "OpenSSL PM";
+    size_t pers_len = sizeof(pers);
+
     int endpoint;
     int mode;
     int version;
@@ -84,16 +84,6 @@ int ssl_pm_new(SSL *ssl)
     if (!ssl_pm)
         SSL_ERR(ret, failed1, "ssl_malloc\n");
 
-    if (method->endpoint) {
-        pers = "server";
-        endpoint = MBEDTLS_SSL_IS_SERVER;
-    } else {
-        pers = "client";
-        endpoint = MBEDTLS_SSL_IS_CLIENT;
-    }
-
-    //max_content_len = 4096;
-
     mbedtls_net_init(&ssl_pm->fd);
     mbedtls_net_init(&ssl_pm->cl_fd);
 
@@ -102,10 +92,15 @@ int ssl_pm_new(SSL *ssl)
     mbedtls_entropy_init(&ssl_pm->entropy);
     mbedtls_ssl_init(&ssl_pm->ssl);
 
-    ret = mbedtls_ctr_drbg_seed(&ssl_pm->ctr_drbg, mbedtls_entropy_func, &ssl_pm->entropy, (const unsigned char *)pers, strlen(pers));
+    ret = mbedtls_ctr_drbg_seed(&ssl_pm->ctr_drbg, mbedtls_entropy_func, &ssl_pm->entropy, pers, pers_len);
     if (ret)
         SSL_ERR(ret, failed1, "mbedtls_ctr_drbg_seed:[-0x%x]\n", -ret);
 
+    if (method->endpoint) {
+        endpoint = MBEDTLS_SSL_IS_SERVER;
+    } else {
+        endpoint = MBEDTLS_SSL_IS_CLIENT;
+    }
     ret = mbedtls_ssl_config_defaults(&ssl_pm->conf, endpoint, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
     if (ret)
         SSL_ERR(ret, failed2, "mbedtls_ssl_config_defaults:[-0x%x]\n", -ret);

@@ -98,3 +98,77 @@ failed2:
 failed1:
     return NULL;
 }
+
+/*
+ * SSL_CTX_add_client_CA - set SSL context client CA certification
+ *
+ * @param ctx - SSL context point
+ * @param x   - client CA certification point
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
+{
+    SSL_ASSERT(ctx);
+    SSL_ASSERT(x);
+
+    ctx->client_CA = x;
+
+    return 1;
+}
+
+/*
+ * SSL_CTX_use_certificate - set the SSL context certification
+ *
+ * @param ctx - SSL context point
+ * @param x   - X509 certification point
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
+{
+    SSL_ASSERT(ctx);
+    SSL_ASSERT(x);
+
+    ctx->cert->x509 = x;
+
+    return 1;
+}
+
+/*
+ * SSL_CTX_use_certificate_ASN1 - load certification into the SSL context
+ *
+ * @param ctx - SSL context point
+ * @param len - certification context bytes
+ * @param d   - certification context point
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
+                                 const unsigned char *d)
+{
+    int ret;
+    X509 *cert;
+
+    cert = d2i_X509(&ctx->cert->x509, d, len);
+    if (!cert)
+        SSL_RET(failed1, "d2i_X509\n");
+
+    ret = SSL_CTX_use_certificate(ctx, cert);
+    if (!ret)
+        SSL_RET(failed2, "SSL_CTX_use_certificate\n");
+
+    return 1;
+
+failed2:
+    X509_free(cert);
+failed1:
+    return 0;
+}
+
