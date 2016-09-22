@@ -1,14 +1,24 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #ifndef _SSL_PM_H_
 #define _SSL_PM_H_
 
 #include "ssl_types.h"
-#include "esp_types.h"
-#include "esp_system.h"
+#include "ssl_port.h"
 
-void* ssl_zalloc(size_t size);
-void *ssl_malloc(size_t size);
-void ssl_free(void *p);
-void* ssl_memcpy(void *to, const void *from, size_t size);
+#define LOCAL_ATRR
 
 int ssl_pm_new(SSL *ssl);
 void ssl_pm_free(SSL *ssl);
@@ -28,15 +38,15 @@ OSSL_HANDSHAKE_STATE ssl_pm_get_state(const SSL *ssl);
 
 void ssl_pm_set_bufflen(SSL *ssl, int len);
 
-void* x509_pm_new(void);
-void x509_pm_free(void *pm);
-int x509_pm_load_crt(void *pm, const unsigned char *buffer, int len);
-void x509_pm_unload_crt(void *pm);
-void x509_pm_start_ca(void *ssl, void *pm);
+int x509_pm_new(X509 *x);
+void x509_pm_free(X509 *x);
+int x509_pm_load(X509 *x, const unsigned char *buffer, int len);
+void x509_pm_unload(X509 *x);
+void x509_pm_start_ca(X509 *x);
 
-void* pkey_pm_new(void);
-void pkey_pm_free(void *pm);
-int pkey_pm_load_crt(void *pm, const unsigned char *buffer, int len);
-void pkey_pm_unload_crt(void *pm);
+int pkey_pm_new(EVP_PKEY *pkey);
+void pkey_pm_free(EVP_PKEY *pkey);
+int pkey_pm_load(EVP_PKEY *pkey, const unsigned char *buffer, int len);
+void pkey_pm_unload(EVP_PKEY *pkey);
 
 #endif

@@ -1,8 +1,21 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #ifndef _SSL_TYPES_H_
 #define _SSL_TYPES_H_
 
 #include "ssl_code.h"
-#include <stddef.h>
 
 typedef void SSL_CIPHER;
 
@@ -47,15 +60,25 @@ typedef struct x509_st X509;
 struct evp_pkey_st;
 typedef struct evp_pkey_st EVP_PKEY;
 
+struct x509_method_st;
+typedef struct x509_method_st X509_METHOD;
+
+struct pkey_method_st;
+typedef struct pkey_method_st PKEY_METHOD;
+
 struct evp_pkey_st {
 
     void *pkey_pm;
+
+    const PKEY_METHOD *method;
 };
 
 struct x509_st {
 
     /* X509 certification platform private point */
     void *x509_pm;
+
+    const X509_METHOD *method;
 };
 
 struct cert_st {
@@ -111,6 +134,8 @@ struct ssl_ctx_st
     long session_timeout;
 
     int read_ahead;
+
+    int read_buffer_len;
 };
 
 struct ssl_st
@@ -183,8 +208,34 @@ struct ssl_method_func_st {
     OSSL_HANDSHAKE_STATE (*ssl_get_state)(const SSL *ssl);
 };
 
+struct x509_method_st {
+
+    int (*x509_new)(X509 *x);
+
+    void (*x509_free)(X509 *x);
+
+    int (*x509_load)(X509 *x, const unsigned char *buf, int len);
+
+    void (*x509_unload)(X509 *x);
+};
+
+struct pkey_method_st {
+
+    int (*pkey_new)(EVP_PKEY *pkey);
+
+    void (*pkey_free)(EVP_PKEY *pkey);
+
+    int (*pkey_load)(EVP_PKEY *pkey, const unsigned char *buf, int len);
+
+    void (*pkey_unload)(EVP_PKEY *pkey);
+};
+
 typedef int (*next_proto_cb)(SSL *ssl, unsigned char **out,
                              unsigned char *outlen, const unsigned char *in,
                              unsigned int inlen, void *arg);
+
+#define SSL_METHOD_CALL(f, s, ...)        s->method->func->ssl_##f(s, ##__VA_ARGS__)
+#define X509_METHOD_CALL(f, x, ...)       x->method->x509_##f(x, ##__VA_ARGS__)
+#define EVP_PKEY_METHOD_CALL(f, k, ...)   k->method->pkey_##f(k, ##__VA_ARGS__)
 
 #endif

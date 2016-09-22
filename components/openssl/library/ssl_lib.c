@@ -1,11 +1,35 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "ssl_lib.h"
 #include "ssl_pkey.h"
+#include "ssl_x509.h"
 #include "ssl_cert.h"
 #include "ssl_dbg.h"
-#include "ssl_pm.h"
+#include "ssl_port.h"
 
 #define SSL_SEND_DATA_MAX_LENGTH 1460
 
+/*
+ * ossl_statem_in_error - Discover whether the current connection is in the error state
+ *
+ * @param ssl - SSL point
+ *
+ * @return
+ *         1 : Yes
+ *         0 : no
+ */
 int ossl_statem_in_error(const SSL *ssl)
 {
     if (ssl->statem.state == MSG_FLOW_ERROR)
@@ -23,7 +47,7 @@ int ossl_statem_in_error(const SSL *ssl)
  */
 int SSL_want(const SSL *ssl)
 {
-    return 0;
+    return ssl->rwstate;
 }
 
 /*
@@ -131,7 +155,7 @@ OSSL_HANDSHAKE_STATE SSL_get_state(const SSL *ssl)
 
     SSL_ASSERT(ssl);
 
-    state = ssl->method->func->ssl_get_state(ssl);
+    state = SSL_METHOD_CALL(get_state, ssl);
 
     return state;
 }
@@ -154,15 +178,15 @@ SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
 
     client_ca = sk_X509_NAME_new_null();
     if (!client_ca)
-        SSL_ERR(-2, go_failed1, "ssl_ctx_new:ctx:[%d]\n", ret);
+        SSL_ERR(-2, go_failed1, "sk_X509_NAME_new_null\n");
 
     cert = ssl_cert_new();
     if (!cert)
-        SSL_ERR(-2, go_failed2, "ssl_ctx_new:ctx:[%d]\n", ret);
+        SSL_ERR(-2, go_failed2, "ssl_cert_new\n");
 
     ctx = (SSL_CTX *)ssl_zalloc(sizeof(SSL_CTX));
     if (!ctx)
-        SSL_ERR(-2, go_failed3, "ssl_ctx_new:ctx:[%d]\n", ret);
+        SSL_ERR(-2, go_failed3, "ssl_ctx_new:ctx\n");
 
     ctx->method = method;
     ctx->cert = cert;
@@ -215,6 +239,8 @@ int SSL_CTX_set_ssl_version(SSL_CTX *ctx, const SSL_METHOD *meth)
 
     ctx->method = meth;
 
+    ctx->version = meth->version;
+
     return 1;
 }
 
@@ -258,9 +284,11 @@ SSL *SSL_new(SSL_CTX *ctx)
     ssl->version = ctx->version;
     ssl->options = ctx->options;
 
-    ret = ssl->method->func->ssl_new(ssl);
+    ret = SSL_METHOD_CALL(new, ssl);
     if (ret)
         SSL_RET(failed2, "ssl_new\n");
+
+    ssl->rwstate = SSL_NOTHING;
 
     return ssl;
 
@@ -281,7 +309,7 @@ void SSL_free(SSL *ssl)
 {
     SSL_ASSERT(ssl);
 
-    ssl->method->func->ssl_free(ssl);
+    SSL_METHOD_CALL(free, ssl);
 
     ssl_free(ssl);
 }
@@ -302,7 +330,7 @@ int SSL_do_handshake(SSL *ssl)
 
     SSL_ASSERT(ssl);
 
-    ret = ssl->method->func->ssl_handshake(ssl);
+    ret = SSL_METHOD_CALL(handshake, ssl);
 
     return ret;
 }
@@ -357,7 +385,7 @@ int SSL_shutdown(SSL *ssl)
 
     if (SSL_get_state(ssl) != TLS_ST_OK) return 0;
 
-    ret = ssl->method->func->ssl_shutdown(ssl);
+    ret = SSL_METHOD_CALL(shutdown, ssl);
 
     return ret;
 }
@@ -381,9 +409,9 @@ int SSL_clear(SSL *ssl)
     if (1 != ret)
         SSL_ERR(0, go_failed1, "SSL_shutdown\n");
 
-    ssl->method->func->ssl_free(ssl);
+    SSL_METHOD_CALL(free, ssl);
 
-    ret = ssl->method->func->ssl_new(ssl);
+    ret = SSL_METHOD_CALL(new, ssl);
     if (!ret)
         SSL_ERR(0, go_failed1, "ssl_new\n");
 
@@ -413,7 +441,11 @@ int SSL_read(SSL *ssl, void *buffer, int len)
     SSL_ASSERT(buffer);
     SSL_ASSERT(len);
 
-    ret = ssl->method->func->ssl_read(ssl, buffer, len);
+    ssl->rwstate = SSL_READING;
+
+    ret = SSL_METHOD_CALL(read, ssl, buffer, len);
+
+    ssl->rwstate = SSL_NOTHING;
 
     return ret;
 }
@@ -440,6 +472,8 @@ int SSL_write(SSL *ssl, const void *buffer, int len)
     SSL_ASSERT(buffer);
     SSL_ASSERT(len);
 
+    ssl->rwstate = SSL_WRITING;
+
     send_bytes = len;
     pbuf = (const unsigned char *)buffer;
 
@@ -451,12 +485,14 @@ int SSL_write(SSL *ssl, const void *buffer, int len)
         else
             bytes = send_bytes;
 
-        ret = ssl->method->func->ssl_send(ssl, buffer, len);
+        ret = SSL_METHOD_CALL(send, ssl, buffer, len);
         if (ret > 0) {
             pbuf += ret;
             send_bytes -= ret;
         }
     } while (ret > 0 && send_bytes);
+
+    ssl->rwstate = SSL_NOTHING;
 
     send_bytes = len - send_bytes;
     if (send_bytes >= 0)
@@ -518,11 +554,11 @@ int SSL_set_ssl_method(SSL *ssl, const SSL_METHOD *method)
         if (1 != ret)
             SSL_ERR(0, go_failed1, "SSL_shutdown\n");
 
-        ssl->method->func->ssl_free(ssl);
+        SSL_METHOD_CALL(free, ssl);
 
         ssl->method = method;
 
-        ret = ssl->method->func->ssl_new(ssl);
+        ret = SSL_METHOD_CALL(new, ssl);
         if (!ret)
             SSL_ERR(0, go_failed1, "ssl_new\n");
     } else {
@@ -579,7 +615,7 @@ int SSL_pending(const SSL *ssl)
 
     SSL_ASSERT(ssl);
 
-    ret = ssl->method->func->ssl_pending(ssl);
+    ret = SSL_METHOD_CALL(pending, ssl);
 
     return ret;
 }
@@ -705,7 +741,7 @@ int SSL_get_fd(const SSL *ssl)
 
     SSL_ASSERT(ssl);
 
-    ret = ssl->method->func->ssl_get_fd(ssl, 0);
+    ret = SSL_METHOD_CALL(get_fd, ssl, 0);
 
     return ret;
 }
@@ -725,7 +761,7 @@ int SSL_get_rfd(const SSL *ssl)
 
     SSL_ASSERT(ssl);
 
-    ret = ssl->method->func->ssl_get_fd(ssl, 0);
+    ret = SSL_METHOD_CALL(get_fd, ssl, 0);
 
     return ret;
 }
@@ -745,7 +781,7 @@ int SSL_get_wfd(const SSL *ssl)
 
     SSL_ASSERT(ssl);
 
-    ret = ssl->method->func->ssl_get_fd(ssl, 0);
+    ret = SSL_METHOD_CALL(get_fd, ssl, 0);
 
     return ret;
 }
@@ -767,7 +803,7 @@ int SSL_set_fd(SSL *ssl, int fd)
     SSL_ASSERT(ssl);
     SSL_ASSERT(fd >= 0);
 
-    ssl->method->func->ssl_set_fd(ssl, fd, 0);
+    SSL_METHOD_CALL(set_fd, ssl, fd, 0);
 
     return 1;
 }
@@ -789,7 +825,7 @@ int SSL_set_rfd(SSL *ssl, int fd)
     SSL_ASSERT(ssl);
     SSL_ASSERT(fd >= 0);
 
-    ssl->method->func->ssl_set_fd(ssl, fd, 0);
+    SSL_METHOD_CALL(set_fd, ssl, fd, 0);
 
     return 1;
 }
@@ -811,7 +847,7 @@ int SSL_set_wfd(SSL *ssl, int fd)
     SSL_ASSERT(ssl);
     SSL_ASSERT(fd >= 0);
 
-    ssl->method->func->ssl_set_fd(ssl, fd, 0);
+    SSL_METHOD_CALL(set_fd, ssl, fd, 0);
 
     return 1;
 }
@@ -1451,7 +1487,7 @@ void SSL_CTX_set_default_read_buffer_len(SSL_CTX *ctx, size_t len)
     SSL_ASSERT(ctx);
     SSL_ASSERT(len);
 
-    ctx->method->func->ssl_set_bufflen(NULL, len);
+    ctx->read_buffer_len = len;
 }
 
 /*
@@ -1467,7 +1503,7 @@ void SSL_set_default_read_buffer_len(SSL *ssl, size_t len)
     SSL_ASSERT(ssl);
     SSL_ASSERT(len);
 
-    ssl->method->func->ssl_set_bufflen(ssl, len);
+    SSL_METHOD_CALL(set_bufflen, ssl, len);
 }
 
 /*
@@ -1687,4 +1723,19 @@ long SSL_set_timeout(SSL *ssl, long t)
     ssl->session.timeout = t;
 
     return t;
+}
+
+/*
+ * SSL_set_verify - set the SSL verifying of the SSL context
+ *
+ * @param ctx             - SSL point
+ * @param mode            - verifying mode
+ * @param verify_callback - verifying callback function
+ *
+ * @return none
+ */
+void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
+{
+    SSL_ASSERT(ssl);
+    SSL_ASSERT(verify_callback);
 }

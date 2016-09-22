@@ -1,4 +1,19 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "ssl_pm.h"
+#include "ssl_port.h"
 #include "ssl_dbg.h"
 
 #include <string.h>
@@ -30,55 +45,21 @@ struct ssl_pm
 
 struct x509_pm
 {
+    int load;
+
     mbedtls_x509_crt x509_crt;
 };
 
 struct pkey_pm
 {
+    int load;
+
     mbedtls_pk_context pkey;
 };
 
 
 unsigned int max_content_len;
 
-
-/*********************************************************************************************/
-/********************************* SSL general interface *************************************/
-
-void* ssl_zalloc(size_t size)
-{
-    void *p = malloc(size);
-
-    if (p)
-        memset(p, 0, size);
-
-    return p;
-}
-
-void *ssl_malloc(size_t size)
-{
-    return ssl_zalloc(size);
-}
-
-void ssl_free(void *p)
-{
-    free(p);
-}
-
-void* ssl_memcpy(void *to, const void *from, size_t size)
-{
-    return memcpy(to, from, size);
-}
-
-void ssl_speed_up_enter(void)
-{
-
-}
-
-void ssl_speed_up_exit(void)
-{
-
-}
 
 /*********************************************************************************************/
 /************************************ SSL arch interface *************************************/
@@ -90,13 +71,18 @@ int ssl_pm_new(SSL *ssl)
 
     char *pers;
     int endpoint;
+    int mode;
+    int version;
 
     SSL_CTX *ctx = ssl->ctx;
     const SSL_METHOD *method = ssl->method;
 
-    ssl_pm = malloc(sizeof(struct ssl_pm));
+    struct x509_pm *x509_pm;
+    struct pkey_pm *pkey_pm;
+
+    ssl_pm = ssl_malloc(sizeof(struct ssl_pm));
     if (!ssl_pm)
-        return -1;
+        SSL_ERR(ret, failed1, "ssl_malloc\n");
 
     if (method->endpoint) {
         pers = "server";
@@ -124,21 +110,34 @@ int ssl_pm_new(SSL *ssl)
     if (ret)
         SSL_ERR(ret, failed2, "mbedtls_ssl_config_defaults:[-0x%x]\n", -ret);
 
+    if (TLS1_2_VERSION == ssl->version)
+        version = MBEDTLS_SSL_MINOR_VERSION_3;
+    else if (TLS1_1_VERSION == ssl->version)
+        version = MBEDTLS_SSL_MINOR_VERSION_2;
+    else if (TLS1_VERSION == ssl->version)
+        version = MBEDTLS_SSL_MINOR_VERSION_1;
+    else
+        version = MBEDTLS_SSL_MINOR_VERSION_0;
+
+    mbedtls_ssl_conf_max_version(&ssl_pm->conf, MBEDTLS_SSL_MAJOR_VERSION_3, version);
+
     mbedtls_ssl_conf_rng(&ssl_pm->conf, mbedtls_ctr_drbg_random, &ssl_pm->ctr_drbg);
+
     mbedtls_ssl_conf_dbg(&ssl_pm->conf, NULL, NULL);
 
-    if (ctx->client_CA->x509_pm) {
-        struct x509_pm *x509_pm = (struct x509_pm *)ctx->client_CA->x509_pm;
+    x509_pm = (struct x509_pm *)ctx->client_CA->x509_pm;
+    if (x509_pm->load) {
+        mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, &x509_pm->x509_crt, NULL);
 
-         mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, &x509_pm->x509_crt, NULL);
-         mbedtls_ssl_conf_authmode(&ssl_pm->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+        mode = MBEDTLS_SSL_VERIFY_REQUIRED;
     } else {
-        mbedtls_ssl_conf_authmode(&ssl_pm->conf, MBEDTLS_SSL_VERIFY_NONE);
+        mode = MBEDTLS_SSL_VERIFY_NONE;
     }
-    if (ctx->cert->x509 &&
-        ctx->cert->pkey) {
-        struct x509_pm *x509_pm = (struct x509_pm *)ctx->cert->x509->x509_pm;
-        struct pkey_pm *pkey_pm = (struct pkey_pm *)ctx->cert->pkey->pkey_pm;
+    mbedtls_ssl_conf_authmode(&ssl_pm->conf, mode);
+
+    pkey_pm = (struct pkey_pm *)ctx->cert->pkey->pkey_pm;
+    if (pkey_pm->load) {
+        x509_pm = (struct x509_pm *)ctx->cert->x509->x509_pm;
 
         ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, &x509_pm->x509_crt, &pkey_pm->pkey);
         if (ret)
@@ -332,21 +331,24 @@ OSSL_HANDSHAKE_STATE ssl_pm_get_state(const SSL *ssl)
     return state;
 }
 
-void* x509_pm_new(void)
+int x509_pm_new(X509 *x)
 {
-    return ssl_malloc(sizeof(struct x509_pm));
+    struct x509_pm *x509_pm;
+
+    x509_pm = ssl_malloc(sizeof(struct x509_pm));
+    if (!x509_pm)
+        return -1;
+
+    x->x509_pm = x509_pm;
+
+    return 0;
 }
 
-void x509_pm_free(void *pm)
-{
-    ssl_free(pm);
-}
-
-int x509_pm_load_crt(void *pm, const unsigned char *buffer, int len)
+int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
 {
     int ret;
     unsigned char *load_buf;
-    struct x509_pm *x509_pm = (struct x509_pm *)pm;
+    struct x509_pm *x509_pm = (struct x509_pm *)x->x509_pm;
 
     load_buf = ssl_malloc(len + 1);
     if (!load_buf)
@@ -362,34 +364,48 @@ int x509_pm_load_crt(void *pm, const unsigned char *buffer, int len)
     if (ret)
         SSL_RET(failed1, "");
 
+    x509_pm->load = 1;
+
     return 0;
 
 failed1:
     return -1;
 }
 
-void x509_pm_unload_crt(void *pm)
+void x509_pm_unload(X509 *x)
 {
-    struct x509_pm *x509_pm = (struct x509_pm *)pm;
+    struct x509_pm *x509_pm = (struct x509_pm *)x->x509_pm;
 
     mbedtls_x509_crt_free(&x509_pm->x509_crt);
+
+    x509_pm->load = 0;
 }
 
-void* pkey_pm_new(void)
+void x509_pm_free(X509 *x)
 {
-    return ssl_malloc(sizeof(struct pkey_pm));
+    x509_pm_unload(x);
+
+    ssl_free(x->x509_pm);
 }
 
-void pkey_pm_free(void *pm)
+int pkey_pm_new(EVP_PKEY *pkey)
 {
-    ssl_free(pm);
+    struct pkey_pm *pkey_pm;
+
+    pkey_pm = ssl_malloc(sizeof(struct pkey_pm));
+    if (!pkey_pm)
+        return -1;
+
+    pkey->pkey_pm = pkey_pm;
+
+    return 0;
 }
 
-int pkey_pm_load_crt(void *pm, const unsigned char *buffer, int len)
+int pkey_pm_load(EVP_PKEY *pkey, const unsigned char *buffer, int len)
 {
     int ret;
     unsigned char *load_buf;
-    struct pkey_pm *pkey_pm = (struct pkey_pm *)pm;
+    struct pkey_pm *pkey_pm = (struct pkey_pm *)pkey->pkey_pm;
 
     load_buf = ssl_malloc(len + 1);
     if (!load_buf)
@@ -405,17 +421,28 @@ int pkey_pm_load_crt(void *pm, const unsigned char *buffer, int len)
     if (ret)
         SSL_RET(failed1, "");
 
+    pkey_pm->load = 1;
+
     return 0;
 
 failed1:
     return -1;
 }
 
-void pkey_pm_unload_crt(void *pm)
+void pkey_pm_unload(EVP_PKEY *pkey)
 {
-    struct pkey_pm *pkey_pm = (struct pkey_pm *)pm;
+    struct pkey_pm *pkey_pm = (struct pkey_pm *)pkey->pkey_pm;
 
     mbedtls_pk_free(&pkey_pm->pkey);
+
+    pkey_pm->load = 0;
+}
+
+void pkey_pm_free(EVP_PKEY *pkey)
+{
+    pkey_pm_unload(pkey);
+
+    ssl_free(pkey->pkey_pm);
 }
 
 void ssl_pm_set_bufflen(SSL *ssl, int len)

@@ -1,4 +1,3 @@
 # Anyone compiling mbedTLS code needs the name of the
 # alternative config file
-CFLAGS += -DMBEDTLS_CONFIG_FILE='"mbedtls/esp_config.h"'
 

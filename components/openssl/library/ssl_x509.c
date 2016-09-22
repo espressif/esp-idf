@@ -1,54 +1,100 @@
-#include "ssl_x509.h"
-#include "ssl_dbg.h"
-#include "ssl_pm.h"
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "ssl_x509.h"
+#include "ssl_methods.h"
+#include "ssl_dbg.h"
+#include "ssl_port.h"
+
+/*
+ * sk_X509_NAME_new_null - create a X509 certification object
+ *
+ * @param none
+ *
+ * @return X509 certification object point or NULL if failed
+ */
 X509* sk_X509_NAME_new_null(void)
 {
-    return ssl_malloc(sizeof(X509));
-}
-
-X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len)
-{
-    X509 *x509_crt;
-    void *x509_pm;
     int ret;
+    X509 *x;
 
-    SSL_ASSERT(cert);
-    SSL_ASSERT(buffer);
-    SSL_ASSERT(len);
+    x = ssl_malloc(sizeof(X509));
+    if (!x)
+        SSL_RET(failed1, "ssl_malloc\n");
 
-    x509_crt = sk_X509_NAME_new_null();
-    if (!x509_crt)
-        SSL_RET(failed1, "");
+    x->method = X509_method();
 
-    x509_pm = x509_pm_new();
-    if (!x509_pm)
-        SSL_RET(failed2, "");
-
-    ret = x509_pm_load_crt(x509_pm, buffer, len);
+    ret = x->method->x509_new(x);
     if (ret)
-        SSL_RET(failed3, "");
+        SSL_RET(failed2, "x509_new\n");
 
-    x509_crt->x509_pm = x509_pm;
-    if (cert)
-        *cert = x509_crt;
+    return x;
 
-    return x509_crt;
-
-failed3:
-    x509_pm_free(x509_pm);
 failed2:
-    ssl_free(x509_crt);
+    ssl_free(x);
 failed1:
     return NULL;
 }
 
-void X509_free(X509 *cert)
+/*
+ * X509_free - free a X509 certification object
+ *
+ * @param x - X509 certification object point
+ *
+ * @return none
+ */
+void X509_free(X509 *x)
 {
-    if (cert->x509_pm) {
-        x509_pm_unload_crt(cert->x509_pm);
-        x509_pm_free(cert->x509_pm);
-    }
-    ssl_free(cert);
+    X509_METHOD_CALL(free, x);
+
+    ssl_free(x);
 };
 
+/*
+ * d2i_X509 - load a character certification context into system context. If '*cert' is pointed to the
+ *            certification, then load certification into it. Or create a new X509 certification object
+ *
+ * @param cert   - a point pointed to X509 certification
+ * @param buffer - a point pointed to the certification context memory point
+ * @param length - certification bytes
+ *
+ * @return X509 certification object point or NULL if failed
+ */
+X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len)
+{
+    int ret;
+    X509 *x;
+
+    SSL_ASSERT(buffer);
+    SSL_ASSERT(len);
+
+    if (cert && *cert) {
+        x = *cert;
+    } else {
+        x = sk_X509_NAME_new_null();
+        if (!x)
+            SSL_RET(failed1, "sk_X509_NAME_new_null\n");
+    }
+
+    ret = X509_METHOD_CALL(load, x, buffer, len);
+    if (ret)
+        SSL_RET(failed2, "x509_load\n");
+
+    return x;
+
+failed2:
+    X509_free(x);
+failed1:
+    return NULL;
+}
