@@ -132,6 +132,26 @@ int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
 }
 
 /*
+ * SSL_CTX_use_certificate - set the SSL private key
+ *
+ * @param ctx - SSL point
+ * @param x   - private key point
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_use_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
+{
+    SSL_ASSERT(ctx);
+    SSL_ASSERT(pkey);
+
+    ssl->cert->pkey = pkey;
+
+    return 1;
+}
+
+/*
  * SSL_CTX_use_PrivateKey_ASN1 - load private key into the SSL context
  *
  * @param type - private key type
@@ -166,6 +186,40 @@ failed1:
 }
 
 /*
+ * SSL_use_PrivateKey_ASN1 - load private key into the SSL
+ *
+ * @param type - private key type
+ * @param ctx  - SSL context point
+ * @param d    - private key context point
+ * @param len  - private key context bytes
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_use_PrivateKey_ASN1(int type, SSL *ssl,
+                                const unsigned char *d, long len)
+{
+    int ret;
+    EVP_PKEY *pkey;
+
+    pkey = d2i_PrivateKey(0, &ssl->cert->pkey, &d, len);
+    if (!pkey)
+        SSL_RET(failed1, "d2i_PrivateKey\n");
+
+    ret = SSL_use_PrivateKey(ssl, pkey);
+    if (!ret)
+        SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
+
+    return 1;
+
+failed2:
+    EVP_PKEY_free(pkey);
+failed1:
+    return 0;
+}
+
+/*
  * SSL_CTX_use_certificate_file - load the private key file into SSL context
  *
  * @param ctx  - SSL context point
@@ -177,6 +231,22 @@ failed1:
  *         0 : failed
  */
 int SSL_CTX_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
+{
+    return 0;
+}
+
+/*
+ * SSL_use_PrivateKey_file - load the private key file into SSL
+ *
+ * @param ctx  - SSL point
+ * @param file - private key file name
+ * @param type - private key encoding type
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
 {
     return 0;
 }

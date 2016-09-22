@@ -169,6 +169,26 @@ int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
 }
 
 /*
+ * SSL_CTX_use_certificate - set the SSL certification
+ *
+ * @param ctx - SSL point
+ * @param x   - X509 certification point
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_use_certificate(SSL *ssl, X509 *x)
+{
+    SSL_ASSERT(ctx);
+    SSL_ASSERT(x);
+
+    ssl->cert->x509 = x;
+
+    return 1;
+}
+
+/*
  * SSL_get_certificate - get the SSL certification point
  *
  * @param ssl - SSL point
@@ -177,6 +197,8 @@ int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
  */
 X509 *SSL_get_certificate(const SSL *ssl)
 {
+    SSL_ASSERT(ssl);
+
     return ssl->cert->x509;
 }
 
@@ -214,6 +236,39 @@ failed1:
 }
 
 /*
+ * SSL_use_certificate_ASN1 - load certification into the SSL
+ *
+ * @param ctx - SSL point
+ * @param len - certification context bytes
+ * @param d   - certification context point
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_use_certificate_ASN1(SSL *ssl, int len,
+                             const unsigned char *d)
+{
+    int ret;
+    X509 *cert;
+
+    cert = d2i_X509(&ssl->cert->x509, d, len);
+    if (!cert)
+        SSL_RET(failed1, "d2i_X509\n");
+
+    ret = SSL_use_certificate(ssl, cert);
+    if (!ret)
+        SSL_RET(failed2, "SSL_use_certificate\n");
+
+    return 1;
+
+failed2:
+    X509_free(cert);
+failed1:
+    return 0;
+}
+
+/*
  * SSL_CTX_use_certificate_file - load the certification file into SSL context
  *
  * @param ctx  - SSL context point
@@ -225,6 +280,22 @@ failed1:
  *         0 : failed
  */
 int SSL_CTX_use_certificate_file(SSL_CTX *ctx, const char *file, int type)
+{
+    return 0;
+}
+
+/*
+ * SSL_use_certificate_file - load the certification file into SSL
+ *
+ * @param ctx  - SSL point
+ * @param file - certification file name
+ * @param type - certification encoding type
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_use_certificate_file(SSL *ssl, const char *file, int type)
 {
     return 0;
 }
