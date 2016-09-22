@@ -20,7 +20,6 @@
 typedef void SSL_CIPHER;
 
 typedef void X509_STORE_CTX;
-typedef void X509_NAME;
 typedef void X509_STORE;
 
 typedef void RSA;
@@ -28,7 +27,19 @@ typedef void RSA;
 typedef void STACK;
 typedef void BIO;
 
-#define STACK_OF(x) x
+#define STACK_OF(type)  struct stack_st_##type
+
+#define SKM_DEFINE_STACK_OF(t1, t2, t3) \
+    STACK_OF(t1); \
+    static ossl_inline STACK_OF(t1) *sk_##t1##_new_null(void) \
+    { \
+        return (STACK_OF(t1) *)OPENSSL_sk_new_null(); \
+    } \
+
+#define DEFINE_STACK_OF(t) SKM_DEFINE_STACK_OF(t, t, t)
+
+struct stack_st;
+typedef struct stack_st OPENSSL_STACK;
 
 struct ssl_method_st;
 typedef struct ssl_method_st SSL_METHOD;
@@ -65,6 +76,10 @@ typedef struct x509_method_st X509_METHOD;
 
 struct pkey_method_st;
 typedef struct pkey_method_st PKEY_METHOD;
+
+struct stack_st {
+    char *data;
+};
 
 struct evp_pkey_st {
 

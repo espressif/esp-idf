@@ -120,6 +120,21 @@ int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
 }
 
 /*
+ * SSL_add_client_CA - add CA client certification into the SSL
+ *
+ * @param ssl - SSL point
+ * @param x   - CA certification point
+ *
+ * @return
+ *        1 : OK
+ *        0 : failed
+ */
+int SSL_add_client_CA(SSL *ssl, X509 *x)
+{
+
+}
+
+/*
  * SSL_CTX_use_certificate - set the SSL context certification
  *
  * @param ctx - SSL context point
@@ -137,6 +152,18 @@ int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
     ctx->cert->x509 = x;
 
     return 1;
+}
+
+/*
+ * SSL_get_certificate - get the SSL certification point
+ *
+ * @param ssl - SSL point
+ *
+ * @return SSL certification point
+ */
+X509 *SSL_get_certificate(const SSL *ssl)
+{
+    return ssl->cert->x509;
 }
 
 /*

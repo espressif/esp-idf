@@ -17,6 +17,8 @@
 
 #include "ssl_types.h"
 
+DEFINE_STACK_OF(X509_NAME)
+
 X509* sk_X509_NAME_new_null(void);
 
 X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len);
