@@ -1745,3 +1745,61 @@ long SSL_get_verify_result(const SSL *ssl)
 
     return SSL_METHOD_CALL(get_verify_result, ssl);
 }
+
+/*
+ * SSL_CTX_get_verify_depth - get the SSL verifying depth of the SSL context
+ *
+ * @param ctx - SSL context point
+ *
+ * @return verifying depth
+ */
+int SSL_CTX_get_verify_depth(const SSL_CTX *ctx)
+{
+    SSL_ASSERT(ctx);
+
+    return ctx->param.depth;
+}
+
+/*
+ * SSL_CTX_set_verify_depth - set the SSL verify depth of the SSL context
+ *
+ * @param ctx   - SSL context point
+ * @param depth - verifying depth
+ *
+ * @return one
+ */
+void SSL_CTX_set_verify_depth(SSL_CTX *ctx, int depth)
+{
+    SSL_ASSERT(ctx);
+
+    ctx->param.depth = depth;
+}
+
+/*
+ * SSL_get_verify_depth - get the SSL verifying depth of the SSL
+ *
+ * @param ctx - SSL point
+ *
+ * @return verifying depth
+ */
+int SSL_get_verify_depth(const SSL *ssl)
+{
+    SSL_ASSERT(ssl);
+
+    return ssl->param.depth;
+}
+
+/*
+ * SSL_set_verify_depth - set the SSL verify depth of the SSL
+ *
+ * @param ctx   - SSL point
+ * @param depth - verifying depth
+ *
+ * @return one
+ */
+void SSL_set_verify_depth(SSL *ssl, int depth)
+{
+    SSL_ASSERT(ssl);
+
+    ssl->param.depth = depth;
+}

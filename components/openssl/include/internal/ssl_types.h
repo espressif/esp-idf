@@ -76,6 +76,9 @@ typedef struct cert_st CERT;
 struct x509_st;
 typedef struct x509_st X509;
 
+struct X509_VERIFY_PARAM_st;
+typedef struct X509_VERIFY_PARAM_st X509_VERIFY_PARAM;
+
 struct evp_pkey_st;
 typedef struct evp_pkey_st EVP_PKEY;
 
@@ -139,6 +142,12 @@ struct ssl_session_st {
     long time;
 };
 
+struct X509_VERIFY_PARAM_st {
+
+    int depth;
+
+};
+
 struct ssl_ctx_st
 {
     int version;
@@ -164,6 +173,8 @@ struct ssl_ctx_st
     int read_ahead;
 
     int read_buffer_len;
+
+    X509_VERIFY_PARAM param;
 };
 
 struct ssl_st
@@ -194,6 +205,8 @@ struct ssl_st
     X509 *client_CA;
 
     long verify_result;
+
+    X509_VERIFY_PARAM param;
 
     int err;
 
