@@ -74,7 +74,6 @@ int ssl_pm_new(SSL *ssl)
     int mode;
     int version;
 
-    SSL_CTX *ctx = ssl->ctx;
     const SSL_METHOD *method = ssl->method;
 
     struct x509_pm *x509_pm;
@@ -185,9 +184,9 @@ int ssl_pm_handshake(SSL *ssl)
     }
     ssl_speed_up_exit();
 
-    if (!mbed_ret)
+    if (!mbed_ret) {
         ret = 1;
-    else {
+    } else {
         ret = 0;
         SSL_DEBUG(1, "mbedtls_ssl_handshake [-0x%x]\n", -mbed_ret);
     }

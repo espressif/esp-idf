@@ -144,6 +144,8 @@ struct ssl_session_st {
     long timeout;
 
     long time;
+
+    X509 *peer;
 };
 
 struct X509_VERIFY_PARAM_st {

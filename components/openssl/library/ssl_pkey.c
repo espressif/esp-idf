@@ -177,7 +177,7 @@ int SSL_CTX_use_PrivateKey_ASN1(int type, SSL_CTX *ctx,
     if (!ret)
         SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
 
-    ctx->cert->pkey->ref++;
+    ctx->cert->pkey->ref = 1;
 
     return 1;
 
@@ -216,7 +216,7 @@ int SSL_use_PrivateKey_ASN1(int type, SSL *ssl,
     if (!ret)
         SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
 
-    ssl->cert->pkey->ref++;
+    ssl->cert->pkey->ref = 1;
 
     return 1;
 

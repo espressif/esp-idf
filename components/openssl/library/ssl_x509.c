@@ -218,7 +218,6 @@ int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
 {
     int ret;
     X509 *cert;
-    const unsigned char *pbuf;
 
     cert = d2i_X509(&ctx->cert->x509, d, len);
     if (!cert)
@@ -228,7 +227,7 @@ int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
     if (!ret)
         SSL_RET(failed2, "SSL_CTX_use_certificate\n");
 
-    ctx->cert->x509->ref++;
+    ctx->cert->x509->ref = 1;
 
     return 1;
 
@@ -266,7 +265,7 @@ int SSL_use_certificate_ASN1(SSL *ssl, int len,
     if (!ret)
         SSL_RET(failed2, "SSL_use_certificate\n");
 
-    ssl->cert->x509->ref++;
+    ssl->cert->x509->ref = 1;
 
     return 1;
 
@@ -306,4 +305,18 @@ int SSL_CTX_use_certificate_file(SSL_CTX *ctx, const char *file, int type)
 int SSL_use_certificate_file(SSL *ssl, const char *file, int type)
 {
     return 0;
+}
+
+/*
+ * SSL_get_peer_certificate - get peer certification
+ *
+ * @param ssl - SSL point
+ *
+ * @return certification
+ */
+X509 *SSL_get_peer_certificate(const SSL *ssl)
+{
+    SSL_ASSERT(ssl);
+
+    return ssl->session.peer;
 }
