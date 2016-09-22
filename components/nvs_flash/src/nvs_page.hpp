@@ -194,11 +194,15 @@ protected:
 
     esp_err_t alterEntryState(size_t index, EntryState state);
 
+    esp_err_t alterEntryRangeState(size_t begin, size_t end, EntryState state);
+
     esp_err_t alterPageState(PageState state);
 
     esp_err_t readEntry(size_t index, Item& dst) const;
 
     esp_err_t writeEntry(const Item& item);
+    
+    esp_err_t writeEntryData(const uint8_t* data, size_t size);
 
     esp_err_t eraseEntry(size_t index);
     

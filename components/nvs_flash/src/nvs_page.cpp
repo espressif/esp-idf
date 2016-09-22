@@ -108,6 +108,27 @@ esp_err_t Page::writeEntry(const Item& item)
 
     return ESP_OK;
 }
+    
+esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
+{
+    assert(size % ENTRY_SIZE == 0);
+    assert(mNextFreeEntry != INVALID_ENTRY);
+    assert(mFirstUsedEntry != INVALID_ENTRY);
+    const uint16_t count = size / ENTRY_SIZE;
+    
+    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), reinterpret_cast<const uint32_t*>(data), static_cast<uint32_t>(size));
+    if (rc != ESP_OK) {
+        mState = PageState::INVALID;
+        return rc;
+    }
+    auto err = alterEntryRangeState(mNextFreeEntry, mNextFreeEntry + count, EntryState::WRITTEN);
+    if (err != ESP_OK) {
+        return err;
+    }
+    mUsedEntryCount += count;
+    mNextFreeEntry += count;
+    return ESP_OK;
+}
 
 esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize)
 {
@@ -170,13 +191,18 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
             return err;
         }
 
-        size_t left = dataSize;
-        while (left != 0) {
-            size_t willWrite = Page::ENTRY_SIZE;
-            willWrite = (left < willWrite)?left:willWrite;
-            memcpy(item.rawData, src, willWrite);
-            src += willWrite;
-            left -= willWrite;
+        size_t left = dataSize / ENTRY_SIZE * ENTRY_SIZE;
+        if (left > 0) {
+            err = writeEntryData(static_cast<const uint8_t*>(data), left);
+            if (err != ESP_OK) {
+                return err;
+            }
+        }
+        
+        size_t tail = dataSize - left;
+        if (tail > 0) {
+            std::fill_n(item.rawData, ENTRY_SIZE / 4, 0xffffffff);
+            memcpy(item.rawData, static_cast<const uint8_t*>(data) + left, tail);
             err = writeEntry(item);
             if (err != ESP_OK) {
                 return err;
@@ -290,11 +316,15 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
                 if (mEntryTable.get(i) == EntryState::WRITTEN) {
                     --mUsedEntryCount;
                 }
-                rc = alterEntryState(i, EntryState::ERASED);
-                if (rc != ESP_OK) {
-                    return rc;
-                }
                 ++mErasedEntryCount;
+            }
+            if (span == 1) {
+                rc = alterEntryState(index, EntryState::ERASED);
+            } else {
+                rc = alterEntryRangeState(index, index + span, EntryState::ERASED);
+            }
+            if (rc != ESP_OK) {
+                return rc;
             }
         }
     }
@@ -372,17 +402,7 @@ esp_err_t Page::moveItem(Page& other)
             return err;
         }
     }
-    for (size_t i = mFirstUsedEntry; i < end; ++i) {
-        err = eraseEntry(i);
-        if (err != ESP_OK) {
-            return err;
-        }
-    }
-    updateFirstUsedEntry(mFirstUsedEntry, span);
-    mErasedEntryCount += span;
-    mUsedEntryCount -= span;
-    
-    return ESP_OK;
+    return eraseEntryAndSpan(mFirstUsedEntry);
 }
 
 esp_err_t Page::mLoadEntryTable()
@@ -427,7 +447,7 @@ esp_err_t Page::mLoadEntryTable()
         // but before the entry state table was altered, the entry locacted via
         // entry state table may actually be half-written.
         // this is easy to check by reading EntryHeader (i.e. first word)
-        if (mNextFreeEntry != INVALID_ENTRY) {
+        while (mNextFreeEntry < ENTRY_COUNT) {
             uint32_t entryAddress = getEntryAddress(mNextFreeEntry);
             uint32_t header;
             auto rc = spi_flash_read(entryAddress, &header, sizeof(header));
@@ -436,12 +456,20 @@ esp_err_t Page::mLoadEntryTable()
                 return rc;
             }
             if (header != 0xffffffff) {
+                auto oldState = mEntryTable.get(mNextFreeEntry);
                 auto err = alterEntryState(mNextFreeEntry, EntryState::ERASED);
                 if (err != ESP_OK) {
                     mState = PageState::INVALID;
                     return err;
                 }
                 ++mNextFreeEntry;
+                if (oldState == EntryState::WRITTEN) {
+                    --mUsedEntryCount;
+                }
+                ++mErasedEntryCount;
+            }
+            else {
+                break;
             }
         }
 
@@ -569,6 +597,31 @@ esp_err_t Page::alterEntryState(size_t index, EntryState state)
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
+    }
+    return ESP_OK;
+}
+
+esp_err_t Page::alterEntryRangeState(size_t begin, size_t end, EntryState state)
+{
+    assert(end <= ENTRY_COUNT);
+    assert(end > begin);
+    size_t wordIndex = mEntryTable.getWordIndex(end - 1);
+    for (ptrdiff_t i = end - 1; i >= static_cast<ptrdiff_t>(begin); --i) {
+        mEntryTable.set(i, state);
+        size_t nextWordIndex;
+        if (i == static_cast<ptrdiff_t>(begin)) {
+            nextWordIndex = (size_t) -1;
+        } else {
+            nextWordIndex = mEntryTable.getWordIndex(i - 1);
+        }
+        if (nextWordIndex != wordIndex) {
+            uint32_t word = mEntryTable.data()[wordIndex];
+            auto rc = spi_flash_write(mBaseAddress + ENTRY_TABLE_OFFSET + static_cast<uint32_t>(wordIndex) * 4, &word, 4);
+            if (rc != ESP_OK) {
+                return rc;
+            }
+        }
+        wordIndex = nextWordIndex;
     }
     return ESP_OK;
 }

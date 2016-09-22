@@ -234,6 +234,7 @@ void Storage::debugCheck()
     
     for (auto p = mPageManager.begin(); p != mPageManager.end(); ++p) {
         size_t itemIndex = 0;
+        size_t usedCount = 0;
         Item item;
         while (p->findItem(Page::NS_ANY, ItemType::ANY, nullptr, itemIndex, item) == ESP_OK) {
             std::stringstream keyrepr;
@@ -246,7 +247,9 @@ void Storage::debugCheck()
             }
             keys.insert(std::make_pair(keystr, static_cast<Page*>(p)));
             itemIndex += item.span;
+            usedCount += item.span;
         }
+        assert(usedCount == p->getUsedEntryCount());
     }
 }
 #endif //ESP_PLATFORM

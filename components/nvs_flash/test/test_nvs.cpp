@@ -443,18 +443,140 @@ TEST_CASE("wifi test", "[nvs]")
     SpiFlashEmulator emu(10);
     emu.randomize(10);
     
-    nvs_handle handle;
+    
     const uint32_t NVS_FLASH_SECTOR = 5;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
     TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
-    TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &handle));
+    nvs_handle misc_handle;
+    TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &misc_handle));
+    char log[33];
+    size_t log_size = sizeof(log);
+    TEST_ESP_ERR(nvs_get_str(misc_handle, "log", log, &log_size), ESP_ERR_NVS_NOT_FOUND);
+    strcpy(log, "foobarbazfizzz");
+    TEST_ESP_OK(nvs_set_str(misc_handle, "log", log));
+    
+    nvs_handle net80211_handle;
+    TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &net80211_handle));
     
     uint8_t opmode = 2;
-    if (nvs_get_u8(handle, "wifi.opmode", &opmode) != ESP_OK) {
-        TEST_ESP_OK(nvs_set_u8(handle, "wifi.opmode", opmode));
-    }
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "wifi.opmode", &opmode), ESP_ERR_NVS_NOT_FOUND);
+    
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "wifi.opmode", opmode));
+    
+    uint8_t country = 0;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "wifi.country", &opmode), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "wifi.country", opmode));
+    
+    char ssid[36];
+    size_t size = sizeof(ssid);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "sta.ssid", ssid, &size), ESP_ERR_NVS_NOT_FOUND);
+    strcpy(ssid, "my android AP");
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "sta.ssid", ssid, size));
+    
+    char mac[6];
+    size = sizeof(mac);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "sta.mac", mac, &size), ESP_ERR_NVS_NOT_FOUND);
+    memset(mac, 0xab, 6);
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "sta.mac", mac, size));
+    
+    uint8_t authmode = 1;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "sta.authmode", &authmode), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "sta.authmode", authmode));
+
+    char pswd[65];
+    size = sizeof(pswd);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "sta.pswd", pswd, &size), ESP_ERR_NVS_NOT_FOUND);
+    strcpy(pswd, "`123456788990-=");
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "sta.pswd", pswd, size));
+
+    char pmk[32];
+    size = sizeof(pmk);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "sta.pmk", pmk, &size), ESP_ERR_NVS_NOT_FOUND);
+    memset(pmk, 1, size);
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "sta.pmk", pmk, size));
+    
+    uint8_t chan = 1;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "sta.chan", &chan), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "sta.chan", chan));
+    
+    uint8_t autoconn = 1;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "auto.conn", &autoconn), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "auto.conn", autoconn));
+
+    uint8_t bssid_set = 1;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "bssid.set", &bssid_set), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "bssid.set", bssid_set));
+
+    char bssid[6];
+    size = sizeof(bssid);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "sta.bssid", bssid, &size), ESP_ERR_NVS_NOT_FOUND);
+    memset(mac, 0xcd, 6);
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "sta.bssid", bssid, size));
+
+    uint8_t phym = 3;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "sta.phym", &phym), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "sta.phym", phym));
+    
+    uint8_t phybw = 2;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "sta.phybw", &phybw), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "sta.phybw", phybw));
+    
+    char apsw[2];
+    size = sizeof(apsw);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "sta.apsw", apsw, &size), ESP_ERR_NVS_NOT_FOUND);
+    memset(apsw, 0x2, size);
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "sta.apsw", apsw, size));
+    
+    char apinfo[700];
+    size = sizeof(apinfo);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "sta.apinfo", apinfo, &size), ESP_ERR_NVS_NOT_FOUND);
+    memset(apinfo, 0, size);
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "sta.apinfo", apinfo, size));
+    
+    size = sizeof(ssid);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "ap.ssid", ssid, &size), ESP_ERR_NVS_NOT_FOUND);
+    strcpy(ssid, "ESP_A2F340");
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "ap.ssid", ssid, size));
+    
+    size = sizeof(mac);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "ap.mac", mac, &size), ESP_ERR_NVS_NOT_FOUND);
+    memset(mac, 0xac, 6);
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "ap.mac", mac, size));
+    
+    size = sizeof(pswd);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "ap.passwd", pswd, &size), ESP_ERR_NVS_NOT_FOUND);
+    strcpy(pswd, "");
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "ap.passwd", pswd, size));
+    
+    size = sizeof(pmk);
+    TEST_ESP_ERR(nvs_get_blob(net80211_handle, "ap.pmk", pmk, &size), ESP_ERR_NVS_NOT_FOUND);
+    memset(pmk, 1, size);
+    TEST_ESP_OK(nvs_set_blob(net80211_handle, "ap.pmk", pmk, size));
+    
+    chan = 6;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "ap.chan", &chan), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "ap.chan", chan));
+
+    authmode = 0;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "ap.authmode", &authmode), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "ap.authmode", authmode));
+    
+    uint8_t hidden = 0;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "ap.hidden", &hidden), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "ap.hidden", hidden));
+    
+    uint8_t max_conn = 4;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "ap.max.conn", &max_conn), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "ap.max.conn", max_conn));
+    
+    uint8_t bcn_interval = 2;
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "bcn_interval", &bcn_interval), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "bcn_interval", bcn_interval));
+    
+    s_perf << "Time to simulate nvs init with wifi libs: " << emu.getTotalTime() << " us (" << emu.getEraseOps() << "E " << emu.getWriteOps() << "W " << emu.getReadOps() << "R " << emu.getWriteBytes() << "Wb " << emu.getReadBytes() << "Rb)" << std::endl;
+
 }
 
 
