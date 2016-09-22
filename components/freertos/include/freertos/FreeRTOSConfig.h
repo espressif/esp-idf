@@ -241,6 +241,8 @@
 
 #define configUSE_NEWLIB_REENTRANT		1
 
+#define configSUPPORT_DYNAMIC_ALLOCATION    1
+
 /* Test FreeRTOS timers (with timer task) and more. */
 /* Some files don't compile if this flag is disabled */
 #define configUSE_TIMERS                    1
