@@ -120,7 +120,7 @@ int ssl_pm_new(SSL *ssl)
 
     mbedtls_ssl_conf_dbg(&ssl_pm->conf, NULL, NULL);
 
-    x509_pm = (struct x509_pm *)ctx->client_CA->x509_pm;
+    x509_pm = (struct x509_pm *)ssl->client_CA->x509_pm;
     if (x509_pm->load) {
         mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, &x509_pm->x509_crt, NULL);
 
@@ -130,9 +130,9 @@ int ssl_pm_new(SSL *ssl)
     }
     mbedtls_ssl_conf_authmode(&ssl_pm->conf, mode);
 
-    pkey_pm = (struct pkey_pm *)ctx->cert->pkey->pkey_pm;
+    pkey_pm = (struct pkey_pm *)ssl->cert->pkey->pkey_pm;
     if (pkey_pm->load) {
-        x509_pm = (struct x509_pm *)ctx->cert->x509->x509_pm;
+        x509_pm = (struct x509_pm *)ssl->cert->x509->x509_pm;
 
         ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, &x509_pm->x509_crt, &pkey_pm->pkey);
         if (ret)

@@ -99,12 +99,16 @@ struct stack_st {
 
 struct evp_pkey_st {
 
+    int ref;
+
     void *pkey_pm;
 
     const PKEY_METHOD *method;
 };
 
 struct x509_st {
+
+    int ref;
 
     /* X509 certification platform private point */
     void *x509_pm;

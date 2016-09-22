@@ -85,7 +85,7 @@ X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len)
     } else {
         x = X509_new();
         if (!x)
-            SSL_RET(failed1, "sk_X509_NAME_new_null\n");
+            SSL_RET(failed1, "X509_new\n");
         m = 1;
     }
 
@@ -218,6 +218,7 @@ int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
 {
     int ret;
     X509 *cert;
+    const unsigned char *pbuf;
 
     cert = d2i_X509(&ctx->cert->x509, d, len);
     if (!cert)
@@ -226,6 +227,8 @@ int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
     ret = SSL_CTX_use_certificate(ctx, cert);
     if (!ret)
         SSL_RET(failed2, "SSL_CTX_use_certificate\n");
+
+    ctx->cert->x509->ref++;
 
     return 1;
 
@@ -252,13 +255,18 @@ int SSL_use_certificate_ASN1(SSL *ssl, int len,
     int ret;
     X509 *cert;
 
-    cert = d2i_X509(&ssl->cert->x509, d, len);
+    if (ssl->cert->x509->ref)
+        SSL_RET(failed1);
+
+    cert = d2i_X509(NULL, d, len);
     if (!cert)
         SSL_RET(failed1, "d2i_X509\n");
 
     ret = SSL_use_certificate(ssl, cert);
     if (!ret)
         SSL_RET(failed2, "SSL_use_certificate\n");
+
+    ssl->cert->x509->ref++;
 
     return 1;
 

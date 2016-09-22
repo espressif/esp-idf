@@ -282,6 +282,9 @@ SSL *SSL_new(SSL_CTX *ctx)
     ssl->version = ctx->version;
     ssl->options = ctx->options;
 
+    ssl->cert = ctx->cert;
+    ssl->client_CA = ctx->client_CA;
+
     ret = SSL_METHOD_CALL(new, ssl);
     if (ret)
         SSL_RET(failed2, "ssl_new\n");

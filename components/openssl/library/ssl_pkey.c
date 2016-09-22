@@ -177,6 +177,8 @@ int SSL_CTX_use_PrivateKey_ASN1(int type, SSL_CTX *ctx,
     if (!ret)
         SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
 
+    ctx->cert->pkey->ref++;
+
     return 1;
 
 failed2:
@@ -203,13 +205,18 @@ int SSL_use_PrivateKey_ASN1(int type, SSL *ssl,
     int ret;
     EVP_PKEY *pkey;
 
-    pkey = d2i_PrivateKey(0, &ssl->cert->pkey, &d, len);
+    if (ssl->cert->pkey->ref)
+        SSL_RET(failed1);
+
+    pkey = d2i_PrivateKey(0, NULL, &d, len);
     if (!pkey)
         SSL_RET(failed1, "d2i_PrivateKey\n");
 
     ret = SSL_use_PrivateKey(ssl, pkey);
     if (!ret)
         SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
+
+    ssl->cert->pkey->ref++;
 
     return 1;
 
