@@ -27,6 +27,12 @@ typedef void RSA;
 typedef void STACK;
 typedef void BIO;
 
+#define ossl_inline inline
+
+#define SSL_METHOD_CALL(f, s, ...)        s->method->func->ssl_##f(s, ##__VA_ARGS__)
+#define X509_METHOD_CALL(f, x, ...)       x->method->x509_##f(x, ##__VA_ARGS__)
+#define EVP_PKEY_METHOD_CALL(f, k, ...)   k->method->pkey_##f(k, ##__VA_ARGS__)
+
 #define STACK_OF(type)  struct stack_st_##type
 
 #define SKM_DEFINE_STACK_OF(t1, t2, t3) \
@@ -37,6 +43,8 @@ typedef void BIO;
     } \
 
 #define DEFINE_STACK_OF(t) SKM_DEFINE_STACK_OF(t, t, t)
+
+typedef int (*OPENSSL_sk_compfunc)(const void *, const void *);
 
 struct stack_st;
 typedef struct stack_st OPENSSL_STACK;
@@ -78,7 +86,12 @@ struct pkey_method_st;
 typedef struct pkey_method_st PKEY_METHOD;
 
 struct stack_st {
-    char *data;
+
+    char **data;
+
+    int num_alloc;
+
+    OPENSSL_sk_compfunc c;
 };
 
 struct evp_pkey_st {
@@ -178,6 +191,8 @@ struct ssl_st
 
     int rwstate;
 
+    X509 *client_CA;
+
     int err;
 
     void (*info_callback) (const SSL *ssl, int type, int val);
@@ -248,9 +263,5 @@ struct pkey_method_st {
 typedef int (*next_proto_cb)(SSL *ssl, unsigned char **out,
                              unsigned char *outlen, const unsigned char *in,
                              unsigned int inlen, void *arg);
-
-#define SSL_METHOD_CALL(f, s, ...)        s->method->func->ssl_##f(s, ##__VA_ARGS__)
-#define X509_METHOD_CALL(f, x, ...)       x->method->x509_##f(x, ##__VA_ARGS__)
-#define EVP_PKEY_METHOD_CALL(f, k, ...)   k->method->pkey_##f(k, ##__VA_ARGS__)
 
 #endif

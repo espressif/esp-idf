@@ -15,10 +15,10 @@
 #ifndef _SSL_DEBUG_H_
 #define _SSL_DEBUG_H_
 
-#define SSL_DEBUG_ENBALE 1
+#define SSL_DEBUG_ENBALE 0
 #define SSL_DEBUG_LEVEL 0
-#define SSL_ASSERT_ENABLE 1
-#define SSL_DEBUG_LOCATION_ENABLE 1
+#define SSL_ASSERT_ENABLE 0
+#define SSL_DEBUG_LOCATION_ENABLE 0
 
 #if SSL_DEBUG_ENBALE
     extern int ets_printf(const char *fmt, ...);

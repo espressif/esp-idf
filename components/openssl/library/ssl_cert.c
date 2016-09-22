@@ -37,7 +37,7 @@ CERT *ssl_cert_new(void)
     if (!cert->pkey)
         SSL_RET(failed2, "EVP_PKEY_new\n");
 
-    cert->x509 = sk_X509_NAME_new_null();
+    cert->x509 = X509_new();
     if (!cert->x509)
         SSL_RET(failed3, "sk_X509_NAME_new_null\n");
 

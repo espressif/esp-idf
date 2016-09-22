@@ -78,6 +78,7 @@ EVP_PKEY *d2i_PrivateKey(int type,
                          const unsigned char **pp,
                          long length)
 {
+    int m = 0;
     int ret;
     EVP_PKEY *pkey;
 
@@ -91,6 +92,7 @@ EVP_PKEY *d2i_PrivateKey(int type,
         pkey = EVP_PKEY_new();;
         if (!pkey)
             SSL_RET(failed1, "ssl_malloc\n");
+        m = 1;
     }
 
     ret = EVP_PKEY_METHOD_CALL(load, pkey, *pp, length);
@@ -103,7 +105,8 @@ EVP_PKEY *d2i_PrivateKey(int type,
     return pkey;
 
 failed2:
-    EVP_PKEY_free(pkey);
+    if (m)
+        EVP_PKEY_free(pkey);
 failed1:
     return NULL;
 }

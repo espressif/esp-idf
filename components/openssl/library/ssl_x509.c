@@ -24,7 +24,7 @@
  *
  * @return X509 certification object point or NULL if failed
  */
-X509* sk_X509_NAME_new_null(void)
+X509* X509_new(void)
 {
     int ret;
     X509 *x;
@@ -73,6 +73,7 @@ void X509_free(X509 *x)
  */
 X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len)
 {
+    int m = 0;
     int ret;
     X509 *x;
 
@@ -82,9 +83,10 @@ X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len)
     if (cert && *cert) {
         x = *cert;
     } else {
-        x = sk_X509_NAME_new_null();
+        x = X509_new();
         if (!x)
             SSL_RET(failed1, "sk_X509_NAME_new_null\n");
+        m = 1;
     }
 
     ret = X509_METHOD_CALL(load, x, buffer, len);
@@ -94,7 +96,8 @@ X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len)
     return x;
 
 failed2:
-    X509_free(x);
+    if (m)
+        X509_free(x);
 failed1:
     return NULL;
 }
@@ -111,8 +114,13 @@ failed1:
  */
 int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
 {
+    int ret;
+
     SSL_ASSERT(ctx);
     SSL_ASSERT(x);
+
+    if (ctx->client_CA)
+        X509_free(ctx->client_CA);
 
     ctx->client_CA = x;
 
@@ -131,7 +139,17 @@ int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
  */
 int SSL_add_client_CA(SSL *ssl, X509 *x)
 {
+    int ret;
 
+    SSL_ASSERT(ssl);
+    SSL_ASSERT(x);
+
+    if (ssl->client_CA)
+        X509_free(ssl->client_CA);
+
+    ssl->client_CA = x;
+
+    return 1;
 }
 
 /*

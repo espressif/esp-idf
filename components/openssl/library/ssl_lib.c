@@ -169,28 +169,27 @@ OSSL_HANDSHAKE_STATE SSL_get_state(const SSL *ssl)
  */
 SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
 {
-    int ret;
     SSL_CTX *ctx;
     CERT *cert;
     X509 *client_ca;
 
     if (!method) SSL_RET(go_failed1, "method\n");
 
-    client_ca = sk_X509_NAME_new_null();
+    client_ca = X509_new();
     if (!client_ca)
-        SSL_ERR(-2, go_failed1, "sk_X509_NAME_new_null\n");
+        SSL_RET(go_failed1, "sk_X509_NAME_new_null\n");
 
     cert = ssl_cert_new();
     if (!cert)
-        SSL_ERR(-2, go_failed2, "ssl_cert_new\n");
+        SSL_RET(go_failed2, "ssl_cert_new\n");
 
     ctx = (SSL_CTX *)ssl_zalloc(sizeof(SSL_CTX));
     if (!ctx)
-        SSL_ERR(-2, go_failed3, "ssl_ctx_new:ctx\n");
+        SSL_RET(go_failed3, "ssl_ctx_new:ctx\n");
 
     ctx->method = method;
-    ctx->cert = cert;
     ctx->client_CA = client_ca;
+    ctx->cert = cert;
 
     ctx->version = method->version;
 
@@ -268,7 +267,6 @@ const SSL_METHOD *SSL_CTX_get_ssl_method(SSL_CTX *ctx)
 SSL *SSL_new(SSL_CTX *ctx)
 {
     int ret;
-    void *ssl_pm;
     SSL *ssl;
 
     if (!ctx)
@@ -485,7 +483,7 @@ int SSL_write(SSL *ssl, const void *buffer, int len)
         else
             bytes = send_bytes;
 
-        ret = SSL_METHOD_CALL(send, ssl, buffer, len);
+        ret = SSL_METHOD_CALL(send, ssl, buffer, bytes);
         if (ret > 0) {
             pbuf += ret;
             send_bytes -= ret;
@@ -798,8 +796,6 @@ int SSL_get_wfd(const SSL *ssl)
  */
 int SSL_set_fd(SSL *ssl, int fd)
 {
-    int ret;
-
     SSL_ASSERT(ssl);
     SSL_ASSERT(fd >= 0);
 
@@ -820,8 +816,6 @@ int SSL_set_fd(SSL *ssl, int fd)
  */
 int SSL_set_rfd(SSL *ssl, int fd)
 {
-    int ret;
-
     SSL_ASSERT(ssl);
     SSL_ASSERT(fd >= 0);
 
@@ -842,8 +836,6 @@ int SSL_set_rfd(SSL *ssl, int fd)
  */
 int SSL_set_wfd(SSL *ssl, int fd)
 {
-    int ret;
-
     SSL_ASSERT(ssl);
     SSL_ASSERT(fd >= 0);
 

@@ -16,10 +16,18 @@
 #define _SSL_X509_H_
 
 #include "ssl_types.h"
+#include "ssl_stack.h"
 
 DEFINE_STACK_OF(X509_NAME)
 
-X509* sk_X509_NAME_new_null(void);
+/*
+ * sk_X509_NAME_new_null - create a X509 certification object
+ *
+ * @param none
+ *
+ * @return X509 certification object point or NULL if failed
+ */
+X509* X509_new(void);
 
 X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len);
 

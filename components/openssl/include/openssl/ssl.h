@@ -15,8 +15,8 @@
 #ifndef _SSL_H_
 #define _SSL_H_
 
-#include "ssl_port.h"
-#include "internal/ssl_types.h"
+#include "platform/ssl_port.h"
+#include "internal/ssl_x509.h"
 
 /*
 {
