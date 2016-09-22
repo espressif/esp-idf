@@ -193,6 +193,8 @@ struct ssl_st
 
     X509 *client_CA;
 
+    long verify_result;
+
     int err;
 
     void (*info_callback) (const SSL *ssl, int type, int val);
@@ -234,6 +236,8 @@ struct ssl_method_func_st {
     int (*ssl_get_fd)(const SSL *ssl, int mode);
 
     void (*ssl_set_bufflen)(SSL *ssl, int len);
+
+    long (*ssl_get_verify_result)(const SSL *ssl);
 
     OSSL_HANDSHAKE_STATE (*ssl_get_state)(const SSL *ssl);
 };

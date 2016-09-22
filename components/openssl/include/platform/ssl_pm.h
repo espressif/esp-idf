@@ -49,4 +49,6 @@ void pkey_pm_free(EVP_PKEY *pkey);
 int pkey_pm_load(EVP_PKEY *pkey, const unsigned char *buffer, int len);
 void pkey_pm_unload(EVP_PKEY *pkey);
 
+long ssl_pm_get_verify_result(const SSL *ssl);
+
 #endif

@@ -444,3 +444,19 @@ void ssl_pm_set_bufflen(SSL *ssl, int len)
 {
     max_content_len = len;
 }
+
+long ssl_pm_get_verify_result(const SSL *ssl)
+{
+    long ret;
+    long verify_result;
+    struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
+
+    ret = mbedtls_ssl_get_verify_result(&ssl_pm->ssl);
+
+    if (!ret)
+        verify_result = X509_V_OK;
+    else
+        verify_result = X509_V_ERR_UNSPECIFIED;
+
+    return verify_result;
+}

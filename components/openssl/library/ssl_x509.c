@@ -114,8 +114,6 @@ failed1:
  */
 int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
 {
-    int ret;
-
     SSL_ASSERT(ctx);
     SSL_ASSERT(x);
 
@@ -139,8 +137,6 @@ int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
  */
 int SSL_add_client_CA(SSL *ssl, X509 *x)
 {
-    int ret;
-
     SSL_ASSERT(ssl);
     SSL_ASSERT(x);
 

@@ -1731,3 +1731,17 @@ void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_C
     SSL_ASSERT(ssl);
     SSL_ASSERT(verify_callback);
 }
+
+/*
+ * SSL_get_verify_result - get the verifying result of the SSL certification
+ *
+ * @param ssl - the SSL point
+ *
+ * @return the result of verifying
+ */
+long SSL_get_verify_result(const SSL *ssl)
+{
+    SSL_ASSERT(ssl);
+
+    return SSL_METHOD_CALL(get_verify_result, ssl);
+}

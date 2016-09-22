@@ -21,6 +21,7 @@
                     read, send, pending, \
                     set_fd, get_fd, \
                     set_bufflen, \
+                    get_verify_result, \
                     get_state) \
         static const SSL_METHOD_FUNC func_name LOCAL_ATRR = { \
                 new, \
@@ -34,6 +35,7 @@
                 set_fd, \
                 get_fd, \
                 set_bufflen, \
+                get_verify_result, \
                 get_state \
         };
 

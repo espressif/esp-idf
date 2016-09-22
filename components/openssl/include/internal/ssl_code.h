@@ -17,6 +17,7 @@
 
 #include "ssl3.h"
 #include "tls1.h"
+#include "x509_vfy.h"
 
 /* Used in SSL_set_shutdown()/SSL_get_shutdown(); */
 # define SSL_SENT_SHUTDOWN       1
