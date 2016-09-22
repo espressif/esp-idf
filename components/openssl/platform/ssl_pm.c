@@ -162,13 +162,13 @@ void ssl_pm_free(SSL *ssl)
 {
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
-    mbedtls_ssl_config_free(&ssl_pm->conf);
     mbedtls_ctr_drbg_free(&ssl_pm->ctr_drbg);
     mbedtls_entropy_free(&ssl_pm->entropy);
+    mbedtls_ssl_config_free(&ssl_pm->conf);
     mbedtls_ssl_free(&ssl_pm->ssl);
 
-    mbedtls_net_free(&ssl_pm->fd);
-    mbedtls_net_free(&ssl_pm->cl_fd);
+    ssl_free(ssl_pm);
+    ssl->ssl_pm = NULL;
 }
 
 int ssl_pm_handshake(SSL *ssl)
@@ -383,6 +383,7 @@ void x509_pm_free(X509 *x)
     x509_pm_unload(x);
 
     ssl_free(x->x509_pm);
+    x->x509_pm = NULL;
 }
 
 int pkey_pm_new(EVP_PKEY *pkey)
@@ -443,6 +444,7 @@ void pkey_pm_free(EVP_PKEY *pkey)
     pkey_pm_unload(pkey);
 
     ssl_free(pkey->pkey_pm);
+    pkey->pkey_pm = NULL;
 }
 
 void ssl_pm_set_bufflen(SSL *ssl, int len)

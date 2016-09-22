@@ -266,7 +266,7 @@ const SSL_METHOD *SSL_CTX_get_ssl_method(SSL_CTX *ctx)
  */
 SSL *SSL_new(SSL_CTX *ctx)
 {
-    int ret;
+    int ret = 0;
     SSL *ssl;
 
     if (!ctx)
