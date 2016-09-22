@@ -339,6 +339,16 @@ int x509_pm_new(X509 *x)
     return 0;
 }
 
+void x509_pm_unload(X509 *x)
+{
+    struct x509_pm *x509_pm = (struct x509_pm *)x->x509_pm;
+
+    if (x509_pm->load)
+        mbedtls_x509_crt_free(&x509_pm->x509_crt);
+
+    x509_pm->load = 0;
+}
+
 int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
 {
     int ret;
@@ -351,6 +361,8 @@ int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
 
     ssl_memcpy(load_buf, buffer, len);
     load_buf[len] = '\0';
+
+    x509_pm_unload(x);
 
     mbedtls_x509_crt_init(&x509_pm->x509_crt);
     ret = mbedtls_x509_crt_parse(&x509_pm->x509_crt, load_buf, len);
@@ -365,15 +377,6 @@ int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
 
 failed1:
     return -1;
-}
-
-void x509_pm_unload(X509 *x)
-{
-    struct x509_pm *x509_pm = (struct x509_pm *)x->x509_pm;
-
-    mbedtls_x509_crt_free(&x509_pm->x509_crt);
-
-    x509_pm->load = 0;
 }
 
 void x509_pm_free(X509 *x)
@@ -396,6 +399,16 @@ int pkey_pm_new(EVP_PKEY *pkey)
     return 0;
 }
 
+void pkey_pm_unload(EVP_PKEY *pkey)
+{
+    struct pkey_pm *pkey_pm = (struct pkey_pm *)pkey->pkey_pm;
+
+    if (pkey_pm->load)
+        mbedtls_pk_free(&pkey_pm->pkey);
+
+    pkey_pm->load = 0;
+}
+
 int pkey_pm_load(EVP_PKEY *pkey, const unsigned char *buffer, int len)
 {
     int ret;
@@ -408,6 +421,8 @@ int pkey_pm_load(EVP_PKEY *pkey, const unsigned char *buffer, int len)
 
     ssl_memcpy(load_buf, buffer, len);
     load_buf[len] = '\0';
+
+    pkey_pm_unload(pkey);
 
     mbedtls_pk_init(&pkey_pm->pkey);
     ret = mbedtls_pk_parse_key(&pkey_pm->pkey, load_buf, len, NULL, 0);
@@ -422,15 +437,6 @@ int pkey_pm_load(EVP_PKEY *pkey, const unsigned char *buffer, int len)
 
 failed1:
     return -1;
-}
-
-void pkey_pm_unload(EVP_PKEY *pkey)
-{
-    struct pkey_pm *pkey_pm = (struct pkey_pm *)pkey->pkey_pm;
-
-    mbedtls_pk_free(&pkey_pm->pkey);
-
-    pkey_pm->load = 0;
 }
 
 void pkey_pm_free(EVP_PKEY *pkey)
