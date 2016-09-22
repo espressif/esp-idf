@@ -213,3 +213,18 @@ failed1:
     return 0;
 }
 
+/*
+ * SSL_CTX_use_certificate_file - load the certification file into SSL context
+ *
+ * @param ctx  - SSL context point
+ * @param file - certification file name
+ * @param type - certification encoding type
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_CTX_use_certificate_file(SSL_CTX *ctx, const char *file, int type)
+{
+    return 0;
+}

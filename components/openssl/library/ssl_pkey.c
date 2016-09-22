@@ -165,3 +165,34 @@ failed1:
     return 0;
 }
 
+/*
+ * SSL_CTX_use_certificate_file - load the private key file into SSL context
+ *
+ * @param ctx  - SSL context point
+ * @param file - private key file name
+ * @param type - private key encoding type
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_CTX_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
+{
+    return 0;
+}
+
+/*
+ * SSL_CTX_use_certificate_ASN1 - load the RSA ASN1 private key into SSL context
+ *
+ * @param ctx - SSL context point
+ * @param d   - data point
+ * @param len - RSA private key length
+ *
+ * @return
+ *         1 : OK
+ *         0 : failed
+ */
+int SSL_CTX_use_RSAPrivateKey_ASN1(SSL_CTX *ctx, const unsigned char *d, long len)
+{
+    return SSL_CTX_use_PrivateKey_ASN1(0, ctx, d, len);
+}

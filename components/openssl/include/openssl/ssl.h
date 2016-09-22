@@ -927,7 +927,7 @@ int SSL_CTX_use_PrivateKey_ASN1(int pk, SSL_CTX *ctx, const unsigned char *d,  l
  *         1 : OK
  *         0 : failed
  */
-int SSL_CTX_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type);//adds the first private key found in file to ctx, The formatting type of the certificate must be specified from the known types SSL_FILETYPE_PEM, SSL_FILETYPE_ASN1.
+int SSL_CTX_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type);
 
 /*
  * SSL_CTX_use_certificate - load the RSA private key into SSL context
@@ -952,7 +952,7 @@ int SSL_CTX_use_RSAPrivateKey(SSL_CTX *ctx, RSA *rsa);
  *         1 : OK
  *         0 : failed
  */
-int SSL_CTX_use_RSAPrivateKey_ASN1(SSL_CTX *ctx, unsigned char *d, long len);
+int SSL_CTX_use_RSAPrivateKey_ASN1(SSL_CTX *ctx, const unsigned char *d, long len);
 
 /*
  * SSL_CTX_use_certificate_file - load the RSA private key file into SSL context
