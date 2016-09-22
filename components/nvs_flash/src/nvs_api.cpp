@@ -103,6 +103,36 @@ extern "C" void nvs_close(nvs_handle handle)
     s_nvs_handles.erase(it);
 }
 
+extern "C" esp_err_t nvs_erase_key(nvs_handle handle, const char* key)
+{
+    Lock lock;
+    NVS_DEBUGV("%s %s\r\n", __func__, key);
+    HandleEntry entry;
+    auto err = nvs_find_ns_handle(handle, entry);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (entry.mReadOnly) {
+        return ESP_ERR_NVS_READ_ONLY;
+    }
+    return s_nvs_storage.eraseItem(entry.mNsIndex, key);
+}
+
+extern "C" esp_err_t nvs_erase_all(nvs_handle handle)
+{
+    Lock lock;
+    NVS_DEBUGV("%s\r\n", __func__);
+    HandleEntry entry;
+    auto err = nvs_find_ns_handle(handle, entry);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (entry.mReadOnly) {
+        return ESP_ERR_NVS_READ_ONLY;
+    }
+    return s_nvs_storage.eraseNamespace(entry.mNsIndex);
+}
+
 template<typename T>
 static esp_err_t nvs_set(nvs_handle handle, const char* key, T value)
 {

@@ -278,19 +278,6 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key)
     return findItem(nsIndex, datatype, key, index, item);
 }
 
-esp_err_t Page::eraseEntry(size_t index)
-{
-    auto state = mEntryTable.get(index);
-    assert(state == EntryState::WRITTEN || state == EntryState::EMPTY);
-
-    auto rc = alterEntryState(index, EntryState::ERASED);
-    if (rc != ESP_OK) {
-        return rc;
-    }
-
-    return ESP_OK;
-}
-
 esp_err_t Page::eraseEntryAndSpan(size_t index)
 {
     auto state = mEntryTable.get(index);

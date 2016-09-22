@@ -206,8 +206,6 @@ protected:
     
     esp_err_t writeEntryData(const uint8_t* data, size_t size);
 
-    esp_err_t eraseEntry(size_t index);
-
     esp_err_t eraseEntryAndSpan(size_t index);
 
     void updateFirstUsedEntry(size_t index, size_t span);

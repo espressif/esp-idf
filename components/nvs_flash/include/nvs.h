@@ -181,6 +181,41 @@ esp_err_t nvs_get_str (nvs_handle handle, const char* key, char* out_value, size
 esp_err_t nvs_get_blob(nvs_handle handle, const char* key, void* out_value, size_t* length);
 
 /**
+ * @brief      Erase key-value pair with given key name.
+ *
+ * Note that actual storage may not be updated until nvs_commit function is called.
+ *
+ * @param[in]  handle  Storage handle obtained with nvs_open. If handle has to be
+ *                     opened as not read only for this call to succeed.
+ *
+ * @param[in]  key     Key name. Maximal length is determined by the underlying
+ *                     implementation, but is guaranteed to be at least
+ *                     16 characters. Shouldn't be empty.
+ *
+ * @return      - ESP_OK if erase operation was successful
+ *              - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
+ *              - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
+ *              - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
+ *              - other error codes from the underlying storage driver
+ */
+esp_err_t nvs_erase_key(nvs_handle handle, const char* key);
+
+/**
+ * @brief      Erase all key-value pairs in a namespace
+ *
+ * Note that actual storage may not be updated until nvs_commit function is called.
+ *
+ * @param[in]  handle  Storage handle obtained with nvs_open. If handle has to be
+ *                     opened as not read only for this call to succeed.
+ *
+ * @return      - ESP_OK if erase operation was successful
+ *              - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
+ *              - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
+ *              - other error codes from the underlying storage driver
+ */
+esp_err_t nvs_erase_all(nvs_handle handle);
+
+/**
  * @brief      Write any pending changes to non-volatile storage
  *
  * After setting any values, nvs_commit() must be called to ensure changes are written

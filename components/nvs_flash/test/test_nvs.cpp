@@ -386,6 +386,27 @@ TEST_CASE("can modify an item on a page which will be erased", "[nvs]")
 }
 
 
+TEST_CASE("can erase items", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    Storage storage;
+    CHECK(storage.init(0, 3) == ESP_OK);
+    for (size_t i = 0; i < Page::ENTRY_COUNT * 2 - 3; ++i) {
+        char name[Item::MAX_KEY_LENGTH + 1];
+        snprintf(name, sizeof(name), "key%05d", static_cast<int>(i));
+        REQUIRE(storage.writeItem(3, name, static_cast<int>(i)) == ESP_OK);
+    }
+    CHECK(storage.writeItem(1, "foo", 32) == ESP_OK);
+    CHECK(storage.writeItem(2, "foo", 64) == ESP_OK);
+    CHECK(storage.eraseItem(2, "foo") == ESP_OK);
+    int val;
+    CHECK(storage.readItem(1, "foo", val) == ESP_OK);
+    CHECK(val == 32);
+    CHECK(storage.eraseNamespace(3) == ESP_OK);
+    CHECK(storage.readItem(2, "foo", val) == ESP_ERR_NVS_NOT_FOUND);
+    CHECK(storage.readItem(3, "key00222", val) == ESP_ERR_NVS_NOT_FOUND);
+}
+
 #define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
 #define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
 
