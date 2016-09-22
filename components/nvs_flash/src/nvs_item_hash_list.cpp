@@ -16,7 +16,7 @@
 
 namespace nvs
 {
-    
+
 HashList::~HashList()
 {
     for (auto it = mBlockList.begin(); it != mBlockList.end();) {
@@ -26,13 +26,13 @@ HashList::~HashList()
         delete static_cast<HashListBlock*>(tmp);
     }
 }
-    
+
 HashList::HashListBlock::HashListBlock()
 {
     static_assert(sizeof(HashListBlock) == HashListBlock::BYTE_SIZE,
                   "cache block size calculation incorrect");
 }
-    
+
 void HashList::insert(const Item& item, size_t index)
 {
     const uint32_t hash_24 = item.calculateCrc32WithoutValue() & 0xffffff;
@@ -53,8 +53,7 @@ void HashList::insert(const Item& item, size_t index)
 
 void HashList::erase(size_t index)
 {
-    for (auto it = std::begin(mBlockList); it != std::end(mBlockList);)
-    {
+    for (auto it = std::begin(mBlockList); it != std::end(mBlockList);) {
         bool haveEntries = false;
         for (size_t i = 0; i < it->mCount; ++i) {
             if (it->mNodes[i].mIndex == index) {
@@ -70,8 +69,7 @@ void HashList::erase(size_t index)
             ++it;
             mBlockList.erase(tmp);
             delete static_cast<HashListBlock*>(tmp);
-        }
-        else {
+        } else {
             ++it;
         }
     }
@@ -81,13 +79,12 @@ void HashList::erase(size_t index)
 size_t HashList::find(size_t start, const Item& item)
 {
     const uint32_t hash_24 = item.calculateCrc32WithoutValue() & 0xffffff;
-    for (auto it = std::begin(mBlockList); it != std::end(mBlockList); ++it)
-    {
+    for (auto it = std::begin(mBlockList); it != std::end(mBlockList); ++it) {
         for (size_t index = 0; index < it->mCount; ++index) {
             HashListNode& e = it->mNodes[index];
             if (e.mIndex >= start &&
-                e.mHash == hash_24 &&
-                e.mIndex != 0xff) {
+                    e.mHash == hash_24 &&
+                    e.mIndex != 0xff) {
                 return e.mIndex;
             }
         }
@@ -95,5 +92,5 @@ size_t HashList::find(size_t start, const Item& item)
     return SIZE_MAX;
 }
 
-    
+
 } // namespace nvs

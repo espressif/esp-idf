@@ -74,7 +74,7 @@ public:
     {
         return eraseItem(nsIndex, itemTypeOf<T>(), key);
     }
-    
+
     void debugDump();
     void debugCheck();
 

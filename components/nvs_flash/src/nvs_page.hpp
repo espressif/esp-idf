@@ -162,25 +162,27 @@ public:
     esp_err_t erase();
 
     void invalidateCache();
-    
+
     void debugDump() const;
 
 protected:
 
-    class Header {
+    class Header
+    {
     public:
-        Header() {
+        Header()
+        {
             std::fill_n(mReserved, sizeof(mReserved)/sizeof(mReserved[0]), UINT32_MAX);
         }
-        
+
         PageState mState;       // page state
         uint32_t mSeqNumber;    // sequence number of this page
         uint32_t mReserved[5];  // unused, must be 0xffffffff
         uint32_t mCrc32;        // crc of everything except mState
-        
+
         uint32_t calculateCrc32();
     };
-    
+
     enum class EntryState {
         EMPTY   = 0x3, // 0b11, default state after flash erase
         WRITTEN = EMPTY & ~ESB_WRITTEN, // entry was written
@@ -205,9 +207,9 @@ protected:
     esp_err_t writeEntryData(const uint8_t* data, size_t size);
 
     esp_err_t eraseEntry(size_t index);
-    
+
     esp_err_t eraseEntryAndSpan(size_t index);
-    
+
     void updateFirstUsedEntry(size_t index, size_t span);
 
     static constexpr size_t getAlignmentForType(ItemType type)

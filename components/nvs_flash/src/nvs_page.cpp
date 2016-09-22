@@ -29,7 +29,7 @@ uint32_t Page::Header::calculateCrc32()
                     reinterpret_cast<uint8_t*>(this) + offsetof(Header, mSeqNumber),
                     offsetof(Header, mCrc32) - offsetof(Header, mSeqNumber));
 }
-    
+
 esp_err_t Page::load(uint32_t sectorNumber)
 {
     mBaseAddress = sectorNumber * SEC_SIZE;
@@ -59,15 +59,13 @@ esp_err_t Page::load(uint32_t sectorNumber)
                 break;
             }
         }
-    }
-    else if (header.mCrc32 != header.calculateCrc32()) {
+    } else if (header.mCrc32 != header.calculateCrc32()) {
         header.mState = PageState::CORRUPT;
-    }
-    else {
+    } else {
         mState = header.mState;
         mSeqNumber = header.mSeqNumber;
     }
-    
+
     switch (mState) {
     case PageState::UNINITIALIZED:
         break;
@@ -172,7 +170,7 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
     size_t span = (totalSize + ENTRY_SIZE - 1) / ENTRY_SIZE;
     item = Item(nsIndex, datatype, span, key);
     mHashList.insert(item, mNextFreeEntry);
-    
+
     if (datatype != ItemType::SZ && datatype != ItemType::BLOB) {
         memcpy(item.data, data, dataSize);
         item.crc32 = item.calculateCrc32();
@@ -208,6 +206,7 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
                 return err;
             }
         }
+    
     }
     return ESP_OK;
 }
@@ -283,21 +282,21 @@ esp_err_t Page::eraseEntry(size_t index)
 {
     auto state = mEntryTable.get(index);
     assert(state == EntryState::WRITTEN || state == EntryState::EMPTY);
-    
+
     auto rc = alterEntryState(index, EntryState::ERASED);
     if (rc != ESP_OK) {
         return rc;
     }
-    
+
     return ESP_OK;
 }
-    
+
 esp_err_t Page::eraseEntryAndSpan(size_t index)
 {
     auto state = mEntryTable.get(index);
     assert(state == EntryState::WRITTEN || state == EntryState::EMPTY);
     mHashList.erase(index);
-    
+
     size_t span = 1;
     if (state == EntryState::WRITTEN) {
         Item item;
@@ -327,8 +326,7 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
                 return rc;
             }
         }
-    }
-    else {
+    } else {
         auto rc = alterEntryState(index, EntryState::ERASED);
         if (rc != ESP_OK) {
             return rc;
@@ -338,7 +336,7 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
     if (index == mFirstUsedEntry) {
         updateFirstUsedEntry(index, span);
     }
-    
+
     if (index + span > mNextFreeEntry) {
         mNextFreeEntry = index + span;
     }
@@ -361,7 +359,7 @@ void Page::updateFirstUsedEntry(size_t index, size_t span)
         }
     }
 }
-    
+
 esp_err_t Page::moveItem(Page& other)
 {
     if (mFirstUsedEntry == INVALID_ENTRY) {
@@ -371,7 +369,7 @@ esp_err_t Page::moveItem(Page& other)
     if (mFindInfo.itemIndex() == mFirstUsedEntry) {
         invalidateCache();
     }
-    
+
     if (other.mState == PageState::UNINITIALIZED) {
         auto err = other.initialize();
         if (err != ESP_OK) {
@@ -392,9 +390,9 @@ esp_err_t Page::moveItem(Page& other)
 
     size_t span = entry.span;
     size_t end = mFirstUsedEntry + span;
-    
+
     assert(mFirstUsedEntry != INVALID_ENTRY || span == 1);
-    
+
     for (size_t i = mFirstUsedEntry + 1; i < end; ++i) {
         readEntry(i, entry);
         err = other.writeEntry(entry);
@@ -485,7 +483,7 @@ esp_err_t Page::mLoadEntryTable()
                 lastItemIndex = INVALID_ENTRY;
                 continue;
             }
-            
+
             lastItemIndex = i;
 
             auto err = readEntry(i, item);
@@ -502,7 +500,7 @@ esp_err_t Page::mLoadEntryTable()
                 }
                 continue;
             }
-            
+
             mHashList.insert(item, i);
 
             if (item.datatype != ItemType::BLOB && item.datatype != ItemType::SZ) {
@@ -523,7 +521,7 @@ esp_err_t Page::mLoadEntryTable()
             }
             i += span - 1;
         }
-        
+
         // check that last item is not duplicate
         if (lastItemIndex != INVALID_ENTRY) {
             size_t findItemIndex = 0;
@@ -538,8 +536,7 @@ esp_err_t Page::mLoadEntryTable()
                 }
             }
         }
-    }
-    else if (mState == PageState::FULL || mState == PageState::FREEING) {
+    } else if (mState == PageState::FULL || mState == PageState::FREEING) {
         // We have already filled mHashList for page in active state.
         // Do the same for the case when page is in full or freeing state.
         Item item;
@@ -547,15 +544,15 @@ esp_err_t Page::mLoadEntryTable()
             if (mEntryTable.get(i) != EntryState::WRITTEN) {
                 continue;
             }
-            
+
             auto err = readEntry(i, item);
             if (err != ESP_OK) {
                 mState = PageState::INVALID;
                 return err;
             }
-            
+
             mHashList.insert(item, i);
-            
+
             size_t span = item.span;
             i += span - 1;
         }
@@ -574,7 +571,7 @@ esp_err_t Page::initialize()
     header.mState = mState;
     header.mSeqNumber = mSeqNumber;
     header.mCrc32 = header.calculateCrc32();
-    
+
     auto rc = spi_flash_write(mBaseAddress, reinterpret_cast<uint32_t*>(&header), sizeof(header));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
@@ -651,7 +648,7 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
     if (mState == PageState::CORRUPT || mState == PageState::INVALID || mState == PageState::UNINITIALIZED) {
         return ESP_ERR_NVS_NOT_FOUND;
     }
-    
+
     if (itemIndex >= ENTRY_COUNT) {
         return ESP_ERR_NVS_NOT_FOUND;
     }
@@ -665,22 +662,21 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
     if (itemIndex > mFirstUsedEntry && itemIndex < ENTRY_COUNT) {
         start = itemIndex;
     }
-    
+
     size_t end = mNextFreeEntry;
     if (end > ENTRY_COUNT) {
         end = ENTRY_COUNT;
     }
-    
+
     if (nsIndex != NS_ANY && datatype != ItemType::ANY && key != NULL) {
         size_t cachedIndex = mHashList.find(start, Item(nsIndex, datatype, 0, key));
         if (cachedIndex < ENTRY_COUNT) {
             start = cachedIndex;
-        }
-        else {
+        } else {
             return ESP_ERR_NVS_NOT_FOUND;
         }
     }
-    
+
     size_t next;
     for (size_t i = start; i < end; i = next) {
         next = i + 1;
@@ -783,7 +779,7 @@ void Page::invalidateCache()
 {
     mFindInfo = CachedFindInfo();
 }
-    
+
 void Page::debugDump() const
 {
     printf("state=%x addr=%x seq=%d\nfirstUsed=%d nextFree=%d used=%d erased=%d\n", mState, mBaseAddress, mSeqNumber, static_cast<int>(mFirstUsedEntry), static_cast<int>(mNextFreeEntry), mUsedEntryCount, mErasedEntryCount);
@@ -793,18 +789,15 @@ void Page::debugDump() const
         EntryState state = mEntryTable.get(i);
         if (state == EntryState::EMPTY) {
             printf("E\n");
-        }
-        else if (state == EntryState::ERASED) {
+        } else if (state == EntryState::ERASED) {
             printf("X\n");
-        }
-        else if (state == EntryState::WRITTEN) {
+        } else if (state == EntryState::WRITTEN) {
             Item item;
             readEntry(i, item);
             if (skip == 0) {
                 printf("W ns=%2u type=%2u span=%3u key=\"%s\"\n", item.nsIndex, static_cast<unsigned>(item.datatype), item.span, item.key);
                 skip = item.span - 1;
-            }
-            else {
+            } else {
                 printf("D\n");
                 skip--;
             }

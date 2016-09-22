@@ -51,7 +51,7 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
         Page& p = *it;
         size_t itemIndex = 0;
         Item item;
-        while(p.findItem(Page::NS_INDEX, ItemType::U8, nullptr, itemIndex, item) == ESP_OK) {
+        while (p.findItem(Page::NS_INDEX, ItemType::U8, nullptr, itemIndex, item) == ESP_OK) {
             NamespaceEntry* entry = new NamespaceEntry;
             item.getKey(entry->mName, sizeof(entry->mName) - 1);
             item.getValue(entry->mIndex);
@@ -103,14 +103,13 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
         if (err != ESP_OK) {
             return err;
         }
-    }
-    else if (err != ESP_OK) {
+    } else if (err != ESP_OK) {
         return err;
     }
 
     if (findPage) {
         if (findPage->state() == Page::PageState::UNINITIALIZED ||
-            findPage->state() == Page::PageState::INVALID) {
+                findPage->state() == Page::PageState::INVALID) {
             auto err = findItem(nsIndex, datatype, key, findPage, item);
             assert(err == ESP_OK);
         }
@@ -158,7 +157,7 @@ esp_err_t Storage::createOrOpenNamespace(const char* nsName, bool canCreate, uin
         }
         mNamespaceUsage.set(ns, true);
         nsIndex = ns;
-        
+
         NamespaceEntry* entry = new NamespaceEntry;
         entry->mIndex = ns;
         strncpy(entry->mName, nsName, sizeof(entry->mName) - 1);

@@ -20,15 +20,15 @@
 class HandleEntry : public intrusive_list_node<HandleEntry>
 {
 public:
-    HandleEntry(){}
-    
+    HandleEntry() {}
+
     HandleEntry(nvs_handle handle, bool readOnly, uint8_t nsIndex) :
-    mHandle(handle),
-    mReadOnly(readOnly),
-    mNsIndex(nsIndex)
+        mHandle(handle),
+        mReadOnly(readOnly),
+        mNsIndex(nsIndex)
     {
     }
-    
+
     nvs_handle mHandle;
     uint8_t mReadOnly;
     uint8_t mNsIndex;
@@ -263,12 +263,10 @@ static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, cons
 
     if (length == nullptr) {
         return ESP_ERR_NVS_INVALID_LENGTH;
-    }
-    else if (out_value == nullptr) {
+    } else if (out_value == nullptr) {
         *length = dataSize;
         return ESP_OK;
-    }
-    else if (*length < dataSize) {
+    } else if (*length < dataSize) {
         *length = dataSize;
         return ESP_ERR_NVS_INVALID_LENGTH;
     }
