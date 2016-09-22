@@ -35,14 +35,14 @@ typedef volatile struct {
             uint32_t flash_read: 1;                         /*Read flash enable. Read flash operation will be triggered when the bit is set. The bit will be cleared once the operation done. 1: enable 0: disable.*/
         };
         uint32_t val;
-    }cmd;
+    } cmd;
     union {
         struct {
             uint32_t reserved      : 8;
             uint32_t usr_addr_value:24;                     /*[31:8]:address to slave [7:0]:Reserved.*/
         };
         uint32_t val;
-    }addr;
+    } addr;
     union {
         struct {
             uint32_t reserved0:         10;                 /*reserved*/
@@ -63,7 +63,7 @@ typedef volatile struct {
             uint32_t reserved27:         5;                 /*reserved*/
         };
         uint32_t val;
-    }ctrl;
+    } ctrl;
     union {
         struct {
             uint32_t reserved0:        16;                  /*reserved*/
@@ -71,7 +71,7 @@ typedef volatile struct {
             uint32_t cs_hold_delay:     4;                  /*SPI cs signal is delayed by spi clock cycles*/
         };
         uint32_t val;
-    }ctrl1;
+    } ctrl1;
     union {
         struct {
             uint32_t status:    16;                         /*In the slave mode, it is the status for master to read out.*/
@@ -79,7 +79,7 @@ typedef volatile struct {
             uint32_t status_ext: 8;                         /*In the slave mode,it is the status for master to read out.*/
         };
         uint32_t val;
-    }rd_status;
+    } rd_status;
     union {
         struct {
             uint32_t setup_time:       4;                   /*(cycles-1) of ,prepare, phase by spi clock, this bits combined with spi_cs_setup bit.*/
@@ -94,7 +94,7 @@ typedef volatile struct {
             uint32_t cs_delay_num:     4;                   /*spi_cs signal is delayed by system clock cycles*/
         };
         uint32_t val;
-    }ctrl2;
+    } ctrl2;
     union {
         struct {
             uint32_t clkcnt_l:       6;                     /*In the master mode it must be equal to spi_clkcnt_N. In the slave mode it must be 0.*/
@@ -104,7 +104,7 @@ typedef volatile struct {
             uint32_t clk_equ_sysclk: 1;                     /*In the master mode 1: spi_clk is eqaul to system 0: spi_clk is divided from system clock.*/
         };
         uint32_t val;
-    }clock;
+    } clock;
     union {
         struct {
             uint32_t doutdin:           1;                  /*Set the bit to enable full duplex communication. 1: enable 0: disable.*/
@@ -138,7 +138,7 @@ typedef volatile struct {
             uint32_t usr_command:       1;                  /*This bit enable the command phase of an operation.*/
         };
         uint32_t val;
-    }user;
+    } user;
     union {
         struct {
             uint32_t usr_dummy_cyclelen: 8;                 /*The length in spi_clk cycles of dummy phase. The register value shall be (cycle_num-1).*/
@@ -146,7 +146,7 @@ typedef volatile struct {
             uint32_t usr_addr_bitlen:    6;                 /*The length in bits of address phase. The register value shall be (bit_num-1).*/
         };
         uint32_t val;
-    }user1;
+    } user1;
     union {
         struct {
             uint32_t usr_command_value: 16;                 /*The value of  command.*/
@@ -154,21 +154,21 @@ typedef volatile struct {
             uint32_t usr_command_bitlen: 4;                 /*The length in bits of command phase. The register value shall be (bit_num-1)*/
         };
         uint32_t val;
-    }user2;
+    } user2;
     union {
         struct {
             uint32_t usr_mosi_dbitlen:24;                   /*The length in bits of write-data. The register value shall be (bit_num-1).*/
             uint32_t reserved24:       8;                   /*reserved*/
         };
         uint32_t val;
-    }mosi_dlen;
+    } mosi_dlen;
     union {
         struct {
             uint32_t usr_miso_dbitlen:24;                   /*The length in bits of  read-data. The register value shall be (bit_num-1).*/
             uint32_t reserved24:       8;                   /*reserved*/
         };
         uint32_t val;
-    }miso_dlen;
+    } miso_dlen;
     uint32_t slv_wr_status;                                 /*In the slave mode this register are the status register for the master to write into. In the master mode this register are the higher 32bits in the 64 bits address condition.*/
     union {
         struct {
@@ -185,7 +185,7 @@ typedef volatile struct {
             uint32_t reserved31:     1;                     /*reserved*/
         };
         uint32_t val;
-    }pin;
+    } pin;
     union {
         struct {
             uint32_t rd_buf_done:  1;                       /*The interrupt raw bit for the completion of read-buffer operation in the slave mode.*/
@@ -206,7 +206,7 @@ typedef volatile struct {
             uint32_t sync_reset:   1;                       /*Software reset enable, reset the spi clock line cs line and data lines.*/
         };
         uint32_t val;
-    }slave;
+    } slave;
     union {
         struct {
             uint32_t rdbuf_dummy_en:  1;                    /*In the slave mode it is the enable bit of dummy phase for read-buffer operations.*/
@@ -221,7 +221,7 @@ typedef volatile struct {
             uint32_t status_bitlen:   5;                    /*In the slave mode it is the length of status bit.*/
         };
         uint32_t val;
-    }slave1;
+    } slave1;
     union {
         struct {
             uint32_t rdsta_dummy_cyclelen: 8;               /*In the slave mode it is the length in spi_clk cycles of dummy phase for read-status operations. The register value shall be (cycle_num-1).*/
@@ -230,7 +230,7 @@ typedef volatile struct {
             uint32_t wrbuf_dummy_cyclelen: 8;               /*In the slave mode it is the length in spi_clk cycles of dummy phase for write-buffer operations. The register value shall be (cycle_num-1).*/
         };
         uint32_t val;
-    }slave2;
+    } slave2;
     union {
         struct {
             uint32_t rdbuf_cmd_value: 8;                    /*In the slave mode it is the value of read-buffer command.*/
@@ -239,21 +239,21 @@ typedef volatile struct {
             uint32_t wrsta_cmd_value: 8;                    /*In the slave mode it is the value of write-status command.*/
         };
         uint32_t val;
-    }slave3;
+    } slave3;
     union {
         struct {
             uint32_t bit_len:    24;                        /*In the slave mode it is the length in bits for write-buffer operations. The register value shall be (bit_num-1).*/
             uint32_t reserved24:  8;                        /*reserved*/
         };
         uint32_t val;
-    }slv_wrbuf_dlen;
+    } slv_wrbuf_dlen;
     union {
         struct {
             uint32_t bit_len:    24;                        /*In the slave mode it is the length in bits for read-buffer operations. The register value shall be (bit_num-1).*/
             uint32_t reserved24:  8;                        /*reserved*/
         };
         uint32_t val;
-    }slv_rdbuf_dlen;
+    } slv_rdbuf_dlen;
     union {
         struct {
             uint32_t req_en:        1;                      /*For SPI0  Cache access enable  1: enable  0:disable.*/
@@ -263,7 +263,7 @@ typedef volatile struct {
             uint32_t reserved4:    28;                      /*reserved*/
         };
         uint32_t val;
-    }cache_fctrl;
+    } cache_fctrl;
     union {
         struct {
             uint32_t reserved0:           1;                /*reserved*/
@@ -279,7 +279,7 @@ typedef volatile struct {
             uint32_t reserved29:          3;                /*reserved*/
         };
         uint32_t val;
-    }cache_sctrl;
+    } cache_sctrl;
     union {
         struct {
             uint32_t dio:       1;                          /*For SPI0 SRAM DIO mode enable .  SRAM DIO enable command will be send when the bit is set. The bit will be cleared once the operation done.*/
@@ -289,7 +289,7 @@ typedef volatile struct {
             uint32_t reserved5:27;                          /*reserved*/
         };
         uint32_t val;
-    }sram_cmd;
+    } sram_cmd;
     union {
         struct {
             uint32_t usr_rd_cmd_value:   16;                /*For SPI0 When cache mode is enable it is the read command value of command phase for SRAM.*/
@@ -297,7 +297,7 @@ typedef volatile struct {
             uint32_t usr_rd_cmd_bitlen:   4;                /*For SPI0 When cache mode is enable it is the length in bits of command phase for SRAM. The register value shall be (bit_num-1).*/
         };
         uint32_t val;
-    }sram_drd_cmd;
+    } sram_drd_cmd;
     union {
         struct {
             uint32_t usr_wr_cmd_value: 16;                  /*For SPI0 When cache mode is enable it is the write command value of command phase for SRAM.*/
@@ -305,14 +305,14 @@ typedef volatile struct {
             uint32_t usr_wr_cmd_bitlen: 4;                  /*For SPI0 When cache mode is enable it is the in bits of command phase  for SRAM. The register value shall be (bit_num-1).*/
         };
         uint32_t val;
-    }sram_dwr_cmd;
+    } sram_dwr_cmd;
     union {
         struct {
             uint32_t slv_rdata_bit:24;                      /*In the slave mode it is the bit length of read data. The value is the length - 1.*/
             uint32_t reserved24:    8;                      /*reserved*/
         };
         uint32_t val;
-    }slv_rd_bit;
+    } slv_rd_bit;
     uint32_t reserved_68;
     uint32_t reserved_6c;
     uint32_t reserved_70;
@@ -341,7 +341,7 @@ typedef volatile struct {
             uint32_t t_pp_ena:   1;                         /*page program delay enable.*/
         };
         uint32_t val;
-    }ext0;
+    } ext0;
     union {
         struct {
             uint32_t t_erase_time: 12;                      /*erase flash delay time by system clock.*/
@@ -351,21 +351,21 @@ typedef volatile struct {
             uint32_t t_erase_ena:   1;                      /*erase flash delay enable.*/
         };
         uint32_t val;
-    }ext1;
+    } ext1;
     union {
         struct {
             uint32_t st:         3;                         /*The status of spi state machine .*/
             uint32_t reserved3: 29;                         /*reserved*/
         };
         uint32_t val;
-    }ext2;
+    } ext2;
     union {
         struct {
             uint32_t int_hold_ena: 2;                       /*This register is for two SPI masters to share the same cs clock and data signals. The bits of one SPI are set  if the other SPI is busy  the SPI will be hold. 1(3): hold at ,idle, phase 2: hold at ,prepare, phase.*/
             uint32_t reserved2:   30;                       /*reserved*/
         };
         uint32_t val;
-    }ext3;
+    } ext3;
     union {
         struct {
             uint32_t reserved0:         2;                  /*reserved*/
@@ -387,7 +387,7 @@ typedef volatile struct {
             uint32_t reserved17:       15;                  /*reserved*/
         };
         uint32_t val;
-    }dma_conf;
+    } dma_conf;
     union {
         struct {
             uint32_t addr:        20;                       /*The address of the first outlink descriptor.*/
@@ -398,7 +398,7 @@ typedef volatile struct {
             uint32_t reserved31:   1;                       /*reserved*/
         };
         uint32_t val;
-    }dma_out_link;
+    } dma_out_link;
     union {
         struct {
             uint32_t addr:       20;                        /*The address of the first inlink descriptor.*/
@@ -410,7 +410,7 @@ typedef volatile struct {
             uint32_t reserved31:  1;                        /*reserved*/
         };
         uint32_t val;
-    }dma_in_link;
+    } dma_in_link;
     union {
         struct {
             uint32_t rx_en:      1;                         /*spi dma read data status bit.*/
@@ -418,7 +418,7 @@ typedef volatile struct {
             uint32_t reserved2: 30;                         /*spi dma read data from memory count.*/
         };
         uint32_t val;
-    }dma_status;
+    } dma_status;
     union {
         struct {
             uint32_t inlink_dscr_empty:  1;                 /*The enable bit for lack of enough inlink descriptors.*/
@@ -433,7 +433,7 @@ typedef volatile struct {
             uint32_t reserved9:         23;                 /*reserved*/
         };
         uint32_t val;
-    }dma_int_ena;
+    } dma_int_ena;
     union {
         struct {
             uint32_t inlink_dscr_empty:  1;                 /*The raw bit for lack of enough inlink descriptors.*/
@@ -448,7 +448,7 @@ typedef volatile struct {
             uint32_t reserved9:         23;                 /*reserved*/
         };
         uint32_t val;
-    }dma_int_raw;
+    } dma_int_raw;
     union {
         struct {
             uint32_t inlink_dscr_empty:  1;                  /*The status bit for lack of enough inlink descriptors.*/
@@ -463,7 +463,7 @@ typedef volatile struct {
             uint32_t reserved9:         23;                  /*reserved*/
         };
         uint32_t val;
-    }dma_int_st;
+    } dma_int_st;
     union {
         struct {
             uint32_t inlink_dscr_empty:  1;                 /*The clear bit for lack of enough inlink descriptors.*/
@@ -478,7 +478,7 @@ typedef volatile struct {
             uint32_t reserved9:         23;                 /*reserved*/
         };
         uint32_t val;
-    }dma_int_clr;
+    } dma_int_clr;
     uint32_t dma_in_err_eof_des_addr;                       /*The inlink descriptor address when spi dma produce receiving error.*/
     uint32_t dma_in_suc_eof_des_addr;                       /*The last inlink descriptor address when spi dma produce from_suc_eof.*/
     uint32_t dma_inlink_dscr;                               /*The content of current in descriptor pointer.*/
@@ -668,7 +668,7 @@ typedef volatile struct {
             uint32_t reserved28: 4;                         /*reserved*/
         };
         uint32_t val;
-    }date;
+    } date;
 } spi_dev_t;
 extern spi_dev_t SPI0;                                      /* SPI0 IS FOR INTERNAL USE*/
 extern spi_dev_t SPI1;

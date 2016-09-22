@@ -27,7 +27,7 @@ typedef volatile struct {
                 uint32_t enable:       1;             /*When set  timer 0/1 time-base counter is enabled*/
             };
             uint32_t val;
-        }config;
+        } config;
         uint32_t cnt_low;                             /*Register to store timer 0/1 time-base counter current value lower 32 bits.*/
         uint32_t cnt_high;                            /*Register to store timer 0 time-base counter current value higher 32 bits.*/
         uint32_t update;                              /*Write any value will trigger a timer 0 time-base counter value update (timer 0 current value will be stored in registers above)*/
@@ -36,7 +36,7 @@ typedef volatile struct {
         uint32_t load_low;                            /*Lower 32 bits of the value that will load into timer 0 time-base counter*/
         uint32_t load_high;                           /*higher 32 bits of the value that will load into timer 0 time-base counter*/
         uint32_t reload;                              /*Write any value will trigger timer 0 time-base counter reload*/
-    }hw_timer[2];
+    } hw_timer[2];
     union {
         struct {
             uint32_t reserved0:       14;
@@ -52,14 +52,14 @@ typedef volatile struct {
             uint32_t en:               1;             /*When set  SWDT is enabled*/
         };
         uint32_t val;
-    }wdt_config0;
+    } wdt_config0;
     union {
         struct {
             uint32_t reserved0:       16;
             uint32_t clk_prescale:16;             /*SWDT clock prescale value. Period = 12.5ns * value stored in this register*/
         };
         uint32_t val;
-    }wdt_config1;
+    } wdt_config1;
     uint32_t wdt_config2;                             /*Stage 0 timeout value in SWDT clock cycles*/
     uint32_t wdt_config3;                             /*Stage 1 timeout value in SWDT clock cycles*/
     uint32_t wdt_config4;                             /*Stage 2 timeout value in SWDT clock cycles*/
@@ -76,14 +76,14 @@ typedef volatile struct {
             uint32_t start:         1;
         };
         uint32_t val;
-    }rtc_cali_cfg;
+    } rtc_cali_cfg;
     union {
         struct {
             uint32_t reserved0:      7;
             uint32_t value:25;
         };
         uint32_t val;
-    }rtc_cali_cfg1;
+    } rtc_cali_cfg1;
     union {
         struct {
             uint32_t reserved0:         7;
@@ -99,14 +99,14 @@ typedef volatile struct {
             uint32_t en:           1;
         };
         uint32_t val;
-    }lactconfig;
+    } lactconfig;
     union {
         struct {
             uint32_t reserved0:         6;
             uint32_t step_len:26;
         };
         uint32_t val;
-    }lactrtc;
+    } lactrtc;
     uint32_t lactlo;                                  /**/
     uint32_t lacthi;                                  /**/
     uint32_t lactupdate;                              /**/
@@ -124,7 +124,7 @@ typedef volatile struct {
             uint32_t reserved4: 28;
         };
         uint32_t val;
-    }int_ena;
+    } int_ena;
     union {
         struct {
             uint32_t t0:        1;                    /*interrupt when timer0 alarm*/
@@ -134,7 +134,7 @@ typedef volatile struct {
             uint32_t reserved4:28;
         };
         uint32_t val;
-    }int_raw;
+    } int_raw;
     union {
         struct {
             uint32_t t0:         1;                   /*interrupt when timer0 alarm*/
@@ -144,7 +144,7 @@ typedef volatile struct {
             uint32_t reserved4: 28;
         };
         uint32_t val;
-    }int_st_timers;
+    } int_st_timers;
     union {
         struct {
             uint32_t t0:         1;                   /*interrupt when timer0 alarm*/
@@ -154,7 +154,7 @@ typedef volatile struct {
             uint32_t reserved4: 28;
         };
         uint32_t val;
-    }int_clr_timers;
+    } int_clr_timers;
     uint32_t reserved_a8;
     uint32_t reserved_ac;
     uint32_t reserved_b0;
@@ -181,14 +181,14 @@ typedef volatile struct {
             uint32_t reserved28:   4;
         };
         uint32_t val;
-    }timg_date;
+    } timg_date;
     union {
         struct {
             uint32_t reserved0: 31;
             uint32_t en:     1;                   /*Force clock enable for this regfile*/
         };
         uint32_t val;
-    }clk;
+    } clk;
 } timg_dev_t;
 extern timg_dev_t TIMERG0;
 extern timg_dev_t TIMERG1;

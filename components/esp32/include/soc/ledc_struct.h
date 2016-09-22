@@ -24,21 +24,21 @@ typedef volatile struct {
                 uint32_t clk_en:     1;              /*This bit is clock gating control signal. when software configure LED_PWM internal registers  it controls the register clock.*/
             };
             uint32_t val;
-        }conf0;
+        } conf0;
         union {
             struct {
                 uint32_t hpoint:     20;             /*The output value changes to high when htimerx(x=[0 3]) selected by high speed channel has reached reg_hpoint_hsch0[19:0]*/
                 uint32_t reserved20: 12;
             };
             uint32_t val;
-        }hpoint;
+        } hpoint;
         union {
             struct {
                 uint32_t duty:      25;              /*The register is used to control output duty. When hstimerx(x=[0 3]) chosen by high speed channel  has reached reg_lpoint_hsch0 the output signal changes to low. reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4])          (1)  reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4] +1)     (2)  The least four bits in this register represent the decimal part and determines when to choose (1) or (2)*/
                 uint32_t reserved25: 7;
             };
             uint32_t val;
-        }duty;
+        } duty;
         union {
             struct {
                 uint32_t duty_scale:10;              /*This register controls the increase or decrease step scale for high speed channel.*/
@@ -48,15 +48,15 @@ typedef volatile struct {
                 uint32_t duty_start: 1;              /*When reg_duty_num_hsch0 reg_duty_cycle_hsch0 and reg_duty_scale_hsch0 has been configured. these register won't take effect until set reg_duty_start_hsch0. this bit is automatically cleared by hardware.*/
             };
             uint32_t val;
-        }conf1;
+        } conf1;
         union {
             struct {
                 uint32_t duty_read: 25;              /*This register represents the current duty of the output signal for high speed channel.*/
                 uint32_t reserved25: 7;
             };
             uint32_t val;
-        }duty_rd;
-    }high_speed_channel[8];
+        } duty_rd;
+    } high_speed_channel[8];
     struct{
         union {
             struct {
@@ -67,21 +67,21 @@ typedef volatile struct {
                 uint32_t reserved5: 27;
             };
             uint32_t val;
-        }conf0;
+        } conf0;
         union {
             struct {
                 uint32_t hpoint:     20;             /*The output value changes to high when lstimerx(x=[0 3]) selected by low speed channel has reached reg_hpoint_lsch0[19:0]*/
                 uint32_t reserved20: 12;
             };
             uint32_t val;
-        }hpoint;
+        } hpoint;
         union {
             struct {
                 uint32_t duty:      25;              /*The register is used to control output duty. When lstimerx(x=[0 3]) choosed by low speed channel has reached reg_lpoint_lsch0 the output signal changes to low. reg_lpoint_lsch0=(reg_hpoint_lsch0[19:0]+reg_duty_lsch0[24:4])          (1)  reg_lpoint_lsch0=(reg_hpoint_lsch0[19:0]+reg_duty_lsch0[24:4] +1)     (2)  The least four bits in this register represent the decimal part and determines when to choose (1) or (2)*/
                 uint32_t reserved25: 7;
             };
             uint32_t val;
-        }duty;
+        } duty;
         union {
             struct {
                 uint32_t duty_scale:10;              /*This register controls the increase or decrease step scale for low speed channel.*/
@@ -91,15 +91,15 @@ typedef volatile struct {
                 uint32_t duty_start: 1;              /*When reg_duty_num_hsch1 reg_duty_cycle_hsch1 and reg_duty_scale_hsch1 has been configured. these register won't take effect until set reg_duty_start_hsch1. this bit is automatically cleared by hardware.*/
             };
             uint32_t val;
-        }conf1;
+        } conf1;
         union {
             struct {
                 uint32_t duty_read: 25;              /*This register represents the current duty of the output signal for low speed channel.*/
                 uint32_t reserved25: 7;
             };
             uint32_t val;
-        }duty_r;
-    }low_speed_channel[8];
+        } duty_r;
+    } low_speed_channel[8];
     struct{
         union {
             struct {
@@ -111,15 +111,15 @@ typedef volatile struct {
                 uint32_t reserved26: 6;
             };
             uint32_t val;
-        }conf;
+        } conf;
         union {
             struct {
                 uint32_t timer_cnt:  20;               /*software can read this register to get the current counter value in high speed timer*/
                 uint32_t reserved20: 12;
             };
             uint32_t val;
-        }value;
-    }high_speed_timer[4];
+        } value;
+    } high_speed_timer[4];
     struct{
         union {
             struct {
@@ -132,15 +132,15 @@ typedef volatile struct {
                 uint32_t reserved27:   5;
             };
             uint32_t val;
-        }conf;
+        } conf;
         union {
             struct {
                 uint32_t timer_cnt:   20;              /*software can read this register to get the current counter value in low speed timer.*/
                 uint32_t reserved20:  12;
             };
             uint32_t val;
-        }value;
-    }low_speed_timer[4];
+        } value;
+    } low_speed_timer[4];
     union {
         struct {
             uint32_t hstimer0_ovf:        1;           /*The interrupt raw bit for high speed channel0  counter overflow.*/
@@ -170,7 +170,7 @@ typedef volatile struct {
             uint32_t reserved24:          8;
         };
         uint32_t val;
-    }int_raw;
+    } int_raw;
     union {
         struct {
             uint32_t hstimer0_ovf:        1;            /*The interrupt status bit for high speed channel0  counter overflow event.*/
@@ -199,7 +199,7 @@ typedef volatile struct {
             uint32_t reserved24:          8;
         };
         uint32_t val;
-    }int_st;
+    } int_st;
     union {
         struct {
             uint32_t hstimer0_ovf:        1;           /*The interrupt enable bit for high speed channel0  counter overflow interrupt.*/
@@ -229,7 +229,7 @@ typedef volatile struct {
             uint32_t reserved24:          8;
         };
         uint32_t val;
-    }int_ena;
+    } int_ena;
     union {
         struct {
             uint32_t hstimer0_ovf:        1;           /*Set this  bit to clear  high speed channel0  counter overflow interrupt.*/
@@ -259,14 +259,14 @@ typedef volatile struct {
             uint32_t reserved24:          8;
         };
         uint32_t val;
-    }int_clr;
+    } int_clr;
     union {
         struct {
             uint32_t apb_clk_sel: 1;                   /*This bit is used to set the frequency of slow_clk. 1'b1:80mhz  1'b0:8mhz*/
             uint32_t reserved1:  31;
         };
         uint32_t val;
-    }conf;
+    } conf;
     uint32_t reserved_194;
     uint32_t reserved_198;
     uint32_t reserved_19c;

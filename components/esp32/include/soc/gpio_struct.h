@@ -24,28 +24,28 @@ typedef volatile struct {
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }out1;
+    } out1;
     union {
         struct {
             uint32_t data:       8;                 /*GPIO32~39 output value write 1 to set*/
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }out1_w1ts;
+    } out1_w1ts;
     union {
         struct {
             uint32_t data:       8;                 /*GPIO32~39 output value write 1 to clear*/
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }out1_w1tc;
+    } out1_w1tc;
     union {
         struct {
             uint32_t sel:        8;                 /*SDIO PADS on/off control from outside*/
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }sdio_select;
+    } sdio_select;
     uint32_t enable;                                /*GPIO0~31 output enable*/
     uint32_t enable_w1ts;                           /*GPIO0~31 output enable write 1 to set*/
     uint32_t enable_w1tc;                           /*GPIO0~31 output enable write 1 to clear*/
@@ -55,28 +55,28 @@ typedef volatile struct {
             uint32_t reserved8:  24;
         };
         uint32_t val;
-    }enable1;
+    } enable1;
     union {
         struct {
             uint32_t data:        8;                /*GPIO32~39 output enable write 1 to set*/
             uint32_t reserved8:  24;
         };
         uint32_t val;
-    }enable1_w1ts;
+    } enable1_w1ts;
     union {
         struct {
             uint32_t data:        8;                /*GPIO32~39 output enable write 1 to clear*/
             uint32_t reserved8:  24;
         };
         uint32_t val;
-    }enable1_w1tc;
+    } enable1_w1tc;
     union {
         struct {
-            uint32_t strapping: 16;                 /*GPIO strapping results: {2'd0  boot_sel_dig[7:1]  vsdio_boot_sel  boot_sel_chip[5:0]}.   Boot_sel_dig[7:1]: {U0RXD  SD_CLK  SD_CMD  SD_DATA0  SD_DATA1  SD_DATA2  SD_DATA3}.  vsdio_boot_sel: MTDI. boot_sel_chip[5:0]: {GPIO0  U0TXD  GPIO2  GPIO4  MTDO  GPIO5}*/
+            uint32_t strapping: 16;                 /*GPIO strapping results: {2'd0  boot_sel_dig[7:1]  vsdio_boot_sel  boot_sel_chip[5:0]} .   Boot_sel_dig[7:1]: {U0RXD  SD_CLK  SD_CMD  SD_DATA0  SD_DATA1  SD_DATA2  SD_DATA3} .  vsdio_boot_sel: MTDI. boot_sel_chip[5:0]: {GPIO0  U0TXD  GPIO2  GPIO4  MTDO  GPIO5} */
             uint32_t reserved16:16;
         };
         uint32_t val;
-    }strap;
+    } strap;
     uint32_t in;                                    /*GPIO0~31 input value*/
     union {
         struct {
@@ -84,7 +84,7 @@ typedef volatile struct {
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }in1;
+    } in1;
     uint32_t status;                                /*GPIO0~31 interrupt status*/
     uint32_t status_w1ts;                           /*GPIO0~31 interrupt status write 1 to set*/
     uint32_t status_w1tc;                           /*GPIO0~31 interrupt status write 1 to clear*/
@@ -94,21 +94,21 @@ typedef volatile struct {
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }status1;
+    } status1;
     union {
         struct {
             uint32_t intr_st:    8;                 /*GPIO32~39 interrupt status write 1 to set*/
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }status1_w1ts;
+    } status1_w1ts;
     union {
         struct {
             uint32_t intr_st:    8;                 /*GPIO32~39 interrupt status write 1 to clear*/
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }status1_w1tc;
+    } status1_w1tc;
     uint32_t reserved_5c;
     uint32_t acpu_int;                              /*GPIO0~31 APP CPU interrupt status*/
     uint32_t acpu_nmi_int;                          /*GPIO0~31 APP CPU non-maskable interrupt status*/
@@ -121,35 +121,35 @@ typedef volatile struct {
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }acpu_int1;
+    } acpu_int1;
     union {
         struct {
             uint32_t intr:       8;                 /*GPIO32~39 APP CPU non-maskable interrupt status*/
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }acpu_nmi_int1;
+    } acpu_nmi_int1;
     union {
         struct {
             uint32_t intr:       8;                 /*GPIO32~39 PRO CPU interrupt status*/
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }pcpu_int1;
+    } pcpu_int1;
     union {
         struct {
             uint32_t intr:       8;                 /*GPIO32~39 PRO CPU non-maskable interrupt status*/
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }pcpu_nmi_int1;
+    } pcpu_nmi_int1;
     union {
         struct {
             uint32_t intr:       8;                 /*SDIO's extent GPIO32~39 interrupt*/
             uint32_t reserved8: 24;
         };
         uint32_t val;
-    }cpusdio_int1;
+    } cpusdio_int1;
     union {
         struct {
             uint32_t reserved0:     2;
@@ -162,7 +162,7 @@ typedef volatile struct {
             uint32_t reserved18:   14;
         };
         uint32_t val;
-    }pin[40];
+    } pin[40];
     union {
         struct {
             uint32_t rtc_max:     10;
@@ -170,7 +170,7 @@ typedef volatile struct {
             uint32_t start:        1;
         };
         uint32_t val;
-    }cali_conf;
+    } cali_conf;
     union {
         struct {
             uint32_t value_sync2: 20;
@@ -179,7 +179,7 @@ typedef volatile struct {
             uint32_t rdy_sync2:    1;
         };
         uint32_t val;
-    }cali_data;
+    } cali_data;
     union {
         struct {
             uint32_t func_sel:    6;                /*select one of the 256 inputs*/
@@ -188,7 +188,7 @@ typedef volatile struct {
             uint32_t reserved8:  24;                /*The 256 registers below are selection control for 256 input signals connected to GPIO matrix's 40 GPIO input  if GPIO_FUNCx_IN_SEL is set to n(0<=n<40): it means GPIOn input is used for input signal x  if GPIO_FUNCx_IN_SEL is set to 0x38: the input signal x is set to 1   if GPIO_FUNCx_IN_SEL is set to 0x30: the input signal x is set to 0*/
         };
         uint32_t val;
-    }func_in_sel_cfg[256];
+    } func_in_sel_cfg[256];
     union {
         struct {
             uint32_t func_sel:     9;               /*select one of the 256 output to 40 GPIO*/
@@ -198,7 +198,7 @@ typedef volatile struct {
             uint32_t reserved12:  20;               /*The 40 registers below are selection control for 40 GPIO output  if GPIO_FUNCx_OUT_SEL is set to n(0<=n<256): it means GPIOn input is used for output signal x  if GPIO_FUNCx_OUT_INV_SEL is set to 1  the output signal x is set to ~value.  if GPIO_FUNC0_OUT_SEL is 256 or GPIO_FUNC0_OEN_SEL is 1 using GPIO_ENABLE_DATA[x] for the enable value else using the signal enable*/
         };
         uint32_t val;
-    }func_out_sel_cfg[40];
+    } func_out_sel_cfg[40];
 } gpio_dev_t;
 extern gpio_dev_t GPIO;
 #endif  /* _SOC_GPIO_STRUCT_H_ */

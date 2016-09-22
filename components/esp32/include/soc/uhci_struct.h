@@ -43,7 +43,7 @@ typedef volatile struct {
             uint32_t reserved24:         8;
         };
         uint32_t val;
-    }conf0;
+    } conf0;
     union {
         struct {
             uint32_t rx_start:            1;               /*when a separator char has been send  it will produce uhci_rx_start_int interrupt.*/
@@ -66,7 +66,7 @@ typedef volatile struct {
             uint32_t reserved17:         15;
         };
         uint32_t val;
-    }int_raw;
+    } int_raw;
     union {
         struct {
             uint32_t rx_start:            1;
@@ -89,7 +89,7 @@ typedef volatile struct {
             uint32_t reserved17:         15;
         };
         uint32_t val;
-    }int_st;
+    } int_st;
     union {
         struct {
             uint32_t rx_start:            1;
@@ -112,7 +112,7 @@ typedef volatile struct {
             uint32_t reserved17:         15;
         };
         uint32_t val;
-    }int_ena;
+    } int_ena;
     union {
         struct {
             uint32_t rx_start:            1;
@@ -135,7 +135,7 @@ typedef volatile struct {
             uint32_t reserved17:         15;
         };
         uint32_t val;
-    }int_clr;
+    } int_clr;
     union {
         struct {
             uint32_t full:       1;                      /*1:DMA out link descriptor's fifo is full.*/
@@ -143,7 +143,7 @@ typedef volatile struct {
             uint32_t reserved2: 30;
         };
         uint32_t val;
-    }dma_out_status;
+    } dma_out_status;
     union {
         struct {
             uint32_t fifo_wdata: 9;                      /*This is the data need to be pushed into out link descriptor's fifo.*/
@@ -152,7 +152,7 @@ typedef volatile struct {
             uint32_t reserved17:15;
         };
         uint32_t val;
-    }dma_out_push;
+    } dma_out_push;
     union {
         struct {
             uint32_t full:         1;
@@ -162,7 +162,7 @@ typedef volatile struct {
             uint32_t reserved7:   25;
         };
         uint32_t val;
-    }dma_in_status;
+    } dma_in_status;
     union {
         struct {
             uint32_t fifo_rdata:  12;                    /*This register stores the data pop from in link descriptor's fifo.*/
@@ -171,7 +171,7 @@ typedef volatile struct {
             uint32_t reserved17:  15;
         };
         uint32_t val;
-    }dma_in_pop;
+    } dma_in_pop;
     union {
         struct {
             uint32_t addr:         20;                   /*This register stores the least 20 bits of the first out link descriptor's address.*/
@@ -182,7 +182,7 @@ typedef volatile struct {
             uint32_t park:          1;                   /*1： the out link descriptor's fsm is in idle state. 0:the out link descriptor's fsm is working.*/
         };
         uint32_t val;
-    }dma_out_link;
+    } dma_out_link;
     union {
         struct {
             uint32_t addr:       20;                     /*This register stores the least 20 bits of the first in link descriptor's address.*/
@@ -194,7 +194,7 @@ typedef volatile struct {
             uint32_t park:        1;                     /*1:the in link descriptor's fsm is in idle state.   0:the in link descriptor's fsm is working*/
         };
         uint32_t val;
-    }dma_in_link;
+    } dma_in_link;
     union {
         struct {
             uint32_t check_sum_en:          1;            /*Set this bit to enable decoder to check  check_sum in packet header.*/
@@ -210,7 +210,7 @@ typedef volatile struct {
             uint32_t reserved21:           11;
         };
         uint32_t val;
-    }conf1;
+    } conf1;
     uint32_t state0;                                       /**/
     uint32_t state1;                                       /**/
     uint32_t dma_out_eof_des_addr;                         /*This register stores the address of out link description when eof bit in this descriptor is 1.*/
@@ -225,7 +225,7 @@ typedef volatile struct {
             uint32_t reserved6:  26;
         };
         uint32_t val;
-    }ahb_test;
+    } ahb_test;
     uint32_t dma_in_dscr;                                  /*The content of current in link descriptor's third dword*/
     uint32_t dma_in_dscr_bf0;                              /*The content of current in link descriptor's first dword*/
     uint32_t dma_in_dscr_bf1;                              /*The content of current in link descriptor's second dword*/
@@ -245,7 +245,7 @@ typedef volatile struct {
             uint32_t reserved8:   24;
         };
         uint32_t val;
-    }escape_conf;
+    } escape_conf;
     union {
         struct {
             uint32_t txfifo_timeout:       8;              /*This register stores the timeout value.when DMA takes more time than this register value to receive a data  it will produce  uhci_tx_hung_int interrupt.*/
@@ -257,7 +257,7 @@ typedef volatile struct {
             uint32_t reserved24:           8;
         };
         uint32_t val;
-    }hung_conf;
+    } hung_conf;
     uint32_t ack_num;                                      /**/
     uint32_t rx_head;                                      /*This register stores the packet header received by DMA*/
     union {
@@ -269,10 +269,10 @@ typedef volatile struct {
             uint32_t reserved8:      24;
         };
         uint32_t val;
-    }quick_sent;
+    } quick_sent;
     struct{
         uint32_t w_data[2];                                /*This register stores the content of short packet's dword*/
-    }q_data[7];
+    } q_data[7];
     union {
         struct {
             uint32_t seper_char:      8;                   /*This register stores the separator char  separator char is used to separate the data frame.*/
@@ -281,7 +281,7 @@ typedef volatile struct {
             uint32_t reserved24:      8;
         };
         uint32_t val;
-    }esc_conf0;
+    } esc_conf0;
     union {
         struct {
             uint32_t seq0:       8;                        /*This register stores the first substitute char used to replace the separate char.*/
@@ -290,7 +290,7 @@ typedef volatile struct {
             uint32_t reserved24: 8;
         };
         uint32_t val;
-    }esc_conf1;
+    } esc_conf1;
     union {
         struct {
             uint32_t seq1:       8;                        /*This register stores the flow control char to turn on the flow_control*/
@@ -299,7 +299,7 @@ typedef volatile struct {
             uint32_t reserved24: 8;
         };
         uint32_t val;
-    }esc_conf2;
+    } esc_conf2;
     union {
         struct {
             uint32_t seq2:       8;                        /*This register stores the flow_control char to turn off the flow_control*/
@@ -308,14 +308,14 @@ typedef volatile struct {
             uint32_t reserved24: 8;
         };
         uint32_t val;
-    }esc_conf3;
+    } esc_conf3;
     union {
         struct {
             uint32_t thrs:      13;                        /*when the amount of packet payload is larger than this value the process of receiving data is done.*/
             uint32_t reserved13:19;
         };
         uint32_t val;
-    }pkt_thres;
+    } pkt_thres;
     uint32_t reserved_c4;
     uint32_t reserved_c8;
     uint32_t reserved_cc;
