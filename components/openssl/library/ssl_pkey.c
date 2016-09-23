@@ -118,9 +118,6 @@ int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
  */
 int SSL_use_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
 {
-    int ret;
-    int ssl_ret;
-
     SSL_ASSERT(ctx);
     SSL_ASSERT(pkey);
 
