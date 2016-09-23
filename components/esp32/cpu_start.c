@@ -44,8 +44,11 @@
 #include "esp_log.h"
 
 static void IRAM_ATTR user_start_cpu0(void);
+#if !CONFIG_FREERTOS_UNICORE
 static void IRAM_ATTR call_user_start_cpu1();
 static void IRAM_ATTR user_start_cpu1(void);
+static bool app_cpu_started = false;
+#endif
 extern void ets_setup_syscalls(void);
 extern esp_err_t app_main(void *ctx);
 
@@ -57,7 +60,6 @@ extern void (*__init_array_end)(void);
 extern volatile int port_xSchedulerRunning[2];
 
 static const char* TAG = "cpu_start";
-static bool app_cpu_started = false;
 
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
@@ -107,7 +109,7 @@ void IRAM_ATTR call_user_start_cpu0()
     user_start_cpu0();
 }
 
-
+#if !CONFIG_FREERTOS_UNICORE
 void IRAM_ATTR call_user_start_cpu1()
 {
     asm volatile (\
@@ -130,6 +132,7 @@ void IRAM_ATTR user_start_cpu1(void)
     ESP_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
 }
+#endif
 
 static void do_global_ctors(void)
 {
