@@ -32,7 +32,7 @@ X509* X509_new(void)
 
     x->method = X509_method();
 
-    ret = x->method->x509_new(x);
+    ret = X509_METHOD_CALL(new, x);
     if (ret)
         SSL_RET(failed2, "x509_new\n");
 
@@ -256,5 +256,5 @@ X509 *SSL_get_peer_certificate(const SSL *ssl)
 {
     SSL_ASSERT(ssl);
 
-    return ssl->session.peer;
+    return ssl->session->peer;
 }

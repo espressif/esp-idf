@@ -213,7 +213,7 @@ struct ssl_st
     /* where we are */
     OSSL_STATEM statem;
 
-    SSL_SESSION session;
+    SSL_SESSION *session;
 
     int verify_mode;
 

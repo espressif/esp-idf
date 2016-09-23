@@ -118,6 +118,38 @@ OSSL_HANDSHAKE_STATE SSL_get_state(const SSL *ssl)
 }
 
 /**
+ * @brief create a new SSL session object
+ */
+SSL_SESSION* SSL_SESSION_new(void)
+{
+    SSL_SESSION *session;
+
+    session = ssl_zalloc(sizeof(SSL_SESSION));
+    if (!session)
+        SSL_RET(failed1);
+
+    session->peer = X509_new();
+    if (!session->peer)
+        SSL_RET(failed2);
+
+    return session;
+
+failed2:
+    ssl_free(session);
+failed1:
+    return NULL;
+}
+
+/**
+ * @brief free a new SSL session object
+ */
+void SSL_SESSION_free(SSL_SESSION *session)
+{
+    X509_free(session->peer);
+    ssl_free(session);
+}
+
+/**
  * @brief create a SSL context
  */
 SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
@@ -210,6 +242,10 @@ SSL *SSL_new(SSL_CTX *ctx)
     if (!ssl)
         SSL_RET(failed1, "ssl_zalloc\n");
 
+    ssl->session = SSL_SESSION_new();
+    if (!ssl->session)
+        SSL_RET(failed2, "ssl_zalloc\n");
+
     ssl->ctx = ctx;
     ssl->method = ctx->method;
 
@@ -222,12 +258,14 @@ SSL *SSL_new(SSL_CTX *ctx)
 
     ret = SSL_METHOD_CALL(new, ssl);
     if (ret)
-        SSL_RET(failed2, "ssl_new\n");
+        SSL_RET(failed3, "ssl_new\n");
 
     ssl->rwstate = SSL_NOTHING;
 
     return ssl;
 
+failed3:
+    SSL_SESSION_free(ssl->session);
 failed2:
     ssl_free(ssl);
 failed1:
@@ -242,6 +280,8 @@ void SSL_free(SSL *ssl)
     SSL_ASSERT(ssl);
 
     SSL_METHOD_CALL(free, ssl);
+
+    SSL_SESSION_free(ssl->session);
 
     if (ssl->ca_reload)
         X509_free(ssl->client_CA);
@@ -1369,7 +1409,7 @@ long SSL_set_time(SSL *ssl, long t)
 {
     SSL_ASSERT(ssl);
 
-    ssl->session.time = t;
+    ssl->session->time = t;
 
     return t;
 }
@@ -1381,7 +1421,7 @@ long SSL_set_timeout(SSL *ssl, long t)
 {
     SSL_ASSERT(ssl);
 
-    ssl->session.timeout = t;
+    ssl->session->timeout = t;
 
     return t;
 }
