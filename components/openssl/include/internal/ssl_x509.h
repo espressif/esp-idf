@@ -20,17 +20,34 @@
 
 DEFINE_STACK_OF(X509_NAME)
 
-/*
- * sk_X509_NAME_new_null - create a X509 certification object
+/**
+ * @brief create a X509 certification object
  *
  * @param none
  *
- * @return X509 certification object point or NULL if failed
+ * @return X509 certification object point
  */
 X509* X509_new(void);
 
+/**
+ * @brief load a character certification context into system context. If '*cert' is pointed to the
+ *        certification, then load certification into it. Or create a new X509 certification object
+ *
+ * @param cert   - a point pointed to X509 certification
+ * @param buffer - a point pointed to the certification context memory point
+ * @param length - certification bytes
+ *
+ * @return X509 certification object point
+ */
 X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len);
 
-void X509_free(X509 *cert);
+/**
+ * @brief free a X509 certification object
+ *
+ * @param x - X509 certification object point
+ *
+ * @return none
+ */
+void X509_free(X509 *x);
 
 #endif

@@ -19,12 +19,8 @@
 #include "ssl_dbg.h"
 #include "ssl_port.h"
 
-/*
- * EVP_PKEY_new - create a private key object
- *
- * @param none
- *
- * @return private key object point or NULL if failed
+/**
+ * @brief create a private key object
  */
 EVP_PKEY* EVP_PKEY_new(void)
 {
@@ -49,12 +45,8 @@ failed1:
     return NULL;
 }
 
-/*
- * EVP_PKEY_free - free a private key object
- *
- * @param pkey - private key object point
- *
- * @return none
+/**
+ * @brief free a private key object
  */
 void EVP_PKEY_free(EVP_PKEY *pkey)
 {
@@ -63,16 +55,9 @@ void EVP_PKEY_free(EVP_PKEY *pkey)
     ssl_free(pkey);
 }
 
-/*
- * d2i_PrivateKey - load a character key context into system context. If '*a' is pointed to the
- *                  private key, then load key into it. Or create a new private key object
- *
- * @param type   - private key type
- * @param a      - a point pointed to a private key point
- * @param pp     - a point pointed to the key context memory point
- * @param length - key bytes
- *
- * @return private key object point or NULL if failed
+/**
+ * @brief load a character key context into system context. If '*a' is pointed to the
+ *        private key, then load key into it. Or create a new private key object
  */
 EVP_PKEY *d2i_PrivateKey(int type,
                          EVP_PKEY **a,
@@ -112,15 +97,8 @@ failed1:
     return NULL;
 }
 
-/*
- * SSL_CTX_use_certificate - set the SSL context private key
- *
- * @param ctx - SSL context point
- * @param x   - private key point
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief set the SSL context private key
  */
 int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
 {
@@ -135,15 +113,8 @@ int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
     return 1;
 }
 
-/*
- * SSL_CTX_use_certificate - set the SSL private key
- *
- * @param ctx - SSL point
- * @param x   - private key point
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief set the SSL private key
  */
 int SSL_use_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
 {
@@ -163,17 +134,8 @@ int SSL_use_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
     return 1;
 }
 
-/*
- * SSL_CTX_use_PrivateKey_ASN1 - load private key into the SSL context
- *
- * @param type - private key type
- * @param ctx  - SSL context point
- * @param d    - private key context point
- * @param len  - private key context bytes
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief load private key into the SSL context
  */
 int SSL_CTX_use_PrivateKey_ASN1(int type, SSL_CTX *ctx,
                                 const unsigned char *d, long len)
@@ -197,17 +159,8 @@ failed1:
     return 0;
 }
 
-/*
- * SSL_use_PrivateKey_ASN1 - load private key into the SSL
- *
- * @param type - private key type
- * @param ctx  - SSL context point
- * @param d    - private key context point
- * @param len  - private key context bytes
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief load private key into the SSL
  */
 int SSL_use_PrivateKey_ASN1(int type, SSL *ssl,
                                 const unsigned char *d, long len)
@@ -255,48 +208,24 @@ failed1:
     return 0;
 }
 
-/*
- * SSL_CTX_use_certificate_file - load the private key file into SSL context
- *
- * @param ctx  - SSL context point
- * @param file - private key file name
- * @param type - private key encoding type
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief load the private key file into SSL context
  */
 int SSL_CTX_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
 {
     return 0;
 }
 
-/*
- * SSL_use_PrivateKey_file - load the private key file into SSL
- *
- * @param ctx  - SSL point
- * @param file - private key file name
- * @param type - private key encoding type
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief load the private key file into SSL
  */
 int SSL_use_PrivateKey_file(SSL_CTX *ctx, const char *file, int type)
 {
     return 0;
 }
 
-/*
- * SSL_CTX_use_certificate_ASN1 - load the RSA ASN1 private key into SSL context
- *
- * @param ctx - SSL context point
- * @param d   - data point
- * @param len - RSA private key length
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief load the RSA ASN1 private key into SSL context
  */
 int SSL_CTX_use_RSAPrivateKey_ASN1(SSL_CTX *ctx, const unsigned char *d, long len)
 {

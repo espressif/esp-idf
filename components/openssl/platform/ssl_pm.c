@@ -62,6 +62,9 @@ unsigned int max_content_len;
 /*********************************************************************************************/
 /************************************ SSL arch interface *************************************/
 
+/**
+ * @brief create SSL low-level object
+ */
 int ssl_pm_new(SSL *ssl)
 {
     struct ssl_pm *ssl_pm;
@@ -140,6 +143,9 @@ failed1:
     return -1;
 }
 
+/**
+ * @brief free SSL low-level object
+ */
 void ssl_pm_free(SSL *ssl)
 {
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
@@ -156,6 +162,9 @@ void ssl_pm_free(SSL *ssl)
     ssl->ssl_pm = NULL;
 }
 
+/**
+ * @brief reload SSL low-level certification object
+ */
 static int ssl_pm_reload_crt(SSL *ssl)
 {
     int ret;

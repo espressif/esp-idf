@@ -21,14 +21,8 @@
 
 #define SSL_SEND_DATA_MAX_LENGTH 1460
 
-/*
- * ossl_statem_in_error - Discover whether the current connection is in the error state
- *
- * @param ssl - SSL point
- *
- * @return
- *         1 : Yes
- *         0 : no
+/**
+ * @brief Discover whether the current connection is in the error state
  */
 int ossl_statem_in_error(const SSL *ssl)
 {
@@ -38,81 +32,48 @@ int ossl_statem_in_error(const SSL *ssl)
     return 0;
 }
 
-/*
- * SSL_want - get the SSL specifical statement
- *
- * @param ssl - SSL point
- *
- * @return specifical statement
+/**
+ * @brief get the SSL specifical statement
  */
 int SSL_want(const SSL *ssl)
 {
     return ssl->rwstate;
 }
 
-/*
- * SSL_want_nothing - check if SSL want nothing
- *
- * @param ssl - SSL point
- *
- * @return
- *         1 : yes
- *         0 : no
+/**
+ * @brief check if SSL want nothing
  */
 int SSL_want_nothing(const SSL *ssl)
 {
     return (SSL_want(ssl) == SSL_NOTHING);
 }
 
-/*
- * SSL_want_read - check if SSL want to read
- *
- * @param ssl - SSL point
- *
- * @return
- *         1 : yes
- *         0 : no
+/**
+ * @brief check if SSL want to read
  */
 int SSL_want_read(const SSL *ssl)
 {
     return (SSL_want(ssl) == SSL_READING);
 }
 
-/*
- * SSL_want_read - check if SSL want to write
- *
- * @param ssl - SSL point
- *
- * @return
- *         1 : yes
- *         0 : no
+/**
+ * @brief check if SSL want to write
  */
 int SSL_want_write(const SSL *ssl)
 {
     return (SSL_want(ssl) == SSL_WRITING);
 }
 
-/*
- * SSL_want_read - check if SSL want to lookup X509 certification
- *
- * @param ssl - SSL point
- *
- * @return
- *         1 : yes
- *         0 : no
+/**
+ * @brief check if SSL want to lookup X509 certification
  */
 int SSL_want_x509_lookup(const SSL *ssl)
 {
     return (SSL_want(ssl) == SSL_WRITING);
 }
 
-/*
- * SSL_get_error - get SSL error code
- *
- * @param ssl       - SSL point
- * @param ret_code  - SSL return code
- *
- * @return SSL error number
+/**
+ * @brief get SSL error code
  */
 int SSL_get_error(const SSL *ssl, int ret_code)
 {
@@ -142,12 +103,8 @@ int SSL_get_error(const SSL *ssl, int ret_code)
     return ret;
 }
 
-/*
- * SSL_get_state - get the SSL state
- *
- * @param ssl - SSL point
- *
- * @return SSL state
+/**
+ * @brief get the SSL state
  */
 OSSL_HANDSHAKE_STATE SSL_get_state(const SSL *ssl)
 {
@@ -160,12 +117,8 @@ OSSL_HANDSHAKE_STATE SSL_get_state(const SSL *ssl)
     return state;
 }
 
-/*
- * SSL_CTX_new - create a SSL context
- *
- * @param method - the SSL context configuration file
- *
- * @return the context point, if create failed return NULL
+/**
+ * @brief create a SSL context
  */
 SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
 {
@@ -203,12 +156,8 @@ go_failed1:
     return NULL;
 }
 
-/*
- * SSL_CTX_free - free a SSL context
- *
- * @param method - the SSL context point
- *
- * @return none
+/**
+ * @brief free a SSL context
  */
 void SSL_CTX_free(SSL_CTX* ctx)
 {
@@ -221,15 +170,8 @@ void SSL_CTX_free(SSL_CTX* ctx)
     ssl_free(ctx);
 }
 
-/*
- * SSL_CTX_set_ssl_version - set  the SSL context version
- *
- * @param ctx  - SSL context point
- * @param meth - SSL method point
- *
- * @return
- *        1 : OK
- *        0 : failed
+/**
+ * @brief set  the SSL context version
  */
 int SSL_CTX_set_ssl_version(SSL_CTX *ctx, const SSL_METHOD *meth)
 {
@@ -243,12 +185,8 @@ int SSL_CTX_set_ssl_version(SSL_CTX *ctx, const SSL_METHOD *meth)
     return 1;
 }
 
-/*
- * SSL_CTX_get_ssl_method - get the SSL context current method
- *
- * @param ctx - SSL context point
- *
- * @return the SSL context current method
+/**
+ * @brief get the SSL context current method
  */
 const SSL_METHOD *SSL_CTX_get_ssl_method(SSL_CTX *ctx)
 {
@@ -257,12 +195,8 @@ const SSL_METHOD *SSL_CTX_get_ssl_method(SSL_CTX *ctx)
     return ctx->method;
 }
 
-/*
- * SSL_new - create a SSL
- *
- * @param ctx - the SSL context point
- *
- * @return the SSL point or NULL if failed
+/**
+ * @brief create a SSL
  */
 SSL *SSL_new(SSL_CTX *ctx)
 {
@@ -300,12 +234,8 @@ failed1:
     return NULL;
 }
 
-/*
- * SSL_free - free the SSL
- *
- * @param ssl - the SSL point
- *
- * @return none
+/**
+ * @brief free the SSL
  */
 void SSL_free(SSL *ssl)
 {
@@ -322,15 +252,8 @@ void SSL_free(SSL *ssl)
     ssl_free(ssl);
 }
 
-/*
- * SSL_do_handshake - perform the SSL handshake
- *
- * @param ssl - SSL point
- *
- * @return
- *        1 : OK
- *        0 : failed
- *       -1 : a error catch
+/**
+ * @brief perform the SSL handshake
  */
 int SSL_do_handshake(SSL *ssl)
 {
@@ -343,14 +266,8 @@ int SSL_do_handshake(SSL *ssl)
     return ret;
 }
 
-/*
- * SSL_connect - connect to the remote SSL server
- *
- * @param ssl - the SSL point
- *
- * @return
- *         1 : OK
- *        -1 : failed
+/**
+ * @brief connect to the remote SSL server
  */
 int SSL_connect(SSL *ssl)
 {
@@ -359,14 +276,8 @@ int SSL_connect(SSL *ssl)
     return SSL_do_handshake(ssl);
 }
 
-/*
- * SSL_accept - accept the remote connection
- *
- * @param ssl - the SSL point
- *
- * @return
- *         1 : OK
- *        -1 : failed
+/**
+ * @brief accept the remote connection
  */
 int SSL_accept(SSL *ssl)
 {
@@ -375,15 +286,8 @@ int SSL_accept(SSL *ssl)
     return SSL_do_handshake(ssl);
 }
 
-/*
- * SSL_shutdown - shutdown the connection
- *
- * @param ssl - the SSL point
- *
- * @return
- *        1 : OK
- *        0 : shutdown is not finished
- *       -1 : an error catch
+/**
+ * @brief shutdown the connection
  */
 int SSL_shutdown(SSL *ssl)
 {
@@ -398,14 +302,8 @@ int SSL_shutdown(SSL *ssl)
     return ret;
 }
 
-/*
- * SSL_clear - reset the SSL
- *
- * @param ssl - SSL point
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief reset the SSL
  */
 int SSL_clear(SSL *ssl)
 {
@@ -429,17 +327,8 @@ go_failed1:
     return ret;
 }
 
-/*
- * SSL_read - read data from to remote
- *
- * @param ssl    - the SSL point which has been connected
- * @param buffer - the received data buffer point
- * @param len    - the received data length
- *
- * @return
- *       > 0 : OK, and return received data bytes
- *       = 0 : connection is closed
- *       < 0 : an error catch
+/**
+ * @brief read data from to remote
  */
 int SSL_read(SSL *ssl, void *buffer, int len)
 {
@@ -458,17 +347,8 @@ int SSL_read(SSL *ssl, void *buffer, int len)
     return ret;
 }
 
-/*
- * SSL_write - send the data to remote
- *
- * @param ssl    - the SSL point which has been connected
- * @param buffer - the send data buffer point
- * @param len    - the send data length
- *
- * @return
- *       > 0 : OK, and return sent data bytes
- *       = 0 : connection is closed
- *       < 0 : an error catch
+/**
+ * @brief send the data to remote
  */
 int SSL_write(SSL *ssl, const void *buffer, int len)
 {
@@ -511,12 +391,8 @@ int SSL_write(SSL *ssl, const void *buffer, int len)
     return ret;
 }
 
-/*
- * SSL_get_SSL_CTX - get SSL context of the SSL
- *
- * @param ssl - SSL point
- *
- * @return SSL context
+/**
+ * @brief get SSL context of the SSL
  */
 SSL_CTX *SSL_get_SSL_CTX(const SSL *ssl)
 {
@@ -525,12 +401,8 @@ SSL_CTX *SSL_get_SSL_CTX(const SSL *ssl)
     return ssl->ctx;
 }
 
-/*
- * SSL_CTX_get_ssl_method - get the SSL current method
- *
- * @param ssl - SSL point
- *
- * @return the SSL current method
+/**
+ * @brief get the SSL current method
  */
 const SSL_METHOD *SSL_get_ssl_method(SSL *ssl)
 {
@@ -539,15 +411,8 @@ const SSL_METHOD *SSL_get_ssl_method(SSL *ssl)
     return ssl->method;
 }
 
-/*
- * SSL_set_ssl_method - set the SSL method
- *
- * @param ssl  - SSL point
- * @param meth - SSL method point
- *
- * @return
- *        1 : OK
- *        0 : failed
+/**
+ * @brief set the SSL method
  */
 int SSL_set_ssl_method(SSL *ssl, const SSL_METHOD *method)
 {
@@ -580,12 +445,8 @@ go_failed1:
     return ret;
 }
 
-/*
- * SSL_get_shutdown - get SSL shutdown mode
- *
- * @param ssl - SSL point
- *
- * @return shutdown mode
+/**
+ * @brief get SSL shutdown mode
  */
 int SSL_get_shutdown(const SSL *ssl)
 {
@@ -594,13 +455,8 @@ int SSL_get_shutdown(const SSL *ssl)
     return ssl->shutdown;
 }
 
-/*
- * SSL_set_quiet_shutdown - set SSL shutdown mode
- *
- * @param ssl  - SSL point
- * @param mode - shutdown mode
- *
- * @return none
+/**
+ * @brief set SSL shutdown mode
  */
 void SSL_set_shutdown(SSL *ssl, int mode)
 {
@@ -610,12 +466,8 @@ void SSL_set_shutdown(SSL *ssl, int mode)
 }
 
 
-/*
- * SSL_pending - get the number of the bytes to be read
- *
- * @param ssl - SSL point
- *
- * @return number of the bytes
+/**
+ * @brief get the number of the bytes to be read
  */
 int SSL_pending(const SSL *ssl)
 {
@@ -628,14 +480,8 @@ int SSL_pending(const SSL *ssl)
     return ret;
 }
 
-/*
- * SSL_has_pending - check if some data can be read
- *
- * @param ssl - SSL point
- *
- * @return
- *         1 : there are bytes to be read
- *         0 : no data
+/**
+ * @brief check if some data can be read
  */
 int SSL_has_pending(const SSL *ssl)
 {
@@ -651,52 +497,32 @@ int SSL_has_pending(const SSL *ssl)
     return ret;
 }
 
-/*
- * SSL_CTX_clear_options - clear the SSL context option bit of "op"
- *
- * @param ctx - SSL context point
- * @param op  - option
- *
- * @return SSL context option
+/**
+ * @brief clear the SSL context option bit of "op"
  */
 unsigned long SSL_CTX_clear_options(SSL_CTX *ctx, unsigned long op)
 {
     return ctx->options &= ~op;
 }
 
-/*
- * SSL_CTX_clear_options - get the SSL context option
- *
- * @param ctx - SSL context point
- * @param op  - option
- *
- * @return SSL context option
+/**
+ * @brief get the SSL context option
  */
 unsigned long SSL_CTX_get_options(SSL_CTX *ctx)
 {
     return ctx->options;
 }
 
-/*
- * SSL_CTX_set_option - set the option of the SSL context
- *
- * @param ctx - the SSL context
- *
- * @return the SSL context option
- *
+/**
+ * @brief set the option of the SSL context
  */
 unsigned long SSL_CTX_set_options(SSL_CTX *ctx, unsigned long opt)
 {
     return ctx->options |= opt;
 }
 
-/*
- * SSL_clear_options - clear SSL option
- *
- * @param ssl - SSL point
- * @param op  - clear option
- *
- * @return SSL option
+/**
+ * @brief clear SSL option
  */
 unsigned long SSL_clear_options(SSL *ssl, unsigned long op)
 {
@@ -705,12 +531,8 @@ unsigned long SSL_clear_options(SSL *ssl, unsigned long op)
     return ssl->options & ~op;
 }
 
-/*
- * SSL_clear_options - get SSL option
- *
- * @param ssl - SSL point
- *
- * @return SSL option
+/**
+ * @brief get SSL option
  */
 unsigned long SSL_get_options(SSL *ssl)
 {
@@ -719,13 +541,8 @@ unsigned long SSL_get_options(SSL *ssl)
     return ssl->options;
 }
 
-/*
- * SSL_clear_options - clear SSL option
- *
- * @param ssl - SSL point
- * @param op  - setting option
- *
- * @return SSL option
+/**
+ * @brief clear SSL option
  */
 unsigned long SSL_set_options(SSL *ssl, unsigned long op)
 {
@@ -734,14 +551,8 @@ unsigned long SSL_set_options(SSL *ssl, unsigned long op)
     return ssl->options |= op;
 }
 
-/*
- * SSL_get_fd - get the socket handle of the SSL
- *
- * @param ssl - SSL point
- *
- * @return
- *      >= 0 : yes, and return socket handle
- *       < 0 : a error catch
+/**
+ * @brief get the socket handle of the SSL
  */
 int SSL_get_fd(const SSL *ssl)
 {
@@ -754,14 +565,8 @@ int SSL_get_fd(const SSL *ssl)
     return ret;
 }
 
-/*
- * SSL_get_rfd - get the read only socket handle of the SSL
- *
- * @param ssl - SSL point
- *
- * @return
- *      >= 0 : yes, and return socket handle
- *       < 0 : a error catch
+/**
+ * @brief get the read only socket handle of the SSL
  */
 int SSL_get_rfd(const SSL *ssl)
 {
@@ -774,14 +579,8 @@ int SSL_get_rfd(const SSL *ssl)
     return ret;
 }
 
-/*
- * SSL_get_wfd - get the write only socket handle of the SSL
- *
- * @param ssl - SSL point
- *
- * @return
- *      >= 0 : yes, and return socket handle
- *       < 0 : a error catch
+/**
+ * @brief get the write only socket handle of the SSL
  */
 int SSL_get_wfd(const SSL *ssl)
 {
@@ -794,15 +593,8 @@ int SSL_get_wfd(const SSL *ssl)
     return ret;
 }
 
-/*
- * SSL_set_fd - bind the socket file description into the SSL
- *
- * @param ssl - the SSL point
- * @param fd  - socket handle
- *
- * @return
- *        1 : OK
- *        0 : failed
+/**
+ * @brief bind the socket file description into the SSL
  */
 int SSL_set_fd(SSL *ssl, int fd)
 {
@@ -814,15 +606,8 @@ int SSL_set_fd(SSL *ssl, int fd)
     return 1;
 }
 
-/*
- * SSL_set_fd - bind the read only socket file description into the SSL
- *
- * @param ssl - the SSL point
- * @param fd  - socket handle
- *
- * @return
- *        1 : OK
- *        0 : failed
+/**
+ * @brief bind the read only socket file description into the SSL
  */
 int SSL_set_rfd(SSL *ssl, int fd)
 {
@@ -834,15 +619,8 @@ int SSL_set_rfd(SSL *ssl, int fd)
     return 1;
 }
 
-/*
- * SSL_set_fd - bind the write only socket file description into the SSL
- *
- * @param ssl - the SSL point
- * @param fd  - socket handle
- *
- * @return
- *        1 : OK
- *        0 : failed
+/**
+ * @brief bind the write only socket file description into the SSL
  */
 int SSL_set_wfd(SSL *ssl, int fd)
 {
@@ -854,12 +632,8 @@ int SSL_set_wfd(SSL *ssl, int fd)
     return 1;
 }
 
-/*
- * SSL_version - get SSL version
- *
- * @param ssl - SSL point
- *
- * @return SSL version
+/**
+ * @brief get SSL version
  */
 int SSL_version(const SSL *ssl)
 {
@@ -868,12 +642,8 @@ int SSL_version(const SSL *ssl)
     return ssl->version;
 }
 
-/*
- * ssl_protocol_to_string - get the SSL version string
- *
- * @param version - the SSL version
- *
- * @return the SSL version string
+/**
+ * @brief get the SSL version string
  */
 static const char* ssl_protocol_to_string(int version)
 {
@@ -893,12 +663,8 @@ static const char* ssl_protocol_to_string(int version)
     return str;
 }
 
-/*
- * SSL_get_version - get the SSL current version
- *
- * @param ssl - SSL point
- *
- * @return the version string
+/**
+ * @brief get the SSL current version
  */
 const char *SSL_get_version(const SSL *ssl)
 {
@@ -907,12 +673,8 @@ const char *SSL_get_version(const SSL *ssl)
     return ssl_protocol_to_string(SSL_version(ssl));
 }
 
-/*
- * SSL_alert_desc_string - get alert description string
- *
- * @param value - alert value
- *
- * @return alert description string
+/**
+ * @brief get alert description string
  */
 const char* SSL_alert_desc_string(int value)
 {
@@ -1018,12 +780,8 @@ const char* SSL_alert_desc_string(int value)
     return str;
 }
 
-/*
- * SSL_alert_desc_string - get alert description long string
- *
- * @param value - alert value
- *
- * @return alert description long string
+/**
+ * @brief get alert description long string
  */
 const char* SSL_alert_desc_string_long(int value)
 {
@@ -1129,12 +887,8 @@ const char* SSL_alert_desc_string_long(int value)
     return str;
 }
 
-/*
- * SSL_alert_type_string - get alert type string
- *
- * @param value - alert value
- *
- * @return alert type string
+/**
+ * @brief get alert type string
  */
 const char *SSL_alert_type_string(int value)
 {
@@ -1156,12 +910,8 @@ const char *SSL_alert_type_string(int value)
     return str;
 }
 
-/*
- * SSL_alert_type_string_long - get alert type long string
- *
- * @param value - alert value
- *
- * @return alert type long string
+/**
+ * @brief get alert type long string
  */
 const char *SSL_alert_type_string_long(int value)
 {
@@ -1183,12 +933,8 @@ const char *SSL_alert_type_string_long(int value)
     return str;
 }
 
-/*
- * SSL_rstate_string - get the state string where SSL is reading
- *
- * @param ssl - SSL point
- *
- * @return state string
+/**
+ * @brief get the state string where SSL is reading
  */
 const char *SSL_rstate_string(SSL *ssl)
 {
@@ -1215,12 +961,8 @@ const char *SSL_rstate_string(SSL *ssl)
     return str;
 }
 
-/*
- * SSL_rstate_string_long - get the statement long string where SSL is reading
- *
- * @param ssl - SSL point
- *
- * @return statement long string
+/**
+ * @brief get the statement long string where SSL is reading
  */
 const char *SSL_rstate_string_long(SSL *ssl)
 {
@@ -1246,12 +988,8 @@ const char *SSL_rstate_string_long(SSL *ssl)
     return str;
 }
 
-/*
- * SSL_state_string - get SSL statement string
- *
- * @param ssl - SSL point
- *
- * @return SSL statement string
+/**
+ * @brief get SSL statement string
  */
 char *SSL_state_string(const SSL *ssl)
 {
@@ -1358,12 +1096,8 @@ char *SSL_state_string(const SSL *ssl)
     return str;
 }
 
-/*
- * SSL_state_string_long - get SSL statement long string
- *
- * @param ssl - SSL point
- *
- * @return SSL statement long string
+/**
+ * @brief get SSL statement long string
  */
 char *SSL_state_string_long(const SSL *ssl)
 {
@@ -1476,13 +1210,8 @@ char *SSL_state_string_long(const SSL *ssl)
     return str;
 }
 
-/*
- * SSL_CTX_set_default_read_buffer_len - set the SSL context read buffer length
- *
- * @param ctx - SSL context point
- * @param len - read buffer length
- *
- * @return none
+/**
+ * @brief set the SSL context read buffer length
  */
 void SSL_CTX_set_default_read_buffer_len(SSL_CTX *ctx, size_t len)
 {
@@ -1492,13 +1221,8 @@ void SSL_CTX_set_default_read_buffer_len(SSL_CTX *ctx, size_t len)
     ctx->read_buffer_len = len;
 }
 
-/*
- * SSL_set_default_read_buffer_len - set the SSL read buffer length
- *
- * @param ssl - SSL point
- * @param len - read buffer length
- *
- * @return none
+/**
+ * @brief set the SSL read buffer length
  */
 void SSL_set_default_read_buffer_len(SSL *ssl, size_t len)
 {
@@ -1508,13 +1232,8 @@ void SSL_set_default_read_buffer_len(SSL *ssl, size_t len)
     SSL_METHOD_CALL(set_bufflen, ssl, len);
 }
 
-/*
- * SSL_set_info_callback - set the SSL information callback function
- *
- * @param ssl - SSL point
- * @param cb  - information callback function
- *
- * @return none
+/**
+ * @brief set the SSL information callback function
  */
 void SSL_set_info_callback(SSL *ssl, void (*cb) (const SSL *ssl, int type, int val))
 {
@@ -1523,32 +1242,23 @@ void SSL_set_info_callback(SSL *ssl, void (*cb) (const SSL *ssl, int type, int v
     ssl->info_callback = cb;
 }
 
-/*
- * SSL_CTX_up_ref - add SSL context reference count by '1'
- *
- * @param ctx - SSL context point
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief add SSL context reference count by '1'
  */
 int SSL_CTX_up_ref(SSL_CTX *ctx)
 {
     SSL_ASSERT(ctx);
 
-    /* no support multi-thread SSL here */
+    /**
+     * no support multi-thread SSL here
+     */
     ctx->references++;
 
     return 1;
 }
 
-/*
- * SSL_set_security_level - set the SSL security level
- *
- * @param ssl   - SSL point
- * @param level - security level
- *
- * @return none
+/**
+ * @brief set the SSL security level
  */
 void SSL_set_security_level(SSL *ssl, int level)
 {
@@ -1557,12 +1267,8 @@ void SSL_set_security_level(SSL *ssl, int level)
     ssl->cert->sec_level = level;
 }
 
-/*
- * SSL_get_security_level - get the SSL security level
- *
- * @param ssl - SSL point
- *
- * @return security level
+/**
+ * @brief get the SSL security level
  */
 int SSL_get_security_level(const SSL *ssl)
 {
@@ -1571,12 +1277,8 @@ int SSL_get_security_level(const SSL *ssl)
     return ssl->cert->sec_level;
 }
 
-/*
- * SSL_CTX_get_verify_mode - get the SSL verifying mode of the SSL context
- *
- * @param ctx - SSL context point
- *
- * @return verifying mode
+/**
+ * @brief get the SSL verifying mode of the SSL context
  */
 int SSL_CTX_get_verify_mode(const SSL_CTX *ctx)
 {
@@ -1585,13 +1287,8 @@ int SSL_CTX_get_verify_mode(const SSL_CTX *ctx)
     return ctx->verify_mode;
 }
 
-/*
- * SSL_CTX_set_timeout - set the session timeout time
- *
- * @param ctx - SSL context point
- * @param t   - new session timeout time
- *
- * @return old session timeout time
+/**
+ * @brief set the session timeout time
  */
 long SSL_CTX_set_timeout(SSL_CTX *ctx, long t)
 {
@@ -1605,12 +1302,8 @@ long SSL_CTX_set_timeout(SSL_CTX *ctx, long t)
     return l;
 }
 
-/*
- * SSL_CTX_get_timeout - get the session timeout time
- *
- * @param ctx - SSL context point
- *
- * @return current session timeout time
+/**
+ * @brief get the session timeout time
  */
 long SSL_CTX_get_timeout(const SSL_CTX *ctx)
 {
@@ -1619,13 +1312,8 @@ long SSL_CTX_get_timeout(const SSL_CTX *ctx)
     return ctx->session_timeout;
 }
 
-/*
- * SSL_set_read_ahead - set the SSL if we can read as many as data
- *
- * @param ssl - SSL point
- * @param yes - enable the function
- *
- * @return none
+/**
+ * @brief set the SSL if we can read as many as data
  */
 void SSL_set_read_ahead(SSL *ssl, int yes)
 {
@@ -1634,13 +1322,8 @@ void SSL_set_read_ahead(SSL *ssl, int yes)
     ssl->rlayer.read_ahead = yes;
 }
 
-/*
- * SSL_set_read_ahead - set the SSL context if we can read as many as data
- *
- * @param ctx - SSL context point
- * @param yes - enable the function
- *
- * @return none
+/**
+ * @brief set the SSL context if we can read as many as data
  */
 void SSL_CTX_set_read_ahead(SSL_CTX *ctx, int yes)
 {
@@ -1649,12 +1332,8 @@ void SSL_CTX_set_read_ahead(SSL_CTX *ctx, int yes)
     ctx->read_ahead = yes;
 }
 
-/*
- * SSL_set_read_ahead - get the SSL ahead signal if we can read as many as data
- *
- * @param ssl - SSL point
- *
- * @return SSL context ahead signal
+/**
+ * @brief get the SSL ahead signal if we can read as many as data
  */
 int SSL_get_read_ahead(const SSL *ssl)
 {
@@ -1663,12 +1342,8 @@ int SSL_get_read_ahead(const SSL *ssl)
     return ssl->rlayer.read_ahead;
 }
 
-/*
- * SSL_set_read_ahead - get the SSL context ahead signal if we can read as many as data
- *
- * @param ctx - SSL context point
- *
- * @return SSL context ahead signal
+/**
+ * @brief get the SSL context ahead signal if we can read as many as data
  */
 long SSL_CTX_get_read_ahead(SSL_CTX *ctx)
 {
@@ -1677,14 +1352,8 @@ long SSL_CTX_get_read_ahead(SSL_CTX *ctx)
     return ctx->read_ahead;
 }
 
-/*
- * SSL_CTX_get_ciphers - check if the SSL context can read as many as data
- *
- * @param ctx - SSL context point
- *
- * @return
- *         1 : Yes
- *         0 : No
+/**
+ * @brief check if the SSL context can read as many as data
  */
 long SSL_CTX_get_default_read_ahead(SSL_CTX *ctx)
 {
@@ -1693,13 +1362,8 @@ long SSL_CTX_get_default_read_ahead(SSL_CTX *ctx)
     return ctx->read_ahead;
 }
 
-/*
- * SSL_set_time - set SSL session time
- *
- * @param ssl - SSL point
- * @param t   - session time
- *
- * @return session time
+/**
+ * @brief set SSL session time
  */
 long SSL_set_time(SSL *ssl, long t)
 {
@@ -1710,13 +1374,8 @@ long SSL_set_time(SSL *ssl, long t)
     return t;
 }
 
-/*
- * SSL_set_time - set SSL session timeout time
- *
- * @param ssl - SSL point
- * @param t   - session timeout time
- *
- * @return session timeout time
+/**
+ * @brief set SSL session timeout time
  */
 long SSL_set_timeout(SSL *ssl, long t)
 {
@@ -1727,12 +1386,8 @@ long SSL_set_timeout(SSL *ssl, long t)
     return t;
 }
 
-/*
- * SSL_get_verify_result - get the verifying result of the SSL certification
- *
- * @param ssl - the SSL point
- *
- * @return the result of verifying
+/**
+ * @brief get the verifying result of the SSL certification
  */
 long SSL_get_verify_result(const SSL *ssl)
 {
@@ -1741,12 +1396,8 @@ long SSL_get_verify_result(const SSL *ssl)
     return SSL_METHOD_CALL(get_verify_result, ssl);
 }
 
-/*
- * SSL_CTX_get_verify_depth - get the SSL verifying depth of the SSL context
- *
- * @param ctx - SSL context point
- *
- * @return verifying depth
+/**
+ * @brief get the SSL verifying depth of the SSL context
  */
 int SSL_CTX_get_verify_depth(const SSL_CTX *ctx)
 {
@@ -1755,13 +1406,8 @@ int SSL_CTX_get_verify_depth(const SSL_CTX *ctx)
     return ctx->param.depth;
 }
 
-/*
- * SSL_CTX_set_verify_depth - set the SSL verify depth of the SSL context
- *
- * @param ctx   - SSL context point
- * @param depth - verifying depth
- *
- * @return one
+/**
+ * @brief set the SSL verify depth of the SSL context
  */
 void SSL_CTX_set_verify_depth(SSL_CTX *ctx, int depth)
 {
@@ -1770,12 +1416,8 @@ void SSL_CTX_set_verify_depth(SSL_CTX *ctx, int depth)
     ctx->param.depth = depth;
 }
 
-/*
- * SSL_get_verify_depth - get the SSL verifying depth of the SSL
- *
- * @param ctx - SSL point
- *
- * @return verifying depth
+/**
+ * @brief get the SSL verifying depth of the SSL
  */
 int SSL_get_verify_depth(const SSL *ssl)
 {
@@ -1784,13 +1426,8 @@ int SSL_get_verify_depth(const SSL *ssl)
     return ssl->param.depth;
 }
 
-/*
- * SSL_set_verify_depth - set the SSL verify depth of the SSL
- *
- * @param ctx   - SSL point
- * @param depth - verifying depth
- *
- * @return one
+/**
+ * @brief set the SSL verify depth of the SSL
  */
 void SSL_set_verify_depth(SSL *ssl, int depth)
 {
@@ -1799,14 +1436,8 @@ void SSL_set_verify_depth(SSL *ssl, int depth)
     ssl->param.depth = depth;
 }
 
-/*
- * SSL_CTX_set_verify - set the SSL context verifying of the SSL context
- *
- * @param ctx             - SSL context point
- * @param mode            - verifying mode
- * @param verify_callback - verifying callback function
- *
- * @return none
+/**
+ * @brief set the SSL context verifying of the SSL context
  */
 void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
@@ -1816,14 +1447,8 @@ void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509
     ctx->default_verify_callback = verify_callback;
 }
 
-/*
- * SSL_set_verify - set the SSL verifying of the SSL context
- *
- * @param ctx             - SSL point
- * @param mode            - verifying mode
- * @param verify_callback - verifying callback function
- *
- * @return none
+/**
+ * @brief set the SSL verifying of the SSL context
  */
 void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {

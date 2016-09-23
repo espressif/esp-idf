@@ -18,12 +18,8 @@
 #include "ssl_dbg.h"
 #include "ssl_port.h"
 
-/*
- * sk_X509_NAME_new_null - create a X509 certification object
- *
- * @param none
- *
- * @return X509 certification object point or NULL if failed
+/**
+ * @brief create a X509 certification object
  */
 X509* X509_new(void)
 {
@@ -48,12 +44,8 @@ failed1:
     return NULL;
 }
 
-/*
- * X509_free - free a X509 certification object
- *
- * @param x - X509 certification object point
- *
- * @return none
+/**
+ * @brief free a X509 certification object
  */
 void X509_free(X509 *x)
 {
@@ -62,15 +54,9 @@ void X509_free(X509 *x)
     ssl_free(x);
 };
 
-/*
- * d2i_X509 - load a character certification context into system context. If '*cert' is pointed to the
- *            certification, then load certification into it. Or create a new X509 certification object
- *
- * @param cert   - a point pointed to X509 certification
- * @param buffer - a point pointed to the certification context memory point
- * @param length - certification bytes
- *
- * @return X509 certification object point or NULL if failed
+/**
+ * @brief load a character certification context into system context. If '*cert' is pointed to the
+ *        certification, then load certification into it. Or create a new X509 certification object
  */
 X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len)
 {
@@ -103,15 +89,8 @@ failed1:
     return NULL;
 }
 
-/*
- * SSL_CTX_add_client_CA - set SSL context client CA certification
- *
- * @param ctx - SSL context point
- * @param x   - client CA certification point
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief set SSL context client CA certification
  */
 int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
 {
@@ -126,15 +105,8 @@ int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
     return 1;
 }
 
-/*
- * SSL_add_client_CA - add CA client certification into the SSL
- *
- * @param ssl - SSL point
- * @param x   - CA certification point
- *
- * @return
- *        1 : OK
- *        0 : failed
+/**
+ * @brief add CA client certification into the SSL
  */
 int SSL_add_client_CA(SSL *ssl, X509 *x)
 {
@@ -151,15 +123,8 @@ int SSL_add_client_CA(SSL *ssl, X509 *x)
     return 1;
 }
 
-/*
- * SSL_CTX_use_certificate - set the SSL context certification
- *
- * @param ctx - SSL context point
- * @param x   - X509 certification point
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief set the SSL context certification
  */
 int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
 {
@@ -171,15 +136,8 @@ int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
     return 1;
 }
 
-/*
- * SSL_CTX_use_certificate - set the SSL certification
- *
- * @param ctx - SSL point
- * @param x   - X509 certification point
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief set the SSL certification
  */
 int SSL_use_certificate(SSL *ssl, X509 *x)
 {
@@ -191,12 +149,8 @@ int SSL_use_certificate(SSL *ssl, X509 *x)
     return 1;
 }
 
-/*
- * SSL_get_certificate - get the SSL certification point
- *
- * @param ssl - SSL point
- *
- * @return SSL certification point
+/**
+ * @brief get the SSL certification point
  */
 X509 *SSL_get_certificate(const SSL *ssl)
 {
@@ -205,16 +159,8 @@ X509 *SSL_get_certificate(const SSL *ssl)
     return ssl->cert->x509;
 }
 
-/*
- * SSL_CTX_use_certificate_ASN1 - load certification into the SSL context
- *
- * @param ctx - SSL context point
- * @param len - certification context bytes
- * @param d   - certification context point
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief load certification into the SSL context
  */
 int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
                                  const unsigned char *d)
@@ -238,16 +184,8 @@ failed1:
     return 0;
 }
 
-/*
- * SSL_use_certificate_ASN1 - load certification into the SSL
- *
- * @param ctx - SSL point
- * @param len - certification context bytes
- * @param d   - certification context point
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief load certification into the SSL
  */
 int SSL_use_certificate_ASN1(SSL *ssl, int len,
                              const unsigned char *d)
@@ -295,44 +233,24 @@ failed1:
     return 0;
 }
 
-/*
- * SSL_CTX_use_certificate_file - load the certification file into SSL context
- *
- * @param ctx  - SSL context point
- * @param file - certification file name
- * @param type - certification encoding type
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief load the certification file into SSL context
  */
 int SSL_CTX_use_certificate_file(SSL_CTX *ctx, const char *file, int type)
 {
     return 0;
 }
 
-/*
- * SSL_use_certificate_file - load the certification file into SSL
- *
- * @param ctx  - SSL point
- * @param file - certification file name
- * @param type - certification encoding type
- *
- * @return
- *         1 : OK
- *         0 : failed
+/**
+ * @brief load the certification file into SSL
  */
 int SSL_use_certificate_file(SSL *ssl, const char *file, int type)
 {
     return 0;
 }
 
-/*
- * SSL_get_peer_certificate - get peer certification
- *
- * @param ssl - SSL point
- *
- * @return certification
+/**
+ * @brief get peer certification
  */
 X509 *SSL_get_peer_certificate(const SSL *ssl)
 {

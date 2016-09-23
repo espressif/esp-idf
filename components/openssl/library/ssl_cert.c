@@ -18,12 +18,8 @@
 #include "ssl_dbg.h"
 #include "ssl_port.h"
 
-/*
- * ssl_cert_new - create a certification object include private key object
- *
- * @param none
- *
- * @return certification object point or NULL if failed
+/**
+ * @brief create a certification object include private key object
  */
 CERT *ssl_cert_new(void)
 {
@@ -51,18 +47,14 @@ failed1:
     return NULL;
 }
 
-/*
- * ssl_cert_free - free a certification object
- *
- * @param c - certification object point
- *
- * @return none
+/**
+ * @brief free a certification object
  */
-void ssl_cert_free(CERT *c)
+void ssl_cert_free(CERT *cert)
 {
-    X509_free(c->x509);
+    X509_free(cert->x509);
 
-    EVP_PKEY_free(c->pkey);
+    EVP_PKEY_free(cert->pkey);
 
-    ssl_free(c);
+    ssl_free(cert);
 }

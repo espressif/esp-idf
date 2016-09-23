@@ -17,7 +17,22 @@
 
 #include "ssl_types.h"
 
+/**
+ * @brief create a certification object include private key object
+ *
+ * @param none
+ *
+ * @return certification object point
+ */
 CERT* ssl_cert_new(void);
-void ssl_cert_free(CERT *c);
+
+/**
+ * @brief free a certification object
+ *
+ * @param cert - certification object point
+ *
+ * @return none
+ */
+void ssl_cert_free(CERT *cert);
 
 #endif

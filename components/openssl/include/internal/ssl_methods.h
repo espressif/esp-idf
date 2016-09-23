@@ -15,6 +15,9 @@
 #ifndef _SSL_METHODS_H_
 #define _SSL_METHODS_H_
 
+/**
+ * TLS method function implement
+ */
 #define IMPLEMENT_TLS_METHOD_FUNC(func_name, \
                     new, free, \
                     handshake, shutdown, clear, \
@@ -89,7 +92,22 @@
         return &func_name##_data; \
     }
 
+/**
+ * @brief get X509 object method
+ *
+ * @param none
+ *
+ * @return X509 object method point
+ */
 const X509_METHOD* X509_method(void);
+
+/**
+ * @brief get private key object method
+ *
+ * @param none
+ *
+ * @return private key object method point
+ */
 const PKEY_METHOD* EVP_PKEY_method(void);
 
 #endif

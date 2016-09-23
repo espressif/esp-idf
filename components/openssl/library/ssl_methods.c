@@ -16,7 +16,7 @@
 #include "ssl_methods.h"
 #include "ssl_pm.h"
 
-/*
+/**
  * TLS method function collection
  */
 IMPLEMENT_TLS_METHOD_FUNC(TLS_method_func,
@@ -28,7 +28,7 @@ IMPLEMENT_TLS_METHOD_FUNC(TLS_method_func,
         ssl_pm_get_verify_result,
         ssl_pm_get_state);
 
-/*
+/**
  * TLS or SSL client method collection
  */
 IMPLEMENT_TLS_METHOD(TLS_ANY_VERSION, 0, TLS_method_func, TLS_client_method);
@@ -41,7 +41,7 @@ IMPLEMENT_TLS_METHOD(TLS1_VERSION, 0, TLS_method_func, TLSv1_client_method);
 
 IMPLEMENT_SSL_METHOD(SSL3_VERSION, 0, TLS_method_func, SSLv3_client_method);
 
-/*
+/**
  * TLS or SSL server method collection
  */
 IMPLEMENT_TLS_METHOD(TLS_ANY_VERSION, 1, TLS_method_func, TLS_server_method);
@@ -54,7 +54,7 @@ IMPLEMENT_TLS_METHOD(TLS1_VERSION, 0, TLS_method_func, TLSv1_server_method);
 
 IMPLEMENT_SSL_METHOD(SSL3_VERSION, 1, TLS_method_func, SSLv3_server_method);
 
-/*
+/**
  * TLS or SSL method collection
  */
 IMPLEMENT_TLS_METHOD(TLS_ANY_VERSION, -1, TLS_method_func, TLS_method);
@@ -67,15 +67,15 @@ IMPLEMENT_SSL_METHOD(TLS1_VERSION, -1, TLS_method_func, TLSv1_method);
 
 IMPLEMENT_SSL_METHOD(SSL3_VERSION, -1, TLS_method_func, SSLv3_method);
 
-/*
- * X509 certification method collection
+/**
+ * @brief get X509 object method
  */
 IMPLEMENT_X509_METHOD(X509_method,
             x509_pm_new, x509_pm_free,
             x509_pm_load, x509_pm_unload);
 
-/*
- * private key method collection
+/**
+ * @brief get private key object method
  */
 IMPLEMENT_PKEY_METHOD(EVP_PKEY_method,
             pkey_pm_new, pkey_pm_free,

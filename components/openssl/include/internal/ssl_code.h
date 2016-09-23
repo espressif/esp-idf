@@ -72,6 +72,7 @@ typedef enum {
     MSG_FLOW_FINISHED
 } MSG_FLOW_STATE;
 
+/* SSL subsystem states */
 typedef enum {
     TLS_ST_BEFORE,
     TLS_ST_OK,
