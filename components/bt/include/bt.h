@@ -18,6 +18,11 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef void (* bt_app_startup_cb_t)(void *param);
 
 esp_err_t esp_bt_startup(bt_app_startup_cb_t cb, void *ctx);
@@ -53,5 +58,9 @@ void API_vhci_host_send_packet(uint8_t *data, uint16_t len);
  * param is the vhci_host_callback type variable
  */
 void API_vhci_host_register_callback(const vhci_host_callback_t *callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BT_H__ */
