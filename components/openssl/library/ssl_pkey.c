@@ -14,6 +14,7 @@
 
 #include "ssl_lib.h"
 #include "ssl_pkey.h"
+#include "ssl_cert.h"
 #include "ssl_methods.h"
 #include "ssl_dbg.h"
 #include "ssl_port.h"
@@ -38,7 +39,7 @@ EVP_PKEY* EVP_PKEY_new(void)
 
     ret = EVP_PKEY_METHOD_CALL(new, pkey);
     if (ret)
-        SSL_RET(failed2, "pkey_new\n");
+        SSL_RET(failed2, "EVP_PKEY_METHOD_CALL\n");
 
     return pkey;
 
@@ -91,13 +92,13 @@ EVP_PKEY *d2i_PrivateKey(int type,
     } else {
         pkey = EVP_PKEY_new();;
         if (!pkey)
-            SSL_RET(failed1, "ssl_malloc\n");
+            SSL_RET(failed1, "EVP_PKEY_new\n");
         m = 1;
     }
 
     ret = EVP_PKEY_METHOD_CALL(load, pkey, *pp, length);
     if (ret)
-        SSL_RET(failed2, "pkey_pm_load_crt\n");
+        SSL_RET(failed2, "EVP_PKEY_METHOD_CALL\n");
 
     if (a)
         *a = pkey;
@@ -177,8 +178,6 @@ int SSL_CTX_use_PrivateKey_ASN1(int type, SSL_CTX *ctx,
     if (!ret)
         SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
 
-    ctx->cert->pkey->ref = 1;
-
     return 1;
 
 failed2:
@@ -203,25 +202,44 @@ int SSL_use_PrivateKey_ASN1(int type, SSL *ssl,
                                 const unsigned char *d, long len)
 {
     int ret;
+    int reload;
     EVP_PKEY *pkey;
+    CERT *cert;
+    CERT *old_cert;
 
-    if (ssl->cert->pkey->ref)
-        SSL_RET(failed1);
+    if (!ssl->crt_reload) {
+        cert = ssl_cert_new();
+        if (!cert)
+            SSL_RET(failed1, "ssl_cert_new\n");
 
-    pkey = d2i_PrivateKey(0, NULL, &d, len);
+        old_cert = ssl->cert ;
+        ssl->cert = cert;
+
+        ssl->crt_reload = 1;
+
+        reload = 1;
+    } else {
+        reload = 0;
+    }
+
+    pkey = d2i_PrivateKey(0, &ssl->cert->pkey, &d, len);
     if (!pkey)
-        SSL_RET(failed1, "d2i_PrivateKey\n");
+        SSL_RET(failed2, "d2i_PrivateKey\n");
 
     ret = SSL_use_PrivateKey(ssl, pkey);
     if (!ret)
-        SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
-
-    ssl->cert->pkey->ref = 1;
+        SSL_RET(failed3, "SSL_use_PrivateKey\n");
 
     return 1;
 
-failed2:
+failed3:
     EVP_PKEY_free(pkey);
+failed2:
+    if (reload) {
+        ssl->cert = old_cert;
+        ssl_cert_free(cert);
+        ssl->crt_reload = 0;
+    }
 failed1:
     return 0;
 }

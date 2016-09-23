@@ -43,16 +43,16 @@ struct ssl_pm
 
 struct x509_pm
 {
-    int load;
-
     mbedtls_x509_crt x509_crt;
+
+    int load;
 };
 
 struct pkey_pm
 {
-    int load;
-
     mbedtls_pk_context pkey;
+
+    int load;
 };
 
 
@@ -79,9 +79,13 @@ int ssl_pm_new(SSL *ssl)
     struct x509_pm *x509_pm;
     struct pkey_pm *pkey_pm;
 
+    ssl->session.peer = ssl_malloc(sizeof(X509));
+    if (!ssl->session.peer)
+        SSL_ERR(ret, failed1, "ssl_malloc\n");
+
     ssl_pm = ssl_malloc(sizeof(struct ssl_pm));
     if (!ssl_pm)
-        SSL_ERR(ret, failed1, "ssl_malloc\n");
+        SSL_ERR(ret, failed2, "ssl_malloc\n");
 
     mbedtls_net_init(&ssl_pm->fd);
     mbedtls_net_init(&ssl_pm->cl_fd);
@@ -93,7 +97,7 @@ int ssl_pm_new(SSL *ssl)
 
     ret = mbedtls_ctr_drbg_seed(&ssl_pm->ctr_drbg, mbedtls_entropy_func, &ssl_pm->entropy, pers, pers_len);
     if (ret)
-        SSL_ERR(ret, failed1, "mbedtls_ctr_drbg_seed:[-0x%x]\n", -ret);
+        SSL_ERR(ret, failed3, "mbedtls_ctr_drbg_seed:[-0x%x]\n", -ret);
 
     if (method->endpoint) {
         endpoint = MBEDTLS_SSL_IS_SERVER;
@@ -102,7 +106,7 @@ int ssl_pm_new(SSL *ssl)
     }
     ret = mbedtls_ssl_config_defaults(&ssl_pm->conf, endpoint, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
     if (ret)
-        SSL_ERR(ret, failed2, "mbedtls_ssl_config_defaults:[-0x%x]\n", -ret);
+        SSL_ERR(ret, failed3, "mbedtls_ssl_config_defaults:[-0x%x]\n", -ret);
 
     if (TLS1_2_VERSION == ssl->version)
         version = MBEDTLS_SSL_MINOR_VERSION_3;
@@ -135,12 +139,12 @@ int ssl_pm_new(SSL *ssl)
 
         ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, &x509_pm->x509_crt, &pkey_pm->pkey);
         if (ret)
-            SSL_ERR(ret, failed3, "mbedtls_ssl_conf_own_cert:[%d]\n", ret);
+            SSL_ERR(ret, failed4, "mbedtls_ssl_conf_own_cert:[%d]\n", ret);
     }
 
     ret = mbedtls_ssl_setup(&ssl_pm->ssl, &ssl_pm->conf);
     if (ret)
-        SSL_ERR(ret, failed4, "mbedtls_ssl_setup:[-0x%x]\n", -ret);
+        SSL_ERR(ret, failed5, "mbedtls_ssl_setup:[-0x%x]\n", -ret);
 
     mbedtls_ssl_set_bio(&ssl_pm->ssl, &ssl_pm->fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
@@ -148,12 +152,14 @@ int ssl_pm_new(SSL *ssl)
 
     return 0;
 
-failed4:
+failed5:
     mbedtls_ssl_config_free(&ssl_pm->conf);
-failed3:
+failed4:
     mbedtls_ctr_drbg_free(&ssl_pm->ctr_drbg);
-failed2:
+failed3:
     mbedtls_entropy_free(&ssl_pm->entropy);
+failed2:
+    ssl_free(ssl->session.peer);
 failed1:
     return -1;
 }
@@ -186,6 +192,8 @@ int ssl_pm_handshake(SSL *ssl)
 
     if (!mbed_ret) {
         ret = 1;
+
+        ssl->session.peer = (X509 *)mbedtls_ssl_get_peer_cert(&ssl_pm->ssl);
     } else {
         ret = 0;
         SSL_DEBUG(1, "mbedtls_ssl_handshake [-0x%x]\n", -mbed_ret);

@@ -312,6 +312,12 @@ void SSL_free(SSL *ssl)
 
     SSL_METHOD_CALL(free, ssl);
 
+    if (ssl->ca_reload)
+        X509_free(ssl->client_CA);
+
+    if (ssl->crt_reload)
+        ssl_cert_free(ssl->cert);
+
     ssl_free(ssl);
 }
 

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "ssl_x509.h"
+#include "ssl_cert.h"
 #include "ssl_methods.h"
 #include "ssl_dbg.h"
 #include "ssl_port.h"
@@ -91,7 +92,7 @@ X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len)
 
     ret = X509_METHOD_CALL(load, x, buffer, len);
     if (ret)
-        SSL_RET(failed2, "x509_load\n");
+        SSL_RET(failed2, "X509_METHOD_CALL\n");
 
     return x;
 
@@ -140,7 +141,9 @@ int SSL_add_client_CA(SSL *ssl, X509 *x)
     SSL_ASSERT(ssl);
     SSL_ASSERT(x);
 
-    if (ssl->client_CA)
+    if (!ssl->ca_reload)
+        ssl->ca_reload = 1;
+    else
         X509_free(ssl->client_CA);
 
     ssl->client_CA = x;
@@ -227,8 +230,6 @@ int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
     if (!ret)
         SSL_RET(failed2, "SSL_CTX_use_certificate\n");
 
-    ctx->cert->x509->ref = 1;
-
     return 1;
 
 failed2:
@@ -252,25 +253,44 @@ int SSL_use_certificate_ASN1(SSL *ssl, int len,
                              const unsigned char *d)
 {
     int ret;
-    X509 *cert;
+    int reload;
+    X509 *x;
+    CERT *cert;
+    CERT *old_cert;
 
-    if (ssl->cert->x509->ref)
-        SSL_RET(failed1);
+    if (!ssl->crt_reload) {
+        cert = ssl_cert_new();
+        if (!cert)
+            SSL_RET(failed1, "ssl_cert_new\n");
 
-    cert = d2i_X509(NULL, d, len);
-    if (!cert)
-        SSL_RET(failed1, "d2i_X509\n");
+        old_cert = ssl->cert ;
+        ssl->cert = cert;
 
-    ret = SSL_use_certificate(ssl, cert);
+        ssl->crt_reload = 1;
+
+        reload = 1;
+    } else {
+        reload = 0;
+    }
+
+    x = d2i_X509(&ssl->cert->x509, d, len);
+    if (!x)
+        SSL_RET(failed2, "d2i_X509\n");
+
+    ret = SSL_use_certificate(ssl, x);
     if (!ret)
-        SSL_RET(failed2, "SSL_use_certificate\n");
-
-    ssl->cert->x509->ref = 1;
+        SSL_RET(failed3, "SSL_use_certificate\n");
 
     return 1;
 
+failed3:
+    X509_free(x);
 failed2:
-    X509_free(cert);
+    if (reload) {
+        ssl->cert = old_cert;
+        ssl_cert_free(cert);
+        ssl->crt_reload = 0;
+    }
 failed1:
     return 0;
 }

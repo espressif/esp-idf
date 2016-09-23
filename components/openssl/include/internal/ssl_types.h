@@ -99,16 +99,12 @@ struct stack_st {
 
 struct evp_pkey_st {
 
-    int ref;
-
     void *pkey_pm;
 
     const PKEY_METHOD *method;
 };
 
 struct x509_st {
-
-    int ref;
 
     /* X509 certification platform private point */
     void *x509_pm;
@@ -127,6 +123,7 @@ struct cert_st {
 };
 
 struct ossl_statem_st {
+
     MSG_FLOW_STATE state;
 
     int hand_state;
@@ -193,7 +190,13 @@ struct ssl_st
     /* shut things down(0x01 : sent, 0x02 : received) */
     int shutdown;
 
+    int crt_reload;
+
     CERT *cert;
+
+    int ca_reload;
+
+    X509 *client_CA;
 
     SSL_CTX  *ctx;
 
@@ -207,8 +210,6 @@ struct ssl_st
     SSL_SESSION session;
 
     int rwstate;
-
-    X509 *client_CA;
 
     long verify_result;
 

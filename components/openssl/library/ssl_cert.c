@@ -39,7 +39,7 @@ CERT *ssl_cert_new(void)
 
     cert->x509 = X509_new();
     if (!cert->x509)
-        SSL_RET(failed3, "sk_X509_NAME_new_null\n");
+        SSL_RET(failed3, "X509_new\n");
 
     return cert;
 
