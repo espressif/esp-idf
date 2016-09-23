@@ -15,6 +15,10 @@
 #ifndef _SSL_X509_H_
 #define _SSL_X509_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "ssl_types.h"
 #include "ssl_stack.h"
 
@@ -49,5 +53,9 @@ X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len);
  * @return none
  */
 void X509_free(X509 *x);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -15,6 +15,10 @@
 #ifndef _X509_VFY_H_
 #define _X509_VFY_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #define         X509_V_OK                                       0
 #define         X509_V_ERR_UNSPECIFIED                          1
 #define         X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT            2
@@ -99,5 +103,9 @@
 #define         X509_V_ERR_NO_VALID_SCTS                        71
 
 #define         X509_V_ERR_PROXY_SUBJECT_NAME_VIOLATION         72
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

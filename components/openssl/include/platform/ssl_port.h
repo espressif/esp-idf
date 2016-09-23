@@ -15,6 +15,10 @@
 #ifndef _SSL_PORT_H_
 #define _SSL_PORT_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "esp_types.h"
 
 void* ssl_zalloc(size_t size);

@@ -15,6 +15,10 @@
 #ifndef _SSL_CERT_H_
 #define _SSL_CERT_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "ssl_types.h"
 
 /**
@@ -34,5 +38,9 @@ CERT* ssl_cert_new(void);
  * @return none
  */
 void ssl_cert_free(CERT *cert);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -15,6 +15,10 @@
 #ifndef _SSL_DEBUG_H_
 #define _SSL_DEBUG_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #define SSL_DEBUG_ENBALE 0
 #define SSL_DEBUG_LEVEL 0
 #define SSL_ASSERT_ENABLE 0
@@ -45,5 +49,9 @@
 #define SSL_RET(go, ...) {  SSL_DEBUG_LOCATION(); SSL_PRINT(__VA_ARGS__); goto go; }
 
 #define SSL_DEBUG(level, ...) { if (level > SSL_DEBUG_LEVEL) {SSL_PRINT(__VA_ARGS__);} }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

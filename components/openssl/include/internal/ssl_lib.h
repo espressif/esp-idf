@@ -15,6 +15,14 @@
 #ifndef _SSL_LIB_H_
 #define _SSL_LIB_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "ssl_types.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

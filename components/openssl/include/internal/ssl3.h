@@ -15,6 +15,10 @@
 #ifndef _SSL3_H_
 #define _SSL3_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 # define SSL3_AD_CLOSE_NOTIFY             0
 # define SSL3_AD_UNEXPECTED_MESSAGE      10/* fatal */
 # define SSL3_AD_BAD_RECORD_MAC          20/* fatal */
@@ -32,5 +36,9 @@
 # define SSL3_AL_FATAL                    2
 
 #define SSL3_VERSION                 0x0300
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

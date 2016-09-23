@@ -15,6 +15,10 @@
 #ifndef _SSL_H_
 #define _SSL_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "platform/ssl_port.h"
 #include "internal/ssl_x509.h"
 
@@ -1684,5 +1688,8 @@ const char *SSL_get_psk_identity_hint(SSL *ssl);
  */
 const char *SSL_get_psk_identity(SSL *ssl);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

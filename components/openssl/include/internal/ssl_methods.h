@@ -15,6 +15,10 @@
 #ifndef _SSL_METHODS_H_
 #define _SSL_METHODS_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 /**
  * TLS method function implement
  */
@@ -109,5 +113,9 @@ const X509_METHOD* X509_method(void);
  * @return private key object method point
  */
 const PKEY_METHOD* EVP_PKEY_method(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

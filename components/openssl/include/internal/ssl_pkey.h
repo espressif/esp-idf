@@ -15,6 +15,10 @@
 #ifndef _SSL_PKEY_H_
 #define _SSL_PKEY_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "ssl_types.h"
 
 /**
@@ -50,5 +54,9 @@ EVP_PKEY* d2i_PrivateKey(int type,
  * @return none
  */
 void EVP_PKEY_free(EVP_PKEY *x);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

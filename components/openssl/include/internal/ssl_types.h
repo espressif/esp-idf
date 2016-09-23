@@ -15,6 +15,10 @@
 #ifndef _SSL_TYPES_H_
 #define _SSL_TYPES_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "ssl_code.h"
 
 typedef void SSL_CIPHER;
@@ -293,5 +297,9 @@ struct pkey_method_st {
 typedef int (*next_proto_cb)(SSL *ssl, unsigned char **out,
                              unsigned char *outlen, const unsigned char *in,
                              unsigned int inlen, void *arg);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

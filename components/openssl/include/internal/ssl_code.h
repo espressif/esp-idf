@@ -15,6 +15,10 @@
 #ifndef _SSL_CODE_H_
 #define _SSL_CODE_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "ssl3.h"
 #include "tls1.h"
 #include "x509_vfy.h"
@@ -112,5 +116,9 @@ typedef enum {
     TLS_ST_SW_CHANGE,
     TLS_ST_SW_FINISHED
 } OSSL_HANDSHAKE_STATE;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -15,6 +15,10 @@
 #ifndef _TLS1_H_
 #define _TLS1_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 # define TLS1_AD_DECRYPTION_FAILED       21
 # define TLS1_AD_RECORD_OVERFLOW         22
 # define TLS1_AD_UNKNOWN_CA              48/* fatal */
@@ -43,5 +47,9 @@
 #define TLS1_VERSION                    0x0301
 #define TLS1_1_VERSION                  0x0302
 #define TLS1_2_VERSION                  0x0303
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

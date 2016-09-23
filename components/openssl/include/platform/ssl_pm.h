@@ -15,6 +15,10 @@
 #ifndef _SSL_PM_H_
 #define _SSL_PM_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "ssl_types.h"
 #include "ssl_port.h"
 
