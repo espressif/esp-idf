@@ -78,6 +78,14 @@ int ssl_pm_new(SSL *ssl)
 
     const SSL_METHOD *method = ssl->method;
 
+    struct x509_pm *ctx_ca = (struct x509_pm *)ssl->ctx->client_CA->x509_pm;
+    struct x509_pm *ctx_crt = (struct x509_pm *)ssl->ctx->cert->x509->x509_pm;
+    struct pkey_pm *ctx_pkey = (struct pkey_pm *)ssl->ctx->cert->pkey->pkey_pm;
+
+    struct x509_pm *ssl_ca = (struct x509_pm *)ssl->client_CA->x509_pm;
+    struct x509_pm *ssl_crt = (struct x509_pm *)ssl->cert->x509->x509_pm;
+    struct pkey_pm *ssl_pkey = (struct pkey_pm *)ssl->cert->pkey->pkey_pm;
+
     ssl_pm = ssl_zalloc(sizeof(struct ssl_pm));
     if (!ssl_pm)
         SSL_ERR(ret, failed1, "ssl_zalloc\n");
@@ -125,6 +133,10 @@ int ssl_pm_new(SSL *ssl)
     mbedtls_ssl_set_bio(&ssl_pm->ssl, &ssl_pm->fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     ssl->ssl_pm = ssl_pm;
+
+    ssl_ca->ex_crt = ctx_ca->x509_crt;
+    ssl_crt->ex_crt = ctx_crt->x509_crt;
+    ssl_pkey->ex_pkey = ctx_pkey->pkey;
 
     return 0;
 
@@ -179,13 +191,20 @@ static int ssl_pm_reload_crt(SSL *ssl)
 
     if (ca_pm->x509_crt) {
         mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, ca_pm->x509_crt, NULL);
+    } else if (ca_pm->ex_crt) {
+        mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, ca_pm->x509_crt, NULL);
     }
 
     if (crt_pm->x509_crt && pkey_pm->pkey) {
         ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, crt_pm->x509_crt, pkey_pm->pkey);
-        if (ret)
-            return -1;
+    } else if (crt_pm->ex_crt && pkey_pm->ex_pkey) {
+        ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, crt_pm->ex_crt, pkey_pm->ex_pkey);
+    } else {
+        ret = 0;
     }
+
+    if (ret)
+        return -1;
 
     return 0;
 }

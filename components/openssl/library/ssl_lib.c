@@ -246,24 +246,34 @@ SSL *SSL_new(SSL_CTX *ctx)
     if (!ssl->session)
         SSL_RET(failed2, "ssl_zalloc\n");
 
+    ssl->cert = ssl_cert_new();
+    if (!ssl->cert)
+        SSL_RET(failed3, "ssl_cert_new\n");
+
+    ssl->client_CA = X509_new();
+    if (!ssl->client_CA)
+        SSL_RET(failed4, "ssl_cert_new\n");
+
     ssl->ctx = ctx;
     ssl->method = ctx->method;
 
     ssl->version = ctx->version;
     ssl->options = ctx->options;
 
-    ssl->cert = ctx->cert;
-    ssl->client_CA = ctx->client_CA;
     ssl->verify_mode = ctx->verify_mode;
 
     ret = SSL_METHOD_CALL(new, ssl);
     if (ret)
-        SSL_RET(failed3, "ssl_new\n");
+        SSL_RET(failed5, "ssl_new\n");
 
     ssl->rwstate = SSL_NOTHING;
 
     return ssl;
 
+failed5:
+    X509_free(ssl->client_CA);
+failed4:
+    ssl_cert_free(ssl->cert);
 failed3:
     SSL_SESSION_free(ssl->session);
 failed2:
@@ -281,13 +291,11 @@ void SSL_free(SSL *ssl)
 
     SSL_METHOD_CALL(free, ssl);
 
+    X509_free(ssl->client_CA);
+
+    ssl_cert_free(ssl->cert);
+
     SSL_SESSION_free(ssl->session);
-
-    if (ssl->ca_reload)
-        X509_free(ssl->client_CA);
-
-    if (ssl->crt_reload)
-        ssl_cert_free(ssl->cert);
 
     ssl_free(ssl);
 }
