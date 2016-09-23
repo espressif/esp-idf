@@ -30,7 +30,7 @@ X509* X509_new(void)
     int ret;
     X509 *x;
 
-    x = ssl_malloc(sizeof(X509));
+    x = ssl_zalloc(sizeof(X509));
     if (!x)
         SSL_RET(failed1, "ssl_malloc\n");
 

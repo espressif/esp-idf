@@ -31,7 +31,7 @@ void* ssl_zalloc(size_t size)
 
 void *ssl_malloc(size_t size)
 {
-    return ssl_zalloc(size);
+    return malloc(size);
 }
 
 void ssl_free(void *p)

@@ -31,7 +31,7 @@ EVP_PKEY* EVP_PKEY_new(void)
     int ret;
     EVP_PKEY *pkey;
 
-    pkey = ssl_malloc(sizeof(EVP_PKEY));
+    pkey = ssl_zalloc(sizeof(EVP_PKEY));
     if (!pkey)
         SSL_RET(failed1, "ssl_malloc\n");
 
