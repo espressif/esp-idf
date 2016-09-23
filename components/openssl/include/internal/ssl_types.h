@@ -259,6 +259,8 @@ struct ssl_method_func_st {
 
     long (*ssl_get_verify_result)(const SSL *ssl);
 
+    int (*ssl_reload_crt)(SSL *ssl);
+
     OSSL_HANDSHAKE_STATE (*ssl_get_state)(const SSL *ssl);
 };
 

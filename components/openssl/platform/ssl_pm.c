@@ -475,3 +475,33 @@ long ssl_pm_get_verify_result(const SSL *ssl)
 
     return verify_result;
 }
+
+int ssl_pm_reload_crt(SSL *ssl)
+{
+    int ret;
+    int mode;
+    struct ssl_pm *ssl_pm = ssl->ssl_pm;
+    struct x509_pm *x509_pm;
+    struct pkey_pm *pkey_pm;
+
+    x509_pm = (struct x509_pm *)ssl->client_CA->x509_pm;
+    if (x509_pm->load) {
+        mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, &x509_pm->x509_crt, NULL);
+
+        mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+    } else {
+        mode = MBEDTLS_SSL_VERIFY_NONE;
+    }
+    mbedtls_ssl_conf_authmode(&ssl_pm->conf, mode);
+
+    pkey_pm = (struct pkey_pm *)ssl->cert->pkey->pkey_pm;
+    if (pkey_pm->load) {
+        x509_pm = (struct x509_pm *)ssl->cert->x509->x509_pm;
+
+        ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, &x509_pm->x509_crt, &pkey_pm->pkey);
+        if (ret)
+            return -1;
+    }
+
+    return 0;
+}

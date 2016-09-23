@@ -127,6 +127,9 @@ int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
     SSL_ASSERT(ctx);
     SSL_ASSERT(pkey);
 
+    if (ctx->cert->pkey)
+        EVP_PKEY_free(ctx->cert->pkey);
+
     ctx->cert->pkey = pkey;
 
     return 1;
@@ -144,12 +147,26 @@ int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
  */
 int SSL_use_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
 {
+    int ret;
+    int ssl_ret;
+
     SSL_ASSERT(ctx);
     SSL_ASSERT(pkey);
 
+    if (!ssl->ca_reload)
+        ssl->ca_reload = 1;
+    else
+        EVP_PKEY_free(ssl->cert->pkey);
+
     ssl->cert->pkey = pkey;
 
-    return 1;
+    ssl_ret = SSL_METHOD_CALL(reload_crt, ssl);
+    if (ssl_ret)
+        ret = 0;
+    else
+        ret = 1;
+
+    return ret;
 }
 
 /*

@@ -26,6 +26,7 @@ IMPLEMENT_TLS_METHOD_FUNC(TLS_method_func,
         ssl_pm_set_fd, ssl_pm_get_fd,
         ssl_pm_set_bufflen,
         ssl_pm_get_verify_result,
+        ssl_pm_reload_crt,
         ssl_pm_get_state);
 
 /*

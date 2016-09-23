@@ -51,4 +51,6 @@ void pkey_pm_unload(EVP_PKEY *pkey);
 
 long ssl_pm_get_verify_result(const SSL *ssl);
 
+int ssl_pm_reload_crt(SSL *ssl);
+
 #endif

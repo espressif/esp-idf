@@ -22,6 +22,7 @@
                     set_fd, get_fd, \
                     set_bufflen, \
                     get_verify_result, \
+                    ssl_reload_crt, \
                     get_state) \
         static const SSL_METHOD_FUNC func_name LOCAL_ATRR = { \
                 new, \
@@ -36,6 +37,7 @@
                 get_fd, \
                 set_bufflen, \
                 get_verify_result, \
+                ssl_reload_crt, \
                 get_state \
         };
 

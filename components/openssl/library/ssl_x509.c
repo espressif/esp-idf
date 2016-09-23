@@ -138,6 +138,9 @@ int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
  */
 int SSL_add_client_CA(SSL *ssl, X509 *x)
 {
+    int ret;
+    int ssl_ret;
+
     SSL_ASSERT(ssl);
     SSL_ASSERT(x);
 
@@ -148,7 +151,13 @@ int SSL_add_client_CA(SSL *ssl, X509 *x)
 
     ssl->client_CA = x;
 
-    return 1;
+    ssl_ret = SSL_METHOD_CALL(reload_crt, ssl);
+    if (ssl_ret)
+        ret = 0;
+    else
+        ret = 1;
+
+    return ret;
 }
 
 /*
