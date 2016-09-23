@@ -82,11 +82,11 @@ static int ledc_is_valid_mode(uint32_t mode)
     return 1;
 }
 
-
 static esp_err_t ledc_timer_config(ledc_mode_t speed_mode, uint32_t timer_sel, uint32_t div_num, uint32_t timer_lim,ledc_timer_source_t clk)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     LEDC.high_speed_timer[timer_sel].conf.div_num = div_num;
     LEDC.high_speed_timer[timer_sel].conf.tick_sel = clk;
@@ -98,8 +98,9 @@ static esp_err_t ledc_timer_config(ledc_mode_t speed_mode, uint32_t timer_sel, u
 static esp_err_t ledc_duty_config(ledc_mode_t speed_mode, uint32_t channel_num, uint32_t hpoint_val, uint32_t duty_val,
     uint32_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     LEDC.high_speed_channel[channel_num].hpoint.hpoint = hpoint_val;
     LEDC.high_speed_channel[channel_num].duty.duty = duty_val;
@@ -113,8 +114,9 @@ static esp_err_t ledc_duty_config(ledc_mode_t speed_mode, uint32_t channel_num, 
 
 static esp_err_t ledc_set_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint32_t timer_idx)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     LEDC.high_speed_channel[channel].conf0.timer_sel = timer_idx;
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -123,8 +125,9 @@ static esp_err_t ledc_set_channel_timer(ledc_mode_t speed_mode, uint32_t channel
 
 static esp_err_t ledc_timer_rst(ledc_mode_t speed_mode, uint32_t timer_sel)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     LEDC.high_speed_timer[timer_sel].conf.rst = 1;
     LEDC.high_speed_timer[timer_sel].conf.rst = 0;
@@ -133,8 +136,9 @@ static esp_err_t ledc_timer_rst(ledc_mode_t speed_mode, uint32_t timer_sel)
 }
 static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, uint32_t channel, ledc_intr_type_t type)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
+    }
     uint32_t value;
     uint32_t intr_type = type;
     portENTER_CRITICAL(&ledc_spinlock);
@@ -150,8 +154,9 @@ static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, uint32_t channel,
 
 esp_err_t ledc_isr_register(uint32_t ledc_intr_num, void (*fn)(void*), void * arg)
 {
-    if(fn == NULL)
+    if(fn == NULL) {
         return ESP_ERR_INVALID_ARG;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     ESP_INTR_DISABLE(ledc_intr_num);
     intr_matrix_set(xPortGetCoreID(), ETS_LEDC_INTR_SOURCE, ledc_intr_num);
@@ -174,19 +179,17 @@ esp_err_t ledc_config(ledc_config_t* ledc_conf)
     uint32_t duty_depth = ledc_conf->duty_depth;
     uint32_t intr_type = ledc_conf->intr_type;
     uint32_t duty = ledc_conf->duty;
-    uint64_t div_param = 0;
+    uint32_t div_param = 0;
     uint32_t precision = 0;
-    if(!ledc_is_valid_channel(ledc_channel))
-        return ESP_ERR_INVALID_ARG;
-    if(!ledc_is_valid_mode(speed_mode))
-        return ESP_ERR_INVALID_ARG;
-    if(gpio_num >= GPIO_NUM_34 || gpio_num == 20 || gpio_num == 24 || gpio_num == 28 || gpio_num == 29 || gpio_num == 30
-        || gpio_num == 31) {
-        LEDC_ERROR("GPIO number error: IO%d\n ", gpio_num);
+    int timer_clk_src = 0;
+    if(!ledc_is_valid_channel(ledc_channel)) {
         return ESP_ERR_INVALID_ARG;
     }
-    if(gpio_num >= GPIO_PIN_COUNT || 0 == GPIO_PIN_MUX_REG[gpio_num]) {
-        LEDC_ERROR("io_num=%d does not exist\n", gpio_num);
+    if(!ledc_is_valid_mode(speed_mode)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(!GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)) {
+        LEDC_ERROR("GPIO number error: IO%d\n ", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
     if(freq_hz == 0 || duty_depth == 0 || duty_depth > LEDC_DUTY_DEPTH_15_BIT) {
@@ -200,32 +203,34 @@ esp_err_t ledc_config(ledc_config_t* ledc_conf)
     portENTER_CRITICAL(&ledc_spinlock);
     esp_err_t ret = ESP_OK;
     /*gpio matrix ledc pwm signal*/
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], 2);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
     gpio_matrix_out(gpio_num, LEDC_HS_SIG_OUT0_IDX + ledc_channel, 0, 0);
     /*configure ledc param*/
     /*calculate the div_param and select which base clock and first we will select the apb_clk */
     precision = (0x1 << duty_depth);  //2**depth
-    div_param = (uint64_t) LEDC_APB_CLK_HZ * 256 / freq_hz / precision; //8bit fragment
+    div_param = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision; //8bit fragment
     /*Fail ,because the div num overflow or too small*/
-    if(div_param <= 256 || div_param > LEDC_DIV_NUM_HSTIMER0) { //REF TICK
+    if(div_param <= 256 || div_param > LEDC_DIV_NUM_HSTIMER0_V) { //REF TICK
         /*Selet the reference tick*/
-        div_param = (uint64_t) LEDC_REF_CLK_HZ * 256 / freq_hz / precision;
+        div_param = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
         if(div_param <= 256 || div_param > LEDC_DIV_NUM_HSTIMER0_V) {
             LEDC_ERROR("div param err,div_param=%u\n", div_param);
             ret = ESP_FAIL;
         }
-        ledc_timer_config(speed_mode, timer_select, div_param, duty_depth, LEDC_REF_TICK);
+        timer_clk_src = LEDC_REF_TICK;
+        ledc_timer_config(speed_mode, timer_select, div_param, duty_depth, timer_clk_src);
         ledc_set_channel_timer(speed_mode, ledc_channel, timer_select);
     } else { //APB TICK
-        ledc_timer_config(speed_mode, timer_select, div_param, duty_depth, LEDC_APB_CLK);
+        timer_clk_src = LEDC_APB_CLK;
+        ledc_timer_config(speed_mode, timer_select, div_param, duty_depth, timer_clk_src);
         ledc_set_channel_timer(speed_mode, ledc_channel, timer_select);
     }
     ledc_timer_rst(speed_mode, timer_select);
     ledc_set_duty(speed_mode, ledc_channel, duty);
     ledc_enable_intr_type(speed_mode, ledc_channel, intr_type);
     LEDC_INFO("LEDC_PWM CHANNEL %1u|GPIO %02u|FreHz %05u|Duty %04u|Depth %04u|Time %01u|SourceClk %01u|Divparam %u\n",
-        ledc_channel, gpio_num, freq_hz, duty, duty_depth, timer_select, timer_source_clk_flag, div_param
+        ledc_channel, gpio_num, freq_hz, duty, duty_depth, timer_select, timer_clk_src, div_param
     );
     ledc_update(speed_mode, ledc_channel);
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -234,10 +239,12 @@ esp_err_t ledc_config(ledc_config_t* ledc_conf)
 
 esp_err_t ledc_update(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
-    if(!ledc_is_valid_channel(channel))
+    }
+    if(!ledc_is_valid_channel(channel)) {
         return ESP_ERR_INVALID_ARG;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     LEDC.high_speed_channel[channel].conf0.sig_out_en = 1;
     LEDC.high_speed_channel[channel].conf1.duty_start = 1;
@@ -247,10 +254,12 @@ esp_err_t ledc_update(ledc_mode_t speed_mode, ledc_channel_t channel)
 
 esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idle_level)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
-    if(!ledc_is_valid_channel(channel))
+    }
+    if(!ledc_is_valid_channel(channel)) {
         return ESP_ERR_INVALID_ARG;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     LEDC.high_speed_channel[channel].conf0.idle_lv = idle_level;
     LEDC.high_speed_channel[channel].conf0.sig_out_en = 0;
@@ -261,15 +270,17 @@ esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idl
 esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty, ledc_duty_direction_t fade_direction,
     uint32_t step_num, uint32_t duty_cyle_num, uint32_t duty_scale)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
-    if(!ledc_is_valid_channel(channel))
+    }
+    if(!ledc_is_valid_channel(channel)) {
         return ESP_ERR_INVALID_ARG;
+    }
     if(fade_direction > LEDC_DUTY_DIR_INCREASE) {
         LEDC_ERROR("Duty direction err\n");
         return ESP_ERR_INVALID_ARG;
     }
-    if(step_num > 0X3FF || duty_cyle_num > 0X3FF || duty_scale > 0X3FF) {
+    if(step_num > LEDC_DUTY_NUM_HSCH0_V || duty_cyle_num > LEDC_DUTY_CYCLE_HSCH0_V || duty_scale > LEDC_DUTY_SCALE_HSCH0_V) {
         LEDC_ERROR("step_num=%u duty_cyle_num=%u duty_scale=%u\n", step_num, duty_cyle_num, duty_scale);
         return ESP_ERR_INVALID_ARG;
     }
@@ -289,10 +300,12 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty,
 
 esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
-    if(!ledc_is_valid_channel(channel))
+    }
+    if(!ledc_is_valid_channel(channel)) {
         return ESP_ERR_INVALID_ARG;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     ledc_duty_config(speed_mode,
                      channel,         //uint32_t chan_num,
@@ -307,21 +320,23 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
     return ESP_OK;
 }
 
-uint32_t ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
+int ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
-    if(!ledc_is_valid_mode(speed_mode))
-        return ESP_ERR_INVALID_ARG;
-    uint32_t duty = 0;
-    duty = (LEDC.high_speed_channel[channel].duty_rd.duty_read >> 4);
+    if(!ledc_is_valid_mode(speed_mode)) {
+        return -1;
+    }
+    uint32_t duty = (LEDC.high_speed_channel[channel].duty_rd.duty_read >> 4);
     return duty;
 }
 
 esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t freq_hz)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
-    if(!ledc_is_valid_channel(channel))
+    }
+    if(!ledc_is_valid_channel(channel)) {
         return ESP_ERR_INVALID_ARG;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     esp_err_t ret = ESP_OK;
     uint32_t div_num = 0;
@@ -332,9 +347,9 @@ esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
     uint32_t timer_source_clk = LEDC.high_speed_timer[timer_select].conf.tick_sel;
     uint32_t precision = (0x1 << duty_depth);
     if(timer_source_clk == LEDC_APB_CLK) {
-        div_num = (uint64_t) LEDC_APB_CLK_HZ * 256 / freq_hz / precision;
+        div_num = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision;
     } else {
-        div_num = (uint64_t) LEDC_REF_CLK_HZ * 256 / freq_hz / precision;
+        div_num = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
     }
     if(div_num <= 256 || div_num > LEDC_DIV_NUM_HSTIMER0) {
         LEDC_ERROR("channel %u,div param err,div_param=%u\n", channel, div_num);
@@ -347,10 +362,12 @@ esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
 
 uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
-    if(!ledc_is_valid_mode(speed_mode))
+    if(!ledc_is_valid_mode(speed_mode)) {
         return 0;
-    if(!ledc_is_valid_channel(channel))
-        return ESP_ERR_INVALID_ARG;
+    }
+    if(!ledc_is_valid_channel(channel)) {
+        return 0;
+    }
     portENTER_CRITICAL(&ledc_spinlock);
     uint32_t freq = 0;
     uint32_t timer_select = LEDC.high_speed_channel[channel].conf0.timer_sel;
@@ -359,9 +376,9 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_channel_t channel)
     uint32_t div_num = LEDC.high_speed_timer[timer_select].conf.div_num;
     uint32_t precision = (0x1 << duty_depth);
     if(timer_source_clk == LEDC_APB_CLK) {
-        freq = ((uint64_t) LEDC_APB_CLK_HZ) * 256 / precision / div_num;
+        freq = ((uint64_t) LEDC_APB_CLK_HZ << 8) / precision / div_num;
     } else {
-        freq = ((uint64_t) LEDC_REF_CLK_HZ) * 256 / precision / div_num;
+        freq = ((uint64_t) LEDC_REF_CLK_HZ << 8) / precision / div_num;
     }
     portEXIT_CRITICAL(&ledc_spinlock);
     return freq;

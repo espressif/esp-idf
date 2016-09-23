@@ -101,7 +101,7 @@ typedef struct ledc_channel_t_config {
  *                                            When different channel ,select same time ,their freq_hz and duty_depth must be same
  * @return     ESP_OK:  success
  *             ESP_ERR_INVALID_ARG: parameter error
- *             ESP_FAIL: spin_lock error
+ *             ESP_FAIL: Can not find a proper pre-devider number base on the given frequency and the current duty_depth.
  *
  */
 esp_err_t ledc_config(ledc_config_t* ledc_conf);
@@ -118,7 +118,6 @@ esp_err_t ledc_config(ledc_config_t* ledc_conf);
  *
  * @return     ESP_OK:  success
  *             ESP_ERR_INVALID_ARG: parameter error
- *             ESP_FAIL: spin_lock error
  *
  */
 esp_err_t ledc_update(ledc_mode_t speed_mode, ledc_channel_t channel);
@@ -134,7 +133,6 @@ esp_err_t ledc_update(ledc_mode_t speed_mode, ledc_channel_t channel);
  *
  * @return     ESP_OK:  success
  *             ESP_ERR_INVALID_ARG: parameter error
- *             ESP_FAIL: spin_lock error
  */
 esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idle_level);
 
@@ -151,7 +149,7 @@ esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idl
  *
  * @return     ESP_OK:  success
  *             ESP_ERR_INVALID_ARG: parameter error
- *             ESP_FAIL: spin_lock error
+ *             ESP_FAIL: Can not find a proper pre-devider number base on the given frequency and the current duty_depth.
  */
 esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t freq_hz);
 
@@ -181,7 +179,6 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_channel_t channel);
  *
  * @return     ESP_OK:  success
  *             ESP_ERR_INVALID_ARG: parameter error
- *             ESP_FAIL: spin_lock error
  */
 esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty);
 
@@ -193,10 +190,11 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
  * @param[in]  channel : LEDC channel(0-7)
  *
  *
- * @return    current LEDC duty
+ * @return     -1: parameter error
+ *             other value: current LEDC duty
  *
  */
-uint32_t ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
+int ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
 
 /**
  * @brief      LEDC set gradient
@@ -219,7 +217,6 @@ uint32_t ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
  *
  * @return     ESP_OK               : success
  *             ESP_ERR_INVALID_ARG  : parameter error
- *             ESP_FAIL             : spin_lock error
  */
 esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty, ledc_duty_direction_t gradule_direction,
                         uint32_t step_num, uint32_t duty_cyle_num, uint32_t duty_scale);
@@ -237,7 +234,6 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty,
  *
  * @return      ESP_OK                    : success ;
  *              ESP_ERR_INVALID_ARG       : fucntion ptr error.
- *              ESP_FAIL                  : spin_lock error
  */
 esp_err_t ledc_isr_register(uint32_t ledc_intr_num, void (*fn)(void*), void * arg);
 
