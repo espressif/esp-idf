@@ -110,8 +110,9 @@ static uint16_t make_cmd_ble_set_adv_data(uint8_t *buf, uint8_t data_len, uint8_
     memset(buf, 0, HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA);
 
     if (p_data != NULL && data_len > 0) {
-        if (data_len > HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA)
+        if (data_len > HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA) {
             data_len = HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA;
+        }
 
         UINT8_TO_STREAM (buf, data_len);
 

@@ -24,11 +24,17 @@
 #include "freertos/portmacro.h"
 #include "esp_types.h"
 #include "esp_system.h"
+#include "esp_task.h"
 #include "esp_intr.h"
 #include "esp_attr.h"
 #include "bt.h"
 
 #if CONFIG_BT_ENABLED
+
+/* not for user call, so don't put to include file */
+extern void btdm_osi_funcs_register(void *osi_funcs);
+extern void btdm_controller_init(void);
+
 
 static bt_app_startup_cb_t app_startup_cb;
 static void *app_startup_ctx;
@@ -42,9 +48,6 @@ do{\
         return __err;\
     }\
 } while(0)
-
-extern void btdm_controller_init(void);
-extern void API_osi_funcs_register(void *osi_funcs);
 
 struct osi_funcs_t {
     xt_handler (*_set_isr)(int n, xt_handler f, void *arg);
@@ -60,17 +63,17 @@ struct osi_funcs_t {
 
 static portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
-static inline void IRAM_ATTR interrupt_disable(void)
+static void IRAM_ATTR interrupt_disable(void)
 {
     portENTER_CRITICAL(&global_int_mux);
 }
 
-static inline void IRAM_ATTR interrupt_restore(void)
+static void IRAM_ATTR interrupt_restore(void)
 {
     portEXIT_CRITICAL(&global_int_mux);
 }
 
-static inline void *IRAM_ATTR semphr_take_wrapped(void *semphr, uint32_t block_time)
+static void * IRAM_ATTR semphr_take_wrapper(void *semphr, uint32_t block_time)
 {
     return (void *)xSemaphoreTake(semphr, block_time);
 }
@@ -83,23 +86,24 @@ static struct osi_funcs_t osi_funcs = {
     ._task_yield = vPortYield,
     ._semphr_create = xQueueCreateCountingSemaphore,
     ._semphr_give_from_isr = (void *)xQueueGiveFromISR,
-    ._semphr_take = semphr_take_wrapped,
+    ._semphr_take = semphr_take_wrapper,
     ._read_efuse_mac = system_efuse_read_mac,
 };
 
 static void bt_controller_task(void *pvParam)
 {
-    API_osi_funcs_register(&osi_funcs);
+    btdm_osi_funcs_register(&osi_funcs);
     btdm_controller_init();
 }
 
 
 static void bt_init_task(void *pvParameters)
 {
-    xTaskCreatePinnedToCore(bt_controller_task, "btControllerTask", BT_CONTROLLER_TASK_STACK_SIZE, NULL, BT_CONTROLLER_TASK_PRIO, NULL, 0);
+    xTaskCreatePinnedToCore(bt_controller_task, "btControllerTask", ESP_TASK_BT_CONTROLLER_STACK, NULL, ESP_TASK_BT_CONTROLLER_PRIO, NULL, 0);
 
-    if (app_startup_cb)
-	app_startup_cb(app_startup_ctx);
+    if (app_startup_cb) {
+        app_startup_cb(app_startup_ctx);
+    }
 
     vTaskDelete(NULL);
 }
@@ -110,7 +114,7 @@ esp_err_t esp_bt_startup(bt_app_startup_cb_t cb, void *ctx)
     app_startup_cb = cb;
     app_startup_ctx = ctx;
 
-    xTaskCreatePinnedToCore(bt_init_task, "btInitTask", BT_INIT_TASK_STACK_SIZE, NULL, BT_INIT_TASK_PRIO, NULL, 0);
+    xTaskCreatePinnedToCore(bt_init_task, "btInitTask", ESP_TASK_BT_INIT_STACK, NULL, ESP_TASK_BT_INIT_PRIO, NULL, 0);
 
     return ESP_OK;
 }
