@@ -23,6 +23,11 @@
 # define SSL_SENT_SHUTDOWN       1
 # define SSL_RECEIVED_SHUTDOWN   2
 
+# define SSL_VERIFY_NONE                 0x00
+# define SSL_VERIFY_PEER                 0x01
+# define SSL_VERIFY_FAIL_IF_NO_PEER_CERT 0x02
+# define SSL_VERIFY_CLIENT_ONCE          0x04
+
 /*
  * The following 3 states are kept in ssl->rlayer.rstate when reads fail, you
  * should not need these

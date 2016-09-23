@@ -171,6 +171,8 @@ struct ssl_ctx_st
 
     int verify_mode;
 
+    int (*default_verify_callback) (int ok, X509_STORE_CTX *ctx);
+
     long session_timeout;
 
     int read_ahead;
@@ -208,6 +210,10 @@ struct ssl_st
     OSSL_STATEM statem;
 
     SSL_SESSION session;
+
+    int verify_mode;
+
+    int (*verify_callback) (int ok, X509_STORE_CTX *ctx);
 
     int rwstate;
 
@@ -258,8 +264,6 @@ struct ssl_method_func_st {
     void (*ssl_set_bufflen)(SSL *ssl, int len);
 
     long (*ssl_get_verify_result)(const SSL *ssl);
-
-    int (*ssl_reload_crt)(SSL *ssl);
 
     OSSL_HANDSHAKE_STATE (*ssl_get_state)(const SSL *ssl);
 };

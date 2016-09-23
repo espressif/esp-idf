@@ -160,13 +160,7 @@ int SSL_use_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
 
     ssl->cert->pkey = pkey;
 
-    ssl_ret = SSL_METHOD_CALL(reload_crt, ssl);
-    if (ssl_ret)
-        ret = 0;
-    else
-        ret = 1;
-
-    return ret;
+    return 1;
 }
 
 /*

@@ -71,13 +71,9 @@ int ssl_pm_new(SSL *ssl)
     size_t pers_len = sizeof(pers);
 
     int endpoint;
-    int mode;
     int version;
 
     const SSL_METHOD *method = ssl->method;
-
-    struct x509_pm *x509_pm;
-    struct pkey_pm *pkey_pm;
 
     ssl->session.peer = ssl_zalloc(sizeof(X509));
     if (!ssl->session.peer)
@@ -123,28 +119,9 @@ int ssl_pm_new(SSL *ssl)
 
     mbedtls_ssl_conf_dbg(&ssl_pm->conf, NULL, NULL);
 
-    x509_pm = (struct x509_pm *)ssl->client_CA->x509_pm;
-    if (x509_pm->load) {
-        mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, &x509_pm->x509_crt, NULL);
-
-        mode = MBEDTLS_SSL_VERIFY_REQUIRED;
-    } else {
-        mode = MBEDTLS_SSL_VERIFY_NONE;
-    }
-    mbedtls_ssl_conf_authmode(&ssl_pm->conf, mode);
-
-    pkey_pm = (struct pkey_pm *)ssl->cert->pkey->pkey_pm;
-    if (pkey_pm->load) {
-        x509_pm = (struct x509_pm *)ssl->cert->x509->x509_pm;
-
-        ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, &x509_pm->x509_crt, &pkey_pm->pkey);
-        if (ret)
-            SSL_ERR(ret, failed4, "mbedtls_ssl_conf_own_cert:[%d]\n", ret);
-    }
-
     ret = mbedtls_ssl_setup(&ssl_pm->ssl, &ssl_pm->conf);
     if (ret)
-        SSL_ERR(ret, failed5, "mbedtls_ssl_setup:[-0x%x]\n", -ret);
+        SSL_ERR(ret, failed4, "mbedtls_ssl_setup:[-0x%x]\n", -ret);
 
     mbedtls_ssl_set_bio(&ssl_pm->ssl, &ssl_pm->fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
@@ -152,9 +129,8 @@ int ssl_pm_new(SSL *ssl)
 
     return 0;
 
-failed5:
-    mbedtls_ssl_config_free(&ssl_pm->conf);
 failed4:
+    mbedtls_ssl_config_free(&ssl_pm->conf);
     mbedtls_ctr_drbg_free(&ssl_pm->ctr_drbg);
 failed3:
     mbedtls_entropy_free(&ssl_pm->entropy);
@@ -177,10 +153,48 @@ void ssl_pm_free(SSL *ssl)
     ssl->ssl_pm = NULL;
 }
 
+static int ssl_pm_reload_crt(SSL *ssl)
+{
+    int ret;
+    int mode;
+    struct ssl_pm *ssl_pm = ssl->ssl_pm;
+    struct x509_pm *ca_pm = (struct x509_pm *)ssl->client_CA->x509_pm;
+
+    struct pkey_pm *pkey_pm = (struct pkey_pm *)ssl->cert->pkey->pkey_pm;
+    struct x509_pm *crt_pm = (struct x509_pm *)ssl->cert->x509->x509_pm;
+
+    if (ssl->verify_mode == SSL_VERIFY_PEER)
+        mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+    else if (ssl->verify_mode == SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
+        mode = MBEDTLS_SSL_VERIFY_NONE;
+    else if (ssl->verify_mode == SSL_VERIFY_CLIENT_ONCE)
+        mode = MBEDTLS_SSL_VERIFY_UNSET;
+    else
+        mode = MBEDTLS_SSL_VERIFY_NONE;
+
+    mbedtls_ssl_conf_authmode(&ssl_pm->conf, mode);
+
+    if (ca_pm->load) {
+        mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, &ca_pm->x509_crt, NULL);
+    }
+
+    if (pkey_pm->load) {
+        ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, &crt_pm->x509_crt, &pkey_pm->pkey);
+        if (ret)
+            return -1;
+    }
+
+    return 0;
+}
+
 int ssl_pm_handshake(SSL *ssl)
 {
     int ret, mbed_ret;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
+
+    mbed_ret = ssl_pm_reload_crt(ssl);
+    if (mbed_ret)
+        return 0;
 
     ssl_speed_up_enter();
     while((mbed_ret = mbedtls_ssl_handshake(&ssl_pm->ssl)) != 0) {
@@ -474,34 +488,4 @@ long ssl_pm_get_verify_result(const SSL *ssl)
         verify_result = X509_V_ERR_UNSPECIFIED;
 
     return verify_result;
-}
-
-int ssl_pm_reload_crt(SSL *ssl)
-{
-    int ret;
-    int mode;
-    struct ssl_pm *ssl_pm = ssl->ssl_pm;
-    struct x509_pm *x509_pm;
-    struct pkey_pm *pkey_pm;
-
-    x509_pm = (struct x509_pm *)ssl->client_CA->x509_pm;
-    if (x509_pm->load) {
-        mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, &x509_pm->x509_crt, NULL);
-
-        mode = MBEDTLS_SSL_VERIFY_REQUIRED;
-    } else {
-        mode = MBEDTLS_SSL_VERIFY_NONE;
-    }
-    mbedtls_ssl_conf_authmode(&ssl_pm->conf, mode);
-
-    pkey_pm = (struct pkey_pm *)ssl->cert->pkey->pkey_pm;
-    if (pkey_pm->load) {
-        x509_pm = (struct x509_pm *)ssl->cert->x509->x509_pm;
-
-        ret = mbedtls_ssl_conf_own_cert(&ssl_pm->conf, &x509_pm->x509_crt, &pkey_pm->pkey);
-        if (ret)
-            return -1;
-    }
-
-    return 0;
 }

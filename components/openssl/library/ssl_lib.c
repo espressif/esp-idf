@@ -284,6 +284,7 @@ SSL *SSL_new(SSL_CTX *ctx)
 
     ssl->cert = ctx->cert;
     ssl->client_CA = ctx->client_CA;
+    ssl->verify_mode = ctx->verify_mode;
 
     ret = SSL_METHOD_CALL(new, ssl);
     if (ret)
@@ -1727,21 +1728,6 @@ long SSL_set_timeout(SSL *ssl, long t)
 }
 
 /*
- * SSL_set_verify - set the SSL verifying of the SSL context
- *
- * @param ctx             - SSL point
- * @param mode            - verifying mode
- * @param verify_callback - verifying callback function
- *
- * @return none
- */
-void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
-{
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(verify_callback);
-}
-
-/*
  * SSL_get_verify_result - get the verifying result of the SSL certification
  *
  * @param ssl - the SSL point
@@ -1811,4 +1797,38 @@ void SSL_set_verify_depth(SSL *ssl, int depth)
     SSL_ASSERT(ssl);
 
     ssl->param.depth = depth;
+}
+
+/*
+ * SSL_CTX_set_verify - set the SSL context verifying of the SSL context
+ *
+ * @param ctx             - SSL context point
+ * @param mode            - verifying mode
+ * @param verify_callback - verifying callback function
+ *
+ * @return none
+ */
+void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
+{
+    SSL_ASSERT(ctx);
+
+    ctx->verify_mode = mode;
+    ctx->default_verify_callback = verify_callback;
+}
+
+/*
+ * SSL_set_verify - set the SSL verifying of the SSL context
+ *
+ * @param ctx             - SSL point
+ * @param mode            - verifying mode
+ * @param verify_callback - verifying callback function
+ *
+ * @return none
+ */
+void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
+{
+    SSL_ASSERT(ctx);
+
+    ssl->verify_mode = mode;
+    ssl->verify_callback = verify_callback;
 }
