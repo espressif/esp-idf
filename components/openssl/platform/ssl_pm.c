@@ -149,6 +149,9 @@ void ssl_pm_free(SSL *ssl)
     mbedtls_ssl_config_free(&ssl_pm->conf);
     mbedtls_ssl_free(&ssl_pm->ssl);
 
+    ssl_free(ssl->session.peer);
+    ssl->session.peer = NULL;
+
     ssl_free(ssl_pm);
     ssl->ssl_pm = NULL;
 }
