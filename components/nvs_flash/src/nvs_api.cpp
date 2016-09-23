@@ -17,6 +17,15 @@
 #include "intrusive_list.h"
 #include "nvs_platform.hpp"
 
+#ifdef ESP_PLATFORM
+// Uncomment this line to force output from this module
+// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#include "esp_log.h"
+static const char* TAG = "nvs";
+#else
+#define ESP_LOGD(...)
+#endif
+
 class HandleEntry : public intrusive_list_node<HandleEntry>
 {
 public:
@@ -55,7 +64,7 @@ extern "C" esp_err_t nvs_flash_init(uint32_t baseSector, uint32_t sectorCount)
 {
     Lock::init();
     Lock lock;
-    NVS_DEBUGV("%s %d %d\r\n", __func__, baseSector, sectorCount);
+    ESP_LOGD(TAG, "init start=%d count=%d", baseSector, sectorCount);
     s_nvs_handles.clear();
     return s_nvs_storage.init(baseSector, sectorCount);
 }
@@ -75,7 +84,7 @@ static esp_err_t nvs_find_ns_handle(nvs_handle handle, HandleEntry& entry)
 extern "C" esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_handle)
 {
     Lock lock;
-    NVS_DEBUGV("%s %s %d\r\n", __func__, name, open_mode);
+    ESP_LOGD(TAG, "%s %s %d", __func__, name, open_mode);
     uint8_t nsIndex;
     esp_err_t err = s_nvs_storage.createOrOpenNamespace(name, open_mode == NVS_READWRITE, nsIndex);
     if (err != ESP_OK) {
@@ -93,7 +102,7 @@ extern "C" esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_han
 extern "C" void nvs_close(nvs_handle handle)
 {
     Lock lock;
-    NVS_DEBUGV("%s %d\r\n", __func__, handle);
+    ESP_LOGD(TAG, "%s %d", __func__, handle);
     auto it = find_if(begin(s_nvs_handles), end(s_nvs_handles), [=](HandleEntry& e) -> bool {
         return e.mHandle == handle;
     });
@@ -106,7 +115,7 @@ extern "C" void nvs_close(nvs_handle handle)
 extern "C" esp_err_t nvs_erase_key(nvs_handle handle, const char* key)
 {
     Lock lock;
-    NVS_DEBUGV("%s %s\r\n", __func__, key);
+    ESP_LOGD(TAG, "%s %s\r\n", __func__, key);
     HandleEntry entry;
     auto err = nvs_find_ns_handle(handle, entry);
     if (err != ESP_OK) {
@@ -121,7 +130,7 @@ extern "C" esp_err_t nvs_erase_key(nvs_handle handle, const char* key)
 extern "C" esp_err_t nvs_erase_all(nvs_handle handle)
 {
     Lock lock;
-    NVS_DEBUGV("%s\r\n", __func__);
+    ESP_LOGD(TAG, "%s\r\n", __func__);
     HandleEntry entry;
     auto err = nvs_find_ns_handle(handle, entry);
     if (err != ESP_OK) {
@@ -137,7 +146,7 @@ template<typename T>
 static esp_err_t nvs_set(nvs_handle handle, const char* key, T value)
 {
     Lock lock;
-    NVS_DEBUGV("%s %s %d %d\r\n", __func__, key, sizeof(T), (uint32_t) value);
+    ESP_LOGD(TAG, "%s %s %d %d", __func__, key, sizeof(T), (uint32_t) value);
     HandleEntry entry;
     auto err = nvs_find_ns_handle(handle, entry);
     if (err != ESP_OK) {
@@ -200,7 +209,7 @@ extern "C" esp_err_t nvs_commit(nvs_handle handle)
 extern "C" esp_err_t nvs_set_str(nvs_handle handle, const char* key, const char* value)
 {
     Lock lock;
-    NVS_DEBUGV("%s %s %s\r\n", __func__, key, value);
+    ESP_LOGD(TAG, "%s %s %s", __func__, key, value);
     HandleEntry entry;
     auto err = nvs_find_ns_handle(handle, entry);
     if (err != ESP_OK) {
@@ -212,7 +221,7 @@ extern "C" esp_err_t nvs_set_str(nvs_handle handle, const char* key, const char*
 extern "C" esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, size_t length)
 {
     Lock lock;
-    NVS_DEBUGV("%s %s %d\r\n", __func__, key, length);
+    ESP_LOGD(TAG, "%s %s %d", __func__, key, length);
     HandleEntry entry;
     auto err = nvs_find_ns_handle(handle, entry);
     if (err != ESP_OK) {
@@ -226,7 +235,7 @@ template<typename T>
 static esp_err_t nvs_get(nvs_handle handle, const char* key, T* out_value)
 {
     Lock lock;
-    NVS_DEBUGV("%s %s %d\r\n", __func__, key, sizeof(T));
+    ESP_LOGD(TAG, "%s %s %d", __func__, key, sizeof(T));
     HandleEntry entry;
     auto err = nvs_find_ns_handle(handle, entry);
     if (err != ESP_OK) {
@@ -278,7 +287,7 @@ extern "C" esp_err_t nvs_get_u64 (nvs_handle handle, const char* key, uint64_t* 
 static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, const char* key, void* out_value, size_t* length)
 {
     Lock lock;
-    NVS_DEBUGV("%s %s\r\n", __func__, key);
+    ESP_LOGD(TAG, "%s %s", __func__, key);
     HandleEntry entry;
     auto err = nvs_find_ns_handle(handle, entry);
     if (err != ESP_OK) {
