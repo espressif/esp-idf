@@ -43,6 +43,11 @@
 #define ESP_TASK_WPS_PRIO             (ESP_TASK_PRIO_MIN + 2)
 #define ESP_TASK_WPS_STACK            2048
 
+/* Bt contoller Task */
+/* controller */
+#define ESP_TASK_BT_CONTROLLER_PRIO   (ESP_TASK_PRIO_MAX - 1)
+#define ESP_TASK_BT_CONTROLLER_STACK  4096
+
 /* idf task */
 #define ESP_TASKD_EVENT_PRIO          (ESP_TASK_PRIO_MAX - 5)
 #define ESP_TASKD_EVENT_STACK         CONFIG_SYSTEM_EVENT_TASK_STACK_SIZE
@@ -50,5 +55,6 @@
 #define ESP_TASK_WIFI_STARTUP_STACK   4096
 #define ESP_TASK_TCPIP_PRIO           (ESP_TASK_PRIO_MAX - 7)
 #define ESP_TASK_TCPIP_STACK          2048
-
+#define ESP_TASK_BT_INIT_PRIO         (ESP_TASK_PRIO_MAX - 7)
+#define ESP_TASK_BT_INIT_STACK        2048
 #endif

@@ -260,14 +260,14 @@
 /*************************************************************************************************************
  *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
  *      0                       1               extern level            WMAC                    Reserved
- *      1                       1               extern level            BT/BLE Host             Reserved
+ *      1                       1               extern level            BT/BLE Host VHCI        Reserved
  *      2                       1               extern level            FROM_CPU                FROM_CPU
  *      3                       1               extern level            TG0_WDT                 Reserved
  *      4                       1               extern level            WBB
- *      5                       1               extern level            Reserved
+ *      5                       1               extern level            BT Controller 
  *      6                       1               timer                   FreeRTOS Tick(L1)       FreeRTOS Tick(L1)
  *      7                       1               software                Reserved                Reserved
- *      8                       1               extern level            Reserved
+ *      8                       1               extern level            BLE Controller 
  *      9                       1               extern level            
  *      10                      1               extern edge             Internal Timer
  *      11                      3               profiling

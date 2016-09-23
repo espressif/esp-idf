@@ -48,6 +48,9 @@ static void IRAM_ATTR call_user_start_cpu1();
 static void IRAM_ATTR user_start_cpu1(void);
 extern void ets_setup_syscalls(void);
 extern esp_err_t app_main(void *ctx);
+#if CONFIG_BT_ENABLED
+extern void bt_app_main(void *param);
+#endif
 
 extern int _bss_start;
 extern int _bss_end;
@@ -161,7 +164,10 @@ void user_start_cpu0(void)
 
 #if CONFIG_WIFI_ENABLED && CONFIG_WIFI_AUTO_STARTUP
 #include "esp_wifi.h"
-    esp_wifi_startup(app_main, NULL);
+	esp_wifi_startup(app_main, NULL);
+#elif CONFIG_BT_ENABLED
+#include "bt.h"
+        esp_bt_startup(bt_app_main, NULL);
 #else
     app_main(NULL);
 #endif
