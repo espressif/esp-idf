@@ -27,22 +27,22 @@
 #include "freertos/semphr.h"
 
 #include "tcpip_adapter.h"
+#include "esp_log.h"
 
 #define ESP32_WORKAROUND 1
 
 #if CONFIG_WIFI_ENABLED
+static const char* TAG = "event";
 static bool event_init_flag = false;
 static xQueueHandle g_event_handler = NULL;
-
 static system_event_cb_t g_event_handler_cb;
 static void *g_event_ctx;
 
-#define WIFI_DEBUG(...)
 #define WIFI_API_CALL_CHECK(info, api_call, ret) \
 do{\
     esp_err_t __err = (api_call);\
     if ((ret) != __err) {\
-        WIFI_DEBUG("%s %d %s ret=%d\n", __FUNCTION__, __LINE__, (info), __err);\
+        ESP_LOGE(TAG, "%s %d %s ret=%d", __FUNCTION__, __LINE__, (info), __err);\
         return __err;\
     }\
 } while(0)
@@ -71,7 +71,7 @@ static system_event_handle_t g_system_event_handle_table[] = {
     {SYSTEM_EVENT_STA_CONNECTED,       system_event_sta_connected_handle_default},
     {SYSTEM_EVENT_STA_DISCONNECTED,    system_event_sta_disconnected_handle_default},
     {SYSTEM_EVENT_STA_AUTHMODE_CHANGE, NULL},
-    {SYSTEM_EVENT_STA_GOT_IP,           system_event_sta_got_ip_default},
+    {SYSTEM_EVENT_STA_GOT_IP,          system_event_sta_got_ip_default},
     {SYSTEM_EVENT_AP_START,            system_event_ap_start_handle_default},
     {SYSTEM_EVENT_AP_STOP,             system_event_ap_stop_handle_default},
     {SYSTEM_EVENT_AP_STACONNECTED,     NULL},
@@ -85,7 +85,7 @@ static esp_err_t system_event_sta_got_ip_default(system_event_t *event)
     extern esp_err_t esp_wifi_set_sta_ip(void);
     WIFI_API_CALL_CHECK("esp_wifi_set_sta_ip", esp_wifi_set_sta_ip(), ESP_OK);
 
-    printf("ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR "\n",
+    ESP_LOGI(TAG, "ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
            IP2STR(&event->event_info.got_ip.ip_info.ip),
            IP2STR(&event->event_info.got_ip.ip_info.netmask),
            IP2STR(&event->event_info.got_ip.ip_info.gw));
@@ -161,7 +161,7 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
 
             esp_event_send(&evt);
         } else {
-            WIFI_DEBUG("invalid static ip\n");
+            ESP_LOGE(TAG, "invalid static ip");
         }
     }
 
@@ -187,92 +187,86 @@ static esp_err_t esp_wifi_post_event_to_user(system_event_t *event)
 static esp_err_t esp_system_event_debug(system_event_t *event)
 {
     if (event == NULL) {
-        printf("Error: event is null!\n");
+        ESP_LOGE(TAG, "event is null!");
         return ESP_FAIL;
     }
 
-    WIFI_DEBUG("received event: ");
     switch (event->event_id) {
     case SYSTEM_EVENT_WIFI_READY: {
-        WIFI_DEBUG("SYSTEM_EVENT_WIFI_READY\n");
+        ESP_LOGD(TAG, "SYSTEM_EVENT_WIFI_READY");
         break;
     }
     case SYSTEM_EVENT_SCAN_DONE: {
-        system_event_sta_scan_done_t *scan_done;
-        scan_done = &event->event_info.scan_done;
-        WIFI_DEBUG("SYSTEM_EVENT_SCAN_DONE\nstatus:%d, number:%d\n",  scan_done->status, scan_done->number);
+        system_event_sta_scan_done_t *scan_done = &event->event_info.scan_done;
+        ESP_LOGD(TAG, "SYSTEM_EVENT_SCAN_DONE, status:%d, number:%d",  scan_done->status, scan_done->number);
         break;
     }
     case SYSTEM_EVENT_STA_START: {
-        WIFI_DEBUG("SYSTEM_EVENT_STA_START\n");
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_START");
         break;
     }
     case SYSTEM_EVENT_STA_STOP: {
-        WIFI_DEBUG("SYSTEM_EVENT_STA_STOP\n");
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_STOP");
         break;
     }
     case SYSTEM_EVENT_STA_CONNECTED: {
-        system_event_sta_connected_t *connected;
-        connected = &event->event_info.connected;
-        WIFI_DEBUG("SYSTEM_EVENT_STA_CONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, channel:%d, authmode:%d\n", \
+        system_event_sta_connected_t *connected = &event->event_info.connected;
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_CONNECTED, ssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, channel:%d, authmode:%d", \
                    connected->ssid, connected->ssid_len, connected->bssid[0], connected->bssid[0], connected->bssid[1], \
                    connected->bssid[3], connected->bssid[4], connected->bssid[5], connected->channel, connected->authmode);
         break;
     }
     case SYSTEM_EVENT_STA_DISCONNECTED: {
-        system_event_sta_disconnected_t *disconnected;
-        disconnected = &event->event_info.disconnected;
-        WIFI_DEBUG("SYSTEM_EVENT_STA_DISCONNECTED\nssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, reason:%d\n", \
+        system_event_sta_disconnected_t *disconnected = &event->event_info.disconnected;
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED, ssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, reason:%d", \
                    disconnected->ssid, disconnected->ssid_len, disconnected->bssid[0], disconnected->bssid[0], disconnected->bssid[1], \
                    disconnected->bssid[3], disconnected->bssid[4], disconnected->bssid[5], disconnected->reason);
         break;
     }
     case SYSTEM_EVENT_STA_AUTHMODE_CHANGE: {
-        system_event_sta_authmode_change_t *auth_change;
-        auth_change = &event->event_info.auth_change;
-        WIFI_DEBUG("SYSTEM_EVENT_STA_AUTHMODE_CHNAGE\nold_mode:%d, new_mode:%d\n", auth_change->old_mode, auth_change->new_mode);
+        system_event_sta_authmode_change_t *auth_change = &event->event_info.auth_change;
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_AUTHMODE_CHNAGE, old_mode:%d, new_mode:%d", auth_change->old_mode, auth_change->new_mode);
         break;
     }
     case SYSTEM_EVENT_STA_GOT_IP: {
-        system_event_sta_got_ip_t *got_ip;
-        got_ip = &event->event_info.got_ip;
-        WIFI_DEBUG("SYSTEM_EVENT_STA_GOTIP\n");
+        system_event_sta_got_ip_t *got_ip = &event->event_info.got_ip;
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_GOTIP, ip:" IPSTR ", mask:" IPSTR ", gw:" IPSTR,
+            IP2STR(&got_ip->ip_info.ip),
+            IP2STR(&got_ip->ip_info.netmask),
+            IP2STR(&got_ip->ip_info.gw));
         break;
     }
     case SYSTEM_EVENT_AP_START: {
-        WIFI_DEBUG("SYSTEM_EVENT_AP_START\n");
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_START");
         break;
     }
     case SYSTEM_EVENT_AP_STOP: {
-        WIFI_DEBUG("SYSTEM_EVENT_AP_STOP\n");
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STOP");
         break;
     }
     case SYSTEM_EVENT_AP_STACONNECTED: {
-        system_event_ap_staconnected_t *staconnected;
-        staconnected = &event->event_info.sta_connected;
-        WIFI_DEBUG("SYSTEM_EVENT_AP_STACONNECTED\nmac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d\n", \
+        system_event_ap_staconnected_t *staconnected = &event->event_info.sta_connected;
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STACONNECTED, mac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d", \
                    staconnected->mac[0], staconnected->mac[0], staconnected->mac[1], \
                    staconnected->mac[3], staconnected->mac[4], staconnected->mac[5], staconnected->aid);
         break;
     }
     case SYSTEM_EVENT_AP_STADISCONNECTED: {
-        system_event_ap_stadisconnected_t *stadisconnected;
-        stadisconnected = &event->event_info.sta_disconnected;
-        WIFI_DEBUG("SYSTEM_EVENT_AP_STADISCONNECTED\nmac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d\n", \
+        system_event_ap_stadisconnected_t *stadisconnected = &event->event_info.sta_disconnected;
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STADISCONNECTED, mac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d", \
                    stadisconnected->mac[0], stadisconnected->mac[0], stadisconnected->mac[1], \
                    stadisconnected->mac[3], stadisconnected->mac[4], stadisconnected->mac[5], stadisconnected->aid);
         break;
     }
     case SYSTEM_EVENT_AP_PROBEREQRECVED: {
-        system_event_ap_probe_req_rx_t *ap_probereqrecved;
-        ap_probereqrecved = &event->event_info.ap_probereqrecved;
-        WIFI_DEBUG("SYSTEM_EVENT_AP_PROBEREQRECVED\nrssi:%d, mac:%02x:%02x:%02x:%02x:%02x:%02x\n", \
+        system_event_ap_probe_req_rx_t *ap_probereqrecved = &event->event_info.ap_probereqrecved;
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_PROBEREQRECVED, rssi:%d, mac:%02x:%02x:%02x:%02x:%02x:%02x", \
                    ap_probereqrecved->rssi, ap_probereqrecved->mac[0], ap_probereqrecved->mac[0], ap_probereqrecved->mac[1], \
                    ap_probereqrecved->mac[3], ap_probereqrecved->mac[4], ap_probereqrecved->mac[5]);
         break;
     }
     default: {
-        printf("Error: no such kind of event!\n");
+        ESP_LOGW(TAG, "no such kind of event!");
         break;
     }
     }
@@ -283,19 +277,19 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
 static esp_err_t esp_system_event_handler(system_event_t *event)
 {
     if (event == NULL) {
-        printf("Error: event is null!\n");
+        ESP_LOGE(TAG, "Error: event is null!");
         return ESP_FAIL;
     }
 
     esp_system_event_debug(event);
     if ((event->event_id < SYSTEM_EVENT_MAX) && (event->event_id == g_system_event_handle_table[event->event_id].event_id)) {
         if (g_system_event_handle_table[event->event_id].event_handle) {
-            WIFI_DEBUG("enter default callback\n");
+            ESP_LOGV(TAG, "enter default callback");
             g_system_event_handle_table[event->event_id].event_handle(event);
-            WIFI_DEBUG("exit default callback\n");
+            ESP_LOGV(TAG, "exit default callback");
         }
     } else {
-        printf("mismatch or invalid event, id=%d\n", event->event_id);
+        ESP_LOGE(TAG, "mismatch or invalid event, id=%d", event->event_id);
     }
 
     return esp_wifi_post_event_to_user(event);
@@ -310,7 +304,7 @@ static void esp_system_event_task(void *pvParameters)
         if (xQueueReceive(g_event_handler, &evt, portMAX_DELAY) == pdPASS) {
             ret = esp_system_event_handler(&evt);
             if (ret == ESP_FAIL) {
-                printf("esp wifi post event to user fail!\n");
+                ESP_LOGE(TAG, "post event to user fail!");
             }
         }
     }
@@ -334,9 +328,9 @@ esp_err_t esp_event_send(system_event_t *event)
 
     if (pdPASS != ret) {
         if (event) {
-            printf("e=%d f\n", event->event_id);
+            ESP_LOGE(TAG, "e=%d f", event->event_id);
         } else {
-            printf("e null\n");
+            ESP_LOGE(TAG, "e null");
         }
         return ESP_FAIL;
     }
