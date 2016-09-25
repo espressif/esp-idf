@@ -59,7 +59,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "esp_err.h"
 #include "rom/queue.h"
 
@@ -138,12 +139,21 @@ typedef enum {
 
 
 typedef struct {
-    void    *event_q;                 /**< WiFi event q handler, it's a freeRTOS queue */
+    QueueHandle_t event_queue;        /**< WiFi event queue handle */
     uint8_t rx_ba_win;                /**< TBC */
     uint8_t tx_ba_win;                /**< TBC */
     uint8_t rx_buf_cnt;               /**< TBC */
     uint8_t tx_buf_cnt;               /**< TBC */
 } wifi_init_config_t;
+
+
+#define WIFI_INIT_CONFIG_DEFAULT(event_queue_) { \
+    .event_queue = event_queue_, \
+    .rx_ba_win = 0, \
+    .tx_ba_win = 0, \
+    .rx_buf_cnt = 0, \
+    .tx_buf_cnt = 0 \
+};
 
 /**
   * @brief  Init WiFi
