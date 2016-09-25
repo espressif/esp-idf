@@ -197,8 +197,9 @@ void bleAdvtTask(void *pvParameters)
     }
 }
 
-void bt_app_main()
+int main()
 {
+    bt_controller_init();
     xTaskCreatePinnedToCore(&bleAdvtTask, "bleAdvtTask", 2048, NULL, 5, NULL, 0);
 }
 

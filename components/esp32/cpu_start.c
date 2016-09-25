@@ -47,10 +47,7 @@ static void IRAM_ATTR user_start_cpu0(void);
 static void IRAM_ATTR call_user_start_cpu1();
 static void IRAM_ATTR user_start_cpu1(void);
 extern void ets_setup_syscalls(void);
-extern esp_err_t app_main(void *ctx);
-#if CONFIG_BT_ENABLED
-extern void bt_app_main(void *param);
-#endif
+extern int main(void);
 
 extern int _bss_start;
 extern int _bss_end;
@@ -137,9 +134,15 @@ void IRAM_ATTR user_start_cpu1(void)
 static void do_global_ctors(void)
 {
     void (**p)(void);
-    for (p = &__init_array_start; p != &__init_array_end; ++p) {
+    for (p = &__init_array_end; p >= &__init_array_start; --p) {
         (*p)();
     }
+}
+
+static void mainTask(void* args)
+{
+    main();
+    vTaskDelete(NULL);
 }
 
 void user_start_cpu0(void)
@@ -150,28 +153,12 @@ void user_start_cpu0(void)
     do_global_ctors();
     esp_ipc_init();
     spi_flash_init();
-
-#if CONFIG_WIFI_ENABLED
-    esp_err_t ret = nvs_flash_init(5, 3);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "nvs_flash_init failed, ret=%d", ret);
-    }
-
+#ifdef CONFIG_WIFI_ENABLED
     system_init();
-    esp_event_init(NULL, NULL);
-    tcpip_adapter_init();
 #endif
-
-#if CONFIG_WIFI_ENABLED && CONFIG_WIFI_AUTO_STARTUP
-#include "esp_wifi.h"
-	esp_wifi_startup(app_main, NULL);
-#elif CONFIG_BT_ENABLED
-#include "bt.h"
-        esp_bt_startup(bt_app_main, NULL);
-#else
-    app_main(NULL);
-#endif
-
+    xTaskCreatePinnedToCore(&mainTask, "mainTask",
+            ESP_TASK_MAIN_STACK, NULL,
+            ESP_TASK_MAIN_PRIO, NULL, 0);
     ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
     vTaskStartScheduler();
 }

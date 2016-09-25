@@ -96,26 +96,11 @@ static void bt_controller_task(void *pvParam)
     btdm_controller_init();
 }
 
-
-static void bt_init_task(void *pvParameters)
+void bt_controller_init()
 {
-    xTaskCreatePinnedToCore(bt_controller_task, "btControllerTask", ESP_TASK_BT_CONTROLLER_STACK, NULL, ESP_TASK_BT_CONTROLLER_PRIO, NULL, 0);
-
-    if (app_startup_cb) {
-        app_startup_cb(app_startup_ctx);
-    }
-
-    vTaskDelete(NULL);
+    xTaskCreatePinnedToCore(bt_controller_task, "btController",
+            ESP_TASK_BT_CONTROLLER_STACK, NULL,
+            ESP_TASK_BT_CONTROLLER_PRIO, NULL, 0);
 }
 
-
-esp_err_t esp_bt_startup(bt_app_startup_cb_t cb, void *ctx)
-{
-    app_startup_cb = cb;
-    app_startup_ctx = ctx;
-
-    xTaskCreatePinnedToCore(bt_init_task, "btInitTask", ESP_TASK_BT_INIT_STACK, NULL, ESP_TASK_BT_INIT_PRIO, NULL, 0);
-
-    return ESP_OK;
-}
 #endif

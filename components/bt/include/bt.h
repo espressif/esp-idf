@@ -15,7 +15,7 @@
 #ifndef __BT_H__
 #define __BT_H__
 
-#include "freertos/FreeRTOS.h"
+#include <stdint.h>
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -23,9 +23,12 @@ extern "C" {
 #endif
 
 
-typedef void (* bt_app_startup_cb_t)(void *param);
-
-esp_err_t esp_bt_startup(bt_app_startup_cb_t cb, void *ctx);
+/**
+ * @brief  Initialize BT controller
+ *
+ * This function should be called only once, before any other BT functions are called.
+ */
+void bt_controller_init();
 
 /* @breif: vhci_host_callback
  *  used for vhci call host function to notify what host need to do
