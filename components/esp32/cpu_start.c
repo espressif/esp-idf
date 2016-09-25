@@ -134,7 +134,7 @@ void IRAM_ATTR user_start_cpu1(void)
 static void do_global_ctors(void)
 {
     void (**p)(void);
-    for (p = &__init_array_end; p >= &__init_array_start; --p) {
+    for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
         (*p)();
     }
 }
@@ -153,9 +153,6 @@ void user_start_cpu0(void)
     do_global_ctors();
     esp_ipc_init();
     spi_flash_init();
-#ifdef CONFIG_WIFI_ENABLED
-    system_init();
-#endif
     xTaskCreatePinnedToCore(&mainTask, "mainTask",
             ESP_TASK_MAIN_STACK, NULL,
             ESP_TASK_MAIN_PRIO, NULL, 0);
