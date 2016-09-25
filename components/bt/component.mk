@@ -6,7 +6,7 @@
 
 CURRENT_DIR=$(IDF_PATH)/components/bt
 
-COMPONENT_ADD_INCLUDEDIRS := ./include
+COMPONENT_ADD_INCLUDEDIRS := include
 
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses
 
@@ -19,7 +19,5 @@ COMPONENT_ADD_LDFLAGS := -lbt -L$(abspath lib) \
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 $(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
-
-COMPONENT_SRCDIRS := ./
 
 include $(IDF_PATH)/make/component_common.mk

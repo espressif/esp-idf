@@ -36,9 +36,6 @@ extern void btdm_osi_funcs_register(void *osi_funcs);
 extern void btdm_controller_init(void);
 
 
-static bt_app_startup_cb_t app_startup_cb;
-static void *app_startup_ctx;
-
 #define BT_DEBUG(...)
 #define BT_API_CALL_CHECK(info, api_call, ret) \
 do{\
