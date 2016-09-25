@@ -101,7 +101,7 @@ typedef union {
 } system_event_info_t;
 
 typedef struct {
-    system_event_id_t     event_id;      /**< even ID */
+    system_event_id_t     event_id;      /**< event ID */
     system_event_info_t   event_info;    /**< event information */
 } system_event_t;
 

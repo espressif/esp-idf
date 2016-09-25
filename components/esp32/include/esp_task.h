@@ -15,10 +15,10 @@
 /* Notes:
  * 1. Put all task priority and stack size definition in this file
  * 2. If the task priority is less than 10, use ESP_TASK_PRIO_MIN + X style,
- *    otherwise use ESP_TASK_PRIO_MIN - X style
- * 3. If this is a daemon task, the macro prifix is ESP_TASKD_, otherwise
+ *    otherwise use ESP_TASK_PRIO_MAX - X style
+ * 3. If this is a daemon task, the macro prefix is ESP_TASKD_, otherwise
  *    it's ESP_TASK_
- * 4. If the configMAX_PRIORITIES is modified, please make all prority are 
+ * 4. If the configMAX_PRIORITIES is modified, please make all priority are
  *    greater than 0
  * 5. Make sure esp_task.h is consistent between wifi lib and idf
  */
