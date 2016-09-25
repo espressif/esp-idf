@@ -19,6 +19,7 @@
 #include "esp_err.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
+#include "esp_event_loop.h"
 #include "esp_task.h"
 
 #include "freertos/FreeRTOS.h"
@@ -29,14 +30,7 @@
 #include "tcpip_adapter.h"
 #include "esp_log.h"
 
-#define ESP32_WORKAROUND 1
-
-#if CONFIG_WIFI_ENABLED
-static const char* TAG = "event";
-static bool event_init_flag = false;
-static xQueueHandle g_event_handler = NULL;
-static system_event_cb_t g_event_handler_cb;
-static void *g_event_ctx;
+const char* TAG = "event";
 
 #define WIFI_API_CALL_CHECK(info, api_call, ret) \
 do{\
@@ -175,15 +169,6 @@ esp_err_t system_event_sta_disconnected_handle_default(system_event_t *event)
     return ESP_OK;
 }
 
-static esp_err_t esp_wifi_post_event_to_user(system_event_t *event)
-{
-    if (g_event_handler_cb) {
-        return (*g_event_handler_cb)(g_event_ctx, event);
-    }
-
-    return ESP_OK;
-}
-
 static esp_err_t esp_system_event_debug(system_event_t *event)
 {
     if (event == NULL) {
@@ -274,7 +259,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     return ESP_OK;
 }
 
-static esp_err_t esp_system_event_handler(system_event_t *event)
+esp_err_t esp_event_process_default(system_event_t *event)
 {
     if (event == NULL) {
         ESP_LOGE(TAG, "Error: event is null!");
@@ -290,72 +275,7 @@ static esp_err_t esp_system_event_handler(system_event_t *event)
         }
     } else {
         ESP_LOGE(TAG, "mismatch or invalid event, id=%d", event->event_id);
-    }
-
-    return esp_wifi_post_event_to_user(event);
-}
-
-static void esp_system_event_task(void *pvParameters)
-{
-    system_event_t evt;
-    esp_err_t ret;
-
-    while (1) {
-        if (xQueueReceive(g_event_handler, &evt, portMAX_DELAY) == pdPASS) {
-            ret = esp_system_event_handler(&evt);
-            if (ret == ESP_FAIL) {
-                ESP_LOGE(TAG, "post event to user fail!");
-            }
-        }
-    }
-}
-
-system_event_cb_t esp_event_set_cb(system_event_cb_t cb, void *ctx)
-{
-    system_event_cb_t old_cb = g_event_handler_cb;
-
-    g_event_handler_cb = cb;
-    g_event_ctx = ctx;
-
-    return old_cb;
-}
-
-esp_err_t esp_event_send(system_event_t *event)
-{
-    portBASE_TYPE ret;
-
-    ret = xQueueSendToBack((xQueueHandle)g_event_handler, event, 0);
-
-    if (pdPASS != ret) {
-        if (event) {
-            ESP_LOGE(TAG, "e=%d f", event->event_id);
-        } else {
-            ESP_LOGE(TAG, "e null");
-        }
         return ESP_FAIL;
     }
-
     return ESP_OK;
 }
-
-void *esp_event_get_handler(void)
-{
-    return (void *)g_event_handler;
-}
-
-esp_err_t esp_event_init(system_event_cb_t cb, void *ctx)
-{
-    if (event_init_flag) {
-        return ESP_FAIL;
-    }
-
-    g_event_handler_cb = cb;
-    g_event_ctx = ctx;
-
-    g_event_handler = xQueueCreate(CONFIG_SYSTEM_EVENT_QUEUE_SIZE, sizeof(system_event_t));
-
-    xTaskCreatePinnedToCore(esp_system_event_task, "eventTask", ESP_TASKD_EVENT_STACK, NULL, ESP_TASKD_EVENT_PRIO, NULL, 0);
-    return ESP_OK;
-}
-
-#endif

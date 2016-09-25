@@ -106,30 +106,6 @@ typedef struct {
 } system_event_t;
 
 /**
-  * @brief  Application specified event callback function
-  *
-  * @param  void *ctx : reserved for user
-  * @param  system_event_t *event : event type defined in this file
-  *
-  * @return ESP_OK : succeed
-  * @return others : fail
-  */
-typedef esp_err_t (*system_event_cb_t)(void *ctx, system_event_t *event);
-
-/**
-  * @brief  Set application specified event callback function
-  *
-  * @attention 1. If cb is NULL, means application don't need to handle
-  *               If cb is not NULL, it will be call when an event is received, after the default event callback is completed
-  *
-  * @param  system_event_cb_t cb : callback
-  * @param  void *ctx : reserved for user
-  *
-  * @return system_event_cb_t : old callback
-  */
-system_event_cb_t esp_event_set_cb(system_event_cb_t cb, void *ctx);
-
-/**
   * @brief  Send a event to event task
   *
   * @attention 1. Other task/modules, such as the TCPIP module, can call this API to send an event to event task
@@ -142,28 +118,20 @@ system_event_cb_t esp_event_set_cb(system_event_cb_t cb, void *ctx);
 esp_err_t esp_event_send(system_event_t *event);
 
 /**
-  * @brief  Get the event handler
+  * @brief  Default event handler for system events
   *
-  * @attention : currently this API returns event queue handler, by this event queue,
-  *              users can notice when WiFi has done something like scanning done, connected to AP or disconnected from AP.
+  * This function performs default handling of system events.
+  * When using esp_event_loop APIs, it is called automatically before invoking the user-provided
+  * callback function.
   *
-  * @param  null
+  * Applications which implement a custom event loop must call this function
+  * as part of event processing.
   *
-  * @return void * : event queue pointer
+  * @param  event pointer to event to be handled
+  * @return ESP_OK if an event was handled successfully
   */
-void *esp_event_get_handler(void);
+esp_err_t esp_event_process_default(system_event_t *event);
 
-/**
-  * @brief  Init the event module
-  *         Create the event handler and task
-  *
-  * @param  system_event_cb_t cb : application specified event callback, it can be modified by call esp_event_set_cb
-  * @param  void *ctx : reserved for user
-  *
-  * @return ESP_OK : succeed
-  * @return others : fail
-  */
-esp_err_t esp_event_init(system_event_cb_t cb, void *ctx);
 
 #ifdef __cplusplus
 }
