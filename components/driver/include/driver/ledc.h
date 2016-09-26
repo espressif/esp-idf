@@ -43,15 +43,15 @@ typedef enum {
     LEDC_DUTY_DIR_INCREASE = 1,    /*LEDC duty increase direction */
 } ledc_duty_direction_t;
 typedef enum  {
-    LEDC_REF_TICK = 0, // 1MhZ
-    LEDC_APB_CLK,      //80Mhz
-}ledc_timer_src_t;
+    LEDC_REF_TICK = 0, /*LEDC timer clock divided from reference tick(1Mhz) */
+    LEDC_APB_CLK,      /*LEDC timer clock divided from APB clock(80Mhz)*/
+} ledc_clk_src_t;
 typedef enum {
-    LEDC_TIMER0 = 0, /*LEDC source time TIME0 */
-    LEDC_TIMER1,     /*LEDC source time TIME1 */
-    LEDC_TIMER2,     /*LEDC source time TIME2 */
-    LEDC_TIMER3,     /*LEDC source time TIME3 */
-} ledc_timer_source_t;
+    LEDC_TIMER0 = 0, /*LEDC source timer TIMER0 */
+    LEDC_TIMER1,     /*LEDC source timer TIMER1 */
+    LEDC_TIMER2,     /*LEDC source timer TIMER2 */
+    LEDC_TIMER3,     /*LEDC source timer TIMER3 */
+} ledc_timer_t;
 typedef enum {
     LEDC_CHANNEL_0 = 0, /*LEDC channel 0 */
     LEDC_CHANNEL_1,     /*LEDC channel 1 */
@@ -63,56 +63,56 @@ typedef enum {
     LEDC_CHANNEL_7,     /*LEDC channel 7 */
 } ledc_channel_t;
 typedef enum {
-    LEDC_DUTY_DEPTH_10_BIT = 10, /*LEDC PWM depth 10Bit */
-    LEDC_DUTY_DEPTH_11_BIT = 11, /*LEDC PWM depth 11Bit */
-    LEDC_DUTY_DEPTH_12_BIT = 12, /*LEDC PWM depth 12Bit */
-    LEDC_DUTY_DEPTH_13_BIT = 13, /*LEDC PWM depth 13Bit */
-    LEDC_DUTY_DEPTH_14_BIT = 14, /*LEDC PWM depth 14Bit */
-    LEDC_DUTY_DEPTH_15_BIT = 15, /*LEDC PWM depth 15Bit */
-} ledc_duty_depth_t;
+    LEDC_TIMER_10_BIT = 10, /*LEDC PWM depth 10Bit */
+    LEDC_TIMER_11_BIT = 11, /*LEDC PWM depth 11Bit */
+    LEDC_TIMER_12_BIT = 12, /*LEDC PWM depth 12Bit */
+    LEDC_TIMER_13_BIT = 13, /*LEDC PWM depth 13Bit */
+    LEDC_TIMER_14_BIT = 14, /*LEDC PWM depth 14Bit */
+    LEDC_TIMER_15_BIT = 15, /*LEDC PWM depth 15Bit */
+} ledc_timer_bit_t;
 
 typedef struct ledc_channel_t_config {
-    int gpio_num;                   /*the LEDC output gpio_num, if you want to use gpio16, ledc_config_t.gpio_num = 16*/
-    ledc_mode_t speed_mode;         /*LEDC speed speed_mode*/
+    int gpio_num;                   /*the LEDC output gpio_num, if you want to use gpio16, gpio_num = 16*/
+    ledc_mode_t speed_mode;         /*LEDC speed speed_mode, high-speed mode or low-speed mode*/
     ledc_channel_t channel;         /*LEDC channel(0 - 7)*/
-    ledc_intr_type_t intr_type;     /*configure interrupt , Fade interrupt enable  or Fade interrupt disable*/
-    ledc_timer_source_t timer_src;  /*Select the timer source of channel (0 - 3)*/
+    ledc_intr_type_t intr_type;     /*configure interrupt, Fade interrupt enable  or Fade interrupt disable*/
+    ledc_timer_t timer_sel;  /*Select the timer source of channel (0 - 3)*/
     uint32_t freq_hz;               /*LEDC channel frequency(Hz)*/
-    uint32_t duty;                  /*LEDC channel duty,the duty range is [0,(2**duty_depth) - 1],*/
-    ledc_duty_depth_t duty_depth;   /*LEDC channel duty depth*/
+    uint32_t duty;                  /*LEDC channel duty, the duty range is [0, (2**bit_num) - 1], */
+    ledc_timer_bit_t bit_num;       /*LEDC channel duty depth*/
 } ledc_config_t;
 
 /**
  * @brief      LEDC common configuration
  *
- * User this Function,configure LEDC with the given channel/output gpio_num/interrupt/source timer/frequency(Hz)/LEDC depth
+ * User this Function, configure LEDC with the given channel/output gpio_num/interrupt/source timer/frequency(Hz)/LEDC depth
  *
  * @param[in]  ledc_config_t
  *             ledc_config_t.speed_mode     : LEDC speed speed_mode
  *             ledc_config_t.gpio_num       : LEDC output gpio_num, if you want to use gpio16, ledc_config_t.gpio_num = 16
  *             ledc_config_t.channel        : LEDC channel(0 - 7)
- *             ledc_config_t.intr_type      : configure interrupt , Fade interrupt enable  or Fade interrupt disable
- *             ledc_config_t.timer_src      : Select the timer source of channel (0 - 3)
- *                                            When different channel ,select same timer ,their freq_hz and duty_depth must be the same
+ *             ledc_config_t.intr_type      : configure interrupt, Fade interrupt enable  or Fade interrupt disable
+ *             ledc_config_t.timer_sel      : Select the timer source of channel (0 - 3)
+ *                                            When different channel, select same timer, their freq_hz and bit_num must be the same
  *             ledc_config_t.freq_hz        : LEDC channel frequency(Hz),
- *                                            When different channel ,select same time ,their freq_hz and duty_depth must be same
- *             ledc_config_t.duty           : LEDC channel duty,the duty range is [0,(2**duty_depth) - 1],
- *             ledc_config_t.duty_depth     : LEDC channel duty depth
- *                                            When different channel ,select same time ,their freq_hz and duty_depth must be same
+ *                                            When different channel, select same time, their freq_hz and bit_num must be same
+ *             ledc_config_t.duty           : LEDC channel duty, the duty range is [0, (2**bit_num) - 1],
+ *             ledc_config_t.bit_num     : LEDC channel duty depth
+ *                                            When different channel, select same time, their freq_hz and bit_num must be same
  * @return     ESP_OK:  success
  *             ESP_ERR_INVALID_ARG: parameter error
- *             ESP_FAIL: Can not find a proper pre-devider number base on the given frequency and the current duty_depth.
+ *             ESP_FAIL: Can not find a proper pre-divider number base on the given frequency and the current bit_num.
  *
  */
 esp_err_t ledc_config(ledc_config_t* ledc_conf);
 
 /**
- * @brief      LEDC start
+ * @brief      LEDC update channel parameters
  *
  * Call this function to activate the LEDC updated parameters.
- * After ledc_set_duty,ledc_set_fade, we need to call this function to update the settings.
+ * After ledc_set_duty, ledc_set_fade, we need to call this function to update the settings.
  *
- * @param[in]  speed_mode : select the LEDC speed_mode, high-speed speed_mode and low-speed speed_mode,now we only support high-speed speed_mode ,next will add low-speed speed_mode
+ * @param[in]  speed_mode : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
  *
  * @param[in]  channel    : LEDC channel(0-7)
  *
@@ -125,9 +125,9 @@ esp_err_t ledc_update(ledc_mode_t speed_mode, ledc_channel_t channel);
 /**
  * @brief   LEDC stop
  *
- * Disable LEDC output,and set idle level
+ * Disable LEDC output, and set idle level
  *
- * @param[in]  speed_mode   : select the LEDC speed_mode,high-speed speed_mode and low-speed speed_mode,now we only support high-speed speed_mode ,next will add low-speed speed_mode
+ * @param[in]  speed_mode   : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
  *
  * @param[in]  channel      : LEDC channel(0-7)
  *
@@ -141,41 +141,41 @@ esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idl
  *
  * Set LEDC frequency(Hz)
  *
- * @param[in]  speed_mode  : select the LEDC speed_mode,high-speed speed_mode and low-speed speed_mode,now we only support high-speed speed_mode ,next will add low-speed speed_mode
+ * @param[in]  speed_mode  : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
  *
- * @param[in]  channel     : current channel(0-7)
+ * @param[in]  timer_num   : LEDC timer index(0-3)
  *
  * @param[in]  freq_hz     : set the LEDC frequency
  *
  * @return     ESP_OK:  success
  *             ESP_ERR_INVALID_ARG: parameter error
- *             ESP_FAIL: Can not find a proper pre-devider number base on the given frequency and the current duty_depth.
+ *             ESP_FAIL: Can not find a proper pre-divider number base on the given frequency and the current bit_num.
  */
-esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t freq_hz);
+esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num, uint32_t freq_hz);
 
 /**
  * @brief      LEDC get channel frequency(Hz)
  *
- * @param[in]  speed_mode  : select the LEDC speed_mode,high-speed speed_mode and low-speed speed_mode,now we only support high-speed speed_mode ,next will add low-speed speed_mode
+ * @param[in]  speed_mode  : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
  *
- * @param[in]  channel     : LEDC channel(0-7)
+ * @param[in]  timer_num   : LEDC timer index(0-3)
  *
  * @return    0      :  error
  *            others :  current LEDC frequency
  *
  */
-uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_channel_t channel);
+uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num);
 
 /**
  * @brief      LEDC set duty
  *
- * Set LEDC duty ,After the function calls the ledc_update function, the function can take effect.
+ * Set LEDC duty, After the function calls the ledc_update function, the function can take effect.
  *
- * @param[in]  speed_mode    : select the LEDC speed_mode,high-speed speed_mode and low-speed speed_mode,now we only support high-speed speed_mode ,next will add low-speed speed_mode
+ * @param[in]  speed_mode  : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
  *
- * @param[in]  channel : LEDC channel(0-7)
+ * @param[in]  channel     : LEDC channel(0-7)
  *
- * @param[in]  duty  : set the LEDC duty ,the duty range is [0,(2**duty_depth) - 1]
+ * @param[in]  duty        : set the LEDC duty, the duty range is [0, (2**bit_num) - 1]
  *
  * @return     ESP_OK:  success
  *             ESP_ERR_INVALID_ARG: parameter error
@@ -185,7 +185,7 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
 /**
  * @brief      LEDC get duty
  *
- * @param[in]  speed_mode    : select the LEDC speed_mode,high-speed speed_mode and low-speed speed_mode,now we only support high-speed speed_mode ,next will add low-speed speed_mode
+ * @param[in]  speed_mode    : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
  *
  * @param[in]  channel : LEDC channel(0-7)
  *
@@ -199,13 +199,13 @@ int ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
 /**
  * @brief      LEDC set gradient
  *
- * Set LEDC gradient , After the function calls the ledc_update function , the function can take effect.
+ * Set LEDC gradient, After the function calls the ledc_update function, the function can take effect.
  *
- * @param[in]  speed_mode           : select the LEDC speed_mode,high-speed speed_mode and low-speed speed_mode,now we only support high-speed speed_mode ,next will add low-speed speed_mode
+ * @param[in]  speed_mode           : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
  *
  * @param[in]  channel              : LEDC channel(0-7)
  *
- * @param[in]  duty                 : set the start of the gradient duty , the duty range is [0,(2**duty_depth) - 1]
+ * @param[in]  duty                 : set the start of the gradient duty, the duty range is [0, (2**bit_num) - 1]
  *
  * @param[in]  gradule_direction    : set the direction of the gradient
  *
@@ -227,19 +227,92 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty,
  *          Users should know that which CPU is running and then pick a INUM that is not used by system.
  *          We can find the information of INUM and interrupt level in soc.h.
  *          TODO: to move INUM options to menu_config
- * @parameter   uint32_t ledc_intr_num    : LEDC interrupt number,check the info in soc.h, and please see the core-isa.h for more details
+ * @parameter   uint32_t ledc_intr_num    : LEDC interrupt number, check the info in soc.h, and please see the core-isa.h for more details
  * @parameter   void (* fn)(void* )       : interrupt handler function.
  *                                          Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
  * @parameter   void * arg                : parameter for handler function
  *
  * @return      ESP_OK                    : success ;
- *              ESP_ERR_INVALID_ARG       : fucntion ptr error.
+ *              ESP_ERR_INVALID_ARG       : function ptr error.
  */
 esp_err_t ledc_isr_register(uint32_t ledc_intr_num, void (*fn)(void*), void * arg);
 
+/**
+ * @brief      configure LEDC settings
+ *
+ * @param[in]  speed_mode    : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ *
+ * @param[in]  timer_sel     : timer index(0-3), there are 4 timers in LEDC module
+ *
+ * @param[in]  div_num       : timer clock divide number, the timer clock is divided from the selected clock source
+ *
+ * @param[in]  bit_num       : the count number of one period, counter range is 0 ~ ((2 ** bit_num) - 1)
+ *
+ * @param[in]  clk_src       : select LEDC source clock.
+ *
+ * @return     -1: parameter error
+ *             other value: current LEDC duty
+ *
+ */
+esp_err_t ledc_timer_config(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t div_num, uint32_t bit_num, ledc_clk_src_t clk_src);
 
+/**
+ * @brief      reset LEDC timer
+ *
+ * @param[in]  speed_mode    : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ *
+ * @param[in]  timer_sel     : LEDC timer index(0-3)
+ *
+ *
+ * @return     ESP_ERR_INVALID_ARG: parameter error
+ *             ESP_OK: success
+ *
+ */
+esp_err_t ledc_timer_rst(ledc_mode_t speed_mode, uint32_t timer_sel);
 
+/**
+ * @brief      pause LEDC timer counter
+ *
+ * @param[in]  speed_mode    : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ *
+ * @param[in]  timer_sel     : LEDC timer index(0-3)
+ *
+ *
+ * @return     ESP_ERR_INVALID_ARG: parameter error
+ *             ESP_OK: success
+ *
+ */
+esp_err_t ledc_timer_pause(ledc_mode_t speed_mode, uint32_t timer_sel);
 
+/**
+ * @brief      pause LEDC timer resume
+ *
+ * @param[in]  speed_mode    : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ *
+ * @param[in]  timer_sel     : LEDC timer index(0-3)
+ *
+ *
+ * @return     ESP_ERR_INVALID_ARG: parameter error
+ *             ESP_OK: success
+ *
+ */
+esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, uint32_t timer_sel);
+
+/**
+ * @brief      bind LEDC channel with the selected timer
+ *
+ * @param[in]  speed_mode    : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ *
+ * @param[in]  channel       : LEDC channel index(0-7)
+ *
+ * @param[in]  timer_idx     : LEDC timer index(0-3)
+ *
+ *
+ * @return     ESP_ERR_INVALID_ARG: parameter error
+ *             ESP_OK: success
+ *
+ */
+esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint32_t timer_idx);
 
 /***************************EXAMPLE**********************************
  *
@@ -247,20 +320,20 @@ esp_err_t ledc_isr_register(uint32_t ledc_intr_num, void (*fn)(void*), void * ar
  * ----------------EXAMPLE OF LEDC SETTING ---------------------
  *     ledc_config_t ledc_conf = {
  *         .channel = LEDC_CHANNEL_0;                           //set LEDC channel 0
- *         .duty = 1000;                                        //set the duty for initialization.(duty range is 0 ~ ((2**duty_depth)-1)
- *         .freq_hz = 1000;                                     //set frequency , e.g.,1KHz
+ *         .duty = 1000;                                        //set the duty for initialization.(duty range is 0 ~ ((2**bit_num)-1)
+ *         .freq_hz = 1000;                                     //set frequency, e.g., 1KHz
  *         .gpio_num = 16;                                      //GPIO number
- *         .intr_type = LEDC_INTR_FADE_END;                     //GPIO INTR TYPE, as an example,we enable fade_end interrupt here.
- *         .duty_depth = LEDC_DUTY_DEPTH_12_BIT;                //set duty_depth , (duty range is 0 ~ ((2**duty_depth)-1)
+ *         .intr_type = LEDC_INTR_FADE_END;                     //GPIO INTR TYPE, as an example, we enable fade_end interrupt here.
+ *         .bit_num = LEDC_TIMER_12_BIT;                   //set bit_num, (duty range is 0 ~ ((2**bit_num)-1)
  *         .speed_mode = LEDC_HIGH_SPEED_MODE;                  //set LEDC mode, from ledc_mode_t
- *         .timer_src = LEDC_TIMER0;                            //set LEDC timer source, if different channel use one timer, the frequency and duty_depth of these channels should be the same
+ *         .timer_sel = LEDC_TIMER0;                            //set LEDC timer source, if different channel use one timer, the frequency and bit_num of these channels should be the same
  *     }
  *     ledc_config(&ledc_conf);                                 //setup the configuration
  * ----------------EXAMPLE OF SETTING DUTY --- -----------------
  *     uint32_t ledc_channel = LEDC_CHANNEL_0;                  //LEDC channel(0-73)
- *     uint32_t duty = 2000;                                    //duty range is 0 ~ ((2**duty_depth)-1)
- *     LEDC_set_duty(LEDC_HIGH_SPEED_MODE,ledc_channel,duty);   //set speed mode, channel, and duty.
- *     ledc_update(LEDC_HIGH_SPEED_MODE,ledc_channel);          //after set duty, we need to call ledc_update to update the settings.
+ *     uint32_t duty = 2000;                                    //duty range is 0 ~ ((2**bit_num)-1)
+ *     LEDC_set_duty(LEDC_HIGH_SPEED_MODE, ledc_channel, duty); //set speed mode, channel, and duty.
+ *     ledc_update(LEDC_HIGH_SPEED_MODE, ledc_channel);         //after set duty, we need to call ledc_update to update the settings.
  *
  *
  * ----------------EXAMPLE OF LEDC INTERRUPT ------------------
@@ -277,7 +350,7 @@ esp_err_t ledc_isr_register(uint32_t ledc_intr_num, void (*fn)(void*), void * ar
  *    uint32_t intr_st = LEDC.int_st.val;                       //read LEDC interrupt status.
  *
  *    //you will find which channels have triggered fade_end interrupt here,
- *    //then , you can post some event to RTOS queue to process the event.
+ *    //then, you can post some event to RTOS queue to process the event.
  *    //later we will add a queue in the driver code.
  *
  *    LEDC.int_clr.val = intr_st;                               //clear LEDC interrupt status.
