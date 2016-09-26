@@ -43,9 +43,13 @@
 #include "esp_ipc.h"
 #include "esp_log.h"
 
-static void IRAM_ATTR user_start_cpu0(void);
-static void IRAM_ATTR call_user_start_cpu1();
-static void IRAM_ATTR user_start_cpu1(void);
+void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
+void start_cpu1(void) __attribute__((weak, alias("start_cpu0_default")));
+void start_cpu0_default(void) IRAM_ATTR;
+void start_cpu1_default(void) IRAM_ATTR;
+static void IRAM_ATTR call_start_cpu1();
+static void do_global_ctors(void);
+static void main_task(void* args);
 extern void ets_setup_syscalls(void);
 extern int main(void);
 
@@ -64,7 +68,7 @@ static bool app_cpu_started = false;
  * and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
  */
 
-void IRAM_ATTR call_user_start_cpu0()
+void IRAM_ATTR call_start_cpu0()
 {
     //Kill wdt
     REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
@@ -88,13 +92,13 @@ void IRAM_ATTR call_user_start_cpu0()
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
 #ifndef CONFIG_FREERTOS_UNICORE
-    ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_user_start_cpu1);
+    ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
 
     SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
     CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
     SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
     CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
-    ets_set_appcpu_boot_addr((uint32_t)call_user_start_cpu1);
+    ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
     while (!app_cpu_started) {
         ets_delay_us(100);
@@ -104,11 +108,10 @@ void IRAM_ATTR call_user_start_cpu0()
     CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
 #endif
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
-    user_start_cpu0();
+    start_cpu0();
 }
 
-
-void IRAM_ATTR call_user_start_cpu1()
+void IRAM_ATTR call_start_cpu1()
 {
     asm volatile (\
                   "wsr    %0, vecbase\n" \
@@ -118,10 +121,25 @@ void IRAM_ATTR call_user_start_cpu1()
 
     ESP_EARLY_LOGI(TAG, "App cpu up.");
     app_cpu_started = 1;
-    user_start_cpu1();
+    start_cpu1();
 }
 
-void IRAM_ATTR user_start_cpu1(void)
+void start_cpu0_default(void)
+{
+    esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
+    uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
+    ets_setup_syscalls();
+    do_global_ctors();
+    esp_ipc_init();
+    spi_flash_init();
+    xTaskCreatePinnedToCore(&main_task, "main",
+            ESP_TASK_MAIN_STACK, NULL,
+            ESP_TASK_MAIN_PRIO, NULL, 0);
+    ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
+    vTaskStartScheduler();
+}
+
+void start_cpu1_default(void)
 {
     // Wait for FreeRTOS initialization to finish on PRO CPU
     while (port_xSchedulerRunning[0] == 0) {
@@ -139,24 +157,9 @@ static void do_global_ctors(void)
     }
 }
 
-static void mainTask(void* args)
+static void main_task(void* args)
 {
     main();
     vTaskDelete(NULL);
-}
-
-void user_start_cpu0(void)
-{
-    esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
-    uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
-    ets_setup_syscalls();
-    do_global_ctors();
-    esp_ipc_init();
-    spi_flash_init();
-    xTaskCreatePinnedToCore(&mainTask, "mainTask",
-            ESP_TASK_MAIN_STACK, NULL,
-            ESP_TASK_MAIN_PRIO, NULL, 0);
-    ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
-    vTaskStartScheduler();
 }
 
