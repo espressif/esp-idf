@@ -55,7 +55,7 @@ static bool app_cpu_started = false;
 static void do_global_ctors(void);
 static void main_task(void* args);
 extern void ets_setup_syscalls(void);
-extern int main(void);
+extern int app_main(void);
 
 extern int _bss_start;
 extern int _bss_end;
@@ -166,7 +166,7 @@ static void do_global_ctors(void)
 
 static void main_task(void* args)
 {
-    main();
+    app_main();
     vTaskDelete(NULL);
 }
 
