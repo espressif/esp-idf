@@ -25,6 +25,15 @@
 DEFINE_STACK_OF(X509_NAME)
 
 /**
+ * @brief create a X509 certification object according to input X509 certification
+ *
+ * @param ix - input X509 certification point
+ *
+ * @return new X509 certification object point
+ */
+X509* __X509_new(X509 *ix);
+
+/**
  * @brief create a X509 certification object
  *
  * @param none

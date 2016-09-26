@@ -196,11 +196,7 @@ struct ssl_st
     /* shut things down(0x01 : sent, 0x02 : received) */
     int shutdown;
 
-    int crt_reload;
-
     CERT *cert;
-
-    int ca_reload;
 
     X509 *client_CA;
 
@@ -274,24 +270,20 @@ struct ssl_method_func_st {
 
 struct x509_method_st {
 
-    int (*x509_new)(X509 *x);
+    int (*x509_new)(X509 *x, X509 *m_x);
 
     void (*x509_free)(X509 *x);
 
     int (*x509_load)(X509 *x, const unsigned char *buf, int len);
-
-    void (*x509_unload)(X509 *x);
 };
 
 struct pkey_method_st {
 
-    int (*pkey_new)(EVP_PKEY *pkey);
+    int (*pkey_new)(EVP_PKEY *pkey, EVP_PKEY *m_pkey);
 
     void (*pkey_free)(EVP_PKEY *pkey);
 
     int (*pkey_load)(EVP_PKEY *pkey, const unsigned char *buf, int len);
-
-    void (*pkey_unload)(EVP_PKEY *pkey);
 };
 
 typedef int (*next_proto_cb)(SSL *ssl, unsigned char **out,

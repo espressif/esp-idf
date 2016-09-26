@@ -158,11 +158,11 @@ SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
     CERT *cert;
     X509 *client_ca;
 
-    if (!method) SSL_RET(go_failed1, "method\n");
+    if (!method) SSL_RET(go_failed1, "method:NULL\n");
 
     client_ca = X509_new();
     if (!client_ca)
-        SSL_RET(go_failed1, "sk_X509_NAME_new_null\n");
+        SSL_RET(go_failed1, "X509_new\n");
 
     cert = ssl_cert_new();
     if (!cert)
@@ -170,7 +170,7 @@ SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
 
     ctx = (SSL_CTX *)ssl_zalloc(sizeof(SSL_CTX));
     if (!ctx)
-        SSL_RET(go_failed3, "ssl_ctx_new:ctx\n");
+        SSL_RET(go_failed3, "ssl_zalloc:ctx\n");
 
     ctx->method = method;
     ctx->client_CA = client_ca;
@@ -244,15 +244,15 @@ SSL *SSL_new(SSL_CTX *ctx)
 
     ssl->session = SSL_SESSION_new();
     if (!ssl->session)
-        SSL_RET(failed2, "ssl_zalloc\n");
+        SSL_RET(failed2, "SSL_SESSION_new\n");
 
-    ssl->cert = ssl_cert_new();
+    ssl->cert = __ssl_cert_new(ctx->cert);
     if (!ssl->cert)
-        SSL_RET(failed3, "ssl_cert_new\n");
+        SSL_RET(failed3, "__ssl_cert_new\n");
 
-    ssl->client_CA = X509_new();
+    ssl->client_CA = __X509_new(ctx->client_CA);
     if (!ssl->client_CA)
-        SSL_RET(failed4, "ssl_cert_new\n");
+        SSL_RET(failed4, "__X509_new\n");
 
     ssl->ctx = ctx;
     ssl->method = ctx->method;

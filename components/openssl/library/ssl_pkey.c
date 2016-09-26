@@ -20,20 +20,24 @@
 #include "ssl_port.h"
 
 /**
- * @brief create a private key object
+ * @brief create a private key object according to input private key
  */
-EVP_PKEY* EVP_PKEY_new(void)
+EVP_PKEY* __EVP_PKEY_new(EVP_PKEY *ipk)
 {
     int ret;
     EVP_PKEY *pkey;
 
     pkey = ssl_zalloc(sizeof(EVP_PKEY));
     if (!pkey)
-        SSL_RET(failed1, "ssl_malloc\n");
+        SSL_RET(failed1, "ssl_zalloc\n");
 
-    pkey->method = EVP_PKEY_method();
+    if (ipk) {
+        pkey->method = ipk->method;
+    } else {
+        pkey->method = EVP_PKEY_method();
+    }
 
-    ret = EVP_PKEY_METHOD_CALL(new, pkey);
+    ret = EVP_PKEY_METHOD_CALL(new, pkey, ipk);
     if (ret)
         SSL_RET(failed2, "EVP_PKEY_METHOD_CALL\n");
 
@@ -43,6 +47,14 @@ failed2:
     ssl_free(pkey);
 failed1:
     return NULL;
+}
+
+/**
+ * @brief create a private key object
+ */
+EVP_PKEY* EVP_PKEY_new(void)
+{
+    return __EVP_PKEY_new(NULL);
 }
 
 /**
@@ -105,6 +117,9 @@ int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
     SSL_ASSERT(ctx);
     SSL_ASSERT(pkey);
 
+    if (ctx->cert->pkey == pkey)
+        return 1;
+
     if (ctx->cert->pkey)
         EVP_PKEY_free(ctx->cert->pkey);
 
@@ -118,12 +133,13 @@ int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
  */
 int SSL_use_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT(ssl);
     SSL_ASSERT(pkey);
 
-    if (!ssl->ca_reload)
-        ssl->ca_reload = 1;
-    else
+    if (ssl->cert->pkey == pkey)
+        return 1;
+
+    if (ssl->cert->pkey)
         EVP_PKEY_free(ssl->cert->pkey);
 
     ssl->cert->pkey = pkey;
@@ -138,20 +154,20 @@ int SSL_CTX_use_PrivateKey_ASN1(int type, SSL_CTX *ctx,
                                 const unsigned char *d, long len)
 {
     int ret;
-    EVP_PKEY *pkey;
+    EVP_PKEY *pk;
 
-    pkey = d2i_PrivateKey(0, &ctx->cert->pkey, &d, len);
-    if (!pkey)
+    pk = d2i_PrivateKey(0, NULL, &d, len);
+    if (!pk)
         SSL_RET(failed1, "d2i_PrivateKey\n");
 
-    ret = SSL_CTX_use_PrivateKey(ctx, pkey);
+    ret = SSL_CTX_use_PrivateKey(ctx, pk);
     if (!ret)
         SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
 
     return 1;
 
 failed2:
-    EVP_PKEY_free(pkey);
+    EVP_PKEY_free(pk);
 failed1:
     return 0;
 }
@@ -163,44 +179,20 @@ int SSL_use_PrivateKey_ASN1(int type, SSL *ssl,
                                 const unsigned char *d, long len)
 {
     int ret;
-    int reload;
-    EVP_PKEY *pkey;
-    CERT *cert;
-    CERT *old_cert;
+    EVP_PKEY *pk;
 
-    if (!ssl->crt_reload) {
-        cert = ssl_cert_new();
-        if (!cert)
-            SSL_RET(failed1, "ssl_cert_new\n");
+    pk = d2i_PrivateKey(0, NULL, &d, len);
+    if (!pk)
+        SSL_RET(failed1, "d2i_PrivateKey\n");
 
-        old_cert = ssl->cert ;
-        ssl->cert = cert;
-
-        ssl->crt_reload = 1;
-
-        reload = 1;
-    } else {
-        reload = 0;
-    }
-
-    pkey = d2i_PrivateKey(0, &ssl->cert->pkey, &d, len);
-    if (!pkey)
-        SSL_RET(failed2, "d2i_PrivateKey\n");
-
-    ret = SSL_use_PrivateKey(ssl, pkey);
+    ret = SSL_use_PrivateKey(ssl, pk);
     if (!ret)
-        SSL_RET(failed3, "SSL_use_PrivateKey\n");
+        SSL_RET(failed2, "SSL_use_PrivateKey\n");
 
     return 1;
 
-failed3:
-    EVP_PKEY_free(pkey);
 failed2:
-    if (reload) {
-        ssl->cert = old_cert;
-        ssl_cert_free(cert);
-        ssl->crt_reload = 0;
-    }
+    EVP_PKEY_free(pk);
 failed1:
     return 0;
 }

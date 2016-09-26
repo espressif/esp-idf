@@ -78,14 +78,6 @@ int ssl_pm_new(SSL *ssl)
 
     const SSL_METHOD *method = ssl->method;
 
-    struct x509_pm *ctx_ca = (struct x509_pm *)ssl->ctx->client_CA->x509_pm;
-    struct x509_pm *ctx_crt = (struct x509_pm *)ssl->ctx->cert->x509->x509_pm;
-    struct pkey_pm *ctx_pkey = (struct pkey_pm *)ssl->ctx->cert->pkey->pkey_pm;
-
-    struct x509_pm *ssl_ca = (struct x509_pm *)ssl->client_CA->x509_pm;
-    struct x509_pm *ssl_crt = (struct x509_pm *)ssl->cert->x509->x509_pm;
-    struct pkey_pm *ssl_pkey = (struct pkey_pm *)ssl->cert->pkey->pkey_pm;
-
     ssl_pm = ssl_zalloc(sizeof(struct ssl_pm));
     if (!ssl_pm)
         SSL_ERR(ret, failed1, "ssl_zalloc\n");
@@ -133,10 +125,6 @@ int ssl_pm_new(SSL *ssl)
     mbedtls_ssl_set_bio(&ssl_pm->ssl, &ssl_pm->fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     ssl->ssl_pm = ssl_pm;
-
-    ssl_ca->ex_crt = ctx_ca->x509_crt;
-    ssl_crt->ex_crt = ctx_crt->x509_crt;
-    ssl_pkey->ex_pkey = ctx_pkey->pkey;
 
     return 0;
 
@@ -376,7 +364,7 @@ OSSL_HANDSHAKE_STATE ssl_pm_get_state(const SSL *ssl)
     return state;
 }
 
-int x509_pm_new(X509 *x)
+int x509_pm_new(X509 *x, X509 *m_x)
 {
     struct x509_pm *x509_pm;
 
@@ -386,13 +374,19 @@ int x509_pm_new(X509 *x)
 
     x->x509_pm = x509_pm;
 
+    if (m_x) {
+        struct x509_pm *m_x509_pm = (struct x509_pm *)m_x->x509_pm;
+
+        x509_pm->ex_crt = m_x509_pm->x509_crt;
+    }
+
     return 0;
 
 failed1:
     return -1;
 }
 
-void x509_pm_unload(X509 *x)
+void x509_pm_free(X509 *x)
 {
     struct x509_pm *x509_pm = (struct x509_pm *)x->x509_pm;
 
@@ -402,11 +396,6 @@ void x509_pm_unload(X509 *x)
         ssl_free(x509_pm->x509_crt);
         x509_pm->x509_crt = NULL;
     }
-}
-
-void x509_pm_free(X509 *x)
-{
-    x509_pm_unload(x);
 
     ssl_free(x->x509_pm);
     x->x509_pm = NULL;
@@ -450,7 +439,7 @@ failed1:
     return -1;
 }
 
-int pkey_pm_new(EVP_PKEY *pkey)
+int pkey_pm_new(EVP_PKEY *pk, EVP_PKEY *m_pkey)
 {
     struct pkey_pm *pkey_pm;
 
@@ -458,14 +447,20 @@ int pkey_pm_new(EVP_PKEY *pkey)
     if (!pkey_pm)
         return -1;
 
-    pkey->pkey_pm = pkey_pm;
+    pk->pkey_pm = pkey_pm;
+
+    if (m_pkey) {
+        struct pkey_pm *m_pkey_pm = (struct pkey_pm *)m_pkey->pkey_pm;
+
+        pkey_pm->ex_pkey = m_pkey_pm->pkey;
+    }
 
     return 0;
 }
 
-void pkey_pm_unload(EVP_PKEY *pkey)
+void pkey_pm_free(EVP_PKEY *pk)
 {
-    struct pkey_pm *pkey_pm = (struct pkey_pm *)pkey->pkey_pm;
+    struct pkey_pm *pkey_pm = (struct pkey_pm *)pk->pkey_pm;
 
     if (pkey_pm->pkey) {
         mbedtls_pk_free(pkey_pm->pkey);
@@ -473,21 +468,16 @@ void pkey_pm_unload(EVP_PKEY *pkey)
         ssl_free(pkey_pm->pkey);
         pkey_pm->pkey = NULL;
     }
+
+    ssl_free(pk->pkey_pm);
+    pk->pkey_pm = NULL;
 }
 
-void pkey_pm_free(EVP_PKEY *pkey)
-{
-    pkey_pm_unload(pkey);
-
-    ssl_free(pkey->pkey_pm);
-    pkey->pkey_pm = NULL;
-}
-
-int pkey_pm_load(EVP_PKEY *pkey, const unsigned char *buffer, int len)
+int pkey_pm_load(EVP_PKEY *pk, const unsigned char *buffer, int len)
 {
     int ret;
     unsigned char *load_buf;
-    struct pkey_pm *pkey_pm = (struct pkey_pm *)pkey->pkey_pm;
+    struct pkey_pm *pkey_pm = (struct pkey_pm *)pk->pkey_pm;
 
     if (!pkey_pm->pkey) {
         pkey_pm->pkey = ssl_malloc(sizeof(mbedtls_pk_context));

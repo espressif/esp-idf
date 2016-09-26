@@ -69,14 +69,12 @@
 #define IMPLEMENT_X509_METHOD(func_name, \
                 new, \
                 free, \
-                load, \
-                unload) \
+                load) \
     const X509_METHOD* func_name(void) { \
         static const X509_METHOD func_name##_data LOCAL_ATRR = { \
                 new, \
                 free, \
-                load, \
-                unload, \
+                load \
         }; \
         return &func_name##_data; \
     }
@@ -84,14 +82,12 @@
 #define IMPLEMENT_PKEY_METHOD(func_name, \
                 new, \
                 free, \
-                load, \
-                unload) \
+                load) \
     const PKEY_METHOD* func_name(void) { \
         static const PKEY_METHOD func_name##_data LOCAL_ATRR = { \
                 new, \
                 free, \
-                load, \
-                unload, \
+                load \
         }; \
         return &func_name##_data; \
     }

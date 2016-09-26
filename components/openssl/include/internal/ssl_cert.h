@@ -22,6 +22,15 @@
 #include "ssl_types.h"
 
 /**
+ * @brief create a certification object include private key object according to input certification
+ *
+ * @param ic - input certification point
+ *
+ * @return certification object point
+ */
+CERT *__ssl_cert_new(CERT *ic);
+
+/**
  * @brief create a certification object include private key object
  *
  * @param none

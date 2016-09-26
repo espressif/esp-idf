@@ -22,6 +22,15 @@
 #include "ssl_types.h"
 
 /**
+ * @brief create a private key object according to input private key
+ *
+ * @param ipk - input private key point
+ *
+ * @return new private key object point
+ */
+EVP_PKEY* __EVP_PKEY_new(EVP_PKEY *ipk);
+
+/**
  * @brief create a private key object
  *
  * @param none

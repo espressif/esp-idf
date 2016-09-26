@@ -19,23 +19,34 @@
 #include "ssl_port.h"
 
 /**
- * @brief create a certification object include private key object
+ * @brief create a certification object according to input certification
  */
-CERT *ssl_cert_new(void)
+CERT *__ssl_cert_new(CERT *ic)
 {
     CERT *cert;
+
+    X509 *ix;
+    EVP_PKEY *ipk;
 
     cert = ssl_zalloc(sizeof(CERT));
     if (!cert)
         SSL_RET(failed1, "ssl_zalloc\n");
 
-    cert->pkey = EVP_PKEY_new();
-    if (!cert->pkey)
-        SSL_RET(failed2, "EVP_PKEY_new\n");
+    if (ic) {
+        ipk = ic->pkey;
+        ix = ic->x509;
+    } else {
+        ipk = NULL;
+        ix = NULL;
+    }
 
-    cert->x509 = X509_new();
+    cert->pkey = __EVP_PKEY_new(ipk);
+    if (!cert->pkey)
+        SSL_RET(failed2, "__EVP_PKEY_new\n");
+
+    cert->x509 = __X509_new(ix);
     if (!cert->x509)
-        SSL_RET(failed3, "X509_new\n");
+        SSL_RET(failed3, "__X509_new\n");
 
     return cert;
 
@@ -45,6 +56,14 @@ failed2:
     ssl_free(cert);
 failed1:
     return NULL;
+}
+
+/**
+ * @brief create a certification object include private key object
+ */
+CERT *ssl_cert_new(void)
+{
+    return __ssl_cert_new(NULL);
 }
 
 /**
