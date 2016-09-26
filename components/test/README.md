@@ -33,3 +33,15 @@ test --- CIConfigs --- sanity_test1.yml (Runner config files)
 2. use [auto_test_script](https://gitlab.espressif.cn:6688/yinling/auto_test_script) to load the modified case and verify the modification
 3. create a merge request and assign to HYL (or add comment @yinling for merging test). 
 After review it will be merged to SDK and will be The cases will be synced to database in auto_test_script.
+
+
+## Run test case locally
+
+1. clone auto_test_script (ssh://git@gitlab.espressif.cn:27227/yinling/auto_test_script.git) from gitlab
+2. create test environment:
+    1. search test case (search test case ID in components/test/TestCaseAll.yml, get the "test environment" value
+    2. goto [test environment list](https://gitlab.espressif.cn:6688/yinling/auto_test_script/blob/master/public/Documents/TestEnvList.md), find the link and goto the environment detail page 
+    3. create test environment according to figure and description
+    4. [config test environment](https://gitlab.espressif.cn:6688/yinling/auto_test_script/blob/master/public/Design/TestEnvConfig.DesignNote.md). All parameters in table "Parameters require config before use" MUST be configured.
+3. run test cases with [CIRunner.py](https://gitlab.espressif.cn:6688/yinling/auto_test_script/blob/master/public/Design/RunnerConfigs.DesignNote.md)
+
