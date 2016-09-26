@@ -138,22 +138,10 @@ typedef enum {
 } wifi_second_chan_t;
 
 
+typedef esp_err_t (*wifi_event_handler_t)(void *event);
 typedef struct {
-    QueueHandle_t event_queue;        /**< WiFi event queue handle */
-    uint8_t rx_ba_win;                /**< TBC */
-    uint8_t tx_ba_win;                /**< TBC */
-    uint8_t rx_buf_cnt;               /**< TBC */
-    uint8_t tx_buf_cnt;               /**< TBC */
+    wifi_event_handler_t event_handler;  /**< WiFi event handler */
 } wifi_init_config_t;
-
-
-#define WIFI_INIT_CONFIG_DEFAULT(event_queue_) { \
-    .event_queue = event_queue_, \
-    .rx_ba_win = 0, \
-    .tx_ba_win = 0, \
-    .rx_buf_cnt = 0, \
-    .tx_buf_cnt = 0 \
-};
 
 /**
   * @brief  Init WiFi
@@ -165,7 +153,6 @@ typedef struct {
   *               to this queue when event happens, such as, when station connects to WiFi, WiFi driver
   *               will post station connected event to this queue. If the queue is not initialized, WiFi
   *               will not post any events
-  * @attention 3. For other parameters, currently it's not ready, just ignore it.
   *
   * @param  wifi_init_config_t *config : provide WiFi init configuration
   *
@@ -531,22 +518,22 @@ esp_err_t esp_wifi_set_promiscuous_rx_cb(wifi_promiscuous_cb_t cb);
 /**
   * @brief     Enable the promiscuous mode.
   *
-  * @param     uint8 promiscuous : 0 - disable / 1 - enable
+  * @param     bool promiscuous : false - disable / true - enable
   *
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_set_promiscuous(uint8_t enable);
+esp_err_t esp_wifi_set_promiscuous(bool enable);
 
 /**
   * @brief     Get the promiscuous mode.
   *
-  * @param     uint8 *enable : store the current status of promiscuous mode
+  * @param     bool *enable : store the current status of promiscuous mode
   *
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_get_promiscuous(uint8_t *enable);
+esp_err_t esp_wifi_get_promiscuous(bool *enable);
 
 typedef struct {
     char ssid[32];              /**< SSID of ESP32 soft-AP */
