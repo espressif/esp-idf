@@ -1,0 +1,5 @@
+Config: {debug mode: false, execute count: 1, execute order: in order}
+DUT: [SSC1]
+Filter:
+- ADD:
+    ID: [SYS_MISC_0101, SYS_MISC_0201]

@@ -1,0 +1,5 @@
+Config: {debug mode: false, execute count: 1, execute order: in order}
+DUT: [SSC1]
+Filter:
+- ADD:
+    ID: [TCPIP_TCP_0405, ^TCPIP_TCP_0405]
