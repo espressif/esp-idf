@@ -47,7 +47,7 @@ void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
 void start_cpu0_default(void) IRAM_ATTR;
 #if !CONFIG_FREERTOS_UNICORE
 static void IRAM_ATTR call_start_cpu1();
-void start_cpu1(void) __attribute__((weak, alias("start_cpu0_default")));
+void start_cpu1(void) __attribute__((weak, alias("start_cpu1_default")));
 void start_cpu1_default(void) IRAM_ATTR;
 static bool app_cpu_started = false;
 #endif //!CONFIG_FREERTOS_UNICORE
