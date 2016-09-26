@@ -44,10 +44,14 @@
 #include "esp_log.h"
 
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
-void start_cpu1(void) __attribute__((weak, alias("start_cpu0_default")));
 void start_cpu0_default(void) IRAM_ATTR;
-void start_cpu1_default(void) IRAM_ATTR;
+#if !CONFIG_FREERTOS_UNICORE
 static void IRAM_ATTR call_start_cpu1();
+void start_cpu1(void) __attribute__((weak, alias("start_cpu0_default")));
+void start_cpu1_default(void) IRAM_ATTR;
+static bool app_cpu_started = false;
+#endif //!CONFIG_FREERTOS_UNICORE
+
 static void do_global_ctors(void);
 static void main_task(void* args);
 extern void ets_setup_syscalls(void);
@@ -61,7 +65,6 @@ extern void (*__init_array_end)(void);
 extern volatile int port_xSchedulerRunning[2];
 
 static const char* TAG = "cpu_start";
-static bool app_cpu_started = false;
 
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
@@ -91,7 +94,7 @@ void IRAM_ATTR call_start_cpu0()
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
-#ifndef CONFIG_FREERTOS_UNICORE
+#if !CONFIG_FREERTOS_UNICORE
     ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
 
     SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
@@ -111,6 +114,7 @@ void IRAM_ATTR call_start_cpu0()
     start_cpu0();
 }
 
+#if !CONFIG_FREERTOS_UNICORE
 void IRAM_ATTR call_start_cpu1()
 {
     asm volatile (\
@@ -123,6 +127,7 @@ void IRAM_ATTR call_start_cpu1()
     app_cpu_started = 1;
     start_cpu1();
 }
+#endif //!CONFIG_FREERTOS_UNICORE
 
 void start_cpu0_default(void)
 {
@@ -139,6 +144,7 @@ void start_cpu0_default(void)
     vTaskStartScheduler();
 }
 
+#if !CONFIG_FREERTOS_UNICORE
 void start_cpu1_default(void)
 {
     // Wait for FreeRTOS initialization to finish on PRO CPU
@@ -148,6 +154,7 @@ void start_cpu1_default(void)
     ESP_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
 }
+#endif //!CONFIG_FREERTOS_UNICORE
 
 static void do_global_ctors(void)
 {

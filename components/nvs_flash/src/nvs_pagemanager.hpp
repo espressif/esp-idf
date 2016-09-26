@@ -52,7 +52,7 @@ public:
 
 protected:
     friend class Iterator;
-    
+
     esp_err_t activatePage();
 
     TPageList mPageList;
