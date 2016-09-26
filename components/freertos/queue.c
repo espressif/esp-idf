@@ -1156,6 +1156,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				}
 			}
 			#endif /* configUSE_QUEUE_SETS */
+			xReturn = pdPASS;
 		}
 		else
 		{

@@ -64,6 +64,7 @@ build_ssc:
   script:
     - git clone ssh://git@gitlab.espressif.cn:27227/yinling/SSC.git
     - cd SSC
+    - git checkout ${CI_BUILD_REF_NAME} || echo "Using SSC default branch..."
     - make defconfig
     - chmod +x gen_misc_ng.sh
     - ./gen_misc_ng.sh
