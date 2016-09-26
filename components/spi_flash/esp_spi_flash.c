@@ -246,11 +246,8 @@ esp_err_t IRAM_ATTR spi_flash_read(uint32_t src_addr, uint32_t *dest, uint32_t s
 {
     COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc;
-    {
-        rc = SPIRead(src_addr, dest, (int32_t) size);
-        COUNTER_ADD_BYTES(read, size);
-    }
+    SpiFlashOpResult rc = SPIRead(src_addr, dest, (int32_t) size);
+    COUNTER_ADD_BYTES(read, size);
     spi_flash_enable_interrupts_caches_and_other_cpu();
     COUNTER_STOP(read);
     return spi_flash_translate_rc(rc);
