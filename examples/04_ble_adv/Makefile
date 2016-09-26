@@ -13,3 +13,4 @@ sdkconfig: sdkconfig.defaults
 	$(Q) cp $< $@
 
 menuconfig: sdkconfig
+defconfig: sdkconfig
