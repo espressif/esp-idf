@@ -24,6 +24,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -52,8 +53,13 @@
 #define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
 #define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
 
-/* Flag for when we are connected & ready to make a request */
-static volatile bool ready;
+/* FreeRTOS event group to signal when we are connected & ready to make a request */
+static EventGroupHandle_t wifi_event_group;
+
+/* The event group allows multiple bits for each event,
+   but we only care about one event - are we connected
+   to the AP with an IP? */
+const int CONNECTED_BIT = BIT0;
 
 /* Constants that aren't configurable in menuconfig */
 #define WEB_SERVER "www.howsmyssl.com"
@@ -78,7 +84,7 @@ extern const char *server_root_cert;
    to ESP_LOGx debug output.
 
    MBEDTLS_DEBUG_LEVEL 4 means all mbedTLS debug output gets sent here,
-   and then filtered to the 
+   and then filtered to the ESP logging mechanism.
 */
 static void mbedtls_debug(void *ctx, int level,
                      const char *file, int line,
@@ -117,11 +123,17 @@ static void mbedtls_debug(void *ctx, int level,
 static esp_err_t wifi_event_cb(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
+    case SYSTEM_EVENT_STA_START:
+        esp_wifi_connect();
+        break;
     case SYSTEM_EVENT_STA_GOT_IP:
-        ready = true;
+        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        ready = false;
+        /* This is a workaround as ESP32 WiFi libs don't currently
+           auto-reassociate. */
+        esp_wifi_connect();
+        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
         break;
     default:
         break;
@@ -153,8 +165,6 @@ static void https_get_task(void *pvParameters)
     mbedtls_x509_crt cacert;
     mbedtls_ssl_config conf;
     mbedtls_net_context server_fd;
-
-    esp_wifi_connect();
 
     mbedtls_ssl_init(&ssl);
     mbedtls_x509_crt_init(&cacert);
@@ -213,28 +223,23 @@ static void https_get_task(void *pvParameters)
     mbedtls_ssl_conf_dbg(&conf, mbedtls_debug, NULL);
 #endif
 
-    ESP_LOGI(TAG, "%d free...", system_get_free_heap_size());
-
-    char *x = malloc(8192);
-    memset(x, 'a', 8192);
-
-    ESP_LOGI(TAG, "%d free now...", system_get_free_heap_size());
-
     if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
     {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
         goto exit;
     }
 
-    ESP_LOGI(TAG, "Waiting for WiFi online...");
-    while (!ready) {
-        vTaskDelay(1);
-    }
-    ESP_LOGI(TAG, "WiFi is online");
-
     while(1) {
-        ESP_LOGI(TAG, "Connecting to %s:%s...", WEB_SERVER, WEB_PORT);
+        /* Wait for the callback to set the CONNECTED_BIT in the
+           event group.
+        */
+        xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
+                            false, true, portMAX_DELAY);
+        ESP_LOGI(TAG, "Connected to AP");
+
         mbedtls_net_init(&server_fd);
+
+        ESP_LOGI(TAG, "Connecting to %s:%s...", WEB_SERVER, WEB_PORT);
 
         if ((ret = mbedtls_net_connect(&server_fd, WEB_SERVER,
                                       WEB_PORT, MBEDTLS_NET_PROTO_TCP)) != 0)
@@ -343,6 +348,7 @@ static void https_get_task(void *pvParameters)
 
 void app_main()
 {
+    wifi_event_group = xEventGroupCreate();
     esp_event_set_cb(wifi_event_cb, NULL);
     set_wifi_configuration();
     xTaskCreate(&https_get_task, "https_get_task", 8192, NULL, 5, NULL);

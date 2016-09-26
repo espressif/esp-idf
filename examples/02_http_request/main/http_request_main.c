@@ -9,6 +9,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -28,8 +29,13 @@
 #define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
 #define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
 
-/* Flag for when we are connected & ready to make a request */
-static volatile bool ready;
+/* FreeRTOS event group to signal when we are connected & ready to make a request */
+static EventGroupHandle_t wifi_event_group;
+
+/* The event group allows multiple bits for each event,
+   but we only care about one event - are we connected
+   to the AP with an IP? */
+const int CONNECTED_BIT = BIT0;
 
 /* Constants that aren't configurable in menuconfig */
 #define WEB_SERVER "example.com"
@@ -46,11 +52,17 @@ static const char *REQUEST = "GET " WEB_URL " HTTP/1.1\n"
 static esp_err_t wifi_event_cb(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
+    case SYSTEM_EVENT_STA_START:
+        esp_wifi_connect();
+        break;
     case SYSTEM_EVENT_STA_GOT_IP:
-        ready = true;
+        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        ready = false;
+        /* This is a workaround as ESP32 WiFi libs don't currently
+           auto-reassociate. */
+        esp_wifi_connect();
+        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
         break;
     default:
         break;
@@ -83,11 +95,11 @@ static void http_get_task(void *pvParameters)
     char recv_buf[64];
 
     while(1) {
-        esp_wifi_connect();
-        /* Wait for the event callback to tell us we are connected */
-        while (!ready) {
-            vTaskDelay(1);
-        }
+        /* Wait for the callback to set the CONNECTED_BIT in the
+           event group.
+        */
+        xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
+                            false, true, portMAX_DELAY);
         ESP_LOGI(TAG, "Connected to AP");
 
         int err = getaddrinfo(WEB_SERVER, "80", &hints, &res);
@@ -153,6 +165,7 @@ static void http_get_task(void *pvParameters)
 
 void app_main()
 {
+    wifi_event_group = xEventGroupCreate();
     esp_event_set_cb(wifi_event_cb, NULL);
     set_wifi_configuration();
     xTaskCreate(&http_get_task, "http_get_task", 2048, NULL, 5, NULL);
