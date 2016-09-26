@@ -106,46 +106,8 @@ test_build_system:
     - ./make/test_build_system.sh
 
 
-
-# template for test jobs
-.test_template: &test_template
-  stage: test
-  when: on_success
-  only:
-    - master
-    - triggers
-
-  variables:
-    # need user to set SDK_NAME and CONFIG_FILE (may need to set BIN_PATH and APP_NAME later) in before_script
-    SCRIPT_PATH: /home/gitlab-runner/auto_test_script
-    BIN_PATH: ${CI_PROJECT_DIR}/SSC/build/
-    APP_NAME: ssc
-    LOG_PATH: $CI_PROJECT_DIR/$CI_BUILD_REF
-    
-  artifacts:
-    when: always
-    paths:
-      - $LOG_PATH
-    expire_in: 6 mos
-    
-  script:
-    - cd $SCRIPT_PATH
-    - python CIRunner.py -l $LOG_PATH -c $SDK_NAME/$CONFIG_FILE bin_path $APP_NAME $BIN_PATH
-
-sanity_test:
-  <<: *test_template
-  tags:
-    - ESP32
-    - SSC_T1_1
-    - SSC_T2_1
-    - SSC_T1_WAN
-  before_script:
-    - SDK_NAME=ESP32_IDF
-    - CONFIG_FILE=sanity_test.yml
-
-
 push_master_to_github:
-  before_script: 
+  before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
   only:
@@ -165,3 +127,164 @@ push_master_to_github:
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git remote add github git@github.com:espressif/esp-idf.git
     - git push --follow-tags github HEAD:master
+
+
+# AUTO GENERATED PART START, DO NOT MODIFY CONTENT BELOW
+# template for test jobs
+.test_template: &test_template
+  stage: test
+  when: on_success
+  only:
+    - master
+    - triggers
+
+  variables:
+    LOCAL_ENV_CONFIG_PATH: "/home/gitlab-runner/LocalConfig/ESP32"
+    BIN_PATH: "$CI_PROJECT_DIR/SSC/build/"
+    APP_NAME: "ssc"
+    LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
+    # assume it's tests are put in "components/test"
+    TEST_CASE_FILE_PATH: "components/test"
+    # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
+    CONFIG_FILE: "jobs must set this variable"
+
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+    expire_in: 6 mos
+
+  script:
+    # assume that auto_test_script is a sub-module of SDK, otherwise add as submodule here
+    - git submodule update --init --recursive
+    - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
+
+
+# template for overnight test jobs
+.test_template_night: &test_template_night
+  <<: *test_template
+  only:
+    # can only be triggered
+    - triggers
+  script:
+    # must be night build triggers, otherwise exit without test
+    - test $NIGHT_BUILD != "Yes" || exit
+    # assume that auto_test_script is a sub-module of SDK
+    - git submodule update --init --recursive
+    - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
+
+Function_SYS_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_SYS_01.yml
+
+Function_WIFI_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_APC
+    - SSC_T1_1
+    - SSC_T1_WEP
+    - SSC_T2_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_WIFI_01.yml
+
+Function_WIFI_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_APC
+    - SSC_T1_1
+    - SSC_T1_WEP
+    - SSC_T2_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_WIFI_02.yml
+
+Function_TCPIP_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T1_2
+    - SSC_T2_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_TCPIP_01.yml
+
+Function_TCPIP_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T2_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_TCPIP_02.yml
+
+Function_TCPIP_03:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T2_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_TCPIP_03.yml
+
+Function_TCPIP_04:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T1_2
+    - SSC_T2_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_TCPIP_04.yml
+
+Function_TCPIP_05:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T1_2
+    - SSC_T2_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_TCPIP_05.yml
+
+Function_TCPIP_06:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T2_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_TCPIP_06.yml
+
+Function_TCPIP_07:
+  <<: *test_template_night
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+  before_script:
+    - SDK_NAME=ESP32_IDF
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=Function_TCPIP_07.yml
+
