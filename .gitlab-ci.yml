@@ -139,14 +139,13 @@ push_master_to_github:
     - triggers
 
   variables:
-    LOCAL_ENV_CONFIG_PATH: "/home/gitlab-runner/LocalConfig/ESP32"
+    # LOCAL_ENV_CONFIG_PATH: define LOCAL_ENV_CONFIG in jobs because this variable may need complicated logic to generate
     BIN_PATH: "$CI_PROJECT_DIR/SSC/build/"
     APP_NAME: "ssc"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
-    # assume it's tests are put in "components/test"
-    TEST_CASE_FILE_PATH: "components/test"
+    # assume tests are put in "components/test"
+    TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/test"
     # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
-    CONFIG_FILE: "jobs must set this variable"
 
   artifacts:
     when: always
@@ -179,9 +178,8 @@ Function_SYS_01:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_SYS_01.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_SYS_01.yml
 
 Function_WIFI_01:
   <<: *test_template
@@ -192,9 +190,8 @@ Function_WIFI_01:
     - SSC_T1_WEP
     - SSC_T2_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_WIFI_01.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_01.yml
 
 Function_WIFI_02:
   <<: *test_template
@@ -205,9 +202,8 @@ Function_WIFI_02:
     - SSC_T1_WEP
     - SSC_T2_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_WIFI_02.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_02.yml
 
 Function_TCPIP_01:
   <<: *test_template
@@ -217,9 +213,8 @@ Function_TCPIP_01:
     - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_TCPIP_01.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_01.yml
 
 Function_TCPIP_02:
   <<: *test_template
@@ -228,9 +223,8 @@ Function_TCPIP_02:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_TCPIP_02.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_02.yml
 
 Function_TCPIP_03:
   <<: *test_template
@@ -239,9 +233,8 @@ Function_TCPIP_03:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_TCPIP_03.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_03.yml
 
 Function_TCPIP_04:
   <<: *test_template
@@ -251,9 +244,8 @@ Function_TCPIP_04:
     - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_TCPIP_04.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_04.yml
 
 Function_TCPIP_05:
   <<: *test_template
@@ -263,9 +255,8 @@ Function_TCPIP_05:
     - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_TCPIP_05.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_05.yml
 
 Function_TCPIP_06:
   <<: *test_template
@@ -274,9 +265,8 @@ Function_TCPIP_06:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_TCPIP_06.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_06.yml
 
 Function_TCPIP_07:
   <<: *test_template_night
@@ -284,7 +274,6 @@ Function_TCPIP_07:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - SDK_NAME=ESP32_IDF
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=Function_TCPIP_07.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_07.yml
 
