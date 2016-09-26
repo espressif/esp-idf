@@ -143,6 +143,11 @@ typedef struct {
     wifi_event_handler_t event_handler;  /**< WiFi event handler */
 } wifi_init_config_t;
 
+
+#define WIFI_INIT_CONFIG_DEFAULT(event_handler_) { \
+    .event_handler = (wifi_event_handler_t)event_handler_, \
+};
+
 /**
   * @brief  Init WiFi
   *         Alloc resource for WiFi driver, such as WiFi control structure, RX/TX buffer,
@@ -523,7 +528,7 @@ esp_err_t esp_wifi_set_promiscuous_rx_cb(wifi_promiscuous_cb_t cb);
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_set_promiscuous(bool enable);
+esp_err_t esp_wifi_set_promiscuous(bool en);
 
 /**
   * @brief     Get the promiscuous mode.
@@ -533,7 +538,7 @@ esp_err_t esp_wifi_set_promiscuous(bool enable);
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_get_promiscuous(bool *enable);
+esp_err_t esp_wifi_get_promiscuous(bool *en);
 
 typedef struct {
     char ssid[32];              /**< SSID of ESP32 soft-AP */
