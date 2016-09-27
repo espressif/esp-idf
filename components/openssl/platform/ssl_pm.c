@@ -25,6 +25,12 @@
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
 
+#if 0
+    #define DEBUG_LOAD_BUF_STRING(str) SSL_DEBUG(1, "%s\n", str)
+#else
+    #define DEBUG_LOAD_BUF_STRING(str)
+#endif
+
 struct ssl_pm
 {
     /* local socket file description */
@@ -407,10 +413,13 @@ int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
     unsigned char *load_buf;
     struct x509_pm *x509_pm = (struct x509_pm *)x->x509_pm;
 
+	if (x509_pm->x509_crt)
+        mbedtls_x509_crt_free(x509_pm->x509_crt);
+
     if (!x509_pm->x509_crt) {
-        x509_pm->x509_crt = ssl_zalloc(sizeof(mbedtls_x509_crt));
+        x509_pm->x509_crt = ssl_malloc(sizeof(mbedtls_x509_crt));
         if (!x509_pm->x509_crt)
-            SSL_RET(failed1, "ssl_zalloc\n");
+            SSL_RET(failed1, "ssl_malloc\n");
     }
 
     load_buf = ssl_malloc(len + 1);
@@ -420,12 +429,11 @@ int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
     ssl_memcpy(load_buf, buffer, len);
     load_buf[len] = '\0';
 
-	mbedtls_x509_crt_init(x509_pm->x509_crt);
+    DEBUG_LOAD_BUF_STRING(load_buf);
 
-    if (x509_pm->x509_crt)
-        mbedtls_x509_crt_free(x509_pm->x509_crt);
+    mbedtls_x509_crt_init(x509_pm->x509_crt);
 
-    ret = mbedtls_x509_crt_parse(x509_pm->x509_crt, load_buf, len);
+    ret = mbedtls_x509_crt_parse(x509_pm->x509_crt, load_buf, len + 1);
     ssl_free(load_buf);
 
     if (ret)
@@ -480,10 +488,13 @@ int pkey_pm_load(EVP_PKEY *pk, const unsigned char *buffer, int len)
     unsigned char *load_buf;
     struct pkey_pm *pkey_pm = (struct pkey_pm *)pk->pkey_pm;
 
+    if (pkey_pm->pkey)
+        mbedtls_pk_free(pkey_pm->pkey);
+
     if (!pkey_pm->pkey) {
-        pkey_pm->pkey = ssl_zalloc(sizeof(mbedtls_pk_context));
+        pkey_pm->pkey = ssl_malloc(sizeof(mbedtls_pk_context));
         if (!pkey_pm->pkey)
-            SSL_RET(failed1, "ssl_zalloc\n");
+            SSL_RET(failed1, "ssl_malloc\n");
     }
 
     load_buf = ssl_malloc(len + 1);
@@ -493,12 +504,11 @@ int pkey_pm_load(EVP_PKEY *pk, const unsigned char *buffer, int len)
     ssl_memcpy(load_buf, buffer, len);
     load_buf[len] = '\0';
 
+    DEBUG_LOAD_BUF_STRING(load_buf);
+
     mbedtls_pk_init(pkey_pm->pkey);
 
-    if (pkey_pm->pkey)
-        mbedtls_pk_free(pkey_pm->pkey);
-
-    ret = mbedtls_pk_parse_key(pkey_pm->pkey, load_buf, len, NULL, 0);
+    ret = mbedtls_pk_parse_key(pkey_pm->pkey, load_buf, len + 1, NULL, 0);
     ssl_free(load_buf);
 
     if (ret)
