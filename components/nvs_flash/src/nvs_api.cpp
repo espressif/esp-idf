@@ -16,6 +16,7 @@
 #include "nvs_storage.hpp"
 #include "intrusive_list.h"
 #include "nvs_platform.hpp"
+#include "sdkconfig.h"
 
 #ifdef ESP_PLATFORM
 // Uncomment this line to force output from this module
@@ -60,7 +61,12 @@ extern "C" void nvs_dump()
     s_nvs_storage.debugDump();
 }
 
-extern "C" esp_err_t nvs_flash_init(uint32_t baseSector, uint32_t sectorCount)
+extern "C" esp_err_t nvs_flash_init(void)
+{
+    return nvs_flash_init_custom(6, 3);
+}
+
+extern "C" esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount)
 {
     Lock::init();
     Lock lock;
