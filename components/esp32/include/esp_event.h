@@ -19,8 +19,7 @@
 #include <stdbool.h>
 
 #include "esp_err.h"
-#include "esp_wifi.h"
-
+#include "esp_wifi_types.h"
 #include "tcpip_adapter.h"
 
 #ifdef __cplusplus
@@ -104,6 +103,8 @@ typedef struct {
     system_event_id_t     event_id;      /**< event ID */
     system_event_info_t   event_info;    /**< event information */
 } system_event_t;
+
+typedef esp_err_t (*system_event_handler_t)(system_event_t *event);
 
 /**
   * @brief  Send a event to event task
