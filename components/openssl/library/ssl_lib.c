@@ -126,11 +126,11 @@ SSL_SESSION* SSL_SESSION_new(void)
 
     session = ssl_zalloc(sizeof(SSL_SESSION));
     if (!session)
-        SSL_RET(failed1);
+        SSL_RET(failed1, "ssl_zalloc\n");
 
     session->peer = X509_new();
     if (!session->peer)
-        SSL_RET(failed2);
+        SSL_RET(failed2, "X509_new\n");
 
     return session;
 
@@ -1500,7 +1500,7 @@ void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509
  */
 void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT(ssl);
 
     ssl->verify_mode = mode;
     ssl->verify_callback = verify_callback;

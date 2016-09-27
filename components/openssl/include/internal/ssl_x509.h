@@ -63,6 +63,30 @@ X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len);
  */
 void X509_free(X509 *x);
 
+/**
+ * @brief set SSL context client CA certification
+ *
+ * @param ctx - SSL context point
+ * @param x   - X509 certification point
+ *
+ * @return result
+ *     0 : failed
+ *     1 : OK
+ */
+int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x);
+
+/**
+ * @brief add CA client certification into the SSL
+ *
+ * @param ssl - SSL point
+ * @param x   - X509 certification point
+ *
+ * @return result
+ *     0 : failed
+ *     1 : OK
+ */
+int SSL_add_client_CA(SSL *ssl, X509 *x);
+
 #ifdef __cplusplus
 }
 #endif

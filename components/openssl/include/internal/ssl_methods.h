@@ -15,6 +15,8 @@
 #ifndef _SSL_METHODS_H_
 #define _SSL_METHODS_H_
 
+#include "ssl_types.h"
+
 #ifdef __cplusplus
  extern "C" {
 #endif

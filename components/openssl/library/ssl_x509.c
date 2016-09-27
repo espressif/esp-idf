@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "ssl_x509.h"
-#include "ssl_cert.h"
 #include "ssl_methods.h"
 #include "ssl_dbg.h"
 #include "ssl_port.h"
@@ -214,9 +213,7 @@ int SSL_use_certificate_ASN1(SSL *ssl, int len,
                              const unsigned char *d)
 {
     int ret;
-    int reload;
     X509 *x;
-    int m = 0;
 
     x = d2i_X509(NULL, d, len);
     if (!x)

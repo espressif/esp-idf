@@ -30,13 +30,13 @@ OPENSSL_STACK* OPENSSL_sk_new(OPENSSL_sk_compfunc c)
     OPENSSL_STACK *stack;
     char **data;
 
-    stack = ssl_malloc(sizeof(OPENSSL_STACK));
+    stack = ssl_zalloc(sizeof(OPENSSL_STACK));
     if (!stack)
-        SSL_RET(failed1);
+        SSL_RET(failed1, "ssl_zalloc\n");
 
-    data = ssl_malloc(sizeof(*data) * MIN_NODES);
+    data = ssl_zalloc(sizeof(*data) * MIN_NODES);
     if (!data)
-        SSL_RET(failed2);
+        SSL_RET(failed2, "ssl_zalloc\n");
 
     stack->data = data;
     stack->num_alloc = MIN_NODES;

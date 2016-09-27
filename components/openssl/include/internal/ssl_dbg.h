@@ -19,10 +19,10 @@
  extern "C" {
 #endif
 
-#define SSL_DEBUG_ENBALE 0
+#define SSL_DEBUG_ENBALE 1
 #define SSL_DEBUG_LEVEL 0
-#define SSL_ASSERT_ENABLE 0
-#define SSL_DEBUG_LOCATION_ENABLE 0
+#define SSL_ASSERT_ENABLE 1
+#define SSL_DEBUG_LOCATION_ENABLE 1
 
 #if SSL_DEBUG_ENBALE
     extern int ets_printf(const char *fmt, ...);
