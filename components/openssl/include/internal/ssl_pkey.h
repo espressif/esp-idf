@@ -64,6 +64,21 @@ EVP_PKEY* d2i_PrivateKey(int type,
  */
 void EVP_PKEY_free(EVP_PKEY *x);
 
+/**
+ * @brief load private key into the SSL
+ *
+ * @param type - private key type
+ * @param ssl  - SSL point
+ * @param len  - data bytes
+ * @param d    - data point
+ *
+ * @return result
+ *     0 : failed
+ *     1 : OK 
+ */
+ int SSL_use_PrivateKey_ASN1(int type, SSL *ssl, const unsigned char *d, long len);
+
+
 #ifdef __cplusplus
 }
 #endif

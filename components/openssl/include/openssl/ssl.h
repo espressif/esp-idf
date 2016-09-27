@@ -21,6 +21,7 @@
 
 #include "platform/ssl_port.h"
 #include "internal/ssl_x509.h"
+#include "internal/ssl_pkey.h"
 
 /*
 {
@@ -425,6 +426,26 @@ const char *SSL_get_version(const SSL *ssl);
  *     0 : failed
  */
 int SSL_CTX_set_ssl_version(SSL_CTX *ctx, const SSL_METHOD *meth);
+
+/**
+ * @brief get the bytes numbers which are to be read
+ *
+ * @param ssl  - SSL point
+ *
+ * @return bytes number
+ */
+int SSL_pending(const SSL *ssl);
+
+/**
+ * @brief check if SSL want nothing
+ *
+ * @param ssl - SSL point
+ *
+ * @return result
+ *     0 : false
+ *     1 : true
+ */
+int SSL_want_nothing(const SSL *ssl);
 
 /**
  * @brief get the SSL context current method

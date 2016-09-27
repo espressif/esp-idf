@@ -87,6 +87,20 @@ int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x);
  */
 int SSL_add_client_CA(SSL *ssl, X509 *x);
 
+/**
+ * @brief load certification into the SSL
+ *
+ * @param ssl - SSL point
+ * @param len - data bytes
+ * @param d   - data point
+ *
+ * @return result
+ *     0 : failed
+ *     1 : OK
+ *
+ */
+int SSL_use_certificate_ASN1(SSL *ssl, int len, const unsigned char *d);
+
 #ifdef __cplusplus
 }
 #endif
