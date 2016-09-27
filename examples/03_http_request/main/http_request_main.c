@@ -10,9 +10,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_event.h"
+#include "esp_event_loop.h"
 #include "esp_log.h"
+#include "nvs_flash.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -49,7 +51,7 @@ static const char *REQUEST = "GET " WEB_URL " HTTP/1.1\n"
     "User-Agent: esp-idf/1.0 esp32\n"
     "\n";
 
-static esp_err_t wifi_event_cb(void *ctx, system_event_t *event)
+static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
     case SYSTEM_EVENT_STA_START:
@@ -70,8 +72,14 @@ static esp_err_t wifi_event_cb(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
-static void set_wifi_configuration(void)
+static void initialise_wifi(void)
 {
+    tcpip_adapter_init();
+    wifi_event_group = xEventGroupCreate();
+    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT(esp_event_loop_get_queue() );
+    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = EXAMPLE_WIFI_SSID,
@@ -79,8 +87,9 @@ static void set_wifi_configuration(void)
         },
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
-    esp_wifi_set_mode(WIFI_MODE_STA);
-    esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
+    ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
 static void http_get_task(void *pvParameters)
@@ -165,8 +174,8 @@ static void http_get_task(void *pvParameters)
 
 void app_main()
 {
-    wifi_event_group = xEventGroupCreate();
-    esp_event_set_cb(wifi_event_cb, NULL);
-    set_wifi_configuration();
+    nvs_flash_init(6, 3);
+    system_init();
+    initialise_wifi();
     xTaskCreate(&http_get_task, "http_get_task", 2048, NULL, 5, NULL);
 }
