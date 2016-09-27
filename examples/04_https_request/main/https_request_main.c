@@ -356,7 +356,7 @@ static void https_get_task(void *pvParameters)
 
 void app_main()
 {
-    nvs_flash_init(6, 3);
+    nvs_flash_init();
     system_init();
     initialise_wifi();
     xTaskCreate(&https_get_task, "https_get_task", 8192, NULL, 5, NULL);

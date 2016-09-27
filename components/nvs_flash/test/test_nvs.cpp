@@ -425,7 +425,7 @@ TEST_CASE("nvs api tests", "[nvs]")
     for (uint16_t i = NVS_FLASH_SECTOR; i <NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++i) {
         spi_flash_erase_sector(i);
     }
-    TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
 
     TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
 
@@ -468,7 +468,7 @@ TEST_CASE("wifi test", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR = 5;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
-    TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     nvs_handle misc_handle;
     TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &misc_handle));
@@ -610,7 +610,7 @@ TEST_CASE("can init storage from flash with random contents", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR = 5;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
-    TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &handle));
     
@@ -631,7 +631,7 @@ TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][.][long]")
         const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
         emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
         
-        TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+        TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
         
         nvs_handle handle_1;
         TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
@@ -867,7 +867,7 @@ TEST_CASE("monkey test", "[nvs][monkey]")
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
     
-    TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
     
     nvs_handle handle;
     TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
@@ -909,7 +909,7 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
             }
         }
         
-        TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+        TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
 
         nvs_handle handle;
         TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
@@ -921,7 +921,7 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
         }
         nvs_close(handle);
         
-        TEST_ESP_OK(nvs_flash_init(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+        TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
         TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
         auto res = test.doRandomThings(handle, gen, count);
         if (res != ESP_OK) {
