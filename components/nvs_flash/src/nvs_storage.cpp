@@ -51,7 +51,7 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
         Page& p = *it;
         size_t itemIndex = 0;
         Item item;
-        while(p.findItem(Page::NS_INDEX, ItemType::U8, nullptr, itemIndex, item) == ESP_OK) {
+        while (p.findItem(Page::NS_INDEX, ItemType::U8, nullptr, itemIndex, item) == ESP_OK) {
             NamespaceEntry* entry = new NamespaceEntry;
             item.getKey(entry->mName, sizeof(entry->mName) - 1);
             item.getValue(entry->mIndex);
@@ -67,6 +67,19 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
     debugCheck();
 #endif
     return ESP_OK;
+}
+
+esp_err_t Storage::findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item)
+{
+    size_t itemIndex = 0;
+    for (auto it = std::begin(mPageManager); it != std::end(mPageManager); ++it) {
+        auto err = it->findItem(nsIndex, datatype, key, itemIndex, item);
+        if (err == ESP_OK) {
+            page = it;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_NVS_NOT_FOUND;
 }
 
 esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize)
@@ -103,14 +116,13 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
         if (err != ESP_OK) {
             return err;
         }
-    }
-    else if (err != ESP_OK) {
+    } else if (err != ESP_OK) {
         return err;
     }
 
     if (findPage) {
         if (findPage->state() == Page::PageState::UNINITIALIZED ||
-            findPage->state() == Page::PageState::INVALID) {
+                findPage->state() == Page::PageState::INVALID) {
             auto err = findItem(nsIndex, datatype, key, findPage, item);
             assert(err == ESP_OK);
         }
@@ -158,7 +170,7 @@ esp_err_t Storage::createOrOpenNamespace(const char* nsName, bool canCreate, uin
         }
         mNamespaceUsage.set(ns, true);
         nsIndex = ns;
-        
+
         NamespaceEntry* entry = new NamespaceEntry;
         entry->mIndex = ns;
         strncpy(entry->mName, nsName, sizeof(entry->mName) - 1);
@@ -203,6 +215,27 @@ esp_err_t Storage::eraseItem(uint8_t nsIndex, ItemType datatype, const char* key
     return findPage->eraseItem(nsIndex, datatype, key);
 }
 
+esp_err_t Storage::eraseNamespace(uint8_t nsIndex)
+{
+    if (mState != StorageState::ACTIVE) {
+        return ESP_ERR_NVS_NOT_INITIALIZED;
+    }
+
+    for (auto it = std::begin(mPageManager); it != std::end(mPageManager); ++it) {
+        while (true) {
+            auto err = it->eraseItem(nsIndex, ItemType::ANY, nullptr);
+            if (err == ESP_ERR_NVS_NOT_FOUND) {
+                break;
+            }
+            else if (err != ESP_OK) {
+                return err;
+            }
+        }
+    }
+    return ESP_OK;
+
+}
+
 esp_err_t Storage::getItemDataSize(uint8_t nsIndex, ItemType datatype, const char* key, size_t& dataSize)
 {
     if (mState != StorageState::ACTIVE) {
@@ -234,6 +267,7 @@ void Storage::debugCheck()
     
     for (auto p = mPageManager.begin(); p != mPageManager.end(); ++p) {
         size_t itemIndex = 0;
+        size_t usedCount = 0;
         Item item;
         while (p->findItem(Page::NS_ANY, ItemType::ANY, nullptr, itemIndex, item) == ESP_OK) {
             std::stringstream keyrepr;
@@ -246,7 +280,9 @@ void Storage::debugCheck()
             }
             keys.insert(std::make_pair(keystr, static_cast<Page*>(p)));
             itemIndex += item.span;
+            usedCount += item.span;
         }
+        assert(usedCount == p->getUsedEntryCount());
     }
 }
 #endif //ESP_PLATFORM

@@ -275,9 +275,7 @@ when the scheduler is unsuspended.  The pending ready list itself can only be
 accessed from a critical section. */
 PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended[ portNUM_PROCESSORS ]	= { ( UBaseType_t ) pdFALSE };
 
-/* Muxes used in the task code */
-PRIVILEGED_DATA static portBASE_TYPE xMutexesInitialised = pdFALSE;
-/* For now, we use just one mux for all the critical sections. ToDo: give evrything a bit more granularity;
+/* For now, we use just one mux for all the critical sections. ToDo: give everything a bit more granularity;
   that could improve performance by not needlessly spinning in spinlocks for unrelated resources. */
 PRIVILEGED_DATA static portMUX_TYPE xTaskQueueMutex = portMUX_INITIALIZER_UNLOCKED;
 PRIVILEGED_DATA static portMUX_TYPE xTickCountMutex = portMUX_INITIALIZER_UNLOCKED;
@@ -577,15 +575,6 @@ static void prvResetNextTaskUnblockTime( void );
 
 #endif
 
-/*-----------------------------------------------------------*/
-
-
-static void vTaskInitializeLocalMuxes( void )
-{
-	vPortCPUInitializeMutex(&xTaskQueueMutex);
-	vPortCPUInitializeMutex(&xTickCountMutex);
-	xMutexesInitialised = pdTRUE;
-}
 
 /*-----------------------------------------------------------*/
 
@@ -595,9 +584,6 @@ BaseType_t xReturn;
 TCB_t * pxNewTCB;
 StackType_t *pxTopOfStack;
 BaseType_t i;
-	
-	/* Initialize mutexes, if they're not already initialized. */
-	if (xMutexesInitialised == pdFALSE) vTaskInitializeLocalMuxes();
 	
 	configASSERT( pxTaskCode );
 	configASSERT( ( ( uxPriority & ( ~portPRIVILEGE_BIT ) ) < configMAX_PRIORITIES ) );
@@ -1724,10 +1710,6 @@ BaseType_t xAlreadyYielded = pdFALSE;
 	removed task will have been added to the xPendingReadyList.  Once the
 	scheduler has been resumed it is safe to move all the pending ready
 	tasks from this list into their appropriate ready list. */
-
-	//This uses a mux, but can be called before tasks are scheduled. Make sure muxes are inited.
-	/* Initialize mutexes, if they're not already initialized. */
-	if (xMutexesInitialised == pdFALSE) vTaskInitializeLocalMuxes();
 
 	taskENTER_CRITICAL(&xTaskQueueMutex);
 	{

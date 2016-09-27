@@ -59,7 +59,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "esp_err.h"
 #include "rom/queue.h"
 
@@ -136,35 +137,23 @@ typedef enum {
     WIFI_SECOND_CHAN_BELOW,     /**< the channel width is HT40 and the second channel is below the primary channel */
 } wifi_second_chan_t;
 
-/**
-  * @brief     startup WiFi driver and register application specific callback function
-  *
-  * @attention 1. This API should be called in application startup code to init WiFi driver
-  * @attention 2. The callback function is used to provide application specific WiFi configuration,
-  *               such as, set the WiFi mode, register the event callback, set AP SSID etc before
-  *               WiFi is startup
-  * @attention 3. Avoid to create application task in the callback, otherwise you may get wrong behavior
-  * @attention 4. If the callback return is not ESP_OK, the startup will fail!
-  * @attention 5. Before this API can be called, system_init()/esp_event_init()/tcpip_adapter_init() should
-  *               be called firstly
-  *
-  * @param  wifi_startup_cb_t cb : application specific callback function
-  * @param  void *ctx : reserved for user
-  *
-  * @return ESP_OK : succeed
-  * @return others : fail
-  */
-typedef esp_err_t (* wifi_startup_cb_t)(void *ctx);
-
-esp_err_t esp_wifi_startup(wifi_startup_cb_t cb, void *ctx);
 
 typedef struct {
-    void    *event_q;                 /**< WiFi event q handler, it's a freeRTOS queue */
+    QueueHandle_t event_queue;        /**< WiFi event queue handle */
     uint8_t rx_ba_win;                /**< TBC */
     uint8_t tx_ba_win;                /**< TBC */
     uint8_t rx_buf_cnt;               /**< TBC */
     uint8_t tx_buf_cnt;               /**< TBC */
 } wifi_init_config_t;
+
+
+#define WIFI_INIT_CONFIG_DEFAULT(event_queue_) { \
+    .event_queue = event_queue_, \
+    .rx_ba_win = 0, \
+    .tx_ba_win = 0, \
+    .rx_buf_cnt = 0, \
+    .tx_buf_cnt = 0 \
+};
 
 /**
   * @brief  Init WiFi
