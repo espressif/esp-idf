@@ -26,6 +26,7 @@
 
 
 #include "bt_defs.h"
+#include "bt_common_types.h"
 #include "bte.h"
 #include "btu.h"
 #include "bt_trace.h"
@@ -37,7 +38,6 @@
 #include "controller.h"
 #include "hci_layer.h"
 
-#include "bt_app_common.h"
 //#include "bluedroid_test.h"
 /*
 #define LOG_TAG "bt_main"
@@ -100,6 +100,8 @@ static void bte_main_enable(void);
 //extern void bte_load_ble_conf(const char *p_path);
 fixed_queue_t *btu_hci_msg_queue;
 
+bluedroid_init_done_cb_t bluedroid_init_done_cb;
+
 /******************************************************************************
 **
 ** Function         bte_main_boot_entry
@@ -109,7 +111,7 @@ fixed_queue_t *btu_hci_msg_queue;
 ** Returns          None
 **
 ******************************************************************************/
-void bte_main_boot_entry(void)
+void bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 {
     if (gki_init())
         LOG_ERROR("%s: Init GKI Module Failure.\n", __func__);
@@ -124,6 +126,8 @@ void bte_main_boot_entry(void)
       return;
     }
 
+    bluedroid_init_done_cb = cb;
+
     //Caution: No event dispatcher defined now in hci layer 
     //data_dispatcher_register_default(hci->event_dispatcher, btu_hci_msg_queue);
     hci->set_data_queue(btu_hci_msg_queue);
@@ -133,27 +137,9 @@ void bte_main_boot_entry(void)
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
     //bte_load_ble_conf(BTE_BLE_STACK_CONF_FILE);
 #endif
-    //TODO: STACK CONFIG Module init
-    //module_init(get_module(STACK_CONFIG_MODULE));
-
-    // set up bt application task
-#if (defined(BT_APP_DEMO) && BT_APP_DEMO == TRUE)
-    bt_app1_task_start_up();
-    // bt_app_start_up();
-#endif
 
     //Enbale HCI
     bte_main_enable();
-
-    // LOG_ERROR("Test HCI Command\n");
-    // controller_get_interface()->devctl_reset(NULL);
-
-    //LOG_ERROR("Test bta_enable_bt\n");
-    //bt_test_bta_enable_bt();
-
-    //LOG_ERROR("Test ble_advertise\n");
-    //bt_test_ble_advertise();
-
 }
 
 /******************************************************************************

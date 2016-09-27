@@ -2,9 +2,33 @@
 # Component Makefile
 #
 
-COMPONENT_ADD_INCLUDEDIRS := ./include bluedroid/include bluedroid/osi/include bluedroid/gki/include bluedroid/btcore/include bluedroid/hci/include bluedroid/device/include bluedroid/stack/include bluedroid/app/include bluedroid/profiles/include bluedroid/bta/include bluedroid/stack/avrc/include bluedroid/stack/rfcomm/include bluedroid/bta/sys/include
+COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
+				bluedroid/bta/sys/include		\
+				bluedroid/btcore/include		\
+				bluedroid/device/include		\
+				bluedroid/gki/include			\
+				bluedroid/hci/include			\
+				bluedroid/osi/include			\
+				bluedroid/profiles/esp/include		\
+				bluedroid/profiles/std/avrc/include	\
+				bluedroid/profiles/std/battery/include	\
+				bluedroid/profiles/std/dis/include	\
+				bluedroid/profiles/std/hid/include	\
+				bluedroid/profiles/std/rfcomm/include	\
+				bluedroid/profiles/std/include		\
+				bluedroid/stack/btm/include		\
+				bluedroid/stack/btu/include		\
+				bluedroid/stack/gap/include		\
+				bluedroid/stack/gatt/include		\
+				bluedroid/stack/hcic/include		\
+				bluedroid/stack/l2cap/include		\
+				bluedroid/stack/sdp/include		\
+				bluedroid/stack/smp/include		\
+				bluedroid/stack/include			\
+				bluedroid/include			\
+				include	
 
-CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses
+CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses -I./include
 
 LIBS := btdm_app
 
@@ -16,44 +40,39 @@ COMPONENT_ADD_LDFLAGS := -lbt -L$(abspath lib) \
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 $(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
 
-COMPONENT_SRCDIRS := 	\
-		bluedroid/main	\
-		bluedroid/profiles/hid_le	\
-		bluedroid/profiles/baterry	\
-		bluedroid/profiles/sample_button	\
-		bluedroid/profiles/diss	\
-		bluedroid/profiles	\
-		bluedroid/hci	\
-		bluedroid/stack/btu	\
-		bluedroid/stack/btm	\
-		bluedroid/stack/gatt	\
-		bluedroid/stack/avrc	\
-		bluedroid/stack/hcic	\
-		bluedroid/stack/srvc	\
-		bluedroid/stack/gap	\
-		bluedroid/stack/l2cap	\
-		bluedroid/stack/smp	\
-		bluedroid/stack/sdp	\
-		bluedroid/stack/rfcomm	\
-		bluedroid/stack	\
-		bluedroid/btcore	\
-		bluedroid/device	\
-		bluedroid/app/app_client_profiles	\
-		bluedroid/app/app_client_profiles/battery_c	\
-		bluedroid/app/app_project	\
-		bluedroid/app/app_profiles	\
-		bluedroid/app/app_profiles/app_sample_button	\
-		bluedroid/app/app_core	\
-		bluedroid/app	\
-		bluedroid/gki	\
-		bluedroid/bta/gatt	\
-		bluedroid/bta/dm	\
-		bluedroid/bta/sys	\
-		bluedroid/bta	\
-		bluedroid/osi	\
-		bluedroid/test	\
-		bluedroid/btif	\
-		bluedroid	\
-		./
+COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
+			bluedroid/bta/gatt			\
+			bluedroid/bta/hh			\
+			bluedroid/bta/sys			\
+			bluedroid/bta				\
+			bluedroid/btcore			\
+			bluedroid/btif				\
+			bluedroid/device			\
+			bluedroid/gki				\
+			bluedroid/hci				\
+			bluedroid/main				\
+			bluedroid/osi				\
+			bluedroid/profiles/esp/ble_button	\
+			bluedroid/profiles/esp			\
+			bluedroid/profiles/std/avrc		\
+			bluedroid/profiles/std/battery		\
+			bluedroid/profiles/std/dis		\
+			bluedroid/profiles/std/hid		\
+			bluedroid/profiles/std/hid_le		\
+			bluedroid/profiles/std/rfcomm		\
+			bluedroid/profiles/std			\
+			bluedroid/profiles			\
+			bluedroid/stack/btm			\
+			bluedroid/stack/btu			\
+			bluedroid/stack/gap			\
+			bluedroid/stack/gatt			\
+			bluedroid/stack/hcic			\
+			bluedroid/stack/include			\
+			bluedroid/stack/l2cap			\
+			bluedroid/stack/sdp			\
+			bluedroid/stack/smp			\
+			bluedroid/stack				\
+			bluedroid				\
+			.
 
 include $(IDF_PATH)/make/component_common.mk

@@ -8,9 +8,7 @@
 #include "bt_defs.h"
 #include "thread.h"
 
-
-extern xQueueHandle xBtaApp1Queue;
-extern xTaskHandle xBtaApp1TaskHandle;
+typedef void (* bluedroid_init_done_cb_t)(void);
 
 typedef struct {
     uint8_t client_if;

@@ -29,10 +29,9 @@
 #include "utl.h"
 #include "bta_hh_api.h"
 
-#if BTA_HH_LE_INCLUDED == TRUE
-xxx
+//#if BTA_HH_LE_INCLUDED == TRUE
 #include "bta_gatt_api.h"
-#endif
+//#endif
 
 /* can be moved to bta_api.h */
 #define BTA_HH_MAX_RPT_CHARS    8

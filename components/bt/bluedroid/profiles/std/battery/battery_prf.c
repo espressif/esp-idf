@@ -17,7 +17,7 @@
 #include "bt_trace.h"
 #include "btm_api.h"
 #include "bt_types.h"
-#include "gatt_profile.h"
+#include "dis_api.h"
 
 #if BLE_INCLUDED == true
 

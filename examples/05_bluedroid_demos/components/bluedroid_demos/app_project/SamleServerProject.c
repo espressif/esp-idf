@@ -20,7 +20,7 @@
 #include "bt_trace.h"
 #include "btm_api.h"
 #include "bt_types.h"
-#include "gatt_profile.h"
+#include "dis_api.h"
 #include "bt_app_common.h"
 
 //#include "app_button.h"
@@ -66,7 +66,7 @@ BD_ADDR rand_ijiazu_addr = {0x00,0x02,0x5B,0x00,0x32,0x55};
 tESP_BLE_ADV_DATA ijiazu_adv_data[ADV_SCAN_IDX_MAX] = 
 {
 	[BLE_ADV_DATA_IDX] 		= {
-										.adv_name = "esp_server",
+										.adv_name = "Espressif_007",
 										{
 										{0,0},
 										NULL,			//no manufature data to be setting in the ijiazu adervetisiing datas

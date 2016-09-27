@@ -82,9 +82,9 @@ extern void avdt_rcv_sync_info (BT_HDR *p_buf);
 #include "btm_ble_int.h"
 #endif
 
-#if (defined(BT_APP_DEMO) && BT_APP_DEMO == TRUE)
-#include "bt_app_common.h"
-#endif
+//#if (defined(BT_APP_DEMO) && BT_APP_DEMO == TRUE)
+//#include "bt_app_common.h"
+//#endif
 
 extern void BTE_InitStack(void);
 
@@ -126,6 +126,8 @@ extern fixed_queue_t *event_queue;
 //extern fixed_queue_t *btif_msg_queue;
 
 //extern thread_t *bt_workqueue_thread;
+
+extern bluedroid_init_done_cb_t bluedroid_init_done_cb;
 
 /* Define a function prototype to allow a generic timeout handler */
 typedef void (tUSER_TIMEOUT_FUNC) (TIMER_LIST_ENT *p_tle);
@@ -371,8 +373,9 @@ void btu_task_start_up(void) {
 
   // Inform the bt jni thread initialization is ok.
   // btif_transfer_context(btif_init_ok, 0, NULL, 0, NULL);
-#if (defined(BT_APP_DEMO) && BT_APP_DEMO == TRUE)
-  bt_app1_transfer_context(bt_app1_init_ok, 0, NULL, 0, NULL);
+#if(defined(BT_APP_DEMO) && BT_APP_DEMO == TRUE)
+  if (bluedroid_init_done_cb)
+  	bluedroid_init_done_cb();
 #endif
 }
 
