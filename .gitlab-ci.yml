@@ -154,8 +154,8 @@ push_master_to_github:
     expire_in: 6 mos
 
   script:
-    # assume that auto_test_script is a sub-module of SDK, otherwise add as submodule here
-    - git submodule update --init --recursive
+    - git clone ssh://git@gitlab.espressif.cn:27227/yinling/auto_test_script.git
+    - cd auto_test_script
     - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
 
 
@@ -168,8 +168,8 @@ push_master_to_github:
   script:
     # must be night build triggers, otherwise exit without test
     - test $NIGHT_BUILD != "Yes" || exit
-    # assume that auto_test_script is a sub-module of SDK
-    - git submodule update --init --recursive
+    - git clone ssh://git@gitlab.espressif.cn:27227/yinling/auto_test_script.git
+    - cd auto_test_script
     - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
 
 Function_SYS_01:
@@ -185,7 +185,6 @@ Function_WIFI_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_APC
     - SSC_T1_1
     - SSC_T1_WEP
     - SSC_T2_1
@@ -197,7 +196,6 @@ Function_WIFI_02:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_APC
     - SSC_T1_1
     - SSC_T1_WEP
     - SSC_T2_1
@@ -276,4 +274,13 @@ Function_TCPIP_07:
   before_script:
     - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_07.yml
+
+Function_WIFI_03:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_APC
+  before_script:
+    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_03.yml
 
