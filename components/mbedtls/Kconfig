@@ -1,0 +1,37 @@
+menu "mbedTLS"
+
+config MBEDTLS_SSL_MAX_CONTENT_LEN
+    int "TLS maximum message content length"
+	default 16384
+    range 512 16384
+    help
+        Maximum TLS message length (in bytes) supported by mbedTLS.
+        
+        16384 is the default and this value is required to comply
+        fully with TLS standards.
+        
+        However you can set a lower value in order to save RAM. This
+        is safe if the other end of the connection supports Maximum
+        Fragment Length Negotiation Extension (max_fragment_length,
+        see RFC6066) or you know for certain that it will never send a
+        message longer than a certain number of bytes.
+        
+        If the value is set too low, symptoms are a failed TLS
+        handshake or a return value of MBEDTLS_ERR_SSL_INVALID_RECORD
+        (-0x7200).
+
+config MBEDTLS_DEBUG
+   bool "Enable mbedTLS debugging"
+   default "no"
+   help
+       Enable mbedTLS debugging functions.
+       
+       If this option is enabled, use the mbedtls_debug_set_threshold()
+       and mbedtls_ssl_conf_dbg() functions to obtain debugging output
+       from mbedTLS.
+       
+       Note thatm mbedTLS debugging is not related to the ESP logging
+       functionality. See the "https_request_main" example for a
+       sample function which connects the two together.
+
+endmenu
