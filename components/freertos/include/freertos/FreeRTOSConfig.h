@@ -124,6 +124,16 @@
         abort();                                                        \
         }
 #endif
+
+#if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
+#include <stdlib.h>
+#include "rom/ets_sys.h"
+#define UNTESTED_FUNCTION() { ets_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#else
+#define UNTESTED_FUNCTION()
+#endif
+
+
 #endif /* def __ASSEMBLER__ */
 
 
@@ -263,12 +273,6 @@
 #define configXT_SIMULATOR					0
 
 
-#if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-#include "rom/ets_sys.h"
-#define UNTESTED_FUNCTION() { ets_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
-#else
-#define UNTESTED_FUNCTION()
-#endif
 
 
 #endif /* FREERTOS_CONFIG_H */
