@@ -61,8 +61,9 @@
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-#include "esp_err.h"
 #include "rom/queue.h"
+#include "esp_err.h"
+#include "esp_event.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,8 +145,8 @@ typedef struct {
 } wifi_init_config_t;
 
 
-#define WIFI_INIT_CONFIG_DEFAULT(event_handler_) { \
-    .event_handler = (wifi_event_handler_t)event_handler_, \
+#define WIFI_INIT_CONFIG_DEFAULT() { \
+    .event_handler = &esp_event_send, \
 };
 
 /**
