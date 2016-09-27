@@ -13,7 +13,7 @@ esp_err_t event_handler(void *ctx, system_event_t *event)
 
 int app_main(void)
 {
-    nvs_flash_init(6, 3);
+    nvs_flash_init();
     system_init();
     tcpip_adapter_init();
     ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
