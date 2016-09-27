@@ -2066,64 +2066,6 @@ test cases:
   test point 2: wifi connect status check
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
-  ID: WIFI_CONN_0701
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 sta -D
-    - [R SSC1 C QAP]
-  - - SSC SSC1 sta -Q
-    - ['R SSC1 C +STA_STATUS:0']
-  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
-    - ['R SSC1 C +JAP:OK']
-  - - SSC SSC1 sta -Q
-    - ['R SSC1 C +STA_STATUS:1', 'R SSC1 C +JAP:CONNECTED']
-  - - SSC SSC1 sta -Q
-    - ['R SSC1 C +STA_STATUS:5']
-  - - APC <APC1> OFF <ap_apc>
-    - [P PC_COM L OK, P SSC1 C bcn_timout]
-  - - SSC SSC1 sta -Q
-    - ['R SSC1 C +STA_STATUS:4']
-  - - APC <APC1> ON <ap_apc>
-    - [P PC_COM L OK]
-  comment: ''
-  execution time: 0.0
-  expected result: '1. idle state
-
-    2. connecting state
-
-    3. got IP state
-
-    4. connect fail state'
-  initial condition: STAM1
-  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
-    TC with initial condition STAAP1
-  module: WIFI MAC
-  steps: '1. sta disconnected, query status
-
-    2. sta connect to AP, query status
-
-    3. got IP, query status
-
-    4. AP power off, query status when beacon timeout'
-  sub module: WIFI Connect
-  summary: check wifi status idle, connecting, got ip and connect fail
-  test environment: SSC_T1_APC
-  test environment description (auto): "PC has 1 wired NIC connected to AP.\nPC has\
-    \ 1 wired NIC connected to APC (static IP within the same subnet with APC). \n\
-    APC control AP power supply. \nPC has 1 WiFi NIC. \n1 SSC target connect with\
-    \ PC by UART."
-  test point 1: basic function
-  test point 2: wifi connect status check
-  version: v1 (2016-8-15)
-- CI ready: 'Yes'
   ID: TCPIP_DNS_0102
   SDK: '8266_NonOS
 
@@ -2602,64 +2544,6 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: IGMP API parameter check
-  version: v1 (2016-8-15)
-- CI ready: 'Yes'
-  ID: ^WIFI_CONN_0701
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 sta -D
-    - [R SSC1 C QAP]
-  - - SSC SSC1 sta -Q
-    - ['R SSC1 C +STA_STATUS:0']
-  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
-    - ['R SSC1 C +JAP:OK']
-  - - SSC SSC1 sta -Q
-    - ['R SSC1 C +STA_STATUS:1', 'R SSC1 C +JAP:CONNECTED']
-  - - SSC SSC1 sta -Q
-    - ['R SSC1 C +STA_STATUS:5']
-  - - APC <APC1> OFF <ap_apc>
-    - [P PC_COM L OK, P SSC1 C bcn_timout]
-  - - SSC SSC1 sta -Q
-    - ['R SSC1 C +STA_STATUS:4']
-  - - APC <APC1> ON <ap_apc>
-    - [P PC_COM L OK]
-  comment: ''
-  execution time: 0.0
-  expected result: '1. idle state
-
-    2. connecting state
-
-    3. got IP state
-
-    4. connect fail state'
-  initial condition: STAAP1
-  initial condition description (auto): testing sta on sta + ap mode, quit AP (autogen
-    by STAM1)
-  module: WIFI MAC
-  steps: '1. sta disconnected, query status
-
-    2. sta connect to AP, query status
-
-    3. got IP, query status
-
-    4. AP power off, query status when beacon timeout'
-  sub module: WIFI Connect
-  summary: check wifi status idle, connecting, got ip and connect fail
-  test environment: SSC_T1_APC
-  test environment description (auto): "PC has 1 wired NIC connected to AP.\nPC has\
-    \ 1 wired NIC connected to APC (static IP within the same subnet with APC). \n\
-    APC control AP power supply. \nPC has 1 WiFi NIC. \n1 SSC target connect with\
-    \ PC by UART."
-  test point 1: basic function
-  test point 2: wifi connect status check
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
   ID: ^WIFI_CONN_0703
@@ -7986,46 +7870,6 @@ test cases:
   test point 2: wifi disconnect reason test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
-  ID: ^WIFI_CONN_0902
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
-    - ['R SSC1 C +JAP:CONNECTED']
-  - - APC <APC1> OFF <ap_apc>
-    - [P PC_COM L OK, 'R SSC1 C +JAP:DISCONNECTED,1,200']
-  - - APC <APC1> ON <ap_apc>
-    - [P PC_COM L OK]
-  comment: ''
-  execution time: 0.0
-  expected result: '1. succeed
-
-    2. disconnect event REASON_BEACON_TIMEOUT'
-  initial condition: STAAP1
-  initial condition description (auto): testing sta on sta + ap mode, quit AP (autogen
-    by STAM1)
-  module: WIFI MAC
-  steps: '1. connect to AP
-
-    2. AP power off'
-  sub module: WIFI Connect
-  summary: test wifi disconnect reason REASON_BEACON_TIMEOUT
-  test environment: SSC_T1_APC
-  test environment description (auto): "PC has 1 wired NIC connected to AP.\nPC has\
-    \ 1 wired NIC connected to APC (static IP within the same subnet with APC). \n\
-    APC control AP power supply. \nPC has 1 WiFi NIC. \n1 SSC target connect with\
-    \ PC by UART."
-  test point 1: basic function
-  test point 2: wifi disconnect reason test
-  version: v1 (2016-8-15)
-- CI ready: 'Yes'
   ID: ^WIFI_CONN_0901
   SDK: '8266_NonOS
 
@@ -12215,46 +12059,6 @@ test cases:
     PC has 1 WiFi NIC.
 
     1 SSC target connect with PC by UART.'
-  test point 1: basic function
-  test point 2: wifi disconnect reason test
-  version: v1 (2016-8-15)
-- CI ready: 'Yes'
-  ID: WIFI_CONN_0902
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
-    - ['R SSC1 C +JAP:CONNECTED']
-  - - APC <APC1> OFF <ap_apc>
-    - [P PC_COM L OK, 'R SSC1 C +JAP:DISCONNECTED,1,200']
-  - - APC <APC1> ON <ap_apc>
-    - [P PC_COM L OK]
-  comment: ''
-  execution time: 0.0
-  expected result: '1. succeed
-
-    2. disconnect event REASON_BEACON_TIMEOUT'
-  initial condition: STAM1
-  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
-    TC with initial condition STAAP1
-  module: WIFI MAC
-  steps: '1. connect to AP
-
-    2. AP power off'
-  sub module: WIFI Connect
-  summary: test wifi disconnect reason REASON_BEACON_TIMEOUT
-  test environment: SSC_T1_APC
-  test environment description (auto): "PC has 1 wired NIC connected to AP.\nPC has\
-    \ 1 wired NIC connected to APC (static IP within the same subnet with APC). \n\
-    APC control AP power supply. \nPC has 1 WiFi NIC. \n1 SSC target connect with\
-    \ PC by UART."
   test point 1: basic function
   test point 2: wifi disconnect reason test
   version: v1 (2016-8-15)

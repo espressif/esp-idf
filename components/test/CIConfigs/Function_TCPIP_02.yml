@@ -1,7 +1,7 @@
-Config: {debug mode: false, execute count: 1, execute order: in order}
+Config: {execute count: 1, execute order: in order}
 DUT: [SSC2, SSC1]
 Filter:
-- ADD:
+- Add:
     ID: [^TCPIP_IGMP_0104, ^TCPIP_UDP_0110, TCPIP_IGMP_0104, TCPIP_IGMP_0103, TCPIP_IGMP_0102,
       TCPIP_IGMP_0101, ^TCPIP_UDP_0201, ^TCPIP_ICMP_0101, TCPIP_UDP_0108, TCPIP_UDP_0109,
       TCPIP_UDP_0106, TCPIP_UDP_0107, TCPIP_UDP_0104, TCPIP_UDP_0105, TCPIP_UDP_0102,
