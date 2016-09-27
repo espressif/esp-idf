@@ -186,7 +186,7 @@ static int ssl_pm_reload_crt(SSL *ssl)
     if (ca_pm->x509_crt) {
         mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, ca_pm->x509_crt, NULL);
     } else if (ca_pm->ex_crt) {
-        mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, ca_pm->x509_crt, NULL);
+        mbedtls_ssl_conf_ca_chain(&ssl_pm->conf, ca_pm->ex_crt, NULL);
     }
 
     if (crt_pm->x509_crt && pkey_pm->pkey) {
