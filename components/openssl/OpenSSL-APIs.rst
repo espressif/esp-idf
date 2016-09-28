@@ -8,24 +8,31 @@ License 2.0 as described in the file LICENSE.
 Chapter Introduction
 ====================
 
-Chapter 1. SSL Context Method Create
-Chapter 2. SSL Context Fucntion
-Chapter 3. SSL Fucntion
-Chapter 4. SSL X509 Certification and Private Key Function
+- Chapter 1. SSL Context Method Create
+- Chapter 2. SSL Context Fucntion
+- Chapter 3. SSL Fucntion
+- Chapter 4. SSL X509 Certification and Private Key Function
 
 
 Chapter 1. SSL Context Method Create 
 ====================================
 
-1.1 const SSL_METHOD* SSLv23_client_method(void);
 
-    Arguments : none
+1.1 const SSL_METHOD* ``SSLv23_client_method``(void)
+
+    Arguments::
     
-    Return : SSLV2 and 3 version SSL context client method point
+        none
     
-    Description : create the target SSL context method
+    Return::
     
-    Example :
+        SSLV2 and 3 version SSL context client method point
+    
+    Description::
+    
+        create the target SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -35,15 +42,21 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.2 const SSL_METHOD* TLSv1_client_method(void);
+1.2 const SSL_METHOD* ``TLSv1_client_method``(void)
 
-    Arguments : none
+    Arguments::
     
-    Return : TLSV1.0 version SSL context client method point
+        none
     
-    Description : create the target SSL context method
+    Return::
     
-    Example :
+        TLSV1.0 version SSL context client method point
+    
+    Description::
+    
+        create the target SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -53,15 +66,21 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.3 const SSL_METHOD* SSLv3_client_method(void);
+1.3 const SSL_METHOD* ``SSLv3_client_method``(void)
 
-    Arguments : none
+    Arguments::
     
-    Return : SSLV3.0 version SSL context client method point
+        none
     
-    Description : create the target SSL context method
+    Return::
     
-    Example :
+        SSLV3.0 version SSL context client method point
+    
+    Description::
+    
+        create the target SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -71,15 +90,21 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.4 const SSL_METHOD* TLSv1_1_client_method(void);
+1.4 const SSL_METHOD* ``TLSv1_1_client_method``(void)
 
-    Arguments : none
+    Arguments::
     
-    Return : TLSV1.1 version SSL context client method point
+        none
     
-    Description : create the target SSL context method
+    Return::
     
-    Example :
+        TLSV1.1 version SSL context client method point
+    
+    Description::
+    
+        create the target SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -89,15 +114,21 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.5 const SSL_METHOD* TLSv1_2_client_method(void);
+1.5 const SSL_METHOD* ``TLSv1_2_client_method``(void)
 
-    Arguments : none
+    Arguments::
     
-    Return : TLSV1.2 version SSL context client method point
+       none
     
-    Description : create the target SSL context method
+    Return::
     
-    Example :
+       TLSV1.2 version SSL context client method point
+    
+    Description::
+    
+       create the target SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -107,15 +138,21 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.6 const SSL_METHOD* SSLv23_server_method(void);
+1.6 const SSL_METHOD* ``SSLv23_server_method``(void)
 
-    Arguments : none
+    Arguments::
     
-    Return : SSLV2 and 3 version SSL context server method point
+        none
     
-    Description : create the target SSL context method
+    Return::
     
-    Example :
+        SSLV2 and 3 version SSL context server method point
+    
+    Description::
+    
+        create the target SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -125,13 +162,19 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.7 const SSL_METHOD* TLSv1_1_server_method(void);
+1.7 const SSL_METHOD* ``TLSv1_1_server_method``(void)
 
-    Arguments : none
+    Arguments::
     
-    Return : TLSV1.1 version SSL context server method point
+        none
     
-    Description : create the target SSL context method
+    Return::
+    
+        TLSV1.1 version SSL context server method point
+    
+    Description::
+    
+        create the target SSL context method
     
     Example :
     
@@ -143,15 +186,21 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.8 const SSL_METHOD* TLSv1_2_server_method(void);
+1.8 const SSL_METHOD* ``TLSv1_2_server_method``(void)
 
-    Arguments : none
+    Arguments::
     
-    Return : TLSV1.2 version SSL context server method point
+        none
     
-    Description : create the target SSL context method
+    Return::
     
-    Example :
+        TLSV1.2 version SSL context server method point
+    
+    Description::
+    
+        create the target SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -161,15 +210,21 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.9 const SSL_METHOD* TLSv1_server_method(void);
+1.9 const SSL_METHOD* ``TLSv1_server_method``(void)
 
-    Arguments : none
+    Arguments::
     
-    Return : TLSV1.0 version SSL context server method point
+        none
     
-    Description : create the target SSL context method
+    Return::
     
-    Example :
+        TLSV1.0 version SSL context server method point
+    
+    Description::
+    
+        create the target SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -179,15 +234,21 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.10 const SSL_METHOD* SSLv3_server_method(void);
+1.10 const SSL_METHOD* ``SSLv3_server_method``(void)
 
-    Arguments : none
+    Arguments::
     
-    Return : SSLV3.0 version SSL context server method point
+        none
     
-    Description : create the target SSL context method
+    Return::
     
-    Example :
+        SSLV3.0 version SSL context server method point
+    
+    Description::
+    
+        create the target SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -201,15 +262,22 @@ Chapter 1. SSL Context Method Create
 Chapter 2. SSL Context Fucntion
 ===============================
 
-2.1 SSL_CTX* SSL_CTX_new(const SSL_METHOD *method);
 
-    Arguments : method - the SSL context method point
+2.1 SSL_CTX* ``SSL_CTX_new``(const SSL_METHOD *method)
+
+    Arguments::
     
-    Return : context point
+        method - the SSL context method point
     
-    Description : create a SSL context
+    Return::
     
-    Example :
+        context point
+    
+    Description::
+    
+        create a SSL context
+    
+    Example::
     
         void example(void)
         {
@@ -219,15 +287,21 @@ Chapter 2. SSL Context Fucntion
         }
 
 
-2.2 void SSL_CTX_free(SSL_CTX *ctx);
+2.2 ``void SSL_CTX_free``(SSL_CTX *ctx)
 
-    Arguments : ctx - the SSL context point
+    Arguments::
     
-    Return : none
+        ctx - the SSL context point
     
-    Description : free a SSL context
+    Return::
     
-    Example :
+        none
+    
+    Description::
+    
+        free a SSL context
+    
+    Example::
     
         void example(void)
         {
@@ -239,18 +313,23 @@ Chapter 2. SSL Context Fucntion
         }
 
 
-2.3 int SSL_CTX_set_ssl_version(SSL_CTX *ctx, const SSL_METHOD *meth);
+2.3 ``int SSL_CTX_set_ssl_version``(SSL_CTX *ctx, const SSL_METHOD *meth)
 
-    Arguments : ctx  - SSL context point
-                meth - SSL method point
+    Arguments::
     
-    Return : result
+        ctx  - SSL context point
+        meth - SSL method point
+    
+    Return::
+    
         1 : OK
         0 : failed
     
-    Description : set the SSL context version
+    Description::
     
-    Example :
+        set the SSL context version
+    
+    Example::
     
         void example(void)
         {
@@ -263,15 +342,21 @@ Chapter 2. SSL Context Fucntion
         }
 
 
-2.4 const SSL_METHOD *SSL_CTX_get_ssl_method(SSL_CTX *ctx);
+2.4 const SSL_METHOD* ``SSL_CTX_get_ssl_method``(SSL_CTX *ctx)
 
-    Arguments : ctx - SSL context point
+    Arguments::
     
-    Return : SSL context method
+        ctx - SSL context point
     
-    Description : get the SSL context method
+    Return::
     
-    Example :
+        SSL context method
+    
+    Description::
+    
+        get the SSL context method
+    
+    Example::
     
         void example(void)
         {
@@ -288,15 +373,22 @@ Chapter 2. SSL Context Fucntion
 Chapter 3. SSL Fucntion
 =======================
 
-3.1 SSL* SSL_new(SSL_CTX *ctx);
 
-    Arguments : ctx - SSL context point
+3.1 SSL* ``SSL_new``(SSL_CTX *ctx)
+
+    Arguments::
     
-    Return : SSL method
+        ctx - SSL context point
     
-    Description : create a SSL
+    Return::
     
-    Example :
+        SSL method
+    
+    Description::
+    
+        create a SSL
+    
+    Example::
     
         void example(void)
         {
@@ -309,15 +401,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.2 void SSL_free(SSL *ssl);
+3.2 void ``SSL_free``(SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : none
+        ssl - SSL point
     
-    Description : free SSL
+    Return::
     
-    Example :
+        none
+    
+    Description::
+    
+        free SSL
+    
+    Example::
     
         void example(void)
         {
@@ -329,18 +427,23 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.3 int SSL_do_handshake(SSL *ssl);
+3.3 int ``SSL_do_handshake``(SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         1 : OK
         0 : failed, connect is close by remote
        -1 : a error catch
     
-    Description : perform the SSL handshake
+    Description::
     
-    Example :
+        perform the SSL handshake
+    
+    Example::
     
         void example(void)
         {
@@ -353,18 +456,23 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.4 int SSL_connect(SSL *ssl);
+3.4 int ``SSL_connect``(SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         1 : OK
         0 : failed, connect is close by remote
        -1 : a error catch
     
-    Description : connect to the remote SSL server
+    Description::
     
-    Example :
+        connect to the remote SSL server
+    
+    Example::
     
         void example(void)
         {
@@ -377,18 +485,23 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.5 int SSL_accept(SSL *ssl);
+3.5 int ``SSL_accept``(SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         1 : OK
         0 : failed, connect is close by remote
        -1 : a error catch
     
-    Description : accept the remote connection
+    Description::
     
-    Example :
+        accept the remote connection
+    
+    Example::
     
         void example(void)
         {
@@ -401,18 +514,23 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.6 int SSL_shutdown(SSL *ssl);
+3.6 int ``SSL_shutdown``(SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         1 : OK
         0 : failed, connect is close by remote
        -1 : a error catch
     
-    Description : shutdown the connection
+    Description::
     
-    Example :
+        shutdown the connection
+    
+    Example::
     
         void example(void)
         {
@@ -425,17 +543,22 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.7 int SSL_clear(SSL *ssl);
+3.7 int ``SSL_clear``(SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         1 : OK
         0 : failed
         
-    Description : shutdown the connection
+    Description::
     
-    Example :
+        shutdown the connection
+    
+    Example::
     
         void example(void)
         {
@@ -448,20 +571,25 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.8 int SSL_read(SSL *ssl, void *buffer, int len);
+3.8 int ``SSL_read``(SSL *ssl, void *buffer, int len)
 
-    Arguments : ssl    - point
-                buffer - data buffer point
-                len    - data length
+    Arguments::
     
-    Return : result
+        ssl    - point
+        buffer - data buffer point
+        len    - data length
+    
+    Return::
+    
         > 0 : OK, and return received data bytes
         = 0 : no data received or connection is closed
         < 0 : an error catch
         
-    Description : read data from remote
+    Description::
     
-    Example :
+        read data from remote
+    
+    Example::
     
         void example(void)
         {
@@ -475,20 +603,25 @@ Chapter 3. SSL Fucntion
             ret = SSL_read(ssl, buf, len);
         }
 
-3.9 int SSL_write(SSL *ssl, const void *buffer, int len);
+3.9 int ``SSL_write``(SSL *ssl, const void *buffer, int len)
 
-    Arguments : ssl    - SSL point
-                buffer - data buffer point
-                len    - data length
+    Arguments::
     
-    Return : result
+        ssl    - SSL point
+        buffer - data buffer point
+        len    - data length
+    
+    Return::
+    
         > 0 : OK, and return received data bytes
         = 0 : no data sent or connection is closed
         < 0 : an error catch
         
-    Description : send the data to remote
+    Description::
     
-    Example :
+        send the data to remote
+    
+    Example::
     
         void example(void)
         {
@@ -503,15 +636,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.10 SSL_CTX *SSL_get_SSL_CTX(const SSL *ssl);
+3.10 ``SSL_CTX *SSL_get_SSL_CTX``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : SSL context
+        ssl - SSL point
+    
+    Return::
+    
+        SSL context
         
-    Description : get SSL context of the SSL
+    Description::
     
-    Example :
+        get SSL context of the SSL
+    
+    Example::
     
         void example(void)
         {
@@ -524,15 +663,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.11 int SSL_get_shutdown(const SSL *ssl);
+3.11 int ``SSL_get_shutdown``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : shutdown mode
+        ssl - SSL point
+    
+    Return::
+    
+        shutdown mode
         
-    Description : get SSL shutdown mode
+    Description::
     
-    Example :
+        get SSL shutdown mode
+    
+    Example::
     
         void example(void)
         {
@@ -545,15 +690,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.12 void SSL_set_shutdown(SSL *ssl, int mode);
+3.12 void ``SSL_set_shutdown``(SSL *ssl, int mode)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : shutdown mode
+        ssl - SSL point
+    
+    Return::
+    
+        shutdown mode
         
-    Description : set SSL shutdown mode
+    Description::
     
-    Example :
+        set SSL shutdown mode
+    
+    Example::
     
         void example(void)
         {
@@ -566,15 +717,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.13 const SSL_METHOD *SSL_get_ssl_method(SSL *ssl);
+3.13 const SSL_METHOD* ``SSL_get_ssl_method``(SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : SSL method
+        ssl - SSL point
+    
+    Return::
+    
+        SSL method
         
-    Description : set SSL shutdown mode
+    Description::
     
-    Example :
+        set SSL shutdown mode
+    
+    Example::
     
         void example(void)
         {
@@ -587,18 +744,23 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.14 int SSL_set_ssl_method(SSL *ssl, const SSL_METHOD *method);
+3.14 int ``SSL_set_ssl_method``(SSL *ssl, const SSL_METHOD *method)
 
-    Arguments : ssl  - SSL point
-                meth - SSL method point
+    Arguments::
     
-    Return : result
+        ssl  - SSL point
+        meth - SSL method point
+    
+    Return::
+    
         1 : OK
         0 : failed
         
-    Description : set the SSL method
+    Description::
     
-    Example :
+        set the SSL method
+    
+    Example::
     
         void example(void)
         {
@@ -612,15 +774,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.15 int SSL_pending(const SSL *ssl);
+3.15 int ``SSL_pending``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : data bytes
+        ssl - SSL point
+    
+    Return::
+    
+        data bytes
         
-    Description : get received data bytes
+    Description::
     
-    Example :
+        get received data bytes
+    
+    Example::
     
         void example(void)
         {
@@ -633,17 +801,22 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.16 int SSL_has_pending(const SSL *ssl);
+3.16 int ``SSL_has_pending``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         1 : Yes
         0 : No
         
-    Description : check if data is received
+    Description::
     
-    Example :
+        check if data is received
+    
+    Example::
     
         void example(void)
         {
@@ -656,17 +829,22 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.17 int SSL_get_fd(const SSL *ssl);
+3.17 int ``SSL_get_fd``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         >= 0 : socket id
          < 0 : a error catch
         
-    Description : get the socket of the SSL
+    Description::
     
-    Example :
+        get the socket of the SSL
+    
+    Example::
     
         void example(void)
         {
@@ -679,17 +857,22 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.18 int SSL_get_rfd(const SSL *ssl);
+3.18 int ``SSL_get_rfd``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         >= 0 : socket id
          < 0 : a error catch
         
-    Description : get the read only socket of the SSL
+    Description::
     
-    Example :
+        get the read only socket of the SSL
+    
+    Example::
     
         void example(void)
         {
@@ -702,17 +885,22 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.19 int SSL_get_wfd(const SSL *ssl);
+3.19 int ``SSL_get_wfd``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         >= 0 : socket id
          < 0 : a error catch
         
-    Description : get the write only socket of the SSL
+    Description::
     
-    Example :
+        get the write only socket of the SSL
+    
+    Example::
     
         void example(void)
         {
@@ -725,18 +913,23 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.20 int SSL_set_fd(SSL *ssl, int fd);
+3.20 int ``SSL_set_fd``(SSL *ssl, int fd)
 
-    Arguments : ssl - SSL point
-                fd  - socket id
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+        fd  - socket id
+    
+    Return::
+    
         1 : OK
         0 : failed
         
-    Description : set socket to SSL
+    Description::
     
-    Example :
+        set socket to SSL
+    
+    Example::
     
         void example(void)
         {
@@ -750,18 +943,23 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.21 int SSL_set_rfd(SSL *ssl, int fd);
+3.21 int ``SSL_set_rfd``(SSL *ssl, int fd)
 
-    Arguments : ssl - SSL point
-                fd  - socket id
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+        fd  - socket id
+    
+    Return::
+    
         1 : OK
         0 : failed
         
-    Description : set read only socket to SSL
+    Description::
     
-    Example :
+        set read only socket to SSL
+    
+    Example::
     
         void example(void)
         {
@@ -775,18 +973,23 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.22 int SSL_set_wfd(SSL *ssl, int fd);
+3.22 int ``SSL_set_wfd``(SSL *ssl, int fd)
 
-    Arguments : ssl - SSL point
-                fd  - socket id
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+        fd  - socket id
+    
+    Return::
+    
         1 : OK
         0 : failed
         
-    Description : set write only socket to SSL
+    Description::
     
-    Example :
+        set write only socket to SSL
+    
+    Example::
     
         void example(void)
         {
@@ -800,15 +1003,21 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.23 int SSL_version(const SSL *ssl);
+3.23 int ``SSL_version``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : SSL version
+        ssl - SSL point
+    
+    Return::
+    
+        SSL version
         
-    Description : get SSL version
+    Description::
     
-    Example :
+        get SSL version
+    
+    Example::
     
         void example(void)
         {
@@ -821,15 +1030,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.24 const char *SSL_get_version(const SSL *ssl);
+3.24 const char* ``SSL_get_version``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : SSL version string
+        ssl - SSL point
+    
+    Return::
+    
+        SSL version string
         
-    Description : get the SSL current version string
+    Description::
     
-    Example :
+        get the SSL current version string
+    
+    Example::
     
         void example(void)
         {
@@ -842,15 +1057,21 @@ Chapter 3. SSL Fucntion
         }
         
         
-3.25 OSSL_HANDSHAKE_STATE SSL_get_state(const SSL *ssl);
+3.25 OSSL_HANDSHAKE_STATE ``SSL_get_state``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : SSL state
+        ssl - SSL point
+    
+    Return::
+    
+        SSL state
         
-    Description : get the SSL state
+    Description::
     
-    Example :
+        get the SSL state
+    
+    Example::
     
         void example(void)
         {
@@ -863,15 +1084,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.26 const char *SSL_alert_desc_string(int value);
+3.26 const char* ``SSL_alert_desc_string``(int value)
 
-    Arguments : value - SSL description
+    Arguments::
     
-    Return : alert value string
+        value - SSL description
+    
+    Return::
+    
+        alert value string
         
-    Description : get alert description string
+    Description::
     
-    Example :
+        get alert description string
+    
+    Example::
     
         void example(void)
         {
@@ -884,15 +1111,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.27 const char *SSL_alert_desc_string_long(int value);
+3.27 const char* ``SSL_alert_desc_string_long``(int value)
 
-    Arguments : value - SSL description
+    Arguments::
     
-    Return : alert value long string
+        value - SSL description
+    
+    Return::
+    
+        alert value long string
         
-    Description : get alert description long string
+    Description::
     
-    Example :
+        get alert description long string
+    
+    Example::
     
         void example(void)
         {
@@ -905,15 +1138,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.28 const char *SSL_alert_type_string(int value);
+3.28 const char* ``SSL_alert_type_string``(int value)
 
-    Arguments : value - SSL type description
+    Arguments::
     
-    Return : alert type string
+        value - SSL type description
+    
+    Return::
+    
+        alert type string
         
-    Description : get alert type string
+    Description::
     
-    Example :
+        get alert type string
+    
+    Example::
     
         void example(void)
         {
@@ -926,15 +1165,21 @@ Chapter 3. SSL Fucntion
         }
         
         
-3.29 const char *SSL_alert_type_string_long(int value);
+3.29 const char* ``SSL_alert_type_string_long``(int value)
 
-    Arguments : value - SSL type description
+    Arguments::
     
-    Return : alert type long string
+        value - SSL type description
+    
+    Return::
+    
+        alert type long string
         
-    Description : get alert type long string
+    Description::
     
-    Example :
+        get alert type long string
+    
+    Example::
     
         void example(void)
         {
@@ -946,15 +1191,21 @@ Chapter 3. SSL Fucntion
             str = SSL_alert_type_string_long(val);
         }
 
-3.30 const char *SSL_rstate_string(SSL *ssl);
+3.30 const char* ``SSL_rstate_string``(SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : state string
+        ssl - SSL point
+    
+    Return::
+    
+        state string
         
-    Description : get the state string where SSL is reading
+    Description::
     
-    Example :
+        get the state string where SSL is reading
+    
+    Example::
     
         void example(void)
         {
@@ -967,15 +1218,21 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.31 const char *SSL_rstate_string_long(SSL *ssl);
+3.31 const char* ``SSL_rstate_string_long``(SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : state long string
+        ssl - SSL point
+    
+    Return::
+    
+        state long string
         
-    Description : get the state long string where SSL is reading
+    Description::
     
-    Example :
+        get the state long string where SSL is reading
+    
+    Example::
     
         void example(void)
         {
@@ -988,15 +1245,48 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.32 char *SSL_state_string(const SSL *ssl);
+3.32 const char* ``SSL_state_string``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : state string
+        ssl - SSL point
+    
+    Return::
+    
+        state string
         
-    Description : get the state string
+    Description::
     
-    Example :
+        get the state string
+    
+    Example::
+    
+        void example(void)
+        {
+            SSL *ssl;
+            const char *str;
+                        
+            ... ...
+            
+            str = SSL_state_string(ssl);
+        }
+
+
+3.33 char* ``SSL_state_string_long``(const SSL *ssl)
+
+    Arguments::
+    
+        ssl - SSL point
+    
+    Return::
+    
+        state long string
+        
+    Description::
+    
+        get the state long string
+    
+    Example::
     
         void example(void)
         {
@@ -1009,37 +1299,22 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.33 char *SSL_state_string_long(const SSL *ssl);
+3.34 int ``SSL_get_error``(const SSL *ssl, int ret_code)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : state long string
+        ssl      - SSL point
+        ret_code - SSL return code
+    
+    Return::
+    
+        SSL error number
         
-    Description : get the state long string
+    Description::
     
-    Example :
+        get SSL error code
     
-        void example(void)
-        {
-            SSL *ssl;
-            char *str;
-                        
-            ... ...
-            
-            str = SSL_state_string(ssl);
-        }
-
-
-3.34 int SSL_get_error(const SSL *ssl, int ret_code);
-
-    Arguments : ssl      - SSL point
-                ret_code - SSL return code
-    
-    Return : SSL error number
-        
-    Description : get SSL error code
-    
-    Example :
+    Example::
     
         void example(void)
         {
@@ -1052,16 +1327,22 @@ Chapter 3. SSL Fucntion
             err = SSL_get_error(ssl, ret);
         }
         
-3.35 void SSL_CTX_set_default_read_buffer_len(SSL_CTX *ctx, size_t len);
+3.35 void ``SSL_CTX_set_default_read_buffer_len``(SSL_CTX *ctx, size_t len)
 
-    Arguments : ctx - SSL context point
-                len - read buffer length
+    Arguments::
     
-    Return : none
+        ctx - SSL context point
+        len - read buffer length
+    
+    Return::
+    
+        none
         
-    Description : set the SSL context read buffer length
+    Description::
     
-    Example :
+        set the SSL context read buffer length
+    
+    Example::
     
         void example(void)
         {
@@ -1074,16 +1355,22 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.36 void SSL_set_default_read_buffer_len(SSL *ssl, size_t len);
+3.36 void ``SSL_set_default_read_buffer_len``(SSL *ssl, size_t len)
 
-    Arguments : ssl - SSL point
-                len - read buffer length
+    Arguments::
     
-    Return : none
+        ssl - SSL point
+        len - read buffer length
+    
+    Return::
+    
+        none
         
-    Description : set the SSL read buffer length
+    Description::
     
-    Example :
+        set the SSL read buffer length
+    
+    Example::
     
         void example(void)
         {
@@ -1096,15 +1383,21 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.37 int SSL_want(const SSL *ssl);
+3.37 int ``SSL_want``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : specifical statement
+        ssl - SSL point
+    
+    Return::
+    
+        specifical statement
         
-    Description : get the SSL specifical statement
+    Description::
     
-    Example :
+        get the SSL specifical statement
+    
+    Example::
     
         void example(void)
         {
@@ -1117,17 +1410,22 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.38 int SSL_want_nothing(const SSL *ssl);
+3.38 int ``SSL_want_nothing``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         0 : false
         1 : true
         
-    Description : check if SSL want nothing
+    Description::
     
-    Example :
+        check if SSL want nothing
+    
+    Example::
     
         void example(void)
         {
@@ -1140,17 +1438,22 @@ Chapter 3. SSL Fucntion
         }
         
         
-3.39 int SSL_want_read(const SSL *ssl);
+3.39 int ``SSL_want_read``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         0 : false
         1 : true
         
-    Description : check if SSL want to read
+    Description::
     
-    Example :
+        check if SSL want to read
+    
+    Example::
     
         void example(void)
         {
@@ -1163,17 +1466,22 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.40 int SSL_want_write(const SSL *ssl);
+3.40 int ``SSL_want_write``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+    
+    Return::
+    
         0 : false
         1 : true
         
-    Description : check if SSL want to write
+    Description::
     
-    Example :
+        check if SSL want to write
+    
+    Example::
     
         void example(void)
         {
@@ -1189,18 +1497,25 @@ Chapter 3. SSL Fucntion
 Chapter 4. SSL X509 Certification and Private Key Function
 ==========================================================
 
-4.1 X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len);
 
-    Arguments : cert   - a point pointed to X509 certification
-                buffer - a point pointed to the certification context memory point
-                length - certification bytes
+4.1 X509* ``d2i_X509``(X509 **cert, const unsigned char *buffer, long len)
+
+    Arguments::
     
-    Return : X509 certification object point
+        cert   - a point pointed to X509 certification
+        buffer - a point pointed to the certification context memory point
+        length - certification bytes
+    
+    Return::
+    
+        X509 certification object point
         
-    Description : load a character certification context into system context. If '*cert' is pointed to the
-                  certification, then load certification into it. Or create a new X509 certification object
+    Description::
     
-    Example :
+        load a character certification context into system context. If '*cert' is pointed to the
+        certification, then load certification into it. Or create a new X509 certification object
+    
+    Example::
     
         void example(void)
         {
@@ -1214,18 +1529,23 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.2 int SSL_add_client_CA(SSL *ssl, X509 *x);
+4.2 int ``SSL_add_client_CA``(SSL *ssl, X509 *x)
 
-    Arguments : ssl - SSL point
-                x   - CA certification point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+        x   - CA certification point
+    
+    Return::
+
         1 : OK
         0 : failed
         
-    Description : add CA client certification into the SSL
+    Description::
     
-    Example :
+        add CA client certification into the SSL
+    
+    Example::
     
         void example(void)
         {
@@ -1239,18 +1559,23 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.3 int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x);
+4.3 int ``SSL_CTX_add_client_CA``(SSL_CTX *ctx, X509 *x)
 
-    Arguments : ctx - SSL context point
-                x   - CA certification point
+    Arguments::
     
-    Return : result
+        ctx - SSL context point
+         x   - CA certification point
+    
+    Return::
+
         1 : OK
         0 : failed
         
-    Description : add CA client certification into the SSL context
+    Description::
     
-    Example :
+        add CA client certification into the SSL context
+    
+    Example::
     
         void example(void)
         {
@@ -1264,15 +1589,21 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.4 X509 *SSL_get_certificate(const SSL *ssl);
+4.4 X509* ``SSL_get_certificate``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : SSL certification point
+        ssl - SSL point
+    
+    Return::
+    
+        SSL certification point
         
-    Description : get the SSL certification point
+    Description::
     
-    Example :
+        get the SSL certification point
+    
+    Example::
     
         void example(void)
         {
@@ -1285,15 +1616,21 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.5 long SSL_get_verify_result(const SSL *ssl);
+4.5 long ``SSL_get_verify_result``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : the result of verifying
+        ssl - SSL point
+    
+    Return::
+    
+        the result of verifying
         
-    Description : get the verifying result of the SSL certification
+    Description::
     
-    Example :
+        get the verifying result of the SSL certification
+    
+    Example::
     
         void example(void)
         {
@@ -1306,18 +1643,23 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.6 int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x);
+4.6 int ``SSL_CTX_use_certificate``(SSL_CTX *ctx, X509 *x)
 
-    Arguments : ctx  - the SSL context point
-                pkey - certification object point
+    Arguments::
     
-    Return : result
+        ctx  - the SSL context point
+        pkey - certification object point
+    
+    Return::
+    
         1 : OK
         0 : failed
         
-    Description : load the certification into the SSL_CTX or SSL object
+    Description::
     
-    Example :
+        load the certification into the SSL_CTX or SSL object
+    
+    Example::
     
         void example(void)
         {
@@ -1331,19 +1673,24 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.7 int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len, const unsigned char *d);
+4.7 int ``SSL_CTX_use_certificate_ASN1``(SSL_CTX *ctx, int len, const unsigned char *d)
 
-    Arguments : ctx - SSL context point
-                len - certification length
-                d   - data point
+    Arguments::
     
-    Return : result
+        ctx - SSL context point
+        len - certification length
+        d   - data point
+    
+    Return::
+     
         1 : OK
         0 : failed
         
-    Description : load the ASN1 certification into SSL context
+    Description::
     
-    Example :
+        load the ASN1 certification into SSL context
+    
+    Example::
     
         void example(void)
         {
@@ -1358,18 +1705,23 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
         
 
-4.8 int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey);
+4.8 int ``SSL_CTX_use_PrivateKey``(SSL_CTX *ctx, EVP_PKEY *pkey)
 
-    Arguments : ctx - SSL context point
-                pkey - private key object point
+    Arguments::
     
-    Return : result
+        ctx - SSL context point
+        pkey - private key object point
+    
+    Return::
+
         1 : OK
         0 : failed
         
-    Description : load the private key into the context object
+    Description::
     
-    Example :
+        load the private key into the context object
+    
+    Example::
     
         void example(void)
         {
@@ -1383,19 +1735,24 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.9 int SSL_CTX_use_PrivateKey_ASN1(int pk, SSL_CTX *ctx, const unsigned char *d,  long len);
+4.9 int ``SSL_CTX_use_PrivateKey_ASN1``(int pk, SSL_CTX *ctx, const unsigned char *d,  long len)
 
-    Arguments : ctx - SSL context point
-                d   - data point
-                len - private key length
+    Arguments::
     
-    Return : result
+        ctx - SSL context point
+        d   - data point
+        len - private key length
+    
+    Return::
+    
         1 : OK
         0 : failed
         
-    Description : load the ASN1 private key into SSL context
+    Description::
     
-    Example :
+        load the ASN1 private key into SSL context
+    
+    Example::
     
         void example(void)
         {
@@ -1411,19 +1768,24 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
         
 
-4.10 int SSL_CTX_use_RSAPrivateKey_ASN1(SSL_CTX *ctx, const unsigned char *d, long len);
+4.10 int ``SSL_CTX_use_RSAPrivateKey_ASN1``(SSL_CTX *ctx, const unsigned char *d, long len)
 
-    Arguments : ctx - SSL context point
-                d   - data point
-                len - private key length
+    Arguments::
     
-    Return : result
+        ctx - SSL context point
+        d   - data point
+        len - private key length
+    
+    Return::
+    
         1 : OK
         0 : failed
         
-    Description : load the RSA ASN1 private key into SSL context
+    Description::
     
-    Example :
+        load the RSA ASN1 private key into SSL context
+    
+    Example::
     
         void example(void)
         {
@@ -1438,19 +1800,24 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.11 int SSL_use_certificate_ASN1(SSL *ssl, int len, const unsigned char *d);
+4.11 int ``SSL_use_certificate_ASN1``(SSL *ssl, int len, const unsigned char *d)
 
-    Arguments : ssl - SSL point
-                len - data bytes
-                d   - data point
+    Arguments::
     
-    Return : result
+        ssl - SSL point
+        len - data bytes
+        d   - data point
+    
+    Return::
+    
         1 : OK
         0 : failed
         
-    Description : load certification into the SSL
+    Description::
     
-    Example :
+        load certification into the SSL
+    
+    Example::
     
         void example(void)
         {
@@ -1465,15 +1832,21 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.12 X509 *SSL_get_peer_certificate(const SSL *ssl);
+4.12 X509* ``SSL_get_peer_certificate``(const SSL *ssl)
 
-    Arguments : ssl - SSL point
+    Arguments::
     
-    Return : peer certification
+        ssl - SSL point
+    
+    Return::
+    
+        peer certification
         
-    Description : get peer certification
+    Description::
     
-    Example :
+        get peer certification
+    
+    Example::
     
         void example(void)
         {
