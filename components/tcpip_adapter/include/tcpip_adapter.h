@@ -16,10 +16,8 @@
 #define _TCPIP_ADAPTER_H_
 
 #include <stdint.h>
-
 #include "rom/queue.h"
-
-#include "esp_wifi.h"
+#include "esp_wifi_types.h"
 
 #define CONFIG_TCPIP_LWIP 1
 #define CONFIG_DHCP_STA_LIST 1
@@ -27,6 +25,10 @@
 #if CONFIG_TCPIP_LWIP
 #include "lwip/ip_addr.h"
 #include "apps/dhcpserver.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define IP2STR(ipaddr) ip4_addr1_16(ipaddr), \
     ip4_addr2_16(ipaddr), \
@@ -128,6 +130,10 @@ wifi_interface_t tcpip_adapter_get_wifi_if(void *dev);
 
 esp_err_t tcpip_adapter_get_sta_list(struct station_info *sta_info, struct station_list **sta_list);
 esp_err_t tcpip_adapter_free_sta_list(struct station_list *sta_list);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*  _TCPIP_ADAPTER_H_ */
 

@@ -23,6 +23,7 @@
 #include "esp_spi_flash.h"
 #include "compressed_enum_table.hpp"
 #include "intrusive_list.h"
+#include "nvs_item_hash_list.hpp"
 
 namespace nvs
 {
@@ -161,25 +162,27 @@ public:
     esp_err_t erase();
 
     void invalidateCache();
-    
+
     void debugDump() const;
 
 protected:
 
-    class Header {
+    class Header
+    {
     public:
-        Header() {
+        Header()
+        {
             std::fill_n(mReserved, sizeof(mReserved)/sizeof(mReserved[0]), UINT32_MAX);
         }
-        
+
         PageState mState;       // page state
         uint32_t mSeqNumber;    // sequence number of this page
         uint32_t mReserved[5];  // unused, must be 0xffffffff
         uint32_t mCrc32;        // crc of everything except mState
-        
+
         uint32_t calculateCrc32();
     };
-    
+
     enum class EntryState {
         EMPTY   = 0x3, // 0b11, default state after flash erase
         WRITTEN = EMPTY & ~ESB_WRITTEN, // entry was written
@@ -193,16 +196,18 @@ protected:
 
     esp_err_t alterEntryState(size_t index, EntryState state);
 
+    esp_err_t alterEntryRangeState(size_t begin, size_t end, EntryState state);
+
     esp_err_t alterPageState(PageState state);
 
     esp_err_t readEntry(size_t index, Item& dst) const;
 
     esp_err_t writeEntry(const Item& item);
+    
+    esp_err_t writeEntryData(const uint8_t* data, size_t size);
 
-    esp_err_t eraseEntry(size_t index);
-    
     esp_err_t eraseEntryAndSpan(size_t index);
-    
+
     void updateFirstUsedEntry(size_t index, size_t span);
 
     static constexpr size_t getAlignmentForType(ItemType type)
@@ -229,6 +234,7 @@ protected:
     uint16_t mErasedEntryCount = 0;
 
     CachedFindInfo mFindInfo;
+    HashList mHashList;
 
     static const uint32_t HEADER_OFFSET = 0;
     static const uint32_t ENTRY_TABLE_OFFSET = HEADER_OFFSET + 32;

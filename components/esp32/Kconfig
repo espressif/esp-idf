@@ -80,33 +80,22 @@ config WIFI_ENABLED
 
 		Temporarily, this option is not compatible with BT stack.
 
-config WIFI_AUTO_STARTUP
-    bool "Start WiFi with system startup"
-    default "y"
-    depends on WIFI_ENABLED
-    help
-        By default, WiFi is started with system startup, you can turn off this
-        feature and start by yourself.
-
-config WIFI_AUTO_CONNECT
-    bool "Enable auto connect"
-    default "y"
-    depends on WIFI_ENABLED
-    help
-        If station is enabled, and station config is set, this will enable WiFi
-        station auto connect when WiFi startup.
-
 config SYSTEM_EVENT_QUEUE_SIZE
-    int "system event queue size"
+    int "System event queue size"
     default 32
-    depends on WIFI_ENABLED
     help
         Config system event queue size in different application.
 
 config SYSTEM_EVENT_TASK_STACK_SIZE
-    int "system event task stack size"
+    int "Event loop task stack size"
     default 2048
-    depends on WIFI_ENABLED
+    help
+        Config system event task stack size in different application.
+
+
+config MAIN_TASK_STACK_SIZE
+    int "Main task stack size"
+    default 4096
     help
         Config system event task stack size in different application.
 

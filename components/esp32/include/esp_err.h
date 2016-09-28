@@ -15,6 +15,7 @@
 #define __ESP_ERR_H__
 
 #include <stdint.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +32,12 @@ typedef int32_t esp_err_t;
 #define ESP_ERR_INVALID_ARG     0x102
 #define ESP_ERR_INVALID_STATE   0x103
 
+/**
+ * Macro which can be used to check the error code,
+ * and terminate the program in case the code is not ESP_OK.
+ * Prints the failed statement to serial output.
+ */
+#define ESP_ERROR_CHECK(x)   do { esp_err_t rc = (x); if (rc != ESP_OK) { assert(0 && #x);} } while(0);
 
 #ifdef __cplusplus
 }

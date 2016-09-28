@@ -43,17 +43,19 @@
 #include "esp_ipc.h"
 #include "esp_log.h"
 
-static void IRAM_ATTR user_start_cpu0(void);
+void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
+void start_cpu0_default(void) IRAM_ATTR;
 #if !CONFIG_FREERTOS_UNICORE
-static void IRAM_ATTR call_user_start_cpu1();
-static void IRAM_ATTR user_start_cpu1(void);
+static void IRAM_ATTR call_start_cpu1();
+void start_cpu1(void) __attribute__((weak, alias("start_cpu1_default")));
+void start_cpu1_default(void) IRAM_ATTR;
 static bool app_cpu_started = false;
-#endif
+#endif //!CONFIG_FREERTOS_UNICORE
+
+static void do_global_ctors(void);
+static void main_task(void* args);
 extern void ets_setup_syscalls(void);
-extern esp_err_t app_main(void *ctx);
-#if CONFIG_BT_ENABLED
-extern void bt_app_main(void *param);
-#endif
+extern void app_main(void);
 
 extern int _bss_start;
 extern int _bss_end;
@@ -69,7 +71,7 @@ static const char* TAG = "cpu_start";
  * and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
  */
 
-void IRAM_ATTR call_user_start_cpu0()
+void IRAM_ATTR call_start_cpu0()
 {
     //Kill wdt
     REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
@@ -92,14 +94,14 @@ void IRAM_ATTR call_user_start_cpu0()
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
-#ifndef CONFIG_FREERTOS_UNICORE
-    ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_user_start_cpu1);
+#if !CONFIG_FREERTOS_UNICORE
+    ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
 
     SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
     CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
     SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
     CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
-    ets_set_appcpu_boot_addr((uint32_t)call_user_start_cpu1);
+    ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
     while (!app_cpu_started) {
         ets_delay_us(100);
@@ -109,11 +111,11 @@ void IRAM_ATTR call_user_start_cpu0()
     CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
 #endif
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
-    user_start_cpu0();
+    start_cpu0();
 }
 
 #if !CONFIG_FREERTOS_UNICORE
-void IRAM_ATTR call_user_start_cpu1()
+void IRAM_ATTR call_start_cpu1()
 {
     asm volatile (\
                   "wsr    %0, vecbase\n" \
@@ -123,10 +125,27 @@ void IRAM_ATTR call_user_start_cpu1()
 
     ESP_EARLY_LOGI(TAG, "App cpu up.");
     app_cpu_started = 1;
-    user_start_cpu1();
+    start_cpu1();
+}
+#endif //!CONFIG_FREERTOS_UNICORE
+
+void start_cpu0_default(void)
+{
+    esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
+    uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
+    ets_setup_syscalls();
+    do_global_ctors();
+    esp_ipc_init();
+    spi_flash_init();
+    xTaskCreatePinnedToCore(&main_task, "main",
+            ESP_TASK_MAIN_STACK, NULL,
+            ESP_TASK_MAIN_PRIO, NULL, 0);
+    ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
+    vTaskStartScheduler();
 }
 
-void IRAM_ATTR user_start_cpu1(void)
+#if !CONFIG_FREERTOS_UNICORE
+void start_cpu1_default(void)
 {
     // Wait for FreeRTOS initialization to finish on PRO CPU
     while (port_xSchedulerRunning[0] == 0) {
@@ -135,47 +154,19 @@ void IRAM_ATTR user_start_cpu1(void)
     ESP_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
 }
-#endif
+#endif //!CONFIG_FREERTOS_UNICORE
 
 static void do_global_ctors(void)
 {
     void (**p)(void);
-    for (p = &__init_array_start; p != &__init_array_end; ++p) {
+    for (p = &__init_array_end - 1; p >= &__init_array_start; --p) {
         (*p)();
     }
 }
 
-void user_start_cpu0(void)
+static void main_task(void* args)
 {
-    esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
-    uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
-    ets_setup_syscalls();
-    do_global_ctors();
-    esp_ipc_init();
-    spi_flash_init();
-
-#if CONFIG_WIFI_ENABLED
-    esp_err_t ret = nvs_flash_init(5, 3);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "nvs_flash_init failed, ret=%d", ret);
-    }
-
-    system_init();
-    esp_event_init(NULL, NULL);
-    tcpip_adapter_init();
-#endif
-
-#if CONFIG_WIFI_ENABLED && CONFIG_WIFI_AUTO_STARTUP
-#include "esp_wifi.h"
-	esp_wifi_startup(app_main, NULL);
-#elif CONFIG_BT_ENABLED
-#include "bt.h"
-        esp_bt_startup(bt_app_main, NULL);
-#else
-    app_main(NULL);
-#endif
-
-    ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
-    vTaskStartScheduler();
+    app_main();
+    vTaskDelete(NULL);
 }
 

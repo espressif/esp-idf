@@ -47,13 +47,12 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
     if (mPageList.empty()) {
         mSeqNumber = 0;
         return activatePage();
-    }
-    else {
+    } else {
         uint32_t lastSeqNo;
         assert(mPageList.back().getSeqNumber(lastSeqNo) == ESP_OK);
         mSeqNumber = lastSeqNo + 1;
     }
-    
+
     // if power went out after a new item for the given key was written,
     // but before the old one was erased, we end up with a duplicate item
     Page& lastPage = back();
@@ -64,7 +63,7 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
         itemIndex += item.span;
         lastItemIndex = itemIndex;
     }
-    
+
     if (lastItemIndex != SIZE_MAX) {
         auto last = PageManager::TPageListIterator(&lastPage);
         for (auto it = begin(); it != last; ++it) {
@@ -78,7 +77,7 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
     for (auto it = begin(); it!= end(); ++it) {
         if (it->state() == Page::PageState::FREEING) {
             Page* newPage = &mPageList.back();
-            if(newPage->state() != Page::PageState::ACTIVE) {
+            if (newPage->state() != Page::PageState::ACTIVE) {
                 auto err = activatePage();
                 if (err != ESP_OK) {
                     return err;
@@ -93,12 +92,12 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
                     return err;
                 }
             }
-            
+
             auto err = it->erase();
             if (err != ESP_OK) {
                 return err;
             }
-            
+
             Page* p = static_cast<Page*>(it);
             mPageList.erase(it);
             mFreePageList.push_back(p);
@@ -139,7 +138,7 @@ esp_err_t PageManager::requestNewPage()
     if (err != ESP_OK) {
         return err;
     }
-    
+
     Page* newPage = &mPageList.back();
 
     Page* erasedPage = maxErasedItemsPageIt;
@@ -161,7 +160,7 @@ esp_err_t PageManager::requestNewPage()
     if (err != ESP_OK) {
         return err;
     }
-    
+
     assert(usedEntries == newPage->getUsedEntryCount());
 
     mPageList.erase(maxErasedItemsPageIt);
@@ -188,5 +187,5 @@ esp_err_t PageManager::activatePage()
     ++mSeqNumber;
     return ESP_OK;
 }
-    
+
 } // namespace nvs
