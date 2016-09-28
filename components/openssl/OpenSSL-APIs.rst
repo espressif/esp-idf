@@ -1,13 +1,21 @@
 OpenSSL-APIs 
-======================
+============
+
+All original source code in this repository is Copyright (C) 2015-2016
+Espressif Systems. This source code is licensed under the Apache
+License 2.0 as described in the file LICENSE.
+
+Chapter Introduction
+====================
 
 Chapter 1. SSL Context Method Create
 Chapter 2. SSL Context Fucntion
 Chapter 3. SSL Fucntion
 Chapter 4. SSL X509 Certification and Private Key Function
 
-======================
+
 Chapter 1. SSL Context Method Create 
+====================================
 
 1.1 const SSL_METHOD* SSLv23_client_method(void);
 
@@ -189,8 +197,9 @@ Chapter 1. SSL Context Method Create
         }
 
 
-======================
+
 Chapter 2. SSL Context Fucntion
+===============================
 
 2.1 SSL_CTX* SSL_CTX_new(const SSL_METHOD *method);
 
@@ -275,8 +284,9 @@ Chapter 2. SSL Context Fucntion
         }
 
 
-======================
+
 Chapter 3. SSL Fucntion
+=======================
 
 3.1 SSL* SSL_new(SSL_CTX *ctx);
 
@@ -1175,8 +1185,9 @@ Chapter 3. SSL Fucntion
             ret = SSL_want_write(ssl);
         }        
 
-======================
+
 Chapter 4. SSL X509 Certification and Private Key Function
+==========================================================
 
 4.1 X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len);
 
@@ -1474,5 +1485,3 @@ Chapter 4. SSL X509 Certification and Private Key Function
             peer = SSL_get_peer_certificate(ssl);
         }
 
-======================
-END
