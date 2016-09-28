@@ -69,13 +69,15 @@ public:
         return readItem(nsIndex, itemTypeOf(value), key, &value, sizeof(value));
     }
 
-    template<typename T>
     esp_err_t eraseItem(uint8_t nsIndex, const char* key)
     {
-        return eraseItem(nsIndex, itemTypeOf<T>(), key);
+        return eraseItem(nsIndex, ItemType::ANY, key);
     }
     
+    esp_err_t eraseNamespace(uint8_t nsIndex);
+
     void debugDump();
+    
     void debugCheck();
 
 
@@ -88,19 +90,7 @@ protected:
 
     void clearNamespaces();
 
-    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item)
-    {
-        size_t itemIndex = 0;
-        for (auto it = std::begin(mPageManager); it != std::end(mPageManager); ++it) {
-            auto err = it->findItem(nsIndex, datatype, key, itemIndex, item);
-            if (err == ESP_OK) {
-                page = it;
-                return ESP_OK;
-            }
-        }
-        return ESP_ERR_NVS_NOT_FOUND;
-    }
-
+    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item);
 
 protected:
     size_t mPageCount;

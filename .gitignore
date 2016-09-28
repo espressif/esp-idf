@@ -7,8 +7,18 @@ GTAGS
 GRTAGS
 GPATH
 
+# emacs
+.dir-locals.el
+
 # emacs temp file suffixes
 *~
 .#*
 \#*#
 
+# Example project files
+examples/*/sdkconfig
+examples/*/sdkconfig.old
+examples/*/build
+
+# Bootloader files
+components/bootloader/src/sdkconfig.old

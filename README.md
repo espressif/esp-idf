@@ -1,6 +1,18 @@
 # Using Espressif IoT Development Framework with the ESP32
 
-# Prerequisites
+# Setting Up ESP-IDF
+
+In the [docs](docs) directory you will find per-platform setup guides:
+
+* [Windows Setup Guide](docs/windows-setup.rst)
+* [Mac OS Setup Guide](docs/macos-setup.rst)
+* [Linux Setup Guide](docs/linux-setup.rst)
+
+# Finding A Project
+
+As well as the [esp-idf-template](https://github.com/espressif/esp-idf-template) project mentioned in the setup guide, esp-idf comes with some example projects in the [examples](examples) directory.
+
+Once you've found the project you want to work with, change to its directory and you can configure and build it:
 
 # Configuring your project
 
@@ -52,8 +64,10 @@ For more details about partition tables and how to create custom variations, vie
 
 # Resources
 
-* The [docs directory of the esp-idf repository](https://github.com/espressif/esp-idf/tree/master/docs) contains esp-idf documentation.
+* The [docs directory of the esp-idf repository](docs) contains esp-idf documentation.
 
 * The [esp32.com forum](http://esp32.com/) is a place to ask questions and find community resources.
 
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
+
+* If you're interested in contributing to esp-idf, please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.

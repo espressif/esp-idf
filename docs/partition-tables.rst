@@ -12,6 +12,16 @@ The simplest way to use the partition table is to `make menuconfig` and choose o
 
 In both cases the factory app is flashed at offset 0x10000. If you `make partition_table` then it will print a summary of the partition table.
 
+Known Issues
+------------
+
+The below design document outlines the goals for the partition table system. At the moment, only some features are used:
+
+- data partition types "rf" & "wifi" are unused and can be entirely omitted to save space.
+- NVS (non-volatile-storage) uses a hardcoded 12KB (0x3000 byte) region at offset 0x6000.
+
+Once a full user API is in place for partition access, these limitations will be resolved and you'll be able to use the partition mechanism fully for storing data in flash.
+
 Built-in Partition Tables
 -------------------------
 

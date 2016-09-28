@@ -21,7 +21,7 @@
 
 namespace nvs
 {
-uint32_t Item::calculateCrc32()
+uint32_t Item::calculateCrc32() const
 {
     uint32_t result = 0xffffffff;
     const uint8_t* p = reinterpret_cast<const uint8_t*>(this);
@@ -29,6 +29,16 @@ uint32_t Item::calculateCrc32()
                       offsetof(Item, crc32) - offsetof(Item, nsIndex));
     result = crc32_le(result, p + offsetof(Item, key), sizeof(key));
     result = crc32_le(result, p + offsetof(Item, data), sizeof(data));
+    return result;
+}
+
+uint32_t Item::calculateCrc32WithoutValue() const
+{
+    uint32_t result = 0xffffffff;
+    const uint8_t* p = reinterpret_cast<const uint8_t*>(this);
+    result = crc32_le(result, p + offsetof(Item, nsIndex),
+                      offsetof(Item, datatype) - offsetof(Item, nsIndex));
+    result = crc32_le(result, p + offsetof(Item, key), sizeof(key));
     return result;
 }
 
