@@ -1,5 +1,152 @@
 test cases:
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0105
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has no erp/xrates/ht, cap.short_slot_time=1, rates=[1/2/5/5/11]
+
+    3. radiotap rates in [1/2/5/5/11]'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11b
+
+    2. ht40 STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11b, ht40 STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0102
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m b
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has no erp/xrates/ht, cap.short_slot_time=1, rates=[1/2/5/5/11]
+
+    3. radiotap rates in [1/2/5/5/11]'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11b
+
+    2. 11b STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11b, 11b STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0103
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m g
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has no erp/xrates/ht, cap.short_slot_time=1, rates=[1/2/5/5/11]
+
+    3. radiotap rates in [1/2/5/5/11]'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11b
+
+    2. 11bg STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11b, 11g STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^WIFI_CONN_0601
   SDK: '8266_NonOS
 
@@ -7,6 +154,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -51,6 +199,438 @@ test cases:
   test point 2: list SoftAP connected station
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0101
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK', 'R CAP PDU (Wlan.frame_ctrl.type_subtype="Management-Beacon")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")']
+  comment: ''
+  execution time: 0.0
+  expected result: 1. beacon has no erp/xrates/ht, cap.short_slot_time=1, rates=[1/2/5/5/11]
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: 1. target set to PHY mode 11b, capture beacon
+  sub module: Phy Mode
+  summary: SoftAP set as 11b, check beacon
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0313
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates!)(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.ht_operation.second_channel_offset!="0","2")(Wlan.ie_list.ht_operation.sta_channel_width="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP ht40, STA 11b
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP ht40, STA 11b, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0312
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.ht_operation.second_channel_offset="0")(Wlan.ie_list.ht_operation.sta_channel_width="0")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11bgn, STA ht40
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11bgn, STA ht40, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0311
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.ht_operation.second_channel_offset="0")(Wlan.ie_list.ht_operation.sta_channel_width="0")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11bgn, STA 11bgn
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11bgn, STA 11bgn, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0310
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.ht_operation.second_channel_offset="0")(Wlan.ie_list.ht_operation.sta_channel_width="0")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11bgn, STA 11bg
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11bgn, STA 11bg, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0316
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.ht_operation.second_channel_offset!="0","2")(Wlan.ie_list.ht_operation.sta_channel_width="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP ht40, STA ht40
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP ht40, STA ht40, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0315
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.ht_operation.second_channel_offset!="0","2")(Wlan.ie_list.ht_operation.sta_channel_width="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP ht40, STA 11bgn
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP ht40, STA 11bgn, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0314
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.ht_operation.second_channel_offset!="0","2")(Wlan.ie_list.ht_operation.sta_channel_width="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP ht40, STA 11bg
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP ht40, STA 11bg, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: TCPIP_ICMP_0101
   SDK: '8266_NonOS
 
@@ -58,6 +638,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -97,6 +678,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -129,6 +711,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -181,6 +764,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -247,6 +831,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -306,6 +891,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -363,6 +949,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -430,6 +1017,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -489,6 +1077,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -525,6 +1114,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -566,6 +1156,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -635,6 +1226,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -690,6 +1282,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -753,6 +1346,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -816,6 +1410,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -870,6 +1465,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -933,6 +1529,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -987,6 +1584,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1042,6 +1640,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1073,6 +1672,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1136,6 +1736,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1217,6 +1818,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1280,6 +1882,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1361,6 +1964,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1410,6 +2014,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1479,6 +2084,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1524,6 +2130,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1575,6 +2182,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1626,6 +2234,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1665,6 +2274,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1710,6 +2320,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1773,6 +2384,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1836,6 +2448,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1893,6 +2506,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -1950,6 +2564,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2001,6 +2616,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2042,6 +2658,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2066,6 +2683,340 @@ test cases:
   test point 2: wifi connect status check
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0308
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m g
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11bg, STA ht40
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11bg, STA ht40, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0309
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates!)(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.ht_operation.second_channel_offset="0")(Wlan.ie_list.ht_operation.sta_channel_width="0")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11bgn, STA 11b
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11bgn, STA 11b, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0304
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m b
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11b, STA ht40
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11b, STA ht40, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0305
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m g
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates!)(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11bg, STA 11b
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11bg, STA 11b, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0306
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m g
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11bg, STA 11bg
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11bg, STA 11bg, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0307
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m g
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11bg, STA 11bgn
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11bg, STA 11bgn, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: TCPIP_DNS_0102
   SDK: '8266_NonOS
 
@@ -2073,6 +3024,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 3/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2113,6 +3065,116 @@ test cases:
   test point 2: DNS function test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0301
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m b
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates!)(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11b, STA 11b
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11b, STA 11b, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0302
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m b
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11b, STA 11bg
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11b, STA 11bg, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: TCPIP_DNS_0101
   SDK: '8266_NonOS
 
@@ -2120,6 +3182,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 3/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2144,6 +3207,52 @@ test cases:
   test point 2: DNS function test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0403
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_c1_ht40> -p <ap_password_phy>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['']
+  - - DELAY 10
+    - ['P SSC1 NC +JAP:DISCONNECTED', 'P SSC2 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 3. SoftAP and STA in channel2, SoftAP 20M, STA 40M, STA not disconnected
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. SoftAP 11n ht20, in channel1, ext AP 11n ht40, in channel2
+
+    2. STA connect to ext AP
+
+    3. AP get connected'
+  sub module: Phy Mode
+  summary: SoftAP ext AP in defferent channel, SoftAP 20M, ext AP 40M, STA connect
+    to AP then Softap get connected
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP initial channel test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: WIFI_CONN_0904
   SDK: '8266_NonOS
 
@@ -2151,6 +3260,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2221,6 +3331,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2278,6 +3389,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2333,6 +3445,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2377,6 +3490,55 @@ test cases:
   test point 2: query JAP status
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0110
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. beacon has erp/xrates, no ht, cap.short_slot_time=1, rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    2. assoc response has erp/xrates, no ht, cap.short_slot_time=1, rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates and xrates'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bg
+
+    2. ht40 STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11bg, ht40 STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^TCPIP_IGMP_0102
   SDK: '8266_NonOS
 
@@ -2384,6 +3546,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2441,6 +3604,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2489,6 +3653,55 @@ test cases:
   test point 2: IGMP API parameter check
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0113
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m g
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has erp/xrates, no ht, cap.short_slot_time=1, rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates/xrates'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn
+
+    2. 11bg STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11bgn, 11g STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^TCPIP_IGMP_0104
   SDK: '8266_NonOS
 
@@ -2496,6 +3709,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2553,6 +3767,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2584,6 +3799,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2648,6 +3864,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2686,6 +3903,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2736,6 +3954,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2798,6 +4017,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2860,6 +4080,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2917,6 +4138,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -2972,6 +4194,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3029,6 +4252,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3084,6 +4308,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3159,6 +4384,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3198,6 +4424,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3265,6 +4492,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3316,6 +4544,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3382,6 +4611,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3439,6 +4669,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3478,6 +4709,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3547,6 +4779,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3586,6 +4819,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3643,6 +4877,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3706,6 +4941,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3757,6 +4993,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3805,6 +5042,57 @@ test cases:
   test point 2: IGMP send/recv test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0120
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.ht_operation.second_channel_offset!="0","2")(Wlan.ie_list.ht_operation.sta_channel_width="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed,
+
+    2. assoc response has erp/ht/xrates, cap.short_slot_time=1, ht_info.2nd_channel_offset=2,sta_channel_width=1,
+    rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates/xrates/msc0-7'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode ht40
+
+    2. ht40 STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as ht40, ht40 STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: TCPIP_IGMP_0201
   SDK: '8266_NonOS
 
@@ -3812,6 +5100,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3861,6 +5150,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3918,6 +5208,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -3967,6 +5258,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4038,6 +5330,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4093,6 +5386,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4147,6 +5441,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4210,6 +5505,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4273,6 +5569,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4336,6 +5633,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4391,6 +5689,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4454,6 +5753,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4529,6 +5829,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4588,6 +5889,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4647,6 +5949,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4698,6 +6001,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4749,6 +6053,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4807,6 +6112,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4870,6 +6176,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4945,6 +6252,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -4996,6 +6304,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5090,6 +6399,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5177,6 +6487,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5237,6 +6548,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5330,6 +6642,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5391,6 +6704,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5453,6 +6767,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5536,6 +6851,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5605,6 +6921,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5672,6 +6989,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5755,6 +7073,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5818,6 +7137,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5880,6 +7200,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5935,6 +7256,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -5996,6 +7318,257 @@ test cases:
   test point 2: mac address function test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0119
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.ht_operation.second_channel_offset="0")(Wlan.ie_list.ht_operation.sta_channel_width="0")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed,
+
+    2. assoc response has erp/ht/xrates, cap.short_slot_time=1, ht_info.2nd_channel_offset=0,sta_channel_width=0,
+    rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates/xrates/msc0-7'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode ht40
+
+    2. 11bgn STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as ht40, 11n STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0118
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m g
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has erp/xrates, no ht, cap.short_slot_time=1, rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates/xrates'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode ht40
+
+    2. 11bg STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as ht40, 11g STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0115
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.ht_operation.second_channel_offset="0")(Wlan.ie_list.ht_operation.sta_channel_width="0")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed,
+
+    2. assoc response has erp/ht/xrates, cap.short_slot_time=1, ht_info.2nd_channel_offset=0,sta_channel_width=0,
+    rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates/xrates/msc0-7'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn
+
+    2. ht40 STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11bgn, ht40 STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0114
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.ht_operation.second_channel_offset="0")(Wlan.ie_list.ht_operation.sta_channel_width="0")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed,
+
+    2. assoc response has erp/ht/xrates, cap.short_slot_time=1, ht_info.2nd_channel_offset=0,sta_channel_width=0,
+    rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates/xrates/msc0-7'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn
+
+    2. 11bgn STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11bgn, 11n STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0117
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m b
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has no erp/xrates/ht, cap.short_slot_time=1, rates=[1/2/5/5/11]
+
+    3. radiotap rates in rates'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode ht40
+
+    2. 11b STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as ht40, 11b STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: TCPIP_UDP_0202
   SDK: '8266_NonOS
 
@@ -6003,6 +7576,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6071,6 +7645,92 @@ test cases:
   test point 2: use UDP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0111
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-Beacon")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_operation.second_channel_offset="0")(Wlan.ie_list.ht_operation.sta_channel_width="0")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")']
+  comment: ''
+  execution time: 0.0
+  expected result: 1. beacon has erp/ht/xrates, cap.short_slot_time=1, ht_info.2nd_channel_offset=0,sta_channel_width=0,
+    rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: 1. target set to PHY mode 11bgn, capture beacon
+  sub module: Phy Mode
+  summary: SoftAP set as 11bgn, check beacon
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0112
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m b
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has no erp/xrates/ht, cap.short_slot_time=1, rates=[1/2/5/5/11]
+
+    3. radiotap rates in rates'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn
+
+    2. 11b STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11bgn, 11b STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: TCPIP_TCP_0411
   SDK: '8266_NonOS
 
@@ -6078,6 +7738,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6140,6 +7801,281 @@ test cases:
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0502
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <ap_ssid_c1_ht20> -p <ap_password_phy>
+    - ['R SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <target2_ssid> -p <target2_password>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC3 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <ap_ssid_c2_ht40> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 C +JAP:CONNECTED', 'P SSC[1,3] NC +JAP:DISCONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 4. all STA not get disconnected; target 1 SoftAP and STA both in
+    channel2; SoftAP in 20M, STA in 40M
+  initial condition: T3_PHY1
+  initial condition description (auto): '1. target 1 and target 2 set to AP+STA mode,
+    target 3 set to STA mode
+
+    2. all interface of target 2,3 set to 11n ht40
+
+    3. config softAP of target 1 and target 2'
+  module: WIFI MAC
+  steps: '1. target 1 STA set to 40M, SoftAP set to 20M
+
+    2. target 2 STA connect to ap_channel1_20
+
+    3. target 1/3 STA connect to target 2/1 SoftAP
+
+    4. target 2 STA connect to ap_channel2_40'
+  sub module: Phy Mode
+  summary: SoftAP STA in channel1 20M, STA changed to channel2 40M
+  test environment: SSC_T3_PhyMode
+  test environment description (auto): '3 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with (HT20, channel1), (HT20, channel2), (HT40, channel1), (HT40, channel2).
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP dynamic channel switch test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0503
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <ap_ssid_c1_ht40> -p <ap_password_phy>
+    - ['R SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <target2_ssid> -p <target2_password>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC3 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <ap_ssid_c2_ht20> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 C +JAP:CONNECTED', 'P SSC[1,3] NC +JAP:DISCONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 4. all STA not get disconnected; target 1 SoftAP and STA both in
+    channel2 20M
+  initial condition: T3_PHY1
+  initial condition description (auto): '1. target 1 and target 2 set to AP+STA mode,
+    target 3 set to STA mode
+
+    2. all interface of target 2,3 set to 11n ht40
+
+    3. config softAP of target 1 and target 2'
+  module: WIFI MAC
+  steps: '1. target 1 STA set to 40M, SoftAP set to 20M
+
+    2. target 2 STA connect to ap_channel1_40
+
+    3. target 1/3 STA connect to target 2/1 SoftAP
+
+    4. target 2 STA connect to ap_channel2_20'
+  sub module: Phy Mode
+  summary: SoftAP STA in channel1, SoftAP 20M, STA 40M, STA changed to channel2 20M
+  test environment: SSC_T3_PhyMode
+  test environment description (auto): '3 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with (HT20, channel1), (HT20, channel2), (HT40, channel1), (HT40, channel2).
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP dynamic channel switch test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0501
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <ap_ssid_c1_ht20> -p <ap_password_phy>
+    - ['R SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <target2_ssid> -p <target2_password>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC3 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <ap_ssid_c2_ht20> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 C +JAP:CONNECTED', 'P SSC[1,3] NC +JAP:DISCONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 4. all STA not get disconnected; target 1 SoftAP and STA both in
+    channel2 20M
+  initial condition: T3_PHY1
+  initial condition description (auto): '1. target 1 and target 2 set to AP+STA mode,
+    target 3 set to STA mode
+
+    2. all interface of target 2,3 set to 11n ht40
+
+    3. config softAP of target 1 and target 2'
+  module: WIFI MAC
+  steps: '1. target 1 STA and SoftAP set to 20M
+
+    2. target 2 STA connect to ap_channel1_20
+
+    3. target 1/3 STA connect to target 2/1 SoftAP
+
+    4. target 2 STA connect to ap_channel2_20'
+  sub module: Phy Mode
+  summary: SoftAP STA in channel1 20M, STA changed to channel2 20M
+  test environment: SSC_T3_PhyMode
+  test environment description (auto): '3 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with (HT20, channel1), (HT20, channel2), (HT40, channel1), (HT40, channel2).
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP dynamic channel switch test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0506
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <ap_ssid_c1_ht40> -p <ap_password_phy>
+    - ['R SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <target2_ssid> -p <target2_password>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC3 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <ap_ssid_c2_ht40> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 C +JAP:CONNECTED', 'P SSC[1,3] NC +JAP:DISCONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 4. all STA not get disconnected; target 1 SoftAP and STA both in
+    channel2 40M
+  initial condition: T3_PHY1
+  initial condition description (auto): '1. target 1 and target 2 set to AP+STA mode,
+    target 3 set to STA mode
+
+    2. all interface of target 2,3 set to 11n ht40
+
+    3. config softAP of target 1 and target 2'
+  module: WIFI MAC
+  steps: '1. target 1 STA and SoftAP set to 40M
+
+    2. target 2 STA connect to ap_channel1_40
+
+    3. target 1/3 STA connect to target 2/1 SoftAP
+
+    4. target 2 STA connect to ap_channel2_40'
+  sub module: Phy Mode
+  summary: SoftAP STA in channel1, SoftAP 40M, STA 40M, STA changed to channel2 40M
+  test environment: SSC_T3_PhyMode
+  test environment description (auto): '3 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with (HT20, channel1), (HT20, channel2), (HT40, channel1), (HT40, channel2).
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP dynamic channel switch test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0505
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <ap_ssid_c1_ht40> -p <ap_password_phy>
+    - ['R SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <target2_ssid> -p <target2_password>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC3 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <ap_ssid_c2_ht20> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 C +JAP:CONNECTED', 'P SSC[1,3] NC +JAP:DISCONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 4. all STA not get disconnected; target 1 SoftAP and STA both in
+    channel2; SoftAP in 20M, STA in 40M
+  initial condition: T3_PHY1
+  initial condition description (auto): '1. target 1 and target 2 set to AP+STA mode,
+    target 3 set to STA mode
+
+    2. all interface of target 2,3 set to 11n ht40
+
+    3. config softAP of target 1 and target 2'
+  module: WIFI MAC
+  steps: '1. target 1 STA set to 40M ,SoftAP set to 20M
+
+    2. target 2 STA connect to ap_channel1_40
+
+    3. target 1/3 STA connect to target 2/1 SoftAP
+
+    4. target 2 STA connect to ap_channel2_20'
+  sub module: Phy Mode
+  summary: SoftAP STA in channel1, SoftAP 40M, STA 40M, STA changed to channel2 20M
+  test environment: SSC_T3_PhyMode
+  test environment description (auto): '3 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with (HT20, channel1), (HT20, channel2), (HT40, channel1), (HT40, channel2).
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP dynamic channel switch test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: WIFI_CONN_0301
   SDK: '8266_NonOS
 
@@ -6147,6 +8083,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6191,6 +8128,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6245,6 +8183,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6284,6 +8223,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6353,6 +8293,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6392,6 +8333,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6449,6 +8391,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6500,6 +8443,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6563,6 +8507,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6613,6 +8558,310 @@ test cases:
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0205
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11g> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req and assoc-req has xrates, no ht, cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in rates or xrates'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bg
+
+    2. target connect to 11g AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bg, join 11g external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0204
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11b> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req has xrates, no ht, cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54];
+
+    assoc-req has no erp/ht/xrates, cap.short_slot_time=1,rates=[1/2/5.5/11]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in [1/2/5.5/11]'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bg
+
+    2. target connect to 11b AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bg, join 11b external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0207
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11b> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req has xrates/ht, cap.short_slot_time=1,rates=[1/2/5.5/11/24/36/48/54];
+
+    assoc-req has no ht/xrates, cap.short_slot_time=1,rates=[1/2/5.5/11]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in [1/2/5.5/11]'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn
+
+    2. target connect to 11b AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bgn, join 11b external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0206
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_20> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req and assoc-req has xrates, no ht, cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in rates or xrates'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bg
+
+    2. target connect to 11n AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bg, join 11n external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0201
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11b> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates!)(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req and assoc-req has no ht/xrates, cap.short_slot_time=1,rates=[1/2/5.5/11]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in [1/2/5.5/11]'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11b
+
+    2. target connect to 11b AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11b, join 11b external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^TCPIP_DHCP_0102
   SDK: '8266_NonOS
 
@@ -6620,6 +8869,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6657,6 +8907,126 @@ test cases:
   test point 2: DHCP client function test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0203
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_20> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates!)(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req and assoc-reqhas no ht/xrates, cap.short_slot_time=1,rates=[1/2/5.5/11]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in [1/2/5.5/11]'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11b
+
+    2. target connect to 11n AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11b, join 11b external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0202
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11g> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates!)(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req and assoc-reqhas no ht/xrates, cap.short_slot_time=1,rates=[1/2/5.5/11]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in [1/2/5.5/11]'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11b
+
+    2. target connect to 11g AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11b, join 11g external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^TCPIP_DHCP_0103
   SDK: '8266_NonOS
 
@@ -6664,6 +9034,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6726,6 +9097,216 @@ test cases:
   test point 2: DHCP client function test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0209
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_20> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req and assoc-req has xrates/ht, cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in rates or xrates or msc0-7'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn
+
+    2. target connect to 11n AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bgn, join 11n external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0208
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11g> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req has xrates/ht, cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54];
+
+    assoc-req has xrates no ht, cap.short_slot_time=1,rates=[1/2/5.5/11], xrates=[24/36/48/54];
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in rates or xrates'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn
+
+    2. target connect to 11g AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bgn, join 11g external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_SCAN_0301
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -S
+    - ['']
+  - - SSC SSC1 sta -S
+    - [P SSC1 C +SCANFAIL, 'P SSC1 P +SCAN:', R SSC1 C +SCANDONE]
+  comment: ''
+  execution time: 0.0
+  expected result: '1. second scan failed
+
+    2. first scan succeed'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. do all channel scan
+
+    2. do scan before scan finished'
+  sub module: WIFI Scan
+  summary: reject scan request before scan finished
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: interaction
+  test point 2: Scan interact with other WiFi operation
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_SCAN_0303
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 C +JAP:OK']
+  - - SSC SSC1 sta -S
+    - [P SSC1 C +SCANDONE, 'P SSC1 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:OK']
+  - - SSC SSC1 sta -S
+    - ['']
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - [P SSC1 C +SCANDONE, 'P SSC1 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: '2. scan succeed, JAP succeed
+
+    5. JAP succeed, scan succeed'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. target 1 STA join AP
+
+    2. target 1 STA scan before JAP succeed
+
+    3. target 1 quite AP
+
+    4. target 1 scan
+
+    5. target 1 JAP before scan succeed'
+  sub module: WIFI Scan
+  summary: scan during JAP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: interaction
+  test point 2: Scan interact with other WiFi operation
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^WIFI_CONN_0801
   SDK: '8266_NonOS
 
@@ -6733,6 +9314,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6788,6 +9370,55 @@ test cases:
   test point 2: wifi auth changed event test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_SCAN_0304
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC2 C +JAP:OK']
+  - - SSC SSC1 sta -S
+    - [P SSC1 C +SCANDONE, 'P SSC2 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:OK']
+  - - SSC SSC1 sta -S
+    - ['']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - [P SSC1 C +SCANDONE, 'P SSC2 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: '2. scan succeed, JAP succeed
+
+    5. JAP succeed, scan succeed'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. target 2 STA join target 1 SoftAP
+
+    2. target 1 STA scan before target 2 JAP succeed
+
+    3. target 2 STA QAP
+
+    4. target 1 STA scan
+
+    5. target 2 STA JAP before target 1 STA scan succeed'
+  sub module: WIFI Scan
+  summary: scan during ext STA join SoftAP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: interaction
+  test point 2: Scan interact with other WiFi operation
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^TCPIP_UDP_0108
   SDK: '8266_NonOS
 
@@ -6795,6 +9426,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6846,6 +9478,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6899,6 +9532,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6948,6 +9582,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -6997,6 +9632,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7054,6 +9690,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7108,6 +9745,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7147,6 +9785,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7186,6 +9825,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7260,6 +9900,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7324,6 +9965,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7381,6 +10023,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7420,6 +10063,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7497,6 +10141,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7566,6 +10211,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7637,6 +10283,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7700,6 +10347,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7757,6 +10405,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7808,6 +10457,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7877,6 +10527,7 @@ test cases:
 
     ESP32_IDF'
   Test App: basic function
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -7925,6 +10576,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8024,6 +10676,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8107,6 +10760,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8206,6 +10860,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8243,6 +10898,43 @@ test cases:
   test point 2: TCP connect and disconnect abnormal case
   version: v1 (2015-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0116
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK', 'R CAP PDU (Wlan.frame_ctrl.type_subtype="Management-Beacon")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.ht_operation.second_channel_offset!="0","2")(Wlan.ie_list.ht_operation.sta_channel_width="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")']
+  comment: ''
+  execution time: 0.0
+  expected result: 1. beacon has erp/ht/xrates, cap.short_slot_time=1, ht_info.2nd_channel_offset=3,sta_channel_width=1,
+    rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: 1. target set to PHY mode ht40, capture beacon
+  sub module: Phy Mode
+  summary: SoftAP set as ht40, check beacon
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^TCPIP_DNS_0101
   SDK: '8266_NonOS
 
@@ -8250,6 +10942,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 3/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8281,6 +10974,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 3/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8324,6 +11018,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 3/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8371,6 +11066,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8464,6 +11160,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8525,6 +11222,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8612,6 +11310,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8706,6 +11405,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8757,6 +11457,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8832,6 +11533,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8895,6 +11597,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -8955,6 +11658,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9049,6 +11753,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9142,6 +11847,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9217,6 +11923,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9304,6 +12011,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9367,6 +12075,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9411,6 +12120,61 @@ test cases:
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_SCAN_0302
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC1 soc -B -t UDP -p <test_udp_port1>
+    - ['R SSC1 A <sock1>:BIND:(\d+),OK']
+  - - SSC SSC1 soc -S -s <sock1> -i <pc_ip> -p <test_udp_port1> -n 1000000 -j 5
+    - ['']
+  - - SSC SSC2 phy -S -o 1 -m b
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC2 sta -S -n <ap_channel>
+    - [R SSC2 P <ap_ssid>]
+  - - SSC SSC2 phy -S -o 1 -m g
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC2 sta -S -n <ap_channel>
+    - [R SSC2 P <ap_ssid>]
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC2 sta -S -n <ap_channel>
+    - [R SSC2 P <ap_ssid>]
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC2 sta -S -n <ap_channel>
+    - [R SSC2 P <ap_ssid>]
+  comment: ''
+  execution time: 0.0
+  expected result: 3. target 2 able to scan AP
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. target 1 connect to AP
+
+    2. target 1 start sending UDP packets
+
+    3. target 2 scan in AP channel in 11b.g,n,ht40 mode'
+  sub module: WIFI Scan
+  summary: scan in congest channel
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: interaction
+  test point 2: Scan interact with other WiFi operation
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: TCPIP_ARP_0101
   SDK: '8266_NonOS
 
@@ -9418,6 +12182,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9457,6 +12222,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9508,6 +12274,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9559,6 +12326,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9618,6 +12386,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9677,6 +12446,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9734,6 +12504,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9793,6 +12564,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9844,6 +12616,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9896,6 +12669,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -9958,6 +12732,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10022,6 +12797,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10094,6 +12870,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10156,6 +12933,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10204,6 +12982,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10284,6 +13063,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10352,6 +13132,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10410,6 +13191,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10467,6 +13249,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10538,6 +13321,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10637,6 +13421,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10720,6 +13505,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10819,6 +13605,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10868,6 +13655,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -10949,6 +13737,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11030,6 +13819,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11111,6 +13901,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: 3/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11147,6 +13938,62 @@ test cases:
   test point 2: DNS function test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0303
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m b
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s%20or%20wlan%20addr2%20%%s <target_mac>
+      <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. check STA packet
+
+    3. check SoftAP packet'
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. set softAP 11b, STA 11bgn
+
+    2. STA connect to ext AP
+
+    3. ext STA connect to SoftAP'
+  sub module: Phy Mode
+  summary: SoftAP 11b, STA 11bgn, get connected and join AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: TCPIP_DHCP_0206
   SDK: '8266_NonOS
 
@@ -11154,6 +14001,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11217,6 +14065,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11290,6 +14139,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11371,6 +14221,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11420,6 +14271,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11479,6 +14331,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11548,6 +14401,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11617,6 +14471,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11675,6 +14530,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11756,6 +14612,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11821,6 +14678,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11884,6 +14742,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -11953,6 +14812,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12022,6 +14882,7 @@ test cases:
 
     ESP32_IDF'
   Test App: basic function
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12070,6 +14931,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12116,6 +14978,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12140,6 +15003,257 @@ test cases:
   test point 2: wifi disconnect reason test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0108
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m g
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has erp/xrates, no ht, cap.short_slot_time=1, rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates and xrates'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bg
+
+    2. 11bg STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11bg, 11g STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0109
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has erp/xrates, no ht, cap.short_slot_time=1, rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates and xrates'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bg
+
+    2. 11bgn STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11bg, 11n STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0106
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-Beacon")(Wlan.ie_list.erp="")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")']
+  comment: ''
+  execution time: 0.0
+  expected result: 1. beacon has erp/xrates, no ht, cap.short_slot_time=1, rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: 1. target set to PHY mode 11bg, capture beacon
+  sub module: Phy Mode
+  summary: SoftAP set as 11bg, check beacon
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0107
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m b
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.supported_rates=""1/","2/","5.5/","11/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has erp/xrates, no ht, cap.short_slot_time=1, rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    3. radiotap rates in rates'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bg
+
+    2. 11b STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11bg, 11b STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_SCAN_0201
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 sta -S
+    - [R SSC1 P <ap_ssid_11b> P <ap_ssid_11g> P <ap_ssid_11n_ht20> P <ap_ssid_11n_ht40>]
+  - - SSC SSC1 phy -S -o 1 -m g
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 sta -S
+    - [R SSC1 P <ap_ssid_11b> P <ap_ssid_11g> P <ap_ssid_11n_ht20> P <ap_ssid_11n_ht40>]
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 sta -S
+    - [R SSC1 P <ap_ssid_11b> P <ap_ssid_11g> P <ap_ssid_11n_ht20> P <ap_ssid_11n_ht40>]
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 sta -S
+    - [R SSC1 P <ap_ssid_11b> P <ap_ssid_11g> P <ap_ssid_11n_ht20> P <ap_ssid_11n_ht40>]
+  comment: ''
+  execution time: 0.0
+  expected result: '3. find all 3 ext APs
+
+    5. find all 3 ext APs
+
+    7. find all 3 ext APs
+
+    9. find all 3 ext APs'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. 3 ext APs in 11b, 11g, 11n mode
+
+    2. STA in 11b mode
+
+    3. do all channel scan
+
+    4. STA in 11g mode
+
+    5. do all channel scan
+
+    6. STA in 11n ht20 mode
+
+    7. do all channel scan
+
+    8. STA in 11n ht40 mode
+
+    9. do all channel scan'
+  sub module: WIFI Scan
+  summary: STA in differnt PHY mode to scan AP in different PHY mode
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: Scan in different mode and channel
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: WIFI_CONN_0503
   SDK: '8266_NonOS
 
@@ -12147,6 +15261,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12197,6 +15312,285 @@ test cases:
   test point 2: reconnect policy test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0402
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <ap_ssid_c1_ht20> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 NC +JAP:DISCONNECTED', 'P SSC1 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 3. SoftAP and STA in channel2, both bandwidth 20M, SoftAP not get
+    disconnected
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. SoftAP 11n ht20, in channel1, ext AP 11n ht20, in channel2
+
+    2. AP get connected
+
+    3. STA connect to ext AP'
+  sub module: Phy Mode
+  summary: SoftAP ext AP in defferent channel, both bandwidth 20M, Softap get connected
+    than STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP initial channel test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0401
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_c1_ht20> -p <ap_password_phy>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['']
+  - - DELAY 10
+    - ['P SSC1 NC +JAP:DISCONNECTED', 'P SSC2 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 3. SoftAP and STA in channel2, both bandwidth 20M, STA not disconnected
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. SoftAP 11n ht20, in channel1, ext AP 11n ht20, in channel2
+
+    2. STA connect to ext AP
+
+    3. AP get connected'
+  sub module: Phy Mode
+  summary: SoftAP ext AP in defferent channel, both bandwidth 20M, STA connect to
+    AP then Softap get connected
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP initial channel test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0407
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_c1_ht40> -p <ap_password_phy>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['']
+  - - DELAY 10
+    - ['P SSC1 NC +JAP:DISCONNECTED', 'P SSC2 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 3. SoftAP and STA in channel2, SoftAP 40M, STA 20M, STA not disconnected
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. SoftAP 11n ht40, in channel1, ext AP 11n ht20, in channel2
+
+    2. STA connect to ext AP
+
+    3. AP get connected'
+  sub module: Phy Mode
+  summary: SoftAP ext AP in defferent channel, SoftAP 40M, ext AP 20M, STA connect
+    to AP then Softap get connected
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP initial channel test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0406
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <ap_ssid_c1_ht20> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 NC +JAP:DISCONNECTED', 'P SSC1 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 3. SoftAP and STA in channel2, both bandwidth 40M, SoftAP not get
+    disconnected
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. SoftAP 11n ht40, in channel1, ext AP 11n ht40, in channel2
+
+    2. AP get connected
+
+    3. STA connect to ext AP'
+  sub module: Phy Mode
+  summary: SoftAP ext AP in defferent channel, both bandwidth 40M, Softap get connected
+    than STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP initial channel test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0405
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_c1_ht20> -p <ap_password_phy>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['']
+  - - DELAY 10
+    - ['P SSC1 NC +JAP:DISCONNECTED', 'P SSC2 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 3. SoftAP and STA in channel2, both bandwidth 40M, STA not disconnected
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. SoftAP 11n ht40, in channel1, ext AP 11n ht40, in channel2
+
+    2. STA connect to ext AP
+
+    3. AP get connected'
+  sub module: Phy Mode
+  summary: SoftAP ext AP in defferent channel, both bandwidth 40M, STA connect to
+    AP then Softap get connected
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP initial channel test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0404
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <ap_ssid_c1_ht40> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 NC +JAP:DISCONNECTED', 'P SSC1 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 3. SoftAP and STA in channel2, SoftAP 20M, STA 40M, SoftAP not
+    get disconnected
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. SoftAP 11n ht20, in channel1, ext AP 11n ht40, in channel2
+
+    2. AP get connected
+
+    3. STA connect to ext AP'
+  sub module: Phy Mode
+  summary: SoftAP ext AP in defferent channel, SoftAP 20M, ext AP 40M, Softap get
+    connected than STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP initial channel test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^TCPIP_UDP_0112
   SDK: '8266_NonOS
 
@@ -12204,6 +15598,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12236,6 +15631,53 @@ test cases:
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0408
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 40
+    - ['R SSC2 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <ap_ssid_c1_ht40> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 NC +JAP:DISCONNECTED', 'P SSC1 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 3. SoftAP and STA in channel2, SoftAP 40M, STA 20M, SoftAP not
+    get disconnected
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  module: WIFI MAC
+  steps: '1. SoftAP 11n ht40, in channel1, ext AP 11n ht20, in channel2
+
+    2. AP get connected
+
+    3. STA connect to ext AP'
+  sub module: Phy Mode
+  summary: SoftAP ext AP in defferent channel, SoftAP 40M, ext AP 20M, Softap get
+    connected than STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP initial channel test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^TCPIP_UDP_0114
   SDK: '8266_NonOS
 
@@ -12243,6 +15685,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12275,6 +15718,315 @@ test cases:
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0214
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities.short_gi_for_40="1")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req and assoc-req has xrates/ht, ht_cap.short_gi40=1, 40width=1,  cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54];
+
+    4. 40M
+
+    5. succeed
+
+    6. data rate in radiotap is in rates or xrates'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn ht40
+
+    2. target connect to 11n ht40 AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bgn ht40,join ht40 external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0212
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11g> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req has xrates/ht, ht_cap.short_gi40=1, 40width=1,  cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54];
+
+    assoc-req has xrates no ht, cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54];
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in rates or xrates'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn ht40
+
+    2. target connect to 11g AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bgn ht40, join 11g external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0213
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_20> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req has xrates/ht, ht_cap.short_gi40=1, 40width=1,  cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54];
+
+    assoc-req has xrates/ht, cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54];
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in rates or xrates'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn ht40
+
+    2. target connect to 11n AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bgn ht40, join 11n external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0210
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 20
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11n_40> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities="")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")(Wlan.capability.short_slot_time="1")',
+      'P CAP OR 2 PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M","6M","9M","12M","18M","24M","36M","48M","54M")
+        PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.msc="")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req and assoc-req has xrates/ht, cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in rates or xrates or msc0-7'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn
+
+    2. target connect to 11n ht40 AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bgn, join ht40 external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_PHY_0211
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC1 sta -C -s <ap_ssid_11b> -p <ap_password_phy>
+    - ['P SSC1 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-ProbeReq")(Wlan.ie_list.extended_supported_rates+Wlan.ie_list.supported_rates="24/","36/","48/","54/","1/","2/","5.5/","11/","6/","9/","12/","18/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocReq")(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. probe-req has xrates/ht, ht_cap.short_gi40=1, 40width=1, cap.short_slot_time=1,rates+xrates=[1/2/5.5/11/6/9/12/18/24/36/48/54];
+
+    assoc-req has no ht/xrates, cap.short_slot_time=1,rates=[1/2/5.5/11]
+
+    4. 20M
+
+    5. succeed
+
+    6. data rate in radiotap is in [1/2/5.5/11]'
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11bgn ht40
+
+    2. target connect to 11b AP
+
+    3. capture probe-req and assoc-req in step2
+
+    4. check if config bandwidth correct
+
+    5. send data from target
+
+    6. capture data in step5'
+  sub module: Phy Mode
+  summary: target STA set as 11bgn ht40, join 11b external AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^WIFI_CONN_0104
   SDK: '8266_NonOS
 
@@ -12282,6 +16034,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12334,6 +16087,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12409,6 +16163,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12464,6 +16219,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12527,6 +16283,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12590,6 +16347,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12642,6 +16400,61 @@ test cases:
   test point 2: SAP/JAP with different config
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0504
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 1 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC1 phy -S -o 2 -m n -b 40
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 sta -C -s <ap_ssid_c1_ht40> -p <ap_password_phy>
+    - ['R SSC2 C +JAP:CONNECTED']
+  - - SSC SSC1 sta -C -s <target2_ssid> -p <target2_password>
+    - ['R SSC1 C +JAP:CONNECTED']
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC3 C +JAP:CONNECTED']
+  - - SSC SSC2 sta -C -s <ap_ssid_c2_ht20> -p <ap_password_phy>
+    - ['']
+  - - DELAY 10
+    - ['P SSC2 C +JAP:CONNECTED', 'P SSC[1,3] NC +JAP:DISCONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: 4. all STA not get disconnected; target 1 SoftAP and STA both in
+    channel2 20M
+  initial condition: T3_PHY1
+  initial condition description (auto): '1. target 1 and target 2 set to AP+STA mode,
+    target 3 set to STA mode
+
+    2. all interface of target 2,3 set to 11n ht40
+
+    3. config softAP of target 1 and target 2'
+  module: WIFI MAC
+  steps: '1. target 1 STA and SoftAP set to 40M
+
+    2. target 2 STA connect to ap_channel1_40
+
+    3. target 1/3 STA connect to target 2/1 SoftAP
+
+    4. target 2 STA connect to ap_channel2_20'
+  sub module: Phy Mode
+  summary: SoftAP STA in channel1, SoftAP 20M, STA 40M, STA changed to channel2 40M
+  test environment: SSC_T3_PhyMode
+  test environment description (auto): '3 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with (HT20, channel1), (HT20, channel2), (HT40, channel1), (HT40, channel2).
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: STA+SoftAP dynamic channel switch test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: ^TCPIP_IP_0101
   SDK: '8266_NonOS
 
@@ -12649,6 +16462,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12706,6 +16520,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12745,6 +16560,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12808,6 +16624,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12870,6 +16687,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12916,6 +16734,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -12971,6 +16790,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -13039,6 +16859,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -13115,6 +16936,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -13208,6 +17030,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -13252,6 +17075,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -13346,6 +17170,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -13407,6 +17232,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -13451,6 +17277,55 @@ test cases:
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: WIFI_PHY_0104
+  SDK: ESP32_IDF
+  Test App: SSC
+  allow fail: 2/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 phy -S -o 2 -m b
+    - ['R SSC1 C +PHY:OK']
+  - - SSC SSC2 phy -S -o 1 -m n -b 20
+    - ['R SSC2 C +PHY:OK']
+  - - STRING <cap_filter> wlan%20addr2%20%%s <target_ap_mac>
+    - [R PC_COM C OK]
+  - - 'NIC CAP START <capture_nic> wlan_capture <cap_filter> <capture_channel> '
+    - ['R PC_COM C +NIC_START:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['P SSC2 C +JAP:CONNECTED', 'P CAP PDU (Wlan.frame_ctrl.type_subtype="Management-AssocRes")(Wlan.ie_list.erp!)(Wlan.ie_list.ht_capabilities!)(Wlan.ie_list.extended_supported_rates!)(Wlan.capability.short_slot_time="1")(Wlan.ie_list.supported_rates="1/","2/","5.5/","11/")',
+      'P CAP PDU (Wlan.frame_ctrl.type_subtype="Data")(Wlan.radiotap.rate<"1M","2M","5.5M","11M")']
+  comment: ''
+  execution time: 0.0
+  expected result: '1. succeed
+
+    2. assoc response has no erp/xrates/ht, cap.short_slot_time=1, rates=[1/2/5/5/11]
+
+    3. radiotap rates in [1/2/5/5/11]'
+  initial condition: APM1
+  initial condition description (auto): AP mode, DHCP on, will autogen a TC with initial
+    condition APSTA1
+  module: WIFI MAC
+  steps: '1. target set to PHY mode 11b
+
+    2. 11bgn STA connect to SoftAP, capture assoc response
+
+    3. ping, capture Data'
+  sub module: Phy Mode
+  summary: SoftAP set as 11b, 11n STA connect to AP
+  test environment: SSC_T2_PhyMode
+  test environment description (auto): '2 SSC target connect with PC by UART.
+
+    PC has one WiFi NIC support capture wlan packet using libpcap.
+
+    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
+
+    Put 4 APs near SSC targets.'
+  test point 1: basic function
+  test point 2: SoftAP PHY mode test
+  version: v1 (2015-8-15)
+- CI ready: 'Yes'
   ID: TCPIP_TCP_0113
   SDK: '8266_NonOS
 
@@ -13458,6 +17333,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -13545,6 +17421,7 @@ test cases:
 
     ESP32_IDF'
   Test App: SSC
+  allow fail: ''
   auto test: 'Yes'
   category: Function
   cmd set:
