@@ -20,7 +20,7 @@
 #include "soc/gpio_sig_map.h"
 #include "driver/ledc.h"
 
-//TODO: Move these debug options to menuconfig
+//TODO: to use APIs in esp_log.h.
 #define LEDC_DBG_WARING_ENABLE (0)
 #define LEDC_DBG_ERROR_ENABLE  (0)
 #define LEDC_INFO_ENABLE       (0)
@@ -64,31 +64,31 @@
 
 static portMUX_TYPE ledc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
-static int ledc_is_valid_channel(uint32_t channel)
+static bool ledc_is_valid_channel(uint32_t channel)
 {
     if(channel > LEDC_CHANNEL_7) {
         LEDC_ERROR("LEDC CHANNEL ERR: %d\n",channel);
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
-static int ledc_is_valid_mode(uint32_t mode)
+static bool ledc_is_valid_mode(uint32_t mode)
 {
     if(mode >= LEDC_SPEED_MODE_MAX) {
         LEDC_ERROR("LEDC MODE ERR: %d\n",mode);
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
-static int ledc_is_valid_timer(int timer)
+static bool ledc_is_valid_timer(int timer)
 {
     if(timer > LEDC_TIMER3) {
         LEDC_ERROR("LEDC TIMER ERR: %d\n", timer);
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
 esp_err_t ledc_timer_config(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t div_num, uint32_t bit_num, ledc_clk_src_t clk_src)

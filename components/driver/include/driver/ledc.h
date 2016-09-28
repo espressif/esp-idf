@@ -34,24 +34,29 @@ typedef enum {
     //LEDC_LOW_SPEED_MODE,    /*LEDC low speed speed_mode */
     LEDC_SPEED_MODE_MAX,
 } ledc_mode_t;
+
 typedef enum {
     LEDC_INTR_DISABLE = 0,    /*Disable LEDC interrupt */
     LEDC_INTR_FADE_END,       /*Enable LEDC interrupt */
 } ledc_intr_type_t;
+
 typedef enum {
     LEDC_DUTY_DIR_DECREASE = 0,    /*LEDC duty decrease direction */
     LEDC_DUTY_DIR_INCREASE = 1,    /*LEDC duty increase direction */
 } ledc_duty_direction_t;
+
 typedef enum  {
     LEDC_REF_TICK = 0, /*LEDC timer clock divided from reference tick(1Mhz) */
     LEDC_APB_CLK,      /*LEDC timer clock divided from APB clock(80Mhz)*/
 } ledc_clk_src_t;
+
 typedef enum {
     LEDC_TIMER0 = 0, /*LEDC source timer TIMER0 */
     LEDC_TIMER1,     /*LEDC source timer TIMER1 */
     LEDC_TIMER2,     /*LEDC source timer TIMER2 */
     LEDC_TIMER3,     /*LEDC source timer TIMER3 */
 } ledc_timer_t;
+
 typedef enum {
     LEDC_CHANNEL_0 = 0, /*LEDC channel 0 */
     LEDC_CHANNEL_1,     /*LEDC channel 1 */
@@ -62,6 +67,7 @@ typedef enum {
     LEDC_CHANNEL_6,     /*LEDC channel 6 */
     LEDC_CHANNEL_7,     /*LEDC channel 7 */
 } ledc_channel_t;
+
 typedef enum {
     LEDC_TIMER_10_BIT = 10, /*LEDC PWM depth 10Bit */
     LEDC_TIMER_11_BIT = 11, /*LEDC PWM depth 11Bit */
