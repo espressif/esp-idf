@@ -18,7 +18,7 @@ Chapter 1. SSL Context Method Create
 ====================================
 
 
-1.1 const SSL_METHOD* ``SSLv23_client_method``(void)
+1.1 const SSL_METHOD* ``SSLv23_client_method`` (void)
 
     Arguments::
     
@@ -42,7 +42,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.2 const SSL_METHOD* ``TLSv1_client_method``(void)
+1.2 const SSL_METHOD* ``TLSv1_client_method`` (void)
 
     Arguments::
     
@@ -66,7 +66,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.3 const SSL_METHOD* ``SSLv3_client_method``(void)
+1.3 const SSL_METHOD* ``SSLv3_client_method`` (void)
 
     Arguments::
     
@@ -90,7 +90,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.4 const SSL_METHOD* ``TLSv1_1_client_method``(void)
+1.4 const SSL_METHOD* ``TLSv1_1_client_method`` (void)
 
     Arguments::
     
@@ -114,7 +114,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.5 const SSL_METHOD* ``TLSv1_2_client_method``(void)
+1.5 const SSL_METHOD* ``TLSv1_2_client_method`` (void)
 
     Arguments::
     
@@ -138,7 +138,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.6 const SSL_METHOD* ``SSLv23_server_method``(void)
+1.6 const SSL_METHOD* ``SSLv23_server_method`` (void)
 
     Arguments::
     
@@ -162,7 +162,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.7 const SSL_METHOD* ``TLSv1_1_server_method``(void)
+1.7 const SSL_METHOD* ``TLSv1_1_server_method`` (void)
 
     Arguments::
     
@@ -186,7 +186,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.8 const SSL_METHOD* ``TLSv1_2_server_method``(void)
+1.8 const SSL_METHOD* ``TLSv1_2_server_method`` (void)
 
     Arguments::
     
@@ -210,7 +210,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.9 const SSL_METHOD* ``TLSv1_server_method``(void)
+1.9 const SSL_METHOD* ``TLSv1_server_method`` (void)
 
     Arguments::
     
@@ -234,7 +234,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.10 const SSL_METHOD* ``SSLv3_server_method``(void)
+1.10 const SSL_METHOD* ``SSLv3_server_method`` (void)
 
     Arguments::
     
@@ -263,7 +263,7 @@ Chapter 2. SSL Context Fucntion
 ===============================
 
 
-2.1 SSL_CTX* ``SSL_CTX_new``(const SSL_METHOD *method)
+2.1 SSL_CTX* ``SSL_CTX_new`` (const SSL_METHOD *method)
 
     Arguments::
     
@@ -287,7 +287,7 @@ Chapter 2. SSL Context Fucntion
         }
 
 
-2.2 ``void SSL_CTX_free``(SSL_CTX *ctx)
+2.2 ``void SSL_CTX_free`` (SSL_CTX *ctx)
 
     Arguments::
     
@@ -313,7 +313,7 @@ Chapter 2. SSL Context Fucntion
         }
 
 
-2.3 ``int SSL_CTX_set_ssl_version``(SSL_CTX *ctx, const SSL_METHOD *meth)
+2.3 ``int SSL_CTX_set_ssl_version`` (SSL_CTX *ctx, const SSL_METHOD *meth)
 
     Arguments::
     
@@ -342,7 +342,7 @@ Chapter 2. SSL Context Fucntion
         }
 
 
-2.4 const SSL_METHOD* ``SSL_CTX_get_ssl_method``(SSL_CTX *ctx)
+2.4 const SSL_METHOD* ``SSL_CTX_get_ssl_method`` (SSL_CTX *ctx)
 
     Arguments::
     
@@ -374,7 +374,7 @@ Chapter 3. SSL Fucntion
 =======================
 
 
-3.1 SSL* ``SSL_new``(SSL_CTX *ctx)
+3.1 SSL* ``SSL_new`` (SSL_CTX *ctx)
 
     Arguments::
     
@@ -401,7 +401,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.2 void ``SSL_free``(SSL *ssl)
+3.2 void ``SSL_free`` (SSL *ssl)
 
     Arguments::
     
@@ -427,7 +427,7 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.3 int ``SSL_do_handshake``(SSL *ssl)
+3.3 int ``SSL_do_handshake`` (SSL *ssl)
 
     Arguments::
     
@@ -456,7 +456,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.4 int ``SSL_connect``(SSL *ssl)
+3.4 int ``SSL_connect`` (SSL *ssl)
 
     Arguments::
     
@@ -485,7 +485,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.5 int ``SSL_accept``(SSL *ssl)
+3.5 int ``SSL_accept`` (SSL *ssl)
 
     Arguments::
     
@@ -514,7 +514,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.6 int ``SSL_shutdown``(SSL *ssl)
+3.6 int ``SSL_shutdown`` (SSL *ssl)
 
     Arguments::
     
@@ -543,7 +543,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.7 int ``SSL_clear``(SSL *ssl)
+3.7 int ``SSL_clear`` (SSL *ssl)
 
     Arguments::
     
@@ -571,7 +571,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.8 int ``SSL_read``(SSL *ssl, void *buffer, int len)
+3.8 int ``SSL_read`` (SSL *ssl, void *buffer, int len)
 
     Arguments::
     
@@ -603,7 +603,7 @@ Chapter 3. SSL Fucntion
             ret = SSL_read(ssl, buf, len);
         }
 
-3.9 int ``SSL_write``(SSL *ssl, const void *buffer, int len)
+3.9 int ``SSL_write`` (SSL *ssl, const void *buffer, int len)
 
     Arguments::
     
@@ -636,7 +636,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.10 ``SSL_CTX *SSL_get_SSL_CTX``(const SSL *ssl)
+3.10 ``SSL_CTX *SSL_get_SSL_CTX`` (const SSL *ssl)
 
     Arguments::
     
@@ -663,7 +663,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.11 int ``SSL_get_shutdown``(const SSL *ssl)
+3.11 int ``SSL_get_shutdown`` (const SSL *ssl)
 
     Arguments::
     
@@ -690,7 +690,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.12 void ``SSL_set_shutdown``(SSL *ssl, int mode)
+3.12 void ``SSL_set_shutdown`` (SSL *ssl, int mode)
 
     Arguments::
     
@@ -717,7 +717,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.13 const SSL_METHOD* ``SSL_get_ssl_method``(SSL *ssl)
+3.13 const SSL_METHOD* ``SSL_get_ssl_method`` (SSL *ssl)
 
     Arguments::
     
@@ -744,7 +744,7 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.14 int ``SSL_set_ssl_method``(SSL *ssl, const SSL_METHOD *method)
+3.14 int ``SSL_set_ssl_method`` (SSL *ssl, const SSL_METHOD *method)
 
     Arguments::
     
@@ -774,7 +774,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.15 int ``SSL_pending``(const SSL *ssl)
+3.15 int ``SSL_pending`` (const SSL *ssl)
 
     Arguments::
     
@@ -801,7 +801,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.16 int ``SSL_has_pending``(const SSL *ssl)
+3.16 int ``SSL_has_pending`` (const SSL *ssl)
 
     Arguments::
     
@@ -829,7 +829,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.17 int ``SSL_get_fd``(const SSL *ssl)
+3.17 int ``SSL_get_fd`` (const SSL *ssl)
 
     Arguments::
     
@@ -857,7 +857,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.18 int ``SSL_get_rfd``(const SSL *ssl)
+3.18 int ``SSL_get_rfd`` (const SSL *ssl)
 
     Arguments::
     
@@ -885,7 +885,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.19 int ``SSL_get_wfd``(const SSL *ssl)
+3.19 int ``SSL_get_wfd`` (const SSL *ssl)
 
     Arguments::
     
@@ -913,7 +913,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.20 int ``SSL_set_fd``(SSL *ssl, int fd)
+3.20 int ``SSL_set_fd`` (SSL *ssl, int fd)
 
     Arguments::
     
@@ -943,7 +943,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.21 int ``SSL_set_rfd``(SSL *ssl, int fd)
+3.21 int ``SSL_set_rfd`` (SSL *ssl, int fd)
 
     Arguments::
     
@@ -973,7 +973,7 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.22 int ``SSL_set_wfd``(SSL *ssl, int fd)
+3.22 int ``SSL_set_wfd`` (SSL *ssl, int fd)
 
     Arguments::
     
@@ -1003,7 +1003,7 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.23 int ``SSL_version``(const SSL *ssl)
+3.23 int ``SSL_version`` (const SSL *ssl)
 
     Arguments::
     
@@ -1030,7 +1030,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.24 const char* ``SSL_get_version``(const SSL *ssl)
+3.24 const char* ``SSL_get_version`` (const SSL *ssl)
 
     Arguments::
     
@@ -1057,7 +1057,7 @@ Chapter 3. SSL Fucntion
         }
         
         
-3.25 OSSL_HANDSHAKE_STATE ``SSL_get_state``(const SSL *ssl)
+3.25 OSSL_HANDSHAKE_STATE ``SSL_get_state`` (const SSL *ssl)
 
     Arguments::
     
@@ -1084,7 +1084,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.26 const char* ``SSL_alert_desc_string``(int value)
+3.26 const char* ``SSL_alert_desc_string`` (int value)
 
     Arguments::
     
@@ -1111,7 +1111,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.27 const char* ``SSL_alert_desc_string_long``(int value)
+3.27 const char* ``SSL_alert_desc_string_long`` (int value)
 
     Arguments::
     
@@ -1138,7 +1138,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.28 const char* ``SSL_alert_type_string``(int value)
+3.28 const char* ``SSL_alert_type_string`` (int value)
 
     Arguments::
     
@@ -1165,7 +1165,7 @@ Chapter 3. SSL Fucntion
         }
         
         
-3.29 const char* ``SSL_alert_type_string_long``(int value)
+3.29 const char* ``SSL_alert_type_string_long`` (int value)
 
     Arguments::
     
@@ -1191,7 +1191,7 @@ Chapter 3. SSL Fucntion
             str = SSL_alert_type_string_long(val);
         }
 
-3.30 const char* ``SSL_rstate_string``(SSL *ssl)
+3.30 const char* ``SSL_rstate_string`` (SSL *ssl)
 
     Arguments::
     
@@ -1218,7 +1218,7 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.31 const char* ``SSL_rstate_string_long``(SSL *ssl)
+3.31 const char* ``SSL_rstate_string_long`` (SSL *ssl)
 
     Arguments::
     
@@ -1245,7 +1245,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.32 const char* ``SSL_state_string``(const SSL *ssl)
+3.32 const char* ``SSL_state_string`` (const SSL *ssl)
 
     Arguments::
     
@@ -1272,7 +1272,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.33 char* ``SSL_state_string_long``(const SSL *ssl)
+3.33 char* ``SSL_state_string_long`` (const SSL *ssl)
 
     Arguments::
     
@@ -1299,7 +1299,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.34 int ``SSL_get_error``(const SSL *ssl, int ret_code)
+3.34 int ``SSL_get_error`` (const SSL *ssl, int ret_code)
 
     Arguments::
     
@@ -1327,7 +1327,7 @@ Chapter 3. SSL Fucntion
             err = SSL_get_error(ssl, ret);
         }
         
-3.35 void ``SSL_CTX_set_default_read_buffer_len``(SSL_CTX *ctx, size_t len)
+3.35 void ``SSL_CTX_set_default_read_buffer_len`` (SSL_CTX *ctx, size_t len)
 
     Arguments::
     
@@ -1355,7 +1355,7 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.36 void ``SSL_set_default_read_buffer_len``(SSL *ssl, size_t len)
+3.36 void ``SSL_set_default_read_buffer_len`` (SSL *ssl, size_t len)
 
     Arguments::
     
@@ -1383,7 +1383,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.37 int ``SSL_want``(const SSL *ssl)
+3.37 int ``SSL_want`` (const SSL *ssl)
 
     Arguments::
     
@@ -1410,7 +1410,7 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.38 int ``SSL_want_nothing``(const SSL *ssl)
+3.38 int ``SSL_want_nothing`` (const SSL *ssl)
 
     Arguments::
     
@@ -1438,7 +1438,7 @@ Chapter 3. SSL Fucntion
         }
         
         
-3.39 int ``SSL_want_read``(const SSL *ssl)
+3.39 int ``SSL_want_read`` (const SSL *ssl)
 
     Arguments::
     
@@ -1466,7 +1466,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.40 int ``SSL_want_write``(const SSL *ssl)
+3.40 int ``SSL_want_write`` (const SSL *ssl)
 
     Arguments::
     
@@ -1498,7 +1498,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
 ==========================================================
 
 
-4.1 X509* ``d2i_X509``(X509 **cert, const unsigned char *buffer, long len)
+4.1 X509* ``d2i_X509`` (X509 **cert, const unsigned char *buffer, long len)
 
     Arguments::
     
@@ -1529,7 +1529,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.2 int ``SSL_add_client_CA``(SSL *ssl, X509 *x)
+4.2 int ``SSL_add_client_CA`` (SSL *ssl, X509 *x)
 
     Arguments::
     
@@ -1559,7 +1559,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.3 int ``SSL_CTX_add_client_CA``(SSL_CTX *ctx, X509 *x)
+4.3 int ``SSL_CTX_add_client_CA`` (SSL_CTX *ctx, X509 *x)
 
     Arguments::
     
@@ -1589,7 +1589,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.4 X509* ``SSL_get_certificate``(const SSL *ssl)
+4.4 X509* ``SSL_get_certificate`` (const SSL *ssl)
 
     Arguments::
     
@@ -1616,7 +1616,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.5 long ``SSL_get_verify_result``(const SSL *ssl)
+4.5 long ``SSL_get_verify_result`` (const SSL *ssl)
 
     Arguments::
     
@@ -1643,7 +1643,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.6 int ``SSL_CTX_use_certificate``(SSL_CTX *ctx, X509 *x)
+4.6 int ``SSL_CTX_use_certificate`` (SSL_CTX *ctx, X509 *x)
 
     Arguments::
     
@@ -1673,7 +1673,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.7 int ``SSL_CTX_use_certificate_ASN1``(SSL_CTX *ctx, int len, const unsigned char *d)
+4.7 int ``SSL_CTX_use_certificate_ASN1`` (SSL_CTX *ctx, int len, const unsigned char *d)
 
     Arguments::
     
@@ -1705,7 +1705,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
         
 
-4.8 int ``SSL_CTX_use_PrivateKey``(SSL_CTX *ctx, EVP_PKEY *pkey)
+4.8 int ``SSL_CTX_use_PrivateKey`` (SSL_CTX *ctx, EVP_PKEY *pkey)
 
     Arguments::
     
@@ -1735,7 +1735,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.9 int ``SSL_CTX_use_PrivateKey_ASN1``(int pk, SSL_CTX *ctx, const unsigned char *d,  long len)
+4.9 int ``SSL_CTX_use_PrivateKey_ASN1`` (int pk, SSL_CTX *ctx, const unsigned char *d,  long len)
 
     Arguments::
     
@@ -1768,7 +1768,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
         
 
-4.10 int ``SSL_CTX_use_RSAPrivateKey_ASN1``(SSL_CTX *ctx, const unsigned char *d, long len)
+4.10 int ``SSL_CTX_use_RSAPrivateKey_ASN1`` (SSL_CTX *ctx, const unsigned char *d, long len)
 
     Arguments::
     
@@ -1800,7 +1800,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.11 int ``SSL_use_certificate_ASN1``(SSL *ssl, int len, const unsigned char *d)
+4.11 int ``SSL_use_certificate_ASN1`` (SSL *ssl, int len, const unsigned char *d)
 
     Arguments::
     
@@ -1832,7 +1832,7 @@ Chapter 4. SSL X509 Certification and Private Key Function
         }
 
 
-4.12 X509* ``SSL_get_peer_certificate``(const SSL *ssl)
+4.12 X509* ``SSL_get_peer_certificate`` (const SSL *ssl)
 
     Arguments::
     
