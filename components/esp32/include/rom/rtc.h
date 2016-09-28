@@ -161,7 +161,7 @@ WAKEUP_REASON rtc_get_wakeup_cause(void);
   *
   * @param  uint32_t start_addr : 0 - 0x7ff for Fast RTC Memory.
   *
-  * @param  uint32_t crc_len : 0 - 0x7ff, 0 for 1 byte, 0x7ff for 0x800 byte.
+  * @param  uint32_t crc_len : 0 - 0x7ff, 0 for 4 byte, 0x7ff for 0x2000 byte.
   *
   * @return uint32_t : CRC32 result
   */

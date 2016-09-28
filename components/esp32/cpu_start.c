@@ -42,7 +42,6 @@
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
 #include "esp_log.h"
-#include "esp_deepsleep.h"
 
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
 void start_cpu0_default(void) IRAM_ATTR;
