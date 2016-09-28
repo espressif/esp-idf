@@ -7,7 +7,7 @@ The framing layer of HTTP/2 is implemented as a reusable C library.
 
 An HPACK encoder and decoder are available as a public API.
 
-- The nghttp support many different processor, But for the most part function you only need the function as follows:
+- The nghttp support many different processor, but for the most part you only need the following functions:
 
     *nghttp2_session_callbacks_new:*  Initializes *callbacks_ptr with NULL values
 
@@ -29,7 +29,7 @@ An HPACK encoder and decoder are available as a public API.
     
     *nghttp2_session_del:* Frees any resources allocated for session
     
-If you are following TLS related RFC, you know that NPN is not the standardized way to negotiate HTTP/2. NPN itself is not event published as RFC. 
+If you are following TLS related RFC, you know that NPN is not the standardized way to negotiate HTTP/2. NPN itself is not even published as RFC. 
 
 The standard way to negotiate HTTP/2 is ALPN, Application-Layer Protocol Negotiation Extension, defined in RFC 7301. 
 
@@ -39,6 +39,6 @@ The standard way to negotiate HTTP/2 is ALPN, Application-Layer Protocol Negotia
 
     This endpoint supports h2, h2-16, h2-14, spdy/3.1 and http/1.1 via ALPN/NPN and requires TLSv1.2 for HTTP/2 connection.
 
-More information about nghttp library will show them on https://nghttp2.org
+More information about nghttp library can be found at https://nghttp2.org
 
 An introductory article on protocol is available on RFC 7540 HTTP/2 and RFC 7541 HPACK - Header Compression for HTTP/2
