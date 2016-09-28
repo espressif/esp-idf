@@ -3337,6 +3337,18 @@ TCB_t *pxNewTCB;
 }
 /*-----------------------------------------------------------*/
 
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+{
+	TCB_t *pxTCB;
+	UBaseType_t uxReturn;
+
+	pxTCB = prvGetTCBFromHandle( xTask );
+
+	return pxTCB->xCoreID;
+}
+/*-----------------------------------------------------------*/
+
+
 #if ( configUSE_TRACE_FACILITY == 1 )
 
 	static UBaseType_t prvListTaskWithinSingleList( TaskStatus_t *pxTaskStatusArray, List_t *pxList, eTaskState eState )
