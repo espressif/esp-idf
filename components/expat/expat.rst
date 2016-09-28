@@ -7,7 +7,7 @@ It is a stream-oriented parser in which an application registers handlers for th
     
 It can parse some larger files.
     
--   Expat XML Parser Support many different processor, But for the most part function you only need four function as follows:
+-   Expat XML Parser support many different processor, but for the most part function you only need the following functions:
 
     *XML_ParserCreate:*  Create a new parser object
 
@@ -17,6 +17,6 @@ It can parse some larger files.
 
     *XML_Parse:*  Pass a buffer full of document to the parser
 
-More information about Expat library will show them on http://expat.sourceforge.net
+More information about Expat library can be found on http://expat.sourceforge.net
 
 An introductory article on using Expat is available on http://xml.com
