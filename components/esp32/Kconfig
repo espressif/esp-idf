@@ -63,6 +63,12 @@ config MEMMAP_TRACEMEM
         of memory that can't be used for general purposes anymore. Disable this if you do not know
         what this is.
 
+# Memory to reverse for trace, used in linker script
+config TRACEMEM_RESERVE_DRAM
+    hex
+    default 0x8000 if MEMMAP_TRACEMEM
+    default 0x0
+
 config MEMMAP_SPISRAM
     bool "Use external SPI SRAM chip as main memory"
     default "n"
