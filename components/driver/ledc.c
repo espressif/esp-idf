@@ -16,7 +16,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
-#include "soc/dport_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "driver/ledc.h"
 
@@ -84,14 +83,14 @@ static bool ledc_is_valid_mode(uint32_t mode)
 
 static bool ledc_is_valid_timer(int timer)
 {
-    if(timer > LEDC_TIMER3) {
+    if(timer > LEDC_TIMER_3) {
         LEDC_ERROR("LEDC TIMER ERR: %d\n", timer);
         return false;
     }
     return true;
 }
 
-esp_err_t ledc_timer_config(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t div_num, uint32_t bit_num, ledc_clk_src_t clk_src)
+esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t div_num, uint32_t bit_num, ledc_clk_src_t clk_src)
 {
     if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
@@ -103,7 +102,7 @@ esp_err_t ledc_timer_config(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint
     LEDC.timer_group[speed_mode].timer[timer_sel].conf.div_num = div_num;
     LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel = clk_src;
     LEDC.timer_group[speed_mode].timer[timer_sel].conf.bit_num = bit_num;
-    if(speed_mode == LEDC_HIGH_SPEED_MODE) {
+    if(speed_mode != LEDC_HIGH_SPEED_MODE) {
         LEDC.timer_group[speed_mode].timer[timer_sel].conf.low_speed_update = 1;
     }
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -213,45 +212,28 @@ esp_err_t ledc_isr_register(uint32_t ledc_intr_num, void (*fn)(void*), void * ar
     return ESP_OK;
 }
 
-esp_err_t ledc_config(ledc_config_t* ledc_conf)
+esp_err_t ledc_timer_config(ledc_timer_config_t* timer_conf)
 {
-    SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_LEDC_CLK_EN);
-    CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_LEDC_RST);
+    int freq_hz = timer_conf->freq_hz;
+    int bit_num = timer_conf->bit_num;
+    int timer_num = timer_conf->timer_num;
+    int speed_mode = timer_conf->speed_mode;
 
-    uint32_t speed_mode = ledc_conf->speed_mode;
-    uint32_t gpio_num = ledc_conf->gpio_num;
-    uint32_t ledc_channel = ledc_conf->channel;
-    uint32_t freq_hz = ledc_conf->freq_hz;
-    uint32_t timer_select = ledc_conf->timer_sel;
-    uint32_t bit_num = ledc_conf->bit_num;
-    uint32_t intr_type = ledc_conf->intr_type;
-    uint32_t duty = ledc_conf->duty;
-    uint32_t div_param = 0;
-    uint32_t precision = 0;
-    int timer_clk_src = 0;
-
-    if(!ledc_is_valid_channel(ledc_channel)) {
-        return ESP_ERR_INVALID_ARG;
-    }
     if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;
     }
-    if(!GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)) {
-        LEDC_ERROR("GPIO number error: IO%d\n ", gpio_num);
-        return ESP_ERR_INVALID_ARG;
-    }
     if(freq_hz == 0 || bit_num == 0 || bit_num > LEDC_TIMER_15_BIT) {
-        LEDC_ERROR("freq_hz=%u bit_num=%u\n", div_param, bit_num);
+        LEDC_ERROR("freq_hz=%u bit_num=%u\n", freq_hz, bit_num);
         return ESP_ERR_INVALID_ARG;
     }
-    if(timer_select > LEDC_TIMER3) {
-        LEDC_ERROR("Time Select %u\n", timer_select);
+    if(timer_num > LEDC_TIMER_3) {
+        LEDC_ERROR("Time Select %u\n", timer_num);
         return ESP_ERR_INVALID_ARG;
     }
-    portENTER_CRITICAL(&ledc_spinlock);
     esp_err_t ret = ESP_OK;
-    precision = (0x1 << bit_num);  //2**depth
-    div_param = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision; //8bit fragment
+    uint32_t precision = (0x1 << bit_num);  //2**depth
+    uint64_t div_param = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision; //8bit fragment
+    int timer_clk_src;
     /*Fail ,because the div_num overflow or too small*/
     if(div_param <= 256 || div_param > LEDC_DIV_NUM_HSTIMER0_V) { //REF TICK
         /*Selet the reference tick*/
@@ -264,33 +246,59 @@ esp_err_t ledc_config(ledc_config_t* ledc_conf)
     } else { //APB TICK
         timer_clk_src = LEDC_APB_CLK;
     }
-    //1. set timer parameters
-    //   timer settings decide the clk of counter and the period of PWM
-    ledc_timer_config(speed_mode, timer_select, div_param, bit_num, timer_clk_src);
-    //   reset timer.
-    ledc_timer_rst(speed_mode, timer_select);
-    //2. set channel parameters
-    //   channel parameters decide how the waveform looks like in one period
-    //   set channel duty, duty range is (0 ~ ((2 ** bit_num) - 1))
-    ledc_set_duty(speed_mode, ledc_channel, duty);
-    //update duty settings
-    ledc_update(speed_mode, ledc_channel);
-    //3. bind the channel with the timer
-    ledc_bind_channel_timer(speed_mode, ledc_channel, timer_select);
-    //4. set interrupt type
-    ledc_enable_intr_type(speed_mode, ledc_channel, intr_type);
-    LEDC_INFO("LEDC_PWM CHANNEL %1u|GPIO %02u|FreHz %05u|Duty %04u|Depth %04u|Time %01u|SourceClk %01u|Divparam %u\n",
-        ledc_channel, gpio_num, freq_hz, duty, bit_num, timer_select, timer_clk_src, div_param
-    );
-    /*5. set LEDC signal in gpio matrix*/
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
-    gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-    gpio_matrix_out(gpio_num, LEDC_HS_SIG_OUT0_IDX + ledc_channel, 0, 0);
-    portEXIT_CRITICAL(&ledc_spinlock);
+    /*set timer parameters*/
+    /*timer settings decide the clk of counter and the period of PWM*/
+    ledc_timer_set(speed_mode, timer_num, div_param, bit_num, timer_clk_src);
+    /*   reset timer.*/
+    ledc_timer_rst(speed_mode, timer_num);
     return ret;
 }
 
-esp_err_t ledc_update(ledc_mode_t speed_mode, ledc_channel_t channel)
+esp_err_t ledc_channel_config(ledc_channel_config_t* ledc_conf)
+{
+    uint32_t speed_mode = ledc_conf->speed_mode;
+    uint32_t gpio_num = ledc_conf->gpio_num;
+    uint32_t ledc_channel = ledc_conf->channel;
+    uint32_t timer_select = ledc_conf->timer_sel;
+    uint32_t intr_type = ledc_conf->intr_type;
+    uint32_t duty = ledc_conf->duty;
+
+    if(!ledc_is_valid_channel(ledc_channel)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(!ledc_is_valid_mode(speed_mode)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(!GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)) {
+        LEDC_ERROR("GPIO number error: IO%d\n ", gpio_num);
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(timer_select > LEDC_TIMER_3) {
+        LEDC_ERROR("Time Select %u\n", timer_select);
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_err_t ret = ESP_OK;
+    /*set channel parameters*/
+    /*   channel parameters decide how the waveform looks like in one period*/
+    /*   set channel duty, duty range is (0 ~ ((2 ** bit_num) - 1))*/
+    ledc_set_duty(speed_mode, ledc_channel, duty);
+    /*update duty settings*/
+    ledc_update_duty(speed_mode, ledc_channel);
+    /*bind the channel with the timer*/
+    ledc_bind_channel_timer(speed_mode, ledc_channel, timer_select);
+    /*set interrupt type*/
+    ledc_enable_intr_type(speed_mode, ledc_channel, intr_type);
+    LEDC_INFO("LEDC_PWM CHANNEL %1u|GPIO %02u|Duty %04u|Time %01u\n",
+        ledc_channel, gpio_num, duty, timer_select
+    );
+    /*set LEDC signal in gpio matrix*/
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+    gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
+    gpio_matrix_out(gpio_num, LEDC_HS_SIG_OUT0_IDX + ledc_channel, 0, 0);
+    return ret;
+}
+
+esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     if(!ledc_is_valid_mode(speed_mode)) {
         return ESP_ERR_INVALID_ARG;

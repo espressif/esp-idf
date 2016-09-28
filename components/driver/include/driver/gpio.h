@@ -14,7 +14,7 @@
 
 #ifndef _DRIVER_GPIO_H_
 #define _DRIVER_GPIO_H_
-
+#include "esp_err.h"
 #include <esp_types.h>
 #include "soc/gpio_reg.h"
 #include "soc/gpio_struct.h"
