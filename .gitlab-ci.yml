@@ -139,7 +139,8 @@ push_master_to_github:
     - triggers
 
   variables:
-    # LOCAL_ENV_CONFIG_PATH: define LOCAL_ENV_CONFIG in jobs because this variable may need complicated logic to generate
+    # LOCAL_ENV_CONFIG_PATH: define in template and jobs can overwrite if required
+    LOCAL_ENV_CONFIG_PATH: /home/gitlab-runner/LocalConfig/ESP32_IDF
     BIN_PATH: "$CI_PROJECT_DIR/SSC/build/"
     APP_NAME: "ssc"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
@@ -154,7 +155,7 @@ push_master_to_github:
     expire_in: 6 mos
 
   script:
-    - git clone ssh://git@gitlab.espressif.cn:27227/yinling/auto_test_script.git
+    - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
 
@@ -168,7 +169,7 @@ push_master_to_github:
   script:
     # must be night build triggers, otherwise exit without test
     - test $NIGHT_BUILD != "Yes" || exit
-    - git clone ssh://git@gitlab.espressif.cn:27227/yinling/auto_test_script.git
+    - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
 
@@ -178,18 +179,18 @@ Function_SYS_01:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_SYS_01.yml
 
 Function_WIFI_01:
   <<: *test_template
   tags:
     - ESP32_IDF
+    - SSC_T3_PhyMode
     - SSC_T1_1
     - SSC_T1_WEP
+    - SSC_T2_PhyMode
     - SSC_T2_1
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_01.yml
 
 Function_WIFI_02:
@@ -198,20 +199,28 @@ Function_WIFI_02:
     - ESP32_IDF
     - SSC_T1_1
     - SSC_T1_WEP
+    - SSC_T2_PhyMode
     - SSC_T2_1
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_02.yml
+
+Function_WIFI_03:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T3_PhyMode
+    - SSC_T1_1
+    - SSC_T2_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_03.yml
 
 Function_TCPIP_01:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_01.yml
 
 Function_TCPIP_02:
@@ -221,7 +230,6 @@ Function_TCPIP_02:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_02.yml
 
 Function_TCPIP_03:
@@ -231,7 +239,6 @@ Function_TCPIP_03:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_03.yml
 
 Function_TCPIP_04:
@@ -239,10 +246,8 @@ Function_TCPIP_04:
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_04.yml
 
 Function_TCPIP_05:
@@ -250,37 +255,116 @@ Function_TCPIP_05:
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_05.yml
 
 Function_TCPIP_06:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-    - SSC_T2_1
-  before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_06.yml
-
-Function_TCPIP_07:
   <<: *test_template_night
   tags:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_07.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_06.yml
 
-Function_WIFI_03:
+Function_WIFI_04:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_APC
   before_script:
-    - LOCAL_ENV_CONFIG_PATH=/home/gitlab-runner/LocalConfig/ESP32_IDF
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_03.yml
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_04.yml
+
+Function_WIFI_05:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_05.yml
+
+Function_WIFI_06:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_06.yml
+
+Function_WIFI_07:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_07.yml
+
+Function_WIFI_08:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_08.yml
+
+Function_WIFI_09:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_09.yml
+
+Function_TCPIP_07:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T1_2
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_07.yml
+
+Function_TCPIP_08:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T2_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_08.yml
+
+Function_TCPIP_09:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_09.yml
+
+Function_TCPIP_10:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T1_2
+    - SSC_T2_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_10.yml
+
+Function_TCPIP_11:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_11.yml
+
+Function_TCPIP_12:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - SSC_T1_2
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_12.yml
 
