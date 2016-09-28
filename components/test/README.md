@@ -1,4 +1,7 @@
-# The test folder in SDK
+
+# Note: The test cases in this folder are for Espressif internal use.
+
+# Goto internal project wiki Testing page for detail about this folder.
 
 ## File Structure
 
@@ -45,3 +48,14 @@ After review it will be merged to SDK and will be The cases will be synced to da
     4. [config test environment](https://gitlab.espressif.cn:6688/yinling/auto_test_script/blob/master/public/Design/TestEnvConfig.DesignNote.md). All parameters in table "Parameters require config before use" MUST be configured.
 3. run test cases with [CIRunner.py](https://gitlab.espressif.cn:6688/yinling/auto_test_script/blob/master/public/Design/RunnerConfigs.DesignNote.md)
 
+
+
+## exclude known issues for CI
+the test cases listed in file "KnownIssues" will be excluded by CI when calculating results
+
+Editing KnownIssues file is very simple, one single line for the ID for each case.
+```
+TCPIP_TCP_0101
+TCPIP_TCP_0201
+...
+```
