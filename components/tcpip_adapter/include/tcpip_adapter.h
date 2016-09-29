@@ -21,7 +21,19 @@
  * The aim of this adapter is to provide an abstract layer upon TCPIP stack.
  * With this layer, switch to other TCPIP stack is possible and easy in esp-idf.
  *
- * TODO: ipv6 support will be added.
+ * If users want to use other TCPIP stack, all those functions should be implemented
+ * by using the specific APIs of that stack. The macros in CONFIG_TCPIP_LWIP should be
+ * re-defined.
+ *
+ * tcpip_adapter_init should be called in the start of app_main for only once.
+ *
+ * Currently most adapter APIs are called in event_default_handlers.c.
+ *
+ * We recommend users only use set/get IP APIs, DHCP server/client APIs,
+ * get free station list APIs in application side. Other APIs are used in esp-idf internal,
+ * otherwise the state maybe wrong.
+ *
+ * TODO: ipv6 support will be added, use menuconfig to disable CONFIG_TCPIP_LWIP
  */
 
 #include <stdint.h>
