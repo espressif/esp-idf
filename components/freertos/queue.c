@@ -888,7 +888,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 
 		configASSERT( pxQueue );
 		configASSERT( !( ( pvBuffer == NULL ) && ( pxQueue->uxItemSize != ( UBaseType_t ) 0U ) ) );
-		ets_printf("Not Supported: %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		for( ;; )
 		{
 			taskENTER_CRITICAL();
@@ -1903,6 +1903,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 	BaseType_t xReturn;
 	Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 
+		UNTESTED_FUNCTION();
 		/* If the queue is already full we may have to block.  A critical section
 		is required to prevent an interrupt removing something from the queue
 		between the check to see if the queue is full and blocking on the queue. */
@@ -2176,7 +2177,8 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 	void vQueueAddToRegistry( QueueHandle_t xQueue, const char *pcQueueName ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 	{
 	UBaseType_t ux;
-
+		
+		UNTESTED_FUNCTION();
 		/* See if there is an empty space in the registry.  A NULL name denotes
 		a free slot. */
 		for( ux = ( UBaseType_t ) 0U; ux < ( UBaseType_t ) configQUEUE_REGISTRY_SIZE; ux++ )

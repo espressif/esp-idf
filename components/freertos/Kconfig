@@ -44,6 +44,14 @@ config FREERTOS_HZ
 	help
 		Select the tick rate at which FreeRTOS does pre-emptive context switching.
 
+config FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
+	bool "Halt when an SMP-untested function is called"
+	default y
+	help
+		Some functions in FreeRTOS have not been thoroughly tested yet when moving to
+		the SMP implementation of FreeRTOS. When this option is enabled, these fuctions
+		will throw an assert().
+
 choice FREERTOS_CHECK_STACKOVERFLOW
 	prompt "Check for stack overflow"
 	default FREERTOS_CHECK_STACKOVERFLOW_QUICK

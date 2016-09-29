@@ -129,6 +129,9 @@ functions but without including stdio.h here. */
 					} while(0)
 #endif
 
+
+
+
 /* Value that can be assigned to the eNotifyState member of the TCB. */
 typedef enum
 {
@@ -584,7 +587,6 @@ BaseType_t xReturn;
 TCB_t * pxNewTCB;
 StackType_t *pxTopOfStack;
 BaseType_t i;
-	
 	configASSERT( pxTaskCode );
 	configASSERT( ( ( uxPriority & ( ~portPRIVILEGE_BIT ) ) < configMAX_PRIORITIES ) );
 	configASSERT( (xCoreID>=0 && xCoreID<portNUM_PROCESSORS) || (xCoreID==tskNO_AFFINITY) );
@@ -859,7 +861,7 @@ BaseType_t i;
 	TickType_t xTimeToWake;
 	BaseType_t xAlreadyYielded=pdFALSE, xShouldDelay = pdFALSE;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		configASSERT( pxPreviousWakeTime );
 		configASSERT( ( xTimeIncrement > 0U ) );
 		configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] == 0 );
@@ -1029,7 +1031,7 @@ BaseType_t i;
 	List_t *pxStateList;
 	const TCB_t * const pxTCB = ( TCB_t * ) xTask;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		configASSERT( pxTCB );
 
 		if( pxTCB == pxCurrentTCB[ xPortGetCoreID() ] )
@@ -1099,7 +1101,7 @@ BaseType_t i;
 	TCB_t *pxTCB;
 	UBaseType_t uxReturn;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* If null is passed in here then we are changing the
@@ -1307,7 +1309,7 @@ BaseType_t i;
 	{
 	TCB_t *pxTCB;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* If null is passed in here then it is the running task that is
@@ -1448,7 +1450,7 @@ BaseType_t i;
 	{
 	TCB_t * const pxTCB = ( TCB_t * ) xTaskToResume;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		/* It does not make sense to resume the calling task. */
 		configASSERT( xTaskToResume );
 
@@ -1850,7 +1852,7 @@ UBaseType_t uxTaskGetNumberOfTasks( void )
 	{
 	UBaseType_t uxTask = 0, uxQueue = configMAX_PRIORITIES;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		vTaskSuspendAll(); //WARNING: This only suspends one CPU. ToDo: suspend others as well. Mux using taskQueueMutex maybe?
 		{
 			/* Is there a space in the array for each task in the system? */
@@ -3136,7 +3138,7 @@ UBaseType_t x;
 	{
 	TCB_t *pxTCB;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		/* If null is passed in here then we are deleting ourselves. */
 		pxTCB = prvGetTCBFromHandle( xTaskToModify );
 
@@ -3344,6 +3346,7 @@ TCB_t *pxNewTCB;
 	volatile TCB_t *pxNextTCB, *pxFirstTCB;
 	UBaseType_t uxTask = 0;
 
+		UNTESTED_FUNCTION();
 		if( listCURRENT_LIST_LENGTH( pxList ) > ( UBaseType_t ) 0 )
 		{
 			listGET_OWNER_OF_NEXT_ENTRY( pxFirstTCB, pxList );
@@ -3450,6 +3453,7 @@ TCB_t *pxNewTCB;
 	uint8_t *pucEndOfStack;
 	UBaseType_t uxReturn;
 
+		UNTESTED_FUNCTION();
 		pxTCB = prvGetTCBFromHandle( xTask );
 
 		#if portSTACK_GROWTH < 0
@@ -3881,6 +3885,7 @@ scheduler will re-enable the interrupts instead. */
 	TaskStatus_t *pxTaskStatusArray;
 	volatile UBaseType_t uxArraySize, x;
 	char cStatus;
+		UNTESTED_FUNCTION();
 
 		/*
 		 * PLEASE NOTE:
@@ -3974,6 +3979,7 @@ scheduler will re-enable the interrupts instead. */
 	volatile UBaseType_t uxArraySize, x;
 	uint32_t ulTotalTime, ulStatsAsPercentage;
 
+		UNTESTED_FUNCTION();
 		#if( configUSE_TRACE_FACILITY != 1 )
 		{
 			#error configUSE_TRACE_FACILITY must also be set to 1 in FreeRTOSConfig.h to use vTaskGetRunTimeStats().
@@ -4131,6 +4137,7 @@ TickType_t uxReturn;
 	TickType_t xTimeToWake;
 	uint32_t ulReturn;
 
+		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* Only block if the notification count is not already non-zero. */
@@ -4241,6 +4248,7 @@ TickType_t uxReturn;
 	TickType_t xTimeToWake;
 	BaseType_t xReturn;
 
+		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* Only block if a notification is not already pending. */
@@ -4363,6 +4371,7 @@ TickType_t uxReturn;
 	eNotifyValue eOriginalNotifyState;
 	BaseType_t xReturn = pdPASS;
 
+		UNTESTED_FUNCTION();
 		configASSERT( xTaskToNotify );
 		pxTCB = ( TCB_t * ) xTaskToNotify;
 
@@ -4447,6 +4456,7 @@ TickType_t uxReturn;
 	eNotifyValue eOriginalNotifyState;
 	BaseType_t xReturn = pdPASS;
 
+		UNTESTED_FUNCTION();
 		configASSERT( xTaskToNotify );
 
 		pxTCB = ( TCB_t * ) xTaskToNotify;
@@ -4540,6 +4550,7 @@ TickType_t uxReturn;
 	TCB_t * pxTCB;
 	eNotifyValue eOriginalNotifyState;
 
+		UNTESTED_FUNCTION();
 		configASSERT( xTaskToNotify );
 
 
