@@ -92,7 +92,7 @@ void periph_module_enable(periph_module_t periph)
         default:
             break;
     }
-    portENTER_CRITICAL(&periph_spinlock);
+    portEXIT_CRITICAL(&periph_spinlock);
 }
 
 void periph_module_disable(periph_module_t periph)
@@ -166,5 +166,5 @@ void periph_module_disable(periph_module_t periph)
         default:
             break;
     }
-    portENTER_CRITICAL(&periph_spinlock);
+    portEXIT_CRITICAL(&periph_spinlock);
 }
