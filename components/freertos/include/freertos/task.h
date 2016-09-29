@@ -1979,6 +1979,12 @@ BaseType_t xTaskGenericCreate( TaskFunction_t pxTaskCode, const char * const pcN
  */
 UBaseType_t uxTaskGetTaskNumber( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
+
+/*
+ * Get the current core affinity of a task
+ */
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
+
 /*
  * Set the uxTaskNumber of the task referenced by the xTask parameter to
  * uxHandle.
