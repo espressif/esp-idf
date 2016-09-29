@@ -92,6 +92,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "xtensa_rtos.h"
 
+/*
+  Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
+  Please change this when the tcb structure is changed
+*/
+#define TASKTCB_XCOREID_OFFSET (0x3C+configMAX_TASK_NAME_LEN+3)&~3
 .extern pxCurrentTCB
 
 /* Enable stack backtrace across exception/interrupt - see below */
@@ -902,7 +907,7 @@ _xt_coproc_exc:
     slli    a3,  a3, 2
     add     a2,  a2, a3
     l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCB[cpuid] */
-    addi    a2, a2, (0x3C+configMAX_TASK_NAME_LEN+3)&~3 /* offset to xCoreID in tcb struct */
+    addi    a2, a2, TASKTCB_XCOREID_OFFSET  /* offset to xCoreID in tcb struct */
     getcoreid a3
     s32i    a3, a2, 0                       /* store current cpuid */
 
