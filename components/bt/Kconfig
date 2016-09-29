@@ -3,21 +3,27 @@ visible if MEMMAP_BT
 
 
 config BT_ENABLED
-	bool
-	depends on ESP32_ENABLE_STACK_BT
-	help
-		This compiles in the low-level BT stack.
+    bool
+    depends on ESP32_ENABLE_STACK_BT
+    help
+        This compiles in the low-level BT stack.
 
 #config BT_BTLE
-#	bool "Enable BTLE"
-#	depends on BT_ENABLED
-#	help
-#		This compiles BTLE support
+#    bool "Enable BTLE"
+#    depends on BT_ENABLED
+#    help
+#        This compiles BTLE support
 #
 #config BT_BT
-#	bool "Enable classic BT"
-#	depends on BT_ENABLED
-#	help
-#		This enables classic BT support
+#    bool "Enable classic BT"
+#    depends on BT_ENABLED
+#    help
+#        This enables classic BT support
 
 endmenu
+
+# Memory reserved at start of DRAM for Bluetooth stack
+config BT_RESERVE_DRAM
+    hex
+    default 0x10000 if MEMMAP_BT
+    default 0

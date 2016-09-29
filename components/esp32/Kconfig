@@ -63,6 +63,12 @@ config MEMMAP_TRACEMEM
         of memory that can't be used for general purposes anymore. Disable this if you do not know
         what this is.
 
+# Memory to reverse for trace, used in linker script
+config TRACEMEM_RESERVE_DRAM
+    hex
+    default 0x8000 if MEMMAP_TRACEMEM
+    default 0x0
+
 config MEMMAP_SPISRAM
     bool "Use external SPI SRAM chip as main memory"
     default "n"
@@ -78,7 +84,7 @@ config WIFI_ENABLED
     help
         This compiles in the low-level WiFi stack.
 
-		Temporarily, this option is not compatible with BT stack.
+        Temporarily, this option is not compatible with BT stack.
 
 config SYSTEM_EVENT_QUEUE_SIZE
     int "System event queue size"
@@ -101,13 +107,37 @@ config MAIN_TASK_STACK_SIZE
 
 
 config NEWLIB_STDOUT_ADDCR
-	bool "Standard-out output adds carriage return before newline"
-	default y
-	help
-		Most people are used to end their printf strings with a newline. If this
-		is sent as is to the serial port, most terminal programs will only move the
-		cursor one line down, not also move it to the beginning of the line. This
-		is usually done by an added CR character. Enabling this will make the
-		standard output code automatically add a CR character before a LF.
+    bool "Standard-out output adds carriage return before newline"
+    default y
+    help
+        Most people are used to end their printf strings with a newline. If this
+        is sent as is to the serial port, most terminal programs will only move the
+        cursor one line down, not also move it to the beginning of the line. This
+        is usually done by an added CR character. Enabling this will make the
+        standard output code automatically add a CR character before a LF.
+
+config ULP_COPROC_ENABLED
+    bool "Enable Ultra Low Power (ULP) Coprocessor"
+    default "n"
+    help
+        Set to 'y' if you plan to load a firmware for the coprocessor.
+
+        If this option is enabled, further coprocessor configuration will appear in the Components menu.
+
+config ULP_COPROC_RESERVE_MEM
+    int "RTC slow memory reserved for coprocessor"
+    default 512
+    range 32 8192
+    depends on ULP_COPROC_ENABLED
+    help
+        Bytes of memory to reserve for ULP coprocessor firmware & data.
+
+        Data is reserved at the beginning of RTC slow memory.
+
+# Set CONFIG_ULP_COPROC_RESERVE_MEM to 0 if ULP is disabled
+config ULP_COPROC_RESERVE_MEM
+    int
+    default 0
+    depends on !ULP_COPROC_ENABLED
 
 endmenu

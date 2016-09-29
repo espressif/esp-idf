@@ -44,25 +44,25 @@ extern "C" {
   *************************************************************************************
   *     rtc memory addr         type    size            usage
   *     0x3ff61000(0x50000000)  Slow    SIZE_CP         Co-Processor code/Reset Entry
-  *     0x3ff61000+SIZE_CP      Slow    6144-SIZE_CP
-  *     0x3ff62800              Slow    2048            Reserved
+  *     0x3ff61000+SIZE_CP      Slow    4096-SIZE_CP
+  *     0x3ff62800              Slow    4096            Reserved
   *
   *     0x3ff80000(0x400c0000)  Fast    8192            deep sleep entry code
   *
   *************************************************************************************
   *     Rtc store registers     usage
-  *     RTC_STORE0
-  *     RTC_STORE1
-  *     RTC_STORE2
-  *     RTC_STORE3
-  *     RTC_STORE4              Reserved
-  *     RTC_STORE5              External Xtal Frequency
-  *     RTC_STORE6              FAST_RTC_MEMORY_ENTRY
-  *     RTC_STORE7              FAST_RTC_MEMORY_CRC
+  *     RTC_CNTL_STORE0_REG
+  *     RTC_CNTL_STORE1_REG
+  *     RTC_CNTL_STORE2_REG
+  *     RTC_CNTL_STORE3_REG
+  *     RTC_CNTL_STORE4_REG     Reserved
+  *     RTC_CNTL_STORE5_REG     External Xtal Frequency
+  *     RTC_CNTL_STORE6_REG     FAST_RTC_MEMORY_ENTRY
+  *     RTC_CNTL_STORE7_REG     FAST_RTC_MEMORY_CRC
   *************************************************************************************
   */
-#define RTC_ENTRY_ADDR RTC_STORE6
-#define RTC_MEMORY_CRC RTC_STORE7
+#define RTC_ENTRY_ADDR_REG RTC_CNTL_STORE6_REG
+#define RTC_MEMORY_CRC_REG RTC_CNTL_STORE7_REG
 
 
 typedef enum {
@@ -161,7 +161,7 @@ WAKEUP_REASON rtc_get_wakeup_cause(void);
   *
   * @param  uint32_t start_addr : 0 - 0x7ff for Fast RTC Memory.
   *
-  * @param  uint32_t crc_len : 0 - 0x7ff, 0 for 1 byte, 0x7ff for 0x800 byte.
+  * @param  uint32_t crc_len : 0 - 0x7ff, 0 for 4 byte, 0x7ff for 0x2000 byte.
   *
   * @return uint32_t : CRC32 result
   */

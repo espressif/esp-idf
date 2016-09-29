@@ -1,27 +1,27 @@
 menu "LWIP"
 
 config LWIP_MAX_SOCKETS
-	int "Max number of open sockets"
-	range 1 16
-	default 4
-	help
-		Sockets take up a certain amount of memory, and allowing fewer
-		sockets to be open at the same time conserves memory. Specify
-		the maximum amount of sockets here.
+    int "Max number of open sockets"
+    range 1 16
+    default 4
+    help
+        Sockets take up a certain amount of memory, and allowing fewer
+        sockets to be open at the same time conserves memory. Specify
+        the maximum amount of sockets here.
 
 config LWIP_THREAD_LOCAL_STORAGE_INDEX
-	int "Index for thread-local-storage pointer for lwip"
-	default 0
-	help
-		Specify the thread-local-storage-pointer index for lwip
-		use.
+    int "Index for thread-local-storage pointer for lwip"
+    default 0
+    help
+        Specify the thread-local-storage-pointer index for lwip
+        use.
 
 config LWIP_SO_REUSE
-	bool "Enable SO_REUSEADDR option"
-	default 0
-	help
-		Enabling this option allows binding to a port which remains in 
-		TIME_WAIT.
+    bool "Enable SO_REUSEADDR option"
+    default 0
+    help
+        Enabling this option allows binding to a port which remains in
+        TIME_WAIT.
 
 endmenu
 

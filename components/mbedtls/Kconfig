@@ -2,7 +2,7 @@ menu "mbedTLS"
 
 config MBEDTLS_SSL_MAX_CONTENT_LEN
     int "TLS maximum message content length"
-	default 16384
+    default 16384
     range 512 16384
     help
         Maximum TLS message length (in bytes) supported by mbedTLS.
