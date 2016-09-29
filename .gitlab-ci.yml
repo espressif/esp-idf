@@ -64,27 +64,9 @@ build_ssc:
   script:
     - git clone ssh://git@gitlab.espressif.cn:27227/yinling/SSC.git
     - cd SSC
-    - git checkout ${CI_BUILD_REF_NAME} || echo "Using SSC default branch..."
     - make defconfig
     - chmod +x gen_misc_ng.sh
     - ./gen_misc_ng.sh
-
-build_examples:
-  <<: *build_template
-  artifacts:
-    paths:
-      - build_examples/*/*/build/*.bin
-      - build_examples/*/*/build/*.elf
-      - build_examples/*/*/build/*.map
-      - build_examples/*/*/build/bootloader/*.bin
-    expire_in: 6 mos
-
-  script:
-    # it's not possible to build 100% out-of-tree and have the "artifacts"
-    # mechanism work, but this is the next best thing
-    - mkdir build_examples
-    - cd build_examples
-    - ${IDF_PATH}/make/build_examples.sh
 
 test_nvs_on_host:
   stage: test
@@ -168,7 +150,7 @@ push_master_to_github:
     - triggers
   script:
     # must be night build triggers, otherwise exit without test
-    - test $NIGHT_BUILD != "Yes" || exit
+    - test $NIGHT_BUILD != "Yes" || exit 0
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
@@ -185,10 +167,7 @@ Function_WIFI_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T3_PhyMode
     - SSC_T1_1
-    - SSC_T1_WEP
-    - SSC_T2_PhyMode
     - SSC_T2_1
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_01.yml
@@ -198,21 +177,9 @@ Function_WIFI_02:
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T1_WEP
-    - SSC_T2_PhyMode
     - SSC_T2_1
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_02.yml
-
-Function_WIFI_03:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T3_PhyMode
-    - SSC_T1_1
-    - SSC_T2_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_03.yml
 
 Function_TCPIP_01:
   <<: *test_template
@@ -267,6 +234,14 @@ Function_TCPIP_06:
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_06.yml
 
+Function_WIFI_03:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T3_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_03.yml
+
 Function_WIFI_04:
   <<: *test_template
   tags:
@@ -279,7 +254,7 @@ Function_WIFI_05:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_PhyMode
+    - SSC_T1_WEP
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_05.yml
 
@@ -290,30 +265,6 @@ Function_WIFI_06:
     - SSC_T2_PhyMode
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_06.yml
-
-Function_WIFI_07:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T2_PhyMode
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_07.yml
-
-Function_WIFI_08:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T2_PhyMode
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_08.yml
-
-Function_WIFI_09:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T2_PhyMode
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_09.yml
 
 Function_TCPIP_07:
   <<: *test_template
@@ -368,3 +319,42 @@ Function_TCPIP_12:
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_TCPIP_12.yml
 
+Function_WIFI_07:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_07.yml
+
+Function_WIFI_08:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_08.yml
+
+Function_WIFI_09:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_09.yml
+
+Function_WIFI_10:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_10.yml
+
+Function_WIFI_11:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/Function_WIFI_11.yml
