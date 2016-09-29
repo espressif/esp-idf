@@ -125,59 +125,6 @@ test cases:
   test point 2: sw reboot
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
-  ID: TCPIP_ARP_0202
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - STRING <cap_filter> ether%20src%20%%s%20or%20ether%20dst%20%%s <target_mac>
-      <target_mac>
-    - [R PC_COM C OK]
-  - - NIC NIC1 START <pc_nic> capture+send+block_arp_ip <cap_filter>
-    - ['R PC_COM C +NIC_START:OK']
-  - - NIC NIC1 SEND ARP arp_op_code "request" arp_target_proto_addr "192.168.11.240"
-      ethernet_len_type "ARP" ethernet_dst_addr "ff:ff:ff:ff:ff:ff"
-    - ['']
-  - - DELAY 2
-    - [P PC_COM C +DELAYDONE, P NIC1 NPDU (Ethernet.dst_addr=<pc_nic_mac>)(Ethernet.len_type="ARP")]
-  - - NIC NIC1 SEND ARP arp_op_code "request" arp_target_proto_addr <target_ip> arp_sender_hw_addr
-      "18:18:18:18:18:18" ethernet_len_type "ARP" ethernet_dst_addr "ff:ff:ff:ff:ff:ff"
-    - ['']
-  - - DELAY 2
-    - [P PC_COM C +DELAYDONE, P NIC1 NPDU (Ethernet.dst_addr=<pc_nic_mac>)(Ethernet.len_type="ARP")]
-  - - NIC NIC1 SEND ARP arp_op_code "request" arp_target_proto_addr <target_ip> arp_sender_proto_addr
-      <target_ip> ethernet_dst_addr "ff:ff:ff:ff:ff:ff"
-    - ['']
-  - - DELAY 2
-    - [P PC_COM C +DELAYDONE, P NIC1 NPDU (Ethernet.dst_addr=<pc_nic_mac>)(Ethernet.len_type="ARP")]
-  comment: ''
-  execution time: 0.0
-  expected result: 1. PC can't recv ARP reply from target
-  initial condition: STAM2
-  initial condition description (auto): sta mode, join AP, DHCP on, will autogen a
-    TC with initial condition STAAP2
-  module: TCPIP
-  steps: 1. PC send ARP req with target_hw_addr, sender_hw_addr and sender_proto_addr
-    not correct
-  sub module: ARP
-  summary: PC send invalid ARP request to target 2
-  test environment: SSC_T1_1
-  test environment description (auto): 'PC has 2 wired NIC connected to AP.
-
-    PC has 1 WiFi NIC.
-
-    1 SSC target connect with PC by UART.'
-  test point 1: abnormal/special use
-  test point 2: handling ARP request
-  version: v1 (2015-8-15)
-- CI ready: 'Yes'
   ID: ^TCPIP_DHCP_0302
   SDK: '8266_NonOS
 
@@ -527,48 +474,6 @@ test cases:
   test point 1: basic function
   test point 2: 'get heap size '
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
-  ID: TCPIP_ARP_0204
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - STRING <cap_filter> ether%20src%20%%s%20or%20ether%20dst%20%%s <target_mac>
-      <target_mac>
-    - [R PC_COM C OK]
-  - - NIC NIC1 START <pc_nic> capture+send+block_arp_ip <cap_filter>
-    - ['R PC_COM C +NIC_START:OK']
-  - - NIC NIC1 SEND ARP arp_op_code 0xFF arp_target_proto_addr <target_ip> ethernet_dst_addr
-      "ff:ff:ff:ff:ff:ff"
-    - ['']
-  - - DELAY 2
-    - [P PC_COM C +DELAYDONE, P NIC1 NPDU (Ethernet.dst_addr=<pc_nic_mac>)(Ethernet.len_type="ARP")]
-  comment: ''
-  execution time: 0.0
-  expected result: 1. PC can't recv ARP reply from target
-  initial condition: STAM2
-  initial condition description (auto): sta mode, join AP, DHCP on, will autogen a
-    TC with initial condition STAAP2
-  module: TCPIP
-  steps: 1. PC send ARP with error op_code
-  sub module: ARP
-  summary: PC send invalid ARP request to target 4
-  test environment: SSC_T1_1
-  test environment description (auto): 'PC has 2 wired NIC connected to AP.
-
-    PC has 1 WiFi NIC.
-
-    1 SSC target connect with PC by UART.'
-  test point 1: abnormal/special use
-  test point 2: handling ARP request
-  version: v1 (2015-8-15)
 - CI ready: 'Yes'
   ID: TCPIP_TCP_0412
   SDK: '8266_NonOS
@@ -8202,51 +8107,6 @@ test cases:
   test point 2: use TCP SAP (socket/espconn API) in different state
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
-  ID: TCPIP_TCP_0501
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - STRING <cap_filter> ether%20src%20%%s%20or%20ether%20dst%20%%s <target_mac>
-      <target_mac>
-    - [R PC_COM C OK]
-  - - NIC NIC1 START <pc_nic> capture+block_ip <cap_filter>
-    - ['R PC_COM C +NIC_START:OK']
-  - - SSC SSC1 soc -B -t TCP
-    - ['R SSC1 A <sock1>:BIND:(\d+),OK']
-  - - SSC SSC1 soc -C -s <sock1> -i <pc_ip> -p <test_tcp_port1>
-    - ['']
-  - - DELAY 10
-    - ['R SSC1 RE CONNECT:\d+,ERROR']
-  comment: ''
-  execution time: 0.0
-  expected result: 2. connect failed, no exception
-  initial condition: STAM2
-  initial condition description (auto): sta mode, join AP, DHCP on, will autogen a
-    TC with initial condition STAAP2
-  module: TCPIP
-  steps: '1. PC do not reply any IP packet on NIC
-
-    2. target try to connect to TCP server with PC NIC IP'
-  sub module: TCP
-  summary: PC do not reply TCP SYN of target
-  test environment: SSC_T1_1
-  test environment description (auto): 'PC has 2 wired NIC connected to AP.
-
-    PC has 1 WiFi NIC.
-
-    1 SSC target connect with PC by UART.'
-  test point 1: abnormal/special use
-  test point 2: TCP connect and disconnect abnormal case
-  version: v1 (2015-8-15)
-- CI ready: 'Yes'
   ID: ^TCPIP_DNS_0101
   SDK: '8266_NonOS
 
@@ -9431,46 +9291,6 @@ test cases:
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
-  ID: TCPIP_ARP_0101
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - STRING <cap_filter> ether%20src%20%%s%20or%20ether%20dst%20%%s <target_mac>
-      <target_mac>
-    - [R PC_COM C OK]
-  - - NIC NIC1 START <pc_nic> capture+send+block_arp_ip <cap_filter>
-    - ['R PC_COM C +NIC_START:OK']
-  - - NIC NIC1 SEND ARP arp_op_code "request" arp_target_proto_addr <target_ip> ethernet_dst_addr
-      "ff:ff:ff:ff:ff:ff"
-    - ['P PC_COM C +NIC_SEND:OK', P NIC1 PDU (Ethernet.dst_addr=<pc_nic_mac>)(ARP.hw_type="Ethernet")(ARP.protocol="IPv4")(ARP.hw_len="6")(ARP.proto_len="4")(ARP.op_code="reply")(ARP.sender_hw_addr=<target_mac>)(ARP.sender_proto_addr=<target_ip>)(ARP.target_hw_addr=<pc_nic_mac>)(ARP.target_proto_addr=<pc_ip>)]
-  comment: ''
-  execution time: 0.0
-  expected result: 1. PC recv target valid ARP reply
-  initial condition: STAM2
-  initial condition description (auto): sta mode, join AP, DHCP on, will autogen a
-    TC with initial condition STAAP2
-  module: TCPIP
-  steps: 1. PC send ARP req to target
-  sub module: ARP
-  summary: PC send valid ARP request to target
-  test environment: SSC_T1_1
-  test environment description (auto): 'PC has 2 wired NIC connected to AP.
-
-    PC has 1 WiFi NIC.
-
-    1 SSC target connect with PC by UART.'
-  test point 1: basic function
-  test point 2: handling ARP request
-  version: v1 (2015-8-15)
 - CI ready: 'Yes'
   ID: TCPIP_UDP_0304
   SDK: '8266_NonOS
@@ -12125,53 +11945,6 @@ test cases:
   test point 2: wifi disconnect reason test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
-  ID: TCPIP_ARP_0203
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - STRING <cap_filter> ether%20src%20%%s%20or%20ether%20dst%20%%s <target_mac>
-      <target_mac>
-    - [R PC_COM C OK]
-  - - NIC NIC1 START <pc_nic> capture+send+block_arp_ip <cap_filter>
-    - ['R PC_COM C +NIC_START:OK']
-  - - NIC NIC1 SEND ARP arp_op_code "request" arp_target_proto_addr <target_ip> arp_hw_len
-      10 ethernet_dst_addr "ff:ff:ff:ff:ff:ff"
-    - ['']
-  - - DELAY 2
-    - [P PC_COM C +DELAYDONE, P NIC1 NPDU (Ethernet.dst_addr=<pc_nic_mac>)(Ethernet.len_type="ARP")]
-  - - NIC NIC1 SEND ARP arp_op_code "request" arp_target_proto_addr <target_ip> arp_proto_len
-      10 ethernet_dst_addr "ff:ff:ff:ff:ff:ff"
-    - ['']
-  - - DELAY 2
-    - [P PC_COM C +DELAYDONE, P NIC1 NPDU (Ethernet.dst_addr=<pc_nic_mac>)(Ethernet.len_type="ARP")]
-  comment: ''
-  execution time: 0.0
-  expected result: 1. PC can't recv ARP reply from target
-  initial condition: STAM2
-  initial condition description (auto): sta mode, join AP, DHCP on, will autogen a
-    TC with initial condition STAAP2
-  module: TCPIP
-  steps: 1. PC send ARP req with hw_addr_len and proto_addr_len not correct
-  sub module: ARP
-  summary: PC send invalid ARP request to target 3
-  test environment: SSC_T1_1
-  test environment description (auto): 'PC has 2 wired NIC connected to AP.
-
-    PC has 1 WiFi NIC.
-
-    1 SSC target connect with PC by UART.'
-  test point 1: abnormal/special use
-  test point 2: handling ARP request
-  version: v1 (2015-8-15)
-- CI ready: 'Yes'
   ID: WIFI_CONN_0503
   SDK: '8266_NonOS
 
@@ -12867,53 +12640,6 @@ test cases:
   test point 1: basic function
   test point 2: SAP/JAP with different config
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
-  ID: TCPIP_ARP_0201
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - STRING <cap_filter> ether%20src%20%%s%20or%20ether%20dst%20%%s <target_mac>
-      <target_mac>
-    - [R PC_COM C OK]
-  - - NIC NIC1 START <pc_nic> capture+send+block_arp_ip <cap_filter>
-    - ['R PC_COM C +NIC_START:OK']
-  - - NIC NIC1 SEND ARP arp_op_code "request" arp_hw_type 0xF1F1 arp_target_proto_addr
-      <target_ip> ethernet_dst_addr "ff:ff:ff:ff:ff:ff"
-    - ['']
-  - - DELAY 2
-    - [P PC_COM C +DELAYDONE, P NIC1 NPDU (Ethernet.dst_addr=<pc_nic_mac>)(Ethernet.len_type="ARP")]
-  - - NIC NIC1 SEND ARP arp_op_code "request" arp_proto_type 0xF1F1 arp_target_proto_addr
-      <target_ip> ethernet_dst_addr "ff:ff:ff:ff:ff:ff"
-    - ['']
-  - - DELAY 2
-    - [P PC_COM C +DELAYDONE, P NIC1 NPDU (Ethernet.dst_addr=<pc_nic_mac>)(Ethernet.len_type="ARP")]
-  comment: ''
-  execution time: 0.0
-  expected result: 1. PC can't recv ARP reply from target
-  initial condition: STAM2
-  initial condition description (auto): sta mode, join AP, DHCP on, will autogen a
-    TC with initial condition STAAP2
-  module: TCPIP
-  steps: 1. PC send ARP req with unsupported hw type and protocol type
-  sub module: ARP
-  summary: PC send invalid ARP request to target 1
-  test environment: SSC_T1_1
-  test environment description (auto): 'PC has 2 wired NIC connected to AP.
-
-    PC has 1 WiFi NIC.
-
-    1 SSC target connect with PC by UART.'
-  test point 1: abnormal/special use
-  test point 2: handling ARP request
-  version: v1 (2015-8-15)
 - CI ready: 'Yes'
   ID: ^WIFI_CONN_0503
   SDK: '8266_NonOS
