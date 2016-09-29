@@ -160,7 +160,7 @@ push_master_to_github:
     - triggers
   script:
     # must be night build triggers, otherwise exit without test
-    - test $NIGHT_BUILD != "Yes" || exit 0
+    - test $NIGHT_BUILD = "Yes" || exit 0
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
