@@ -15,6 +15,27 @@
 #ifndef _TCPIP_ADAPTER_H_
 #define _TCPIP_ADAPTER_H_
 
+/**
+ * @brief TCPIP adapter library
+ *
+ * The aim of this adapter is to provide an abstract layer upon TCPIP stack.
+ * With this layer, switch to other TCPIP stack is possible and easy in esp-idf.
+ *
+ * If users want to use other TCPIP stack, all those functions should be implemented
+ * by using the specific APIs of that stack. The macros in CONFIG_TCPIP_LWIP should be
+ * re-defined.
+ *
+ * tcpip_adapter_init should be called in the start of app_main for only once.
+ *
+ * Currently most adapter APIs are called in event_default_handlers.c.
+ *
+ * We recommend users only use set/get IP APIs, DHCP server/client APIs,
+ * get free station list APIs in application side. Other APIs are used in esp-idf internal,
+ * otherwise the state maybe wrong.
+ *
+ * TODO: ipv6 support will be added, use menuconfig to disable CONFIG_TCPIP_LWIP
+ */
+
 #include <stdint.h>
 #include "rom/queue.h"
 #include "esp_wifi_types.h"
@@ -55,7 +76,7 @@ struct station_list {
 
 #endif
 
-#define ESP_ERR_TCPIP_ADAPTER_BASE      0x5000      // base should be moved to esp_err.h
+#define ESP_ERR_TCPIP_ADAPTER_BASE      0x5000      // TODO: move base address to esp_err.h
 
 #define ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS        ESP_ERR_TCPIP_ADAPTER_BASE + 0x00
 #define ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY          ESP_ERR_TCPIP_ADAPTER_BASE + 0x01
@@ -65,46 +86,125 @@ struct station_list {
 #define ESP_ERR_TCPIP_ADAPTER_NO_MEM                ESP_ERR_TCPIP_ADAPTER_BASE + 0x05
 #define ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED      ESP_ERR_TCPIP_ADAPTER_BASE + 0x06
 
-/* will add ethernet interface */
+/* TODO: add Ethernet interface */
 typedef enum {
     TCPIP_ADAPTER_IF_STA = 0,     /**< ESP32 station interface */
     TCPIP_ADAPTER_IF_AP,          /**< ESP32 soft-AP interface */
     TCPIP_ADAPTER_IF_MAX
 } tcpip_adapter_if_t;
 
+/* status of DHCP client or DHCP server */
 typedef enum {
-    TCPIP_ADAPTER_DHCP_INIT = 0,
-    TCPIP_ADAPTER_DHCP_STARTED,
-    TCPIP_ADAPTER_DHCP_STOPPED,
+    TCPIP_ADAPTER_DHCP_INIT = 0,    /**< DHCP client/server in initial state */
+    TCPIP_ADAPTER_DHCP_STARTED,     /**< DHCP client/server already been started */
+    TCPIP_ADAPTER_DHCP_STOPPED,     /**< DHCP client/server already been stopped */
     TCPIP_ADAPTER_DHCP_STATUS_MAX
 } tcpip_adapter_dhcp_status_t;
 
+/* set the option mode for DHCP client or DHCP server */
 typedef enum{
     TCPIP_ADAPTER_OP_START = 0,
-    TCPIP_ADAPTER_OP_SET,
-    TCPIP_ADAPTER_OP_GET,
+    TCPIP_ADAPTER_OP_SET,           /**< set option mode */
+    TCPIP_ADAPTER_OP_GET,           /**< get option mode */
     TCPIP_ADAPTER_OP_MAX
 } tcpip_adapter_option_mode_t;
 
 typedef enum{
-    TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS   = 32,
-    TCPIP_ADAPTER_REQUESTED_IP_ADDRESS          = 50,
-    TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME         = 51,
-    TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME         = 52,
+    TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS   = 32,   /**< solicitation router address */
+    TCPIP_ADAPTER_REQUESTED_IP_ADDRESS          = 50,   /**< request IP address pool */
+    TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME         = 51,   /**< request IP address lease time */
+    TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME         = 52,   /**< request IP address retry counter */
 } tcpip_adapter_option_id_t;
 
+/**
+ * @brief  Initialize tcpip adpater
+ *
+ * This will initialize TCPIP stack inside.
+ */
 void tcpip_adapter_init(void);
 
+/**
+ * @brief  Start an interface with specific MAC and IP
+ *
+ * softAP or station interface will be initialized, connect WiFi stack with TCPIP stack.
+ *
+ * For softAP interface, DHCP server will be started automatically.
+ *
+ * @param[in]  tcpip_if: the interface which we will start
+ * @param[in]  mac: set MAC address of this interface
+ * @param[in]  ip_info: set IP address of this interface
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         ESP_ERR_NO_MEM
+ */
 esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
 
+/**
+ * @brief  Stop an interface
+ *
+ * The interface will be cleanup in this API, if DHCP server/client are started, will be stopped.
+ *
+ * @param[in]  tcpip_if: the interface which will be started
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY
+ */
 esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if);
 
+/**
+ * @brief  Bring up an interface
+ *
+ * Only station interface need to be brought up, since station interface will be shut down when disconnect.
+ *
+ * @param[in]  tcpip_if: the interface which will be up
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY
+ */
 esp_err_t tcpip_adapter_up(tcpip_adapter_if_t tcpip_if);
 
+/**
+ * @brief  Shut down an interface
+ *
+ * Only station interface need to be shut down, since station interface will be brought up when connect.
+ *
+ * @param[in]  tcpip_if: the interface which will be down
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY
+ */
 esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if);
 
+/**
+ * @brief  Get interface's IP information
+ *
+ * There has an IP information copy in adapter library, if interface is up, get IP information from
+ * interface, otherwise get from copy.
+ *
+ * @param[in]   tcpip_if: the interface which we want to get IP information
+ * @param[out]  ip_info: If successful, IP information will be returned in this argument.
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ */
 esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
 
+/**
+ * @brief  Set interface's IP information
+ *
+ * There has an IP information copy in adapter library, if interface is up, also set interface's IP.
+ * DHCP client/server should be stopped before set new IP information.
+ *
+ * This function is mainly used for setting static IP.
+ *
+ * @param[in]  tcpip_if: the interface which we want to set IP information
+ * @param[in]  ip_info: If successful, IP information will be returned in this argument.
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ */
 esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
 
 #if 0
@@ -113,22 +213,171 @@ esp_err_t tcpip_adapter_get_mac(tcpip_adapter_if_t tcpip_if, uint8_t *mac);
 esp_err_t tcpip_adapter_set_mac(tcpip_adapter_if_t tcpip_if, uint8_t *mac);
 #endif
 
+/**
+ * @brief  Get DHCP server's status
+ *
+ * @param[in]   tcpip_if: the interface which we will get status of DHCP server
+ * @param[out]  status: If successful, the status of DHCP server will be return in this argument.
+ *
+ * @return ESP_OK
+ */
 esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
+
+/**
+ * @brief  Set or Get DHCP server's option
+ *
+ * @param[in]  opt_op: option operate type, 1 for SET, 2 for GET.
+ * @param[in]  opt_id: option index, 32 for ROUTER, 50 for IP POLL, 51 for LEASE TIME, 52 for REQUEST TIME
+ * @param[in]  opt_val: option parameter
+ * @param[in]  opt_len: option length
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED
+ *         ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED
+ */
 esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len);
+
+/**
+ * @brief  Start DHCP server
+ *
+ * @note   Currently DHCP server is bind to softAP interface.
+ *
+ * @param[in]  tcpip_if: the interface which we will start DHCP server
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED
+ */
 esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief  Stop DHCP server
+ *
+ * @note   Currently DHCP server is bind to softAP interface.
+ *
+ * @param[in]  tcpip_if: the interface which we will stop DHCP server
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPED
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY
+ */
 esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if);
 
+/**
+ * @brief  Get DHCP client status
+ *
+ * @param[in]  tcpip_if: the interface which we will get status of DHCP client
+ * @param[out]  status: If successful, the status of DHCP client will be return in this argument.
+ *
+ * @return ESP_OK
+ */
 esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
+
+/**
+ * @brief  Set or Get DHCP client's option
+ *
+ * @note   This function is not implement now.
+ *
+ * @param[in]  opt_op: option operate type, 1 for SET, 2 for GET.
+ * @param[in]  opt_id: option index, 32 for ROUTER, 50 for IP POLL, 51 for LEASE TIME, 52 for REQUEST TIME
+ * @param[in]  opt_val: option parameter
+ * @param[in]  opt_len: option length
+ *
+ * @return ESP_OK
+ */
 esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len);
+
+/**
+ * @brief  Start DHCP client
+ *
+ * @note   Currently DHCP client is bind to station interface.
+ *
+ * @param[in]  tcpip_if: the interface which we will start DHCP client
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED
+ *         ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED
+ */
 esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief  Stop DHCP client
+ *
+ * @note   Currently DHCP client is bind to station interface.
+ *
+ * @param[in]  tcpip_if: the interface which we will stop DHCP client
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ *         ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPED
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY
+ */
 esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
 
+/**
+ * @brief  Get data from station interface
+ *
+ * This function should be installed by esp_wifi_reg_rxcb, so WiFi packets will be forward to TCPIP stack.
+ *
+ * @param[in]  void *buffer: the received data point
+ * @param[in]  uint16_t len: the received data length
+ * @param[in]  void *eb: parameter
+ *
+ * @return ESP_OK
+ */
 esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void *eb);
+
+/**
+ * @brief  Get data from softAP interface
+ *
+ * This function should be installed by esp_wifi_reg_rxcb, so WiFi packets will be forward to TCPIP stack.
+ *
+ * @param[in]  void *buffer: the received data point
+ * @param[in]  uint16_t len: the received data length
+ * @param[in]  void *eb: parameter
+ *
+ * @return ESP_OK
+ */
 esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void *eb);
 
+/**
+ * @brief  Get WiFi interface index
+ *
+ * Get WiFi interface from TCPIP interface struct pointer.
+ *
+ * @param[in]  void *dev: adapter interface
+ *
+ * @return WIFI_IF_STA
+ *         WIFI_IF_AP
+ *         WIFI_IF_MAX
+ */
 wifi_interface_t tcpip_adapter_get_wifi_if(void *dev);
 
+/**
+ * @brief  Get the station information list
+ *
+ * @note   This function should be called in AP mode and dhcp server started, and the list should
+ *         be by using tcpip_adapter_free_sta_list.
+ *
+ * @param[in]   sta_info: station information
+ * @param[out]  sta_list: station information list
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_NO_MEM
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ */
 esp_err_t tcpip_adapter_get_sta_list(struct station_info *sta_info, struct station_list **sta_list);
+
+/**
+ * @brief Free the station information list's memory
+ *
+ * @param  sta_list: station information list
+ *
+ * @return ESP_OK
+ */
 esp_err_t tcpip_adapter_free_sta_list(struct station_list *sta_list);
 
 #ifdef __cplusplus
