@@ -164,4 +164,4 @@ push_master_to_github:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git remote add github git@github.com:espressif/esp-idf.git
-    - git push github HEAD:master
+    - git push --follow-tags github HEAD:master
