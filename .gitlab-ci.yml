@@ -89,7 +89,7 @@ test_build_system:
     - ./make/test_build_system.sh
 
 test_report:
-  stage: deploy
+  stage: test
   only:
     - master
     - triggers
