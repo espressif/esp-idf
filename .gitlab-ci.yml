@@ -88,6 +88,30 @@ test_build_system:
   script:
     - ./make/test_build_system.sh
 
+test_report:
+  stage: deploy
+  only:
+    - master
+    - triggers
+  tags:
+    - test_report
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
+    TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/test"
+    REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
+  artifacts:
+    when: always
+    paths:
+      - $REPORT_PATH
+    expire_in: 6 mos
+  script:
+    - ls $LOG_PATH
+    # clone test bench
+    - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
+    - cd auto_test_script
+    # generate report
+    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH
+
 
 push_master_to_github:
   before_script:
