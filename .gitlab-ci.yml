@@ -89,12 +89,13 @@ test_build_system:
     - ./make/test_build_system.sh
 
 test_report:
-  stage: test
+  stage: deploy
   only:
     - master
     - triggers
   tags:
     - test_report
+  allow_failure: true
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/test"
@@ -144,6 +145,7 @@ push_master_to_github:
   only:
     - master
     - triggers
+  allow_failure: true
 
   variables:
     # LOCAL_ENV_CONFIG_PATH: define in template and jobs can overwrite if required
