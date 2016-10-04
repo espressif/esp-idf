@@ -50,6 +50,7 @@ endif
 #The directory where we put all objects/libraries/binaries. The project Makefile can
 #configure this if needed.
 BUILD_DIR_BASE ?= $(PROJECT_PATH)/build
+export BUILD_DIR_BASE
 
 #Component directories. These directories are searched for components.
 #The project Makefile can override these component dirs, or define extra component directories.
@@ -105,7 +106,7 @@ COMPONENT_INCLUDES := $(abspath $(foreach comp,$(COMPONENT_PATHS_BUILDABLE),$(ad
 	$(call GetVariable,$(comp),COMPONENT_ADD_INCLUDEDIRS))))
 
 #Also add project include path, for sdk includes
-COMPONENT_INCLUDES += $(PROJECT_PATH)/build/include/
+COMPONENT_INCLUDES += $(BUILD_DIR_BASE)/include/
 export COMPONENT_INCLUDES
 
 #COMPONENT_LDFLAGS has a list of all flags that are needed to link the components together. It's collected

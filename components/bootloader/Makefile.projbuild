@@ -14,17 +14,18 @@ BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)
 BOOTLOADER_BUILD_DIR=$(BUILD_DIR_BASE)/bootloader
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
 
+# Custom recursive make for bootloader sub-project
+BOOTLOADER_MAKE=$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
+	MAKEFLAGS= V=$(V) \
+	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
+
 .PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
 
 $(BOOTLOADER_BIN): $(COMPONENT_PATH)/src/sdkconfig
-	$(Q) PROJECT_PATH= \
-	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
-	$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src MAKEFLAGS= V=$(V) TARGET_BIN_LAYOUT="$(BOOTLOADER_TARGET_BIN_LAYOUT)" $(BOOTLOADER_BIN)
+	$(Q) $(BOOTLOADER_MAKE) $@
 
 bootloader-clean:
-	$(Q) PROJECT_PATH= \
-	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
-	$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src app-clean MAKEFLAGS= V=$(V)
+	$(Q) $(BOOTLOADER_MAKE) app-clean
 
 clean: bootloader-clean
 
@@ -43,7 +44,8 @@ $(COMPONENT_PATH)/src/sdkconfig: $(PROJECT_PATH)/sdkconfig
 
 # bootloader-flash calls flash in the bootloader dummy project
 bootloader-flash: $(BOOTLOADER_BIN)
-	$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src flash MAKEFLAGS= V=$(V)
+	$(BOOTLOADER_MAKE) flash
+
 
 else
 CFLAGS += -D BOOTLOADER_BUILD=1 -I $(IDF_PATH)/components/esp32/include 
