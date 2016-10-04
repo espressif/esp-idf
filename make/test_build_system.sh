@@ -62,7 +62,7 @@ function run_tests()
 	print_status "Partition CSV file rebuilds partitions"
 	take_build_snapshot
 	touch ${IDF_PATH}/components/partition_table/partitions_singleapp.csv
-	make partition_table
+	make partition_table || failure "Failed to build partition table"
 	assert_rebuilt partitions_singleapp.bin
 	assert_not_rebuilt app-template.bin app-template.elf ${BOOTLOADER_BINS}
 
@@ -70,18 +70,31 @@ function run_tests()
 	take_build_snapshot
 	# verify no build files are refreshed by a partial make
 	ALL_BUILD_FILES=$(find ${BUILD} -type f | sed "s@${BUILD}/@@")
-	make
+	make || failure "Partial build failed"
 	assert_not_rebuilt ${ALL_BUILD_FILES}
 
 	print_status "Cleaning should remove all files from build"
-	make clean
+	make clean || failure "Failed to make clean"
 	ALL_BUILD_FILES=$(find ${BUILD} -type f)
 	if [ -n "${ALL_BUILD_FILES}" ]; then
 		 failure "Files weren't cleaned: ${ALL_BUILD_FILES}"
 	fi
 
+	print_status "Moving BUILD_DIR_BASE out of tree should still build OK"
+	rm -rf --preserve-root ${BUILD}/*
+	OUTOFTREE_BUILD=${TESTDIR}/alt_build
+	make BUILD_DIR_BASE=${OUTOFTREE_BUILD} || failure "Failed to build with BUILD_DIR_BASE overriden"
+	NEW_BUILD_FILES=$(find ${OUTOFREE_BUILD} -type f)
+	if [ -z "${NEW_BUILD_FILES}" ]; then
+		failure "No files found in new build directory!"
+	fi
+	DEFAULT_BUILD_FILES=$(find ${BUILD} -mindepth 1)
+	if [ -n "${DEFAULT_BUILD_FILES}" ]; then
+		failure "Some files were incorrectly put into the default build directory: ${DEFAULT_BUILD_FILES}"
+	fi
+
 	print_status "Can still clean build if all text files are CRLFs"
-	make clean
+	make clean || failure "Unexpected failure to make clean"
 	find . -exec unix2dos {} \; # CRLFify template dir
 	# make a copy of esp-idf and CRLFify it
 	CRLF_ESPIDF=${TESTDIR}/esp-idf-crlf
@@ -89,12 +102,11 @@ function run_tests()
 	cp -rv ${IDF_PATH}/* ${CRLF_ESPIDF}
 	# don't CRLFify executable files, as Linux will fail to execute them
 	find ${CRLF_ESPIDF} -type f ! -perm 755 -exec unix2dos {} \;
-	make IDF_PATH=${CRLF_ESPIDF}
+	make IDF_PATH=${CRLF_ESPIDF} || failure "Failed to build with CRLFs in source"
 	# do the same checks we do for the clean build
 	assert_built ${APP_BINS} ${BOOTLOADER_BINS} partitions_singleapp.bin
 	[ -f ${BUILD}/partition*.bin ] || failure "A partition table should have been built in CRLF mode"
 
-	# NOTE: If adding new tests, add them above this CRLF test...
 
 	print_status "All tests completed"
 	if [ -n "${FAILURES}" ]; then
