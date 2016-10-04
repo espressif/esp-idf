@@ -7,6 +7,10 @@ COMPONENT_KCONFIGS_PROJBUILD := $(foreach component,$(COMPONENT_PATHS),$(wildcar
 #For doing make menuconfig etc
 KCONFIG_TOOL_DIR=$(IDF_PATH)/tools/kconfig
 
+# set SDKCONFIG to the project's sdkconfig,
+# unless it's overriden (happens for bootloader)
+SDKCONFIG ?= $(PROJECT_PATH)/sdkconfig
+
 # clear MAKEFLAGS as the menuconfig makefile uses implicit compile rules
 $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
 	MAKEFLAGS="" \
@@ -15,17 +19,16 @@ $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
 
 # use a wrapper environment for where we run Kconfig tools
 KCONFIG_TOOL_ENV=KCONFIG_AUTOHEADER=$(BUILD_DIR_BASE)/include/sdkconfig.h \
-	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
-	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" \
+	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" KCONFIG_CONFIG=$(SDKCONFIG) \
 	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)"
 
 menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
 	$(summary) MENUCONFIG
 	$(Q) $(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
 
-ifeq ("$(wildcard $(PROJECT_PATH)/sdkconfig)","")
+ifeq ("$(wildcard $(SDKCONFIG))","")
 #No sdkconfig found. Need to run menuconfig to make this if we need it.
-$(PROJECT_PATH)/sdkconfig: menuconfig
+$(SDKCONFIG): menuconfig
 endif
 
 defconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
@@ -48,7 +51,7 @@ $(BUILD_DIR_BASE)/include/config/auto.conf:
 endif
 endif
 
-$(AUTO_CONF_REGEN_TARGET) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(PROJECT_PATH)/sdkconfig $(KCONFIG_TOOL_DIR)/conf $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD)
+$(AUTO_CONF_REGEN_TARGET) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(SDKCONFIG) $(KCONFIG_TOOL_DIR)/conf $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD)
 	$(summary) GENCONFIG
 	$(Q) mkdir -p $(BUILD_DIR_BASE)/include/config
 	$(Q) cd $(BUILD_DIR_BASE); $(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/conf --silentoldconfig $(IDF_PATH)/Kconfig

@@ -13,19 +13,21 @@ ifeq ("$(IS_BOOTLOADER_BUILD)","")
 BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)
 BOOTLOADER_BUILD_DIR=$(BUILD_DIR_BASE)/bootloader
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
+BOOTLOADER_SDKCONFIG=$(BOOTLOADER_BUILD_DIR)/sdkconfig
 
 # Custom recursive make for bootloader sub-project
 BOOTLOADER_MAKE=$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
-	MAKEFLAGS= V=$(V) \
+	MAKEFLAGS= V=$(V) SDKCONFIG=$(BOOTLOADER_SDKCONFIG) \
 	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
 
 .PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
 
-$(BOOTLOADER_BIN): $(COMPONENT_PATH)/src/sdkconfig
+$(BOOTLOADER_BIN): | $(BOOTLOADER_BUILD_DIR)/sdkconfig
 	$(Q) $(BOOTLOADER_MAKE) $@
 
 bootloader-clean:
-	$(Q) $(BOOTLOADER_MAKE) app-clean
+	$(Q) $(BOOTLOADER_MAKE) app-clean config-clean
+	$(Q) rm -f $(BOOTLOADER_SDKCONFIG) $(BOOTLOADER_SDKCONFIG).old
 
 clean: bootloader-clean
 
@@ -37,15 +39,17 @@ all_binaries: $(BOOTLOADER_BIN)
 
 ESPTOOL_ALL_FLASH_ARGS += 0x1000 $(BOOTLOADER_BIN)
 
-# synchronise the project level config to the component's
-# config
-$(COMPONENT_PATH)/src/sdkconfig: $(PROJECT_PATH)/sdkconfig
-	$(Q) cp $< $@
-
 # bootloader-flash calls flash in the bootloader dummy project
 bootloader-flash: $(BOOTLOADER_BIN)
 	$(BOOTLOADER_MAKE) flash
 
+# synchronise the project level config to the bootloader's
+# config
+$(BOOTLOADER_SDKCONFIG): $(PROJECT_PATH)/sdkconfig | $(BOOTLOADER_BUILD_DIR)
+	$(Q) cp $< $@
+
+$(BOOTLOADER_BUILD_DIR):
+	$(Q) mkdir -p $@
 
 else
 CFLAGS += -D BOOTLOADER_BUILD=1 -I $(IDF_PATH)/components/esp32/include 
