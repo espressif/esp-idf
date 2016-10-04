@@ -2,7 +2,7 @@
 #
 # Test the build system for basic consistency
 #
-# Just a bash script that tests some likely make failure scenarios in a row
+# A bash script that tests some likely make failure scenarios in a row
 # Creates its own test build directory under TMP and cleans it up when done.
 #
 # Environment variables:
@@ -11,6 +11,17 @@
 # ESP_IDF_TEMPLATE_GIT - Can override git clone source for template app. Otherwise github.
 # NOCLEANUP - Set to '1' if you want the script to leave its temporary directory when done, for post-mortem.
 #
+#
+# Internals:
+# * The tests run in sequence & the system keeps track of all failures to print at the end.
+# * BUILD directory is set to default BUILD_DIR_BASE
+# * The "print_status" function both prints a status line to the log and keeps track of which test is running.
+# * Calling the "failure" function prints a failure message to the log and also adds to the list of failures to print at the end.
+# * The function "assert_built" tests for a file relative to the BUILD directory.
+# * The function "take_build_snapshot" can be paired with the functions "assert_rebuilt" and "assert_not_rebuilt" to compare file timestamps and verify if they were rebuilt or not since the snapshot was taken.
+#
+# To add a new test case, add it to the end of the run_tests function. Note that not all test cases do comprehensive cleanup
+# (although very invasive ones like appending CRLFs to all files take a copy of the esp-idf tree.)
 
 # Set up some variables
 #
