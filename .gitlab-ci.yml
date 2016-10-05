@@ -32,6 +32,7 @@ build_template_app:
     IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
+    IDF_CI_BUILD: "1"
 
   script:
     - git clone https://github.com/espressif/esp-idf-template.git

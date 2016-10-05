@@ -19,9 +19,9 @@ GPATH
 .settings
 
 # Example project files
-examples/*/*/sdkconfig
-examples/*/*/sdkconfig.old
-examples/*/*/build
+examples/**/sdkconfig
+examples/**/sdkconfig.old
+examples/**/build
 
 #Doc build artifacts
 docs/_build/
@@ -33,3 +33,7 @@ docs/man/
 tools/unit-test-app/sdkconfig
 tools/unit-test-app/sdkconfig.old
 tools/unit-test-app/build
+
+# AWS IoT Examples require device-specific certs/keys
+examples/protocols/aws_iot/*/main/certs/*.pem.*
+
