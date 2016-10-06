@@ -106,7 +106,7 @@ COMPONENT_INCLUDES := $(abspath $(foreach comp,$(COMPONENT_PATHS_BUILDABLE),$(ad
 	$(call GetVariable,$(comp),COMPONENT_ADD_INCLUDEDIRS))))
 
 #Also add project include path, for sdk includes
-COMPONENT_INCLUDES += $(BUILD_DIR_BASE)/include/
+COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
 export COMPONENT_INCLUDES
 
 #COMPONENT_LDFLAGS has a list of all flags that are needed to link the components together. It's collected

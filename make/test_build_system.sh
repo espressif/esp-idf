@@ -91,7 +91,7 @@ function run_tests()
 		 failure "Files weren't cleaned: ${ALL_BUILD_FILES}"
 	fi
 
-	print_status "Moving BUILD_DIR_BASE out of tree should still build OK"
+	print_status "Moving BUILD_DIR_BASE out of tree"
 	rm -rf --preserve-root ${BUILD}/*
 	OUTOFTREE_BUILD=${TESTDIR}/alt_build
 	make BUILD_DIR_BASE=${OUTOFTREE_BUILD} || failure "Failed to build with BUILD_DIR_BASE overriden"
@@ -102,6 +102,14 @@ function run_tests()
 	DEFAULT_BUILD_FILES=$(find ${BUILD} -mindepth 1)
 	if [ -n "${DEFAULT_BUILD_FILES}" ]; then
 		failure "Some files were incorrectly put into the default build directory: ${DEFAULT_BUILD_FILES}"
+	fi
+
+	print_status "BUILD_DIR_BASE inside default build directory"
+	rm -rf --preserve-root ${BUILD}/*
+	make BUILD_DIR_BASE=build/subdirectory || failure "Failed to build with BUILD_DIR_BASE as subdir"
+	NEW_BUILD_FILES=$(find ${BUILD}/subdirectory -type f)
+	if [ -z "${NEW_BUILD_FILES}" ]; then
+		failure "No files found in new build directory!"
 	fi
 
 	print_status "Can still clean build if all text files are CRLFs"

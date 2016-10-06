@@ -6,7 +6,7 @@
 # lib(subdirectory_name).a in the build directory. This behaviour is entirely configurable,
 # please read the esp-idf build system document if you need to do this.
 #
--include $(BUILD_DIR_BASE)/include/config/auto.conf
+-include include/config/auto.conf
 
 COMPONENT_SRCDIRS := . hwcrypto
 
