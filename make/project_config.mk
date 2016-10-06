@@ -11,10 +11,9 @@ KCONFIG_TOOL_DIR=$(IDF_PATH)/tools/kconfig
 # unless it's overriden (happens for bootloader)
 SDKCONFIG ?= $(PROJECT_PATH)/sdkconfig
 
-# clear MAKEFLAGS as the menuconfig makefile uses implicit compile rules
+# reset MAKEFLAGS as the menuconfig makefile uses implicit compile rules
 $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
-	MAKEFLAGS="" \
-	CC=$(HOSTCC) LD=$(HOSTLD) \
+	MAKEFLAGS=$(ORIGINAL_MAKEFLAGS) CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
 # use a wrapper environment for where we run Kconfig tools

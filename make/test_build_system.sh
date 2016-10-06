@@ -92,7 +92,7 @@ function run_tests()
     fi
 
     print_status "Moving BUILD_DIR_BASE out of tree"
-    rm -rf --preserve-root ${BUILD}/*
+    clean_build_dir
     OUTOFTREE_BUILD=${TESTDIR}/alt_build
     make BUILD_DIR_BASE=${OUTOFTREE_BUILD} || failure "Failed to build with BUILD_DIR_BASE overriden"
     NEW_BUILD_FILES=$(find ${OUTOFREE_BUILD} -type f)
@@ -105,11 +105,18 @@ function run_tests()
     fi
 
     print_status "BUILD_DIR_BASE inside default build directory"
-    rm -rf --preserve-root ${BUILD}/*
+    clean_build_dir
     make BUILD_DIR_BASE=build/subdirectory || failure "Failed to build with BUILD_DIR_BASE as subdir"
     NEW_BUILD_FILES=$(find ${BUILD}/subdirectory -type f)
     if [ -z "${NEW_BUILD_FILES}" ]; then
         failure "No files found in new build directory!"
+    fi
+
+    print_status "Parallel builds should work OK"
+    clean_build_dir
+    (make -j5 2>&1 | tee ${TESTDIR}/parallel_build.log) || failure "Failed to build in parallel"
+    if grep -q "warning: jobserver unavailable" ${TESTDIR}/parallel_build.log; then
+        failure "Parallel build prints 'warning: jobserver unavailable' errors"
     fi
 
     print_status "Can still clean build if all text files are CRLFs"
@@ -220,6 +227,12 @@ function assert_not_rebuilt()
         fi
         shift
     done
+}
+
+# do a "clean" that doesn't depend on 'make clean'
+function clean_build_dir()
+{
+    rm -rf --preserve-root ${BUILD}/*
 }
 
 cd ${TESTDIR}

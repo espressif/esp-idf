@@ -37,6 +37,7 @@ help:
 	@echo "'make partition_table', etc, etc."
 
 # disable built-in make rules, makes debugging saner
+MAKEFLAGS_OLD := $(MAKEFLAGS)
 MAKEFLAGS +=-rR
 
 # Figure out PROJECT_PATH if not set
@@ -231,7 +232,7 @@ define GenerateComponentPhonyTarget
 # $(2) - target to generate (build, clean)
 .PHONY: $(notdir $(1))-$(2)
 $(notdir $(1))-$(2): | $(BUILD_DIR_BASE)/$(notdir $(1))
-	@+$(MAKE) -C $(BUILD_DIR_BASE)/$(notdir $(1)) -f $(1)/component.mk COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(notdir $(1)) $(2)
+	$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(notdir $(1)) -f $(1)/component.mk COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(notdir $(1)) $(2)
 endef
 
 define GenerateComponentTargets
