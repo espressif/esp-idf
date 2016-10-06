@@ -32,123 +32,123 @@ export V=1
 
 function run_tests()
 {
-	FAILURES=
-	STATUS="Starting"
-	print_status "Checking prerequisites"
-	[ -z ${IDF_PATH} ] && echo "IDF_PATH is not set. Need path to esp-idf installation." && exit 2
+    FAILURES=
+    STATUS="Starting"
+    print_status "Checking prerequisites"
+    [ -z ${IDF_PATH} ] && echo "IDF_PATH is not set. Need path to esp-idf installation." && exit 2
 
-	print_status "Cloning template from ${ESP_IDF_TEMPLATE_GIT}..."
-	git clone ${ESP_IDF_TEMPLATE_GIT} template
-	cd template
-	git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
+    print_status "Cloning template from ${ESP_IDF_TEMPLATE_GIT}..."
+    git clone ${ESP_IDF_TEMPLATE_GIT} template
+    cd template
+    git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
 
-	print_status "Updating template config..."
-	make defconfig || exit $?
+    print_status "Updating template config..."
+    make defconfig || exit $?
 
-	BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
-	APP_BINS="app-template.elf app-template.bin"
+    BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
+    APP_BINS="app-template.elf app-template.bin"
 
-	print_status "Initial clean build"
-	# if make fails here, everything fails
-	make || exit $?
-	# check all the expected build artifacts from the clean build
-	assert_built ${APP_BINS} ${BOOTLOADER_BINS} partitions_singleapp.bin
-	[ -f ${BUILD}/partition*.bin ] || failure "A partition table should have been built"
+    print_status "Initial clean build"
+    # if make fails here, everything fails
+    make || exit $?
+    # check all the expected build artifacts from the clean build
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} partitions_singleapp.bin
+    [ -f ${BUILD}/partition*.bin ] || failure "A partition table should have been built"
 
-	print_status "Updating component source file rebuilds component"
-	# touch a file & do a build
-	take_build_snapshot
-	touch ${IDF_PATH}/components/esp32/syscalls.c
-	make || failure "Failed to partial build"
-	assert_rebuilt ${APP_BINS} esp32/libesp32.a esp32/syscalls.o
-	assert_not_rebuilt lwip/liblwip.a freertos/libfreertos.a ${BOOTLOADER_BINS} partitions_singleapp.bin
+    print_status "Updating component source file rebuilds component"
+    # touch a file & do a build
+    take_build_snapshot
+    touch ${IDF_PATH}/components/esp32/syscalls.c
+    make || failure "Failed to partial build"
+    assert_rebuilt ${APP_BINS} esp32/libesp32.a esp32/syscalls.o
+    assert_not_rebuilt lwip/liblwip.a freertos/libfreertos.a ${BOOTLOADER_BINS} partitions_singleapp.bin
 
-	print_status "Bootloader source file rebuilds bootloader"
-	take_build_snapshot
-	touch ${IDF_PATH}/components/bootloader/src/main/bootloader_start.c
-	make bootloader || failure "Failed to partial build bootloader"
-	assert_rebuilt ${BOOTLOADER_BINS} bootloader/main/bootloader_start.o
-	assert_not_rebuilt ${APP_BINS} partitions_singleapp.bin
+    print_status "Bootloader source file rebuilds bootloader"
+    take_build_snapshot
+    touch ${IDF_PATH}/components/bootloader/src/main/bootloader_start.c
+    make bootloader || failure "Failed to partial build bootloader"
+    assert_rebuilt ${BOOTLOADER_BINS} bootloader/main/bootloader_start.o
+    assert_not_rebuilt ${APP_BINS} partitions_singleapp.bin
 
-	print_status "Partition CSV file rebuilds partitions"
-	take_build_snapshot
-	touch ${IDF_PATH}/components/partition_table/partitions_singleapp.csv
-	make partition_table || failure "Failed to build partition table"
-	assert_rebuilt partitions_singleapp.bin
-	assert_not_rebuilt app-template.bin app-template.elf ${BOOTLOADER_BINS}
+    print_status "Partition CSV file rebuilds partitions"
+    take_build_snapshot
+    touch ${IDF_PATH}/components/partition_table/partitions_singleapp.csv
+    make partition_table || failure "Failed to build partition table"
+    assert_rebuilt partitions_singleapp.bin
+    assert_not_rebuilt app-template.bin app-template.elf ${BOOTLOADER_BINS}
 
-	print_status "Partial build doesn't compile anything by default"
-	take_build_snapshot
-	# verify no build files are refreshed by a partial make
-	ALL_BUILD_FILES=$(find ${BUILD} -type f | sed "s@${BUILD}/@@")
-	make || failure "Partial build failed"
-	assert_not_rebuilt ${ALL_BUILD_FILES}
+    print_status "Partial build doesn't compile anything by default"
+    take_build_snapshot
+    # verify no build files are refreshed by a partial make
+    ALL_BUILD_FILES=$(find ${BUILD} -type f | sed "s@${BUILD}/@@")
+    make || failure "Partial build failed"
+    assert_not_rebuilt ${ALL_BUILD_FILES}
 
-	print_status "Cleaning should remove all files from build"
-	make clean || failure "Failed to make clean"
-	ALL_BUILD_FILES=$(find ${BUILD} -type f)
-	if [ -n "${ALL_BUILD_FILES}" ]; then
-		 failure "Files weren't cleaned: ${ALL_BUILD_FILES}"
-	fi
+    print_status "Cleaning should remove all files from build"
+    make clean || failure "Failed to make clean"
+    ALL_BUILD_FILES=$(find ${BUILD} -type f)
+    if [ -n "${ALL_BUILD_FILES}" ]; then
+         failure "Files weren't cleaned: ${ALL_BUILD_FILES}"
+    fi
 
-	print_status "Moving BUILD_DIR_BASE out of tree"
-	rm -rf --preserve-root ${BUILD}/*
-	OUTOFTREE_BUILD=${TESTDIR}/alt_build
-	make BUILD_DIR_BASE=${OUTOFTREE_BUILD} || failure "Failed to build with BUILD_DIR_BASE overriden"
-	NEW_BUILD_FILES=$(find ${OUTOFREE_BUILD} -type f)
-	if [ -z "${NEW_BUILD_FILES}" ]; then
-		failure "No files found in new build directory!"
-	fi
-	DEFAULT_BUILD_FILES=$(find ${BUILD} -mindepth 1)
-	if [ -n "${DEFAULT_BUILD_FILES}" ]; then
-		failure "Some files were incorrectly put into the default build directory: ${DEFAULT_BUILD_FILES}"
-	fi
+    print_status "Moving BUILD_DIR_BASE out of tree"
+    rm -rf --preserve-root ${BUILD}/*
+    OUTOFTREE_BUILD=${TESTDIR}/alt_build
+    make BUILD_DIR_BASE=${OUTOFTREE_BUILD} || failure "Failed to build with BUILD_DIR_BASE overriden"
+    NEW_BUILD_FILES=$(find ${OUTOFREE_BUILD} -type f)
+    if [ -z "${NEW_BUILD_FILES}" ]; then
+        failure "No files found in new build directory!"
+    fi
+    DEFAULT_BUILD_FILES=$(find ${BUILD} -mindepth 1)
+    if [ -n "${DEFAULT_BUILD_FILES}" ]; then
+        failure "Some files were incorrectly put into the default build directory: ${DEFAULT_BUILD_FILES}"
+    fi
 
-	print_status "BUILD_DIR_BASE inside default build directory"
-	rm -rf --preserve-root ${BUILD}/*
-	make BUILD_DIR_BASE=build/subdirectory || failure "Failed to build with BUILD_DIR_BASE as subdir"
-	NEW_BUILD_FILES=$(find ${BUILD}/subdirectory -type f)
-	if [ -z "${NEW_BUILD_FILES}" ]; then
-		failure "No files found in new build directory!"
-	fi
+    print_status "BUILD_DIR_BASE inside default build directory"
+    rm -rf --preserve-root ${BUILD}/*
+    make BUILD_DIR_BASE=build/subdirectory || failure "Failed to build with BUILD_DIR_BASE as subdir"
+    NEW_BUILD_FILES=$(find ${BUILD}/subdirectory -type f)
+    if [ -z "${NEW_BUILD_FILES}" ]; then
+        failure "No files found in new build directory!"
+    fi
 
-	print_status "Can still clean build if all text files are CRLFs"
-	make clean || failure "Unexpected failure to make clean"
-	find . -exec unix2dos {} \; # CRLFify template dir
-	# make a copy of esp-idf and CRLFify it
-	CRLF_ESPIDF=${TESTDIR}/esp-idf-crlf
-	mkdir -p ${CRLF_ESPIDF}
-	cp -rv ${IDF_PATH}/* ${CRLF_ESPIDF}
-	# don't CRLFify executable files, as Linux will fail to execute them
-	find ${CRLF_ESPIDF} -type f ! -perm 755 -exec unix2dos {} \;
-	make IDF_PATH=${CRLF_ESPIDF} || failure "Failed to build with CRLFs in source"
-	# do the same checks we do for the clean build
-	assert_built ${APP_BINS} ${BOOTLOADER_BINS} partitions_singleapp.bin
-	[ -f ${BUILD}/partition*.bin ] || failure "A partition table should have been built in CRLF mode"
+    print_status "Can still clean build if all text files are CRLFs"
+    make clean || failure "Unexpected failure to make clean"
+    find . -exec unix2dos {} \; # CRLFify template dir
+    # make a copy of esp-idf and CRLFify it
+    CRLF_ESPIDF=${TESTDIR}/esp-idf-crlf
+    mkdir -p ${CRLF_ESPIDF}
+    cp -rv ${IDF_PATH}/* ${CRLF_ESPIDF}
+    # don't CRLFify executable files, as Linux will fail to execute them
+    find ${CRLF_ESPIDF} -type f ! -perm 755 -exec unix2dos {} \;
+    make IDF_PATH=${CRLF_ESPIDF} || failure "Failed to build with CRLFs in source"
+    # do the same checks we do for the clean build
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} partitions_singleapp.bin
+    [ -f ${BUILD}/partition*.bin ] || failure "A partition table should have been built in CRLF mode"
 
 
-	print_status "All tests completed"
-	if [ -n "${FAILURES}" ]; then
-		echo "Some failures were detected:"
-		echo -e "${FAILURES}"
-		exit 1
-	else
-		echo "Build tests passed."
-	fi
+    print_status "All tests completed"
+    if [ -n "${FAILURES}" ]; then
+        echo "Some failures were detected:"
+        echo -e "${FAILURES}"
+        exit 1
+    else
+        echo "Build tests passed."
+    fi
 }
 
 function print_status()
 {
-	echo "******** $1"
-	STATUS="$1"
+    echo "******** $1"
+    STATUS="$1"
 }
 
 function failure()
 {
-	echo "!!!!!!!!!!!!!!!!!!!"
-	echo "FAILURE: $1"
-	echo "!!!!!!!!!!!!!!!!!!!"
-	FAILURES="${FAILURES}${STATUS} :: $1\n"
+    echo "!!!!!!!!!!!!!!!!!!!"
+    echo "FAILURE: $1"
+    echo "!!!!!!!!!!!!!!!!!!!"
+    FAILURES="${FAILURES}${STATUS} :: $1\n"
 }
 
 TESTDIR=${TMP}/build_system_tests_$$
@@ -164,62 +164,62 @@ BUILD=${TESTDIR}/template/build
 # copy all the build output to a snapshot directory
 function take_build_snapshot()
 {
-	rm -rf ${SNAPSHOT}
-	cp -ap ${TESTDIR}/template/build ${SNAPSHOT}
+    rm -rf ${SNAPSHOT}
+    cp -ap ${TESTDIR}/template/build ${SNAPSHOT}
 }
 
 # verify that all the arguments are present in the build output directory
 function assert_built()
 {
-	until [ -z "$1" ]; do
-		if [ ! -f "${BUILD}/$1" ]; then
-			failure "File $1 should be in the build output directory"
-		fi
-		shift
-	done
+    until [ -z "$1" ]; do
+        if [ ! -f "${BUILD}/$1" ]; then
+            failure "File $1 should be in the build output directory"
+        fi
+        shift
+    done
 }
 
 # Test if a file has been rebuilt.
 function file_was_rebuilt()
 {
-	# can't use [ a -ot b ] here as -ot only gives second resolution
-	# but stat -c %y seems to be microsecond at least for tmpfs, ext4..
-	if [ "$(stat -c %y ${SNAPSHOT}/$1)" != "$(stat -c %y ${BUILD}/$1)" ]; then
-		return 0
-	else
-		return 1
-	fi
+    # can't use [ a -ot b ] here as -ot only gives second resolution
+    # but stat -c %y seems to be microsecond at least for tmpfs, ext4..
+    if [ "$(stat -c %y ${SNAPSHOT}/$1)" != "$(stat -c %y ${BUILD}/$1)" ]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # verify all the arguments passed in were rebuilt relative to the snapshot
 function assert_rebuilt()
 {
-	until [ -z "$1" ]; do
-		assert_built "$1"
-		if [ ! -f "${SNAPSHOT}/$1" ]; then
-			failure "File $1 should have been original build snapshot"
-		fi
-		if ! file_was_rebuilt "$1"; then
-			failure "File $1 should have been rebuilt"
-		fi
-		shift
-	done
+    until [ -z "$1" ]; do
+        assert_built "$1"
+        if [ ! -f "${SNAPSHOT}/$1" ]; then
+            failure "File $1 should have been original build snapshot"
+        fi
+        if ! file_was_rebuilt "$1"; then
+            failure "File $1 should have been rebuilt"
+        fi
+        shift
+    done
 }
 
 # verify all the arguments are in the build directory & snapshot,
 # but were not rebuilt
 function assert_not_rebuilt()
 {
-	until [ -z "$1" ]; do
-		assert_built "$1"
-		if [ ! -f "${SNAPSHOT}/$1" ]; then
-			failure "File $1 should be in snapshot build directory"
-		fi
-		if file_was_rebuilt "$1"; then
-			failure "File $1 should not have been rebuilt"
-		fi
-		shift
-	done
+    until [ -z "$1" ]; do
+        assert_built "$1"
+        if [ ! -f "${SNAPSHOT}/$1" ]; then
+            failure "File $1 should be in snapshot build directory"
+        fi
+        if file_was_rebuilt "$1"; then
+            failure "File $1 should not have been rebuilt"
+        fi
+        shift
+    done
 }
 
 cd ${TESTDIR}
