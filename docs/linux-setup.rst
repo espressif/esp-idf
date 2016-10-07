@@ -83,6 +83,10 @@ In any case, here are the steps to compile the toolchain yourself.
 
         sudo apt-get install gawk gperf grep gettext libncurses-dev python python-dev automake bison flex texinfo help2man libtool
 
+  - Ubuntu 16.04::
+  
+        sudo apt-get install gawk gperf grep gettext python python-dev automake bison flex texinfo help2man libtool libtool-bin
+
   - Debian::
 
         TODO
