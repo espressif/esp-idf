@@ -1,6 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "bt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "string.h"
 
 
 extern void bte_main_boot_entry(void *);
@@ -15,8 +19,9 @@ void pingTask(void *pvParameters)
     }
 }
 
-void bt_app_main()
+void app_main()
 {
+    bt_controller_init();
     xTaskCreatePinnedToCore(&pingTask, "pingTask", 2048, NULL, 5, NULL, 0);
     bt_app_task_start_up();
     bte_main_boot_entry(bt_app_core_start);

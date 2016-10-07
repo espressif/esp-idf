@@ -24,7 +24,9 @@
 #include "rom/ets_sys.h"
 //extern void ets_printf(const char *fmt, ...);
 
+#ifndef assert
 #define assert(x)	do { if (!(x)) ets_printf("bt host error %s %u\n", __FILE__, __LINE__); } while (0)
+#endif
 
 inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
 {

@@ -16,6 +16,7 @@
 #define __BT_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "esp_err.h"
 
 #ifdef __cplusplus

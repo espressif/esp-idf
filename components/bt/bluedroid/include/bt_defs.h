@@ -69,7 +69,7 @@ inline uint32_t swap_byte_32(uint32_t x) {
           ((x & 0x00ff0000UL) >> 8) |
           ((x & 0xff000000UL) >> 24));
 }
-
+#ifndef ntohs
 inline uint16_t ntohs(uint16_t x) {
 #ifdef CPU_LITTLE_ENDIAN
   return swap_byte_16(x);
@@ -77,14 +77,6 @@ inline uint16_t ntohs(uint16_t x) {
   return x;
 #endif
 }
-
-typedef struct vhci_host_callback {
-    void (*notify_host_send_available)(void);
-    int (*notify_host_recv)(uint8_t *data, uint16_t len);
-} vhci_host_callback_t;
-
-bool API_vhci_host_check_send_available(void);
-void API_vhci_host_send_packet(uint8_t *data, uint16_t len);
-void API_vhci_host_register_callback(const vhci_host_callback_t *callback);
+#endif
 
 #endif /* _BT_DEFS_H_ */
