@@ -90,7 +90,6 @@ const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
     GPIO_PIN_REG_39
 };
 
-#define IS_VALID_GPIO(gpio_num)  ( (gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0))
 static int is_valid_gpio(int gpio_num)
 {
     if(gpio_num >= GPIO_PIN_COUNT || GPIO_PIN_MUX_REG[gpio_num] == 0) {
@@ -102,8 +101,9 @@ static int is_valid_gpio(int gpio_num)
 
 esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-    if(!is_valid_gpio(gpio_num))
+    if(!is_valid_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     if(intr_type >= GPIO_INTR_MAX) {
         GPIO_ERROR("Unknown GPIO intr:%u\n",intr_type);
         return ESP_ERR_INVALID_ARG;
@@ -114,8 +114,9 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 
 esp_err_t gpio_intr_enable(gpio_num_t gpio_num)
 {
-    if(!is_valid_gpio(gpio_num))
+    if(!is_valid_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     if(xPortGetCoreID() == 0) {
         GPIO.pin[gpio_num].int_ena = GPIO_PRO_CPU_INTR_ENA;     //enable pro cpu intr
     } else {
@@ -126,16 +127,18 @@ esp_err_t gpio_intr_enable(gpio_num_t gpio_num)
 
 esp_err_t gpio_intr_disable(gpio_num_t gpio_num)
 {
-    if(!is_valid_gpio(gpio_num))
+    if(!is_valid_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     GPIO.pin[gpio_num].int_ena = 0;                             //disable GPIO intr
     return ESP_OK;
 }
 
 static esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 {
-    if(!is_valid_gpio(gpio_num))
+    if(!is_valid_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     if(gpio_num < 32) {
         GPIO.enable_w1tc = (0x1 << gpio_num);
     } else {
@@ -150,8 +153,9 @@ static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
         GPIO_ERROR("io_num=%d can only be input\n",gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
-    if(!is_valid_gpio(gpio_num))
+    if(!is_valid_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     if(gpio_num < 32) {
         GPIO.enable_w1ts = (0x1 << gpio_num);
     } else {
@@ -162,18 +166,21 @@ static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 
 esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 {
-    if(!IS_VALID_GPIO(gpio_num))
+    if(!GPIO_IS_VALID_GPIO(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     if(level) {
-        if(gpio_num < 32)
+        if(gpio_num < 32) {
             GPIO.out_w1ts = (1 << gpio_num);
-        else
+        } else {
             GPIO.out1_w1ts.data = (1 << (gpio_num - 32));
+        }
     } else {
-        if(gpio_num < 32)
+        if(gpio_num < 32) {
             GPIO.out_w1tc = (1 << gpio_num);
-        else
+        } else {
             GPIO.out1_w1tc.data = (1 << (gpio_num - 32));
+        }
     }
     return ESP_OK;
 }
@@ -189,8 +196,9 @@ int gpio_get_level(gpio_num_t gpio_num)
 
 esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
 {
-    if(!is_valid_gpio(gpio_num))
+    if(!is_valid_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     esp_err_t ret = ESP_OK;
     switch(pull) {
         case GPIO_PULLUP_ONLY:
@@ -219,8 +227,9 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
 
 esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode)
 {
-    if(!is_valid_gpio(gpio_num))
+    if(!is_valid_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     if(gpio_num >= 34 && (mode & (GPIO_MODE_DEF_OUTPUT))) {
         GPIO_ERROR("io_num=%d can only be input\n",gpio_num);
         return ESP_ERR_INVALID_ARG;
@@ -290,7 +299,8 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
                 gpio_output_enable(io_num);
             } else {
                 gpio_output_disable(io_num);
-            }GPIO_INFO("|");
+            }
+            GPIO_INFO("|");
             if(pGPIOConfig->pull_up_en) {
                 GPIO_INFO("PU ");
                 PIN_PULLUP_EN(io_reg);
@@ -310,7 +320,7 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
             } else {
                 gpio_intr_disable(io_num);
             }
-            PIN_FUNC_SELECT(io_reg, GPIO_FUNC_SEL); /*function number 2 is GPIO_FUNC for each pin */
+            PIN_FUNC_SELECT(io_reg, PIN_FUNC_GPIO); /*function number 2 is GPIO_FUNC for each pin */
         } else if(bit_valid && (io_reg == 0)) {
             GPIO_WARNING("io_num=%d does not exist\n",io_num);
         }
@@ -321,8 +331,9 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
 
 esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg)
 {
-    if(fn == NULL)
+    if(fn == NULL) {
         return ESP_ERR_INVALID_ARG;
+    }
     ESP_INTR_DISABLE(gpio_intr_num);
     intr_matrix_set(xPortGetCoreID(), ETS_GPIO_INTR_SOURCE, gpio_intr_num);
     xt_set_interrupt_handler(gpio_intr_num, fn, arg);
@@ -333,8 +344,9 @@ esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * ar
 /*only level interrupt can be used for wake-up function*/
 esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-    if(!is_valid_gpio(gpio_num))
+    if(!is_valid_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     esp_err_t ret = ESP_OK;
     if((intr_type == GPIO_INTR_LOW_LEVEL) || (intr_type == GPIO_INTR_HIGH_LEVEL)) {
         GPIO.pin[gpio_num].int_type = intr_type;
@@ -348,8 +360,9 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 
 esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num)
 {
-    if(!is_valid_gpio(gpio_num))
+    if(!is_valid_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
     GPIO.pin[gpio_num].wakeup_enable = 0;
     return ESP_OK;
 }

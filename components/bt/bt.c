@@ -36,9 +36,6 @@ extern void btdm_osi_funcs_register(void *osi_funcs);
 extern void btdm_controller_init(void);
 
 
-static bt_app_startup_cb_t app_startup_cb;
-static void *app_startup_ctx;
-
 #define BT_DEBUG(...)
 #define BT_API_CALL_CHECK(info, api_call, ret) \
 do{\
@@ -56,8 +53,11 @@ struct osi_funcs_t {
     void (*_interrupt_restore)(void);
     void (*_task_yield)(void);
     void *(*_semphr_create)(uint32_t max, uint32_t init);
-    void *(*_semphr_give_from_isr)(void *semphr, void *hptw);
-    void *(*_semphr_take)(void *semphr, uint32_t block_time);
+    int32_t (*_semphr_give_from_isr)(void *semphr, void *hptw);
+    int32_t (*_semphr_take)(void *semphr, uint32_t block_time_ms);
+    void *(*_mutex_create)(void);
+    int32_t (*_mutex_lock)(void *mutex);
+    int32_t (*_mutex_unlock)(void *mutex);
     esp_err_t (* _read_efuse_mac)(uint8_t mac[6]);
 };
 
@@ -73,9 +73,34 @@ static void IRAM_ATTR interrupt_restore(void)
     portEXIT_CRITICAL(&global_int_mux);
 }
 
-static void * IRAM_ATTR semphr_take_wrapper(void *semphr, uint32_t block_time)
+static void * IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init)
 {
-    return (void *)xSemaphoreTake(semphr, block_time);
+    return (void *)xSemaphoreCreateCounting(max, init);
+}
+
+static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
+{
+    return (int32_t)xSemaphoreGiveFromISR(semphr, hptw);
+}
+
+static int32_t IRAM_ATTR semphr_take_wrapper(void *semphr, uint32_t block_time_ms)
+{
+    return (int32_t)xSemaphoreTake(semphr, block_time_ms / portTICK_RATE_MS);
+}
+
+static void * IRAM_ATTR mutex_create_wrapper(void)
+{
+    return (void *)xSemaphoreCreateMutex();
+}
+
+static int32_t IRAM_ATTR mutex_lock_wrapper(void *mutex)
+{
+    return (int32_t)xSemaphoreTake(mutex, portMAX_DELAY);
+}
+
+static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex)
+{
+    return (int32_t)xSemaphoreGive(mutex);
 }
 
 static struct osi_funcs_t osi_funcs = {
@@ -84,9 +109,12 @@ static struct osi_funcs_t osi_funcs = {
     ._interrupt_disable = interrupt_disable,
     ._interrupt_restore = interrupt_restore,
     ._task_yield = vPortYield,
-    ._semphr_create = xQueueCreateCountingSemaphore,
-    ._semphr_give_from_isr = (void *)xQueueGiveFromISR,
+    ._semphr_create = semphr_create_wrapper,
+    ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
     ._semphr_take = semphr_take_wrapper,
+    ._mutex_create = mutex_create_wrapper,
+    ._mutex_lock = mutex_lock_wrapper,
+    ._mutex_unlock = mutex_unlock_wrapper,
     ._read_efuse_mac = system_efuse_read_mac,
 };
 
@@ -96,26 +124,11 @@ static void bt_controller_task(void *pvParam)
     btdm_controller_init();
 }
 
-
-static void bt_init_task(void *pvParameters)
+void bt_controller_init()
 {
-    xTaskCreatePinnedToCore(bt_controller_task, "btControllerTask", ESP_TASK_BT_CONTROLLER_STACK, NULL, ESP_TASK_BT_CONTROLLER_PRIO, NULL, 0);
-
-    if (app_startup_cb) {
-        app_startup_cb(app_startup_ctx);
-    }
-
-    vTaskDelete(NULL);
+    xTaskCreatePinnedToCore(bt_controller_task, "btController",
+            ESP_TASK_BT_CONTROLLER_STACK, NULL,
+            ESP_TASK_BT_CONTROLLER_PRIO, NULL, 0);
 }
 
-
-esp_err_t esp_bt_startup(bt_app_startup_cb_t cb, void *ctx)
-{
-    app_startup_cb = cb;
-    app_startup_ctx = ctx;
-
-    xTaskCreatePinnedToCore(bt_init_task, "btInitTask", ESP_TASK_BT_INIT_STACK, NULL, ESP_TASK_BT_INIT_PRIO, NULL, 0);
-
-    return ESP_OK;
-}
 #endif

@@ -129,6 +129,9 @@ functions but without including stdio.h here. */
 					} while(0)
 #endif
 
+
+
+
 /* Value that can be assigned to the eNotifyState member of the TCB. */
 typedef enum
 {
@@ -157,7 +160,7 @@ typedef struct tskTaskControlBlock
 	StackType_t			*pxStack;			/*< Points to the start of the stack. */
 	char				pcTaskName[ configMAX_TASK_NAME_LEN ];/*< Descriptive name given to the task when created.  Facilitates debugging only. */ /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 	BaseType_t			xCoreID;			/*< Core this task is pinned to */
-
+											/* If this moves around (other than pcTaskName size changes), please change the define in xtensa_vectors.S as well. */
 	#if ( portSTACK_GROWTH > 0 )
 		StackType_t		*pxEndOfStack;		/*< Points to the end of the stack on architectures where the stack grows up from low memory. */
 	#endif
@@ -275,9 +278,7 @@ when the scheduler is unsuspended.  The pending ready list itself can only be
 accessed from a critical section. */
 PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended[ portNUM_PROCESSORS ]	= { ( UBaseType_t ) pdFALSE };
 
-/* Muxes used in the task code */
-PRIVILEGED_DATA static portBASE_TYPE xMutexesInitialised = pdFALSE;
-/* For now, we use just one mux for all the critical sections. ToDo: give evrything a bit more granularity;
+/* For now, we use just one mux for all the critical sections. ToDo: give everything a bit more granularity;
   that could improve performance by not needlessly spinning in spinlocks for unrelated resources. */
 PRIVILEGED_DATA static portMUX_TYPE xTaskQueueMutex = portMUX_INITIALIZER_UNLOCKED;
 PRIVILEGED_DATA static portMUX_TYPE xTickCountMutex = portMUX_INITIALIZER_UNLOCKED;
@@ -577,15 +578,6 @@ static void prvResetNextTaskUnblockTime( void );
 
 #endif
 
-/*-----------------------------------------------------------*/
-
-
-static void vTaskInitializeLocalMuxes( void )
-{
-	vPortCPUInitializeMutex(&xTaskQueueMutex);
-	vPortCPUInitializeMutex(&xTickCountMutex);
-	xMutexesInitialised = pdTRUE;
-}
 
 /*-----------------------------------------------------------*/
 
@@ -595,10 +587,6 @@ BaseType_t xReturn;
 TCB_t * pxNewTCB;
 StackType_t *pxTopOfStack;
 BaseType_t i;
-	
-	/* Initialize mutexes, if they're not already initialized. */
-	if (xMutexesInitialised == pdFALSE) vTaskInitializeLocalMuxes();
-	
 	configASSERT( pxTaskCode );
 	configASSERT( ( ( uxPriority & ( ~portPRIVILEGE_BIT ) ) < configMAX_PRIORITIES ) );
 	configASSERT( (xCoreID>=0 && xCoreID<portNUM_PROCESSORS) || (xCoreID==tskNO_AFFINITY) );
@@ -873,7 +861,7 @@ BaseType_t i;
 	TickType_t xTimeToWake;
 	BaseType_t xAlreadyYielded=pdFALSE, xShouldDelay = pdFALSE;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		configASSERT( pxPreviousWakeTime );
 		configASSERT( ( xTimeIncrement > 0U ) );
 		configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] == 0 );
@@ -1043,7 +1031,7 @@ BaseType_t i;
 	List_t *pxStateList;
 	const TCB_t * const pxTCB = ( TCB_t * ) xTask;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		configASSERT( pxTCB );
 
 		if( pxTCB == pxCurrentTCB[ xPortGetCoreID() ] )
@@ -1113,7 +1101,7 @@ BaseType_t i;
 	TCB_t *pxTCB;
 	UBaseType_t uxReturn;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* If null is passed in here then we are changing the
@@ -1321,7 +1309,7 @@ BaseType_t i;
 	{
 	TCB_t *pxTCB;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* If null is passed in here then it is the running task that is
@@ -1462,7 +1450,7 @@ BaseType_t i;
 	{
 	TCB_t * const pxTCB = ( TCB_t * ) xTaskToResume;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		/* It does not make sense to resume the calling task. */
 		configASSERT( xTaskToResume );
 
@@ -1725,10 +1713,6 @@ BaseType_t xAlreadyYielded = pdFALSE;
 	scheduler has been resumed it is safe to move all the pending ready
 	tasks from this list into their appropriate ready list. */
 
-	//This uses a mux, but can be called before tasks are scheduled. Make sure muxes are inited.
-	/* Initialize mutexes, if they're not already initialized. */
-	if (xMutexesInitialised == pdFALSE) vTaskInitializeLocalMuxes();
-
 	taskENTER_CRITICAL(&xTaskQueueMutex);
 	{
 		--uxSchedulerSuspended[ xPortGetCoreID() ];
@@ -1868,7 +1852,7 @@ UBaseType_t uxTaskGetNumberOfTasks( void )
 	{
 	UBaseType_t uxTask = 0, uxQueue = configMAX_PRIORITIES;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		vTaskSuspendAll(); //WARNING: This only suspends one CPU. ToDo: suspend others as well. Mux using taskQueueMutex maybe?
 		{
 			/* Is there a space in the array for each task in the system? */
@@ -3154,7 +3138,7 @@ UBaseType_t x;
 	{
 	TCB_t *pxTCB;
 
-		ets_printf("ToDo %s\n", __FUNCTION__);
+		UNTESTED_FUNCTION();
 		/* If null is passed in here then we are deleting ourselves. */
 		pxTCB = prvGetTCBFromHandle( xTaskToModify );
 
@@ -3355,6 +3339,18 @@ TCB_t *pxNewTCB;
 }
 /*-----------------------------------------------------------*/
 
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+{
+	TCB_t *pxTCB;
+	UBaseType_t uxReturn;
+
+	pxTCB = prvGetTCBFromHandle( xTask );
+
+	return pxTCB->xCoreID;
+}
+/*-----------------------------------------------------------*/
+
+
 #if ( configUSE_TRACE_FACILITY == 1 )
 
 	static UBaseType_t prvListTaskWithinSingleList( TaskStatus_t *pxTaskStatusArray, List_t *pxList, eTaskState eState )
@@ -3362,6 +3358,7 @@ TCB_t *pxNewTCB;
 	volatile TCB_t *pxNextTCB, *pxFirstTCB;
 	UBaseType_t uxTask = 0;
 
+		UNTESTED_FUNCTION();
 		if( listCURRENT_LIST_LENGTH( pxList ) > ( UBaseType_t ) 0 )
 		{
 			listGET_OWNER_OF_NEXT_ENTRY( pxFirstTCB, pxList );
@@ -3468,6 +3465,7 @@ TCB_t *pxNewTCB;
 	uint8_t *pucEndOfStack;
 	UBaseType_t uxReturn;
 
+		UNTESTED_FUNCTION();
 		pxTCB = prvGetTCBFromHandle( xTask );
 
 		#if portSTACK_GROWTH < 0
@@ -3899,6 +3897,7 @@ scheduler will re-enable the interrupts instead. */
 	TaskStatus_t *pxTaskStatusArray;
 	volatile UBaseType_t uxArraySize, x;
 	char cStatus;
+		UNTESTED_FUNCTION();
 
 		/*
 		 * PLEASE NOTE:
@@ -3992,6 +3991,7 @@ scheduler will re-enable the interrupts instead. */
 	volatile UBaseType_t uxArraySize, x;
 	uint32_t ulTotalTime, ulStatsAsPercentage;
 
+		UNTESTED_FUNCTION();
 		#if( configUSE_TRACE_FACILITY != 1 )
 		{
 			#error configUSE_TRACE_FACILITY must also be set to 1 in FreeRTOSConfig.h to use vTaskGetRunTimeStats().
@@ -4149,6 +4149,7 @@ TickType_t uxReturn;
 	TickType_t xTimeToWake;
 	uint32_t ulReturn;
 
+		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* Only block if the notification count is not already non-zero. */
@@ -4259,6 +4260,7 @@ TickType_t uxReturn;
 	TickType_t xTimeToWake;
 	BaseType_t xReturn;
 
+		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* Only block if a notification is not already pending. */
@@ -4381,6 +4383,7 @@ TickType_t uxReturn;
 	eNotifyValue eOriginalNotifyState;
 	BaseType_t xReturn = pdPASS;
 
+		UNTESTED_FUNCTION();
 		configASSERT( xTaskToNotify );
 		pxTCB = ( TCB_t * ) xTaskToNotify;
 
@@ -4465,6 +4468,7 @@ TickType_t uxReturn;
 	eNotifyValue eOriginalNotifyState;
 	BaseType_t xReturn = pdPASS;
 
+		UNTESTED_FUNCTION();
 		configASSERT( xTaskToNotify );
 
 		pxTCB = ( TCB_t * ) xTaskToNotify;
@@ -4558,6 +4562,7 @@ TickType_t uxReturn;
 	TCB_t * pxTCB;
 	eNotifyValue eOriginalNotifyState;
 
+		UNTESTED_FUNCTION();
 		configASSERT( xTaskToNotify );
 
 

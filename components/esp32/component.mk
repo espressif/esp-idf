@@ -10,23 +10,9 @@
 
 COMPONENT_SRCDIRS := . hwcrypto
 
-LIBS := crypto core net80211 phy rtc pp wpa wps
+LIBS := crypto core net80211 phy rtc pp wpa smartconfig
 
-ifeq ($(CONFIG_MEMMAP_BT),y)
-    ifeq ($(CONFIG_MEMMAP_TRACEMEM),y)
-        LINKER_SCRIPTS = -T esp32.bt.trace.ld
-    else
-        LINKER_SCRIPTS = -T esp32.bt.ld
-    endif
-else
-    ifeq ($(CONFIG_MEMMAP_TRACEMEM),y)
-        LINKER_SCRIPTS = -T esp32.trace.ld
-    else
-        LINKER_SCRIPTS = -T esp32.ld
-    endif
-endif
-
-LINKER_SCRIPTS += -T esp32.common.ld -T esp32.rom.ld -T esp32.peripherals.ld
+LINKER_SCRIPTS += -T esp32_out.ld -T esp32.common.ld -T esp32.rom.ld -T esp32.peripherals.ld
 
 COMPONENT_ADD_LDFLAGS := -lesp32 \
                            $(abspath libhal.a) \
@@ -51,3 +37,14 @@ $(eval $(call SubmoduleRequiredForFiles,$(ALL_LIB_FILES)))
 # It would be better for components to be able to expose any of these
 # non-standard dependencies via get_variable, but this will do for now.
 $(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
+
+# Preprocess esp32.ld linker script into esp32_out.ld
+#
+# The library doesn't really depend on esp32_out.ld, but it
+# saves us from having to add the target to a Makefile.projbuild
+$(COMPONENT_LIBRARY): esp32_out.ld
+
+esp32_out.ld: $(COMPONENT_PATH)/ld/esp32.ld ../include/sdkconfig.h
+	$(CC) -I ../include -C -P -x c -E $< -o $@
+
+COMPONENT_EXTRA_CLEAN := esp32_out.ld

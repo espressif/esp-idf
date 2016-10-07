@@ -14,133 +14,74 @@
 #ifndef _SOC_LEDC_STRUCT_H_
 #define _SOC_LEDC_STRUCT_H_
 typedef volatile struct {
-    struct{
-        union {
-            struct {
-                uint32_t timer_sel:  2;              /*There are four high speed timers  the two bits are used to select one of them for high speed channel.  2'b00: seletc hstimer0.   2'b01: select hstimer1.  2'b10: select hstimer2.    2'b11: select hstimer3.*/
-                uint32_t sig_out_en: 1;              /*This is the output enable control bit for high speed channel*/
-                uint32_t idle_lv:    1;              /*This bit is used to control the output value when high speed channel is off.*/
-                uint32_t reserved4: 27;
-                uint32_t clk_en:     1;              /*This bit is clock gating control signal. when software configure LED_PWM internal registers  it controls the register clock.*/
-            };
-            uint32_t val;
-        } conf0;
-        union {
-            struct {
-                uint32_t hpoint:     20;             /*The output value changes to high when htimerx(x=[0 3]) selected by high speed channel has reached reg_hpoint_hsch0[19:0]*/
-                uint32_t reserved20: 12;
-            };
-            uint32_t val;
-        } hpoint;
-        union {
-            struct {
-                uint32_t duty:      25;              /*The register is used to control output duty. When hstimerx(x=[0 3]) chosen by high speed channel  has reached reg_lpoint_hsch0 the output signal changes to low. reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4])          (1)  reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4] +1)     (2)  The least four bits in this register represent the decimal part and determines when to choose (1) or (2)*/
-                uint32_t reserved25: 7;
-            };
-            uint32_t val;
-        } duty;
-        union {
-            struct {
-                uint32_t duty_scale:10;              /*This register controls the increase or decrease step scale for high speed channel.*/
-                uint32_t duty_cycle:10;              /*This register is used to increase or decrease the duty every reg_duty_cycle_hsch0 cycles for high speed channel.*/
-                uint32_t duty_num:  10;              /*This register is used to control the number of increased or decreased times for high speed channel.*/
-                uint32_t duty_inc:   1;              /*This register is used to increase the duty of output signal or decrease the duty of output signal for high speed channel.*/
-                uint32_t duty_start: 1;              /*When reg_duty_num_hsch0 reg_duty_cycle_hsch0 and reg_duty_scale_hsch0 has been configured. these register won't take effect until set reg_duty_start_hsch0. this bit is automatically cleared by hardware.*/
-            };
-            uint32_t val;
-        } conf1;
-        union {
-            struct {
-                uint32_t duty_read: 25;              /*This register represents the current duty of the output signal for high speed channel.*/
-                uint32_t reserved25: 7;
-            };
-            uint32_t val;
-        } duty_rd;
-    } high_speed_channel[8];
-    struct{
-        union {
-            struct {
-                uint32_t timer_sel:  2;              /*There are four low speed timers  the two bits are used to select one of them for low speed channel.  2'b00: seletc lstimer0.   2'b01: select lstimer1.  2'b10: select lstimer2.    2'b11: select lstimer3.*/
-                uint32_t sig_out_en: 1;              /*This is the output enable control bit for low speed channel.*/
-                uint32_t idle_lv:    1;              /*This bit is used to control the output value when low speed channel is off.*/
-                uint32_t para_up:    1;              /*This bit is used to update register LEDC_LSCH0_HPOINT and LEDC_LSCH0_DUTY for low speed channel.*/
-                uint32_t reserved5: 27;
-            };
-            uint32_t val;
-        } conf0;
-        union {
-            struct {
-                uint32_t hpoint:     20;             /*The output value changes to high when lstimerx(x=[0 3]) selected by low speed channel has reached reg_hpoint_lsch0[19:0]*/
-                uint32_t reserved20: 12;
-            };
-            uint32_t val;
-        } hpoint;
-        union {
-            struct {
-                uint32_t duty:      25;              /*The register is used to control output duty. When lstimerx(x=[0 3]) choosed by low speed channel has reached reg_lpoint_lsch0 the output signal changes to low. reg_lpoint_lsch0=(reg_hpoint_lsch0[19:0]+reg_duty_lsch0[24:4])          (1)  reg_lpoint_lsch0=(reg_hpoint_lsch0[19:0]+reg_duty_lsch0[24:4] +1)     (2)  The least four bits in this register represent the decimal part and determines when to choose (1) or (2)*/
-                uint32_t reserved25: 7;
-            };
-            uint32_t val;
-        } duty;
-        union {
-            struct {
-                uint32_t duty_scale:10;              /*This register controls the increase or decrease step scale for low speed channel.*/
-                uint32_t duty_cycle:10;              /*This register is used to increase or decrease the duty every reg_duty_cycle_lsch0 cycles for low speed channel.*/
-                uint32_t duty_num:  10;              /*This register is used to control the num of increased or decreased times for low speed channel6.*/
-                uint32_t duty_inc:   1;              /*This register is used to increase the duty of output signal or decrease the duty of output signal for low speed channel6.*/
-                uint32_t duty_start: 1;              /*When reg_duty_num_hsch1 reg_duty_cycle_hsch1 and reg_duty_scale_hsch1 has been configured. these register won't take effect until set reg_duty_start_hsch1. this bit is automatically cleared by hardware.*/
-            };
-            uint32_t val;
-        } conf1;
-        union {
-            struct {
-                uint32_t duty_read: 25;              /*This register represents the current duty of the output signal for low speed channel.*/
-                uint32_t reserved25: 7;
-            };
-            uint32_t val;
-        } duty_r;
-    } low_speed_channel[8];
-    struct{
-        union {
-            struct {
-                uint32_t timer_lim:  5;               /*This register controls the range of the counter in high speed timer. the counter range is [0 2**reg_hstimer0_lim] the max bit width for counter is 20.*/
-                uint32_t div_num:   18;               /*This register is used to configure parameter for divider in high speed timer the least significant eight bits represent the decimal part.*/
-                uint32_t pause:      1;               /*This bit is used to pause the counter in high speed timer*/
-                uint32_t rst:        1;               /*This bit is used to reset high speed timer the counter will be 0 after reset.*/
-                uint32_t tick_sel:   1;               /*This bit is used to choose apb_clk or ref_tick for high speed timer. 1'b1:apb_clk  0:ref_tick*/
-                uint32_t reserved26: 6;
-            };
-            uint32_t val;
-        } conf;
-        union {
-            struct {
-                uint32_t timer_cnt:  20;               /*software can read this register to get the current counter value in high speed timer*/
-                uint32_t reserved20: 12;
-            };
-            uint32_t val;
-        } value;
-    } high_speed_timer[4];
-    struct{
-        union {
-            struct {
-                uint32_t timer_lim:    5;              /*This register controls the range of the counter in low speed timer. the counter range is [0 2**reg_lstimer0_lim] the max bit width for counter is 20.*/
-                uint32_t div_num:     18;              /*This register is used to configure parameter for divider in low speed timer the least significant eight bits represent the decimal part.*/
-                uint32_t pause:        1;              /*This bit is used to pause the counter in low speed timer.*/
-                uint32_t rst:          1;              /*This bit is used to reset low speed timer the counter will be 0 after reset.*/
-                uint32_t tick_sel:     1;              /*This bit is used to choose slow_clk or ref_tick for low speed timer. 1'b1:slow_clk  0:ref_tick*/
-                uint32_t param_update: 1;              /*Set this bit  to update  reg_div_num_lstime0 and  reg_lstimer0_lim.*/
-                uint32_t reserved27:   5;
-            };
-            uint32_t val;
-        } conf;
-        union {
-            struct {
-                uint32_t timer_cnt:   20;              /*software can read this register to get the current counter value in low speed timer.*/
-                uint32_t reserved20:  12;
-            };
-            uint32_t val;
-        } value;
-    } low_speed_timer[4];
+    struct {
+        struct {
+            union {
+                struct {
+                    uint32_t timer_sel:  2;              /*There are four high speed timers  the two bits are used to select one of them for high speed channel.  2'b00: seletc hstimer0.   2'b01: select hstimer1.  2'b10: select hstimer2.    2'b11: select hstimer3.*/
+                    uint32_t sig_out_en: 1;              /*This is the output enable control bit for high speed channel*/
+                    uint32_t idle_lv:    1;              /*This bit is used to control the output value when high speed channel is off.*/
+                    uint32_t reserved4: 27;
+                    uint32_t clk_en:     1;              /*This bit is clock gating control signal. when software configure LED_PWM internal registers  it controls the register clock.*/
+                };
+                uint32_t val;
+            } conf0;
+            union {
+                struct {
+                    uint32_t hpoint:     20;             /*The output value changes to high when htimerx(x=[0 3]) selected by high speed channel has reached reg_hpoint_hsch0[19:0]*/
+                    uint32_t reserved20: 12;
+                };
+                uint32_t val;
+            } hpoint;
+            union {
+                struct {
+                    uint32_t duty:      25;              /*The register is used to control output duty. When hstimerx(x=[0 3]) chosen by high speed channel  has reached reg_lpoint_hsch0 the output signal changes to low. reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4])          (1)  reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4] +1)     (2)  The least four bits in this register represent the decimal part and determines when to choose (1) or (2)*/
+                    uint32_t reserved25: 7;
+                };
+                uint32_t val;
+            } duty;
+            union {
+                struct {
+                    uint32_t duty_scale:10;              /*This register controls the increase or decrease step scale for high speed channel.*/
+                    uint32_t duty_cycle:10;              /*This register is used to increase or decrease the duty every reg_duty_cycle_hsch0 cycles for high speed channel.*/
+                    uint32_t duty_num:  10;              /*This register is used to control the number of increased or decreased times for high speed channel.*/
+                    uint32_t duty_inc:   1;              /*This register is used to increase the duty of output signal or decrease the duty of output signal for high speed channel.*/
+                    uint32_t duty_start: 1;              /*When reg_duty_num_hsch0 reg_duty_cycle_hsch0 and reg_duty_scale_hsch0 has been configured. these register won't take effect until set reg_duty_start_hsch0. this bit is automatically cleared by hardware.*/
+                };
+                uint32_t val;
+            } conf1;
+            union {
+                struct {
+                    uint32_t duty_read: 25;              /*This register represents the current duty of the output signal for high speed channel.*/
+                    uint32_t reserved25: 7;
+                };
+                uint32_t val;
+            } duty_rd;
+        } channel[8];
+    } channel_group[2];                                /*two channel groups : 0: high-speed channels; 1: low-speed channels*/
+    struct {
+        struct {
+            union {
+                struct {
+                    uint32_t bit_num:  5;                 /*This register controls the range of the counter in high speed timer. the counter range is [0 2**reg_hstimer0_lim] the max bit width for counter is 20.*/
+                    uint32_t div_num:   18;               /*This register is used to configure parameter for divider in high speed timer the least significant eight bits represent the decimal part.*/
+                    uint32_t pause:      1;               /*This bit is used to pause the counter in high speed timer*/
+                    uint32_t rst:        1;               /*This bit is used to reset high speed timer the counter will be 0 after reset.*/
+                    uint32_t tick_sel:   1;               /*This bit is used to choose apb_clk or ref_tick for high speed timer. 1'b1:apb_clk  0:ref_tick*/
+                    uint32_t low_speed_update: 1;         /*This bit is only useful for low speed timer channels, reserved for high speed timers*/
+                    uint32_t reserved26: 5;
+                };
+                uint32_t val;
+            } conf;
+            union {
+                struct {
+                    uint32_t timer_cnt:  20;               /*software can read this register to get the current counter value in high speed timer*/
+                    uint32_t reserved20: 12;
+                };
+                uint32_t val;
+            } value;
+        } timer[4];
+    } timer_group[2];                                    /*two channel groups : 0: high-speed channels; 1: low-speed channels*/
     union {
         struct {
             uint32_t hstimer0_ovf:        1;           /*The interrupt raw bit for high speed channel0  counter overflow.*/

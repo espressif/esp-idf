@@ -14,7 +14,7 @@
 
 #ifndef _DRIVER_GPIO_H_
 #define _DRIVER_GPIO_H_
-
+#include "esp_err.h"
 #include <esp_types.h>
 #include "soc/gpio_reg.h"
 #include "soc/gpio_struct.h"
@@ -65,8 +65,6 @@ extern "C" {
 #define GPIO_SEL_38             ((uint64_t)(((uint64_t)1)<<38))  /* Pin 38 selected */
 #define GPIO_SEL_39             ((uint64_t)(((uint64_t)1)<<39))  /* Pin 39 selected */
 
-#define GPIO_FUNC_SEL           2
-
 #define GPIO_PIN_REG_0          PERIPHS_IO_MUX_GPIO0_U
 #define GPIO_PIN_REG_1          PERIPHS_IO_MUX_U0TXD_U
 #define GPIO_PIN_REG_2          PERIPHS_IO_MUX_GPIO2_U
@@ -115,6 +113,8 @@ extern "C" {
 
 #define GPIO_PIN_COUNT              40
 extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
+#define GPIO_IS_VALID_GPIO(gpio_num)      ((gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0))   //to decide whether it is a valid GPIO number
+#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 34))         //to decide whether it can be a valid GPIO number of output mode
 
 typedef enum {
     GPIO_NUM_0 = 0,

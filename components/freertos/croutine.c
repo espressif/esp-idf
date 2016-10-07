@@ -143,6 +143,7 @@ BaseType_t xCoRoutineCreate( crCOROUTINE_CODE pxCoRoutineCode, UBaseType_t uxPri
 BaseType_t xReturn;
 CRCB_t *pxCoRoutine;
 
+	UNTESTED_FUNCTION(); //Actually, coroutines are entirely unsupported
 	/* Allocate the memory that will store the co-routine control block. */
 	pxCoRoutine = ( CRCB_t * ) pvPortMalloc( sizeof( CRCB_t ) );
 	if( pxCoRoutine )
