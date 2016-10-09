@@ -390,7 +390,8 @@ int SSL_read(SSL *ssl, void *buffer, int len)
 
     ret = SSL_METHOD_CALL(read, ssl, buffer, len);
 
-    ssl->rwstate = SSL_NOTHING;
+    if (ret == len)
+        ssl->rwstate = SSL_NOTHING;
 
     return ret;
 }
@@ -428,12 +429,10 @@ int SSL_write(SSL *ssl, const void *buffer, int len)
         }
     } while (ret > 0 && send_bytes);
 
-    ssl->rwstate = SSL_NOTHING;
-
-    send_bytes = len - send_bytes;
-    if (send_bytes >= 0)
-        ret = send_bytes;
-    else
+    if (ret >= 0) {
+        ret = len - send_bytes;
+        ssl->rwstate = SSL_NOTHING;
+    } else
         ret = -1;
 
     return ret;
