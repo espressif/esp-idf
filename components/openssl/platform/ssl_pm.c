@@ -401,6 +401,8 @@ int x509_pm_show_info(X509 *x)
         SSL_RET(failed2, "");
     buf[ret] = 0;
 
+    ssl_free(buf);
+
     SSL_PRINT("%s", buf);
 
     return 0;
