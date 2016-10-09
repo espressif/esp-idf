@@ -448,6 +448,28 @@ int SSL_pending(const SSL *ssl);
 int SSL_want_nothing(const SSL *ssl);
 
 /**
+ * @brief check if SSL want to read
+ *
+ * @param ssl - SSL point
+ *
+ * @return result
+ *     0 : false
+ *     1 : true
+ */
+int SSL_want_read(const SSL *ssl);
+
+/**
+ * @brief check if SSL want to write
+ *
+ * @param ssl - SSL point
+ *
+ * @return result
+ *     0 : false
+ *     1 : true
+ */
+int SSL_want_write(const SSL *ssl);
+
+/**
  * @brief get the SSL context current method
  *
  * @param ctx - SSL context point

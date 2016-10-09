@@ -42,6 +42,7 @@ OSSL_HANDSHAKE_STATE ssl_pm_get_state(const SSL *ssl);
 
 void ssl_pm_set_bufflen(SSL *ssl, int len);
 
+int x509_pm_show_info(X509 *x);
 int x509_pm_new(X509 *x, X509 *m_x);
 void x509_pm_free(X509 *x);
 int x509_pm_load(X509 *x, const unsigned char *buffer, int len);

@@ -275,6 +275,8 @@ struct x509_method_st {
     void (*x509_free)(X509 *x);
 
     int (*x509_load)(X509 *x, const unsigned char *buf, int len);
+
+    int (*x509_show_info)(X509 *x);
 };
 
 struct pkey_method_st {

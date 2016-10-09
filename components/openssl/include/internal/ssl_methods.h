@@ -71,12 +71,14 @@
 #define IMPLEMENT_X509_METHOD(func_name, \
                 new, \
                 free, \
-                load) \
+                load, \
+                show_info) \
     const X509_METHOD* func_name(void) { \
         static const X509_METHOD func_name##_data LOCAL_ATRR = { \
                 new, \
                 free, \
-                load \
+                load, \
+                show_info \
         }; \
         return &func_name##_data; \
     }

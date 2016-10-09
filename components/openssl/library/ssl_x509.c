@@ -18,6 +18,14 @@
 #include "ssl_port.h"
 
 /**
+ * @brief show X509 certification information
+ */
+int __X509_show_info(X509 *x)
+{
+    return X509_METHOD_CALL(show_info, x);
+}
+
+/**
  * @brief create a X509 certification object according to input X509 certification
  */
 X509* __X509_new(X509 *ix)
@@ -256,3 +264,4 @@ X509 *SSL_get_peer_certificate(const SSL *ssl)
 
     return ssl->session->peer;
 }
+

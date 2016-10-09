@@ -31,6 +31,8 @@
     #define DEBUG_LOAD_BUF_STRING(str)
 #endif
 
+#define X509_INFO_STRING_LENGTH 1024
+
 struct ssl_pm
 {
     /* local socket file description */
@@ -368,6 +370,42 @@ OSSL_HANDSHAKE_STATE ssl_pm_get_state(const SSL *ssl)
     }
 
     return state;
+}
+
+int x509_pm_show_info(X509 *x)
+{
+    int ret;
+    char *buf;
+    mbedtls_x509_crt *x509_crt;
+    struct x509_pm *x509_pm = x->x509_pm;
+
+    if (x509_pm->x509_crt)
+        x509_crt = x509_pm->x509_crt;
+    else if (x509_pm->ex_crt)
+        x509_crt = x509_pm->ex_crt;
+    else
+        x509_crt = NULL;
+
+    if (!x509_crt)
+        return -1;
+
+    buf = ssl_malloc(X509_INFO_STRING_LENGTH);
+    if (!buf)
+        SSL_RET(failed1, "");
+
+    ret = mbedtls_x509_crt_info(buf, X509_INFO_STRING_LENGTH - 1, "", x509_crt);
+    if (ret <= 0)
+        SSL_RET(failed2, "");
+    buf[ret] = 0;
+
+    SSL_PRINT("%s", buf);
+
+    return 0;
+
+failed2:
+    ssl_free(buf);
+failed1:
+    return -1;
 }
 
 int x509_pm_new(X509 *x, X509 *m_x)

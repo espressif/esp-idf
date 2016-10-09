@@ -71,7 +71,7 @@ IMPLEMENT_SSL_METHOD(SSL3_VERSION, -1, TLS_method_func, SSLv3_method);
  */
 IMPLEMENT_X509_METHOD(X509_method,
             x509_pm_new, x509_pm_free,
-            x509_pm_load);
+            x509_pm_load, x509_pm_show_info);
 
 /**
  * @brief get private key object method
