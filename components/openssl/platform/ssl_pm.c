@@ -111,16 +111,19 @@ int ssl_pm_new(SSL *ssl)
     if (ret)
         SSL_ERR(ret, failed2, "mbedtls_ssl_config_defaults:[-0x%x]\n", -ret);
 
-    if (TLS1_2_VERSION == ssl->version)
-        version = MBEDTLS_SSL_MINOR_VERSION_3;
-    else if (TLS1_1_VERSION == ssl->version)
-        version = MBEDTLS_SSL_MINOR_VERSION_2;
-    else if (TLS1_VERSION == ssl->version)
-        version = MBEDTLS_SSL_MINOR_VERSION_1;
-    else
-        version = MBEDTLS_SSL_MINOR_VERSION_0;
+    if (TLS_ANY_VERSION != ssl->version) {
+        if (TLS1_2_VERSION == ssl->version)
+            version = MBEDTLS_SSL_MINOR_VERSION_3;
+        else if (TLS1_1_VERSION == ssl->version)
+            version = MBEDTLS_SSL_MINOR_VERSION_2;
+        else if (TLS1_VERSION == ssl->version)
+            version = MBEDTLS_SSL_MINOR_VERSION_1;
+        else
+            version = MBEDTLS_SSL_MINOR_VERSION_0;
 
-    //mbedtls_ssl_conf_max_version(&ssl_pm->conf, MBEDTLS_SSL_MAJOR_VERSION_3, version);
+        mbedtls_ssl_conf_max_version(&ssl_pm->conf, MBEDTLS_SSL_MAJOR_VERSION_3, version);
+        mbedtls_ssl_conf_min_version(&ssl_pm->conf, MBEDTLS_SSL_MAJOR_VERSION_3, version);
+    }
 
     mbedtls_ssl_conf_rng(&ssl_pm->conf, mbedtls_ctr_drbg_random, &ssl_pm->ctr_drbg);
 
