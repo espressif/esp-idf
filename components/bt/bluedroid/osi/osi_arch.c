@@ -84,22 +84,18 @@ osi_mutex_free(osi_mutex_t *pxMutex)
 }
 
 /*-----------------------------------------------------------------------------------*/
-//  Creates and returns a new semaphore. The "count" argument specifies
-//  the initial state of the semaphore. TBD finish and test
+//  Creates and returns a new semaphore. The "init_count" argument specifies
+//  the initial state of the semaphore, "max_count" specifies the maximum value
+//  that can be reached.
 int
-osi_sem_new(osi_sem_t *sem, uint8_t count)
+osi_sem_new(osi_sem_t *sem, uint32_t max_count, uint32_t init_count)
 {
   int xReturn = -1;
-  vSemaphoreCreateBinary(*sem);
-
-  if ((*sem) != NULL) {
-    if (count == 0) {	// Means it can't be taken
-      xSemaphoreTake(*sem, 1);
+  if (sem) {
+    *sem = xSemaphoreCreateCounting(max_count, init_count);
+    if ((*sem) != NULL) {
+      xReturn = 0;
     }
-
-    xReturn = 0;
-  } else {
-    ;	// TBD need assert
   }
 
   return xReturn;

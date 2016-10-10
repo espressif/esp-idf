@@ -26,7 +26,7 @@ void osi_mutex_unlock(osi_mutex_t *pxMutex);
 
 void osi_mutex_free(osi_mutex_t *pxMutex);
 
-int osi_sem_new(osi_sem_t *sem, uint8_t count);
+int osi_sem_new(osi_sem_t *sem, uint32_t max_count, uint32_t init_count);
 
 void osi_sem_signal(osi_sem_t *sem);
 

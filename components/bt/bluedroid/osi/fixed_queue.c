@@ -21,13 +21,14 @@
 #include "fixed_queue.h"
 #include "list.h"
 #include "osi.h"
+#include "osi_arch.h"
 #include "bt_trace.h"
 
 typedef struct fixed_queue_t {
   
   list_t *list;
-  //semaphore_t *enqueue_sem;
-  //semaphore_t *dequeue_sem;
+  osi_sem_t enqueue_sem;
+  osi_sem_t dequeue_sem;
   pthread_mutex_t lock;
   size_t capacity;
 
@@ -53,15 +54,15 @@ fixed_queue_t *fixed_queue_new(size_t capacity) {
   if (!ret->list)
     goto error;
 
-/*
-  ret->enqueue_sem = semaphore_new(capacity);
+
+  osi_sem_new(&ret->enqueue_sem, capacity, capacity);
   if (!ret->enqueue_sem)
     goto error;
 
-  ret->dequeue_sem = semaphore_new(0);
+  osi_sem_new(&ret->dequeue_sem, capacity, 0);
   if (!ret->dequeue_sem)
     goto error;
-*/
+
   return ret;
 
 error:;
@@ -81,8 +82,8 @@ void fixed_queue_free(fixed_queue_t *queue, fixed_queue_free_cb free_cb) {
       free_cb(list_node(node));
 
   list_free(queue->list);
-//  semaphore_free(queue->enqueue_sem);
-//  semaphore_free(queue->dequeue_sem);
+  osi_sem_free(&queue->enqueue_sem);
+  osi_sem_free(&queue->dequeue_sem);
   pthread_mutex_destroy(&queue->lock);
   osi_free(queue);
 }
@@ -108,28 +109,28 @@ void fixed_queue_enqueue(fixed_queue_t *queue, void *data) {
   assert(queue != NULL);
   assert(data != NULL);
 
-//  semaphore_wait(queue->enqueue_sem);
-
+  osi_sem_wait(&queue->enqueue_sem, 0);
+  
   pthread_mutex_lock(&queue->lock);
 
   list_append(queue->list, data);
   pthread_mutex_unlock(&queue->lock);
 
-//  semaphore_post(queue->dequeue_sem);
+  osi_sem_signal(&queue->dequeue_sem);
 }
 
 void *fixed_queue_dequeue(fixed_queue_t *queue) {
   void *ret = NULL;
   assert(queue != NULL);
 
-//  semaphore_wait(queue->dequeue_sem);
+  osi_sem_wait(&queue->dequeue_sem, 0);
 
   pthread_mutex_lock(&queue->lock);
   ret = list_front(queue->list);
   list_remove(queue->list, ret);
   pthread_mutex_unlock(&queue->lock);
 
-//  semaphore_post(queue->enqueue_sem);
+  osi_sem_signal(&queue->enqueue_sem);
 
   return ret;
 }
