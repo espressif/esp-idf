@@ -24,10 +24,11 @@ $(APP_BIN): $(APP_ELF) $(ESPTOOLPY_SRC)
 	$(Q) $(ESPTOOLPY) elf2image --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) -o $@ $<
 
 flash: all_binaries $(ESPTOOLPY_SRC)
-	@echo "Flashing project app to $(CONFIG_APP_OFFSET)..."
+	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(CONFIG_APP_OFFSET))..."
 	$(Q) $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 app-flash: $(APP_BIN) $(ESPTOOLPY_SRC)
+	@echo "Flashing app to serial port $(ESPPORT), offset $(CONFIG_APP_OFFSET)..."
 	$(Q) $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
 
-$(eval $(call SubmoduleRequiredForFiles,$(ESPTOOLPY_SRC)))
+$(eval $(call SubmoduleCheck,$(ESPTOOLPY_SRC),$(COMPONENT_PATH)/esptool))

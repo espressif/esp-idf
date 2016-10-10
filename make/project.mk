@@ -165,7 +165,7 @@ CPPFLAGS = -DESP_PLATFORM -Og -g3 -Wpointer-arith -Werror -Wno-error=unused-func
 CFLAGS = $(CPPFLAGS) -std=gnu99 -g3 -fstrict-volatile-bitfields
 
 # CXXFLAGS uses by C++ only
-CXXFLAGS = $(CPPFLAGS) -Og -std=gnu++11 -g3 -fno-exceptions -fstrict-volatile-bitfields
+CXXFLAGS = $(CPPFLAGS) -Og -std=gnu++11 -g3 -fno-exceptions -fstrict-volatile-bitfields -fno-rtti
 
 export CFLAGS CPPFLAGS CXXFLAGS
 
