@@ -94,10 +94,6 @@ extern void BTE_InitStack(void);
 tBTU_CB  btu_cb;
 #endif
 
-static xTaskHandle  xBtuTaskHandle;
-static xQueueHandle xBtuQueue;
-
-
 // Communication queue between btu_task and bta.
 extern fixed_queue_t *btu_bta_msg_queue;
 
@@ -126,7 +122,8 @@ extern fixed_queue_t *event_queue;
 //extern fixed_queue_t *btif_msg_queue;
 
 //extern thread_t *bt_workqueue_thread;
-
+extern xTaskHandle  xBtuTaskHandle;
+extern xQueueHandle xBtuQueue;
 extern bluedroid_init_done_cb_t bluedroid_init_done_cb;
 
 /* Define a function prototype to allow a generic timeout handler */
@@ -305,7 +302,7 @@ static void btu_bta_alarm_process(TIMER_LIST_ENT *p_tle) {
 **
 ** Description      Process BTU Task Thread.
 ******************************************************************************/
-static void btu_task_thread_handler(void *arg)
+void btu_task_thread_handler(void *arg)
 {
     //ke_event_clear(KE_EVENT_BTU_TASK_THREAD);
 
@@ -314,7 +311,7 @@ static void btu_task_thread_handler(void *arg)
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtuQueue, &e, (portTickType)portMAX_DELAY)) {
 
-            if (e->sig == 0xff) {
+            if (e->sig == SIG_BTU_WORK) {
                 fixed_queue_process(btu_hci_msg_queue);
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
                 fixed_queue_process(btu_bta_msg_queue);
@@ -324,19 +321,22 @@ static void btu_task_thread_handler(void *arg)
                 fixed_queue_process(btu_oneshot_alarm_queue);
                 fixed_queue_process(btu_l2cap_alarm_queue);
             }
+            else if (e->sig == SIG_BTU_START_UP) {
+                btu_task_start_up();
+            }
             osi_free(e);
         }
     }
 }
 
 
-void btu_task_post(void)
+void btu_task_post(uint32_t sig)
 {
     TaskEvt_t *evt = (TaskEvt_t *)osi_malloc(sizeof(TaskEvt_t));
     if (evt == NULL)
         return;
 
-    evt->sig = 0xff;
+    evt->sig = sig;
     evt->par = 0;
 
     if (xQueueSend(xBtuQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
@@ -346,9 +346,6 @@ void btu_task_post(void)
 
 void btu_task_start_up(void) {
 //  ke_event_callback_set(KE_EVENT_BTU_TASK_THREAD, &btu_task_thread_handler);
-
-  xBtuQueue = xQueueCreate(15, sizeof(void *));
-  xTaskCreate(btu_task_thread_handler, "BtuT", 8192, NULL, configMAX_PRIORITIES - 1, &xBtuTaskHandle);
 
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
   fixed_queue_register_dequeue(btu_bta_msg_queue, btu_bta_msg_ready);
@@ -391,9 +388,6 @@ void btu_task_shut_down(void) {
 #endif
 
   btu_free_core();
-
-  vTaskDelete(xBtuTaskHandle);
-  vQueueDelete(xBtuQueue);
 }
 
 /*******************************************************************************
@@ -518,7 +512,7 @@ void btu_general_alarm_cb(void *data) {
 
   fixed_queue_enqueue(btu_general_alarm_queue, p_tle);
   //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-  btu_task_post();
+  btu_task_post(SIG_BTU_WORK);
 }
 
 void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec) {
@@ -603,7 +597,7 @@ static void btu_l2cap_alarm_cb(void *data) {
 
   fixed_queue_enqueue(btu_l2cap_alarm_queue, p_tle);
   //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-  btu_task_post();
+  btu_task_post(SIG_BTU_WORK);
 }
 
 void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ticks) {
@@ -667,7 +661,7 @@ void btu_oneshot_alarm_cb(void *data) {
 
   fixed_queue_enqueue(btu_oneshot_alarm_queue, p_tle);
   //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-  btu_task_post();
+  btu_task_post(SIG_BTU_WORK);
 }
 
 /*

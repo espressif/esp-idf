@@ -34,6 +34,7 @@
 
 typedef struct {
   uint16_t opcode;
+  future_t *complete_future;
   command_complete_cb complete_callback;
   command_status_cb status_callback;
   void *context;
@@ -43,7 +44,7 @@ typedef struct {
 
 typedef struct {
   bool timer_is_set;
- osi_alarm_t *command_response_timer;
+  osi_alarm_t *command_response_timer;
   list_t *commands_pending_response;
   pthread_mutex_t commands_pending_response_lock;
 } command_waiting_response_t;
@@ -280,8 +281,27 @@ static void transmit_command(
   hci_host_task_post();
 }
 
+static future_t *transmit_command_futured(BT_HDR *command) {
+  waiting_command_t *wait_entry = osi_calloc(sizeof(waiting_command_t));
+  assert(wait_entry != NULL);
+
+  future_t *future = future_new();
+
+  uint8_t *stream = command->data + command->offset;
+  STREAM_TO_UINT16(wait_entry->opcode, stream);
+  wait_entry->complete_future = future;
+  wait_entry->command = command;
+
+  // Store the command message type in the event field
+  // in case the upper layer didn't already
+  command->event = MSG_STACK_TO_HC_HCI_CMD;
+
+  fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
+  hci_host_task_post();
+  return future;
+}
+
 static void transmit_downward(uint16_t type, void *data) {
-  BT_HDR *tmp = (BT_HDR *)data;
   if (type == MSG_STACK_TO_HC_HCI_CMD) {
     transmit_command((BT_HDR *)data, NULL, NULL, NULL);
     LOG_WARN("%s legacy transmit of command. Use transmit_command instead.\n", __func__);
@@ -441,6 +461,8 @@ static bool filter_incoming_event(BT_HDR *packet) {
       LOG_WARN("%s command complete event with no matching command. opcode: 0x%x.", __func__, opcode);
     else if (wait_entry->complete_callback)
       wait_entry->complete_callback(packet, wait_entry->context);
+    else if (wait_entry->complete_future)
+      future_ready(wait_entry->complete_future, packet);
 
     goto intercepted;
   } else if (event_code == HCI_COMMAND_STATUS_EVT) {
@@ -473,7 +495,7 @@ intercepted:
   if (wait_entry) {
     // If it has a callback, it's responsible for freeing the packet
     if (event_code == HCI_COMMAND_STATUS_EVT ||
-        !wait_entry->complete_callback)
+        (!wait_entry->complete_callback && !wait_entry->complete_future))
       buffer_allocator->free(packet);
 
     // If it has a callback, it's responsible for freeing the command
@@ -494,7 +516,7 @@ static void dispatch_reassembled(BT_HDR *packet) {
 
   if (hci_host_env.upwards_data_queue) {
     fixed_queue_enqueue(hci_host_env.upwards_data_queue, packet);
-    btu_task_post();
+    btu_task_post(SIG_BTU_WORK);
     //Tell Up-layer received packet.
   } else {
     LOG_DEBUG("%s had no queue to place upwards data packet in. Dropping it on the floor.", __func__);
@@ -548,6 +570,7 @@ static void init_layer_interface() {
   if (!interface_created) {
     interface.set_data_queue = set_data_queue;
     interface.transmit_command = transmit_command;
+    interface.transmit_command_futured = transmit_command_futured;
     interface.transmit_downward = transmit_downward;
     interface_created = true;
   }

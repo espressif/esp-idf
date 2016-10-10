@@ -29,11 +29,9 @@
 #include "hci_packet_factory.h"
 #include "hci_packet_parser.h"
 
-typedef void (*devctl_reset_callback)(void);
-
 typedef struct controller_t {
-  void (*devctl_reset)(devctl_reset_callback reset_callback);
-  void (*devctl_shutdown)(void);
+  void (*start_up)(void);
+  void (*shut_down)(void);
   bool (*get_is_ready)(void);
 
   const bt_bdaddr_t *(*get_address)(void);

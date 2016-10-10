@@ -204,7 +204,10 @@ void BTM_DeviceReset (UNUSED_ATTR tBTM_CMPL_CB *p_cb) {
   /* Clear the callback, so application would not hang on reset */
   btm_db_reset();
 
-  controller_get_interface()->devctl_reset(reset_complete);
+  /* todo: review the below logic; start_up executes under another task context
+   * reset_complete runs in btu task */
+  controller_get_interface()->start_up();
+  reset_complete();
 }
 
 /*******************************************************************************

@@ -25,6 +25,7 @@
 #include "fixed_queue.h"
 #include "hash_map.h"
 #include "hash_functions.h"
+#include "thread.h"
 
 #include "l2c_int.h"
 #include "dyn_mem.h"
@@ -71,9 +72,14 @@ static const size_t BTU_L2CAP_ALARM_HASH_MAP_SIZE = 17;
 
 //thread_t *bt_workqueue_thread;
 //static const char *BT_WORKQUEUE_NAME = "bt_workqueue";
+xTaskHandle  xBtuTaskHandle = NULL;
+xQueueHandle xBtuQueue = 0;
 
 extern void PLATFORM_DisableHciTransport(UINT8 bDisable);
 
+extern void btu_task_thread_handler(void *arg);
+void btu_task_start_up(void);
+void btu_task_shut_down(void);
 /*****************************************************************************
 **                          V A R I A B L E S                                *
 ******************************************************************************/
@@ -187,8 +193,9 @@ void BTU_StartUp(void)
     if (btu_l2cap_alarm_queue == NULL)
          goto error_exit;
 
-    btu_task_start_up();
-
+    xBtuQueue = xQueueCreate(15, sizeof(void *));
+    xTaskCreate(btu_task_thread_handler, "BtuT", 8192, NULL, configMAX_PRIORITIES - 1, &xBtuTaskHandle);
+    btu_task_post(SIG_BTU_START_UP);
 /*
     // Continue startup on bt workqueue thread.
     thread_post(bt_workqueue_thread, btu_task_start_up, NULL);
@@ -218,6 +225,8 @@ void BTU_ShutDown(void) {
   fixed_queue_free(btu_l2cap_alarm_queue, NULL);
 
   //thread_free(bt_workqueue_thread);
+  vTaskDelete(xBtuTaskHandle);
+  vQueueDelete(xBtuQueue);
 
   btu_bta_msg_queue = NULL;
 
@@ -231,6 +240,8 @@ void BTU_ShutDown(void) {
   btu_l2cap_alarm_queue = NULL;
 
 //  bt_workqueue_thread = NULL;
+  xBtuTaskHandle = NULL;
+  xBtuQueue = 0;
 }
 
 /*****************************************************************************

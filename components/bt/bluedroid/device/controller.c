@@ -27,8 +27,8 @@
 #include "hci_packet_parser.h"
 #include "btm_ble_api.h"
 #include "version.h"
+#include "future.h"
 
-//#include "bluedroid_test.h" /*FOr Test Case*/
 const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\x00\x06\x7f" };
 
 #if (BLE_INCLUDED)
@@ -72,304 +72,176 @@ static bool ble_supported;
 static bool simple_pairing_supported;
 static bool secure_connections_supported;
 
-devctl_reset_callback reset_cb;
-static uint8_t page_number = 0;
-static void devctl_hdl_cmd_complete(BT_HDR *response, void *context) {
-  BT_HDR *command = NULL;
-  command_opcode_t opcode;
-  uint8_t *stream = response->data + response->offset;
+#define AWAIT_COMMAND(command) future_await(hci->transmit_command_futured(command))
 
-  STREAM_SKIP_UINT16(stream);      //skip event_code and total length field
-  STREAM_SKIP_UINT8(stream);       //skip command_credits field
-  STREAM_TO_UINT16(opcode, stream);
+// Module lifecycle functions
 
-  switch (opcode) {
-  case HCI_RESET:
+static void start_up(void) {
+  BT_HDR *response;
+
+  // Send the initial reset command
+  response = AWAIT_COMMAND(packet_factory->make_reset());
+  packet_parser->parse_generic_command_complete(response);
+
+  // Request the classic buffer size next
+  response = AWAIT_COMMAND(packet_factory->make_read_buffer_size());
+  packet_parser->parse_read_buffer_size_response(
+      response, &acl_data_size_classic, &acl_buffer_count_classic);
+
+  // Tell the controller about our buffer sizes and buffer counts next
+  // TODO(zachoverflow): factor this out. eww l2cap contamination. And why just a hardcoded 10?
+  response = AWAIT_COMMAND(
+    packet_factory->make_host_buffer_size(
+      L2CAP_MTU_SIZE,
+      SCO_HOST_BUFFER_SIZE,
+      L2CAP_HOST_FC_ACL_BUFS,
+      10
+    )
+  );
+
+  packet_parser->parse_generic_command_complete(response);
+
+  // Read the local version info off the controller next, including
+  // information such as manufacturer and supported HCI version
+  response = AWAIT_COMMAND(packet_factory->make_read_local_version_info());
+  packet_parser->parse_read_local_version_info_response(response, &bt_version);
+
+  // Read the bluetooth address off the controller next
+  response = AWAIT_COMMAND(packet_factory->make_read_bd_addr());
+  packet_parser->parse_read_bd_addr_response(response, &address);
+
+  // Request the controller's supported commands next
+  response = AWAIT_COMMAND(packet_factory->make_read_local_supported_commands());
+  packet_parser->parse_read_local_supported_commands_response(
+    response,
+    supported_commands,
+    HCI_SUPPORTED_COMMANDS_ARRAY_SIZE
+  );
+
+  // Read page 0 of the controller features next
+  uint8_t page_number = 0;
+  response = AWAIT_COMMAND(packet_factory->make_read_local_extended_features(page_number));
+  packet_parser->parse_read_local_extended_features_response(
+    response,
+    &page_number,
+    &last_features_classic_page_index,
+    features_classic,
+    MAX_FEATURES_CLASSIC_PAGE_COUNT
+  );
+
+  assert(page_number == 0);
+  page_number++;
+
+  // Inform the controller what page 0 features we support, based on what
+  // it told us it supports. We need to do this first before we request the
+  // next page, because the controller's response for page 1 may be
+  // dependent on what we configure from page 0
+  simple_pairing_supported = HCI_SIMPLE_PAIRING_SUPPORTED(features_classic[0].as_array);
+  if (simple_pairing_supported) {
+    response = AWAIT_COMMAND(packet_factory->make_write_simple_pairing_mode(HCI_SP_MODE_ENABLED));
     packet_parser->parse_generic_command_complete(response);
-    command = packet_factory->make_read_buffer_size();
-    break;
-  case HCI_READ_BUFFER_SIZE:
-    packet_parser->parse_read_buffer_size_response(
-        response, &acl_data_size_classic, &acl_buffer_count_classic);
-    command = packet_factory->make_host_buffer_size(
-        L2CAP_MTU_SIZE, SCO_HOST_BUFFER_SIZE, L2CAP_HOST_FC_ACL_BUFS, 10);
-    break;
-  case HCI_HOST_BUFFER_SIZE:
+  }
+
+#if (BLE_INCLUDED == TRUE)
+  if (HCI_LE_SPT_SUPPORTED(features_classic[0].as_array)) {
+    uint8_t simultaneous_le_host = HCI_SIMUL_LE_BREDR_SUPPORTED(features_classic[0].as_array) ? BTM_BLE_SIMULTANEOUS_HOST : 0;
+    response = AWAIT_COMMAND(
+      packet_factory->make_ble_write_host_support(BTM_BLE_HOST_SUPPORT, simultaneous_le_host)
+    );
+
     packet_parser->parse_generic_command_complete(response);
-    command = packet_factory->make_read_local_version_info();
-    break;
-  case HCI_READ_LOCAL_VERSION_INFO:
-    packet_parser->parse_read_local_version_info_response(response, &bt_version);
-    command = packet_factory->make_read_bd_addr();
-    break;
-  case HCI_READ_BD_ADDR:
-    packet_parser->parse_read_bd_addr_response(response, &address);
-    command = packet_factory->make_read_local_supported_commands();
-    break;
-  case HCI_READ_LOCAL_SUPPORTED_CMDS:
-    packet_parser->parse_read_local_supported_commands_response(
-        response, supported_commands, HCI_SUPPORTED_COMMANDS_ARRAY_SIZE);
-    page_number = 0;
-    command = packet_factory->make_read_local_extended_features(page_number);
-    break;
-  case HCI_READ_LOCAL_EXT_FEATURES:
-    if (response) {
-      packet_parser->parse_read_local_extended_features_response(
-	  response, &page_number,&last_features_classic_page_index,
-	  features_classic, MAX_FEATURES_CLASSIC_PAGE_COUNT);
-      response = NULL;
-      page_number++;
-    }
-    if (1 == page_number) {
-      simple_pairing_supported = HCI_SIMPLE_PAIRING_SUPPORTED(features_classic[0].as_array);
-      if (simple_pairing_supported) {
-	command = packet_factory->make_write_simple_pairing_mode(HCI_SP_MODE_ENABLED);
-	break;
-      }
-      // BLOCK_BEGIN
-#if (BLE_INCLUDED == TRUE)
-      if (HCI_LE_SPT_SUPPORTED(features_classic[0].as_array)) {
-	uint8_t simultaneous_le_host = HCI_SIMUL_LE_BREDR_SUPPORTED(features_classic[0].as_array) ? BTM_BLE_SIMULTANEOUS_HOST : 0;
-	command = packet_factory->make_ble_write_host_support(BTM_BLE_HOST_SUPPORT, simultaneous_le_host);
-	break;
-      }
+  }
 #endif
-    }
 
-    if (page_number <= last_features_classic_page_index &&
-	page_number < MAX_FEATURES_CLASSIC_PAGE_COUNT) {
-      command = packet_factory->make_read_local_extended_features(page_number);
-      break;
-    } else {
-#if (SC_MODE_INCLUDED == TRUE)
-      secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(features_classic[2].as_array);
-      if (secure_connections_supported) {
-	command = packet_factory->make_write_secure_connections_host_support(HCI_SC_MODE_ENABLED);
-	break;
-      }
-#endif
-#if (BLE_INCLUDED == TRUE)
-      ble_supported = last_features_classic_page_index >= 1 && HCI_LE_HOST_SUPPORTED(features_classic[1].as_array);
-      if (ble_supported) {
-	// Request the ble white list size next
-	command = packet_factory->make_ble_read_white_list_size();
-	break;
-      }
-#endif
-      if (simple_pairing_supported) {
-	command = packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK);
-	break;
-      }
-    }
-    // BLOCK_END
+  // Done telling the controller about what page 0 features we support
+  // Request the remaining feature pages
+  while (page_number <= last_features_classic_page_index &&
+         page_number < MAX_FEATURES_CLASSIC_PAGE_COUNT) {
+    response = AWAIT_COMMAND(packet_factory->make_read_local_extended_features(page_number));
+    packet_parser->parse_read_local_extended_features_response(
+      response,
+      &page_number,
+      &last_features_classic_page_index,
+      features_classic,
+      MAX_FEATURES_CLASSIC_PAGE_COUNT
+    );
 
-  case HCI_WRITE_SIMPLE_PAIRING_MODE:
-    if (response) {
-      packet_parser->parse_generic_command_complete(response);
-      response = NULL;
-    }
-      // BLOCK_BEGIN
-#if (BLE_INCLUDED == TRUE)
-     if (HCI_LE_SPT_SUPPORTED(features_classic[0].as_array)) {
-	uint8_t simultaneous_le_host = HCI_SIMUL_LE_BREDR_SUPPORTED(features_classic[0].as_array) ? BTM_BLE_SIMULTANEOUS_HOST : 0;
-	command = packet_factory->make_ble_write_host_support(BTM_BLE_HOST_SUPPORT, simultaneous_le_host);
-	break;
-      }
-#endif
-    if (page_number <= last_features_classic_page_index &&
-	page_number < MAX_FEATURES_CLASSIC_PAGE_COUNT) {
-      command = packet_factory->make_read_local_extended_features(page_number);
-      break;
-    } else {
-#if (SC_MODE_INCLUDED == TRUE)
-      secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(features_classic[2].as_array);
-      if (secure_connections_supported) {
-	command = packet_factory->make_write_secure_connections_host_support(HCI_SC_MODE_ENABLED);
-	break;
-      }
-#endif
-#if (BLE_INCLUDED == TRUE)
-      ble_supported = last_features_classic_page_index >= 1 && HCI_LE_HOST_SUPPORTED(features_classic[1].as_array);
-      if (ble_supported) {
-	// Request the ble white list size next
-	command = packet_factory->make_ble_read_white_list_size();
-	break;
-      }
-#endif
-      if (simple_pairing_supported) {
-	command = packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK);
-	break;
-      }
-    }
+    page_number++;
+  }
 
 #if (SC_MODE_INCLUDED == TRUE)
-    case HCI_WRITE_SECURE_CONNS_SUPPORT:
-      if (response) {
-        packet_parser->parse_generic_command_complete(response);
-        response = NULL;
-      }
-#if (BLE_INCLUDED == TRUE)
-      ble_supported = last_features_classic_page_index >= 1 && HCI_LE_HOST_SUPPORTED(features_classic[1].as_array);
-      if (ble_supported) {
-	// Request the ble white list size next
-	command = packet_factory->make_ble_read_white_list_size();
-	break;
-      }
-#endif /* (BLE_INCLUDED == TRUE) */
-      if (simple_pairing_supported) {
-	command = packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK);
-	break;
-      }
-#endif /* (SC_MODE_INCLUDED == TRUE) */
+  secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(features_classic[2].as_array);
+  if (secure_connections_supported) {
+    response = AWAIT_COMMAND(packet_factory->make_write_secure_connections_host_support(HCI_SC_MODE_ENABLED));
+    packet_parser->parse_generic_command_complete(response);
+  }
+#endif
 
 #if (BLE_INCLUDED == TRUE)
-  case HCI_WRITE_LE_HOST_SUPPORT:
-    if (response) {
-      packet_parser->parse_generic_command_complete(response);
-      response = NULL;
-    }
-    if (page_number <= last_features_classic_page_index &&
-	page_number < MAX_FEATURES_CLASSIC_PAGE_COUNT) {
-      command = packet_factory->make_read_local_extended_features(page_number);
-      break;
-    } else {
-#if (SC_MODE_INCLUDED == TRUE)
-      secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(features_classic[2].as_array);
-      if (secure_connections_supported) {
-	command = packet_factory->make_write_secure_connections_host_support(HCI_SC_MODE_ENABLED);
-	break;
-      }
-#endif
-      ble_supported = last_features_classic_page_index >= 1 && HCI_LE_HOST_SUPPORTED(features_classic[1].as_array);
-      if (ble_supported) {
-	// Request the ble white list size next
-	command = packet_factory->make_ble_read_white_list_size();
-	break;
-      }
-      if (simple_pairing_supported) {
-	command = packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK);
-	break;
-      }
-    }
-  case HCI_BLE_READ_WHITE_LIST_SIZE:
-    if (response) {
-      packet_parser->parse_ble_read_white_list_size_response(response, &ble_white_list_size);
-      response = NULL;
-    }
-    if (ble_supported) {
-      // Request the ble buffer size next
-      command = packet_factory->make_ble_read_buffer_size();
-      break;
-    }
-  // Fall Through if no next command generated
-  case HCI_BLE_READ_BUFFER_SIZE:
-    if (response) {
-      packet_parser->parse_ble_read_buffer_size_response(
-          response, &acl_data_size_ble, &acl_buffer_count_ble);
-      response = NULL;
-    }
+  ble_supported = last_features_classic_page_index >= 1 && HCI_LE_HOST_SUPPORTED(features_classic[1].as_array);
+  if (ble_supported) {
+    // Request the ble white list size next
+    response = AWAIT_COMMAND(packet_factory->make_ble_read_white_list_size());
+    packet_parser->parse_ble_read_white_list_size_response(response, &ble_white_list_size);
+
+    // Request the ble buffer size next
+    response = AWAIT_COMMAND(packet_factory->make_ble_read_buffer_size());
+    packet_parser->parse_ble_read_buffer_size_response(
+      response,
+      &acl_data_size_ble,
+      &acl_buffer_count_ble
+    );
+
     // Response of 0 indicates ble has the same buffer size as classic
     if (acl_data_size_ble == 0)
       acl_data_size_ble = acl_data_size_classic;
-    if (ble_supported) {
-      // Request the ble supported states next
-      command = packet_factory->make_ble_read_supported_states();
-      break;
-    }
-    // Fall Through if no next command generated
-  case HCI_BLE_READ_SUPPORTED_STATES:
-    if (response) {
-      packet_parser->parse_ble_read_supported_states_response(
-            response, ble_supported_states, sizeof(ble_supported_states));
-      response = NULL;
+
+    // Request the ble supported states next
+    response = AWAIT_COMMAND(packet_factory->make_ble_read_supported_states());
+    packet_parser->parse_ble_read_supported_states_response(
+      response,
+      ble_supported_states,
+      sizeof(ble_supported_states)
+    );
+
+    // Request the ble supported features next
+    response = AWAIT_COMMAND(packet_factory->make_ble_read_local_supported_features());
+    packet_parser->parse_ble_read_local_supported_features_response(
+      response,
+      &features_ble
+    );
+
+    if (HCI_LE_ENHANCED_PRIVACY_SUPPORTED(features_ble.as_array)) {
+        response = AWAIT_COMMAND(packet_factory->make_ble_read_resolving_list_size());
+        packet_parser->parse_ble_read_resolving_list_size_response(
+            response,
+            &ble_resolving_list_max_size);
     }
 
-    if (ble_supported) {
-      // Request the ble supported features next
-      command = packet_factory->make_ble_read_local_supported_features();
-      break;
-    }
-    // Fall Through if no next command generated
-  case HCI_BLE_READ_LOCAL_SPT_FEAT:
-    if (response) {
-      packet_parser->parse_ble_read_local_supported_features_response(
-            response, &features_ble);
-      response = NULL;
+    if (HCI_LE_DATA_LEN_EXT_SUPPORTED(features_ble.as_array)) {
+        response = AWAIT_COMMAND(packet_factory->make_ble_read_suggested_default_data_length());
+        packet_parser->parse_ble_read_suggested_default_data_length_response(
+            response,
+            &ble_suggested_default_data_length);
     }
 
-    if (ble_supported &&
-	HCI_LE_ENHANCED_PRIVACY_SUPPORTED(features_ble.as_array)) {
-      command = packet_factory->make_ble_read_resolving_list_size();
-      break;
-    }
-  case HCI_BLE_READ_RESOLVING_LIST_SIZE:
-    if (response) {
-      packet_parser->parse_ble_read_resolving_list_size_response(
-            response, &ble_resolving_list_max_size);
-      response = NULL;
-    }
-
-    if (ble_supported &&
-	HCI_LE_DATA_LEN_EXT_SUPPORTED(features_ble.as_array)) {
-      command = packet_factory->make_ble_read_suggested_default_data_length();
-      break;
-    }
-  case HCI_BLE_READ_DEFAULT_DATA_LENGTH:
-    if (response) {
-      packet_parser->parse_ble_read_suggested_default_data_length_response(
-            response, &ble_suggested_default_data_length);
-      response = NULL;
-    }
-
-    if (ble_supported) {
-      // Set the ble event mask next
-      command = packet_factory->make_ble_set_event_mask(&BLE_EVENT_MASK);
-      break;
-    }
-  case HCI_BLE_SET_EVENT_MASK:
-    if (response) {
-      packet_parser->parse_generic_command_complete(response);
-      response = NULL;
-    }
-    if (simple_pairing_supported) {
-      command = packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK);
-      break;
-    }
+    // Set the ble event mask next
+    response = AWAIT_COMMAND(packet_factory->make_ble_set_event_mask(&BLE_EVENT_MASK));
+    packet_parser->parse_generic_command_complete(response);
+  }
 #endif
-  case HCI_SET_EVENT_MASK:
-    if (response) {
-      packet_parser->parse_generic_command_complete(response);
-      response = command = NULL;
-    }
-    //At this point, Reset Thread should be completed well.
-    readable = true;
-    page_number = 0;
-    if (reset_cb)
-      reset_cb();
 
-    break;
-  default:
-    LOG_ERROR("%s: No available opcode matched.", __func__);
-    break;
+  if (simple_pairing_supported) {
+    response = AWAIT_COMMAND(packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK));
+    packet_parser->parse_generic_command_complete(response);
   }
 
-  if (command)
-    hci->transmit_command(command, devctl_hdl_cmd_complete, NULL, NULL);
+  readable = true;
+  // return future_new_immediate(FUTURE_SUCCESS);
+  return;
 }
 
-// Interface functions
-static void devctl_reset(devctl_reset_callback reset_callback) {
-  reset_cb = reset_callback;
-  BT_HDR *command = packet_factory->make_read_buffer_size();
-  //BT_HDR *command = packet_factory->make_reset();
-  LOG_ERROR("Device Control Send Device Read Buffer Size Command\n");
-  page_number = 0;
-  if (command)
-    hci->transmit_command(command, devctl_hdl_cmd_complete, NULL, NULL);
-}
-
-static void devctl_shutdown(void) {
-  reset_cb = NULL;
+static void shut_down(void) {
   readable = false;
 }
 
@@ -531,8 +403,8 @@ static void set_ble_resolving_list_max_size(int resolving_list_max_size) {
 }
 
 static const controller_t interface = {
-  devctl_reset,
-  devctl_shutdown,
+  start_up,
+  shut_down,
   get_is_ready,
 
   get_address,

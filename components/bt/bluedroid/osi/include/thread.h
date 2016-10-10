@@ -15,7 +15,12 @@ struct task_evt {
 };
 typedef struct task_evt TaskEvt_t;
 
-void btu_task_post(void);
+enum {
+    SIG_BTU_START_UP = 0xfe,
+    SIG_BTU_WORK = 0xff
+};
+
+void btu_task_post(uint32_t sig);
 void hci_host_task_post(void);
 void hci_hal_h4_task_post(void);
 void hci_drv_task_post(void);

@@ -23,7 +23,7 @@
 #include "allocator.h"
 #include "fixed_queue.h"
 #include "osi.h"
-
+#include "future.h"
 ///// LEGACY DEFINITIONS /////
 
 /* Message event mask across Host/Controller lib and stack */
@@ -87,6 +87,8 @@ typedef struct hci_t {
       command_status_cb status_cb,
       void *context
   );
+
+  future_t *(*transmit_command_futured)(BT_HDR *command);
 
   // Send some data downward through the HCI layer
   void (*transmit_downward)(uint16_t type, void *data);

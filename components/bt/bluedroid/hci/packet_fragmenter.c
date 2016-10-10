@@ -66,7 +66,7 @@ static BT_HDR *fragment_get_current_packet() {
 }
 
 static void fragment_and_dispatch(BT_HDR *packet) {
-  uint16_t continuation_handle, current_pkt_size;
+  uint16_t continuation_handle;
   uint16_t max_data_size, max_packet_size, remaining_length;
   uint16_t event = packet->event & MSG_EVT_MASK;
   uint8_t *stream = packet->data + packet->offset;
