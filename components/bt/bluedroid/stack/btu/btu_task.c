@@ -324,8 +324,8 @@ static void btu_task_thread_handler(void *arg)
                 fixed_queue_process(btu_oneshot_alarm_queue);
                 fixed_queue_process(btu_l2cap_alarm_queue);
             }
+            osi_free(e);
         }
-        osi_free(e);
     }
 }
 

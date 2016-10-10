@@ -65,12 +65,12 @@ static void bt_app_task_handler(void *arg)
                 fixed_queue_process(bta_app_msg_queue);
                 fixed_queue_process(bt_app_general_alarm_queue);
             }else if(e->sig == BUTTON_PRESS_EVT){
-			LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
-		  button_msg[1] = e->par;
-          button_msg_notify(2,button_msg);		
-}
+                LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
+                button_msg[1] = e->par;
+                button_msg_notify(2,button_msg);		
+            }
+            osi_free(e);
         }
-        osi_free(e);
     }
 }
 
@@ -201,7 +201,7 @@ static void bt_app_task_shut_down(void)
     fixed_queue_unregister_dequeue(bt_app_general_alarm_queue);
 
     vTaskDelete(xBtaApp1TaskHandle);
-    vTaskDelete(xBtaApp1Queue);
+    vQueueDelete(xBtaApp1Queue);
 }
 
 

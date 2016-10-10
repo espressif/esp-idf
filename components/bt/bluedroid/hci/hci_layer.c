@@ -242,8 +242,8 @@ static void hci_host_thread_handler(void *arg)
                     }
                 }
             }
+            osi_free(e);
         }
-        osi_free(e);
     }
 }
 
