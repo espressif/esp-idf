@@ -187,7 +187,7 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
 	/*instantiate a hid device service*/
 	//hidd_le_init();
     /*start advetising*/
-//    BTA_GATTS_Listen(server_if, true, NULL);
+    //BTA_GATTS_Listen(server_if, true, NULL);
 }
 
 /*register callback*/
@@ -208,7 +208,7 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
 								bta_gatts_set_adv_data_cback);
 			//set the adversting data to the btm layer
 			ESP_AppBleSetScanRsp(&ijiazu_adv_data[BLE_SCAN_RSP_DATA_IDX],NULL);
-           	
+    	    BTA_GATTS_Listen(server_if, true, NULL);
         }
         break;
         /*connect callback*/

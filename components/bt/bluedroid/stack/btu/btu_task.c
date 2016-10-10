@@ -347,7 +347,7 @@ void btu_task_post(void)
 void btu_task_start_up(void) {
 //  ke_event_callback_set(KE_EVENT_BTU_TASK_THREAD, &btu_task_thread_handler);
 
-  xBtuQueue = xQueueCreate(15, sizeof(void *));
+  xBtuQueue = xQueueCreate(30, sizeof(void *));
   xTaskCreate(btu_task_thread_handler, "BtuT", 8192, NULL, configMAX_PRIORITIES - 1, &xBtuTaskHandle);
 
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)

@@ -242,13 +242,13 @@ static void bt_app_dm_upstreams_evt(UINT16 event, char *p_param)
 
 
         /*set connectable,discoverable, pairable and paired only modes of local device*/
-        tBTA_DM_DISC disc_mode = BTA_DM_GENERAL_DISC | BTA_DM_BLE_GENERAL_DISCOVERABLE;
-        tBTA_DM_CONN conn_mode = BTA_DM_CONN | BTA_DM_BLE_CONNECTABLE;
-        BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
+        tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
+        tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
+        BTA_DmSetVisibility(disc_mode, conn_mode, (uint8_t)BTA_DM_NON_PAIRABLE, (uint8_t)BTA_DM_CONN_ALL );
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
         /* Enable local privacy */
-        BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
+        //BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
         do {
             const controller_t *controller = controller_get_interface();
             char bdstr[18];
