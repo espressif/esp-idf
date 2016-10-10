@@ -7,6 +7,17 @@
 
 #include "ssl_types.h"
 
+#define STACK_OF(type)  struct stack_st_##type
+
+#define SKM_DEFINE_STACK_OF(t1, t2, t3) \
+    STACK_OF(t1); \
+    static ossl_inline STACK_OF(t1) *sk_##t1##_new_null(void) \
+    { \
+        return (STACK_OF(t1) *)OPENSSL_sk_new_null(); \
+    } \
+
+#define DEFINE_STACK_OF(t) SKM_DEFINE_STACK_OF(t, t, t)
+
 /**
  * @brief create a openssl stack object
  *

@@ -19,7 +19,6 @@
  extern "C" {
 #endif
 
-#include "platform/ssl_port.h"
 #include "internal/ssl_x509.h"
 #include "internal/ssl_pkey.h"
 

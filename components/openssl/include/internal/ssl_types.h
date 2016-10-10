@@ -37,17 +37,6 @@ typedef void BIO;
 #define X509_METHOD_CALL(f, x, ...)       x->method->x509_##f(x, ##__VA_ARGS__)
 #define EVP_PKEY_METHOD_CALL(f, k, ...)   k->method->pkey_##f(k, ##__VA_ARGS__)
 
-#define STACK_OF(type)  struct stack_st_##type
-
-#define SKM_DEFINE_STACK_OF(t1, t2, t3) \
-    STACK_OF(t1); \
-    static ossl_inline STACK_OF(t1) *sk_##t1##_new_null(void) \
-    { \
-        return (STACK_OF(t1) *)OPENSSL_sk_new_null(); \
-    } \
-
-#define DEFINE_STACK_OF(t) SKM_DEFINE_STACK_OF(t, t, t)
-
 typedef int (*OPENSSL_sk_compfunc)(const void *, const void *);
 
 struct stack_st;
