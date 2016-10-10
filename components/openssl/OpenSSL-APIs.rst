@@ -1,9 +1,14 @@
 OpenSSL-APIs 
-============
+------------
 
 All original source code in this repository is Copyright (C) 2015-2016
 Espressif Systems. This source code is licensed under the Apache
 License 2.0 as described in the file LICENSE.
+
+OpenSSL APIs not mentioned in this article are not open to public for the time,
+also do not have the corresponding function.
+If user calls it directly, it will always return an error or may show cannot link
+at compile time.
 
 Chapter Introduction
 ====================
@@ -17,8 +22,7 @@ Chapter Introduction
 Chapter 1. SSL Context Method Create 
 ====================================
 
-
-1.1 const SSL_METHOD* ``SSLv23_client_method`` (void)
+1.1 const SSL_METHOD* ``SSLv3_client_method`` (void)
 
     Arguments::
     
@@ -26,7 +30,7 @@ Chapter 1. SSL Context Method Create
     
     Return::
     
-        SSLV2 and 3 version SSL context client method point
+        SSLV3.0 version SSL context client method point
     
     Description::
     
@@ -36,11 +40,10 @@ Chapter 1. SSL Context Method Create
     
         void example(void)
         {
-            const SSL_METHOD *method = SSLv23_client_method();
+            const SSL_METHOD *method = SSLv3_client_method();
  
             ...
         }
-
 
 1.2 const SSL_METHOD* ``TLSv1_client_method`` (void)
 
@@ -65,32 +68,7 @@ Chapter 1. SSL Context Method Create
             ...
         }
 
-
-1.3 const SSL_METHOD* ``SSLv3_client_method`` (void)
-
-    Arguments::
-    
-        none
-    
-    Return::
-    
-        SSLV3.0 version SSL context client method point
-    
-    Description::
-    
-        create the target SSL context method
-    
-    Example::
-    
-        void example(void)
-        {
-            const SSL_METHOD *method = SSLv3_client_method();
- 
-            ...
-        }
-
-
-1.4 const SSL_METHOD* ``TLSv1_1_client_method`` (void)
+1.3 const SSL_METHOD* ``TLSv1_1_client_method`` (void)
 
     Arguments::
     
@@ -113,8 +91,7 @@ Chapter 1. SSL Context Method Create
             ...
         }
 
-
-1.5 const SSL_METHOD* ``TLSv1_2_client_method`` (void)
+1.4 const SSL_METHOD* ``TLSv1_2_client_method`` (void)
 
     Arguments::
     
@@ -136,9 +113,31 @@ Chapter 1. SSL Context Method Create
  
             ...
         }
+        
+1.5 const SSL_METHOD* ``TLS_client_method`` (void)
 
+    Arguments::
+    
+       none
+    
+    Return::
+    
+       TLSV1.2 version SSL context client method point
+    
+    Description::
+    
+       create the default SSL context method, it's always to be TLSV1.2
+    
+    Example::
+    
+        void example(void)
+        {
+            const SSL_METHOD *method = TLSv1_2_client_method();
+ 
+            ...
+        }        
 
-1.6 const SSL_METHOD* ``SSLv23_server_method`` (void)
+1.6 const SSL_METHOD* ``SSLv3_server_method`` (void)
 
     Arguments::
     
@@ -146,7 +145,7 @@ Chapter 1. SSL Context Method Create
     
     Return::
     
-        SSLV2 and 3 version SSL context server method point
+        SSLV3.0 version SSL context server method point
     
     Description::
     
@@ -156,13 +155,35 @@ Chapter 1. SSL Context Method Create
     
         void example(void)
         {
-            const SSL_METHOD *method = SSLv23_server_method();
+            const SSL_METHOD *method = SSLv3_server_method();
  
             ...
         }
 
+1.7 const SSL_METHOD* ``TLSv1_server_method`` (void)
 
-1.7 const SSL_METHOD* ``TLSv1_1_server_method`` (void)
+    Arguments::
+    
+        none
+    
+    Return::
+    
+        TLSV1.0 version SSL context server method point
+    
+    Description::
+    
+        create the target SSL context method
+    
+    Example::
+    
+        void example(void)
+        {
+            const SSL_METHOD *method = TLSv1_server_method();
+ 
+            ...
+        }
+
+1.8 const SSL_METHOD* ``TLSv1_1_server_method`` (void)
 
     Arguments::
     
@@ -186,7 +207,7 @@ Chapter 1. SSL Context Method Create
         }
 
 
-1.8 const SSL_METHOD* ``TLSv1_2_server_method`` (void)
+1.9 const SSL_METHOD* ``TLSv1_2_server_method`` (void)
 
     Arguments::
     
@@ -209,32 +230,7 @@ Chapter 1. SSL Context Method Create
             ...
         }
 
-
-1.9 const SSL_METHOD* ``TLSv1_server_method`` (void)
-
-    Arguments::
-    
-        none
-    
-    Return::
-    
-        TLSV1.0 version SSL context server method point
-    
-    Description::
-    
-        create the target SSL context method
-    
-    Example::
-    
-        void example(void)
-        {
-            const SSL_METHOD *method = TLSv1_server_method();
- 
-            ...
-        }
-
-
-1.10 const SSL_METHOD* ``SSLv3_server_method`` (void)
+1.10 const SSL_METHOD* ``TLS_server_method`` (void)
 
     Arguments::
     
@@ -242,21 +238,20 @@ Chapter 1. SSL Context Method Create
     
     Return::
     
-        SSLV3.0 version SSL context server method point
+        TLSV1.2 version SSL context server method point
     
     Description::
     
-        create the target SSL context method
+        create the default SSL context method, it's always to be TLSV1.2
     
     Example::
     
         void example(void)
         {
-            const SSL_METHOD *method = SSLv3_server_method();
+            const SSL_METHOD *method = TLSv1_2_server_method();
  
             ...
         }
-
 
 
 Chapter 2. SSL Context Fucntion
@@ -1326,64 +1321,8 @@ Chapter 3. SSL Fucntion
             
             err = SSL_get_error(ssl, ret);
         }
-        
-3.35 void ``SSL_CTX_set_default_read_buffer_len`` (SSL_CTX *ctx, size_t len)
 
-    Arguments::
-    
-        ctx - SSL context point
-        len - read buffer length
-    
-    Return::
-    
-        none
-        
-    Description::
-    
-        set the SSL context read buffer length
-    
-    Example::
-    
-        void example(void)
-        {
-            SSL_CTX *ctx;
-            size_t len;
-                        
-            ... ...
-            
-            SSL_CTX_set_default_read_buffer_len(ctx, len);
-        }
-        
-
-3.36 void ``SSL_set_default_read_buffer_len`` (SSL *ssl, size_t len)
-
-    Arguments::
-    
-        ssl - SSL point
-        len - read buffer length
-    
-    Return::
-    
-        none
-        
-    Description::
-    
-        set the SSL read buffer length
-    
-    Example::
-    
-        void example(void)
-        {
-            SSL *ssl;
-            size_t len;
-                        
-            ... ...
-            
-            SSL_set_default_read_buffer_len(ctx, len);
-        }
-
-
-3.37 int ``SSL_want`` (const SSL *ssl)
+3.35 int ``SSL_want`` (const SSL *ssl)
 
     Arguments::
     
@@ -1410,7 +1349,7 @@ Chapter 3. SSL Fucntion
         }
         
 
-3.38 int ``SSL_want_nothing`` (const SSL *ssl)
+3.36 int ``SSL_want_nothing`` (const SSL *ssl)
 
     Arguments::
     
@@ -1438,7 +1377,7 @@ Chapter 3. SSL Fucntion
         }
         
         
-3.39 int ``SSL_want_read`` (const SSL *ssl)
+3.37 int ``SSL_want_read`` (const SSL *ssl)
 
     Arguments::
     
@@ -1466,7 +1405,7 @@ Chapter 3. SSL Fucntion
         }
 
 
-3.40 int ``SSL_want_write`` (const SSL *ssl)
+3.38 int ``SSL_want_write`` (const SSL *ssl)
 
     Arguments::
     
