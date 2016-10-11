@@ -49,6 +49,7 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/main				\
 			bluedroid/osi				\
 			bluedroid/profiles/esp/ble_button	\
+			bluedroid/profiles/esp/wechat_AirSync	\
 			bluedroid/profiles/esp			\
 			bluedroid/profiles/std/avrc		\
 			bluedroid/profiles/std/battery		\
