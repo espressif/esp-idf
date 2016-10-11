@@ -11,7 +11,9 @@
  *
  ****************************************************************************************
  */
+#include "prf_defs.h"
 
+#if (BUT_PROFILE_CFG)
 #include "bt_target.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
@@ -34,11 +36,18 @@
 
 #define BUT_MAX_STRING_DATA     7
 
+typedef void (tBU_CBACK)(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *data);
 
 #ifndef BUT_MAX_INT_NUM
 #define BUT_MAX_INT_NUM     4
 #endif
 
+enum
+{
+	RECEIVE_NET_PASSWD_EVT,
+	RECEIVE_NET_SSD_EVT,
+	RECEIVE_EVT_MAX
+};
 
 /// button Service Attributes Indexes
 enum
@@ -79,6 +88,8 @@ typedef struct
     UINT16          but_wirt_hdl;
     UINT16          but_ntf_hdl;
     UINT16          but_cfg_hdl;
+ 
+    tBU_CBACK       *p_cback;
 
 }tBUT_INST;
 
@@ -102,9 +113,10 @@ UINT16 button_env_find_conn_id_by_bd_adddr(BD_ADDR bda);
 
 BOOLEAN button_env_clcb_dealloc(UINT16 conn_id);
 
-tGATT_STATUS button_init(void);
+tGATT_STATUS button_init(tBU_CBACK *call_back);
 
 void button_msg_notify(UINT8 len, UINT8 *button_msg);
 
 extern tBUTTON_CB_ENV button_cb_env;
 
+#endif ///BUT_PROFILE_CFG

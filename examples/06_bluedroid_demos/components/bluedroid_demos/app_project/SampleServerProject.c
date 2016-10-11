@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "prf_defs.h"
+
 #include "bta_api.h"
 #include "bta_gatt_api.h"
 #include "controller.h"
@@ -23,10 +25,16 @@
 #include "dis_api.h"
 #include "bt_app_common.h"
 
-//#include "app_button.h"
-//#include "button_pro.h"
+//#include "prf_defs.h"
+
+#include "wx_airsync_prf.h"
+
+#include "button_pro.h"
+
 #include "hid_le_prf.h"
-#include "prf_defs.h"
+
+//
+
 #include "hcimsgs.h"
 #include "bt_app_defs.h"
 
@@ -45,11 +53,19 @@ static unsigned char BASE_UUID[16] = {
     };
 
 UINT16 ijiazu_uuid = 0xffff;
+UINT16 wechat_uuid = 0xfee7;
 tBTA_BLE_SERVICE ijiazu_service = {
 							0x01,		//only one service in the ijiazu button profile
 							false,
 							&ijiazu_uuid
 							};        /* 16 bits services */
+
+tBTA_BLE_SERVICE wechat_service = {
+							0x01,		//only one service in the ijiazu button profile
+							false,
+							&wechat_uuid
+							};        /* 16 bits services */
+
 
 
 UINT8 beacon_manu[25] = {0x4c, 0x00,0x02, 0x15, 0xfd, 0xa5, 0x06, 0x93, 0xa4, 0xe2, 
@@ -58,8 +74,9 @@ UINT8 beacon_manu[25] = {0x4c, 0x00,0x02, 0x15, 0xfd, 0xa5, 0x06, 0x93, 0xa4, 0x
 
 //UINT8 ijiazu_manu[17] = {0xff,0x20,0x14,0x07,0x22,0x00,0x02,0x5B,0x00,0x33,0x49,0x31,0x30,0x4a,0x30,0x30,0x31};
 UINT8 ijiazu_manu[17] = {0xff,0x20,0x14,0x07,0x22,0x00,0x02,0x5B,0x00,0x33,0x49,0x31,0x30,0x4a,0x30,0x30,0x31};
+UINT8 wechat_manu[] = {0x00,0x00,0x18,0xfe,0x34,0x6a,0x86,0x2e};
 tBTA_BLE_MANU	p_ijiazu_manu = {sizeof(ijiazu_manu),ijiazu_manu};			/* manufacturer data */
-
+tBTA_BLE_MANU   p_wechat_manu = {sizeof(wechat_manu),wechat_manu};
 
 BD_ADDR rand_ijiazu_addr = {0x00,0x02,0x5B,0x00,0x32,0x55};
 
@@ -104,6 +121,50 @@ tESP_BLE_ADV_DATA ijiazu_adv_data[ADV_SCAN_IDX_MAX] =
 								}
 };
 
+tESP_BLE_ADV_DATA wechat_adv_data[ADV_SCAN_IDX_MAX] = 
+{
+	[BLE_ADV_DATA_IDX] 		= {
+										.adv_name = NULL,
+										{
+										{0,0},
+										NULL,			//no manufature data to be setting in the ijiazu adervetisiing datas
+										&wechat_service,
+										NULL,					//the  128 bits service uuid set to null(not used)
+										NULL,					//the 32 bits Service UUID set to null(not used)
+										NULL,					//16 bits services Solicitation UUIDs set to null(not used)
+										NULL,					//List of 32 bit Service Solicitation UUIDs set to null(not used)
+										NULL,					//List of 128 bit Service Solicitation UUIDs set to null(not used)
+										NULL,					//proprietary data set to null(not used)
+										NULL,					//service data set not null(no service data to be sent)
+										0x0200,         		//device type : generic display
+										BTA_DM_GENERAL_DISC,	// General discoverable. 
+										0xFE					//the tx power value,defult value is 0
+										},
+									
+								},
+	[BLE_SCAN_RSP_DATA_IDX] = {
+										.adv_name = "wechat_demo",	
+										{
+										{0,0},
+										&p_wechat_manu,
+										NULL,
+										NULL,					//the  128 bits service uuid set to null(not used)
+										NULL,					//the 32 bits Service UUID set to null(not used)
+										NULL,					//16 bits services Solicitation UUIDs set to null(not used)
+										NULL,					//List of 32 bit Service Solicitation UUIDs set to null(not used)
+										NULL,					//List of 128 bit Service Solicitation UUIDs set to null(not used)
+										NULL,					//proprietary data set to null(not used)
+										NULL,					//service data set not null(no service data to be sent)
+										0x0000,         		//device type : generic display
+										0x00,					// General discoverable. 
+										0x00},					//the tx power value,defult value is 0
+									
+								}
+};
+
+#if	(BUT_PROFILE_CFG)
+static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
+#endif
                   
 typedef struct {
     uint8_t uu[16];
@@ -180,10 +241,19 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
     bas_register();  
 	/*instantiate the driver for button profile*/
 	//app_button_init();
+#if (BUT_PROFILE_CFG)
 	/*instantiate a button service*/
-	//button_init();
+	button_init(SimpleDataCallBack);
+#endif	///BUT_PROFILE_CFG
+
+#if (HIDD_LE_PROFILE_CFG)
 	/*instantiate a hid device service*/
 	hidd_le_init();
+#endif	///HIDD_LE_PROFILE_CFG
+
+#if (WX_AIRSYNC_CFG)
+	AirSync_Init(NULL);
+#endif	///WX_AIRSYNC_CFG
     /*start advetising*/
 //    BTA_GATTS_Listen(server_if, true, NULL);
 }
@@ -202,10 +272,10 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
             
             LOG_ERROR("set advertising parameters\n");
 			//set the advertising data to the btm layer
-			ESP_AppBleConfigadvData(&ijiazu_adv_data[BLE_ADV_DATA_IDX],
+			ESP_AppBleConfigadvData(&wechat_adv_data[BLE_ADV_DATA_IDX],
 								bta_gatts_set_adv_data_cback);
 			//set the adversting data to the btm layer
-			ESP_AppBleSetScanRsp(&ijiazu_adv_data[BLE_SCAN_RSP_DATA_IDX],NULL);
+			ESP_AppBleSetScanRsp(&wechat_adv_data[BLE_SCAN_RSP_DATA_IDX],NULL);
            	
         }
         break;
@@ -226,6 +296,25 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
     }
 
 }
+
+#if	(BUT_PROFILE_CFG)
+static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data)
+{
+	LOG_ERROR("the event value is:%x\n",event);
+	switch(event)
+	{
+		case RECEIVE_NET_PASSWD_EVT:
+		LOG_ERROR("Received the network passwork");
+		break;
+		case RECEIVE_NET_SSD_EVT:
+		 LOG_ERROR("Received the network SSID");
+		break;
+		default:
+		break;
+	}
+}
+#endif	///BUT_PROFILE_CFG
+
 
 static void ble_server_appRegister(void)
 {    

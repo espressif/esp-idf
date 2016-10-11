@@ -88,11 +88,11 @@ tBTM_STATUS BTM_BleGetEnergyInfo(tBTM_BLE_ENERGY_INFO_CBACK *p_ener_cback)
 
     BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
 
-    BTM_TRACE_EVENT("BTM_BleGetEnergyInfo");
+    BTM_TRACE_EVENT("BTM_BleGetEnergyInfo\n");
 
     if (0 == cmn_ble_vsc_cb.energy_support)
     {
-        BTM_TRACE_ERROR("Controller does not support get energy info");
+        BTM_TRACE_ERROR("Controller does not support get energy info\n");
         return BTM_ERR_PROCESSING;
     }
 

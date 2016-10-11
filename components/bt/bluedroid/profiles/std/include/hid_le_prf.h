@@ -12,11 +12,14 @@
  ****************************************************************************************
  */
 
+#include "prf_defs.h"
 
+#if (HIDD_LE_PROFILE_CFG)
 #include "bta_gatts_int.h"
 
 #include "bta_api.h"
 #include "gatt_api.h"
+
 
 /// Maximal number of HIDS that can be added in the DB
 #ifndef USE_ONE_HIDS_INSTANCE
@@ -214,5 +217,7 @@ enum
  
  tGATT_STATUS hidd_le_init (void);
 
+
+#endif	///HIDD_LE_PROFILE_CFG
  
 

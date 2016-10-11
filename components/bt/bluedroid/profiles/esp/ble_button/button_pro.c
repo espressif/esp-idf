@@ -26,8 +26,12 @@
 #include "bta_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gatts_int.h"
-
 #include "button_pro.h"
+
+#include "prf_defs.h"
+
+#if (BUT_PROFILE_CFG)
+
 
 #define ARRAY_SIZE(x)	(sizeof(x)/sizeof((x)[0]))
 
@@ -54,7 +58,10 @@ static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 {
 	tBTA_GATTS_RSP rsp;
 	tBT_UUID uuid = {LEN_UUID_16, {ATT_SVC_BUTTON}};
-	
+	tBUT_INST  *p_inst = &button_cb_env.button_inst;
+	UINT8 net_event = 0xff;
+	UINT8 len = 0;
+	UINT8 *p_rec_data = NULL;
 	//LOG_ERROR("p_data->status = %x\n",p_data->status);
 	//if(p_data->status != BTA_GATT_OK){
 	//	LOG_ERROR("button profile register failed\n");
@@ -91,6 +98,32 @@ static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 		case BTA_GATTS_WRITE_EVT:
 			BTA_GATTS_SendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
 								p_data->req_data.status,NULL);
+			LOG_ERROR("Received button data:");
+			for(int i = 0; i < p_data->req_data.p_data->write_req.len; i++){
+				LOG_ERROR("%x",p_data->req_data.p_data->write_req.value[i]);
+			}
+			LOG_ERROR("\n");
+			if(p_data->req_data.p_data->write_req.handle == button_cb_env.button_inst.but_wirt_hdl){
+			if(p_data->req_data.p_data->write_req.value[0] == 0xFF){
+				net_event = RECEIVE_NET_PASSWD_EVT;
+				len = p_data->req_data.p_data->write_req.len - 1;
+				p_rec_data = &p_data->req_data.p_data->write_req.value[1];
+				LOG_ERROR("RECEIVE_NET_PASSWD_EVT\n");
+			}else if(p_data->req_data.p_data->write_req.value[0] == 0xEE){
+				
+				net_event = RECEIVE_NET_SSD_EVT;
+				len = p_data->req_data.p_data->write_req.len - 1;
+				p_rec_data = &p_data->req_data.p_data->write_req.value[1];
+				LOG_ERROR("RECEIVE_NET_SSD_EVT\n");
+			}else{
+				net_event = 0xff;
+				len = p_data->req_data.p_data->write_req.len;
+				p_rec_data = p_data->req_data.p_data->write_req.value;
+				
+		}		
+//	button_msg_notify(len,p_rec_data);	
+	(*p_inst->p_cback)(button_cb_env.button_inst.app_id,net_event,len,p_rec_data);
+			}
 			break;
 		case BTA_GATTS_CONF_EVT:
 			
@@ -285,9 +318,10 @@ BOOLEAN button_env_clcb_dealloc(UINT16 conn_id)
 ** Description      Initializa the GATT Service for button profiles.
 **
 *******************************************************************************/
-tGATT_STATUS button_init (void)
+tGATT_STATUS button_init (tBU_CBACK *call_back)
 {
 	tBT_UUID app_uuid = {LEN_UUID_16,{ATT_SVC_BUTTON}};
+	
 
 	if(button_cb_env.enabled)
 	{
@@ -299,6 +333,12 @@ tGATT_STATUS button_init (void)
 		memset(&button_cb_env,0,sizeof(tBUTTON_CB_ENV));
 	}
 	
+
+	 if(call_back != NULL)
+        {
+                button_cb_env.button_inst.p_cback = call_back;
+        }
+
 	
 	/* register the button profile to the BTA_GATTS module*/
 	 BTA_GATTS_AppRegister(&app_uuid,button_profile_cb);
@@ -324,3 +364,5 @@ void button_msg_notify(UINT8 len, UINT8 *button_msg)
 	 BTA_GATTS_HandleValueIndication (conn_id, attr_id, len,
                                       button_msg, rsp);
 }
+
+#endif	///BUT_PROFILE_CFG

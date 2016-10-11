@@ -14,12 +14,14 @@
 #include "bt_app_common.h"
 
 #include "controller.h"
-
+//#include "prf_defs.h"
 #include "hash_map.h"
 #include "hash_functions.h"
 #include "alarm.h"
-#include "app_button.h"
+//#include "app_button.h"
+#if	(BUT_PROFILE_CFG)
 #include "button_pro.h"
+#endif	///BUT_PROFILE_CFG
 #include "thread.h"
 #include "bt_app_common.h"
 #include "dis_api.h"
@@ -64,12 +66,17 @@ static void bt_app_task_handler(void *arg)
             if (e->sig == 0xff) {
                 fixed_queue_process(bta_app_msg_queue);
                 fixed_queue_process(bt_app_general_alarm_queue);
-            }else if(e->sig == BUTTON_PRESS_EVT){
-                LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
-                button_msg[1] = e->par;
-                button_msg_notify(2,button_msg);		
             }
-            osi_free(e);
+#if (BUT_PROFILE_CFG)
+			else if(e->sig == BUTTON_PRESS_EVT){
+			LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
+		  button_msg[1] = e->par;
+          button_msg_notify(2,button_msg);	
+
+
+	}
+#endif	///BUT_PROFILE_CFG
+
         }
     }
 }
@@ -187,7 +194,7 @@ void bt_app_task_start_up(void)
     return;
 
 error_exit:
-    LOG_ERROR("%s Unable to allocate resources for bt_app", __func__);
+    LOG_ERROR("%s Unable to allocate resources for bt_app\n", __func__);
     bt_app_task_shut_down();
 }
 
@@ -320,7 +327,7 @@ void bt_app_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec) 
     alarm = hash_map_get(bt_app_general_alarm_hash_map, p_tle);
     pthread_mutex_unlock(&bt_app_general_alarm_lock);
     if (alarm == NULL) {
-        LOG_ERROR("%s Unable to create alarm", __func__);
+        LOG_ERROR("%s Unable to create alarm\n", __func__);
 
         return;
     }
@@ -364,6 +371,10 @@ static void bt_app_general_alarm_process(TIMER_LIST_ENT *p_tle)
  
 
   //     bt_test_start_inquiry();
+ 	 /*set connectable,discoverable, pairable and paired only modes of local device*/
+        tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
+       	tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
+        //BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 
        gatts_server_test();
        //gattc_client_test();

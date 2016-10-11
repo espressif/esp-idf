@@ -13,9 +13,9 @@
  */
 #include <string.h>
 #include "hid_le_prf.h"
-#include "prf_defs.h"
 #include "bta_gatt_api.h"
 
+#if	(HIDD_LE_PROFILE_CFG)
 tHIDD_LE_ENV hidd_le_env;
 
 tBT_UUID char_info_uuid = {LEN_UUID_16, {CHAR_HID_INFO_UUID}};
@@ -25,8 +25,6 @@ tBT_UUID char_proto_mode_uuid = {LEN_UUID_16, {CHAR_PROTOCOL_MODE_UUID}};
 tBT_UUID char_kb_in_report_uuid = {LEN_UUID_16, {CHAR_BOOT_KB_IN_REPORT_UUID}};
 tBT_UUID char_kb_out_report_uuid = {LEN_UUID_16,{CHAR_BOOT_KB_OUT_REPORT_UUID}};
 tBT_UUID char_mouse_in_report_uuid = {LEN_UUID_16,{CHAR_BOOT_MOUSE_IN_REPORT_UUID}};
-
-
 
 /// Full HID device Database Description - Used to add attributes into the database
 const  tCHAR_DESC hids_char_db[HIDD_LE_CHAR_MAX] =
@@ -296,5 +294,6 @@ tGATT_STATUS hidd_le_init (void)
 }
 
 
+#endif	///HIDD_LE_PROFILE_CFG
 
 
