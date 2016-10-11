@@ -69,6 +69,23 @@ build_ssc:
     - chmod +x gen_misc_ng.sh
     - ./gen_misc_ng.sh
 
+build_examples:
+  <<: *build_template
+  artifacts:
+    paths:
+      - build_examples/*/*/build/*.bin
+      - build_examples/*/*/build/*.elf
+      - build_examples/*/*/build/*.map
+      - build_examples/*/*/build/bootloader/*.bin
+    expire_in: 6 mos
+
+  script:
+    # it's not possible to build 100% out-of-tree and have the "artifacts"
+    # mechanism work, but this is the next best thing
+    - mkdir build_examples
+    - cd build_examples
+    - ${IDF_PATH}/make/build_examples.sh
+
 test_nvs_on_host:
   stage: test
   image: espressif/esp32-ci-env
