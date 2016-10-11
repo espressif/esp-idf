@@ -14,6 +14,9 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
+#include <stdio.h>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -25,7 +28,7 @@
 #include "esp_ipc.h"
 #include "esp_attr.h"
 #include "esp_spi_flash.h"
-
+#include "esp_log.h"
 
 /*
     Driver for SPI flash read/write/erase operations
@@ -71,6 +74,19 @@ static bool s_flash_op_can_start = false;
 static bool s_flash_op_complete = false;
 #endif //CONFIG_FREERTOS_UNICORE
 
+#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
+static const char* TAG = "spi_flash";
+static spi_flash_counters_t s_flash_stats;
+
+#define COUNTER_START()     uint32_t ts_begin = xthal_get_ccount()
+#define COUNTER_STOP(counter)  do{ s_flash_stats.counter.count++; s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (XT_CLOCK_FREQ / 1000000); } while(0)
+#define COUNTER_ADD_BYTES(counter, size) do { s_flash_stats.counter.bytes += size; } while (0)
+#else
+#define COUNTER_START()
+#define COUNTER_STOP(counter)
+#define COUNTER_ADD_BYTES(counter, size)
+
+#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
 #ifndef CONFIG_FREERTOS_UNICORE
 
@@ -95,6 +111,10 @@ static void IRAM_ATTR spi_flash_op_block_func(void* arg)
 void spi_flash_init()
 {
     s_flash_op_mutex = xSemaphoreCreateMutex();
+
+#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
+    spi_flash_reset_counters();
+#endif
 }
 
 static void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
@@ -160,7 +180,9 @@ static void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 
 void spi_flash_init()
 {
-    // No-op in single core mode
+#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
+    spi_flash_reset_counters();
+#endif
 }
 
 static void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
@@ -193,6 +215,7 @@ SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
 
 esp_err_t IRAM_ATTR spi_flash_erase_sector(uint16_t sec)
 {
+    COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
     rc = spi_flash_unlock();
@@ -200,27 +223,33 @@ esp_err_t IRAM_ATTR spi_flash_erase_sector(uint16_t sec)
         rc = SPIEraseSector(sec);
     }
     spi_flash_enable_interrupts_caches_and_other_cpu();
+    COUNTER_STOP(erase);
     return spi_flash_translate_rc(rc);
 }
 
 esp_err_t IRAM_ATTR spi_flash_write(uint32_t dest_addr, const uint32_t *src, uint32_t size)
 {
+    COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
     rc = spi_flash_unlock();
     if (rc == SPI_FLASH_RESULT_OK) {
         rc = SPIWrite(dest_addr, src, (int32_t) size);
+        COUNTER_ADD_BYTES(write, size);
     }
     spi_flash_enable_interrupts_caches_and_other_cpu();
+    COUNTER_STOP(write);
     return spi_flash_translate_rc(rc);
 }
 
 esp_err_t IRAM_ATTR spi_flash_read(uint32_t src_addr, uint32_t *dest, uint32_t size)
 {
+    COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc;
-    rc = SPIRead(src_addr, dest, (int32_t) size);
+    SpiFlashOpResult rc = SPIRead(src_addr, dest, (int32_t) size);
+    COUNTER_ADD_BYTES(read, size);
     spi_flash_enable_interrupts_caches_and_other_cpu();
+    COUNTER_STOP(read);
     return spi_flash_translate_rc(rc);
 }
 
@@ -270,3 +299,30 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
         SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
     }
 }
+
+#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
+
+static inline void dump_counter(spi_flash_counter_t* counter, const char* name)
+{
+    ESP_LOGI(TAG, "%s  count=%8d  time=%8dms  bytes=%8d\n", name,
+            counter->count, counter->time, counter->bytes);
+}
+
+const spi_flash_counters_t* spi_flash_get_counters()
+{
+    return &s_flash_stats;
+}
+
+void spi_flash_reset_counters()
+{
+    memset(&s_flash_stats, 0, sizeof(s_flash_stats));
+}
+
+void spi_flash_dump_counters()
+{
+    dump_counter(&s_flash_stats.read,  "read ");
+    dump_counter(&s_flash_stats.write, "write");
+    dump_counter(&s_flash_stats.erase, "erase");
+}
+
+#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS

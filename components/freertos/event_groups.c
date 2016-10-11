@@ -124,7 +124,6 @@ typedef struct xEventGroupDefinition
 
 /* Again: one mux for all events. Maybe this can be made more granular. ToDo: look into that. -JD */
 static portMUX_TYPE xEventGroupMux = portMUX_INITIALIZER_UNLOCKED;
-static BaseType_t xMuxInitialized = pdFALSE;
 
 
 /*-----------------------------------------------------------*/
@@ -145,12 +144,6 @@ EventGroupHandle_t xEventGroupCreate( void )
 {
 EventGroup_t *pxEventBits;
 
-	//Initialize mux, if needed
-	if ( xMuxInitialized == pdFALSE ) {
-		vPortCPUInitializeMutex( & xEventGroupMux );
-		xMuxInitialized = pdTRUE;
-	}
-	
 	pxEventBits = pvPortMalloc( sizeof( EventGroup_t ) );
 	if( pxEventBits != NULL )
 	{

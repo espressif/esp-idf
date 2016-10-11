@@ -28,13 +28,13 @@ config LOG_DEFAULT_LEVEL_VERBOSE
 endchoice
 
 config LOG_DEFAULT_LEVEL
-	int
-	default 0 if LOG_DEFAULT_LEVEL_NONE
-	default 1 if LOG_DEFAULT_LEVEL_ERROR
-	default 2 if LOG_DEFAULT_LEVEL_WARN
-	default 3 if LOG_DEFAULT_LEVEL_INFO
-	default 4 if LOG_DEFAULT_LEVEL_DEBUG
-	default 5 if LOG_DEFAULT_LEVEL_VERBOSE
+    int
+    default 0 if LOG_DEFAULT_LEVEL_NONE
+    default 1 if LOG_DEFAULT_LEVEL_ERROR
+    default 2 if LOG_DEFAULT_LEVEL_WARN
+    default 3 if LOG_DEFAULT_LEVEL_INFO
+    default 4 if LOG_DEFAULT_LEVEL_DEBUG
+    default 5 if LOG_DEFAULT_LEVEL_VERBOSE
 
 config LOG_COLORS
    bool "Use ANSI terminal colors in log output"

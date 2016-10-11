@@ -1442,8 +1442,15 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
 #ifdef LWIP_ESP8266
         /*fix the code for getting the UDP proto's remote information by liuh at 2014.8.27*/
         if (NETCONNTYPE_GROUP(netconn_type(sock->conn)) == NETCONN_UDP){
-            buf.addr.u_addr.ip4.addr = sock->conn->pcb.udp->remote_ip.u_addr.ip4.addr;
-            remote_port = sock->conn->pcb.udp->remote_port;
+            if(NETCONNTYPE_ISIPV6(netconn_type(sock->conn))) {
+                memcpy(&buf.addr.u_addr.ip6.addr, sock->conn->pcb.udp->remote_ip.u_addr.ip6.addr,16);
+                remote_port = sock->conn->pcb.udp->remote_port;
+                IP_SET_TYPE(&buf.addr, IPADDR_TYPE_V6);
+            } else {
+                buf.addr.u_addr.ip4.addr = sock->conn->pcb.udp->remote_ip.u_addr.ip4.addr;
+                remote_port = sock->conn->pcb.udp->remote_port;
+                IP_SET_TYPE(&buf.addr, IPADDR_TYPE_V4);
+            }
         } else {
 #endif
             remote_port = 0;

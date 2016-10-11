@@ -2118,6 +2118,12 @@ BaseType_t xTaskPriorityDisinherit( TaskHandle_t const pxMutexHolder ) PRIVILEGE
  */
 UBaseType_t uxTaskGetTaskNumber( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
+
+/*
+ * Get the current core affinity of a task
+ */
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
+
 /*
  * Set the uxTaskNumber of the task referenced by the xTask parameter to
  * uxHandle.

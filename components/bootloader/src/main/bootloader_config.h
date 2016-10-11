@@ -30,6 +30,10 @@ extern "C"
 #define IROM_HIGH   0x40400000
 #define DROM_LOW    0x3F400000
 #define DROM_HIGH   0x3F800000
+#define RTC_IRAM_LOW  0x400C0000
+#define RTC_IRAM_HIGH 0x400C2000
+#define RTC_DATA_LOW  0x50000000
+#define RTC_DATA_HIGH 0x50002000
 
 /*spi mode,saved in third byte in flash */
 enum {

@@ -302,7 +302,7 @@ zconf.lex.c: zconf.l
 
 zconf.hash.c: zconf.gperf
 # strip CRs on Windows systems where gperf will otherwise barf on them
-	sed -E "s/\r//" zconf.gperf | gperf -t --output-file zconf.hash.c -a -C -E -g -k '1,3,$$' -p -t
+	sed -E "s/\\x0D$$//" zconf.gperf | gperf -t --output-file zconf.hash.c -a -C -E -g -k '1,3,$$' -p -t
 
 zconf.tab.c: zconf.y
 	bison -t -l -p zconf -o zconf.tab.c zconf.y

@@ -27,7 +27,7 @@ typedef volatile struct {
                 uint32_t clk_en:         1;             /*This bit  is used  to control clock.when software configure RMT internal registers  it controls the register clock.*/
             };
             uint32_t val;
-        }conf0;
+        } conf0;
         union {
             struct {
                 uint32_t tx_start:        1;            /*Set this bit to start sending data for channel0-7.*/
@@ -46,8 +46,8 @@ typedef volatile struct {
                 uint32_t reserved20:     12;
             };
             uint32_t val;
-        }conf1;
-    }conf_ch[8];
+        } conf1;
+    } conf_ch[8];
     uint32_t status_ch[8];                              /*The status for channel0-7*/
     uint32_t apb_mem_addr_ch[8];                        /*The ram relative address in channel0-7 by apb fifo access*/
     union {
@@ -86,7 +86,7 @@ typedef volatile struct {
             uint32_t ch7_tx_thr_event: 1;               /*The interrupt raw bit for channel 7 turns to high level when transmitter in channel7  have send data more than  reg_rmt_tx_lim_ch7  after detecting this interrupt  software can updata the old data with new data.*/
         };
         uint32_t val;
-    }int_raw;
+    } int_raw;
     union {
         struct {
             uint32_t ch0_tx_end:       1;                /*The interrupt  state bit for channel 0's mt_ch0_tx_end_int_raw when mt_ch0_tx_end_int_ena is set to 0.*/
@@ -123,7 +123,7 @@ typedef volatile struct {
             uint32_t ch7_tx_thr_event: 1;                /*The interrupt state bit  for channel 7's rmt_ch7_tx_thr_event_int_raw when mt_ch7_tx_thr_event_int_ena is set to 1.*/
         };
         uint32_t val;
-    }int_st;
+    } int_st;
     union {
         struct {
             uint32_t ch0_tx_end:       1;               /*Set this bit to enable rmt_ch0_tx_end_int_st.*/
@@ -160,7 +160,7 @@ typedef volatile struct {
             uint32_t ch7_tx_thr_event: 1;               /*Set this bit to enable rmt_ch7_tx_thr_event_int_st.*/
         };
         uint32_t val;
-    }int_ena;
+    } int_ena;
     union {
         struct {
             uint32_t ch0_tx_end:       1;               /*Set this bit to clear the rmt_ch0_rx_end_int_raw..*/
@@ -197,21 +197,21 @@ typedef volatile struct {
             uint32_t ch7_tx_thr_event: 1;               /*Set this bit to clear the  rmt_ch7_tx_thr_event_int_raw interrupt.*/
         };
         uint32_t val;
-    }int_clr;
+    } int_clr;
     union {
         struct {
             uint32_t low: 16;                           /*This register is used to configure carrier wave's low level value for channel0-7.*/
             uint32_t high:16;                           /*This register is used to configure carrier wave's high level value for channel0-7.*/
         };
         uint32_t val;
-    }carrier_duty_ch[8];
+    } carrier_duty_ch[8];
     union {
         struct {
             uint32_t limit: 9;                          /*When channel0-7 sends more than reg_rmt_tx_lim_ch0 data then channel0-7 produce the relative interrupt.*/
             uint32_t reserved9: 23;
         };
         uint32_t val;
-    }tx_lim_ch[8];
+    } tx_lim_ch[8];
     union {
         struct {
             uint32_t fifo_mask:  1;                     /*Set this bit to disable apb fifo access*/
@@ -219,10 +219,28 @@ typedef volatile struct {
             uint32_t reserved2:     30;
         };
         uint32_t val;
-    }apb_conf;
+    } apb_conf;
     uint32_t reserved_f4;
     uint32_t reserved_f8;
     uint32_t date;                                      /*This is the version register.*/
 } rmt_dev_t;
 extern rmt_dev_t RMT;
+
+//Allow access to RMT memory using RMTMEM.chan[0].data[8]
+typedef volatile struct {
+    struct {
+        union {
+            struct {
+                uint32_t level1:       1;
+                uint32_t duration1:    15;
+                uint32_t level0:       1;
+                uint32_t duration0:    15;
+
+            };
+            uint32_t val;
+        } data[64];
+    } chan[8];
+} rmt_mem_t;
+extern rmt_mem_t RMTMEM;
+
 #endif  /* _SOC_RMT_STRUCT_H_ */

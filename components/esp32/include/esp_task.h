@@ -15,10 +15,10 @@
 /* Notes:
  * 1. Put all task priority and stack size definition in this file
  * 2. If the task priority is less than 10, use ESP_TASK_PRIO_MIN + X style,
- *    otherwise use ESP_TASK_PRIO_MIN - X style
- * 3. If this is a daemon task, the macro prifix is ESP_TASKD_, otherwise
+ *    otherwise use ESP_TASK_PRIO_MAX - X style
+ * 3. If this is a daemon task, the macro prefix is ESP_TASKD_, otherwise
  *    it's ESP_TASK_
- * 4. If the configMAX_PRIORITIES is modified, please make all prority are 
+ * 4. If the configMAX_PRIORITIES is modified, please make all priority are
  *    greater than 0
  * 5. Make sure esp_task.h is consistent between wifi lib and idf
  */
@@ -43,12 +43,17 @@
 #define ESP_TASK_WPS_PRIO             (ESP_TASK_PRIO_MIN + 2)
 #define ESP_TASK_WPS_STACK            2048
 
+/* Bt contoller Task */
+/* controller */
+#define ESP_TASK_BT_CONTROLLER_PRIO   (ESP_TASK_PRIO_MAX - 1)
+#define ESP_TASK_BT_CONTROLLER_STACK  4096
+
 /* idf task */
 #define ESP_TASKD_EVENT_PRIO          (ESP_TASK_PRIO_MAX - 5)
 #define ESP_TASKD_EVENT_STACK         CONFIG_SYSTEM_EVENT_TASK_STACK_SIZE
-#define ESP_TASK_WIFI_STARTUP_PRIO    (ESP_TASK_PRIO_MAX - 7)
-#define ESP_TASK_WIFI_STARTUP_STACK   4096
 #define ESP_TASK_TCPIP_PRIO           (ESP_TASK_PRIO_MAX - 7)
 #define ESP_TASK_TCPIP_STACK          2048
+#define ESP_TASK_MAIN_PRIO            (ESP_TASK_PRIO_MIN + 1)
+#define ESP_TASK_MAIN_STACK           CONFIG_MAIN_TASK_STACK_SIZE
 
 #endif

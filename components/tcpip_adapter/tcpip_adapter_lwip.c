@@ -161,6 +161,9 @@ esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
             ip4_addr_set_zero(&esp_ip[tcpip_if].netmask);
         }
 
+        /* Modify ip address to trigger tcp/udp pcb cleanup */
+        netif_set_addr(esp_netif[tcpip_if], IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
+
         netif_set_down(esp_netif[tcpip_if]);
     }
 

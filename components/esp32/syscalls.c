@@ -142,8 +142,12 @@ int _open_r(struct _reent *r, const char * path, int flags, int mode) {
     return 0;
 }
 
+void _exit(int __status) {
+    abort();
+}
+
 ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size) {
-    const char* p = (const char*) data;
+    const char *data_c = (const char *)data;
     if (fd == STDOUT_FILENO) {
         static _lock_t stdout_lock; /* lazily initialised */
         /* Even though newlib does stream locking on stdout, we need
@@ -160,14 +164,13 @@ ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size) {
            which aren't fully valid.)
         */
         _lock_acquire_recursive(&stdout_lock);
-        while(size--) {
+        for (size_t i = 0; i < size; i++) {
 #if CONFIG_NEWLIB_STDOUT_ADDCR
-            if (*p=='\n') {
+            if (data_c[i]=='\n') {
                 uart_tx_one_char('\r');
             }
 #endif
-            uart_tx_one_char(*p);
-            ++p;
+            uart_tx_one_char(data_c[i]);
         }
         _lock_release_recursive(&stdout_lock);
     }

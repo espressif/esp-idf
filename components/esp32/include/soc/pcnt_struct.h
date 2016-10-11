@@ -34,29 +34,29 @@ typedef volatile struct {
                 uint32_t ch1_lctrl_mode: 2;         /*This register is used to control the mode of channel1's low control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
             };
             uint32_t val;
-        }conf0;
+        } conf0;
         union {
             struct {
                 uint32_t cnt_thres0:16;             /*This register is used to configure thres0 value for unit0.*/
                 uint32_t cnt_thres1:16;             /*This register is used to configure thres1 value for unit0.*/
             };
             uint32_t val;
-        }conf1;
+        } conf1;
         union {
             struct {
                 uint32_t cnt_h_lim:16;              /*This register is used to configure thr_h_lim value for unit0.*/
                 uint32_t cnt_l_lim:16;              /*This register is used to configure thr_l_lim value for unit0.*/
             };
             uint32_t val;
-        }conf2;
-    }conf_unit[8];
+        } conf2;
+    } conf_unit[8];
     union {
         struct {
             uint32_t cnt_val   : 16;                /*This register stores the current pulse count value for unit0.*/
             uint32_t reserved16: 16;
         };
         uint32_t val;
-    }cnt_unit[8];
+    } cnt_unit[8];
     union {
         struct {
             uint32_t cnt_thr_event_u0: 1;           /*This is the interrupt raw bit for channel0 event.*/
@@ -70,7 +70,7 @@ typedef volatile struct {
             uint32_t reserved8:       24;
         };
         uint32_t val;
-    }int_raw;
+    } int_raw;
     union {
         struct {
             uint32_t cnt_thr_event_u0: 1;            /*This is the  interrupt status bit for channel0 event.*/
@@ -84,7 +84,7 @@ typedef volatile struct {
             uint32_t reserved8:       24;
         };
         uint32_t val;
-    }int_st;
+    } int_st;
     union {
         struct {
             uint32_t cnt_thr_event_u0: 1;           /*This is the  interrupt enable bit for channel0 event.*/
@@ -98,7 +98,7 @@ typedef volatile struct {
             uint32_t reserved8:       24;
         };
         uint32_t val;
-    }int_ena;
+    } int_ena;
     union {
         struct {
             uint32_t cnt_thr_event_u0: 1;           /*Set this bit to clear channel0 event interrupt.*/
@@ -112,7 +112,7 @@ typedef volatile struct {
             uint32_t reserved8:       24;
         };
         uint32_t val;
-    }int_clr;
+    } int_clr;
     uint32_t status_unit[8];
     union {
         struct {
@@ -136,7 +136,7 @@ typedef volatile struct {
             uint32_t reserved17:  15;
         };
         uint32_t val;
-    }ctrl;
+    } ctrl;
     uint32_t reserved_b4;
     uint32_t reserved_b8;
     uint32_t reserved_bc;

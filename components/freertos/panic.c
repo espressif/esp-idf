@@ -79,9 +79,9 @@ inline static void panicPutDec(int a) { }
 int xPortGetCoreID();
 
 void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName ) {
-	panicPutStr("***ERROR*** A stack overflow in task");
+	panicPutStr("***ERROR*** A stack overflow in task ");
 	panicPutStr((char*)pcTaskName);
-	panicPutStr("has been detected.\n");
+	panicPutStr(" has been detected.\r\n");
 }
 
 static const char *edesc[]={
@@ -160,7 +160,7 @@ void xt_unhandled_exception(XtExcFrame *frame) {
 	panicPutStr("Guru Meditation Error of type ");
 	x=regs[20];
 	if (x<40) panicPutStr(edesc[x]); else panicPutStr("Unknown");
-	panicPutStr(" occured on core ");
+	panicPutStr(" occurred on core ");
 	panicPutDec(xPortGetCoreID());
 	if (inOCDMode()) {
 		panicPutStr(" at pc=");

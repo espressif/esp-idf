@@ -22,6 +22,7 @@
 #include "rom/ets_sys.h"
 #include "rom/spi_flash.h"
 #include "rom/crc.h"
+#include "rom/rtc.h"
 
 #include "soc/soc.h"
 #include "soc/cpu.h"
@@ -362,11 +363,15 @@ void unpack_load_app(const partition_pos_t* partition)
     uint32_t irom_load_addr = 0;
     uint32_t irom_size = 0;
 
+    /* Reload the RTC memory sections whenever a non-deepsleep reset
+       is occuring */
+    bool load_rtc_memory = rtc_get_reset_reason(0) != DEEPSLEEP_RESET;
+
     ESP_LOGD(TAG, "bin_header: %u %u %u %u %08x", image_header.magic,
-              image_header.blocks,
-              image_header.spi_mode,
-              image_header.spi_size,
-              (unsigned)image_header.entry_addr);
+             image_header.blocks,
+             image_header.spi_mode,
+             image_header.spi_size,
+             (unsigned)image_header.entry_addr);
 
     for (uint32_t section_index = 0;
             section_index < image_header.blocks;
@@ -406,7 +411,18 @@ void unpack_load_app(const partition_pos_t* partition)
             map = true;
         }
 
-        ESP_LOGI(TAG, "section %d: paddr=0x%08x vaddr=0x%08x size=0x%05x (%6d) %s", section_index, pos, section_header.load_addr, section_header.data_len, section_header.data_len, (load)?"load":(map)?"map":"");
+        if (!load_rtc_memory && address >= RTC_IRAM_LOW && address < RTC_IRAM_HIGH) {
+            ESP_LOGD(TAG, "Skipping RTC code section at %08x\n", pos);
+            load = false;
+        }
+
+        if (!load_rtc_memory && address >= RTC_DATA_LOW && address < RTC_DATA_HIGH) {
+            ESP_LOGD(TAG, "Skipping RTC data section at %08x\n", pos);
+            load = false;
+        }
+
+        ESP_LOGI(TAG, "section %d: paddr=0x%08x vaddr=0x%08x size=0x%05x (%6d) %s", section_index, pos,
+                 section_header.load_addr, section_header.data_len, section_header.data_len, (load)?"load":(map)?"map":"");
 
         if (!load) {
             pos += section_header.data_len;

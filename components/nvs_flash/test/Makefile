@@ -8,6 +8,7 @@ SOURCE_FILES = \
 		nvs_page.cpp \
 		nvs_pagemanager.cpp \
 		nvs_storage.cpp \
+		nvs_item_hash_list.cpp \
 	) \
 	spi_flash_emulation.cpp \
 	test_compressed_enum_table.cpp \

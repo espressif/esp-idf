@@ -20,7 +20,7 @@ typedef volatile struct {
             uint32_t reserved14:    18;
         };
         uint32_t val;
-    }scl_low_period;
+    } scl_low_period;
     union {
         struct {
             uint32_t sda_force_out:    1;           /*1：normally output sda data   0: exchange the function of sda_o and sda_oe (sda_o is the original internal output sda signal sda_oe is the enable bit for the internal output sda signal)*/
@@ -35,7 +35,7 @@ typedef volatile struct {
             uint32_t reserved9:       23;
         };
         uint32_t val;
-    }ctr;
+    } ctr;
     union {
         struct {
             uint32_t ack_rec:             1;        /*This register stores the value of ACK bit.*/
@@ -55,14 +55,14 @@ typedef volatile struct {
             uint32_t reserved31:          1;
         };
         uint32_t val;
-    }status_reg;
+    } status_reg;
     union {
         struct {
             uint32_t tout:      20;                 /*This register is used to configure the max clock number of receiving  a data.*/
             uint32_t reserved20:12;
         };
         uint32_t val;
-    }timeout;
+    } timeout;
     union {
         struct {
             uint32_t addr:       15;                /*when configured as i2c slave  this register is used to configure slave's address.*/
@@ -70,7 +70,7 @@ typedef volatile struct {
             uint32_t en_10bit:    1;                /*This register is used to enable slave 10bit address mode.*/
         };
         uint32_t val;
-    }slave_addr;
+    } slave_addr;
     union {
         struct {
             uint32_t rx_fifo_start_addr: 5;         /*This is the offset address of the last receiving data as described in nonfifo_rx_thres_register.*/
@@ -80,7 +80,7 @@ typedef volatile struct {
             uint32_t reserved20:        12;
         };
         uint32_t val;
-    }fifo_st;
+    } fifo_st;
     union {
         struct {
             uint32_t rx_fifo_full_thrhd: 5;
@@ -94,14 +94,14 @@ typedef volatile struct {
             uint32_t reserved26:         6;
         };
         uint32_t val;
-    }fifo_conf;
+    } fifo_conf;
     union {
         struct {
-            uint32_t data:       8;                 /*The register represent the byte  data read from rx_fifo when use apb fifo access*/
-            uint32_t reserved8: 24;
+            uint8_t data;                           /*The register represent the byte  data read from rx_fifo when use apb fifo access*/
+            uint8_t reserved[3];
         };
         uint32_t val;
-    }fifo_data;
+    } fifo_data;
     union {
         struct {
             uint32_t rx_fifo_full:     1;           /*The raw interrupt status bit for rx_fifo full when use apb fifo access.*/
@@ -120,7 +120,7 @@ typedef volatile struct {
             uint32_t reserved13:      19;
         };
         uint32_t val;
-    }int_raw;
+    } int_raw;
     union {
         struct {
             uint32_t rx_fifo_full:     1;           /*Set this bit to clear the rx_fifo_full_int interrupt.*/
@@ -139,7 +139,7 @@ typedef volatile struct {
             uint32_t reserved13:      19;
         };
         uint32_t val;
-    }int_clr;
+    } int_clr;
     union {
         struct {
             uint32_t rx_fifo_full:     1;           /*The enable bit for rx_fifo_full_int interrupt.*/
@@ -158,7 +158,7 @@ typedef volatile struct {
             uint32_t reserved13:      19;
         };
         uint32_t val;
-    }int_ena;
+    } int_ena;
     union {
         struct {
             uint32_t rx_fifo_full:     1;            /*The masked interrupt status for rx_fifo_full_int interrupt.*/
@@ -177,28 +177,28 @@ typedef volatile struct {
             uint32_t reserved13:      19;
         };
         uint32_t val;
-    }int_status;
+    } int_status;
     union {
         struct {
             uint32_t time:        10;                /*This register is used to configure the clock num I2C used to hold the data after the negedge of SCL.*/
             uint32_t reserved10:  22;
         };
         uint32_t val;
-    }sda_hold;
+    } sda_hold;
     union {
         struct {
             uint32_t time:       10;                 /*This register is used to configure the clock num I2C used to sample data on SDA after the posedge of SCL*/
             uint32_t reserved10: 22;
         };
         uint32_t val;
-    }sda_sample;
+    } sda_sample;
     union {
         struct {
             uint32_t period:     14;                 /*This register is used to configure the clock num during SCL is low level.*/
             uint32_t reserved14: 18;
         };
         uint32_t val;
-    }scl_high_period;
+    } scl_high_period;
     uint32_t reserved_3c;
     union {
         struct {
@@ -206,28 +206,28 @@ typedef volatile struct {
             uint32_t reserved10: 22;
         };
         uint32_t val;
-    }scl_start_hold;
+    } scl_start_hold;
     union {
         struct {
             uint32_t time:       10;                /*This register is used to configure the clock num between the posedge of SCL and the negedge of SDA for restart mark.*/
             uint32_t reserved10: 22;
         };
         uint32_t val;
-    }scl_rstart_setup;
+    } scl_rstart_setup;
     union {
         struct {
             uint32_t time:       14;                /*This register is used to configure the clock num after the STOP bit's posedge.*/
             uint32_t reserved14: 18;
         };
         uint32_t val;
-    }scl_stop_hold;
+    } scl_stop_hold;
     union {
         struct {
             uint32_t time:       10;                /*This register is used to configure the clock num between the posedge of SCL and the posedge of SDA.*/
             uint32_t reserved10: 22;
         };
         uint32_t val;
-    }scl_stop_setup;
+    } scl_stop_setup;
     union {
         struct {
             uint32_t thres:      3;                 /*When input SCL's pulse width is smaller than this register value  I2C ignores this pulse.*/
@@ -235,7 +235,7 @@ typedef volatile struct {
             uint32_t reserved4: 28;
         };
         uint32_t val;
-    }scl_filter_cfg;
+    } scl_filter_cfg;
     union {
         struct {
             uint32_t thres:      3;                 /*When input SCL's pulse width is smaller than this register value  I2C ignores this pulse.*/
@@ -243,7 +243,7 @@ typedef volatile struct {
             uint32_t reserved4: 28;
         };
         uint32_t val;
-    }sda_filter_cfg;
+    } sda_filter_cfg;
     union {
         struct {
             uint32_t byte_num:      8;              /*Byte_num represent the number of data need to be send or data need to be received.*/
@@ -255,7 +255,7 @@ typedef volatile struct {
             uint32_t done:  1;                      /*When command0 is done in I2C Master mode  this bit changes to high level.*/
         };
         uint32_t val;
-    }command[16];
+    } command[16];
     uint32_t reserved_98;
     uint32_t reserved_9c;
     uint32_t reserved_a0;
