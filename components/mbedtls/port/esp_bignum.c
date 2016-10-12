@@ -97,15 +97,21 @@ static void esp_mpi_release_hardware( void )
 /* Number of words used to hold 'mpi', rounded up to nearest
    16 words (512 bits) to match hardware support.
 
-   Note that mpi->N (size of memory buffer) may be higher than this
+   Note that mpi->n (size of memory buffer) may be higher than this
    number, if the high bits are mostly zeroes.
+
+   This implementation may cause the caller to leak a small amount of
+   timing information when an operation is performed (length of a
+   given mpi value, rounded to nearest 512 bits), but not all mbedTLS
+   RSA operations succeed if we use mpi->N as-is (buffers are too long).
 */
 static inline size_t hardware_words_needed(const mbedtls_mpi *mpi)
 {
-    size_t res;
-    for(res = mpi->n; res > 0; res-- ) {
-        if( mpi->p[res - 1] != 0 )
-            break;
+    size_t res = 1;
+    for(size_t i = 0; i < mpi->n; i++) {
+        if( mpi->p[i] != 0 ) {
+            res = i + 1;
+        }
     }
     res = (res + 0xF) & ~0xF;
     return res;
@@ -135,23 +141,14 @@ static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, s
 static inline int mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, int num_words)
 {
     int ret = 0;
-    size_t x_n = x->n;
 
-    /* this code is written in non-intuitive way, to only grow the
-       result if it is absolutely necessary - ie if all the high bits
-       are zero, the bignum won't be grown to fit them. */
-    for(int i = num_words - 1; i >= 0; i--) {
-        uint32_t value = REG_READ(mem_base + i * 4);
-        if(value != 0 && x_n <= i) {
-            MBEDTLS_MPI_CHK( mbedtls_mpi_grow(x, i+1) );
-            x_n = i+1;
-        }
-        if(x_n > i) {
-            x->p[i] = value;
-        }
+    MBEDTLS_MPI_CHK( mbedtls_mpi_grow(x, num_words) );
+
+    for(int i = 0; i < num_words; i++) {
+        x->p[i] = REG_READ(mem_base + i * 4);
     }
-    /* Zero any remaining limbs in the bignum, if the buffer was
-       always bigger than num_words */
+    /* Zero any remaining limbs in the bignum, if the buffer is bigger
+       than num_words */
     for(size_t i = num_words; i < x->n; i++) {
         x->p[i] = 0;
     }
