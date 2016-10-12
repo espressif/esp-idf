@@ -223,8 +223,8 @@ IT_Function_SYS_01:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_SYS_01.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_SYS_01.yml
 
 IT_Function_WIFI_01:
   <<: *test_template
@@ -233,8 +233,8 @@ IT_Function_WIFI_01:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_01.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_01.yml
 
 IT_Function_WIFI_02:
   <<: *test_template
@@ -243,8 +243,8 @@ IT_Function_WIFI_02:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_02.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_02.yml
 
 IT_Function_TCPIP_01:
   <<: *test_template
@@ -253,8 +253,8 @@ IT_Function_TCPIP_01:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_01.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_01.yml
 
 IT_Function_TCPIP_02:
   <<: *test_template
@@ -263,8 +263,8 @@ IT_Function_TCPIP_02:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_02.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_02.yml
 
 IT_Function_TCPIP_03:
   <<: *test_template
@@ -273,8 +273,8 @@ IT_Function_TCPIP_03:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_03.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_03.yml
 
 IT_Function_TCPIP_04:
   <<: *test_template
@@ -283,8 +283,8 @@ IT_Function_TCPIP_04:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_04.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_04.yml
 
 IT_Function_TCPIP_05:
   <<: *test_template
@@ -293,8 +293,8 @@ IT_Function_TCPIP_05:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_05.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_05.yml
 
 IT_Function_TCPIP_06:
   <<: *test_template_night
@@ -302,8 +302,8 @@ IT_Function_TCPIP_06:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_06.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_06.yml
 
 IT_Function_WIFI_03:
   <<: *test_template
@@ -311,8 +311,8 @@ IT_Function_WIFI_03:
     - ESP32_IDF
     - SSC_T3_PhyMode
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_03.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_03.yml
 
 IT_Function_WIFI_04:
   <<: *test_template
@@ -320,8 +320,8 @@ IT_Function_WIFI_04:
     - ESP32_IDF
     - SSC_T1_APC
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_04.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_04.yml
 
 IT_Function_WIFI_05:
   <<: *test_template
@@ -329,8 +329,8 @@ IT_Function_WIFI_05:
     - ESP32_IDF
     - SSC_T1_WEP
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_05.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_05.yml
 
 IT_Function_WIFI_06:
   <<: *test_template
@@ -338,8 +338,8 @@ IT_Function_WIFI_06:
     - ESP32_IDF
     - SSC_T2_PhyMode
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_06.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_06.yml
 
 IT_Function_TCPIP_07:
   <<: *test_template
@@ -349,8 +349,8 @@ IT_Function_TCPIP_07:
     - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_07.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_07.yml
 
 IT_Function_TCPIP_08:
   <<: *test_template
@@ -358,8 +358,8 @@ IT_Function_TCPIP_08:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_08.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_08.yml
 
 IT_Function_TCPIP_09:
   <<: *test_template
@@ -367,8 +367,8 @@ IT_Function_TCPIP_09:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_09.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_09.yml
 
 IT_Function_TCPIP_10:
   <<: *test_template
@@ -378,8 +378,8 @@ IT_Function_TCPIP_10:
     - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_10.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_10.yml
 
 IT_Function_TCPIP_11:
   <<: *test_template
@@ -387,8 +387,8 @@ IT_Function_TCPIP_11:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_11.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_11.yml
 
 IT_Function_TCPIP_12:
   <<: *test_template
@@ -397,5 +397,5 @@ IT_Function_TCPIP_12:
     - SSC_T1_1
     - SSC_T1_2
   before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_12.yml
     - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_12.yml
