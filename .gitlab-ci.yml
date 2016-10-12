@@ -123,7 +123,6 @@ test_report:
       - $REPORT_PATH
     expire_in: 6 mos
   script:
-    - ls $LOG_PATH
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
