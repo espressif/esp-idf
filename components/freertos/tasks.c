@@ -601,7 +601,7 @@ static void prvInitialiseNewTask( 	TaskFunction_t pxTaskCode,
 									UBaseType_t uxPriority,
 									TaskHandle_t * const pxCreatedTask,
 									TCB_t *pxNewTCB,
-									const MemoryRegion_t * const xRegions ) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+									const MemoryRegion_t * const xRegions, const BaseType_t xCoreID) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 
 /*
  * Called after a new task has been created and initialised to place the task
@@ -637,7 +637,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			function - use them. */
 			pxNewTCB = ( TCB_t * ) pxTaskBuffer; /*lint !e740 Unusual cast is ok as the structures are designed to have the same alignment, and the size is checked by an assert. */
 			pxNewTCB->pxStack = ( StackType_t * ) puxStackBuffer;
-			pxNewTCB->xCoreID = xCoreID;
 
 			#if( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 )
 			{
@@ -647,7 +646,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			}
 			#endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 
-			prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL );
+			prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, xCoreID );
 			prvAddNewTaskToReadyList( pxNewTCB, pxTaskCode, xCoreID );
 		}
 		else
@@ -693,7 +692,8 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 										pxTaskDefinition->pvParameters,
 										pxTaskDefinition->uxPriority,
 										pxCreatedTask, pxNewTCB,
-										pxTaskDefinition->xRegions );
+										pxTaskDefinition->xRegions,
+										tskNO_AFFINITY );
 
 				prvAddNewTaskToReadyList( pxNewTCB, pxTaskDefinition->pvTaskCode, tskNO_AFFINITY );
 				xReturn = pdPASS;
@@ -785,7 +785,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			}
 			#endif /* configSUPPORT_STATIC_ALLOCATION */
 
-			prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
+			prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, tskNO_AFFINITY );
 			prvAddNewTaskToReadyList( pxNewTCB, pxTaskCode, xCoreID );
 			xReturn = pdPASS;
 		}
@@ -807,7 +807,7 @@ static void prvInitialiseNewTask( 	TaskFunction_t pxTaskCode,
 									UBaseType_t uxPriority,
 									TaskHandle_t * const pxCreatedTask,
 									TCB_t *pxNewTCB,
-									const MemoryRegion_t * const xRegions ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+									const MemoryRegion_t * const xRegions, const BaseType_t xCoreID ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 {
 StackType_t *pxTopOfStack;
 UBaseType_t x;
@@ -893,6 +893,7 @@ UBaseType_t x;
 	}
 
 	pxNewTCB->uxPriority = uxPriority;
+	pxNewTCB->xCoreID = xCoreID;
 	#if ( configUSE_MUTEXES == 1 )
 	{
 		pxNewTCB->uxBasePriority = uxPriority;
@@ -945,6 +946,9 @@ UBaseType_t x;
 		for( x = 0; x < ( UBaseType_t ) configNUM_THREAD_LOCAL_STORAGE_POINTERS; x++ )
 		{
 			pxNewTCB->pvThreadLocalStoragePointers[ x ] = NULL;
+			#if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1)
+			pxNewTCB->pvThreadLocalStoragePointersDelCallback[ x ] = NULL;
+			#endif
 		}
 	}
 	#endif
