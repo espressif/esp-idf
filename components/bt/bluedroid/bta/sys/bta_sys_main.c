@@ -512,7 +512,7 @@ void bta_sys_event(BT_HDR *p_msg)
     UINT8       id;
     BOOLEAN     freebuf = TRUE;
 
-    APPL_TRACE_EVENT("BTA got event 0x%x", p_msg->event);
+    APPL_TRACE_EVENT("BTA got event 0x%x\n", p_msg->event);
 
     /* get subsystem id from event */
     id = (UINT8) (p_msg->event >> 8);
@@ -524,7 +524,7 @@ void bta_sys_event(BT_HDR *p_msg)
     }
     else
     {
-        APPL_TRACE_WARNING("BTA got unregistered event id %d", id);
+        APPL_TRACE_WARNING("BTA got unregistered event id %d\n", id);
     }
 
     if (freebuf)
