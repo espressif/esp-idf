@@ -224,7 +224,7 @@ BOOLEAN bta_sys_sm_execute(BT_HDR *p_msg)
     UINT8               action;
     int                 i;
 
-    APPL_TRACE_EVENT("bta_sys_sm_execute state:%d, event:0x%x",  bta_sys_cb.state, p_msg->event);
+    APPL_TRACE_EVENT("bta_sys_sm_execute state:%d, event:0x%x\n",  bta_sys_cb.state, p_msg->event);
 
     /* look up the state table for the current state */
     state_table = bta_sys_st_tbl[bta_sys_cb.state];

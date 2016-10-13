@@ -29,6 +29,9 @@ void bt_prf_task_thread_handler(void *arg);
 void  bt_prf_init_core(void);
 void  bt_prf_free_core(void);
 
+void bt_prf_task_post(uint32_t sig);
+
+
 void bt_prf_StartUp(void);
 void bt_prf_ShutDown(void);
 

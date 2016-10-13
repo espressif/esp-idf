@@ -13,6 +13,7 @@
  */
 
 #include "bt_prf_task.h"
+#include "bt_prf_sys.h"
 #include "allocator.h"
 #include "thread.h"
 #include "gki.h"
@@ -37,12 +38,12 @@
 	 //ke_event_clear(KE_EVENT_BTU_TASK_THREAD);
  
 	 TaskEvt_t *e;
- 
 	 for (;;) {
 		 if (pdTRUE == xQueueReceive(xProfileQueue, &e, (portTickType)portMAX_DELAY)) {
  
 			 if (e->sig == SIG_BTU_WORK) {
-				 fixed_queue_process(bt_profile_msg_queue);
+				fixed_queue_process(bt_profile_msg_queue);
+				
 			 }
 			 else if (e->sig == SIG_BTU_START_UP) {
 				 bt_prf_task_start_up();
@@ -52,11 +53,29 @@
 	 }
  }
 
+ void bt_prf_task_post(uint32_t sig)
+{
+    TaskEvt_t *evt = (TaskEvt_t *)osi_malloc(sizeof(TaskEvt_t));
+    if (evt == NULL)
+        return;
+
+    evt->sig = sig;
+    evt->par = 0;
+
+    if (xQueueSend(xProfileQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
+            ets_printf("xProfileQueue failed\n");
+    }
+}
+
 void bt_profile_msg_ready(fixed_queue_t *queue) {
     BT_HDR *p_msg;
 
     while (!fixed_queue_is_empty(queue)) {
         p_msg = (BT_HDR *)fixed_queue_dequeue(queue);
+		if(p_msg != NULL)
+		{
+			bt_prf_sys_event(p_msg);
+		}
     }
 }
 

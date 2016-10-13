@@ -16,6 +16,8 @@ struct task_evt {
 typedef struct task_evt TaskEvt_t;
 
 enum {
+	SIG_PRF_START_UP = 0xfc,
+	SIG_PRF_WORK	= 0xfd,
     SIG_BTU_START_UP = 0xfe,
     SIG_BTU_WORK = 0xff
 };
