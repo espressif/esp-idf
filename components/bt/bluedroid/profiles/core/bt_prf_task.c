@@ -66,7 +66,49 @@ void bt_prf_task_start_up(void)
 	 fixed_queue_register_dequeue(bt_profile_msg_queue, bt_profile_msg_ready);
 }
 
+void btu_task_shut_down(void) 
+{
+	fixed_queue_unregister_dequeue(bt_profile_msg_queue);
+	
+  	bt_prf_free_core();
+}
 
+
+void bt_prf_StartUp(void)
+{
+	bt_profile_msg_queue = fixed_queue_new(SIZE_MAX);
+    if (bt_profile_msg_queue == NULL)
+        goto error_exit;
+
+	return;
+
+error_exit:;
+   LOG_ERROR("%s Unable to allocate resources for bt_workqueue\n", __func__);
+   bt_prf_ShutDown();
+
+}
+
+void bt_prf_ShutDown(void)
+{
+	
+	btu_task_shut_down();
+
+	//thread_free(bt_workqueue_thread);
+  	vTaskDelete(xProfileTaskHandle);
+  	vQueueDelete(xProfileQueue);
+
+	bt_profile_msg_queue = NULL;
+
+	//  bt_workqueue_thread = NULL;
+  	xProfileTaskHandle = NULL;
+ 	xProfileQueue = 0;
+}
+
+
+void  bt_prf_free_core(void)
+{
+	
+}
 
 
 

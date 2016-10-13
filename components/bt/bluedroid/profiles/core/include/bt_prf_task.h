@@ -13,6 +13,7 @@
  */
 
 #include <stddef.h> 
+#include "bt_defs.h"
 #include "fixed_queue.h"
 
 #ifndef BT_PRF_TASK_H__
