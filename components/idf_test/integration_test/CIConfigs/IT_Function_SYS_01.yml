@@ -1,0 +1,5 @@
+Config: {execute count: 1, execute order: in order}
+DUT: [SSC1]
+Filter:
+- Add:
+    ID: [SYS_MISC_0101, SYS_MISC_0201]

@@ -1,52 +1,143 @@
 menu "ESP32-specific config"
 
-config WIFI_ENABLED
-    bool "Enable low-level WiFi stack"
+choice ESP32_DEFAULT_CPU_FREQ_MHZ
+    prompt "CPU frequency"
+    default ESP32_DEFAULT_CPU_FREQ_240
+    help
+        CPU frequency to be set on application startup.
+
+config ESP32_DEFAULT_CPU_FREQ_80
+    bool "80 MHz"
+config ESP32_DEFAULT_CPU_FREQ_160
+    bool "160 MHz"
+config ESP32_DEFAULT_CPU_FREQ_240
+    bool "240 MHz"
+endchoice
+
+config ESP32_DEFAULT_CPU_FREQ_MHZ
+    int
+    default 80 if ESP32_DEFAULT_CPU_FREQ_80
+    default 160 if ESP32_DEFAULT_CPU_FREQ_160
+    default 240 if ESP32_DEFAULT_CPU_FREQ_240
+
+choice ESP32_WIFI_OR_BT
+    prompt "Select stack to enable (WiFi or BT)"
+    default ESP32_ENABLE_WIFI
+    help
+        Temporarily, WiFi and BT stacks can not be used at the same time.
+        Select which stack to enable.
+
+config ESP32_ENABLE_STACK_WIFI
+    bool "WiFi"
+    select WIFI_ENABLED if ESP32_ENABLE_STACK_WIFI
+config ESP32_ENABLE_STACK_BT
+    bool "BT"
+    select MEMMAP_BT if ESP32_ENABLE_STACK_BT
+    select BT_ENABLED if ESP32_ENABLE_STACK_BT
+config ESP32_ENABLE_STACK_NONE
+    bool "None"
+endchoice
+
+config MEMMAP_BT
+    bool
+    depends on ESP32_ENABLE_STACK_BT
+    help
+        The Bluetooth stack uses memory that cannot be used as generic memory anymore. This
+        reserves the space for that within the memory map of the compiled binary.
+        This option is required to enable BT stack.
+        Temporarily, this option is not compatible with WiFi stack.
+
+config MEMMAP_SMP
+    bool "Reserve memory for two cores"
     default "y"
+    help
+        The ESP32 contains two cores. If you plan to only use one, you can disable this item
+        to save some memory. (ToDo: Make this automatically depend on unicore support)
+
+config MEMMAP_TRACEMEM
+    bool "Use TRAX tracing feature"
+    default "n"
+    help
+        The ESP32 contains a feature which allows you to trace the execution path the processor
+        has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
+        of memory that can't be used for general purposes anymore. Disable this if you do not know
+        what this is.
+
+# Memory to reverse for trace, used in linker script
+config TRACEMEM_RESERVE_DRAM
+    hex
+    default 0x8000 if MEMMAP_TRACEMEM
+    default 0x0
+
+config MEMMAP_SPISRAM
+    bool "Use external SPI SRAM chip as main memory"
+    default "n"
+    help
+        The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the 
+        main memory map. Enable this if you have this hardware and want to use it in the same
+        way as on-chip RAM.
+
+config WIFI_ENABLED
+    bool
+    default "y"
+    depends on ESP32_ENABLE_STACK_WIFI
     help
         This compiles in the low-level WiFi stack.
 
-		Temporarily, this option requires that FreeRTOS runs in single core mode.
-
-config WIFI_AUTO_STARTUP
-    bool "Start WiFi with system startup"
-    default "y"
-    depends on WIFI_ENABLED
-    help
-        By default, WiFi is started with system startup, you can turn off this
-        feature and start by yourself.
-
-config WIFI_AUTO_CONNECT
-    bool "Enable auto connect"
-    default "y"
-    depends on WIFI_ENABLED
-    help
-        If station is enabled, and station config is set, this will enable WiFi
-        station auto connect when WiFi startup.
+        Temporarily, this option is not compatible with BT stack.
 
 config SYSTEM_EVENT_QUEUE_SIZE
-    int "system event queue size"
+    int "System event queue size"
     default 32
-    depends on WIFI_ENABLED
     help
         Config system event queue size in different application.
 
 config SYSTEM_EVENT_TASK_STACK_SIZE
-    int "system event task stack size"
+    int "Event loop task stack size"
     default 2048
-    depends on WIFI_ENABLED
+    help
+        Config system event task stack size in different application.
+
+
+config MAIN_TASK_STACK_SIZE
+    int "Main task stack size"
+    default 4096
     help
         Config system event task stack size in different application.
 
 
 config NEWLIB_STDOUT_ADDCR
-	bool "Standard-out output adds carriage return before newline"
-	default y
-	help
-		Most people are used to end their printf strings with a newline. If this
-		is sent as is to the serial port, most terminal programs will only move the
-		cursor one line down, not also move it to the beginning of the line. This
-		is usually done by an added CR character. Enabling this will make the
-		standard output code automatically add a CR character before a LF.
+    bool "Standard-out output adds carriage return before newline"
+    default y
+    help
+        Most people are used to end their printf strings with a newline. If this
+        is sent as is to the serial port, most terminal programs will only move the
+        cursor one line down, not also move it to the beginning of the line. This
+        is usually done by an added CR character. Enabling this will make the
+        standard output code automatically add a CR character before a LF.
+
+config ULP_COPROC_ENABLED
+    bool "Enable Ultra Low Power (ULP) Coprocessor"
+    default "n"
+    help
+        Set to 'y' if you plan to load a firmware for the coprocessor.
+
+        If this option is enabled, further coprocessor configuration will appear in the Components menu.
+
+config ULP_COPROC_RESERVE_MEM
+    int "RTC slow memory reserved for coprocessor"
+    default 512
+    range 32 8192
+    depends on ULP_COPROC_ENABLED
+    help
+        Bytes of memory to reserve for ULP coprocessor firmware & data.
+
+        Data is reserved at the beginning of RTC slow memory.
+
+# Set CONFIG_ULP_COPROC_RESERVE_MEM to 0 if ULP is disabled
+config ULP_COPROC_RESERVE_MEM
+    int
+    default 0
+    depends on !ULP_COPROC_ENABLED
 
 endmenu

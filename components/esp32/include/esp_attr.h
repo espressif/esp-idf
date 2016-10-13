@@ -17,13 +17,25 @@
 #define ROMFN_ATTR
 
 //Normally, the linker script will put all code and rodata in flash,
-//and all variables in shared RAM. This can be redirected to IRAM if
-//needed using these macros.
+//and all variables in shared RAM. These macros can be used to redirect
+//particular functions/variables to other memory regions.
 
 // Forces code into IRAM instead of flash
 #define IRAM_ATTR __attribute__((section(".iram1")))
 
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR __attribute__((section(".dram1")))
+
+// Forces code into RTC fast memory
+#define RTC_IRAM_ATTR __attribute__((section(".rtc.text")))
+
+// Forces data into RTC slow memory
+// Any variable marked with this attribute will keep its value
+// during a deep sleep / wake cycle.
+#define RTC_DATA_ATTR __attribute__((section(".rtc.data")))
+
+// Forces read-only data into RTC slow memory
+// Makes constant data available to RTC wake stubs (see esp_deepsleep.h)
+#define RTC_RODATA_ATTR __attribute__((section(".rtc.rodata")))
 
 #endif /* __ESP_ATTR_H__ */

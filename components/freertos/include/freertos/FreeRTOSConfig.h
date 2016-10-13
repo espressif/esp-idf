@@ -100,7 +100,7 @@
 #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS 1
 
 /* TODO: config freq by menuconfig */
-#define XT_CLOCK_FREQ 80000000
+#define XT_CLOCK_FREQ (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
 
 /* Required for configuration-dependent settings */
 #include "xtensa_config.h"
@@ -124,6 +124,16 @@
         abort();                                                        \
         }
 #endif
+
+#if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
+#include <stdlib.h>
+#include "rom/ets_sys.h"
+#define UNTESTED_FUNCTION() { ets_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#else
+#define UNTESTED_FUNCTION()
+#endif
+
+
 #endif /* def __ASSEMBLER__ */
 
 
@@ -222,7 +232,9 @@
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
 
-#ifndef configENABLE_MEMORY_DEBUG
+#if CONFIG_ENABLE_MEMORY_DEBUG
+#define configENABLE_MEMORY_DEBUG 1
+#else
 #define configENABLE_MEMORY_DEBUG 0
 #endif
 
@@ -259,6 +271,8 @@
 
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0
+
+
 
 
 #endif /* FREERTOS_CONFIG_H */

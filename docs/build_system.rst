@@ -193,10 +193,13 @@ Because components usually live under the project directory (although
 they can also reside in an other folder), the path to this may be
 something like  /home/myuser/projects/myprojects/components/httpd .
 
+Components can have any name (unique to the project) but the name
+cannot contain spaces (esp-idf does not support spaces in paths).
+
 One of the things that most components will have is a component.mk makefile,
 containing instructions on how to build the component. Because the
 build environment tries to set reasonable defaults that will work most
-of the time, component.mk can be very small. 
+of the time, component.mk can be very small.
 
 Simplest component.mk
 =====================

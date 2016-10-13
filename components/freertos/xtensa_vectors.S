@@ -92,6 +92,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "xtensa_rtos.h"
 
+/*
+  Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
+  Please change this when the tcb structure is changed
+*/
+#define TASKTCB_XCOREID_OFFSET (0x3C+configMAX_TASK_NAME_LEN+3)&~3
+.extern pxCurrentTCB
 
 /* Enable stack backtrace across exception/interrupt - see below */
 #define XT_DEBUG_BACKTRACE    0
@@ -892,6 +898,20 @@ _xt_coproc_exc:
     addx4   a0, a5, a0                      /* a0 = &_xt_coproc_mask[n] */
     l32i    a0, a0, 0                       /* a0 = (n << 16) | (1 << n) */
 
+    /* TODO: Remove this as soon as coprocessor state moving works across cores - JD */
+    /* FPU operations are incompatible with non-pinned tasks. If we have a FPU operation
+       here, to keep the entire thing from crashing, it's better to pin the task to whatever
+       core we're running on now. */
+    movi    a2, pxCurrentTCB
+    getcoreid a3
+    slli    a3,  a3, 2
+    add     a2,  a2, a3
+    l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCB[cpuid] */
+    addi    a2, a2, TASKTCB_XCOREID_OFFSET  /* offset to xCoreID in tcb struct */
+    getcoreid a3
+    s32i    a3, a2, 0                       /* store current cpuid */
+
+	/* Grab correct xt_coproc_owner_sa for this core */
 	getcoreid a2
 	movi    a3, XCHAL_CP_MAX << 2
 	mull    a2, a2, a3

@@ -8,6 +8,5 @@
 #
 
 COMPONENT_ADD_LDFLAGS := -L $(abspath .) -lmain -T esp32.bootloader.ld -T $(IDF_PATH)/components/esp32/ld/esp32.rom.ld 
-COMPONENT_EXTRA_INCLUDES := $(IDF_PATH)/components/esp32/include 
 
 include $(IDF_PATH)/make/component_common.mk

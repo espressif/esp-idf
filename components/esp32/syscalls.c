@@ -142,8 +142,12 @@ int _open_r(struct _reent *r, const char * path, int flags, int mode) {
     return 0;
 }
 
+void _exit(int __status) {
+    abort();
+}
+
 ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size) {
-    const char* p = (const char*) data;
+    const char *data_c = (const char *)data;
     if (fd == STDOUT_FILENO) {
         static _lock_t stdout_lock; /* lazily initialised */
         /* Even though newlib does stream locking on stdout, we need
@@ -160,14 +164,13 @@ ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size) {
            which aren't fully valid.)
         */
         _lock_acquire_recursive(&stdout_lock);
-        while(size--) {
+        for (size_t i = 0; i < size; i++) {
 #if CONFIG_NEWLIB_STDOUT_ADDCR
-            if (*p=='\n') {
+            if (data_c[i]=='\n') {
                 uart_tx_one_char('\r');
             }
 #endif
-            uart_tx_one_char(*p);
-            ++p;
+            uart_tx_one_char(data_c[i]);
         }
         _lock_release_recursive(&stdout_lock);
     }
@@ -365,6 +368,23 @@ void IRAM_ATTR _lock_release(_lock_t *lock) {
 
 void IRAM_ATTR _lock_release_recursive(_lock_t *lock) {
     lock_release_generic(lock, queueQUEUE_TYPE_RECURSIVE_MUTEX);
+}
+
+// This function is not part on newlib API, it is defined in libc/stdio/local.h
+// It is called as part of _reclaim_reent via a pointer in __cleanup member 
+// of struct _reent.
+// This function doesn't call _fclose_r for _stdin, _stdout, _stderr members
+// of struct reent. Not doing so causes a memory leak each time a task is
+// terminated. We replace __cleanup member with _extra_cleanup_r (below) to work
+// around this.
+extern void _cleanup_r(struct _reent* r);
+
+void _extra_cleanup_r(struct _reent* r)
+{
+    _cleanup_r(r);
+    _fclose_r(r, r->_stdout);
+    _fclose_r(r, r->_stderr);
+    _fclose_r(r, r->_stdin);
 }
 
 static struct _reent s_reent;

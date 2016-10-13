@@ -147,7 +147,7 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 
         /*SO_REUSEADDR option dafault is disable in source code(lwip)*/
 #if SO_REUSE
-        n = 1;
+        int n = 1;
         if ( setsockopt( ctx->fd, SOL_SOCKET, SO_REUSEADDR,
                          (const char *) &n, sizeof( n ) ) != 0 ) {
             close( ctx->fd );

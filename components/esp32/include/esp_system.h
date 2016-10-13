@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include "esp_err.h"
+#include "esp_deepsleep.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,21 +62,6 @@ void system_restore(void);
   * @return null
   */
 void system_restart(void);
-
-/**
-  * @brief     Set the chip to deep-sleep mode.
-  *
-  *            The device will automatically wake up after the deep-sleep time set
-  *            by the users. Upon waking up, the device boots up from user_init.
-  *
-  * @attention  The parameter time_in_us to be "uint64" is for further development. 
-  *                  Only the low 32 bits of parameter time_in_us are avalable now.
-  *
-  * @param     uint64 time_in_us : deep-sleep time, only the low 32bits are avalable now. unit: microsecond
-  *
-  * @return    null
-  */
-void system_deep_sleep(uint64_t time_in_us);
 
 /**
   * @brief  Get system time, unit: microsecond.

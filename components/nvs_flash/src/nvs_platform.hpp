@@ -61,7 +61,6 @@ public:
 } // namespace nvs
 
 #else // ESP_PLATFORM
-#define NVS_DEBUGV(...) printf(__VA_ARGS__)
 namespace nvs
 {
 class Lock
@@ -74,11 +73,6 @@ public:
 };
 } // namespace nvs
 #endif // ESP_PLATFORM
-
-#ifndef CONFIG_NVS_DEBUG
-#undef NVS_DEBUGV
-#define NVS_DEBUGV(...)
-#endif
 
 
 #endif /* nvs_platform_h */

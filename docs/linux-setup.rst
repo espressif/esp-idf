@@ -108,6 +108,7 @@ Note the ``--recursive`` option! If you have already cloned ESP-IDF without this
     cd ~/esp/esp-idf
     git submodule update --init
 
+**IMPORTANT:** The esp-idf build system does not support spaces in paths to esp-idf or to projects.
 
 Step 3: Starting a project
 ==========================
