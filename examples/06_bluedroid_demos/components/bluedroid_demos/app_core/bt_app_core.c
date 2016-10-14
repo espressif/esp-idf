@@ -256,7 +256,7 @@ static void bt_app_dm_upstreams_evt(UINT16 event, char *p_param)
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
         /* Enable local privacy */
-        BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
+        //BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
         do {
             const controller_t *controller = controller_get_interface();
             char bdstr[18];
@@ -374,7 +374,7 @@ static void bt_app_general_alarm_process(TIMER_LIST_ENT *p_tle)
  	 /*set connectable,discoverable, pairable and paired only modes of local device*/
         tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
        	tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
-        //BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
+        BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 
        gatts_server_test();
        //gattc_client_test();

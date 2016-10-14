@@ -28,7 +28,7 @@
 
 #define WX_AIRSYNC_CFG			1
 #define BUT_PROFILE_CFG			0
-#define HIDD_LE_PROFILE_CFG		0
+#define HIDD_LE_PROFILE_CFG		1
 
 /*
  * Type Definition
