@@ -983,7 +983,7 @@ void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
 #if BLE_INCLUDED == TRUE
     tBTA_DM_API_BLE_ADV_PARAMS    *p_msg;
 
-    APPL_TRACE_API ("BTA_DmSetBleAdvParam: %d, %d", adv_int_min, adv_int_max);
+    APPL_TRACE_API ("BTA_DmSetBleAdvParam: %d, %d\n", adv_int_min, adv_int_max);
 
     if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_ADV_PARAMS))) != NULL)
     {

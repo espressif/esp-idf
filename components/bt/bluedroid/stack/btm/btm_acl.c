@@ -105,7 +105,7 @@ tACL_CONN *btm_bda_to_acl (BD_ADDR bda, tBT_TRANSPORT transport)
 #endif
                 )
             {
-                BTM_TRACE_DEBUG ("btm_bda_to_acl found");
+                BTM_TRACE_DEBUG ("btm_bda_to_acl found\n");
                 return(p);
             }
         }

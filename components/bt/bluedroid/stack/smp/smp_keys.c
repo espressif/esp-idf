@@ -82,7 +82,7 @@ void smp_debug_print_nbyte_little_endian(UINT8 *p, const UINT8 *key_name, UINT8 
     int     row_count;
     UINT8   p_buf[512];
 
-    SMP_TRACE_WARNING("%s(LSB ~ MSB):", key_name);
+    SMP_TRACE_WARNING("%s(LSB ~ MSB):\n", key_name);
     memset(p_buf, 0, sizeof(p_buf));
     row_count = len % col_count ? len / col_count + 1: len / col_count;
 
@@ -145,16 +145,16 @@ BOOLEAN smp_encrypt_data (UINT8 *key, UINT8 key_len,
     UINT8 *p_rev_key = NULL;     /* input key in big endilan format */
     UINT8 *p_rev_output = NULL;  /* encrypted output in big endilan format */
 
-    SMP_TRACE_DEBUG ("%s", __func__);
+    SMP_TRACE_DEBUG ("%s\n", __func__);
     if ( (p_out == NULL ) || (key_len != SMP_ENCRYT_KEY_SIZE) )
     {
-        SMP_TRACE_ERROR ("%s failed", __func__);
+        SMP_TRACE_ERROR ("%s failed\n", __func__);
         return FALSE;
     }
 
     if ((p_start = (UINT8 *)GKI_getbuf((SMP_ENCRYT_DATA_SIZE*4))) == NULL)
     {
-        SMP_TRACE_ERROR ("%s failed unable to allocate buffer", __func__);
+        SMP_TRACE_ERROR ("%s failed unable to allocate buffer\n", __func__);
         return FALSE;
     }
 
@@ -277,7 +277,7 @@ void smp_generate_stk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     tSMP_ENC output;
     tSMP_STATUS status = SMP_PAIR_FAIL_UNKNOWN;
 
-    SMP_TRACE_DEBUG ("%s", __func__);
+    SMP_TRACE_DEBUG ("%s\n", __func__);
 
     if (p_cb->le_secure_connections_mode_is_used)
     {
@@ -312,7 +312,7 @@ void smp_generate_srand_mrand_confirm(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     UNUSED(p_data);
 
-    SMP_TRACE_DEBUG ("%s", __func__);
+    SMP_TRACE_DEBUG ("%s\n", __func__);
     p_cb->rand_enc_proc_state = SMP_GEN_SRAND_MRAND;
     /* generate MRand or SRand */
     if (!btsnd_hcic_ble_rand((void *)smp_rand_back))
@@ -333,7 +333,7 @@ void smp_generate_rand_cont(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     UNUSED(p_data);
 
-    SMP_TRACE_DEBUG ("%s", __func__);
+    SMP_TRACE_DEBUG ("%s\n", __func__);
     p_cb->rand_enc_proc_state = SMP_GEN_SRAND_MRAND_CONT;
     /* generate 64 MSB of MRand or SRand */
     if (!btsnd_hcic_ble_rand((void *)smp_rand_back))
@@ -360,7 +360,7 @@ void smp_generate_ltk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UNUSED(p_data);
 
     BOOLEAN div_status;
-    SMP_TRACE_DEBUG ("%s", __FUNCTION__);
+    SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
     if (smp_get_br_state() == SMP_BR_STATE_BOND_PENDING)
     {
         smp_br_process_link_key(p_cb, NULL);
@@ -380,7 +380,7 @@ void smp_generate_ltk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     }
     else
     {
-        SMP_TRACE_DEBUG ("Generate DIV for LTK");
+        SMP_TRACE_DEBUG ("Generate DIV for LTK\n");
         p_cb->rand_enc_proc_state = SMP_GEN_DIV_LTK;
         /* generate MRand or SRand */
         if (!btsnd_hcic_ble_rand((void *)smp_rand_back))
@@ -409,7 +409,7 @@ void smp_compute_csrk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     tSMP_ENC    output;
     tSMP_STATUS   status = SMP_PAIR_FAIL_UNKNOWN;
 
-    SMP_TRACE_DEBUG ("smp_compute_csrk div=%x", p_cb->div);
+    SMP_TRACE_DEBUG ("smp_compute_csrk div=%x\n", p_cb->div);
     BTM_GetDeviceEncRoot(er);
     /* CSRK = d1(ER, DIV, 1) */
     UINT16_TO_STREAM(p, p_cb->div);
@@ -417,7 +417,7 @@ void smp_compute_csrk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     if (!SMP_Encrypt(er, BT_OCTET16_LEN, buffer, 4, &output))
     {
-        SMP_TRACE_ERROR("smp_generate_csrk failed");
+        SMP_TRACE_ERROR("smp_generate_csrk failed\n");
         if (p_cb->smp_over_br)
         {
             smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &status);
@@ -475,7 +475,7 @@ void smp_concatenate_local( tSMP_CB *p_cb, UINT8 **p_data, UINT8 op_code)
 {
     UINT8   *p = *p_data;
 
-    SMP_TRACE_DEBUG ("%s", __func__);
+    SMP_TRACE_DEBUG ("%s\n", __func__);
     UINT8_TO_STREAM(p, op_code);
     UINT8_TO_STREAM(p, p_cb->local_io_capability);
     UINT8_TO_STREAM(p, p_cb->loc_oob_flag);
@@ -495,7 +495,7 @@ void smp_concatenate_peer( tSMP_CB *p_cb, UINT8 **p_data, UINT8 op_code)
 {
     UINT8   *p = *p_data;
 
-    SMP_TRACE_DEBUG ("smp_concatenate_peer ");
+    SMP_TRACE_DEBUG ("smp_concatenate_peer \n");
     UINT8_TO_STREAM(p, op_code);
     UINT8_TO_STREAM(p, p_cb->peer_io_caps);
     UINT8_TO_STREAM(p, p_cb->peer_oob_flag);
@@ -523,11 +523,11 @@ void smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
     tBLE_ADDR_TYPE    addr_type = 0;
     BD_ADDR           remote_bda;
 
-    SMP_TRACE_DEBUG ("smp_gen_p1_4_confirm");
+    SMP_TRACE_DEBUG ("smp_gen_p1_4_confirm\n");
 
     if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, remote_bda, &addr_type))
     {
-        SMP_TRACE_ERROR("can not generate confirm for unknown device");
+        SMP_TRACE_ERROR("can not generate confirm for unknown device\n");
         return;
     }
 
@@ -556,7 +556,7 @@ void smp_gen_p1_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p1)
         smp_concatenate_local(p_cb, &p, SMP_OPCODE_PAIRING_RSP);
     }
 #if SMP_DEBUG == TRUE
-    SMP_TRACE_DEBUG("p1 = pres || preq || rat' || iat'");
+    SMP_TRACE_DEBUG("p1 = pres || preq || rat' || iat'\n");
     smp_debug_print_nbyte_little_endian ((UINT8 *)p1, (const UINT8 *)"P1", 16);
 #endif
 }
@@ -576,14 +576,14 @@ void smp_gen_p2_4_confirm( tSMP_CB *p_cb, BT_OCTET16 p2)
     UINT8       *p = (UINT8 *)p2;
     BD_ADDR     remote_bda;
     tBLE_ADDR_TYPE  addr_type = 0;
-
+	SMP_TRACE_DEBUG ("smp_gen_p2_4_confirm\n");
     if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, remote_bda, &addr_type))
     {
-        SMP_TRACE_ERROR("can not generate confirm p2 for unknown device");
+        SMP_TRACE_ERROR("can not generate confirm p2 for unknown device\n");
         return;
     }
 
-    SMP_TRACE_DEBUG ("smp_gen_p2_4_confirm");
+    SMP_TRACE_DEBUG ("smp_gen_p2_4_confirm\n");
 
     memset(p, 0, sizeof(BT_OCTET16));
 
@@ -624,7 +624,7 @@ void smp_calculate_comfirm (tSMP_CB *p_cb, BT_OCTET16 rand, BD_ADDR bda)
     tSMP_ENC       output;
     tSMP_STATUS     status = SMP_PAIR_FAIL_UNKNOWN;
 
-    SMP_TRACE_DEBUG ("smp_calculate_comfirm ");
+    SMP_TRACE_DEBUG ("smp_calculate_comfirm \n");
     /* generate p1 = pres || preq || rat' || iat' */
     smp_gen_p1_4_confirm(p_cb, p1);
 
@@ -661,9 +661,9 @@ static void smp_calculate_comfirm_cont(tSMP_CB *p_cb, tSMP_ENC *p)
     tSMP_ENC      output;
     tSMP_STATUS     status = SMP_PAIR_FAIL_UNKNOWN;
 
-    SMP_TRACE_DEBUG ("smp_calculate_comfirm_cont ");
+    SMP_TRACE_DEBUG ("smp_calculate_comfirm_cont \n");
 #if SMP_DEBUG == TRUE
-    SMP_TRACE_DEBUG("Confirm step 1 p1' = e(k, r XOR p1)  Generated");
+    SMP_TRACE_DEBUG("Confirm step 1 p1' = e(k, r XOR p1)  Generated\n");
     smp_debug_print_nbyte_little_endian (p->param_buf, (const UINT8 *)"C1", 16);
 #endif
 
@@ -676,11 +676,12 @@ static void smp_calculate_comfirm_cont(tSMP_CB *p_cb, tSMP_ENC *p)
     /* calculate: Confirm = E(k, p1' XOR p2) */
     if (!SMP_Encrypt(p_cb->tk, BT_OCTET16_LEN, p2, BT_OCTET16_LEN, &output))
     {
-        SMP_TRACE_ERROR("smp_calculate_comfirm_cont failed");
+        SMP_TRACE_ERROR("smp_calculate_comfirm_cont failed\n");
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
     }
     else
     {
+    	SMP_TRACE_DEBUG("p_cb->rand_enc_proc_state=%d\n",p_cb->rand_enc_proc_state);
         switch (p_cb->rand_enc_proc_state)
         {
             case SMP_GEN_CONFIRM:
@@ -708,7 +709,7 @@ static void smp_generate_confirm(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     UNUSED(p_data);
 
-    SMP_TRACE_DEBUG ("%s", __func__);
+    SMP_TRACE_DEBUG ("%s\n", __func__);
     p_cb->rand_enc_proc_state = SMP_GEN_CONFIRM;
     smp_debug_print_nbyte_little_endian ((UINT8 *)p_cb->rand,  (const UINT8 *)"local rand", 16);
     smp_calculate_comfirm(p_cb, p_cb->rand, p_cb->pairing_bda);
@@ -729,7 +730,7 @@ void smp_generate_compare (tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     UNUSED(p_data);
 
-    SMP_TRACE_DEBUG ("smp_generate_compare ");
+    SMP_TRACE_DEBUG ("smp_generate_compare \n");
     p_cb->rand_enc_proc_state = SMP_GEN_COMPARE;
     smp_debug_print_nbyte_little_endian ((UINT8 *)p_cb->rrand,  (const UINT8 *)"peer rand", 16);
     smp_calculate_comfirm(p_cb, p_cb->rrand, p_cb->local_bda);
@@ -749,7 +750,7 @@ static void smp_process_confirm(tSMP_CB *p_cb, tSMP_ENC *p)
 {
     tSMP_KEY    key;
 
-    SMP_TRACE_DEBUG ("%s", __FUNCTION__);
+    SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
     memcpy(p_cb->confirm, p->param_buf, BT_OCTET16_LEN);
 
 #if (SMP_DEBUG == TRUE)
@@ -759,7 +760,9 @@ static void smp_process_confirm(tSMP_CB *p_cb, tSMP_ENC *p)
 
     key.key_type = SMP_KEY_TYPE_CFM;
     key.p_data = p->param_buf;
+	
     smp_sm_event(p_cb, SMP_KEY_READY_EVT, &key);
+
 }
 
 /*******************************************************************************
@@ -776,14 +779,14 @@ static void smp_process_compare(tSMP_CB *p_cb, tSMP_ENC *p)
 {
     tSMP_KEY    key;
 
-    SMP_TRACE_DEBUG ("smp_process_compare ");
+    SMP_TRACE_DEBUG ("smp_process_compare \n");
 #if (SMP_DEBUG == TRUE)
-    SMP_TRACE_DEBUG("Compare Generated");
+    SMP_TRACE_DEBUG("Compare Generated\n");
     smp_debug_print_nbyte_little_endian (p->param_buf,  (const UINT8 *)"Compare", 16);
 #endif
     key.key_type = SMP_KEY_TYPE_CMP;
     key.p_data   = p->param_buf;
-
+	//smp_set_state(SMP_STATE_CONFIRM);
     smp_sm_event(p_cb, SMP_KEY_READY_EVT, &key);
 }
 
@@ -830,14 +833,14 @@ static void smp_generate_ltk_cont(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     tSMP_ENC    output;
     tSMP_STATUS     status = SMP_PAIR_FAIL_UNKNOWN;
 
-    SMP_TRACE_DEBUG ("%s", __func__);
+    SMP_TRACE_DEBUG ("%s\n", __func__);
     BTM_GetDeviceEncRoot(er);
 
     /* LTK = d1(ER, DIV, 0)= e(ER, DIV)*/
     if (!SMP_Encrypt(er, BT_OCTET16_LEN, (UINT8 *)&p_cb->div,
                      sizeof(UINT16), &output))
     {
-        SMP_TRACE_ERROR("%s failed", __func__);
+        SMP_TRACE_ERROR("%s failed\n", __func__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
     }
     else
@@ -867,7 +870,7 @@ static void smp_generate_y(tSMP_CB *p_cb, tSMP_INT_DATA *p)
     tSMP_STATUS     status = SMP_PAIR_FAIL_UNKNOWN;
 
 
-    SMP_TRACE_DEBUG ("smp_generate_y ");
+    SMP_TRACE_DEBUG ("smp_generate_y \n");
     BTM_GetDeviceDHK(dhk);
 
     if (!SMP_Encrypt(dhk, BT_OCTET16_LEN, p_cb->enc_rand,
@@ -898,7 +901,7 @@ static void smp_generate_rand_vector (tSMP_CB *p_cb, tSMP_INT_DATA *p)
 
     /* generate EDIV and rand now */
     /* generate random vector */
-    SMP_TRACE_DEBUG ("smp_generate_rand_vector ");
+    SMP_TRACE_DEBUG ("smp_generate_rand_vector\n");
     p_cb->rand_enc_proc_state = SMP_GEN_RAND_V;
     if (!btsnd_hcic_ble_rand((void *)smp_rand_back))
         smp_rand_back(NULL);
@@ -946,7 +949,7 @@ BOOLEAN smp_calculate_legacy_short_term_key(tSMP_CB *p_cb, tSMP_ENC *output)
     BT_OCTET16 ptext;
     UINT8 *p = ptext;
 
-    SMP_TRACE_DEBUG ("%s", __func__);
+    SMP_TRACE_DEBUG ("%s\n", __func__);
     memset(p, 0, BT_OCTET16_LEN);
     if (p_cb->role == HCI_ROLE_MASTER)
     {
@@ -964,7 +967,7 @@ BOOLEAN smp_calculate_legacy_short_term_key(tSMP_CB *p_cb, tSMP_ENC *output)
     encrypted = SMP_Encrypt( p_cb->tk, BT_OCTET16_LEN, ptext, BT_OCTET16_LEN, output);
     if (!encrypted)
     {
-        SMP_TRACE_ERROR("%s failed", __func__);
+        SMP_TRACE_ERROR("%s failed\n", __func__);
     }
     return encrypted;
 }
@@ -1007,19 +1010,19 @@ void smp_create_private_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_use_oob_private_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    SMP_TRACE_DEBUG ("%s req_oob_type: %d, role: %d",
+    SMP_TRACE_DEBUG ("%s req_oob_type: %d, role: %d\n",
                       __func__, p_cb->req_oob_type, p_cb->role);
 
     switch (p_cb->req_oob_type)
     {
         case SMP_OOB_BOTH:
         case SMP_OOB_LOCAL:
-            SMP_TRACE_DEBUG("%s restore secret key", __func__)
+            SMP_TRACE_DEBUG("%s restore secret key\n", __func__);
             memcpy(p_cb->private_key, p_cb->sc_oob_data.loc_oob_data.private_key_used, BT_OCTET32_LEN);
             smp_process_private_key(p_cb);
             break;
         default:
-            SMP_TRACE_DEBUG("%s create secret key anew", __func__);
+            SMP_TRACE_DEBUG("%s create secret key anew\n", __func__);
             smp_set_state(SMP_STATE_PAIR_REQ_RSP);
             smp_decide_association_model(p_cb, NULL);
             break;
@@ -1038,7 +1041,7 @@ void smp_use_oob_private_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 void smp_continue_private_key_creation (tSMP_CB *p_cb, tBTM_RAND_ENC *p)
 {
     UINT8   state = p_cb->rand_enc_proc_state & ~0x80;
-    SMP_TRACE_DEBUG ("%s state=0x%x", __func__, state);
+    SMP_TRACE_DEBUG ("%s state=0x%x\n", __func__, state);
 
     switch (state)
     {
@@ -1125,7 +1128,7 @@ void smp_compute_dhkey (tSMP_CB *p_cb)
     Point       peer_publ_key, new_publ_key;
     BT_OCTET32  private_key;
 
-    SMP_TRACE_DEBUG ("%s", __FUNCTION__);
+    SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
 
     memcpy(private_key, p_cb->private_key, BT_OCTET32_LEN);
     memcpy(peer_publ_key.x, p_cb->peer_publ_key.x, BT_OCTET32_LEN);
@@ -1161,7 +1164,7 @@ void smp_calculate_local_commitment(tSMP_CB *p_cb)
 {
     UINT8 random_input;
 
-    SMP_TRACE_DEBUG("%s", __FUNCTION__);
+    SMP_TRACE_DEBUG("%s\n", __FUNCTION__);
 
     switch (p_cb->selected_association_model)
     {
@@ -1169,7 +1172,7 @@ void smp_calculate_local_commitment(tSMP_CB *p_cb)
         case SMP_MODEL_SEC_CONN_NUM_COMP:
             if (p_cb->role  == HCI_ROLE_MASTER)
                 SMP_TRACE_WARNING ("local commitment calc on master is not expected \
-                                    for Just Works/Numeric Comparison models");
+                                    for Just Works/Numeric Comparison models\n");
             smp_calculate_f4(p_cb->loc_publ_key.x, p_cb->peer_publ_key.x, p_cb->rand, 0,
                              p_cb->commitment);
             break;
@@ -1180,12 +1183,12 @@ void smp_calculate_local_commitment(tSMP_CB *p_cb)
                              random_input, p_cb->commitment);
             break;
         case SMP_MODEL_SEC_CONN_OOB:
-            SMP_TRACE_WARNING ("local commitment calc is expected for OOB model BEFORE pairing");
+            SMP_TRACE_WARNING ("local commitment calc is expected for OOB model BEFORE pairing\n");
             smp_calculate_f4(p_cb->loc_publ_key.x, p_cb->loc_publ_key.x, p_cb->local_random, 0,
                              p_cb->commitment);
             break;
         default:
-            SMP_TRACE_ERROR("Association Model = %d is not used in LE SC",
+            SMP_TRACE_ERROR("Association Model = %d is not used in LE SC\n",
                              p_cb->selected_association_model);
             return;
     }
@@ -1215,7 +1218,7 @@ void smp_calculate_peer_commitment(tSMP_CB *p_cb, BT_OCTET16 output_buf)
         case SMP_MODEL_SEC_CONN_NUM_COMP:
             if (p_cb->role  == HCI_ROLE_SLAVE)
                 SMP_TRACE_WARNING ("peer commitment calc on slave is not expected \
-                for Just Works/Numeric Comparison models");
+                for Just Works/Numeric Comparison models\n");
             smp_calculate_f4(p_cb->peer_publ_key.x, p_cb->loc_publ_key.x, p_cb->rrand, 0,
                              output_buf);
             break;
@@ -1230,12 +1233,12 @@ void smp_calculate_peer_commitment(tSMP_CB *p_cb, BT_OCTET16 output_buf)
                              output_buf);
             break;
         default:
-            SMP_TRACE_ERROR("Association Model = %d is not used in LE SC",
+            SMP_TRACE_ERROR("Association Model = %d is not used in LE SC\n",
                              p_cb->selected_association_model);
             return;
     }
 
-    SMP_TRACE_EVENT ("peer commitment calculation is completed");
+    SMP_TRACE_EVENT ("peer commitment calculation is completed\n");
 }
 
 /*******************************************************************************
@@ -1386,7 +1389,7 @@ UINT32 smp_calculate_g2(UINT8 *u, UINT8 *v, UINT8 *x, UINT8 *y)
     UINT8   *p_prnt = NULL;
 #endif
 
-    SMP_TRACE_DEBUG ("%s", __FUNCTION__);
+    SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
 
     p = msg;
     ARRAY_TO_STREAM(p, y, BT_OCTET16_LEN);

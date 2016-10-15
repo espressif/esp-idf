@@ -132,7 +132,7 @@ tSMP_STATUS SMP_Pair (BD_ADDR bd_addr)
     tSMP_CB   *p_cb = &smp_cb;
     UINT8     status = SMP_PAIR_INTERNAL_ERR;
 
-    SMP_TRACE_EVENT ("%s state=%d br_state=%d flag=0x%x ",
+    SMP_TRACE_EVENT ("%s state=%d br_state=%d flag=0x%x \n",
                       __FUNCTION__, p_cb->state, p_cb->br_state, p_cb->flags);
     if (p_cb->state != SMP_STATE_IDLE || p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD ||
         p_cb->smp_over_br)
@@ -148,7 +148,7 @@ tSMP_STATUS SMP_Pair (BD_ADDR bd_addr)
 
         if (!L2CA_ConnectFixedChnl (L2CAP_SMP_CID, bd_addr))
         {
-            SMP_TRACE_ERROR("%s: L2C connect fixed channel failed.", __FUNCTION__);
+            SMP_TRACE_ERROR("%s: L2C connect fixed channel failed.\n", __FUNCTION__);
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
             return status;
         }
