@@ -250,9 +250,9 @@ static void bt_app_dm_upstreams_evt(UINT16 event, char *p_param)
 
 
         /*set connectable,discoverable, pairable and paired only modes of local device*/
-        tBTA_DM_DISC disc_mode = BTA_DM_GENERAL_DISC | BTA_DM_BLE_GENERAL_DISCOVERABLE;
-        tBTA_DM_CONN conn_mode = BTA_DM_CONN | BTA_DM_BLE_CONNECTABLE;
-        BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
+        tBTA_DM_DISC disc_mode =  BTA_DM_BLE_GENERAL_DISCOVERABLE;
+        tBTA_DM_CONN conn_mode =  BTA_DM_BLE_CONNECTABLE;
+        BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
         /* Enable local privacy */
@@ -268,17 +268,27 @@ static void bt_app_dm_upstreams_evt(UINT16 event, char *p_param)
 	break;
 	case BTA_DM_BLE_SEC_REQ_EVT:
 		
-		smp_cmd.local_io_capability = 0x03;		//no input no output
-		smp_cmd.loc_oob_flag = 0x00;		//oob data not present
-		smp_cmd.loc_auth_req = 0x05;
-		smp_cmd.loc_enc_size = 0x10;
-		smp_cmd.local_i_key = 0x07;
-		smp_cmd.local_r_key = 0x07;
-		memcpy(smp_cmd.pairing_bda,p_data->ble_req.bd_addr,0x06);
-		smp_send_cmd(SMP_OPCODE_PAIRING_RSP,&smp_cmd);
-		smp_set_state(SMP_STATE_WAIT_CONFIRM);
+		smp_cb.local_io_capability = 0x03;		//no input no output
+		smp_cb.loc_oob_flag = 0x00;		//oob data not present
+		smp_cb.loc_auth_req = 0x01;
+		smp_cb.loc_enc_size = 0x10;
+		smp_cb.local_i_key = 0x01;
+		smp_cb.local_r_key = 0x01;		//1101
+		
+		//memcpy(smp_cb.pairing_bda,p_data->ble_req.bd_addr,0x06);
+
+		smp_sm_event(&smp_cb,SMP_PAIRING_REQ_EVT,NULL);
+		//smp_send_cmd(SMP_OPCODE_PAIRING_RSP,&smp_cb);
+		//smp_generate_srand_mrand_confirm(&smp_cb,NULL);
+		//smp_set_state(SMP_STATE_PAIR_REQ_RSP,SMP_BR_PAIRING_REQ_EVT);
 		//BTA_DmConfirm(p_data->ble_req.bd_addr,true);
 			break;
+	case BTA_DM_BLE_KEY_EVT:
+		if(p_data->ble_key.key_type == BTM_LE_KEY_PENC)
+		{
+			smp_set_state(SMP_STATE_IDLE);
+		}
+		break;
 	default:
 		break;
     }
@@ -372,9 +382,9 @@ static void bt_app_general_alarm_process(TIMER_LIST_ENT *p_tle)
 
   //     bt_test_start_inquiry();
  	 /*set connectable,discoverable, pairable and paired only modes of local device*/
-        tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
-       	tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
-        BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
+      //  tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
+     //  	tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
+      //  BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 
        gatts_server_test();
        //gattc_client_test();
