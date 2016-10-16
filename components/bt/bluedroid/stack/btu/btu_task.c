@@ -345,7 +345,6 @@ void btu_task_post(uint32_t sig)
 }
 
 void btu_task_start_up(void) {
-//  ke_event_callback_set(KE_EVENT_BTU_TASK_THREAD, &btu_task_thread_handler);
 
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
   fixed_queue_register_dequeue(btu_bta_msg_queue, btu_bta_msg_ready);
