@@ -225,4 +225,22 @@ typedef volatile struct {
     uint32_t date;                                      /*This is the version register.*/
 } rmt_dev_t;
 extern rmt_dev_t RMT;
+
+//Allow access to RMT memory using RMTMEM.chan[0].data[8]
+typedef volatile struct {
+    struct {
+        union {
+            struct {
+                uint32_t level1:       1;
+                uint32_t duration1:    15;
+                uint32_t level0:       1;
+                uint32_t duration0:    15;
+
+            };
+            uint32_t val;
+        } data[64];
+    } chan[8];
+} rmt_mem_t;
+extern rmt_mem_t RMTMEM;
+
 #endif  /* _SOC_RMT_STRUCT_H_ */

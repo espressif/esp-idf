@@ -79,9 +79,9 @@ inline static void panicPutDec(int a) { }
 int xPortGetCoreID();
 
 void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName ) {
-	panicPutStr("***ERROR*** A stack overflow in task");
+	panicPutStr("***ERROR*** A stack overflow in task ");
 	panicPutStr((char*)pcTaskName);
-	panicPutStr("has been detected.\r\n");
+	panicPutStr(" has been detected.\r\n");
 }
 
 static const char *edesc[]={

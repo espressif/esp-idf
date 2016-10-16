@@ -142,6 +142,10 @@ int _open_r(struct _reent *r, const char * path, int flags, int mode) {
     return 0;
 }
 
+void _exit(int __status) {
+    abort();
+}
+
 ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size) {
     const char *data_c = (const char *)data;
     if (fd == STDOUT_FILENO) {
