@@ -3342,7 +3342,6 @@ TCB_t *pxNewTCB;
 BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 {
 	TCB_t *pxTCB;
-	UBaseType_t uxReturn;
 
 	pxTCB = prvGetTCBFromHandle( xTask );
 

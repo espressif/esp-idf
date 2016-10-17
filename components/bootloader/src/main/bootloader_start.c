@@ -411,15 +411,15 @@ void unpack_load_app(const partition_pos_t* partition)
             map = true;
         }
 
-		if(!load_rtc_memory && address >= RTC_IRAM_LOW && address < RTC_IRAM_HIGH) {
-			ESP_LOGD(TAG, "Skipping RTC code section at %08x\n", pos);
-			load = false;
-		}
+        if (!load_rtc_memory && address >= RTC_IRAM_LOW && address < RTC_IRAM_HIGH) {
+            ESP_LOGD(TAG, "Skipping RTC code section at %08x\n", pos);
+            load = false;
+        }
 
-		if(!load_rtc_memory && address >= RTC_DATA_LOW && address < RTC_DATA_HIGH) {
-			ESP_LOGD(TAG, "Skipping RTC data section at %08x\n", pos);
-			load = false;
-		}
+        if (!load_rtc_memory && address >= RTC_DATA_LOW && address < RTC_DATA_HIGH) {
+            ESP_LOGD(TAG, "Skipping RTC data section at %08x\n", pos);
+            load = false;
+        }
 
         ESP_LOGI(TAG, "section %d: paddr=0x%08x vaddr=0x%08x size=0x%05x (%6d) %s", section_index, pos,
                  section_header.load_addr, section_header.data_len, section_header.data_len, (load)?"load":(map)?"map":"");

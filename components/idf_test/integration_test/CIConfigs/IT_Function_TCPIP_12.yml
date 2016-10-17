@@ -1,0 +1,6 @@
+Config: {execute count: 1, execute order: in order}
+DUT: [SSC1]
+Filter:
+- Add:
+    ID: [TCPIP_DNS_0103, TCPIP_DNS_0103, TCPIP_DNS_0103, TCPIP_DNS_0103, TCPIP_DNS_0103,
+      ^TCPIP_UDP_0110, ^TCPIP_UDP_0110, ^TCPIP_UDP_0110, ^TCPIP_UDP_0110, ^TCPIP_UDP_0110]
