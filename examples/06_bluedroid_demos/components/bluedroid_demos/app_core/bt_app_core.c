@@ -78,6 +78,7 @@ static void bt_app_task_handler(void *arg)
 #endif	///BUT_PROFILE_CFG
 
         }
+        osi_free(e);
     }
 }
 

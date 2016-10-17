@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "prf_defs.h"
+
 #include "bta_api.h"
 #include "bta_gatt_api.h"
 #include "controller.h"
@@ -26,7 +28,7 @@
 //#include "app_button.h"
 #include "button_pro.h"
 #include "hid_le_prf.h"
-#include "prf_defs.h"
+
 #include "hcimsgs.h"
 #include "bt_app_defs.h"
 
@@ -104,8 +106,9 @@ tESP_BLE_ADV_DATA ijiazu_adv_data[ADV_SCAN_IDX_MAX] =
 								}
 };
 
+#if	(BUT_PROFILE_CFG)
 static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
-
+#endif
                   
 typedef struct {
     uint8_t uu[16];
@@ -182,8 +185,11 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
     //bas_register();  
 	/*instantiate the driver for button profile*/
 	//app_button_init();
+#if (BUT_PROFILE_CFG)
 	/*instantiate a button service*/
 	button_init(SimpleDataCallBack);
+#endif	///BUT_PROFILE_CFG
+
 	/*instantiate a hid device service*/
 	//hidd_le_init();
     /*start advetising*/
@@ -229,6 +235,7 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
 
 }
 
+#if	(BUT_PROFILE_CFG)
 #define HEADER_SSID	"ssid"
 #define HEADER_PASSWD	"passwd"
 #define HEADER_CONFIRM	"confirm"
@@ -270,6 +277,7 @@ static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_da
 	}
 	
 }
+#endif	///BUT_PROFILE_CFG
 
 static void ble_server_appRegister(void)
 {    

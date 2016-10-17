@@ -15,12 +15,14 @@
 #include "bt_app_common.h"
 
 #include "controller.h"
-
+#include "prf_defs.h"
 #include "hash_map.h"
 #include "hash_functions.h"
 #include "alarm.h"
-#include "app_button.h"
+//#include "app_button.h"
+#if	(BUT_PROFILE_CFG)
 #include "button_pro.h"
+#endif	///BUT_PROFILE_CFG
 #include "thread.h"
 #include "bt_app_common.h"
 #include "dis_api.h"
@@ -64,11 +66,17 @@ static void bt_app_task_handler(void *arg)
             if (e->sig == 0xff) {
                 fixed_queue_process(bta_app_msg_queue);
                 fixed_queue_process(bt_app_general_alarm_queue);
-            }else if(e->sig == BUTTON_PRESS_EVT){
+            }
+#if (BUT_PROFILE_CFG)
+			else if(e->sig == BUTTON_PRESS_EVT){
 			LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
 		  button_msg[1] = e->par;
-          button_msg_notify(2,button_msg);		
-}
+          button_msg_notify(2,button_msg);	
+
+
+	}
+#endif	///BUT_PROFILE_CFG
+
         }
         osi_free(e);
     }
@@ -200,7 +208,7 @@ void bt_app_task_start_up(void)
     return;
 
 error_exit:
-    LOG_ERROR("%s Unable to allocate resources for bt_app", __func__);
+    LOG_ERROR("%s Unable to allocate resources for bt_app\n", __func__);
     bt_app_task_shut_down();
 }
 
@@ -271,6 +279,12 @@ static void bt_app_dm_upstreams_evt(UINT16 event, char *p_param)
 		smp_set_state(SMP_STATE_WAIT_CONFIRM);
 		//BTA_DmConfirm(p_data->ble_req.bd_addr,true);
 			break;
+	case BTA_DM_BLE_KEY_EVT:
+		if(p_data->ble_key.key_type == BTM_LE_KEY_PENC)
+		{
+			smp_set_state(SMP_STATE_IDLE);
+		}
+		break;
 	default:
 		break;
     }
@@ -319,7 +333,7 @@ void bt_app_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec) 
     alarm = hash_map_get(bt_app_general_alarm_hash_map, p_tle);
     pthread_mutex_unlock(&bt_app_general_alarm_lock);
     if (alarm == NULL) {
-        LOG_ERROR("%s Unable to create alarm", __func__);
+        LOG_ERROR("%s Unable to create alarm\n", __func__);
 
         return;
     }
