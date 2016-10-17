@@ -176,17 +176,20 @@ COMMON_FLAGS = \
 
 # Optimization flags are set based on menuconfig choice
 ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
-OPTMIZATION_FLAGS = -Os
+OPTIMIZATION_FLAGS = -Os
 CPPFLAGS += -DNDEBUG
 else
-OPTMIZATION_FLAGS = -O0
+OPTIMIZATION_FLAGS = -O0
 endif
 
+# Enable generation of debugging symbols
+OPTIMIZATION_FLAGS += -ggdb
+
 # List of flags to pass to C compiler
-CFLAGS = -ggdb -std=gnu99 $(strip $(OPTMIZATION_FLAGS) $(COMMON_FLAGS) $(COMMON_WARNING_FLAGS))
+CFLAGS = -std=gnu99 $(strip $(OPTIMIZATION_FLAGS) $(COMMON_FLAGS) $(COMMON_WARNING_FLAGS))
 
 # List of flags to pass to C++ compiler
-CXXFLAGS = -ggdb -std=gnu++11 -fno-exceptions -fno-rtti $(strip $(OPTMIZATION_FLAGS) $(COMMON_FLAGS) $(COMMON_WARNING_FLAGS))
+CXXFLAGS = -std=gnu++11 -fno-exceptions -fno-rtti $(strip $(OPTIMIZATION_FLAGS) $(COMMON_FLAGS) $(COMMON_WARNING_FLAGS))
 
 export CFLAGS CPPFLAGS CXXFLAGS
 
