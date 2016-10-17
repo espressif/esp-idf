@@ -82,7 +82,7 @@ static void hci_hal_env_init(
   if (hci_hal_env.rx_q)
     fixed_queue_register_dequeue(hci_hal_env.rx_q, event_uart_has_bytes);
   else
-    LOG_ERROR("%s unable to create rx queue.", __func__);
+    LOG_ERROR("%s unable to create rx queue.\n", __func__);
 
   return;
 }
@@ -97,7 +97,7 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks) {
 
   hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX);
   
-  xHciH4Queue = xQueueCreate(3, sizeof(void *));
+  xHciH4Queue = xQueueCreate(60, sizeof(void *));
   xTaskCreate(hci_hal_h4_rx_handler, "HciH4T", 4096+2048, NULL, configMAX_PRIORITIES - 3, &xHciH4TaskHandle);
 
   //register vhci host cb

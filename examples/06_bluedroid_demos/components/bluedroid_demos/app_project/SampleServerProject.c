@@ -238,7 +238,7 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
     DIS_SrInit(dis_attr_mask);
 */
     /*instantiate a battery service*/
-    bas_register();  
+    //bas_register();  
 	/*instantiate the driver for button profile*/
 	//app_button_init();
 #if (BUT_PROFILE_CFG)

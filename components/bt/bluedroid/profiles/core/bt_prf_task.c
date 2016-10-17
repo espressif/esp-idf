@@ -85,7 +85,7 @@ void bt_prf_task_start_up(void)
 	 fixed_queue_register_dequeue(bt_profile_msg_queue, bt_profile_msg_ready);
 }
 
-void btu_task_shut_down(void) 
+void bt_prf_task_shut_down(void) 
 {
 	fixed_queue_unregister_dequeue(bt_profile_msg_queue);
 	
@@ -110,7 +110,7 @@ error_exit:;
 void bt_prf_ShutDown(void)
 {
 	
-	btu_task_shut_down();
+	bt_prf_task_shut_down();
 
 	//thread_free(bt_workqueue_thread);
   	vTaskDelete(xProfileTaskHandle);
@@ -118,7 +118,7 @@ void bt_prf_ShutDown(void)
 
 	bt_profile_msg_queue = NULL;
 
-	//  bt_workqueue_thread = NULL;
+	// bt_workqueue_thread = NULL;
   	xProfileTaskHandle = NULL;
  	xProfileQueue = 0;
 }

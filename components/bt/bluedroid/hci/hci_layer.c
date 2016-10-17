@@ -111,7 +111,7 @@ int hci_start_up(void) {
   if (hci_layer_init_env())
     goto error;
 
-  xHciHostQueue = xQueueCreate(3, sizeof(void *));
+  xHciHostQueue = xQueueCreate(60, sizeof(void *));
   xTaskCreate(hci_host_thread_handler, "HciHostT", (4096+2048), NULL, configMAX_PRIORITIES - 3, &xHciHostTaskHandle);
 
   packet_fragmenter->init(&packet_fragmenter_callbacks);

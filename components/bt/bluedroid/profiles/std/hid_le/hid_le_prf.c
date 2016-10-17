@@ -458,7 +458,7 @@ void hidd_le_CreateService(BOOLEAN is_primary)
 	tBTA_GATTS_IF server_if ;
 	tBT_UUID uuid = {LEN_UUID_16, {ATT_SVC_HID}};
 	//the number of the hid device attributes in the hid service.
-	UINT16 num_handle = HIDD_LE_IDX_NB;
+	UINT16 num_handle = HIDD_LE_IDX_NB+5;
 	UINT8 inst = 0x00;
 	server_if = hidd_le_env.gatt_if;
 	hidd_le_env.inst_id = inst;
