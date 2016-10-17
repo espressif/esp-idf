@@ -56,19 +56,19 @@ extern fixed_queue_t *btu_hci_msg_queue;
 fixed_queue_t *btu_general_alarm_queue;
 hash_map_t *btu_general_alarm_hash_map;
 pthread_mutex_t btu_general_alarm_lock;
-static const size_t BTU_GENERAL_ALARM_HASH_MAP_SIZE = 17;
+static const size_t BTU_GENERAL_ALARM_HASH_MAP_SIZE = 34;
 
 // Oneshot timer queue.
 fixed_queue_t *btu_oneshot_alarm_queue;
 hash_map_t *btu_oneshot_alarm_hash_map;
 pthread_mutex_t btu_oneshot_alarm_lock;
-static const size_t BTU_ONESHOT_ALARM_HASH_MAP_SIZE = 17;
+static const size_t BTU_ONESHOT_ALARM_HASH_MAP_SIZE = 34;
 
 // l2cap timer queue.
 fixed_queue_t *btu_l2cap_alarm_queue;
 hash_map_t *btu_l2cap_alarm_hash_map;
 pthread_mutex_t btu_l2cap_alarm_lock;
-static const size_t BTU_L2CAP_ALARM_HASH_MAP_SIZE = 17;
+static const size_t BTU_L2CAP_ALARM_HASH_MAP_SIZE = 34;
 
 //thread_t *bt_workqueue_thread;
 //static const char *BT_WORKQUEUE_NAME = "bt_workqueue";
@@ -193,7 +193,7 @@ void BTU_StartUp(void)
     if (btu_l2cap_alarm_queue == NULL)
          goto error_exit;
 
-    xBtuQueue = xQueueCreate(30, sizeof(void *));
+    xBtuQueue = xQueueCreate(60, sizeof(void *));
     xTaskCreate(btu_task_thread_handler, "BtuT", 8192, NULL, configMAX_PRIORITIES - 1, &xBtuTaskHandle);
     btu_task_post(SIG_BTU_START_UP);
 /*

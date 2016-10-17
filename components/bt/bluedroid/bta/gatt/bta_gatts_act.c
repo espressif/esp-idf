@@ -620,7 +620,7 @@ void bta_gatts_send_rsp (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg)
                         p_msg->api_rsp.status,
                         (tGATTS_RSP *)p_msg->api_rsp.p_rsp) != GATT_SUCCESS)
     {
-        APPL_TRACE_ERROR("Sending response failed");
+        APPL_TRACE_ERROR("Sending response failed\n");
     }
 
 }

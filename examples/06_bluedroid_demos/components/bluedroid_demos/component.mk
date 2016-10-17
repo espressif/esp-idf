@@ -12,9 +12,10 @@ COMPONENT_SRCDIRS :=	\
 			app_client_profiles/battery_c		\
 			app_client_profiles			\
 			app_profiles/app_sample_button		\
+			app_profiles/app_WX_airsync		\
 			app_profiles				\
-			app_project
-
+			app_project				
+	
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses -I./include
 
 

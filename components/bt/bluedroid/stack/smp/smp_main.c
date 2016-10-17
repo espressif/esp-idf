@@ -442,7 +442,7 @@ static const UINT8 smp_slave_entry_map[][SMP_STATE_MAX] =
 {
 /* state name:             Idle WaitApp SecReq Pair   Wait Confirm Rand PublKey SCPhs1  Wait  Wait  SCPhs2  Wait   DHKChk Enc   Bond  CrLocSc
                                  Rsp    Pend   ReqRsp Cfm               Exch    Strt    Cmtm  Nonce Strt    DHKChk        Pend  Pend  OobData   */
-/* PAIR_REQ             */{ 2,    0,     1,      0,     0,   0,    0,   0,      0,      0,    0,    0,      0,     0,     0,    0,     0   },
+/* PAIR_REQ             */{ 2,    1,     1,      0,     0,   0,    0,   0,      0,      0,    0,    0,      0,     0,     0,    0,     0   },
 /* PAIR_RSP             */{ 0,    0,     0,      0,     0,   0,    0,   0,      0,      0,    0,    0,      0,     0,     0,    0,     0   },
 /* CONFIRM              */{ 0,    4,     0,      1,     1,   0,    0,   0,      0,      0,    0,    0,      0,     0,     0,    0,     0   },
 /* RAND                 */{ 0,    0,     0,      0,     0,   1,    2,   0,      0,      0,    1,    0,      0,     0,     0,    0,     0   },
@@ -491,7 +491,7 @@ static const UINT8 smp_slave_idle_table[][SMP_SM_NUM_COLS] =
 /* PAIR_REQ */      {SMP_PROC_PAIR_CMD,   SMP_SEND_APP_CBACK,     SMP_STATE_WAIT_APP_RSP}
 /* CR_LOC_SC_OOB_DATA   */ ,{SMP_CREATE_PRIVATE_KEY, SMP_SM_NO_ACTION, SMP_STATE_CREATE_LOCAL_SEC_CONN_OOB_DATA}
 };
-
+ 
 static const UINT8 smp_slave_wait_for_app_response_table [][SMP_SM_NUM_COLS] =
 {
 /*               Event                   Action                 Next State */
@@ -525,7 +525,6 @@ static const UINT8 smp_slave_pair_request_response_table[][SMP_SM_NUM_COLS] =
 /*                          Event                  Action                 Next State */
 /* CONFIRM  */ {SMP_PROC_CONFIRM,       SMP_SM_NO_ACTION,   SMP_STATE_CONFIRM},
 /* TK_REQ   */ {SMP_SEND_APP_CBACK,     SMP_SM_NO_ACTION,   SMP_STATE_WAIT_APP_RSP},
-
                     /* TK/Confirm ready */
 /* KEY_READY */{SMP_PROC_SL_KEY,        SMP_SM_NO_ACTION,   SMP_STATE_PAIR_REQ_RSP}
 /* PUBL_KEY_EXCH_REQ    */,{ SMP_CREATE_PRIVATE_KEY, SMP_SM_NO_ACTION, SMP_STATE_PUBLIC_KEY_EXCH},
@@ -772,15 +771,15 @@ void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data)
     UINT8           action, entry, i;
     tSMP_ENTRY_TBL  entry_table =  smp_entry_table[p_cb->role];
 
-    SMP_TRACE_EVENT("main smp_sm_event");
+    SMP_TRACE_EVENT("main smp_sm_event\n");
     if (curr_state >= SMP_STATE_MAX)
     {
-        SMP_TRACE_DEBUG( "Invalid state: %d", curr_state) ;
+        SMP_TRACE_DEBUG( "Invalid state: %d\n", curr_state) ;
         return;
     }
 
     SMP_TRACE_DEBUG( "SMP Role: %s State: [%s (%d)], Event: [%s (%d)]",\
-                      (p_cb->role == 0x01) ?"Slave" : "Master", smp_get_state_name( p_cb->state),
+                      (p_cb->role == 0x01) ?"Slave" : "Master\n", smp_get_state_name( p_cb->state),
                       p_cb->state, smp_get_event_name(event), event) ;
 
     /* look up the state table for the current state */
@@ -799,7 +798,7 @@ void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data)
     }
     else
     {
-        SMP_TRACE_DEBUG( "Ignore event [%s (%d)] in state [%s (%d)]",
+        SMP_TRACE_DEBUG( "Ignore event [%s (%d)] in state [%s (%d)]\n",
                           smp_get_event_name(event), event, smp_get_state_name(curr_state),
                           curr_state);
         return;
@@ -825,7 +824,7 @@ void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data)
             break;
         }
     }
-    SMP_TRACE_DEBUG( "result state = %s", smp_get_state_name( p_cb->state ) ) ;
+    SMP_TRACE_DEBUG( "result state = %s\n", smp_get_state_name( p_cb->state ) ) ;
 }
 
 /*******************************************************************************

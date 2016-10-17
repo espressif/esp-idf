@@ -14,12 +14,14 @@
 #include "bt_app_common.h"
 
 #include "controller.h"
-
+//#include "prf_defs.h"
 #include "hash_map.h"
 #include "hash_functions.h"
 #include "alarm.h"
-#include "app_button.h"
+//#include "app_button.h"
+#if	(BUT_PROFILE_CFG)
 #include "button_pro.h"
+#endif	///BUT_PROFILE_CFG
 #include "thread.h"
 #include "bt_app_common.h"
 #include "dis_api.h"
@@ -64,12 +66,17 @@ static void bt_app_task_handler(void *arg)
             if (e->sig == 0xff) {
                 fixed_queue_process(bta_app_msg_queue);
                 fixed_queue_process(bt_app_general_alarm_queue);
-            }else if(e->sig == BUTTON_PRESS_EVT){
-                LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
-                button_msg[1] = e->par;
-                button_msg_notify(2,button_msg);		
             }
-            osi_free(e);
+#if (BUT_PROFILE_CFG)
+			else if(e->sig == BUTTON_PRESS_EVT){
+			LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
+		  button_msg[1] = e->par;
+          button_msg_notify(2,button_msg);	
+
+
+	}
+#endif	///BUT_PROFILE_CFG
+
         }
     }
 }
@@ -187,7 +194,7 @@ void bt_app_task_start_up(void)
     return;
 
 error_exit:
-    LOG_ERROR("%s Unable to allocate resources for bt_app", __func__);
+    LOG_ERROR("%s Unable to allocate resources for bt_app\n", __func__);
     bt_app_task_shut_down();
 }
 
@@ -243,13 +250,13 @@ static void bt_app_dm_upstreams_evt(UINT16 event, char *p_param)
 
 
         /*set connectable,discoverable, pairable and paired only modes of local device*/
-        tBTA_DM_DISC disc_mode = BTA_DM_GENERAL_DISC | BTA_DM_BLE_GENERAL_DISCOVERABLE;
-        tBTA_DM_CONN conn_mode = BTA_DM_CONN | BTA_DM_BLE_CONNECTABLE;
-        BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
+        tBTA_DM_DISC disc_mode =  BTA_DM_BLE_GENERAL_DISCOVERABLE;
+        tBTA_DM_CONN conn_mode =  BTA_DM_BLE_CONNECTABLE;
+        BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
         /* Enable local privacy */
-        BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
+        //BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
         do {
             const controller_t *controller = controller_get_interface();
             char bdstr[18];
@@ -261,17 +268,27 @@ static void bt_app_dm_upstreams_evt(UINT16 event, char *p_param)
 	break;
 	case BTA_DM_BLE_SEC_REQ_EVT:
 		
-		smp_cmd.local_io_capability = 0x03;		//no input no output
-		smp_cmd.loc_oob_flag = 0x00;		//oob data not present
-		smp_cmd.loc_auth_req = 0x05;
-		smp_cmd.loc_enc_size = 0x10;
-		smp_cmd.local_i_key = 0x07;
-		smp_cmd.local_r_key = 0x07;
-		memcpy(smp_cmd.pairing_bda,p_data->ble_req.bd_addr,0x06);
-		smp_send_cmd(SMP_OPCODE_PAIRING_RSP,&smp_cmd);
-		smp_set_state(SMP_STATE_WAIT_CONFIRM);
+		smp_cb.local_io_capability = 0x03;		//no input no output
+		smp_cb.loc_oob_flag = 0x00;		//oob data not present
+		smp_cb.loc_auth_req = 0x01;
+		smp_cb.loc_enc_size = 0x10;
+		smp_cb.local_i_key = 0x01;
+		smp_cb.local_r_key = 0x01;		//1101
+		
+		//memcpy(smp_cb.pairing_bda,p_data->ble_req.bd_addr,0x06);
+
+		smp_sm_event(&smp_cb,SMP_PAIRING_REQ_EVT,NULL);
+		//smp_send_cmd(SMP_OPCODE_PAIRING_RSP,&smp_cb);
+		//smp_generate_srand_mrand_confirm(&smp_cb,NULL);
+		//smp_set_state(SMP_STATE_PAIR_REQ_RSP,SMP_BR_PAIRING_REQ_EVT);
 		//BTA_DmConfirm(p_data->ble_req.bd_addr,true);
 			break;
+	case BTA_DM_BLE_KEY_EVT:
+		if(p_data->ble_key.key_type == BTM_LE_KEY_PENC)
+		{
+			smp_set_state(SMP_STATE_IDLE);
+		}
+		break;
 	default:
 		break;
     }
@@ -320,7 +337,7 @@ void bt_app_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec) 
     alarm = hash_map_get(bt_app_general_alarm_hash_map, p_tle);
     pthread_mutex_unlock(&bt_app_general_alarm_lock);
     if (alarm == NULL) {
-        LOG_ERROR("%s Unable to create alarm", __func__);
+        LOG_ERROR("%s Unable to create alarm\n", __func__);
 
         return;
     }
@@ -364,6 +381,10 @@ static void bt_app_general_alarm_process(TIMER_LIST_ENT *p_tle)
  
 
   //     bt_test_start_inquiry();
+ 	 /*set connectable,discoverable, pairable and paired only modes of local device*/
+      //  tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
+     //  	tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
+      //  BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 
        gatts_server_test();
        //gattc_client_test();

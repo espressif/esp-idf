@@ -9,6 +9,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/gki/include			\
 				bluedroid/hci/include			\
 				bluedroid/osi/include			\
+				bluedroid/profiles/core/include			\
 				bluedroid/profiles/esp/include		\
 				bluedroid/profiles/std/avrc/include	\
 				bluedroid/profiles/std/battery/include	\
@@ -48,7 +49,9 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/hci				\
 			bluedroid/main				\
 			bluedroid/osi				\
+			bluedroid/profiles/core		\
 			bluedroid/profiles/esp/ble_button	\
+			bluedroid/profiles/esp/wechat_AirSync	\
 			bluedroid/profiles/esp			\
 			bluedroid/profiles/std/avrc		\
 			bluedroid/profiles/std/battery		\

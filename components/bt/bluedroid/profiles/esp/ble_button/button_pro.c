@@ -26,8 +26,12 @@
 #include "bta_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gatts_int.h"
-
 #include "button_pro.h"
+
+#include "prf_defs.h"
+
+#if (BUT_PROFILE_CFG)
+
 
 #define ARRAY_SIZE(x)	(sizeof(x)/sizeof((x)[0]))
 
@@ -104,7 +108,8 @@ static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			p_rec_data = &p_data->req_data.p_data->write_req.value[0];
 			//	button_msg_notify(len,p_rec_data);	
 			(*p_inst->p_cback)(button_cb_env.button_inst.app_id,net_event,len,p_rec_data);
-			}
+				
+		}		
 			break;
 		case BTA_GATTS_CONF_EVT:
 			
@@ -345,3 +350,5 @@ void button_msg_notify(UINT8 len, UINT8 *button_msg)
 	 BTA_GATTS_HandleValueIndication (conn_id, attr_id, len,
                                       button_msg, rsp);
 }
+
+#endif	///BUT_PROFILE_CFG

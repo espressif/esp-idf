@@ -636,7 +636,6 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
                     remaining_ticks = bta_dm_pm_get_remaining_ticks(&bta_dm_cb.pm_timer[i].timer[timer_idx]);
                     if (remaining_ticks < timeout)
                     {
-			ets_printf("remain 00\n");
                         /* Cancel and restart the timer */
                         /*
                          * TODO: The value of pm_action[timer_idx] is

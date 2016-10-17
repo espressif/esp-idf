@@ -93,14 +93,14 @@ static void smp_connect_callback (UINT16 channel, BD_ADDR bd_addr, BOOLEAN conne
     tSMP_INT_DATA   int_data;
     BD_ADDR dummy_bda = {0};
 
-    SMP_TRACE_EVENT ("SMDBG l2c %s", __FUNCTION__);
+    SMP_TRACE_EVENT ("SMDBG l2c %s\n", __FUNCTION__);
 
     if (transport == BT_TRANSPORT_BR_EDR || memcmp(bd_addr, dummy_bda, BD_ADDR_LEN) == 0)
         return;
 
     if (memcmp(bd_addr, p_cb->pairing_bda, BD_ADDR_LEN) == 0)
     {
-        SMP_TRACE_EVENT ("%s()  for pairing BDA: %08x%04x  Event: %s",
+        SMP_TRACE_EVENT ("%s()  for pairing BDA: %08x%04x  Event: %s\n",
                         __FUNCTION__,
                         (bd_addr[0]<<24)+(bd_addr[1]<<16)+(bd_addr[2]<<8) + bd_addr[3],
                         (bd_addr[4]<<8)+bd_addr[5],
@@ -146,14 +146,14 @@ static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
     tSMP_CB *p_cb = &smp_cb;
     UINT8   *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     UINT8   cmd ;
-    SMP_TRACE_EVENT ("SMDBG l2c %s", __FUNCTION__);
+    SMP_TRACE_EVENT ("\nSMDBG l2c %s\n", __FUNCTION__);
 
     STREAM_TO_UINT8(cmd, p);
 
     /* sanity check */
     if ((SMP_OPCODE_MAX < cmd) || (SMP_OPCODE_MIN > cmd))
     {
-        SMP_TRACE_WARNING( "Ignore received command with RESERVED code 0x%02x", cmd);
+        SMP_TRACE_WARNING( "Ignore received command with RESERVED code 0x%02x\n", cmd);
         GKI_freebuf (p_buf);
         return;
     }
@@ -184,7 +184,7 @@ static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
         if (cmd == SMP_OPCODE_CONFIRM)
         {
             SMP_TRACE_DEBUG ("in %s cmd = 0x%02x, peer_auth_req = 0x%02x,"
-                              "loc_auth_req = 0x%02x",
+                              "loc_auth_req = 0x%02x\n",
                               __FUNCTION__, cmd, p_cb->peer_auth_req, p_cb->loc_auth_req);
 
             if ((p_cb->peer_auth_req  & SMP_SC_SUPPORT_BIT) &&

@@ -11,7 +11,9 @@
  *
  ****************************************************************************************
  */
+#include "prf_defs.h"
 
+#if (BUT_PROFILE_CFG)
 #include "bt_target.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
@@ -117,3 +119,4 @@ void button_msg_notify(UINT8 len, UINT8 *button_msg);
 
 extern tBUTTON_CB_ENV button_cb_env;
 
+#endif ///BUT_PROFILE_CFG

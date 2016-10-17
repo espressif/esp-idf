@@ -12,9 +12,11 @@
  ****************************************************************************************
  */
 
+#include "prf_defs.h"
 
+#if (HIDD_LE_PROFILE_CFG)
 #include "bta_gatts_int.h"
-
+#include "bt_types.h"
 #include "bta_api.h"
 #include "gatt_api.h"
 
@@ -24,6 +26,10 @@
 #else
 #define HIDD_LE_NB_HIDS_INST_MAX              (1)
 #endif
+
+// Number of HID reports defined in the service
+#define HID_NUM_REPORTS          9
+
 
 #define ATT_SVC_HID 	0x1812
 
@@ -46,7 +52,26 @@
 #define HIDD_LE_REPORT_NTF_CFG_MASK           (0x20)
 
 
+/* HID information flags */
+#define HID_FLAGS_REMOTE_WAKE           0x01      // RemoteWake
+#define HID_FLAGS_NORMALLY_CONNECTABLE  0x02      // NormallyConnectable
 
+/* Control point commands */
+#define HID_CMD_SUSPEND                 0x00      // Suspend
+#define HID_CMD_EXIT_SUSPEND            0x01      // Exit Suspend
+
+/* HID protocol mode values */
+#define HID_PROTOCOL_MODE_BOOT          0x00      // Boot Protocol Mode
+#define HID_PROTOCOL_MODE_REPORT        0x01      // Report Protocol Mode
+
+/* Attribute value lengths */
+#define HID_PROTOCOL_MODE_LEN           1         // HID Protocol Mode
+#define HID_INFORMATION_LEN             4         // HID Information
+#define HID_REPORT_REF_LEN              2         // HID Report Reference Descriptor
+#define HID_EXT_REPORT_REF_LEN          2         // External Report Reference Descriptor
+
+// HID feature flags
+#define HID_KBD_FLAGS             HID_FLAGS_REMOTE_WAKE
 
 
 /// HID Service Attributes Indexes
@@ -104,13 +129,27 @@ enum
     HIDD_LE_INFO_CHAR,
     HIDD_LE_CTNL_PT_CHAR,
     HIDD_LE_REPORT_MAP_CHAR,
+    HIDD_LE_REPORT_CHAR,
     HIDD_LE_PROTO_MODE_CHAR,
     HIDD_LE_BOOT_KB_IN_REPORT_CHAR,
     HIDD_LE_BOOT_KB_OUT_REPORT_CHAR,
     HIDD_LE_BOOT_MOUSE_IN_REPORT_CHAR,
-    HIDD_LE_REPORT_CHAR,
-
     HIDD_LE_CHAR_MAX //= HIDD_LE_REPORT_CHAR + HIDD_LE_NB_REPORT_INST_MAX,
+};
+
+///att read event table Indexs
+enum
+{
+	HIDD_LE_READ_INFO_EVT,
+	HIDD_LE_READ_CTNL_PT_EVT,
+	HIDD_LE_READ_REPORT_MAP_EVT,
+	HIDD_LE_READ_REPORT_EVT,
+	HIDD_LE_READ_PROTO_MODE_EVT,
+	HIDD_LE_BOOT_KB_IN_REPORT_EVT,
+	HIDD_LE_BOOT_KB_OUT_REPORT_EVT,
+	HIDD_LE_BOOT_MOUSE_IN_REPORT_EVT,
+
+	HID_LE_EVT_MAX
 };
 
 /// Client Characteristic Configuration Codes
@@ -176,22 +215,33 @@ enum
  
  }tHIDD_CLCB;
 
+ // HID report mapping table
+typedef struct
+{
+  UINT16    handle;           // Handle of report characteristic
+  UINT16    cccdHandle;       // Handle of CCCD for report characteristic
+  UINT8     id;               // Report ID
+  UINT8     type;             // Report type
+  UINT8     mode;             // Protocol mode (report or boot)
+} hidRptMap_t;
+
 
  typedef struct
  {
  	/// hidd profile id
-	UINT8			 app_id;
+	UINT8 app_id;
 	 /// Notified handle
-    uint16_t ntf_handle;
-	///Attribute Table
-    uint8_t att_tbl[HIDD_LE_NB_HIDS_INST_MAX][HIDD_LE_CHAR_MAX];
+    UINT16 ntf_handle;
+	///Attribute handle Table
+    UINT16 att_tbl[HIDD_LE_CHAR_MAX];
 	/// Supported Features
 	tHIDD_FEATURE	 hidd_feature[HIDD_LE_NB_HIDS_INST_MAX];
 	/// Current Protocol Mode
     UINT8 proto_mode[HIDD_LE_NB_HIDS_INST_MAX];
     /// Number of HIDS added in the database
     UINT8 hids_nb;
- 
+ 	UINT8 pending_evt;
+	UINT16 pending_hal;
  }tHIDD_INST;
 
 
@@ -211,8 +261,15 @@ enum
 
  void hidd_le_CreateService(BOOLEAN is_primary);
 
+ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
+    tGATT_STATUS status, UINT8 event, tGATTS_DATA *p_rsp);
+
+ void hidd_read_attr_value(tGATTS_DATA *p_data, UINT32 trans_id);
+
  
  tGATT_STATUS hidd_le_init (void);
 
+
+#endif	///HIDD_LE_PROFILE_CFG
  
 
