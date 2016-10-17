@@ -23,6 +23,17 @@ endmenu
 
 source "$COMPONENT_KCONFIGS_PROJBUILD"
 
+choice OPTIMIZATION_LEVEL
+    prompt "Optimization level"
+    default OPTIMIZATION_LEVEL_DEBUG
+    help
+        This option sets compiler optimization level.
+config OPTIMIZATION_LEVEL_DEBUG
+    bool "Debug"
+config OPTIMIZATION_LEVEL_RELEASE
+    bool "Release"
+endchoice
+
 menu "Component config"
 source "$COMPONENT_KCONFIGS"
 endmenu

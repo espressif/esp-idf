@@ -157,15 +157,36 @@ LDFLAGS ?= -nostdlib \
 # If you need your component to add CFLAGS/etc globally for all source
 # files, set CFLAGS += in your component's Makefile.projbuild
 
-# CPPFLAGS used by an compile pass that uses the C preprocessor
-CPPFLAGS = -DESP_PLATFORM -Og -g3 -Wpointer-arith -Werror -Wno-error=unused-function -Wno-error=unused-but-set-variable \
-		-Wno-error=unused-variable -Wall -ffunction-sections -fdata-sections -mlongcalls -nostdlib -MMD -MP
+# CPPFLAGS used by C preprocessor
+CPPFLAGS = -DESP_PLATFORM
 
-# C flags use by C only
-CFLAGS = $(CPPFLAGS) -std=gnu99 -g3 -fstrict-volatile-bitfields
+# Warnings-related flags relevant both for C and C++
+COMMON_WARNING_FLAGS = -Wall -Werror \
+	-Wno-error=unused-function \
+	-Wno-error=unused-but-set-variable \
+	-Wno-error=unused-variable 
 
-# CXXFLAGS uses by C++ only
-CXXFLAGS = $(CPPFLAGS) -Og -std=gnu++11 -g3 -fno-exceptions -fstrict-volatile-bitfields -fno-rtti
+# Flags which control code generation and dependency generation, both for C and C++
+COMMON_FLAGS = \
+	-ffunction-sections -fdata-sections \
+	-fstrict-volatile-bitfields \
+	-mlongcalls \
+	-nostdlib \
+	-MMD -MP
+
+# Optimization flags are set based on menuconfig choice
+ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
+OPTMIZATION_FLAGS = -Os
+CPPFLAGS += -DNDEBUG
+else
+OPTMIZATION_FLAGS = -O0
+endif
+
+# List of flags to pass to C compiler
+CFLAGS = -ggdb -std=gnu99 $(strip $(OPTMIZATION_FLAGS) $(COMMON_FLAGS) $(COMMON_WARNING_FLAGS))
+
+# List of flags to pass to C++ compiler
+CXXFLAGS = -ggdb -std=gnu++11 -fno-exceptions -fno-rtti $(strip $(OPTMIZATION_FLAGS) $(COMMON_FLAGS) $(COMMON_WARNING_FLAGS))
 
 export CFLAGS CPPFLAGS CXXFLAGS
 
