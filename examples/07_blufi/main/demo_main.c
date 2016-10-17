@@ -113,7 +113,6 @@ void app_main()
 {
     esp_err_t ret;
 
-    phy_set_wifi_mode_only(0);
     nvs_flash_init();
     system_init();
     initialise_wifi();
