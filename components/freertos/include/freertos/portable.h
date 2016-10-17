@@ -192,8 +192,7 @@ void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
 #endif
 
 /* Multi-core: get current core ID */
-int xPortGetCoreID( void );
-
+#define xPortGetCoreID() __extension__({int id; asm volatile("rsr.prid %0; extui %0,%0,13,1":"=r"(id)); id;})
 
 #ifdef __cplusplus
 }

@@ -51,18 +51,6 @@ port_switch_flag:
 
     .text
 
-
-
-/* C function to get proc ID.*/
-	.global xPortGetCoreID
-	.type xPortGetCoreID,@function
-	.align 4
-xPortGetCoreID:
-	ENTRY(16)
-	getcoreid a2
-	RET(16)
-
-
 /*
 *******************************************************************************
 * _frxt_setup_switch
