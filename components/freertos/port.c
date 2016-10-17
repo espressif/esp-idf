@@ -263,17 +263,14 @@ void vPortAssertIfInISR()
  * *bitwise inverse* of the old mem if the mem wasn't written. This doesn't seem to happen on the
  * ESP32, though. (Would show up directly if it did because the magic wouldn't match.)
  */
-uint32_t uxPortCompareSet(volatile uint32_t *mux, uint32_t compare, uint32_t set)
-{
-	__asm__ __volatile__ (
-		"WSR 	    %2,SCOMPARE1 \n" //initialize SCOMPARE1
-		"ISYNC      \n" //wait sync
-		"S32C1I     %0, %1, 0	 \n" //store id into the lock, if the lock is the same as comparel. Otherwise, no write-access
-		:"=r"(set) \
-		:"r"(mux), "r"(compare), "0"(set) \
-		);
-	return set;
-}
+#define uxPortCompareSet(mux, compare, set) \
+		__asm__ __volatile__( \
+			"WSR 	    %2,SCOMPARE1 \n" \
+			"ISYNC      \n" \
+			"S32C1I     %0, %1, 0	 \n"  \
+			:"=r"(*set) \
+			:"r"(mux), "r"(compare), "0"(*set) \
+			); \
 
 /*
  * For kernel use: Initialize a per-CPU mux. Mux will be initialized unlocked.
@@ -310,7 +307,8 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 	irqStatus=portENTER_CRITICAL_NESTED();
 	do {
 		//Lock mux if it's currently unlocked
-		res=uxPortCompareSet(&mux->mux, portMUX_FREE_VAL, (xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL);
+		res=(xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL;
+		uxPortCompareSet(&mux->mux, portMUX_FREE_VAL, &res);
 		//If it wasn't free and we're the owner of the lock, we are locking recursively.
 		if ( (res != portMUX_FREE_VAL) && (((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT) == xPortGetCoreID()) ) {
 			//Mux was already locked by us. Just bump the recurse count by one.
@@ -362,7 +360,8 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 	if ( (mux->mux & portMUX_MAGIC_MASK) != portMUX_MAGIC_VAL ) ets_printf("ERROR: vPortCPUReleaseMutex: mux %p is uninitialized (0x%X)!\n", mux, mux->mux);
 #endif
 	//Unlock mux if it's currently locked with a recurse count of 0
-	res=uxPortCompareSet(&mux->mux, (xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL, portMUX_FREE_VAL);
+	res=portMUX_FREE_VAL;
+	uxPortCompareSet(&mux->mux, (xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL, &res);
 
 	if ( res == portMUX_FREE_VAL ) {
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
