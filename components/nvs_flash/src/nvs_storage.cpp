@@ -123,8 +123,7 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
     if (findPage) {
         if (findPage->state() == Page::PageState::UNINITIALIZED ||
                 findPage->state() == Page::PageState::INVALID) {
-            auto err = findItem(nsIndex, datatype, key, findPage, item);
-            assert(err == ESP_OK);
+            ESP_ERROR_CHECK( findItem(nsIndex, datatype, key, findPage, item) );
         }
         err = findPage->eraseItem(nsIndex, datatype, key);
         if (err == ESP_ERR_FLASH_OP_FAIL) {
