@@ -363,27 +363,30 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 	res=portMUX_FREE_VAL;
 	uxPortCompareSet(&mux->mux, (xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL, &res);
 
-	if ( res == portMUX_FREE_VAL ) {
+	if ( ((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT) == xPortGetCoreID() ) {
+		//Lock is valid, we can return safely. Just need to check if it's a recursive lock; if so we need to decrease the refcount.
+		 if ( ((res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT)!=0) {
+			//We locked this, but the reccount isn't zero. Decrease refcount and continue.
+			recCnt=(res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT;
+			recCnt--;
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG_RECURSIVE
+			ets_printf("Recursive unlock: recCnt=%d last locked %s line %d, curr %s line %d\n", recCnt, lastLockedFn, lastLockedLine, fnName, line);
+#endif
+			mux->mux=portMUX_MAGIC_VAL|(recCnt<<portMUX_CNT_SHIFT)|(xPortGetCoreID()<<portMUX_VAL_SHIFT);
+		}
+	} else if ( res == portMUX_FREE_VAL ) {
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p was already unlocked!\n", mux);
 		ets_printf("Last non-recursive unlock %s line %d, curr unlock %s line %d\n", lastLockedFn, lastLockedLine, fnName, line);
 #endif
 		ret=pdFALSE;
-	} else if ( ((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT) != xPortGetCoreID() ) {
+	} else {
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p wasn't locked by this core (%d) but by core %d (ret=%x, mux=%x).\n", mux, xPortGetCoreID(), ((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT), res, mux->mux);
 		ets_printf("Last non-recursive lock %s line %d\n", lastLockedFn, lastLockedLine);
 		ets_printf("Called by %s line %d\n", fnName, line);
 #endif
 		ret=pdFALSE;
-	} else if ( ((res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT)!=0) {
-		//We locked this, but the reccount isn't zero. Decrease refcount and continue.
-		recCnt=(res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT;
-		recCnt--;
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG_RECURSIVE
-		ets_printf("Recursive unlock: recCnt=%d last locked %s line %d, curr %s line %d\n", recCnt, lastLockedFn, lastLockedLine, fnName, line);
-#endif
-		mux->mux=portMUX_MAGIC_VAL|(recCnt<<portMUX_CNT_SHIFT)|(xPortGetCoreID()<<portMUX_VAL_SHIFT);
 	}
 	portEXIT_CRITICAL_NESTED(irqStatus);
 	return ret;
