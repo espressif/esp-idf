@@ -7,6 +7,10 @@
 
 //  Version : 1.0.4
 
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -556,4 +560,6 @@ void epb_unpack_switch_backgroud_push_free(SwitchBackgroudPush *push)
 	epb_unpack_base_push_free(push->base_push);
 	GKI_freebuf(push);
 }
+
+#endif	///WX_AIRSYNC_CFG
 

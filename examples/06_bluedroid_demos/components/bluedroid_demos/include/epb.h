@@ -10,6 +10,10 @@
 #ifndef __EPB_H__
 #define __EPB_H__
 
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -106,5 +110,8 @@ int epb_varint32_pack_size(uint16_t tag, uint32_t value, bool is_signed);
 int epb_fixed32_pack_size(uint16_t tag);
 int epb_length_delimited_pack_size(uint16_t tag, int len);
 
-#endif
+
+#endif	///WX_AIRSYNC_CFG
+
+#endif	///__EPB_H__
 

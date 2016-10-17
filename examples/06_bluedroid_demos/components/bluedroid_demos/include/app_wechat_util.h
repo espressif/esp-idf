@@ -1,6 +1,8 @@
 #ifndef __APP_WECHAT_UTIL_H__
 #define __APP_WECHAT_UTIL_H__
 
+#include "prf_defs.h"
+if (WX_AIRSYNC_CFG)
 #include <stdint.h>
 #include <string.h>
 
@@ -76,6 +78,8 @@ unsigned long t_ntohl(unsigned long n);
 
 void wechat_error_chack(data_handler *p_data_handler, int error_code);
 void data_handler_init(data_handler** p_data_handler, uint8_t product_type);
+
+#endif	///WX_AIRSYNC_CFG
 
 #endif	///__APP_WECHAT_UTIL_H__
 

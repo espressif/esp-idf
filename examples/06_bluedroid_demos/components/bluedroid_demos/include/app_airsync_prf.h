@@ -13,6 +13,10 @@
 #ifndef _APP_AIRSYNC_PRF_H__
 #define _APP_AIRSYNC_PRF_H__
 
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
+
 #include "app_wechat_util.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -34,6 +38,8 @@ void ble_wechat_process_received_data(uint8_t* pData, uint32_t length);
 data_handler* app_wechat_datahandler(void);
 bool ble_wechat_is_last_data_sent_out(void);
 
+
+#endif	///WX_AIRSYNC_CFG
 
 #endif	///_APP_AIRSYNC_PRF_H__
 

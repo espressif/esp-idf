@@ -2,6 +2,11 @@
 #ifndef __MPBLEDEMO2_H__
 #define __MPBLEDEMO2_H__
 
+#include "prf_defs.h"
+
+#if	(WX_AIRSYNC_CFG)
+
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -128,5 +133,8 @@ extern void mpbledemo2_reset(void);
 extern void mpbledemo2_indication_state(bool isEnable);
 extern int32_t mpbledemo2_sendData(uint8_t* ptrData, uint32_t lengthInByte);
 
-#endif
+
+#endif	///WX_AIRSYNC_CFG
+
+#endif	///__MPBLEDEMO2_H__
 

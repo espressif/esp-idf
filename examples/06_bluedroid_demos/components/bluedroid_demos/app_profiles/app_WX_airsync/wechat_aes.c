@@ -4,6 +4,10 @@
 // 创 建 人：Liangbofu
 // 创建日期：2009-07-17
 ///////////////////////////////////////////////////////////////////////////////
+
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
 #include "wechat_aes.h"
 #include <string.h>
 #include <stdlib.h>
@@ -440,4 +444,7 @@ void AES_Decrypt(unsigned char *pPlainText, const unsigned char *pCipherText,
 		#endif
 	}
 }
+
+
+#endif	///WX_AIRSYNC_CFG
 

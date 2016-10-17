@@ -5,6 +5,10 @@
 //  Copyright 2014 Tencent. All rights reserved.
 //
 
+
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
 #include <stdio.h>
 #include "wechar_crc.h"
 
@@ -41,4 +45,7 @@ uint32_t crc32(uint32_t crc, const uint8_t *buf, int len)
     } while (--len);
     return crc ^ 0xffffffffL;
 }
+
+
+#endif	///WX_AIRSYNC_CFG
 

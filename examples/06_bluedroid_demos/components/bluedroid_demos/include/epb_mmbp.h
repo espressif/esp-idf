@@ -10,6 +10,10 @@
 #ifndef __EPB_MMBP_H__
 #define __EPB_MMBP_H__
 
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
+
 #include "epb.h"
 
 typedef enum
@@ -237,5 +241,8 @@ void epb_unpack_switch_view_push_free(SwitchViewPush *push);
 SwitchBackgroudPush *epb_unpack_switch_backgroud_push(const uint8_t *buf, int buf_len);
 void epb_unpack_switch_backgroud_push_free(SwitchBackgroudPush *push);
 
-#endif
+
+#endif	///WX_AIRSYNC_CFG
+
+#endif	///__EPB_MMBP_H__
 

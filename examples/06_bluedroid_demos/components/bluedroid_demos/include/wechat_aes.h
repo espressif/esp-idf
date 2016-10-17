@@ -7,6 +7,9 @@
 #ifndef __WECHAT_AES_H
 #define __WECHAT_AES_H
 
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
 #ifdef __cplusplus
 	extern "C" {
 #endif
@@ -62,8 +65,9 @@ unsigned int AES_get_length(unsigned int length);
 void AES_free(unsigned char* p);
 #ifdef __cplusplus
 	}
-#endif
+#endif	///__cplusplus
 
+#endif	///WX_AIRSYNC_CFG
 
 #endif	// __WECHAT_AES_H
 

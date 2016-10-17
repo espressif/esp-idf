@@ -7,6 +7,10 @@
 
 //  Version : 1.0.2
 
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
+
 #include <string.h>
 #include "epb.h"
 
@@ -406,3 +410,5 @@ int epb_length_delimited_pack_size(uint16_t tag, int len)
     return epb_varint32_pack_size(tag, len, false) + len;
 }
 
+
+#endif	///WX_AIRSYNC_CFG

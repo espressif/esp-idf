@@ -11,7 +11,10 @@
  ****************************************************************************************
  */
 
- 
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -121,4 +124,7 @@ int32_t wechat_md5 (char *argv, uint8_t *md5_32)
   return EXIT_SUCCESS;
 
 }
+
+
+#endif	///WX_AIRSYNC_CFG
 

@@ -4,6 +4,11 @@
 *	author by anqiren  2014/12/02  V1.0bat
 *
 **/
+
+#include "prf_defs.h"
+
+#if	(WX_AIRSYNC_CFG)
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -576,4 +581,6 @@ int32_t mpbledemo2_sendData(uint8_t* ptrData, uint32_t lengthInByte)
 	ble_wechat_indicate_data(data, len);
     return 0;
 }
+
+#endif	///WX_AIRSYNC_CFG
 

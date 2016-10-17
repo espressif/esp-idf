@@ -8,6 +8,10 @@
 #ifndef __CRC32_H__
 #define __CRC32_H__
 
+
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -17,8 +21,9 @@ uint32_t crc32(uint32_t crc, const uint8_t *buf, int len);
 
 #ifdef __cplusplus
 }
-#endif
+#endif		///__cplusplus
 
+#endif		///WX_AIRSYNC_CFG
 
-#endif
+#endif	///__CRC32_H__
 

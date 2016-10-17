@@ -11,6 +11,9 @@
  ****************************************************************************************
  */
 
+#include "prf_defs.h"
+#if (WX_AIRSYNC_CFG)
+
 #include "app_airsync_prf.h"
 #include "wx_airsync_prf.h"
 #include "app_wechat_util.h"
@@ -151,4 +154,7 @@ data_handler *app_wechat_datahandler(void)
 {
 	return pDataHandler;
 }
+
+
+#endif	///WX_AIRSYNC_CFG
 
