@@ -27,7 +27,7 @@ ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 
 # automatically trigger a git submodule update
 # if any libraries are missing
-$(eval $(call SubmoduleRequiredForFiles,$(ALL_LIB_FILES)))
+$(eval $(call SubmoduleCheck,$(ALL_LIB_FILES),$(COMPONENT_PATH)/lib))
 
 # this is a hack to make sure the app is re-linked if the binary
 # libraries change or are updated. If they change, the main esp32

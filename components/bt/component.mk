@@ -4,8 +4,6 @@
 
 #COMPONENT_ADD_INCLUDEDIRS := 
 
-CURRENT_DIR=$(IDF_PATH)/components/bt
-
 COMPONENT_ADD_INCLUDEDIRS := include
 
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses
@@ -22,4 +20,4 @@ ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 $(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
 
 # automatically trigger a git submodule update if BT library is missing
-$(eval $(call SubmoduleRequiredForFiles,$(ALL_LIB_FILES)))
+$(eval $(call SubmoduleCheck,$(ALL_LIB_FILES),$(COMPONENT_PATH)/lib))

@@ -91,6 +91,13 @@ function run_tests()
          failure "Files weren't cleaned: ${ALL_BUILD_FILES}"
     fi
 
+    print_status "Bootloader build shouldn't leave build output anywhere else"
+    rm -rf --preserve-root ${BUILD}
+    make bootloader
+    # find wizardry: find any file not named sdkconfig.h that
+    # isn't in the "bootloader" or "config" directories
+    find ${BUILD} -type d \( -name bootloader -o -name config \) -prune , -type f ! -name sdkconfig.h || failure "Bootloader built files outside the bootloader or config directories"
+
     print_status "Moving BUILD_DIR_BASE out of tree"
     clean_build_dir
     OUTOFTREE_BUILD=${TESTDIR}/alt_build
