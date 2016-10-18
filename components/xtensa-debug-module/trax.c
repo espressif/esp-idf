@@ -12,10 +12,12 @@
 #define TRACEMEM_MUX_BLK1_ONLY          2
 #define TRACEMEM_MUX_PROBLK1_APPBLK0    3
 
-static const char* TAG = "log";
+static const char* TAG = "trax";
 
-int trax_enable(trax_ena_select_t which) {
+int trax_enable(trax_ena_select_t which) 
+{
 #if !CONFIG_MEMMAP_TRACEMEM
+    ESP_LOGE(TAG, "Trax_enable called, but trax is disabled in menuconfig!");
     return ESP_ERR_NO_MEM;
 #endif
 #if !CONFIG_MEMMAP_TRACEMEM_TWOBANKS
@@ -32,8 +34,10 @@ int trax_enable(trax_ena_select_t which) {
 }
 
 
-int trax_start_trace(trax_downcount_unit_t units_until_stop) {
+int trax_start_trace(trax_downcount_unit_t units_until_stop) 
+{
 #if !CONFIG_MEMMAP_TRACEMEM
+    ESP_LOGE(TAG, "Trax_start_trace called, but trax is disabled in menuconfig!");
     return ESP_ERR_NO_MEM;
 #endif
     uint32_t v;
@@ -54,8 +58,10 @@ int trax_start_trace(trax_downcount_unit_t units_until_stop) {
 }
 
 
-int trax_trigger_traceend_after_delay(int delay) {
+int trax_trigger_traceend_after_delay(int delay) 
+{
 #if !CONFIG_MEMMAP_TRACEMEM
+    ESP_LOGE(TAG, "Trax_trigger_traceend_after_delay called, but trax is disabled in menuconfig!");
     return ESP_ERR_NO_MEM;
 #endif
     eri_write(ERI_TRAX_DELAYCNT, delay);
