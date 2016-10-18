@@ -503,6 +503,12 @@ void SPI_Write_Encrypt_Disable(void);
   */
 SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, uint32_t *data, uint32_t len);
 
+
+/** @brief Global SpiFlashChip structure used by ROM functions
+ *
+ */
+extern SpiFlashChip g_rom_flashchip;
+
 /**
   * @}
   */

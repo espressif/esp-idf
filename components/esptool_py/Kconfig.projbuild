@@ -94,4 +94,31 @@ config ESPTOOLPY_FLASHFREQ
 	default "26m" if ESPTOOLPY_FLASHFREQ_26M
 	default "20m" if ESPTOOLPY_FLASHFREQ_20M
 
+
+choice ESPTOOLPY_FLASHSIZE
+	prompt "Flash size"
+	default ESPTOOLPY_FLASHSIZE_2MB
+	help
+		SPI flash size, in megabytes
+
+config ESPTOOLPY_FLASHSIZE_1MB
+	bool "1 MB"
+config ESPTOOLPY_FLASHSIZE_2MB
+	bool "2 MB"
+config ESPTOOLPY_FLASHSIZE_4MB
+	bool "4 MB"
+config ESPTOOLPY_FLASHSIZE_8MB
+	bool "8 MB"
+config ESPTOOLPY_FLASHSIZE_16MB
+	bool "16 MB"
+endchoice
+
+config ESPTOOLPY_FLASHSIZE
+	string
+	default "1MB" if ESPTOOLPY_FLASHSIZE_1MB
+	default "2MB" if ESPTOOLPY_FLASHSIZE_2MB
+	default "4MB" if ESPTOOLPY_FLASHSIZE_4MB
+	default "8MB" if ESPTOOLPY_FLASHSIZE_8MB
+	default "16MB" if ESPTOOLPY_FLASHSIZE_16MB
+
 endmenu

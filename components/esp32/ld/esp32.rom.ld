@@ -286,6 +286,7 @@ PROVIDE ( _global_impure_ptr = 0x3ffae0b0 );
 PROVIDE ( gmtime = 0x40059848 );
 PROVIDE ( gmtime_r = 0x40059868 );
 PROVIDE ( g_phyFuns_instance = 0x3ffae0c4 );
+PROVIDE ( g_rom_flashchip = 0x3ffae270 );
 PROVIDE ( gpio_init = 0x40009c20 );
 PROVIDE ( gpio_input_get = 0x40009b88 );
 PROVIDE ( gpio_input_get_high = 0x40009b9c );
