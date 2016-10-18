@@ -284,32 +284,23 @@ UINT16 button_env_find_conn_id_by_bd_adddr(BD_ADDR remote_bda)
 ** Returns          True the deallocation is successful
 **
 *******************************************************************************/
-/*
+
 BOOLEAN button_env_clcb_dealloc(UINT16 conn_id)
 {
 	UINT8 i_clcb = 0;
 	tBUT_CLCB *p_clcb = NULL;
 
-	for(i_clcb = 0, p_clcb = &button_cb_env.clcb; i_clcb < BUTT_MAX_APPS; i_clcb++, p_clcb++)
+	for(i_clcb = 0, p_clcb = &button_cb_env.clcb; i_clcb < 1; i_clcb++, p_clcb++)
 	{
 		if(p_clcb->in_use && p_clcb->connected && (p_clcb->conn_id == conn_id))
 		{
-			unsigned j;
-			for(j = 0; j < ARRAY_SIZE(p_clcb->button_value.data_string);j++)
-			{
-				if(p_clcb->button_value.data_string[j])
-				{
-					GKI_freebuf(p_clcb->button_value.data_string[j]);
-				}
-			}
 			memset(p_clcb, 0, sizeof(tBUT_CLCB));
 			return TRUE;
 		}
 	}
 
 	return FALSE;
-}*/
-
+}
 
 /*******************************************************************************
 **
@@ -347,6 +338,12 @@ tGATT_STATUS button_init (tBU_CBACK *call_back)
 
 	return GATT_SUCCESS;
 }
+
+void button_disable(UINT16 connid)
+{
+		button_env_clcb_dealloc(connid);
+}
+
 
 void button_msg_notify(UINT8 len, UINT8 *button_msg)
 {

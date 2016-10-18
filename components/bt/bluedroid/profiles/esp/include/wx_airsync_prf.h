@@ -50,7 +50,7 @@ typedef void (tAIRSYNC_CBACK)(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *data)
 	 WX_IDX_AIRSYNC_READ_VAL,
 	 WX_IDX_AIRSYNC_NTF_CFG,
  
-	 KEY_IDX_NB,
+	 WX_IDX_NB,
  };
  
  typedef struct

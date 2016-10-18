@@ -15,7 +15,6 @@
 *******************************************************************************
 *********
 */
-#if 0
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -33,6 +32,52 @@
 
 #include "allocator.h"
 #include "button_pro.h"
+#include "app_button_int.h"
+
+
+/*******************************************************************************
+**
+** Function         ble_but_prf_hdl_event
+**
+** Description      button profile main event handling function.
+**
+**
+** Returns          BOOLEAN
+**
+*******************************************************************************/
+BOOLEAN ble_but_prf_hdl_event(BT_HDR *msg_data)
+{
+	UINT16 connid = 0;
+	switch(msg_data->event)
+	{
+		case BLE_BUT_CREATE_DB_REQ_EVT: 
+			Button_CreateService();
+			break;
+		case BLE_BUT_VAL_SEND_CFM_EVT:
+			break;
+		case BLE_BUT_SET_CHAR_VAL_REQ_EVT:
+			button_msg_notify(msg_data->len,msg_data->data);
+			break;
+		case BLE_BUT_ENABLE_REQ_EVT:
+			button_init(NULL);
+			break;
+		case BLE_BUT_DISABLE_IND_EVT:
+			button_disable(connid);
+			break;
+		case BLE_BUT_CHAR_WRITE_IND_EVT:
+			
+			break;
+		case BLE_BUT_ERROR_IND_EVT:
+			break;
+		default:
+			break;
+	}
+}
+
+
+
+#if 0
+
 #define GPIO_INUM 8
 #define TABLE_ELEMENT_CNT(table) ((sizeof(table))/(sizeof(table[0])));
 app_key_env key_press;

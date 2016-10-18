@@ -184,7 +184,7 @@ void AirSync_CreateService(void)
 {
 	tBTA_GATTS_IF server_if ;
 	tBT_UUID uuid = {LEN_UUID_16, {ATT_SVC_AIRSYNC}};
-	UINT16 num_handle = KEY_IDX_NB;
+	UINT16 num_handle = WX_IDX_NB;
 	UINT8 inst = 0x00;
 	server_if = airsync_cb_env.gatt_if;
 	airsync_cb_env.inst_id = inst;

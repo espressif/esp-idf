@@ -760,14 +760,14 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
     BOOLEAN rt = FALSE;
     UINT8 rl_mask = btm_cb.ble_ctr_cb.rl_state;
 
-    BTM_TRACE_DEBUG("%s btm_cb.ble_ctr_cb.privacy_mode = %d", __func__,
+    BTM_TRACE_DEBUG("%s btm_cb.ble_ctr_cb.privacy_mode = %d\n", __func__,
                                 btm_cb.ble_ctr_cb.privacy_mode);
 
     /* if controller does not support RPA offloading or privacy 1.2, skip */
     if (controller_get_interface()->get_ble_resolving_list_max_size() == 0)
         return FALSE;
 
-    BTM_TRACE_DEBUG("%s btm_cb.ble_ctr_cb.privacy_mode = %d",
+    BTM_TRACE_DEBUG("%s btm_cb.ble_ctr_cb.privacy_mode = %d\n",
                     __func__, btm_cb.ble_ctr_cb.privacy_mode);
 
     /* only add RPA enabled device into resolving list */
@@ -801,7 +801,7 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
                         p_dev_rec->ble.static_addr_type = p_dev_rec->ble.ble_addr_type;
                     }
 
-                    BTM_TRACE_DEBUG("%s:adding device to controller resolving list", __func__);
+                    BTM_TRACE_DEBUG("%s:adding device to controller resolving list\n", __func__);
                     // use identical IRK for now
                     rt = btsnd_hcic_ble_add_device_resolving_list(p_dev_rec->ble.static_addr_type,
                               p_dev_rec->ble.static_addr, peer_irk, local_irk);
@@ -837,13 +837,13 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
         }
         else
         {
-            BTM_TRACE_ERROR("Device already in Resolving list");
+            BTM_TRACE_ERROR("Device already in Resolving list\n");
             rt = TRUE;
         }
     }
     else
     {
-        BTM_TRACE_DEBUG("Device not a RPA enabled device");
+        BTM_TRACE_DEBUG("Device not a RPA enabled device\n");
     }
     return rt;
 }
@@ -863,7 +863,7 @@ void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC *p_dev_rec)
 {
     UINT8 rl_mask = btm_cb.ble_ctr_cb.rl_state;
 
-    BTM_TRACE_EVENT ("%s", __func__);
+    BTM_TRACE_EVENT ("%s\n", __func__);
     if (rl_mask)
     {
         if (!btm_ble_disable_resolving_list (rl_mask, FALSE))
@@ -879,7 +879,7 @@ void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC *p_dev_rec)
     }
     else
     {
-        BTM_TRACE_DEBUG("Device not in resolving list");
+        BTM_TRACE_DEBUG("Device not in resolving list\n");
     }
 
     /* if resolving list has been turned on, re-enable it */

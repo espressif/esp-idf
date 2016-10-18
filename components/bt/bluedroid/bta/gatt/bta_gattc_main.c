@@ -364,7 +364,7 @@ BOOLEAN bta_gattc_hdl_event(BT_HDR *p_msg)
     tBTA_GATTC_RCB      *p_clreg;
     BOOLEAN             rt = TRUE;
 #if BTA_GATT_DEBUG == TRUE
-    APPL_TRACE_DEBUG("bta_gattc_hdl_event: Event [%s]", gattc_evt_code(p_msg->event));
+    APPL_TRACE_DEBUG("bta_gattc_hdl_event: Event [%s]\n", gattc_evt_code(p_msg->event));
 #endif
     switch (p_msg->event)
     {
@@ -424,7 +424,7 @@ BOOLEAN bta_gattc_hdl_event(BT_HDR *p_msg)
             }
             else
             {
-                APPL_TRACE_DEBUG("Ignore unknown conn ID: %d", p_msg->layer_specific);
+                APPL_TRACE_DEBUG("Ignore unknown conn ID: %d\n", p_msg->layer_specific);
             }
 
             break;

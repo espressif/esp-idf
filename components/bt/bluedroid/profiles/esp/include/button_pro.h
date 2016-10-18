@@ -115,6 +115,8 @@ BOOLEAN button_env_clcb_dealloc(UINT16 conn_id);
 
 tGATT_STATUS button_init(tBU_CBACK *call_back);
 
+void button_disable(UINT16 connid);
+
 void button_msg_notify(UINT8 len, UINT8 *button_msg);
 
 extern tBUTTON_CB_ENV button_cb_env;
