@@ -21,7 +21,8 @@
 # * The function "take_build_snapshot" can be paired with the functions "assert_rebuilt" and "assert_not_rebuilt" to compare file timestamps and verify if they were rebuilt or not since the snapshot was taken.
 #
 # To add a new test case, add it to the end of the run_tests function. Note that not all test cases do comprehensive cleanup
-# (although very invasive ones like appending CRLFs to all files take a copy of the esp-idf tree.)
+# (although very invasive ones like appending CRLFs to all files take a copy of the esp-idf tree), however the clean_build_dir
+# function can be used to force-delete all files from the build output directory.
 
 # Set up some variables
 #
@@ -92,7 +93,7 @@ function run_tests()
     fi
 
     print_status "Bootloader build shouldn't leave build output anywhere else"
-    rm -rf --preserve-root ${BUILD}
+    clean_build_dir
     make bootloader
     # find wizardry: find any file not named sdkconfig.h that
     # isn't in the "bootloader" or "config" directories
