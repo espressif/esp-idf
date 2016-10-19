@@ -659,7 +659,7 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
 #if BLE_PRIVACY_SPT == TRUE
     tBTM_BLE_CB  *p_cb = &btm_cb.ble_ctr_cb;
 
-    BTM_TRACE_EVENT ("%s", __func__);
+    BTM_TRACE_EVENT ("%s\n", __func__);
 
     /* if LE is not supported, return error */
     if (!controller_get_interface()->supports_ble())
@@ -1333,7 +1333,7 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT8 type, UINT8 *p_length)
 *******************************************************************************/
 UINT16 BTM_BleReadDiscoverability()
 {
-    BTM_TRACE_API("%s", __FUNCTION__);
+    BTM_TRACE_API("%s\n", __FUNCTION__);
 
     return (btm_cb.ble_ctr_cb.inq_var.discoverable_mode);
 }
@@ -1350,7 +1350,7 @@ UINT16 BTM_BleReadDiscoverability()
 *******************************************************************************/
 UINT16 BTM_BleReadConnectability()
 {
-    BTM_TRACE_API ("%s", __FUNCTION__);
+    BTM_TRACE_API ("%s\n", __FUNCTION__);
 
     return (btm_cb.ble_ctr_cb.inq_var.connectable_mode);
 }
@@ -1782,7 +1782,7 @@ tBTM_STATUS btm_ble_set_discoverability(UINT16 combined_mode)
                         own_addr_type = p_addr_cb->own_addr_type;
     UINT16              adv_int_min, adv_int_max;
 
-    BTM_TRACE_EVENT ("%s mode=0x%0x combined_mode=0x%x", __FUNCTION__, mode, combined_mode);
+    BTM_TRACE_EVENT ("%s mode=0x%0x combined_mode=0x%x\n", __FUNCTION__, mode, combined_mode);
 
     /*** Check mode parameter ***/
     if (mode > BTM_BLE_MAX_DISCOVERABLE)
@@ -1800,7 +1800,7 @@ tBTM_STATUS btm_ble_set_discoverability(UINT16 combined_mode)
     btu_stop_timer(&p_cb->fast_adv_timer);
 
     /* update adv params if start advertising */
-    BTM_TRACE_EVENT ("evt_type=0x%x p-cb->evt_type=0x%x ", evt_type, p_cb->evt_type);
+    BTM_TRACE_EVENT ("evt_type=0x%x p-cb->evt_type=0x%x\n ", evt_type, p_cb->evt_type);
 
     if (new_mode == BTM_BLE_ADV_ENABLE)
     {

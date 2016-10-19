@@ -92,6 +92,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] =
     /*******This handler function added by Yulong at 2016/9/9 to 
     		support the random address setting for the APP******/
     bta_dm_ble_set_rand_address,	/*BTA_DM_API_SET_RAND_ADDR_EVT*/
+     /*******This handler function added by Yulong at 2016/10/19 to 
+    		support stop the ble advertising setting by the APP******/
+    bta_dm_ble_stop_advertising,	/*BTA_DM_API_BLE_STOP_ADV_EVT*/
 #if BLE_PRIVACY_SPT == TRUE
     bta_dm_ble_config_local_privacy,   /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif

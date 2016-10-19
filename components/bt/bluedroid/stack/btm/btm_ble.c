@@ -453,7 +453,7 @@ void BTM_BleConfirmReply (BD_ADDR bd_addr, UINT8 res)
     }
 
     p_dev_rec->sec_flags   |= BTM_SEC_LE_AUTHENTICATED;
-    BTM_TRACE_DEBUG ("%s", __func__);
+    BTM_TRACE_DEBUG ("%s\n", __func__);
     SMP_ConfirmReply(bd_addr, res_smp);
 }
 

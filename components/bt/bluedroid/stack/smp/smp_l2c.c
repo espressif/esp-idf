@@ -296,7 +296,7 @@ static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
     tSMP_CB *p_cb = &smp_cb;
     UINT8   *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     UINT8   cmd ;
-    SMP_TRACE_EVENT ("SMDBG l2c %s", __func__);
+    SMP_TRACE_EVENT ("SMDBG l2c %s\n", __func__);
 
     STREAM_TO_UINT8(cmd, p);
 

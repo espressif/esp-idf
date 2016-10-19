@@ -95,6 +95,9 @@ enum
     /*******This event added by Yulong at 2016/9/9 to 
     support the random address setting for the APP******/
     BTA_DM_API_SET_RAND_ADDR_EVT,
+    /*******This event added by Yulong at 2016/10/19 to 
+    support stop the ble advertising setting by the APP******/
+    BTA_DM_API_BLE_STOP_ADV_EVT,
 #if BLE_PRIVACY_SPT == TRUE
     BTA_DM_API_LOCAL_PRIVACY_EVT,
 #endif
@@ -1128,6 +1131,7 @@ extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_observe (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data);

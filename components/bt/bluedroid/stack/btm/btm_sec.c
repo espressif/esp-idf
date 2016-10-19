@@ -447,7 +447,7 @@ void BTM_SetPairableMode (BOOLEAN allow_pairing, BOOLEAN connect_only_paired)
 *******************************************************************************/
 void BTM_SetSecureConnectionsOnly (BOOLEAN secure_connections_only_mode)
 {
-    BTM_TRACE_API("%s: Mode : %u", __FUNCTION__,
+    BTM_TRACE_API("%s: Mode : %u\n", __FUNCTION__,
                    secure_connections_only_mode);
 
     btm_cb.devcb.secure_connections_only = secure_connections_only_mode;

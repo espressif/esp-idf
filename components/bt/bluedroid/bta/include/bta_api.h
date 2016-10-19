@@ -2023,6 +2023,8 @@ extern void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport,
 extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb);
 
+extern void BTA_DmBleStopAdvertising(void);
+
 extern void BTA_DmSetRandAddress(BD_ADDR rand_addr);
 
 #endif

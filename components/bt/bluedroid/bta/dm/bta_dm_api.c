@@ -2089,6 +2089,32 @@ extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
     }
 }
 
+/*******************************************************************************
+**
+** Function         BTA_DmBleStopAdvertising
+**
+** Description      This function set the random address for the APP
+**
+** Parameters       void
+** 
+** Returns          void
+**
+**
+*******************************************************************************/
+extern void BTA_DmBleStopAdvertising(void)
+{
+	BT_HDR   *p_msg;
+
+    APPL_TRACE_API("BTA_DmBleStopAdvertising\n");
+
+    if ((p_msg = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
+    {
+        memset(p_msg, 0, sizeof(BT_HDR));
+        p_msg->event = BTA_DM_API_BLE_STOP_ADV_EVT;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 
 /*******************************************************************************
 **
