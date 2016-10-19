@@ -92,6 +92,7 @@ SECTIONS
     KEEP(*(.gnu.linkonce.s2.*))
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
+    *libfreertos.a:panic.o(.rodata .rodata.*)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
     _heap_start = ABSOLUTE(.);
