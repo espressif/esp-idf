@@ -8046,6 +8046,8 @@ test cases:
   category: Function
   cmd set:
   - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
   - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
     - ['R SSC2 C +JAP:OK']
   - - SSC SSC1 sta -S
