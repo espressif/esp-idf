@@ -1143,7 +1143,7 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 soc -H -d iot.espressif.cn
+  - - SSC SSC1 soc -H -d factory.espressif.cn
     - ['R SSC1 A <ip_addr>:\+HOSTIP:OK,(.+)\r\n']
   - - SSC SSC1 soc -B -t TCP
     - ['R SSC1 A <sock1>:\+BIND:(\d+),OK']
@@ -1178,7 +1178,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DNS function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_DNS_0103
   SDK: '8266_NonOS
@@ -1192,7 +1192,7 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 soc -H -d iot.espressif.cn
+  - - SSC SSC1 soc -H -d factory.espressif.cn
     - ['R SSC1 A <ip_addr>:\+HOSTIP:OK,(.+)\r\n']
   - - SSC SSC1 soc -B -t UDP
     - ['R SSC1 A <sock1>:\+BIND:(\d+),OK']
@@ -1223,7 +1223,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DNS function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_ICMP_0101
   SDK: '8266_NonOS
@@ -9144,7 +9144,7 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 soc -H -d iot.espressif.cn
+  - - SSC SSC1 soc -H -d factory.espressif.cn
     - ['R SSC1 A <ip_addr>:\+HOSTIP:OK,(.+)\r\n']
   - - SSC SSC1 soc -B -t TCP
     - ['R SSC1 A <sock1>:\+BIND:(\d+),OK']
@@ -9179,7 +9179,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DNS function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_DNS_0103
   SDK: '8266_NonOS
@@ -9193,7 +9193,7 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 soc -H -d iot.espressif.cn
+  - - SSC SSC1 soc -H -d factory.espressif.cn
     - ['R SSC1 A <ip_addr>:\+HOSTIP:OK,(.+)\r\n']
   - - SSC SSC1 soc -B -t UDP
     - ['R SSC1 A <sock1>:\+BIND:(\d+),OK']
@@ -9224,7 +9224,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DNS function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_ICMP_0101
   SDK: '8266_NonOS
