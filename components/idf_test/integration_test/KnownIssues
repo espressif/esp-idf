@@ -62,6 +62,10 @@ WIFI_SCAN_0303
 ^WIFI_SCAN_0103
 ^WIFI_SCAN_0105
 
+# set mac address may lead to exception
+WIFI_ADDR_0101
+^WIFI_ADDR_0101
+
 # DHCP issues
 ^TCPIP_DHCP_0301
 TCPIP_DHCP_0301
