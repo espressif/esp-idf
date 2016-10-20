@@ -904,16 +904,13 @@ _xt_coproc_exc:
        core we're running on now. */
     movi    a2, pxCurrentTCB
     getcoreid a3
-    slli    a3,  a3, 2
-    add     a2,  a2, a3
+    addx4     a2,  a3, a2
     l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCB[cpuid] */
     addi    a2, a2, TASKTCB_XCOREID_OFFSET  /* offset to xCoreID in tcb struct */
-    getcoreid a3
     s32i    a3, a2, 0                       /* store current cpuid */
 
 	/* Grab correct xt_coproc_owner_sa for this core */
-	getcoreid a2
-	movi    a3, XCHAL_CP_MAX << 2
+	movi    a2, XCHAL_CP_MAX << 2
 	mull    a2, a2, a3
     movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
 	add     a3, a3, a2

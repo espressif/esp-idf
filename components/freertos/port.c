@@ -253,28 +253,6 @@ void vPortAssertIfInISR()
 	configASSERT(port_interruptNesting[xPortGetCoreID()]==0)
 }
 
-
-/*
- * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
- * *mux to compare, and if it's the same, will set *mux to set. It will return the old value
- * of *addr.
- *
- * Warning: From the ISA docs: in some (unspecified) cases, the s32c1i instruction may return the
- * *bitwise inverse* of the old mem if the mem wasn't written. This doesn't seem to happen on the
- * ESP32, though. (Would show up directly if it did because the magic wouldn't match.)
- */
-uint32_t uxPortCompareSet(volatile uint32_t *mux, uint32_t compare, uint32_t set)
-{
-	__asm__ __volatile__ (
-		"WSR 	    %2,SCOMPARE1 \n" //initialize SCOMPARE1
-		"ISYNC      \n" //wait sync
-		"S32C1I     %0, %1, 0	 \n" //store id into the lock, if the lock is the same as comparel. Otherwise, no write-access
-		:"=r"(set) \
-		:"r"(mux), "r"(compare), "0"(set) \
-		);
-	return set;
-}
-
 /*
  * For kernel use: Initialize a per-CPU mux. Mux will be initialized unlocked.
  */
@@ -310,7 +288,8 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 	irqStatus=portENTER_CRITICAL_NESTED();
 	do {
 		//Lock mux if it's currently unlocked
-		res=uxPortCompareSet(&mux->mux, portMUX_FREE_VAL, (xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL);
+		res=(xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL;
+		uxPortCompareSet(&mux->mux, portMUX_FREE_VAL, &res);
 		//If it wasn't free and we're the owner of the lock, we are locking recursively.
 		if ( (res != portMUX_FREE_VAL) && (((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT) == xPortGetCoreID()) ) {
 			//Mux was already locked by us. Just bump the recurse count by one.
@@ -362,29 +341,33 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 	if ( (mux->mux & portMUX_MAGIC_MASK) != portMUX_MAGIC_VAL ) ets_printf("ERROR: vPortCPUReleaseMutex: mux %p is uninitialized (0x%X)!\n", mux, mux->mux);
 #endif
 	//Unlock mux if it's currently locked with a recurse count of 0
-	res=uxPortCompareSet(&mux->mux, (xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL, portMUX_FREE_VAL);
+	res=portMUX_FREE_VAL;
+	uxPortCompareSet(&mux->mux, (xPortGetCoreID()<<portMUX_VAL_SHIFT)|portMUX_MAGIC_VAL, &res);
 
-	if ( res == portMUX_FREE_VAL ) {
+	if ( ((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT) == xPortGetCoreID() ) {
+		//Lock is valid, we can return safely. Just need to check if it's a recursive lock; if so we need to decrease the refcount.
+		 if ( ((res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT)!=0) {
+			//We locked this, but the reccount isn't zero. Decrease refcount and continue.
+			recCnt=(res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT;
+			recCnt--;
+#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG_RECURSIVE
+			ets_printf("Recursive unlock: recCnt=%d last locked %s line %d, curr %s line %d\n", recCnt, lastLockedFn, lastLockedLine, fnName, line);
+#endif
+			mux->mux=portMUX_MAGIC_VAL|(recCnt<<portMUX_CNT_SHIFT)|(xPortGetCoreID()<<portMUX_VAL_SHIFT);
+		}
+	} else if ( res == portMUX_FREE_VAL ) {
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p was already unlocked!\n", mux);
 		ets_printf("Last non-recursive unlock %s line %d, curr unlock %s line %d\n", lastLockedFn, lastLockedLine, fnName, line);
 #endif
 		ret=pdFALSE;
-	} else if ( ((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT) != xPortGetCoreID() ) {
+	} else {
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p wasn't locked by this core (%d) but by core %d (ret=%x, mux=%x).\n", mux, xPortGetCoreID(), ((res&portMUX_VAL_MASK)>>portMUX_VAL_SHIFT), res, mux->mux);
 		ets_printf("Last non-recursive lock %s line %d\n", lastLockedFn, lastLockedLine);
 		ets_printf("Called by %s line %d\n", fnName, line);
 #endif
 		ret=pdFALSE;
-	} else if ( ((res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT)!=0) {
-		//We locked this, but the reccount isn't zero. Decrease refcount and continue.
-		recCnt=(res&portMUX_CNT_MASK)>>portMUX_CNT_SHIFT;
-		recCnt--;
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG_RECURSIVE
-		ets_printf("Recursive unlock: recCnt=%d last locked %s line %d, curr %s line %d\n", recCnt, lastLockedFn, lastLockedLine, fnName, line);
-#endif
-		mux->mux=portMUX_MAGIC_VAL|(recCnt<<portMUX_CNT_SHIFT)|(xPortGetCoreID()<<portMUX_VAL_SHIFT);
 	}
 	portEXIT_CRITICAL_NESTED(irqStatus);
 	return ret;

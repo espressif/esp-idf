@@ -76,7 +76,6 @@ inline static void panicPutHex(int a) { }
 inline static void panicPutDec(int a) { }
 #endif
 
-int xPortGetCoreID();
 
 void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName ) {
 	panicPutStr("***ERROR*** A stack overflow in task ");
