@@ -27,7 +27,10 @@ choice OPTIMIZATION_LEVEL
     prompt "Optimization level"
     default OPTIMIZATION_LEVEL_DEBUG
     help
-        This option sets compiler optimization level.
+        This option sets optimization level.
+        For "Release" setting, -Os flag is added to CFLAGS,
+         and -DNDEBUG flag is added to CPPFLAGS.
+        For "Debug" setting, -Og flag is added to CFLAGS.
 config OPTIMIZATION_LEVEL_DEBUG
     bool "Debug"
 config OPTIMIZATION_LEVEL_RELEASE

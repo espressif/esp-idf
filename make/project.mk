@@ -179,7 +179,7 @@ ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
 OPTIMIZATION_FLAGS = -Os
 CPPFLAGS += -DNDEBUG
 else
-OPTIMIZATION_FLAGS = -O0
+OPTIMIZATION_FLAGS = -Og
 endif
 
 # Enable generation of debugging symbols
