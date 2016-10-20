@@ -149,16 +149,16 @@ LDFLAGS ?= -nostdlib \
 	-Wl,-EL
 
 # Set default CPPFLAGS, CFLAGS, CXXFLAGS
-#
 # These are exported so that components can use them when compiling.
-#
 # If you need your component to add CFLAGS/etc for it's own source compilation only, set CFLAGS += in your component's Makefile.
-#
 # If you need your component to add CFLAGS/etc globally for all source
-# files, set CFLAGS += in your component's Makefile.projbuild
+#  files, set CFLAGS += in your component's Makefile.projbuild
+# If you need to set CFLAGS/CPPFLAGS/CXXFLAGS at project level, set them in application Makefile
+#  before including project.mk. Default flags will be added before the ones provided in application Makefile.
 
 # CPPFLAGS used by C preprocessor
-CPPFLAGS = -DESP_PLATFORM
+# If any flags are defined in application Makefile, add them at the end. 
+CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
 COMMON_WARNING_FLAGS = -Wall -Werror \
@@ -186,10 +186,24 @@ endif
 OPTIMIZATION_FLAGS += -ggdb
 
 # List of flags to pass to C compiler
-CFLAGS = -std=gnu99 $(strip $(OPTIMIZATION_FLAGS) $(COMMON_FLAGS) $(COMMON_WARNING_FLAGS))
+# If any flags are defined in application Makefile, add them at the end.
+CFLAGS := $(strip \
+	-std=gnu99 \
+	$(OPTIMIZATION_FLAGS) \
+	$(COMMON_FLAGS) \
+	$(COMMON_WARNING_FLAGS) \
+	$(CFLAGS))
 
 # List of flags to pass to C++ compiler
-CXXFLAGS = -std=gnu++11 -fno-exceptions -fno-rtti $(strip $(OPTIMIZATION_FLAGS) $(COMMON_FLAGS) $(COMMON_WARNING_FLAGS))
+# If any flags are defined in application Makefile, add them at the end.
+CXXFLAGS := $(strip \
+	-std=gnu++11 \
+	-fno-exceptions \
+	-fno-rtti \
+	$(OPTIMIZATION_FLAGS) \
+	$(COMMON_FLAGS) \
+	$(COMMON_WARNING_FLAGS) \
+	$(CXXFLAGS))
 
 export CFLAGS CPPFLAGS CXXFLAGS
 
