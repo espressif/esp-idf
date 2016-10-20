@@ -880,7 +880,7 @@ test cases:
     - ['R SSC1 C +DHCP:AP,OK']
   - - SSC SSC2 sta -C -s <random_string> -p <random_string>
     - ['R SSC2 C +JAP:CONNECTED']
-  - - DELAY 10
+  - - DELAY 30
     - ['']
   - - SSC SSC1 ap -L
     - [R SSC1 C 192.168.4.2 C 192.168.4.3 P <pc_wifi_nic_mac> P <target2_mac>]
@@ -8886,7 +8886,7 @@ test cases:
     - ['R SSC1 C +DHCP:AP,OK']
   - - SSC SSC2 sta -C -s <random_string> -p <random_string>
     - ['R SSC2 C +JAP:CONNECTED']
-  - - DELAY 10
+  - - DELAY 30
     - ['']
   - - SSC SSC1 ap -L
     - [R SSC1 C 192.168.4.2 C 192.168.4.3 P <pc_wifi_nic_mac> P <target2_mac>]
