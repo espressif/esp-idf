@@ -256,7 +256,7 @@ void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy)
     BD_ADDR          p_addr_ptr= {0};
     UINT8            adv_mode = p_cb->adv_mode;
 
-    BTM_TRACE_EVENT ("BTM_BleUpdateAdvFilterPolicy");
+    BTM_TRACE_EVENT ("BTM_BleUpdateAdvFilterPolicy\n");
 
     if (!controller_get_interface()->supports_ble())
         return;
@@ -1074,6 +1074,69 @@ tBTM_STATUS BTM_BleSetAdvParams(UINT16 adv_int_min, UINT16 adv_int_max,
     return status;
 }
 
+
+/*******************************************************************************
+**
+** Function         BTM_BleSetAdvParamsStartAdv
+**
+** Description      This function is called to set all of the advertising parameters.
+**
+** Parameters:       None.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, UINT8 adv_type,
+                               tBLE_ADDR_TYPE own_bda_type, tBLE_BD_ADDR *p_dir_bda,
+                               tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP afp)
+{
+	tBTM_LE_RANDOM_CB *p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+    tBTM_STATUS status = BTM_SUCCESS;
+	
+	BTM_TRACE_EVENT ("BTM_BleSetAdvParams\n");
+
+    if (!controller_get_interface()->supports_ble())
+        return BTM_ILLEGAL_VALUE;
+
+    if (!BTM_BLE_ISVALID_PARAM(adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
+        !BTM_BLE_ISVALID_PARAM(adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX))
+    {
+        return BTM_ILLEGAL_VALUE;
+    }
+
+    p_cb->adv_interval_min = adv_int_min;
+    p_cb->adv_interval_max = adv_int_max;
+    p_cb->adv_chnl_map = chnl_map;
+	p_addr_cb->own_addr_type = own_bda_type;
+	p_cb->evt_type = adv_type;
+	p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
+	
+	if (p_dir_bda)
+    {
+        memcpy(&p_cb->direct_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
+    }
+
+	BTM_TRACE_EVENT ("update params for an active adv\n");
+
+    btm_ble_stop_adv();
+
+	 /* update adv params */
+    btsnd_hcic_ble_write_adv_params (adv_int_min,
+                                     adv_int_max,
+                                     adv_type,
+                                     own_bda_type,
+                                     p_dir_bda->type,
+                                     p_dir_bda->bda,
+                                     chnl_map,
+                                     p_cb->afp);
+
+	  btm_ble_start_adv();
+}
+
+
+
+
 /*******************************************************************************
 **
 ** Function         BTM_BleReadAdvParams
@@ -1888,7 +1951,7 @@ tBTM_STATUS btm_ble_set_connectability(UINT16 combined_mode)
                             own_addr_type = p_addr_cb->own_addr_type;
     UINT16                  adv_int_min, adv_int_max;
 
-    BTM_TRACE_EVENT ("%s mode=0x%0x combined_mode=0x%x", __FUNCTION__, mode, combined_mode);
+    BTM_TRACE_EVENT ("%s mode=0x%0x combined_mode=0x%x\n", __FUNCTION__, mode, combined_mode);
 
     /*** Check mode parameter ***/
     if (mode > BTM_BLE_MAX_CONNECTABLE)

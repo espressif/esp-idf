@@ -941,6 +941,24 @@ BOOLEAN BTM_SecAddBleKey (BD_ADDR bd_addr, tBTM_LE_KEY_VALUE *p_le_key,
 tBTM_STATUS BTM_BleSetAdvParams(UINT16 adv_int_min, UINT16 adv_int_max,
                                        tBLE_BD_ADDR *p_dir_bda, tBTM_BLE_ADV_CHNL_MAP chnl_map);
 
+
+
+/*******************************************************************************
+**
+** Function         BTM_BleSetAdvParamsStartAdv
+**
+** Description      This function is called to set all of the advertising parameters.
+**
+** Parameters:       None.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, UINT8 adv_type,
+                               							tBLE_ADDR_TYPE own_bda_type, tBLE_BD_ADDR *p_dir_bda,
+                                						tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP afp);
+
+
 /*******************************************************************************
 **
 ** Function         BTM_BleWriteAdvData

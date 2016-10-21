@@ -4890,6 +4890,28 @@ void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         BTM_BleSetAdvParamsStartAdv
+**
+** Description      This function is called to set all of the advertising parameters.
+**
+** Parameters:       None.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_ble_set_adv_params_all	(tBTA_DM_MSG *p_data)
+{
+	BTM_BleSetAdvParamsStartAdv(p_data->ble_set_adv_params_all.adv_int_min,
+								p_data->ble_set_adv_params_all.adv_int_max,
+								p_data->ble_set_adv_params_all.adv_type,
+								p_data->ble_set_adv_params_all.addr_type_own,
+								p_data->ble_set_adv_params_all.p_dir_bda,
+								p_data->ble_set_adv_params_all.channel_map,
+								p_data->ble_set_adv_params_all.adv_filter_policy);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ble_set_adv_config
 **
 ** Description      This function set the customized ADV data configuration

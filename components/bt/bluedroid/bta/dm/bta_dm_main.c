@@ -99,6 +99,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] =
     bta_dm_ble_config_local_privacy,   /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
     bta_dm_ble_set_adv_params,     /* BTA_DM_API_BLE_ADV_PARAM_EVT */
+    bta_dm_ble_set_adv_params_all, /* BTA_DM_API_BLE_ADV_PARAM_All_EVT */
     bta_dm_ble_set_adv_config,     /* BTA_DM_API_BLE_SET_ADV_CONFIG_EVT */
     bta_dm_ble_set_scan_rsp,       /* BTA_DM_API_BLE_SET_SCAN_RSPT */
     bta_dm_ble_broadcast,          /* BTA_DM_API_BLE_BROADCAST_EVT */

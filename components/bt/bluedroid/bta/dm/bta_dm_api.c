@@ -1004,6 +1004,42 @@ void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
     }
 #endif
 }
+
+void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
+											  UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
+											  tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
+                           					  tBLE_BD_ADDR *p_dir_bda)
+{
+#if BLE_INCLUDED == TRUE
+    tBTA_DM_API_BLE_ADV_PARAMS_ALL    *p_msg;
+
+    APPL_TRACE_API ("BTA_DmSetBleAdvParam: %d, %d\n", adv_int_min, adv_int_max);
+
+    if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS_ALL *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_ADV_PARAMS_ALL))) != NULL)
+    {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ADV_PARAMS_ALL));
+
+        p_msg->hdr.event = BTA_DM_API_BLE_ADV_PARAM_All_EVT;
+
+        p_msg->adv_int_min      = adv_int_min;
+        p_msg->adv_int_max      = adv_int_max;
+		p_msg->adv_type			= adv_type;
+		p_msg->addr_type_own	= addr_type_own;
+		p_msg->channel_map		= chnl_map;
+		p_msg->adv_filter_policy	= adv_fil_pol;
+        if (p_dir_bda != NULL)
+        {
+            p_msg->p_dir_bda = (tBLE_BD_ADDR *)(p_msg + 1);
+            memcpy(p_msg->p_dir_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
+        }
+
+        bta_sys_sendmsg(p_msg);
+    }
+#endif
+}
+
+
+
 /*******************************************************************************
 **                      BLE ADV data management API
 ********************************************************************************/
@@ -1498,7 +1534,7 @@ void BTA_DmBleUpdateConnectionParam(BD_ADDR bd_addr, UINT16 min_int,
 **
 *******************************************************************************/
 void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable)
-{
+{	///This function used the irk to generate the resolve address
 #if BLE_INCLUDED == TRUE && BLE_PRIVACY_SPT == TRUE
     tBTA_DM_API_LOCAL_PRIVACY *p_msg;
 
@@ -1534,7 +1570,7 @@ void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable)
 void BTA_BleEnableAdvInstance (tBTA_BLE_ADV_PARAMS *p_params,
                                 tBTA_BLE_MULTI_ADV_CBACK *p_cback,
                                 void *p_ref)
-{
+{	///This function just used for vendor debug
     tBTA_DM_API_BLE_MULTI_ADV_ENB    *p_msg;
     UINT16 len = sizeof(tBTA_BLE_ADV_PARAMS) + sizeof(tBTA_DM_API_BLE_MULTI_ADV_ENB);
 
@@ -1572,6 +1608,7 @@ void BTA_BleEnableAdvInstance (tBTA_BLE_ADV_PARAMS *p_params,
 *******************************************************************************/
 void BTA_BleUpdateAdvInstParam (UINT8 inst_id, tBTA_BLE_ADV_PARAMS *p_params)
 {
+	///This function just used for vendor debug
     tBTA_DM_API_BLE_MULTI_ADV_PARAM    *p_msg;
     UINT16      len = sizeof(tBTA_BLE_ADV_PARAMS) + sizeof(tBTA_DM_API_BLE_MULTI_ADV_PARAM);
 
@@ -1608,7 +1645,7 @@ void BTA_BleUpdateAdvInstParam (UINT8 inst_id, tBTA_BLE_ADV_PARAMS *p_params)
 void BTA_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
                             tBTA_BLE_AD_MASK data_mask,
                             tBTA_BLE_ADV_DATA *p_data)
-{
+{		///This function just used for vendor debug
     tBTA_DM_API_BLE_MULTI_ADV_DATA    *p_msg;
     UINT16      len =  sizeof(tBTA_DM_API_BLE_MULTI_ADV_DATA) ;
 
@@ -1638,7 +1675,7 @@ void BTA_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
 ** Returns          BTA_SUCCESS if command started sucessfully; otherwise failure.
 **
 *******************************************************************************/
-void BTA_BleDisableAdvInstance (UINT8  inst_id)
+void BTA_BleDisableAdvInstance (UINT8  inst_id)		//this function just used for vendor debug
 {
     tBTA_DM_API_BLE_MULTI_ADV_DISABLE    *p_msg;
 

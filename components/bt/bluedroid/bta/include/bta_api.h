@@ -921,7 +921,7 @@ typedef struct
 } tBTA_DM_BOND_CANCEL_CMPL;
 
 /* Union of all security callback structures */
-typedef union
+ typedef union
 {
     tBTA_DM_ENABLE      enable;         /* BTA enabled */
     tBTA_DM_PIN_REQ     pin_req;        /* PIN request. */
@@ -1918,6 +1918,13 @@ extern void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
 *******************************************************************************/
 extern void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
                                    tBLE_BD_ADDR *p_dir_bda);
+
+extern void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
+									  UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
+									  tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
+                           			  tBLE_BD_ADDR *p_dir_bda);
+
+
 /*******************************************************************************
 **
 ** Function         BTA_DmSearchExt
