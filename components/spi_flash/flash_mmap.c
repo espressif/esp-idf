@@ -88,6 +88,9 @@ esp_err_t IRAM_ATTR spi_flash_mmap(uint32_t src_addr, size_t size, spi_flash_mma
     if (src_addr & 0xffff) {
         return ESP_ERR_INVALID_ARG;
     }
+    if (src_addr + size > g_rom_flashchip.chip_size) {
+        return ESP_ERR_INVALID_ARG;
+    }
     spi_flash_disable_interrupts_caches_and_other_cpu();
     if (s_mmap_page_refcnt[0] == 0) {
         spi_flash_mmap_init();
