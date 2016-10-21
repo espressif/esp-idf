@@ -339,12 +339,12 @@ _xt_panic:
     rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
     s32i    a0, sp, XT_STK_A0
 
-    /* Set up PS for C, reenable hi-pri interrupts, and clear EXCM. */
-    movi    a0, PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE
+    /* Set up PS for C, disable all interrupts, and clear EXCM. */
+    movi    a0, PS_INTLEVEL(7) | PS_UM | PS_WOE
     wsr     a0, PS
 
 	//Call panic handler
-	mov		a2,sp
+	mov		a6,sp
 	call4 panicHandler
 
 1:  j       1b                              /* loop infinitely */
@@ -1606,6 +1606,13 @@ _xt_highint4:
     /* USER_EDIT:
     ADD HIGH PRIORITY LEVEL 4 INTERRUPT HANDLER CODE HERE.
     */
+
+    /* On the ESP32, this level is used for the INT_WDT handler. If that triggers, the program is stuck with interrupts
+       off and the CPU should panic. */
+	rsr     a0, EXCSAVE_4
+	wsr     a0, EXCSAVE_1 /* panic handler reads this register */
+    call0 _xt_panic
+
 
     .align  4
 .L_xt_highint4_exit:

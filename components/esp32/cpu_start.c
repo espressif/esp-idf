@@ -44,6 +44,8 @@
 #include "esp_log.h"
 
 #include "esp_brownout.h"
+#include "esp_int_wdt.h"
+#include "esp_task_wdt.h"
 
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
 void start_cpu0_default(void) IRAM_ATTR;
@@ -143,10 +145,10 @@ void start_cpu0_default(void)
     esp_brownout_init();
 #endif
 #if CONFIG_INT_WDT
-    int_wdt_init()
+    int_wdt_init();
 #endif
 #if CONFIG_TASK_WDT
-    task_wdt_init()
+    task_wdt_init();
 #endif
 
     xTaskCreatePinnedToCore(&main_task, "main",

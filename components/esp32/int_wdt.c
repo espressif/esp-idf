@@ -47,11 +47,6 @@ This uses the TIMERG1 WDT.
 
 #define WDT_WRITE_KEY 0x50D83AA1
 
-static void esp_int_wdt_isr(void *arg) {
-	abort();
-}
-
-
 void int_wdt_init() {
 	TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
 	TIMERG1.wdt_config0.sys_reset_length=7;				//3.2uS
@@ -67,7 +62,9 @@ void int_wdt_init() {
 	TIMERG1.wdt_wprotect=0;
 	ESP_INTR_DISABLE(WDT_INT_NUM);
 	intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
-	xt_set_interrupt_handler(WDT_INT_NUM, int_wdt_isr, NULL);
+	//We do not register a handler for the interrupt because it is interrupt level 4 which
+	//is not servicable from C. Instead, xtensa_vectors.S has a call to the panic handler for
+	//this interrupt.
 	ESP_INTR_ENABLE(WDT_INT_NUM);
 }
 
