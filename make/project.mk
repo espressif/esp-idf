@@ -214,6 +214,7 @@ HOSTCC := $(CC)
 HOSTLD := $(LD)
 HOSTAR := $(AR)
 HOSTOBJCOPY := $(OBJCOPY)
+export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY
 
 #Set target compiler. Defaults to whatever the user has
 #configured as prefix + yer olde gcc commands
