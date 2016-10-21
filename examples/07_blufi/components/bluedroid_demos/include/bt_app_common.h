@@ -4,23 +4,7 @@
 #include <stdint.h>
 #include "osi.h"
 #include "bt_common_types.h"
-
-/** Bluetooth Error Status */
-/** originally defined in bluetooth.h */
-typedef enum {
-    BT_STATUS_SUCCESS,
-    BT_STATUS_FAIL,
-    BT_STATUS_NOT_READY,
-    BT_STATUS_NOMEM,
-    BT_STATUS_BUSY,
-    BT_STATUS_DONE,
-    BT_STATUS_UNSUPPORTED,
-    BT_STATUS_PARAM_INVALID,
-    BT_STATUS_UNHANDLED,
-    BT_STATUS_AUTH_FAILURE,
-    BT_STATUS_RMT_DEV_DOWN
-
-} bt_status_t;
+#include "bt_defs.h"
     
 /* BT APP Events */
 #define BT_EVT_APP                     (0xB000)

@@ -166,10 +166,6 @@ tESP_BLE_ADV_DATA wechat_adv_data[ADV_SCAN_IDX_MAX] =
 static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
 #endif
                   
-typedef struct {
-    uint8_t uu[16];
-} bt_uuid_t;
-
 int uuidType(unsigned char* p_uuid)
 {
     int i = 0;

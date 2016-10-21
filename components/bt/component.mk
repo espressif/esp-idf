@@ -40,6 +40,7 @@ COMPONENT_ADD_LDFLAGS := -lbt -L$(abspath lib) \
 COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/bta/gatt			\
 			bluedroid/bta/hh			\
+			bluedroid/bta/sdp			\
 			bluedroid/bta/sys			\
 			bluedroid/bta				\
 			bluedroid/btcore			\

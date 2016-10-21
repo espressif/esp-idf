@@ -28,10 +28,6 @@ static unsigned char BASE_UUID[16] = {
     0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
                   
-typedef struct {
-    uint8_t uu[16];
-} bt_uuid_t;
-
 int uuidType(unsigned char* p_uuid)
 {
     int i = 0;
