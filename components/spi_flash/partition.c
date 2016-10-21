@@ -135,38 +135,6 @@ const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, const
     return res;
 }
 
-void esp_partition_iterator_release(esp_partition_iterator_t iterator)
-{
-    // iterator == NULL is okay
-    free(iterator);
-}
-
-const esp_partition_t* esp_partition_get(esp_partition_iterator_t iterator)
-{
-    assert(iterator != NULL);
-    return iterator->info;
-}
-
-esp_partition_type_t esp_partition_type(esp_partition_iterator_t iterator)
-{
-    return esp_partition_get(iterator)->type;
-}
-
-uint32_t esp_partition_size(esp_partition_iterator_t iterator)
-{
-    return esp_partition_get(iterator)->size;
-}
-
-uint32_t esp_partition_address(esp_partition_iterator_t iterator)
-{
-    return esp_partition_get(iterator)->address;
-}
-
-const char* esp_partition_label(esp_partition_iterator_t iterator)
-{
-    return esp_partition_get(iterator)->label;
-}
-
 static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t type, const char* label)
 {
     esp_partition_iterator_opaque_t* it =
@@ -218,4 +186,93 @@ static esp_err_t load_partitions()
     }
     spi_flash_munmap(handle);
     return ESP_OK;
+}
+
+void esp_partition_iterator_release(esp_partition_iterator_t iterator)
+{
+    // iterator == NULL is okay
+    free(iterator);
+}
+
+const esp_partition_t* esp_partition_get(esp_partition_iterator_t iterator)
+{
+    assert(iterator != NULL);
+    return iterator->info;
+}
+
+esp_err_t esp_partition_read(const esp_partition_t* partition,
+        size_t src_offset, uint8_t* dst, size_t size)
+{
+    assert(partition != NULL);
+    if (src_offset > partition->size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (src_offset + size > partition->size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    return spi_flash_read(partition->address + src_offset, dst, size);
+}
+
+esp_err_t esp_partition_write(const esp_partition_t* partition,
+                             size_t dst_offset, const uint8_t* src, size_t size)
+{
+    assert(partition != NULL);
+    if (dst_offset > partition->size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (dst_offset + size > partition->size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    return spi_flash_write(partition->address + dst_offset, src, size);
+}
+
+esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
+                                    size_t start_addr, size_t size)
+{
+    assert(partition != NULL);
+    if (start_addr > partition->size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (start_addr + size > partition->size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (size % SPI_FLASH_SEC_SIZE != 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (start_addr % SPI_FLASH_SEC_SIZE != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return spi_flash_erase_range(partition->address + start_addr, size);
+
+}
+
+/*
+ * Note: current implementation ignores the possibility of multiple regions in the same partition being
+ * mapped. Reference counting and address space re-use is delegated to spi_flash_mmap.
+ *
+ * If this becomes a performance issue (i.e. if we need to map multiple regions within the partition),
+ * we can add esp_partition_mmapv which will accept an array of offsets and sizes, and return array of
+ * mmaped pointers, and a single handle for all these regions.
+ */
+esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, uint32_t size,
+                             spi_flash_mmap_memory_t memory,
+                             const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
+{
+    assert(partition != NULL);
+    if (offset > partition->size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (offset + size > partition->size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    size_t phys_addr = partition->address + offset;
+    // offset within 64kB block
+    size_t region_offset = phys_addr & 0xffff;
+    size_t mmap_addr = phys_addr & 0xffff0000;
+    esp_err_t rc = spi_flash_mmap(mmap_addr, size, memory, out_ptr, out_handle);
+    // adjust returned pointer to point to the correct offset
+    if (rc == ESP_OK) {
+        *out_ptr = (void*) (((ptrdiff_t) *out_ptr) + region_offset);
+    }
+    return rc;
 }

@@ -17,7 +17,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include "esp_err.h"
+#include "esp_spi_flash.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,58 +131,26 @@ const esp_partition_t* esp_partition_get(esp_partition_iterator_t iterator);
 esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t iterator);
 
 /**
- * @brief Get partition type
+ * @brief Release partition iterator
  *
- * @note This is a helper function built around esp_partition_get.
- *
- * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
- *
- * @return esp_partition_type_t value for partition pointed to by the iterator.
- */
-esp_partition_type_t esp_partition_type(esp_partition_iterator_t iterator);
-
-/**
- * @brief Get partition size
- *
- * @note This is a helper function built around esp_partition_get.
+ * Any pointers obtained using esp_partition_label function will be invalid
+ * after this call.
  *
  * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
  *
- * @return partition size, in bytes
  */
-uint32_t esp_partition_size(esp_partition_iterator_t iterator);
-
-/**
- * @brief Get partition address
- *
- * @note This is a helper function built around esp_partition_get.
- *
- * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
- *
- * @return flash address of partition start
- */
-uint32_t esp_partition_address(esp_partition_iterator_t iterator);
-
-/**
- * @brief Get partition label
- *
- * @note This is a helper function built around esp_partition_get.
- *
- * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
- *
- * @return pointer to a zero-terminated string with partition label.
- *         The pointer is valid for the lifetime of the application.
- */
-const char* esp_partition_label(esp_partition_iterator_t iterator);
+void esp_partition_iterator_release(esp_partition_iterator_t iterator);
 
 /**
  * @brief Read data from the partition
  *
- * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
+ * @param partition Pointer to partition structure obtained using
+ *                  esp_partition_find_first or esp_partition_get.
+ *                  Must be non-NULL.
+ * @param dst Pointer to the buffer where data should be stored.
+ *            Pointer must be non-NULL and buffer must be at least 'size' bytes long.
  * @param src_offset Address of the data to be read, relative to the
  *                   beginning of the partition.
- * @param dst Pointer to the buffer where data should be stored.
- *            Must be non-NULL and at least 'size' bytes long.
  * @param size Size of data to be read, in bytes.
  *
  * @return ESP_OK, if data was read successfully;
@@ -188,17 +158,22 @@ const char* esp_partition_label(esp_partition_iterator_t iterator);
  *         ESP_ERR_INVALID_SIZE, if read would go out of bounds of the partition;
  *         or one of error codes from lower-level flash driver.
  */
-esp_err_t esp_partition_read(esp_partition_iterator_t iterator,
-                             uint32_t src_offset, uint8_t* dst, uint32_t size);
+esp_err_t esp_partition_read(const esp_partition_t* partition,
+                             size_t src_offset, uint8_t* dst, size_t size);
 
 /**
  * @brief Write data to the partition
  *
- * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
- * @param src Pointer to the source buffer.  Must be non-NULL and
- *              at least 'size' bytes long.
+ * Before writing data to flash, corresponding region of flash needs to be erased.
+ * This can be done using esp_partition_erase_range function.
+ *
+ * @param partition Pointer to partition structure obtained using
+ *                  esp_partition_find_first or esp_partition_get.
+ *                  Must be non-NULL.
  * @param dst_offset Address where the data should be written, relative to the
  *                   beginning of the partition.
+ * @param src Pointer to the source buffer.  Pointer must be non-NULL and
+ *            buffer must be at least 'size' bytes long.
  * @param size Size of data to be written, in bytes.
  *
  * @note Prior to writing to flash memory, make sure it has been erased with
@@ -209,13 +184,15 @@ esp_err_t esp_partition_read(esp_partition_iterator_t iterator,
  *         ESP_ERR_INVALID_SIZE, if write would go out of bounds of the partition;
  *         or one of error codes from lower-level flash driver.
  */
-esp_err_t esp_partition_write(esp_partition_iterator_t iterator,
-                             const uint8_t* src, uint32_t dst_offset, uint32_t size);
+esp_err_t esp_partition_write(const esp_partition_t* partition,
+                             size_t dst_offset, const uint8_t* src, size_t size);
 
 /**
  * @brief Erase part of the partition
  *
- * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
+ * @param partition Pointer to partition structure obtained using
+ *                  esp_partition_find_first or esp_partition_get.
+ *                  Must be non-NULL.
  * @param start_addr Address where erase operation should start. Must be aligned
  *                   to 4 kilobytes.
  * @param size Size of the range which should be erased, in bytes.
@@ -226,35 +203,37 @@ esp_err_t esp_partition_write(esp_partition_iterator_t iterator,
  *         ESP_ERR_INVALID_SIZE, if erase would go out of bounds of the partition;
  *         or one of error codes from lower-level flash driver.
  */
-esp_err_t esp_partition_erase_range(esp_partition_iterator_t iterator,
+esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
                                     uint32_t start_addr, uint32_t size);
 
 /**
  * @brief Configure MMU to map partition into data memory
  *
- * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
+ * Unlike spi_flash_mmap function, which requires a 64kB aligned base address,
+ * this function doesn't impose such a requirement.
+ * If offset results in a flash address which is not aligned to 64kB boundary,
+ * address will be rounded to the lower 64kB boundary, so that mapped region
+ * includes requested range.
+ * Pointer returned via out_ptr argument will be adjusted to point to the
+ * requested offset (not necessarily to the beginning of mmap-ed region).
  *
+ * To release mapped memory, pass handle returned via out_handle argument to
+ * spi_flash_munmap function.
+ *
+ * @param partition Pointer to partition structure obtained using
+ *                  esp_partition_find_first or esp_partition_get.
+ *                  Must be non-NULL.
  * @param offset Offset from the beginning of partition where mapping should start.
- *               Must be aligned to 64k.
- *
  * @param size Size of the area to be mapped.
+ * @param memory  Memory space where the region should be mapped
+ * @param out_ptr  Output, pointer to the mapped memory region
+ * @param out_handle  Output, handle which should be used for spi_flash_munmap call
  *
- * @return pointer to mapped memory, if successful
- *         NULL, if memory can not be mapped for any reason
+ * @return ESP_OK, if successful
  */
-void* esp_partition_mmap(esp_partition_iterator_t iterator, uint32_t offset, uint32_t size);
-
-
-/**
- * @brief Release partition iterator
- *
- * Any pointers obtained using esp_partition_label function will be invalid
- * after this call.
- *
- * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
- *
- */
-void esp_partition_iterator_release(esp_partition_iterator_t iterator);
+esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, uint32_t size,
+                             spi_flash_mmap_memory_t memory,
+                             const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
 
 #ifdef __cplusplus

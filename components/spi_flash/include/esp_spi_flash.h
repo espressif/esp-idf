@@ -16,6 +16,7 @@
 #define ESP_SPI_FLASH_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include "esp_err.h"
 #include "sdkconfig.h"
 
