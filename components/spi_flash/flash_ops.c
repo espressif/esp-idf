@@ -64,6 +64,11 @@ void spi_flash_init()
 #endif
 }
 
+size_t spi_flash_get_chip_size()
+{
+    return g_rom_flashchip.chip_size;
+}
+
 SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
 {
     static bool unlocked = false;
@@ -77,28 +82,74 @@ SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
     return SPI_FLASH_RESULT_OK;
 }
 
-esp_err_t IRAM_ATTR spi_flash_erase_sector(uint16_t sec)
+esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
 {
+    return spi_flash_erase_range(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
+}
+
+esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
+{
+    if (start_addr % SPI_FLASH_SEC_SIZE != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (size % SPI_FLASH_SEC_SIZE != 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (size + start_addr > spi_flash_get_chip_size()) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    size_t start = start_addr / SPI_FLASH_SEC_SIZE;
+    size_t end = start + size / SPI_FLASH_SEC_SIZE;
+    const size_t sectors_per_block = 16;
     COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
     rc = spi_flash_unlock();
     if (rc == SPI_FLASH_RESULT_OK) {
-        rc = SPIEraseSector(sec);
+        for (size_t sector = start; sector != end && rc == SPI_FLASH_RESULT_OK; ) {
+            if (sector % sectors_per_block == 0 && end - sector > sectors_per_block) {
+                rc = SPIEraseBlock(sector / sectors_per_block);
+                sector += sectors_per_block;
+                COUNTER_ADD_BYTES(erase, sectors_per_block * SPI_FLASH_SEC_SIZE);
+            }
+            else {
+                rc = SPIEraseSector(sector);
+                ++sector;
+                COUNTER_ADD_BYTES(erase, SPI_FLASH_SEC_SIZE);
+            }
+        }
     }
     spi_flash_enable_interrupts_caches_and_other_cpu();
     COUNTER_STOP(erase);
     return spi_flash_translate_rc(rc);
 }
 
-esp_err_t IRAM_ATTR spi_flash_write(uint32_t dest_addr, const uint32_t *src, uint32_t size)
+esp_err_t IRAM_ATTR spi_flash_write(size_t dest_addr, const uint8_t *src, size_t size)
 {
+    // TODO: replace this check with code which deals with unaligned sources
+    if (((ptrdiff_t) src) % 4 != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    // Destination alignment is also checked in ROM code, but we can give
+    // better error code here
+    // TODO: add handling of unaligned destinations
+    if (dest_addr % 4 != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (size % 4 != 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    // Out of bound writes are checked in ROM code, but we can give better
+    // error code here
+    if (dest_addr + size > g_rom_flashchip.chip_size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
     COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
     rc = spi_flash_unlock();
     if (rc == SPI_FLASH_RESULT_OK) {
-        rc = SPIWrite(dest_addr, src, (int32_t) size);
+        rc = SPIWrite((uint32_t) dest_addr, (const uint32_t*) src, (int32_t) size);
         COUNTER_ADD_BYTES(write, size);
     }
     spi_flash_enable_interrupts_caches_and_other_cpu();
@@ -106,11 +157,29 @@ esp_err_t IRAM_ATTR spi_flash_write(uint32_t dest_addr, const uint32_t *src, uin
     return spi_flash_translate_rc(rc);
 }
 
-esp_err_t IRAM_ATTR spi_flash_read(uint32_t src_addr, uint32_t *dest, uint32_t size)
+esp_err_t IRAM_ATTR spi_flash_read(size_t src_addr, uint8_t *dest, size_t size)
 {
+    // TODO: replace this check with code which deals with unaligned destinations
+    if (((ptrdiff_t) dest) % 4 != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    // Source alignment is also checked in ROM code, but we can give
+    // better error code here
+    // TODO: add handling of unaligned destinations
+    if (src_addr % 4 != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (size % 4 != 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    // Out of bound reads are checked in ROM code, but we can give better
+    // error code here
+    if (src_addr + size > g_rom_flashchip.chip_size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
     COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc = SPIRead(src_addr, dest, (int32_t) size);
+    SpiFlashOpResult rc = SPIRead((uint32_t) src_addr, (uint32_t*) dest, (int32_t) size);
     COUNTER_ADD_BYTES(read, size);
     spi_flash_enable_interrupts_caches_and_other_cpu();
     COUNTER_STOP(read);

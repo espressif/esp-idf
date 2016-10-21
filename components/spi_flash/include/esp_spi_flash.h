@@ -39,36 +39,62 @@ extern "C" {
 void spi_flash_init();
 
 /**
+ * @brief  Get flash chip size, as set in binary image header
+ *
+ * @note This value does not necessarily match real flash size.
+ *
+ * @return size of flash chip, in bytes
+ */
+size_t spi_flash_get_chip_size();
+
+/**
  * @brief  Erase the Flash sector.
  *
- * @param  uint16 sec : Sector number, the count starts at sector 0, 4KB per sector.
+ * @param  sector  Sector number, the count starts at sector 0, 4KB per sector.
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_erase_sector(uint16_t sec);
+esp_err_t spi_flash_erase_sector(size_t sector);
+
+/**
+ * @brief  Erase a range of flash sectors
+ *
+ * @param  uint32_t start_address : Address where erase operation has to start.
+ *                                  Must be 4kB-aligned
+ * @param  uint32_t size : Size of erased range, in bytes. Must be divisible by 4kB.
+ *
+ * @return esp_err_t
+ */
+esp_err_t spi_flash_erase_range(size_t start_addr, size_t size);
+
 
 /**
  * @brief  Write data to Flash.
  *
- * @param  uint32 des_addr  : destination address in Flash.
- * @param  uint32 *src_addr : source address of the data.
- * @param  uint32 size      : length of data
+ * @note Both des_addr and src_addr have to be 4-byte aligned.
+ *       This is a temporary limitation which will be removed.
+ *
+ * @param  des_addr  destination address in Flash
+ * @param  src_addr  source address of the data
+ * @param  size  length of data, in bytes
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_write(uint32_t des_addr, const uint32_t *src_addr, uint32_t size);
+esp_err_t spi_flash_write(size_t des_addr, const uint8_t *src_addr, size_t size);
 
 /**
  * @brief  Read data from Flash.
  *
- * @param  uint32 src_addr  : source address of the data in Flash.
- * @param  uint32 *des_addr : destination address.
- * @param  uint32 size      : length of data
+ * @note Both des_addr and src_addr have to be 4-byte aligned.
+ *       This is a temporary limitation which will be removed.
+ *
+ * @param  src_addr  source address of the data in Flash.
+ * @param  des_addr  destination address
+ * @param  size  length of data
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_read(uint32_t src_addr, uint32_t *des_addr, uint32_t size);
-
+esp_err_t spi_flash_read(size_t src_addr, uint8_t *des_addr, size_t size);
 
 /**
  * @brief Enumeration which specifies memory space requested in an mmap call
@@ -135,7 +161,7 @@ void spi_flash_mmap_dump();
 typedef struct {
     uint32_t count;     // number of times operation was executed
     uint32_t time;      // total time taken, in microseconds
-    uint32_t bytes;     // total number of bytes, for read and write operations
+    uint32_t bytes;     // total number of bytes
 } spi_flash_counter_t;
 
 typedef struct {

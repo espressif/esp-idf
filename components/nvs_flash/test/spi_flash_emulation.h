@@ -44,7 +44,7 @@ public:
         spi_flash_emulator_set(nullptr);
     }
 
-    bool read(uint32_t* dest, uint32_t srcAddr, size_t size) const
+    bool read(uint32_t* dest, size_t srcAddr, size_t size) const
     {
         if (srcAddr % 4 != 0 ||
                 size % 4 != 0 ||
@@ -60,7 +60,7 @@ public:
         return true;
     }
 
-    bool write(uint32_t dstAddr, const uint32_t* src, size_t size)
+    bool write(size_t dstAddr, const uint32_t* src, size_t size)
     {
         uint32_t sectorNumber = dstAddr/SPI_FLASH_SEC_SIZE;
         if (sectorNumber < mLowerSectorBound || sectorNumber >= mUpperSectorBound) {
@@ -96,7 +96,7 @@ public:
         return true;
     }
 
-    bool erase(uint32_t sectorNumber)
+    bool erase(size_t sectorNumber)
     {
         size_t offset = sectorNumber * SPI_FLASH_SEC_SIZE / 4;
         if (offset > mData.size()) {
