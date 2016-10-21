@@ -43,6 +43,8 @@
 #include "esp_ipc.h"
 #include "esp_log.h"
 
+#include "esp_brownout.h"
+
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
 void start_cpu0_default(void) IRAM_ATTR;
 #if !CONFIG_FREERTOS_UNICORE
@@ -137,6 +139,16 @@ void start_cpu0_default(void)
     do_global_ctors();
     esp_ipc_init();
     spi_flash_init();
+#if CONFIG_BROWNOUT_DET
+    esp_brownout_init();
+#endif
+#if CONFIG_INT_WDT
+    int_wdt_init()
+#endif
+#if CONFIG_TASK_WDT
+    task_wdt_init()
+#endif
+
     xTaskCreatePinnedToCore(&main_task, "main",
             ESP_TASK_MAIN_STACK, NULL,
             ESP_TASK_MAIN_PRIO, NULL, 0);
