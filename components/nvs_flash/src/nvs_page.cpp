@@ -769,7 +769,7 @@ void Page::invalidateCache()
 
 void Page::debugDump() const
 {
-    printf("state=%x addr=%x seq=%d\nfirstUsed=%d nextFree=%d used=%d erased=%d\n", mState, mBaseAddress, mSeqNumber, static_cast<int>(mFirstUsedEntry), static_cast<int>(mNextFreeEntry), mUsedEntryCount, mErasedEntryCount);
+    printf("state=%x addr=%x seq=%d\nfirstUsed=%d nextFree=%d used=%d erased=%d\n", (int) mState, mBaseAddress, mSeqNumber, static_cast<int>(mFirstUsedEntry), static_cast<int>(mNextFreeEntry), mUsedEntryCount, mErasedEntryCount);
     size_t skip = 0;
     for (size_t i = 0; i < ENTRY_COUNT; ++i) {
         printf("%3d: ", static_cast<int>(i));

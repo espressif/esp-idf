@@ -37,6 +37,12 @@ build_template_app:
     # branch
     - git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
     - make defconfig
+    # Test debug build (default)
+    - make all V=1
+    # Now test release build
+    - make clean
+    - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
+    - make defconfig
     - make all V=1
 
 

@@ -91,15 +91,15 @@ define GenerateCompileTargets
 # $(1) - directory containing source files, relative to $(COMPONENT_PATH)
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c | $(1)
 	$$(summary) CC $$@
-	$$(Q) $$(CC) $$(CFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(Q) $$(CC) $$(CFLAGS) $(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp | $(1)
-	$$(summary) CC $$@
-	$$(Q) $$(CXX) $$(CXXFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(summary) CXX $$@
+	$$(Q) $$(CXX) $$(CXXFLAGS) $(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
 $(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S | $(1)
-	$$(summary) CC $$@
-	$$(Q) $$(CC) $$(CFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
+	$$(summary) AS $$@
+	$$(Q) $$(CC) $$(CFLAGS) $(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
 # CWD is build dir, create the build subdirectory if it doesn't exist
 $(1):

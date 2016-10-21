@@ -151,23 +151,61 @@ LDFLAGS ?= -nostdlib \
 	-Wl,-EL
 
 # Set default CPPFLAGS, CFLAGS, CXXFLAGS
-#
 # These are exported so that components can use them when compiling.
-#
 # If you need your component to add CFLAGS/etc for it's own source compilation only, set CFLAGS += in your component's Makefile.
-#
 # If you need your component to add CFLAGS/etc globally for all source
-# files, set CFLAGS += in your component's Makefile.projbuild
+#  files, set CFLAGS += in your component's Makefile.projbuild
+# If you need to set CFLAGS/CPPFLAGS/CXXFLAGS at project level, set them in application Makefile
+#  before including project.mk. Default flags will be added before the ones provided in application Makefile.
 
-# CPPFLAGS used by an compile pass that uses the C preprocessor
-CPPFLAGS = -DESP_PLATFORM -Og -g3 -Wpointer-arith -Werror -Wno-error=unused-function -Wno-error=unused-but-set-variable \
-		-Wno-error=unused-variable -Wall -ffunction-sections -fdata-sections -mlongcalls -nostdlib -MMD -MP
+# CPPFLAGS used by C preprocessor
+# If any flags are defined in application Makefile, add them at the end. 
+CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS)
 
-# C flags use by C only
-CFLAGS = $(CPPFLAGS) -std=gnu99 -g3 -fstrict-volatile-bitfields
+# Warnings-related flags relevant both for C and C++
+COMMON_WARNING_FLAGS = -Wall -Werror \
+	-Wno-error=unused-function \
+	-Wno-error=unused-but-set-variable \
+	-Wno-error=unused-variable 
 
-# CXXFLAGS uses by C++ only
-CXXFLAGS = $(CPPFLAGS) -Og -std=gnu++11 -g3 -fno-exceptions -fstrict-volatile-bitfields -fno-rtti
+# Flags which control code generation and dependency generation, both for C and C++
+COMMON_FLAGS = \
+	-ffunction-sections -fdata-sections \
+	-fstrict-volatile-bitfields \
+	-mlongcalls \
+	-nostdlib \
+	-MMD -MP
+
+# Optimization flags are set based on menuconfig choice
+ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
+OPTIMIZATION_FLAGS = -Os
+CPPFLAGS += -DNDEBUG
+else
+OPTIMIZATION_FLAGS = -Og
+endif
+
+# Enable generation of debugging symbols
+OPTIMIZATION_FLAGS += -ggdb
+
+# List of flags to pass to C compiler
+# If any flags are defined in application Makefile, add them at the end.
+CFLAGS := $(strip \
+	-std=gnu99 \
+	$(OPTIMIZATION_FLAGS) \
+	$(COMMON_FLAGS) \
+	$(COMMON_WARNING_FLAGS) \
+	$(CFLAGS))
+
+# List of flags to pass to C++ compiler
+# If any flags are defined in application Makefile, add them at the end.
+CXXFLAGS := $(strip \
+	-std=gnu++11 \
+	-fno-exceptions \
+	-fno-rtti \
+	$(OPTIMIZATION_FLAGS) \
+	$(COMMON_FLAGS) \
+	$(COMMON_WARNING_FLAGS) \
+	$(CXXFLAGS))
 
 export CFLAGS CPPFLAGS CXXFLAGS
 

@@ -49,7 +49,7 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
         return activatePage();
     } else {
         uint32_t lastSeqNo;
-        assert(mPageList.back().getSeqNumber(lastSeqNo) == ESP_OK);
+        ESP_ERROR_CHECK( mPageList.back().getSeqNumber(lastSeqNo) );
         mSeqNumber = lastSeqNo + 1;
     }
 
@@ -142,7 +142,9 @@ esp_err_t PageManager::requestNewPage()
     Page* newPage = &mPageList.back();
 
     Page* erasedPage = maxErasedItemsPageIt;
+#ifndef NDEBUG
     size_t usedEntries = erasedPage->getUsedEntryCount();
+#endif
     err = erasedPage->markFreeing();
     if (err != ESP_OK) {
         return err;
