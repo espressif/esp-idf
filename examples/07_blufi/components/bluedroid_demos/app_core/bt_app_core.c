@@ -19,7 +19,7 @@
 #include "hash_map.h"
 #include "hash_functions.h"
 #include "alarm.h"
-//#include "app_button.h"
+#include "app_button.h"
 #if	(BUT_PROFILE_CFG)
 #include "button_pro.h"
 #endif	///BUT_PROFILE_CFG
