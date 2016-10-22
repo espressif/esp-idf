@@ -190,7 +190,6 @@ struct msghdr {
 #define SO_CONTIMEO    0x1009 /* Unimplemented: connect timeout */
 #define SO_NO_CHECK    0x100a /* don't create UDP checksum */
 
-
 /*
  * Structure used for manipulating linger option.
  */
@@ -250,6 +249,11 @@ struct linger {
 #define TCP_KEEPIDLE   0x03    /* set pcb->keep_idle  - Same as TCP_KEEPALIVE, but use seconds for get/setsockopt */
 #define TCP_KEEPINTVL  0x04    /* set pcb->keep_intvl - Use seconds for get/setsockopt */
 #define TCP_KEEPCNT    0x05    /* set pcb->keep_cnt   - Use number of probes sent for get/setsockopt */
+#if ESP_PER_SOC_TCP_WND
+#define TCP_WINDOW     0x06    /* set pcb->per_soc_tcp_wnd */
+#define TCP_SNDBUF     0x07    /* set pcb->per_soc_tcp_snd_buf */
+#endif
+
 #endif /* LWIP_TCP */
 
 #if LWIP_IPV6

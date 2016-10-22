@@ -225,18 +225,21 @@ extern unsigned long os_random(void);
  * TCP_WND: The size of a TCP window.  This must be at least
  * (2 * TCP_MSS) for things to work well
  */
-#define PERF 1
+
+#define ESP_PER_SOC_TCP_WND             1
+#if ESP_PER_SOC_TCP_WND
+#define TCP_WND_DEFAULT                      (4*TCP_MSS)
+#define TCP_SND_BUF_DEFAULT                  (2*TCP_MSS)
+
+#define TCP_WND(pcb)                         (pcb->per_soc_tcp_wnd)
+#define TCP_SND_BUF(pcb)                     (pcb->per_soc_tcp_snd_buf)
+#else
 #ifdef PERF
 extern unsigned char misc_prof_get_tcpw(void);
 extern unsigned char misc_prof_get_tcp_snd_buf(void);
-#define TCP_WND                         (misc_prof_get_tcpw()*TCP_MSS)
-#define TCP_SND_BUF                     (misc_prof_get_tcp_snd_buf()*TCP_MSS)
-
-#else
-
-#define TCP_WND                         (4 * TCP_MSS)
-#define TCP_SND_BUF                     (2 * TCP_MSS)
-
+#define TCP_WND(pcb)                         (misc_prof_get_tcpw()*TCP_MSS)
+#define TCP_SND_BUF(pcb)                     (misc_prof_get_tcp_snd_buf()*TCP_MSS)
+#endif
 #endif
 
 

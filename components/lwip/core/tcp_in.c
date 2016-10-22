@@ -1745,9 +1745,9 @@ tcp_parseopt(struct tcp_pcb *pcb)
           pcb->rcv_scale = TCP_RCV_SCALE;
           pcb->flags |= TF_WND_SCALE;
           /* window scaling is enabled, we can use the full receive window */
-          LWIP_ASSERT("window not at default value", pcb->rcv_wnd == TCPWND_MIN16(TCP_WND));
-          LWIP_ASSERT("window not at default value", pcb->rcv_ann_wnd == TCPWND_MIN16(TCP_WND));
-          pcb->rcv_wnd = pcb->rcv_ann_wnd = TCP_WND;
+          LWIP_ASSERT("window not at default value", pcb->rcv_wnd == TCPWND_MIN16(TCP_WND(pcb)));
+          LWIP_ASSERT("window not at default value", pcb->rcv_ann_wnd == TCPWND_MIN16(TCP_WND(pcb)));
+          pcb->rcv_wnd = pcb->rcv_ann_wnd = TCP_WND(pcb);
         }
         break;
 #endif
