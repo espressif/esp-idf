@@ -15,7 +15,9 @@ In the [docs](docs) directory you will find per-platform setup guides:
 Finding A Project
 -----------------
 
-As well as the [esp-idf-template](https://github.com/espressif/esp-idf-template) project mentioned in the setup guide, esp-idf comes with some example projects in the [examples](examples) directory.
+As well as the esp-idf-template_ project mentioned in the setup guide, esp-idf comes with some example projects in the [examples](examples) directory.
+
+.. _esp-idf-template: https://github.com/espressif/esp-idf-template
 
 Once you've found the project you want to work with, change to its directory and you can configure and build it:
 
@@ -82,3 +84,9 @@ Resources
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
 
 * If you're interested in contributing to esp-idf, please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
+
+.. |docs| image:: https://readthedocs.org/projects/docs/badge/?version=latest
+    :alt: Documentation Status
+    :scale: 100%
+    :target: http://esp-idf.readthedocs.io/en/latest/?badge=latest
