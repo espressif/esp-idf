@@ -1,6 +1,10 @@
-# Using Espressif IoT Development Framework with the ESP32
+Using Espressif IoT Development Framework with the ESP32
+========================================================
 
-# Setting Up ESP-IDF
+|docs|
+
+Setting Up ESP-IDF
+------------------
 
 In the [docs](docs) directory you will find per-platform setup guides:
 
@@ -8,23 +12,27 @@ In the [docs](docs) directory you will find per-platform setup guides:
 * [Mac OS Setup Guide](docs/macos-setup.rst)
 * [Linux Setup Guide](docs/linux-setup.rst)
 
-# Finding A Project
+Finding A Project
+-----------------
 
 As well as the [esp-idf-template](https://github.com/espressif/esp-idf-template) project mentioned in the setup guide, esp-idf comes with some example projects in the [examples](examples) directory.
 
 Once you've found the project you want to work with, change to its directory and you can configure and build it:
 
-# Configuring your project
+Configuring your project
+------------------------
 
 `make menuconfig`
 
-# Compiling your project
+Compiling your project
+----------------------
 
 `make all`
 
 ... will compile app, bootloader and generate a partition table based on the config.
 
-# Flashing your project
+Flashing your project
+---------------------
 
 When `make all` finishes, it will print a command line to use esptool.py to flash the chip. However you can also do this from make by running:
 
@@ -34,7 +42,8 @@ This will flash the entire project (app, bootloader and partition table) to a ne
 
 You don't need to run `make all` before running `make flash`, `make flash` will automatically rebuild anything which needs it.
 
-# Compiling & Flashing Just the App
+Compiling & Flashing Just the App
+---------------------------------
 
 After the initial flash, you may just want to build and flash just your app, not the bootloader and partition table:
 
@@ -45,7 +54,8 @@ After the initial flash, you may just want to build and flash just your app, not
 
 (There's no downside to reflashing the bootloader and partition table each time, if they haven't changed.)
 
-# The Partition Table
+The Partition Table
+-------------------
 
 Once you've compiled your project, the "build" directory will contain a binary file with a name like "my_app.bin". This is an ESP32 image binary that can be loaded by the bootloader.
 
@@ -62,7 +72,8 @@ In both cases the factory app is flashed at offset 0x10000. If you `make partiti
 
 For more details about partition tables and how to create custom variations, view the `docs/partition_tables.rst` file.
 
-# Resources
+Resources
+---------
 
 * The [docs directory of the esp-idf repository](docs) contains esp-idf documentation.
 

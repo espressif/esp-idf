@@ -1,12 +1,15 @@
-# Contributions Guide
+Contributions Guide
+===================
 
 We welcome contributions to the esp-idf project!
 
-## How to Contribute
+How to Contribute
+-----------------
 
 Contributions to esp-idf - fixing bugs, adding features, adding documentation - are welcome. We accept contributions via [Github Pull Requests](https://help.github.com/articles/about-pull-requests/).
 
-## Before Contributing
+Before Contributing
+-------------------
 
 Before sending us a Pull Request, please consider this list of points:
 
@@ -24,7 +27,8 @@ Before sending us a Pull Request, please consider this list of points:
 
 * If you're unsure about any of these points, please open the Pull Request anyhow and then ask us for feedback.
 
-## Pull Request Process
+Pull Request Process
+--------------------
 
 After you open the Pull Request, there will probably be some discussion in the comments field of the request itself.
 
@@ -32,6 +36,7 @@ Once the Pull Request is ready to merge, it will first be merged into our intern
 
 If this process passes, it will be merged onto the public github repository.
 
-## Legal Part
+Legal Part
+----------
 
 Before a contribution can be accepted, you will need to sign our [Contributor Agreement](docs/contributor-agreement.rst). You will be prompted for this automatically as part of the Pull Request process.
