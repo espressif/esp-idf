@@ -51,7 +51,7 @@ enum {
     SPI_SPEED_20M,
     SPI_SPEED_80M = 0xF
 };
-/*suppport flash size in esp32 */
+/*supported flash sizes*/
 enum {
     SPI_SIZE_1MB = 0,
     SPI_SIZE_2MB,
