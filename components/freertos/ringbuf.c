@@ -371,8 +371,7 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t ringbuf, void *data, size_t da
         //Does not fit in the remaining space in the ringbuffer.
         write_succeeded=pdFALSE;
     } else {
-        copyItemToRingbuf(rb, data, dataSize);
-        write_succeeded=pdTRUE;
+        write_succeeded = copyItemToRingbuf(rb, data, dataSize);
     }
     portEXIT_CRITICAL_ISR(&rb->mux);
     if (write_succeeded) {
