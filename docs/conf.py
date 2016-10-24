@@ -20,13 +20,15 @@ import os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-# run doxygen
+# -- Run DoxyGen to prepare XML for Sphinx---------------------------------
+# ref. https://github.com/rtfd/readthedocs.org/issues/388
 #
-# for implementation on readthedocs.org check
-# https://github.com/rtfd/readthedocs.org/issues/388
+# added by krzychb, 24-Oct-2016
 #
+
 from subprocess import call 
 call('doxygen')
+
 
 # -- General configuration ------------------------------------------------
 
@@ -268,3 +270,18 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+# -- Use sphinx_rtd_theme for local builds --------------------------------
+# ref. https://github.com/snide/sphinx_rtd_theme#using-this-theme-locally-then-building-on-read-the-docs
+#
+# added by krzychb, 24-Oct-2016
+#
+# on_rtd is whether we are on readthedocs.org
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+# otherwise, readthedocs.org uses their theme by default, so no need to specify it
