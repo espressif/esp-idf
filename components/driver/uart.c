@@ -90,10 +90,11 @@ esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit
     return ESP_OK;
 }
 
-int uart_get_word_length(uart_port_t uart_num)
+esp_err_t uart_get_word_length(uart_port_t uart_num, uart_word_length_t* data_bit)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
-    return UART[uart_num]->conf0.bit_num;
+    *(data_bit) = UART[uart_num]->conf0.bit_num;
+    return ESP_OK;
 }
 
 esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
@@ -106,10 +107,11 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
     return ESP_OK;
 }
 
-int uart_get_stop_bits(uart_port_t uart_num)
+esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bit)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
-    return UART[uart_num]->conf0.stop_bit_num;
+    (*stop_bit) = UART[uart_num]->conf0.stop_bit_num;
+    return ESP_OK;
 }
 
 esp_err_t uart_set_parity(uart_port_t uart_num, uart_parity_t parity_mode)
@@ -122,19 +124,20 @@ esp_err_t uart_set_parity(uart_port_t uart_num, uart_parity_t parity_mode)
     return ESP_OK;
 }
 
-int uart_get_parity(uart_port_t uart_num)
+esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
     int val = UART[uart_num]->conf0.val;
     if(val & UART_PARITY_EN_M) {
         if(val & UART_PARITY_M) {
-            return UART_PARITY_ODD;
+            (*parity_mode) = UART_PARITY_ODD;
         } else {
-            return UART_PARITY_EVEN;
+            (*parity_mode) = UART_PARITY_EVEN;
         }
     } else {
-        return UART_PARITY_DISABLE;
+        (*parity_mode) = UART_PARITY_DISABLE;
     }
+    return ESP_OK;
 }
 
 esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
@@ -149,14 +152,14 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
     return ESP_OK;
 }
 
-int uart_get_baudrate(uart_port_t uart_num)
+esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     uint32_t clk_div = (UART[uart_num]->clk_div.div_int << 4) | UART[uart_num]->clk_div.div_frag;
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
-    uint32_t baudrate = ((UART_CLK_FREQ) << 4) / clk_div;
-    return baudrate;
+    (*baudrate) = ((UART_CLK_FREQ) << 4) / clk_div;
+    return ESP_OK;
 }
 
 esp_err_t uart_set_line_inverse(uart_port_t uart_num, uint32_t inverse_mask)
@@ -192,7 +195,7 @@ esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t flow
     return ESP_OK;
 }
 
-int uart_get_hw_flow_ctrl(uart_port_t uart_num)
+esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flow_ctrl)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
     uart_hw_flowcontrol_t val = UART_HW_FLOWCTRL_DISABLE;
@@ -202,7 +205,8 @@ int uart_get_hw_flow_ctrl(uart_port_t uart_num)
     if(UART[uart_num]->conf0.tx_flow_en) {
         val |= UART_HW_FLOWCTRL_CTS;
     }
-    return val;
+    (*flow_ctrl) = val;
+    return ESP_OK;
 }
 
 static esp_err_t uart_reset_fifo(uart_port_t uart_num)
@@ -311,11 +315,11 @@ esp_err_t uart_isr_register(uart_port_t uart_num, uint8_t uart_intr_num, void (*
 //only one GPIO pad can connect with input signal
 esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num)
 {
-    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
-    UART_CHECK((tx_io_num < 0 || (GPIO_IS_VALID_OUTPUT_GPIO(tx_io_num))), "tx_io_num error");
-    UART_CHECK((rx_io_num < 0 || (GPIO_IS_VALID_GPIO(rx_io_num))), "rx_io_num error");
-    UART_CHECK((rts_io_num < 0 || (GPIO_IS_VALID_OUTPUT_GPIO(rts_io_num))), "rts_io_num error");
-    UART_CHECK((cts_io_num < 0 || (GPIO_IS_VALID_GPIO(cts_io_num))), "cts_io_num error");
+//    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
+//    UART_CHECK((tx_io_num < 0 || (GPIO_IS_VALID_OUTPUT_GPIO(tx_io_num))), "tx_io_num error");
+//    UART_CHECK((rx_io_num < 0 || (GPIO_IS_VALID_GPIO(rx_io_num))), "rx_io_num error");
+//    UART_CHECK((rts_io_num < 0 || (GPIO_IS_VALID_OUTPUT_GPIO(rts_io_num))), "rts_io_num error");
+//    UART_CHECK((cts_io_num < 0 || (GPIO_IS_VALID_GPIO(cts_io_num))), "cts_io_num error");
 
     int tx_sig, rx_sig, rts_sig, cts_sig;
     switch(uart_num) {

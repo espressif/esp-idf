@@ -27,7 +27,7 @@ extern "C" {
 #include <esp_types.h>
 
 extern const char* UART_TAG;
-#define UART_FIFO_LEN           (128)   //Do Not Change it
+#define UART_FIFO_LEN           (128)   //Do not change this, this value describes the length of the gardware FIFO in the ESP32
 #define UART_INTR_MASK          0x1ff
 #define UART_LINE_INV_MASK      (0x3f << 19)
 
@@ -150,13 +150,10 @@ esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit
  *
  * @param   uart_port_t uart_no: UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @return  ESP_FAIL (-1)       : Parameter error
- *          UART_DATA_5_BITS (0): UART word length: 5 bits.
- *          UART_DATA_6_BITS (1): UART word length: 6 bits.
- *          UART_DATA_7_BITS (2): UART word length: 7 bits.
- *          UART_DATA_8_BITS (3): UART word length: 8 bits.
+ * @return  ESP_FAIL : Parameter error
+ *          ESP_OK   : Success, result will be put in (*data_bit)
  */
-int uart_get_word_length(uart_port_t uart_num);
+esp_err_t uart_get_word_length(uart_port_t uart_num, uart_word_length_t* data_bit);
 
 /**
  * @brief   Set UART stop bits.
@@ -174,12 +171,10 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_no, uart_stop_bits_t bit_num);
  *
  * @param   uart_port_t uart_no: UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @return  ESP_FAIL (-1): Parameter error
- *          UART_STOP_BITS_1   (1): 1 stop bit
- *          UART_STOP_BITS_1_5 (2): 1.5 stop bits
- *          UART_STOP_BITS_1   (3): 2 stop bits
+ * @return  ESP_FAIL : Parameter error
+ *          ESP_OK   : Success, result will be put in (*stop_bit)
  */
-int uart_get_stop_bits(uart_port_t uart_num);
+esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bit);
 
 /**
  * @brief   Set UART parity.
@@ -196,13 +191,11 @@ esp_err_t uart_set_parity(uart_port_t uart_no, uart_parity_t parity_mode);
  *
  * @param   uart_port_t uart_no: UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @return  ESP_FAIL (-1): Parameter error
- *          UART_PARITY_ODD    (0x11): Odd parity check mode
- *          UART_PARITY_EVEN   (0x10): Even parity check mode
- *          UART_PARITY_DISABLE(0x0) : parity check disabled
+ * @return  ESP_FAIL  : Parameter error
+ *          ESP_OK    : Success, result will be put in (*parity_mode)
  *
  */
-int uart_get_parity(uart_port_t uart_num);
+esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
 
 /**
  * @brief   Set UART baud rate.
@@ -219,11 +212,11 @@ esp_err_t uart_set_baudrate(uart_port_t uart_no, uint32_t baud_rate);
  *
  * @param   uart_port_t uart_no: UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @return  ESP_FAIL(-1): Parameter error
- *          Others  (>0): UART baud-rate
+ * @return  ESP_FAIL : Parameter error
+ *          ESP_OK   : Success, result will be put in (*baudrate)
  *
  */
-int uart_get_baudrate(uart_port_t uart_num);
+esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
 
 /**
  * @brief   Set UART line inverse mode
@@ -253,13 +246,10 @@ esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_no, uart_hw_flowcontrol_t flow_
  * @brief   Get hardware flow control mode
  * @param   uart_port_t uart_no   : UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @return  ESP_FAIL (-1): Parameter error
- *          UART_HW_FLOWCTRL_DISABLE (0): UART hw flow control disabled
- *          UART_HW_FLOWCTRL_RTS     (1): UART RX flow control enabled
- *          UART_HW_FLOWCTRL_CTS     (2): UART TX flow control enabled
- *          UART_HW_FLOWCTRL_CTS_RTS (3): UART TX/RX flow control enabled
+ * @return  ESP_FAIL : Parameter error
+ *          ESP_OK   : Success, result will be put in (*flow_ctrl)
  */
-int uart_get_hw_flow_ctrl(uart_port_t uart_num);
+esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flow_ctrl);
 
 /**
  * @brief   Clear UART interrupt status
@@ -453,6 +443,7 @@ esp_err_t uart_driver_delete(uart_port_t uart_num);
  * @param   TickType_t ticks_to_wait:  Timeout, count in RTOS ticks
  *
  * @return  ESP_OK         : Success
+ *          ESP_FAIL       : Parameter error
  *          ESP_ERR_TIMEOUT: Timeout
  */
 esp_err_t uart_wait_tx_fifo_empty(uart_port_t uart_num, TickType_t ticks_to_wait);
@@ -465,7 +456,8 @@ esp_err_t uart_wait_tx_fifo_empty(uart_port_t uart_num, TickType_t ticks_to_wait
  * @param   char* buffer        : data buffer address
  * @param   uint32_t len        : data length to send
  *
- * @return  The number of data that pushed to the TX FIFO
+ * @return  -1         : Parameter error
+ *          OTHERS(>=0): The number of data that pushed to the TX FIFO
  */
 int uart_tx_chars(uart_port_t uart_no, char* buffer, uint32_t len);
 
@@ -477,7 +469,8 @@ int uart_tx_chars(uart_port_t uart_no, char* buffer, uint32_t len);
  * @param   char* src           : data buffer address
  * @param   size_t size         : data length to send
  *
- * @return  The number of data that sent out.
+ * @return  -1         : Parameter error
+ *          OTHERS(>=0): The number of data that pushed to the TX FIFO
  */
 int uart_tx_all_chars(uart_port_t uart_num, const char* src, size_t size);
 
@@ -490,7 +483,8 @@ int uart_tx_all_chars(uart_port_t uart_num, const char* src, size_t size);
  * @param   size_t size         : data length to send
  * @param   int brk_len         : break signal length (unit: one bit's time@current_baudrate)
  *
- * @return  The number of data that sent out.
+ * @return  -1         : Parameter error
+ *          OTHERS(>=0): The number of data that pushed to the TX FIFO
  */
 int uart_tx_all_chars_with_break(uart_port_t uart_num, const char* src, size_t size, int brk_len);
 
@@ -498,20 +492,20 @@ int uart_tx_all_chars_with_break(uart_port_t uart_num, const char* src, size_t s
 * @brief   UART read one char
  *
  * @param   uart_port_t uart_no       : UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param   TickType_t ticks_to_wait  : ticks to wait.
+ * @param   TickType_t ticks_to_wait  : Timeout, count in RTOS ticks
  *
  * @return  -1      : Error
- *          Others  : return a char data from uart fifo.
+ *          Others  : return a char data from UART.
  */
 int uart_read_char(uart_port_t uart_num, TickType_t ticks_to_wait);
 
 /**
 * @brief   UART read bytes from UART buffer
  *
- * @param   uart_port_t uart_no   : UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param   uint8_t* buf          : pointer to the buffer.
- * @param   uint32_t length       : data length
- * @param   TickType_t ticks_to_wait: timeout time( FreeRTOS ti c
+ * @param   uart_port_t uart_no     : UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param   uint8_t* buf            : pointer to the buffer.
+ * @param   uint32_t length         : data length
+ * @param   TickType_t ticks_to_wait: Timeout, count in RTOS ticks
  *
  * @return  -1      : Error
  *          Others  : return a char data from uart fifo.
@@ -542,9 +536,9 @@ esp_err_t uart_set_print_port(uart_port_t uart_no);
  * @brief   Get the current serial port for ets_printf function
  *
  *
- * @param   uart_port_t uart_no : UART_NUM_0, UART_NUM_1 or UART_NUM_2
- *
- * @return  null
+ * @return  current print port: 0: UART0;
+ *                              1: UART1;
+ *                              2: UART2;
  */
 int uart_get_print_port();
 
@@ -637,7 +631,6 @@ int uart_get_print_port();
  *                            break;
  *                        case UART_FIFO_OVF:                                                     //Event of HW FIFO overflow detected
  *                            ESP_LOGI(UART_TAG, "hw fifo overflow\n");
- *                            while(1);
  *                            break;
  *                        case UART_BUFFER_FULL:                                                  //Event of UART ring buffer full
  *                            ESP_LOGI(UART_TAG, "ring buffer full\n");

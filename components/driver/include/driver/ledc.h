@@ -26,6 +26,7 @@
 extern "C" {
 #endif
 
+extern const char* LEDC_TAG;
 #define LEDC_APB_CLK_HZ (APB_CLK_FREQ)
 #define LEDC_REF_CLK_HZ (1*1000000)
 
@@ -338,6 +339,22 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, uint32_t timer_sel);
  */
 esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint32_t timer_idx);
 
+/**
+ * @brief      Set LEDC output signal to GPIO
+ *
+ * @param[in]  gpio_num    : GPIO number for LEDC signal output
+ *
+ * @param[in]  speed_mode    : select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ *
+ * @param[in]  channel       : LEDC channel index(0-7), select from ledc_channel_t
+ *
+ *
+ * @return     ESP_ERR_INVALID_ARG: parameter error
+ *             ESP_OK: success
+ *
+ */
+esp_err_t ledc_set_pin(int gpio_num,ledc_mode_t speed_mode, ledc_channel_t ledc_channel);
+
 /***************************EXAMPLE**********************************
  *
  *
@@ -349,21 +366,21 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint
  *     ledc_timer_config_t timer_conf = {
  *         .bit_num = LEDC_TIMER_12_BIT,                        //set timer counter bit number
  *         .freq_hz = 1000,                                     //set frequency of pwm, here, 1000Hz
- *         .speed_mode = LEDC_HIGH_SPEED_MODE                   //timer mode,
+ *         .speed_mode = LEDC_HIGH_SPEED_MODE,                  //timer mode,
  *         .timer_num = LEDC_TIMER_0,                           //timer number
  *     };
  *     ledc_timer_config(&timer_conf);                          //setup timer.
  *
  *     //3. set LEDC channel
  *     ledc_channel_config_t ledc_conf = {
- *         .channel = LEDC_CHANNEL_0;                           //set LEDC channel 0
- *         .duty = 1000;                                        //set the duty for initialization.(duty range is 0 ~ ((2**bit_num)-1)
- *         .gpio_num = 16;                                      //GPIO number
- *         .intr_type = LEDC_INTR_FADE_END;                     //GPIO INTR TYPE, as an example, we enable fade_end interrupt here.
- *         .speed_mode = LEDC_HIGH_SPEED_MODE;                  //set LEDC mode, from ledc_mode_t
- *         .timer_sel = LEDC_TIMER_0;                            //set LEDC timer source, if different channel use one timer, the frequency and bit_num of these channels should be the same
+ *         .channel = LEDC_CHANNEL_0,                           //set LEDC channel 0
+ *         .duty = 1000,                                        //set the duty for initialization.(duty range is 0 ~ ((2**bit_num)-1)
+ *         .gpio_num = 16,                                      //GPIO number
+ *         .intr_type = LEDC_INTR_FADE_END,                     //GPIO INTR TYPE, as an example, we enable fade_end interrupt here.
+ *         .speed_mode = LEDC_HIGH_SPEED_MODE,                  //set LEDC mode, from ledc_mode_t
+ *         .timer_sel = LEDC_TIMER_0,                           //set LEDC timer source, if different channel use one timer, the frequency and bit_num of these channels should be the same
  *     }
- *     ledc_channel_config(&ledc_conf);                                 //setup the configuration
+ *     ledc_channel_config(&ledc_conf);                         //setup the configuration
  *
  * ----------------EXAMPLE OF SETTING DUTY --- -----------------
  *     uint32_t ledc_channel = LEDC_CHANNEL_0;                  //LEDC channel(0-73)

@@ -28,6 +28,8 @@
 extern "C" {
 #endif
 
+extern const char* GPIO_TAG;
+
 #define GPIO_SEL_0              (BIT(0))                         /* Pin 0 selected */
 #define GPIO_SEL_1              (BIT(1))                         /* Pin 1 selected */
 #define GPIO_SEL_2              (BIT(2))                         /* Pin 2 selected */
