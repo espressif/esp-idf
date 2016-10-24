@@ -556,7 +556,7 @@ static void *xRingbufferReceiveGeneric(RingbufHandle_t ringbuf, size_t *item_siz
 
 void *xRingbufferReceive(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait)
 {
-	return xRingbufferReceiveGeneric(ringbuf, item_size, ticks_to_wait, 0);
+    return xRingbufferReceiveGeneric(ringbuf, item_size, ticks_to_wait, 0);
 }
 
 
@@ -573,17 +573,17 @@ void *xRingbufferReceiveFromISR(RingbufHandle_t ringbuf, size_t *item_size)
 
 void *xRingbufferReceiveUpTo(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait, size_t wanted_size) {
     ringbuf_t *rb=(ringbuf_t *)ringbuf;
-	if (wanted_size == 0) return NULL;
+    if (wanted_size == 0) return NULL;
     configASSERT(rb);
     configASSERT(rb->flags & flag_bytebuf);
-	return xRingbufferReceiveGeneric(ringbuf, item_size, ticks_to_wait, wanted_size);
+    return xRingbufferReceiveGeneric(ringbuf, item_size, ticks_to_wait, wanted_size);
 }
 
 void *xRingbufferReceiveUpToFromISR(RingbufHandle_t ringbuf, size_t *item_size, size_t wanted_size)
 {
     ringbuf_t *rb=(ringbuf_t *)ringbuf;
     uint8_t *itemData;
-	if (wanted_size == 0) return NULL;
+    if (wanted_size == 0) return NULL;
     configASSERT(rb);
     configASSERT(rb->flags & flag_bytebuf);
     portENTER_CRITICAL_ISR(&rb->mux);
