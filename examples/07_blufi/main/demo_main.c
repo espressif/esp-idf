@@ -87,23 +87,23 @@ void wifiTestTask(void *pvParameters)
 
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        if (confirm) {
-		confirm = false;
-		BTA_DisableBluetooth();
+		if (confirm) {
+			confirm = false;
+			//BTA_DisableBluetooth();
 
-		strcpy(sta_config.sta.ssid, tmp_ssid);
-		strcpy(sta_config.sta.password, tmp_passwd);
-		sta_config.sta.bssid_set = 0;
+			strcpy(sta_config.sta.ssid, tmp_ssid);
+			strcpy(sta_config.sta.password, tmp_passwd);
+			sta_config.sta.bssid_set = 0;
 
-		ret = esp_wifi_disconnect();
-		printf("esp_wifi config\n");
-		esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-		printf("esp_wifi connect\n");
-		ret = esp_wifi_connect();
-		if (ret != ESP_OK) {
-			printf("esp_wifi connect failed\n");
+			ret = esp_wifi_disconnect();
+			printf("esp_wifi config\n");
+			esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+			printf("esp_wifi connect\n");
+			ret = esp_wifi_connect();
+			if (ret != ESP_OK) {
+				printf("esp_wifi connect failed\n");
+			}
 		}
-	}
     }
 }
 

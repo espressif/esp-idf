@@ -9,6 +9,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/gki/include			\
 				bluedroid/hci/include			\
 				bluedroid/osi/include			\
+				bluedroid/profiles/esp/blufi/include		\
 				bluedroid/profiles/esp/include		\
 				bluedroid/profiles/std/avrc/include	\
 				bluedroid/profiles/std/battery/include	\

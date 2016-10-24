@@ -1,16 +1,16 @@
-/**
- ****************************************************************************************
- *
- * @file blufi_pro.c
- *
- * @brief Application entry point
- *
- * Copyright (C) Espressif 2016
- * Created by Yulong at 2016/8/18
- *
- *
- ****************************************************************************************
- */
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <stdint.h>
 
@@ -28,6 +28,63 @@
 #include "bta_gatts_int.h"
 
 #include "blufi_prf.h"
+#include "blufi_adv.h"
+
+#define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
+#define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
+
+UINT16 esp32_uuid = SVC_BLUFI_UUID;
+UINT8 esp32_manu[17] = {0xff,0x20,0x14,0x07,0x22,0x00,0x02,0x5B,0x00,0x33,0x49,0x31,0x30,0x4a,0x30,0x30,0x31};
+tBTA_BLE_MANU	p_esp32_manu = {sizeof(esp32_manu),esp32_manu};			/* manufacturer data */
+
+tBTA_BLE_SERVICE esp32_service = {
+							0x01,		//only one service in the ijiazu button profile
+							false,
+							&esp32_uuid
+							};        /* 16 bits services */
+
+
+tBLUFI_BLE_ADV_DATA esp32_adv_data[ADV_SCAN_IDX_MAX] = 
+{
+	[BLE_ADV_DATA_IDX] = {
+		.adv_name = "Espressif_008",
+		{
+		{0,0},
+		NULL,			//no manufature data to be setting in the esp32 adervetisiing datas
+		&esp32_service,
+		NULL,					//the  128 bits service uuid set to null(not used)
+		NULL,					//the 32 bits Service UUID set to null(not used)
+		NULL,					//16 bits services Solicitation UUIDs set to null(not used)
+		NULL,					//List of 32 bit Service Solicitation UUIDs set to null(not used)
+		NULL,					//List of 128 bit Service Solicitation UUIDs set to null(not used)
+		NULL,					//proprietary data set to null(not used)
+		NULL,					//service data set not null(no service data to be sent)
+		0x0200,         		//device type : generic display
+		BTA_DM_GENERAL_DISC,	// General discoverable. 
+		0xFE					//the tx power value,defult value is 0
+		},
+	},
+
+	[BLE_SCAN_RSP_DATA_IDX] = {
+		.adv_name = NULL,	
+		{
+		{0,0},
+		&p_esp32_manu,
+		NULL,
+		NULL,					//the  128 bits service uuid set to null(not used)
+		NULL,					//the 32 bits Service UUID set to null(not used)
+		NULL,					//16 bits services Solicitation UUIDs set to null(not used)
+		NULL,					//List of 32 bit Service Solicitation UUIDs set to null(not used)
+		NULL,					//List of 128 bit Service Solicitation UUIDs set to null(not used)
+		NULL,					//proprietary data set to null(not used)
+		NULL,					//service data set not null(no service data to be sent)
+		0x0000,         		//device type : generic display
+		0x00,					// General discoverable. 
+		0x00},					//the tx power value,defult value is 0
+	}
+};
+
+
 
 static tBLUFI_CB_ENV blufi_cb_env;
 
@@ -56,11 +113,13 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 	UINT8 net_event = 0xff;
 	UINT8 len = 0;
 	UINT8 *p_rec_data = NULL;
+	tBTA_GATT_STATUS  status;
 
 	LOG_ERROR("blufi profile cb event = %x\n",event);
 	switch(event) {
 		case BTA_GATTS_REG_EVT:
-			
+            status = p_data->reg_oper.status;
+
 			LOG_ERROR("p_data->reg_oper.status = %x\n",p_data->reg_oper.status);
 			LOG_ERROR("(p_data->reg_oper.uuid.uu.uuid16=%x\n",p_data->reg_oper.uuid.uu.uuid16);
 			if(p_data->reg_oper.status != BTA_GATT_OK) {
@@ -70,6 +129,15 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
 			blufi_cb_env.gatt_if = p_data->reg_oper.server_if;
 			blufi_cb_env.enabled = true;
+            LOG_ERROR("register complete: event=%d, status=%d, server_if=%d\n", 
+                event, status, blufi_cb_env.gatt_if);
+            
+            LOG_ERROR("set advertising parameters\n");
+			//set the advertising data to the btm layer
+			BlufiBleConfigadvData(&esp32_adv_data[BLE_ADV_DATA_IDX], NULL);
+			//set the adversting data to the btm layer
+			BlufiBleSetScanRsp(&esp32_adv_data[BLE_SCAN_RSP_DATA_IDX],NULL);
+    	    BTA_GATTS_Listen(blufi_cb_env.gatt_if, true, NULL);
 
 			//create the blufi service to the service data base.
 			if(p_data->reg_oper.uuid.uu.uuid16 == SVC_BLUFI_UUID) {
@@ -118,24 +186,9 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			if(p_data->add_result.char_uuid.uu.uuid16 == CHAR_BLUFI_UUID)
 			{
 				uuid.uu.uuid16 = CHAR_BLUFI_UUID;
-				//tBTA_GATT_PERM perm = GATT_PERM_READ;
 				//save the att handle to the env
 				blufi_cb_env.blufi_inst.blufi_hdl = p_data->add_result.attr_id;
-				//add the frist blufi characteristic --> Notify characteristic
-				//BTA_GATTS_AddCharacteristic(blufi_cb_env.clcb.cur_srvc_id,&uuid,
-				//						GATT_PERM_READ,(GATT_CHAR_PROP_BIT_READ|GATT_CHAR_PROP_BIT_NOTIFY));
 			}
-#if 0
-			else if(p_data->add_result.char_uuid.uu.uuid16 == CHAR_BLUFI_UUID){ // add the gattc config descriptor to the notify charateristic
-				//tBTA_GATT_PERM perm = (GATT_PERM_WRITE|GATT_PERM_WRITE);
-				uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
-				blufi_cb_env.blufi_inst.blufi_hdl = p_data->add_result.attr_id;
-				BTA_GATTS_AddCharDescriptor (blufi_cb_env.clcb.cur_srvc_id,
-                                  				(GATT_PERM_WRITE|GATT_PERM_WRITE),
-                                  				&uuid);
-			}
-			
-#endif
 			break;
 		case BTA_GATTS_ADD_CHAR_DESCR_EVT:
 			if(p_data->add_result.char_uuid.uu.uuid16 == GATT_UUID_CHAR_CLIENT_CONFIG)
@@ -146,6 +199,13 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 		case BTA_GATTS_CONNECT_EVT:
 			//set the connection flag to true
 			blufi_env_clcb_alloc(p_data->conn.conn_id, p_data->conn.remote_bda);
+            LOG_ERROR("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n", 
+                             BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
+                             p_data->conn.reason, p_data->conn.conn_id);
+            /*return whether the remote device is currently connected*/
+            int is_connected = BTA_DmGetConnectionState(p_data->conn.remote_bda);
+            LOG_ERROR("is_connected=%d\n",is_connected);
+			BTA_DmBleBroadcast(0); //stop adv
 			break;
 		case BTA_GATTS_DISCONNECT_EVT:
 			//set the connection flag to true
