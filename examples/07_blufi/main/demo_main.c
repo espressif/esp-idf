@@ -15,9 +15,7 @@
 extern tBTA_STATUS BTA_DisableBluetooth(void);
 extern void phy_set_wifi_mode_only(bool wifi_only);
 extern void bte_main_boot_entry(void *);
-extern void bt_app_task_start_up(void);
-extern void bt_app_task_shut_down(void);
-extern void bt_app_core_start(void);
+extern void blufi_init(void);
 
 #define WIFI_LIST_NUM	10
 
@@ -121,6 +119,6 @@ void app_main()
 
     bt_controller_init();
     xTaskCreatePinnedToCore(&wifiTestTask, "wifiTestTask", 2048, NULL, 20, NULL, 0);
-    bt_app_task_start_up();
-    bte_main_boot_entry(bt_app_core_start);
+   // bt_app_task_start_up();
+    bte_main_boot_entry(blufi_init);
 }

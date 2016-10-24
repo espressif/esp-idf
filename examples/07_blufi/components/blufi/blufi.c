@@ -21,95 +21,95 @@
 #include "btm_api.h"
 #include "bt_types.h"
 #include "dis_api.h"
-#include "bt_app_common.h"
 
-//#include "app_button.h"
-#include "button_pro.h"
+#include "blufi_prf.h"
 #include "hid_le_prf.h"
 #include "prf_defs.h"
 #include "hcimsgs.h"
-#include "bt_app_defs.h"
+
+#include "blufi.h"
+#include "blufi_adv.h"
+
+static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
+
+struct dm_evt {
+	tBTA_DM_SEC_EVT event;
+	tBTA_DM_SEC* p_data;
+};
+
+typedef struct {
+    uint8_t uu[16];
+} bt_uuid_t;
 
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 tBTA_GATTS_IF server_if;
 
-static unsigned char DIS_UUID[16] = {
-    0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
-    0x00, 0x10, 0x00, 0x00, 0x0a, 0x18, 0x00, 0x00
-    };
 static unsigned char BASE_UUID[16] = {
     0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
     0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
 
-UINT16 ijiazu_uuid = 0xffff;
-tBTA_BLE_SERVICE ijiazu_service = {
-							0x01,		//only one service in the ijiazu button profile
-							false,
-							&ijiazu_uuid
-							};        /* 16 bits services */
+UINT16 esp32_uuid = 0xffff;
+tBTA_BLE_SERVICE esp32_service = {
+	0x01,		//only one service in the esp32 button profile
+	false,
+	&esp32_uuid
+	};        /* 16 bits services */
 
 
-UINT8 beacon_manu[25] = {0x4c, 0x00,0x02, 0x15, 0xfd, 0xa5, 0x06, 0x93, 0xa4, 0xe2, 
-                  0x4f, 0xb1, 0xaf, 0xcf, 0xc6, 0xeb, 0x07, 0x64, 0x78, 0x25,
-                  0x27, 0x32, 0xe6, 0x08, 0xc5};
+UINT8 beacon_manu[25] = {
+	0x4c, 0x00,0x02, 0x15, 0xfd, 0xa5, 0x06, 0x93, 0xa4, 0xe2, 
+    0x4f, 0xb1, 0xaf, 0xcf, 0xc6, 0xeb, 0x07, 0x64, 0x78, 0x25,
+    0x27, 0x32, 0xe6, 0x08, 0xc5
+    };
 
-//UINT8 ijiazu_manu[17] = {0xff,0x20,0x14,0x07,0x22,0x00,0x02,0x5B,0x00,0x33,0x49,0x31,0x30,0x4a,0x30,0x30,0x31};
-UINT8 ijiazu_manu[17] = {0xff,0x20,0x14,0x07,0x22,0x00,0x02,0x5B,0x00,0x33,0x49,0x31,0x30,0x4a,0x30,0x30,0x31};
-tBTA_BLE_MANU	p_ijiazu_manu = {sizeof(ijiazu_manu),ijiazu_manu};			/* manufacturer data */
+UINT8 esp32_manu[17] = {0xff,0x20,0x14,0x07,0x22,0x00,0x02,0x5B,0x00,0x33,0x49,0x31,0x30,0x4a,0x30,0x30,0x31};
+tBTA_BLE_MANU	p_esp32_manu = {sizeof(esp32_manu),esp32_manu};			/* manufacturer data */
 
 
-BD_ADDR rand_ijiazu_addr = {0x00,0x02,0x5B,0x00,0x32,0x55};
+BD_ADDR rand_esp32_addr = {0x00,0x02,0x5B,0x00,0x32,0x55};
 
-tESP_BLE_ADV_DATA ijiazu_adv_data[ADV_SCAN_IDX_MAX] = 
+tESP_BLE_ADV_DATA esp32_adv_data[ADV_SCAN_IDX_MAX] = 
 {
-	[BLE_ADV_DATA_IDX] 		= {
-										.adv_name = "Espressif_008",
-										{
-										{0,0},
-										NULL,			//no manufature data to be setting in the ijiazu adervetisiing datas
-										&ijiazu_service,
-										NULL,					//the  128 bits service uuid set to null(not used)
-										NULL,					//the 32 bits Service UUID set to null(not used)
-										NULL,					//16 bits services Solicitation UUIDs set to null(not used)
-										NULL,					//List of 32 bit Service Solicitation UUIDs set to null(not used)
-										NULL,					//List of 128 bit Service Solicitation UUIDs set to null(not used)
-										NULL,					//proprietary data set to null(not used)
-										NULL,					//service data set not null(no service data to be sent)
-										0x0200,         		//device type : generic display
-										BTA_DM_GENERAL_DISC,	// General discoverable. 
-										0xFE					//the tx power value,defult value is 0
-										},
-									
-								},
+	[BLE_ADV_DATA_IDX] = {
+		.adv_name = "Espressif_008",
+		{
+		{0,0},
+		NULL,			//no manufature data to be setting in the esp32 adervetisiing datas
+		&esp32_service,
+		NULL,					//the  128 bits service uuid set to null(not used)
+		NULL,					//the 32 bits Service UUID set to null(not used)
+		NULL,					//16 bits services Solicitation UUIDs set to null(not used)
+		NULL,					//List of 32 bit Service Solicitation UUIDs set to null(not used)
+		NULL,					//List of 128 bit Service Solicitation UUIDs set to null(not used)
+		NULL,					//proprietary data set to null(not used)
+		NULL,					//service data set not null(no service data to be sent)
+		0x0200,         		//device type : generic display
+		BTA_DM_GENERAL_DISC,	// General discoverable. 
+		0xFE					//the tx power value,defult value is 0
+		},
+	},
+
 	[BLE_SCAN_RSP_DATA_IDX] = {
-										.adv_name = NULL,	
-										{
-										{0,0},
-										&p_ijiazu_manu,
-										NULL,
-										NULL,					//the  128 bits service uuid set to null(not used)
-										NULL,					//the 32 bits Service UUID set to null(not used)
-										NULL,					//16 bits services Solicitation UUIDs set to null(not used)
-										NULL,					//List of 32 bit Service Solicitation UUIDs set to null(not used)
-										NULL,					//List of 128 bit Service Solicitation UUIDs set to null(not used)
-										NULL,					//proprietary data set to null(not used)
-										NULL,					//service data set not null(no service data to be sent)
-										0x0000,         		//device type : generic display
-										0x00,					// General discoverable. 
-										0x00},					//the tx power value,defult value is 0
-									
-								}
+		.adv_name = NULL,	
+		{
+		{0,0},
+		&p_esp32_manu,
+		NULL,
+		NULL,					//the  128 bits service uuid set to null(not used)
+		NULL,					//the 32 bits Service UUID set to null(not used)
+		NULL,					//16 bits services Solicitation UUIDs set to null(not used)
+		NULL,					//List of 32 bit Service Solicitation UUIDs set to null(not used)
+		NULL,					//List of 128 bit Service Solicitation UUIDs set to null(not used)
+		NULL,					//proprietary data set to null(not used)
+		NULL,					//service data set not null(no service data to be sent)
+		0x0000,         		//device type : generic display
+		0x00,					// General discoverable. 
+		0x00},					//the tx power value,defult value is 0
+	}
 };
-
-static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
-
-                  
-typedef struct {
-    uint8_t uu[16];
-} bt_uuid_t;
 
 int uuidType(unsigned char* p_uuid)
 {
@@ -171,23 +171,7 @@ void btif_to_bta_uuid(tBT_UUID *p_dest, bt_uuid_t *p_src)
 static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
 {
     LOG_ERROR("set advertising config:status=%d\n", call_status);
-    /*dis init*/
-/*    tDIS_ATTR_MASK dis_attr_mask;
-    dis_attr_mask = DIS_ATTR_SYS_ID_BIT | DIS_ATTR_MODEL_NUM_BIT | DIS_ATTR_SERIAL_NUM_BIT | 
-        DIS_ATTR_FW_NUM_BIT | DIS_ATTR_HW_NUM_BIT | DIS_ATTR_SW_NUM_BIT | DIS_ATTR_MANU_NAME_BIT |
-        DIS_ATTR_IEEE_DATA_BIT | DIS_ATTR_PNP_ID_BIT;
-    DIS_SrInit(dis_attr_mask);
-*/
-    /*instantiate a battery service*/
-    //bas_register();  
-	/*instantiate the driver for button profile*/
-	//app_button_init();
-	/*instantiate a button service*/
-	button_init(SimpleDataCallBack);
-	/*instantiate a hid device service*/
-	//hidd_le_init();
-    /*start advetising*/
-    //BTA_GATTS_Listen(server_if, true, NULL);
+	blufi_profile_init(SimpleDataCallBack);
 }
 
 /*register callback*/
@@ -204,10 +188,10 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
             
             LOG_ERROR("set advertising parameters\n");
 			//set the advertising data to the btm layer
-			ESP_AppBleConfigadvData(&ijiazu_adv_data[BLE_ADV_DATA_IDX],
+			ESP_AppBleConfigadvData(&esp32_adv_data[BLE_ADV_DATA_IDX],
 								bta_gatts_set_adv_data_cback);
 			//set the adversting data to the btm layer
-			ESP_AppBleSetScanRsp(&ijiazu_adv_data[BLE_SCAN_RSP_DATA_IDX],NULL);
+			ESP_AppBleSetScanRsp(&esp32_adv_data[BLE_SCAN_RSP_DATA_IDX],NULL);
     	    BTA_GATTS_Listen(server_if, true, NULL);
         }
         break;
@@ -271,21 +255,72 @@ static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_da
 	
 }
 
-static void ble_server_appRegister(void)
+static void blufi_ble_server_appRegister(void)
 {    
     bt_uuid_t uuid;
     tBT_UUID t_uuid;
     memcpy(&uuid, BASE_UUID, sizeof(bt_uuid_t));
-    //memcpy(&uuid, DIS_UUID, sizeof(bt_uuid_t));
     btif_to_bta_uuid(&t_uuid, &uuid);
 
     LOG_ERROR("register gatts application\n");
     BTA_GATTS_AppRegister(&t_uuid, bta_gatts_callback);
 }
 
-void gatts_server_test(void)
+static BtStatus_t blufi_dm_upstreams_evt(void *arg)
+{
+	struct dm_evt *evt = (struct dm_evt *)arg;
+	
+    tBTA_DM_SEC *p_data = (tBTA_DM_SEC*)evt->p_data;
+    switch (evt->event) {
+	    case BTA_DM_ENABLE_EVT: {
+	        /*set connectable,discoverable, pairable and paired only modes of local device*/
+	        tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
+	        tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
+	        BTA_DmSetVisibility(disc_mode, conn_mode, (uint8_t)BTA_DM_NON_PAIRABLE, (uint8_t)BTA_DM_CONN_ALL );
+	
+#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
+	        /* Enable local privacy */
+	        //BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
+	        do {
+	            const controller_t *controller = controller_get_interface();
+	            char bdstr[18];
+	            bdaddr_to_string(controller->get_address(), bdstr, sizeof(bdstr));
+	            LOG_ERROR("BDA is: %s\n", bdstr);
+	        } while (0);
+#endif
+	    	blufi_ble_server_appRegister();
+			break;
+		default:
+			break;
+	    }
+	}
+
+    GKI_freebuf(evt);
+
+	return BT_STATUS_SUCCESS;
+}
+
+
+void blufi_bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data)
+{
+	struct dm_evt *evt;
+
+    LOG_ERROR("%s: %d\n", __func__, (uint16_t)event);
+
+	evt = (struct dm_evt *)GKI_getbuf(sizeof(struct dm_evt));
+	if (evt == NULL)
+		return;
+
+	evt->event = event;
+	evt->p_data = p_data;
+
+    blufi_transfer_context(blufi_dm_upstreams_evt, evt);
+}
+
+BtStatus_t blufi_enable(void *arg)
 {
     BTM_SetTraceLevel(BT_TRACE_LEVEL_DEBUG);
 
-    ble_server_appRegister();
+    BTA_EnableBluetooth(blufi_bte_dm_evt);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 }

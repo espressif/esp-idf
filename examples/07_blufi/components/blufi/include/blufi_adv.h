@@ -1,3 +1,6 @@
+#ifndef __BLUFI_ADV_H__
+#define __BLUFI_ADV_H__
+
 #include "bta_api.h"
 #include "btm_ble_api.h"
 
@@ -20,4 +23,4 @@ extern void ESP_AppBleConfigadvData(tESP_BLE_ADV_DATA *adv_data,
 extern void ESP_AppBleSetScanRsp(tESP_BLE_ADV_DATA *scan_rsp_data,
 							  tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback);
 
-
+#endif /* __BLUFI_ADV_H__ */

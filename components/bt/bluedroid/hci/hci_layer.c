@@ -142,7 +142,7 @@ void hci_host_task_post(void)
     if (hci_host_startup_flag == false)
         return;
 
-    TaskEvt_t *evt = (TaskEvt_t *)osi_malloc(sizeof(TaskEvt_t));
+    BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
     if (evt == NULL)
         return;
 
@@ -223,7 +223,7 @@ static void hci_host_thread_handler(void *arg)
    * H4 type header added (1 byte).
    */
 
-    TaskEvt_t *e;
+    BtTaskEvt_t *e;
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciHostQueue, &e, (portTickType)portMAX_DELAY)) {

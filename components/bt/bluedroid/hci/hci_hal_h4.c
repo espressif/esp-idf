@@ -157,7 +157,7 @@ static uint16_t transmit_data(serial_data_type_t type,
 
 // Internal functions
 static void hci_hal_h4_rx_handler(void *arg) {
-    TaskEvt_t *e;
+    BtTaskEvt_t *e;
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciH4Queue, &e, (portTickType)portMAX_DELAY)) {
@@ -171,7 +171,7 @@ static void hci_hal_h4_rx_handler(void *arg) {
 
 void hci_hal_h4_task_post(void)
 {
-    TaskEvt_t *evt = (TaskEvt_t *)osi_malloc(sizeof(TaskEvt_t));
+    BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
     if (evt == NULL)
         return;
 
