@@ -1,54 +1,41 @@
 .. Read the Docs Template documentation master file
 
-Welcome to ESP32 Programming Guide
-==================================
-
-
-Example C functions
--------------------
-
-.. c:function:: esp_err_t esp_wifi_get_ap_list (uint16_t *number, wifi_ap_list_t *ap_list)
-
-.. c:function:: esp_err_t esp_wifi_set_protocol (wifi_interface_t ifx, uint8_t protocol_bitmap)
-
-
-Example C function integration
-------------------------------
-
-.. doxygenfunction:: esp_wifi_init
-.. doxygenfunction:: esp_wifi_set_config
-
-.. doxygenfunction:: gpio_isr_register
-.. doxygenfunction:: ledc_timer_set 	
-
-
-Example C enum integration
---------------------------
-
-.. doxygenenum:: wifi_auth_mode_t
-
-
-Example C struct integration
-----------------------------
-
-.. doxygenstruct:: wifi_scan_config_t
-   :members:
-
+ESP32 Programming Guide
+=======================
 
 Contents:
 
-.. About - TBA
-
 .. toctree::
-   :caption: Toolchain Setup
+   :caption: Setup Toolchain
    :maxdepth: 1
 
-   windows-setup
-   linux-setup
-   macos-setup
-   eclipse-setup
+   Windows <windows-setup>
+   Linux <linux-setup>
+   Mac OS <macos-setup>
 
-.. API Reference - TBA
+.. Configure - TBA
+
+.. Connect - TBA
+
+.. toctree::
+   :caption: Build and Flash
+   :maxdepth: 1
+
+   Eclipse IDE <eclipse-setup>
+
+.. toctree::
+   :caption: Tweak
+   :maxdepth: 1
+   
+   partition-tables
+   build_system
+
+.. toctree::
+   :caption: API Reference
+   :maxdepth: 1
+
+   Wi-Fi <api/esp_wifi>
+   api/example
 
 .. Technical Reference - TBA
 
@@ -68,17 +55,14 @@ Contents:
    contributor-agreement
 
 .. toctree::
-   :caption: Copyrights and Licenses
+   :caption: Legal
    :maxdepth: 1
 
    COPYRIGHT
 
-.. toctree::
-   :caption: Flapping Documents
-   :maxdepth: 1
-   
-   partition-tables
-   build_system
+.. About - TBA
+
+
 
    
 Indices and tables
