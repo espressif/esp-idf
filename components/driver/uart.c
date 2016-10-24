@@ -312,10 +312,10 @@ esp_err_t uart_isr_register(uart_port_t uart_num, uint8_t uart_intr_num, void (*
 esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
-    UART_CHECK((tx_io_num < 0 || tx_io_num < GPIO_PIN_COUNT || GPIO_PIN_MUX_REG[tx_io_num] != 0), "tx_io_num error");
-    UART_CHECK((rx_io_num < 0 || rx_io_num < GPIO_PIN_COUNT || GPIO_PIN_MUX_REG[rx_io_num] != 0), "rx_io_num error");
-    UART_CHECK((rts_io_num < 0 || rts_io_num < GPIO_PIN_COUNT || GPIO_PIN_MUX_REG[rts_io_num] != 0), "rts_io_num error");
-    UART_CHECK((cts_io_num < 0 || cts_io_num < GPIO_PIN_COUNT || GPIO_PIN_MUX_REG[cts_io_num] != 0), "cts_io_num error");
+    UART_CHECK((tx_io_num < 0 || (GPIO_IS_VALID_OUTPUT_GPIO(tx_io_num))), "tx_io_num error");
+    UART_CHECK((rx_io_num < 0 || (GPIO_IS_VALID_GPIO(rx_io_num))), "rx_io_num error");
+    UART_CHECK((rts_io_num < 0 || (GPIO_IS_VALID_OUTPUT_GPIO(rts_io_num))), "rts_io_num error");
+    UART_CHECK((cts_io_num < 0 || (GPIO_IS_VALID_GPIO(cts_io_num))), "cts_io_num error");
 
     int tx_sig, rx_sig, rts_sig, cts_sig;
     switch(uart_num) {
