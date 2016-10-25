@@ -103,7 +103,9 @@ esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if)
 
     if (tcpip_if == TCPIP_ADAPTER_IF_AP) {
         dhcps_stop(esp_netif[tcpip_if]);    // TODO: dhcps checks status by its self
-        dhcps_status = TCPIP_ADAPTER_DHCP_INIT;
+        if (TCPIP_ADAPTER_DHCP_STOPPED != dhcps_status){
+            dhcps_status = TCPIP_ADAPTER_DHCP_INIT;
+        }
     } else if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
         dhcp_release(esp_netif[tcpip_if]);
         dhcp_stop(esp_netif[tcpip_if]);
