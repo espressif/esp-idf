@@ -35,6 +35,7 @@ Contents:
    :maxdepth: 1
 
    Wi-Fi <api/esp_wifi>
+   GPIO <api/gpio>
    api/example
 
 .. Technical Reference - TBA
