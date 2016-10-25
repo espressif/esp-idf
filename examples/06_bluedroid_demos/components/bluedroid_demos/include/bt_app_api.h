@@ -14,6 +14,7 @@
 
 #include "bt_types.h"
 #include "bt_app_defs.h"
+#include "bta_gatt_api.h"
 
 typedef tBTA_SET_ADV_DATA_CMPL_CBACK tAPI_SET_ADV_DATA_CMPL_CBACK  ;
 typedef	tBTA_STATUS tAPI_STATUS;
@@ -41,6 +42,8 @@ extern void API_Ble_SetPacketDataLength(BD_ADDR remote_device, UINT16 tx_data_le
 extern void API_Ble_SetRandAddress(BD_ADDR rand_addr);
 
 extern void API_Ble_ConfigLocalPrivacy(BOOLEAN privacy_enable);											
+
+extern void API_Ble_GATTC_AppRegister(tBT_UUID *p_app_uuid, tBTA_GATTC_CBACK *p_client_cb);
 
 
 void API_Ble_PrfEnable(); 

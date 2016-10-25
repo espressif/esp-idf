@@ -64,6 +64,15 @@ typedef struct
 	tBLE_BD_ADDR			*p_dir_bda;
 }tESP_API_BLE_ADV_PARAMS_ALL;
 
+typedef struct
+{
+	UINT8		scan_type;
+	UINT16		scan_intv;
+	UINT16		scan_win;
+	UINT8		addr_type_own;
+	UINT8		scan_fil_policy;
+}tESP_BLE_SCAN_PARAMS;
+
 
 extern void ESP_AppBleConfigadvData(tESP_BLE_ADV_DATA *adv_data,
 												tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
