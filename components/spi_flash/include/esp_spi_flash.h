@@ -35,6 +35,8 @@ extern "C" {
  *
  *  This function must be called exactly once, before any other 
  *  spi_flash_* functions are called.
+ *  Currently this function is called from startup code. There is
+ *  no need to call it from application code.
  *
  */
 void spi_flash_init();

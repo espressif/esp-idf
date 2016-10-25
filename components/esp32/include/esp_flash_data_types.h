@@ -24,7 +24,7 @@ extern "C"
 #define ESP_PARTITION_TABLE_ADDR 0x4000
 #define ESP_PARTITION_MAGIC 0x50AA
 
-/*spi mode,saved in third byte in flash */
+/* SPI flash mode, used in esp_image_header_t */
 typedef enum {
     ESP_IMAGE_SPI_MODE_QIO,
     ESP_IMAGE_SPI_MODE_QOUT,
@@ -34,7 +34,7 @@ typedef enum {
     ESP_IMAGE_SPI_MODE_SLOW_READ
 } esp_image_spi_mode_t;
 
-/* spi speed*/
+/* SPI flash clock frequency */
 enum {
     ESP_IMAGE_SPI_SPEED_40M,
     ESP_IMAGE_SPI_SPEED_26M,
@@ -42,7 +42,7 @@ enum {
     ESP_IMAGE_SPI_SPEED_80M = 0xF
 } esp_image_spi_freq_t;
 
-/*supported flash sizes*/
+/* Supported SPI flash sizes */
 typedef enum {
     ESP_IMAGE_FLASH_SIZE_1MB = 0,
     ESP_IMAGE_FLASH_SIZE_2MB,
@@ -52,22 +52,23 @@ typedef enum {
     ESP_IMAGE_FLASH_SIZE_MAX
 } esp_image_flash_size_t;
 
+/* Main header of binary image */
 typedef struct {
-    char magic;
-    char blocks;
-    char spi_mode;      /* flag of flash read mode in unpackage and usage in future */
-    char spi_speed: 4;  /* low bit */
-    char spi_size: 4;
-    unsigned int entry_addr;
+    uint8_t magic;
+    uint8_t blocks;
+    uint8_t spi_mode;      /* flash read mode (esp_image_spi_mode_t as uint8_t) */
+    uint8_t spi_speed: 4;  /* flash frequency (esp_image_spi_freq_t as uint8_t) */
+    uint8_t spi_size: 4;   /* flash chip size (esp_image_flash_size_t as uint8_t) */
+    uint32_t entry_addr;
     uint8_t encrypt_flag;    /* encrypt flag */
     uint8_t secure_boot_flag; /* secure boot flag */
-    char extra_header[14]; /* ESP32 additional header, unused by second bootloader */
+    uint8_t extra_header[14]; /* ESP32 additional header, unused by second bootloader */
 }  esp_image_header_t;
 
-/* each header of flash bin block */
+/* Header of binary image segment */
 typedef struct {
-    unsigned int load_addr;
-    unsigned int data_len;
+    uint32_t load_addr;
+    uint32_t data_len;
 } esp_image_section_header_t;
 
 
@@ -85,13 +86,16 @@ typedef struct {
     uint32_t size;
 } esp_partition_pos_t;
 
+/* Structure which describes the layout of partition table entry.
+ * See docs/partition_tables.rst for more information about individual fields.
+ */
 typedef struct {
 	uint16_t magic;
-	uint8_t  type;        /* partition Type */
-    uint8_t  subtype;     /* part_subtype */
+	uint8_t  type;
+    uint8_t  subtype;
     esp_partition_pos_t pos;
-	uint8_t  label[16];    /* label for the partition */
-    uint8_t  reserved[4];     /* reserved */
+	uint8_t  label[16];
+    uint8_t  reserved[4];
 } esp_partition_info_t;
 
 
