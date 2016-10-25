@@ -30,6 +30,7 @@ This uses the TIMERG1 WDT.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <esp_types.h>
@@ -72,12 +73,34 @@ void int_wdt_init() {
 }
 
 
+#if CONFIG_INT_WDT_CHECK_CPU1
+//Not static; the ISR assembly checks this.
+bool int_wdt_app_cpu_ticked=false;
+
 void vApplicationTickHook(void) {
+	if (xPortGetCoreID()!=0) {
+		int_wdt_app_cpu_ticked=true;
+	} else {
+		//Only feed wdt if app cpu also ticked.
+		if (int_wdt_app_cpu_ticked) {
+			TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
+			TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;		//Set timeout before interrupt
+			TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;		//Set timeout before reset
+			TIMERG1.wdt_feed=1;
+			TIMERG1.wdt_wprotect=0;
+			int_wdt_app_cpu_ticked=false;
+		}
+	}
+}
+#else
+void vApplicationTickHook(void) {
+	if (xPortGetCoreID()!=0) return;
 	TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
 	TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;		//Set timeout before interrupt
 	TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;		//Set timeout before reset
 	TIMERG1.wdt_feed=1;
 	TIMERG1.wdt_wprotect=0;
 }
+#endif
 
 #endif

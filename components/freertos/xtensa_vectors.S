@@ -92,7 +92,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "xtensa_rtos.h"
 #include "panic.h"
-
+#include "sdkconfig.h"
 /*
   Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
   Please change this when the tcb structure is changed
@@ -1616,12 +1616,25 @@ _xt_highint4:
     ADD HIGH PRIORITY LEVEL 4 INTERRUPT HANDLER CODE HERE.
     */
 
+
+
     /* On the ESP32, this level is used for the INT_WDT handler. If that triggers, the program is stuck with interrupts
        off and the CPU should panic. */
 	rsr     a0, EXCSAVE_4
 	wsr     a0, EXCSAVE_1 /* panic handler reads this register */
-	movi    a0,PANIC_RSN_INTWDT
+	/* Set EXCCAUSE to reflect cause of the wdt int trigger */
+	movi    a0,PANIC_RSN_INTWDT_CPU0
 	wsr     a0,EXCCAUSE
+#if CONFIG_INT_WDT_CHECK_CPU1
+	/* Check if the cause is the app cpu failing to tick.*/
+	movi    a0, int_wdt_app_cpu_ticked
+	l32i    a0, a0, 0
+	bnez    a0, 1f
+	/* It is. Modify cause. */
+	movi    a0,PANIC_RSN_INTWDT_CPU1
+	wsr     a0,EXCCAUSE
+1:
+#endif
     call0 _xt_panic
 
 

@@ -158,6 +158,13 @@ config INT_WDT_TIMEOUT_MS
     help
         The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
 
+config INT_WDT_CHECK_CPU1
+    bool "Also watch CPU1 tick interrupt"
+    depends on INT_WDT && !FREERTOS_UNICORE
+    default y
+    help
+        Also detect if interrupts on CPU 1 are disabled for too long.
+
 config TASK_WDT
     bool "Task watchdog"
     default y
@@ -182,7 +189,7 @@ config TASK_WDT_TIMEOUT_S
         Timeout for the task WDT, in seconds.
 
 config TASK_WDT_CHECK_IDLE_TASK
-    bool "Task watchdog watches idle tasks"
+    bool "Task watchdog watches CPU0 idle task"
     depends on TASK_WDT
     default y
     help
@@ -191,6 +198,13 @@ config TASK_WDT_CHECK_IDLE_TASK
         task hoarding the CPU. It is also a bad thing because FreeRTOS household tasks depend on the 
         idle task getting some runtime every now and then. Take Care: With this disabled, this 
         watchdog will trigger if no tasks register themselves within the timeout value.
+
+config TASK_WDT_CHECK_IDLE_TASK_CPU1
+    bool "Task watchdog also watches CPU1 idle task"
+    depends on TASK_WDT_CHECK_IDLE_TASK && !FREERTOS_UNICORE
+    default y
+    help
+        Also check the idle task that runs on CPU1.
 
 #The brownout detector code is disabled (by making it depend on a nonexisting symbol) because the current revision of ESP32
 #silicon has a bug in the brown-out detector, rendering it unusable for resetting the CPU.

@@ -75,6 +75,11 @@ static void IRAM_ATTR task_wdt_isr(void *arg) {
 			printf(" - %s (%s)\n", pcTaskGetTaskName(wdttask->task_handle), cpu);
 		}
 	}
+	ets_printf("Tasks currently running:\n");
+	for (int x=0; x<portNUM_PROCESSORS; x++) {
+		ets_printf("CPU %d: %s\n", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
+	}
+
 #if CONFIG_TASK_WDT_PANIC
 	ets_printf("Aborting.\n");
 	abort();
@@ -170,6 +175,9 @@ void task_wdt_init() {
 
 #if CONFIG_TASK_WDT_CHECK_IDLE_TASK
 void vApplicationIdleHook(void) {
+#if !CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
+	if (xPortGetCoreID()!=0) return;
+#endif
 	task_wdt_feed();
 }
 #endif

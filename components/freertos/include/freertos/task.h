@@ -1933,6 +1933,17 @@ TickType_t uxTaskResetEventItemValue( void ) PRIVILEGED_FUNCTION;
  */
 TaskHandle_t xTaskGetCurrentTaskHandle( void ) PRIVILEGED_FUNCTION;
 
+
+
+/*
+ * Return the handle of the task running on a certain CPU. Because of
+ * the nature of SMP processing, there is no guarantee that this
+ * value will still be valid on return and should only be used for
+ * debugging purposes.
+ */
+TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t cpuid );
+
+
 /*
  * Capture the current time status for future reference.
  */
