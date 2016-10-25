@@ -36,7 +36,6 @@ extern "C"
 #define RTC_DATA_LOW  0x50000000
 #define RTC_DATA_HIGH 0x50002000
 
-
 #define PART_TYPE_APP 0x00
 #define PART_SUBTYPE_FACTORY  0x00
 #define PART_SUBTYPE_OTA_FLAG 0x10
@@ -66,8 +65,7 @@ void boot_cache_redirect( uint32_t pos, size_t size );
 uint32_t get_bin_len(uint32_t pos);
 
 bool flash_encrypt(bootloader_state_t *bs);
-bool secure_boot(void);
-
+bool secure_boot_generate_bootloader_digest(void);
 
 #ifdef __cplusplus
 }

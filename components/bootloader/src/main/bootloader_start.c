@@ -256,6 +256,7 @@ void bootloader_main()
     bootloader_state_t bs;
     SpiFlashOpResult spiRet1,spiRet2;    
     esp_ota_select_entry_t sa,sb;
+
     memset(&bs, 0, sizeof(bs));
 
     ESP_LOGI(TAG, "compile time " __TIME__ );
@@ -329,16 +330,20 @@ void bootloader_main()
     }
 
     ESP_LOGI(TAG, "Loading app partition at offset %08x", load_part_pos);
+
     if(fhdr.secure_boot_flag == 0x01) {
-        /* protect the 2nd_boot  */    
-        if(false == secure_boot()){
-            ESP_LOGE(TAG, "secure boot failed");
-            return;
+        /* Generate secure digest from this bootloader to protect future
+         modifications */
+        if (secure_boot_generate_bootloader_digest() == false){
+            ESP_LOGE(TAG, "Bootloader digest generation failed. SECURE BOOT IS NOT ENABLED.");
+            /* Allow booting to continue, as the failure is probably
+               due to user-configured EFUSEs for testing...
+            */
         }
     }
 
     if(fhdr.encrypt_flag == 0x01) {
-        /* encrypt flash */            
+        /* encrypt flash */
         if (false == flash_encrypt(&bs)) {
            ESP_LOGE(TAG, "flash encrypt failed");
            return;
