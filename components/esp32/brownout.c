@@ -24,7 +24,7 @@
 
 #if CONFIG_BROWNOUT_DET
 /*
-This file ins included in esp-idf, but the menuconfig option for this is disabled because a silicon bug
+This file is included in esp-idf, but the menuconfig option for this is disabled because a silicon bug
 prohibits the brownout detector from functioning correctly on the ESP32.
 */
 
