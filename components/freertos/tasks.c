@@ -77,6 +77,7 @@ task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 
 #include "rom/ets_sys.h"
+#include "esp_newlib.h"
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
@@ -962,8 +963,8 @@ UBaseType_t x;
 
 	#if ( configUSE_NEWLIB_REENTRANT == 1 )
 	{
-		/* Initialise this task's Newlib reent structure. */
-		_REENT_INIT_PTR( ( &( pxNewTCB->xNewLib_reent ) ) );
+        /* Initialise this task's Newlib reent structure. */
+        esp_reent_init(&pxNewTCB->xNewLib_reent);
 	}
 	#endif
 
@@ -3643,8 +3644,6 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 
 #if ( INCLUDE_vTaskDelete == 1 )
 
-	// TODO: move this to newlib component and provide a header file
-	extern void _extra_cleanup_r(struct _reent* r);
 
 	static void prvDeleteTCB( TCB_t *pxTCB )
 	{
@@ -3657,7 +3656,6 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 		to the task to free any memory allocated at the application level. */
 		#if ( configUSE_NEWLIB_REENTRANT == 1 )
 		{
-			pxTCB->xNewLib_reent.__cleanup = &_extra_cleanup_r;
 			_reclaim_reent( &( pxTCB->xNewLib_reent ) );
 		}
 		#endif /* configUSE_NEWLIB_REENTRANT */

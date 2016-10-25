@@ -15,6 +15,16 @@
 #ifndef __ESP_NEWLIB_H__
 #define __ESP_NEWLIB_H__
 
+#include <sys/reent.h>
+
+/**
+ * Replacement for newlib's _REENT_INIT_PTR and __sinit.
+ *
+ * Called from startup code and FreeRTOS, not intended to be called from
+ * application code.
+ */
+void esp_reent_init(struct _reent* r);
+
 /**
  * Function which sets up syscall table used by newlib functions in ROM.
  *

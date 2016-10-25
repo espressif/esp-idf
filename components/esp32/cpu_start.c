@@ -42,6 +42,7 @@
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
 #include "esp_log.h"
+#include "esp_vfs_dev.h"
 #include "esp_newlib.h"
 #include "esp_brownout.h"
 #include "esp_int_wdt.h"
@@ -161,6 +162,11 @@ void start_cpu0_default(void)
     esp_task_wdt_init();
 #endif
     esp_setup_syscalls();
+    esp_vfs_dev_uart_register();
+    esp_reent_init(_GLOBAL_REENT);
+    _GLOBAL_REENT->_stdout = fopen("/dev/uart/0", "w"); // use fdopen here?
+    _GLOBAL_REENT->_stderr = _GLOBAL_REENT->_stdout;
+    _GLOBAL_REENT->_stdin  = _GLOBAL_REENT->_stdout;
     do_global_ctors();
     esp_ipc_init();
     spi_flash_init();
