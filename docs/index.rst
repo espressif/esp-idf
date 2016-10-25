@@ -21,14 +21,16 @@ Contents:
    :caption: Build and Flash
    :maxdepth: 1
 
+   Make <make-project>
    Eclipse IDE <eclipse-setup>
 
 .. toctree::
-   :caption: Tweak
+   :caption: Want More?
    :maxdepth: 1
    
    partition-tables
    build_system
+   openocd
 
 .. toctree::
    :caption: API Reference
@@ -38,13 +40,10 @@ Contents:
    GPIO <api/gpio>
    api/example
 
-.. Technical Reference - TBA
-
 .. toctree::
-   :caption: Debugging
-   :maxdepth: 1
+   :caption: Technical Reference
 
-   openocd
+   Technical Reference <http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>
 
 .. Resources - TBA
    
@@ -63,11 +62,9 @@ Contents:
 
 .. About - TBA
 
-
-
-   
-Indices and tables
-==================
+ 
+Indices
+=======
 
 * :ref:`genindex`
 * :ref:`search`
