@@ -46,6 +46,8 @@ void wifi_set_blue_config(char *ssid, char *passwd)
 	printf("confirm true\n");
 }
 
+extern void blufi_config_failed(void);
+extern void blufi_config_success(void);
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
@@ -54,6 +56,8 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+		blufi_config_success();
+		BTA_DisableBluetooth();
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
@@ -102,6 +106,7 @@ void wifiTestTask(void *pvParameters)
 			ret = esp_wifi_connect();
 			if (ret != ESP_OK) {
 				printf("esp_wifi connect failed\n");
+				blufi_config_failed();
 			}
 		}
     }

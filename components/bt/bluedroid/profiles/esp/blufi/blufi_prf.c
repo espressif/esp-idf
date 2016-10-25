@@ -33,6 +33,9 @@
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
+void blufi_config_success(void);
+void blufi_config_failed(void);
+
 UINT16 esp32_uuid = SVC_BLUFI_UUID;
 UINT8 esp32_manu[17] = {0xff,0x20,0x14,0x07,0x22,0x00,0x02,0x5B,0x00,0x33,0x49,0x31,0x30,0x4a,0x30,0x30,0x31};
 tBTA_BLE_MANU	p_esp32_manu = {sizeof(esp32_manu),esp32_manu};			/* manufacturer data */
@@ -180,21 +183,22 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			//add the frist blufi characteristic --> write characteristic
 			BTA_GATTS_AddCharacteristic(blufi_cb_env.clcb.cur_srvc_id, &uuid,
 										(GATT_PERM_WRITE | GATT_PERM_READ),
-										(GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE));
+										(GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE | GATT_CHAR_PROP_BIT_NOTIFY));
 			break;
 		case BTA_GATTS_ADD_CHAR_EVT:
 			if(p_data->add_result.char_uuid.uu.uuid16 == CHAR_BLUFI_UUID)
 			{
-				uuid.uu.uuid16 = CHAR_BLUFI_UUID;
 				//save the att handle to the env
 				blufi_cb_env.blufi_inst.blufi_hdl = p_data->add_result.attr_id;
+
+				uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
+				BTA_GATTS_AddCharDescriptor (blufi_cb_env.clcb.cur_srvc_id,
+				                             (GATT_PERM_WRITE|GATT_PERM_WRITE),
+				                             &uuid);
 			}
 			break;
 		case BTA_GATTS_ADD_CHAR_DESCR_EVT:
-			if(p_data->add_result.char_uuid.uu.uuid16 == GATT_UUID_CHAR_CLIENT_CONFIG)
-			{
-				blufi_cb_env.blufi_inst.blufi_hdl = p_data->add_result.attr_id;
-			}
+			/* Nothing */
 			break;
 		case BTA_GATTS_CONNECT_EVT:
 			//set the connection flag to true
@@ -361,7 +365,7 @@ tGATT_STATUS blufi_profile_init (tBLUFI_CBACK *call_back)
 	return GATT_SUCCESS;
 }
 
-void blufi_msg_notify(UINT8 len, UINT8 *blufi_msg)
+void blufi_msg_notify(UINT8 *blufi_msg, UINT8 len)
 {
 	 BOOLEAN conn_status = blufi_cb_env.clcb.connected;
 	 UINT16 conn_id = blufi_cb_env.clcb.conn_id;
@@ -376,4 +380,16 @@ void blufi_msg_notify(UINT8 len, UINT8 *blufi_msg)
 	 
 	 BTA_GATTS_HandleValueIndication (conn_id, attr_id, len,
                                       blufi_msg, rsp);
+}
+
+void blufi_config_success(void)
+{
+	uint8_t *success_msg = "BLUFI_CONFIG_OK";
+	blufi_msg_notify(success_msg, strlen(success_msg));
+}
+
+void blufi_config_failed(void)
+{
+	uint8_t *failed_msg = "BLUFI_CONFIG_FAILED";
+	blufi_msg_notify(failed_msg, strlen(failed_msg));
 }

@@ -7,7 +7,7 @@
 //define the blufi Char uuid
 #define CHAR_BLUFI_UUID	0xFF01
 
-#define BLUFI_HDL_NUM	3
+#define BLUFI_HDL_NUM	4
 
 #define BLUFI_VAL_MAX_LEN	(20)
 
@@ -72,5 +72,5 @@ BOOLEAN blufi_env_clcb_dealloc(UINT16 conn_id);
 
 tGATT_STATUS blufi_profile_init(tBLUFI_CBACK *call_back);
 
-void blufi_msg_notify(UINT8 len, UINT8 *blufi_msg);
+void blufi_msg_notify(UINT8 *blufi_msg, UINT8 len);
 
