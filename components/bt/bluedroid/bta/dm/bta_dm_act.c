@@ -4740,6 +4740,27 @@ void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_ble_set_scan_fil_params
+**
+** Description      This function sets BLE scan filter & parameters.
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
+{
+	BTM_BleSetScanFilterParams (p_data->ble_set_scan_fil_params.client_if,
+								p_data->ble_set_scan_fil_params.scan_int,
+								p_data->ble_set_scan_fil_params.scan_window,
+								p_data->ble_set_scan_fil_params.scan_mode,
+								p_data->ble_set_scan_fil_params.addr_type_own,
+								p_data->ble_set_scan_fil_params.scan_filter_policy,
+								p_data->ble_set_scan_fil_params.scan_param_setup_cback);
+}
+
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ble_set_conn_scan_params
 **
 ** Description      This function set the preferred connection scan parameters.
@@ -4857,7 +4878,7 @@ void bta_dm_ble_observe (tBTA_DM_MSG *p_data)
                             bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb))!= BTM_CMD_STARTED)
         {
             tBTA_DM_SEARCH  data;
-            APPL_TRACE_WARNING(" %s BTM_BleObserve  failed. status %d",__FUNCTION__,status);
+            APPL_TRACE_WARNING(" %s BTM_BleObserve  failed. status %d\n",__FUNCTION__,status);
             data.inq_cmpl.num_resps = 0;
             if (bta_dm_search_cb.p_scan_cback)
             {
@@ -4890,7 +4911,7 @@ void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
-** Function         BTM_BleSetAdvParamsStartAdv
+** Function         bta_dm_ble_set_adv_params_all
 **
 ** Description      This function is called to set all of the advertising parameters.
 **

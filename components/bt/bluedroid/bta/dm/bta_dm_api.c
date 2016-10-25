@@ -860,6 +860,8 @@ void BTA_DmBleSecurityGrant(BD_ADDR bd_addr, tBTA_DM_BLE_SEC_GRANT res)
     }
 #endif
 }
+
+
 /*******************************************************************************
 **
 ** Function         BTA_DmSetBlePrefConnParams
@@ -963,6 +965,44 @@ void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
 
         bta_sys_sendmsg(p_msg);
     }
+}
+
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetBleScanFilterParams
+**
+** Description      This function is called to set scan parameters
+**
+** Parameters:      client_if - Client IF
+**                  scan_interval - scan interval
+**                  scan_window - scan window
+**                  scan_mode - scan mode
+**                  scan_param_setup_status_cback - Set scan param status callback
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
+                            UINT32 scan_window, tBLE_SCAN_MODE scan_mode, UINT8 scan_fil_poilcy,
+                            UINT8 addr_type_own, tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback)
+{
+	tBTA_DM_API_BLE_SCAN_FILTER_PARAMS *p_msg;
+
+	if ((p_msg = (tBTA_DM_API_BLE_SCAN_FILTER_PARAMS *)GKI_getbuf(sizeof(tBTA_DM_API_BLE_SCAN_FILTER_PARAMS))) != NULL)
+	{
+		memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_SCAN_FILTER_PARAMS));
+		p_msg->hdr.event = BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT;
+		p_msg->client_if = client_if;
+		p_msg->scan_int = scan_interval;
+		p_msg->scan_window = scan_window;
+		p_msg->scan_mode = scan_mode;
+		p_msg->addr_type_own = addr_type_own;
+		p_msg->scan_filter_policy = scan_fil_poilcy;
+		p_msg->scan_param_setup_cback = scan_param_setup_cback;
+	}
+	
+
 }
 
 /*******************************************************************************
@@ -1930,7 +1970,7 @@ void BTA_DmEnableScanFilter(UINT8 action, tBTA_DM_BLE_PF_STATUS_CBACK *p_cmpl_cb
 {
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
     tBTA_DM_API_ENABLE_SCAN_FILTER *p_msg;
-    APPL_TRACE_API ("BTA_DmEnableScanFilter: %d", action);
+    APPL_TRACE_API ("BTA_DmEnableScanFilter: %d\n", action);
 
     UINT16  len = sizeof(tBTA_DM_API_ENABLE_SCAN_FILTER) + sizeof(tBLE_BD_ADDR);
 

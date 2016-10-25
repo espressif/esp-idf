@@ -26,9 +26,9 @@
 #define ATT_UUID_128_LEN                        0x0010
 #define ATT_UUID_32_LEN                         0x0004
 
-#define WX_AIRSYNC_CFG			1
+#define WX_AIRSYNC_CFG			0
 #define BUT_PROFILE_CFG			1
-#define HIDD_LE_PROFILE_CFG		1
+#define HIDD_LE_PROFILE_CFG		0
 
 /*
  * Type Definition

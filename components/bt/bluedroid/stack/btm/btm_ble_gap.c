@@ -351,7 +351,7 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT8 duration,
     UINT32 scan_interval = !p_inq->scan_interval ? BTM_BLE_GAP_DISC_SCAN_INT : p_inq->scan_interval;
     UINT32 scan_window = !p_inq->scan_window ? BTM_BLE_GAP_DISC_SCAN_WIN : p_inq->scan_window;
 
-    BTM_TRACE_EVENT ("%s : scan_type:%d, %d, %d", __func__, btm_cb.btm_inq_vars.scan_type,
+    BTM_TRACE_EVENT ("%s : scan_type:%d, %d, %d\n", __func__, btm_cb.btm_inq_vars.scan_type,
                       p_inq->scan_interval, p_inq->scan_window);
 
     if (!controller_get_interface()->supports_ble())
@@ -1193,7 +1193,7 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_
     UINT32 max_scan_interval;
     UINT32 max_scan_window;
 
-    BTM_TRACE_EVENT ("%s", __func__);
+    BTM_TRACE_EVENT ("%s\n", __func__);
     if (!controller_get_interface()->supports_ble())
         return;
 
@@ -1226,11 +1226,64 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_
         if (scan_setup_status_cback != NULL)
             scan_setup_status_cback(client_if, BTM_ILLEGAL_VALUE);
 
-        BTM_TRACE_ERROR("Illegal params: scan_interval = %d scan_window = %d",
+        BTM_TRACE_ERROR("Illegal params: scan_interval = %d scan_window = %d\n",
                         scan_interval, scan_window);
     }
 
 }
+
+void BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
+                          tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, tBTM_BLE_SFP scan_filter_policy,
+                          tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback)
+{
+	tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+    UINT32 max_scan_interval;
+    UINT32 max_scan_window;
+
+    BTM_TRACE_EVENT ("%s\n", __func__);
+    if (!controller_get_interface()->supports_ble())
+        return;
+
+    /* If not supporting extended scan support, use the older range for checking */
+    if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0)
+    {
+        max_scan_interval = BTM_BLE_SCAN_INT_MAX;
+        max_scan_window = BTM_BLE_SCAN_WIN_MAX;
+    }
+    else
+    {
+        /* If supporting extended scan support, use the new extended range for checking */
+        max_scan_interval = BTM_BLE_EXT_SCAN_INT_MAX;
+        max_scan_window = BTM_BLE_EXT_SCAN_WIN_MAX;
+    }
+
+    if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN, max_scan_interval) &&
+        BTM_BLE_ISVALID_PARAM(scan_window, BTM_BLE_SCAN_WIN_MIN, max_scan_window) &&
+       (scan_mode == BTM_BLE_SCAN_MODE_ACTI || scan_mode == BTM_BLE_SCAN_MODE_PASS))
+    {
+        p_cb->scan_type = scan_mode;
+        p_cb->scan_interval = scan_interval;
+        p_cb->scan_window = scan_window;
+		p_cb->sfp = scan_filter_policy;
+
+		btsnd_hcic_ble_set_scan_params(p_cb->scan_type, (UINT16)scan_interval,
+                                      (UINT16)scan_window,
+                                      addr_type_own,
+                                      scan_filter_policy);
+		 
+        if (scan_setup_status_cback != NULL)
+            scan_setup_status_cback(client_if, BTM_SUCCESS);
+    }
+    else
+    {
+        if (scan_setup_status_cback != NULL)
+            scan_setup_status_cback(client_if, BTM_ILLEGAL_VALUE);
+
+        BTM_TRACE_ERROR("Illegal params: scan_interval = %d scan_window = %d\n",
+                        scan_interval, scan_window);
+    }
+}
+
 
 /*******************************************************************************
 **

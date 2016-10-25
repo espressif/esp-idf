@@ -90,6 +90,9 @@ enum
     BTA_DM_API_BLE_CONN_PARAM_EVT,
     BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT,
     BTA_DM_API_BLE_SCAN_PARAM_EVT,
+     /*******This event added by Yulong at 2016/10/25 to 
+    support the scan filter setting for the APP******/
+    BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT,
     BTA_DM_API_BLE_OBSERVE_EVT,
     BTA_DM_API_UPDATE_CONN_PARAM_EVT,
     /*******This event added by Yulong at 2016/9/9 to 
@@ -476,6 +479,19 @@ typedef struct
     tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
 }tBTA_DM_API_BLE_SCAN_PARAMS;
 
+typedef struct
+{
+    BT_HDR hdr;
+    tBTA_GATTC_IF client_if;
+    UINT32 scan_int;
+    UINT32 scan_window;
+    tBLE_SCAN_MODE scan_mode;
+	UINT8 addr_type_own;
+	UINT8 scan_filter_policy;
+    tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
+}tBTA_DM_API_BLE_SCAN_FILTER_PARAMS;
+
+
 /* set scan parameter for BLE connections */
 typedef struct
 {
@@ -747,6 +763,7 @@ typedef union
     tBTA_DM_API_BLE_CONN_PARAMS         ble_set_conn_params;
     tBTA_DM_API_BLE_CONN_SCAN_PARAMS    ble_set_conn_scan_params;
     tBTA_DM_API_BLE_SCAN_PARAMS         ble_set_scan_params;
+	tBTA_DM_API_BLE_SCAN_FILTER_PARAMS	ble_set_scan_fil_params;
     tBTA_DM_API_BLE_OBSERVE             ble_observe;
     tBTA_DM_API_ENABLE_PRIVACY          ble_remote_privacy;
     tBTA_DM_API_LOCAL_PRIVACY           ble_local_privacy;
@@ -1145,6 +1162,7 @@ extern void bta_dm_security_grant (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_bg_conn_type (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_observe (tBTA_DM_MSG *p_data);

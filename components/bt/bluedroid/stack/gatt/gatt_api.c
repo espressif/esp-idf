@@ -680,7 +680,7 @@ tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
 
     if ( (p_reg == NULL) || (p_tcb == NULL))
     {
-        GATT_TRACE_ERROR ("GATTS_HandleValueNotification Unknown  conn_id: %u ", conn_id);
+        GATT_TRACE_ERROR ("GATTS_HandleValueNotification Unknown  conn_id: %u \n", conn_id);
         return(tGATT_STATUS) GATT_INVALID_CONN_ID;
     }
 
@@ -689,7 +689,7 @@ tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
         notif.handle    = attr_handle;
         notif.len       = val_len;
         memcpy (notif.value, p_val, val_len);
-        notif.auth_req = GATT_AUTH_REQ_NONE;;
+        notif.auth_req = GATT_AUTH_REQ_NONE;
 
         if ((p_buf = attp_build_sr_msg (p_tcb, GATT_HANDLE_VALUE_NOTIF, (tGATT_SR_MSG *)&notif))
                    != NULL)

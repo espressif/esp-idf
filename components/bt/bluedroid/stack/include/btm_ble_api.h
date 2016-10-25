@@ -1029,6 +1029,30 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval,
                                  UINT32 scan_window, tBLE_SCAN_MODE scan_type,
                                  tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
 
+
+
+/*******************************************************************************
+**
+** Function         BTM_BleSetScanFilterParams
+**
+** Description      This function is called to set Scan Filter & parameters.
+**
+** Parameters       client_if - Client IF value
+**                  scan_interval - Scan interval
+**                  scan_window - Scan window
+**                  scan_type - Scan type
+**					addr_type_own - owner address type
+**					scan_filter_policy - scan filter policy
+**                  scan_setup_status_cback - Scan setup status callback
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
+                          tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, tBTM_BLE_SFP scan_filter_policy,
+                          tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
+
+
 /*******************************************************************************
 **
 ** Function         BTM_BleGetVendorCapabilities
