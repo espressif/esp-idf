@@ -42,7 +42,7 @@
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
 #include "esp_log.h"
-
+#include "esp_newlib.h"
 #include "esp_brownout.h"
 #include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
@@ -160,7 +160,7 @@ void start_cpu0_default(void)
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
-    ets_setup_syscalls();
+    esp_setup_syscalls();
     do_global_ctors();
     esp_ipc_init();
     spi_flash_init();

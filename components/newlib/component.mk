@@ -1,8 +1,5 @@
-COMPONENT_ADD_LDFLAGS := $(abspath lib/libc.a) $(abspath lib/libm.a)
+COMPONENT_ADD_LDFLAGS := $(abspath lib/libc.a) $(abspath lib/libm.a) -lnewlib
 
-
-define COMPONENT_BUILDRECIPE
-	#Nothing to do; this does not generate a library.
-endef
+COMPONENT_ADD_INCLUDEDIRS := include platform_include
 
 include $(IDF_PATH)/make/component_common.mk
