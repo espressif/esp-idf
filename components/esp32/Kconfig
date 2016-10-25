@@ -140,7 +140,6 @@ config ULP_COPROC_RESERVE_MEM
     default 0
     depends on !ULP_COPROC_ENABLED
 
-menu "Watchdogs & brown-out detection"
 
 config INT_WDT
     bool "Interrupt watchdog"
@@ -155,7 +154,7 @@ config INT_WDT_TIMEOUT_MS
     int "Interrupt watchdog timeout (ms)"
     depends on INT_WDT
     default 10
-    range INT_WDT_TIMEOUT_MIN 10000
+    range 10 10000
     help
         The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
 
@@ -190,11 +189,15 @@ config TASK_WDT_CHECK_IDLE_TASK
         With this turned on, the task WDT can detect if the idle task is not called within the task
         watchdog timeout period. The idle task not being called usually is a symptom of another
         task hoarding the CPU. It is also a bad thing because FreeRTOS household tasks depend on the 
-        idle task getting some runtime every now and then.
+        idle task getting some runtime every now and then. Take Care: With this disabled, this 
+        watchdog will trigger if no tasks register themselves within the timeout value.
 
+#The brownout detector code is disabled (by making it depend on a nonexisting symbol) because the current revision of ESP32
+#silicon has a bug in the brown-out detector, rendering it unusable for resetting the CPU.
 config BROWNOUT_DET
     bool "Hardware brownout detect & reset"
     default y
+    depends on NEEDS_ESP32_NEW_SILICON_REV
     help
         The ESP32 has a built-in brownout detector which can detect if the voltage is lower than 
         a specific value. If this happens, it will reset the chip in order to prevent unintended
@@ -207,6 +210,8 @@ choice BROWNOUT_DET_LVL_SEL
     help
         The brownout detector will reset the chip when the supply voltage is below this level.
 
+#The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
+#of the brownout threshold levels.
 config BROWNOUT_DET_LVL_SEL_0
     bool "2.1V"
 config BROWNOUT_DET_LVL_SEL_1
@@ -246,7 +251,6 @@ config BROWNOUT_DET_RESETDELAY
         The brownout detector can reset the chip after a certain delay, in order to make sure e.g. a voltage dip has entirely passed
         before trying to restart the chip. You can set the delay here.
 
-endmenu
 
 
 

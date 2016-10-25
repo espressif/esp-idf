@@ -22,6 +22,12 @@
 #include "soc/rtc_cntl_reg.h"
 
 
+#if CONFIG_BROWNOUT_DET
+/*
+This file ins included in esp-idf, but the menuconfig option for this is disabled because a silicon bug
+prohibits the brownout detector from functioning correctly on the ESP32.
+*/
+
 void esp_brownout_init() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 
             RTC_CNTL_BROWN_OUT_ENA | (CONFIG_BROWNOUT_DET_LVL << RTC_CNTL_DBROWN_OUT_THRES_S) |
@@ -29,3 +35,5 @@ void esp_brownout_init() {
             RTC_CNTL_BROWN_OUT_PD_RF_ENA|RTC_CNTL_BROWN_OUT_CLOSE_FLASH_ENA);
 
 }
+
+#endif

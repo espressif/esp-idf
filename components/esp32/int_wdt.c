@@ -44,7 +44,6 @@ This uses the TIMERG1 WDT.
 
 #define WDT_INT_NUM 24
 
-
 #define WDT_WRITE_KEY 0x50D83AA1
 
 void int_wdt_init() {
@@ -55,11 +54,15 @@ void int_wdt_init() {
 	TIMERG1.wdt_config0.stg0=1;							//1st stage timeout: interrupt
 	TIMERG1.wdt_config0.stg1=3;							//2nd stage timeout: reset system
 	TIMERG1.wdt_config1.clk_prescale=80*500;			//Prescaler: wdt counts in ticks of 0.5mS
-	TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;		//Set timeout before interrupt
-	TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;		//Set timeout before reset
+	//The timer configs initially are set to 5 seconds, to make sure the CPU can start up. The tick hook sets
+	//it to their actual value.
+	TIMERG1.wdt_config2=10000;
+	TIMERG1.wdt_config3=10000;
 	TIMERG1.wdt_config0.en=1;
 	TIMERG1.wdt_feed=1;
 	TIMERG1.wdt_wprotect=0;
+	TIMERG1.int_clr_timers.wdt=1;
+	TIMERG1.int_ena.wdt=1;
 	ESP_INTR_DISABLE(WDT_INT_NUM);
 	intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
 	//We do not register a handler for the interrupt because it is interrupt level 4 which
@@ -69,9 +72,10 @@ void int_wdt_init() {
 }
 
 
-
 void vApplicationTickHook(void) {
 	TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
+	TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;		//Set timeout before interrupt
+	TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;		//Set timeout before reset
 	TIMERG1.wdt_feed=1;
 	TIMERG1.wdt_wprotect=0;
 }

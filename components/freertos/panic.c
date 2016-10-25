@@ -25,8 +25,13 @@
 #include "soc/io_mux_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/timer_group_struct.h"
 
 #include "gdbstub.h"
+#include "panic.h"
+
+#define WDT_WRITE_KEY 0x50D83AA1
+
 
 /*
 Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -130,10 +135,25 @@ static int inOCDMode() {
 }
 
 void panicHandler(XtExcFrame *frame) {
+	int *regs=(int*)frame;
+	//Please keep in sync with PANIC_RSN_* defines
+	const char *reasons[]={
+			"Unknown reason",
+			"Unhandled debug exception",
+			"Double exception",
+			"Unhandled kernel exception",
+			"Coprocessor exception",
+			"Interrupt wdt timeout"
+		};
+	const char *reason=reasons[0];
+	//The panic reason is stored in the EXCCAUSE register.
+	if (regs[20]<=PANIC_RSN_MAX) reason=reasons[regs[20]];
 	haltOtherCore();
 	panicPutStr("Guru Meditation Error: Core ");
 	panicPutDec(xPortGetCoreID());
-	panicPutStr(" panic'ed.\r\n");
+	panicPutStr(" panic'ed (");
+	panicPutStr(reason);
+	panicPutStr(")\r\n");
 
 	if (inOCDMode()) {
 		asm("break.n 1");
@@ -175,6 +195,33 @@ void xt_unhandled_exception(XtExcFrame *frame) {
 }
 
 
+//Disables all but one WDT, and allows enough time on that WDT to do what we need to do.
+static void reconfigureAllWdts() {
+	TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
+	TIMERG0.wdt_feed=1;
+	TIMERG0.wdt_config0.sys_reset_length=7;				//3.2uS
+	TIMERG0.wdt_config0.cpu_reset_length=7;				//3.2uS
+	TIMERG0.wdt_config0.stg0=3;							//1st stage timeout: reset system
+	TIMERG0.wdt_config1.clk_prescale=80*500;			//Prescaler: wdt counts in ticks of 0.5mS
+	TIMERG0.wdt_config2=2000;							//1 second before reset
+	TIMERG0.wdt_config0.en=1;
+	TIMERG0.wdt_wprotect=0;
+	//Disable wdt 1
+	TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
+	TIMERG1.wdt_config0.en=0;
+	TIMERG1.wdt_wprotect=0;
+}
+
+static void disableAllWdts() {
+	TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
+	TIMERG0.wdt_config0.en=0;
+	TIMERG0.wdt_wprotect=0;
+	TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
+	TIMERG1.wdt_config0.en=0;
+	TIMERG0.wdt_wprotect=0;
+}
+
+
 /*
 We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
 serial port and either jump to the gdb stub, halt the CPU or reboot.
@@ -186,6 +233,9 @@ void commonErrorHandler(XtExcFrame *frame) {
 		"PC      ","PS      ","A0      ","A1      ","A2      ","A3      ","A4      ","A5      ",
 		"A6      ","A7      ","A8      ","A9      ","A10     ","A11     ","A12     ","A13     ",
 		"A14     ","A15     ","SAR     ","EXCCAUSE","EXCVADDR","LBEG    ","LEND    ","LCOUNT  "};
+
+	//Feed the watchdogs, so they will give us time to print out debug info
+	reconfigureAllWdts();
 
 	panicPutStr("Register dump:\r\n");
 
@@ -201,6 +251,7 @@ void commonErrorHandler(XtExcFrame *frame) {
 		panicPutStr("\r\n");
 	}
 #if CONFIG_FREERTOS_PANIC_GDBSTUB
+	disableAllWdts();
 	panicPutStr("Entering gdb stub now.\r\n");
 	gdbstubPanicHandler(frame);
 #elif CONFIG_FREERTOS_PANIC_PRINT_REBOOT || CONFIG_FREERTOS_PANIC_SILENT_REBOOT
@@ -208,6 +259,7 @@ void commonErrorHandler(XtExcFrame *frame) {
 	for (x=0; x<100; x++) ets_delay_us(1000);
 	software_reset();
 #else
+	disableAllWdts();
 	panicPutStr("CPU halted.\r\n");
 	while(1);
 #endif

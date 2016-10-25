@@ -91,6 +91,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *******************************************************************************/
 
 #include "xtensa_rtos.h"
+#include "panic.h"
 
 /*
   Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
@@ -462,6 +463,8 @@ _DebugExceptionVector:
     jx      a3
     #else
     wsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL    /* save original a0 somewhere */
+	movi    a0,PANIC_RSN_DEBUGEXCEPTION
+	wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* does not return */
     rfi     XCHAL_DEBUGLEVEL                /* make a0 point here not later */
     #endif
@@ -489,6 +492,8 @@ _DoubleExceptionVector:
     #if XCHAL_HAVE_DEBUG
     break   1, 4                            /* unhandled double exception */
     #endif
+	movi    a0,PANIC_RSN_DOUBLEEXCEPTION
+	wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* does not return */
     rfde                                    /* make a0 point here not later */
 
@@ -522,6 +527,8 @@ _xt_kernel_exc:
     #if XCHAL_HAVE_DEBUG
     break   1, 0                            /* unhandled kernel exception */
     #endif
+	movi    a0,PANIC_RSN_KERNELEXCEPTION
+	wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* does not return */
     rfe                                     /* make a0 point here not there */
 
@@ -1024,6 +1031,8 @@ _xt_coproc_exc:
     #if XCHAL_HAVE_DEBUG
     break   1, 1                            /* unhandled user exception */
     #endif
+	movi    a0,PANIC_RSN_COPROCEXCEPTION
+	wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* not in a thread (invalid) */
     /* never returns */
 
@@ -1611,6 +1620,8 @@ _xt_highint4:
        off and the CPU should panic. */
 	rsr     a0, EXCSAVE_4
 	wsr     a0, EXCSAVE_1 /* panic handler reads this register */
+	movi    a0,PANIC_RSN_INTWDT
+	wsr     a0,EXCCAUSE
     call0 _xt_panic
 
 

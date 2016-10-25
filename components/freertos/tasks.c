@@ -1832,7 +1832,6 @@ UBaseType_t uxTaskGetNumberOfTasks( void )
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_pcTaskGetTaskName == 1 )
-
 	char *pcTaskGetTaskName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 	{
 	TCB_t *pxTCB;
