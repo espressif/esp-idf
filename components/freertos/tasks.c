@@ -3784,9 +3784,8 @@ In fact, nothing below this line has/is.
 
 /* Gotcha (which seems to be deliberate in FreeRTOS, according to
 http://www.freertos.org/FreeRTOS_Support_Forum_Archive/December_2012/freertos_PIC32_Bug_-_vTaskEnterCritical_6400806.html
-) is that calling vTaskEnterCritical followed by vTaskExitCritical will leave the interrupts DISABLED! Re-enabling the
-scheduler will re-enable the interrupts instead. */
-
+) is that calling vTaskEnterCritical followed by vTaskExitCritical will leave the interrupts DISABLED when the scheduler
+is not running.  Re-enabling the scheduler will re-enable the interrupts instead. */
 
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 

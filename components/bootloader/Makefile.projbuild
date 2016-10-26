@@ -8,7 +8,7 @@
 # basically runs Make in the src/ directory but it needs to zero some variables
 # the ESP-IDF project.mk makefile exports first, to not let them interfere.
 #
-ifeq ("$(IS_BOOTLOADER_BUILD)","")
+ifndef IS_BOOTLOADER_BUILD
 
 BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)
 BOOTLOADER_BUILD_DIR=$(abspath $(BUILD_DIR_BASE)/bootloader)

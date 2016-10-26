@@ -46,6 +46,7 @@
 #include "esp_brownout.h"
 #include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
+#include "trax.h"
 
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
 void start_cpu0_default(void) IRAM_ATTR;
@@ -135,6 +136,15 @@ void IRAM_ATTR call_start_cpu1()
 
 void start_cpu0_default(void)
 {
+//Enable trace memory and immediately start trace.
+#if CONFIG_MEMMAP_TRACEMEM
+#if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
+    trax_enable(TRAX_ENA_PRO_APP);
+#else
+    trax_enable(TRAX_ENA_PRO);
+#endif
+    trax_start_trace(TRAX_DOWNCOUNT_WORDS);
+#endif
     esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
     uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
     ets_setup_syscalls();
@@ -161,6 +171,9 @@ void start_cpu0_default(void)
 #if !CONFIG_FREERTOS_UNICORE
 void start_cpu1_default(void)
 {
+#if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
+    trax_start_trace(TRAX_DOWNCOUNT_WORDS);
+#endif
     // Wait for FreeRTOS initialization to finish on PRO CPU
     while (port_xSchedulerRunning[0] == 0) {
         ;

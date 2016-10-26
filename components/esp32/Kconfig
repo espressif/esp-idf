@@ -63,10 +63,22 @@ config MEMMAP_TRACEMEM
         of memory that can't be used for general purposes anymore. Disable this if you do not know
         what this is.
 
+config MEMMAP_TRACEMEM_TWOBANKS
+    bool "Reserve memory for tracing both pro as well as app cpu execution"
+    default "n"
+    depends on MEMMAP_TRACEMEM && MEMMAP_SMP
+    help
+        The ESP32 contains a feature which allows you to trace the execution path the processor
+        has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
+        of memory that can't be used for general purposes anymore. Disable this if you do not know
+        what this is.
+
+
 # Memory to reverse for trace, used in linker script
 config TRACEMEM_RESERVE_DRAM
     hex
-    default 0x8000 if MEMMAP_TRACEMEM
+    default 0x8000 if MEMMAP_TRACEMEM && MEMMAP_TRACEMEM_TWOBANKS
+    default 0x4000 if MEMMAP_TRACEMEM && !MEMMAP_TRACEMEM_TWOBANKS
     default 0x0
 
 config MEMMAP_SPISRAM
