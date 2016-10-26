@@ -399,83 +399,89 @@ tBTA_GATT_STATUS API_Ble_GattcDeregisterForNotifications (tBTA_GATTC_IF client_i
 
 void API_Ble_GattsDisable(void)
 {
-	// TODO:
+	 BTA_GATTS_Disable();
 }
+
+void API_Ble_GattsAppRegister(tBT_UUID *p_app_uuid, tBTA_GATTS_CBACK *p_cback)
+{
+	BTA_GATTS_AppRegister(p_app_uuid, p_cback);
+}
+
 
 void API_Ble_GattsAppDeregister(tBTA_GATTS_IF server_if)
 {
-	// TODO:
+	BTA_GATTS_AppDeregister(server_if);
 }
 
 void API_Ble_GattsCreateService(tBTA_GATTS_IF server_if, tBT_UUID *p_service_uuid, UINT8 inst,
                              UINT16 num_handle, BOOLEAN is_primary)
 {
-	// TODO:
+	BTA_GATTS_CreateService(server_if, p_service_uuid, inst, num_handle, is_primary);
 }
 
 
 void API_Ble_GattsAddIncludeService(UINT16 service_id, UINT16 included_service_id)
 {
-	// TODO:
+	BTA_GATTS_AddIncludeService(service_id, included_service_id);
 }
 
 
 void API_Ble_GattsAddCharacteristic (UINT16 service_id,  tBT_UUID  *p_char_uuid,
                                   					tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property)
 {
-	// TODO:
+	BTA_GATTS_AddCharacteristic (service_id, p_char_uuid, perm, property);
 }
 
 void API_Ble_GattsAddCharDescriptor (UINT16 service_id,
 													   tBTA_GATT_PERM perm,
 													   tBT_UUID  * p_descr_uuid)
 {
-	
+	BTA_GATTS_AddCharDescriptor (service_id, perm, p_descr_uuid);
 }
 
 void API_Ble_GattsDeleteService(UINT16 service_id)
 {
-	// TODO:
+	 BTA_GATTS_DeleteService(service_id);
 }
 
 void API_Ble_GattsStartService(UINT16 service_id, tBTA_GATT_TRANSPORT sup_transport)
 {
-	
+	BTA_GATTS_StartService(service_id, sup_transport);
 }
 
 
 void API_Ble_GattsStopService(UINT16 service_id)
 {
-	// TODO:
+	BTA_GATTS_StopService(service_id);
 }
 
 
 void API_Ble_GattsHandleValueIndication (UINT16 conn_id, UINT16 attr_id, UINT16 data_len,
                                       								UINT8 *p_data, BOOLEAN need_confirm)
 {
-	// TODO:
+	BTA_GATTS_HandleValueIndication (conn_id, attr_id, data_len, p_data, need_confirm);
 }
 
 void API_Ble_GattsSendRsp (UINT16 conn_id, UINT32 trans_id,
                         			tBTA_GATT_STATUS status, tBTA_GATTS_RSP *p_msg)
 {
-	// TODO:
+	BTA_GATTS_SendRsp (conn_id, trans_id, status, p_msg);
 }
 
 void API_Ble_GattsOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda, BOOLEAN is_direct,
 				   tBTA_GATT_TRANSPORT transport)
 {
-	// TODO:
+	BTA_GATTS_Open(server_if, remote_bda, is_direct, transport);
 }
 
 void API_Ble_GattsCancelOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda, BOOLEAN is_direct)
 {
-	// TODO:
+	 BTA_GATTS_CancelOpen(server_if, remote_bda, is_direct);
 }
 
 void API_Ble_GattsClose(UINT16 conn_id)
 {
-	// TODO:
+	BTA_GATTS_Close(conn_id);
 }
 
 
