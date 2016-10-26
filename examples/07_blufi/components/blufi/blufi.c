@@ -47,7 +47,7 @@ static char tmp_passwd[33];
 static void BlufiDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data)
 {
 	char *p = NULL;
-	LOG_ERROR("the data is:%s\n", p_data);
+	LOG_DEBUG("the data is:%s\n", p_data);
 #if	0
 	switch(event)
 	{
@@ -63,17 +63,17 @@ static void BlufiDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_dat
 #endif
 	p = strstr(p_data, HEADER_SSID);
 	if (p) {
-		ets_printf("SSID: %s\n", p+strlen(HEADER_SSID)+1);
+		LOG_ERROR("SSID: %s\n", p+strlen(HEADER_SSID)+1);
 		strcpy(tmp_ssid, p+strlen(HEADER_SSID)+1);
 	}
 	p = strstr(p_data, HEADER_PASSWD);
 	if (p) {
-		ets_printf("PASSWORD: %s\n", p+strlen(HEADER_PASSWD)+1);
+		LOG_ERROR("PASSWORD: %s\n", p+strlen(HEADER_PASSWD)+1);
 		strcpy(tmp_passwd, p+strlen(HEADER_PASSWD)+1);
 	}
 	p = strstr(p_data, HEADER_CONFIRM);
 	if (p) {
-		ets_printf("CONFIRM\n");
+		LOG_ERROR("CONFIRM\n");
 		wifi_set_blue_config(tmp_ssid, tmp_passwd);
 	}
 	
@@ -98,7 +98,7 @@ static BtStatus_t blufi_dm_upstreams_evt(void *arg)
 	            const controller_t *controller = controller_get_interface();
 	            char bdstr[18];
 	            bdaddr_to_string(controller->get_address(), bdstr, sizeof(bdstr));
-	            LOG_ERROR("BDA is: %s\n", bdstr);
+	            LOG_DEBUG("BDA is: %s\n", bdstr);
 	        } while (0);
 #endif
 			blufi_profile_init(BlufiDataCallBack);
@@ -118,7 +118,7 @@ void blufi_bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data)
 {
 	struct dm_evt *evt;
 
-    LOG_ERROR("%s: %d\n", __func__, (uint16_t)event);
+    LOG_DEBUG("%s: %d\n", __func__, (uint16_t)event);
 
 	evt = (struct dm_evt *)GKI_getbuf(sizeof(struct dm_evt));
 	if (evt == NULL)
@@ -132,7 +132,7 @@ void blufi_bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data)
 
 BtStatus_t blufi_enable(void *arg)
 {
-    BTM_SetTraceLevel(BT_TRACE_LEVEL_DEBUG);
+    BTM_SetTraceLevel(BT_TRACE_LEVEL_ERROR);
 
     BTA_EnableBluetooth(blufi_bte_dm_evt);
     vTaskDelay(1000 / portTICK_PERIOD_MS);

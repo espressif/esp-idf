@@ -118,13 +118,13 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 	UINT8 *p_rec_data = NULL;
 	tBTA_GATT_STATUS  status;
 
-	LOG_ERROR("blufi profile cb event = %x\n",event);
+	LOG_DEBUG("blufi profile cb event = %x\n",event);
 	switch(event) {
 		case BTA_GATTS_REG_EVT:
             status = p_data->reg_oper.status;
 
-			LOG_ERROR("p_data->reg_oper.status = %x\n",p_data->reg_oper.status);
-			LOG_ERROR("(p_data->reg_oper.uuid.uu.uuid16=%x\n",p_data->reg_oper.uuid.uu.uuid16);
+			LOG_DEBUG("p_data->reg_oper.status = %x\n",p_data->reg_oper.status);
+			LOG_DEBUG("(p_data->reg_oper.uuid.uu.uuid16=%x\n",p_data->reg_oper.uuid.uu.uuid16);
 			if(p_data->reg_oper.status != BTA_GATT_OK) {
 				LOG_ERROR("blufi profile register failed\n");
 				return;
@@ -132,10 +132,10 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
 			blufi_cb_env.gatt_if = p_data->reg_oper.server_if;
 			blufi_cb_env.enabled = true;
-            LOG_ERROR("register complete: event=%d, status=%d, server_if=%d\n", 
+            LOG_DEBUG("register complete: event=%d, status=%d, server_if=%d\n", 
                 event, status, blufi_cb_env.gatt_if);
             
-            LOG_ERROR("set advertising parameters\n");
+            LOG_DEBUG("set advertising parameters\n");
 			//set the advertising data to the btm layer
 			BlufiBleConfigadvData(&esp32_adv_data[BLE_ADV_DATA_IDX], NULL);
 			//set the adversting data to the btm layer
@@ -151,6 +151,10 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			memset(&rsp, 0, sizeof(tBTA_GATTS_API_RSP));
 			rsp.attr_value.handle = p_data->req_data.p_data->read_req.handle;
 			rsp.attr_value.len = 2;
+			//rsp.attr_value.value[0] = 0xde;
+			//rsp.attr_value.value[1] = 0xed;
+			//rsp.attr_value.value[2] = 0xbe;
+			//rsp.attr_value.value[3] = 0xef;
 			BTA_GATTS_SendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
 					  p_data->req_data.status,&rsp);
 			break;
@@ -158,11 +162,11 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			BTA_GATTS_SendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
 								p_data->req_data.status,NULL);
 
-			LOG_ERROR("Received blufi data:");
+			LOG_DEBUG("Received blufi data:");
 			for(int i = 0; i < p_data->req_data.p_data->write_req.len; i++){
-				LOG_ERROR("%x",p_data->req_data.p_data->write_req.value[i]);
+				LOG_DEBUG("%x",p_data->req_data.p_data->write_req.value[i]);
 			}
-			LOG_ERROR("\n");
+			LOG_DEBUG("\n");
 
 			if (p_data->req_data.p_data->write_req.handle == blufi_cb_env.blufi_inst.blufi_hdl) {
 
@@ -203,12 +207,12 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 		case BTA_GATTS_CONNECT_EVT:
 			//set the connection flag to true
 			blufi_env_clcb_alloc(p_data->conn.conn_id, p_data->conn.remote_bda);
-            LOG_ERROR("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n", 
+            LOG_DEBUG("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n", 
                              BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
                              p_data->conn.reason, p_data->conn.conn_id);
             /*return whether the remote device is currently connected*/
             int is_connected = BTA_DmGetConnectionState(p_data->conn.remote_bda);
-            LOG_ERROR("is_connected=%d\n",is_connected);
+            LOG_DEBUG("is_connected=%d\n",is_connected);
 			BTA_DmBleBroadcast(0); //stop adv
 			break;
 		case BTA_GATTS_DISCONNECT_EVT:

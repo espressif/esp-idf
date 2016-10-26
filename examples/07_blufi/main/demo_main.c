@@ -43,7 +43,7 @@ void wifi_set_blue_config(char *ssid, char *passwd)
 	strcpy(tmp_ssid, ssid);
 	strcpy(tmp_passwd, passwd);
 	confirm = true;
-	printf("confirm true\n");
+	LOG_DEBUG("confirm true\n");
 }
 
 extern void blufi_config_failed(void);
@@ -100,12 +100,12 @@ void wifiTestTask(void *pvParameters)
 			sta_config.sta.bssid_set = 0;
 
 			ret = esp_wifi_disconnect();
-			printf("esp_wifi config\n");
+			LOG_INFO("esp_wifi config\n");
 			esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-			printf("esp_wifi connect\n");
+			LOG_INFO("esp_wifi connect\n");
 			ret = esp_wifi_connect();
 			if (ret != ESP_OK) {
-				printf("esp_wifi connect failed\n");
+				LOG_ERROR("esp_wifi connect failed\n");
 				blufi_config_failed();
 			}
 		}

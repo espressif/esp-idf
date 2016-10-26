@@ -179,7 +179,7 @@ void hci_hal_h4_task_post(void)
     evt->par = 0;
 
     if (xQueueSend(xHciH4Queue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
-            ets_printf("xHciH4Queue failed\n");
+        LOG_ERROR("xHciH4Queue failed\n");
     }
 }
 

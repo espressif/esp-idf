@@ -150,7 +150,7 @@ void hci_host_task_post(void)
     evt->par = 0;
 
     if (xQueueSend(xHciHostQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
-            ets_printf("xHciHostQueue failed\n");
+            LOG_ERROR("xHciHostQueue failed\n");
     }
 }
 
@@ -337,7 +337,6 @@ static void event_command_ready(fixed_queue_t *queue) {
 
   // Move it to the list of commands awaiting response
   pthread_mutex_lock(&cmd_wait_q->commands_pending_response_lock);
-  //ets_printf("%s\n", __func__);
   list_append(cmd_wait_q->commands_pending_response, wait_entry);
   pthread_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
 
@@ -548,7 +547,6 @@ static waiting_command_t *get_waiting_command(command_opcode_t opcode) {
       node != list_end(cmd_wait_q->commands_pending_response);
       node = list_next(node)) {
     waiting_command_t *wait_entry = list_node(node);
-    //ets_printf("wait_entry %08x\n", wait_entry);
     if (!wait_entry || wait_entry->opcode != opcode)
       continue;
 
