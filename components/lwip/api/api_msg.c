@@ -314,8 +314,8 @@ poll_tcp(void *arg, struct tcp_pcb *pcb)
   if (conn->flags & NETCONN_FLAG_CHECK_WRITESPACE) {
     /* If the queued byte- or pbuf-count drops below the configured low-water limit,
        let select mark this pcb as writable again. */
-    if ((conn->pcb.tcp != NULL) && (tcp_sndbuf(conn->pcb.tcp) > TCP_SNDLOWAT) &&
-      (tcp_sndqueuelen(conn->pcb.tcp) < TCP_SNDQUEUELOWAT)) {
+    if ((conn->pcb.tcp != NULL) && (tcp_sndbuf(conn->pcb.tcp) > TCP_SNDLOWAT(conn->pcb.tcp)) &&
+      (tcp_sndqueuelen(conn->pcb.tcp) < TCP_SNDQUEUELOWAT(conn->pcb.tcp))) {
       conn->flags &= ~NETCONN_FLAG_CHECK_WRITESPACE;
       API_EVENT(conn, NETCONN_EVT_SENDPLUS, 0);
     }
@@ -348,8 +348,8 @@ sent_tcp(void *arg, struct tcp_pcb *pcb, u16_t len)
 
     /* If the queued byte- or pbuf-count drops below the configured low-water limit,
        let select mark this pcb as writable again. */
-    if ((conn->pcb.tcp != NULL) && (tcp_sndbuf(conn->pcb.tcp) > TCP_SNDLOWAT) &&
-      (tcp_sndqueuelen(conn->pcb.tcp) < TCP_SNDQUEUELOWAT)) {
+    if ((conn->pcb.tcp != NULL) && (tcp_sndbuf(conn->pcb.tcp) > TCP_SNDLOWAT(conn->pcb.tcp) &&
+      (tcp_sndqueuelen(conn->pcb.tcp) < TCP_SNDQUEUELOWAT(conn->pcb.tcp)))) {
       conn->flags &= ~NETCONN_FLAG_CHECK_WRITESPACE;
       API_EVENT(conn, NETCONN_EVT_SENDPLUS, len);
     }
@@ -1540,8 +1540,8 @@ err_mem:
            and let poll_tcp check writable space to mark the pcb writable again */
         API_EVENT(conn, NETCONN_EVT_SENDMINUS, len);
         conn->flags |= NETCONN_FLAG_CHECK_WRITESPACE;
-      } else if ((tcp_sndbuf(conn->pcb.tcp) <= TCP_SNDLOWAT) ||
-                 (tcp_sndqueuelen(conn->pcb.tcp) >= TCP_SNDQUEUELOWAT)) {
+      } else if ((tcp_sndbuf(conn->pcb.tcp) <= TCP_SNDLOWAT(conn->pcb.tcp)) ||
+                 (tcp_sndqueuelen(conn->pcb.tcp) >= TCP_SNDQUEUELOWAT(conn->pcb.tcp))) {
         /* The queued byte- or pbuf-count exceeds the configured low-water limit,
            let select mark this pcb as non-writable. */
         API_EVENT(conn, NETCONN_EVT_SENDMINUS, len);

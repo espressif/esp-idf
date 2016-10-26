@@ -2393,6 +2393,16 @@ lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *opt
                   s, *(int *)optval));
       break;
 #endif /* LWIP_TCP_KEEPALIVE */
+
+#if ESP_PER_SOC_TCP_WND
+    case TCP_WINDOW:
+    *(int*)optval = (int)sock->conn->pcb.tcp->per_soc_tcp_wnd;
+    break;
+    case TCP_SNDBUF:
+    *(int*)optval = (int)sock->conn->pcb.tcp->per_soc_tcp_snd_buf;
+    break;
+#endif
+
     default:
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, IPPROTO_TCP, UNIMPL: optname=0x%x, ..)\n",
                   s, optname));
@@ -2790,6 +2800,16 @@ lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_
                   s, sock->conn->pcb.tcp->keep_cnt));
       break;
 #endif /* LWIP_TCP_KEEPALIVE */
+
+#if ESP_PER_SOC_TCP_WND
+    case TCP_WINDOW:
+    sock->conn->pcb.tcp->per_soc_tcp_wnd = ((u32_t)(*(const int*)optval)) * TCP_MSS;
+    break;
+    case TCP_SNDBUF:
+    sock->conn->pcb.tcp->per_soc_tcp_snd_buf = ((u32_t)(*(const int*)optval)) * TCP_MSS;
+    break;
+#endif
+
     default:
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_TCP, UNIMPL: optname=0x%x, ..)\n",
                   s, optname));
