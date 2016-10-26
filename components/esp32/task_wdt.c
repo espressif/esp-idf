@@ -13,14 +13,6 @@
 // limitations under the License.
 
 
-/*
-This routine enables a more general-purpose task watchdog: tasks can individually
-feed the watchdog and the watchdog will bark if one or more tasks haven't fed the
-watchdog within the specified time. Optionally, the idle tasks can also configured
-to feed the watchdog in a similar fashion, to detect CPU starvation.
-
-This uses the TIMERG0 WDT.
-*/
 
 #include <stdint.h>
 #include <stdio.h>
@@ -35,6 +27,7 @@ This uses the TIMERG0 WDT.
 #include "esp_intr.h"
 #include "esp_attr.h"
 #include "soc/timer_group_struct.h"
+#include "soc/timer_group_reg.h"
 #include "esp_log.h"
 
 #include "esp_task_wdt.h"
@@ -51,11 +44,6 @@ struct wdt_task_t {
 };
 
 static wdt_task_t *wdt_task_list=NULL;
-
-//We use this interrupt number on whatever task calls task_wdt_init.
-#define WDT_INT_NUM 24
-
-#define WDT_WRITE_KEY 0x50D83AA1
 
 static void IRAM_ATTR task_wdt_isr(void *arg) {
     wdt_task_t *wdttask;
@@ -87,7 +75,7 @@ static void IRAM_ATTR task_wdt_isr(void *arg) {
 }
 
 
-void task_wdt_feed() {
+void esp_task_wdt_feed() {
     wdt_task_t *wdttask=wdt_task_list;
     bool found_task=false, do_feed_wdt=true;
     TaskHandle_t handle=xTaskGetCurrentTaskHandle();
@@ -127,7 +115,7 @@ void task_wdt_feed() {
     }
 }
 
-void task_wdt_delete() {
+void esp_task_wdt_delete() {
     TaskHandle_t handle=xTaskGetCurrentTaskHandle();
     wdt_task_t *wdttask=wdt_task_list;
     //Wdt task list can't be empty
@@ -152,7 +140,7 @@ void task_wdt_delete() {
     }
 }
 
-void task_wdt_init() {
+void esp_task_wdt_init() {
     TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
     TIMERG0.wdt_config0.sys_reset_length=7;             //3.2uS
     TIMERG0.wdt_config0.cpu_reset_length=7;             //3.2uS
@@ -178,7 +166,7 @@ void vApplicationIdleHook(void) {
 #if !CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
     if (xPortGetCoreID()!=0) return;
 #endif
-    task_wdt_feed();
+    esp_task_wdt_feed();
 }
 #endif
 

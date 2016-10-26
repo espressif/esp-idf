@@ -81,8 +81,10 @@ config TRACEMEM_RESERVE_DRAM
     default 0x4000 if MEMMAP_TRACEMEM && !MEMMAP_TRACEMEM_TWOBANKS
     default 0x0
 
+# Not implemented and/or needs new silicon rev to work
 config MEMMAP_SPISRAM
     bool "Use external SPI SRAM chip as main memory"
+    depends on ESP32_NEEDS_NEW_SILICON_REV
     default "n"
     help
         The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the 
@@ -151,6 +153,45 @@ config ULP_COPROC_RESERVE_MEM
     int
     default 0
     depends on !ULP_COPROC_ENABLED
+
+
+choice ESP32_PANIC
+    prompt "Panic handler behaviour"
+    default FREERTOS_PANIC_PRINT_REBOOT
+    help
+        If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is 
+        invoked. Configure the panic handlers action here.
+
+config ESP32_PANIC_PRINT_HALT
+    bool "Print registers and halt"
+    help
+        Outputs the relevant registers over the serial port and halt the 
+        processor. Needs a manual reset to restart.
+
+config ESP32_PANIC_PRINT_REBOOT
+    bool "Print registers and reboot"
+    help
+        Outputs the relevant registers over the serial port and immediately
+        reset the processor.
+
+config ESP32_PANIC_SILENT_REBOOT
+    bool "Silent reboot"
+    help
+        Just resets the processor without outputting anything
+
+config ESP32_PANIC_GDBSTUB
+    bool "Invoke GDBStub"
+    help
+        Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
+        of the crash.
+endchoice
+
+config ESP32_DEBUG_OCDAWARE
+    bool "Make exception and panic handlers JTAG/OCD aware"
+    default y
+    help
+        The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
+        instead of panicking, have the debugger stop on the offending instruction.
 
 
 config INT_WDT

@@ -26,11 +26,10 @@
 #include "soc/dport_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_struct.h"
+#include "soc/timer_group_reg.h"
 
-#include "gdbstub.h"
-#include "panic.h"
-
-#define WDT_WRITE_KEY 0x50D83AA1
+#include "esp_gdbstub.h"
+#include "esp_panic.h"
 
 
 /*
@@ -196,7 +195,13 @@ void xt_unhandled_exception(XtExcFrame *frame) {
 }
 
 
-//Disables all but one WDT, and allows enough time on that WDT to do what we need to do.
+/*
+If watchdogs are enabled, the panic handler runs the risk of getting aborted pre-emptively because
+an overzealous watchdog decides to reset it. On the other hand, if we disable all watchdogs, we run
+the risk of somehow halting in the panic handler and not resetting. That is why this routine kills 
+all watchdogs except the timer group 0 watchdog, and it reconfigures that to reset the chip after
+one second.
+*/
 static void reconfigureAllWdts() {
 	TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
 	TIMERG0.wdt_feed=1;
@@ -213,6 +218,9 @@ static void reconfigureAllWdts() {
 	TIMERG1.wdt_wprotect=0;
 }
 
+/*
+This disables all the watchdogs for when we call the gdbstub.
+*/
 static void disableAllWdts() {
 	TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
 	TIMERG0.wdt_config0.en=0;
@@ -254,7 +262,7 @@ void commonErrorHandler(XtExcFrame *frame) {
 #if CONFIG_FREERTOS_PANIC_GDBSTUB
 	disableAllWdts();
 	panicPutStr("Entering gdb stub now.\r\n");
-	gdbstubPanicHandler(frame);
+	esp_gdbstub_panic_handler(frame);
 #elif CONFIG_FREERTOS_PANIC_PRINT_REBOOT || CONFIG_FREERTOS_PANIC_SILENT_REBOOT
 	panicPutStr("Rebooting...\r\n");
 	for (x=0; x<100; x++) ets_delay_us(1000);
@@ -267,7 +275,7 @@ void commonErrorHandler(XtExcFrame *frame) {
 }
 
 
-void setBreakpointIfJtag(void *fn) {
+void esp_set_breakpoint_if_jtag(void *fn) {
 	if (!inOCDMode()) return;
 	setFirstBreakpoint((uint32_t)fn);
 }

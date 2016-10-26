@@ -28,15 +28,25 @@ extern "C" {
   * @{
   */
 
+/*
+This routine enables a more general-purpose task watchdog: tasks can individually
+feed the watchdog and the watchdog will bark if one or more tasks haven't fed the
+watchdog within the specified time. Optionally, the idle tasks can also configured
+to feed the watchdog in a similar fashion, to detect CPU starvation.
+
+This uses the TIMERG0 WDT.
+*/
+
+
 /**
-  * @brief  Initialize the task watchdog. This is called in the init code, no need to 
-  *         call it explicitly.
+  * @brief  Initialize the task watchdog. This is called in the init code, if the
+  *         task watchdog is enabled in menuconfig.
   *
   * @param  null
   *
   * @return null
   */
-void task_wdt_init();
+void esp_task_wdt_init();
 
 /**
   * @brief  Feed the watchdog. After the first feeding session, the watchdog will expect the calling
@@ -47,7 +57,7 @@ void task_wdt_init();
   * @return null
   */
 
-void task_wdt_feed();
+void esp_task_wdt_feed();
 
 
 /**
@@ -57,7 +67,7 @@ void task_wdt_feed();
   *
   * @return null
   */
-void task_wdt_delete();
+void esp_task_wdt_delete();
 
 /**
   * @}

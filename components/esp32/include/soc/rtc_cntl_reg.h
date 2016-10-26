@@ -14,6 +14,8 @@
 #ifndef _SOC_RTC_CNTL_REG_H_
 #define _SOC_RTC_CNTL_REG_H_
 
+#define WDT_WRITE_KEY 0x50D83AA1
+
 
 #include "soc.h"
 #define RTC_CNTL_OPTIONS0_REG          (DR_REG_RTCCNTL_BASE + 0x0)

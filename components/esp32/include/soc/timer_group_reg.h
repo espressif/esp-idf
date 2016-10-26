@@ -15,6 +15,8 @@
 #define __TIMG_REG_H__
 #include "soc.h"
 
+#define WDT_WRITE_KEY 0x50D83AA1
+
 #define REG_TIMG_BASE(i)       (DR_REG_TIMERGROUP0_BASE + i*0x1000)
 #define TIMG_T0CONFIG_REG(i)          (REG_TIMG_BASE(i) + 0x0000)
 /* TIMG_T0_EN : R/W ;bitpos:[31] ;default: 1'h0 ; */

@@ -13,18 +13,6 @@
 // limitations under the License.
 
 
-/*
-This routine enables a watchdog to catch instances of processes disabling
-interrupts for too long, or code within interrupt handlers taking too long. 
-It does this by setting up a watchdog which gets fed from the FreeRTOS
-task switch interrupt. When this watchdog times out, initially it will call
-a high-level interrupt routine that will panic FreeRTOS in order to allow
-for forensic examination of the state of the CPU. When this interrupt 
-handler is not called and the watchdog times out a second time, it will 
-reset the SoC.
-
-This uses the TIMERG1 WDT.
-*/
 
 #include "sdkconfig.h"
 #include <stdint.h>
@@ -37,6 +25,7 @@ This uses the TIMERG1 WDT.
 #include "esp_err.h"
 #include "esp_intr.h"
 #include "soc/timer_group_struct.h"
+#include "soc/timer_group_reg.h"
 
 #include "esp_int_wdt.h"
 
@@ -45,9 +34,8 @@ This uses the TIMERG1 WDT.
 
 #define WDT_INT_NUM 24
 
-#define WDT_WRITE_KEY 0x50D83AA1
 
-void int_wdt_init() {
+void esp_int_wdt_init() {
     TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
     TIMERG1.wdt_config0.sys_reset_length=7;             //3.2uS
     TIMERG1.wdt_config0.cpu_reset_length=7;             //3.2uS
@@ -73,6 +61,7 @@ void int_wdt_init() {
 }
 
 
+//Take care: the tick hook can also be called before esp_int_wdt_init() is called.
 #if CONFIG_INT_WDT_CHECK_CPU1
 //Not static; the ISR assembly checks this.
 bool int_wdt_app_cpu_ticked=false;

@@ -147,19 +147,19 @@ void start_cpu0_default(void)
 #endif
     esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
     uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
-    ets_setup_syscalls();
-    do_global_ctors();
-    esp_ipc_init();
-    spi_flash_init();
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
 #if CONFIG_INT_WDT
-    int_wdt_init();
+    esp_int_wdt_init();
 #endif
 #if CONFIG_TASK_WDT
-    task_wdt_init();
+    esp_task_wdt_init();
 #endif
+    ets_setup_syscalls();
+    do_global_ctors();
+    esp_ipc_init();
+    spi_flash_init();
 
     xTaskCreatePinnedToCore(&main_task, "main",
             ESP_TASK_MAIN_STACK, NULL,

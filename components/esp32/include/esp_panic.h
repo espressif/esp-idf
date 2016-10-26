@@ -14,7 +14,7 @@
 
 #ifndef __ASSEMBLER__
 
-void setBreakpointIfJtag(void *fn);
+void esp_set_breakpoint_if_jtag(void *fn);
 
 #endif
 
