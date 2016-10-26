@@ -19,7 +19,7 @@ Before sending us a Pull Request, please consider this list of points:
 
 * Is the code adequately commented for people to understand how it is structured?
 
-* Is there documentation or examples that go with code contributions? [There are additional suggestions for writing good examples in the examples README](examples/README.md).
+* Is there documentation or examples that go with code contributions? `There are additional suggestions for writing good examples in the examples README <https://github.com/espressif/esp-idf/tree/master/examples>`_.
 
 * Are comments and documentation written in clear English, with no spelling or grammar errors?
 
@@ -39,4 +39,6 @@ If this process passes, it will be merged onto the public github repository.
 Legal Part
 ----------
 
-Before a contribution can be accepted, you will need to sign our :doc:`Contributor Agreement <docs/contributor-agreement>`. You will be prompted for this automatically as part of the Pull Request process.
+Before a contribution can be accepted, you will need to sign our `Contributor Agreement <http://esp-idf.readthedocs.io/en/latest/contributing.html>`_. You will be prompted for this automatically as part of the Pull Request process.
+
+

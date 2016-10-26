@@ -1,5 +1,3 @@
-.. Read the Docs Template documentation master file
-
 ESP32 Programming Guide
 =======================
 
@@ -25,7 +23,7 @@ Contents:
    Eclipse IDE <eclipse-setup>
 
 .. toctree::
-   :caption: Want More?
+   :caption: What Else?
    :maxdepth: 1
    
    partition-tables
@@ -37,8 +35,9 @@ Contents:
    :maxdepth: 1
 
    Wi-Fi <api/esp_wifi>
+   Bluetooth <api/bt>
    GPIO <api/gpio>
-   api/example
+   Template <api/template>
 
 .. toctree::
    :caption: Technical Reference

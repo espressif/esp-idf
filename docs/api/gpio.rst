@@ -1,8 +1,23 @@
 GPIO API
 ========
 
-Functions
+Overview
+--------
+
+`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+
+Application Example
+-------------------
+
+`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+
+Reference
 ---------
+
+`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+
+Functions
+^^^^^^^^^
 
 .. doxygenfunction:: gpio_config
 .. doxygenfunction:: gpio_set_intr_type
@@ -16,9 +31,7 @@ Functions
 .. doxygenfunction:: gpio_wakeup_disable
 .. doxygenfunction:: gpio_isr_register
 
-*Example code:*
-
-Configuration of GPIO as an output
+*Example code:* Configuration of GPIO as an output
 
 .. code-block:: c
 
@@ -30,7 +43,7 @@ Configuration of GPIO as an output
     io_conf.pull_up_en = 0;                            //disable pull-up mode
     gpio_config(&io_conf);                             //configure GPIO with the given settings
 
-Configuration of GPIO as an input
+*Example code:* Configuration of GPIO as an input
 
 .. code-block:: c
 
@@ -43,7 +56,8 @@ Configuration of GPIO as an input
     gpio_config(&io_conf);                             //configure GPIO with the given settings
 
 
-Low level ROM GPIO functions
+ROM GPIO functions
+^^^^^^^^^^^^^^^^^^
 
 .. doxygenfunction:: gpio_init
 .. doxygenfunction:: gpio_output_set
@@ -65,3 +79,5 @@ Low level ROM GPIO functions
 .. doxygenfunction:: gpio_pad_pulldown
 .. doxygenfunction:: gpio_pad_unhold
 .. doxygenfunction:: gpio_pad_hold
+
+
