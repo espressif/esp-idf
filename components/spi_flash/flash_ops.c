@@ -124,7 +124,7 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
     return spi_flash_translate_rc(rc);
 }
 
-esp_err_t IRAM_ATTR spi_flash_write(size_t dest_addr, const uint8_t *src, size_t size)
+esp_err_t IRAM_ATTR spi_flash_write(size_t dest_addr, const void *src, size_t size)
 {
     // TODO: replace this check with code which deals with unaligned sources
     if (((ptrdiff_t) src) % 4 != 0) {
@@ -157,7 +157,7 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dest_addr, const uint8_t *src, size_t
     return spi_flash_translate_rc(rc);
 }
 
-esp_err_t IRAM_ATTR spi_flash_read(size_t src_addr, uint8_t *dest, size_t size)
+esp_err_t IRAM_ATTR spi_flash_read(size_t src_addr, void *dest, size_t size)
 {
     // TODO: replace this check with code which deals with unaligned destinations
     if (((ptrdiff_t) dest) % 4 != 0) {

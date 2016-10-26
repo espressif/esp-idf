@@ -35,7 +35,7 @@ esp_err_t spi_flash_erase_sector(size_t sec)
     return ESP_OK;
 }
 
-esp_err_t spi_flash_write(size_t des_addr, const uint8_t *src_addr, size_t size)
+esp_err_t spi_flash_write(size_t des_addr, const void *src_addr, size_t size)
 {
     if (!s_emulator) {
         return ESP_ERR_FLASH_OP_TIMEOUT;
@@ -48,7 +48,7 @@ esp_err_t spi_flash_write(size_t des_addr, const uint8_t *src_addr, size_t size)
     return ESP_OK;
 }
 
-esp_err_t spi_flash_read(size_t src_addr, uint8_t *des_addr, size_t size)
+esp_err_t spi_flash_read(size_t src_addr, void *des_addr, size_t size)
 {
     if (!s_emulator) {
         return ESP_ERR_FLASH_OP_TIMEOUT;

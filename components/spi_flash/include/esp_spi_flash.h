@@ -83,7 +83,7 @@ esp_err_t spi_flash_erase_range(size_t start_addr, size_t size);
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_write(size_t des_addr, const uint8_t *src_addr, size_t size);
+esp_err_t spi_flash_write(size_t dest, const void *src, size_t size);
 
 /**
  * @brief  Read data from Flash.
@@ -97,7 +97,7 @@ esp_err_t spi_flash_write(size_t des_addr, const uint8_t *src_addr, size_t size)
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_read(size_t src_addr, uint8_t *des_addr, size_t size);
+esp_err_t spi_flash_read(size_t src, void *dest, size_t size);
 
 /**
  * @brief Enumeration which specifies memory space requested in an mmap call

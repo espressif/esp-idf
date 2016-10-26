@@ -42,9 +42,9 @@ TEST_CASE("invalid writes are checked", "[spi_flash_emu]")
     SpiFlashEmulator emu(1);
 
     uint32_t val = 0;
-    CHECK(spi_flash_write(0, reinterpret_cast<const uint8_t*>(&val), 4) == ESP_OK);
+    CHECK(spi_flash_write(0, &val, 4) == ESP_OK);
     val = 1;
-    CHECK(spi_flash_write(0, reinterpret_cast<const uint8_t*>(&val), 4) == ESP_ERR_FLASH_OP_FAIL);
+    CHECK(spi_flash_write(0, &val, 4) == ESP_ERR_FLASH_OP_FAIL);
 }
 
 
@@ -53,11 +53,11 @@ TEST_CASE("out of bounds writes fail", "[spi_flash_emu]")
     SpiFlashEmulator emu(4);
     uint32_t vals[8];
     std::fill_n(vals, 8, 0);
-    CHECK(spi_flash_write(0, reinterpret_cast<const uint8_t*>(vals), sizeof(vals)) == ESP_OK);
+    CHECK(spi_flash_write(0, vals, sizeof(vals)) == ESP_OK);
 
-    CHECK(spi_flash_write(4*4096 - sizeof(vals), reinterpret_cast<const uint8_t*>(vals), sizeof(vals)) == ESP_OK);
+    CHECK(spi_flash_write(4*4096 - sizeof(vals), vals, sizeof(vals)) == ESP_OK);
 
-    CHECK(spi_flash_write(4*4096 - sizeof(vals) + 4, reinterpret_cast<const uint8_t*>(vals), sizeof(vals)) == ESP_ERR_FLASH_OP_FAIL);
+    CHECK(spi_flash_write(4*4096 - sizeof(vals) + 4, vals, sizeof(vals)) == ESP_ERR_FLASH_OP_FAIL);
 }
 
 
@@ -65,9 +65,9 @@ TEST_CASE("after erase the sector is set to 0xff", "[spi_flash_emu]")
 {
     SpiFlashEmulator emu(4);
     uint32_t val1 = 0xab00cd12;
-    CHECK(spi_flash_write(0, reinterpret_cast<const uint8_t*>(&val1), sizeof(val1)) == ESP_OK);
+    CHECK(spi_flash_write(0, &val1, sizeof(val1)) == ESP_OK);
     uint32_t val2 = 0x5678efab;
-    CHECK(spi_flash_write(4096 - 4, reinterpret_cast<const uint8_t*>(&val2), sizeof(val2)) == ESP_OK);
+    CHECK(spi_flash_write(4096 - 4, &val2, sizeof(val2)) == ESP_OK);
 
     CHECK(emu.words()[0] == val1);
     CHECK(range_empty_n(emu.words() + 1, 4096 / 4 - 2));
