@@ -191,14 +191,14 @@ esp_err_t esp_wifi_disconnect(void);
 esp_err_t esp_wifi_clear_fast_connect(void);
 
 /**
-  * @brief     Kick the all station or associated id equals to aid
+  * @brief     deauthenticate all stations or associated id equals to aid
   *
-  * @param     uint16_t aid : when aid is 0, kick all stations, otherwise kick station whose associated id is aid
+  * @param     uint16_t aid : when aid is 0, deauthenticate all stations, otherwise deauthenticate station whose associated id is aid
   *
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_kick_sta(uint16_t aid);
+esp_err_t esp_wifi_deauth_sta(uint16_t aid);
 
 /**
   * @brief     Scan all available APs.
