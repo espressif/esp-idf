@@ -158,8 +158,8 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
             bas_service_cmpl(p_data->srvc_oper.service_id, p_data->srvc_oper.status);
             
             /*start advertising*/
-            if(p_data->srvc_oper.status == GATT_SUCCESS)
-                BTA_GATTS_Listen(server_if, true, NULL);
+            //if(p_data->srvc_oper.status == GATT_SUCCESS)
+               // BTA_GATTS_Listen(server_if, true, NULL);
           //    BTA_GATTC_Broadcast(client_if, true);       //non-connectable
         }
         break;

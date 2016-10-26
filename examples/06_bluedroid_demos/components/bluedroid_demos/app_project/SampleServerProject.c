@@ -33,6 +33,8 @@
 
 #include "hid_le_prf.h"
 
+#include "bt_app_api.h"
+
 //
 
 #include "hcimsgs.h"
@@ -77,6 +79,18 @@ UINT8 ijiazu_manu[17] = {0xff,0x20,0x14,0x07,0x22,0x00,0x02,0x5B,0x00,0x33,0x49,
 UINT8 wechat_manu[] = {0x00,0x00,0x18,0xfe,0x34,0x6a,0x86,0x2e};
 tBTA_BLE_MANU	p_ijiazu_manu = {sizeof(ijiazu_manu),ijiazu_manu};			/* manufacturer data */
 tBTA_BLE_MANU   p_wechat_manu = {sizeof(wechat_manu),wechat_manu};
+
+tESP_API_BLE_ADV_PARAMS_ALL adv_params = 
+{
+	.adv_int_min 		= BTM_BLE_ADV_INT_MIN + 0x100,
+	.adv_int_max 		= BTM_BLE_ADV_INT_MIN + 0x100,
+	.adv_type	 		= API_GEN_DISCOVERABLE,
+	.addr_type_own 		= API_PUBLIC_ADDR,
+	.channel_map		= API_BLE_ADV_CHNL_MAP,
+	.adv_filter_policy 	= API_ADV_UNDIRECT,
+	{API_PUBLIC_ADDR,NULL}
+};
+
 
 BD_ADDR rand_ijiazu_addr = {0x00,0x02,0x5B,0x00,0x32,0x55};
 
@@ -254,6 +268,8 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
 #if (WX_AIRSYNC_CFG)
 	AirSync_Init(NULL);
 #endif	///WX_AIRSYNC_CFG
+
+	API_Ble_AppStartAdvertising(&adv_params);
     /*start advetising*/
 //    BTA_GATTS_Listen(server_if, true, NULL);
 }
@@ -272,10 +288,8 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
             
             LOG_ERROR("set advertising parameters\n");
 			//set the advertising data to the btm layer
-			ESP_AppBleConfigadvData(&wechat_adv_data[BLE_ADV_DATA_IDX],
+			API_Ble_AppConfigAdvData(&wechat_adv_data[BLE_ADV_DATA_IDX],
 								bta_gatts_set_adv_data_cback);
-			//set the adversting data to the btm layer
-			ESP_AppBleSetScanRsp(&wechat_adv_data[BLE_SCAN_RSP_DATA_IDX],NULL);
            	
         }
         break;
@@ -325,7 +339,7 @@ static void ble_server_appRegister(void)
     btif_to_bta_uuid(&t_uuid, &uuid);
 
     LOG_ERROR("register gatts application\n");
-    BTA_GATTS_AppRegister(&t_uuid, bta_gatts_callback);
+    API_Ble_GattsAppRegister(&t_uuid, bta_gatts_callback);
 }
 
 void gatts_server_test(void)

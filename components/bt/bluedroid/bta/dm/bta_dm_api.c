@@ -1324,7 +1324,7 @@ extern void BTA_DmBleBroadcast (BOOLEAN start)
 {
     tBTA_DM_API_BLE_OBSERVE   *p_msg;
 
-    APPL_TRACE_API("BTA_DmBleBroadcast: start = %d ", start);
+    APPL_TRACE_API("BTA_DmBleBroadcast: start = %d \n", start);
 
     if ((p_msg = (tBTA_DM_API_BLE_OBSERVE *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_OBSERVE))) != NULL)
     {

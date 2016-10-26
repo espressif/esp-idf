@@ -1,7 +1,19 @@
+
+#ifndef _BT_APP_DEFS_H__
+#define	_BT_APP_DEFS_H__
+
+
 #include "bta_api.h"
 #include "btm_ble_api.h"
 
 #define API_BLE_CONN_PARAM_UNDEF        0xffff      /* use this value when a specific value not to be overwritten */
+
+#define API_BLE_ADV_CHNL_MAP (API_BLE_ADV_CHNL_37|API_BLE_ADV_CHNL_38|API_BLE_ADV_CHNL_39)
+
+/* advertising channel map */
+#define API_BLE_ADV_CHNL_37    (0x01 << 0)
+#define API_BLE_ADV_CHNL_38    (0x01 << 1)
+#define API_BLE_ADV_CHNL_39    (0x01 << 2)
 
 
 #define API_BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == API_BLE_CONN_PARAM_UNDEF))
@@ -38,6 +50,24 @@ enum api_adv_filter
     /// Start directed connectable advertising
     API_ADV_DIRECT
 };
+
+/// Own BD address source of the device
+enum api_own_addr_src
+{
+   /// Public Address
+   API_PUBLIC_ADDR,
+   /// Provided random address
+   API_PROVIDED_RND_ADDR,
+   /// Provided static random address
+   API_GEN_STATIC_RND_ADDR,
+   /// Generated resolvable private random address
+   API_GEN_RSLV_ADDR,
+   /// Generated non-resolvable private random address
+   API_GEN_NON_RSLV_ADDR,
+   /// Provided Reconnection address
+   API_PROVIDED_RECON_ADDR,
+};
+
 
 
 typedef struct
@@ -81,3 +111,6 @@ extern void ESP_AppBleSetScanRsp(tESP_BLE_ADV_DATA *scan_rsp_data,
 							  tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback);
 
 
+
+
+#endif		///_BT_APP_DEFS_H__
