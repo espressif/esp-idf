@@ -157,39 +157,39 @@ typedef enum {
 } gpio_num_t;
 
 typedef enum {
-    GPIO_INTR_DISABLE = 0,     /* disable GPIO interrupt                             */
-    GPIO_INTR_POSEDGE = 1,     /* GPIO interrupt type : rising edge                  */
-    GPIO_INTR_NEGEDGE = 2,     /* GPIO interrupt type : falling edge                 */
-    GPIO_INTR_ANYEDGE = 3,     /* GPIO interrupt type : both rising and falling edge */
-    GPIO_INTR_LOW_LEVEL = 4,   /* GPIO interrupt type : input low level trigger      */
-    GPIO_INTR_HIGH_LEVEL = 5,  /* GPIO interrupt type : input high level trigger     */
+    GPIO_INTR_DISABLE = 0,     /*!< disable GPIO interrupt                             */
+    GPIO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
+    GPIO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
+    GPIO_INTR_ANYEDGE = 3,     /*!< GPIO interrupt type : both rising and falling edge */
+    GPIO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
+    GPIO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
     GPIO_INTR_MAX,
 } gpio_int_type_t;
 
 typedef enum {
-    GPIO_MODE_INPUT = GPIO_MODE_DEF_INPUT,                                                         /* GPIO mode : input only                           */
-    GPIO_MODE_OUTPUT = GPIO_MODE_DEF_OUTPUT,                                                       /* GPIO mode : output only mode                     */
-    GPIO_MODE_OUTPUT_OD = ((GPIO_MODE_DEF_OUTPUT)|(GPIO_MODE_DEF_OD)),                             /* GPIO mode : output only with open-drain mode     */
-    GPIO_MODE_INPUT_OUTPUT_OD = ((GPIO_MODE_DEF_INPUT)|(GPIO_MODE_DEF_OUTPUT)|(GPIO_MODE_DEF_OD)), /* GPIO mode : output and input with open-drain mode*/
-    GPIO_MODE_INPUT_OUTPUT = ((GPIO_MODE_DEF_INPUT)|(GPIO_MODE_DEF_OUTPUT)),                       /* GPIO mode : output and input mode                */
+    GPIO_MODE_INPUT = GPIO_MODE_DEF_INPUT,                                                         /*!< GPIO mode : input only                           */
+    GPIO_MODE_OUTPUT = GPIO_MODE_DEF_OUTPUT,                                                       /*!< GPIO mode : output only mode                     */
+    GPIO_MODE_OUTPUT_OD = ((GPIO_MODE_DEF_OUTPUT)|(GPIO_MODE_DEF_OD)),                             /*!< GPIO mode : output only with open-drain mode     */
+    GPIO_MODE_INPUT_OUTPUT_OD = ((GPIO_MODE_DEF_INPUT)|(GPIO_MODE_DEF_OUTPUT)|(GPIO_MODE_DEF_OD)), /*!< GPIO mode : output and input with open-drain mode*/
+    GPIO_MODE_INPUT_OUTPUT = ((GPIO_MODE_DEF_INPUT)|(GPIO_MODE_DEF_OUTPUT)),                       /*!< GPIO mode : output and input mode                */
 } gpio_mode_t;
 
 typedef enum {
-    GPIO_PULLUP_DISABLE = 0x0,     /* disable GPIO pull-up resistor */
-    GPIO_PULLUP_ENABLE = 0x1,      /*  enable GPIO pull-up resistor */
+    GPIO_PULLUP_DISABLE = 0x0,     /*!< disable GPIO pull-up resistor */
+    GPIO_PULLUP_ENABLE = 0x1,      /*!< enable GPIO pull-up resistor */
 } gpio_pullup_t;
 
 typedef enum {
-    GPIO_PULLDOWN_DISABLE = 0x0,   /* disable GPIO pull-down resistor */
-    GPIO_PULLDOWN_ENABLE = 0x1,    /* enable GPIO pull-down resistor  */
+    GPIO_PULLDOWN_DISABLE = 0x0,   /*!< disable GPIO pull-down resistor */
+    GPIO_PULLDOWN_ENABLE = 0x1,    /*!< enable GPIO pull-down resistor  */
 } gpio_pulldown_t;
 
 typedef struct {
-    uint64_t pin_bit_mask;          /* GPIO pin: set with bit mask, each bit maps to a GPIO */
-    gpio_mode_t mode;               /* GPIO mode: set input/output mode                     */
-    gpio_pullup_t pull_up_en;       /* GPIO pull-up                                         */
-    gpio_pulldown_t pull_down_en;   /* GPIO pull-down                                       */
-    gpio_int_type_t intr_type;      /* GPIO interrupt type                                  */
+    uint64_t pin_bit_mask;          /*!< GPIO pin: set with bit mask, each bit maps to a GPIO */
+    gpio_mode_t mode;               /*!< GPIO mode: set input/output mode                     */
+    gpio_pullup_t pull_up_en;       /*!< GPIO pull-up                                         */
+    gpio_pulldown_t pull_down_en;   /*!< GPIO pull-down                                       */
+    gpio_int_type_t intr_type;      /*!< GPIO interrupt type                                  */
 } gpio_config_t;
 
 typedef enum {
@@ -199,10 +199,10 @@ typedef enum {
 } gpio_level_t;
 
 typedef enum {
-    GPIO_PULLUP_ONLY,               /* Pad pull up            */
-    GPIO_PULLDOWN_ONLY,             /* Pad pull down          */
-    GPIO_PULLUP_PULLDOWN,           /* Pad pull up + pull down*/
-    GPIO_FLOATING,                  /* Pad floating           */
+    GPIO_PULLUP_ONLY,               /*!< Pad pull up            */
+    GPIO_PULLDOWN_ONLY,             /*!< Pad pull down          */
+    GPIO_PULLUP_PULLDOWN,           /*!< Pad pull up + pull down*/
+    GPIO_FLOATING,                  /*!< Pad floating           */
 } gpio_pull_mode_t;
 
 typedef void (*gpio_event_callback)(gpio_num_t gpio_intr_num);
@@ -224,20 +224,20 @@ typedef void (*gpio_event_callback)(gpio_num_t gpio_intr_num);
  */
 
 /**
- * @brief	   GPIO common configuration
+ * @brief      GPIO common configuration
  *
  * Use this Function ,Configure GPIO's Mode,pull-up,PullDown,IntrType
  *
- * @parameter[in]  pGPIOConfig
- *                 pGPIOConfig.pin_bit_mask   : Configure GPIO pins bits,set this parameter with bit mask.
+ * @param[in]  pGPIOConfig
+ *             pGPIOConfig.pin_bit_mask   : Configure GPIO pins bits,set this parameter with bit mask.
  *                                              If you want to configure GPIO34 and GPIO16, pin_bit_mask=GPIO_Pin_16|GPIO_Pin_34;
- *                 pGPIOConfig.mode           : Configure GPIO mode,such as output ,input...
- *                 pGPIOConfig.pull_up_en     : Enable or Disable pull-up
- *                 pGPIOConfig.pull_down_en   : Enable or Disable pull-down
- *                 pGPIOConfig.intr_type : Configure GPIO interrupt trigger type
- * @return	       ESP_OK: success ;
- *                 ESP_ERR_INVALID_ARG: parameter error
- *                 ESP_FAIL : GPIO error
+ *             pGPIOConfig.mode           : Configure GPIO mode,such as output ,input...
+ *             pGPIOConfig.pull_up_en     : Enable or Disable pull-up
+ *             pGPIOConfig.pull_down_en   : Enable or Disable pull-down
+ *             pGPIOConfig.intr_type : Configure GPIO interrupt trigger type
+ * @return     ESP_OK: success ;
+ *             ESP_ERR_INVALID_ARG: parameter error
+ *             ESP_FAIL : GPIO error
  *
  */
 esp_err_t gpio_config(gpio_config_t *pGPIOConfig);
@@ -246,12 +246,12 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig);
 /**
  * @brief      GPIO set interrupt trigger type
  *
- * @parameter[in]  gpio_num : GPIO number.
+ * @param[in]  gpio_num : GPIO number.
  *                            If you want to set output level of GPIO16, gpio_num should be GPIO_NUM_16 (16);
- * @parameter[in]  intr_type: interrupt type, select from gpio_int_type_t
+ * @param[in]  intr_type: interrupt type, select from gpio_int_type_t
  *
- * @return         ESP_OK   : success
- *                 ESP_ERR_INVALID_ARG: parameter error
+ * @return     ESP_OK   : success
+ *             ESP_ERR_INVALID_ARG: parameter error
  *
  */
 esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type);
@@ -259,11 +259,11 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 /**
  * @brief      enable GPIO module interrupt signal
  *
- * @parameter[in]  gpio_num : GPIO number.
+ * @param[in]  gpio_num : GPIO number.
  *                            If you want to set output level of GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
- * @return         ESP_OK   : success
- *                 ESP_ERR_INVALID_ARG: parameter error
+ * @return     ESP_OK   : success
+ *             ESP_ERR_INVALID_ARG: parameter error
  *
  */
 esp_err_t gpio_intr_enable(gpio_num_t gpio_num);
@@ -271,78 +271,78 @@ esp_err_t gpio_intr_enable(gpio_num_t gpio_num);
 /**
  * @brief      disable GPIO module interrupt signal
  *
- * @parameter[in]  gpio_num : GPIO number.
+ * @param[in]  gpio_num : GPIO number.
  *                            If you want to set output level of GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
- * @return         ESP_OK   : success
- *                 ESP_ERR_INVALID_ARG: parameter error
+ * @return     ESP_OK   : success
+ *             ESP_ERR_INVALID_ARG: parameter error
  *
  */
 esp_err_t gpio_intr_disable(gpio_num_t gpio_num);
 
 /**
- * @brief	   GPIO set output level
+ * @brief      GPIO set output level
  *
- * @parameter[in]  gpio_num : GPIO number.
+ * @param[in]  gpio_num : GPIO number.
  *                            If you want to set output level of GPIO16, gpio_num should be GPIO_NUM_16 (16);
- * @parameter[in]  level    : Output level. 0: low ; 1: high
+ * @param[in]  level    : Output level. 0: low ; 1: high
  *
- * @return	       ESP_OK   : success
- *                 ESP_FAIL : GPIO error
+ * @return     ESP_OK   : success
+ *             ESP_FAIL : GPIO error
  *
  */
 esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level);
 
 /**
- * @brief	   GPIO get input level
+ * @brief	GPIO get input level
  *
- * @parameter[in]  gpio_num : GPIO number.
+ * @param[in]  gpio_num : GPIO number.
  *                            If you want to get level of pin GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
- * @return	    0  : the GPIO input level is 0
+ * @return	0  : the GPIO input level is 0
  *              1  : the GPIO input level is 1
  *
  */
 int gpio_get_level(gpio_num_t gpio_num);
 
 /**
- * @brief	   GPIO set direction
+ * @brief      GPIO set direction
  *
  * Configure GPIO direction,such as output_only,input_only,output_and_input
  *
- * @parameter[in]  gpio_num : Configure GPIO pins number,it should be GPIO number.
+ * @param[in]  gpio_num : Configure GPIO pins number,it should be GPIO number.
  *                            If you want to set direction of GPIO16, gpio_num should be GPIO_NUM_16 (16);
- * @parameter[in]  mode     : Configure GPIO direction,such as output_only,input_only,...
+ * @param[in]  mode     : Configure GPIO direction,such as output_only,input_only,...
  *
- * @return	       ESP_OK   : success
- *                 ESP_ERR_INVALID_ARG : fail
- *                 ESP_FAIL : GPIO error
+ * @return     ESP_OK   : success
+ *             ESP_ERR_INVALID_ARG : fail
+ *             ESP_FAIL : GPIO error
  *
  */
 esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 
 /**
- * @brief	   GPIO set pull
+ * @brief	GPIO set pull
  *
  * User this Function,configure GPIO pull mode,such as pull-up,pull-down
  *
- * @parameter[in]  gpio_num : Configure GPIO pins number,it should be GPIO number.
+ * @param[in]  gpio_num : Configure GPIO pins number,it should be GPIO number.
  *                            If you want to set pull up or down mode for GPIO16,gpio_num should be GPIO_NUM_16 (16);
- * @parameter[in]  pull     : Configure GPIO pull up/down mode,such as pullup_only,pulldown_only,pullup_and_pulldown,...
+ * @param[in]  pull     : Configure GPIO pull up/down mode,such as pullup_only,pulldown_only,pullup_and_pulldown,...
  *
- * @return	       ESP_OK   : success
- *                 ESP_ERR_INVALID_ARG : fail
- *                 ESP_FAIL : GPIO error
+ * @return	ESP_OK   : success
+ *              ESP_ERR_INVALID_ARG : fail
+ *              ESP_FAIL : GPIO error
  *
  */
 esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 
 /**
-  * @brief enable GPIO wake-up function.
+  * @brief  enable GPIO wake-up function.
   *
-  * @param gpio_num_t gpio_num : GPIO number.
+  * @param  gpio_num : GPIO number.
   *
-  * @param gpio_int_type_t intr_type : only GPIO_INTR_LOLEVEL\GPIO_INTR_HILEVEL can be used
+  * @param  intr_type : only GPIO_INTR_LOLEVEL\GPIO_INTR_HILEVEL can be used
   *
   * @return ESP_OK: success
   *         ESP_ERR_INVALID_ARG: parameter error
@@ -350,9 +350,9 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 
 /**
-  * @brief disable GPIO wake-up function.
+  * @brief  disable GPIO wake-up function.
   *
-  * @param gpio_num_t gpio_num: GPIO number
+  * @param  gpio_num: GPIO number
   *
   * @return ESP_OK: success
   *         ESP_ERR_INVALID_ARG: parameter error
@@ -365,13 +365,13 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
  *          Users should know that which CPU is running and then pick a INUM that is not used by system.
  *          We can find the information of INUM and interrupt level in soc.h.
  *          TODO: to move INUM options to menu_config
- * @parameter   uint32_t gpio_intr_num     : GPIO interrupt number,check the info in soc.h, and please see the core-isa.h for more details
- * @parameter   void (* fn)(void* )       : interrupt handler function.
+ * @param   gpio_intr_num    : GPIO interrupt number,check the info in soc.h, and please see the core-isa.h for more details
+ * @param   (*fn)(void* )    : interrupt handler function.
  *                                          Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
- * @parameter   void * arg                : parameter for handler function
+ * @param   arg              : parameter for handler function
  *
- * @return      ESP_OK : success ;
- *              ESP_FAIL: gpio error
+ * @return  ESP_OK : success ;
+ *          ESP_FAIL: gpio error
  */
 esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg);
 

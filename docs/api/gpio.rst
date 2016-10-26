@@ -16,6 +16,13 @@ Reference
 
 `Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
 
+Enumerations
+^^^^^^^^^^^^
+
+.. doxygenenum:: gpio_int_type_t
+.. doxygenenum:: gpio_mode_t
+.. doxygenenum:: gpio_pull_mode_t
+
 Functions
 ^^^^^^^^^
 
