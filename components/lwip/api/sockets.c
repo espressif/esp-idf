@@ -400,7 +400,7 @@ static void lwip_socket_drop_registered_memberships(int s);
  */ 
 static inline void esp32_tx_flow_ctrl(void)
 {
-  uint8_t _wait_delay = 0;
+  uint8_t _wait_delay = 1;
 
   while ((system_get_free_heap_size() < HEAP_HIGHWAT) || esp_wifi_internal_tx_is_stop()){
      vTaskDelay(_wait_delay/portTICK_RATE_MS);

@@ -60,7 +60,7 @@ bool esp_wifi_internal_tx_is_stop(void);
 void esp_wifi_internal_free_rx_buffer(void* buffer);
 
 /**
-  * @brief  free the rx buffer which allocated by wifi driver
+  * @brief  transmit the buffer via wifi driver
   *
   * @attention1 TODO should modify the return type from bool to int
   * 
