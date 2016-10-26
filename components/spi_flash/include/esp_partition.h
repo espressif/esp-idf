@@ -26,51 +26,52 @@ extern "C" {
 #endif
 
 typedef enum {
-    ESP_PARTITION_APP_MASK = 0x0000,
-    ESP_PARTITION_APP_FACTORY = ESP_PARTITION_APP_MASK | 0x00,
-    ESP_PARTITION_APP_OTA_MIN = ESP_PARTITION_APP_MASK | 0x10,
-    ESP_PARTITION_APP_OTA_0 = ESP_PARTITION_APP_OTA_MIN + 0,
-    ESP_PARTITION_APP_OTA_1 = ESP_PARTITION_APP_OTA_MIN + 1,
-    ESP_PARTITION_APP_OTA_2 = ESP_PARTITION_APP_OTA_MIN + 2,
-    ESP_PARTITION_APP_OTA_3 = ESP_PARTITION_APP_OTA_MIN + 3,
-    ESP_PARTITION_APP_OTA_4 = ESP_PARTITION_APP_OTA_MIN + 4,
-    ESP_PARTITION_APP_OTA_5 = ESP_PARTITION_APP_OTA_MIN + 5,
-    ESP_PARTITION_APP_OTA_6 = ESP_PARTITION_APP_OTA_MIN + 6,
-    ESP_PARTITION_APP_OTA_7 = ESP_PARTITION_APP_OTA_MIN + 7,
-    ESP_PARTITION_APP_OTA_8 = ESP_PARTITION_APP_OTA_MIN + 8,
-    ESP_PARTITION_APP_OTA_9 = ESP_PARTITION_APP_OTA_MIN + 9,
-    ESP_PARTITION_APP_OTA_10 = ESP_PARTITION_APP_OTA_MIN + 10,
-    ESP_PARTITION_APP_OTA_11 = ESP_PARTITION_APP_OTA_MIN + 11,
-    ESP_PARTITION_APP_OTA_12 = ESP_PARTITION_APP_OTA_MIN + 12,
-    ESP_PARTITION_APP_OTA_13 = ESP_PARTITION_APP_OTA_MIN + 13,
-    ESP_PARTITION_APP_OTA_14 = ESP_PARTITION_APP_OTA_MIN + 14,
-    ESP_PARTITION_APP_OTA_15 = ESP_PARTITION_APP_OTA_MIN + 15,
-    ESP_PARTITION_APP_OTA_MAX = ESP_PARTITION_APP_MASK | 0x1f,
-    ESP_PARTITION_APP_TEST = ESP_PARTITION_APP_MASK | 0x20,
-    ESP_PARTITION_APP_ANY = ESP_PARTITION_APP_MASK | 0xff,
-
-    ESP_PARTITION_DATA_MASK = 0x0100,
-    ESP_PARTITION_DATA_OTA = ESP_PARTITION_DATA_MASK | 0x00,
-    ESP_PARTITION_DATA_RF = ESP_PARTITION_DATA_MASK | 0x01,
-    ESP_PARTITION_DATA_WIFI = ESP_PARTITION_DATA_MASK | 0x02,
-    ESP_PARTITION_DATA_ANY = ESP_PARTITION_DATA_MASK | 0xff,
-
-    ESP_PARTITION_FILESYSTEM_MASK = 0x0200,
-    ESP_PARTITION_FILESYSTEM_ESPHTTPD = 0x0200,
-    ESP_PARTITION_FILESYSTEM_FAT = 0x0201,
-    ESP_PARTITION_FILESYSTEM_SPIFFS = 0x0202,
-    ESP_PARTITION_FILESYSTEM_ANY = 0x20ff,
-
-    ESP_PARTITION_END = 0xffff
+    ESP_PARTITION_TYPE_APP = 0x00,
+    ESP_PARTITION_TYPE_DATA = 0x01,
+    ESP_PARTITION_TYPE_FILESYSTEM = 0x02,
 } esp_partition_type_t;
 
-#define ESP_PARTITION_APP_OTA(i) ((esp_partition_type_t)(ESP_PARTITION_APP_OTA_MIN + ((i) & 0xf)))
+typedef enum {
+    ESP_PARTITION_SUBTYPE_APP_FACTORY = 0x00,
+    ESP_PARTITION_SUBTYPE_APP_OTA_MIN = 0x10,
+    ESP_PARTITION_SUBTYPE_APP_OTA_0 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 0,
+    ESP_PARTITION_SUBTYPE_APP_OTA_1 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 1,
+    ESP_PARTITION_SUBTYPE_APP_OTA_2 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 2,
+    ESP_PARTITION_SUBTYPE_APP_OTA_3 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 3,
+    ESP_PARTITION_SUBTYPE_APP_OTA_4 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 4,
+    ESP_PARTITION_SUBTYPE_APP_OTA_5 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 5,
+    ESP_PARTITION_SUBTYPE_APP_OTA_6 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 6,
+    ESP_PARTITION_SUBTYPE_APP_OTA_7 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 7,
+    ESP_PARTITION_SUBTYPE_APP_OTA_8 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 8,
+    ESP_PARTITION_SUBTYPE_APP_OTA_9 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 9,
+    ESP_PARTITION_SUBTYPE_APP_OTA_10 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 10,
+    ESP_PARTITION_SUBTYPE_APP_OTA_11 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 11,
+    ESP_PARTITION_SUBTYPE_APP_OTA_12 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 12,
+    ESP_PARTITION_SUBTYPE_APP_OTA_13 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 13,
+    ESP_PARTITION_SUBTYPE_APP_OTA_14 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 14,
+    ESP_PARTITION_SUBTYPE_APP_OTA_15 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 15,
+    ESP_PARTITION_SUBTYPE_APP_OTA_MAX = 15,
+    ESP_PARTITION_SUBTYPE_APP_TEST = 0x20,
+
+    ESP_PARTITION_SUBTYPE_DATA_OTA = 0x00,
+    ESP_PARTITION_SUBTYPE_DATA_RF =  0x01,
+    ESP_PARTITION_SUBTYPE_DATA_NVS = 0x02,
+
+    ESP_PARTITION_SUBTYPE_FILESYSTEM_ESPHTTPD = 0x00,
+    ESP_PARTITION_SUBTYPE_FILESYSTEM_FAT = 0x01,
+    ESP_PARTITION_SUBTYPE_FILESYSTEM_SPIFFS = 0x02,
+
+    ESP_PARTITION_SUBTYPE_ANY = 0xff,
+} esp_partition_subtype_t;
+
+#define ESP_PARTITION_SUBTYPE_OTA(i) ((esp_partition_subtype_t)(ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ((i) & 0xf)))
 
 
 typedef struct esp_partition_iterator_opaque_* esp_partition_iterator_t;
 
 typedef struct {
     esp_partition_type_t type;
+    esp_partition_subtype_t subtype;
     uint32_t address;
     uint32_t size;
     char label[17];
@@ -81,9 +82,9 @@ typedef struct {
  * @brief Find partition based on one or more parameters
  *
  * @param type Partition type, one of esp_partition_type_t values
- *             To find all app partitions or all filesystem partitions,
- *             use ESP_PARTITION_APP_ANY or ESP_PARTITION_FILESYSTEM_ANY,
- *             respectively.
+ * @param subtype Partition subtype, of esp_partition_subtype_t values.
+ *             To find all partitions of given type, use
+ *             ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking
  *             for partition with a specific name. Pass NULL otherwise.
  *
@@ -92,22 +93,22 @@ typedef struct {
  *         Iterator obtained through this function has to be released
  *         using esp_partition_iterator_release when not used any more.
  */
-esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, const char* label);
+esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
 
 /**
  * @brief Find first partition based on one or more parameters
  *
  * @param type Partition type, one of esp_partition_type_t values
- *             To find all app partitions or all filesystem partitions,
- *             use ESP_PARTITION_APP_ANY or ESP_PARTITION_FILESYSTEM_ANY,
- *             respectively.
+ * @param subtype Partition subtype, of esp_partition_subtype_t values.
+ *             To find all partitions of given type, use
+ *             ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking
  *             for partition with a specific name. Pass NULL otherwise.
  *
  * @return pointer to esp_partition_t structure, or NULL if no parition is found.
  *         This pointer is valid for the lifetime of the application.
  */
-const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, const char* label);
+const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
 
 /**
  * @brief Get esp_partition_t structure for given partition

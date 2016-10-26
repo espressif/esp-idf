@@ -39,13 +39,14 @@ typedef struct partition_list_item_ {
 
 typedef struct esp_partition_iterator_opaque_ {
     esp_partition_type_t type;                  // requested type
+    esp_partition_subtype_t subtype;               // requested subtype
     const char* label;                          // requested label (can be NULL)
     partition_list_item_t* next_item;     // next item to iterate to
     esp_partition_t* info;                // pointer to info (it is redundant, but makes code more readable)
 } esp_partition_iterator_opaque_t;
 
 
-static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t type, const char* label);
+static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
 static esp_err_t load_partitions();
 
 
@@ -54,18 +55,8 @@ static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list =
 static _lock_t s_partition_list_lock;
 
 
-static uint32_t get_major_type(esp_partition_type_t type)
-{
-    return (type >> 8) & 0xff;
-}
-
-static uint32_t get_minor_type(esp_partition_type_t type)
-{
-    return type & 0xff;
-}
-
 esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
-        const char* label)
+        esp_partition_subtype_t subtype, const char* label)
 {
     if (SLIST_EMPTY(&s_partition_list)) {
         // only lock if list is empty (and check again after acquiring lock)
@@ -81,7 +72,7 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
     }
     // create an iterator pointing to the start of the list
     // (next item will be the first one)
-    esp_partition_iterator_t it = iterator_create(type, label);
+    esp_partition_iterator_t it = iterator_create(type, subtype, label);
     // advance iterator to the next item which matches constraints
     it = esp_partition_next(it);
     // if nothing found, it == NULL and iterator has been released
@@ -95,17 +86,13 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
     if (it->next_item == NULL) {
         return NULL;
     }
-    uint32_t requested_major_type = get_major_type(it->type);
-    uint32_t requested_minor_type = get_minor_type(it->type);
     _lock_acquire(&s_partition_list_lock);
     for (; it->next_item != NULL; it->next_item = SLIST_NEXT(it->next_item, next)) {
         esp_partition_t* p = &it->next_item->info;
-        uint32_t it_major_type = get_major_type(p->type);
-        uint32_t it_minor_type = get_minor_type(p->type);
-        if (requested_major_type != it_major_type) {
+        if (it->type != p->type) {
             continue;
         }
-        if (requested_minor_type != 0xff && requested_minor_type != it_minor_type) {
+        if (it->subtype != 0xff && it->subtype != p->subtype) {
             continue;
         }
         if (it->label != NULL && strcmp(it->label, p->label) != 0) {
@@ -124,9 +111,10 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
     return it;
 }
 
-const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, const char* label)
+const esp_partition_t* esp_partition_find_first(esp_partition_type_t type,
+        esp_partition_subtype_t subtype, const char* label)
 {
-    esp_partition_iterator_t it = esp_partition_find(type, label);
+    esp_partition_iterator_t it = esp_partition_find(type, subtype, label);
     if (it == NULL) {
         return NULL;
     }
@@ -135,11 +123,13 @@ const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, const
     return res;
 }
 
-static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t type, const char* label)
+static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t type,
+        esp_partition_subtype_t subtype, const char* label)
 {
     esp_partition_iterator_opaque_t* it =
             (esp_partition_iterator_opaque_t*) malloc(sizeof(esp_partition_iterator_opaque_t));
     it->type = type;
+    it->subtype = subtype;
     it->label = label;
     it->next_item = SLIST_FIRST(&s_partition_list);
     it->info = NULL;
@@ -172,7 +162,8 @@ static esp_err_t load_partitions()
         partition_list_item_t* item = (partition_list_item_t*) malloc(sizeof(partition_list_item_t));
         item->info.address = it->pos.offset;
         item->info.size = it->pos.size;
-        item->info.type = (it->type << 8) | it->subtype;
+        item->info.type = it->type;
+        item->info.subtype = it->subtype;
         item->info.encrypted = false;
         // it->label may not be zero-terminated
         strncpy(item->info.label, (const char*) it->label, sizeof(it->label));
@@ -201,7 +192,7 @@ const esp_partition_t* esp_partition_get(esp_partition_iterator_t iterator)
 }
 
 esp_err_t esp_partition_read(const esp_partition_t* partition,
-        size_t src_offset, uint8_t* dst, size_t size)
+        size_t src_offset, void* dst, size_t size)
 {
     assert(partition != NULL);
     if (src_offset > partition->size) {
@@ -214,7 +205,7 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
 }
 
 esp_err_t esp_partition_write(const esp_partition_t* partition,
-                             size_t dst_offset, const uint8_t* src, size_t size)
+                             size_t dst_offset, const void* src, size_t size)
 {
     assert(partition != NULL);
     if (dst_offset > partition->size) {
