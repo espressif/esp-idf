@@ -49,7 +49,7 @@ static void IRAM_ATTR task_wdt_isr(void *arg) {
     wdt_task_t *wdttask;
     const char *cpu;
     //Feed the watchdog so we do not reset
-    TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
+    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_feed=1;
     TIMERG0.wdt_wprotect=0;
     //Ack interrupt
@@ -107,7 +107,7 @@ void esp_task_wdt_feed() {
     }
     if (do_feed_wdt) {
         //All tasks have checked in; time to feed the hw watchdog.
-        TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
+        TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
         TIMERG0.wdt_feed=1;
         TIMERG0.wdt_wprotect=0;
         //Reset fed_watchdog status
@@ -141,13 +141,13 @@ void esp_task_wdt_delete() {
 }
 
 void esp_task_wdt_init() {
-    TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
-    TIMERG0.wdt_config0.sys_reset_length=7;             //3.2uS
-    TIMERG0.wdt_config0.cpu_reset_length=7;             //3.2uS
+    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+    TIMERG0.wdt_config0.sys_reset_length=7;                 //3.2uS
+    TIMERG0.wdt_config0.cpu_reset_length=7;                 //3.2uS
     TIMERG0.wdt_config0.level_int_en=1;
-    TIMERG0.wdt_config0.stg0=1;                         //1st stage timeout: interrupt
-    TIMERG0.wdt_config0.stg1=3;                         //2nd stage timeout: reset system
-    TIMERG0.wdt_config1.clk_prescale=80*500;            //Prescaler: wdt counts in ticks of 0.5mS
+    TIMERG0.wdt_config0.stg0=TIMG_WDT_STG_SEL_INT;          //1st stage timeout: interrupt
+    TIMERG0.wdt_config0.stg1=TIMG_WDT_STG_SEL_RESET_SYSTEM; //2nd stage timeout: reset system
+    TIMERG0.wdt_config1.clk_prescale=80*500;                //Prescaler: wdt counts in ticks of 0.5mS
     TIMERG0.wdt_config2=CONFIG_TASK_WDT_TIMEOUT_S*2000;     //Set timeout before interrupt
     TIMERG0.wdt_config3=CONFIG_TASK_WDT_TIMEOUT_S*4000;     //Set timeout before reset
     TIMERG0.wdt_config0.en=1;

@@ -36,13 +36,13 @@
 
 
 void esp_int_wdt_init() {
-    TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
-    TIMERG1.wdt_config0.sys_reset_length=7;             //3.2uS
-    TIMERG1.wdt_config0.cpu_reset_length=7;             //3.2uS
+    TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+    TIMERG1.wdt_config0.sys_reset_length=7;                 //3.2uS
+    TIMERG1.wdt_config0.cpu_reset_length=7;                 //3.2uS
     TIMERG1.wdt_config0.level_int_en=1;
-    TIMERG1.wdt_config0.stg0=1;                         //1st stage timeout: interrupt
-    TIMERG1.wdt_config0.stg1=3;                         //2nd stage timeout: reset system
-    TIMERG1.wdt_config1.clk_prescale=80*500;            //Prescaler: wdt counts in ticks of 0.5mS
+    TIMERG1.wdt_config0.stg0=TIMG_WDT_STG_SEL_INT;          //1st stage timeout: interrupt
+    TIMERG1.wdt_config0.stg1=TIMG_WDT_STG_SEL_RESET_SYSTEM; //2nd stage timeout: reset system
+    TIMERG1.wdt_config1.clk_prescale=80*500;                //Prescaler: wdt counts in ticks of 0.5mS
     //The timer configs initially are set to 5 seconds, to make sure the CPU can start up. The tick hook sets
     //it to their actual value.
     TIMERG1.wdt_config2=10000;
@@ -72,7 +72,7 @@ void vApplicationTickHook(void) {
     } else {
         //Only feed wdt if app cpu also ticked.
         if (int_wdt_app_cpu_ticked) {
-            TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
+            TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
             TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
             TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
             TIMERG1.wdt_feed=1;
@@ -84,7 +84,7 @@ void vApplicationTickHook(void) {
 #else
 void vApplicationTickHook(void) {
     if (xPortGetCoreID()!=0) return;
-    TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
+    TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
     TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
     TIMERG1.wdt_feed=1;

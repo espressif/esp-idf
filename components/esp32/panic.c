@@ -203,17 +203,17 @@ all watchdogs except the timer group 0 watchdog, and it reconfigures that to res
 one second.
 */
 static void reconfigureAllWdts() {
-	TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
+	TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
 	TIMERG0.wdt_feed=1;
 	TIMERG0.wdt_config0.sys_reset_length=7;				//3.2uS
 	TIMERG0.wdt_config0.cpu_reset_length=7;				//3.2uS
-	TIMERG0.wdt_config0.stg0=3;							//1st stage timeout: reset system
+	TIMERG0.wdt_config0.stg0=TIMG_WDT_STG_SEL_RESET_SYSTEM;	//1st stage timeout: reset system
 	TIMERG0.wdt_config1.clk_prescale=80*500;			//Prescaler: wdt counts in ticks of 0.5mS
 	TIMERG0.wdt_config2=2000;							//1 second before reset
 	TIMERG0.wdt_config0.en=1;
 	TIMERG0.wdt_wprotect=0;
 	//Disable wdt 1
-	TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
+	TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
 	TIMERG1.wdt_config0.en=0;
 	TIMERG1.wdt_wprotect=0;
 }
@@ -222,10 +222,10 @@ static void reconfigureAllWdts() {
 This disables all the watchdogs for when we call the gdbstub.
 */
 static void disableAllWdts() {
-	TIMERG0.wdt_wprotect=WDT_WRITE_KEY;
+	TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
 	TIMERG0.wdt_config0.en=0;
 	TIMERG0.wdt_wprotect=0;
-	TIMERG1.wdt_wprotect=WDT_WRITE_KEY;
+	TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
 	TIMERG1.wdt_config0.en=0;
 	TIMERG0.wdt_wprotect=0;
 }
