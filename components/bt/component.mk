@@ -60,6 +60,7 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/profiles/std/hid		\
 			bluedroid/profiles/std/hid_le		\
 			bluedroid/profiles/std/rfcomm		\
+			bluedroid/profiles/std/sdp		\
 			bluedroid/profiles/std			\
 			bluedroid/profiles			\
 			bluedroid/stack/btm			\

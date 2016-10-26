@@ -77,6 +77,18 @@ typedef enum {
 
 } bt_status_t;
 
+#define ASSERTC(cond, msg, val) if (!(cond)) { LOG_ERROR( \
+    "### ASSERT : %s line %d %s (%d) ###", __FILE__, __LINE__, msg, val);}
+
+#define HAL_CBACK(P_CB, P_CBACK, ...)\
+    if (P_CB && P_CB->P_CBACK) {            \
+        BTIF_TRACE_API("HAL %s->%s", #P_CB, #P_CBACK); \
+        P_CB->P_CBACK(__VA_ARGS__);         \
+    }                                       \
+    else {                                  \
+        ASSERTC(0, "Callback is NULL", 0);  \
+    }
+
 #ifndef CPU_LITTLE_ENDIAN
 #define CPU_LITTLE_ENDIAN
 #endif
@@ -92,6 +104,7 @@ inline uint32_t swap_byte_32(uint32_t x) {
           ((x & 0x00ff0000UL) >> 8) |
           ((x & 0xff000000UL) >> 24));
 }
+
 #ifndef ntohs
 inline uint16_t ntohs(uint16_t x) {
 #ifdef CPU_LITTLE_ENDIAN
@@ -102,6 +115,16 @@ inline uint16_t ntohs(uint16_t x) {
 }
 #endif /* #ifndef ntohs */
 
+#ifndef htons
+inline uint16_t htons(uint16_t x) {
+#ifdef CPU_LITTLE_ENDIAN
+  return swap_byte_16(x);
+#else
+  return x;
+#endif
+}
+#endif /* #ifndef htons */
+
 #ifndef ntohl
 inline uint32_t ntohl(uint32_t x) {
 #ifdef CPU_LITTLE_ENDIAN
@@ -111,5 +134,15 @@ inline uint32_t ntohl(uint32_t x) {
 #endif
 }
 #endif /* #ifndef ntohl*/
+
+#ifndef htonl
+inline uint32_t htonl(uint32_t x) {
+#ifdef CPU_LITTLE_ENDIAN
+  return swap_byte_32(x);
+#else
+  return x;
+#endif
+}
+#endif /* #ifndef htonl*/
 
 #endif /* _BT_DEFS_H_ */
