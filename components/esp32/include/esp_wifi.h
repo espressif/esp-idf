@@ -198,7 +198,7 @@ esp_err_t esp_wifi_clear_fast_connect(void);
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_kick_station(uint16_t aid);
+esp_err_t esp_wifi_kick_sta(uint16_t aid);
 
 /**
   * @brief     Scan all available APs.
@@ -471,14 +471,13 @@ esp_err_t esp_wifi_get_config(wifi_interface_t ifx, wifi_config_t *conf);
   *
   * @attention SSC only API
   *
-  * @param     struct station_info **station :  station list
+  * @param     wifi_sta_list_t *sta:  sta list
   *
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_get_station_list(struct station_info **station);
+esp_err_t esp_wifi_ap_get_sta_list(wifi_sta_list_t *sta);
 
-esp_err_t esp_wifi_free_station_list(void);
 
 /**
   * @brief     Set the WiFi API configuration storage type

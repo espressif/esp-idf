@@ -150,10 +150,15 @@ typedef union {
     wifi_sta_config_t sta; /**< configuration of STA */
 } wifi_config_t;
 
-struct station_info {
-    STAILQ_ENTRY(station_info) next;
-    uint8_t bssid[6];
-};
+typedef struct {
+    uint8_t mac[6];  /**< mac address of sta that associated with ESP32 soft-AP */
+}wifi_sta_info_t;
+
+#define ESP_WIFI_MAX_CONN_NUM  8  /**< max number of sta the eSP32 soft-AP can connect */
+typedef struct {
+    wifi_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM+2]; /**< sta list */
+    uint8_t         num; /**< number of sta that associated with ESP32 soft-AP */
+}wifi_sta_list_t;
 
 typedef enum {
     WIFI_STORAGE_FLASH,  /**< all configuration will strore in both memory and flash */
