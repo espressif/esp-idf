@@ -167,7 +167,7 @@ ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size)
     return ret;
 }
 
-_off_t esp_vfs_lseek(struct _reent *r, int fd, _off_t size, int mode)
+off_t esp_vfs_lseek(struct _reent *r, int fd, off_t size, int mode)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     if (vfs == NULL) {

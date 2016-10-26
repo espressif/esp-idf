@@ -1,3 +1,17 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <string.h>
 #include "esp_vfs.h"
 #include "esp_attr.h"
@@ -6,6 +20,7 @@
 #include "soc/uart_struct.h"
 
 static uart_dev_t* s_uarts[3] = {&UART0, &UART1, &UART2};
+static _lock_t s_uart_locks[3]; // per-UART locks, lazily initialized
 
 static int IRAM_ATTR uart_open(const char * path, int flags, int mode)
 {
@@ -36,21 +51,12 @@ static size_t IRAM_ATTR uart_write(int fd, const void * data, size_t size)
     assert(fd >=0 && fd < 3);
     const char *data_c = (const char *)data;
     uart_dev_t* uart = s_uarts[fd];
-    static _lock_t stdout_lock; /* lazily initialised */
-    /* Even though newlib does stream locking on stdout, we need
-       a dedicated stdout UART lock...
-
-       This is because each task has its own _reent structure with
-       unique FILEs for stdin/stdout/stderr, so these are
-       per-thread (lazily initialised by __sinit the first time a
-       stdio function is used, see findfp.c:235.
-
-       It seems like overkill to allocate a FILE-per-task and lock
-       a thread-local stream, but I see no easy way to fix this
-       (pre-__sinit_, tasks have "fake" FILEs ie __sf_fake_stdout
-       which aren't fully valid.)
-    */
-    _lock_acquire_recursive(&stdout_lock);
+    /*
+     *  Even though newlib does stream locking on each individual stream, we need
+     *  a dedicated UART lock if two streams (stdout and stderr) point to the
+     *  same UART.
+     */
+    _lock_acquire_recursive(&s_uart_locks[fd]);
     for (size_t i = 0; i < size; i++) {
 #if CONFIG_NEWLIB_STDOUT_ADDCR
         if (data_c[i]=='\n') {
@@ -59,7 +65,7 @@ static size_t IRAM_ATTR uart_write(int fd, const void * data, size_t size)
 #endif
         uart_tx_char(uart, data_c[i]);
     }
-    _lock_release_recursive(&stdout_lock);
+    _lock_release_recursive(&s_uart_locks[fd]);
     return size;
 }
 

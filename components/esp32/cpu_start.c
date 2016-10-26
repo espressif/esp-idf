@@ -164,9 +164,10 @@ void start_cpu0_default(void)
     esp_setup_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
-    _GLOBAL_REENT->_stdout = fopen("/dev/uart/0", "w"); // use fdopen here?
-    _GLOBAL_REENT->_stderr = _GLOBAL_REENT->_stdout;
-    _GLOBAL_REENT->_stdin  = _GLOBAL_REENT->_stdout;
+    const char* default_uart_dev = "/dev/uart/0";
+    _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
+    _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
+    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     do_global_ctors();
     esp_ipc_init();
     spi_flash_init();

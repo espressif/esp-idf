@@ -71,8 +71,8 @@ typedef struct
         size_t (*write)(int fd, const void * data, size_t size);
     };
     union {
-        _off_t (*lseek_p)(void* p, int fd, _off_t size, int mode);
-        _off_t (*lseek)(int fd, _off_t size, int mode);
+        off_t (*lseek_p)(void* p, int fd, off_t size, int mode);
+        off_t (*lseek)(int fd, off_t size, int mode);
     };
     union {
         ssize_t (*read_p)(void* ctx, int fd, void * dst, size_t size);
@@ -137,7 +137,7 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
  */
 
 ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size);
-_off_t esp_vfs_lseek(struct _reent *r, int fd, _off_t size, int mode);
+off_t esp_vfs_lseek(struct _reent *r, int fd, off_t size, int mode);
 ssize_t esp_vfs_read(struct _reent *r, int fd, void * dst, size_t size);
 int esp_vfs_open(struct _reent *r, const char * path, int flags, int mode);
 int esp_vfs_close(struct _reent *r, int fd);
