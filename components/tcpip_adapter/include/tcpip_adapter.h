@@ -363,8 +363,8 @@ wifi_interface_t tcpip_adapter_get_wifi_if(void *dev);
 /**
  * @brief  Get the station information list
  *
- * @param[in]   wifi_sta_list_t *wifi_sta_list: sta list info
- * @param[out]  tcpip_adapter_sta_list_t *tcpip_sta_list: sta list info
+ * @param[in]   wifi_sta_list_t *wifi_sta_list: station list info
+ * @param[out]  tcpip_adapter_sta_list_t *tcpip_sta_list: station list info
  *
  * @return ESP_OK
  *         ESP_ERR_TCPIP_ADAPTER_NO_MEM

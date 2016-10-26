@@ -235,19 +235,19 @@ esp_err_t esp_wifi_scan_stop(void);
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_get_ap_num(uint16_t *number);
+esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
 
 /**
   * @brief     Get AP list found in last scan
   *
-  * @param     uint16_t *number : as input param, it stores max AP number ap_list can hold, as output param, it store
+  * @param     uint16_t *number : as input param, it stores max AP number ap_records can hold, as output param, it store
                                   the actual AP number this API returns
-  * @param     wifi_ap_list_t *ap_list : a list to hold the found APs
+  * @param     wifi_ap_record_t *ap_records: an wifi_ap_record_t array to hold the found APs
   *
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
-esp_err_t esp_wifi_get_ap_list(uint16_t *number, wifi_ap_list_t *ap_list);
+esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records);
 
 /**
   * @brief     Set current power save type
@@ -471,7 +471,7 @@ esp_err_t esp_wifi_get_config(wifi_interface_t ifx, wifi_config_t *conf);
   *
   * @attention SSC only API
   *
-  * @param     wifi_sta_list_t *sta:  sta list
+  * @param     wifi_sta_list_t *sta:  station list
   *
   * @return    ESP_OK : succeed
   * @return    others : fail

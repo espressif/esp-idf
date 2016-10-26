@@ -109,7 +109,7 @@ typedef struct {
     wifi_second_chan_t second;            /**< second channel of AP */
     int8_t  rssi;                         /**< signal strength of AP */
     wifi_auth_mode_t authmode;            /**< authmode of AP */
-} wifi_ap_list_t;
+} wifi_ap_record_t;
 
 typedef enum {
     WIFI_PS_NONE,    /**< No power save */
@@ -154,10 +154,10 @@ typedef struct {
     uint8_t mac[6];  /**< mac address of sta that associated with ESP32 soft-AP */
 }wifi_sta_info_t;
 
-#define ESP_WIFI_MAX_CONN_NUM  8  /**< max number of sta the eSP32 soft-AP can connect */
+#define ESP_WIFI_MAX_CONN_NUM  (8+2)       /**< max number of sta the eSP32 soft-AP can connect */
 typedef struct {
-    wifi_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM+2]; /**< sta list */
-    uint8_t         num; /**< number of sta that associated with ESP32 soft-AP */
+    wifi_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM]; /**< station list */
+    uint8_t         num; /**< number of station that associated with ESP32 soft-AP */
 }wifi_sta_list_t;
 
 typedef enum {
