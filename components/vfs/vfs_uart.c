@@ -92,6 +92,7 @@ void esp_vfs_dev_uart_register()
         .fstat = &uart_fstat,
         .close = &uart_close,
         .read = NULL, // TODO: implement reading from UART
+        .lseek = NULL,
         .stat = NULL,
         .link = NULL,
         .unlink = NULL,
