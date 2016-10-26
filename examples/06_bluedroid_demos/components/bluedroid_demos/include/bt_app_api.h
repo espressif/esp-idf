@@ -49,14 +49,13 @@ extern void API_Ble_GattcAppRegister (tBT_UUID *p_app_uuid, tBTA_GATTC_CBACK *p_
 
 extern void API_Ble_GattcAppDeregister (tBTA_GATTC_IF client_if);
 
-extern void API_Ble_GattcOpen (tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
-                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport);
+extern void API_Ble_GattcOpen (tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is_direct);
 
 extern void API_GattcCancelOpen (tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is_direct);
 
 extern void API_Ble_GattcClose (UINT16 conn_id);
 
-extern void API_Ble_GattcConfigureMTU (UINT16 conn_id, UINT16 mtu);
+extern tGATT_STATUS API_Ble_GattcConfigureMTU (UINT16 conn_id, UINT16 mtu);
 
 extern void API_Ble_GattcServiceSearchRequest (UINT16 conn_id, tBT_UUID *p_srvc_uuid);
 
@@ -64,6 +63,15 @@ extern tBTA_GATT_STATUS  API_Ble_GattcGetFirstChar (UINT16 conn_id, tBTA_GATT_SR
                                           						   tBT_UUID *p_char_uuid_cond,
                                           						   tBTA_GATTC_CHAR_ID *p_char_result,
                                           						   tBTA_GATT_CHAR_PROP *p_property);
+
+extern tBTA_GATT_STATUS  API_Ble_GattcGetFirstCharDescr (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
+                                                tBT_UUID *p_descr_uuid_cond,
+                                                tBTA_GATTC_CHAR_DESCR_ID *p_descr_result);
+
+extern tBTA_GATT_STATUS  API_Ble_GattcGetNextIncludedService(UINT16 conn_id,
+                                                   tBTA_GATTC_INCL_SVC_ID *p_start_id,
+                                                   tBT_UUID               *p_uuid_cond,
+                                                   tBTA_GATTC_INCL_SVC_ID *p_result);
 
 extern tBTA_GATT_STATUS  API_Ble_GattcGetNextChar (UINT16 conn_id,
                                          tBTA_GATTC_CHAR_ID *p_start_char_id,
@@ -76,7 +84,7 @@ extern tBTA_GATT_STATUS  API_Ble_GattcGetNextCharDescr (UINT16 conn_id,
                                              tBT_UUID           *p_descr_uuid_cond,
                                              tBTA_GATTC_CHAR_DESCR_ID *p_descr_result);
 
-extern tBTA_GATT_STATUS  BTA_GATTC_GetFirstIncludedService (UINT16 conn_id, tBTA_GATT_SRVC_ID *p_srvc_id,
+extern tBTA_GATT_STATUS  API_Ble_GattcGetFirstIncludedService (UINT16 conn_id, tBTA_GATT_SRVC_ID *p_srvc_id,
                                                     tBT_UUID *p_uuid_cond, tBTA_GATTC_INCL_SVC_ID *p_result);
 
 extern void API_Ble_GattcReadCharacteristic (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
@@ -118,6 +126,45 @@ extern tBTA_GATT_STATUS API_Ble_GattcDeregisterForNotifications (tBTA_GATTC_IF c
                                                        BD_ADDR bda,
                                                        tBTA_GATTC_CHAR_ID *p_char_id);
 
+extern void API_Ble_GattsDisable(void);
+
+
+extern void API_Ble_GattsAppRegister(tBT_UUID *p_app_uuid, tBTA_GATTS_CBACK *p_cback);
+
+extern void API_Ble_GattsAppDeregister(tBTA_GATTS_IF server_if);
+
+extern void API_Ble_GattsCreateService(tBTA_GATTS_IF server_if, tBT_UUID *p_service_uuid, UINT8 inst,
+                             UINT16 num_handle, BOOLEAN is_primary);
+
+extern void API_Ble_GattsAddIncludeService(UINT16 service_id, UINT16 included_service_id);
+
+extern void API_Ble_GattsAddCharacteristic (UINT16 service_id,  tBT_UUID  *p_char_uuid,
+                                  tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property);
+
+
+extern void API_Ble_GattsAddCharDescriptor (UINT16 service_id,
+                                  						tBTA_GATT_PERM perm,
+                                  						tBT_UUID  * p_descr_uuid);
+
+
+extern void API_Ble_GattsDeleteService(UINT16 service_id);
+
+extern void API_Ble_GattsStartService(UINT16 service_id, tBTA_GATT_TRANSPORT sup_transport);
+
+extern void API_Ble_GattsStopService(UINT16 service_id);
+
+extern void API_Ble_GattsHandleValueIndication (UINT16 conn_id, UINT16 attr_id, UINT16 data_len,
+                                      								UINT8 *p_data, BOOLEAN need_confirm);
+
+extern void API_Ble_GattsSendRsp (UINT16 conn_id, UINT32 trans_id,
+                        			tBTA_GATT_STATUS status, tBTA_GATTS_RSP *p_msg);
+
+extern void API_Ble_GattsOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda, BOOLEAN is_direct,
+                    tBTA_GATT_TRANSPORT transport);
+
+extern void API_Ble_GattsCancelOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda, BOOLEAN is_direct);
+
+extern void API_Ble_GattsClose(UINT16 conn_id);
 
 
 void API_Ble_PrfEnable (void); 

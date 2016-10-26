@@ -164,38 +164,92 @@ void API_Ble_GattcAppRegister(tBT_UUID *p_app_uuid, tBTA_GATTC_CBACK *p_client_c
 
 void API_Ble_GattcAppDeregister(tBTA_GATTC_IF client_if)
 {
-	
+	BTA_GATTC_AppDeregister(client_if);
 }
 
-void API_Ble_GattcOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda,
-                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport)
+void API_Ble_GattcOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is_direct)
 {
+	tBTA_GATT_TRANSPORT transport = BTA_GATT_TRANSPORT_LE;
+	if(remote_bda == NULL ){
+		LOG_ERROR("Invaild address data \n");
+		return;
+	}
+
+	BTA_GATTC_Open(client_if, remote_bda, is_direct, transport);
+	
+	
+
 	
 }
 
 void API_GattcCancelOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is_direct)
 {
-	
+	if(remote_bda == NULL ){
+		LOG_ERROR("Invaild address data \n");
+		return;
+	}
+
+	BTA_GATTC_CancelOpen(client_if, remote_bda, is_direct);
 }
 
 void API_Ble_GattcClose(UINT16 conn_id)
 {
-	
+	BTA_GATTC_Close(conn_id);
 }
 
 
-void API_Ble_GattcConfigureMTU (UINT16 conn_id, UINT16 mtu)
+tGATT_STATUS API_Ble_GattcConfigureMTU (UINT16 conn_id, UINT16 mtu)
 {
+	if ((mtu < GATT_DEF_BLE_MTU_SIZE) || (mtu > GATT_MAX_MTU_SIZE)){
+		LOG_ERROR("Invalid MTU parameters\n");
+		return GATT_ILLEGAL_PARAMETER;
+	}
+
+	BTA_GATTC_ConfigureMTU (conn_id, mtu);
 	
 }
+
+void API_Ble_GattcServiceSearchRequest (UINT16 conn_id, tBT_UUID *p_srvc_uuid)
+{
+	BTA_GATTC_ServiceSearchRequest(conn_id, p_srvc_uuid);
+}
+
 
 tBTA_GATT_STATUS  API_Ble_GattcGetFirstChar (UINT16 conn_id, tBTA_GATT_SRVC_ID *p_srvc_id,
                                           	tBT_UUID *p_char_uuid_cond,
                                           	tBTA_GATTC_CHAR_ID *p_char_result,
                                           	tBTA_GATT_CHAR_PROP *p_property)
 {
+	tBTA_GATT_STATUS status = 0;
+	
+	if (!p_srvc_id || !p_char_result){
+    	return BTA_GATT_ILLEGAL_PARAMETER;
+	}
+
+	status = BTA_GATTC_GetFirstChar (conn_id, p_srvc_id, p_char_uuid_cond,
+                                     p_char_result, p_property);
+
+	return status;
+	
 	
 }
+
+tBTA_GATT_STATUS  API_Ble_GattcGetFirstCharDescr (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
+                                                tBT_UUID *p_descr_uuid_cond,
+                                                tBTA_GATTC_CHAR_DESCR_ID *p_descr_result)
+{
+	tBTA_GATT_STATUS    status;
+
+    if (!p_char_id || !p_descr_result){
+      return BTA_GATT_ILLEGAL_PARAMETER;
+    }
+
+	status = BTA_GATTC_GetFirstCharDescr (conn_id, p_char_id, p_descr_uuid_cond, p_descr_result);
+
+	return status;
+	
+}
+
 
 tBTA_GATT_STATUS  API_Ble_GattcGetNextChar (UINT16 conn_id,
                                          tBTA_GATTC_CHAR_ID *p_start_char_id,
@@ -204,6 +258,17 @@ tBTA_GATT_STATUS  API_Ble_GattcGetNextChar (UINT16 conn_id,
                                          tBTA_GATT_CHAR_PROP    *p_property)
 {
 	
+	tBTA_GATT_STATUS	status;
+	
+	   if (!p_start_char_id || !p_char_result){
+	   	return BTA_GATT_ILLEGAL_PARAMETER;
+	   }
+
+	status = BTA_GATTC_GetNextChar(conn_id, p_start_char_id, p_char_uuid_cond,
+                                   p_char_result, p_property);
+
+	return status;
+	   
 }
 
 tBTA_GATT_STATUS  API_Ble_GattcGetNextCharDescr (UINT16 conn_id,
@@ -211,19 +276,54 @@ tBTA_GATT_STATUS  API_Ble_GattcGetNextCharDescr (UINT16 conn_id,
                                              tBT_UUID           *p_descr_uuid_cond,
                                              tBTA_GATTC_CHAR_DESCR_ID *p_descr_result)
 {
+	 tBTA_GATT_STATUS status;
+
+    if (!p_start_descr_id || !p_descr_result){
+    	return BTA_GATT_ILLEGAL_PARAMETER;
+    }
+
+	status = BTA_GATTC_GetNextCharDescr (conn_id, p_start_descr_id, p_descr_uuid_cond, p_descr_result);
+
+	return status;
 	
 }
 
-tBTA_GATT_STATUS  BTA_GATTC_GetFirstIncludedService(UINT16 conn_id, tBTA_GATT_SRVC_ID *p_srvc_id,
+tBTA_GATT_STATUS  API_Ble_GattcGetFirstIncludedService(UINT16 conn_id, tBTA_GATT_SRVC_ID *p_srvc_id,
                                                     tBT_UUID *p_uuid_cond, tBTA_GATTC_INCL_SVC_ID *p_result)
 {
 	
+	tBTA_GATT_STATUS status;
+	
+	if (!p_srvc_id || !p_result){
+		return BTA_GATT_ILLEGAL_PARAMETER;
+	}
+
+	status = BTA_GATTC_GetFirstIncludedService(conn_id, p_srvc_id, p_uuid_cond, p_result);
+
+	return status;
 }
+
+tBTA_GATT_STATUS  API_Ble_GattcGetNextIncludedService(UINT16 conn_id,
+                                                   tBTA_GATTC_INCL_SVC_ID *p_start_id,
+                                                   tBT_UUID               *p_uuid_cond,
+                                                   tBTA_GATTC_INCL_SVC_ID *p_result)
+{
+	tBTA_GATT_STATUS status;
+
+    if (!p_start_id || !p_result){
+    	return BTA_GATT_ILLEGAL_PARAMETER;
+    }
+
+	status = BTA_GATTC_GetNextIncludedService(conn_id, p_start_id, p_uuid_cond, p_result);
+
+	return status;
+}
+
 
 void API_Ble_GattcReadCharacteristic(UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
                                   tBTA_GATT_AUTH_REQ auth_req)
 {
-	
+	 BTA_GATTC_ReadCharacteristic(conn_id, p_char_id, auth_req);
 }
 
 
@@ -231,13 +331,13 @@ void API_Ble_GattcReadCharDescr (UINT16 conn_id,
                              					tBTA_GATTC_CHAR_DESCR_ID  *p_descr_id,
                               					tBTA_GATT_AUTH_REQ auth_req)
 {
-	
+	BTA_GATTC_ReadCharDescr (conn_id, p_descr_id, auth_req);
 }
 
 void API_Ble_GattcReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
                             				tBTA_GATT_AUTH_REQ auth_req)
 {
-	
+	 BTA_GATTC_ReadMultiple(conn_id, p_read_multi, auth_req);
 }
 
 void API_Ble_GattcWriteCharValue ( UINT16 conn_id,
@@ -247,7 +347,7 @@ void API_Ble_GattcWriteCharValue ( UINT16 conn_id,
                                 						 UINT8 *p_value,
                                 						 tBTA_GATT_AUTH_REQ auth_req)
 {
-	
+	BTA_GATTC_WriteCharValue (conn_id, p_char_id, write_type, len, p_value, auth_req);
 }
 
 void API_Ble_GattcWriteCharDescr (UINT16 conn_id,
@@ -256,7 +356,7 @@ void API_Ble_GattcWriteCharDescr (UINT16 conn_id,
                               					 tBTA_GATT_UNFMT      *p_data,
                               					 tBTA_GATT_AUTH_REQ auth_req)
 {
-	
+	 BTA_GATTC_WriteCharDescr (conn_id, p_char_descr_id, write_type, p_data, auth_req);
 }
 
 
@@ -264,33 +364,119 @@ void API_Ble_GattcPrepareWrite  (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
                               						UINT16 offset, UINT16 len, UINT8 *p_value,
                               						tBTA_GATT_AUTH_REQ auth_req)
 {
-	
+	BTA_GATTC_PrepareWrite  (conn_id, p_char_id, offset, len, p_value, auth_req);
 }
 
 void  API_Ble_GattcExecuteWrite (UINT16 conn_id, BOOLEAN is_execute)
 {
-	
+	BTA_GATTC_ExecuteWrite (conn_id, is_execute);
 }
 
 void API_Ble_GattcSendIndConfirm (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id)
 {
-	
+	BTA_GATTC_SendIndConfirm (conn_id, p_char_id);
 }
 
 tBTA_GATT_STATUS API_Ble_GattcRegisterForNotifications (tBTA_GATTC_IF client_if,
                                                      BD_ADDR bda,
                                                      tBTA_GATTC_CHAR_ID *p_char_id)
 {
-	
+	tBTA_GATT_STATUS    status = BTA_GATT_ILLEGAL_PARAMETER;
+	status = BTA_GATTC_RegisterForNotifications (client_if, bda, p_char_id);
+
+	return status;
 }
 
 tBTA_GATT_STATUS API_Ble_GattcDeregisterForNotifications (tBTA_GATTC_IF client_if,
                                                        							BD_ADDR bda,
                                                        							tBTA_GATTC_CHAR_ID *p_char_id)
 {
+	tBTA_GATT_STATUS    status = BTA_GATT_ILLEGAL_PARAMETER;
+	status = BTA_GATTC_DeregisterForNotifications (client_if, bda, p_char_id);
+
+	return status;
+}
+
+void API_Ble_GattsDisable(void)
+{
+	// TODO:
+}
+
+void API_Ble_GattsAppDeregister(tBTA_GATTS_IF server_if)
+{
+	// TODO:
+}
+
+void API_Ble_GattsCreateService(tBTA_GATTS_IF server_if, tBT_UUID *p_service_uuid, UINT8 inst,
+                             UINT16 num_handle, BOOLEAN is_primary)
+{
+	// TODO:
+}
+
+
+void API_Ble_GattsAddIncludeService(UINT16 service_id, UINT16 included_service_id)
+{
+	// TODO:
+}
+
+
+void API_Ble_GattsAddCharacteristic (UINT16 service_id,  tBT_UUID  *p_char_uuid,
+                                  					tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property)
+{
+	// TODO:
+}
+
+void API_Ble_GattsAddCharDescriptor (UINT16 service_id,
+													   tBTA_GATT_PERM perm,
+													   tBT_UUID  * p_descr_uuid)
+{
 	
 }
 
+void API_Ble_GattsDeleteService(UINT16 service_id)
+{
+	// TODO:
+}
+
+void API_Ble_GattsStartService(UINT16 service_id, tBTA_GATT_TRANSPORT sup_transport)
+{
+	
+}
+
+
+void API_Ble_GattsStopService(UINT16 service_id)
+{
+	// TODO:
+}
+
+
+void API_Ble_GattsHandleValueIndication (UINT16 conn_id, UINT16 attr_id, UINT16 data_len,
+                                      								UINT8 *p_data, BOOLEAN need_confirm)
+{
+	// TODO:
+}
+
+void API_Ble_GattsSendRsp (UINT16 conn_id, UINT32 trans_id,
+                        			tBTA_GATT_STATUS status, tBTA_GATTS_RSP *p_msg)
+{
+	// TODO:
+}
+
+void API_Ble_GattsOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda, BOOLEAN is_direct,
+				   tBTA_GATT_TRANSPORT transport)
+{
+	// TODO:
+}
+
+void API_Ble_GattsCancelOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda, BOOLEAN is_direct)
+{
+	// TODO:
+}
+
+void API_Ble_GattsClose(UINT16 conn_id)
+{
+	// TODO:
+}
 
 
 
