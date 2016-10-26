@@ -150,12 +150,12 @@ low_level_output(struct netif *netif, struct pbuf *p)
         }
     }
     
-    ieee80211_output(wifi_if, q->payload, pbuf_x_len);
+    esp_wifi_internal_tx(wifi_if, q->payload, pbuf_x_len);
     return ERR_OK;
     
 #else
     for(q = p; q != NULL; q = q->next) {
-        ieee80211_output(wifi_if, q->payload, q->len);
+        esp_wifi_internal_tx(wifi_if, q->payload, q->len);
     }
 #endif
 
