@@ -36,7 +36,7 @@
 
 #include "lwip/opt.h"
 
-#ifdef LWIP_ESP8266
+#if ESP_DNS
 #include "lwip/err.h"
 #endif
 

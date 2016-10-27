@@ -51,11 +51,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 #if IP_REASSEMBLY
 /**
  * The IP reassembly code currently has the following limitations:

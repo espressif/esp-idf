@@ -172,6 +172,14 @@ menuconfig ENABLE_MEMORY_DEBUG
     help
         Enable this option to show malloc heap block and memory crash detect
 
+config FREERTOS_ISR_STACKSIZE
+    int "ISR stack size"
+    range 1536 32768
+    default 1536
+    help
+        The interrupt handlers have their own stack. The size of the stack can be defined here. 
+        Each processor has its own stack, so the total size occupied will be twice this.
+
 menuconfig FREERTOS_DEBUG_INTERNALS
     bool "Debug FreeRTOS internals"
     default n
@@ -197,13 +205,6 @@ config FREERTOS_PORTMUX_DEBUG_RECURSIVE
         If enabled, additional debug information will be printed for recursive
         portMUX usage.
 
-config FREERTOS_ISR_STACKSIZE
-    int "ISR stack size"
-    range 1536 32768
-    default 1536
-    help
-        The interrupt handlers have their own stack. The size of the stack can be defined here. 
-        Each processor has its own stack, so the total size occupied will be twice this.
 
 
 endif # FREERTOS_DEBUG_INTERNALS

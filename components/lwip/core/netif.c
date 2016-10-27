@@ -81,10 +81,6 @@
 #define NETIF_LINK_CALLBACK(n)
 #endif /* LWIP_NETIF_LINK_CALLBACK */
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 struct netif *netif_list;
 struct netif *netif_default;
 
@@ -220,7 +216,7 @@ netif_add(struct netif *netif,
   /* netif not under DHCP control by default */
   netif->dhcp = NULL;
 
-#ifdef LWIP_ESP8266
+#if ESP_DHCP
   netif->dhcps_pcb = NULL;
 #endif
 
@@ -233,8 +229,7 @@ netif_add(struct netif *netif,
 #endif /* LWIP_AUTOIP */
 #if LWIP_IPV6_AUTOCONFIG
 
-#ifdef LWIP_ESP8266
-//#if 0
+#if ESP_IPV6_AUTOCONFIG
   netif->ip6_autoconfig_enabled = 1;
 #else
   /* IPv6 address autoconfiguration not enabled by default */
@@ -973,7 +968,7 @@ netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit)
     }
   }
   
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
     ip6_addr_set( ip_2_ip6(&netif->link_local_addr), ip_2_ip6(&netif->ip6_addr[0]) );
 #endif
 
@@ -1028,7 +1023,7 @@ netif_add_ip6_address(struct netif *netif, const ip6_addr_t *ip6addr, s8_t *chos
 }
 
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 void
 netif_create_ip4_linklocal_address(struct netif * netif)
 {

@@ -234,7 +234,7 @@ static inline unsigned portENTER_CRITICAL_NESTED() { unsigned state = XTOS_SET_I
  * *bitwise inverse* of the old mem if the mem wasn't written. This doesn't seem to happen on the
  * ESP32, though. (Would show up directly if it did because the magic wouldn't match.)
  */
-inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set) {
+static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set) {
     __asm__ __volatile__(
         "WSR 	    %2,SCOMPARE1 \n"
         "ISYNC      \n"

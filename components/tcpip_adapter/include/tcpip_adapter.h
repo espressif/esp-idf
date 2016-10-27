@@ -67,11 +67,15 @@ typedef struct {
 typedef dhcps_lease_t tcpip_adapter_dhcps_lease_t;
 
 #if CONFIG_DHCP_STA_LIST 
-struct station_list {
-    STAILQ_ENTRY(station_list) next;
+typedef struct {
     uint8_t mac[6];
     ip4_addr_t ip;
-};
+}tcpip_adapter_sta_info_t;
+
+typedef struct {
+    tcpip_adapter_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM+2];
+    uint8_t num;
+}tcpip_adapter_sta_list_t;
 #endif
 
 #endif
@@ -359,26 +363,14 @@ wifi_interface_t tcpip_adapter_get_wifi_if(void *dev);
 /**
  * @brief  Get the station information list
  *
- * @note   This function should be called in AP mode and dhcp server started, and the list should
- *         be by using tcpip_adapter_free_sta_list.
- *
- * @param[in]   sta_info: station information
- * @param[out]  sta_list: station information list
+ * @param[in]   wifi_sta_list_t *wifi_sta_list: station list info
+ * @param[out]  tcpip_adapter_sta_list_t *tcpip_sta_list: station list info
  *
  * @return ESP_OK
  *         ESP_ERR_TCPIP_ADAPTER_NO_MEM
  *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
  */
-esp_err_t tcpip_adapter_get_sta_list(struct station_info *sta_info, struct station_list **sta_list);
-
-/**
- * @brief Free the station information list's memory
- *
- * @param  sta_list: station information list
- *
- * @return ESP_OK
- */
-esp_err_t tcpip_adapter_free_sta_list(struct station_list *sta_list);
+esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list);
 
 #ifdef __cplusplus
 }

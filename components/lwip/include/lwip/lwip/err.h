@@ -60,7 +60,7 @@ typedef s8_t err_t;
 #define ERR_USE        -8    /* Address in use.          */
 
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 #define ERR_ALREADY    -9	 /* Already connected.       */
 #define ERR_ISCONN     -10   /* Conn already established.*/
 #define ERR_IS_FATAL(e) ((e) < ERR_ISCONN)

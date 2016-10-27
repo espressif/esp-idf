@@ -55,10 +55,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 /* netconns are polled once per second (e.g. continue write on memory error) */
 #define NETCONN_TCP_POLL_INTERVAL 2
 
@@ -314,8 +310,8 @@ poll_tcp(void *arg, struct tcp_pcb *pcb)
   if (conn->flags & NETCONN_FLAG_CHECK_WRITESPACE) {
     /* If the queued byte- or pbuf-count drops below the configured low-water limit,
        let select mark this pcb as writable again. */
-    if ((conn->pcb.tcp != NULL) && (tcp_sndbuf(conn->pcb.tcp) > TCP_SNDLOWAT) &&
-      (tcp_sndqueuelen(conn->pcb.tcp) < TCP_SNDQUEUELOWAT)) {
+    if ((conn->pcb.tcp != NULL) && (tcp_sndbuf(conn->pcb.tcp) > TCP_SNDLOWAT(conn->pcb.tcp)) &&
+      (tcp_sndqueuelen(conn->pcb.tcp) < TCP_SNDQUEUELOWAT(conn->pcb.tcp))) {
       conn->flags &= ~NETCONN_FLAG_CHECK_WRITESPACE;
       API_EVENT(conn, NETCONN_EVT_SENDPLUS, 0);
     }
@@ -348,8 +344,8 @@ sent_tcp(void *arg, struct tcp_pcb *pcb, u16_t len)
 
     /* If the queued byte- or pbuf-count drops below the configured low-water limit,
        let select mark this pcb as writable again. */
-    if ((conn->pcb.tcp != NULL) && (tcp_sndbuf(conn->pcb.tcp) > TCP_SNDLOWAT) &&
-      (tcp_sndqueuelen(conn->pcb.tcp) < TCP_SNDQUEUELOWAT)) {
+    if ((conn->pcb.tcp != NULL) && (tcp_sndbuf(conn->pcb.tcp) > TCP_SNDLOWAT(conn->pcb.tcp) &&
+      (tcp_sndqueuelen(conn->pcb.tcp) < TCP_SNDQUEUELOWAT(conn->pcb.tcp)))) {
       conn->flags &= ~NETCONN_FLAG_CHECK_WRITESPACE;
       API_EVENT(conn, NETCONN_EVT_SENDPLUS, len);
     }
@@ -1216,16 +1212,7 @@ lwip_netconn_do_connect(void *m)
       if (msg->conn->state == NETCONN_CONNECT) {
         msg->err = ERR_ALREADY;
       } else if (msg->conn->state != NETCONN_NONE) {
-
-#ifdef LWIP_ESP8266
-    if( msg->conn->pcb.tcp->state == ESTABLISHED )
         msg->err = ERR_ISCONN;
-    else
-        msg->err = ERR_ALREADY;
-#else
-        msg->err = ERR_ISCONN;
-#endif
-
       } else {
         setup_tcp(msg->conn);
         msg->err = tcp_connect(msg->conn->pcb.tcp, API_EXPR_REF(msg->msg.bc.ipaddr),
@@ -1540,8 +1527,8 @@ err_mem:
            and let poll_tcp check writable space to mark the pcb writable again */
         API_EVENT(conn, NETCONN_EVT_SENDMINUS, len);
         conn->flags |= NETCONN_FLAG_CHECK_WRITESPACE;
-      } else if ((tcp_sndbuf(conn->pcb.tcp) <= TCP_SNDLOWAT) ||
-                 (tcp_sndqueuelen(conn->pcb.tcp) >= TCP_SNDQUEUELOWAT)) {
+      } else if ((tcp_sndbuf(conn->pcb.tcp) <= TCP_SNDLOWAT(conn->pcb.tcp)) ||
+                 (tcp_sndqueuelen(conn->pcb.tcp) >= TCP_SNDQUEUELOWAT(conn->pcb.tcp))) {
         /* The queued byte- or pbuf-count exceeds the configured low-water limit,
            let select mark this pcb as non-writable. */
         API_EVENT(conn, NETCONN_EVT_SENDMINUS, len);
@@ -1646,14 +1633,7 @@ lwip_netconn_do_write(void *m)
         if (lwip_netconn_do_writemore(msg->conn, 0) != ERR_OK) {
           LWIP_ASSERT("state!", msg->conn->state == NETCONN_WRITE);
           UNLOCK_TCPIP_CORE();
-
-#ifdef LWIP_ESP8266
-//#if 0
-            sys_arch_sem_wait( LWIP_API_MSG_SND_SEM(msg), 0);
-#else
-            sys_arch_sem_wait(LWIP_API_MSG_SEM(msg), 0);
-#endif
-                
+          sys_arch_sem_wait(LWIP_API_MSG_SEM(msg), 0);
           LOCK_TCPIP_CORE();
           LWIP_ASSERT("state!", msg->conn->state != NETCONN_WRITE);
         }

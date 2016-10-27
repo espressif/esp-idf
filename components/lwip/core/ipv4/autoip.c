@@ -76,11 +76,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 /* 169.254.0.0 */
 #define AUTOIP_NET         0xA9FE0000
 /* 169.254.1.0 */

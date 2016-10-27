@@ -61,7 +61,7 @@
 #include "lwip/api.h"
 #include "netif/ppp/ppp_impl.h"
 
-#ifndef PERF
+#if ! ESP_PERF
 /* Compile-time sanity checks for configuration errors.
  * These can be done independently of LWIP_DEBUG, without penalty.
  */
@@ -135,13 +135,15 @@
 //#endif
 #else /* LWIP_WND_SCALE */
 
-#ifndef LWIP_ESP8266
+#if (ESP_PER_SOC_TCP_WND == 0)
 #if (LWIP_TCP && (TCP_WND > 0xffff))
   #error "If you want to use TCP, TCP_WND must fit in an u16_t, so, you have to reduce it in your lwipopts.h (or enable window scaling)"
 #endif
 #endif
 
 #endif /* LWIP_WND_SCALE */
+
+#if (ESP_PER_SOC_TCP_WND == 0)
 #if (LWIP_TCP && (TCP_SND_QUEUELEN > 0xffff))
   #error "If you want to use TCP, TCP_SND_QUEUELEN must fit in an u16_t, so, you have to reduce it in your lwipopts.h"
 #endif
@@ -149,7 +151,6 @@
   #error "TCP_SND_QUEUELEN must be at least 2 for no-copy TCP writes to work"
 #endif
 
-#ifndef LWIP_ESP8266
 #if (LWIP_TCP && ((TCP_MAXRTX > 12) || (TCP_SYNMAXRTX > 12)))
   #error "If you want to use TCP, TCP_MAXRTX and TCP_SYNMAXRTX must less or equal to 12 (due to tcp_backoff table), so, you have to reduce them in your lwipopts.h"
 #endif
@@ -289,6 +290,8 @@
 #if !MEMP_MEM_MALLOC && (MEMP_NUM_TCP_SEG < TCP_SND_QUEUELEN)
   #error "lwip_sanity_check: WARNING: MEMP_NUM_TCP_SEG should be at least as big as TCP_SND_QUEUELEN. If you know what you are doing, define LWIP_DISABLE_TCP_SANITY_CHECKS to 1 to disable this error."
 #endif
+
+#if (ESP_PER_SOC_TCP_WND == 0)
 #if TCP_SND_BUF < (2 * TCP_MSS)
   #error "lwip_sanity_check: WARNING: TCP_SND_BUF must be at least as much as (2 * TCP_MSS) for things to work smoothly. If you know what you are doing, define LWIP_DISABLE_TCP_SANITY_CHECKS to 1 to disable this error."
 #endif
@@ -304,11 +307,13 @@
 #if TCP_SNDQUEUELOWAT >= TCP_SND_QUEUELEN
   #error "lwip_sanity_check: WARNING: TCP_SNDQUEUELOWAT must be less than TCP_SND_QUEUELEN. If you know what you are doing, define LWIP_DISABLE_TCP_SANITY_CHECKS to 1 to disable this error."
 #endif
+#endif
+
 #if !MEMP_MEM_MALLOC && (PBUF_POOL_BUFSIZE <= (PBUF_LINK_ENCAPSULATION_HLEN + PBUF_LINK_HLEN + PBUF_IP_HLEN + PBUF_TRANSPORT_HLEN))
   #error "lwip_sanity_check: WARNING: PBUF_POOL_BUFSIZE does not provide enough space for protocol headers. If you know what you are doing, define LWIP_DISABLE_TCP_SANITY_CHECKS to 1 to disable this error."
 #endif
 
-#ifndef LWIP_ESP8266
+#if ! ESP_LWIP
 #if !MEMP_MEM_MALLOC && (TCP_WND > (PBUF_POOL_SIZE * (PBUF_POOL_BUFSIZE - (PBUF_LINK_ENCAPSULATION_HLEN + PBUF_LINK_HLEN + PBUF_IP_HLEN + PBUF_TRANSPORT_HLEN))))
   #error "lwip_sanity_check: WARNING: TCP_WND is larger than space provided by PBUF_POOL_SIZE * (PBUF_POOL_BUFSIZE - protocol headers). If you know what you are doing, define LWIP_DISABLE_TCP_SANITY_CHECKS to 1 to disable this error."
 #endif
@@ -328,13 +333,6 @@
 void
 lwip_init(void)
 {
-#ifdef LWIP_ESP8266
-//  MEMP_NUM_TCP_PCB = 5;
-//  TCP_WND = (4 * TCP_MSS);
-//  TCP_MAXRTX = 12;
-//  TCP_SYNMAXRTX = 6;
-#endif
-
   /* Modules initialization */
   stats_init();
 #if !NO_SYS
