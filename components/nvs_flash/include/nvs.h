@@ -28,23 +28,27 @@ extern "C" {
  */
 typedef uint32_t nvs_handle;
 
-#define ESP_ERR_NVS_BASE                0x1100
-#define ESP_ERR_NVS_NOT_INITIALIZED     (ESP_ERR_NVS_BASE + 0x01)
-#define ESP_ERR_NVS_NOT_FOUND           (ESP_ERR_NVS_BASE + 0x02)
-#define ESP_ERR_NVS_TYPE_MISMATCH       (ESP_ERR_NVS_BASE + 0x03)
-#define ESP_ERR_NVS_READ_ONLY           (ESP_ERR_NVS_BASE + 0x04)
-#define ESP_ERR_NVS_NOT_ENOUGH_SPACE    (ESP_ERR_NVS_BASE + 0x05)
-#define ESP_ERR_NVS_INVALID_NAME        (ESP_ERR_NVS_BASE + 0x06)
-#define ESP_ERR_NVS_INVALID_HANDLE      (ESP_ERR_NVS_BASE + 0x07)
-#define ESP_ERR_NVS_REMOVE_FAILED       (ESP_ERR_NVS_BASE + 0x08)
-#define ESP_ERR_NVS_KEY_TOO_LONG        (ESP_ERR_NVS_BASE + 0x09)
-#define ESP_ERR_NVS_PAGE_FULL           (ESP_ERR_NVS_BASE + 0x0a)
-#define ESP_ERR_NVS_INVALID_STATE       (ESP_ERR_NVS_BASE + 0x0b)
-#define ESP_ERR_NVS_INVALID_LENGTH      (ESP_ERR_NVS_BASE + 0x0c)
+#define ESP_ERR_NVS_BASE                0x1100                     /*!< Starting number of error codes */
+#define ESP_ERR_NVS_NOT_INITIALIZED     (ESP_ERR_NVS_BASE + 0x01)  /*!< The storage driver is not initialized */
+#define ESP_ERR_NVS_NOT_FOUND           (ESP_ERR_NVS_BASE + 0x02)  /*!< Id namespace doesn’t exist yet and mode is NVS_READONLY */
+#define ESP_ERR_NVS_TYPE_MISMATCH       (ESP_ERR_NVS_BASE + 0x03)  /*!< TBA */
+#define ESP_ERR_NVS_READ_ONLY           (ESP_ERR_NVS_BASE + 0x04)  /*!< Storage handle was opened as read only */
+#define ESP_ERR_NVS_NOT_ENOUGH_SPACE    (ESP_ERR_NVS_BASE + 0x05)  /*!< There is not enough space in the underlying storage to save the value */
+#define ESP_ERR_NVS_INVALID_NAME        (ESP_ERR_NVS_BASE + 0x06)  /*!< Namespace name doesn’t satisfy constraints */
+#define ESP_ERR_NVS_INVALID_HANDLE      (ESP_ERR_NVS_BASE + 0x07)  /*!< Handle has been closed or is NULL */
+#define ESP_ERR_NVS_REMOVE_FAILED       (ESP_ERR_NVS_BASE + 0x08)  /*!< The value wasn’t updated because flash write operation has failed. The value was written however, and update will be finished after re-initialization of nvs, provided that flash operation doesn’t fail again. */
+#define ESP_ERR_NVS_KEY_TOO_LONG        (ESP_ERR_NVS_BASE + 0x09)  /*!< TBA */
+#define ESP_ERR_NVS_PAGE_FULL           (ESP_ERR_NVS_BASE + 0x0a)  /*!< TBA */
+#define ESP_ERR_NVS_INVALID_STATE       (ESP_ERR_NVS_BASE + 0x0b)  /*!< TBA */
+#define ESP_ERR_NVS_INVALID_LENGTH      (ESP_ERR_NVS_BASE + 0x0c)  /*!< TBA */
 
+/**
+ * @brief Mode of opening the non-volatile storage
+ *
+ */
 typedef enum {
-	NVS_READONLY,
-	NVS_READWRITE
+	NVS_READONLY,  /*!< Read only */
+	NVS_READWRITE  /*!< Read and write */
 } nvs_open_mode;
 
 /**
@@ -129,24 +133,26 @@ esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, si
  * It is suggested that nvs_get/set_str is used for zero-terminated C strings, and
  * nvs_get/set_blob used for arbitrary data structures.
  *
- * Example of using nvs_get_i32:
+ * \code{c}
+ * // Example of using nvs_get_i32:
  * int32_t max_buffer_size = 4096; // default value
  * esp_err_t err = nvs_get_i32(my_handle, "max_buffer_size", &max_buffer_size);
  * assert(err == ESP_OK || err == ESP_ERR_NVS_NOT_FOUND);
  * // if ESP_ERR_NVS_NOT_FOUND was returned, max_buffer_size will still
  * // have its default value.
  *
- * Example (without error checking) of using nvs_get_str to get a string into dynamic array:
+ * // Example (without error checking) of using nvs_get_str to get a string into dynamic array:
  * size_t required_size;
  * nvs_get_str(my_handle, "server_name", NULL, &required_size);
  * char* server_name = malloc(required_size);
  * nvs_get_str(my_handle, "server_name", server_name, &required_size);
  *
- * Example (without error checking) of using nvs_get_blob to get a binary data
+ * // Example (without error checking) of using nvs_get_blob to get a binary data
  * into a static array:
  * uint8_t mac_addr[6];
  * size_t size = sizeof(mac_addr);
  * nvs_get_blob(my_handle, "dst_mac_addr", mac_addr, &size);
+ * \endcode
  *
  * @param[in]     handle     Handle obtained from nvs_open function.
  * @param[in]     key        Key name. Maximal length is determined by the underlying
