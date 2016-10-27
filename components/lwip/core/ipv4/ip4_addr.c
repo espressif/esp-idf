@@ -45,17 +45,8 @@
 
 /* used by IP_ADDR_ANY and IP_ADDR_BROADCAST in ip_addr.h */
 
-#ifdef LWIP_ESP8266
-//TO_DO
-//const ip_addr_t ip_addr_any ICACHE_RODATA_ATTR STORE_ATTR = IPADDR4_INIT(IPADDR_ANY);
-//const ip_addr_t ip_addr_broadcast ICACHE_RODATA_ATTR STORE_ATTR = IPADDR4_INIT(IPADDR_BROADCAST);
 const ip_addr_t ip_addr_any = IPADDR4_INIT(IPADDR_ANY);
 const ip_addr_t ip_addr_broadcast = IPADDR4_INIT(IPADDR_BROADCAST);
-#else
-const ip_addr_t ip_addr_any = IPADDR4_INIT(IPADDR_ANY);
-const ip_addr_t ip_addr_broadcast = IPADDR4_INIT(IPADDR_BROADCAST);
-#endif
-
 
 /**
  * Determine if an address is a broadcast address on a network interface
@@ -170,7 +161,7 @@ ip4addr_aton(const char *cp, ip4_addr_t *addr)
   u32_t parts[4];
   u32_t *pp = parts;
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 //#if 0
   char ch;
   unsigned long cutoff;
@@ -199,8 +190,7 @@ ip4addr_aton(const char *cp, ip4_addr_t *addr)
       }
     }
     
-#ifdef LWIP_ESP8266
-//#if 0
+#if ESP_IP4_ATON
     cutoff =(unsigned long)0xffffffff / (unsigned long)base;
     cutlim =(unsigned long)0xffffffff % (unsigned long)base;
     for (;;) {

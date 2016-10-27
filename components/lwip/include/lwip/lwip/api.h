@@ -185,10 +185,6 @@ struct netconn {
   /** sem that is used to synchronously execute functions in the core context */
   sys_sem_t op_completed;
 
-#ifdef LWIP_ESP8266
-  sys_sem_t snd_op_completed;	//only for snd semphore
-#endif
-  
 #endif
 
   /** mbox where received packets are stored until they are fetched

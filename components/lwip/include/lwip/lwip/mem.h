@@ -51,8 +51,6 @@ typedef size_t mem_size_t;
  * allow these defines to be overridden.
  */
 
-#ifndef MEMLEAK_DEBUG
-
 #ifndef mem_free
 #define mem_free free
 #endif
@@ -62,41 +60,6 @@ typedef size_t mem_size_t;
 #ifndef mem_calloc
 #define mem_calloc calloc
 #endif
-
-/*      DYC_NEED_TO_DO_LATER
-#ifndef mem_realloc
-#define mem_realloc 
-#endif
-#ifndef mem_zalloc
-#define mem_zalloc
-#endif
-*/
-
-#else
-/*
-#ifndef mem_free
-#define mem_free(s) \
-	do{\
-		const char *file = mem_debug_file;\
-		vPortFree(s, file, __LINE__);\
-	}while(0)
-#endif
-#ifndef mem_malloc
-#define mem_malloc(s) ({const char *file = mem_debug_file; pvPortMalloc(s, file, __LINE__);})
-#endif
-#ifndef mem_calloc
-#define mem_calloc(s) ({const char *file = mem_debug_file; pvPortCalloc(s, file, __LINE__);})
-#endif
-#ifndef mem_realloc
-#define mem_realloc(p, s) ({const char *file = mem_debug_file; pvPortRealloc(p, s, file, __LINE__);})
-#endif
-#ifndef mem_zalloc
-#define mem_zalloc(s) ({const char *file = mem_debug_file; pvPortZalloc(s, file, __LINE__);})
-#endif
-*/
-#endif
-
-
 
 /* Since there is no C library allocation function to shrink memory without
    moving it, define this to nothing. */

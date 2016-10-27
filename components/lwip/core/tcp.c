@@ -57,10 +57,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 #ifndef TCP_LOCAL_PORT_RANGE_START
 /* From http://www.iana.org/assignments/port-numbers:
    "The Dynamic and/or Private Ports are those from 49152 through 65535" */
@@ -77,14 +73,7 @@ static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
 #define TCP_KEEP_INTVL(pcb) TCP_KEEPINTVL_DEFAULT
 #endif /* LWIP_TCP_KEEPALIVE */
 
-#ifdef LWIP_ESP8266
-//TO_DO
-//char tcp_state_str[12];
-//const char tcp_state_str_rodata[][12] ICACHE_RODATA_ATTR STORE_ATTR = {
 const char * const tcp_state_str[] = {
-#else
-const char * const tcp_state_str[] = {
-#endif
   "CLOSED",
   "LISTEN",
   "SYN_SENT",
@@ -100,27 +89,14 @@ const char * const tcp_state_str[] = {
 
 
 /* last local TCP port */
-#ifdef LWIP_ESP8266
 static s16_t tcp_port = TCP_LOCAL_PORT_RANGE_START;
-#else
-static u16_t tcp_port = TCP_LOCAL_PORT_RANGE_START;
-#endif
 
 /* Incremented every coarse grained timer shot (typically every 500 ms). */
 u32_t tcp_ticks;
 
-#ifdef LWIP_ESP8266
-//TO_DO
-//const u8_t tcp_backoff[13] ICACHE_RODATA_ATTR STORE_ATTR ={ 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7};
-//const u8_t tcp_persist_backoff[7] ICACHE_RODATA_ATTR STORE_ATTR = { 3, 6, 12, 24, 48, 96, 120 };
-
-const u8_t tcp_backoff[13] = { 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7};
-const u8_t tcp_persist_backoff[7] = { 3, 6, 12, 24, 48, 96, 120 };
-#else
 const u8_t tcp_backoff[13] = { 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7};
  /* Times per slowtmr hits */
 const u8_t tcp_persist_backoff[7] = { 3, 6, 12, 24, 48, 96, 120 };
-#endif
 
 
 /* The TCP PCB lists. */
@@ -136,18 +112,8 @@ struct tcp_pcb *tcp_active_pcbs;
 struct tcp_pcb *tcp_tw_pcbs;
 
 /** An array with all (non-temporary) PCB lists, mainly used for smaller code size */
-#ifdef LWIP_ESP8266
-//TO_DO
-//struct tcp_pcb ** const tcp_pcb_lists[] ICACHE_RODATA_ATTR STORE_ATTR = {&tcp_listen_pcbs.pcbs, &tcp_bound_pcbs,
-   //     &tcp_active_pcbs, &tcp_tw_pcbs};
 struct tcp_pcb ** const tcp_pcb_lists[] = {&tcp_listen_pcbs.pcbs, &tcp_bound_pcbs,
         &tcp_active_pcbs, &tcp_tw_pcbs};
-
-#else
-struct tcp_pcb ** const tcp_pcb_lists[] = {&tcp_listen_pcbs.pcbs, &tcp_bound_pcbs,
-        &tcp_active_pcbs, &tcp_tw_pcbs};
-#endif
-
 
 u8_t tcp_active_pcbs_changed;
 
@@ -720,7 +686,7 @@ tcp_new_port(void)
 
 again:
 
-#ifdef LWIP_ESP8266
+#if ESP_RANDOM_TCP_PORT
 	tcp_port = system_get_time();
 	if (tcp_port < 0)
 		tcp_port = LWIP_RAND() - tcp_port;
@@ -915,13 +881,7 @@ tcp_slowtmr_start:
         
         /* If snd_wnd is zero, use persist timer to send 1 byte probes
          * instead of using the standard retransmission mechanism. */
-#ifdef LWIP_ESP8266
-//NEED TO DO
-        //u8_t backoff_cnt = system_get_data_of_array_8(tcp_persist_backoff, pcb->persist_backoff-1);
         u8_t backoff_cnt = tcp_persist_backoff[pcb->persist_backoff-1];
-#else
-        u8_t backoff_cnt = tcp_persist_backoff[pcb->persist_backoff-1];
-#endif
 
         if (pcb->persist_cnt < backoff_cnt) {
           pcb->persist_cnt++;
@@ -949,15 +909,7 @@ tcp_slowtmr_start:
           /* Double retransmission time-out unless we are trying to
            * connect to somebody (i.e., we are in SYN_SENT). */
           if (pcb->state != SYN_SENT) {
-
-#ifdef LWIP_ESP8266
-//TO_DO
-//            pcb->rto = ((pcb->sa >> 3) + pcb->sv) << system_get_data_of_array_8(tcp_backoff, pcb->nrtx);  
               pcb->rto = ((pcb->sa >> 3) + pcb->sv) << tcp_backoff[pcb->nrtx];
-#else
-              pcb->rto = ((pcb->sa >> 3) + pcb->sv) << tcp_backoff[pcb->nrtx];
-#endif
-
           }
 
           /* Reset the retransmission timer. */
@@ -1436,7 +1388,7 @@ tcp_kill_timewait(void)
   }
 }
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 /**
  * Kills the oldest connection that is in FIN_WAIT_2 state.
  * Called from tcp_alloc() if no more connections are available.
@@ -1502,7 +1454,7 @@ tcp_alloc(u8_t prio)
   struct tcp_pcb *pcb;
   u32_t iss;
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
     /*Kills the oldest connection that is in TIME_WAIT state.*/
     u8_t time_wait_num = 0;
     for(pcb = tcp_tw_pcbs; pcb != NULL; pcb = pcb->next) {
@@ -2015,14 +1967,7 @@ void tcp_netif_ipv4_addr_changed(const ip4_addr_t* old_addr, const ip4_addr_t* n
 const char*
 tcp_debug_state_str(enum tcp_state s)
 {
-#ifdef LWIP_ESP8266
-//TO_DO
-      //system_get_string_from_flash(tcp_state_str_rodata[s], tcp_state_str, 12);
-      //return tcp_state_str;
       return tcp_state_str[s];
-#else
-      return tcp_state_str[s];
-#endif
 }
 
 #if TCP_DEBUG || TCP_INPUT_DEBUG || TCP_OUTPUT_DEBUG

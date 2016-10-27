@@ -56,16 +56,8 @@
 #define IFNAME0 'e'
 #define IFNAME1 'n'
 
-#ifdef LWIP_ESP8266
-//TO_DO
-//char *hostname;
-//bool default_hostname = 1;
-
 static char hostname[16];
-#else
-static char hostname[16];
-#endif
-#ifdef PERF
+#if ESP_PERF
 uint32_t g_rx_alloc_pbuf_fail_cnt = 0;
 #endif
 
@@ -95,7 +87,7 @@ low_level_init(struct netif *netif)
   /* don't set NETIF_FLAG_ETHARP if this device is not an ethernet one */
   netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
   
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 
 #if LWIP_IGMP
 
@@ -133,7 +125,7 @@ low_level_output(struct netif *netif, struct pbuf *p)
     return ERR_IF;
   } 
   
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
     q = p;
     u16_t pbuf_x_len = 0;
     pbuf_x_len = q->len;
@@ -172,7 +164,7 @@ low_level_output(struct netif *netif, struct pbuf *p)
  * @param netif the lwip network interface structure for this ethernetif
  */
 void
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
 #else
 wlanif_input(struct netif *netif, void *buffer, uint16 len)
@@ -180,17 +172,17 @@ wlanif_input(struct netif *netif, void *buffer, uint16 len)
 {
   struct pbuf *p;
   
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
     if(buffer== NULL)
     	goto _exit;
     if(netif == NULL)
     	goto _exit;
 #endif
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
   p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
   if (p == NULL){
-#ifdef PERF
+#if ESP_PERF
       g_rx_alloc_pbuf_fail_cnt++;
 #endif
       return;
@@ -236,7 +228,7 @@ wlanif_init(struct netif *netif)
 #if LWIP_NETIF_HOSTNAME
   /* Initialize interface hostname */
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 //TO_DO
 /*
   if ((struct netif *)wifi_get_netif(STATION_IF) == netif) {

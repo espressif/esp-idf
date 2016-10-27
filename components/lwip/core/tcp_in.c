@@ -60,11 +60,6 @@
 #include "lwip/nd6.h"
 #endif /* LWIP_ND6_TCP_REACHABILITY_HINTS */
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 /** Initial CWND calculation as defined RFC 2581 */
 #define LWIP_TCP_CALC_INITIAL_CWND(mss) LWIP_MIN((4U * (mss)), LWIP_MAX((2U * (mss)), 4380U));
 /** Initial slow start threshold value: we use the full window */
@@ -329,20 +324,6 @@ tcp_input(struct pbuf *p, struct netif *inp)
 
 
   if (pcb != NULL) {
-
-#ifdef LWIP_ESP8266
-//No Need Any more
-/*
-	extern char RxNodeNum(void);
-	if(RxNodeNum() <= 2)
-	{
-extern void pbuf_free_ooseq(void);
-		pbuf_free_ooseq();
-	}
-*/
-#endif
-
-    
     /* The incoming segment belongs to a connection. */
 #if TCP_INPUT_DEBUG
     tcp_debug_print_state(pcb->state);
