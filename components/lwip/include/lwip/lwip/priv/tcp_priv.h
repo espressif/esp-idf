@@ -92,7 +92,7 @@ err_t            tcp_process_refused_data(struct tcp_pcb *pcb);
                             ((tpcb)->flags & (TF_NODELAY | TF_INFR)) || \
                             (((tpcb)->unsent != NULL) && (((tpcb)->unsent->next != NULL) || \
                               ((tpcb)->unsent->len >= (tpcb)->mss))) || \
-                            ((tcp_sndbuf(tpcb) == 0) || (tcp_sndqueuelen(tpcb) >= TCP_SND_QUEUELEN)) \
+                            ((tcp_sndbuf(tpcb) == 0) || (tcp_sndqueuelen(tpcb) >= TCP_SND_QUEUELEN(tpcb))) \
                             ) ? 1 : 0)
 #define tcp_output_nagle(tpcb) (tcp_do_output_nagle(tpcb) ? tcp_output(tpcb) : ERR_OK)
 

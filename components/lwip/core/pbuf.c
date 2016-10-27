@@ -83,6 +83,7 @@ static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
 #endif
 
 #ifdef LWIP_ESP8266
+#include "esp_wifi_internal.h"
 #define EP_OFFSET 0
 #endif
 
@@ -764,8 +765,7 @@ pbuf_free(struct pbuf *p)
         } else if (type == PBUF_ROM || type == PBUF_REF) {
         
 #ifdef LWIP_ESP8266
-          extern void system_pp_recycle_rx_pkt(void*);
-          if (type == PBUF_REF && p->eb != NULL ) system_pp_recycle_rx_pkt(p->eb);
+          if (type == PBUF_REF && p->eb != NULL ) esp_wifi_internal_free_rx_buffer(p->eb);
 #endif
 
             memp_free(MEMP_PBUF, p);

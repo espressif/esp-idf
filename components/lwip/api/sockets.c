@@ -388,10 +388,8 @@ static void lwip_socket_drop_registered_memberships(int s);
 #endif /* LWIP_IGMP */
 
 #ifdef LWIP_ESP8266
-
-/* Since esp_wifi_tx_is_stop/system_get_free_heap_size are not an public wifi API, so extern them here*/
-extern size_t system_get_free_heap_size(void);
-extern bool esp_wifi_tx_is_stop(void);
+#include "esp_wifi_internal.h"
+#include "esp_system.h"
 
 /* Please be notified that this flow control is just a workaround for fixing wifi Q full issue. 
  * Under UDP/TCP pressure test, we found that the sockets may cause wifi tx queue full if the socket
@@ -402,9 +400,9 @@ extern bool esp_wifi_tx_is_stop(void);
  */ 
 static inline void esp32_tx_flow_ctrl(void)
 {
-  uint8_t _wait_delay = 0;
+  uint8_t _wait_delay = 1;
 
-  while ((system_get_free_heap_size() < HEAP_HIGHWAT) || esp_wifi_tx_is_stop()){
+  while ((system_get_free_heap_size() < HEAP_HIGHWAT) || esp_wifi_internal_tx_is_stop()){
      vTaskDelay(_wait_delay/portTICK_RATE_MS);
      if (_wait_delay < 64) _wait_delay *= 2;
   }
@@ -2395,6 +2393,16 @@ lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *opt
                   s, *(int *)optval));
       break;
 #endif /* LWIP_TCP_KEEPALIVE */
+
+#if ESP_PER_SOC_TCP_WND
+    case TCP_WINDOW:
+    *(int*)optval = (int)sock->conn->pcb.tcp->per_soc_tcp_wnd;
+    break;
+    case TCP_SNDBUF:
+    *(int*)optval = (int)sock->conn->pcb.tcp->per_soc_tcp_snd_buf;
+    break;
+#endif
+
     default:
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, IPPROTO_TCP, UNIMPL: optname=0x%x, ..)\n",
                   s, optname));
@@ -2792,6 +2800,16 @@ lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_
                   s, sock->conn->pcb.tcp->keep_cnt));
       break;
 #endif /* LWIP_TCP_KEEPALIVE */
+
+#if ESP_PER_SOC_TCP_WND
+    case TCP_WINDOW:
+    sock->conn->pcb.tcp->per_soc_tcp_wnd = ((u32_t)(*(const int*)optval)) * TCP_MSS;
+    break;
+    case TCP_SNDBUF:
+    sock->conn->pcb.tcp->per_soc_tcp_snd_buf = ((u32_t)(*(const int*)optval)) * TCP_MSS;
+    break;
+#endif
+
     default:
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_TCP, UNIMPL: optname=0x%x, ..)\n",
                   s, optname));
