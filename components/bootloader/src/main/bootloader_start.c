@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -49,8 +49,8 @@ flash cache is down and the app CPU is in reset. We do have a stack, so we can d
 extern void Cache_Flush(int);
 
 void bootloader_main();
-void unpack_load_app(const partition_pos_t *app_node);
-void print_flash_info(struct flash_hdr* pfhdr);
+void unpack_load_app(const esp_partition_pos_t *app_node);
+void print_flash_info(const esp_image_header_t* pfhdr);
 void IRAM_ATTR set_cache_and_start_app(uint32_t drom_addr,
     uint32_t drom_load_addr,
     uint32_t drom_size,
@@ -58,7 +58,7 @@ void IRAM_ATTR set_cache_and_start_app(uint32_t drom_addr,
     uint32_t irom_load_addr,
     uint32_t irom_size,
     uint32_t entry_addr);
-static void update_flash_config(struct flash_hdr* pfhdr);
+static void update_flash_config(const esp_image_header_t* pfhdr);
 
 
 void IRAM_ATTR call_start_cpu0()
@@ -154,7 +154,7 @@ void boot_cache_redirect( uint32_t pos, size_t size )
  */
 bool load_partition_table(bootloader_state_t* bs, uint32_t addr)
 {
-    partition_info_t partition;
+    esp_partition_info_t partition;
     uint32_t end = addr + 0x1000;
     int index = 0;
     char *partition_usage;
@@ -168,7 +168,7 @@ bool load_partition_table(bootloader_state_t* bs, uint32_t addr)
         ESP_LOGD(TAG, "type=%x subtype=%x", partition.type, partition.subtype);
         partition_usage = "unknown";
 
-        if (partition.magic == PARTITION_MAGIC) { /* valid partition definition */
+        if (partition.magic == ESP_PARTITION_MAGIC) { /* valid partition definition */
             switch(partition.type) {
             case PART_TYPE_APP: /* app partition */
                 switch(partition.subtype) {
@@ -231,12 +231,12 @@ bool load_partition_table(bootloader_state_t* bs, uint32_t addr)
     return true;
 }
 
-static uint32_t ota_select_crc(const ota_select *s)
+static uint32_t ota_select_crc(const esp_ota_select_entry_t *s)
 {
   return crc32_le(UINT32_MAX, (uint8_t*)&s->ota_seq, 4);
 }
 
-static bool ota_select_valid(const ota_select *s)
+static bool ota_select_valid(const esp_ota_select_entry_t *s)
 {
   return s->ota_seq != UINT32_MAX && s->crc == ota_select_crc(s);
 }
@@ -252,10 +252,10 @@ void bootloader_main()
 {
     ESP_LOGI(TAG, "Espressif ESP32 2nd stage bootloader v. %s", BOOT_VERSION);
 
-    struct flash_hdr    fhdr;
+    esp_image_header_t fhdr;
     bootloader_state_t bs;
     SpiFlashOpResult spiRet1,spiRet2;    
-    ota_select sa,sb;
+    esp_ota_select_entry_t sa,sb;
     memset(&bs, 0, sizeof(bs));
 
     ESP_LOGI(TAG, "compile time " __TIME__ );
@@ -266,18 +266,18 @@ void bootloader_main()
     /*register first sector in drom0 page 0 */
     boot_cache_redirect( 0, 0x5000 );
 
-    memcpy((unsigned int *) &fhdr, MEM_CACHE(0x1000), sizeof(struct flash_hdr) );
+    memcpy((unsigned int *) &fhdr, MEM_CACHE(0x1000), sizeof(esp_image_header_t) );
 
     print_flash_info(&fhdr);
 
     update_flash_config(&fhdr);
 
-    if (!load_partition_table(&bs, PARTITION_ADD)) {
+    if (!load_partition_table(&bs, ESP_PARTITION_TABLE_ADDR)) {
         ESP_LOGE(TAG, "load partition table error!");
         return;
     }
 
-    partition_pos_t load_part_pos;
+    esp_partition_pos_t load_part_pos;
 
     if (bs.ota_info.offset != 0) {              // check if partition table has OTA info partition
         //ESP_LOGE("OTA info sector handling is not implemented");
@@ -293,14 +293,14 @@ void bootloader_main()
             sb.crc = ota_select_crc(&sb);
 
             Cache_Read_Disable(0);  
-            spiRet1 = SPIEraseSector(bs.ota_info.offset/0x1000);       
-            spiRet2 = SPIEraseSector(bs.ota_info.offset/0x1000+1);       
+            spiRet1 = SPIEraseSector(bs.ota_info.offset/0x1000);
+            spiRet2 = SPIEraseSector(bs.ota_info.offset/0x1000+1);
             if (spiRet1 != SPI_FLASH_RESULT_OK || spiRet2 != SPI_FLASH_RESULT_OK ) {  
                 ESP_LOGE(TAG, SPI_ERROR_LOG);
                 return;
             } 
-            spiRet1 = SPIWrite(bs.ota_info.offset,(uint32_t *)&sa,sizeof(ota_select));
-            spiRet2 = SPIWrite(bs.ota_info.offset + 0x1000,(uint32_t *)&sb,sizeof(ota_select));
+            spiRet1 = SPIWrite(bs.ota_info.offset,(uint32_t *)&sa,sizeof(esp_ota_select_entry_t));
+            spiRet2 = SPIWrite(bs.ota_info.offset + 0x1000,(uint32_t *)&sb,sizeof(esp_ota_select_entry_t));
             if (spiRet1 != SPI_FLASH_RESULT_OK || spiRet2 != SPI_FLASH_RESULT_OK ) {  
                 ESP_LOGE(TAG, SPI_ERROR_LOG);
                 return;
@@ -329,7 +329,7 @@ void bootloader_main()
     }
 
     ESP_LOGI(TAG, "Loading app partition at offset %08x", load_part_pos);
-    if(fhdr.secury_boot_flag == 0x01) {
+    if(fhdr.secure_boot_flag == 0x01) {
         /* protect the 2nd_boot  */    
         if(false == secure_boot()){
             ESP_LOGE(TAG, "secure boot failed");
@@ -350,12 +350,12 @@ void bootloader_main()
 }
 
 
-void unpack_load_app(const partition_pos_t* partition)
+void unpack_load_app(const esp_partition_pos_t* partition)
 {
     boot_cache_redirect(partition->offset, partition->size);
 
     uint32_t pos = 0;
-    struct flash_hdr image_header;
+    esp_image_header_t image_header;
     memcpy(&image_header, MEM_CACHE(pos), sizeof(image_header));
     pos += sizeof(image_header);
 
@@ -379,7 +379,7 @@ void unpack_load_app(const partition_pos_t* partition)
     for (uint32_t section_index = 0;
             section_index < image_header.blocks;
             ++section_index) {
-        struct block_hdr section_header = {0};
+        esp_image_section_header_t section_header = {0};
         memcpy(&section_header, MEM_CACHE(pos), sizeof(section_header));
         pos += sizeof(section_header);
 
@@ -485,23 +485,23 @@ void IRAM_ATTR set_cache_and_start_app(
     (*entry)();
 }
 
-static void update_flash_config(struct flash_hdr* pfhdr)
+static void update_flash_config(const esp_image_header_t* pfhdr)
 {
     uint32_t size;
     switch(pfhdr->spi_size) {
-        case SPI_SIZE_1MB:
+        case ESP_IMAGE_FLASH_SIZE_1MB:
             size = 1;
             break;
-        case SPI_SIZE_2MB:
+        case ESP_IMAGE_FLASH_SIZE_2MB:
             size = 2;
             break;
-        case SPI_SIZE_4MB:
+        case ESP_IMAGE_FLASH_SIZE_4MB:
             size = 4;
             break;
-        case SPI_SIZE_8MB:
+        case ESP_IMAGE_FLASH_SIZE_8MB:
             size = 8;
             break;
-        case SPI_SIZE_16MB:
+        case ESP_IMAGE_FLASH_SIZE_16MB:
             size = 16;
             break;
         default:
@@ -516,66 +516,53 @@ static void update_flash_config(struct flash_hdr* pfhdr)
     Cache_Read_Enable( 0 );
 }
 
-void print_flash_info(struct flash_hdr* pfhdr)
+void print_flash_info(const esp_image_header_t* phdr)
 {
 #if (BOOT_LOG_LEVEL >= BOOT_LOG_LEVEL_NOTICE)
 
-    struct flash_hdr fhdr = *pfhdr;
-
-    ESP_LOGD(TAG, "magic %02x", fhdr.magic );
-    ESP_LOGD(TAG, "blocks %02x", fhdr.blocks );
-    ESP_LOGD(TAG, "spi_mode %02x", fhdr.spi_mode );
-    ESP_LOGD(TAG, "spi_speed %02x", fhdr.spi_speed );
-    ESP_LOGD(TAG, "spi_size %02x", fhdr.spi_size );
+    ESP_LOGD(TAG, "magic %02x", phdr->magic );
+    ESP_LOGD(TAG, "blocks %02x", phdr->blocks );
+    ESP_LOGD(TAG, "spi_mode %02x", phdr->spi_mode );
+    ESP_LOGD(TAG, "spi_speed %02x", phdr->spi_speed );
+    ESP_LOGD(TAG, "spi_size %02x", phdr->spi_size );
 
     const char* str;
-    switch ( fhdr.spi_speed ) {
-    case SPI_SPEED_40M:
+    switch ( phdr->spi_speed ) {
+    case ESP_IMAGE_SPI_SPEED_40M:
         str = "40MHz";
         break;
-
-    case SPI_SPEED_26M:
+    case ESP_IMAGE_SPI_SPEED_26M:
         str = "26.7MHz";
         break;
-
-    case SPI_SPEED_20M:
+    case ESP_IMAGE_SPI_SPEED_20M:
         str = "20MHz";
         break;
-
-    case SPI_SPEED_80M:
+    case ESP_IMAGE_SPI_SPEED_80M:
         str = "80MHz";
         break;
-
     default:
         str = "20MHz";
         break;
     }
     ESP_LOGI(TAG, "SPI Speed      : %s", str );
 
-    
-
-    switch ( fhdr.spi_mode ) {
-    case SPI_MODE_QIO:
+    switch ( phdr->spi_mode ) {
+    case ESP_IMAGE_SPI_MODE_QIO:
         str = "QIO";
         break;
-
-    case SPI_MODE_QOUT:
+    case ESP_IMAGE_SPI_MODE_QOUT:
         str = "QOUT";
         break;
-
-    case SPI_MODE_DIO:
+    case ESP_IMAGE_SPI_MODE_DIO:
         str = "DIO";
         break;
-
-    case SPI_MODE_DOUT:
+    case ESP_IMAGE_SPI_MODE_DOUT:
         str = "DOUT";
         break;
-
-    case SPI_MODE_FAST_READ:
+    case ESP_IMAGE_SPI_MODE_FAST_READ:
         str = "FAST READ";
         break;
-
-    case SPI_MODE_SLOW_READ:
+    case ESP_IMAGE_SPI_MODE_SLOW_READ:
         str = "SLOW READ";
         break;
     default:
@@ -584,31 +571,24 @@ void print_flash_info(struct flash_hdr* pfhdr)
     }
     ESP_LOGI(TAG, "SPI Mode       : %s", str );
 
-    
-
-    switch ( fhdr.spi_size ) {
-    case SPI_SIZE_1MB:
+    switch ( phdr->spi_size ) {
+    case ESP_IMAGE_FLASH_SIZE_1MB:
         str = "1MB";
         break;
-
-    case SPI_SIZE_2MB:
+    case ESP_IMAGE_FLASH_SIZE_2MB:
         str = "2MB";
         break;
-
-    case SPI_SIZE_4MB:
+    case ESP_IMAGE_FLASH_SIZE_4MB:
         str = "4MB";
         break;
-
-    case SPI_SIZE_8MB:
+    case ESP_IMAGE_FLASH_SIZE_8MB:
         str = "8MB";
         break;
-
-    case SPI_SIZE_16MB:
+    case ESP_IMAGE_FLASH_SIZE_16MB:
         str = "16MB";
         break;
-
     default:
-        str = "1MB";
+        str = "2MB";
         break;
     }
     ESP_LOGI(TAG, "SPI Flash Size : %s", str );

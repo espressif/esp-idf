@@ -30,7 +30,7 @@ TEST_CASE("flash starts with all bytes == 0xff", "[spi_flash_emu]")
     uint8_t sector[SPI_FLASH_SEC_SIZE];
 
     for (int i = 0; i < 4; ++i) {
-        CHECK(spi_flash_read(0, reinterpret_cast<uint32_t*>(sector), sizeof(sector)) == ESP_OK);
+        CHECK(spi_flash_read(0, sector, sizeof(sector)) == ESP_OK);
         for (auto v: sector) {
             CHECK(v == 0xff);
         }
@@ -83,7 +83,7 @@ TEST_CASE("after erase the sector is set to 0xff", "[spi_flash_emu]")
 TEST_CASE("read/write/erase operation times are calculated correctly", "[spi_flash_emu]")
 {
     SpiFlashEmulator emu(1);
-    uint32_t data[128];
+    uint8_t data[512];
     spi_flash_read(0, data, 4);
     CHECK(emu.getTotalTime() == 7);
     CHECK(emu.getReadOps() == 1);
@@ -141,7 +141,7 @@ TEST_CASE("read/write/erase operation times are calculated correctly", "[spi_fla
     CHECK(emu.getTotalTime() == 37142);
 }
 
-TEST_CASE("data is randomized predicatbly", "[spi_flash_emu]")
+TEST_CASE("data is randomized predictably", "[spi_flash_emu]")
 {
     SpiFlashEmulator emu1(3);
     emu1.randomize(0x12345678);

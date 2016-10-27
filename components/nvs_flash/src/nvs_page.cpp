@@ -37,7 +37,7 @@ esp_err_t Page::load(uint32_t sectorNumber)
     mErasedEntryCount = 0;
 
     Header header;
-    auto rc = spi_flash_read(mBaseAddress, reinterpret_cast<uint32_t*>(&header), sizeof(header));
+    auto rc = spi_flash_read(mBaseAddress, &header, sizeof(header));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -86,7 +86,7 @@ esp_err_t Page::load(uint32_t sectorNumber)
 
 esp_err_t Page::writeEntry(const Item& item)
 {
-    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), reinterpret_cast<const uint32_t*>(&item), sizeof(item));
+    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), &item, sizeof(item));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -114,7 +114,7 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
     assert(mFirstUsedEntry != INVALID_ENTRY);
     const uint16_t count = size / ENTRY_SIZE;
     
-    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), reinterpret_cast<const uint32_t*>(data), static_cast<uint32_t>(size));
+    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), data, size);
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -397,7 +397,7 @@ esp_err_t Page::mLoadEntryTable()
             mState == PageState::FULL ||
             mState == PageState::FREEING) {
         auto rc = spi_flash_read(mBaseAddress + ENTRY_TABLE_OFFSET, mEntryTable.data(),
-                                 static_cast<uint32_t>(mEntryTable.byteSize()));
+                                 mEntryTable.byteSize());
         if (rc != ESP_OK) {
             mState = PageState::INVALID;
             return rc;
@@ -559,7 +559,7 @@ esp_err_t Page::initialize()
     header.mSeqNumber = mSeqNumber;
     header.mCrc32 = header.calculateCrc32();
 
-    auto rc = spi_flash_write(mBaseAddress, reinterpret_cast<uint32_t*>(&header), sizeof(header));
+    auto rc = spi_flash_write(mBaseAddress, &header, sizeof(header));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -577,7 +577,8 @@ esp_err_t Page::alterEntryState(size_t index, EntryState state)
     mEntryTable.set(index, state);
     size_t wordToWrite = mEntryTable.getWordIndex(index);
     uint32_t word = mEntryTable.data()[wordToWrite];
-    auto rc = spi_flash_write(mBaseAddress + ENTRY_TABLE_OFFSET + static_cast<uint32_t>(wordToWrite) * 4, &word, 4);
+    auto rc = spi_flash_write(mBaseAddress + ENTRY_TABLE_OFFSET + static_cast<uint32_t>(wordToWrite) * 4,
+            &word, sizeof(word));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -600,7 +601,8 @@ esp_err_t Page::alterEntryRangeState(size_t begin, size_t end, EntryState state)
         }
         if (nextWordIndex != wordIndex) {
             uint32_t word = mEntryTable.data()[wordIndex];
-            auto rc = spi_flash_write(mBaseAddress + ENTRY_TABLE_OFFSET + static_cast<uint32_t>(wordIndex) * 4, &word, 4);
+            auto rc = spi_flash_write(mBaseAddress + ENTRY_TABLE_OFFSET + static_cast<uint32_t>(wordIndex) * 4,
+                    &word, 4);
             if (rc != ESP_OK) {
                 return rc;
             }
@@ -612,7 +614,8 @@ esp_err_t Page::alterEntryRangeState(size_t begin, size_t end, EntryState state)
 
 esp_err_t Page::alterPageState(PageState state)
 {
-    auto rc = spi_flash_write(mBaseAddress, reinterpret_cast<uint32_t*>(&state), sizeof(state));
+    uint32_t state_val = static_cast<uint32_t>(state);
+    auto rc = spi_flash_write(mBaseAddress, &state_val, sizeof(state));
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;
@@ -623,7 +626,7 @@ esp_err_t Page::alterPageState(PageState state)
 
 esp_err_t Page::readEntry(size_t index, Item& dst) const
 {
-    auto rc = spi_flash_read(getEntryAddress(index), reinterpret_cast<uint32_t*>(&dst), sizeof(dst));
+    auto rc = spi_flash_read(getEntryAddress(index), &dst, sizeof(dst));
     if (rc != ESP_OK) {
         return rc;
     }
