@@ -147,7 +147,9 @@ void start_cpu0_default(void)
     uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
     ets_setup_syscalls();
     do_global_ctors();
+#if !CONFIG_FREERTOS_UNICORE
     esp_crosscore_int_init();
+#endif
     esp_ipc_init();
     spi_flash_init();
     xTaskCreatePinnedToCore(&main_task, "main",

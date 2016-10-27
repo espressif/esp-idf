@@ -19,6 +19,10 @@
  * Initialize the crosscore interrupt system for this CPU.
  * This needs to be called once on every CPU that is used
  * by FreeRTOS.
+ *
+ * If multicore FreeRTOS support is enabled, this will be
+ * called automatically by the startup code and should not
+ * be called manually.
  */
 void esp_crosscore_int_init();
 
@@ -27,6 +31,9 @@ void esp_crosscore_int_init();
  * Send an interrupt to a CPU indicating it should yield its
  * currently running task in favour of a higher-priority task
  * that presumably just woke up.
+ *
+ * This is used internally by FreeRTOS in multicore mode
+ * and should not be called by the user.
  *
  * @param coreID Core that should do the yielding
  */
