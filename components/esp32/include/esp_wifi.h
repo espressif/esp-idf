@@ -242,12 +242,23 @@ esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
   *
   * @param     uint16_t *number : as input param, it stores max AP number ap_records can hold, as output param, it store
                                   the actual AP number this API returns
-  * @param     wifi_ap_record_t *ap_records: an wifi_ap_record_t array to hold the found APs
+  * @param     wifi_ap_record_t *ap_records: wifi_ap_record_t array to hold the found APs
   *
   * @return    ESP_OK : succeed
   * @return    others : fail
   */
 esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records);
+
+
+/**
+  * @brief     Get information of AP associated with ESP32 station
+  *
+  * @param     wifi_ap_record_t *ap_info: the wifi_ap_record_t to hold station assocated AP
+  *
+  * @return    ESP_OK : succeed
+  * @return    others : fail
+  */
+esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
 
 /**
   * @brief     Set current power save type
