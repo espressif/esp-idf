@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __ESP_VFS_H__
-#define __ESP_VFS_H__
+#ifndef __ESP_VFS_DEV_H__
+#define __ESP_VFS_DEV_H__
 
 #include "esp_vfs.h"
 
@@ -25,4 +25,4 @@
 void esp_vfs_dev_uart_register();
 
 
-#endif //__ESP_VFS_H__
+#endif //__ESP_VFS_DEV_H__

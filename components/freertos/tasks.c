@@ -963,8 +963,8 @@ UBaseType_t x;
 
 	#if ( configUSE_NEWLIB_REENTRANT == 1 )
 	{
-        /* Initialise this task's Newlib reent structure. */
-        esp_reent_init(&pxNewTCB->xNewLib_reent);
+		/* Initialise this task's Newlib reent structure. */
+		esp_reent_init(&pxNewTCB->xNewLib_reent);
 	}
 	#endif
 

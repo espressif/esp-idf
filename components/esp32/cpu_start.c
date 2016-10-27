@@ -60,7 +60,6 @@ static bool app_cpu_started = false;
 
 static void do_global_ctors(void);
 static void main_task(void* args);
-extern void ets_setup_syscalls(void);
 extern void app_main(void);
 
 extern int _bss_start;

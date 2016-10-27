@@ -38,26 +38,26 @@ void* IRAM_ATTR _malloc_r(struct _reent *r, size_t size)
 
 void IRAM_ATTR _free_r(struct _reent *r, void* ptr)
 {
-    return vPortFree(ptr);
+    vPortFree(ptr);
 }
 
 void* IRAM_ATTR _realloc_r(struct _reent *r, void* ptr, size_t size)
 {
-	void* new_chunk;
-	if (size == 0) {
-		if (ptr) {
-			vPortFree(ptr);
-		}
-		return NULL;
-	}
+    void* new_chunk;
+    if (size == 0) {
+        if (ptr) {
+            vPortFree(ptr);
+        }
+        return NULL;
+    }
 
-	new_chunk = pvPortMalloc(size);
-	if (new_chunk && ptr) {
-		memcpy(new_chunk, ptr, size);
-		vPortFree(ptr);
-	}
-	// realloc behaviour: don't free original chunk if alloc failed
-	return new_chunk;
+    new_chunk = pvPortMalloc(size);
+    if (new_chunk && ptr) {
+        memcpy(new_chunk, ptr, size);
+        vPortFree(ptr);
+    }
+    // realloc behaviour: don't free original chunk if alloc failed
+    return new_chunk;
 }
 
 void* IRAM_ATTR _calloc_r(struct _reent *r, size_t count, size_t size)
@@ -65,7 +65,7 @@ void* IRAM_ATTR _calloc_r(struct _reent *r, size_t count, size_t size)
     void* result = pvPortMalloc(count * size);
     if (result)
     {
-    	memset(result, 0, count * size);
+        memset(result, 0, count * size);
     }
     return result;
 }

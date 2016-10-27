@@ -31,5 +31,5 @@ clock_t _times_r(struct _reent *r, struct tms *ptms)
 int _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
 {
     __errno_r(r) = ENOSYS;
-    return (clock_t) -1;
+    return -1;
 }
