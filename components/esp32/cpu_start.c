@@ -42,7 +42,8 @@
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
 #include "esp_log.h"
-
+#include "esp_vfs_dev.h"
+#include "esp_newlib.h"
 #include "esp_brownout.h"
 #include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
@@ -59,7 +60,6 @@ static bool app_cpu_started = false;
 
 static void do_global_ctors(void);
 static void main_task(void* args);
-extern void ets_setup_syscalls(void);
 extern void app_main(void);
 
 extern int _bss_start;
@@ -160,7 +160,13 @@ void start_cpu0_default(void)
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
-    ets_setup_syscalls();
+    esp_setup_syscalls();
+    esp_vfs_dev_uart_register();
+    esp_reent_init(_GLOBAL_REENT);
+    const char* default_uart_dev = "/dev/uart/0";
+    _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
+    _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
+    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     do_global_ctors();
     esp_ipc_init();
     spi_flash_init();

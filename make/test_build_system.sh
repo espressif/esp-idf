@@ -59,9 +59,9 @@ function run_tests()
     print_status "Updating component source file rebuilds component"
     # touch a file & do a build
     take_build_snapshot
-    touch ${IDF_PATH}/components/esp32/syscalls.c
+    touch ${IDF_PATH}/components/esp32/cpu_start.c
     make || failure "Failed to partial build"
-    assert_rebuilt ${APP_BINS} esp32/libesp32.a esp32/syscalls.o
+    assert_rebuilt ${APP_BINS} esp32/libesp32.a esp32/cpu_start.o
     assert_not_rebuilt lwip/liblwip.a freertos/libfreertos.a ${BOOTLOADER_BINS} partitions_singleapp.bin
 
     print_status "Bootloader source file rebuilds bootloader"
