@@ -180,7 +180,7 @@
 /* The Xtensa port uses a separate interrupt stack. Adjust the stack size */
 /* to suit the needs of your specific application.                        */
 #ifndef configISR_STACK_SIZE
-#define configISR_STACK_SIZE			1024//2048
+#define configISR_STACK_SIZE			CONFIG_FREERTOS_ISR_STACKSIZE
 #endif
 
 /* Minimal heap size to make sure examples can run on memory limited

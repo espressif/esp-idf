@@ -236,7 +236,7 @@ PRIVILEGED_DATA static List_t xDelayedTaskList1;						/*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2;						/*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
 PRIVILEGED_DATA static List_t * volatile pxDelayedTaskList;				/*< Points to the delayed task list currently being used. */
 PRIVILEGED_DATA static List_t * volatile pxOverflowDelayedTaskList;		/*< Points to the delayed task list currently being used to hold tasks that have overflowed the current tick count. */
-PRIVILEGED_DATA static List_t xPendingReadyList;						/*< Tasks that have been readied while the scheduler was suspended.  They will be moved to the ready list when the scheduler is resumed. */
+PRIVILEGED_DATA static List_t xPendingReadyList[ portNUM_PROCESSORS ];						/*< Tasks that have been readied while the scheduler was suspended.  They will be moved to the ready list when the scheduler is resumed. */
 
 #if ( INCLUDE_vTaskDelete == 1 )
 
@@ -591,7 +591,7 @@ static void prvResetNextTaskUnblockTime( void );
  * is possible that it is inaccurate because the other CPU just did a task switch, but in that case
  * at most a superfluous interrupt is generated.
 */
-static void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
+void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 {
 	BaseType_t i;
 	if (xCoreID != tskNO_AFFINITY) {
@@ -781,16 +781,14 @@ BaseType_t i;
 		{
 			/* Scheduler is running. If the created task is of a higher priority than an executing task
 			  then it should run now.
-			  ToDo: This only works for the current core. If a task is scheduled on an other processor,
-			  the other processor will keep running the task it's working on, and only switch to the newer 
-			  task on a timer interrupt. */
-			  //No mux here, uxPriority is mostly atomic and there's not really any harm if this check misfires.
-			if( xCoreID != xPortGetCoreID() ) {
-				taskYIELD_OTHER_CORE(xCoreID, uxPriority);
-			}
-			else if( pxCurrentTCB[ xPortGetCoreID() ]->uxPriority < uxPriority )
+			  No mux here, uxPriority is mostly atomic and there's not really any harm if this check misfires.
+			*/
+			if( tskCAN_RUN_HERE( xCoreID ) && pxCurrentTCB[ xPortGetCoreID() ]->uxPriority < uxPriority )
 			{
 				taskYIELD_IF_USING_PREEMPTION();
+			}
+			else if( xCoreID != xPortGetCoreID() ) {
+				taskYIELD_OTHER_CORE(xCoreID, uxPriority);
 			}
 			else
 			{
@@ -1452,7 +1450,7 @@ BaseType_t i;
 		if( listIS_CONTAINED_WITHIN( &xSuspendedTaskList, &( pxTCB->xGenericListItem ) ) != pdFALSE )
 		{
 			/* Has the task already been resumed from within an ISR? */
-			if( listIS_CONTAINED_WITHIN( &xPendingReadyList, &( pxTCB->xEventListItem ) ) == pdFALSE )
+			if( listIS_CONTAINED_WITHIN( &xPendingReadyList[ xPortGetCoreID() ], &( pxTCB->xEventListItem ) ) == pdFALSE )
 			{
 				/* Is it in the suspended list because it is in the	Suspended
 				state, or because is is blocked with no timeout? */
@@ -1544,7 +1542,6 @@ BaseType_t i;
 
 #if ( ( INCLUDE_xTaskResumeFromISR == 1 ) && ( INCLUDE_vTaskSuspend == 1 ) )
 
-/* ToDo: Make this multicore-compatible. */
 	BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume )
 	{
 	BaseType_t xYieldRequired = pdFALSE;
@@ -1567,13 +1564,13 @@ BaseType_t i;
 					( void ) uxListRemove(  &( pxTCB->xGenericListItem ) );
 					prvAddTaskToReadyList( pxTCB );
 
-					if ( pxTCB->xCoreID == xPortGetCoreID() )
-					{
-						taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority);
-					}
-					else if( pxTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+					if( tskCAN_RUN_HERE( pxTCB->xCoreID ) && pxTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
 					{
 						xYieldRequired = pdTRUE;
+					}
+					else if ( pxTCB->xCoreID != xPortGetCoreID() )
+					{
+						taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority);
 					}
 					else
 					{
@@ -1585,7 +1582,7 @@ BaseType_t i;
 					/* The delayed or ready lists cannot be accessed so the task
 					is held in the pending ready list until the scheduler is
 					unsuspended. */
-					vListInsertEnd( &( xPendingReadyList ), &( pxTCB->xEventListItem ) );
+					vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxTCB->xEventListItem ) );
 				}
 			}
 			else
@@ -1770,9 +1767,9 @@ BaseType_t xAlreadyYielded = pdFALSE;
 			{
 				/* Move any readied tasks from the pending list into the
 				appropriate ready list. */
-				while( listLIST_IS_EMPTY( &xPendingReadyList ) == pdFALSE )
+				while( listLIST_IS_EMPTY( &xPendingReadyList[ xPortGetCoreID() ] ) == pdFALSE )
 				{
-					pxTCB = ( TCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( ( &xPendingReadyList ) );
+					pxTCB = ( TCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( ( &xPendingReadyList[ xPortGetCoreID() ] ) );
 					( void ) uxListRemove( &( pxTCB->xEventListItem ) );
 					( void ) uxListRemove( &( pxTCB->xGenericListItem ) );
 					prvAddTaskToReadyList( pxTCB );
@@ -1784,10 +1781,6 @@ BaseType_t xAlreadyYielded = pdFALSE;
 						/* We can schedule the awoken task on this CPU. */
 						xYieldPending[xPortGetCoreID()] = pdTRUE;
 						break;
-					}
-					else if ( pxTCB->xCoreID != xPortGetCoreID() ) 
-					{
-						taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority );
 					}
 					else
 					{
@@ -2658,15 +2651,20 @@ BaseType_t xReturn;
 		/* The delayed and ready lists cannot be accessed, so hold this task
 		pending until the scheduler is resumed. */
 		taskENTER_CRITICAL(&xTaskQueueMutex);
-		vListInsertEnd( &( xPendingReadyList ), &( pxUnblockedTCB->xEventListItem ) );
+		vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxUnblockedTCB->xEventListItem ) );
 		taskEXIT_CRITICAL(&xTaskQueueMutex);
 	}
 
 	if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
 	{
-		/* We can schedule the awoken task on this CPU. */
-		xYieldPending[xPortGetCoreID()] = pdTRUE;
+		/* Return true if the task removed from the event list has a higher
+		priority than the calling task.  This allows the calling task to know if
+		it should force a context switch now. */
 		xReturn = pdTRUE;
+
+		/* Mark that a yield is pending in case the user is not using the
+		"xHigherPriorityTaskWoken" parameter to an ISR safe FreeRTOS function. */
+		xYieldPending[ xPortGetCoreID() ] = pdTRUE;
 	}
 	else if ( pxUnblockedTCB->xCoreID != xPortGetCoreID() )
 	{
@@ -2724,9 +2722,15 @@ BaseType_t xReturn;
 
 	if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
 	{
-		/* We can schedule the awoken task on this CPU. */
-		xYieldPending[xPortGetCoreID()] = pdTRUE;
+		/* Return true if the task removed from the event list has
+		a higher priority than the calling task.  This allows
+		the calling task to know if it should force a context
+		switch now. */
 		xReturn = pdTRUE;
+
+		/* Mark that a yield is pending in case the user is not using the
+		"xHigherPriorityTaskWoken" parameter to an ISR safe FreeRTOS function. */
+		xYieldPending[ xPortGetCoreID() ] = pdTRUE;
 	}
 	else if ( pxUnblockedTCB->xCoreID != xPortGetCoreID() )
 	{
@@ -2967,7 +2971,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 	eSleepModeStatus eReturn = eStandardSleep;
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 
-		if( listCURRENT_LIST_LENGTH( &xPendingReadyList ) != 0 )
+		if( listCURRENT_LIST_LENGTH( &xPendingReadyList[ xPortGetCoreID() ] ) != 0 )
 		{
 			/* A task was made ready while the scheduler was suspended. */
 			eReturn = eAbortSleep;
@@ -3210,7 +3214,7 @@ UBaseType_t uxPriority;
 
 	vListInitialise( &xDelayedTaskList1 );
 	vListInitialise( &xDelayedTaskList2 );
-	vListInitialise( &xPendingReadyList );
+	vListInitialise( &xPendingReadyList[ xPortGetCoreID() ] );
 
 	#if ( INCLUDE_vTaskDelete == 1 )
 	{
@@ -4576,7 +4580,7 @@ TickType_t uxReturn;
 				{
 					/* The delayed and ready lists cannot be accessed, so hold
 					this task pending until the scheduler is resumed. */
-					vListInsertEnd( &( xPendingReadyList ), &( pxTCB->xEventListItem ) );
+					vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxTCB->xEventListItem ) );
 				}
 
 				if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
@@ -4644,7 +4648,7 @@ TickType_t uxReturn;
 				{
 					/* The delayed and ready lists cannot be accessed, so hold
 					this task pending until the scheduler is resumed. */
-					vListInsertEnd( &( xPendingReadyList ), &( pxTCB->xEventListItem ) );
+					vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxTCB->xEventListItem ) );
 				}
 				
 				if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
