@@ -41,6 +41,7 @@
 #include "esp_event.h"
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
+#include "esp_crosscore_int.h"
 #include "esp_log.h"
 
 #include "trax.h"
@@ -146,6 +147,7 @@ void start_cpu0_default(void)
     uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
     ets_setup_syscalls();
     do_global_ctors();
+    esp_crosscore_int_init();
     esp_ipc_init();
     spi_flash_init();
     xTaskCreatePinnedToCore(&main_task, "main",
@@ -165,6 +167,7 @@ void start_cpu1_default(void)
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
+    esp_crosscore_int_init();
     ESP_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
 }

@@ -57,7 +57,7 @@ static void esp_crosscore_isr(void *arg) {
 	if (xPortGetCoreID()==0) {
 		WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
 	} else {
-		WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 1);
+		WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
 	}
 	//Grab the reason and clear it.
 	portENTER_CRITICAL(&reasonSpinlock);
@@ -77,6 +77,7 @@ static void esp_crosscore_isr(void *arg) {
 //on each active core.
 void esp_crosscore_int_init() {
 	portENTER_CRITICAL(&reasonSpinlock);
+	ets_printf("init cpu %d\n", xPortGetCoreID());
 	reason[xPortGetCoreID()]=0;
 	portEXIT_CRITICAL(&reasonSpinlock);
 	ESP_INTR_DISABLE(ETS_FROM_CPU_INUM);
@@ -87,7 +88,6 @@ void esp_crosscore_int_init() {
 	}
 	xt_set_interrupt_handler(ETS_FROM_CPU_INUM, esp_crosscore_isr, (void*)&reason[xPortGetCoreID()]);
 	ESP_INTR_ENABLE(ETS_FROM_CPU_INUM);
-
 }
 
 void esp_crosscore_int_send_yield(int coreId) {
