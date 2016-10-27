@@ -37,6 +37,7 @@ Contents:
    Wi-Fi <api/esp_wifi>
    Bluetooth <api/bt>
    GPIO <api/gpio>
+   NVS <api/nvs>
    Template <api/template>
 
 .. toctree::
