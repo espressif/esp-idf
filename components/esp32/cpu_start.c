@@ -54,6 +54,9 @@
 #include "esp_coexist.h"
 #include "trax.h"
 
+#define STRINGIFY(s) STRINGIFY2(s)
+#define STRINGIFY2(s) #s
+
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
 void start_cpu0_default(void) IRAM_ATTR;
 #if !CONFIG_FREERTOS_UNICORE
@@ -96,9 +99,6 @@ void IRAM_ATTR call_start_cpu0()
     asm volatile (\
                   "wsr    %0, vecbase\n" \
                   ::"r"(&_init_start));
-
-    uartAttach();
-    ets_install_uart_printf();
 
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
 
@@ -145,6 +145,15 @@ void IRAM_ATTR call_start_cpu1()
 
     cpu_configure_region_protection();
 
+#if CONFIG_CONSOLE_UART_NONE
+    ets_install_putc1(NULL);
+    ets_install_putc2(NULL);
+#else // CONFIG_CONSOLE_UART_NONE
+    uartAttach();
+    ets_install_uart_printf();
+    uart_tx_switch(CONFIG_CONSOLE_UART_NUM);
+#endif
+
     ESP_EARLY_LOGI(TAG, "App cpu up.");
     app_cpu_started = 1;
     start_cpu1();
@@ -164,7 +173,7 @@ void start_cpu0_default(void)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
-    uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
+	uart_div_modify(CONFIG_CONSOLE_UART_NUM, (APB_CLK_FREQ << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
@@ -177,10 +186,16 @@ void start_cpu0_default(void)
     esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
-    const char* default_uart_dev = "/dev/uart/0";
+#ifndef CONFIG_CONSOLE_UART_NONE
+    const char* default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_CONSOLE_UART_NUM);
     _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
     _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
+#else
+    _GLOBAL_REENT->_stdin  = (FILE*) &__sf_fake_stdin;
+    _GLOBAL_REENT->_stdout = (FILE*) &__sf_fake_stdout;
+    _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
+#endif
     do_global_ctors();
 #if !CONFIG_FREERTOS_UNICORE
     esp_crosscore_int_init();

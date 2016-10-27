@@ -33,7 +33,7 @@ void esp_set_cpu_freq(void)
 
     // freq will be changed to 40MHz in rtc_init_lite,
     // wait uart tx finish, otherwise some uart output will be lost
-    uart_tx_wait_idle(0);
+    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
 
     rtc_init_lite(XTAL_AUTO);
     cpu_freq_t freq = CPU_80M;
@@ -54,7 +54,7 @@ void esp_set_cpu_freq(void)
 
     // freq will be changed to freq in rtc_set_cpu_freq,
     // wait uart tx finish, otherwise some uart output will be lost
-    uart_tx_wait_idle(0);
+    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
 
     rtc_set_cpu_freq(freq);
     ets_update_cpu_frequency(freq_mhz);
