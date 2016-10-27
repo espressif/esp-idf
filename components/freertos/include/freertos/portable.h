@@ -192,7 +192,7 @@ void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
 #endif
 
 /* Multi-core: get current core ID */
-inline uint32_t xPortGetCoreID() {
+static inline uint32_t xPortGetCoreID() {
     int id;
     asm volatile(
         "rsr.prid %0\n"
