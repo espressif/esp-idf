@@ -93,45 +93,6 @@ config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 
         If using the WiFi stack, this value must be at least 1.
 
-#This still needs to be implemented.
-choice FREERTOS_PANIC
-    prompt "Panic handler behaviour"
-    default FREERTOS_PANIC_PRINT_REBOOT
-    help
-        If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is 
-        invoked. Configure the panic handlers action here.
-
-config FREERTOS_PANIC_PRINT_HALT
-    bool "Print registers and halt"
-    help
-        Outputs the relevant registers over the serial port and halt the 
-        processor. Needs a manual reset to restart.
-
-config FREERTOS_PANIC_PRINT_REBOOT
-    bool "Print registers and reboot"
-    help
-        Outputs the relevant registers over the serial port and immediately
-        reset the processor.
-
-config FREERTOS_PANIC_SILENT_REBOOT
-    bool "Silent reboot"
-    help
-        Just resets the processor without outputting anything
-
-config FREERTOS_PANIC_GDBSTUB
-    bool "Invoke GDBStub"
-    help
-        Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
-        of the crash.
-endchoice
-
-config FREERTOS_DEBUG_OCDAWARE
-    bool "Make exception and panic handlers JTAG/OCD aware"
-    default y
-    help
-        The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
-        instead of panicking, have the debugger stop on the offending instruction.
-
 choice FREERTOS_ASSERT
     prompt "FreeRTOS assertions"
     default FREERTOS_ASSERT_FAIL_ABORT

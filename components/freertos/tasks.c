@@ -2161,7 +2161,6 @@ UBaseType_t uxTaskGetNumberOfTasks( void )
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_pcTaskGetTaskName == 1 )
-
 	char *pcTaskGetTaskName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 	{
 	TCB_t *pxTCB;
@@ -2304,6 +2303,23 @@ BaseType_t xSwitchRequired = pdFALSE;
 		  We can't really calculate what we need, that's done on core 0... just assume we need a switch.
 		  ToDo: Make this more intelligent? -- JD
 		*/
+		//We do need the tick hook to satisfy the int watchdog.
+		#if ( configUSE_TICK_HOOK == 1 )
+		{
+			/* Guard against the tick hook being called when the pended tick
+			count is being unwound (when the scheduler is being unlocked). */
+			if( uxPendedTicks == ( UBaseType_t ) 0U )
+			{
+				vApplicationTickHook();
+			}
+			else
+			{
+				mtCOVERAGE_TEST_MARKER();
+			}
+		}
+		#endif /* configUSE_TICK_HOOK */
+
+
 		return pdTRUE;
 	}
 
@@ -3723,6 +3739,19 @@ TCB_t *pxTCB;
 
 		return xReturn;
 	}
+
+	TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t cpuid )
+	{
+	TaskHandle_t xReturn=NULL;
+
+		//Xtensa-specific: the pxCurrentPCB pointer is atomic so we shouldn't need a lock.
+		if (cpuid < portNUM_PROCESSORS) {
+			xReturn = pxCurrentTCB[ cpuid ];
+		}
+
+		return xReturn;
+	}
+
 
 #endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
 /*-----------------------------------------------------------*/

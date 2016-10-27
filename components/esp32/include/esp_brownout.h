@@ -11,12 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GDBSTUB_H
-#define GDBSTUB_H
 
-#include <xtensa/config/core.h>
-#include "freertos/xtensa_api.h"
 
-void gdbstubPanicHandler(XtExcFrame *frame);
+#ifndef __ESP_BROWNOUT_H
+#define __ESP_BROWNOUT_H
+
+void esp_brownout_init();
 
 #endif

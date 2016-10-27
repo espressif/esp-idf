@@ -101,7 +101,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "panic.h"
+#include "esp_panic.h"
 
 /* Defined in portasm.h */
 extern void _frxt_tick_timer_init(void);
@@ -375,7 +375,7 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 
 #if CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
 void vPortFirstTaskHook(TaskFunction_t function) {
-	setBreakpointIfJtag(function);
+	esp_set_breakpoint_if_jtag(function);
 }
 #endif
 

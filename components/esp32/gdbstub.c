@@ -24,7 +24,7 @@
 #include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
 
-#include "gdbstub.h"
+#include "esp_gdbstub.h"
 
 //Length of buffer used to reserve GDB commands. Has to be at least able to fit the G command, which
 //implies a minimum size of about 320 bytes.
