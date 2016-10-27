@@ -77,8 +77,8 @@ esp_err_t spi_flash_erase_range(size_t start_addr, size_t size);
  * @note Both des_addr and src_addr have to be 4-byte aligned.
  *       This is a temporary limitation which will be removed.
  *
- * @param  des_addr  destination address in Flash
- * @param  src_addr  source address of the data
+ * @param  dest  destination address in Flash
+ * @param  src   pointer to the source buffer
  * @param  size  length of data, in bytes
  *
  * @return esp_err_t
@@ -91,8 +91,8 @@ esp_err_t spi_flash_write(size_t dest, const void *src, size_t size);
  * @note Both des_addr and src_addr have to be 4-byte aligned.
  *       This is a temporary limitation which will be removed.
  *
- * @param  src_addr  source address of the data in Flash.
- * @param  des_addr  destination address
+ * @param  src   source address of the data in Flash.
+ * @param  dest  pointer to the destination buffer
  * @param  size  length of data
  *
  * @return esp_err_t

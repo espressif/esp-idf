@@ -82,9 +82,9 @@ typedef struct {
  * @brief Find partition based on one or more parameters
  *
  * @param type Partition type, one of esp_partition_type_t values
- * @param subtype Partition subtype, of esp_partition_subtype_t values.
- *             To find all partitions of given type, use
- *             ESP_PARTITION_SUBTYPE_ANY.
+ * @param subtype Partition subtype, one of esp_partition_subtype_t values.
+ *                To find all partitions of given type, use
+ *                ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking
  *             for partition with a specific name. Pass NULL otherwise.
  *
@@ -99,13 +99,13 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_parti
  * @brief Find first partition based on one or more parameters
  *
  * @param type Partition type, one of esp_partition_type_t values
- * @param subtype Partition subtype, of esp_partition_subtype_t values.
- *             To find all partitions of given type, use
- *             ESP_PARTITION_SUBTYPE_ANY.
+ * @param subtype Partition subtype, one of esp_partition_subtype_t values.
+ *                To find all partitions of given type, use
+ *                ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking
  *             for partition with a specific name. Pass NULL otherwise.
  *
- * @return pointer to esp_partition_t structure, or NULL if no parition is found.
+ * @return pointer to esp_partition_t structure, or NULL if no partition is found.
  *         This pointer is valid for the lifetime of the application.
  */
 const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
@@ -134,9 +134,6 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t iterator);
 /**
  * @brief Release partition iterator
  *
- * Any pointers obtained using esp_partition_label function will be invalid
- * after this call.
- *
  * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
  *
  */
@@ -155,7 +152,7 @@ void esp_partition_iterator_release(esp_partition_iterator_t iterator);
  * @param size Size of data to be read, in bytes.
  *
  * @return ESP_OK, if data was read successfully;
- *         ESP_ERR_INVALID_ARG, if iterator or src are NULL;
+ *         ESP_ERR_INVALID_ARG, if src_offset exceeds partition size;
  *         ESP_ERR_INVALID_SIZE, if read would go out of bounds of the partition;
  *         or one of error codes from lower-level flash driver.
  */
@@ -181,7 +178,7 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
  *       esp_partition_erase_range call.
  *
  * @return ESP_OK, if data was written successfully;
- *         ESP_ERR_INVALID_ARG, if iterator or dst are NULL;
+ *         ESP_ERR_INVALID_ARG, if dst_offset exceeds partition size;
  *         ESP_ERR_INVALID_SIZE, if write would go out of bounds of the partition;
  *         or one of error codes from lower-level flash driver.
  */
