@@ -59,11 +59,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 /** Set this to 0 in the rare case of wanting to call an extra function to
  * generate the IP checksum (in contrast to calculating it on-the-fly). */
 #ifndef LWIP_INLINE_IP_CHKSUM
@@ -150,7 +145,7 @@ ip4_route_src(const ip4_addr_t *dest, const ip4_addr_t *src)
 struct netif *
 ip4_route(const ip4_addr_t *dest)
 {
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
   struct netif *non_default_netif = NULL;
 #endif
   struct netif *netif;
@@ -183,7 +178,7 @@ ip4_route(const ip4_addr_t *dest)
     }
   }
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
   if (non_default_netif && !ip4_addr_isbroadcast(dest, non_default_netif)){
     return non_default_netif;
   }

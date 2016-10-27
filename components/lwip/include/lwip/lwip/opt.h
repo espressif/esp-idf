@@ -3008,8 +3008,8 @@
 #define LWIP_PERF                       0
 #endif
 
-#ifndef THREAD_SAFE_DEBUG
-#define THREAD_SAFE_DEBUG               0
+#ifndef ESP_THREAD_SAFE_DEBUG
+#define ESP_THREAD_SAFE_DEBUG               0
 #endif
 
 #endif /* LWIP_HDR_OPT_H */
