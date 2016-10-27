@@ -38,7 +38,7 @@ task switching / interrupt code runs into an unrecoverable error. The default ta
 overflow handler also is in here.
 */
 
-#if !CONFIG_FREERTOS_PANIC_SILENT_REBOOT
+#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
 //printf may be broken, so we fix our own printing fns...
 inline static void panicPutchar(char c) {
 	while (((READ_PERI_REG(UART_STATUS_REG(0))>>UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT)>=126) ;
@@ -123,7 +123,7 @@ static void haltOtherCore() {
 
 //Returns true when a debugger is attached using JTAG.
 static int inOCDMode() {
-#if CONFIG_FREERTOS_DEBUG_OCDAWARE
+#if CONFIG_ESP32_DEBUG_OCDAWARE
 	int dcr;
 	int reg=0x10200C; //DSRSET register
 	asm("rer %0,%1":"=r"(dcr):"r"(reg));
@@ -218,6 +218,7 @@ static void reconfigureAllWdts() {
 	TIMERG1.wdt_wprotect=0;
 }
 
+#if CONFIG_ESP32_PANIC_GDBSTUB || CONFIG_ESP32_PANIC_PRINT_HALT
 /*
 This disables all the watchdogs for when we call the gdbstub.
 */
@@ -230,6 +231,7 @@ static void disableAllWdts() {
 	TIMERG0.wdt_wprotect=0;
 }
 
+#endif
 
 /*
 We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
@@ -259,11 +261,11 @@ void commonErrorHandler(XtExcFrame *frame) {
 		}
 		panicPutStr("\r\n");
 	}
-#if CONFIG_FREERTOS_PANIC_GDBSTUB
+#if CONFIG_ESP32_PANIC_GDBSTUB
 	disableAllWdts();
 	panicPutStr("Entering gdb stub now.\r\n");
 	esp_gdbstub_panic_handler(frame);
-#elif CONFIG_FREERTOS_PANIC_PRINT_REBOOT || CONFIG_FREERTOS_PANIC_SILENT_REBOOT
+#elif CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
 	panicPutStr("Rebooting...\r\n");
 	for (x=0; x<100; x++) ets_delay_us(1000);
 	software_reset();
