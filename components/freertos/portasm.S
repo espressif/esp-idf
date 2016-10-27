@@ -51,18 +51,6 @@ port_switch_flag:
 
     .text
 
-
-
-/* C function to get proc ID.*/
-	.global xPortGetCoreID
-	.type xPortGetCoreID,@function
-	.align 4
-xPortGetCoreID:
-	ENTRY(16)
-	getcoreid a2
-	RET(16)
-
-
 /*
 *******************************************************************************
 * _frxt_setup_switch
@@ -81,9 +69,8 @@ _frxt_setup_switch:
     ENTRY(16)
 
 	getcoreid a3
-	slli	a3,  a3, 2
     movi    a2, port_switch_flag
-	add		a2,  a2, a3
+	addx4	a2,  a3, a2
 
     movi    a3, 1
     s32i    a3, a2, 0
@@ -128,12 +115,11 @@ _frxt_int_enter:
     Manage nesting directly rather than call the generic IntEnter()
     (in windowed ABI we can't call a C function here anyway because PS.EXCM is still set).
     */
-	getcoreid a3
-	slli	a4,  a3, 2					/* a4 = cpuid * 4 */
+	getcoreid a4
     movi    a2,  port_xSchedulerRunning
-	add		a2,  a2, a4
+	addx4	a2,  a4, a2
     movi    a3,  port_interruptNesting
-	add		a3,  a3, a4
+	addx4	a3,  a4, a3
     l32i    a2,  a2, 0                  /* a2 = port_xSchedulerRunning     */
     beqz    a2,  1f                     /* scheduler not running, no tasks */
     l32i    a2,  a3, 0                  /* a2 = port_interruptNesting      */
@@ -142,14 +128,13 @@ _frxt_int_enter:
     bnei    a2,  1, .Lnested            /* !=0 before incr, so nested      */
 
     movi    a2,  pxCurrentTCB
-	add		a2,  a2, a4
+	addx4	a2,  a4, a2
     l32i    a2,  a2, 0                  /* a2 = current TCB                */
     beqz    a2,  1f
     s32i    a1,  a2, TOPOFSTACK_OFFS    /* pxCurrentTCB->pxTopOfStack = SP */
     movi    a1,  port_IntStackTop       /* a1 = top of intr stack          */
 	movi	a2,  configISR_STACK_SIZE
-	getcoreid a3
-	mull	a2,  a3, a2
+	mull	a2,  a4, a2
 	add     a1,  a1, a2					/* for current proc */
 
 .Lnested:
@@ -177,12 +162,11 @@ _frxt_int_enter:
     .align  4
 _frxt_int_exit:
 
-	getcoreid a3
-	slli	a4,  a3, 2					/* a4 is core * 4 */
+	getcoreid a4
     movi    a2,  port_xSchedulerRunning
-	add		a2,  a2, a4
+	addx4	a2,  a4, a2
     movi    a3,  port_interruptNesting
-	add		a3,  a3, a4
+	addx4	a3,  a4, a3
     rsil    a0,  XCHAL_EXCM_LEVEL       /* lock out interrupts             */
     l32i    a2,  a2, 0                  /* a2 = port_xSchedulerRunning     */
     beqz    a2,  .Lnoswitch             /* scheduler not running, no tasks */
@@ -192,13 +176,13 @@ _frxt_int_exit:
     bnez    a2,  .Lnesting              /* !=0 after decr so still nested  */
 
     movi    a2,  pxCurrentTCB
-	add		a2,  a2, a4
+	addx4	a2,  a4, a2
     l32i    a2,  a2, 0                  /* a2 = current TCB                */
     beqz    a2,  1f                     /* no task ? go to dispatcher      */
     l32i    a1,  a2, TOPOFSTACK_OFFS    /* SP = pxCurrentTCB->pxTopOfStack */
 
     movi    a2,  port_switch_flag       /* address of switch flag          */
-	add		a2,  a2, a4					/* point to flag for this cpu      */
+	addx4	a2,  a4, a2					/* point to flag for this cpu      */
     l32i    a3,  a2, 0                  /* a3 = port_switch_flag           */
     beqz    a3,  .Lnoswitch             /* flag = 0 means no switch reqd   */
     movi    a3,  0
@@ -404,14 +388,12 @@ _frxt_dispatch:
     call0   vTaskSwitchContext  // Get next TCB to resume
     movi    a2, pxCurrentTCB
 	getcoreid a3
-	slli	a3,  a3, 2
-	add		a2,  a2, a3
+	addx4	a2,  a3, a2
     #else
     call4   vTaskSwitchContext  // Get next TCB to resume
     movi    a2, pxCurrentTCB
 	getcoreid a3
-	slli	a3,  a3, 2
-	add		a2,  a2, a3
+	addx4	a2,  a3, a2
     #endif
     l32i    a3,  a2, 0
     l32i    sp,  a3, TOPOFSTACK_OFFS     /* SP = next_TCB->pxTopOfStack;  */
@@ -451,8 +433,7 @@ _frxt_dispatch:
     /* Restore CPENABLE from task's co-processor save area. */
     movi    a3, pxCurrentTCB            /* cp_state =                       */
 	getcoreid a2
-	slli	a2,  a2, 2
-	add		a3,  a2, a3
+	addx4	a3,  a2, a3
     l32i    a3, a3, 0
     l32i    a2, a3, CP_TOPOFSTACK_OFFS     /* StackType_t                       *pxStack; */
     l16ui   a3, a2, XT_CPENABLE         /* CPENABLE = cp_state->cpenable;   */
@@ -541,8 +522,7 @@ vPortYield:
 
     movi    a2,  pxCurrentTCB
 	getcoreid a3
-	slli	a3,  a3, 2
-	add		a2,  a2, a3
+	addx4	a2,  a3, a2
     l32i    a2,  a2, 0                  /* a2 = pxCurrentTCB                */
     movi    a3,  0
     s32i    a3,  sp, XT_SOL_EXIT        /* 0 to flag as solicited frame     */
@@ -593,8 +573,7 @@ vPortYieldFromInt:
     /* Save CPENABLE in task's co-processor save area, and clear CPENABLE.  */
     movi    a3, pxCurrentTCB            /* cp_state =                       */
 	getcoreid a2
-	slli	a2,  a2, 2
-	add		a3,  a2, a3
+	addx4	a3,  a2, a3
     l32i    a3, a3, 0
 
     l32i    a2, a3, CP_TOPOFSTACK_OFFS
@@ -637,18 +616,17 @@ _frxt_task_coproc_state:
 
 	/* We can use a3 as a scratchpad, the instances of code calling XT_RTOS_CP_STATE don't seem to need it saved. */
 	getcoreid a3
-	slli	a3,  a3, 2			/* a3=coreid*4 */
     movi    a15, port_xSchedulerRunning /* if (port_xSchedulerRunning              */
-	add		a15, a15, a3
+	addx4	a15, a3,a15
     l32i    a15, a15, 0
     beqz    a15, 1f
     movi    a15, port_interruptNesting  /* && port_interruptNesting == 0           */
-	add		a15, a15, a3
+	addx4	a15, a3, a15
     l32i    a15, a15, 0
     bnez    a15, 1f
 
     movi    a15, pxCurrentTCB
-	add		a15,  a3, a15
+	addx4	a15, a3, a15
     l32i    a15, a15, 0                 /* && pxCurrentTCB != 0) {                 */
 
 

@@ -58,6 +58,7 @@ void IRAM_ATTR set_cache_and_start_app(uint32_t drom_addr,
     uint32_t irom_load_addr,
     uint32_t irom_size,
     uint32_t entry_addr);
+static void update_flash_config(struct flash_hdr* pfhdr);
 
 
 void IRAM_ATTR call_start_cpu0()
@@ -258,7 +259,7 @@ void bootloader_main()
     memset(&bs, 0, sizeof(bs));
 
     ESP_LOGI(TAG, "compile time " __TIME__ );
-    /* close watch dog here */
+    /* disable watch dog here */
     REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
     SPIUnlock();
@@ -268,6 +269,8 @@ void bootloader_main()
     memcpy((unsigned int *) &fhdr, MEM_CACHE(0x1000), sizeof(struct flash_hdr) );
 
     print_flash_info(&fhdr);
+
+    update_flash_config(&fhdr);
 
     if (!load_partition_table(&bs, PARTITION_ADD)) {
         ESP_LOGE(TAG, "load partition table error!");
@@ -364,7 +367,7 @@ void unpack_load_app(const partition_pos_t* partition)
     uint32_t irom_size = 0;
 
     /* Reload the RTC memory sections whenever a non-deepsleep reset
-       is occuring */
+       is occurring */
     bool load_rtc_memory = rtc_get_reset_reason(0) != DEEPSLEEP_RESET;
 
     ESP_LOGD(TAG, "bin_header: %u %u %u %u %08x", image_header.magic,
@@ -482,6 +485,36 @@ void IRAM_ATTR set_cache_and_start_app(
     (*entry)();
 }
 
+static void update_flash_config(struct flash_hdr* pfhdr)
+{
+    uint32_t size;
+    switch(pfhdr->spi_size) {
+        case SPI_SIZE_1MB:
+            size = 1;
+            break;
+        case SPI_SIZE_2MB:
+            size = 2;
+            break;
+        case SPI_SIZE_4MB:
+            size = 4;
+            break;
+        case SPI_SIZE_8MB:
+            size = 8;
+            break;
+        case SPI_SIZE_16MB:
+            size = 16;
+            break;
+        default:
+            size = 2;
+    }
+    Cache_Read_Disable( 0 );
+    // Set flash chip size
+    SPIParamCfg(g_rom_flashchip.deviceId, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
+    // TODO: set mode
+    // TODO: set frequency
+    Cache_Flush(0);
+    Cache_Read_Enable( 0 );
+}
 
 void print_flash_info(struct flash_hdr* pfhdr)
 {

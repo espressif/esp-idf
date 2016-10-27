@@ -7177,7 +7177,7 @@ uint32_t nghttp2_session_get_remote_settings(nghttp2_session *session,
     return session->remote_settings.max_header_list_size;
   }
 
-  assert(0);
+  abort();
 }
 
 static int nghttp2_session_upgrade_internal(nghttp2_session *session,

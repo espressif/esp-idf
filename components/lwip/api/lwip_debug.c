@@ -48,6 +48,9 @@ static void dbg_lwip_tcp_pcb_one_show(struct tcp_pcb* pcb)
     printf("rttest=%d rtseq=%d sa=%d sv=%d\n", pcb->rttest, pcb->rtseq, pcb->sa, pcb->sv);
     printf("rto=%d nrtx=%d\n", pcb->rto, pcb->nrtx);
     printf("dupacks=%d lastack=%d\n", pcb->dupacks, pcb->lastack);
+#if ESP_PER_SOC_TCP_WND
+    printf("per_soc_window=%d per_soc_snd_buf=%d\n", pcb->per_soc_tcp_wnd, pcb->per_soc_tcp_snd_buf);
+#endif
     printf("cwnd=%d ssthreash=%d\n", pcb->cwnd, pcb->ssthresh);
     printf("snd_next=%d snd_wl1=%d snd_wl2=%d\n", pcb->snd_nxt, pcb->snd_wl1, pcb->snd_wl2);
     printf("snd_lbb=%d snd_wnd=%d snd_wnd_max=%d\n", pcb->snd_lbb, pcb->snd_wnd, pcb->snd_wnd_max);
