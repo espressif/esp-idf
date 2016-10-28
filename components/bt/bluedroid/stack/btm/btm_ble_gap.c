@@ -1051,7 +1051,7 @@ tBTM_STATUS BTM_BleSetAdvParams(UINT16 adv_int_min, UINT16 adv_int_max,
         memcpy(&p_cb->direct_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
     }
 
-    BTM_TRACE_EVENT ("update params for an active adv");
+    BTM_TRACE_EVENT ("update params for an active adv\n");
 
     btm_ble_stop_adv();
 
@@ -1094,7 +1094,7 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS status = BTM_SUCCESS;
 	
-	BTM_TRACE_EVENT ("BTM_BleSetAdvParams\n");
+	BTM_TRACE_EVENT ("BTM_BleSetAdvParamsStartAdv\n");
 
     if (!controller_get_interface()->supports_ble())
         return BTM_ILLEGAL_VALUE;
@@ -1111,6 +1111,7 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
 	p_addr_cb->own_addr_type = own_bda_type;
 	p_cb->evt_type = adv_type;
 	p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
+	p_cb->afp = afp;
 	
 	if (p_dir_bda)
     {
@@ -3180,7 +3181,7 @@ tBTM_STATUS btm_ble_start_adv(void)
 {
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS     rt = BTM_NO_RESOURCES;
-
+	BTM_TRACE_EVENT ("btm_ble_start_adv\n");
     if (!btm_ble_adv_states_operation (btm_ble_topology_check, p_cb->evt_type))
         return BTM_WRONG_MODE;
 
@@ -3202,6 +3203,7 @@ tBTM_STATUS btm_ble_start_adv(void)
          p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
          btm_ble_adv_states_operation(btm_ble_set_topology_mask, p_cb->evt_type);
          rt = BTM_SUCCESS;
+		 BTM_TRACE_EVENT ("BTM_SUCCESS\n");
     }
     else
     {

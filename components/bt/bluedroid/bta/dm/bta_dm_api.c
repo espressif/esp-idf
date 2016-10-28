@@ -207,7 +207,7 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, UINT8 p
 
     tBTA_DM_API_SET_VISIBILITY    *p_msg;
 
-    if ((p_msg = (tBTA_DM_API_SET_VISIBILITY *) GKI_getbuf(sizeof(tBTA_DM_MSG))) != NULL)
+    if ((p_msg = (tBTA_DM_API_SET_VISIBILITY *) GKI_getbuf(sizeof(tBTA_DM_API_SET_VISIBILITY))) != NULL)
     {
         p_msg->hdr.event = BTA_DM_API_SET_VISIBILITY_EVT;
         p_msg->disc_mode = disc_mode;
@@ -690,7 +690,7 @@ void bta_dmexecutecallback (tBTA_DM_EXEC_CBACK* p_callback, void * p_param)
 {
     tBTA_DM_API_EXECUTE_CBACK *p_msg;
 
-    if ((p_msg = (tBTA_DM_API_EXECUTE_CBACK *) GKI_getbuf(sizeof(tBTA_DM_MSG))) != NULL)
+    if ((p_msg = (tBTA_DM_API_EXECUTE_CBACK *) GKI_getbuf(sizeof(tBTA_DM_API_EXECUTE_CBACK))) != NULL)
     {
         p_msg->hdr.event = BTA_DM_API_EXECUTE_CBACK_EVT;
         p_msg->p_param= p_param;
@@ -1025,9 +1025,10 @@ void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
 
     APPL_TRACE_API ("BTA_DmSetBleAdvParam: %d, %d\n", adv_int_min, adv_int_max);
 
-    if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_ADV_PARAMS))) != NULL)
+    if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_ADV_PARAMS)
+													+ sizeof(tBLE_BD_ADDR))) != NULL)
     {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ADV_PARAMS));
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ADV_PARAMS)+sizeof(tBLE_BD_ADDR));
 
         p_msg->hdr.event = BTA_DM_API_BLE_ADV_PARAM_EVT;
 
@@ -1053,9 +1054,11 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
 #if BLE_INCLUDED == TRUE
     tBTA_DM_API_BLE_ADV_PARAMS_ALL    *p_msg;
 
-    APPL_TRACE_API ("BTA_DmSetBleAdvParam: %d, %d\n", adv_int_min, adv_int_max);
-
-    if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS_ALL *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_ADV_PARAMS_ALL))) != NULL)
+    APPL_TRACE_ERROR ("BTA_DmSetBleAdvParamsAll: %d, %d\n", adv_int_min, adv_int_max);
+	APPL_TRACE_ERROR ("adv_type = %d, addr_type_own = %d, chnl_map = %d, adv_fil_pol = %d\n",
+						adv_type,addr_type_own,chnl_map,adv_fil_pol);
+    if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS_ALL *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_ADV_PARAMS_ALL)
+															+ sizeof(tBLE_BD_ADDR))) != NULL)
     {
         memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ADV_PARAMS_ALL));
 

@@ -80,16 +80,7 @@ UINT8 wechat_manu[] = {0x00,0x00,0x18,0xfe,0x34,0x6a,0x86,0x2e};
 tBTA_BLE_MANU	p_ijiazu_manu = {sizeof(ijiazu_manu),ijiazu_manu};			/* manufacturer data */
 tBTA_BLE_MANU   p_wechat_manu = {sizeof(wechat_manu),wechat_manu};
 
-tESP_API_BLE_ADV_PARAMS_ALL adv_params = 
-{
-	.adv_int_min 		= BTM_BLE_ADV_INT_MIN + 0x100,
-	.adv_int_max 		= BTM_BLE_ADV_INT_MIN + 0x100,
-	.adv_type	 		= API_GEN_DISCOVERABLE,
-	.addr_type_own 		= API_PUBLIC_ADDR,
-	.channel_map		= API_BLE_ADV_CHNL_MAP,
-	.adv_filter_policy 	= API_ADV_UNDIRECT,
-	{API_PUBLIC_ADDR,NULL}
-};
+
 
 
 BD_ADDR rand_ijiazu_addr = {0x00,0x02,0x5B,0x00,0x32,0x55};
@@ -269,7 +260,7 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
 	AirSync_Init(NULL);
 #endif	///WX_AIRSYNC_CFG
 
-	API_Ble_AppStartAdvertising(&adv_params);
+	//API_Ble_AppStartAdvertising(&adv_params);
     /*start advetising*/
 //    BTA_GATTS_Listen(server_if, true, NULL);
 }

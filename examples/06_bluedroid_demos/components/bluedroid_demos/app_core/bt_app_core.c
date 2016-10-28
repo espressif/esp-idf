@@ -252,7 +252,7 @@ static void bt_app_dm_upstreams_evt(UINT16 event, char *p_param)
         /*set connectable,discoverable, pairable and paired only modes of local device*/
         tBTA_DM_DISC disc_mode =  BTA_DM_BLE_GENERAL_DISCOVERABLE;
         tBTA_DM_CONN conn_mode =  BTA_DM_BLE_CONNECTABLE;
-        BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
+        //BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
         /* Enable local privacy */

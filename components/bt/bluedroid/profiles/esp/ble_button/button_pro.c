@@ -38,6 +38,22 @@
 
 tBUTTON_CB_ENV button_cb_env;
 
+tBLE_BD_ADDR			p_peer_bda = {
+	.type	= API_PUBLIC_ADDR,
+	.bda	= {0}
+};
+
+tESP_API_BLE_ADV_PARAMS_ALL adv_params = 
+{
+	.adv_int_min 		= BTM_BLE_ADV_INT_MIN + 0x100,
+	.adv_int_max 		= BTM_BLE_ADV_INT_MIN + 0x100,
+	.adv_type	 		= API_NON_DISCOVERABLE,
+	.addr_type_own 		= API_PUBLIC_ADDR,
+	.channel_map		= API_BLE_ADV_CHNL_MAP,
+	.adv_filter_policy 	= ADV_ALLOW_SCAN_ANY_CON_ANY,
+	.p_dir_bda			= &p_peer_bda
+};
+
 
 
 /*****************************************************************************
@@ -172,6 +188,9 @@ static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			{
 				button_cb_env.button_inst.but_cfg_hdl = p_data->add_result.attr_id;
 			}
+			///Start advertising
+			LOG_ERROR("\nStart sent the ADV.\n");
+			API_Ble_AppStartAdvertising(&adv_params);
 			break;
 		case BTA_GATTS_CONNECT_EVT:
 			//set the connection flag to true

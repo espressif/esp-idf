@@ -58,6 +58,8 @@ void API_Ble_AppStartAdvertising(tESP_API_BLE_ADV_PARAMS_ALL *ble_adv_params)
 		return;
 	}
 
+	LOG_ERROR("API_Ble_AppStartAdvertising\n");
+
 	///
 	BTA_DmSetBleAdvParamsAll(ble_adv_params->adv_int_min,
 							 ble_adv_params->adv_int_max,

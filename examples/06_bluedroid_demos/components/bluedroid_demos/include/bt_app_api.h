@@ -166,5 +166,3 @@ extern void API_Ble_GattsCancelOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda,
 
 extern void API_Ble_GattsClose(UINT16 conn_id);
 
-
-void API_Ble_PrfEnable (void); 

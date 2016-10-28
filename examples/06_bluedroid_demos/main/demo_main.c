@@ -15,7 +15,7 @@ void pingTask(void *pvParameters)
 {
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        printf("ping\n");
+        //printf("ping\n");
     }
 }
 

@@ -41,14 +41,16 @@ enum api_adv_type
 
 enum api_adv_filter
 {
-    /// Start non connectable advertising
-    API_ADV_NON_CONN,
-    /// Start undirected connectable advertising
-    API_ADV_UNDIRECT,
-	/// Start directed connectable advertising
-	API_ADV_DIRECT_LOW_DUTY,
-    /// Start directed connectable advertising
-    API_ADV_DIRECT
+     ///Allow both scan and connection requests from anyone
+    ADV_ALLOW_SCAN_ANY_CON_ANY    = 0x00,
+    ///Allow both scan req from White List devices only and connection req from anyone
+    ADV_ALLOW_SCAN_WLST_CON_ANY,
+    ///Allow both scan req from anyone and connection req from White List devices only
+    ADV_ALLOW_SCAN_ANY_CON_WLST,
+    ///Allow scan and connection requests from White List devices only
+    ADV_ALLOW_SCAN_WLST_CON_WLST,
+    ///Enumeration end value for advertising filter policy value check
+    ADV_ALLOW_SCAN_END
 };
 
 /// Own BD address source of the device
