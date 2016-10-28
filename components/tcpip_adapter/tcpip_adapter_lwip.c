@@ -598,6 +598,7 @@ esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapt
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
 
     memset(tcpip_sta_list, 0, sizeof(tcpip_adapter_sta_list_t));
+    tcpip_sta_list->num = wifi_sta_list->num;
     for (i=0; i<wifi_sta_list->num; i++){
         memcpy(tcpip_sta_list->sta[i].mac, wifi_sta_list->sta[i].mac, 6);
         dhcp_search_ip_on_mac(tcpip_sta_list->sta[i].mac, &tcpip_sta_list->sta[i].ip);
