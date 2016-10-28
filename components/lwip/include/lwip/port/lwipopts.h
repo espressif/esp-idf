@@ -95,10 +95,6 @@ extern unsigned long os_random(void);
    ---------- Internal Memory Pool Sizes ----------
    ------------------------------------------------
 */
-/**
- * MEMP_NUM_TCP_PCB: the number of simulatenously active TCP connections.
- * (requires the LWIP_TCP option)
- */
 
 /**
  * MEMP_NUM_NETCONN: the number of struct netconns.
