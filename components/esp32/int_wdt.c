@@ -24,6 +24,7 @@
 #include <esp_types.h>
 #include "esp_err.h"
 #include "esp_intr.h"
+#include "esp_attr.h"
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 
@@ -66,7 +67,7 @@ void esp_int_wdt_init() {
 //Not static; the ISR assembly checks this.
 bool int_wdt_app_cpu_ticked=false;
 
-void vApplicationTickHook(void) {
+void IRAM_ATTR vApplicationTickHook(void) {
     if (xPortGetCoreID()!=0) {
         int_wdt_app_cpu_ticked=true;
     } else {
@@ -82,7 +83,7 @@ void vApplicationTickHook(void) {
     }
 }
 #else
-void vApplicationTickHook(void) {
+void IRAM_ATTR vApplicationTickHook(void) {
     if (xPortGetCoreID()!=0) return;
     TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt

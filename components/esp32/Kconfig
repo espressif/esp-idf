@@ -157,7 +157,7 @@ config ULP_COPROC_RESERVE_MEM
 
 choice ESP32_PANIC
     prompt "Panic handler behaviour"
-    default FREERTOS_PANIC_PRINT_REBOOT
+    default ESP32_PANIC_PRINT_REBOOT
     help
         If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is 
         invoked. Configure the panic handlers action here.
