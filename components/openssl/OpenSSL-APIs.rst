@@ -1,14 +1,9 @@
 OpenSSL-APIs 
 ------------
 
-All original source code in this repository is Copyright (C) 2015-2016
-Espressif Systems. This source code is licensed under the Apache
-License 2.0 as described in the file LICENSE.
-
 OpenSSL APIs not mentioned in this article are not open to public for the time,
 also do not have the corresponding function.
-If user calls it directly, it will always return an error or may show cannot link
-at compile time.
+If user calls it directly, it will always return an error or may show cannot link at compile time.
 
 Chapter Introduction
 ====================

@@ -1,3 +1,2 @@
-# Anyone compiling mbedTLS code needs the name of the
-# alternative config file
+# Anyone compiling openssl code needs the mbedtls library and header file
 
