@@ -95,17 +95,37 @@ extern unsigned long os_random(void);
    ---------- Internal Memory Pool Sizes ----------
    ------------------------------------------------
 */
-/**
- * MEMP_NUM_TCP_PCB: the number of simulatenously active TCP connections.
- * (requires the LWIP_TCP option)
- */
-#define MEMP_NUM_TCP_PCB                5
 
 /**
  * MEMP_NUM_NETCONN: the number of struct netconns.
  * (only needed if you use the sequential API, like api_lib.c)
  */
-#define MEMP_NUM_NETCONN                10
+#define MEMP_NUM_NETCONN                CONFIG_LWIP_MAX_SOCKETS
+
+/**
+ * MEMP_NUM_RAW_PCB: Number of raw connection PCBs
+ * (requires the LWIP_RAW option)
+ */
+#define MEMP_NUM_RAW_PCB                16
+
+/**
+ * MEMP_NUM_TCP_PCB: the number of simulatenously active TCP connections.
+ * (requires the LWIP_TCP option)
+ */
+#define MEMP_NUM_TCP_PCB                16
+
+/**
+ * MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP connections.
+ * (requires the LWIP_TCP option)
+ */
+#define MEMP_NUM_TCP_PCB_LISTEN         16
+
+/**
+ * MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
+ * per active UDP "connection".
+ * (requires the LWIP_UDP option)
+ */
+#define MEMP_NUM_UDP_PCB                16
 
 /*
    --------------------------------
@@ -542,9 +562,9 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
  * DHCP_DEBUG: Enable debugging in dhcp.c.
  */
 #define DHCP_DEBUG                      LWIP_DBG_OFF
-#define LWIP_DEBUG                      0
+#define LWIP_DEBUG                      LWIP_DBG_OFF
 #define TCP_DEBUG                       LWIP_DBG_OFF
-#define ESP_THREAD_SAFE_DEBUG               LWIP_DBG_OFF
+#define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_IP               0
