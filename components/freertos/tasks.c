@@ -2308,7 +2308,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 		{
 			/* Guard against the tick hook being called when the pended tick
 			count is being unwound (when the scheduler is being unlocked). */
-			if( uxPendedTicks == ( UBaseType_t ) 0U )
+			if( ( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE ) || uxPendedTicks == ( UBaseType_t ) 0U )
 			{
 				vApplicationTickHook();
 			}
