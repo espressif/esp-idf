@@ -206,7 +206,7 @@ config INT_WDT
 config INT_WDT_TIMEOUT_MS
     int "Interrupt watchdog timeout (ms)"
     depends on INT_WDT
-    default 10
+    default 300
     range 10 10000
     help
         The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
