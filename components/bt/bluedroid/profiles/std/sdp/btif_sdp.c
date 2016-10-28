@@ -63,7 +63,7 @@ static void btif_sdp_search_comp_evt(UINT16 event, char *p_param)
 {
     tBTA_SDP_SEARCH_COMP *evt_data = (tBTA_SDP_SEARCH_COMP*) p_param;
     bt_bdaddr_t addr;
-    BTIF_TRACE_DEBUG("%s:  event = %d", __FUNCTION__, event);
+    BTIF_TRACE_DEBUG("%s:  event = %d\n", __FUNCTION__, event);
 
     if (event != BTA_SDP_SEARCH_COMP_EVT)
         return;
@@ -123,7 +123,7 @@ static void sdp_dm_cback(tBTA_SDP_EVT event, tBTA_SDP *p_data, void *user_data)
 
 bt_status_t API_BT_SdpInit(btsdp_callbacks_t *callbacks)
 {
-    BTIF_TRACE_DEBUG("Sdp Search %s", __FUNCTION__);
+    BTIF_TRACE_DEBUG("Sdp Search %s\n", __FUNCTION__);
 
     bt_sdp_callbacks = callbacks;
     sdp_server_init();
@@ -135,7 +135,7 @@ bt_status_t API_BT_SdpInit(btsdp_callbacks_t *callbacks)
 
 bt_status_t API_BT_SdpDeinit(void)
 {
-    BTIF_TRACE_DEBUG("Sdp Search %s", __FUNCTION__);
+    BTIF_TRACE_DEBUG("Sdp Search %s\n", __FUNCTION__);
 
     bt_sdp_callbacks = NULL;
     sdp_server_cleanup();
@@ -168,7 +168,7 @@ bt_status_t API_BT_SdpSearch(bt_bdaddr_t *bd_addr,  const uint8_t* uuid)
 *******************************************************************************/
 bt_status_t btif_sdp_execute_service(BOOLEAN b_enable)
 {
-    BTIF_TRACE_DEBUG("%s enable:%d", __FUNCTION__, b_enable);
+    BTIF_TRACE_DEBUG("%s enable:%d\n", __FUNCTION__, b_enable);
 
      if (b_enable)
      {

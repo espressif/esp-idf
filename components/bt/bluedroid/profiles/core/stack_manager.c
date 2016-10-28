@@ -26,7 +26,6 @@ static bt_status_t event_init_stack(bt_callbacks_t *cb);
 static bt_status_t event_start_up_stack(void);
 static bt_status_t event_shut_down_stack(void);
 static bt_status_t event_clean_up_stack(void);
-static void event_signal_stack_initialized(void);
 static void event_signal_stack_up(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param);
 static void event_signal_stack_down(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param);
 
@@ -62,7 +61,7 @@ static bt_status_t event_start_up_stack(void)
         return BT_STATUS_DONE;
     }
 
-    LOG_DEBUG("%s is bringing up the stack.", __func__);
+    LOG_DEBUG("%s is bringing up the stack.\n", __func__);
     hack_future = future_new();
 
     btif_enable_bluetooth();
@@ -74,7 +73,7 @@ static bt_status_t event_start_up_stack(void)
     }
 
     stack_is_running = true;
-    LOG_DEBUG("%s finished", __func__);
+    LOG_DEBUG("%s finished\n", __func__);
     btif_transfer_context(event_signal_stack_up, 0, NULL, 0, NULL);
     return BT_STATUS_SUCCESS;
 }
@@ -82,11 +81,11 @@ static bt_status_t event_start_up_stack(void)
 static bt_status_t event_shut_down_stack(void)
 {
     if (!stack_is_running) {
-        LOG_DEBUG("%s stack is already brought down.", __func__);
+        LOG_DEBUG("%s stack is already brought down.\n", __func__);
         return BT_STATUS_DONE;
     }
 
-    LOG_DEBUG("%s is bringing down the stack.", __func__);
+    LOG_DEBUG("%s is bringing down the stack.\n", __func__);
     hack_future = future_new();
     stack_is_running = false;
 
@@ -94,7 +93,7 @@ static bt_status_t event_shut_down_stack(void)
 
     future_await(hack_future);
 
-    LOG_DEBUG("%s finished.", __func__);
+    LOG_DEBUG("%s finished.\n", __func__);
     btif_transfer_context(event_signal_stack_down, 0, NULL, 0, NULL);
     return BT_STATUS_SUCCESS;
 }
@@ -102,7 +101,7 @@ static bt_status_t event_shut_down_stack(void)
 static bt_status_t event_clean_up_stack(void)
 {
     if (!stack_is_initialized) {
-        LOG_DEBUG("%s found the stack already in a clean state.", __func__);
+        LOG_DEBUG("%s found the stack already in a clean state.\n", __func__);
         return BT_STATUS_DONE;
     }
 
@@ -110,7 +109,7 @@ static bt_status_t event_clean_up_stack(void)
         event_shut_down_stack();
     }
     
-    LOG_DEBUG("%s is cleaning up the stack.", __func__);
+    LOG_DEBUG("%s is cleaning up the stack.\n", __func__);
     
     stack_is_initialized = false;
 

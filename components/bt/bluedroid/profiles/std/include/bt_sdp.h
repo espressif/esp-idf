@@ -113,8 +113,6 @@ typedef union {
 typedef void (*btsdp_search_callback)(bt_status_t status, bt_bdaddr_t *bd_addr, uint8_t* uuid, int num_records, bluetooth_sdp_record *records);
 
 typedef struct {
-    /** Set to sizeof(btsdp_callbacks_t) */
-    size_t      size;
     btsdp_search_callback  sdp_search_cb;
 } btsdp_callbacks_t;
 
