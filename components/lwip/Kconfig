@@ -1,7 +1,7 @@
 menu "LWIP"
 
 config LWIP_MAX_SOCKETS
-    int "Max number of open sockets"
+    int "Max number of open sockets, the valid value is from 1 to 16"
     range 1 16
     default 4
     help
