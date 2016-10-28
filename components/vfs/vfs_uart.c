@@ -18,6 +18,7 @@
 #include "sys/errno.h"
 #include "sys/lock.h"
 #include "soc/uart_struct.h"
+#include "sdkconfig.h"
 
 static uart_dev_t* s_uarts[3] = {&UART0, &UART1, &UART2};
 static _lock_t s_uart_locks[3]; // per-UART locks, lazily initialized

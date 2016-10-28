@@ -47,6 +47,7 @@ SECTIONS
     _iram_text_start = ABSOLUTE(.);
     *(.iram1 .iram1.*)
     *libfreertos.a:(.literal .text .literal.* .text.*)
+    *libesp32.a:panic.o(.literal .text .literal.* .text.*)
     *libphy.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
     *libpp.a:(.literal .text .literal.* .text.*)
@@ -92,7 +93,7 @@ SECTIONS
     KEEP(*(.gnu.linkonce.s2.*))
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
-    *libfreertos.a:panic.o(.rodata .rodata.*)
+    *libesp32.a:panic.o(.rodata .rodata.*)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
     _heap_start = ABSOLUTE(.);

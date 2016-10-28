@@ -1018,6 +1018,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 			if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
 			{
+#if portFIRST_TASK_HOOK
+				if ( xPortGetCoreID() == 0 ) {
+					vPortFirstTaskHook(pxTaskCode);
+				}
+#endif /* configFIRST_TASK_HOOK */
 				/* This is the first task to be created so do the preliminary
 				initialisation required.  We will not recover if this call
 				fails, but we will report the failure. */
@@ -1044,12 +1049,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 						/* Schedule if nothing is scheduled yet, or overwrite a task of lower prio. */
 						if ( pxCurrentTCB[i] == NULL || pxCurrentTCB[i]->uxPriority <= pxNewTCB->uxPriority )
 						{
-#if portFIRST_TASK_HOOK
-							if ( i == 0) {
-								vPortFirstTaskHook(pxTaskCode);
-							}
-#endif /* configFIRST_TASK_HOOK */
-
 							pxCurrentTCB[i] = pxNewTCB;
 							break;
 						}
@@ -2309,7 +2308,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 		{
 			/* Guard against the tick hook being called when the pended tick
 			count is being unwound (when the scheduler is being unlocked). */
-			if( uxPendedTicks == ( UBaseType_t ) 0U )
+			if( ( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE ) || uxPendedTicks == ( UBaseType_t ) 0U )
 			{
 				vApplicationTickHook();
 			}
