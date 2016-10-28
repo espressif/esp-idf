@@ -7,14 +7,14 @@ Introduction
 Non-volatile storage (NVS) library is designed to store key-value pairs in flash. This sections introduces some concepts used by NVS.
 
 Underlying storage
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 Currently NVS uses a portion of main flash memory through ``spi_flash_{read|write|erase}`` APIs. The range of flash sectors to be used by the library is provided to ``nvs_flash_init`` function.
 
 Future versions of this library may add other storage backends to keep data in another flash chip (SPI or I2C), RTC, FRAM, etc.
 
 Keys and values
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 NVS operates on key-value pairs. Keys are ASCII strings, maximum key length is currently 15 characters. Values can have one of the following types:
 
@@ -32,12 +32,12 @@ Keys are required to be unique. Writing a value for a key which already exists b
 Data type check is also performed when reading a value. An error is returned if data type of read operation doesn’t match the data type of the value.
 
 Namespaces
-~~~~~~~~~~
+^^^^^^^^^^
 
 To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of namespaces. Namespace names follow the same rules as key names, i.e. 15 character maximum length. Namespace name is specified in the ``nvs_open`` call. This call returns an opaque handle, which is used in subsequent calls to ``nvs_read_*``, ``nvs_write_*``, and ``nvs_commit`` functions. This way, handle is associated with a namespace, and key names will not collide with same names in other namespaces.
 
 Security, tampering, and robustness
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 NVS library doesn't implement tamper prevention measures. It is possible for anyone with physical access to the flash chip to alter, erase, or add key-value pairs.
 
@@ -59,12 +59,12 @@ Internals
 ---------
 
 Log of key-value pairs
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 NVS stores key-value pairs sequentially, with new key-value pairs being added at the end. When a value of any given key has to be updated, new key-value pair is added at the end of the log and old key-value pair is marked as erased.
 
 Pages and entries
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 NVS library uses two main entities in its operation: pages and entries. Page is a logical structure which stores a portion of the overall log. Logical page corresponds to one physical sector of flash memory. Pages which are in use have a *sequence number* associated with them. Sequence numbers impose an ordering on pages. Higher sequence numbers correspond to pages which were created later. Each page can be in one of the following states:
 
@@ -101,7 +101,7 @@ Mapping from flash sectors to logical pages doesn't have any particular order. L
     +----------+  +----------+  +----------+  +----------+
 
 Structure of a page
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 For now we assume that flash sector size is 4096 bytes and that ESP32 flash encryption hardware operates on 32-byte blocks. It is possible to introduce some settings configurable at compile-time (e.g. via menuconfig) to accommodate flash chips with different sector sizes (although it is not clear if other components in the system, e.g. SPI flash driver and SPI flash cache can support these other sizes).
 
@@ -133,7 +133,7 @@ CRC32 value in header is calculated over the part which doesn't include state va
 The following sections describe structure of entry state bitmap and entry itself.
 
 Entry and entry state bitmap
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Each entry can be in one of the following three states. Each state is represented with two bits in the entry state bitmap. Final four bits in the bitmap (256 - 2 * 126) are unused.
 
@@ -148,7 +148,7 @@ Erased (2'b00)
 
 
 Structure of entry
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 For values of primitive types (currently integers from 1 to 8 bytes long), entry holds one key-value pair. For string and blob types, entry holds part of the whole key-value pair. In case when a key-value pair spans multiple entries, all entries are stored in the same page.
 
@@ -200,7 +200,7 @@ Variable length values (strings and blobs) are written into subsequent entries, 
 
 
 Namespaces
-~~~~~~~~~~
+^^^^^^^^^^
 
 As mentioned above, each key-value pair belongs to one of the namespaces. Namespaces identifiers (strings) are stored as keys of key-value pairs in namespace with index 0. Values corresponding to these keys are indexes of these namespaces. 
 
@@ -218,10 +218,9 @@ As mentioned above, each key-value pair belongs to one of the namespaces. Namesp
 
 
 Item hash list
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^
 
 To reduce the number of reads performed from flash memory, each member of Page class maintains a list of pairs: (item index; item hash). This list makes searches much quicker. Instead of iterating over all entries, reading them from flash one at a time, ``Page::findItem`` first performs search for item hash in the hash list. This gives the item index within the page, if such an item exists. Due to a hash collision it is possible that a different item will be found. This is handled by falling back to iteration over items in flash.
 
 Each node in hash list contains a 24-bit hash and 8-bit item index. Hash is calculated based on item namespace and key name. CRC32 is used for calculation, result is truncated to 24 bits. To reduce overhead of storing 32-bit entries in a linked list, list is implemented as a doubly-linked list of arrays. Each array holds 29 entries, for the total size of 128 bytes, together with linked list pointers and 32-bit count field. Minimal amount of extra RAM useage per page is therefore 128 bytes, maximum is 640 bytes.
-
 
