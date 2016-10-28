@@ -30,12 +30,16 @@
 
 #include "esp_gdbstub.h"
 #include "esp_panic.h"
-
+#include "esp_attr.h"
 
 /*
 Panic handlers; these get called when an unhandled exception occurs or the assembly-level
 task switching / interrupt code runs into an unrecoverable error. The default task stack
 overflow handler also is in here.
+*/
+
+/*
+Note: The linker script will put everything in this file in IRAM/DRAM, so it also works with flash cache disabled.
 */
 
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
