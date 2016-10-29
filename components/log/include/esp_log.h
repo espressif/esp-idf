@@ -29,7 +29,7 @@ extern "C" {
  */
 typedef enum {
     ESP_LOG_NONE,       /*!< No log output */
-    ESP_LOG_ERROR,      /*!<  Critical errors, software module can not recover on its own */
+    ESP_LOG_ERROR,      /*!< Critical errors, software module can not recover on its own */
     ESP_LOG_WARN,       /*!< Error conditions from which recovery measures have been taken */
     ESP_LOG_INFO,       /*!< Information messages which describe normal flow of events */
     ESP_LOG_DEBUG,      /*!< Extra information which is not necessary for normal use (values, pointers, sizes, etc). */
@@ -61,17 +61,6 @@ void esp_log_level_set(const char* tag, esp_log_level_t level);
 void esp_log_set_vprintf(vprintf_like_t func);
 
 /**
- * @brief Write message into the log
- *
- * This function is not intended to be used directly. Instead, use one of
- * ESP_LOGE, ESP_LOGW, ESP_LOGI, ESP_LOGD, ESP_LOGV macros.
- *
- * This function or these macros should not be used from an interrupt.
- */
-void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
-
-
-/**
  * @brief Function which returns timestamp to be used in log output
  *
  * This function is used in expansion of ESP_LOGx macros.
@@ -84,6 +73,16 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  * @return timestamp, in milliseconds
  */
 uint32_t esp_log_timestamp(void);
+
+/**
+ * @brief Write message into the log
+ *
+ * This function is not intended to be used directly. Instead, use one of
+ * ESP_LOGE, ESP_LOGW, ESP_LOGI, ESP_LOGD, ESP_LOGV macros.
+ *
+ * This function or these macros should not be used from an interrupt.
+ */
+void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
 
 
 #if CONFIG_LOG_COLORS

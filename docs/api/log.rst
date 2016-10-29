@@ -13,8 +13,7 @@ Functions
 
 .. doxygenfunction:: esp_log_level_set
 .. doxygenfunction:: esp_log_set_vprintf
+.. doxygenfunction:: esp_log_timestamp
 .. doxygenfunction:: esp_log_write
-
-.. FIXME esp_log_timestamp
 
 
