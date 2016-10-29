@@ -1,7 +1,7 @@
 .. include:: ../../components/nvs_flash/README.rst
 
-Reference
----------
+API Reference
+-------------
 
 Enumerations
 ^^^^^^^^^^^^

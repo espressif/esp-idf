@@ -19,7 +19,7 @@ Reference
 Type Definitions
 ^^^^^^^^^^^^^^^^
 
-.. doxygentypedef:: vhci_host_callback
+.. doxygenstruct:: vhci_host_callback
 
 Functions
 ^^^^^^^^^
