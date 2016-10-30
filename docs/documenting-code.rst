@@ -4,7 +4,7 @@ Documenting Code
 Introduction
 ------------
 
-When documenting code for this repository, please follow `Doxygen style <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_ . You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks like for example ``/* @param ratio this is oxygen to air ratio */``. 
+When documenting code for this repository, please follow `Doxygen style <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_. You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks like for example ``/* @param ratio this is oxygen to air ratio */``. 
 
 Doxygen is phrasing the code, extracting the commands together with subsequent text, and building documentation out of it.
 
@@ -14,7 +14,7 @@ Typical comment block, that contains documentation of a function, looks like bel
    :align: center
    :alt: Sample inline code documentation
  
-Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get the taste of available features please check data reach and very well organized `Doxygen Manual <http://www.stack.nl/~dimitri/doxygen/manual/index.html>`_ .
+Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get the taste of available features please check data reach and very well organized `Doxygen Manual <http://www.stack.nl/~dimitri/doxygen/manual/index.html>`_.
 
 Why we need it?
 ---------------
@@ -35,7 +35,7 @@ When writing code for this repository, please follow guidelines below.
 
   1. Document all building blocks of code: functions, structs, typedefs, enums, macros, etc. Provide enough information on purpose, functionality and limitations of documented items, as you would like to see them documented when reading the code by others.
 
-  2. Documentation of function should describe what this function does. If it accepts input parameters and returns some value, all they should be explained.
+  2. Documentation of function should describe what this function does. If it accepts input parameters and returns some value, all of them should be explained.
 
   3. Do not add a data type before parameter or any other characters besides spaces. All spaces and line breaks are compressed into a single space. If you like to break a line, then break it twice.
 
@@ -76,7 +76,7 @@ When writing code for this repository, please follow guidelines below.
 Go one extra mile
 -----------------
 
-There are are couple of tips how you can make your documentation even better and more useful to the reader.
+There are couple of tips how you can make your documentation even better and more useful to the reader.
 
 Add code snippets to illustrate implementation. To do so, enclose the snippet using ``@code{c}`` and ``@endcode`` commands.
 
@@ -122,5 +122,5 @@ Wrap up
 -------
 
 We love good code that is doing cool things. 
-We love it even better, if it is well documented, so we can qickly make it run and also do the cool things.
+We love it even better, if it is well documented, so we can quickly make it run and also do the cool things.
 
