@@ -3,7 +3,11 @@ ESP32 Programming Guide
 
 .. caution::
 
-   This is DRAFT - mind your step
+   This DRAF version of documentation developed within `ESP-IDF 1.0 Release plan <http://esp32.com/viewtopic.php?f=10&p=1708>`_.
+   It is scheduled for merging with `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository at the release date.
+   Before merging it may be incomplete, or not fully in sync with espressif/esp-idf.
+   Please mind your step!
+
 
 Contents:
 
@@ -58,6 +62,7 @@ Contents:
    :maxdepth: 1
 
    contributing
+   documenting-code
    contributor-agreement
 
 .. toctree::
