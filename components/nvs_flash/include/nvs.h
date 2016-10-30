@@ -62,12 +62,13 @@ typedef enum {
  *                         underlying implementation, but is guaranteed to be
  *                         at least 16 characters. Shouldn't be empty.
  * @param[in]  open_mode   NVS_READWRITE or NVS_READONLY. If NVS_READONLY, will 
- *						   open a handle for reading only. All write requests will 
- *						   be rejected for this handle.
+ *                         open a handle for reading only. All write requests will 
+ *			   be rejected for this handle.
  * @param[out] out_handle  If successful (return code is zero), handle will be
  *                         returned in this argument.
  *
- * @return     - ESP_OK if storage handle was opened successfully
+ * @return
+ *             - ESP_OK if storage handle was opened successfully
  *             - ESP_ERR_NVS_NOT_INITIALIZED if the storage driver is not initialized
  *             - ESP_ERR_NVS_NOT_FOUND id namespace doesn't exist yet and
  *               mode is NVS_READONLY
@@ -90,7 +91,8 @@ esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_ha
  * @param[in]  value   The value to set.
  * @param[in]  length  For nvs_set_blob: length of binary value to set, in bytes.
  *
- * @return     - ESP_OK if value was set successfully
+ * @return
+ *             - ESP_OK if value was set successfully
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *             - ESP_ERR_NVS_READ_ONLY if storage handle was opened as read only
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
@@ -168,7 +170,8 @@ esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, si
  *                           zero, will be set to the actual length of the value
  *                           written. For nvs_get_str this includes zero terminator.
  *
- * @return     - ESP_OK if the value was retrieved successfully
+ * @return
+ *             - ESP_OK if the value was retrieved successfully
  *             - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
@@ -197,7 +200,8 @@ esp_err_t nvs_get_blob(nvs_handle handle, const char* key, void* out_value, size
  *                     implementation, but is guaranteed to be at least
  *                     16 characters. Shouldn't be empty.
  *
- * @return      - ESP_OK if erase operation was successful
+ * @return
+ *              - ESP_OK if erase operation was successful
  *              - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *              - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
  *              - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
@@ -213,7 +217,8 @@ esp_err_t nvs_erase_key(nvs_handle handle, const char* key);
  * @param[in]  handle  Storage handle obtained with nvs_open.
  *                     Handles that were opened read only cannot be used.
  *
- * @return      - ESP_OK if erase operation was successful
+ * @return
+ *              - ESP_OK if erase operation was successful
  *              - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *              - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
  *              - other error codes from the underlying storage driver
@@ -230,7 +235,8 @@ esp_err_t nvs_erase_all(nvs_handle handle);
  * @param[in]  handle  Storage handle obtained with nvs_open.
  *                     Handles that were opened read only cannot be used.
  *
- * @return     - ESP_OK if the changes have been written successfully
+ * @return
+ *             - ESP_OK if the changes have been written successfully
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *             - other error codes from the underlying storage driver
  */
@@ -255,3 +261,4 @@ void nvs_close(nvs_handle handle);
 #endif
 
 #endif //ESP_NVS_H
+
