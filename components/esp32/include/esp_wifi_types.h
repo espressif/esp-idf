@@ -154,7 +154,7 @@ typedef struct {
     uint8_t mac[6];  /**< mac address of sta that associated with ESP32 soft-AP */
 }wifi_sta_info_t;
 
-#define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of sta the ESP32 soft-AP can connect */
+#define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32 soft-AP */
 typedef struct {
     wifi_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM]; /**< station list */
     int       num; /**< number of station that associated with ESP32 soft-AP */
