@@ -104,7 +104,7 @@ void esp_ble_stop_advertising (void);
 
 /*******************************************************************************
 **
-** @function         esp_ble_update_conec_params
+** @function         esp_ble_update_conn_params
 **
 ** @brief           Update connection parameters, can only be used when connection is up.
 **
@@ -117,7 +117,7 @@ void esp_ble_stop_advertising (void);
 ** @return          None
 **
 *******************************************************************************/
-void esp_ble_update_conec_params (BD_ADDR bd_addr, uint16_t min_int, 
+void esp_ble_update_conn_params (BD_ADDR bd_addr, uint16_t min_int, 
 												uint16_t max_int, uint16_t latency, uint16_t timeout);
 
 
