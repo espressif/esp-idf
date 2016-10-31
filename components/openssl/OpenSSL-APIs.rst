@@ -1,9 +1,12 @@
 OpenSSL-APIs 
 ------------
 
+This directory does not contain OpenSSL itself, but the code here can be used as a wrapper for applications using the OpenSSL API. 
+It uses mbedSSL to do the actual work, so anyone compiling openssl code needs the mbedtls library and header file.
+
 OpenSSL APIs not mentioned in this article are not open to public for the time,
 also do not have the corresponding function.
-If user calls it directly, it will always return an error or may show cannot link at compile time.
+If user calls it directly, it will always return an error or may show cannot link at compiling time.
 
 Chapter Introduction
 ====================
