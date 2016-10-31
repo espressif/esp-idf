@@ -44,7 +44,7 @@ ToDo: There is a small chance the CPU already has yielded when this ISR is servi
 the ISR will cause it to switch _away_ from it. portYIELD_FROM_ISR will probably just schedule the task again, but have to check that.
 */
 static void esp_crosscore_isr(void *arg) {
-    volatile uint32_t myReasonVal;
+    uint32_t myReasonVal;
 #if 0
     //A pointer to the correct reason array item is passed to this ISR.
     volatile uint32_t *myReason=arg;
