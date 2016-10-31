@@ -141,6 +141,18 @@ public:
     {
         return reinterpret_cast<const uint8_t*>(mData.data());
     }
+    
+    void load(const char* filename)
+    {
+        FILE* f = fopen(filename, "rb");
+        fseek(f, 0, SEEK_END);
+        off_t size = ftell(f);
+        assert(size % SPI_FLASH_SEC_SIZE == 0);
+        mData.resize(size);
+        fseek(f, 0, SEEK_SET);
+        auto s = fread(mData.data(), SPI_FLASH_SEC_SIZE, size / SPI_FLASH_SEC_SIZE, f);
+        assert(s == static_cast<size_t>(size / SPI_FLASH_SEC_SIZE));
+    }
 
     void clearStats()
     {

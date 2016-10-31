@@ -953,6 +953,68 @@ TEST_CASE("test for memory leaks in open/set", "[leaks]")
     }
 }
 
+TEST_CASE("duplicate items are removed", "[nvs][dupes]")
+{
+    SpiFlashEmulator emu(3);
+    {
+        // create one item
+        nvs::Page p;
+        p.load(0);
+        p.writeItem<uint8_t>(1, "opmode", 3);
+    }
+    {
+        // add another one without deleting the first one
+        nvs::Item item(1, ItemType::U8, 1, "opmode");
+        item.data[0] = 2;
+        item.crc32 = item.calculateCrc32();
+        emu.write(3 * 32, reinterpret_cast<const uint32_t*>(&item), sizeof(item));
+        uint32_t mask = 0xFFFFFFFA;
+        emu.write(32, &mask, 4);
+    }
+    {
+        // load page and check that second item persists
+        nvs::Page p;
+        p.load(0);
+        uint8_t val;
+        p.readItem(1, "opmode", val);
+        CHECK(val == 2);
+        CHECK(p.getErasedEntryCount() == 1);
+        CHECK(p.getUsedEntryCount() == 1);
+    }
+}
+
+TEST_CASE("recovery after failure to write data", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    // TODO: remove explicit alignment
+    const char str[] __attribute__((aligned(4))) = "value 0123456789abcdef012345678value 0123456789abcdef012345678";
+
+    // make flash write fail exactly in Page::writeEntryData
+    emu.failAfter(17);
+    {
+        Storage storage;
+        TEST_ESP_OK(storage.init(0, 3));
+        
+        TEST_ESP_ERR(storage.writeItem(1, ItemType::SZ, "key", str, strlen(str)), ESP_ERR_FLASH_OP_FAIL);
+        
+        // check that repeated operations cause an error
+        TEST_ESP_ERR(storage.writeItem(1, ItemType::SZ, "key", str, strlen(str)), ESP_ERR_NVS_INVALID_STATE);
+        
+        uint8_t val;
+        TEST_ESP_ERR(storage.readItem(1, ItemType::U8, "key", &val, sizeof(val)), ESP_ERR_NVS_NOT_FOUND);
+    }
+    {
+        // load page and check that data was erased
+        Page p;
+        p.load(0);
+        CHECK(p.getErasedEntryCount() == 3);
+        CHECK(p.getUsedEntryCount() == 0);
+        
+        // try to write again
+        TEST_ESP_OK(p.writeItem(1, ItemType::SZ, "key", str, strlen(str)));
+    }
+}
+
 TEST_CASE("dump all performance data", "[nvs]")
 {
     std::cout << "====================" << std::endl << "Dumping benchmarks" << std::endl;
