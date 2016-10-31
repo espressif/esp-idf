@@ -171,7 +171,7 @@ static void sdp_snd_service_search_req(tCONN_CB *p_ccb, UINT8 cont_len, UINT8 * 
     p_cmd->len = (UINT16)(p - p_start);
 
 #if (SDP_DEBUG_RAW == TRUE)
-    SDP_TRACE_WARNING("sdp_snd_service_search_req cont_len :%d disc_state:%d",cont_len, p_ccb->disc_state);
+    SDP_TRACE_WARNING("sdp_snd_service_search_req cont_len :%d disc_state:%d\n",cont_len, p_ccb->disc_state);
 #endif
 
 
@@ -228,7 +228,7 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
     BOOLEAN         invalid_pdu = TRUE;
 
 #if (SDP_DEBUG_RAW == TRUE)
-    SDP_TRACE_WARNING("sdp_disc_server_rsp disc_state:%d", p_ccb->disc_state);
+    SDP_TRACE_WARNING("sdp_disc_server_rsp disc_state:%d\n", p_ccb->disc_state);
 #endif
 
     /* stop inactivity timer when we receive a response */
@@ -270,7 +270,7 @@ void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg)
 
     if (invalid_pdu)
     {
-        SDP_TRACE_WARNING ("SDP - Unexp. PDU: %d in state: %d", rsp_pdu, p_ccb->disc_state);
+        SDP_TRACE_WARNING ("SDP - Unexp. PDU: %d in state: %d\n", rsp_pdu, p_ccb->disc_state);
         sdp_disconnect (p_ccb, SDP_GENERIC_ERROR);
     }
 }
@@ -300,7 +300,7 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
     p_ccb->num_handles += cur_handles;
     if (p_ccb->num_handles == 0)
     {
-        SDP_TRACE_WARNING ("SDP - Rcvd ServiceSearchRsp, no matches");
+        SDP_TRACE_WARNING ("SDP - Rcvd ServiceSearchRsp, no matches\n");
         sdp_disconnect (p_ccb, SDP_NO_RECS_MATCH);
         return;
     }
@@ -359,9 +359,9 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
 
     for (i = 0; i < p_ccb->list_len; i++)
     {
-        sprintf((char *)&num_array[i*2],"%02X",(UINT8)(p_ccb->rsp_list[i]));
+        sprintf((char *)&num_array[i*2],"%02X\n",(UINT8)(p_ccb->rsp_list[i]));
     }
-    SDP_TRACE_WARNING("result :%s",num_array);
+    SDP_TRACE_WARNING("result :%s\n",num_array);
 #endif
 
     if(p_ccb->p_db->raw_data)
@@ -380,7 +380,7 @@ static void sdp_copy_raw_data (tCONN_CB *p_ccb, BOOLEAN offset)
             cpy_len = list_len;
         }
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("list_len :%d cpy_len:%d raw_size:%d raw_used:%d",
+        SDP_TRACE_WARNING("list_len :%d cpy_len:%d raw_size:%d raw_used:%d\n",
             list_len, cpy_len, p_ccb->p_db->raw_size, p_ccb->p_db->raw_used);
 #endif
         memcpy (&p_ccb->p_db->raw_data[p_ccb->p_db->raw_used], p, cpy_len);
@@ -406,14 +406,14 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
     BOOLEAN         cont_request_needed = FALSE;
 
 #if (SDP_DEBUG_RAW == TRUE)
-    SDP_TRACE_WARNING("process_service_attr_rsp raw inc:%d",
+    SDP_TRACE_WARNING("process_service_attr_rsp raw inc:%d\n",
         SDP_RAW_DATA_INCLUDED);
 #endif
     /* If p_reply is NULL, we were called after the records handles were read */
     if (p_reply)
     {
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("ID & len: 0x%02x-%02x-%02x-%02x",
+        SDP_TRACE_WARNING("ID & len: 0x%02x-%02x-%02x-%02x\n",
             p_reply[0], p_reply[1], p_reply[2], p_reply[3]);
 #endif
         /* Skip transaction ID and length */
@@ -421,7 +421,7 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 
         BE_STREAM_TO_UINT16 (list_byte_count, p_reply);
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("list_byte_count:%d", list_byte_count);
+        SDP_TRACE_WARNING("list_byte_count:%d\n", list_byte_count);
 #endif
 
         /* Copy the response to the scratchpad. First, a safety check on the length */
@@ -432,7 +432,7 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         }
 
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("list_len: %d, list_byte_count: %d",
+        SDP_TRACE_WARNING("list_len: %d, list_byte_count: %d\n",
             p_ccb->list_len, list_byte_count);
 #endif
         if (p_ccb->rsp_list == NULL)
@@ -440,7 +440,7 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
             p_ccb->rsp_list = (UINT8 *)GKI_getbuf (SDP_MAX_LIST_BYTE_COUNT);
             if (p_ccb->rsp_list == NULL)
             {
-                SDP_TRACE_ERROR ("SDP - no gki buf to save rsp");
+                SDP_TRACE_ERROR ("SDP - no gki buf to save rsp\n");
                 sdp_disconnect (p_ccb, SDP_NO_RESOURCES);
                 return;
             }
@@ -449,10 +449,10 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         p_ccb->list_len += list_byte_count;
         p_reply         += list_byte_count;
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("list_len: %d(attr_rsp)", p_ccb->list_len);
+        SDP_TRACE_WARNING("list_len: %d(attr_rsp)\n", p_ccb->list_len);
 
         /* Check if we need to request a continuation */
-        SDP_TRACE_WARNING("*p_reply:%d(%d)", *p_reply, SDP_MAX_CONTINUATION_LEN);
+        SDP_TRACE_WARNING("*p_reply:%d(%d)\n", *p_reply, SDP_MAX_CONTINUATION_LEN);
 #endif
         if (*p_reply)
         {
@@ -467,7 +467,7 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         {
 
 #if (SDP_RAW_DATA_INCLUDED == TRUE)
-            SDP_TRACE_WARNING("process_service_attr_rsp");
+            SDP_TRACE_WARNING("process_service_attr_rsp\n");
             sdp_copy_raw_data (p_ccb, FALSE);
 #endif
 
@@ -566,13 +566,13 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
     BOOLEAN         cont_request_needed = FALSE;
 
 #if (SDP_DEBUG_RAW == TRUE)
-    SDP_TRACE_WARNING("process_service_search_attr_rsp");
+    SDP_TRACE_WARNING("process_service_search_attr_rsp\n");
 #endif
     /* If p_reply is NULL, we were called for the initial read */
     if (p_reply)
     {
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("ID & len: 0x%02x-%02x-%02x-%02x",
+        SDP_TRACE_WARNING("ID & len: 0x%02x-%02x-%02x-%02x\n",
             p_reply[0], p_reply[1], p_reply[2], p_reply[3]);
 #endif
         /* Skip transaction ID and length */
@@ -580,7 +580,7 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 
         BE_STREAM_TO_UINT16 (lists_byte_count, p_reply);
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("lists_byte_count:%d", lists_byte_count);
+        SDP_TRACE_WARNING("lists_byte_count:%d\n", lists_byte_count);
 #endif
 
         /* Copy the response to the scratchpad. First, a safety check on the length */
@@ -591,7 +591,7 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         }
 
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("list_len: %d, list_byte_count: %d",
+        SDP_TRACE_WARNING("list_len: %d, list_byte_count: %d\n",
             p_ccb->list_len, lists_byte_count);
 #endif
         if (p_ccb->rsp_list == NULL)
@@ -599,7 +599,7 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
             p_ccb->rsp_list = (UINT8 *)GKI_getbuf (SDP_MAX_LIST_BYTE_COUNT);
             if (p_ccb->rsp_list == NULL)
             {
-                SDP_TRACE_ERROR ("SDP - no gki buf to save rsp");
+                SDP_TRACE_ERROR ("SDP - no gki buf to save rsp\n");
                 sdp_disconnect (p_ccb, SDP_NO_RESOURCES);
                 return;
             }
@@ -608,10 +608,10 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         p_ccb->list_len += lists_byte_count;
         p_reply         += lists_byte_count;
 #if (SDP_DEBUG_RAW == TRUE)
-        SDP_TRACE_WARNING("list_len: %d(search_attr_rsp)", p_ccb->list_len);
+        SDP_TRACE_WARNING("list_len: %d(search_attr_rsp)\n", p_ccb->list_len);
 
         /* Check if we need to request a continuation */
-        SDP_TRACE_WARNING("*p_reply:%d(%d)", *p_reply, SDP_MAX_CONTINUATION_LEN);
+        SDP_TRACE_WARNING("*p_reply:%d(%d)\n", *p_reply, SDP_MAX_CONTINUATION_LEN);
 #endif
         if (*p_reply)
         {
@@ -626,7 +626,7 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
     }
 
 #if (SDP_DEBUG_RAW == TRUE)
-    SDP_TRACE_WARNING("cont_request_needed:%d", cont_request_needed);
+    SDP_TRACE_WARNING("cont_request_needed:%d\n", cont_request_needed);
 #endif
     /* If continuation request (or first time request) */
     if ((cont_request_needed) || (!p_reply))
@@ -699,7 +699,7 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
     /*******************************************************************/
 
 #if (SDP_RAW_DATA_INCLUDED == TRUE)
-    SDP_TRACE_WARNING("process_service_search_attr_rsp");
+    SDP_TRACE_WARNING("process_service_search_attr_rsp\n");
     sdp_copy_raw_data (p_ccb, TRUE);
 #endif
 
@@ -710,7 +710,7 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 
     if ((type >> 3) != DATA_ELE_SEQ_DESC_TYPE)
     {
-        SDP_TRACE_WARNING ("SDP - Wrong type: 0x%02x in attr_rsp", type);
+        SDP_TRACE_WARNING ("SDP - Wrong type: 0x%02x in attr_rsp\n", type);
         return;
     }
     p = sdpu_get_len_from_type (p, type, &seq_len);
@@ -758,14 +758,14 @@ static UINT8 *save_attr_seq (tCONN_CB *p_ccb, UINT8 *p, UINT8 *p_msg_end)
 
     if ((type >> 3) != DATA_ELE_SEQ_DESC_TYPE)
     {
-        SDP_TRACE_WARNING ("SDP - Wrong type: 0x%02x in attr_rsp", type);
+        SDP_TRACE_WARNING ("SDP - Wrong type: 0x%02x in attr_rsp\n", type);
         return (NULL);
     }
 
     p = sdpu_get_len_from_type (p, type, &seq_len);
     if ((p + seq_len) > p_msg_end)
     {
-        SDP_TRACE_WARNING ("SDP - Bad len in attr_rsp %d", seq_len);
+        SDP_TRACE_WARNING ("SDP - Bad len in attr_rsp %d\n", seq_len);
         return (NULL);
     }
 
@@ -773,7 +773,7 @@ static UINT8 *save_attr_seq (tCONN_CB *p_ccb, UINT8 *p, UINT8 *p_msg_end)
     p_rec = add_record (p_ccb->p_db, p_ccb->device_address);
     if (!p_rec)
     {
-        SDP_TRACE_WARNING ("SDP - DB full add_record");
+        SDP_TRACE_WARNING ("SDP - DB full add_record\n");
         return (NULL);
     }
 
@@ -786,7 +786,7 @@ static UINT8 *save_attr_seq (tCONN_CB *p_ccb, UINT8 *p, UINT8 *p_msg_end)
         p = sdpu_get_len_from_type (p, type, &attr_len);
         if (((type >> 3) != UINT_DESC_TYPE) || (attr_len != 2))
         {
-            SDP_TRACE_WARNING ("SDP - Bad type: 0x%02x or len: %d in attr_rsp", type, attr_len);
+            SDP_TRACE_WARNING ("SDP - Bad type: 0x%02x or len: %d in attr_rsp\n", type, attr_len);
             return (NULL);
         }
         BE_STREAM_TO_UINT16 (attr_id, p);
@@ -796,7 +796,7 @@ static UINT8 *save_attr_seq (tCONN_CB *p_ccb, UINT8 *p, UINT8 *p_msg_end)
 
         if (!p)
         {
-            SDP_TRACE_WARNING ("SDP - DB full add_attr");
+            SDP_TRACE_WARNING ("SDP - DB full add_attr\n");
             return (NULL);
         }
     }
@@ -916,7 +916,7 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
                 /* SDP_TRACE_DEBUG ("SDP - attr nest level:%d(list)", nest_level); */
                 if (nest_level >= MAX_NEST_LEVELS)
                 {
-                    SDP_TRACE_ERROR ("SDP - attr nesting too deep");
+                    SDP_TRACE_ERROR ("SDP - attr nesting too deep\n");
                     return (p_end);
                 }
 
@@ -993,7 +993,7 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
             }
             break;
         default:
-            SDP_TRACE_WARNING ("SDP - bad len in UUID attr: %d", attr_len);
+            SDP_TRACE_WARNING ("SDP - bad len in UUID attr: %d\n", attr_len);
             return (p + attr_len);
         }
         break;
@@ -1009,7 +1009,7 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
         /* SDP_TRACE_DEBUG ("SDP - attr nest level:%d", nest_level); */
         if (nest_level >= MAX_NEST_LEVELS)
         {
-            SDP_TRACE_ERROR ("SDP - attr nesting too deep");
+            SDP_TRACE_ERROR ("SDP - attr nesting too deep\n");
             return (p_end);
         }
         if(is_additional_list != 0 || attr_id == ATTR_ID_ADDITION_PROTO_DESC_LISTS)
@@ -1038,7 +1038,7 @@ static UINT8 *add_attr (UINT8 *p, tSDP_DISCOVERY_DB *p_db, tSDP_DISC_REC *p_rec,
             p_attr->attr_value.v.u8 = *p++;
             break;
         default:
-            SDP_TRACE_WARNING ("SDP - bad len in boolean attr: %d", attr_len);
+            SDP_TRACE_WARNING ("SDP - bad len in boolean attr: %d\n", attr_len);
             return (p + attr_len);
         }
         break;

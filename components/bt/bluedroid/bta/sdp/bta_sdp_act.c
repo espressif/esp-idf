@@ -69,7 +69,7 @@ static inline tBT_UUID shorten_sdp_uuid(const tBT_UUID* u)
     static uint8_t bt_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
                                      0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB };
 
-    APPL_TRACE_DEBUG("%s() - uuid len:%d", __func__, u->len);
+    APPL_TRACE_DEBUG("%s() - uuid len:%d\n", __func__, u->len);
     if(u->len != 16)
         return *u;
 
@@ -292,7 +292,7 @@ static void bta_create_ops_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
                 {
                     if (count == sizeof(record->ops.supported_formats_list)) {
                         APPL_TRACE_ERROR("%s() - supported_formats_list - count overflow - "
-                                "too many sub attributes!!", __func__);
+                                "too many sub attributes!!\n", __func__);
                         /* If you hit this, new formats have been added,
                          * update SDP_OPP_SUPPORTED_FORMATS_MAX_LENGTH */
                         break;
@@ -309,7 +309,7 @@ static void bta_create_ops_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
             if (record->ops.supported_formats_list_len != count) {
                 APPL_TRACE_WARNING("%s() - supported_formats_list - Length of attribute different "
                         "from the actual number of sub-attributes in the sequence "
-                        "att-length: %d - number of elements: %d", __func__,
+                        "att-length: %d - number of elements: %d\n", __func__,
                         record->ops.supported_formats_list_len , count);
 
             }
@@ -397,7 +397,7 @@ static void bta_sdp_search_cback(UINT16 result, void * user_data)
     UINT16 uuid16 = 0;
     int count = 0;
     tBT_UUID su;
-    APPL_TRACE_DEBUG("%s() -  res: 0x%x", __func__, result);
+    APPL_TRACE_DEBUG("%s() -  res: 0x%x\n", __func__, result);
 
     bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
 
@@ -416,24 +416,24 @@ static void bta_sdp_search_cback(UINT16 result, void * user_data)
             if(p_rec != NULL){
                 status = BTA_SDP_SUCCESS;
                 if (IS_UUID(UUID_MAP_MAS,uuid->uu.uuid128)) {
-                    APPL_TRACE_DEBUG("%s() - found MAP (MAS) uuid", __func__);
+                    APPL_TRACE_DEBUG("%s() - found MAP (MAS) uuid\n", __func__);
                     bta_create_mas_sdp_record(&evt_data.records[count], p_rec);
                 } else if (IS_UUID(UUID_MAP_MNS,uuid->uu.uuid128)) {
-                    APPL_TRACE_DEBUG("%s() - found MAP (MNS) uuid", __func__);
+                    APPL_TRACE_DEBUG("%s() - found MAP (MNS) uuid\n", __func__);
                     bta_create_mns_sdp_record(&evt_data.records[count], p_rec);
                 } else if (IS_UUID(UUID_PBAP_PSE,uuid->uu.uuid128)){
-                    APPL_TRACE_DEBUG("%s() - found PBAP (PSE) uuid", __func__);
+                    APPL_TRACE_DEBUG("%s() - found PBAP (PSE) uuid\n", __func__);
                     bta_create_pse_sdp_record(&evt_data.records[count], p_rec);
                 } else if (IS_UUID(UUID_OBEX_OBJECT_PUSH,uuid->uu.uuid128)){
-                    APPL_TRACE_DEBUG("%s() - found Object Push Server (OPS) uuid", __func__);
+                    APPL_TRACE_DEBUG("%s() - found Object Push Server (OPS) uuid\n", __func__);
                     bta_create_ops_sdp_record(&evt_data.records[count], p_rec);
                 } else if (IS_UUID(UUID_SAP,uuid->uu.uuid128)) {
-                    APPL_TRACE_DEBUG("%s() - found SAP uuid", __func__);
+                    APPL_TRACE_DEBUG("%s() - found SAP uuid\n", __func__);
                     bta_create_sap_sdp_record(&evt_data.records[count], p_rec);
                 } else {
 
                     /* we do not have specific structure for this */
-                    APPL_TRACE_DEBUG("%s() - profile not identified. using raw data", __func__);
+                    APPL_TRACE_DEBUG("%s() - profile not identified. using raw data\n", __func__);
                     bta_create_raw_sdp_record(&evt_data.records[count], p_rec);
                     p_rec = NULL; // Terminate loop
                     /* For raw, we only extract the first entry, and then return the entire
@@ -444,7 +444,7 @@ static void bta_sdp_search_cback(UINT16 result, void * user_data)
                 }
                 count++;
             } else {
-                APPL_TRACE_DEBUG("%s() - UUID not found", __func__);
+                APPL_TRACE_DEBUG("%s() - UUID not found\n", __func__);
             }
         } while (p_rec != NULL && count < BTA_SDP_MAX_RECORDS);
 
@@ -467,7 +467,7 @@ static void bta_sdp_search_cback(UINT16 result, void * user_data)
 *******************************************************************************/
 void bta_sdp_enable(tBTA_SDP_MSG *p_data)
 {
-    APPL_TRACE_DEBUG("%s in, sdp_active:%d", __func__, bta_sdp_cb.sdp_active);
+    APPL_TRACE_DEBUG("%s in, sdp_active:%d\n", __func__, bta_sdp_cb.sdp_active);
     tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
     bta_sdp_cb.p_dm_cback = p_data->enable.p_cback;
     bta_sdp_cb.p_dm_cback(BTA_SDP_ENABLE_EVT, (tBTA_SDP *)&status, NULL);
@@ -489,12 +489,12 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
     tBT_UUID *bta_sdp_search_uuid = osi_malloc(sizeof(tBT_UUID));
     if(p_data == NULL)
     {
-        APPL_TRACE_DEBUG("SDP control block handle is null");
+        APPL_TRACE_DEBUG("SDP control block handle is null\n");
         return;
     }
     tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
 
-    APPL_TRACE_DEBUG("%s in, sdp_active:%d", __func__, bta_sdp_cb.sdp_active);
+    APPL_TRACE_DEBUG("%s in, sdp_active:%d\n", __func__, bta_sdp_cb.sdp_active);
 
     if (bta_sdp_cb.sdp_active != BTA_SDP_ACTIVE_NONE)
     {
@@ -516,7 +516,7 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
     memcpy(bta_sdp_search_uuid, &(p_data->get_search.uuid),sizeof(tBT_UUID));
 
     /* initialize the search for the uuid */
-    APPL_TRACE_DEBUG("%s init discovery with UUID(len: %d):",
+    APPL_TRACE_DEBUG("%s init discovery with UUID(len: %d):\n",
             __func__, bta_sdp_search_uuid->len);
     for(x = 0; x<bta_sdp_search_uuid->len;x++){
         APPL_TRACE_DEBUG("%X",bta_sdp_search_uuid->uu.uuid128[x]);
@@ -554,7 +554,7 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
 *******************************************************************************/
 void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
 {
-    APPL_TRACE_DEBUG("%s() event: %d", __func__, p_data->record.hdr.event);
+    APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
     if (bta_sdp_cb.p_dm_cback)
         bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, NULL, p_data->record.user_data);
 }
@@ -570,7 +570,7 @@ void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
 *******************************************************************************/
 void bta_sdp_remove_record(tBTA_SDP_MSG *p_data)
 {
-    APPL_TRACE_DEBUG("%s() event: %d", __func__, p_data->record.hdr.event);
+    APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
     if (bta_sdp_cb.p_dm_cback)
         bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, NULL, p_data->record.user_data);
 }
