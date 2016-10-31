@@ -39,7 +39,7 @@ static spi_flash_counters_t s_flash_stats;
 #define COUNTER_STOP(counter)  \
     do{ \
         s_flash_stats.counter.count++; \
-        s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (XT_CLOCK_FREQ / 1000000); \\
+        s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (XT_CLOCK_FREQ / 1000000); \
     } while(0)
 
 #define COUNTER_ADD_BYTES(counter, size) \
@@ -126,10 +126,6 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
 
 esp_err_t IRAM_ATTR spi_flash_write(size_t dest_addr, const void *src, size_t size)
 {
-    // TODO: replace this check with code which deals with unaligned sources
-    if (((ptrdiff_t) src) % 4 != 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
     // Destination alignment is also checked in ROM code, but we can give
     // better error code here
     // TODO: add handling of unaligned destinations
