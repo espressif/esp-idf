@@ -744,7 +744,7 @@ esp_err_t Page::erase()
     mFirstUsedEntry = INVALID_ENTRY;
     mNextFreeEntry = INVALID_ENTRY;
     mState = PageState::UNINITIALIZED;
-    mHashList = HashList();
+    mHashList.clear();
     return ESP_OK;
 }
 
