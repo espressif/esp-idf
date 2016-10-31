@@ -73,8 +73,8 @@ typedef struct {
 }tcpip_adapter_sta_info_t;
 
 typedef struct {
-    tcpip_adapter_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM+2];
-    uint8_t num;
+    tcpip_adapter_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM];
+    int num;
 }tcpip_adapter_sta_list_t;
 #endif
 
