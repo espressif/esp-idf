@@ -512,7 +512,7 @@ extern unsigned long os_random(void);
 /* Enable all Espressif-only options */
 
 #define ESP_LWIP                        1
-#define ESP_PER_SOC_TCP_WND             1
+#define ESP_PER_SOC_TCP_WND             0
 #define ESP_THREAD_SAFE                 1
 #define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 #define ESP_DHCP                        1
@@ -524,9 +524,10 @@ extern unsigned long os_random(void);
 #define ESP_LIGHT_SLEEP                 1
 
 
-#if ESP_PER_SOC_TCP_WND
 #define TCP_WND_DEFAULT                      (4*TCP_MSS)
 #define TCP_SND_BUF_DEFAULT                  (2*TCP_MSS)
+
+#if ESP_PER_SOC_TCP_WND
 #define TCP_WND(pcb)                         (pcb->per_soc_tcp_wnd)
 #define TCP_SND_BUF(pcb)                     (pcb->per_soc_tcp_snd_buf)
 #else
