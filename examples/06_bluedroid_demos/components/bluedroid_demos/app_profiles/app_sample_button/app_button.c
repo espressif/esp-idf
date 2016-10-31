@@ -15,6 +15,13 @@
 *******************************************************************************
 *********
 */
+
+
+#include "prf_defs.h"
+
+#if (BUT_PROFILE_CFG)
+
+
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -75,6 +82,8 @@ BOOLEAN ble_but_prf_hdl_event(BT_HDR *msg_data)
 }
 
 
+
+#endif		///BUT_PROFILE_CFG
 
 #if 0
 

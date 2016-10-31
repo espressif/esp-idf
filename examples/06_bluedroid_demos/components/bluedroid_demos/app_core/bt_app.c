@@ -29,7 +29,7 @@
  ** Returns 		 None
  **
  *******************************************************************************/
- void ESP_AppBleConfigadvData(tESP_BLE_ADV_DATA *adv_data,
+ void ble_config_adv_data(esp_ble_adv_data_cfg_t *adv_data,
 												tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
 {
 	tBTA_BLE_AD_MASK data_mask = 0;
@@ -112,7 +112,7 @@
 ** Returns          None
 **
 *******************************************************************************/
-void ESP_AppBleSetScanRsp(tESP_BLE_ADV_DATA *scan_rsp_data,
+void ble_set_scan_rsp(esp_ble_adv_data_cfg_t *scan_rsp_data,
 												tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback)
 {
 	tBTA_BLE_AD_MASK data_mask = 0;

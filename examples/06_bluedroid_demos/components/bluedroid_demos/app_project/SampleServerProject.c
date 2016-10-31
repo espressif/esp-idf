@@ -85,7 +85,7 @@ tBTA_BLE_MANU   p_wechat_manu = {sizeof(wechat_manu),wechat_manu};
 
 BD_ADDR rand_ijiazu_addr = {0x00,0x02,0x5B,0x00,0x32,0x55};
 
-tESP_BLE_ADV_DATA ijiazu_adv_data[ADV_SCAN_IDX_MAX] = 
+esp_ble_adv_data_cfg_t ijiazu_adv_data[ADV_SCAN_IDX_MAX] = 
 {
 	[BLE_ADV_DATA_IDX] 		= {
 										.adv_name = "Espressif_007",
@@ -126,7 +126,7 @@ tESP_BLE_ADV_DATA ijiazu_adv_data[ADV_SCAN_IDX_MAX] =
 								}
 };
 
-tESP_BLE_ADV_DATA wechat_adv_data[ADV_SCAN_IDX_MAX] = 
+esp_ble_adv_data_cfg_t wechat_adv_data[ADV_SCAN_IDX_MAX] = 
 {
 	[BLE_ADV_DATA_IDX] 		= {
 										.adv_name = NULL,
@@ -279,7 +279,7 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
             
             LOG_ERROR("set advertising parameters\n");
 			//set the advertising data to the btm layer
-			API_Ble_AppConfigAdvData(&wechat_adv_data[BLE_ADV_DATA_IDX],
+			esp_ble_config_adv_data(&wechat_adv_data[BLE_ADV_DATA_IDX],
 								bta_gatts_set_adv_data_cback);
            	
         }
@@ -330,7 +330,7 @@ static void ble_server_appRegister(void)
     btif_to_bta_uuid(&t_uuid, &uuid);
 
     LOG_ERROR("register gatts application\n");
-    API_Ble_GattsAppRegister(&t_uuid, bta_gatts_callback);
+    esp_ble_gatts_app_register(&t_uuid, bta_gatts_callback);
 }
 
 void gatts_server_test(void)

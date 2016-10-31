@@ -17,25 +17,25 @@
 //#include "btm_ble_int.h"
 
 
-void API_Ble_AppConfigAdvData(tESP_BLE_ADV_DATA *adv_data,
-											tAPI_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
+void esp_ble_config_adv_data (esp_ble_adv_data_cfg_t *adv_data,
+												     esp_ble_set_adv_data_cmpl_cb_t *adv_data_cback)
 {
 	if(adv_data != NULL)
 	{
-		ESP_AppBleConfigadvData(adv_data, p_adv_data_cback);
+		ble_config_adv_data(adv_data, adv_data_cback);
 	}else{
 		LOG_ERROR("The adv_data is NULL\n");
 	}
 
 	if(++adv_data != NULL)
 	{
-		ESP_AppBleSetScanRsp(adv_data,NULL);
+		ble_set_scan_rsp(adv_data,NULL);
 	}
 			
 }
 
 
-void API_Ble_AppStartAdvertising(tESP_API_BLE_ADV_PARAMS_ALL *ble_adv_params)
+void esp_ble_start_advertising (esp_ble_adv_params_all_t *ble_adv_params)
 {
 	if (!API_BLE_ISVALID_PARAM(ble_adv_params->adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
         !API_BLE_ISVALID_PARAM(ble_adv_params->adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX))
@@ -51,8 +51,8 @@ void API_Ble_AppStartAdvertising(tESP_API_BLE_ADV_PARAMS_ALL *ble_adv_params)
 		return;
 	}
 
-	if ((ble_adv_params->adv_filter_policy < API_ADV_NON_CONN) && 
-		(ble_adv_params->adv_filter_policy > API_ADV_DIRECT) )
+	if ((ble_adv_params->adv_filter_policy < ADV_ALLOW_SCAN_ANY_CON_ANY) && 
+		(ble_adv_params->adv_filter_policy > ADV_ALLOW_SCAN_WLST_CON_WLST) )
 	{
 		LOG_ERROR("Invalid advertisting type parameters.\n");
 		return;
@@ -73,8 +73,8 @@ void API_Ble_AppStartAdvertising(tESP_API_BLE_ADV_PARAMS_ALL *ble_adv_params)
 }
 
 
-void API_Ble_SetScanParams (tESP_BLE_SCAN_PARAMS *scan_params, tGATT_IF client_if,
-                            		            tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback)
+void esp_ble_set_scan_params (esp_ble_scan_params *scan_params, esp_gattc_if_t client_if,
+                            		            esp_scan_param_setup_cb_t scan_param_setup_cback)
 {
 	if (API_BLE_ISVALID_PARAM(scan_params->scan_intv, BTM_BLE_SCAN_INT_MIN, BTM_BLE_SCAN_INT_MAX) &&
         API_BLE_ISVALID_PARAM(scan_params->scan_win, BTM_BLE_SCAN_WIN_MIN, BTM_BLE_SCAN_WIN_MAX) &&
@@ -91,26 +91,26 @@ void API_Ble_SetScanParams (tESP_BLE_SCAN_PARAMS *scan_params, tGATT_IF client_i
 }
 
 
-void API_Ble_StartScanning (UINT8 duration, tBTA_DM_SEARCH_CBACK *p_results_cb)
+void esp_ble_start_scanning (UINT8 duration, esp_dm_search_cb_t *results_cb)
 {
-	if((duration != 0) && (p_results_cb != NULL))
+	if((duration != 0) && (results_cb != NULL))
 	{
 		///Start scan the device
-		BTA_DmBleObserve(true, duration, p_results_cb);	
+		BTA_DmBleObserve(true, duration, results_cb);	
 	}else{
 		LOG_ERROR("The scan duration or p_results_cb invalid\n");
 	}
 }
 
-void API_Ble_AppStopAdvertising(void)
+void esp_ble_stop_advertising (void)
 {
 	bool stop_adv = true;
 	
 	BTA_DmBleBroadcast(stop_adv);
 }
 
-void API_Ble_AppUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int, 
-												UINT16 max_int, UINT16 latency, UINT16 timeout)
+void esp_ble_update_conec_params (BD_ADDR bd_addr, uint16_t min_int, 
+												uint16_t max_int, uint16_t latency, uint16_t timeout)
 {
 	if (min_int > max_int){
 		min_int = max_int;
@@ -125,7 +125,7 @@ void API_Ble_AppUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int,
 	
 }
 
-void API_Ble_SetPacketDataLength(BD_ADDR remote_device, UINT16 tx_data_length)
+void esp_ble_set_pkt_data_len (BD_ADDR remote_device, uint16_t tx_data_length)
 {
 	if (tx_data_length > BTM_BLE_DATA_SIZE_MAX){
        tx_data_length =  BTM_BLE_DATA_SIZE_MAX;
@@ -137,7 +137,7 @@ void API_Ble_SetPacketDataLength(BD_ADDR remote_device, UINT16 tx_data_length)
 }
 
 
-void API_Ble_SetRandAddress(BD_ADDR rand_addr)
+void esp_ble_set_rand_addr (BD_ADDR rand_addr)
 {
 	if (rand_addr != NULL){
 		BTA_DmSetRandAddress(rand_addr);
@@ -146,7 +146,7 @@ void API_Ble_SetRandAddress(BD_ADDR rand_addr)
 	}
 }
 
-void API_Ble_ConfigLocalPrivacy(BOOLEAN privacy_enable)
+void  esp_ble_config_local_privacy (BOOLEAN privacy_enable)
 {
 	 BTA_DmBleConfigLocalPrivacy(privacy_enable);
 }
@@ -154,22 +154,22 @@ void API_Ble_ConfigLocalPrivacy(BOOLEAN privacy_enable)
 
 
 
-void API_Ble_GattcAppRegister(tBT_UUID *p_app_uuid, tBTA_GATTC_CBACK *p_client_cb)
+void esp_ble_gattc_app_register(esp_bt_uuid_t *app_uuid, esp_gattc_cb_t *client_cb)
 {
-	if (p_app_uuid != NULL)
+	if (app_uuid != NULL)
 	{
-		BTA_GATTC_AppRegister(p_app_uuid, *p_client_cb);
+		BTA_GATTC_AppRegister(app_uuid, client_cb);
 	}else{
 		LOG_ERROR("The app uuid invalid.\n");
 	}
 }
 
-void API_Ble_GattcAppDeregister(tBTA_GATTC_IF client_if)
+void esp_ble_gattc_app_unregister(esp_gattc_if_t client_if)
 {
 	BTA_GATTC_AppDeregister(client_if);
 }
 
-void API_Ble_GattcOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is_direct)
+void esp_ble_gattc_conn(esp_gattc_if_t client_if, BD_ADDR remote_bda, BOOLEAN is_direct)
 {
 	tBTA_GATT_TRANSPORT transport = BTA_GATT_TRANSPORT_LE;
 	if(remote_bda == NULL ){
@@ -184,7 +184,7 @@ void API_Ble_GattcOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is_d
 	
 }
 
-void API_GattcCancelOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is_direct)
+void esp_ble_gattc_cancel_conn (esp_gattc_if_t client_if, BD_ADDR remote_bda, BOOLEAN is_direct)
 {
 	if(remote_bda == NULL ){
 		LOG_ERROR("Invaild address data \n");
@@ -194,13 +194,13 @@ void API_GattcCancelOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is
 	BTA_GATTC_CancelOpen(client_if, remote_bda, is_direct);
 }
 
-void API_Ble_GattcClose(UINT16 conn_id)
+void esp_ble_gattc_close (uint16_t conn_id)
 {
 	BTA_GATTC_Close(conn_id);
 }
 
 
-tGATT_STATUS API_Ble_GattcConfigureMTU (UINT16 conn_id, UINT16 mtu)
+tGATT_STATUS esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu)
 {
 	if ((mtu < GATT_DEF_BLE_MTU_SIZE) || (mtu > GATT_MAX_MTU_SIZE)){
 		LOG_ERROR("Invalid MTU parameters\n");
@@ -211,277 +211,279 @@ tGATT_STATUS API_Ble_GattcConfigureMTU (UINT16 conn_id, UINT16 mtu)
 	
 }
 
-void API_Ble_GattcServiceSearchRequest (UINT16 conn_id, tBT_UUID *p_srvc_uuid)
+void esp_ble_gattc_svc_search_req (uint16_t conn_id, esp_bt_uuid_t *srvc_uuid)
 {
-	BTA_GATTC_ServiceSearchRequest(conn_id, p_srvc_uuid);
+	BTA_GATTC_ServiceSearchRequest(conn_id, srvc_uuid);
 }
 
 
-tBTA_GATT_STATUS  API_Ble_GattcGetFirstChar (UINT16 conn_id, tBTA_GATT_SRVC_ID *p_srvc_id,
-                                          	tBT_UUID *p_char_uuid_cond,
-                                          	tBTA_GATTC_CHAR_ID *p_char_result,
-                                          	tBTA_GATT_CHAR_PROP *p_property)
+tBTA_GATT_STATUS  esp_ble_gattc_get_first_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
+                                          						   esp_bt_uuid_t *char_uuid_cond,
+                                          						   esp_gattc_char_id_t *char_result,
+                                          						   esp_gatt_char_prop_t *property)
 {
 	tBTA_GATT_STATUS status = 0;
 	
-	if (!p_srvc_id || !p_char_result){
+	if (!srvc_id || !char_result){
     	return BTA_GATT_ILLEGAL_PARAMETER;
 	}
 
-	status = BTA_GATTC_GetFirstChar (conn_id, p_srvc_id, p_char_uuid_cond,
-                                     p_char_result, p_property);
+	status = BTA_GATTC_GetFirstChar (conn_id, srvc_id, char_uuid_cond,
+                                     char_result, property);
 
 	return status;
 	
 	
 }
 
-tBTA_GATT_STATUS  API_Ble_GattcGetFirstCharDescr (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
-                                                tBT_UUID *p_descr_uuid_cond,
-                                                tBTA_GATTC_CHAR_DESCR_ID *p_descr_result)
+tBTA_GATT_STATUS  esp_ble_gattc_get_first_char_descr (uint16_t conn_id, esp_gattc_char_id_t *char_id,
+                                                esp_bt_uuid_t *descr_uuid_cond,
+                                                esp_gattc_char_descr_id_t *descr_result)
 {
 	tBTA_GATT_STATUS    status;
 
-    if (!p_char_id || !p_descr_result){
+    if (!char_id || !descr_result){
       return BTA_GATT_ILLEGAL_PARAMETER;
     }
 
-	status = BTA_GATTC_GetFirstCharDescr (conn_id, p_char_id, p_descr_uuid_cond, p_descr_result);
+	status = BTA_GATTC_GetFirstCharDescr (conn_id, char_id, descr_uuid_cond, descr_result);
 
 	return status;
 	
 }
 
 
-tBTA_GATT_STATUS  API_Ble_GattcGetNextChar (UINT16 conn_id,
-                                         tBTA_GATTC_CHAR_ID *p_start_char_id,
-                                         tBT_UUID           *p_char_uuid_cond,
-                                         tBTA_GATTC_CHAR_ID *p_char_result,
-                                         tBTA_GATT_CHAR_PROP    *p_property)
+tBTA_GATT_STATUS  esp_ble_gattc_get_next_char (uint16_t conn_id,
+                                         esp_gattc_char_id_t *start_char_id,
+                                         esp_bt_uuid_t       *char_uuid_cond,
+                                         esp_gattc_char_id_t *char_result,
+                                         esp_gatt_char_prop_t    *property)
 {
 	
 	tBTA_GATT_STATUS	status;
 	
-	   if (!p_start_char_id || !p_char_result){
+	   if (!start_char_id || !char_result){
 	   	return BTA_GATT_ILLEGAL_PARAMETER;
 	   }
 
-	status = BTA_GATTC_GetNextChar(conn_id, p_start_char_id, p_char_uuid_cond,
-                                   p_char_result, p_property);
+	status = BTA_GATTC_GetNextChar(conn_id, start_char_id, char_uuid_cond,
+                                   char_result, property);
 
 	return status;
 	   
 }
 
-tBTA_GATT_STATUS  API_Ble_GattcGetNextCharDescr (UINT16 conn_id,
-                                             tBTA_GATTC_CHAR_DESCR_ID *p_start_descr_id,
-                                             tBT_UUID           *p_descr_uuid_cond,
-                                             tBTA_GATTC_CHAR_DESCR_ID *p_descr_result)
+tBTA_GATT_STATUS   esp_ble_gattc_get_next_char_descr (uint16_t conn_id,
+                                             esp_gattc_char_descr_id_t *start_descr_id,
+                                             esp_bt_uuid_t             *descr_uuid_cond,
+                                             esp_gattc_char_descr_id_t *descr_result)
 {
 	 tBTA_GATT_STATUS status;
 
-    if (!p_start_descr_id || !p_descr_result){
+    if (!start_descr_id || !descr_result){
     	return BTA_GATT_ILLEGAL_PARAMETER;
     }
 
-	status = BTA_GATTC_GetNextCharDescr (conn_id, p_start_descr_id, p_descr_uuid_cond, p_descr_result);
+	status = BTA_GATTC_GetNextCharDescr (conn_id, start_descr_id, descr_uuid_cond, descr_result);
 
 	return status;
 	
 }
 
-tBTA_GATT_STATUS  API_Ble_GattcGetFirstIncludedService(UINT16 conn_id, tBTA_GATT_SRVC_ID *p_srvc_id,
-                                                    tBT_UUID *p_uuid_cond, tBTA_GATTC_INCL_SVC_ID *p_result)
+tBTA_GATT_STATUS  esp_ble_gattc_get_first_inclu_srvc (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
+                                                    esp_bt_uuid_t *uuid_cond, esp_gattc_incl_srvc_id_t *result)
 {
 	
 	tBTA_GATT_STATUS status;
 	
-	if (!p_srvc_id || !p_result){
+	if (!srvc_id || !result){
 		return BTA_GATT_ILLEGAL_PARAMETER;
 	}
 
-	status = BTA_GATTC_GetFirstIncludedService(conn_id, p_srvc_id, p_uuid_cond, p_result);
+	status = BTA_GATTC_GetFirstIncludedService(conn_id, srvc_id, uuid_cond, result);
 
 	return status;
 }
 
-tBTA_GATT_STATUS  API_Ble_GattcGetNextIncludedService(UINT16 conn_id,
-                                                   tBTA_GATTC_INCL_SVC_ID *p_start_id,
-                                                   tBT_UUID               *p_uuid_cond,
-                                                   tBTA_GATTC_INCL_SVC_ID *p_result)
+tBTA_GATT_STATUS  esp_ble_gattc_get_next_inclu_srvc (uint16_t conn_id,
+                                                   esp_gattc_incl_srvc_id_t *start_id,
+                                                   esp_bt_uuid_t            *uuid_cond,
+                                                   esp_gattc_incl_srvc_id_t *result)
 {
 	tBTA_GATT_STATUS status;
 
-    if (!p_start_id || !p_result){
+    if (!start_id || !result){
     	return BTA_GATT_ILLEGAL_PARAMETER;
     }
 
-	status = BTA_GATTC_GetNextIncludedService(conn_id, p_start_id, p_uuid_cond, p_result);
+	status = BTA_GATTC_GetNextIncludedService(conn_id, start_id, uuid_cond, result);
 
 	return status;
 }
 
 
-void API_Ble_GattcReadCharacteristic(UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
-                                  tBTA_GATT_AUTH_REQ auth_req)
+void esp_ble_gattc_read_char (uint16_t conn_id, esp_gattc_char_id_t *char_id,
+                                  esp_gatt_auth_req_t auth_req)
 {
-	 BTA_GATTC_ReadCharacteristic(conn_id, p_char_id, auth_req);
+	 BTA_GATTC_ReadCharacteristic(conn_id, char_id, auth_req);
 }
 
 
-void API_Ble_GattcReadCharDescr (UINT16 conn_id,
-                             					tBTA_GATTC_CHAR_DESCR_ID  *p_descr_id,
-                              					tBTA_GATT_AUTH_REQ auth_req)
+void esp_ble_gattc_read_char_descr (uint16_t conn_id,
+                             							 esp_gattc_char_descr_id_t  *descr_id,
+                              							 esp_gatt_auth_req_t auth_req)
 {
-	BTA_GATTC_ReadCharDescr (conn_id, p_descr_id, auth_req);
+	BTA_GATTC_ReadCharDescr (conn_id, descr_id, auth_req);
 }
 
-void API_Ble_GattcReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
-                            				tBTA_GATT_AUTH_REQ auth_req)
+void esp_ble_gattc_read_multi (uint16_t conn_id, esp_gattc_multi_t *read_multi,
+                            esp_gatt_auth_req_t auth_req)
 {
-	 BTA_GATTC_ReadMultiple(conn_id, p_read_multi, auth_req);
+	 BTA_GATTC_ReadMultiple(conn_id, read_multi, auth_req);
 }
 
-void API_Ble_GattcWriteCharValue ( UINT16 conn_id,
-                               							 tBTA_GATTC_CHAR_ID *p_char_id,
-                                						 tBTA_GATTC_WRITE_TYPE  write_type,
-                                						 UINT16 len,
-                                						 UINT8 *p_value,
-                                						 tBTA_GATT_AUTH_REQ auth_req)
+void esp_ble_gattc_write_char_val ( uint16_t conn_id,
+                               							 esp_gattc_char_id_t *char_id,
+                                						 esp_gattc_write_type_t  write_type,
+                                						 uint16_t len,
+                                						 uint8_t *value,
+                                						 esp_gatt_auth_req_t auth_req)
 {
-	BTA_GATTC_WriteCharValue (conn_id, p_char_id, write_type, len, p_value, auth_req);
-}
-
-void API_Ble_GattcWriteCharDescr (UINT16 conn_id,
-                              					 tBTA_GATTC_CHAR_DESCR_ID *p_char_descr_id,
-                              					 tBTA_GATTC_WRITE_TYPE  write_type,
-                              					 tBTA_GATT_UNFMT      *p_data,
-                              					 tBTA_GATT_AUTH_REQ auth_req)
-{
-	 BTA_GATTC_WriteCharDescr (conn_id, p_char_descr_id, write_type, p_data, auth_req);
+	BTA_GATTC_WriteCharValue (conn_id, char_id, write_type, len, value, auth_req);
 }
 
 
-void API_Ble_GattcPrepareWrite  (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
-                              						UINT16 offset, UINT16 len, UINT8 *p_value,
-                              						tBTA_GATT_AUTH_REQ auth_req)
+void esp_ble_gattc_write_char_descr (uint16_t conn_id,
+                               esp_gattc_char_descr_id_t *char_descr_id,
+                               esp_gattc_write_type_t  write_type,
+                               esp_gatt_unfmt_t      *data,
+                               esp_gatt_auth_req_t auth_req)
 {
-	BTA_GATTC_PrepareWrite  (conn_id, p_char_id, offset, len, p_value, auth_req);
+	 BTA_GATTC_WriteCharDescr (conn_id, char_descr_id, write_type, data, auth_req);
 }
 
-void  API_Ble_GattcExecuteWrite (UINT16 conn_id, BOOLEAN is_execute)
+
+void esp_ble_gattc_prepa_write (uint16_t conn_id, esp_gattc_char_id_t *char_id,
+                              						uint16_t offset, uint16_t len, uint8_t *value,
+                              						esp_gatt_auth_req_t auth_req)
+{
+	BTA_GATTC_PrepareWrite  (conn_id, char_id, offset, len, value, auth_req);
+}
+
+void  esp_ble_gattc_execu_write (uint16_t conn_id, BOOLEAN is_execute)
 {
 	BTA_GATTC_ExecuteWrite (conn_id, is_execute);
 }
 
-void API_Ble_GattcSendIndConfirm (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id)
+void esp_ble_gattc_send_ind_cfm (uint16_t conn_id, esp_gattc_char_id_t *char_id)
 {
-	BTA_GATTC_SendIndConfirm (conn_id, p_char_id);
+	BTA_GATTC_SendIndConfirm (conn_id, char_id);
 }
 
-tBTA_GATT_STATUS API_Ble_GattcRegisterForNotifications (tBTA_GATTC_IF client_if,
+tBTA_GATT_STATUS esp_ble_gattc_register_ntf (esp_gattc_if_t client_if,
                                                      BD_ADDR bda,
-                                                     tBTA_GATTC_CHAR_ID *p_char_id)
+                                                     esp_gattc_char_id_t *char_id)
 {
 	tBTA_GATT_STATUS    status = BTA_GATT_ILLEGAL_PARAMETER;
-	status = BTA_GATTC_RegisterForNotifications (client_if, bda, p_char_id);
+	status = BTA_GATTC_RegisterForNotifications (client_if, bda, char_id);
 
 	return status;
 }
 
-tBTA_GATT_STATUS API_Ble_GattcDeregisterForNotifications (tBTA_GATTC_IF client_if,
-                                                       							BD_ADDR bda,
-                                                       							tBTA_GATTC_CHAR_ID *p_char_id)
+tBTA_GATT_STATUS esp_ble_gattc_unregister_ntf (esp_gattc_if_t client_if,
+                                                       BD_ADDR bda,
+                                                       esp_gattc_char_id_t *char_id)
 {
 	tBTA_GATT_STATUS    status = BTA_GATT_ILLEGAL_PARAMETER;
-	status = BTA_GATTC_DeregisterForNotifications (client_if, bda, p_char_id);
+	status = BTA_GATTC_DeregisterForNotifications (client_if, bda, char_id);
 
 	return status;
 }
 
-void API_Ble_GattsDisable(void)
+void esp_ble_gatts_disale(void)
 {
 	 BTA_GATTS_Disable();
 }
 
-void API_Ble_GattsAppRegister(tBT_UUID *p_app_uuid, tBTA_GATTS_CBACK *p_cback)
+void esp_ble_gatts_app_register(esp_bt_uuid_t *app_uuid, esp_gatts_cb_t *cback)
 {
-	BTA_GATTS_AppRegister(p_app_uuid, p_cback);
+	BTA_GATTS_AppRegister(app_uuid, cback);
 }
 
 
-void API_Ble_GattsAppDeregister(tBTA_GATTS_IF server_if)
+void esp_ble_gatts_app_unregister(esp_gatts_if_t server_if)
 {
 	BTA_GATTS_AppDeregister(server_if);
 }
 
-void API_Ble_GattsCreateService(tBTA_GATTS_IF server_if, tBT_UUID *p_service_uuid, UINT8 inst,
-                             UINT16 num_handle, BOOLEAN is_primary)
+void esp_ble_gatts_create_srvc(esp_gatts_if_t server_if, esp_bt_uuid_t *service_uuid, uint8_t inst,
+                             uint16_t num_handle, BOOLEAN is_primary)
 {
-	BTA_GATTS_CreateService(server_if, p_service_uuid, inst, num_handle, is_primary);
+	BTA_GATTS_CreateService(server_if, service_uuid, inst, num_handle, is_primary);
 }
 
 
-void API_Ble_GattsAddIncludeService(UINT16 service_id, UINT16 included_service_id)
+void esp_ble_gatts_add_inclu_srvc (uint16_t service_id, uint16_t included_service_id)
 {
 	BTA_GATTS_AddIncludeService(service_id, included_service_id);
 }
 
 
-void API_Ble_GattsAddCharacteristic (UINT16 service_id,  tBT_UUID  *p_char_uuid,
-                                  					tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property)
+void esp_ble_gatts_add_char (uint16_t service_id,  esp_bt_uuid_t  *char_uuid,
+                                  esp_gatt_perm_t perm, esp_gatt_char_prop_t property)
 {
-	BTA_GATTS_AddCharacteristic (service_id, p_char_uuid, perm, property);
+	BTA_GATTS_AddCharacteristic (service_id, char_uuid, perm, property);
 }
 
-void API_Ble_GattsAddCharDescriptor (UINT16 service_id,
-													   tBTA_GATT_PERM perm,
-													   tBT_UUID  * p_descr_uuid)
+void esp_ble_gatts_add_char_descr (uint16_t service_id,
+                                  						esp_gatt_perm_t perm,
+                                  						esp_bt_uuid_t  * descr_uuid)
 {
-	BTA_GATTS_AddCharDescriptor (service_id, perm, p_descr_uuid);
+	BTA_GATTS_AddCharDescriptor (service_id, perm, descr_uuid);
 }
 
-void API_Ble_GattsDeleteService(UINT16 service_id)
+void esp_ble_gatts_dele_srvc (uint16_t service_id)
 {
 	 BTA_GATTS_DeleteService(service_id);
 }
 
-void API_Ble_GattsStartService(UINT16 service_id, tBTA_GATT_TRANSPORT sup_transport)
+void esp_ble_gatts_start_srvc(uint16_t service_id)
 {
-	BTA_GATTS_StartService(service_id, sup_transport);
+	tBTA_GATT_TRANSPORT transport = BT_TRANSPORT_LE;
+	BTA_GATTS_StartService(service_id, transport);
 }
 
 
-void API_Ble_GattsStopService(UINT16 service_id)
+void esp_ble_gatts_stop_srvc(uint16_t service_id)
 {
 	BTA_GATTS_StopService(service_id);
 }
 
 
-void API_Ble_GattsHandleValueIndication (UINT16 conn_id, UINT16 attr_id, UINT16 data_len,
-                                      								UINT8 *p_data, BOOLEAN need_confirm)
+void esp_ble_gatts_hdl_val_indica (uint16_t conn_id, uint16_t attr_id, uint16_t data_len,
+                                      								uint8_t *data, BOOLEAN need_confirm)
 {
-	BTA_GATTS_HandleValueIndication (conn_id, attr_id, data_len, p_data, need_confirm);
+	BTA_GATTS_HandleValueIndication (conn_id, attr_id, data_len, data, need_confirm);
 }
 
-void API_Ble_GattsSendRsp (UINT16 conn_id, UINT32 trans_id,
-                        			tBTA_GATT_STATUS status, tBTA_GATTS_RSP *p_msg)
+void esp_ble_gatts_send_rsp (uint16_t conn_id, uint32_t trans_id,
+                        			esp_gatt_status_t status, esp_gatts_rsp_t *msg)
 {
-	BTA_GATTS_SendRsp (conn_id, trans_id, status, p_msg);
+	BTA_GATTS_SendRsp (conn_id, trans_id, status, msg);
 }
 
-void API_Ble_GattsOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda, BOOLEAN is_direct,
-				   tBTA_GATT_TRANSPORT transport)
+void esp_ble_gatts_conn (esp_gatts_if_t server_if, BD_ADDR remote_bda, BOOLEAN is_direct)
 {
+	tBTA_GATT_TRANSPORT transport = BT_TRANSPORT_LE;
 	BTA_GATTS_Open(server_if, remote_bda, is_direct, transport);
 }
 
-void API_Ble_GattsCancelOpen(tBTA_GATTS_IF server_if, BD_ADDR remote_bda, BOOLEAN is_direct)
+void esp_ble_gatts_cancel_conn (esp_gatts_if_t server_if, BD_ADDR remote_bda, BOOLEAN is_direct)
 {
 	 BTA_GATTS_CancelOpen(server_if, remote_bda, is_direct);
 }
 
-void API_Ble_GattsClose(UINT16 conn_id)
+void esp_ble_gatts_close(uint16_t conn_id)
 {
 	BTA_GATTS_Close(conn_id);
 }

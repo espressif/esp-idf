@@ -1582,7 +1582,7 @@ BOOLEAN GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr, UINT16 *p_c
         status = TRUE;
     }
 
-    GATT_TRACE_API ("GATT_GetConnIdIfConnected status=%d", status);
+    GATT_TRACE_API ("GATT_GetConnIdIfConnected status=%d\n", status);
     return status;
 }
 

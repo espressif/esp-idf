@@ -523,7 +523,7 @@ typedef tGATTS_RSP tBTA_GATTS_RSP;
 typedef tGATT_EXEC_FLAG tBTA_GATT_EXEC_FLAG;
 
 /* read request always based on UUID */
-typedef tGATT_READ_REQ tTA_GBATT_READ_REQ;
+typedef tGATT_READ_REQ tBTA_GATT_READ_REQ;
 
 /* write request data */
 typedef tGATT_WRITE_REQ tBTA_GATT_WRITE_REQ;
