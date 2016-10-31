@@ -1320,9 +1320,9 @@ tcp_rst(u32_t seqno, u32_t ackno,
 #endif
 #else
 #if LWIP_WND_SCALE
-  tcphdr->wnd = PP_HTONS(((TCP_WND >> TCP_RCV_SCALE) & 0xFFFF));
+  tcphdr->wnd = PP_HTONS(((TCP_WND_DEFAULT >> TCP_RCV_SCALE) & 0xFFFF));
 #else
-  tcphdr->wnd = PP_HTONS(TCP_WND);
+  tcphdr->wnd = PP_HTONS(TCP_WND_DEFAULT);
 #endif
 #endif
   tcphdr->chksum = 0;

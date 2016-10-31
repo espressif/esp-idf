@@ -1532,6 +1532,12 @@ tcp_alloc(u8_t prio)
   }
   if (pcb != NULL) {
     memset(pcb, 0, sizeof(struct tcp_pcb));
+
+#if ESP_PER_SOC_TCP_WND
+    pcb->per_soc_tcp_wnd = TCP_WND_DEFAULT;
+    pcb->per_soc_tcp_snd_buf = TCP_SND_BUF_DEFAULT;
+#endif
+
     pcb->prio = prio;
     pcb->snd_buf = TCP_SND_BUF_DEFAULT;
     pcb->snd_queuelen = 0;
@@ -1575,11 +1581,6 @@ tcp_alloc(u8_t prio)
 #endif /* LWIP_TCP_KEEPALIVE */
 
     pcb->keep_cnt_sent = 0;
-
-#if ESP_PER_SOC_TCP_WND
-    pcb->per_soc_tcp_wnd = TCP_WND_DEFAULT;
-    pcb->per_soc_tcp_snd_buf = TCP_SND_BUF_DEFAULT;
-#endif
   }
 
   return pcb;
