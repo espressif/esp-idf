@@ -395,12 +395,15 @@ static void lwip_socket_drop_registered_memberships(int s);
  */ 
 static inline void esp32_tx_flow_ctrl(void)
 {
+//TODO we need to do flow control for UDP
+#if 0
   uint8_t _wait_delay = 1;
 
   while ((system_get_free_heap_size() < HEAP_HIGHWAT) || esp_wifi_internal_tx_is_stop()){
      vTaskDelay(_wait_delay/portTICK_RATE_MS);
      if (_wait_delay < 64) _wait_delay *= 2;
   }
+#endif
 }
 
 #else
@@ -1207,8 +1210,6 @@ lwip_send(int s, const void *data, size_t size, int flags)
     return -1;
 #endif /* (LWIP_UDP || LWIP_RAW) */
   }
-
-  esp32_tx_flow_ctrl();
 
   write_flags = NETCONN_COPY |
     ((flags & MSG_MORE)     ? NETCONN_MORE      : 0) |
