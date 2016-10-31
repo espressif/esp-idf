@@ -41,6 +41,7 @@
 #include "esp_event.h"
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
+#include "esp_crosscore_int.h"
 #include "esp_log.h"
 #include "esp_vfs_dev.h"
 #include "esp_newlib.h"
@@ -168,6 +169,9 @@ void start_cpu0_default(void)
     _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
     _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     do_global_ctors();
+#if !CONFIG_FREERTOS_UNICORE
+    esp_crosscore_int_init();
+#endif
     esp_ipc_init();
     spi_flash_init();
 
@@ -188,6 +192,7 @@ void start_cpu1_default(void)
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
+    esp_crosscore_int_init();
     ESP_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
 }
