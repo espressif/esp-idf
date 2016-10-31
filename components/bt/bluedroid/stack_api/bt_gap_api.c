@@ -1,8 +1,8 @@
-#include "bt_gap.h"
+#include "bt_gap_api.h"
 #include "bta_api.h"
 #include "bt_trace.h"
 
-bt_status_t API_BT_GapSetScanMode(bt_scan_mode_t mode)
+esp_err_t esp_bt_gap_set_scan_mode(bt_scan_mode_t mode)
 {
     tBTA_DM_DISC disc_mode;
     tBTA_DM_CONN conn_mode;
@@ -24,13 +24,12 @@ bt_status_t API_BT_GapSetScanMode(bt_scan_mode_t mode)
         break;
 
     default:
-        BTIF_TRACE_ERROR("invalid scan mode (0x%x)", mode);
-        return BT_STATUS_PARM_INVALID;
+        // BTIF_TRACE_ERROR("invalid scan mode (0x%x)", mode);
+        return ESP_ERR_INVALID_ARG;
     }
 
-    BTIF_TRACE_EVENT("set property scan mode : %x", mode);
-
+    // BTIF_TRACE_EVENT("set property scan mode : %x", mode);
     BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
     
-    return BT_STATUS_SUCCESS;
+    return ESP_OK;
 }

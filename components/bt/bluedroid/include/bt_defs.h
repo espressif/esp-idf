@@ -77,18 +77,6 @@ typedef enum {
 
 } bt_status_t;
 
-#define ASSERTC(cond, msg, val) if (!(cond)) { LOG_ERROR( \
-    "### ASSERT : %s line %d %s (%d) ###", __FILE__, __LINE__, msg, val);}
-
-#define HAL_CBACK(P_CB, P_CBACK, ...)\
-    if (P_CB && P_CB->P_CBACK) {            \
-        BTIF_TRACE_API("HAL %s->%s", #P_CB, #P_CBACK); \
-        P_CB->P_CBACK(__VA_ARGS__);         \
-    }                                       \
-    else {                                  \
-        ASSERTC(0, "Callback is NULL", 0);  \
-    }
-
 #ifndef CPU_LITTLE_ENDIAN
 #define CPU_LITTLE_ENDIAN
 #endif
