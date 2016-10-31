@@ -512,7 +512,7 @@ extern unsigned long os_random(void);
 /* Enable all Espressif-only options */
 
 #define ESP_LWIP                        1
-#define ESP_PER_SOC_TCP_WND             0
+#define ESP_PER_SOC_TCP_WND             1
 #define ESP_THREAD_SAFE                 1
 #define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 #define ESP_DHCP                        1
