@@ -963,22 +963,27 @@ TEST_CASE("duplicate items are removed", "[nvs][dupes]")
         p.writeItem<uint8_t>(1, "opmode", 3);
     }
     {
-        // add another one without deleting the first one
+        // add another two without deleting the first one
         nvs::Item item(1, ItemType::U8, 1, "opmode");
         item.data[0] = 2;
         item.crc32 = item.calculateCrc32();
         emu.write(3 * 32, reinterpret_cast<const uint32_t*>(&item), sizeof(item));
-        uint32_t mask = 0xFFFFFFFA;
+        emu.write(4 * 32, reinterpret_cast<const uint32_t*>(&item), sizeof(item));
+        uint32_t mask = 0xFFFFFFEA;
         emu.write(32, &mask, 4);
     }
     {
         // load page and check that second item persists
-        nvs::Page p;
-        p.load(0);
+        nvs::Storage s;
+        s.init(0, 3);
         uint8_t val;
-        p.readItem(1, "opmode", val);
+        ESP_ERROR_CHECK(s.readItem(1, "opmode", val));
         CHECK(val == 2);
-        CHECK(p.getErasedEntryCount() == 1);
+    }
+    {
+        Page p;
+        p.load(0);
+        CHECK(p.getErasedEntryCount() == 2);
         CHECK(p.getUsedEntryCount() == 1);
     }
 }
@@ -986,8 +991,7 @@ TEST_CASE("duplicate items are removed", "[nvs][dupes]")
 TEST_CASE("recovery after failure to write data", "[nvs]")
 {
     SpiFlashEmulator emu(3);
-    // TODO: remove explicit alignment
-    const char str[] __attribute__((aligned(4))) = "value 0123456789abcdef012345678value 0123456789abcdef012345678";
+    const char str[] = "value 0123456789abcdef012345678value 0123456789abcdef012345678";
 
     // make flash write fail exactly in Page::writeEntryData
     emu.failAfter(17);
@@ -1014,6 +1018,42 @@ TEST_CASE("recovery after failure to write data", "[nvs]")
         TEST_ESP_OK(p.writeItem(1, ItemType::SZ, "key", str, strlen(str)));
     }
 }
+
+TEST_CASE("crc error in variable length item is handled", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    const uint64_t before_val = 0xbef04e;
+    const uint64_t after_val = 0xaf7e4;
+    // write some data
+    {
+        Page p;
+        p.load(0);
+        TEST_ESP_OK(p.writeItem<uint64_t>(0, "before", before_val));
+        const char* str = "foobar";
+        TEST_ESP_OK(p.writeItem(0, ItemType::SZ, "key", str, strlen(str)));
+        TEST_ESP_OK(p.writeItem<uint64_t>(0, "after", after_val));
+    }
+    // corrupt some data
+    uint32_t w;
+    CHECK(emu.read(&w, 32 * 3 + 8, sizeof(w)));
+    w &= 0xf000000f;
+    CHECK(emu.write(32 * 3 + 8, &w, sizeof(w)));
+    // load and check
+    {
+        Page p;
+        p.load(0);
+        CHECK(p.getUsedEntryCount() == 2);
+        CHECK(p.getErasedEntryCount() == 2);
+
+        uint64_t val;
+        TEST_ESP_OK(p.readItem<uint64_t>(0, "before", val));
+        CHECK(val == before_val);
+        TEST_ESP_ERR(p.findItem(0, ItemType::SZ, "key"), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_OK(p.readItem<uint64_t>(0, "after", val));
+        CHECK(val == after_val);
+    }
+}
+
 
 TEST_CASE("dump all performance data", "[nvs]")
 {

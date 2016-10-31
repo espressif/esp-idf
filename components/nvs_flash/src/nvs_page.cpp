@@ -301,6 +301,8 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
         }
         if (item.calculateCrc32() != item.crc32) {
             rc = alterEntryState(index, EntryState::ERASED);
+            --mUsedEntryCount;
+            ++mErasedEntryCount;
             if (rc != ESP_OK) {
                 return rc;
             }
@@ -473,7 +475,9 @@ esp_err_t Page::mLoadEntryTable()
         if (end > ENTRY_COUNT) {
             end = ENTRY_COUNT;
         }
-        for (size_t i = 0; i < end; ++i) {
+        size_t span;
+        for (size_t i = 0; i < end; i += span) {
+            span = 1;
             if (mEntryTable.get(i) == EntryState::ERASED) {
                 lastItemIndex = INVALID_ENTRY;
                 continue;
@@ -488,6 +492,9 @@ esp_err_t Page::mLoadEntryTable()
             }
             
             mHashList.insert(item, i);
+            
+            // search for potential duplicate item
+            size_t duplicateIndex = mHashList.find(0, item);
 
             if (item.crc32 != item.calculateCrc32()) {
                 err = eraseEntryAndSpan(i);
@@ -498,23 +505,26 @@ esp_err_t Page::mLoadEntryTable()
                 continue;
             }
 
-            if (item.datatype != ItemType::BLOB && item.datatype != ItemType::SZ) {
-                continue;
-            }
-
-            size_t span = item.span;
-            bool needErase = false;
-            for (size_t j = i; j < i + span; ++j) {
-                if (mEntryTable.get(j) != EntryState::WRITTEN) {
-                    needErase = true;
-                    lastItemIndex = INVALID_ENTRY;
-                    break;
+            
+            if (item.datatype == ItemType::BLOB || item.datatype == ItemType::SZ) {
+                span = item.span;
+                bool needErase = false;
+                for (size_t j = i; j < i + span; ++j) {
+                    if (mEntryTable.get(j) != EntryState::WRITTEN) {
+                        needErase = true;
+                        lastItemIndex = INVALID_ENTRY;
+                        break;
+                    }
+                }
+                if (needErase) {
+                    eraseEntryAndSpan(i);
+                    continue;
                 }
             }
-            if (needErase) {
-                eraseEntryAndSpan(i);
+            
+            if (duplicateIndex < i) {
+                eraseEntryAndSpan(duplicateIndex);
             }
-            i += span - 1;
         }
 
         // check that last item is not duplicate
