@@ -148,7 +148,9 @@ bool secure_boot_generate_bootloader_digest(void) {
         /* reuse the secure boot IV generation function to generate
            the key, as this generator uses the hardware RNG. */
         uint32_t buf[32];
+        ets_secure_boot_start();
         ets_secure_boot_rd_iv(buf);
+        ets_secure_boot_finish();
         for (int i = 0; i < 8; i++) {
             ESP_LOGV(TAG, "EFUSE_BLK2_WDATA%d_REG = 0x%08x", i, buf[i]);
             REG_WRITE(EFUSE_BLK2_WDATA0_REG + 4*i, buf[i]);

@@ -11,23 +11,34 @@ PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
 # two commands that can be used from other components
 # to invoke esptool.py (with or without serial port args)
 #
-# NB: esptool.py lives in the sdk/bin directory not the component directory
 ESPTOOLPY_SRC := $(COMPONENT_PATH)/esptool/esptool.py
 ESPTOOLPY := $(PYTHON) $(ESPTOOLPY_SRC) --chip esp32
 ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD)
 
+# Supporting esptool command line tools
+ESPEFUSEPY := $(PYTHON) $(COMPONENT_PATH)/esptool/espefuse.py
+ESPSECUREPY := $(PYTHON) $(COMPONENT_PATH)/esptool/espsecure.py
+
 ESPTOOL_FLASH_OPTIONS := --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) --flash_size $(ESPFLASHSIZE)
 
-# the no-stub argument is temporary until esptool.py fully supports compressed uploads
+ESPTOOL_ELF2IMAGE_OPTIONS :=
+
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+ESPTOOL_ELF2IMAGE_OPTIONS += "--set-secure-boot-flag"
+endif
+
 ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z) $(ESPTOOL_FLASH_OPTIONS)
 
 ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_APP_OFFSET) $(APP_BIN)
 
 $(APP_BIN): $(APP_ELF) $(ESPTOOLPY_SRC)
-	$(Q) $(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) -o $@ $<
+	$(Q) $(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
 
 flash: all_binaries $(ESPTOOLPY_SRC)
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(CONFIG_APP_OFFSET))..."
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+endif
 	$(Q) $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 app-flash: $(APP_BIN) $(ESPTOOLPY_SRC)

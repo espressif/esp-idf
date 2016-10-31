@@ -11,13 +11,13 @@
 #
 
 .PHONY: build-components menuconfig defconfig all build clean all_binaries
-all: all_binaries # other components will add dependencies to 'all_binaries'
-	@echo "To flash all build output, run 'make flash' or:"
-	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
-
-# (the reason all_binaries is used instead of 'all' is so that the flash target
-# can build everything without triggering the per-component "to flash..."
-# output targets.)
+all: all_binaries
+# see below for recipe of 'all' target
+#
+# # other components will add dependencies to 'all_binaries'. The
+# reason all_binaries is used instead of 'all' is so that the flash
+# target can build everything without triggering the per-component "to
+# flash..." output targets.)
 
 help:
 	@echo "Welcome to Espressif IDF build system. Some useful make targets:"
@@ -134,6 +134,15 @@ export PROJECT_PATH
 
 #Include functionality common to both project & component
 -include $(IDF_PATH)/make/common.mk
+
+all:
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+	@echo "To flash app & partition table, run 'make flash' or:"
+else
+	@echo "To flash all build output, run 'make flash' or:"
+endif
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 # Set default LDFLAGS
 

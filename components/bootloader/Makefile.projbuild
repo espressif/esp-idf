@@ -15,6 +15,8 @@ BOOTLOADER_BUILD_DIR=$(abspath $(BUILD_DIR_BASE)/bootloader)
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
 BOOTLOADER_SDKCONFIG=$(BOOTLOADER_BUILD_DIR)/sdkconfig
 
+SECURE_BOOT_KEYFILE=$(abspath $(call dequote,$(CONFIG_SECURE_BOOTLOADER_KEY_FILE)))
+
 # Custom recursive make for bootloader sub-project
 BOOTLOADER_MAKE=+$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
 	V=$(V) SDKCONFIG=$(BOOTLOADER_SDKCONFIG) \
@@ -31,17 +33,66 @@ bootloader-clean:
 
 clean: bootloader-clean
 
+ifdef CONFIG_SECURE_BOOTLOADER_DISABLED
+# If secure boot disabled, bootloader flashing is integrated
+# with 'make flash' and no warnings are printed.
+
 bootloader: $(BOOTLOADER_BIN)
+	@echo "$(SEPARATOR)"
 	@echo "Bootloader built. Default flash command is:"
 	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $(BOOTLOADER_BIN)"
 
-all_binaries: $(BOOTLOADER_BIN)
-
 ESPTOOL_ALL_FLASH_ARGS += 0x1000 $(BOOTLOADER_BIN)
 
-# bootloader-flash calls flash in the bootloader dummy project
 bootloader-flash: $(BOOTLOADER_BIN)
 	$(BOOTLOADER_MAKE) flash
+
+else ifdef CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH
+# One time flashing requires user to run esptool.py command themselves,
+# and warning is printed about inability to reflash.
+
+bootloader: $(BOOTLOADER_BIN)
+	@echo $(SEPARATOR)
+	@echo "Bootloader built. One-time flash command is:"
+	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $(BOOTLOADER_BIN)"
+	@echo $(SEPARATOR)
+	@echo "* IMPORTANT: After first boot, BOOTLOADER CANNOT BE RE-FLASHED on same device"
+
+else ifdef CONFIG_SECURE_BOOTLOADER_REFLASHABLE
+# Reflashable secure bootloader (recommended for testing only)
+# generates a digest binary (bootloader + digest) and prints
+# instructions for reflashing. User must run commands manually.
+
+BOOTLOADER_DIGEST_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader-reflash-digest.bin
+
+bootloader: $(BOOTLOADER_DIGEST_BIN)
+	@echo $(SEPARATOR)
+	@echo "Bootloader built and secure digest generated. First time flash command is:"
+	@echo "$(ESPEFUSEPY) burn_key secure_boot $(SECURE_BOOT_KEYFILE)"
+	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $(BOOTLOADER_BIN)"
+	@echo $(SEPARATOR)
+	@echo "To reflash the bootloader after initial flash:"
+	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x0 $(BOOTLOADER_DIGEST_BIN)"
+	@echo $(SEPARATOR)
+	@echo "* After first boot, only re-flashes of this kind (with same key) will be accepted."
+	@echo "* NOT RECOMMENDED TO RE-FLASH the same bootloader-reflash-digest.bin to multiple production devices"
+
+$(BOOTLOADER_DIGEST_BIN): $(BOOTLOADER_BIN) $(SECURE_BOOT_KEYFILE)
+	@echo "DIGEST $< + $(SECURE_BOOT_KEYFILE) -> $@"
+	$(Q) $(ESPSECUREPY) digest_secure_bootloader -k $(SECURE_BOOT_KEYFILE) -o $@ $<
+
+$(SECURE_BOOT_KEYFILE):
+	@echo $(SEPARATOR)
+	@echo "Need to generate secure boot digest key first. Run following command:"
+	@echo "$(ESPSECUREPY) generate_key $@"
+	@echo "Keep key file safe after generating."
+	@exit 1
+
+else
+$(error Bad sdkconfig - one of CONFIG_SECURE_BOOTLOADER_DISABLED, CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH, CONFIG_SECURE_BOOTLOADER_REFLASHABLE must be set)
+endif
+
+all_binaries: $(BOOTLOADER_BIN)
 
 # synchronise the project level config to the bootloader's
 # config
