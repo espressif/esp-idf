@@ -74,11 +74,11 @@ public:
             return false;
         }
         
-        if (mFailCountdown != SIZE_MAX && mFailCountdown-- == 0) {
-            return false;
-        }
-
         for (size_t i = 0; i < size / 4; ++i) {
+            if (mFailCountdown != SIZE_MAX && mFailCountdown-- == 0) {
+                return false;
+            }
+
             uint32_t sv = src[i];
             size_t pos = dstAddr / 4 + i;
             uint32_t& dv = mData[pos];

@@ -894,7 +894,7 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
     
     size_t totalOps = 0;
     int lastPercent = -1;
-    for (uint32_t errDelay = 4; ; ++errDelay) {
+    for (uint32_t errDelay = 0; ; ++errDelay) {
         INFO(errDelay);
         emu.randomize(seed);
         emu.clearStats();
@@ -903,23 +903,25 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
         
         if (totalOps != 0) {
             int percent = errDelay * 100 / totalOps;
-            if (percent != lastPercent) {
+            if (percent > lastPercent) {
                 printf("%d/%d (%d%%)\r\n", errDelay, static_cast<int>(totalOps), percent);
                 lastPercent = percent;
             }
         }
         
-        TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
 
         nvs_handle handle;
-        TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
-        
         size_t count = iter_count;
-        if(test.doRandomThings(handle, gen, count) != ESP_ERR_FLASH_OP_FAIL) {
-            nvs_close(handle);
-            break;
+
+        if (nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK) {
+            if (nvs_open("namespace1", NVS_READWRITE, &handle) == ESP_OK) {
+                if(test.doRandomThings(handle, gen, count) != ESP_ERR_FLASH_OP_FAIL) {
+                    nvs_close(handle);
+                    break;
+                }
+                nvs_close(handle);
+            }
         }
-        nvs_close(handle);
         
         TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
         TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
@@ -929,7 +931,7 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
             CHECK(0);
         }
         nvs_close(handle);
-        totalOps = emu.getEraseOps() + emu.getWriteOps();
+        totalOps = emu.getEraseOps() + emu.getWriteBytes() / 4;
     }
 }
 
