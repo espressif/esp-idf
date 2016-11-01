@@ -75,7 +75,7 @@ bootloader: $(BOOTLOADER_DIGEST_BIN)
 	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x0 $(BOOTLOADER_DIGEST_BIN)"
 	@echo $(SEPARATOR)
 	@echo "* After first boot, only re-flashes of this kind (with same key) will be accepted."
-	@echo "* NOT RECOMMENDED TO RE-FLASH the same bootloader-reflash-digest.bin to multiple production devices"
+	@echo "* Not recommended to re-use the same secure boot keyfile on multiple production devices."
 
 $(BOOTLOADER_DIGEST_BIN): $(BOOTLOADER_BIN) $(SECURE_BOOT_KEYFILE)
 	@echo "DIGEST $< + $(SECURE_BOOT_KEYFILE) -> $@"
