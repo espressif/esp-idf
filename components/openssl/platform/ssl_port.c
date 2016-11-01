@@ -15,7 +15,6 @@
 #include "ssl_port.h"
 #include "string.h"
 #include "malloc.h"
-#include "esp_system.h"
 
 /*********************************************************************************************/
 /********************************* SSL general interface *************************************/
@@ -52,11 +51,11 @@ size_t ssl_strlen(const char *src)
 
 void ssl_speed_up_enter(void)
 {
-    system_update_cpu_freq(SYS_CPU_160MHZ);
+
 }
 
 void ssl_speed_up_exit(void)
 {
-    system_update_cpu_freq(SYS_CPU_80MHZ);
+
 }
 
