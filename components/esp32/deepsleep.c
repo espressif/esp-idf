@@ -40,8 +40,7 @@ void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
 }
 
 void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void) {
-    //
-    //mmu_init(0);
+    /* Clear MMU for CPU 0 */
     REG_SET_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MMU_IA_CLR);
     REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MMU_IA_CLR);
 }
