@@ -55,8 +55,8 @@ esp_err_t esp_bt_sdp_remove_record_by_user(void *user_data);
 
 /**********************************************************************************************/
 /**********************************************************************************************/
-/* API into SDP for local service database updates */
-/* these APIs are indended to be called in callback function in the context of stack task,
+/* API into SDP for local service database updates
+ * these APIs are indended to be called in callback function in the context of stack task,
  * to handle BT_SDP_CREATE_RECORD_USER_EVT and BT_SDP_REMOVE_RECORD_USER_EVT
  */
 

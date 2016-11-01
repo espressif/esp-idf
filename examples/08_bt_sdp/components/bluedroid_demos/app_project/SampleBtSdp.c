@@ -8,11 +8,10 @@
 #include "freertos/task.h"
 
 #include "bt_app_common.h"
-#include "bt_stack_manager.h"
-#include "bt_sdp.h"
-#include "bt_gap.h"
+#include "btif_stack_manager.h"
+#include "btif_sdp.h"
+#include "bt_gap_api.h"
 
-/* bta_api.h should not be included as BTA APIs should not be used by APP */
 #include "bta_api.h"
 
 typedef enum {
@@ -26,6 +25,7 @@ typedef union {
 } tBT_APP_EVT_DATA;
 
 static void bt_stack_state_changed(bt_state_t state);
+static int bt_sdp_add_record(void);
 static void bt_sdp_search_complete(bt_status_t status, bt_bdaddr_t *bd_addr, uint8_t* uuid, int num_records, bluetooth_sdp_record *records);
 
 // static bt_bdaddr_t peer_bd_addr = {{0x00, 0x1b, 0xdc, 0x08, 0x0f, 0xe7}};
@@ -56,20 +56,20 @@ static btsdp_callbacks_t btsdp_callbacks = {
     
 static void bt_app_stack_evt(UINT16 event, char *p_param)
 {
-    // tBT_APP_EVT_DATA *p_data = (tBT_APP_EVT_DATA *)p_param;
     switch (event) {
     case BT_APP_EVT_STACK_ON: {
-	// todo: BTM & BTA APIs should not be called in application task
-	char *dev_name = "SDP_CLIENT";
+	char *dev_name = "SDP_SERVER_CLIENT";
 	BTM_SetTraceLevel(BT_TRACE_LEVEL_DEBUG);
 	BTA_DmSetDeviceName(dev_name);
     
-	API_BT_GapSetScanMode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
+        esp_bt_gap_set_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
+        BTIF_SdpInit(&btsdp_callbacks);
 
-        API_BT_SdpInit(&btsdp_callbacks);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        bt_sdp_add_record();
 
         vTaskDelay(20000/portTICK_PERIOD_MS);
-        API_BT_SdpSearch(&peer_bd_addr, target_uuid);
+        BTIF_SdpSearch(&peer_bd_addr, target_uuid);
     }
         break;
     default:
@@ -89,6 +89,22 @@ static void bt_stack_state_changed(bt_state_t state)
     if (state == BT_STATE_ON) {
         bt_stack_evt(BT_APP_EVT_STACK_ON, NULL);
     }
+}
+
+static int bt_sdp_add_record(void)
+{
+    int handle;
+    bluetooth_sdp_sap_record sap_svr;
+    memset (&sap_svr, 0, sizeof(bluetooth_sdp_sap_record));
+    
+    sap_svr.hdr.type = SDP_TYPE_SAP_SERVER;
+    sap_svr.hdr.rfcomm_channel_number = 2;
+    sap_svr.hdr.service_name = "SIM ACCESS";
+    sap_svr.hdr.service_name_length = 10;
+    sap_svr.hdr.profile_version = 0x0100;
+
+    BTIF_SdpCreateRecord((bluetooth_sdp_record *)(&sap_svr), &handle);
+    return handle;
 }
 
 static void bt_sdp_search_complete(bt_status_t status, bt_bdaddr_t *bd_addr, uint8_t* uuid, int num_records, bluetooth_sdp_record *records)
@@ -116,9 +132,9 @@ static void bt_sdp_search_complete(bt_status_t status, bt_bdaddr_t *bd_addr, uin
 void app_main_entry(void)
 {
     bt_status_t stat;
-    stat = API_BTDM_InitStack(&bt_callbacks);
+    stat = BTIF_InitStack(&bt_callbacks);
     if (stat == BT_STATUS_SUCCESS) {
-        API_BTDM_EnableStack();
+        BTIF_EnableStack();
     }
 }
 

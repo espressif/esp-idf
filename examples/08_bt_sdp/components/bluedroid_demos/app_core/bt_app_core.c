@@ -14,7 +14,6 @@
 #include "bt_app_common.h"
 
 #include "controller.h"
-//#include "prf_defs.h"
 #include "thread.h"
 #include "bt_app_common.h"
 
