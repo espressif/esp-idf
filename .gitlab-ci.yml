@@ -1,6 +1,7 @@
 stages:
   - build
   - test
+  - test_report
   - deploy
 
 before_script:
@@ -126,13 +127,12 @@ test_build_system:
     - ./make/test_build_system.sh
 
 test_report:
-  stage: deploy
+  stage: test_report
   only:
     - master
     - triggers
   tags:
     - test_report
-  allow_failure: true
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
@@ -141,7 +141,7 @@ test_report:
     when: always
     paths:
       - $REPORT_PATH
-    expire_in: 6 mos
+    expire_in: 12 mos
   script:
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
