@@ -158,7 +158,7 @@ void sdpu_release_ccb (tCONN_CB *p_ccb)
     /* Free the response buffer */
     if (p_ccb->rsp_list)
     {
-       SDP_TRACE_DEBUG("releasing SDP rsp_list");
+       SDP_TRACE_DEBUG("releasing SDP rsp_list\n");
 
         GKI_freebuf(p_ccb->rsp_list);
         p_ccb->rsp_list = NULL;
@@ -323,13 +323,13 @@ void sdpu_build_n_send_error (tCONN_CB *p_ccb, UINT16 trans_num, UINT16 error_co
     BT_HDR          *p_buf;
 
 
-    SDP_TRACE_WARNING ("SDP - sdpu_build_n_send_error  code: 0x%x  CID: 0x%x",
+    SDP_TRACE_WARNING ("SDP - sdpu_build_n_send_error  code: 0x%x  CID: 0x%x\n",
                         error_code, p_ccb->connection_id);
 
     /* Get a buffer to use to build and send the packet to L2CAP */
     if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL)
     {
-        SDP_TRACE_ERROR ("SDP - no buf for err msg");
+        SDP_TRACE_ERROR ("SDP - no buf for err msg\n");
         return;
     }
     p_buf->offset = L2CAP_MIN_OFFSET;
@@ -674,7 +674,7 @@ BOOLEAN sdpu_compare_uuid_arrays (UINT8 *p_uuid1, UINT32 len1, UINT8 *p_uuid2, U
     if( ((len1 != 2) && (len1 != 4) && (len1 != 16)) ||
         ((len2 != 2) && (len2 != 4) && (len2 != 16)) )
     {
-        SDP_TRACE_ERROR("%s: invalid length", __func__);
+        SDP_TRACE_ERROR("%s: invalid length\n", __func__);
         return FALSE;
     }
 
@@ -1019,7 +1019,7 @@ UINT8 *sdpu_build_partial_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr, UI
 
     if ((p_attr_buff = (UINT8 *) GKI_getbuf(sizeof(UINT8) * SDP_MAX_ATTR_LEN )) == NULL)
     {
-        SDP_TRACE_ERROR("sdpu_build_partial_attrib_entry cannot get a buffer!");
+        SDP_TRACE_ERROR("sdpu_build_partial_attrib_entry cannot get a buffer!\n");
         return NULL;
     }
     p_tmp_attr = p_attr_buff;

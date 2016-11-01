@@ -7,6 +7,8 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "bt_defs.h"
+
 #define portBASE_TYPE int
 
 struct bt_task_evt {
@@ -17,27 +19,14 @@ struct bt_task_evt {
 };
 typedef struct bt_task_evt BtTaskEvt_t;
 
-typedef enum {
-    BT_STATUS_SUCCESS,
-    BT_STATUS_FAIL,
-    BT_STATUS_NOT_READY,
-    BT_STATUS_NOMEM,
-    BT_STATUS_BUSY,
-    BT_STATUS_DONE,
-    BT_STATUS_UNSUPPORTED,
-    BT_STATUS_PARAM_INVALID,
-    BT_STATUS_UNHANDLED,
-    BT_STATUS_AUTH_FAILURE,
-    BT_STATUS_RMT_DEV_DOWN
-} BtStatus_t;
-
-typedef BtStatus_t (* BtTaskCb_t)(void *arg);
+typedef bt_status_t (* BtTaskCb_t)(void *arg);
 
 enum {
-	SIG_PRF_START_UP = 0xfc,
-	SIG_PRF_WORK	= 0xfd,
+    SIG_PRF_START_UP = 0xfc,
+    SIG_PRF_WORK = 0xfd,
     SIG_BTU_START_UP = 0xfe,
-    SIG_BTU_WORK = 0xff
+    SIG_BTU_WORK = 0xff,
+    SIG_BTIF_WORK = 0xff
 };
 
 void btu_task_post(uint32_t sig);

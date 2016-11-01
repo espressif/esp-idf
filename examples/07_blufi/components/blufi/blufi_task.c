@@ -67,7 +67,7 @@ static int blufi_task_post(uint32_t sig, void *par, void *cb, void *arg)
 	return 0;
 }
 
-BtStatus_t blufi_transfer_context(BtTaskCb_t cb, void *arg)
+bt_status_t blufi_transfer_context(BtTaskCb_t cb, void *arg)
 {
     LOG_DEBUG("%s cb %08x, arg %u\n", __func__, cb, arg);
 

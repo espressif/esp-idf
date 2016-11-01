@@ -79,7 +79,7 @@ static void BlufiDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_dat
 	
 }
 
-static BtStatus_t blufi_dm_upstreams_evt(void *arg)
+static bt_status_t blufi_dm_upstreams_evt(void *arg)
 {
 	struct dm_evt *evt = (struct dm_evt *)arg;
 	
@@ -130,7 +130,7 @@ void blufi_bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data)
     blufi_transfer_context(blufi_dm_upstreams_evt, evt);
 }
 
-BtStatus_t blufi_enable(void *arg)
+bt_status_t blufi_enable(void *arg)
 {
     BTM_SetTraceLevel(BT_TRACE_LEVEL_ERROR);
 

@@ -12,7 +12,7 @@ enum BLUFI_SIG {
 };
 
 void blufi_init(void);
-BtStatus_t blufi_enable(void *arg);
-BtStatus_t blufi_transfer_context(BtTaskCb_t cb, void *arg);
+bt_status_t blufi_enable(void *arg);
+bt_status_t blufi_transfer_context(BtTaskCb_t cb, void *arg);
 
 #endif /* __BT_APP_COMMON_H__ */

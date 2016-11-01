@@ -25,7 +25,6 @@ typedef struct
 
 bt_status_t bt_app_transfer_context (tBTAPP_CBACK *p_cback, UINT16 event, char* p_params, int param_len, tBTAPP_COPY_CBACK *p_copy_cback);
 
-void bt_app_init_ok(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param);
-
 void bt_app_task_start_up(void);
+
 #endif /* __BT_APP_COMMON_H__ */

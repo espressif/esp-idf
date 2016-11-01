@@ -27,6 +27,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/stack/sdp/include		\
 				bluedroid/stack/smp/include		\
 				bluedroid/stack/include			\
+				bluedroid/stack_api/include		\
 				bluedroid/include			\
 				include	
 
@@ -41,6 +42,7 @@ COMPONENT_ADD_LDFLAGS := -lbt -L$(abspath lib) \
 COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/bta/gatt			\
 			bluedroid/bta/hh			\
+			bluedroid/bta/sdp			\
 			bluedroid/bta/sys			\
 			bluedroid/bta				\
 			bluedroid/btcore			\
@@ -61,6 +63,8 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/profiles/std/hid		\
 			bluedroid/profiles/std/hid_le		\
 			bluedroid/profiles/std/rfcomm		\
+			bluedroid/profiles/std/sdp		\
+			bluedroid/profiles/std/gap		\
 			bluedroid/profiles/std			\
 			bluedroid/profiles			\
 			bluedroid/stack/btm			\
@@ -73,6 +77,7 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/stack/sdp			\
 			bluedroid/stack/smp			\
 			bluedroid/stack				\
+			bluedroid/stack_api			\
 			bluedroid				\
 			.
 

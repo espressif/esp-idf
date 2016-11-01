@@ -53,6 +53,29 @@ typedef struct {
   uint8_t address[6];
 } __attribute__ ((__packed__)) bt_bdaddr_t;
 
+/** Bluetooth 128-bit UUID */
+typedef struct {
+   uint8_t uu[16];
+} bt_uuid_t;
+
+/** Bluetooth Error Status */
+/** We need to build on this */
+
+typedef enum {
+    BT_STATUS_SUCCESS,
+    BT_STATUS_FAIL,
+    BT_STATUS_NOT_READY,
+    BT_STATUS_NOMEM,
+    BT_STATUS_BUSY,
+    BT_STATUS_DONE,        /* request already completed */
+    BT_STATUS_UNSUPPORTED,
+    BT_STATUS_PARM_INVALID,
+    BT_STATUS_UNHANDLED,
+    BT_STATUS_AUTH_FAILURE,
+    BT_STATUS_RMT_DEV_DOWN,
+    BT_STATUS_AUTH_REJECTED
+
+} bt_status_t;
 
 #ifndef CPU_LITTLE_ENDIAN
 #define CPU_LITTLE_ENDIAN
@@ -69,6 +92,7 @@ inline uint32_t swap_byte_32(uint32_t x) {
           ((x & 0x00ff0000UL) >> 8) |
           ((x & 0xff000000UL) >> 24));
 }
+
 #ifndef ntohs
 inline uint16_t ntohs(uint16_t x) {
 #ifdef CPU_LITTLE_ENDIAN
@@ -77,6 +101,36 @@ inline uint16_t ntohs(uint16_t x) {
   return x;
 #endif
 }
+#endif /* #ifndef ntohs */
+
+#ifndef htons
+inline uint16_t htons(uint16_t x) {
+#ifdef CPU_LITTLE_ENDIAN
+  return swap_byte_16(x);
+#else
+  return x;
 #endif
+}
+#endif /* #ifndef htons */
+
+#ifndef ntohl
+inline uint32_t ntohl(uint32_t x) {
+#ifdef CPU_LITTLE_ENDIAN
+  return swap_byte_32(x);
+#else
+  return x;
+#endif
+}
+#endif /* #ifndef ntohl*/
+
+#ifndef htonl
+inline uint32_t htonl(uint32_t x) {
+#ifdef CPU_LITTLE_ENDIAN
+  return swap_byte_32(x);
+#else
+  return x;
+#endif
+}
+#endif /* #ifndef htonl*/
 
 #endif /* _BT_DEFS_H_ */

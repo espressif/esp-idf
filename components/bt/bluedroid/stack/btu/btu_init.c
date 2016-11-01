@@ -44,7 +44,7 @@
 #endif
 #endif
 
-extern fixed_queue_t *btif_msg_queue;
+// extern fixed_queue_t *btif_msg_queue;
 
 // Communication queue from bta thread to bt_workqueue.
 fixed_queue_t *btu_bta_msg_queue;
