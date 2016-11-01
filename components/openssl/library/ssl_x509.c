@@ -33,9 +33,9 @@ X509* __X509_new(X509 *ix)
     int ret;
     X509 *x;
 
-    x = ssl_zalloc(sizeof(X509));
+    x = ssl_mem_zalloc(sizeof(X509));
     if (!x)
-        SSL_RET(failed1, "ssl_malloc\n");
+        SSL_RET(failed1, "ssl_mem_zalloc\n");
 
     if (ix)
         x->method = ix->method;
@@ -49,7 +49,7 @@ X509* __X509_new(X509 *ix)
     return x;
 
 failed2:
-    ssl_free(x);
+    ssl_mem_free(x);
 failed1:
     return NULL;
 }
@@ -69,7 +69,7 @@ void X509_free(X509 *x)
 {
     X509_METHOD_CALL(free, x);
 
-    ssl_free(x);
+    ssl_mem_free(x);
 };
 
 /**

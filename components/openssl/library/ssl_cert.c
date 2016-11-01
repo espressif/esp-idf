@@ -28,9 +28,9 @@ CERT *__ssl_cert_new(CERT *ic)
     X509 *ix;
     EVP_PKEY *ipk;
 
-    cert = ssl_zalloc(sizeof(CERT));
+    cert = ssl_mem_zalloc(sizeof(CERT));
     if (!cert)
-        SSL_RET(failed1, "ssl_zalloc\n");
+        SSL_RET(failed1, "ssl_mem_zalloc\n");
 
     if (ic) {
         ipk = ic->pkey;
@@ -53,7 +53,7 @@ CERT *__ssl_cert_new(CERT *ic)
 failed3:
     EVP_PKEY_free(cert->pkey);
 failed2:
-    ssl_free(cert);
+    ssl_mem_free(cert);
 failed1:
     return NULL;
 }
@@ -75,5 +75,5 @@ void ssl_cert_free(CERT *cert)
 
     EVP_PKEY_free(cert->pkey);
 
-    ssl_free(cert);
+    ssl_mem_free(cert);
 }

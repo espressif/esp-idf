@@ -25,9 +25,9 @@ EVP_PKEY* __EVP_PKEY_new(EVP_PKEY *ipk)
     int ret;
     EVP_PKEY *pkey;
 
-    pkey = ssl_zalloc(sizeof(EVP_PKEY));
+    pkey = ssl_mem_zalloc(sizeof(EVP_PKEY));
     if (!pkey)
-        SSL_RET(failed1, "ssl_zalloc\n");
+        SSL_RET(failed1, "ssl_mem_zalloc\n");
 
     if (ipk) {
         pkey->method = ipk->method;
@@ -42,7 +42,7 @@ EVP_PKEY* __EVP_PKEY_new(EVP_PKEY *ipk)
     return pkey;
 
 failed2:
-    ssl_free(pkey);
+    ssl_mem_free(pkey);
 failed1:
     return NULL;
 }
@@ -62,7 +62,7 @@ void EVP_PKEY_free(EVP_PKEY *pkey)
 {
     EVP_PKEY_METHOD_CALL(free, pkey);
 
-    ssl_free(pkey);
+    ssl_mem_free(pkey);
 }
 
 /**

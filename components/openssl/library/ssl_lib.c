@@ -124,9 +124,9 @@ SSL_SESSION* SSL_SESSION_new(void)
 {
     SSL_SESSION *session;
 
-    session = ssl_zalloc(sizeof(SSL_SESSION));
+    session = ssl_mem_zalloc(sizeof(SSL_SESSION));
     if (!session)
-        SSL_RET(failed1, "ssl_zalloc\n");
+        SSL_RET(failed1, "ssl_mem_zalloc\n");
 
     session->peer = X509_new();
     if (!session->peer)
@@ -135,7 +135,7 @@ SSL_SESSION* SSL_SESSION_new(void)
     return session;
 
 failed2:
-    ssl_free(session);
+    ssl_mem_free(session);
 failed1:
     return NULL;
 }
@@ -146,7 +146,7 @@ failed1:
 void SSL_SESSION_free(SSL_SESSION *session)
 {
     X509_free(session->peer);
-    ssl_free(session);
+    ssl_mem_free(session);
 }
 
 /**
@@ -168,9 +168,9 @@ SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
     if (!cert)
         SSL_RET(go_failed2, "ssl_cert_new\n");
 
-    ctx = (SSL_CTX *)ssl_zalloc(sizeof(SSL_CTX));
+    ctx = (SSL_CTX *)ssl_mem_zalloc(sizeof(SSL_CTX));
     if (!ctx)
-        SSL_RET(go_failed3, "ssl_zalloc:ctx\n");
+        SSL_RET(go_failed3, "ssl_mem_zalloc:ctx\n");
 
     ctx->method = method;
     ctx->client_CA = client_ca;
@@ -199,7 +199,7 @@ void SSL_CTX_free(SSL_CTX* ctx)
 
     X509_free(ctx->client_CA);
 
-    ssl_free(ctx);
+    ssl_mem_free(ctx);
 }
 
 /**
@@ -238,9 +238,9 @@ SSL *SSL_new(SSL_CTX *ctx)
     if (!ctx)
         SSL_RET(failed1, "ctx:NULL\n");
 
-    ssl = (SSL *)ssl_zalloc(sizeof(SSL));
+    ssl = (SSL *)ssl_mem_zalloc(sizeof(SSL));
     if (!ssl)
-        SSL_RET(failed1, "ssl_zalloc\n");
+        SSL_RET(failed1, "ssl_mem_zalloc\n");
 
     ssl->session = SSL_SESSION_new();
     if (!ssl->session)
@@ -277,7 +277,7 @@ failed4:
 failed3:
     SSL_SESSION_free(ssl->session);
 failed2:
-    ssl_free(ssl);
+    ssl_mem_free(ssl);
 failed1:
     return NULL;
 }
@@ -297,7 +297,7 @@ void SSL_free(SSL *ssl)
 
     SSL_SESSION_free(ssl->session);
 
-    ssl_free(ssl);
+    ssl_mem_free(ssl);
 }
 
 /**
@@ -343,7 +343,7 @@ int SSL_shutdown(SSL *ssl)
 
     SSL_ASSERT(ssl);
 
-    if (SSL_get_state(ssl) != TLS_ST_OK) return 0;
+    if (SSL_get_state(ssl) != TLS_ST_OK) return 1;
 
     ret = SSL_METHOD_CALL(shutdown, ssl);
 

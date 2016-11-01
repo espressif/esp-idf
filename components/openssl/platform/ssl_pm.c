@@ -86,10 +86,16 @@ int ssl_pm_new(SSL *ssl)
 
     const SSL_METHOD *method = ssl->method;
 
-    ssl_pm = ssl_zalloc(sizeof(struct ssl_pm));
+    ssl_pm = ssl_mem_zalloc(sizeof(struct ssl_pm));
     if (!ssl_pm)
-        SSL_ERR(ret, failed1, "ssl_zalloc\n");
+        SSL_ERR(ret, failed1, "ssl_mem_zalloc\n");
 
+    if (ssl->ctx->read_buffer_len < 2048 || 
+        ssl->ctx->read_buffer_len > 8192)
+        return -1;
+
+    max_content_len = ssl->ctx->read_buffer_len;
+    
     mbedtls_net_init(&ssl_pm->fd);
     mbedtls_net_init(&ssl_pm->cl_fd);
 
@@ -144,6 +150,7 @@ failed3:
     mbedtls_ctr_drbg_free(&ssl_pm->ctr_drbg);
 failed2:
     mbedtls_entropy_free(&ssl_pm->entropy);
+    ssl_mem_free(ssl_pm);
 failed1:
     return -1;
 }
@@ -160,7 +167,7 @@ void ssl_pm_free(SSL *ssl)
     mbedtls_ssl_config_free(&ssl_pm->conf);
     mbedtls_ssl_free(&ssl_pm->ssl);
 
-    ssl_free(ssl_pm);
+    ssl_mem_free(ssl_pm);
     ssl->ssl_pm = NULL;
 }
 
@@ -392,7 +399,7 @@ int x509_pm_show_info(X509 *x)
     if (!x509_crt)
         return -1;
 
-    buf = ssl_malloc(X509_INFO_STRING_LENGTH);
+    buf = ssl_mem_malloc(X509_INFO_STRING_LENGTH);
     if (!buf)
         SSL_RET(failed1, "");
 
@@ -401,14 +408,14 @@ int x509_pm_show_info(X509 *x)
         SSL_RET(failed2, "");
     buf[ret] = 0;
 
-    ssl_free(buf);
+    ssl_mem_free(buf);
 
     SSL_PRINT("%s", buf);
 
     return 0;
 
 failed2:
-    ssl_free(buf);
+    ssl_mem_free(buf);
 failed1:
     return -1;
 }
@@ -417,9 +424,9 @@ int x509_pm_new(X509 *x, X509 *m_x)
 {
     struct x509_pm *x509_pm;
 
-    x509_pm = ssl_zalloc(sizeof(struct x509_pm));
+    x509_pm = ssl_mem_zalloc(sizeof(struct x509_pm));
     if (!x509_pm)
-        SSL_RET(failed1, "ssl_zalloc\n");
+        SSL_RET(failed1, "ssl_mem_zalloc\n");
 
     x->x509_pm = x509_pm;
 
@@ -442,11 +449,11 @@ void x509_pm_free(X509 *x)
     if (x509_pm->x509_crt) {
         mbedtls_x509_crt_free(x509_pm->x509_crt);
 
-        ssl_free(x509_pm->x509_crt);
+        ssl_mem_free(x509_pm->x509_crt);
         x509_pm->x509_crt = NULL;
     }
 
-    ssl_free(x->x509_pm);
+    ssl_mem_free(x->x509_pm);
     x->x509_pm = NULL;
 }
 
@@ -460,14 +467,14 @@ int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
         mbedtls_x509_crt_free(x509_pm->x509_crt);
 
     if (!x509_pm->x509_crt) {
-        x509_pm->x509_crt = ssl_malloc(sizeof(mbedtls_x509_crt));
+        x509_pm->x509_crt = ssl_mem_malloc(sizeof(mbedtls_x509_crt));
         if (!x509_pm->x509_crt)
-            SSL_RET(failed1, "ssl_malloc\n");
+            SSL_RET(failed1, "ssl_mem_malloc\n");
     }
 
-    load_buf = ssl_malloc(len + 1);
+    load_buf = ssl_mem_malloc(len + 1);
     if (!load_buf)
-        SSL_RET(failed2, "ssl_malloc\n");
+        SSL_RET(failed2, "ssl_mem_malloc\n");
 
     ssl_memcpy(load_buf, buffer, len);
     load_buf[len] = '\0';
@@ -477,7 +484,7 @@ int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
     mbedtls_x509_crt_init(x509_pm->x509_crt);
 
     ret = mbedtls_x509_crt_parse(x509_pm->x509_crt, load_buf, len + 1);
-    ssl_free(load_buf);
+    ssl_mem_free(load_buf);
 
     if (ret)
         SSL_RET(failed2, "mbedtls_x509_crt_parse, return [-0x%x]\n", -ret);
@@ -485,7 +492,7 @@ int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
     return 0;
 
 failed2:
-    ssl_free(x509_pm->x509_crt);
+    ssl_mem_free(x509_pm->x509_crt);
     x509_pm->x509_crt = NULL;
 failed1:
     return -1;
@@ -495,7 +502,7 @@ int pkey_pm_new(EVP_PKEY *pk, EVP_PKEY *m_pkey)
 {
     struct pkey_pm *pkey_pm;
 
-    pkey_pm = ssl_zalloc(sizeof(struct pkey_pm));
+    pkey_pm = ssl_mem_zalloc(sizeof(struct pkey_pm));
     if (!pkey_pm)
         return -1;
 
@@ -517,11 +524,11 @@ void pkey_pm_free(EVP_PKEY *pk)
     if (pkey_pm->pkey) {
         mbedtls_pk_free(pkey_pm->pkey);
 
-        ssl_free(pkey_pm->pkey);
+        ssl_mem_free(pkey_pm->pkey);
         pkey_pm->pkey = NULL;
     }
 
-    ssl_free(pk->pkey_pm);
+    ssl_mem_free(pk->pkey_pm);
     pk->pkey_pm = NULL;
 }
 
@@ -535,14 +542,14 @@ int pkey_pm_load(EVP_PKEY *pk, const unsigned char *buffer, int len)
         mbedtls_pk_free(pkey_pm->pkey);
 
     if (!pkey_pm->pkey) {
-        pkey_pm->pkey = ssl_malloc(sizeof(mbedtls_pk_context));
+        pkey_pm->pkey = ssl_mem_malloc(sizeof(mbedtls_pk_context));
         if (!pkey_pm->pkey)
-            SSL_RET(failed1, "ssl_malloc\n");
+            SSL_RET(failed1, "ssl_mem_malloc\n");
     }
 
-    load_buf = ssl_malloc(len + 1);
+    load_buf = ssl_mem_malloc(len + 1);
     if (!load_buf)
-        SSL_RET(failed2, "ssl_malloc\n");
+        SSL_RET(failed2, "ssl_mem_malloc\n");
 
     ssl_memcpy(load_buf, buffer, len);
     load_buf[len] = '\0';
@@ -552,7 +559,7 @@ int pkey_pm_load(EVP_PKEY *pk, const unsigned char *buffer, int len)
     mbedtls_pk_init(pkey_pm->pkey);
 
     ret = mbedtls_pk_parse_key(pkey_pm->pkey, load_buf, len + 1, NULL, 0);
-    ssl_free(load_buf);
+    ssl_mem_free(load_buf);
 
     if (ret)
         SSL_RET(failed2, "mbedtls_pk_parse_key, return [-0x%x]\n", -ret);
@@ -560,7 +567,7 @@ int pkey_pm_load(EVP_PKEY *pk, const unsigned char *buffer, int len)
     return 0;
 
 failed2:
-    ssl_free(pkey_pm->pkey);
+    ssl_mem_free(pkey_pm->pkey);
     pkey_pm->pkey = NULL;
 failed1:
     return -1;

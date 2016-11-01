@@ -12,33 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SSL_PORT_H_
-#define _SSL_PORT_H_
+#ifndef _SSL_OPT_H_
+#define _SSL_OPT_H_
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
-#include "platform/ssl_opt.h"
+/**
+ * if not define "ESP32_IDF_PLATFORM", system will use esp8266 platform interface
+ */
+#define ESP32_IDF_PLATFORM
 
-#ifdef ESP32_IDF_PLATFORM
+/**
+ * openssl debug print function enable
+ */
+#define SSL_DEBUG_ENBALE 0
 
-#include "esp_types.h"
+/** 
+ * openssl debug print function level. function whose level is lower that "SSL_DEBUG_LEVEL"
+ * will not print message
+ */
+#define SSL_DEBUG_LEVEL 0
 
-void *ssl_mem_zalloc(size_t size);
-void *ssl_mem_malloc(size_t size);
-void ssl_mem_free(void *p);
+/**
+ * openssl assert function enable, it will check the input paramter and print the message
+ */
+#define SSL_ASSERT_ENABLE 0
 
-void* ssl_memcpy(void *to, const void *from, size_t size);
-size_t ssl_strlen(const char *src);
-
-void ssl_speed_up_enter(void);
-void ssl_speed_up_exit(void);
-
-#elif defined(SSL_PLATFORM_USER_INCLUDE)
-
-SSL_PLATFORM_USER_INCLUDE
-
-#endif
+/**
+ * openssl location function enable, it will print location of the positioning error
+ */
+#define SSL_DEBUG_LOCATION_ENABLE 0
 
 #endif

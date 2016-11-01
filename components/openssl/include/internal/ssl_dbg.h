@@ -15,21 +15,33 @@
 #ifndef _SSL_DEBUG_H_
 #define _SSL_DEBUG_H_
 
+#include "platform/ssl_opt.h"
+#include "platform/ssl_port.h"
+
 #ifdef __cplusplus
  extern "C" {
 #endif
 
-#define SSL_DEBUG_ENBALE 1
+#ifndef SSL_DEBUG_ENBALE
+#define SSL_DEBUG_ENBALE 0
+#endif
+
+#ifndef SSL_DEBUG_LEVEL
 #define SSL_DEBUG_LEVEL 0
-#define SSL_ASSERT_ENABLE 1
-#define SSL_DEBUG_LOCATION_ENABLE 1
+#endif
 
-#if SSL_DEBUG_ENBALE
-    extern int ets_printf(const char *fmt, ...);
+#ifndef SSL_ASSERT_ENABLE
+#define SSL_ASSERT_ENABLE 0
+#endif
 
-    #define SSL_PRINT ets_printf
-#else
-    #define SSL_PRINT(...)
+#ifndef SSL_DEBUG_LOCATION_ENABLE
+#define SSL_DEBUG_LOCATION_ENABLE 0
+#endif
+
+#ifndef SSL_PRINT
+    #include "stdio.h"
+    extern int printf(const char *fmt, ...);
+    #define SSL_PRINT printf
 #endif
 
 #if SSL_DEBUG_LOCATION_ENABLE
