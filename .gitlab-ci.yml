@@ -92,6 +92,20 @@ build_examples:
     - cd build_examples
     - ${IDF_PATH}/make/build_examples.sh
 
+build_docs:
+  stage: build
+  image: espressif/esp32-ci-env
+  tags:
+    - build_docs
+  script:
+    - cd docs
+    - make html
+  artifacts:
+    paths:
+      - docs/_build/html
+    expire_in: 1 mos
+
+
 test_nvs_on_host:
   stage: test
   image: espressif/esp32-ci-env
@@ -157,6 +171,31 @@ push_master_to_github:
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git remote add github git@github.com:espressif/esp-idf.git
     - git push --follow-tags github HEAD:master
+
+
+deploy_docs:
+  before_script:
+    - echo "Not setting up GitLab key, not fetching submodules"
+  stage: deploy
+  only:
+   - master
+   - triggers
+  tags:
+    - deploy
+  image: espressif/esp32-ci-env
+  script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $DOCS_DEPLOY_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host $DOCS_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_SERVER_USER\n" >> ~/.ssh/config
+    - export GIT_VER=$(git describe --always)
+    - cd docs/_build/
+    - mv html $GIT_VER
+    - tar czvf $GIT_VER.tar.gz $GIT_VER
+    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH
+    - ssh $DOCS_SERVER -x "cd $DOCS_PATH && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
 
 
 # AUTO GENERATED PART START, DO NOT MODIFY CONTENT BELOW

@@ -1,5 +1,8 @@
 Partition Tables
-----------------
+================
+
+Overview
+--------
 
 A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to offset 0x4000 in the flash.
 
