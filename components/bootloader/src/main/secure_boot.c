@@ -31,6 +31,8 @@
 #include "sdkconfig.h"
 
 #include "bootloader_config.h"
+#include "bootloader_flash.h"
+#include "esp_image_format.h"
 
 static const char* TAG = "secure_boot";
 
@@ -40,43 +42,52 @@ static const char* TAG = "secure_boot";
  *
  *  @inputs:        bool
  */
-static bool secure_boot_generate(uint32_t bin_len){
+static bool secure_boot_generate(uint32_t image_len){
 	SpiFlashOpResult spiRet;
-	uint16_t i;
 	uint32_t buf[32];
-	if (bin_len % 128 != 0) {  
-		bin_len = (bin_len / 128 + 1) * 128; 
-	} 
+    const void *image;
+
+	if (image_len % 128 != 0) {
+		image_len = (image_len / 128 + 1) * 128;
+	}
 	ets_secure_boot_start();
 	ets_secure_boot_rd_iv(buf);
 	ets_secure_boot_hash(NULL);
 	Cache_Read_Disable(0);
-	/* iv stored in sec 0 */ 
+	/* iv stored in sec 0 */
 	spiRet = SPIEraseSector(0);
 	if (spiRet != SPI_FLASH_RESULT_OK)
-	{   
-		ESP_LOGE(TAG, SPI_ERROR_LOG);
-		return false;
-	}
-	/* write iv to flash, 0x0000, 128 bytes (1024 bits) */
-	spiRet = SPIWrite(0, buf, 128);
-	if (spiRet != SPI_FLASH_RESULT_OK) 
 	{
 		ESP_LOGE(TAG, SPI_ERROR_LOG);
 		return false;
 	}
-	ESP_LOGD(TAG, "write iv to flash.");
 	Cache_Read_Enable(0);
-	/* read 4K code image from flash, for test */
-	for (i = 0; i < bin_len; i+=128) {
-		ets_secure_boot_hash((uint32_t *)(0x3f400000 + 0x1000 + i));
+
+	/* write iv to flash, 0x0000, 128 bytes (1024 bits) */
+    ESP_LOGD(TAG, "write iv to flash.");
+	spiRet = SPIWrite(0, buf, 128);
+	if (spiRet != SPI_FLASH_RESULT_OK)
+	{
+		ESP_LOGE(TAG, SPI_ERROR_LOG);
+		return false;
 	}
+
+	/* generate digest from image contents */
+    image = bootloader_mmap(0x1000, image_len);
+    if (!image) {
+        ESP_LOGE(TAG, "bootloader_mmap(0x1000, 0x%x) failed", image_len);
+        return false;
+    }
+	for (int i = 0; i < image_len; i+=128) {
+		ets_secure_boot_hash(image + i/sizeof(void *));
+	}
+    bootloader_unmap(image);
 
 	ets_secure_boot_obtain();
 	ets_secure_boot_rd_abstract(buf);
 	ets_secure_boot_finish();
-	Cache_Read_Disable(0);
-	/* write abstract to flash, 0x0080, 64 bytes (512 bits) */
+
+    ESP_LOGD(TAG, "write abstract to flash.");
 	spiRet = SPIWrite(0x80, buf, 64);
 	if (spiRet != SPI_FLASH_RESULT_OK) {
 		ESP_LOGE(TAG, SPI_ERROR_LOG);
@@ -99,9 +110,9 @@ static inline void burn_efuses()
 }
 
 /**
- *  @function :     secure_boot_generate_bootloader_digest
+ *  @brief Enable secure boot if it is not already enabled.
  *
- *  @description: Called if the secure boot flag is set on the
+ *  Called if the secure boot flag is set on the
  *  bootloader image in flash. If secure boot is not yet enabled for
  *  bootloader, this will generate the secure boot digest and enable
  *  secure boot by blowing the EFUSE_RD_ABS_DONE_0 efuse.
@@ -110,24 +121,21 @@ static inline void burn_efuses()
  *  ROM bootloader does this.)
  *
  *  @return true if secure boot is enabled (either was already enabled,
- *  or is freshly enabled as a result of calling this function.)
+ *  or is freshly enabled as a result of calling this function.) false
+ *  implies an error occured (possibly secure boot is part-enabled.)
  */
 bool secure_boot_generate_bootloader_digest(void) {
-    uint32_t bin_len = 0;
+    esp_err_t err;
+    uint32_t image_len = 0;
     if (REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0)
     {
         ESP_LOGI(TAG, "bootloader secure boot is already enabled, continuing..");
         return true;
     }
 
-    boot_cache_redirect( 0, 64*1024);
-    bin_len = get_bin_len((uint32_t)MEM_CACHE(0x1000));
-    if (bin_len == 0) {
-        ESP_LOGE(TAG, "Invalid bootloader image length zero.");
-        return false;
-    }
-    if (bin_len > 0x100000) {
-        ESP_LOGE(TAG, "Invalid bootloader image length %x", bin_len);
+    err = esp_image_basic_verify(0x1000, &image_len);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "bootloader image appears invalid! error %d", err);
         return false;
     }
 
@@ -168,7 +176,7 @@ bool secure_boot_generate_bootloader_digest(void) {
     }
 
     ESP_LOGI(TAG, "Generating secure boot digest...");
-    if (false == secure_boot_generate(bin_len)){
+    if (false == secure_boot_generate(image_len)){
         ESP_LOGE(TAG, "secure boot generation failed");
         return false;
     }

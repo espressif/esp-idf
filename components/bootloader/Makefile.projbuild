@@ -20,7 +20,7 @@ SECURE_BOOT_KEYFILE=$(abspath $(call dequote,$(CONFIG_SECURE_BOOTLOADER_KEY_FILE
 # Custom recursive make for bootloader sub-project
 BOOTLOADER_MAKE=+$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
 	V=$(V) SDKCONFIG=$(BOOTLOADER_SDKCONFIG) \
-	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
+	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) IS_BOOTLOADER_BUILD=1
 
 .PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
 
@@ -89,7 +89,9 @@ $(SECURE_BOOT_KEYFILE):
 	@exit 1
 
 else
-$(error Bad sdkconfig - one of CONFIG_SECURE_BOOTLOADER_DISABLED, CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH, CONFIG_SECURE_BOOTLOADER_REFLASHABLE must be set)
+bootloader:
+	@echo "Invalid bootloader target: bad sdkconfig?"
+	@exit 1
 endif
 
 all_binaries: $(BOOTLOADER_BIN)

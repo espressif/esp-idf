@@ -4,7 +4,7 @@
 #
 
 PROJECT_NAME := bootloader
-COMPONENTS := esptool_py bootloader log spi_flash
+COMPONENTS := esptool_py bootloader bootloader_support log spi_flash
 
 # The bootloader pseudo-component is also included in this build, for its Kconfig.projbuild to be included.
 #

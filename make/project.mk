@@ -100,7 +100,7 @@ COMPONENT_LDFLAGS :=
 #
 # Debugging this? Replace $(shell with $(error and you'll see the full command as-run.
 define GetVariable
-$(shell "$(MAKE)" -s --no-print-directory -C $(1) -f component.mk get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
+$(shell "$(MAKE)" -s --no-print-directory -C $(1) -f component.mk get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) IS_BOOTLOADER_BUILD=$(IS_BOOTLOADER_BUILD) | sed -En "s/^$(2)=(.+)/\1/p" )
 endef
 
 COMPONENT_INCLUDES := $(abspath $(foreach comp,$(COMPONENT_PATHS_BUILDABLE),$(addprefix $(comp)/, \

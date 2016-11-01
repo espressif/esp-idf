@@ -25,8 +25,6 @@ extern "C"
 
 #define BOOT_VERSION "V0.1"
 #define SPI_SEC_SIZE 0x1000
-#define MEM_CACHE(offset)   (uint8_t *)(0x3f400000 + (offset))
-#define CACHE_READ_32(offset)   ((uint32_t *)(0x3f400000 + (offset)))
 #define IROM_LOW    0x400D0000
 #define IROM_HIGH   0x40400000
 #define DROM_LOW    0x3F400000
@@ -60,9 +58,6 @@ typedef struct {
     uint32_t app_count;
     uint32_t selected_subtype;
 } bootloader_state_t;
-
-void boot_cache_redirect( uint32_t pos, size_t size );
-uint32_t get_bin_len(uint32_t pos);
 
 bool flash_encrypt(bootloader_state_t *bs);
 bool secure_boot_generate_bootloader_digest(void);
