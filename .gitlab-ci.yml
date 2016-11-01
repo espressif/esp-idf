@@ -255,7 +255,7 @@ push_master_to_github:
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
 
 UT_Function_SYS_01:
-  <<: *test_template
+  <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
