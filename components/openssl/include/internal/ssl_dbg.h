@@ -39,20 +39,36 @@
 #endif
 
 #if SSL_DEBUG_ENBALE
-    #ifndef SSL_PRINT
+    #if !defined(SSL_PRINT_LOG) || !defined(SSL_ERROR_LOG) || !defined(SSL_LOCAL_LOG)
         #include "stdio.h"
         extern int printf(const char *fmt, ...);
-        #define SSL_PRINT printf
+        #ifndef SSL_PRINT_LOG
+            #define SSL_PRINT_LOG printf
+        #endif
+        #ifndef SSL_ERROR_LOG
+            #define SSL_ERROR_LOG printf
+        #endif 
+        #ifndef SSL_LOCAL_LOG
+            #define SSL_LOCAL_LOG printf
+        #endif
     #endif
 #else
-    #ifdef SSL_PRINT
-        #undef SSL_PRINT
-        #define SSL_PRINT(...)
+    #ifdef SSL_PRINT_LOG
+        #undef SSL_PRINT_LOG
+        #define SSL_PRINT_LOG(...)
+    #endif
+    #ifdef SSL_ERROR_LOG
+        #undef SSL_ERROR_LOG
+        #define SSL_ERROR_LOG(...)
+    #endif
+    #ifdef SSL_LOCAL_LOG
+        #undef SSL_LOCAL_LOG
+        #define SSL_LOCAL_LOG(...)
     #endif
 #endif
 
 #if SSL_DEBUG_LOCATION_ENABLE
-    #define SSL_DEBUG_LOCATION() SSL_PRINT("%s %s line %d\n", __FILE__, __FUNCTION__, __LINE__)
+    #define SSL_DEBUG_LOCATION() SSL_LOCAL_LOG("%s %s line %d\n", __FILE__, __FUNCTION__, __LINE__)
 #else
     #define SSL_DEBUG_LOCATION()
 #endif
@@ -63,11 +79,11 @@
     #define SSL_ASSERT(s)
 #endif
 
-#define SSL_ERR(err, go, fmt, ...) { SSL_DEBUG_LOCATION(); SSL_PRINT(fmt, ##__VA_ARGS__); ret = err; goto go; }
+#define SSL_ERR(err, go, fmt, ...) { SSL_DEBUG_LOCATION(); SSL_ERROR_LOG(fmt, ##__VA_ARGS__); ret = err; goto go; }
 
-#define SSL_RET(go, fmt, ...) {  SSL_DEBUG_LOCATION(); SSL_PRINT(fmt, ##__VA_ARGS__); goto go; }
+#define SSL_RET(go, fmt, ...) {  SSL_DEBUG_LOCATION(); SSL_ERROR_LOG(fmt, ##__VA_ARGS__); goto go; }
 
-#define SSL_DEBUG(level, fmt, ...) { if (level > SSL_DEBUG_LEVEL) {SSL_PRINT(fmt, ##__VA_ARGS__);} }
+#define SSL_DEBUG(level, fmt, ...) { if (level > SSL_DEBUG_LEVEL) {SSL_PRINT_LOG(fmt, ##__VA_ARGS__);} }
 
 #ifdef __cplusplus
 }

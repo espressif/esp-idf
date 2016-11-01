@@ -410,7 +410,7 @@ int x509_pm_show_info(X509 *x)
 
     ssl_mem_free(buf);
 
-    SSL_PRINT("%s", buf);
+    SSL_DEBUG(1, "%s", buf);
 
     return 0;
 

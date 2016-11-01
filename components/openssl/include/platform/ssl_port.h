@@ -36,7 +36,9 @@ size_t ssl_strlen(const char *src);
 void ssl_speed_up_enter(void);
 void ssl_speed_up_exit(void);
 
-#define SSL_PRINT(fmt, ...) ESP_LOGD("OpenSSL", fmt, ##__VA_ARGS__)
+#define SSL_PRINT_LOG(fmt, ...) ESP_LOGD("openssl", fmt, ##__VA_ARGS__)
+#define SSL_ERROR_LOG(fmt, ...) ESP_LOGE("openssl", fmt, ##__VA_ARGS__)
+#define SSL_LOCAL_LOG(fmt, ...) ESP_LOGD("openssl", fmt, ##__VA_ARGS__)
 
 #elif defined(SSL_PLATFORM_USER_INCLUDE)
 
