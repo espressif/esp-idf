@@ -92,6 +92,20 @@ build_examples:
     - cd build_examples
     - ${IDF_PATH}/make/build_examples.sh
 
+build_docs:
+  stage: build
+  image: espressif/esp32-ci-env
+  tags:
+    - build_docs
+  script:
+    - cd docs
+    - make html
+  artifacts:
+    paths:
+      - docs/_build/html
+    expire_in: 6 mos
+
+
 test_nvs_on_host:
   stage: test
   image: espressif/esp32-ci-env

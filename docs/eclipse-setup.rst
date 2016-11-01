@@ -1,4 +1,4 @@
-Build and Falsh with Eclipse IDE
+Build and Flash with Eclipse IDE
 ********************************
 
 Installing Eclipse IDE
