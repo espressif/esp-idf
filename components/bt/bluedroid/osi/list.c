@@ -130,7 +130,6 @@ bool list_append(list_t *list, void *data) {
 
   node = (list_node_t *)list->allocator->alloc(sizeof(list_node_t));
   if (!node) {
-	//ets_printf("list_append failed\n");
     return false;
 }
   node->next = NULL;
@@ -209,7 +208,6 @@ list_node_t *list_next(const list_node_t *node) {
 
 void *list_node(const list_node_t *node) {
   assert(node != NULL);
-  //ets_printf("node %08x\n", node);
   return node->data;
 }
 

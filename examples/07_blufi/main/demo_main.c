@@ -15,9 +15,7 @@
 extern tBTA_STATUS BTA_DisableBluetooth(void);
 extern void phy_set_wifi_mode_only(bool wifi_only);
 extern void bte_main_boot_entry(void *);
-extern void bt_app_task_start_up(void);
-extern void bt_app_task_shut_down(void);
-extern void bt_app_core_start(void);
+extern void blufi_init(void);
 
 #define WIFI_LIST_NUM	10
 
@@ -45,9 +43,11 @@ void wifi_set_blue_config(char *ssid, char *passwd)
 	strcpy(tmp_ssid, ssid);
 	strcpy(tmp_passwd, passwd);
 	confirm = true;
-	printf("confirm true\n");
+	LOG_DEBUG("confirm true\n");
 }
 
+extern void blufi_config_failed(void);
+extern void blufi_config_success(void);
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
@@ -56,6 +56,8 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+		blufi_config_success();
+		BTA_DisableBluetooth();
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
@@ -89,23 +91,24 @@ void wifiTestTask(void *pvParameters)
 
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        if (confirm) {
-		confirm = false;
-		BTA_DisableBluetooth();
+		if (confirm) {
+			confirm = false;
+			//BTA_DisableBluetooth();
 
-		strcpy(sta_config.sta.ssid, tmp_ssid);
-		strcpy(sta_config.sta.password, tmp_passwd);
-		sta_config.sta.bssid_set = 0;
+			strcpy(sta_config.sta.ssid, tmp_ssid);
+			strcpy(sta_config.sta.password, tmp_passwd);
+			sta_config.sta.bssid_set = 0;
 
-		ret = esp_wifi_disconnect();
-		printf("esp_wifi config\n");
-		esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-		printf("esp_wifi connect\n");
-		ret = esp_wifi_connect();
-		if (ret != ESP_OK) {
-			printf("esp_wifi connect failed\n");
+			ret = esp_wifi_disconnect();
+			LOG_INFO("esp_wifi config\n");
+			esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+			LOG_INFO("esp_wifi connect\n");
+			ret = esp_wifi_connect();
+			if (ret != ESP_OK) {
+				LOG_ERROR("esp_wifi connect failed\n");
+				blufi_config_failed();
+			}
 		}
-	}
     }
 }
 
@@ -121,6 +124,6 @@ void app_main()
 
     bt_controller_init();
     xTaskCreatePinnedToCore(&wifiTestTask, "wifiTestTask", 2048, NULL, 20, NULL, 0);
-    bt_app_task_start_up();
-    bte_main_boot_entry(bt_app_core_start);
+   // bt_app_task_start_up();
+    bte_main_boot_entry(blufi_init);
 }

@@ -9,11 +9,29 @@
 
 #define portBASE_TYPE int
 
-struct task_evt {
-    uint32_t sig;
-    uint32_t par;
+struct bt_task_evt {
+    uint32_t	sig;	//task sig
+    void *		par;	//point to task param
+	void *		cb;		//point to function cb
+	void *		arg;	//point to function arg
 };
-typedef struct task_evt TaskEvt_t;
+typedef struct bt_task_evt BtTaskEvt_t;
+
+typedef enum {
+    BT_STATUS_SUCCESS,
+    BT_STATUS_FAIL,
+    BT_STATUS_NOT_READY,
+    BT_STATUS_NOMEM,
+    BT_STATUS_BUSY,
+    BT_STATUS_DONE,
+    BT_STATUS_UNSUPPORTED,
+    BT_STATUS_PARAM_INVALID,
+    BT_STATUS_UNHANDLED,
+    BT_STATUS_AUTH_FAILURE,
+    BT_STATUS_RMT_DEV_DOWN
+} BtStatus_t;
+
+typedef BtStatus_t (* BtTaskCb_t)(void *arg);
 
 enum {
 	SIG_PRF_START_UP = 0xfc,

@@ -971,7 +971,7 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
     BT_HDR *event = osi_calloc(sizeof(BT_HDR) + sizeof(command_complete_hack_t));
     command_complete_hack_t *hack = (command_complete_hack_t *)&event->data[0];
 
-    LOG_ERROR("btu_hcif_command_complete_evt\n");
+    LOG_DEBUG("btu_hcif_command_complete_evt\n");
 
     hack->callback = btu_hcif_command_complete_evt_on_task;
     hack->response = response;

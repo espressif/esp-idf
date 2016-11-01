@@ -1434,7 +1434,7 @@ UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
             LOG_ERROR("cp_len = %d\n,p_data->p_manu->len=%d\n",cp_len,p_data->p_manu->len);
             for(int i = 0; i < p_data->p_manu->len; i++)
             {
-                LOG_ERROR("p_data->p_manu->p_val[%d] = %x\n",i,p_data->p_manu->p_val[i]);
+                LOG_DEBUG("p_data->p_manu->p_val[%d] = %x\n",i,p_data->p_manu->p_val[i]);
             }
             *p++ = cp_len + 1;
             *p++ = BTM_BLE_AD_TYPE_MANU;

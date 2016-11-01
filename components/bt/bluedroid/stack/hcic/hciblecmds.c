@@ -136,7 +136,7 @@ BOOLEAN btsnd_hcic_ble_set_adv_data (UINT8 data_len, UINT8 *p_data)
 
     for (int i = 0; i < data_len; i++)
     {
-        LOG_ERROR("p_data[%d] = %x\n", i,p_data[i]);
+        LOG_DEBUG("p_data[%d] = %x\n", i,p_data[i]);
     }
  
     if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA + 1)) == NULL)

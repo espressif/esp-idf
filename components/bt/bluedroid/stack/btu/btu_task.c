@@ -306,7 +306,7 @@ void btu_task_thread_handler(void *arg)
 {
     //ke_event_clear(KE_EVENT_BTU_TASK_THREAD);
 
-    TaskEvt_t *e;
+    BtTaskEvt_t *e;
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtuQueue, &e, (portTickType)portMAX_DELAY)) {
@@ -332,7 +332,7 @@ void btu_task_thread_handler(void *arg)
 
 void btu_task_post(uint32_t sig)
 {
-    TaskEvt_t *evt = (TaskEvt_t *)osi_malloc(sizeof(TaskEvt_t));
+    BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
     if (evt == NULL)
         return;
 
@@ -340,7 +340,7 @@ void btu_task_post(uint32_t sig)
     evt->par = 0;
 
     if (xQueueSend(xBtuQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
-            ets_printf("xBtuQueue failed\n");
+            LOG_ERROR("xBtuQueue failed\n");
     }
 }
 

@@ -1,23 +1,23 @@
-/**
- ****************************************************************************************
- *
- * @file bt_app.c
- *
- * @brief Application entry point
- *
- * Copyright (C) Espressif 2016
- * Created by Yulong at 2016/9/9
- *
- *
- ****************************************************************************************
- */
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#include "bt_app_defs.h"
+#include "blufi_adv.h"
 
 
  /*******************************************************************************
  **
- ** Function		 ESP_AppConfigadvData
+ ** Function		 BlufiConfigadvData
  **
  ** Description 	 This function is called to override the BTA default ADV parameters.
  **
@@ -29,7 +29,7 @@
  ** Returns 		 None
  **
  *******************************************************************************/
- void ESP_AppBleConfigadvData(tESP_BLE_ADV_DATA *adv_data,
+ void BlufiBleConfigadvData(tBLUFI_BLE_ADV_DATA *adv_data,
 												tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
 {
 	tBTA_BLE_AD_MASK data_mask = 0;
@@ -103,7 +103,7 @@
 
 /*******************************************************************************
 **
-** Function         ESP_BleSetScanRsp
+** Function         BLUFI_BleSetScanRsp
 **
 ** Description      This function is called to override the app scan response.
 **
@@ -112,7 +112,7 @@
 ** Returns          None
 **
 *******************************************************************************/
-void ESP_AppBleSetScanRsp(tESP_BLE_ADV_DATA *scan_rsp_data,
+void BlufiBleSetScanRsp(tBLUFI_BLE_ADV_DATA *scan_rsp_data,
 												tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback)
 {
 	tBTA_BLE_AD_MASK data_mask = 0;

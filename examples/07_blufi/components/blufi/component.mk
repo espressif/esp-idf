@@ -7,13 +7,7 @@
 # please read the ESP-IDF documents if you need to do this.
 #
 
-COMPONENT_SRCDIRS :=	\
-			app_core				\
-			app_client_profiles/battery_c		\
-			app_client_profiles			\
-			app_profiles/app_sample_button		\
-			app_profiles				\
-			app_project
+COMPONENT_SRCDIRS := .
 
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses -I./include
 

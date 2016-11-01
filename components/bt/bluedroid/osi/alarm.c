@@ -49,7 +49,7 @@ static struct alarm_t *alarm_cbs_lookfor_available(void)
 
 	for (i = 0; i < ALARM_CBS_NUM; i++) {
 		if (alarm_cbs[i].alarm_hdl == NULL) { //available
-			ets_printf(">>>> %d %08x<<<<\n", i, &alarm_cbs[i]);
+			LOG_DEBUG(">>>> %d %08x<<<<\n", i, &alarm_cbs[i]);
 			return &alarm_cbs[i];
 		}
 	}
@@ -61,14 +61,13 @@ static void alarm_cb_handler(TimerHandle_t xTimer)
 {
 	struct alarm_t *alarm;
 
-	ets_printf("*********************************************************\n");
 	if (!xTimer) {
-		ets_printf("TimerName: NULL\n");
+		LOG_DEBUG("TimerName: NULL\n");
 		return;
 	}
 
 	alarm = pvTimerGetTimerID(xTimer);
-	ets_printf("TimerID %08x, Name %s\n", alarm, pcTimerGetTimerName(xTimer));
+	LOG_DEBUG("TimerID %08x, Name %s\n", alarm, pcTimerGetTimerName(xTimer));
 	if (alarm->cb) {
 		alarm->cb(alarm->cb_data);
 	}
@@ -85,13 +84,13 @@ osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void
 	/* TODO mutex lock */
 	timer_id = alarm_cbs_lookfor_available();
 	if (!timer_id) {
-		ets_printf("%s full\n", __func__);
+		LOG_ERROR("%s full\n", __func__);
 		return NULL;
 	}
 
 	t = xTimerCreate(alarm_name, timer_expire / portTICK_PERIOD_MS, pdFALSE, timer_id, alarm_cb_handler);
 	if (!t) {
-		ets_printf("%s error\n", __func__);
+		LOG_ERROR("%s error\n", __func__);
 		return NULL;
 	}
 
@@ -106,12 +105,12 @@ osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void
 int osi_alarm_free(osi_alarm_t *alarm)
 {
 	if (!alarm) {
-		ets_printf("%s null\n", __func__);
+		LOG_ERROR("%s null\n", __func__);
 		return -1;
 	}
 
 	if (xTimerDelete(alarm->alarm_hdl, BT_ALARM_FREE_WAIT_TICKS) != pdPASS) {
-		ets_printf("%s error\n", __func__);
+		LOG_ERROR("%s error\n", __func__);
 		return -2;
 	}
 
@@ -125,17 +124,17 @@ int osi_alarm_free(osi_alarm_t *alarm)
 
 int osi_alarm_set(osi_alarm_t *alarm, period_ms_t timeout) {
 	if (!alarm) {
-		ets_printf("%s null\n", __func__);
+		LOG_ERROR("%s null\n", __func__);
 		return -1;
 	}
 
 	if (xTimerChangePeriod(alarm->alarm_hdl, timeout / portTICK_PERIOD_MS, BT_ALARM_CHG_PERIOD_WAIT_TICKS) != pdPASS) {
-		ets_printf("%s chg period error\n", __func__);
+		LOG_ERROR("%s chg period error\n", __func__);
 		return -2;
 	}
 
 	if (xTimerStart(alarm->alarm_hdl, BT_ALARM_START_WAIT_TICKS) != pdPASS) {
-		ets_printf("%s start error\n", __func__);
+		LOG_ERROR("%s start error\n", __func__);
 		return -3;
 	}
 
@@ -145,12 +144,12 @@ int osi_alarm_set(osi_alarm_t *alarm, period_ms_t timeout) {
 
 int osi_alarm_cancel(osi_alarm_t *alarm) {
 	if (!alarm) {
-		ets_printf("%s null\n", __func__);
+		LOG_ERROR("%s null\n", __func__);
 		return -1;
 	}
 
 	if (xTimerStop(alarm->alarm_hdl, BT_ALARM_STOP_WAIT_TICKS) != pdPASS) {
-		ets_printf("%s error\n", __func__);
+		LOG_ERROR("%s error\n", __func__);
 		return -2;
 	}
 
