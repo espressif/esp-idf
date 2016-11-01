@@ -382,34 +382,6 @@ static void lwip_socket_unregister_membership(int s, const ip4_addr_t *if_addr, 
 static void lwip_socket_drop_registered_memberships(int s);
 #endif /* LWIP_IGMP */
 
-#if ESP_LWIP
-#include "esp_wifi_internal.h"
-#include "esp_system.h"
-
-/* Please be notified that this flow control is just a workaround for fixing wifi Q full issue. 
- * Under UDP/TCP pressure test, we found that the sockets may cause wifi tx queue full if the socket
- * sending speed is faster than the wifi sending speed, it will finally cause the packet to be dropped
- * in wifi layer, it's not acceptable in some application. That's why we introdue the tx flow control here.
- * However, current solution is just a workaround, we need to consider the return value of wifi tx interface,
- * and feedback the return value to lwip and let lwip do the flow control itself.
- */ 
-static inline void esp32_tx_flow_ctrl(void)
-{
-//TODO we need to do flow control for UDP
-#if 0
-  uint8_t _wait_delay = 1;
-
-  while ((system_get_free_heap_size() < HEAP_HIGHWAT) || esp_wifi_internal_tx_is_stop()){
-     vTaskDelay(_wait_delay/portTICK_RATE_MS);
-     if (_wait_delay < 64) _wait_delay *= 2;
-  }
-#endif
-}
-
-#else
-#define esp32_tx_flow_ctrl() 
-#endif
-
 /** The global array of available sockets */
 static struct lwip_sock sockets[NUM_SOCKETS];
 #if ESP_THREAD_SAFE
@@ -1391,8 +1363,6 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
     return -1;
 #endif /* LWIP_TCP */
   }
-
-  esp32_tx_flow_ctrl();
 
   if ((to != NULL) && !SOCK_ADDR_TYPE_MATCH(to, sock)) {
     /* sockaddr does not match socket type (IPv4/IPv6) */
