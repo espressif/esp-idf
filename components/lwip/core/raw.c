@@ -54,10 +54,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 /** The list of RAW PCBs */
 static struct raw_pcb *raw_pcbs;
 

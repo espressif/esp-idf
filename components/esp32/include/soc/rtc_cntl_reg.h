@@ -14,6 +14,9 @@
 #ifndef _SOC_RTC_CNTL_REG_H_
 #define _SOC_RTC_CNTL_REG_H_
 
+/* The value that needs to be written to RTC_CNTL_WDT_WKEY to write-enable the wdt registers */
+#define RTC_CNTL_WDT_WKEY_VALUE 0x50D83AA1
+
 
 #include "soc.h"
 #define RTC_CNTL_OPTIONS0_REG          (DR_REG_RTCCNTL_BASE + 0x0)

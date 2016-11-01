@@ -15,6 +15,9 @@
 #ifndef _SOC_CPU_H
 #define _SOC_CPU_H
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include "xtensa/corebits.h"
 
 /* C macros for xtensa special register read/write/exchange */

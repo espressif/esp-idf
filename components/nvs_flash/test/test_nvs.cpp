@@ -933,6 +933,24 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
     }
 }
 
+TEST_CASE("test for memory leaks in open/set", "[leaks]")
+{
+    SpiFlashEmulator emu(10);
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    
+    for (int i = 0; i < 100000; ++i) {
+        nvs_handle light_handle = 0;
+        char lightbulb[1024] = {12, 13, 14, 15, 16};
+        TEST_ESP_OK(nvs_open("light", NVS_READWRITE, &light_handle));
+        TEST_ESP_OK(nvs_set_blob(light_handle, "key", lightbulb, sizeof(lightbulb)));
+        TEST_ESP_OK(nvs_commit(light_handle));
+        nvs_close(light_handle);
+    }
+}
+
 TEST_CASE("dump all performance data", "[nvs]")
 {
     std::cout << "====================" << std::endl << "Dumping benchmarks" << std::endl;

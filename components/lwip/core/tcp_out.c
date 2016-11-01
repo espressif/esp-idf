@@ -59,10 +59,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 /* Define some copy-macros for checksum-on-copy so that the code looks
    nicer by preventing too many ifdef's. */
 #if TCP_CHECKSUM_ON_COPY
@@ -336,9 +332,9 @@ tcp_write_checks(struct tcp_pcb *pcb, u16_t len)
   /* If total number of pbufs on the unsent/unacked queues exceeds the
    * configured maximum, return an error */
   /* check for configured max queuelen and possible overflow */
-  if ((pcb->snd_queuelen >= TCP_SND_QUEUELEN) || (pcb->snd_queuelen > TCP_SNDQUEUELEN_OVERFLOW)) {
+  if ((pcb->snd_queuelen >= TCP_SND_QUEUELEN(pcb)) || (pcb->snd_queuelen > TCP_SNDQUEUELEN_OVERFLOW)) {
     LWIP_DEBUGF(TCP_OUTPUT_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("tcp_write: too long queue %"U16_F" (max %"U16_F")\n",
-      pcb->snd_queuelen, TCP_SND_QUEUELEN));
+      pcb->snd_queuelen, TCP_SND_QUEUELEN(pcb)));
     TCP_STATS_INC(tcp.memerr);
     pcb->flags |= TF_NAGLEMEMERR;
     return ERR_MEM;
@@ -606,9 +602,9 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
     /* Now that there are more segments queued, we check again if the
      * length of the queue exceeds the configured maximum or
      * overflows. */
-    if ((queuelen > TCP_SND_QUEUELEN) || (queuelen > TCP_SNDQUEUELEN_OVERFLOW)) {
+    if ((queuelen > TCP_SND_QUEUELEN(pcb)) || (queuelen > TCP_SNDQUEUELEN_OVERFLOW)) {
       LWIP_DEBUGF(TCP_OUTPUT_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("tcp_write: queue too long %"U16_F" (%d)\n",
-        queuelen, (int)TCP_SND_QUEUELEN));
+        queuelen, (int)TCP_SND_QUEUELEN(pcb)));
       pbuf_free(p);
       goto memerr;
     }
@@ -766,10 +762,10 @@ tcp_enqueue_flags(struct tcp_pcb *pcb, u8_t flags)
               (flags & (TCP_SYN | TCP_FIN)) != 0);
 
   /* check for configured max queuelen and possible overflow (FIN flag should always come through!) */
-  if (((pcb->snd_queuelen >= TCP_SND_QUEUELEN) || (pcb->snd_queuelen > TCP_SNDQUEUELEN_OVERFLOW)) &&
+  if (((pcb->snd_queuelen >= TCP_SND_QUEUELEN(pcb)) || (pcb->snd_queuelen > TCP_SNDQUEUELEN_OVERFLOW)) &&
       ((flags & TCP_FIN) == 0)) {
     LWIP_DEBUGF(TCP_OUTPUT_DEBUG | LWIP_DBG_LEVEL_SEVERE, ("tcp_enqueue_flags: too long queue %"U16_F" (max %"U16_F")\n",
-                                       pcb->snd_queuelen, TCP_SND_QUEUELEN));
+                                       pcb->snd_queuelen, TCP_SND_QUEUELEN(pcb)));
     TCP_STATS_INC(tcp.memerr);
     pcb->flags |= TF_NAGLEMEMERR;
     return ERR_MEM;
@@ -1301,6 +1297,7 @@ tcp_rst(u32_t seqno, u32_t ackno,
   struct pbuf *p;
   struct tcp_hdr *tcphdr;
   struct netif *netif;
+  
   p = pbuf_alloc(PBUF_IP, TCP_HLEN, PBUF_RAM);
   if (p == NULL) {
     LWIP_DEBUGF(TCP_DEBUG, ("tcp_rst: could not allocate memory for pbuf\n"));
@@ -1315,10 +1312,18 @@ tcp_rst(u32_t seqno, u32_t ackno,
   tcphdr->seqno = htonl(seqno);
   tcphdr->ackno = htonl(ackno);
   TCPH_HDRLEN_FLAGS_SET(tcphdr, TCP_HLEN/4, TCP_RST | TCP_ACK);
+#if ESP_PER_SOC_TCP_WND
 #if LWIP_WND_SCALE
-  tcphdr->wnd = PP_HTONS(((TCP_WND >> TCP_RCV_SCALE) & 0xFFFF));
+  tcphdr->wnd = PP_HTONS(((TCP_WND_DEFAULT >> TCP_RCV_SCALE) & 0xFFFF));
 #else
-  tcphdr->wnd = PP_HTONS(TCP_WND);
+  tcphdr->wnd = PP_HTONS(TCP_WND_DEFAULT);
+#endif
+#else
+#if LWIP_WND_SCALE
+  tcphdr->wnd = PP_HTONS(((TCP_WND_DEFAULT >> TCP_RCV_SCALE) & 0xFFFF));
+#else
+  tcphdr->wnd = PP_HTONS(TCP_WND_DEFAULT);
+#endif
 #endif
   tcphdr->chksum = 0;
   tcphdr->urgp = 0;

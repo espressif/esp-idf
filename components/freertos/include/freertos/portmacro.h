@@ -225,6 +225,26 @@ static inline unsigned portENTER_CRITICAL_NESTED() { unsigned state = XTOS_SET_I
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(state)     portEXIT_CRITICAL_NESTED(state)
 
 
+/*
+ * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
+ * *mux to compare, and if it's the same, will set *mux to set. It will return the old value
+ * of *addr in *set.
+ *
+ * Warning: From the ISA docs: in some (unspecified) cases, the s32c1i instruction may return the
+ * *bitwise inverse* of the old mem if the mem wasn't written. This doesn't seem to happen on the
+ * ESP32, though. (Would show up directly if it did because the magic wouldn't match.)
+ */
+static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set) {
+    __asm__ __volatile__(
+        "WSR 	    %2,SCOMPARE1 \n"
+        "ISYNC      \n"
+        "S32C1I     %0, %1, 0	 \n"
+        :"=r"(*set)
+        :"r"(addr), "r"(compare), "0"(*set)
+        );
+}
+
+
 /*-----------------------------------------------------------*/
 
 /* Architecture specifics. */

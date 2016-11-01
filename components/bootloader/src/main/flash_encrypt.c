@@ -128,7 +128,7 @@ bool flash_encrypt(bootloader_state_t *bs)
            return false;
        }
         /* encrypt partition table */
-       if (false ==  flash_encrypt_write(PARTITION_ADD, SPI_SEC_SIZE)) {
+       if (false ==  flash_encrypt_write(ESP_PARTITION_TABLE_ADDR, SPI_SEC_SIZE)) {
            ESP_LOGE(TAG, "encrypt partition table error");
            return false;
        }

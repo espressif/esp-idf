@@ -45,11 +45,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 /**
  * Create (allocate) and initialize a new netbuf.
  * The netbuf doesn't yet contain a packet buffer!

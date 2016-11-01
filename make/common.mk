@@ -6,7 +6,7 @@
 #
 # (Note that we only rebuild auto.conf automatically for some targets,
 # see project_config.mk for details.)
--include $(PROJECT_PATH)/build/include/config/auto.conf
+-include $(BUILD_DIR_BASE)/include/config/auto.conf
 
 #Handling of V=1/VERBOSE=1 flag
 #

@@ -186,7 +186,11 @@ void heap_alloc_caps_init() {
 #endif
 
 #if CONFIG_MEMMAP_TRACEMEM
+#if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
     disable_mem_region((void*)0x3fff8000, (void*)0x40000000); //knock out trace mem region
+#else
+    disable_mem_region((void*)0x3fff8000, (void*)0x3fffc000); //knock out trace mem region
+#endif
 #endif
 
 #if 0

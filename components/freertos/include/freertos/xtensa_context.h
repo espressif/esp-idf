@@ -322,12 +322,7 @@ STRUCT_END(XtSolFrame)
 #ifdef __ASSEMBLER__
 	.macro getcoreid reg
 	rsr.prid \reg
-	bbci \reg,1,1f
-	movi \reg,1
-	j 2f
-1:
-	movi \reg,0
-2:
+	extui \reg,\reg,13,1
 	.endm
 #endif
 

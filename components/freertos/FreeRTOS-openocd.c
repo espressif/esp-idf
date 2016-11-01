@@ -18,6 +18,6 @@
 #define USED
 #endif
 
-#ifdef CONFIG_FREERTOS_DEBUG_OCDAWARE
+#ifdef CONFIG_ESP32_DEBUG_OCDAWARE
 const int USED uxTopUsedPriority = configMAX_PRIORITIES - 1;
 #endif
