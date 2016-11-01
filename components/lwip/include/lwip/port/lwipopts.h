@@ -523,7 +523,6 @@ extern unsigned long os_random(void);
 #define ESP_IP4_ATON                    1
 #define ESP_LIGHT_SLEEP                 1
 
-
 #define TCP_WND_DEFAULT                      (4*TCP_MSS)
 #define TCP_SND_BUF_DEFAULT                  (2*TCP_MSS)
 
@@ -549,8 +548,6 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
 
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_IP               0
-
-#define HEAP_HIGHWAT                    20*1024
 
 #define LWIP_NETCONN_FULLDUPLEX         1
 #define LWIP_NETCONN_SEM_PER_THREAD     1
