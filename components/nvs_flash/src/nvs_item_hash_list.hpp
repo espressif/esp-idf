@@ -25,11 +25,18 @@ namespace nvs
 class HashList
 {
 public:
+    HashList();
     ~HashList();
+    
     void insert(const Item& item, size_t index);
     void erase(const size_t index);
     size_t find(size_t start, const Item& item);
-
+    void clear();
+    
+private:
+    HashList(const HashList& other);
+    const HashList& operator= (const HashList& rhs);
+    
 protected:
 
     struct HashListNode {
@@ -56,7 +63,6 @@ protected:
         size_t mCount = 0;
         HashListNode mNodes[ENTRY_COUNT];
     };
-
 
     typedef intrusive_list<HashListBlock> TBlockList;
     TBlockList mBlockList;

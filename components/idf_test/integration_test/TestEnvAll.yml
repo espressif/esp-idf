@@ -229,6 +229,10 @@ test environment:
     Put 4 APs near SSC targets.', test script: EnvBase}
 - {PC OS: '', Special: N, Target Count: 5.0, script path: EnvBase.py, tag: SSC_T5_1,
   test environment detail: 5 SSC target connect with PC by UART., test script: EnvBase}
+- {PC OS: '', Special: Y, Target Count: 5.0, script path: EnvBase.py, tag: SSC_T5_IOT1,
+  test environment detail: '5 SSC targets connect with PC by UART.
+
+    some Android smart phone are placed near SSC targets.', test script: EnvBase}
 - {PC OS: '', Special: N, Target Count: 1.0, script path: EnvBase.py, tag: SSC_T6_1,
   test environment detail: 'PC has 1 wired NIC connected to AP.
 

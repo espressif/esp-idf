@@ -37,7 +37,6 @@
 #include "sdkconfig.h"
 
 /* Enable all Espressif-only options */
-#define LWIP_ESP8266
 
 /*
    -----------------------------------------------
@@ -96,17 +95,37 @@ extern unsigned long os_random(void);
    ---------- Internal Memory Pool Sizes ----------
    ------------------------------------------------
 */
-/**
- * MEMP_NUM_TCP_PCB: the number of simulatenously active TCP connections.
- * (requires the LWIP_TCP option)
- */
-#define MEMP_NUM_TCP_PCB                5
 
 /**
  * MEMP_NUM_NETCONN: the number of struct netconns.
  * (only needed if you use the sequential API, like api_lib.c)
  */
-#define MEMP_NUM_NETCONN                10
+#define MEMP_NUM_NETCONN                CONFIG_LWIP_MAX_SOCKETS
+
+/**
+ * MEMP_NUM_RAW_PCB: Number of raw connection PCBs
+ * (requires the LWIP_RAW option)
+ */
+#define MEMP_NUM_RAW_PCB                16
+
+/**
+ * MEMP_NUM_TCP_PCB: the number of simulatenously active TCP connections.
+ * (requires the LWIP_TCP option)
+ */
+#define MEMP_NUM_TCP_PCB                16
+
+/**
+ * MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP connections.
+ * (requires the LWIP_TCP option)
+ */
+#define MEMP_NUM_TCP_PCB_LISTEN         16
+
+/**
+ * MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
+ * per active UDP "connection".
+ * (requires the LWIP_UDP option)
+ */
+#define MEMP_NUM_UDP_PCB                16
 
 /*
    --------------------------------
@@ -221,23 +240,6 @@ extern unsigned long os_random(void);
    ---------- TCP options ----------
    ---------------------------------
 */
-/**
- * TCP_WND: The size of a TCP window.  This must be at least
- * (2 * TCP_MSS) for things to work well
- */
-#define PERF 1
-#ifdef PERF
-extern unsigned char misc_prof_get_tcpw(void);
-extern unsigned char misc_prof_get_tcp_snd_buf(void);
-#define TCP_WND                         (misc_prof_get_tcpw()*TCP_MSS)
-#define TCP_SND_BUF                     (misc_prof_get_tcp_snd_buf()*TCP_MSS)
-
-#else
-
-#define TCP_WND                         (4 * TCP_MSS)
-#define TCP_SND_BUF                     (2 * TCP_MSS)
-
-#endif
 
 
 /**
@@ -507,14 +509,43 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
  */
 #define TCPIP_DEBUG                     LWIP_DBG_OFF
 
+/* Enable all Espressif-only options */
+
+#define ESP_LWIP                        1
+#define ESP_PER_SOC_TCP_WND             1
+#define ESP_THREAD_SAFE                 1
+#define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
+#define ESP_DHCP                        1
+#define ESP_DNS                         1
+#define ESP_IPV6_AUTOCONFIG             1
+#define ESP_PERF                        0
+#define ESP_RANDOM_TCP_PORT             1
+#define ESP_IP4_ATON                    1
+#define ESP_LIGHT_SLEEP                 1
+
+
+#define TCP_WND_DEFAULT                      (4*TCP_MSS)
+#define TCP_SND_BUF_DEFAULT                  (2*TCP_MSS)
+
+#if ESP_PER_SOC_TCP_WND
+#define TCP_WND(pcb)                         (pcb->per_soc_tcp_wnd)
+#define TCP_SND_BUF(pcb)                     (pcb->per_soc_tcp_snd_buf)
+#else
+#if ESP_PERF
+extern unsigned char misc_prof_get_tcpw(void);
+extern unsigned char misc_prof_get_tcp_snd_buf(void);
+#define TCP_WND(pcb)                         (misc_prof_get_tcpw()*TCP_MSS)
+#define TCP_SND_BUF(pcb)                     (misc_prof_get_tcp_snd_buf()*TCP_MSS)
+#endif
+#endif
+
 /**
  * DHCP_DEBUG: Enable debugging in dhcp.c.
  */
 #define DHCP_DEBUG                      LWIP_DBG_OFF
-#define LWIP_DEBUG                      0
+#define LWIP_DEBUG                      LWIP_DBG_OFF
 #define TCP_DEBUG                       LWIP_DBG_OFF
-#define THREAD_SAFE_DEBUG               LWIP_DBG_OFF
-#define LWIP_THREAD_SAFE                1
+#define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_IP               0

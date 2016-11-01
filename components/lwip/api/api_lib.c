@@ -55,11 +55,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 #define API_MSG_VAR_REF(name)             API_VAR_REF(name)
 #define API_MSG_VAR_DECLARE(name)         API_VAR_DECLARE(struct api_msg, name)
 #define API_MSG_VAR_ALLOC(name)           API_VAR_ALLOC(struct api_msg, MEMP_API_MSG, name)
@@ -178,8 +173,8 @@ netconn_delete(struct netconn *conn)
     return err;
   }
 
-#if !LWIP_THREAD_SAFE
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("netconn_delete - free conn\n"));
+#if !ESP_THREAD_SAFE
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("netconn_delete - free conn\n"));
   netconn_free(conn);
 #endif
 
@@ -502,7 +497,7 @@ netconn_recv_data(struct netconn *conn, void **new_buf)
 #endif /* LWIP_TCP && (LWIP_UDP || LWIP_RAW) */
 #if (LWIP_UDP || LWIP_RAW)
   {
-#if LWIP_THREAD_SAFE
+#if ESP_THREAD_SAFE
     if (buf == NULL){
       API_EVENT(conn, NETCONN_EVT_RCVMINUS, 0);
       return ERR_CLSD;
@@ -710,17 +705,7 @@ netconn_write_partly(struct netconn *conn, const void *dataptr, size_t size,
   }
   dontblock = netconn_is_nonblocking(conn) || (apiflags & NETCONN_DONTBLOCK);
 
-#ifdef LWIP_ESP8266
-
-#ifdef FOR_XIAOMI
-    if (dontblock && bytes_written) {
-#else
-    if (dontblock && !bytes_written) {
-#endif
-    
-#else
   if (dontblock && !bytes_written) {
-#endif
     /* This implies netconn_write() cannot be used for non-blocking send, since
        it has no way to return the number of bytes written. */
     return ERR_VAL;

@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -30,39 +30,7 @@
 #include "esp_spi_flash.h"
 #include "esp_log.h"
 
-/*
-    Driver for SPI flash read/write/erase operations
 
-    In order to perform some flash operations, we need to make sure both CPUs
-    are not running any code from flash for the duration of the flash operation.
-    In a single-core setup this is easy: we disable interrupts/scheduler and do
-    the flash operation. In the dual-core setup this is slightly more complicated.
-    We need to make sure that the other CPU doesn't run any code from flash.
-
-
-    When SPI flash API is called on CPU A (can be PRO or APP), we start
-    spi_flash_op_block_func function on CPU B using esp_ipc_call API. This API
-    wakes up high priority task on CPU B and tells it to execute given function,
-    in this case spi_flash_op_block_func. This function disables cache on CPU B and
-    signals that cache is disabled by setting s_flash_op_can_start flag.
-    Then the task on CPU A disables cache as well, and proceeds to execute flash
-    operation.
-
-    While flash operation is running, interrupts can still run on CPU B.
-    We assume that all interrupt code is placed into RAM.
-
-    Once flash operation is complete, function on CPU A sets another flag,
-    s_flash_op_complete, to let the task on CPU B know that it can re-enable
-    cache and release the CPU. Then the function on CPU A re-enables the cache on
-    CPU A as well and returns control to the calling code.
-
-    Additionally, all API functions are protected with a mutex (s_flash_op_mutex).
-
-    In a single core environment (CONFIG_FREERTOS_UNICORE enabled), we simply
-    disable both caches, no inter-CPU communication takes place.
-*/
-
-static esp_err_t spi_flash_translate_rc(SpiFlashOpResult rc);
 static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_state);
 static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
 
@@ -72,25 +40,23 @@ static uint32_t s_flash_op_cache_state[2];
 static SemaphoreHandle_t s_flash_op_mutex;
 static bool s_flash_op_can_start = false;
 static bool s_flash_op_complete = false;
-#endif //CONFIG_FREERTOS_UNICORE
 
-#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-static const char* TAG = "spi_flash";
-static spi_flash_counters_t s_flash_stats;
+void spi_flash_init_lock()
+{
+    s_flash_op_mutex = xSemaphoreCreateMutex();
+}
 
-#define COUNTER_START()     uint32_t ts_begin = xthal_get_ccount()
-#define COUNTER_STOP(counter)  do{ s_flash_stats.counter.count++; s_flash_stats.counter.time += (xthal_get_ccount() - ts_begin) / (XT_CLOCK_FREQ / 1000000); } while(0)
-#define COUNTER_ADD_BYTES(counter, size) do { s_flash_stats.counter.bytes += size; } while (0)
-#else
-#define COUNTER_START()
-#define COUNTER_STOP(counter)
-#define COUNTER_ADD_BYTES(counter, size)
+void spi_flash_op_lock()
+{
+    xSemaphoreTake(s_flash_op_mutex, portMAX_DELAY);
+}
 
-#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
+void spi_flash_op_unlock()
+{
+    xSemaphoreGive(s_flash_op_mutex);
+}
 
-#ifndef CONFIG_FREERTOS_UNICORE
-
-static void IRAM_ATTR spi_flash_op_block_func(void* arg)
+void IRAM_ATTR spi_flash_op_block_func(void* arg)
 {
     // Disable scheduler on this CPU
     vTaskSuspendAll();
@@ -108,19 +74,9 @@ static void IRAM_ATTR spi_flash_op_block_func(void* arg)
     xTaskResumeAll();
 }
 
-void spi_flash_init()
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
-    s_flash_op_mutex = xSemaphoreCreateMutex();
-
-#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-    spi_flash_reset_counters();
-#endif
-}
-
-static void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
-{
-    // Take the API lock
-    xSemaphoreTake(s_flash_op_mutex, portMAX_DELAY);
+    spi_flash_op_lock();
 
     const uint32_t cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
@@ -152,7 +108,7 @@ static void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
 }
 
-static void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
+void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 {
     const uint32_t cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
@@ -173,98 +129,45 @@ static void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
         xTaskResumeAll();
     }
     // Release API lock
-    xSemaphoreGive(s_flash_op_mutex);
+    spi_flash_op_unlock();
 }
 
-#else  // CONFIG_FREERTOS_UNICORE
+#else // CONFIG_FREERTOS_UNICORE
 
-void spi_flash_init()
+void spi_flash_init_lock()
 {
-#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-    spi_flash_reset_counters();
-#endif
 }
 
-static void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
+void spi_flash_op_lock()
 {
     vTaskSuspendAll();
+}
+
+void spi_flash_op_unlock()
+{
+    xTaskResumeAll();
+}
+
+
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
+{
+    spi_flash_op_lock();
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
 
-static void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
+void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 {
     spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
-    xTaskResumeAll();
+    spi_flash_op_unlock();
 }
 
 #endif // CONFIG_FREERTOS_UNICORE
 
-
-SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
-{
-    static bool unlocked = false;
-    if (!unlocked) {
-        SpiFlashOpResult rc = SPIUnlock();
-        if (rc != SPI_FLASH_RESULT_OK) {
-            return rc;
-        }
-        unlocked = true;
-    }
-    return SPI_FLASH_RESULT_OK;
-}
-
-esp_err_t IRAM_ATTR spi_flash_erase_sector(uint16_t sec)
-{
-    COUNTER_START();
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc;
-    rc = spi_flash_unlock();
-    if (rc == SPI_FLASH_RESULT_OK) {
-        rc = SPIEraseSector(sec);
-    }
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    COUNTER_STOP(erase);
-    return spi_flash_translate_rc(rc);
-}
-
-esp_err_t IRAM_ATTR spi_flash_write(uint32_t dest_addr, const uint32_t *src, uint32_t size)
-{
-    COUNTER_START();
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc;
-    rc = spi_flash_unlock();
-    if (rc == SPI_FLASH_RESULT_OK) {
-        rc = SPIWrite(dest_addr, src, (int32_t) size);
-        COUNTER_ADD_BYTES(write, size);
-    }
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    COUNTER_STOP(write);
-    return spi_flash_translate_rc(rc);
-}
-
-esp_err_t IRAM_ATTR spi_flash_read(uint32_t src_addr, uint32_t *dest, uint32_t size)
-{
-    COUNTER_START();
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc = SPIRead(src_addr, dest, (int32_t) size);
-    COUNTER_ADD_BYTES(read, size);
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    COUNTER_STOP(read);
-    return spi_flash_translate_rc(rc);
-}
-
-static esp_err_t spi_flash_translate_rc(SpiFlashOpResult rc)
-{
-    switch (rc) {
-    case SPI_FLASH_RESULT_OK:
-        return ESP_OK;
-    case SPI_FLASH_RESULT_TIMEOUT:
-        return ESP_ERR_FLASH_OP_TIMEOUT;
-    case SPI_FLASH_RESULT_ERR:
-    default:
-        return ESP_ERR_FLASH_OP_FAIL;
-    }
-}
+/**
+ * The following two functions are replacements for Cache_Read_Disable and Cache_Read_Enable
+ * function in ROM. They are used to work around a bug where Cache_Read_Disable requires a call to
+ * Cache_Flush before Cache_Read_Enable, even if cached data was not modified.
+ */
 
 static const uint32_t cache_mask  = DPORT_APP_CACHE_MASK_OPSDRAM | DPORT_APP_CACHE_MASK_DROM0 |
         DPORT_APP_CACHE_MASK_DRAM1 | DPORT_APP_CACHE_MASK_IROM0 |
@@ -300,29 +203,3 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
     }
 }
 
-#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-
-static inline void dump_counter(spi_flash_counter_t* counter, const char* name)
-{
-    ESP_LOGI(TAG, "%s  count=%8d  time=%8dms  bytes=%8d\n", name,
-            counter->count, counter->time, counter->bytes);
-}
-
-const spi_flash_counters_t* spi_flash_get_counters()
-{
-    return &s_flash_stats;
-}
-
-void spi_flash_reset_counters()
-{
-    memset(&s_flash_stats, 0, sizeof(s_flash_stats));
-}
-
-void spi_flash_dump_counters()
-{
-    dump_counter(&s_flash_stats.read,  "read ");
-    dump_counter(&s_flash_stats.write, "write");
-    dump_counter(&s_flash_stats.erase, "erase");
-}
-
-#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS

@@ -103,7 +103,9 @@ esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if)
 
     if (tcpip_if == TCPIP_ADAPTER_IF_AP) {
         dhcps_stop(esp_netif[tcpip_if]);    // TODO: dhcps checks status by its self
-        dhcps_status = TCPIP_ADAPTER_DHCP_INIT;
+        if (TCPIP_ADAPTER_DHCP_STOPPED != dhcps_status){
+            dhcps_status = TCPIP_ADAPTER_DHCP_INIT;
+        }
     } else if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
         dhcp_release(esp_netif[tcpip_if]);
         dhcp_stop(esp_netif[tcpip_if]);
@@ -588,45 +590,18 @@ wifi_interface_t tcpip_adapter_get_wifi_if(void *dev)
     return WIFI_IF_MAX;
 }
 
-esp_err_t tcpip_adapter_get_sta_list(struct station_info *sta_info, struct station_list **sta_list)
+esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list)
 {
-    struct station_info *info = sta_info;
-    struct station_list *list;
-    STAILQ_HEAD(, station_list) list_head;
+    int i;
 
-    if (sta_list == NULL)
+    if ((wifi_sta_list == NULL) || (tcpip_sta_list == NULL))
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
 
-    STAILQ_INIT(&list_head);
-
-    while (info != NULL) {
-        list = (struct station_list *)malloc(sizeof(struct station_list));
-        memset(list, 0, sizeof (struct station_list));
-
-        if (list == NULL) {
-            return ESP_ERR_TCPIP_ADAPTER_NO_MEM;
-        }
-
-        memcpy(list->mac, info->bssid, 6);
-        dhcp_search_ip_on_mac(list->mac, &list->ip);
-        STAILQ_INSERT_TAIL(&list_head, list, next);
-      
-        info = STAILQ_NEXT(info, next);
-    }
-
-    *sta_list = STAILQ_FIRST(&list_head);
-
-    return ESP_OK;
-}
-
-esp_err_t tcpip_adapter_free_sta_list(struct station_list *sta_list)
-{
-    struct station_list *list = sta_list;
-
-    while (sta_list != NULL) {
-        list = sta_list;
-        sta_list = STAILQ_NEXT(sta_list, next);
-        free(list);
+    memset(tcpip_sta_list, 0, sizeof(tcpip_adapter_sta_list_t));
+    tcpip_sta_list->num = wifi_sta_list->num;
+    for (i=0; i<wifi_sta_list->num; i++){
+        memcpy(tcpip_sta_list->sta[i].mac, wifi_sta_list->sta[i].mac, 6);
+        dhcp_search_ip_on_mac(tcpip_sta_list->sta[i].mac, &tcpip_sta_list->sta[i].ip);
     }
 
     return ESP_OK;

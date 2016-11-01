@@ -25,8 +25,12 @@
 #include "soc/io_mux_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/timer_group_struct.h"
+#include "soc/timer_group_reg.h"
 
-#include "gdbstub.h"
+#include "esp_gdbstub.h"
+#include "esp_panic.h"
+#include "esp_attr.h"
 
 /*
 Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -34,7 +38,11 @@ task switching / interrupt code runs into an unrecoverable error. The default ta
 overflow handler also is in here.
 */
 
-#if !CONFIG_FREERTOS_PANIC_SILENT_REBOOT
+/*
+Note: The linker script will put everything in this file in IRAM/DRAM, so it also works with flash cache disabled.
+*/
+
+#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
 //printf may be broken, so we fix our own printing fns...
 inline static void panicPutchar(char c) {
 	while (((READ_PERI_REG(UART_STATUS_REG(0))>>UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT)>=126) ;
@@ -104,22 +112,22 @@ void commonErrorHandler(XtExcFrame *frame);
 static void haltOtherCore() {
 	if (xPortGetCoreID()==0) {
 		//Kill app cpu
-		CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_APPCPU_C1<<RTC_CNTL_SW_STALL_APPCPU_C1_S);
-		SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, 0x21<<RTC_CNTL_SW_STALL_APPCPU_C1_S);
-		CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_APPCPU_C0<<RTC_CNTL_SW_STALL_APPCPU_C0_S);
-		SET_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, 2<<RTC_CNTL_SW_STALL_APPCPU_C0_S);
+		CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_APPCPU_C1_M);
+		SET_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, 0x21<<RTC_CNTL_SW_STALL_APPCPU_C1_S);
+		CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_APPCPU_C0_M);
+		SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, 2<<RTC_CNTL_SW_STALL_APPCPU_C0_S);
 	} else {
 		//Kill pro cpu
-		CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_PROCPU_C1<<RTC_CNTL_SW_STALL_PROCPU_C1_S);
-		SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, 0x21<<RTC_CNTL_SW_STALL_PROCPU_C1_S);
-		CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_PROCPU_C0<<RTC_CNTL_SW_STALL_PROCPU_C0_S);
-		SET_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, 2<<RTC_CNTL_SW_STALL_PROCPU_C0_S);
+		CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_PROCPU_C1_M);
+		SET_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, 0x21<<RTC_CNTL_SW_STALL_PROCPU_C1_S);
+		CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_PROCPU_C0_M);
+		SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, 2<<RTC_CNTL_SW_STALL_PROCPU_C0_S);
 	}
 }
 
 //Returns true when a debugger is attached using JTAG.
 static int inOCDMode() {
-#if CONFIG_FREERTOS_DEBUG_OCDAWARE
+#if CONFIG_ESP32_DEBUG_OCDAWARE
 	int dcr;
 	int reg=0x10200C; //DSRSET register
 	asm("rer %0,%1":"=r"(dcr):"r"(reg));
@@ -130,10 +138,26 @@ static int inOCDMode() {
 }
 
 void panicHandler(XtExcFrame *frame) {
+	int *regs=(int*)frame;
+	//Please keep in sync with PANIC_RSN_* defines
+	const char *reasons[]={
+			"Unknown reason",
+			"Unhandled debug exception",
+			"Double exception",
+			"Unhandled kernel exception",
+			"Coprocessor exception",
+			"Interrupt wdt timeout on CPU0",
+			"Interrupt wdt timeout on CPU1",
+		};
+	const char *reason=reasons[0];
+	//The panic reason is stored in the EXCCAUSE register.
+	if (regs[20]<=PANIC_RSN_MAX) reason=reasons[regs[20]];
 	haltOtherCore();
 	panicPutStr("Guru Meditation Error: Core ");
 	panicPutDec(xPortGetCoreID());
-	panicPutStr(" panic'ed.\r\n");
+	panicPutStr(" panic'ed (");
+	panicPutStr(reason);
+	panicPutStr(")\r\n");
 
 	if (inOCDMode()) {
 		asm("break.n 1");
@@ -176,6 +200,44 @@ void xt_unhandled_exception(XtExcFrame *frame) {
 
 
 /*
+If watchdogs are enabled, the panic handler runs the risk of getting aborted pre-emptively because
+an overzealous watchdog decides to reset it. On the other hand, if we disable all watchdogs, we run
+the risk of somehow halting in the panic handler and not resetting. That is why this routine kills 
+all watchdogs except the timer group 0 watchdog, and it reconfigures that to reset the chip after
+one second.
+*/
+static void reconfigureAllWdts() {
+	TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+	TIMERG0.wdt_feed=1;
+	TIMERG0.wdt_config0.sys_reset_length=7;				//3.2uS
+	TIMERG0.wdt_config0.cpu_reset_length=7;				//3.2uS
+	TIMERG0.wdt_config0.stg0=TIMG_WDT_STG_SEL_RESET_SYSTEM;	//1st stage timeout: reset system
+	TIMERG0.wdt_config1.clk_prescale=80*500;			//Prescaler: wdt counts in ticks of 0.5mS
+	TIMERG0.wdt_config2=2000;							//1 second before reset
+	TIMERG0.wdt_config0.en=1;
+	TIMERG0.wdt_wprotect=0;
+	//Disable wdt 1
+	TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+	TIMERG1.wdt_config0.en=0;
+	TIMERG1.wdt_wprotect=0;
+}
+
+#if CONFIG_ESP32_PANIC_GDBSTUB || CONFIG_ESP32_PANIC_PRINT_HALT
+/*
+This disables all the watchdogs for when we call the gdbstub.
+*/
+static void disableAllWdts() {
+	TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+	TIMERG0.wdt_config0.en=0;
+	TIMERG0.wdt_wprotect=0;
+	TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+	TIMERG1.wdt_config0.en=0;
+	TIMERG0.wdt_wprotect=0;
+}
+
+#endif
+
+/*
 We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
 serial port and either jump to the gdb stub, halt the CPU or reboot.
 */
@@ -186,6 +248,9 @@ void commonErrorHandler(XtExcFrame *frame) {
 		"PC      ","PS      ","A0      ","A1      ","A2      ","A3      ","A4      ","A5      ",
 		"A6      ","A7      ","A8      ","A9      ","A10     ","A11     ","A12     ","A13     ",
 		"A14     ","A15     ","SAR     ","EXCCAUSE","EXCVADDR","LBEG    ","LEND    ","LCOUNT  "};
+
+	//Feed the watchdogs, so they will give us time to print out debug info
+	reconfigureAllWdts();
 
 	panicPutStr("Register dump:\r\n");
 
@@ -200,21 +265,23 @@ void commonErrorHandler(XtExcFrame *frame) {
 		}
 		panicPutStr("\r\n");
 	}
-#if CONFIG_FREERTOS_PANIC_GDBSTUB
+#if CONFIG_ESP32_PANIC_GDBSTUB
+	disableAllWdts();
 	panicPutStr("Entering gdb stub now.\r\n");
-	gdbstubPanicHandler(frame);
-#elif CONFIG_FREERTOS_PANIC_PRINT_REBOOT || CONFIG_FREERTOS_PANIC_SILENT_REBOOT
+	esp_gdbstub_panic_handler(frame);
+#elif CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
 	panicPutStr("Rebooting...\r\n");
 	for (x=0; x<100; x++) ets_delay_us(1000);
 	software_reset();
 #else
+	disableAllWdts();
 	panicPutStr("CPU halted.\r\n");
 	while(1);
 #endif
 }
 
 
-void setBreakpointIfJtag(void *fn) {
+void esp_set_breakpoint_if_jtag(void *fn) {
 	if (!inOCDMode()) return;
 	setFirstBreakpoint((uint32_t)fn);
 }

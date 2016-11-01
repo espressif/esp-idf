@@ -56,7 +56,7 @@ sys_mutex_new(sys_mutex_t *pxMutex)
     xReturn = ERR_OK;
   }
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mutex_new: m=%p\n", *pxMutex));
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mutex_new: m=%p\n", *pxMutex));
 
   return xReturn;
 }
@@ -89,7 +89,7 @@ sys_mutex_unlock(sys_mutex_t *pxMutex)
 void
 sys_mutex_free(sys_mutex_t *pxMutex)
 {
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mutex_free: m=%p\n", *pxMutex));
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mutex_free: m=%p\n", *pxMutex));
   vQueueDelete(*pxMutex);
 }
 #endif
@@ -192,20 +192,20 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 {
   *mbox = malloc(sizeof(struct sys_mbox_s));
   if (*mbox == NULL){
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("fail to new *mbox\n"));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new *mbox\n"));
     return ERR_MEM;
   }
 
   (*mbox)->os_mbox = xQueueCreate(size, sizeof(void *));
 
   if ((*mbox)->os_mbox == NULL) {
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("fail to new *mbox->os_mbox\n"));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new *mbox->os_mbox\n"));
     free(*mbox);
     return ERR_MEM;
   }
 
   if (sys_mutex_new(&((*mbox)->lock)) != ERR_OK){
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("fail to new *mbox->lock\n"));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new *mbox->lock\n"));
     vQueueDelete((*mbox)->os_mbox);
     free(*mbox);
     return ERR_MEM;
@@ -213,7 +213,7 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 
   (*mbox)->alive = true;
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p mbox_lock=%p\n", *mbox, (*mbox)->os_mbox, (*mbox)->lock));
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p mbox_lock=%p\n", *mbox, (*mbox)->os_mbox, (*mbox)->lock));
   return ERR_OK;
 }
 
@@ -234,7 +234,7 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
   if (xQueueSend((*mbox)->os_mbox, &msg, (portTickType)0) == pdPASS) {
     xReturn = ERR_OK;
   } else {
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("trypost mbox=%p fail\n", (*mbox)->os_mbox));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("trypost mbox=%p fail\n", (*mbox)->os_mbox));
     xReturn = ERR_MEM;
   }
 
@@ -271,7 +271,7 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
   if (*mbox == NULL){
     *msg = NULL;
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch: null mbox\n"));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch: null mbox\n"));
     return -1;
   }
 
@@ -294,14 +294,14 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
   } else { // block forever for a message.
     
     while (1){
-      LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch: fetch mbox=%p os_mbox=%p lock=%p\n", mbox, (*mbox)->os_mbox, (*mbox)->lock));
+      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch: fetch mbox=%p os_mbox=%p lock=%p\n", mbox, (*mbox)->os_mbox, (*mbox)->lock));
       if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY)){
-        LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch:mbox rx msg=%p\n", (*msg)));
+        LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch:mbox rx msg=%p\n", (*msg)));
         break;
       }
 
       if ((*mbox)->alive == false){
-        LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch:mbox not alive\n"));
+        LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_arch_mbox_fetch:mbox not alive\n"));
         *msg = NULL;
         break;
       }
@@ -356,24 +356,24 @@ sys_mbox_free(sys_mbox_t *mbox)
   uint16_t count = 0;
   bool post_null = true;
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free: set alive false\n"));
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free: set alive false\n"));
   (*mbox)->alive = false;
 
   while ( count++ < MAX_POLL_CNT ){ //ESP32_WORKAROUND
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:try lock=%d\n", count));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free:try lock=%d\n", count));
     if (!sys_mutex_trylock( &(*mbox)->lock )){
-      LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:get lock ok %d\n", count));
+      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free:get lock ok %d\n", count));
       sys_mutex_unlock( &(*mbox)->lock );
       break;
     }
 
     if (post_null){
-      LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free: post null to mbox\n"));
+      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free: post null to mbox\n"));
       if (sys_mbox_trypost( mbox, NULL) != ERR_OK){
-        LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free: post null mbox fail\n"));
+        LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free: post null mbox fail\n"));
       } else {
         post_null = false;
-        LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free: post null mbox ok\n"));
+        LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free: post null mbox ok\n"));
       }
     }
 
@@ -383,7 +383,7 @@ sys_mbox_free(sys_mbox_t *mbox)
     sys_delay_ms(PER_POLL_DELAY);
   }
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sys_mbox_free:free mbox\n"));
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free:free mbox\n"));
 
   if (uxQueueMessagesWaiting((*mbox)->os_mbox)) {
     xQueueReset((*mbox)->os_mbox);
@@ -491,7 +491,7 @@ sys_sem_t* sys_thread_sem_get(void)
   if (!sem){
     sem = sys_thread_sem_init();
   }
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem_get s=%p\n", sem));
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem_get s=%p\n", sem));
   return sem;
 }
 
@@ -500,12 +500,12 @@ static void sys_thread_tls_free(int index, void* data)
   sys_sem_t *sem = (sys_sem_t*)(data);
 
   if (sem && *sem){
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem del, i=%d sem=%p\n", index, *sem));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem del, i=%d sem=%p\n", index, *sem));
     vSemaphoreDelete(*sem);
   }
 
   if (sem){
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem pointer del, i=%d sem_p=%p\n", index, sem));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem pointer del, i=%d sem_p=%p\n", index, sem));
     free(sem);
   }
 }
@@ -526,7 +526,7 @@ sys_sem_t* sys_thread_sem_init(void)
     return 0;
   }
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("sem init sem_p=%p sem=%p cb=%p\n", sem, *sem, sys_thread_tls_free));
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem init sem_p=%p sem=%p cb=%p\n", sem, *sem, sys_thread_tls_free));
   vTaskSetThreadLocalStoragePointerAndDelCallback(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX, sem, (TlsDeleteCallbackFunction_t)sys_thread_tls_free);
 
   return sem;

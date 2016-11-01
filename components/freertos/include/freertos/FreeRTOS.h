@@ -74,6 +74,7 @@
  * Include the generic headers required for the FreeRTOS port being used.
  */
 #include <stddef.h>
+#include "sys/reent.h"
 
 /*
  * If stdint.h cannot be located then:
@@ -739,6 +740,20 @@ extern "C" {
 	#define portTICK_TYPE_IS_ATOMIC 0
 #endif
 
+#ifndef configSUPPORT_STATIC_ALLOCATION
+	/* Defaults to 0 for backward compatibility. */
+	#define configSUPPORT_STATIC_ALLOCATION 0
+#endif
+
+#ifndef configSUPPORT_DYNAMIC_ALLOCATION
+	/* Defaults to 1 for backward compatibility. */
+	#define configSUPPORT_DYNAMIC_ALLOCATION 1
+#endif
+
+#if( ( configSUPPORT_STATIC_ALLOCATION == 0 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 0 ) )
+	#error configSUPPORT_STATIC_ALLOCATION and configSUPPORT_DYNAMIC_ALLOCATION cannot both be 0, but can both be 1.
+#endif
+
 #if( portTICK_TYPE_IS_ATOMIC == 0 )
 	/* Either variables of tick type cannot be read atomically, or
 	portTICK_TYPE_IS_ATOMIC was not set - map the critical sections used when
@@ -790,6 +805,153 @@ V8 if desired. */
 #ifndef configESP32_PER_TASK_DATA
 	#define configESP32_PER_TASK_DATA 1
 #endif
+
+/*
+ * In line with software engineering best practice, FreeRTOS implements a strict
+ * data hiding policy, so the real structures used by FreeRTOS to maintain the
+ * state of tasks, queues, semaphores, etc. are not accessible to the application
+ * code.  However, if the application writer wants to statically allocate such
+ * an object then the size of the object needs to be know.  Dummy structures
+ * that are guaranteed to have the same size and alignment requirements of the
+ * real objects are used for this purpose.  The dummy list and list item
+ * structures below are used for inclusion in such a dummy structure.
+ */
+struct xSTATIC_LIST_ITEM
+{
+	TickType_t xDummy1;
+	void *pvDummy2[ 4 ];
+};
+typedef struct xSTATIC_LIST_ITEM StaticListItem_t;
+
+/* See the comments above the struct xSTATIC_LIST_ITEM definition. */
+struct xSTATIC_MINI_LIST_ITEM
+{
+	TickType_t xDummy1;
+	void *pvDummy2[ 2 ];
+};
+typedef struct xSTATIC_MINI_LIST_ITEM StaticMiniListItem_t;
+
+/* See the comments above the struct xSTATIC_LIST_ITEM definition. */
+typedef struct xSTATIC_LIST
+{
+	UBaseType_t uxDummy1;
+	void *pvDummy2;
+	StaticMiniListItem_t xDummy3;
+} StaticList_t;
+
+/*
+ * In line with software engineering best practice, especially when supplying a
+ * library that is likely to change in future versions, FreeRTOS implements a
+ * strict data hiding policy.  This means the Task structure used internally by
+ * FreeRTOS is not accessible to application code.  However, if the application
+ * writer wants to statically allocate the memory required to create a task then
+ * the size of the task object needs to be know.  The StaticTask_t structure
+ * below is provided for this purpose.  Its sizes and alignment requirements are
+ * guaranteed to match those of the genuine structure, no matter which
+ * architecture is being used, and no matter how the values in FreeRTOSConfig.h
+ * are set.  Its contents are somewhat obfuscated in the hope users will
+ * recognise that it would be unwise to make direct use of the structure members.
+ */
+typedef struct xSTATIC_TCB
+{
+	void				*pxDummy1;
+	#if ( portUSING_MPU_WRAPPERS == 1 )
+		xMPU_SETTINGS	xDummy2;
+	#endif
+	StaticListItem_t	xDummy3[ 2 ];
+	UBaseType_t			uxDummy5;
+	void				*pxDummy6;
+	uint8_t				ucDummy7[ configMAX_TASK_NAME_LEN ];
+    UBaseType_t			uxDummyCoreId;
+	#if ( portSTACK_GROWTH > 0 )
+		void			*pxDummy8;
+	#endif
+	#if ( portCRITICAL_NESTING_IN_TCB == 1 )
+		UBaseType_t		uxDummy9;
+        uint32_t        OldInterruptState;
+	#endif
+	#if ( configUSE_TRACE_FACILITY == 1 )
+		UBaseType_t		uxDummy10[ 2 ];
+	#endif
+	#if ( configUSE_MUTEXES == 1 )
+		UBaseType_t		uxDummy12[ 2 ];
+	#endif
+	#if ( configUSE_APPLICATION_TASK_TAG == 1 )
+		void			*pxDummy14;
+	#endif
+	#if( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
+		void			*pvDummy15[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
+    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+		void			*pvDummyLocalStorageCallBack[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
+	#endif
+	#endif
+	#if ( configGENERATE_RUN_TIME_STATS == 1 )
+		uint32_t		ulDummy16;
+	#endif
+	#if ( configUSE_NEWLIB_REENTRANT == 1 )
+		struct	_reent	xDummy17;
+	#endif
+	#if ( configUSE_TASK_NOTIFICATIONS == 1 )
+		uint32_t 		ulDummy18;
+		uint32_t 		ucDummy19;
+	#endif
+	#if( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
+		uint8_t			uxDummy20;
+	#endif
+
+} StaticTask_t;
+
+/*
+ * In line with software engineering best practice, especially when supplying a
+ * library that is likely to change in future versions, FreeRTOS implements a
+ * strict data hiding policy.  This means the Queue structure used internally by
+ * FreeRTOS is not accessible to application code.  However, if the application
+ * writer wants to statically allocate the memory required to create a queue
+ * then the size of the queue object needs to be know.  The StaticQueue_t
+ * structure below is provided for this purpose.  Its sizes and alignment
+ * requirements are guaranteed to match those of the genuine structure, no
+ * matter which architecture is being used, and no matter how the values in
+ * FreeRTOSConfig.h are set.  Its contents are somewhat obfuscated in the hope
+ * users will recognise that it would be unwise to make direct use of the
+ * structure members.
+ */
+typedef struct xSTATIC_QUEUE
+{
+	void *pvDummy1[ 3 ];
+
+	union
+	{
+		void *pvDummy2;
+		UBaseType_t uxDummy2;
+	} u;
+
+	StaticList_t xDummy3[ 2 ];
+	UBaseType_t uxDummy4[ 3 ];
+	BaseType_t ucDummy5[ 2 ];
+
+	#if( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
+		uint8_t ucDummy6;
+	#endif
+
+	#if ( configUSE_QUEUE_SETS == 1 )
+		void *pvDummy7;
+	#endif
+
+	#if ( configUSE_TRACE_FACILITY == 1 )
+		UBaseType_t uxDummy8;
+		uint8_t ucDummy9;
+	#endif
+
+    struct {
+	    volatile uint32_t mux;
+    #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
+	    const char *lastLockedFn;
+	    int lastLockedLine;
+    #endif
+    } mux;
+
+} StaticQueue_t;
+typedef StaticQueue_t StaticSemaphore_t;
 
 #ifdef __cplusplus
 }

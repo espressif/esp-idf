@@ -82,10 +82,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 /** DHCP_CREATE_RAND_XID: if this is set to 1, the xid is created using
  * LWIP_RAND() (this overrides DHCP_GLOBAL_XID)
  */
@@ -146,7 +142,7 @@ static u8_t dhcp_discover_select_options[] = {
   DHCP_OPTION_BROADCAST,
   DHCP_OPTION_DNS_SERVER
   
-#ifdef LWIP_ESP8266
+#if ESP_DHCP
 /**add options for support more router by liuHan**/
    , DHCP_OPTION_DOMAIN_NAME, 
     DHCP_OPTION_NB_TINS, 
@@ -454,7 +450,7 @@ dhcp_fine_tmr(void)
     /* only act on DHCP configured interfaces */
     if (netif->dhcp != NULL) {
         
-//#ifdef LWIP_ESP8266
+//#if ESP_DHCP
       /*add DHCP retries processing by LiuHan*/
 #if 0
       if (DHCP_MAXRTX != 0) {
@@ -997,7 +993,7 @@ dhcp_discover(struct netif *netif)
     dhcp_option(dhcp, DHCP_OPTION_MAX_MSG_SIZE, DHCP_OPTION_MAX_MSG_SIZE_LEN);
     dhcp_option_short(dhcp, DHCP_MAX_MSG_LEN(netif));
 
-#ifdef LWIP_ESP8266
+#if ESP_DHCP
 #if LWIP_NETIF_HOSTNAME
     dhcp_option_hostname(dhcp, netif);
 #endif /* LWIP_NETIF_HOSTNAME */

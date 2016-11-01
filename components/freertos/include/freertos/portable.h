@@ -179,6 +179,14 @@ BaseType_t xPortStartScheduler( void ) PRIVILEGED_FUNCTION;
  */
 void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
 
+
+/*
+ * Send an interrupt to another core in order to make the task running
+ * on it yield for a higher-priority task.
+ */
+
+void vPortYieldOtherCore( BaseType_t coreid) PRIVILEGED_FUNCTION;
+
 /*
  * The structures and methods of manipulating the MPU are contained within the
  * port layer.
@@ -192,7 +200,7 @@ void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
 #endif
 
 /* Multi-core: get current core ID */
-inline uint32_t xPortGetCoreID() {
+static inline uint32_t xPortGetCoreID() {
     int id;
     asm volatile(
         "rsr.prid %0\n"

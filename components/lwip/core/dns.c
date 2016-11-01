@@ -85,10 +85,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 /** Random generator function to create random TXIDs and source ports for queries */
 #ifndef DNS_RAND_TXID
 #if ((LWIP_DNS_SECURE & LWIP_DNS_SECURE_RAND_XID) != 0)
@@ -1091,7 +1087,7 @@ dns_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, 
         u8_t dns_err;
         /* This entry is now completed. */
         
-#ifndef LWIP_ESP8266
+#if ! ESP_DNS
         entry->state = DNS_STATE_DONE;
 #endif
         dns_err = hdr.flags2 & DNS_FLAG2_ERR_MASK;
@@ -1105,7 +1101,7 @@ dns_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, 
         if (((hdr.flags1 & DNS_FLAG1_RESPONSE) == 0) || (dns_err != 0) || (nquestions != 1)) {
           LWIP_DEBUGF(DNS_DEBUG, ("dns_recv: \"%s\": error in flags\n", entry->name));
           /* call callback to indicate error, clean up memory and return */
-#ifndef LWIP_ESP8266
+#if ! ESP_DNS
                 goto responseerr;
         }
 #else

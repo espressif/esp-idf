@@ -986,7 +986,7 @@
  * (2 * TCP_MSS) for things to work well
  */
 #ifndef TCP_WND
-#define TCP_WND                         (4 * TCP_MSS)
+#define TCP_WND(pcb)                         (4 * TCP_MSS)
 #endif
 
 /**
@@ -1040,7 +1040,7 @@
  * To achieve good performance, this should be at least 2 * TCP_MSS.
  */
 #ifndef TCP_SND_BUF
-#define TCP_SND_BUF                     (2 * TCP_MSS)
+#define TCP_SND_BUF(pcb)                     (2 * TCP_MSS)
 #endif
 
 /**
@@ -1048,7 +1048,7 @@
  * as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work.
  */
 #ifndef TCP_SND_QUEUELEN
-#define TCP_SND_QUEUELEN                ((4 * (TCP_SND_BUF) + (TCP_MSS - 1))/(TCP_MSS))
+#define TCP_SND_QUEUELEN(pcb)                ((4 * (TCP_SND_BUF((pcb))) + (TCP_MSS - 1))/(TCP_MSS))
 #endif
 
 /**
@@ -1057,7 +1057,7 @@
  * TCP snd_buf for select to return writable (combined with TCP_SNDQUEUELOWAT).
  */
 #ifndef TCP_SNDLOWAT
-#define TCP_SNDLOWAT                    LWIP_MIN(LWIP_MAX(((TCP_SND_BUF)/2), (2 * TCP_MSS) + 1), (TCP_SND_BUF) - 1)
+#define TCP_SNDLOWAT(pcb)                    LWIP_MIN(LWIP_MAX(((TCP_SND_BUF((pcb)))/2), (2 * TCP_MSS) + 1), (TCP_SND_BUF((pcb))) - 1)
 #endif
 
 /**
@@ -1066,7 +1066,7 @@
  * this number, select returns writable (combined with TCP_SNDLOWAT).
  */
 #ifndef TCP_SNDQUEUELOWAT
-#define TCP_SNDQUEUELOWAT               LWIP_MAX(((TCP_SND_QUEUELEN)/2), 5)
+#define TCP_SNDQUEUELOWAT(pcb)               LWIP_MAX(((TCP_SND_QUEUELEN((pcb)))/2), 5)
 #endif
 
 /**
@@ -1134,7 +1134,7 @@
  * explicit window update
  */
 #ifndef TCP_WND_UPDATE_THRESHOLD
-#define TCP_WND_UPDATE_THRESHOLD   LWIP_MIN((TCP_WND / 4), (TCP_MSS * 4))
+#define TCP_WND_UPDATE_THRESHOLD(pcb)   LWIP_MIN((TCP_WND((pcb)) / 4), (TCP_MSS * 4))
 #endif
 
 /**
@@ -3008,8 +3008,8 @@
 #define LWIP_PERF                       0
 #endif
 
-#ifndef THREAD_SAFE_DEBUG
-#define THREAD_SAFE_DEBUG               0
+#ifndef ESP_THREAD_SAFE_DEBUG
+#define ESP_THREAD_SAFE_DEBUG               0
 #endif
 
 #endif /* LWIP_HDR_OPT_H */

@@ -41,8 +41,13 @@
 #include "esp_event.h"
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
+#include "esp_crosscore_int.h"
 #include "esp_log.h"
-
+#include "esp_vfs_dev.h"
+#include "esp_newlib.h"
+#include "esp_brownout.h"
+#include "esp_int_wdt.h"
+#include "esp_task_wdt.h"
 #include "trax.h"
 
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
@@ -56,7 +61,6 @@ static bool app_cpu_started = false;
 
 static void do_global_ctors(void);
 static void main_task(void* args);
-extern void ets_setup_syscalls(void);
 extern void app_main(void);
 
 extern int _bss_start;
@@ -99,6 +103,10 @@ void IRAM_ATTR call_start_cpu0()
 #if !CONFIG_FREERTOS_UNICORE
     ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
 
+    //Un-stall the app cpu; the panic handler may have stalled it.
+    CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_APPCPU_C1_M);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_APPCPU_C0_M);
+    //Enable clock gating and reset the app cpu.
     SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
     CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
     SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
@@ -144,10 +152,29 @@ void start_cpu0_default(void)
 #endif
     esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
     uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
-    ets_setup_syscalls();
+#if CONFIG_BROWNOUT_DET
+    esp_brownout_init();
+#endif
+#if CONFIG_INT_WDT
+    esp_int_wdt_init();
+#endif
+#if CONFIG_TASK_WDT
+    esp_task_wdt_init();
+#endif
+    esp_setup_syscalls();
+    esp_vfs_dev_uart_register();
+    esp_reent_init(_GLOBAL_REENT);
+    const char* default_uart_dev = "/dev/uart/0";
+    _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
+    _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
+    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     do_global_ctors();
+#if !CONFIG_FREERTOS_UNICORE
+    esp_crosscore_int_init();
+#endif
     esp_ipc_init();
     spi_flash_init();
+
     xTaskCreatePinnedToCore(&main_task, "main",
             ESP_TASK_MAIN_STACK, NULL,
             ESP_TASK_MAIN_PRIO, NULL, 0);
@@ -165,6 +192,7 @@ void start_cpu1_default(void)
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
+    esp_crosscore_int_init();
     ESP_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
 }

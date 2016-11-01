@@ -50,18 +50,13 @@
 #include "lwip/pbuf.h"
 #include "netif/etharp.h"
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 #define TCPIP_MSG_VAR_REF(name)     API_VAR_REF(name)
 #define TCPIP_MSG_VAR_DECLARE(name) API_VAR_DECLARE(struct tcpip_msg, name)
 #define TCPIP_MSG_VAR_ALLOC(name)   API_VAR_ALLOC(struct tcpip_msg, MEMP_TCPIP_MSG_API, name)
 #define TCPIP_MSG_VAR_FREE(name)    API_VAR_FREE(MEMP_TCPIP_MSG_API, name)
 
 /* global variables */
-#ifdef PERF
+#if ESP_PERF
 uint32_t g_rx_post_mbox_fail_cnt = 0;
 #endif
 static tcpip_init_done_fn tcpip_init_done;
@@ -144,13 +139,11 @@ tcpip_thread(void *arg)
     case TCPIP_MSG_INPKT:
       LWIP_DEBUGF(TCPIP_DEBUG, ("tcpip_thread: PACKET %p\n", (void *)msg));
 
-#ifdef LWIP_ESP8266
-//#if 0
+#if ESP_LWIP
         if(msg->msg.inp.p != NULL && msg->msg.inp.netif != NULL) {
 #endif
             msg->msg.inp.input_fn(msg->msg.inp.p, msg->msg.inp.netif);
-#ifdef LWIP_ESP8266
-//#if 0
+#if ESP_LWIP
         }
 #endif
 
@@ -230,7 +223,7 @@ tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
   msg->msg.inp.netif = inp;
   msg->msg.inp.input_fn = input_fn;
   if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {
-#ifdef PERF
+#if ESP_PERF
     g_rx_post_mbox_fail_cnt ++; 
 #endif
     memp_free(MEMP_TCPIP_MSG_INPKT, msg);
@@ -503,7 +496,7 @@ tcpip_init(tcpip_init_done_fn initfunc, void *arg)
 #endif /* LWIP_TCPIP_CORE_LOCKING */
 
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
   sys_thread_t xLwipTaskHandle = sys_thread_new(TCPIP_THREAD_NAME
                 , tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, TCPIP_THREAD_PRIO);
 
@@ -548,8 +541,7 @@ pbuf_free_callback(struct pbuf *p)
  * @return ERR_OK if callback could be enqueued, an err_t if not
  */
  
-#ifdef LWIP_ESP8266
-//#if 0
+#if ESP_LWIP
 static void mem_free_local(void *arg)
 {
 	mem_free(arg);

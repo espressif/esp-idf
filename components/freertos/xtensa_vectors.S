@@ -91,12 +91,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *******************************************************************************/
 
 #include "xtensa_rtos.h"
-
+#include "esp_panic.h"
+#include "sdkconfig.h"
 /*
   Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
   Please change this when the tcb structure is changed
 */
-#define TASKTCB_XCOREID_OFFSET (0x3C+configMAX_TASK_NAME_LEN+3)&~3
+#define TASKTCB_XCOREID_OFFSET (0x38+configMAX_TASK_NAME_LEN+3)&~3
 .extern pxCurrentTCB
 
 /* Enable stack backtrace across exception/interrupt - see below */
@@ -302,12 +303,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
     .section .iram1,"ax"
-	.global panicHandler
+    .global panicHandler
 
     .global     _xt_panic
     .type       _xt_panic,@function
     .align      4
-	.literal_position
+    .literal_position
     .align      4
 
 _xt_panic:
@@ -339,45 +340,45 @@ _xt_panic:
     rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
     s32i    a0, sp, XT_STK_A0
 
-    /* Set up PS for C, reenable hi-pri interrupts, and clear EXCM. */
-    movi    a0, PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE
+    /* Set up PS for C, disable all interrupts, and clear EXCM. */
+    movi    a0, PS_INTLEVEL(7) | PS_UM | PS_WOE
     wsr     a0, PS
 
-	//Call panic handler
-	mov		a2,sp
-	call4 panicHandler
+    //Call panic handler
+    mov     a6,sp
+    call4 panicHandler
 
 1:  j       1b                              /* loop infinitely */
 
-	retw
+    retw
 
 
-	.align 4
+    .align 4
 //Call using call0. Prints the hex char in a2. Kills a3, a4, a5
 panic_print_hex:
-	movi a3,0x60000000
-	movi a4,8
+    movi a3,0x60000000
+    movi a4,8
 panic_print_hex_loop:
-	l32i a5, a3, 0x1c
-	extui a5, a5, 16, 8
-	bgei a5,64,panic_print_hex_loop
+    l32i a5, a3, 0x1c
+    extui a5, a5, 16, 8
+    bgei a5,64,panic_print_hex_loop
 
-	srli a5,a2,28
-	bgei a5,10,panic_print_hex_a
-	addi a5,a5,'0'
-	j panic_print_hex_ok
+    srli a5,a2,28
+    bgei a5,10,panic_print_hex_a
+    addi a5,a5,'0'
+    j panic_print_hex_ok
 panic_print_hex_a:
-	addi a5,a5,'A'-10
+    addi a5,a5,'A'-10
 panic_print_hex_ok:
-	s32i a5,a3,0
-	slli a2,a2,4
-	
-	addi a4,a4,-1
-	bnei a4,0,panic_print_hex_loop
-	movi a5,' '
-	s32i a5,a3,0
+    s32i a5,a3,0
+    slli a2,a2,4
+    
+    addi a4,a4,-1
+    bnei a4,0,panic_print_hex_loop
+    movi a5,' '
+    s32i a5,a3,0
 
-	ret
+    ret
 
 
 
@@ -462,6 +463,8 @@ _DebugExceptionVector:
     jx      a3
     #else
     wsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL    /* save original a0 somewhere */
+    movi    a0,PANIC_RSN_DEBUGEXCEPTION
+    wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* does not return */
     rfi     XCHAL_DEBUGLEVEL                /* make a0 point here not later */
     #endif
@@ -489,6 +492,8 @@ _DoubleExceptionVector:
     #if XCHAL_HAVE_DEBUG
     break   1, 4                            /* unhandled double exception */
     #endif
+    movi    a0,PANIC_RSN_DOUBLEEXCEPTION
+    wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* does not return */
     rfde                                    /* make a0 point here not later */
 
@@ -522,6 +527,8 @@ _xt_kernel_exc:
     #if XCHAL_HAVE_DEBUG
     break   1, 0                            /* unhandled kernel exception */
     #endif
+    movi    a0,PANIC_RSN_KERNELEXCEPTION
+    wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* does not return */
     rfe                                     /* make a0 point here not there */
 
@@ -909,11 +916,11 @@ _xt_coproc_exc:
     addi    a2, a2, TASKTCB_XCOREID_OFFSET  /* offset to xCoreID in tcb struct */
     s32i    a3, a2, 0                       /* store current cpuid */
 
-	/* Grab correct xt_coproc_owner_sa for this core */
-	movi    a2, XCHAL_CP_MAX << 2
-	mull    a2, a2, a3
+    /* Grab correct xt_coproc_owner_sa for this core */
+    movi    a2, XCHAL_CP_MAX << 2
+    mull    a2, a2, a3
     movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
-	add     a3, a3, a2
+    add     a3, a3, a2
 
     extui   a2, a0, 0, 16                   /* coprocessor bitmask portion */
     or      a4, a4, a2                      /* a4 = CPENABLE | (1 << n) */
@@ -1024,6 +1031,8 @@ _xt_coproc_exc:
     #if XCHAL_HAVE_DEBUG
     break   1, 1                            /* unhandled user exception */
     #endif
+    movi    a0,PANIC_RSN_COPROCEXCEPTION
+    wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* not in a thread (invalid) */
     /* never returns */
 
@@ -1606,6 +1615,28 @@ _xt_highint4:
     /* USER_EDIT:
     ADD HIGH PRIORITY LEVEL 4 INTERRUPT HANDLER CODE HERE.
     */
+
+
+
+    /* On the ESP32, this level is used for the INT_WDT handler. If that triggers, the program is stuck with interrupts
+       off and the CPU should panic. */
+    rsr     a0, EXCSAVE_4
+    wsr     a0, EXCSAVE_1 /* panic handler reads this register */
+    /* Set EXCCAUSE to reflect cause of the wdt int trigger */
+    movi    a0,PANIC_RSN_INTWDT_CPU0
+    wsr     a0,EXCCAUSE
+#if CONFIG_INT_WDT_CHECK_CPU1
+    /* Check if the cause is the app cpu failing to tick.*/
+    movi    a0, int_wdt_app_cpu_ticked
+    l32i    a0, a0, 0
+    bnez    a0, 1f
+    /* It is. Modify cause. */
+    movi    a0,PANIC_RSN_INTWDT_CPU1
+    wsr     a0,EXCCAUSE
+1:
+#endif
+    call0 _xt_panic
+
 
     .align  4
 .L_xt_highint4_exit:
