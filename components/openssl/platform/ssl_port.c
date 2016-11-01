@@ -22,7 +22,7 @@
 /*********************************************************************************************/
 /********************************* SSL general interface *************************************/
 
-void* ssl_zalloc(size_t size)
+void* ssl_mem_zalloc(size_t size)
 {
     void *p = malloc(size);
 
@@ -32,12 +32,12 @@ void* ssl_zalloc(size_t size)
     return p;
 }
 
-void *ssl_malloc(size_t size)
+void *ssl_mem_malloc(size_t size)
 {
     return malloc(size);
 }
 
-void ssl_free(void *p)
+void ssl_mem_free(void *p)
 {
     free(p);
 }

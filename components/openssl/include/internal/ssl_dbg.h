@@ -38,10 +38,17 @@
 #define SSL_DEBUG_LOCATION_ENABLE 0
 #endif
 
-#ifndef SSL_PRINT
-    #include "stdio.h"
-    extern int printf(const char *fmt, ...);
-    #define SSL_PRINT printf
+#if SSL_DEBUG_ENBALE
+    #ifndef SSL_PRINT
+        #include "stdio.h"
+        extern int printf(const char *fmt, ...);
+        #define SSL_PRINT printf
+    #endif
+#else
+    #ifdef SSL_PRINT
+        #undef SSL_PRINT
+        #define SSL_PRINT(...)
+    #endif
 #endif
 
 #if SSL_DEBUG_LOCATION_ENABLE
@@ -56,11 +63,11 @@
     #define SSL_ASSERT(s)
 #endif
 
-#define SSL_ERR(err, go, ...) { SSL_DEBUG_LOCATION(); SSL_PRINT(__VA_ARGS__); ret = err; goto go; }
+#define SSL_ERR(err, go, fmt, ...) { SSL_DEBUG_LOCATION(); SSL_PRINT(fmt, ##__VA_ARGS__); ret = err; goto go; }
 
-#define SSL_RET(go, ...) {  SSL_DEBUG_LOCATION(); SSL_PRINT(__VA_ARGS__); goto go; }
+#define SSL_RET(go, fmt, ...) {  SSL_DEBUG_LOCATION(); SSL_PRINT(fmt, ##__VA_ARGS__); goto go; }
 
-#define SSL_DEBUG(level, ...) { if (level > SSL_DEBUG_LEVEL) {SSL_PRINT(__VA_ARGS__);} }
+#define SSL_DEBUG(level, fmt, ...) { if (level > SSL_DEBUG_LEVEL) {SSL_PRINT(fmt, ##__VA_ARGS__);} }
 
 #ifdef __cplusplus
 }

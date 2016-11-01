@@ -24,6 +24,7 @@
 #ifdef ESP32_IDF_PLATFORM
 
 #include "esp_types.h"
+#include "esp_log.h"
 
 void *ssl_mem_zalloc(size_t size);
 void *ssl_mem_malloc(size_t size);
@@ -34,6 +35,8 @@ size_t ssl_strlen(const char *src);
 
 void ssl_speed_up_enter(void);
 void ssl_speed_up_exit(void);
+
+#define SSL_PRINT(fmt, ...) ESP_LOGD("OpenSSL", fmt, ##__VA_ARGS__)
 
 #elif defined(SSL_PLATFORM_USER_INCLUDE)
 
