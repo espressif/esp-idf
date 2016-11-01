@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -131,8 +131,12 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
 esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize)
 {
     Item item;
-
     esp_err_t err;
+    
+    if (mState == PageState::INVALID) {
+        return ESP_ERR_NVS_INVALID_STATE;
+    }
+    
     if (mState == PageState::UNINITIALIZED) {
         err = initialize();
         if (err != ESP_OK) {
@@ -166,7 +170,6 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
     }
 
     // write first item
-
     size_t span = (totalSize + ENTRY_SIZE - 1) / ENTRY_SIZE;
     item = Item(nsIndex, datatype, span, key);
     mHashList.insert(item, mNextFreeEntry);
@@ -215,6 +218,11 @@ esp_err_t Page::readItem(uint8_t nsIndex, ItemType datatype, const char* key, vo
 {
     size_t index = 0;
     Item item;
+    
+    if (mState == PageState::INVALID) {
+        return ESP_ERR_NVS_INVALID_STATE;
+    }
+    
     esp_err_t rc = findItem(nsIndex, datatype, key, index, item);
     if (rc != ESP_OK) {
         return rc;
@@ -293,6 +301,8 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
         }
         if (item.calculateCrc32() != item.crc32) {
             rc = alterEntryState(index, EntryState::ERASED);
+            --mUsedEntryCount;
+            ++mErasedEntryCount;
             if (rc != ESP_OK) {
                 return rc;
             }
@@ -465,7 +475,9 @@ esp_err_t Page::mLoadEntryTable()
         if (end > ENTRY_COUNT) {
             end = ENTRY_COUNT;
         }
-        for (size_t i = 0; i < end; ++i) {
+        size_t span;
+        for (size_t i = 0; i < end; i += span) {
+            span = 1;
             if (mEntryTable.get(i) == EntryState::ERASED) {
                 lastItemIndex = INVALID_ENTRY;
                 continue;
@@ -478,6 +490,11 @@ esp_err_t Page::mLoadEntryTable()
                 mState = PageState::INVALID;
                 return err;
             }
+            
+            mHashList.insert(item, i);
+            
+            // search for potential duplicate item
+            size_t duplicateIndex = mHashList.find(0, item);
 
             if (item.crc32 != item.calculateCrc32()) {
                 err = eraseEntryAndSpan(i);
@@ -488,25 +505,26 @@ esp_err_t Page::mLoadEntryTable()
                 continue;
             }
 
-            mHashList.insert(item, i);
-
-            if (item.datatype != ItemType::BLOB && item.datatype != ItemType::SZ) {
-                continue;
-            }
-
-            size_t span = item.span;
-            bool needErase = false;
-            for (size_t j = i; j < i + span; ++j) {
-                if (mEntryTable.get(j) != EntryState::WRITTEN) {
-                    needErase = true;
-                    lastItemIndex = INVALID_ENTRY;
-                    break;
+            
+            if (item.datatype == ItemType::BLOB || item.datatype == ItemType::SZ) {
+                span = item.span;
+                bool needErase = false;
+                for (size_t j = i; j < i + span; ++j) {
+                    if (mEntryTable.get(j) != EntryState::WRITTEN) {
+                        needErase = true;
+                        lastItemIndex = INVALID_ENTRY;
+                        break;
+                    }
+                }
+                if (needErase) {
+                    eraseEntryAndSpan(i);
+                    continue;
                 }
             }
-            if (needErase) {
-                eraseEntryAndSpan(i);
+            
+            if (duplicateIndex < i) {
+                eraseEntryAndSpan(duplicateIndex);
             }
-            i += span - 1;
         }
 
         // check that last item is not duplicate
@@ -785,8 +803,12 @@ void Page::debugDump() const
             Item item;
             readEntry(i, item);
             if (skip == 0) {
-                printf("W ns=%2u type=%2u span=%3u key=\"%s\"\n", item.nsIndex, static_cast<unsigned>(item.datatype), item.span, item.key);
-                skip = item.span - 1;
+                printf("W ns=%2u type=%2u span=%3u key=\"%s\" len=%d\n", item.nsIndex, static_cast<unsigned>(item.datatype), item.span, item.key, (item.span != 1)?((int)item.varLength.dataSize):-1);
+                if (item.span > 0 && item.span <= ENTRY_COUNT - i) {
+                    skip = item.span - 1;
+                } else {
+                    skip = 0;
+                }
             } else {
                 printf("D\n");
                 skip--;

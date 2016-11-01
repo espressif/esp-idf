@@ -74,11 +74,11 @@ public:
             return false;
         }
         
-        if (mFailCountdown != SIZE_MAX && mFailCountdown-- == 0) {
-            return false;
-        }
-
         for (size_t i = 0; i < size / 4; ++i) {
+            if (mFailCountdown != SIZE_MAX && mFailCountdown-- == 0) {
+                return false;
+            }
+
             uint32_t sv = src[i];
             size_t pos = dstAddr / 4 + i;
             uint32_t& dv = mData[pos];
@@ -140,6 +140,18 @@ public:
     const uint8_t* bytes() const
     {
         return reinterpret_cast<const uint8_t*>(mData.data());
+    }
+    
+    void load(const char* filename)
+    {
+        FILE* f = fopen(filename, "rb");
+        fseek(f, 0, SEEK_END);
+        off_t size = ftell(f);
+        assert(size % SPI_FLASH_SEC_SIZE == 0);
+        mData.resize(size);
+        fseek(f, 0, SEEK_SET);
+        auto s = fread(mData.data(), SPI_FLASH_SEC_SIZE, size / SPI_FLASH_SEC_SIZE, f);
+        assert(s == static_cast<size_t>(size / SPI_FLASH_SEC_SIZE));
     }
 
     void clearStats()
