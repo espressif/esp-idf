@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "ssl_port.h"
+
+#ifdef ESP32_IDF_PLATFORM
+
 #include "string.h"
 #include "malloc.h"
 
@@ -58,4 +61,6 @@ void ssl_speed_up_exit(void)
 {
 
 }
+
+#endif
 
