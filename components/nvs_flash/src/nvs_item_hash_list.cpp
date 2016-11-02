@@ -17,7 +17,11 @@
 namespace nvs
 {
 
-HashList::~HashList()
+HashList::HashList()
+{
+}
+    
+void HashList::clear()
 {
     for (auto it = mBlockList.begin(); it != mBlockList.end();) {
         auto tmp = it;
@@ -25,6 +29,11 @@ HashList::~HashList()
         mBlockList.erase(tmp);
         delete static_cast<HashListBlock*>(tmp);
     }
+}
+    
+HashList::~HashList()
+{
+    clear();
 }
 
 HashList::HashListBlock::HashListBlock()

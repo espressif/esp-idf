@@ -7,7 +7,8 @@ config LWIP_MAX_SOCKETS
     help
         Sockets take up a certain amount of memory, and allowing fewer
         sockets to be open at the same time conserves memory. Specify
-        the maximum amount of sockets here.
+        the maximum amount of sockets here. The valid value is from 1
+        to 16.
 
 config LWIP_THREAD_LOCAL_STORAGE_INDEX
     int "Index for thread-local-storage pointer for lwip"

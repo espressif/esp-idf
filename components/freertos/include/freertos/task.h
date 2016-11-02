@@ -177,6 +177,7 @@ typedef struct xTASK_STATUS
 	UBaseType_t uxCurrentPriority;	/* The priority at which the task was running (may be inherited) when the structure was populated. */
 	UBaseType_t uxBasePriority;		/* The priority to which the task will return if the task's current priority has been inherited to avoid unbounded priority inversion when obtaining a mutex.  Only valid if configUSE_MUTEXES is defined as 1 in FreeRTOSConfig.h. */
 	uint32_t ulRunTimeCounter;		/* The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
+	StackType_t *pxStackBase;		/* Points to the lowest address of the task's stack area. */
 	uint16_t usStackHighWaterMark;	/* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
 } TaskStatus_t;
 
@@ -281,8 +282,19 @@ is used in assert() statements. */
 						  );</pre>
  *
  * Create a new task and add it to the list of tasks that are ready to run.
- * On multicore environments, this will give no specific affinity to the task.
- * Use xTaskCreatePinnedToCore to give affinity.
+ *
+ * Internally, within the FreeRTOS implementation, tasks use two blocks of
+ * memory.  The first block is used to hold the task's data structures.  The
+ * second block is used by the task as its stack.  If a task is created using
+ * xTaskCreate() then both blocks of memory are automatically dynamically
+ * allocated inside the xTaskCreate() function.  (see
+ * http://www.freertos.org/a00111.html).  If a task is created using
+ * xTaskCreateStatic() then the application writer must provide the required
+ * memory.  xTaskCreateStatic() therefore allows a task to be created without
+ * using any dynamic memory allocation.
+ *
+ * See xTaskCreateStatic() for a version that does not use any dynamic memory
+ * allocation.
  *
  * xTaskCreate() can only be used to create a task that has unrestricted
  * access to the entire microcontroller memory map.  Systems that include MPU
@@ -350,8 +362,139 @@ is used in assert() statements. */
  * \defgroup xTaskCreate xTaskCreate
  * \ingroup Tasks
  */
-#define xTaskCreate( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask ) xTaskGenericCreate( ( pvTaskCode ), ( pcName ), ( usStackDepth ), ( pvParameters ), ( uxPriority ), ( pxCreatedTask ), ( NULL ), ( NULL ), tskNO_AFFINITY )
-#define xTaskCreatePinnedToCore( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, xCoreID ) xTaskGenericCreate( ( pvTaskCode ), ( pcName ), ( usStackDepth ), ( pvParameters ), ( uxPriority ), ( pxCreatedTask ), ( NULL ), ( NULL ), xCoreID )
+#if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+    BaseType_t xTaskCreatePinnedToCore(	TaskFunction_t pxTaskCode,
+							            const char * const pcName,
+							            const uint16_t usStackDepth,
+							            void * const pvParameters,
+							            UBaseType_t uxPriority,
+							            TaskHandle_t * const pxCreatedTask,
+							            const BaseType_t xCoreID);
+
+#define xTaskCreate( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask ) xTaskCreatePinnedToCore( ( pvTaskCode ), ( pcName ), ( usStackDepth ), ( pvParameters ), ( uxPriority ), ( pxCreatedTask ), tskNO_AFFINITY )
+#endif
+
+/**
+ * task. h
+ *<pre>
+ TaskHandle_t xTaskCreateStatic( TaskFunction_t pvTaskCode,
+								 const char * const pcName,
+								 uint32_t ulStackDepth,
+								 void *pvParameters,
+								 UBaseType_t uxPriority,
+								 StackType_t *pxStackBuffer,
+								 StaticTask_t *pxTaskBuffer,
+                                 const BaseType_t xCoreID );</pre>
+
+ *
+ * Create a new task and add it to the list of tasks that are ready to run.
+ *
+ * Internally, within the FreeRTOS implementation, tasks use two blocks of
+ * memory.  The first block is used to hold the task's data structures.  The
+ * second block is used by the task as its stack.  If a task is created using
+ * xTaskCreate() then both blocks of memory are automatically dynamically
+ * allocated inside the xTaskCreate() function.  (see
+ * http://www.freertos.org/a00111.html).  If a task is created using
+ * xTaskCreateStatic() then the application writer must provide the required
+ * memory.  xTaskCreateStatic() therefore allows a task to be created without
+ * using any dynamic memory allocation.
+ *
+ * @param pvTaskCode Pointer to the task entry function.  Tasks
+ * must be implemented to never return (i.e. continuous loop).
+ *
+ * @param pcName A descriptive name for the task.  This is mainly used to
+ * facilitate debugging.  The maximum length of the string is defined by
+ * configMAX_TASK_NAME_LEN in FreeRTOSConfig.h.
+ *
+ * @param ulStackDepth The size of the task stack specified as the number of
+ * variables the stack can hold - not the number of bytes.  For example, if
+ * the stack is 32-bits wide and ulStackDepth is defined as 100 then 400 bytes
+ * will be allocated for stack storage.
+ *
+ * @param pvParameters Pointer that will be used as the parameter for the task
+ * being created.
+ *
+ * @param uxPriority The priority at which the task will run.
+ *
+ * @param pxStackBuffer Must point to a StackType_t array that has at least
+ * ulStackDepth indexes - the array will then be used as the task's stack,
+ * removing the need for the stack to be allocated dynamically.
+ *
+ * @param pxTaskBuffer Must point to a variable of type StaticTask_t, which will
+ * then be used to hold the task's data structures, removing the need for the
+ * memory to be allocated dynamically.
+ *
+ * @return If neither pxStackBuffer or pxTaskBuffer are NULL, then the task will
+ * be created and pdPASS is returned.  If either pxStackBuffer or pxTaskBuffer
+ * are NULL then the task will not be created and
+ * errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY is returned.
+ *
+ * Example usage:
+   <pre>
+
+    // Dimensions the buffer that the task being created will use as its stack.
+    // NOTE:  This is the number of words the stack will hold, not the number of
+    // bytes.  For example, if each stack item is 32-bits, and this is set to 100,
+    // then 400 bytes (100 * 32-bits) will be allocated.
+    #define STACK_SIZE 200
+
+    // Structure that will hold the TCB of the task being created.
+    StaticTask_t xTaskBuffer;
+
+    // Buffer that the task being created will use as its stack.  Note this is
+    // an array of StackType_t variables.  The size of StackType_t is dependent on
+    // the RTOS port.
+    StackType_t xStack[ STACK_SIZE ];
+
+    // Function that implements the task being created.
+    void vTaskCode( void * pvParameters )
+    {
+        // The parameter value is expected to be 1 as 1 is passed in the
+        // pvParameters value in the call to xTaskCreateStatic().
+        configASSERT( ( uint32_t ) pvParameters == 1UL );
+
+        for( ;; )
+        {
+            // Task code goes here.
+        }
+    }
+
+    // Function that creates a task.
+    void vOtherFunction( void )
+    {
+        TaskHandle_t xHandle = NULL;
+
+        // Create the task without using any dynamic memory allocation.
+        xHandle = xTaskCreateStatic(
+                      vTaskCode,       // Function that implements the task.
+                      "NAME",          // Text name for the task.
+                      STACK_SIZE,      // Stack size in words, not bytes.
+                      ( void * ) 1,    // Parameter passed into the task.
+                      tskIDLE_PRIORITY,// Priority at which the task is created.
+                      xStack,          // Array to use as the task's stack.
+                      &xTaskBuffer );  // Variable to hold the task's data structure.
+
+        // puxStackBuffer and pxTaskBuffer were not NULL, so the task will have
+        // been created, and xHandle will be the task's handle.  Use the handle
+        // to suspend the task.
+        vTaskSuspend( xHandle );
+    }
+   </pre>
+ * \defgroup xTaskCreateStatic xTaskCreateStatic
+ * \ingroup Tasks
+ */
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+	TaskHandle_t xTaskCreateStaticPinnedToCore(	TaskFunction_t pxTaskCode,
+									            const char * const pcName,
+									            const uint32_t ulStackDepth,
+									            void * const pvParameters,
+									            UBaseType_t uxPriority,
+									            StackType_t * const puxStackBuffer,
+									            StaticTask_t * const pxTaskBuffer,
+                                                const BaseType_t xCoreID );
+
+#define xTaskCreateStatic( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxStackBuffer, pxTaskBuffer ) xTaskCreateStaticPinnedToCore( ( pvTaskCode ), ( pcName ), ( usStackDepth ), ( pvParameters ), ( uxPriority ), ( pxStackBuffer ), ( pxTaskBuffer ), tskNO_AFFINITY )
+#endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
  * task. h
@@ -420,7 +563,9 @@ TaskHandle_t xHandle;
  * \defgroup xTaskCreateRestricted xTaskCreateRestricted
  * \ingroup Tasks
  */
-#define xTaskCreateRestricted( x, pxCreatedTask ) xTaskGenericCreate( ((x)->pvTaskCode), ((x)->pcName), ((x)->usStackDepth), ((x)->pvParameters), ((x)->uxPriority), (pxCreatedTask), ((x)->puxStackBuffer), ((x)->xRegions) )
+#if( portUSING_MPU_WRAPPERS == 1 )
+	BaseType_t xTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition, TaskHandle_t *pxCreatedTask ) PRIVILEGED_FUNCTION;
+#endif
 
 /**
  * task. h
@@ -1933,6 +2078,17 @@ TickType_t uxTaskResetEventItemValue( void ) PRIVILEGED_FUNCTION;
  */
 TaskHandle_t xTaskGetCurrentTaskHandle( void ) PRIVILEGED_FUNCTION;
 
+
+
+/*
+ * Return the handle of the task running on a certain CPU. Because of
+ * the nature of SMP processing, there is no guarantee that this
+ * value will still be valid on return and should only be used for
+ * debugging purposes.
+ */
+TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t cpuid );
+
+
 /*
  * Capture the current time status for future reference.
  */
@@ -1967,12 +2123,6 @@ void vTaskPriorityInherit( TaskHandle_t const pxMutexHolder ) PRIVILEGED_FUNCTIO
  * inherited a higher priority while it was holding a semaphore.
  */
 BaseType_t xTaskPriorityDisinherit( TaskHandle_t const pxMutexHolder ) PRIVILEGED_FUNCTION;
-
-/*
- * Generic version of the task creation function which is in turn called by the
- * xTaskCreate() and xTaskCreateRestricted() macros.
- */
-BaseType_t xTaskGenericCreate( TaskFunction_t pxTaskCode, const char * const pcName, const uint16_t usStackDepth, void * const pvParameters, UBaseType_t uxPriority, TaskHandle_t * const pxCreatedTask, StackType_t * const puxStackBuffer, const MemoryRegion_t * const xRegions, const BaseType_t xCoreID) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 
 /*
  * Get the uxTCBNumber assigned to the task referenced by the xTask parameter.

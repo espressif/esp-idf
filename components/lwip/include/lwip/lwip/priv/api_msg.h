@@ -187,7 +187,7 @@ struct dns_api_msg {
 #endif /* LWIP_DNS */
 
 #if LWIP_NETCONN_SEM_PER_THREAD
-#ifdef LWIP_ESP8266
+#if ESP_THREAD_SAFE
 #define LWIP_NETCONN_THREAD_SEM_GET() sys_thread_sem_get()
 #define LWIP_NETCONN_THREAD_SEM_ALLOC() sys_thread_sem_init()
 #define LWIP_NETCONN_THREAD_SEM_FREE() sys_thread_sem_deinit()
@@ -221,10 +221,6 @@ struct dns_api_msg {
 #define TCPIP_APIMSG_NOERR(m,f) do { (m)->function = f; tcpip_apimsg(m); } while(0)
 #define TCPIP_APIMSG(m,f,e)   do { (m)->function = f; (e) = tcpip_apimsg(m); } while(0)
 #define TCPIP_APIMSG_ACK(m)   do { NETCONN_SET_SAFE_ERR((m)->conn, (m)->err); sys_sem_signal(LWIP_API_MSG_SEM(m)); } while(0)
-
-#ifdef LWIP_ESP8266
-#define TCPIP_APIMSG_ACK_SND(m)  do { NETCONN_SET_SAFE_ERR((m)->conn, (m)->err); sys_sem_signal(LWIP_API_MSG_SND_SEM(m)); } while(0) 
-#endif
 
 #endif /* LWIP_TCPIP_CORE_LOCKING */
 

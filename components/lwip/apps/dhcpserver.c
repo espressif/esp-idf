@@ -24,7 +24,7 @@
 
 #include "apps/dhcpserver.h"
 
-#ifdef LWIP_ESP8266
+#if ESP_DHCP
 
 #define BOOTP_BROADCAST 0x8000
 
@@ -70,10 +70,6 @@
 #define DHCPS_STATE_NAK 4
 #define DHCPS_STATE_IDLE 5
 #define DHCPS_STATE_RELEASE 6
-
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////
 

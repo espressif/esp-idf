@@ -22,7 +22,7 @@ void spi_flash_emulator_set(SpiFlashEmulator* e)
     s_emulator = e;
 }
 
-esp_err_t spi_flash_erase_sector(uint16_t sec)
+esp_err_t spi_flash_erase_sector(size_t sec)
 {
     if (!s_emulator) {
         return ESP_ERR_FLASH_OP_TIMEOUT;
@@ -35,26 +35,26 @@ esp_err_t spi_flash_erase_sector(uint16_t sec)
     return ESP_OK;
 }
 
-esp_err_t spi_flash_write(uint32_t des_addr, const uint32_t *src_addr, uint32_t size)
+esp_err_t spi_flash_write(size_t des_addr, const void *src_addr, size_t size)
 {
     if (!s_emulator) {
         return ESP_ERR_FLASH_OP_TIMEOUT;
     }
 
-    if (!s_emulator->write(des_addr, src_addr, size)) {
+    if (!s_emulator->write(des_addr, reinterpret_cast<const uint32_t*>(src_addr), size)) {
         return ESP_ERR_FLASH_OP_FAIL;
     }
 
     return ESP_OK;
 }
 
-esp_err_t spi_flash_read(uint32_t src_addr, uint32_t *des_addr, uint32_t size)
+esp_err_t spi_flash_read(size_t src_addr, void *des_addr, size_t size)
 {
     if (!s_emulator) {
         return ESP_ERR_FLASH_OP_TIMEOUT;
     }
 
-    if (!s_emulator->read(des_addr, src_addr, size)) {
+    if (!s_emulator->read(reinterpret_cast<uint32_t*>(des_addr), src_addr, size)) {
         return ESP_ERR_FLASH_OP_FAIL;
     }
 

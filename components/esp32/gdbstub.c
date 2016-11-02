@@ -24,7 +24,7 @@
 #include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
 
-#include "gdbstub.h"
+#include "esp_gdbstub.h"
 
 //Length of buffer used to reserve GDB commands. Has to be at least able to fit the G command, which
 //implies a minimum size of about 320 bytes.
@@ -351,7 +351,7 @@ static int gdbReadCommand() {
 
 
 
-void gdbstubPanicHandler(XtExcFrame *frame) {
+void esp_gdbstub_panic_handler(XtExcFrame *frame) {
 	dumpHwToRegfile(frame);
 	//Make sure txd/rxd are enabled
 	PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);

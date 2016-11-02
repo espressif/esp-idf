@@ -8,6 +8,8 @@
 
 #include "esp_wifi.h"
 
+#include "esp_wifi_internal.h"
+
 #include "lwip/err.h"
 
 #ifdef __cplusplus
@@ -17,8 +19,6 @@ extern "C" {
 err_t wlanif_init(struct netif *netif);
 
 void wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb);
-
-bool ieee80211_output(wifi_interface_t wifi_if, void *buffer, u16_t len);
 
 wifi_interface_t wifi_get_interface(void *dev);
 

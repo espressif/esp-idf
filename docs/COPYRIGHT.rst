@@ -1,3 +1,6 @@
+Copyrights and Licenses
+***********************
+
 Software Copyrights
 ===================
 
@@ -87,8 +90,7 @@ developments under license policy of following terms.
 Copyright (C) 2011, ChaN, all right reserved.
 
 * The TJpgDec module is a free software and there is NO WARRANTY.
-* No restriction on use. You can use, modify and redistribute it for
-personal, non-profit or commercial products UNDER YOUR RESPONSIBILITY.
+* No restriction on use. You can use, modify and redistribute it for personal, non-profit or commercial products UNDER YOUR RESPONSIBILITY.
 * Redistributions of source code must retain the above copyright notice.
 
 

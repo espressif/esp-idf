@@ -44,7 +44,7 @@ public:
         spi_flash_emulator_set(nullptr);
     }
 
-    bool read(uint32_t* dest, uint32_t srcAddr, size_t size) const
+    bool read(uint32_t* dest, size_t srcAddr, size_t size) const
     {
         if (srcAddr % 4 != 0 ||
                 size % 4 != 0 ||
@@ -60,7 +60,7 @@ public:
         return true;
     }
 
-    bool write(uint32_t dstAddr, const uint32_t* src, size_t size)
+    bool write(size_t dstAddr, const uint32_t* src, size_t size)
     {
         uint32_t sectorNumber = dstAddr/SPI_FLASH_SEC_SIZE;
         if (sectorNumber < mLowerSectorBound || sectorNumber >= mUpperSectorBound) {
@@ -74,11 +74,11 @@ public:
             return false;
         }
         
-        if (mFailCountdown != SIZE_MAX && mFailCountdown-- == 0) {
-            return false;
-        }
-
         for (size_t i = 0; i < size / 4; ++i) {
+            if (mFailCountdown != SIZE_MAX && mFailCountdown-- == 0) {
+                return false;
+            }
+
             uint32_t sv = src[i];
             size_t pos = dstAddr / 4 + i;
             uint32_t& dv = mData[pos];
@@ -96,7 +96,7 @@ public:
         return true;
     }
 
-    bool erase(uint32_t sectorNumber)
+    bool erase(size_t sectorNumber)
     {
         size_t offset = sectorNumber * SPI_FLASH_SEC_SIZE / 4;
         if (offset > mData.size()) {
@@ -140,6 +140,18 @@ public:
     const uint8_t* bytes() const
     {
         return reinterpret_cast<const uint8_t*>(mData.data());
+    }
+    
+    void load(const char* filename)
+    {
+        FILE* f = fopen(filename, "rb");
+        fseek(f, 0, SEEK_END);
+        off_t size = ftell(f);
+        assert(size % SPI_FLASH_SEC_SIZE == 0);
+        mData.resize(size);
+        fseek(f, 0, SEEK_SET);
+        auto s = fread(mData.data(), SPI_FLASH_SEC_SIZE, size / SPI_FLASH_SEC_SIZE, f);
+        assert(s == static_cast<size_t>(size / SPI_FLASH_SEC_SIZE));
     }
 
     void clearStats()

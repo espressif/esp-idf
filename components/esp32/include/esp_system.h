@@ -16,6 +16,7 @@
 #define __ESP_SYSTEM_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "esp_err.h"
 #include "esp_deepsleep.h"

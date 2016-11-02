@@ -87,7 +87,7 @@ test cases:
   - - SSC SSC1 dhcp -E -o 1
     - ['R SSC1 C +DHCP:STA,OK']
   - - SSC SSC1 ip -S -i 0.0.0.0
-    - ['R SSC1 C +IP:OK']
+    - [R SSC1 C +IP]
   - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
     - ['']
   - - DELAY 20
@@ -121,54 +121,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DHCP client function test
-  version: v1 (2016-8-15)
-- CI ready: 'Yes'
-  ID: TCPIP_DHCP_0102
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
-    - ['R SSC1 C +SAP:OK']
-  - - SSC SSC1 dhcp -E -o 2
-    - ['R SSC1 C +DHCP:AP,OK']
-  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
-    - ['']
-  - - DELAY 20
-    - [P PC_COM C +DELAYDONE, 'P SSC2 NC +JAP:CONNECTED']
-  - - SSC SSC1 dhcp -S -o 2
-    - ['R SSC1 C +DHCP:AP,OK']
-  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
-    - ['R SSC2 C +JAP:CONNECTED']
-  comment: ''
-  execution time: 0.0
-  expected result: "1.target1 set AP OK \n2.target1 关闭DHCP OK\n3.target2 jap target\
-    \ 1,FAIL \n4.target1 打开DHCP OK\n5.target2 jap target 1,ok"
-  initial condition: T2_1
-  initial condition description (auto): target 1 as SoftAP, target 2 as STA, will
-    autogen a TC with initial condition T2_2
-  level: Integration
-  module: TCPIP
-  steps: "1.target1 set AP OK \n2.target1 关闭DHCP OK\n3.target2 jap target 1,FAIL \n\
-    4.target1 打开DHCP OK\n5.target2 jap target 1,ok"
-  sub module: DHCP
-  summary: dhcp server function test
-  test environment: SSC_T2_1
-  test environment description (auto): 'PC has 1 wired NIC connected to AP.
-
-    PC has 1 WiFi NIC.
-
-    2 SSC target connect with PC by UART.'
-  test point 1: basic function
-  test point 2: DHCP client function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_DHCP_0103
   SDK: '8266_NonOS
@@ -927,7 +880,7 @@ test cases:
     - ['R SSC1 C +DHCP:AP,OK']
   - - SSC SSC2 sta -C -s <random_string> -p <random_string>
     - ['R SSC2 C +JAP:CONNECTED']
-  - - DELAY 10
+  - - DELAY 30
     - ['']
   - - SSC SSC1 ap -L
     - [R SSC1 C 192.168.4.2 C 192.168.4.3 P <pc_wifi_nic_mac> P <target2_mac>]
@@ -968,6 +921,53 @@ test cases:
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: TCPIP_DHCP_0212
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  - - SSC SSC1 dhcp -E -o 2
+    - ['R SSC1 C +DHCP:AP,OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['']
+  - - DELAY 20
+    - [P PC_COM C +DELAYDONE, 'P SSC2 NC +JAP:CONNECTED']
+  - - SSC SSC1 dhcp -S -o 2
+    - ['R SSC1 C +DHCP:AP,OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC2 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: "1.target1 set AP OK \n2.target1 关闭DHCP OK\n3.target2 jap target\
+    \ 1,FAIL \n4.target1 打开DHCP OK\n5.target2 jap target 1,ok"
+  initial condition: T2_1
+  initial condition description (auto): target 1 as SoftAP, target 2 as STA, will
+    autogen a TC with initial condition T2_2
+  level: Integration
+  module: TCPIP
+  steps: "1.target1 set AP OK \n2.target1 关闭DHCP OK\n3.target2 jap target 1,FAIL \n\
+    4.target1 打开DHCP OK\n5.target2 jap target 1,ok"
+  sub module: DHCP
+  summary: dhcp server function test
+  test environment: SSC_T2_1
+  test environment description (auto): 'PC has 1 wired NIC connected to AP.
+
+    PC has 1 WiFi NIC.
+
+    2 SSC target connect with PC by UART.'
+  test point 1: basic function
+  test point 2: DHCP server function test
+  version: v2 (2016-10-19)
+- CI ready: 'Yes'
   ID: TCPIP_DHCP_0301
   SDK: '8266_NonOS
 
@@ -987,7 +987,7 @@ test cases:
   - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
     - ['R SSC1 C +JAP:CONNECTED']
   - - SSC SSC1 ip -S -i 0.0.0.0 -o 1
-    - ['R SSC1 C +IP:OK']
+    - [R SSC1 C +IP]
   - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
     - ['']
   - - DELAY 10
@@ -1027,7 +1027,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: interaction
   test point 2: static IP and DHCP interaction test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_DHCP_0302
   SDK: '8266_NonOS
@@ -1143,7 +1143,7 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 soc -H -d iot.espressif.cn
+  - - SSC SSC1 soc -H -d factory.espressif.cn
     - ['R SSC1 A <ip_addr>:\+HOSTIP:OK,(.+)\r\n']
   - - SSC SSC1 soc -B -t TCP
     - ['R SSC1 A <sock1>:\+BIND:(\d+),OK']
@@ -1178,7 +1178,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DNS function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_DNS_0103
   SDK: '8266_NonOS
@@ -1192,7 +1192,7 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 soc -H -d iot.espressif.cn
+  - - SSC SSC1 soc -H -d factory.espressif.cn
     - ['R SSC1 A <ip_addr>:\+HOSTIP:OK,(.+)\r\n']
   - - SSC SSC1 soc -B -t UDP
     - ['R SSC1 A <sock1>:\+BIND:(\d+),OK']
@@ -1223,7 +1223,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DNS function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_ICMP_0101
   SDK: '8266_NonOS
@@ -3189,14 +3189,12 @@ test cases:
   - ''
   - - SOC SOC1 LISTEN <test_tcp_port1>
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -B -t TCP
+  - - SSC SSC1 soc -B -t TCP -w 0
     - ['R SSC1 A <sock1>:BIND:(\d+),OK']
   - - SSC SSC1 soc -C -s <sock1> -i <pc_ip> -p <test_tcp_port1>
     - ['R SSC1 RE CONNECT:\d+,OK']
   - - SOC SOC1 ACCEPT SOC2
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -W -s <sock1> -o 0
-    - ['R SSC1 RE WORKTHREAD:\d+,OK']
   - - SOC SOC2 SEND 146000
     - [P SOC_COM R *]
   - - SSC SSC1 soc -W -s <sock1> -o 1
@@ -3246,7 +3244,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_TCP_0206
   SDK: '8266_NonOS
@@ -3280,7 +3278,7 @@ test cases:
     - ['R SSC1 A <sock4>:ACCEPT:(\d+),\d+,.+,\d+']
   - - SSC SSC1 soc -I
     - ['P SSC1 RE "SOCINFO:%%s,2,%%s,\d+,%%s,%%d"%%(<sock1>,<target_ip>,<pc_ip>,<test_tcp_port1>)',
-      'P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)', 'P SSC1 RE "SOCINFO:%%s,82,.+,%%d,.+,\d+"%%(<sock3>,<random_port>)',
+      'P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)', 'P SSC1 RE "SOCINFO:%%s,82,.+,%%d"%%(<sock3>,<random_port>)',
       'P SSC1 RE "SOCINFO:%%s,2,%%s,%%d,%%s,\d+"%%(<sock4>,<target_ip>,<random_port>,<pc_ip>)']
   comment: ''
   execution time: 0.0
@@ -3531,14 +3529,12 @@ test cases:
   - ''
   - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip_wifi>
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -B -t TCP
+  - - SSC SSC1 soc -B -t TCP -w 0
     - ['R SSC1 A <sock1>:BIND:(\d+),OK']
   - - SSC SSC1 soc -C -s <sock1> -i <pc_ip_wifi> -p <test_tcp_port1>
     - ['R SSC1 RE CONNECT:\d+,OK']
   - - SOC SOC1 ACCEPT SOC2
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -W -s <sock1> -o 0
-    - ['R SSC1 RE WORKTHREAD:\d+,OK']
   - - SOC SOC2 SEND 146000
     - [P SOC_COM R *]
   - - SSC SSC1 soc -W -s <sock1> -o 1
@@ -3586,7 +3582,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_TCP_0212
   SDK: '8266_NonOS
@@ -3620,7 +3616,7 @@ test cases:
     - ['R SSC1 A <sock4>:ACCEPT:(\d+),\d+,.+,\d+']
   - - SSC SSC1 soc -I
     - ['P SSC1 RE "SOCINFO:%%s,2,%%s,\d+,%%s,%%d"%%(<sock1>,<target_ap_ip>,<pc_ip_wifi>,<test_tcp_port1>)',
-      'P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)', 'P SSC1 RE "SOCINFO:%%s,82,.+,%%d,.+,\d+"%%(<sock3>,<random_port>)',
+      'P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)', 'P SSC1 RE "SOCINFO:%%s,82,.+,%%d"%%(<sock3>,<random_port>)',
       'P SSC1 RE "SOCINFO:%%s,2,%%s,%%d,%%s,\d+"%%(<sock4>,<target_ap_ip>,<random_port>,<pc_ip_wifi>)']
   comment: ''
   execution time: 0.0
@@ -5119,10 +5115,8 @@ test cases:
   - ''
   - - SOC SOC1 BIND <test_udp_port1> <pc_ip>
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -B -t UDP -p <test_udp_port1>
+  - - SSC SSC1 soc -B -t UDP -p <test_udp_port1> -w 0
     - ['R SSC1 A <sock1>:BIND:(\d+),OK']
-  - - SSC SSC1 soc -W -s <sock1> -o 0
-    - ['R SSC1 RE WORKTHREAD:\d+,OK']
   - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ip>
     - ['']
   - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ip>
@@ -5180,7 +5174,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: abnormal/special use
   test point 2: use UDP SAP (socket/espconn API) in different state
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_UDP_0202
   SDK: '8266_NonOS
@@ -5198,8 +5192,8 @@ test cases:
     - [R SOC_COM L OK]
   - - SSC SSC1 soc -B -t UDP -p <test_udp_port1>
     - ['R SSC1 A <sock1>:BIND:(\d+),OK']
-  - - SSC SSC1 soc -W -s <sock1> -o 0
-    - ['R SSC1 RE WORKTHREAD:\d+,OK']
+  - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ap_ip>
+    - ['']
   - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ap_ip>
     - ['']
   - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ap_ip>
@@ -5257,7 +5251,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: abnormal/special use
   test point 2: use UDP SAP (socket/espconn API) in different state
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: TCPIP_UDP_0301
   SDK: '8266_NonOS
@@ -5874,6 +5868,8 @@ test cases:
     - ['R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)']
   - - SSC SSC1 ap -S -s <target_ssid> -n 15
     - ['R SSC1 C +SAP:OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)']
   - - SSC SSC2 sta -S
     - ['R SSC2 RE "\+SCAN:%%s,.+,\d+,1"%%(<target_ssid>)']
   comment: ''
@@ -7915,7 +7911,7 @@ test cases:
   - - SSC SSC1 sta -S
     - ['']
   - - SSC SSC1 sta -S
-    - [P SSC1 C +SCANFAIL, 'P SSC1 P +SCAN:', R SSC1 C +SCANDONE]
+    - [P SSC1 C +SCANFAIL, 'P SSC1 C +SCAN:', R SSC1 C +SCANDONE]
   comment: ''
   execution time: 0.0
   expected result: '1. second scan failed
@@ -7931,14 +7927,12 @@ test cases:
     2. do scan before scan finished'
   sub module: WIFI Scan
   summary: reject scan request before scan finished
-  test environment: SSC_T2_PhyMode
-  test environment description (auto): '2 SSC target connect with PC by UART.
+  test environment: SSC_T1_1
+  test environment description (auto): 'PC has 2 wired NIC connected to AP.
 
-    PC has one WiFi NIC support capture wlan packet using libpcap.
+    PC has 1 WiFi NIC.
 
-    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
-
-    Put 4 APs near SSC targets.'
+    1 SSC target connect with PC by UART.'
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
@@ -7987,14 +7981,12 @@ test cases:
     3. target 2 scan in AP channel in 11b.g,n,ht40 mode'
   sub module: WIFI Scan
   summary: scan in congest channel
-  test environment: SSC_T2_PhyMode
-  test environment description (auto): '2 SSC target connect with PC by UART.
+  test environment: SSC_T2_1
+  test environment description (auto): 'PC has 1 wired NIC connected to AP.
 
-    PC has one WiFi NIC support capture wlan packet using libpcap.
+    PC has 1 WiFi NIC.
 
-    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
-
-    Put 4 APs near SSC targets.'
+    2 SSC target connect with PC by UART.'
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
@@ -8022,8 +8014,9 @@ test cases:
   expected result: '2. scan succeed, JAP succeed
 
     5. JAP succeed, scan succeed'
-  initial condition: T2_2
-  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  initial condition: STAM1
+  initial condition description (auto): sta mode, quit AP, DHCP on, will autogen a
+    TC with initial condition STAAP1
   level: Integration
   module: WIFI MAC
   steps: '1. target 1 STA join AP
@@ -8037,14 +8030,12 @@ test cases:
     5. target 1 JAP before scan succeed'
   sub module: WIFI Scan
   summary: scan during JAP
-  test environment: SSC_T2_PhyMode
-  test environment description (auto): '2 SSC target connect with PC by UART.
+  test environment: SSC_T1_1
+  test environment description (auto): 'PC has 2 wired NIC connected to AP.
 
-    PC has one WiFi NIC support capture wlan packet using libpcap.
+    PC has 1 WiFi NIC.
 
-    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
-
-    Put 4 APs near SSC targets.'
+    1 SSC target connect with PC by UART.'
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
@@ -8057,6 +8048,8 @@ test cases:
   category: Function
   cmd set:
   - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
   - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
     - ['R SSC2 C +JAP:OK']
   - - SSC SSC1 sta -S
@@ -8087,14 +8080,12 @@ test cases:
     5. target 2 STA JAP before target 1 STA scan succeed'
   sub module: WIFI Scan
   summary: scan during ext STA join SoftAP
-  test environment: SSC_T2_PhyMode
-  test environment description (auto): '2 SSC target connect with PC by UART.
+  test environment: SSC_T2_1
+  test environment description (auto): 'PC has 1 wired NIC connected to AP.
 
-    PC has one WiFi NIC support capture wlan packet using libpcap.
+    PC has 1 WiFi NIC.
 
-    Set 4 AP with phy mode 11b, 11g, 11n HT20, 11n HT40.
-
-    Put 4 APs near SSC targets.'
+    2 SSC target connect with PC by UART.'
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
@@ -8114,7 +8105,7 @@ test cases:
   - - SSC SSC1 dhcp -E -o 1
     - ['R SSC1 C +DHCP:STA,OK']
   - - SSC SSC1 ip -S -i 0.0.0.0
-    - ['R SSC1 C +IP:OK']
+    - [R SSC1 C +IP]
   - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
     - ['']
   - - DELAY 20
@@ -8148,53 +8139,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DHCP client function test
-  version: v1 (2016-8-15)
-- CI ready: 'Yes'
-  ID: ^TCPIP_DHCP_0102
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
-    - ['R SSC1 C +SAP:OK']
-  - - SSC SSC1 dhcp -E -o 2
-    - ['R SSC1 C +DHCP:AP,OK']
-  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
-    - ['']
-  - - DELAY 20
-    - [P PC_COM C +DELAYDONE, 'P SSC2 NC +JAP:CONNECTED']
-  - - SSC SSC1 dhcp -S -o 2
-    - ['R SSC1 C +DHCP:AP,OK']
-  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
-    - ['R SSC2 C +JAP:CONNECTED']
-  comment: ''
-  execution time: 0.0
-  expected result: "1.target1 set AP OK \n2.target1 关闭DHCP OK\n3.target2 jap target\
-    \ 1,FAIL \n4.target1 打开DHCP OK\n5.target2 jap target 1,ok"
-  initial condition: T2_2
-  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
-  level: Integration
-  module: TCPIP
-  steps: "1.target1 set AP OK \n2.target1 关闭DHCP OK\n3.target2 jap target 1,FAIL \n\
-    4.target1 打开DHCP OK\n5.target2 jap target 1,ok"
-  sub module: DHCP
-  summary: dhcp server function test
-  test environment: SSC_T2_1
-  test environment description (auto): 'PC has 1 wired NIC connected to AP.
-
-    PC has 1 WiFi NIC.
-
-    2 SSC target connect with PC by UART.'
-  test point 1: basic function
-  test point 2: DHCP client function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_DHCP_0103
   SDK: '8266_NonOS
@@ -8943,7 +8888,7 @@ test cases:
     - ['R SSC1 C +DHCP:AP,OK']
   - - SSC SSC2 sta -C -s <random_string> -p <random_string>
     - ['R SSC2 C +JAP:CONNECTED']
-  - - DELAY 10
+  - - DELAY 30
     - ['']
   - - SSC SSC1 ap -L
     - [R SSC1 C 192.168.4.2 C 192.168.4.3 P <pc_wifi_nic_mac> P <target2_mac>]
@@ -8983,6 +8928,52 @@ test cases:
   test point 2: DHCP server function test
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: ^TCPIP_DHCP_0212
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  allow fail: ''
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  - - SSC SSC1 dhcp -E -o 2
+    - ['R SSC1 C +DHCP:AP,OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['']
+  - - DELAY 20
+    - [P PC_COM C +DELAYDONE, 'P SSC2 NC +JAP:CONNECTED']
+  - - SSC SSC1 dhcp -S -o 2
+    - ['R SSC1 C +DHCP:AP,OK']
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - ['R SSC2 C +JAP:CONNECTED']
+  comment: ''
+  execution time: 0.0
+  expected result: "1.target1 set AP OK \n2.target1 关闭DHCP OK\n3.target2 jap target\
+    \ 1,FAIL \n4.target1 打开DHCP OK\n5.target2 jap target 1,ok"
+  initial condition: T2_2
+  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
+  level: Integration
+  module: TCPIP
+  steps: "1.target1 set AP OK \n2.target1 关闭DHCP OK\n3.target2 jap target 1,FAIL \n\
+    4.target1 打开DHCP OK\n5.target2 jap target 1,ok"
+  sub module: DHCP
+  summary: dhcp server function test
+  test environment: SSC_T2_1
+  test environment description (auto): 'PC has 1 wired NIC connected to AP.
+
+    PC has 1 WiFi NIC.
+
+    2 SSC target connect with PC by UART.'
+  test point 1: basic function
+  test point 2: DHCP server function test
+  version: v2 (2016-10-19)
+- CI ready: 'Yes'
   ID: ^TCPIP_DHCP_0301
   SDK: '8266_NonOS
 
@@ -9002,7 +8993,7 @@ test cases:
   - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
     - ['R SSC1 C +JAP:CONNECTED']
   - - SSC SSC1 ip -S -i 0.0.0.0 -o 1
-    - ['R SSC1 C +IP:OK']
+    - [R SSC1 C +IP]
   - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
     - ['']
   - - DELAY 10
@@ -9042,7 +9033,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: interaction
   test point 2: static IP and DHCP interaction test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_DHCP_0302
   SDK: '8266_NonOS
@@ -9157,7 +9148,7 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 soc -H -d iot.espressif.cn
+  - - SSC SSC1 soc -H -d factory.espressif.cn
     - ['R SSC1 A <ip_addr>:\+HOSTIP:OK,(.+)\r\n']
   - - SSC SSC1 soc -B -t TCP
     - ['R SSC1 A <sock1>:\+BIND:(\d+),OK']
@@ -9192,7 +9183,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DNS function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_DNS_0103
   SDK: '8266_NonOS
@@ -9206,7 +9197,7 @@ test cases:
   category: Function
   cmd set:
   - ''
-  - - SSC SSC1 soc -H -d iot.espressif.cn
+  - - SSC SSC1 soc -H -d factory.espressif.cn
     - ['R SSC1 A <ip_addr>:\+HOSTIP:OK,(.+)\r\n']
   - - SSC SSC1 soc -B -t UDP
     - ['R SSC1 A <sock1>:\+BIND:(\d+),OK']
@@ -9237,7 +9228,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: DNS function test
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_ICMP_0101
   SDK: '8266_NonOS
@@ -11199,14 +11190,12 @@ test cases:
   - ''
   - - SOC SOC1 LISTEN <test_tcp_port1>
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -B -t TCP
+  - - SSC SSC1 soc -B -t TCP -w 0
     - ['R SSC1 A <sock1>:BIND:(\d+),OK']
   - - SSC SSC1 soc -C -s <sock1> -i <pc_ip> -p <test_tcp_port1>
     - ['R SSC1 RE CONNECT:\d+,OK']
   - - SOC SOC1 ACCEPT SOC2
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -W -s <sock1> -o 0
-    - ['R SSC1 RE WORKTHREAD:\d+,OK']
   - - SOC SOC2 SEND 146000
     - [P SOC_COM R *]
   - - SSC SSC1 soc -W -s <sock1> -o 1
@@ -11254,7 +11243,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_TCP_0206
   SDK: '8266_NonOS
@@ -11288,7 +11277,7 @@ test cases:
     - ['R SSC1 A <sock4>:ACCEPT:(\d+),\d+,.+,\d+']
   - - SSC SSC1 soc -I
     - ['P SSC1 RE "SOCINFO:%%s,2,%%s,\d+,%%s,%%d"%%(<sock1>,<target_ip>,<pc_ip>,<test_tcp_port1>)',
-      'P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)', 'P SSC1 RE "SOCINFO:%%s,82,.+,%%d,.+,\d+"%%(<sock3>,<random_port>)',
+      'P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)', 'P SSC1 RE "SOCINFO:%%s,82,.+,%%d"%%(<sock3>,<random_port>)',
       'P SSC1 RE "SOCINFO:%%s,2,%%s,%%d,%%s,\d+"%%(<sock4>,<target_ip>,<random_port>,<pc_ip>)']
   comment: ''
   execution time: 0.0
@@ -11539,14 +11528,12 @@ test cases:
   - ''
   - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip_wifi>
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -B -t TCP
+  - - SSC SSC1 soc -B -t TCP -w 0
     - ['R SSC1 A <sock1>:BIND:(\d+),OK']
   - - SSC SSC1 soc -C -s <sock1> -i <pc_ip_wifi> -p <test_tcp_port1>
     - ['R SSC1 RE CONNECT:\d+,OK']
   - - SOC SOC1 ACCEPT SOC2
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -W -s <sock1> -o 0
-    - ['R SSC1 RE WORKTHREAD:\d+,OK']
   - - SOC SOC2 SEND 146000
     - [P SOC_COM R *]
   - - SSC SSC1 soc -W -s <sock1> -o 1
@@ -11592,7 +11579,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: basic function
   test point 2: use TCP SAP (socket/espconn API) in different state
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_TCP_0212
   SDK: '8266_NonOS
@@ -11626,7 +11613,7 @@ test cases:
     - ['R SSC1 A <sock4>:ACCEPT:(\d+),\d+,.+,\d+']
   - - SSC SSC1 soc -I
     - ['P SSC1 RE "SOCINFO:%%s,2,%%s,\d+,%%s,%%d"%%(<sock1>,<target_ap_ip>,<pc_ip_wifi>,<test_tcp_port1>)',
-      'P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)', 'P SSC1 RE "SOCINFO:%%s,82,.+,%%d,.+,\d+"%%(<sock3>,<random_port>)',
+      'P SSC1 RE "SOCINFO:%%s,2,.+,\d+,.+,\d+"%%(<sock2>)', 'P SSC1 RE "SOCINFO:%%s,82,.+,%%d"%%(<sock3>,<random_port>)',
       'P SSC1 RE "SOCINFO:%%s,2,%%s,%%d,%%s,\d+"%%(<sock4>,<target_ap_ip>,<random_port>,<pc_ip_wifi>)']
   comment: ''
   execution time: 0.0
@@ -12981,10 +12968,8 @@ test cases:
   - ''
   - - SOC SOC1 BIND <test_udp_port1> <pc_ip>
     - [R SOC_COM L OK]
-  - - SSC SSC1 soc -B -t UDP -p <test_udp_port1>
+  - - SSC SSC1 soc -B -t UDP -p <test_udp_port1> -w 0
     - ['R SSC1 A <sock1>:BIND:(\d+),OK']
-  - - SSC SSC1 soc -W -s <sock1> -o 0
-    - ['R SSC1 RE WORKTHREAD:\d+,OK']
   - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ip>
     - ['']
   - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ip>
@@ -13042,7 +13027,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: abnormal/special use
   test point 2: use UDP SAP (socket/espconn API) in different state
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_UDP_0202
   SDK: '8266_NonOS
@@ -13060,8 +13045,8 @@ test cases:
     - [R SOC_COM L OK]
   - - SSC SSC1 soc -B -t UDP -p <test_udp_port1>
     - ['R SSC1 A <sock1>:BIND:(\d+),OK']
-  - - SSC SSC1 soc -W -s <sock1> -o 0
-    - ['R SSC1 RE WORKTHREAD:\d+,OK']
+  - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ap_ip>
+    - ['']
   - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ap_ip>
     - ['']
   - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ap_ip>
@@ -13119,7 +13104,7 @@ test cases:
     1 SSC target connect with PC by UART.'
   test point 1: abnormal/special use
   test point 2: use UDP SAP (socket/espconn API) in different state
-  version: v1 (2016-8-15)
+  version: v2 (2016-10-19)
 - CI ready: 'Yes'
   ID: ^TCPIP_UDP_0301
   SDK: '8266_NonOS
@@ -14643,70 +14628,6 @@ test cases:
     6.target 2上查询<target_ap_mac>'
   sub module: WIFI Scan
   summary: scan with scan config show hidden
-  test environment: SSC_T2_1
-  test environment description (auto): 'PC has 1 wired NIC connected to AP.
-
-    PC has 1 WiFi NIC.
-
-    2 SSC target connect with PC by UART.'
-  test point 1: basic function
-  test point 2: scan with different config
-  version: v1 (2016-8-15)
-- CI ready: 'Yes'
-  ID: ^WIFI_SCAN_0105
-  SDK: '8266_NonOS
-
-    8266_RTOS
-
-    ESP32_IDF'
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 sta -D
-    - ['R SSC1 C +QAP:']
-  - - SSC SSC1 ap -S -s <target_tmp_ssid> -p 123456789 -t 3 -h 0 -n 11
-    - ['R SSC1 C +SAP:OK']
-  - - SSC SSC2 sta -S -s <target_tmp_ssid> -b <target_ap_mac> -n 11
-    - [R SSC2 P <target_tmp_ssid> C +SCANDONE]
-  - - SSC SSC2 sta -S -s <target_ssid> -b <target_ap_mac> -n 11
-    - [R SSC2 NP <target_tmp_ssid> C +SCANDONE]
-  - - SSC SSC2 sta -S -s <target_tmp_ssid> -b ff:ff:ff:ff:ff:11 -n 11
-    - [R SSC2 P <target_tmp_ssid>, R SSC2 NP <target_tmp_ssid> C +SCANDONE]
-  - - SSC SSC2 sta -S -s <target_tmp_ssid> -b <target_ap_mac> -n 10
-    - [R SSC2 P <target_tmp_ssid>, R SSC2 NP <target_tmp_ssid> C +SCANDONE]
-  comment: ''
-  execution time: 0.0
-  expected result: '1.target1 QAP
-
-    2. target1 set AP,set ssid broad cast,set channel 11
-
-    3.target2 上查询到<target_tmp_ssid>
-
-    4.target2 上查询不到<target_tmp_ssid>
-
-    5.target2 上查询不到<target_tmp_ssid>
-
-    6.target2 上查询不到<target_tmp_ssid>'
-  initial condition: T2_2
-  initial condition description (auto): target 1 as AP+STA, target 2 as AP+STA (autogen)
-  level: Integration
-  module: WIFI MAC
-  steps: '1.target1 QAP
-
-    2. target1 set AP,set ssid broad cast,set channel 11
-
-    3.target2 上查询到<target_tmp_ssid>
-
-    4.target2 上查询不到<target_tmp_ssid>
-
-    5.target2 上查询不到<target_tmp_ssid>
-
-    6.target2 上查询不到<target_tmp_ssid>'
-  sub module: WIFI Scan
-  summary: scan with several configs
   test environment: SSC_T2_1
   test environment description (auto): 'PC has 1 wired NIC connected to AP.
 

@@ -57,10 +57,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
 #ifndef TCP_LOCAL_PORT_RANGE_START
 /* From http://www.iana.org/assignments/port-numbers:
    "The Dynamic and/or Private Ports are those from 49152 through 65535" */
@@ -77,14 +73,7 @@ static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
 #define TCP_KEEP_INTVL(pcb) TCP_KEEPINTVL_DEFAULT
 #endif /* LWIP_TCP_KEEPALIVE */
 
-#ifdef LWIP_ESP8266
-//TO_DO
-//char tcp_state_str[12];
-//const char tcp_state_str_rodata[][12] ICACHE_RODATA_ATTR STORE_ATTR = {
 const char * const tcp_state_str[] = {
-#else
-const char * const tcp_state_str[] = {
-#endif
   "CLOSED",
   "LISTEN",
   "SYN_SENT",
@@ -100,27 +89,14 @@ const char * const tcp_state_str[] = {
 
 
 /* last local TCP port */
-#ifdef LWIP_ESP8266
 static s16_t tcp_port = TCP_LOCAL_PORT_RANGE_START;
-#else
-static u16_t tcp_port = TCP_LOCAL_PORT_RANGE_START;
-#endif
 
 /* Incremented every coarse grained timer shot (typically every 500 ms). */
 u32_t tcp_ticks;
 
-#ifdef LWIP_ESP8266
-//TO_DO
-//const u8_t tcp_backoff[13] ICACHE_RODATA_ATTR STORE_ATTR ={ 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7};
-//const u8_t tcp_persist_backoff[7] ICACHE_RODATA_ATTR STORE_ATTR = { 3, 6, 12, 24, 48, 96, 120 };
-
-const u8_t tcp_backoff[13] = { 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7};
-const u8_t tcp_persist_backoff[7] = { 3, 6, 12, 24, 48, 96, 120 };
-#else
 const u8_t tcp_backoff[13] = { 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7};
  /* Times per slowtmr hits */
 const u8_t tcp_persist_backoff[7] = { 3, 6, 12, 24, 48, 96, 120 };
-#endif
 
 
 /* The TCP PCB lists. */
@@ -136,18 +112,8 @@ struct tcp_pcb *tcp_active_pcbs;
 struct tcp_pcb *tcp_tw_pcbs;
 
 /** An array with all (non-temporary) PCB lists, mainly used for smaller code size */
-#ifdef LWIP_ESP8266
-//TO_DO
-//struct tcp_pcb ** const tcp_pcb_lists[] ICACHE_RODATA_ATTR STORE_ATTR = {&tcp_listen_pcbs.pcbs, &tcp_bound_pcbs,
-   //     &tcp_active_pcbs, &tcp_tw_pcbs};
 struct tcp_pcb ** const tcp_pcb_lists[] = {&tcp_listen_pcbs.pcbs, &tcp_bound_pcbs,
         &tcp_active_pcbs, &tcp_tw_pcbs};
-
-#else
-struct tcp_pcb ** const tcp_pcb_lists[] = {&tcp_listen_pcbs.pcbs, &tcp_bound_pcbs,
-        &tcp_active_pcbs, &tcp_tw_pcbs};
-#endif
-
 
 u8_t tcp_active_pcbs_changed;
 
@@ -638,7 +604,7 @@ u32_t tcp_update_rcv_ann_wnd(struct tcp_pcb *pcb)
 {
   u32_t new_right_edge = pcb->rcv_nxt + pcb->rcv_wnd;
 
-  if (TCP_SEQ_GEQ(new_right_edge, pcb->rcv_ann_right_edge + LWIP_MIN((TCP_WND / 2), pcb->mss))) {
+  if (TCP_SEQ_GEQ(new_right_edge, pcb->rcv_ann_right_edge + LWIP_MIN((TCP_WND(pcb) / 2), pcb->mss))) {
     /* we can advertise more window */
     pcb->rcv_ann_wnd = pcb->rcv_wnd;
     return new_right_edge - pcb->rcv_ann_right_edge;
@@ -694,10 +660,10 @@ tcp_recved(struct tcp_pcb *pcb, u16_t len)
   wnd_inflation = tcp_update_rcv_ann_wnd(pcb);
 
   /* If the change in the right edge of window is significant (default
-   * watermark is TCP_WND/4), then send an explicit update now.
+   * watermark is TCP_WND(pcb)/4), then send an explicit update now.
    * Otherwise wait for a packet to be sent in the normal course of
    * events (or more window to be available later) */
-  if (wnd_inflation >= TCP_WND_UPDATE_THRESHOLD) {
+  if (wnd_inflation >= TCP_WND_UPDATE_THRESHOLD(pcb)) {
     tcp_ack_now(pcb);
     tcp_output(pcb);
   }
@@ -720,7 +686,7 @@ tcp_new_port(void)
 
 again:
 
-#ifdef LWIP_ESP8266
+#if ESP_RANDOM_TCP_PORT
 	tcp_port = system_get_time();
 	if (tcp_port < 0)
 		tcp_port = LWIP_RAND() - tcp_port;
@@ -827,9 +793,9 @@ tcp_connect(struct tcp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port,
   pcb->snd_lbb = iss - 1;
   /* Start with a window that does not need scaling. When window scaling is
      enabled and used, the window is enlarged when both sides agree on scaling. */
-  pcb->rcv_wnd = pcb->rcv_ann_wnd = TCPWND_MIN16(TCP_WND);
+  pcb->rcv_wnd = pcb->rcv_ann_wnd = TCPWND_MIN16(TCP_WND(pcb));
   pcb->rcv_ann_right_edge = pcb->rcv_nxt;
-  pcb->snd_wnd = TCP_WND;
+  pcb->snd_wnd = TCP_WND(pcb);
   /* As initial send MSS, we use TCP_MSS but limit it to 536.
      The send MSS is updated when an MSS option is received. */
   pcb->mss = (TCP_MSS > 536) ? 536 : TCP_MSS;
@@ -837,7 +803,7 @@ tcp_connect(struct tcp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port,
   pcb->mss = tcp_eff_send_mss(pcb->mss, &pcb->local_ip, &pcb->remote_ip);
 #endif /* TCP_CALCULATE_EFF_SEND_MSS */
   pcb->cwnd = 1;
-  pcb->ssthresh = TCP_WND;
+  pcb->ssthresh = TCP_WND(pcb);
 #if LWIP_CALLBACK_API
   pcb->connected = connected;
 #else /* LWIP_CALLBACK_API */
@@ -915,13 +881,7 @@ tcp_slowtmr_start:
         
         /* If snd_wnd is zero, use persist timer to send 1 byte probes
          * instead of using the standard retransmission mechanism. */
-#ifdef LWIP_ESP8266
-//NEED TO DO
-        //u8_t backoff_cnt = system_get_data_of_array_8(tcp_persist_backoff, pcb->persist_backoff-1);
         u8_t backoff_cnt = tcp_persist_backoff[pcb->persist_backoff-1];
-#else
-        u8_t backoff_cnt = tcp_persist_backoff[pcb->persist_backoff-1];
-#endif
 
         if (pcb->persist_cnt < backoff_cnt) {
           pcb->persist_cnt++;
@@ -949,15 +909,7 @@ tcp_slowtmr_start:
           /* Double retransmission time-out unless we are trying to
            * connect to somebody (i.e., we are in SYN_SENT). */
           if (pcb->state != SYN_SENT) {
-
-#ifdef LWIP_ESP8266
-//TO_DO
-//            pcb->rto = ((pcb->sa >> 3) + pcb->sv) << system_get_data_of_array_8(tcp_backoff, pcb->nrtx);  
               pcb->rto = ((pcb->sa >> 3) + pcb->sv) << tcp_backoff[pcb->nrtx];
-#else
-              pcb->rto = ((pcb->sa >> 3) + pcb->sv) << tcp_backoff[pcb->nrtx];
-#endif
-
           }
 
           /* Reset the retransmission timer. */
@@ -1436,7 +1388,7 @@ tcp_kill_timewait(void)
   }
 }
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 /**
  * Kills the oldest connection that is in FIN_WAIT_2 state.
  * Called from tcp_alloc() if no more connections are available.
@@ -1502,7 +1454,7 @@ tcp_alloc(u8_t prio)
   struct tcp_pcb *pcb;
   u32_t iss;
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
     /*Kills the oldest connection that is in TIME_WAIT state.*/
     u8_t time_wait_num = 0;
     for(pcb = tcp_tw_pcbs; pcb != NULL; pcb = pcb->next) {
@@ -1580,12 +1532,18 @@ tcp_alloc(u8_t prio)
   }
   if (pcb != NULL) {
     memset(pcb, 0, sizeof(struct tcp_pcb));
+
+#if ESP_PER_SOC_TCP_WND
+    pcb->per_soc_tcp_wnd = TCP_WND_DEFAULT;
+    pcb->per_soc_tcp_snd_buf = TCP_SND_BUF_DEFAULT;
+#endif
+
     pcb->prio = prio;
-    pcb->snd_buf = TCP_SND_BUF;
+    pcb->snd_buf = TCP_SND_BUF_DEFAULT;
     pcb->snd_queuelen = 0;
     /* Start with a window that does not need scaling. When window scaling is
        enabled and used, the window is enlarged when both sides agree on scaling. */
-    pcb->rcv_wnd = pcb->rcv_ann_wnd = TCPWND_MIN16(TCP_WND);
+    pcb->rcv_wnd = pcb->rcv_ann_wnd = TCPWND_MIN16(TCP_WND(pcb));
 #if LWIP_WND_SCALE
     /* snd_scale and rcv_scale are zero unless both sides agree to use scaling */
     pcb->snd_scale = 0;
@@ -1608,7 +1566,6 @@ tcp_alloc(u8_t prio)
     pcb->snd_lbb = iss;
     pcb->tmr = tcp_ticks;
     pcb->last_timer = tcp_timer_ctr;
-
     pcb->polltmr = 0;
 
 #if LWIP_CALLBACK_API
@@ -1625,6 +1582,7 @@ tcp_alloc(u8_t prio)
 
     pcb->keep_cnt_sent = 0;
   }
+
   return pcb;
 }
 
@@ -2010,14 +1968,7 @@ void tcp_netif_ipv4_addr_changed(const ip4_addr_t* old_addr, const ip4_addr_t* n
 const char*
 tcp_debug_state_str(enum tcp_state s)
 {
-#ifdef LWIP_ESP8266
-//TO_DO
-      //system_get_string_from_flash(tcp_state_str_rodata[s], tcp_state_str, 12);
-      //return tcp_state_str;
       return tcp_state_str[s];
-#else
-      return tcp_state_str[s];
-#endif
 }
 
 #if TCP_DEBUG || TCP_INPUT_DEBUG || TCP_OUTPUT_DEBUG

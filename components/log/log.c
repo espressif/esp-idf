@@ -284,7 +284,7 @@ static inline void heap_swap(int i, int j)
 }
 #endif //BOOTLOADER_BUILD
 
-inline IRAM_ATTR uint32_t esp_log_early_timestamp()
+IRAM_ATTR uint32_t esp_log_early_timestamp()
 {
     return xthal_get_ccount() / (CPU_CLK_FREQ_ROM / 1000);
 }

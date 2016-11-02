@@ -37,6 +37,7 @@ help:
 	@echo "'make partition_table', etc, etc."
 
 # disable built-in make rules, makes debugging saner
+MAKEFLAGS_OLD := $(MAKEFLAGS)
 MAKEFLAGS +=-rR
 
 # Figure out PROJECT_PATH if not set
@@ -50,6 +51,7 @@ endif
 #The directory where we put all objects/libraries/binaries. The project Makefile can
 #configure this if needed.
 BUILD_DIR_BASE ?= $(PROJECT_PATH)/build
+export BUILD_DIR_BASE
 
 #Component directories. These directories are searched for components.
 #The project Makefile can override these component dirs, or define extra component directories.
@@ -105,7 +107,7 @@ COMPONENT_INCLUDES := $(abspath $(foreach comp,$(COMPONENT_PATHS_BUILDABLE),$(ad
 	$(call GetVariable,$(comp),COMPONENT_ADD_INCLUDEDIRS))))
 
 #Also add project include path, for sdk includes
-COMPONENT_INCLUDES += $(PROJECT_PATH)/build/include/
+COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
 export COMPONENT_INCLUDES
 
 #COMPONENT_LDFLAGS has a list of all flags that are needed to link the components together. It's collected
@@ -149,23 +151,61 @@ LDFLAGS ?= -nostdlib \
 	-Wl,-EL
 
 # Set default CPPFLAGS, CFLAGS, CXXFLAGS
-#
 # These are exported so that components can use them when compiling.
-#
 # If you need your component to add CFLAGS/etc for it's own source compilation only, set CFLAGS += in your component's Makefile.
-#
 # If you need your component to add CFLAGS/etc globally for all source
-# files, set CFLAGS += in your component's Makefile.projbuild
+#  files, set CFLAGS += in your component's Makefile.projbuild
+# If you need to set CFLAGS/CPPFLAGS/CXXFLAGS at project level, set them in application Makefile
+#  before including project.mk. Default flags will be added before the ones provided in application Makefile.
 
-# CPPFLAGS used by an compile pass that uses the C preprocessor
-CPPFLAGS = -DESP_PLATFORM -Og -g3 -Wpointer-arith -Werror -Wno-error=unused-function -Wno-error=unused-but-set-variable \
-		-Wno-error=unused-variable -Wall -ffunction-sections -fdata-sections -mlongcalls -nostdlib -MMD -MP
+# CPPFLAGS used by C preprocessor
+# If any flags are defined in application Makefile, add them at the end. 
+CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS)
 
-# C flags use by C only
-CFLAGS = $(CPPFLAGS) -std=gnu99 -g3 -fstrict-volatile-bitfields
+# Warnings-related flags relevant both for C and C++
+COMMON_WARNING_FLAGS = -Wall -Werror \
+	-Wno-error=unused-function \
+	-Wno-error=unused-but-set-variable \
+	-Wno-error=unused-variable 
 
-# CXXFLAGS uses by C++ only
-CXXFLAGS = $(CPPFLAGS) -Og -std=gnu++11 -g3 -fno-exceptions -fstrict-volatile-bitfields -fno-rtti
+# Flags which control code generation and dependency generation, both for C and C++
+COMMON_FLAGS = \
+	-ffunction-sections -fdata-sections \
+	-fstrict-volatile-bitfields \
+	-mlongcalls \
+	-nostdlib \
+	-MMD -MP
+
+# Optimization flags are set based on menuconfig choice
+ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
+OPTIMIZATION_FLAGS = -Os
+CPPFLAGS += -DNDEBUG
+else
+OPTIMIZATION_FLAGS = -Og
+endif
+
+# Enable generation of debugging symbols
+OPTIMIZATION_FLAGS += -ggdb
+
+# List of flags to pass to C compiler
+# If any flags are defined in application Makefile, add them at the end.
+CFLAGS := $(strip \
+	-std=gnu99 \
+	$(OPTIMIZATION_FLAGS) \
+	$(COMMON_FLAGS) \
+	$(COMMON_WARNING_FLAGS) \
+	$(CFLAGS))
+
+# List of flags to pass to C++ compiler
+# If any flags are defined in application Makefile, add them at the end.
+CXXFLAGS := $(strip \
+	-std=gnu++11 \
+	-fno-exceptions \
+	-fno-rtti \
+	$(OPTIMIZATION_FLAGS) \
+	$(COMMON_FLAGS) \
+	$(COMMON_WARNING_FLAGS) \
+	$(CXXFLAGS))
 
 export CFLAGS CPPFLAGS CXXFLAGS
 
@@ -174,6 +214,7 @@ HOSTCC := $(CC)
 HOSTLD := $(LD)
 HOSTAR := $(AR)
 HOSTOBJCOPY := $(OBJCOPY)
+export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY
 
 #Set target compiler. Defaults to whatever the user has
 #configured as prefix + yer olde gcc commands
@@ -230,7 +271,7 @@ define GenerateComponentPhonyTarget
 # $(2) - target to generate (build, clean)
 .PHONY: $(notdir $(1))-$(2)
 $(notdir $(1))-$(2): | $(BUILD_DIR_BASE)/$(notdir $(1))
-	@+$(MAKE) -C $(BUILD_DIR_BASE)/$(notdir $(1)) -f $(1)/component.mk COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(notdir $(1)) $(2)
+	$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(notdir $(1)) -f $(1)/component.mk COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(notdir $(1)) $(2)
 endef
 
 define GenerateComponentTargets

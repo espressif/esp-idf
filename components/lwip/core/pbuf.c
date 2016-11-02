@@ -78,12 +78,8 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-#ifdef LWIP_ESP8266
-#define EP_OFFSET 0
+#if ESP_LWIP
+#include "esp_wifi_internal.h"
 #endif
 
 #define SIZEOF_STRUCT_PBUF        LWIP_MEM_ALIGN_SIZE(sizeof(struct pbuf))
@@ -207,12 +203,7 @@ struct pbuf *
 pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 {
   struct pbuf *p, *q, *r;
-  
-#ifdef LWIP_ESP8266
-    u16_t offset = 0;
-#else
-    u16_t offset;
-#endif
+  u16_t offset = 0;
   
   s32_t rem_len; /* remaining length */
   LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_alloc(length=%"U16_F")\n", length));
@@ -223,47 +214,15 @@ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
     /* add room for transport (often TCP) layer header */
     offset = PBUF_LINK_ENCAPSULATION_HLEN + PBUF_LINK_HLEN + PBUF_IP_HLEN + PBUF_TRANSPORT_HLEN;
 
-#ifdef LWIP_ESP8266    //TO_DO
-    offset += EP_OFFSET;
-#endif
-    
     break;
   case PBUF_IP:
     /* add room for IP layer header */
     offset = PBUF_LINK_ENCAPSULATION_HLEN + PBUF_LINK_HLEN + PBUF_IP_HLEN;
 
-#ifdef LWIP_ESP8266    //TO_DO
-    offset += EP_OFFSET;
-#endif
-    
     break;
   case PBUF_LINK:
     /* add room for link layer header */
     offset = PBUF_LINK_ENCAPSULATION_HLEN + PBUF_LINK_HLEN;
-
-#ifdef LWIP_ESP8266    //TO_DO
-    /*
-     * 1. LINK_HLEN 14Byte will be remove in WLAN layer
-     * 2. IEEE80211_HDR_MAX_LEN needs 40 bytes.
-     * 3. encryption needs exra 4 bytes ahead of actual data payload, and require
-     *     DAddr and SAddr to be 4-byte aligned.
-     * 4. TRANSPORT and IP are all 20, 4 bytes aligned, nice...
-     * 5. LCC add 6 bytes more, We don't consider WAPI yet...
-     * 6. define LWIP_MEM_ALIGN to be 4 Byte aligned, pbuf struct is 16B, Only thing may be
-     *     matter is ether_hdr is not 4B aligned.
-     *
-     * So, we need extra (40 + 4 - 14) = 30 and it's happen to be 4-Byte aligned
-     *
-     *    1. lwip
-     *         | empty 30B    | eth_hdr (14B)  | payload ...|
-     *              total: 44B ahead payload
-     *    2. net80211
-     *         | max 80211 hdr, 32B | ccmp/tkip iv (8B) | sec rsv(4B) | payload ...|
-     *              total: 40B ahead sec_rsv and 44B ahead payload
-     *
-     */
-    offset += EP_OFFSET;                //remove LINK hdr in wlan
-#endif   
 
     break;
   case PBUF_RAW_TX:
@@ -272,10 +231,6 @@ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
     break;
   case PBUF_RAW:
     offset = 0;
-
-#ifdef LWIP_ESP8266    //TO_DO
-    offset += EP_OFFSET;  
-#endif
 
     break;
   default:
@@ -395,9 +350,10 @@ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
   /* set flags */
   p->flags = 0;
   
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
   p->eb = NULL; 
 #endif
+
   LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_alloc(length=%"U16_F") == %p\n", length, (void *)p));
   return p;
 }
@@ -763,9 +719,8 @@ pbuf_free(struct pbuf *p)
         /* is this a ROM or RAM referencing pbuf? */
         } else if (type == PBUF_ROM || type == PBUF_REF) {
         
-#ifdef LWIP_ESP8266
-          extern void system_pp_recycle_rx_pkt(void*);
-          if (type == PBUF_REF && p->eb != NULL ) system_pp_recycle_rx_pkt(p->eb);
+#if ESP_LWIP
+          if (type == PBUF_REF && p->eb != NULL ) esp_wifi_internal_free_rx_buffer(p->eb);
 #endif
 
             memp_free(MEMP_PBUF, p);

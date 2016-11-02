@@ -1,0 +1,22 @@
+PROJECT_NAME = "ESP32 Programming Guide"
+
+INPUT = ../components/esp32/include/esp_wifi.h ../components/driver/include/driver ../components/esp32/include/rom/gpio.h ../components/bt/include ../components/nvs_flash/include ../components/log/include ../components/vfs/include
+
+WARN_NO_PARAMDOC	= YES
+
+RECURSIVE		= NO
+CASE_SENSE_NAMES 	= NO
+EXTRACT_ALL		= NO
+
+GENERATE_XML		= YES
+XML_OUTPUT		= xml
+
+GENERATE_HTML		= NO
+HAVE_DOT		= NO
+GENERATE_LATEX		= NO
+GENERATE_MAN		= NO
+GENERATE_RTF		= NO
+
+QUIET = YES
+WARN_LOGFILE = "doxygen-warning-log.txt"
+

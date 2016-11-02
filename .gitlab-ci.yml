@@ -1,6 +1,7 @@
 stages:
   - build
   - test
+  - test_report
   - deploy
 
 before_script:
@@ -36,6 +37,12 @@ build_template_app:
     # using on esp-idf. If it doesn't exist then just stick to the default
     # branch
     - git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
+    - make defconfig
+    # Test debug build (default)
+    - make all V=1
+    # Now test release build
+    - make clean
+    - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
     - make defconfig
     - make all V=1
 
@@ -86,6 +93,20 @@ build_examples:
     - cd build_examples
     - ${IDF_PATH}/make/build_examples.sh
 
+build_docs:
+  stage: build
+  image: espressif/esp32-ci-env
+  tags:
+    - build_docs
+  script:
+    - cd docs
+    - make html
+  artifacts:
+    paths:
+      - docs/_build/html
+    expire_in: 1 mos
+
+
 test_nvs_on_host:
   stage: test
   image: espressif/esp32-ci-env
@@ -106,13 +127,12 @@ test_build_system:
     - ./make/test_build_system.sh
 
 test_report:
-  stage: deploy
+  stage: test_report
   only:
     - master
     - triggers
   tags:
     - test_report
-  allow_failure: true
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
@@ -121,7 +141,7 @@ test_report:
     when: always
     paths:
       - $REPORT_PATH
-    expire_in: 6 mos
+    expire_in: 12 mos
   script:
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
@@ -151,6 +171,31 @@ push_master_to_github:
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git remote add github git@github.com:espressif/esp-idf.git
     - git push --follow-tags github HEAD:master
+
+
+deploy_docs:
+  before_script:
+    - echo "Not setting up GitLab key, not fetching submodules"
+  stage: deploy
+  only:
+   - master
+   - triggers
+  tags:
+    - deploy
+  image: espressif/esp32-ci-env
+  script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $DOCS_DEPLOY_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host $DOCS_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_SERVER_USER\n" >> ~/.ssh/config
+    - export GIT_VER=$(git describe --always)
+    - cd docs/_build/
+    - mv html $GIT_VER
+    - tar czvf $GIT_VER.tar.gz $GIT_VER
+    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH
+    - ssh $DOCS_SERVER -x "cd $DOCS_PATH && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
 
 
 # AUTO GENERATED PART START, DO NOT MODIFY CONTENT BELOW

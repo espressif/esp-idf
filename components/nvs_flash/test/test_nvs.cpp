@@ -894,7 +894,7 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
     
     size_t totalOps = 0;
     int lastPercent = -1;
-    for (uint32_t errDelay = 4; ; ++errDelay) {
+    for (uint32_t errDelay = 0; ; ++errDelay) {
         INFO(errDelay);
         emu.randomize(seed);
         emu.clearStats();
@@ -903,23 +903,25 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
         
         if (totalOps != 0) {
             int percent = errDelay * 100 / totalOps;
-            if (percent != lastPercent) {
+            if (percent > lastPercent) {
                 printf("%d/%d (%d%%)\r\n", errDelay, static_cast<int>(totalOps), percent);
                 lastPercent = percent;
             }
         }
         
-        TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
 
         nvs_handle handle;
-        TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
-        
         size_t count = iter_count;
-        if(test.doRandomThings(handle, gen, count) != ESP_ERR_FLASH_OP_FAIL) {
-            nvs_close(handle);
-            break;
+
+        if (nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK) {
+            if (nvs_open("namespace1", NVS_READWRITE, &handle) == ESP_OK) {
+                if(test.doRandomThings(handle, gen, count) != ESP_ERR_FLASH_OP_FAIL) {
+                    nvs_close(handle);
+                    break;
+                }
+                nvs_close(handle);
+            }
         }
-        nvs_close(handle);
         
         TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
         TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
@@ -929,9 +931,129 @@ TEST_CASE("test recovery from sudden poweroff", "[.][long][nvs][recovery][monkey
             CHECK(0);
         }
         nvs_close(handle);
-        totalOps = emu.getEraseOps() + emu.getWriteOps();
+        totalOps = emu.getEraseOps() + emu.getWriteBytes() / 4;
     }
 }
+
+TEST_CASE("test for memory leaks in open/set", "[leaks]")
+{
+    SpiFlashEmulator emu(10);
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+    
+    for (int i = 0; i < 100000; ++i) {
+        nvs_handle light_handle = 0;
+        char lightbulb[1024] = {12, 13, 14, 15, 16};
+        TEST_ESP_OK(nvs_open("light", NVS_READWRITE, &light_handle));
+        TEST_ESP_OK(nvs_set_blob(light_handle, "key", lightbulb, sizeof(lightbulb)));
+        TEST_ESP_OK(nvs_commit(light_handle));
+        nvs_close(light_handle);
+    }
+}
+
+TEST_CASE("duplicate items are removed", "[nvs][dupes]")
+{
+    SpiFlashEmulator emu(3);
+    {
+        // create one item
+        nvs::Page p;
+        p.load(0);
+        p.writeItem<uint8_t>(1, "opmode", 3);
+    }
+    {
+        // add another two without deleting the first one
+        nvs::Item item(1, ItemType::U8, 1, "opmode");
+        item.data[0] = 2;
+        item.crc32 = item.calculateCrc32();
+        emu.write(3 * 32, reinterpret_cast<const uint32_t*>(&item), sizeof(item));
+        emu.write(4 * 32, reinterpret_cast<const uint32_t*>(&item), sizeof(item));
+        uint32_t mask = 0xFFFFFFEA;
+        emu.write(32, &mask, 4);
+    }
+    {
+        // load page and check that second item persists
+        nvs::Storage s;
+        s.init(0, 3);
+        uint8_t val;
+        ESP_ERROR_CHECK(s.readItem(1, "opmode", val));
+        CHECK(val == 2);
+    }
+    {
+        Page p;
+        p.load(0);
+        CHECK(p.getErasedEntryCount() == 2);
+        CHECK(p.getUsedEntryCount() == 1);
+    }
+}
+
+TEST_CASE("recovery after failure to write data", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    const char str[] = "value 0123456789abcdef012345678value 0123456789abcdef012345678";
+
+    // make flash write fail exactly in Page::writeEntryData
+    emu.failAfter(17);
+    {
+        Storage storage;
+        TEST_ESP_OK(storage.init(0, 3));
+        
+        TEST_ESP_ERR(storage.writeItem(1, ItemType::SZ, "key", str, strlen(str)), ESP_ERR_FLASH_OP_FAIL);
+        
+        // check that repeated operations cause an error
+        TEST_ESP_ERR(storage.writeItem(1, ItemType::SZ, "key", str, strlen(str)), ESP_ERR_NVS_INVALID_STATE);
+        
+        uint8_t val;
+        TEST_ESP_ERR(storage.readItem(1, ItemType::U8, "key", &val, sizeof(val)), ESP_ERR_NVS_NOT_FOUND);
+    }
+    {
+        // load page and check that data was erased
+        Page p;
+        p.load(0);
+        CHECK(p.getErasedEntryCount() == 3);
+        CHECK(p.getUsedEntryCount() == 0);
+        
+        // try to write again
+        TEST_ESP_OK(p.writeItem(1, ItemType::SZ, "key", str, strlen(str)));
+    }
+}
+
+TEST_CASE("crc error in variable length item is handled", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    const uint64_t before_val = 0xbef04e;
+    const uint64_t after_val = 0xaf7e4;
+    // write some data
+    {
+        Page p;
+        p.load(0);
+        TEST_ESP_OK(p.writeItem<uint64_t>(0, "before", before_val));
+        const char* str = "foobar";
+        TEST_ESP_OK(p.writeItem(0, ItemType::SZ, "key", str, strlen(str)));
+        TEST_ESP_OK(p.writeItem<uint64_t>(0, "after", after_val));
+    }
+    // corrupt some data
+    uint32_t w;
+    CHECK(emu.read(&w, 32 * 3 + 8, sizeof(w)));
+    w &= 0xf000000f;
+    CHECK(emu.write(32 * 3 + 8, &w, sizeof(w)));
+    // load and check
+    {
+        Page p;
+        p.load(0);
+        CHECK(p.getUsedEntryCount() == 2);
+        CHECK(p.getErasedEntryCount() == 2);
+
+        uint64_t val;
+        TEST_ESP_OK(p.readItem<uint64_t>(0, "before", val));
+        CHECK(val == before_val);
+        TEST_ESP_ERR(p.findItem(0, ItemType::SZ, "key"), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_OK(p.readItem<uint64_t>(0, "after", val));
+        CHECK(val == after_val);
+    }
+}
+
 
 TEST_CASE("dump all performance data", "[nvs]")
 {
