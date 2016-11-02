@@ -32,7 +32,7 @@ class UnitTest(PerformanceTCBase.PerformanceTCBase):
                 time.sleep(1) #wait for test to run before reading result
                 data += self.serial_read_data("UT1")
                 if re.search('[^0] Tests 0 F', data): #check that number of tests run != 0 and number of tests failed == 0
-                    self.set_result("Success")
+                    self.set_result("Succeed")
                     break
             else:
                 self.set_result("Fail")
