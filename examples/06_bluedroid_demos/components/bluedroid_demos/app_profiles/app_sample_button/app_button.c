@@ -41,6 +41,13 @@
 #include "button_pro.h"
 #include "app_button_int.h"
 
+static const tBTA_SYS_REG bta_gatts_reg =
+{
+    ble_but_prf_hdl_event,
+    ble_but_prf_disable
+};
+
+
 
 /*******************************************************************************
 **
@@ -80,6 +87,40 @@ BOOLEAN ble_but_prf_hdl_event(BT_HDR *msg_data)
 			break;
 	}
 }
+
+
+/*******************************************************************************
+**
+** Function         ble_but_prf_disable
+**
+** Description      This function is called to disable the button profile modlue
+**
+** Parameters       None.
+**
+** Returns          None
+**
+*******************************************************************************/
+void ble_but_prf_disable(void)
+{
+    BT_HDR  *p_buf;
+
+    if (bt_prf_sys_is_register(PRF_ID_BUT_LE) == FALSE)
+    {
+        APPL_TRACE_WARNING("button profile Module not enabled/already disabled");
+        return;
+    }
+
+    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
+    {
+        p_buf->event = BTA_GATTS_API_DISABLE_EVT;
+        bta_sys_sendmsg(p_buf);
+    }
+    bta_sys_deregister(PRF_ID_BUT_LE);
+
+}
+
+
+
 
 
 

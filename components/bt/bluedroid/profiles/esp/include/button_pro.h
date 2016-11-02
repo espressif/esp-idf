@@ -65,30 +65,30 @@ enum
 
 typedef struct
 {
-    BD_ADDR remote_bda;
-    BOOLEAN need_rsp;
-    UINT16  clt_cfg;
+    BD_ADDR 	remote_bda;
+    BOOLEAN 	need_rsp;
+    uint16_t 	clt_cfg;
 }but_write_data_t;
 
 typedef struct
 {
     BOOLEAN         in_use;
 	BOOLEAN			congest;
-    UINT16          conn_id;
+    uint16_t        conn_id;
     BOOLEAN         connected;
     BD_ADDR         remote_bda;
-    UINT32          trans_id;
-    UINT8           cur_srvc_id;
+    uint32_t        trans_id;
+    uint8_t         cur_srvc_id;
 
 }but_clcb_t;
 
 
 typedef struct
 {
-    UINT8           app_id;
-    UINT16          but_wirt_hdl;
-    UINT16          but_ntf_hdl;
-    UINT16          but_cfg_hdl;
+    uint8_t           app_id;
+    uint16_t          but_wirt_hdl;
+    uint16_t          but_ntf_hdl;
+    uint16_t          but_cfg_hdl;
  
     but_prf_cb_t    p_cback;
 
@@ -99,11 +99,11 @@ typedef struct
 typedef struct
 {
     but_clcb_t             	clcb; 			/* connection link*/
-    tGATT_IF                gatt_if;
+    esp_gatt_if_t           gatt_if;
     BOOLEAN                 enabled;
 	BOOLEAN					is_primery;
-	but_inst_t               button_inst;
-    UINT8                   inst_id;
+	but_inst_t              button_inst;
+    uint8_t                 inst_id;
 }button_env_cb_t;
 
 void Button_CreateService(void);

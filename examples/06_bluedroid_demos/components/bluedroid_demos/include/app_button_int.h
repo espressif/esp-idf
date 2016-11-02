@@ -105,9 +105,23 @@ typedef struct
     uint16_t conhdl;
 }tBUT_DISABLE_IND;
 
+typedef union
+{
+	uint16_t conhdl;
+	tBUT_CRT_DB_REQ 		but_crt_db_req;
+	tBUT_CRT_DB_CFM 		but_crt_db_cfm;
+	tBUT_CFG_NTF_IND		but_cfg_ntf_ind;
+	tBUT_SND_CHAR_VAL_REQ	but_snd_char_val_req;
+	tBUT_ENABLE_REQ			but_enable_req;
+	tBUT_VAL_SND_CFM		but_val_snd_cfm;
+	tBUT_DISABLE_IND		but_disable_ind;
+}tBUT_PRF_MSG;
+
 
 
 BOOLEAN ble_but_prf_hdl_event(BT_HDR *msg_data);
+
+void ble_but_prf_disable(void);
 
 
 
