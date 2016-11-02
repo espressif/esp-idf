@@ -168,7 +168,7 @@ esp_ble_adv_data_cfg_t wechat_adv_data[ADV_SCAN_IDX_MAX] =
 };
 
 #if	(BUT_PROFILE_CFG)
-static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
+static void SimpleDataCallBack(uint8_t app_id, uint8_t event, uint16_t len, uint8_t *p_data);
 #endif
                   
 typedef struct {
@@ -303,7 +303,7 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
 }
 
 #if	(BUT_PROFILE_CFG)
-static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data)
+static void SimpleDataCallBack(uint8_t app_id, uint8_t event, uint16_t len, uint8_t *p_data)
 {
 	LOG_ERROR("the event value is:%x\n",event);
 	switch(event)

@@ -268,7 +268,7 @@ static void config_completed_cb(uint16_t local_channel_id, tL2CAP_CFG_INFO *nego
 
     case L2CAP_CFG_UNACCEPTABLE_PARAMS:
       // TODO: see if we can renegotiate parameters instead of dropping the connection.
-      LOG_WARN("%s dropping L2CAP connection due to unacceptable config parameters.", __func__);
+      LOG_WARN("%s dropping L2CAP connection due to unacceptable config parameters.\n", __func__);
       l2cap_client_disconnect(client);
       break;
 
@@ -281,7 +281,7 @@ static void config_completed_cb(uint16_t local_channel_id, tL2CAP_CFG_INFO *nego
 
     // Failure, no further parameter negotiation possible.
     default:
-      LOG_WARN("%s L2CAP parameter negotiation failed with error code %d.", __func__, negotiated_parameters->result);
+      LOG_WARN("%s L2CAP parameter negotiation failed with error code %d.\n", __func__, negotiated_parameters->result);
       l2cap_client_disconnect(client);
       break;
   }
@@ -290,7 +290,7 @@ static void config_completed_cb(uint16_t local_channel_id, tL2CAP_CFG_INFO *nego
 static void disconnect_request_cb(uint16_t local_channel_id, bool ack_required) {
   l2cap_client_t *client = find(local_channel_id);
   if (!client) {
-    LOG_ERROR("%s unable to find L2CAP client with LCID 0x%04x.", __func__, local_channel_id);
+    LOG_ERROR("%s unable to find L2CAP client with LCID 0x%04x.\n", __func__, local_channel_id);
     return;
   }
 
@@ -309,7 +309,7 @@ static void disconnect_completed_cb(uint16_t local_channel_id, UNUSED_ATTR uint1
 
   l2cap_client_t *client = find(local_channel_id);
   if (!client) {
-    LOG_ERROR("%s unable to find L2CAP client with LCID 0x%04x.", __func__, local_channel_id);
+    LOG_ERROR("%s unable to find L2CAP client with LCID 0x%04x.\n", __func__, local_channel_id);
     return;
   }
 
@@ -324,7 +324,7 @@ static void congestion_cb(uint16_t local_channel_id, bool is_congested) {
 
   l2cap_client_t *client = find(local_channel_id);
   if (!client) {
-    LOG_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.", __func__, local_channel_id);
+    LOG_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.\n", __func__, local_channel_id);
     return;
   }
 
@@ -345,7 +345,7 @@ static void read_ready_cb(uint16_t local_channel_id, BT_HDR *packet) {
 
   l2cap_client_t *client = find(local_channel_id);
   if (!client) {
-    LOG_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.", __func__, local_channel_id);
+    LOG_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.\n", __func__, local_channel_id);
     return;
   }
 

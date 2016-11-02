@@ -107,6 +107,7 @@ void bt_prf_sys_register(UINT8 id, const tBT_PRF_SYS_REG *p_reg)
 *******************************************************************************/
 void bt_prf_sys_deregister(UINT8 id)
 {
+	bt_prf_sys_cb.reg[id] = NULL;
     bt_prf_sys_cb.is_reg[id] = FALSE;
 }
 

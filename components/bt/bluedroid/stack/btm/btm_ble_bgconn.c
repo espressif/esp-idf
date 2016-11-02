@@ -581,7 +581,7 @@ void btm_ble_initiate_select_conn(BD_ADDR bda)
 *******************************************************************************/
 BOOLEAN btm_ble_suspend_bg_conn(void)
 {
-    BTM_TRACE_EVENT ("%s", __func__);
+    BTM_TRACE_EVENT ("%s\n", __func__);
 
     if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_AUTO)
         return btm_ble_start_auto_conn(FALSE);

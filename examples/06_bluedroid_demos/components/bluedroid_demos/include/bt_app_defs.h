@@ -63,7 +63,6 @@ typedef tBTA_GATTC_IF					esp_gattc_if_t;
 #define ESP_GATTC_ACL_EVT           13  /* ACL up event */
 #define ESP_GATTC_CANCEL_OPEN_EVT   14  /* cancel open event */
 #define ESP_GATTC_SRVC_CHG_EVT      15  /* service change event */
-#define ESP_GATTC_LISTEN_EVT        16  /* listen event */
 #define ESP_GATTC_ENC_CMPL_CB_EVT   17  /* encryption complete callback event */
 #define ESP_GATTC_CFG_MTU_EVT       18  /* configure MTU complete event */
 #define ESP_GATTC_ADV_DATA_EVT      19  /* ADV data event */
@@ -91,7 +90,7 @@ typedef tBTA_GATTC_IF					esp_gattc_if_t;
 #define ESP_GATTS_WRITE_EVT                             GATTS_REQ_TYPE_WRITE        /* 2 */
 #define ESP_GATTS_EXEC_WRITE_EVT                        GATTS_REQ_TYPE_WRITE_EXEC   /* 3 */
 #define ESP_GATTS_MTU_EVT                               GATTS_REQ_TYPE_MTU          /* 4 */
-#define ESP_GATTS_CONF_EVT                              GATTS_REQ_TYPE_CONF         /* 5 */
+#define ESP_GATTS_CFM_EVT                               GATTS_REQ_TYPE_CONF         /* 5 */
 #define ESP_GATTS_DEREG_EVT                             6
 #define ESP_GATTS_CREATE_EVT                            7
 #define ESP_GATTS_ADD_INCL_SRVC_EVT                     8
@@ -105,7 +104,6 @@ typedef tBTA_GATTC_IF					esp_gattc_if_t;
 #define ESP_GATTS_OPEN_EVT                              16
 #define ESP_GATTS_CANCEL_OPEN_EVT                       17
 #define ESP_GATTS_CLOSE_EVT                             18
-#define ESP_GATTS_LISTEN_EVT                            19
 #define ESP_GATTS_CONGEST_EVT                           20
 
 /* Attribute permissions

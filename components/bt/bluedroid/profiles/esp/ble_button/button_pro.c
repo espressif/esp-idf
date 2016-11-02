@@ -36,20 +36,20 @@
 
 #define ARRAY_SIZE(x)	(sizeof(x)/sizeof((x)[0]))
 
-tBUTTON_CB_ENV button_cb_env;
+ button_env_cb_t button_cb_env;
 
 tBLE_BD_ADDR			p_peer_bda = {
 	.type	= API_PUBLIC_ADDR,
 	.bda	= {0}
 };
 
-tESP_API_BLE_ADV_PARAMS_ALL adv_params = 
+esp_ble_adv_params_all_t adv_params = 
 {
 	.adv_int_min 		= BTM_BLE_ADV_INT_MIN + 0x100,
 	.adv_int_max 		= BTM_BLE_ADV_INT_MIN + 0x100,
 	.adv_type	 		= API_NON_DISCOVERABLE,
 	.addr_type_own 		= API_PUBLIC_ADDR,
-	.channel_map		= API_BLE_ADV_CHNL_MAP,
+	.channel_map		= ESP_BLE_ADV_CHNL_MAP,
 	.adv_filter_policy 	= ADV_ALLOW_SCAN_ANY_CON_ANY,
 	.p_dir_bda			= &p_peer_bda
 };
@@ -59,7 +59,7 @@ tESP_API_BLE_ADV_PARAMS_ALL adv_params =
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
-static void button_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
+static void button_profile_cb(esp_gatts_evt_t event,  esp_gatts_t *p_data);
 
 
 /*******************************************************************************
@@ -71,14 +71,14 @@ static void button_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
 ** Returns          NULL 
 **
 *******************************************************************************/
-static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
+static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
 {
-	tBTA_GATTS_RSP rsp;
-	tBT_UUID uuid = {LEN_UUID_16, {ATT_SVC_BUTTON}};
-	tBUT_INST  *p_inst = &button_cb_env.button_inst;
-	UINT8 net_event = 0xff;
-	UINT8 len = 0;
-	UINT8 *p_rec_data = NULL;
+	esp_gatts_rsp_t rsp;
+	esp_bt_uuid_t uuid = {LEN_UUID_16, {ATT_SVC_BUTTON}};
+	but_inst_t  *p_inst = &button_cb_env.button_inst;
+	uint8_t net_event = 0xff;
+	uint8_t len = 0;
+	uint8_t *p_rec_data = NULL;
 	//LOG_ERROR("p_data->status = %x\n",p_data->status);
 	//if(p_data->status != BTA_GATT_OK){
 	//	LOG_ERROR("button profile register failed\n");
@@ -87,7 +87,7 @@ static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 	LOG_ERROR("button profile cb event = %x\n",event);
 	switch(event)	
 	{
-		case BTA_GATTS_REG_EVT:
+		case ESP_GATTS_REG_EVT:
 			
 			LOG_ERROR("p_data->reg_oper.status = %x\n",p_data->reg_oper.status);
 			LOG_ERROR("(p_data->reg_oper.uuid.uu.uuid16=%x\n",p_data->reg_oper.uuid.uu.uuid16);
@@ -104,16 +104,16 @@ static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 				Button_CreateService();
 			}
 			break;
-		case BTA_GATTS_READ_EVT:
+		case ESP_GATTS_READ_EVT:
 			//tBTA_GATTS_RSP rsp;
 			memset(&rsp,0,sizeof(tBTA_GATTS_API_RSP));
 			rsp.attr_value.handle = p_data->req_data.p_data->read_req.handle;
 			rsp.attr_value.len = 2;
-			API_Ble_GattsSendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
+			esp_ble_gatts_send_rsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
 					  p_data->req_data.status,&rsp);
 			break;
-		case BTA_GATTS_WRITE_EVT:
-			API_Ble_GattsSendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
+		case ESP_GATTS_WRITE_EVT:
+			esp_ble_gatts_send_rsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
 								p_data->req_data.status,NULL);
 			LOG_ERROR("Received button data:");
 			for(int i = 0; i < p_data->req_data.p_data->write_req.len; i++){
@@ -142,27 +142,27 @@ static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 	(*p_inst->p_cback)(button_cb_env.button_inst.app_id,net_event,len,p_rec_data);
 			}
 			break;
-		case BTA_GATTS_CONF_EVT:
+		case ESP_GATTS_CFM_EVT:
 			
 			break;
-		case BTA_GATTS_CREATE_EVT:
+		case ESP_GATTS_CREATE_EVT:
 			//tBT_UUID uuid_butt_write;
 			uuid.uu.uuid16 = ATT_CHAR_BUTTON_WIT;
 			//tBTA_GATT_PERM perm = (GATT_PERM_WRITE|GATT_PERM_READ);
 			//tBTA_GATT_CHAR_PROP prop = (GATT_CHAR_PROP_BIT_READ|GATT_CHAR_PROP_BIT_WRITE);
-			//uuid = {LEN_UUID_16, {ATT_SVC_BUTTON}};
+			//uuid = {LEN_UUID_16, {ATT_SVC_BUTTON}}; 
 			button_cb_env.clcb.cur_srvc_id=  p_data->create.service_id;
 			button_cb_env.is_primery =  p_data->create.is_primary;
 			//uuid = {LEN_UUID_16, {ATT_CHAR_BUTTON_WIT}};
 			//start the button service after created
-			API_Ble_GattsStartService(p_data->create.service_id,BTA_GATT_TRANSPORT_LE);
+			esp_ble_gatts_start_srvc(p_data->create.service_id);
 			//add the frist button characteristic --> write characteristic
-			API_Ble_GattsAddCharacteristic(button_cb_env.clcb.cur_srvc_id,&uuid,
+			esp_ble_gatts_add_char(button_cb_env.clcb.cur_srvc_id,&uuid,
 										(GATT_PERM_WRITE|GATT_PERM_READ),
 										(GATT_CHAR_PROP_BIT_READ|GATT_CHAR_PROP_BIT_WRITE));
 			break;
 			
-		case BTA_GATTS_ADD_CHAR_EVT:
+		case ESP_GATTS_ADD_CHAR_EVT:
 			if(p_data->add_result.char_uuid.uu.uuid16 == ATT_CHAR_BUTTON_WIT)
 			{
 				uuid.uu.uuid16 = ATT_CHAR_BUTTON_NTF;
@@ -171,49 +171,47 @@ static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 				//save the att handle to the env
 				button_cb_env.button_inst.but_wirt_hdl = p_data->add_result.attr_id;
 				//add the frist button characteristic --> Notify characteristic
-				API_Ble_GattsAddCharacteristic(button_cb_env.clcb.cur_srvc_id,&uuid,
+				esp_ble_gatts_add_char(button_cb_env.clcb.cur_srvc_id,&uuid,
 										GATT_PERM_READ,(GATT_CHAR_PROP_BIT_READ|GATT_CHAR_PROP_BIT_NOTIFY));
 			}else if(p_data->add_result.char_uuid.uu.uuid16 == ATT_CHAR_BUTTON_NTF){ // add the gattc config descriptor to the notify charateristic
 				//tBTA_GATT_PERM perm = (GATT_PERM_WRITE|GATT_PERM_WRITE);
 				uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
 				button_cb_env.button_inst.but_ntf_hdl = p_data->add_result.attr_id;
-				API_Ble_GattsAddCharDescriptor (button_cb_env.clcb.cur_srvc_id,
+				esp_ble_gatts_add_char_descr (button_cb_env.clcb.cur_srvc_id,
                                   				(GATT_PERM_WRITE|GATT_PERM_WRITE),
                                   				&uuid);
 			}
 			
 			break;
-		case BTA_GATTS_ADD_CHAR_DESCR_EVT:
+		case ESP_GATTS_ADD_CHAR_DESCR_EVT:
 			if(p_data->add_result.char_uuid.uu.uuid16 == GATT_UUID_CHAR_CLIENT_CONFIG)
 			{
 				button_cb_env.button_inst.but_cfg_hdl = p_data->add_result.attr_id;
 			}
 			///Start advertising
 			LOG_ERROR("\nStart sent the ADV.\n");
-			API_Ble_AppStartAdvertising(&adv_params);
+			esp_ble_start_advertising (&adv_params);
 			break;
-		case BTA_GATTS_CONNECT_EVT:
+		case ESP_GATTS_CONNECT_EVT:
 			//set the connection flag to true
 			button_env_clcb_alloc(p_data->conn.conn_id, p_data->conn.remote_bda);
 			break;
-		case BTA_GATTS_DISCONNECT_EVT:
+		case ESP_GATTS_DISCONNECT_EVT:
 			//set the connection flag to true
 			button_cb_env.clcb.connected = false;
 			break;
-		case BTA_GATTS_OPEN_EVT:
+		case ESP_GATTS_OPEN_EVT:
 			///stop the advertising after connected
-			API_Ble_AppStopAdvertising();
+			esp_ble_stop_advertising();
 			break;
-		case BTA_GATTS_CLOSE_EVT:
+		case ESP_GATTS_CLOSE_EVT:
 			if(button_cb_env.clcb.connected && (button_cb_env.clcb.conn_id == p_data->conn.conn_id))
 			{
 				//set the connection channal congested flag to true
 				button_cb_env.clcb.congest =  p_data->congest.congested;
 			}
 			break;
-		case BTA_GATTS_LISTEN_EVT:
-			break;
-		case BTA_GATTS_CONGEST_EVT:
+		case ESP_GATTS_CONGEST_EVT:
 			break;
 		default:
 			break;
@@ -232,17 +230,17 @@ static void button_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 *******************************************************************************/
 void Button_CreateService(void)
 {
-	tBTA_GATTS_IF server_if ;
-	tBT_UUID uuid = {LEN_UUID_16, {ATT_SVC_BUTTON}};
-	UINT16 num_handle = KEY_IDX_NB;
-	UINT8 inst = 0x00;
+	esp_gatts_if_t server_if ;
+	esp_bt_uuid_t uuid = {LEN_UUID_16, {ATT_SVC_BUTTON}};
+	uint16_t num_handle = KEY_IDX_NB;
+	uint8_t inst = 0x00;
 	server_if = button_cb_env.gatt_if;
 	button_cb_env.inst_id = inst;
 	//if(!button_cb_env.enabled)
 	//{
 	//	LOG_ERROR("button service added error.");
 	//}	
-	API_Ble_GattsCreateService(server_if,&uuid,inst,num_handle,true);
+	esp_ble_gatts_create_srvc(server_if,&uuid,inst,num_handle,true);
 	
 }
 
@@ -255,9 +253,9 @@ void Button_CreateService(void)
 ** Returns          NULL if not found. Otherwise pointer to the connection link block.
 **
 *******************************************************************************/
-tBUT_CLCB *button_env_clcb_alloc (UINT16 conn_id, BD_ADDR remote_bda)
+but_clcb_t *button_env_clcb_alloc (uint16_t conn_id, BD_ADDR remote_bda)
 {
-	tBUT_CLCB *p_clcb = NULL;
+	but_clcb_t *p_clcb = NULL;
 	p_clcb = &button_cb_env.clcb; 
 	
 	if(!p_clcb->in_use)
@@ -281,10 +279,10 @@ tBUT_CLCB *button_env_clcb_alloc (UINT16 conn_id, BD_ADDR remote_bda)
 ** Returns          total number of clcb found.
 **
 *******************************************************************************/
-UINT16 button_env_find_conn_id_by_bd_adddr(BD_ADDR remote_bda)
+uint16_t button_env_find_conn_id_by_bd_adddr(BD_ADDR remote_bda)
 {
-	UINT8 i_clcb;
-	tBUT_CLCB *p_clcb = NULL;
+	uint8_t i_clcb;
+	but_clcb_t *p_clcb = NULL;
 
 	for(i_clcb = 0, p_clcb = &button_cb_env.clcb; i_clcb < BUTT_MAX_APPS; i_clcb++, p_clcb++)
 	{
@@ -307,16 +305,16 @@ UINT16 button_env_find_conn_id_by_bd_adddr(BD_ADDR remote_bda)
 **
 *******************************************************************************/
 
-BOOLEAN button_env_clcb_dealloc(UINT16 conn_id)
+BOOLEAN button_env_clcb_dealloc(uint16_t conn_id)
 {
-	UINT8 i_clcb = 0;
-	tBUT_CLCB *p_clcb = NULL;
+	uint16_t i_clcb = 0;
+	but_clcb_t *p_clcb = NULL;
 
 	for(i_clcb = 0, p_clcb = &button_cb_env.clcb; i_clcb < 1; i_clcb++, p_clcb++)
 	{
 		if(p_clcb->in_use && p_clcb->connected && (p_clcb->conn_id == conn_id))
 		{
-			memset(p_clcb, 0, sizeof(tBUT_CLCB));
+			memset(p_clcb, 0, sizeof(but_clcb_t));
 			return TRUE;
 		}
 	}
@@ -331,7 +329,7 @@ BOOLEAN button_env_clcb_dealloc(UINT16 conn_id)
 ** Description      Initializa the GATT Service for button profiles.
 **
 *******************************************************************************/
-tGATT_STATUS button_init (tBU_CBACK *call_back)
+esp_gatt_status_t button_init (but_prf_cb_t call_back)
 {
 	tBT_UUID app_uuid = {LEN_UUID_16,{ATT_SVC_BUTTON}};
 	
@@ -343,7 +341,7 @@ tGATT_STATUS button_init (tBU_CBACK *call_back)
 	}
 	else
 	{
-		memset(&button_cb_env,0,sizeof(tBUTTON_CB_ENV));
+		memset(&button_cb_env,0,sizeof(button_env_cb_t));
 	}
 	
 
@@ -354,33 +352,33 @@ tGATT_STATUS button_init (tBU_CBACK *call_back)
 
 	
 	/* register the button profile to the BTA_GATTS module*/
-	 API_Ble_GattsAppRegister(&app_uuid,button_profile_cb);
+	 esp_ble_gatts_app_register(&app_uuid,button_profile_cb);
 
 	button_cb_env.enabled = TRUE;
 
-	return GATT_SUCCESS;
+	return ESP_GATT_OK;
 }
 
-void button_disable(UINT16 connid)
+void button_disable(uint16_t connid)
 {
 		button_env_clcb_dealloc(connid);
 }
 
 
-void button_msg_notify(UINT8 len, UINT8 *button_msg)
+void button_msg_notify(uint16_t len, uint8_t *button_msg)
 {
 	 BOOLEAN conn_status = button_cb_env.clcb.connected;
-	 UINT16 conn_id = button_cb_env.clcb.conn_id;
-	 UINT16 attr_id = button_cb_env.button_inst.but_ntf_hdl;
+	 uint16_t conn_id = button_cb_env.clcb.conn_id;
+	 uint16_t attr_id = button_cb_env.button_inst.but_ntf_hdl;
 	 //notify rsp==false; indicate rsp==true.
 	 BOOLEAN rsp = false;
 	 if(!conn_status && button_cb_env.clcb.congest)
 	 {
-		LOG_ERROR("the conneciton for button profile has been loss");
+		LOG_ERROR("the conneciton for button profile has been loss\n");
 		return;
 	 }
 	 
-	 API_Ble_GattsHandleValueIndication (conn_id, attr_id, len,
+	 esp_ble_gatts_hdl_val_indica (conn_id, attr_id, len,
                                       button_msg, rsp);
 }
 
