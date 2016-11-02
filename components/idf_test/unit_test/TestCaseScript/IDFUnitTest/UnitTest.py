@@ -11,7 +11,7 @@ class UnitTest(PerformanceTCBase.PerformanceTCBase):
                                                      timeout=timeout, log_path=log_path)
         
         self.test_case = None
-        self.test_timeout = 6
+        self.test_timeout = 20
                                                      
      # load param from excel
         for i in range(1, len(cmd_set)):
@@ -26,12 +26,14 @@ class UnitTest(PerformanceTCBase.PerformanceTCBase):
         
         try:
             self.serial_write_line("UT1", self.test_case)
-            time.sleep(self.test_timeout) #wait for test to run before reading result
-            data = self.serial_read_data("UT1")
-            if re.search('[^0] Tests 0 F', data): #check that number of tests run != 0 and number of tests failed == 0
-                self.set_result("Success")
+            data = ""
+            for _ in range(self.timeout):
+                time.sleep(1) #wait for test to run before reading result
+                data += self.serial_read_data("UT1")
+                if re.search('[^0] Tests 0 F', data): #check that number of tests run != 0 and number of tests failed == 0
+                    self.set_result("Success")
             else:
-               self.set_result("Fail")
+                self.set_result("Fail")
             
         except StandardError,e:
             NativeLog.add_exception_log(e)

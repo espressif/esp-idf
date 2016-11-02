@@ -2,12 +2,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_LIB_0101
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "12"
+  - - test_case = "check if ROM is used for functions"
     - [dummy]
   comment: check if ROM is used for functions
   execution time: 0
@@ -25,12 +25,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_LIB_0102
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "13"
+  - - test_case = "test time functions"
     - [dummy]
   comment: test time functions
   execution time: 0
@@ -48,12 +48,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_LIB_0103
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "14"
+  - - test_case = "test sscanf function"
     - [dummy]
   comment: test sscanf function
   execution time: 0
@@ -71,12 +71,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_LIB_0104
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "15"
+  - - test_case = "test sprintf function"
     - [dummy]
   comment: test sprintf function
   execution time: 0
@@ -94,12 +94,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_LIB_0105
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "16"
+  - - test_case = "test atoX functions"
     - [dummy]
   comment: test atoX functions
   execution time: 0
@@ -117,12 +117,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_LIB_0106
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "17"
+  - - test_case = "test ctype functions"
     - [dummy]
   comment: test ctype functions
   execution time: 0
@@ -140,12 +140,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0102
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "21"
+  - - test_case = "mbedtls MPI self-tests"
     - [dummy]
   comment: mbedtls MPI self-tests
   execution time: 0
@@ -163,12 +163,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0103
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "25"
+  - - test_case = "test AES thread safety"
     - [dummy]
   comment: test AES thread safety
   execution time: 0
@@ -186,12 +186,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0104
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "26"
+  - - test_case = "test AES acceleration"
     - [dummy]
   comment: test AES acceleration
   execution time: 0
@@ -209,12 +209,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0105
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "27"
+  - - test_case = "test SHA thread safety"
     - [dummy]
   comment: test SHA thread safety
   execution time: 0
@@ -232,12 +232,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0106
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "33"
+  - - test_case = "context switch saves FP registers"
     - [dummy]
   comment: context switch saves FP registers
   execution time: 0
@@ -255,12 +255,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0107
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "34"
+  - - test_case = "test FP sqrt"
     - [dummy]
   comment: test FP sqrt
   execution time: 0
@@ -278,12 +278,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0108
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "35"
+  - - test_case = "test FP div"
     - [dummy]
   comment: test FP div
   execution time: 0
@@ -301,12 +301,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0109
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "36"
+  - - test_case = "test FP mul"
     - [dummy]
   comment: test FP mul
   execution time: 0
@@ -324,12 +324,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0110
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "37"
+  - - test_case = "test FP add"
     - [dummy]
   comment: test FP add
   execution time: 0
@@ -347,12 +347,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0111
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "3"
+  - - test_case = "Test JPEG decompression library"
     - [dummy]
   comment: Test JPEG decompression library
   execution time: 0
@@ -370,12 +370,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0112
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "22"
+  - - test_case = "mbedtls AES self-tests"
     - [dummy]
   comment: mbedtls AES self-tests
   execution time: 0
@@ -393,12 +393,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0113
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "17"
+  - - test_case = "mbedtls SHA self-tests"
     - [dummy]
   comment: mbedtls SHA self-tests
   execution time: 0
@@ -416,12 +416,12 @@ test cases:
 - CI ready: 'Yes'
   ID: SYS_MISC_0115
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "28"
+  - - test_case = "test SHA acceleration"
     - [dummy]
   comment: test SHA acceleration
   execution time: 0
@@ -437,37 +437,14 @@ test cases:
   test point 2: SHA acceleration
   version: v1 (2016-10-31)
 - CI ready: 'Yes'
-  ID: SYS_OS_0101
-  SDK: ESP32_IDF
-  Test App: testje
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - IDFUnitTest/UnitTest
-  - - test_case = "31"
-    - [dummy]
-  comment: FreeRTOS Event Groups
-  execution time: 0
-  expected result: 1. set succeed
-  initial condition: UTINIT1
-  level: Unit
-  module: System
-  steps: 1. run freertos test
-  sub module: OS
-  summary: freertos unit test
-  test environment: UT_T1_1
-  test point 1: basic function
-  test point 2: freertos
-  version: v1 (2016-10-26)
-- CI ready: 'Yes'
   ID: SYS_OS_0102
   SDK: ESP32_IDF
-  Test App: testje
+  Test App: UT
   auto test: 'Yes'
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "2"
+  - - test_case = "Freertos TLS delete cb"
     - [dummy]
   comment: Freertos TLS delete cb
   execution time: 0
