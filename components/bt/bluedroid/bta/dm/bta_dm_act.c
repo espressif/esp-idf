@@ -4295,10 +4295,10 @@ void bta_dm_set_encryption (tBTA_DM_MSG *p_data)
 {
     UINT8 i ;
 
-    APPL_TRACE_DEBUG("bta_dm_set_encryption"); //todo
+    APPL_TRACE_DEBUG("bta_dm_set_encryption\n"); //todo
     if (!p_data->set_encryption.p_callback)
     {
-        APPL_TRACE_ERROR("bta_dm_set_encryption callback is not provided");
+        APPL_TRACE_ERROR("bta_dm_set_encryption callback is not provided\n");
         return;
     }
     for (i=0; i<bta_dm_cb.device_list.count; i++)
@@ -4311,7 +4311,7 @@ void bta_dm_set_encryption (tBTA_DM_MSG *p_data)
     {
         if (bta_dm_cb.device_list.peer_device[i].p_encrypt_cback)
         {
-            APPL_TRACE_ERROR("earlier enc was not done for same device");
+            APPL_TRACE_ERROR("earlier enc was not done for same device\n");
             (*p_data->set_encryption.p_callback)(p_data->set_encryption.bd_addr,
                                              p_data->set_encryption.transport,
                                              BTA_BUSY);

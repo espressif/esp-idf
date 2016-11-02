@@ -19,6 +19,7 @@
 #include "bt_target.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
+#include "bt_app_api.h"
 
 
 /// Maximum Transmission Unit

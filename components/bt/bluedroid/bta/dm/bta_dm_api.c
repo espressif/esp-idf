@@ -2071,7 +2071,7 @@ void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length)
 **                  p_callback    - Pointer to callback function to indicat the
 **                                  link encryption status
 **                  sec_act       - This is the security action to indicate
-**                                  what knid of BLE security level is required for
+**                                  what kind of BLE security level is required for
 **                                  the BLE link if the BLE is supported
 **                                  Note: This parameter is ignored for the BR/EDR link
 **                                        or the BLE is not supported

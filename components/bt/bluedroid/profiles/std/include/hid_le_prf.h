@@ -19,6 +19,7 @@
 #include "bt_types.h"
 #include "bta_api.h"
 #include "gatt_api.h"
+#include "bt_app_api.h"
 
 /// Maximal number of HIDS that can be added in the DB
 #ifndef USE_ONE_HIDS_INSTANCE
