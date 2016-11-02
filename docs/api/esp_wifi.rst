@@ -1,20 +1,22 @@
-Wi-Fi API
-=========
+Wi-Fi
+=====
 
 Overview
 --------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
 
 Application Example
 -------------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
 
-Reference
----------
+API Reference
+-------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
+
+.. _Instructions: template.html
 
 Macros
 ------
@@ -22,13 +24,12 @@ Macros
 .. doxygendefine:: WIFI_INIT_CONFIG_DEFAULT
 
 
-Typedefs
---------
+Type Definitions
+----------------
 
 .. doxygentypedef:: wifi_promiscuous_cb_t
 .. doxygentypedef:: wifi_rxcb_t
 .. doxygentypedef:: esp_vendor_ie_cb_t
-
 
 Functions
 ---------
@@ -42,11 +43,12 @@ Functions
 .. doxygenfunction:: esp_wifi_connect
 .. doxygenfunction:: esp_wifi_disconnect
 .. doxygenfunction:: esp_wifi_clear_fast_connect
-.. doxygenfunction:: esp_wifi_kick_station
+.. doxygenfunction:: esp_wifi_deauth_sta
 .. doxygenfunction:: esp_wifi_scan_start
 .. doxygenfunction:: esp_wifi_scan_stop
-.. doxygenfunction:: esp_wifi_get_ap_num
-.. doxygenfunction:: esp_wifi_get_ap_list
+.. doxygenfunction:: esp_wifi_scan_get_ap_num
+.. doxygenfunction:: esp_wifi_scan_get_ap_records
+.. doxygenfunction:: esp_wifi_sta_get_ap_info
 .. doxygenfunction:: esp_wifi_set_ps
 .. doxygenfunction:: esp_wifi_get_ps
 .. doxygenfunction:: esp_wifi_set_protocol
@@ -64,11 +66,12 @@ Functions
 .. doxygenfunction:: esp_wifi_get_promiscuous
 .. doxygenfunction:: esp_wifi_set_config
 .. doxygenfunction:: esp_wifi_get_config
-.. doxygenfunction:: esp_wifi_get_station_list
-.. doxygenfunction:: esp_wifi_free_station_list
+.. doxygenfunction:: esp_wifi_ap_get_sta_list
 .. doxygenfunction:: esp_wifi_set_storage
 .. doxygenfunction:: esp_wifi_reg_rxcb
 .. doxygenfunction:: esp_wifi_set_auto_connect
 .. doxygenfunction:: esp_wifi_get_auto_connect
 .. doxygenfunction:: esp_wifi_set_vendor_ie
 .. doxygenfunction:: esp_wifi_set_vendor_ie_cb
+
+

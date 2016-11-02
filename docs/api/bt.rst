@@ -1,20 +1,22 @@
-Bluetooth API
-=============
+Bluetooth
+=========
 
 Overview
 --------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
 
 Application Example
 -------------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
 
-Reference
----------
+API Reference
+-------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
+
+.. _Instructions: template.html
 
 Type Definitions
 ^^^^^^^^^^^^^^^^
