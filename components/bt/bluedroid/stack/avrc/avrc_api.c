@@ -21,8 +21,10 @@
  *  Interface to AVRCP mandatory commands
  *
  ******************************************************************************/
-#include <string.h>
+// #include <assert.h>
 #include "bt_trace.h"
+#include <string.h>
+
 #include "gki.h"
 #include "avrc_api.h"
 #include "avrc_int.h"

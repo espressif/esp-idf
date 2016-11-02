@@ -26,7 +26,7 @@
 #ifndef AVRC_INT_H
 #define AVRC_INT_H
 
-//#include "avct_defs.h"
+#include "avct_defs.h"
 #include "avrc_api.h"
 
 /*      DEBUG FLAGS

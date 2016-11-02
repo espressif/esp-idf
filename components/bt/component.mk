@@ -9,10 +9,10 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/gki/include			\
 				bluedroid/hci/include			\
 				bluedroid/osi/include			\
+				bluedroid/utils/include			\
 				bluedroid/profiles/core/include			\
 				bluedroid/profiles/esp/blufi/include		\
 				bluedroid/profiles/esp/include		\
-				bluedroid/profiles/std/avrc/include	\
 				bluedroid/profiles/std/battery/include	\
 				bluedroid/profiles/std/dis/include	\
 				bluedroid/profiles/std/hid/include	\
@@ -26,6 +26,10 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/stack/l2cap/include		\
 				bluedroid/stack/sdp/include		\
 				bluedroid/stack/smp/include		\
+				bluedroid/stack/avct/include		\
+				bluedroid/stack/avrc/include		\
+				bluedroid/stack/avdt/include		\
+				bluedroid/stack/a2dp/include		\
 				bluedroid/stack/include			\
 				bluedroid/stack_api/include		\
 				bluedroid/include			\
@@ -57,7 +61,6 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/profiles/esp/ble_button	\
 			bluedroid/profiles/esp/wechat_AirSync	\
 			bluedroid/profiles/esp			\
-			bluedroid/profiles/std/avrc		\
 			bluedroid/profiles/std/battery		\
 			bluedroid/profiles/std/dis		\
 			bluedroid/profiles/std/hid		\
@@ -76,6 +79,10 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/stack/l2cap			\
 			bluedroid/stack/sdp			\
 			bluedroid/stack/smp			\
+			bluedroid/stack/avct			\
+			bluedroid/stack/avrc			\
+			bluedroid/stack/avdt			\
+			bluedroid/stack/a2dp			\
 			bluedroid/stack				\
 			bluedroid/stack_api			\
 			bluedroid				\
