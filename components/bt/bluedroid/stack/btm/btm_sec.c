@@ -1447,7 +1447,7 @@ tBTM_STATUS BTM_SetEncryption (BD_ADDR bd_addr, tBT_TRANSPORT transport, tBTM_SE
         else
         {
             rc = BTM_WRONG_MODE;
-            BTM_TRACE_WARNING("%s: cannot call btm_ble_set_encryption, p is NULL", __FUNCTION__);
+            BTM_TRACE_WARNING("%s: cannot call btm_ble_set_encryption, p is NULL\n", __FUNCTION__);
         }
     }
     else

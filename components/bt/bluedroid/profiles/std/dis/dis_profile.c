@@ -44,10 +44,10 @@
 #define STREAM_TO_UINT64(u64, p) {u64 = (((UINT64)(*(p))) + ((((UINT64)(*((p) + 1)))) << 8) + ((((UINT64)(*((p) + 2)))) << 16) + ((((UINT64)(*((p) + 3)))) << 24) \
                                   + ((((UINT64)(*((p) + 4)))) << 32) + ((((UINT64)(*((p) + 5)))) << 40) + ((((UINT64)(*((p) + 6)))) << 48) + ((((UINT64)(*((p) + 7)))) << 56)); (p) += 8;}
 
-tBT_UUID          uuid = {LEN_UUID_16, {UUID_SERVCLASS_DEVICE_INFO}};
-UINT16            i = 0;
-tDIS_ATTR_MASK    dis_mask;
-static const UINT16  dis_attr_uuid[DIS_MAX_CHAR_NUM] =
+esp_bt_uuid_t           uuid = {LEN_UUID_16, {UUID_SERVCLASS_DEVICE_INFO}};
+UINT16            		i = 0;
+tDIS_ATTR_MASK    		dis_mask;
+static const UINT16  	dis_attr_uuid[DIS_MAX_CHAR_NUM] =
 {
     GATT_UUID_SYSTEM_ID,
     GATT_UUID_MODEL_NUMBER_STR,
@@ -106,12 +106,12 @@ BOOLEAN dis_valid_handle_range(UINT16 handle)
 **
 **   Process write DIS attribute request.
 *******************************************************************************/
-UINT8 dis_write_attr_value(tGATT_WRITE_REQ * p_data, tGATT_STATUS *p_status)
+UINT8 dis_write_attr_value(tGATT_WRITE_REQ * p_data, esp_gatt_status_t *p_status)
 {
     UNUSED(p_data);
 
     *p_status = GATT_WRITE_NOT_PERMIT;
-    return GATT_SUCCESS;
+    return ESP_GATT_OK;
 }
 /*******************************************************************************
 **   DIS Attributes Database Server Request callback
@@ -127,7 +127,7 @@ void dis_s_read_attr_value (tGATTS_DATA *p_data, tGATT_VALUE *p_value, UINT32 tr
     tDIS_DB_ENTRY   *p_db_attr = dis_cb.dis_attr;
     UINT8           *p = p_value->value, i, *pp;
     UINT16          offset = p_data->read_req.offset;
-    tGATT_STATUS    st = GATT_NOT_FOUND;
+    tGATT_STATUS    st = ESP_GATT_NOT_FOUND;
     UINT16          handle = p_data->read_req.handle;
     bool            is_long = p_data->read_req.is_long;
 
@@ -138,10 +138,10 @@ void dis_s_read_attr_value (tGATTS_DATA *p_data, tGATT_VALUE *p_value, UINT32 tr
             if ((p_db_attr->uuid == GATT_UUID_PNP_ID || p_db_attr->uuid == GATT_UUID_SYSTEM_ID)&&
                 is_long == TRUE)
             {
-                st = GATT_NOT_LONG;
+                st = ESP_GATT_NOT_LONG;
                 break;
             }
-            st = GATT_SUCCESS;
+            st = ESP_GATT_NOT_FOUND;
 
             switch (p_db_attr->uuid)
             {
@@ -165,7 +165,7 @@ void dis_s_read_attr_value (tGATTS_DATA *p_data, tGATT_VALUE *p_value, UINT32 tr
 
                     if (offset > p_value->len)
                     {
-                        st = GATT_INVALID_OFFSET;
+                        st = ESP_GATT_INVALID_OFFSET;
                         break;
                     }
                     else
@@ -197,7 +197,7 @@ void dis_s_read_attr_value (tGATTS_DATA *p_data, tGATT_VALUE *p_value, UINT32 tr
     }
     tGATTS_RSP       rsp;
     rsp.attr_value = *p_value;
-    BTA_GATTS_SendRsp(conn_id, trans_id, st, &rsp);
+    esp_ble_gatts_send_rsp(conn_id, trans_id, st, &rsp);
    
 }
 
@@ -209,7 +209,7 @@ void dis_s_read_attr_value (tGATTS_DATA *p_data, tGATT_VALUE *p_value, UINT32 tr
 ** Description      Initialize the Device Information Service Server.
 **
 *******************************************************************************/
-void DIS_Init (tBTA_GATTS_IF gatt_if, tDIS_ATTR_MASK dis_attr_mask)
+void DIS_Init (esp_gatts_if_t gatt_if, tDIS_ATTR_MASK dis_attr_mask)
 {
 
     tGATT_STATUS      status;
@@ -222,7 +222,7 @@ void DIS_Init (tBTA_GATTS_IF gatt_if, tDIS_ATTR_MASK dis_attr_mask)
 
     memset(&dis_cb, 0, sizeof(tDIS_CB));
     
-    BTA_GATTS_CreateService (gatt_if , &uuid, 0, DIS_MAX_ATTR_NUM, TRUE);
+    esp_ble_gatts_create_srvc (gatt_if , &uuid, 0, DIS_MAX_ATTR_NUM, TRUE);
 
 }
 /*******************************************************************************
@@ -241,14 +241,14 @@ void dis_AddChar(UINT16 service_id)
     while(dis_mask != 0 && i < DIS_MAX_CHAR_NUM)
     {
         uuid.uu.uuid16 = p_db_attr->uuid = dis_attr_uuid[i];
-        BTA_GATTS_AddCharacteristic(dis_cb.service_handle, &uuid, GATT_PERM_READ, 
+        esp_ble_gatts_add_char(dis_cb.service_handle, &uuid, GATT_PERM_READ, 
             GATT_CHAR_PROP_BIT_READ);
         p_db_attr ++;
         i ++;
         dis_mask >>= 1;
     }
     /*start service*/
-    BTA_GATTS_StartService(dis_cb.service_handle, GATT_TRANSPORT_LE_BR_EDR);
+    esp_ble_gatts_start_srvc(dis_cb.service_handle);
     dis_cb.enabled = TRUE;
 }
 /*******************************************************************************

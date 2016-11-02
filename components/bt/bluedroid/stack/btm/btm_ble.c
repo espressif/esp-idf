@@ -1620,12 +1620,12 @@ UINT8 btm_ble_io_capabilities_req(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_LE_IO_REQ *p
             p_data->resp_keys = 0;
         }
 
-        BTM_TRACE_DEBUG ("btm_ble_io_capabilities_req 3: auth_req:%d", p_data->auth_req);
-        BTM_TRACE_DEBUG ("btm_ble_io_capabilities_req 4: i_keys=0x%x r_keys=0x%x",
+        BTM_TRACE_DEBUG ("btm_ble_io_capabilities_req 3: auth_req:%d\n", p_data->auth_req);
+        BTM_TRACE_DEBUG ("btm_ble_io_capabilities_req 4: i_keys=0x%x r_keys=0x%x\n",
                           p_data->init_keys,
                           p_data->resp_keys);
 
-        BTM_TRACE_DEBUG ("btm_ble_io_capabilities_req 5: p_data->io_cap = %d auth_req:%d",
+        BTM_TRACE_DEBUG ("btm_ble_io_capabilities_req 5: p_data->io_cap = %d auth_req:%d\n",
                           p_data->io_cap, p_data->auth_req);
 
         /* remove MITM protection requirement if IO cap does not allow it */
@@ -1644,7 +1644,7 @@ UINT8 btm_ble_io_capabilities_req(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_LE_IO_REQ *p
             p_data->resp_keys &= ~SMP_SEC_KEY_TYPE_LK;
         }
 
-        BTM_TRACE_DEBUG ("btm_ble_io_capabilities_req 6: IO_CAP:%d oob_data:%d auth_req:0x%02x",
+        BTM_TRACE_DEBUG ("btm_ble_io_capabilities_req 6: IO_CAP:%d oob_data:%d auth_req:0x%02x\n",
                           p_data->io_cap, p_data->oob_data, p_data->auth_req);
     }
     return callback_rc;
@@ -1663,7 +1663,7 @@ UINT8 btm_ble_io_capabilities_req(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_LE_IO_REQ *p
 UINT8 btm_ble_br_keys_req(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_LE_IO_REQ *p_data)
 {
     UINT8           callback_rc = BTM_SUCCESS;
-    BTM_TRACE_DEBUG ("%s", __func__);
+    BTM_TRACE_DEBUG ("%s\n", __func__);
     if (btm_cb.api.p_le_callback)
     {
         /* the callback function implementation may change the IO capability... */
@@ -1705,7 +1705,7 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void * p_rec, void *p_data)
 
     handle = HCID_GET_HANDLE (handle);
 
-    BTM_TRACE_EVENT ("%s", __func__);
+    BTM_TRACE_EVENT ("%s\n", __func__);
 
     if (match_rec)
     {
