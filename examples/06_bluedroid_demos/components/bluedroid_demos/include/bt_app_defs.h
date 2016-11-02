@@ -25,6 +25,7 @@ typedef tBTA_GATT_STATUS					esp_gatt_status_t;
 
 typedef	UINT16							gatt_size_t;
 typedef	tBT_UUID						esp_bt_uuid_t;
+typedef tBTA_GATT_ID					esp_gatt_id_t;
 
 typedef tBTA_BLE_AD_MASK				esp_ble_ad_mask_t;
 typedef	tGATT_IF 						esp_gatt_if_t;
