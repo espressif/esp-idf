@@ -4,7 +4,13 @@ Documenting Code
 Introduction
 ------------
 
-When documenting code for this repository, please follow `Doxygen style <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_. You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks like for example ``/* @param ratio this is oxygen to air ratio */``. 
+When documenting code for this repository, please follow `Doxygen style <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_. You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks like for example:
+
+::
+
+  /**
+   * @param ratio this is oxygen to air ratio
+   */
 
 Doxygen is phrasing the code, extracting the commands together with subsequent text, and building documentation out of it.
 
@@ -123,4 +129,5 @@ Wrap up
 
 We love good code that is doing cool things. 
 We love it even better, if it is well documented, so we can quickly make it run and also do the cool things.
+
 
