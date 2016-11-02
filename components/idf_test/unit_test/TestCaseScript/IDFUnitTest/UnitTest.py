@@ -26,7 +26,7 @@ class UnitTest(PerformanceTCBase.PerformanceTCBase):
         
         try:
             # add case select by name mark " before case name
-            self.serial_write_line("UT1", "/"" + self.test_case)
+            self.serial_write_line("UT1", "\"" + self.test_case)
             data = ""
             for _ in range(self.timeout):
                 time.sleep(1) #wait for test to run before reading result
