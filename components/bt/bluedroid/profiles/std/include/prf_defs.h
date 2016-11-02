@@ -19,6 +19,7 @@
 #include "bta_gatts_int.h"
 #include "bta_gatt_api.h"
 #include "bt_types.h"
+#include "bt_app_defs.h"
 
 
 #define ATT_HANDLE_LEN                          0x0002
@@ -39,46 +40,46 @@
 typedef struct 
 {
 	///characteristic uuid
-	tBT_UUID	*char_uuid;
+	esp_bt_uuid_t	*char_uuid;
 	///the permition of the characteristic
-	tBTA_GATT_PERM perm;
+	esp_gatt_perm_t perm;
     /// the properties of the characteristic
-    tBTA_GATT_CHAR_PROP prop;
-}tCHAR_DESC;
+    esp_gatt_char_prop_t prop;
+}char_desc_t;
 
 /// UUID - 128-bit type
 typedef struct 
 {
     /// 128-bit UUID
-    UINT8 uuid[ATT_UUID_128_LEN];
-}tUUID_128;
+    uint8_t uuid[ATT_UUID_128_LEN];
+}uuid_128_t;
 
 /// UUID - 32-bit type
 typedef struct 
 {
     /// 32-bit UUID
-    UINT8 uuid[ATT_UUID_32_LEN];
-}tUUID_32;
+    uint8_t uuid[ATT_UUID_32_LEN];
+}uuid_32_t;
 
 /// include service entry element
 typedef struct 
 {
     /// start handle value of included service
-    UINT16 start_hdl;
+    uint16_t start_hdl;
     /// end handle value of included service
-    UINT16 end_hdl;
+    uint16_t end_hdl;
     /// attribute value UUID
-    UINT16 uuid;
-}tSVC_INCL_DESC;
+    uint16_t uuid;
+}incl_svc_desc;
 
 /// Service Changed type definition
 typedef struct 
 {
     /// Service start handle which changed
-    UINT16 start_hdl;
+    uint16_t start_hdl;
     /// Service end handle which changed
-    UINT16 end_hdl;
-}tSVC_CHANG;
+    uint16_t end_hdl;
+}svc_chang_type_t;
 
 
 

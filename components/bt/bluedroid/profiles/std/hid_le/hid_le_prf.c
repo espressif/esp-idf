@@ -16,14 +16,14 @@
 #include "prf_defs.h"
 
 #if	(HIDD_LE_PROFILE_CFG)
-tHIDD_LE_ENV hidd_le_env;
+hidd_le_env_t hidd_le_env;
 
 #define HI_UINT16(a) (((a) >> 8) & 0xFF)
 #define LO_UINT16(a) ((a) & 0xFF)
 
 
 // HID Information characteristic value
-static const UINT8 hidInfo[HID_INFORMATION_LEN] =
+static const uint8_t hidInfo[HID_INFORMATION_LEN] =
 {
   LO_UINT16(0x0111), HI_UINT16(0x0111),             // bcdHID (USB HID version)
   0x00,                                             // bCountryCode
@@ -32,7 +32,7 @@ static const UINT8 hidInfo[HID_INFORMATION_LEN] =
 
 // HID Report Map characteristic value
 // Keyboard report descriptor (using format for Boot interface descriptor)
-static const UINT8 hidReportMap[] =
+static const uint8_t hidReportMap[] =
 {
   0x05, 0x01,  // Usage Page (Generic Desktop)
   0x09, 0x02,  // Usage (Mouse)
@@ -169,27 +169,27 @@ static const UINT8 hidReportMap[] =
 };
 
 // HID report map length
-UINT8 hidReportMapLen = sizeof(hidReportMap);
+uint8_t hidReportMapLen = sizeof(hidReportMap);
 
-UINT8 hidProtocolMode = HID_PROTOCOL_MODE_REPORT;
+uint8_t hidProtocolMode = HID_PROTOCOL_MODE_REPORT;
 
 // HID report mapping table
 static hidRptMap_t  hidRptMap[HID_NUM_REPORTS];
 
 
-tBT_UUID char_info_uuid = {LEN_UUID_16, {CHAR_HID_INFO_UUID}};
-tBT_UUID char_ctnl_pt_uuid = {LEN_UUID_16, {CHAR_HID_CTNL_PT_UUID}};
-tBT_UUID char_report_map_uuid = {LEN_UUID_16, {CHAR_REPORT_MAP_UUID}};
-tBT_UUID char_report_uuid = {LEN_UUID_16, {CHAR_REPORT_UUID}};
-tBT_UUID char_proto_mode_uuid = {LEN_UUID_16, {CHAR_PROTOCOL_MODE_UUID}};
-tBT_UUID char_kb_in_report_uuid = {LEN_UUID_16, {CHAR_BOOT_KB_IN_REPORT_UUID}};
-tBT_UUID char_kb_out_report_uuid = {LEN_UUID_16,{CHAR_BOOT_KB_OUT_REPORT_UUID}};
-tBT_UUID char_mouse_in_report_uuid = {LEN_UUID_16,{CHAR_BOOT_MOUSE_IN_REPORT_UUID}};
+esp_bt_uuid_t char_info_uuid = {LEN_UUID_16, {CHAR_HID_INFO_UUID}};
+esp_bt_uuid_t char_ctnl_pt_uuid = {LEN_UUID_16, {CHAR_HID_CTNL_PT_UUID}};
+esp_bt_uuid_t char_report_map_uuid = {LEN_UUID_16, {CHAR_REPORT_MAP_UUID}};
+esp_bt_uuid_t char_report_uuid = {LEN_UUID_16, {CHAR_REPORT_UUID}};
+esp_bt_uuid_t char_proto_mode_uuid = {LEN_UUID_16, {CHAR_PROTOCOL_MODE_UUID}};
+esp_bt_uuid_t char_kb_in_report_uuid = {LEN_UUID_16, {CHAR_BOOT_KB_IN_REPORT_UUID}};
+esp_bt_uuid_t char_kb_out_report_uuid = {LEN_UUID_16,{CHAR_BOOT_KB_OUT_REPORT_UUID}};
+esp_bt_uuid_t char_mouse_in_report_uuid = {LEN_UUID_16,{CHAR_BOOT_MOUSE_IN_REPORT_UUID}};
 
 
 
 /// Full HID device Database Description - Used to add attributes into the database
-const  tCHAR_DESC hids_char_db[HIDD_LE_CHAR_MAX] =
+const  char_desc_t hids_char_db[HIDD_LE_CHAR_MAX] =
 {
     // HID Information Characteristic Value
     [HIDD_LE_INFO_CHAR]                   		 = {
@@ -247,25 +247,25 @@ const  tCHAR_DESC hids_char_db[HIDD_LE_CHAR_MAX] =
                                                  },
 };
 
-static void HID_AddCharacteristic(const tCHAR_DESC *char_desc);
+static void hidd_add_characterisitc(const char_desc_t *char_desc);
 
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
-static void hidd_le_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
+static void hidd_le_profile_cb(esp_gatts_evt_t event,  esp_gatts_t *p_data);
 
 /*******************************************************************************
 **
-** Function         hidd_le_profile_cb
+** Function         hidd_add_characterisitc
 **
 ** Description      the callback function after the hid device profile has been register to the BTA manager module
 **
 ** Returns          NULL 
 **
 *******************************************************************************/
-static void HID_AddCharacteristic(const tCHAR_DESC *char_desc)
+static void hidd_add_characterisitc(const char_desc_t *char_desc)
 {	
-	UINT16 service_id;
+	uint16_t service_id;
 	if(char_desc == NULL)
 	{
 		LOG_ERROR("Invalid hid characteristic\n");
@@ -282,7 +282,7 @@ static void HID_AddCharacteristic(const tCHAR_DESC *char_desc)
 	if(char_desc->char_uuid != 0x00)
 	{
 		// start added the charact to the data base
-		BTA_GATTS_AddCharacteristic(service_id,
+		esp_ble_gatts_add_char (service_id,
 								char_desc->char_uuid,
 								char_desc->perm,
 								char_desc->prop);
@@ -299,19 +299,19 @@ static void HID_AddCharacteristic(const tCHAR_DESC *char_desc)
 ** Returns          NULL 
 **
 *******************************************************************************/
-static void hidd_le_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
+static void hidd_le_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
 {
-	tBTA_GATTS_RSP rsp;
-	tBT_UUID uuid = {LEN_UUID_16, {ATT_SVC_HID}};
-	static UINT8 hid_char_idx;
-	tHIDD_CLCB *p_clcb = NULL;
-	UINT8 app_id = 0xff;
+	esp_gatts_rsp_t rsp;
+	esp_bt_uuid_t uuid = {LEN_UUID_16, {ATT_SVC_HID}};
+	static uint8_t hid_char_idx;
+	hidd_clcb_t *p_clcb = NULL;
+	uint8_t app_id = 0xff;
 	
 	switch(event)
 	{
-		case BTA_GATTS_REG_EVT:
+		case ESP_GATTS_REG_EVT:
 			//check the register of the hid device profile has been succeess or not
-			if(p_data->reg_oper.status != BTA_GATT_OK)
+			if(p_data->reg_oper.status != ESP_GATT_OK)
 			{
 				LOG_ERROR("hidd profile register failed\n");
 			}
@@ -323,27 +323,27 @@ static void hidd_le_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			//create the hid device service to the service data base.
 			if(p_data->reg_oper.uuid.uu.uuid16 == ATT_SVC_HID)
 			{
-				 hidd_le_CreateService(true);
+				 hidd_le_create_service(true);
 			}
 		    break;
-		case BTA_GATTS_CREATE_EVT:
+		case ESP_GATTS_CREATE_EVT:
 			if(p_data->create.uuid.uu.uuid16 == ATT_SVC_HID)
 			{
 				///store the service id to the env
 				hidd_le_env.hidd_clcb.cur_srvc_id = p_data->create.service_id;
 				//start the button service after created
-				BTA_GATTS_StartService(p_data->create.service_id,BTA_GATT_TRANSPORT_LE);
+				esp_ble_gatts_start_srvc(p_data->create.service_id);
 				hid_char_idx = HIDD_LE_INFO_CHAR;
 				//added the info character to the data base.
-				HID_AddCharacteristic(&hids_char_db[hid_char_idx]);
+				hidd_add_characterisitc(&hids_char_db[hid_char_idx]);
 				hid_char_idx++;
 			}
 			
 			break;
-		case BTA_GATTS_ADD_INCL_SRVC_EVT:
+		case ESP_GATTS_ADD_INCL_SRVC_EVT:
 			
 			break;
-		case BTA_GATTS_ADD_CHAR_EVT:
+		case ESP_GATTS_ADD_CHAR_EVT:
 			//save the charateristic handle to the env
 			hidd_le_env.hidd_inst.att_tbl[hid_char_idx-1] = p_data->add_result.attr_id;
 			LOG_ERROR("hanlder = %x, p_data->add_result.char_uuid.uu.uuid16 = %x\n",p_data->add_result.attr_id,
@@ -360,18 +360,18 @@ static void hidd_le_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 					uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
 					LOG_ERROR("p_data->add_result.char_uuid.uu.uuid16 = %x\n",
 						p_data->add_result.char_uuid.uu.uuid16);
-					BTA_GATTS_AddCharDescriptor (hidd_le_env.hidd_clcb.cur_srvc_id,
+					esp_ble_gatts_add_char_descr (hidd_le_env.hidd_clcb.cur_srvc_id,
                                   			 	GATT_PERM_WRITE,
                                   				&uuid);
 					
 					
 					break;
 				}
-				HID_AddCharacteristic(&hids_char_db[hid_char_idx]);
+				hidd_add_characterisitc(&hids_char_db[hid_char_idx]);
 			}
 			hid_char_idx++;
 			break;
-		case BTA_GATTS_ADD_CHAR_DESCR_EVT:
+		case ESP_GATTS_ADD_CHAR_DESCR_EVT:
 			if(p_data->add_result.char_uuid.uu.uuid16 == GATT_UUID_CHAR_CLIENT_CONFIG)
 			{ 
 				uuid.uu.uuid16 = GATT_UUID_RPT_REF_DESCR;
@@ -385,12 +385,12 @@ static void hidd_le_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			{
 				if(hid_char_idx < HIDD_LE_CHAR_MAX)
 				{
-					HID_AddCharacteristic(&hids_char_db[hid_char_idx]);
+					hidd_add_characterisitc(&hids_char_db[hid_char_idx]);
 					hid_char_idx++;
 				}
 			}
 			break;
-		case BTA_GATTS_READ_EVT:
+		case ESP_GATTS_READ_EVT:
 		{
 			LOG_ERROR("Hidd profile  BTA_GATTS_READ_EVT\n");
 			UINT32 trans_id = p_data->req_data.trans_id;
@@ -403,11 +403,11 @@ static void hidd_le_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			hidd_read_attr_value(p_data->req_data.p_data,trans_id);
 		}
 			break;
-		case BTA_GATTS_WRITE_EVT:
-			BTA_GATTS_SendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
-								p_data->req_data.status,NULL);
+		case ESP_GATTS_WRITE_EVT:
+			esp_ble_gatts_send_rsp (p_data->req_data.conn_id,p_data->req_data.trans_id,
+								    p_data->req_data.status,NULL);
 			break;
-		case BTA_GATTS_CONNECT_EVT: 
+		case ESP_GATTS_CONNECT_EVT: 
 			p_clcb = &hidd_le_env.hidd_clcb; 
 	
 			if(!p_clcb->in_use)
@@ -419,16 +419,16 @@ static void hidd_le_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 				memcpy(p_clcb->remote_bda, p_data->conn.remote_bda,BD_ADDR_LEN);	
 			}
 			break;
-		case BTA_GATTS_DISCONNECT_EVT:
+		case ESP_GATTS_DISCONNECT_EVT:
 			p_clcb = &hidd_le_env.hidd_clcb; 
 			//set the connection flag to true
 			p_clcb->connected = false;
 			p_clcb->in_use = TRUE;
-			memset(p_clcb->remote_bda,0,BD_ADDR_LEN);
+			memset(p_clcb->remote_bda, 0, BD_ADDR_LEN);
 			break;
-		case BTA_GATTS_START_EVT:
+		case ESP_GATTS_START_EVT:
 			break;
-		case BTA_GATTS_CONGEST_EVT:
+		case ESP_GATTS_CONGEST_EVT:
 			if(hidd_le_env.hidd_clcb.connected && (hidd_le_env.hidd_clcb.conn_id == p_data->conn.conn_id))
 			{
 				//set the connection channal congested flag to true
@@ -442,7 +442,7 @@ static void hidd_le_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
 /*******************************************************************************
 **
-** Function         hidd_le_CreateService
+** Function         hidd_le_create_service
 **
 ** Description      Create a Service for the hid device profile
 **
@@ -453,17 +453,17 @@ static void hidd_le_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 ** Returns          NULL 
 **
 *******************************************************************************/
-void hidd_le_CreateService(BOOLEAN is_primary)
+void hidd_le_create_service(BOOLEAN is_primary)
 {
-	tBTA_GATTS_IF server_if ;
-	tBT_UUID uuid = {LEN_UUID_16, {ATT_SVC_HID}};
+	esp_gatts_if_t server_if ;
+	esp_bt_uuid_t  uuid = {LEN_UUID_16, {ATT_SVC_HID}};
 	//the number of the hid device attributes in the hid service.
 	UINT16 num_handle = HIDD_LE_IDX_NB;
 	UINT8 inst = 0x00;
 	server_if = hidd_le_env.gatt_if;
 	hidd_le_env.inst_id = inst;
 	//start create the hid device service
-	BTA_GATTS_CreateService(server_if,&uuid,inst,num_handle,is_primary);
+	esp_ble_gatts_create_srvc (server_if,&uuid,inst,num_handle,is_primary);
 }
 
 
@@ -472,16 +472,16 @@ void hidd_le_CreateService(BOOLEAN is_primary)
 **
 ** Description   it will be called when client sends a read request
 ******************************************************************************/
-void hidd_read_attr_value(tGATTS_DATA *p_data, UINT32 trans_id)
+void hidd_read_attr_value(tGATTS_DATA *p_data, uint32_t trans_id)
 {
-	tHIDD_INST     *p_inst = &hidd_le_env.hidd_inst;
-    UINT8        i;
-	UINT8		 status = GATT_SUCCESS;
-	UINT8 app_id = hidd_le_env.hidd_inst.app_id;
+	hidd_inst_t     *p_inst = &hidd_le_env.hidd_inst;
+    uint8_t      i;
+	uint8_t		 status = ESP_GATT_OK;
+	uint8_t 	 app_id = hidd_le_env.hidd_inst.app_id;
 	
-    tGATT_STATUS st = GATT_NOT_FOUND;
-    UINT16       handle = p_data->read_req.handle;
-	UINT16		 conn_id = hidd_le_env.hidd_clcb.conn_id;
+    esp_gatt_status_t st = ESP_GATT_NOT_FOUND;
+    uint16_t     handle = p_data->read_req.handle;
+	uint16_t	 conn_id = hidd_le_env.hidd_clcb.conn_id;
 
     if (handle == p_inst->att_tbl[HIDD_LE_INFO_CHAR])
     {
@@ -512,22 +512,22 @@ void hidd_read_attr_value(tGATTS_DATA *p_data, UINT32 trans_id)
 	}
 
 	//start build the rsp message
-	Hidd_Rsp(trans_id,conn_id,app_id,status, p_inst->pending_evt,p_data);
+	hidd_rsp(trans_id, conn_id, app_id, status, p_inst->pending_evt, p_data);
 }
 
 /*******************************************************************************
 **
-** Function         Hidd_Rsp
+** Function         hidd_rsp
 **
 ** Description      Respond to a hid device service request
 **
 *******************************************************************************/
-void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
-    tGATT_STATUS status, UINT8 event, tGATTS_DATA *p_rsp)
+void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
+    esp_gatt_status_t status, uint8_t event, tGATTS_DATA *p_rsp)
 {
-    tHIDD_INST *p_inst = &hidd_le_env.hidd_inst;
+    hidd_inst_t *p_inst = &hidd_le_env.hidd_inst;
     tGATTS_RSP  rsp;
-    UINT8   *pp;
+    uint8_t   *pp;
 	LOG_ERROR("conn_id = %x, trans_id = %x, event = %x\n",
 		conn_id,trans_id,event);
 	
@@ -548,7 +548,7 @@ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
 			//copy the infomation value to the att value to sent to the peer device
 			memcpy(rsp.attr_value.value,hidInfo,HID_INFORMATION_LEN);
           	//start send the rsp to the peer device
-            BTA_GATTS_SendRsp(conn_id, trans_id, status, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
             break;
 
         case HIDD_LE_READ_CTNL_PT_EVT:
@@ -557,7 +557,7 @@ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
             rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_CTNL_PT_CHAR];
             rsp.attr_value.len = 0;
           	//start send the rsp to the peer device
-            BTA_GATTS_SendRsp(conn_id, trans_id, status, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
             break;
 
         case HIDD_LE_READ_REPORT_MAP_EVT:
@@ -568,7 +568,7 @@ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
             //copy the infomation value to the att value to sent to the peer device
 			memcpy(rsp.attr_value.value,hidReportMap,hidReportMapLen);
           	//start send the rsp to the peer device
-            BTA_GATTS_SendRsp(conn_id, trans_id, status, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
             break;
 		case HIDD_LE_READ_REPORT_EVT:
 			LOG_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
@@ -576,7 +576,7 @@ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
 			rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR];
             rsp.attr_value.len = 0;
             
-            BTA_GATTS_SendRsp(conn_id, trans_id, status, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
 			break;
         case HIDD_LE_READ_PROTO_MODE_EVT:
 			LOG_ERROR("p_inst->att_tbl[HIDD_LE_PROTO_MODE_CHAR] = %x\n",
@@ -586,7 +586,7 @@ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
             pp = rsp.attr_value.value;
 			//copy the infomation value to the att value to sent to the peer device
 			memcpy(rsp.attr_value.value,&hidProtocolMode,rsp.attr_value.len);
-            BTA_GATTS_SendRsp(conn_id, trans_id, status, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
             break;
 		case HIDD_LE_BOOT_KB_IN_REPORT_EVT:
 			LOG_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
@@ -594,7 +594,7 @@ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
 			rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR];
             rsp.attr_value.len = 0;
             
-            BTA_GATTS_SendRsp(conn_id, trans_id, status, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
 			break;
 		case HIDD_LE_BOOT_KB_OUT_REPORT_EVT:
 			LOG_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
@@ -602,7 +602,7 @@ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
 			rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR];
             rsp.attr_value.len = 0;
 			
-            BTA_GATTS_SendRsp(conn_id, trans_id, status, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
 			break;
 		case HIDD_LE_BOOT_MOUSE_IN_REPORT_EVT:
 			LOG_ERROR("p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR] = %x\n",
@@ -610,7 +610,7 @@ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
 			rsp.attr_value.handle = p_inst->att_tbl[HIDD_LE_BOOT_KB_IN_REPORT_CHAR];
             rsp.attr_value.len = 0;
 			
-            BTA_GATTS_SendRsp(conn_id, trans_id, status, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, status, &rsp);
 			break;
         default:
             break;
@@ -630,28 +630,28 @@ void Hidd_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
 ** Description      Initializa the GATT Service for button profiles.
 ** Returns          NULL 
 *******************************************************************************/
-tGATT_STATUS hidd_le_init (void)
+esp_gatt_status_t hidd_le_init (void)
 {
 	tBT_UUID app_uuid = {LEN_UUID_16,{ATT_SVC_HID}};
 
 	if(hidd_le_env.enabled)
 	{
-		LOG_ERROR("hid device svc already initaliezd");
-		return GATT_ERROR;
+		LOG_ERROR("hid device svc already initaliezd\n");
+		return ESP_GATT_ERROR;
 	}
 	else
 	{
-		memset(&hidd_le_env,0,sizeof(tHIDD_LE_ENV));
+		memset(&hidd_le_env,0,sizeof(hidd_le_env_t));
 	}
 	
 	
 	/*
  register the hid deivce profile to the BTA_GATTS module*/
-	 BTA_GATTS_AppRegister(&app_uuid,hidd_le_profile_cb);
+	esp_ble_gatts_app_register(&app_uuid, hidd_le_profile_cb);
 
 	hidd_le_env.enabled = TRUE;
 
-	return GATT_SUCCESS;
+	return ESP_GATT_OK;
 }
 
 
