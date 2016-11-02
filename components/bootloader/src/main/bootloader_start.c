@@ -34,6 +34,7 @@
 
 #include "sdkconfig.h"
 #include "esp_image_format.h"
+#include "esp_secure_boot.h"
 #include "bootloader_flash.h"
 
 #include "bootloader_config.h"
@@ -214,6 +215,7 @@ void bootloader_main()
 {
     ESP_LOGI(TAG, "Espressif ESP32 2nd stage bootloader v. %s", BOOT_VERSION);
 
+    esp_err_t err;
     esp_image_header_t fhdr;
     bootloader_state_t bs;
     SpiFlashOpResult spiRet1,spiRet2;
@@ -308,8 +310,9 @@ void bootloader_main()
     if(fhdr.secure_boot_flag == 0x01) {
         /* Generate secure digest from this bootloader to protect future
          modifications */
-        if (secure_boot_generate_bootloader_digest() == false){
-            ESP_LOGE(TAG, "Bootloader digest generation failed. SECURE BOOT IS NOT ENABLED.");
+        err = esp_secure_boot_permanently_enable();
+        if (err != ESP_OK){
+            ESP_LOGE(TAG, "Bootloader digest generation failed (%d). SECURE BOOT IS NOT ENABLED.", err);
             /* Allow booting to continue, as the failure is probably
                due to user-configured EFUSEs for testing...
             */

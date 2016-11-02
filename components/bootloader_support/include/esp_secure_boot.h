@@ -16,6 +16,7 @@
 
 #include <stdbool.h>
 #include <esp_err.h>
+#include "soc/efuse_reg.h"
 
 /* Support functions for secure boot features.
 
@@ -30,21 +31,34 @@
  *
  * @return true if secure boot is enabled.
  */
-bool esp_secure_boot_enabled(void);
+static inline bool esp_secure_boot_enabled(void) {
+    return REG_GET_FIELD(EFUSE_BLK0_RDATA6_REG, EFUSE_RD_ABS_DONE_0);
+}
 
 
-/** @brief Enable secure boot if it isw not already enabled.
+/** @brief Enable secure boot if it is not already enabled.
  *
- * @important If this function succeeds, secure boot is permanentl
+ * @important If this function succeeds, secure boot is permanently
  * enabled on the chip via efuse.
  *
- * This function is intended to be called from bootloader code.
+ * @important This function is intended to be called from bootloader code only.
+ *
+ * If secure boot is not yet enabled for bootloader, this will
+ * generate the secure boot digest and enable secure boot by blowing
+ * the EFUSE_RD_ABS_DONE_0 efuse.
+ *
+ * This function does not verify secure boot of the bootloader (the
+ * ROM bootloader does this.)
+ *
+ * Will fail if efuses have been part-burned in a way that indicates
+ * secure boot should not or could not be correctly enabled.
+ *
  *
  * @return ESP_ERR_INVALID_STATE if efuse state doesn't allow
  * secure boot to be enabled cleanly. ESP_OK if secure boot
  * is enabled on this chip from now on.
  */
-esp_err_t esp_secure_boot_enable(void);
+esp_err_t esp_secure_boot_permanently_enable(void);
 
 
 

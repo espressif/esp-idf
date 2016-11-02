@@ -30,72 +30,81 @@
 
 #include "sdkconfig.h"
 
-#include "bootloader_config.h"
 #include "bootloader_flash.h"
 #include "esp_image_format.h"
+#include "esp_secure_boot.h"
 
 static const char* TAG = "secure_boot";
 
+#define HASH_BLOCK_SIZE 128
+#define IV_LEN HASH_BLOCK_SIZE
+#define DIGEST_LEN 64
+
 /**
  *  @function :     secure_boot_generate
- *  @description:   generate boot abstract & iv
+ *  @description:   generate boot digest (aka "abstract") & iv
  *
- *  @inputs:        bool
+ *  @inputs:        image_len - length of image to calculate digest for
  */
 static bool secure_boot_generate(uint32_t image_len){
-	SpiFlashOpResult spiRet;
-	uint32_t buf[32];
+    SpiFlashOpResult spiRet;
+    /* buffer is uint32_t not uint8_t to meet ROM SPI API signature */
+    uint32_t buf[IV_LEN / sizeof(uint32_t)];
     const void *image;
 
-	if (image_len % 128 != 0) {
-		image_len = (image_len / 128 + 1) * 128;
-	}
-	ets_secure_boot_start();
-	ets_secure_boot_rd_iv(buf);
-	ets_secure_boot_hash(NULL);
-	Cache_Read_Disable(0);
-	/* iv stored in sec 0 */
-	spiRet = SPIEraseSector(0);
-	if (spiRet != SPI_FLASH_RESULT_OK)
-	{
-		ESP_LOGE(TAG, SPI_ERROR_LOG);
-		return false;
-	}
-	Cache_Read_Enable(0);
+    /* hardware secure boot engine only takes full blocks, so round up the
+       image length. The additional data should all be 0xFF.
+    */
+    if (image_len % HASH_BLOCK_SIZE != 0) {
+        image_len = (image_len / HASH_BLOCK_SIZE + 1) * HASH_BLOCK_SIZE;
+    }
+    ets_secure_boot_start();
+    ets_secure_boot_rd_iv(buf);
+    ets_secure_boot_hash(NULL);
+    Cache_Read_Disable(0);
+    /* iv stored in sec 0 */
+    spiRet = SPIEraseSector(0);
+    if (spiRet != SPI_FLASH_RESULT_OK)
+    {
+        ESP_LOGE(TAG, "SPI erase failed %d", spiRet);
+        return false;
+    }
+    Cache_Read_Enable(0);
 
-	/* write iv to flash, 0x0000, 128 bytes (1024 bits) */
+    /* write iv to flash, 0x0000, 128 bytes (1024 bits) */
     ESP_LOGD(TAG, "write iv to flash.");
-	spiRet = SPIWrite(0, buf, 128);
-	if (spiRet != SPI_FLASH_RESULT_OK)
-	{
-		ESP_LOGE(TAG, SPI_ERROR_LOG);
-		return false;
-	}
+    spiRet = SPIWrite(0, buf, IV_LEN);
+    if (spiRet != SPI_FLASH_RESULT_OK)
+    {
+        ESP_LOGE(TAG, "SPI write failed %d", spiRet);
+        return false;
+    }
+    bzero(buf, sizeof(buf));
 
-	/* generate digest from image contents */
+    /* generate digest from image contents */
     image = bootloader_mmap(0x1000, image_len);
     if (!image) {
         ESP_LOGE(TAG, "bootloader_mmap(0x1000, 0x%x) failed", image_len);
         return false;
     }
-	for (int i = 0; i < image_len; i+=128) {
-		ets_secure_boot_hash(image + i/sizeof(void *));
-	}
+    for (int i = 0; i < image_len; i+= HASH_BLOCK_SIZE) {
+        ets_secure_boot_hash(image + i/sizeof(void *));
+    }
     bootloader_unmap(image);
 
-	ets_secure_boot_obtain();
-	ets_secure_boot_rd_abstract(buf);
-	ets_secure_boot_finish();
+    ets_secure_boot_obtain();
+    ets_secure_boot_rd_abstract(buf);
+    ets_secure_boot_finish();
 
-    ESP_LOGD(TAG, "write abstract to flash.");
-	spiRet = SPIWrite(0x80, buf, 64);
-	if (spiRet != SPI_FLASH_RESULT_OK) {
-		ESP_LOGE(TAG, SPI_ERROR_LOG);
-		return false;
-	}
-	ESP_LOGD(TAG, "write abstract to flash.");
-	Cache_Read_Enable(0);
-	return true;
+    ESP_LOGD(TAG, "write digest to flash.");
+    spiRet = SPIWrite(0x80, buf, DIGEST_LEN);
+    if (spiRet != SPI_FLASH_RESULT_OK) {
+        ESP_LOGE(TAG, "SPI write failed %d", spiRet);
+        return false;
+    }
+    ESP_LOGD(TAG, "write digest to flash.");
+    Cache_Read_Enable(0);
+    return true;
 }
 
 /* Burn values written to the efuse write registers */
@@ -109,34 +118,19 @@ static inline void burn_efuses()
     while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */
 }
 
-/**
- *  @brief Enable secure boot if it is not already enabled.
- *
- *  Called if the secure boot flag is set on the
- *  bootloader image in flash. If secure boot is not yet enabled for
- *  bootloader, this will generate the secure boot digest and enable
- *  secure boot by blowing the EFUSE_RD_ABS_DONE_0 efuse.
- *
- *  This function does not verify secure boot of the bootloader (the
- *  ROM bootloader does this.)
- *
- *  @return true if secure boot is enabled (either was already enabled,
- *  or is freshly enabled as a result of calling this function.) false
- *  implies an error occured (possibly secure boot is part-enabled.)
- */
-bool secure_boot_generate_bootloader_digest(void) {
+esp_err_t esp_secure_boot_permanently_enable(void) {
     esp_err_t err;
     uint32_t image_len = 0;
-    if (REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0)
+    if (esp_secure_boot_enabled())
     {
         ESP_LOGI(TAG, "bootloader secure boot is already enabled, continuing..");
-        return true;
+        return ESP_OK;
     }
 
     err = esp_image_basic_verify(0x1000, &image_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "bootloader image appears invalid! error %d", err);
-        return false;
+        return err;
     }
 
     uint32_t dis_reg = REG_READ(EFUSE_BLK0_RDATA0_REG);
@@ -178,17 +172,17 @@ bool secure_boot_generate_bootloader_digest(void) {
     ESP_LOGI(TAG, "Generating secure boot digest...");
     if (false == secure_boot_generate(image_len)){
         ESP_LOGE(TAG, "secure boot generation failed");
-        return false;
+        return ESP_FAIL;
     }
     ESP_LOGI(TAG, "Digest generation complete.");
 
     if (!efuse_key_read_protected) {
         ESP_LOGE(TAG, "Pre-loaded key is not read protected. Refusing to blow secure boot efuse.");
-        return false;
+        return ESP_ERR_INVALID_STATE;
     }
     if (!efuse_key_write_protected) {
         ESP_LOGE(TAG, "Pre-loaded key is not write protected. Refusing to blow secure boot efuse.");
-        return false;
+        return ESP_ERR_INVALID_STATE;
     }
 
     ESP_LOGI(TAG, "blowing secure boot efuse & disabling JTAG...");
@@ -200,9 +194,9 @@ bool secure_boot_generate_bootloader_digest(void) {
     ESP_LOGD(TAG, "after updating, EFUSE_BLK0_RDATA6 %x", after);
     if (after & EFUSE_RD_ABS_DONE_0) {
         ESP_LOGI(TAG, "secure boot is now enabled for bootloader image");
-        return true;
+        return ESP_OK;
     } else {
         ESP_LOGE(TAG, "secure boot not enabled for bootloader image, EFUSE_RD_ABS_DONE_0 is probably write protected!");
-        return false;
+        return ESP_ERR_INVALID_STATE;
     }
 }

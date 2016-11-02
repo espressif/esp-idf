@@ -60,7 +60,6 @@ typedef struct {
 } bootloader_state_t;
 
 bool flash_encrypt(bootloader_state_t *bs);
-bool secure_boot_generate_bootloader_digest(void);
 
 #ifdef __cplusplus
 }
