@@ -47,6 +47,8 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/bta/gatt			\
 			bluedroid/bta/hh			\
 			bluedroid/bta/sdp			\
+			bluedroid/bta/av			\
+			bluedroid/bta/ar			\
 			bluedroid/bta/sys			\
 			bluedroid/bta				\
 			bluedroid/btcore			\
