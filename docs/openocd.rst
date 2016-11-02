@@ -1,7 +1,7 @@
 OpenOCD setup for ESP32
 -----------------------
 
-The ESP31 and ESP32 have two powerful Xtensa cores, allowing for a great deal of variety of program architectures. The FreeRTOS
+The ESP31 and ESP32 have two powerful Xtensa cores, allowing for a great variety of program architectures. The FreeRTOS
 OS that comes with ESP-IDF is capable of multi-core pre-emptive multithreading, allowing for an intuitive way of writing software. 
 
 The downside of the ease of programming is that debugging without the right tools is harder: figuring out a bug that is caused 
