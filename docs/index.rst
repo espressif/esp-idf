@@ -16,8 +16,6 @@ Contents:
    Linux <linux-setup>
    Mac OS <macos-setup>
 
-.. Configure - TBA
-
 .. Connect - TBA
 
 .. toctree::
@@ -35,16 +33,62 @@ Contents:
    build_system
    openocd
 
+.. API Reference - TABLE OF CONTENTS
+   1. System - TBA
+   1.1. Fundamentals of multiprocessor programming with FreeRTOS
+   1.2. Application startup flow
+   1.3. Flash encryption and secure boot: how they work and APIs
+   1.4. Lower Power Coprocessor
+   1.5. Watchdogs
+   2. Memeory - TBA
+   3. Wi-Fi
+   4. Bluetooth
+     4.1. BT Classic - TBA
+     4.2. BLE
+   5. Ethernet - TBA
+   6. Interfaces
+     6.1. GPIO
+     6.2. ADC - TBA
+     6.3. DAC - TBA
+     6.4. UART - TBA
+     6.5. I2C - TBA
+     6.6. I2S - TBA
+     6.7. SPI - TBA
+     6.8. CAN - TBA
+     6.9. SD Controller - TBA
+     6.10. Infrared - TBA
+     6.11. Pulse Counter - TBA
+     6.12. PWM - TBA
+     6.13. LED PWM
+     6.14. ...
+   7. Sensors - TBA
+     7.1. Hall Sensor - TBA
+     7.2. Temperature Sensor - TBA
+     7.3. Touch Sensor - TBA
+   8. Protocols - TBA
+   9. Components
+     9.1. Logging <api/log>
+     9.2  Non-Volatile Storage <api/nvs_flash>
+     9.3  Virtual Filesystem <api/vfs>
+     9.3. Http sever
+   10. Applications - TBA
+   API Dcoumentation Teamplate
+
 .. toctree::
    :caption: API Reference
    :maxdepth: 1
 
    Wi-Fi <api/esp_wifi>
    Bluetooth <api/bt>
+
    GPIO <api/gpio>
+   LED Control <api/ledc>
+
    Logging <api/log>
-   Non-volatile storage <api/nvs>
-   Virtual filesystem <api/vfs>
+   Non-Volatile Storage <api/nvs_flash>
+   Virtual Filesystem <api/vfs>
+   deep-sleep-stub
+
    Template <api/template>
 
 .. toctree::
