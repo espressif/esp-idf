@@ -68,13 +68,13 @@ static void bt_app_task_handler(void *arg)
                 fixed_queue_process(bt_app_general_alarm_queue);
             }
 #if (BUT_PROFILE_CFG)
-			else if(e->sig == BUTTON_PRESS_EVT){
-			LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
-		  button_msg[1] = e->par;
-          button_msg_notify(2,button_msg);	
+		//	else if(e->sig == BUTTON_PRESS_EVT){
+		//	LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
+		//  button_msg[1] = e->par;
+        //  button_msg_notify(2,button_msg);	
 
 
-	}
+	//}
 #endif	///BUT_PROFILE_CFG
 
         }

@@ -38,7 +38,7 @@
 	 //ke_event_clear(KE_EVENT_BTU_TASK_THREAD);
  
 	 TaskEvt_t *e;
-	 for (;;) {
+	 for (;;) { 
 		 if (pdTRUE == xQueueReceive(xProfileQueue, &e, (portTickType)portMAX_DELAY)) {
  
 			 if (e->sig == SIG_BTU_WORK) {
@@ -68,10 +68,10 @@
 }
 
 void bt_profile_msg_ready(fixed_queue_t *queue) {
-    BT_HDR *p_msg;
+    prf_hdr_evt_t *p_msg;
 
     while (!fixed_queue_is_empty(queue)) {
-        p_msg = (BT_HDR *)fixed_queue_dequeue(queue);
+        p_msg = (prf_hdr_evt_t *)fixed_queue_dequeue(queue);
 		if(p_msg != NULL)
 		{
 			bt_prf_sys_event(p_msg);

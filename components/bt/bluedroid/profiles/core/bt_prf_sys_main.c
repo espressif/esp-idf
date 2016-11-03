@@ -48,7 +48,7 @@ void bt_prf_sys_init(void)
 ** Returns          void
 **
 *******************************************************************************/
-void bt_prf_sys_event(BT_HDR *p_msg)
+void bt_prf_sys_event(prf_hdr_evt_t *p_msg)
 {
     UINT8       id;
     BOOLEAN     freebuf = TRUE;

@@ -119,7 +119,7 @@ typedef union
 
 
 
-BOOLEAN ble_but_prf_hdl_event(BT_HDR *msg_data);
+BOOLEAN ble_but_prf_hdl_event(prf_hdr_evt_t *msg_data);
 
 void ble_but_prf_disable(void);
 

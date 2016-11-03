@@ -41,7 +41,7 @@
 #include "button_pro.h"
 #include "app_button_int.h"
 
-static const tBTA_SYS_REG bta_gatts_reg =
+static const tBT_PRF_SYS_REG bta_gatts_reg =
 {
     ble_but_prf_hdl_event,
     ble_but_prf_disable
@@ -59,7 +59,7 @@ static const tBTA_SYS_REG bta_gatts_reg =
 ** Returns          BOOLEAN
 **
 *******************************************************************************/
-BOOLEAN ble_but_prf_hdl_event(BT_HDR *msg_data)
+BOOLEAN ble_but_prf_hdl_event(prf_hdr_evt_t *msg_data)
 {
 	UINT16 connid = 0;
 	switch(msg_data->event)
@@ -112,7 +112,7 @@ void ble_but_prf_disable(void)
 
     if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
     {
-        p_buf->event = BTA_GATTS_API_DISABLE_EVT;
+        p_buf->event = BLE_BUT_DISABLE_IND_EVT;
         bta_sys_sendmsg(p_buf);
     }
     bta_sys_deregister(PRF_ID_BUT_LE);

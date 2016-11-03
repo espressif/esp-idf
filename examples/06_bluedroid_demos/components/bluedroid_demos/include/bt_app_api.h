@@ -15,7 +15,7 @@
 #include "bt_types.h"
 #include "bt_app_defs.h"
 #include "bta_gatt_api.h"
-
+#include "bt_prf_sys.h"
 
 
 /*******************************************************************************
@@ -895,7 +895,7 @@ void esp_ble_gatts_cancel_conn (esp_gatts_if_t server_if, BD_ADDR remote_bda, BO
 **
 ** @function        esp_ble_gatts_close
 **
-** @param[in]       Close a connection  a remote device.
+** @brief           Close a connection  a remote device.
 **
 ** @param[in]       conn_id: connectino ID to be closed.
 **
@@ -903,4 +903,22 @@ void esp_ble_gatts_cancel_conn (esp_gatts_if_t server_if, BD_ADDR remote_bda, BO
 **
 *******************************************************************************/
 void esp_ble_gatts_close(uint16_t conn_id);
+
+
+/*******************************************************************************
+**
+** @function        esp_prf_app_register
+**
+** @brief           This function is called to register application callbacks
+**                  with BTA GATTS module.
+**
+** @param[in]       prf_id - the profile identification
+** @param[in]       p_cback - pointer to the application callback function.
+**
+** @return          None
+**
+*******************************************************************************/
+void esp_prf_app_register(uint8_t prf_id, void *p_cback);
+
+
 

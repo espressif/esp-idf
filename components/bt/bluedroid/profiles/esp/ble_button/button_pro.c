@@ -26,7 +26,6 @@
 #include "bta_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gatts_int.h"
-#include "bt_app_api.h"
 #include "button_pro.h"
 
 #include "prf_defs.h"

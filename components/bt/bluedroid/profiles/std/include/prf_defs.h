@@ -36,6 +36,16 @@
  ****************************************************************************************
  */
 
+/* Define the header of each buffer used in the profile stack.
+*/
+typedef struct
+{
+    uint16_t          event;
+    uint16_t          len;
+    uint8_t           data[];
+} prf_hdr_evt_t;
+
+
 /// Characteristic Value Descriptor
 typedef struct 
 {

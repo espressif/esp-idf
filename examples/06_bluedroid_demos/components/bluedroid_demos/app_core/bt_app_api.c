@@ -1194,6 +1194,41 @@ void esp_ble_gatts_close(uint16_t conn_id)
 }
 
 
+/*******************************************************************************
+**
+** @function        esp_prf_app_register
+**
+** @brief           This function is called to register application callbacks
+**                    with BTA GATTS module.
+**
+** @param[in]       p_app_uuid - applicaiton UUID
+** @param[in]       p_cback - pointer to the application callback function.
+**
+** @return          None
+**
+*******************************************************************************/
+void esp_prf_app_register(uint8_t prf_id, void *p_cback)
+{
+    //tBTA_GATTS_API_REG  *p_buf;
+
+    /* register with BTA system manager */
+    if (bt_prf_sys_is_register(PRF_ID_SYS) == FALSE)
+    {
+        bt_prf_sys_register(PRF_ID_SYS, NULL);
+    }
+
+//    if ((p_buf = (tBTA_GATTS_API_REG *) GKI_getbuf(sizeof(tBTA_GATTS_API_REG))) != NULL)
+//    {
+//        p_buf->hdr.event    = BTA_GATTS_API_REG_EVT;
+
+//        if (p_app_uuid != NULL)
+//            memcpy(&p_buf->app_uuid, p_app_uuid, sizeof(tBT_UUID));
+//        p_buf->p_cback      = p_cback;
+
+//        bta_sys_sendmsg(p_buf);
+//    }
+    return;
+}
 
 
 
