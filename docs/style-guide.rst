@@ -3,7 +3,7 @@ Espressif IoT Development Framework Style Guide
 
 
 About this guide
-~~~~~~~~~~~~~~~~
+----------------
 
 Purpose of this style guide is to encourage use of common coding practices within the ESP-IDF. 
 
@@ -14,15 +14,15 @@ We try to keep rules simple enough, which means that they can not cover all pote
 When doing modifications to third-party code used in ESP-IDF, follow the way that particular project is written. That will help propose useful changes for merging into upstream project. 
 
 C code formatting
-~~~~~~~~~~~~~~~~~
+-----------------
 
 Indentation
------------
+^^^^^^^^^^^
 
 Use 4 spaces for each indentation level. Don't use tabs for indentation. Configure the editor to emit 4 spaces each time you press tab key.
 
 Vertical space
---------------
+^^^^^^^^^^^^^^
 
 Place one empty line between functions. Don't begin or end a function with an empty line.
 ::
@@ -44,7 +44,7 @@ Place one empty line between functions. Don't begin or end a function with an em
     }
 
 Horizontal space
-----------------
+^^^^^^^^^^^^^^^^
 
 Always add single space after conditional and loop keywords::
     
@@ -93,7 +93,7 @@ Never add trailing whitespace at the end of the line.
 
 
 Braces
-------
+^^^^^^
 
 - Function definition should have a brace on a separate line::
 
@@ -112,14 +112,13 @@ Braces
     
     if (condition) {
         do_one();
-    }
-    else if (other_condition) {
+    } else if (other_condition) {
         do_two();
     }
 
 
 Comments
---------
+^^^^^^^^
 
 Use ``//`` for single line comments. For multi-line comments it is okay to use either ``//`` on each line or a ``/* */`` block.
 
@@ -160,7 +159,7 @@ Although not directly related to formatting, here are a few notes about using co
 
 
 Formatting your code
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 You can use ``astyle`` program to format your code according to the above recommendations.
 
@@ -170,13 +169,18 @@ To re-format a file, run::
 
     tools/format.sh components/my_component/file.c
 
-Structure and naming
-~~~~~~~~~~~~~~~~~~~~
+Documenting code
+----------------
 
-To be written.
+Please see the guide here: `Documenting Code <documenting-code.rst>`_.
+
+Structure and naming
+--------------------
+
+
 
 Language features
-~~~~~~~~~~~~~~~~~
+-----------------
 
 To be written.
 
