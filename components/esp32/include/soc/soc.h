@@ -148,6 +148,7 @@
 #define DR_REG_GPIO_SD_BASE                     0x3ff44f00
 #define DR_REG_FE2_BASE                         0x3ff45000
 #define DR_REG_FE_BASE                          0x3ff46000
+#define DR_REG_FRC_TIMER_BASE                   0x3ff47000
 #define DR_REG_RTCCNTL_BASE                     0x3ff48000
 #define DR_REG_RTCIO_BASE                       0x3ff48400
 #define DR_REG_SARADC_BASE                      0x3ff48800
@@ -281,9 +282,9 @@
  *      19                      2               extern level
  *      20                      2               extern level
  *      21                      2               extern level
- *      22                      3               extern edge
+ *      22                      3               extern edge             FRC1 timer
  *      23                      3               extern level
- *      24                      4               extern level
+ *      24                      4               extern level            TG1_WDT
  *      25                      4               extern level            Reserved                Reserved
  *      26                      5               extern level            Reserved                Reserved
  *      27                      3               extern level            Reserved                Reserved
@@ -301,8 +302,10 @@
 #define ETS_T0_WDT_INUM                         3
 #define ETS_WBB_INUM                            4
 #define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
+#define ETS_FRC1_INUM                           22
+#define ETS_T1_WDT_INUM                         24
 
-//CPU0 Intrrupt number used in ROM, should be cancelled in SDK
+//CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1
 #define ETS_UART0_INUM                          5
 #define ETS_UART1_INUM                          5

@@ -33,6 +33,8 @@
 #define __LWIPOPTS_H__
 
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
 #include "esp_task.h"
 #include "sdkconfig.h"
 
@@ -552,7 +554,22 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
 #define LWIP_NETCONN_FULLDUPLEX         1
 #define LWIP_NETCONN_SEM_PER_THREAD     1
 
+#define LWIP_DHCP_MAX_NTP_SERVERS       CONFIG_LWIP_DHCP_MAX_NTP_SERVERS
+#define LWIP_TIMEVAL_PRIVATE            0
 
+#define SNTP_SET_SYSTEM_TIME_US(sec, us)  \
+    do { \
+        struct timeval tv = { .tv_sec = sec, .tv_usec = us }; \
+        settimeofday(&tv, NULL); \
+    } while (0);
+
+#define SNTP_GET_SYSTEM_TIME(sec, us) \
+    do { \
+        struct timeval tv = { .tv_sec = 0, .tv_usec = 0 }; \
+        gettimeofday(&tv, NULL); \
+        (sec) = tv.tv_sec;  \
+        (us) = tv.tv_usec; \
+    } while (0);
 
 #define SOC_SEND_LOG //printf
 

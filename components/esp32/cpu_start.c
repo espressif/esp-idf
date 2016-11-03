@@ -169,7 +169,8 @@ void start_cpu0_default(void)
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
-    esp_setup_syscalls();
+    esp_setup_syscall_table();
+    esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
     const char* default_uart_dev = "/dev/uart/0";
