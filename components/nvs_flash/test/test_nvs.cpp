@@ -300,6 +300,27 @@ TEST_CASE("storage doesn't add duplicates within multiple pages", "[nvs]")
     CHECK(page.findItem(1, itemTypeOf<int>(), "bar") == ESP_OK);
 }
 
+TEST_CASE("storage can find items on second page if first is not fully written and has cached search data", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    Storage storage;
+    CHECK(storage.init(0, 3) == ESP_OK);
+    int bar = 0;
+    uint8_t bigdata[100 * 32] = {0};
+    // write one big chunk of data
+    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "first", bigdata, sizeof(bigdata)));
+    
+    // write second one; it will not fit into the first page
+    ESP_ERROR_CHECK(storage.writeItem(0, ItemType::BLOB, "second", bigdata, sizeof(bigdata)));
+    
+    size_t size;
+    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "first", size));
+    CHECK(size == sizeof(bigdata));
+    ESP_ERROR_CHECK(storage.getItemDataSize(0, ItemType::BLOB, "second", size));
+    CHECK(size == sizeof(bigdata));
+}
+
+
 TEST_CASE("can write and read variable length data lots of times", "[nvs]")
 {
     SpiFlashEmulator emu(8);
@@ -1051,6 +1072,39 @@ TEST_CASE("crc error in variable length item is handled", "[nvs]")
         TEST_ESP_ERR(p.findItem(0, ItemType::SZ, "key"), ESP_ERR_NVS_NOT_FOUND);
         TEST_ESP_OK(p.readItem<uint64_t>(0, "after", val));
         CHECK(val == after_val);
+    }
+}
+
+
+TEST_CASE("read/write failure (TW8406)", "[nvs]")
+{
+    SpiFlashEmulator emu(3);
+    nvs_flash_init_custom(0, 3);
+    for (int attempts = 0; attempts < 3; ++attempts) {
+        int i = 0;
+        nvs_handle light_handle = 0;
+        char key[15] = {0};
+        char data[76] = {12, 13, 14, 15, 16};
+        uint8_t number = 20;
+        size_t data_len = sizeof(data);
+        
+        ESP_ERROR_CHECK(nvs_open("LIGHT", NVS_READWRITE, &light_handle));
+        ESP_ERROR_CHECK(nvs_set_u8(light_handle, "RecordNum", number));
+        for (i = 0; i < number; ++i) {
+            sprintf(key, "light%d", i);
+            ESP_ERROR_CHECK(nvs_set_blob(light_handle, key, data, sizeof(data)));
+        }
+        nvs_commit(light_handle);
+        
+        uint8_t get_number = 0;
+        ESP_ERROR_CHECK(nvs_get_u8(light_handle, "RecordNum", &get_number));
+        REQUIRE(number == get_number);
+        for (i = 0; i < number; ++i) {
+            char data[76] = {0};
+            sprintf(key, "light%d", i);
+            ESP_ERROR_CHECK(nvs_get_blob(light_handle, key, data, &data_len));
+        }
+        nvs_close(light_handle);
     }
 }
 
