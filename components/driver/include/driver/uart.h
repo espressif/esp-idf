@@ -87,8 +87,8 @@ typedef struct {
     uart_word_length_t data_bits;       /*!< UART byte size*/
     uart_parity_t parity;               /*!< UART parity mode*/
     uart_stop_bits_t stop_bits;         /*!< UART stop bits*/
-    uart_hw_flowcontrol_t flow_ctrl;    /*!< UART hw flow control mode(cts/rts)*/
-    uint8_t rx_flow_ctrl_thresh ;       /*!< UART hw RTS threshold*/
+    uart_hw_flowcontrol_t flow_ctrl;    /*!< UART HW flow control mode(cts/rts)*/
+    uint8_t rx_flow_ctrl_thresh ;       /*!< UART HW RTS threshold*/
 } uart_config_t;
 
 typedef struct {
@@ -124,6 +124,7 @@ typedef struct {
  * @brief   Set UART data bits.
  *
  * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   data_bit UART data bits
  *
  * @return
@@ -147,6 +148,7 @@ esp_err_t uart_get_word_length(uart_port_t uart_num, uart_word_length_t* data_bi
  * @brief   Set UART stop bits.
  *
  * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   bit_num  UART stop bits
  *
  * @return
@@ -170,6 +172,7 @@ esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bit);
  * @brief   Set UART parity.
  *
  * @param   uart_no     UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   parity_mode the enum of uart parity configuration
  *
  * @return
@@ -194,6 +197,7 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
  * @brief   Set UART baud rate.
  *
  * @param   uart_no   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   baud_rate UART baud-rate.
  *
  * @return
@@ -216,7 +220,9 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
 
 /**
  * @brief   Set UART line inverse mode
+ *
  * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   inverse_mask Choose the wires that need to be inversed.
  *
  *          (inverse_mask should be chosen from uart_inverse_t, combine with OR-OPERATION)
@@ -232,7 +238,9 @@ esp_err_t uart_set_line_inverse(uart_port_t uart_no, uint32_t inverse_mask) ;
  * @brief   Set hardware flow control.
  *
  * @param   uart_no   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   flow_ctrl Hardware flow control mode
+ *
  * @param   rx_thresh Threshold of Hardware RX flow control(0 ~ UART_FIFO_LEN)
  *
  * @return
@@ -243,6 +251,7 @@ esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_no, uart_hw_flowcontrol_t flow_
 
 /**
  * @brief   Get hardware flow control mode
+ *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
  * @return
@@ -255,6 +264,7 @@ esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flo
  * @brief   Clear UART interrupt status
  *
  * @param   uart_no   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   clr_mask  Bit mask of the status that to be cleared.
  *
  *                    (enable_mask should be chosen from the fields of register UART_INT_CLR_REG)
@@ -269,6 +279,7 @@ esp_err_t uart_clear_intr_status(uart_port_t uart_num, uint32_t clr_mask);
  * @brief   Set UART interrupt enable
  *
  * @param   uart_no      UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   enable_mask  Bit mask of the enable bits.
  *
  *                       (enable_mask should be chosen from the fields of register UART_INT_ENA_REG)
@@ -283,6 +294,7 @@ esp_err_t uart_enable_intr_mask(uart_port_t uart_num, uint32_t enable_mask);
  * @brief   Clear UART interrupt enable bits
  *
  * @param   uart_no       UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   disable_mask  Bit mask of the disable bits.
  *
  *                        (disable_mask should be chosen from the fields of register UART_INT_ENA_REG)
@@ -331,7 +343,9 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num);
  * @brief   Enable UART TX interrupt(RX_FULL & RX_TIMEOUT INTERRUPT)
  *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   enable  1: enable; 0: disable
+ *
  * @param   thresh  Threshold of TX interrupt, 0 ~ UART_FIFO_LEN
  *
  * @return
@@ -342,13 +356,16 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
 
 /**
 * @brief   register UART interrupt handler(ISR).
+*           @note
  *          UART ISR handler will be attached to the same CPU core that this function is running on.
  *          Users should know that which CPU is running and then pick a INUM that is not used by system.
  *          We can find the information of INUM and interrupt level in soc.h.
  *
  *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   uart_intr_num UART interrupt number,check the info in soc.h, and please refer to core-isa.h for more details
+ *
  * @param   fn  Interrupt handler function.
  * @attention
  *          The ISR handler function MUST be defined with attribution of "IRAM_ATTR" for now.
@@ -364,9 +381,13 @@ esp_err_t uart_isr_register(uart_port_t uart_num, uint8_t uart_intr_num, void (*
  * @brief   Set UART pin number
  *
  * @param   uart_no    UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   tx_io_num  UART TX pin GPIO number
+ *
  * @param   rx_io_num  UART RX pin GPIO number
+ *
  * @param   rts_io_num UART RTS pin GPIO number
+ *
  * @param   cts_io_num UART CTS pin GPIO number
  *
  * @return
@@ -380,6 +401,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
  *          UART rx hardware flow control should not be set.
  *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   level   1: RTS output low(active); 0: RTS output high(block)
  *
  * @return
@@ -392,6 +414,7 @@ esp_err_t uart_set_rts(uart_port_t uart_num, int level);
  * @brief   UART set DTR level (before inverse)
  *
  * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   level    1: DTR output low; 0: DTR output high
  *
  * @return
@@ -404,6 +427,7 @@ esp_err_t uart_set_dtr(uart_port_t uart_num, int level);
 * @brief   UART parameter configure
  *
  * @param   uart_no     UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   uart_config UART parameter settings
  *
  * @return
@@ -416,6 +440,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, uart_config_t *uart_config);
 * @brief   UART interrupt configure
  *
  * @param   uart_no     UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   p_intr_conf UART interrupt settings
  *
  * @return
@@ -431,12 +456,19 @@ esp_err_t uart_intr_config(uart_port_t uart_num, uart_intr_config_t *p_intr_conf
  *          Users should know that which CPU is running and then pick a INUM that is not used by system.
  *          We can find the information of INUM and interrupt level in soc.h.
  *
- * @param   uart_no       UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param   rx_buffer_size   UART RX ring buffer size
- * @param   tx_buffer_size   UART TX ring buffer size, if set to zero, driver will not use TX buffer and TX task.
- * @param   queue_size    UART event queue size/depth.
+ * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
+ * @param   rx_buffer_size UART RX ring buffer size
+ *
+ * @param   tx_buffer_size UART TX ring buffer size.
+ *
+ *          If set to zero, driver will not use TX buffer, TX function will block task until all data have been sent out..
+ *
+ * @param   queue_size UART event queue size/depth.
+ *
  * @param   uart_intr_num UART interrupt number,check the info in soc.h, and please refer to core-isa.h for more details
- * @param   uart_queue  UART event queue handle, if set NULL, driver will not use an event queue.
+ *
+ * @param   uart_queue UART event queue handle, if set NULL, driver will not use an event queue.
  *
  * @return
  *     - ESP_OK   Success
@@ -459,6 +491,7 @@ esp_err_t uart_driver_delete(uart_port_t uart_num);
  * @brief   Wait UART TX FIFO empty
  *
  * @param   uart_no       UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   ticks_to_wait Timeout, count in RTOS ticks
  *
  * @return
@@ -473,7 +506,9 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
  *          This function will not wait for the space in TX FIFO, just fill the TX FIFO and return when the FIFO is full.
  *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   buffer data buffer address
+ *
  * @param   len    data length to send
  *
  * @return
@@ -484,10 +519,17 @@ int uart_tx_chars(uart_port_t uart_no, char* buffer, uint32_t len);
 
 /**
  * @brief   Send data to the UART port from a given buffer and length,
+ *
+ *          If parameter tx_buffer_size is set to zero:
  *          This function will not return until all the data have been sent out, or at least pushed into TX FIFO.
  *
+ *          Otherwise, if tx_buffer_size > 0, this function will return after copying all the data to tx ringbuffer,
+ *          then, UART ISR will move data from ring buffer to TX FIFO gradually.
+ *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   src   data buffer address
+ *
  * @param   size  data length to send
  *
  * @return
@@ -498,23 +540,37 @@ int uart_tx_all_chars(uart_port_t uart_num, const char* src, size_t size);
 
 /**
  * @brief   Send data to the UART port from a given buffer and length,
+ *
+ *          If parameter tx_buffer_size is set to zero:
  *          This function will not return until all the data and the break signal have been sent out.
+ *          After all data send out, send a break signal.
+ *
+ *          Otherwise, if tx_buffer_size > 0, this function will return after copying all the data to tx ringbuffer,
+ *          then, UART ISR will move data from ring buffer to TX FIFO gradually.
+ *          After all data send out, send a break signal.
+ *
+ *
  *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   src   data buffer address
+ *
  * @param   size  data length to send
+ *
  * @param   brk_len break signal length (unit: one bit's time@current_baudrate)
  *
  * @return
  *     - (-1) Parameter error
  *     - OTHERS(>=0) The number of data that pushed to the TX FIFO
  */
+
 int uart_tx_all_chars_with_break(uart_port_t uart_num, const char* src, size_t size, int brk_len);
 
 /**
 * @brief   UART read one char
  *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   ticks_to_wait Timeout, count in RTOS ticks
  *
  * @return
@@ -527,9 +583,13 @@ int uart_read_char(uart_port_t uart_num, TickType_t ticks_to_wait);
 * @brief   UART read bytes from UART buffer
  *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
  * @param   buf     pointer to the buffer.
+ *
  * @param   length  data length
+ *
  * @param   ticks_to_wait sTimeout, count in RTOS ticks
+ *
  *
  * @return
  *     - (-1) Error
@@ -588,14 +648,17 @@ int uart_get_print_port(void);
  * uart_param_config(uart_num, &uart_config);
  * //b1. Setup UART driver(with UART queue)
  * QueueHandle_t uart_queue;
- * uart_driver_install(uart_num, 1024 * 2, 10, UART_INTR_NUM, &uart_queue);//parameters here are just an example
+ * //parameters here are just an example, tx buffer size is 2048
+ * uart_driver_install(uart_num, 1024 * 2, 1024 * 2, 10, UART_INTR_NUM, &uart_queue);
  * //b2. Setup UART driver(without UART queue)
- * uart_driver_install(uart_num, 1024 * 2, 10, UART_INTR_NUM, NULL);       //parameters here are just an example
+ * //parameters here are just an example, tx buffer size is 0
+ * uart_driver_install(uart_num, 1024 * 2, 0, 10, UART_INTR_NUM, NULL);
  *@endcode
  *-----------------------------------------------------------------------------*
  * @code{c}
  * //2. Set UART pin
- * uart_set_pin(uart_num, -1, -1, 15, 13);                 //set UART pin, not needed if use default pins.
+ * //set UART pin, not needed if use default pins.
+ * uart_set_pin(uart_num, -1, -1, 15, 13);
  * @endcode
  *-----------------------------------------------------------------------------*
  * @code{c}
@@ -629,15 +692,20 @@ int uart_get_print_port(void);
  *         .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
  *         .rx_flow_ctrl_thresh = 122,
  *     };
- *     uart_param_config(uart_num, &uart_config);                       //Config UART1 parameters
- *     uart_set_pin(uart_num, 16, 17, 18, 19);                          //Set UART1 pins(TX: IO16, RX: IO17, RTS: IO18, CTS: IO19)
- *     esp_log_level_set(UART_TAG, ESP_LOG_ERROR);                      //Set UART log level
+ *     //Configure UART1 parameters
+ *     uart_param_config(uart_num, &uart_config);
+ *     //Set UART1 pins(TX: IO16, RX: IO17, RTS: IO18, CTS: IO19)
+ *     uart_set_pin(uart_num, 16, 17, 18, 19);
+ *     //Set UART log level
+ *     esp_log_level_set(UART_TAG, ESP_LOG_ERROR);
  *     //Install UART driver( We don't need an event queue here)
  *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, 17, NULL, RINGBUF_TYPE_BYTEBUF);
  *     uint8_t data[1000];
  *     while(1) {
- *         int len = uart_read_bytes(uart_num, data, sizeof(data), 10); //Read data from UART
- *         uart_tx_all_chars(uart_num, (const char*)data, len);         //Write data back to UART
+ *         //Read data from UART
+ *         int len = uart_read_bytes(uart_num, data, sizeof(data), 10);
+ *         //Write data back to UART
+ *         uart_tx_all_chars(uart_num, (const char*)data, len);
  *     }
  * }
  * @endcode
@@ -704,12 +772,16 @@ int uart_get_print_port(void);
  *        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
  *        .rx_flow_ctrl_thresh = 122,
  *     };
- *     uart_param_config(uart_num, &uart_config);                                 //Set UART parameters
- *     uart_set_pin(uart_num, -1, -1, 15, 13);                                    //Set UART pins,(-1: default pin, no change.)
- *     esp_log_level_set(UART_TAG, ESP_LOG_INFO);                                 //Set UART log level
+ *     //Set UART parameters
+ *     uart_param_config(uart_num, &uart_config);
+ *     //Set UART pins,(-1: default pin, no change.)
+ *     uart_set_pin(uart_num, -1, -1, 15, 13);
+ *     //Set UART log level
+ *     esp_log_level_set(UART_TAG, ESP_LOG_INFO);
  *     //Install UART driver, and get the queue.
  *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, 17, &uart0_queue, RINGBUF_TYPE_BYTEBUF);
- *     xTaskCreate(uart_task, "uTask", 2048*8, (void*)uart_num, 10, NULL);        //Create a task to handler UART event from ISR
+ *     //Create a task to handler UART event from ISR
+ *     xTaskCreate(uart_task, "uTask", 2048*8, (void*)uart_num, 10, NULL);
  * }
  * @endcode
  *
