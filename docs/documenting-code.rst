@@ -33,7 +33,6 @@ The ultimate goal is to ensure that all the code is consistently documented, so 
    :align: center
    :alt: Sample inline code after rendering
 
- 
 Go for it!
 ----------
 
@@ -76,7 +75,6 @@ When writing code for this repository, please follow guidelines below.
       *
       ...
  
-
   7. Overview of functionality of documented header file, or group of files that make a library, should be placed in separate ``README.rst`` file. 
 
 Go one extra mile
@@ -113,7 +111,6 @@ To highlight some information use command ``@attention`` or ``@note``. Example b
    *
    ...
 
-
 Use markdown to make your documentation even more readable. With markdown you can add headers, links, tables and more.
 
 ::
@@ -123,6 +120,10 @@ Use markdown to make your documentation even more readable. With markdown you ca
    * [ESP32 Technical Reference](http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf)
    *
    ...
+
+.. note::
+
+   For the code snippets, links, etc. to make it to the documentation, they should be enclosed in a comment block associated with one of documented objects. For instance, if the code snippet is illustrating how to use certain function, it should be enclosed in a comment block for that function.
 
 Wrap up
 -------
