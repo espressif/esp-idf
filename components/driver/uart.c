@@ -43,28 +43,35 @@ const char* UART_TAG = "UART";
 #define UART_EXIT_CRITICAL(mux)     portEXIT_CRITICAL(mux)
 
 typedef struct {
-    uart_port_t uart_num;
-    SemaphoreHandle_t tx_fifo_sem;
-    SemaphoreHandle_t tx_mutex;
-    SemaphoreHandle_t tx_buffer_mutex;
-    SemaphoreHandle_t tx_done_sem;
-    SemaphoreHandle_t tx_brk_sem;
-    SemaphoreHandle_t rx_mux;
-    QueueHandle_t xQueueUart;
-    int queue_size;
-    int intr_num;
-    int rx_buf_size;
-    ringbuf_type_t rx_buf_type;
-    RingbufHandle_t rx_ring_buf;
-    int tx_buf_size;
-    RingbufHandle_t tx_ring_buf;
-    bool buffer_full_flg;
-    bool tx_waiting;
-    int cur_remain;
-    uint8_t* rd_ptr;
-    uint8_t* head_ptr;
-    uint8_t data_buf[UART_FIFO_LEN];
-    uint8_t data_len;
+    uart_port_t uart_num;               /*!< UART port number*/
+    int queue_size;                     /*!< UART event queue size*/
+    QueueHandle_t xQueueUart;           /*!< UART queue handler*/
+    int intr_num;                       /*!< UART interrupt number*/
+    //rx parameters
+    SemaphoreHandle_t rx_mux;           /*!< UART RX data mutex*/
+    int rx_buf_size;                    /*!< RX ring buffer size */
+    RingbufHandle_t rx_ring_buf;        /*!< RX ring buffer handler*/
+    bool rx_buffer_full_flg;            /*!< RX ring buffer full flag. */
+    int rx_cur_remain;                  /*!< Data number that waiting to be read out in ring buffer item*/
+    uint8_t* rx_ptr;                    /*!< pointer to the current data in ring buffer*/
+    uint8_t* rx_head_ptr;               /*!< pointer to the head of RX item*/
+    uint8_t rx_data_buf[UART_FIFO_LEN]; /*!< Data buffer to stash FIFO data*/
+    uint8_t rx_stash_len;               /*!< stashed data length.(When using flow control, after reading out FIFO data, if we fail to push to buffer, we can just stash them.) */
+    //tx parameters
+    SemaphoreHandle_t tx_fifo_sem;      /*!< UART TX FIFO semaphore*/
+    SemaphoreHandle_t tx_mux;           /*!< UART TX mutex*/
+    SemaphoreHandle_t tx_buffer_mux;    /*!< UART TX buffer semaphore*/
+    SemaphoreHandle_t tx_done_sem;      /*!< UART TX done semaphore*/
+    SemaphoreHandle_t tx_brk_sem;       /*!< UART TX send break done semaphore*/
+    int tx_buf_size;                    /*!< TX ring buffer size */
+    RingbufHandle_t tx_ring_buf;        /*!< TX ring buffer handler*/
+    bool tx_waiting_fifo;               /*!< this flag indicates that some task is waiting for FIFO empty interrupt, used to send all data without any data buffer*/
+    uint8_t* tx_ptr;                    /*!< TX data pointer to push to FIFO in TX buffer mode*/
+    uart_event_t* tx_head;              /*!< TX data pointer to head of the current buffer in TX ring buffer*/
+    uint32_t tx_len_tot;                /*!< Total length of current item in ring buffer*/
+    uint8_t tx_brk_flg;                 /*!< Flag to indicate to send a break signal in the end of the item sending procedure */
+    uint8_t tx_brk_len;                 /*!< TX break signal cycle length/number */
+    uint8_t tx_waiting_brk;             /*!< Flag to indicate that TX FIFO is ready to send break signal after FIFO is empty, do not push data into TX FIFO right now.*/
 } uart_obj_t;
 
 static uart_obj_t *p_uart_obj[UART_NUM_MAX] = {0};
@@ -438,16 +445,8 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
     uint32_t uart_intr_status = UART[uart_num]->int_st.val;
     int rx_fifo_len = 0;
     uart_event_t uart_event;
-
-    static uint8_t * tx_ptr;
-    static uart_event_t* tx_head;
-    static int tx_len_tot = 0;
-    static int brk_flg = 0;
-    static int tx_brk_len = 0;
-    static int wait_brk = 0;
-
-
     portBASE_TYPE HPTaskAwoken = 0;
+
     while(uart_intr_status != 0x0) {
         buf_idx = 0;
         uart_event.type = UART_EVENT_MAX;
@@ -456,85 +455,92 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
             uart_reg->int_ena.txfifo_empty = 0;
             uart_reg->int_clr.txfifo_empty = 1;
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
-            if(wait_brk) {
+            if(p_uart->tx_waiting_brk) {
                 return;
             }
-            if(p_uart->tx_waiting == true) {
-                p_uart->tx_waiting = false;
+            if(p_uart->tx_waiting_fifo == true) {
+                p_uart->tx_waiting_fifo = false;
                 xSemaphoreGiveFromISR(p_uart->tx_fifo_sem, NULL);
             }
             else {
+                //We don't use TX ring buffer, because the size if zero.
+                if(p_uart->tx_buf_size == 0) {
+                    return;
+                }
                 int tx_fifo_rem = UART_FIFO_LEN - UART[uart_num]->status.txfifo_cnt;
                 bool en_tx_flg = false;
-                if(tx_len_tot == 0) {
-                    size_t size;
-//                    ets_printf("dbg1,tot=0,get 1st head\n");
-//                    xRingbufferPrintInfo(p_uart->tx_ring_buf);
-                    tx_head = (uart_event_t*) xRingbufferReceiveFromISR(p_uart->tx_ring_buf, &size);
-//                    xRingbufferPrintInfo(p_uart->tx_ring_buf);
-                    if(tx_head) {   //enable empty intr
-//                        tx_ptr = (uint8_t*)tx_head + sizeof(uart_event_t);
-                        tx_ptr = NULL;
-//                        en_tx_flg = true;
-                        tx_len_tot = tx_head->data.size;
-                        if(tx_head->type == UART_DATA_BREAK) {
-                            tx_len_tot = tx_head->data.size;
-                            brk_flg = 1;
-                            tx_brk_len = tx_head->data.brk_len;
+                //We need to put a loop here, in case all the buffer items are very short.
+                //That would cause a watch_dog reset because empty interrupt happens so often.
+                //Although this is a loop in ISR, this loop will execute at most 128 turns.
+                while(tx_fifo_rem) {
+                    if(p_uart->tx_len_tot == 0) {
+                        size_t size;
+                        //The first item is the data description
+                        //Get the first item to get the data information
+                        p_uart->tx_head = (uart_event_t*) xRingbufferReceiveFromISR(p_uart->tx_ring_buf, &size);
+                        if(p_uart->tx_head) {
+                            p_uart->tx_ptr = NULL;
+                            p_uart->tx_len_tot = p_uart->tx_head->data.size;
+                            if(p_uart->tx_head->type == UART_DATA_BREAK) {
+                                p_uart->tx_len_tot = p_uart->tx_head->data.size;
+                                p_uart->tx_brk_flg = 1;
+                                p_uart->tx_brk_len = p_uart->tx_head->data.brk_len;
+                            }
+                            //We have saved the data description from the 1st item, return buffer.
+                            vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
                         }
-//                        ets_printf("ret1,tot: %d\n", tx_len_tot);
-                        vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, tx_head, &HPTaskAwoken);
-//                        xRingbufferPrintInfo(p_uart->tx_ring_buf);
-//                        xRingbufferPrintInfo(p_uart->tx_ring_buf);
+                        else {
+                            //Can not get data from ring buffer, return;
+                            return;
+                        }
                     }
-                    else {
-                        return;
-                    }
-                }
-                if(tx_ptr == NULL) {
-                    size_t size;
-//                    ets_printf("dbg2, tx ptr null, get 2nd tx ptr\n");
-//                    xRingbufferPrintInfo(p_uart->tx_ring_buf);
-                    tx_ptr = (uint8_t*) xRingbufferReceiveFromISR(p_uart->tx_ring_buf, &size);
-
-//                    xRingbufferPrintInfo(p_uart->tx_ring_buf);
-                    if(tx_ptr) {
-                        tx_head = (void*) tx_ptr;
-//                        ets_printf("get size: %d ; h size: %d\n", size, tx_len_tot);
-                        en_tx_flg = true;
-                    } else {
-                        return;
-                    }
-                }
-//                else
-                if(tx_len_tot > 0 && tx_ptr) {  //tx
-                    int send_len = tx_len_tot > tx_fifo_rem ? tx_fifo_rem : tx_len_tot;
-                    for(buf_idx = 0; buf_idx < send_len; buf_idx++) {
-                        WRITE_PERI_REG(UART_FIFO_AHB_REG(uart_num), *(tx_ptr++) & 0xff);
-                    }
-                    tx_len_tot -= send_len;
-//                    ets_printf("tot: %d\n", tx_len_tot);
-                    if(tx_len_tot == 0) {
-                        if(brk_flg == 1) {
-                            UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
-                            uart_reg->int_ena.tx_brk_done = 0;
-                            uart_reg->idle_conf.tx_brk_num = tx_brk_len;
-                            uart_reg->conf0.txd_brk = 1;
-                            uart_reg->int_clr.tx_brk_done = 1;
-                            uart_reg->int_ena.tx_brk_done = 1;
-                            UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
-                            wait_brk = 1;
+                    if(p_uart->tx_ptr == NULL) {
+                        size_t size;
+                        //2nd item is the data we need to send through UART
+                        //Get 2nd item from ring buffer
+                        p_uart->tx_ptr = (uint8_t*) xRingbufferReceiveFromISR(p_uart->tx_ring_buf, &size);
+                        if(p_uart->tx_ptr) {
+                            //Update the TX item head, we will need this to return item to buffer.
+                            p_uart->tx_head = (void*) p_uart->tx_ptr;
+                            en_tx_flg = true;
                         } else {
+                            //Can not get data from ring buffer, return;
+                            return;
+                        }
+                    }
+                    if(p_uart->tx_len_tot > 0 && p_uart->tx_ptr) {
+                        //To fill the TX FIFO.
+                        int send_len = p_uart->tx_len_tot > tx_fifo_rem ? tx_fifo_rem : p_uart->tx_len_tot;
+                        for(buf_idx = 0; buf_idx < send_len; buf_idx++) {
+                            WRITE_PERI_REG(UART_FIFO_AHB_REG(uart_num), *(p_uart->tx_ptr++) & 0xff);
+                        }
+                        p_uart->tx_len_tot -= send_len;
+                        tx_fifo_rem -= send_len;
+                        if(p_uart->tx_len_tot == 0) {
+                            //Sending item done, now we need to send break if there is a record.
+                            //Return item to ring buffer.
+                            vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
+                            p_uart->tx_head = NULL;
+                            p_uart->tx_ptr = NULL;
+                            //Set TX break signal after FIFO is empty
+                            if(p_uart->tx_brk_flg == 1) {
+                                UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
+                                uart_reg->int_ena.tx_brk_done = 0;
+                                uart_reg->idle_conf.tx_brk_num = p_uart->tx_brk_len;
+                                uart_reg->conf0.txd_brk = 1;
+                                uart_reg->int_clr.tx_brk_done = 1;
+                                uart_reg->int_ena.tx_brk_done = 1;
+                                UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
+                                p_uart->tx_waiting_brk = 1;
+                                return;
+                            } else {
+                                //enable TX empty interrupt
+                                en_tx_flg = true;
+                            }
+                        } else {
+                            //enable TX empty interrupt
                             en_tx_flg = true;
                         }
-//                        ets_printf("ret2\n");
-                        vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, tx_head, &HPTaskAwoken);
-//                        xRingbufferPrintInfo(p_uart->tx_ring_buf);
-//                        xRingbufferPrintInfo(p_uart->tx_ring_buf);
-                        tx_head = NULL;
-                        tx_ptr = NULL;
-                    } else {
-                        en_tx_flg = true;
                     }
                 }
                 if(en_tx_flg) {
@@ -546,14 +552,13 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
             }
         }
         else if((uart_intr_status & UART_RXFIFO_TOUT_INT_ST_M) || (uart_intr_status & UART_RXFIFO_FULL_INT_ST_M)) {
-            if(p_uart->buffer_full_flg == false) {
+            if(p_uart->rx_buffer_full_flg == false) {
                 //Get the buffer from the FIFO
-//                ESP_LOGE(UART_TAG, "FULL\n");
                 rx_fifo_len = uart_reg->status.rxfifo_cnt;
-                p_uart->data_len = rx_fifo_len;
-                memset(p_uart->data_buf, 0, sizeof(p_uart->data_buf));
+                p_uart->rx_stash_len = rx_fifo_len;
+                //We have to read out all data in RX FIFO to clear the interrupt signal
                 while(buf_idx < rx_fifo_len) {
-                    p_uart->data_buf[buf_idx++] = uart_reg->fifo.rw_byte;
+                    p_uart->rx_data_buf[buf_idx++] = uart_reg->fifo.rw_byte;
                 }
                 //After Copying the Data From FIFO ,Clear intr_status
                 UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
@@ -562,12 +567,14 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
                 UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
                 uart_event.type = UART_DATA;
                 uart_event.data.size = rx_fifo_len;
-                if(pdFALSE == xRingbufferSendFromISR(p_uart->rx_ring_buf, p_uart->data_buf, p_uart->data_len, &HPTaskAwoken)) {
+                //If we fail to push data to ring buffer, we will have to stash the data, and send next time.
+                //Mainly for applications that uses flow control or small ring buffer.
+                if(pdFALSE == xRingbufferSendFromISR(p_uart->rx_ring_buf, p_uart->rx_data_buf, p_uart->rx_stash_len, &HPTaskAwoken)) {
                     UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
                     uart_reg->int_ena.rxfifo_full = 0;
                     uart_reg->int_ena.rxfifo_tout = 0;
                     UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
-                    p_uart->buffer_full_flg = true;
+                    p_uart->rx_buffer_full_flg = true;
                     uart_event.type = UART_BUFFER_FULL;
                 } else {
                     uart_event.type = UART_DATA;
@@ -597,19 +604,17 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
             uart_reg->int_clr.frm_err = 1;
             uart_event.type = UART_PARITY_ERR;
         } else if(uart_intr_status & UART_TX_BRK_DONE_INT_ST_M) {
-//            ESP_LOGE(UART_TAG, "UART TX BRK DONE\n");
-            ets_printf("tx brk done\n");
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_reg->conf0.txd_brk = 0;
             uart_reg->int_ena.tx_brk_done = 0;
             uart_reg->int_clr.tx_brk_done = 1;
-            if(brk_flg == 1) {
+            if(p_uart->tx_brk_flg == 1) {
                 uart_reg->int_ena.txfifo_empty = 1;
             }
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
-            if(brk_flg == 1) {
-                brk_flg = 0;
-                wait_brk = 0;
+            if(p_uart->tx_brk_flg == 1) {
+                p_uart->tx_brk_flg = 0;
+                p_uart->tx_waiting_brk = 0;
             } else {
                 xSemaphoreGiveFromISR(p_uart->tx_brk_sem, &HPTaskAwoken);
             }
@@ -644,8 +649,8 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error");
     BaseType_t res;
     portTickType ticks_end = xTaskGetTickCount() + ticks_to_wait;
-    //Take tx_mutex
-    res = xSemaphoreTake(p_uart_obj[uart_num]->tx_mutex, (portTickType)ticks_to_wait);
+    //Take tx_mux
+    res = xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)ticks_to_wait);
     if(res == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
@@ -653,7 +658,7 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
     xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, 0);
     ticks_to_wait = ticks_end - xTaskGetTickCount();
     if(UART[uart_num]->status.txfifo_cnt == 0) {
-        xSemaphoreGive(p_uart_obj[uart_num]->tx_mutex);
+        xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_OK;
     }
     uart_enable_intr_mask(uart_num, UART_TX_DONE_INT_ENA_M);
@@ -661,10 +666,10 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
     res = xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, (portTickType)ticks_to_wait);
     if(res == pdFALSE) {
         uart_disable_intr_mask(uart_num, UART_TX_DONE_INT_ENA_M);
-        xSemaphoreGive(p_uart_obj[uart_num]->tx_mutex);
+        xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_ERR_TIMEOUT;
     }
-    xSemaphoreGive(p_uart_obj[uart_num]->tx_mutex);
+    xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
     return ESP_OK;
 }
 
@@ -701,9 +706,9 @@ int uart_tx_chars(uart_port_t uart_num, char* buffer, uint32_t len)
     if(len == 0) {
         return 0;
     }
-    xSemaphoreTake(p_uart_obj[uart_num]->tx_mutex, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)portMAX_DELAY);
     int tx_len = uart_fill_fifo(uart_num, buffer, len);
-    xSemaphoreGive(p_uart_obj[uart_num]->tx_mutex);
+    xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
     return tx_len;
 }
 
@@ -716,14 +721,14 @@ static int uart_tx_all(uart_port_t uart_num, const char* src, size_t size, bool 
         return 0;
     }
     //lock for uart_tx
-    xSemaphoreTake(p_uart_obj[uart_num]->tx_mutex, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)portMAX_DELAY);
     size_t original_size = size;
     while(size) {
         //semaphore for tx_fifo available
         if(pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, (portTickType)portMAX_DELAY)) {
             size_t sent = uart_fill_fifo(uart_num, (char*) src, size);
             if(sent < size) {
-                p_uart_obj[uart_num]->tx_waiting = true;
+                p_uart_obj[uart_num]->tx_waiting_fifo = true;
                 uart_enable_tx_intr(uart_num, 1, UART_EMPTY_THRESH_DEFAULT);
             }
             size -= sent;
@@ -735,49 +740,25 @@ static int uart_tx_all(uart_port_t uart_num, const char* src, size_t size, bool 
         xSemaphoreTake(p_uart_obj[uart_num]->tx_brk_sem, (portTickType)portMAX_DELAY);
     }
     xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
-    xSemaphoreGive(p_uart_obj[uart_num]->tx_mutex);
+    xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
     return original_size;
 }
-
-//static void uart_tx_task(void* arg)
-//{
-//    uart_obj_t* p_uart = (uart_obj_t*) arg;
-//    size_t size;
-//    uart_event_t evt;
-//    for(;;) {
-//        char* data = (char*) xRingbufferReceive(p_uart->tx_ring_buf, &size, portMAX_DELAY);
-//        if(data == NULL) {
-//            continue;
-//        }
-//        memcpy(&evt, data, sizeof(evt));
-//        if(evt.type == UART_DATA) {
-//            uart_tx_all(p_uart->uart_num, (const char*) data + sizeof(uart_event_t), evt.data.size, 0, 0);
-//        } else if(evt.type == UART_DATA_BREAK) {
-//            uart_tx_all(p_uart->uart_num, (const char*) data + sizeof(uart_event_t), evt.data.size, 1, evt.data.brk_len);
-//        }
-//        vRingbufferReturnItem(p_uart->tx_ring_buf, data);
-//    }
-//    vTaskDelete(NULL);
-//}
 
 int uart_tx_all_chars(uart_port_t uart_num, const char* src, size_t size)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
     UART_CHECK((p_uart_obj[uart_num] != NULL), "uart driver error");
     UART_CHECK(src, "buffer null");
+    //Push data to TX ring buffer and return, ISR will send the data.
     if(p_uart_obj[uart_num]->tx_buf_size > 0) {
         if(xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf) > (size + sizeof(uart_event_t))) {
             uart_event_t evt;
-            xSemaphoreTake(p_uart_obj[uart_num]->tx_buffer_mutex, (portTickType)portMAX_DELAY);
+            xSemaphoreTake(p_uart_obj[uart_num]->tx_buffer_mux, (portTickType)portMAX_DELAY);
             evt.type = UART_DATA;
             evt.data.size = size;
-            ets_printf("-----1st send-----\n");
             xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) &evt, sizeof(uart_event_t), portMAX_DELAY);
-            xRingbufferPrintInfo(p_uart_obj[uart_num]->tx_ring_buf);
-            ets_printf("====2nd send====\n");
             xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) src, size, portMAX_DELAY);
-            xRingbufferPrintInfo(p_uart_obj[uart_num]->tx_ring_buf);
-            xSemaphoreGive(p_uart_obj[uart_num]->tx_buffer_mutex);
+            xSemaphoreGive(p_uart_obj[uart_num]->tx_buffer_mux);
             uart_enable_tx_intr(uart_num, 1, UART_EMPTY_THRESH_DEFAULT);
             return size;
         } else {
@@ -785,6 +766,7 @@ int uart_tx_all_chars(uart_port_t uart_num, const char* src, size_t size)
             return uart_tx_all(uart_num, src, size, 0, 0);
         }
     } else {
+        //Send data without TX ring buffer, the task will block until all data have been sent out
         return uart_tx_all(uart_num, src, size, 0, 0);
     }
 }
@@ -796,16 +778,17 @@ int uart_tx_all_chars_with_break(uart_port_t uart_num, const char* src, size_t s
     UART_CHECK((size > 0), "uart size error");
     UART_CHECK((src), "uart data null");
     UART_CHECK((brk_len > 0 && brk_len < 256), "break_num error");
+    //Push data to TX ring buffer and return, ISR will send the data.
     if(p_uart_obj[uart_num]->tx_buf_size > 0) {
         if(xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf) > (size)) {
             uart_event_t evt;
-            xSemaphoreTake(p_uart_obj[uart_num]->tx_buffer_mutex, (portTickType)portMAX_DELAY);
+            xSemaphoreTake(p_uart_obj[uart_num]->tx_buffer_mux, (portTickType)portMAX_DELAY);
             evt.type = UART_DATA_BREAK;
             evt.data.size = size;
             evt.data.brk_len = brk_len;
             xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) &evt, sizeof(uart_event_t), portMAX_DELAY);
             xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) src, size, portMAX_DELAY);
-            xSemaphoreGive(p_uart_obj[uart_num]->tx_buffer_mutex);
+            xSemaphoreGive(p_uart_obj[uart_num]->tx_buffer_mux);
             uart_enable_tx_intr(uart_num, 1, UART_EMPTY_THRESH_DEFAULT);
             return size;
         } else {
@@ -813,6 +796,7 @@ int uart_tx_all_chars_with_break(uart_port_t uart_num, const char* src, size_t s
             return uart_tx_all(uart_num, src, size, 1, brk_len);
         }
     } else {
+        //Send data without TX ring buffer, the task will block until all data have been sent out
         return uart_tx_all(uart_num, src, size, 1, brk_len);
     }
 }
@@ -828,29 +812,29 @@ int uart_read_char(uart_port_t uart_num, TickType_t ticks_to_wait)
     if(xSemaphoreTake(p_uart_obj[uart_num]->rx_mux,(portTickType)ticks_to_wait) != pdTRUE) {
         return -1;
     }
-    if(p_uart_obj[uart_num]->cur_remain == 0) {
+    if(p_uart_obj[uart_num]->rx_cur_remain == 0) {
         ticks_to_wait = ticks_end - xTaskGetTickCount();
         data = (uint8_t*) xRingbufferReceive(p_uart_obj[uart_num]->rx_ring_buf, &size, (portTickType) ticks_to_wait);
         if(data) {
-            p_uart_obj[uart_num]->head_ptr = data;
-            p_uart_obj[uart_num]->rd_ptr = data;
-            p_uart_obj[uart_num]->cur_remain = size;
+            p_uart_obj[uart_num]->rx_head_ptr = data;
+            p_uart_obj[uart_num]->rx_ptr = data;
+            p_uart_obj[uart_num]->rx_cur_remain = size;
         } else {
             xSemaphoreGive(p_uart_obj[uart_num]->rx_mux);
             return -1;
         }
     }
-    val = *(p_uart_obj[uart_num]->rd_ptr);
-    p_uart_obj[uart_num]->rd_ptr++;
-    p_uart_obj[uart_num]->cur_remain--;
-    if(p_uart_obj[uart_num]->cur_remain == 0) {
-        vRingbufferReturnItem(p_uart_obj[uart_num]->rx_ring_buf, p_uart_obj[uart_num]->head_ptr);
-        p_uart_obj[uart_num]->head_ptr = NULL;
-        p_uart_obj[uart_num]->rd_ptr = NULL;
-        if(p_uart_obj[uart_num]->buffer_full_flg) {
-            BaseType_t res = xRingbufferSend(p_uart_obj[uart_num]->rx_ring_buf, p_uart_obj[uart_num]->data_buf, p_uart_obj[uart_num]->data_len, 1);
+    val = *(p_uart_obj[uart_num]->rx_ptr);
+    p_uart_obj[uart_num]->rx_ptr++;
+    p_uart_obj[uart_num]->rx_cur_remain--;
+    if(p_uart_obj[uart_num]->rx_cur_remain == 0) {
+        vRingbufferReturnItem(p_uart_obj[uart_num]->rx_ring_buf, p_uart_obj[uart_num]->rx_head_ptr);
+        p_uart_obj[uart_num]->rx_head_ptr = NULL;
+        p_uart_obj[uart_num]->rx_ptr = NULL;
+        if(p_uart_obj[uart_num]->rx_buffer_full_flg) {
+            BaseType_t res = xRingbufferSend(p_uart_obj[uart_num]->rx_ring_buf, p_uart_obj[uart_num]->rx_data_buf, p_uart_obj[uart_num]->rx_stash_len, 1);
             if(res == pdTRUE) {
-                p_uart_obj[uart_num]->buffer_full_flg = false;
+                p_uart_obj[uart_num]->rx_buffer_full_flg = false;
                 uart_enable_rx_intr(p_uart_obj[uart_num]->uart_num);
             }
         }
@@ -872,46 +856,40 @@ int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickTyp
         return -1;
     }
     while(length) {
-        if(p_uart_obj[uart_num]->cur_remain == 0) {
+        if(p_uart_obj[uart_num]->rx_cur_remain == 0) {
             data = (uint8_t*) xRingbufferReceive(p_uart_obj[uart_num]->rx_ring_buf, &size, (portTickType) ticks_to_wait);
             if(data) {
-                p_uart_obj[uart_num]->head_ptr = data;
-                p_uart_obj[uart_num]->rd_ptr = data;
-                p_uart_obj[uart_num]->cur_remain = size;
-//                ets_printf("dbg0\n");
+                p_uart_obj[uart_num]->rx_head_ptr = data;
+                p_uart_obj[uart_num]->rx_ptr = data;
+                p_uart_obj[uart_num]->rx_cur_remain = size;
             } else {
                 xSemaphoreGive(p_uart_obj[uart_num]->rx_mux);
-//                ets_printf("dbg1\n");
                 return copy_len;
             }
         }
-        if(p_uart_obj[uart_num]->cur_remain > length) {
+        if(p_uart_obj[uart_num]->rx_cur_remain > length) {
             len_tmp = length;
         } else {
-            len_tmp = p_uart_obj[uart_num]->cur_remain;
+            len_tmp = p_uart_obj[uart_num]->rx_cur_remain;
         }
-//        ets_printf("dbga\n");
-        memcpy(buf + copy_len, p_uart_obj[uart_num]->rd_ptr, len_tmp);
-        p_uart_obj[uart_num]->rd_ptr += len_tmp;
-        p_uart_obj[uart_num]->cur_remain -= len_tmp;
+        memcpy(buf + copy_len, p_uart_obj[uart_num]->rx_ptr, len_tmp);
+        p_uart_obj[uart_num]->rx_ptr += len_tmp;
+        p_uart_obj[uart_num]->rx_cur_remain -= len_tmp;
         copy_len += len_tmp;
         length -= len_tmp;
-//        ets_printf("dbgb\n");
-        if(p_uart_obj[uart_num]->cur_remain == 0) {
-            vRingbufferReturnItem(p_uart_obj[uart_num]->rx_ring_buf, p_uart_obj[uart_num]->head_ptr);
-            p_uart_obj[uart_num]->head_ptr = NULL;
-            p_uart_obj[uart_num]->rd_ptr = NULL;
-            if(p_uart_obj[uart_num]->buffer_full_flg) {
-                BaseType_t res = xRingbufferSend(p_uart_obj[uart_num]->rx_ring_buf, p_uart_obj[uart_num]->data_buf, p_uart_obj[uart_num]->data_len, 1);
-//                ets_printf("dbg2\n");
+        if(p_uart_obj[uart_num]->rx_cur_remain == 0) {
+            vRingbufferReturnItem(p_uart_obj[uart_num]->rx_ring_buf, p_uart_obj[uart_num]->rx_head_ptr);
+            p_uart_obj[uart_num]->rx_head_ptr = NULL;
+            p_uart_obj[uart_num]->rx_ptr = NULL;
+            if(p_uart_obj[uart_num]->rx_buffer_full_flg) {
+                BaseType_t res = xRingbufferSend(p_uart_obj[uart_num]->rx_ring_buf, p_uart_obj[uart_num]->rx_data_buf, p_uart_obj[uart_num]->rx_stash_len, 1);
                 if(res == pdTRUE) {
-                    p_uart_obj[uart_num]->buffer_full_flg = false;
+                    p_uart_obj[uart_num]->rx_buffer_full_flg = false;
                     uart_enable_rx_intr(p_uart_obj[uart_num]->uart_num);
                 }
             }
         }
     }
-//    ets_printf("dbg3\n");
     xSemaphoreGive(p_uart_obj[uart_num]->rx_mux);
     return copy_len;
 }
@@ -926,11 +904,11 @@ esp_err_t uart_flush(uart_port_t uart_num)
     //rx sem protect the ring buffer read related functions
     xSemaphoreTake(p_uart->rx_mux, (portTickType)portMAX_DELAY);
     while(true) {
-        if(p_uart->head_ptr) {
-            vRingbufferReturnItem(p_uart->rx_ring_buf, p_uart->head_ptr);
-            p_uart->rd_ptr = NULL;
-            p_uart->cur_remain = 0;
-            p_uart->head_ptr = NULL;
+        if(p_uart->rx_head_ptr) {
+            vRingbufferReturnItem(p_uart->rx_ring_buf, p_uart->rx_head_ptr);
+            p_uart->rx_ptr = NULL;
+            p_uart->rx_cur_remain = 0;
+            p_uart->rx_head_ptr = NULL;
         }
         data = (uint8_t*) xRingbufferReceive(p_uart->rx_ring_buf, &size, (portTickType) 0);
         if(data == NULL) {
@@ -938,19 +916,24 @@ esp_err_t uart_flush(uart_port_t uart_num)
         }
         vRingbufferReturnItem(p_uart->rx_ring_buf, data);
     }
-    p_uart->rd_ptr = NULL;
-    p_uart->cur_remain = 0;
-    p_uart->head_ptr = NULL;
+    p_uart->rx_ptr = NULL;
+    p_uart->rx_cur_remain = 0;
+    p_uart->rx_head_ptr = NULL;
     xSemaphoreGive(p_uart->rx_mux);
-    xSemaphoreTake(p_uart->tx_mutex, (portTickType)portMAX_DELAY);
-    do {
-        data = (uint8_t*) xRingbufferReceive(p_uart->tx_ring_buf, &size, (portTickType) 0);
-        if(data == NULL) {
-            break;
-        }
-        vRingbufferReturnItem(p_uart->rx_ring_buf, data);
-    } while(1);
-    xSemaphoreGive(p_uart->tx_mutex);
+
+    xSemaphoreTake(p_uart->tx_mux, (portTickType)portMAX_DELAY);
+    if(p_uart->tx_buf_size > 0) {
+        xSemaphoreTake(p_uart->tx_buffer_mux, (portTickType)portMAX_DELAY);
+        do {
+            data = (uint8_t*) xRingbufferReceive(p_uart->tx_ring_buf, &size, (portTickType) 0);
+            if(data == NULL) {
+                break;
+            }
+            vRingbufferReturnItem(p_uart->rx_ring_buf, data);
+        } while(1);
+        xSemaphoreGive(p_uart->tx_buffer_mux);
+    }
+    xSemaphoreGive(p_uart->tx_mux);
     uart_wait_tx_done(uart_num, portMAX_DELAY);
     uart_reset_fifo(uart_num);
     return ESP_OK;
@@ -1009,7 +992,7 @@ int uart_get_print_port()
     return s_uart_print_nport;
 }
 
-esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, int uart_intr_num, void* uart_queue, ringbuf_type_t rx_buf_type)
+esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, int uart_intr_num, void* uart_queue)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error");
     UART_CHECK((rx_buffer_size > 0), "uart rx buffer length error\n");
@@ -1025,11 +1008,16 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
         p_uart_obj[uart_num]->tx_done_sem = xSemaphoreCreateBinary();
         p_uart_obj[uart_num]->tx_brk_sem = xSemaphoreCreateBinary();
-        p_uart_obj[uart_num]->tx_mutex = xSemaphoreCreateMutex();
-        p_uart_obj[uart_num]->tx_buffer_mutex = xSemaphoreCreateMutex();
+        p_uart_obj[uart_num]->tx_mux = xSemaphoreCreateMutex();
         p_uart_obj[uart_num]->rx_mux = xSemaphoreCreateMutex();
         p_uart_obj[uart_num]->intr_num = uart_intr_num;
         p_uart_obj[uart_num]->queue_size = queue_size;
+        p_uart_obj[uart_num]->tx_ptr = NULL;
+        p_uart_obj[uart_num]->tx_head = NULL;
+        p_uart_obj[uart_num]->tx_len_tot = 0;
+        p_uart_obj[uart_num]->tx_brk_flg = 0;
+        p_uart_obj[uart_num]->tx_brk_len = 0;
+        p_uart_obj[uart_num]->tx_waiting_brk = 0;
 
         if(uart_queue) {
             p_uart_obj[uart_num]->xQueueUart = xQueueCreate(queue_size, sizeof(uart_event_t));
@@ -1038,19 +1026,20 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         } else {
             p_uart_obj[uart_num]->xQueueUart = NULL;
         }
-        p_uart_obj[uart_num]->buffer_full_flg = false;
-        p_uart_obj[uart_num]->tx_waiting = false;
-        p_uart_obj[uart_num]->rd_ptr = NULL;
-        p_uart_obj[uart_num]->cur_remain = 0;
-        p_uart_obj[uart_num]->head_ptr = NULL;
-        p_uart_obj[uart_num]->rx_buf_type = rx_buf_type;
-        p_uart_obj[uart_num]->rx_ring_buf = xRingbufferCreate(rx_buffer_size, rx_buf_type);
+        p_uart_obj[uart_num]->rx_buffer_full_flg = false;
+        p_uart_obj[uart_num]->tx_waiting_fifo = false;
+        p_uart_obj[uart_num]->rx_ptr = NULL;
+        p_uart_obj[uart_num]->rx_cur_remain = 0;
+        p_uart_obj[uart_num]->rx_head_ptr = NULL;
+        p_uart_obj[uart_num]->rx_ring_buf = xRingbufferCreate(rx_buffer_size, RINGBUF_TYPE_BYTEBUF);
         if(tx_buffer_size > 0) {
             p_uart_obj[uart_num]->tx_ring_buf = xRingbufferCreate(tx_buffer_size, RINGBUF_TYPE_NOSPLIT);//RINGBUF_TYPE_BYTEBUF);//RINGBUF_TYPE_NOSPLIT);
             p_uart_obj[uart_num]->tx_buf_size = tx_buffer_size;
+            p_uart_obj[uart_num]->tx_buffer_mux = xSemaphoreCreateMutex();
         } else {
             p_uart_obj[uart_num]->tx_ring_buf = NULL;
             p_uart_obj[uart_num]->tx_buf_size = 0;
+            p_uart_obj[uart_num]->tx_buffer_mux = NULL;
         }
     } else {
         ESP_LOGE(UART_TAG, "UART driver already installed\n");
@@ -1097,13 +1086,13 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
         vSemaphoreDelete(p_uart_obj[uart_num]->tx_brk_sem);
         p_uart_obj[uart_num]->tx_brk_sem = NULL;
     }
-    if(p_uart_obj[uart_num]->tx_mutex) {
-        vSemaphoreDelete(p_uart_obj[uart_num]->tx_mutex);
-        p_uart_obj[uart_num]->tx_mutex = NULL;
+    if(p_uart_obj[uart_num]->tx_mux) {
+        vSemaphoreDelete(p_uart_obj[uart_num]->tx_mux);
+        p_uart_obj[uart_num]->tx_mux = NULL;
     }
-    if(p_uart_obj[uart_num]->tx_buffer_mutex) {
-        vSemaphoreDelete(p_uart_obj[uart_num]->tx_buffer_mutex);
-        p_uart_obj[uart_num]->tx_buffer_mutex = NULL;
+    if(p_uart_obj[uart_num]->tx_buffer_mux) {
+        vSemaphoreDelete(p_uart_obj[uart_num]->tx_buffer_mux);
+        p_uart_obj[uart_num]->tx_buffer_mux = NULL;
     }
     if(p_uart_obj[uart_num]->rx_mux) {
         vSemaphoreDelete(p_uart_obj[uart_num]->rx_mux);

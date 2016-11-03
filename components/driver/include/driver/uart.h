@@ -437,13 +437,12 @@ esp_err_t uart_intr_config(uart_port_t uart_num, uart_intr_config_t *p_intr_conf
  * @param   queue_size    UART event queue size/depth.
  * @param   uart_intr_num UART interrupt number,check the info in soc.h, and please refer to core-isa.h for more details
  * @param   uart_queue  UART event queue handle, if set NULL, driver will not use an event queue.
- * @param   buf_type      UART RX ring_buffer type
  *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, int uart_intr_num, void* uart_queue, ringbuf_type_t rx_buf_type);
+esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, int uart_intr_num, void* uart_queue);
 
 /**
  * @brief   Uninstall UART driver.
