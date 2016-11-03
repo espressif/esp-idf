@@ -1,20 +1,24 @@
 /*
- *  Copyright (c) 2016 - 2026 MaiKe Labs
+ *  MaiKe Labs (2016 - 2026)
  *
  *  Written by Jack Tan <jiankemeng@gmail.com>
  *
- *	This program is free software: you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation, either version 3 of the License, or
- *	(at your option) any later version.
- *
- *	This program is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
- *
- *	You should have received a copy of the GNU General Public License
- *	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *  
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *  
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  *
 */
 #include <stdio.h>
@@ -30,7 +34,7 @@ void scan_ap_task(void *pvParameters)
 {
 	uint16_t n = 0;
 	wifi_ap_list_t *al;
-    while (1) {
+	while (1) {
 
 		esp_wifi_scan_start(NULL, true);
 		esp_wifi_get_ap_num(&n);
@@ -43,22 +47,21 @@ void scan_ap_task(void *pvParameters)
 		if (esp_wifi_get_ap_list(&n, al) == ESP_OK) {
 			for (uint16_t i = 0; i < n; i++) {
 				uint8_t *bi = al[i].bssid;
-				printf("%32s (%02x:%02x:%02x:%02x:%02x:%02x) rssi: %02d auth: %02d\r\n",
-						al[i].ssid,
-						MAC2STR(bi),
-						al[i].rssi,
-						al[i].authmode
-					);
+				printf
+				    ("%32s (%02x:%02x:%02x:%02x:%02x:%02x) rssi: %02d auth: %02d\r\n",
+				     al[i].ssid, MAC2STR(bi), al[i].rssi,
+				     al[i].authmode);
 			}
 		}
 		free(al);
 
-		printf("------------ delay 6s to start a new scanning ... --------------\r\n");
-        vTaskDelay(6000 / portTICK_PERIOD_MS);
-    }
+		printf
+		    ("------------ delay 6s to start a new scanning ... --------------\r\n");
+		vTaskDelay(6000 / portTICK_PERIOD_MS);
+	}
 }
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static esp_err_t event_handler(void *ctx, system_event_t * event)
 {
 	return 0;
 }
@@ -81,5 +84,6 @@ void app_main()
 	wifi_init();
 	printf("Welcome to Noduino Quantum\r\n");
 	printf("WiFi AP SSID Scanning... \r\n");
-    xTaskCreatePinnedToCore(&scan_ap_task, "scan_ap_task", 1024, NULL, 5, NULL, 0);
+	xTaskCreatePinnedToCore(&scan_ap_task, "scan_ap_task", 1024, NULL, 5,
+				NULL, 0);
 }
