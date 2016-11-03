@@ -349,5 +349,19 @@ config ESP32_TIME_SYSCALL_USE_NONE
     bool "None"
 endchoice
 
+choice ESP32_RTC_CLOCK_SOURCE
+	prompt "RTC clock source"
+	default ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
+	help
+		Choose which clock is used as RTC clock source.
+		The only available option for now is to use internal
+		150kHz RC oscillator.
+
+config ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
+	bool "Internal RC"
+config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+	bool "External 32kHz crystal"
+	depends on DOCUMENTATION_FOR_RTC_CNTL
+endchoice
 
 endmenu
