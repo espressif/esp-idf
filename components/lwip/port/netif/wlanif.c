@@ -142,16 +142,13 @@ low_level_output(struct netif *netif, struct pbuf *p)
         }
     }
     
-    esp_wifi_internal_tx(wifi_if, q->payload, pbuf_x_len);
-    return ERR_OK;
-    
+    return esp_wifi_internal_tx(wifi_if, q->payload, pbuf_x_len);
 #else
     for(q = p; q != NULL; q = q->next) {
         esp_wifi_internal_tx(wifi_if, q->payload, q->len);
     }
-#endif
-
   return ERR_OK;
+#endif
 }
 
 /**

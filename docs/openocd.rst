@@ -1,11 +1,14 @@
+Debugging
+=========
+
 OpenOCD setup for ESP32
 -----------------------
 
-The ESP31 and ESP32 have two powerful Xtensa cores, allowing for a great deal of variety of program architectures. The FreeRTOS
-OS that comes with ESP-IDF is capable multi-core pre-emptive multithreading, allowing for an intuitive way of writing software. 
+The ESP31 and ESP32 have two powerful Xtensa cores, allowing for a great variety of program architectures. The FreeRTOS
+OS that comes with ESP-IDF is capable of multi-core pre-emptive multithreading, allowing for an intuitive way of writing software. 
 
 The downside of the ease of programming is that debugging without the right tools is harder: figuring out a bug that is caused 
-by two threads, maybe even running simultaneously on two different CPU cures, can take a long time when all you have are printf 
+by two threads, maybe even running simultaneously on two different CPU cores, can take a long time when all you have are printf 
 statements. A better and in many cases quicker way to debug such problems is by using a debugger, connected to the processors over
 a debug port. 
 
@@ -84,7 +87,7 @@ Connecting a debugger to OpenOCD
 OpenOCD should now be ready to accept gdb connections. If you have compiled the ESP32 toolchain using Crosstool-NG, or
 if you have downloaded a precompiled toolchain from the Espressif website, you should already have xtensa-esp32-elf-gdb, 
 a version of gdb that can be used for this. First, make sure the project you want to debug is compiled and flashed 
-into the ESP32s SPI flash. Then, in a different console than OpenOCD is running in, invoke gdb. For example, for the 
+into the ESP32's SPI flash. Then, in a different console than OpenOCD is running in, invoke gdb. For example, for the 
 template app, you would do this like such::
 
     cd esp-idf-template

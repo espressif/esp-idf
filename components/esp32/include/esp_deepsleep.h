@@ -54,37 +54,7 @@ void system_deep_sleep(uint64_t time_in_us);
  * to run code immediately when the chip wakes from
  * sleep.
  *
- * For example:
- * @code
- * void RTC_IRAM_ATTR esp_wake_deep_sleep(void) {
- *    esp_default_wake_deep_sleep();
- *    // Add additional functionality here
- * }
- *
- * (Implementing this function is not required for normal operation,
- * in the usual case your app will start normally when waking from
- * deep sleep.)
- *
- * esp_wake_deep_sleep() functionality is limited:
- *
- * - Runs immediately on wake, so most of the SoC is freshly reset -
- *   flash is unmapped and hardware is otherwise uninitialised.
- *
- * - Can only call functions implemented in ROM, or marked RTC_IRAM_ATTR.
- *
- * - Static variables marked RTC_DATA_ATTR will have initial values on
- *   cold boot, and maintain these values between sleep/wake cycles.
- *
- * - Read-only data should be marked RTC_RODATA_ATTR. Strings must be
- *   declared as variables also using RTC_RODATA_ATTR, like this:
- *   RTC_RODATA_ATTR const char message[] = "Hello from very early boot!\n";
- *
- * - Any other static memory will not be initialised (either to zero,
- *   or to any predefined value).
- *
- *
- * - If you implement your own stub, the first call the stub makes
-     should be to esp_default_wake_deep_sleep().
+ * See docs/deep-sleep-stub.rst for details.
  */
 void esp_wake_deep_sleep(void);
 
@@ -115,9 +85,7 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void);
 
 /* The default esp-idf-provided esp_wake_deep_sleep() stub.
 
-   If you replace esp_wake_deep_sleep() in your program, or use
-   esp_set_deep_sleep_wake_stub(), then it is recommended you call
-   esp_default_wake_deep_sleep() as the first function in your stub.
+   See docs/deep-sleep-stub.rst for details.
 */
 void esp_default_wake_deep_sleep(void);
 

@@ -24,6 +24,15 @@ config LWIP_SO_REUSE
         Enabling this option allows binding to a port which remains in
         TIME_WAIT.
 
+config LWIP_DHCP_MAX_NTP_SERVERS
+	int	"Maximum number of NTP servers"
+	default 1
+	range 1 16
+	help
+		Set maxumum number of NTP servers used by LwIP SNTP module.
+		First argument of sntp_setserver/sntp_setservername functions
+		is limited to this value. 
+
 endmenu
 
 

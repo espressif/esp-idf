@@ -351,7 +351,7 @@ static int gdbReadCommand() {
 
 
 
-void gdbstubPanicHandler(XtExcFrame *frame) {
+void esp_gdbstub_panic_handler(XtExcFrame *frame) {
 	dumpHwToRegfile(frame);
 	//Make sure txd/rxd are enabled
 	PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);

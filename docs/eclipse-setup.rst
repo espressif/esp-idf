@@ -1,3 +1,6 @@
+Build and Flash with Eclipse IDE
+********************************
+
 Installing Eclipse IDE
 ======================
 

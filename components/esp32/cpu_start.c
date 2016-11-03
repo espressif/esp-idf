@@ -19,6 +19,7 @@
 
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
+#include "rom/rtc.h"
 
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"
@@ -65,6 +66,8 @@ extern void app_main(void);
 
 extern int _bss_start;
 extern int _bss_end;
+extern int _rtc_bss_start;
+extern int _rtc_bss_end;
 extern int _init_start;
 extern void (*__init_array_start)(void);
 extern void (*__init_array_end)(void);
@@ -94,6 +97,11 @@ void IRAM_ATTR call_start_cpu0()
     ets_install_uart_printf();
 
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
+
+    /* Unless waking from deep sleep (implying RTC memory is intact), clear RTC bss */
+    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET) {
+        memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
+    }
 
     // Initialize heap allocator
     heap_alloc_caps_init();
@@ -161,7 +169,8 @@ void start_cpu0_default(void)
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
-    esp_setup_syscalls();
+    esp_setup_syscall_table();
+    esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
     const char* default_uart_dev = "/dev/uart/0";
