@@ -23,26 +23,26 @@
 
 #define REG_FRC_TIMER_BASE(i)           (DR_REG_FRC_TIMER_BASE + i*0x20)
 
-#define FRC_TIMER_LOAD_REG(i)           (REG_FRC_TIMER_BASE(i) + 0x0)	// timer load value (23 bit for i==0, 32 bit for i==1)
+#define FRC_TIMER_LOAD_REG(i)           (REG_FRC_TIMER_BASE(i) + 0x0)   // timer load value (23 bit for i==0, 32 bit for i==1)
 #define FRC_TIMER_LOAD_VALUE(i)         ((i == 0)?0x007FFFFF:0xffffffff)
 #define FRC_TIMER_LOAD_VALUE_S          0
 
-#define FRC_TIMER_COUNT_REG(i)          (REG_FRC_TIMER_BASE(i) + 0x4)	// timer count value (23 bit for i==0, 32 bit for i==1)
+#define FRC_TIMER_COUNT_REG(i)          (REG_FRC_TIMER_BASE(i) + 0x4)   // timer count value (23 bit for i==0, 32 bit for i==1)
 #define FRC_TIMER_COUNT                 ((i == 0)?0x007FFFFF:0xffffffff)
 #define FRC_TIMER_COUNT_S               0
 
 #define FRC_TIMER_CTRL_REG(i)           (REG_FRC_TIMER_BASE(i) + 0x8)
-#define FRC_TIMER_INT_ENABLE            (BIT(8))		// enable interrupt
-#define FRC_TIMER_ENABLE				(BIT(7))		// enable timer
-#define FRC_TIMER_AUTOLOAD				(BIT(6))		// enable autoload
-#define FRC_TIMER_PRESCALER				0x00000007		// 0: divide by 1, 2: divide by 16, 4: divide by 256
-#define FRC_TIMER_PRESCALER_S	        1
-#define FRC_TIMER_EDGE_INT				(BIT(0))		// 0: level, 1: edge
+#define FRC_TIMER_INT_ENABLE            (BIT(8))        // enable interrupt
+#define FRC_TIMER_ENABLE                (BIT(7))        // enable timer
+#define FRC_TIMER_AUTOLOAD              (BIT(6))        // enable autoload
+#define FRC_TIMER_PRESCALER             0x00000007      // 0: divide by 1, 2: divide by 16, 4: divide by 256
+#define FRC_TIMER_PRESCALER_S           1
+#define FRC_TIMER_EDGE_INT              (BIT(0))        // 0: level, 1: edge
 
 #define FRC_TIMER_INT_REG(i)            (REG_FRC_TIMER_BASE(i) + 0xC)
-#define FRC_TIMER_INT_CLR         		(BIT(0))		// clear interrupt
+#define FRC_TIMER_INT_CLR               (BIT(0))        // clear interrupt
 
-#define FRC_TIMER_ALARM_REG(i)          (REG_FRC_TIMER_BASE(i) + 0x10)	// timer alarm value; register only present for i == 1
+#define FRC_TIMER_ALARM_REG(i)          (REG_FRC_TIMER_BASE(i) + 0x10)  // timer alarm value; register only present for i == 1
 #define FRC_TIMER_ALARM                 0xFFFFFFFF
 #define FRC_TIMER_ALARM_S               0
 
