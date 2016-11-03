@@ -530,7 +530,7 @@ int uart_read_char(uart_port_t uart_num, TickType_t ticks_to_wait);
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
  * @param   buf     pointer to the buffer.
  * @param   length  data length
- * @param   ticks_to_wait: Timeout, count in RTOS ticks
+ * @param   ticks_to_wait sTimeout, count in RTOS ticks
  *
  * @return
  *     - (-1) Error

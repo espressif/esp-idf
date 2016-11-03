@@ -77,9 +77,13 @@ static int ringbufferFreeMem(ringbuf_t *rb)
 {
     int free_size = rb->free_ptr-rb->write_ptr;
     if (free_size <= 0) free_size += rb->size;
+    //If we free the last dummy item in the buffer, free_ptr will point to rb->data
+    //In this case, after we write the last some bytes, the buffer might wrap around if we don't have room for a header anymore.
+//    if (free_size == 0 && rb->read_ptr == rb->write_ptr) free_size += rb->size;
     //Reserve one byte. If we do not do this and the entire buffer is filled, we get a situation 
-    //where read_ptr == free_ptr, messing up the next calculation.
-    return free_size-1;
+    //where write_ptr == free_ptr, messing up the next calculation.
+//    return free_size == 0 ? 0 : free_size - 1;
+    return free_size - 1;
 }
 
 
@@ -334,6 +338,10 @@ static uint8_t *getItemFromRingbufByteBuf(ringbuf_t *rb, size_t *length, int wan
 //can be increase.
 //This function by itself is not threadsafe, always call from within a muxed section.
 static void returnItemToRingbufDefault(ringbuf_t *rb, void *item) {
+    ets_printf("in returnItemToRingbufDefault\n");
+    xRingbufferPrintInfo(rb);
+
+
     uint8_t *data=(uint8_t*)item;
     configASSERT(((int)rb->free_ptr&3)==0);
     configASSERT(data >= rb->data);
@@ -350,9 +358,16 @@ static void returnItemToRingbufDefault(ringbuf_t *rb, void *item) {
     hdr=(buf_entry_hdr_t *)rb->free_ptr;
     //basically forward free_ptr until we run into either a block that is still in use or the write pointer.
     while (((hdr->flags & iflag_free) || (hdr->flags & iflag_dummydata)) && rb->free_ptr != rb->write_ptr) {
+
         if (hdr->flags & iflag_dummydata) {
+            ets_printf("hrd len: %d; flg: 0x%02x\n",hdr->len,hdr->flags);
             //Rest is dummy data. Reset to start of ringbuffer.
             rb->free_ptr=rb->data;
+            //If the read_ptr is pointing to this dummy item,
+            //we should also move the read pointer to data, in case we overwrite the read hdr.
+//            if(rb->read_ptr == (uint8_t*)hdr) {
+//                rb->read_ptr = rb->data;
+//            }
         } else {
             //Skip past item
             size_t len=(hdr->len+3)&~3;
@@ -363,8 +378,10 @@ static void returnItemToRingbufDefault(ringbuf_t *rb, void *item) {
         if ((rb->data+rb->size)-rb->free_ptr < sizeof(buf_entry_hdr_t)) {
             rb->free_ptr=rb->data;
         }
+        if(rb->free_ptr == rb->read_ptr) break;
         //Next header
         hdr=(buf_entry_hdr_t *)rb->free_ptr;
+
     }
 }
 
@@ -386,6 +403,12 @@ void xRingbufferPrintInfo(RingbufHandle_t ringbuf)
     configASSERT(rb);
     ets_printf("Rb size %d free %d rptr %d freeptr %d wptr %d\n",
             rb->size, ringbufferFreeMem(rb), rb->read_ptr-rb->data, rb->free_ptr-rb->data, rb->write_ptr-rb->data);
+    buf_entry_hdr_t *hdr=(buf_entry_hdr_t *)rb->read_ptr;
+    if(rb->write_ptr == rb->read_ptr) {
+        ets_printf("write que read\n");
+    } else {
+        ets_printf("hdr len: %d; flg: 0x%08x\n", hdr->len, hdr->flags);
+    }
 }
 
 
@@ -493,7 +516,7 @@ BaseType_t xRingbufferSend(RingbufHandle_t ringbuf, void *data, size_t dataSize,
                 ticks_to_wait = ticks_end - xTaskGetTickCount();
             }
         } while (ringbufferFreeMem(rb) < needed_size && ticks_to_wait>=0);
-        
+
         //Lock the mux in order to make sure no one else is messing with the ringbuffer and do the copy.
         portENTER_CRITICAL(&rb->mux);
         //Another thread may have been able to sneak its write first. Check again now we locked the ringbuff, and retry
