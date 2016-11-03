@@ -21,6 +21,9 @@ PARTITION_TABLE_BIN := $(BUILD_DIR_BASE)/$(notdir $(PARTITION_TABLE_CSV_PATH:.cs
 $(PARTITION_TABLE_BIN): $(PARTITION_TABLE_CSV_PATH)
 	@echo "Building partitions from $(PARTITION_TABLE_CSV_PATH)..."
 	$(Q) $(GEN_ESP32PART) $< $@
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+	$(Q) $(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) $@  # signed in-place
+endif
 
 all_binaries: $(PARTITION_TABLE_BIN)
 

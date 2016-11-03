@@ -77,6 +77,22 @@ config SECURE_BOOTLOADER_KEY_FILE
 
        See docs/security/secure-boot.rst for details.
 
+config SECURE_BOOT_SIGNING_KEY
+     string "Secure boot signing key"
+	 depends on SECURE_BOOTLOADER_ENABLED
+	 default secure_boot_signing_key.pem
+     help
+        Path to the key file used to sign partition tables and app images for secure boot.
+
+        Key file is an ECDSA private key (NIST256p curve) in PEM format.
+
+        Path is evaluated relative to the project directory.
+
+        You can generate a new signing key by running the following command:
+        espsecure.py generate_signing_key secure_boot_signing_key.pem
+
+        See docs/security/secure-boot.rst for details.
+
 config SECURE_BOOTLOADER_ENABLED
     bool
     default SECURE_BOOTLOADER_ONE_TIME_FLASH || SECURE_BOOTLOADER_REFLASHABLE

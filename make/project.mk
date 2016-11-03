@@ -151,6 +151,7 @@ LDFLAGS ?= -nostdlib \
 	-L$(IDF_PATH)/ld \
 	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(SRCDIRS)) \
 	-u call_user_start_cpu0	\
+	$(EXTRA_LDFLAGS) \
 	-Wl,--gc-sections	\
 	-Wl,-static	\
 	-Wl,--start-group	\

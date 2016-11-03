@@ -60,6 +60,14 @@ static inline bool esp_secure_boot_enabled(void) {
  */
 esp_err_t esp_secure_boot_permanently_enable(void);
 
-
+/** @brief Verify the signature appended to some binary data in flash.
+ *
+ * @param src_addr Starting offset of the data in flash.
+ * @param length Length of data in bytes. Signature is appended -after- length bytes.
+ *
+ * @return ESP_OK if signature is valid, ESP_ERR_INVALID_STATE if
+ * signature fails, ESP_FAIL for other failures (ie can't read flash).
+ */
+esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length);
 
 #endif

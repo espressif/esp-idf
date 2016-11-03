@@ -110,6 +110,7 @@ void IRAM_ATTR call_start_cpu0()
  */
 bool load_partition_table(bootloader_state_t* bs, uint32_t addr)
 {
+    esp_err_t err;
     const esp_partition_info_t *partitions;
     const int PARTITION_TABLE_SIZE = 0x1000;
     const int MAX_PARTITIONS = PARTITION_TABLE_SIZE / sizeof(esp_partition_info_t);
@@ -117,6 +118,14 @@ bool load_partition_table(bootloader_state_t* bs, uint32_t addr)
 
     ESP_LOGI(TAG, "Partition Table:");
     ESP_LOGI(TAG, "## Label            Usage          Type ST Offset   Length");
+
+    if(esp_secure_boot_enabled()) {
+        err = esp_secure_boot_verify_signature(addr, 0x1000);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to verify partition table signature.");
+            return false;
+        }
+    }
 
     partitions = bootloader_mmap(addr, 0x1000);
     if (!partitions) {
@@ -334,7 +343,23 @@ void bootloader_main()
 
 static void unpack_load_app(const esp_partition_pos_t* partition)
 {
+    esp_err_t err;
     esp_image_header_t image_header;
+    uint32_t image_length;
+
+    if (esp_secure_boot_enabled()) {
+        /* TODO: verify the app image as part of OTA boot decision, so can have fallbacks */
+        err = esp_image_basic_verify(partition->offset, &image_length);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to verify app image @ 0x%x (%d)", partition->offset, err);
+            return;
+        }
+        err = esp_secure_boot_verify_signature(partition->offset, image_length);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "App image @ 0x%x failed signature verification (%d)", partition->offset, err);
+            return;
+        }
+    }
 
     if (esp_image_load_header(partition->offset, &image_header) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to load app image header @ 0x%x", partition->offset);
