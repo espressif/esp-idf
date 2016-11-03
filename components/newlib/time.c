@@ -20,6 +20,7 @@
 #include <sys/reent.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <sys/lock.h>
 #include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -54,6 +55,15 @@ static uint64_t get_rtc_time_us()
 #endif // WITH_RTC
 
 
+// time from Epoch to the first boot time
+#ifdef WITH_RTC
+static RTC_DATA_ATTR struct timeval s_boot_time;
+#else
+static struct timeval s_boot_time;
+#endif
+static _lock_t s_boot_time_lock;
+
+
 #ifdef WITH_FRC1
 #define FRC1_PRESCALER 16
 #define FRC1_PRESCALER_CTL 2
@@ -83,7 +93,6 @@ void esp_setup_time_syscalls()
     s_microseconds = get_rtc_time_us();
 #endif //WITH_RTC
 
-
     // set up timer
     WRITE_PERI_REG(FRC_TIMER_CTRL_REG(0), \
             FRC_TIMER_AUTOLOAD | \
@@ -112,12 +121,12 @@ clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
     return (clock_t) tv.tv_sec;
 }
 
-int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
+static uint64_t get_time_since_boot()
 {
-    (void) tz;
+    uint64_t microseconds = 0;
 #ifdef WITH_FRC1
     uint32_t timer_ticks_before = READ_PERI_REG(FRC_TIMER_COUNT_REG(0));
-    uint64_t microseconds = s_microseconds;
+    microseconds = s_microseconds;
     uint32_t timer_ticks_after = READ_PERI_REG(FRC_TIMER_COUNT_REG(0));
     if (timer_ticks_after > timer_ticks_before) {
         // overflow happened at some point between getting
@@ -127,17 +136,47 @@ int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
     }
     microseconds += (FRC_TIMER_LOAD_VALUE(0) - timer_ticks_after) / FRC1_TICKS_PER_US;
 #elif defined(WITH_RTC)
-    uint64_t microseconds = get_rtc_time_us();
+    microseconds = get_rtc_time_us();
 #endif
+    return microseconds;
+}
 
+int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
+{
+    (void) tz;
 #if defined( WITH_FRC1 ) || defined( WITH_RTC )
+    uint64_t microseconds = get_time_since_boot();
     if (tv) {
-        tv->tv_sec = microseconds / 1000000;
+        _lock_acquire(&s_boot_time_lock);
+        microseconds += s_boot_time.tv_usec;
+        tv->tv_sec = s_boot_time.tv_sec + microseconds / 1000000;
         tv->tv_usec = microseconds % 1000000;
+        _lock_release(&s_boot_time_lock);
     }
     return 0;
 #else
     __errno_r(r) = ENOSYS;
     return -1;
 #endif // defined( WITH_FRC1 ) || defined( WITH_RTC )
+}
+
+int settimeofday(const struct timeval *tv, const struct timezone *tz)
+{
+    (void) tz;
+#if defined( WITH_FRC1 ) || defined( WITH_RTC )
+    if (tv) {
+        _lock_acquire(&s_boot_time_lock);
+        uint64_t now = ((uint64_t) tv->tv_sec) * 1000000LL + tv->tv_usec;
+        uint64_t since_boot = get_time_since_boot();
+        uint64_t boot_time = now - since_boot;
+
+        s_boot_time.tv_sec = boot_time / 1000000;
+        s_boot_time.tv_usec = boot_time % 1000000;
+        _lock_release(&s_boot_time_lock);
+    }
+    return 0;
+#else
+    __errno_r(r) = ENOSYS;
+    return -1;
+#endif
 }

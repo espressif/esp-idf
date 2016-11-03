@@ -324,7 +324,7 @@ choice ESP32_TIME_SYSCALL
 	default ESP32_TIME_SYSCALL_USE_RTC_FRC1
 	help
 		This setting defines which hardware timers are used to
-		implement 'gettimeofday' function in C library.
+		implement 'gettimeofday' and 'time' functions in C library.
 		
 		- If only FRC1 timer is used, gettimeofday will provide time at
 		  microsecond resolution. Time will not be preserved when going
@@ -336,8 +336,8 @@ choice ESP32_TIME_SYSCALL
 		  deep sleep, but time will be measured at 6.(6) microsecond
 		  resolution. Also the gettimeofday function itself may take 
 		  longer to run.
-		- If no timers are used, gettimeofday function return -1 and
-		  set errno to ENOSYS. 
+		- If no timers are used, gettimeofday and time functions
+		  return -1 and set errno to ENOSYS. 
 		  
 config ESP32_TIME_SYSCALL_USE_RTC
     bool "RTC"
