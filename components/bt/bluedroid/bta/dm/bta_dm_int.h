@@ -90,15 +90,25 @@ enum
     BTA_DM_API_BLE_CONN_PARAM_EVT,
     BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT,
     BTA_DM_API_BLE_SCAN_PARAM_EVT,
+     /*******This event added by Yulong at 2016/10/25 to 
+    support the scan filter setting for the APP******/
+    BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT,
     BTA_DM_API_BLE_OBSERVE_EVT,
     BTA_DM_API_UPDATE_CONN_PARAM_EVT,
     /*******This event added by Yulong at 2016/9/9 to 
     support the random address setting for the APP******/
     BTA_DM_API_SET_RAND_ADDR_EVT,
+    /*******This event added by Yulong at 2016/10/19 to 
+    support stop the ble advertising setting by the APP******/
+    BTA_DM_API_BLE_STOP_ADV_EVT,
 #if BLE_PRIVACY_SPT == TRUE
     BTA_DM_API_LOCAL_PRIVACY_EVT,
 #endif
     BTA_DM_API_BLE_ADV_PARAM_EVT,
+
+	/*******This event added by Yulong at 2016/10/20 to 
+    support setting the ble advertising param by the APP******/
+    BTA_DM_API_BLE_ADV_PARAM_All_EVT,
     BTA_DM_API_BLE_SET_ADV_CONFIG_EVT,
     BTA_DM_API_BLE_SET_SCAN_RSP_EVT,
     BTA_DM_API_BLE_BROADCAST_EVT,
@@ -469,6 +479,19 @@ typedef struct
     tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
 }tBTA_DM_API_BLE_SCAN_PARAMS;
 
+typedef struct
+{
+    BT_HDR hdr;
+    tBTA_GATTC_IF client_if;
+    UINT32 scan_int;
+    UINT32 scan_window;
+    tBLE_SCAN_MODE scan_mode;
+	UINT8 addr_type_own;
+	UINT8 scan_filter_policy;
+    tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback;
+}tBTA_DM_API_BLE_SCAN_FILTER_PARAMS;
+
+
 /* set scan parameter for BLE connections */
 typedef struct
 {
@@ -510,6 +533,20 @@ typedef struct
     UINT16                  adv_int_max;
     tBLE_BD_ADDR            *p_dir_bda;
 }tBTA_DM_API_BLE_ADV_PARAMS;
+
+/* set adv parameter for BLE advertising */
+typedef struct
+{
+    BT_HDR                  hdr;
+    UINT16                  adv_int_min;
+    UINT16                  adv_int_max;
+	UINT8					adv_type;
+	tBLE_ADDR_TYPE		    addr_type_own;
+	tBTM_BLE_ADV_CHNL_MAP   channel_map;
+	tBTM_BLE_AFP			adv_filter_policy;
+    tBLE_BD_ADDR            *p_dir_bda;
+}tBTA_DM_API_BLE_ADV_PARAMS_ALL;
+
 
 typedef struct
 {
@@ -726,10 +763,12 @@ typedef union
     tBTA_DM_API_BLE_CONN_PARAMS         ble_set_conn_params;
     tBTA_DM_API_BLE_CONN_SCAN_PARAMS    ble_set_conn_scan_params;
     tBTA_DM_API_BLE_SCAN_PARAMS         ble_set_scan_params;
+	tBTA_DM_API_BLE_SCAN_FILTER_PARAMS	ble_set_scan_fil_params;
     tBTA_DM_API_BLE_OBSERVE             ble_observe;
     tBTA_DM_API_ENABLE_PRIVACY          ble_remote_privacy;
     tBTA_DM_API_LOCAL_PRIVACY           ble_local_privacy;
     tBTA_DM_API_BLE_ADV_PARAMS          ble_set_adv_params;
+	tBTA_DM_API_BLE_ADV_PARAMS_ALL		ble_set_adv_params_all;
     tBTA_DM_API_SET_ADV_CONFIG          ble_set_adv_data;
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
     tBTA_DM_API_SCAN_FILTER_PARAM_SETUP ble_scan_filt_param_setup;
@@ -1123,13 +1162,16 @@ extern void bta_dm_security_grant (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_bg_conn_type (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_observe (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_config_local_privacy (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_set_adv_params_all	(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data);

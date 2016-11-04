@@ -68,13 +68,13 @@ static void bt_app_task_handler(void *arg)
                 fixed_queue_process(bt_app_general_alarm_queue);
             }
 #if (BUT_PROFILE_CFG)
-			else if(e->sig == BUTTON_PRESS_EVT){
-			LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
-		  button_msg[1] = e->par;
-          button_msg_notify(2,button_msg);	
+		//	else if(e->sig == BUTTON_PRESS_EVT){
+		//	LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
+		//  button_msg[1] = e->par;
+        //  button_msg_notify(2,button_msg);	
 
 
-	}
+	//}
 #endif	///BUT_PROFILE_CFG
 
         }
@@ -253,7 +253,7 @@ static void bt_app_dm_upstreams_evt(UINT16 event, char *p_param)
         /*set connectable,discoverable, pairable and paired only modes of local device*/
         tBTA_DM_DISC disc_mode =  BTA_DM_BLE_GENERAL_DISCOVERABLE;
         tBTA_DM_CONN conn_mode =  BTA_DM_BLE_CONNECTABLE;
-        BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
+        //BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
         /* Enable local privacy */

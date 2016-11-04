@@ -19,7 +19,7 @@
 #ifndef BT_PRF_TASK_H__
 #define BT_PRF_TASK_H__
 
-/* Functions provided by btu_core.c
+/* Functions provided by bt_prf_task.c
 ************************************
 */
 

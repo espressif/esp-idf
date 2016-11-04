@@ -256,7 +256,7 @@ void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy)
     BD_ADDR          p_addr_ptr= {0};
     UINT8            adv_mode = p_cb->adv_mode;
 
-    BTM_TRACE_EVENT ("BTM_BleUpdateAdvFilterPolicy");
+    BTM_TRACE_EVENT ("BTM_BleUpdateAdvFilterPolicy\n");
 
     if (!controller_get_interface()->supports_ble())
         return;
@@ -351,7 +351,7 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT8 duration,
     UINT32 scan_interval = !p_inq->scan_interval ? BTM_BLE_GAP_DISC_SCAN_INT : p_inq->scan_interval;
     UINT32 scan_window = !p_inq->scan_window ? BTM_BLE_GAP_DISC_SCAN_WIN : p_inq->scan_window;
 
-    BTM_TRACE_EVENT ("%s : scan_type:%d, %d, %d", __func__, btm_cb.btm_inq_vars.scan_type,
+    BTM_TRACE_EVENT ("%s : scan_type:%d, %d, %d\n", __func__, btm_cb.btm_inq_vars.scan_type,
                       p_inq->scan_interval, p_inq->scan_window);
 
     if (!controller_get_interface()->supports_ble())
@@ -659,7 +659,7 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
 #if BLE_PRIVACY_SPT == TRUE
     tBTM_BLE_CB  *p_cb = &btm_cb.ble_ctr_cb;
 
-    BTM_TRACE_EVENT ("%s", __func__);
+    BTM_TRACE_EVENT ("%s\n", __func__);
 
     /* if LE is not supported, return error */
     if (!controller_get_interface()->supports_ble())
@@ -1051,7 +1051,7 @@ tBTM_STATUS BTM_BleSetAdvParams(UINT16 adv_int_min, UINT16 adv_int_max,
         memcpy(&p_cb->direct_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
     }
 
-    BTM_TRACE_EVENT ("update params for an active adv");
+    BTM_TRACE_EVENT ("update params for an active adv\n");
 
     btm_ble_stop_adv();
 
@@ -1073,6 +1073,70 @@ tBTM_STATUS BTM_BleSetAdvParams(UINT16 adv_int_min, UINT16 adv_int_max,
 
     return status;
 }
+
+
+/*******************************************************************************
+**
+** Function         BTM_BleSetAdvParamsStartAdv
+**
+** Description      This function is called to set all of the advertising parameters.
+**
+** Parameters:       None.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, UINT8 adv_type,
+                               tBLE_ADDR_TYPE own_bda_type, tBLE_BD_ADDR *p_dir_bda,
+                               tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP afp)
+{
+	tBTM_LE_RANDOM_CB *p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+    tBTM_STATUS status = BTM_SUCCESS;
+	
+	BTM_TRACE_EVENT ("BTM_BleSetAdvParamsStartAdv\n");
+
+    if (!controller_get_interface()->supports_ble())
+        return BTM_ILLEGAL_VALUE;
+
+    if (!BTM_BLE_ISVALID_PARAM(adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
+        !BTM_BLE_ISVALID_PARAM(adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX))
+    {
+        return BTM_ILLEGAL_VALUE;
+    }
+
+    p_cb->adv_interval_min = adv_int_min;
+    p_cb->adv_interval_max = adv_int_max;
+    p_cb->adv_chnl_map = chnl_map;
+	p_addr_cb->own_addr_type = own_bda_type;
+	p_cb->evt_type = adv_type;
+	p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
+	p_cb->afp = afp;
+	
+	if (p_dir_bda)
+    {
+        memcpy(&p_cb->direct_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
+    }
+
+	BTM_TRACE_EVENT ("update params for an active adv\n");
+
+    btm_ble_stop_adv();
+
+	 /* update adv params */
+    btsnd_hcic_ble_write_adv_params (adv_int_min,
+                                     adv_int_max,
+                                     adv_type,
+                                     own_bda_type,
+                                     p_dir_bda->type,
+                                     p_dir_bda->bda,
+                                     chnl_map,
+                                     p_cb->afp);
+
+	  btm_ble_start_adv();
+}
+
+
+
 
 /*******************************************************************************
 **
@@ -1130,7 +1194,7 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_
     UINT32 max_scan_interval;
     UINT32 max_scan_window;
 
-    BTM_TRACE_EVENT ("%s", __func__);
+    BTM_TRACE_EVENT ("%s\n", __func__);
     if (!controller_get_interface()->supports_ble())
         return;
 
@@ -1163,11 +1227,64 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_
         if (scan_setup_status_cback != NULL)
             scan_setup_status_cback(client_if, BTM_ILLEGAL_VALUE);
 
-        BTM_TRACE_ERROR("Illegal params: scan_interval = %d scan_window = %d",
+        BTM_TRACE_ERROR("Illegal params: scan_interval = %d scan_window = %d\n",
                         scan_interval, scan_window);
     }
 
 }
+
+void BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
+                          tBLE_SCAN_MODE scan_mode, UINT8 addr_type_own, tBTM_BLE_SFP scan_filter_policy,
+                          tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback)
+{
+	tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+    UINT32 max_scan_interval;
+    UINT32 max_scan_window;
+
+    BTM_TRACE_EVENT ("%s\n", __func__);
+    if (!controller_get_interface()->supports_ble())
+        return;
+
+    /* If not supporting extended scan support, use the older range for checking */
+    if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0)
+    {
+        max_scan_interval = BTM_BLE_SCAN_INT_MAX;
+        max_scan_window = BTM_BLE_SCAN_WIN_MAX;
+    }
+    else
+    {
+        /* If supporting extended scan support, use the new extended range for checking */
+        max_scan_interval = BTM_BLE_EXT_SCAN_INT_MAX;
+        max_scan_window = BTM_BLE_EXT_SCAN_WIN_MAX;
+    }
+
+    if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN, max_scan_interval) &&
+        BTM_BLE_ISVALID_PARAM(scan_window, BTM_BLE_SCAN_WIN_MIN, max_scan_window) &&
+       (scan_mode == BTM_BLE_SCAN_MODE_ACTI || scan_mode == BTM_BLE_SCAN_MODE_PASS))
+    {
+        p_cb->scan_type = scan_mode;
+        p_cb->scan_interval = scan_interval;
+        p_cb->scan_window = scan_window;
+		p_cb->sfp = scan_filter_policy;
+
+		btsnd_hcic_ble_set_scan_params(p_cb->scan_type, (UINT16)scan_interval,
+                                      (UINT16)scan_window,
+                                      addr_type_own,
+                                      scan_filter_policy);
+		 
+        if (scan_setup_status_cback != NULL)
+            scan_setup_status_cback(client_if, BTM_SUCCESS);
+    }
+    else
+    {
+        if (scan_setup_status_cback != NULL)
+            scan_setup_status_cback(client_if, BTM_ILLEGAL_VALUE);
+
+        BTM_TRACE_ERROR("Illegal params: scan_interval = %d scan_window = %d\n",
+                        scan_interval, scan_window);
+    }
+}
+
 
 /*******************************************************************************
 **
@@ -1333,7 +1450,7 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT8 type, UINT8 *p_length)
 *******************************************************************************/
 UINT16 BTM_BleReadDiscoverability()
 {
-    BTM_TRACE_API("%s", __FUNCTION__);
+    BTM_TRACE_API("%s\n", __FUNCTION__);
 
     return (btm_cb.ble_ctr_cb.inq_var.discoverable_mode);
 }
@@ -1350,7 +1467,7 @@ UINT16 BTM_BleReadDiscoverability()
 *******************************************************************************/
 UINT16 BTM_BleReadConnectability()
 {
-    BTM_TRACE_API ("%s", __FUNCTION__);
+    BTM_TRACE_API ("%s\n", __FUNCTION__);
 
     return (btm_cb.ble_ctr_cb.inq_var.connectable_mode);
 }
@@ -1782,7 +1899,7 @@ tBTM_STATUS btm_ble_set_discoverability(UINT16 combined_mode)
                         own_addr_type = p_addr_cb->own_addr_type;
     UINT16              adv_int_min, adv_int_max;
 
-    BTM_TRACE_EVENT ("%s mode=0x%0x combined_mode=0x%x", __FUNCTION__, mode, combined_mode);
+    BTM_TRACE_EVENT ("%s mode=0x%0x combined_mode=0x%x\n", __FUNCTION__, mode, combined_mode);
 
     /*** Check mode parameter ***/
     if (mode > BTM_BLE_MAX_DISCOVERABLE)
@@ -1800,7 +1917,7 @@ tBTM_STATUS btm_ble_set_discoverability(UINT16 combined_mode)
     btu_stop_timer(&p_cb->fast_adv_timer);
 
     /* update adv params if start advertising */
-    BTM_TRACE_EVENT ("evt_type=0x%x p-cb->evt_type=0x%x ", evt_type, p_cb->evt_type);
+    BTM_TRACE_EVENT ("evt_type=0x%x p-cb->evt_type=0x%x\n ", evt_type, p_cb->evt_type);
 
     if (new_mode == BTM_BLE_ADV_ENABLE)
     {
@@ -1888,7 +2005,7 @@ tBTM_STATUS btm_ble_set_connectability(UINT16 combined_mode)
                             own_addr_type = p_addr_cb->own_addr_type;
     UINT16                  adv_int_min, adv_int_max;
 
-    BTM_TRACE_EVENT ("%s mode=0x%0x combined_mode=0x%x", __FUNCTION__, mode, combined_mode);
+    BTM_TRACE_EVENT ("%s mode=0x%0x combined_mode=0x%x\n", __FUNCTION__, mode, combined_mode);
 
     /*** Check mode parameter ***/
     if (mode > BTM_BLE_MAX_CONNECTABLE)
@@ -3064,7 +3181,7 @@ tBTM_STATUS btm_ble_start_adv(void)
 {
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS     rt = BTM_NO_RESOURCES;
-
+	BTM_TRACE_EVENT ("btm_ble_start_adv\n");
     if (!btm_ble_adv_states_operation (btm_ble_topology_check, p_cb->evt_type))
         return BTM_WRONG_MODE;
 
@@ -3086,6 +3203,7 @@ tBTM_STATUS btm_ble_start_adv(void)
          p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
          btm_ble_adv_states_operation(btm_ble_set_topology_mask, p_cb->evt_type);
          rt = BTM_SUCCESS;
+		 BTM_TRACE_EVENT ("BTM_SUCCESS\n");
     }
     else
     {

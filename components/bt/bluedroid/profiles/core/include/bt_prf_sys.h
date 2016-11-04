@@ -16,6 +16,7 @@
 #define _PROFILE_SYS_H__
 
 #include "bt_types.h"
+#include "prf_defs.h"
 
 enum
 {
@@ -38,7 +39,7 @@ typedef UINT8 tBT_PRF_SYS_CONN_STATUS;
 /* disable function type */
 typedef void (tBT_PRF_SYS_DISABLE)(void);
 /* event handler function type */
-typedef BOOLEAN (tBT_PRF_SYS_EVT_HDLR)(BT_HDR *p_msg);
+typedef BOOLEAN (tBT_PRF_SYS_EVT_HDLR)(prf_hdr_evt_t *p_msg);
 
 /* conn callback for role / low power manager*/
 typedef void (tBT_PRF_SYS_CONN_CBACK)(tBT_PRF_SYS_CONN_STATUS status,
@@ -73,14 +74,17 @@ extern tBT_PRF_SYS_CB bt_prf_sys_cb;
 
 extern void bt_prf_sys_init(void);
 extern void bt_prf_sys_free(void);
-extern void bt_prf_sys_event(BT_HDR *p_msg);
+extern void bt_prf_sys_event(prf_hdr_evt_t *p_msg);
 
-extern void bt_prf_sys_register(UINT8 id, const tBT_PRF_SYS_REG *p_reg);
-extern void bt_prf_sys_deregister(UINT8 id);
-extern BOOLEAN bt_prf_sys_is_register(UINT8 id);
+extern void bt_prf_sys_sendmsg(void *p_msg);
 
-extern void bt_prf_sys_idle(UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
-extern void bt_prf_sys_busy(UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
+
+extern void bt_prf_sys_register(uint8_t id, const tBT_PRF_SYS_REG *p_reg);
+extern void bt_prf_sys_deregister(uint8_t id);
+extern BOOLEAN bt_prf_sys_is_register(uint8_t id);
+
+extern void bt_prf_sys_idle(uint8_t id, uint8_t app_id, BD_ADDR peer_addr);
+extern void bt_prf_sys_busy(uint8_t id, uint8_t app_id, BD_ADDR peer_addr);
 
 
 #endif	///_PROFILE_SYS_H__

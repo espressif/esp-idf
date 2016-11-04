@@ -60,7 +60,7 @@ void BTA_GATTC_Disable(void)
 
     if (bta_sys_is_register(BTA_ID_GATTC) == FALSE)
     {
-        APPL_TRACE_WARNING("GATTC Module not enabled/already disabled");
+        APPL_TRACE_WARNING("GATTC Module not enabled/already disabled\n");
         return;
     }
     if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)

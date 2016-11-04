@@ -3,13 +3,7 @@
 
 #include "bta_api.h"
 #include "btm_ble_api.h"
-
-enum
-{
-	BLE_ADV_DATA_IDX,
-	BLE_SCAN_RSP_DATA_IDX,
-	ADV_SCAN_IDX_MAX
-};
+#include "bt_app_defs.h"
 
 typedef struct
 {

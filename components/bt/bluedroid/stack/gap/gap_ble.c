@@ -464,13 +464,13 @@ void GAP_BleAttrDBUpdate(UINT16 attr_uuid, tGAP_BLE_ATTR_VALUE *p_value)
     tGAP_ATTR  *p_db_attr = gap_cb.gatt_attr;
     UINT8       i = 0;
 
-    GAP_TRACE_EVENT("GAP_BleAttrDBUpdate attr_uuid=0x%04x", attr_uuid);
+    GAP_TRACE_EVENT("GAP_BleAttrDBUpdate attr_uuid=0x%04x\n", attr_uuid);
 
     for (i = 0; i < GAP_MAX_CHAR_NUM; i ++, p_db_attr ++)
     {
         if (p_db_attr->uuid == attr_uuid)
         {
-            GAP_TRACE_EVENT("Found attr_uuid=0x%04x", attr_uuid);
+            GAP_TRACE_EVENT("Found attr_uuid=0x%04x\n", attr_uuid);
 
             switch (attr_uuid)
             {
@@ -630,7 +630,7 @@ static void gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
 
     op_type = p_clcb->cl_op_uuid;
 
-    GAP_TRACE_EVENT ("gap_ble_c_cmpl_cback() - op_code: 0x%02x  status: 0x%02x  read_type: 0x%04x", op, status, op_type);
+    GAP_TRACE_EVENT ("gap_ble_c_cmpl_cback() - op_code: 0x%02x  status: 0x%02x  read_type: 0x%04x\n", op, status, op_type);
     /* Currently we only issue read commands */
     if (op != GATTC_OPTYPE_READ)
         return;
@@ -660,7 +660,7 @@ static void gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
             break;
 
         case GATT_UUID_GAP_DEVICE_NAME:
-            GAP_TRACE_EVENT ("GATT_UUID_GAP_DEVICE_NAME");
+            GAP_TRACE_EVENT ("GATT_UUID_GAP_DEVICE_NAME\n");
             len = (UINT16)strlen((char *)pp);
             if (len > GAP_CHAR_DEV_NAME_SIZE)
                 len = GAP_CHAR_DEV_NAME_SIZE;

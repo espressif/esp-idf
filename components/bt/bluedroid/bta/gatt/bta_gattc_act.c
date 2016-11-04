@@ -271,6 +271,7 @@ void bta_gattc_start_if(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
         APPL_TRACE_ERROR("Unable to start app.: Unknown interface =%d",p_msg->int_start_if.client_if );
     }
 }
+
 /*******************************************************************************
 **
 ** Function         bta_gattc_deregister
