@@ -1,16 +1,3 @@
-/**
- ****************************************************************************************
- *
- * @file app_airsync_md5.h
- *
- * @brief Application airsync md5 generation head Entry Point
- *
- * Copyright (C) ESPRESSIF 2016
- * Created by Yulong at 2016/10/9
- *
- ****************************************************************************************
- */
-
 #ifndef __APP_AIRSYNC_MD5__
 #define __APP_AIRSYNC_MD5__
 

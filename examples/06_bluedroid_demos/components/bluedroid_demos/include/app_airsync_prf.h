@@ -1,15 +1,3 @@
-/**
- ****************************************************************************************
- *
- * @file app_airsync_prf.h
- *
- * @brief Application Security Entry Point
- *
- * Copyright (C) ESPRESSIF 2016
- * Created by Yulong at 2016/9/30
- *
- ****************************************************************************************
- */
 #ifndef _APP_AIRSYNC_PRF_H__
 #define _APP_AIRSYNC_PRF_H__
 

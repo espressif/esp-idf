@@ -1,18 +1,3 @@
-/**
- 
-*******************************************************************************
-*********
-*
-* @file app_button_int.h
-*
-* @brief button Service Application entry point
-*
-* Copyright (C) ESPRESSSIF 2016
-* Created by Yulong at 2016/10/17
-* 
-*******************************************************************************
-**********/
-
 #include "prf_defs.h"
 #include "bt_prf_sys.h"
 #include "bt_types.h"
