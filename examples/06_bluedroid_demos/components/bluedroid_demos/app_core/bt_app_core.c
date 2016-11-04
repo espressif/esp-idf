@@ -73,7 +73,7 @@ extern void ble_server_test(void);
 
 static void bt_app_task_handler(void *arg)
 {
-    TaskEvt_t *e;
+    BtTaskEvt_t *e;
     UINT8 button_msg[2] = {0x01,0x00};
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtaApp1Queue, &e, (portTickType)portMAX_DELAY)) {
@@ -99,7 +99,7 @@ static void bt_app_task_handler(void *arg)
 static void bt_app_task_post(void)
 {
 
-     TaskEvt_t *evt = (TaskEvt_t *)osi_malloc(sizeof(TaskEvt_t));
+     BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
      if (evt == NULL)
         return;
 
