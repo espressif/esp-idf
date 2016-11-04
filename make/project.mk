@@ -306,6 +306,9 @@ app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)
 	$(Q) rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
-clean: app-clean
+# NB: this ordering is deliberate (app-clean before config-clean),
+# so config remains valid during all component clean targets
+config-clean: app-clean
+clean: config-clean
 
 

@@ -15,8 +15,7 @@ BOOTLOADER_BUILD_DIR=$(abspath $(BUILD_DIR_BASE)/bootloader)
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
 BOOTLOADER_SDKCONFIG=$(BOOTLOADER_BUILD_DIR)/sdkconfig
 
-# both signing key paths are resolved relative to the project directory
-SECURE_BOOTLOADER_KEY=$(abspath $(call dequote,$(CONFIG_SECURE_BOOTLOADER_KEY_FILE)))
+# signing key path is resolved relative to the project directory
 SECURE_BOOT_SIGNING_KEY=$(abspath $(call dequote,$(CONFIG_SECURE_BOOT_SIGNING_KEY)))
 export SECURE_BOOT_SIGNING_KEY  # used by bootloader_support component
 
@@ -30,10 +29,6 @@ BOOTLOADER_MAKE=+$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
 
 $(BOOTLOADER_BIN): | $(BOOTLOADER_BUILD_DIR)/sdkconfig
 	$(Q) $(BOOTLOADER_MAKE) $@
-
-bootloader-clean:
-	$(Q) $(BOOTLOADER_MAKE) app-clean config-clean
-	$(Q) rm -f $(BOOTLOADER_SDKCONFIG) $(BOOTLOADER_SDKCONFIG).old
 
 clean: bootloader-clean
 
@@ -66,7 +61,11 @@ else ifdef CONFIG_SECURE_BOOTLOADER_REFLASHABLE
 # Reflashable secure bootloader
 # generates a digest binary (bootloader + digest)
 
-BOOTLOADER_DIGEST_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader-reflash-digest.bin
+BOOTLOADER_DIGEST_BIN := $(BOOTLOADER_BUILD_DIR)/bootloader-reflash-digest.bin
+SECURE_BOOTLOADER_KEY := $(BOOTLOADER_BUILD_DIR)/secure-bootloader-key.bin
+
+$(SECURE_BOOTLOADER_KEY): $(SECURE_BOOT_SIGNING_KEY)
+	$(Q) $(ESPSECUREPY) digest_private_key -k $< $@
 
 bootloader: $(BOOTLOADER_DIGEST_BIN)
 	@echo $(SEPARATOR)
@@ -84,19 +83,15 @@ $(BOOTLOADER_DIGEST_BIN): $(BOOTLOADER_BIN) $(SECURE_BOOTLOADER_KEY)
 	@echo "DIGEST $(notdir $@)"
 	$(Q) $(ESPSECUREPY) digest_secure_bootloader -k $(SECURE_BOOTLOADER_KEY) -o $@ $<
 
-$(SECURE_BOOTLOADER_KEY):
-	@echo $(SEPARATOR)
-	@echo "Need to generate secure boot signing key. Run following command:"
-	@echo "$(ESPSECUREPY) generate_key $@"
-	@echo "Keep key file safe after generating."
-	@echo "(See secure boot documentation for caveats & alternatives.)")
-	@exit 1
-
 else
 bootloader:
 	@echo "Invalid bootloader target: bad sdkconfig?"
 	@exit 1
 endif
+
+bootloader-clean:
+	$(Q) $(BOOTLOADER_MAKE) app-clean config-clean
+	$(Q) rm -f $(BOOTLOADER_SDKCONFIG) $(BOOTLOADER_SDKCONFIG).old $(SECURE_BOOTLOADER_KEY) $(BOOTLOADER_DIGEST_BIN)
 
 all_binaries: $(BOOTLOADER_BIN)
 

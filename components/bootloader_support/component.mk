@@ -17,9 +17,8 @@ COMPONENT_SRCDIRS := src
 #
 ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
 
+# this path is created relative to the component build directory
 SECURE_BOOT_VERIFICATION_KEY := $(abspath signature_verification_key.bin)
-
-COMPONENT_EMBED_FILES := $(SECURE_BOOT_VERIFICATION_KEY)
 
 $(SECURE_BOOT_SIGNING_KEY):
 	@echo "Need to generate secure boot signing key."
@@ -31,6 +30,11 @@ $(SECURE_BOOT_SIGNING_KEY):
 
 $(SECURE_BOOT_VERIFICATION_KEY): $(SECURE_BOOT_SIGNING_KEY)
 	$(ESPSECUREPY) extract_public_key --keyfile $< $@
+
+COMPONENT_EXTRA_CLEAN += $(SECURE_BOOT_VERIFICATION_KEY)
+
+COMPONENT_EMBED_FILES := $(SECURE_BOOT_VERIFICATION_KEY)
+
 endif
 
 include $(IDF_PATH)/make/component_common.mk
