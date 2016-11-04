@@ -74,7 +74,8 @@
 **  Externs
 ******************************************************************************/
 extern bt_status_t btif_sdp_execute_service(BOOLEAN b_enable);
-
+extern bt_status_t btif_av_execute_service(BOOLEAN b_enable);
+extern bt_status_t btif_av_sink_execute_service(BOOLEAN b_enable);
 /******************************************************************************
 **  Functions
 ******************************************************************************/
@@ -113,6 +114,12 @@ bt_status_t btif_in_execute_service_request(tBTA_SERVICE_ID service_id,
     switch (service_id) {
     case BTA_SDP_SERVICE_ID:
         btif_sdp_execute_service(b_enable);
+        break;
+    case BTA_A2DP_SOURCE_SERVICE_ID:
+        btif_av_execute_service(b_enable);
+        break;
+    case BTA_A2DP_SINK_SERVICE_ID:
+        btif_av_sink_execute_service(b_enable);
         break;
     default:
         BTIF_TRACE_ERROR("%s: Unknown service being enabled\n", __FUNCTION__);

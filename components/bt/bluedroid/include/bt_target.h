@@ -1294,17 +1294,17 @@ Range: 2 octets
 ******************************************************************************/
 
 #ifndef AVDT_INCLUDED
-#define AVDT_INCLUDED               FALSE//TRUE
+#define AVDT_INCLUDED               TRUE
 #endif
 
 /* Include reporting capability in AVDTP */
 #ifndef AVDT_REPORTING
-#define AVDT_REPORTING              FALSE//TRUE
+#define AVDT_REPORTING              TRUE
 #endif
 
 /* Include multiplexing capability in AVDTP */
 #ifndef AVDT_MULTIPLEXING
-#define AVDT_MULTIPLEXING           FALSE//TRUE
+#define AVDT_MULTIPLEXING           TRUE
 #endif
 
 /* Number of simultaneous links to different peer devices. */

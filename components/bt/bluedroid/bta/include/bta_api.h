@@ -28,7 +28,7 @@
 #include "bt_target.h"
 #include "bt_types.h"
 #include "btm_api.h"
-// #include "uipc_msg.h"
+#include "uipc_msg.h"
 
 #if BLE_INCLUDED == TRUE
 #include "btm_ble_api.h"
