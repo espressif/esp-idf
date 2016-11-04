@@ -43,6 +43,10 @@ typedef char bdstr_t[18];
 /*******************************************************************************
 **  Functions
 ********************************************************************************/
+const char* dump_rc_event(UINT8 event);
+const char* dump_rc_notification_event_id(UINT8 event_id);
+const char* dump_rc_pdu(UINT8 pdu);
+
 UINT32 devclass2uint(DEV_CLASS dev_class);
 void uint2devclass(UINT32 dev, DEV_CLASS dev_class);
 void uuid16_to_uuid128(uint16_t uuid16, bt_uuid_t* uuid128);
