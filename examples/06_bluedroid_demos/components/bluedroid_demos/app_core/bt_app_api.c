@@ -169,7 +169,7 @@ void esp_ble_start_scanning (UINT8 duration, esp_dm_search_cb_t *results_cb)
 *******************************************************************************/
 void esp_ble_stop_advertising (void)
 {
-	bool stop_adv = true;
+	bool stop_adv = false;
 	
 	BTA_DmBleBroadcast(stop_adv);
 }

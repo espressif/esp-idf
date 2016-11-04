@@ -37,21 +37,6 @@
 
  button_env_cb_t button_cb_env;
 
-tBLE_BD_ADDR			p_peer_bda = {
-	.type	= API_PUBLIC_ADDR,
-	.bda	= {0}
-};
-
-esp_ble_adv_params_all_t adv_params = 
-{
-	.adv_int_min 		= BTM_BLE_ADV_INT_MIN + 0x100,
-	.adv_int_max 		= BTM_BLE_ADV_INT_MIN + 0x100,
-	.adv_type	 		= API_NON_DISCOVERABLE,
-	.addr_type_own 		= API_PUBLIC_ADDR,
-	.channel_map		= ESP_BLE_ADV_CHNL_MAP,
-	.adv_filter_policy 	= ADV_ALLOW_SCAN_ANY_CON_ANY,
-	.p_dir_bda			= &p_peer_bda
-};
 
 
 
@@ -190,9 +175,11 @@ static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
 			///Start advertising
 			LOG_ERROR("\n*******Start sent the ADV.*************\n");
 			//esp_ble_start_advertising (&adv_params);
-			BTA_GATTS_Listen(button_cb_env.gatt_if, true, NULL);
+			//BTA_GATTS_Listen(button_cb_env.gatt_if, true, NULL);
 			break;
 		case ESP_GATTS_CONNECT_EVT:
+			LOG_ERROR("############BUTTON CONNCET EVT################\n");
+			//esp_ble_stop_advertising();
 			//set the connection flag to true
 			button_env_clcb_alloc(p_data->conn.conn_id, p_data->conn.remote_bda);
 			break;
@@ -202,7 +189,7 @@ static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
 			break;
 		case ESP_GATTS_OPEN_EVT:
 			///stop the advertising after connected
-			esp_ble_stop_advertising();
+			
 			break;
 		case ESP_GATTS_CLOSE_EVT:
 			if(button_cb_env.clcb.connected && (button_cb_env.clcb.conn_id == p_data->conn.conn_id))

@@ -81,6 +81,24 @@ tBTA_BLE_MANU	p_ijiazu_manu = {sizeof(ijiazu_manu),ijiazu_manu};			/* manufactur
 tBTA_BLE_MANU   p_wechat_manu = {sizeof(wechat_manu),wechat_manu};
 
 
+tBLE_BD_ADDR			p_peer_bda = {
+	.type	= API_PUBLIC_ADDR,
+	.bda	= {0}
+};
+
+esp_ble_adv_params_all_t adv_params = 
+{
+	.adv_int_min 		= BTM_BLE_ADV_INT_MIN + 0x100,
+	.adv_int_max 		= BTM_BLE_ADV_INT_MIN + 0x100,
+	.adv_type	 		= API_NON_DISCOVERABLE,
+	.addr_type_own 		= API_PUBLIC_ADDR,
+	.channel_map		= ESP_BLE_ADV_CHNL_MAP,
+	.adv_filter_policy 	= ADV_ALLOW_SCAN_ANY_CON_ANY,
+	.p_dir_bda			= &p_peer_bda
+};
+
+
+
 
 
 BD_ADDR rand_ijiazu_addr = {0x00,0x02,0x5B,0x00,0x32,0x55};
@@ -244,9 +262,9 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
         DIS_ATTR_IEEE_DATA_BIT | DIS_ATTR_PNP_ID_BIT;
     DIS_SrInit(dis_attr_mask);
 */
-	ble_but_create_svc();
+	//ble_but_create_svc();
     /*instantiate a battery service*/
-    //bas_register();  
+    bas_register();  
 	/*instantiate the driver for button profile*/
 	//app_button_init();
 #if (BUT_PROFILE_CFG)
@@ -262,7 +280,7 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
 #if (WX_AIRSYNC_CFG)
 	AirSync_Init(NULL);
 #endif	///WX_AIRSYNC_CFG
-
+	esp_ble_start_advertising(&adv_params);
 	//API_Ble_AppStartAdvertising(&adv_params);
     /*start advetising*/
 //    BTA_GATTS_Listen(server_if, true, NULL);
@@ -290,6 +308,8 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         /*connect callback*/
         case BTA_GATTS_CONNECT_EVT:
         {
+			///Stop the advertising when the connection is establish
+			esp_ble_stop_advertising();
             LOG_ERROR("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n", 
                              BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
                              p_data->conn.reason, p_data->conn.conn_id);
@@ -298,7 +318,11 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
             LOG_ERROR("is_connected=%d\n",is_connected);
         }
         break;
-        
+
+		case BTA_GATTS_DISCONNECT_EVT:
+			///start the advertising again when lose the connection
+			esp_ble_start_advertising(&adv_params);
+        	break;
         default:
         LOG_ERROR("unsettled event: %d\n", event);
     }
