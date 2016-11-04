@@ -15,6 +15,7 @@
 #include "bt_prf_task.h"
 #include "bt_prf_sys.h"
 #include "allocator.h"
+#include "bt_trace.h"
 #include "thread.h"
 #include "gki.h"
 
@@ -35,17 +36,16 @@
  ******************************************************************************/
  void bt_prf_task_thread_handler(void *arg)
  {
-	 //ke_event_clear(KE_EVENT_BTU_TASK_THREAD);
  
 	 TaskEvt_t *e;
 	 for (;;) { 
 		 if (pdTRUE == xQueueReceive(xProfileQueue, &e, (portTickType)portMAX_DELAY)) {
  
-			 if (e->sig == SIG_BTU_WORK) {
+			 if (e->sig == SIG_PRF_WORK) {
 				fixed_queue_process(bt_profile_msg_queue);
-				
+				LOG_ERROR("bt_prf_task_thread_handler\n");
 			 }
-			 else if (e->sig == SIG_BTU_START_UP) {
+			 else if (e->sig == SIG_PRF_START_UP) {
 				 bt_prf_task_start_up();
 			 }
 			 osi_free(e); 
@@ -82,6 +82,7 @@ void bt_profile_msg_ready(fixed_queue_t *queue) {
 
 void bt_prf_task_start_up(void)
 {
+	 LOG_ERROR("bt_prf_task_start_up\n");
 	 fixed_queue_register_dequeue(bt_profile_msg_queue, bt_profile_msg_ready);
 }
 
@@ -98,10 +99,13 @@ void bt_prf_StartUp(void)
 	bt_profile_msg_queue = fixed_queue_new(SIZE_MAX);
     if (bt_profile_msg_queue == NULL)
         goto error_exit;
-
+	
+	xProfileQueue = xQueueCreate(60, sizeof(void *));
+	xTaskCreate(bt_prf_task_thread_handler, "Bt_prf", 4096, NULL, configMAX_PRIORITIES - 1, &xProfileTaskHandle);
+	bt_prf_task_post(SIG_PRF_START_UP);
 	return;
 
-error_exit:;
+error_exit:
    LOG_ERROR("%s Unable to allocate resources for bt_workqueue\n", __func__);
    bt_prf_ShutDown();
 

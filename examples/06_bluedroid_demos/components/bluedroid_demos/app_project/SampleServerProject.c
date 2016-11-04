@@ -30,7 +30,7 @@
 #include "wx_airsync_prf.h"
 
 #include "button_pro.h"
-
+#include "app_button.h"
 #include "hid_le_prf.h"
 
 #include "bt_app_api.h"
@@ -231,6 +231,8 @@ void btif_to_bta_uuid(tBT_UUID *p_dest, bt_uuid_t *p_src)
         break;
     }
 }
+
+
 /*set advertising config callback*/
 static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
 {
@@ -242,13 +244,14 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
         DIS_ATTR_IEEE_DATA_BIT | DIS_ATTR_PNP_ID_BIT;
     DIS_SrInit(dis_attr_mask);
 */
+	ble_but_create_svc();
     /*instantiate a battery service*/
-    bas_register();  
+    //bas_register();  
 	/*instantiate the driver for button profile*/
 	//app_button_init();
 #if (BUT_PROFILE_CFG)
 	/*instantiate a button service*/
-	button_init(SimpleDataCallBack);
+	//button_init(SimpleDataCallBack);
 #endif	///BUT_PROFILE_CFG
 
 #if (HIDD_LE_PROFILE_CFG)
@@ -331,6 +334,9 @@ static void ble_server_appRegister(void)
 
     LOG_ERROR("register gatts application\n");
     esp_ble_gatts_app_register(&t_uuid, bta_gatts_callback);
+
+	bt_prf_sys_init();
+	ble_but_prf_enable();
 }
 
 void gatts_server_test(void)

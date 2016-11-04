@@ -41,7 +41,7 @@
 #include "button_pro.h"
 #include "app_button_int.h"
 
-static const tBT_PRF_SYS_REG bta_gatts_reg =
+static const tBT_PRF_SYS_REG but_prf_reg =
 {
     ble_but_prf_hdl_event,
     ble_but_prf_disable
@@ -61,6 +61,8 @@ static const tBT_PRF_SYS_REG bta_gatts_reg =
 *******************************************************************************/
 BOOLEAN ble_but_prf_hdl_event(prf_hdr_evt_t *msg_data)
 {
+	LOG_ERROR("###################ble_but_prf_hdl_event#####################################\n");
+	
 	UINT16 connid = 0;
 	switch(msg_data->event)
 	{
@@ -102,21 +104,42 @@ BOOLEAN ble_but_prf_hdl_event(prf_hdr_evt_t *msg_data)
 *******************************************************************************/
 void ble_but_prf_disable(void)
 {
-    BT_HDR  *p_buf;
-
+    prf_hdr_evt_t  *p_buf;
+	LOG_ERROR("ble_but_prf_disable\n");
+	
     if (bt_prf_sys_is_register(PRF_ID_BUT_LE) == FALSE)
     {
-        APPL_TRACE_WARNING("button profile Module not enabled/already disabled");
+        APPL_TRACE_WARNING("button profile Module not enabled/already disabled\n");
         return;
     }
 
-    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
+    if ((p_buf = (prf_hdr_evt_t *) GKI_getbuf(sizeof(prf_hdr_evt_t))) != NULL)
     {
         p_buf->event = BLE_BUT_DISABLE_IND_EVT;
         bta_sys_sendmsg(p_buf);
     }
     bta_sys_deregister(PRF_ID_BUT_LE);
 
+}
+
+void ble_but_prf_enable(void)
+{
+	bt_prf_sys_register(PRF_ID_BUT_LE,&but_prf_reg);
+}
+
+void ble_but_create_svc(void)
+{
+	prf_hdr_evt_t *p_msg;
+
+	LOG_ERROR("ble_but_create_svc\n"); 		//todo
+    if ((p_msg = (prf_hdr_evt_t *) GKI_getbuf(sizeof(prf_hdr_evt_t))) != NULL)
+    {
+        memset(p_msg, 0, sizeof(prf_hdr_evt_t));
+
+        p_msg->event = BLE_BUT_ENABLE_REQ_EVT;
+			
+        bt_prf_sys_sendmsg(p_msg);
+    }
 }
 
 

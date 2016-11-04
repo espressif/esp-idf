@@ -44,7 +44,7 @@ void esp_ble_config_adv_data (esp_ble_adv_data_cfg_t *adv_data,
 
 	if(++adv_data != NULL)
 	{
-		ble_set_scan_rsp(adv_data,NULL);
+		ble_set_scan_rsp(adv_data, NULL);
 	}
 			
 }
@@ -414,11 +414,11 @@ void esp_ble_gattc_close (uint16_t conn_id)
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the mtu value invalid
 **
 *******************************************************************************/
-tGATT_STATUS esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu)
+esp_gatt_status_t esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu)
 {
 	if ((mtu < GATT_DEF_BLE_MTU_SIZE) || (mtu > GATT_MAX_MTU_SIZE)){
 		LOG_ERROR("Invalid MTU parameters\n");
-		return GATT_ILLEGAL_PARAMETER;
+		return ESP_GATT_ILLEGAL_PARAMETER;
 	}
 
 	BTA_GATTC_ConfigureMTU (conn_id, mtu);
@@ -468,15 +468,15 @@ void esp_ble_gattc_svc_search_req (uint16_t conn_id, esp_bt_uuid_t *srvc_uuid)
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the srvc_id or char_result parameter is NULL.
 **
 *****************************************************************************************************/
-tBTA_GATT_STATUS  esp_ble_gattc_get_first_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
+esp_gatt_status_t  esp_ble_gattc_get_first_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
                                           						   esp_bt_uuid_t *char_uuid_cond,
                                           						   esp_gattc_char_id_t *char_result,
                                           						   esp_gatt_char_prop_t *property)
 {
-	tBTA_GATT_STATUS status = 0;
+	esp_gatt_status_t status = 0;
 	
 	if (!srvc_id || !char_result){
-    	return BTA_GATT_ILLEGAL_PARAMETER;
+    	return ESP_GATT_ILLEGAL_PARAMETER;
 	}
 
 	status = BTA_GATTC_GetFirstChar (conn_id, srvc_id, char_uuid_cond,
@@ -507,14 +507,14 @@ tBTA_GATT_STATUS  esp_ble_gattc_get_first_char (uint16_t conn_id, esp_gatt_srvc_
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the char_id or descr_result parameter is NULL.
 **
 *******************************************************************************/
-tBTA_GATT_STATUS  esp_ble_gattc_get_first_char_descr (uint16_t conn_id, esp_gattc_char_id_t *char_id,
+esp_gatt_status_t  esp_ble_gattc_get_first_char_descr (uint16_t conn_id, esp_gattc_char_id_t *char_id,
                                                 esp_bt_uuid_t *descr_uuid_cond,
                                                 esp_gattc_char_descr_id_t *descr_result)
 {
-	tBTA_GATT_STATUS    status;
+	esp_gatt_status_t    status;
 
     if (!char_id || !descr_result){
-      return BTA_GATT_ILLEGAL_PARAMETER;
+      return ESP_GATT_ILLEGAL_PARAMETER;
     }
 
 	status = BTA_GATTC_GetFirstCharDescr (conn_id, char_id, descr_uuid_cond, descr_result);
@@ -546,17 +546,17 @@ tBTA_GATT_STATUS  esp_ble_gattc_get_first_char_descr (uint16_t conn_id, esp_gatt
 ** 
 *******************************************************************************/
 
-tBTA_GATT_STATUS  esp_ble_gattc_get_next_char (uint16_t conn_id,
+esp_gatt_status_t  esp_ble_gattc_get_next_char (uint16_t conn_id,
                                          esp_gattc_char_id_t *start_char_id,
                                          esp_bt_uuid_t       *char_uuid_cond,
                                          esp_gattc_char_id_t *char_result,
                                          esp_gatt_char_prop_t    *property)
 {
 	
-	tBTA_GATT_STATUS	status;
+	esp_gatt_status_t	status;
 	
 	   if (!start_char_id || !char_result){
-	   	return BTA_GATT_ILLEGAL_PARAMETER;
+	   	return ESP_GATT_ILLEGAL_PARAMETER;
 	   }
 
 	status = BTA_GATTC_GetNextChar(conn_id, start_char_id, char_uuid_cond,
@@ -588,15 +588,15 @@ tBTA_GATT_STATUS  esp_ble_gattc_get_next_char (uint16_t conn_id,
 **
 *******************************************************************************/
 
-tBTA_GATT_STATUS   esp_ble_gattc_get_next_char_descr (uint16_t conn_id,
+esp_gatt_status_t   esp_ble_gattc_get_next_char_descr (uint16_t conn_id,
                                              esp_gattc_char_descr_id_t *start_descr_id,
                                              esp_bt_uuid_t             *descr_uuid_cond,
                                              esp_gattc_char_descr_id_t *descr_result)
 {
-	 tBTA_GATT_STATUS status;
+	 esp_gatt_status_t status;
 
     if (!start_descr_id || !descr_result){
-    	return BTA_GATT_ILLEGAL_PARAMETER;
+    	return ESP_GATT_ILLEGAL_PARAMETER;
     }
 
 	status = BTA_GATTC_GetNextCharDescr (conn_id, start_descr_id, descr_uuid_cond, descr_result);
@@ -625,14 +625,14 @@ tBTA_GATT_STATUS   esp_ble_gattc_get_next_char_descr (uint16_t conn_id,
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the srvc_id or result parameter is NULL.
 **
 *******************************************************************************/
-tBTA_GATT_STATUS  esp_ble_gattc_get_first_inclu_srvc (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
+esp_gatt_status_t  esp_ble_gattc_get_first_inclu_srvc (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
                                                     esp_bt_uuid_t *uuid_cond, esp_gattc_incl_srvc_id_t *result)
 {
 	
-	tBTA_GATT_STATUS status;
+	esp_gatt_status_t status;
 	
 	if (!srvc_id || !result){
-		return BTA_GATT_ILLEGAL_PARAMETER;
+		return ESP_GATT_ILLEGAL_PARAMETER;
 	}
 
 	status = BTA_GATTC_GetFirstIncludedService(conn_id, srvc_id, uuid_cond, result);
@@ -661,15 +661,15 @@ tBTA_GATT_STATUS  esp_ble_gattc_get_first_inclu_srvc (uint16_t conn_id, esp_gatt
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the p_char_id or p_descr_result parameter is NULL.
 
 *******************************************************************************/
-tBTA_GATT_STATUS  esp_ble_gattc_get_next_inclu_srvc (uint16_t conn_id,
+esp_gatt_status_t  esp_ble_gattc_get_next_inclu_srvc (uint16_t conn_id,
                                                    esp_gattc_incl_srvc_id_t *start_id,
                                                    esp_bt_uuid_t            *uuid_cond,
                                                    esp_gattc_incl_srvc_id_t *result)
 {
-	tBTA_GATT_STATUS status;
+	esp_gatt_status_t status;
 
     if (!start_id || !result){
-    	return BTA_GATT_ILLEGAL_PARAMETER;
+    	return ESP_GATT_ILLEGAL_PARAMETER;
     }
 
 	status = BTA_GATTC_GetNextIncludedService(conn_id, start_id, uuid_cond, result);
@@ -860,11 +860,11 @@ void esp_ble_gattc_send_ind_cfm (uint16_t conn_id, esp_gattc_char_id_t *char_id)
 ** @return          OK if registration succeed, otherwise failed.
 **
 *******************************************************************************/
-tBTA_GATT_STATUS esp_ble_gattc_register_ntf (esp_gattc_if_t client_if,
+esp_gatt_status_t esp_ble_gattc_register_ntf (esp_gattc_if_t client_if,
                                                      BD_ADDR bda,
                                                      esp_gattc_char_id_t *char_id)
 {
-	tBTA_GATT_STATUS    status = BTA_GATT_ILLEGAL_PARAMETER;
+	esp_gatt_status_t    status = ESP_GATT_ILLEGAL_PARAMETER;
 	status = BTA_GATTC_RegisterForNotifications (client_if, bda, char_id);
 
 	return status;
@@ -888,7 +888,7 @@ tBTA_GATT_STATUS esp_ble_gattc_unregister_ntf (esp_gattc_if_t client_if,
                                                        BD_ADDR bda,
                                                        esp_gattc_char_id_t *char_id)
 {
-	tBTA_GATT_STATUS    status = BTA_GATT_ILLEGAL_PARAMETER;
+	esp_gatt_status_t    status = ESP_GATT_ILLEGAL_PARAMETER;
 	status = BTA_GATTC_DeregisterForNotifications (client_if, bda, char_id);
 
 	return status;

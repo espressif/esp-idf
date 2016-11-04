@@ -274,7 +274,7 @@ void esp_ble_gattc_close (uint16_t conn_id);
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the mtu value invalid
 **
 *******************************************************************************/
-tGATT_STATUS esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu);
+esp_gatt_status_t esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu);
 
 
 /*******************************************************************************
@@ -316,7 +316,7 @@ void esp_ble_gattc_svc_search_req (uint16_t conn_id, esp_bt_uuid_t *srvc_uuid);
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the srvc_id or char_result parameter is NULL.
 **
 *****************************************************************************************************/
-tBTA_GATT_STATUS  esp_ble_gattc_get_first_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
+esp_gatt_status_t  esp_ble_gattc_get_first_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
                                           						   esp_bt_uuid_t *char_uuid_cond,
                                           						   esp_gattc_char_id_t *char_result,
                                           						   esp_gatt_char_prop_t *property);
@@ -341,7 +341,7 @@ tBTA_GATT_STATUS  esp_ble_gattc_get_first_char (uint16_t conn_id, esp_gatt_srvc_
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the char_id or descr_result parameter is NULL.
 **
 *******************************************************************************/
-tBTA_GATT_STATUS  esp_ble_gattc_get_first_char_descr (uint16_t conn_id, esp_gattc_char_id_t *char_id,
+esp_gatt_status_t  esp_ble_gattc_get_first_char_descr (uint16_t conn_id, esp_gattc_char_id_t *char_id,
                                                 esp_bt_uuid_t *descr_uuid_cond,
                                                 esp_gattc_char_descr_id_t *descr_result);
 
@@ -366,7 +366,7 @@ tBTA_GATT_STATUS  esp_ble_gattc_get_first_char_descr (uint16_t conn_id, esp_gatt
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the p_char_id or p_descr_result parameter is NULL.
 
 *******************************************************************************/
-tBTA_GATT_STATUS  esp_ble_gattc_get_next_inclu_srvc (uint16_t conn_id,
+esp_gatt_status_t  esp_ble_gattc_get_next_inclu_srvc (uint16_t conn_id,
                                                    esp_gattc_incl_srvc_id_t *start_id,
                                                    esp_bt_uuid_t            *uuid_cond,
                                                    esp_gattc_incl_srvc_id_t *result);
@@ -393,7 +393,7 @@ tBTA_GATT_STATUS  esp_ble_gattc_get_next_inclu_srvc (uint16_t conn_id,
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the start_char_id or char_result parameter is NULL.
 ** 
 *******************************************************************************/
-tBTA_GATT_STATUS  esp_ble_gattc_get_next_char (uint16_t conn_id,
+esp_gatt_status_t  esp_ble_gattc_get_next_char (uint16_t conn_id,
                                          esp_gattc_char_id_t *start_char_id,
                                          esp_bt_uuid_t       *char_uuid_cond,
                                          esp_gattc_char_id_t *char_result,
@@ -420,7 +420,7 @@ tBTA_GATT_STATUS  esp_ble_gattc_get_next_char (uint16_t conn_id,
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the start_descr_id or descr_result parameter is NULL.
 **
 *******************************************************************************/
-tBTA_GATT_STATUS  esp_ble_gattc_get_next_char_descr (uint16_t conn_id,
+esp_gatt_status_t  esp_ble_gattc_get_next_char_descr (uint16_t conn_id,
                                              esp_gattc_char_descr_id_t *start_descr_id,
                                              esp_bt_uuid_t             *descr_uuid_cond,
                                              esp_gattc_char_descr_id_t *descr_result);
@@ -445,7 +445,7 @@ tBTA_GATT_STATUS  esp_ble_gattc_get_next_char_descr (uint16_t conn_id,
 **  - @ref ESP_GATT_ILLEGAL_PARAMETER: If the srvc_id or result parameter is NULL.
 **
 *******************************************************************************/
-extern tBTA_GATT_STATUS  esp_ble_gattc_get_first_inclu_srvc (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
+esp_gatt_status_t  esp_ble_gattc_get_first_inclu_srvc (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
                                                     esp_bt_uuid_t *uuid_cond, esp_gattc_incl_srvc_id_t *result);
 
 
@@ -615,7 +615,7 @@ void esp_ble_gattc_send_ind_cfm (uint16_t conn_id, esp_gattc_char_id_t *char_id)
 ** @return          OK if registration succeed, otherwise failed.
 **
 *******************************************************************************/
-tBTA_GATT_STATUS esp_ble_gattc_register_ntf (esp_gattc_if_t client_if,
+esp_gatt_status_t esp_ble_gattc_register_ntf (esp_gattc_if_t client_if,
                                                      BD_ADDR bda,
                                                      esp_gattc_char_id_t *char_id);
 

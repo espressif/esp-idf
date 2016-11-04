@@ -188,8 +188,9 @@ static void button_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
 				button_cb_env.button_inst.but_cfg_hdl = p_data->add_result.attr_id;
 			}
 			///Start advertising
-			LOG_ERROR("\nStart sent the ADV.\n");
-			esp_ble_start_advertising (&adv_params);
+			LOG_ERROR("\n*******Start sent the ADV.*************\n");
+			//esp_ble_start_advertising (&adv_params);
+			BTA_GATTS_Listen(button_cb_env.gatt_if, true, NULL);
 			break;
 		case ESP_GATTS_CONNECT_EVT:
 			//set the connection flag to true
@@ -332,11 +333,11 @@ esp_gatt_status_t button_init (but_prf_cb_t call_back)
 {
 	tBT_UUID app_uuid = {LEN_UUID_16,{ATT_SVC_BUTTON}};
 	
-
+	LOG_ERROR("\n=============================button_init==============================================\n");
 	if(button_cb_env.enabled)
 	{
-		LOG_ERROR("button svc already initaliezd");
-		return GATT_ERROR;
+		LOG_ERROR("button svc already initaliezd\n");
+		return ESP_GATT_ERROR;
 	}
 	else
 	{

@@ -76,6 +76,9 @@ extern void bt_prf_sys_init(void);
 extern void bt_prf_sys_free(void);
 extern void bt_prf_sys_event(prf_hdr_evt_t *p_msg);
 
+extern void bt_prf_sys_sendmsg(void *p_msg);
+
+
 extern void bt_prf_sys_register(uint8_t id, const tBT_PRF_SYS_REG *p_reg);
 extern void bt_prf_sys_deregister(uint8_t id);
 extern BOOLEAN bt_prf_sys_is_register(uint8_t id);
