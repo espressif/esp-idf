@@ -31,7 +31,6 @@
 #include "bta_av_co.h"
 #include "bta_av_ci.h"
 #include "bta_av_sbc.h"
-#if 0 // todo : port the call out functions
 #include "btif_media.h"
 #include "sbc_encoder.h"
 #include "btif_av_co.h"
@@ -1840,138 +1839,17 @@ BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max)
     return TRUE;
 }
 
-
-#else /* #if 0 */
-
-extern BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info,
-                                    UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 index)
+/* the call out functions for audio stream */
+tBTA_AV_CO_FUNCTS bta_av_a2d_cos =
 {
-    return FALSE;
-}
-
-extern void bta_av_co_audio_disc_res(tBTA_AV_HNDL hndl, UINT8 num_seps,
-                    UINT8 num_snk, UINT8 num_src, BD_ADDR addr, UINT16 uuid_local)
-{
-    return;
-}
-
-extern void bta_av_co_video_disc_res(tBTA_AV_HNDL hndl, UINT8 num_seps,
-                                     UINT8 num_snk, BD_ADDR addr)
-{
-    return;
-}
-
-extern UINT8 bta_av_co_audio_getconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                       UINT8 *p_codec_info, UINT8 *p_sep_info_idx, UINT8 seid,
-                                       UINT8 *p_num_protect, UINT8 *p_protect_info)
-{
-    return 0;
-}
-
-extern UINT8 bta_av_co_video_getconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                       UINT8 *p_codec_info, UINT8 *p_sep_info_idx, UINT8 seid,
-                                       UINT8 *p_num_protect, UINT8 *p_protect_info)
-{
-    return 0;
-}
-
-extern void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                        UINT8 *p_codec_info, UINT8 seid, BD_ADDR addr,
-                                        UINT8 num_protect, UINT8 *p_protect_info,UINT8 t_local_sep, UINT8 avdt_handle)
-{
-    return;
-}
-
-extern void bta_av_co_video_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                      UINT8 *p_codec_info, UINT8 seid, BD_ADDR addr,
-                                      UINT8 num_protect, UINT8 *p_protect_info)
-{
-    return;
-}
-
-extern void bta_av_co_audio_open(tBTA_AV_HNDL hndl,
-                                 tBTA_AV_CODEC codec_type, UINT8 *p_codec_info,
-                                 UINT16 mtu)
-{
-    return;
-}
-
-extern void bta_av_co_video_open(tBTA_AV_HNDL hndl,
-                                 tBTA_AV_CODEC codec_type, UINT8 *p_codec_info,
-                                 UINT16 mtu)
-{
-    return;
-}
-
-extern void bta_av_co_audio_close(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                  UINT16 mtu)
-{
-    return;
-}
-
-extern void bta_av_co_video_close(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                  UINT16 mtu)
-{
-    return;
-}
-
-extern void bta_av_co_audio_start(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                  UINT8 *p_codec_info, BOOLEAN *p_no_rtp_hdr)
-{
-    return;
-}
-
-extern void bta_av_co_video_start(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                  UINT8 *p_codec_info, BOOLEAN *p_no_rtp_hdr)
-{
-    return;
-}
-
-extern void bta_av_co_audio_stop(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type)
-{
-    return;
-}
-
-extern void bta_av_co_video_stop(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type)
-{
-    return;
-}
-
-extern void * bta_av_co_audio_src_data_path(tBTA_AV_CODEC codec_type,
-                                            UINT32 *p_len, UINT32 *p_timestamp)
-{
-    return NULL;
-}
-
-extern void * bta_av_co_video_src_data_path(tBTA_AV_CODEC codec_type,
-                                            UINT32 *p_len, UINT32 *p_timestamp)
-{
-    return NULL;
-}
-
-extern void bta_av_co_audio_drop(tBTA_AV_HNDL hndl)
-{
-    return;
-}
-
-extern void bta_av_co_video_report_conn (BOOLEAN open, UINT8 avdt_handle)
-{
-    return;
-}
-
-extern void bta_av_co_video_report_rr (UINT32 packet_lost)
-{
-    return;
-}
-
-extern void bta_av_co_audio_delay(tBTA_AV_HNDL hndl, UINT16 delay)
-{
-    return;
-}
-
-extern void bta_av_co_video_delay(tBTA_AV_HNDL hndl, UINT16 delay)
-{
-    return;
-}
-
-#endif
+    bta_av_co_audio_init,
+    bta_av_co_audio_disc_res,
+    bta_av_co_audio_getconfig,
+    bta_av_co_audio_setconfig,
+    bta_av_co_audio_open,
+    bta_av_co_audio_close,
+    bta_av_co_audio_start,
+    bta_av_co_audio_stop,
+    bta_av_co_audio_src_data_path,
+    bta_av_co_audio_delay
+};

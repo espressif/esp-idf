@@ -562,6 +562,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     registr.status = BTA_AV_FAIL_RESOURCES;
     registr.app_id = p_data->api_reg.app_id;
     registr.chnl   = (tBTA_AV_CHNL)p_data->hdr.layer_specific;
+    registr.p_bta_av_cos = p_data->api_reg.bta_av_cos;
     do
     {
         p_scb = bta_av_alloc_scb(registr.chnl);
@@ -649,7 +650,8 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
         {
             /* set up the audio stream control block */
             p_scb->p_act_tbl = (const tBTA_AV_ACT *)bta_av_a2d_action;
-            p_scb->p_cos     = &bta_av_a2d_cos;
+            // p_scb->p_cos     = &bta_av_a2d_cos;
+	    p_scb->p_cos     = registr.p_bta_av_cos;
             p_scb->media_type= AVDT_MEDIA_AUDIO;
             cs.cfg.psc_mask  = AVDT_PSC_TRANS;
             cs.media_type    = AVDT_MEDIA_AUDIO;
@@ -671,7 +673,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
             /* keep the configuration in the stream control block */
             memcpy(&p_scb->cfg, &cs.cfg, sizeof(tAVDT_CFG));
             while(index < BTA_AV_MAX_SEPS &&
-                (*bta_av_a2d_cos.init)(&codec_type, cs.cfg.codec_info,
+                (p_scb->p_cos->init)(&codec_type, cs.cfg.codec_info,
                 &cs.cfg.num_protect, cs.cfg.protect_info, index) == TRUE)
             {
 

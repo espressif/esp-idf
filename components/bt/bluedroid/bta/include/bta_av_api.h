@@ -255,6 +255,43 @@ typedef UINT8 tBTA_AV_ERR;
 #define BTA_AV_MAX_EVT          22
 
 
+/* function types for call-out functions */
+typedef BOOLEAN (*tBTA_AV_CO_INIT) (UINT8 *p_codec_type, UINT8 *p_codec_info,
+                                   UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 index);
+typedef void (*tBTA_AV_CO_DISC_RES) (tBTA_AV_HNDL hndl, UINT8 num_seps,
+                                     UINT8 num_snk, UINT8 num_src, BD_ADDR addr, UINT16 uuid_local);
+typedef UINT8 (*tBTA_AV_CO_GETCFG) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
+                                     UINT8 *p_codec_info, UINT8 *p_sep_info_idx, UINT8 seid,
+                                     UINT8 *p_num_protect, UINT8 *p_protect_info);
+typedef void (*tBTA_AV_CO_SETCFG) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
+                                     UINT8 *p_codec_info, UINT8 seid, BD_ADDR addr,
+                                     UINT8 num_protect, UINT8 *p_protect_info,
+                                     UINT8 t_local_sep, UINT8 avdt_handle);
+typedef void (*tBTA_AV_CO_OPEN) (tBTA_AV_HNDL hndl,
+                                 tBTA_AV_CODEC codec_type, UINT8 *p_codec_info,
+                                   UINT16 mtu);
+typedef void (*tBTA_AV_CO_CLOSE) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT16 mtu);
+typedef void (*tBTA_AV_CO_START) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,UINT8 *p_codec_info, BOOLEAN *p_no_rtp_hdr);
+typedef void (*tBTA_AV_CO_STOP) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type);
+typedef void * (*tBTA_AV_CO_DATAPATH) (tBTA_AV_CODEC codec_type,
+                                       UINT32 *p_len, UINT32 *p_timestamp);
+typedef void (*tBTA_AV_CO_DELAY) (tBTA_AV_HNDL hndl, UINT16 delay);
+
+/* the call-out functions for one stream */
+typedef struct
+{
+    tBTA_AV_CO_INIT     init;
+    tBTA_AV_CO_DISC_RES disc_res;
+    tBTA_AV_CO_GETCFG   getcfg;
+    tBTA_AV_CO_SETCFG   setcfg;
+    tBTA_AV_CO_OPEN     open;
+    tBTA_AV_CO_CLOSE    close;
+    tBTA_AV_CO_START    start;
+    tBTA_AV_CO_STOP     stop;
+    tBTA_AV_CO_DATAPATH data;
+    tBTA_AV_CO_DELAY    delay;
+} tBTA_AV_CO_FUNCTS;
+
 typedef UINT8 tBTA_AV_EVT;
 
 /* Event associated with BTA_AV_ENABLE_EVT */
@@ -270,6 +307,7 @@ typedef struct
     tBTA_AV_HNDL    hndl;       /* Handle associated with the stream. */
     UINT8           app_id;     /* ID associated with call to BTA_AvRegister() */
     tBTA_AV_STATUS  status;
+    tBTA_AV_CO_FUNCTS *p_bta_av_cos;
 } tBTA_AV_REGISTER;
 
 /* data associated with BTA_AV_OPEN_EVT */
@@ -560,7 +598,7 @@ void BTA_AvDisable(void);
 **
 *******************************************************************************/
 void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name,
-                            UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback);
+		    UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback, tBTA_AV_CO_FUNCTS * bta_av_cos);
 
 /*******************************************************************************
 **

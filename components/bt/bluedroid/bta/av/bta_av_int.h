@@ -156,7 +156,7 @@ enum
 /*****************************************************************************
 **  Data types
 *****************************************************************************/
-
+#if 0
 /* function types for call-out functions */
 typedef BOOLEAN (*tBTA_AV_CO_INIT) (UINT8 *p_codec_type, UINT8 *p_codec_info,
                                    UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 index);
@@ -193,6 +193,7 @@ typedef struct
     tBTA_AV_CO_DATAPATH data;
     tBTA_AV_CO_DELAY    delay;
 } tBTA_AV_CO_FUNCTS;
+#endif
 
 /* data type for BTA_AV_API_ENABLE_EVT */
 typedef struct
@@ -210,6 +211,7 @@ typedef struct
     char                p_service_name[BTA_SERVICE_NAME_LEN+1];
     UINT8               app_id;
     tBTA_AV_DATA_CBACK       *p_app_data_cback;
+    tBTA_AV_CO_FUNCTS   *bta_av_cos;
 } tBTA_AV_API_REG;
 
 
@@ -611,7 +613,7 @@ extern UINT16 *p_bta_av_rc_id;
 extern UINT16 *p_bta_av_rc_id_ac;
 
 extern const tBTA_AV_SACT bta_av_a2d_action[];
-extern const tBTA_AV_CO_FUNCTS bta_av_a2d_cos;
+// extern const tBTA_AV_CO_FUNCTS bta_av_a2d_cos;
 extern const tBTA_AV_SACT bta_av_vdp_action[];
 extern tAVDT_CTRL_CBACK * const bta_av_dt_cback[];
 extern void bta_av_stream_data_cback(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp, UINT8 m_pt);

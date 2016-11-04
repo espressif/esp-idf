@@ -155,6 +155,8 @@ extern void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data);
 extern BOOLEAN btif_rc_get_connected_peer(BD_ADDR peer_addr);
 extern void btif_rc_check_handle_pending_play (BD_ADDR peer_addr, BOOLEAN bSendToApp);
 
+
+extern tBTA_AV_CO_FUNCTS bta_av_a2d_cos;
 /*****************************************************************************
 ** Local helper functions
 ******************************************************************************/
@@ -1327,7 +1329,7 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
          BTA_AvEnable(BTA_SEC_AUTHENTICATE, (BTA_AV_FEAT_RCTG | BTA_AV_FEAT_NO_SCO_SSPD),
                       bte_av_callback);
 #endif
-         BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AV_SERVICE_NAME, 0, bte_av_media_callback);
+         BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AV_SERVICE_NAME, 0, bte_av_media_callback, &bta_av_a2d_cos);
      }
      else {
          BTA_AvDeregister(btif_av_cb.bta_handle);

@@ -21,6 +21,7 @@ COMPONENT_SRCDIRS :=	\
 			udrv/ulinux				\
 			embdrv/sbc/encoder			\
 			embdrv/sbc/decoder			\
+			btif/co					\
 			btif
 
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses -I./include

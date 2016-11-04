@@ -76,7 +76,7 @@ enum
 
 
 /* the call out functions for audio stream */
-const tBTA_AV_CO_FUNCTS bta_av_a2d_cos =
+/* const tBTA_AV_CO_FUNCTS bta_av_a2d_cos =
 {
     bta_av_co_audio_init,
     bta_av_co_audio_disc_res,
@@ -89,6 +89,10 @@ const tBTA_AV_CO_FUNCTS bta_av_a2d_cos =
     bta_av_co_audio_src_data_path,
     bta_av_co_audio_delay
 };
+*/
+tBTA_AV_CO_FUNCTS *p_bta_av_a2d_cos = NULL;
+
+
 
 /* ssm action functions for audio stream */
 const tBTA_AV_SACT bta_av_a2d_action[] =
