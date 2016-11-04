@@ -32,11 +32,11 @@ extern "C" {
 #include "freertos/ringbuf.h"
 #include <esp_types.h>
 
-extern const char* UART_TAG;
-#define UART_FIFO_LEN           (128)   //Do not change this, this value describes the length of the gardware FIFO in the ESP32
+#define UART_FIFO_LEN           (128)   /*< Length of the hardware FIFO buffers */
 #define UART_INTR_MASK          0x1ff
 #define UART_LINE_INV_MASK      (0x3f << 19)
 #define UART_BITRATE_MAX        5000000
+#define UART_PIN_NO_CHANGE      (-1)
 
 typedef enum {
     UART_DATA_5_BITS = 0x0,    /*!< word length: 5bits*/
@@ -243,6 +243,8 @@ esp_err_t uart_set_line_inverse(uart_port_t uart_no, uint32_t inverse_mask) ;
  *
  * @param   rx_thresh Threshold of Hardware RX flow control(0 ~ UART_FIFO_LEN)
  *
+ *          Only when UART_HW_FLOWCTRL_RTS is set , will the rx_thresh value be set.
+ *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
@@ -380,15 +382,19 @@ esp_err_t uart_isr_register(uart_port_t uart_num, uint8_t uart_intr_num, void (*
 /**
  * @brief   Set UART pin number
  *
+ *          @note
+ *          Internal signal can be output to multiple GPIO pads
+ *          Only one GPIO pad can connect with input signal
+ *
  * @param   uart_no    UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   tx_io_num  UART TX pin GPIO number
+ * @param   tx_io_num  UART TX pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
  *
- * @param   rx_io_num  UART RX pin GPIO number
+ * @param   rx_io_num  UART RX pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
  *
- * @param   rts_io_num UART RTS pin GPIO number
+ * @param   rts_io_num UART RTS pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
  *
- * @param   cts_io_num UART CTS pin GPIO number
+ * @param   cts_io_num UART CTS pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
  *
  * @return
  *     - ESP_OK   Success
@@ -434,20 +440,20 @@ esp_err_t uart_set_dtr(uart_port_t uart_num, int level);
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_param_config(uart_port_t uart_num, uart_config_t *uart_config);
+esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_config);
 
 /**
 * @brief   UART interrupt configure
  *
  * @param   uart_no     UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   p_intr_conf UART interrupt settings
+ * @param   intr_conf UART interrupt settings
  *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_intr_config(uart_port_t uart_num, uart_intr_config_t *p_intr_conf);
+esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_conf);
 
 /**
  * @brief   Install UART driver.
@@ -504,6 +510,9 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
 /**
  * @brief   Send data to the UART port from a given buffer and length,
  *          This function will not wait for the space in TX FIFO, just fill the TX FIFO and return when the FIFO is full.
+ *          @note
+ *          This function should only be used when UART TX buffer is not enabled.
+ *
  *
  * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
@@ -515,7 +524,7 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
  *     - (-1)  Parameter error
  *     - OTHERS(>=0)  The number of data that pushed to the TX FIFO
  */
-int uart_tx_chars(uart_port_t uart_no, char* buffer, uint32_t len);
+int uart_tx_chars(uart_port_t uart_no, const char* buffer, uint32_t len);
 
 /**
  * @brief   Send data to the UART port from a given buffer and length,
@@ -536,7 +545,7 @@ int uart_tx_chars(uart_port_t uart_no, char* buffer, uint32_t len);
  *     - (-1) Parameter error
  *     - OTHERS(>=0)  The number of data that pushed to the TX FIFO
  */
-int uart_tx_all_chars(uart_port_t uart_num, const char* src, size_t size);
+int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
 
 /**
  * @brief   Send data to the UART port from a given buffer and length,
@@ -564,20 +573,7 @@ int uart_tx_all_chars(uart_port_t uart_num, const char* src, size_t size);
  *     - OTHERS(>=0) The number of data that pushed to the TX FIFO
  */
 
-int uart_tx_all_chars_with_break(uart_port_t uart_num, const char* src, size_t size, int brk_len);
-
-/**
-* @brief   UART read one char
- *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
- *
- * @param   ticks_to_wait Timeout, count in RTOS ticks
- *
- * @return
- *     - (-1) Error
- *     - Others return a char data from UART.
- */
-int uart_read_char(uart_port_t uart_num, TickType_t ticks_to_wait);
+int uart_write_bytes_with_break(uart_port_t uart_num, const char* src, size_t size, int brk_len);
 
 /**
 * @brief   UART read bytes from UART buffer
@@ -607,25 +603,6 @@ int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickTyp
  *     - ESP_FAIL Parameter error
  */
 esp_err_t uart_flush(uart_port_t uart_num);
-
-/**
- * @brief   Set the serial output port for ets_printf function, not effective for ESP_LOGX macro.
- *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_FAIL Parameter error, or UART driver not installed.
- */
-esp_err_t uart_set_print_port(uart_port_t uart_no);
-
-/**
- * @brief   Get the current serial port for ets_printf function
- *
- *
- * @return  current print port(0: UART0; 1: UART1; 2: UART2)
- */
-int uart_get_print_port(void);
 
 /***************************EXAMPLE**********************************
  *
@@ -658,7 +635,7 @@ int uart_get_print_port(void);
  * @code{c}
  * //2. Set UART pin
  * //set UART pin, not needed if use default pins.
- * uart_set_pin(uart_num, -1, -1, 15, 13);
+ * uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 15, 13);
  * @endcode
  *-----------------------------------------------------------------------------*
  * @code{c}
@@ -671,12 +648,12 @@ int uart_get_print_port(void);
  * @code{c}
  * //4. Write data to UART.
  * char* test_str = "This is a test string.\n"
- * uart_tx_all_chars(uart_num, (const char*)test_str, strlen(test_str));
+ * uart_write_bytes(uart_num, (const char*)test_str, strlen(test_str));
  * @endcode
  *-----------------------------------------------------------------------------*
  * @code{c}
  * //5. Write data to UART, end with a break signal.
- * uart_tx_all_chars_with_break(0, "test break\n",strlen("test break\n"), 100);
+ * uart_write_bytes_with_break(0, "test break\n",strlen("test break\n"), 100);
  * @endcode
  *-----------------------------------------------------------------------------*
  * @code{c}
@@ -696,8 +673,6 @@ int uart_get_print_port(void);
  *     uart_param_config(uart_num, &uart_config);
  *     //Set UART1 pins(TX: IO16, RX: IO17, RTS: IO18, CTS: IO19)
  *     uart_set_pin(uart_num, 16, 17, 18, 19);
- *     //Set UART log level
- *     esp_log_level_set(UART_TAG, ESP_LOG_ERROR);
  *     //Install UART driver( We don't need an event queue here)
  *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, 17, NULL, RINGBUF_TYPE_BYTEBUF);
  *     uint8_t data[1000];
@@ -705,7 +680,7 @@ int uart_get_print_port(void);
  *         //Read data from UART
  *         int len = uart_read_bytes(uart_num, data, sizeof(data), 10);
  *         //Write data back to UART
- *         uart_tx_all_chars(uart_num, (const char*)data, len);
+ *         uart_write_bytes(uart_num, (const char*)data, len);
  *     }
  * }
  * @endcode
@@ -715,6 +690,7 @@ int uart_get_print_port(void);
  * #include "freertos/queue.h"
  * //A queue to handle UART event.
  * QueueHandle_t uart0_queue;
+ * static const char *TAG = "uart_example";
  * void uart_task(void *pvParameters)
  * {
  *     int uart_num = (int)pvParameters;
@@ -723,37 +699,37 @@ int uart_get_print_port(void);
  *     for(;;) {
  *         //Waiting for UART event.
  *         if(xQueueReceive(uart0_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
- *             ESP_LOGI(UART_TAG, "uart[%d] event:", uart_num);
+ *             ESP_LOGI(TAG, "uart[%d] event:", uart_num);
  *             switch(event.type) {
  *                 //Event of UART receving data
  *                 case UART_DATA:
- *                     ESP_LOGI(UART_TAG,"data, len: %d\n", event.data.size);
+ *                     ESP_LOGI(TAG,"data, len: %d\n", event.data.size);
  *                     int len = uart_read_bytes(uart_num, dtmp, event.data.size, 10);
- *                     ESP_LOGI(UART_TAG, "uart read: %d\n", len);
+ *                     ESP_LOGI(TAG, "uart read: %d\n", len);
  *                     break;
  *                 //Event of HW FIFO overflow detected
  *                 case UART_FIFO_OVF:
- *                     ESP_LOGI(UART_TAG, "hw fifo overflow\n");
+ *                     ESP_LOGI(TAG, "hw fifo overflow\n");
  *                     break;
  *                 //Event of UART ring buffer full
  *                 case UART_BUFFER_FULL:
- *                     ESP_LOGI(UART_TAG, "ring buffer full\n");
+ *                     ESP_LOGI(TAG, "ring buffer full\n");
  *                     break;
  *                 //Event of UART RX break detected
  *                 case UART_BREAK:
- *                     ESP_LOGI(UART_TAG, "uart rx break\n");
+ *                     ESP_LOGI(TAG, "uart rx break\n");
  *                     break;
  *                 //Event of UART parity check error
  *                 case UART_PARITY_ERR:
- *                     ESP_LOGI(UART_TAG, "uart parity error\n");
+ *                     ESP_LOGI(TAG, "uart parity error\n");
  *                     break;
  *                 //Event of UART frame error
  *                 case UART_FRAME_ERR:
- *                     ESP_LOGI(UART_TAG, "uart frame error\n");
+ *                     ESP_LOGI(TAG, "uart frame error\n");
  *                     break;
  *                 //Others
  *                 default:
- *                     ESP_LOGI(UART_TAG, "uart event type: %d\n", event.type);
+ *                     ESP_LOGI(TAG, "uart event type: %d\n", event.type);
  *                     break;
  *             }
  *        }
@@ -775,9 +751,9 @@ int uart_get_print_port(void);
  *     //Set UART parameters
  *     uart_param_config(uart_num, &uart_config);
  *     //Set UART pins,(-1: default pin, no change.)
- *     uart_set_pin(uart_num, -1, -1, 15, 13);
+ *     uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 15, 13);
  *     //Set UART log level
- *     esp_log_level_set(UART_TAG, ESP_LOG_INFO);
+ *     esp_log_level_set(TAG, ESP_LOG_INFO);
  *     //Install UART driver, and get the queue.
  *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, 17, &uart0_queue, RINGBUF_TYPE_BYTEBUF);
  *     //Create a task to handler UART event from ISR

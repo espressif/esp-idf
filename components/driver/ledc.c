@@ -20,7 +20,7 @@
 #include "driver/ledc.h"
 #include "esp_log.h"
 
-const char* LEDC_TAG = "LEDC";
+static const char* LEDC_TAG = "LEDC";
 static portMUX_TYPE ledc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #define LEDC_CHECK(a, str, ret_val) if (!(a)) {                                         \
         ESP_LOGE(LEDC_TAG,"%s:%d (%s):%s\n", __FILE__, __LINE__, __FUNCTION__, str);    \

@@ -26,7 +26,6 @@
 extern "C" {
 #endif
 
-extern const char* LEDC_TAG;
 #define LEDC_APB_CLK_HZ (APB_CLK_FREQ)
 #define LEDC_REF_CLK_HZ (1*1000000)
 

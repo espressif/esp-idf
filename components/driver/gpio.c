@@ -20,7 +20,7 @@
 #include "soc/soc.h"
 #include "esp_log.h"
 
-const char* GPIO_TAG = "GPIO";
+static const char* GPIO_TAG = "GPIO";
 #define GPIO_CHECK(a, str, ret_val) if (!(a)) {                                         \
         ESP_LOGE(GPIO_TAG,"%s:%d (%s):%s\n", __FILE__, __LINE__, __FUNCTION__, str);    \
         return (ret_val);                                                               \
