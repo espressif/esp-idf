@@ -55,14 +55,16 @@ static uint64_t get_rtc_time_us()
 #endif // WITH_RTC
 
 
-// time from Epoch to the first boot time
+// s_boot_time: time from Epoch to the first boot time
 #ifdef WITH_RTC
 static RTC_DATA_ATTR struct timeval s_boot_time;
-#else
+#elif defined(WITH_FRC1)
 static struct timeval s_boot_time;
 #endif
-static _lock_t s_boot_time_lock;
 
+#if defined(WITH_RTC) || defined(WITH_FRC1)
+static _lock_t s_boot_time_lock;
+#endif
 
 #ifdef WITH_FRC1
 #define FRC1_PRESCALER 16
@@ -121,6 +123,7 @@ clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
     return (clock_t) tv.tv_sec;
 }
 
+#if defined( WITH_FRC1 ) || defined( WITH_RTC )
 static uint64_t get_time_since_boot()
 {
     uint64_t microseconds = 0;
@@ -140,6 +143,7 @@ static uint64_t get_time_since_boot()
 #endif
     return microseconds;
 }
+#endif // defined( WITH_FRC1 ) || defined( WITH_RTC )
 
 int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
 {
@@ -176,7 +180,7 @@ int settimeofday(const struct timeval *tv, const struct timezone *tz)
     }
     return 0;
 #else
-    __errno_r(r) = ENOSYS;
+    errno = ENOSYS;
     return -1;
 #endif
 }
