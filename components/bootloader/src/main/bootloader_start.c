@@ -51,7 +51,7 @@ extern void Cache_Flush(int);
 void bootloader_main();
 void unpack_load_app(const esp_partition_pos_t *app_node);
 void print_flash_info(const esp_image_header_t* pfhdr);
-void IRAM_ATTR set_cache_and_start_app(uint32_t drom_addr,
+void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t drom_load_addr,
     uint32_t drom_size,
     uint32_t irom_addr,
@@ -445,7 +445,7 @@ void unpack_load_app(const esp_partition_pos_t* partition)
         image_header.entry_addr);
 }
 
-void IRAM_ATTR set_cache_and_start_app(
+void set_cache_and_start_app(
     uint32_t drom_addr,
     uint32_t drom_load_addr,
     uint32_t drom_size,
@@ -456,9 +456,7 @@ void IRAM_ATTR set_cache_and_start_app(
 {
     ESP_LOGD(TAG, "configure drom and irom and start");
     Cache_Read_Disable( 0 );
-    Cache_Read_Disable( 1 );
     Cache_Flush( 0 );
-    Cache_Flush( 1 );
     uint32_t drom_page_count = (drom_size + 64*1024 - 1) / (64*1024); // round up to 64k
     ESP_LOGV(TAG, "d mmu set paddr=%08x vaddr=%08x size=%d n=%d", drom_addr & 0xffff0000, drom_load_addr & 0xffff0000, drom_size, drom_page_count );
     int rc = cache_flash_mmu_set( 0, 0, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count );
@@ -474,7 +472,8 @@ void IRAM_ATTR set_cache_and_start_app(
     REG_CLR_BIT( DPORT_PRO_CACHE_CTRL1_REG, (DPORT_PRO_CACHE_MASK_IRAM0) | (DPORT_PRO_CACHE_MASK_IRAM1 & 0) | (DPORT_PRO_CACHE_MASK_IROM0 & 0) | DPORT_PRO_CACHE_MASK_DROM0 | DPORT_PRO_CACHE_MASK_DRAM1 );
     REG_CLR_BIT( DPORT_APP_CACHE_CTRL1_REG, (DPORT_APP_CACHE_MASK_IRAM0) | (DPORT_APP_CACHE_MASK_IRAM1 & 0) | (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 | DPORT_APP_CACHE_MASK_DRAM1 );
     Cache_Read_Enable( 0 );
-    Cache_Read_Enable( 1 );
+
+    // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)
 
     ESP_LOGD(TAG, "start: 0x%08x", entry_addr);
     typedef void (*entry_t)(void);
