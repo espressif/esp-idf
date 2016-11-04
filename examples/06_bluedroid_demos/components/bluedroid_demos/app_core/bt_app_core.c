@@ -329,7 +329,7 @@ void bt_app_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec) 
     // Get the alarm for the timer list entry.
     pthread_mutex_lock(&bt_app_general_alarm_lock);
     if (!hash_map_has_key(bt_app_general_alarm_hash_map, p_tle)) {
-        alarm = osi_alarm_new("bt_app", bt_app_general_alarm_cb, (void *)p_tle, 0);
+        alarm = osi_alarm_new("bt_app", bt_app_general_alarm_cb, (void *)p_tle, 0. false);
         hash_map_set(bt_app_general_alarm_hash_map, p_tle, alarm);
     }
     pthread_mutex_unlock(&bt_app_general_alarm_lock);

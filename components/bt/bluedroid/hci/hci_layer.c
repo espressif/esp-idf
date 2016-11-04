@@ -187,7 +187,7 @@ static int hci_layer_init_env(void)
     return -1;
   }
   pthread_mutex_init(&cmd_wait_q->commands_pending_response_lock, NULL);
-  cmd_wait_q->command_response_timer = osi_alarm_new("cmd_rsp_to", command_timed_out, cmd_wait_q, COMMAND_PENDING_TIMEOUT);
+  cmd_wait_q->command_response_timer = osi_alarm_new("cmd_rsp_to", command_timed_out, cmd_wait_q, COMMAND_PENDING_TIMEOUT, false);
   if (!cmd_wait_q->command_response_timer) {
     LOG_ERROR("%s unable to create command response timer.", __func__);
     return -1;

@@ -26,7 +26,7 @@ enum {
     SIG_PRF_WORK = 0xfd,
     SIG_BTU_START_UP = 0xfe,
     SIG_BTU_WORK = 0xff,
-    SIG_BTIF_WORK = 0xff
+    // SIG_BTIF_WORK = 0xff
 };
 
 void btu_task_post(uint32_t sig);

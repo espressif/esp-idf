@@ -90,7 +90,7 @@ static void btif_thread_post(uint32_t sig);
 /************************************************************************************
 **  Externs
 ************************************************************************************/
-static fixed_queue_t *xBtifQueue = NULL;
+static QueueHandle_t xBtifQueue = NULL;
 
 /** TODO: Move these to _common.h */
 void bte_main_boot_entry(void *);

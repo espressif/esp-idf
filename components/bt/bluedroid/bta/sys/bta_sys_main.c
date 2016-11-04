@@ -631,7 +631,7 @@ void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms) {
   // Get the alarm for this p_tle.
   pthread_mutex_lock(&bta_alarm_lock);
   if (!hash_map_has_key(bta_alarm_hash_map, p_tle)) {
-    hash_map_set(bta_alarm_hash_map, p_tle, osi_alarm_new("bta_sys", bta_alarm_cb, p_tle, 0));
+    hash_map_set(bta_alarm_hash_map, p_tle, osi_alarm_new("bta_sys", bta_alarm_cb, p_tle, 0, false));
   }
   pthread_mutex_unlock(&bta_alarm_lock);
 

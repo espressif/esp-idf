@@ -73,7 +73,7 @@ static void alarm_cb_handler(TimerHandle_t xTimer)
 	}
 }
 
-osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void *data, period_ms_t timer_expire)
+osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void *data, period_ms_t timer_expire, bool is_periodic)
 {
 	struct alarm_t *timer_id;
 	TimerHandle_t t;
@@ -88,7 +88,8 @@ osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void
 		return NULL;
 	}
 
-	t = xTimerCreate(alarm_name, timer_expire / portTICK_PERIOD_MS, pdFALSE, timer_id, alarm_cb_handler);
+	portBASE_TYPE auto_reload = is_periodic ? pdTRUE : pdFALSE;
+	t = xTimerCreate(alarm_name, timer_expire / portTICK_PERIOD_MS, auto_reload, timer_id, alarm_cb_handler);
 	if (!t) {
 		LOG_ERROR("%s error\n", __func__);
 		return NULL;

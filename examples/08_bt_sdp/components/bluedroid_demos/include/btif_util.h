@@ -26,7 +26,7 @@
 // #include <sys/time.h>
 
 #include "bt_types.h"
-// #include "bt_utils.h"
+#include "bt_utils.h"
 #include "bt_defs.h"
 
 /*******************************************************************************
