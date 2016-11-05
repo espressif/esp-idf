@@ -1,26 +1,120 @@
-GPIO API
-========
+GPIO
+====
 
 Overview
 --------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
 
 Application Example
 -------------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
 
-Reference
----------
+API Reference
+-------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
+
+.. _Instructions: template.html
+
+Macros
+------
+
+.. doxygendefine:: GPIO_SEL_0
+.. doxygendefine:: GPIO_SEL_1
+.. doxygendefine:: GPIO_SEL_2
+.. doxygendefine:: GPIO_SEL_3
+.. doxygendefine:: GPIO_SEL_4
+.. doxygendefine:: GPIO_SEL_5
+.. doxygendefine:: GPIO_SEL_6
+.. doxygendefine:: GPIO_SEL_7
+.. doxygendefine:: GPIO_SEL_8
+.. doxygendefine:: GPIO_SEL_9
+.. doxygendefine:: GPIO_SEL_10
+.. doxygendefine:: GPIO_SEL_11
+.. doxygendefine:: GPIO_SEL_12
+.. doxygendefine:: GPIO_SEL_13
+.. doxygendefine:: GPIO_SEL_14
+.. doxygendefine:: GPIO_SEL_15
+.. doxygendefine:: GPIO_SEL_16
+.. doxygendefine:: GPIO_SEL_17
+.. doxygendefine:: GPIO_SEL_18
+.. doxygendefine:: GPIO_SEL_19
+.. doxygendefine:: GPIO_SEL_21
+.. doxygendefine:: GPIO_SEL_22
+.. doxygendefine:: GPIO_SEL_23
+.. doxygendefine:: GPIO_SEL_25
+.. doxygendefine:: GPIO_SEL_26
+.. doxygendefine:: GPIO_SEL_27
+.. doxygendefine:: GPIO_SEL_32
+.. doxygendefine:: GPIO_SEL_33
+.. doxygendefine:: GPIO_SEL_34
+.. doxygendefine:: GPIO_SEL_35
+.. doxygendefine:: GPIO_SEL_36
+.. doxygendefine:: GPIO_SEL_37
+.. doxygendefine:: GPIO_SEL_38
+.. doxygendefine:: GPIO_SEL_39
+.. doxygendefine:: GPIO_PIN_REG_0
+.. doxygendefine:: GPIO_PIN_REG_1
+.. doxygendefine:: GPIO_PIN_REG_2
+.. doxygendefine:: GPIO_PIN_REG_3
+.. doxygendefine:: GPIO_PIN_REG_4
+.. doxygendefine:: GPIO_PIN_REG_5
+.. doxygendefine:: GPIO_PIN_REG_6
+.. doxygendefine:: GPIO_PIN_REG_7
+.. doxygendefine:: GPIO_PIN_REG_8
+.. doxygendefine:: GPIO_PIN_REG_9
+.. doxygendefine:: GPIO_PIN_REG_10
+.. doxygendefine:: GPIO_PIN_REG_11
+.. doxygendefine:: GPIO_PIN_REG_12
+.. doxygendefine:: GPIO_PIN_REG_13
+.. doxygendefine:: GPIO_PIN_REG_14
+.. doxygendefine:: GPIO_PIN_REG_15
+.. doxygendefine:: GPIO_PIN_REG_16
+.. doxygendefine:: GPIO_PIN_REG_17
+.. doxygendefine:: GPIO_PIN_REG_18
+.. doxygendefine:: GPIO_PIN_REG_19
+.. doxygendefine:: GPIO_PIN_REG_20
+.. doxygendefine:: GPIO_PIN_REG_21
+.. doxygendefine:: GPIO_PIN_REG_22
+.. doxygendefine:: GPIO_PIN_REG_23
+.. doxygendefine:: GPIO_PIN_REG_25
+.. doxygendefine:: GPIO_PIN_REG_26
+.. doxygendefine:: GPIO_PIN_REG_27
+.. doxygendefine:: GPIO_PIN_REG_32
+.. doxygendefine:: GPIO_PIN_REG_33
+.. doxygendefine:: GPIO_PIN_REG_34
+.. doxygendefine:: GPIO_PIN_REG_35
+.. doxygendefine:: GPIO_PIN_REG_36
+.. doxygendefine:: GPIO_PIN_REG_37
+.. doxygendefine:: GPIO_PIN_REG_38
+.. doxygendefine:: GPIO_PIN_REG_39
+.. doxygendefine:: GPIO_APP_CPU_INTR_ENA
+.. doxygendefine:: GPIO_APP_CPU_NMI_INTR_ENA
+.. doxygendefine:: GPIO_PRO_CPU_INTR_ENA
+.. doxygendefine:: GPIO_PRO_CPU_NMI_INTR_ENA
+.. doxygendefine:: GPIO_SDIO_EXT_INTR_ENA
+.. doxygendefine:: GPIO_MODE_DEF_INPUT
+.. doxygendefine:: GPIO_MODE_DEF_OUTPUT
+.. doxygendefine:: GPIO_MODE_DEF_OD
+.. doxygendefine:: GPIO_PIN_COUNT
+.. doxygendefine:: GPIO_IS_VALID_GPIO
+.. doxygendefine:: GPIO_IS_VALID_OUTPUT_GPIO
+
+Type Definitions
+^^^^^^^^^^^^^^^^
+
+.. doxygentypedef:: gpio_event_callback
 
 Enumerations
 ^^^^^^^^^^^^
 
+.. doxygenenum:: gpio_num_t
 .. doxygenenum:: gpio_int_type_t
 .. doxygenenum:: gpio_mode_t
+.. doxygenenum:: gpio_pullup_t
+.. doxygenenum:: gpio_pulldown_t
 .. doxygenenum:: gpio_pull_mode_t
 
 Functions
@@ -37,54 +131,3 @@ Functions
 .. doxygenfunction:: gpio_wakeup_enable
 .. doxygenfunction:: gpio_wakeup_disable
 .. doxygenfunction:: gpio_isr_register
-
-*Example code:* Configuration of GPIO as an output
-
-.. code-block:: c
-
-    gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_INTR_DISABLE;             //disable interrupt
-    io_conf.mode = GPIO_MODE_OUTPUT;                   //set as output mode
-    io_conf.pin_bit_mask = GPIO_SEL_18 | GPIO_SEL_19;  //bit mask of the pins that you want to set,e.g.GPIO18/19
-    io_conf.pull_down_en = 0;                          //disable pull-down mode
-    io_conf.pull_up_en = 0;                            //disable pull-up mode
-    gpio_config(&io_conf);                             //configure GPIO with the given settings
-
-*Example code:* Configuration of GPIO as an input
-
-.. code-block:: c
-
-    gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_INTR_POSEDGE;             //set posedge interrupt
-    io_conf.mode = GPIO_MODE_INPUT;                    //set as input
-    io_conf.pin_bit_mask = GPIO_SEL_4 | GPIO_SEL_5;    //bit mask of the pins that you want to set, e.g.,GPIO4/5
-    io_conf.pull_down_en = 0;                          //disable pull-down mode
-    io_conf.pull_up_en = 1;                            //enable pull-up mode
-    gpio_config(&io_conf);                             //configure GPIO with the given settings
-
-
-ROM GPIO functions
-^^^^^^^^^^^^^^^^^^
-
-.. doxygenfunction:: gpio_init
-.. doxygenfunction:: gpio_output_set
-.. doxygenfunction:: gpio_output_set_high
-.. doxygenfunction:: gpio_input_get
-.. doxygenfunction:: gpio_input_get_high
-.. doxygenfunction:: gpio_intr_handler_register
-.. doxygenfunction:: gpio_intr_pending
-.. doxygenfunction:: gpio_intr_pending_high
-.. doxygenfunction:: gpio_intr_ack
-.. doxygenfunction:: gpio_intr_ack_high
-.. doxygenfunction:: gpio_pin_wakeup_enable
-.. doxygenfunction:: gpio_pin_wakeup_disable
-.. doxygenfunction:: gpio_matrix_in
-.. doxygenfunction:: gpio_matrix_out
-.. doxygenfunction:: gpio_pad_select_gpio
-.. doxygenfunction:: gpio_pad_set_drv
-.. doxygenfunction:: gpio_pad_pullup
-.. doxygenfunction:: gpio_pad_pulldown
-.. doxygenfunction:: gpio_pad_unhold
-.. doxygenfunction:: gpio_pad_hold
-
-
