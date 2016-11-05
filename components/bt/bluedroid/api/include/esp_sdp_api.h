@@ -1,9 +1,9 @@
-#ifndef __BT_SDP_API_H__
-#define __BT_SDP_API_H__
+#ifndef __ESP_SDP_API_H__
+#define __ESP_SDP_API_H__
 
 #include <stdint.h>
 #include "esp_err.h"
-#include "bt_api_common.h"
+#include "esp_bt_common.h"
 #include "bta_sdp_api.h"
 #include "bt_sdp.h"
 
@@ -113,6 +113,5 @@ bool esp_bt_sdp_add_service_class_id_list(uint32_t handle,
                                           uint16_t *p_service_uuids);
 
 bool esp_bt_sdp_delete_attribute(uint32_t handle, uint16_t attr_id);
-/**********************************************************************************************/
-/**********************************************************************************************/
-#endif /* __BT_SDP_API_H__ */
+
+#endif /* __ESP_SDP_API_H__ */

@@ -1,5 +1,5 @@
-#ifndef __BT_API_COMMON_H__
-#define __BT_API_COMMON_H__
+#ifndef __ESP_BT_COMMON_H__
+#define __ESP_BT_COMMON_H__
 
 #include <stdint.h>
 
@@ -10,4 +10,4 @@ typedef tBT_UUID esp_bt_uuid_t;   /* tBT_UUID in "bt_types.h" */
 
 typedef BD_ADDR esp_bd_addr_t;    /* BD_ADDR in bt_types.h */
 
-#endif /* __BT_API_COMMON_H__ */
+#endif /* __ESP_BT_COMMON_H__ */

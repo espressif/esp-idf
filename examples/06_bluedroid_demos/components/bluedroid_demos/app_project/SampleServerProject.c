@@ -47,12 +47,12 @@
 #include "app_button.h"
 #include "hid_le_prf.h"
 
-#include "bt_app_api.h"
+#include "esp_gatt_api.h"
 
 //
 
 #include "hcimsgs.h"
-#include "bt_app_defs.h"
+#include "esp_bt_defs.h"
 
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_app_api.h"
+#include "esp_gatt_api.h"
 #include "btm_ble_api.h"
 //#include "btm_ble_int.h"
 

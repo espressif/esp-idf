@@ -1,6 +1,5 @@
-
-#ifndef _BT_APP_DEFS_H__
-#define	_BT_APP_DEFS_H__
+#ifndef __ESP_BT_DEFS_H__
+#define	__ESP_BT_DEFS_H__
 
 
 #include "bta_api.h"
@@ -329,4 +328,4 @@ extern void ble_set_scan_rsp(esp_ble_adv_data_cfg_t *scan_rsp_data,
 
 
 
-#endif		///_BT_APP_DEFS_H__
+#endif		///__ESP_BT_DEFS_H__

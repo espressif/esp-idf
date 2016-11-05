@@ -20,7 +20,7 @@
 #include "bta_gatts_int.h"
 #include "bta_gatt_api.h"
 #include "bt_types.h"
-#include "bt_app_defs.h"
+#include "esp_bt_defs.h"
 
 
 #define ATT_HANDLE_LEN                          0x0002

@@ -18,7 +18,7 @@
 #include "bt_target.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
-#include "bt_app_api.h"
+#include "esp_gatt_api.h"
 
 #define KEY_SUCCESS             GATT_SUCCESS
 #define KEY_ILLEGAL_PARAM       GATT_ILLEGAL_PARAMETER

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_app_sec.h"
 #include <stdlib.h>        // standard library
 #include <string.h>
 
+#include "esp_sec_api.h"
 
 
 extern void srand (unsigned int seed);

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_gap_api.h"
+#include "esp_gap_api.h"
 #include "bta_api.h"
 #include "bt_trace.h"
 

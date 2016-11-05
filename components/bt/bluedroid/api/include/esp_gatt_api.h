@@ -1,19 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+#ifndef __ESP_GATT_API_H__
+#define __ESP_GATT_API_H__
 
 #include "bt_types.h"
-#include "bt_app_defs.h"
+#include "esp_bt_defs.h"
 #include "bta_gatt_api.h"
 #include "bt_prf_sys.h"
 
@@ -921,4 +910,4 @@ void esp_ble_gatts_close(uint16_t conn_id);
 void esp_prf_app_register(uint8_t prf_id, void *p_cback);
 
 
-
+#endif /* __ESP_GATT_API_H__ */

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_sdp_api.h"
+#include "esp_sdp_api.h"
 
 
 esp_err_t esp_bt_sdp_enable(bt_sdp_cb_t *cback)

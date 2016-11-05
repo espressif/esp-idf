@@ -31,7 +31,7 @@
 #include "btm_api.h"
 #include "bt_types.h"
 #include "gattc_profile.h"
-#include "bt_app_api.h"
+#include "esp_gatt_api.h"
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]

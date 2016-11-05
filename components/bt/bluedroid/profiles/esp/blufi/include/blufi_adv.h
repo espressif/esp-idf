@@ -3,7 +3,7 @@
 
 #include "bta_api.h"
 #include "btm_ble_api.h"
-#include "bt_app_defs.h"
+#include "esp_bt_defs.h"
 
 typedef struct
 {
