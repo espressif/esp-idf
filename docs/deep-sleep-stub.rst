@@ -1,12 +1,12 @@
 Deep Sleep Wake Stubs
----------------------
+=====================
 
 ESP32 supports running a "deep sleep wake stub" when coming out of deep sleep. This function runs immediately as soon as the chip wakes up - before any normal initialisation, bootloader, or ESP-IDF code has run. After the wake stub runs, the SoC can go back to sleep or continue to start ESP-IDF normally.
 
 Deep sleep wake stub code is loaded into "RTC Fast Memory" and any data which it uses must also be loaded into RTC memory. RTC memory regions hold their contents during deep sleep.
 
 Rules for Wake Stubs
-====================
+--------------------
 
 Wake stub code must be carefully written:
 
@@ -23,9 +23,9 @@ Wake stub code must be carefully written:
 * Wake stub code is a part of the main esp-idf app. During normal running of esp-idf, functions can call the wake stub functions or access RTC memory. It is as if these were regular parts of the app.
 
 Implementing A Stub
-===================
+-------------------
 
-The wake stub in esp-idf is called ``esp_wake_deep_sleep()``. This function runs whenever the SoC wakes from deep sleep. There is a default version of this function provided in esp-idf, but the default function is weak-linked so if your app contains a function named ``esp_wake_deep_sleep()` then this will override the default.
+The wake stub in esp-idf is called ``esp_wake_deep_sleep()``. This function runs whenever the SoC wakes from deep sleep. There is a default version of this function provided in esp-idf, but the default function is weak-linked so if your app contains a function named ``esp_wake_deep_sleep()`` then this will override the default.
 
 If supplying a custom wake stub, the first thing it does should be to call ``esp_default_wake_deep_sleep()``.
 
@@ -36,7 +36,7 @@ If you want to swap between different deep sleep stubs at runtime, it is also po
 All of these functions are declared in the ``esp_deepsleep.h`` header under components/esp32.
 
 Loading Code Into RTC Memory
-============================
+----------------------------
 
 Wake stub code must be resident in RTC Fast Memory. This can be done in one of two ways.
 
@@ -53,7 +53,7 @@ The first way is simpler for very short and simple code, or for source files whe
 
 
 Loading Data Into RTC Memory
-============================
+----------------------------
 
 Data used by stub code must be resident in RTC Slow Memory. This memory is also used by the ULP.
 
