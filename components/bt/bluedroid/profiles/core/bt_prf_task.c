@@ -36,31 +36,28 @@
  ******************************************************************************/
  void bt_prf_task_thread_handler(void *arg)
  {
- 
-	 BtTaskEvt_t *e;
+	 BtTaskEvt_t e;
+
 	 for (;;) { 
 		 if (pdTRUE == xQueueReceive(xProfileQueue, &e, (portTickType)portMAX_DELAY)) {
  
-			 if (e->sig == SIG_PRF_WORK) {
+			 if (e.sig == SIG_PRF_WORK) {
 				fixed_queue_process(bt_profile_msg_queue);
 				LOG_ERROR("bt_prf_task_thread_handler\n");
 			 }
-			 else if (e->sig == SIG_PRF_START_UP) {
+			 else if (e.sig == SIG_PRF_START_UP) {
 				 bt_prf_task_start_up();
 			 }
-			 osi_free(e); 
 		 }
 	 }
  }
 
  void bt_prf_task_post(uint32_t sig)
 {
-    BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
-    if (evt == NULL)
-        return;
+    BtTaskEvt_t evt;
 
-    evt->sig = sig;
-    evt->par = 0;
+    evt.sig = sig;
+    evt.par = 0;
 
     if (xQueueSend(xProfileQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
             ets_printf("xProfileQueue failed\n");
@@ -100,7 +97,7 @@ void bt_prf_StartUp(void)
     if (bt_profile_msg_queue == NULL)
         goto error_exit;
 	
-	xProfileQueue = xQueueCreate(60, sizeof(void *));
+	xProfileQueue = xQueueCreate(60, sizeof(BtTaskEvt_t));
 	xTaskCreate(bt_prf_task_thread_handler, "Bt_prf", 4096, NULL, configMAX_PRIORITIES - 1, &xProfileTaskHandle);
 	bt_prf_task_post(SIG_PRF_START_UP);
 	return;

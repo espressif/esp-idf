@@ -73,18 +73,18 @@ extern void ble_server_test(void);
 
 static void bt_app_task_handler(void *arg)
 {
-    BtTaskEvt_t *e;
+    BtTaskEvt_t e;
     UINT8 button_msg[2] = {0x01,0x00};
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtaApp1Queue, &e, (portTickType)portMAX_DELAY)) {
-            if (e->sig == 0xff) {
+            if (e.sig == 0xff) {
                 fixed_queue_process(bta_app_msg_queue);
                 fixed_queue_process(bt_app_general_alarm_queue);
             }
 #if (BUT_PROFILE_CFG)
-		//	else if(e->sig == BUTTON_PRESS_EVT){
-		//	LOG_ERROR("button_press_event come in,button_value=%x\n",e->par);
-		//  button_msg[1] = e->par;
+		//	else if(e.sig == BUTTON_PRESS_EVT){
+		//	LOG_ERROR("button_press_event come in,button_value=%x\n",e.par);
+		//  button_msg[1] = e.par;
         //  button_msg_notify(2,button_msg);	
 
 
@@ -92,19 +92,15 @@ static void bt_app_task_handler(void *arg)
 #endif	///BUT_PROFILE_CFG
 
         }
-        osi_free(e);
     }
 }
 
 static void bt_app_task_post(void)
 {
+     BtTaskEvt_t evt;
 
-     BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
-     if (evt == NULL)
-        return;
-
-     evt->sig = 0xff;
-     evt->par = 0;
+     evt.sig = 0xff;
+     evt.par = 0;
 
      if (xQueueSend(xBtaApp1Queue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
          ets_printf("btdm_post failed\n");
@@ -188,7 +184,7 @@ void bt_app_task_start_up(void)
         goto error_exit;
     //ke_event_callback_set(KE_EVENT_BT_APP_TASK, &bt_app_task_handler);
 
-    xBtaApp1Queue = xQueueCreate(3, sizeof(void *));
+    xBtaApp1Queue = xQueueCreate(3, sizeof(BtTaskEvt_t));
     xTaskCreate(bt_app_task_handler, "BtaApp1T", 8192, NULL, configMAX_PRIORITIES - 3, xBtaApp1TaskHandle);
 
     fixed_queue_register_dequeue(bta_app_msg_queue, bta_app_msg_ready);

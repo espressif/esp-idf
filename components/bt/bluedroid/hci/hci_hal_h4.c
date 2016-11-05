@@ -91,13 +91,14 @@ static void hci_hal_env_deinit(void) {
   fixed_queue_free(hci_hal_env.rx_q, hci_hal_env.allocator->free);
 }
 
-static bool hal_open(const hci_hal_callbacks_t *upper_callbacks) {
+static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
+{
   assert(upper_callbacks != NULL);
   callbacks = upper_callbacks;
 
   hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX);
   
-  xHciH4Queue = xQueueCreate(60, sizeof(void *));
+  xHciH4Queue = xQueueCreate(60, sizeof(BtTaskEvt_t));
   xTaskCreate(hci_hal_h4_rx_handler, "HciH4T", 4096+2048, NULL, configMAX_PRIORITIES - 3, &xHciH4TaskHandle);
 
   //register vhci host cb
@@ -105,10 +106,6 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks) {
 
 
   return true;
-
-error:
-  interface.close();
-  return false;
 }
 
 static void hal_close() {
@@ -156,27 +153,25 @@ static uint16_t transmit_data(serial_data_type_t type,
 }
 
 // Internal functions
-static void hci_hal_h4_rx_handler(void *arg) {
-    BtTaskEvt_t *e;
+static void hci_hal_h4_rx_handler(void *arg)
+{
+    BtTaskEvt_t e;
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciH4Queue, &e, (portTickType)portMAX_DELAY)) {
-            if (e->sig == 0xff) {  
+            if (e.sig == 0xff) {  
                 fixed_queue_process(hci_hal_env.rx_q);
             }
-            osi_free(e);
         }
     }
 }
 
 void hci_hal_h4_task_post(void)
 {
-    BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
-    if (evt == NULL)
-        return;
+    BtTaskEvt_t evt;
 
-    evt->sig = 0xff;
-    evt->par = 0;
+    evt.sig = 0xff;
+    evt.par = 0;
 
     if (xQueueSend(xHciH4Queue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
         LOG_ERROR("xHciH4Queue failed\n");
