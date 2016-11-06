@@ -89,10 +89,12 @@
 **  Static variables
 *******************************************************************************/
 static const hci_t *hci;
-static void bte_main_enable(void);
+
 /*******************************************************************************
 **  Static functions
 *******************************************************************************/
+static void bte_main_disable(void);
+static void bte_main_enable(void);
 
 /*******************************************************************************
 **  Externs
@@ -111,19 +113,23 @@ bluedroid_init_done_cb_t bluedroid_init_done_cb;
 ** Returns          None
 **
 ******************************************************************************/
-void bte_main_boot_entry(bluedroid_init_done_cb_t cb)
+int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 {
-    if (gki_init())
+    if (gki_init()) {
         LOG_ERROR("%s: Init GKI Module Failure.\n", __func__);
+		return -1;
+	}
 
     hci = hci_layer_get_interface();
-    if (!hci)
+    if (!hci) {
       LOG_ERROR("%s could not get hci layer interface.\n", __func__);
+	  return -2;
+	}
 
     btu_hci_msg_queue = fixed_queue_new(SIZE_MAX);
     if (btu_hci_msg_queue == NULL) {
       LOG_ERROR("%s unable to allocate hci message queue.\n", __func__);
-      return;
+      return -3;
     }
 
     bluedroid_init_done_cb = cb;
@@ -140,6 +146,8 @@ void bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 
     //Enbale HCI
     bte_main_enable();
+
+	return 0;
 }
 
 /******************************************************************************
@@ -151,7 +159,7 @@ void bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 ** Returns          None
 **
 ******************************************************************************/
-void bte_main_shutdown()
+void bte_main_shutdown(void)
 {
     //data_dispatcher_register_default(hci_layer_get_interface()->event_dispatcher, NULL);
     hci->set_data_queue(NULL);
@@ -167,6 +175,8 @@ void bte_main_shutdown()
 */
 
     gki_clean_up();
+
+	bte_main_disable();
 }
 
 /******************************************************************************
@@ -202,7 +212,7 @@ static void bte_main_enable(void)
 ** Returns          None
 **
 ******************************************************************************/
-void bte_main_disable(void)
+static void bte_main_disable(void)
 {
 /*
     APPL_TRACE_DEBUG("%s", __FUNCTION__);

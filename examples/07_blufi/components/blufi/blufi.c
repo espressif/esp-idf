@@ -44,6 +44,8 @@
 #include "blufi.h"
 #include "blufi_adv.h"
 
+#include "esp_bt_common.h"
+
 static void BlufiDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
 
 struct dm_evt {
@@ -93,7 +95,7 @@ static void BlufiDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_dat
 	
 }
 
-static bt_status_t blufi_dm_upstreams_evt(void *arg)
+static esp_err_t blufi_dm_upstreams_evt(void *arg)
 {
 	struct dm_evt *evt = (struct dm_evt *)arg;
 	
@@ -124,7 +126,7 @@ static bt_status_t blufi_dm_upstreams_evt(void *arg)
 
     GKI_freebuf(evt);
 
-	return BT_STATUS_SUCCESS;
+	return ESP_OK;
 }
 
 
@@ -144,10 +146,27 @@ void blufi_bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data)
     blufi_transfer_context(blufi_dm_upstreams_evt, evt);
 }
 
-bt_status_t blufi_enable(void *arg)
+esp_err_t blufi_enable(void *arg)
 {
+	esp_err_t err;
+
     BTM_SetTraceLevel(BT_TRACE_LEVEL_ERROR);
 
-    BTA_EnableBluetooth(blufi_bte_dm_evt);
+    err = esp_enable_bluetooth(blufi_bte_dm_evt);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+	return err;
+}
+
+esp_err_t blufi_disable(void *arg)
+{
+	esp_err_t err;
+
+    err =  esp_disable_bluetooth();
+
+	if (arg) {
+		((void (*)(void))arg)();
+	}
+
+	return err;
 }

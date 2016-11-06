@@ -30,6 +30,10 @@
 #include "blufi_prf.h"
 #include "blufi_adv.h"
 
+#include "esp_adv_api.h"
+#include "esp_bt_defs.h"
+#include "esp_gatt_api.h"
+
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
@@ -41,13 +45,13 @@ UINT8 esp32_manu[17] = {0xff,0x20,0x14,0x07,0x22,0x00,0x02,0x5B,0x00,0x33,0x49,0
 tBTA_BLE_MANU	p_esp32_manu = {sizeof(esp32_manu),esp32_manu};			/* manufacturer data */
 
 tBTA_BLE_SERVICE esp32_service = {
-							0x01,		//only one service in the ijiazu button profile
+							0x01,		//only one service in the blufi profile
 							false,
 							&esp32_uuid
 							};        /* 16 bits services */
 
 
-tBLUFI_BLE_ADV_DATA esp32_adv_data[ADV_SCAN_IDX_MAX] = 
+esp_ble_adv_data_cfg_t esp32_adv_data[ADV_SCAN_IDX_MAX] = 
 {
 	[BLE_ADV_DATA_IDX] = {
 		.adv_name = "Espressif_008",
@@ -87,7 +91,21 @@ tBLUFI_BLE_ADV_DATA esp32_adv_data[ADV_SCAN_IDX_MAX] =
 	}
 };
 
+tBLE_BD_ADDR  peer_bda = {
+     .type   = API_PUBLIC_ADDR,
+     .bda    = {0}
+};
 
+esp_ble_adv_params_all_t adv_params =
+{
+     .adv_int_min        = BTM_BLE_ADV_INT_MIN + 0x100,
+     .adv_int_max        = BTM_BLE_ADV_INT_MIN + 0x100,
+     .adv_type           = API_NON_DISCOVERABLE,
+     .addr_type_own      = API_PUBLIC_ADDR,
+     .channel_map        = ESP_BLE_ADV_CHNL_MAP,
+     .adv_filter_policy  = ADV_ALLOW_SCAN_ANY_CON_ANY,
+     .p_dir_bda          = &peer_bda
+};
 
 static tBLUFI_CB_ENV blufi_cb_env;
 
@@ -96,7 +114,7 @@ static tBLUFI_CB_ENV blufi_cb_env;
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
-static void blufi_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
+static void blufi_profile_cb(esp_gatts_evt_t event,  esp_gatts_t *p_data);
 
 
 /*******************************************************************************
@@ -108,24 +126,24 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
 ** Returns          NULL 
 **
 *******************************************************************************/
-static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
+static void blufi_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
 {
-	tBTA_GATTS_RSP rsp;
-	tBT_UUID uuid = {LEN_UUID_16, {SVC_BLUFI_UUID}};
+	esp_gatts_rsp_t rsp;
+	esp_bt_uuid_t uuid = {LEN_UUID_16, {SVC_BLUFI_UUID}};
 	tBLUFI_INST  *p_inst = &blufi_cb_env.blufi_inst;
 	UINT8 net_event = 0xff;
 	UINT8 len = 0;
 	UINT8 *p_rec_data = NULL;
-	tBTA_GATT_STATUS  status;
+	esp_gatt_status_t status;
 
 	LOG_DEBUG("blufi profile cb event = %x\n",event);
 	switch(event) {
-		case BTA_GATTS_REG_EVT:
+		case ESP_GATTS_REG_EVT:
             status = p_data->reg_oper.status;
 
 			LOG_DEBUG("p_data->reg_oper.status = %x\n",p_data->reg_oper.status);
 			LOG_DEBUG("(p_data->reg_oper.uuid.uu.uuid16=%x\n",p_data->reg_oper.uuid.uu.uuid16);
-			if(p_data->reg_oper.status != BTA_GATT_OK) {
+			if(p_data->reg_oper.status != ESP_GATT_OK) {
 				LOG_ERROR("blufi profile register failed\n");
 				return;
 			}
@@ -140,14 +158,13 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			BlufiBleConfigadvData(&esp32_adv_data[BLE_ADV_DATA_IDX], NULL);
 			//set the adversting data to the btm layer
 			BlufiBleSetScanRsp(&esp32_adv_data[BLE_SCAN_RSP_DATA_IDX],NULL);
-    	    BTA_GATTS_Listen(blufi_cb_env.gatt_if, true, NULL);
-
+			esp_ble_start_advertising(&adv_params);
 			//create the blufi service to the service data base.
 			if(p_data->reg_oper.uuid.uu.uuid16 == SVC_BLUFI_UUID) {
 				blufi_create_service();
 			}
 			break;
-		case BTA_GATTS_READ_EVT:
+		case ESP_GATTS_READ_EVT:
 			memset(&rsp, 0, sizeof(tBTA_GATTS_API_RSP));
 			rsp.attr_value.handle = p_data->req_data.p_data->read_req.handle;
 			rsp.attr_value.len = 2;
@@ -155,11 +172,11 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			//rsp.attr_value.value[1] = 0xed;
 			//rsp.attr_value.value[2] = 0xbe;
 			//rsp.attr_value.value[3] = 0xef;
-			BTA_GATTS_SendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
+			esp_ble_gatts_send_rsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
 					  p_data->req_data.status,&rsp);
 			break;
-		case BTA_GATTS_WRITE_EVT:
-			BTA_GATTS_SendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
+		case ESP_GATTS_WRITE_EVT:
+			esp_ble_gatts_send_rsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
 								p_data->req_data.status,NULL);
 
 			LOG_DEBUG("Received blufi data:");
@@ -175,36 +192,36 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			        p_inst->blufi_cback(blufi_cb_env.blufi_inst.app_id, net_event, len, p_rec_data);
 			}
 			break;
-		case BTA_GATTS_CONF_EVT:
+		case ESP_GATTS_CFM_EVT:
 			/* Nothing */
 			break;
-		case BTA_GATTS_CREATE_EVT:
+		case ESP_GATTS_CREATE_EVT:
 			uuid.uu.uuid16 = CHAR_BLUFI_UUID;
 			blufi_cb_env.clcb.cur_srvc_id = p_data->create.service_id;
 			blufi_cb_env.is_primery =  p_data->create.is_primary;
 			//start the blufi service after created
-			BTA_GATTS_StartService(p_data->create.service_id, BTA_GATT_TRANSPORT_LE);
+			esp_ble_gatts_start_srvc(p_data->create.service_id);
 			//add the frist blufi characteristic --> write characteristic
-			BTA_GATTS_AddCharacteristic(blufi_cb_env.clcb.cur_srvc_id, &uuid,
+			esp_ble_gatts_add_char(blufi_cb_env.clcb.cur_srvc_id, &uuid,
 										(GATT_PERM_WRITE | GATT_PERM_READ),
 										(GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE | GATT_CHAR_PROP_BIT_NOTIFY));
 			break;
-		case BTA_GATTS_ADD_CHAR_EVT:
+		case ESP_GATTS_ADD_CHAR_EVT:
 			if(p_data->add_result.char_uuid.uu.uuid16 == CHAR_BLUFI_UUID)
 			{
 				//save the att handle to the env
 				blufi_cb_env.blufi_inst.blufi_hdl = p_data->add_result.attr_id;
 
 				uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
-				BTA_GATTS_AddCharDescriptor (blufi_cb_env.clcb.cur_srvc_id,
+				esp_ble_gatts_add_char_descr(blufi_cb_env.clcb.cur_srvc_id,
 				                             (GATT_PERM_WRITE|GATT_PERM_WRITE),
 				                             &uuid);
 			}
 			break;
-		case BTA_GATTS_ADD_CHAR_DESCR_EVT:
+		case ESP_GATTS_ADD_CHAR_DESCR_EVT:
 			/* Nothing */
 			break;
-		case BTA_GATTS_CONNECT_EVT:
+		case ESP_GATTS_CONNECT_EVT:
 			//set the connection flag to true
 			blufi_env_clcb_alloc(p_data->conn.conn_id, p_data->conn.remote_bda);
             LOG_DEBUG("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n", 
@@ -213,24 +230,23 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             /*return whether the remote device is currently connected*/
             int is_connected = BTA_DmGetConnectionState(p_data->conn.remote_bda);
             LOG_DEBUG("is_connected=%d\n",is_connected);
-			BTA_DmBleBroadcast(0); //stop adv
+			esp_ble_stop_advertising(); //stop adv
 			break;
-		case BTA_GATTS_DISCONNECT_EVT:
+		case ESP_GATTS_DISCONNECT_EVT:
 			//set the connection flag to true
 			blufi_cb_env.clcb.connected = false;
+			esp_ble_start_advertising(&adv_params);
 			break;
-		case BTA_GATTS_OPEN_EVT:
+		case ESP_GATTS_OPEN_EVT:
 			break;
-		case BTA_GATTS_CLOSE_EVT:
+		case ESP_GATTS_CLOSE_EVT:
 			if(blufi_cb_env.clcb.connected && (blufi_cb_env.clcb.conn_id == p_data->conn.conn_id))
 			{
 				//set the connection channal congested flag to true
 				blufi_cb_env.clcb.congest =  p_data->congest.congested;
 			}
 			break;
-		case BTA_GATTS_LISTEN_EVT:
-			break;
-		case BTA_GATTS_CONGEST_EVT:
+		case ESP_GATTS_CONGEST_EVT:
 			break;
 		default:
 			break;
@@ -249,8 +265,8 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 *******************************************************************************/
 void blufi_create_service(void)
 {
-	tBTA_GATTS_IF server_if ;
-	tBT_UUID uuid = {LEN_UUID_16, {SVC_BLUFI_UUID}};
+	esp_gatts_if_t server_if ;
+	esp_bt_uuid_t uuid = {LEN_UUID_16, {SVC_BLUFI_UUID}};
 	UINT16 num_handle = BLUFI_HDL_NUM;
 	UINT8 inst = 0x00;
 	server_if = blufi_cb_env.gatt_if;
@@ -260,7 +276,7 @@ void blufi_create_service(void)
 		LOG_ERROR("blufi service added error.");
 		return;
 	}	
-	BTA_GATTS_CreateService(server_if, &uuid, inst, num_handle, true);
+	esp_ble_gatts_create_srvc(server_if, &uuid, inst, num_handle, true);
 	
 }
 
@@ -341,9 +357,9 @@ BOOLEAN blufi_env_clcb_dealloc(UINT16 conn_id)
 ** Description      Initializa the GATT Service for blufi profiles.
 **
 *******************************************************************************/
-tGATT_STATUS blufi_profile_init (tBLUFI_CBACK *call_back)
+esp_gatt_status_t blufi_profile_init (tBLUFI_CBACK *call_back)
 {
-	tBT_UUID app_uuid = {LEN_UUID_16, {SVC_BLUFI_UUID}};
+	esp_bt_uuid_t app_uuid = {LEN_UUID_16, {SVC_BLUFI_UUID}};
 	
 
 	if(blufi_cb_env.enabled)
@@ -363,8 +379,8 @@ tGATT_STATUS blufi_profile_init (tBLUFI_CBACK *call_back)
     }
 
 	
-	/* register the blufi profile to the BTA_GATTS module*/
-	BTA_GATTS_AppRegister(&app_uuid, blufi_profile_cb);
+	/* register the blufi profile to the ESP_GATTS module*/
+	esp_ble_gatts_app_register(&app_uuid, blufi_profile_cb);
 
 	return GATT_SUCCESS;
 }
@@ -382,7 +398,7 @@ void blufi_msg_notify(UINT8 *blufi_msg, UINT8 len)
 		return;
 	 }
 	 
-	 BTA_GATTS_HandleValueIndication (conn_id, attr_id, len,
+	 esp_ble_gatts_hdl_val_indica(conn_id, attr_id, len,
                                       blufi_msg, rsp);
 }
 

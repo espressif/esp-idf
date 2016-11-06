@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "blufi_adv.h"
-
+#include "esp_adv_api.h"
 
  /*******************************************************************************
  **
@@ -29,75 +29,10 @@
  ** Returns 		 None
  **
  *******************************************************************************/
- void BlufiBleConfigadvData(tBLUFI_BLE_ADV_DATA *adv_data,
-												tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
+ void BlufiBleConfigadvData(esp_ble_adv_data_cfg_t *adv_data,
+												esp_ble_set_adv_data_cmpl_cb_t *p_adv_data_cback)
 {
-	tBTA_BLE_AD_MASK data_mask = 0;
-	if(adv_data->adv_name != NULL)
-	{
-		 data_mask |= BTM_BLE_AD_BIT_DEV_NAME;
-		 BTA_DmSetDeviceName(adv_data->adv_name);
-	}
-	if(adv_data->ble_adv_data.int_range.low != 0 ||
-	   adv_data->ble_adv_data.int_range.hi != 0)
-		data_mask |= BTM_BLE_AD_BIT_INT_RANGE;
-	
-	if(adv_data->ble_adv_data.p_manu != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_MANU;
-	}
-
-	if(adv_data->ble_adv_data.p_services != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE;
-	}
-
-	if(adv_data->ble_adv_data.p_service_32b != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_32;
-	}
-
-	if(adv_data->ble_adv_data.p_services_128b != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_128;
-	}
-
-	if(adv_data->ble_adv_data.p_sol_services != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_SOL;
-	}
-
-	if(adv_data->ble_adv_data.p_sol_service_32b != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_32SOL;
-	}
-
-	if(adv_data->ble_adv_data.p_sol_service_128b != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_128SOL;
-	}
-	
-	if(adv_data->ble_adv_data.p_service_data != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_DATA;
-	}
-	
-	if(adv_data->ble_adv_data.appearance != 0)
-	{
-		data_mask |= BTM_BLE_AD_BIT_APPEARANCE;
-	}
-
-	if(adv_data->ble_adv_data.p_proprietary != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_PROPRIETARY;
-	}
-
-	if(adv_data->ble_adv_data.tx_power != 0)
-	{
-		data_mask |= BTM_BLE_AD_BIT_TX_PWR;
-	}
-
-	BTA_DmBleSetAdvConfig(data_mask, &(adv_data->ble_adv_data), p_adv_data_cback);
+	esp_ble_config_adv_data(adv_data, p_adv_data_cback);
 }
 
 
@@ -112,75 +47,10 @@
 ** Returns          None
 **
 *******************************************************************************/
-void BlufiBleSetScanRsp(tBLUFI_BLE_ADV_DATA *scan_rsp_data,
-												tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback)
+void BlufiBleSetScanRsp(esp_ble_adv_data_cfg_t *scan_rsp_data,
+												esp_ble_set_adv_data_cmpl_cb_t *p_scan_rsp_data_cback)
 {
-	tBTA_BLE_AD_MASK data_mask = 0;
-	if(scan_rsp_data->adv_name != NULL)
-	{
-		 data_mask |= BTM_BLE_AD_BIT_DEV_NAME;
-		 BTA_DmSetDeviceName(scan_rsp_data->adv_name);
-	}
-	if(scan_rsp_data->ble_adv_data.int_range.low != 0 || 
-	   scan_rsp_data->ble_adv_data.int_range.hi != 0)
-		data_mask |= BTM_BLE_AD_BIT_INT_RANGE;
-	
-	if(scan_rsp_data->ble_adv_data.p_manu != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_MANU;
-	}
-
-	if(scan_rsp_data->ble_adv_data.p_services != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE;
-	}
-
-	if(scan_rsp_data->ble_adv_data.p_service_32b != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_32;
-	}
-
-	if(scan_rsp_data->ble_adv_data.p_services_128b != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_128;
-	}
-
-	if(scan_rsp_data->ble_adv_data.p_sol_services != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_SOL;
-	}
-
-	if(scan_rsp_data->ble_adv_data.p_sol_service_32b != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_32SOL;
-	}
-
-	if(scan_rsp_data->ble_adv_data.p_sol_service_128b != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_128SOL;
-	}
-	
-	if(scan_rsp_data->ble_adv_data.p_service_data != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_SERVICE_DATA;
-	}
-	
-	if(scan_rsp_data->ble_adv_data.appearance != 0)
-	{
-		data_mask |= BTM_BLE_AD_BIT_APPEARANCE;
-	}
-
-	if(scan_rsp_data->ble_adv_data.p_proprietary != NULL)
-	{
-		data_mask |= BTM_BLE_AD_BIT_PROPRIETARY;
-	}
-
-	if(scan_rsp_data->ble_adv_data.tx_power != 0)
-	{
-		data_mask |= BTM_BLE_AD_BIT_TX_PWR;
-	}
-
-	BTA_DmBleSetScanRsp(data_mask, &(scan_rsp_data->ble_adv_data), p_scan_rsp_data_cback);
+	esp_ble_set_scan_rsp(scan_rsp_data, p_scan_rsp_data_cback);
 }
 
 

@@ -26,10 +26,8 @@
 #include "bt.h"
 #include "bta_api.h"
 
-extern tBTA_STATUS BTA_DisableBluetooth(void);
-extern void phy_set_wifi_mode_only(bool wifi_only);
-extern void bte_main_boot_entry(void *);
-extern void blufi_init(void);
+#include "esp_bt_common.h"
+#include "blufi.h"
 
 #define WIFI_LIST_NUM	10
 
@@ -71,7 +69,8 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
 		blufi_config_success();
-		BTA_DisableBluetooth();
+		esp_disable_bluetooth(); //close bluetooth function
+		//esp_deinit_bluetooth();  //free bluetooth resource
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
@@ -107,7 +106,6 @@ void wifiTestTask(void *pvParameters)
         vTaskDelay(1000 / portTICK_PERIOD_MS);
 		if (confirm) {
 			confirm = false;
-			//BTA_DisableBluetooth();
 
 			strcpy(sta_config.sta.ssid, tmp_ssid);
 			strcpy(sta_config.sta.password, tmp_passwd);
@@ -138,6 +136,6 @@ void app_main()
 
     bt_controller_init();
     xTaskCreatePinnedToCore(&wifiTestTask, "wifiTestTask", 2048, NULL, 20, NULL, 0);
-   // bt_app_task_start_up();
-    bte_main_boot_entry(blufi_init);
+
+    esp_init_bluetooth(blufi_init);
 }

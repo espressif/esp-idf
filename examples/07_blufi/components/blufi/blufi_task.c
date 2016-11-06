@@ -60,7 +60,7 @@ static void blufi_task(void *arg)
     }
 }
 
-static int blufi_task_post(uint32_t sig, void *par, void *cb, void *arg)
+static esp_err_t blufi_task_post(uint32_t sig, void *par, void *cb, void *arg)
 {
      BtTaskEvt_t evt;
 
@@ -71,13 +71,13 @@ static int blufi_task_post(uint32_t sig, void *par, void *cb, void *arg)
 
      if (xQueueSend(xBlufiTaskQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
          LOG_ERROR("Blufi Post failed\n");
-         return -1;
+         return ESP_FAIL;
      }
 
-	return 0;
+	return ESP_OK;
 }
 
-bt_status_t blufi_transfer_context(BtTaskCb_t cb, void *arg)
+esp_err_t blufi_transfer_context(blufi_task_cb_t cb, void *arg)
 {
     LOG_DEBUG("%s cb %08x, arg %u\n", __func__, cb, arg);
 
@@ -100,5 +100,9 @@ static void blufi_task_init(void)
 void blufi_init(void) {
 	blufi_task_init();
 	blufi_transfer_context(blufi_enable, NULL);
+}
+
+void blufi_deinit(void) {
+	blufi_transfer_context(blufi_disable, blufi_task_deinit);
 }
 
