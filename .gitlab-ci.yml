@@ -19,7 +19,7 @@ before_script:
   - git submodule update --init --recursive
   # try use submodule with same branch
   - SUBMODULES=`cat .gitmodules | grep path | awk '{print $3}'`
-  - for MODULE in $SUBMODULES;do (cd $MODULE;git fetch;git checkout ${CI_BUILD_REF_NAME} || echo "using default branch";cd $CI_PROJECT_DIR); done
+  - for MODULE in $SUBMODULES;do (echo $MODULE;cd $MODULE;git checkout ${CI_BUILD_REF_NAME} || echo "using default branch";cd $CI_PROJECT_DIR); done
 
 build_template_app:
   stage: build
