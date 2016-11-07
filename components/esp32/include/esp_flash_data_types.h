@@ -21,7 +21,7 @@ extern "C"
 {
 #endif
 
-#define ESP_PARTITION_TABLE_ADDR 0x4000
+#define ESP_PARTITION_TABLE_ADDR 0x8000
 #define ESP_PARTITION_MAGIC 0x50AA
 
 /* OTA selection structure (two copies in the OTA data partition.)

@@ -11,6 +11,8 @@
 # NB: gen_esp32part.py lives in the sdk/bin/ dir not component dir
 GEN_ESP32PART := $(PYTHON) $(COMPONENT_PATH)/gen_esp32part.py -q
 
+PARTITION_TABLE_OFFSET := 0x8000
+
 # Path to partition CSV file is relative to project path for custom
 # partition CSV files, but relative to component dir otherwise.$
 PARTITION_TABLE_ROOT := $(call dequote,$(if $(CONFIG_PARTITION_TABLE_CUSTOM),$(PROJECT_PATH),$(COMPONENT_PATH)))
@@ -27,8 +29,8 @@ endif
 
 all_binaries: $(PARTITION_TABLE_BIN)
 
-PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash 0x4000 $(PARTITION_TABLE_BIN)
-ESPTOOL_ALL_FLASH_ARGS += 0x4000 $(PARTITION_TABLE_BIN)
+PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
+ESPTOOL_ALL_FLASH_ARGS += $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
 
 partition_table: $(PARTITION_TABLE_BIN)
 	@echo "Partition table binary generated. Contents:"

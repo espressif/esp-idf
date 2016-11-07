@@ -62,6 +62,7 @@ esp_err_t esp_image_load_segment_header(uint8_t index, uint32_t src_addr, const 
     }
 
     for(int i = 0; i <= index && err == ESP_OK; i++) {
+        ESP_LOGV(TAG, "loading segment header %d at offset 0x%x", i, next_addr);
         err = bootloader_flash_read(next_addr, segment_header, sizeof(esp_image_segment_header_t));
         if (err == ESP_OK) {
             if ((segment_header->data_len & 3) != 0
@@ -69,6 +70,7 @@ esp_err_t esp_image_load_segment_header(uint8_t index, uint32_t src_addr, const 
                 ESP_LOGE(TAG, "invalid segment length 0x%x", segment_header->data_len);
                 err = ESP_ERR_IMAGE_INVALID;
             }
+            ESP_LOGV(TAG, "segment data length 0x%x", segment_header->data_len);
             next_addr += sizeof(esp_image_segment_header_t);
             *segment_data_offset = next_addr;
             next_addr += segment_header->data_len;
@@ -140,7 +142,11 @@ esp_err_t esp_image_basic_verify(uint32_t src_addr, uint32_t *p_length)
     }
 
     /* image padded to next full 16 byte block, with checksum byte at very end */
-    length += 15 - (length % 16);
+    ESP_LOGV(TAG, "unpadded image length 0x%x", length);
+    length += 16; /* always pad by at least 1 byte */
+    length = length - (length % 16);
+    ESP_LOGV(TAG, "padded image length 0x%x", length);
+    ESP_LOGD(TAG, "reading checksum block at 0x%x", src_addr + length - 16);
     bootloader_flash_read(src_addr + length - 16, buf, 16);
     if (checksum != buf[15]) {
         ESP_LOGE(TAG, "checksum failed. Calculated 0x%x read 0x%x",

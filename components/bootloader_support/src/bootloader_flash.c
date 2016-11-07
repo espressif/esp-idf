@@ -94,11 +94,11 @@ void bootloader_unmap(const void *mapping)
 esp_err_t bootloader_flash_read(size_t src_addr, void *dest, size_t size)
 {
     if(src_addr & 3) {
-        ESP_LOGE(TAG, "bootloader_flash_read src_addr not 4-byte aligned");
+        ESP_LOGE(TAG, "bootloader_flash_read src_addr 0x%x not 4-byte aligned", src_addr);
         return ESP_FAIL;
     }
     if((intptr_t)dest & 3) {
-        ESP_LOGE(TAG, "bootloader_flash_read dest not 4-byte aligned");
+        ESP_LOGE(TAG, "bootloader_flash_read dest 0x%x not 4-byte aligned", (intptr_t)dest);
         return ESP_FAIL;
     }
 
