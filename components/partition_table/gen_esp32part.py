@@ -9,6 +9,8 @@ import struct
 import argparse
 import sys
 
+MAX_PARTITION_LENGTH = 0xC00   # 3K for partition data (96 entries) leaves 1K in a 4K sector for signature
+
 __version__ = '1.0'
 
 quiet = False
@@ -92,7 +94,11 @@ class PartitionTable(list):
         return result
 
     def to_binary(self):
-        return "".join(e.to_binary() for e in self)
+        result = "".join(e.to_binary() for e in self)
+        if len(result )>= MAX_PARTITION_LENGTH:
+            raise InputError("Binary partition table length (%d) longer than max" % len(result))
+        result += "\xFF" * (MAX_PARTITION_LENGTH - len(result))  # pad the sector, for signing
+        return result
 
     def to_csv(self, simple_formatting=False):
         rows = [ "# Espressif ESP32 Partition Table",

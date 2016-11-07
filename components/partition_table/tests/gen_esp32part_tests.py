@@ -37,6 +37,10 @@ LONGER_BINARY_TABLE += "\xAA\x50\x10\x00" + \
                        "second" + ("\0"*10) + \
                        "\x00\x00\x00\x00"
 
+def _strip_trailing_ffs(binary_table):
+    while binary_table.endswith("\xFF"):
+        binary_table = binary_table[0:len(binary_table)-1]
+    return binary_table
 
 class CSVParserTests(unittest.TestCase):
 
@@ -156,7 +160,7 @@ class BinaryOutputTests(unittest.TestCase):
 first, 0x30, 0xEE, 0x100400, 0x300000
 """
         t = PartitionTable.from_csv(csv)
-        tb = t.to_binary()
+        tb = _strip_trailing_ffs(t.to_binary())
         self.assertEqual(len(tb), 32)
         self.assertEqual('\xAA\x50', tb[0:2]) # magic
         self.assertEqual('\x30\xee', tb[2:4]) # type, subtype
@@ -170,7 +174,7 @@ first, 0x30, 0xEE, 0x100400, 0x300000
 second,0x31, 0xEF,         , 0x100000
 """
         t = PartitionTable.from_csv(csv)
-        tb = t.to_binary()
+        tb = _strip_trailing_ffs(t.to_binary())
         self.assertEqual(len(tb), 64)
         self.assertEqual('\xAA\x50', tb[0:2])
         self.assertEqual('\xAA\x50', tb[32:34])
@@ -215,7 +219,7 @@ class BinaryParserTests(unittest.TestCase):
         self.assertEqual(t[2].type, 0x10)
         self.assertEqual(t[2].name, "second")
 
-        round_trip = t.to_binary()
+        round_trip = _strip_trailing_ffs(t.to_binary())
         self.assertEqual(round_trip, LONGER_BINARY_TABLE)
 
     def test_bad_magic(self):
@@ -267,7 +271,7 @@ class CSVOutputTests(unittest.TestCase):
         self.assertEqual(row[0], "factory")
         self.assertEqual(row[1], "app")
         self.assertEqual(row[2], "2")
-        self.assertEqual(row[3], "64K")
+        self.assertEqual(row[3], "0x10000")
         self.assertEqual(row[4], "1M")
 
         # round trip back to a PartitionTable and check is identical
@@ -291,7 +295,7 @@ class CommandLineTests(unittest.TestCase):
             # reopen the CSV and check the generated binary is identical
             with open(csvpath, 'r') as f:
                 from_csv = PartitionTable.from_csv(f.read())
-            self.assertEqual(from_csv.to_binary(), LONGER_BINARY_TABLE)
+            self.assertEqual(_strip_trailing_ffs(from_csv.to_binary()), LONGER_BINARY_TABLE)
 
             # run gen_esp32part.py to conver the CSV to binary again
             subprocess.check_call([sys.executable, "../gen_esp32part.py",
@@ -299,6 +303,7 @@ class CommandLineTests(unittest.TestCase):
             # assert that file reads back as identical
             with open(binpath, 'rb') as f:
                 binary_readback = f.read()
+            binary_readback = _strip_trailing_ffs(binary_readback)
             self.assertEqual(binary_readback, LONGER_BINARY_TABLE)
 
         finally:
