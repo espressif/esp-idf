@@ -1,21 +1,31 @@
 [submodule "components/esp32/lib"]
 	path = components/esp32/lib
 	url = https://github.com/espressif/esp32-wifi-lib.git
+
 [submodule "components/esptool_py/esptool"]
 	path = components/esptool_py/esptool
 	url = https://github.com/espressif/esptool.git
+
 [submodule "components/bt/lib"]
 	path = components/bt/lib
 	url = https://github.com/espressif/esp32-bt-lib.git
+
 [submodule "components/micro-ecc/micro-ecc"]
 	path = components/micro-ecc/micro-ecc
 	url = https://github.com/kmackay/micro-ecc.git
+
 [submodule "components/coap/libcoap"]
 	path = components/coap/libcoap
 	url = https://github.com/obgm/libcoap.git
+
 [submodule "components/aws_iot/aws-iot-device-sdk-embedded-C"]
 	path = components/aws_iot/aws-iot-device-sdk-embedded-C
 	url = https://github.com/espressif/aws-iot-device-sdk-embedded-C.git
+
 [submodule "components/nghttp/nghttp2"]
 	path = components/nghttp/nghttp2
 	url = https://github.com/nghttp2/nghttp2.git
+
+[submodule "components/libsodium/libsodium"]
+	path = components/libsodium/libsodium
+	url = https://github.com/jedisct1/libsodium.git
