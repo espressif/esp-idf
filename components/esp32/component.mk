@@ -8,6 +8,10 @@ LIBS := core net80211 phy rtc pp wpa smartconfig coexist wps wpa2
 
 LINKER_SCRIPTS += -T esp32_out.ld -T esp32.common.ld -T esp32.rom.ld -T esp32.peripherals.ld
 
+ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")
+LINKER_SCRIPTS += -T esp32.rom.nanofmt.ld
+endif
+
 COMPONENT_ADD_LDFLAGS := -lesp32 \
                            $(COMPONENT_PATH)/libhal.a \
                            -L$(COMPONENT_PATH)/lib \

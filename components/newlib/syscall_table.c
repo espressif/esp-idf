@@ -25,6 +25,7 @@
 #include "rom/libc_stubs.h"
 #include "esp_vfs.h"
 #include "esp_newlib.h"
+#include "sdkconfig.h"
 
 static struct _reent s_reent;
 
@@ -76,8 +77,13 @@ static struct syscall_stub_table s_stub_table = {
     ._lock_try_acquire_recursive = &_lock_try_acquire_recursive,
     ._lock_release = &_lock_release,
     ._lock_release_recursive = &_lock_release_recursive,
+#ifdef CONFIG_NEWLIB_NANO_FORMAT
     ._printf_float = &_printf_float,
     ._scanf_float = &_scanf_float,
+#else
+    ._printf_float = NULL,
+    ._scanf_float = NULL,
+#endif
 };
 
 void esp_setup_syscall_table()
