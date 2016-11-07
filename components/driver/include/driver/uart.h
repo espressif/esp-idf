@@ -38,12 +38,18 @@ extern "C" {
 #define UART_BITRATE_MAX        5000000
 #define UART_PIN_NO_CHANGE      (-1)
 
+#define UART_INVERSE_DISABLE  (0x0)            /*!< Disable UART signal inverse*/
+#define UART_INVERSE_RXD   (UART_RXD_INV_M)    /*!< UART RXD input inverse*/
+#define UART_INVERSE_CTS   (UART_CTS_INV_M)    /*!< UART CTS input inverse*/
+#define UART_INVERSE_TXD   (UART_TXD_INV_M)    /*!< UART TXD output inverse*/
+#define UART_INVERSE_RTS   (UART_RTS_INV_M)    /*!< UART RTS output inverse*/
+
 typedef enum {
     UART_DATA_5_BITS = 0x0,    /*!< word length: 5bits*/
     UART_DATA_6_BITS = 0x1,    /*!< word length: 6bits*/
     UART_DATA_7_BITS = 0x2,    /*!< word length: 7bits*/
     UART_DATA_8_BITS = 0x3,    /*!< word length: 8bits*/
-    UART_DATA_MAX_BITS = 0X4,
+    UART_DATA_BITS_MAX = 0X4,
 } uart_word_length_t;
 
 typedef enum {
@@ -74,14 +80,6 @@ typedef enum {
     UART_HW_FLOWCTRL_MAX     = 0x4,
 } uart_hw_flowcontrol_t;
 
-typedef enum {
-    UART_INVERSE_DISABLE = 0x0,                     /*!< Disable UART wire output inverse*/
-    UART_INVERSE_RXD  = (uint32_t)UART_RXD_INV_M,   /*!< UART RXD input inverse*/
-    UART_INVERSE_CTS  = (uint32_t)UART_CTS_INV_M,   /*!< UART CTS input inverse*/
-    UART_INVERSE_TXD  = (uint32_t)UART_TXD_INV_M,   /*!< UART TXD output inverse*/
-    UART_INVERSE_RTS  = (uint32_t)UART_RTS_INV_M,   /*!< UART RTS output inverse*/
-} uart_inverse_t;
-
 typedef struct {
     int baud_rate;                      /*!< UART baudrate*/
     uart_word_length_t data_bits;       /*!< UART byte size*/
@@ -110,14 +108,8 @@ typedef enum {
 } uart_event_type_t;
 
 typedef struct {
-    uart_event_type_t type;
-    union {
-        struct {
-            int brk_len;
-            size_t size;
-            uint8_t data[];
-        } data;
-    };
+    uart_event_type_t type; /*!< UART event type */
+    size_t size;            /*!< UART data size for UART_DATA event*/
 } uart_event_t;
 
 /**
@@ -225,14 +217,13 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
  *
  * @param   inverse_mask Choose the wires that need to be inversed.
  *
- *          (inverse_mask should be chosen from uart_inverse_t, combine with OR-OPERATION)
+ *          (inverse_mask should be chosen from UART_INVERSE_RXD/UART_INVERSE_TXD/UART_INVERSE_RTS/UART_INVERSE_CTS, combine with OR-OPERATION)
  *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_set_line_inverse(uart_port_t uart_no, uint32_t inverse_mask) ;
-
+esp_err_t uart_set_line_inverse(uart_port_t uart_no, uint32_t inverse_mask);
 
 /**
  * @brief   Set hardware flow control.
@@ -701,11 +692,13 @@ esp_err_t uart_flush(uart_port_t uart_num);
  *         if(xQueueReceive(uart0_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
  *             ESP_LOGI(TAG, "uart[%d] event:", uart_num);
  *             switch(event.type) {
+ *                 memset(dtmp, 0, sizeof(dtmp));
  *                 //Event of UART receving data
  *                 case UART_DATA:
- *                     ESP_LOGI(TAG,"data, len: %d\n", event.data.size);
- *                     int len = uart_read_bytes(uart_num, dtmp, event.data.size, 10);
- *                     ESP_LOGI(TAG, "uart read: %d\n", len);
+ *                     ESP_LOGI(TAG,"data, len: %d", event.size);
+ *                     int len = uart_read_bytes(uart_num, dtmp, event.size, 10);
+ *                     ESP_LOGI(TAG, "uart read: %d", len);
+                       uart_write_bytes(uart_num, (const char*)dtmp, len);
  *                     break;
  *                 //Event of HW FIFO overflow detected
  *                 case UART_FIFO_OVF:
