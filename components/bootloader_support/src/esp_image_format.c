@@ -70,8 +70,8 @@ esp_err_t esp_image_load_segment_header(uint8_t index, uint32_t src_addr, const 
                 ESP_LOGE(TAG, "invalid segment length 0x%x", segment_header->data_len);
                 err = ESP_ERR_IMAGE_INVALID;
             }
-            ESP_LOGV(TAG, "segment data length 0x%x", segment_header->data_len);
             next_addr += sizeof(esp_image_segment_header_t);
+            ESP_LOGV(TAG, "segment data length 0x%x data starts 0x%x", segment_header->data_len, next_addr);
             *segment_data_offset = next_addr;
             next_addr += segment_header->data_len;
         }
@@ -124,7 +124,7 @@ esp_err_t esp_image_basic_verify(uint32_t src_addr, uint32_t *p_length)
         for(int i = 0; i < segment_header.data_len; i++) {
             checksum ^= segment_data[i];
         }
-        bootloader_unmap(segment_data);
+        bootloader_munmap(segment_data);
     }
 
     /* End of image, verify checksum */

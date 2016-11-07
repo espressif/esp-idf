@@ -60,7 +60,9 @@ static inline bool esp_secure_boot_enabled(void) {
  */
 esp_err_t esp_secure_boot_permanently_enable(void);
 
-/** @brief Verify the signature appended to some binary data in flash.
+/** @brief Verify the secure boot signature (determinstic ECDSA w/ SHA256) appended to some binary data in flash.
+ *
+ * Public key is compiled into the calling program. See docs/security/secure-boot.rst for details.
  *
  * @param src_addr Starting offset of the data in flash.
  * @param length Length of data in bytes. Signature is appended -after- length bytes.

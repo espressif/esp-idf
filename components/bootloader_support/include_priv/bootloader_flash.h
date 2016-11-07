@@ -29,11 +29,11 @@
 /**
  * @brief Map a region of flash to data memory
  *
- * @important In bootloader code, only one region can be bootloader_mmaped at once. The previous region must be bootloader_unmapped before another region is mapped.
+ * @important In bootloader code, only one region can be bootloader_mmaped at once. The previous region must be bootloader_munmapped before another region is mapped.
  *
  * @important In app code, these functions are not thread safe.
  *
- * Call bootloader_unmap once for each successful call to bootloader_mmap.
+ * Call bootloader_munmap once for each successful call to bootloader_mmap.
  *
  * In esp-idf app, this function maps directly to spi_flash_mmap.
  *
@@ -49,9 +49,9 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size);
 /**
  * @brief Unmap a previously mapped region of flash
  *
- * Call bootloader_unmap once for each successful call to bootloader_mmap.
+ * Call bootloader_munmap once for each successful call to bootloader_mmap.
  */
-void bootloader_unmap(const void *mapping);
+void bootloader_munmap(const void *mapping);
 
 /**
  * @brief  Read data from Flash.

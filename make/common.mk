@@ -6,7 +6,8 @@
 #
 # (Note that we only rebuild auto.conf automatically for some targets,
 # see project_config.mk for details.)
--include $(BUILD_DIR_BASE)/include/config/auto.conf
+SDKCONFIG_MAKEFILE := $(BUILD_DIR_BASE)/include/config/auto.conf
+-include $(SDKCONFIG_MAKEFILE)
 
 #Handling of V=1/VERBOSE=1 flag
 #

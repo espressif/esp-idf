@@ -90,7 +90,7 @@ static bool secure_boot_generate(uint32_t image_len){
     for (int i = 0; i < image_len; i+= HASH_BLOCK_SIZE) {
         ets_secure_boot_hash(image + i/sizeof(void *));
     }
-    bootloader_unmap(image);
+    bootloader_munmap(image);
 
     ets_secure_boot_obtain();
     ets_secure_boot_rd_abstract(buf);

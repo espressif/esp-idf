@@ -107,7 +107,7 @@ esp_err_t esp_image_load_segment_header(uint8_t index, uint32_t src_addr, const 
  *
  * Image validation checks:
  * - Magic byte
- * - No single section longer than 16MB
+ * - No single segment longer than 16MB
  * - Total image no longer than 16MB
  * - 8 bit image checksum is valid
  *

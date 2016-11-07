@@ -43,9 +43,10 @@ extern const uint8_t signature_verification_key_end[] asm("_binary_signature_ver
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     sha_context sha;
-    uint8_t digest[64];
+    uint8_t digest[32];
     ptrdiff_t keylen;
-    const uint8_t *data;
+    const uint8_t *data, *digest_data;
+    uint32_t digest_len, chunk_len;
     const signature_block_t *sigblock;
     bool is_valid;
 
@@ -68,16 +69,23 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     /* Use ROM SHA functions directly */
     ets_sha_enable();
     ets_sha_init(&sha);
-    ets_sha_update(&sha, SHA2_512, data, length);
-    ets_sha_finish(&sha, SHA2_512, digest);
+    digest_len = length * 8;
+    digest_data = data;
+    while (digest_len > 0) {
+        uint32_t chunk_len = (digest_len > 64) ? 64 : digest_len;
+        ets_sha_update(&sha, SHA2_256, digest_data, chunk_len);
+        digest_len -= chunk_len;
+        digest_data += chunk_len / 8;
+    }
+    ets_sha_finish(&sha, SHA2_256, digest);
     ets_sha_disable();
 #else
     /* Use thread-safe esp-idf SHA layer */
-    esp_sha512_init(&sha);
-    esp_sha512_start(&sha, false);
-    esp_sha512_update(&sha, data, length);
-    esp_sha512_finish(&sha, digest);
-    esp_sha512_free(&sha);
+    esp_sha256_init(&sha);
+    esp_sha256_start(&sha, false);
+    esp_sha256_update(&sha, data, length);
+    esp_sha256_finish(&sha, digest);
+    esp_sha256_free(&sha);
 #endif
 
     keylen = signature_verification_key_end - signature_verification_key_start;
@@ -90,10 +98,10 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
                            digest, sizeof(digest), sigblock->signature,
                            uECC_secp256r1());
 
-    bootloader_unmap(data);
+    bootloader_munmap(data);
     return is_valid ? ESP_OK : ESP_ERR_IMAGE_INVALID;
 
  unmap_and_fail:
-    bootloader_unmap(data);
+    bootloader_munmap(data);
     return ESP_FAIL;
 }

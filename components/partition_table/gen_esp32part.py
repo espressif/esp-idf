@@ -86,11 +86,14 @@ class PartitionTable(list):
 
     @classmethod
     def from_binary(cls, b):
-        if len(b) % 32 != 0:
-            raise InputError("Partition table length must be a multiple of 32 bytes. Got %d bytes." % len(b))
         result = cls()
         for o in range(0,len(b),32):
-            result.append(PartitionDefinition.from_binary(b[o:o+32]))
+            data = b[o:o+32]
+            if len(data) != 32:
+                raise InputError("Ran out of partition table data before reaching end marker")
+            if data == '\xFF'*32:
+                break  # end of partition table
+            result.append(PartitionDefinition.from_binary(data))
         return result
 
     def to_binary(self):

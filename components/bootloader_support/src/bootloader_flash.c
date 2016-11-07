@@ -38,7 +38,7 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
     return result;
 }
 
-void bootloader_unmap(const void *mapping)
+void bootloader_munmap(const void *mapping)
 {
     if(mapping && map) {
         spi_flash_munmap(map);
@@ -68,7 +68,7 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
     }
 
     uint32_t src_addr_aligned = src_addr & 0xffff0000;
-    uint32_t count = (size + 0xffff) / 0x10000;
+    uint32_t count = (size + (src_addr - src_addr_aligned) + 0xffff) / 0x10000;
     Cache_Read_Disable(0);
     Cache_Flush(0);
     ESP_LOGD(TAG, "mmu set paddr=%08x count=%d", src_addr_aligned, count );
@@ -80,7 +80,7 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
     return (void *)(0x3f400000 + (src_addr - src_addr_aligned));
 }
 
-void bootloader_unmap(const void *mapping)
+void bootloader_munmap(const void *mapping)
 {
     if (mapped)  {
         /* Full MMU reset */

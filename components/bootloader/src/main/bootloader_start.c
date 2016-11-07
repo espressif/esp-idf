@@ -104,35 +104,38 @@ void IRAM_ATTR call_start_cpu0()
  *                  OTA info sector, factory app sector, and test app sector.
  *
  *  @inputs:        bs     bootloader state structure used to save the data
- *                  addr   address of partition table in flash
  *  @return:        return true, if the partition table is loaded (and MD5 checksum is valid)
  *
  */
-bool load_partition_table(bootloader_state_t* bs, uint32_t addr)
+bool load_partition_table(bootloader_state_t* bs)
 {
     esp_err_t err;
     const esp_partition_info_t *partitions;
-    const int PARTITION_TABLE_SIZE = 0x1000;
-    const int MAX_PARTITIONS = PARTITION_TABLE_SIZE / sizeof(esp_partition_info_t);
+    const int ESP_PARTITION_TABLE_DATA_LEN = 0xC00; /* length of actual data (signature is appended to this) */
+    const int MAX_PARTITIONS = ESP_PARTITION_TABLE_DATA_LEN / sizeof(esp_partition_info_t);
     char *partition_usage;
 
     ESP_LOGI(TAG, "Partition Table:");
     ESP_LOGI(TAG, "## Label            Usage          Type ST Offset   Length");
 
+#ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
     if(esp_secure_boot_enabled()) {
-        err = esp_secure_boot_verify_signature(addr, 0x1000);
+        ESP_LOGI(TAG, "Verifying partition table signature...");
+        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to verify partition table signature.");
             return false;
         }
+        ESP_LOGD(TAG, "Partition table signature verified");
     }
+#endif
 
-    partitions = bootloader_mmap(addr, 0x1000);
+    partitions = bootloader_mmap(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
     if (!partitions) {
-            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", addr, 0x1000);
+            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
             return false;
     }
-    ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", addr, (intptr_t)partitions);
+    ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_ADDR, (intptr_t)partitions);
 
     for(int i = 0; i < MAX_PARTITIONS; i++) {
         const esp_partition_info_t *partition = &partitions[i];
@@ -197,7 +200,7 @@ bool load_partition_table(bootloader_state_t* bs, uint32_t addr)
                  partition->pos.offset, partition->pos.size);
     }
 
-    bootloader_unmap(partitions);
+    bootloader_munmap(partitions);
 
     ESP_LOGI(TAG,"End of partition table");
     return true;
@@ -248,7 +251,7 @@ void bootloader_main()
 
     update_flash_config(&fhdr);
 
-    if (!load_partition_table(&bs, ESP_PARTITION_TABLE_ADDR)) {
+    if (!load_partition_table(&bs)) {
         ESP_LOGE(TAG, "load partition table error!");
         return;
     }
@@ -268,7 +271,7 @@ void bootloader_main()
         }
         sa = ota_select_map[0];
         sb = ota_select_map[1];
-        bootloader_unmap(ota_select_map);
+        bootloader_munmap(ota_select_map);
 
         if(sa.ota_seq == 0xFFFFFFFF && sb.ota_seq == 0xFFFFFFFF) {
             // init status flash
@@ -336,7 +339,7 @@ void bootloader_main()
         }
     }
 
-    // copy sections to RAM, set up caches, and start application
+    // copy loaded segments to RAM, set up caches for mapped segments, and start application
     unpack_load_app(&load_part_pos);
 }
 
@@ -347,14 +350,15 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
     esp_image_header_t image_header;
     uint32_t image_length;
 
-    if (esp_secure_boot_enabled()) {
-        /* TODO: verify the app image as part of OTA boot decision, so can have fallbacks */
-        err = esp_image_basic_verify(partition->offset, &image_length);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to verify app image @ 0x%x (%d)", partition->offset, err);
-            return;
-        }
+    /* TODO: verify the app image as part of OTA boot decision, so can have fallbacks */
+    err = esp_image_basic_verify(partition->offset, &image_length);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to verify app image @ 0x%x (%d)", partition->offset, err);
+        return;
+    }
+
 #ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+    if (esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "Verifying app signature @ 0x%x (length 0x%x)", partition->offset, image_length);
         err = esp_secure_boot_verify_signature(partition->offset, image_length);
         if (err != ESP_OK) {
@@ -377,7 +381,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
     uint32_t irom_load_addr = 0;
     uint32_t irom_size = 0;
 
-    /* Reload the RTC memory sections whenever a non-deepsleep reset
+    /* Reload the RTC memory segments whenever a non-deepsleep reset
        is occurring */
     bool load_rtc_memory = rtc_get_reset_reason(0) != DEEPSLEEP_RESET;
 
@@ -409,7 +413,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
         }
 
         if (address >= DROM_LOW && address < DROM_HIGH) {
-            ESP_LOGD(TAG, "found drom section, map from %08x to %08x", data_offs,
+            ESP_LOGD(TAG, "found drom segment, map from %08x to %08x", data_offs,
                       segment_header.load_addr);
             drom_addr = data_offs;
             drom_load_addr = segment_header.load_addr;
@@ -419,7 +423,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
         }
 
         if (address >= IROM_LOW && address < IROM_HIGH) {
-            ESP_LOGD(TAG, "found irom section, map from %08x to %08x", data_offs,
+            ESP_LOGD(TAG, "found irom segment, map from %08x to %08x", data_offs,
                       segment_header.load_addr);
             irom_addr = data_offs;
             irom_load_addr = segment_header.load_addr;
@@ -429,12 +433,12 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
         }
 
         if (!load_rtc_memory && address >= RTC_IRAM_LOW && address < RTC_IRAM_HIGH) {
-            ESP_LOGD(TAG, "Skipping RTC code section at %08x\n", data_offs);
+            ESP_LOGD(TAG, "Skipping RTC code segment at %08x\n", data_offs);
             load = false;
         }
 
         if (!load_rtc_memory && address >= RTC_DATA_LOW && address < RTC_DATA_HIGH) {
-            ESP_LOGD(TAG, "Skipping RTC data section at %08x\n", data_offs);
+            ESP_LOGD(TAG, "Skipping RTC data segment at %08x\n", data_offs);
             load = false;
         }
 
@@ -449,7 +453,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
                 return;
             }
             memcpy((void *)segment_header.load_addr, data, segment_header.data_len);
-            bootloader_unmap(data);
+            bootloader_munmap(data);
         }
     }
 

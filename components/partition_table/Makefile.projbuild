@@ -20,12 +20,19 @@ PARTITION_TABLE_CSV_PATH := $(call dequote,$(abspath $(PARTITION_TABLE_ROOT)/$(s
 
 PARTITION_TABLE_BIN := $(BUILD_DIR_BASE)/$(notdir $(PARTITION_TABLE_CSV_PATH:.csv=.bin))
 
-$(PARTITION_TABLE_BIN): $(PARTITION_TABLE_CSV_PATH)
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN:.bin=-unsigned.bin)
+# add an extra signing step for secure partition table
+$(PARTITION_TABLE_BIN): $(PARTITION_TABLE_BIN_UNSIGNED)
+	$(Q) $(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
+else
+# secure bootloader disabled, both files are the same
+PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN)
+endif
+
+$(PARTITION_TABLE_BIN_UNSIGNED): $(PARTITION_TABLE_CSV_PATH) $(SDKCONFIG_MAKEFILE)
 	@echo "Building partitions from $(PARTITION_TABLE_CSV_PATH)..."
 	$(Q) $(GEN_ESP32PART) $< $@
-ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
-	$(Q) $(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) $@  # signed in-place
-endif
 
 all_binaries: $(PARTITION_TABLE_BIN)
 
