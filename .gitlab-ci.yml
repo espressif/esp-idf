@@ -12,12 +12,14 @@ before_script:
   - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-
   # if testing master branch, use github wifi libs.
   # if testing other branches, use gitlab wifi libs (as maybe changes aren't merged to master yet)
   - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-wifi-lib%ssh://git@gitlab.espressif.cn:27227/idf/esp32-wifi-lib%" .gitmodules
   # fetch all submodules
   - git submodule update --init --recursive
+  # try use submodule with same branch
+  - SUBMODULES=`cat .gitmodules | grep path | awk '{print $3}'`
+  - for MODULE in $SUBMODULES;do (echo $MODULE;cd $MODULE;git checkout ${CI_BUILD_REF_NAME} || echo "using default branch";cd $CI_PROJECT_DIR); done
 
 build_template_app:
   stage: build
