@@ -110,12 +110,16 @@ static bool secure_boot_generate(uint32_t image_len){
 /* Burn values written to the efuse write registers */
 static inline void burn_efuses()
 {
+#ifdef CONFIG_SECURE_BOOT_TEST_MODE
+    ESP_LOGE(TAG, "SECURE BOOT TEST MODE. Not really burning any efuses!");
+#else
     REG_WRITE(EFUSE_CONF_REG, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */
     REG_WRITE(EFUSE_CMD_REG,  0x02);    /* efuse_pgm_cmd */
     while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_pagm_cmd=0 */
     REG_WRITE(EFUSE_CONF_REG, 0x5AA5);  /* efuse_read_op_ena, release force */
     REG_WRITE(EFUSE_CMD_REG,  0x01);    /* efuse_read_cmd */
     while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */
+#endif
 }
 
 esp_err_t esp_secure_boot_permanently_enable(void) {
@@ -185,10 +189,22 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    ESP_LOGI(TAG, "blowing secure boot efuse & disabling JTAG...");
+    ESP_LOGI(TAG, "blowing secure boot efuse...");
     ESP_LOGD(TAG, "before updating, EFUSE_BLK0_RDATA6 %x", REG_READ(EFUSE_BLK0_RDATA6_REG));
-    REG_WRITE(EFUSE_BLK0_WDATA6_REG,
-                EFUSE_RD_ABS_DONE_0 | EFUSE_RD_DISABLE_JTAG);
+
+    uint32_t new_wdata6 = EFUSE_RD_ABS_DONE_0;
+
+    #ifdef CONFIG_SECURE_BOOT_DISABLE_JTAG
+    ESP_LOGI(TAG, "disabling JTAG...");
+    new_wdata6 |= EFUSE_RD_DISABLE_JTAG;
+    #endif
+
+    #ifdef CONFIG_SECURE_BOOT_DISABLE_UART_BOOTLOADER
+    ESP_LOGI(TAG, "disabling UART bootloader...");
+    new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE_S;
+    #endif
+
+    REG_WRITE(EFUSE_BLK0_WDATA6_REG, new_wdata6);
     burn_efuses();
     uint32_t after = REG_READ(EFUSE_BLK0_RDATA6_REG);
     ESP_LOGD(TAG, "after updating, EFUSE_BLK0_RDATA6 %x", after);
@@ -196,7 +212,11 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         ESP_LOGI(TAG, "secure boot is now enabled for bootloader image");
         return ESP_OK;
     } else {
+#ifdef CONFIG_SECURE_BOOT_TEST_MODE
+        ESP_LOGE(TAG, "secure boot not enabled due to test mode");
+#else
         ESP_LOGE(TAG, "secure boot not enabled for bootloader image, EFUSE_RD_ABS_DONE_0 is probably write protected!");
+#endif
         return ESP_ERR_INVALID_STATE;
     }
 }

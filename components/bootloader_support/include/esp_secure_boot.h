@@ -32,7 +32,7 @@
  * @return true if secure boot is enabled.
  */
 static inline bool esp_secure_boot_enabled(void) {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA6_REG, EFUSE_RD_ABS_DONE_0);
+    return REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0;
 }
 
 

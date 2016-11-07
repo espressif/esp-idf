@@ -316,17 +316,17 @@ void bootloader_main()
 
     ESP_LOGI(TAG, "Loading app partition at offset %08x", load_part_pos);
 
-    if(fhdr.secure_boot_flag == 0x01) {
-        /* Generate secure digest from this bootloader to protect future
-         modifications */
-        err = esp_secure_boot_permanently_enable();
-        if (err != ESP_OK){
-            ESP_LOGE(TAG, "Bootloader digest generation failed (%d). SECURE BOOT IS NOT ENABLED.", err);
-            /* Allow booting to continue, as the failure is probably
-               due to user-configured EFUSEs for testing...
-            */
-        }
+#ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+    /* Generate secure digest from this bootloader to protect future
+       modifications */
+    err = esp_secure_boot_permanently_enable();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Bootloader digest generation failed (%d). SECURE BOOT IS NOT ENABLED.", err);
+        /* Allow booting to continue, as the failure is probably
+           due to user-configured EFUSEs for testing...
+        */
     }
+#endif
 
     if(fhdr.encrypt_flag == 0x01) {
         /* encrypt flash */
@@ -354,12 +354,16 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             ESP_LOGE(TAG, "Failed to verify app image @ 0x%x (%d)", partition->offset, err);
             return;
         }
+#ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+        ESP_LOGI(TAG, "Verifying app signature @ 0x%x (length 0x%x)", partition->offset, image_length);
         err = esp_secure_boot_verify_signature(partition->offset, image_length);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "App image @ 0x%x failed signature verification (%d)", partition->offset, err);
             return;
         }
+        ESP_LOGD(TAG, "App signature is valid");
     }
+#endif
 
     if (esp_image_load_header(partition->offset, &image_header) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to load app image header @ 0x%x", partition->offset);
