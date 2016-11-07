@@ -141,6 +141,29 @@ test environment:
     PC wired NIC should set static IP address within the same subnet with AP.
 
     Must use onboard wired NIC.', test script: EnvBase}
+- {PC OS: '', Special: Y, Target Count: 1.0, script path: EnvBase.py, tag: SSC_T1_Sleep1,
+  test environment detail: 'AP support DTIM placed with AT target.
+
+    SSC target connect with Raspberry Pi by UART.
+
+    Multimeter connect with Raspberry Pi via GPIB.
+
+    Series multimeter between GND and VCC of SSC1.
+
+    SSC1''s light sleep wakeup pin and wakeup indication connect with Raspberry Pi''s
+    GPIO.
+
+    SSC1''s XPD connect with RSTB.', test script: EnvBase}
+- {PC OS: '', Special: Y, Target Count: 1.0, script path: EnvBase.py, tag: SSC_T1_Sleep2,
+  test environment detail: 'AP support DTIM placed with AT target.
+
+    SSC target connect with Raspberry Pi by UART.
+
+    Multimeter connect with Raspberry Pi via GPIB.
+
+    Series multimeter between GND and VCC of SSC1.
+
+    SSC1''s RSTB pin connect with Raspberry Pi''s GPIO.', test script: EnvBase}
 - {PC OS: '', Special: Y, Target Count: 1.0, script path: EnvBase.py, tag: SSC_T1_TempBox,
   test environment detail: '1 SSC target connect with PC by UART.
 
@@ -179,6 +202,12 @@ test environment:
     SSC2', additional param list: '', basic param list: '', script path: EnvBase.py,
   tag: SSC_T2_GPIO3, test environment detail: '[TBD] 2个ESP_8266通过UART连到PC, ESP_8266之间需要测试的Target_GPIO相连',
   test script: EnvBase}
+- {PC OS: '', Special: N, Target Count: 2.0, script path: EnvBase.py, tag: SSC_T2_JAP,
+  test environment detail: 'PC has 1 wired NIC connected to APC.
+
+    APC control the power supply of multiple APs.
+
+    2 SSC target connect with PC by UART.', test script: EnvBase}
 - {PC OS: '', Special: N, Target Count: 2.0, script path: EnvBase.py, tag: SSC_T2_PhyMode,
   test environment detail: '2 SSC target connect with PC by UART.
 
@@ -191,28 +220,6 @@ test environment:
   test environment detail: '2 SSC target connect with PC by UART.
 
     Put them to Shield box.', test script: EnvBase}
-- {PC OS: '', Special: Y, Target Count: 2.0, script path: EnvBase.py, tag: SSC_T2_Sleep1,
-  test environment detail: 'AP support DTIM placed with AT target.
-
-    2 SSC target connect with PC by UART.
-
-    Multimeter connect with PC via GPIB.
-
-    Series multimeter between GND and VCC of SSC1.
-
-    SSC1''s light sleep wakeup pin and wakeup indication connect with AT2''s GPIO.
-
-    SSC1''s XPD connect with RSTB.', test script: EnvBase}
-- {PC OS: '', Special: Y, Target Count: 2.0, script path: EnvBase.py, tag: SSC_T2_Sleep2,
-  test environment detail: 'AP support DTIM placed with AT target.
-
-    2 SSC target connect with PC by UART.
-
-    Multimeter connect with PC via GPIB.
-
-    Series multimeter between GND and VCC of SSC1.
-
-    SSC1''s RSTB pin connect with AT2''s GPIO.', test script: EnvBase}
 - {PC OS: '', Special: N, Target Count: 2.0, script path: EnvBase.py, tag: SSC_T2_SmartConfig,
   test environment detail: '2 SSC target connect with PC by UART.
 
@@ -263,6 +270,8 @@ test environment:
     SSC2', additional param list: '', basic param list: '', script path: EnvBase.py,
   tag: UART_T1_2, test environment detail: '[TBD] ESP_8266通过UART_0通过USB, UART_1 TXD
     通过 TTLcable 连到PC', test script: EnvBase}
+- {PC OS: '', Special: N, Target Count: 1.0, script path: EnvBase.py, tag: UT_T1_1,
+  test environment detail: Environment for running ESP32 unit tests, test script: EnvBase}
 - {PC OS: linux, Special: Y, Target Count: 1.0, script path: EnvBase.py, tag: WebServer_T1_1,
   test environment detail: 'Web Server target connect with PC by UART.
 
