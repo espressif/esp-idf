@@ -6,7 +6,7 @@ ldflags()
 {
 	if [ $(uname -s) == "Darwin" ]; then 
 		#OSX seems to need ncurses too
-		echo -n "-lncurses"
+		echo -n "-lncurses "
 	fi
 	pkg-config --libs ncursesw 2>/dev/null && exit
 	pkg-config --libs ncurses 2>/dev/null && exit
@@ -43,7 +43,7 @@ ccflags()
 	fi
 	if [ $(uname -s) == "Darwin" ]; then
 		#OSX doesn't have libintl
-		echo -n "-DKBUILD_NO_NLS"
+		echo -n "-DKBUILD_NO_NLS -Wno-format-security "
 	fi
 }
 
