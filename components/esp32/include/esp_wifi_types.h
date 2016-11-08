@@ -21,6 +21,7 @@
 #include "rom/queue.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
+#include "esp_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,11 +35,10 @@ typedef enum {
     WIFI_MODE_MAX
 } wifi_mode_t;
 
-typedef enum {
-    WIFI_IF_STA = 0,     /**< ESP32 station interface */
-    WIFI_IF_AP,          /**< ESP32 soft-AP interface */
-    WIFI_IF_MAX
-} wifi_interface_t;
+typedef esp_interface_t wifi_interface_t;
+
+#define WIFI_IF_STA ESP_IF_WIFI_STA
+#define WIFI_IF_AP  ESP_IF_WIFI_AP
 
 typedef enum {
     WIFI_COUNTRY_CN = 0, /**< country China, channel range [1, 14] */

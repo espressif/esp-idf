@@ -266,7 +266,7 @@ static u8_t *add_offer_options(u8_t *optptr)
         //bzero(&if_ip, sizeof(struct ip_info));
         memset(&if_ip , 0x00, sizeof(tcpip_adapter_ip_info_t));
 
-        tcpip_adapter_get_ip_info(WIFI_IF_AP, &if_ip);
+        tcpip_adapter_get_ip_info(ESP_IF_WIFI_AP, &if_ip);
 
         *optptr++ = DHCP_OPTION_ROUTER;
         *optptr++ = 4;

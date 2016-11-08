@@ -1,0 +1,20 @@
+menuconfig ETHERNET
+    bool "Enable Ethernet"
+    default n
+    help
+        Enable this option to enable ethernet driver and show the menu with ethernet features.
+        
+
+config DMA_RX_BUF_NUM
+    int "Dma Rx Buf Num"
+    default  10
+    depends on ETHERNET
+    help
+        Dma rx buf num ,can not be 0 .
+
+config DMA_TX_BUF_NUM
+    int "Dma Tx Buf Num"
+    default 10
+    depends on ETHERNET
+    help
+        Dma tx Buf num ,can not be 0.

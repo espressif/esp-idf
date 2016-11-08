@@ -271,7 +271,7 @@
  *      6                       1               timer                   FreeRTOS Tick(L1)       FreeRTOS Tick(L1)
  *      7                       1               software                Reserved                Reserved
  *      8                       1               extern level            BLE Controller 
- *      9                       1               extern level            
+ *      9                       1               extern level            EMAC
  *      10                      1               extern edge             Internal Timer
  *      11                      3               profiling
  *      12                      1               extern level
@@ -303,6 +303,7 @@
 #define ETS_FROM_CPU_INUM                       2
 #define ETS_T0_WDT_INUM                         3
 #define ETS_WBB_INUM                            4
+#define ETS_EMAC_INUM                           9
 #define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24

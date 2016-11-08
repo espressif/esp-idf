@@ -22,6 +22,8 @@
 #include "esp_event.h"
 #include "esp_event_loop.h"
 #include "esp_task.h"
+#include "esp_eth.h"
+
 #include "rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
@@ -59,6 +61,11 @@ static esp_err_t system_event_sta_connected_handle_default(system_event_t *event
 static esp_err_t system_event_sta_disconnected_handle_default(system_event_t *event);
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event);
 
+static esp_err_t system_event_eth_start_handle_default(system_event_t *event);
+static esp_err_t system_event_eth_stop_handle_default(system_event_t *event);
+static esp_err_t system_event_eth_connected_handle_default(system_event_t *event);
+static esp_err_t system_event_eth_disconnected_handle_default(system_event_t *event);
+
 static system_event_handle_t g_system_event_handle_table[] = {
     {SYSTEM_EVENT_WIFI_READY,          NULL},
     {SYSTEM_EVENT_SCAN_DONE,           NULL},
@@ -77,8 +84,73 @@ static system_event_handle_t g_system_event_handle_table[] = {
     {SYSTEM_EVENT_AP_STACONNECTED,     NULL},
     {SYSTEM_EVENT_AP_STADISCONNECTED,  NULL},
     {SYSTEM_EVENT_AP_PROBEREQRECVED,   NULL},
+    {SYSTEM_EVENT_AP_STA_GOT_IP6,      NULL},
+    {SYSTEM_EVENT_ETH_START,           system_event_eth_start_handle_default},
+    {SYSTEM_EVENT_ETH_STOP,            system_event_eth_stop_handle_default},
+    {SYSTEM_EVENT_ETH_CONNECTED,       system_event_eth_connected_handle_default},
+    {SYSTEM_EVENT_ETH_DISCONNECTED,    system_event_eth_disconnected_handle_default},
+    {SYSTEM_EVENT_ETH_GOT_IP,          NULL},
     {SYSTEM_EVENT_MAX,                 NULL},
 };
+
+esp_err_t system_event_eth_start_handle_default(system_event_t *event)
+{
+    tcpip_adapter_ip_info_t eth_ip;
+    uint8_t eth_mac[6];
+
+    esp_eth_get_mac(eth_mac);
+    tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &eth_ip);
+    tcpip_adapter_start(TCPIP_ADAPTER_IF_ETH, eth_mac, &eth_ip);
+
+    return ESP_OK;
+}
+
+esp_err_t system_event_eth_stop_handle_default(system_event_t *event)
+{
+    tcpip_adapter_stop(TCPIP_ADAPTER_IF_ETH);
+
+    return ESP_OK;
+}
+
+esp_err_t system_event_eth_connected_handle_default(system_event_t *event)
+{
+    tcpip_adapter_dhcp_status_t status;
+
+    tcpip_adapter_up(TCPIP_ADAPTER_IF_ETH);
+
+    tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_ETH, &status);
+
+    if (status == TCPIP_ADAPTER_DHCP_INIT) {
+          
+        tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_ETH);
+    } else if (status == TCPIP_ADAPTER_DHCP_STOPPED) {
+        tcpip_adapter_ip_info_t eth_ip;
+
+        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &eth_ip);
+
+        if (!(ip4_addr_isany_val(eth_ip.ip) || ip4_addr_isany_val(eth_ip.netmask) || ip4_addr_isany_val(eth_ip.gw))) {
+            system_event_t evt;
+
+            //notify event
+            evt.event_id = SYSTEM_EVENT_ETH_GOT_IP;
+            memcpy(&evt.event_info.got_ip.ip_info, &eth_ip, sizeof(tcpip_adapter_ip_info_t));
+
+            esp_event_send(&evt);
+        } else {
+            ESP_LOGE(TAG, "invalid static ip");
+        }
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t system_event_eth_disconnected_handle_default(system_event_t *event)
+{
+    tcpip_adapter_down(TCPIP_ADAPTER_IF_ETH);
+    return ESP_OK;
+}
+
+
 
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event)
 {
@@ -97,8 +169,8 @@ esp_err_t system_event_ap_start_handle_default(system_event_t *event)
     tcpip_adapter_ip_info_t ap_ip;
     uint8_t ap_mac[6];
 
-    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
-    WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(WIFI_IF_AP, ap_mac), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(ESP_IF_WIFI_AP, ap_mac), ESP_OK);
 
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ap_ip);
     tcpip_adapter_start(TCPIP_ADAPTER_IF_AP, ap_mac, &ap_ip);
@@ -108,7 +180,7 @@ esp_err_t system_event_ap_start_handle_default(system_event_t *event)
 
 esp_err_t system_event_ap_stop_handle_default(system_event_t *event)
 {
-    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL), ESP_OK);
 
     tcpip_adapter_stop(TCPIP_ADAPTER_IF_AP);
 
@@ -120,7 +192,7 @@ esp_err_t system_event_sta_start_handle_default(system_event_t *event)
     tcpip_adapter_ip_info_t sta_ip;
     uint8_t sta_mac[6];
 
-    WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(WIFI_IF_STA, sta_mac), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac), ESP_OK);
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &sta_ip);
     tcpip_adapter_start(TCPIP_ADAPTER_IF_STA, sta_mac, &sta_ip);
 
@@ -138,7 +210,7 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
 {
     tcpip_adapter_dhcp_status_t status;
 
-    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t)tcpip_adapter_sta_input), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t)tcpip_adapter_sta_input), ESP_OK);
 
     tcpip_adapter_up(TCPIP_ADAPTER_IF_STA);
 
@@ -170,7 +242,7 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
 esp_err_t system_event_sta_disconnected_handle_default(system_event_t *event)
 {
     tcpip_adapter_down(TCPIP_ADAPTER_IF_STA);
-    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_STA, NULL), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL), ESP_OK);
     return ESP_OK;
 }
 
@@ -267,6 +339,27 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
                    MAC2STR(ap_probereqrecved->mac));
         break;
     }
+    case SYSTEM_EVENT_ETH_START: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_ETH_START");
+        break;
+    }
+    case SYSTEM_EVENT_ETH_STOP: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_ETH_STOP");
+        break;
+    }
+    case SYSTEM_EVENT_ETH_CONNECTED: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_ETH_CONNECETED");
+        break;
+    }
+    case SYSTEM_EVENT_ETH_DISCONNECTED: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_ETH_DISCONNECETED");
+        break;
+    }
+    case SYSTEM_EVENT_ETH_GOT_IP: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_ETH_GOT_IP");
+        break;
+    }
+
     default: {
         ESP_LOGW(TAG, "no such kind of event!");
         break;
