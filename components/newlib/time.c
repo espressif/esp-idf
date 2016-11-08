@@ -112,7 +112,7 @@ void esp_setup_time_syscalls()
 clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
 {
     clock_t t = xTaskGetTickCount() * (portTICK_PERIOD_MS * CLK_TCK / 1000);
-    ptms->tms_cstime = t;
+    ptms->tms_cstime = 0;
     ptms->tms_cutime = 0;
     ptms->tms_stime = t;
     ptms->tms_utime = 0;
