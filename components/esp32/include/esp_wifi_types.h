@@ -114,8 +114,6 @@ typedef struct {
 typedef enum {
     WIFI_PS_NONE,    /**< No power save */
     WIFI_PS_MODEM,   /**< Modem power save */
-    WIFI_PS_LIGHT,   /**< Light power save */
-    WIFI_PS_MAC,     /**< MAC power save */
 } wifi_ps_type_t;
 
 #define WIFI_PROTOCOL_11B         1
