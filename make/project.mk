@@ -166,7 +166,8 @@ CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS)
 COMMON_WARNING_FLAGS = -Wall -Werror \
 	-Wno-error=unused-function \
 	-Wno-error=unused-but-set-variable \
-	-Wno-error=unused-variable 
+	-Wno-error=unused-variable \
+	-Wno-error=deprecated-declarations
 
 # Flags which control code generation and dependency generation, both for C and C++
 COMMON_FLAGS = \

@@ -18,6 +18,7 @@
 
 #include "esp_err.h"
 #include "esp_wifi.h"
+#include "esp_wifi_internal.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
 #include "esp_task.h"
@@ -76,8 +77,7 @@ static system_event_handle_t g_system_event_handle_table[] = {
 
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event)
 {
-    extern esp_err_t esp_wifi_set_sta_ip(void);
-    WIFI_API_CALL_CHECK("esp_wifi_set_sta_ip", esp_wifi_set_sta_ip(), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_set_sta_ip", esp_wifi_internal_set_sta_ip(), ESP_OK);
 
     ESP_LOGI(TAG, "ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
            IP2STR(&event->event_info.got_ip.ip_info.ip),
@@ -92,7 +92,7 @@ esp_err_t system_event_ap_start_handle_default(system_event_t *event)
     tcpip_adapter_ip_info_t ap_ip;
     uint8_t ap_mac[6];
 
-    WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
     WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(WIFI_IF_AP, ap_mac), ESP_OK);
 
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ap_ip);
@@ -103,7 +103,7 @@ esp_err_t system_event_ap_start_handle_default(system_event_t *event)
 
 esp_err_t system_event_ap_stop_handle_default(system_event_t *event)
 {
-    WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_AP, NULL), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL), ESP_OK);
 
     tcpip_adapter_stop(TCPIP_ADAPTER_IF_AP);
 
@@ -133,7 +133,7 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
 {
     tcpip_adapter_dhcp_status_t status;
 
-    WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t)tcpip_adapter_sta_input), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t)tcpip_adapter_sta_input), ESP_OK);
 
     tcpip_adapter_up(TCPIP_ADAPTER_IF_STA);
 
@@ -165,7 +165,7 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
 esp_err_t system_event_sta_disconnected_handle_default(system_event_t *event)
 {
     tcpip_adapter_down(TCPIP_ADAPTER_IF_STA);
-    WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_STA, NULL), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_STA, NULL), ESP_OK);
     return ESP_OK;
 }
 

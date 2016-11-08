@@ -34,6 +34,8 @@ typedef int32_t esp_err_t;
 #define ESP_ERR_INVALID_SIZE    0x104
 #define ESP_ERR_NOT_FOUND       0x105
 
+#define ESP_ERR_WIFI_BASE       0x3000 /*!< Starting number of WiFi error codes */
+
 /**
  * Macro which can be used to check the error code,
  * and terminate the program in case the code is not ESP_OK.
