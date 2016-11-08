@@ -111,7 +111,7 @@ int hci_start_up(void) {
   if (hci_layer_init_env())
     goto error;
 
-  xHciHostQueue = xQueueCreate(60, sizeof(void *));
+  xHciHostQueue = xQueueCreate(60, sizeof(BtTaskEvt_t));
   xTaskCreate(hci_host_thread_handler, "HciHostT", (4096+2048), NULL, configMAX_PRIORITIES - 3, &xHciHostTaskHandle);
 
   packet_fragmenter->init(&packet_fragmenter_callbacks);
@@ -139,15 +139,13 @@ void hci_shut_down(void) {
 
 void hci_host_task_post(void)
 {
+    BtTaskEvt_t evt;
+
     if (hci_host_startup_flag == false)
         return;
 
-    BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
-    if (evt == NULL)
-        return;
-
-    evt->sig = 0xff;
-    evt->par = 0;
+    evt.sig = 0xff;
+    evt.par = 0;
 
     if (xQueueSend(xHciHostQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
             LOG_ERROR("xHciHostQueue failed\n");
@@ -223,12 +221,12 @@ static void hci_host_thread_handler(void *arg)
    * H4 type header added (1 byte).
    */
 
-    BtTaskEvt_t *e;
+    BtTaskEvt_t e;
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciHostQueue, &e, (portTickType)portMAX_DELAY)) {
 
-            if (e->sig == 0xff) {
+            if (e.sig == 0xff) {
                 if (API_vhci_host_check_send_available()) {
                     /*Now Target only allowed one packet per TX*/
                     BT_HDR *pkt = packet_fragmenter->fragment_current_packet();
@@ -243,7 +241,6 @@ static void hci_host_thread_handler(void *arg)
                     }
                 }
             }
-            osi_free(e);
         }
     }
 }

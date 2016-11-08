@@ -1,22 +1,24 @@
-/**
- ****************************************************************************************
- *
- * @file bt_prf_sys_main.c
- *
- * @brief Application entry point
- *
- * Copyright (C) Espressif 2016
- * Created by Yulong at 2016/10/13
- *
- *
- ****************************************************************************************
- */
  
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "thread.h"
 #include "bt_prf_sys.h"
 #include "fixed_queue.h"
 #include "bt_prf_task.h"
 #include "gki.h"
+#include "bt_trace.h"
 
 #include <string.h>
 
@@ -34,7 +36,9 @@ static const tBT_PRF_SYS_REG bt_prf_sys_reg =
 
 void bt_prf_sys_init(void)
 {
-	memset(&bt_prf_sys_cb,0,sizeof(tBT_PRF_SYS_CB));
+	LOG_ERROR("bt_prf_sys_init\n");
+	memset(&bt_prf_sys_cb, 0, sizeof(tBT_PRF_SYS_CB));
+	bt_prf_StartUp();
 }
 
 
@@ -48,12 +52,12 @@ void bt_prf_sys_init(void)
 ** Returns          void
 **
 *******************************************************************************/
-void bt_prf_sys_event(BT_HDR *p_msg)
+void bt_prf_sys_event(prf_hdr_evt_t *p_msg)
 {
     UINT8       id;
     BOOLEAN     freebuf = TRUE;
 
-    APPL_TRACE_EVENT("profile task got event 0x%x\n", p_msg->event);
+    LOG_ERROR("profile task got event 0x%x\n", p_msg->event);
 
     /* get subsystem id from event */
     id = (UINT8) (p_msg->event >> 8);
@@ -65,7 +69,7 @@ void bt_prf_sys_event(BT_HDR *p_msg)
     }
     else
     {
-        APPL_TRACE_WARNING("profile task got unregistered event id %d\n", id);
+        LOG_ERROR("profile task got unregistered event id %d\n", id);
     }
 
     if (freebuf)
@@ -107,6 +111,7 @@ void bt_prf_sys_register(UINT8 id, const tBT_PRF_SYS_REG *p_reg)
 *******************************************************************************/
 void bt_prf_sys_deregister(UINT8 id)
 {
+	bt_prf_sys_cb.reg[id] = NULL;
     bt_prf_sys_cb.is_reg[id] = FALSE;
 }
 
@@ -130,7 +135,7 @@ BOOLEAN bt_prf_sys_is_register(UINT8 id)
 **
 ** Function         bt_prf_sys_sendmsg
 **
-** Description      Send a GKI message to the profile task.
+** Description      Send a message to the profile task.
 **
 **
 ** Returns          void
@@ -140,7 +145,7 @@ void bt_prf_sys_sendmsg(void *p_msg)
 {
     // There is a race condition that occurs if the stack is shut down while
     // there is a procedure in progress that can schedule a task via this
-    // message queue. This causes |btu_bta_msg_queue| to get cleaned up before
+    // message queue. This causes |bt_profile_msg_queue| to get cleaned up before
     // it gets used here; hence we check for NULL before using it.
     if (bt_profile_msg_queue) {
         fixed_queue_enqueue(bt_profile_msg_queue, p_msg);
@@ -148,7 +153,3 @@ void bt_prf_sys_sendmsg(void *p_msg)
         bt_prf_task_post(SIG_PRF_WORK);
     }
 }
-
-
-
-

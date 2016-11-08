@@ -38,6 +38,7 @@
 #define L2CAP_CMD_AMP_MOVE_RSP              0x0F
 #define L2CAP_CMD_AMP_MOVE_CFM              0x10
 #define L2CAP_CMD_AMP_MOVE_CFM_RSP          0x11
+
 #define L2CAP_CMD_BLE_UPDATE_REQ            0x12
 #define L2CAP_CMD_BLE_UPDATE_RSP            0x13
 

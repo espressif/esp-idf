@@ -10,7 +10,7 @@
 #include "bt_app_common.h"
 #include "btif_stack_manager.h"
 #include "btif_sdp.h"
-#include "bt_gap_api.h"
+#include "esp_gap_api.h"
 
 #include "bta_api.h"
 

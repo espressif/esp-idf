@@ -1,3 +1,17 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /***************************************************************
 *
 * This file is for gatt server device. It instantiates BATTERY
@@ -30,13 +44,15 @@
 #include "wx_airsync_prf.h"
 
 #include "button_pro.h"
-
+#include "app_button.h"
 #include "hid_le_prf.h"
+
+#include "esp_gatt_api.h"
 
 //
 
 #include "hcimsgs.h"
-#include "bt_app_defs.h"
+#include "esp_bt_defs.h"
 
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
@@ -78,9 +94,30 @@ UINT8 wechat_manu[] = {0x00,0x00,0x18,0xfe,0x34,0x6a,0x86,0x2e};
 tBTA_BLE_MANU	p_ijiazu_manu = {sizeof(ijiazu_manu),ijiazu_manu};			/* manufacturer data */
 tBTA_BLE_MANU   p_wechat_manu = {sizeof(wechat_manu),wechat_manu};
 
+
+tBLE_BD_ADDR			p_peer_bda = {
+	.type	= API_PUBLIC_ADDR,
+	.bda	= {0}
+};
+
+esp_ble_adv_params_all_t adv_params = 
+{
+	.adv_int_min 		= BTM_BLE_ADV_INT_MIN + 0x100,
+	.adv_int_max 		= BTM_BLE_ADV_INT_MIN + 0x100,
+	.adv_type	 		= API_NON_DISCOVERABLE,
+	.addr_type_own 		= API_PUBLIC_ADDR,
+	.channel_map		= ESP_BLE_ADV_CHNL_MAP,
+	.adv_filter_policy 	= ADV_ALLOW_SCAN_ANY_CON_ANY,
+	.p_dir_bda			= &p_peer_bda
+};
+
+
+
+
+
 BD_ADDR rand_ijiazu_addr = {0x00,0x02,0x5B,0x00,0x32,0x55};
 
-tESP_BLE_ADV_DATA ijiazu_adv_data[ADV_SCAN_IDX_MAX] = 
+esp_ble_adv_data_cfg_t ijiazu_adv_data[ADV_SCAN_IDX_MAX] = 
 {
 	[BLE_ADV_DATA_IDX] 		= {
 										.adv_name = "Espressif_007",
@@ -121,7 +158,7 @@ tESP_BLE_ADV_DATA ijiazu_adv_data[ADV_SCAN_IDX_MAX] =
 								}
 };
 
-tESP_BLE_ADV_DATA wechat_adv_data[ADV_SCAN_IDX_MAX] = 
+esp_ble_adv_data_cfg_t wechat_adv_data[ADV_SCAN_IDX_MAX] = 
 {
 	[BLE_ADV_DATA_IDX] 		= {
 										.adv_name = NULL,
@@ -163,7 +200,7 @@ tESP_BLE_ADV_DATA wechat_adv_data[ADV_SCAN_IDX_MAX] =
 };
 
 #if	(BUT_PROFILE_CFG)
-static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
+static void SimpleDataCallBack(uint8_t app_id, uint8_t event, uint16_t len, uint8_t *p_data);
 #endif
                   
 int uuidType(unsigned char* p_uuid)
@@ -222,6 +259,8 @@ void btif_to_bta_uuid(tBT_UUID *p_dest, bt_uuid_t *p_src)
         break;
     }
 }
+
+
 /*set advertising config callback*/
 static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
 {
@@ -233,13 +272,14 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
         DIS_ATTR_IEEE_DATA_BIT | DIS_ATTR_PNP_ID_BIT;
     DIS_SrInit(dis_attr_mask);
 */
+	//ble_but_create_svc();
     /*instantiate a battery service*/
-    //bas_register();  
+    bas_register();  
 	/*instantiate the driver for button profile*/
 	//app_button_init();
 #if (BUT_PROFILE_CFG)
 	/*instantiate a button service*/
-	button_init(SimpleDataCallBack);
+	//button_init(SimpleDataCallBack);
 #endif	///BUT_PROFILE_CFG
 
 #if (HIDD_LE_PROFILE_CFG)
@@ -250,6 +290,8 @@ static void bta_gatts_set_adv_data_cback(tBTA_STATUS call_status)
 #if (WX_AIRSYNC_CFG)
 	AirSync_Init(NULL);
 #endif	///WX_AIRSYNC_CFG
+	esp_ble_start_advertising(&adv_params);
+	//API_Ble_AppStartAdvertising(&adv_params);
     /*start advetising*/
 //    BTA_GATTS_Listen(server_if, true, NULL);
 }
@@ -268,16 +310,16 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
             
             LOG_ERROR("set advertising parameters\n");
 			//set the advertising data to the btm layer
-			ESP_AppBleConfigadvData(&wechat_adv_data[BLE_ADV_DATA_IDX],
+			esp_ble_config_adv_data(&wechat_adv_data[BLE_ADV_DATA_IDX],
 								bta_gatts_set_adv_data_cback);
-			//set the adversting data to the btm layer
-			ESP_AppBleSetScanRsp(&wechat_adv_data[BLE_SCAN_RSP_DATA_IDX],NULL);
            	
         }
         break;
         /*connect callback*/
         case BTA_GATTS_CONNECT_EVT:
         {
+			///Stop the advertising when the connection is establish
+			esp_ble_stop_advertising();
             LOG_ERROR("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n", 
                              BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
                              p_data->conn.reason, p_data->conn.conn_id);
@@ -286,7 +328,11 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
             LOG_ERROR("is_connected=%d\n",is_connected);
         }
         break;
-        
+
+		case BTA_GATTS_DISCONNECT_EVT:
+			///start the advertising again when lose the connection
+			esp_ble_start_advertising(&adv_params);
+        	break;
         default:
         LOG_ERROR("unsettled event: %d\n", event);
     }
@@ -294,7 +340,7 @@ void bta_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
 }
 
 #if	(BUT_PROFILE_CFG)
-static void SimpleDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data)
+static void SimpleDataCallBack(uint8_t app_id, uint8_t event, uint16_t len, uint8_t *p_data)
 {
 	LOG_ERROR("the event value is:%x\n",event);
 	switch(event)
@@ -321,7 +367,10 @@ static void ble_server_appRegister(void)
     btif_to_bta_uuid(&t_uuid, &uuid);
 
     LOG_ERROR("register gatts application\n");
-    BTA_GATTS_AppRegister(&t_uuid, bta_gatts_callback);
+    esp_ble_gatts_app_register(&t_uuid, bta_gatts_callback);
+
+	bt_prf_sys_init();
+	ble_but_prf_enable();
 }
 
 void gatts_server_test(void)

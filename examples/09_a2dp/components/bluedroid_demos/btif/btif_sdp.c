@@ -34,7 +34,7 @@
 #include "btif_util.h"
 #include "bta_api.h"
 
-#include "bt_sdp_api.h"
+#include "esp_sdp_api.h"
 
 /*****************************************************************************
 **  Functions implemented in sdp_server.c

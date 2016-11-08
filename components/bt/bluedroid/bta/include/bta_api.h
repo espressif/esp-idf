@@ -921,7 +921,7 @@ typedef struct
 } tBTA_DM_BOND_CANCEL_CMPL;
 
 /* Union of all security callback structures */
-typedef union
+ typedef union
 {
     tBTA_DM_ENABLE      enable;         /* BTA enabled */
     tBTA_DM_PIN_REQ     pin_req;        /* PIN request. */
@@ -1901,6 +1901,27 @@ extern void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
                                    UINT32 scan_window, tBLE_SCAN_MODE scan_mode,
                                    tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_status_cback);
 
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetBleScanFilterParams
+**
+** Description      This function is called to set scan parameters
+**
+** Parameters:      client_if - Client IF
+**                  scan_interval - scan interval
+**                  scan_window - scan window
+**                  scan_mode - scan mode
+**                  scan_param_setup_status_cback - Set scan param status callback
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
+                            UINT32 scan_window, tBLE_SCAN_MODE scan_mode, UINT8 scan_fil_poilcy,
+                            UINT8 addr_type_own, tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback);
+
+
 /*******************************************************************************
 **
 ** Function         BTA_DmSetBleAdvParams
@@ -1918,6 +1939,13 @@ extern void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
 *******************************************************************************/
 extern void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
                                    tBLE_BD_ADDR *p_dir_bda);
+
+extern void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
+									  UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
+									  tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
+                           			  tBLE_BD_ADDR *p_dir_bda);
+
+
 /*******************************************************************************
 **
 ** Function         BTA_DmSearchExt
@@ -2022,6 +2050,8 @@ extern void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport,
 *******************************************************************************/
 extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb);
+
+extern void BTA_DmBleStopAdvertising(void);
 
 extern void BTA_DmSetRandAddress(BD_ADDR rand_addr);
 

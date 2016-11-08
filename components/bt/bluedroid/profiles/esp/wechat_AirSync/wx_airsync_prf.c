@@ -1,17 +1,18 @@
-/**
- ****************************************************************************************
- *
- * @file wx_airsync_prf.c
- *
- * @brief Application entry point
- *
- * Copyright (C) Espressif 2016
- * Created by Yulong at 2016/9/29
- *
- *
- ****************************************************************************************
- */
 #include "wx_airsync_prf.h"
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 
 #if (WX_AIRSYNC_CFG)
 
@@ -37,7 +38,7 @@ tAIRSYNC_CB_ENV airsync_cb_env;
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
-static void airsync_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
+static void airsync_profile_cb(esp_gatts_evt_t event,  esp_gatts_t *p_data);
 
 
 /*******************************************************************************
@@ -49,17 +50,17 @@ static void airsync_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
 ** Returns          NULL 
 **
 *******************************************************************************/
-static void airsync_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
+static void airsync_profile_cb(esp_gatts_evt_t event, esp_gatts_t *p_data)
 {
-	tBTA_GATTS_RSP rsp;
-	tBT_UUID uuid = {LEN_UUID_16, {ATT_SVC_AIRSYNC}};
+	esp_gatts_rsp_t rsp;
+	esp_bt_uuid_t uuid = {LEN_UUID_16, {ATT_SVC_AIRSYNC}};
 	tAirSync_INST  *p_inst = &airsync_cb_env.airsync_inst;
 	
 	
 	LOG_ERROR("airsync profile cb event = %x\n",event);
 	switch(event)	
 	{
-		case BTA_GATTS_REG_EVT:
+		case ESP_GATTS_REG_EVT:
 			
 			if(p_data->reg_oper.status != BTA_GATT_OK)
 			{
@@ -73,41 +74,41 @@ static void airsync_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 				AirSync_CreateService();
 			}
 			break;
-		case BTA_GATTS_READ_EVT:
+		case ESP_GATTS_READ_EVT:
 			
 			if(airsync_cb_env.clcb.connected && airsync_cb_env.enabled){
 				//tBTA_GATTS_RSP rsp;
 				memset(&rsp,0,sizeof(tBTA_GATTS_API_RSP));
 				rsp.attr_value.handle = p_data->req_data.p_data->read_req.handle;
 				rsp.attr_value.len = 2;
-				BTA_GATTS_SendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
+				esp_ble_gatts_send_rsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
 					  p_data->req_data.status,&rsp);
 			}
 			break;
-		case BTA_GATTS_WRITE_EVT:
+		case ESP_GATTS_WRITE_EVT:
 			if(airsync_cb_env.clcb.connected && airsync_cb_env.enabled){
-				 	BTA_GATTS_SendRsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
+				 	esp_ble_gatts_send_rsp(p_data->req_data.conn_id,p_data->req_data.trans_id,
 								p_data->req_data.status,NULL);
 
 			}
 			break;
-		case BTA_GATTS_CONF_EVT:
+		case ESP_GATTS_CFM_EVT:
 			
 			break;
-		case BTA_GATTS_CREATE_EVT:
+		case ESP_GATTS_CREATE_EVT:
 			uuid.uu.uuid16 = ATT_CHAR_AIRSYNC_WIT;
 			
 			airsync_cb_env.clcb.cur_srvc_id=  p_data->create.service_id;
 			airsync_cb_env.is_primery =  p_data->create.is_primary;
 			//start the airsync service after created
-			BTA_GATTS_StartService(p_data->create.service_id,BTA_GATT_TRANSPORT_LE);
+			esp_ble_gatts_start_srvc(p_data->create.service_id);
 			//add the frist airsync characteristic --> write characteristic
-			BTA_GATTS_AddCharacteristic(airsync_cb_env.clcb.cur_srvc_id,&uuid,
+			esp_ble_gatts_add_char(airsync_cb_env.clcb.cur_srvc_id,&uuid,
 										(GATT_PERM_WRITE|GATT_PERM_READ),
 										(GATT_CHAR_PROP_BIT_READ|GATT_CHAR_PROP_BIT_WRITE));
 			break;
 			
-		case BTA_GATTS_ADD_CHAR_EVT:
+		case ESP_GATTS_ADD_CHAR_EVT:
 			if(p_data->add_result.char_uuid.uu.uuid16 == ATT_CHAR_AIRSYNC_WIT)
 			{
 				uuid.uu.uuid16 = ATT_CHAR_AIRSYBC_NTF;
@@ -116,19 +117,19 @@ static void airsync_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 				//save the att handle to the env
 				airsync_cb_env.airsync_inst.airsync_wirt_hdl = p_data->add_result.attr_id;
 				//add the second airsync characteristic --> Notify characteristic
-				BTA_GATTS_AddCharacteristic(airsync_cb_env.clcb.cur_srvc_id,&uuid,
+				esp_ble_gatts_add_char(airsync_cb_env.clcb.cur_srvc_id,&uuid,
 										GATT_PERM_READ,(GATT_CHAR_PROP_BIT_READ|GATT_CHAR_PROP_BIT_INDICATE));
 			}else if(p_data->add_result.char_uuid.uu.uuid16 == ATT_CHAR_AIRSYBC_NTF){ 
 				//tBTA_GATT_PERM perm = (GATT_PERM_WRITE|GATT_PERM_WRITE);
 				uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
 				airsync_cb_env.airsync_inst.airsync_ntf_hdl = p_data->add_result.attr_id;
-				BTA_GATTS_AddCharDescriptor (airsync_cb_env.clcb.cur_srvc_id,
+				esp_ble_gatts_add_char_descr (airsync_cb_env.clcb.cur_srvc_id,
                                   				(GATT_PERM_WRITE|GATT_PERM_WRITE),
                                   				&uuid);
 
 				uuid.uu.uuid16 = ATT_CHAR_AIRSYNC_READ;
 				//add the third airsync characteristic --> Read characteristic
-				BTA_GATTS_AddCharacteristic(airsync_cb_env.clcb.cur_srvc_id,&uuid,
+				esp_ble_gatts_add_char(airsync_cb_env.clcb.cur_srvc_id,&uuid,
 											GATT_PERM_READ,
 											GATT_CHAR_PROP_BIT_READ);
 			}else if(p_data->add_result.char_uuid.uu.uuid16 == ATT_CHAR_AIRSYNC_READ){
@@ -136,32 +137,30 @@ static void airsync_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 			}
 			
 			break;
-		case BTA_GATTS_ADD_CHAR_DESCR_EVT:
+		case ESP_GATTS_ADD_CHAR_DESCR_EVT:
 			if(p_data->add_result.char_uuid.uu.uuid16 == GATT_UUID_CHAR_CLIENT_CONFIG)
 			{
 				airsync_cb_env.airsync_inst.airsync_cfg_hdl = p_data->add_result.attr_id;
 			}
 			break;
-		case BTA_GATTS_CONNECT_EVT:
+		case ESP_GATTS_CONNECT_EVT:
 			//set the connection flag to true
 			airsync_env_clcb_alloc(p_data->conn.conn_id, p_data->conn.remote_bda);
 			break;
-		case BTA_GATTS_DISCONNECT_EVT:
+		case ESP_GATTS_DISCONNECT_EVT:
 			//set the connection flag to true
 			airsync_cb_env.clcb.connected = false;
 			break;
-		case BTA_GATTS_OPEN_EVT:
+		case ESP_GATTS_OPEN_EVT:
 			break;
-		case BTA_GATTS_CLOSE_EVT:
+		case ESP_GATTS_CLOSE_EVT:
 			if(airsync_cb_env.clcb.connected && (airsync_cb_env.clcb.conn_id == p_data->conn.conn_id))
 			{
 				//set the connection channal congested flag to true
 				airsync_cb_env.clcb.congest =  p_data->congest.congested;
 			}
 			break;
-		case BTA_GATTS_LISTEN_EVT:
-			break;
-		case BTA_GATTS_CONGEST_EVT: 
+		case ESP_GATTS_CONGEST_EVT: 
 			//set the congest flag
 			airsync_cb_env.clcb.congest = p_data->congest.congested;
 			break;
@@ -182,14 +181,14 @@ static void airsync_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 *******************************************************************************/
 void AirSync_CreateService(void)
 {
-	tBTA_GATTS_IF server_if ;
-	tBT_UUID uuid = {LEN_UUID_16, {ATT_SVC_AIRSYNC}};
-	UINT16 num_handle = KEY_IDX_NB;
+	esp_gatts_if_t server_if ;
+	esp_bt_uuid_t uuid = {LEN_UUID_16, {ATT_SVC_AIRSYNC}};
+	UINT16 num_handle = WX_IDX_NB;
 	UINT8 inst = 0x00;
 	server_if = airsync_cb_env.gatt_if;
 	airsync_cb_env.inst_id = inst;
 	
-	BTA_GATTS_CreateService(server_if,&uuid,inst,num_handle,true);
+	esp_ble_gatts_create_srvc(server_if,&uuid,inst,num_handle,true);
 	
 }
 
@@ -254,13 +253,13 @@ UINT16 airsync_env_find_conn_id_by_bd_adddr(BD_ADDR remote_bda)
 *******************************************************************************/
 tGATT_STATUS AirSync_Init(tAIRSYNC_CBACK *call_back)
 {
-	tBT_UUID app_uuid = {LEN_UUID_16,{ATT_SVC_AIRSYNC}};
+	esp_bt_uuid_t app_uuid = {LEN_UUID_16,{ATT_SVC_AIRSYNC}};
 	
 
 	if(airsync_cb_env.enabled)
 	{
 		LOG_ERROR("airsync svc already initaliezd\n");
-		return GATT_ERROR;
+		return ESP_GATT_ERROR;
 	}
 	else
 	{
@@ -269,18 +268,17 @@ tGATT_STATUS AirSync_Init(tAIRSYNC_CBACK *call_back)
 	
 
 	 if(call_back != NULL)
-        {
-            airsync_cb_env.airsync_inst.p_cback = call_back;
-        }
+     {
+        airsync_cb_env.airsync_inst.p_cback = call_back;
+     }
 
 	
 	/* register the airsync profile to the BTA_GATTS module*/
-	 BTA_GATTS_AppRegister(&app_uuid,airsync_profile_cb);
+	 esp_ble_gatts_app_register(&app_uuid,airsync_profile_cb);
 
 	airsync_cb_env.enabled = TRUE;
 
-	return GATT_SUCCESS;
+	return ESP_GATT_OK;
 }
 
 #endif	///WX_AIRSYNC_CFG
-

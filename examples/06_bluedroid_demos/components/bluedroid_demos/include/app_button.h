@@ -1,17 +1,3 @@
-/**
- ****************************************************************************************
- *
- * @file app_button.h
- *
- * @brief button Service Application entry point
- *
- * Copyright (C) ESPRESSIF 2016
- * Created by Yulong at 2016/02/24
- *
- *
- ****************************************************************************************
- */
-
  /*
  * DEFINES
  ****************************************************************************************
@@ -57,6 +43,9 @@ extern app_key_env key_press;
 
  uint8_t check_sum(uint8_t *check_array,uint8_t len);
 
+ void ble_but_prf_enable(void);
+
+ void ble_but_create_svc(void);
 
 
 

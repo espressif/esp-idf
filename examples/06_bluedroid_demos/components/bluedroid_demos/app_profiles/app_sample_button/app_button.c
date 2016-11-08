@@ -1,21 +1,23 @@
-/**
- 
-*******************************************************************************
-*********
- *
- * @file app_button.c
- *
- * @brief button Service Application entry point
- *
- * Copyright (C) ESPRESSSIF 2016
- * Created by Yulong at 2016/08/24
- *
- *
- 
-*******************************************************************************
-*********
-*/
-#if 0
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+#include "prf_defs.h"
+
+#if (BUT_PROFILE_CFG)
+
+
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -33,6 +35,118 @@
 
 #include "allocator.h"
 #include "button_pro.h"
+#include "app_button_int.h"
+
+static const tBT_PRF_SYS_REG but_prf_reg =
+{
+    ble_but_prf_hdl_event,
+    ble_but_prf_disable
+};
+
+
+
+/*******************************************************************************
+**
+** Function         ble_but_prf_hdl_event
+**
+** Description      button profile main event handling function.
+**
+**
+** Returns          BOOLEAN
+**
+*******************************************************************************/
+BOOLEAN ble_but_prf_hdl_event(prf_hdr_evt_t *msg_data)
+{
+	LOG_ERROR("###################ble_but_prf_hdl_event#####################################\n");
+	
+	UINT16 connid = 0;
+	switch(msg_data->event)
+	{
+		case BLE_BUT_CREATE_DB_REQ_EVT: 
+			Button_CreateService();
+			break;
+		case BLE_BUT_VAL_SEND_CFM_EVT:
+			break;
+		case BLE_BUT_SET_CHAR_VAL_REQ_EVT:
+			button_msg_notify(msg_data->len,msg_data->data);
+			break;
+		case BLE_BUT_ENABLE_REQ_EVT:
+			button_init(NULL);
+			break;
+		case BLE_BUT_DISABLE_IND_EVT:
+			button_disable(connid);
+			break;
+		case BLE_BUT_CHAR_WRITE_IND_EVT:
+			
+			break;
+		case BLE_BUT_ERROR_IND_EVT:
+			break;
+		default:
+			break;
+	}
+}
+
+
+/*******************************************************************************
+**
+** Function         ble_but_prf_disable
+**
+** Description      This function is called to disable the button profile modlue
+**
+** Parameters       None.
+**
+** Returns          None
+**
+*******************************************************************************/
+void ble_but_prf_disable(void)
+{
+    prf_hdr_evt_t  *p_buf;
+	LOG_ERROR("ble_but_prf_disable\n");
+	
+    if (bt_prf_sys_is_register(PRF_ID_BUT_LE) == FALSE)
+    {
+        APPL_TRACE_WARNING("button profile Module not enabled/already disabled\n");
+        return;
+    }
+
+    if ((p_buf = (prf_hdr_evt_t *) GKI_getbuf(sizeof(prf_hdr_evt_t))) != NULL)
+    {
+        p_buf->event = BLE_BUT_DISABLE_IND_EVT;
+        bta_sys_sendmsg(p_buf);
+    }
+    bta_sys_deregister(PRF_ID_BUT_LE);
+
+}
+
+void ble_but_prf_enable(void)
+{
+	bt_prf_sys_register(PRF_ID_BUT_LE,&but_prf_reg);
+}
+
+void ble_but_create_svc(void)
+{
+	prf_hdr_evt_t *p_msg;
+
+	LOG_ERROR("ble_but_create_svc\n"); 		//todo
+    if ((p_msg = (prf_hdr_evt_t *) GKI_getbuf(sizeof(prf_hdr_evt_t))) != NULL)
+    {
+        memset(p_msg, 0, sizeof(prf_hdr_evt_t));
+
+        p_msg->event = BLE_BUT_ENABLE_REQ_EVT;
+			
+        bt_prf_sys_sendmsg(p_msg);
+    }
+}
+
+
+
+
+
+
+#endif		///BUT_PROFILE_CFG
+
+#if 0
+
 #define GPIO_INUM 8
 #define TABLE_ELEMENT_CNT(table) ((sizeof(table))/(sizeof(table[0])));
 app_key_env key_press;

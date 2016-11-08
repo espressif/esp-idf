@@ -2731,11 +2731,11 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
 void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
 {
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (bda);
-
+	BTM_TRACE_ERROR ("%s\n",__func__);
     /* Some device may request a connection before we are done with the HCI_Reset sequence */
     if (!controller_get_interface()->get_is_ready())
     {
-        BTM_TRACE_EVENT ("Security Manager: connect request when device not ready\n");
+        BTM_TRACE_ERROR ("Security Manager: connect request when device not ready\n");
         btsnd_hcic_reject_conn (bda, HCI_ERR_HOST_REJECT_DEVICE);
         return;
     }
@@ -2747,7 +2747,7 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
     {
         if (!p_dev_rec || !(p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED))
         {
-            BTM_TRACE_EVENT ("Security Manager: connect request from non-paired device\n");
+            BTM_TRACE_ERROR ("Security Manager: connect request from non-paired device\n");
             btsnd_hcic_reject_conn (bda, HCI_ERR_HOST_REJECT_DEVICE);
             return;
         }
@@ -2759,7 +2759,7 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
     {
         if (!p_dev_rec)
         {
-            BTM_TRACE_EVENT ("Security Manager: connect request from not paired device\n");
+            BTM_TRACE_ERROR ("Security Manager: connect request from not paired device\n");
             btsnd_hcic_reject_conn (bda, HCI_ERR_HOST_REJECT_DEVICE);
             return;
         }
@@ -2770,7 +2770,7 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
         &&(btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)
         &&(!memcmp (btm_cb.pairing_bda, bda, BD_ADDR_LEN)))
     {
-        BTM_TRACE_EVENT ("Security Manager: reject connect request from bonding device\n");
+        BTM_TRACE_ERROR ("Security Manager: reject connect request from bonding device\n");
 
         /* incoming connection from bonding device is rejected */
         btm_cb.pairing_flags |= BTM_PAIR_FLAGS_REJECTED_CONNECT;
@@ -4426,7 +4426,8 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
     UINT8            bit_shift = 0;
 
     btm_acl_resubmit_page();
-
+	
+	BTM_TRACE_ERROR ("%s\n",__func__);
     /* Commenting out trace due to obf/compilation problems.
     */
 #if (BT_USE_TRACES == TRUE)

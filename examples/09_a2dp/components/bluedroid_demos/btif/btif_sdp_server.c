@@ -33,7 +33,7 @@
 #include "btif_common.h"
 #include "bta_sys.h"
 #include "utl.h"
-#include "bt_sdp_api.h"
+#include "esp_sdp_api.h"
 
 static pthread_mutex_t sdp_lock;
 

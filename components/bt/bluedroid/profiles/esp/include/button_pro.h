@@ -1,22 +1,24 @@
-/**
- ****************************************************************************************
- *
- * @file button_pro.h
- *
- * @brief Application entry point
- *
- * Copyright (C) Espressif 2016
- * Created by Yulong at 2016/8/18
- *
- *
- ****************************************************************************************
- */
 #include "prf_defs.h"
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 
 #if (BUT_PROFILE_CFG)
 #include "bt_target.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
+#include "esp_gatt_api.h"
 
 #define KEY_SUCCESS             GATT_SUCCESS
 #define KEY_ILLEGAL_PARAM       GATT_ILLEGAL_PARAMETER
@@ -36,7 +38,7 @@
 
 #define BUT_MAX_STRING_DATA     7
 
-typedef void (tBU_CBACK)(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *data);
+typedef void (*but_prf_cb_t)(uint8_t app_id, uint8_t event, uint16_t len, uint8_t *value);
 
 #ifndef BUT_MAX_INT_NUM
 #define BUT_MAX_INT_NUM     4
@@ -64,59 +66,61 @@ enum
 
 typedef struct
 {
-    BD_ADDR remote_bda;
-    BOOLEAN need_rsp;
-    UINT16  clt_cfg;
-}tBUT_WRITE_DATA;
+    BD_ADDR 	remote_bda;
+    BOOLEAN 	need_rsp;
+    uint16_t 	clt_cfg;
+}but_write_data_t;
 
 typedef struct
 {
     BOOLEAN         in_use;
 	BOOLEAN			congest;
-    UINT16          conn_id;
+    uint16_t        conn_id;
     BOOLEAN         connected;
     BD_ADDR         remote_bda;
-    UINT32          trans_id;
-    UINT8           cur_srvc_id;
+    uint32_t        trans_id;
+    uint8_t         cur_srvc_id;
 
-}tBUT_CLCB;
+}but_clcb_t;
 
 
 typedef struct
 {
-    UINT8           app_id;
-    UINT16          but_wirt_hdl;
-    UINT16          but_ntf_hdl;
-    UINT16          but_cfg_hdl;
+    uint8_t           app_id;
+    uint16_t          but_wirt_hdl;
+    uint16_t          but_ntf_hdl;
+    uint16_t          but_cfg_hdl;
  
-    tBU_CBACK       *p_cback;
+    but_prf_cb_t    p_cback;
 
-}tBUT_INST;
+}but_inst_t;
 
 
 /* service engine control block */
 typedef struct
 {
-    tBUT_CLCB             	clcb; 			/* connection link*/
-    tGATT_IF                gatt_if;
+    but_clcb_t             	clcb; 			/* connection link*/
+    esp_gatt_if_t           gatt_if;
     BOOLEAN                 enabled;
 	BOOLEAN					is_primery;
-	tBUT_INST               button_inst;
-    UINT8                   inst_id;
-}tBUTTON_CB_ENV;
+	but_inst_t              button_inst;
+    uint8_t                 inst_id;
+}button_env_cb_t;
 
 void Button_CreateService(void);
 
-tBUT_CLCB *button_env_clcb_alloc(UINT16 conn_id, BD_ADDR bda);
+but_clcb_t *button_env_clcb_alloc(uint16_t conn_id, BD_ADDR bda);
 
-UINT16 button_env_find_conn_id_by_bd_adddr(BD_ADDR bda);
+uint16_t button_env_find_conn_id_by_bd_adddr(BD_ADDR bda);
 
-BOOLEAN button_env_clcb_dealloc(UINT16 conn_id);
+BOOLEAN button_env_clcb_dealloc(uint16_t conn_id);
 
-tGATT_STATUS button_init(tBU_CBACK *call_back);
+esp_gatt_status_t button_init(but_prf_cb_t call_back);
 
-void button_msg_notify(UINT8 len, UINT8 *button_msg);
+void button_disable(uint16_t connid);
 
-extern tBUTTON_CB_ENV button_cb_env;
+void button_msg_notify(uint16_t len, uint8_t *button_msg);
+
+extern button_env_cb_t button_cb_env;
 
 #endif ///BUT_PROFILE_CFG

@@ -318,7 +318,7 @@ void bta_sys_hw_error(tBTA_SYS_HW_MSG *p_sys_hw_msg)
     UINT8 module_index;
     UNUSED(p_sys_hw_msg);
 
-    APPL_TRACE_DEBUG("%s", __FUNCTION__);
+    APPL_TRACE_DEBUG("%s\n", __FUNCTION__);
 
     for (module_index = 0; module_index < BTA_SYS_MAX_HW_MODULES; module_index++)
     {
@@ -377,7 +377,7 @@ void bta_sys_hw_api_enable( tBTA_SYS_HW_MSG *p_sys_hw_msg )
             bta_sys_cb.sys_hw_cback[p_sys_hw_msg->hw_module ](  BTA_SYS_HW_ON_EVT   );
     }
 
-    APPL_TRACE_EVENT ("bta_sys_hw_api_enable for %d, active modules 0x%04X",
+    APPL_TRACE_EVENT ("bta_sys_hw_api_enable for %d, active modules 0x%04X\n",
                     p_sys_hw_msg->hw_module, bta_sys_cb.sys_hw_module_active);
 
 }
@@ -394,7 +394,7 @@ void bta_sys_hw_api_enable( tBTA_SYS_HW_MSG *p_sys_hw_msg )
 *******************************************************************************/
 void bta_sys_hw_api_disable(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 {
-    APPL_TRACE_DEBUG("bta_sys_hw_api_disable for %d, active modules: 0x%04X",
+    APPL_TRACE_DEBUG("bta_sys_hw_api_disable for %d, active modules: 0x%04X\n",
         p_sys_hw_msg->hw_module, bta_sys_cb.sys_hw_module_active );
 
     /* make sure the related SW blocks were stopped */
@@ -442,7 +442,7 @@ void bta_sys_hw_api_disable(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 *******************************************************************************/
 void bta_sys_hw_evt_enabled(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 {
-    APPL_TRACE_EVENT("bta_sys_hw_evt_enabled for %i", p_sys_hw_msg->hw_module);
+    APPL_TRACE_EVENT("bta_sys_hw_evt_enabled for %i\n", p_sys_hw_msg->hw_module);
     BTM_DeviceReset( NULL );
 }
 
@@ -461,7 +461,7 @@ void bta_sys_hw_evt_disabled(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 {
     UINT8 hw_module_index;
 
-    APPL_TRACE_DEBUG("bta_sys_hw_evt_disabled - module 0x%X", p_sys_hw_msg->hw_module);
+    APPL_TRACE_DEBUG("bta_sys_hw_evt_disabled - module 0x%X\n", p_sys_hw_msg->hw_module);
 
     for (hw_module_index = 0; hw_module_index < BTA_SYS_MAX_HW_MODULES; hw_module_index++)
     {
@@ -485,7 +485,7 @@ void bta_sys_hw_evt_stack_enabled(tBTA_SYS_HW_MSG *p_sys_hw_msg)
     UINT8 hw_module_index;
     UNUSED(p_sys_hw_msg);
 
-    APPL_TRACE_DEBUG(" bta_sys_hw_evt_stack_enabled!notify the callers");
+    APPL_TRACE_DEBUG(" bta_sys_hw_evt_stack_enabled!notify the callers\n");
 
     for (hw_module_index = 0; hw_module_index < BTA_SYS_MAX_HW_MODULES; hw_module_index++ )
     {

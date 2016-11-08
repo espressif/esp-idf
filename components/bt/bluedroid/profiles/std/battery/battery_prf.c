@@ -1,9 +1,18 @@
-/***************************************************************
-* *
-* * This file is for battery service based on bta layer
-* *
-***************************************************************/
 #include <stdint.h>
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -35,7 +44,7 @@
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
-tBTA_GATTS_IF server_if;
+esp_gatts_if_t server_if;
 
 tBATTERY_CB         battery_cb;
 tGATT_CHAR_PROP     prop = GATT_CHAR_PROP_BIT_READ;
@@ -43,19 +52,19 @@ tBA_REG_INFO        ba_reg_info;
 UINT8               attr_handle_bit = 0x00;
 
 extern tDIS_CB      dis_cb;
-tBT_UUID            bas_uuid = {LEN_UUID_16, {UUID_SERVCLASS_BATTERY}};
+esp_bt_uuid_t       bas_uuid = {LEN_UUID_16, {UUID_SERVCLASS_BATTERY}};
 /******************************************************************************
 ** Function      bas_gatts_callback
 **
 ** Description   battery service register callback function
 *******************************************************************************/
-static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
+static void bas_gatts_callback(esp_gatts_evt_t event, tBTA_GATTS* p_data)
 {
     switch (event)
     {   
-        case BTA_GATTS_REG_EVT:
+        case ESP_GATTS_REG_EVT:
         {  
-            tBTA_GATT_STATUS  status = p_data->reg_oper.status;
+            esp_gatt_status_t  status = p_data->reg_oper.status;
             server_if = p_data->reg_oper.server_if;
             LOG_ERROR("BAS register completed: event=%d, status=%d, server_if=%d\n", 
                 event, status, server_if);
@@ -69,7 +78,7 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         break;
 
         /*connect callback*/
-        case BTA_GATTS_CONNECT_EVT:
+        case ESP_GATTS_CONNECT_EVT:
         {
             LOG_ERROR("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n",
                              BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
@@ -81,7 +90,7 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         break;
         
         /*create service callback*/
-        case BTA_GATTS_CREATE_EVT:
+        case ESP_GATTS_CREATE_EVT:
         {
             LOG_ERROR("create service:server_if=%d,service_id=0x%x,service_uuid=0x%x\n",
                             p_data->create.server_if, p_data->create.service_id,
@@ -103,7 +112,7 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         }
         break;
 
-        case BTA_GATTS_ADD_CHAR_EVT: 
+        case ESP_GATTS_ADD_CHAR_EVT: 
         {
             LOG_ERROR("create characteristic:server_if=%d,service_id=0x%x,char_uuid=0x%x\n",
                             p_data->add_result.server_if, p_data->add_result.service_id,
@@ -141,7 +150,7 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         }
         break;
 
-        case BTA_GATTS_ADD_CHAR_DESCR_EVT:
+        case ESP_GATTS_ADD_CHAR_DESCR_EVT:
         {
             
             LOG_ERROR("create descriptor:server_if=%d,service_id=0x%x,attr_id=0x%x,char_uuid=0x%x\n",
@@ -151,20 +160,20 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         }
         break;
 
-        case BTA_GATTS_START_EVT:
+        case ESP_GATTS_START_EVT:
         {
             LOG_ERROR("start service:server_if=%d,service_id=0x%x\n", p_data->srvc_oper.server_if,
                 p_data->srvc_oper.service_id);
             bas_service_cmpl(p_data->srvc_oper.service_id, p_data->srvc_oper.status);
             
             /*start advertising*/
-            if(p_data->srvc_oper.status == GATT_SUCCESS)
-                BTA_GATTS_Listen(server_if, true, NULL);
+            //if(p_data->srvc_oper.status == GATT_SUCCESS)
+               // BTA_GATTS_Listen(server_if, true, NULL);
           //    BTA_GATTC_Broadcast(client_if, true);       //non-connectable
         }
         break;
 
-        case BTA_GATTS_READ_EVT:
+        case ESP_GATTS_READ_EVT:
         {
             UINT32 trans_id = p_data->req_data.trans_id;
             UINT16 conn_id = p_data->req_data.conn_id;
@@ -186,7 +195,7 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         }
         break;
 
-        case BTA_GATTS_WRITE_EVT:
+        case ESP_GATTS_WRITE_EVT:
         {
         
             UINT32 trans_id = p_data->req_data.trans_id;
@@ -199,7 +208,7 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         }
         break;
 
-        case BTA_GATTS_EXEC_WRITE_EVT:
+        case ESP_GATTS_EXEC_WRITE_EVT:
         {
             UINT32 trans_id = p_data->req_data.trans_id;
             UINT16 conn_id = p_data->req_data.conn_id;
@@ -209,7 +218,7 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         }
         break;
 
-        case BTA_GATTS_MTU_EVT:
+        case ESP_GATTS_MTU_EVT:
         {
             UINT32 trans_id = p_data->req_data.trans_id;
             UINT16 conn_id = p_data->req_data.conn_id;
@@ -219,7 +228,7 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
         }
         break;
 
-        case BTA_GATTS_CONF_EVT:
+        case ESP_GATTS_CFM_EVT:
         {
 
             UINT32 trans_id = p_data->req_data.trans_id;
@@ -231,6 +240,7 @@ static void bas_gatts_callback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data)
 
         default:
         LOG_ERROR("unsettled event: %d\n", event);
+		break;
     }
 
 }
@@ -243,7 +253,7 @@ static void bas_callback(UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
     UINT8 event, tBA_WRITE_DATA *p_data)
 {
     tBA_RSP_DATA p_rsp;
-    tGATT_STATUS st = GATT_SUCCESS;
+    tGATT_STATUS st = ESP_GATT_OK;
     switch(event)
     {
         case BA_READ_LEVEL_REQ :
@@ -299,10 +309,10 @@ static void bas_callback(UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
 void bas_s_read_attr_value(tGATTS_DATA *p_data, UINT32 trans_id, UINT16 conn_id)
 {
     
-    tBA_INST     *p_inst = &battery_cb.battery_inst[0];
-    UINT8        i;
-    tGATT_STATUS st = GATT_NOT_FOUND;
-    UINT16       handle = p_data->read_req.handle;
+    tBA_INST     		*p_inst = &battery_cb.battery_inst[0];
+    UINT8        		i;
+    esp_gatt_status_t 	st = ESP_GATT_NOT_FOUND;
+    UINT16       		handle = p_data->read_req.handle;
 
 
     for (i = 0; i < BA_MAX_INT_NUM; i ++, p_inst ++)
@@ -314,7 +324,7 @@ void bas_s_read_attr_value(tGATTS_DATA *p_data, UINT32 trans_id, UINT16 conn_id)
             handle == p_inst->pres_fmt_hdl)
             {
             if (p_data->read_req.is_long)
-                st = GATT_NOT_LONG;
+                st = ESP_GATT_NOT_LONG;
 
                 if (p_inst->p_cback)
                 {
@@ -329,7 +339,7 @@ void bas_s_read_attr_value(tGATTS_DATA *p_data, UINT32 trans_id, UINT16 conn_id)
                   (*p_inst->p_cback)(trans_id, conn_id, p_inst->app_id, p_inst->pending_evt, NULL);
                 }
             else /* application is not registered */
-                st = GATT_ERR_UNLIKELY;
+                st = ESP_GATT_ERR_UNLIKELY;
                 break;
             }
         /* else attribute not found */
@@ -343,12 +353,12 @@ void bas_s_read_attr_value(tGATTS_DATA *p_data, UINT32 trans_id, UINT16 conn_id)
 ******************************************************************************/
 void bas_s_write_attr_value(tGATTS_DATA *p_data, UINT32 trans_id, UINT16 conn_id, BD_ADDR bd_addr)
 {
-    tBA_WRITE_DATA  cfg;
-    UINT8        *p = p_data->write_req.value;
-    tBA_INST     *p_inst = &battery_cb.battery_inst[0];
-    UINT8        i;
-    tGATT_STATUS st = GATT_NOT_FOUND;
-    UINT16       handle = p_data->write_req.handle;
+    tBA_WRITE_DATA   cfg;
+    UINT8            *p = p_data->write_req.value;
+    tBA_INST         *p_inst = &battery_cb.battery_inst[0];
+    UINT8        	  i;
+    esp_gatt_status_t st = ESP_GATT_NOT_FOUND;
+    UINT16            handle = p_data->write_req.handle;
 
 
     for (i = 0; i < BA_MAX_INT_NUM; i ++, p_inst ++)
@@ -366,7 +376,7 @@ void bas_s_write_attr_value(tGATTS_DATA *p_data, UINT32 trans_id, UINT16 conn_id
                     (*p_inst->p_cback)(trans_id, conn_id, p_inst->app_id, p_inst->pending_evt, &cfg);
                 }
             else /* all other handle is not writable */
-                st = GATT_WRITE_NOT_PERMIT;
+                st = ESP_GATT_WRITE_NOT_PERMIT;
                 break;
             }
      
@@ -381,7 +391,7 @@ void bas_s_write_attr_value(tGATTS_DATA *p_data, UINT32 trans_id, UINT16 conn_id
 ****************************************************************/
 void bas_register(void)
 {
-    BTA_GATTS_AppRegister(&bas_uuid, bas_gatts_callback);    
+    esp_ble_gatts_app_register(&bas_uuid, bas_gatts_callback);    
     
 }
 /***************************************************************
@@ -410,7 +420,7 @@ void bas_init(tBTA_GATTS_IF gatt_if, UINT16 app_id)
 
     LOG_ERROR("create battery service\n");
     LOG_ERROR("inst_id=%d\n", battery_cb.inst_id);
-    BTA_GATTS_CreateService (gatt_if, &bas_uuid, battery_cb.inst_id ,
+    esp_ble_gatts_create_srvc (gatt_if, &bas_uuid, battery_cb.inst_id ,
                          BA_MAX_ATTR_NUM, ba_reg_info.is_pri);
 
     battery_cb.inst_id ++;
@@ -432,7 +442,7 @@ void bas_AddChar(UINT16 service_id, tBT_UUID *char_uuid)
     if (ba_reg_info.ba_level_descr & BA_LEVEL_NOTIFY)
              prop |= GATT_CHAR_PROP_BIT_NOTIFY;
      attr_handle_bit = 0x01;
-     BTA_GATTS_AddCharacteristic(service_id, char_uuid, BATTER_LEVEL_PERM, prop);
+     esp_ble_gatts_add_char(service_id, char_uuid, BATTER_LEVEL_PERM, prop);
 
 }
 
@@ -468,7 +478,7 @@ void bas_AddCharDescr(UINT16 service_id, UINT16 attr_id)
             uuid.uu.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
             ba_reg_info.ba_level_descr &= 0xfe;
             attr_handle_bit = 0x02;
-            BTA_GATTS_AddCharDescriptor(service_id, (GATT_PERM_READ|GATT_PERM_WRITE), &uuid);
+            esp_ble_gatts_add_char_descr(service_id, (GATT_PERM_READ|GATT_PERM_WRITE), &uuid);
             return;
         }
      
@@ -476,7 +486,7 @@ void bas_AddCharDescr(UINT16 service_id, UINT16 attr_id)
         if (ba_reg_info.ba_level_descr & BA_LEVEL_PRE_FMT)
         {
             uuid.uu.uuid16 = GATT_UUID_CHAR_PRESENT_FORMAT;
-            BTA_GATTS_AddCharDescriptor(service_id, GATT_PERM_READ, &uuid);
+            esp_ble_gatts_add_char_descr(service_id, GATT_PERM_READ, &uuid);
             ba_reg_info.ba_level_descr &= 0xfd;
             attr_handle_bit = 0x04;
             return;
@@ -486,14 +496,14 @@ void bas_AddCharDescr(UINT16 service_id, UINT16 attr_id)
         {
             uuid.uu.uuid16 = GATT_UUID_RPT_REF_DESCR;
             ba_reg_info.ba_level_descr &= 0xfb;
-            BTA_GATTS_AddCharDescriptor(service_id, GATT_PERM_READ, &uuid);
+            esp_ble_gatts_add_char_descr(service_id, GATT_PERM_READ, &uuid);
             attr_handle_bit = 0x08;
             return;
         }
     }
     
      else
-        BTA_GATTS_StartService(service_id, ba_reg_info.transport);
+        esp_ble_gatts_start_srvc(service_id);
 
 }
 
@@ -504,12 +514,12 @@ void bas_AddCharDescr(UINT16 service_id, UINT16 attr_id)
 ** Description  create battery service complete
 **
 ****************************************************************/
-void bas_service_cmpl(UINT16 service_id, tBTA_GATT_STATUS status)
+void bas_service_cmpl(UINT16 service_id, esp_gatt_status_t status)
 {
-    if(status != GATT_SUCCESS)
+    if(status != ESP_GATT_OK)
     {
         battery_cb.inst_id --;
-        BTA_GATTS_DeleteService(service_id);
+        esp_ble_gatts_dele_srvc(service_id);
     }
 
 }
@@ -521,7 +531,7 @@ void bas_service_cmpl(UINT16 service_id, tBTA_GATT_STATUS status)
 **
 *******************************************************************************/
 void Battery_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
-    tGATT_STATUS st, UINT8 event, tBA_RSP_DATA *p_rsp)
+    esp_gatt_status_t st, UINT8 event, tBA_RSP_DATA *p_rsp)
 {
     tBA_INST *p_inst = &battery_cb.battery_inst[0];
     tGATTS_RSP  rsp;
@@ -549,7 +559,7 @@ void Battery_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
             rsp.attr_value.len = 2;
             pp = rsp.attr_value.value;
             UINT16_TO_STREAM(pp, p_rsp->clt_cfg);
-            BTA_GATTS_SendRsp(conn_id, trans_id, st, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, st, &rsp);
             //srvc_sr_rsp(p_inst->pending_clcb_idx, st, &rsp);
             break;
 
@@ -558,12 +568,12 @@ void Battery_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
             rsp.attr_value.len = 1;
             pp = rsp.attr_value.value;
             UINT8_TO_STREAM(pp, p_rsp->ba_level);
-            BTA_GATTS_SendRsp(conn_id, trans_id, st, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, st, &rsp);
             //srvc_sr_rsp(p_inst->pending_clcb_idx, st, &rsp);
             break;
 
         case BA_WRITE_CLT_CFG_REQ:
-            BTA_GATTS_SendRsp(conn_id, trans_id, st, NULL);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, st, NULL);
             //srvc_sr_rsp(p_inst->pending_clcb_idx, st, NULL);
             break;
 
@@ -573,7 +583,7 @@ void Battery_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
             pp = rsp.attr_value.value;
             UINT8_TO_STREAM(pp, p_rsp->rpt_ref.rpt_id);
             UINT8_TO_STREAM(pp, p_rsp->rpt_ref.rpt_type);
-            BTA_GATTS_SendRsp(conn_id, trans_id, st, &rsp);
+            esp_ble_gatts_send_rsp(conn_id, trans_id, st, &rsp);
             //srvc_sr_rsp(p_inst->pending_clcb_idx, st, &rsp);
             break;
 
@@ -607,7 +617,7 @@ void Battery_Notify (UINT16 conn_id, UINT8 app_id, BD_ADDR remote_bda, UINT8 bat
 
     if (i == BA_MAX_INT_NUM || p_inst->clt_cfg_hdl == 0)
         return;
-    BTA_GATTS_HandleValueIndication(conn_id, p_inst->ba_level_hdl, 1, &battery_level, false);
+    esp_ble_gatts_hdl_val_indica(conn_id, p_inst->ba_level_hdl, 1, &battery_level, false);
     //srvc_sr_notify(remote_bda, p_inst->ba_level_hdl, 1, &battery_level);
 
 }

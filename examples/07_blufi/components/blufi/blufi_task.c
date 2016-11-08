@@ -1,3 +1,17 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -29,45 +43,41 @@ extern void ble_server_test(void);
 
 static void blufi_task(void *arg)
 {
-    BtTaskEvt_t *e;
+    BtTaskEvt_t e;
 
 	for (;;) {
 		if (pdTRUE == xQueueReceive(xBlufiTaskQueue, &e, (portTickType)portMAX_DELAY)) {
-			switch (e->sig) {
+			switch (e.sig) {
 				case BLUFI_SIG_SWITCH_CONTEXT:
-					if (e->cb) {
-						((BtTaskCb_t)e->cb)(e->arg);
+					if (e.cb) {
+						((BtTaskCb_t)e.cb)(e.arg);
 					}
 					break;
 				default:
 					break;
 			}
-		    osi_free(e);
 		}
     }
 }
 
-static int blufi_task_post(uint32_t sig, void *par, void *cb, void *arg)
+static esp_err_t blufi_task_post(uint32_t sig, void *par, void *cb, void *arg)
 {
+     BtTaskEvt_t evt;
 
-     BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
-     if (evt == NULL)
-        return -1;
-
-     evt->sig = sig;
-     evt->par = par;
-     evt->cb = cb;
-     evt->arg = arg;
+     evt.sig = sig;
+     evt.par = par;
+     evt.cb = cb;
+     evt.arg = arg;
 
      if (xQueueSend(xBlufiTaskQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
          LOG_ERROR("Blufi Post failed\n");
-         return -1;
+         return ESP_FAIL;
      }
 
-	return 0;
+	return ESP_OK;
 }
 
-bt_status_t blufi_transfer_context(BtTaskCb_t cb, void *arg)
+esp_err_t blufi_transfer_context(blufi_task_cb_t cb, void *arg)
 {
     LOG_DEBUG("%s cb %08x, arg %u\n", __func__, cb, arg);
 
@@ -83,12 +93,16 @@ static void blufi_task_deinit(void)
 
 static void blufi_task_init(void)
 {
-    xBlufiTaskQueue = xQueueCreate(10, sizeof(void *));
+    xBlufiTaskQueue = xQueueCreate(10, sizeof(BtTaskEvt_t));
     xTaskCreate(blufi_task, "BlUFI", 8192, NULL, configMAX_PRIORITIES - 3, xBlufiTaskHandle);
 }
 
 void blufi_init(void) {
 	blufi_task_init();
 	blufi_transfer_context(blufi_enable, NULL);
+}
+
+void blufi_deinit(void) {
+	blufi_transfer_context(blufi_disable, blufi_task_deinit);
 }
 

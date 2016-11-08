@@ -304,14 +304,12 @@ static void btu_bta_alarm_process(TIMER_LIST_ENT *p_tle) {
 ******************************************************************************/
 void btu_task_thread_handler(void *arg)
 {
-    //ke_event_clear(KE_EVENT_BTU_TASK_THREAD);
-
-    BtTaskEvt_t *e;
+    BtTaskEvt_t e;
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtuQueue, &e, (portTickType)portMAX_DELAY)) {
 
-            if (e->sig == SIG_BTU_WORK) {
+            if (e.sig == SIG_BTU_WORK) {
                 fixed_queue_process(btu_hci_msg_queue);
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
                 fixed_queue_process(btu_bta_msg_queue);
@@ -321,10 +319,9 @@ void btu_task_thread_handler(void *arg)
                 fixed_queue_process(btu_oneshot_alarm_queue);
                 fixed_queue_process(btu_l2cap_alarm_queue);
             }
-            else if (e->sig == SIG_BTU_START_UP) {
+            else if (e.sig == SIG_BTU_START_UP) {
                 btu_task_start_up();
             }
-            osi_free(e);
         }
     }
 }
@@ -332,12 +329,10 @@ void btu_task_thread_handler(void *arg)
 
 void btu_task_post(uint32_t sig)
 {
-    BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
-    if (evt == NULL)
-        return;
+    BtTaskEvt_t evt;
 
-    evt->sig = sig;
-    evt->par = 0;
+    evt.sig = sig;
+    evt.par = 0;
 
     if (xQueueSend(xBtuQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
             LOG_ERROR("xBtuQueue failed\n");

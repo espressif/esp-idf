@@ -31,13 +31,13 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/stack/avdt/include		\
 				bluedroid/stack/a2dp/include		\
 				bluedroid/stack/include			\
-				bluedroid/stack_api/include		\
+				bluedroid/api/include		\
 				bluedroid/include			\
 				include	
 
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses
 
-LIBS := btdm_app
+LIBS := btdm_app coexist
 
 COMPONENT_ADD_LDFLAGS := -lbt -L$(abspath lib) \
                            $(addprefix -l,$(LIBS)) \
@@ -86,7 +86,7 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/stack/avdt			\
 			bluedroid/stack/a2dp			\
 			bluedroid/stack				\
-			bluedroid/stack_api			\
+			bluedroid/api			\
 			bluedroid				\
 			.
 

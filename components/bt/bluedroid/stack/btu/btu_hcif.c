@@ -1196,7 +1196,7 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR *command, void *c
 *******************************************************************************/
 static void btu_hcif_hardware_error_evt (UINT8 *p)
 {
-    HCI_TRACE_ERROR("Ctlr H/w error event - code:0x%x", *p);
+    HCI_TRACE_ERROR("Ctlr H/w error event - code:0x%x\n", *p);
 
     /* If anyone wants device status notifications, give him one. */
     btm_report_device_status (BTM_DEV_STATUS_DOWN);

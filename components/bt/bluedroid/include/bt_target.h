@@ -40,6 +40,11 @@
 #include "gki_target.h"
 #include "dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
+
+#ifndef	CLASSIC_BT_INCLUDED
+#define	CLASSIC_BT_INCLUDED	TRUE
+#endif	///CLASSIC_BT_INCLUDED
+
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
 #define L2CAP_EXTFEA_SUPPORTED_MASK (L2CAP_EXTFEA_ENH_RETRANS | L2CAP_EXTFEA_STREAM_MODE | L2CAP_EXTFEA_NO_CRC | L2CAP_EXTFEA_FIXED_CHNLS)
@@ -894,6 +899,33 @@
 #ifndef GATT_MAX_BG_CONN_DEV
 #define GATT_MAX_BG_CONN_DEV        8 /*MAX is 32*/
 #endif
+
+/******************************************************************************
+**
+** GATT
+**
+******************************************************************************/
+#ifndef GATTC_INCLUDED
+#if BLE_INCLUDED == TRUE
+#define GATTC_INCLUDED         TRUE
+#else
+#define GATTC_INCLUDED         FALSE
+#endif
+#endif
+
+#ifndef GATTS_INCLUDED
+#if BLE_INCLUDED == TRUE
+#define GATTS_INCLUDED         TRUE
+#else
+#define GATTS_INCLUDED         FALSE
+#endif
+#endif
+
+	
+#if SMP_INCLUDED == TRUE && BLE_INCLUDED == FALSE
+#error "can't have SMP without BLE"
+#endif
+
 
 /******************************************************************************
 **

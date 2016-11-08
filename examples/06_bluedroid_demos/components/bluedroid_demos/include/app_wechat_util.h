@@ -2,7 +2,7 @@
 #define __APP_WECHAT_UTIL_H__
 
 #include "prf_defs.h"
-if (WX_AIRSYNC_CFG)
+#if (WX_AIRSYNC_CFG)
 #include <stdint.h>
 #include <string.h>
 

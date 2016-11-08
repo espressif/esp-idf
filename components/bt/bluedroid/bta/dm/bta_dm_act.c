@@ -4295,10 +4295,10 @@ void bta_dm_set_encryption (tBTA_DM_MSG *p_data)
 {
     UINT8 i ;
 
-    APPL_TRACE_DEBUG("bta_dm_set_encryption"); //todo
+    APPL_TRACE_DEBUG("bta_dm_set_encryption\n"); //todo
     if (!p_data->set_encryption.p_callback)
     {
-        APPL_TRACE_ERROR("bta_dm_set_encryption callback is not provided");
+        APPL_TRACE_ERROR("bta_dm_set_encryption callback is not provided\n");
         return;
     }
     for (i=0; i<bta_dm_cb.device_list.count; i++)
@@ -4311,7 +4311,7 @@ void bta_dm_set_encryption (tBTA_DM_MSG *p_data)
     {
         if (bta_dm_cb.device_list.peer_device[i].p_encrypt_cback)
         {
-            APPL_TRACE_ERROR("earlier enc was not done for same device");
+            APPL_TRACE_ERROR("earlier enc was not done for same device\n");
             (*p_data->set_encryption.p_callback)(p_data->set_encryption.bd_addr,
                                              p_data->set_encryption.transport,
                                              BTA_BUSY);
@@ -4740,6 +4740,27 @@ void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_ble_set_scan_fil_params
+**
+** Description      This function sets BLE scan filter & parameters.
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
+{
+	BTM_BleSetScanFilterParams (p_data->ble_set_scan_fil_params.client_if,
+								p_data->ble_set_scan_fil_params.scan_int,
+								p_data->ble_set_scan_fil_params.scan_window,
+								p_data->ble_set_scan_fil_params.scan_mode,
+								p_data->ble_set_scan_fil_params.addr_type_own,
+								p_data->ble_set_scan_fil_params.scan_filter_policy,
+								p_data->ble_set_scan_fil_params.scan_param_setup_cback);
+}
+
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ble_set_conn_scan_params
 **
 ** Description      This function set the preferred connection scan parameters.
@@ -4800,6 +4821,27 @@ void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
 	
 }
 
+/*******************************************************************************
+**
+** Function         bta_dm_ble_stop_advertising
+**
+** Description      This function stop the BLE avdertising for the device.
+**
+** Parameters:		void
+** Explanation:		This function added by Yulong at 2016/10/19 
+*******************************************************************************/
+void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data)
+{
+	if(p_data->hdr.event != BTA_DM_API_BLE_STOP_ADV_EVT)
+	{
+		APPL_TRACE_ERROR("Invalid BTA event,cann't stop the BLE adverting\n");
+	}
+	
+	btm_ble_stop_adv();
+}
+
+
+
 #if BLE_PRIVACY_SPT == TRUE
 /*******************************************************************************
 **
@@ -4836,7 +4878,7 @@ void bta_dm_ble_observe (tBTA_DM_MSG *p_data)
                             bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb))!= BTM_CMD_STARTED)
         {
             tBTA_DM_SEARCH  data;
-            APPL_TRACE_WARNING(" %s BTM_BleObserve  failed. status %d",__FUNCTION__,status);
+            APPL_TRACE_WARNING(" %s BTM_BleObserve  failed. status %d\n",__FUNCTION__,status);
             data.inq_cmpl.num_resps = 0;
             if (bta_dm_search_cb.p_scan_cback)
             {
@@ -4865,6 +4907,28 @@ void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data)
                         p_data->ble_set_adv_params.adv_int_max,
                         p_data->ble_set_adv_params.p_dir_bda,
                         BTA_DM_BLE_ADV_CHNL_MAP);
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_ble_set_adv_params_all
+**
+** Description      This function is called to set all of the advertising parameters.
+**
+** Parameters:       None.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_ble_set_adv_params_all	(tBTA_DM_MSG *p_data)
+{
+	BTM_BleSetAdvParamsStartAdv(p_data->ble_set_adv_params_all.adv_int_min,
+								p_data->ble_set_adv_params_all.adv_int_max,
+								p_data->ble_set_adv_params_all.adv_type,
+								p_data->ble_set_adv_params_all.addr_type_own,
+								p_data->ble_set_adv_params_all.p_dir_bda,
+								p_data->ble_set_adv_params_all.channel_map,
+								p_data->ble_set_adv_params_all.adv_filter_policy);
 }
 
 /*******************************************************************************
@@ -4927,7 +4991,7 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
     if (BTM_SetBleDataLength(p_data->ble_set_data_length.remote_bda,
                         p_data->ble_set_data_length.tx_data_length) != BTM_SUCCESS)
     {
-        APPL_TRACE_ERROR("%s failed", __FUNCTION__);
+        APPL_TRACE_ERROR("%s failed\n", __FUNCTION__);
     }
 }
 
