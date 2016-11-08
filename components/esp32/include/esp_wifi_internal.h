@@ -62,14 +62,15 @@ void esp_wifi_internal_free_rx_buffer(void* buffer);
 /**
   * @brief  transmit the buffer via wifi driver
   *
-  * @attention1 TODO should modify the return type from bool to int
-  * 
   * @param  wifi_interface_t wifi_if : wifi interface id
   * @param  void *buffer : the buffer to be tansmit
   * @param  u16_t len : the length of buffer
   *
-  * @return True : success transmit the buffer to wifi driver
-  *         False : failed to transmit the buffer to wifi driver
+  * @return
+  *    - ERR_OK  : Successfully transmit the buffer to wifi driver
+  *    - ERR_MEM : Out of memory
+  *    - ERR_IF : WiFi driver error
+  *    - ERR_ARG : Invalid argument
   */
 int esp_wifi_internal_tx(wifi_interface_t wifi_if, void *buffer, u16_t len);
 
