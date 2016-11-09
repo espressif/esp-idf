@@ -2,15 +2,13 @@
 # Component Makefile
 #
 
-#COMPONENT_ADD_INCLUDEDIRS := 
-
 COMPONENT_ADD_INCLUDEDIRS := include
 
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses
 
 LIBS := btdm_app
 
-COMPONENT_ADD_LDFLAGS := -lbt -L$(abspath lib) \
+COMPONENT_ADD_LDFLAGS := -lbt -L $(COMPONENT_PATH)/lib \
                            $(addprefix -l,$(LIBS)) \
                           $(LINKER_SCRIPTS)
 

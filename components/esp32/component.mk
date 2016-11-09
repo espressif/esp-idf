@@ -15,10 +15,10 @@ LIBS := core net80211 phy rtc pp wpa smartconfig coexist
 LINKER_SCRIPTS += -T esp32_out.ld -T esp32.common.ld -T esp32.rom.ld -T esp32.peripherals.ld
 
 COMPONENT_ADD_LDFLAGS := -lesp32 \
-                           $(abspath libhal.a) \
-                           -L$(abspath lib) \
+                           $(COMPONENT_PATH)/libhal.a \
+                           -L$(COMPONENT_PATH)/lib \
                            $(addprefix -l,$(LIBS)) \
-                          -L $(abspath ld) \
+                          -L $(COMPONENT_PATH)/ld \
                           $(LINKER_SCRIPTS)
 
 include $(IDF_PATH)/make/component_common.mk

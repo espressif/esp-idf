@@ -58,10 +58,19 @@ COMPONENT_ADD_LDFLAGS ?= -l$(COMPONENT_NAME)
 OWN_INCLUDES:=$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS) $(COMPONENT_PRIV_INCLUDEDIRS)))
 COMPONENT_INCLUDES := $(OWN_INCLUDES) $(filter-out $(OWN_INCLUDES),$(COMPONENT_INCLUDES))
 
-#This target is used to collect variable values from inside project.mk
-# see project.mk GetVariable macro for details.
-get_variable:
-	@echo "$(GET_VARIABLE)=$(call $(GET_VARIABLE)) "
+# This target is used to take component.mk variables COMPONENT_ADD_INCLUDEDIRS,
+# COMPONENT_ADD_LDFLAGS and COMPONENT_DEPENDS and inject them into the project
+# makefile level.
+#
+# The target here has no dependencies, as the parent target in
+# project.mk evaluates dependencies before calling down to here. See
+# GenerateProjectVarsTarget in project.mk.
+component_project_vars.mk::
+	$(details) "Rebuilding component project variables list $(abspath $@)"
+	@echo "# Automatically generated build file. Do not edit." > $@
+	@echo "COMPONENT_INCLUDES += $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS))" >> $@
+	@echo "COMPONENT_LDFLAGS += $(COMPONENT_ADD_LDFLAGS)" >> $@
+	@echo "$(COMPONENT_NAME)-build: $(addsuffix -build,$(COMPONENT_DEPENDS))" >> $@
 
 #Targets for build/clean. Use builtin recipe if component Makefile
 #hasn't defined its own.
@@ -77,10 +86,12 @@ $(COMPONENT_LIBRARY): $(COMPONENT_OBJS)
 	$(Q) $(AR) cru $@ $(COMPONENT_OBJS)
 endif
 
+CLEAN_FILES = $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EXTRA_CLEAN) component_project_vars.mk
+
 ifeq ("$(COMPONENT_OWNCLEANTARGET)", "")
 clean:
-	$(summary) RM $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EXTRA_CLEAN)
-	$(Q) rm -f $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EXTRA_CLEAN)
+	$(summary) RM $(CLEAN_FILES)
+	$(Q) rm -f $(CLEAN_FILES)
 endif
 
 #Include all dependency files already generated

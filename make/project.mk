@@ -48,10 +48,21 @@ PROJECT_PATH := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 export PROJECT_PATH
 endif
 
+COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/component_common.mk)
+export COMMON_MAKEFILES
+
 #The directory where we put all objects/libraries/binaries. The project Makefile can
 #configure this if needed.
 BUILD_DIR_BASE ?= $(PROJECT_PATH)/build
 export BUILD_DIR_BASE
+
+# Include project config file, if it exists.
+#
+# (Note that we only rebuild auto.conf automatically for some targets,
+# see project_config.mk for details.)
+SDKCONFIG_MAKEFILE := $(BUILD_DIR_BASE)/include/config/auto.conf
+-include $(SDKCONFIG_MAKEFILE)
+export $(filter CONFIG_%,$(.VARIABLES))
 
 #Component directories. These directories are searched for components.
 #The project Makefile can override these component dirs, or define extra component directories.
@@ -87,47 +98,32 @@ COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(c
 # LDFLAGS args (COMPONENT_LDFLAGS) supplied by each component.
 COMPONENT_INCLUDES :=
 COMPONENT_LDFLAGS :=
-#
-# Also add any inter-component dependencies for each component.
 
-# Extract a variable from a child make process
+# include paths for generated "component project variables" targets with
+# COMPONENT_INCLUDES, COMPONENT_LDFLAGS & dependency targets
 #
-# $(1) - path to directory to invoke make in
-# $(2) - name of variable to print via the get_variable target (passed in GET_VARIABLE)
+# See component_project_vars.mk target in component_common.mk
+COMPONENT_PROJECT_VARS := $(addsuffix /component_project_vars.mk,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
+COMPONENT_PROJECT_VARS := $(addprefix $(BUILD_DIR_BASE)/,$(COMPONENT_PROJECT_VARS))
+include $(COMPONENT_PROJECT_VARS)
+
+
+# Generate a target to rebuild component_project_vars.mk for a component
+# $(1) - component directory
+# $(2) - component name only
 #
-# needs 'sed' processing of stdout because make sometimes echoes other stuff on stdout,
-# even if asked not to.
-#
-# Debugging this? Replace $(shell with $(error and you'll see the full command as-run.
-define GetVariable
-$(shell "$(MAKE)" -s --no-print-directory -C $(1) -f component.mk get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
+# Rebuilds if component.mk, makefiles or sdkconfig changes.
+define GenerateProjectVarsTarget
+$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(if $(MAKE_RESTARTS),,$(SDKCONFIG_MAKEFILE)) $(BUILD_DIR_BASE)/$(2)
+	$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(1)/component.mk component_project_vars.mk COMPONENT_PATH=$(1)
 endef
+$(foreach comp,$(COMPONENT_PATHS_BUILDABLE), $(eval $(call GenerateProjectVarsTarget,$(comp),$(notdir $(comp)))))
 
-COMPONENT_INCLUDES := $(abspath $(foreach comp,$(COMPONENT_PATHS_BUILDABLE),$(addprefix $(comp)/, \
-	$(call GetVariable,$(comp),COMPONENT_ADD_INCLUDEDIRS))))
-
-#Also add project include path, for sdk includes
+#Also add project include path, for top-level includes
 COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
+
 export COMPONENT_INCLUDES
-
-#COMPONENT_LDFLAGS has a list of all flags that are needed to link the components together. It's collected
-#in the same way as COMPONENT_INCLUDES is.
-COMPONENT_LDFLAGS := $(foreach comp,$(COMPONENT_PATHS_BUILDABLE), \
-	$(call GetVariable,$(comp),COMPONENT_ADD_LDFLAGS))
 export COMPONENT_LDFLAGS
-
-# Generate component dependency targets from dependencies lists
-# each component gains a target of its own <name>-build with dependencies
-# of the names of any other components (-build) that need building first
-#
-# the actual targets (that invoke submakes) are generated below by
-# GenerateComponentTarget macro.
-define GenerateComponentDependencies
-# $(1) = component path
-.PHONY: $$(notdir $(1))
-$$(notdir $(1))-build: $(addsuffix -build,$(call GetVariable,$(1),COMPONENT_DEPENDS))
-endef
-$(foreach comp,$(COMPONENT_PATHS_BUILDABLE), $(eval $(call GenerateComponentDependencies,$(comp))))
 
 #Make sure submakes can also use this.
 export PROJECT_PATH
@@ -242,7 +238,7 @@ COMPONENT_PATH := $(1)
 endef
 $(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefile,$(componentpath))))
 
-# once we know component paths, we can include the config
+# once we know component paths, we can include the config generation targets
 include $(IDF_PATH)/make/project_config.mk
 
 # A "component" library is any library in the LDFLAGS where
@@ -269,29 +265,31 @@ $(BUILD_DIR_BASE):
 
 define GenerateComponentPhonyTarget
 # $(1) - path to component dir
-# $(2) - target to generate (build, clean)
-.PHONY: $(notdir $(1))-$(2)
-$(notdir $(1))-$(2): | $(BUILD_DIR_BASE)/$(notdir $(1))
-	$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(notdir $(1)) -f $(1)/component.mk COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(notdir $(1)) $(2)
+# $(2) - name of component
+# $(3) - target to generate (build, clean)
+.PHONY: $(2)-$(3)
+$(2)-$(3): | $(BUILD_DIR_BASE)/$(2)
+	$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(1)/component.mk COMPONENT_PATH=$(1) COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(2) $(3)
 endef
 
 define GenerateComponentTargets
 # $(1) - path to component dir
-$(BUILD_DIR_BASE)/$(notdir $(1)):
-	@mkdir -p $(BUILD_DIR_BASE)/$(notdir $(1))
+# $(2) - name of component
+$(BUILD_DIR_BASE)/$(2):
+	@mkdir -p $(BUILD_DIR_BASE)/$(2)
 
 # tell make it can build any component's library by invoking the recursive -build target
 # (this target exists for all components even ones which don't build libraries, but it's
 # only invoked for the targets whose libraries appear in COMPONENT_LIBRARIES and hence the
 # APP_ELF dependencies.)
-$(BUILD_DIR_BASE)/$(notdir $(1))/lib$(notdir $(1)).a: $(notdir $(1))-build
+$(BUILD_DIR_BASE)/$(2)/lib$(2).a: $(2)-build
 	$(details) "Target '$$^' responsible for '$$@'" # echo which build target built this file
 endef
 
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTargets,$(component))))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTargets,$(component),$(notdir $(component)))))
 
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),build)))
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),clean)))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),$(notdir $(component)),build)))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),$(notdir $(component)),clean)))
 
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)

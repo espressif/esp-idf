@@ -2,12 +2,6 @@
 # and component makefiles
 #
 
-# Include project config file, if it exists.
-#
-# (Note that we only rebuild auto.conf automatically for some targets,
-# see project_config.mk for details.)
--include $(BUILD_DIR_BASE)/include/config/auto.conf
-
 #Handling of V=1/VERBOSE=1 flag
 #
 # if V=1, $(summary) does nothing and $(details) will echo extra details

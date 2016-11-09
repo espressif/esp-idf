@@ -37,7 +37,7 @@ defconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
 
 # Work out of whether we have to build the Kconfig makefile
 # (auto.conf), or if we're in a situation where we don't need it
-NON_CONFIG_TARGETS := clean %-clean get_variable help menuconfig defconfig
+NON_CONFIG_TARGETS := clean %-clean help menuconfig defconfig
 AUTO_CONF_REGEN_TARGET := $(BUILD_DIR_BASE)/include/config/auto.conf
 
 # disable AUTO_CONF_REGEN_TARGET if all targets are non-config targets
