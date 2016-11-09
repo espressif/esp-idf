@@ -22,7 +22,7 @@ for example in ${IDF_PATH}/examples/*; do
 	pushd ${EXAMPLE_NUM}/`basename ${example}`
 	# can't do "make defconfig all" as this will trip menuconfig
 	# sometimes
-	make defconfig && make || RESULT=$?
+	make defconfig V=1 && make V=1 || RESULT=$?
 	popd
 	EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
 done

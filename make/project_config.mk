@@ -21,13 +21,17 @@ KCONFIG_TOOL_ENV=KCONFIG_AUTOHEADER=$(abspath $(BUILD_DIR_BASE)/include/sdkconfi
 	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" KCONFIG_CONFIG=$(SDKCONFIG) \
 	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)"
 
-menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
+menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
 	$(summary) MENUCONFIG
 	$(Q) $(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
 
 ifeq ("$(wildcard $(SDKCONFIG))","")
-#No sdkconfig found. Need to run menuconfig to make this if we need it.
+ifeq ("$(filter defconfig,$(MAKECMDGOALS))","")
+# if not configuration is present and defconfig is not a target, run makeconfig
 $(SDKCONFIG): menuconfig
+else
+$(SDKCONFIG): defconfig
+endif
 endif
 
 defconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
