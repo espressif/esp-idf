@@ -78,7 +78,7 @@ typedef struct {
 } system_event_sta_got_ip_t;
 
 typedef struct {
-    uint8_t pin_code;         /**< PIN code of station in enrollee mode */
+    uint8_t pin_code[8];         /**< PIN code of station in enrollee mode */
 }system_event_sta_wps_er_pin_t;
 
 typedef struct {

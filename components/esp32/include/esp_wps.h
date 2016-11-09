@@ -63,7 +63,6 @@ typedef enum wps_type {
   *          - ESP_OK : succeed
   *          - ESP_ERR_WIFI_WPS_TYPE : wps type is invalid
   *          - ESP_ERR_WIFI_WPS_MODE : wifi is not in station mode or sniffer mode is on
-  *          - ESP_ERR_WIFI_WPS_SM : wps state machine is not initialized
   *          - ESP_ERR_WIFI_FAIL : wps initialization fails
   */
 esp_err_t esp_wifi_wps_enable(wps_type_t wps_type);
