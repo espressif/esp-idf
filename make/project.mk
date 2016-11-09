@@ -111,18 +111,6 @@ COMPONENT_PROJECT_VARS := $(addsuffix /component_project_vars.mk,$(notdir $(COMP
 COMPONENT_PROJECT_VARS := $(addprefix $(BUILD_DIR_BASE)/,$(COMPONENT_PROJECT_VARS))
 include $(COMPONENT_PROJECT_VARS)
 
-
-# Generate a target to rebuild component_project_vars.mk for a component
-# $(1) - component directory
-# $(2) - component name only
-#
-# Rebuilds if component.mk, makefiles or sdkconfig changes.
-define GenerateProjectVarsTarget
-$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG) | $(BUILD_DIR_BASE)/$(2)
-	$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(1)/component.mk component_project_vars.mk COMPONENT_PATH=$(1)
-endef
-$(foreach comp,$(COMPONENT_PATHS_BUILDABLE), $(eval $(call GenerateProjectVarsTarget,$(comp),$(notdir $(comp)))))
-
 #Also add project include path, for top-level includes
 COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
 
@@ -271,33 +259,44 @@ all_binaries: $(APP_BIN)
 $(BUILD_DIR_BASE):
 	mkdir -p $(BUILD_DIR_BASE)
 
-define GenerateComponentPhonyTarget
-# $(1) - path to component dir
-# $(2) - name of component
-# $(3) - target to generate (build, clean)
-.PHONY: $(2)-$(3)
-$(2)-$(3): | $(BUILD_DIR_BASE)/$(2)
-	$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(1)/component.mk COMPONENT_PATH=$(1) COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(2) $(3)
+# Macro for the recursive sub-make for each component
+# $(1) - component directory
+# $(2) - component name only
+#
+# Is recursively expanded by the GenerateComponentTargets macro
+define ComponentMake
+$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(1)/component.mk COMPONENT_PATH=$(1) COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(2)
 endef
 
 define GenerateComponentTargets
 # $(1) - path to component dir
 # $(2) - name of component
+.PHONY: $(2)-build $(2)-clean
+
+$(2)-build:
+	$(call ComponentMake,$(1),$(2)) build
+
+$(2)-clean:
+	$(call ComponentMake,$(1),$(2)) clean
+
 $(BUILD_DIR_BASE)/$(2):
 	@mkdir -p $(BUILD_DIR_BASE)/$(2)
 
-# tell make it can build any component's library by invoking the recursive -build target
+# tell make it can build any component's library by invoking the -build target
 # (this target exists for all components even ones which don't build libraries, but it's
 # only invoked for the targets whose libraries appear in COMPONENT_LIBRARIES and hence the
 # APP_ELF dependencies.)
 $(BUILD_DIR_BASE)/$(2)/lib$(2).a: $(2)-build
 	$(details) "Target '$$^' responsible for '$$@'" # echo which build target built this file
+
+# add a target to generate the component_project_vars.mk files
+# that are used to inject variables into project make pass (see
+# component_project_vars.mk target in component_common.mk).
+$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG) | $(BUILD_DIR_BASE)/$(2)
+	$(call ComponentMake,$(1),$(2)) component_project_vars.mk
 endef
 
 $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTargets,$(component),$(notdir $(component)))))
-
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),$(notdir $(component)),build)))
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),$(notdir $(component)),clean)))
 
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)
