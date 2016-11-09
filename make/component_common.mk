@@ -58,19 +58,33 @@ COMPONENT_ADD_LDFLAGS ?= -l$(COMPONENT_NAME)
 OWN_INCLUDES:=$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS) $(COMPONENT_PRIV_INCLUDEDIRS)))
 COMPONENT_INCLUDES := $(OWN_INCLUDES) $(filter-out $(OWN_INCLUDES),$(COMPONENT_INCLUDES))
 
-# This target is used to take component.mk variables COMPONENT_ADD_INCLUDEDIRS,
-# COMPONENT_ADD_LDFLAGS and COMPONENT_DEPENDS and inject them into the project
-# makefile level.
+# macro to generate relative paths inside component_project_vars.mk, whenever possible
+# ie put literal $(IDF_PATH), $(PROJECT_PATH) and $(BUILD_DIR_BASE) into the generated
+# makefiles where possible.
+#
+# This means if directories move (breaking absolute paths), don't need to 'make clean'
+define MakeRelativePath
+$(subst $(IDF_PATH),$$(IDF_PATH),$(subst $(PROJECT_PATH),$$(PROJECT_PATH),$(subst $(BUILD_DIR_BASE),\$$(BUILD_DIR_BASE),$(1))))
+endef
+
+# This target generates component_project_vars.mk for the
+# component. This is used to take component.mk variables
+# COMPONENT_ADD_INCLUDEDIRS, COMPONENT_ADD_LDFLAGS and
+# COMPONENT_DEPENDS and inject those into the project makefile.
 #
 # The target here has no dependencies, as the parent target in
 # project.mk evaluates dependencies before calling down to here. See
-# GenerateProjectVarsTarget in project.mk.
+# GenerateComponentTargets macro in project.mk.
+#
+# If you are thinking of editing the output of this makefile for a
+# component-specific feature, please don't! What you want is a
+# Makefile.projbuild for your component (see docs/build-system.rst for more.)
 component_project_vars.mk::
 	$(details) "Building component project variables list $(abspath $@)"
-	@echo "# Automatically generated build file. Do not edit." > $@
-	@echo "COMPONENT_INCLUDES += $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS))" >> $@
-	@echo "COMPONENT_LDFLAGS += $(COMPONENT_ADD_LDFLAGS)" >> $@
-	@echo "$(COMPONENT_NAME)-build: $(addsuffix -build,$(COMPONENT_DEPENDS))" >> $@
+	@echo '# Automatically generated build file. Do not edit.' > $@
+	@echo 'COMPONENT_INCLUDES += $(call MakeRelativePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS)))' >> $@
+	@echo 'COMPONENT_LDFLAGS += $(call MakeRelativePath,$(COMPONENT_ADD_LDFLAGS))' >> $@
+	@echo '$(COMPONENT_NAME)-build: $(addsuffix -build,$(COMPONENT_DEPENDS))' >> $@
 
 #Targets for build/clean. Use builtin recipe if component Makefile
 #hasn't defined its own.
