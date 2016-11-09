@@ -66,7 +66,7 @@ COMPONENT_INCLUDES := $(OWN_INCLUDES) $(filter-out $(OWN_INCLUDES),$(COMPONENT_I
 # project.mk evaluates dependencies before calling down to here. See
 # GenerateProjectVarsTarget in project.mk.
 component_project_vars.mk::
-	$(details) "Rebuilding component project variables list $(abspath $@)"
+	$(details) "Building component project variables list $(abspath $@)"
 	@echo "# Automatically generated build file. Do not edit." > $@
 	@echo "COMPONENT_INCLUDES += $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS))" >> $@
 	@echo "COMPONENT_LDFLAGS += $(COMPONENT_ADD_LDFLAGS)" >> $@

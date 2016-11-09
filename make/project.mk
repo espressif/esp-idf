@@ -56,13 +56,17 @@ export COMMON_MAKEFILES
 BUILD_DIR_BASE ?= $(PROJECT_PATH)/build
 export BUILD_DIR_BASE
 
+ifndef IS_BOOTLOADER_BUILD
 # Include project config file, if it exists.
+# (bootloader build doesn't need this, config is exported from top-level)
 #
 # (Note that we only rebuild auto.conf automatically for some targets,
 # see project_config.mk for details.)
+#
 SDKCONFIG_MAKEFILE := $(BUILD_DIR_BASE)/include/config/auto.conf
 -include $(SDKCONFIG_MAKEFILE)
 export $(filter CONFIG_%,$(.VARIABLES))
+endif
 
 #Component directories. These directories are searched for components.
 #The project Makefile can override these component dirs, or define extra component directories.
@@ -114,7 +118,7 @@ include $(COMPONENT_PROJECT_VARS)
 #
 # Rebuilds if component.mk, makefiles or sdkconfig changes.
 define GenerateProjectVarsTarget
-$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(if $(MAKE_RESTARTS),,$(SDKCONFIG_MAKEFILE)) $(BUILD_DIR_BASE)/$(2)
+$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG) | $(BUILD_DIR_BASE)/$(2)
 	$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(1)/component.mk component_project_vars.mk COMPONENT_PATH=$(1)
 endef
 $(foreach comp,$(COMPONENT_PATHS_BUILDABLE), $(eval $(call GenerateProjectVarsTarget,$(comp),$(notdir $(comp)))))
@@ -238,8 +242,12 @@ COMPONENT_PATH := $(1)
 endef
 $(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefile,$(componentpath))))
 
+ifndef IS_BOOTLOADER_BUILD
 # once we know component paths, we can include the config generation targets
+#
+# (bootloader build doesn't need this, config is exported from top-level)
 include $(IDF_PATH)/make/project_config.mk
+endif
 
 # A "component" library is any library in the LDFLAGS where
 # the name of the library is also a name of the component
