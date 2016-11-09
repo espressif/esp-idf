@@ -19,9 +19,15 @@ static const uint32_t STATUS_QIE_BIT = (1 << 9); /* Quad Enable */
 #define SPI_IDX 1
 #define OTH_IDX 0
 
+#ifndef BOOTLOADER_BUILD
+#define ATTR IRAM_ATTR
+#else
+#define ATTR
+#endif // BOOTLOADER_BUILD
+
 extern SpiFlashChip SPI_flashchip_data;
 
-static void IRAM_ATTR Wait_SPI_Idle(void)
+static void ATTR Wait_SPI_Idle(void)
 {
   /* Wait for SPI state machine to be idle */
   while((REG_READ(SPI_EXT2_REG(SPI_IDX)) & SPI_ST)) {
@@ -42,7 +48,7 @@ static void IRAM_ATTR Wait_SPI_Idle(void)
    about interrupts, CPU coordination, flash mapping. However some of
    the functions in esp_spi_flash.c call it.
  */
-SpiFlashOpResult IRAM_ATTR SPIUnlock(void)
+SpiFlashOpResult ATTR SPIUnlock(void)
 {
   uint32_t status;
 

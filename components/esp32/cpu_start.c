@@ -177,9 +177,9 @@ void start_cpu0_default(void)
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
     const char* default_uart_dev = "/dev/uart/0";
+    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
     _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
-    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     do_global_ctors();
 #if !CONFIG_FREERTOS_UNICORE
     esp_crosscore_int_init();

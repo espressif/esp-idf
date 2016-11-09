@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/fcntl.h>
 #include "esp_task.h"
 #include "sdkconfig.h"
 
