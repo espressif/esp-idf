@@ -151,6 +151,10 @@ int esp_vfs_open(struct _reent *r, const char * path, int flags, int mode)
     const char* path_within_vfs = translate_path(vfs, path);
     int ret;
     CHECK_AND_CALL(ret, r, vfs, open, path_within_vfs, flags, mode);
+    if (ret < 0) {
+        return ret;
+    }
+    assert(ret >= vfs->vfs.fd_offset);
     return ret - vfs->vfs.fd_offset + (vfs->offset << VFS_INDEX_S);
 }
 

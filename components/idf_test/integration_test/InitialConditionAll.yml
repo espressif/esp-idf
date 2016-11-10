@@ -2933,3 +2933,27 @@ initial condition:
   start: 87.0
   tag: T3_PHY1
   test script: InitCondBase
+- check cmd set:
+  - ''
+  - - UT UT1 -
+    - [R UT1 C Tests C Failures C Ignored]
+  force restore cmd set:
+  - ''
+  - - FREBOOT UT1
+    - ['']
+  - - UT UT1 -
+    - [R UT1 C Tests C Failures C Ignored]
+  initial condition detail: At UT menu page
+  restore cmd set:
+  - ''
+  - - FREBOOT UT1
+    - ['']
+  - - UT UT1 -
+    - [R UT1 C Tests C Failures C Ignored]
+  restore post cmd set:
+  - ''
+  - - DELAY 0.1
+    - ['']
+  script path: InitCondBase.py
+  tag: UTINIT1
+  test script: InitCondBase

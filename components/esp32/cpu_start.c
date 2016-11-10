@@ -20,6 +20,7 @@
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
 #include "rom/rtc.h"
+#include "rom/cache.h"
 
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"
@@ -110,7 +111,9 @@ void IRAM_ATTR call_start_cpu0()
 
 #if !CONFIG_FREERTOS_UNICORE
     ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
-
+    //Flush and enable icache for APP CPU
+    Cache_Flush(1);
+    Cache_Read_Enable(1);
     //Un-stall the app cpu; the panic handler may have stalled it.
     CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_APPCPU_C1_M);
     CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_APPCPU_C0_M);
@@ -174,9 +177,9 @@ void start_cpu0_default(void)
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
     const char* default_uart_dev = "/dev/uart/0";
+    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
     _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
-    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     do_global_ctors();
 #if !CONFIG_FREERTOS_UNICORE
     esp_crosscore_int_init();
