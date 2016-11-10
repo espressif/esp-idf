@@ -1,5 +1,6 @@
 stages:
   - build
+  - unit_test
   - test
   - test_report
   - deploy
@@ -75,6 +76,23 @@ build_ssc:
     - make defconfig
     - chmod +x gen_misc_ng.sh
     - ./gen_misc_ng.sh
+
+build_esp_idf_tests:
+  <<: *build_template
+  artifacts:
+    paths:
+      - ./esp-idf-tests/build/*.bin
+      - ./esp-idf-tests/build/*.elf
+      - ./esp-idf-tests/build/*.map
+      - ./esp-idf-tests/build/bootloader/*.bin
+    expire_in: 6 mos
+
+  script:
+    - git clone $GITLAB_SSH_SERVER/idf/esp-idf-tests.git
+    - cd esp-idf-tests
+    - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
+    - make defconfig
+    - make
 
 build_examples:
   <<: *build_template
@@ -215,7 +233,7 @@ deploy_docs:
     APP_NAME: "ssc"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     # append test level folder to TEST_CASE_FILE_PATH in before_script of test job
-    TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
+    TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
 
   artifacts:
@@ -261,13 +279,34 @@ deploy_docs:
     # run test
     - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
 
+# template for unit test jobs
+.unit_test_template: &unit_test_template
+  <<: *test_template
+  allow_failure: false
+  stage: unit_test
+
+  variables:
+    # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
+    LOCAL_ENV_CONFIG_PATH: /home/gitlab-runner/LocalConfig/ESP32_IDF
+    BIN_PATH: "$CI_PROJECT_DIR/esp-idf-tests/build/"
+    LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
+    APP_NAME: "ut"
+    TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
+
+UT_Function_SYS_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/UT_Function_SYS_01.yml
+
 IT_Function_SYS_01:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_SYS_01.yml
 
 IT_Function_WIFI_01:
@@ -277,7 +316,6 @@ IT_Function_WIFI_01:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_01.yml
 
 IT_Function_WIFI_02:
@@ -287,7 +325,6 @@ IT_Function_WIFI_02:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_02.yml
 
 IT_Function_TCPIP_01:
@@ -297,7 +334,6 @@ IT_Function_TCPIP_01:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_01.yml
 
 IT_Function_TCPIP_02:
@@ -307,7 +343,6 @@ IT_Function_TCPIP_02:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_02.yml
 
 IT_Function_TCPIP_03:
@@ -317,7 +352,6 @@ IT_Function_TCPIP_03:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_03.yml
 
 IT_Function_TCPIP_04:
@@ -327,7 +361,6 @@ IT_Function_TCPIP_04:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_04.yml
 
 IT_Function_TCPIP_05:
@@ -337,7 +370,6 @@ IT_Function_TCPIP_05:
     - SSC_T1_1
     - SSC_T2_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_05.yml
 
 IT_Function_TCPIP_06:
@@ -346,7 +378,6 @@ IT_Function_TCPIP_06:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_06.yml
 
 IT_Function_WIFI_03:
@@ -355,7 +386,6 @@ IT_Function_WIFI_03:
     - ESP32_IDF
     - SSC_T3_PhyMode
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_03.yml
 
 IT_Function_WIFI_04:
@@ -364,7 +394,6 @@ IT_Function_WIFI_04:
     - ESP32_IDF
     - SSC_T1_APC
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_04.yml
 
 IT_Function_WIFI_05:
@@ -373,7 +402,6 @@ IT_Function_WIFI_05:
     - ESP32_IDF
     - SSC_T1_WEP
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_05.yml
 
 IT_Function_WIFI_06:
@@ -382,7 +410,6 @@ IT_Function_WIFI_06:
     - ESP32_IDF
     - SSC_T2_PhyMode
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_06.yml
 
 IT_Function_TCPIP_07:
@@ -393,7 +420,6 @@ IT_Function_TCPIP_07:
     - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_07.yml
 
 IT_Function_TCPIP_08:
@@ -402,7 +428,6 @@ IT_Function_TCPIP_08:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_08.yml
 
 IT_Function_TCPIP_09:
@@ -411,7 +436,6 @@ IT_Function_TCPIP_09:
     - ESP32_IDF
     - SSC_T1_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_09.yml
 
 IT_Function_TCPIP_10:
@@ -422,7 +446,6 @@ IT_Function_TCPIP_10:
     - SSC_T1_2
     - SSC_T2_1
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_10.yml
 
 IT_Function_TCPIP_11:
@@ -430,8 +453,8 @@ IT_Function_TCPIP_11:
   tags:
     - ESP32_IDF
     - SSC_T1_1
+    - SSC_T1_2
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_11.yml
 
 IT_Function_TCPIP_12:
@@ -439,7 +462,5 @@ IT_Function_TCPIP_12:
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T1_2
   before_script:
-    - TEST_CASE_FILE_PATH=$TEST_CASE_FILE_PATH/integration_test
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_12.yml

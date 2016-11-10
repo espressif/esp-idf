@@ -18,9 +18,11 @@
 
 #include "esp_err.h"
 #include "esp_wifi.h"
+#include "esp_wifi_internal.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
 #include "esp_task.h"
+#include "rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -76,8 +78,7 @@ static system_event_handle_t g_system_event_handle_table[] = {
 
 static esp_err_t system_event_sta_got_ip_default(system_event_t *event)
 {
-    extern esp_err_t esp_wifi_set_sta_ip(void);
-    WIFI_API_CALL_CHECK("esp_wifi_set_sta_ip", esp_wifi_set_sta_ip(), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_set_sta_ip", esp_wifi_internal_set_sta_ip(), ESP_OK);
 
     ESP_LOGI(TAG, "ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
            IP2STR(&event->event_info.got_ip.ip_info.ip),
@@ -92,7 +93,7 @@ esp_err_t system_event_ap_start_handle_default(system_event_t *event)
     tcpip_adapter_ip_info_t ap_ip;
     uint8_t ap_mac[6];
 
-    WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, (wifi_rxcb_t)tcpip_adapter_ap_input), ESP_OK);
     WIFI_API_CALL_CHECK("esp_wifi_mac_get",  esp_wifi_get_mac(WIFI_IF_AP, ap_mac), ESP_OK);
 
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ap_ip);
@@ -103,7 +104,7 @@ esp_err_t system_event_ap_start_handle_default(system_event_t *event)
 
 esp_err_t system_event_ap_stop_handle_default(system_event_t *event)
 {
-    WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_AP, NULL), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL), ESP_OK);
 
     tcpip_adapter_stop(TCPIP_ADAPTER_IF_AP);
 
@@ -133,7 +134,7 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
 {
     tcpip_adapter_dhcp_status_t status;
 
-    WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t)tcpip_adapter_sta_input), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_STA, (wifi_rxcb_t)tcpip_adapter_sta_input), ESP_OK);
 
     tcpip_adapter_up(TCPIP_ADAPTER_IF_STA);
 
@@ -165,7 +166,7 @@ esp_err_t system_event_sta_connected_handle_default(system_event_t *event)
 esp_err_t system_event_sta_disconnected_handle_default(system_event_t *event)
 {
     tcpip_adapter_down(TCPIP_ADAPTER_IF_STA);
-    WIFI_API_CALL_CHECK("esp_wifi_reg_rxcb", esp_wifi_reg_rxcb(WIFI_IF_STA, NULL), ESP_OK);
+    WIFI_API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(WIFI_IF_STA, NULL), ESP_OK);
     return ESP_OK;
 }
 
@@ -196,16 +197,14 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     }
     case SYSTEM_EVENT_STA_CONNECTED: {
         system_event_sta_connected_t *connected = &event->event_info.connected;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_CONNECTED, ssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, channel:%d, authmode:%d", \
-                   connected->ssid, connected->ssid_len, connected->bssid[0], connected->bssid[0], connected->bssid[1], \
-                   connected->bssid[3], connected->bssid[4], connected->bssid[5], connected->channel, connected->authmode);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_CONNECTED, ssid:%s, ssid_len:%d, bssid:" MACSTR ", channel:%d, authmode:%d", \
+                   connected->ssid, connected->ssid_len, MAC2STR(connected->bssid), connected->channel, connected->authmode);
         break;
     }
     case SYSTEM_EVENT_STA_DISCONNECTED: {
         system_event_sta_disconnected_t *disconnected = &event->event_info.disconnected;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED, ssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, reason:%d", \
-                   disconnected->ssid, disconnected->ssid_len, disconnected->bssid[0], disconnected->bssid[0], disconnected->bssid[1], \
-                   disconnected->bssid[3], disconnected->bssid[4], disconnected->bssid[5], disconnected->reason);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED, ssid:%s, ssid_len:%d, bssid:" MACSTR ", reason:%d", \
+                   disconnected->ssid, disconnected->ssid_len, MAC2STR(disconnected->bssid), disconnected->reason);
         break;
     }
     case SYSTEM_EVENT_STA_AUTHMODE_CHANGE: {
@@ -231,23 +230,21 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     }
     case SYSTEM_EVENT_AP_STACONNECTED: {
         system_event_ap_staconnected_t *staconnected = &event->event_info.sta_connected;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STACONNECTED, mac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d", \
-                   staconnected->mac[0], staconnected->mac[0], staconnected->mac[1], \
-                   staconnected->mac[3], staconnected->mac[4], staconnected->mac[5], staconnected->aid);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STACONNECTED, mac:" MACSTR ", aid:%d", \
+                   MAC2STR(staconnected->mac), staconnected->aid);
         break;
     }
     case SYSTEM_EVENT_AP_STADISCONNECTED: {
         system_event_ap_stadisconnected_t *stadisconnected = &event->event_info.sta_disconnected;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STADISCONNECTED, mac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d", \
-                   stadisconnected->mac[0], stadisconnected->mac[0], stadisconnected->mac[1], \
-                   stadisconnected->mac[3], stadisconnected->mac[4], stadisconnected->mac[5], stadisconnected->aid);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STADISCONNECTED, mac:" MACSTR ", aid:%d", \
+                   MAC2STR(stadisconnected->mac), stadisconnected->aid);
         break;
     }
     case SYSTEM_EVENT_AP_PROBEREQRECVED: {
         system_event_ap_probe_req_rx_t *ap_probereqrecved = &event->event_info.ap_probereqrecved;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_PROBEREQRECVED, rssi:%d, mac:%02x:%02x:%02x:%02x:%02x:%02x", \
-                   ap_probereqrecved->rssi, ap_probereqrecved->mac[0], ap_probereqrecved->mac[0], ap_probereqrecved->mac[1], \
-                   ap_probereqrecved->mac[3], ap_probereqrecved->mac[4], ap_probereqrecved->mac[5]);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_PROBEREQRECVED, rssi:%d, mac:" MACSTR, \
+                   ap_probereqrecved->rssi, \
+                   MAC2STR(ap_probereqrecved->mac));
         break;
     }
     default: {

@@ -38,8 +38,8 @@ static uint32_t s_flash_op_cache_state[2];
 
 #ifndef CONFIG_FREERTOS_UNICORE
 static SemaphoreHandle_t s_flash_op_mutex;
-static bool s_flash_op_can_start = false;
-static bool s_flash_op_complete = false;
+static volatile bool s_flash_op_can_start = false;
+static volatile bool s_flash_op_complete = false;
 
 void spi_flash_init_lock()
 {

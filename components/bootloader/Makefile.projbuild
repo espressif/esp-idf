@@ -33,7 +33,7 @@ clean: bootloader-clean
 
 bootloader: $(BOOTLOADER_BIN)
 	@echo "Bootloader built. Default flash command is:"
-	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $(BOOTLOADER_BIN)"
+	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $^"
 
 all_binaries: $(BOOTLOADER_BIN)
 
@@ -41,7 +41,7 @@ ESPTOOL_ALL_FLASH_ARGS += 0x1000 $(BOOTLOADER_BIN)
 
 # bootloader-flash calls flash in the bootloader dummy project
 bootloader-flash: $(BOOTLOADER_BIN)
-	$(BOOTLOADER_MAKE) flash
+	$(ESPTOOLPY_WRITE_FLASH) 0x1000 $^
 
 # synchronise the project level config to the bootloader's
 # config
