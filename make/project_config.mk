@@ -42,7 +42,7 @@ defconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
 # Work out of whether we have to build the Kconfig makefile
 # (auto.conf), or if we're in a situation where we don't need it
 NON_CONFIG_TARGETS := clean %-clean help menuconfig defconfig
-AUTO_CONF_REGEN_TARGET := $(BUILD_DIR_BASE)/include/config/auto.conf
+AUTO_CONF_REGEN_TARGET := $(SDKCONFIG_MAKEFILE)
 
 # disable AUTO_CONF_REGEN_TARGET if all targets are non-config targets
 # (and not building default target)
@@ -50,7 +50,7 @@ ifneq ("$(MAKECMDGOALS)","")
 ifeq ($(filter $(NON_CONFIG_TARGETS), $(MAKECMDGOALS)),$(MAKECMDGOALS))
 AUTO_CONF_REGEN_TARGET :=
 # dummy target
-$(BUILD_DIR_BASE)/include/config/auto.conf:
+$(SDKCONFIG_MAKEFILE):
 endif
 endif
 

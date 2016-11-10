@@ -12,8 +12,6 @@ COMPONENT_ADD_LDFLAGS := -lbt -L $(COMPONENT_PATH)/lib \
                            $(addprefix -l,$(LIBS)) \
                           $(LINKER_SCRIPTS)
 
-include $(IDF_PATH)/make/component_common.mk
-
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 $(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
 

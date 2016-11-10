@@ -48,80 +48,73 @@ PROJECT_PATH := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 export PROJECT_PATH
 endif
 
-COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/component_common.mk)
+# A list of the "common" makefiles, to use as a target dependency
+COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/component_wrapper.mk)
 export COMMON_MAKEFILES
 
-#The directory where we put all objects/libraries/binaries. The project Makefile can
-#configure this if needed.
+# The directory where we put all objects/libraries/binaries. The project Makefile can
+# configure this if needed.
 BUILD_DIR_BASE ?= $(PROJECT_PATH)/build
 export BUILD_DIR_BASE
 
-ifndef IS_BOOTLOADER_BUILD
-# Include project config file, if it exists.
-# (bootloader build doesn't need this, config is exported from top-level)
-#
-# (Note that we only rebuild auto.conf automatically for some targets,
-# see project_config.mk for details.)
-#
-SDKCONFIG_MAKEFILE := $(BUILD_DIR_BASE)/include/config/auto.conf
--include $(SDKCONFIG_MAKEFILE)
-export $(filter CONFIG_%,$(.VARIABLES))
-endif
-
-#Component directories. These directories are searched for components.
-#The project Makefile can override these component dirs, or define extra component directories.
+# Component directories. These directories are searched for components.
+# The project Makefile can override these component dirs, or define extra component directories.
 COMPONENT_DIRS ?= $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components
 export COMPONENT_DIRS
 
-#The project Makefile can define a list of components, but if it does not do this we just take
-#all available components in the component dirs.
+# Source directories of the project itself (a special, project-specific component.) Defaults to only "main".
+SRCDIRS ?= main
+
+# The project Makefile can define a list of components, but if it does not do this we just take
+# all available components in the component dirs.
 ifeq ("$(COMPONENTS)","")
-#Find all component names. The component names are the same as the
-#directories they're in, so /bla/components/mycomponent/ -> mycomponent. We later use
-#the COMPONENT_DIRS bit to find back the component path.
+# Find all component names. The component names are the same as the
+# directories they're in, so /bla/components/mycomponent/ -> mycomponent. We then use
+# COMPONENT_DIRS to build COMPONENT_PATHS with the full path to each component.
 COMPONENTS := $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/*))
 COMPONENTS := $(sort $(foreach comp,$(COMPONENTS),$(lastword $(subst /, ,$(comp)))))
 endif
 export COMPONENTS
 
-#Sources default to only "main"
-SRCDIRS ?= main
-
-#Here, we resolve and add all the components and source paths into absolute paths.
-#If a component exists in multiple COMPONENT_DIRS, we take the first match.
-#WARNING: These directories paths must be generated WITHOUT a trailing / so we
-#can use $(notdir x) to get the component name.
+# Resolve all of COMPONENTS into absolute paths in COMPONENT_PATHS.
+#
+# If a component name exists in multiple COMPONENT_DIRS, we take the first match.
+#
+# NOTE: These paths must be generated WITHOUT a trailing / so we
+# can use $(notdir x) to get the component name.
 COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)))))
 COMPONENT_PATHS += $(abspath $(SRCDIRS))
 
-#A component is buildable if it has a component.mk makefile; we assume that a
-# 'make -C $(component dir) -f component.mk build' results in a lib$(componentname).a
+# A component is buildable if it has a component.mk makefile in it
 COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
 
-# Assemble global list of include dirs (COMPONENT_INCLUDES), and
-# LDFLAGS args (COMPONENT_LDFLAGS) supplied by each component.
+# Initialise a project-wide list of include dirs (COMPONENT_INCLUDES),
+# and LDFLAGS args (COMPONENT_LDFLAGS) supplied by each component.
+#
+# These variables are built up via the component_project_vars.mk
+# generated makefiles (one per component).
 COMPONENT_INCLUDES :=
 COMPONENT_LDFLAGS :=
 
-# include paths for generated "component project variables" targets with
-# COMPONENT_INCLUDES, COMPONENT_LDFLAGS & dependency targets
+# COMPONENT_PROJECT_VARS is the list of component_project_vars.mk generated makefiles
+# for each component.
 #
-# See component_project_vars.mk target in component_common.mk
+# Including $(COMPONENT_PROJECT_VARS) builds the COMPONENT_INCLUDES,
+# COMPONENT_LDFLAGS variables and also targets for any inter-component
+# dependencies.
+#
+# See the component_project_vars.mk target in component_wrapper.mk
 COMPONENT_PROJECT_VARS := $(addsuffix /component_project_vars.mk,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 COMPONENT_PROJECT_VARS := $(addprefix $(BUILD_DIR_BASE)/,$(COMPONENT_PROJECT_VARS))
 include $(COMPONENT_PROJECT_VARS)
 
-#Also add project include path, for top-level includes
+# Also add top-level project include path, for top-level includes
 COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
 
 export COMPONENT_INCLUDES
-export COMPONENT_LDFLAGS
 
-#Make sure submakes can also use this.
-export PROJECT_PATH
-
-#Include functionality common to both project & component
--include $(IDF_PATH)/make/common.mk
+# Set variables common to both project & component
+include $(IDF_PATH)/make/common.mk
 
 # Set default LDFLAGS
 
@@ -198,15 +191,15 @@ CXXFLAGS := $(strip \
 
 export CFLAGS CPPFLAGS CXXFLAGS
 
-#Set host compiler and binutils
+# Set host compiler and binutils
 HOSTCC := $(CC)
 HOSTLD := $(LD)
 HOSTAR := $(AR)
 HOSTOBJCOPY := $(OBJCOPY)
 export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY
 
-#Set target compiler. Defaults to whatever the user has
-#configured as prefix + yer olde gcc commands
+# Set target compiler. Defaults to whatever the user has
+# configured as prefix + ye olde gcc commands
 CC := $(call dequote,$(CONFIG_TOOLPREFIX))gcc
 CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
 LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
@@ -230,10 +223,10 @@ COMPONENT_PATH := $(1)
 endef
 $(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefile,$(componentpath))))
 
-ifndef IS_BOOTLOADER_BUILD
 # once we know component paths, we can include the config generation targets
 #
 # (bootloader build doesn't need this, config is exported from top-level)
+ifndef IS_BOOTLOADER_BUILD
 include $(IDF_PATH)/make/project_config.mk
 endif
 
@@ -265,12 +258,14 @@ $(BUILD_DIR_BASE):
 #
 # Is recursively expanded by the GenerateComponentTargets macro
 define ComponentMake
-$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(1)/component.mk COMPONENT_PATH=$(1) COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(2)
+$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(IDF_PATH)/make/component_wrapper.mk COMPONENT_MAKEFILE=$(1)/component.mk
 endef
 
-define GenerateComponentTargets
+# Generate top-level component-specific targets for each component
 # $(1) - path to component dir
 # $(2) - name of component
+#
+define GenerateComponentTargets
 .PHONY: $(2)-build $(2)-clean
 
 $(2)-build:
@@ -289,10 +284,19 @@ $(BUILD_DIR_BASE)/$(2):
 $(BUILD_DIR_BASE)/$(2)/lib$(2).a: $(2)-build
 	$(details) "Target '$$^' responsible for '$$@'" # echo which build target built this file
 
-# add a target to generate the component_project_vars.mk files
-# that are used to inject variables into project make pass (see
-# component_project_vars.mk target in component_common.mk).
-$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG) | $(BUILD_DIR_BASE)/$(2)
+# add a target to generate the component_project_vars.mk files that
+# are used to inject variables into project make pass (see matching
+# component_project_vars.mk target in component_wrapper.mk).
+#
+# If any component_project_vars.mk file is out of date, the make
+# process will call this target to rebuild it and then restart.
+#
+# Note: $(SDKCONFIG) is a normal prereq as we need to rebuild these
+# files whenever the config changes. $(SDKCONFIG_MAKEFILE) is an
+# order-only prereq because if it hasn't been rebuilt, we need to
+# build it first - but including it as a normal prereq can lead to
+# infinite restarts as the conf process will keep updating it.
+$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG) | $(BUILD_DIR_BASE)/$(2) $(SDKCONFIG_MAKEFILE)
 	$(call ComponentMake,$(1),$(2)) component_project_vars.mk
 endef
 

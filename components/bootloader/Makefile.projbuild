@@ -20,7 +20,7 @@ BOOTLOADER_MAKE=+$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
 
 .PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
 
-$(BOOTLOADER_BIN):
+$(BOOTLOADER_BIN): $(SDKCONFIG_MAKEFILE)
 	$(Q) $(BOOTLOADER_MAKE) $@
 
 bootloader-clean:

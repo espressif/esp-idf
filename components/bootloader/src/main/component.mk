@@ -1,12 +1,9 @@
 #
-# Main Makefile. This is basically the same as a component makefile.
+# Main bootloader Makefile.
 #
-# This Makefile should, at the very least, just include $(IDF_PATH)/make/component_common.mk. By default, 
-# this will take the sources in the src/ directory, compile them and link them into 
-# lib(subdirectory_name).a in the build directory. This behaviour is entirely configurable,
-# please read the esp-idf build system document if you need to do this.
+# This is basically the same as a component makefile, but in the case of the bootloader
+# we pull in bootloader-specific linker arguments.
 #
 
 COMPONENT_ADD_LDFLAGS := -L $(COMPONENT_PATH) -lmain -T esp32.bootloader.ld -T $(IDF_PATH)/components/esp32/ld/esp32.rom.ld
 
-include $(IDF_PATH)/make/component_common.mk
