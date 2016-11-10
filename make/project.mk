@@ -40,10 +40,9 @@ help:
 MAKEFLAGS_OLD := $(MAKEFLAGS)
 MAKEFLAGS +=-rR
 
-# Figure out PROJECT_PATH if not set
-ifeq ("$(PROJECT_PATH)","")
-#The path to the project: we assume the Makefile including this file resides
-#in the root of that directory.
+# Default path to the project: we assume the Makefile including this file
+# is in the project directory
+ifndef PROJECT_PATH
 PROJECT_PATH := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 export PROJECT_PATH
 endif
@@ -67,7 +66,7 @@ SRCDIRS ?= main
 
 # The project Makefile can define a list of components, but if it does not do this we just take
 # all available components in the component dirs.
-ifeq ("$(COMPONENTS)","")
+ifndef COMPONENTS
 # Find all component names. The component names are the same as the
 # directories they're in, so /bla/components/mycomponent/ -> mycomponent. We then use
 # COMPONENT_DIRS to build COMPONENT_PATHS with the full path to each component.

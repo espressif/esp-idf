@@ -8,7 +8,7 @@
 #
 # CWD is the build directory of the component.
 
-ifeq ("$(PROJECT_PATH)","")
+ifndef PROJECT_PATH
 $(error Make was invoked from $(CURDIR). However please do not run make from the sdk or a component directory; invoke make from the project directory. See the ESP-IDF README for details.)
 endif
 
@@ -60,7 +60,7 @@ include $(COMPONENT_MAKEFILE)
 
 # Object files which need to be linked into the library
 # By default we take all .c, .cpp & .S files in COMPONENT_SRCDIRS.
-ifeq ("$(COMPONENT_OBJS)", "")
+ifndef COMPONENT_OBJS
 # Find all source files in all COMPONENT_SRCDIRS
 COMPONENT_OBJS := $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.c,%.o,$(wildcard $(COMPONENT_PATH)/$(compsrcdir)/*.c)))
 COMPONENT_OBJS += $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.cpp,%.o,$(wildcard $(COMPONENT_PATH)/$(compsrcdir)/*.cpp)))
@@ -120,7 +120,7 @@ component_project_vars.mk::
 
 # If COMPONENT_OWNBUILDTARGET is not set, define a phony build target and
 # a COMPONENT_LIBRARY link target.
-ifeq ("$(COMPONENT_OWNBUILDTARGET)", "")
+ifndef COMPONENT_OWNBUILDTARGET
 .PHONY: build
 build: $(COMPONENT_LIBRARY)
 	@mkdir -p $(COMPONENT_SRCDIRS)
@@ -134,7 +134,7 @@ $(COMPONENT_LIBRARY): $(COMPONENT_OBJS)
 endif
 
 # If COMPONENT_OWNCLEANTARGET is not set, define a phony clean target
-ifeq ("$(COMPONENT_OWNCLEANTARGET)", "")
+ifndef COMPONENT_OWNCLEANTARGET
 CLEAN_FILES = $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EXTRA_CLEAN) component_project_vars.mk
 .PHONY: clean
 clean:
