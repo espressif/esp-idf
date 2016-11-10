@@ -22,9 +22,6 @@ import os
 
 # -- Run DoxyGen to prepare XML for Sphinx---------------------------------
 # ref. https://github.com/rtfd/readthedocs.org/issues/388
-#
-# added by krzychb, 24-Oct-2016
-#
 
 from subprocess import call, Popen, PIPE
 import shlex
@@ -297,8 +294,6 @@ texinfo_documents = [
 
 # -- Use sphinx_rtd_theme for local builds --------------------------------
 # ref. https://github.com/snide/sphinx_rtd_theme#using-this-theme-locally-then-building-on-read-the-docs
-#
-# added by krzychb, 24-Oct-2016
 #
 # on_rtd is whether we are on readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
