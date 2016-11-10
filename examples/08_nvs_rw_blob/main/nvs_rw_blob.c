@@ -74,22 +74,14 @@ esp_err_t save_run_time(void)
     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
 
     // Read previously saved blob if available
-    uint32_t* run_time;
+    uint32_t* run_time = malloc(required_size + sizeof(uint32_t));
     if (required_size > 0) {
-        run_time = malloc(required_size);
-        // read previously saved blob
         err = nvs_get_blob(my_handle, "run_time", run_time, &required_size);
         if (err != ESP_OK) return err;
-        // add extra space for the new value
-        required_size += sizeof(uint32_t);
-        run_time = realloc(run_time, required_size);
-    } else {
-        // nothing saved jet - just allocate space for the first value to save
-        required_size = sizeof(uint32_t);
-        run_time = malloc(required_size);
     }
 
     // Write value including previously saved blob if available
+    required_size += sizeof(uint32_t);
     run_time[required_size / sizeof(uint32_t) - 1] = xTaskGetTickCount() * portTICK_PERIOD_MS;
     err = nvs_set_blob(my_handle, "run_time", run_time, required_size);
     if (err != ESP_OK) return err;
