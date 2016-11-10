@@ -18,21 +18,33 @@ to this bit of memory will block.
 
 The requirement for items to be contiguous is slightly problematic when the only way to place
 the next item would involve a wraparound from the end to the beginning of the ringbuffer. This can
-be solved in two ways:
-- allow_split_items = pdTRUE: The insertion code will split the item in two items; one which fits
+be solved (or not) in a few ways:
+- type = RINGBUF_TYPE_ALLOWSPLIT: The insertion code will split the item in two items; one which fits
 in the space left at the end of the ringbuffer, one that contains the remaining data which is placed
 in the beginning. Two xRingbufferReceive calls will be needed to retrieve the data.
-- allow_split_items = pdFALSE: The insertion code will leave the room at the end of the ringbuffer
+- type = RINGBUF_TYPE_NOSPLIT: The insertion code will leave the room at the end of the ringbuffer
 unused and instead will put the entire item at the start of the ringbuffer, as soon as there is 
 enough free space.
+- type = RINGBUF_TYPE_BYTEBUF: This is your conventional byte-based ringbuffer. It does have no
+overhead, but it has no item contiguousness either: a read will just give you the entire written
+buffer space, or the space up to the end of the buffer, and writes can be broken up in any way 
+possible. Note that this type cannot do a 2nd read before returning the memory of the 1st.
 
 The maximum size of an item will be affected by this decision. When split items are allowed, it's
 acceptable to push items of (buffer_size)-16 bytes into the buffer. When it's not allowed, the
-maximum size is (buffer_size/2)-8 bytes.
+maximum size is (buffer_size/2)-8 bytes. The bytebuf can fill the entire buffer with data, it has
+no overhead.
 */
 
 //An opaque handle for a ringbuff object.
 typedef void * RingbufHandle_t;
+
+//The various types of buffer
+typedef enum {
+	RINGBUF_TYPE_NOSPLIT = 0,
+	RINGBUF_TYPE_ALLOWSPLIT,
+	RINGBUF_TYPE_BYTEBUF
+} ringbuf_type_t;
 
 
 /**
@@ -45,7 +57,7 @@ typedef void * RingbufHandle_t;
  *
  * @return A RingbufHandle_t handle to the created ringbuffer, or NULL in case of error.
  */
-RingbufHandle_t xRingbufferCreate(size_t buf_length, BaseType_t allow_split_items);
+RingbufHandle_t xRingbufferCreate(size_t buf_length, ringbuf_type_t type);
 
 
 /**
@@ -118,6 +130,34 @@ void *xRingbufferReceive(RingbufHandle_t ringbuf, size_t *item_size, TickType_t 
  *         item. NULL when the ringbuffer is empty, *item_size is untouched in that case.
  */
 void *xRingbufferReceiveFromISR(RingbufHandle_t ringbuf, size_t *item_size);
+
+
+/**
+ * @brief  Retrieve bytes from a ByteBuf type of ring buffer, specifying the maximum amount of bytes
+ * to return
+ *
+ * @param  ringbuf - Ring buffer to retrieve the item from
+ * @param  item_size - Pointer to a variable to which the size of the retrieved item will be written.
+ * @param  xTicksToWait - Ticks to wait for items in the ringbuffer.
+ *
+ * @return Pointer to the retrieved item on success; *item_size filled with the length of the 
+ *         item. NULL on timeout, *item_size is untouched in that case.
+ */
+void *xRingbufferReceiveUpTo(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait, size_t wanted_size);
+
+
+/**
+ * @brief  Retrieve bytes from a ByteBuf type of ring buffer, specifying the maximum amount of bytes
+ * to return. Call this from an ISR.
+ *
+ * @param  ringbuf - Ring buffer to retrieve the item from
+ * @param  item_size - Pointer to a variable to which the size of the retrieved item will be written.
+ *
+ * @return Pointer to the retrieved item on success; *item_size filled with the length of the 
+ *         item. NULL when the ringbuffer is empty, *item_size is untouched in that case.
+ */
+void *xRingbufferReceiveUpToFromISR(RingbufHandle_t ringbuf, size_t *item_size, size_t wanted_size);
+
 
 
 /**
