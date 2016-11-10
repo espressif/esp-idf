@@ -729,7 +729,7 @@ static int uart_tx_all(uart_port_t uart_num, const char* src, size_t size, bool 
         } else {
             evt.type = UART_DATA;
         }
-        xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) &evt, sizeof(uart_event_t), portMAX_DELAY);
+        xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) &evt, sizeof(uart_tx_data_t), portMAX_DELAY);
         while(size > 0) {
             int send_size = size > max_size / 2 ? max_size / 2 : size;
             xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) (src + offset), send_size, portMAX_DELAY);
