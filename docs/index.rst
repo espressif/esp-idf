@@ -92,9 +92,10 @@ Contents:
    Wi-Fi <api/esp_wifi>
    Bluetooth <api/bt>
 
-   GPIO <api/gpio>
-   LED Control <api/ledc>
-
+   api/gpio
+   api/uart
+   api/ledc
+ 
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>
    Virtual Filesystem <api/vfs>
@@ -114,6 +115,7 @@ Contents:
    :maxdepth: 1
 
    contributing
+   Style Guide <style-guide>
    documenting-code
    contributor-agreement
 
