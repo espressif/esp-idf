@@ -46,7 +46,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     uint8_t digest[32];
     ptrdiff_t keylen;
     const uint8_t *data, *digest_data;
-    uint32_t digest_len, chunk_len;
+    uint32_t digest_len;
     const signature_block_t *sigblock;
     bool is_valid;
 

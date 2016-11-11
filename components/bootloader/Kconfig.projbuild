@@ -85,31 +85,31 @@ config SECURE_BOOT_SIGNING_KEY
         See docs/security/secure-boot.rst for details.
 
 config SECURE_BOOT_DISABLE_JTAG
-	   bool "First boot: Permanently disable JTAG"
-	   depends on SECURE_BOOTLOADER_ENABLED
-	   default Y
-	   help
-	      Bootloader permanently disable JTAG (across entire chip) when enabling secure boot. This happens on first boot of the bootloader.
+       bool "First boot: Permanently disable JTAG"
+       depends on SECURE_BOOTLOADER_ENABLED
+       default Y
+       help
+          Bootloader permanently disable JTAG (across entire chip) when enabling secure boot. This happens on first boot of the bootloader.
 
-		  It is recommended this option remains set for production environments.
+          It is recommended this option remains set for production environments.
 
-config SECURE_BOOT_DISABLE_UART_BOOTLOADER
- 	   bool "First boot: Permanently disable UART bootloader"
-	   depends on SECURE_BOOTLOADER_ENABLED
-	   default Y
-	   help
-	      Bootloader permanently disables UART and other bootloader modes when enabling secure boot. This happens on first boot.
+config SECURE_BOOT_DISABLE_ROM_BASIC
+       bool "First boot: Permanently disable ROM BASIC fallback"
+       depends on SECURE_BOOTLOADER_ENABLED
+       default Y
+       help
+          Bootloader permanently disables ROM BASIC (on UART console) as a fallback if the bootloader image becomes invalid. This happens on first boot.
 
-		  It is recommended this option remains set for production environments.
+          It is recommended this option remains set in production environments.
 
 config SECURE_BOOT_TEST_MODE
-	   bool "Test mode: don't actually enable secure boot"
-	   depends on SECURE_BOOTLOADER_ENABLED
-	   default N
-	   help
-		  If this option is set, all permanent secure boot changes (via Efuse) are disabled.
+       bool "Test mode: don't actually enable secure boot"
+       depends on SECURE_BOOTLOADER_ENABLED
+       default N
+       help
+          If this option is set, all permanent secure boot changes (via Efuse) are disabled.
 
-		  This option is for testing purposes only - it effectively completely disables secure boot protection.
+          This option is for testing purposes only - it effectively completely disables secure boot protection.
 
 config SECURE_BOOTLOADER_ENABLED
     bool
