@@ -44,7 +44,10 @@ esp_err_t save_restart_counter(void)
     err = nvs_set_i32(my_handle, "restart_conter", restart_counter);
     if (err != ESP_OK) return err;
 
-    // Commit
+    // Commit written value.
+    // After setting any values, nvs_commit() must be called to ensure changes are written
+    // to flash storage. Implementations may write to storage at other times,
+    // but this is not guaranteed.
     err = nvs_commit(my_handle);
     if (err != ESP_OK) return err;
 

@@ -55,7 +55,10 @@ void app_main()
         err = nvs_set_i32(my_handle, "restart_conter", restart_counter);
         printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
 
-        // Commit
+        // Commit written value.
+        // After setting any values, nvs_commit() must be called to ensure changes are written
+        // to flash storage. Implementations may write to storage at other times,
+        // but this is not guaranteed.
         printf("Committing updates in NVS ... ");
         err = nvs_commit(my_handle);
         printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
