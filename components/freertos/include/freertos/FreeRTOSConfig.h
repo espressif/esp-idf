@@ -152,9 +152,9 @@
  *----------------------------------------------------------*/
 
 #define configUSE_PREEMPTION			1
-#define configUSE_IDLE_HOOK				( CONFIG_TASK_WDT_CHECK_IDLE_TASK )
+#define configUSE_IDLE_HOOK				( CONFIG_FREERTOS_LEGACY_IDLE_HOOK )
 
-#define configUSE_TICK_HOOK				( CONFIG_INT_WDT )
+#define configUSE_TICK_HOOK				( CONFIG_FREERTOS_LEGACY_TICK_HOOK )
 
 #define configTICK_RATE_HZ				( CONFIG_FREERTOS_HZ )
 
