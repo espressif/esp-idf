@@ -275,6 +275,18 @@ Second Level: Component Makefiles
 
 To better understand the component make process, have a read through the ``component_wrapper.mk`` file and some of the ``component.mk`` files included with esp-idf.
 
+Debugging The Make Process
+--------------------------
+
+Some tips for debugging the esp-idf build system:
+
+- Appending ``V=1`` to the make arguments (or setting it as an environment variable) will cause make to echo all commands executed, and also each directory as it is entered for a sub-make.
+- Running ``make -w`` will cause make to echo each directory as it is entered for a sub-make - same as ``V=1`` but without also echoing all commands.
+- Running ``make --trace`` (possibly in addition to one of the above arguments) will print out every target as it is built, and the dependency which caused it to be built.
+- Running ``make -p`` prints a (very verbose) summary of every generated target in each makefile.
+
+For more debugging tips and general make information, see the `GNU Make Manual`.
+
 Overriding Parts of the Project
 -------------------------------
 
@@ -394,24 +406,6 @@ If a a source file in another component included ``logo.h``, then this
 component's name would have to be added to the other component's
 ``COMPONENT_DEPENDS`` list to ensure that the components were built
 in-order.
-
-Cosmetic Improvements
-^^^^^^^^^^^^^^^^^^^^^
-
-The above example will work just fine, but there's one last cosmetic
-improvement that can be done. The make system tries to make the make
-process somewhat easier on the  eyes by hiding the commands (unless you
-run make with the V=1 switch) and this does  not do that yet. Here's an
-improved version that will output in the same style as  the rest of the
-make process::
-
-   COMPONENT_EXTRA_CLEAN := test_tjpgd_logo.h
-
-   graphics_lib.o: logo.h
-
-    logo.h: $(COMPONENT_PATH)/logo.bmp
-        $(summary) BMP2H $@
-        $(Q) bmp2h -i $^ -o $@
 
 
 Fully Overriding The Component Makefile

@@ -16,13 +16,14 @@ export SDKCONFIG_MAKEFILE  # sub-makes (like bootloader) will reuse this path
 # if V is unset or not 1, $(summary) echoes a summary and $(details) does nothing
 V ?= $(VERBOSE)
 ifeq ("$(V)","1")
-Q :=
 summary := @true
 details := @echo
 else
-Q := @
 summary := @echo
 details := @true
+
+# disable echoing of commands, directory names
+MAKEFLAGS += --silent
 endif
 
 # Pseudo-target to check a git submodule has been properly initialised
@@ -36,8 +37,8 @@ endif
 define SubmoduleCheck
 $(1):
 	@echo "WARNING: Missing submodule $(2) for $$@..."
-	$(Q) [ -d ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
-	$(Q) [ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule --init' in esp-idf root directory."; exit 1)
+	[ -d ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
+	[ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule --init' in esp-idf root directory."; exit 1)
 	@echo "Attempting 'git submodule update --init' in esp-idf root directory..."
 	cd ${IDF_PATH} && git submodule update --init $(2)
 

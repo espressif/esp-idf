@@ -21,10 +21,10 @@ BOOTLOADER_MAKE=+$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
 .PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
 
 $(BOOTLOADER_BIN): $(SDKCONFIG_MAKEFILE)
-	$(Q) $(BOOTLOADER_MAKE) $@
+	$(BOOTLOADER_MAKE) $@
 
 bootloader-clean:
-	$(Q) $(BOOTLOADER_MAKE) app-clean
+	$(BOOTLOADER_MAKE) app-clean
 
 clean: bootloader-clean
 
@@ -41,7 +41,7 @@ bootloader-flash: $(BOOTLOADER_BIN)
 	$(ESPTOOLPY_WRITE_FLASH) 0x1000 $^
 
 $(BOOTLOADER_BUILD_DIR):
-	$(Q) mkdir -p $@
+	mkdir -p $@
 
 else
 CFLAGS += -D BOOTLOADER_BUILD=1 -I $(IDF_PATH)/components/esp32/include

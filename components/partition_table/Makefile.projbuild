@@ -20,7 +20,7 @@ PARTITION_TABLE_BIN := $(BUILD_DIR_BASE)/$(notdir $(PARTITION_TABLE_CSV_PATH:.cs
 
 $(PARTITION_TABLE_BIN): $(PARTITION_TABLE_CSV_PATH)
 	@echo "Building partitions from $(PARTITION_TABLE_CSV_PATH)..."
-	$(Q) $(GEN_ESP32PART) $< $@
+	$(GEN_ESP32PART) $< $@
 
 all_binaries: $(PARTITION_TABLE_BIN)
 
@@ -30,16 +30,16 @@ ESPTOOL_ALL_FLASH_ARGS += 0x4000 $(PARTITION_TABLE_BIN)
 partition_table: $(PARTITION_TABLE_BIN)
 	@echo "Partition table binary generated. Contents:"
 	@echo $(SEPARATOR)
-	$(Q) $(GEN_ESP32PART) $<
+	$(GEN_ESP32PART) $<
 	@echo $(SEPARATOR)
 	@echo "Partition flashing command:"
 	@echo "$(PARTITION_TABLE_FLASH_CMD)"
 
 partition_table-flash: $(PARTITION_TABLE_BIN)
 	@echo "Flashing partition table..."
-	$(Q) $(PARTITION_TABLE_FLASH_CMD)
+	$(PARTITION_TABLE_FLASH_CMD)
 
 partition_table-clean:
-	$(Q) rm -f $(PARTITION_TABLE_BIN)
+	rm -f $(PARTITION_TABLE_BIN)
 
 clean: partition_table-clean

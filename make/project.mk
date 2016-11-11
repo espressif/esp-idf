@@ -238,7 +238,7 @@ COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)),$(APP_LIBR
 # the rules to build these are emitted as part of GenerateComponentTarget below
 $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a)
 	$(summary) LD $(notdir $@)
-	$(Q) $(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
+	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
 # Generation of $(APP_BIN) from $(APP_ELF) is added by the esptool
 # component's Makefile.projbuild
@@ -257,7 +257,7 @@ $(BUILD_DIR_BASE):
 #
 # Is recursively expanded by the GenerateComponentTargets macro
 define ComponentMake
-$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(IDF_PATH)/make/component_wrapper.mk COMPONENT_MAKEFILE=$(1)/component.mk
++$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(IDF_PATH)/make/component_wrapper.mk COMPONENT_MAKEFILE=$(1)/component.mk
 endef
 
 # Generate top-level component-specific targets for each component
@@ -303,7 +303,7 @@ $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponent
 
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)
-	$(Q) rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
+	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
 clean: app-clean
 
