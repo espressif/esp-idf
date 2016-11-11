@@ -109,7 +109,6 @@ void IRAM_ATTR call_start_cpu0()
  */
 bool load_partition_table(bootloader_state_t* bs)
 {
-    esp_err_t err;
     const esp_partition_info_t *partitions;
     const int ESP_PARTITION_TABLE_DATA_LEN = 0xC00; /* length of actual data (signature is appended to this) */
     const int MAX_PARTITIONS = ESP_PARTITION_TABLE_DATA_LEN / sizeof(esp_partition_info_t);
@@ -121,7 +120,7 @@ bool load_partition_table(bootloader_state_t* bs)
 #ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
     if(esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "Verifying partition table signature...");
-        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
+        esp_err_t err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to verify partition table signature.");
             return false;
@@ -227,7 +226,6 @@ void bootloader_main()
 {
     ESP_LOGI(TAG, "Espressif ESP32 2nd stage bootloader v. %s", BOOT_VERSION);
 
-    esp_err_t err;
     esp_image_header_t fhdr;
     bootloader_state_t bs;
     SpiFlashOpResult spiRet1,spiRet2;
@@ -322,7 +320,7 @@ void bootloader_main()
 #ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
     /* Generate secure digest from this bootloader to protect future
        modifications */
-    err = esp_secure_boot_permanently_enable();
+    esp_err_t err = esp_secure_boot_permanently_enable();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Bootloader digest generation failed (%d). SECURE BOOT IS NOT ENABLED.", err);
         /* Allow booting to continue, as the failure is probably
