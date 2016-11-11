@@ -37,7 +37,7 @@ ifdef CONFIG_SECURE_BOOTLOADER_DISABLED
 # with 'make flash' and no warnings are printed.
 
 bootloader: $(BOOTLOADER_BIN)
-	@echo "$(SEPARATOR)"
+	@echo $(SEPARATOR)
 	@echo "Bootloader built. Default flash command is:"
 	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $(BOOTLOADER_BIN)"
 
