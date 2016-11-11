@@ -34,6 +34,7 @@ Contents:
    partition-tables
    build_system
    openocd
+   Secure Boot <security/secure-boot>
 
 .. toctree::
    :caption: API Reference

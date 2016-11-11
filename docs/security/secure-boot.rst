@@ -3,16 +3,19 @@ Secure Boot
 
 Secure Boot is a feature for ensuring only your code can run on the chip. Data loaded from flash is verified on each reset.
 
-Secure Boot is separate from the Encrypted Flash feature, and you can use secure boot without encrypting the flash contents. However for maximum protection we recommend using both features together.
+Secure Boot is separate from the Encrypted Flash feature, and you can use secure boot without encrypting the flash contents. However we recommend using both features together for a secure environment.
+
 
 Background
 ----------
 
-- Most data is stored in flash. Flash access does not need to be protected from physical access in order for secure boot to function, because critical data is stored in Efuses internal to the chip.
+- Most data is stored in flash. Flash access does not need to be protected from physical access in order for secure boot to function, because critical data is stored (non-software-accessible) in Efuses internal to the chip.
 
 - Efuses are used to store the secure bootloader key (in efuse block 2), and also a single Efuse bit (ABS_DONE_0) is burned (written to 1) to permanently enable secure boot on the chip. For more details about efuse, see the (forthcoming) chapter in the Technical Reference Manual.
 
 - To understand the secure boot process, first familiarise yourself with the standard `esp-idf boot process`.
+
+- Both stages of the boot process (initial software bootloader load, and subsequent partition & app loading) are verified by the secure boot process, in a "chain of trust" relationship.
 
 Secure Boot Process Overview
 ----------------------------
@@ -21,19 +24,19 @@ This is a high level overview of the secure boot process. Step by step instructi
 
 1. The options to enable secure boot are provided in the ``make menuconfig`` hierarchy, under "Secure Boot Configuration".
 
-2. Bootloader Config includes the path to a secure boot signing key. This is a ECDSA public/private key pair in a PEM format file.
+2. Secure Boot Configuration includes "Secure boot signing key", which is a file path. This file is a ECDSA public/private key pair in a PEM format file.
 
 2. The software bootloader image is built by esp-idf with secure boot support enabled and the public key (signature verification) portion of the secure boot signing key compiled in. This software bootloader image is flashed at offset 0x1000.
 
 3. On first boot, the software bootloader follows the following process to enable secure boot:
   - Hardware secure boot support generates a device secure bootloader key (generated via hardware RNG, then stored read/write protected in efuse), and a secure digest. The digest is derived from the key, an IV, and the bootloader image contents.
   - The secure digest is flashed at offset 0x0 in the flash.
+  - Depending on Secure Boot Configuration, efuses are burned to disable JTAG and the ROM BASIC interpreter (it is strongly recommended these options are turned on.)
   - Bootloader permanently enables secure boot by burning the ABS_DONE_0 efuse. The software bootloader then becomes protected (the chip will only boot a bootloader image if the digest matches.)
-  - Depending on menuconfig choices, the bootloader may also disable JTAG and the UART bootloader function, both via efuse. (This is recommended.)
 
-4. On subsequent boots the ROM bootloader sees that the secure boot efuse is burned, reads the saved digest at 0x0 and uses hardware secure boot support to compare it with a newly calculated digest. If the digest does not match then booting will not continue. The digest and comparison are performed entirely by hardware, for technical details see `Hardware Secure Boot Support`.
+4. On subsequent boots the ROM bootloader sees that the secure boot efuse is burned, reads the saved digest at 0x0 and uses hardware secure boot support to compare it with a newly calculated digest. If the digest does not match then booting will not continue. The digest and comparison are performed entirely by hardware, and the calculated digest is not readable by software. For technical details see `Hardware Secure Boot Support`.
 
-5. When running in secure boot mode, the software bootloader uses the secure boot signing key (the public key of which is embedded in the bootloader itself, and therefore validated as part of the bootloader) to verify all subsequent partition tables and app images before they are booted.
+5. When running in secure boot mode, the software bootloader uses the secure boot signing key (the public key of which is embedded in the bootloader itself, and therefore validated as part of the bootloader) to verify the signature appended to all subsequent partition tables and app images before they are booted.
 
 Keys
 ----
@@ -42,11 +45,11 @@ The following keys are used by the secure boot process:
 
 - "secure bootloader key" is a 256-bit AES key that is stored in Efuse block 2. The bootloader can generate this key itself from the internal hardware random number generator, the user does not need to supply it (it is optionally possible to supply this key, see `Re-Flashable Software Bootloader`). The Efuse holding this key is read & write protected (preventing software access) before secure boot is enabled.
 
-- "secure boot signing key" is a standard ECDSA public/private key pair (NIST256p aka prime256v1 curve) in PEM format.
+- "secure boot signing key" is a standard ECDSA public/private key pair (see `Image Signing Algorithm`) in PEM format.
 
   - The public key from this key pair (for signature verificaton but not signature creation) is compiled into the software bootloader and used to verify the second stage of booting (partition table, app image) before booting continues. The public key can be freely distributed, it does not need to be kept secret.
 
-  - The private key from this key pair *must be securely kept private*, as anyone who has this key can authenticate to a bootloader with secure boot using the matching public key.
+  - The private key from this key pair *must be securely kept private*, as anyone who has this key can authenticate to any bootloader that is configured with secure boot and the matching public key.
 
 
 How To Enable Secure Boot
@@ -76,7 +79,7 @@ How To Enable Secure Boot
 
 *NOTE* Secure boot won't be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
 
-9. On subsequent boots, the secure boot hardware will verify the software bootloader (using the secure bootloader key) and then the software bootloader will verify the partition table and app image (using the public key portion of the secure boot signing key).
+9. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed (using the secure bootloader key) and then the software bootloader will verify the signed partition table and app image (using the public key portion of the secure boot signing key).
 
 Re-Flashable Software Bootloader
 --------------------------------
@@ -120,7 +123,7 @@ Secure Boot Best Practices
 * Generate the signing key on a system with a quality source of entropy.
 * Keep the signing key private at all times. A leak of this key will compromise the secure boot system.
 * Do not allow any third party to observe any aspects of the key generation or signing process using espsecure.py. Both processes are vulnerable to timing or other side-channel attacks.
-* Enable all secure boot options. These include flash encryption, disabling of JTAG, and disabling alternative boot modes.
+* Enable all secure boot options in the Secure Boot Configuration. These include flash encryption, disabling of JTAG, disabling BASIC ROM interpeter, and disabling the UART bootloader encrypted flash access.
 
 Technical Details
 -----------------
@@ -136,19 +139,19 @@ The Secure Boot support hardware can perform three basic operations:
 
 2. Generate a digest from data (usually the bootloader image from flash) using a key stored in Efuse block 2. The key in Efuse can (& should) be read/write protected, which prevents software access. For full details of this algorithm see `Secure Bootloader Digest Algorithm`. The digest can only be read back by software if Efuse ABS_DONE_0 is *not* burned (ie still 0).
 
-3. Verify a digest from data (usually the bootloader image from flash), and compare it to a pre-existing digest (usually read from flash offset 0x0). The hardware returns a true/false comparison without making the digest available to software. This function is available even when Efuse ABS_DONE_0 is burned.
+3. Generate a digest from data (usually the bootloader image from flash) using the same algorithm as step 2 and compare it to a pre-calculated digest supplied in a buffer (usually read from flash offset 0x0). The hardware returns a true/false comparison without making the digest available to software. This function is available even when Efuse ABS_DONE_0 is burned.
 
 Secure Bootloader Digest Algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting with an "image" of binary data as input, this algorithm generates a digest as output.
+Starting with an "image" of binary data as input, this algorithm generates a digest as output. The digest is sometimes referred to as an "abstract" in hardware documentation.
 
 For a Python version of this algorithm, see the `espsecure.py` tool in the components/esptool_py directory.
 
 Items marked with (^) are to fulfill hardware restrictions, as opposed to cryptographic restrictions.
 
 1. Prefix the image with a 128 byte randomly generated IV.
-2. If the image is not modulo 128, pad the image to a 128 byte boundary with 0xFF. (^)
+2. If the image length is not modulo 128, pad the image to a 128 byte boundary with 0xFF. (^)
 3. For each 16 byte plaintext block of the input image:
    - Reverse the byte order of the plaintext input block (^)
    - Apply AES256 in ECB mode to the plaintext block.
@@ -169,7 +172,6 @@ Deterministic ECDSA as specified by `RFC6979`.
 - Key format used for storage is PEM.
   - In the bootloader, the public key (for signature verification) is flashed as 64 raw bytes.
 - Image signature is 68 bytes - a 4 byte version word (currently zero), followed by a 64 bytes of signature data. These 68 bytes are appended to an app image or partition table data.
-
 
 
 .. _esp-idf boot process: ../boot-process.rst
