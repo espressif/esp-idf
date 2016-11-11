@@ -117,7 +117,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /*
   Macro get_percpu_entry_for - convert a per-core ID into a multicore entry.
   Basically does reg=reg*portNUM_PROCESSORS+current_core_id
-  Multiple versions here for multiple 
+  Multiple versions here to optimize for specific portNUM_PROCESSORS values.
 */
     .macro get_percpu_entry_for reg scratch
 #if (portNUM_PROCESSORS == 1)
