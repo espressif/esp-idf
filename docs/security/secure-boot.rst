@@ -5,6 +5,7 @@ Secure Boot is a feature for ensuring only your code can run on the chip. Data l
 
 Secure Boot is separate from the Encrypted Flash feature, and you can use secure boot without encrypting the flash contents. However we recommend using both features together for a secure environment.
 
+**IMPORTANT: As Encrypted Flash feature and related security features are not yet released, Secure Boot should not be considered sufficient for a secure device and we strongly recommend not enabling the one-time secure bootloader feature until it is mature.**
 
 Background
 ----------
