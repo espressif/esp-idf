@@ -265,12 +265,6 @@
 #define INCLUDE_eTaskGetState               1
 #define configUSE_QUEUE_SETS                1
 
-#if (!defined XT_INTEXC_HOOKS)
-#define configXT_INTEXC_HOOKS               1   /* Exception hooks used by certain tests */
-#if configUSE_TRACE_FACILITY_2
-#define configASSERT_2						1	/* Specific to Xtensa port */
-#endif
-#endif
 
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0
