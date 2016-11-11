@@ -83,7 +83,9 @@ esp_err_t esp_wifi_wps_disable(void);
   *
   * @attention WPS can only be used when ESP32 station is enabled.
   *
-  * @param     null
+  * @param     timeout_ms : maximum blocking time before API return.
+  *          - 0 : non-blocking
+  *          - 1~120000 : blocking time (not supported in IDF v1.0)
   *
   * @return    
   *          - ESP_OK : succeed
@@ -92,7 +94,7 @@ esp_err_t esp_wifi_wps_disable(void);
   *          - ESP_ERR_WIFI_WPS_SM : wps state machine is not initialized
   *          - ESP_ERR_WIFI_FAIL : wps initialization fails
   */
-esp_err_t esp_wifi_wps_start(void);
+esp_err_t esp_wifi_wps_start(int timeout_ms);
 
 /**
   * @}
