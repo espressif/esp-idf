@@ -11,6 +11,7 @@
 # NB: gen_esp32part.py lives in the sdk/bin/ dir not component dir
 GEN_ESP32PART := $(PYTHON) $(COMPONENT_PATH)/gen_esp32part.py -q
 
+# Has a matching value in bootloader_support esp_flash_partitions.h
 PARTITION_TABLE_OFFSET := 0x8000
 
 # Path to partition CSV file is relative to project path for custom

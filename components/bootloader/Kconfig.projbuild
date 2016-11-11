@@ -1,7 +1,7 @@
 menu "Bootloader config"
 choice LOG_BOOTLOADER_LEVEL
    bool "Bootloader log verbosity"
-   default LOG_BOOTLOADER_LEVEL_WARN
+   default LOG_BOOTLOADER_LEVEL_INFO
    help
        Specify how much output to see in bootloader logs.
 
@@ -32,7 +32,7 @@ endmenu
 
 
 
-menu "Secure boot configuration"
+menu "Security features"
 
 choice SECURE_BOOTLOADER
     bool "Secure bootloader"
@@ -62,7 +62,7 @@ config SECURE_BOOTLOADER_REFLASHABLE
     help
         Generate a reusable secure bootloader key, derived (via SHA-256) from the secure boot signing key.
 
-		This allows the secure bootloader to be re-flashed by anyone with access to the secure boot signing key.
+        This allows the secure bootloader to be re-flashed by anyone with access to the secure boot signing key.
 
         This option is less secure than one-time flash, because a leak of the digest key from one device allows reflashing of any device that uses it.
 
@@ -70,8 +70,8 @@ endchoice
 
 config SECURE_BOOT_SIGNING_KEY
      string "Secure boot signing key"
-	 depends on SECURE_BOOTLOADER_ENABLED
-	 default secure_boot_signing_key.pem
+     depends on SECURE_BOOTLOADER_ENABLED
+     default secure_boot_signing_key.pem
      help
         Path to the key file used to sign partition tables and app images for secure boot.
 
@@ -114,5 +114,14 @@ config SECURE_BOOT_TEST_MODE
 config SECURE_BOOTLOADER_ENABLED
     bool
     default SECURE_BOOTLOADER_ONE_TIME_FLASH || SECURE_BOOTLOADER_REFLASHABLE
+
+config FLASH_ENCRYPTION_ENABLED
+    bool "Enable flash encryption on boot"
+    help
+       If this option is set, flash contents will be encrypted by the bootloader on first boot.
+
+	   Note: After first boot, the system will be permanently encrypted.
+	   See docs/securityflash-encryption.rst for details.
+
 
 endmenu

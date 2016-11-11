@@ -218,10 +218,46 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dest_addr, const void *src, size_t si
 
 }
 
+esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size)
+{
+    if ((dest_addr % 32) != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((size % 32) != 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if ((uint32_t) src < 0x3ff00000) {
+        // if source address is in DROM, we won't be able to read it
+        // from within SPIWrite
+        // TODO: consider buffering source data using heap and writing it anyway?
+        return ESP_ERR_INVALID_ARG;
+    }
+    COUNTER_START();
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    SpiFlashOpResult rc;
+    rc = spi_flash_unlock();
+    if (rc == SPI_FLASH_RESULT_OK) {
+        /* SPI_Encrypt_Write encrypts data in RAM as it writes,
+           so copy to a temporary buffer - 32 bytes at a time.
+        */
+        uint32_t encrypt_buf[32/sizeof(uint32_t)];
+        for (size_t i = 0; i < size; i += 32) {
+            memcpy(encrypt_buf, ((const uint8_t *)src) + i, 32);
+            rc = SPI_Encrypt_Write((uint32_t) dest_addr + i, encrypt_buf, 32);
+            if (rc != SPI_FLASH_RESULT_OK) {
+                break;
+            }
+        }
+        bzero(encrypt_buf, sizeof(encrypt_buf));
+    }
+    COUNTER_ADD_BYTES(write, size);
+    return spi_flash_translate_rc(rc);
+}
+
 esp_err_t IRAM_ATTR spi_flash_read(size_t src_addr, void *dest, size_t size)
 {
     // TODO: replace this check with code which deals with unaligned destinations
-    if (((ptrdiff_t) dest) % 4 != 0) {
+    if (((ptrdiff_t)dest % 4) != 0) {
         return ESP_ERR_INVALID_ARG;
     }
     // Source alignment is also checked in ROM code, but we can give

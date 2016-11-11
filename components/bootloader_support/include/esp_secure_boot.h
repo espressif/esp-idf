@@ -67,9 +67,25 @@ esp_err_t esp_secure_boot_permanently_enable(void);
  * @param src_addr Starting offset of the data in flash.
  * @param length Length of data in bytes. Signature is appended -after- length bytes.
  *
+ * If flash encryption is enabled, the image will be transparently decrypted while being verified.
+ *
  * @return ESP_OK if signature is valid, ESP_ERR_INVALID_STATE if
  * signature fails, ESP_FAIL for other failures (ie can't read flash).
  */
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length);
+
+/** @brief Secure boot verification block, on-flash data format. */
+typedef struct {
+    uint32_t version;
+    uint8_t signature[64];
+} esp_secure_boot_sig_block_t;
+
+#define FLASH_OFFS_SECURE_BOOT_IV_DIGEST 0
+
+/** @brief Secure boot IV+digest header */
+typedef struct {
+    uint8_t iv[128];
+    uint8_t digest[64];
+} esp_secure_boot_iv_digest_t;
 
 #endif

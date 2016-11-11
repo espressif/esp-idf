@@ -3,7 +3,7 @@ Secure Boot
 
 Secure Boot is a feature for ensuring only your code can run on the chip. Data loaded from flash is verified on each reset.
 
-Secure Boot is separate from the Encrypted Flash feature, and you can use secure boot without encrypting the flash contents. However we recommend using both features together for a secure environment.
+Secure Boot is separate from the `Flash Encryption` feature, and you can use secure boot without encrypting the flash contents. However we recommend using both features together for a secure environment.
 
 **IMPORTANT: As Encrypted Flash feature and related security features are not yet released, Secure Boot should not be considered sufficient for a secure device and we strongly recommend not enabling the one-time secure bootloader feature until it is mature.**
 
@@ -177,3 +177,4 @@ Deterministic ECDSA as specified by `RFC6979`.
 
 
 .. _RFC6979: https://tools.ietf.org/html/rfc6979
+.. _Flash Encryption: flash-encryption.rst

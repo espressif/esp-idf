@@ -79,8 +79,8 @@
 //set bits of register controlled by mask
 #define REG_SET_BITS(_r, _b, _m) (*(volatile uint32_t*)(_r) = (*(volatile uint32_t*)(_r) & ~(_m)) | ((_b) & (_m)))
 
-//get field from register, used when _f is not left shifted by _f##_S
-#define REG_GET_FIELD(_r, _f) ((REG_READ(_r) >> (_f##_S)) & (_f))
+//get field from register, uses field _S & _V to determine mask
+#define REG_GET_FIELD(_r, _f) ((REG_READ(_r) >> (_f##_S)) & (_f##_V))
 
 //set field to register, used when _f is not left shifted by _f##_S
 #define REG_SET_FIELD(_r, _f, _v) (REG_WRITE((_r),((REG_READ(_r) & ~((_f) << (_f##_S)))|(((_v) & (_f))<<(_f##_S)))))

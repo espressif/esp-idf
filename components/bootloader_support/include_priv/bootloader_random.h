@@ -14,7 +14,12 @@
 
 #pragma once
 
-#include "soc.h"
+#include <stddef.h>
 
-/* Hardware random number generator register */ 
-#define WDEV_RND_REG 0x60035144
+/**
+ * @brief Fill buffer with 'length' random bytes
+ *
+ * @param buffer Pointer to buffer
+ * @param length This many bytes of random data will be copied to buffer
+ */
+void bootloader_fill_random(void *buffer, size_t length);
