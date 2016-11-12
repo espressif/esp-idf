@@ -191,14 +191,14 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet) {
   if (type == HCI_BLE_EVENT) {
     uint8_t len;
     STREAM_TO_UINT8(len, stream);
-    LOG_ERROR("Workround stream corrupted during LE SCAN: pkt_len=%d ble_event_len=%d",
+    LOG_ERROR("Workround stream corrupted during LE SCAN: pkt_len=%d ble_event_len=%d\n",
               packet->len, len);
     hci_hal_env.allocator->free(packet);
     return;
   }
   if (type < DATA_TYPE_ACL || type > DATA_TYPE_EVENT) {
-    LOG_ERROR("%s Unknown HCI message type. Dropping this byte 0x%x,"
-              " min %x, max %x", __func__, type,
+    LOG_ERROR("%d Unknown HCI message type. Dropping this byte 0x%x,"
+              " min %x, max %x\n", __func__, type,
               DATA_TYPE_ACL, DATA_TYPE_EVENT);
     hci_hal_env.allocator->free(packet);
     return;
@@ -211,8 +211,11 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet) {
     return;
   }
   if (type == DATA_TYPE_ACL) {
+  	packet->offset--;
     stream += hdr_size - 2;
     STREAM_TO_UINT16(length, stream);
+	stream = packet->data + 1;
+	memcpy(packet->data, stream, packet->len);
   } else {
     stream += hdr_size - 1;
     STREAM_TO_UINT8(length, stream);
@@ -251,7 +254,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len) {
   pkt_size = BT_HDR_SIZE + len;
   pkt = (BT_HDR *)hci_hal_env.allocator->alloc(pkt_size);
   if (!pkt) {
-    LOG_ERROR("%s couldn't aquire memory for inbound data buffer.", __func__);
+    LOG_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
     return -1;
   }
   pkt->offset = 0;

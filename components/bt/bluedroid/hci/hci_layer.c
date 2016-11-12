@@ -369,7 +369,8 @@ static void fragmenter_transmit_finished(BT_HDR *packet, bool all_fragments_sent
     // This is kind of a weird case, since we're dispatching a partially sent packet
     // up to a higher layer.
     // TODO(zachoverflow): rework upper layer so this isn't necessary.
-    dispatch_reassembled(packet);
+    buffer_allocator->free(packet);
+    //dispatch_reassembled(packet);
     //data_dispatcher_dispatch(interface.event_dispatcher, packet->event & MSG_EVT_MASK, packet);
   }
 }
@@ -531,7 +532,7 @@ static serial_data_type_t event_to_data_type(uint16_t event) {
   else if (event == MSG_STACK_TO_HC_HCI_CMD)
     return DATA_TYPE_COMMAND;
   else
-    LOG_ERROR("%s invalid event type, could not translate 0x%x", __func__, event);
+    LOG_ERROR("%s invalid event type, could not translate 0x%x\n", __func__, event);
 
   return 0;
 }
