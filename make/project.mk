@@ -36,6 +36,13 @@ help:
 	@echo "See also 'make bootloader', 'make bootloader-flash', 'make bootloader-clean', "
 	@echo "'make partition_table', etc, etc."
 
+# dependency checks
+ifndef MAKE_RESTARTS
+ifeq ("$(filter 4.% 3.81 3.82,$(MAKE_VERSION))","")
+$(warning "esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.")
+endif
+endif
+
 # disable built-in make rules, makes debugging saner
 MAKEFLAGS_OLD := $(MAKEFLAGS)
 MAKEFLAGS +=-rR
@@ -105,7 +112,8 @@ COMPONENT_LDFLAGS :=
 # See the component_project_vars.mk target in component_wrapper.mk
 COMPONENT_PROJECT_VARS := $(addsuffix /component_project_vars.mk,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 COMPONENT_PROJECT_VARS := $(addprefix $(BUILD_DIR_BASE)/,$(COMPONENT_PROJECT_VARS))
-include $(COMPONENT_PROJECT_VARS)
+# this line is -include instead of include to prevent a spurious error message on make 3.81
+-include $(COMPONENT_PROJECT_VARS)
 
 # Also add top-level project include path, for top-level includes
 COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
