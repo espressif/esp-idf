@@ -39,7 +39,5 @@ void app_main(void)
         level = !level;
         vTaskDelay(300 / portTICK_PERIOD_MS);
     }
-
-    return 0;
 }
 
