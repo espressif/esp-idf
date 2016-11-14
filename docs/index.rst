@@ -28,6 +28,7 @@ Contents:
    :caption: What Else?
    :maxdepth: 1
    
+   General Notes <general-notes>
    partition-tables
    build_system
    openocd
