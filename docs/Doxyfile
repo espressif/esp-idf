@@ -1,6 +1,6 @@
 PROJECT_NAME = "ESP32 Programming Guide"
 
-INPUT = ../components/esp32/include/esp_wifi.h ../components/driver/include/driver ../components/esp32/include/rom/gpio.h ../components/bt/include ../components/nvs_flash/include ../components/log/include ../components/vfs/include
+INPUT = ../components/esp32/include/esp_wifi.h ../components/driver/include/driver ../components/bt/include ../components/nvs_flash/include ../components/log/include ../components/vfs/include
 
 WARN_NO_PARAMDOC	= YES
 

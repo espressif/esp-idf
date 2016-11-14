@@ -41,6 +41,9 @@ COMPONENT_LIBRARY = lib$(COMPONENT_NAME).a
 # Source dirs a component has. Default to root directory of component.
 COMPONENT_SRCDIRS = .
 
+#Names of binary files to embed as symbols in the component library
+COMPONENT_EMBED_FILES ?=
+
 # By default, include only the include/ dir.
 COMPONENT_ADD_INCLUDEDIRS = include
 COMPONENT_ADD_LDFLAGS = -l$(COMPONENT_NAME)
@@ -127,7 +130,7 @@ build: $(COMPONENT_LIBRARY)
 
 # Build the archive. We remove the archive first, otherwise ar will get confused if we update
 # an archive when multiple filenames have the same name (src1/test.o and src2/test.o)
-$(COMPONENT_LIBRARY): $(COMPONENT_OBJS)
+$(COMPONENT_LIBRARY): $(COMPONENT_OBJS) $(COMPONENT_EMBED_OBJS)
 	$(summary) AR $@
 	rm -f $@
 	$(AR) cru $@ $(COMPONENT_OBJS)
@@ -135,7 +138,7 @@ endif
 
 # If COMPONENT_OWNCLEANTARGET is not set, define a phony clean target
 ifndef COMPONENT_OWNCLEANTARGET
-CLEAN_FILES = $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EXTRA_CLEAN) component_project_vars.mk
+CLEAN_FILES = $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EMBED_OBJS) $(COMPONENT_EXTRA_CLEAN) component_project_vars.mk
 .PHONY: clean
 clean:
 	$(summary) RM $(CLEAN_FILES)
@@ -167,3 +170,34 @@ endef
 
 # Generate all the compile target patterns
 $(foreach srcdir,$(COMPONENT_SRCDIRS), $(eval $(call GenerateCompileTargets,$(srcdir))))
+
+## Support for embedding binary files into the ELF as symbols
+
+OBJCOPY_EMBED_ARGS := --input binary --output elf32-xtensa-le --binary-architecture xtensa --rename-section .data=.rodata.embedded
+
+# Generate pattern for embedding text or binary files into the app
+# $(1) is name of file (as relative path inside component)
+# $(2) is txt or bin depending on file contents
+#
+# txt files are null-terminated before being embedded (otherwise
+# identical behaviour.)
+#
+# Files are temporarily copied to the build directory before objcopy,
+# because objcopy generates the symbol name from the full command line
+# path to the input file.
+define GenerateEmbedTarget
+$(1).$(2).o: $(call resolvepath,$(1),$(COMPONENT_PATH)) | $$(dir $(1))
+	$$(summary) EMBED $$@
+	$$(Q) $(if $(filter-out $$(notdir $$(abspath $$<)),$$(abspath $$(notdir $$<))), cp $$< $$(notdir $$<) )  # copy input file to build dir, unless already in build dir
+	$$(Q) $(if $(subst bin,,$(2)),echo -ne '\0' >> $$(notdir $$<) )  # trailing NUL byte on text output
+	$$(Q) $$(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) $$@
+	$$(Q) rm $$(notdir $$<)
+endef
+
+# generate targets to embed binary & text files
+$(foreach binfile,$(COMPONENT_EMBED_FILES), $(eval $(call GenerateEmbedTarget,$(binfile),bin)))
+
+$(foreach txtfile,$(COMPONENT_EMBED_TXTFILES), $(eval $(call GenerateEmbedTarget,$(txtfile),txt)))
+
+# generate targets to create binary embed directories
+$(foreach bindir,$(sort $(dir $(COMPONENT_EMBED_FILES))), $(eval $(call GenerateBuildDirTarget,$(bindir))))

@@ -30,6 +30,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <xtensa/config/core.h>
 
 #include "xtensa_context.h"
+#include "FreeRTOSConfig.h"
 
 #if XCHAL_HAVE_INTERRUPTS
 
@@ -59,6 +60,15 @@ _xt_vpri_mask:     .word   0xFFFFFFFF    /* Virtual priority mask */
   Table of C-callable interrupt handlers for each interrupt. Note that not all
   slots can be filled, because interrupts at level > EXCM_LEVEL will not be
   dispatched to a C handler by default.
+
+  Stored as:
+  int 0 cpu 0
+  int 0 cpu 1
+  ...
+  int 0 cpu n
+  int 1 cpu 0
+  int 1 cpu 1
+  etc
 -------------------------------------------------------------------------------
 */
 
@@ -69,7 +79,7 @@ _xt_vpri_mask:     .word   0xFFFFFFFF    /* Virtual priority mask */
 _xt_interrupt_table:
 
     .set    i, 0
-    .rept   XCHAL_NUM_INTERRUPTS
+    .rept   XCHAL_NUM_INTERRUPTS*portNUM_PROCESSORS
     .word   xt_unhandled_interrupt      /* handler address               */
     .word   i                           /* handler arg (default: intnum) */
     .set    i, i+1
@@ -85,6 +95,15 @@ _xt_interrupt_table:
   Table of C-callable exception handlers for each exception. Note that not all
   slots will be active, because some exceptions (e.g. coprocessor exceptions)
   are always handled by the OS and cannot be hooked by user handlers.
+
+  Stored as:
+  exc 0 cpu 0
+  exc 0 cpu 1
+  ...
+  exc 0 cpu n
+  exc 1 cpu 0
+  exc 1 cpu 1
+  etc
 -------------------------------------------------------------------------------
 */
 
@@ -93,7 +112,7 @@ _xt_interrupt_table:
     .align  4
 
 _xt_exception_table:
-    .rept   XCHAL_EXCCAUSE_NUM
+    .rept   XCHAL_EXCCAUSE_NUM * portNUM_PROCESSORS
     .word   xt_unhandled_exception    /* handler address */
     .endr
 

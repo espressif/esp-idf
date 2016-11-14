@@ -392,8 +392,13 @@ file called graphics_lib.c::
 
 
 In this example, graphics_lib.o and logo.h will be generated in the
-component build directory, whereas logo.bmp resides in the component
-source directory.
+current directory (the build directory) while logo.bmp comes with the
+component and resides under the component path. Because logo.h is a
+generated file, it needs to be cleaned when make clean is called which
+why it is added to the COMPONENT_EXTRA_CLEAN variable.
+
+Cosmetic Improvements
+^^^^^^^^^^^^^^^^^^^^^
 
 Because logo.h is a generated file, it needs to be cleaned when make
 clean is called which why it is added to the COMPONENT_EXTRA_CLEAN
@@ -406,6 +411,28 @@ If a a source file in another component included ``logo.h``, then this
 component's name would have to be added to the other component's
 ``COMPONENT_DEPENDS`` list to ensure that the components were built
 in-order.
+
+Embedding Binary Data
+^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes you have a file with some binary or text data that you'd like to make available to your component - but you don't want to reformat the file as C source.
+
+You can set a variable COMPONENT_EMBED_FILES in component.mk, giving the names of the files to embed in this way::
+
+  COMPONENT_EMBED_FILES := server_root_cert.der
+
+Or if the file is a string, you can use the variable COMPONENT_EMBED_TXTFILES. This will embed the contents of the text file as a null-terminated string::
+
+  COMPONENT_EMBED_TXTFILES := server_root_cert.pem
+
+The file's contents will be added to the .rodata section in flash, and are available via symbol names as follows::
+
+  extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
+  extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
+
+The names are generated from the full name of the file, as given in COMPONENT_EMBED_FILES. Characters /, ., etc. are replaced with underscores. The _binary prefix in the symbol name is added by objcopy and is the same for both text and binary files.
+
+For an example of using this technique, see examples/04_https_request - the certificate file contents are loaded from the text .pem file at compile time.
 
 
 Fully Overriding The Component Makefile

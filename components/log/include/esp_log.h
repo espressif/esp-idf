@@ -19,6 +19,10 @@
 #include <stdarg.h>
 #include "sdkconfig.h"
 
+#ifdef BOOTLOADER_BUILD
+#include <rom/ets_sys.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

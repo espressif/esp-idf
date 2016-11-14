@@ -14,31 +14,104 @@ BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)
 BOOTLOADER_BUILD_DIR=$(abspath $(BUILD_DIR_BASE)/bootloader)
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
 
+# signing key path is resolved relative to the project directory
+SECURE_BOOT_SIGNING_KEY=$(abspath $(call dequote,$(CONFIG_SECURE_BOOT_SIGNING_KEY)))
+export SECURE_BOOT_SIGNING_KEY  # used by bootloader_support component
+
 # Custom recursive make for bootloader sub-project
 BOOTLOADER_MAKE=+$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
-	V=$(V) BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) \
+	V=$(V) BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR)
 
 .PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
 
 $(BOOTLOADER_BIN): $(SDKCONFIG_MAKEFILE)
 	$(BOOTLOADER_MAKE) $@
 
-bootloader-clean:
-	$(BOOTLOADER_MAKE) app-clean
-
 clean: bootloader-clean
 
+ifdef CONFIG_SECURE_BOOTLOADER_DISABLED
+# If secure boot disabled, bootloader flashing is integrated
+# with 'make flash' and no warnings are printed.
+
 bootloader: $(BOOTLOADER_BIN)
+	@echo $(SEPARATOR)
 	@echo "Bootloader built. Default flash command is:"
 	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $^"
 
-all_binaries: $(BOOTLOADER_BIN)
-
 ESPTOOL_ALL_FLASH_ARGS += 0x1000 $(BOOTLOADER_BIN)
 
-# bootloader-flash calls flash in the bootloader dummy project
 bootloader-flash: $(BOOTLOADER_BIN)
 	$(ESPTOOLPY_WRITE_FLASH) 0x1000 $^
+
+else ifdef CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH
+
+#### TEMPORARILY DISABLE THIS OPTION
+ifneq ("$(IDF_INSECURE_SECURE_BOOT)","1")
+bootloader:
+	@echo "Secure boot features are not yet mature, so the current secure bootloader will not properly secure the device"
+	@echo "If you flash this bootloader, you will be left with an non-updateable bootloader that is missing features."
+	@echo "If you really want to do this, set the environment variable IDF_INSECURE_SECURE_BOOT=1 and rerun make."
+	exit 1
+else
+
+# One time flashing requires user to run esptool.py command themselves,
+# and warning is printed about inability to reflash.
+
+bootloader: $(BOOTLOADER_BIN)
+	@echo $(SEPARATOR)
+	@echo "Bootloader built. One-time flash command is:"
+	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $(BOOTLOADER_BIN)"
+	@echo $(SEPARATOR)
+	@echo "* IMPORTANT: After first boot, BOOTLOADER CANNOT BE RE-FLASHED on same device"
+
+endif # IDF_INSECURE_SECURE_BOOT
+else ifdef CONFIG_SECURE_BOOTLOADER_REFLASHABLE
+# Reflashable secure bootloader
+# generates a digest binary (bootloader + digest)
+
+#### TEMPORARILY DISABLE THIS OPTION
+ifneq ("$(IDF_INSECURE_SECURE_BOOT)","1")
+bootloader:
+	@echo "Secure boot features are not yet mature, so the current secure bootloader will not properly secure the device."
+	@echo "If using this feature, expect to reflash the bootloader at least one more time."
+	@echo "If you really want to do this, set the environment variable IDF_INSECURE_SECURE_BOOT=1 and rerun make."
+	exit 1
+else
+
+BOOTLOADER_DIGEST_BIN := $(BOOTLOADER_BUILD_DIR)/bootloader-reflash-digest.bin
+SECURE_BOOTLOADER_KEY := $(BOOTLOADER_BUILD_DIR)/secure-bootloader-key.bin
+
+$(SECURE_BOOTLOADER_KEY): $(SECURE_BOOT_SIGNING_KEY)
+	$(Q) $(ESPSECUREPY) digest_private_key -k $< $@
+
+bootloader: $(BOOTLOADER_DIGEST_BIN)
+	@echo $(SEPARATOR)
+	@echo "Bootloader built and secure digest generated. First time flash command is:"
+	@echo "$(ESPEFUSEPY) burn_key secure_boot $(SECURE_BOOTLOADER_KEY)"
+	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x1000 $(BOOTLOADER_BIN)"
+	@echo $(SEPARATOR)
+	@echo "To reflash the bootloader after initial flash:"
+	@echo "$(ESPTOOLPY_WRITE_FLASH) 0x0 $(BOOTLOADER_DIGEST_BIN)"
+	@echo $(SEPARATOR)
+	@echo "* After first boot, only re-flashes of this kind (with same key) will be accepted."
+	@echo "* Not recommended to re-use the same secure boot keyfile on multiple production devices."
+
+$(BOOTLOADER_DIGEST_BIN): $(BOOTLOADER_BIN) $(SECURE_BOOTLOADER_KEY)
+	@echo "DIGEST $(notdir $@)"
+	$(Q) $(ESPSECUREPY) digest_secure_bootloader -k $(SECURE_BOOTLOADER_KEY) -o $@ $<
+
+endif # IDF_INSECURE_SECURE_BOOT
+else
+bootloader:
+	@echo "Invalid bootloader target: bad sdkconfig?"
+	@exit 1
+endif
+
+all_binaries: $(BOOTLOADER_BIN)
+
+bootloader-clean:
+	$(BOOTLOADER_MAKE) app-clean
+	rm -f $(SECURE_BOOTLOADER_KEY) $(BOOTLOADER_DIGEST_BIN)
 
 $(BOOTLOADER_BUILD_DIR):
 	mkdir -p $@

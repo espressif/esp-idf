@@ -656,19 +656,20 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
     if (mState == PageState::CORRUPT || mState == PageState::INVALID || mState == PageState::UNINITIALIZED) {
         return ESP_ERR_NVS_NOT_FOUND;
     }
-
-    if (itemIndex >= ENTRY_COUNT) {
+    
+    size_t findBeginIndex = itemIndex;
+    if (findBeginIndex >= ENTRY_COUNT) {
         return ESP_ERR_NVS_NOT_FOUND;
     }
 
     CachedFindInfo findInfo(nsIndex, datatype, key);
     if (mFindInfo == findInfo) {
-        itemIndex = mFindInfo.itemIndex();
+        findBeginIndex = mFindInfo.itemIndex();
     }
 
     size_t start = mFirstUsedEntry;
-    if (itemIndex > mFirstUsedEntry && itemIndex < ENTRY_COUNT) {
-        start = itemIndex;
+    if (findBeginIndex > mFirstUsedEntry && findBeginIndex < ENTRY_COUNT) {
+        start = findBeginIndex;
     }
 
     size_t end = mNextFreeEntry;

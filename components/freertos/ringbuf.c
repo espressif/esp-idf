@@ -18,6 +18,7 @@
 #include "freertos/queue.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/ringbuf.h"
+#include "esp_attr.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -25,6 +26,7 @@
 
 typedef enum {
     flag_allowsplit = 1,
+    flag_bytebuf = 2,
 } rbflag_t;
 
 typedef enum {
@@ -33,8 +35,10 @@ typedef enum {
 } itemflag_t;
 
 
+typedef struct ringbuf_t ringbuf_t;
+
 //The ringbuffer structure
-typedef struct {
+struct  ringbuf_t {
     SemaphoreHandle_t free_space_sem;           //Binary semaphore, wakes up writing threads when there's more free space
     SemaphoreHandle_t items_buffered_sem;       //Binary semaphore, indicates there are new packets in the circular buffer. See remark.
     size_t size;                                //Size of the data storage
@@ -44,7 +48,12 @@ typedef struct {
     uint8_t *data;                              //Data storage
     portMUX_TYPE mux;                           //Spinlock for actual data/ptr/struct modification
     rbflag_t flags;
-} ringbuf_t;
+    size_t maxItemSize;
+   //The following keep function pointers to hold different implementations for ringbuffer management.
+    BaseType_t (*copyItemToRingbufImpl)(ringbuf_t *rb, uint8_t *buffer, size_t buffer_size);
+    uint8_t *(*getItemFromRingbufImpl)(ringbuf_t *rb, size_t *length, int wanted_length);
+    void (*returnItemToRingbufImpl)(ringbuf_t *rb, void *item);
+};
 
 
 
@@ -73,14 +82,16 @@ static int ringbufferFreeMem(ringbuf_t *rb)
     return free_size-1;
 }
 
-//Copies a single item to the ring buffer. Assumes there is space in the ringbuffer and
+
+//Copies a single item to the ring buffer; refuses to split items. Assumes there is space in the ringbuffer and
 //the ringbuffer is locked. Increases write_ptr to the next item. Returns pdTRUE on
 //success, pdFALSE if it can't make the item fit and the calling routine needs to retry
 //later or fail.
 //This function by itself is not threadsafe, always call from within a muxed section.
-static BaseType_t copyItemToRingbuf(ringbuf_t *rb, uint8_t *buffer, size_t buffer_size) 
+static BaseType_t copyItemToRingbufNoSplit(ringbuf_t *rb, uint8_t *buffer, size_t buffer_size) 
 {
-    size_t rbuffer_size=(buffer_size+3)&~3; //Payload length, rounded to next 32-bit value
+    size_t rbuffer_size;
+    rbuffer_size=(buffer_size+3)&~3; //Payload length, rounded to next 32-bit value
     configASSERT(((int)rb->write_ptr&3)==0); //write_ptr needs to be 32-bit aligned
     configASSERT(rb->write_ptr-(rb->data+rb->size) >= sizeof(buf_entry_hdr_t)); //need to have at least the size 
                                             //of a header to the end of the ringbuff
@@ -88,65 +99,28 @@ static BaseType_t copyItemToRingbuf(ringbuf_t *rb, uint8_t *buffer, size_t buffe
     
     //See if we have enough contiguous space to write the buffer.
     if (rem_len < rbuffer_size + sizeof(buf_entry_hdr_t)) {
-        //The buffer can't be contiguously written to the ringbuffer, but needs special handling. Do
-        //that depending on how the ringbuffer is configured.
-        //The code here is also expected to check if the buffer, mangled in whatever way is implemented,
-        //will still fit, and return pdFALSE if that is not the case.
-        if (rb->flags & flag_allowsplit) {
-            //Buffer plus header is not going to fit in the room from wr_pos to the end of the 
-            //ringbuffer... we need to split the write in two.
-            //First, see if this will fit at all.
-            if (ringbufferFreeMem(rb) < (sizeof(buf_entry_hdr_t)*2)+rbuffer_size) {
-                //Will not fit.
-                return pdFALSE;
-            }
-            //Because the code at the end of the function makes sure we always have 
-            //room for a header, this should never assert.
-            configASSERT(rem_len>=sizeof(buf_entry_hdr_t));
-            //Okay, it should fit. Write everything.
-            //First, place bit of buffer that does fit. Write header first...
-            buf_entry_hdr_t *hdr=(buf_entry_hdr_t *)rb->write_ptr;
-            hdr->flags=0;
-            hdr->len=rem_len-sizeof(buf_entry_hdr_t);
-            rb->write_ptr+=sizeof(buf_entry_hdr_t);
-            rem_len-=sizeof(buf_entry_hdr_t);
-            if (rem_len!=0) {
-                //..then write the data bit that fits.
-                memcpy(rb->write_ptr, buffer, rem_len);
-                //Update vars so the code later on will write the rest of the data.
-                buffer+=rem_len;
-                rbuffer_size-=rem_len;
-                buffer_size-=rem_len;
-            } else {
-                //Huh, only the header fit. Mark as dummy so the receive function doesn't receive
-                //an useless zero-byte packet.
-                hdr->flags|=iflag_dummydata;
-            }
-            rb->write_ptr=rb->data;
-        } else {
-            //Buffer plus header is not going to fit in the room from wr_pos to the end of the 
-            //ringbuffer... but we're not allowed to split the buffer. We need to fill the 
-            //rest of the ringbuffer with a dummy item so we can place the data at the _start_ of
-            //the ringbuffer..
-            //First, find out if we actually have enough space at the start of the ringbuffer to
-            //make this work (Again, we need 4 bytes extra because otherwise read_ptr==free_ptr)
-            if (rb->free_ptr-rb->data < rbuffer_size+sizeof(buf_entry_hdr_t)+4) {
-                //Will not fit.
-                return pdFALSE;
-            }
-            //If the read buffer hasn't wrapped around yet, there's no way this will work either.
-            if (rb->free_ptr > rb->write_ptr) {
-                //No luck.
-                return pdFALSE;
-            }
-
-            //Okay, it will fit. Mark the rest of the ringbuffer space with a dummy packet.
-            buf_entry_hdr_t *hdr=(buf_entry_hdr_t *)rb->write_ptr;
-            hdr->flags=iflag_dummydata;
-            //Reset the write pointer to the start of the ringbuffer so the code later on can
-            //happily write the data.
-            rb->write_ptr=rb->data;
+        //Buffer plus header is not going to fit in the room from wr_pos to the end of the 
+        //ringbuffer... but we're not allowed to split the buffer. We need to fill the 
+        //rest of the ringbuffer with a dummy item so we can place the data at the _start_ of
+        //the ringbuffer..
+        //First, find out if we actually have enough space at the start of the ringbuffer to
+        //make this work (Again, we need 4 bytes extra because otherwise read_ptr==free_ptr)
+        if (rb->free_ptr-rb->data < rbuffer_size+sizeof(buf_entry_hdr_t)+4) {
+            //Will not fit.
+            return pdFALSE;
         }
+        //If the read buffer hasn't wrapped around yet, there's no way this will work either.
+        if (rb->free_ptr > rb->write_ptr) {
+            //No luck.
+            return pdFALSE;
+        }
+
+        //Okay, it will fit. Mark the rest of the ringbuffer space with a dummy packet.
+        buf_entry_hdr_t *hdr=(buf_entry_hdr_t *)rb->write_ptr;
+        hdr->flags=iflag_dummydata;
+        //Reset the write pointer to the start of the ringbuffer so the code later on can
+        //happily write the data.
+        rb->write_ptr=rb->data;
     } else {
         //No special handling needed. Checking if it's gonna fit probably still is a good idea.
         if (ringbufferFreeMem(rb) < sizeof(buf_entry_hdr_t)+rbuffer_size) {
@@ -174,9 +148,117 @@ static BaseType_t copyItemToRingbuf(ringbuf_t *rb, uint8_t *buffer, size_t buffe
     return pdTRUE;
 }
 
+//Copies a single item to the ring buffer; allows split items. Assumes there is space in the ringbuffer and
+//the ringbuffer is locked. Increases write_ptr to the next item. Returns pdTRUE on
+//success, pdFALSE if it can't make the item fit and the calling routine needs to retry
+//later or fail.
+//This function by itself is not threadsafe, always call from within a muxed section.
+static BaseType_t copyItemToRingbufAllowSplit(ringbuf_t *rb, uint8_t *buffer, size_t buffer_size) 
+{
+    size_t rbuffer_size;
+    rbuffer_size=(buffer_size+3)&~3; //Payload length, rounded to next 32-bit value
+    configASSERT(((int)rb->write_ptr&3)==0); //write_ptr needs to be 32-bit aligned
+    configASSERT(rb->write_ptr-(rb->data+rb->size) >= sizeof(buf_entry_hdr_t)); //need to have at least the size 
+                                            //of a header to the end of the ringbuff
+    size_t rem_len=(rb->data + rb->size) - rb->write_ptr; //length remaining until end of ringbuffer
+    
+    //See if we have enough contiguous space to write the buffer.
+    if (rem_len < rbuffer_size + sizeof(buf_entry_hdr_t)) {
+        //The buffer can't be contiguously written to the ringbuffer, but needs special handling. Do
+        //that depending on how the ringbuffer is configured.
+        //The code here is also expected to check if the buffer, mangled in whatever way is implemented,
+        //will still fit, and return pdFALSE if that is not the case.
+        //Buffer plus header is not going to fit in the room from wr_pos to the end of the 
+        //ringbuffer... we need to split the write in two.
+        //First, see if this will fit at all.
+        if (ringbufferFreeMem(rb) < (sizeof(buf_entry_hdr_t)*2)+rbuffer_size) {
+            //Will not fit.
+            return pdFALSE;
+        }
+         //Because the code at the end of the function makes sure we always have 
+        //room for a header, this should never assert.
+        configASSERT(rem_len>=sizeof(buf_entry_hdr_t));
+         //Okay, it should fit. Write everything.
+        //First, place bit of buffer that does fit. Write header first...
+        buf_entry_hdr_t *hdr=(buf_entry_hdr_t *)rb->write_ptr;
+        hdr->flags=0;
+        hdr->len=rem_len-sizeof(buf_entry_hdr_t);
+        rb->write_ptr+=sizeof(buf_entry_hdr_t);
+        rem_len-=sizeof(buf_entry_hdr_t);
+        if (rem_len!=0) {
+            //..then write the data bit that fits.
+            memcpy(rb->write_ptr, buffer, rem_len);
+            //Update vars so the code later on will write the rest of the data.
+            buffer+=rem_len;
+            rbuffer_size-=rem_len;
+            buffer_size-=rem_len;
+        } else {
+            //Huh, only the header fit. Mark as dummy so the receive function doesn't receive
+            //an useless zero-byte packet.
+            hdr->flags|=iflag_dummydata;
+        }
+        rb->write_ptr=rb->data;
+    } else {
+        //No special handling needed. Checking if it's gonna fit probably still is a good idea.
+        if (ringbufferFreeMem(rb) < sizeof(buf_entry_hdr_t)+rbuffer_size) {
+            //Buffer is not going to fit, period.
+            return pdFALSE;
+        }
+    }
+
+    //If we are here, the buffer is guaranteed to fit in the space starting at the write pointer.
+    buf_entry_hdr_t *hdr=(buf_entry_hdr_t *)rb->write_ptr;
+    hdr->len=buffer_size;
+    hdr->flags=0;
+    rb->write_ptr+=sizeof(buf_entry_hdr_t);
+    memcpy(rb->write_ptr, buffer, buffer_size);
+    rb->write_ptr+=rbuffer_size;
+
+    //The buffer will wrap around if we don't have room for a header anymore.
+    if ((rb->data+rb->size)-rb->write_ptr < sizeof(buf_entry_hdr_t)) {
+        //'Forward' the write buffer until we are at the start of the ringbuffer.
+        //The read pointer will always be at the start of a full header, which cannot 
+        //exist at the point of the current write pointer, so there's no chance of overtaking
+        //that.
+        rb->write_ptr=rb->data;
+    }
+    return pdTRUE;
+}
+
+
+//Copies a bunch of daya to the ring bytebuffer. Assumes there is space in the ringbuffer and
+//the ringbuffer is locked. Increases write_ptr to the next item. Returns pdTRUE on
+//success, pdFALSE if it can't make the item fit and the calling routine needs to retry
+//later or fail.
+//This function by itself is not threadsafe, always call from within a muxed section.
+static BaseType_t copyItemToRingbufByteBuf(ringbuf_t *rb, uint8_t *buffer, size_t buffer_size) 
+{
+    size_t rem_len=(rb->data + rb->size) - rb->write_ptr; //length remaining until end of ringbuffer
+    
+    //See if we have enough contiguous space to write the buffer.
+    if (rem_len < buffer_size) {
+        //...Nope. Write the data bit that fits.
+        memcpy(rb->write_ptr, buffer, rem_len);
+        //Update vars so the code later on will write the rest of the data.
+        buffer+=rem_len;
+        buffer_size-=rem_len;
+        rb->write_ptr=rb->data;
+    }
+
+    //If we are here, the buffer is guaranteed to fit in the space starting at the write pointer.
+    memcpy(rb->write_ptr, buffer, buffer_size);
+    rb->write_ptr+=buffer_size;
+    //The buffer will wrap around if we're at the end.
+    if ((rb->data+rb->size)==rb->write_ptr) {
+        rb->write_ptr=rb->data;
+    }
+    return pdTRUE;
+}
+
 //Retrieves a pointer to the data of the next item, or NULL if this is not possible.
 //This function by itself is not threadsafe, always call from within a muxed section.
-static uint8_t *getItemFromRingbuf(ringbuf_t *rb, size_t *length)
+//Because we always return one item, this function ignores the wanted_length variable.
+static uint8_t *getItemFromRingbufDefault(ringbuf_t *rb, size_t *length, int wanted_length)
 {
     uint8_t *ret;
     configASSERT(((int)rb->read_ptr&3)==0);
@@ -210,10 +292,48 @@ static uint8_t *getItemFromRingbuf(ringbuf_t *rb, size_t *length)
     return ret;
 }
 
+//Retrieves a pointer to the data in the buffer, or NULL if this is not possible.
+//This function by itself is not threadsafe, always call from within a muxed section.
+//This function honours the wanted_length and will never return more data than this.
+static uint8_t *getItemFromRingbufByteBuf(ringbuf_t *rb, size_t *length, int wanted_length)
+{
+    uint8_t *ret;
+    if (rb->read_ptr != rb->free_ptr) {
+        //This type of ringbuff does not support multiple outstanding buffers.
+        return NULL;
+    }
+    if (rb->read_ptr == rb->write_ptr) {
+        //No data available.
+        return NULL;
+    }
+    ret=rb->read_ptr;
+    if (rb->read_ptr > rb->write_ptr) {
+        //Available data wraps around. Give data until the end of the buffer.
+        *length=rb->size-(rb->read_ptr - rb->data);
+        if (wanted_length != 0 && *length > wanted_length) {
+            *length=wanted_length;
+            rb->read_ptr+=wanted_length;
+        } else {
+            rb->read_ptr=rb->data;
+        }
+    } else {
+        //Return data up to write pointer.
+        *length=rb->write_ptr -rb->read_ptr;
+        if (wanted_length != 0 && *length > wanted_length) {
+            *length=wanted_length;
+            rb->read_ptr+=wanted_length;
+        } else {
+            rb->read_ptr=rb->write_ptr;
+        }
+    }
+    return ret;
+}
+
+
 //Returns an item to the ringbuffer. Will mark the item as free, and will see if the free pointer
 //can be increase.
 //This function by itself is not threadsafe, always call from within a muxed section.
-static void returnItemToRingbuf(ringbuf_t *rb, void *item) {
+static void returnItemToRingbufDefault(ringbuf_t *rb, void *item) {
     uint8_t *data=(uint8_t*)item;
     configASSERT(((int)rb->free_ptr&3)==0);
     configASSERT(data >= rb->data);
@@ -243,11 +363,25 @@ static void returnItemToRingbuf(ringbuf_t *rb, void *item) {
         if ((rb->data+rb->size)-rb->free_ptr < sizeof(buf_entry_hdr_t)) {
             rb->free_ptr=rb->data;
         }
+        //The free_ptr can not exceed read_ptr, otherwise write_ptr might overwrite read_ptr.
+        //Read_ptr can not set to rb->data with free_ptr, otherwise write_ptr might wrap around to rb->data.
+        if(rb->free_ptr == rb->read_ptr) break;
         //Next header
         hdr=(buf_entry_hdr_t *)rb->free_ptr;
     }
 }
 
+
+//Returns an item to the ringbuffer. Will mark the item as free, and will see if the free pointer
+//can be increase.
+//This function by itself is not threadsafe, always call from within a muxed section.
+static void returnItemToRingbufBytebuf(ringbuf_t *rb, void *item) {
+    uint8_t *data=(uint8_t*)item;
+    configASSERT(data >= rb->data);
+    configASSERT(data < rb->data+rb->size);
+    //Free the read memory.
+    rb->free_ptr=rb->read_ptr;
+}
 
 void xRingbufferPrintInfo(RingbufHandle_t ringbuf)
 {
@@ -259,7 +393,7 @@ void xRingbufferPrintInfo(RingbufHandle_t ringbuf)
 
 
 
-RingbufHandle_t xRingbufferCreate(size_t buf_length, BaseType_t allow_split_items)
+RingbufHandle_t xRingbufferCreate(size_t buf_length, ringbuf_type_t type)
 {
     ringbuf_t *rb = malloc(sizeof(ringbuf_t));
     if (rb==NULL) goto err;
@@ -273,9 +407,35 @@ RingbufHandle_t xRingbufferCreate(size_t buf_length, BaseType_t allow_split_item
     rb->free_space_sem = xSemaphoreCreateBinary();
     rb->items_buffered_sem = xSemaphoreCreateBinary();
     rb->flags=0;
-    if (allow_split_items) rb->flags|=flag_allowsplit;
+    if (type==RINGBUF_TYPE_ALLOWSPLIT) {
+        rb->flags|=flag_allowsplit;
+        rb->copyItemToRingbufImpl=copyItemToRingbufAllowSplit;
+        rb->getItemFromRingbufImpl=getItemFromRingbufDefault;
+        rb->returnItemToRingbufImpl=returnItemToRingbufDefault;
+        //Calculate max item size. Worst case, we need to split an item into two, which means two headers of overhead.
+        rb->maxItemSize=rb->size-(sizeof(buf_entry_hdr_t)*2)-4;
+    } else if (type==RINGBUF_TYPE_BYTEBUF) {
+        rb->flags|=flag_bytebuf;
+        rb->copyItemToRingbufImpl=copyItemToRingbufByteBuf;
+        rb->getItemFromRingbufImpl=getItemFromRingbufByteBuf;
+        rb->returnItemToRingbufImpl=returnItemToRingbufBytebuf;
+        //Calculate max item size. We have no headers and can split anywhere -> size is total size minus one.
+        rb->maxItemSize=rb->size-1;
+    } else if (type==RINGBUF_TYPE_NOSPLIT) {
+        rb->copyItemToRingbufImpl=copyItemToRingbufNoSplit;
+        rb->getItemFromRingbufImpl=getItemFromRingbufDefault;
+        rb->returnItemToRingbufImpl=returnItemToRingbufDefault;
+        //Calculate max item size. Worst case, we have the write ptr in such a position that we are lacking four bytes of free
+        //memory to put an item into the rest of the memory. If this happens, we have to dummy-fill
+        //(item_data-4) bytes of buffer, then we only have (size-(item_data-4) bytes left to fill
+        //with the real item. (item size being header+data)
+        rb->maxItemSize=(rb->size/2)-sizeof(buf_entry_hdr_t)-4;
+    } else {
+        configASSERT(0);
+    }
     if (rb->free_space_sem == NULL || rb->items_buffered_sem == NULL) goto err;
     vPortCPUInitializeMutex(&rb->mux);
+
     return (RingbufHandle_t)rb;
 
 err:
@@ -303,18 +463,7 @@ size_t xRingbufferGetMaxItemSize(RingbufHandle_t ringbuf)
 {
     ringbuf_t *rb=(ringbuf_t *)ringbuf;
     configASSERT(rb);
-    //In both cases, we return 4 bytes less than what we actually can have. If the ringbuffer is
-    //indeed entirely filled, read_ptr==free_ptr, which throws off the free space calculation.
-    if (rb->flags & flag_allowsplit) {
-        //Worst case, we need to split an item into two, which means two headers of overhead.
-        return rb->size-(sizeof(buf_entry_hdr_t)*2)-4;
-    } else {
-        //Worst case, we have the write ptr in such a position that we are lacking four bytes of free
-        //memory to put an item into the rest of the memory. If this happens, we have to dummy-fill
-        //(item_data-4) bytes of buffer, then we only have (size-(item_data-4) bytes left to fill
-        //with the real item. (item size being header+data)
-        return (rb->size/2)-sizeof(buf_entry_hdr_t)-4;
-    }
+    return rb->maxItemSize;
 }
 
 BaseType_t xRingbufferSend(RingbufHandle_t ringbuf, void *data, size_t dataSize, TickType_t ticks_to_wait)
@@ -352,7 +501,7 @@ BaseType_t xRingbufferSend(RingbufHandle_t ringbuf, void *data, size_t dataSize,
         portENTER_CRITICAL(&rb->mux);
         //Another thread may have been able to sneak its write first. Check again now we locked the ringbuff, and retry
         //everything if this is the case. Otherwise, we can write and are done.
-        done=copyItemToRingbuf(rb, data, dataSize);
+        done=rb->copyItemToRingbufImpl(rb, data, dataSize);
         portEXIT_CRITICAL(&rb->mux);
     }
     xSemaphoreGive(rb->items_buffered_sem);
@@ -371,8 +520,7 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t ringbuf, void *data, size_t da
         //Does not fit in the remaining space in the ringbuffer.
         write_succeeded=pdFALSE;
     } else {
-        copyItemToRingbuf(rb, data, dataSize);
-        write_succeeded=pdTRUE;
+        write_succeeded = rb->copyItemToRingbufImpl(rb, data, dataSize);
     }
     portEXIT_CRITICAL_ISR(&rb->mux);
     if (write_succeeded) {
@@ -382,7 +530,7 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t ringbuf, void *data, size_t da
 }
 
 
-void *xRingbufferReceive(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait) 
+static void *xRingbufferReceiveGeneric(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait, size_t wanted_size) 
 {
     ringbuf_t *rb=(ringbuf_t *)ringbuf;
     uint8_t *itemData;
@@ -399,7 +547,7 @@ void *xRingbufferReceive(RingbufHandle_t ringbuf, size_t *item_size, TickType_t 
         }
         //Okay, we seem to have data in the buffer. Grab the mux and copy it out if it's still there.
         portENTER_CRITICAL(&rb->mux);
-        itemData=getItemFromRingbuf(rb, item_size);
+        itemData=rb->getItemFromRingbufImpl(rb, item_size, wanted_size);
         portEXIT_CRITICAL(&rb->mux);
         if (itemData) {
             //We managed to get an item.
@@ -409,6 +557,11 @@ void *xRingbufferReceive(RingbufHandle_t ringbuf, size_t *item_size, TickType_t 
     return (void*)itemData;
 }
 
+void *xRingbufferReceive(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait)
+{
+    return xRingbufferReceiveGeneric(ringbuf, item_size, ticks_to_wait, 0);
+}
+
 
 void *xRingbufferReceiveFromISR(RingbufHandle_t ringbuf, size_t *item_size) 
 {
@@ -416,7 +569,28 @@ void *xRingbufferReceiveFromISR(RingbufHandle_t ringbuf, size_t *item_size)
     uint8_t *itemData;
     configASSERT(rb);
     portENTER_CRITICAL_ISR(&rb->mux);
-    itemData=getItemFromRingbuf(rb, item_size);
+    itemData=rb->getItemFromRingbufImpl(rb, item_size, 0);
+    portEXIT_CRITICAL_ISR(&rb->mux);
+    return (void*)itemData;
+}
+
+void *xRingbufferReceiveUpTo(RingbufHandle_t ringbuf, size_t *item_size, TickType_t ticks_to_wait, size_t wanted_size) {
+    ringbuf_t *rb=(ringbuf_t *)ringbuf;
+    if (wanted_size == 0) return NULL;
+    configASSERT(rb);
+    configASSERT(rb->flags & flag_bytebuf);
+    return xRingbufferReceiveGeneric(ringbuf, item_size, ticks_to_wait, wanted_size);
+}
+
+void *xRingbufferReceiveUpToFromISR(RingbufHandle_t ringbuf, size_t *item_size, size_t wanted_size)
+{
+    ringbuf_t *rb=(ringbuf_t *)ringbuf;
+    uint8_t *itemData;
+    if (wanted_size == 0) return NULL;
+    configASSERT(rb);
+    configASSERT(rb->flags & flag_bytebuf);
+    portENTER_CRITICAL_ISR(&rb->mux);
+    itemData=rb->getItemFromRingbufImpl(rb, item_size, 0);
     portEXIT_CRITICAL_ISR(&rb->mux);
     return (void*)itemData;
 }
@@ -426,7 +600,7 @@ void vRingbufferReturnItem(RingbufHandle_t ringbuf, void *item)
 {
     ringbuf_t *rb=(ringbuf_t *)ringbuf;
     portENTER_CRITICAL_ISR(&rb->mux);
-    returnItemToRingbuf(rb, item);
+    rb->returnItemToRingbufImpl(rb, item);
     portEXIT_CRITICAL_ISR(&rb->mux);
     xSemaphoreGive(rb->free_space_sem);
 }
@@ -436,7 +610,7 @@ void vRingbufferReturnItemFromISR(RingbufHandle_t ringbuf, void *item, BaseType_
 {
     ringbuf_t *rb=(ringbuf_t *)ringbuf;
     portENTER_CRITICAL_ISR(&rb->mux);
-    returnItemToRingbuf(rb, item);
+    rb->returnItemToRingbufImpl(rb, item);
     portEXIT_CRITICAL_ISR(&rb->mux);
     xSemaphoreGiveFromISR(rb->free_space_sem, higher_prio_task_awoken);
 }
