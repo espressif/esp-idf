@@ -56,15 +56,19 @@ When writing code for this repository, please follow guidelines below.
        :align: center
        :alt: Sample void function documented inline and after rendering
  
-  5. When documenting members of a ``struct``, ``typedef`` or ``enum``, place specific comment like below after each member.
+  5. When documenting a ``define`` as well as members of a ``struct``or ``enum``, place specific comment like below after each member.
 
     .. image:: _static/doc-code-member.png
        :align: center
        :alt: Sample of member documentation inline and after rendering
- 
+
+    .. note::
+
+      In this case do not use detailed documentation blocks ``/*!< Do not use this style! */`` becasue they are causing Doxygen validation errors. If you have code already documented like that, you may convert it using `dms.py <https://github.com/espressif/esp-idf/tree/master/docs/dmc.py>`_ script placed in `/docs <https://github.com/espressif/esp-idf/tree/master/docs>`_ folder of  `espressif/esp-idf`_ repository.
+
   6. To provide well formatted lists, break the line after command (like ``@return`` in example below).
 
-    .. code-block:: c
+    ::
 
       ...
       *
@@ -86,7 +90,7 @@ There is couple of tips, how you can make your documentation even better and mor
 
   1. Add code snippets to illustrate implementation. To do so, enclose snippet using ``@code{c}`` and ``@endcode`` commands. 
 
-    .. code-block:: c
+    ::
 
       ...
       *
@@ -105,7 +109,7 @@ There is couple of tips, how you can make your documentation even better and mor
 
   2. To highlight some important information use command ``@attention`` or ``@note``.
 
-    .. code-block:: c
+    ::
 
       ...
       *
@@ -119,7 +123,7 @@ There is couple of tips, how you can make your documentation even better and mor
 
   3. Use markdown to make your documentation even more readable. You will add headers, links, tables and more.
 
-    .. code-block:: c
+    ::
 
       ...
       *
@@ -129,7 +133,7 @@ There is couple of tips, how you can make your documentation even better and mor
 
   .. note::
 
-   Code snippets, notes, links, etc. will not make it to the documentation, if not enclosed in a comment block associated with one of documented objects.
+     Code snippets, notes, links, etc. will not make it to the documentation, if not enclosed in a comment block associated with one of documented objects.
 
   5. Prepare one or more complete code examples together with description. Place them in a separate file ``example.rst`` in the same directory as the API header files. If directory contains header files for different APIs, then the file name should be ``apiname-example.rst``.
 
