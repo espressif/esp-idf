@@ -1,7 +1,21 @@
 .. include:: ../../components/log/README.rst
 
+Application Example
+-------------------
+
+`Instructions`_
+
 API Reference
 -------------
+
+`Instructions`_
+
+.. _Instructions: template.html
+
+Header Files
+^^^^^^^^^^^^
+
+  * `log/include/esp_log.h <https://github.com/espressif/esp-idf/blob/master/components/log/include/esp_log.h>`_
 
 Macros
 ^^^^^^

@@ -18,8 +18,13 @@ API Reference
 
 .. _Instructions: template.html
 
+Header Files
+^^^^^^^^^^^^
+
+  * `driver/include/driver/driver/gpio.h <https://github.com/espressif/esp-idf/blob/master/components/driver/include/driver/gpio.h>`_
+
 Macros
-------
+^^^^^^
 
 .. doxygendefine:: GPIO_SEL_0
 .. doxygendefine:: GPIO_SEL_1

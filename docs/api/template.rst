@@ -51,10 +51,11 @@ API Reference
 
    *INSTRUCTIONS*
  
-   1. Provide list of API members divided into sections. 
-   2. Use corresponding ``.. doxygen..`` directives, so member documentation is auto updated.
+   1. Specify the names of header files used to generate this reference. Each name should be linked to the source on `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository.
+   2. Provide list of API members divided into sections. 
+   3. Use corresponding ``.. doxygen..`` directives, so member documentation is auto updated.
 
-     * Data Structures -``.. doxygenstruct::``
+     * Data Structures -``.. doxygenstruct::`` together with ``:members:``
      * Macros - ``.. doxygendefine::``
      * Type Definitions - ``.. doxygentypedef::``
      * Enumerations - ``.. doxygenenum::``
@@ -62,30 +63,48 @@ API Reference
 
      See `Breathe documentation <https://breathe.readthedocs.io/en/latest/directives.html>`_ for additional information. 
 
-   3. Once done remove superfluous headers.
-   4. When changes are committed and documentation is build, check how this section rendered. :doc:`Correct annotations <../documenting-code>` in respective header files, if required.
+   4. Once done remove superfluous headers.
+   5. When changes are committed and documentation is build, check how this section rendered. :doc:`Correct annotations <../documenting-code>` in respective header files, if required.
+
+Header Files
+^^^^^^^^^^^^
+
+  * `path/header-file.h`
 
 Data Structures
 ^^^^^^^^^^^^^^^
 
-``.. doxygenstruct:: name_of_structure``
+::
+
+  .. doxygenstruct:: name_of_structure
+     :members:
 
 Macros
 ^^^^^^
 
-``.. doxygendefine:: name_of_macro``
+::
+
+  .. doxygendefine:: name_of_macro
 
 Type Definitions
 ^^^^^^^^^^^^^^^^
 
-``.. doxygentypedef:: name_of_type``
+::
+
+  .. doxygentypedef:: name_of_type
 
 Enumerations
 ^^^^^^^^^^^^
 
-``.. doxygenenum:: name_of_enumeration``
+::
+
+  .. doxygenenum:: name_of_enumeration
 
 Functions
 ^^^^^^^^^
 
-``.. doxygenfunction:: name_of_function``
+::
+
+  .. doxygenfunction:: name_of_function
+
+
