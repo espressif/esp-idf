@@ -41,8 +41,9 @@ COMPONENT_LIBRARY = lib$(COMPONENT_NAME).a
 # Source dirs a component has. Default to root directory of component.
 COMPONENT_SRCDIRS = .
 
-#Names of binary files to embed as symbols in the component library
+#Names of binary & text files to embed as raw content in the component library
 COMPONENT_EMBED_FILES ?=
+COMPONENT_EMBED_TXTFILES ?=
 
 # By default, include only the include/ dir.
 COMPONENT_ADD_INCLUDEDIRS = include
@@ -71,6 +72,11 @@ COMPONENT_OBJS += $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.S,%.o,$
 # Make relative by removing COMPONENT_PATH from all found object paths
 COMPONENT_OBJS := $(patsubst $(COMPONENT_PATH)/%,%,$(COMPONENT_OBJS))
 endif
+
+# Object files with embedded binaries to add to the component library
+# Correspond to the files named in COMPONENT_EMBED_FILES & COMPONENT_EMBED_TXTFILES
+COMPONENT_EMBED_OBJS ?= $(addsuffix .bin.o,$(COMPONENT_EMBED_FILES)) $(addsuffix .txt.o,$(COMPONENT_EMBED_TXTFILES))
+
 
 # If we're called to compile something, we'll get passed the COMPONENT_INCLUDES
 # variable with all the include dirs from all the components in random order. This
@@ -133,7 +139,7 @@ build: $(COMPONENT_LIBRARY)
 $(COMPONENT_LIBRARY): $(COMPONENT_OBJS) $(COMPONENT_EMBED_OBJS)
 	$(summary) AR $@
 	rm -f $@
-	$(AR) cru $@ $(COMPONENT_OBJS)
+	$(AR) cru $@ $^
 endif
 
 # If COMPONENT_OWNCLEANTARGET is not set, define a phony clean target
@@ -187,11 +193,11 @@ OBJCOPY_EMBED_ARGS := --input binary --output elf32-xtensa-le --binary-architect
 # path to the input file.
 define GenerateEmbedTarget
 $(1).$(2).o: $(call resolvepath,$(1),$(COMPONENT_PATH)) | $$(dir $(1))
-	$$(summary) EMBED $$@
-	$$(Q) $(if $(filter-out $$(notdir $$(abspath $$<)),$$(abspath $$(notdir $$<))), cp $$< $$(notdir $$<) )  # copy input file to build dir, unless already in build dir
-	$$(Q) $(if $(subst bin,,$(2)),echo -ne '\0' >> $$(notdir $$<) )  # trailing NUL byte on text output
-	$$(Q) $$(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) $$@
-	$$(Q) rm $$(notdir $$<)
+	$(summary) EMBED $$@
+	$$(if $$(filter-out $$(notdir $$(abspath $$<)),$$(abspath $$(notdir $$<))), cp $$< $$(notdir $$<) )  # copy input file to build dir, unless already in build dir
+	$$(if $$(subst bin,,$(2)),echo -ne '\0' >> $$(notdir $$<) )  # trailing NUL byte on text output
+	$(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) $$@
+	rm $$(notdir $$<)
 endef
 
 # generate targets to embed binary & text files
