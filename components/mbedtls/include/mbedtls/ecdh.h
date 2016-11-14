@@ -43,15 +43,15 @@ typedef enum
  */
 typedef struct
 {
-    mbedtls_ecp_group grp;      /*!<  elliptic curve used                           */
-    mbedtls_mpi d;              /*!<  our secret value (private key)                */
-    mbedtls_ecp_point Q;        /*!<  our public value (public key)                 */
-    mbedtls_ecp_point Qp;       /*!<  peer's public value (public key)              */
-    mbedtls_mpi z;              /*!<  shared secret                                 */
-    int point_format;   /*!<  format for point export in TLS messages       */
-    mbedtls_ecp_point Vi;       /*!<  blinding value (for later)                    */
-    mbedtls_ecp_point Vf;       /*!<  un-blinding value (for later)                 */
-    mbedtls_mpi _d;             /*!<  previous d (for later)                        */
+    mbedtls_ecp_group grp;      //!<  elliptic curve used
+    mbedtls_mpi d;              //!<  our secret value (private key)
+    mbedtls_ecp_point Q;        //!<  our public value (public key)
+    mbedtls_ecp_point Qp;       //!<  peer's public value (public key)
+    mbedtls_mpi z;              //!<  shared secret
+    int point_format;   //!<  format for point export in TLS messages
+    mbedtls_ecp_point Vi;       //!<  blinding value (for later)
+    mbedtls_ecp_point Vf;       //!<  un-blinding value (for later)
+    mbedtls_mpi _d;             //!<  previous d (for later)
 }
 mbedtls_ecdh_context;
 

@@ -38,11 +38,11 @@
  */
 
 #if !defined(MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT)
-#define MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT       86400   /*!< 1 day  */
+#define MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT       86400   //!< 1 day
 #endif
 
 #if !defined(MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES)
-#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES      50   /*!< Maximum entries in cache */
+#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES      50   //!< Maximum entries in cache
 #endif
 
 /* \} name SECTION: Module settings */
@@ -60,13 +60,13 @@ typedef struct mbedtls_ssl_cache_entry mbedtls_ssl_cache_entry;
 struct mbedtls_ssl_cache_entry
 {
 #if defined(MBEDTLS_HAVE_TIME)
-    mbedtls_time_t timestamp;           /*!< entry timestamp    */
+    mbedtls_time_t timestamp;           //!< entry timestamp
 #endif
-    mbedtls_ssl_session session;        /*!< entry session      */
+    mbedtls_ssl_session session;        //!< entry session
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
-    mbedtls_x509_buf peer_cert;         /*!< entry peer_cert    */
+    mbedtls_x509_buf peer_cert;         //!< entry peer_cert
 #endif
-    mbedtls_ssl_cache_entry *next;      /*!< chain pointer      */
+    mbedtls_ssl_cache_entry *next;      //!< chain pointer
 };
 
 /**
@@ -74,11 +74,11 @@ struct mbedtls_ssl_cache_entry
  */
 struct mbedtls_ssl_cache_context
 {
-    mbedtls_ssl_cache_entry *chain;     /*!< start of the chain     */
-    int timeout;                /*!< cache entry timeout    */
-    int max_entries;            /*!< maximum entries        */
+    mbedtls_ssl_cache_entry *chain;     //!< start of the chain
+    int timeout;                //!< cache entry timeout
+    int max_entries;            //!< maximum entries
 #if defined(MBEDTLS_THREADING_C)
-    mbedtls_threading_mutex_t mutex;    /*!< mutex                  */
+    mbedtls_threading_mutex_t mutex;    //!< mutex
 #endif
 };
 

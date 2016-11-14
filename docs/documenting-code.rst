@@ -56,7 +56,7 @@ When writing code for this repository, please follow guidelines below.
        :align: center
        :alt: Sample void function documented inline and after rendering
  
-  5. When documenting a ``define`` as well as members of a ``struct``or ``enum``, place specific comment like below after each member.
+  5. When documenting a ``define`` as well as members of a ``struct`` or ``enum``, place specific comment like below after each member.
 
     .. image:: _static/doc-code-member.png
        :align: center

@@ -50,7 +50,7 @@ extern "C" {
  */
 typedef struct
 {
-    uint32_t k[4];       /*!< key */
+    uint32_t k[4];       //!< key
 }
 mbedtls_xtea_context;
 

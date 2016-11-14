@@ -57,9 +57,9 @@ extern "C" {
  */
 typedef struct
 {
-    int nr;                     /*!<  number of rounds  */
-    uint32_t *rk;               /*!<  AES round keys    */
-    uint32_t buf[68];           /*!<  unaligned data    */
+    int nr;                     //!<  number of rounds
+    uint32_t *rk;               //!<  AES round keys
+    uint32_t buf[68];           //!<  unaligned data
 }
 mbedtls_aes_context;
 

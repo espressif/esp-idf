@@ -36,7 +36,7 @@ extern "C" {
  * \brief          CCM context structure
  */
 typedef struct {
-    mbedtls_cipher_context_t cipher_ctx;    /*!< cipher context used */
+    mbedtls_cipher_context_t cipher_ctx;    //!< cipher context used
 }
 mbedtls_ccm_context;
 

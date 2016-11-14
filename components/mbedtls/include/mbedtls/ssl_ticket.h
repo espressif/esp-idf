@@ -45,9 +45,9 @@ extern "C" {
  */
 typedef struct
 {
-    unsigned char name[4];          /*!< random key identifier              */
-    uint32_t generation_time;       /*!< key generation timestamp (seconds) */
-    mbedtls_cipher_context_t ctx;   /*!< context for auth enc/decryption    */
+    unsigned char name[4];          //!< random key identifier
+    uint32_t generation_time;       //!< key generation timestamp (seconds)
+    mbedtls_cipher_context_t ctx;   //!< context for auth enc/decryption
 }
 mbedtls_ssl_ticket_key;
 
@@ -56,14 +56,14 @@ mbedtls_ssl_ticket_key;
  */
 typedef struct
 {
-    mbedtls_ssl_ticket_key keys[2]; /*!< ticket protection keys             */
-    unsigned char active;           /*!< index of the currently active key  */
+    mbedtls_ssl_ticket_key keys[2]; //!< ticket protection keys
+    unsigned char active;           //!< index of the currently active key
 
-    uint32_t ticket_lifetime;       /*!< lifetime of tickets in seconds     */
+    uint32_t ticket_lifetime;       //!< lifetime of tickets in seconds
 
     /** Callback for getting (pseudo-)random numbers                        */
     int  (*f_rng)(void *, unsigned char *, size_t);
-    void *p_rng;                    /*!< context for the RNG function       */
+    void *p_rng;                    //!< context for the RNG function
 
 #if defined(MBEDTLS_THREADING_C)
     mbedtls_threading_mutex_t mutex;

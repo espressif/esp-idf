@@ -70,23 +70,23 @@
 extern "C" {
 #endif
 
-#define ESP_ERR_WIFI_OK          ESP_OK                    /*!< No error */
-#define ESP_ERR_WIFI_FAIL        ESP_FAIL                  /*!< General fail code */
-#define ESP_ERR_WIFI_NO_MEM      ESP_ERR_NO_MEM            /*!< Out of memory */
-#define ESP_ERR_WIFI_ARG         ESP_ERR_INVALID_ARG       /*!< Invalid argument */
-#define ESP_ERR_WIFI_NOT_SUPPORT ESP_ERR_NOT_SUPPORTED     /*!< Indicates that API is not supported yet */
+#define ESP_ERR_WIFI_OK          ESP_OK                    //!< No error
+#define ESP_ERR_WIFI_FAIL        ESP_FAIL                  //!< General fail code
+#define ESP_ERR_WIFI_NO_MEM      ESP_ERR_NO_MEM            //!< Out of memory
+#define ESP_ERR_WIFI_ARG         ESP_ERR_INVALID_ARG       //!< Invalid argument
+#define ESP_ERR_WIFI_NOT_SUPPORT ESP_ERR_NOT_SUPPORTED     //!< Indicates that API is not supported yet
 
-#define ESP_ERR_WIFI_NOT_INIT    (ESP_ERR_WIFI_BASE + 1)   /*!< WiFi driver is not installed by esp_wifi_init */
-#define ESP_ERR_WIFI_NOT_START   (ESP_ERR_WIFI_BASE + 2)   /*!< WiFi driver is not started by esp_wifi_start */
-#define ESP_ERR_WIFI_IF          (ESP_ERR_WIFI_BASE + 3)   /*!< WiFi interface error */
-#define ESP_ERR_WIFI_MODE        (ESP_ERR_WIFI_BASE + 4)   /*!< WiFi mode error */
-#define ESP_ERR_WIFI_STATE       (ESP_ERR_WIFI_BASE + 5)   /*!< WiFi internal state error */
-#define ESP_ERR_WIFI_CONN        (ESP_ERR_WIFI_BASE + 6)   /*!< WiFi internal control block of station or soft-AP error */
-#define ESP_ERR_WIFI_NVS         (ESP_ERR_WIFI_BASE + 7)   /*!< WiFi internal NVS module error */
-#define ESP_ERR_WIFI_MAC         (ESP_ERR_WIFI_BASE + 8)   /*!< MAC address is invalid */
-#define ESP_ERR_WIFI_SSID        (ESP_ERR_WIFI_BASE + 9)   /*!< SSID is invalid */
-#define ESP_ERR_WIFI_PASSWORD    (ESP_ERR_WIFI_BASE + 10)  /*!< Passord is invalid */
-#define ESP_ERR_WIFI_TIMEOUT     (ESP_ERR_WIFI_BASE + 11)  /*!< Timeout error */
+#define ESP_ERR_WIFI_NOT_INIT    (ESP_ERR_WIFI_BASE + 1)   //!< WiFi driver is not installed by esp_wifi_init
+#define ESP_ERR_WIFI_NOT_START   (ESP_ERR_WIFI_BASE + 2)   //!< WiFi driver is not started by esp_wifi_start
+#define ESP_ERR_WIFI_IF          (ESP_ERR_WIFI_BASE + 3)   //!< WiFi interface error
+#define ESP_ERR_WIFI_MODE        (ESP_ERR_WIFI_BASE + 4)   //!< WiFi mode error
+#define ESP_ERR_WIFI_STATE       (ESP_ERR_WIFI_BASE + 5)   //!< WiFi internal state error
+#define ESP_ERR_WIFI_CONN        (ESP_ERR_WIFI_BASE + 6)   //!< WiFi internal control block of station or soft-AP error
+#define ESP_ERR_WIFI_NVS         (ESP_ERR_WIFI_BASE + 7)   //!< WiFi internal NVS module error
+#define ESP_ERR_WIFI_MAC         (ESP_ERR_WIFI_BASE + 8)   //!< MAC address is invalid
+#define ESP_ERR_WIFI_SSID        (ESP_ERR_WIFI_BASE + 9)   //!< SSID is invalid
+#define ESP_ERR_WIFI_PASSWORD    (ESP_ERR_WIFI_BASE + 10)  //!< Passord is invalid
+#define ESP_ERR_WIFI_TIMEOUT     (ESP_ERR_WIFI_BASE + 11)  //!< Timeout error
 
 typedef struct {
     system_event_handler_t event_handler;  /**< WiFi event handler */

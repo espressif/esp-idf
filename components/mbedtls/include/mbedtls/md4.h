@@ -45,9 +45,9 @@ extern "C" {
  */
 typedef struct
 {
-    uint32_t total[2];          /*!< number of bytes processed  */
-    uint32_t state[4];          /*!< intermediate digest state  */
-    unsigned char buffer[64];   /*!< data block being processed */
+    uint32_t total[2];          //!< number of bytes processed
+    uint32_t state[4];          //!< intermediate digest state
+    unsigned char buffer[64];   //!< data block being processed
 }
 mbedtls_md4_context;
 

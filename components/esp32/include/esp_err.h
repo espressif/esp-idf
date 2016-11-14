@@ -37,7 +37,7 @@ typedef int32_t esp_err_t;
 #define ESP_ERR_TIMEOUT         0x107
 
 
-#define ESP_ERR_WIFI_BASE       0x3000 /*!< Starting number of WiFi error codes */
+#define ESP_ERR_WIFI_BASE       0x3000 //!< Starting number of WiFi error codes
 
 /**
  * Macro which can be used to check the error code,
