@@ -145,7 +145,7 @@ void esp_task_wdt_delete() {
 #if CONFIG_TASK_WDT_CHECK_IDLE_TASK
 static bool idle_hook(void) {
 #if !CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    if (xPortGetCoreID()!=0) return;
+    if (xPortGetCoreID()!=0) return true;
 #endif
     esp_task_wdt_feed();
     return true;
