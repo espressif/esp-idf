@@ -927,7 +927,6 @@ typedef struct xSTATIC_QUEUE
 
 	StaticList_t xDummy3[ 2 ];
 	UBaseType_t uxDummy4[ 3 ];
-	BaseType_t ucDummy5[ 2 ];
 
 	#if( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
 		uint8_t ucDummy6;
@@ -943,12 +942,12 @@ typedef struct xSTATIC_QUEUE
 	#endif
 
     struct {
-	    volatile uint32_t mux;
+	    volatile uint32_t ucDummy10;
     #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	    const char *lastLockedFn;
-	    int lastLockedLine;
+	    void *pvDummy8;
+	    UBaseType_t uxDummy11;
     #endif
-    } mux;
+    } sDummy12;
 
 } StaticQueue_t;
 typedef StaticQueue_t StaticSemaphore_t;
