@@ -25,6 +25,7 @@ Structures
 ^^^^^^^^^^
 
 .. doxygenstruct:: esp_vfs_t
+   :members:
 
 Functions
 ^^^^^^^^^
