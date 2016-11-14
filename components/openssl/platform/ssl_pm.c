@@ -215,6 +215,31 @@ static int ssl_pm_reload_crt(SSL *ssl)
     return 0;
 }
 
+/*
+ * Perform the mbedtls SSL handshake instead of mbedtls_ssl_handshake.
+ * We can add debug here.
+ */
+LOCAL int mbedtls_handshake( mbedtls_ssl_context *ssl )
+{
+    int ret = 0;
+
+    if (ssl == NULL || ssl->conf == NULL)
+        return MBEDTLS_ERR_SSL_BAD_INPUT_DATA;
+
+    while (ssl->state != MBEDTLS_SSL_HANDSHAKE_OVER)
+    {
+        ret = mbedtls_ssl_handshake_step(ssl);
+        
+        SSL_DEBUG(1, "ssl ret %d state %d heap %d\n", 
+            ret, ssl->state, system_get_free_heap_size());
+        
+        if (ret != 0)
+            break;
+    }
+
+    return ret;
+}
+
 int ssl_pm_handshake(SSL *ssl)
 {
     int ret, mbed_ret;
@@ -224,13 +249,19 @@ int ssl_pm_handshake(SSL *ssl)
     if (mbed_ret)
         return 0;
 
+    SSL_DEBUG(1, "ssl_speed_up_enter ");
     ssl_speed_up_enter();
-    while((mbed_ret = mbedtls_ssl_handshake(&ssl_pm->ssl)) != 0) {
+    SSL_DEBUG(1, "OK\n");
+    
+    while((mbed_ret = mbedtls_handshake(&ssl_pm->ssl)) != 0) {
         if (mbed_ret != MBEDTLS_ERR_SSL_WANT_READ && mbed_ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
            break;
         }
     }
+    
+    SSL_DEBUG(1, "ssl_speed_up_exit ");
     ssl_speed_up_exit();
+    SSL_DEBUG(1, "OK\n");
 
     if (!mbed_ret) {
         struct x509_pm *x509_pm = (struct x509_pm *)ssl->session->peer->x509_pm;
@@ -492,6 +523,7 @@ int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
     return 0;
 
 failed2:
+    mbedtls_x509_crt_free(x509_pm->x509_crt);
     ssl_mem_free(x509_pm->x509_crt);
     x509_pm->x509_crt = NULL;
 failed1:
@@ -567,6 +599,7 @@ int pkey_pm_load(EVP_PKEY *pk, const unsigned char *buffer, int len)
     return 0;
 
 failed2:
+    mbedtls_pk_free(pkey_pm->pkey);
     ssl_mem_free(pkey_pm->pkey);
     pkey_pm->pkey = NULL;
 failed1:

@@ -55,16 +55,17 @@
 #else
     #ifdef SSL_PRINT_LOG
         #undef SSL_PRINT_LOG
-        #define SSL_PRINT_LOG(...)
     #endif
+    #define SSL_PRINT_LOG(...)
+    
     #ifdef SSL_ERROR_LOG
         #undef SSL_ERROR_LOG
-        #define SSL_ERROR_LOG(...)
     #endif
+    #define SSL_ERROR_LOG(...)
     #ifdef SSL_LOCAL_LOG
         #undef SSL_LOCAL_LOG
-        #define SSL_LOCAL_LOG(...)
     #endif
+    #define SSL_LOCAL_LOG(...)
 #endif
 
 #if SSL_DEBUG_LOCATION_ENABLE
