@@ -1,9 +1,6 @@
 COMPONENT_ADD_INCLUDEDIRS := include
 COMPONENT_PRIV_INCLUDEDIRS := include_priv
 
-# include configuration macros early
-include $(IDF_PATH)/make/common.mk
-
 ifdef IS_BOOTLOADER_BUILD
 # share "private" headers with the bootloader component
 # eventual goal: all functionality that needs this lives in bootloader_support
@@ -36,5 +33,3 @@ COMPONENT_EXTRA_CLEAN += $(SECURE_BOOT_VERIFICATION_KEY)
 COMPONENT_EMBED_FILES := $(SECURE_BOOT_VERIFICATION_KEY)
 
 endif
-
-include $(IDF_PATH)/make/component_common.mk

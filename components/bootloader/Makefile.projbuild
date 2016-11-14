@@ -13,7 +13,6 @@ ifndef IS_BOOTLOADER_BUILD
 BOOTLOADER_COMPONENT_PATH := $(COMPONENT_PATH)
 BOOTLOADER_BUILD_DIR=$(abspath $(BUILD_DIR_BASE)/bootloader)
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
-BOOTLOADER_SDKCONFIG=$(BOOTLOADER_BUILD_DIR)/sdkconfig
 
 # signing key path is resolved relative to the project directory
 SECURE_BOOT_SIGNING_KEY=$(abspath $(call dequote,$(CONFIG_SECURE_BOOT_SIGNING_KEY)))
@@ -21,14 +20,12 @@ export SECURE_BOOT_SIGNING_KEY  # used by bootloader_support component
 
 # Custom recursive make for bootloader sub-project
 BOOTLOADER_MAKE=+$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
-	V=$(V) SDKCONFIG=$(BOOTLOADER_SDKCONFIG) \
-	BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) IS_BOOTLOADER_BUILD=1
-
+	V=$(V) BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR)
 
 .PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
 
-$(BOOTLOADER_BIN): | $(BOOTLOADER_BUILD_DIR)/sdkconfig
-	$(Q) $(BOOTLOADER_MAKE) $@
+$(BOOTLOADER_BIN): $(SDKCONFIG_MAKEFILE)
+	$(BOOTLOADER_MAKE) $@
 
 clean: bootloader-clean
 
@@ -110,21 +107,16 @@ bootloader:
 	@exit 1
 endif
 
-bootloader-clean:
-	$(Q) $(BOOTLOADER_MAKE) app-clean config-clean
-	$(Q) rm -f $(BOOTLOADER_SDKCONFIG) $(BOOTLOADER_SDKCONFIG).old $(SECURE_BOOTLOADER_KEY) $(BOOTLOADER_DIGEST_BIN)
-
 all_binaries: $(BOOTLOADER_BIN)
 
-# synchronise the project level config to the bootloader's
-# config
-$(BOOTLOADER_SDKCONFIG): $(PROJECT_PATH)/sdkconfig | $(BOOTLOADER_BUILD_DIR)
-	$(Q) cp $< $@
+bootloader-clean:
+	$(BOOTLOADER_MAKE) app-clean
+	rm -f $(SECURE_BOOTLOADER_KEY) $(BOOTLOADER_DIGEST_BIN)
 
 $(BOOTLOADER_BUILD_DIR):
-	$(Q) mkdir -p $@
+	mkdir -p $@
 
 else
-CFLAGS += -D BOOTLOADER_BUILD=1 -I $(IDF_PATH)/components/esp32/include 
+CFLAGS += -D BOOTLOADER_BUILD=1 -I $(IDF_PATH)/components/esp32/include
 
 endif

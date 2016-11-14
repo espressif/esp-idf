@@ -15,16 +15,15 @@ RESULT=0
 set -e
 
 for example in ${IDF_PATH}/examples/*; do
-	[ -f ${example}/Makefile ] || continue
-	echo "Building ${example} as ${EXAMPLE_NUM}..."
-	mkdir ${EXAMPLE_NUM}
-	cp -r ${example} ${EXAMPLE_NUM}
-	pushd ${EXAMPLE_NUM}/`basename ${example}`
-	# can't do "make defconfig all" as this will trip menuconfig
-	# sometimes
-	make defconfig && make || RESULT=$?
-	popd
-	EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
+    [ -f ${example}/Makefile ] || continue
+    echo "Building ${example} as ${EXAMPLE_NUM}..."
+    mkdir ${EXAMPLE_NUM}
+    cp -r ${example} ${EXAMPLE_NUM}
+    pushd ${EXAMPLE_NUM}/`basename ${example}`
+    # build non-verbose first, only build verbose if there's an error
+    make defconfig all || (RESULT=$?; make V=1)
+    popd
+    EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
 done
 
 exit $RESULT

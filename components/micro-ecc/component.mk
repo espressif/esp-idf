@@ -4,5 +4,3 @@ COMPONENT_SRCDIRS := micro-ecc
 COMPONENT_OBJS := micro-ecc/uECC.o
 
 COMPONENT_ADD_INCLUDEDIRS := micro-ecc
-
-include $(IDF_PATH)/make/component_common.mk
