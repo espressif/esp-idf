@@ -11,13 +11,13 @@
 #
 
 .PHONY: build-components menuconfig defconfig all build clean all_binaries
-all: all_binaries # other components will add dependencies to 'all_binaries'
-	@echo "To flash all build output, run 'make flash' or:"
-	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
-
-# (the reason all_binaries is used instead of 'all' is so that the flash target
-# can build everything without triggering the per-component "to flash..."
-# output targets.)
+all: all_binaries
+# see below for recipe of 'all' target
+#
+# # other components will add dependencies to 'all_binaries'. The
+# reason all_binaries is used instead of 'all' is so that the flash
+# target can build everything without triggering the per-component "to
+# flash..." output targets.)
 
 help:
 	@echo "Welcome to Espressif IDF build system. Some useful make targets:"
@@ -100,7 +100,7 @@ COMPONENT_LDFLAGS :=
 #
 # Debugging this? Replace $(shell with $(error and you'll see the full command as-run.
 define GetVariable
-$(shell "$(MAKE)" -s --no-print-directory -C $(1) -f component.mk get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
+$(shell "$(MAKE)" -s --no-print-directory -C $(1) -f component.mk get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) IS_BOOTLOADER_BUILD=$(IS_BOOTLOADER_BUILD) | sed -En "s/^$(2)=(.+)/\1/p" )
 endef
 
 COMPONENT_INCLUDES := $(abspath $(foreach comp,$(COMPONENT_PATHS_BUILDABLE),$(addprefix $(comp)/, \
@@ -135,6 +135,15 @@ export PROJECT_PATH
 #Include functionality common to both project & component
 -include $(IDF_PATH)/make/common.mk
 
+all:
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+	@echo "To flash app & partition table, run 'make flash' or:"
+else
+	@echo "To flash all build output, run 'make flash' or:"
+endif
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
+
 # Set default LDFLAGS
 
 LDFLAGS ?= -nostdlib \
@@ -142,6 +151,7 @@ LDFLAGS ?= -nostdlib \
 	-L$(IDF_PATH)/ld \
 	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(SRCDIRS)) \
 	-u call_user_start_cpu0	\
+	$(EXTRA_LDFLAGS) \
 	-Wl,--gc-sections	\
 	-Wl,-static	\
 	-Wl,--start-group	\
@@ -297,6 +307,9 @@ app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)
 	$(Q) rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
-clean: app-clean
+# NB: this ordering is deliberate (app-clean before config-clean),
+# so config remains valid during all component clean targets
+config-clean: app-clean
+clean: config-clean
 
 

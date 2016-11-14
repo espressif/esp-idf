@@ -6,7 +6,8 @@
 #
 # (Note that we only rebuild auto.conf automatically for some targets,
 # see project_config.mk for details.)
--include $(BUILD_DIR_BASE)/include/config/auto.conf
+SDKCONFIG_MAKEFILE := $(BUILD_DIR_BASE)/include/config/auto.conf
+-include $(SDKCONFIG_MAKEFILE)
 
 #Handling of V=1/VERBOSE=1 flag
 #
@@ -53,8 +54,26 @@ endef
 # convenience variable for printing an 80 asterisk wide separator line
 SEPARATOR:="*******************************************************************************"
 
-# macro to remove quotes from an argument, ie $(call dequote (CONFIG_BLAH))
+# macro to remove quotes from an argument, ie $(call dequote,$(CONFIG_BLAH))
 define dequote
 $(subst ",,$(1))
 endef
 # " comment kept here to keep syntax highlighting happy
+
+
+# macro to keep an absolute path as-is, but resolve a relative path
+# against a particular parent directory
+#
+# $(1) path to resolve
+# $(2) directory to resolve non-absolute path against
+#
+# Path and directory don't have to exist (definition of a "relative
+# path" is one that doesn't start with /)
+#
+# $(2) can contain a trailing forward slash or not, result will not
+# double any path slashes.
+#
+# example $(call resolvepath,$(CONFIG_PATH),$(CONFIG_DIR))
+define resolvepath
+$(if $(filter /%,$(1)),$(1),$(subst //,/,$(2)/$(1)))
+endef

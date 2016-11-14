@@ -59,7 +59,6 @@ $(AUTO_CONF_REGEN_TARGET) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(SDKCONFIG) $(
 # sometimes you can get an infinite make loop on Windows where sdkconfig always gets regenerated newer
 # than the target(!)
 
-clean: config-clean
 .PHONY: config-clean
 config-clean:
 	$(summary RM CONFIG)
