@@ -11,27 +11,47 @@ PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
 # two commands that can be used from other components
 # to invoke esptool.py (with or without serial port args)
 #
-# NB: esptool.py lives in the sdk/bin directory not the component directory
 ESPTOOLPY_SRC := $(COMPONENT_PATH)/esptool/esptool.py
 ESPTOOLPY := $(PYTHON) $(ESPTOOLPY_SRC) --chip esp32
 ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD)
 
+# Supporting esptool command line tools
+ESPEFUSEPY := $(PYTHON) $(COMPONENT_PATH)/esptool/espefuse.py
+ESPSECUREPY := $(PYTHON) $(COMPONENT_PATH)/esptool/espsecure.py
+export ESPSECUREPY  # is used in bootloader_support component
+
 ESPTOOL_FLASH_OPTIONS := --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) --flash_size $(ESPFLASHSIZE)
 
-# the no-stub argument is temporary until esptool.py fully supports compressed uploads
+ESPTOOL_ELF2IMAGE_OPTIONS :=
+
 ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z) $(ESPTOOL_FLASH_OPTIONS)
 
 ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_APP_OFFSET) $(APP_BIN)
 
-$(APP_BIN): $(APP_ELF) $(ESPTOOLPY_SRC)
-	$(Q) $(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) -o $@ $<
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+ifndef IS_BOOTLOADER_BUILD
+# for secure boot, add a signing step to get from unsiged app to signed app
+APP_BIN_UNSIGNED := $(APP_BIN:.bin=-unsigned.bin)
+
+$(APP_BIN): $(APP_BIN_UNSIGNED)
+	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $^  # signed in-place
+endif
+endif
+# non-secure boot (or bootloader), both these files are the same
+APP_BIN_UNSIGNED ?= $(APP_BIN)
+
+$(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC)
+	$(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
 
 flash: all_binaries $(ESPTOOLPY_SRC)
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(CONFIG_APP_OFFSET))..."
-	$(Q) $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+endif
+	$(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 app-flash: $(APP_BIN) $(ESPTOOLPY_SRC)
 	@echo "Flashing app to serial port $(ESPPORT), offset $(CONFIG_APP_OFFSET)..."
-	$(Q) $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+	$(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
 
 $(eval $(call SubmoduleCheck,$(ESPTOOLPY_SRC),$(COMPONENT_PATH)/esptool))

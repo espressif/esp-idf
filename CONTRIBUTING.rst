@@ -39,6 +39,7 @@ If this process passes, it will be merged onto the public github repository.
 Legal Part
 ----------
 
-Before a contribution can be accepted, you will need to sign our `Contributor Agreement <http://esp-idf.readthedocs.io/en/latest/contributing.html>`_. You will be prompted for this automatically as part of the Pull Request process.
+Before a contribution can be accepted, you will need to sign our :doc:`contributor-agreement`. You will be prompted for this automatically as part of the Pull Request process.
+
 
 

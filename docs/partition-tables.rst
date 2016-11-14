@@ -6,6 +6,8 @@ Overview
 
 A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to offset 0x4000 in the flash.
 
+Partition table length is 0xC00 bytes (maximum 95 partition table entries). If the partition table is signed due to `secure boot`, the signature is appended after the table data.
+
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
 The simplest way to use the partition table is to `make menuconfig` and choose one of the simple predefined partition tables:
@@ -130,3 +132,6 @@ Flashing the partition table
 * ``make flash``: Will flash everything including the partition table.
 
 A manual flashing command is also printed as part of ``make partition_table``.
+
+
+.. _secure boot: security/secure-boot.rst

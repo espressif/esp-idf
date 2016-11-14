@@ -20,6 +20,7 @@
 #include "soc/gpio_struct.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/io_mux_reg.h"
+#include "soc/gpio_sig_map.h"
 #include "rom/gpio.h"
 #include "esp_attr.h"
 
@@ -313,7 +314,7 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
   *
   * @param gpio_num GPIO number.
   *
-  * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOLEVEL\GPIO_INTR_HILEVEL can be used
+  * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL\GPIO_INTR_HIGH_LEVEL can be used.
   *
   * @return
   *     - ESP_OK Success

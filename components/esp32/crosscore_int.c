@@ -45,14 +45,9 @@ the ISR will cause it to switch _away_ from it. portYIELD_FROM_ISR will probably
 */
 static void esp_crosscore_isr(void *arg) {
     uint32_t myReasonVal;
-#if 0
     //A pointer to the correct reason array item is passed to this ISR.
     volatile uint32_t *myReason=arg;
-#else
-    //The previous line does not work yet, the interrupt code needs work to understand two separate interrupt and argument
-    //tables... this is a valid but slightly less optimal replacement.
-    volatile uint32_t *myReason=&reason[xPortGetCoreID()];
-#endif
+
     //Clear the interrupt first.
     if (xPortGetCoreID()==0) {
         WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
