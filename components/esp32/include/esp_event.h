@@ -102,7 +102,7 @@ typedef union {
     system_event_sta_scan_done_t               scan_done;          /**< ESP32 station scan (APs) done */
     system_event_sta_authmode_change_t         auth_change;        /**< the auth mode of AP ESP32 station connected to changed */
     system_event_sta_got_ip_t                  got_ip;             /**< ESP32 station got IP */
-    system_event_sta_wps_er_pin_t              sta_er_pin;
+    system_event_sta_wps_er_pin_t              sta_er_pin;         /**< ESP32 station WPS enrollee mode PIN code received */
     system_event_ap_staconnected_t             sta_connected;      /**< a station connected to ESP32 soft-AP */
     system_event_ap_stadisconnected_t          sta_disconnected;   /**< a station disconnected to ESP32 soft-AP */
     system_event_ap_probe_req_rx_t             ap_probereqrecved;  /**< ESP32 soft-AP receive probe request packet */
