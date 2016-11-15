@@ -1,20 +1,27 @@
-Bluetooth API
-=============
+Bluetooth
+=========
 
 Overview
 --------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
 
 Application Example
 -------------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
 
-Reference
----------
+API Reference
+-------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
+
+.. _Instructions: template.html
+
+Header Files
+^^^^^^^^^^^^
+
+  * `bt/include/bt.h <https://github.com/espressif/esp-idf/blob/master/components/bt/include/bt.h>`_
 
 Type Definitions
 ^^^^^^^^^^^^^^^^

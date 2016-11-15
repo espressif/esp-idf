@@ -29,12 +29,38 @@
 #define EFUSE_RD_EFUSE_RD_DIS_M  ((EFUSE_RD_EFUSE_RD_DIS_V)<<(EFUSE_RD_EFUSE_RD_DIS_S))
 #define EFUSE_RD_EFUSE_RD_DIS_V  0xF
 #define EFUSE_RD_EFUSE_RD_DIS_S  16
+
+/* Read disable bits for efuse blocks 1-3 */
+#define EFUSE_RD_DIS_BLK1 (1<<16)
+#define EFUSE_RD_DIS_BLK2 (1<<17)
+#define EFUSE_RD_DIS_BLK3 (1<<18)
+/* Read disable FLASH_CRYPT_CONFIG, CODING_SCHEME & KEY_STATUS
+   in efuse block 0
+*/
+#define EFUSE_RD_DIS_BLK0_PARTIAL (1<<19)
+
 /* EFUSE_RD_EFUSE_WR_DIS : RO ;bitpos:[15:0] ;default: 16'b0 ; */
 /*description: read for efuse_wr_disable*/
 #define EFUSE_RD_EFUSE_WR_DIS  0x0000FFFF
 #define EFUSE_RD_EFUSE_WR_DIS_M  ((EFUSE_RD_EFUSE_WR_DIS_V)<<(EFUSE_RD_EFUSE_WR_DIS_S))
 #define EFUSE_RD_EFUSE_WR_DIS_V  0xFFFF
 #define EFUSE_RD_EFUSE_WR_DIS_S  0
+
+/* Write disable bits */
+#define EFUSE_WR_DIS_RD_DIS (1<<0) /*< disable writing read disable reg */
+#define EFUSE_WR_DIS_WR_DIS (1<<1) /*< disable writing write disable reg */
+#define EFUSE_WR_DIS_FLASH_CRYPT_CNT (1<<2)
+#define EFUSE_WR_DIS_MAC_SPI_CONFIG_HD (1<<3) /*< disable writing MAC & SPI config hd efuses */
+#define EFUSE_WR_DIS_XPD_SDIO (1<<5) /*< disable writing SDIO config efuses */
+#define EFUSE_WR_DIS_SPI_PAD_CONFIG (1<<6) /*< disable writing SPI_PAD_CONFIG efuses */
+#define EFUSE_WR_DIS_BLK1 (1<<7) /*< disable writing BLK1 efuses */
+#define EFUSE_WR_DIS_BLK2 (1<<8) /*< disable writing BLK2 efuses */
+#define EFUSE_WR_DIS_BLK3 (1<<9) /*< disable writing BLK3 efuses */
+#define EFUSE_WR_DIS_FLASH_CRYPT_CODING_SCHEME (1<<10) /*< disable writing FLASH_CRYPT_CONFIG and CODING_SCHEME efuses */
+#define EFUSE_WR_DIS_ABS_DONE_0 (1<<12) /*< disable writing ABS_DONE_0 efuse */
+#define EFUSE_WR_DIS_ABS_DONE_1 (1<<13) /*< disable writing ABS_DONE_1 efuse */
+#define EFUSE_WR_DIS_JTAG_DISABLE (1<<14) /*< disable writing JTAG_DISABLE efuse */
+#define EFUSE_WR_DIS_CONSOLE_DL_DISABLE (1<<15) /*< disable writing CONSOLE_DEBUG_DISABLE, DISABLE_DL_ENCRYPT, DISABLE_DL_DECRYPT and DISABLE_DL_CACHE efuses */
 
 #define EFUSE_BLK0_RDATA1_REG          (DR_REG_EFUSE_BASE + 0x004)
 /* EFUSE_RD_WIFI_MAC_CRC_LOW : RO ;bitpos:[31:0] ;default: 32'b0 ; */

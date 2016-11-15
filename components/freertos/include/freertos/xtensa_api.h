@@ -42,7 +42,8 @@ typedef void (*xt_exc_handler)(XtExcFrame *);
 
 /*
 -------------------------------------------------------------------------------
-  Call this function to set a handler for the specified exception.
+  Call this function to set a handler for the specified exception. The handler
+  will be installed on the core that calls this function.
 
     n        - Exception number (type)
     f        - Handler function address, NULL to uninstall handler.
@@ -61,7 +62,8 @@ extern xt_exc_handler xt_set_exception_handler(int n, xt_exc_handler f);
 
 /*
 -------------------------------------------------------------------------------
-  Call this function to set a handler for the specified interrupt.
+  Call this function to set a handler for the specified interrupt. The handler
+  will be installed on the core that calls this function.
  
     n        - Interrupt number.
     f        - Handler function address, NULL to uninstall handler.
@@ -73,7 +75,8 @@ extern xt_handler xt_set_interrupt_handler(int n, xt_handler f, void * arg);
 
 /*
 -------------------------------------------------------------------------------
-  Call this function to enable the specified interrupts.
+  Call this function to enable the specified interrupts on the core that runs
+  this code.
 
     mask     - Bit mask of interrupts to be enabled.
 -------------------------------------------------------------------------------
@@ -83,7 +86,8 @@ extern void xt_ints_on(unsigned int mask);
 
 /*
 -------------------------------------------------------------------------------
-  Call this function to disable the specified interrupts.
+  Call this function to disable the specified interrupts on the core that runs
+  this code.
 
     mask     - Bit mask of interrupts to be disabled.
 -------------------------------------------------------------------------------

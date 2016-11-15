@@ -26,7 +26,7 @@ If you're looking for a more bare-bones project to start from, try [esp-idf-temp
 
 If you have a new example you think we'd like, please consider sending it to us as a Pull Request.
 
-Please read the esp-idf CONTRIBUTING.md file which lays out general contribution rules.
+Please read the esp-idf CONTRIBUTING.rst file which lays out general contribution rules.
 
 In addition, here are some tips for creating good examples:
 

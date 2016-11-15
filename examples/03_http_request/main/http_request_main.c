@@ -175,7 +175,6 @@ static void http_get_task(void *pvParameters)
 void app_main()
 {
     nvs_flash_init();
-    system_init();
     initialise_wifi();
     xTaskCreate(&http_get_task, "http_get_task", 2048, NULL, 5, NULL);
 }

@@ -668,6 +668,7 @@ mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
   } else {
 #endif
 #ifdef BN_S_MP_EXPTMOD_C
+    (void) dr;
     /* otherwise use the generic Barrett reduction technique */
     return s_mp_exptmod (G, X, P, Y, 0);
 #else

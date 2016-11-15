@@ -18,8 +18,10 @@
 #include "soc.h"
 
 #define REG_UART_BASE( i )  (DR_REG_UART_BASE + (i) * 0x10000 + ( i > 1 ? 0xe000 : 0 ) )
-
+#define REG_UART_AHB_BASE(i)  (0x60000000 + (i) * 0x10000 + ( i > 1 ? 0xe000 : 0 ) )
+#define UART_FIFO_AHB_REG(i)  (REG_UART_AHB_BASE(i) + 0x0)
 #define UART_FIFO_REG(i)          (REG_UART_BASE(i) + 0x0)
+
 /* UART_RXFIFO_RD_BYTE : RO ;bitpos:[7:0] ;default: 8'b0 ; */
 /*description: This register stores one byte data  read by rx fifo.*/
 #define UART_RXFIFO_RD_BYTE  0x000000FF

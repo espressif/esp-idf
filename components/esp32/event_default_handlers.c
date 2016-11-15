@@ -22,6 +22,7 @@
 #include "esp_event.h"
 #include "esp_event_loop.h"
 #include "esp_task.h"
+#include "rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -67,6 +68,10 @@ static system_event_handle_t g_system_event_handle_table[] = {
     {SYSTEM_EVENT_STA_DISCONNECTED,    system_event_sta_disconnected_handle_default},
     {SYSTEM_EVENT_STA_AUTHMODE_CHANGE, NULL},
     {SYSTEM_EVENT_STA_GOT_IP,          system_event_sta_got_ip_default},
+    {SYSTEM_EVENT_STA_WPS_ER_SUCCESS,  NULL},
+    {SYSTEM_EVENT_STA_WPS_ER_FAILED,   NULL},
+    {SYSTEM_EVENT_STA_WPS_ER_TIMEOUT,  NULL},
+    {SYSTEM_EVENT_STA_WPS_ER_PIN,      NULL},
     {SYSTEM_EVENT_AP_START,            system_event_ap_start_handle_default},
     {SYSTEM_EVENT_AP_STOP,             system_event_ap_stop_handle_default},
     {SYSTEM_EVENT_AP_STACONNECTED,     NULL},
@@ -196,16 +201,14 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     }
     case SYSTEM_EVENT_STA_CONNECTED: {
         system_event_sta_connected_t *connected = &event->event_info.connected;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_CONNECTED, ssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, channel:%d, authmode:%d", \
-                   connected->ssid, connected->ssid_len, connected->bssid[0], connected->bssid[0], connected->bssid[1], \
-                   connected->bssid[3], connected->bssid[4], connected->bssid[5], connected->channel, connected->authmode);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_CONNECTED, ssid:%s, ssid_len:%d, bssid:" MACSTR ", channel:%d, authmode:%d", \
+                   connected->ssid, connected->ssid_len, MAC2STR(connected->bssid), connected->channel, connected->authmode);
         break;
     }
     case SYSTEM_EVENT_STA_DISCONNECTED: {
         system_event_sta_disconnected_t *disconnected = &event->event_info.disconnected;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED, ssid:%s, ssid_len:%d, bssid:%02x:%02x:%02x:%02x:%02x:%02x, reason:%d", \
-                   disconnected->ssid, disconnected->ssid_len, disconnected->bssid[0], disconnected->bssid[0], disconnected->bssid[1], \
-                   disconnected->bssid[3], disconnected->bssid[4], disconnected->bssid[5], disconnected->reason);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED, ssid:%s, ssid_len:%d, bssid:" MACSTR ", reason:%d", \
+                   disconnected->ssid, disconnected->ssid_len, MAC2STR(disconnected->bssid), disconnected->reason);
         break;
     }
     case SYSTEM_EVENT_STA_AUTHMODE_CHANGE: {
@@ -221,6 +224,22 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
             IP2STR(&got_ip->ip_info.gw));
         break;
     }
+    case SYSTEM_EVENT_STA_WPS_ER_SUCCESS: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_SUCCESS");
+        break;
+    }
+    case SYSTEM_EVENT_STA_WPS_ER_FAILED: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_FAILED");
+        break;
+    }
+    case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_TIMEOUT");
+        break;
+    }
+    case SYSTEM_EVENT_STA_WPS_ER_PIN: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_PIN");
+        break;
+    }
     case SYSTEM_EVENT_AP_START: {
         ESP_LOGD(TAG, "SYSTEM_EVENT_AP_START");
         break;
@@ -231,23 +250,21 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     }
     case SYSTEM_EVENT_AP_STACONNECTED: {
         system_event_ap_staconnected_t *staconnected = &event->event_info.sta_connected;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STACONNECTED, mac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d", \
-                   staconnected->mac[0], staconnected->mac[0], staconnected->mac[1], \
-                   staconnected->mac[3], staconnected->mac[4], staconnected->mac[5], staconnected->aid);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STACONNECTED, mac:" MACSTR ", aid:%d", \
+                   MAC2STR(staconnected->mac), staconnected->aid);
         break;
     }
     case SYSTEM_EVENT_AP_STADISCONNECTED: {
         system_event_ap_stadisconnected_t *stadisconnected = &event->event_info.sta_disconnected;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STADISCONNECTED, mac:%02x:%02x:%02x:%02x:%02x:%02x, aid:%d", \
-                   stadisconnected->mac[0], stadisconnected->mac[0], stadisconnected->mac[1], \
-                   stadisconnected->mac[3], stadisconnected->mac[4], stadisconnected->mac[5], stadisconnected->aid);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STADISCONNECTED, mac:" MACSTR ", aid:%d", \
+                   MAC2STR(stadisconnected->mac), stadisconnected->aid);
         break;
     }
     case SYSTEM_EVENT_AP_PROBEREQRECVED: {
         system_event_ap_probe_req_rx_t *ap_probereqrecved = &event->event_info.ap_probereqrecved;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_PROBEREQRECVED, rssi:%d, mac:%02x:%02x:%02x:%02x:%02x:%02x", \
-                   ap_probereqrecved->rssi, ap_probereqrecved->mac[0], ap_probereqrecved->mac[0], ap_probereqrecved->mac[1], \
-                   ap_probereqrecved->mac[3], ap_probereqrecved->mac[4], ap_probereqrecved->mac[5]);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_PROBEREQRECVED, rssi:%d, mac:" MACSTR, \
+                   ap_probereqrecved->rssi, \
+                   MAC2STR(ap_probereqrecved->mac));
         break;
     }
     default: {
