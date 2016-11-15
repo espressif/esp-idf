@@ -28,7 +28,7 @@ esp_err_t esp_ble_gatts_register_callback(esp_profile_cb_t callback)
 esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 	uint16_t app_uuid;
 
 	if (app_id < APP_ID_MIN || app_id > APP_ID_MAX)
@@ -39,28 +39,28 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
 	msg.act = BTC_GATTS_ACT_APP_REGISTER;
 	arg.app_uuid = app_id;
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
 esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatt_if)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
 	msg.act = BTC_GATTS_ACT_APP_UNREGISTER;
 	arg.gatt_if = gatt_if;
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatt_if,
 				esp_gatt_srvc_id_t *service_id, uint16_t num_handle)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
@@ -69,14 +69,14 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatt_if,
 	arg.num_handle = num_handle;
 	memcpy(&arg.service_id, service_id, sizeof(esp_gatt_srvc_id_t));
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
 esp_err_t esp_ble_gatts_add_include_service(uint16_t service_handle, uint16_t included_service_handle)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
@@ -84,7 +84,7 @@ esp_err_t esp_ble_gatts_add_include_service(uint16_t service_handle, uint16_t in
 	arg.service_handle = service_handle;
 	arg.included_service_handle = included_service_handle;
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -92,7 +92,7 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
                                   esp_gatt_perm_t perm, esp_gatt_char_prop_t property)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
@@ -102,7 +102,7 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
 	arg.property = property;
 	memcpy(&arg.uuid, char_uuid, sizeof(esp_bt_uuid_t));
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -111,7 +111,7 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
                                   						esp_gatt_perm_t perm)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
@@ -120,72 +120,72 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
 	arg.perm = perm;
 	memcpy(&arg.descr_uuid, descr_uuid, sizeof(esp_bt_uuid_t));
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
 	msg.act = BTC_GATTS_ACT_DELETE_SERVICE;
 	arg.service_handle = service_handle;
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_start_service(uint16_t service_handle)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
 	msg.act = BTC_GATTS_ACT_START_SERVICE;
 	arg.service_handle = service_handle;
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
 	msg.act = BTC_GATTS_ACT_STOP_SERVICE;
 	arg.service_handle = service_handle;
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
 esp_err_t esp_ble_gatts_send_indicate(uint16_t conn_id, uint16_t attr_handle,
-					uint16_t data_len, uint8_t *data, bool need_confirm)
+					uint16_t value_len, uint8_t *value, bool need_confirm)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
 	msg.act = BTC_GATTS_ACT_SEND_INDICATE;
 	arg.conn_id = conn_id;
 	arg.attr_handle = attr_handle;
-	arg.data_len = data_len;
+	arg.value_len = value_len;
 	arg.need_confirm = need_confirm;
-	memcpy(&arg.data, data, data_len);
+	memcpy(&arg.value, value, value_len);
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_send_response(uint16_t conn_id, uint32_t trans_id,
                         			esp_gatt_status_t status, esp_gatt_rsp_t *rsp)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
@@ -195,13 +195,13 @@ esp_err_t esp_ble_gatts_send_response(uint16_t conn_id, uint32_t trans_id,
 	arg.status = status;
 	memcpy(&arg.rsp, rsp, sizeof(esp_gatt_rsp_t));
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bool is_direct)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
@@ -210,18 +210,18 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bo
 	arg.is_direct = is_direct;
 	memcpy(&arg.remote_bda, remote_bda, sizeof(esp_bd_addr_t));
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_close(uint16_t conn_id)
 {
 	btc_msg_t msg;
-	esp_ble_gatts_args_t arg;
+	btc_ble_gatts_args_t arg;
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GATTS;
 	msg.act = BTC_GATTS_ACT_CLOSE;
 	arg.conn_id = conn_id;
 
-	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+	return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

@@ -61,7 +61,7 @@ static void btc_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 		LOG_ERROR("%s transfer failed\n", __func__);
 }
 
-static void btc_gattc_app_register(esp_ble_gattc_args_t *arg)
+static void btc_gattc_app_register(btc_ble_gattc_args_t *arg)
 {
     tBT_UUID app_uuid;
     app_uuid.len = 2;
@@ -69,35 +69,35 @@ static void btc_gattc_app_register(esp_ble_gattc_args_t *arg)
     BTA_GATTC_AppRegister(&app_uuid, btc_gattc_cback);
 }
 
-static void btc_gattc_app_unregister(esp_ble_gattc_args_t *arg)
+static void btc_gattc_app_unregister(btc_ble_gattc_args_t *arg)
 {
     BTA_GATTC_AppDeregister(arg->gatt_if);
 }
 
-static void btc_gattc_open(esp_ble_gattc_args_t *arg)
+static void btc_gattc_open(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATT_TRANSPORT transport = BTA_GATT_TRANSPORT_LE;
     BTA_GATTC_Open(arg->gatt_if, arg->remote_bda, arg->is_direct, transport);
 }
 
-static void btc_gattc_close(esp_ble_gattc_args_t *arg)
+static void btc_gattc_close(btc_ble_gattc_args_t *arg)
 {
     // TODO; Review this call of BTA_API, check the usage of BTA_GATTC_CancelOpen
     BTA_GATTC_Close(arg->conn_id);
 }
 
-static void btc_gattc_cfg_mtu(esp_ble_gattc_args_t *arg)
+static void btc_gattc_cfg_mtu(btc_ble_gattc_args_t *arg)
 {
     BTA_GATTC_ConfigureMTU (arg->conn_id, arg->mtu);
 }
 
-static void btc_gattc_search_service(esp_ble_gattc_args_t *arg)
+static void btc_gattc_search_service(btc_ble_gattc_args_t *arg)
 {
     tBT_UUID *srvc_uuid = (tBT_UUID *)(&arg->uuid);
     BTA_GATTC_ServiceSearchRequest(arg->conn_id, srvc_uuid);
 }
 
-static void btc_gattc_get_first_char(esp_ble_gattc_args_t *arg)
+static void btc_gattc_get_first_char(btc_ble_gattc_args_t *arg)
 {
     esp_gatt_id_t char_id;
     tBTA_GATT_STATUS status;
@@ -123,7 +123,7 @@ static void btc_gattc_get_first_char(esp_ble_gattc_args_t *arg)
     BTC_GATTC_CB_TO_APP(ESP_GATTC_GET_CHAR_EVT, &param);
 }
 
-static void btc_gattc_get_next_char(esp_ble_gattc_args_t *arg)
+static void btc_gattc_get_next_char(btc_ble_gattc_args_t *arg)
 {
     esp_gatt_id_t char_id;
     tBTA_GATT_STATUS status;
@@ -150,7 +150,7 @@ static void btc_gattc_get_next_char(esp_ble_gattc_args_t *arg)
     BTC_GATTC_CB_TO_APP(ESP_GATTC_GET_CHAR_EVT, &param);
 }
 
-static void btc_gattc_get_first_descr(esp_ble_gattc_args_t *arg)
+static void btc_gattc_get_first_descr(btc_ble_gattc_args_t *arg)
 {
     esp_gatt_id_t descr_id;
     tBTA_GATT_STATUS status;
@@ -177,7 +177,7 @@ static void btc_gattc_get_first_descr(esp_ble_gattc_args_t *arg)
     BTC_GATTC_CB_TO_APP(ESP_GATTC_GET_DESCR_EVT, &param);
 }
 
-static void btc_gattc_get_next_descr(esp_ble_gattc_args_t *arg)
+static void btc_gattc_get_next_descr(btc_ble_gattc_args_t *arg)
 {
     esp_gatt_id_t descr_id;
     tBTA_GATT_STATUS status;
@@ -204,7 +204,7 @@ static void btc_gattc_get_next_descr(esp_ble_gattc_args_t *arg)
     BTC_GATTC_CB_TO_APP(ESP_GATTC_GET_DESCR_EVT, &param);
 }
 
-static void btc_gattc_get_first_incl_service(esp_ble_gattc_args_t *arg)
+static void btc_gattc_get_first_incl_service(btc_ble_gattc_args_t *arg)
 {
     esp_gatt_srvc_id_t incl_srvc_id;
     tBTA_GATT_STATUS status;
@@ -227,7 +227,7 @@ static void btc_gattc_get_first_incl_service(esp_ble_gattc_args_t *arg)
     BTC_GATTC_CB_TO_APP(ESP_GATTC_GET_INCL_SRVC_EVT, &param);
 }
 
-static void btc_gattc_get_next_incl_service(esp_ble_gattc_args_t *arg)
+static void btc_gattc_get_next_incl_service(btc_ble_gattc_args_t *arg)
 {
     esp_gatt_srvc_id_t incl_srvc_id;
     tBTA_GATT_STATUS status;
@@ -251,7 +251,7 @@ static void btc_gattc_get_next_incl_service(esp_ble_gattc_args_t *arg)
     BTC_GATTC_CB_TO_APP(ESP_GATTC_GET_INCL_SRVC_EVT, &param);
 }
 
-static void btc_gattc_read_char(esp_ble_gattc_args_t *arg)
+static void btc_gattc_read_char(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATTC_CHAR_ID in_char_id;
     btc_to_bta_srvc_id(&in_char_id.srvc_id, &arg->service_id);
@@ -259,7 +259,7 @@ static void btc_gattc_read_char(esp_ble_gattc_args_t *arg)
     BTA_GATTC_ReadCharacteristic(arg->conn_id, &in_char_id, arg->auth_req);
 }
 
-static void btc_gattc_read_char_descr(esp_ble_gattc_args_t *arg)
+static void btc_gattc_read_char_descr(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATTC_CHAR_DESCR_ID in_char_descr_id;
     btc_to_bta_srvc_id(&in_char_descr_id.char_id.srvc_id, &arg->service_id);
@@ -269,7 +269,7 @@ static void btc_gattc_read_char_descr(esp_ble_gattc_args_t *arg)
     BTA_GATTC_ReadCharDescr(arg->conn_id, &in_char_descr_id, arg->auth_req);
 }
 
-static void btc_gattc_write_char(esp_ble_gattc_args_t *arg)
+static void btc_gattc_write_char(btc_ble_gattc_args_t *arg)
 {
     //TODO: check the write type
     tBTA_GATTC_CHAR_ID in_char_id;
@@ -280,12 +280,12 @@ static void btc_gattc_write_char(esp_ble_gattc_args_t *arg)
 
     BTA_GATTC_WriteCharValue(arg->conn_id, &in_char_id,
                              write_type,
-                             arg->len,
+                             arg->value_len,
                              arg->value,
                              arg->auth_req);
 }
 
-static void btc_gattc_write_char_descr(esp_ble_gattc_args_t *arg)
+static void btc_gattc_write_char_descr(btc_ble_gattc_args_t *arg)
 {
     //TODO: check the write type
     tBTA_GATTC_CHAR_DESCR_ID in_char_descr_id;
@@ -295,7 +295,7 @@ static void btc_gattc_write_char_descr(esp_ble_gattc_args_t *arg)
     btc_to_bta_gatt_id(&in_char_descr_id.char_id.char_id, &arg->char_id);
     btc_to_bta_gatt_id(&in_char_descr_id.descr_id, &arg->descr_id);
 
-    descr_val.len = arg->len;
+    descr_val.len = arg->value_len;
     descr_val.p_value = arg->value;
 
     BTA_GATTC_WriteCharDescr(arg->conn_id, &in_char_descr_id,
@@ -303,22 +303,22 @@ static void btc_gattc_write_char_descr(esp_ble_gattc_args_t *arg)
                              arg->auth_req);
 }
 
-static void btc_gattc_prepare_write(esp_ble_gattc_args_t *arg)
+static void btc_gattc_prepare_write(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATTC_CHAR_ID in_char_id;
     btc_to_bta_srvc_id(&in_char_id.srvc_id, &arg->service_id);
     btc_to_bta_gatt_id(&in_char_id.char_id, &arg->char_id);
 
-    BTA_GATTC_PrepareWrite(arg->conn_id, &in_char_id, arg->offset, arg->len,
+    BTA_GATTC_PrepareWrite(arg->conn_id, &in_char_id, arg->offset, arg->value_len,
 			   arg->value, arg->auth_req);
 }
 
-static void btc_gattc_execute_wrtie(esp_ble_gattc_args_t *arg)
+static void btc_gattc_execute_wrtie(btc_ble_gattc_args_t *arg)
 {
     BTA_GATTC_ExecuteWrite(arg->conn_id, arg->is_execute);
 }
 
-static void btc_gattc_reg_for_notify(esp_ble_gattc_args_t *arg)
+static void btc_gattc_reg_for_notify(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATT_STATUS status;
     tBTA_GATTC_CHAR_ID in_char_id;
@@ -339,7 +339,7 @@ static void btc_gattc_reg_for_notify(esp_ble_gattc_args_t *arg)
     BTC_GATTC_CB_TO_APP(ESP_GATTC_REG_FOR_NOTIF_EVT, &param);
 }
 
-static void btc_gattc_unreg_for_notify(esp_ble_gattc_args_t *arg)
+static void btc_gattc_unreg_for_notify(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATT_STATUS status;
     tBTA_GATTC_CHAR_ID in_char_id;
@@ -362,7 +362,7 @@ static void btc_gattc_unreg_for_notify(esp_ble_gattc_args_t *arg)
 
 void btc_gattc_call_handler(btc_msg_t *msg)
 {
-    esp_ble_gattc_args_t *arg = (esp_ble_gattc_args_t *)(msg->arg);
+    btc_ble_gattc_args_t *arg = (btc_ble_gattc_args_t *)(msg->arg);
     switch (msg->act) {
     case BTC_GATTC_ACT_APP_REGISTER:
         btc_gattc_app_register(arg);

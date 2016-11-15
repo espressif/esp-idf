@@ -32,9 +32,6 @@
 *******************************************************************************/
 esp_err_t esp_ble_gattc_register_callback(esp_profile_cb_t callback)
 {
-    btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
-
     if (callback == NULL) {
         return ESP_FAIL;
     }
@@ -58,13 +55,13 @@ esp_err_t esp_ble_gattc_register_callback(esp_profile_cb_t callback)
 esp_err_t esp_ble_gattc_app_register(uint16_t app_id)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_APP_REGISTER;
     arg.app_id = app_id;
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 /*******************************************************************************
@@ -82,13 +79,13 @@ esp_err_t esp_ble_gattc_app_register(uint16_t app_id)
 esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gatt_if)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_APP_UNREGISTER;
     arg.gatt_if = gatt_if;
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 /*******************************************************************************
@@ -108,7 +105,7 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gatt_if)
 esp_err_t esp_ble_gattc_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bool is_direct)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -117,7 +114,7 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bo
     memcpy(arg.remote_bda, remote_bda, ESP_BD_ADDR_LEN);
     arg.is_direct = is_direct;
     
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 /*******************************************************************************
@@ -134,14 +131,14 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bo
 esp_err_t esp_ble_gattc_close (uint16_t conn_id)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
     
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_CLOSE;
     arg.conn_id = conn_id;
     
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -161,7 +158,7 @@ esp_err_t esp_ble_gattc_close (uint16_t conn_id)
 esp_err_t esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     if ((mtu < ESP_GATT_DEF_BLE_MTU_SIZE) || (mtu > ESP_GATT_MAX_MTU_SIZE)) {
         return ESP_GATT_ILLEGAL_PARAMETER;
@@ -173,7 +170,7 @@ esp_err_t esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu)
     arg.conn_id = conn_id;
     arg.mtu = mtu;
     
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 /*******************************************************************************
@@ -195,7 +192,7 @@ esp_err_t esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu)
 esp_err_t esp_ble_gattc_search_service(uint16_t conn_id, esp_bt_uuid_t *filter_uuid)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -203,7 +200,7 @@ esp_err_t esp_ble_gattc_search_service(uint16_t conn_id, esp_bt_uuid_t *filter_u
     arg.conn_id = conn_id;
     memcpy(&arg.uuid, filter_uuid, sizeof(esp_bt_uuid_t));
     
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -229,7 +226,7 @@ esp_err_t esp_ble_gattc_get_characteristic(uint16_t conn_id,
                                            esp_gatt_id_t *start_char_id)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -242,7 +239,7 @@ esp_err_t esp_ble_gattc_get_characteristic(uint16_t conn_id,
         msg.act = BTC_GATTC_ACT_GET_FIRST_CHAR;
     }
     
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -268,7 +265,7 @@ esp_err_t esp_ble_gattc_get_descriptor(uint16_t conn_id,
                                        esp_gatt_id_t *start_descr_id)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -282,7 +279,7 @@ esp_err_t esp_ble_gattc_get_descriptor(uint16_t conn_id,
         msg.act = BTC_GATTC_ACT_GET_FIRST_DESCR;
     }
     
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -307,7 +304,7 @@ esp_err_t esp_ble_gattc_get_included_service(uint16_t conn_id,
                                              esp_gatt_srvc_id_t *start_incl_srvc_id)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -320,7 +317,7 @@ esp_err_t esp_ble_gattc_get_included_service(uint16_t conn_id,
         msg.act = BTC_GATTC_ACT_GET_FIRST_INCL_SERVICE;
     }
     
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 /*******************************************************************************
@@ -342,7 +339,7 @@ esp_err_t esp_ble_gattc_read_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id
                                    esp_gatt_id_t *char_id, esp_gatt_auth_req_t auth_req)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -351,7 +348,7 @@ esp_err_t esp_ble_gattc_read_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id
     memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     arg.auth_req = auth_req;
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 /*******************************************************************************
@@ -375,7 +372,7 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
                                          esp_gatt_auth_req_t auth_req)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -385,7 +382,7 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
     memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     memcpy(&arg.descr_id, descr_id, sizeof(esp_gatt_id_t));
     arg.auth_req = auth_req;
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 /*******************************************************************************
@@ -397,7 +394,7 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
 ** @param[in]       conn_id - connection ID.
 ** @param[in]       srvc_id - serivcie ID.
 ** @param[in]       char_id - characteristic ID to write.
-** @param[in]       len: length of the data to be written.
+** @param[in]       value_len: length of the value to be written.
 ** @param[in]       value - the value to be written.
 **
 ** @return          ESP_OK - success, other - failed
@@ -406,12 +403,12 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
 esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
                                     esp_gatt_srvc_id_t *srvc_id,
                                     esp_gatt_id_t *char_id,
-                                    uint16_t len,
+                                    uint16_t value_len,
                                     uint8_t *value,
                                     esp_gatt_auth_req_t auth_req)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -419,10 +416,10 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
     arg.conn_id = (uint16_t) conn_id;
     memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
-    arg.len = len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : len;
-    memcpy(arg.value, value, arg.len);
+    arg.value_len = value_len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : value_len;
+    memcpy(arg.value, value, arg.value_len);
     arg.auth_req = auth_req;
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 /*******************************************************************************
@@ -435,6 +432,7 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
 ** @param[in]       srvc_id - serivcie ID.
 ** @param[in]       char_id - characteristic ID.
 ** @param[in]       descr_id - characteristic descriptor ID to write.
+** @param[in]       value_len: length of the value to be written.
 ** @param[in]       value - the value to be written.
 **
 ** @return          ESP_OK - success, other - failed
@@ -444,12 +442,12 @@ esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
                                           esp_gatt_srvc_id_t *srvc_id,
                                           esp_gatt_id_t *char_id,
                                           esp_gatt_id_t *descr_id,
-                                          uint16_t len,
+                                          uint16_t value_len,
                                           uint8_t *value,
                                           esp_gatt_auth_req_t auth_req)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -458,10 +456,10 @@ esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
     memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     memcpy(&arg.descr_id, descr_id, sizeof(esp_gatt_id_t));
-    arg.len = len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : len;
-    memcpy(arg.value, value, arg.len);
+    arg.value_len = value_len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : value_len;
+    memcpy(arg.value, value, arg.value_len);
     arg.auth_req = auth_req;
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 /*******************************************************************************
@@ -473,7 +471,7 @@ esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
 ** @param[in]       conn_id - connection ID.
 ** @param[in]       char_id - GATT characteritic ID of the service.
 ** @param[in]       offset - offset of the write value.
-** @param[in]       len: length of the data to be written.
+** @param[in]       value_len: length of the value to be written.
 ** @param[in]       value - the value to be written.
 **
 ** @return          ESP_OK - success, other - failed
@@ -483,13 +481,13 @@ esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
 				      esp_gatt_srvc_id_t *srvc_id,
 				      esp_gatt_id_t *char_id,
 					  uint16_t offset,
-				      uint16_t len,
-				      uint8_t *data,
+				      uint16_t value_len,
+				      uint8_t *value,
 					  esp_gatt_auth_req_t auth_req)
 {
     //TODO: Review this function
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -498,10 +496,10 @@ esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
     memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     arg.offset = offset;
-    arg.len = len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : len; // length check ?
-    memcpy(arg.value, data, arg.len);
+    arg.value_len = value_len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : value_len; // length check ?
+    memcpy(arg.value, value, arg.value_len);
     arg.auth_req = auth_req;
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -521,14 +519,14 @@ esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
 esp_err_t esp_ble_gattc_execute_write (uint16_t conn_id, bool is_execute)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_EXECUTE_WRITE;
     arg.conn_id = conn_id;
     arg.is_execute = is_execute;
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -553,7 +551,7 @@ esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gatt_if,
                                                      esp_gatt_id_t *char_id)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -562,7 +560,7 @@ esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gatt_if,
     memcpy(&arg.remote_bda, &server_bda, sizeof(esp_bd_addr_t));
     memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -587,7 +585,7 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gatt_if,
                                                       esp_gatt_id_t *char_id)
 {
     btc_msg_t msg;
-    esp_ble_gattc_args_t arg;
+    btc_ble_gattc_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
@@ -596,6 +594,6 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gatt_if,
     memcpy(&arg.remote_bda, &server_bda, sizeof(esp_bd_addr_t));
     memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
-    return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 

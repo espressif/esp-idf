@@ -33,32 +33,6 @@
 /* following is extra event */
 #define ESP_GATTS_RESPONSE_EVT            21
 
-/* esp_ble_gatts_args_t */
-typedef struct {
-	esp_gatt_if_t gatt_if;	 /* internal is server_if or client_if */
-	esp_gatt_srvc_id_t service_id;
-	esp_gatt_id_t char_id;
-	esp_gatt_id_t descr_uuid;
-	esp_bt_uuid_t uuid;
-	esp_gatt_rsp_t rsp;
-	esp_gatt_perm_t perm;
-	esp_gatt_char_prop_t property;
-	esp_bd_addr_t remote_bda;
-	esp_gatt_status_t status;
-	uint16_t service_handle;
-	uint16_t included_service_handle;
-	uint16_t attr_handle;
-	uint16_t num_handle;
-	uint16_t conn_id;
-	uint16_t trans_id;
-	bool need_confirm;
-	bool is_direct;
-	uint16_t app_uuid;
-	uint16_t data_len;
-	uint8_t data[ESP_GATT_MAX_ATTR_LEN];
-} esp_ble_gatts_args_t;
-
-
 /* esp_ble_gatts_cb_param_t */
 typedef union {
 	//ESP_GATTS_REG_EVT
@@ -368,15 +342,15 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle);
 **
 ** @param[in]       conn_id - connection id to indicate.
 ** @param[in]	    attribute_handle - attribute handle to indicate.
-** @param[in]       data_len - indicate data length.
-** @param[in]       data: data to indicate.
+** @param[in]       value_len - indicate value length.
+** @param[in]       value: value to indicate.
 ** @param[in]       need_confirm - if this indication expects a confirmation or not.
 **
 ** @return          ESP_OK - success, other - failed
 **
 *******************************************************************************/
 esp_err_t esp_ble_gatts_send_indicate(uint16_t conn_id, uint16_t attr_handle,
-					uint16_t data_len, uint8_t *data, bool need_confirm);
+					uint16_t value_len, uint8_t *value, bool need_confirm);
 
 
 /*******************************************************************************

@@ -100,7 +100,7 @@ static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
 void btc_gatts_call_handler(btc_msg_t *msg)
 {
-	esp_ble_gatts_args_t *arg = (esp_ble_gatts_args_t *)msg->arg;
+	btc_ble_gatts_args_t *arg = (btc_ble_gatts_args_t *)msg->arg;
 
 	switch (msg->act) {
 	case BTC_GATTS_ACT_APP_REGISTER: {
@@ -152,7 +152,7 @@ void btc_gatts_call_handler(btc_msg_t *msg)
 	}
 	case BTC_GATTS_ACT_SEND_INDICATE:
 		BTA_GATTS_HandleValueIndication(arg->conn_id, arg->attr_handle,
-                                        arg->data_len, arg->data, arg->need_confirm);
+                                        arg->value_len, arg->value, arg->need_confirm);
 		break;
 	case BTC_GATTS_ACT_SEND_RESPONSE: {
 		esp_ble_gatts_cb_param_t param;
