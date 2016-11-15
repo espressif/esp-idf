@@ -78,6 +78,9 @@ typedef enum {
     LEDC_TIMER_15_BIT = 15, /*!< LEDC PWM depth 15Bit */
 } ledc_timer_bit_t;
 
+/**
+ * @brief Configuration parameters of LEDC channel for ledc_channel_config function
+ */
 typedef struct {
     int gpio_num;                   /*!< the LEDC output gpio_num, if you want to use gpio16, gpio_num = 16*/
     ledc_mode_t speed_mode;         /*!< LEDC speed speed_mode, high-speed mode or low-speed mode*/
@@ -87,6 +90,9 @@ typedef struct {
     uint32_t duty;                  /*!< LEDC channel duty, the duty range is [0, (2**bit_num) - 1], */
 } ledc_channel_config_t;
 
+/**
+ * @brief Configuration parameters of LEDC Timer timer for ledc_timer_config function
+ */
 typedef struct {
     ledc_mode_t speed_mode;         /*!< LEDC speed speed_mode, high-speed mode or low-speed mode*/
     ledc_timer_bit_t bit_num;       /*!< LEDC channel duty depth*/

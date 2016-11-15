@@ -62,13 +62,13 @@ esp_err_t spi_flash_erase_sector(size_t sector);
 /**
  * @brief  Erase a range of flash sectors
  *
- * @param  uint32_t start_address : Address where erase operation has to start.
+ * @param  start_address  Address where erase operation has to start.
  *                                  Must be 4kB-aligned
- * @param  uint32_t size : Size of erased range, in bytes. Must be divisible by 4kB.
+ * @param  size  Size of erased range, in bytes. Must be divisible by 4kB.
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_erase_range(size_t start_addr, size_t size);
+esp_err_t spi_flash_erase_range(size_t start_address, size_t size);
 
 
 /**
