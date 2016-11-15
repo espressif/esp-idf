@@ -113,11 +113,11 @@ typedef struct {
 } uart_event_t;
 
 /**
- * @brief   Set UART data bits.
+ * @brief Set UART data bits.
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   data_bit UART data bits
+ * @param data_bit UART data bits
  *
  * @return
  *     - ESP_OK   Success
@@ -126,9 +126,11 @@ typedef struct {
 esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit);
 
 /**
- * @brief   Get UART data bits.
+ * @brief Get UART data bits.
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
+ * @param data_bit Pointer to accept value of UART data bits.
  *
  * @return
  *     - ESP_FAIL  Parameter error
@@ -137,22 +139,24 @@ esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit
 esp_err_t uart_get_word_length(uart_port_t uart_num, uart_word_length_t* data_bit);
 
 /**
- * @brief   Set UART stop bits.
+ * @brief Set UART stop bits.
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   bit_num  UART stop bits
+ * @param bit_num  UART stop bits
  *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Fail
  */
-esp_err_t uart_set_stop_bits(uart_port_t uart_no, uart_stop_bits_t bit_num);
+esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t bit_num);
 
 /**
- * @brief   Set UART stop bits.
+ * @brief Set UART stop bits.
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
+ * @param stop_bit  Pointer to accept value of UART stop bits.
  *
  * @return
  *     - ESP_FAIL Parameter error
@@ -161,22 +165,24 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_no, uart_stop_bits_t bit_num);
 esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bit);
 
 /**
- * @brief   Set UART parity.
+ * @brief Set UART parity.
  *
- * @param   uart_no     UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   parity_mode the enum of uart parity configuration
+ * @param parity_mode the enum of uart parity configuration
  *
  * @return
  *     - ESP_FAIL  Parameter error
  *     - ESP_OK    Success
  */
-esp_err_t uart_set_parity(uart_port_t uart_no, uart_parity_t parity_mode);
+esp_err_t uart_set_parity(uart_port_t uart_num, uart_parity_t parity_mode);
 
 /**
- * @brief   Get UART parity mode.
+ * @brief Get UART parity mode.
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
+ * @param parity_mode Pointer to accept value of UART parity mode.
  *
  * @return
  *     - ESP_FAIL  Parameter error
@@ -186,22 +192,24 @@ esp_err_t uart_set_parity(uart_port_t uart_no, uart_parity_t parity_mode);
 esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
 
 /**
- * @brief   Set UART baud rate.
+ * @brief Set UART baud rate.
  *
- * @param   uart_no   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   baud_rate UART baud-rate.
+ * @param baud_rate UART baud-rate.
  *
  * @return
  *     - ESP_FAIL Parameter error
  *     - ESP_OK   Success
  */
-esp_err_t uart_set_baudrate(uart_port_t uart_no, uint32_t baud_rate);
+esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate);
 
 /**
- * @brief   Get UART bit-rate.
+ * @brief Get UART bit-rate.
  *
- * @param   uart_no: UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
+ * @param baudrate Pointer to accept value of UART baud rate
  *
  * @return
  *     - ESP_FAIL Parameter error
@@ -211,11 +219,11 @@ esp_err_t uart_set_baudrate(uart_port_t uart_no, uint32_t baud_rate);
 esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
 
 /**
- * @brief   Set UART line inverse mode
+ * @brief Set UART line inverse mode
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   inverse_mask Choose the wires that need to be inversed.
+ * @param Inverse_mask Choose the wires that need to be inversed.
  *
  *          (inverse_mask should be chosen from UART_INVERSE_RXD/UART_INVERSE_TXD/UART_INVERSE_RTS/UART_INVERSE_CTS, combine with OR-OPERATION)
  *
@@ -223,16 +231,16 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_set_line_inverse(uart_port_t uart_no, uint32_t inverse_mask);
+esp_err_t uart_set_line_inverse(uart_port_t uart_num, uint32_t inverse_mask);
 
 /**
- * @brief   Set hardware flow control.
+ * @brief Set hardware flow control.
  *
- * @param   uart_no   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num   UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   flow_ctrl Hardware flow control mode
+ * @param flow_ctrl Hardware flow control mode
  *
- * @param   rx_thresh Threshold of Hardware RX flow control(0 ~ UART_FIFO_LEN)
+ * @param rx_thresh Threshold of Hardware RX flow control(0 ~ UART_FIFO_LEN)
  *
  *          Only when UART_HW_FLOWCTRL_RTS is set , will the rx_thresh value be set.
  *
@@ -240,12 +248,14 @@ esp_err_t uart_set_line_inverse(uart_port_t uart_no, uint32_t inverse_mask);
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_no, uart_hw_flowcontrol_t flow_ctrl, uint8_t rx_thresh);
+esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t flow_ctrl, uint8_t rx_thresh);
 
 /**
- * @brief   Get hardware flow control mode
+ * @brief Get hardware flow control mode
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
+ * @param flow_ctrl Option for different flow control mode.
  *
  * @return
  *     - ESP_FAIL Parameter error
@@ -254,11 +264,11 @@ esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_no, uart_hw_flowcontrol_t flow_
 esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flow_ctrl);
 
 /**
- * @brief   Clear UART interrupt status
+ * @brief Clear UART interrupt status
  *
- * @param   uart_no   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num   UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   clr_mask  Bit mask of the status that to be cleared.
+ * @param clr_mask  Bit mask of the status that to be cleared.
  *
  *                    (enable_mask should be chosen from the fields of register UART_INT_CLR_REG)
  *
@@ -269,11 +279,11 @@ esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flo
 esp_err_t uart_clear_intr_status(uart_port_t uart_num, uint32_t clr_mask);
 
 /**
- * @brief   Set UART interrupt enable
+ * @brief Set UART interrupt enable
  *
- * @param   uart_no      UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num      UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   enable_mask  Bit mask of the enable bits.
+ * @param enable_mask  Bit mask of the enable bits.
  *
  *                       (enable_mask should be chosen from the fields of register UART_INT_ENA_REG)
  *
@@ -284,11 +294,11 @@ esp_err_t uart_clear_intr_status(uart_port_t uart_num, uint32_t clr_mask);
 esp_err_t uart_enable_intr_mask(uart_port_t uart_num, uint32_t enable_mask);
 
 /**
- * @brief   Clear UART interrupt enable bits
+ * @brief Clear UART interrupt enable bits
  *
- * @param   uart_no       UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num       UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   disable_mask  Bit mask of the disable bits.
+ * @param disable_mask  Bit mask of the disable bits.
  *
  *                        (disable_mask should be chosen from the fields of register UART_INT_ENA_REG)
  *
@@ -300,9 +310,9 @@ esp_err_t uart_disable_intr_mask(uart_port_t uart_num, uint32_t disable_mask);
 
 
 /**
- * @brief   Enable UART RX interrupt(RX_FULL & RX_TIMEOUT INTERRUPT)
+ * @brief Enable UART RX interrupt(RX_FULL & RX_TIMEOUT INTERRUPT)
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
  * @return
  *     - ESP_OK   Success
@@ -311,9 +321,9 @@ esp_err_t uart_disable_intr_mask(uart_port_t uart_num, uint32_t disable_mask);
 esp_err_t uart_enable_rx_intr(uart_port_t uart_num);
 
 /**
- * @brief   Disable UART RX interrupt(RX_FULL & RX_TIMEOUT INTERRUPT)
+ * @brief Disable UART RX interrupt(RX_FULL & RX_TIMEOUT INTERRUPT)
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
  * @return
  *     - ESP_OK   Success
@@ -322,9 +332,9 @@ esp_err_t uart_enable_rx_intr(uart_port_t uart_num);
 esp_err_t uart_disable_rx_intr(uart_port_t uart_num);
 
 /**
- * @brief   Disable UART TX interrupt(RX_FULL & RX_TIMEOUT INTERRUPT)
+ * @brief Disable UART TX interrupt(RX_FULL & RX_TIMEOUT INTERRUPT)
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
  * @return
  *     - ESP_OK   Success
@@ -333,13 +343,13 @@ esp_err_t uart_disable_rx_intr(uart_port_t uart_num);
 esp_err_t uart_disable_tx_intr(uart_port_t uart_num);
 
 /**
- * @brief   Enable UART TX interrupt(RX_FULL & RX_TIMEOUT INTERRUPT)
+ * @brief Enable UART TX interrupt(RX_FULL & RX_TIMEOUT INTERRUPT)
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   enable  1: enable; 0: disable
+ * @param enable  1: enable; 0: disable
  *
- * @param   thresh  Threshold of TX interrupt, 0 ~ UART_FIFO_LEN
+ * @param thresh  Threshold of TX interrupt, 0 ~ UART_FIFO_LEN
  *
  * @return
  *     - ESP_OK   Success
@@ -348,21 +358,20 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num);
 esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
 
 /**
-* @brief   register UART interrupt handler(ISR).
+* @brief register UART interrupt handler(ISR).
 *           @note
  *          UART ISR handler will be attached to the same CPU core that this function is running on.
  *          Users should know that which CPU is running and then pick a INUM that is not used by system.
  *          We can find the information of INUM and interrupt level in soc.h.
  *
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_intr_num UART interrupt number,check the info in soc.h, and please refer to core-isa.h for more details
  *
- * @param   uart_intr_num UART interrupt number,check the info in soc.h, and please refer to core-isa.h for more details
- *
- * @param   fn  Interrupt handler function.
+ * @param fn  Interrupt handler function.
  * @attention
  *          The ISR handler function MUST be defined with attribution of "IRAM_ATTR" for now.
- * @param   arg parameter for handler function
+ * @param arg parameter for handler function
  *
  * @return
  *     - ESP_OK   Success
@@ -371,21 +380,21 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
 esp_err_t uart_isr_register(uart_port_t uart_num, uint8_t uart_intr_num, void (*fn)(void*), void * arg);
 
 /**
- * @brief   Set UART pin number
+ * @brief Set UART pin number
  *
  *          @note
  *          Internal signal can be output to multiple GPIO pads
  *          Only one GPIO pad can connect with input signal
  *
- * @param   uart_no    UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num    UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   tx_io_num  UART TX pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
+ * @param tx_io_num  UART TX pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
  *
- * @param   rx_io_num  UART RX pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
+ * @param rx_io_num  UART RX pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
  *
- * @param   rts_io_num UART RTS pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
+ * @param rts_io_num UART RTS pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
  *
- * @param   cts_io_num UART CTS pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
+ * @param cts_io_num UART CTS pin GPIO number, if set to UART_PIN_NO_CHANGE, use the current pin.
  *
  * @return
  *     - ESP_OK   Success
@@ -394,12 +403,12 @@ esp_err_t uart_isr_register(uart_port_t uart_num, uint8_t uart_intr_num, void (*
 esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num);
 
 /**
- * @brief   UART set RTS level (before inverse)
+ * @brief UART set RTS level (before inverse)
  *          UART rx hardware flow control should not be set.
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   level   1: RTS output low(active); 0: RTS output high(block)
+ * @param level   1: RTS output low(active); 0: RTS output high(block)
  *
  * @return
  *     - ESP_OK   Success
@@ -408,11 +417,11 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 esp_err_t uart_set_rts(uart_port_t uart_num, int level);
 
 /**
- * @brief   UART set DTR level (before inverse)
+ * @brief UART set DTR level (before inverse)
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   level    1: DTR output low; 0: DTR output high
+ * @param level    1: DTR output low; 0: DTR output high
  *
  * @return
  *     - ESP_OK   Success
@@ -421,11 +430,11 @@ esp_err_t uart_set_rts(uart_port_t uart_num, int level);
 esp_err_t uart_set_dtr(uart_port_t uart_num, int level);
 
 /**
-* @brief   UART parameter configure
+* @brief UART parameter configure
  *
- * @param   uart_no     UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num     UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   uart_config UART parameter settings
+ * @param uart_config UART parameter settings
  *
  * @return
  *     - ESP_OK   Success
@@ -434,11 +443,11 @@ esp_err_t uart_set_dtr(uart_port_t uart_num, int level);
 esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_config);
 
 /**
-* @brief   UART interrupt configure
+* @brief UART interrupt configure
  *
- * @param   uart_no     UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num     UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   intr_conf UART interrupt settings
+ * @param intr_conf UART interrupt settings
  *
  * @return
  *     - ESP_OK   Success
@@ -447,25 +456,25 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
 esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_conf);
 
 /**
- * @brief   Install UART driver.
+ * @brief Install UART driver.
  *
  *          UART ISR handler will be attached to the same CPU core that this function is running on.
  *          Users should know that which CPU is running and then pick a INUM that is not used by system.
  *          We can find the information of INUM and interrupt level in soc.h.
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   rx_buffer_size UART RX ring buffer size
+ * @param rx_buffer_size UART RX ring buffer size
  *
- * @param   tx_buffer_size UART TX ring buffer size.
+ * @param tx_buffer_size UART TX ring buffer size.
  *
  *          If set to zero, driver will not use TX buffer, TX function will block task until all data have been sent out..
  *
- * @param   queue_size UART event queue size/depth.
+ * @param queue_size UART event queue size/depth.
  *
- * @param   uart_intr_num UART interrupt number,check the info in soc.h, and please refer to core-isa.h for more details
+ * @param uart_intr_num UART interrupt number,check the info in soc.h, and please refer to core-isa.h for more details
  *
- * @param   uart_queue UART event queue handle, if set NULL, driver will not use an event queue.
+ * @param uart_queue UART event queue handle, if set NULL, driver will not use an event queue.
  *
  * @return
  *     - ESP_OK   Success
@@ -474,9 +483,9 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
 esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, int uart_intr_num, void* uart_queue);
 
 /**
- * @brief   Uninstall UART driver.
+ * @brief Uninstall UART driver.
  *
- * @param   uart_no  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
  * @return
  *     - ESP_OK   Success
@@ -485,11 +494,11 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
 esp_err_t uart_driver_delete(uart_port_t uart_num);
 
 /**
- * @brief   Wait UART TX FIFO empty
+ * @brief Wait UART TX FIFO empty
  *
- * @param   uart_no       UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num       UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   ticks_to_wait Timeout, count in RTOS ticks
+ * @param ticks_to_wait Timeout, count in RTOS ticks
  *
  * @return
  *     - ESP_OK   Success
@@ -499,26 +508,25 @@ esp_err_t uart_driver_delete(uart_port_t uart_num);
 esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
 
 /**
- * @brief   Send data to the UART port from a given buffer and length,
+ * @brief Send data to the UART port from a given buffer and length,
  *          This function will not wait for the space in TX FIFO, just fill the TX FIFO and return when the FIFO is full.
  *          @note
  *          This function should only be used when UART TX buffer is not enabled.
  *
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param buffer data buffer address
  *
- * @param   buffer data buffer address
- *
- * @param   len    data length to send
+ * @param len    data length to send
  *
  * @return
  *     - (-1)  Parameter error
  *     - OTHERS(>=0)  The number of data that pushed to the TX FIFO
  */
-int uart_tx_chars(uart_port_t uart_no, const char* buffer, uint32_t len);
+int uart_tx_chars(uart_port_t uart_num, const char* buffer, uint32_t len);
 
 /**
- * @brief   Send data to the UART port from a given buffer and length,
+ * @brief Send data to the UART port from a given buffer and length,
  *
  *          If parameter tx_buffer_size is set to zero:
  *          This function will not return until all the data have been sent out, or at least pushed into TX FIFO.
@@ -526,11 +534,11 @@ int uart_tx_chars(uart_port_t uart_no, const char* buffer, uint32_t len);
  *          Otherwise, if tx_buffer_size > 0, this function will return after copying all the data to tx ringbuffer,
  *          then, UART ISR will move data from ring buffer to TX FIFO gradually.
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   src   data buffer address
+ * @param src   data buffer address
  *
- * @param   size  data length to send
+ * @param size  data length to send
  *
  * @return
  *     - (-1) Parameter error
@@ -539,7 +547,7 @@ int uart_tx_chars(uart_port_t uart_no, const char* buffer, uint32_t len);
 int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
 
 /**
- * @brief   Send data to the UART port from a given buffer and length,
+ * @brief Send data to the UART port from a given buffer and length,
  *
  *          If parameter tx_buffer_size is set to zero:
  *          This function will not return until all the data and the break signal have been sent out.
@@ -549,15 +557,13 @@ int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
  *          then, UART ISR will move data from ring buffer to TX FIFO gradually.
  *          After all data send out, send a break signal.
  *
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
+ * @param src   data buffer address
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param size  data length to send
  *
- * @param   src   data buffer address
- *
- * @param   size  data length to send
- *
- * @param   brk_len break signal length (unit: one bit's time@current_baudrate)
+ * @param brk_len break signal length (unit: time of one data bit at current_baudrate)
  *
  * @return
  *     - (-1) Parameter error
@@ -567,16 +573,15 @@ int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
 int uart_write_bytes_with_break(uart_port_t uart_num, const char* src, size_t size, int brk_len);
 
 /**
-* @brief   UART read bytes from UART buffer
+ * @brief UART read bytes from UART buffer
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
- * @param   buf     pointer to the buffer.
+ * @param buf     pointer to the buffer.
  *
- * @param   length  data length
+ * @param length  data length
  *
- * @param   ticks_to_wait sTimeout, count in RTOS ticks
- *
+ * @param ticks_to_wait sTimeout, count in RTOS ticks
  *
  * @return
  *     - (-1) Error
@@ -585,9 +590,9 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const char* src, size_t si
 int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickType_t ticks_to_wait);
 
 /**
- * @brief   UART ring buffer flush
+ * @brief UART ring buffer flush
  *
- * @param   uart_no UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *
  * @return
  *     - ESP_OK Success
