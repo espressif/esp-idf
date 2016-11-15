@@ -1,0 +1,264 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+#include "rom/ets_sys.h"
+#include "soc/dport_reg.h"
+
+#include "esp_err.h"
+#include "esp_phy_init.h"
+#include "esp_system.h"
+#include "phy.h"
+#include "esp_log.h"
+#include "sdkconfig.h"
+#include "phy_init_data.h"
+
+static const char* TAG = "phy_init";
+
+static const esp_phy_init_data_t* phy_get_init_data();
+static void phy_release_init_data(const esp_phy_init_data_t*);
+
+esp_err_t esp_phy_init(esp_phy_calibration_mode_t mode)
+{
+    ESP_LOGD(TAG, "esp_phy_init, mode=%d", mode);
+    esp_err_t err;
+    const esp_phy_init_data_t* init_data = phy_get_init_data();
+    if (init_data == NULL) {
+        ESP_LOGE(TAG, "failed to obtain PHY init data");
+        return ESP_FAIL;
+    }
+    esp_phy_calibration_data_t* cal_data =
+            (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
+    if (cal_data == NULL) {
+        ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
+        return ESP_ERR_NO_MEM;
+    }
+    // Initialize PHY function pointer table
+    phy_get_romfunc_addr();
+    // Enable WiFi peripheral clock
+    SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
+    // If full calibration is requested, don't need to load previous calibration data
+    if (mode != PHY_RF_CAL_FULL) {
+        err = esp_phy_load_cal_data(cal_data);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "failed to load RF calibration data, falling back to full calibration");
+            mode = PHY_RF_CAL_FULL;
+        }
+    }
+    ESP_LOGV(TAG, "calling register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d", init_data, cal_data, mode);
+    register_chipv7_phy(init_data, cal_data, mode);
+    if (mode != PHY_RF_CAL_NONE) {
+        err = esp_phy_store_cal_data(cal_data);
+    } else {
+        err = ESP_OK;
+    }
+    phy_release_init_data(init_data);
+    free(cal_data); // PHY maintains a copy of calibration data, so we can free this
+    return err;
+}
+
+// PHY init data handling functions
+
+#if CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
+#define NO_DEFAULT_INIT_DATA
+#include "esp_partition.h"
+
+static const esp_phy_init_data_t* phy_get_init_data()
+{
+    const esp_partition_t* partition = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_PHY, NULL);
+    if (partition == NULL) {
+        ESP_LOGE(TAG, "PHY data partition not found");
+        return NULL;
+    }
+    ESP_LOGD(TAG, "loading PHY init data from partition at offset 0x%x", partition->address);
+    size_t init_data_store_length = sizeof(phy_init_magic_pre) +
+            sizeof(esp_phy_init_data_t) + sizeof(phy_init_magic_post);
+    uint8_t* init_data_store = (uint8_t*) malloc(init_data_store_length);
+    if (init_data_store == NULL) {
+        ESP_LOGE(TAG, "failed to allocate memory for PHY init data");
+        return NULL;
+    }
+    esp_err_t err = esp_partition_read(partition, 0, init_data_store, init_data_store_length);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "failed to read PHY data partition (%d)", err);
+        return NULL;
+    }
+    if (memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) != 0 ||
+        memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
+                PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) != 0) {
+        ESP_LOGE(TAG, "failed to validate PHY data partition");
+        return NULL;
+    }
+    ESP_LOGE(TAG, "PHY data partition validated");
+    return (const esp_phy_init_data_t*) (init_data_store + sizeof(phy_init_magic_pre));
+}
+
+static void phy_release_init_data(const esp_phy_init_data_t* init_data)
+{
+    free((uint8_t*) init_data - sizeof(phy_init_magic_pre));
+}
+
+#else // CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
+
+// phy_init_data.h will declare static 'phy_init_data' variable initialized with default init data
+
+static const esp_phy_init_data_t* phy_get_init_data()
+{
+    ESP_LOGD(TAG, "loading PHY init data from application binary");
+    return &phy_init_data;
+}
+
+static void phy_release_init_data(const esp_phy_init_data_t* init_data)
+{
+    // no-op
+}
+#endif // CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
+
+
+// PHY calibration data handling functions
+
+#if CONFIG_ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS
+#include "nvs.h"
+
+static const char* PHY_NAMESPACE = "phy";
+static const char* PHY_CAL_VERSION_KEY = "cal_version";
+static const char* PHY_CAL_MAC_KEY = "cal_mac";
+static const char* PHY_CAL_DATA_KEY = "cal_data";
+
+static esp_err_t load_cal_data_from_nvs(nvs_handle handle,
+        esp_phy_calibration_data_t* out_cal_data);
+
+static esp_err_t store_cal_data_to_nvs(nvs_handle handle,
+        const esp_phy_calibration_data_t* cal_data);
+
+esp_err_t esp_phy_load_cal_data(esp_phy_calibration_data_t* out_cal_data)
+{
+    nvs_handle handle;
+    esp_err_t err = nvs_open(PHY_NAMESPACE, NVS_READONLY, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGD(TAG, "%s: failed to open NVS namespace (%d)", __func__, err);
+        return err;
+    }
+    else {
+        err = load_cal_data_from_nvs(handle, out_cal_data);
+        nvs_close(handle);
+        return err;
+    }
+}
+
+esp_err_t esp_phy_store_cal_data(const esp_phy_calibration_data_t* cal_data)
+{
+    nvs_handle handle;
+    esp_err_t err = nvs_open(PHY_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGD(TAG, "%s: failed to open NVS namespace (%d)", __func__, err);
+        return err;
+    }
+    else {
+        err = store_cal_data_to_nvs(handle, cal_data);
+        nvs_close(handle);
+        return err;
+    }
+}
+
+static esp_err_t load_cal_data_from_nvs(nvs_handle handle, esp_phy_calibration_data_t* out_cal_data)
+{
+    esp_err_t err;
+    uint32_t cal_data_version;
+    err = nvs_get_u32(handle, PHY_CAL_VERSION_KEY, &cal_data_version);
+    if (err != ESP_OK) {
+        ESP_LOGD(TAG, "%s: failed to get cal_version (%d)", __func__, err);
+        return err;
+    }
+    uint32_t cal_format_version = phy_get_rf_cal_version();
+    if (cal_data_version != cal_format_version) {
+        ESP_LOGD(TAG, "%s: expected calibration data format %d, found %d",
+                __func__, cal_format_version, cal_data_version);
+        return ESP_FAIL;
+    }
+    uint8_t cal_data_mac[6];
+    size_t length = sizeof(cal_data_mac);
+    err = nvs_get_blob(handle, PHY_CAL_MAC_KEY, cal_data_mac, &length);
+    if (err != ESP_OK) {
+        ESP_LOGD(TAG, "%s: failed to get cal_mac (%d)", __func__, err);
+        return err;
+    }
+    if (length != sizeof(cal_data_mac)) {
+        ESP_LOGD(TAG, "%s: invalid length of cal_mac (%d)", __func__, length);
+        return ESP_ERR_INVALID_SIZE;
+    }
+    uint8_t sta_mac[6];
+    system_efuse_read_mac(sta_mac);
+    if (memcmp(sta_mac, cal_data_mac, sizeof(sta_mac)) != 0) {
+        ESP_LOGE(TAG, "%s: calibration data MAC check failed: expected " \
+                MACSTR ", found " MACSTR,
+                __func__, MAC2STR(sta_mac), MAC2STR(cal_data_mac));
+        return ESP_FAIL;
+    }
+    length = sizeof(*out_cal_data);
+    err = nvs_get_blob(handle, PHY_CAL_DATA_KEY, out_cal_data, &length);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: failed to get cal_data(%d)", __func__, err);
+        return err;
+    }
+    if (length != sizeof(*out_cal_data)) {
+        ESP_LOGD(TAG, "%s: invalid length of cal_data (%d)", __func__, length);
+        return ESP_ERR_INVALID_SIZE;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t store_cal_data_to_nvs(nvs_handle handle,
+        const esp_phy_calibration_data_t* cal_data)
+{
+    esp_err_t err;
+    uint32_t cal_format_version = phy_get_rf_cal_version();
+    err = nvs_set_u32(handle, PHY_CAL_VERSION_KEY, cal_format_version);
+    if (err != ESP_OK) {
+        return err;
+    }
+    uint8_t sta_mac[6];
+    system_efuse_read_mac(sta_mac);
+    err = nvs_set_blob(handle, PHY_CAL_MAC_KEY, sta_mac, sizeof(sta_mac));
+    if (err != ESP_OK) {
+        return err;
+    }
+    err = nvs_set_blob(handle, PHY_CAL_DATA_KEY, cal_data, sizeof(*cal_data));
+    return err;
+}
+
+#else // CONFIG_ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS
+
+// Default implementation: don't store or load calibration data.
+// These functions are defined as weak and can be overridden in the application.
+
+esp_err_t esp_phy_store_cal_data(const esp_phy_calibration_data_t* cal_data) __attribute__((weak))
+{
+    // pretend that calibration data is stored
+    return ESP_OK;
+}
+
+esp_err_t esp_phy_load_cal_data(const esp_phy_calibration_data_t* cal_data) __attribute__((weak))
+{
+    // nowhere to load data from
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+#endif // CONFIG_ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS
+

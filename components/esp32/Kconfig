@@ -364,4 +364,58 @@ config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
 	depends on DOCUMENTATION_FOR_RTC_CNTL
 endchoice
 
+config ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS
+	bool "Store PHY calibration data in NVS"
+	default y
+	help
+		Choose whether to use non-volatile storage library (NVS)
+		to store PHY calibration data obtained at run time.
+		If enabled, this will use approximately 2kB of NVS storage
+		for PHY calibration data. 
+		If this option is not enabled, calibration data will not be stored,
+		unless application provides its own implementations of 
+		esp_phy_store_cal_data and esp_phy_load_cal_data functions.
+		See esp_phy_init.h for details.
+		
+		If unsure, choose 'y'. 
+
+
+config ESP32_PHY_AUTO_INIT
+	bool "Initialize PHY in startup code"
+	default y
+	help
+		If enabled, PHY will be initialized in startup code, before
+		app_main function runs.
+		If this is undesired, disable this option and call esp_phy_init
+		from the application before enabling WiFi or BT.
+		
+		If this option is enabled along with ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS,
+		startup code will also initialize NVS prior to initializing PHY.
+		
+		If unsure, choose 'y'. 
+
+config ESP32_PHY_INIT_DATA_IN_PARTITION
+	bool "Use a partition to store PHY init data"
+	default n
+	help
+		If enabled, PHY init data will be loaded from a partition.
+		When using a custom partition table, make sure that PHY data
+		partition is included (type: 'data', subtype: 'phy'). 
+		With default partition tables, this is done automatically. 
+		If PHY init data is stored in a partition, it has to be flashed there,
+		otherwise runtime error will occur.
+		
+		If this option is not enabled, PHY init data will be embedded
+		into the application binary.
+		
+		If unsure, choose 'n'.
+
+config ESP32_PHY_MAX_TX_POWER
+	int "Max TX power (dBm)"
+	range 0 20
+	default 20
+	help
+		Set maximum transmit power. Actual transmit power for high
+		data rates may be lower than this setting.
+
 endmenu

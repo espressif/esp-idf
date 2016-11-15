@@ -50,6 +50,7 @@
 #include "esp_brownout.h"
 #include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
+#include "esp_phy_init.h"
 #include "trax.h"
 
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
@@ -186,6 +187,20 @@ void start_cpu0_default(void)
 #endif
     esp_ipc_init();
     spi_flash_init();
+
+#if CONFIG_ESP32_PHY_AUTO_INIT
+#if CONFIG_ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS
+    nvs_flash_init();
+#endif
+    esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
+    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
+        calibration_mode = PHY_RF_CAL_NONE;
+    }
+    if (esp_phy_init(calibration_mode) != ESP_OK) {
+        ESP_LOGD(TAG, "phy init has failed");
+        abort();
+    }
+#endif
 
     xTaskCreatePinnedToCore(&main_task, "main",
             ESP_TASK_MAIN_STACK, NULL,
