@@ -177,7 +177,7 @@ typedef err_t (*netif_mld_mac_filter_fn)(struct netif *netif,
 #endif /* LWIP_IPV6 && LWIP_IPV6_MLD */
 
 
-#ifdef LWIP_ESP8266
+#if ESP_DHCP
 /*add DHCP event processing by LiuHan*/
 typedef void (*dhcp_event_fn)(void);
 #endif
@@ -190,7 +190,7 @@ struct netif {
   /** pointer to next in linked list */
   struct netif *next;
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 //ip_addr_t  is changed   by marco  IPV4, IPV6
   ip_addr_t link_local_addr;
 #endif
@@ -248,7 +248,7 @@ struct netif {
   /** the DHCP client state information for this netif */
   struct dhcp *dhcp;
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
   struct udp_pcb *dhcps_pcb;	
   dhcp_event_fn dhcp_event;
 #endif  

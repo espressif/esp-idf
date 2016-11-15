@@ -249,7 +249,7 @@ void dhcp_fine_tmr(void);
 #define DHCP_OPTION_NTP 42
 #define DHCP_OPTION_END 255
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
 /**add options for support more router by liuHan**/
 #define DHCP_OPTION_DOMAIN_NAME 15
 #define DHCP_OPTION_PRD 31

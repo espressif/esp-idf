@@ -19,11 +19,6 @@ it would on a single-core system: the other core still will keep on
 executing all it's own. Use a mux, queue or semaphore to protect your
 structures instead.
 
-- While each core has individual interrupts, the handlers are shared. This 
-means that when you set a handler for an interrupt, it will get triggered if 
-the interrupt is triggered on both CPU0 as well as on CPU1. This is something
-we may change in future FreeRTOS-esp32 releases.
-
 - This FreeRTOS version has the task local storage backported from the 8.2.x
 versions. It, however, has an addition: you can also set a callback when you 
 set the pointer. This callback will be called by the idle task, with the 

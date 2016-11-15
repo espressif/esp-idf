@@ -62,11 +62,6 @@
 #include "lwip/sys.h"
 #include "lwip/pbuf.h"
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 /** The one and only timeout list */
 static struct sys_timeo *next_timeout;
 #if NO_SYS
@@ -162,7 +157,7 @@ dhcp_timer_coarse(void *arg)
   LWIP_DEBUGF(TIMERS_DEBUG, ("tcpip: dhcp_coarse_tmr()\n"));
   dhcp_coarse_tmr();
 
-#ifdef LWIP_ESP8266
+#if ESP_DHCP
   extern void dhcps_coarse_tmr(void);
   dhcps_coarse_tmr();
 #endif
@@ -294,12 +289,6 @@ void sys_timeouts_init(void)
 #endif /* LWIP_ARP */
 #if LWIP_DHCP
 
-#ifdef LWIP_ESP8266
-       // DHCP_MAXRTX = 0;
-#endif
-
-
-
   sys_timeout(DHCP_COARSE_TIMER_MSECS, dhcp_timer_coarse, NULL);
   sys_timeout(DHCP_FINE_TIMER_MSECS, dhcp_timer_fine, NULL);
 #endif /* LWIP_DHCP */
@@ -346,7 +335,7 @@ void
 sys_timeout_debug(u32_t msecs, sys_timeout_handler handler, void *arg, const char* handler_name)
 #else /* LWIP_DEBUG_TIMERNAMES */
 
-#ifdef LWIP_ESP8266
+#if ESP_LIGHT_SLEEP
         u32_t LwipTimOutLim = 0;	// For light sleep. time out. limit is 3000ms
 #endif
 
@@ -379,7 +368,7 @@ sys_timeout(u32_t msecs, sys_timeout_handler handler, void *arg)
   timeout->h = handler;
   timeout->arg = arg;
 
-#ifdef LWIP_ESP8266
+#if ESP_LIGHT_SLEEP
     if(msecs < LwipTimOutLim)
     	msecs = LwipTimOutLim;
 #endif

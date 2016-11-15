@@ -15,6 +15,16 @@
 #define __TIMG_REG_H__
 #include "soc.h"
 
+/* The value that needs to be written to TIMG_WDT_WKEY to write-enable the wdt registers */
+#define TIMG_WDT_WKEY_VALUE 0x50D83AA1
+
+/* Possible values for TIMG_WDT_STGx */
+#define TIMG_WDT_STG_SEL_OFF 0
+#define TIMG_WDT_STG_SEL_INT 1
+#define TIMG_WDT_STG_SEL_RESET_CPU 2
+#define TIMG_WDT_STG_SEL_RESET_SYSTEM 3
+
+
 #define REG_TIMG_BASE(i)       (DR_REG_TIMERGROUP0_BASE + i*0x1000)
 #define TIMG_T0CONFIG_REG(i)          (REG_TIMG_BASE(i) + 0x0000)
 /* TIMG_T0_EN : R/W ;bitpos:[31] ;default: 1'h0 ; */

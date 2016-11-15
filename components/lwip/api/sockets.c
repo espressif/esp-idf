@@ -61,11 +61,6 @@
 
 #include <string.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 /* If the netconn API is not required publicly, then we include the necessary
    files here to get the implementation */
 #if !LWIP_NETCONN
@@ -216,7 +211,7 @@ struct lwip_sock {
   /** last error that occurred on this socket (in fact, all our errnos fit into an u8_t) */
   u8_t err;
 
-#if LWIP_THREAD_SAFE
+#if ESP_THREAD_SAFE
   /* lock is used to protect state/ref field, however this lock is not a perfect lock, e.g
    * taskA and taskB can access sock X, then taskA freed sock X, before taskB detect 
    * this, taskC reuse sock X, then when taskB try to access sock X, problem may happen.
@@ -239,7 +234,7 @@ struct lwip_sock {
   SELWAIT_T select_waiting;
 };
 
-#if LWIP_THREAD_SAFE
+#if ESP_THREAD_SAFE
 
 #define LWIP_SOCK_OPEN    0
 #define LWIP_SOCK_CLOSING 1
@@ -247,25 +242,25 @@ struct lwip_sock {
 
 #define LWIP_SOCK_LOCK(sock) \
 do{\
-  /*LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("l\n"));*/\
+  /*LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("l\n"));*/\
     sys_mutex_lock(&sock->lock);\
-  /*LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("l ok\n"));*/\
+  /*LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("l ok\n"));*/\
 }while(0)
 
 
 #define LWIP_SOCK_UNLOCK(sock) \
 do{\
   sys_mutex_unlock(&sock->lock);\
-  /*LWIP_DEBUGF(THREAD_SAFE_DEBUG1, ("unl\n"));*/\
+  /*LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG1, ("unl\n"));*/\
 }while(0)
 
 #define LWIP_FREE_SOCK(sock) \
 do{\
   if(sock->conn && NETCONNTYPE_GROUP(netconn_type(sock->conn)) == NETCONN_TCP){\
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("LWIP_FREE_SOCK:free tcp sock\n"));\
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("LWIP_FREE_SOCK:free tcp sock\n"));\
     free_socket(sock, 1);\
   } else {\
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("LWIP_FREE_SOCK:free non-tcp sock\n"));\
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("LWIP_FREE_SOCK:free non-tcp sock\n"));\
     free_socket(sock, 0);\
   }\
 }while(0)
@@ -273,7 +268,7 @@ do{\
 #define LWIP_SET_CLOSE_FLAG() \
 do{\
   LWIP_SOCK_LOCK(__sock);\
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("mark sock closing\n"));\
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("mark sock closing\n"));\
   __sock->state = LWIP_SOCK_CLOSING;\
   LWIP_SOCK_UNLOCK(__sock);\
 }while(0)
@@ -291,7 +286,7 @@ do{\
   LWIP_SOCK_LOCK(__sock);\
   __sock->ref ++;\
   if (__sock->state != LWIP_SOCK_OPEN) {\
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("LWIP_API_LOCK:soc is %d, return\n", __sock->state));\
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("LWIP_API_LOCK:soc is %d, return\n", __sock->state));\
     __sock->ref --;\
     LWIP_SOCK_UNLOCK(__sock);\
     return -1;\
@@ -306,12 +301,12 @@ do{\
   __sock->ref --;\
   if (__sock->state == LWIP_SOCK_CLOSING) {\
     if (__sock->ref == 0){\
-      LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("LWIP_API_UNLOCK:ref 0, free __sock\n"));\
+      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("LWIP_API_UNLOCK:ref 0, free __sock\n"));\
       LWIP_FREE_SOCK(__sock);\
       LWIP_SOCK_UNLOCK(__sock);\
       return __ret;\
     }\
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("LWIP_API_UNLOCK: soc state is closing, return\n"));\
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("LWIP_API_UNLOCK: soc state is closing, return\n"));\
     LWIP_SOCK_UNLOCK(__sock);\
     return __ret;\
   }\
@@ -387,36 +382,9 @@ static void lwip_socket_unregister_membership(int s, const ip4_addr_t *if_addr, 
 static void lwip_socket_drop_registered_memberships(int s);
 #endif /* LWIP_IGMP */
 
-#ifdef LWIP_ESP8266
-
-/* Since esp_wifi_tx_is_stop/system_get_free_heap_size are not an public wifi API, so extern them here*/
-extern size_t system_get_free_heap_size(void);
-extern bool esp_wifi_tx_is_stop(void);
-
-/* Please be notified that this flow control is just a workaround for fixing wifi Q full issue. 
- * Under UDP/TCP pressure test, we found that the sockets may cause wifi tx queue full if the socket
- * sending speed is faster than the wifi sending speed, it will finally cause the packet to be dropped
- * in wifi layer, it's not acceptable in some application. That's why we introdue the tx flow control here.
- * However, current solution is just a workaround, we need to consider the return value of wifi tx interface,
- * and feedback the return value to lwip and let lwip do the flow control itself.
- */ 
-static inline void esp32_tx_flow_ctrl(void)
-{
-  uint8_t _wait_delay = 0;
-
-  while ((system_get_free_heap_size() < HEAP_HIGHWAT) || esp_wifi_tx_is_stop()){
-     vTaskDelay(_wait_delay/portTICK_RATE_MS);
-     if (_wait_delay < 64) _wait_delay *= 2;
-  }
-}
-
-#else
-#define esp32_tx_flow_ctrl() 
-#endif
-
 /** The global array of available sockets */
 static struct lwip_sock sockets[NUM_SOCKETS];
-#if LWIP_THREAD_SAFE
+#if ESP_THREAD_SAFE
 static bool sockets_init_flag = false;
 #endif
 /** The global list of tasks waiting for select */
@@ -427,13 +395,7 @@ static volatile int select_cb_ctr;
 
 /** Table to quickly map an lwIP error (err_t) to a socket error
   * by using -err as an index */
-#ifdef LWIP_ESP8266
-//TO_DO
-//static const int err_to_errno_table[] ICACHE_RODATA_ATTR STORE_ATTR = {
 static const int err_to_errno_table[] = {
-#else
-static const int err_to_errno_table[] = {
-#endif
   0,             /* ERR_OK          0      No error, everything OK. */
   ENOMEM,        /* ERR_MEM        -1      Out of memory error.     */
   ENOBUFS,       /* ERR_BUF        -2      Buffer error.            */
@@ -444,7 +406,7 @@ static const int err_to_errno_table[] = {
   EWOULDBLOCK,   /* ERR_WOULDBLOCK -7      Operation would block.   */
   EADDRINUSE,    /* ERR_USE        -8      Address in use.          */
 
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
   EALREADY,      /* ERR_ALREADY    -9      Already connected.       */
   EISCONN,		 /* ERR_ISCONN     -10	   Conn already established */
   ECONNABORTED,  /* ERR_ABRT       -11     Connection aborted.      */
@@ -585,7 +547,7 @@ alloc_socket(struct netconn *newconn, int accepted)
   int i;
   SYS_ARCH_DECL_PROTECT(lev);
 
-#if LWIP_THREAD_SAFE
+#if ESP_THREAD_SAFE
   bool    found        = false;
   int     oldest       = -1;
 
@@ -641,16 +603,16 @@ alloc_socket(struct netconn *newconn, int accepted)
     if (!sockets[oldest].lock){
       /* one time init and never free */
       if (sys_mutex_new(&sockets[oldest].lock) != ERR_OK){
-        LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("new sock lock fail\n"));
+        LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("new sock lock fail\n"));
         return -1;
       }
     }
-    LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("alloc_socket: alloc %d ok\n", oldest));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("alloc_socket: alloc %d ok\n", oldest));
 
     return oldest + LWIP_SOCKET_OFFSET;
   }
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("alloc_socket: failed\n"));
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("alloc_socket: failed\n"));
  
 #else
 
@@ -695,12 +657,12 @@ free_socket(struct lwip_sock *sock, int is_tcp)
   void *lastdata;
   SYS_ARCH_DECL_PROTECT(lev);
 
-  LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("free_sockset:free socket s=%p is_tcp=%d\n", sock, is_tcp));
+  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("free_sockset:free socket s=%p is_tcp=%d\n", sock, is_tcp));
   lastdata         = sock->lastdata;
   sock->lastdata   = NULL;
   sock->lastoffset = 0;
   sock->err        = 0;
-#if LWIP_THREAD_SAFE
+#if ESP_THREAD_SAFE
   if (sock->conn){
     netconn_free(sock->conn);
   }
@@ -718,10 +680,10 @@ free_socket(struct lwip_sock *sock, int is_tcp)
 
   if (lastdata != NULL) {
     if (is_tcp) {
-      LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("free_sockset:free lastdata pbuf=%p\n", lastdata));
+      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("free_sockset:free lastdata pbuf=%p\n", lastdata));
       pbuf_free((struct pbuf *)lastdata);
     } else {
-      LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("free_sockset:free lastdata, netbuf=%p\n", lastdata));
+      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("free_sockset:free lastdata, netbuf=%p\n", lastdata));
       netbuf_delete((struct netbuf *)lastdata);
     }
   }
@@ -874,19 +836,19 @@ lwip_close(int s)
   int is_tcp = 0;
   err_t err;
 
-  LWIP_DEBUGF(SOCKETS_DEBUG|THREAD_SAFE_DEBUG, ("lwip_close: (%d)\n", s));
+  LWIP_DEBUGF(SOCKETS_DEBUG|ESP_THREAD_SAFE_DEBUG, ("lwip_close: (%d)\n", s));
 
   sock = get_socket(s);
   if (!sock) {
-    LWIP_DEBUGF(SOCKETS_DEBUG|THREAD_SAFE_DEBUG, ("lwip_close: sock is null, return -1\n"));
+    LWIP_DEBUGF(SOCKETS_DEBUG|ESP_THREAD_SAFE_DEBUG, ("lwip_close: sock is null, return -1\n"));
     return -1;
   }
 
   if (sock->conn != NULL) {
     is_tcp = NETCONNTYPE_GROUP(netconn_type(sock->conn)) == NETCONN_TCP;
-    LWIP_DEBUGF(SOCKETS_DEBUG|THREAD_SAFE_DEBUG, ("lwip_close: is_tcp=%d\n", is_tcp));
+    LWIP_DEBUGF(SOCKETS_DEBUG|ESP_THREAD_SAFE_DEBUG, ("lwip_close: is_tcp=%d\n", is_tcp));
   } else {
-    LWIP_DEBUGF(SOCKETS_DEBUG|THREAD_SAFE_DEBUG, ("conn is null\n"));
+    LWIP_DEBUGF(SOCKETS_DEBUG|ESP_THREAD_SAFE_DEBUG, ("conn is null\n"));
     LWIP_ASSERT("lwip_close: sock->lastdata == NULL", sock->lastdata == NULL);
   }
 
@@ -897,12 +859,12 @@ lwip_close(int s)
 
   err = netconn_delete(sock->conn);
   if (err != ERR_OK) {
-    LWIP_DEBUGF(SOCKETS_DEBUG|THREAD_SAFE_DEBUG, ("netconn_delete fail, ret=%d\n", err));
+    LWIP_DEBUGF(SOCKETS_DEBUG|ESP_THREAD_SAFE_DEBUG, ("netconn_delete fail, ret=%d\n", err));
     sock_set_errno(sock, err_to_errno(err));
     return -1;
   }
 
-#if !LWIP_THREAD_SAFE
+#if !ESP_THREAD_SAFE
   free_socket(sock, is_tcp);
 #endif
 
@@ -1132,22 +1094,13 @@ lwip_recvfrom(int s, void *mem, size_t len, int flags,
         ip_addr_debug_print(SOCKETS_DEBUG, fromaddr);
         LWIP_DEBUGF(SOCKETS_DEBUG, (" port=%"U16_F" len=%d\n", port, off));
 
-#ifdef LWIP_ESP8266        
         if (from && fromlen)
-#else
-
-#if SOCKETS_DEBUG
-        if (from && fromlen)
-#endif /* SOCKETS_DEBUG */
-
-#endif
         {
               if (*fromlen > saddr.sa.sa_len) {
                 *fromlen = saddr.sa.sa_len;
               }
               MEMCPY(from, &saddr, *fromlen);
-          
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
         } else {
         	/*fix the code for setting the UDP PROTO's remote infomation by liuh at 2014.8.27*/
         	if (NETCONNTYPE_GROUP(netconn_type(sock->conn)) == NETCONN_UDP){
@@ -1229,8 +1182,6 @@ lwip_send(int s, const void *data, size_t size, int flags)
     return -1;
 #endif /* (LWIP_UDP || LWIP_RAW) */
   }
-
-  esp32_tx_flow_ctrl();
 
   write_flags = NETCONN_COPY |
     ((flags & MSG_MORE)     ? NETCONN_MORE      : 0) |
@@ -1413,8 +1364,6 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
 #endif /* LWIP_TCP */
   }
 
-  esp32_tx_flow_ctrl();
-
   if ((to != NULL) && !SOCK_ADDR_TYPE_MATCH(to, sock)) {
     /* sockaddr does not match socket type (IPv4/IPv6) */
     sock_set_errno(sock, err_to_errno(ERR_VAL));
@@ -1439,7 +1388,7 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
     SOCKADDR_TO_IPADDR_PORT(to, &buf.addr, remote_port);
   } else {
   
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
         /*fix the code for getting the UDP proto's remote information by liuh at 2014.8.27*/
         if (NETCONNTYPE_GROUP(netconn_type(sock->conn)) == NETCONN_UDP){
             if(NETCONNTYPE_ISIPV6(netconn_type(sock->conn))) {
@@ -1455,7 +1404,7 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
 #endif
             remote_port = 0;
             ip_addr_set_any(NETCONNTYPE_ISIPV6(netconn_type(sock->conn)), &buf.addr);
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
         }
 #endif
         
@@ -1988,7 +1937,7 @@ again:
 int
 lwip_shutdown(int s, int how)
 {
-#ifndef LWIP_ESP8266
+#if ! ESP_LWIP
 
   struct lwip_sock *sock;
   err_t err;
@@ -2395,6 +2344,16 @@ lwip_getsockopt_impl(int s, int level, int optname, void *optval, socklen_t *opt
                   s, *(int *)optval));
       break;
 #endif /* LWIP_TCP_KEEPALIVE */
+
+#if ESP_PER_SOC_TCP_WND
+    case TCP_WINDOW:
+    *(int*)optval = (int)sock->conn->pcb.tcp->per_soc_tcp_wnd;
+    break;
+    case TCP_SNDBUF:
+    *(int*)optval = (int)sock->conn->pcb.tcp->per_soc_tcp_snd_buf;
+    break;
+#endif
+
     default:
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, IPPROTO_TCP, UNIMPL: optname=0x%x, ..)\n",
                   s, optname));
@@ -2792,6 +2751,16 @@ lwip_setsockopt_impl(int s, int level, int optname, const void *optval, socklen_
                   s, sock->conn->pcb.tcp->keep_cnt));
       break;
 #endif /* LWIP_TCP_KEEPALIVE */
+
+#if ESP_PER_SOC_TCP_WND
+    case TCP_WINDOW:
+    sock->conn->pcb.tcp->per_soc_tcp_wnd = ((u32_t)(*(const int*)optval)) * TCP_MSS;
+    break;
+    case TCP_SNDBUF:
+    sock->conn->pcb.tcp->per_soc_tcp_snd_buf = ((u32_t)(*(const int*)optval)) * TCP_MSS;
+    break;
+#endif
+
     default:
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_TCP, UNIMPL: optname=0x%x, ..)\n",
                   s, optname));
@@ -3108,7 +3077,7 @@ static void lwip_socket_drop_registered_memberships(int s)
 }
 #endif /* LWIP_IGMP */
 
-#if LWIP_THREAD_SAFE
+#if ESP_THREAD_SAFE
 
 int
 lwip_sendto_r(int s, const void *data, size_t size, int flags,

@@ -14,6 +14,9 @@
 #ifndef _SOC_RTC_CNTL_REG_H_
 #define _SOC_RTC_CNTL_REG_H_
 
+/* The value that needs to be written to RTC_CNTL_WDT_WKEY to write-enable the wdt registers */
+#define RTC_CNTL_WDT_WKEY_VALUE 0x50D83AA1
+
 
 #include "soc.h"
 #define RTC_CNTL_OPTIONS0_REG          (DR_REG_RTCCNTL_BASE + 0x0)
@@ -235,6 +238,9 @@
 #define RTC_CNTL_TIME_VALID_M  (BIT(30))
 #define RTC_CNTL_TIME_VALID_V  0x1
 #define RTC_CNTL_TIME_VALID_S  30
+
+/* frequency of RTC slow clock, Hz */
+#define RTC_CTNL_SLOWCLK_FREQ   150000
 
 #define RTC_CNTL_TIME0_REG          (DR_REG_RTCCNTL_BASE + 0x10)
 /* RTC_CNTL_TIME_LO : RO ;bitpos:[31:0] ;default: 32'h0 ; */

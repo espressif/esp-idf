@@ -152,9 +152,9 @@
  *----------------------------------------------------------*/
 
 #define configUSE_PREEMPTION			1
-#define configUSE_IDLE_HOOK				0
+#define configUSE_IDLE_HOOK				( CONFIG_FREERTOS_LEGACY_IDLE_HOOK )
 
-#define configUSE_TICK_HOOK				0
+#define configUSE_TICK_HOOK				( CONFIG_FREERTOS_LEGACY_TICK_HOOK )
 
 #define configTICK_RATE_HZ				( CONFIG_FREERTOS_HZ )
 
@@ -180,7 +180,7 @@
 /* The Xtensa port uses a separate interrupt stack. Adjust the stack size */
 /* to suit the needs of your specific application.                        */
 #ifndef configISR_STACK_SIZE
-#define configISR_STACK_SIZE			1024//2048
+#define configISR_STACK_SIZE			CONFIG_FREERTOS_ISR_STACKSIZE
 #endif
 
 /* Minimal heap size to make sure examples can run on memory limited
@@ -231,6 +231,7 @@
 #define INCLUDE_vTaskDelayUntil				1
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
+#define INCLUDE_pcTaskGetTaskName			1
 
 #if CONFIG_ENABLE_MEMORY_DEBUG
 #define configENABLE_MEMORY_DEBUG 1
@@ -251,6 +252,8 @@
 
 #define configUSE_NEWLIB_REENTRANT		1
 
+#define configSUPPORT_DYNAMIC_ALLOCATION    1
+
 /* Test FreeRTOS timers (with timer task) and more. */
 /* Some files don't compile if this flag is disabled */
 #define configUSE_TIMERS                    1
@@ -262,12 +265,6 @@
 #define INCLUDE_eTaskGetState               1
 #define configUSE_QUEUE_SETS                1
 
-#if (!defined XT_INTEXC_HOOKS)
-#define configXT_INTEXC_HOOKS               1   /* Exception hooks used by certain tests */
-#if configUSE_TRACE_FACILITY_2
-#define configASSERT_2						1	/* Specific to Xtensa port */
-#endif
-#endif
 
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0

@@ -47,11 +47,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR STORE_ATTR = __FILE__;
-#endif
-
-
 /** helper struct for gethostbyname_r to access the char* buffer */
 struct gethostbyname_r_helper {
   ip_addr_t *addr_list[2];

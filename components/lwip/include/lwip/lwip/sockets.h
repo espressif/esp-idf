@@ -190,7 +190,6 @@ struct msghdr {
 #define SO_CONTIMEO    0x1009 /* Unimplemented: connect timeout */
 #define SO_NO_CHECK    0x100a /* don't create UDP checksum */
 
-
 /*
  * Structure used for manipulating linger option.
  */
@@ -250,6 +249,11 @@ struct linger {
 #define TCP_KEEPIDLE   0x03    /* set pcb->keep_idle  - Same as TCP_KEEPALIVE, but use seconds for get/setsockopt */
 #define TCP_KEEPINTVL  0x04    /* set pcb->keep_intvl - Use seconds for get/setsockopt */
 #define TCP_KEEPCNT    0x05    /* set pcb->keep_cnt   - Use number of probes sent for get/setsockopt */
+#if ESP_PER_SOC_TCP_WND
+#define TCP_WINDOW     0x06    /* set pcb->per_soc_tcp_wnd */
+#define TCP_SNDBUF     0x07    /* set pcb->per_soc_tcp_snd_buf */
+#endif
+
 #endif /* LWIP_TCP */
 
 #if LWIP_IPV6
@@ -505,7 +509,7 @@ int lwip_fcntl(int s, int cmd, int val);
 #if LWIP_COMPAT_SOCKETS
 #if LWIP_COMPAT_SOCKETS != 2
 
-#if LWIP_THREAD_SAFE
+#if ESP_THREAD_SAFE
 
 int lwip_accept_r(int s, struct sockaddr *addr, socklen_t *addrlen);
 int lwip_bind_r(int s, const struct sockaddr *name, socklen_t namelen);
@@ -590,7 +594,7 @@ int lwip_fcntl_r(int s, int cmd, int val);
 #define fcntl(s,cmd,val)                          lwip_fcntl(s,cmd,val)
 #define ioctl(s,cmd,argp)                         lwip_ioctl(s,cmd,argp)
 #endif /* LWIP_POSIX_SOCKETS_IO_NAMES */
-#endif /* LWIP_THREAD_SAFE */
+#endif /* ESP_THREAD_SAFE */
 
 #endif /* LWIP_COMPAT_SOCKETS != 2 */
 

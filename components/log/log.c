@@ -284,7 +284,15 @@ static inline void heap_swap(int i, int j)
 }
 #endif //BOOTLOADER_BUILD
 
-inline IRAM_ATTR uint32_t esp_log_early_timestamp()
+
+#ifndef BOOTLOADER_BUILD
+#define ATTR IRAM_ATTR
+#else
+#define ATTR
+#endif // BOOTLOADER_BUILD
+
+
+uint32_t ATTR esp_log_early_timestamp()
 {
     return xthal_get_ccount() / (CPU_CLK_FREQ_ROM / 1000);
 }
@@ -305,9 +313,6 @@ uint32_t IRAM_ATTR esp_log_timestamp()
 
 #else
 
-uint32_t IRAM_ATTR esp_log_timestamp()
-{
-    return esp_log_early_timestamp();
-}
+uint32_t esp_log_timestamp() __attribute__((alias("esp_log_early_timestamp")));
 
 #endif //BOOTLOADER_BUILD

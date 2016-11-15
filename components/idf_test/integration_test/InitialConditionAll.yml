@@ -1,0 +1,2959 @@
+initial condition:
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:2']
+  - - SSC SSC1 ap -Q
+    - ['R SSC1 RE "\+APCONFIG:%%s,%%s,\d+,\d+,\d+,4,"%%(<target_ssid>,<target_password>)']
+  - - SSC SSC1 dhcp -Q -o 2
+    - ['R SSC1 C +DHCP:AP,STARTED']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  initial condition detail: AP mode, DHCP on, will autogen a TC with initial condition
+    APSTA1
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 31.0
+  tag: APM1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:2']
+  - - SSC SSC1 ap -Q
+    - ['R SSC1 RE "\+APCONFIG:%%s,%%s,\d+,\d+,\d+,4,"%%(<target_ssid>,<target_password>)']
+  - - SSC SSC1 ap -L
+    - ['R SSC1 RE "\+LSTA:.+,%%s"%%(<pc_ip_wifi>)']
+  - - SSC SSC1 dhcp -Q -o 2
+    - ['R SSC1 C +DHCP:AP,STARTED']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  initial condition detail: AP mode, PC join AP, DHCP on, will autogen a TC with initial
+    condition APSTA2
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 38.0
+  tag: APM2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:2']
+  - - SSC SSC1 ap -Q
+    - ['R SSC1 RE "\+APCONFIG:%%s,%%s,\d+,\d+,\d+,4,"%%(<target_ssid>,<target_password>)']
+  - - SSC SSC1 dhcp -Q -o 2
+    - ['R SSC1 C +DHCP:AP,STARTED']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  initial condition detail: AP mode, will NOT autogen a TC with initial condition
+    APSTA1
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 31.0
+  tag: APO1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:2']
+  - - SSC SSC1 ap -Q
+    - ['R SSC1 RE "\+APCONFIG:%%s,%%s,\d+,\d+,\d+,4,"%%(<target_ssid>,<target_password>)']
+  - - SSC SSC1 ap -L
+    - ['R SSC1 RE "\+LSTA:.+,%%s"%%(<pc_ip_wifi>)']
+  - - SSC SSC1 dhcp -Q -o 2
+    - ['R SSC1 C +DHCP:AP,STARTED']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  initial condition detail: AP mode, will NOT autogen a TC with initial condition
+    APSTA2
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 38.0
+  tag: APO2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 upgrade -Q -t 1
+    - ['R SSC1 C BIN_ID,0']
+  - - SSC SSC1 upgrade -Q -t 2 -b 0
+    - ['R SSC1 C BIN_INFO,0']
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 upgrade -R -r 1 -s <ota_bin_size>
+    - [R SSC1 NC ERROR C !!!ready!!!]
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  - - SOC SOC1 ULISTEN <test_tcp_port1> <pc_ip>
+    - [R SOC_COM L OK]
+  - - SOC SOC1 SETOPT REPLY BIN
+    - [R SOC_COM C OK]
+  - - SSC SSC1 upgrade -I -b 0 -f 0
+    - ['P SSC1 C +UPGRADE:OK']
+  - - SSC SSC1 upgrade -U -i <pc_ip> -p <test_tcp_port1> -u <ota_bin>
+    - ['P SSC1 C +UPGRADE:SUCCEED']
+  - - SSC SSC1 upgrade -R -b 0
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  initial condition detail: AP only mode, running BIN0 (located on flash id 0)
+  restore cmd set:
+  - ''
+  - - SSC SSC1 upgrade -Q -t 2 -b 0
+    - ['R SSC1 C BIN_INFO,0']
+  - - SSC SSC1 upgrade -R -b 0
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 upgrade -D
+    - ['R SSC1 C +UPGRADE:OK']
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 31.0
+  tag: APOBIN0
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:3']
+  - - SSC SSC1 ap -Q
+    - ['R SSC1 RE "\+APCONFIG:%%s,%%s,\d+,\d+,\d+,4,"%%(<target_ssid>,<target_password>)']
+  - - SSC SSC1 dhcp -Q -o 2
+    - ['R SSC1 C +DHCP:AP,STARTED']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  initial condition detail: testing ap on sta + ap mode (autogen by APM1)
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 59.0
+  tag: APSTA1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:3']
+  - - SSC SSC1 ap -Q
+    - ['R SSC1 RE "\+APCONFIG:%%s,%%s,\d+,\d+,\d+,4,"%%(<target_ssid>,<target_password>)']
+  - - SSC SSC1 ap -L
+    - ['R SSC1 RE "\+LSTA:.+,%%s"%%(<pc_ip_wifi>)']
+  - - SSC SSC1 dhcp -Q -o 2
+    - ['R SSC1 C +DHCP:AP,STARTED']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  initial condition detail: testing ap on sta + ap mode,  PC join AP (autogen by APM2)
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+    - ['R SSC1 C +SAP:OK']
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 66.0
+  tag: APSTA2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:3']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - DELAY 5
+    - ['']
+  - - ATC AT1 CWSAP_DEF <target_ssid> <target_password> <target_channel> <target_auth_enum>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  initial condition detail: StationSoftAP mode
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 24.0
+  tag: ATAP1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 C +CWMODE_CUR:3 L OK']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:1']
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - DELAY 5
+    - ['']
+  - - ATC AT1 CWSAP_DEF <target_ssid> <target_password> <target_channel> <target_auth_enum>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  initial condition detail: StationSoftAP mode, PC join Target AP, multi link, use
+    dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 31.0
+  tag: ATAP3
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 C +CWMODE_CUR:3 L OK']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:0']
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - DELAY 10
+    - ['']
+  - - ATC AT1 CWSAP_DEF <target_ssid> <target_password> <target_channel> <target_auth_enum>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  initial condition detail: StationSoftAP mode, PC join Target AP, single link, use
+    dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 45.0
+  tag: ATAP4
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT
+    - [R AT1 L OK]
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+RST
+    - [R AT1 L OK]
+  initial condition detail: StationSoftAP mode, both PC join Target AP, single link,
+    use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 3.0
+  tag: ATAP5
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT
+    - [R AT1 L OK]
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+RST
+    - [R AT1 L OK]
+  initial condition detail: StationSoftAP mode, both PC join Target AP, multi link,
+    use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 3.0
+  tag: ATAP6
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:2']
+  - - ATS AT1 AT+CWDHCP_DEF=0,1
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=2
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=0,1
+    - [R AT1 R *]
+  initial condition detail: SoftAP mode, use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=2
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=0,1
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 59.0
+  tag: ATAPO1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 C +CWMODE_CUR:2 L OK']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:1']
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWDHCP_DEF=0,1
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=2
+    - [R AT1 L OK]
+  - - ATC AT1 CWSAP_DEF <target_ssid> <target_password> <target_channel> <target_auth_enum>
+    - [R AT1 L OK]
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWDHCP_DEF=0,1
+    - [R AT1 R *]
+  initial condition detail: SoftAP mode, PC join Target AP, multi link, use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=2
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CWDHCP_DEF=0,1
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 66.0
+  tag: ATAPO3
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 C +CWMODE_CUR:2 L OK']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:0']
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWDHCP_DEF=0,1
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=2
+    - [R AT1 L OK]
+  - - ATC AT1 CWSAP_DEF <target_ssid> <target_password> <target_channel> <target_auth_enum>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=0,1
+    - [R AT1 R *]
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - ['R PC_COM NC ERROR C +WIFICONN:OK']
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  initial condition detail: SoftAP mode, PC join Target AP, single link, use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=2
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWLIF
+    - [R AT1 P <pc_ip>]
+  - - ATS AT1 AT+CWDHCP_DEF=0,1
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 73.0
+  tag: ATAPO4
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT
+    - [R AT1 L OK]
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+RST
+    - [R AT1 L OK]
+  initial condition detail: SoftAP mode, both PC join Target AP, single link, use
+    dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 3.0
+  tag: ATAPO5
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT
+    - [R AT1 L OK]
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+RST
+    - [R AT1 L OK]
+  initial condition detail: SoftAP mode, both PC join Target AP, multi link, use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 3.0
+  tag: ATAPO6
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:3']
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  initial condition detail: StationSoftAP mode
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 87.0
+  tag: ATAPSTA1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:3']
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  initial condition detail: StationSoftAP mode, DHCP client on
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 87.0
+  tag: ATAPSTA2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:3']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - ['R AT1 C +CWJAP_CUR:', R AT1 P <ap_ssid>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:1']
+  - - ATS AT1 AT+CWDHCP_CUR?
+    - ['R AT1 C DHCP:3']
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  initial condition detail: StationSoftAP mode, connected to AP, multi link, use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 94.0
+  tag: ATAPSTA3
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:3']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - ['R AT1 C +CWJAP_CUR:', R AT1 P <ap_ssid>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:0']
+  - - ATS AT1 AT+CWDHCP_CUR?
+    - ['R AT1 C DHCP:3']
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  initial condition detail: StationSoftAP mode, connected to AP, single link, use
+    dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWDHCP_DEF=2,1
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 101.0
+  tag: ATAPSTA4
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:3']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - ['R AT1 C +CWJAP_CUR:', R AT1 P <ap_ssid>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:1']
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  initial condition detail: StationSoftAP mode, connected to AP, multi link, use static
+    ip
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 129.0
+  tag: ATAPSTA5
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:3']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - ['R AT1 C +CWJAP_CUR:', R AT1 P <ap_ssid>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:0']
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  initial condition detail: StationSoftAP mode, connected to AP, single link, use
+    static ip
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 136.0
+  tag: ATAPSTA6
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT
+    - [R AT1 L OK]
+  - - ATS AT1 AT+RESTORE
+    - [R AT1 L OK, R AT1 C ready]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT
+    - [R AT1 L OK]
+  - - ATS AT1 AT+RESTORE
+    - [R AT1 L OK, R AT1 C ready]
+  initial condition detail: 'first time usage. Use restore function. '
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+RESTORE
+    - [R AT1 L OK, R AT1 C ready]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 143.0
+  tag: ATFTU
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT
+    - [R AT1 L OK]
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+RST
+    - [R AT1 L OK]
+  initial condition detail: none
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 3.0
+  tag: ATNone
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - DELAY 0.1
+    - [dummy]
+  force restore cmd set:
+  - ''
+  - - DELAY 0.1
+    - [dummy]
+  initial condition detail: none 2
+  restore cmd set:
+  - ''
+  - - DELAY 0.1
+    - [dummy]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 108.0
+  tag: ATNone2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:1']
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 L OK]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 L OK]
+  initial condition detail: same as STA1, but will not autogen STA+AP STA test case
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 10.0
+  tag: ATOSTA1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:1']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - ['R AT1 C +CWJAP_CUR:', R AT1 P <ap_ssid>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:0']
+  - - ATS AT1 AT+CWDHCP_CUR?
+    - ['R AT1 C DHCP:3']
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  initial condition detail: same as STA4, but will not autogen STA+AP STA test case
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 17.0
+  tag: ATOSTA4
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 C +CWMODE_CUR:3 C OK']
+  - - ATS AT2 AT+CWMODE_CUR?
+    - ['R AT2 C +CWMODE_CUR:1 C OK']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - [R AT1 NC OK L ERROR]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT2 AT+CWMODE_DEF=1
+    - [R AT2 L OK]
+  - - ATS AT1 AT+CWQAP
+    - [R AT1 L OK]
+  initial condition detail: same as OT2_1, but will not autogen STA+AP STA test case
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT2 AT+CWMODE_DEF=1
+    - [R AT2 L OK]
+  - - ATS AT1 AT+CWQAP
+    - [R AT1 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 52.0
+  tag: ATOT2_1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:1']
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 L OK]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 L OK]
+  initial condition detail: station mode, use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 10.0
+  tag: ATSTA1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:1']
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 L OK]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 L OK]
+  initial condition detail: station mode, DHCP client on, use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 10.0
+  tag: ATSTA2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:1']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - ['R AT1 C +CWJAP_CUR:', R AT1 P <ap_ssid>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:1']
+  - - ATS AT1 AT+CWDHCP_CUR?
+    - ['R AT1 C DHCP:3']
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  initial condition detail: station mode, connected to AP, multi link, use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 38.0
+  tag: ATSTA3
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:1']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - ['R AT1 C +CWJAP_CUR:', R AT1 P <ap_ssid>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:0']
+  - - ATS AT1 AT+CWDHCP_CUR?
+    - ['R AT1 C DHCP:3']
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  initial condition detail: station mode, connected to AP, single link, use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CWDHCP_DEF=1,1
+    - [R AT1 R *]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 17.0
+  tag: ATSTA4
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:1']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - ['R AT1 C +CWJAP_CUR:', R AT1 P <ap_ssid>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:1']
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  initial condition detail: station mode, connected to AP, multi link, use static
+    ip
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=1
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 115.0
+  tag: ATSTA5
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 L +CWMODE_CUR:1']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - ['R AT1 C +CWJAP_CUR:', R AT1 P <ap_ssid>]
+  - - ATS AT1 AT+CIPMUX?
+    - ['R AT1 L +CIPMUX:0']
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  initial condition detail: station mode, connected to AP, single link, use static
+    ip
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=1
+    - [R AT1 L OK]
+  - - ATC AT1 CWJAP_DEF <ap_ssid> <ap_password>
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPSERVER=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPCLOSE <max_conn>
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMUX=0
+    - [R AT1 L OK]
+  - - ATS AT1 AT+CIPCLOSE
+    - [R AT1 R *]
+  - - ATS AT1 AT+CIPMODE=0
+    - [R AT1 R *]
+  - - ATC AT1 CIPSTA_DEF <target_static_ip>
+    - [R AT1 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 122.0
+  tag: ATSTA6
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 C +CWMODE_CUR:3 C OK']
+  - - ATS AT2 AT+CWMODE_CUR?
+    - ['R AT2 C +CWMODE_CUR:1 C OK']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - [R AT1 NC OK L ERROR]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT2 AT+CWMODE_DEF=1
+    - [R AT2 L OK]
+  - - ATS AT1 AT+CWQAP
+    - [R AT1 L OK]
+  initial condition detail: Target 1 in StationSoftAP mode, Target 2 in station mode,
+    use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=3
+    - [R AT1 L OK]
+  - - ATS AT2 AT+CWMODE_DEF=1
+    - [R AT2 L OK]
+  - - ATS AT1 AT+CWQAP
+    - [R AT1 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 52.0
+  tag: ATT2_1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ATS AT1 AT+CWMODE_CUR?
+    - ['R AT1 C +CWMODE_CUR:2 C OK']
+  - - ATS AT2 AT+CWMODE_CUR?
+    - ['R AT2 C +CWMODE_CUR:3 C OK']
+  - - ATS AT1 AT+CWJAP_CUR?
+    - [R AT1 NC OK L ERROR]
+  force restore cmd set:
+  - ''
+  - - ATS AT1 AT+RST
+    - [R AT1 C ready]
+  - - ATS AT1 AT+CWMODE_DEF=2
+    - [R AT1 L OK]
+  - - ATS AT2 AT+CWMODE_DEF=3
+    - [R AT2 L OK]
+  initial condition detail: Target 1 in SoftAP mode, Target 2 in StationSoftAP mode,
+    use dhcp
+  restore cmd set:
+  - ''
+  - - ATSO AT1 +++
+    - ['']
+  - - ATS AT1 AT
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - ATS AT1 AT+CWMODE_DEF=2
+    - [R AT1 L OK]
+  - - ATS AT2 AT+CWMODE_DEF=3
+    - [R AT2 L OK]
+  restore post cmd set:
+  - ''
+  - - ATS AT1 AT+CWSTOPSMART
+    - [R AT1 R *]
+  - - ATS AT1 AT+SAVETRANSLINK=0
+    - [R AT1 R *]
+  - - AT+SYSRAM
+    - ['R AT1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 80.0
+  tag: ATT2_2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ASSERT
+    - [dummy]
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] reboot
+    - ['P SSC[1-<node_num>] C !!!ready!!!']
+  - - SSC SSC[1-<node_num>] mesh -E -o 0
+    - ['P SSC[1-<node_num>] C +MESH:DISABLED']
+  - - SSC SSC[1-<node_num>] op -S -o 1
+    - ['P SSC[1-<node_num>] C +MODE:OK']
+  - - SSC SSC[1-<node_num>] sta -D
+    - ['P SSC[1-<node_num>] C +QAP:OK']
+  initial condition detail: all mesh node disabled
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -E -o 0
+    - ['P SSC[1-<node_num>] C +MESH:DISABLED']
+  - - SSC SSC[1-<node_num>] op -S -o 1
+    - ['P SSC[1-<node_num>] C +MODE:OK']
+  - - SSC SSC[1-<node_num>] sta -D
+    - ['P SSC[1-<node_num>] C +QAP:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 31.0
+  tag: DISABLED
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ASSERT
+    - [dummy]
+  - - SSC SSC[1-<node_num>] mesh -Q -t 4
+    - ['R SSC[1-<node_num>] T <node_num>']
+  - - MESHTREE
+    - ['R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)']
+  force restore cmd set:
+  - ''
+  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>
+    - [R SOC_COM L OK]
+  - - SSC SSC[1-<node_num>] mesh -E -o 0
+    - ['P SSC[1-<node_num>] C +MESH:DISABLED']
+  - - SSC SSC[1-<node_num>] mesh -I -g <group_id> -a 4 -k <target_password> -i <pc_ip>
+      -p <test_tcp_port1> -h 5
+    - ['P SSC[1-<node_num>] C ENCRYPTION,OK C GROUP,OK C SERVER,OK C HOP,OK']
+  - - SSC SSC[1-<node_num>] mesh -A -s <ap_ssid> -k <ap_password>
+    - ['P SSC[1-<node_num>] C +MESHINIT:AP,OK']
+  - - SSC SSC1 mesh -E -o 1 -t 2
+    - ['P SSC1 C +MESH:ENABLED']
+  - - SOC SOC1 MACCEPT GSOC1
+    - [R SOC_COM L OK]
+  - - SSC SSC[2-<node_num>] mesh -E -o 1 -t 2
+    - ['P SSC[2-<node_num>] C +MESH:ENABLED']
+  - - DELAY 60
+    - ['']
+  - - SSC SSC[1-<node_num>] mesh -C
+    - ['P SSC[1-<node_num>] C +MESH:CONNECTED']
+  - - SSC SSC[1-<node_num>] mesh -Q -t 4
+    - ['R SSC[1-<node_num>] T <node_num>']
+  - - MESHTREE
+    - ['R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)']
+  - - SSC SSC[1-<node_num>] mesh -O -t 1 -o 1
+    - ['P SSC[1-<node_num>] C +MESH:OK']
+  initial condition detail: all mesh node enabled as ONLINE, mesh network established
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] reboot
+    - ['P SSC[1-<node_num>] C !!!ready!!!']
+  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>
+    - [R SOC_COM L OK]
+  - - SSC SSC[1-<node_num>] mesh -E -o 0
+    - ['P SSC[1-<node_num>] C +MESH:DISABLED']
+  - - SSC SSC[1-<node_num>] mesh -I -g <group_id> -a 4 -k <target_password> -i <pc_ip>
+      -p <test_tcp_port1> -h 5
+    - ['P SSC[1-<node_num>] C ENCRYPTION,OK C GROUP,OK C SERVER,OK C HOP,OK']
+  - - SSC SSC[1-<node_num>] mesh -A -s <ap_ssid> -k <ap_password>
+    - ['P SSC[1-<node_num>] C +MESHINIT:AP,OK']
+  - - SSC SSC1 mesh -E -o 1 -t 2
+    - ['P SSC1 C +MESH:ENABLED']
+  - - SOC SOC1 MACCEPT GSOC1
+    - [R SOC_COM L OK]
+  - - SSC SSC[2-<node_num>] mesh -E -o 1 -t 2
+    - ['P SSC[2-<node_num>] C +MESH:ENABLED']
+  - - DELAY 60
+    - ['']
+  - - SSC SSC[1-<node_num>] mesh -C
+    - ['P SSC[1-<node_num>] C +MESH:CONNECTED']
+  - - SSC SSC[1-<node_num>] mesh -Q -t 4
+    - ['R SSC[1-<node_num>] T <node_num>']
+  - - MESHTREE
+    - ['R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)']
+  - - SSC SSC[1-<node_num>] mesh -O -t 1 -o 1
+    - ['P SSC[1-<node_num>] C +MESH:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 17.0
+  tag: ENABLED_1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - ASSERT
+    - [dummy]
+  - - SSC SSC[1-<node_num>] mesh -Q -t 4
+    - ['R SSC[1-<node_num>] T <node_num>']
+  - - MESHTREE
+    - ['R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)']
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] reboot
+    - ['P SSC[1-<node_num>] C !!!ready!!!']
+  - - SSC SSC[1-<node_num>] mesh -I -g <group_id> -a 4 -k <target_password> -i <pc_ip>
+      -p <test_tcp_port1> -h 5
+    - ['P SSC[1-<node_num>] C ENCRYPTION,OK C GROUP,OK C SERVER,OK C HOP,OK']
+  - - SSC SSC1 mesh -A -s <ap_ssid> -k <ap_password>
+    - ['P SSC1 C +MESHINIT:AP,OK']
+  - - SSC SSC1 mesh -E -o 1 -t 1
+    - ['P SSC1 C +MESH:ENABLED']
+  - - SSC SSC[2-<node_num>] mesh -E -o 1 -t 2
+    - ['']
+  - - DELAY 60
+    - ['P SSC[2-<node_num>] C +MESH:ENABLED']
+  - - SSC SSC[1-<node_num>] mesh -C
+    - ['P SSC[1-<node_num>] C +MESH:CONNECTED']
+  - - SSC SSC[1-<node_num>] mesh -Q -t 4
+    - ['R SSC[1-<node_num>] T <node_num>']
+  - - MESHTREE
+    - ['R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)']
+  initial condition detail: root as LOCAL, rest node as ONLINE, mesh network established
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -E -o 0
+    - ['P SSC[1-<node_num>] C +MESH:DISABLED']
+  - - SSC SSC[1-<node_num>] mesh -I -g <group_id> -a 4 -k <target_password> -i <pc_ip>
+      -p <test_tcp_port1> -h 5
+    - ['P SSC[1-<node_num>] C ENCRYPTION,OK C GROUP,OK C SERVER,OK C HOP,OK']
+  - - SSC SSC1 mesh -A -s <ap_ssid> -k <ap_password>
+    - ['P SSC1 C +MESHINIT:AP,OK']
+  - - SSC SSC1 mesh -E -o 1 -t 1
+    - ['P SSC1 C +MESH:ENABLED']
+  - - SSC SSC[2-<node_num>] mesh -E -o 1 -t 2
+    - ['']
+  - - DELAY 60
+    - ['P SSC[2-<node_num>] C +MESH:ENABLED']
+  - - SSC SSC[1-<node_num>] mesh -C
+    - ['P SSC[1-<node_num>] C +MESH:CONNECTED']
+  - - SSC SSC[1-<node_num>] mesh -Q -t 4
+    - ['R SSC[1-<node_num>] T <node_num>']
+  - - MESHTREE
+    - ['R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 24.0
+  tag: ENABLED_2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:2']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  - - SSC SSC1 espnow -D
+    - ['R SSC1 C +ESPNOW:']
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-<dev_num>] reboot
+    - ['R SSC[1-<dev_num>] C !!!ready!!!']
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -m <target_ap_mac> -o 2
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 espnow -D
+    - ['R SSC1 C +ESPNOW:']
+  initial condition detail: one target in AP mode and espnow is de-initialized
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 mac -S -m <target_ap_mac> -o 2
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC1 espnow -D
+    - ['R SSC1 C +ESPNOW:']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 17.0
+  tag: NOW1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC[1-<dev_num>] op -Q
+    - ['R SSC[1-<dev_num>] C +CURMODE:2']
+  - - SSC SSC[1-<dev_num>] mac -Q -o 3
+    - ['R SSC[1-<dev_num>] P <target[1-<dev_num>]_ap_mac> P <target[1-<dev_num>]_mac>']
+  - - SSC SSC[1-<dev_num>] espnow -D
+    - ['R SSC[1-<dev_num>] C +ESPNOW:']
+  - - SSC SSC[1-<dev_num>] espnow -I
+    - ['R SSC[1-<dev_num>] C +ESPNOW:OK']
+  - - SSC SSC[1-<dev_num>] espnow -R -t Set -r 2
+    - ['R SSC[1-<dev_num>] C +ESPNOW:OK']
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-<dev_num>] reboot
+    - ['R SSC[1-<dev_num>] C !!!ready!!!']
+  - - SSC SSC[1-<dev_num>] op -S -o 3
+    - ['R SSC[1-<dev_num>] C +MODE:OK']
+  - - SSC SSC[1-<dev_num>] mac -S -m <target[1-<dev_num>]_ap_mac> -o 2
+    - ['R SSC[1-<dev_num>] C +MAC:AP,OK']
+  - - SSC SSC[1-<dev_num>] mac -S -m <target[1-<dev_num>]_mac> -o 1
+    - ['R SSC[1-<dev_num>] C +MAC:STA,OK']
+  - - SSC SSC[1-<dev_num>] op -S -o 2
+    - ['R SSC[1-<dev_num>] C +MODE:OK']
+  - - SSC SSC[1-<dev_num>] espnow -D
+    - ['R SSC[1-<dev_num>] C +ESPNOW:']
+  - - SSC SSC[1-<dev_num>] espnow -I
+    - ['R SSC[1-<dev_num>] C +ESPNOW:OK']
+  - - SSC SSC[1-<dev_num>] espnow -R -t Set -r 2
+    - ['R SSC[1-<dev_num>] C +ESPNOW:OK']
+  initial condition detail: multiple (<dev_num>) targets in AP mode, espnow is initialized
+    with self role slave
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-<dev_num>] op -S -o 3
+    - ['R SSC[1-<dev_num>] C +MODE:OK']
+  - - SSC SSC[1-<dev_num>] mac -S -m <target[1-<dev_num>]_ap_mac> -o 2
+    - ['R SSC[1-<dev_num>] C +MAC:AP,OK']
+  - - SSC SSC[1-<dev_num>] mac -S -m <target[1-<dev_num>]_mac> -o 1
+    - ['R SSC[1-<dev_num>] C +MAC:STA,OK']
+  - - SSC SSC[1-<dev_num>] op -S -o 2
+    - ['R SSC[1-<dev_num>] C +MODE:OK']
+  - - SSC SSC[1-<dev_num>] espnow -D
+    - ['R SSC[1-<dev_num>] C +ESPNOW:']
+  - - SSC SSC[1-<dev_num>] espnow -I
+    - ['R SSC[1-<dev_num>] C +ESPNOW:OK']
+  - - SSC SSC[1-<dev_num>] espnow -R -t Set -r 2
+    - ['R SSC[1-<dev_num>] C +ESPNOW:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 24.0
+  tag: NOW2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - DELAY 0.1
+    - [dummy]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  initial condition detail: none
+  restore cmd set:
+  - ''
+  - - DELAY 0.1
+    - [dummy]
+  restore post cmd set:
+  - ''
+  - - DELAY 0.1
+    - [dummy]
+  script path: InitCondBase.py
+  start: 10.0
+  tag: None
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 sp -D
+    - ['R SSC1 C +SP:OK']
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 sp -D
+    - ['R SSC1 C +SP:OK']
+  initial condition detail: one target and simple is de-inited
+  restore cmd set:
+  - ''
+  - - SSC SSC1 sp -D
+    - ['R SSC1 C +SP:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 31.0
+  tag: PAIR1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC[1,2] op -Q
+    - ['R SSC[1,2] C +MODE:[2,1]']
+  - - SSC SSC[1,2] mac -Q -o 3
+    - ['R SSC[1,2] P <target[1,2]_ap_mac> P <target[1,2]_mac>']
+  - - SSC SSC[1,2] sp -D
+    - ['R SSC[1,2] C +SP:OK']
+  - - SSC SSC[1,2] sp -I
+    - ['R SSC[1,2] C +SP:OK']
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1,2] reboot
+    - ['R SSC[1,2] C !!!ready!!!']
+  - - SSC SSC[1,2] op -S -o 3
+    - ['R SSC[1,2] C +MODE:OK']
+  - - SSC SSC[1,2] mac -S -m <target[1,2]_ap_mac> -o 2
+    - ['R SSC[1,2] C +MAC:AP,OK']
+  - - SSC SSC[1,2] mac -S -m <target[1,2]_mac> -o 1
+    - ['R SSC[1,2] C +MAC:STA,OK']
+  - - SSC SSC[1,2] op -S -o [2,1]
+    - ['R SSC[1,2] C +MODE:OK']
+  - - SSC SSC[1,2] sp -D
+    - ['R SSC[1,2] C +SP:OK']
+  - - SSC SSC[1,2] sp -I
+    - ['R SSC[1,2] C +SP:OK']
+  initial condition detail: target1 in AP mode, target2 in STA mode, two targets de-init
+    and init simple pair
+  restore cmd set:
+  - ''
+  - - SSC SSC[1,2] op -S -o 3
+    - ['R SSC[1,2] C +MODE:OK']
+  - - SSC SSC[1,2] mac -S -m <target[1,2]_ap_mac> -o 2
+    - ['R SSC[1,2] C +MAC:AP,OK']
+  - - SSC SSC[1,2] mac -S -m <target[1,2]_mac> -o 1
+    - ['R SSC[1,2] C +MAC:STA,OK']
+  - - SSC SSC[1,2] op -S -o [2,1]
+    - ['R SSC[1,2] C +MODE:OK']
+  - - SSC SSC[1,2] sp -D
+    - ['R SSC[1,2] C +SP:OK']
+  - - SSC SSC[1,2] sp -I
+    - ['R SSC[1,2] C +SP:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 38.0
+  tag: PAIR2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC[1,2] op -Q
+    - ['R SSC[1,2] C +MODE:[3,3]']
+  - - SSC SSC[1,2] mac -Q -o 3
+    - ['R SSC[1,2] P <target[1,2]_ap_mac> P <target[1,2]_mac>']
+  - - SSC SSC[1,2] sp -D
+    - ['R SSC[1,2] C +SP:OK']
+  - - SSC SSC[1,2] sp -I
+    - ['R SSC[1,2] C +SP:OK']
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1,2] reboot
+    - ['R SSC[1,2] C !!!ready!!!']
+  - - SSC SSC[1,2] op -S -o [3,3]
+    - ['R SSC[1,2] C +MODE:OK']
+  - - SSC SSC[1,2] mac -S -m <target[1,2]_ap_mac> -o 2
+    - ['R SSC[1,2] C +MAC:AP,OK']
+  - - SSC SSC[1,2] mac -S -m <target[1,2]_mac> -o 1
+    - ['R SSC[1,2] C +MAC:STA,OK']
+  - - SSC SSC[1,2] sp -D
+    - ['R SSC[1,2] C +SP:OK']
+  - - SSC SSC[1,2] sp -I
+    - ['R SSC[1,2] C +SP:OK']
+  initial condition detail: target1 and target2 in STA+AP mode, two targets de-init
+    and init simple pair
+  restore cmd set:
+  - ''
+  - - SSC SSC[1,2] op -S -o [3,3]
+    - ['R SSC[1,2] C +MODE:OK']
+  - - SSC SSC[1,2] mac -S -m <target[1,2]_ap_mac> -o 2
+    - ['R SSC[1,2] C +MAC:AP,OK']
+  - - SSC SSC[1,2] mac -S -m <target[1,2]_mac> -o 1
+    - ['R SSC[1,2] C +MAC:STA,OK']
+  - - SSC SSC[1,2] sp -D
+    - ['R SSC[1,2] C +SP:OK']
+  - - SSC SSC[1,2] sp -I
+    - ['R SSC[1,2] C +SP:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 45.0
+  tag: PAIR3
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:3']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:']
+  - - SSC SSC1 dhcp -Q -o 1
+    - ['R SSC1 C +DHCP:STA,STARTED']
+  - - SSC SSC1 mac -Q -o 1
+    - [R SSC1 P <target_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  initial condition detail: testing sta on sta + ap mode, quit AP (autogen by STAM1)
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 45.0
+  tag: STAAP1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:3']
+  - - SSC SSC1 sta -Q
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  - - SSC SSC1 dhcp -Q -o 1
+    - ['R SSC1 C +DHCP:STA,STARTED']
+  - - SSC SSC1 mac -Q -o 1
+    - [R SSC1 P <target_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  initial condition detail: testing sta on sta + ap mode,  join AP, DHCP on (autogen
+    by STAM2)
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 52.0
+  tag: STAAP2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 upgrade -Q -t 1
+    - ['R SSC1 C BIN_ID,0']
+  - - SSC SSC1 upgrade -Q -t 2 -b 0
+    - ['R SSC1 C BIN_INFO,0']
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 upgrade -R -r 1 -s <ota_bin_size>
+    - [R SSC1 NC ERROR C !!!ready!!!]
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  - - SOC SOC1 ULISTEN <test_tcp_port1> <pc_ip>
+    - [R SOC_COM L OK]
+  - - SOC SOC1 SETOPT REPLY BIN
+    - [R SOC_COM C OK]
+  - - SSC SSC1 upgrade -I -b 0 -f 0
+    - ['P SSC1 C +UPGRADE:OK']
+  - - SSC SSC1 upgrade -U -i <pc_ip> -p <test_tcp_port1> -u <ota_bin>
+    - ['P SSC1 C +UPGRADE:SUCCEED']
+  - - SSC SSC1 upgrade -R -b 0
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  initial condition detail: APSTA mode, connected to AP, running BIN0 (located on
+    flash id 0)
+  restore cmd set:
+  - ''
+  - - SSC SSC1 upgrade -Q -t 2 -b 0
+    - ['R SSC1 C BIN_INFO,0']
+  - - SSC SSC1 upgrade -R -b 0
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 upgrade -D
+    - ['R SSC1 C +UPGRADE:OK']
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 24.0
+  tag: STAAPBIN0
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:1']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:']
+  - - SSC SSC1 dhcp -Q -o 1
+    - ['R SSC1 C +DHCP:STA,STARTED']
+  - - SSC SSC1 mac -Q -o 1
+    - [R SSC1 P <target_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  initial condition detail: sta mode, quit AP, DHCP on, will autogen a TC with initial
+    condition STAAP1
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 17.0
+  tag: STAM1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:1']
+  - - SSC SSC1 sta -Q
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  - - SSC SSC1 dhcp -Q -o 1
+    - ['R SSC1 C +DHCP:STA,STARTED']
+  - - SSC SSC1 mac -Q -o 1
+    - [R SSC1 P <target_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  initial condition detail: sta mode, join AP, DHCP on, will autogen a TC with initial
+    condition STAAP2
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 24.0
+  tag: STAM2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 upgrade -Q -t 1
+    - ['R SSC1 C BIN_ID,0']
+  - - SSC SSC1 upgrade -Q -t 2 -b 0
+    - ['R SSC1 C BIN_INFO,0']
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 upgrade -R -r 1 -s <ota_bin_size>
+    - [R SSC1 NC ERROR C !!!ready!!!]
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  - - SOC SOC1 ULISTEN <test_tcp_port1> <pc_ip>
+    - [R SOC_COM L OK]
+  - - SOC SOC1 SETOPT REPLY BIN
+    - [R SOC_COM C OK]
+  - - SSC SSC1 upgrade -I -b 0 -f 0
+    - ['P SSC1 C +UPGRADE:OK']
+  - - SSC SSC1 upgrade -U -i <pc_ip> -p <test_tcp_port1> -u <ota_bin>
+    - ['P SSC1 C +UPGRADE:SUCCEED']
+  - - SSC SSC1 upgrade -R -b 0
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  initial condition detail: STA mode, connected to AP, running BIN0 (located on flash
+    id 0)
+  restore cmd set:
+  - ''
+  - - SSC SSC1 upgrade -Q -t 2 -b 0
+    - ['R SSC1 C BIN_INFO,0']
+  - - SSC SSC1 upgrade -R -b 0
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 upgrade -D
+    - ['R SSC1 C +UPGRADE:OK']
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 17.0
+  tag: STAMBIN0
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:1']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:']
+  - - SSC SSC1 dhcp -Q -o 1
+    - ['R SSC1 C +DHCP:STA,STARTED']
+  - - SSC SSC1 mac -Q -o 1
+    - [R SSC1 P <target_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  initial condition detail: sta mode, quit AP, will NOT autogen a TC with initial
+    condition STAAP1
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP:']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 17.0
+  tag: STAO1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:1']
+  - - SSC SSC1 sta -Q
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  - - SSC SSC1 dhcp -Q -o 1
+    - ['R SSC1 C +DHCP:STA,STARTED']
+  - - SSC SSC1 mac -Q -o 1
+    - [R SSC1 P <target_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  initial condition detail: sta mode, join AP, DHCP on, will NOT autogen a TC with
+    initial condition STAAP2
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC1 dhcp -S -o 1
+    - [R SSC1 C +DHCP]
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - ['R SSC1 C +MAC:STA,OK']
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - ['R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 24.0
+  tag: STAO2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:2']
+  - - SSC SSC2 op -Q
+    - ['R SSC2 C +CURMODE:1']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:']
+  - - SSC SSC2 soc -T
+    - ['']
+  - - SSC SSC1 dhcp -Q -o 2
+    - ['R SSC1 C +DHCP:AP,STARTED']
+  - - SSC SSC2 dhcp -Q -o 1
+    - ['R SSC2 C +DHCP:STA,STARTED']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  - - SSC SSC2 mac -Q -o 1
+    - [R SSC2 P <target2_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC2 reboot
+    - [R SSC2 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC2 op -S -o 1
+    - ['R SSC2 C +MODE:OK']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:']
+  - - SSC SSC2 soc -T
+    - ['']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC2 dhcp -S -o 1
+    - [R SSC2 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - ['R SSC2 C +MAC:STA,OK']
+  initial condition detail: same as T2_1 but will NOT autogen a TC with initial condition
+    T2_2
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC2 op -S -o 1
+    - ['R SSC2 C +MODE:OK']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:']
+  - - SSC SSC2 soc -T
+    - ['']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC2 dhcp -S -o 1
+    - [R SSC2 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - ['R SSC2 C +MAC:STA,OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 73.0
+  tag: T2O_1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:2']
+  - - SSC SSC2 op -Q
+    - ['R SSC2 C +CURMODE:1']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:']
+  - - SSC SSC2 soc -T
+    - ['']
+  - - SSC SSC1 dhcp -Q -o 2
+    - ['R SSC1 C +DHCP:AP,STARTED']
+  - - SSC SSC2 dhcp -Q -o 1
+    - ['R SSC2 C +DHCP:STA,STARTED']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  - - SSC SSC2 mac -Q -o 1
+    - [R SSC2 P <target2_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC2 reboot
+    - [R SSC2 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC2 op -S -o 1
+    - ['R SSC2 C +MODE:OK']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:']
+  - - SSC SSC2 soc -T
+    - ['']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC2 dhcp -S -o 1
+    - [R SSC2 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - ['R SSC2 C +MAC:STA,OK']
+  initial condition detail: target 1 as SoftAP, target 2 as STA, will autogen a TC
+    with initial condition T2_2
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC2 op -S -o 1
+    - ['R SSC2 C +MODE:OK']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:']
+  - - SSC SSC2 soc -T
+    - ['']
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC2 dhcp -S -o 1
+    - [R SSC2 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - ['R SSC2 C +MAC:STA,OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 73.0
+  tag: T2_1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - ['R SSC1 C +CURMODE:3']
+  - - SSC SSC2 op -Q
+    - ['R SSC2 C +CURMODE:3']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:']
+  - - SSC SSC2 soc -T
+    - [R SSC2 C +CLOSEALL]
+  - - SSC SSC1 dhcp -Q -o 2
+    - ['R SSC1 C +DHCP:AP,STARTED']
+  - - SSC SSC2 dhcp -Q -o 1
+    - ['R SSC2 C +DHCP:STA,STARTED']
+  - - SSC SSC1 mac -Q -o 2
+    - [R SSC1 P <target_ap_mac>]
+  - - SSC SSC2 mac -Q -o 1
+    - [R SSC2 P <target2_mac>]
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - [R SSC1 C !!!ready!!!]
+  - - SSC SSC2 reboot
+    - [R SSC2 C !!!ready!!!]
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC2 op -S -o 3
+    - ['R SSC2 C +MODE:OK']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:']
+  - - SSC SSC2 soc -T
+    - [R SSC2 C +CLOSEALL]
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC2 dhcp -S -o 1
+    - [R SSC2 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - ['R SSC2 C +MAC:STA,OK']
+  initial condition detail: target 1 as AP+STA, target 2 as AP+STA (autogen)
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 3
+    - ['R SSC1 C +MODE:OK']
+  - - SSC SSC2 op -S -o 3
+    - ['R SSC2 C +MODE:OK']
+  - - SSC SSC2 sta -D
+    - ['R SSC2 C +QAP:']
+  - - SSC SSC2 soc -T
+    - [R SSC2 C +CLOSEALL]
+  - - SSC SSC1 dhcp -S -o 2
+    - [R SSC1 C +DHCP]
+  - - SSC SSC2 dhcp -S -o 1
+    - [R SSC2 C +DHCP]
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - ['R SSC1 C +MAC:AP,OK']
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - ['R SSC2 C +MAC:STA,OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 ram
+    - ['R SSC1 C +FREEHEAP:']
+  script path: InitCondBase.py
+  start: 80.0
+  tag: T2_2
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - SSC SSC[1-3] op -Q
+    - ['R SSC[1-3] C +CURMODE:3']
+  - - SSC SSC[1-3] phy -Q -o 3
+    - ['R SSC[1-3] C STA,n,40 C AP,n,40']
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-3] reboot
+    - ['R SSC[1-3] C !!!ready!!!']
+  - - SSC SSC[1-3] op -S -o 3
+    - ['R SSC[1-3] C +MODE:OK']
+  - - SSC SSC[1-3] phy -S -o 3 -m n -b 40
+    - ['R SSC[1-3] C +PHY:OK']
+  initial condition detail: '1. target 1 and target 2 set to AP+STA mode, target 3
+    set to STA mode
+
+    2. all interface of target 2,3 set to 11n ht40
+
+    3. config softAP of target 1 and target 2'
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o 3
+    - ['R SSC[1-3] C +MODE:OK']
+  - - SSC SSC[1-3] phy -S -o 3 -m n -b 40
+    - ['R SSC[1-3] C +PHY:OK']
+  restore post cmd set:
+  - ''
+  - - SSC SSC1 soc -T
+    - [R SSC1 C +CLOSEALL]
+  - - SSC SSC1 sta -R -r 1
+    - [R SSC1 C OK]
+  - - SSC SSC1 ram
+    - ['R SSC1 A <heap_size>:(\d+)']
+  script path: InitCondBase.py
+  start: 87.0
+  tag: T3_PHY1
+  test script: InitCondBase
+- check cmd set:
+  - ''
+  - - UT UT1 -
+    - [R UT1 C Tests C Failures C Ignored]
+  force restore cmd set:
+  - ''
+  - - FREBOOT UT1
+    - ['']
+  - - UT UT1 -
+    - [R UT1 C Tests C Failures C Ignored]
+  initial condition detail: At UT menu page
+  restore cmd set:
+  - ''
+  - - FREBOOT UT1
+    - ['']
+  - - UT UT1 -
+    - [R UT1 C Tests C Failures C Ignored]
+  restore post cmd set:
+  - ''
+  - - DELAY 0.1
+    - ['']
+  script path: InitCondBase.py
+  tag: UTINIT1
+  test script: InitCondBase

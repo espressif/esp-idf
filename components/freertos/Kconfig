@@ -93,45 +93,6 @@ config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 
         If using the WiFi stack, this value must be at least 1.
 
-#This still needs to be implemented.
-choice FREERTOS_PANIC
-    prompt "Panic handler behaviour"
-    default FREERTOS_PANIC_PRINT_REBOOT
-    help
-        If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is 
-        invoked. Configure the panic handlers action here.
-
-config FREERTOS_PANIC_PRINT_HALT
-    bool "Print registers and halt"
-    help
-        Outputs the relevant registers over the serial port and halt the 
-        processor. Needs a manual reset to restart.
-
-config FREERTOS_PANIC_PRINT_REBOOT
-    bool "Print registers and reboot"
-    help
-        Outputs the relevant registers over the serial port and immediately
-        reset the processor.
-
-config FREERTOS_PANIC_SILENT_REBOOT
-    bool "Silent reboot"
-    help
-        Just resets the processor without outputting anything
-
-config FREERTOS_PANIC_GDBSTUB
-    bool "Invoke GDBStub"
-    help
-        Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
-        of the crash.
-endchoice
-
-config FREERTOS_DEBUG_OCDAWARE
-    bool "Make exception and panic handlers JTAG/OCD aware"
-    default y
-    help
-        The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
-        instead of panicking, have the debugger stop on the offending instruction.
-
 choice FREERTOS_ASSERT
     prompt "FreeRTOS assertions"
     default FREERTOS_ASSERT_FAIL_ABORT
@@ -160,7 +121,7 @@ endchoice
 
 config FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
     bool "Stop program on scheduler start when JTAG/OCD is detected"
-    depends on FREERTOS_DEBUG_OCDAWARE
+    depends on ESP32_DEBUG_OCDAWARE
     default y
     help
         If JTAG/OCD is connected, stop execution when the scheduler is started and the first
@@ -171,6 +132,43 @@ menuconfig ENABLE_MEMORY_DEBUG
     default n
     help
         Enable this option to show malloc heap block and memory crash detect
+
+config FREERTOS_ISR_STACKSIZE
+    int "ISR stack size"
+    range 1536 32768
+    default 1536
+    help
+        The interrupt handlers have their own stack. The size of the stack can be defined here. 
+        Each processor has its own stack, so the total size occupied will be twice this.
+
+config FREERTOS_LEGACY_HOOKS
+    bool "Use FreeRTOS legacy hooks"
+    default n
+    help
+        FreeRTOS offers a number of hooks/callback functions that are called when a timer
+        tick happens, the idle thread runs etc. esp-idf replaces these by runtime registerable
+        hooks using the esp_register_freertos_xxx_hook system, but for legacy reasons the old
+        hooks can also still be enabled. Please enable this only if you have code that for some
+        reason can't be migrated to the esp_register_freertos_xxx_hook system.
+
+if FREERTOS_LEGACY_HOOKS
+
+config FREERTOS_LEGACY_IDLE_HOOK
+    bool "Enable legacy idle hook"
+    default n
+    help
+        If enabled, FreeRTOS will call a function called vApplicationIdleHook when the idle thread
+        on a CPU is running. Please make sure your code defines such a function.
+
+config FREERTOS_LEGACY_TICK_HOOK
+    bool "Enable legacy tick hook"
+    default n
+    help
+        If enabled, FreeRTOS will call a function called vApplicationTickHook when a FreeRTOS
+        tick is executed. Please make sure your code defines such a function.
+
+endif #FREERTOS_LEGACY_HOOKS
+
 
 menuconfig FREERTOS_DEBUG_INTERNALS
     bool "Debug FreeRTOS internals"
@@ -196,6 +194,8 @@ config FREERTOS_PORTMUX_DEBUG_RECURSIVE
     help
         If enabled, additional debug information will be printed for recursive
         portMUX usage.
+
+
 
 endif # FREERTOS_DEBUG_INTERNALS
 

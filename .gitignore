@@ -19,6 +19,3 @@ GPATH
 examples/*/sdkconfig
 examples/*/sdkconfig.old
 examples/*/build
-
-# Bootloader files
-components/bootloader/src/sdkconfig.old

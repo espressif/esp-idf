@@ -3830,6 +3830,11 @@
 #define DPORT_DATE_S  0
 #define DPORT_DPORT_DATE_VERSION 0x1605190
 
+/* Flash MMU table for PRO CPU */
+#define DPORT_PRO_FLASH_MMU_TABLE ((volatile uint32_t*) 0x3FF10000)
+
+/* Flash MMU table for APP CPU */
+#define DPORT_APP_FLASH_MMU_TABLE ((volatile uint32_t*) 0x3FF12000)
 
 
 

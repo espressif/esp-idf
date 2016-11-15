@@ -18,34 +18,13 @@
 #include "freertos/xtensa_api.h"
 #include "driver/gpio.h"
 #include "soc/soc.h"
+#include "esp_log.h"
 
-//TODO: move debug options to menuconfig
-#define GPIO_DBG_ENABLE     (0)
-#define GPIO_WARNING_ENABLE (0)
-#define GPIO_ERROR_ENABLE   (0)
-#define GPIO_INFO_ENABLE    (0)
-//DBG INFOR 
-#if GPIO_INFO_ENABLE
-#define GPIO_INFO ets_printf
-#else
-#define GPIO_INFO(...)
-#endif
-#if GPIO_WARNING_ENABLE
-#define GPIO_WARNING(format,...) do{\
-        ets_printf("[waring][%s#%u]",__FUNCTION__,__LINE__);\
-        ets_printf(format,##__VA_ARGS__);\
-}while(0)
-#else 
-#define GPIO_WARNING(...)
-#endif
-#if GPIO_ERROR_ENABLE
-#define GPIO_ERROR(format,...) do{\
-        ets_printf("[error][%s#%u]",__FUNCTION__,__LINE__);\
-        ets_printf(format,##__VA_ARGS__);\
-}while(0)
-#else 
-#define GPIO_ERROR(...)
-#endif 
+static const char* GPIO_TAG = "GPIO";
+#define GPIO_CHECK(a, str, ret_val) if (!(a)) {                                         \
+        ESP_LOGE(GPIO_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
+        return (ret_val);                                                               \
+        }
 
 const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
     GPIO_PIN_REG_0,
@@ -90,33 +69,85 @@ const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
     GPIO_PIN_REG_39
 };
 
-static int is_valid_gpio(int gpio_num)
-{
-    if(gpio_num >= GPIO_PIN_COUNT || GPIO_PIN_MUX_REG[gpio_num] == 0) {
-        GPIO_ERROR("GPIO io_num=%d does not exist\n",gpio_num);
-        return 0;
-    }
-    return 1;
+const gpio_pu_pd_desc_t gpio_pu_pd_desc[GPIO_PIN_COUNT]={
+    {RTC_IO_TOUCH_PAD1_REG, RTC_IO_TOUCH_PAD1_RUE_M, RTC_IO_TOUCH_PAD1_RDE_M},
+    {PERIPHS_IO_MUX_U0TXD_U, FUN_PU, FUN_PD},
+    {RTC_IO_TOUCH_PAD2_REG, RTC_IO_TOUCH_PAD2_RUE_M, RTC_IO_TOUCH_PAD2_RDE_M},
+    {PERIPHS_IO_MUX_U0RXD_U, FUN_PU, FUN_PD},
+    {RTC_IO_TOUCH_PAD0_REG, RTC_IO_TOUCH_PAD0_RUE_M, RTC_IO_TOUCH_PAD0_RDE_M},
+    {PERIPHS_IO_MUX_GPIO5_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_CLK_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_DATA0_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_DATA1_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_DATA2_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_DATA3_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_CMD_U, FUN_PU, FUN_PD},
+    {RTC_IO_TOUCH_PAD5_REG, RTC_IO_TOUCH_PAD5_RUE_M, RTC_IO_TOUCH_PAD5_RDE_M},
+    {RTC_IO_TOUCH_PAD4_REG, RTC_IO_TOUCH_PAD4_RUE_M, RTC_IO_TOUCH_PAD4_RDE_M},
+    {RTC_IO_TOUCH_PAD6_REG, RTC_IO_TOUCH_PAD6_RUE_M, RTC_IO_TOUCH_PAD6_RDE_M},
+    {RTC_IO_TOUCH_PAD3_REG, RTC_IO_TOUCH_PAD3_RUE_M, RTC_IO_TOUCH_PAD3_RDE_M},
+    {PERIPHS_IO_MUX_GPIO16_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO17_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO18_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO19_U, FUN_PU, FUN_PD},
+    {0,0,0},
+    {PERIPHS_IO_MUX_GPIO21_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO22_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO23_U, FUN_PU, FUN_PD},
+    {0,0,0},
+    {RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_RUE_M, RTC_IO_PDAC1_RDE_M},
+    {RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_RUE_M, RTC_IO_PDAC2_RDE_M},
+    {RTC_IO_TOUCH_PAD7_REG, RTC_IO_TOUCH_PAD7_RUE_M, RTC_IO_TOUCH_PAD7_RDE_M},
+    {0,0,0},
+    {0,0,0},
+    {0,0,0},
+    {0,0,0},
+    {RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32P_RUE_M, RTC_IO_X32P_RDE_M},
+    {RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_RUE_M, RTC_IO_X32N_RDE_M},
+    {PERIPHS_IO_MUX_GPIO34_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO35_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO36_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO37_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO38_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO39_U, FUN_PU, FUN_PD}
+};
+
+
+esp_err_t gpio_pullup_en(gpio_num_t gpio_num) {
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+    return ESP_OK;
+}
+
+esp_err_t gpio_pullup_dis(gpio_num_t gpio_num) {
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+    return ESP_OK;
+}
+
+esp_err_t gpio_pulldown_en(gpio_num_t gpio_num) {
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
+    return ESP_OK;
+}
+
+esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num) {
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
+    return ESP_OK;
 }
 
 esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-    if(!is_valid_gpio(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if(intr_type >= GPIO_INTR_MAX) {
-        GPIO_ERROR("Unknown GPIO intr:%u\n",intr_type);
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(intr_type < GPIO_INTR_MAX, "GPIO interrupt type error", ESP_ERR_INVALID_ARG);
     GPIO.pin[gpio_num].int_type = intr_type;
     return ESP_OK;
 }
 
 esp_err_t gpio_intr_enable(gpio_num_t gpio_num)
 {
-    if(!is_valid_gpio(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     if(xPortGetCoreID() == 0) {
         GPIO.pin[gpio_num].int_ena = GPIO_PRO_CPU_INTR_ENA;     //enable pro cpu intr
     } else {
@@ -127,18 +158,14 @@ esp_err_t gpio_intr_enable(gpio_num_t gpio_num)
 
 esp_err_t gpio_intr_disable(gpio_num_t gpio_num)
 {
-    if(!is_valid_gpio(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     GPIO.pin[gpio_num].int_ena = 0;                             //disable GPIO intr
     return ESP_OK;
 }
 
 static esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 {
-    if(!is_valid_gpio(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     if(gpio_num < 32) {
         GPIO.enable_w1tc = (0x1 << gpio_num);
     } else {
@@ -149,13 +176,7 @@ static esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 
 static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 {
-    if(gpio_num >= 34) {
-        GPIO_ERROR("io_num=%d can only be input\n",gpio_num);
-        return ESP_ERR_INVALID_ARG;
-    }
-    if(!is_valid_gpio(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
     if(gpio_num < 32) {
         GPIO.enable_w1ts = (0x1 << gpio_num);
     } else {
@@ -166,9 +187,7 @@ static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 
 esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 {
-    if(!GPIO_IS_VALID_GPIO(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     if(level) {
         if(gpio_num < 32) {
             GPIO.out_w1ts = (1 << gpio_num);
@@ -196,29 +215,28 @@ int gpio_get_level(gpio_num_t gpio_num)
 
 esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
 {
-    if(!is_valid_gpio(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(pull <= GPIO_FLOATING, "GPIO pull mode error", ESP_ERR_INVALID_ARG);
     esp_err_t ret = ESP_OK;
     switch(pull) {
         case GPIO_PULLUP_ONLY:
-            PIN_PULLUP_EN(GPIO_PIN_MUX_REG[gpio_num]);
-            PIN_PULLDWN_DIS(GPIO_PIN_MUX_REG[gpio_num]);
+            REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+            REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
             break;
         case GPIO_PULLDOWN_ONLY:
-            PIN_PULLUP_DIS(GPIO_PIN_MUX_REG[gpio_num]);
-            PIN_PULLDWN_EN(GPIO_PIN_MUX_REG[gpio_num]);
+            REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+            REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
             break;
         case GPIO_PULLUP_PULLDOWN:
-            PIN_PULLUP_EN(GPIO_PIN_MUX_REG[gpio_num]);
-            PIN_PULLDWN_EN(GPIO_PIN_MUX_REG[gpio_num]);
+            REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+            REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
             break;
         case GPIO_FLOATING:
-            PIN_PULLUP_DIS(GPIO_PIN_MUX_REG[gpio_num]);
-            PIN_PULLDWN_DIS(GPIO_PIN_MUX_REG[gpio_num]);
+            REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+            REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
             break;
         default:
-            GPIO_ERROR("Unknown pull up/down mode,gpio_num=%u,pull=%u\n",gpio_num,pull);
+            ESP_LOGE(GPIO_TAG, "Unknown pull up/down mode,gpio_num=%u,pull=%u",gpio_num,pull);
             ret = ESP_ERR_INVALID_ARG;
             break;
     }
@@ -227,11 +245,9 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
 
 esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode)
 {
-    if(!is_valid_gpio(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     if(gpio_num >= 34 && (mode & (GPIO_MODE_DEF_OUTPUT))) {
-        GPIO_ERROR("io_num=%d can only be input\n",gpio_num);
+        ESP_LOGE(GPIO_TAG, "io_num=%d can only be input",gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
     esp_err_t ret = ESP_OK;
@@ -266,54 +282,56 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
     uint64_t gpio_pin_mask = (pGPIOConfig->pin_bit_mask);
     uint32_t io_reg = 0;
     uint32_t io_num = 0;
-    uint64_t bit_valid = 0;
+    uint8_t input_en = 0;
+    uint8_t output_en = 0;
+    uint8_t od_en = 0;
+    uint8_t pu_en = 0;
+    uint8_t pd_en = 0;
     if(pGPIOConfig->pin_bit_mask == 0 || pGPIOConfig->pin_bit_mask >= (((uint64_t) 1) << GPIO_PIN_COUNT)) {
-        GPIO_ERROR("GPIO_PIN mask error \n");
+        ESP_LOGE(GPIO_TAG, "GPIO_PIN mask error ");
         return ESP_ERR_INVALID_ARG;
     }
     if((pGPIOConfig->mode) & (GPIO_MODE_DEF_OUTPUT)) {
         //GPIO 34/35/36/37/38/39 can only be used as input mode;
         if((gpio_pin_mask & ( GPIO_SEL_34 | GPIO_SEL_35 | GPIO_SEL_36 | GPIO_SEL_37 | GPIO_SEL_38 | GPIO_SEL_39))) {
-            GPIO_ERROR("GPIO34-39 can only be used as input mode\n");
+            ESP_LOGE(GPIO_TAG, "GPIO34-39 can only be used as input mode");
             return ESP_ERR_INVALID_ARG;
         }
     }
     do {
         io_reg = GPIO_PIN_MUX_REG[io_num];
         if(((gpio_pin_mask >> io_num) & BIT(0)) && io_reg) {
-            GPIO_INFO("Gpio%02d |Mode:",io_num);
             if((pGPIOConfig->mode) & GPIO_MODE_DEF_INPUT) {
-                GPIO_INFO("INPUT ");
+                input_en = 1;
                 PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[io_num]);
             } else {
                 PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[io_num]);
             }
             if((pGPIOConfig->mode) & GPIO_MODE_DEF_OD) {
-                GPIO_INFO("OD ");
+                od_en = 1;
                 GPIO.pin[io_num].pad_driver = 1; /*0x01 Open-drain */
             } else {
                 GPIO.pin[io_num].pad_driver = 0; /*0x00 Normal gpio output */
             }
             if((pGPIOConfig->mode) & GPIO_MODE_DEF_OUTPUT) {
-                GPIO_INFO("OUTPUT ");
+                output_en = 1;
                 gpio_output_enable(io_num);
             } else {
                 gpio_output_disable(io_num);
             }
-            GPIO_INFO("|");
             if(pGPIOConfig->pull_up_en) {
-                GPIO_INFO("PU ");
-                PIN_PULLUP_EN(io_reg);
+                pu_en = 1;
+                REG_SET_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
             } else {
-                PIN_PULLUP_DIS(io_reg);
+                REG_CLR_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
             }
             if(pGPIOConfig->pull_down_en) {
-                GPIO_INFO("PD ");
-                PIN_PULLDWN_EN(io_reg);
+                pd_en = 1;
+                REG_SET_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
             } else {
-                PIN_PULLDWN_DIS(io_reg);
+                REG_CLR_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
             }
-            GPIO_INFO("Intr:%d |\n",pGPIOConfig->intr_type);
+            ESP_LOGI(GPIO_TAG, "GPIO[%d]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
             gpio_set_intr_type(io_num, pGPIOConfig->intr_type);
             if(pGPIOConfig->intr_type) {
                 gpio_intr_enable(io_num);
@@ -321,8 +339,6 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
                 gpio_intr_disable(io_num);
             }
             PIN_FUNC_SELECT(io_reg, PIN_FUNC_GPIO); /*function number 2 is GPIO_FUNC for each pin */
-        } else if(bit_valid && (io_reg == 0)) {
-            GPIO_WARNING("io_num=%d does not exist\n",io_num);
         }
         io_num++;
     } while(io_num < GPIO_PIN_COUNT);
@@ -331,9 +347,7 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
 
 esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg)
 {
-    if(fn == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(fn, "GPIO ISR null", ESP_ERR_INVALID_ARG);
     ESP_INTR_DISABLE(gpio_intr_num);
     intr_matrix_set(xPortGetCoreID(), ETS_GPIO_INTR_SOURCE, gpio_intr_num);
     xt_set_interrupt_handler(gpio_intr_num, fn, arg);
@@ -344,15 +358,13 @@ esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * ar
 /*only level interrupt can be used for wake-up function*/
 esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-    if(!is_valid_gpio(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     esp_err_t ret = ESP_OK;
     if((intr_type == GPIO_INTR_LOW_LEVEL) || (intr_type == GPIO_INTR_HIGH_LEVEL)) {
         GPIO.pin[gpio_num].int_type = intr_type;
         GPIO.pin[gpio_num].wakeup_enable = 0x1;
     } else {
-        GPIO_ERROR("GPIO wakeup only support Level mode,but edge mode set. gpio_num:%u\n",gpio_num);
+        ESP_LOGE(GPIO_TAG, "GPIO wakeup only support Level mode,but edge mode set. gpio_num:%u",gpio_num);
         ret = ESP_ERR_INVALID_ARG;
     }
     return ret;
@@ -360,9 +372,7 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 
 esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num)
 {
-    if(!is_valid_gpio(gpio_num)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     GPIO.pin[gpio_num].wakeup_enable = 0;
     return ESP_OK;
 }

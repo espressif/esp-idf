@@ -116,6 +116,7 @@ extern "C" void nvs_close(nvs_handle handle)
         return;
     }
     s_nvs_handles.erase(it);
+    delete static_cast<HandleEntry*>(it);
 }
 
 extern "C" esp_err_t nvs_erase_key(nvs_handle handle, const char* key)

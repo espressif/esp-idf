@@ -1,27 +1,19 @@
 #
 # Component Makefile
 #
-# This Makefile should, at the very least, just include $(IDF_PATH)/make/component_common.mk. By default, 
-# this will take the sources in this directory, compile them and link them into 
-# lib(subdirectory_name).a in the build directory. This behaviour is entirely configurable,
-# please read the esp-idf build system document if you need to do this.
-#
--include $(PROJECT_PATH)/build/include/config/auto.conf
 
 COMPONENT_SRCDIRS := . hwcrypto
 
-LIBS := crypto core net80211 phy rtc pp wpa smartconfig
+LIBS := core net80211 phy rtc pp wpa smartconfig coexist wps
 
 LINKER_SCRIPTS += -T esp32_out.ld -T esp32.common.ld -T esp32.rom.ld -T esp32.peripherals.ld
 
 COMPONENT_ADD_LDFLAGS := -lesp32 \
-                           $(abspath libhal.a) \
-                           -L$(abspath lib) \
+                           $(COMPONENT_PATH)/libhal.a \
+                           -L$(COMPONENT_PATH)/lib \
                            $(addprefix -l,$(LIBS)) \
-                          -L $(abspath ld) \
+                          -L $(COMPONENT_PATH)/ld \
                           $(LINKER_SCRIPTS)
-
-include $(IDF_PATH)/make/component_common.mk
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 

@@ -7,38 +7,42 @@ COMPONENT_KCONFIGS_PROJBUILD := $(foreach component,$(COMPONENT_PATHS),$(wildcar
 #For doing make menuconfig etc
 KCONFIG_TOOL_DIR=$(IDF_PATH)/tools/kconfig
 
-# clear MAKEFLAGS as the menuconfig makefile uses implicit compile rules
+# set SDKCONFIG to the project's sdkconfig,
+# unless it's overriden (happens for bootloader)
+SDKCONFIG ?= $(PROJECT_PATH)/sdkconfig
+
+# reset MAKEFLAGS as the menuconfig makefile uses implicit compile rules
 $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
-	MAKEFLAGS="" \
-	CC=$(HOSTCC) LD=$(HOSTLD) \
+	MAKEFLAGS=$(ORIGINAL_MAKEFLAGS) CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
-menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
-	$(summary) MENUCONFIG
-	$(Q) KCONFIG_AUTOHEADER=$(PROJECT_PATH)/build/include/sdkconfig.h \
-	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
-	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" \
-	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)" \
-	$(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
+# use a wrapper environment for where we run Kconfig tools
+KCONFIG_TOOL_ENV=KCONFIG_AUTOHEADER=$(abspath $(BUILD_DIR_BASE)/include/sdkconfig.h) \
+	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" KCONFIG_CONFIG=$(SDKCONFIG) \
+	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)"
 
-ifeq ("$(wildcard $(PROJECT_PATH)/sdkconfig)","")
-#No sdkconfig found. Need to run menuconfig to make this if we need it.
-$(PROJECT_PATH)/sdkconfig: menuconfig
+menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
+	$(summary) MENUCONFIG
+	$(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
+
+ifeq ("$(wildcard $(SDKCONFIG))","")
+ifeq ("$(filter defconfig,$(MAKECMDGOALS))","")
+# if not configuration is present and defconfig is not a target, run makeconfig
+$(SDKCONFIG): menuconfig
+else
+$(SDKCONFIG): defconfig
+endif
 endif
 
 defconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
 	$(summary) DEFCONFIG
-	$(Q) mkdir -p $(PROJECT_PATH)/build/include/config
-	$(Q) KCONFIG_AUTOHEADER=$(PROJECT_PATH)/build/include/sdkconfig.h \
-	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
-	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" \
-	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)" \
-	$(KCONFIG_TOOL_DIR)/conf --olddefconfig $(IDF_PATH)/Kconfig
+	mkdir -p $(BUILD_DIR_BASE)/include/config
+	$(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/conf --olddefconfig $(IDF_PATH)/Kconfig
 
 # Work out of whether we have to build the Kconfig makefile
 # (auto.conf), or if we're in a situation where we don't need it
-NON_CONFIG_TARGETS := clean %-clean get_variable help menuconfig defconfig
-AUTO_CONF_REGEN_TARGET := $(PROJECT_PATH)/build/include/config/auto.conf
+NON_CONFIG_TARGETS := clean %-clean help menuconfig defconfig
+AUTO_CONF_REGEN_TARGET := $(SDKCONFIG_MAKEFILE)
 
 # disable AUTO_CONF_REGEN_TARGET if all targets are non-config targets
 # (and not building default target)
@@ -46,26 +50,21 @@ ifneq ("$(MAKECMDGOALS)","")
 ifeq ($(filter $(NON_CONFIG_TARGETS), $(MAKECMDGOALS)),$(MAKECMDGOALS))
 AUTO_CONF_REGEN_TARGET :=
 # dummy target
-$(PROJECT_PATH)/build/include/config/auto.conf:
+$(SDKCONFIG_MAKEFILE):
 endif
 endif
 
-$(AUTO_CONF_REGEN_TARGET) $(PROJECT_PATH)/build/include/sdkconfig.h: $(PROJECT_PATH)/sdkconfig $(KCONFIG_TOOL_DIR)/conf $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD)
+$(AUTO_CONF_REGEN_TARGET) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(SDKCONFIG) $(KCONFIG_TOOL_DIR)/conf $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD)
 	$(summary) GENCONFIG
-	$(Q) mkdir -p $(PROJECT_PATH)/build/include/config
-	$(Q) cd build; KCONFIG_AUTOHEADER="$(PROJECT_PATH)/build/include/sdkconfig.h" \
-	KCONFIG_CONFIG=$(PROJECT_PATH)/sdkconfig \
-	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" \
-	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)" \
-	$(KCONFIG_TOOL_DIR)/conf --silentoldconfig $(IDF_PATH)/Kconfig
-	$(Q) touch $(AUTO_CONF_REGEN_TARGET) $(PROJECT_PATH)/build/include/sdkconfig.h
+	mkdir -p $(BUILD_DIR_BASE)/include/config
+	cd $(BUILD_DIR_BASE); $(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/conf --silentoldconfig $(IDF_PATH)/Kconfig
+	touch $(AUTO_CONF_REGEN_TARGET) $(BUILD_DIR_BASE)/include/sdkconfig.h
 # touch to ensure both output files are newer - as 'conf' can also update sdkconfig (a dependency). Without this,
 # sometimes you can get an infinite make loop on Windows where sdkconfig always gets regenerated newer
 # than the target(!)
 
-clean: config-clean
 .PHONY: config-clean
 config-clean:
 	$(summary RM CONFIG)
 	$(MAKE) -C $(KCONFIG_TOOL_DIR) clean
-	$(Q) rm -rf $(PROJECT_PATH)/build/include/config $(PROJECT_PATH)/build/include/sdkconfig.h
+	rm -rf $(BUILD_DIR_BASE)/include/config $(BUILD_DIR_BASE)/include/sdkconfig.h

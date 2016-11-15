@@ -30,7 +30,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <xtensa/config/core.h>
 
+#include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
+#include "freertos/portable.h"
 
 #include "rom/ets_sys.h"
 
@@ -39,7 +41,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /* Handler table is in xtensa_intr_asm.S */
 // Todo: Make multicore - JD
 
-extern xt_exc_handler _xt_exception_table[XCHAL_EXCCAUSE_NUM];
+extern xt_exc_handler _xt_exception_table[XCHAL_EXCCAUSE_NUM*portNUM_PROCESSORS];
 
 
 /*
@@ -66,6 +68,8 @@ xt_exc_handler xt_set_exception_handler(int n, xt_exc_handler f)
     if( n < 0 || n >= XCHAL_EXCCAUSE_NUM )
         return 0;       /* invalid exception number */
 
+    /* Convert exception number to _xt_exception_table name */
+    n = n * portNUM_PROCESSORS + xPortGetCoreID();
     old = _xt_exception_table[n];
 
     if (f) {
@@ -89,7 +93,7 @@ typedef struct xt_handler_table_entry {
     void * arg;
 } xt_handler_table_entry;
 
-extern xt_handler_table_entry _xt_interrupt_table[XCHAL_NUM_INTERRUPTS];
+extern xt_handler_table_entry _xt_interrupt_table[XCHAL_NUM_INTERRUPTS*portNUM_PROCESSORS];
 
 
 /*
@@ -117,6 +121,9 @@ xt_handler xt_set_interrupt_handler(int n, xt_handler f, void * arg)
         return 0;       /* invalid interrupt number */
     if( Xthal_intlevel[n] > XCHAL_EXCM_LEVEL )
         return 0;       /* priority level too high to safely handle in C */
+
+    /* Convert exception number to _xt_exception_table name */
+    n = n * portNUM_PROCESSORS + xPortGetCoreID();
 
     entry = _xt_interrupt_table + n;
     old   = entry->handler;

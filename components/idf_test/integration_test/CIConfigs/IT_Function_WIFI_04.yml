@@ -1,0 +1,5 @@
+Config: {execute count: 1, execute order: in order}
+DUT: [SSC1]
+Filter:
+- Add:
+    ID: [^WIFI_CONN_0902, WIFI_CONN_0902]

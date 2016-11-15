@@ -137,7 +137,7 @@ struct pbuf {
    */
   u16_t ref;
   
-#ifdef LWIP_ESP8266
+#if ESP_LWIP
   void  *eb;
 #endif
 };

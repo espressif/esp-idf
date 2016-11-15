@@ -1,3 +1,7 @@
 COMPONENT_ADD_INCLUDEDIRS := include
 
-include $(IDF_PATH)/make/component_common.mk
+ifdef IS_BOOTLOADER_BUILD
+# Bootloader needs updated SPIUnlock from this file
+COMPONENT_OBJS := spi_flash_rom_patch.o
+endif
+

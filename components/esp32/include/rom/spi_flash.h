@@ -218,7 +218,7 @@ void SelectSpiFunction(uint32_t ishspi);
 void spi_flash_attach(uint32_t ishspi, bool legacy);
 
 /**
-  * @brief SPI Read Flash status register. We use CMD 0x05.
+  * @brief SPI Read Flash status register. We use CMD 0x05 (RDSR).
   *    Please do not call this function in SDK.
   *
   * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
@@ -232,7 +232,7 @@ void spi_flash_attach(uint32_t ishspi, bool legacy);
 SpiFlashOpResult SPI_read_status(SpiFlashChip *spi, uint32_t *status);
 
 /**
-  * @brief SPI Read Flash status register high 16 bit. We use CMD 0x35.
+  * @brief SPI Read Flash status register bits 8-15. We use CMD 0x35 (RDSR2).
   *        Please do not call this function in SDK.
   *
   * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
@@ -243,7 +243,7 @@ SpiFlashOpResult SPI_read_status(SpiFlashChip *spi, uint32_t *status);
   *         SPI_FLASH_RESULT_ERR : read error.
   *         SPI_FLASH_RESULT_TIMEOUT : read timeout.
   */
-SpiFlashOpResult SPI_read_status_high(SpiFlashChip *spi, uint32_t *status);
+SpiFlashOpResult SPI_read_status_high(uint32_t *status);
 
 /**
   * @brief Write status to Falsh status register.
@@ -502,6 +502,12 @@ void SPI_Write_Encrypt_Disable(void);
   *         SPI_FLASH_RESULT_TIMEOUT : Encrypto write timeout.
   */
 SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, uint32_t *data, uint32_t len);
+
+
+/** @brief Global SpiFlashChip structure used by ROM functions
+ *
+ */
+extern SpiFlashChip g_rom_flashchip;
 
 /**
   * @}

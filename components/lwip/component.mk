@@ -8,4 +8,3 @@ COMPONENT_SRCDIRS := api apps/sntp apps core/ipv4 core/ipv6 core netif port/free
 
 CFLAGS += -Wno-address -Wno-unused-variable -Wno-unused-but-set-variable
 
-include $(IDF_PATH)/make/component_common.mk

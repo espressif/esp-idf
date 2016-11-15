@@ -17,6 +17,7 @@
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_err.h"
 
 #include "rom/cache.h"
 #include "rom/ets_sys.h"
@@ -30,6 +31,7 @@
 #include "sdkconfig.h"
 
 #include "bootloader_config.h"
+#include "esp_image_format.h"
 
 static const char* TAG = "flash_encrypt";
 
@@ -90,103 +92,97 @@ bool flash_encrypt_write(uint32_t pos, uint32_t len)
    Cache_Read_Enable(0); 
    return true;
 }
+
+
 /**
  *  @function :     flash_encrypt
  *  @description:   encrypt 2nd boot ,partition table ,factory bin ��test bin (if use)��ota bin
  *                  ��OTA info sector.
  *
  *  @inputs:        bs     bootloader state structure used to save the data
- *                 
+ *
  *  @return:        return true, if the encrypt flash success
- *                  
+ *
  */
 bool flash_encrypt(bootloader_state_t *bs)
 {
-   uint32_t bin_len = 0;
-   uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_FLASH_CRYPT_CNT);
-   uint8_t count = bitcount(flash_crypt_cnt);
-   int i = 0;
-   ESP_LOGD(TAG, "flash encrypt cnt %x, bitcount %d", flash_crypt_cnt, count);
+    esp_err_t err;
+    uint32_t image_len = 0;
+    uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_FLASH_CRYPT_CNT);
+    uint8_t count = bitcount(flash_crypt_cnt);
+    ESP_LOGD(TAG, "flash encrypt cnt %x, bitcount %d", flash_crypt_cnt, count);
 
-   if ((count % 2) == 0) {    
-       boot_cache_redirect( 0, 64*1024);
-        /* encrypt iv and abstruct */ 
-       if (false == flash_encrypt_write(0, SPI_SEC_SIZE)) {
-           ESP_LOGE(TAG, "encrypt iv and abstract error");
-           return false;
-       }
+    if ((count % 2) == 0) {
+        /* encrypt iv and abstract */
+        if (false == flash_encrypt_write(0, SPI_SEC_SIZE)) {
+            ESP_LOGE(TAG, "encrypt iv and abstract error");
+            return false;
+        }
 
-        /* encrypt write boot bin*/
-       bin_len = get_bin_len((uint32_t)MEM_CACHE(0x1000));
-       if(bin_len != 0) {
-           if (false == flash_encrypt_write(0x1000, bin_len)) {
-               ESP_LOGE(TAG, "encrypt 2nd boot error");
-               return false;
-           }
-       } else {
-           ESP_LOGE(TAG, "2nd boot len error");
-           return false;
-       }
+        /* encrypt bootloader image */
+        err = esp_image_basic_verify(0x1000, &image_len);
+        if(err == ESP_OK && image_len != 0) {
+            if (false == flash_encrypt_write(0x1000, image_len)) {
+                ESP_LOGE(TAG, "encrypt 2nd boot error");
+                return false;
+            }
+        } else {
+            ESP_LOGE(TAG, "2nd boot len error");
+            return false;
+        }
+
         /* encrypt partition table */
-       if (false ==  flash_encrypt_write(PARTITION_ADD, SPI_SEC_SIZE)) {
-           ESP_LOGE(TAG, "encrypt partition table error");
-           return false;
-       }
+        if (false ==  flash_encrypt_write(ESP_PARTITION_TABLE_ADDR, SPI_SEC_SIZE)) {
+            ESP_LOGE(TAG, "encrypt partition table error");
+            return false;
+        }
 
         /* encrypt write factory bin  */
-       if(bs->factory.offset != 0x00) {
-           ESP_LOGD(TAG, "have factory bin");
-           boot_cache_redirect(bs->factory.offset, bs->factory.size);
-           bin_len = get_bin_len((uint32_t)MEM_CACHE(bs->factory.offset&0xffff));
-           if(bin_len != 0) {           
-               if (false ==  flash_encrypt_write(bs->factory.offset, bin_len)) {
-                   ESP_LOGE(TAG, "encrypt factory bin error");
-                   return false;
-               }
-           }
-       }
+        if(bs->factory.offset != 0 && bs->factory.size != 0) {
+            ESP_LOGD(TAG, "have factory bin");
+            if (false ==  flash_encrypt_write(bs->factory.offset, bs->factory.size)) {
+                ESP_LOGE(TAG, "encrypt factory bin error");
+                return false;
+            }
+        }
+
         /* encrypt write test bin  */
-       if(bs->test.offset != 0x00) {
-           ESP_LOGD(TAG, "have test bin");
-           boot_cache_redirect(bs->test.offset, bs->test.size);
-           bin_len = get_bin_len((uint32_t)MEM_CACHE(bs->test.offset&0xffff));
-           if(bin_len != 0) {
-               if (false ==  flash_encrypt_write(bs->test.offset, bin_len)) {
-                   ESP_LOGE(TAG, "encrypt test bin error");
-                   return false;
-               }
-           }
-       }
+        if(bs->test.offset != 0 && bs->test.size != 0) {
+            ESP_LOGD(TAG, "have test bin");
+            if (false ==  flash_encrypt_write(bs->test.offset, bs->test.size)) {
+                ESP_LOGE(TAG, "encrypt test bin error");
+                return false;
+            }
+        }
+
         /* encrypt write ota bin  */
-       for (i = 0;i<16;i++) {
-           if(bs->ota[i].offset != 0x00) {
-               ESP_LOGD(TAG, "have ota[%d] bin",i);
-               boot_cache_redirect(bs->ota[i].offset, bs->ota[i].size);
-               bin_len = get_bin_len((uint32_t)MEM_CACHE(bs->ota[i].offset&0xffff));
-               if(bin_len != 0) {    
-                   if (false == flash_encrypt_write(bs->ota[i].offset, bin_len)) {
-                       ESP_LOGE(TAG, "encrypt ota bin error");
-                       return false;
-                   }
-               }
-           }
-       }
+        for (int i = 0; i < 16; i++) {
+            if(bs->ota[i].offset != 0 && bs->ota[i].size != 0) {
+                ESP_LOGD(TAG, "have ota[%d] bin",i);
+                if (false == flash_encrypt_write(bs->ota[i].offset, bs->ota[i].size)) {
+                    ESP_LOGE(TAG, "encrypt ota bin error");
+                    return false;
+                }
+            }
+        }
+
         /* encrypt write ota info bin  */
-       if (false == flash_encrypt_write(bs->ota_info.offset, 2*SPI_SEC_SIZE)) {
-           ESP_LOGE(TAG, "encrypt ota info error");
-           return false;
-       }  
-       REG_SET_FIELD(EFUSE_BLK0_WDATA0_REG, EFUSE_FLASH_CRYPT_CNT, 0x04);   
-       REG_WRITE(EFUSE_CONF_REG, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */     
-       REG_WRITE(EFUSE_CMD_REG,  0x02);    /* efuse_pgm_cmd */     
-       while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_pagm_cmd=0 */
-       ESP_LOGW(TAG, "burn  flash_crypt_cnt");   
-       REG_WRITE(EFUSE_CONF_REG, 0x5AA5);  /* efuse_read_op_ena, release force */   
-       REG_WRITE(EFUSE_CMD_REG,  0x01);    /* efuse_read_cmd */     
-       while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */  
-       return true;
-   } else {   
-       ESP_LOGI(TAG, "flash already encrypted.");
-       return true;
-   }
+        if (false == flash_encrypt_write(bs->ota_info.offset, 2*SPI_SEC_SIZE)) {
+            ESP_LOGE(TAG, "encrypt ota info error");
+            return false;
+        }
+
+        REG_SET_FIELD(EFUSE_BLK0_WDATA0_REG, EFUSE_FLASH_CRYPT_CNT, 0x04);
+        REG_WRITE(EFUSE_CONF_REG, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */
+        REG_WRITE(EFUSE_CMD_REG,  0x02);    /* efuse_pgm_cmd */
+        while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_pagm_cmd=0 */
+        ESP_LOGW(TAG, "burn  flash_crypt_cnt");
+        REG_WRITE(EFUSE_CONF_REG, 0x5AA5);  /* efuse_read_op_ena, release force */
+        REG_WRITE(EFUSE_CMD_REG,  0x01);    /* efuse_read_cmd */
+        while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */
+        return true;
+    } else {
+        ESP_LOGI(TAG, "flash already encrypted.");
+        return true;
+    }
 }
