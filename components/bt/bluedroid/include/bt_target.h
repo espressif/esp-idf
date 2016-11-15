@@ -573,7 +573,7 @@
 
 /* The IO capability of the local device (for Simple Pairing) */
 #ifndef BTM_LOCAL_IO_CAPS
-#define BTM_LOCAL_IO_CAPS               BTM_IO_CAP_IO
+#define BTM_LOCAL_IO_CAPS               BTM_IO_CAP_NONE
 #endif
 
 #ifndef BTM_LOCAL_IO_CAPS_BLE
@@ -1593,7 +1593,7 @@ Range: 2 octets
 **
 ******************************************************************************/
 #ifndef AVRC_INCLUDED
-#define AVRC_INCLUDED               FALSE
+#define AVRC_INCLUDED               TRUE
 #endif
 
 #ifndef AVRC_METADATA_INCLUDED

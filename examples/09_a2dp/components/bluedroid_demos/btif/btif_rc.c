@@ -31,6 +31,7 @@
 #include "bta_api.h"
 #include "bta_av_api.h"
 #include "avrc_defs.h"
+#include "avrc_api.h"
 #include "gki.h"
 
 #define LOG_TAG "bt_btif_avrc"
@@ -206,10 +207,22 @@ static btrc_ctrl_callbacks_t *bt_rc_ctrl_callbacks = NULL;
 extern BOOLEAN btif_hf_call_terminated_recently();
 extern BOOLEAN check_cod(const bt_bdaddr_t *remote_bdaddr, uint32_t cod);
 
-
 /*****************************************************************************
 **  Functions
 ******************************************************************************/
+
+/*****************************************************************************
+ ** temporarily hacked functions. TODO: remove or port these functions
+ *****************************************************************************/
+BOOLEAN btif_hf_call_terminated_recently(void)
+{
+    return FALSE;
+}
+
+BOOLEAN check_cod(const bt_bdaddr_t *remote_bdaddr, uint32_t cod)
+{
+    return FALSE;
+}
 
 /*****************************************************************************
 **   Local uinput helper functions

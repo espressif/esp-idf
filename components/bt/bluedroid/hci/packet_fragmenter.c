@@ -161,8 +161,9 @@ static void reassemble_and_dispatch(BT_HDR *packet) {
       partial_packet->len = full_length;
       partial_packet->offset = packet->len;
 
-      memcpy(partial_packet->data, packet->data, packet->len);
-
+      // org: memcpy(partial_packet->data, packet->data, packet->len);
+      memcpy(partial_packet->data, packet->data+packet->offset, packet->len);
+      
       // Update the ACL data size to indicate the full expected length
       stream = partial_packet->data;
       STREAM_SKIP_UINT16(stream); // skip the handle
@@ -179,7 +180,10 @@ static void reassemble_and_dispatch(BT_HDR *packet) {
         return;
       }
 
-      packet->offset = HCI_ACL_PREAMBLE_SIZE;
+      // org: packet->offset = HCI_ACL_PREAMBLE_SIZE;
+      packet->offset += HCI_ACL_PREAMBLE_SIZE; // skip ACL preamble
+      packet->len -= HCI_ACL_PREAMBLE_SIZE;
+      
       projected_offset = partial_packet->offset + (packet->len - HCI_ACL_PREAMBLE_SIZE);
       if (projected_offset > partial_packet->len) { // len stores the expected length
         LOG_WARN("%s got packet which would exceed expected length of %d. Truncating.", __func__, partial_packet->len);
@@ -190,7 +194,8 @@ static void reassemble_and_dispatch(BT_HDR *packet) {
       memcpy(
         partial_packet->data + partial_packet->offset,
         packet->data + packet->offset,
-        packet->len - packet->offset
+        // org: packet->len - packet->offset
+	packet->len
       );
 
       // Free the old packet buffer, since we don't need it anymore

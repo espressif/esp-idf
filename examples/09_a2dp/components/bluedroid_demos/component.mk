@@ -19,8 +19,8 @@ COMPONENT_SRCDIRS :=	\
 			app_core				\
 			app_project				\
 			udrv/ulinux				\
-			embdrv/sbc/encoder			\
-			embdrv/sbc/decoder			\
+			embdrv/sbc/encoder/srce			\
+			embdrv/sbc/decoder/srce			\
 			btif/co					\
 			btif
 

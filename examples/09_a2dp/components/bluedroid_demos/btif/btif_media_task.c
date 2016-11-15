@@ -335,6 +335,14 @@ static xTaskHandle  xBtifMediaTaskHandle = NULL;
 static QueueHandle_t xBtifMediaQueue = NULL;
 
 /*****************************************************************************
+ **  temporary hacked functions. TODO: port these functions or remove them?
+ *****************************************************************************/
+BOOLEAN btif_hf_is_call_idle(void)
+{
+    return FALSE;
+}
+
+/*****************************************************************************
  **  Misc helper functions
  *****************************************************************************/
 

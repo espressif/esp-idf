@@ -12,6 +12,7 @@
 *******************************************************************************/
 void raise_priority_a2dp(tHIGH_PRIORITY_TASK high_task)
 {
+    (void) high_task;
     return;
 }
 
@@ -28,5 +29,6 @@ void raise_priority_a2dp(tHIGH_PRIORITY_TASK high_task)
 *******************************************************************************/
 void adjust_priority_a2dp(int start)
 {
+    (void) start;
     return;
 }

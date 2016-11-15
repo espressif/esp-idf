@@ -31,6 +31,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/stack/avdt/include		\
 				bluedroid/stack/a2dp/include		\
 				bluedroid/stack/include			\
+				bluedroid/utils/include			\
 				bluedroid/api/include		\
 				bluedroid/include			\
 				include	
@@ -86,6 +87,7 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/stack/avdt			\
 			bluedroid/stack/a2dp			\
 			bluedroid/stack				\
+			bluedroid/utils				\
 			bluedroid/api			\
 			bluedroid				\
 			.

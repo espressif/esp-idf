@@ -368,7 +368,7 @@ static tBTA_AV_SCB * bta_av_alloc_scb(tBTA_AV_CHNL chnl)
     }
     else if(chnl != BTA_AV_CHNL_AUDIO)
     {
-        APPL_TRACE_ERROR("bad channel: %d", chnl);
+        APPL_TRACE_ERROR("bad channel: %d\n", chnl);
         sts = BTA_AV_FAIL;
     }
 
@@ -438,7 +438,7 @@ void bta_av_conn_cback(UINT8 handle, BD_ADDR bd_addr, UINT8 event, tAVDT_CTRL *p
 #if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
         else if (AVDT_CONNECT_IND_EVT == event)
         {
-            APPL_TRACE_DEBUG("CONN_IND is ACP:%d", p_data->hdr.err_param);
+            APPL_TRACE_DEBUG("CONN_IND is ACP:%d\n", p_data->hdr.err_param);
         }
 #endif
 
@@ -456,10 +456,10 @@ void bta_av_conn_cback(UINT8 handle, BD_ADDR bd_addr, UINT8 event, tAVDT_CTRL *p
 #if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
             if(p_scb)
             {
-                APPL_TRACE_DEBUG("scb hndl x%x, role x%x", p_scb->hndl, p_scb->role);
+                APPL_TRACE_DEBUG("scb hndl x%x, role x%x\n", p_scb->hndl, p_scb->role);
             }
 #endif
-            APPL_TRACE_DEBUG("conn_cback bd_addr:%02x-%02x-%02x-%02x-%02x-%02x",
+            APPL_TRACE_DEBUG("conn_cback bd_addr:%02x-%02x-%02x-%02x-%02x-%02x\n",
                           bd_addr[0], bd_addr[1],
                           bd_addr[2], bd_addr[3],
                           bd_addr[4], bd_addr[5]);
@@ -505,7 +505,7 @@ static void bta_av_api_sink_enable(tBTA_AV_DATA *p_data)
 {
     UINT16 activate_sink = 0;
     activate_sink = p_data->hdr.layer_specific;
-    APPL_TRACE_DEBUG("bta_av_api_sink_enable %d ", activate_sink)
+    APPL_TRACE_DEBUG("bta_av_api_sink_enable %d \n", activate_sink)
     char p_service_name[BTA_SERVICE_NAME_LEN+1];
     BCM_STRNCPY_S(p_service_name, sizeof(p_service_name),
             BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
@@ -605,7 +605,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                                 (UINT8)(bta_av_cb.sec_mask & (~BTA_SEC_AUTHORIZE)), BTA_ID_AV);
 #endif
 
-                bta_ar_reg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target", NULL,
+                bta_ar_reg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target\n", NULL,
                                 p_bta_av_cfg->avrc_tg_cat, BTA_ID_AV);
 #endif
             }
@@ -631,7 +631,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
         */
         cs.nsc_mask = AVDT_NSC_RECONFIG |
               ((bta_av_cb.features & BTA_AV_FEAT_PROTECT) ? 0 : AVDT_NSC_SECURITY);
-        APPL_TRACE_DEBUG("nsc_mask: 0x%x", cs.nsc_mask);
+        APPL_TRACE_DEBUG("nsc_mask: 0x%x\n", cs.nsc_mask);
 
         if (p_data->api_reg.p_service_name[0] == 0)
         {
@@ -683,7 +683,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                 cs.tsep = AVDT_TSEP_SNK;
                 cs.p_data_cback = bta_av_stream_data_cback;
             }
-                APPL_TRACE_DEBUG(" SEP Type = %d",cs.tsep);
+                APPL_TRACE_DEBUG(" SEP Type = %d\n",cs.tsep);
 #endif
                 if(AVDT_CreateStream(&p_scb->seps[index].av_handle, &cs) == AVDT_SUCCESS)
                 {
@@ -697,7 +697,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                         p_scb->seps[index].p_app_data_cback = NULL; /* In case of A2DP SOURCE we don't need a callback to handle media packets */
 #endif
 
-                    APPL_TRACE_DEBUG("audio[%d] av_handle: %d codec_type: %d",
+                    APPL_TRACE_DEBUG("audio[%d] av_handle: %d codec_type: %d\n",
                         index, p_scb->seps[index].av_handle, p_scb->seps[index].codec_type);
                     index++;
                 }
@@ -747,7 +747,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                 }
             }
             bta_av_cb.reg_audio |= BTA_AV_HNDL_TO_MSK(p_scb->hdi);
-            APPL_TRACE_DEBUG("reg_audio: 0x%x",bta_av_cb.reg_audio);
+            APPL_TRACE_DEBUG("reg_audio: 0x%x\n",bta_av_cb.reg_audio);
         }
         else
         {
@@ -911,7 +911,7 @@ void bta_av_restore_switch (void)
     int     i;
     UINT8   mask;
 
-    APPL_TRACE_DEBUG("reg_audio: 0x%x",bta_av_cb.reg_audio);
+    APPL_TRACE_DEBUG("reg_audio: 0x%x\n",bta_av_cb.reg_audio);
     for(i=0; i<BTA_AV_NUM_STRS; i++)
     {
         mask = BTA_AV_HNDL_TO_MSK(i);
@@ -944,7 +944,7 @@ static void bta_av_sys_rs_cback (tBTA_SYS_CONN_STATUS status,UINT8 id, UINT8 app
     UINT8       peer_idx = 0;
     UNUSED(status);
 
-    APPL_TRACE_DEBUG("bta_av_sys_rs_cback: %d", bta_av_cb.rs_idx);
+    APPL_TRACE_DEBUG("bta_av_sys_rs_cback: %d\n", bta_av_cb.rs_idx);
     for(i=0; i<BTA_AV_NUM_STRS; i++)
     {
         /* loop through all the SCBs to find matching peer addresses and report the role change event */
@@ -953,7 +953,7 @@ static void bta_av_sys_rs_cback (tBTA_SYS_CONN_STATUS status,UINT8 id, UINT8 app
         if (p_scb && (bdcmp (peer_addr, p_scb->peer_addr) == 0) &&
             (p_buf = (tBTA_AV_ROLE_RES *) GKI_getbuf(sizeof(tBTA_AV_ROLE_RES))) != NULL)
         {
-            APPL_TRACE_DEBUG("new_role:%d, hci_status:x%x hndl: x%x", id, app_id, p_scb->hndl);
+            APPL_TRACE_DEBUG("new_role:%d, hci_status:x%x hndl: x%x\n", id, app_id, p_scb->hndl);
             /*
             if ((id != BTM_ROLE_MASTER) && (app_id != HCI_SUCCESS))
             {
@@ -988,7 +988,7 @@ static void bta_av_sys_rs_cback (tBTA_SYS_CONN_STATUS status,UINT8 id, UINT8 app
         }
         if (p_scb && p_scb->q_tag == BTA_AV_Q_TAG_OPEN)
         {
-            APPL_TRACE_DEBUG ("bta_av_sys_rs_cback: rs_idx(%d), hndl:x%x q_tag: %d",
+            APPL_TRACE_DEBUG ("bta_av_sys_rs_cback: rs_idx(%d), hndl:x%x q_tag: %d\n",
                 bta_av_cb.rs_idx, p_scb->hndl, p_scb->q_tag);
 
             if(HCI_SUCCESS == app_id || HCI_ERR_NO_CONNECTION == app_id)
@@ -1024,7 +1024,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8
     UNUSED(app_id);
     UNUSED(peer_addr);
 
-    APPL_TRACE_DEBUG("bta_av_sco_chg_cback:%d status:%d", id, status);
+    APPL_TRACE_DEBUG("bta_av_sco_chg_cback:%d status:%d\n", id, status);
     if(id)
     {
         bta_av_cb.sco_occupied = TRUE;
@@ -1036,7 +1036,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8
 
             if( p_scb && p_scb->co_started && (p_scb->sco_suspend == FALSE))
             {
-                APPL_TRACE_DEBUG("suspending scb:%d", i);
+                APPL_TRACE_DEBUG("suspending scb:%d\n", i);
                 /* scb is used and started, not suspended automatically */
                 p_scb->sco_suspend = TRUE;
                 stop.flush   = FALSE;
@@ -1055,7 +1055,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8
 
             if( p_scb && p_scb->sco_suspend ) /* scb is used and suspended for SCO */
             {
-                APPL_TRACE_DEBUG("starting scb:%d", i);
+                APPL_TRACE_DEBUG("starting scb:%d\n", i);
                 bta_av_ssm_execute(p_scb, BTA_AV_AP_START_EVT, NULL);
             }
         }
@@ -1128,7 +1128,7 @@ BOOLEAN bta_av_link_role_ok(tBTA_AV_SCB *p_scb, UINT8 bits)
 
     if (BTM_GetRole(p_scb->peer_addr, &role) == BTM_SUCCESS)
     {
-        LOG_INFO("%s hndl:x%x role:%d conn_audio:x%x bits:%d features:x%x",
+        LOG_INFO("%s hndl:x%x role:%d conn_audio:x%x bits:%d features:x%x\n",
                 __func__, p_scb->hndl, role, bta_av_cb.conn_audio, bits,
                 bta_av_cb.features);
         if (BTM_ROLE_MASTER != role && (A2D_BitsSet(bta_av_cb.conn_audio) > bits || (bta_av_cb.features & BTA_AV_FEAT_MASTER)))
@@ -1179,7 +1179,7 @@ UINT16 bta_av_chk_mtu(tBTA_AV_SCB *p_scb, UINT16 mtu)
                 if((p_scb != p_scbi) && p_scbi && (p_scbi->chnl == BTA_AV_CHNL_AUDIO) )
                 {
                     mask = BTA_AV_HNDL_TO_MSK(i);
-                    APPL_TRACE_DEBUG("[%d] mtu: %d, mask:0x%x",
+                    APPL_TRACE_DEBUG("[%d] mtu: %d, mask:0x%x\n",
                         i, p_scbi->stream_mtu, mask);
                     if(bta_av_cb.conn_audio & mask)
                     {
@@ -1189,7 +1189,7 @@ UINT16 bta_av_chk_mtu(tBTA_AV_SCB *p_scb, UINT16 mtu)
                 }
             }
         }
-        APPL_TRACE_DEBUG("bta_av_chk_mtu audio count:%d, conn_audio:0x%x, ret:%d",
+        APPL_TRACE_DEBUG("bta_av_chk_mtu audio count:%d, conn_audio:0x%x, ret:%d\n",
             bta_av_cb.audio_open_cnt, bta_av_cb.conn_audio, ret_mtu);
     }
     return ret_mtu;
@@ -1262,10 +1262,10 @@ void bta_av_sm_execute(tBTA_AV_CB *p_cb, UINT16 event, tBTA_AV_DATA *p_data)
     UINT8               action;
 
 #if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
-    APPL_TRACE_EVENT("AV event=0x%x(%s) state=%d(%s)",
+    APPL_TRACE_EVENT("AV event=0x%x(%s) state=%d(%s)\n",
         event, bta_av_evt_code(event), p_cb->state, bta_av_st_code(p_cb->state));
 #else
-    APPL_TRACE_EVENT("AV event=0x%x state=%d", event, p_cb->state);
+    APPL_TRACE_EVENT("AV event=0x%x state=%d\n", event, p_cb->state);
 #endif
 
     /* look up the state table for the current state */
@@ -1275,7 +1275,7 @@ void bta_av_sm_execute(tBTA_AV_CB *p_cb, UINT16 event, tBTA_AV_DATA *p_data)
 
     /* set next state */
     p_cb->state = state_table[event][BTA_AV_NEXT_STATE];
-    APPL_TRACE_EVENT("next state=%d", p_cb->state);
+    APPL_TRACE_EVENT("next state=%d\n", p_cb->state);
 
     /* execute action functions */
     if ((action = state_table[event][BTA_AV_ACTION_COL]) != BTA_AV_IGNORE)
@@ -1308,9 +1308,9 @@ BOOLEAN bta_av_hdl_event(BT_HDR *p_msg)
     if(event >= first_event)
     {
 #if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
-        APPL_TRACE_VERBOSE("AV nsm event=0x%x(%s)", event, bta_av_evt_code(event));
+        APPL_TRACE_VERBOSE("AV nsm event=0x%x(%s)\n", event, bta_av_evt_code(event));
 #else
-        APPL_TRACE_VERBOSE("AV nsm event=0x%x", event);
+        APPL_TRACE_VERBOSE("AV nsm event=0x%x\n", event);
 #endif
         /* non state machine events */
         (*bta_av_nsm_act[event - BTA_AV_FIRST_NSM_EVT]) ((tBTA_AV_DATA *) p_msg);
@@ -1318,16 +1318,16 @@ BOOLEAN bta_av_hdl_event(BT_HDR *p_msg)
     else if (event >= BTA_AV_FIRST_SM_EVT && event <= BTA_AV_LAST_SM_EVT)
     {
 #if (defined(BTA_AV_DEBUG) && BTA_AV_DEBUG == TRUE)
-        APPL_TRACE_VERBOSE("AV sm event=0x%x(%s)", event, bta_av_evt_code(event));
+        APPL_TRACE_VERBOSE("AV sm event=0x%x(%s)\n", event, bta_av_evt_code(event));
 #else
-        APPL_TRACE_VERBOSE("AV sm event=0x%x", event);
+        APPL_TRACE_VERBOSE("AV sm event=0x%x\n", event);
 #endif
         /* state machine events */
         bta_av_sm_execute(&bta_av_cb, p_msg->event, (tBTA_AV_DATA *) p_msg);
     }
     else
     {
-        APPL_TRACE_VERBOSE("handle=0x%x", p_msg->layer_specific);
+        APPL_TRACE_VERBOSE("handle=0x%x\n", p_msg->layer_specific);
         /* stream state machine events */
         bta_av_ssm_execute( bta_av_hndl_to_scb(p_msg->layer_specific),
                                 p_msg->event, (tBTA_AV_DATA *) p_msg);
