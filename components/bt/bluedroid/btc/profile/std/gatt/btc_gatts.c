@@ -118,7 +118,7 @@ void btc_gatts_call_handler(btc_msg_t *msg)
 		break;
 	case BTC_GATTS_ACT_CREATE_SERVICE: {
         tBTA_GATT_SRVC_ID srvc_id;
-        btc_to_bta_srvc_id(&srvc_id, &arg->service_uuid);
+        btc_to_bta_srvc_id(&srvc_id, &arg->service_id);
         BTA_GATTS_CreateService(arg->gatt_if, &srvc_id.id.uuid,
                                 srvc_id.id.inst_id, arg->num_handle,
                                 srvc_id.is_primary);

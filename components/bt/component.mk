@@ -15,9 +15,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/btc/profile/std/gatt/include	\
 				bluedroid/btc/profile/std/gap/include	\
 				bluedroid/btc/profile/std/sdp/include	\
-				bluedroid/btc/profile/std/include/gatt	\
-				bluedroid/btc/profile/std/include/gap	\
-				bluedroid/btc/profile/std/include/sdp	\
+				bluedroid/btc/profile/std/include	\
 				bluedroid/btc/include		\
 				bluedroid/stack/btm/include		\
 				bluedroid/stack/btu/include		\
@@ -55,7 +53,6 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/osi				\
 			bluedroid/btc/core		\
 			bluedroid/btc/profile/esp/blufi	\
-			bluedroid/btc/profile/std/gap		\
 			bluedroid/btc/profile/std/gap		\
 			bluedroid/btc/profile/std/gatt		\
 			bluedroid/btc/profile			\

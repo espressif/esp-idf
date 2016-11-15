@@ -234,9 +234,9 @@ esp_err_t esp_ble_gattc_get_characteristic(uint16_t conn_id,
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     arg.conn_id = conn_id;
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     if (start_char_id) {
-        memcpy(&arg.char_uuid, start_char_id, sizeof(esp_gatt_id_t));
+        memcpy(&arg.char_id, start_char_id, sizeof(esp_gatt_id_t));
         msg.act = BTC_GATTC_ACT_GET_NEXT_CHAR;
     } else {
         msg.act = BTC_GATTC_ACT_GET_FIRST_CHAR;
@@ -273,10 +273,10 @@ esp_err_t esp_ble_gattc_get_descriptor(uint16_t conn_id,
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     arg.conn_id = conn_id;
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&arg.char_uuid, char_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     if (start_descr_id) {
-        memcpy(&arg.descr_uuid, start_descr_id, sizeof(esp_gatt_id_t));
+        memcpy(&arg.descr_id, start_descr_id, sizeof(esp_gatt_id_t));
         msg.act = BTC_GATTC_ACT_GET_NEXT_DESCR;
     } else {
         msg.act = BTC_GATTC_ACT_GET_FIRST_DESCR;
@@ -312,9 +312,9 @@ esp_err_t esp_ble_gattc_get_included_service(uint16_t conn_id,
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     arg.conn_id = conn_id;
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     if (start_incl_srvc_id) {
-        memcpy(&arg.start_service_uuid, start_incl_srvc_id, sizeof(esp_gatt_srvc_id_t));
+        memcpy(&arg.start_service_id, start_incl_srvc_id, sizeof(esp_gatt_srvc_id_t));
         msg.act = BTC_GATTC_ACT_GET_NEXT_INCL_SERVICE;
     } else {
         msg.act = BTC_GATTC_ACT_GET_FIRST_INCL_SERVICE;
@@ -348,8 +348,8 @@ esp_err_t esp_ble_gattc_read_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_READ_CHAR;
     arg.conn_id = conn_id;
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&arg.char_uuid, char_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     arg.auth_req = auth_req;
     return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -381,9 +381,9 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_READ_CHAR_DESCR;
     arg.conn_id = conn_id;
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&arg.char_uuid, char_id, sizeof(esp_gatt_id_t));
-    memcpy(&arg.descr_uuid, descr_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.descr_id, descr_id, sizeof(esp_gatt_id_t));
     arg.auth_req = auth_req;
     return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -417,8 +417,8 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_WRITE_CHAR;
     arg.conn_id = (uint16_t) conn_id;
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&arg.char_uuid, char_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     arg.len = len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : len;
     memcpy(arg.value, value, arg.len);
     arg.auth_req = auth_req;
@@ -455,9 +455,9 @@ esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_WRITE_CHAR_DESCR;
     arg.conn_id = (uint16_t) conn_id;
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&arg.char_uuid, char_id, sizeof(esp_gatt_id_t));
-    memcpy(&arg.descr_uuid, descr_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.descr_id, descr_id, sizeof(esp_gatt_id_t));
     arg.len = len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : len;
     memcpy(arg.value, value, arg.len);
     arg.auth_req = auth_req;
@@ -495,8 +495,8 @@ esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_PREPARE_WRITE;
     arg.conn_id = conn_id;
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&arg.char_uuid, char_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     arg.offset = offset;
     arg.len = len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : len; // length check ?
     memcpy(arg.value, data, arg.len);
@@ -560,8 +560,8 @@ esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gatt_if,
     msg.act = BTC_GATTC_ACT_REG_FOR_NOTIFY;
     arg.gatt_if = gatt_if;
     memcpy(&arg.remote_bda, &server_bda, sizeof(esp_bd_addr_t));
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&arg.char_uuid, char_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -594,8 +594,8 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gatt_if,
     msg.act = BTC_GATTC_ACT_UNREG_FOR_NOTIFY;
     arg.gatt_if = gatt_if;
     memcpy(&arg.remote_bda, &server_bda, sizeof(esp_bd_addr_t));
-    memcpy(&arg.service_uuid, srvc_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&arg.char_uuid, char_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.char_id, char_id, sizeof(esp_gatt_id_t));
     return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 

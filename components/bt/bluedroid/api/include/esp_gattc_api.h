@@ -60,10 +60,10 @@ typedef struct {
     uint16_t len;
     uint16_t offset;
     esp_gatt_if_t gatt_if;	 /* internal is server_if or client_if */    
-    esp_gatt_srvc_id_t service_uuid;
-    esp_gatt_srvc_id_t start_service_uuid;
-    esp_gatt_id_t char_uuid;
-    esp_gatt_id_t descr_uuid;
+    esp_gatt_srvc_id_t service_id;
+    esp_gatt_srvc_id_t start_service_id;
+    esp_gatt_id_t char_id;
+    esp_gatt_id_t descr_id;
     esp_gatt_auth_req_t auth_req;
     esp_bd_addr_t remote_bda;
     esp_bt_uuid_t uuid;
@@ -116,7 +116,7 @@ typedef union {
     /* ESP_GATTC_SEARCH_RES_EVT */
     struct gattc_search_res_evt_param {
         uint16_t conn_id;
-        esp_gatt_srvc_id_t service_uuid;
+        esp_gatt_srvc_id_t service_id;
     } search_res;
     
     /* ESP_GATTC_READ_CHAR_EVT,  ESP_GATTC_READ_DESCR_EVT */

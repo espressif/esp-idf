@@ -36,8 +36,8 @@
 /* esp_ble_gatts_args_t */
 typedef struct {
 	esp_gatt_if_t gatt_if;	 /* internal is server_if or client_if */
-	esp_gatt_srvc_id_t service_uuid;
-	esp_gatt_id_t char_uuid;
+	esp_gatt_srvc_id_t service_id;
+	esp_gatt_id_t char_id;
 	esp_gatt_id_t descr_uuid;
 	esp_bt_uuid_t uuid;
 	esp_gatt_rsp_t rsp;
@@ -113,7 +113,7 @@ typedef union {
 		int status;
 		uint16_t gatt_if;
 		uint16_t service_handle; //handle
-		esp_gatt_srvc_id_t service_id; //uuid
+		esp_gatt_srvc_id_t service_id; //id
 	} create;
 	// param for ESP_GATTS_ADD_INCL_SRVC_EVT
 	struct gatts_add_incl_srvc_evt_param {
@@ -240,14 +240,14 @@ esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatt_if);
 **                  service and characteristics/descriptors into the service.
 **
 ** @param[in]       gatt_if: gatt interface ID
-** @param[in]       service_uuid: service UUID.
+** @param[in]       service_id: service ID.
 ** @param[in]       num_handle: numble of handle requessted for this service.
 **
 ** @return          ESP_OK - success, other - failed
 **
 *******************************************************************************/
 esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatt_if,
-				esp_gatt_srvc_id_t *service_uuid, uint16_t num_handle);
+				esp_gatt_srvc_id_t *service_id, uint16_t num_handle);
 
 
 
