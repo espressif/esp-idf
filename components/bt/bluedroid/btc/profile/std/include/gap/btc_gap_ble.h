@@ -1,0 +1,21 @@
+#ifndef __BTC_GAP_BLE_H__
+#define __BTC_GAP_BLE_H__
+
+typedef enum {
+	BTC_GAP_BLE_ACT_CFG_ADV_DATA = 0,
+	BTC_GAP_BLE_ACT_SET_SCAN_PARAM,
+	BTC_GAP_BLE_ACT_START_SCAN,
+	BTC_GAP_BLE_ACT_STOP_SCAN,
+	BTC_GAP_BLE_ACT_START_ADV,
+	BTC_GAP_BLE_ACT_STOP_ADV,
+	BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM,
+	BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN,
+	BTC_GAP_BLE_ACT_SET_RAND_ADDRESS,
+	BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
+	BTC_GAP_BLE_ACT_SET_DEV_NAME,
+} btc_gap_ble_act_t;
+
+void btc_gap_ble_call_handler(btc_msg_t *msg);
+void btc_gap_ble_cb_handler(btc_msg_t *msg);
+
+#endif /* __BTC_GAP_BLE_H__ */

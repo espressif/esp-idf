@@ -1000,6 +1000,8 @@ void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
 		p_msg->addr_type_own = addr_type_own;
 		p_msg->scan_filter_policy = scan_fil_poilcy;
 		p_msg->scan_param_setup_cback = scan_param_setup_cback;
+
+        bta_sys_sendmsg(p_msg);
 	}
 	
 

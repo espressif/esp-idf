@@ -1,0 +1,26 @@
+#ifndef __BTC_GATTS_H__
+#define __BTC_GATTS_H__
+#include "btc_task.h"
+
+typedef enum {
+	BTC_GATTS_ACT_APP_REGISTER = 0,
+	BTC_GATTS_ACT_APP_UNREGISTER,
+	BTC_GATTS_ACT_CREATE_SERVICE,
+	BTC_GATTS_ACT_DELETE_SERVICE,
+	BTC_GATTS_ACT_START_SERVICE,
+	BTC_GATTS_ACT_STOP_SERVICE,
+	BTC_GATTS_ACT_ADD_INCLUDE_SERVICE,
+	BTC_GATTS_ACT_ADD_CHAR,
+	BTC_GATTS_ACT_ADD_CHAR_DESCR,
+	BTC_GATTS_ACT_SEND_INDICATE,
+	BTC_GATTS_ACT_SEND_RESPONSE,
+	BTC_GATTS_ACT_OPEN,
+	BTC_GATTS_ACT_CLOSE,
+} btc_gatts_act_t;
+
+
+
+void btc_gatts_call_handler(btc_msg_t *msg);
+void btc_gatts_cb_handler(btc_msg_t *msg);
+
+#endif /* __BTC_GATTS_H__ */

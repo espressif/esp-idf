@@ -34,17 +34,13 @@
 #include "bt_trace.h"
 #include "btm_api.h"
 #include "bt_types.h"
-#include "dis_api.h"
 
 #include "blufi_prf.h"
-#include "hid_le_prf.h"
-#include "prf_defs.h"
-#include "hcimsgs.h"
 
 #include "blufi.h"
 #include "blufi_adv.h"
 
-#include "esp_bt_common.h"
+#include "esp_bt_defs.h"
 
 static void BlufiDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
 

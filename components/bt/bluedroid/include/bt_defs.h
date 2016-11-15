@@ -74,7 +74,6 @@ typedef enum {
     BT_STATUS_AUTH_FAILURE,
     BT_STATUS_RMT_DEV_DOWN,
     BT_STATUS_AUTH_REJECTED
-
 } bt_status_t;
 
 #ifndef CPU_LITTLE_ENDIAN

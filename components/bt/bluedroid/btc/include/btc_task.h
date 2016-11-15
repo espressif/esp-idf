@@ -1,0 +1,48 @@
+#ifndef __BTC_TASK_H__
+#define __BTC_TASK_H__
+
+#include <stdint.h>
+#include "bt_defs.h"
+
+#define BTC_TASK_QUEUE_NUM	20
+#define BTC_TASK_STACK_SIZE	4096
+#define BTC_TASK_NAME		"btcT"
+
+typedef struct btc_msg {
+	uint8_t sig;	//event signal
+	uint8_t aid;	//application id
+	uint8_t pid;	//profile id
+	uint8_t act;	//profile action, defined in seprerate header files
+	void   *arg;    //param for btc function or function param
+} btc_msg_t;
+
+typedef enum {
+	BTC_SIG_API_CALL = 0,	// APP TO STACK
+	BTC_SIG_API_CB,			// STACK TO APP
+	BTC_SIG_NUM,
+} btc_sig_t; //btc message type
+
+typedef enum {
+	BTC_PID_GATTS = 0,
+	BTC_PID_GATTC,
+	BTC_PID_GAP_BLE,
+	BTC_PID_GAP_BT,
+	BTC_PID_SDP,
+	BTC_PID_BLE_HID,
+	BTC_PID_BT_HID,
+	BTC_PID_SPP,
+	BTC_PID_SPPLIKE,
+	BTC_PID_BLUFI,
+	BTC_PID_NUM,
+} btc_pid_t; //btc profile id 
+
+typedef struct {
+	void (* btc_call)(btc_msg_t *msg);
+	void (* btc_cb)(btc_msg_t *msg);
+} btc_func_t;
+
+typedef void (* btc_arg_deep_copy_t)(btc_msg_t *msg, void *dst, void *src);
+
+bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func);
+
+#endif /* __BTC_TASK_H__ */

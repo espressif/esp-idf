@@ -9,15 +9,16 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/gki/include			\
 				bluedroid/hci/include			\
 				bluedroid/osi/include			\
-				bluedroid/profiles/core/include			\
-				bluedroid/profiles/esp/blufi/include		\
-				bluedroid/profiles/esp/include		\
-				bluedroid/profiles/std/avrc/include	\
-				bluedroid/profiles/std/battery/include	\
-				bluedroid/profiles/std/dis/include	\
-				bluedroid/profiles/std/hid/include	\
-				bluedroid/profiles/std/rfcomm/include	\
-				bluedroid/profiles/std/include		\
+				bluedroid/btc/core/include		\
+				bluedroid/btc/profile/esp/blufi/include		\
+				bluedroid/btc/profile/esp/include		\
+				bluedroid/btc/profile/std/gatt/include	\
+				bluedroid/btc/profile/std/gap/include	\
+				bluedroid/btc/profile/std/sdp/include	\
+				bluedroid/btc/profile/std/include/gatt	\
+				bluedroid/btc/profile/std/include/gap	\
+				bluedroid/btc/profile/std/include/sdp	\
+				bluedroid/btc/include		\
 				bluedroid/stack/btm/include		\
 				bluedroid/stack/btu/include		\
 				bluedroid/stack/gap/include		\
@@ -52,21 +53,12 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/hci				\
 			bluedroid/main				\
 			bluedroid/osi				\
-			bluedroid/profiles/core		\
-			bluedroid/profiles/esp/blufi	\
-			bluedroid/profiles/esp/ble_button	\
-			bluedroid/profiles/esp/wechat_AirSync	\
-			bluedroid/profiles/esp			\
-			bluedroid/profiles/std/avrc		\
-			bluedroid/profiles/std/battery		\
-			bluedroid/profiles/std/dis		\
-			bluedroid/profiles/std/hid		\
-			bluedroid/profiles/std/hid_le		\
-			bluedroid/profiles/std/rfcomm		\
-			bluedroid/profiles/std/sdp		\
-			bluedroid/profiles/std/gap		\
-			bluedroid/profiles/std			\
-			bluedroid/profiles			\
+			bluedroid/btc/core		\
+			bluedroid/btc/profile/esp/blufi	\
+			bluedroid/btc/profile/std/gap		\
+			bluedroid/btc/profile/std/gap		\
+			bluedroid/btc/profile/std/gatt		\
+			bluedroid/btc/profile			\
 			bluedroid/stack/btm			\
 			bluedroid/stack/btu			\
 			bluedroid/stack/gap			\

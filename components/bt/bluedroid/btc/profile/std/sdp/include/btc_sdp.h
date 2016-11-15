@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "esp_err.h"
-#include "esp_bt_defs.h"
+#include "esp_bt_common.h"
 #include "bta_sdp_api.h"
 #include "bt_sdp.h"
 
