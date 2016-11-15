@@ -116,7 +116,8 @@ class PartitionDefinition(object):
         "app" : APP_TYPE,
         "data" : DATA_TYPE,
     }
-
+    
+    # Keep this map in sync with esp_partition_subtype_t enum in esp_partition.h 
     SUBTYPES = {
         APP_TYPE : {
             "factory" : 0x00,
@@ -124,8 +125,11 @@ class PartitionDefinition(object):
             },
         DATA_TYPE : {
             "ota" : 0x00,
-            "rf" : 0x01,
-            "wifi" : 0x02,
+            "phy" : 0x01,
+            "nvs" : 0x02,
+            "esphttpd" : 0x80,
+            "fat" : 0x81,
+            "spiffs" : 0x82,
             },
     }
 
