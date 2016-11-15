@@ -113,7 +113,7 @@ functions but without including stdio.h here. */
 /*
  * Defines the size, in words, of the stack allocated to the idle task.
  */
-#define tskIDLE_STACK_SIZE	configMINIMAL_STACK_SIZE
+#define tskIDLE_STACK_SIZE	2048//configMINIMAL_STACK_SIZE
 
 #if( configUSE_PREEMPTION == 0 )
 	/* If the cooperative scheduler is being used then a yield should not be
