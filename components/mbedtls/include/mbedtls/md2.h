@@ -44,10 +44,10 @@ extern "C" {
  */
 typedef struct
 {
-    unsigned char cksum[16];    /*!< checksum of the data block */
-    unsigned char state[48];    /*!< intermediate digest state  */
-    unsigned char buffer[16];   /*!< data block being processed */
-    size_t left;                /*!< amount of data in buffer   */
+    unsigned char cksum[16];    //!< checksum of the data block
+    unsigned char state[48];    //!< intermediate digest state
+    unsigned char buffer[16];   //!< data block being processed
+    size_t left;                //!< amount of data in buffer
 }
 mbedtls_md2_context;
 

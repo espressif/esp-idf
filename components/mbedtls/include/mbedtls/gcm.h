@@ -41,15 +41,15 @@ extern "C" {
  * \brief          GCM context structure
  */
 typedef struct {
-    mbedtls_cipher_context_t cipher_ctx;/*!< cipher context used */
-    uint64_t HL[16];            /*!< Precalculated HTable */
-    uint64_t HH[16];            /*!< Precalculated HTable */
-    uint64_t len;               /*!< Total data length */
-    uint64_t add_len;           /*!< Total add length */
-    unsigned char base_ectr[16];/*!< First ECTR for tag */
-    unsigned char y[16];        /*!< Y working value */
-    unsigned char buf[16];      /*!< buf working value */
-    int mode;                   /*!< Encrypt or Decrypt */
+    mbedtls_cipher_context_t cipher_ctx;//!< cipher context used
+    uint64_t HL[16];            //!< Precalculated HTable
+    uint64_t HH[16];            //!< Precalculated HTable
+    uint64_t len;               //!< Total data length
+    uint64_t add_len;           //!< Total add length
+    unsigned char base_ectr[16];//!< First ECTR for tag
+    unsigned char y[16];        //!< Y working value
+    unsigned char buf[16];      //!< buf working value
+    int mode;                   //!< Encrypt or Decrypt
 }
 mbedtls_gcm_context;
 

@@ -52,7 +52,7 @@ extern "C" {
  */
 typedef struct
 {
-    uint32_t sk[32];            /*!<  DES subkeys       */
+    uint32_t sk[32];            //!<  DES subkeys
 }
 mbedtls_des_context;
 
@@ -61,7 +61,7 @@ mbedtls_des_context;
  */
 typedef struct
 {
-    uint32_t sk[96];            /*!<  3DES subkeys      */
+    uint32_t sk[96];            //!<  3DES subkeys
 }
 mbedtls_des3_context;
 

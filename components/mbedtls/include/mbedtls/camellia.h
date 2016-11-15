@@ -51,8 +51,8 @@ extern "C" {
  */
 typedef struct
 {
-    int nr;                     /*!<  number of rounds  */
-    uint32_t rk[68];            /*!<  CAMELLIA round keys    */
+    int nr;                     //!<  number of rounds
+    uint32_t rk[68];            //!<  CAMELLIA round keys
 }
 mbedtls_camellia_context;
 

@@ -45,10 +45,10 @@ extern "C" {
  */
 typedef struct
 {
-    uint32_t total[2];          /*!< number of bytes processed  */
-    uint32_t state[8];          /*!< intermediate digest state  */
-    unsigned char buffer[64];   /*!< data block being processed */
-    int is224;                  /*!< 0 => SHA-256, else SHA-224 */
+    uint32_t total[2];          //!< number of bytes processed
+    uint32_t state[8];          //!< intermediate digest state
+    unsigned char buffer[64];   //!< data block being processed
+    int is224;                  //!< 0 => SHA-256, else SHA-224
 }
 mbedtls_sha256_context;
 

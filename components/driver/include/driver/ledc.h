@@ -30,68 +30,68 @@ extern "C" {
 #define LEDC_REF_CLK_HZ (1*1000000)
 
 typedef enum {
-    LEDC_HIGH_SPEED_MODE = 0, /*!< LEDC high speed speed_mode */
+    LEDC_HIGH_SPEED_MODE = 0, //!< LEDC high speed speed_mode
     //in this version, we only support high speed speed_mode. We will access low speed speed_mode later
-    //LEDC_LOW_SPEED_MODE,    /*!< LEDC low speed speed_mode */
-    LEDC_SPEED_MODE_MAX,      /*!< LEDC speed limit */
+    //LEDC_LOW_SPEED_MODE,    //!< LEDC low speed speed_mode
+    LEDC_SPEED_MODE_MAX,      //!< LEDC speed limit
 } ledc_mode_t;
 
 typedef enum {
-    LEDC_INTR_DISABLE = 0,    /*!< Disable LEDC interrupt */
-    LEDC_INTR_FADE_END,       /*!< Enable LEDC interrupt */
+    LEDC_INTR_DISABLE = 0,    //!< Disable LEDC interrupt
+    LEDC_INTR_FADE_END,       //!< Enable LEDC interrupt
 } ledc_intr_type_t;
 
 typedef enum {
-    LEDC_DUTY_DIR_DECREASE = 0,    /*!< LEDC duty decrease direction */
-    LEDC_DUTY_DIR_INCREASE = 1,    /*!< LEDC duty increase direction */
+    LEDC_DUTY_DIR_DECREASE = 0,    //!< LEDC duty decrease direction
+    LEDC_DUTY_DIR_INCREASE = 1,    //!< LEDC duty increase direction
 } ledc_duty_direction_t;
 
 typedef enum  {
-    LEDC_REF_TICK = 0, /*!< LEDC timer clock divided from reference tick(1Mhz) */
-    LEDC_APB_CLK,      /*!< LEDC timer clock divided from APB clock(80Mhz)*/
+    LEDC_REF_TICK = 0, //!< LEDC timer clock divided from reference tick(1Mhz)
+    LEDC_APB_CLK,      //!< LEDC timer clock divided from APB clock(80Mhz)
 } ledc_clk_src_t;
 
 typedef enum {
-    LEDC_TIMER_0 = 0, /*!< LEDC source timer TIMER0 */
-    LEDC_TIMER_1,     /*!< LEDC source timer TIMER1 */
-    LEDC_TIMER_2,     /*!< LEDC source timer TIMER2 */
-    LEDC_TIMER_3,     /*!< LEDC source timer TIMER3 */
+    LEDC_TIMER_0 = 0, //!< LEDC source timer TIMER0
+    LEDC_TIMER_1,     //!< LEDC source timer TIMER1
+    LEDC_TIMER_2,     //!< LEDC source timer TIMER2
+    LEDC_TIMER_3,     //!< LEDC source timer TIMER3
 } ledc_timer_t;
 
 typedef enum {
-    LEDC_CHANNEL_0 = 0, /*!< LEDC channel 0 */
-    LEDC_CHANNEL_1,     /*!< LEDC channel 1 */
-    LEDC_CHANNEL_2,     /*!< LEDC channel 2 */
-    LEDC_CHANNEL_3,     /*!< LEDC channel 3 */
-    LEDC_CHANNEL_4,     /*!< LEDC channel 4 */
-    LEDC_CHANNEL_5,     /*!< LEDC channel 5 */
-    LEDC_CHANNEL_6,     /*!< LEDC channel 6 */
-    LEDC_CHANNEL_7,     /*!< LEDC channel 7 */
+    LEDC_CHANNEL_0 = 0, //!< LEDC channel 0
+    LEDC_CHANNEL_1,     //!< LEDC channel 1
+    LEDC_CHANNEL_2,     //!< LEDC channel 2
+    LEDC_CHANNEL_3,     //!< LEDC channel 3
+    LEDC_CHANNEL_4,     //!< LEDC channel 4
+    LEDC_CHANNEL_5,     //!< LEDC channel 5
+    LEDC_CHANNEL_6,     //!< LEDC channel 6
+    LEDC_CHANNEL_7,     //!< LEDC channel 7
 } ledc_channel_t;
 
 typedef enum {
-    LEDC_TIMER_10_BIT = 10, /*!< LEDC PWM depth 10Bit */
-    LEDC_TIMER_11_BIT = 11, /*!< LEDC PWM depth 11Bit */
-    LEDC_TIMER_12_BIT = 12, /*!< LEDC PWM depth 12Bit */
-    LEDC_TIMER_13_BIT = 13, /*!< LEDC PWM depth 13Bit */
-    LEDC_TIMER_14_BIT = 14, /*!< LEDC PWM depth 14Bit */
-    LEDC_TIMER_15_BIT = 15, /*!< LEDC PWM depth 15Bit */
+    LEDC_TIMER_10_BIT = 10, //!< LEDC PWM depth 10Bit
+    LEDC_TIMER_11_BIT = 11, //!< LEDC PWM depth 11Bit
+    LEDC_TIMER_12_BIT = 12, //!< LEDC PWM depth 12Bit
+    LEDC_TIMER_13_BIT = 13, //!< LEDC PWM depth 13Bit
+    LEDC_TIMER_14_BIT = 14, //!< LEDC PWM depth 14Bit
+    LEDC_TIMER_15_BIT = 15, //!< LEDC PWM depth 15Bit
 } ledc_timer_bit_t;
 
 typedef struct {
-    int gpio_num;                   /*!< the LEDC output gpio_num, if you want to use gpio16, gpio_num = 16*/
-    ledc_mode_t speed_mode;         /*!< LEDC speed speed_mode, high-speed mode or low-speed mode*/
-    ledc_channel_t channel;         /*!< LEDC channel(0 - 7)*/
-    ledc_intr_type_t intr_type;     /*!< configure interrupt, Fade interrupt enable  or Fade interrupt disable*/
-    ledc_timer_t timer_sel;         /*!< Select the timer source of channel (0 - 3)*/
-    uint32_t duty;                  /*!< LEDC channel duty, the duty range is [0, (2**bit_num) - 1], */
+    int gpio_num;                   //!< the LEDC output gpio_num, if you want to use gpio16, gpio_num = 16
+    ledc_mode_t speed_mode;         //!< LEDC speed speed_mode, high-speed mode or low-speed mode
+    ledc_channel_t channel;         //!< LEDC channel(0 - 7)
+    ledc_intr_type_t intr_type;     //!< configure interrupt, Fade interrupt enable  or Fade interrupt disable
+    ledc_timer_t timer_sel;         //!< Select the timer source of channel (0 - 3)
+    uint32_t duty;                  //!< LEDC channel duty, the duty range is [0, (2**bit_num) - 1],
 } ledc_channel_config_t;
 
 typedef struct {
-    ledc_mode_t speed_mode;         /*!< LEDC speed speed_mode, high-speed mode or low-speed mode*/
-    ledc_timer_bit_t bit_num;       /*!< LEDC channel duty depth*/
-    ledc_timer_t  timer_num;        /*!< The timer source of channel (0 - 3)*/
-    uint32_t freq_hz;               /*!< LEDC timer frequency(Hz)*/
+    ledc_mode_t speed_mode;         //!< LEDC speed speed_mode, high-speed mode or low-speed mode
+    ledc_timer_bit_t bit_num;       //!< LEDC channel duty depth
+    ledc_timer_t  timer_num;        //!< The timer source of channel (0 - 3)
+    uint32_t freq_hz;               //!< LEDC timer frequency(Hz)
 } ledc_timer_config_t;
 
 

@@ -148,17 +148,17 @@ extern "C" {
  */
 typedef struct
 {
-    size_t len; /*!<  size(P) in chars  */
-    mbedtls_mpi P;      /*!<  prime modulus     */
-    mbedtls_mpi G;      /*!<  generator         */
-    mbedtls_mpi X;      /*!<  secret value      */
-    mbedtls_mpi GX;     /*!<  self = G^X mod P  */
-    mbedtls_mpi GY;     /*!<  peer = G^Y mod P  */
-    mbedtls_mpi K;      /*!<  key = GY^X mod P  */
-    mbedtls_mpi RP;     /*!<  cached R^2 mod P  */
-    mbedtls_mpi Vi;     /*!<  blinding value    */
-    mbedtls_mpi Vf;     /*!<  un-blinding value */
-    mbedtls_mpi pX;     /*!<  previous X        */
+    size_t len; //!<  size(P) in chars
+    mbedtls_mpi P;      //!<  prime modulus
+    mbedtls_mpi G;      //!<  generator
+    mbedtls_mpi X;      //!<  secret value
+    mbedtls_mpi GX;     //!<  self = G^X mod P
+    mbedtls_mpi GY;     //!<  peer = G^Y mod P
+    mbedtls_mpi K;      //!<  key = GY^X mod P
+    mbedtls_mpi RP;     //!<  cached R^2 mod P
+    mbedtls_mpi Vi;     //!<  blinding value
+    mbedtls_mpi Vf;     //!<  un-blinding value
+    mbedtls_mpi pX;     //!<  previous X
 }
 mbedtls_dhm_context;
 

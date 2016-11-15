@@ -132,7 +132,7 @@ typedef struct
     mbedtls_havege_state    havege_data;
 #endif
 #if defined(MBEDTLS_THREADING_C)
-    mbedtls_threading_mutex_t mutex;    /*!< mutex                  */
+    mbedtls_threading_mutex_t mutex;    //!< mutex
 #endif
 #if defined(MBEDTLS_ENTROPY_NV_SEED)
     int initial_entropy_run;

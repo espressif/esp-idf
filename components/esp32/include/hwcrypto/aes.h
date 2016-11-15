@@ -52,8 +52,8 @@ typedef struct {
  *                 generating an extra round key
  */
 typedef struct {
-    int nr;                     /*!<  number of rounds  */
-    uint32_t *rk;               /*!<  AES round keys    */
+    int nr;                     //!<  number of rounds
+    uint32_t *rk;               //!<  AES round keys
     KEY_CTX enc;
     KEY_CTX dec;
 } esp_aes_context;
