@@ -686,13 +686,14 @@ esp_err_t uart_flush(uart_port_t uart_num);
  * {
  *     int uart_num = (int)pvParameters;
  *     uart_event_t event;
- *     uint8_t dtmp[1000];
+ *     size_t size = 1024;
+ *     uint8_t* dtmp = (uint8_t*)malloc(size);
  *     for(;;) {
  *         //Waiting for UART event.
  *         if(xQueueReceive(uart0_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
  *             ESP_LOGI(TAG, "uart[%d] event:", uart_num);
  *             switch(event.type) {
- *                 memset(dtmp, 0, sizeof(dtmp));
+ *                 memset(dtmp, 0, size);
  *                 //Event of UART receving data
  *                 case UART_DATA:
  *                     ESP_LOGI(TAG,"data, len: %d", event.size);
@@ -727,6 +728,8 @@ esp_err_t uart_flush(uart_port_t uart_num);
  *             }
  *        }
  *     }
+ *     free(dtmp);
+ *     dtmp = NULL;
  *     vTaskDelete(NULL);
  * }
  *
@@ -744,13 +747,13 @@ esp_err_t uart_flush(uart_port_t uart_num);
  *     //Set UART parameters
  *     uart_param_config(uart_num, &uart_config);
  *     //Set UART pins,(-1: default pin, no change.)
- *     uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 15, 13);
+ *     uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
  *     //Set UART log level
  *     esp_log_level_set(TAG, ESP_LOG_INFO);
  *     //Install UART driver, and get the queue.
- *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, 17, &uart0_queue, RINGBUF_TYPE_BYTEBUF);
+ *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, 17, &uart0_queue);
  *     //Create a task to handler UART event from ISR
- *     xTaskCreate(uart_task, "uTask", 2048*8, (void*)uart_num, 10, NULL);
+ *     xTaskCreate(uart_task, "uTask", 1024, (void*)uart_num, 10, NULL);
  * }
  * @endcode
  *
