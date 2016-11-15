@@ -69,6 +69,74 @@ const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
     GPIO_PIN_REG_39
 };
 
+const gpio_pu_pd_desc_t gpio_pu_pd_desc[GPIO_PIN_COUNT]={
+    {RTC_IO_TOUCH_PAD1_REG, RTC_IO_TOUCH_PAD1_RUE_M, RTC_IO_TOUCH_PAD1_RDE_M},
+    {PERIPHS_IO_MUX_U0TXD_U, FUN_PU, FUN_PD},
+    {RTC_IO_TOUCH_PAD2_REG, RTC_IO_TOUCH_PAD2_RUE_M, RTC_IO_TOUCH_PAD2_RDE_M},
+    {PERIPHS_IO_MUX_U0RXD_U, FUN_PU, FUN_PD},
+    {RTC_IO_TOUCH_PAD0_REG, RTC_IO_TOUCH_PAD0_RUE_M, RTC_IO_TOUCH_PAD0_RDE_M},
+    {PERIPHS_IO_MUX_GPIO5_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_CLK_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_DATA0_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_DATA1_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_DATA2_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_DATA3_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_SD_CMD_U, FUN_PU, FUN_PD},
+    {RTC_IO_TOUCH_PAD5_REG, RTC_IO_TOUCH_PAD5_RUE_M, RTC_IO_TOUCH_PAD5_RDE_M},
+    {RTC_IO_TOUCH_PAD4_REG, RTC_IO_TOUCH_PAD4_RUE_M, RTC_IO_TOUCH_PAD4_RDE_M},
+    {RTC_IO_TOUCH_PAD6_REG, RTC_IO_TOUCH_PAD6_RUE_M, RTC_IO_TOUCH_PAD6_RDE_M},
+    {RTC_IO_TOUCH_PAD3_REG, RTC_IO_TOUCH_PAD3_RUE_M, RTC_IO_TOUCH_PAD3_RDE_M},
+    {PERIPHS_IO_MUX_GPIO16_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO17_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO18_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO19_U, FUN_PU, FUN_PD},
+    {0,0,0},
+    {PERIPHS_IO_MUX_GPIO21_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO22_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO23_U, FUN_PU, FUN_PD},
+    {0,0,0},
+    {RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_RUE_M, RTC_IO_PDAC1_RDE_M},
+    {RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_RUE_M, RTC_IO_PDAC2_RDE_M},
+    {RTC_IO_TOUCH_PAD7_REG, RTC_IO_TOUCH_PAD7_RUE_M, RTC_IO_TOUCH_PAD7_RDE_M},
+    {0,0,0},
+    {0,0,0},
+    {0,0,0},
+    {0,0,0},
+    {RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32P_RUE_M, RTC_IO_X32P_RDE_M},
+    {RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_RUE_M, RTC_IO_X32N_RDE_M},
+    {PERIPHS_IO_MUX_GPIO34_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO35_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO36_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO37_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO38_U, FUN_PU, FUN_PD},
+    {PERIPHS_IO_MUX_GPIO39_U, FUN_PU, FUN_PD}
+};
+
+
+esp_err_t gpio_pullup_en(gpio_num_t gpio_num) {
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+    return ESP_OK;
+}
+
+esp_err_t gpio_pullup_dis(gpio_num_t gpio_num) {
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+    return ESP_OK;
+}
+
+esp_err_t gpio_pulldown_en(gpio_num_t gpio_num) {
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
+    return ESP_OK;
+}
+
+esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num) {
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
+    return ESP_OK;
+}
+
 esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
@@ -152,20 +220,20 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
     esp_err_t ret = ESP_OK;
     switch(pull) {
         case GPIO_PULLUP_ONLY:
-            PIN_PULLUP_EN(GPIO_PIN_MUX_REG[gpio_num]);
-            PIN_PULLDWN_DIS(GPIO_PIN_MUX_REG[gpio_num]);
+            REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+            REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
             break;
         case GPIO_PULLDOWN_ONLY:
-            PIN_PULLUP_DIS(GPIO_PIN_MUX_REG[gpio_num]);
-            PIN_PULLDWN_EN(GPIO_PIN_MUX_REG[gpio_num]);
+            REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+            REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
             break;
         case GPIO_PULLUP_PULLDOWN:
-            PIN_PULLUP_EN(GPIO_PIN_MUX_REG[gpio_num]);
-            PIN_PULLDWN_EN(GPIO_PIN_MUX_REG[gpio_num]);
+            REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+            REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
             break;
         case GPIO_FLOATING:
-            PIN_PULLUP_DIS(GPIO_PIN_MUX_REG[gpio_num]);
-            PIN_PULLDWN_DIS(GPIO_PIN_MUX_REG[gpio_num]);
+            REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu);
+            REG_CLR_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pd);
             break;
         default:
             ESP_LOGE(GPIO_TAG, "Unknown pull up/down mode,gpio_num=%u,pull=%u",gpio_num,pull);
@@ -253,15 +321,15 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
             }
             if(pGPIOConfig->pull_up_en) {
                 pu_en = 1;
-                PIN_PULLUP_EN(io_reg);
+                REG_SET_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
             } else {
-                PIN_PULLUP_DIS(io_reg);
+                REG_CLR_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
             }
             if(pGPIOConfig->pull_down_en) {
                 pd_en = 1;
-                PIN_PULLDWN_EN(io_reg);
+                REG_SET_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
             } else {
-                PIN_PULLDWN_DIS(io_reg);
+                REG_CLR_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
             }
             ESP_LOGI(GPIO_TAG, "GPIO[%d]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
             gpio_set_intr_type(io_num, pGPIOConfig->intr_type);
