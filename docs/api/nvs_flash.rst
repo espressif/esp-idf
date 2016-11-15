@@ -8,6 +8,12 @@ Application Example
 API Reference
 -------------
 
+Header Files
+^^^^^^^^^^^^
+
+  * `nvs_flash/include/nvs_flash.h <https://github.com/espressif/esp-idf/blob/master/components/nvs_flash/include/nvs_flash.h>`_
+  * `nvs_flash/include/nvs.h <https://github.com/espressif/esp-idf/blob/master/components/nvs_flash/include/nvs.h>`_
+
 Macros
 ^^^^^^
 

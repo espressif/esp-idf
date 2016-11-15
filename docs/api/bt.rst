@@ -18,6 +18,11 @@ API Reference
 
 .. _Instructions: template.html
 
+Header Files
+^^^^^^^^^^^^
+
+  * `bt/include/bt.h <https://github.com/espressif/esp-idf/blob/master/components/bt/include/bt.h>`_
+
 Type Definitions
 ^^^^^^^^^^^^^^^^
 

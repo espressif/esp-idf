@@ -25,6 +25,7 @@
 #include "soc/io_mux_reg.h"
 
 #include "esp_gdbstub.h"
+#include "driver/gpio.h"
 
 //Length of buffer used to reserve GDB commands. Has to be at least able to fit the G command, which
 //implies a minimum size of about 320 bytes.
@@ -354,7 +355,7 @@ static int gdbReadCommand() {
 void esp_gdbstub_panic_handler(XtExcFrame *frame) {
 	dumpHwToRegfile(frame);
 	//Make sure txd/rxd are enabled
-	PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
+	gpio_pullup_dis(1);
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
 

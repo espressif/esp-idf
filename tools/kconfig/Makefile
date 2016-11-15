@@ -41,13 +41,13 @@ nconfig: nconf
 	$< $(silent) $(Kconfig)
 
 silentoldconfig: conf
-	$(Q)mkdir -p include/config include/generated
+	mkdir -p include/config include/generated
 	$< $(silent) --$@ $(Kconfig)
 
 localyesconfig localmodconfig: streamline_config.pl conf
-	$(Q)mkdir -p include/config include/generated
-	$(Q)perl $< --$@ . $(Kconfig) > .tmp.config
-	$(Q)if [ -f .config ]; then 					\
+	mkdir -p include/config include/generated
+	perl $< --$@ . $(Kconfig) > .tmp.config
+	if [ -f .config ]; then 					\
 			cmp -s .tmp.config .config ||			\
 			(mv -f .config .config.old.1;			\
 			 mv -f .tmp.config .config;			\
@@ -57,7 +57,7 @@ localyesconfig localmodconfig: streamline_config.pl conf
 			mv -f .tmp.config .config;			\
 			conf $(silent) --silentoldconfig $(Kconfig); \
 	fi
-	$(Q)rm -f .tmp.config
+	rm -f .tmp.config
 
 
 # These targets map 1:1 to the commandline options of 'conf'
@@ -84,22 +84,22 @@ ifeq ($(KBUILD_DEFCONFIG),)
 else
 ifneq ($(wildcard $(srctree)/arch/$(SRCARCH)/configs/$(KBUILD_DEFCONFIG)),)
 	@$(kecho) "*** Default configuration is based on '$(KBUILD_DEFCONFIG)'"
-	$(Q)$< $(silent) --defconfig=arch/$(SRCARCH)/configs/$(KBUILD_DEFCONFIG) $(Kconfig)
+	$< $(silent) --defconfig=arch/$(SRCARCH)/configs/$(KBUILD_DEFCONFIG) $(Kconfig)
 else
 	@$(kecho) "*** Default configuration is based on target '$(KBUILD_DEFCONFIG)'"
-	$(Q) $(MAKE) -f $(srctree)/Makefile $(KBUILD_DEFCONFIG)
+	$(MAKE) -f $(srctree)/Makefile $(KBUILD_DEFCONFIG)
 endif
 endif
 
 %_defconfig: conf
-	$(Q)$< $(silent) --defconfig=arch/$(SRCARCH)/configs/$@ $(Kconfig)
+	$< $(silent) --defconfig=arch/$(SRCARCH)/configs/$@ $(Kconfig)
 
 configfiles=$(wildcard $(srctree)/kernel/configs/$@ $(srctree)/arch/$(SRCARCH)/configs/$@)
 
 %.config: conf
 	$(if $(call configfiles),, $(error No configuration exists for this target on this architecture))
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/kconfig/merge_config.sh -m .config $(configfiles)
-	+$(Q)yes "" | $(MAKE) -f $(srctree)/Makefile oldconfig
+	$(CONFIG_SHELL) $(srctree)/scripts/kconfig/merge_config.sh -m .config $(configfiles)
+	+yes "" | $(MAKE) -f $(srctree)/Makefile oldconfig
 
 PHONY += kvmconfig
 kvmconfig: kvm_guest.config
@@ -111,7 +111,7 @@ xenconfig: xen.config
 
 PHONY += tinyconfig
 tinyconfig:
-	$(Q)$(MAKE) -f $(srctree)/Makefile allnoconfig tiny.config
+	$(MAKE) -f $(srctree)/Makefile allnoconfig tiny.config
 
 # Help text used by make help
 help:
@@ -181,7 +181,7 @@ clean-files += $(conf-objs) $(mconf-objs) conf mconf $(lxdialog)
 PHONY += dochecklxdialog
 $(addprefix ,$(lxdialog)): dochecklxdialog
 dochecklxdialog:
-	$(Q)$(CONFIG_SHELL) $(check-lxdialog) -check $(CC) $(CFLAGS) $(LOADLIBES_mconf)
+	$(CONFIG_SHELL) $(check-lxdialog) -check $(CC) $(CFLAGS) $(LOADLIBES_mconf)
 
 always := dochecklxdialog
 
@@ -285,7 +285,7 @@ quiet_cmd_moc = MOC     $@
 
 # Extract gconf menu items for i18n support
 gconf.glade.h: gconf.glade
-	$(Q)intltool-extract --type=gettext/glade --srcdir=$(srctree) \
+	intltool-extract --type=gettext/glade --srcdir=$(srctree) \
 	gconf.glade
 
 
