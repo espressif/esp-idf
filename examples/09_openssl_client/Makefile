@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := openssl
+PROJECT_NAME := openssl_client
 
 include $(IDF_PATH)/make/project.mk
 
