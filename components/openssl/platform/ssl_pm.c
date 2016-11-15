@@ -90,10 +90,6 @@ int ssl_pm_new(SSL *ssl)
     if (!ssl_pm)
         SSL_ERR(ret, failed1, "ssl_mem_zalloc\n");
 
-    if (ssl->ctx->read_buffer_len < 2048 || 
-        ssl->ctx->read_buffer_len > 8192)
-        return -1;
-
     max_content_len = ssl->ctx->read_buffer_len;
     
     mbedtls_net_init(&ssl_pm->fd);
