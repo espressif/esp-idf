@@ -18,6 +18,11 @@ API Reference
 
 .. _Instructions: template.html
 
+Header Files
+^^^^^^^^^^^^
+
+  * `esp32/include/esp_wifi.h <https://github.com/espressif/esp-idf/blob/master/components/esp32/include/esp_wifi.h>`_
+
 Macros
 ------
 
@@ -28,7 +33,6 @@ Type Definitions
 ----------------
 
 .. doxygentypedef:: wifi_promiscuous_cb_t
-.. doxygentypedef:: wifi_rxcb_t
 .. doxygentypedef:: esp_vendor_ie_cb_t
 
 Functions
@@ -68,7 +72,6 @@ Functions
 .. doxygenfunction:: esp_wifi_get_config
 .. doxygenfunction:: esp_wifi_ap_get_sta_list
 .. doxygenfunction:: esp_wifi_set_storage
-.. doxygenfunction:: esp_wifi_reg_rxcb
 .. doxygenfunction:: esp_wifi_set_auto_connect
 .. doxygenfunction:: esp_wifi_get_auto_connect
 .. doxygenfunction:: esp_wifi_set_vendor_ie

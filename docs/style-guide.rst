@@ -172,7 +172,7 @@ To re-format a file, run::
 Documenting code
 ----------------
 
-Please see the guide here: `Documenting Code <documenting-code.rst>`_.
+Please see the guide here: :doc:`documenting-code`.
 
 Structure and naming
 --------------------
