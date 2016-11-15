@@ -68,6 +68,10 @@ static system_event_handle_t g_system_event_handle_table[] = {
     {SYSTEM_EVENT_STA_DISCONNECTED,    system_event_sta_disconnected_handle_default},
     {SYSTEM_EVENT_STA_AUTHMODE_CHANGE, NULL},
     {SYSTEM_EVENT_STA_GOT_IP,          system_event_sta_got_ip_default},
+    {SYSTEM_EVENT_STA_WPS_ER_SUCCESS,  NULL},
+    {SYSTEM_EVENT_STA_WPS_ER_FAILED,   NULL},
+    {SYSTEM_EVENT_STA_WPS_ER_TIMEOUT,  NULL},
+    {SYSTEM_EVENT_STA_WPS_ER_PIN,      NULL},
     {SYSTEM_EVENT_AP_START,            system_event_ap_start_handle_default},
     {SYSTEM_EVENT_AP_STOP,             system_event_ap_stop_handle_default},
     {SYSTEM_EVENT_AP_STACONNECTED,     NULL},
@@ -218,6 +222,22 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
             IP2STR(&got_ip->ip_info.ip),
             IP2STR(&got_ip->ip_info.netmask),
             IP2STR(&got_ip->ip_info.gw));
+        break;
+    }
+    case SYSTEM_EVENT_STA_WPS_ER_SUCCESS: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_SUCCESS");
+        break;
+    }
+    case SYSTEM_EVENT_STA_WPS_ER_FAILED: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_FAILED");
+        break;
+    }
+    case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_TIMEOUT");
+        break;
+    }
+    case SYSTEM_EVENT_STA_WPS_ER_PIN: {
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_PIN");
         break;
     }
     case SYSTEM_EVENT_AP_START: {
