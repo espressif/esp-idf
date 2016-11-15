@@ -194,7 +194,7 @@ OBJCOPY_EMBED_ARGS := --input binary --output elf32-xtensa-le --binary-architect
 define GenerateEmbedTarget
 $(1).$(2).o: $(call resolvepath,$(1),$(COMPONENT_PATH)) | $$(dir $(1))
 	$(summary) EMBED $$@
-	$$(if $$(filter-out $$(notdir $$(abspath $$<)),$$(abspath $$(notdir $$<))), cp $$< $$(notdir $$<) )  # copy input file to build dir, unless already in build dir
+	$(if $(filter-out $$(notdir $$(abspath $$<)),$$(abspath $$(notdir $$<))), cp $$< $$(notdir $$<) )  # copy input file to build dir, unless already in build dir
 	$$(if $$(subst bin,,$(2)),echo -ne '\0' >> $$(notdir $$<) )  # trailing NUL byte on text output
 	$(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) $$@
 	rm $$(notdir $$<)
