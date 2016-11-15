@@ -372,6 +372,19 @@ wifi_interface_t tcpip_adapter_get_wifi_if(void *dev);
  */
 esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list);
 
+#define TCPIP_HOSTNAME_MAX_SIZE    31
+/**
+ * @brief  Set the hostname to the interface
+ *
+ * @param[in]   tcpip_if: the interface which we will set the hostname
+ * @param[in]   hostname: the host name for set the interfce
+ *
+ * @return ESP_OK:success
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY:interface status error
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS:parameter error
+ */
+esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *hostname);
+
 #ifdef __cplusplus
 }
 #endif
