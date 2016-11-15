@@ -13,7 +13,7 @@
 // limitations under the License.
 #include "catch.hpp"
 #include "nvs.hpp"
-#include "nvs_flash.h"
+#include "nvs_test_api.h"
 #include "spi_flash_emulation.h"
 #include <sstream>
 #include <iostream>

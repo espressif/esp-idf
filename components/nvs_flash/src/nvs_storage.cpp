@@ -69,6 +69,11 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
     return ESP_OK;
 }
 
+bool Storage::isValid() const
+{
+    return mState == StorageState::ACTIVE;
+}
+
 esp_err_t Storage::findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item)
 {
     for (auto it = std::begin(mPageManager); it != std::end(mPageManager); ++it) {

@@ -25,16 +25,6 @@ extern "C" {
  */
 esp_err_t nvs_flash_init(void);
 
-/**
- * @brief Initialize NVS flash storage with custom flash sector layout
- * @note  Make sure specified sectors don't fall within ranges occupied
- *        by other partitions.
- * @param baseSector Flash sector (units of 4096 bytes) offset to start NVS
- * @param sectorCount Length (in flash sectors) of NVS region
- * @return ESP_OK if flash was successfully initialized
- */
-esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount);
-
 
 #ifdef __cplusplus
 }

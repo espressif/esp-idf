@@ -65,6 +65,11 @@ extern "C" void nvs_dump()
 #ifdef ESP_PLATFORM
 extern "C" esp_err_t nvs_flash_init(void)
 {
+    Lock::init();
+    Lock lock;
+    if (s_nvs_storage.isValid()) {
+        return ESP_OK;
+    }
     const esp_partition_t* partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
     if (partition == NULL) {
@@ -78,9 +83,7 @@ extern "C" esp_err_t nvs_flash_init(void)
 
 extern "C" esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount)
 {
-    Lock::init();
-    Lock lock;
-    ESP_LOGD(TAG, "init start=%d count=%d", baseSector, sectorCount);
+    ESP_LOGD(TAG, "nvs_flash_init_custom start=%d count=%d", baseSector, sectorCount);
     s_nvs_handles.clear();
     return s_nvs_storage.init(baseSector, sectorCount);
 }
