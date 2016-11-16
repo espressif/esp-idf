@@ -74,3 +74,5 @@ For more details about partition tables and how to create custom variations, vie
 
 * If you're interested in contributing to esp-idf, please check the [Contributions Guide](http://esp-idf.readthedocs.io/en/latest/contributing.html>).
 
+
+
