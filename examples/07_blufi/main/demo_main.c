@@ -133,10 +133,16 @@ void app_main()
     system_init();
     initialise_wifi();
 
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    //vTaskDelay(3000 / portTICK_PERIOD_MS);
 
     bt_controller_init();
     xTaskCreatePinnedToCore(&wifiTestTask, "wifiTestTask", 2048, NULL, 20, NULL, 0);
 
-    esp_init_bluetooth(blufi_init);
+	LOG_ERROR("%s init bluetooth\n", __func__);
+    ret = esp_init_bluetooth();
+	if (ret) {
+		LOG_ERROR("%s init bluetooth failed\n", __func__);
+		return;
+	}
+	blufi_init();
 }

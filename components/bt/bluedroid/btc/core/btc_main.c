@@ -1,26 +1,77 @@
+#include "btc_task.h"
 #include "btc_main.h"
+#include "future.h"
 #include "esp_err.h"
+
+static future_t *main_future[BTC_MAIN_FUTURE_NUM];
 
 extern int bte_main_boot_entry(void *cb);
 extern int bte_main_shutdown(void);
 
-bt_status_t btc_enable_bluetooth(esp_bt_sec_cb_t *p_cback)
+future_t **btc_main_get_future_p(btc_main_future_type_t type)
 {
-	return BTA_EnableBluetooth(p_cback) == BTA_SUCCESS ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+	return &main_future[type];
 }
 
-bt_status_t btc_disable_bluetooth(void)
+static void btc_sec_callback(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data)
 {
-	return BTA_DisableBluetooth() == BTA_SUCCESS ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+	switch (event) {
+	case BTA_DM_ENABLE_EVT:
+		future_ready(*btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE), FUTURE_SUCCESS);
+		break;
+	case BTA_DM_DISABLE_EVT:
+		future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_SUCCESS);
+		break;
+	}
 }
 
-bt_status_t btc_init_bluetooth(bluetooth_init_cb_t cb)
+static bt_status_t btc_enable_bluetooth(void)
 {
-	return bte_main_boot_entry(cb) == 0 ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+	BTA_EnableBluetooth(btc_sec_callback);
+}
+
+static bt_status_t btc_disable_bluetooth(void)
+{
+	BTA_DisableBluetooth();
+}
+
+void btc_init_callback(void)
+{
+	future_ready(*btc_main_get_future_p(BTC_MAIN_INIT_FUTURE), FUTURE_SUCCESS);
+}
+
+static bt_status_t btc_init_bluetooth(void)
+{
+	bte_main_boot_entry(btc_init_callback);
 }
 
 
-void btc_deinit_bluetooth(void)
+static void btc_deinit_bluetooth(void)
 {
 	bte_main_shutdown();
+	future_ready(*btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE), FUTURE_SUCCESS);
 }
+
+void btc_main_call_handler(btc_msg_t *msg)
+{
+	LOG_ERROR("%s act %d\n", __func__, msg->act);
+
+	switch (msg->act) {
+	case BTC_MAIN_ACT_INIT:
+		btc_init_bluetooth();
+		break;
+	case BTC_MAIN_ACT_DEINIT:
+		btc_deinit_bluetooth();
+		break;
+	case BTC_MAIN_ACT_ENABLE:
+		btc_enable_bluetooth();
+		break;
+	case BTC_MAIN_ACT_DISABLE:
+		btc_disable_bluetooth();
+		break;
+	default:
+		LOG_ERROR("%s UNKNOWN ACT %d\n", __func__, msg->act);
+		break;
+	}
+}
+

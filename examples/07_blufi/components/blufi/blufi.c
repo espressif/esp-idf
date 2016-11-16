@@ -94,53 +94,30 @@ static void BlufiDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_dat
 
 static esp_err_t blufi_dm_upstreams_evt(void *arg)
 {
-	struct dm_evt *evt = (struct dm_evt *)arg;
-	
-    tBTA_DM_SEC *p_data = (tBTA_DM_SEC*)evt->p_data;
-    switch (evt->event) {
-	    case BTA_DM_ENABLE_EVT: {
-	        /*set connectable,discoverable, pairable and paired only modes of local device*/
-	        tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
-	        tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
-	        BTA_DmSetVisibility(disc_mode, conn_mode, (uint8_t)BTA_DM_NON_PAIRABLE, (uint8_t)BTA_DM_CONN_ALL );
-	
-#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
-	        /* Enable local privacy */
-	        //BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
-	        do {
-	            const controller_t *controller = controller_get_interface();
-	            char bdstr[18];
-	            bdaddr_to_string(controller->get_address(), bdstr, sizeof(bdstr));
-	            LOG_DEBUG("BDA is: %s\n", bdstr);
-	        } while (0);
-#endif
-			blufi_profile_init(BlufiDataCallBack);
-			break;
-		default:
-			break;
-	    }
-	}
+	/*set connectable,discoverable, pairable and paired only modes of local device*/
+	tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
+	tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
+	BTA_DmSetVisibility(disc_mode, conn_mode, (uint8_t)BTA_DM_NON_PAIRABLE, (uint8_t)BTA_DM_CONN_ALL );
 
-    GKI_freebuf(evt);
+#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
+	/* Enable local privacy */
+	//BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
+	do {
+		const controller_t *controller = controller_get_interface();
+		char bdstr[18];
+		bdaddr_to_string(controller->get_address(), bdstr, sizeof(bdstr));
+		LOG_DEBUG("BDA is: %s\n", bdstr);
+	} while (0);
+#endif
+	blufi_profile_init(BlufiDataCallBack);
 
 	return ESP_OK;
 }
 
 
-void blufi_bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data)
+void blufi_bte_dm_evt(void)
 {
-	struct dm_evt *evt;
-
-    LOG_DEBUG("%s: %d\n", __func__, (uint16_t)event);
-
-	evt = (struct dm_evt *)GKI_getbuf(sizeof(struct dm_evt));
-	if (evt == NULL)
-		return;
-
-	evt->event = event;
-	evt->p_data = p_data;
-
-    blufi_transfer_context(blufi_dm_upstreams_evt, evt);
+	blufi_transfer_context(blufi_dm_upstreams_evt, NULL);
 }
 
 esp_err_t blufi_enable(void *arg)
@@ -149,7 +126,12 @@ esp_err_t blufi_enable(void *arg)
 
     BTM_SetTraceLevel(BT_TRACE_LEVEL_ERROR);
 
-    err = esp_enable_bluetooth(blufi_bte_dm_evt);
+    err = esp_enable_bluetooth();
+	if (err) {
+		LOG_ERROR("%s failed\n", __func__);
+		return err;
+	}
+	blufi_bte_dm_evt();
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 
 	return err;
