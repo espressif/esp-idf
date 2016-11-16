@@ -337,7 +337,7 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
   *
   * @param gpio_num GPIO number.
   *
-  * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL\GPIO_INTR_HIGH_LEVEL can be used.
+  * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
   *
   * @return
   *     - ESP_OK Success

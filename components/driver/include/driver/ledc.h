@@ -150,6 +150,8 @@ esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
  *
  * @param  channel LEDC channel(0-7), select from ledc_channel_t
  *
+ * @param  idle_level Set output idle level after LEDC stops.
+ *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
