@@ -55,9 +55,10 @@ void openssl_demo_thread(void *p)
     struct ip4_addr *ip4_addr;
     
     int recv_bytes = 0;
-    char send_data[] = OPENSSL_DEMO_REQUEST;
-    int send_bytes = sizeof(send_data);
     char recv_buf[OPENSSL_DEMO_RECV_BUF_LEN];
+    
+    const char send_data[] = OPENSSL_DEMO_REQUEST;
+    const int send_bytes = sizeof(send_data);
 
     ESP_LOGI(TAG, "OpenSSL demo thread start OK");
 
@@ -171,7 +172,6 @@ static void openssl_client_init(void)
 {
     int ret;
     xTaskHandle openssl_handle;
-    extern void openssl_demo_thread(void *p);
 
     ret = xTaskCreate(openssl_demo_thread,
                       OPENSSL_DEMO_THREAD_NAME,
@@ -182,7 +182,6 @@ static void openssl_client_init(void)
 
     if (ret != pdPASS)  {
         ESP_LOGI(TAG, "create thread %s failed", OPENSSL_DEMO_THREAD_NAME);
-        return ;
     }
 }
 

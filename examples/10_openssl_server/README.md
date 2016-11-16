@@ -4,7 +4,7 @@ The Example contains of OpenSSL server demo.
 
 First you should configure the project by "make menuconfig":
   Example Configuration -> 
-    1. WiFi SSID: you own wifi that you pc is connected to alse. 
+    1. WiFi SSID: WiFi network to which your PC is also connected to. 
     1. WiFi Password: wifi password
     
 IF you want to test the OpenSSL server demo: 

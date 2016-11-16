@@ -65,9 +65,10 @@ static void openssl_demo_thread(void *p)
     socklen_t addr_len;
     struct sockaddr_in sock_addr;
 
-    char send_data[] = OPENSSL_DEMO_SERVER_ACK;
-    int send_bytes = sizeof(send_data);
     char recv_buf[OPENSSL_DEMO_RECV_BUF_LEN];
+
+    const char send_data[] = OPENSSL_DEMO_SERVER_ACK;
+    const int send_bytes = sizeof(send_data);
 
     extern const unsigned char cacert_pem_start[] asm("_binary_cacert_pem_start");
     extern const unsigned char cacert_pem_end[]   asm("_binary_cacert_pem_end");
@@ -194,7 +195,6 @@ static void openssl_client_init(void)
 {
     int ret;
     xTaskHandle openssl_handle;
-    extern void openssl_demo_thread(void *p);
 
     ret = xTaskCreate(openssl_demo_thread,
                       OPENSSL_DEMO_THREAD_NAME,
@@ -205,7 +205,6 @@ static void openssl_client_init(void)
 
     if (ret != pdPASS)  {
         ESP_LOGI(TAG, "create thread %s failed", OPENSSL_DEMO_THREAD_NAME);
-        return ;
     }
 }
 

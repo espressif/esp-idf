@@ -6,7 +6,7 @@ First you should config the project by "make menuconfig":
   Example Configuration ->
     1. Target Domain : the domain that you want to connect to, and default is "www.baidu.com".
     2. Target port number : the port number of the target domain, and default is 443.
-    3. WiFi SSID : you own wifi, which you pc is connected to alse, and default is "myssid".
+    3. WiFi SSID : you own wifi, which is connected to the Internet, and default is "myssid".
     4. WiFi Password : wifi password, and default is "mypassword"
 
 If you want to test the OpenSSL client demo:
