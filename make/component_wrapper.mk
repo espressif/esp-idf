@@ -180,7 +180,7 @@ $(foreach srcdir,$(COMPONENT_SRCDIRS), $(eval $(call GenerateCompileTargets,$(sr
 
 ## Support for embedding binary files into the ELF as symbols
 
-OBJCOPY_EMBED_ARGS := --input binary --output elf32-xtensa-le --binary-architecture xtensa --rename-section .data=.rodata.embedded
+OBJCOPY_EMBED_ARGS := --input-target binary --output-target elf32-xtensa-le --binary-architecture xtensa --rename-section .data=.rodata.embedded
 
 # Generate pattern for embedding text or binary files into the app
 # $(1) is name of file (as relative path inside component)
