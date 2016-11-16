@@ -1548,7 +1548,7 @@ UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
                 cp_len = len - MIN_ADV_LENGTH;
             else
                 cp_len = p_data->p_manu->len;
-            LOG_ERROR("cp_len = %d\n,p_data->p_manu->len=%d\n",cp_len,p_data->p_manu->len);
+            LOG_DEBUG("cp_len = %d\n,p_data->p_manu->len=%d\n",cp_len,p_data->p_manu->len);
             for(int i = 0; i < p_data->p_manu->len; i++)
             {
                 LOG_DEBUG("p_data->p_manu->p_val[%d] = %x\n",i,p_data->p_manu->p_val[i]);
@@ -1556,7 +1556,7 @@ UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
             *p++ = cp_len + 1;
             *p++ = BTM_BLE_AD_TYPE_MANU;
             ARRAY_TO_STREAM(p, p_data->p_manu->p_val, cp_len);
-            LOG_ERROR("p_addr = %p\n,p_data->p_manu->p_val = %p\n",p,p_data->p_manu->p_val);
+            LOG_DEBUG("p_addr = %p\n,p_data->p_manu->p_val = %p\n",p,p_data->p_manu->p_val);
             len -= (cp_len + MIN_ADV_LENGTH);
             data_mask &= ~BTM_BLE_AD_BIT_MANU;
         }

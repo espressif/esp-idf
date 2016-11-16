@@ -54,7 +54,7 @@ static void btc_deinit_bluetooth(void)
 
 void btc_main_call_handler(btc_msg_t *msg)
 {
-	LOG_ERROR("%s act %d\n", __func__, msg->act);
+	LOG_DEBUG("%s act %d\n", __func__, msg->act);
 
 	switch (msg->act) {
 	case BTC_MAIN_ACT_INIT:
