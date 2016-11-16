@@ -471,7 +471,8 @@ BaseType_t xRingbufferSend(RingbufHandle_t ringbuf, void *data, size_t dataSize,
     ringbuf_t *rb=(ringbuf_t *)ringbuf;
     size_t needed_size=dataSize+sizeof(buf_entry_hdr_t);
     BaseType_t done=pdFALSE;
-    portTickType ticks_end=xTaskGetTickCount() + ticks_to_wait;
+    TickType_t ticks_end = xTaskGetTickCount() + ticks_to_wait;
+    TickType_t ticks_remaining = ticks_to_wait;
 
     configASSERT(rb);
 
@@ -486,17 +487,26 @@ BaseType_t xRingbufferSend(RingbufHandle_t ringbuf, void *data, size_t dataSize,
             if (ringbufferFreeMem(rb) < needed_size) {
                 //Data does not fit yet. Wait until the free_space_sem is given, then re-evaluate.
 
-                BaseType_t r = xSemaphoreTake(rb->free_space_sem, ticks_to_wait);
+                BaseType_t r = xSemaphoreTake(rb->free_space_sem, ticks_remaining);
                 if (r == pdFALSE) {
                     //Timeout.
                     return pdFALSE;
                 }
-                //Adjust ticks_to_wait; we may have waited less than that and in the case the free memory still is not enough,
+                //Adjust ticks_remaining; we may have waited less than that and in the case the free memory still is not enough,
                 //we will need to wait some more.
-                ticks_to_wait = ticks_end - xTaskGetTickCount();
+                if (ticks_to_wait != portMAX_DELAY) {
+                    ticks_remaining = ticks_end - xTaskGetTickCount();
+                }
+
+                // ticks_remaining will always be less than or equal to the original ticks_to_wait,
+                // unless the timeout is reached - in which case it unsigned underflows to a much
+                // higher value.
+                //
+                // (Check is written this non-intuitive way to allow for the case where xTaskGetTickCount()
+                // has overflowed but the ticks_end value has not overflowed.)
             }
-        } while (ringbufferFreeMem(rb) < needed_size && ticks_to_wait>=0);
-        
+        } while (ringbufferFreeMem(rb) < needed_size && ticks_remaining > 0 && ticks_remaining <= ticks_to_wait);
+
         //Lock the mux in order to make sure no one else is messing with the ringbuffer and do the copy.
         portENTER_CRITICAL(&rb->mux);
         //Another thread may have been able to sneak its write first. Check again now we locked the ringbuff, and retry

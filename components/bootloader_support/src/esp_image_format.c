@@ -17,7 +17,7 @@
 #include <esp_log.h>
 #include <bootloader_flash.h>
 
-const static char *TAG = "esp_image";
+static const char *TAG = "esp_image";
 
 #define SIXTEEN_MB 0x1000000
 #define ESP_ROM_CHECKSUM_INITIAL 0xEF
