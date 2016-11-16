@@ -1,0 +1,21 @@
+Date：2016-11-14
+更新内容:
+1.Recorder 支持PCM,实现录音回放的demo, 16k,16bit;
+2.fix 播放破音bug;
+3.优化按键Key为中断方式;
+4. API修改：EspAudioPlayerDataWrite->EspAudioPlayerStreamWrite
+5. API新增：EspAudioPlayerStreamCfg(uint32_t rate, uint32_t channel,uint32_t bitLen)
+
+
+Date：2016-11-04
+新增功能:
+1.Airpaly
+2.DLNA
+
+Date:2016-10-14
+
+Espressif Audio Player Library 0.5.1
+支持功能:
+1. URL播放音乐和播控
+2. 音频支持MP3、AAC、FLAC、WAV
+

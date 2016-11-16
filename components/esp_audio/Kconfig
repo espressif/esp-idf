@@ -1,0 +1,24 @@
+menu "EspAudio"
+
+config AUDIO_LOG_ERROR_EN
+    bool "Enable Audio error message"
+    default y
+    help
+        Disable it will redurce error information and run faster
+config AUDIO_LOG_WARN_EN
+    bool "Enable Audio warning message"
+    default y
+    help
+        Disable it will redurce warning information and run faster
+config AUDIO_LOG_INFO_EN
+    bool "Enable Audio normal message"
+    default y
+    help
+        Disable it will redurce normal information and run faster
+config AUDIO_LOG_DEBUG_EN
+    bool "Enable Audio debug message"
+    default n
+    help
+        Disable it will redurce debug information and run faster
+
+endmenu
