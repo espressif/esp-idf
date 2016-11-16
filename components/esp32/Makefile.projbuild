@@ -3,34 +3,21 @@ ifdef CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
 PHY_INIT_DATA_OBJ = $(BUILD_DIR_BASE)/phy_init_data.o
 PHY_INIT_DATA_BIN = $(BUILD_DIR_BASE)/phy_init_data.bin
 
-PARTITION_TABLE_COMPONENT_PATH := $(COMPONENT_PATH)/../partition_table
-ESP32_COMPONENT_PATH := $(COMPONENT_PATH)
-
-GEN_ESP32PART := $(PYTHON) $(PARTITION_TABLE_COMPONENT_PATH)/gen_esp32part.py -q
-
-# Path to partition CSV file is relative to project path for custom
-# partition CSV files, but relative to component dir otherwise.
-PARTITION_TABLE_ROOT := $(call dequote,$(if $(CONFIG_PARTITION_TABLE_CUSTOM),$(PROJECT_PATH),$(PARTITION_TABLE_COMPONENT_PATH)))
-PARTITION_TABLE_CSV_PATH := $(call dequote,$(abspath $(PARTITION_TABLE_ROOT)/$(subst $(quote),,$(CONFIG_PARTITION_TABLE_FILENAME))))
-PARTITION_TABLE_BIN := $(BUILD_DIR_BASE)/$(notdir $(PARTITION_TABLE_CSV_PATH:.csv=.bin))
-
-# Parse partition table and get offset of PHY init data partition
-PHY_INIT_GET_ADDR_CMD := $(GEN_ESP32PART) $(PARTITION_TABLE_CSV_PATH) | $(GEN_ESP32PART) - | sed -n -e "s/[^,]*,data,phy,\\([^,]*\\),.*/\\1/p"
-PHY_INIT_DATA_ADDR = $(shell $(PHY_INIT_GET_ADDR_CMD))
- 
 # Command to flash PHY init data partition
-PHY_INIT_DATA_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PHY_INIT_DATA_ADDR) $(PHY_INIT_DATA_BIN)
-ESPTOOL_ALL_FLASH_ARGS += $(PHY_INIT_DATA_ADDR) $(PHY_INIT_DATA_BIN)
+PHY_INIT_DATA_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(CONFIG_PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
+ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
+
+ESP32_COMPONENT_PATH := $(COMPONENT_PATH)
 
 $(PHY_INIT_DATA_OBJ): $(ESP32_COMPONENT_PATH)/phy_init_data.h $(BUILD_DIR_BASE)/include/sdkconfig.h
 	$(summary) CC $(notdir $@)
 	printf "#include \"phy_init_data.h\"\n" | $(CC) -I $(BUILD_DIR_BASE)/include -I $(ESP32_COMPONENT_PATH) -I $(ESP32_COMPONENT_PATH)/include -c -o $@ -xc -
-	
+
 $(PHY_INIT_DATA_BIN): $(PHY_INIT_DATA_OBJ)
 	$(summary) BIN $(notdir $@)
-	$(OBJCOPY) -O binary $< $@ 
+	$(OBJCOPY) -O binary $< $@
 
-phy_init_data: $(PHY_INIT_DATA_BIN) 
+phy_init_data: $(PHY_INIT_DATA_BIN)
 
 phy_init_data-flash: $(BUILD_DIR_BASE)/phy_init_data.bin
 	@echo "Flashing PHY init data..."
@@ -38,5 +25,8 @@ phy_init_data-flash: $(BUILD_DIR_BASE)/phy_init_data.bin
 
 phy_init_data-clean:
 	rm -f $(PHY_INIT_DATA_BIN) $(PHY_INIT_DATA_OBJ)
+
+all: phy_init_data
+flash: phy_init_data
 
 endif # CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
