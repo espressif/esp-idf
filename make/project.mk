@@ -158,14 +158,16 @@ LDFLAGS ?= -nostdlib \
 
 # CPPFLAGS used by C preprocessor
 # If any flags are defined in application Makefile, add them at the end. 
-CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS)
+CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
-COMMON_WARNING_FLAGS = -Wall -Werror \
+COMMON_WARNING_FLAGS = -Wall -Werror=all \
 	-Wno-error=unused-function \
 	-Wno-error=unused-but-set-variable \
 	-Wno-error=unused-variable \
-	-Wno-error=deprecated-declarations
+	-Wno-error=deprecated-declarations \
+	-Wextra \
+	-Wno-unused-parameter -Wno-sign-compare
 
 # Flags which control code generation and dependency generation, both for C and C++
 COMMON_FLAGS = \
@@ -192,8 +194,9 @@ CFLAGS := $(strip \
 	-std=gnu99 \
 	$(OPTIMIZATION_FLAGS) \
 	$(COMMON_FLAGS) \
-	$(COMMON_WARNING_FLAGS) \
-	$(CFLAGS))
+	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration \
+	$(CFLAGS) \
+	$(EXTRA_CFLAGS))
 
 # List of flags to pass to C++ compiler
 # If any flags are defined in application Makefile, add them at the end.
@@ -204,7 +207,8 @@ CXXFLAGS := $(strip \
 	$(OPTIMIZATION_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
-	$(CXXFLAGS))
+	$(CXXFLAGS) \
+	$(EXTRA_CXXFLAGS))
 
 export CFLAGS CPPFLAGS CXXFLAGS
 

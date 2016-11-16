@@ -45,10 +45,13 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     sha_context sha;
     uint8_t digest[32];
     ptrdiff_t keylen;
-    const uint8_t *data, *digest_data;
-    uint32_t digest_len;
+    const uint8_t *data;
     const signature_block_t *sigblock;
     bool is_valid;
+#ifdef BOOTLOADER_BUILD
+    const uint8_t *digest_data;
+    uint32_t digest_len;
+#endif
 
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
 

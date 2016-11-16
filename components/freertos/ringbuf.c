@@ -495,8 +495,8 @@ BaseType_t xRingbufferSend(RingbufHandle_t ringbuf, void *data, size_t dataSize,
                 //we will need to wait some more.
                 ticks_to_wait = ticks_end - xTaskGetTickCount();
             }
-        } while (ringbufferFreeMem(rb) < needed_size && ticks_to_wait>=0);
-        
+        } while (ringbufferFreeMem(rb) < needed_size && ticks_end >= xTaskGetTickCount());
+
         //Lock the mux in order to make sure no one else is messing with the ringbuffer and do the copy.
         portENTER_CRITICAL(&rb->mux);
         //Another thread may have been able to sneak its write first. Check again now we locked the ringbuff, and retry
