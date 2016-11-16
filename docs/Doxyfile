@@ -38,3 +38,8 @@ QUIET = YES
 ## Log warnings in a file for further review
 ##
 WARN_LOGFILE = "doxygen-warning-log.txt"
+
+## Fail documentation build if Doxygen warns on issues
+##
+WARN_AS_ERROR = YES
+
