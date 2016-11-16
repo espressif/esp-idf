@@ -32,7 +32,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses
 
-LIBS := btdm_app coexist
+LIBS := btdm_app
 
 COMPONENT_ADD_LDFLAGS := -lbt -L$(abspath lib) \
                            $(addprefix -l,$(LIBS)) \
