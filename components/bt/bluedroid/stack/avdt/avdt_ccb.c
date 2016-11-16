@@ -302,7 +302,7 @@ void avdt_ccb_event(tAVDT_CCB *p_ccb, UINT8 event, tAVDT_CCB_EVT *p_data)
     int                 i;
 
 #if AVDT_DEBUG == TRUE
-    AVDT_TRACE_EVENT("CCB ccb=%d event=%s state=%s", avdt_ccb_to_idx(p_ccb), avdt_ccb_evt_str[event], avdt_ccb_st_str[p_ccb->state]);
+    AVDT_TRACE_EVENT("CCB ccb=%d event=%s state=%s\n", avdt_ccb_to_idx(p_ccb), avdt_ccb_evt_str[event], avdt_ccb_st_str[p_ccb->state]);
 #endif
 
     /* look up the state table for the current state */
@@ -357,7 +357,7 @@ tAVDT_CCB *avdt_ccb_by_bd(BD_ADDR bd_addr)
         /* if no ccb found */
         p_ccb = NULL;
 
-        AVDT_TRACE_DEBUG("No ccb for addr %02x-%02x-%02x-%02x-%02x-%02x",
+        AVDT_TRACE_DEBUG("No ccb for addr %02x-%02x-%02x-%02x-%02x-%02x\n",
                           bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
     }
     return p_ccb;
@@ -387,7 +387,7 @@ tAVDT_CCB *avdt_ccb_alloc(BD_ADDR bd_addr)
             GKI_init_q(&p_ccb->cmd_q);
             GKI_init_q(&p_ccb->rsp_q);
             p_ccb->timer_entry.param = (UINT32) p_ccb;
-            AVDT_TRACE_DEBUG("avdt_ccb_alloc %d", i);
+            AVDT_TRACE_DEBUG("avdt_ccb_alloc %d\n", i);
             break;
         }
     }
@@ -415,7 +415,7 @@ void avdt_ccb_dealloc(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
 {
     UNUSED(p_data);
 
-    AVDT_TRACE_DEBUG("avdt_ccb_dealloc %d", avdt_ccb_to_idx(p_ccb));
+    AVDT_TRACE_DEBUG("avdt_ccb_dealloc %d\n", avdt_ccb_to_idx(p_ccb));
     btu_stop_timer(&p_ccb->timer_entry);
     memset(p_ccb, 0, sizeof(tAVDT_CCB));
 }
@@ -458,7 +458,7 @@ tAVDT_CCB *avdt_ccb_by_idx(UINT8 idx)
     else
     {
         p_ccb = NULL;
-        AVDT_TRACE_WARNING("No ccb for idx %d", idx);
+        AVDT_TRACE_WARNING("No ccb for idx %d\n", idx);
     }
     return p_ccb;
 }

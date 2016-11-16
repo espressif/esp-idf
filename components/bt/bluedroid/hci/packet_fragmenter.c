@@ -142,8 +142,7 @@ static void reassemble_and_dispatch(BT_HDR *packet) {
       uint16_t full_length;
       if (partial_packet) {
         LOG_WARN("%s found unfinished packet for handle with start packet. Dropping old.", __func__);
-
-        hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
+	hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
         buffer_allocator->free(partial_packet);
       }
 
@@ -151,7 +150,7 @@ static void reassemble_and_dispatch(BT_HDR *packet) {
       if (full_length <= packet->len) {
         if (full_length < packet->len)
           LOG_WARN("%s found l2cap full length %d less than the hci length %d.", __func__, l2cap_length, packet->len);
-
+          
         callbacks->reassembled(packet);
         return;
       }
@@ -161,7 +160,6 @@ static void reassemble_and_dispatch(BT_HDR *packet) {
       partial_packet->len = full_length;
       partial_packet->offset = packet->len;
 
-      // org: memcpy(partial_packet->data, packet->data, packet->len);
       memcpy(partial_packet->data, packet->data+packet->offset, packet->len);
       
       // Update the ACL data size to indicate the full expected length
@@ -180,11 +178,10 @@ static void reassemble_and_dispatch(BT_HDR *packet) {
         return;
       }
 
-      // org: packet->offset = HCI_ACL_PREAMBLE_SIZE;
       packet->offset += HCI_ACL_PREAMBLE_SIZE; // skip ACL preamble
       packet->len -= HCI_ACL_PREAMBLE_SIZE;
-      
-      projected_offset = partial_packet->offset + (packet->len - HCI_ACL_PREAMBLE_SIZE);
+
+      projected_offset = partial_packet->offset + packet->len;
       if (projected_offset > partial_packet->len) { // len stores the expected length
         LOG_WARN("%s got packet which would exceed expected length of %d. Truncating.", __func__, partial_packet->len);
         packet->len = partial_packet->len - partial_packet->offset;
@@ -194,10 +191,8 @@ static void reassemble_and_dispatch(BT_HDR *packet) {
       memcpy(
         partial_packet->data + partial_packet->offset,
         packet->data + packet->offset,
-        // org: packet->len - packet->offset
 	packet->len
       );
-
       // Free the old packet buffer, since we don't need it anymore
       buffer_allocator->free(packet);
       partial_packet->offset = projected_offset;

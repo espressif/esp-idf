@@ -91,7 +91,7 @@ static UINT8 avdt_ad_tcid_to_type(UINT8 tcid)
         */
         type = ((tcid + AVDT_CHAN_NUM_TYPES - 2) % (AVDT_CHAN_NUM_TYPES - 1)) + 1;
     }
-    AVDT_TRACE_DEBUG("tcid: %d, type: %d", tcid, type);
+    AVDT_TRACE_DEBUG("tcid: %d, type: %d\n", tcid, type);
     return type;
 }
 
@@ -302,7 +302,7 @@ tAVDT_TC_TBL *avdt_ad_tc_tbl_alloc(tAVDT_CCB *p_ccb)
 *******************************************************************************/
 UINT8 avdt_ad_tc_tbl_to_idx(tAVDT_TC_TBL *p_tbl)
 {
-    AVDT_TRACE_DEBUG("avdt_ad_tc_tbl_to_idx: %d", (p_tbl - avdt_cb.ad.tc_tbl));
+    AVDT_TRACE_DEBUG("avdt_ad_tc_tbl_to_idx: %d\n", (p_tbl - avdt_cb.ad.tc_tbl));
     /* use array arithmetic to determine index */
     return (UINT8) (p_tbl - avdt_cb.ad.tc_tbl);
 }
@@ -334,7 +334,7 @@ void avdt_ad_tc_close_ind(tAVDT_TC_TBL *p_tbl, UINT16 reason)
     p_tbl->cfg_flags = 0;
     p_tbl->peer_mtu = L2CAP_DEFAULT_MTU;
 
-    AVDT_TRACE_DEBUG("avdt_ad_tc_close_ind tcid: %d, old: %d",
+    AVDT_TRACE_DEBUG("avdt_ad_tc_close_ind tcid: %d, old: %d\n",
         p_tbl->tcid, close.old_tc_state);
     /* if signaling channel, notify ccb that channel open */
     if (p_tbl->tcid == 0)
@@ -548,7 +548,7 @@ void avdt_ad_open_req(UINT8 type, tAVDT_CCB *p_ccb, tAVDT_SCB *p_scb, UINT8 role
 
 
     p_tbl->tcid = avdt_ad_type_to_tcid(type, p_scb);
-    AVDT_TRACE_DEBUG("avdt_ad_open_req: type: %d, role: %d, tcid:%d",
+    AVDT_TRACE_DEBUG("avdt_ad_open_req: type: %d, role: %d, tcid:%d\n",
         type, role, p_tbl->tcid);
 
     if (type == AVDT_CHAN_SIG)
@@ -565,7 +565,7 @@ void avdt_ad_open_req(UINT8 type, tAVDT_CCB *p_ccb, tAVDT_SCB *p_scb, UINT8 role
 
         /* also set scb_hdl in rt_tbl */
         avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].scb_hdl = avdt_scb_to_hdl(p_scb);
-        AVDT_TRACE_DEBUG("avdt_cb.ad.rt_tbl[%d][%d].scb_hdl = %d",
+        AVDT_TRACE_DEBUG("avdt_cb.ad.rt_tbl[%d][%d].scb_hdl = %d\n",
             avdt_ccb_to_idx(p_ccb), p_tbl->tcid,
             avdt_scb_to_hdl(p_scb));
     }
@@ -585,11 +585,11 @@ void avdt_ad_open_req(UINT8 type, tAVDT_CCB *p_ccb, tAVDT_SCB *p_scb, UINT8 role
         {
             /* if connect req ok, store tcid in lcid table  */
             avdt_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID] = avdt_ad_tc_tbl_to_idx(p_tbl);
-            AVDT_TRACE_DEBUG("avdt_cb.ad.lcid_tbl[%d] = %d",
+            AVDT_TRACE_DEBUG("avdt_cb.ad.lcid_tbl[%d] = %d\n",
                 (lcid - L2CAP_BASE_APPL_CID), avdt_ad_tc_tbl_to_idx(p_tbl));
 
             avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = lcid;
-            AVDT_TRACE_DEBUG("avdt_cb.ad.rt_tbl[%d][%d].lcid = 0x%x",
+            AVDT_TRACE_DEBUG("avdt_cb.ad.rt_tbl[%d][%d].lcid = 0x%x\n",
                 avdt_ccb_to_idx(p_ccb), p_tbl->tcid,
                 lcid);
         }
@@ -619,7 +619,7 @@ void avdt_ad_close_req(UINT8 type, tAVDT_CCB *p_ccb, tAVDT_SCB *p_scb)
     tAVDT_TC_TBL    *p_tbl;
 
     p_tbl = avdt_ad_tc_tbl_by_type(type, p_ccb, p_scb);
-    AVDT_TRACE_DEBUG("avdt_ad_close_req state: %d", p_tbl->state);
+    AVDT_TRACE_DEBUG("avdt_ad_close_req state: %d\n", p_tbl->state);
 
     switch(p_tbl->state)
     {

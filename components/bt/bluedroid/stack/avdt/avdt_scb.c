@@ -529,7 +529,7 @@ void avdt_scb_event(tAVDT_SCB *p_scb, UINT8 event, tAVDT_SCB_EVT *p_data)
     int                 i;
 
 #if AVDT_DEBUG == TRUE
-    AVDT_TRACE_EVENT("SCB hdl=%d event=%d/%s state=%s", avdt_scb_to_hdl(p_scb), event, avdt_scb_evt_str[event], avdt_scb_st_str[p_scb->state]);
+    AVDT_TRACE_EVENT("SCB hdl=%d event=%d/%s state=%s\n", avdt_scb_to_hdl(p_scb), event, avdt_scb_evt_str[event], avdt_scb_st_str[p_scb->state]);
 #endif
     /* set current event */
     p_scb->curr_evt = event;
@@ -621,7 +621,7 @@ tAVDT_SCB *avdt_scb_alloc(tAVDT_CS *p_cs)
             }
 #endif
             p_scb->timer_entry.param = (UINT32) p_scb;
-            AVDT_TRACE_DEBUG("avdt_scb_alloc hdl=%d, psc_mask:0x%x", i+1, p_cs->cfg.psc_mask);
+            AVDT_TRACE_DEBUG("avdt_scb_alloc hdl=%d, psc_mask:0x%x\n", i+1, p_cs->cfg.psc_mask);
             break;
         }
     }
@@ -653,7 +653,7 @@ void avdt_scb_dealloc(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 #endif
     UNUSED(p_data);
 
-    AVDT_TRACE_DEBUG("avdt_scb_dealloc hdl=%d", avdt_scb_to_hdl(p_scb));
+    AVDT_TRACE_DEBUG("avdt_scb_dealloc hdl=%d\n", avdt_scb_to_hdl(p_scb));
     btu_stop_timer(&p_scb->timer_entry);
 
 #if AVDT_MULTIPLEXING == TRUE
@@ -704,13 +704,13 @@ tAVDT_SCB *avdt_scb_by_hdl(UINT8 hdl)
         if (!p_scb->allocated)
         {
             p_scb = NULL;
-            AVDT_TRACE_WARNING("scb hdl %d not allocated", hdl);
+            AVDT_TRACE_WARNING("scb hdl %d not allocated\n", hdl);
         }
     }
     else
     {
         p_scb = NULL;
-        AVDT_TRACE_WARNING("scb hdl %d out of range", hdl);
+        AVDT_TRACE_WARNING("scb hdl %d out of range\n", hdl);
     }
     return p_scb;
 }
@@ -732,7 +732,7 @@ UINT8 avdt_scb_verify(tAVDT_CCB *p_ccb, UINT8 state, UINT8 *p_seid, UINT16 num_s
     UINT8       nsc_mask;
     UINT8       ret = 0;
 
-    AVDT_TRACE_DEBUG("avdt_scb_verify state %d", state);
+    AVDT_TRACE_DEBUG("avdt_scb_verify state %d\n", state);
     /* set nonsupported command mask */
     /* translate public state into private state */
     nsc_mask = 0;

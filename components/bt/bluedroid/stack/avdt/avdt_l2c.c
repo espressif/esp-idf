@@ -78,7 +78,7 @@ static void avdt_sec_check_complete_term (BD_ADDR bd_addr, tBT_TRANSPORT transpo
     tAVDT_TC_TBL    *p_tbl;
     UNUSED(p_ref_data);
 
-    AVDT_TRACE_DEBUG("avdt_sec_check_complete_term res: %d", res);
+    AVDT_TRACE_DEBUG("avdt_sec_check_complete_term res: %d\n", res);
     if (!bd_addr)
     {
         AVDT_TRACE_WARNING("avdt_sec_check_complete_term: NULL BD_ADDR");
@@ -136,7 +136,7 @@ static void avdt_sec_check_complete_orig (BD_ADDR bd_addr, tBT_TRANSPORT trasnpo
     tAVDT_TC_TBL    *p_tbl;
     UNUSED(p_ref_data);
 
-    AVDT_TRACE_DEBUG("avdt_sec_check_complete_orig res: %d", res);
+    AVDT_TRACE_DEBUG("avdt_sec_check_complete_orig res: %d\n", res);
     if (bd_addr)
         p_ccb = avdt_ccb_by_bd(bd_addr);
     p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_SIG, p_ccb, AVDT_AD_ST_SEC_INT);
@@ -283,7 +283,7 @@ void avdt_l2c_connect_cfm_cback(UINT16 lcid, UINT16 result)
     tL2CAP_CFG_INFO cfg;
     tAVDT_CCB *p_ccb;
 
-    AVDT_TRACE_DEBUG("avdt_l2c_connect_cfm_cback lcid: %d, result: %d",
+    AVDT_TRACE_DEBUG("avdt_l2c_connect_cfm_cback lcid: %d, result: %d\n",
         lcid, result);
     /* look up info for this channel */
     if ((p_tbl = avdt_ad_tc_tbl_by_lcid(lcid)) != NULL)
@@ -409,7 +409,7 @@ void avdt_l2c_config_ind_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
         {
             p_tbl->peer_mtu = L2CAP_DEFAULT_MTU;
         }
-        AVDT_TRACE_DEBUG("peer_mtu: %d, lcid: x%x",p_tbl->peer_mtu, lcid);
+        AVDT_TRACE_DEBUG("peer_mtu: %d, lcid: x%x\n",p_tbl->peer_mtu, lcid);
 
         /* send L2CAP configure response */
         memset(p_cfg, 0, sizeof(tL2CAP_CFG_INFO));
@@ -445,7 +445,7 @@ void avdt_l2c_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
 {
     tAVDT_TC_TBL    *p_tbl;
 
-    AVDT_TRACE_DEBUG("avdt_l2c_disconnect_ind_cback lcid: %d, ack_needed: %d",
+    AVDT_TRACE_DEBUG("avdt_l2c_disconnect_ind_cback lcid: %d, ack_needed: %d\n",
         lcid, ack_needed);
     /* look up info for this channel */
     if ((p_tbl = avdt_ad_tc_tbl_by_lcid(lcid)) != NULL)
@@ -474,7 +474,7 @@ void avdt_l2c_disconnect_cfm_cback(UINT16 lcid, UINT16 result)
 {
     tAVDT_TC_TBL    *p_tbl;
 
-    AVDT_TRACE_DEBUG("avdt_l2c_disconnect_cfm_cback lcid: %d, result: %d",
+    AVDT_TRACE_DEBUG("avdt_l2c_disconnect_cfm_cback lcid: %d, result: %d\n",
         lcid, result);
     /* look up info for this channel */
     if ((p_tbl = avdt_ad_tc_tbl_by_lcid(lcid)) != NULL)

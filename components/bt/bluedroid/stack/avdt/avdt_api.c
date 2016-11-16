@@ -224,14 +224,14 @@ void AVDT_SINK_Deactivate()
 
 void AVDT_AbortReq(UINT8 handle)
 {
-    AVDT_TRACE_ERROR("%s", __func__);
+    AVDT_TRACE_ERROR("%s\n", __func__);
 
     tAVDT_SCB *p_scb = avdt_scb_by_hdl(handle);
     if (p_scb != NULL)
     {
         avdt_scb_event(p_scb, AVDT_SCB_API_ABORT_REQ_EVT, NULL);
     } else {
-        AVDT_TRACE_ERROR("%s Improper SCB, can not abort the stream", __func__);
+        AVDT_TRACE_ERROR("%s Improper SCB, can not abort the stream\n", __func__);
     }
 }
 
@@ -383,7 +383,7 @@ static UINT16 avdt_get_cap_req(BD_ADDR bd_addr, tAVDT_CCB_API_GETCAP *p_evt)
     /* verify SEID */
     if ((p_evt->single.seid < AVDT_SEID_MIN) || (p_evt->single.seid > AVDT_SEID_MAX))
     {
-        AVDT_TRACE_ERROR("seid: %d", p_evt->single.seid);
+        AVDT_TRACE_ERROR("seid: %d\n", p_evt->single.seid);
         result = AVDT_BAD_PARAMS;
     }
     /* find channel control block for this bd addr; if none, allocate one */
@@ -1194,7 +1194,7 @@ extern UINT16 AVDT_WriteDataReq(UINT8 handle, UINT8 *p_data, UINT32 data_len,
             result = AVDT_BAD_HANDLE;
             break;
         }
-        AVDT_TRACE_WARNING("mux_tsid_media:%d", p_scb->curr_cfg.mux_tsid_media);
+        AVDT_TRACE_WARNING("mux_tsid_media:%d\n", p_scb->curr_cfg.mux_tsid_media);
 
         if (p_scb->p_pkt != NULL
             || p_scb->p_ccb == NULL
@@ -1203,7 +1203,7 @@ extern UINT16 AVDT_WriteDataReq(UINT8 handle, UINT8 *p_data, UINT32 data_len,
             || p_scb->curr_cfg.mux_tsid_media == 0)
         {
             result = AVDT_ERR_BAD_STATE;
-            AVDT_TRACE_WARNING("p_scb->p_pkt=%x, p_scb->p_ccb=%x, IsQueueEmpty=%x, p_scb->frag_off=%x",
+            AVDT_TRACE_WARNING("p_scb->p_pkt=%x, p_scb->p_ccb=%x, IsQueueEmpty=%x, p_scb->frag_off=%x\n",
                 p_scb->p_pkt, p_scb->p_ccb, GKI_queue_is_empty(&p_scb->frag_q), p_scb->frag_off);
             break;
         }
@@ -1232,7 +1232,7 @@ extern UINT16 AVDT_WriteDataReq(UINT8 handle, UINT8 *p_data, UINT32 data_len,
 #if (BT_USE_TRACES == TRUE)
     if(result != AVDT_SUCCESS)
     {
-        AVDT_TRACE_WARNING("*** AVDT_WriteDataReq failed result=%d",result);
+        AVDT_TRACE_WARNING("*** AVDT_WriteDataReq failed result=%d\n",result);
     }
 #endif
     return result;
@@ -1355,9 +1355,9 @@ UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
 
             case AVDT_RTCP_PT_RR:   /* Receiver Report */
                 *p++ = p_data->rr.frag_lost;
-                AVDT_TRACE_API("packet_lost: %d", p_data->rr.packet_lost);
+                AVDT_TRACE_API("packet_lost: %d\n", p_data->rr.packet_lost);
                 p_data->rr.packet_lost &= 0xFFFFFF;
-                AVDT_TRACE_API("packet_lost: %d", p_data->rr.packet_lost);
+                AVDT_TRACE_API("packet_lost: %d\n", p_data->rr.packet_lost);
                 UINT24_TO_BE_STREAM(p, p_data->rr.packet_lost);
                 UINT32_TO_BE_STREAM(p, p_data->rr.seq_num_rcvd);
                 UINT32_TO_BE_STREAM(p, p_data->rr.jitter);
