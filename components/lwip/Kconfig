@@ -6,9 +6,14 @@ config L2_TO_L3_COPY
     help
         If this feature is enabled, then all traffic from layer2(WIFI Driver)
         to layer3(LWIP stack) will make a copy, the layer2 buffer will be
-        freed and the copy will be sent to layer3. Please make sure you fully
-        understand this feature before you enable this feature.
-
+        freed and the copy will be sent to layer3. Please be notified that the
+        total layer2 receiving buffer is fixed and ESP32 currently supports 25
+        layer2 receiving buffer, when layer2 buffer runs out of memory, then the 
+        incoming packets will be dropped in hardware. The layer3 buffer is 
+        allocated from the heap, so the total layer3 receiving buffer depends 
+        on the available heap size, when heap runs out of memory,  no copy will
+        be sent to layer3 and packet will be dropped in layer2. Please make sure
+        you fully understand the impact of this feature before enabling it.
 
 config LWIP_MAX_SOCKETS
     int "Max number of open sockets"
