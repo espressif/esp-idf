@@ -603,10 +603,10 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
         } else if(uart_intr_status & UART_BRK_DET_INT_ST_M) {
             uart_reg->int_clr.brk_det = 1;
             uart_event.type = UART_BREAK;
-        } else if(uart_intr_status & UART_FRM_ERR_INT_ST_M) {
+        } else if(uart_intr_status & UART_PARITY_ERR_INT_ST_M ) {
             uart_reg->int_clr.parity_err = 1;
             uart_event.type = UART_FRAME_ERR;
-        } else if(uart_intr_status & UART_PARITY_ERR_INT_ST_M) {
+        } else if(uart_intr_status & UART_FRM_ERR_INT_ST_M) {
             uart_reg->int_clr.frm_err = 1;
             uart_event.type = UART_PARITY_ERR;
         } else if(uart_intr_status & UART_TX_BRK_DONE_INT_ST_M) {
@@ -964,7 +964,8 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
                             | UART_RXFIFO_TOUT_INT_ENA_M
                             | UART_FRM_ERR_INT_ENA_M
                             | UART_RXFIFO_OVF_INT_ENA_M
-                            | UART_BRK_DET_INT_ENA_M,
+                            | UART_BRK_DET_INT_ENA_M
+                            | UART_PARITY_ERR_INT_ENA_M,
         .rxfifo_full_thresh = UART_FULL_THRESH_DEFAULT,
         .rx_timeout_thresh = UART_TOUT_THRESH_DEFAULT,
         .txfifo_empty_intr_thresh = UART_EMPTY_THRESH_DEFAULT

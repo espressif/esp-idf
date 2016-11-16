@@ -68,8 +68,8 @@ typedef enum {
 
 typedef enum {
     UART_PARITY_DISABLE = 0x0,   /*!< Disable UART parity*/
-    UART_PARITY_EVEN = 0x10,     /*!< Enable UART even parity*/
-    UART_PARITY_ODD  = 0x11      /*!< Enable UART odd parity*/
+    UART_PARITY_EVEN = 0x2,     /*!< Enable UART even parity*/
+    UART_PARITY_ODD  = 0x3      /*!< Enable UART odd parity*/
 } uart_parity_t;
 
 typedef enum {
