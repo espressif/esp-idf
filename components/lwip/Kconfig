@@ -1,5 +1,15 @@
 menu "LWIP"
 
+config L2_TO_L3_COPY
+    bool "Enable copy between Layer2 and Layer3 packets"
+    default 0
+    help
+        If this feature is enabled, then all traffic from layer2(WIFI Driver)
+        to layer3(LWIP stack) will make a copy, the layer2 buffer will be
+        freed and the copy will be sent to layer3. Please make sure you fully
+        understand this feature before you enable this feature.
+
+
 config LWIP_MAX_SOCKETS
     int "Max number of open sockets"
     range 1 16

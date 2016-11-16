@@ -525,6 +525,7 @@ extern unsigned long os_random(void);
 #define ESP_RANDOM_TCP_PORT             1
 #define ESP_IP4_ATON                    1
 #define ESP_LIGHT_SLEEP                 1
+#define ESP_L2_TO_L3_COPY               CONFIG_L2_TO_L3_COPY
 
 #define TCP_WND_DEFAULT                      (4*TCP_MSS)
 #define TCP_SND_BUF_DEFAULT                  (2*TCP_MSS)
