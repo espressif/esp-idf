@@ -25,7 +25,10 @@
  *****************************************************************************/
 #include <stddef.h>
 #include "uipc.h"
-
+#include "esp_system.h"
+#include "EspAudio.h"
+#include "EspAudioCom.h"
+#include "bt_trace.h"
 /*****************************************************************************
 **  Constants & Macros
 ******************************************************************************/
@@ -48,6 +51,8 @@ const char* dump_uipc_event(tUIPC_EVENT event)
 *******************************************************************************/
 void UIPC_Init(void *dummy)
 {
+    LOG_ERROR("Free memory: %d bytes\n", system_get_free_heap_size());
+    EspAudio_Init();
     return;
 }
 
@@ -62,6 +67,17 @@ void UIPC_Init(void *dummy)
 *******************************************************************************/
 BOOLEAN UIPC_Open(tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK *p_cback)
 {
+    if (ch_id == UIPC_CH_ID_AV_AUDIO) {
+        // TODO: review the stream param config parameter here
+        EspAudioPlayerStreamCfg(StreamSampleRate_44k, StreamChannel_Two, StreamBitLen_16BIT);
+        EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
+    }
+
+    /*
+    if (p_cback) {
+        p_cback(ch_id, UIPC_OPEN_EVT);
+    }
+    */
     return TRUE;
 }
 
@@ -105,6 +121,9 @@ BOOLEAN UIPC_SendBuf(tUIPC_CH_ID ch_id, BT_HDR *p_msg)
 *******************************************************************************/
 BOOLEAN UIPC_Send(tUIPC_CH_ID ch_id, UINT16 msg_evt, UINT8 *p_buf, UINT16 msglen)
 {
+    if (ch_id == UIPC_CH_ID_AV_AUDIO) {
+        EspAudioPlayerStreamWrite(p_buf, msglen);
+    }
     return TRUE;
 }
 

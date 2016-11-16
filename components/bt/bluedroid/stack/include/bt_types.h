@@ -41,7 +41,7 @@ typedef int32_t INT32;
 typedef bool BOOLEAN;
 
 #define PACKED  __packed
-#define INLINE  __inline
+// #define INLINE  __inline
 
 #define BCM_STRCPY_S(x1,x2,x3)      strcpy((x1),(x3))
 #define BCM_STRNCPY_S(x1,x2,x3,x4)  strncpy((x1),(x3),(x4))
