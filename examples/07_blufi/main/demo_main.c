@@ -26,7 +26,8 @@
 #include "bt.h"
 #include "bta_api.h"
 
-#include "esp_bt_common.h"
+#include "esp_bt_defs.h"
+#include "esp_bt_main.h"
 #include "blufi.h"
 
 #define WIFI_LIST_NUM	10

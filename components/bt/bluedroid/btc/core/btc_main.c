@@ -16,7 +16,7 @@ bt_status_t btc_disable_bluetooth(void)
 
 bt_status_t btc_init_bluetooth(bluetooth_init_cb_t cb)
 {
-	return bte_main_boot_entry(cb) == 0 ? ESP_OK : ESP_FAIL;
+	return bte_main_boot_entry(cb) == 0 ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 

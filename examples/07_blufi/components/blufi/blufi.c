@@ -41,6 +41,7 @@
 #include "blufi_adv.h"
 
 #include "esp_bt_defs.h"
+#include "esp_bt_main.h"
 
 static void BlufiDataCallBack(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *p_data);
 
