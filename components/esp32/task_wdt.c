@@ -26,6 +26,7 @@
 #include "esp_err.h"
 #include "esp_intr.h"
 #include "esp_attr.h"
+#include "esp_freertos_hooks.h"
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "esp_log.h"
@@ -140,6 +141,18 @@ void esp_task_wdt_delete() {
     }
 }
 
+
+#if CONFIG_TASK_WDT_CHECK_IDLE_TASK
+static bool idle_hook(void) {
+#if !CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    if (xPortGetCoreID()!=0) return true;
+#endif
+    esp_task_wdt_feed();
+    return true;
+}
+#endif
+
+
 void esp_task_wdt_init() {
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_config0.sys_reset_length=7;                 //3.2uS
@@ -153,6 +166,9 @@ void esp_task_wdt_init() {
     TIMERG0.wdt_config0.en=1;
     TIMERG0.wdt_feed=1;
     TIMERG0.wdt_wprotect=0;
+#if CONFIG_TASK_WDT_CHECK_IDLE_TASK
+    esp_register_freertos_idle_hook(idle_hook);
+#endif
     ESP_INTR_DISABLE(ETS_T0_WDT_INUM);
     intr_matrix_set(xPortGetCoreID(), ETS_TG0_WDT_LEVEL_INTR_SOURCE, ETS_T0_WDT_INUM);
     xt_set_interrupt_handler(ETS_T0_WDT_INUM, task_wdt_isr, NULL);
@@ -161,13 +177,5 @@ void esp_task_wdt_init() {
     ESP_INTR_ENABLE(ETS_T0_WDT_INUM);
 }
 
-#if CONFIG_TASK_WDT_CHECK_IDLE_TASK
-void vApplicationIdleHook(void) {
-#if !CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    if (xPortGetCoreID()!=0) return;
-#endif
-    esp_task_wdt_feed();
-}
-#endif
 
 #endif
