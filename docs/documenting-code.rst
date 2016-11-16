@@ -40,98 +40,91 @@ Go for it!
 
 When writing code for this repository, please follow guidelines below.
 
-  1. Document all building blocks of code: functions, structs, typedefs, enums, macros, etc. Provide enough information on purpose, functionality and limitations of documented items, as you would like to see them documented when reading the code by others.
+1. Document all building blocks of code: functions, structs, typedefs, enums, macros, etc. Provide enough information on purpose, functionality and limitations of documented items, as you would like to see them documented when reading the code by others.
 
-  2. Documentation of function should describe what this function does. If it accepts input parameters and returns some value, all of them should be explained.
+2. Documentation of function should describe what this function does. If it accepts input parameters and returns some value, all of them should be explained.
 
-  3. Do not add a data type before parameter or any other characters besides spaces. All spaces and line breaks are compressed into a single space. If you like to break a line, then break it twice.
+3. Do not add a data type before parameter or any other characters besides spaces. All spaces and line breaks are compressed into a single space. If you like to break a line, then break it twice.
 
-    .. image:: _static/doc-code-function.png
-       :align: center
-       :alt: Sample function documented inline and after rendering
+  .. image:: _static/doc-code-function.png
+     :align: center
+     :alt: Sample function documented inline and after rendering
 
-  4. If function has void input or does not return any value, then skip ``@param`` or ``@return``
+4. If function has void input or does not return any value, then skip ``@param`` or ``@return``
 
-    .. image:: _static/doc-code-void-function.png
-       :align: center
-       :alt: Sample void function documented inline and after rendering
+  .. image:: _static/doc-code-void-function.png
+     :align: center
+     :alt: Sample void function documented inline and after rendering
  
-  5. When documenting members of a ``struct``, ``typedef`` or ``enum``, place specific comment like below after each member.
+5. When documenting a ``define`` as well as members of a ``struct`` or ``enum``, place specific comment like below after each member.
 
-    .. image:: _static/doc-code-member.png
-       :align: center
-       :alt: Sample of member documentation inline and after rendering
+  .. image:: _static/doc-code-member.png
+     :align: center
+     :alt: Sample of member documentation inline and after rendering
+
+
+6. To provide well formatted lists, break the line after command (like ``@return`` in example below).
+
+  ::
+
+    *
+    * @return
+    *    - ESP_OK if erase operation was successful
+    *    - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
+    *    - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
+    *    - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
+    *    - other error codes from the underlying storage driver
+    *
  
-  6. To provide well formatted lists, break the line after command (like ``@return`` in example below).
-
-    .. code-block:: c
-
-      ...
-      *
-      * @return
-      *    - ESP_OK if erase operation was successful
-      *    - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
-      *    - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
-      *    - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
-      *    - other error codes from the underlying storage driver
-      *
-      ...
- 
-  7. Overview of functionality of documented header file, or group of files that make a library, should be placed in the same directory in a separate ``README.rst`` file. If directory contains header files for different APIs, then the file name should be ``apiname-readme.rst``.
+7. Overview of functionality of documented header file, or group of files that make a library, should be placed in the same directory in a separate ``README.rst`` file. If directory contains header files for different APIs, then the file name should be ``apiname-readme.rst``.
 
 Go one extra mile
 -----------------
 
 There is couple of tips, how you can make your documentation even better and more useful to the reader.
 
-  1. Add code snippets to illustrate implementation. To do so, enclose snippet using ``@code{c}`` and ``@endcode`` commands. 
+1. Add code snippets to illustrate implementation. To do so, enclose snippet using ``@code{c}`` and ``@endcode`` commands. 
 
-    .. code-block:: c
+  ::
 
-      ...
-      *
-      * @code{c}
-      * // Example of using nvs_get_i32:
-      * int32_t max_buffer_size = 4096; // default value
-      * esp_err_t err = nvs_get_i32(my_handle, "max_buffer_size", &max_buffer_size);
-      * assert(err == ESP_OK || err == ESP_ERR_NVS_NOT_FOUND);
-      * // if ESP_ERR_NVS_NOT_FOUND was returned, max_buffer_size will still
-      * // have its default value.
-      * @endcode
-      *
-      ...
+    *
+    * @code{c}
+    * // Example of using nvs_get_i32:
+    * int32_t max_buffer_size = 4096; // default value
+    * esp_err_t err = nvs_get_i32(my_handle, "max_buffer_size", &max_buffer_size);
+    * assert(err == ESP_OK || err == ESP_ERR_NVS_NOT_FOUND);
+    * // if ESP_ERR_NVS_NOT_FOUND was returned, max_buffer_size will still
+    * // have its default value.
+    * @endcode
+    *
 
-    The code snippet should be enclosed in a comment block of the function that it illustrates.
+  The code snippet should be enclosed in a comment block of the function that it illustrates.
 
-  2. To highlight some important information use command ``@attention`` or ``@note``.
+2. To highlight some important information use command ``@attention`` or ``@note``.
 
-    .. code-block:: c
+  ::
 
-      ...
-      *
-      * @attention
-      *     1. This API only impact WIFI_MODE_STA or WIFI_MODE_APSTA mode
-      *     2. If the ESP32 is connected to an AP, call esp_wifi_disconnect to disconnect.
-      *
-      ...
+    *
+    * @attention
+    *     1. This API only impact WIFI_MODE_STA or WIFI_MODE_APSTA mode
+    *     2. If the ESP32 is connected to an AP, call esp_wifi_disconnect to disconnect.
+    *
 
-    Above example also shows how to use a numbered list.
+  Above example also shows how to use a numbered list.
 
-  3. Use markdown to make your documentation even more readable. You will add headers, links, tables and more.
+3. Use markdown to make your documentation even more readable. You will add headers, links, tables and more.
 
-    .. code-block:: c
+  ::
 
-      ...
-      *
-      * [ESP32 Technical Reference](http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf)
-      *
-      ...
+    *
+    * [ESP32 Technical Reference](http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf)
+    *
 
-  .. note::
+.. note::
 
    Code snippets, notes, links, etc. will not make it to the documentation, if not enclosed in a comment block associated with one of documented objects.
 
-  5. Prepare one or more complete code examples together with description. Place them in a separate file ``example.rst`` in the same directory as the API header files. If directory contains header files for different APIs, then the file name should be ``apiname-example.rst``.
+5. Prepare one or more complete code examples together with description. Place them in a separate file ``example.rst`` in the same directory as the API header files. If directory contains header files for different APIs, then the file name should be ``apiname-example.rst``.
 
 Put it all together
 -------------------
