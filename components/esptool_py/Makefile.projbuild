@@ -54,4 +54,6 @@ app-flash: $(APP_BIN) $(ESPTOOLPY_SRC)
 	@echo "Flashing app to serial port $(ESPPORT), offset $(CONFIG_APP_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
 
-$(eval $(call SubmoduleCheck,$(ESPTOOLPY_SRC),$(COMPONENT_PATH)/esptool))
+# Submodules normally added in component.mk, but can be added
+# at the project level as long as qualified path
+COMPONENT_SUBMODULES += $(COMPONENT_PATH)/esptool

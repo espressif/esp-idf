@@ -103,8 +103,8 @@ endef
 
 # component_project_vars.mk target for the component. This is used to
 # take component.mk variables COMPONENT_ADD_INCLUDEDIRS,
-# COMPONENT_ADD_LDFLAGS and COMPONENT_DEPENDS and inject those into
-# the project make pass.
+# COMPONENT_ADD_LDFLAGS, COMPONENT_DEPENDS and COMPONENT_SUBMODULES
+# and inject those into the project make pass.
 #
 # The target here has no dependencies, as the parent target in
 # project.mk evaluates dependencies before calling down to here. See
@@ -119,6 +119,7 @@ component_project_vars.mk::
 	@echo '# Automatically generated build file. Do not edit.' > $@
 	@echo 'COMPONENT_INCLUDES += $(call MakeVariablePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS)))' >> $@
 	@echo 'COMPONENT_LDFLAGS += $(call MakeVariablePath,$(COMPONENT_ADD_LDFLAGS))' >> $@
+	@echo 'COMPONENT_SUBMODULES += $(call MakeVariablePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_SUBMODULES)))' >> $@
 	@echo '$(COMPONENT_NAME)-build: $(addsuffix -build,$(COMPONENT_DEPENDS))' >> $@
 
 
