@@ -21,7 +21,7 @@ After SoC reset, PRO CPU will start running immediately, executing reset vector 
 
 Startup code called from the reset vector determines the boot mode by checking ``GPIO_STRAP_REG`` register for bootstrap pin states. Depending on the reset reason, the following takes place:
 
-1. Reset from deep sleep: if the value in ``RTC_CNTL_STORE6_REG`` is non-zero, and CRC value of RTC memory in ``RTC_CNTL_STORE7_REG`` is valid, use ``RTC_CNTL_STORE6_REG`` as an entry point address and jump immediately to it. If ``RTC_CNTL_STORE6_REG`` is zero, or ``RTC_CNTL_STORE7_REG`` contains invalid CRC, or once the code called via ``RTC_CNTL_STORE6_REG`` returns, proceed with boot as if it was a power-on reset. **Note**: to run customized code at this point, a deep sleep stub mechanism is provided. Please see deep sleep documentation for this: deep-sleep-stub_.
+1. Reset from deep sleep: if the value in ``RTC_CNTL_STORE6_REG`` is non-zero, and CRC value of RTC memory in ``RTC_CNTL_STORE7_REG`` is valid, use ``RTC_CNTL_STORE6_REG`` as an entry point address and jump immediately to it. If ``RTC_CNTL_STORE6_REG`` is zero, or ``RTC_CNTL_STORE7_REG`` contains invalid CRC, or once the code called via ``RTC_CNTL_STORE6_REG`` returns, proceed with boot as if it was a power-on reset. **Note**: to run customized code at this point, a deep sleep stub mechanism is provided. Please see :doc:`deep sleep <deep-sleep-stub>` documentation for this.
 
 2. For power-on reset, software SOC reset, and watchdog SOC reset: check the ``GPIO_STRAP_REG`` register if UART or SDIO download mode is requested. If this is the case, configure UART or SDIO, and wait for code to be downloaded. Otherwise, proceed with boot as if it was due to software CPU reset.
 
@@ -38,7 +38,7 @@ In ESP-IDF, the binary image which resides at offset 0x1000 in flash is the seco
 
 When the first stage bootloader is finished checking and loading the second stage bootloader, it jumps to the second stage bootloader entry point found in the binary image header.
 
-Second stage bootloader reads the partition table found at offset 0x8000. For more information about partition tables, see partition-tables_. It finds factory and OTA partitions, and decides which one to boot based on data found in *OTA info* partition. 
+Second stage bootloader reads the partition table found at offset 0x8000. See :doc:`partition tables <partition-tables>` documentation for more information. The bootloader finds factory and OTA partitions, and decides which one to boot based on data found in *OTA info* partition. 
 
 For the selected partition, second stage bootloader copies data and code sections which are mapped into IRAM and DRAM to their load addresses. For sections which have load addresses in DROM and IROM regions, flash MMU is configured to provide the correct mapping. Note that the second stage bootloader configures flash MMU for both PRO and APP CPUs, but it only enables flash MMU for PRO CPU. Reason for this is that second stage bootloader code is loaded into the memory region used by APP CPU cache. The duty of enabling cache for APP CPU is passed on to the application. Once code is loaded and flash MMU is set up, second stage bootloader jumps to the application entry point found in the binary image header.
 
@@ -95,7 +95,7 @@ Note that the code outside ``0x40000000 — 0x40400000`` region may not be reach
 RTC fast memory
 ^^^^^^^^^^^^^^^
 
-The code which has to run after wake-up from deep sleep mode has to be placed into RTC memory. Please check detailed description in deep-sleep-stub_.
+The code which has to run after wake-up from deep sleep mode has to be placed into RTC memory. Please check detailed description in :doc:`deep sleep <deep-sleep-stub>` documentation.
 
 DRAM (data RAM)
 ^^^^^^^^^^^^^^^
@@ -118,10 +118,8 @@ By default, constant data is placed by the linker into a 4 MB region (``0x3F4000
 RTC slow memory
 ^^^^^^^^^^^^^^^
 
-Global and static variables used by code which runs from RTC memory (i.e. deep sleep stub code) must be placed into RTC slow memory. Please check the detailed description in deep-sleep-stub_.
+Global and static variables used by code which runs from RTC memory (i.e. deep sleep stub code) must be placed into RTC slow memory. Please check detailed description in :doc:`deep sleep <deep-sleep-stub>` documentation.
 
 
-.. _deep-sleep-stub: deep-sleep-stub.rst
-.. _partition-tables: partition-tables.rst
 
 
