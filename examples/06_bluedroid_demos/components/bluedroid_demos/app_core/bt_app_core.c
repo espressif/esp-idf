@@ -373,7 +373,7 @@ void bt_app_stop_timer(TIMER_LIST_ENT *p_tle)
     // Get the alarm for the timer list entry.
    osi_alarm_t *alarm = hash_map_get(bt_app_general_alarm_hash_map, p_tle);
     if (alarm == NULL) {
-        LOG_WARN("%s Unable to find expected alarm in hashmap", __func__);
+        LOG_WARN("%s Unable to find expected alarm in hashmap\n", __func__);
         return;
     }
     osi_alarm_cancel(alarm);

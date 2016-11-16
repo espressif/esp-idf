@@ -217,7 +217,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 {
 	esp_ble_gatts_cb_param_t param;
 	
-    tBTA_GATTS *p_data = (tBTA_GATTS *)msg->arg;
+    	tBTA_GATTS *p_data = (tBTA_GATTS *)msg->arg;
 
 	switch (msg->act) {
 	case BTA_GATTS_REG_EVT: {

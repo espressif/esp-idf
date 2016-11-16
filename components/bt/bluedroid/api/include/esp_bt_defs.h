@@ -14,6 +14,8 @@ typedef enum {
 	ESP_BT_STATUS_WRONG_MODE       =  5,
 } esp_bt_status_t;
 
+#define ESP_DEFAULT_GATT_IF		    	0xff
+
 #define ESP_BLE_CONN_PARAM_UNDEF        0xffff      /* use this value when a specific value not to be overwritten */
 
 #define ESP_BLE_IS_VALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == ESP_BLE_CONN_PARAM_UNDEF))
