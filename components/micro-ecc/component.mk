@@ -4,3 +4,5 @@ COMPONENT_SRCDIRS := micro-ecc
 COMPONENT_OBJS := micro-ecc/uECC.o
 
 COMPONENT_ADD_INCLUDEDIRS := micro-ecc
+
+COMPONENT_SUBMODULES := micro-ecc
