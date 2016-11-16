@@ -22,15 +22,11 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-#include "esp_types.h"
 #include "esp_log.h"
-#include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
-#include "esp_log.h"
 
 #include "nvs_flash.h"
-#include "tcpip_adapter.h"
 
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
@@ -221,7 +217,7 @@ static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
            auto-reassociate. */
-        esp_wifi_connect();        
+        esp_wifi_connect(); 
         xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
         break;
     default:
