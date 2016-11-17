@@ -49,6 +49,7 @@ struct wdt_task_t {
 static wdt_task_t *wdt_task_list=NULL;
 static portMUX_TYPE taskwdt_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
+
 static void IRAM_ATTR task_wdt_isr(void *arg) {
     wdt_task_t *wdttask;
     const char *cpu;
@@ -69,21 +70,21 @@ static void IRAM_ATTR task_wdt_isr(void *arg) {
         return;
     }
     //Watchdog got triggered because at least one task did not report in.
-    ets_printf("Task watchdog got triggered. The following tasks did not feed the watchdog in time:\n");
+    ets_printf(DRAM_STR("Task watchdog got triggered. The following tasks did not feed the watchdog in time:\n"));
     for (wdttask=wdt_task_list; wdttask!=NULL; wdttask=wdttask->next) {
         if (!wdttask->fed_watchdog) {
-            cpu=xTaskGetAffinity(wdttask->task_handle)==0?"CPU 0":"CPU 1";
-            if (xTaskGetAffinity(wdttask->task_handle)==tskNO_AFFINITY) cpu="CPU 0/1";
-            ets_printf(" - %s (%s)\n", pcTaskGetTaskName(wdttask->task_handle), cpu);
+            cpu=xTaskGetAffinity(wdttask->task_handle)==0?DRAM_STR("CPU 0"):DRAM_STR("CPU 1");
+            if (xTaskGetAffinity(wdttask->task_handle)==tskNO_AFFINITY) cpu=DRAM_STR("CPU 0/1");
+            ets_printf(DRAM_STR(" - %s (%s)\n"), pcTaskGetTaskName(wdttask->task_handle), cpu);
         }
     }
-    ets_printf("Tasks currently running:\n");
+    ets_printf(DRAM_STR("Tasks currently running:\n"));
     for (int x=0; x<portNUM_PROCESSORS; x++) {
-        ets_printf("CPU %d: %s\n", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
+        ets_printf(DRAM_STR("CPU %d: %s\n"), x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
     }
 
 #if CONFIG_TASK_WDT_PANIC
-    ets_printf("Aborting.\n");
+    ets_printf(DRAM_STR("Aborting.\n"));
     abort();
 #endif
     portEXIT_CRITICAL(&taskwdt_spinlock);

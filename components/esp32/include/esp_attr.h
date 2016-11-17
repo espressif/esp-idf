@@ -26,6 +26,10 @@
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR __attribute__((section(".dram1")))
 
+// Forces a string into DRAM instrad of flash
+// Use as ets_printf(DRAM_STR("Hello world!\n"));
+#define DRAM_STR(str) (__extension__({static const DRAM_ATTR char __c[] = (str); (const char *)&__c;}))
+
 // Forces code into RTC fast memory. See "docs/deep-sleep-stub.rst"
 #define RTC_IRAM_ATTR __attribute__((section(".rtc.text")))
 
