@@ -1001,7 +1001,7 @@
 
 /* The maximum number of SDP records the server can support. */
 #ifndef SDP_MAX_RECORDS
-#define SDP_MAX_RECORDS             15  /*max is 30*/
+#define SDP_MAX_RECORDS             4  /*max is 30*/
 #endif
 
 /* The maximum number of attributes in each record. */

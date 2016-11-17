@@ -25,7 +25,7 @@
 #include "bta_sdp_api.h"
 
 #ifndef BTA_SDP_DB_SIZE
-#define BTA_SDP_DB_SIZE  4500
+#define BTA_SDP_DB_SIZE  1500
 #endif
 
 static UINT8 __attribute__ ((aligned(4))) bta_sdp_db_data[BTA_SDP_DB_SIZE];
