@@ -159,6 +159,7 @@ test_report:
     when: always
     paths:
       - $REPORT_PATH
+      - $LOG_PATH
     expire_in: 12 mos
   script:
     # clone test bench
