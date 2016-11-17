@@ -63,10 +63,7 @@ build_ssc:
   <<: *build_template
   artifacts:
     paths:
-      - ./SSC/build/*.bin
-      - ./SSC/build/*.elf
-      - ./SSC/build/*.map
-      - ./SSC/build/bootloader/*.bin
+      - ./SSC/ssc_bin
     expire_in: 6 mos
 
   script:
@@ -229,7 +226,7 @@ deploy_docs:
   variables:
     # LOCAL_ENV_CONFIG_PATH: define in template and jobs can overwrite if required
     LOCAL_ENV_CONFIG_PATH: /home/gitlab-runner/LocalConfig/ESP32_IDF
-    BIN_PATH: "$CI_PROJECT_DIR/SSC/build/"
+    BIN_PATH: "$CI_PROJECT_DIR/SSC/ssc_bin/SSC"
     APP_NAME: "ssc"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     # append test level folder to TEST_CASE_FILE_PATH in before_script of test job
