@@ -25,60 +25,37 @@
 #include "esp_system.h"
 #include "phy.h"
 #include "esp_log.h"
+#include "nvs.h"
 #include "sdkconfig.h"
 #include "phy_init_data.h"
 
 static const char* TAG = "phy_init";
 
-static const esp_phy_init_data_t* phy_get_init_data();
-static void phy_release_init_data(const esp_phy_init_data_t*);
 
-esp_err_t esp_phy_init(esp_phy_calibration_mode_t mode)
+esp_err_t esp_phy_init(const esp_phy_init_data_t* init_data,
+        esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data)
 {
-    ESP_LOGD(TAG, "esp_phy_init, mode=%d", mode);
-    esp_err_t err;
-    const esp_phy_init_data_t* init_data = phy_get_init_data();
-    if (init_data == NULL) {
-        ESP_LOGE(TAG, "failed to obtain PHY init data");
-        return ESP_FAIL;
-    }
-    esp_phy_calibration_data_t* cal_data =
-            (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
-    if (cal_data == NULL) {
-        ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
-        return ESP_ERR_NO_MEM;
-    }
-    // Initialize PHY function pointer table
+    assert(init_data);
+    assert(calibration_data);
+    // Initialize PHY pointer table
     phy_get_romfunc_addr();
+    REG_SET_BIT(DPORT_WIFI_RST_EN_REG, DPORT_MAC_RST);
+    REG_CLR_BIT(DPORT_WIFI_RST_EN_REG, DPORT_MAC_RST);
     // Enable WiFi peripheral clock
     SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
-    // If full calibration is requested, don't need to load previous calibration data
-    if (mode != PHY_RF_CAL_FULL) {
-        err = esp_phy_load_cal_data(cal_data);
-        if (err != ESP_OK) {
-            ESP_LOGW(TAG, "failed to load RF calibration data, falling back to full calibration");
-            mode = PHY_RF_CAL_FULL;
-        }
-    }
-    ESP_LOGV(TAG, "calling register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d", init_data, cal_data, mode);
-    register_chipv7_phy(init_data, cal_data, mode);
-    if (mode != PHY_RF_CAL_NONE) {
-        err = esp_phy_store_cal_data(cal_data);
-    } else {
-        err = ESP_OK;
-    }
-    phy_release_init_data(init_data);
-    free(cal_data); // PHY maintains a copy of calibration data, so we can free this
-    return err;
+    ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
+            init_data, calibration_data, mode);
+    phy_set_wifi_mode_only(0);
+    register_chipv7_phy(init_data, calibration_data, mode);
+    coex_bt_high_prio();
+    return ESP_OK;
 }
 
 // PHY init data handling functions
-
 #if CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
-#define NO_DEFAULT_INIT_DATA
 #include "esp_partition.h"
 
-static const esp_phy_init_data_t* phy_get_init_data()
+const esp_phy_init_data_t* esp_phy_get_init_data()
 {
     const esp_partition_t* partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_PHY, NULL);
@@ -109,7 +86,7 @@ static const esp_phy_init_data_t* phy_get_init_data()
     return (const esp_phy_init_data_t*) (init_data_store + sizeof(phy_init_magic_pre));
 }
 
-static void phy_release_init_data(const esp_phy_init_data_t* init_data)
+void esp_phy_release_init_data(const esp_phy_init_data_t* init_data)
 {
     free((uint8_t*) init_data - sizeof(phy_init_magic_pre));
 }
@@ -118,13 +95,13 @@ static void phy_release_init_data(const esp_phy_init_data_t* init_data)
 
 // phy_init_data.h will declare static 'phy_init_data' variable initialized with default init data
 
-static const esp_phy_init_data_t* phy_get_init_data()
+const esp_phy_init_data_t* esp_phy_get_init_data()
 {
     ESP_LOGD(TAG, "loading PHY init data from application binary");
     return &phy_init_data;
 }
 
-static void phy_release_init_data(const esp_phy_init_data_t* init_data)
+void esp_phy_release_init_data(const esp_phy_init_data_t* init_data)
 {
     // no-op
 }
@@ -132,22 +109,18 @@ static void phy_release_init_data(const esp_phy_init_data_t* init_data)
 
 
 // PHY calibration data handling functions
-
-#if CONFIG_ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS
-#include "nvs.h"
-
 static const char* PHY_NAMESPACE = "phy";
 static const char* PHY_CAL_VERSION_KEY = "cal_version";
 static const char* PHY_CAL_MAC_KEY = "cal_mac";
 static const char* PHY_CAL_DATA_KEY = "cal_data";
 
-static esp_err_t load_cal_data_from_nvs(nvs_handle handle,
+static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
         esp_phy_calibration_data_t* out_cal_data);
 
-static esp_err_t store_cal_data_to_nvs(nvs_handle handle,
+static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
         const esp_phy_calibration_data_t* cal_data);
 
-esp_err_t esp_phy_load_cal_data(esp_phy_calibration_data_t* out_cal_data)
+esp_err_t esp_phy_load_cal_data_from_nvs(esp_phy_calibration_data_t* out_cal_data)
 {
     nvs_handle handle;
     esp_err_t err = nvs_open(PHY_NAMESPACE, NVS_READONLY, &handle);
@@ -156,13 +129,13 @@ esp_err_t esp_phy_load_cal_data(esp_phy_calibration_data_t* out_cal_data)
         return err;
     }
     else {
-        err = load_cal_data_from_nvs(handle, out_cal_data);
+        err = load_cal_data_from_nvs_handle(handle, out_cal_data);
         nvs_close(handle);
         return err;
     }
 }
 
-esp_err_t esp_phy_store_cal_data(const esp_phy_calibration_data_t* cal_data)
+esp_err_t esp_phy_store_cal_data_to_nvs(const esp_phy_calibration_data_t* cal_data)
 {
     nvs_handle handle;
     esp_err_t err = nvs_open(PHY_NAMESPACE, NVS_READWRITE, &handle);
@@ -171,13 +144,14 @@ esp_err_t esp_phy_store_cal_data(const esp_phy_calibration_data_t* cal_data)
         return err;
     }
     else {
-        err = store_cal_data_to_nvs(handle, cal_data);
+        err = store_cal_data_to_nvs_handle(handle, cal_data);
         nvs_close(handle);
         return err;
     }
 }
 
-static esp_err_t load_cal_data_from_nvs(nvs_handle handle, esp_phy_calibration_data_t* out_cal_data)
+static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
+        esp_phy_calibration_data_t* out_cal_data)
 {
     esp_err_t err;
     uint32_t cal_data_version;
@@ -186,7 +160,8 @@ static esp_err_t load_cal_data_from_nvs(nvs_handle handle, esp_phy_calibration_d
         ESP_LOGD(TAG, "%s: failed to get cal_version (%d)", __func__, err);
         return err;
     }
-    uint32_t cal_format_version = phy_get_rf_cal_version();
+    uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
+    ESP_LOGV(TAG, "phy_get_rf_cal_version: %d\n", cal_format_version);
     if (cal_data_version != cal_format_version) {
         ESP_LOGD(TAG, "%s: expected calibration data format %d, found %d",
                 __func__, cal_format_version, cal_data_version);
@@ -224,11 +199,12 @@ static esp_err_t load_cal_data_from_nvs(nvs_handle handle, esp_phy_calibration_d
     return ESP_OK;
 }
 
-static esp_err_t store_cal_data_to_nvs(nvs_handle handle,
+static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
         const esp_phy_calibration_data_t* cal_data)
 {
     esp_err_t err;
-    uint32_t cal_format_version = phy_get_rf_cal_version();
+    uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
+    ESP_LOGV(TAG, "phy_get_rf_cal_version: %d\n", cal_format_version);
     err = nvs_set_u32(handle, PHY_CAL_VERSION_KEY, cal_format_version);
     if (err != ESP_OK) {
         return err;
@@ -243,22 +219,6 @@ static esp_err_t store_cal_data_to_nvs(nvs_handle handle,
     return err;
 }
 
-#else // CONFIG_ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS
-
-// Default implementation: don't store or load calibration data.
-// These functions are defined as weak and can be overridden in the application.
-
-esp_err_t esp_phy_store_cal_data(const esp_phy_calibration_data_t* cal_data) __attribute__((weak))
+void register_chipv7_phy_stub()
 {
-    // pretend that calibration data is stored
-    return ESP_OK;
 }
-
-esp_err_t esp_phy_load_cal_data(const esp_phy_calibration_data_t* cal_data) __attribute__((weak))
-{
-    // nowhere to load data from
-    return ESP_ERR_NOT_SUPPORTED;
-}
-
-#endif // CONFIG_ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS
-

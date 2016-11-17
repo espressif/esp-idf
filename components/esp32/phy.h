@@ -41,9 +41,22 @@ int register_chipv7_phy(const esp_phy_init_data_t* init_data, esp_phy_calibratio
 
 /**
  * @brief Get the format version of calibration data used by PHY library.
- * @return Format version number
+ * @return Format version number, OR'ed with BIT(16) if PHY is in WIFI only mode.
  */
 uint32_t phy_get_rf_cal_version();
+
+/**
+ * @brief Set RF/BB for only WIFI mode or coexist(WIFI & BT) mode
+ * @param[in] true is for only WIFI mode, false is for coexist mode. default is 0.
+ * @return NULL
+ */
+void phy_set_wifi_mode_only(bool wifi_only);
+
+/**
+ * @brief Set BT the highest priority in coexist mode.
+ * @return NULL
+ */
+void coex_bt_high_prio(void);
 
 #ifdef __cplusplus
 }

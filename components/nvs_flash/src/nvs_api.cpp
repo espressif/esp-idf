@@ -62,6 +62,13 @@ extern "C" void nvs_dump()
     s_nvs_storage.debugDump();
 }
 
+extern "C" esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount)
+{
+    ESP_LOGD(TAG, "nvs_flash_init_custom start=%d count=%d", baseSector, sectorCount);
+    s_nvs_handles.clear();
+    return s_nvs_storage.init(baseSector, sectorCount);
+}
+
 #ifdef ESP_PLATFORM
 extern "C" esp_err_t nvs_flash_init(void)
 {
@@ -80,13 +87,6 @@ extern "C" esp_err_t nvs_flash_init(void)
             partition->size / SPI_FLASH_SEC_SIZE);
 }
 #endif
-
-extern "C" esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount)
-{
-    ESP_LOGD(TAG, "nvs_flash_init_custom start=%d count=%d", baseSector, sectorCount);
-    s_nvs_handles.clear();
-    return s_nvs_storage.init(baseSector, sectorCount);
-}
 
 static esp_err_t nvs_find_ns_handle(nvs_handle handle, HandleEntry& entry)
 {

@@ -364,21 +364,6 @@ config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
 	depends on DOCUMENTATION_FOR_RTC_CNTL
 endchoice
 
-config ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS
-	bool "Store PHY calibration data in NVS"
-	default y
-	help
-		Choose whether to use non-volatile storage library (NVS)
-		to store PHY calibration data obtained at run time.
-		If enabled, this will use approximately 2kB of NVS storage
-		for PHY calibration data. 
-		If this option is not enabled, calibration data will not be stored,
-		unless application provides its own implementations of 
-		esp_phy_store_cal_data and esp_phy_load_cal_data functions.
-		See esp_phy_init.h for details.
-		
-		If unsure, choose 'y'. 
-
 
 config ESP32_PHY_AUTO_INIT
 	bool "Initialize PHY in startup code"
@@ -389,8 +374,8 @@ config ESP32_PHY_AUTO_INIT
 		If this is undesired, disable this option and call esp_phy_init
 		from the application before enabling WiFi or BT.
 		
-		If this option is enabled along with ESP32_STORE_PHY_CALIBRATION_DATA_IN_NVS,
-		startup code will also initialize NVS prior to initializing PHY.
+		If this option is enabled, startup code will also initialize 
+		NVS prior to initializing PHY.
 		
 		If unsure, choose 'y'. 
 
