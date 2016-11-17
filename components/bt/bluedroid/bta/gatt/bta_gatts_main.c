@@ -72,7 +72,6 @@ BOOLEAN bta_gatts_hdl_event(BT_HDR *p_msg)
             break;
 
         case BTA_GATTS_API_REG_EVT:
-	    LOG_ERROR("bta_gatts_register\n");
             bta_gatts_register(p_cb, (tBTA_GATTS_DATA *) p_msg);
             break;
 

@@ -7,6 +7,7 @@
 #define BTC_TASK_QUEUE_NUM	20
 #define BTC_TASK_STACK_SIZE	4096
 #define BTC_TASK_NAME		"btcT"
+#define BTC_TASK_PRIO		(configMAX_PRIORITIES - 5)
 
 typedef struct btc_msg {
 	uint8_t sig;	//event signal
@@ -23,7 +24,8 @@ typedef enum {
 } btc_sig_t; //btc message type
 
 typedef enum {
-	BTC_PID_GATTS = 0,
+	BTC_PID_MAIN_INIT = 0,
+	BTC_PID_GATTS,
 	BTC_PID_GATTC,
 	BTC_PID_GAP_BLE,
 	BTC_PID_GAP_BT,
@@ -44,5 +46,8 @@ typedef struct {
 typedef void (* btc_arg_deep_copy_t)(btc_msg_t *msg, void *dst, void *src);
 
 bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func);
+
+int btc_init(void);
+void btc_deinit(void);
 
 #endif /* __BTC_TASK_H__ */

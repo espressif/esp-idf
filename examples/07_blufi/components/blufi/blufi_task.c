@@ -93,8 +93,8 @@ static void blufi_task_deinit(void)
 
 static void blufi_task_init(void)
 {
-    xBlufiTaskQueue = xQueueCreate(10, sizeof(BtTaskEvt_t));
-    xTaskCreate(blufi_task, "BlUFI", 8192, NULL, configMAX_PRIORITIES - 3, xBlufiTaskHandle);
+    xBlufiTaskQueue = xQueueCreate(5, sizeof(BtTaskEvt_t));
+    xTaskCreate(blufi_task, "BlUFI", 4096, NULL, configMAX_PRIORITIES - 3, xBlufiTaskHandle);
 }
 
 void blufi_init(void) {

@@ -222,7 +222,7 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 // btla-specific --
         if (first_unuse != 0xff)
         {
-            APPL_TRACE_ERROR("register application first_unuse rcb_idx = %d", first_unuse);
+            APPL_TRACE_VERBOSE("register application first_unuse rcb_idx = %d", first_unuse);
 
             p_cb->rcb[first_unuse].in_use = TRUE;
             p_cb->rcb[first_unuse].p_cback = p_msg->api_reg.p_cback;
@@ -353,7 +353,7 @@ void bta_gatts_create_srvc(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg)
 
     rcb_idx = bta_gatts_find_app_rcb_idx_by_app_if(p_cb, p_msg->api_create_svc.server_if);
 
-    APPL_TRACE_ERROR("create service rcb_idx = %d", rcb_idx);
+    APPL_TRACE_DEBUG("create service rcb_idx = %d", rcb_idx);
 
     if (rcb_idx != BTA_GATTS_INVALID_APP)
     {

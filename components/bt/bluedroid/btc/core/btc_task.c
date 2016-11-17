@@ -19,14 +19,17 @@
 #include "thread.h"
 #include "gki.h"
 #include "bt_defs.h"
+#include "btc_main.h"
 #include "btc_gatts.h"
 #include "btc_gattc.h"
 #include "btc_gap_ble.h"
+#include "btc_blufi_prf.h"
 
 static xTaskHandle  xBtcTaskHandle = NULL;
 static xQueueHandle xBtcQueue = 0;
 
 static btc_func_t profile_tab[BTC_PID_NUM] = {
+	[BTC_PID_MAIN_INIT]	= {btc_main_call_handler,		NULL					},
 	[BTC_PID_GATTS]		= {btc_gatts_call_handler,		btc_gatts_cb_handler	},
 	[BTC_PID_GATTC]		= {btc_gattc_call_handler,		btc_gattc_cb_handler	},
 	[BTC_PID_GAP_BLE]	= {btc_gap_ble_call_handler, 	btc_gap_ble_cb_handler	},
@@ -36,7 +39,7 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
 	[BTC_PID_BT_HID]	= {NULL, NULL},
 	[BTC_PID_SPP]		= {NULL, NULL},
 	[BTC_PID_SPPLIKE]	= {NULL, NULL},
-	[BTC_PID_BLUFI]		= {NULL, NULL},
+	[BTC_PID_BLUFI]		= {btc_blufi_call_handler, 		btc_blufi_cb_handler	},
 };
 
  /*****************************************************************************
@@ -51,6 +54,7 @@ static void btc_task(void *arg)
 
 	for (;;) { 
 		if (pdTRUE == xQueueReceive(xBtcQueue, &msg, (portTickType)portMAX_DELAY)) {
+			LOG_DEBUG("%s msg %u %u %u %08x\n", __func__, msg.sig, msg.pid, msg.act, msg.arg);
 			switch (msg.sig) {
 			case BTC_SIG_API_CALL:
 				profile_tab[msg.pid].btc_call(&msg);
@@ -74,7 +78,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg)
 		return BT_STATUS_PARM_INVALID;
 	}
 
-	if (xQueueSend(xBtcQueue, &msg, 10/portTICK_RATE_MS) != pdTRUE) {
+	if (xQueueSend(xBtcQueue, msg, 10/portTICK_RATE_MS) != pdTRUE) {
 		LOG_ERROR("Btc Post failed\n");
 		return BT_STATUS_BUSY;
 	}
@@ -102,6 +106,8 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 			if (copy_func) {
 				copy_func(&lmsg, lmsg.arg, arg);
 			}
+		} else {
+			lmsg.arg = NULL;
 		}
 
 		return btc_task_post(&lmsg);
@@ -110,8 +116,8 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 
 int btc_init(void)
 {
-	xBtcQueue = xQueueCreate(60, sizeof(btc_msg_t));
-	xTaskCreate(btc_task, "Bt_prf", 4096, NULL, configMAX_PRIORITIES - 1, &xBtcTaskHandle);
+	xBtcQueue = xQueueCreate(BTC_TASK_QUEUE_NUM, sizeof(btc_msg_t));
+	xTaskCreate(btc_task, "Btc_task", BTC_TASK_STACK_SIZE, NULL, BTC_TASK_PRIO, &xBtcTaskHandle);
 
 	/* TODO: initial the profile_tab */
 

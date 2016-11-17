@@ -26,6 +26,7 @@
 #include "bt.h"
 #include "bta_api.h"
 
+#include "esp_blufi_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 #include "blufi.h"
@@ -42,7 +43,6 @@ const int CONNECTED_BIT = BIT0;
 
 
 
-static wifi_scan_config_t scan_config;
 static wifi_config_t sta_config;
 
 static char tmp_ssid[33];
@@ -59,8 +59,6 @@ void wifi_set_blue_config(char *ssid, char *passwd)
 	LOG_DEBUG("confirm true\n");
 }
 
-extern void blufi_config_failed(void);
-extern void blufi_config_success(void);
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
@@ -69,7 +67,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-		blufi_config_success();
+		esp_blufi_send_config_state(ESP_BLUFI_CONFIG_OK);
 		esp_disable_bluetooth(); //close bluetooth function
 		//esp_deinit_bluetooth();  //free bluetooth resource
         break;
@@ -98,7 +96,6 @@ static void initialise_wifi(void)
 }
 
 
-static int loop = 0;
 void wifiTestTask(void *pvParameters)
 {
     esp_err_t ret;
@@ -119,7 +116,7 @@ void wifiTestTask(void *pvParameters)
 			ret = esp_wifi_connect();
 			if (ret != ESP_OK) {
 				LOG_ERROR("esp_wifi connect failed\n");
-				blufi_config_failed();
+				esp_blufi_send_config_state(ESP_BLUFI_CONFIG_FAILED);
 			}
 		}
     }
@@ -133,10 +130,16 @@ void app_main()
     system_init();
     initialise_wifi();
 
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    //vTaskDelay(3000 / portTICK_PERIOD_MS);
 
     bt_controller_init();
     xTaskCreatePinnedToCore(&wifiTestTask, "wifiTestTask", 2048, NULL, 20, NULL, 0);
 
-    esp_init_bluetooth(blufi_init);
+	LOG_ERROR("%s init bluetooth\n", __func__);
+    ret = esp_init_bluetooth();
+	if (ret) {
+		LOG_ERROR("%s init bluetooth failed\n", __func__);
+		return;
+	}
+	blufi_init();
 }
