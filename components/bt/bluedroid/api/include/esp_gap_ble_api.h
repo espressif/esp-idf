@@ -62,15 +62,16 @@ typedef struct {
 	bool					set_scan_rsp;
 	bool					include_name;
 	bool					include_txpower;
-	int						min_interval;
-	int						max_interval;
-	int						appearance;
+	int					min_interval;
+	int					max_interval;
+	int					appearance;
 	uint16_t				manufacturer_len;
-	uint8_t					*p_manufacturer_data;
+	uint8_t				*p_manufacturer_data;
 	uint16_t				service_data_len;
-	uint8_t					*p_service_data;
+	uint8_t				*p_service_data;
 	uint16_t				service_uuid_len;
-	uint8_t					*p_service_uuid;
+	uint8_t				*p_service_uuid;
+	uint8_t	                   flag;
 } esp_ble_adv_data_t;
 
 typedef enum {
