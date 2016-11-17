@@ -22,6 +22,8 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
 #include <esp_types.h>
 #include "esp_err.h"
 #include "esp_intr.h"
@@ -45,6 +47,8 @@ struct wdt_task_t {
 };
 
 static wdt_task_t *wdt_task_list=NULL;
+static portMUX_TYPE taskwdt_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
 
 static void IRAM_ATTR task_wdt_isr(void *arg) {
     wdt_task_t *wdttask;
@@ -55,24 +59,35 @@ static void IRAM_ATTR task_wdt_isr(void *arg) {
     TIMERG0.wdt_wprotect=0;
     //Ack interrupt
     TIMERG0.int_clr_timers.wdt=1;
+    //We are taking a spinlock while doing I/O (ets_printf) here. Normally, that is a pretty
+    //bad thing, possibly (temporarily) hanging up the 2nd core and stopping FreeRTOS. In this case,
+    //something bad already happened and reporting this is considered more important
+    //than the badness caused by a spinlock here.
+    portENTER_CRITICAL(&taskwdt_spinlock);
+    if (!wdt_task_list) {
+        //No task on list. Maybe none registered yet.
+        portEXIT_CRITICAL(&taskwdt_spinlock);
+        return;
+    }
     //Watchdog got triggered because at least one task did not report in.
-    ets_printf("Task watchdog got triggered. The following tasks did not feed the watchdog in time:\n");
+    ets_printf(DRAM_STR("Task watchdog got triggered. The following tasks did not feed the watchdog in time:\n"));
     for (wdttask=wdt_task_list; wdttask!=NULL; wdttask=wdttask->next) {
         if (!wdttask->fed_watchdog) {
-            cpu=xTaskGetAffinity(wdttask->task_handle)==0?"CPU 0":"CPU 1";
-            if (xTaskGetAffinity(wdttask->task_handle)==tskNO_AFFINITY) cpu="CPU 0/1";
-            printf(" - %s (%s)\n", pcTaskGetTaskName(wdttask->task_handle), cpu);
+            cpu=xTaskGetAffinity(wdttask->task_handle)==0?DRAM_STR("CPU 0"):DRAM_STR("CPU 1");
+            if (xTaskGetAffinity(wdttask->task_handle)==tskNO_AFFINITY) cpu=DRAM_STR("CPU 0/1");
+            ets_printf(DRAM_STR(" - %s (%s)\n"), pcTaskGetTaskName(wdttask->task_handle), cpu);
         }
     }
-    ets_printf("Tasks currently running:\n");
+    ets_printf(DRAM_STR("Tasks currently running:\n"));
     for (int x=0; x<portNUM_PROCESSORS; x++) {
-        ets_printf("CPU %d: %s\n", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
+        ets_printf(DRAM_STR("CPU %d: %s\n"), x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
     }
 
 #if CONFIG_TASK_WDT_PANIC
-    ets_printf("Aborting.\n");
+    ets_printf(DRAM_STR("Aborting.\n"));
     abort();
 #endif
+    portEXIT_CRITICAL(&taskwdt_spinlock);
 }
 
 
@@ -80,6 +95,8 @@ void esp_task_wdt_feed() {
     wdt_task_t *wdttask=wdt_task_list;
     bool found_task=false, do_feed_wdt=true;
     TaskHandle_t handle=xTaskGetCurrentTaskHandle();
+    portENTER_CRITICAL(&taskwdt_spinlock);
+
     //Walk the linked list of wdt tasks to find this one, as well as see if we need to feed
     //the real watchdog timer.
     for (wdttask=wdt_task_list; wdttask!=NULL; wdttask=wdttask->next) {
@@ -114,14 +131,18 @@ void esp_task_wdt_feed() {
         //Reset fed_watchdog status
         for (wdttask=wdt_task_list; wdttask->next!=NULL; wdttask=wdttask->next) wdttask->fed_watchdog=false;
     }
+    portEXIT_CRITICAL(&taskwdt_spinlock);
 }
 
 void esp_task_wdt_delete() {
     TaskHandle_t handle=xTaskGetCurrentTaskHandle();
     wdt_task_t *wdttask=wdt_task_list;
+    portENTER_CRITICAL(&taskwdt_spinlock);
+
     //Wdt task list can't be empty
     if (!wdt_task_list) {
         ESP_LOGE(TAG, "task_wdt_delete: No tasks in list?");
+        portEXIT_CRITICAL(&taskwdt_spinlock);
         return;
     }
     if (handle==wdt_task_list) {
@@ -130,15 +151,25 @@ void esp_task_wdt_delete() {
         free(wdttask);
     } else {
         //Find current task in list
+        if (wdt_task_list->task_handle==handle) {
+            //Task is the very first one.
+            wdt_task_t *freeme=wdt_task_list;
+            wdt_task_list=wdt_task_list->next;
+            free(freeme);
+            portEXIT_CRITICAL(&taskwdt_spinlock);
+            return;
+        }
         while (wdttask->next!=NULL && wdttask->next->task_handle!=handle) wdttask=wdttask->next;
         if (!wdttask->next) {
             ESP_LOGE(TAG, "task_wdt_delete: Task never called task_wdt_feed!");
+            portEXIT_CRITICAL(&taskwdt_spinlock);
             return;
         }
         wdt_task_t *freeme=wdttask->next;
         wdttask->next=wdttask->next->next;
         free(freeme);
     }
+    portEXIT_CRITICAL(&taskwdt_spinlock);
 }
 
 
