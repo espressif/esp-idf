@@ -99,6 +99,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 		memcpy(&lmsg, msg, sizeof(btc_msg_t));
 		if (arg) {
 			lmsg.arg = (void *)GKI_getbuf(arg_len);
+			memset(lmsg.arg, 0x00, arg_len);	//important, avoid arg which have no length
 			if (lmsg.arg == NULL) {
 				return BT_STATUS_NOMEM;
 			}

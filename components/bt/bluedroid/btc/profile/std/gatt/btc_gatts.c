@@ -128,7 +128,7 @@ void btc_gatts_call_handler(btc_msg_t *msg)
 		BTA_GATTS_DeleteService(arg->service_handle);
 		break;
 	case BTC_GATTS_ACT_START_SERVICE:
-		BTA_GATTS_StartService(arg->service_handle, GATT_TRANSPORT_LE);
+		BTA_GATTS_StartService(arg->service_handle, BTA_GATT_TRANSPORT_LE);
 		break;
 	case BTC_GATTS_ACT_STOP_SERVICE:
 		BTA_GATTS_StopService(arg->service_handle);

@@ -16,14 +16,11 @@ typedef uint32_t esp_gap_ble_event_t;
 
 /// Advertising mode
 typedef enum {
-    /// Mode in non-discoverable
-	ADV_TYPE_NON_DISCOVERABLE = 0,
-    /// Mode in general discoverable
-    ADV_TYPE_GEN_DISCOVERABLE,
-    /// Mode in limited discoverable
-    ADV_TYPE_LIM_DISCOVERABLE,
-    /// Broadcaster mode which is a non discoverable and non connectable mode.
-    ADV_TYPE_BROADCASTER_MODE,
+	ADV_TYPE_IND 				= 0x00,
+	ADV_TYPE_DIRECT_IND_HIGH	= 0x01,
+	ADV_TYPE_SCAN_IND			= 0x02,
+	ADV_TYPE_NONCONN_IND		= 0x03,
+	ADV_TYPE_DIRECT_IND_LOW		= 0x04,
 } esp_ble_adv_type_t;
 
 typedef enum {
@@ -50,28 +47,27 @@ typedef struct {
 	uint16_t			  	adv_int_min;
 	uint16_t				adv_int_max;
 	esp_ble_adv_type_t		adv_type;
-	esp_bd_addr_t			own_addr;
 	esp_ble_addr_type_t		own_addr_type;
 	esp_bd_addr_t			peer_addr;
 	esp_ble_addr_type_t		peer_addr_type;
 	esp_ble_adv_channel_t	channel_map;
 	esp_ble_adv_filter_t	adv_filter_policy;
-}esp_ble_adv_params_t;
+} esp_ble_adv_params_t;
 
 typedef struct {
 	bool					set_scan_rsp;
 	bool					include_name;
 	bool					include_txpower;
-	int					min_interval;
-	int					max_interval;
-	int					appearance;
+	int						min_interval;
+	int						max_interval;
+	int						appearance;
 	uint16_t				manufacturer_len;
-	uint8_t				*p_manufacturer_data;
+	uint8_t					*p_manufacturer_data;
 	uint16_t				service_data_len;
-	uint8_t				*p_service_data;
+	uint8_t					*p_service_data;
 	uint16_t				service_uuid_len;
-	uint8_t				*p_service_uuid;
-	uint8_t	                   flag;
+	uint8_t					*p_service_uuid;
+	uint8_t	                flag;
 } esp_ble_adv_data_t;
 
 typedef enum {
@@ -104,21 +100,6 @@ typedef struct {
 } esp_ble_conn_update_params_t;
 
 typedef void (*esp_gap_ble_cb_t)(esp_gap_ble_event_t event, void *param);
-
-/* esp_ble_gap_args_t */
-typedef struct {
-	esp_ble_adv_data_t adv_data;
-	esp_ble_adv_params_t adv_params;
-	esp_ble_scan_params_t  scan_params;
-	esp_ble_conn_update_params_t conn_params;
-	esp_bd_addr_t remote_device;
-	esp_bd_addr_t rand_addr;
-	uint32_t duration;
-	uint16_t tx_data_length;
-	bool privacy_enable;
-#define ESP_GAP_DEVICE_NAME_MAX	(32)
-	char device_name[ESP_GAP_DEVICE_NAME_MAX+1]; 
-} esp_ble_gap_args_t;
 
 typedef enum {
 	/* Search callback events */

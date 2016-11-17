@@ -115,8 +115,10 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
          mask = BTM_BLE_AD_BIT_FLAGS;
     }
 
-    if (p_adv_data->include_name)
+    if (p_adv_data->include_name) {
+		LOG_ERROR("include dev name\n");
         mask |= BTM_BLE_AD_BIT_DEV_NAME;
+	}
 
     if (p_adv_data->include_txpower)
         mask |= BTM_BLE_AD_BIT_TX_PWR;
@@ -348,7 +350,6 @@ static void btc_set_scan_param_callback(tGATT_IF client_if, tBTA_STATUS status )
 static void btc_ble_set_adv_data(esp_ble_adv_data_t *adv_data,
 												tBTA_SET_ADV_DATA_CMPL_CBACK p_adv_data_cback)
 {
-	tBTA_BLE_ADV_DATA bta_adv_data; 				//TODO:must be global, not stack 
 	tBTA_BLE_AD_MASK data_mask = 0;
 
 	btc_to_bta_adv_data(adv_data, &gl_bta_adv_data, &data_mask);
@@ -373,44 +374,63 @@ static void btc_ble_set_scan_param(esp_ble_scan_params_t *ble_scan_params,
 	//BTA_DmBleSetScanRsp(data_mask, &gl_bta_scan_rsp_data, p_scan_rsp_data_cback);
 }
 
-static void btc_ble_start_advertising(esp_ble_adv_params_t *ble_adv_params)
+void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params)
 {
-	tBLE_BD_ADDR bd_addr;
+	tBTA_DM_DISC disc_mode = 0;
+	tBTA_DM_CONN conn_mode = 0;
+	tBLE_BD_ADDR peer_addr;
 
+	if (ble_adv_params->adv_type == ADV_TYPE_NONCONN_IND){
+		conn_mode = BTA_DM_BLE_NON_CONNECTABLE;
+	}else {
+		conn_mode = BTA_DM_BLE_CONNECTABLE;
+	}
+
+	if (ble_adv_params->adv_filter_policy == ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY){
+		disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
+	}else if (ble_adv_params->adv_filter_policy == ADV_FILTER_ALLOW_SCAN_WLST_CON_ANY
+			|| ble_adv_params->adv_filter_policy == ADV_FILTER_ALLOW_SCAN_ANY_CON_WLST){
+		disc_mode = BTA_DM_BLE_LIMITED_DISCOVERABLE;
+	}else if (ble_adv_params->adv_filter_policy == ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST){
+		disc_mode = BTA_DM_BLE_NON_DISCOVERABLE;
+	}
 
 	if (!API_BLE_ISVALID_PARAM(ble_adv_params->adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
-        !API_BLE_ISVALID_PARAM(ble_adv_params->adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX))
-    {
-    	LOG_ERROR("Invalid advertisting interval parameters.\n");
-        return ;
-    }
+			!API_BLE_ISVALID_PARAM(ble_adv_params->adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX))
+	{
+		LOG_ERROR("Invalid advertisting interval parameters.\n");
+		return ;
+	}
 
-	if ((ble_adv_params->adv_type < ADV_TYPE_NON_DISCOVERABLE) && 
-		(ble_adv_params->adv_type > ADV_TYPE_BROADCASTER_MODE) )
+	if ((ble_adv_params->adv_type < ADV_TYPE_IND) && 
+			(ble_adv_params->adv_type > ADV_TYPE_DIRECT_IND_LOW) )
 	{
 		LOG_ERROR("Invalid advertisting type parameters.\n");
 		return;
 	}
 
 	if ((ble_adv_params->adv_filter_policy < ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY) && 
-		(ble_adv_params->adv_filter_policy > ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST) )
+			(ble_adv_params->adv_filter_policy > ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST) )
 	{
 		LOG_ERROR("Invalid advertisting type parameters.\n");
 		return;
 	}
-
 	LOG_ERROR("API_Ble_AppStartAdvertising\n");
 
-	bd_addr.type = ble_adv_params->peer_addr_type;
-	memcpy(&bd_addr.bda, ble_adv_params->peer_addr, sizeof(BD_ADDR));
 	///
+	memcpy(peer_addr.bda, ble_adv_params->peer_addr, ESP_BD_ADDR_LEN);
+	peer_addr.type = ble_adv_params->peer_addr_type;
 	BTA_DmSetBleAdvParamsAll(ble_adv_params->adv_int_min,
-							   ble_adv_params->adv_int_max,
-							   ble_adv_params->adv_type,
-							   ble_adv_params->own_addr_type,
-							   ble_adv_params->channel_map,
-							   ble_adv_params->adv_filter_policy,
-							   &bd_addr);
+			ble_adv_params->adv_int_max,
+			ble_adv_params->adv_type,
+			ble_adv_params->own_addr_type,
+			ble_adv_params->channel_map,
+			ble_adv_params->adv_filter_policy,
+		 	&peer_addr);
+
+
+	/*set connectable,discoverable, pairable and paired only modes of local device*/
+	BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 }
 
 
@@ -567,10 +587,63 @@ void btc_gap_ble_cb_handler(btc_msg_t *msg)
 	
 }
 
+void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
+{
+	switch (msg->act)
+	{
+	case BTC_GAP_BLE_ACT_CFG_ADV_DATA: {
+		esp_ble_adv_data_t *src = (esp_ble_adv_data_t *)p_src;
+		esp_ble_adv_data_t  *dst = (esp_ble_adv_data_t*) p_dest;
+
+		if (src->p_manufacturer_data) {
+			dst->p_manufacturer_data = GKI_getbuf(src->manufacturer_len);
+			memcpy(dst->p_manufacturer_data, src->p_manufacturer_data,
+					src->manufacturer_len);
+		}
+
+		if (src->p_service_data) {
+			dst->p_service_data = GKI_getbuf(src->service_data_len);
+			memcpy(dst->p_service_data, src->p_service_data, src->service_data_len);
+		}
+
+		if (src->p_service_uuid) {
+			dst->p_service_uuid = GKI_getbuf(src->service_uuid_len);
+			memcpy(dst->p_service_uuid, src->p_service_uuid, src->service_uuid_len);
+		}
+		break;
+	}
+	default:
+		LOG_ERROR("Unhandled deep copy\n", msg->act);
+		break;
+	}
+}
+
+static void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
+{
+	switch (msg->act) {
+	case BTC_GAP_BLE_ACT_CFG_ADV_DATA: {
+		esp_ble_adv_data_t *adv = (esp_ble_adv_data_t *)msg->arg;
+    	if (adv->p_service_data)
+			GKI_freebuf(adv->p_service_data);
+
+    	if (adv->p_service_uuid)
+			GKI_freebuf(adv->p_service_uuid);
+
+    	if (adv->p_manufacturer_data)
+			GKI_freebuf(adv->p_manufacturer_data);
+		break;
+	}
+	default:
+		LOG_ERROR("Unhandled deep free\n", msg->act);
+		break;
+	}
+}
+
 void btc_gap_ble_call_handler(btc_msg_t *msg)
 {
-	esp_ble_gap_args_t *arg = (esp_ble_gap_args_t *)msg->arg;
+	btc_ble_gap_args_t *arg = (btc_ble_gap_args_t *)msg->arg;
 	
+    LOG_ERROR("%s act %d\n", __FUNCTION__, msg->act);
 
 	switch (msg->act) {
 	case BTC_GAP_BLE_ACT_CFG_ADV_DATA:
@@ -610,8 +683,11 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
 		btc_ble_config_local_privacy(arg->privacy_enable);
 		break;
 	case BTC_GAP_BLE_ACT_SET_DEV_NAME:
+		BTA_DmSetDeviceName(arg->device_name);
 		break;
 	default:
 		break;
 	}
+
+	btc_gap_ble_arg_deep_free(msg);
 }
