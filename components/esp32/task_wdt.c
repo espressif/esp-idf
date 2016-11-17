@@ -29,7 +29,6 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "esp_log.h"
-#include "esp_wifi_internal.h"
 
 #include "esp_task_wdt.h"
 
@@ -168,7 +167,6 @@ void vApplicationIdleHook(void) {
     if (xPortGetCoreID()!=0) return;
 #endif
     esp_task_wdt_feed();
-    esp_wifi_ps_idle_cb();
 }
 #endif
 

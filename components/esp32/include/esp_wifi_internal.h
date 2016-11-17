@@ -105,15 +105,6 @@ esp_err_t esp_wifi_internal_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn);
   */
 esp_err_t esp_wifi_internal_set_sta_ip(void);
 
-/**
-  * @brief     The WiFi power save callback function
-  *
-  * @param     none
-  *
-  * @return    none
-  */
-void esp_wifi_ps_idle_cb(void);
-
 #ifdef __cplusplus
 }
 #endif
