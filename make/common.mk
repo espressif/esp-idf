@@ -26,31 +26,6 @@ details := @true
 MAKEFLAGS += --silent
 endif
 
-# Pseudo-target to check a git submodule has been properly initialised
-#
-# $(eval $(call SubmoduleCheck,FILENAMES,SUBMODULE_PATH)) to create a target that
-# automatically runs 'git submodule update --init SUBMODULE_PATH' if any of
-# the files in FILENAMES are missing, and fails if this is not possible.
-#
-# Will also print a WARNING if the submodule at SUBMODULE_PATH appears
-# to require an update.
-define SubmoduleCheck
-$(1):
-	@echo "WARNING: Missing submodule $(2) for $$@..."
-	[ -d ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
-	[ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule --init' in esp-idf root directory."; exit 1)
-	@echo "Attempting 'git submodule update --init' in esp-idf root directory..."
-	cd ${IDF_PATH} && git submodule update --init $(2)
-
-# Parse 'git submodule status' output for out-of-date submodule.
-# Status output prefixes status line with '+' if the submodule commit doesn't match
-ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(2) | grep '^+')","")
-$$(info WARNING: git submodule $2 may be out of date. Run 'git submodule update' to update.)
-endif
-endef
-
-
-
 # General make utilities
 
 # convenience variable for printing an 80 asterisk wide separator line

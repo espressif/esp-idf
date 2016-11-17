@@ -17,9 +17,7 @@ COMPONENT_ADD_LDFLAGS := -lesp32 \
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 
-# automatically trigger a git submodule update
-# if any libraries are missing
-$(eval $(call SubmoduleCheck,$(ALL_LIB_FILES),$(COMPONENT_PATH)/lib))
+COMPONENT_SUBMODULES += lib
 
 # this is a hack to make sure the app is re-linked if the binary
 # libraries change or are updated. If they change, the main esp32
