@@ -3008,6 +3008,13 @@
 #define LWIP_PERF                       0
 #endif
 
+/**
+ * ESP_L2_TO_L3_COPY: enable memcpy when receiving packet from L2
+ */
+#ifndef ESP_L2_TO_L3_COPY
+#define ESP_L2_TO_L3_COPY                   0
+#endif
+
 #ifndef ESP_THREAD_SAFE_DEBUG
 #define ESP_THREAD_SAFE_DEBUG               0
 #endif
