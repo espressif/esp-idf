@@ -70,7 +70,7 @@ esp_err_t esp_ble_gap_start_scanning(uint32_t duration)
 
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GAP_BLE;
-	msg.act = BTC_GAP_BLE_ACT_SET_SCAN_PARAM;
+	msg.act = BTC_GAP_BLE_ACT_START_SCAN;
 	arg.duration = duration;
 
 	return (btc_transfer_context(&msg, &arg, sizeof(esp_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);

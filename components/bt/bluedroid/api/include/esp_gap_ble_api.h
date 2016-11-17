@@ -74,6 +74,24 @@ typedef struct {
 	uint8_t	                   flag;
 } esp_ble_adv_data_t;
 
+/// Own BD address source of the device
+typedef enum 
+{
+   /// Public Address
+   ESP_PUBLIC_ADDR,
+   /// Provided random address
+   ESP_PROVIDED_RND_ADDR,
+   /// Provided static random address
+   ESP_GEN_STATIC_RND_ADDR,
+   /// Generated resolvable private random address
+   ESP_GEN_RSLV_ADDR,
+   /// Generated non-resolvable private random address
+   ESP_GEN_NON_RSLV_ADDR,
+   /// Provided Reconnection address
+   ESP_PROVIDED_RECON_ADDR,
+}esp_ble_own_addr_src_t;
+
+
 typedef enum {
 	BLE_SCAN_TYPE_PASSIVE 	=	0x0,
 	BLE_SCAN_TYPE_ACTIVE 	=	0x1,

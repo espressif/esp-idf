@@ -472,7 +472,7 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
 	}
 	case BTA_DM_INQ_CMPL_EVT: {
 		param.scan_rst.num_resps = p_data->inq_cmpl.num_resps;
-		LOG_ERROR("%s  BLE observe complete. Num Resp %d", __FUNCTION__,p_data->inq_cmpl.num_resps);
+		LOG_ERROR("%s  BLE observe complete. Num Resp %d\n", __FUNCTION__,p_data->inq_cmpl.num_resps);
 		break;
 	}
 	default:
