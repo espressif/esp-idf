@@ -63,7 +63,7 @@ extern "C" void nvs_dump()
 
 extern "C" esp_err_t nvs_flash_init(void)
 {
-    return nvs_flash_init_custom(6, 3);
+    return nvs_flash_init_custom(9, 3);
 }
 
 extern "C" esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount)
