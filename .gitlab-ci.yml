@@ -78,15 +78,14 @@ build_esp_idf_tests:
   <<: *build_template
   artifacts:
     paths:
-      - ./esp-idf-tests/build/*.bin
-      - ./esp-idf-tests/build/*.elf
-      - ./esp-idf-tests/build/*.map
-      - ./esp-idf-tests/build/bootloader/*.bin
+      - ./tools/unit-test-app/build/*.bin
+      - ./tools/unit-test-app/build/*.elf
+      - ./tools/unit-test-app/build/*.map
+      - ./tools/unit-test-app/build/bootloader/*.bin
     expire_in: 6 mos
 
   script:
-    - git clone $GITLAB_SSH_SERVER/idf/esp-idf-tests.git
-    - cd esp-idf-tests
+    - cd tools/unit-test-app
     - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
     - make defconfig
     - make
@@ -131,7 +130,7 @@ test_nvs_on_host:
   tags:
     - nvs_host_test
   script:
-    - cd components/nvs_flash/test
+    - cd components/nvs_flash/test_nvs_host
     - make test
 
 test_build_system:
