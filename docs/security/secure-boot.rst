@@ -14,7 +14,7 @@ Background
 
 - Efuses are used to store the secure bootloader key (in efuse block 2), and also a single Efuse bit (ABS_DONE_0) is burned (written to 1) to permanently enable secure boot on the chip. For more details about efuse, see the (forthcoming) chapter in the Technical Reference Manual.
 
-- To understand the secure boot process, first familiarise yourself with the standard `esp-idf boot process`.
+- To understand the secure boot process, first familiarise yourself with the standard :doc:`ESP-IDF boot process <../general-notes>`.
 
 - Both stages of the boot process (initial software bootloader load, and subsequent partition & app loading) are verified by the secure boot process, in a "chain of trust" relationship.
 
@@ -30,10 +30,11 @@ This is a high level overview of the secure boot process. Step by step instructi
 2. The software bootloader image is built by esp-idf with secure boot support enabled and the public key (signature verification) portion of the secure boot signing key compiled in. This software bootloader image is flashed at offset 0x1000.
 
 3. On first boot, the software bootloader follows the following process to enable secure boot:
-  - Hardware secure boot support generates a device secure bootloader key (generated via hardware RNG, then stored read/write protected in efuse), and a secure digest. The digest is derived from the key, an IV, and the bootloader image contents.
-  - The secure digest is flashed at offset 0x0 in the flash.
-  - Depending on Secure Boot Configuration, efuses are burned to disable JTAG and the ROM BASIC interpreter (it is strongly recommended these options are turned on.)
-  - Bootloader permanently enables secure boot by burning the ABS_DONE_0 efuse. The software bootloader then becomes protected (the chip will only boot a bootloader image if the digest matches.)
+
+   - Hardware secure boot support generates a device secure bootloader key (generated via hardware RNG, then stored read/write protected in efuse), and a secure digest. The digest is derived from the key, an IV, and the bootloader image contents.
+   - The secure digest is flashed at offset 0x0 in the flash.
+   - Depending on Secure Boot Configuration, efuses are burned to disable JTAG and the ROM BASIC interpreter (it is strongly recommended these options are turned on.)
+   - Bootloader permanently enables secure boot by burning the ABS_DONE_0 efuse. The software bootloader then becomes protected (the chip will only boot a bootloader image if the digest matches.)
 
 4. On subsequent boots the ROM bootloader sees that the secure boot efuse is burned, reads the saved digest at 0x0 and uses hardware secure boot support to compare it with a newly calculated digest. If the digest does not match then booting will not continue. The digest and comparison are performed entirely by hardware, and the calculated digest is not readable by software. For technical details see `Hardware Secure Boot Support`.
 
@@ -175,5 +176,4 @@ Deterministic ECDSA as specified by `RFC6979`.
 - Image signature is 68 bytes - a 4 byte version word (currently zero), followed by a 64 bytes of signature data. These 68 bytes are appended to an app image or partition table data.
 
 
-.. _esp-idf boot process: ../boot-process.rst
 .. _RFC6979: https://tools.ietf.org/html/rfc6979

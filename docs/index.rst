@@ -28,6 +28,7 @@ Contents:
    :caption: What Else?
    :maxdepth: 1
    
+   General Notes <general-notes>
    partition-tables
    build_system
    openocd
@@ -97,7 +98,7 @@ Contents:
    api/gpio
    api/uart
    api/ledc
- 
+   SPI Flash and Partition APIs <api/spi_flash>
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>
    Virtual Filesystem <api/vfs>

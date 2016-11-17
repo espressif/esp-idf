@@ -10,7 +10,7 @@
 # where this file is located.
 #
 
-.PHONY: build-components menuconfig defconfig all build clean all_binaries
+.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules
 all: all_binaries
 # see below for recipe of 'all' target
 #
@@ -94,13 +94,16 @@ COMPONENT_PATHS += $(abspath $(SRCDIRS))
 # A component is buildable if it has a component.mk makefile in it
 COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
 
-# Initialise a project-wide list of include dirs (COMPONENT_INCLUDES),
-# and LDFLAGS args (COMPONENT_LDFLAGS) supplied by each component.
+# Initialise project-wide variables which can be added to by
+# each component.
 #
 # These variables are built up via the component_project_vars.mk
 # generated makefiles (one per component).
+#
+# See docs/build-system.rst for more details.
 COMPONENT_INCLUDES :=
 COMPONENT_LDFLAGS :=
+COMPONENT_SUBMODULES :=
 
 # COMPONENT_PROJECT_VARS is the list of component_project_vars.mk generated makefiles
 # for each component.
@@ -158,14 +161,16 @@ LDFLAGS ?= -nostdlib \
 
 # CPPFLAGS used by C preprocessor
 # If any flags are defined in application Makefile, add them at the end. 
-CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS)
+CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
-COMMON_WARNING_FLAGS = -Wall -Werror \
+COMMON_WARNING_FLAGS = -Wall -Werror=all \
 	-Wno-error=unused-function \
 	-Wno-error=unused-but-set-variable \
 	-Wno-error=unused-variable \
-	-Wno-error=deprecated-declarations
+	-Wno-error=deprecated-declarations \
+	-Wextra \
+	-Wno-unused-parameter -Wno-sign-compare
 
 # Flags which control code generation and dependency generation, both for C and C++
 COMMON_FLAGS = \
@@ -192,8 +197,9 @@ CFLAGS := $(strip \
 	-std=gnu99 \
 	$(OPTIMIZATION_FLAGS) \
 	$(COMMON_FLAGS) \
-	$(COMMON_WARNING_FLAGS) \
-	$(CFLAGS))
+	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration \
+	$(CFLAGS) \
+	$(EXTRA_CFLAGS))
 
 # List of flags to pass to C++ compiler
 # If any flags are defined in application Makefile, add them at the end.
@@ -204,7 +210,8 @@ CXXFLAGS := $(strip \
 	$(OPTIMIZATION_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
-	$(CXXFLAGS))
+	$(CXXFLAGS) \
+	$(EXTRA_CXXFLAGS))
 
 export CFLAGS CPPFLAGS CXXFLAGS
 
@@ -285,7 +292,7 @@ endef
 define GenerateComponentTargets
 .PHONY: $(2)-build $(2)-clean
 
-$(2)-build:
+$(2)-build: check-submodules
 	$(call ComponentMake,$(1),$(2)) build
 
 $(2)-clean:
@@ -328,4 +335,30 @@ app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 config-clean: app-clean
 clean: config-clean
 
+# phony target to check if any git submodule listed in COMPONENT_SUBMODULES are missing
+# or out of date, and exit if so. Components can add paths to this variable.
+#
+# This only works for components inside IDF_PATH
+check-submodules:
 
+# Generate a target to check this submodule
+# $(1) - submodule directory, relative to IDF_PATH
+define GenerateSubmoduleCheckTarget
+check-submodules: $(IDF_PATH)/$(1)/.git
+$(IDF_PATH)/$(1)/.git:
+	@echo "WARNING: Missing submodule $(1)..."
+	[ -d ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
+	[ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule init $(1)' in esp-idf root directory."; exit 1)
+	@echo "Attempting 'git submodule update --init $(1)' in esp-idf root directory..."
+	cd ${IDF_PATH} && git submodule update --init $(1)
+
+# Parse 'git submodule status' output for out-of-date submodule.
+# Status output prefixes status line with '+' if the submodule commit doesn't match
+ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(1) | grep '^+')","")
+$$(info WARNING: git submodule $(1) may be out of date. Run 'git submodule update' to update.)
+endif
+endef
+
+# filter/subst in expression ensures all submodule paths begin with $(IDF_PATH), and then strips that prefix
+# so the argument is suitable for use with 'git submodule' commands
+$(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))

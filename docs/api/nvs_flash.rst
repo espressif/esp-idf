@@ -3,7 +3,10 @@
 Application Example
 -------------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+Two examples are provided in ESP-IDF examples directory:
+
+- `07_nvs_rw_value <https://github.com/espressif/esp-idf/tree/master/examples/07_nvs_rw_value>`_ demostrates how to read and write integer values
+- `08_nvs_rw_blob <https://github.com/espressif/esp-idf/tree/master/examples/08_nvs_rw_blob>`_ demostrates how to read and write variable length binary values
 
 API Reference
 -------------

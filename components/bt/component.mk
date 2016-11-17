@@ -15,5 +15,4 @@ COMPONENT_ADD_LDFLAGS := -lbt -L $(COMPONENT_PATH)/lib \
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 $(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
 
-# automatically trigger a git submodule update if BT library is missing
-$(eval $(call SubmoduleCheck,$(ALL_LIB_FILES),$(COMPONENT_PATH)/lib))
+COMPONENT_SUBMODULES += lib

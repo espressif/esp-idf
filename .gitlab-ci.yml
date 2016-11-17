@@ -118,6 +118,9 @@ build_docs:
     - build_docs
   script:
     - cd docs
+    - doxygen
+    # If not building master branch, and there are Doxygen warnings, print them and bail out
+    - test "${CI_BUILD_REF_NAME}" = "master" || test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
     - make html
   artifacts:
     paths:

@@ -2704,7 +2704,7 @@ void vTaskSwitchContext( void )
 		taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 		
 		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE, resetListHead;
-		unsigned portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
+		portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
 		unsigned portBASE_TYPE holdTop=pdFALSE;
 		
 		/*
@@ -2717,8 +2717,6 @@ void vTaskSwitchContext( void )
 		
 		while ( ableToSchedule == pdFALSE && uxDynamicTopReady >= 0 )
 		{
-			configASSERT( uxTopReadyPriority>=0 );
-			configASSERT( uxDynamicTopReady>=0 );
 			resetListHead = pdFALSE;
 			// Nothing to do for empty lists
 			if (!listLIST_IS_EMPTY( &( pxReadyTasksLists[ uxDynamicTopReady ] ) )) {

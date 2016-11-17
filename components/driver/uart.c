@@ -23,11 +23,9 @@
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "soc/dport_reg.h"
-#include "rom/ets_sys.h"
 #include "soc/uart_struct.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
-#include "soc/uart_struct.h"
 
 static const char* UART_TAG = "UART";
 #define UART_CHECK(a, str, ret) if (!(a)) {                                             \
@@ -458,17 +456,20 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
             uart_reg->int_clr.txfifo_empty = 1;
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             if(p_uart->tx_waiting_brk) {
-                return;
+                continue;
             }
             //TX semaphore will only be used when tx_buf_size is zero.
             if(p_uart->tx_waiting_fifo == true && p_uart->tx_buf_size == 0) {
                 p_uart->tx_waiting_fifo = false;
-                xSemaphoreGiveFromISR(p_uart->tx_fifo_sem, NULL);
+                xSemaphoreGiveFromISR(p_uart->tx_fifo_sem, &HPTaskAwoken);
+                if(HPTaskAwoken == pdTRUE) {
+                    portYIELD_FROM_ISR() ;
+                }
             }
             else {
-                //We don't use TX ring buffer, because the size if zero.
+                //We don't use TX ring buffer, because the size is zero.
                 if(p_uart->tx_buf_size == 0) {
-                    return;
+                    continue;
                 }
                 int tx_fifo_rem = UART_FIFO_LEN - UART[uart_num]->status.txfifo_cnt;
                 bool en_tx_flg = false;
@@ -492,6 +493,9 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
                                 }
                                 //We have saved the data description from the 1st item, return buffer.
                                 vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
+                                if(HPTaskAwoken == pdTRUE) {
+                                    portYIELD_FROM_ISR() ;
+                                }
                             }else if(p_uart->tx_ptr == NULL) {
                                 //Update the TX item pointer, we will need this to return item to buffer.
                                 p_uart->tx_ptr =  (uint8_t*) p_uart->tx_head;
@@ -501,7 +505,7 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
                         }
                         else {
                             //Can not get data from ring buffer, return;
-                            return;
+                            break;
                         }
                     }
                     if(p_uart->tx_len_tot > 0 && p_uart->tx_ptr && p_uart->tx_len_cur > 0) {
@@ -516,6 +520,9 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
                         if(p_uart->tx_len_cur == 0) {
                             //Return item to ring buffer.
                             vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
+                            if(HPTaskAwoken == pdTRUE) {
+                                portYIELD_FROM_ISR() ;
+                            }
                             p_uart->tx_head = NULL;
                             p_uart->tx_ptr = NULL;
                             //Sending item done, now we need to send break if there is a record.
@@ -529,7 +536,6 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
                                 uart_reg->int_ena.tx_brk_done = 1;
                                 UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
                                 p_uart->tx_waiting_brk = 1;
-                                return;
                             } else {
                                 //enable TX empty interrupt
                                 en_tx_flg = true;
@@ -576,6 +582,9 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
                 } else {
                     uart_event.type = UART_DATA;
                 }
+                if(HPTaskAwoken == pdTRUE) {
+                    portYIELD_FROM_ISR() ;
+                }
             } else {
                 UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
                 uart_reg->int_ena.rxfifo_full = 0;
@@ -594,10 +603,10 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
         } else if(uart_intr_status & UART_BRK_DET_INT_ST_M) {
             uart_reg->int_clr.brk_det = 1;
             uart_event.type = UART_BREAK;
-        } else if(uart_intr_status & UART_FRM_ERR_INT_ST_M) {
+        } else if(uart_intr_status & UART_PARITY_ERR_INT_ST_M ) {
             uart_reg->int_clr.parity_err = 1;
             uart_event.type = UART_FRAME_ERR;
-        } else if(uart_intr_status & UART_PARITY_ERR_INT_ST_M) {
+        } else if(uart_intr_status & UART_FRM_ERR_INT_ST_M) {
             uart_reg->int_clr.frm_err = 1;
             uart_event.type = UART_PARITY_ERR;
         } else if(uart_intr_status & UART_TX_BRK_DONE_INT_ST_M) {
@@ -614,6 +623,9 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
                 p_uart->tx_waiting_brk = 0;
             } else {
                 xSemaphoreGiveFromISR(p_uart->tx_brk_sem, &HPTaskAwoken);
+                if(HPTaskAwoken == pdTRUE) {
+                    portYIELD_FROM_ISR() ;
+                }
             }
         } else if(uart_intr_status & UART_TX_BRK_IDLE_DONE_INT_ST_M) {
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
@@ -626,6 +638,9 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
             uart_reg->int_clr.tx_done = 1;
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
+            if(HPTaskAwoken == pdTRUE) {
+                portYIELD_FROM_ISR() ;
+            }
         }
         else {
             uart_reg->int_clr.val = uart_intr_status; /*simply clear all other intr status*/
@@ -634,6 +649,9 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
 
         if(uart_event.type != UART_EVENT_MAX && p_uart->xQueueUart) {
             xQueueSendFromISR(p_uart->xQueueUart, (void * )&uart_event, &HPTaskAwoken);
+            if(HPTaskAwoken == pdTRUE) {
+                portYIELD_FROM_ISR() ;
+            }
         }
         uart_intr_status = uart_reg->int_st.val;
     }
@@ -946,7 +964,8 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
                             | UART_RXFIFO_TOUT_INT_ENA_M
                             | UART_FRM_ERR_INT_ENA_M
                             | UART_RXFIFO_OVF_INT_ENA_M
-                            | UART_BRK_DET_INT_ENA_M,
+                            | UART_BRK_DET_INT_ENA_M
+                            | UART_PARITY_ERR_INT_ENA_M,
         .rxfifo_full_thresh = UART_FULL_THRESH_DEFAULT,
         .rx_timeout_thresh = UART_TOUT_THRESH_DEFAULT,
         .txfifo_empty_intr_thresh = UART_EMPTY_THRESH_DEFAULT

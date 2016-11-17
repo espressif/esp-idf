@@ -186,6 +186,14 @@ The following variables can be set inside ``component.mk`` to control build sett
   generates an include file which you then want to include in another
   component. Most components do not need to set this variable.
 
+The following variable only works for components that are part of esp-idf itself:
+
+- ``COMPONENT_SUBMODULES``: Optional list of git submodule paths
+  (relative to COMPONENT_PATH) used by the component. These will be
+  checked (and initialised if necessary) by the build process. This
+  variable is ignored if the component is outside the IDF_PATH
+  directory.
+
 
 Optional Component-Specific Variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

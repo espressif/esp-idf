@@ -117,6 +117,9 @@ extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
 #define GPIO_IS_VALID_GPIO(gpio_num)      ((gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0))   //to decide whether it is a valid GPIO number
 #define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 34))         //to decide whether it can be a valid GPIO number of output mode
 
+/**
+ * @brief Pullup/pulldown information for a single GPIO pad
+ */
 typedef struct {
     uint32_t reg;       /*!< Register to modify to enable or disable pullups or pulldowns */
     uint32_t pu;        /*!< Bit to set or clear in the above register to enable or disable the pullup, respectively */
@@ -208,6 +211,9 @@ typedef enum {
     GPIO_PULLDOWN_ENABLE = 0x1,    /*!< Enable GPIO pull-down resistor  */
 } gpio_pulldown_t;
 
+/**
+ * @brief Configuration parameters of GPIO pad for gpio_config function
+ */
 typedef struct {
     uint64_t pin_bit_mask;          /*!< GPIO pin: set with bit mask, each bit maps to a GPIO */
     gpio_mode_t mode;               /*!< GPIO mode: set input/output mode                     */
@@ -337,7 +343,7 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
   *
   * @param gpio_num GPIO number.
   *
-  * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL\GPIO_INTR_HIGH_LEVEL can be used.
+  * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
   *
   * @return
   *     - ESP_OK Success
