@@ -32,13 +32,10 @@ void bt_controller_init(void);
 
 /** @brief vhci_host_callback
  *  used for vhci call host function to notify what host need to do
- *  
- *  notify_host_send_available: notify host can send packet to controller
- *  notify_host_recv: notify host that controller has packet send to host
  */
 typedef struct vhci_host_callback {
-    void (*notify_host_send_available)(void);
-    int (*notify_host_recv)(uint8_t *data, uint16_t len);
+    void (*notify_host_send_available)(void);               /*!< callback used to notify that the host can send packet to controller */
+    int (*notify_host_recv)(uint8_t *data, uint16_t len);   /*!< callback used to notify that the controller has a packet to send to the host*/
 } vhci_host_callback_t;
 
 /** @brief API_vhci_host_check_send_available
