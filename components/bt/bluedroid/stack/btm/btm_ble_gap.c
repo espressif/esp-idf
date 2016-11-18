@@ -415,7 +415,7 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT8 duration,
     }
     else
     {
-        BTM_TRACE_ERROR("%s Observe not active", __func__);
+        BTM_TRACE_ERROR("%s Observe not active\n", __func__);
     }
 
     return status;
@@ -2869,13 +2869,14 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
         STREAM_TO_UINT8    (evt_type, p);
         STREAM_TO_UINT8    (addr_type, p);
         STREAM_TO_BDADDR   (bda, p);
-
+	BTM_TRACE_ERROR("btm_ble_process_adv_pkt:bda= %0x:%0x:%0x:%0x:%0x:%0x\n",
+                                     bda[0],bda[1],bda[2],bda[3],bda[4],bda[5]);
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
         /* map address to security record */
         match = btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
 
-        BTM_TRACE_DEBUG("btm_ble_process_adv_pkt:bda= %0x:%0x:%0x:%0x:%0x:%0x",
-                                     bda[0],bda[1],bda[2],bda[3],bda[4],bda[5]);
+       // BTM_TRACE_ERROR("btm_ble_process_adv_pkt:bda= %0x:%0x:%0x:%0x:%0x:%0x\n",
+        //                             bda[0],bda[1],bda[2],bda[3],bda[4],bda[5]);
         /* always do RRA resolution on host */
         if (!match && BTM_BLE_IS_RESOLVE_BDA(bda))
         {
@@ -2993,7 +2994,7 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
             btm_send_sel_conn_callback(bda, evt_type, p, addr_type);
         else
         {
-            BTM_TRACE_DEBUG("None LE device, can not initiate selective connection");
+            BTM_TRACE_DEBUG("None LE device, can not initiate selective connection\n");
         }
     }
     else

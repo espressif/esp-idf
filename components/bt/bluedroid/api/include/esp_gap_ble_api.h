@@ -12,6 +12,34 @@
 #define ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT		2
 #define ESP_GAP_BLE_SCAN_RESULT_EVT					3
 
+/****************** define the adv type macro***************************************/
+#define ESP_BLE_AD_TYPE_FLAG            				0x01                 
+#define ESP_BLE_AD_TYPE_16SRV_PART      				0x02       
+#define ESP_BLE_AD_TYPE_16SRV_CMPL      				0x03   
+#define ESP_BLE_AD_TYPE_32SRV_PART      				0x04       
+#define ESP_BLE_AD_TYPE_32SRV_CMPL      				0x05   
+#define ESP_BLE_AD_TYPE_128SRV_PART     				0x06      
+#define ESP_BLE_AD_TYPE_128SRV_CMPL     				0x07   
+#define ESP_BLE_AD_TYPE_NAME_SHORT      				0x08      
+#define ESP_BLE_AD_TYPE_NAME_CMPL       				0x09       
+#define ESP_BLE_AD_TYPE_TX_PWR          				0x0A            
+#define ESP_BLE_AD_TYPE_DEV_CLASS       				0x0D
+#define ESP_BLE_AD_TYPE_SM_TK           				0x10
+#define ESP_BLE_AD_TYPE_SM_OOB_FLAG     				0x11
+#define ESP_BLE_AD_TYPE_INT_RANGE       				0x12
+#define ESP_BLE_AD_TYPE_SOL_SRV_UUID    				0x14
+#define ESP_BLE_AD_TYPE_128SOL_SRV_UUID 				0x15
+#define ESP_BLE_AD_TYPE_SERVICE_DATA    				0x16
+#define ESP_BLE_AD_TYPE_PUBLIC_TARGET   				0x17
+#define ESP_BLE_AD_TYPE_RANDOM_TARGET   				0x18
+#define ESP_BLE_AD_TYPE_APPEARANCE      				0x19
+#define ESP_BLE_AD_TYPE_ADV_INT         				0x1A
+#define ESP_BLE_AD_TYPE_32SOL_SRV_UUID  				0x1B
+#define ESP_BLE_AD_TYPE_32SERVICE_DATA  				0x1C
+#define ESP_BLE_AD_TYPE_128SERVICE_DATA 				0x1D
+#define ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE  			0xFF  		
+
+
 typedef uint32_t esp_gap_ble_event_t;
 
 /// Advertising mode
@@ -169,6 +197,7 @@ typedef union {
 		esp_bt_dev_type_t dev_type;
 		esp_ble_addr_type_t ble_addr_type;
 		int	rssi;
+		uint8_t   *p_eir;                 /* received EIR */
 		int flag;
 		int num_resps;
 	} scan_rst;
@@ -336,5 +365,21 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable);
 **
 *******************************************************************************/
 esp_err_t esp_ble_gap_set_device_name(char *name);
+
+
+/*******************************************************************************
+**
+** @function        esp_ble_resolve_adv_data
+**
+** @brief             This function is called to get ADV data for a specific type.
+**
+** @param[in]       p_adv - pointer of ADV data whitch to be resolved
+** @param[in]       type   - finding ADV data type
+** @param[out]     p_length - return the length of ADV data not including type
+**
+** @return          	 pointer of ADV data 
+**
+*******************************************************************************/
+uint8_t *esp_ble_resolve_adv_data( uint8_t *p_adv, uint8_t type, uint8_t *p_length );
 
 #endif /* __ESP_GAP_BLE_API_H__ */

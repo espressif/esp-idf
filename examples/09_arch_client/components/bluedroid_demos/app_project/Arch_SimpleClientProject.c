@@ -33,6 +33,8 @@
 #include "bta_gatt_api.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
+#include "esp_bt_main.h"
+
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
@@ -129,12 +131,24 @@ static void esp_scan_result_cb(uint32_t event, void *param)
 		case ESP_GAP_BLE_SCAN_RESULT_EVT:
 		{
 			esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
-			//switch(scan_result->scan_rst.search_evt)
-			//{
-			//	case ESP_GAP_SEARCH_DISC_BLE_RES_EVT:
+			switch(scan_result->scan_rst.search_evt)
+			{
+ 				case ESP_GAP_SEARCH_INQ_RES_EVT:
+					for (int i = 0; i < 6; i++)
+					{
+						LOG_ERROR("%x\n", scan_result->scan_rst.bda[i]);
+					}
+
+					LOG_ERROR("\n");
+					//if(strcmp(scan_result->scan_rst.bda, ))
+					break;
+				case ESP_GAP_SEARCH_INQ_CMPL_EVT:
+					break;
+				default:
+					break;
 			//		LOG_ERROR("ESP_GAP_SEARCH_DISC_BLE_RES_EVT\n");
 			//	break;
-			//}
+			}
 			break;
 		}
 		//case :
@@ -401,6 +415,7 @@ void ble_client_appRegister(void)
 void gattc_client_test(void)
 {
     BTM_SetTraceLevel(BT_TRACE_LEVEL_DEBUG);
-
+    esp_init_bluetooth();
+    esp_enable_bluetooth();
     ble_client_appRegister();
 }

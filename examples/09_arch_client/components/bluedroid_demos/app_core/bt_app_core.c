@@ -314,7 +314,7 @@ static void bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data)
 
 void bt_app_init_ok(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param)
 {
-    BTA_EnableBluetooth(bte_dm_evt);
+    //BTA_EnableBluetooth(bte_dm_evt);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     bt_app_start_timer(&main_boot_tle, BT_APP_TTYPE_MAIN_ENTRY, 8);
 }

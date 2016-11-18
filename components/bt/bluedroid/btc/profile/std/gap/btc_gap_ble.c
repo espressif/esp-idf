@@ -411,6 +411,8 @@ static void btc_ble_start_advertising(esp_ble_adv_params_t *ble_adv_params)
 							   ble_adv_params->channel_map,
 							   ble_adv_params->adv_filter_policy,
 							   &bd_addr);
+
+	
 }
 
 
@@ -454,7 +456,7 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
 {
 	esp_ble_gap_cb_param_t param;
 	btc_msg_t msg;
-    uint8_t len;
+    	uint8_t len;
 
 	msg.sig = BTC_SIG_API_CB;
 	msg.pid = BTC_PID_GAP_BLE;
@@ -463,11 +465,13 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
 	param.scan_rst.search_evt = event;
     switch (event) {
 	case BTA_DM_INQ_RES_EVT: {
+		LOG_ERROR("BTA_DM_INQ_RES_EVT\n");
 		bdcpy(param.scan_rst.bda, p_data->inq_res.bd_addr);
 		param.scan_rst.dev_type = p_data->inq_res.device_type;
 		param.scan_rst.rssi = p_data->inq_res.rssi;
 		param.scan_rst.ble_addr_type = p_data->inq_res.ble_addr_type;
 		param.scan_rst.flag = p_data->inq_res.flag;
+		param.scan_rst.p_eir = p_data->inq_res.p_eir;
 		break;
 	}
 	case BTA_DM_INQ_CMPL_EVT: {
@@ -475,8 +479,23 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
 		LOG_ERROR("%s  BLE observe complete. Num Resp %d\n", __FUNCTION__,p_data->inq_cmpl.num_resps);
 		break;
 	}
+	case BTA_DM_DISC_RES_EVT:
+		LOG_ERROR("BTA_DM_DISC_RES_EVT\n");
+		break;
+	case BTA_DM_DISC_BLE_RES_EVT:
+		LOG_ERROR("BTA_DM_DISC_BLE_RES_EVT\n");
+		break;
+	case BTA_DM_DISC_CMPL_EVT:
+		LOG_ERROR("BTA_DM_DISC_CMPL_EVT\n");
+		break;
+	case BTA_DM_DI_DISC_CMPL_EVT:
+		LOG_ERROR("BTA_DM_DI_DISC_CMPL_EVT\n");
+		break;
+	case BTA_DM_SEARCH_CANCEL_CMPL_EVT:
+		LOG_ERROR("BTA_DM_SEARCH_CANCEL_CMPL_EVT\n");
+		break;
 	default:
-        LOG_ERROR("%s : Unknown event 0x%x", __FUNCTION__, event);
+        	LOG_ERROR("%s : Unknown event 0x%x\n", __FUNCTION__, event);
         return;
     }
     btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL);
