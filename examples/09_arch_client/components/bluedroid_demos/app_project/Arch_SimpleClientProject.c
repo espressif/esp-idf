@@ -119,6 +119,8 @@ static void btif_to_bta_uuid(tBT_UUID *p_dest, bt_uuid_t *p_src)
 
 static void esp_scan_result_cb(uint32_t event, void *param)
 {
+	uint8_t *adv_name = NULL;
+	uint8_t adv_name_len = 0;
 	switch(event)
 	{
 		case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
@@ -136,10 +138,18 @@ static void esp_scan_result_cb(uint32_t event, void *param)
  				case ESP_GAP_SEARCH_INQ_RES_EVT:
 					for (int i = 0; i < 6; i++)
 					{
-						LOG_ERROR("%x\n", scan_result->scan_rst.bda[i]);
+						LOG_ERROR("%x:", scan_result->scan_rst.bda[i]);
 					}
-
 					LOG_ERROR("\n");
+					adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, 
+											ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
+					LOG_ERROR("adv_name_len=%x\n",adv_name_len);
+					for(int j = 0; j < adv_name_len; j++)
+					{
+						LOG_ERROR("%c",adv_name[j]);
+					}
+					LOG_ERROR("\n");
+					
 					//if(strcmp(scan_result->scan_rst.bda, ))
 					break;
 				case ESP_GAP_SEARCH_INQ_CMPL_EVT:

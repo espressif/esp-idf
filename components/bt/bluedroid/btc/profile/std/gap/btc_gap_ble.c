@@ -14,6 +14,7 @@
 
 #include <string.h>
 
+#include "bt_types.h"
 #include "bta_api.h"
 #include "btc_task.h"
 #include "btc_manage.h"
@@ -456,22 +457,21 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
 {
 	esp_ble_gap_cb_param_t param;
 	btc_msg_t msg;
-    	uint8_t len;
-
+    	
 	msg.sig = BTC_SIG_API_CB;
 	msg.pid = BTC_PID_GAP_BLE;
 	msg.act = ESP_GAP_BLE_SCAN_RESULT_EVT;
-
+	
 	param.scan_rst.search_evt = event;
     switch (event) {
 	case BTA_DM_INQ_RES_EVT: {
-		LOG_ERROR("BTA_DM_INQ_RES_EVT\n");
 		bdcpy(param.scan_rst.bda, p_data->inq_res.bd_addr);
 		param.scan_rst.dev_type = p_data->inq_res.device_type;
 		param.scan_rst.rssi = p_data->inq_res.rssi;
 		param.scan_rst.ble_addr_type = p_data->inq_res.ble_addr_type;
 		param.scan_rst.flag = p_data->inq_res.flag;
-		param.scan_rst.p_eir = p_data->inq_res.p_eir;
+		memcpy(param.scan_rst.ble_adv, p_data->inq_res.p_eir, 
+				ESP_BLE_ADV_DATA_LEN_MAX);
 		break;
 	}
 	case BTA_DM_INQ_CMPL_EVT: {

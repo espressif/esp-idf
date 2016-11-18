@@ -12,6 +12,8 @@
 #define ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT		2
 #define ESP_GAP_BLE_SCAN_RESULT_EVT					3
 
+#define ESP_BLE_ADV_DATA_LEN_MAX        31
+
 /****************** define the adv type macro***************************************/
 #define ESP_BLE_AD_TYPE_FLAG            				0x01                 
 #define ESP_BLE_AD_TYPE_16SRV_PART      				0x02       
@@ -197,7 +199,7 @@ typedef union {
 		esp_bt_dev_type_t dev_type;
 		esp_ble_addr_type_t ble_addr_type;
 		int	rssi;
-		uint8_t   *p_eir;                 /* received EIR */
+		uint8_t  ble_adv[ESP_BLE_ADV_DATA_LEN_MAX];                 /* received EIR */
 		int flag;
 		int num_resps;
 	} scan_rst;
