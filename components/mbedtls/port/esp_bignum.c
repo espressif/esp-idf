@@ -26,7 +26,6 @@
 #include <limits.h>
 #include <assert.h>
 #include "mbedtls/bignum.h"
-#include "mbedtls/bn_mul.h"
 #include "rom/bigint.h"
 #include "soc/hwcrypto_reg.h"
 #include "esp_system.h"
@@ -38,9 +37,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#if defined(MBEDTLS_MPI_MUL_MPI_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT)
-
-static const char *TAG = "bignum";
+static const __attribute__((unused)) char *TAG = "bignum";
 
 #if defined(CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
 static SemaphoreHandle_t op_complete_sem;
@@ -70,10 +67,7 @@ static void rsa_isr_initialise()
 
 static _lock_t mpi_lock;
 
-/* At the moment these hardware locking functions aren't exposed publically
-   for MPI. If you want to use the ROM bigint functions and co-exist with mbedTLS, please raise a feature request.
-*/
-static void esp_mpi_acquire_hardware( void )
+void esp_mpi_acquire_hardware( void )
 {
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
@@ -83,7 +77,7 @@ static void esp_mpi_acquire_hardware( void )
 #endif
 }
 
-static void esp_mpi_release_hardware( void )
+void esp_mpi_release_hardware( void )
 {
     ets_bigint_disable();
     _lock_release(&mpi_lock);
@@ -545,6 +539,4 @@ static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, 
 }
 
 #endif /* MBEDTLS_MPI_MUL_MPI_ALT */
-
-#endif /* MBEDTLS_MPI_MUL_MPI_ALT || MBEDTLS_MPI_EXP_MOD_ALT */
 
