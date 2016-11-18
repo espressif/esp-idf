@@ -41,9 +41,6 @@ This uses the TIMERG1 WDT.
   * @brief  Initialize the interrupt watchdog. This is called in the init code if
   *         the interrupt watchdog is enabled in menuconfig.
   *
-  * @param  null
-  *
-  * @return null
   */
 void esp_int_wdt_init();
 

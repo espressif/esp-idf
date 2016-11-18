@@ -103,8 +103,8 @@ endef
 
 # component_project_vars.mk target for the component. This is used to
 # take component.mk variables COMPONENT_ADD_INCLUDEDIRS,
-# COMPONENT_ADD_LDFLAGS and COMPONENT_DEPENDS and inject those into
-# the project make pass.
+# COMPONENT_ADD_LDFLAGS, COMPONENT_DEPENDS and COMPONENT_SUBMODULES
+# and inject those into the project make pass.
 #
 # The target here has no dependencies, as the parent target in
 # project.mk evaluates dependencies before calling down to here. See
@@ -119,6 +119,7 @@ component_project_vars.mk::
 	@echo '# Automatically generated build file. Do not edit.' > $@
 	@echo 'COMPONENT_INCLUDES += $(call MakeVariablePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_INCLUDEDIRS)))' >> $@
 	@echo 'COMPONENT_LDFLAGS += $(call MakeVariablePath,$(COMPONENT_ADD_LDFLAGS))' >> $@
+	@echo 'COMPONENT_SUBMODULES += $(call MakeVariablePath,$(addprefix $(COMPONENT_PATH)/,$(COMPONENT_SUBMODULES)))' >> $@
 	@echo '$(COMPONENT_NAME)-build: $(addsuffix -build,$(COMPONENT_DEPENDS))' >> $@
 
 
@@ -179,7 +180,7 @@ $(foreach srcdir,$(COMPONENT_SRCDIRS), $(eval $(call GenerateCompileTargets,$(sr
 
 ## Support for embedding binary files into the ELF as symbols
 
-OBJCOPY_EMBED_ARGS := --input binary --output elf32-xtensa-le --binary-architecture xtensa --rename-section .data=.rodata.embedded
+OBJCOPY_EMBED_ARGS := --input-target binary --output-target elf32-xtensa-le --binary-architecture xtensa --rename-section .data=.rodata.embedded
 
 # Generate pattern for embedding text or binary files into the app
 # $(1) is name of file (as relative path inside component)
@@ -188,17 +189,28 @@ OBJCOPY_EMBED_ARGS := --input binary --output elf32-xtensa-le --binary-architect
 # txt files are null-terminated before being embedded (otherwise
 # identical behaviour.)
 #
-# Files are temporarily copied to the build directory before objcopy,
-# because objcopy generates the symbol name from the full command line
-# path to the input file.
 define GenerateEmbedTarget
-$(1).$(2).o: $(call resolvepath,$(1),$(COMPONENT_PATH)) | $$(dir $(1))
+
+# copy the input file into the build dir (using a subdirectory
+# in case the file already exists elsewhere in the build dir)
+embed_bin/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_bin
+	cp $$< $$@
+
+embed_txt/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_txt
+	cp $$< $$@
+	echo -ne '\0' >> $$@  # null-terminate text files
+
+# messing about with the embed_X subdirectory then using 'cd' for objcopy is because the
+# full path passed to OBJCOPY makes it into the name of the symbols in the .o file
+$(1).$(2).o: embed_$(2)/$$(notdir $(1)) | $$(dir $(1))
 	$(summary) EMBED $$@
-	$$(if $$(filter-out $$(notdir $$(abspath $$<)),$$(abspath $$(notdir $$<))), cp $$< $$(notdir $$<) )  # copy input file to build dir, unless already in build dir
-	$$(if $$(subst bin,,$(2)),echo -ne '\0' >> $$(notdir $$<) )  # trailing NUL byte on text output
-	$(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) $$@
-	rm $$(notdir $$<)
+	cd embed_$(2); $(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) ../$$@
+
+CLEAN_FILES += embed_$(2)/$$(notdir $(1))
 endef
+
+embed_txt embed_bin:
+	mkdir -p $@
 
 # generate targets to embed binary & text files
 $(foreach binfile,$(COMPONENT_EMBED_FILES), $(eval $(call GenerateEmbedTarget,$(binfile),bin)))

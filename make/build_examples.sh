@@ -20,8 +20,13 @@ for example in ${IDF_PATH}/examples/*; do
     mkdir ${EXAMPLE_NUM}
     cp -r ${example} ${EXAMPLE_NUM}
     pushd ${EXAMPLE_NUM}/`basename ${example}`
-    # build non-verbose first, only build verbose if there's an error
-    make defconfig all || (RESULT=$?; make V=1)
+
+   # be stricter in the CI build than the default IDF settings
+   export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
+   export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+
+   # build non-verbose first, only build verbose if there's an error
+    (make clean defconfig && make all ) || (RESULT=$?; make V=1)
     popd
     EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
 done

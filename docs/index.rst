@@ -28,6 +28,7 @@ Contents:
    :caption: What Else?
    :maxdepth: 1
    
+   General Notes <general-notes>
    partition-tables
    build_system
    openocd
@@ -42,9 +43,9 @@ Contents:
      1.2. Application startup flow - TBA
      1.3. Flash encryption and secure boot: how they work and APIs - TBA
      1.4. Lower Power Coprocessor - TBA
-     1.5. Watchdogs
+     1.5. Watchdogs <api/wdts>
      1.6. ...
-   2. Memeory - TBA
+   2. Memory - TBA
      2.1. Memory layout of the application (IRAM/IROM, limitations of each) - TBA
      2.2. Flash layout and partitions - TBA
      2.3. Flash access APIs - TBA
@@ -92,11 +93,12 @@ Contents:
 
    Wi-Fi <api/esp_wifi>
    Bluetooth <api/bt>
+   Watchdogs <api/wdts>
 
    api/gpio
    api/uart
    api/ledc
- 
+   SPI Flash and Partition APIs <api/spi_flash>
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>
    Virtual Filesystem <api/vfs>

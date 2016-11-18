@@ -77,8 +77,9 @@ typedef enum {
  */
 esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_handle);
 
+/**@{*/
 /**
- * @brief      nvs_set_X - set value for given key
+ * @brief      set value for given key
  *
  * This family of functions set value for the key, given its name. Note that
  * actual storage will not be updated until nvs_commit function is called.
@@ -89,7 +90,6 @@ esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_ha
  *                     implementation, but is guaranteed to be at least
  *                     16 characters. Shouldn't be empty.
  * @param[in]  value   The value to set.
- * @param[in]  length  For nvs_set_blob: length of binary value to set, in bytes.
  *
  * @return
  *             - ESP_OK if value was set successfully
@@ -112,10 +112,39 @@ esp_err_t nvs_set_u32 (nvs_handle handle, const char* key, uint32_t value);
 esp_err_t nvs_set_i64 (nvs_handle handle, const char* key, int64_t value);
 esp_err_t nvs_set_u64 (nvs_handle handle, const char* key, uint64_t value);
 esp_err_t nvs_set_str (nvs_handle handle, const char* key, const char* value);
-esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, size_t length);
+/**@}*/ 
 
 /**
- * @brief      nvs_get_X - get value for given key
+ * @brief       set variable length binary value for given key
+ *
+ * This family of functions set value for the key, given its name. Note that
+ * actual storage will not be updated until nvs_commit function is called.
+ *
+ * @param[in]  handle  Handle obtained from nvs_open function.
+ *                     Handles that were opened read only cannot be used.
+ * @param[in]  key     Key name. Maximal length is determined by the underlying
+ *                     implementation, but is guaranteed to be at least
+ *                     16 characters. Shouldn't be empty.
+ * @param[in]  value   The value to set.
+ * @param[in]  length  length of binary value to set, in bytes.
+ *
+ * @return
+ *             - ESP_OK if value was set successfully
+ *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
+ *             - ESP_ERR_NVS_READ_ONLY if storage handle was opened as read only
+ *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
+ *             - ESP_ERR_NVS_NOT_ENOUGH_SPACE if there is not enough space in the
+ *               underlying storage to save the value
+ *             - ESP_ERR_NVS_REMOVE_FAILED if the value wasn't updated because flash
+ *               write operation has failed. The value was written however, and
+ *               update will be finished after re-initialization of nvs, provided that
+ *               flash operation doesn't fail again.
+ */
+esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, size_t length);
+
+/**@{*/
+/**
+ * @brief      get value for given key
  *
  * These functions retrieve value for the key, given its name. If key does not
  * exist, or the requested variable type doesn't match the type which was used
@@ -125,7 +154,55 @@ esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, si
  *
  * All functions expect out_value to be a pointer to an already allocated variable
  * of the given type.
- * Additionally, nvs_get_str and nvs_get_blob support WinAPI-style length queries.
+ *
+ * \code{c}
+ * // Example of using nvs_get_i32:
+ * int32_t max_buffer_size = 4096; // default value
+ * esp_err_t err = nvs_get_i32(my_handle, "max_buffer_size", &max_buffer_size);
+ * assert(err == ESP_OK || err == ESP_ERR_NVS_NOT_FOUND);
+ * // if ESP_ERR_NVS_NOT_FOUND was returned, max_buffer_size will still
+ * // have its default value.
+ *
+ * \endcode
+ *
+ * @param[in]     handle     Handle obtained from nvs_open function.
+ * @param[in]     key        Key name. Maximal length is determined by the underlying
+ *                           implementation, but is guaranteed to be at least
+ *                           16 characters. Shouldn't be empty.
+ * @param         out_value  Pointer to the output value.
+ *                           May be NULL for nvs_get_str and nvs_get_blob, in this
+ *                           case required length will be returned in length argument.
+ *
+ * @return
+ *             - ESP_OK if the value was retrieved successfully
+ *             - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
+ *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
+ *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
+ *             - ESP_ERR_NVS_INVALID_LENGTH if length is not sufficient to store data
+ */
+esp_err_t nvs_get_i8  (nvs_handle handle, const char* key, int8_t* out_value);
+esp_err_t nvs_get_u8  (nvs_handle handle, const char* key, uint8_t* out_value);
+esp_err_t nvs_get_i16 (nvs_handle handle, const char* key, int16_t* out_value);
+esp_err_t nvs_get_u16 (nvs_handle handle, const char* key, uint16_t* out_value);
+esp_err_t nvs_get_i32 (nvs_handle handle, const char* key, int32_t* out_value);
+esp_err_t nvs_get_u32 (nvs_handle handle, const char* key, uint32_t* out_value);
+esp_err_t nvs_get_i64 (nvs_handle handle, const char* key, int64_t* out_value);
+esp_err_t nvs_get_u64 (nvs_handle handle, const char* key, uint64_t* out_value);
+/**@}*/ 
+
+/**
+ * @brief      get value for given key
+ *
+ * These functions retrieve value for the key, given its name. If key does not
+ * exist, or the requested variable type doesn't match the type which was used
+ * when setting a value, an error is returned.
+ *
+ * In case of any error, out_value is not modified.
+ *
+ * All functions expect out_value to be a pointer to an already allocated variable
+ * of the given type.
+ * 
+ * nvs_get_str and nvs_get_blob functions support WinAPI-style length queries.
  * To get the size necessary to store the value, call nvs_get_str or nvs_get_blob
  * with zero out_value and non-zero pointer to length. Variable pointed to
  * by length argument will be set to the required length. For nvs_get_str,
@@ -136,13 +213,6 @@ esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, si
  * nvs_get/set_blob used for arbitrary data structures.
  *
  * \code{c}
- * // Example of using nvs_get_i32:
- * int32_t max_buffer_size = 4096; // default value
- * esp_err_t err = nvs_get_i32(my_handle, "max_buffer_size", &max_buffer_size);
- * assert(err == ESP_OK || err == ESP_ERR_NVS_NOT_FOUND);
- * // if ESP_ERR_NVS_NOT_FOUND was returned, max_buffer_size will still
- * // have its default value.
- *
  * // Example (without error checking) of using nvs_get_str to get a string into dynamic array:
  * size_t required_size;
  * nvs_get_str(my_handle, "server_name", NULL, &required_size);
@@ -163,8 +233,7 @@ esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, si
  * @param         out_value  Pointer to the output value.
  *                           May be NULL for nvs_get_str and nvs_get_blob, in this
  *                           case required length will be returned in length argument.
- * @param[inout]  length     For nvs_get_str and nvs_get_blob, non-zero pointer
- *                           to the variable holding the length of out_value.
+ * @param[inout]  length     A non-zero pointer to the variable holding the length of out_value.
  *                           In case out_value a zero, will be set to the length
  *                           required to hold the value. In case out_value is not
  *                           zero, will be set to the actual length of the value
@@ -177,16 +246,10 @@ esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, si
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
  *             - ESP_ERR_NVS_INVALID_LENGTH if length is not sufficient to store data
  */
-esp_err_t nvs_get_i8  (nvs_handle handle, const char* key, int8_t* out_value);
-esp_err_t nvs_get_u8  (nvs_handle handle, const char* key, uint8_t* out_value);
-esp_err_t nvs_get_i16 (nvs_handle handle, const char* key, int16_t* out_value);
-esp_err_t nvs_get_u16 (nvs_handle handle, const char* key, uint16_t* out_value);
-esp_err_t nvs_get_i32 (nvs_handle handle, const char* key, int32_t* out_value);
-esp_err_t nvs_get_u32 (nvs_handle handle, const char* key, uint32_t* out_value);
-esp_err_t nvs_get_i64 (nvs_handle handle, const char* key, int64_t* out_value);
-esp_err_t nvs_get_u64 (nvs_handle handle, const char* key, uint64_t* out_value);
+/**@{*/
 esp_err_t nvs_get_str (nvs_handle handle, const char* key, char* out_value, size_t* length);
 esp_err_t nvs_get_blob(nvs_handle handle, const char* key, void* out_value, size_t* length);
+/**@}*/
 
 /**
  * @brief      Erase key-value pair with given key name.

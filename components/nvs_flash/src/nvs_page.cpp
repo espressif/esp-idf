@@ -114,7 +114,30 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
     assert(mFirstUsedEntry != INVALID_ENTRY);
     const uint16_t count = size / ENTRY_SIZE;
     
-    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), data, size);
+    const uint8_t* buf = data;
+    
+#ifdef ESP_PLATFORM
+    /* On the ESP32, data can come from DROM, which is not accessible by spi_flash_write
+     * function. To work around this, we copy the data to heap if it came from DROM.
+     * Hopefully this won't happen very often in practice. For data from DRAM, we should
+     * still be able to write it to flash directly.
+     * TODO: figure out how to make this platform-specific check nicer (probably by introducing
+     * a platform-specific flash layer).
+     */
+    if ((uint32_t) data < 0x3ff00000) {
+        buf = (uint8_t*) malloc(size);
+        if (!buf) {
+            return ESP_ERR_NO_MEM;
+        }
+        memcpy((void*)buf, data, size);
+    }
+#endif //ESP_PLATFORM
+    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), buf, size);
+#ifdef ESP_PLATFORM
+    if (buf != data) {
+        free((void*)buf);
+    }
+#endif //ESP_PLATFORM
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;

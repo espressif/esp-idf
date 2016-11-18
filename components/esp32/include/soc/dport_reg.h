@@ -1028,6 +1028,7 @@
 #define DPORT_WIFI_RST_EN_REG          (DR_REG_DPORT_BASE + 0x0D0)
 /* DPORT_WIFI_RST : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
+#define DPORT_MAC_RST (BIT(2))
 #define DPORT_WIFI_RST  0xFFFFFFFF
 #define DPORT_WIFI_RST_M  ((DPORT_WIFI_RST_V)<<(DPORT_WIFI_RST_S))
 #define DPORT_WIFI_RST_V  0xFFFFFFFF
