@@ -76,6 +76,8 @@ esp_err_t spi_flash_erase_range(size_t start_address, size_t size);
  *
  * @note Address in flash, dest, has to be 4-byte aligned.
  *       This is a temporary limitation which will be removed.
+ * @note If source address is in DROM, this function will return
+ *       ESP_ERR_INVALID_ARG.
  *
  * @param  dest  destination address in Flash
  * @param  src   pointer to the source buffer

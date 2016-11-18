@@ -18,26 +18,12 @@
 extern "C" {
 #endif
 
-/** Initialise NVS flash storage with default flash sector layout
-
-    Temporarily, this region is hardcoded as a 12KB (0x3000 byte)
-    region starting at 36KB (0x9000 byte) offset in flash.
-
-    @return ESP_OK if flash was successfully initialised.
-*/
+/**
+ * @brief Initialize NVS flash storage with layout given in the partition table.
+ *
+ * @return ESP_OK if storage was successfully initialized.
+ */
 esp_err_t nvs_flash_init(void);
-
-/** Initialise NVS flash storage with custom flash sector layout
-
-    @param baseSector Flash sector (units of 4096 bytes) offset to start NVS.
-    @param sectorCount Length (in flash sectors) of NVS region.
-
-    @return ESP_OK if flash was successfully initialised.
-
-    @note Use this parameter if you're not using the options in menuconfig for
-          configuring flash layout & partition table.
-*/
-esp_err_t nvs_flash_init_custom(uint32_t baseSector, uint32_t sectorCount);
 
 
 #ifdef __cplusplus
