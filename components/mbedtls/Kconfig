@@ -51,6 +51,22 @@ config MBEDTLS_HARDWARE_MPI
 
        These operations are used by RSA.
 
+config MBEDTLS_MPI_USE_INTERRUPT
+    bool "Use interrupt for MPI operations"
+    depends on MBEDTLS_HARDWARE_MPI
+    default y
+    help
+        Use an interrupt to coordinate MPI operations.
 
+        This allows other code to run on the CPU while an MPI operation is pending.
+        Otherwise the CPU busy-waits.
+
+config MBEDTLS_MPI_INTERRUPT_NUM
+    int "MPI Interrupt number"
+    depends on MBEDTLS_MPI_USE_INTERRUPT
+    default 18
+    help
+        CPU interrupt number for MPI interrupt to connect to. Must be otherwise unused.
+        Eventually this assignment will be handled automatically at runtime.
 
 endmenu

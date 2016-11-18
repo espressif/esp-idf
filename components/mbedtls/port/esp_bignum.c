@@ -31,11 +31,42 @@
 #include "soc/hwcrypto_reg.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_intr.h"
+#include "esp_attr.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 #if defined(MBEDTLS_MPI_MUL_MPI_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT)
+
+static const char *TAG = "bignum";
+
+#if defined(CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
+static SemaphoreHandle_t op_complete_sem;
+
+static IRAM_ATTR void rsa_complete_isr(void *arg)
+{
+    BaseType_t higher_woken;
+    REG_WRITE(RSA_INTERRUPT_REG, 1);
+    xSemaphoreGiveFromISR(op_complete_sem, &higher_woken);
+    if (higher_woken) {
+        portYIELD_FROM_ISR();
+    }
+}
+
+static void rsa_isr_initialise()
+{
+    if (op_complete_sem == NULL) {
+        op_complete_sem = xSemaphoreCreateBinary();
+        intr_matrix_set(xPortGetCoreID(), ETS_RSA_INTR_SOURCE, CONFIG_MBEDTLS_MPI_INTERRUPT_NUM);
+        xt_set_interrupt_handler(CONFIG_MBEDTLS_MPI_INTERRUPT_NUM, &rsa_complete_isr, NULL);
+        xthal_set_intclear(1 << CONFIG_MBEDTLS_MPI_INTERRUPT_NUM);
+        xt_ints_on(1 << CONFIG_MBEDTLS_MPI_INTERRUPT_NUM);
+    }
+}
+
+#endif /* CONFIG_MBEDTLS_MPI_USE_INTERRUPT */
 
 static _lock_t mpi_lock;
 
@@ -47,6 +78,9 @@ static void esp_mpi_acquire_hardware( void )
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
     ets_bigint_enable();
+#ifdef CONFIG_MBEDTLS_MPI_USE_INTERRUPT
+    rsa_isr_initialise();
+#endif
 }
 
 static void esp_mpi_release_hardware( void )
@@ -187,13 +221,21 @@ static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words
 */
 static inline void execute_op(uint32_t op_reg)
 {
-    /* Clear interrupt status, start operation */
+    /* Clear interrupt status */
     REG_WRITE(RSA_INTERRUPT_REG, 1);
+
     REG_WRITE(op_reg, 1);
 
-    /* TODO: use interrupt instead of busywaiting */
+#ifdef CONFIG_MBEDTLS_MPI_USE_INTERRUPT
+    if (!xSemaphoreTake(op_complete_sem, 2000 / portTICK_PERIOD_MS)) {
+        ESP_LOGE(TAG, "Timed out waiting for RSA operation (op_reg 0x%x int_reg 0x%x)",
+                 op_reg, REG_READ(RSA_INTERRUPT_REG));
+        abort(); /* indicates a fundamental problem with driver */
+    }
+#else
     while(REG_READ(RSA_INTERRUPT_REG) != 1)
        { }
+#endif
 
     /* clear the interrupt */
     REG_WRITE(RSA_INTERRUPT_REG, 1);
@@ -355,8 +397,6 @@ static int modular_multiply_finish(mbedtls_mpi *Z, const mbedtls_mpi *X, const m
 }
 
 #if defined(MBEDTLS_MPI_MUL_MPI_ALT) /* MBEDTLS_MPI_MUL_MPI_ALT */
-
-static const char *TAG = "bignum";
 
 static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t num_words);
 
