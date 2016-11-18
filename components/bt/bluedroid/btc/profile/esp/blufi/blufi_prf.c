@@ -357,7 +357,7 @@ void btc_blufi_cb_handler(btc_msg_t *msg)
 		BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_DATA, &param);
 		break;
 	default:
-		LOG_ERROR("%s UNKNOWN %d\n", msg->act);
+		LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);
 		break;
 	}
 }
@@ -381,7 +381,7 @@ void btc_blufi_call_handler(btc_msg_t *msg)
 		}
 		break;
 	default:
-		LOG_ERROR("%s UNKNOWN %d\n", msg->act);
+		LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);
 		break;
 	}
 }

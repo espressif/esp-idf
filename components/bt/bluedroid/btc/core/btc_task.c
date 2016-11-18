@@ -94,7 +94,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 				return BT_STATUS_PARM_INVALID;
 		}
 
-		LOG_DEBUG("%s msg %u %u %u %08x\n", __func__, msg->sig, msg->pid, msg->act, msg->arg);
+		LOG_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
 
 		memcpy(&lmsg, msg, sizeof(btc_msg_t));
 		if (arg) {

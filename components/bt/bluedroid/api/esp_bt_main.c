@@ -27,14 +27,14 @@ esp_err_t esp_enable_bluetooth(void)
 	future_t **future_p;
 
 	if (esp_already_enable) {
-		LOG_ERROR("%s already enable\n");
+		LOG_ERROR("%s already enable\n", __func__);
 		return ESP_ERR_INVALID_STATE;
 	}
 
 	future_p = btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE);
 	*future_p = future_new();
 	if (*future_p == NULL) {
-		LOG_ERROR("%s failed\n");
+		LOG_ERROR("%s failed\n", __func__);
 		return ESP_ERR_NO_MEM;
 	}
 
@@ -44,7 +44,7 @@ esp_err_t esp_enable_bluetooth(void)
 	btc_transfer_context(&msg, NULL, 0, NULL);
 
 	if (future_await(*future_p) == FUTURE_FAIL) {
-		LOG_ERROR("%s failed\n");
+		LOG_ERROR("%s failed\n", __func__);
 		return ESP_FAIL;
 	}
 
@@ -59,14 +59,14 @@ esp_err_t esp_disable_bluetooth(void)
 	future_t **future_p;
 
 	if (!esp_already_enable) {
-		LOG_ERROR("%s already disable\n");
+		LOG_ERROR("%s already disable\n", __func__);
 		return ESP_ERR_INVALID_STATE;
 	}
 
 	future_p = btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE);
 	*future_p = future_new();
 	if (*future_p == NULL) {
-		LOG_ERROR("%s failed\n");
+		LOG_ERROR("%s failed\n", __func__);
 		return ESP_ERR_NO_MEM;
 	}
 
@@ -76,7 +76,7 @@ esp_err_t esp_disable_bluetooth(void)
 	btc_transfer_context(&msg, NULL, 0, NULL);
 
 	if (future_await(*future_p) == FUTURE_FAIL) {
-		LOG_ERROR("%s failed\n");
+		LOG_ERROR("%s failed\n", __func__);
 		return ESP_FAIL;
 	}
 
@@ -91,14 +91,14 @@ esp_err_t esp_init_bluetooth(void)
 	future_t **future_p;
 
 	if (esp_already_init) {
-		LOG_ERROR("%s already init\n");
+		LOG_ERROR("%s already init\n", __func__);
 		return ESP_ERR_INVALID_STATE;
 	}
 
 	future_p = btc_main_get_future_p(BTC_MAIN_INIT_FUTURE);
 	*future_p = future_new();
 	if (*future_p == NULL) {
-		LOG_ERROR("%s failed\n");
+		LOG_ERROR("%s failed\n", __func__);
 		return ESP_ERR_NO_MEM;
 	}
 
@@ -110,7 +110,7 @@ esp_err_t esp_init_bluetooth(void)
 	btc_transfer_context(&msg, NULL, 0, NULL);
 
 	if (future_await(*future_p) == FUTURE_FAIL) {
-		LOG_ERROR("%s failed\n");
+		LOG_ERROR("%s failed\n", __func__);
 		return ESP_FAIL;
 	}
 
@@ -126,14 +126,14 @@ esp_err_t esp_deinit_bluetooth(void)
 	future_t **future_p;
 
 	if (!esp_already_init) {
-		LOG_ERROR("%s already deinit\n");
+		LOG_ERROR("%s already deinit\n", __func__);
 		return ESP_ERR_INVALID_STATE;
 	}
 
 	future_p = btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE);
 	*future_p = future_new();
 	if (*future_p == NULL) {
-		LOG_ERROR("%s failed\n");
+		LOG_ERROR("%s failed\n", __func__);
 		return ESP_ERR_NO_MEM;
 	}
 
@@ -143,7 +143,7 @@ esp_err_t esp_deinit_bluetooth(void)
 	btc_transfer_context(&msg, NULL, 0, NULL);
 
 	if (future_await(*future_p) == FUTURE_FAIL) {
-		LOG_ERROR("%s failed\n");
+		LOG_ERROR("%s failed\n", __func__);
 		return ESP_FAIL;
 	}
 

@@ -40,71 +40,64 @@ int uuidType(unsigned char* p_uuid)
     return LEN_UUID_128;
 }
 
-void btif_to_bta_uuid(tBT_UUID *p_dest, bt_uuid_t *p_src)
-{
-    char *p_byte = (char*)p_src;
-    int i = 0;
-
-    p_dest->len = uuidType(p_src->uu);
-
-    switch (p_dest->len)
-    {
-        case LEN_UUID_16:
-            p_dest->uu.uuid16 = (p_src->uu[13] << 8) + p_src->uu[12];
-            break;
-
-        case LEN_UUID_32:
-            p_dest->uu.uuid32  = (p_src->uu[13] <<  8) + p_src->uu[12];
-            p_dest->uu.uuid32 += (p_src->uu[15] << 24) + (p_src->uu[14] << 16);
-            break;
-
-        case LEN_UUID_128:
-            for(i = 0; i != 16; ++i)
-                p_dest->uu.uuid128[i] = p_byte[i];
-            break;
-
-        default:
-            LOG_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_dest->len);
-            break;
-    }
-}
-
-
 /*******************************************************************************
  * BTC -> BTA conversion functions
  *******************************************************************************/
 
 void btc_to_bta_uuid(tBT_UUID *p_dest, esp_bt_uuid_t *p_src)
 {
-    memcpy(p_dest, p_src, sizeof(esp_bt_uuid_t));
-}
-
-void btc_to_bta_srvc_id(tBTA_GATT_SRVC_ID *p_dest, esp_gatt_srvc_id_t *p_src)
-{
-    memcpy(p_dest, p_src, sizeof(esp_gatt_srvc_id_t));
+	p_dest->len = p_src->len;
+	if (p_src->len == LEN_UUID_16) {
+		p_dest->uu.uuid16 = p_src->uuid.uuid16;
+	} else if (p_src->len == LEN_UUID_32) {
+		p_dest->uu.uuid32 = p_src->uuid.uuid32;
+	} else if (p_src->len == LEN_UUID_128) {
+    	memcpy(&p_dest->uu.uuid128, p_src->uuid.uuid128, p_dest->len);
+	} else {
+		LOG_ERROR("%s UUID len is invalid %d\n", __func__, p_dest->len);
+	}
 }
 
 void btc_to_bta_gatt_id(tBTA_GATT_ID *p_dest, esp_gatt_id_t *p_src)
 {
-    memcpy(p_dest, p_src, sizeof(esp_gatt_id_t));
+	p_dest->inst_id = p_src->inst_id;
+	btc_to_bta_uuid(&p_dest->uuid, &p_src->uuid);
 }
+
+void btc_to_bta_srvc_id(tBTA_GATT_SRVC_ID *p_dest, esp_gatt_srvc_id_t *p_src)
+{
+	p_dest->is_primary = p_src->is_primary;
+	btc_to_bta_gatt_id(&p_dest->id, &p_src->id);
+}
+
 
 /*******************************************************************************
  * BTA -> BTC conversion functions
  *******************************************************************************/
 void bta_to_btc_uuid(esp_bt_uuid_t *p_dest, tBT_UUID *p_src)
 {
-    memcpy(p_dest, p_src, sizeof(esp_bt_uuid_t));
+	p_dest->len = p_src->len;
+	if (p_src->len == LEN_UUID_16) {
+		p_dest->uuid.uuid16 = p_src->uu.uuid16;
+	} else if (p_src->len == LEN_UUID_32) {
+		p_dest->uuid.uuid32 = p_src->uu.uuid32;
+	} else if (p_src->len == LEN_UUID_128) {
+    	memcpy(&p_dest->uuid.uuid128, p_src->uu.uuid128, p_dest->len);
+	} else {
+		LOG_ERROR("%s UUID len is invalid %d\n", __func__, p_dest->len);
+	}
 }
 
 void bta_to_btc_gatt_id(esp_gatt_id_t *p_dest, tBTA_GATT_ID *p_src)
 {
-    memcpy(p_dest, p_src, sizeof(esp_gatt_id_t));
+	p_dest->inst_id = p_src->inst_id;
+	bta_to_btc_uuid(&p_dest->uuid, &p_src->uuid);
 }
 
 void bta_to_btc_srvc_id(esp_gatt_srvc_id_t *p_dest, tBTA_GATT_SRVC_ID *p_src)
 {
-    memcpy(p_dest, p_src, sizeof(esp_gatt_srvc_id_t));
+	p_dest->is_primary = p_src->is_primary;
+	bta_to_btc_gatt_id(&p_dest->id, &p_src->id);
 }
 
 void btc_to_bta_response(tBTA_GATTS_RSP *rsp_struct, esp_gatt_rsp_t *p_rsp)

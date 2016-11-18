@@ -30,7 +30,7 @@ typedef struct {
 		uint32_t	uuid32;
 		uint8_t		uuid128[ESP_UUID_LEN_128];
 	} uuid;
-}esp_bt_uuid_t;   /* tBT_UUID in "bt_types.h" */
+} __attribute__((packed)) esp_bt_uuid_t;   /* tBT_UUID in "bt_types.h" */
 
 typedef enum {
 	ESP_BT_DEVICE_TYPE_BREDR   = 0x01,

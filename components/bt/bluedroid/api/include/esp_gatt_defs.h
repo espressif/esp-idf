@@ -70,12 +70,12 @@ typedef enum {
 typedef struct {
 	esp_bt_uuid_t 	uuid;
 	uint8_t			inst_id;
-} esp_gatt_id_t;
+} __attribute__((packed)) esp_gatt_id_t;
 
 typedef struct {
 	esp_gatt_id_t 	id;
-	uint8_t			is_primary;
-} esp_gatt_srvc_id_t;
+	bool			is_primary;
+} __attribute__((packed)) esp_gatt_srvc_id_t;
 
 typedef enum {
 	AUTH_REQ_NO_SCATTERNET,			/* Device doesn't support scatternet, it might

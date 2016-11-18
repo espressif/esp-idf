@@ -116,12 +116,12 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
     }
 
     if (p_adv_data->include_name) {
-		LOG_ERROR("include dev name\n");
         mask |= BTM_BLE_AD_BIT_DEV_NAME;
 	}
 
-    if (p_adv_data->include_txpower)
+    if (p_adv_data->include_txpower) {
         mask |= BTM_BLE_AD_BIT_TX_PWR;
+	}
 
     if (p_adv_data->min_interval > 0 && p_adv_data->max_interval > 0 &&
         p_adv_data->max_interval >= p_adv_data->min_interval)
@@ -204,8 +204,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
              tBT_UUID bt_uuid;
 
              memcpy(&bt_uuid.uu, p_adv_data->p_service_uuid + position, LEN_UUID_128);
-		bt_uuid.len = p_adv_data->service_uuid_len;
-
+			 bt_uuid.len = p_adv_data->service_uuid_len;
              switch(bt_uuid.len)
              {
                 case (LEN_UUID_16):
@@ -246,7 +245,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
 
                    if (NULL != bta_adv_data->p_service_32b->p_uuid)
                    {
-                      LOG_ERROR("%s - In 32-UUID_data", __FUNCTION__);
+                      LOG_DEBUG("%s - In 32-UUID_data", __FUNCTION__);
                       mask |= BTM_BLE_AD_BIT_SERVICE_32;
                       ++bta_adv_data->p_service_32b->num_service;
                       *p_uuid_out32++ = bt_uuid.uu.uuid32;
@@ -263,11 +262,11 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                                                           GKI_getbuf(sizeof(tBTA_BLE_128SERVICE));
                       if (NULL != bta_adv_data->p_services_128b)
                       {
-                         LOG_ERROR("%s - In 128-UUID_data", __FUNCTION__);
+                         LOG_DEBUG("%s - In 128-UUID_data", __FUNCTION__);
                          mask |= BTM_BLE_AD_BIT_SERVICE_128;
                          memcpy(bta_adv_data->p_services_128b->uuid128,
                                                          bt_uuid.uu.uuid128, LEN_UUID_128);
-                         LOG_ERROR("%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x", bt_uuid.uu.uuid128[0],
+                         LOG_DEBUG("%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x", bt_uuid.uu.uuid128[0],
                             bt_uuid.uu.uuid128[1],bt_uuid.uu.uuid128[2], bt_uuid.uu.uuid128[3],
                             bt_uuid.uu.uuid128[4],bt_uuid.uu.uuid128[5],bt_uuid.uu.uuid128[6],
                             bt_uuid.uu.uuid128[7],bt_uuid.uu.uuid128[8],bt_uuid.uu.uuid128[9],
@@ -353,6 +352,7 @@ static void btc_ble_set_adv_data(esp_ble_adv_data_t *adv_data,
 	tBTA_BLE_AD_MASK data_mask = 0;
 
 	btc_to_bta_adv_data(adv_data, &gl_bta_adv_data, &data_mask);
+
 	if (!adv_data->set_scan_rsp){
 		BTA_DmBleSetAdvConfig(data_mask, &gl_bta_adv_data, p_adv_data_cback);
 	}else{
@@ -415,7 +415,7 @@ void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params)
 		LOG_ERROR("Invalid advertisting type parameters.\n");
 		return;
 	}
-	LOG_ERROR("API_Ble_AppStartAdvertising\n");
+	LOG_DEBUG("API_Ble_AppStartAdvertising\n");
 
 	///
 	memcpy(peer_addr.bda, ble_adv_params->peer_addr, ESP_BD_ADDR_LEN);
@@ -592,37 +592,38 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 	switch (msg->act)
 	{
 	case BTC_GAP_BLE_ACT_CFG_ADV_DATA: {
-		esp_ble_adv_data_t *src = (esp_ble_adv_data_t *)p_src;
-		esp_ble_adv_data_t  *dst = (esp_ble_adv_data_t*) p_dest;
+		btc_ble_gap_args_t *src = (btc_ble_gap_args_t *)p_src;
+		btc_ble_gap_args_t  *dst = (btc_ble_gap_args_t*) p_dest;
 
-		if (src->p_manufacturer_data) {
-			dst->p_manufacturer_data = GKI_getbuf(src->manufacturer_len);
-			memcpy(dst->p_manufacturer_data, src->p_manufacturer_data,
-					src->manufacturer_len);
+		if (src->adv_data.p_manufacturer_data) {
+			dst->adv_data.p_manufacturer_data = GKI_getbuf(src->adv_data.manufacturer_len);
+			memcpy(dst->adv_data.p_manufacturer_data, src->adv_data.p_manufacturer_data,
+					src->adv_data.manufacturer_len);
 		}
 
-		if (src->p_service_data) {
-			dst->p_service_data = GKI_getbuf(src->service_data_len);
-			memcpy(dst->p_service_data, src->p_service_data, src->service_data_len);
+		if (src->adv_data.p_service_data) {
+			dst->adv_data.p_service_data = GKI_getbuf(src->adv_data.service_data_len);
+			memcpy(dst->adv_data.p_service_data, src->adv_data.p_service_data, src->adv_data.service_data_len);
 		}
 
-		if (src->p_service_uuid) {
-			dst->p_service_uuid = GKI_getbuf(src->service_uuid_len);
-			memcpy(dst->p_service_uuid, src->p_service_uuid, src->service_uuid_len);
+		if (src->adv_data.p_service_uuid) {
+			dst->adv_data.p_service_uuid = GKI_getbuf(src->adv_data.service_uuid_len);
+			memcpy(dst->adv_data.p_service_uuid, src->adv_data.p_service_uuid, src->adv_data.service_uuid_len);
 		}
 		break;
 	}
 	default:
-		LOG_ERROR("Unhandled deep copy\n", msg->act);
+		LOG_ERROR("Unhandled deep copy %d\n", msg->act);
 		break;
 	}
 }
 
 static void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
 {
+	LOG_DEBUG("%s \n", __func__);
 	switch (msg->act) {
 	case BTC_GAP_BLE_ACT_CFG_ADV_DATA: {
-		esp_ble_adv_data_t *adv = (esp_ble_adv_data_t *)msg->arg;
+		esp_ble_adv_data_t *adv = &((btc_ble_gap_args_t *)msg->arg)->adv_data;
     	if (adv->p_service_data)
 			GKI_freebuf(adv->p_service_data);
 
@@ -634,7 +635,7 @@ static void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
 		break;
 	}
 	default:
-		LOG_ERROR("Unhandled deep free\n", msg->act);
+		LOG_DEBUG("Unhandled deep free %d\n", msg->act);
 		break;
 	}
 }
@@ -643,7 +644,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
 {
 	btc_ble_gap_args_t *arg = (btc_ble_gap_args_t *)msg->arg;
 	
-    LOG_ERROR("%s act %d\n", __FUNCTION__, msg->act);
+    LOG_DEBUG("%s act %d\n", __FUNCTION__, msg->act);
 
 	switch (msg->act) {
 	case BTC_GAP_BLE_ACT_CFG_ADV_DATA:

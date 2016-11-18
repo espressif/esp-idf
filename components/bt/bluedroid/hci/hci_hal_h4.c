@@ -197,7 +197,7 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet) {
     return;
   }
   if (type < DATA_TYPE_ACL || type > DATA_TYPE_EVENT) {
-    LOG_ERROR("%d Unknown HCI message type. Dropping this byte 0x%x,"
+    LOG_ERROR("%s Unknown HCI message type. Dropping this byte 0x%x,"
               " min %x, max %x", __func__, type,
               DATA_TYPE_ACL, DATA_TYPE_EVENT);
     hci_hal_env.allocator->free(packet);
@@ -205,7 +205,7 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet) {
   }
   hdr_size = preamble_sizes[type - 1];
   if (packet->len < hdr_size) {
-    LOG_ERROR("Wrong packet length type=%s pkt_len=%d hdr_len=%d",
+    LOG_ERROR("Wrong packet length type=%d pkt_len=%d hdr_len=%d",
               type, packet->len, hdr_size);
     hci_hal_env.allocator->free(packet);
     return;

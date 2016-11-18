@@ -30,30 +30,33 @@
 #include "esp_bt_main.h"
 #include "esp_bt_main.h"
 
-#define GATTS_SERVICE_UUID_TEST 	0xFFFF
+#define GATTS_SERVICE_UUID_TEST 	0x00FF
 #define GATTS_CHAR_UUID_TEST 		0xFF01
 #define GATTS_DESCR_UUID_TEST 		0x3333
 #define APP_ID_TEST					0x18
 #define GATTS_NUM_HANDLE_TEST		4
-#define TEST_DEVICE_NAME			"snakeNB"
+#define TEST_DEVICE_NAME			"ESP_GATTS_DEMO"
 
-#define TEST_MANUFACTURER_DATA_LEN	8
-static uint16_t test_service_uuid = GATTS_NUM_HANDLE_TEST;
-static uint8_t test_manufacturer[TEST_MANUFACTURER_DATA_LEN] =  {0x1, 0x2, 0x1, 0x2, 0x1, 0x2, 0x1, 0x2};
+#define TEST_MANUFACTURER_DATA_LEN	17
+static uint16_t test_service_uuid = GATTS_SERVICE_UUID_TEST;
+static uint8_t test_service_uuid128[16] = {	0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+											0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
+static uint8_t test_manufacturer[TEST_MANUFACTURER_DATA_LEN] =  {0x12, 0x23, 0x45, 0x56};
 static esp_ble_adv_data_t test_adv_data = {
 	.set_scan_rsp = false,
 	.include_name = true,
 	.include_txpower = true,
 	.min_interval = 0x20,
 	.max_interval = 0x40,
-	.appearance = 0,
-	.manufacturer_len = TEST_MANUFACTURER_DATA_LEN,
-	.p_manufacturer_data = &test_manufacturer[0],
+	.appearance = 0x0,
+	.manufacturer_len = 0,			//TEST_MANUFACTURER_DATA_LEN,
+	.p_manufacturer_data = NULL,	// &test_manufacturer[0],
 	.service_data_len = 0,
 	.p_service_data = NULL,
 	.service_uuid_len = 2,
-	.p_service_uuid = (uint8_t *)&test_service_uuid,
+	.p_service_uuid = test_service_uuid128,
+	.flag = 0,
 };
 
 static esp_ble_adv_params_t test_adv_params = {
@@ -85,6 +88,14 @@ static struct gatts_test_inst gl_test;
 static void gap_event_handler(uint32_t event, void *param)
 {
 	LOG_ERROR("GAP_EVT, event %d\n", event);
+
+	switch (event) {
+	case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
+		esp_ble_gap_start_advertising(&test_adv_params);
+		break;
+	default:
+		break;
+	}
 }
 
 static void gatts_event_handler(uint32_t event, void *param)
@@ -95,15 +106,15 @@ static void gatts_event_handler(uint32_t event, void *param)
 	case ESP_GATTS_REG_EVT:
 		LOG_ERROR("REGISTER_APP_EVT, status %d, gatt_if %d, app_id %d\n", p->reg.status, p->reg.gatt_if, p->reg.app_id);
 		gl_test.gatt_if = p->reg.gatt_if;
-		gl_test.service_id.is_primary = 1;
+		gl_test.service_id.is_primary = true;
 		gl_test.service_id.id.inst_id = 0x00;
 		gl_test.service_id.id.uuid.len = ESP_UUID_LEN_16;
 		gl_test.service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_TEST;
-		esp_ble_gatts_create_service(gl_test.gatt_if, &gl_test.service_id, GATTS_NUM_HANDLE_TEST);
 
 		esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
 		esp_ble_gap_config_adv_data(&test_adv_data);
-		esp_ble_gap_start_advertising(&test_adv_params);
+
+		esp_ble_gatts_create_service(gl_test.gatt_if, &gl_test.service_id, GATTS_NUM_HANDLE_TEST);
 		break;
 	case ESP_GATTS_READ_EVT: {
 		LOG_ERROR("GATT_READ_EVT, conn_id %d, trans_id %d, handle %d\n", p->read.conn_id, p->read.trans_id, p->read.handle);
@@ -199,7 +210,8 @@ void app_main()
 
 	esp_ble_gatts_register_callback(gatts_event_handler);
 	esp_ble_gap_register_callback(gap_event_handler);
-	esp_ble_gatts_app_register(0x18);
+	esp_ble_gatts_app_register(GATTS_SERVICE_UUID_TEST);
+	//esp_ble_gatts_app_register(0x18);
 
 	return;
 }
