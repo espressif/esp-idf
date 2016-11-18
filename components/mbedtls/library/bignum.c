@@ -1092,6 +1092,8 @@ int mbedtls_mpi_sub_int( mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_sint 
     return( mbedtls_mpi_sub_mpi( X, A, &_B ) );
 }
 
+#if !defined(MBEDTLS_MPI_MUL_MPI_ALT) || !defined(MBEDTLS_MPI_EXP_MOD_ALT)
+
 /*
  * Helper for mbedtls_mpi multiplication
  */
@@ -1103,6 +1105,7 @@ static
  */
 __attribute__ ((noinline))
 #endif
+
 void mpi_mul_hlp( size_t i, mbedtls_mpi_uint *s, mbedtls_mpi_uint *d, mbedtls_mpi_uint b )
 {
     mbedtls_mpi_uint c = 0, t = 0;
@@ -1163,6 +1166,8 @@ void mpi_mul_hlp( size_t i, mbedtls_mpi_uint *s, mbedtls_mpi_uint *d, mbedtls_mp
     }
     while( c != 0 );
 }
+
+#endif
 
 #if !defined(MBEDTLS_MPI_MUL_MPI_ALT)
 /*
@@ -1526,6 +1531,8 @@ int mbedtls_mpi_mod_int( mbedtls_mpi_uint *r, const mbedtls_mpi *A, mbedtls_mpi_
     return( 0 );
 }
 
+#if !defined(MBEDTLS_MPI_EXP_MOD_ALT)
+
 /*
  * Fast Montgomery initialization (thanks to Tom St Denis)
  */
@@ -1600,7 +1607,6 @@ static int mpi_montred( mbedtls_mpi *A, const mbedtls_mpi *N, mbedtls_mpi_uint m
     return( mpi_montmul( A, &U, N, mm, T ) );
 }
 
-#if !defined(MBEDTLS_MPI_EXP_MOD_ALT)
 /*
  * Sliding-window exponentiation: X = A^E mod N  (HAC 14.85)
  */

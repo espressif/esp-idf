@@ -35,8 +35,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-static const char *TAG = "bignum";
-
 #if defined(MBEDTLS_MPI_MUL_MPI_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT)
 
 static _lock_t mpi_lock;
@@ -330,6 +328,8 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
 /* Second & final step of a modular multiply - load second multiplication
  * factor Y, run the multiply, read back the result into Z.
  *
+ * Called from both mbedtls_mpi_exp_mod and mbedtls_mpi_mod_mpi.
+ *
  * @param Z result value
  * @param X first multiplication factor (used to set sign of result).
  * @param Y second multiplication factor.
@@ -338,7 +338,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
  *
  *  Caller must have already called esp_mpi_acquire_hardware().
  */
-inline static int modular_multiply_finish(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t num_words)
+static int modular_multiply_finish(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t num_words)
 {
     int ret;
     /* Load Y to X input memory block, rerun */
@@ -355,6 +355,8 @@ inline static int modular_multiply_finish(mbedtls_mpi *Z, const mbedtls_mpi *X, 
 }
 
 #if defined(MBEDTLS_MPI_MUL_MPI_ALT) /* MBEDTLS_MPI_MUL_MPI_ALT */
+
+static const char *TAG = "bignum";
 
 static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t num_words);
 

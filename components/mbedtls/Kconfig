@@ -22,7 +22,7 @@ config MBEDTLS_SSL_MAX_CONTENT_LEN
 
 config MBEDTLS_DEBUG
    bool "Enable mbedTLS debugging"
-   default "no"
+   default n
    help
        Enable mbedTLS debugging functions.
        
@@ -33,5 +33,24 @@ config MBEDTLS_DEBUG
        Note thatm mbedTLS debugging is not related to the ESP logging
        functionality. See the "https_request_main" example for a
        sample function which connects the two together.
+
+config MBEDTLS_HARDWARE_AES
+   bool "Enable hardware AES acceleration"
+   default y
+   help
+       Enable hardware accelerated AES encryption & decryption.
+
+config MBEDTLS_HARDWARE_MPI
+   bool "Enable hardware MPI (bignum) acceleration"
+   default y
+   help
+       Enable hardware accelerated multiple precision integer operations.
+
+       Hardware accelerated multiplication, modulo multiplication,
+       and modular exponentiation for up to 4096 bit results.
+
+       These operations are used by RSA.
+
+
 
 endmenu
