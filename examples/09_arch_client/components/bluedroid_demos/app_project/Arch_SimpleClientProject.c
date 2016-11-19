@@ -168,6 +168,7 @@ static void esp_scan_result_cb(uint32_t event, void *param)
 							{
 								connet = TRUE;
 								LOG_ERROR("Connet to the remote device.\n");
+								esp_ble_gap_stop_scanning();
 								esp_ble_gattc_open(client_if, scan_result->scan_rst.bda, TRUE);
 							}
 						}
@@ -192,6 +193,7 @@ static void esp_scan_result_cb(uint32_t event, void *param)
 
 static void esp_gattc_result_cb(uint32_t event, void *gattc_param)
 {
+	uint16_t conidx = 0;
 	esp_ble_gattc_cb_param_t *gattc_data = (esp_ble_gattc_cb_param_t *)gattc_param;
 	LOG_ERROR("esp_gattc_result_cb, event = %x\n", event);
 	switch (event)
@@ -202,6 +204,9 @@ static void esp_gattc_result_cb(uint32_t event, void *gattc_param)
 			LOG_ERROR("status = %x, client_if = %x\n", status, client_if);
 			break;
 		case ESP_GATTC_OPEN_EVT: 
+			conidx = gattc_data->open.conn_id;
+			LOG_ERROR("conidx = %x, if = %x\n",conidx, gattc_data->open.gatt_if);
+			esp_ble_gattc_search_service(conidx, NULL);
 			LOG_ERROR("ESP_GATTC_OPEN_EVT\n");
 			break;
 		default:

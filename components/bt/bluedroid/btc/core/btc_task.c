@@ -105,12 +105,6 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 				return BT_STATUS_NOMEM;
 			}
 			memcpy(lmsg.arg, arg, arg_len);
-			temp = (tBTA_GATTC *)lmsg.arg;
-			temp2 = (tBTA_GATTC *)arg;
-			LOG_ERROR("###the temp status = %x, if = %x\n####\n",
-						temp->reg_oper.status,temp->reg_oper.client_if);
-			LOG_ERROR("###the arg status = %x, if = %x\n####\n",
-						temp2->reg_oper.status, temp2->reg_oper.client_if);
 			if (copy_func) {
 				copy_func(&lmsg, lmsg.arg, arg);
 			}

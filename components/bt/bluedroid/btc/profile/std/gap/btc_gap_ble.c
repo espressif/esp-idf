@@ -513,6 +513,12 @@ static void btc_ble_start_scanning(uint8_t duration, tBTA_DM_SEARCH_CBACK *resul
 	}
 }
 
+static void btc_ble_stop_scanning(void)
+{
+	uint8_t duration = 0;
+	BTA_DmBleObserve(false, duration, NULL);	
+}
+
 
 static void btc_ble_stop_advertising(void)
 {
@@ -608,6 +614,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
 		btc_ble_start_scanning(arg->duration, btc_search_callback);
 		break;
 	case BTC_GAP_BLE_ACT_STOP_SCAN:
+		btc_ble_stop_scanning();
 		break;
 	case BTC_GAP_BLE_ACT_START_ADV:
 		btc_ble_start_advertising(&arg->adv_params);

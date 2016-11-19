@@ -54,6 +54,7 @@ static void btc_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GATTC;
     msg.act = (uint8_t) event;
+    LOG_ERROR("the gattc event = %x\n",event);	
     ret = btc_transfer_context(&msg, p_data, sizeof(tBTA_GATTC), btc_gattc_copy_req_data);
 
 	if (ret)

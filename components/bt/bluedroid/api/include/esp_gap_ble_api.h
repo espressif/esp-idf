@@ -267,6 +267,16 @@ esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params);
 esp_err_t esp_ble_gap_start_scanning(uint32_t duration);
 
 
+/*******************************************************************************
+**
+** @function       esp_ble_gap_stop_scanning
+**
+** @brief            This function call to stop the device scanning the peer device whith advertising on the air 
+** @param	     void
+** @return          ESP_OK - success, other - failed
+**
+*******************************************************************************/
+esp_err_t esp_ble_gap_stop_scanning(void);
 
 /*******************************************************************************
 **
