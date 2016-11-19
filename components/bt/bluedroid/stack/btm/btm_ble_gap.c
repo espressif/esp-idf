@@ -2869,8 +2869,8 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
         STREAM_TO_UINT8    (evt_type, p);
         STREAM_TO_UINT8    (addr_type, p);
         STREAM_TO_BDADDR   (bda, p);
-	BTM_TRACE_ERROR("btm_ble_process_adv_pkt:bda= %0x:%0x:%0x:%0x:%0x:%0x\n",
-                                     bda[0],bda[1],bda[2],bda[3],bda[4],bda[5]);
+	//BTM_TRACE_ERROR("btm_ble_process_adv_pkt:bda= %0x:%0x:%0x:%0x:%0x:%0x\n",
+       //                              bda[0],bda[1],bda[2],bda[3],bda[4],bda[5]);
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
         /* map address to security record */
         match = btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);

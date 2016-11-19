@@ -39,8 +39,12 @@
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
-tBTA_GATTC_IF client_if;
+esp_gatt_if_t client_if;
+esp_gatt_status_t status = ESP_GATT_ERROR;
+BOOLEAN connet = FALSE;
 BD_ADDR obj_addr;
+uint16_t simpleClient_id = 0xEE;
+char device_name[] = "Heart Rate";
 static unsigned char BASE_UUID[16] = {
     0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
     0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -149,8 +153,25 @@ static void esp_scan_result_cb(uint32_t event, void *param)
 						LOG_ERROR("%c",adv_name[j]);
 					}
 					LOG_ERROR("\n");
+					for(int j = 0; j < adv_name_len; j++)
+					{
+						LOG_ERROR("%c",device_name[j]);
+					}
+					LOG_ERROR("\n");
 					
-					//if(strcmp(scan_result->scan_rst.bda, ))
+					if (adv_name != NULL)
+					{
+						if(strcmp(adv_name, device_name) == 0)
+						{
+							LOG_ERROR("the name eque to Heart Rate.\n");
+							if (status ==  ESP_GATT_OK && connet == FALSE)
+							{
+								connet = TRUE;
+								LOG_ERROR("Connet to the remote device.\n");
+								esp_ble_gattc_open(client_if, scan_result->scan_rst.bda, TRUE);
+							}
+						}
+					}
 					break;
 				case ESP_GAP_SEARCH_INQ_CMPL_EVT:
 					break;
@@ -171,7 +192,21 @@ static void esp_scan_result_cb(uint32_t event, void *param)
 
 static void esp_gattc_result_cb(uint32_t event, void *gattc_param)
 {
-	
+	esp_ble_gattc_cb_param_t *gattc_data = (esp_ble_gattc_cb_param_t *)gattc_param;
+	LOG_ERROR("esp_gattc_result_cb, event = %x\n", event);
+	switch (event)
+	{
+		case ESP_GATTC_REG_EVT:
+			status = gattc_data->reg.status;
+			client_if = gattc_data->reg.gatt_if;
+			LOG_ERROR("status = %x, client_if = %x\n", status, client_if);
+			break;
+		case ESP_GATTC_OPEN_EVT: 
+			LOG_ERROR("ESP_GATTC_OPEN_EVT\n");
+			break;
+		default:
+		break;
+	}
 }
 
 
@@ -219,33 +254,7 @@ void bta_le_fill_16bits_char_id(UINT8 inst_id, UINT16 char_uuid, tBTA_GATT_ID* p
     bta_le_fill_16bits_gatt_id(inst_id, char_uuid, p_output);
 }
 */
-/*get remote name*/
-static bool check_remote_name(tBTA_DM_INQ_RES* result, uint8_t* rmt_name, uint8_t* rmt_name_len)
-{
-    uint8_t *p_rmt_name = NULL;
-    uint8_t remote_name_len = 0;
-    
-    if (result->p_eir) {
-        p_rmt_name = BTM_CheckEirData(result->p_eir,
-            BTM_EIR_COMPLETE_LOCAL_NAME_TYPE,
-            &remote_name_len);
-        if (!p_rmt_name)
-            p_rmt_name = BTM_CheckEirData(result->p_eir,
-                BTM_EIR_SHORTENED_LOCAL_NAME_TYPE,
-                &remote_name_len);
-        if (p_rmt_name) {
-            if (remote_name_len > BD_NAME_LEN)
-                remote_name_len = BD_NAME_LEN;
-            if (rmt_name && rmt_name_len) {
-                memcpy(rmt_name, p_rmt_name, remote_name_len);
-                *(rmt_name + remote_name_len) = 0;
-                *rmt_name_len = remote_name_len;
-                }
-            return true;
-        }
-    }
-    return false;
-}
+
 
 /************************************************************************************
 * * Function        bta_scan_recult_callback
@@ -312,9 +321,9 @@ static void bta_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p
         LOG_ERROR("%s : unknown event 0x%x", __FUNCTION__, event);
     }
 }
-
-#endif	
-
+	
+#endif		///if 0
+	
 /************************************************************************************
 * * Function        bta_scan_param_setup_cback
 * *
@@ -414,6 +423,8 @@ void ble_client_appRegister(void)
    //register the callback function to the gattc module
    if ((status = esp_ble_gattc_register_callback(esp_gattc_result_cb)) != ESP_OK){
 	LOG_ERROR("gattc register error, error code = %x\n",status);		
+   }else{
+	esp_ble_gattc_app_register(simpleClient_id);
    }	
 
 

@@ -1687,7 +1687,7 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt (UINT8 *p)
 
 static void btu_ble_process_adv_pkt (UINT8 *p)
 {
-    HCI_TRACE_ERROR("btu_ble_process_adv_pkt\n");
+    HCI_TRACE_DEBUG("btu_ble_process_adv_pkt\n");
 
     btm_ble_process_adv_pkt(p);
 }

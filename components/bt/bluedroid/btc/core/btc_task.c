@@ -24,6 +24,8 @@
 #include "btc_gattc.h"
 #include "btc_gap_ble.h"
 #include "btc_blufi_prf.h"
+#include "bta_gatt_api.h"
+
 
 static xTaskHandle  xBtcTaskHandle = NULL;
 static xQueueHandle xBtcQueue = 0;
@@ -89,7 +91,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg)
 bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func)
 {
 		btc_msg_t lmsg;
-
+		tBTA_GATTC *temp = NULL, *temp2 = NULL;
 		if (msg == NULL) {
 				return BT_STATUS_PARM_INVALID;
 		}
@@ -103,6 +105,12 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 				return BT_STATUS_NOMEM;
 			}
 			memcpy(lmsg.arg, arg, arg_len);
+			temp = (tBTA_GATTC *)lmsg.arg;
+			temp2 = (tBTA_GATTC *)arg;
+			LOG_ERROR("###the temp status = %x, if = %x\n####\n",
+						temp->reg_oper.status,temp->reg_oper.client_if);
+			LOG_ERROR("###the arg status = %x, if = %x\n####\n",
+						temp2->reg_oper.status, temp2->reg_oper.client_if);
 			if (copy_func) {
 				copy_func(&lmsg, lmsg.arg, arg);
 			}
