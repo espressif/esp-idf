@@ -321,9 +321,9 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
             }
             if(pGPIOConfig->pull_up_en) {
                 pu_en = 1;
-                REG_SET_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
+                REG_SET_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pu);
             } else {
-                REG_CLR_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pd);
+                REG_CLR_BIT(gpio_pu_pd_desc[io_num].reg, gpio_pu_pd_desc[io_num].pu);
             }
             if(pGPIOConfig->pull_down_en) {
                 pd_en = 1;
