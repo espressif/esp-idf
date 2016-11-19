@@ -1425,7 +1425,7 @@ void tcp_pcb_num_cal(tcp_pcb_num_t *tcp_pcb_num)
         }
     }
 
-    for (pcb = tcp_listen_pcbs.listen_pcbs; pcb != NULL; pcb = pcb->next){
+    for (listen = tcp_listen_pcbs.listen_pcbs; listen != NULL; listen = listen->next){
         tcp_pcb_num->total ++;
         tcp_pcb_num->listen ++;
     }
