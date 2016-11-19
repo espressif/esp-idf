@@ -71,8 +71,8 @@ extern const struct memp_desc* const memp_pools[MEMP_MAX];
 #include "lwip/mem.h"
 
 #define memp_init()
-#define memp_malloc(type)     mem_malloc(memp_pools[type]->size)
-#define memp_free(type, mem)  mem_free(mem)
+#define memp_malloc(type)     mem_malloc(memp_pools[type]->size); ESP_CNT_MEM_MALLOC_INC(type)
+#define memp_free(type, mem)  mem_free(mem); ESP_CNT_MEM_FREE_INC(type)
 
 #define LWIP_MEMPOOL_DECLARE(name,num,size,desc) \
   const struct memp_desc memp_ ## name = { \
