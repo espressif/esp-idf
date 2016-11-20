@@ -1,7 +1,7 @@
 /*
- * MaiKe Labs (2016 - 2026)
+ * WiFi scan example
  *
- * Written by Jack Tan <jiankemeng@gmail.com>
+ * Written by Jack Tan of MaiKe Labs <jiankemeng@gmail.com>
  *
  * This example code is in the Public Domain (or CC0 licensed, at your option.)
  * Unless required by applicable law or agreed to in writing, this
@@ -30,7 +30,7 @@ void scan_ap_task(void *pvParameters)
 		printf("Scanned %d APs \r\n", n);
 		al = malloc(n * sizeof(wifi_ap_list_t));
 		if (al == NULL) {
-			return;
+			abort();
 		}
 		if (esp_wifi_get_ap_list(&n, al) == ESP_OK) {
 			for (uint16_t i = 0; i < n; i++) {
