@@ -69,7 +69,7 @@ void app_main()
 	nvs_flash_init();
 	system_init();
 	wifi_init();
-	printf("Welcome to Noduino Quantum\r\n");
+	printf("Welcome to esp-idf wifi_scan demo!\r\n");
 	printf("WiFi AP SSID Scanning... \r\n");
 	xTaskCreatePinnedToCore(&scan_ap_task, "scan_ap_task", 1024, NULL, 5,
 				NULL, 0);
