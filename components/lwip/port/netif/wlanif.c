@@ -126,8 +126,9 @@ low_level_output(struct netif *netif, struct pbuf *p)
         return ERR_IF;
     }
 
-    if(q->next !=NULL)
-    {
+    if(q->next == NULL) {
+        ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
+    } else {
         LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
         printf("low level_output: len=%d\n", p->tot_len);
         q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
@@ -136,10 +137,10 @@ low_level_output(struct netif *netif, struct pbuf *p)
         } else {
             return ERR_MEM;
         }
+        ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
+        pbuf_free(q);
     }
   
-    ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
-    pbuf_free(q);
     return ret; 
 }
 
