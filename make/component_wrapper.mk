@@ -204,7 +204,7 @@ embed_txt/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_tx
 # full path passed to OBJCOPY makes it into the name of the symbols in the .o file
 $(1).$(2).o: embed_$(2)/$$(notdir $(1)) | $$(dir $(1))
 	$(summary) EMBED $$@
-	cd embed_$(2); $(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) ../$$@
+	cd embed_$(2); $(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) $$(call resolvepath,$$@,../)
 
 CLEAN_FILES += embed_$(2)/$$(notdir $(1))
 endef
