@@ -121,12 +121,16 @@ static inline size_t bits_to_hardware_words(size_t num_bits)
 */
 static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, size_t num_words)
 {
-    for(size_t i = 0; i < mpi->n && i < num_words; i++) {
-        REG_WRITE(mem_base + i * 4, mpi->p[i]);
-    }
-    for(size_t i = mpi->n; i < num_words; i++) {
-        REG_WRITE(mem_base + i * 4, 0);
-    }
+    uint32_t *pbase = (uint32_t *)mem_base;
+    uint32_t copy_words = num_words < mpi->n ? num_words : mpi->n;
+
+    /* Copy MPI data to memory block registers */
+    memcpy(pbase, mpi->p, copy_words * 4);
+
+    /* Zero any remaining memory block data */
+    bzero(pbase + copy_words, (num_words - copy_words) * 4);
+
+    /* Note: not executing memw here, can do it before we start a bignum operation */
 }
 
 /* Read mbedTLS MPI bignum back from hardware memory block.
@@ -141,15 +145,16 @@ static inline int mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, int num_wo
 
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(x, num_words) );
 
-    for(int i = 0; i < num_words; i++) {
-        x->p[i] = REG_READ(mem_base + i * 4);
-    }
+    /* Copy data from memory block registers */
+    memcpy(x->p, (uint32_t *)mem_base, num_words * 4);
+
     /* Zero any remaining limbs in the bignum, if the buffer is bigger
        than num_words */
     for(size_t i = num_words; i < x->n; i++) {
         x->p[i] = 0;
     }
 
+    asm volatile ("memw");
  cleanup:
     return ret;
 }
@@ -217,6 +222,9 @@ static inline void execute_op(uint32_t op_reg)
 {
     /* Clear interrupt status */
     REG_WRITE(RSA_INTERRUPT_REG, 1);
+
+    /* Note: above REG_WRITE includes a memw, so we know any writes
+       to the memory blocks are also complete. */
 
     REG_WRITE(op_reg, 1);
 
