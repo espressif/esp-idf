@@ -21,56 +21,8 @@ extern "C"
 {
 #endif
 
-#define ESP_PARTITION_TABLE_ADDR 0x4000
+#define ESP_PARTITION_TABLE_ADDR 0x8000
 #define ESP_PARTITION_MAGIC 0x50AA
-
-/* SPI flash mode, used in esp_image_header_t */
-typedef enum {
-    ESP_IMAGE_SPI_MODE_QIO,
-    ESP_IMAGE_SPI_MODE_QOUT,
-    ESP_IMAGE_SPI_MODE_DIO,
-    ESP_IMAGE_SPI_MODE_DOUT,
-    ESP_IMAGE_SPI_MODE_FAST_READ,
-    ESP_IMAGE_SPI_MODE_SLOW_READ
-} esp_image_spi_mode_t;
-
-/* SPI flash clock frequency */
-enum {
-    ESP_IMAGE_SPI_SPEED_40M,
-    ESP_IMAGE_SPI_SPEED_26M,
-    ESP_IMAGE_SPI_SPEED_20M,
-    ESP_IMAGE_SPI_SPEED_80M = 0xF
-} esp_image_spi_freq_t;
-
-/* Supported SPI flash sizes */
-typedef enum {
-    ESP_IMAGE_FLASH_SIZE_1MB = 0,
-    ESP_IMAGE_FLASH_SIZE_2MB,
-    ESP_IMAGE_FLASH_SIZE_4MB,
-    ESP_IMAGE_FLASH_SIZE_8MB,
-    ESP_IMAGE_FLASH_SIZE_16MB,
-    ESP_IMAGE_FLASH_SIZE_MAX
-} esp_image_flash_size_t;
-
-/* Main header of binary image */
-typedef struct {
-    uint8_t magic;
-    uint8_t blocks;
-    uint8_t spi_mode;      /* flash read mode (esp_image_spi_mode_t as uint8_t) */
-    uint8_t spi_speed: 4;  /* flash frequency (esp_image_spi_freq_t as uint8_t) */
-    uint8_t spi_size: 4;   /* flash chip size (esp_image_flash_size_t as uint8_t) */
-    uint32_t entry_addr;
-    uint8_t encrypt_flag;    /* encrypt flag */
-    uint8_t secure_boot_flag; /* secure boot flag */
-    uint8_t extra_header[14]; /* ESP32 additional header, unused by second bootloader */
-}  esp_image_header_t;
-
-/* Header of binary image segment */
-typedef struct {
-    uint32_t load_addr;
-    uint32_t data_len;
-} esp_image_section_header_t;
-
 
 /* OTA selection structure (two copies in the OTA data partition.)
    Size of 32 bytes is friendly to flash encryption */

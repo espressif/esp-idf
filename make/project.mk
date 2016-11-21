@@ -10,14 +10,14 @@
 # where this file is located.
 #
 
-.PHONY: build-components menuconfig defconfig all build clean all_binaries
-all: all_binaries # other components will add dependencies to 'all_binaries'
-	@echo "To flash all build output, run 'make flash' or:"
-	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
-
-# (the reason all_binaries is used instead of 'all' is so that the flash target
-# can build everything without triggering the per-component "to flash..."
-# output targets.)
+.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules
+all: all_binaries
+# see below for recipe of 'all' target
+#
+# # other components will add dependencies to 'all_binaries'. The
+# reason all_binaries is used instead of 'all' is so that the flash
+# target can build everything without triggering the per-component "to
+# flash..." output targets.)
 
 help:
 	@echo "Welcome to Espressif IDF build system. Some useful make targets:"
@@ -36,104 +36,104 @@ help:
 	@echo "See also 'make bootloader', 'make bootloader-flash', 'make bootloader-clean', "
 	@echo "'make partition_table', etc, etc."
 
+# dependency checks
+ifndef MAKE_RESTARTS
+ifeq ("$(filter 4.% 3.81 3.82,$(MAKE_VERSION))","")
+$(warning "esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.")
+endif
+endif
+
 # disable built-in make rules, makes debugging saner
 MAKEFLAGS_OLD := $(MAKEFLAGS)
 MAKEFLAGS +=-rR
 
-# Figure out PROJECT_PATH if not set
-ifeq ("$(PROJECT_PATH)","")
-#The path to the project: we assume the Makefile including this file resides
-#in the root of that directory.
+# Default path to the project: we assume the Makefile including this file
+# is in the project directory
+ifndef PROJECT_PATH
 PROJECT_PATH := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 export PROJECT_PATH
 endif
 
-#The directory where we put all objects/libraries/binaries. The project Makefile can
-#configure this if needed.
+# A list of the "common" makefiles, to use as a target dependency
+COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/component_wrapper.mk)
+export COMMON_MAKEFILES
+
+# The directory where we put all objects/libraries/binaries. The project Makefile can
+# configure this if needed.
 BUILD_DIR_BASE ?= $(PROJECT_PATH)/build
 export BUILD_DIR_BASE
 
-#Component directories. These directories are searched for components.
-#The project Makefile can override these component dirs, or define extra component directories.
+# Component directories. These directories are searched for components.
+# The project Makefile can override these component dirs, or define extra component directories.
 COMPONENT_DIRS ?= $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components
 export COMPONENT_DIRS
 
-#The project Makefile can define a list of components, but if it does not do this we just take
-#all available components in the component dirs.
-ifeq ("$(COMPONENTS)","")
-#Find all component names. The component names are the same as the
-#directories they're in, so /bla/components/mycomponent/ -> mycomponent. We later use
-#the COMPONENT_DIRS bit to find back the component path.
+# Source directories of the project itself (a special, project-specific component.) Defaults to only "main".
+SRCDIRS ?= main
+
+# The project Makefile can define a list of components, but if it does not do this we just take
+# all available components in the component dirs.
+ifndef COMPONENTS
+# Find all component names. The component names are the same as the
+# directories they're in, so /bla/components/mycomponent/ -> mycomponent. We then use
+# COMPONENT_DIRS to build COMPONENT_PATHS with the full path to each component.
 COMPONENTS := $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/*))
 COMPONENTS := $(sort $(foreach comp,$(COMPONENTS),$(lastword $(subst /, ,$(comp)))))
 endif
 export COMPONENTS
 
-#Sources default to only "main"
-SRCDIRS ?= main
-
-#Here, we resolve and add all the components and source paths into absolute paths.
-#If a component exists in multiple COMPONENT_DIRS, we take the first match.
-#WARNING: These directories paths must be generated WITHOUT a trailing / so we
-#can use $(notdir x) to get the component name.
+# Resolve all of COMPONENTS into absolute paths in COMPONENT_PATHS.
+#
+# If a component name exists in multiple COMPONENT_DIRS, we take the first match.
+#
+# NOTE: These paths must be generated WITHOUT a trailing / so we
+# can use $(notdir x) to get the component name.
 COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)))))
 COMPONENT_PATHS += $(abspath $(SRCDIRS))
 
-#A component is buildable if it has a component.mk makefile; we assume that a
-# 'make -C $(component dir) -f component.mk build' results in a lib$(componentname).a
+# A component is buildable if it has a component.mk makefile in it
 COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
 
-# Assemble global list of include dirs (COMPONENT_INCLUDES), and
-# LDFLAGS args (COMPONENT_LDFLAGS) supplied by each component.
+# Initialise project-wide variables which can be added to by
+# each component.
+#
+# These variables are built up via the component_project_vars.mk
+# generated makefiles (one per component).
+#
+# See docs/build-system.rst for more details.
 COMPONENT_INCLUDES :=
 COMPONENT_LDFLAGS :=
-#
-# Also add any inter-component dependencies for each component.
+COMPONENT_SUBMODULES :=
 
-# Extract a variable from a child make process
+# COMPONENT_PROJECT_VARS is the list of component_project_vars.mk generated makefiles
+# for each component.
 #
-# $(1) - path to directory to invoke make in
-# $(2) - name of variable to print via the get_variable target (passed in GET_VARIABLE)
+# Including $(COMPONENT_PROJECT_VARS) builds the COMPONENT_INCLUDES,
+# COMPONENT_LDFLAGS variables and also targets for any inter-component
+# dependencies.
 #
-# needs 'sed' processing of stdout because make sometimes echoes other stuff on stdout,
-# even if asked not to.
-#
-# Debugging this? Replace $(shell with $(error and you'll see the full command as-run.
-define GetVariable
-$(shell "$(MAKE)" -s --no-print-directory -C $(1) -f component.mk get_variable PROJECT_PATH=$(PROJECT_PATH) GET_VARIABLE=$(2) | sed -En "s/^$(2)=(.+)/\1/p" )
-endef
+# See the component_project_vars.mk target in component_wrapper.mk
+COMPONENT_PROJECT_VARS := $(addsuffix /component_project_vars.mk,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
+COMPONENT_PROJECT_VARS := $(addprefix $(BUILD_DIR_BASE)/,$(COMPONENT_PROJECT_VARS))
+# this line is -include instead of include to prevent a spurious error message on make 3.81
+-include $(COMPONENT_PROJECT_VARS)
 
-COMPONENT_INCLUDES := $(abspath $(foreach comp,$(COMPONENT_PATHS_BUILDABLE),$(addprefix $(comp)/, \
-	$(call GetVariable,$(comp),COMPONENT_ADD_INCLUDEDIRS))))
-
-#Also add project include path, for sdk includes
+# Also add top-level project include path, for top-level includes
 COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
+
 export COMPONENT_INCLUDES
 
-#COMPONENT_LDFLAGS has a list of all flags that are needed to link the components together. It's collected
-#in the same way as COMPONENT_INCLUDES is.
-COMPONENT_LDFLAGS := $(foreach comp,$(COMPONENT_PATHS_BUILDABLE), \
-	$(call GetVariable,$(comp),COMPONENT_ADD_LDFLAGS))
-export COMPONENT_LDFLAGS
+# Set variables common to both project & component
+include $(IDF_PATH)/make/common.mk
 
-# Generate component dependency targets from dependencies lists
-# each component gains a target of its own <name>-build with dependencies
-# of the names of any other components (-build) that need building first
-#
-# the actual targets (that invoke submakes) are generated below by
-# GenerateComponentTarget macro.
-define GenerateComponentDependencies
-# $(1) = component path
-.PHONY: $$(notdir $(1))
-$$(notdir $(1))-build: $(addsuffix -build,$(call GetVariable,$(1),COMPONENT_DEPENDS))
-endef
-$(foreach comp,$(COMPONENT_PATHS_BUILDABLE), $(eval $(call GenerateComponentDependencies,$(comp))))
-
-#Make sure submakes can also use this.
-export PROJECT_PATH
-
-#Include functionality common to both project & component
--include $(IDF_PATH)/make/common.mk
+all:
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+	@echo "To flash app & partition table, run 'make flash' or:"
+else
+	@echo "To flash all build output, run 'make flash' or:"
+endif
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 # Set default LDFLAGS
 
@@ -142,6 +142,7 @@ LDFLAGS ?= -nostdlib \
 	-L$(IDF_PATH)/ld \
 	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(SRCDIRS)) \
 	-u call_user_start_cpu0	\
+	$(EXTRA_LDFLAGS) \
 	-Wl,--gc-sections	\
 	-Wl,-static	\
 	-Wl,--start-group	\
@@ -160,14 +161,16 @@ LDFLAGS ?= -nostdlib \
 
 # CPPFLAGS used by C preprocessor
 # If any flags are defined in application Makefile, add them at the end. 
-CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS)
+CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
-COMMON_WARNING_FLAGS = -Wall -Werror \
+COMMON_WARNING_FLAGS = -Wall -Werror=all \
 	-Wno-error=unused-function \
 	-Wno-error=unused-but-set-variable \
 	-Wno-error=unused-variable \
-	-Wno-error=deprecated-declarations
+	-Wno-error=deprecated-declarations \
+	-Wextra \
+	-Wno-unused-parameter -Wno-sign-compare
 
 # Flags which control code generation and dependency generation, both for C and C++
 COMMON_FLAGS = \
@@ -194,8 +197,9 @@ CFLAGS := $(strip \
 	-std=gnu99 \
 	$(OPTIMIZATION_FLAGS) \
 	$(COMMON_FLAGS) \
-	$(COMMON_WARNING_FLAGS) \
-	$(CFLAGS))
+	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration \
+	$(CFLAGS) \
+	$(EXTRA_CFLAGS))
 
 # List of flags to pass to C++ compiler
 # If any flags are defined in application Makefile, add them at the end.
@@ -206,19 +210,20 @@ CXXFLAGS := $(strip \
 	$(OPTIMIZATION_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
-	$(CXXFLAGS))
+	$(CXXFLAGS) \
+	$(EXTRA_CXXFLAGS))
 
 export CFLAGS CPPFLAGS CXXFLAGS
 
-#Set host compiler and binutils
+# Set host compiler and binutils
 HOSTCC := $(CC)
 HOSTLD := $(LD)
 HOSTAR := $(AR)
 HOSTOBJCOPY := $(OBJCOPY)
 export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY
 
-#Set target compiler. Defaults to whatever the user has
-#configured as prefix + yer olde gcc commands
+# Set target compiler. Defaults to whatever the user has
+# configured as prefix + ye olde gcc commands
 CC := $(call dequote,$(CONFIG_TOOLPREFIX))gcc
 CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
 LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
@@ -242,8 +247,12 @@ COMPONENT_PATH := $(1)
 endef
 $(foreach componentpath,$(COMPONENT_PATHS),$(eval $(call includeProjBuildMakefile,$(componentpath))))
 
-# once we know component paths, we can include the config
+# once we know component paths, we can include the config generation targets
+#
+# (bootloader build doesn't need this, config is exported from top-level)
+ifndef IS_BOOTLOADER_BUILD
 include $(IDF_PATH)/make/project_config.mk
+endif
 
 # A "component" library is any library in the LDFLAGS where
 # the name of the library is also a name of the component
@@ -254,7 +263,7 @@ COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)),$(APP_LIBR
 # the rules to build these are emitted as part of GenerateComponentTarget below
 $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a)
 	$(summary) LD $(notdir $@)
-	$(Q) $(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
+	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
 # Generation of $(APP_BIN) from $(APP_ELF) is added by the esptool
 # component's Makefile.projbuild
@@ -267,36 +276,89 @@ all_binaries: $(APP_BIN)
 $(BUILD_DIR_BASE):
 	mkdir -p $(BUILD_DIR_BASE)
 
-define GenerateComponentPhonyTarget
-# $(1) - path to component dir
-# $(2) - target to generate (build, clean)
-.PHONY: $(notdir $(1))-$(2)
-$(notdir $(1))-$(2): | $(BUILD_DIR_BASE)/$(notdir $(1))
-	$(Q) +$(MAKE) -C $(BUILD_DIR_BASE)/$(notdir $(1)) -f $(1)/component.mk COMPONENT_BUILD_DIR=$(BUILD_DIR_BASE)/$(notdir $(1)) $(2)
+# Macro for the recursive sub-make for each component
+# $(1) - component directory
+# $(2) - component name only
+#
+# Is recursively expanded by the GenerateComponentTargets macro
+define ComponentMake
++$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(IDF_PATH)/make/component_wrapper.mk COMPONENT_MAKEFILE=$(1)/component.mk
 endef
 
-define GenerateComponentTargets
+# Generate top-level component-specific targets for each component
 # $(1) - path to component dir
-$(BUILD_DIR_BASE)/$(notdir $(1)):
-	@mkdir -p $(BUILD_DIR_BASE)/$(notdir $(1))
+# $(2) - name of component
+#
+define GenerateComponentTargets
+.PHONY: $(2)-build $(2)-clean
 
-# tell make it can build any component's library by invoking the recursive -build target
+$(2)-build: check-submodules
+	$(call ComponentMake,$(1),$(2)) build
+
+$(2)-clean:
+	$(call ComponentMake,$(1),$(2)) clean
+
+$(BUILD_DIR_BASE)/$(2):
+	@mkdir -p $(BUILD_DIR_BASE)/$(2)
+
+# tell make it can build any component's library by invoking the -build target
 # (this target exists for all components even ones which don't build libraries, but it's
 # only invoked for the targets whose libraries appear in COMPONENT_LIBRARIES and hence the
 # APP_ELF dependencies.)
-$(BUILD_DIR_BASE)/$(notdir $(1))/lib$(notdir $(1)).a: $(notdir $(1))-build
+$(BUILD_DIR_BASE)/$(2)/lib$(2).a: $(2)-build
 	$(details) "Target '$$^' responsible for '$$@'" # echo which build target built this file
+
+# add a target to generate the component_project_vars.mk files that
+# are used to inject variables into project make pass (see matching
+# component_project_vars.mk target in component_wrapper.mk).
+#
+# If any component_project_vars.mk file is out of date, the make
+# process will call this target to rebuild it and then restart.
+#
+# Note: $(SDKCONFIG) is a normal prereq as we need to rebuild these
+# files whenever the config changes. $(SDKCONFIG_MAKEFILE) is an
+# order-only prereq because if it hasn't been rebuilt, we need to
+# build it first - but including it as a normal prereq can lead to
+# infinite restarts as the conf process will keep updating it.
+$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG) | $(BUILD_DIR_BASE)/$(2) $(SDKCONFIG_MAKEFILE)
+	$(call ComponentMake,$(1),$(2)) component_project_vars.mk
 endef
 
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTargets,$(component))))
-
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),build)))
-$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentPhonyTarget,$(component),clean)))
+$(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTargets,$(component),$(notdir $(component)))))
 
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)
-	$(Q) rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
+	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
-clean: app-clean
+# NB: this ordering is deliberate (app-clean before config-clean),
+# so config remains valid during all component clean targets
+config-clean: app-clean
+clean: config-clean
 
+# phony target to check if any git submodule listed in COMPONENT_SUBMODULES are missing
+# or out of date, and exit if so. Components can add paths to this variable.
+#
+# This only works for components inside IDF_PATH
+check-submodules:
 
+# Generate a target to check this submodule
+# $(1) - submodule directory, relative to IDF_PATH
+define GenerateSubmoduleCheckTarget
+check-submodules: $(IDF_PATH)/$(1)/.git
+$(IDF_PATH)/$(1)/.git:
+	@echo "WARNING: Missing submodule $(1)..."
+	[ -d ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
+	[ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule init $(1)' in esp-idf root directory."; exit 1)
+	@echo "Attempting 'git submodule update --init $(1)' in esp-idf root directory..."
+	cd ${IDF_PATH} && git submodule update --init $(1)
+
+# Parse 'git submodule status' output for out-of-date submodule.
+# Status output prefixes status line with '+' if the submodule commit doesn't match
+ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(1) | grep '^+')","")
+$$(info WARNING: git submodule $(1) may be out of date. Run 'git submodule update' to update.)
+endif
+endef
+
+# filter/subst in expression ensures all submodule paths begin with $(IDF_PATH), and then strips that prefix
+# so the argument is suitable for use with 'git submodule' commands
+$(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))

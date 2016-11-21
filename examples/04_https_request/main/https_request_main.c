@@ -74,8 +74,18 @@ static const char *REQUEST = "GET " WEB_URL " HTTP/1.1\n"
     "User-Agent: esp-idf/1.0 esp32\n"
     "\n";
 
-/* Root cert for howsmyssl.com, found in cert.c */
-extern const char *server_root_cert;
+/* Root cert for howsmyssl.com, taken from server_root_cert.pem
+
+   The PEM file was extracted from the output of this command:
+   openssl s_client -showcerts -connect www.howsmyssl.com:443 </dev/null
+
+   The CA root cert is the last cert given in the chain of certs.
+
+   To embed it in the app binary, the PEM file is named
+   in the component.mk COMPONENT_EMBED_TXTFILES variable.
+*/
+extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
+extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
 
 #ifdef MBEDTLS_DEBUG_C
 
@@ -191,7 +201,9 @@ static void https_get_task(void *pvParameters)
 
     ESP_LOGI(TAG, "Loading the CA root certificate...");
 
-    ret = mbedtls_x509_crt_parse(&cacert, (uint8_t*)server_root_cert, strlen(server_root_cert)+1);
+    ret = mbedtls_x509_crt_parse(&cacert, server_root_cert_pem_start,
+                                 server_root_cert_pem_end-server_root_cert_pem_start);
+
     if(ret < 0)
     {
         ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
@@ -357,7 +369,6 @@ static void https_get_task(void *pvParameters)
 void app_main()
 {
     nvs_flash_init();
-    system_init();
     initialise_wifi();
     xTaskCreate(&https_get_task, "https_get_task", 8192, NULL, 5, NULL);
 }

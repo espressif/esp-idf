@@ -47,6 +47,8 @@ public:
 
     esp_err_t init(uint32_t baseSector, uint32_t sectorCount);
 
+    bool isValid() const;
+
     esp_err_t createOrOpenNamespace(const char* nsName, bool canCreate, uint8_t& nsIndex);
 
     esp_err_t writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize);

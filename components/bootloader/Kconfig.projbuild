@@ -20,12 +20,99 @@ config LOG_BOOTLOADER_LEVEL_VERBOSE
 endchoice
 
 config LOG_BOOTLOADER_LEVEL
-	int
-	default 0 if LOG_BOOTLOADER_LEVEL_NONE
-	default 1 if LOG_BOOTLOADER_LEVEL_ERROR
-	default 2 if LOG_BOOTLOADER_LEVEL_WARN
-	default 3 if LOG_BOOTLOADER_LEVEL_INFO
-	default 4 if LOG_BOOTLOADER_LEVEL_DEBUG
-	default 5 if LOG_BOOTLOADER_LEVEL_VERBOSE
+    int
+    default 0 if LOG_BOOTLOADER_LEVEL_NONE
+    default 1 if LOG_BOOTLOADER_LEVEL_ERROR
+    default 2 if LOG_BOOTLOADER_LEVEL_WARN
+    default 3 if LOG_BOOTLOADER_LEVEL_INFO
+    default 4 if LOG_BOOTLOADER_LEVEL_DEBUG
+    default 5 if LOG_BOOTLOADER_LEVEL_VERBOSE
+
+endmenu
+
+
+
+menu "Secure boot configuration"
+
+choice SECURE_BOOTLOADER
+    bool "Secure bootloader"
+    default SECURE_BOOTLOADER_DISABLED
+    help
+        Build a bootloader with the secure boot flag enabled.
+
+        Secure bootloader can be one-time-flash (chip will only ever
+        boot that particular bootloader), or a digest key can be used
+        to allow the secure bootloader to be re-flashed with
+        modifications. Secure boot also permanently disables JTAG.
+
+        See docs/security/secure-boot.rst for details.
+
+config SECURE_BOOTLOADER_DISABLED
+       bool "Disabled"
+
+config SECURE_BOOTLOADER_ONE_TIME_FLASH
+       bool "One-time flash"
+       help
+           On first boot, the bootloader will generate a key which is not readable externally or by software. A digest is generated from the bootloader image itself. This digest will be verified on each subsequent boot.
+
+           Enabling this option means that the bootloader cannot be changed after the first time it is booted.
+
+config SECURE_BOOTLOADER_REFLASHABLE
+    bool "Reflashable"
+    help
+        Generate a reusable secure bootloader key, derived (via SHA-256) from the secure boot signing key.
+
+		This allows the secure bootloader to be re-flashed by anyone with access to the secure boot signing key.
+
+        This option is less secure than one-time flash, because a leak of the digest key from one device allows reflashing of any device that uses it.
+
+endchoice
+
+config SECURE_BOOT_SIGNING_KEY
+     string "Secure boot signing key"
+	 depends on SECURE_BOOTLOADER_ENABLED
+	 default secure_boot_signing_key.pem
+     help
+        Path to the key file used to sign partition tables and app images for secure boot.
+
+        Key file is an ECDSA private key (NIST256p curve) in PEM format.
+
+        Path is evaluated relative to the project directory.
+
+        You can generate a new signing key by running the following command:
+        espsecure.py generate_signing_key secure_boot_signing_key.pem
+
+        See docs/security/secure-boot.rst for details.
+
+config SECURE_BOOT_DISABLE_JTAG
+       bool "First boot: Permanently disable JTAG"
+       depends on SECURE_BOOTLOADER_ENABLED
+       default Y
+       help
+          Bootloader permanently disable JTAG (across entire chip) when enabling secure boot. This happens on first boot of the bootloader.
+
+          It is recommended this option remains set for production environments.
+
+config SECURE_BOOT_DISABLE_ROM_BASIC
+       bool "First boot: Permanently disable ROM BASIC fallback"
+       depends on SECURE_BOOTLOADER_ENABLED
+       default Y
+       help
+          Bootloader permanently disables ROM BASIC (on UART console) as a fallback if the bootloader image becomes invalid. This happens on first boot.
+
+          It is recommended this option remains set in production environments.
+
+config SECURE_BOOT_TEST_MODE
+       bool "Test mode: don't actually enable secure boot"
+       depends on SECURE_BOOTLOADER_ENABLED
+       default N
+       help
+          If this option is set, all permanent secure boot changes (via Efuse) are disabled.
+
+          This option is for testing purposes only - it effectively completely disables secure boot protection.
+
+config SECURE_BOOTLOADER_ENABLED
+    bool
+    default SECURE_BOOTLOADER_ONE_TIME_FLASH || SECURE_BOOTLOADER_REFLASHABLE
 
 endmenu

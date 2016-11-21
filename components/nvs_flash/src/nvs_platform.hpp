@@ -16,9 +16,6 @@
 
 
 #ifdef ESP_PLATFORM
-#define NVS_DEBUGV(...) ets_printf(__VA_ARGS__)
-
-#include "rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
@@ -30,19 +27,23 @@ class Lock
 public:
     Lock()
     {
-        assert(mSemaphore);
-        xSemaphoreTake(mSemaphore, portMAX_DELAY);
+        if (mSemaphore) {
+            xSemaphoreTake(mSemaphore, portMAX_DELAY);
+        }
     }
 
     ~Lock()
     {
-        assert(mSemaphore);
-        xSemaphoreGive(mSemaphore);
+        if (mSemaphore) {
+            xSemaphoreGive(mSemaphore);
+        }
     }
 
     static esp_err_t init()
     {
-        assert(mSemaphore == nullptr);
+        if (mSemaphore) {
+            return ESP_OK;
+        }
         mSemaphore = xSemaphoreCreateMutex();
         if (!mSemaphore) {
             return ESP_ERR_NO_MEM;
@@ -52,7 +53,9 @@ public:
 
     static void uninit()
     {
-        vSemaphoreDelete(mSemaphore);
+        if (mSemaphore) {
+            vSemaphoreDelete(mSemaphore);
+        }
         mSemaphore = nullptr;
     }
 

@@ -476,6 +476,7 @@ to its original value when it is released. */
 #if configUSE_TICK_HOOK > 0
 	extern void vApplicationTickHook( void );
 #endif
+extern void esp_vApplicationTickHook( void );
 
 #if  portFIRST_TASK_HOOK
 	extern void vPortFirstTaskHook(TaskFunction_t taskfn);
@@ -2360,22 +2361,21 @@ BaseType_t xSwitchRequired = pdFALSE;
 		  We can't really calculate what we need, that's done on core 0... just assume we need a switch.
 		  ToDo: Make this more intelligent? -- JD
 		*/
-		//We do need the tick hook to satisfy the int watchdog.
-		#if ( configUSE_TICK_HOOK == 1 )
 		{
 			/* Guard against the tick hook being called when the pended tick
 			count is being unwound (when the scheduler is being unlocked). */
 			if( ( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE ) || uxPendedTicks == ( UBaseType_t ) 0U )
 			{
+				#if ( configUSE_TICK_HOOK == 1 )
 				vApplicationTickHook();
+				#endif /* configUSE_TICK_HOOK */
+				esp_vApplicationTickHook();
 			}
 			else
 			{
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
-		#endif /* configUSE_TICK_HOOK */
-
 
 		return pdTRUE;
 	}
@@ -2506,20 +2506,21 @@ BaseType_t xSwitchRequired = pdFALSE;
 		}
 		#endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
 
-		#if ( configUSE_TICK_HOOK == 1 )
 		{
 			/* Guard against the tick hook being called when the pended tick
 			count is being unwound (when the scheduler is being unlocked). */
 			if( uxPendedTicks == ( UBaseType_t ) 0U )
 			{
+				#if ( configUSE_TICK_HOOK == 1 )
 				vApplicationTickHook();
+				#endif /* configUSE_TICK_HOOK */
+				esp_vApplicationTickHook();
 			}
 			else
 			{
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
-		#endif /* configUSE_TICK_HOOK */
 		taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 	}
 	else
@@ -2533,6 +2534,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 			vApplicationTickHook();
 		}
 		#endif
+		esp_vApplicationTickHook();
 	}
 
 	#if ( configUSE_PREEMPTION == 1 )
@@ -2702,7 +2704,7 @@ void vTaskSwitchContext( void )
 		taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 		
 		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE, resetListHead;
-		unsigned portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
+		portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
 		unsigned portBASE_TYPE holdTop=pdFALSE;
 		
 		/*
@@ -2715,8 +2717,6 @@ void vTaskSwitchContext( void )
 		
 		while ( ableToSchedule == pdFALSE && uxDynamicTopReady >= 0 )
 		{
-			configASSERT( uxTopReadyPriority>=0 );
-			configASSERT( uxDynamicTopReady>=0 );
 			resetListHead = pdFALSE;
 			// Nothing to do for empty lists
 			if (!listLIST_IS_EMPTY( &( pxReadyTasksLists[ uxDynamicTopReady ] ) )) {
@@ -3270,6 +3270,12 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 			vApplicationIdleHook();
 		}
 		#endif /* configUSE_IDLE_HOOK */
+		{
+			/* Call the esp-idf hook system */
+			extern void esp_vApplicationIdleHook( void );
+			esp_vApplicationIdleHook();
+		}
+
 
 		/* This conditional compilation should use inequality to 0, not equality
 		to 1.  This is to ensure portSUPPRESS_TICKS_AND_SLEEP() is called when

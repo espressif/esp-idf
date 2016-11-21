@@ -42,9 +42,6 @@ This uses the TIMERG0 WDT.
   * @brief  Initialize the task watchdog. This is called in the init code, if the
   *         task watchdog is enabled in menuconfig.
   *
-  * @param  null
-  *
-  * @return null
   */
 void esp_task_wdt_init();
 
@@ -52,9 +49,6 @@ void esp_task_wdt_init();
   * @brief  Feed the watchdog. After the first feeding session, the watchdog will expect the calling
   *         task to keep feeding the watchdog until task_wdt_delete() is called.
   *
-  * @param  null
-  *
-  * @return null
   */
 
 void esp_task_wdt_feed();
@@ -63,9 +57,6 @@ void esp_task_wdt_feed();
 /**
   * @brief  Delete the watchdog for the current task.
   *
-  * @param  null
-  *
-  * @return null
   */
 void esp_task_wdt_delete();
 
