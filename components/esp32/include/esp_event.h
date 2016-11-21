@@ -44,6 +44,7 @@ typedef enum {
     SYSTEM_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
     SYSTEM_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
     SYSTEM_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
+    SYSTEM_EVENT_AP_STA_GOT_IP6,           /**< ESP32 station or ap interface v6IP addr is preferred */
     SYSTEM_EVENT_MAX
 } system_event_id_t;
 
@@ -79,7 +80,11 @@ typedef struct {
 
 typedef struct {
     uint8_t pin_code[8];         /**< PIN code of station in enrollee mode */
-}system_event_sta_wps_er_pin_t;
+} system_event_sta_wps_er_pin_t;
+
+typedef struct {
+    tcpip_adapter_ip6_info_t ip6_info;
+} system_event_ap_sta_got_ip6_t;
 
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
@@ -106,6 +111,7 @@ typedef union {
     system_event_ap_staconnected_t             sta_connected;      /**< a station connected to ESP32 soft-AP */
     system_event_ap_stadisconnected_t          sta_disconnected;   /**< a station disconnected to ESP32 soft-AP */
     system_event_ap_probe_req_rx_t             ap_probereqrecved;  /**< ESP32 soft-AP receive probe request packet */
+    system_event_ap_sta_got_ip6_t              got_ip6;            /**< ESP32 station or ap ipv6 addr state change to preferred */
 } system_event_info_t;
 
 typedef struct {
