@@ -40,6 +40,34 @@ int uuidType(unsigned char* p_uuid)
     return LEN_UUID_128;
 }
 
+int btc128_to_bta_uuid(tBT_UUID *p_dest, uint8_t *p_src)
+{
+	int i = 0;
+
+	p_dest->len = uuidType(p_src);
+
+	switch (p_dest->len)
+	{
+		case LEN_UUID_16:
+			p_dest->uu.uuid16 = (p_src[13] << 8) + p_src[12];
+			break;
+
+		case LEN_UUID_32:
+			p_dest->uu.uuid32  = (p_src[13] <<  8) + p_src[12];
+			p_dest->uu.uuid32 += (p_src[15] << 24) + (p_src[14] << 16);
+			break;
+
+		case LEN_UUID_128:
+			for(i = 0; i != 16; ++i)
+				p_dest->uu.uuid128[i] = p_src[i];
+			break;
+
+		default:
+			LOG_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_dest->len);
+			break;
+																																						    }
+}
+
 /*******************************************************************************
  * BTC -> BTA conversion functions
  *******************************************************************************/

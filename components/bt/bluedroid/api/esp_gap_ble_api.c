@@ -36,6 +36,10 @@ esp_err_t esp_ble_gap_config_adv_data(esp_ble_adv_data_t *adv_data)
 		return ESP_ERR_INVALID_ARG;
 	}
 
+	if (adv_data->service_uuid_len & 0xf) { //not 16*n
+		return ESP_ERR_INVALID_ARG;
+	}
+
 	msg.sig = BTC_SIG_API_CALL;
 	msg.pid = BTC_PID_GAP_BLE;
 	msg.act = BTC_GAP_BLE_ACT_CFG_ADV_DATA;

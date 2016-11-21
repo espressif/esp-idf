@@ -39,8 +39,12 @@
 
 #define TEST_MANUFACTURER_DATA_LEN	17
 static uint16_t test_service_uuid = GATTS_SERVICE_UUID_TEST;
-static uint8_t test_service_uuid128[16] = {	0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-											0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static uint8_t test_service_uuid128[32] = {
+		/* LSB <--------------------------------------------------------------------------------> MSB */
+		//first uuid, 16bit, [12],[13] is the value
+		0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xAB, 0xCD, 0x00, 0x00,
+		//second uuid, 32bit, [12], [13], [14], [15] is the value
+		0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xAB, 0xCD, 0xAB, 0xCD,};
 
 static uint8_t test_manufacturer[TEST_MANUFACTURER_DATA_LEN] =  {0x12, 0x23, 0x45, 0x56};
 static esp_ble_adv_data_t test_adv_data = {
@@ -49,14 +53,14 @@ static esp_ble_adv_data_t test_adv_data = {
 	.include_txpower = true,
 	.min_interval = 0x20,
 	.max_interval = 0x40,
-	.appearance = 0x0,
-	.manufacturer_len = 0,			//TEST_MANUFACTURER_DATA_LEN,
-	.p_manufacturer_data = NULL,	// &test_manufacturer[0],
+	.appearance = 0x00,
+	.manufacturer_len = 0, //TEST_MANUFACTURER_DATA_LEN,
+	.p_manufacturer_data =  NULL, //&test_manufacturer[0],
 	.service_data_len = 0,
 	.p_service_data = NULL,
-	.service_uuid_len = 2,
+	.service_uuid_len = 32,
 	.p_service_uuid = test_service_uuid128,
-	.flag = 0,
+	.flag = 0x2,
 };
 
 static esp_ble_adv_params_t test_adv_params = {

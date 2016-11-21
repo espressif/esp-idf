@@ -19,6 +19,7 @@
 #include "btc_task.h"
 #include "btc_manage.h"
 #include "btc_gap_ble.h"
+#include "btc_gatt_util.h"
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 
@@ -204,20 +205,18 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
         {
              tBT_UUID bt_uuid;
 
-             memcpy(&bt_uuid.uu, p_adv_data->p_service_uuid + position, LEN_UUID_128);
-			 bt_uuid.len = p_adv_data->service_uuid_len;
+			 btc128_to_bta_uuid(&bt_uuid, p_adv_data->p_service_uuid + position);
+
              switch(bt_uuid.len)
              {
                 case (LEN_UUID_16):
                 {
                   if (NULL == bta_adv_data->p_services)
                   {
-                      bta_adv_data->p_services =
-                                                          GKI_getbuf(sizeof(tBTA_BLE_SERVICE));
+                      bta_adv_data->p_services = GKI_getbuf(sizeof(tBTA_BLE_SERVICE));
                       bta_adv_data->p_services->list_cmpl = FALSE;
                       bta_adv_data->p_services->num_service = 0;
-                      bta_adv_data->p_services->p_uuid =
-                              GKI_getbuf(p_adv_data->service_uuid_len / LEN_UUID_128 * LEN_UUID_16);
+                      bta_adv_data->p_services->p_uuid = GKI_getbuf(p_adv_data->service_uuid_len / LEN_UUID_128 * LEN_UUID_16);
                       p_uuid_out16 = bta_adv_data->p_services->p_uuid;
                   }
 
@@ -246,7 +245,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
 
                    if (NULL != bta_adv_data->p_service_32b->p_uuid)
                    {
-                      LOG_DEBUG("%s - In 32-UUID_data", __FUNCTION__);
+                      LOG_ERROR("%s - In 32-UUID_data", __FUNCTION__);
                       mask |= BTM_BLE_AD_BIT_SERVICE_32;
                       ++bta_adv_data->p_service_32b->num_service;
                       *p_uuid_out32++ = bt_uuid.uu.uuid32;
@@ -263,7 +262,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                                                           GKI_getbuf(sizeof(tBTA_BLE_128SERVICE));
                       if (NULL != bta_adv_data->p_services_128b)
                       {
-                         LOG_DEBUG("%s - In 128-UUID_data", __FUNCTION__);
+                         LOG_ERROR("%s - In 128-UUID_data", __FUNCTION__);
                          mask |= BTM_BLE_AD_BIT_SERVICE_128;
                          memcpy(bta_adv_data->p_services_128b->uuid128,
                                                          bt_uuid.uu.uuid128, LEN_UUID_128);
