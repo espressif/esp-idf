@@ -285,7 +285,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 		param.create.service_handle = p_data->create.service_id;
 		param.create.service_id.is_primary = p_data->create.is_primary;
 		param.create.service_id.id.inst_id = p_data->create.svc_instance;
-		memcpy(&param.create.service_id.id.uuid, &p_data->create.uuid, sizeof(esp_bt_uuid_t));
+		bta_to_btc_uuid(&param.create.service_id.id.uuid, &p_data->create.uuid);
 		BTC_GATTS_CB_TO_APP(ESP_GATTS_CREATE_EVT, &param);
 		break;
 	case BTA_GATTS_ADD_INCL_SRVC_EVT:
@@ -301,7 +301,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 		param.add_char.gatt_if = p_data->add_result.server_if;
 		param.add_char.attr_handle = p_data->add_result.attr_id;
 		param.add_char.service_handle = p_data->add_result.service_id;
-		memcpy(&param.add_char.char_uuid, &p_data->add_result.char_uuid, sizeof(esp_bt_uuid_t));
+		bta_to_btc_uuid(&param.add_char.char_uuid, &p_data->add_result.char_uuid);
 
 		BTC_GATTS_CB_TO_APP(ESP_GATTS_ADD_CHAR_EVT, &param);
 		break;
@@ -310,7 +310,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 		param.add_char_descr.gatt_if = p_data->add_result.server_if;
 		param.add_char_descr.attr_handle = p_data->add_result.attr_id;
 		param.add_char_descr.service_handle = p_data->add_result.service_id;
-		memcpy(&param.add_char_descr.char_uuid, &p_data->add_result.char_uuid, sizeof(esp_bt_uuid_t));
+		bta_to_btc_uuid(&param.add_char_descr.char_uuid, &p_data->add_result.char_uuid);
 
 		BTC_GATTS_CB_TO_APP(ESP_GATTS_ADD_CHAR_DESCR_EVT, &param);
 		break;

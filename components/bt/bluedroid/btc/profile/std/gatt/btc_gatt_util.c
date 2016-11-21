@@ -100,9 +100,13 @@ void bta_to_btc_srvc_id(esp_gatt_srvc_id_t *p_dest, tBTA_GATT_SRVC_ID *p_src)
 	bta_to_btc_gatt_id(&p_dest->id, &p_src->id);
 }
 
-void btc_to_bta_response(tBTA_GATTS_RSP *rsp_struct, esp_gatt_rsp_t *p_rsp)
+void btc_to_bta_response(tBTA_GATTS_RSP *p_dest, esp_gatt_rsp_t *p_src)
 {
-	memcpy(rsp_struct, p_rsp, sizeof(esp_gatt_rsp_t));
+    p_dest->attr_value.auth_req = p_src->attr_value.auth_req;
+    p_dest->attr_value.handle   = p_src->attr_value.handle;
+    p_dest->attr_value.len      = p_src->attr_value.len;
+    p_dest->attr_value.offset   = p_src->attr_value.offset;
+    memcpy(p_dest->attr_value.value, p_src->attr_value.value, ESP_GATT_MAX_ATTR_LEN);
 }
 
 uint16_t get_uuid16(tBT_UUID *p_uuid)
