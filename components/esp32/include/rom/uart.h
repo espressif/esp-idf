@@ -161,6 +161,14 @@ typedef struct {
     int              received;
 } UartDevice;
 
+typedef enum {
+    OK = 0,
+    FAIL,
+    PENDING,
+    BUSY,
+    CANCEL,
+} STATUS;
+
 /**
   * @brief Init uart device struct value and reset uart0/uart1 rx.
   *        Please do not call this function in SDK.
