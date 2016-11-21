@@ -80,6 +80,9 @@ typedef enum {
     RMT_CARRIER_LEVEL_MAX
 } rmt_carrier_level_t;
 
+/**
+ * @brief Data struct of RMT TX configure parameters
+ */
 typedef struct {
     bool loop_en;                         /*!< RMT loop output mode*/
     uint32_t carrier_freq_hz;             /*!< RMT carrier frequency */
@@ -90,12 +93,18 @@ typedef struct {
     bool idle_output_en;                  /*!< RMT idle level output enable*/
 }rmt_tx_config_t;
 
+/**
+ * @brief Data struct of RMT RX configure parameters
+ */
 typedef struct {
     bool filter_en;                    /*!< RMT receiver filer enable*/
     uint8_t filter_ticks_thresh;       /*!< RMT filter tick  number */
     uint16_t idle_threshold;           /*!< RMT RX idle threshold */
 }rmt_rx_config_t;
 
+/**
+ * @brief Data struct of RMT configure parameters
+ */
 typedef struct {
     rmt_mode_t rmt_mode;               /*!< RMT mode: transmitter or receiver */
     rmt_channel_t channel;             /*!< RMT channel */
