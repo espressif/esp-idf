@@ -1394,6 +1394,7 @@ typedef struct {
     u8_t closing;
     u8_t fin_wait2;
     u8_t last_ack;
+    u8_t fin_wait1;
     u8_t listen;
     u8_t bound;
     u8_t total;
@@ -1422,6 +1423,8 @@ void tcp_pcb_num_cal(tcp_pcb_num_t *tcp_pcb_num)
             tcp_pcb_num->last_ack ++;
         } else if (pcb->state == CLOSING) {
             tcp_pcb_num->closing ++;
+        } else if (pcb->state == FIN_WAIT_1){
+            tcp_pcb_num->fin_wait1 ++;
         }
     }
 
@@ -1463,7 +1466,9 @@ tcp_alloc(u8_t prio)
         } else if (tcp_pcb_num.closing > 0){
             tcp_kill_state(CLOSING);
         } else if (tcp_pcb_num.fin_wait2 > 0){
-            tcp_kill_state(FIN_WAIT_2);//TODO check whether we have issue here?????
+            tcp_kill_state(FIN_WAIT_2);
+        } else if (tcp_pcb_num.fin_wait1 > 0){
+            tcp_kill_state(FIN_WAIT_1);
         } else {
             tcp_kill_prio(prio);
         }
@@ -1471,9 +1476,9 @@ tcp_alloc(u8_t prio)
 
     tcp_pcb_num_cal(&tcp_pcb_num);
     if (tcp_pcb_num.total >= MEMP_NUM_TCP_PCB){
-        LWIP_DEBUGF(TCP_DEBUG, ("tcp_alloc: no available tcp pcb %d %d %d %d %d %d %d\n",
+        LWIP_DEBUGF(TCP_DEBUG, ("tcp_alloc: no available tcp pcb %d %d %d %d %d %d %d %d\n",
            tcp_pcb_num.total, tcp_pcb_num.time_wait, tcp_pcb_num.last_ack, tcp_pcb_num.closing,
-           tcp_pcb_num.fin_wait2, tcp_pcb_num.listen, tcp_pcb_num.bound));
+           tcp_pcb_num.fin_wait2, tcp_pcb_num.fin_wait1, tcp_pcb_num.listen, tcp_pcb_num.bound));
         return NULL;
     }
 
