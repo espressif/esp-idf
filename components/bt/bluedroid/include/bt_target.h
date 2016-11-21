@@ -795,7 +795,7 @@
  * resolution, local address rotation etc.
  */
 #ifndef BLE_PRIVACY_SPT
-#define BLE_PRIVACY_SPT         		FALSE	///TRUE
+#define BLE_PRIVACY_SPT         TRUE
 #endif
 
 /*
