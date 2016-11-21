@@ -28,7 +28,7 @@
 #include "bt_target.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
-#include "esp_gatt_api.h"
+#include "esp_gatts_api.h"
 
 #define DIS_SUCCESS             GATT_SUCCESS
 #define DIS_ILLEGAL_PARAM       GATT_ILLEGAL_PARAMETER

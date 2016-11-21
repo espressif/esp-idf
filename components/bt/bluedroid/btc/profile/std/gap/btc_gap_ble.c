@@ -14,6 +14,7 @@
 
 #include <string.h>
 
+#include "bt_types.h"
 #include "bta_api.h"
 #include "btc_task.h"
 #include "btc_manage.h"
@@ -428,7 +429,6 @@ void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params)
 			ble_adv_params->adv_filter_policy,
 		 	&peer_addr);
 
-
 	/*set connectable,discoverable, pairable and paired only modes of local device*/
 	BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 }
@@ -474,12 +474,11 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
 {
 	esp_ble_gap_cb_param_t param;
 	btc_msg_t msg;
-    uint8_t len;
-
+    	
 	msg.sig = BTC_SIG_API_CB;
 	msg.pid = BTC_PID_GAP_BLE;
 	msg.act = ESP_GAP_BLE_SCAN_RESULT_EVT;
-
+	
 	param.scan_rst.search_evt = event;
     switch (event) {
 	case BTA_DM_INQ_RES_EVT: {
@@ -488,15 +487,32 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
 		param.scan_rst.rssi = p_data->inq_res.rssi;
 		param.scan_rst.ble_addr_type = p_data->inq_res.ble_addr_type;
 		param.scan_rst.flag = p_data->inq_res.flag;
+		memcpy(param.scan_rst.ble_adv, p_data->inq_res.p_eir, 
+				ESP_BLE_ADV_DATA_LEN_MAX);
 		break;
 	}
 	case BTA_DM_INQ_CMPL_EVT: {
 		param.scan_rst.num_resps = p_data->inq_cmpl.num_resps;
-		LOG_ERROR("%s  BLE observe complete. Num Resp %d", __FUNCTION__,p_data->inq_cmpl.num_resps);
+		LOG_ERROR("%s  BLE observe complete. Num Resp %d\n", __FUNCTION__,p_data->inq_cmpl.num_resps);
 		break;
 	}
+	case BTA_DM_DISC_RES_EVT:
+		LOG_ERROR("BTA_DM_DISC_RES_EVT\n");
+		break;
+	case BTA_DM_DISC_BLE_RES_EVT:
+		LOG_ERROR("BTA_DM_DISC_BLE_RES_EVT\n");
+		break;
+	case BTA_DM_DISC_CMPL_EVT:
+		LOG_ERROR("BTA_DM_DISC_CMPL_EVT\n");
+		break;
+	case BTA_DM_DI_DISC_CMPL_EVT:
+		LOG_ERROR("BTA_DM_DI_DISC_CMPL_EVT\n");
+		break;
+	case BTA_DM_SEARCH_CANCEL_CMPL_EVT:
+		LOG_ERROR("BTA_DM_SEARCH_CANCEL_CMPL_EVT\n");
+		break;
 	default:
-        LOG_ERROR("%s : Unknown event 0x%x", __FUNCTION__, event);
+        	LOG_ERROR("%s : Unknown event 0x%x\n", __FUNCTION__, event);
         return;
     }
     btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL);
@@ -512,6 +528,12 @@ static void btc_ble_start_scanning(uint8_t duration, tBTA_DM_SEARCH_CBACK *resul
 	}else{
 		LOG_ERROR("The scan duration or p_results_cb invalid\n");
 	}
+}
+
+static void btc_ble_stop_scanning(void)
+{
+	uint8_t duration = 0;
+	BTA_DmBleObserve(false, duration, NULL);	
 }
 
 
@@ -663,6 +685,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
 		btc_ble_start_scanning(arg->duration, btc_search_callback);
 		break;
 	case BTC_GAP_BLE_ACT_STOP_SCAN:
+		btc_ble_stop_scanning();
 		break;
 	case BTC_GAP_BLE_ACT_START_ADV:
 		btc_ble_start_advertising(&arg->adv_params);

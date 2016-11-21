@@ -191,10 +191,10 @@ void bta_gattc_register(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data)
     tBTA_GATT_STATUS         status = BTA_GATT_NO_RESOURCES;
 
 
-    APPL_TRACE_DEBUG("bta_gattc_register state %d",p_cb->state);
+    APPL_TRACE_DEBUG("bta_gattc_register state %d\n",p_cb->state);
     memset(&cb_data, 0, sizeof(cb_data));
     cb_data.reg_oper.status = BTA_GATT_NO_RESOURCES;
-
+  
      /* check if  GATTC module is already enabled . Else enable */
      if (p_cb->state == BTA_GATTC_STATE_DISABLED)
      {
@@ -207,7 +207,7 @@ void bta_gattc_register(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data)
         {
             if ((p_app_uuid == NULL) || (p_cb->cl_rcb[i].client_if = GATT_Register(p_app_uuid, &bta_gattc_cl_cback)) == 0)
             {
-                APPL_TRACE_ERROR("Register with GATT stack failed.");
+                APPL_TRACE_ERROR("Register with GATT stack failed.\n");
                 status = BTA_GATT_ERROR;
             }
             else
@@ -223,7 +223,7 @@ void bta_gattc_register(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data)
                 {
                     p_buf->hdr.event    = BTA_GATTC_INT_START_IF_EVT;
                     p_buf->client_if    = p_cb->cl_rcb[i].client_if;
-
+			APPL_TRACE_DEBUG("GATTC getbuf sucess.\n");
                     bta_sys_sendmsg(p_buf);
                     status = BTA_GATT_OK;
                 }
@@ -243,8 +243,7 @@ void bta_gattc_register(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data)
     if (p_data->api_reg.p_cback)
     {
         if (p_app_uuid != NULL)
-            memcpy(&(cb_data.reg_oper.app_uuid),p_app_uuid,sizeof(tBT_UUID));
-
+        memcpy(&(cb_data.reg_oper.app_uuid),p_app_uuid,sizeof(tBT_UUID));
         cb_data.reg_oper.status = status;
         (*p_data->api_reg.p_cback)(BTA_GATTC_REG_EVT,  (tBTA_GATTC *)&cb_data);
     }

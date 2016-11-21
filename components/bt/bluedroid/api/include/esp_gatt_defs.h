@@ -115,6 +115,7 @@ typedef enum {
 } esp_gatt_char_prop_t;
 
 #define ESP_GATT_MAX_ATTR_LEN	600 //as same as GATT_MAX_ATTR_LEN
+
 typedef struct {
     uint8_t           value[ESP_GATT_MAX_ATTR_LEN];
     uint16_t          handle;

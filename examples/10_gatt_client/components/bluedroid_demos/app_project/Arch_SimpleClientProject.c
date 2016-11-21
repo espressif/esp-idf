@@ -24,27 +24,48 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
-
-#include "bta_api.h"
-#include "bta_gatt_api.h"
 #include "controller.h"
                
 #include "bt_trace.h"
-#include "btm_api.h"
 #include "bt_types.h"
-#include "gattc_profile.h"
+#include "btm_api.h"
+#include "bta_api.h"
+#include "bta_gatt_api.h"
+#include "esp_gap_ble_api.h"
+#include "esp_gattc_api.h"
+#include "esp_bt_main.h"
+
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
-tBTA_GATTC_IF client_if;
+esp_gatt_if_t client_if;
+esp_gatt_status_t status = ESP_GATT_ERROR;
+BOOLEAN connet = FALSE;
 BD_ADDR obj_addr;
+uint16_t simpleClient_id = 0xEE;
+char device_name[] = "Heart Rate";
 static unsigned char BASE_UUID[16] = {
     0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
     0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
+
+static esp_ble_scan_params_t ble_scan_params =
+{
+	.scan_type 			= BLE_SCAN_TYPE_ACTIVE,
+	.own_addr_type		= ESP_PUBLIC_ADDR,
+	.scan_filter_policy		= BLE_SCAN_FILTER_ALLOW_ALL,
+	.scan_interval			= 0x50,
+	.scan_window			= 0x30
+};
+
+
+static void esp_scan_result_cb(uint32_t event, void *scan_param);
+
+static void esp_gattc_result_cb(uint32_t event, void *gattc_param);
+
                   
-int uuidType(unsigned char* p_uuid)
+int arch_uuidType(unsigned char* p_uuid)
 {
     int i = 0;
     int match = 0;
@@ -76,7 +97,7 @@ static void btif_to_bta_uuid(tBT_UUID *p_dest, bt_uuid_t *p_src)
    
     int i = 0;
             
-    p_dest->len = uuidType(p_src->uu);
+    p_dest->len = arch_uuidType(p_src->uu);
                   
     switch (p_dest->len)
     {
@@ -99,6 +120,102 @@ static void btif_to_bta_uuid(tBT_UUID *p_dest, bt_uuid_t *p_src)
         break;
     }
 }
+
+static void esp_scan_result_cb(uint32_t event, void *param)
+{
+	uint8_t *adv_name = NULL;
+	uint8_t adv_name_len = 0;
+	switch(event)
+	{
+		case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
+		{
+			//the unit of the duration is second
+			uint32_t duration = 10;
+			esp_ble_gap_start_scanning(duration);
+			break;
+		}
+		case ESP_GAP_BLE_SCAN_RESULT_EVT:
+		{
+			esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
+			switch(scan_result->scan_rst.search_evt)
+			{
+ 				case ESP_GAP_SEARCH_INQ_RES_EVT:
+					for (int i = 0; i < 6; i++)
+					{
+						LOG_ERROR("%x:", scan_result->scan_rst.bda[i]);
+					}
+					LOG_ERROR("\n");
+					adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, 
+											ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
+					LOG_ERROR("adv_name_len=%x\n",adv_name_len);
+					for(int j = 0; j < adv_name_len; j++)
+					{
+						LOG_ERROR("%c",adv_name[j]);
+					}
+					LOG_ERROR("\n");
+					for(int j = 0; j < adv_name_len; j++)
+					{
+						LOG_ERROR("%c",device_name[j]);
+					}
+					LOG_ERROR("\n");
+					
+					if (adv_name != NULL)
+					{
+						if(strcmp(adv_name, device_name) == 0)
+						{
+							LOG_ERROR("the name eque to Heart Rate.\n");
+							if (status ==  ESP_GATT_OK && connet == FALSE)
+							{
+								connet = TRUE;
+								LOG_ERROR("Connet to the remote device.\n");
+								esp_ble_gap_stop_scanning();
+								esp_ble_gattc_open(client_if, scan_result->scan_rst.bda, TRUE);
+							}
+						}
+					}
+					break;
+				case ESP_GAP_SEARCH_INQ_CMPL_EVT:
+					break;
+				default:
+					break;
+			//		LOG_ERROR("ESP_GAP_SEARCH_DISC_BLE_RES_EVT\n");
+			//	break;
+			}
+			break;
+		}
+		//case :
+		// 	break;
+		default:
+			break;
+	}
+}
+
+
+static void esp_gattc_result_cb(uint32_t event, void *gattc_param)
+{
+	uint16_t conidx = 0;
+	esp_ble_gattc_cb_param_t *gattc_data = (esp_ble_gattc_cb_param_t *)gattc_param;
+	LOG_ERROR("esp_gattc_result_cb, event = %x\n", event);
+	switch (event)
+	{
+		case ESP_GATTC_REG_EVT:
+			status = gattc_data->reg.status;
+			client_if = gattc_data->reg.gatt_if;
+			LOG_ERROR("status = %x, client_if = %x\n", status, client_if);
+			break;
+		case ESP_GATTC_OPEN_EVT: 
+			conidx = gattc_data->open.conn_id;
+			LOG_ERROR("conidx = %x, if = %x\n",conidx, gattc_data->open.gatt_if);
+			esp_ble_gattc_search_service(conidx, NULL);
+			LOG_ERROR("ESP_GATTC_OPEN_EVT\n");
+			break;
+		default:
+		break;
+	}
+}
+
+
+
 /*
 uint16_t get_uuid16(tBT_UUID* p_uuid)
 {
@@ -142,33 +259,7 @@ void bta_le_fill_16bits_char_id(UINT8 inst_id, UINT16 char_uuid, tBTA_GATT_ID* p
     bta_le_fill_16bits_gatt_id(inst_id, char_uuid, p_output);
 }
 */
-/*get remote name*/
-static bool check_remote_name(tBTA_DM_INQ_RES* result, uint8_t* rmt_name, uint8_t* rmt_name_len)
-{
-    uint8_t *p_rmt_name = NULL;
-    uint8_t remote_name_len = 0;
-    
-    if (result->p_eir) {
-        p_rmt_name = BTM_CheckEirData(result->p_eir,
-            BTM_EIR_COMPLETE_LOCAL_NAME_TYPE,
-            &remote_name_len);
-        if (!p_rmt_name)
-            p_rmt_name = BTM_CheckEirData(result->p_eir,
-                BTM_EIR_SHORTENED_LOCAL_NAME_TYPE,
-                &remote_name_len);
-        if (p_rmt_name) {
-            if (remote_name_len > BD_NAME_LEN)
-                remote_name_len = BD_NAME_LEN;
-            if (rmt_name && rmt_name_len) {
-                memcpy(rmt_name, p_rmt_name, remote_name_len);
-                *(rmt_name + remote_name_len) = 0;
-                *rmt_name_len = remote_name_len;
-                }
-            return true;
-        }
-    }
-    return false;
-}
+
 
 /************************************************************************************
 * * Function        bta_scan_recult_callback
@@ -177,6 +268,8 @@ static bool check_remote_name(tBTA_DM_INQ_RES* result, uint8_t* rmt_name, uint8_
 * *
 * * Return          NULL
 **************************************************************************************/
+
+#if 0
 static void bta_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data)
 {
     uint8_t len;
@@ -233,7 +326,9 @@ static void bta_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p
         LOG_ERROR("%s : unknown event 0x%x", __FUNCTION__, event);
     }
 }
-
+	
+#endif		///if 0
+	
 /************************************************************************************
 * * Function        bta_scan_param_setup_cback
 * *
@@ -241,13 +336,14 @@ static void bta_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p
 * *
 * * Return          NULL
 **************************************************************************************/
+/*
 static void bta_scan_param_setup_cback(tGATT_IF c_client_if, tBTM_STATUS status)
 {
     client_if = c_client_if;
     LOG_ERROR("\nset scan params complete: status=%d, client_if=%d\n", status, client_if);
-    /*start scan*/
+    
     BTA_DmBleObserve(true, 8, bta_scan_result_callback);
-}
+}*/
 
 /************************************************************************************
 * * Function        bta_gattc_callback
@@ -256,6 +352,7 @@ static void bta_scan_param_setup_cback(tGATT_IF c_client_if, tBTM_STATUS status)
 * *
 * * Return          NULL
 **************************************************************************************/
+#if 0
 static void bta_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data)
 {
     switch (event)
@@ -292,75 +389,16 @@ static void bta_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data)
             /*read battery level*/
             int conn_id = p_data->open.conn_id;
 
-            /*discover service*/
-      //      BTA_GATTC_ServiceSearchRequest(conn_id, NULL);
-
         }
         break;
-/*
-        case BTA_GATTC_SEARCH_RES_EVT:
-        {
-           // tBTA_GATTC_SRVC_RES service_result;
-            LOG_ERROR("find the service,uuid=0x%x, is_primary=%d\n",
-                get_uuid16(&p_data->srvc_res.service_uuid.id.uuid), 
-                p_data->srvc_res.service_uuid.is_primary);
-        }
-        break;
-
-        case BTA_GATTC_SEARCH_CMPL_EVT:
-        {
-            LOG_ERROR("search service complete, conn_id=%d,status=%d\n", p_data->search_cmpl.conn_id,
-                p_data->search_cmpl.status);
-
-            //get first characteristic of battey service
-            LOG_ERROR("get first characteristic of battery service\n");
-            tBTA_GATT_STATUS    status;
-            tBTA_GATT_SRVC_ID   battery_srvc_id;
-            tBTA_GATTC_CHAR_ID  out_char_id;
-            tGATT_CHAR_PROP     out_char_prop;
-            bta_le_fill_16bits_srvc_id(TRUE, 0, UUID_SERVCLASS_BATTERY, &battery_srvc_id);
-            status = BTA_GATTC_GetFirstChar(p_data->search_cmpl.conn_id, &battery_srvc_id, NULL, 
-                &out_char_id, &out_char_prop);
-            if(status == 0)
-            {
-                LOG_ERROR("the first char:srvc_id=0x%x,char_id=0x%x, property = %d\n", 
-                    get_uuid16(&out_char_id.srvc_id.id.uuid), get_uuid16(&out_char_id.char_id.uuid),
-                    out_char_prop);
-                //read battery level
-                tBTA_GATTC_CHAR_ID battery_char_id;
-                bta_le_fill_16bits_srvc_id(TRUE, 0, UUID_SERVCLASS_BATTERY, &battery_char_id.srvc_id);
-                bta_le_fill_16bits_char_id(0, GATT_UUID_BATTERY_LEVEL, &battery_char_id.char_id);
-            
-                BTA_GATTC_ReadCharacteristic(p_data->search_cmpl.conn_id, &battery_char_id, 
-                    BTA_GATT_AUTH_REQ_NONE); 
-            }
-        }
-        break;
-
-        case BTA_GATTC_READ_CHAR_EVT:
-        {
-            
-            LOG_ERROR("\nread characteristic:connect_id=%d, status=%d\n", 
-                p_data->read.conn_id, p_data->read.status);
-            LOG_ERROR("srvc_id=0x%x,char_id=0x%x,descr_type=0x%x\n", 
-                get_uuid16(&p_data->read.srvc_id.id.uuid), 
-                get_uuid16(&p_data->read.char_id.uuid), 
-                get_uuid16(&p_data->read.descr_type.uuid));
-            if(get_uuid16(&p_data->read.descr_type.uuid) != GATT_UUID_CHAR_AGG_FORMAT
-                && p_data->read.p_value->unformat.len > 0
-                && p_data->read.p_value->unformat.p_value != NULL)
-            {
-                LOG_ERROR("read the value: len=%d, value=%d\n", p_data->read.p_value->unformat.len,
-                    *(p_data->read.p_value->unformat.p_value));
-            }
-        }
-        break;
-*/
+		
         default:
         LOG_ERROR("%s:unknown event: %d\n", __FUNCTION__, event);
     }
 
 }
+
+#endif	
 
 /************************************************************************************
 * * Function        ble_client_appRegister
@@ -376,18 +414,34 @@ void ble_client_appRegister(void)
     tBT_UUID t_uuid;
     memcpy(&uuid, BASE_UUID, sizeof(bt_uuid_t));
     btif_to_bta_uuid(&t_uuid, &uuid);
-
+    esp_err_t status;
     LOG_ERROR("register application\n");
-    BTA_GATTC_AppRegister(&t_uuid, bta_gattc_callback);
+    //BTA_GATTC_AppRegister(&t_uuid, bta_gattc_callback);
 
-    /*battery service register*/
-//    bac_register();
+    //register the scan callback function to the gap moudule
+    if((status = esp_ble_gap_register_callback(esp_scan_result_cb)) == ESP_OK){
+		esp_ble_gap_set_scan_params(&ble_scan_params);
+	}else{
+		LOG_ERROR("gap register error, error code = %x\n",status);	
+	}	
+
+   //register the callback function to the gattc module
+   if ((status = esp_ble_gattc_register_callback(esp_gattc_result_cb)) != ESP_OK){
+	LOG_ERROR("gattc register error, error code = %x\n",status);		
+   }else{
+	esp_ble_gattc_app_register(simpleClient_id);
+   }	
+
+
+
+   
 
 }
 
 void gattc_client_test(void)
 {
     BTM_SetTraceLevel(BT_TRACE_LEVEL_DEBUG);
-
+    esp_init_bluetooth();
+    esp_enable_bluetooth();
     ble_client_appRegister();
 }

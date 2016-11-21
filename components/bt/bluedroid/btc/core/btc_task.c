@@ -24,6 +24,8 @@
 #include "btc_gattc.h"
 #include "btc_gap_ble.h"
 #include "btc_blufi_prf.h"
+#include "bta_gatt_api.h"
+
 
 static xTaskHandle  xBtcTaskHandle = NULL;
 static xQueueHandle xBtcQueue = 0;

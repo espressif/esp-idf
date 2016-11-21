@@ -54,8 +54,8 @@ static void btc_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GATTC;
     msg.act = (uint8_t) event;
-
-    ret = btc_transfer_context(&msg, &p_data, sizeof(tBTA_GATTC), btc_gattc_copy_req_data);
+    LOG_ERROR("the gattc event = %x\n",event);	
+    ret = btc_transfer_context(&msg, p_data, sizeof(tBTA_GATTC), btc_gattc_copy_req_data);
 
 	if (ret)
 		LOG_ERROR("%s transfer failed\n", __func__);
@@ -425,7 +425,7 @@ void btc_gattc_call_handler(btc_msg_t *msg)
         btc_gattc_unreg_for_notify(arg);
         break;
     default:
-        LOG_ERROR("%s: Unhandled event (%d)!", __FUNCTION__, msg->act);
+        LOG_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
 	break;
 	
     }
@@ -436,7 +436,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     tBTA_GATTC *arg = (tBTA_GATTC *)(msg->arg);
     esp_ble_gattc_cb_param_t param;
 
-	memset(&param, 0, sizeof(esp_ble_gattc_cb_param_t));
+    memset(&param, 0, sizeof(esp_ble_gattc_cb_param_t));
 
 	switch (msg->act) {
 		case BTA_GATTC_REG_EVT: {
