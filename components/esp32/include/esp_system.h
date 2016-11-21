@@ -54,7 +54,7 @@ void esp_restart(void) __attribute__ ((noreturn));
   * Function has been renamed to esp_restart.
   * This name will be removed in a future release.
   */
-void system_restart(void) __attribute((deprecated, noreturn));
+void system_restart(void) __attribute__ ((deprecated, noreturn));
 
 /**
   * @brief  Get system time, unit: microsecond.
@@ -73,7 +73,6 @@ uint32_t system_get_time(void)  __attribute__ ((deprecated));
   * @return Available heap size, in bytes.
   */
 uint32_t esp_get_free_heap_size(void);
-
 
 /**
   * @brief  Get the size of available heap.
@@ -103,7 +102,7 @@ uint32_t esp_random(void);
   *
   * @return ESP_OK on success
   */
-esp_err_t esp_efuse_read_mac(uint8_t mac[6]);
+esp_err_t esp_efuse_read_mac(uint8_t* mac);
 
 /**
   * @brief  Read hardware MAC address.
@@ -115,6 +114,16 @@ esp_err_t esp_efuse_read_mac(uint8_t mac[6]);
   * @return ESP_OK on success
   */
 esp_err_t system_efuse_read_mac(uint8_t mac[6]) __attribute__ ((deprecated));
+
+/**
+ * Get SDK version
+ *
+ * This function is deprecated and will be removed in a future release.
+ *
+ * @return constant string "master"
+ */
+const char* system_get_sdk_version(void)  __attribute__ ((deprecated));
+
 
 
 #ifdef __cplusplus

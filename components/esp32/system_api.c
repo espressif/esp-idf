@@ -32,7 +32,11 @@
 
 static const char* TAG = "system_api";
 
-esp_err_t system_efuse_read_mac(uint8_t mac[6])
+void system_init()
+{
+}
+
+esp_err_t esp_efuse_read_mac(uint8_t* mac)
 {
     uint8_t efuse_crc;
     uint8_t calc_crc;
@@ -64,8 +68,10 @@ esp_err_t system_efuse_read_mac(uint8_t mac[6])
     return ESP_OK;
 }
 
+esp_err_t system_efuse_read_mac(uint8_t mac[6]) __attribute__((alias("esp_efuse_read_mac")));
 
-void IRAM_ATTR system_restart(void)
+
+void IRAM_ATTR esp_restart(void)
 {
     esp_wifi_stop();
 
@@ -130,66 +136,19 @@ void IRAM_ATTR system_restart(void)
     }
 }
 
+void system_restart(void) __attribute__((alias("esp_restart")));
+
 void system_restore(void)
 {
     esp_wifi_restore();
 }
 
-#if 0
-void system_deep_sleep_instant(uint64_t time_in_us)
-{
-    u32 period, cycle_h, cycle_l;
-
-    {
-        struct rst_info debug_data;
-        memset(&debug_data, 0, sizeof(struct rst_info));
-
-        WRITE_PERI_REG(RTC_STORE0, DEEP_SLEEP_AWAKE_FLAG);
-        debug_data.flag = DEEP_SLEEP_AWAKE_FLAG;
-
-        system_write_rtc_mem(0, &debug_data, sizeof(struct rst_info));
-    }
-    
-    rtc_set_cpu_freq(XTAL_AUTO, CPU_XTAL);
-    esp_set_deep_sleep_wake_stub(esp_wake_deep_sleep);
-
-    period = rtc_slowck_cali(CALI_RTC_MUX, 128, XTAL_AUTO);
-    rtc_usec2rtc(time_in_us >> 32, time_in_us, period, &cycle_h, &cycle_l);
-
-    rtc_slp_prep_lite(1, 0);
-    rtc_sleep(cycle_h, cycle_l, TIMER_EXPIRE_EN, 0);
-}
-
-static uint64_t deep_sleep_time;
-
-static void system_deep_sleep_step2(void)
-{
-    system_deep_sleep_instant(deep_sleep_time);
-}
-
-void system_deep_sleep(uint64 time_in_us)
-{
-    wifi_set_sleep_flag(1);
-
-    deep_sleep_time = time_in_us;
-
-    os_timer_disarm(&sta_con_timer);
-    os_timer_setfn(&sta_con_timer, (os_timer_func_t *)system_deep_sleep_step2, NULL);
-    os_timer_arm(&sta_con_timer, 100, 0);
-}
-
-#endif
-
-uint32_t system_get_free_heap_size(void)
+uint32_t esp_get_free_heap_size(void)
 {
     return xPortGetFreeHeapSize();
 }
 
-
-struct rst_info *system_get_rst_info(void)
-{
-    return NULL;
-}
+uint32_t system_get_free_heap_size(void) __attribute__((alias("esp_get_free_heap_size")));
 
 const char* system_get_sdk_version(void)
 {

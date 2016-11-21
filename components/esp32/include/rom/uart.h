@@ -17,6 +17,7 @@
 
 #include "esp_types.h"
 #include "esp_attr.h"
+#include "ets_sys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -160,14 +161,6 @@ typedef struct {
     RcvMsgState      rcv_state;
     int              received;
 } UartDevice;
-
-typedef enum {
-    OK = 0,
-    FAIL,
-    PENDING,
-    BUSY,
-    CANCEL,
-} STATUS;
 
 /**
   * @brief Init uart device struct value and reset uart0/uart1 rx.
