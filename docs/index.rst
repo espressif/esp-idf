@@ -98,6 +98,7 @@ Contents:
    api/gpio
    api/uart
    api/ledc
+   api/rmt
    SPI Flash and Partition APIs <api/spi_flash>
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>

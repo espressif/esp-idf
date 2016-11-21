@@ -40,6 +40,8 @@
             <xsl:text>.. doxygenstruct:: </xsl:text>
             <xsl:value-of select="."/>
             <xsl:text>&#xA;</xsl:text>
+            <xsl:text>    :members:&#xA;</xsl:text>
+            <xsl:text>&#xA;</xsl:text>
         </xsl:for-each>
         <xsl:text>&#xA;</xsl:text>
 
