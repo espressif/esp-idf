@@ -152,6 +152,7 @@ void IRAM_ATTR call_start_cpu1()
 
 void start_cpu0_default(void)
 {
+    esp_setup_syscall_table();
 //Enable trace memory and immediately start trace.
 #if CONFIG_MEMMAP_TRACEMEM
 #if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
@@ -172,7 +173,6 @@ void start_cpu0_default(void)
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
-    esp_setup_syscall_table();
     esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
