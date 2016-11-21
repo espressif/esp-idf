@@ -20,7 +20,7 @@ extern "C" {
   * @return  0: succeed
             -1: fail
   */
-esp_err_t esp_wifi_station_set_wpa2_enterprise_auth(int enable);
+esp_err_t esp_wifi_sta_set_wpa2_enterprise_auth(int enable);
 
 /**
   * @brief  Set username for PEAP/TTLS method.
@@ -32,7 +32,7 @@ esp_err_t esp_wifi_station_set_wpa2_enterprise_auth(int enable);
   *         -1: fail(len <= 0 or len >= 128)
   *         -2: fail(internal memory malloc fail)
   */
-esp_err_t esp_wifi_station_set_enterprise_username(unsigned char *username, int len);
+esp_err_t esp_wifi_sta_set_enterprise_username(unsigned char *username, int len);
 
 /**
   * @brief  Set password for PEAP/TTLS method..
@@ -44,7 +44,7 @@ esp_err_t esp_wifi_station_set_enterprise_username(unsigned char *username, int 
   *         -1: fail(len <= 0)
   *         -2: fail(internal memory malloc fail)
   */
-esp_err_t esp_wifi_station_set_enterprise_password(unsigned char *password, int len);
+esp_err_t esp_wifi_sta_set_enterprise_password(unsigned char *password, int len);
 
 /**
   * @brief  Set CA certificate for PEAP/TTLS method.
@@ -54,7 +54,7 @@ esp_err_t esp_wifi_station_set_enterprise_password(unsigned char *password, int 
   *
   * @return 0: succeed
   */
-esp_err_t esp_wifi_station_set_enterprise_ca_cert(unsigned char *ca_cert, int len);
+esp_err_t esp_wifi_sta_set_enterprise_ca_cert(unsigned char *ca_cert, int len);
 
 /**
   * @brief  Clear username for PEAP/TTLS method.
@@ -63,7 +63,7 @@ esp_err_t esp_wifi_station_set_enterprise_ca_cert(unsigned char *ca_cert, int le
   *
   * @return  null
   */
-void esp_wifi_station_clear_enterprise_username(void);
+void esp_wifi_sta_clear_enterprise_username(void);
 
 /**
   * @brief  Clear password for PEAP/TTLS method..
@@ -72,7 +72,7 @@ void esp_wifi_station_clear_enterprise_username(void);
   *
   * @return  null
   */
-void esp_wifi_station_clear_enterprise_password(void);
+void esp_wifi_sta_clear_enterprise_password(void);
 
 /**
   * @brief  Clear CA certificate for PEAP/TTLS method.
@@ -81,7 +81,7 @@ void esp_wifi_station_clear_enterprise_password(void);
   *
   * @return  null
   */
-void esp_wifi_station_clear_enterprise_ca_cert(void);
+void esp_wifi_sta_clear_enterprise_ca_cert(void);
 
 /**
   * @brief  Set client certificate and key.
@@ -95,7 +95,7 @@ void esp_wifi_station_clear_enterprise_ca_cert(void);
   *
   * @return 0: succeed
   */
-esp_err_t esp_wifi_station_set_enterprise_cert_key(unsigned char *client_cert, int client_cert_len, unsigned char *private_key, int private_key_len, unsigned char *private_key_passwd, int private_key_passwd_len);
+esp_err_t esp_wifi_sta_set_enterprise_cert_key(unsigned char *client_cert, int client_cert_len, unsigned char *private_key, int private_key_len, unsigned char *private_key_passwd, int private_key_passwd_len);
 
 /**
   * @brief  Clear client certificate and key.
@@ -104,7 +104,7 @@ esp_err_t esp_wifi_station_set_enterprise_cert_key(unsigned char *client_cert, i
   *
   * @return  null
   */
-void esp_wifi_station_clear_enterprise_cert_key(void);
+void esp_wifi_sta_clear_enterprise_cert_key(void);
 
 #ifdef __cplusplus
 }
