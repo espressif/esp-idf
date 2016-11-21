@@ -230,7 +230,7 @@ const tBTM_APPL_INFO bta_security =
 
 };
 
-#define MAX_DISC_RAW_DATA_BUF       (4096)
+#define MAX_DISC_RAW_DATA_BUF       (1024)
 UINT8 g_disc_raw_data_buf[MAX_DISC_RAW_DATA_BUF];
 
 extern DEV_CLASS local_device_default_class;

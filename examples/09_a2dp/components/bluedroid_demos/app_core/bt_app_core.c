@@ -134,7 +134,7 @@ void bt_app_task_start_up(void)
     //ke_event_callback_set(KE_EVENT_BT_APP_TASK, &bt_app_task_handler);
 
     xBtAppQueue = xQueueCreate(3, sizeof(void *));
-    xTaskCreate(bt_app_task_handler, "BtaApp1T", 8192, NULL, configMAX_PRIORITIES - 3, xBtAppTaskHandle);
+    xTaskCreate(bt_app_task_handler, "BtaApp1T", 2048, NULL, configMAX_PRIORITIES - 3, xBtAppTaskHandle);
 
     fixed_queue_register_dequeue(bt_app_msg_queue, bta_app_msg_ready);
 

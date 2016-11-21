@@ -403,7 +403,7 @@
 
 /* Includes SCO if TRUE */
 #ifndef BTM_SCO_INCLUDED
-#define BTM_SCO_INCLUDED            TRUE       /* TRUE includes SCO code */
+#define BTM_SCO_INCLUDED            FALSE       /* TRUE includes SCO code */
 #endif
 
 /* Includes SCO if TRUE */
@@ -480,7 +480,7 @@
 
 /* The number of SCO links. */
 #ifndef BTM_MAX_SCO_LINKS
-#define BTM_MAX_SCO_LINKS           3
+#define BTM_MAX_SCO_LINKS           1
 #endif
 
 /* The preferred type of SCO links (2-eSCO, 0-SCO). */
@@ -490,7 +490,7 @@
 
 /* The number of security records for peer devices. 100 AS Default*/
 #ifndef BTM_SEC_MAX_DEVICE_RECORDS
-#define BTM_SEC_MAX_DEVICE_RECORDS  8 // 100
+#define BTM_SEC_MAX_DEVICE_RECORDS  4 // 100
 #endif
 
 /* The number of security records for services. 32 AS Default*/
@@ -636,12 +636,12 @@
 
 /* The maximum number of simultaneous channels that L2CAP can support. Up to 16*/
 #ifndef MAX_L2CAP_CHANNELS
-#define MAX_L2CAP_CHANNELS          8
+#define MAX_L2CAP_CHANNELS          4
 #endif
 
 /* The maximum number of simultaneous applications that can register with L2CAP. */
 #ifndef MAX_L2CAP_CLIENTS
-#define MAX_L2CAP_CLIENTS           8
+#define MAX_L2CAP_CLIENTS           4
 #endif
 
 /* The number of seconds of link inactivity before a link is disconnected. */
@@ -878,15 +878,15 @@
 #endif
 
 #ifndef GATT_MAX_SR_PROFILES
-#define GATT_MAX_SR_PROFILES        8 /* max is 32 */
+#define GATT_MAX_SR_PROFILES        2 /* max is 32 */
 #endif
 
 #ifndef GATT_MAX_APPS
-#define GATT_MAX_APPS            8 /* MAX is 32 note: 2 apps used internally GATT and GAP */
+#define GATT_MAX_APPS            2 /* MAX is 32 note: 2 apps used internally GATT and GAP */
 #endif
 
 #ifndef GATT_MAX_PHY_CHANNEL
-#define GATT_MAX_PHY_CHANNEL        7
+#define GATT_MAX_PHY_CHANNEL        2
 #endif
 
 /* Used for conformance testing ONLY */
@@ -897,7 +897,7 @@
 /* number of background connection device allowence, ideally to be the same as WL size
 */
 #ifndef GATT_MAX_BG_CONN_DEV
-#define GATT_MAX_BG_CONN_DEV        8 /*MAX is 32*/
+#define GATT_MAX_BG_CONN_DEV        2 /*MAX is 32*/
 #endif
 
 /******************************************************************************
@@ -1006,11 +1006,11 @@
 
 /* The maximum number of attributes in each record. */
 #ifndef SDP_MAX_REC_ATTR
-#define SDP_MAX_REC_ATTR            25
+#define SDP_MAX_REC_ATTR            8
 #endif
 
 #ifndef SDP_MAX_PAD_LEN
-#define SDP_MAX_PAD_LEN             600
+#define SDP_MAX_PAD_LEN             300
 #endif
 
 /* The maximum length, in bytes, of an attribute. */

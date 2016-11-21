@@ -8,6 +8,7 @@
 
 #include "nvs_flash.h"
 #include "esp_system.h"
+#include "EspAudio.h"
 
 extern void bte_main_boot_entry(void *);
 extern void bt_app_task_start_up(void);
@@ -18,6 +19,7 @@ void app_main()
     nvs_flash_init();
     system_init();
     printf("Free memory: %d bytes\n", system_get_free_heap_size());
+    EspAudio_Init();
     bt_controller_init();
     bt_app_task_start_up();
     // bte_main_boot_entry(bt_app_core_start);

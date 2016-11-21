@@ -59,8 +59,8 @@ static pthread_mutex_t bta_alarm_lock;
 
 /* trace level */
 /* TODO Bluedroid - Hard-coded trace levels -  Needs to be configurable */
-UINT8 appl_trace_level = BT_TRACE_LEVEL_WARNING; //APPL_INITIAL_TRACE_LEVEL;
-UINT8 btif_trace_level = BT_TRACE_LEVEL_WARNING;
+UINT8 appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
+UINT8 btif_trace_level = BT_TRACE_LEVEL_NONE;
 
 // Communication queue between btu_task and bta.
 extern fixed_queue_t *btu_bta_msg_queue;

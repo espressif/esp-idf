@@ -91,7 +91,7 @@ static void bt_app_stack_evt(UINT16 event, char *p_param)
     switch (event) {
     case BT_APP_EVT_STACK_ON: {
 	char *dev_name = "SDP_SERVER_CLIENT";
-	BTM_SetTraceLevel(BT_TRACE_LEVEL_DEBUG);
+	BTM_SetTraceLevel(BT_TRACE_LEVEL_WARNING);
         btav_set_device_class();
 	BTA_DmSetDeviceName(dev_name);
         esp_bt_gap_set_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);

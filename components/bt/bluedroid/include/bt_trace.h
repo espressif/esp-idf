@@ -187,7 +187,7 @@ inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
 #endif
 
 #ifndef BTM_INITIAL_TRACE_LEVEL
-#define BTM_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
+#define BTM_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_NONE
 #endif
 
 #ifndef L2CAP_INITIAL_TRACE_LEVEL
@@ -239,7 +239,7 @@ inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
 #endif
 
 #ifndef APPL_INITIAL_TRACE_LEVEL
-#define APPL_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
+#define APPL_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_NONE
 #endif
 
 #ifndef BT_TRACE_APPL
@@ -262,7 +262,7 @@ inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
 #define LOG_LEVEL_DEBUG		4
 #define LOG_LEVEL_VERBOSE	5
 #ifndef LOG_LEVEL
-#define LOG_LEVEL	LOG_LEVEL_ERROR
+#define LOG_LEVEL	0
 #endif
 #define LOG_ERROR(fmt, args...)			do {if (LOG_LEVEL >= LOG_LEVEL_ERROR) ets_printf(fmt,## args);} while(0)
 #define LOG_WARN(fmt, args...)			do {if (LOG_LEVEL >= LOG_LEVEL_WARN) ets_printf(fmt,## args);} while(0)

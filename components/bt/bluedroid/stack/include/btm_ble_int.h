@@ -182,7 +182,7 @@ typedef struct
     TIMER_LIST_ENT              raddr_timer_ent;
 } tBTM_LE_RANDOM_CB;
 
-#define BTM_BLE_MAX_BG_CONN_DEV_NUM    10
+#define BTM_BLE_MAX_BG_CONN_DEV_NUM    2
 
 typedef struct
 {
