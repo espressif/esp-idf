@@ -234,10 +234,13 @@ typedef union
 typedef struct
 {
 #if (BTA_AV_INCLUDED == TRUE)
+#if (BTIF_AV_INCLUDED == TRUE)
     BUFFER_Q TxAaQ;
+#endif /* #if (BTIF_AV_INCLUDED == TRUE) */
     BUFFER_Q RxSbcQ;
     BOOLEAN is_tx_timer;
     BOOLEAN is_rx_timer;
+#if (BTIF_AV_INCLUDED == TRUE)
     UINT16 TxAaMtuSize;
     UINT32 timestamp;
     UINT8 TxTranscoding;
@@ -245,10 +248,13 @@ typedef struct
     tBTIF_AV_MEDIA_FEEDINGS media_feeding;
     tBTIF_AV_MEDIA_FEEDINGS_STATE media_feeding_state;
     SBC_ENC_PARAMS encoder;
+#endif /* #if (BTIF_AV_INCLUDED == TRUE) */
     UINT8 busy_level;
     void* av_sm_hdl;
     UINT8 a2dp_cmd_pending; /* we can have max one command pending */
+#if (BTIF_AV_INCLUDED == TRUE)
     BOOLEAN tx_flush; /* discards any outgoing data when true */
+#endif /* #if (BTIF_AV_INCLUDED == TRUE) */
     BOOLEAN rx_flush; /* discards any incoming data when true */
     UINT8 peer_sep;
     BOOLEAN data_channel_open;
@@ -256,7 +262,9 @@ typedef struct
 
     UINT32  sample_rate;
     UINT8   channel_count;
+#if (BTIF_AV_INCLUDED == TRUE)
     osi_alarm_t *media_alarm;
+#endif /* #if (BTIF_AV_INCLUDED == TRUE) */
     osi_alarm_t *decode_alarm;
 #endif
 
@@ -270,11 +278,17 @@ typedef struct {
     long long ts_prev_us;
 } t_stat;
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 static UINT64 last_frame_us = 0;
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 
 static void btif_a2dp_data_cb(tUIPC_CH_ID ch_id, tUIPC_EVENT event);
 static void btif_a2dp_ctrl_cb(tUIPC_CH_ID ch_id, tUIPC_EVENT event);
+
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 static void btif_a2dp_encoder_update(void);
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
+
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 extern OI_STATUS OI_CODEC_SBC_DecodeFrame(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                           const OI_BYTE **frameData,
@@ -303,6 +317,7 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR*p_msg);
 #endif
 
 #if (BTA_AV_INCLUDED == TRUE)
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 static void btif_media_send_aa_frame(void);
 static void btif_media_task_feeding_state_reset(void);
 static void btif_media_task_aa_start_tx(void);
@@ -312,6 +327,7 @@ static void btif_media_task_enc_update(BT_HDR *p_msg);
 static void btif_media_task_audio_feeding_init(BT_HDR *p_msg);
 static void btif_media_task_aa_tx_flush(BT_HDR *p_msg);
 static void btif_media_aa_prep_2_send(UINT8 nb_frame);
+#endif /* (BTIF_AV_SRC_INCLUDED == TRUE) */
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 static void btif_media_task_aa_handle_decoder_reset(BT_HDR *p_msg);
 static void btif_media_task_aa_handle_clear_track(void);
@@ -320,7 +336,9 @@ static void btif_media_task_aa_handle_start_decoding(void);
 #endif
 BOOLEAN btif_media_task_clear_track(void);
 static void btif_media_task_handler(void *arg);
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 static void btif_media_task_aa_handle_timer(UNUSED_ATTR void *context);
+#endif
 static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context);
 static void btif_media_thread_init(UNUSED_ATTR void *context);
 static void btif_media_thread_cleanup(UNUSED_ATTR void *context);
@@ -346,6 +364,7 @@ BOOLEAN btif_hf_is_call_idle(void)
  **  Misc helper functions
  *****************************************************************************/
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 static UINT64 time_now_us()
 {
     // TODO: implement this function
@@ -360,6 +379,7 @@ static void log_tstamps_us(char *comment)
                 GKI_queue_length(&btif_media_cb.TxAaQ));
     prev_us = now_us;
 }
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 
 UNUSED_ATTR static const char *dump_media_event(UINT16 event)
 {
@@ -610,6 +630,7 @@ static void btif_a2dp_data_cb(tUIPC_CH_ID ch_id, tUIPC_EVENT event)
             UIPC_Ioctl(UIPC_CH_ID_AV_AUDIO, UIPC_SET_READ_POLL_TMO,
                        (void *)A2DP_DATA_READ_POLL_MS);
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
             if (btif_media_cb.peer_sep == AVDT_TSEP_SNK) {
                 /* Start the media task to encode SBC */
                 btif_media_task_start_aa_req();
@@ -617,6 +638,7 @@ static void btif_a2dp_data_cb(tUIPC_CH_ID ch_id, tUIPC_EVENT event)
                 /* make sure we update any changed sbc encoder params */
                 btif_a2dp_encoder_update();
             }
+#endif /* BTIF_AV_SRC_INCLUDED == TRUE */
             btif_media_cb.data_channel_open = TRUE;
 
             /* ack back when media task is fully started */
@@ -638,7 +660,7 @@ static void btif_a2dp_data_cb(tUIPC_CH_ID ch_id, tUIPC_EVENT event)
 /*****************************************************************************
  **  BTIF ADAPTATION
  *****************************************************************************/
-
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 static UINT16 btif_media_task_get_sbc_rate(void)
 {
     UINT16 rate = DEFAULT_SBC_BITRATE;
@@ -740,6 +762,7 @@ static void btif_a2dp_encoder_update(void)
     btif_media_task_enc_update_req(&msg);
 }
 
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 
 static void btif_media_task_post(uint32_t sig)
 {
@@ -766,8 +789,10 @@ static void btif_media_task_handler(void *arg)
             case SIG_MEDIA_TASK_AVK_ALARM_TO:
                 btif_media_task_avk_handle_timer(NULL);
                 break;
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
             case SIG_MEDIA_TASK_AA_ALARM_TO:
                 btif_media_task_aa_handle_timer(NULL);
+#endif
                 break;
             case SIG_MEDIA_TASK_CMD_READY:
                 fixed_queue_process(btif_media_cmd_msg_queue);
@@ -835,10 +860,12 @@ void btif_a2dp_stop_media_task(void)
 {
     APPL_TRACE_EVENT("## A2DP STOP MEDIA THREAD ##\n");
 
+#if (BTIF_AV_INCLUDED == TRUE)
     // Stop timer
     osi_alarm_free(btif_media_cb.media_alarm);
     btif_media_cb.media_alarm = NULL;
     btif_media_cb.is_tx_timer = FALSE;
+#endif /* #if (BTIF_AV_INCLUDED == TRUE) */
 
     // Exit thread
     btif_media_task_post(SIG_MEDIA_TASK_CLEAN_UP);
@@ -895,6 +922,8 @@ void btif_a2dp_setup_codec(void)
 
     if (bta_av_co_audio_set_codec(&media_feeding, &status))
     {
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
+
         tBTIF_MEDIA_INIT_AUDIO_FEEDING mfeed;
 
         /* Init the encoding task */
@@ -905,6 +934,7 @@ void btif_a2dp_setup_codec(void)
         mfeed.feeding_mode = BTIF_AV_FEEDING_ASYNCHRONOUS;
         /* Send message to Media task to configure transcoding */
         btif_media_task_audio_feeding_init_req(&mfeed);
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
     }
 
     GKI_enable();
@@ -924,12 +954,14 @@ void btif_a2dp_setup_codec(void)
 void btif_a2dp_on_idle(void)
 {
     APPL_TRACE_EVENT("## ON A2DP IDLE ##\n");
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
     if (btif_media_cb.peer_sep == AVDT_TSEP_SNK)
     {
         /* Make sure media task is stopped */
         btif_media_task_stop_aa_req();
     }
-
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
+    
     bta_av_co_init();
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     if (btif_media_cb.peer_sep == AVDT_TSEP_SRC)
@@ -1123,13 +1155,14 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND *p_av)
         }
     }
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
     /* ensure tx frames are immediately suspended */
     btif_media_cb.tx_flush = 1;
 
     /* request to stop media task  */
     btif_media_task_aa_tx_flush_req();
     btif_media_task_stop_aa_req();
-
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
     /* once stream is fully stopped we will ack back */
 }
 
@@ -1163,12 +1196,13 @@ void btif_a2dp_on_suspended(tBTA_AV_SUSPEND *p_av)
     }
 
     /* once stream is fully stopped we will ack back */
-
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
     /* ensure tx frames are immediately flushed */
     btif_media_cb.tx_flush = 1;
 
     /* stop timer tick */
     btif_media_task_stop_aa_req();
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 }
 
 /* when true media task discards any rx frames */
@@ -1178,13 +1212,14 @@ void btif_a2dp_set_rx_flush(BOOLEAN enable)
     btif_media_cb.rx_flush = enable;
 }
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 /* when true media task discards any tx frames */
 void btif_a2dp_set_tx_flush(BOOLEAN enable)
 {
     APPL_TRACE_EVENT("## DROP TX %d ##\n", enable);
     btif_media_cb.tx_flush = enable;
 }
-
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context)
 {
@@ -1254,6 +1289,7 @@ static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context)
 static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context) {}
 #endif
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 static void btif_media_task_aa_handle_timer(UNUSED_ATTR void *context)
 {
     log_tstamps_us("media task tx timer");
@@ -1269,8 +1305,10 @@ static void btif_media_task_aa_handle_timer(UNUSED_ATTR void *context)
     }
 #endif
 }
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 
 #if (BTA_AV_INCLUDED == TRUE)
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 static void btif_media_task_aa_handle_uipc_rx_rdy(void)
 {
     /* process all the UIPC data */
@@ -1280,6 +1318,7 @@ static void btif_media_task_aa_handle_uipc_rx_rdy(void)
     LOG_VERBOSE("btif_media_task_aa_handle_uipc_rx_rdy calls bta_av_ci_src_data_ready");
     bta_av_ci_src_data_ready(BTA_AV_CHNL_AUDIO);
 }
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 #endif
 
 static void btif_media_thread_init(UNUSED_ATTR void *context) {
@@ -1358,6 +1397,7 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue)
         switch (p_msg->event)
             {
 #if (BTA_AV_INCLUDED == TRUE)
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
             case BTIF_MEDIA_START_AA_TX:
                 btif_media_task_aa_start_tx();
                 break;
@@ -1379,6 +1419,7 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue)
             case BTIF_MEDIA_UIPC_RX_RDY:
                 btif_media_task_aa_handle_uipc_rx_rdy();
                 break;
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
             case BTIF_MEDIA_AUDIO_SINK_CFG_UPDATE:
 #if (BTA_AV_SINK_INCLUDED == TRUE)
                 LOG_ERROR("SINK_CFG_UPDATE: xx\n");
@@ -1462,6 +1503,7 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR*p_msg)
 #endif
 
 #if (BTA_AV_INCLUDED == TRUE)
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 /*******************************************************************************
  **
  ** Function         btif_media_task_enc_init_req
@@ -1598,6 +1640,7 @@ BOOLEAN btif_media_task_stop_aa_req(void)
 
     return TRUE;
 }
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 /*******************************************************************************
  **
  ** Function         btif_media_task_aa_rx_flush_req
@@ -1626,6 +1669,7 @@ BOOLEAN btif_media_task_aa_rx_flush_req(void)
     return TRUE;
 }
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 /*******************************************************************************
  **
  ** Function         btif_media_task_aa_tx_flush_req
@@ -1661,6 +1705,8 @@ BOOLEAN btif_media_task_aa_tx_flush_req(void)
 
     return TRUE;
 }
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
+
 /*******************************************************************************
  **
  ** Function         btif_media_task_aa_rx_flush
@@ -1678,7 +1724,7 @@ static void btif_media_task_aa_rx_flush(void)
     btif_media_flush_q(&(btif_media_cb.RxSbcQ));
 }
 
-
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 /*******************************************************************************
  **
  ** Function         btif_media_task_aa_tx_flush
@@ -2009,6 +2055,7 @@ static void btif_media_task_audio_feeding_init(BT_HDR *p_msg)
     }
 }
 
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 int btif_a2dp_get_track_frequency(UINT8 frequency) {
     int freq = 48000;
     switch (frequency) {
@@ -2225,6 +2272,7 @@ static void btif_media_task_aa_handle_decoder_reset(BT_HDR *p_msg)
 }
 #endif
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 /*******************************************************************************
  **
  ** Function         btif_media_task_feeding_state_reset
@@ -2397,6 +2445,7 @@ static UINT8 btif_get_num_aa_frame(void)
 
     return (UINT8)result;
 }
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 
 /*******************************************************************************
  **
@@ -2444,6 +2493,7 @@ UINT8 btif_media_sink_enque_buf(BT_HDR *p_pkt)
     return GKI_queue_length(&btif_media_cb.RxSbcQ);
 }
 
+
 /*******************************************************************************
  **
  ** Function         btif_media_aa_readbuf
@@ -2453,11 +2503,19 @@ UINT8 btif_media_sink_enque_buf(BT_HDR *p_pkt)
  **
  ** Returns          void
  *******************************************************************************/
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 BT_HDR *btif_media_aa_readbuf(void)
 {
     return GKI_dequeue(&(btif_media_cb.TxAaQ));
 }
+#else
+BT_HDR *btif_media_aa_readbuf(void)
+{
+    return NULL;
+}
+#endif /* BTIF_AV_SRC_INCLUDED */
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 /*******************************************************************************
  **
  ** Function         btif_media_aa_read_feeding
@@ -2766,7 +2824,9 @@ static void btif_media_aa_prep_2_send(UINT8 nb_frame)
         break;
     }
 }
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 
+#if (BTIF_AV_SRC_INCLUDED == TRUE)
 /*******************************************************************************
  **
  ** Function         btif_media_send_aa_frame
@@ -2795,7 +2855,7 @@ static void btif_media_send_aa_frame(void)
 }
 
 #endif /* BTA_AV_INCLUDED == TRUE */
-
+#endif /* #if (BTIF_AV_SRC_INCLUDED == TRUE) */
 /*******************************************************************************
  **
  ** Function         dump_codec_info
