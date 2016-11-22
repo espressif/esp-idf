@@ -198,7 +198,7 @@ embed_bin/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_bi
 
 embed_txt/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_txt
 	cp $$< $$@
-	echo -ne '\0' >> $$@  # null-terminate text files
+	printf '\0' >> $$@  # null-terminate text files
 
 # messing about with the embed_X subdirectory then using 'cd' for objcopy is because the
 # full path passed to OBJCOPY makes it into the name of the symbols in the .o file
