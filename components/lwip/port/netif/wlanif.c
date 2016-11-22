@@ -118,37 +118,29 @@ low_level_init(struct netif *netif)
 static err_t
 low_level_output(struct netif *netif, struct pbuf *p)
 {
-  struct pbuf *q;
-  wifi_interface_t wifi_if = tcpip_adapter_get_wifi_if(netif);
+    wifi_interface_t wifi_if = tcpip_adapter_get_wifi_if(netif);
+    struct pbuf *q = p;
+    err_t ret;
 
-  if (wifi_if >= WIFI_IF_MAX) {
-    return ERR_IF;
-  } 
-  
-#if ESP_LWIP
-    q = p;
-    u16_t pbuf_x_len = 0;
-    pbuf_x_len = q->len;
-    if(q->next !=NULL)
-    {
-        //char cnt = 0;
-        struct pbuf *tmp = q->next;
-        while(tmp != NULL)
-        {
-            memcpy( (u8_t *)( (u8_t *)(q->payload) + pbuf_x_len), (u8_t *)tmp->payload , tmp->len );
-            pbuf_x_len += tmp->len;
-            //cnt++;
-            tmp = tmp->next;
+    if (wifi_if >= WIFI_IF_MAX) {
+        return ERR_IF;
+    }
+
+    if(q->next == NULL) {
+        ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
+    } else {
+        LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
+        q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
+        if (q != NULL) {
+            pbuf_copy(q, p);
+        } else {
+            return ERR_MEM;
         }
+        ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
+        pbuf_free(q);
     }
-    
-    return esp_wifi_internal_tx(wifi_if, q->payload, pbuf_x_len);
-#else
-    for(q = p; q != NULL; q = q->next) {
-        esp_wifi_internal_tx(wifi_if, q->payload, q->len);
-    }
-  return ERR_OK;
-#endif
+  
+    return ret; 
 }
 
 /**
