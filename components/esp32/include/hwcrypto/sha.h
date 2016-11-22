@@ -131,7 +131,7 @@ void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state);
  * while a TLS connection is open, suggest using
  * esp_sha_try_lock_engine() and failing over to software SHA.
  */
-bool esp_sha_lock_engine(esp_sha_type sha_type);
+void esp_sha_lock_engine(esp_sha_type sha_type);
 
 /**
  * @brief Try and obtain exclusive access to a particular SHA engine

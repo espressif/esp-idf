@@ -133,14 +133,29 @@ inline static bool sha_engines_all_idle() {
         && !engine_states[2].in_use;
 }
 
+static void esp_sha_lock_engine_inner(sha_engine_state *engine);
+
 bool esp_sha_try_lock_engine(esp_sha_type sha_type)
 {
     sha_engine_state *engine = &engine_states[sha_engine_index(sha_type)];
     if(_lock_try_acquire(&engine->lock) != 0) {
         /* This SHA engine is already in use */
         return false;
+    } else {
+        esp_sha_lock_engine_inner(engine);
+        return true;
     }
+}
 
+void esp_sha_lock_engine(esp_sha_type sha_type)
+{
+    sha_engine_state *engine = &engine_states[sha_engine_index(sha_type)];
+    _lock_acquire(&engine->lock);
+    esp_sha_lock_engine_inner(engine);
+}
+
+static void esp_sha_lock_engine_inner(sha_engine_state *engine)
+{
     _lock_acquire(&state_change_lock);
 
     if (sha_engines_all_idle()) {
@@ -157,9 +172,8 @@ bool esp_sha_try_lock_engine(esp_sha_type sha_type)
 
     assert( !engine->in_use && "in_use flag should be cleared" );
     engine->in_use = true;
-
-    return true;
 }
+
 
 void esp_sha_unlock_engine(esp_sha_type sha_type)
 {
@@ -253,7 +267,7 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
 {
     size_t block_len = block_length(sha_type);
 
-    esp_sha_try_lock_engine(sha_type);
+    esp_sha_lock_engine(sha_type);
 
     SHA_CTX ctx;
     ets_sha_init(&ctx);
