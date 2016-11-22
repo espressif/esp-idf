@@ -616,20 +616,20 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 		btc_ble_gap_args_t *src = (btc_ble_gap_args_t *)p_src;
 		btc_ble_gap_args_t  *dst = (btc_ble_gap_args_t*) p_dest;
 
-		if (src->adv_data.p_manufacturer_data) {
-			dst->adv_data.p_manufacturer_data = GKI_getbuf(src->adv_data.manufacturer_len);
-			memcpy(dst->adv_data.p_manufacturer_data, src->adv_data.p_manufacturer_data,
-					src->adv_data.manufacturer_len);
+		if (src->cfg_adv_data.adv_data.p_manufacturer_data) {
+			dst->cfg_adv_data.adv_data.p_manufacturer_data = GKI_getbuf(src->cfg_adv_data.adv_data.manufacturer_len);
+			memcpy(dst->cfg_adv_data.adv_data.p_manufacturer_data, src->cfg_adv_data.adv_data.p_manufacturer_data,
+					src->cfg_adv_data.adv_data.manufacturer_len);
 		}
 
-		if (src->adv_data.p_service_data) {
-			dst->adv_data.p_service_data = GKI_getbuf(src->adv_data.service_data_len);
-			memcpy(dst->adv_data.p_service_data, src->adv_data.p_service_data, src->adv_data.service_data_len);
+		if (src->cfg_adv_data.adv_data.p_service_data) {
+			dst->cfg_adv_data.adv_data.p_service_data = GKI_getbuf(src->cfg_adv_data.adv_data.service_data_len);
+			memcpy(dst->cfg_adv_data.adv_data.p_service_data, src->cfg_adv_data.adv_data.p_service_data, src->cfg_adv_data.adv_data.service_data_len);
 		}
 
-		if (src->adv_data.p_service_uuid) {
-			dst->adv_data.p_service_uuid = GKI_getbuf(src->adv_data.service_uuid_len);
-			memcpy(dst->adv_data.p_service_uuid, src->adv_data.p_service_uuid, src->adv_data.service_uuid_len);
+		if (src->cfg_adv_data.adv_data.p_service_uuid) {
+			dst->cfg_adv_data.adv_data.p_service_uuid = GKI_getbuf(src->cfg_adv_data.adv_data.service_uuid_len);
+			memcpy(dst->cfg_adv_data.adv_data.p_service_uuid, src->cfg_adv_data.adv_data.p_service_uuid, src->cfg_adv_data.adv_data.service_uuid_len);
 		}
 		break;
 	}
@@ -644,7 +644,7 @@ static void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
 	LOG_DEBUG("%s \n", __func__);
 	switch (msg->act) {
 	case BTC_GAP_BLE_ACT_CFG_ADV_DATA: {
-		esp_ble_adv_data_t *adv = &((btc_ble_gap_args_t *)msg->arg)->adv_data;
+		esp_ble_adv_data_t *adv = &((btc_ble_gap_args_t *)msg->arg)->cfg_adv_data.adv_data;
     	if (adv->p_service_data)
 			GKI_freebuf(adv->p_service_data);
 
@@ -670,43 +670,46 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
 	switch (msg->act) {
 	case BTC_GAP_BLE_ACT_CFG_ADV_DATA:
 	{
-		if(arg->adv_data.set_scan_rsp == false){
-			btc_ble_set_adv_data(&arg->adv_data, btc_adv_data_callback);
+		if(arg->cfg_adv_data.adv_data.set_scan_rsp == false){
+			btc_ble_set_adv_data(&arg->cfg_adv_data.adv_data, btc_adv_data_callback);
 		}else{
-			btc_ble_set_adv_data(&arg->adv_data, btc_scan_rsp_data_callback);
+			btc_ble_set_adv_data(&arg->cfg_adv_data.adv_data, btc_scan_rsp_data_callback);
 		}
 		break;
 	}
 	case BTC_GAP_BLE_ACT_SET_SCAN_PARAM:
-		btc_ble_set_scan_param(&arg->scan_params, btc_set_scan_param_callback);
+		btc_ble_set_scan_param(&arg->set_scan_param.scan_params, btc_set_scan_param_callback);
 		break;
 	case BTC_GAP_BLE_ACT_START_SCAN:
-		btc_ble_start_scanning(arg->duration, btc_search_callback);
+		btc_ble_start_scanning(arg->start_scan.duration, btc_search_callback);
 		break;
 	case BTC_GAP_BLE_ACT_STOP_SCAN:
 		btc_ble_stop_scanning();
 		break;
 	case BTC_GAP_BLE_ACT_START_ADV:
-		btc_ble_start_advertising(&arg->adv_params);
+		btc_ble_start_advertising(&arg->start_adv.adv_params);
 		break;
 	case BTC_GAP_BLE_ACT_STOP_ADV:
 		btc_ble_stop_advertising();
 		break;
 	case BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM:
-		btc_ble_update_conn_params(arg->conn_params.bda, arg->conn_params.min_int, 
-									arg->conn_params.max_int, arg->conn_params.latency, arg->conn_params.timeout);
+		btc_ble_update_conn_params(arg->conn_update_params.conn_params.bda,
+									arg->conn_update_params.conn_params.min_int, 
+									arg->conn_update_params.conn_params.max_int,
+									arg->conn_update_params.conn_params.latency,
+									arg->conn_update_params.conn_params.timeout);
 		break;
 	case BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN:
-		btc_ble_set_pkt_data_len(arg->remote_device, arg->tx_data_length);
+		btc_ble_set_pkt_data_len(arg->set_pkt_data_len.remote_device, arg->set_pkt_data_len.tx_data_length);
 		break;
 	case BTC_GAP_BLE_ACT_SET_RAND_ADDRESS:
-		btc_ble_set_rand_addr(arg->rand_addr);
+		btc_ble_set_rand_addr(arg->set_rand_addr.rand_addr);
 		break;
 	case BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY:
-		btc_ble_config_local_privacy(arg->privacy_enable);
+		btc_ble_config_local_privacy(arg->cfg_local_privacy.privacy_enable);
 		break;
 	case BTC_GAP_BLE_ACT_SET_DEV_NAME:
-		BTA_DmSetDeviceName(arg->device_name);
+		BTA_DmSetDeviceName(arg->set_dev_name.device_name);
 		break;
 	default:
 		break;
