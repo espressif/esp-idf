@@ -143,15 +143,21 @@ bool esp_sha_try_lock_engine(esp_sha_type sha_type)
 
     _lock_acquire(&state_change_lock);
 
-    assert( !engine->in_use && "in_use flag should be cleared" );
-
     if (sha_engines_all_idle()) {
+        /* Enable SHA hardware */
+        REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
+        /* also clear reset on secure boot, otherwise SHA is held in reset */
+        REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
+                    DPORT_PERI_EN_SHA
+                    | DPORT_PERI_EN_SECUREBOOT);
         ets_sha_enable();
     }
 
     _lock_release(&state_change_lock);
 
+    assert( !engine->in_use && "in_use flag should be cleared" );
     engine->in_use = true;
+
     return true;
 }
 
@@ -165,7 +171,10 @@ void esp_sha_unlock_engine(esp_sha_type sha_type)
     engine->in_use = false;
 
     if (sha_engines_all_idle()) {
-        ets_sha_disable();
+        /* Disable SHA hardware */
+        /* Don't assert reset on secure boot, otherwise AES is held in reset */
+        REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_SHA);
+        REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
     }
 
     _lock_release(&state_change_lock);

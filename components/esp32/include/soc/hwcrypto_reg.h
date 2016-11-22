@@ -30,7 +30,7 @@
 #define RSA_MULT_MODE_REG             (DR_REG_RSA_BASE + 0x80c)
 #define RSA_MULT_START_REG            (DR_REG_RSA_BASE + 0x810)
 
-#define RSA_INTERRUPT_REG             (DR_REG_RSA_BASE + 0X814)
+#define RSA_INTERRUPT_REG             (DR_REG_RSA_BASE + 0x814)
 
 #define RSA_CLEAN_REG                 (DR_REG_RSA_BASE + 0x818)
 
