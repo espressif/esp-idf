@@ -93,8 +93,14 @@ static void btc_gattc_cfg_mtu(btc_ble_gattc_args_t *arg)
 
 static void btc_gattc_search_service(btc_ble_gattc_args_t *arg)
 {
-    tBT_UUID *srvc_uuid = (tBT_UUID *)(&arg->uuid);
-    BTA_GATTC_ServiceSearchRequest(arg->conn_id, srvc_uuid);
+    tBT_UUID srvc_uuid;
+	
+	if (arg->have_uuid) {
+		btc_to_bta_uuid(&srvc_uuid, &arg->uuid);
+    	BTA_GATTC_ServiceSearchRequest(arg->conn_id, &srvc_uuid);
+	} else {
+    	BTA_GATTC_ServiceSearchRequest(arg->conn_id, NULL);
+	}
 }
 
 static void btc_gattc_get_first_char(btc_ble_gattc_args_t *arg)
@@ -488,7 +494,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
 		case BTA_GATTC_SEARCH_RES_EVT: {
 										   tBTA_GATTC_SRVC_RES *srvc_res = &arg->srvc_res;
 										   param.search_res.conn_id = srvc_res->conn_id;
-										   memcpy(&param.search_res.service_id, &srvc_res->service_uuid, sizeof(esp_gatt_srvc_id_t));
+										   bta_to_btc_srvc_id(&param.search_res.service_id, &srvc_res->service_uuid);
 										   BTC_GATTC_CB_TO_APP(ESP_GATTC_SEARCH_RES_EVT, &param);
 										   break;
 									   }

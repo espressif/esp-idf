@@ -33,6 +33,7 @@
 #include "bta_gatt_api.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
+#include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
 
 
@@ -207,10 +208,34 @@ static void esp_gattc_result_cb(uint32_t event, void *gattc_param)
 			conidx = gattc_data->open.conn_id;
 			LOG_ERROR("conidx = %x, if = %x\n",conidx, gattc_data->open.gatt_if);
 			esp_ble_gattc_search_service(conidx, NULL);
-			LOG_ERROR("ESP_GATTC_OPEN_EVT\n");
+			LOG_ERROR("ESP_GATTC_OPEN_EVT status %d\n", gattc_data->open.status);
+			break;
+		case ESP_GATTC_SEARCH_RES_EVT: {
+			esp_gatt_srvc_id_t *srvc_id = &gattc_data->search_res.service_id;
+			conidx = gattc_data->open.conn_id;
+			LOG_ERROR("SEARCH RES: conidx = %x\n", conidx);
+			if (srvc_id->id.uuid.len == ESP_UUID_LEN_16) {
+				LOG_ERROR("UUID16: %x\n", srvc_id->id.uuid.uuid.uuid16);
+			} else if (srvc_id->id.uuid.len == ESP_UUID_LEN_32) {
+				LOG_ERROR("UUID32: %x\n", srvc_id->id.uuid.uuid.uuid32);
+			} else if (srvc_id->id.uuid.len == ESP_UUID_LEN_128) {
+				LOG_ERROR("UUID128: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n", srvc_id->id.uuid.uuid.uuid128[0],
+                            srvc_id->id.uuid.uuid.uuid128[1],srvc_id->id.uuid.uuid.uuid128[2], srvc_id->id.uuid.uuid.uuid128[3],
+                            srvc_id->id.uuid.uuid.uuid128[4],srvc_id->id.uuid.uuid.uuid128[5],srvc_id->id.uuid.uuid.uuid128[6],
+                            srvc_id->id.uuid.uuid.uuid128[7],srvc_id->id.uuid.uuid.uuid128[8],srvc_id->id.uuid.uuid.uuid128[9],
+                            srvc_id->id.uuid.uuid.uuid128[10],srvc_id->id.uuid.uuid.uuid128[11],srvc_id->id.uuid.uuid.uuid128[12],
+                            srvc_id->id.uuid.uuid.uuid128[13],srvc_id->id.uuid.uuid.uuid128[14],srvc_id->id.uuid.uuid.uuid128[15]);
+			} else {
+				LOG_ERROR("UNKNOWN LEN %d\n", srvc_id->id.uuid.len);
+			}
+			break;
+	    }
+		case ESP_GATTC_SEARCH_CMPL_EVT:
+			conidx = gattc_data->search_cmpl.conn_id;
+			LOG_ERROR("SEARCH_CMPL: conidx = %x, status %d\n",conidx, gattc_data->search_cmpl.status);
 			break;
 		default:
-		break;
+			break;
 	}
 }
 

@@ -197,7 +197,7 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet) {
     return;
   }
   if (type < DATA_TYPE_ACL || type > DATA_TYPE_EVENT) {
-    LOG_ERROR("%d Unknown HCI message type. Dropping this byte 0x%x,"
+    LOG_ERROR("%s Unknown HCI message type. Dropping this byte 0x%x,"
               " min %x, max %x\n", __func__, type,
               DATA_TYPE_ACL, DATA_TYPE_EVENT);
     hci_hal_env.allocator->free(packet);

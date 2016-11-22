@@ -120,7 +120,8 @@ static void fragment_and_dispatch(BT_HDR *packet) {
 }
 
 static void reassemble_and_dispatch(BT_HDR *packet) {
-  LOG_ERROR("reassemble_and_dispatch\n");	
+  LOG_DEBUG("reassemble_and_dispatch\n");	
+
   if ((packet->event & MSG_EVT_MASK) == MSG_HC_TO_STACK_HCI_ACL) {
     uint8_t *stream = packet->data;
     uint16_t handle;

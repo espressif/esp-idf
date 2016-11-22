@@ -39,6 +39,7 @@ typedef struct {
     esp_gatt_auth_req_t auth_req;
     esp_bd_addr_t remote_bda;
     esp_bt_uuid_t uuid;
+	bool have_uuid;
     uint16_t app_id;
     uint16_t conn_id;
     uint16_t mtu;

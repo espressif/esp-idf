@@ -192,7 +192,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
       /* only process fixed channel data as channel open indication when link is not in disconnecting mode */
         l2cble_notify_le_connection(p_lcb->remote_bd_addr);
 #endif
-	 L2CAP_TRACE_WARNING ("L2CAP - rcv_cid CID: 0x%04x\n", rcv_cid);
+	 L2CAP_TRACE_DEBUG ("L2CAP - rcv_cid CID: 0x%04x\n", rcv_cid);
     /* Find the CCB for this CID */
     if (rcv_cid >= L2CAP_BASE_APPL_CID)
     {

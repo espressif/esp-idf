@@ -198,7 +198,12 @@ esp_err_t esp_ble_gattc_search_service(uint16_t conn_id, esp_bt_uuid_t *filter_u
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_SEARCH_SERVICE;
     arg.conn_id = conn_id;
-    memcpy(&arg.uuid, filter_uuid, sizeof(esp_bt_uuid_t));
+	if (filter_uuid) {
+		arg.have_uuid = true;
+    	memcpy(&arg.uuid, filter_uuid, sizeof(esp_bt_uuid_t));
+	} else {
+		arg.have_uuid = false;
+	}
     
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
