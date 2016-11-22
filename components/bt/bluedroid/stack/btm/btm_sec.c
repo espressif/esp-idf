@@ -236,7 +236,7 @@ BOOLEAN BTM_SecRegister(tBTM_APPL_INFO *p_cb_info)
     BTM_TRACE_EVENT("%s application registered\n", __func__);
 
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
-    LOG_INFO("%s p_cb_info->p_le_callback == 0x%p\n", __func__, p_cb_info->p_le_callback);
+    LOG_DEBUG("%s p_cb_info->p_le_callback == 0x%p\n", __func__, p_cb_info->p_le_callback);
     if (p_cb_info->p_le_callback)
     {
 #if SMP_INCLUDED == TRUE
@@ -257,7 +257,7 @@ BOOLEAN BTM_SecRegister(tBTM_APPL_INFO *p_cb_info)
 
     btm_cb.api = *p_cb_info;
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
-     LOG_INFO("%s btm_cb.api.p_le_callback = 0x%p\n", __func__, btm_cb.api.p_le_callback);
+     LOG_DEBUG("%s btm_cb.api.p_le_callback = 0x%p\n", __func__, btm_cb.api.p_le_callback);
 #endif
     BTM_TRACE_EVENT("%s application registered\n", __func__);
     return(TRUE);

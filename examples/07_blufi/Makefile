@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := bluedroid_demos
+PROJECT_NAME := blufi_demo
 
 COMPONENT_ADD_INCLUDEDIRS := components/include
 

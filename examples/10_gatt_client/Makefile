@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := bluedroid_demos
+PROJECT_NAME := gatt_client_demo
 
 COMPONENT_ADD_INCLUDEDIRS := components/include
 

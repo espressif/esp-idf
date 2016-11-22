@@ -247,7 +247,7 @@ static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN con
 
     if (transport != BT_TRANSPORT_BR_EDR)
     {
-        SMP_TRACE_WARNING("%s is called on unexpected transport %d",
+        SMP_TRACE_WARNING("%s is called on unexpected transport %d\n",
                            __func__, transport);
         return;
     }
@@ -255,7 +255,7 @@ static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN con
     if (!(memcmp(bd_addr, p_cb->pairing_bda, BD_ADDR_LEN) == 0))
         return;
 
-    SMP_TRACE_EVENT ("%s for pairing BDA: %08x%04x  Event: %s",
+    SMP_TRACE_EVENT ("%s for pairing BDA: %08x%04x  Event: %s\n",
                      __func__,
                      (bd_addr[0]<<24)+(bd_addr[1]<<16)+(bd_addr[2]<<8) + bd_addr[3],
                      (bd_addr[4]<<8)+bd_addr[5],

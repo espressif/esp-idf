@@ -268,7 +268,7 @@ inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
 #define LOG_LEVEL_DEBUG		4
 #define LOG_LEVEL_VERBOSE	5
 #ifndef LOG_LEVEL
-#define LOG_LEVEL	LOG_LEVEL_ERROR
+#define LOG_LEVEL	LOG_LEVEL_INFO
 #endif
 #define LOG_ERROR(fmt, args...)			do {if (LOG_LEVEL >= LOG_LEVEL_ERROR) printf(fmt,## args);} while(0)
 #define LOG_WARN(fmt, args...)			do {if (LOG_LEVEL >= LOG_LEVEL_WARN) BT_PRINTF(fmt,## args);} while(0)

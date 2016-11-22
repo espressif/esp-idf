@@ -404,7 +404,7 @@ void bta_dm_co_ble_load_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OC
     BTIF_TRACE_DEBUG("##################################");
     btif_dm_get_ble_local_keys( p_key_mask, er, p_id_keys);
 #else
-    LOG_ERROR("bta_dm_co_ble_load_local_keys: func not ported\n");
+    LOG_WARN("bta_dm_co_ble_load_local_keys: func not ported\n");
 #endif
 }
 

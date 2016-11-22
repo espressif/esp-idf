@@ -601,7 +601,7 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
         }
     }
     /* no service found at all, the end of server discovery*/
-    LOG_WARN("%s no more services found", __func__);
+    LOG_DEBUG("%s no more services found", __func__);
 
 #if (defined BTA_GATT_DEBUG && BTA_GATT_DEBUG == TRUE)
     bta_gattc_display_cache_server(p_srvc_cb->p_srvc_cache);

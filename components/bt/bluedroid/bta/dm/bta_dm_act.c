@@ -3377,7 +3377,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             /* both local and remote devices support SSR */
             bta_dm_cb.device_list.peer_device[i].info = BTA_DM_DI_USE_SSR;
         }
-        APPL_TRACE_WARNING("%s info: 0x%x", __func__, bta_dm_cb.device_list.peer_device[i].info);
+        APPL_TRACE_DEBUG("%s info: 0x%x", __func__, bta_dm_cb.device_list.peer_device[i].info);
 
         if (bta_dm_cb.p_sec_cback)
             bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, (tBTA_DM_SEC *)&conn);

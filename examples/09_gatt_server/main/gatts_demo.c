@@ -108,7 +108,7 @@ static void gatts_event_handler(uint32_t event, void *param)
 
 	switch (event) {
 	case ESP_GATTS_REG_EVT:
-		LOG_ERROR("REGISTER_APP_EVT, status %d, gatt_if %d, app_id %d\n", p->reg.status, p->reg.gatt_if, p->reg.app_id);
+		LOG_INFO("REGISTER_APP_EVT, status %d, gatt_if %d, app_id %d\n", p->reg.status, p->reg.gatt_if, p->reg.app_id);
 		gl_test.gatt_if = p->reg.gatt_if;
 		gl_test.service_id.is_primary = true;
 		gl_test.service_id.id.inst_id = 0x00;
@@ -121,7 +121,7 @@ static void gatts_event_handler(uint32_t event, void *param)
 		esp_ble_gatts_create_service(gl_test.gatt_if, &gl_test.service_id, GATTS_NUM_HANDLE_TEST);
 		break;
 	case ESP_GATTS_READ_EVT: {
-		LOG_ERROR("GATT_READ_EVT, conn_id %d, trans_id %d, handle %d\n", p->read.conn_id, p->read.trans_id, p->read.handle);
+		LOG_INFO("GATT_READ_EVT, conn_id %d, trans_id %d, handle %d\n", p->read.conn_id, p->read.trans_id, p->read.handle);
 		esp_gatt_rsp_t rsp;
 		memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
 		rsp.attr_value.handle = p->read.handle;
@@ -141,7 +141,7 @@ static void gatts_event_handler(uint32_t event, void *param)
 	case ESP_GATTS_UNREG_EVT:
 		break;
 	case ESP_GATTS_CREATE_EVT:
-		LOG_ERROR("CREATE_SERVICE_EVT, status %d, gatt_if %d,  service_handle %d\n", p->create.status, p->create.gatt_if, p->create.service_handle);
+		LOG_INFO("CREATE_SERVICE_EVT, status %d, gatt_if %d,  service_handle %d\n", p->create.status, p->create.gatt_if, p->create.service_handle);
 		gl_test.service_handle = p->create.service_handle;
 		gl_test.char_uuid.len = ESP_UUID_LEN_16;
 		gl_test.char_uuid.uuid.uuid16 = GATTS_CHAR_UUID_TEST;
@@ -155,7 +155,7 @@ static void gatts_event_handler(uint32_t event, void *param)
 	case ESP_GATTS_ADD_INCL_SRVC_EVT:
 		break;
 	case ESP_GATTS_ADD_CHAR_EVT:
-		LOG_ERROR("ADD_CHAR_EVT, status %d, gatt_if %d,  attr_handle %d, service_handle %d\n",
+		LOG_INFO("ADD_CHAR_EVT, status %d, gatt_if %d,  attr_handle %d, service_handle %d\n",
 					p->add_char.status, p->add_char.gatt_if, p->add_char.attr_handle, p->add_char.service_handle);
 
 		gl_test.char_handle = p->add_char.attr_handle;
@@ -165,19 +165,19 @@ static void gatts_event_handler(uint32_t event, void *param)
 					ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE);
 		break;
 	case ESP_GATTS_ADD_CHAR_DESCR_EVT:
-		LOG_ERROR("ADD_DESCR_EVT, status %d, gatt_if %d,  attr_handle %d, service_handle %d\n",
+		LOG_INFO("ADD_DESCR_EVT, status %d, gatt_if %d,  attr_handle %d, service_handle %d\n",
 					p->add_char.status, p->add_char.gatt_if, p->add_char.attr_handle, p->add_char.service_handle);
 		break;
 	case ESP_GATTS_DELELTE_EVT:
 		break;
 	case ESP_GATTS_START_EVT:
-		LOG_ERROR("SERVICE_START_EVT, status %d, gatt_if %d, service_handle %d\n",
+		LOG_INFO("SERVICE_START_EVT, status %d, gatt_if %d, service_handle %d\n",
 					p->start.status, p->start.gatt_if, p->start.service_handle);
 		break;
 	case ESP_GATTS_STOP_EVT:
 		break;
 	case ESP_GATTS_CONNECT_EVT:
-		LOG_ERROR("SERVICE_START_EVT, conn_id %d, gatt_if %d, remote %02x:%02x:%02x:%02x:%02x:%02x:, is_conn %d\n",
+		LOG_INFO("SERVICE_START_EVT, conn_id %d, gatt_if %d, remote %02x:%02x:%02x:%02x:%02x:%02x:, is_conn %d\n",
 						p->connect.conn_id, p->connect.gatt_if,
 						p->connect.remote_bda[0], p->connect.remote_bda[1], p->connect.remote_bda[2],
 						p->connect.remote_bda[3], p->connect.remote_bda[4], p->connect.remote_bda[5],
@@ -200,7 +200,7 @@ void app_main()
 	esp_err_t ret;
 
     bt_controller_init();
-	LOG_ERROR("%s init bluetooth\n", __func__);
+	LOG_INFO("%s init bluetooth\n", __func__);
     ret = esp_init_bluetooth();
 	if (ret) {
 		LOG_ERROR("%s init bluetooth failed\n", __func__);
@@ -215,7 +215,6 @@ void app_main()
 	esp_ble_gatts_register_callback(gatts_event_handler);
 	esp_ble_gap_register_callback(gap_event_handler);
 	esp_ble_gatts_app_register(GATTS_SERVICE_UUID_TEST);
-	//esp_ble_gatts_app_register(0x18);
 
 	return;
 }

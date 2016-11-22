@@ -203,7 +203,7 @@ esp_err_t esp_ble_gap_set_device_name(char *name)
 ** Returns          	pointer of ADV data
 **
 *******************************************************************************/
-uint8_t *esp_ble_resolve_adv_data( uint8_t *p_adv, uint8_t type, uint8_t *p_length )
+uint8_t *esp_ble_resolve_adv_data( uint8_t *p_adv, uint8_t type, uint8_t *p_length)
 {
     if (((type < ESP_BLE_AD_TYPE_FLAG) || (type > ESP_BLE_AD_TYPE_128SERVICE_DATA)) &&
 	 (type != ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE))
