@@ -8,6 +8,18 @@ config BT_ENABLED
     help
         This compiles in the low-level BT stack.
 
+menu "BT_UTIL"
+visible if BT_ENABLED
+
+config BT_USE_ETS_PRINT
+	bool "BT USE ETS_PRINT"
+	default y
+	depends on BT_ENABLED
+	help
+		This select use print or ets_print
+
+endmenu #menu
+
 #config BT_BTLE
 #    bool "Enable BTLE"
 #    depends on BT_ENABLED

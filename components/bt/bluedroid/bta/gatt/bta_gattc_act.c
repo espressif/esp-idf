@@ -2012,7 +2012,7 @@ void bta_gattc_proc_other_indication(tBTA_GATTC_CLCB *p_clcb, UINT8 op,
     APPL_TRACE_DEBUG("bta_gattc_proc_other_indication check \
                        p_data->att_value.handle=%d p_data->handle=%d",
                        p_data->att_value.handle, p_data->handle);
-    APPL_TRACE_DEBUG("is_notify", p_notify->is_notify);
+    APPL_TRACE_DEBUG("is_notify %d", p_notify->is_notify);
 
     p_notify->is_notify = (op == GATTC_OPTYPE_INDICATION) ? FALSE : TRUE;
     p_notify->len = p_data->att_value.len;

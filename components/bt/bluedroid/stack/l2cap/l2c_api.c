@@ -1441,7 +1441,7 @@ BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda)
         // racing with disconnecting, queue the connection request
         if (p_lcb->link_state == LST_DISCONNECTING)
         {
-            L2CAP_TRACE_DEBUG ("$s() - link disconnecting: RETRY LATER", __func__);
+            L2CAP_TRACE_DEBUG ("%s() - link disconnecting: RETRY LATER", __func__);
             /* Save ccb so it can be started after disconnect is finished */
             p_lcb->p_pending_ccb = p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL];
             return TRUE;

@@ -2251,7 +2251,7 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
         /* acceptor receives L2CAP Channel Connect Request for Secure Connections Only service */
         if (!(local_supports_sc) || !(p_dev_rec->remote_supports_secure_connections))
         {
-            BTM_TRACE_DEBUG("%s: SC only service, local_support_for_sc %d\n",
+            BTM_TRACE_DEBUG("%s: SC only service, local_support_for_sc %d\n"
                             "rmt_support_for_sc : %d -> fail pairing\n", __FUNCTION__,
                             local_supports_sc,
                             p_dev_rec->remote_supports_secure_connections);
@@ -2650,7 +2650,7 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
         /* Secure Connections Only service */
         if (!(local_supports_sc) || !(p_dev_rec->remote_supports_secure_connections))
         {
-            BTM_TRACE_DEBUG("%s: SC only service,local_support_for_sc %d,\n",
+            BTM_TRACE_DEBUG("%s: SC only service,local_support_for_sc %d,\n"
                             "remote_support_for_sc %d: fail pairing\n",__FUNCTION__,
                             local_supports_sc, p_dev_rec->remote_supports_secure_connections);
 
@@ -3399,7 +3399,7 @@ void btm_io_capabilities_req (UINT8 *p)
 
     if ((btm_cb.security_mode == BTM_SEC_MODE_SC) && (p_dev_rec->num_read_pages == 0))
     {
-        BTM_TRACE_EVENT("%s: Device security mode is SC only.\n",
+        BTM_TRACE_EVENT("%s: Device security mode is SC only.\n"
                          "To continue need to know remote features.\n", __FUNCTION__);
 
         p_dev_rec->remote_features_needed = TRUE;
@@ -3471,7 +3471,7 @@ void btm_io_capabilities_req (UINT8 *p)
         /* device in Secure Connections Only mode */
         if (!(local_supports_sc) || !(p_dev_rec->remote_supports_secure_connections))
         {
-            BTM_TRACE_DEBUG("%s: SC only service, local_support_for_sc %d,\n",
+            BTM_TRACE_DEBUG("%s: SC only service, local_support_for_sc %d,\n"
                             " remote_support_for_sc 0x%02x -> fail pairing\n", __FUNCTION__,
                             local_supports_sc, p_dev_rec->remote_supports_secure_connections);
 
@@ -5503,7 +5503,7 @@ static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
     if ((p_dev_rec->security_required & BTM_SEC_MODE4_LEVEL4) &&
         (p_dev_rec->link_key_type != BTM_LKEY_TYPE_AUTH_COMB_P_256))
     {
-        BTM_TRACE_EVENT("%s: Security Manager: SC only service, but link key type is 0x%02x -",
+        BTM_TRACE_EVENT("%s: Security Manager: SC only service, but link key type is 0x%02x -"
                         "security failure\n", __FUNCTION__, p_dev_rec->link_key_type);
         return (BTM_FAILED_ON_SECURITY);
     }

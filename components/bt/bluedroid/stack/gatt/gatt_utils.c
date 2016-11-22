@@ -2703,7 +2703,7 @@ BOOLEAN gatt_update_auto_connect_dev (tGATT_IF gatt_if, BOOLEAN add, BD_ADDR bd_
     /* Make sure app is registered */
     if ((p_reg = gatt_get_regcb(gatt_if)) == NULL)
     {
-        GATT_TRACE_ERROR("gatt_update_auto_connect_dev - gatt_if is not registered", gatt_if);
+        GATT_TRACE_ERROR("gatt_update_auto_connect_dev - gatt_if %d is not registered", gatt_if);
         return(FALSE);
     }
 

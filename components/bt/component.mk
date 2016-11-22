@@ -30,7 +30,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/include			\
 				include	
 
-CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses
+CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses -Wno-error=format
 
 LIBS := btdm_app
 
