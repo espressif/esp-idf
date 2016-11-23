@@ -134,7 +134,12 @@ static void gatts_event_handler(uint32_t event, void *param)
               ESP_GATT_OK, &rsp);
 		break;
 	}
-	case ESP_GATTS_WRITE_EVT:
+	case ESP_GATTS_WRITE_EVT:{
+		LOG_INFO("GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d\n", p->write.conn_id, p->write.trans_id, p->write.handle);
+		LOG_INFO("GATT_WRITE_EVT, value len %d, value %08x\n", p->write.len, *(uint32_t *)p->write.value);
+		esp_ble_gatts_send_response(p->write.conn_id, p->write.trans_id, ESP_GATT_OK, NULL);
+		break;
+	}
 	case ESP_GATTS_EXEC_WRITE_EVT:
 	case ESP_GATTS_MTU_EVT:
 	case ESP_GATTS_CONF_EVT:

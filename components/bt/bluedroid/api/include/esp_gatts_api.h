@@ -60,7 +60,7 @@ typedef union {
 		bool need_rsp;
 		bool is_prep;
 		uint16_t len;
-		uint8_t value[ESP_GATT_MAX_ATTR_LEN];
+		uint8_t *value;
 	} write;
 	// param for ESP_GATTS_EXEC_WRITE_EVT
 	struct gatts_exec_write_evt_param {

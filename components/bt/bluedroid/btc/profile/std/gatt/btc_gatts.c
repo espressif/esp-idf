@@ -44,11 +44,13 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 		break;
 	}
 	case BTC_GATTS_ACT_SEND_RESPONSE: {
-		dst->send_rsp.rsp = (esp_gatt_rsp_t *)GKI_getbuf(sizeof(esp_gatt_rsp_t));
-		if (dst->send_rsp.rsp) {
-			memcpy(dst->send_rsp.rsp, src->send_rsp.rsp, sizeof(esp_gatt_rsp_t));
-		} else {
-			LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+		if (src->send_rsp.rsp) {
+			dst->send_rsp.rsp = (esp_gatt_rsp_t *)GKI_getbuf(sizeof(esp_gatt_rsp_t));
+			if (dst->send_rsp.rsp) {
+				memcpy(dst->send_rsp.rsp, src->send_rsp.rsp, sizeof(esp_gatt_rsp_t));
+			} else {
+				LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+			}
 		}
 		break;
 	}
@@ -212,15 +214,20 @@ void btc_gatts_call_handler(btc_msg_t *msg)
 		break;
 	case BTC_GATTS_ACT_SEND_RESPONSE: {
 		esp_ble_gatts_cb_param_t param;
-		tBTA_GATTS_RSP rsp_struct;
 		esp_gatt_rsp_t *p_rsp = arg->send_rsp.rsp;
-		btc_to_bta_response(&rsp_struct, p_rsp);
 
-		BTA_GATTS_SendRsp(arg->send_rsp.conn_id, arg->send_rsp.trans_id,
+		if (p_rsp) {
+			tBTA_GATTS_RSP rsp_struct;
+			btc_to_bta_response(&rsp_struct, p_rsp);
+			BTA_GATTS_SendRsp(arg->send_rsp.conn_id, arg->send_rsp.trans_id,
 							arg->send_rsp.status, &rsp_struct);
+			param.rsp.handle = rsp_struct.attr_value.handle;	
+		} else {
+			BTA_GATTS_SendRsp(arg->send_rsp.conn_id, arg->send_rsp.trans_id,
+							arg->send_rsp.status, NULL);
+		}
 
 		param.rsp.status = 0;	
-		param.rsp.handle = rsp_struct.attr_value.handle;	
 		BTC_GATTS_CB_TO_APP(ESP_GATTS_RESPONSE_EVT, &param);
 		break;
 	}
@@ -272,7 +279,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 {
 	esp_ble_gatts_cb_param_t param;
 	
-    	tBTA_GATTS *p_data = (tBTA_GATTS *)msg->arg;
+   	tBTA_GATTS *p_data = (tBTA_GATTS *)msg->arg;
 
 	switch (msg->act) {
 	case BTA_GATTS_REG_EVT: {
@@ -306,7 +313,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 		param.write.need_rsp = p_data->req_data.p_data->write_req.need_rsp;
 		param.write.is_prep = p_data->req_data.p_data->write_req.is_prep;
 		param.write.len = p_data->req_data.p_data->write_req.len;
-		memcpy(param.write.value, p_data->req_data.p_data->write_req.value, param.write.len);
+		param.write.value = p_data->req_data.p_data->write_req.value;
 		
 		BTC_GATTS_CB_TO_APP(ESP_GATTS_WRITE_EVT, &param);
 
@@ -425,6 +432,8 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 	}
 
 	btc_gatts_cb_param_copy_free(msg, p_data);
+
+	//ets_printf("yyy\n");
 }
 
 
