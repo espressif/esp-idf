@@ -242,6 +242,10 @@ typedef struct tskTaskControlBlock
 below to enable the use of older kernel aware debuggers. */
 typedef tskTCB TCB_t;
 
+#if __GNUC_PREREQ(4, 6)
+_Static_assert(sizeof(StaticTask_t) == sizeof(TCB_t), "StaticTask_t != TCB_t");
+#endif
+
 /*
  * Some kernel aware debuggers require the data the debugger needs access to to
  * be global, rather than file scope.
