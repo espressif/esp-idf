@@ -28,6 +28,62 @@
 #define A2C_GATTS_EVT(_bta_event) (_bta_event) //BTA TO BTC EVT
 #define C2A_GATTS_EVT(_btc_event) (_btc_event) //BTC TO BTA EVT
 
+void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
+{
+	btc_ble_gatts_args_t *dst = (btc_ble_gatts_args_t*) p_dest;
+	btc_ble_gatts_args_t *src = (btc_ble_gatts_args_t *)p_src;
+
+	switch (msg->act) {
+	case BTC_GATTS_ACT_SEND_INDICATE: {
+		dst->send_ind.value = (uint8_t *)GKI_getbuf(src->send_ind.value_len);
+		if (dst->send_ind.value) {
+			memcpy(dst->send_ind.value, src->send_ind.value, src->send_ind.value_len);
+		} else {
+			LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+		}
+		break;
+	}
+	case BTC_GATTS_ACT_SEND_RESPONSE: {
+		dst->send_rsp.rsp = (esp_gatt_rsp_t *)GKI_getbuf(sizeof(esp_gatt_rsp_t));
+		if (dst->send_rsp.rsp) {
+			memcpy(dst->send_rsp.rsp, src->send_rsp.rsp, sizeof(esp_gatt_rsp_t));
+		} else {
+			LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+		}
+		break;
+	}
+	default:
+		LOG_DEBUG("%s Unhandled deep copy %d\n", __func__, msg->act);
+		break;
+	}
+
+}
+
+void btc_gatts_arg_deep_free(btc_msg_t *msg)
+{
+	btc_ble_gatts_args_t *arg = (btc_ble_gatts_args_t*)msg->arg;
+
+	switch (msg->act) {
+	case BTC_GATTS_ACT_SEND_INDICATE: {
+		if (arg->send_ind.value) {
+			GKI_freebuf(arg->send_ind.value);
+		}
+		break;
+	}
+	case BTC_GATTS_ACT_SEND_RESPONSE: {
+		if (arg->send_rsp.rsp) {
+			GKI_freebuf(arg->send_rsp.rsp);
+		}
+		break;
+	}
+	default:
+		LOG_DEBUG("%s Unhandled deep free %d\n", __func__, msg->act);
+		break;
+	}
+
+}
+
+
 static void btc_gatts_cb_param_copy_req(btc_msg_t *msg, void *p_dest, void *p_src)
 {
 	uint16_t event = msg->act;
@@ -107,61 +163,61 @@ void btc_gatts_call_handler(btc_msg_t *msg)
 		tBT_UUID uuid;
 
 		uuid.len = LEN_UUID_16;
-		uuid.uu.uuid16 = arg->app_uuid;
+		uuid.uu.uuid16 = arg->app_reg.app_id;
 		
 		BTA_GATTS_AppRegister(&uuid, btc_gatts_inter_cb);
  
 		break;
 	 }
 	case BTC_GATTS_ACT_APP_UNREGISTER:
-		BTA_GATTS_AppDeregister(arg->gatt_if);
+		BTA_GATTS_AppDeregister(arg->app_unreg.gatt_if);
 		break;
 	case BTC_GATTS_ACT_CREATE_SERVICE: {
         tBTA_GATT_SRVC_ID srvc_id;
-        btc_to_bta_srvc_id(&srvc_id, &arg->service_id);
-        BTA_GATTS_CreateService(arg->gatt_if, &srvc_id.id.uuid,
-                                srvc_id.id.inst_id, arg->num_handle,
+        btc_to_bta_srvc_id(&srvc_id, &arg->create_srvc.service_id);
+        BTA_GATTS_CreateService(arg->create_srvc.gatt_if, &srvc_id.id.uuid,
+                                srvc_id.id.inst_id, arg->create_srvc.num_handle,
                                 srvc_id.is_primary);
 		break;
 	}
 	case BTC_GATTS_ACT_DELETE_SERVICE:
-		BTA_GATTS_DeleteService(arg->service_handle);
+		BTA_GATTS_DeleteService(arg->delete_srvc.service_handle);
 		break;
 	case BTC_GATTS_ACT_START_SERVICE:
-		BTA_GATTS_StartService(arg->service_handle, BTA_GATT_TRANSPORT_LE);
+		BTA_GATTS_StartService(arg->start_srvc.service_handle, BTA_GATT_TRANSPORT_LE);
 		break;
 	case BTC_GATTS_ACT_STOP_SERVICE:
-		BTA_GATTS_StopService(arg->service_handle);
+		BTA_GATTS_StopService(arg->stop_srvc.service_handle);
 		break;
 	case BTC_GATTS_ACT_ADD_INCLUDE_SERVICE:
-		BTA_GATTS_AddIncludeService(arg->service_handle, arg->included_service_handle);
+		BTA_GATTS_AddIncludeService(arg->add_incl_srvc.service_handle, arg->add_incl_srvc.included_service_handle);
 		break;
 	case BTC_GATTS_ACT_ADD_CHAR: {
 		tBT_UUID uuid;
-		btc_to_bta_uuid(&uuid, &arg->uuid);
+		btc_to_bta_uuid(&uuid, &arg->add_char.char_uuid);
 
-		BTA_GATTS_AddCharacteristic(arg->service_handle, &uuid,
-				arg->perm, arg->property);
+		BTA_GATTS_AddCharacteristic(arg->add_char.service_handle, &uuid,
+				arg->add_char.perm, arg->add_char.property);
 		break;
 	}
 	case BTC_GATTS_ACT_ADD_CHAR_DESCR: {
 		tBT_UUID uuid;
-		btc_to_bta_uuid(&uuid, &arg->uuid);
-		BTA_GATTS_AddCharDescriptor(arg->service_handle, arg->perm, &uuid);
+		btc_to_bta_uuid(&uuid, &arg->add_descr.descr_uuid);
+		BTA_GATTS_AddCharDescriptor(arg->add_descr.service_handle, arg->add_descr.perm, &uuid);
 		break;
 	}
 	case BTC_GATTS_ACT_SEND_INDICATE:
-		BTA_GATTS_HandleValueIndication(arg->conn_id, arg->attr_handle,
-                                        arg->value_len, arg->value, arg->need_confirm);
+		BTA_GATTS_HandleValueIndication(arg->send_ind.conn_id, arg->send_ind.attr_handle,
+                                        arg->send_ind.value_len, arg->send_ind.value, arg->send_ind.need_confirm);
 		break;
 	case BTC_GATTS_ACT_SEND_RESPONSE: {
 		esp_ble_gatts_cb_param_t param;
 		tBTA_GATTS_RSP rsp_struct;
-		esp_gatt_rsp_t *p_rsp = &arg->rsp;
+		esp_gatt_rsp_t *p_rsp = arg->send_rsp.rsp;
 		btc_to_bta_response(&rsp_struct, p_rsp);
 
-		BTA_GATTS_SendRsp(arg->conn_id, arg->trans_id,
-							arg->status, &rsp_struct);
+		BTA_GATTS_SendRsp(arg->send_rsp.conn_id, arg->send_rsp.trans_id,
+							arg->send_rsp.status, &rsp_struct);
 
 		param.rsp.status = 0;	
 		param.rsp.handle = rsp_struct.attr_value.handle;	
@@ -185,14 +241,14 @@ void btc_gatts_call_handler(btc_msg_t *msg)
 	 	//BTA_DmAddBleDevice(p_cb->bd_addr.address, addr_type, device_type);
 #endif
 		// Mark background connections
-		if (!arg->is_direct)
+		if (!arg->open.is_direct)
 			BTA_DmBleSetBgConnType(BTM_BLE_CONN_AUTO, NULL);
 
 		transport = BTA_GATT_TRANSPORT_LE;
 
 		// Connect!
-		BTA_GATTS_Open(arg->gatt_if, arg->remote_bda,
-				arg->is_direct, transport);
+		BTA_GATTS_Open(arg->open.gatt_if, arg->open.remote_bda,
+				arg->open.is_direct, transport);
 		break;
 	}
 	case BTC_GATTS_ACT_CLOSE:
@@ -202,15 +258,14 @@ void btc_gatts_call_handler(btc_msg_t *msg)
         //BTA_GATTS_CancelOpen(p_cb->server_if, p_cb->bd_addr.address, FALSE);
 
         // Close active connection
-        if (arg->conn_id != 0)
-			BTA_GATTS_Close(arg->conn_id);
+        if (arg->close.conn_id != 0)
+			BTA_GATTS_Close(arg->close.conn_id);
 
 		break;
 	default:
 		break;
 	}
-
-
+	btc_gatts_arg_deep_free(msg);
 }
 
 void btc_gatts_cb_handler(btc_msg_t *msg)

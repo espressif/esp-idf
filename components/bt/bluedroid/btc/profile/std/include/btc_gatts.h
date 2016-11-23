@@ -23,32 +23,81 @@ typedef enum {
 } btc_gatts_act_t;
 
 /* btc_ble_gatts_args_t */
-typedef struct {
-	esp_gatt_if_t gatt_if;	 /* internal is server_if or client_if */
-	esp_gatt_srvc_id_t service_id;
-	esp_gatt_id_t char_id;
-	esp_gatt_id_t descr_uuid;
-	esp_bt_uuid_t uuid;
-	esp_gatt_rsp_t rsp;
-	esp_gatt_perm_t perm;
-	esp_gatt_char_prop_t property;
-	esp_bd_addr_t remote_bda;
-	esp_gatt_status_t status;
-	uint16_t service_handle;
-	uint16_t included_service_handle;
-	uint16_t attr_handle;
-	uint16_t num_handle;
-	uint16_t conn_id;
-	uint16_t trans_id;
-	bool need_confirm;
-	bool is_direct;
-	uint16_t app_uuid;
-	uint16_t value_len;
-	uint8_t value[ESP_GATT_MAX_ATTR_LEN];
+typedef union{
+	//BTC_GATTS_ACT_APP_REGISTER = 0,
+	struct app_reg_args {
+		uint16_t app_id;
+	} app_reg;
+	//BTC_GATTS_ACT_APP_UNREGISTER,
+	struct app_unreg_args {
+		esp_gatt_if_t gatt_if;
+	} app_unreg;
+	//BTC_GATTS_ACT_CREATE_SERVICE,
+	struct create_srvc_args {
+		esp_gatt_if_t gatt_if;
+		esp_gatt_srvc_id_t service_id;
+		uint16_t num_handle;
+	} create_srvc;
+	//BTC_GATTS_ACT_DELETE_SERVICE,
+	struct delete_srvc_args {
+		uint16_t service_handle;
+	} delete_srvc;
+	//BTC_GATTS_ACT_START_SERVICE,
+	struct start_srvc_args {
+		uint16_t service_handle;
+	} start_srvc;
+	//BTC_GATTS_ACT_STOP_SERVICE,
+	struct stop_srvc_args {
+		uint16_t service_handle;
+	} stop_srvc;
+	//BTC_GATTS_ACT_ADD_INCLUDE_SERVICE,
+	struct add_incl_srvc_args {
+		uint16_t service_handle;
+		uint16_t included_service_handle;
+	} add_incl_srvc;
+	//BTC_GATTS_ACT_ADD_CHAR,
+	struct add_char_args {
+		uint16_t service_handle;
+		esp_bt_uuid_t char_uuid;
+		esp_gatt_perm_t perm;
+		esp_gatt_char_prop_t property;
+	} add_char;
+	//BTC_GATTS_ACT_ADD_CHAR_DESCR,
+	struct add_descr_args {
+		uint16_t service_handle;
+		esp_bt_uuid_t descr_uuid;
+		esp_gatt_perm_t perm;
+	} add_descr;
+	//BTC_GATTS_ACT_SEND_INDICATE,
+	struct send_indicate_args {
+		uint16_t conn_id;
+		uint16_t attr_handle;
+		bool need_confirm;
+		uint16_t value_len;
+		uint8_t *value;
+	} send_ind;
+	//BTC_GATTS_ACT_SEND_RESPONSE,
+	struct send_rsp_args {
+		uint16_t conn_id;
+		uint32_t trans_id;
+		esp_gatt_status_t status;
+		esp_gatt_rsp_t *rsp;
+	} send_rsp;
+	//BTC_GATTS_ACT_OPEN,
+	struct open_args {
+		esp_gatt_if_t gatt_if;
+		esp_bd_addr_t remote_bda;
+		bool is_direct;
+	} open;
+	//BTC_GATTS_ACT_CLOSE,
+	struct close_args {
+		uint16_t conn_id;
+	} close;
 } btc_ble_gatts_args_t;
 
 
 void btc_gatts_call_handler(btc_msg_t *msg);
 void btc_gatts_cb_handler(btc_msg_t *msg);
+void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
 #endif /* __BTC_GATTS_H__ */
