@@ -57,14 +57,13 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(time != NULL, TIMER_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
 
-    portENTER_CRITICAL(&timer_spinlock[group_num]);
-    TG[group_num]->hw_timer[timer_num].update = 1;
-    uint64_t timer_val = ((uint64_t) TG[group_num]->hw_timer[timer_num].cnt_high << 32)
-                | (TG[group_num]->hw_timer[timer_num].cnt_low);
-    uint16_t div = TG[group_num]->hw_timer[timer_num].config.divider;
-    *time = (double)timer_val * div / TIMER_BASE_CLK;
-    portEXIT_CRITICAL(&timer_spinlock[group_num]);
-    return ESP_OK;
+    uint64_t timer_val;
+    esp_err_t err = timer_get_counter_value(group_num, timer_num, &timer_val);
+    if (err == ESP_OK) {
+        uint16_t div = TG[group_num]->hw_timer[timer_num].config.divider;
+        *time = (double)timer_val * div / TIMER_BASE_CLK;
+    }
+    return err;
 }
 
 esp_err_t timer_set_counter_value(timer_group_t group_num, timer_idx_t timer_num, uint64_t load_val)

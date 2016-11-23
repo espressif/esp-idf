@@ -30,25 +30,25 @@ extern "C" {
  * @brief Selects a Timer-Group out of 2 available groups
  */
 typedef enum {
-	TIMER_GROUP_0 = 0, /*!<Hw timer group 0*/
-	TIMER_GROUP_1 = 1, /*!<Hw timer group 1*/
-	TIMER_GROUP_MAX,
+    TIMER_GROUP_0 = 0, /*!<Hw timer group 0*/
+    TIMER_GROUP_1 = 1, /*!<Hw timer group 1*/
+    TIMER_GROUP_MAX,
 } timer_group_t;
 
 /**
  * @brief Select a hardware timer from timer groups
  */
 typedef enum {
-	TIMER_0 = 0, /*!<Select timer0 of GROUPx*/
-	TIMER_1 = 1, /*!<Select timer1 of GROUPx*/
-	TIMER_MAX,
+    TIMER_0 = 0, /*!<Select timer0 of GROUPx*/
+    TIMER_1 = 1, /*!<Select timer1 of GROUPx*/
+    TIMER_MAX,
 } timer_idx_t;
 
 /**
  * @brief Decides the direction of counter
  */
 typedef enum {
-	TIMER_COUNT_DOWN = 0, /*!< Descending Count from cnt.high|cnt.low*/
+    TIMER_COUNT_DOWN = 0, /*!< Descending Count from cnt.high|cnt.low*/
     TIMER_COUNT_UP = 1,   /*!< Ascending Count from Zero*/
     TIMER_COUNT_MAX
 } timer_count_dir_t;
@@ -57,47 +57,47 @@ typedef enum {
  * @brief Decides whether timer is on or paused
  */
 typedef enum {
-	TIMER_PAUSE = 0, /*!<Pause timer counter*/
-	TIMER_START = 1, /*!<Start timer counter*/
+    TIMER_PAUSE = 0, /*!<Pause timer counter*/
+    TIMER_START = 1, /*!<Start timer counter*/
 } timer_start_t;
 
 /**
  * @brief Decides whether to enable alarm mode
  */
 typedef enum {
-	TIMER_ALARM_DIS = 0,  /*!< Disable timer alarm*/
-	TIMER_ALARM_EN = 1,   /*!< Enable timer alarm*/
-	TIMER_ALARM_MAX
+    TIMER_ALARM_DIS = 0,  /*!< Disable timer alarm*/
+    TIMER_ALARM_EN = 1,   /*!< Enable timer alarm*/
+    TIMER_ALARM_MAX
 } timer_alarm_t;
 
 /**
  * @brief Select interrupt type if running in alarm mode.
  */
 typedef enum {
-	TIMER_INTR_LEVEL = 0,  /*!< Interrupt mode: level mode*/
-	//TIMER_INTR_EDGE = 1, /*!< Interrupt mode: edge mode, Not supported Now*/
-	TIMER_INTR_MAX
+    TIMER_INTR_LEVEL = 0,  /*!< Interrupt mode: level mode*/
+    //TIMER_INTR_EDGE = 1, /*!< Interrupt mode: edge mode, Not supported Now*/
+    TIMER_INTR_MAX
 } timer_intr_mode_t;
 
 /**
  * @brief Select if Alarm needs to be loaded by software or automatically reload by hardware.
  */
 typedef enum {
-	TIMER_AUTORELOAD_DIS = 0,  /*!< Disable auto-reload: hardware will not load counter value after an alarm event*/
-	TIMER_AUTORELOAD_EN = 1,   /*!< Enable auto-reload: hardware will load counter value after an alarm event*/
-	TIMER_AUTORELOAD_MAX,
+    TIMER_AUTORELOAD_DIS = 0,  /*!< Disable auto-reload: hardware will not load counter value after an alarm event*/
+    TIMER_AUTORELOAD_EN = 1,   /*!< Enable auto-reload: hardware will load counter value after an alarm event*/
+    TIMER_AUTORELOAD_MAX,
 } timer_autoreload_t;
 
 /**
  * @brief timer configure struct
  */
 typedef struct {
-	bool alarm_en;                      /*!< Timer alarm enable */
-	bool counter_en;                    /*!< Counter enable */
-	timer_count_dir_t counter_dir;      /*!< Counter direction  */
-	timer_intr_mode_t intr_type;        /*!< Interrupt mode */
-	bool auto_reload;                   /*!< Timer auto-reload */
-	uint16_t divider;                   /*!< Counter clock divider*/
+    bool alarm_en; /*!< Timer alarm enable */
+    bool counter_en; /*!< Counter enable */
+    timer_count_dir_t counter_dir; /*!< Counter direction  */
+    timer_intr_mode_t intr_type; /*!< Interrupt mode */
+    bool auto_reload; /*!< Timer auto-reload */
+    uint16_t divider; /*!< Counter clock divider*/
 } timer_config_t;
 
 /**
@@ -255,7 +255,9 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
  * @param intr_type Timer interrupt type
  * @param fn Interrupt handler function.
  *        @note
- *        Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
+ *        Code inside the handler function can only call functions in IRAM,  so cannot call other timer APIs.
+ *        Use direct register access to access timers from inside the ISR.
+ *
  * @param arg Parameter for handler function
  *
  * @return
@@ -296,6 +298,8 @@ esp_err_t timer_get_config(timer_group_t group_num, timer_idx_t timer_num, timer
  *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  * @param en_mask Timer interrupt enable mask.
+ *        Use TIMG_T0_INT_ENA_M to enable t0 interrupt
+ *        Use TIMG_T1_INT_ENA_M to enable t1 interrupt
  *
  * @return
  *     - ESP_OK Success
@@ -307,6 +311,8 @@ esp_err_t timer_group_intr_enable(timer_group_t group_num, uint32_t en_mask);
  *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  * @param disable_mask Timer interrupt disable mask.
+ *        Use TIMG_T0_INT_ENA_M to disable t0 interrupt
+ *        Use TIMG_T1_INT_ENA_M to disable t1 interrupt
  *
  * @return
  *     - ESP_OK Success
