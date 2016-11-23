@@ -98,10 +98,11 @@ Contents:
    Bluetooth <api/bt>
    Watchdogs <api/wdts>
 
-   api/gpio
-   api/uart
-   api/ledc
-   api/rmt
+   GPIO <api/gpio>
+   UART <api/uart>
+   LED Control <api/ledc>
+   Remote Control <api/rmt>
+   Timer <api/timer>
    SPI Flash and Partition APIs <api/spi_flash>
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>
