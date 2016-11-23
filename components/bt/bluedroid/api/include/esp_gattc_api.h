@@ -17,7 +17,7 @@
 #define ESP_GATTC_SEARCH_RES_EVT    		7   /* GATT discovery result event */
 #define ESP_GATTC_READ_DESCR_EVT    		8   /* GATT read characterisitc descriptor event */
 #define ESP_GATTC_WRITE_DESCR_EVT   		9   /* GATT write characteristic descriptor event */
-#define ESP_GATTC_NOTIF_EVT         		10  /* GATT attribute notification event */
+#define ESP_GATTC_NOTIFY_EVT         		10  /* GATT attribute notification event */
 #define ESP_GATTC_PREP_WRITE_EVT    		11  /* GATT prepare write  event */
 #define ESP_GATTC_EXEC_EVT          		12  /* execute write complete event */
 #define ESP_GATTC_ACL_EVT           		13  /* ACL up event */
@@ -45,7 +45,8 @@
 #define ESP_GATTC_GET_CHAR_EVT                  35  /* get characteristic event */
 #define ESP_GATTC_GET_DESCR_EVT                 36  /* get characteristic descriptor event */
 #define ESP_GATTC_GET_INCL_SRVC_EVT             37  /* get included service event */
-#define ESP_GATTC_REG_FOR_NOTIF_EVT             38  /* register for notification event */
+#define ESP_GATTC_REG_FOR_NOTIFY_EVT             38  /* register for notification event */
+#define ESP_GATTC_UNREG_FOR_NOTIFY_EVT             39  /* unregister for notification event */
 
 
 #define ESP_GATT_DEF_BLE_MTU_SIZE	23
@@ -175,13 +176,18 @@ typedef union {
     } get_incl_srvc;
 
 	/* ESP_GATTC_REG_FOR_NOTIF_EVT, ESP_GATTC_UNREG_FOR_NOTIF_EVT */
-	struct gattc_reg_for_notif_evt_param {
-		uint16_t conn_id;
-		bool registered;
+	struct gattc_reg_for_notify_evt_param {
 		esp_gatt_status_t status;
 		esp_gatt_srvc_id_t srvc_id;
 		esp_gatt_id_t char_id;
-	} reg_for_notif;
+	} reg_for_notify;
+
+	struct gattc_unreg_for_notify_evt_param {
+		esp_gatt_status_t status;
+		esp_gatt_srvc_id_t srvc_id;
+		esp_gatt_id_t char_id;
+	} unreg_for_notify;
+
 
 } esp_ble_gattc_cb_param_t;
 
