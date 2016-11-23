@@ -179,6 +179,11 @@ typedef struct QueueDefinition
 name below to enable the use of older kernel aware debuggers. */
 typedef xQUEUE Queue_t;
 
+#if __GNUC_PREREQ(4, 6)
+_Static_assert(sizeof(StaticQueue_t) == sizeof(Queue_t), "StaticQueue_t != Queue_t");
+#endif
+
+
 /*-----------------------------------------------------------*/
 
 /*

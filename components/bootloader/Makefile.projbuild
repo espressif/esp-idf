@@ -20,7 +20,7 @@ export SECURE_BOOT_SIGNING_KEY  # used by bootloader_support component
 
 # Custom recursive make for bootloader sub-project
 BOOTLOADER_MAKE=+$(MAKE) -C $(BOOTLOADER_COMPONENT_PATH)/src \
-	V=$(V) BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR)
+	V=$(V) BUILD_DIR_BASE=$(BOOTLOADER_BUILD_DIR) TEST_COMPONENTS=
 
 .PHONY: bootloader-clean bootloader-flash bootloader $(BOOTLOADER_BIN)
 

@@ -352,6 +352,10 @@ err_t nd6_queue_packet(s8_t neighbor_index, struct pbuf * p);
 void nd6_reachability_hint(const ip6_addr_t * ip6addr);
 #endif /* LWIP_ND6_TCP_REACHABILITY_HINTS */
 
+#if ESP_LWIP
+/** set nd6 callback when ipv6 addr state pref*/
+void nd6_set_cb(struct netif *netif, void (*cb)(struct netif *netif, u8_t ip_index));
+#endif
 #ifdef __cplusplus
 }
 #endif

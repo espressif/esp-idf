@@ -190,6 +190,10 @@ struct xLIST_ITEM
 };
 typedef struct xLIST_ITEM ListItem_t;					/* For some reason lint wants this as two separate definitions. */
 
+#if __GNUC_PREREQ(4, 6)
+_Static_assert(sizeof(StaticListItem_t) == sizeof(ListItem_t), "StaticListItem_t != ListItem_t");
+#endif
+
 struct xMINI_LIST_ITEM
 {
 	listFIRST_LIST_ITEM_INTEGRITY_CHECK_VALUE				/*< Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
@@ -198,6 +202,11 @@ struct xMINI_LIST_ITEM
 	struct xLIST_ITEM * configLIST_VOLATILE pxPrevious;
 };
 typedef struct xMINI_LIST_ITEM MiniListItem_t;
+
+#if __GNUC_PREREQ(4, 6)
+_Static_assert(sizeof(StaticMiniListItem_t) == sizeof(MiniListItem_t), "StaticMiniListItem_t != MiniListItem_t");
+#endif
+
 
 /*
  * Definition of the type of queue used by the scheduler.
@@ -210,6 +219,10 @@ typedef struct xLIST
 	MiniListItem_t xListEnd;						/*< List item that contains the maximum possible item value meaning it is always at the end of the list and is therefore used as a marker. */
 	listSECOND_LIST_INTEGRITY_CHECK_VALUE				/*< Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
 } List_t;
+
+#if __GNUC_PREREQ(4, 6)
+_Static_assert(sizeof(StaticList_t) == sizeof(List_t), "StaticList_t != List_t");
+#endif
 
 /*
  * Access macro to set the owner of a list item.  The owner of a list item

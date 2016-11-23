@@ -64,18 +64,22 @@ typedef struct {
     ip4_addr_t gw;
 } tcpip_adapter_ip_info_t;
 
+typedef struct {
+    ip6_addr_t ip;
+} tcpip_adapter_ip6_info_t;
+
 typedef dhcps_lease_t tcpip_adapter_dhcps_lease_t;
 
 #if CONFIG_DHCP_STA_LIST 
 typedef struct {
     uint8_t mac[6];
     ip4_addr_t ip;
-}tcpip_adapter_sta_info_t;
+} tcpip_adapter_sta_info_t;
 
 typedef struct {
     tcpip_adapter_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM];
     int num;
-}tcpip_adapter_sta_list_t;
+} tcpip_adapter_sta_list_t;
 #endif
 
 #endif
@@ -210,6 +214,35 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
  *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
  */
 esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief  create interface's linklocal IPv6 information
+ *
+ * @note this function will create a linklocal IPv6 address about input interface,
+ *       if this address status changed to preferred, will call event call back ,
+ *       notify user linklocal IPv6 address has been verified
+ *
+ * @param[in]  tcpip_if: the interface which we want to set IP information
+ *
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ */
+esp_err_t tcpip_adapter_create_ip6_linklocal(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief  get interface's linkloacl IPv6 information
+ *
+ * There has an IPv6 information copy in adapter library, if interface is up,and IPv6 info
+ * is preferred,it will get IPv6 linklocal IP successfully
+ *
+ * @param[in]  tcpip_if: the interface which we want to set IP information
+ * @param[in]  if_ip6: If successful, IPv6 information will be returned in this argument.
+ *
+ * @return ESP_OK
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
+ */
+esp_err_t tcpip_adapter_get_ip6_linklocal(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6);
 
 #if 0
 esp_err_t tcpip_adapter_get_mac(tcpip_adapter_if_t tcpip_if, uint8_t *mac);

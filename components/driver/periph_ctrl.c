@@ -25,6 +25,10 @@ void periph_module_enable(periph_module_t periph)
 {
     portENTER_CRITICAL(&periph_spinlock);
     switch(periph) {
+        case PERIPH_RMT_MODULE:
+            SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_RMT_CLK_EN);
+            CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_RMT_RST);
+            break;
         case PERIPH_LEDC_MODULE:
             SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_LEDC_CLK_EN);
             CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_LEDC_RST);
