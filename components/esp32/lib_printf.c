@@ -12,6 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @file lib_printf.c
+ *
+ * This file contains library-specific printf functions
+ * used by WiFi libraries in the `lib` directory.
+ * These function are used to catch any output which gets printed
+ * by libraries, and redirect it to ESP_LOG macros.
+ *
+ * Eventually WiFi libraries will use ESP_LOG functions internally
+ * and these definitions will be removed.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "esp_log.h"

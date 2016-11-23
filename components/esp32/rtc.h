@@ -12,6 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @file rtc.h
+ * @brief Declarations of APIs provided by librtc.a
+ *
+ * This file is not in the include directory of esp32 component, so it is not
+ * part of the public API. As the source code of librtc.a is gradually moved
+ * into the ESP-IDF, some of these APIs will be exposed to applications.
+ *
+ * For now, only esp_deep_sleep function declared in esp_deepsleep.h
+ * is part of public API.
+ */
+
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
