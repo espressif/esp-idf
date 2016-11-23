@@ -1192,11 +1192,28 @@ etharp_query(struct netif *netif, const ip4_addr_t *ipaddr, struct pbuf *q)
         }
 #if ARP_QUEUE_LEN
         if (qlen >= ARP_QUEUE_LEN) {
+#if ESP_LWIP_ARP
+          int l;
+          struct etharp_q_entry *r;
+
+          l = qlen - 1;
+          r = arp_table[i].q;
+          while (l--)
+            r = r->next;
+          r->next = NULL;
+
+          pbuf_free(new_entry->p);
+          memp_free(MEMP_ARP_QUEUE, new_entry);
+
+          LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_query: could not queue the packet %p (queue is full)\n", (void *)q));
+          return ERR_MEM;
+#else
           struct etharp_q_entry *old;
           old = arp_table[i].q;
           arp_table[i].q = arp_table[i].q->next;
           pbuf_free(old->p);
           memp_free(MEMP_ARP_QUEUE, old);
+#endif
         }
 #endif
         LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_query: queued packet %p on ARP entry %"S16_F"\n", (void *)q, (s16_t)i));

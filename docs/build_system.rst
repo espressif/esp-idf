@@ -57,6 +57,7 @@ Example Project
 ---------------
 
 An example project directory tree might look like this::
+
     - myProject/
                  - Makefile
                  - sdkconfig
@@ -66,11 +67,11 @@ An example project directory tree might look like this::
                                - component2/ - component.mk
                                              - Kconfig
                                              - src1.c
-                                             - include/
-                                                    - component2.h
+                                             - include/ - component2.h
                  - main/       - src1.c
                                - src2.c
                                - component.mk
+
                  - build/
 
 This example "myProject" contains the following elements:
@@ -101,6 +102,7 @@ Minimal Example Makefile
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
+
    PROJECT_NAME := myProject
    
    include $(IDF_PATH)/make/project.mk
@@ -135,7 +137,8 @@ Minimal Component Makefile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The minimal ``component.mk`` file is an empty file(!). If the file is empty, the default component behaviour is set:
-- All source files in the same directory as the makefile (*.c, *.cpp, *.S) will be compiled into the component library
+
+- All source files in the same directory as the makefile (``*.c``, ``*.cpp``, ``*.S``) will be compiled into the component library
 - A sub-directory "include" will be added to the global include search path for all other components.
 - The component library will be linked into the project app.
 
@@ -209,8 +212,8 @@ The following variables can be set inside ``component.mk`` to control the build 
   ``COMPONENT_PRIV_INCLUDEDIRS`` variable, except these paths are not
   expanded relative to the component directory.
 - ``COMPONENT_SRCDIRS``: Directory paths, must be relative to the
-  component directory, which will be searched for source files (*.cpp,
-  *.c, *.S). Defaults to '.', ie the component directory
+  component directory, which will be searched for source files (``*.cpp``,
+  ``*.c``, ``*.S``). Defaults to '.', ie the component directory
   itself. Override this to specify a different list of directories
   which contain source files.
 - ``COMPONENT_OBJS``: Object files to compile. Default value is a .o
@@ -366,12 +369,14 @@ The configuration system can be used to conditionally compile some files
 depending on the options selected in ``make menuconfig``:
 
 ``Kconfig``::
+
     config FOO_ENABLE_BAR
         bool "Enable the BAR feature."
         help
             This enables the BAR feature of the FOO component.
 
 ``component.mk``::
+
     COMPONENT_OBJS := foo_a.o foo_b.o
 
     ifdef CONFIG_FOO_BAR
