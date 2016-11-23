@@ -13,12 +13,9 @@
 #include "soc/gpio_sig_map.h"
 #include "driver/gpio.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define PCNT_PIN_NOT_USED  (-1)
 
 typedef enum {
     PCNT_MODE_KEEP = 0,             /*!< Control mode: won't change counter mode*/
@@ -35,14 +32,14 @@ typedef enum {
 } pcnt_count_mode_t;
 
 typedef enum {
-    PCNT_UNIT0 = 0,                 /*!< PCNT unit0 */
-    PCNT_UNIT1 = 1,                 /*!< PCNT unit1 */
-    PCNT_UNIT2 = 2,                 /*!< PCNT unit2 */
-    PCNT_UNIT3 = 3,                 /*!< PCNT unit3 */
-    PCNT_UNIT4 = 4,                 /*!< PCNT unit4 */
-    PCNT_UNIT5 = 5,                 /*!< PCNT unit5 */
-    PCNT_UNIT6 = 6,                 /*!< PCNT unit6 */
-    PCNT_UNIT7 = 7,                 /*!< PCNT unit7 */
+    PCNT_UNIT_0 = 0,                 /*!< PCNT unit0 */
+    PCNT_UNIT_1 = 1,                 /*!< PCNT unit1 */
+    PCNT_UNIT_2 = 2,                 /*!< PCNT unit2 */
+    PCNT_UNIT_3 = 3,                 /*!< PCNT unit3 */
+    PCNT_UNIT_4 = 4,                 /*!< PCNT unit4 */
+    PCNT_UNIT_5 = 5,                 /*!< PCNT unit5 */
+    PCNT_UNIT_6 = 6,                 /*!< PCNT unit6 */
+    PCNT_UNIT_7 = 7,                 /*!< PCNT unit7 */
     PCNT_UNIT_MAX,
 } pcnt_unit_t; 
 
@@ -55,8 +52,8 @@ typedef enum{
 typedef enum {
     PCNT_EVT_L_LIM = 0,             /*!< PCNT watch point event: Minimum counter value */
     PCNT_EVT_H_LIM = 1,             /*!< PCNT watch point event: Maximum counter value*/
-    PCNT_EVT_THRES0 = 2,            /*!< PCNT watch point event: threshold0 value event*/
-    PCNT_EVT_THRES1 = 3,            /*!< PCNT watch point event: threshold1 value event*/
+    PCNT_EVT_THRES_0 = 2,            /*!< PCNT watch point event: threshold0 value event*/
+    PCNT_EVT_THRES_1 = 3,            /*!< PCNT watch point event: threshold1 value event*/
     PCNT_EVT_ZERO = 4,              /*!< PCNT watch point event: counter value zero event*/
     PCNT_EVT_MAX
 } pcnt_evt_type_t;
@@ -268,6 +265,8 @@ esp_err_t pcnt_filter_disable(pcnt_unit_t unit);
  * @param unit PCNT unit number
  * @param filter_val PCNT signal filter value, counter in APB_CLK cycles.
  *        Any pulses lasting shorter than this will be ignored when the filter is enabled.
+ *        @note
+ *        filter_val is a 10-bit value, so the maximum filter_val should be limited to 1023.
  *
  * @return
  *     - ESP_OK Success
@@ -301,13 +300,18 @@ esp_err_t pcnt_get_filter_value(pcnt_unit_t unit, uint16_t *filter_val);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t pcnt_set_mode(pcnt_unit_t unit, pcnt_channel_t channel, pcnt_count_mode_t pos_mode, pcnt_count_mode_t neg_mode, pcnt_ctrl_mode_t hctrl_mode, pcnt_ctrl_mode_t lctrl_mode);
+esp_err_t pcnt_set_mode(pcnt_unit_t unit, pcnt_channel_t channel,
+                        pcnt_count_mode_t pos_mode, pcnt_count_mode_t neg_mode,
+                        pcnt_ctrl_mode_t hctrl_mode, pcnt_ctrl_mode_t lctrl_mode);
 
 
-/***************************EXAMPLE**********************************
+/**
+ * @addtogroup pcnt-examples
  *
+ * @{
  *
- * ----------------EXAMPLE OF LEDC SETTING ---------------------
+ * EXAMPLE OF PCNT CONFIGURATION
+ * ==============================
  * @code{c}
  * //1. Config PCNT unit
  * pcnt_config_t pcnt_config = {
@@ -324,15 +328,17 @@ esp_err_t pcnt_set_mode(pcnt_unit_t unit, pcnt_channel_t channel, pcnt_count_mod
  * pcnt_unit_config(&pcnt_config);        //init unit
  * @endcode
  *
+ * EXAMPLE OF PCNT EVENT SETTING
+ * ==============================
  * @code{c}
  * //2. Configure PCNT watchpoint event.
- * pcnt_set_event_value(PCNT_UNIT0, PCNT_EVT_THRES1, 5);   //set thres1 value
- * pcnt_event_enable(PCNT_UNIT0, PCNT_EVT_THRES1);         //enable thres1 event
+ * pcnt_set_event_value(PCNT_UNIT_0, PCNT_EVT_THRES_1, 5);   //set thres1 value
+ * pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_THRES_1);         //enable thres1 event
  * @endcode
  *
  * For more examples please refer to PCNT example code in IDF_PATH/examples
  *
- *--------------------------END OF EXAMPLE --------------------------
+ * @}
  */
 
 #ifdef __cplusplus 

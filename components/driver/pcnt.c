@@ -22,6 +22,7 @@
 #define PCNT_PARAM_ERR_STR   "PCNT PARAM ERROR"
 #define PCNT_COUNT_MODE_ERR_STR "PCNT COUNTER MODE ERROR"
 #define PCNT_CTRL_MODE_ERR_STR  "PCNT CTRL MODE ERROR"
+#define PCNT_EVT_TYPE_ERR_STR   "PCNT value type error"
 #define PCNT_CHECK(a,str,ret_val) if(!(a)) { \
 	    ESP_LOGE(PCNT_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str); \
 		return (ret_val); \
@@ -112,7 +113,7 @@ esp_err_t pcnt_set_pin(pcnt_unit_t unit, pcnt_channel_t channel, int pulse_io, i
 esp_err_t pcnt_get_counter_value(pcnt_unit_t pcnt_unit, int16_t* count)
 {
     PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    PCNT_CHECK(count != NULL, "PCNT ADDRESS ERROR", ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(count != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
     *count = (int16_t) PCNT.cnt_unit[pcnt_unit].cnt_val;
     return ESP_OK;
 }
@@ -165,14 +166,14 @@ esp_err_t pcnt_intr_disable(pcnt_unit_t pcnt_unit)
 esp_err_t pcnt_event_enable(pcnt_unit_t unit, pcnt_evt_type_t evt_type)
 {
     PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    PCNT_CHECK(evt_type < PCNT_EVT_MAX, "PCNT value type error", ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(evt_type < PCNT_EVT_MAX, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
     if(evt_type == PCNT_EVT_L_LIM) {
         PCNT.conf_unit[unit].conf0.thr_l_lim_en = 1;
     } else if(evt_type == PCNT_EVT_H_LIM) {
         PCNT.conf_unit[unit].conf0.thr_h_lim_en = 1;
-    } else if(evt_type == PCNT_EVT_THRES0) {
+    } else if(evt_type == PCNT_EVT_THRES_0) {
         PCNT.conf_unit[unit].conf0.thr_thres0_en = 1;
-    } else if(evt_type == PCNT_EVT_THRES1) {
+    } else if(evt_type == PCNT_EVT_THRES_1) {
         PCNT.conf_unit[unit].conf0.thr_thres1_en = 1;
     } else if(evt_type == PCNT_EVT_ZERO) {
         PCNT.conf_unit[unit].conf0.thr_zero_en = 1;
@@ -183,14 +184,14 @@ esp_err_t pcnt_event_enable(pcnt_unit_t unit, pcnt_evt_type_t evt_type)
 esp_err_t pcnt_event_disable(pcnt_unit_t unit, pcnt_evt_type_t evt_type)
 {
     PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    PCNT_CHECK(evt_type < PCNT_EVT_MAX, "PCNT value type error", ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(evt_type < PCNT_EVT_MAX, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
     if(evt_type == PCNT_EVT_L_LIM) {
         PCNT.conf_unit[unit].conf0.thr_l_lim_en = 0;
     } else if(evt_type == PCNT_EVT_H_LIM) {
         PCNT.conf_unit[unit].conf0.thr_h_lim_en = 0;
-    } else if(evt_type == PCNT_EVT_THRES0) {
+    } else if(evt_type == PCNT_EVT_THRES_0) {
         PCNT.conf_unit[unit].conf0.thr_thres0_en = 0;
-    } else if(evt_type == PCNT_EVT_THRES1) {
+    } else if(evt_type == PCNT_EVT_THRES_1) {
         PCNT.conf_unit[unit].conf0.thr_thres1_en = 0;
     } else if(evt_type == PCNT_EVT_ZERO) {
         PCNT.conf_unit[unit].conf0.thr_zero_en = 0;
@@ -201,14 +202,14 @@ esp_err_t pcnt_event_disable(pcnt_unit_t unit, pcnt_evt_type_t evt_type)
 esp_err_t pcnt_set_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16_t value)
 {
     PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    PCNT_CHECK(evt_type < PCNT_EVT_MAX, "PCNT value type error", ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(evt_type < PCNT_EVT_MAX, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
     if(evt_type == PCNT_EVT_L_LIM) {
         PCNT.conf_unit[unit].conf2.cnt_l_lim = value;
     } else if(evt_type == PCNT_EVT_H_LIM) {
         PCNT.conf_unit[unit].conf2.cnt_h_lim = value;
-    } else if(evt_type == PCNT_EVT_THRES0) {
+    } else if(evt_type == PCNT_EVT_THRES_0) {
         PCNT.conf_unit[unit].conf1.cnt_thres0 = value;
-    } else if(evt_type == PCNT_EVT_THRES1) {
+    } else if(evt_type == PCNT_EVT_THRES_1) {
         PCNT.conf_unit[unit].conf1.cnt_thres1 = value;
     }
     return ESP_OK;
@@ -217,16 +218,16 @@ esp_err_t pcnt_set_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
 esp_err_t pcnt_get_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16_t *value)
 {
     PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    PCNT_CHECK(evt_type < PCNT_EVT_MAX, "PCNT value type error", ESP_ERR_INVALID_ARG);
-    PCNT_CHECK(value != NULL, "PCNT ADDRESS ERROR", ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(evt_type < PCNT_EVT_MAX, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(value != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
 
     if(evt_type == PCNT_EVT_L_LIM) {
         *value = (int16_t) PCNT.conf_unit[unit].conf2.cnt_l_lim;
     } else if(evt_type == PCNT_EVT_H_LIM) {
         *value = (int16_t) PCNT.conf_unit[unit].conf2.cnt_h_lim;
-    } else if(evt_type == PCNT_EVT_THRES0) {
+    } else if(evt_type == PCNT_EVT_THRES_0) {
         *value = (int16_t) PCNT.conf_unit[unit].conf1.cnt_thres0;
-    } else if(evt_type == PCNT_EVT_THRES1) {
+    } else if(evt_type == PCNT_EVT_THRES_1) {
         *value = (int16_t) PCNT.conf_unit[unit].conf1.cnt_thres1;
     } else {
         *value = 0;
@@ -245,7 +246,7 @@ esp_err_t pcnt_set_filter_value(pcnt_unit_t unit, uint16_t filter_val)
 esp_err_t pcnt_get_filter_value(pcnt_unit_t unit, uint16_t *filter_val)
 {
     PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    PCNT_CHECK(filter_val != NULL, "PCNT ADDRESS ERROR", ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(filter_val != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
 
     *filter_val = PCNT.conf_unit[unit].conf0.filter_thres;
     return ESP_OK;
