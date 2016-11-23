@@ -796,6 +796,7 @@ static void btif_media_task_handler(void *arg)
                 break;
             case SIG_MEDIA_TASK_CMD_READY:
                 fixed_queue_process(btif_media_cmd_msg_queue);
+		break;
             case SIG_MEDIA_TASK_INIT:
                 btif_media_thread_init(NULL);
                 break;
@@ -1036,14 +1037,12 @@ void btif_reset_decoder(UINT8 *p_av)
             p_av[4], p_av[5], p_av[6]);
 
     tBTIF_MEDIA_SINK_CFG_UPDATE *p_buf;
-    LOG_ERROR("btif_reset_decoder 1\n");
     if (NULL == (p_buf = GKI_getbuf(sizeof(tBTIF_MEDIA_SINK_CFG_UPDATE))))
     {
         APPL_TRACE_ERROR("btif_reset_decoder No Buffer ");
         return;
     }
 
-    LOG_ERROR("btif_reset_decoder 2\n");
     memcpy(p_buf->codec_info,p_av, AVDT_CODEC_SIZE);
     p_buf->hdr.event = BTIF_MEDIA_AUDIO_SINK_CFG_UPDATE;
 
@@ -1241,13 +1240,8 @@ static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context)
             return;
         }
 
-	// temporary hack
-	num_frames_to_process = 7;
-        // num_frames_to_process = btif_media_cb.frames_to_process;
-	
-	
+        num_frames_to_process = btif_media_cb.frames_to_process;
         APPL_TRACE_DEBUG(" Process Frames + ");
-        // LOG_ERROR("Process_Frames %d+\n", btif_media_cb.frames_to_process);
 
         do
         {
@@ -1255,9 +1249,9 @@ static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context)
             if (p_msg == NULL)
                 return;
             num_sbc_frames  = p_msg->num_frames_to_be_processed; /* num of frames in Que Packets */
-            // APPL_TRACE_DEBUG(" Frames left in topmost packet %d\n", num_sbc_frames);
-            // APPL_TRACE_DEBUG(" Remaining frames to process in tick %d\n", num_frames_to_process);
-            // APPL_TRACE_DEBUG(" Num of Packets in Que %d\n", btif_media_cb.RxSbcQ._count);
+            APPL_TRACE_DEBUG(" Frames left in topmost packet %d\n", num_sbc_frames);
+            APPL_TRACE_DEBUG(" Remaining frames to process in tick %d\n", num_frames_to_process);
+            APPL_TRACE_DEBUG(" Num of Packets in Que %d\n", btif_media_cb.RxSbcQ._count);
             // LOG_ERROR(" Frames %d %d %d\n", num_sbc_frames, num_frames_to_process, btif_media_cb.RxSbcQ._count);
             
             if ( num_sbc_frames > num_frames_to_process) /*  Que Packet has more frames*/
@@ -1465,7 +1459,6 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR*p_msg)
     UINT32 sbc_frame_len = p_msg->len - 1;
     availPcmBytes = 2*sizeof(pcmData);
 
-    // LOG_ERROR("inc med\n");
     if ((btif_media_cb.peer_sep == AVDT_TSEP_SNK) || (btif_media_cb.rx_flush))
     {
         APPL_TRACE_DEBUG(" State Changed happened in this tick ");
@@ -2095,13 +2088,7 @@ void btif_a2dp_set_peer_sep(UINT8 sep) {
 }
 
 static void btif_decode_alarm_cb(UNUSED_ATTR void *context) {
-#if 0
-    thread_post(worker_thread, btif_media_task_avk_handle_timer, NULL);
-#else
-    // LOG_ERROR("decoder alarm\n");
     btif_media_task_post(SIG_MEDIA_TASK_AVK_ALARM_TO);
-    // TODO: btif_media_task_avk_handle_timer
-#endif
 }
 
 static void btif_media_task_aa_handle_stop_decoding(void) {
@@ -2118,9 +2105,7 @@ static void btif_media_task_aa_handle_start_decoding(void) {
     APPL_TRACE_ERROR("%s unable to allocate decode alarm.\n", __func__);
     return;
   }
-  LOG_ERROR("Decoder_alarm set\n");
   osi_alarm_set(btif_media_cb.decode_alarm, BTIF_SINK_MEDIA_TIME_TICK);
-  // alarm_set_periodic(btif_media_cb.decode_alarm, BTIF_SINK_MEDIA_TIME_TICK, btif_decode_alarm_cb, NULL);
 }
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)
@@ -2302,11 +2287,7 @@ static void btif_media_task_feeding_state_reset(void)
 
 static void btif_media_task_alarm_cb(UNUSED_ATTR void *context)
 {
-#if 0
-    thread_post(worker_thread, btif_media_task_aa_handle_timer, NULL);
-#else
     btif_media_task_post(SIG_MEDIA_TASK_AA_ALARM_TO);
-#endif
 }
 
 /*******************************************************************************
@@ -2481,7 +2462,6 @@ UINT8 btif_media_sink_enque_buf(BT_HDR *p_pkt)
         if(GKI_queue_length(&btif_media_cb.RxSbcQ) == MAX_A2DP_DELAYED_START_FRAME_COUNT)
         {
             BTIF_TRACE_DEBUG(" Initiate Decoding ");
-            LOG_ERROR("Initiate Decoding\n");
             btif_media_task_aa_handle_start_decoding();
         }
     }
