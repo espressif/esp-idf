@@ -32,9 +32,6 @@ include $(IDF_PATH)/make/common.mk
 # Some of the following defaults may be overriden by the component's component.mk makefile,
 # during the next step:
 
-# Name of the component
-COMPONENT_NAME := $(lastword $(subst /, ,$(realpath $(COMPONENT_PATH))))
-
 # Absolute path of the .a file
 COMPONENT_LIBRARY = lib$(COMPONENT_NAME).a
 
