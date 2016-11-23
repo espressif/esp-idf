@@ -102,6 +102,7 @@ Contents:
    api/uart
    api/ledc
    api/rmt
+   Pulse Counter <api/pcnt>
    SPI Flash and Partition APIs <api/spi_flash>
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>
