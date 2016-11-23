@@ -25,6 +25,7 @@
 #include <malloc.h>
 #include <limits.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "mbedtls/bignum.h"
 #include "rom/bigint.h"
 #include "soc/hwcrypto_reg.h"
