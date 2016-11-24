@@ -33,8 +33,8 @@ typedef enum{
 extern void phy_get_romfunc_addr();
 
 // TODO: these functions need to be moved from librtc to ESP-IDF
-extern void rtc_init_lite();
-extern void rtc_set_cpu_freq(xtal_freq_t xtal_freq, cpu_freq_t cpu_freq);
+extern void rtc_init_lite(xtal_freq_t xtal_freq);
+extern void rtc_set_cpu_freq(cpu_freq_t cpu_freq);
 
 /*
  * This function is not exposed as an API at this point,
@@ -52,7 +52,7 @@ void esp_set_cpu_freq(void)
     // wait uart tx finish, otherwise some uart output will be lost
     uart_tx_wait_idle(0);
 
-    rtc_init_lite();
+    rtc_init_lite(XTAL_AUTO);
     cpu_freq_t freq = CPU_80M;
     switch(freq_mhz) {
         case 240:
@@ -73,7 +73,7 @@ void esp_set_cpu_freq(void)
     // wait uart tx finish, otherwise some uart output will be lost
     uart_tx_wait_idle(0);
 
-    rtc_set_cpu_freq(XTAL_AUTO, freq);
+    rtc_set_cpu_freq(freq);
     ets_update_cpu_frequency(freq_mhz);
 }
 

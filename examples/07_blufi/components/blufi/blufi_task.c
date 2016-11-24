@@ -79,7 +79,7 @@ static esp_err_t blufi_task_post(uint32_t sig, void *par, void *cb, void *arg)
 
 esp_err_t blufi_transfer_context(blufi_task_cb_t cb, void *arg)
 {
-    LOG_DEBUG("%s cb %08x, arg %u\n", __func__, cb, arg);
+    LOG_DEBUG("%s cb %08x, arg %u\n", __func__, (uint32_t)cb, (uint32_t)arg);
 
     return blufi_task_post(BLUFI_SIG_SWITCH_CONTEXT, 0, cb, arg);
 }
