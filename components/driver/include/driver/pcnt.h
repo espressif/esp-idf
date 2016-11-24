@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+#define PCNT_PIN_NOT_USED     (-1)  /*!< Pin are not used */
+
 typedef enum {
     PCNT_MODE_KEEP = 0,             /*!< Control mode: won't change counter mode*/
     PCNT_MODE_REVERSE = 1,          /*!< Control mode: invert counter mode(increase -> decrease, decrease -> increase);*/
@@ -59,7 +61,7 @@ typedef enum {
 } pcnt_evt_type_t;
 
 /**
- * @brief PCNT configure struct
+ * @brief Pulse Counter configure struct
  */
 typedef struct {
     int pulse_gpio_num;             /*!< Pulse input gpio_num, if you want to use gpio16, pulse_gpio_num = 16, a negative value will be ignored */
@@ -75,9 +77,9 @@ typedef struct {
 } pcnt_config_t;
 
 /**
- * @brief Configure PCNT unit
+ * @brief Configure Pulse Counter unit
  *
- * @param pcnt_config Pointer of PCNT unit configure parameter
+ * @param pcnt_config Pointer of Pulse Counter unit configure parameter
  *
  * @return
  *     - ESP_OK Success
@@ -88,7 +90,7 @@ esp_err_t pcnt_unit_config(pcnt_config_t *pcnt_config);
 /**
  * @brief Get pulse counter value
  *
- * @param pcnt_unit  PCNT unit number
+ * @param pcnt_unit  Pulse Counter unit number
  * @param count Pointer to accept counter value
  *
  * @return  
@@ -133,7 +135,8 @@ esp_err_t pcnt_counter_clear(pcnt_unit_t pcnt_unit);
 /**
  * @brief Enable PCNT interrupt for PCNT unit
  *        @note
- *        Five watch point events share the same interrupt source for each unit.
+ *        Each Pulse counter unit has five watch point events that share the same interrupt.
+ *        Configure events with pcnt_event_enable() and pcnt_event_disable()
  *
  * @param pcnt_unit PCNT unit number
  *
@@ -158,8 +161,8 @@ esp_err_t pcnt_intr_disable(pcnt_unit_t pcnt_unit);
  * @brief Enable PCNT event of PCNT unit
  *
  * @param unit PCNT unit number
- * @param evt_type PCNT watch point event type, five events share a same interrupt source
- *
+ * @param evt_type Watch point event type.
+ *                 All enabled events share the same interrupt (one interrupt per pulse counter unit).
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
@@ -170,8 +173,8 @@ esp_err_t pcnt_event_enable(pcnt_unit_t unit, pcnt_evt_type_t evt_type);
  * @brief Disable PCNT event of PCNT unit
  *
  * @param unit PCNT unit number
- * @param evt_type PCNT watch point event type, five events share a same interrupt source
- *
+ * @param evt_type Watch point event type.
+ *                 All enabled events share the same interrupt (one interrupt per pulse counter unit).
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
@@ -182,7 +185,9 @@ esp_err_t pcnt_event_disable(pcnt_unit_t unit, pcnt_evt_type_t evt_type);
  * @brief Set PCNT event value of PCNT unit
  *
  * @param unit PCNT unit number
- * @param evt_type PCNT watch point event type, five events share a same interrupt source
+ * @param evt_type Watch point event type.
+ *                 All enabled events share the same interrupt (one interrupt per pulse counter unit).
+ *
  * @param value Counter value for PCNT event
  *
  * @return
@@ -195,7 +200,8 @@ esp_err_t pcnt_set_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
  * @brief Get PCNT event value of PCNT unit
  *
  * @param unit PCNT unit number
- * @param evt_type PCNT watch point event type, five events share a same interrupt source
+ * @param evt_type Watch point event type.
+ *                 All enabled events share the same interrupt (one interrupt per pulse counter unit).
  * @param value Pointer to accept counter value for PCNT event
  *
  * @return
@@ -229,7 +235,11 @@ esp_err_t pcnt_isr_register(uint32_t pcnt_intr_num, void (*fn)(void*), void * ar
  * @param unit PCNT unit number
  * @param channel PCNT channel number
  * @param pulse_io Pulse signal input GPIO
+ *        @note
+ *        Set to PCNT_PIN_NOT_USED if unused.
  * @param ctrl_io Control signal input GPIO
+ *        @note
+ *        Set to PCNT_PIN_NOT_USED if unused.
  *
  * @return
  *     - ESP_OK Success

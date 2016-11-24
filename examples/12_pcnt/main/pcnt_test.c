@@ -11,7 +11,9 @@
 */
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "driver/periph_ctrl.h"
 #include "driver/ledc.h"
 #include "driver/gpio.h"
@@ -45,28 +47,49 @@ static const char* TAG = "PCNT_TEST";
 #define PCNT_INPUT_CTRL_IO  (5)
 #define LEDC_OUPUT_IO      (18)
 
+xQueueHandle pcnt_evt_queue;  /*A queue to handle pulse counter event*/
+
+
+typedef struct {
+    int unit;        /*pulse counter unit*/
+    uint32_t status; /*pulse counter internal status*/
+} pcnt_evt_t;
+
 void IRAM_ATTR pcnt_intr_handler(void* arg)
 {
     uint32_t intr_status = PCNT.int_st.val;
     int i;
+    pcnt_evt_t evt;
+    portBASE_TYPE HPTaskAwoken = pdFALSE;
+
     for(i = 0; i < PCNT_UNIT_MAX; i++) {
         if(intr_status & (BIT(i))) {
-            ESP_EARLY_LOGI(TAG, "EVENT[%d] intr\n", i);
-            PCNT.int_clr.val |= BIT(i);
+            evt.unit = i;
+            evt.status = PCNT.status_unit[i].val;
+            PCNT.int_clr.val = BIT(i);
+            /*H LIM EVT*/
             if(PCNT.status_unit[i].h_lim_lat) {
-                ESP_EARLY_LOGI(TAG, "H LIM EVT\n");
+                //do something
             }
+            /*L LIM EVT*/
             if(PCNT.status_unit[i].l_lim_lat) {
-                ESP_EARLY_LOGI(TAG, "L LIM EVT\n");
+                //do something
             }
+            /*THRES0 EVT*/
             if(PCNT.status_unit[i].thres0_lat) {
-                ESP_EARLY_LOGI(TAG, "THRES0 EVT\n");
+                //do something
             }
+            /*THRES1 EVT*/
             if(PCNT.status_unit[i].thres1_lat) {
-                ESP_EARLY_LOGI(TAG, "THRES1 EVT\n");
+                //do something
             }
+            /*ZERO EVT*/
             if(PCNT.status_unit[i].zero_lat) {
-                ESP_EARLY_LOGI(TAG, "ZERO EVT\n");
+                //do something
+            }
+            xQueueSendFromISR(pcnt_evt_queue, &evt, &HPTaskAwoken);
+            if(HPTaskAwoken == pdTRUE) {
+                portYIELD_FROM_ISR();
             }
         }
     }
@@ -165,15 +188,39 @@ void app_main()
 {
     /*Init LEDC for pulse input signal */
     ledc_init();
+    /*Init PCNT event queue */
+    pcnt_evt_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
     /*Init PCNT functions*/
     pcnt_init();
 
     int16_t count = 0;
+    pcnt_evt_t evt;
+    portBASE_TYPE res;
     while(1)
     {
-        pcnt_get_counter_value(PCNT_TEST_UNIT, &count);
-        printf("Current counter value :%d\n", count);
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        res = xQueueReceive(pcnt_evt_queue, &evt, 1000 / portTICK_RATE_MS);
+        if(res == pdTRUE) {
+            pcnt_get_counter_value(PCNT_TEST_UNIT, &count);
+            printf("Event PCNT unit[%d]; cnt: %d\n", evt.unit, count);
+            if(evt.status & PCNT_STATUS_THRES1_M) {
+                printf("THRES1 EVT\n");
+            }
+            if(evt.status & PCNT_STATUS_THRES0_M) {
+                printf("THRES0 EVT\n");
+            }
+            if(evt.status & PCNT_STATUS_L_LIM_M) {
+                printf("L_LIM EVT\n");
+            }
+            if(evt.status & PCNT_STATUS_H_LIM_M) {
+                printf("H_LIM EVT\n");
+            }
+            if(evt.status & PCNT_STATUS_ZERO_M) {
+                printf("ZERO EVT\n");
+            }
+        } else {
+            pcnt_get_counter_value(PCNT_TEST_UNIT, &count);
+            printf("Current counter value :%d\n", count);
+        }
     }
 }
 
