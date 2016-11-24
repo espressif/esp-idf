@@ -23,7 +23,7 @@ extern "C" {
  *
  * @return Init ok or failed.
  */
-esp_err_t coexist_init(void);
+esp_err_t coex_init(void);
 
 /**
  * @brief Get software coexist enable or not

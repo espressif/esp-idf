@@ -196,7 +196,7 @@ void start_cpu0_default(void)
 #endif
 
 #if CONFIG_SW_COEXIST_ENABLE
-	if (coexist_init() == ESP_OK) {
+	if (coex_init() == ESP_OK) {
         coexist_set_enable(true);
 	}
 #endif
