@@ -30,7 +30,7 @@ typedef enum {
 } btc_gattc_act_t;
 
 /* btc_ble_gattc_args_t */
-typedef struct {
+typedef union {
     //BTC_GATTC_ACT_APP_REGISTER,
 	struct app_reg_arg {
 		uint16_t app_id;

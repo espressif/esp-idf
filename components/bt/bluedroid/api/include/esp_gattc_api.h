@@ -106,7 +106,7 @@ typedef union {
     	esp_gatt_srvc_id_t srvc_id;
     	esp_gatt_id_t char_id;
     	esp_gatt_id_t descr_id;
-    	uint8_t value[ESP_GATT_MAX_ATTR_LEN];
+    	uint8_t *value;
     	uint16_t value_type;
     	uint16_t value_len;
 	} read; /* ESP_GATTC_READ_CHAR_EVT */
@@ -134,7 +134,7 @@ typedef union {
         esp_gatt_id_t char_id;
         esp_gatt_id_t descr_id;
         uint16_t value_len;
-        UINT8 value[ESP_GATT_MAX_ATTR_LEN];
+        uint8_t *value;
         bool is_notify;
     } notify;
 

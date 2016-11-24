@@ -593,12 +593,13 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
 									  param.notify.is_notify = (notify->is_notify == TRUE) ? true : false;
 									  param.notify.value_len = (notify->len > ESP_GATT_MAX_ATTR_LEN) ? \
 															   ESP_GATT_MAX_ATTR_LEN : notify->len;
-									  memcpy(&param.notify.value, notify->value, param.notify.value_len);
-									  BTC_GATTC_CB_TO_APP(ESP_GATTC_NOTIFY_EVT, &param);
+									  param.notify.value = notify->value;
 
 									  if (notify->is_notify == FALSE) {
 										  BTA_GATTC_SendIndConfirm(notify->conn_id, &notify->char_id);
 									  }
+
+									  BTC_GATTC_CB_TO_APP(ESP_GATTC_NOTIFY_EVT, &param);
 									  break;
 								  }
 		case BTA_GATTC_OPEN_EVT: {

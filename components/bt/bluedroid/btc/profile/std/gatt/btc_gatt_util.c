@@ -183,8 +183,7 @@ uint16_t set_read_value(esp_ble_gattc_cb_param_t *p_dest, tBTA_GATTC_READ *p_src
                 p_dest->read.value_len = p_src->p_value->unformat.len;
                 if ( p_src->p_value->unformat.len > 0  && p_src->p_value->unformat.p_value != NULL )
                 {
-                    memcpy(p_dest->read.value, p_src->p_value->unformat.p_value,
-                           p_src->p_value->unformat.len);
+                    p_dest->read.value = p_src->p_value->unformat.p_value;
                 }
                 len += p_src->p_value->unformat.len;
             }
