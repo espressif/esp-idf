@@ -609,9 +609,9 @@ void *xRingbufferReceiveUpToFromISR(RingbufHandle_t ringbuf, size_t *item_size, 
 void vRingbufferReturnItem(RingbufHandle_t ringbuf, void *item) 
 {
     ringbuf_t *rb=(ringbuf_t *)ringbuf;
-    portENTER_CRITICAL_ISR(&rb->mux);
+    portENTER_CRITICAL(&rb->mux);
     rb->returnItemToRingbufImpl(rb, item);
-    portEXIT_CRITICAL_ISR(&rb->mux);
+    portEXIT_CRITICAL(&rb->mux);
     xSemaphoreGive(rb->free_space_sem);
 }
 
