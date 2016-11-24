@@ -184,3 +184,29 @@ int settimeofday(const struct timeval *tv, const struct timezone *tz)
     return -1;
 #endif
 }
+
+uint32_t system_get_time(void)
+{
+#if defined( WITH_FRC1 ) || defined( WITH_RTC )
+    return get_time_since_boot();
+#else
+    return 0;
+#endif
+}
+
+uint32_t system_get_current_time(void) __attribute__((alias("system_get_time")));
+
+uint32_t system_relative_time(uint32_t current_time)
+{
+    return system_get_time() - current_time;
+}
+
+uint64_t system_get_rtc_time(void)
+{
+#ifdef WITH_RTC
+    return get_rtc_time_us();
+#else
+    return 0;
+#endif
+}
+

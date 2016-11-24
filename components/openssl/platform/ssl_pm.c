@@ -215,7 +215,7 @@ static int ssl_pm_reload_crt(SSL *ssl)
  * Perform the mbedtls SSL handshake instead of mbedtls_ssl_handshake.
  * We can add debug here.
  */
-LOCAL int mbedtls_handshake( mbedtls_ssl_context *ssl )
+static int mbedtls_handshake( mbedtls_ssl_context *ssl )
 {
     int ret = 0;
 
