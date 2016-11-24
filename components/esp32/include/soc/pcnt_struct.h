@@ -113,7 +113,18 @@ typedef volatile struct {
         };
         uint32_t val;
     } int_clr;
-    uint32_t status_unit[8];
+    union {
+        struct {
+            uint32_t cnt_mode:2;                    /*0: positive value to zero; 1: negative value to zero; 2: counter value negative ; 3: counter value positive*/
+            uint32_t thres1_lat:1;                  /* counter value equals to thresh1*/
+            uint32_t thres0_lat:1;                  /* counter value equals to thresh0*/
+            uint32_t l_lim_lat:1;                   /* counter value reaches h_lim*/
+            uint32_t h_lim_lat:1;                   /* counter value reaches l_lim*/
+            uint32_t zero_lat:1;                    /* counter value equals zero*/
+            uint32_t reserved7:25;
+        };
+        uint32_t val;
+    } status_unit[8];
     union {
         struct {
             uint32_t cnt_rst_u0:   1;               /*Set this bit to clear unit0's counter.*/

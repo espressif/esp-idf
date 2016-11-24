@@ -191,6 +191,7 @@ esp_err_t ledc_channel_config(ledc_channel_config_t* ledc_conf)
     LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "ledc mode error", ESP_ERR_INVALID_ARG);
     LEDC_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "ledc GPIO output number error", ESP_ERR_INVALID_ARG);
     LEDC_CHECK(timer_select <= LEDC_TIMER_3, "ledc timer error", ESP_ERR_INVALID_ARG);
+    periph_module_enable(PERIPH_LEDC_MODULE);
     esp_err_t ret = ESP_OK;
     /*set channel parameters*/
     /*   channel parameters decide how the waveform looks like in one period*/
