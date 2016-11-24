@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <esp_types.h>
 #include <string.h>
+#include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
