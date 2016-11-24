@@ -878,15 +878,15 @@
 #endif
 
 #ifndef GATT_MAX_SR_PROFILES
-#define GATT_MAX_SR_PROFILES        2 /* max is 32 */
+#define GATT_MAX_SR_PROFILES        4 /* max is 32 */
 #endif
 
 #ifndef GATT_MAX_APPS
-#define GATT_MAX_APPS            2 /* MAX is 32 note: 2 apps used internally GATT and GAP */
+#define GATT_MAX_APPS            4 /* MAX is 32 note: 2 apps used internally GATT and GAP */
 #endif
 
 #ifndef GATT_MAX_PHY_CHANNEL
-#define GATT_MAX_PHY_CHANNEL        2
+#define GATT_MAX_PHY_CHANNEL        4
 #endif
 
 /* Used for conformance testing ONLY */
@@ -897,7 +897,7 @@
 /* number of background connection device allowence, ideally to be the same as WL size
 */
 #ifndef GATT_MAX_BG_CONN_DEV
-#define GATT_MAX_BG_CONN_DEV        2 /*MAX is 32*/
+#define GATT_MAX_BG_CONN_DEV        4 /*MAX is 32*/
 #endif
 
 /******************************************************************************
