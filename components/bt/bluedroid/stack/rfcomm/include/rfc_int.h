@@ -75,8 +75,7 @@ extern void RFCOMM_LineStatusReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT8 line_status
 /*
 ** Define logical struct used for sending and decoding MX frames
 */
-typedef struct
-{
+typedef struct {
     UINT8   dlci;
     UINT8   type;
     UINT8   cr;
@@ -84,10 +83,8 @@ typedef struct
     UINT8   pf;
     UINT8   credit;
 
-    union
-    {
-        struct
-        {
+    union {
+        struct {
             UINT8 dlci;
             UINT8 frame_type;
             UINT8 conv_layer;
@@ -97,26 +94,22 @@ typedef struct
             UINT8 n2;
             UINT8 k;
         } pn;
-        struct
-        {
+        struct {
             UINT8   *p_data;
             UINT16  data_len;
         } test;
-        struct
-        {
+        struct {
             UINT8 dlci;
             UINT8 signals;
             UINT8 break_present;
             UINT8 break_duration;
         } msc;
-        struct
-        {
+        struct {
             UINT8 ea;
             UINT8 cr;
             UINT8 type;
         } nsc;
-        struct
-        {
+        struct {
             UINT8 dlci;
             UINT8 is_request;
             UINT8 baud_rate;
@@ -129,8 +122,7 @@ typedef struct
             UINT8 xoff_char;
             UINT16 param_mask;
         } rpn;
-        struct
-        {
+        struct {
             UINT8 dlci;
             UINT8 line_status;
         } rls;
@@ -215,8 +207,7 @@ typedef struct
 
 /* Define RFComm control block
 */
-typedef struct
-{
+typedef struct {
     MX_FRAME  rx_frame;
     tL2CAP_APPL_INFO  reg_info;              /* L2CAP Registration info */
     tRFC_MCB *p_rfc_lcid_mcb[MAX_L2CAP_CHANNELS];     /* MCB based on the L2CAP's lcid */
@@ -226,8 +217,7 @@ typedef struct
 } tRFCOMM_CB;
 
 /* Main Control Block for the RFCOMM Layer (PORT and RFC) */
-typedef struct
-{
+typedef struct {
     tRFCOMM_CB  rfc;
     tPORT_CB    port;
     UINT8       trace_level;
@@ -315,7 +305,7 @@ tRFC_MCB  *rfc_find_lcid_mcb (UINT16 lcid);
 extern void      rfc_save_lcid_mcb (tRFC_MCB *p_rfc_mcb, UINT16 lcid);
 extern void      rfc_check_mcb_active (tRFC_MCB *p_mcb);
 extern void      rfc_port_closed (tPORT *p_port);
-extern void      rfc_sec_check_complete (BD_ADDR bd_addr, tBT_TRANSPORT transport,void *p_ref_data, UINT8 res);
+extern void      rfc_sec_check_complete (BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_data, UINT8 res);
 extern void      rfc_inc_credit (tPORT *p_port, UINT8 credit);
 extern void      rfc_dec_credit (tPORT *p_port);
 extern void      rfc_check_send_cmd(tRFC_MCB *p_mcb, BT_HDR *p_buf);

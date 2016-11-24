@@ -89,18 +89,18 @@ typedef UINT8 tL2CAP_CHNL_DATA_RATE;
 
 /* length of the HCI header block */
 /* HCI header(4) + SNK count(1) + FCR bits(1) + AV data length(2) */
-#define L2CAP_MULTI_AV_HCI_HDR_LEN	8
+#define L2CAP_MULTI_AV_HCI_HDR_LEN  8
 
 /* length of padding for 4 bytes align */
 #define L2CAP_MULTI_AV_PADDING_LEN  2
 
 /* length of the HCI header block with padding for FCR */
 /* HCI header(4) + SNK count(1) + FCR bits(1) + AV data length(2) + padding(2) */
-#define L2CAP_MULTI_AV_HCI_HDR_LEN_WITH_PADDING	10
+#define L2CAP_MULTI_AV_HCI_HDR_LEN_WITH_PADDING 10
 
 /* length of the L2CAP header block */
 /* HCI header(4) + L2CAP header(4) + padding(4) or control word(2) + FCS(2) */
-#define L2CAP_MULTI_AV_L2C_HDR_LEN	12
+#define L2CAP_MULTI_AV_L2C_HDR_LEN  12
 
 /* definition used for L2CA_SetDesireRole */
 #define L2CAP_ROLE_SLAVE            HCI_ROLE_SLAVE
@@ -129,8 +129,7 @@ typedef UINT8 tL2CAP_CHNL_DATA_RATE;
 **  Type Definitions
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
 #define L2CAP_FCR_BASIC_MODE    0x00
 #define L2CAP_FCR_ERTM_MODE     0x03
 #define L2CAP_FCR_STREAM_MODE   0x04
@@ -148,8 +147,7 @@ typedef struct
 ** parameters are optional, for each parameter there is a boolean to
 ** use to signify its presence or absence.
 */
-typedef struct
-{
+typedef struct {
     UINT16      result;                 /* Only used in confirm messages */
     BOOLEAN     mtu_present;
     UINT16      mtu;
@@ -287,8 +285,7 @@ typedef void (tL2CA_TX_COMPLETE_CB) (UINT16, UINT16);
 ** MUST be provided, with the exception of the "connect pending"
 ** callback and "congestion status" callback.
 */
-typedef struct
-{
+typedef struct {
     tL2CA_CONNECT_IND_CB        *pL2CA_ConnectInd_Cb;
     tL2CA_CONNECT_CFM_CB        *pL2CA_ConnectCfm_Cb;
     tL2CA_CONNECT_PND_CB        *pL2CA_ConnectPnd_Cb;
@@ -306,8 +303,7 @@ typedef struct
 /* Define the structure that applications use to create or accept
 ** connections with enhanced retransmission mode.
 */
-typedef struct
-{
+typedef struct {
     UINT8       preferred_mode;
     UINT8       allowed_modes;
     UINT8       user_rx_pool_id;
@@ -401,7 +397,7 @@ extern UINT16 L2CA_ConnectReq (UINT16 psm, BD_ADDR p_bd_addr);
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_ConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid,
-                                        UINT16 result, UINT16 status);
+                                UINT16 result, UINT16 status);
 
 /*******************************************************************************
 **
@@ -417,7 +413,7 @@ extern BOOLEAN L2CA_ConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid,
 **
 *******************************************************************************/
 extern UINT16 L2CA_ErtmConnectReq (UINT16 psm, BD_ADDR p_bd_addr,
-                                           tL2CAP_ERTM_INFO *p_ertm_info);
+                                   tL2CAP_ERTM_INFO *p_ertm_info);
 
 // This function sets the callback routines for the L2CAP connection referred to by
 // |local_cid|. The callback routines can only be modified for outgoing connections
@@ -439,8 +435,8 @@ bool L2CA_SetConnectionCallbacks(uint16_t local_cid, const tL2CAP_APPL_INFO *cal
 **
 *******************************************************************************/
 extern BOOLEAN  L2CA_ErtmConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid,
-                                             UINT16 result, UINT16 status,
-                                             tL2CAP_ERTM_INFO *p_ertm_info);
+                                     UINT16 result, UINT16 status,
+                                     tL2CAP_ERTM_INFO *p_ertm_info);
 
 /*******************************************************************************
 **
@@ -546,7 +542,7 @@ bool L2CA_GetIdentifiers(uint16_t lcid, uint16_t *rcid, uint16_t *handle);
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_SetIdleTimeout (UINT16 cid, UINT16 timeout,
-                                            BOOLEAN is_global);
+                                    BOOLEAN is_global);
 
 /*******************************************************************************
 **
@@ -568,7 +564,7 @@ extern BOOLEAN L2CA_SetIdleTimeout (UINT16 cid, UINT16 timeout,
 **                  ACL link.
 *******************************************************************************/
 extern BOOLEAN L2CA_SetIdleTimeoutByBdAddr(BD_ADDR bd_addr, UINT16 timeout,
-                                           tBT_TRANSPORT transport);
+        tBT_TRANSPORT transport);
 
 /*******************************************************************************
 **
@@ -664,7 +660,7 @@ extern BOOLEAN L2CA_FlowControl (UINT16 cid, BOOLEAN data_enabled);
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_SendTestSFrame (UINT16 cid, UINT8 sup_type,
-                                            UINT8 back_track);
+                                    UINT8 back_track);
 
 /*******************************************************************************
 **
@@ -830,8 +826,7 @@ typedef void (tL2CA_UCD_CONGESTION_STATUS_CB) (BD_ADDR, BOOLEAN);
 
 /* UCD registration info (the callback addresses and PSM)
 */
-typedef struct
-{
+typedef struct {
     tL2CA_UCD_DISCOVER_CB           *pL2CA_UCD_Discover_Cb;
     tL2CA_UCD_DATA_CB               *pL2CA_UCD_Data_Cb;
     tL2CA_UCD_CONGESTION_STATUS_CB  *pL2CA_UCD_Congestion_Status_Cb;
@@ -957,8 +952,7 @@ typedef void (tL2CA_FIXED_CONGESTION_STATUS_CB) (BD_ADDR, BOOLEAN);
 
 /* Fixed channel registration info (the callback addresses and channel config)
 */
-typedef struct
-{
+typedef struct {
     tL2CA_FIXED_CHNL_CB    *pL2CA_FixedConn_Cb;
     tL2CA_FIXED_DATA_CB    *pL2CA_FixedData_Cb;
     tL2CA_FIXED_CONGESTION_STATUS_CB *pL2CA_FixedCong_Cb;
@@ -1093,7 +1087,7 @@ extern BOOLEAN L2CA_CancelBleConnectReq (BD_ADDR rem_bda);
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bdRa, UINT16 min_int,
-                                         UINT16 max_int, UINT16 latency, UINT16 timeout);
+        UINT16 max_int, UINT16 latency, UINT16 timeout);
 
 /*******************************************************************************
 **

@@ -19,15 +19,17 @@
 #include "gki.h"
 
 // TODO(zachoverflow): move the assertion into GKI_getbuf in the future
-static void *buffer_alloc(size_t size) {
-  return GKI_getbuf((uint16_t)size);
+static void *buffer_alloc(size_t size)
+{
+    return GKI_getbuf((uint16_t)size);
 }
 
 static const allocator_t interface = {
-  buffer_alloc,
-  GKI_freebuf
+    buffer_alloc,
+    GKI_freebuf
 };
 
-const allocator_t *buffer_allocator_get_interface() {
-  return &interface;
+const allocator_t *buffer_allocator_get_interface()
+{
+    return &interface;
 }

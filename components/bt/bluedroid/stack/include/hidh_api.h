@@ -26,7 +26,7 @@
 *****************************************************************************/
 
 enum {
-    HID_SDP_NO_SERV_UUID = (SDP_ILLEGAL_PARAMETER+1),
+    HID_SDP_NO_SERV_UUID = (SDP_ILLEGAL_PARAMETER + 1),
     HID_SDP_MANDATORY_MISSING
 };
 
@@ -64,8 +64,7 @@ HID_HDEV_EVT_HANDSHAKE  Device sent SET_REPORT          Data=Result-code pdata=N
 HID_HDEV_EVT_VC_UNPLUG  Device sent Virtual Unplug      Data=NA. pdata=NA.
 */
 
-enum
-{
+enum {
     HID_HDEV_EVT_OPEN,
     HID_HDEV_EVT_CLOSE,
     HID_HDEV_EVT_RETRYING,
@@ -101,9 +100,9 @@ extern "C"
 **
 *******************************************************************************/
 extern tHID_STATUS HID_HostGetSDPRecord (BD_ADDR addr,
-                                         tSDP_DISCOVERY_DB *p_db,
-                                         UINT32 db_len,
-                                         tHID_HOST_SDP_CALLBACK *sdp_cback );
+        tSDP_DISCOVERY_DB *p_db,
+        UINT32 db_len,
+        tHID_HOST_SDP_CALLBACK *sdp_cback );
 
 /*******************************************************************************
 **

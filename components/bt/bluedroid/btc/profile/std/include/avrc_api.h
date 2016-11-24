@@ -71,8 +71,8 @@
  * send messages. */
 #define AVRC_UNCONG_IND_EVT     3
 
- /* AVRC_BROWSE_OPEN_IND_EVT event is sent when the browse channel is successfully opened.
- * This eventis sent in response to an AVRC_Open() or AVRC_OpenBrowse() . */
+/* AVRC_BROWSE_OPEN_IND_EVT event is sent when the browse channel is successfully opened.
+* This eventis sent in response to an AVRC_Open() or AVRC_OpenBrowse() . */
 #define AVRC_BROWSE_OPEN_IND_EVT       4
 
 /* AVRC_BROWSE_CLOSE_IND_EVT event is sent when a browse channel is closed.
@@ -121,8 +121,7 @@
 
 /* This data type is used in AVRC_FindService() to initialize the SDP database
  * to hold the result service search. */
-typedef struct
-{
+typedef struct {
     UINT32              db_len;  /* Length, in bytes, of the discovery database */
     tSDP_DISCOVERY_DB  *p_db;    /* Pointer to the discovery database */
     UINT16              num_attr;/* The number of attributes in p_attrs */
@@ -143,7 +142,7 @@ typedef void (tAVRC_FIND_CBACK) (UINT16 status);
 /* This is the control callback function.  This function passes events
  * listed in Table 20 to the application. */
 typedef void (tAVRC_CTRL_CBACK) (UINT8 handle, UINT8 event, UINT16 result,
-             BD_ADDR peer_addr);
+                                 BD_ADDR peer_addr);
 
 
 /* This is the message callback function.  It is executed when AVCTP has
@@ -151,10 +150,9 @@ typedef void (tAVRC_CTRL_CBACK) (UINT8 handle, UINT8 event, UINT16 result,
  * callback function must copy the tAVRC_MSG structure passed to it as it
  * is not guaranteed to remain after the callback function exits. */
 typedef void (tAVRC_MSG_CBACK) (UINT8 handle, UINT8 label, UINT8 opcode,
-             tAVRC_MSG *p_msg);
+                                tAVRC_MSG *p_msg);
 
-typedef struct
-{
+typedef struct {
     tAVRC_CTRL_CBACK    *p_ctrl_cback;  /* pointer to application control callback */
     tAVRC_MSG_CBACK     *p_msg_cback;   /* pointer to application message callback */
     UINT32              company_id;     /* the company ID  */
@@ -204,7 +202,7 @@ extern "C"
 **
 ******************************************************************************/
 extern UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
-                char *p_provider_name, UINT16 categories, UINT32 sdp_handle);
+                             char *p_provider_name, UINT16 categories, UINT32 sdp_handle);
 
 /******************************************************************************
 **

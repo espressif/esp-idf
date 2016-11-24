@@ -23,16 +23,16 @@
 #include "bt_defs.h"
 
 typedef enum {
-  // Disable secure connections
-  // This is for pre BT 4.1/2 devices that do not handle secure mode
-  // very well.
-  INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
+    // Disable secure connections
+    // This is for pre BT 4.1/2 devices that do not handle secure mode
+    // very well.
+    INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
 
-  // Some devices have proven problematic during the pairing process, often
-  // requiring multiple retries to complete pairing. To avoid degrading the user
-  // experience for those devices, automatically re-try pairing if page
-  // timeouts are received during pairing.
-  INTEROP_AUTO_RETRY_PAIRING
+    // Some devices have proven problematic during the pairing process, often
+    // requiring multiple retries to complete pairing. To avoid degrading the user
+    // experience for those devices, automatically re-try pairing if page
+    // timeouts are received during pairing.
+    INTEROP_AUTO_RETRY_PAIRING
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as identified

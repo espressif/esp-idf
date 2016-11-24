@@ -25,14 +25,14 @@
 #define KEY_NO_RESOURCES        GATT_NO_RESOURCES
 
 //define the key serivce uuid
-#define ATT_SVC_BUTTON	0xFFFF
+#define ATT_SVC_BUTTON  0xFFFF
 //define the key Char uuid
-#define ATT_CHAR_BUTTON_WIT	0xFF01
-#define ATT_CHAR_BUTTON_NTF	0xFF02
+#define ATT_CHAR_BUTTON_WIT 0xFF01
+#define ATT_CHAR_BUTTON_NTF 0xFF02
 
-#define	BUTTON_PRESS_NTF_CFG	0x01
+#define BUTTON_PRESS_NTF_CFG    0x01
 
-#define BUTTON_VAL_MAX_LEN	(10)
+#define BUTTON_VAL_MAX_LEN  (10)
 
 #define BUTT_MAX_APPS                  GATT_CL_MAX_LCB
 
@@ -44,18 +44,16 @@ typedef void (*but_prf_cb_t)(uint8_t app_id, uint8_t event, uint16_t len, uint8_
 #define BUT_MAX_INT_NUM     4
 #endif
 
-enum
-{
-	RECEIVE_NET_PASSWD_EVT,
-	RECEIVE_NET_SSD_EVT,
-	RECEIVE_EVT_MAX
+enum {
+    RECEIVE_NET_PASSWD_EVT,
+    RECEIVE_NET_SSD_EVT,
+    RECEIVE_EVT_MAX
 };
 
 /// button Service Attributes Indexes
-enum
-{
+enum {
     KEY_IDX_SVC,
-	KEY_IDX_BUTTON_WIT_CHAR,
+    KEY_IDX_BUTTON_WIT_CHAR,
     KEY_IDX_BUTTON_WIT_VAL,
     KEY_IDX_BUTTON_NTF_CHAR,
     KEY_IDX_BUTTON_NTF_VAL,
@@ -64,48 +62,44 @@ enum
     KEY_IDX_NB,
 };
 
-typedef struct
-{
-    BD_ADDR 	remote_bda;
-    BOOLEAN 	need_rsp;
-    uint16_t 	clt_cfg;
-}but_write_data_t;
+typedef struct {
+    BD_ADDR     remote_bda;
+    BOOLEAN     need_rsp;
+    uint16_t    clt_cfg;
+} but_write_data_t;
 
-typedef struct
-{
+typedef struct {
     BOOLEAN         in_use;
-	BOOLEAN			congest;
+    BOOLEAN         congest;
     uint16_t        conn_id;
     BOOLEAN         connected;
     BD_ADDR         remote_bda;
     uint32_t        trans_id;
     uint8_t         cur_srvc_id;
 
-}but_clcb_t;
+} but_clcb_t;
 
 
-typedef struct
-{
+typedef struct {
     uint8_t           app_id;
     uint16_t          but_wirt_hdl;
     uint16_t          but_ntf_hdl;
     uint16_t          but_cfg_hdl;
- 
+
     but_prf_cb_t    p_cback;
 
-}but_inst_t;
+} but_inst_t;
 
 
 /* service engine control block */
-typedef struct
-{
-    but_clcb_t             	clcb; 			/* connection link*/
+typedef struct {
+    but_clcb_t              clcb;           /* connection link*/
     esp_gatt_if_t           gatt_if;
     BOOLEAN                 enabled;
-	BOOLEAN					is_primery;
-	but_inst_t              button_inst;
+    BOOLEAN                 is_primery;
+    but_inst_t              button_inst;
     uint8_t                 inst_id;
-}button_env_cb_t;
+} button_env_cb_t;
 
 void Button_CreateService(void);
 

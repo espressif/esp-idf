@@ -31,7 +31,7 @@
 #include "esp_bt_main.h"
 #include "blufi.h"
 
-#define WIFI_LIST_NUM	10
+#define WIFI_LIST_NUM   10
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
@@ -51,25 +51,25 @@ static bool confirm = false;
 
 void wifi_set_blue_config(char *ssid, char *passwd)
 {
-	memset(tmp_ssid, 0, 33);
-	memset(tmp_passwd, 0, 33);
-	strcpy(tmp_ssid, ssid);
-	strcpy(tmp_passwd, passwd);
-	confirm = true;
-	LOG_DEBUG("confirm true\n");
+    memset(tmp_ssid, 0, 33);
+    memset(tmp_passwd, 0, 33);
+    strcpy(tmp_ssid, ssid);
+    strcpy(tmp_passwd, passwd);
+    confirm = true;
+    LOG_DEBUG("confirm true\n");
 }
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
-    switch(event->event_id) {
+    switch (event->event_id) {
     case SYSTEM_EVENT_STA_START:
         esp_wifi_connect();
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-		esp_blufi_send_config_state(ESP_BLUFI_CONFIG_OK);
-		esp_disable_bluetooth(); //close bluetooth function
-		//esp_deinit_bluetooth();  //free bluetooth resource
+        esp_blufi_send_config_state(ESP_BLUFI_CONFIG_OK);
+        esp_disable_bluetooth(); //close bluetooth function
+        //esp_deinit_bluetooth();  //free bluetooth resource
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
@@ -102,23 +102,23 @@ void wifiTestTask(void *pvParameters)
 
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-		if (confirm) {
-			confirm = false;
+        if (confirm) {
+            confirm = false;
 
-			strcpy(sta_config.sta.ssid, tmp_ssid);
-			strcpy(sta_config.sta.password, tmp_passwd);
-			sta_config.sta.bssid_set = 0;
+            strcpy(sta_config.sta.ssid, tmp_ssid);
+            strcpy(sta_config.sta.password, tmp_passwd);
+            sta_config.sta.bssid_set = 0;
 
-			ret = esp_wifi_disconnect();
-			LOG_INFO("esp_wifi config\n");
-			esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-			LOG_INFO("esp_wifi connect\n");
-			ret = esp_wifi_connect();
-			if (ret != ESP_OK) {
-				LOG_ERROR("esp_wifi connect failed\n");
-				esp_blufi_send_config_state(ESP_BLUFI_CONFIG_FAILED);
-			}
-		}
+            ret = esp_wifi_disconnect();
+            LOG_INFO("esp_wifi config\n");
+            esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+            LOG_INFO("esp_wifi connect\n");
+            ret = esp_wifi_connect();
+            if (ret != ESP_OK) {
+                LOG_ERROR("esp_wifi connect failed\n");
+                esp_blufi_send_config_state(ESP_BLUFI_CONFIG_FAILED);
+            }
+        }
     }
 }
 
@@ -135,11 +135,11 @@ void app_main()
     bt_controller_init();
     xTaskCreatePinnedToCore(&wifiTestTask, "wifiTestTask", 2048, NULL, 20, NULL, 0);
 
-	LOG_ERROR("%s init bluetooth\n", __func__);
+    LOG_ERROR("%s init bluetooth\n", __func__);
     ret = esp_init_bluetooth();
-	if (ret) {
-		LOG_ERROR("%s init bluetooth failed\n", __func__);
-		return;
-	}
-	blufi_init();
+    if (ret) {
+        LOG_ERROR("%s init bluetooth failed\n", __func__);
+        return;
+    }
+    blufi_init();
 }

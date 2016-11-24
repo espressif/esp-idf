@@ -26,19 +26,17 @@
 #define DIS_MAX_CHAR_NUM            9
 
 
-typedef struct
-{
+typedef struct {
     UINT16      uuid;
     UINT16      handle;
-}tDIS_DB_ENTRY;
+} tDIS_DB_ENTRY;
 
 #define DIS_SYSTEM_ID_SIZE      8
 #define DIS_PNP_ID_SIZE         7
 
 
 
-typedef struct
-{
+typedef struct {
     tDIS_DB_ENTRY           dis_attr[DIS_MAX_CHAR_NUM];
     tDIS_VALUE              dis_value;
 
@@ -52,7 +50,7 @@ typedef struct
     UINT8                   dis_read_uuid_idx;
 
     tDIS_ATTR_MASK          request_mask;
-}tDIS_CB;
+} tDIS_CB;
 
 
 
@@ -71,11 +69,11 @@ extern tDIS_CB *dis_cb_ptr;
 
 extern BOOLEAN dis_valid_handle_range(UINT16 handle);
 extern UINT8 dis_read_attr_value (UINT8 clcb_idx, UINT16 handle, tGATT_VALUE *p_value,
-                           BOOLEAN is_long, tGATT_STATUS *p_status);
-extern UINT8 dis_write_attr_value(tGATT_WRITE_REQ * p_data, tGATT_STATUS *p_status);
+                                  BOOLEAN is_long, tGATT_STATUS *p_status);
+extern UINT8 dis_write_attr_value(tGATT_WRITE_REQ *p_data, tGATT_STATUS *p_status);
 
 extern void dis_c_cmpl_cback (tSRVC_CLCB *p_clcb, tGATTC_OPTYPE op,
-                                    tGATT_STATUS status, tGATT_CL_COMPLETE *p_data);
+                              tGATT_STATUS status, tGATT_CL_COMPLETE *p_data);
 
 
 #ifdef __cplusplus

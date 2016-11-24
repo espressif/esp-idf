@@ -71,27 +71,27 @@ typedef void (*command_complete_cb)(BT_HDR *response, void *context);
 typedef void (*command_status_cb)(uint8_t status, BT_HDR *command, void *context);
 
 typedef struct hci_t {
-  // Send a low power command, if supported and the low power manager is enabled.
-  //void (*send_low_power_command)(low_power_command_t command);
+    // Send a low power command, if supported and the low power manager is enabled.
+    //void (*send_low_power_command)(low_power_command_t command);
 
-  // Do the postload sequence (call after the rest of the BT stack initializes).
-  void (*do_postload)(void);
+    // Do the postload sequence (call after the rest of the BT stack initializes).
+    void (*do_postload)(void);
 
-  // Set the queue to receive ACL data in
-  void (*set_data_queue)(fixed_queue_t *queue);
+    // Set the queue to receive ACL data in
+    void (*set_data_queue)(fixed_queue_t *queue);
 
-  // Send a command through the HCI layer
-  void (*transmit_command)(
-      BT_HDR *command,
-      command_complete_cb complete_callback,
-      command_status_cb status_cb,
-      void *context
-  );
+    // Send a command through the HCI layer
+    void (*transmit_command)(
+        BT_HDR *command,
+        command_complete_cb complete_callback,
+        command_status_cb status_cb,
+        void *context
+    );
 
-  future_t *(*transmit_command_futured)(BT_HDR *command);
+    future_t *(*transmit_command_futured)(BT_HDR *command);
 
-  // Send some data downward through the HCI layer
-  void (*transmit_downward)(uint16_t type, void *data);
+    // Send some data downward through the HCI layer
+    void (*transmit_downward)(uint16_t type, void *data);
 } hci_t;
 
 const hci_t *hci_layer_get_interface();

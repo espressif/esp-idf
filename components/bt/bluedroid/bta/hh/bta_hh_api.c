@@ -42,8 +42,7 @@
 **  Constants
 *****************************************************************************/
 
-static const tBTA_SYS_REG bta_hh_reg =
-{
+static const tBTA_SYS_REG bta_hh_reg = {
     bta_hh_hdl_event,
     BTA_HhDisable
 };
@@ -71,8 +70,7 @@ void BTA_HhEnable(tBTA_SEC sec_mask, tBTA_HH_CBACK *p_cback)
     LOG_INFO("%s sec_mask:0x%x p_cback:%p", __func__, sec_mask, p_cback);
     p_buf = (tBTA_HH_API_ENABLE *)GKI_getbuf((UINT16)sizeof(tBTA_HH_API_ENABLE));
 
-    if (p_buf != NULL)
-    {
+    if (p_buf != NULL) {
         memset(p_buf, 0, sizeof(tBTA_HH_API_ENABLE));
 
         p_buf->hdr.event = BTA_HH_API_ENABLE_EVT;
@@ -98,8 +96,7 @@ void BTA_HhDisable(void)
     BT_HDR  *p_buf;
 
     bta_sys_deregister(BTA_ID_HH);
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR))) != NULL) {
         p_buf->event = BTA_HH_API_DISABLE_EVT;
         bta_sys_sendmsg(p_buf);
     }
@@ -118,8 +115,7 @@ void BTA_HhClose(UINT8 dev_handle)
 {
     BT_HDR    *p_buf;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)sizeof(BT_HDR))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)sizeof(BT_HDR))) != NULL) {
         memset(p_buf, 0, sizeof(BT_HDR));
         p_buf->event            = BTA_HH_API_CLOSE_EVT;
         p_buf->layer_specific   = (UINT16) dev_handle;
@@ -144,8 +140,7 @@ void BTA_HhOpen(BD_ADDR dev_bda, tBTA_HH_PROTO_MODE mode, tBTA_SEC sec_mask)
 
     p_buf = (tBTA_HH_API_CONN *)GKI_getbuf((UINT16)sizeof(tBTA_HH_API_CONN));
 
-    if (p_buf!= NULL)
-    {
+    if (p_buf != NULL) {
         memset((void *)p_buf, 0, sizeof(tBTA_HH_API_CONN));
 
         p_buf->hdr.event            = BTA_HH_API_OPEN_EVT;
@@ -155,9 +150,7 @@ void BTA_HhOpen(BD_ADDR dev_bda, tBTA_HH_PROTO_MODE mode, tBTA_SEC sec_mask)
         bdcpy(p_buf->bd_addr, dev_bda);
 
         bta_sys_sendmsg((void *)p_buf);
-    }
-    else
-    {
+    } else {
         APPL_TRACE_ERROR("No resource to send HID host Connect request.");
     }
 }
@@ -173,8 +166,7 @@ static void bta_hh_snd_write_dev(UINT8 dev_handle, UINT8 t_type, UINT8 param,
     tBTA_HH_CMD_DATA *p_buf;
     UINT16          len = (UINT16) (sizeof(tBTA_HH_CMD_DATA) );
 
-    if ((p_buf = (tBTA_HH_CMD_DATA *)GKI_getbuf(len))!= NULL)
-    {
+    if ((p_buf = (tBTA_HH_CMD_DATA *)GKI_getbuf(len)) != NULL) {
         memset(p_buf, 0, sizeof(tBTA_HH_CMD_DATA));
 
         p_buf->hdr.event = BTA_HH_API_WRITE_DEV_EVT;
@@ -218,7 +210,7 @@ void BTA_HhGetReport(UINT8 dev_handle, tBTA_HH_RPT_TYPE r_type, UINT8 rpt_id, UI
     UINT8 param = (buf_size) ? (r_type | 0x08) : r_type;
 
     bta_hh_snd_write_dev(dev_handle, HID_TRANS_GET_REPORT, param,
-                        buf_size, rpt_id, NULL);
+                         buf_size, rpt_id, NULL);
 }
 /*******************************************************************************
 **
@@ -232,7 +224,7 @@ void BTA_HhGetReport(UINT8 dev_handle, tBTA_HH_RPT_TYPE r_type, UINT8 rpt_id, UI
 void BTA_HhSetProtoMode(UINT8 dev_handle, tBTA_HH_PROTO_MODE p_type)
 {
     bta_hh_snd_write_dev(dev_handle, HID_TRANS_SET_PROTOCOL, (UINT8)p_type,
-                        0, 0, NULL);
+                         0, 0, NULL);
 }
 /*******************************************************************************
 **
@@ -309,8 +301,7 @@ void BTA_HhSendData(UINT8 dev_handle, BD_ADDR dev_bda, BT_HDR  *p_data)
 {
     UNUSED(dev_bda);
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
-    if (p_data->layer_specific != BTA_HH_RPTT_OUTPUT)
-    {
+    if (p_data->layer_specific != BTA_HH_RPTT_OUTPUT) {
         APPL_TRACE_ERROR("ERROR! Wrong report type! Write Command only valid for output report!");
         return;
     }
@@ -331,8 +322,7 @@ void BTA_HhGetDscpInfo(UINT8 dev_handle)
 {
     BT_HDR    *p_buf;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)sizeof(BT_HDR))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)sizeof(BT_HDR))) != NULL) {
         memset(p_buf, 0, sizeof(BT_HDR));
         p_buf->event            = BTA_HH_API_GET_DSCP_EVT;
         p_buf->layer_specific   = (UINT16) dev_handle;
@@ -361,8 +351,7 @@ void BTA_HhAddDev(BD_ADDR bda, tBTA_HH_ATTR_MASK attr_mask, UINT8 sub_class,
 
     p_buf = (tBTA_HH_MAINT_DEV *)GKI_getbuf(len);
 
-    if (p_buf != NULL)
-    {
+    if (p_buf != NULL) {
         memset(p_buf, 0, sizeof(tBTA_HH_MAINT_DEV));
 
         p_buf->hdr.event            = BTA_HH_API_MAINT_DEV_EVT;
@@ -375,14 +364,11 @@ void BTA_HhAddDev(BD_ADDR bda, tBTA_HH_ATTR_MASK attr_mask, UINT8 sub_class,
         bdcpy(p_buf->bda, bda);
 
         memcpy(&p_buf->dscp_info, &dscp_info, sizeof(tBTA_HH_DEV_DSCP_INFO));
-        if ( dscp_info.descriptor.dl_len != 0 && dscp_info.descriptor.dsc_list)
-        {
+        if ( dscp_info.descriptor.dl_len != 0 && dscp_info.descriptor.dsc_list) {
             p_buf->dscp_info.descriptor.dl_len =  dscp_info.descriptor.dl_len;
             p_buf->dscp_info.descriptor.dsc_list = (UINT8 *)(p_buf + 1);
             memcpy(p_buf->dscp_info.descriptor.dsc_list, dscp_info.descriptor.dsc_list, dscp_info.descriptor.dl_len);
-        }
-        else
-        {
+        } else {
             p_buf->dscp_info.descriptor.dsc_list = NULL;
             p_buf->dscp_info.descriptor.dl_len = 0;
         }
@@ -405,8 +391,7 @@ void BTA_HhRemoveDev(UINT8 dev_handle )
 
     p_buf = (tBTA_HH_MAINT_DEV *)GKI_getbuf((UINT16)sizeof(tBTA_HH_MAINT_DEV));
 
-    if (p_buf != NULL)
-    {
+    if (p_buf != NULL) {
         memset(p_buf, 0, sizeof(tBTA_HH_MAINT_DEV));
 
         p_buf->hdr.event            = BTA_HH_API_MAINT_DEV_EVT;
@@ -434,8 +419,7 @@ void BTA_HhUpdateLeScanParam(UINT8 dev_handle, UINT16 scan_int, UINT16 scan_win)
 
     p_buf = (tBTA_HH_SCPP_UPDATE *)GKI_getbuf((UINT16)sizeof(tBTA_HH_SCPP_UPDATE));
 
-    if (p_buf != NULL)
-    {
+    if (p_buf != NULL) {
         memset(p_buf, 0, sizeof(tBTA_HH_SCPP_UPDATE));
 
         p_buf->hdr.event            = BTA_HH_API_SCPP_UPDATE_EVT;
@@ -469,14 +453,12 @@ void BTA_HhParseBootRpt(tBTA_HH_BOOT_RPT *p_data, UINT8 *p_report,
 {
     p_data->dev_type = BTA_HH_DEVT_UNKNOWN;
 
-    if (p_report)
-    {
+    if (p_report) {
         /* first byte is report ID */
-        switch (p_report[0])
-        {
+        switch (p_report[0]) {
         case BTA_HH_KEYBD_RPT_ID: /* key board report ID */
             p_data->dev_type = p_report[0];
-            bta_hh_parse_keybd_rpt(p_data, p_report + 1, (UINT16)(report_len -1));
+            bta_hh_parse_keybd_rpt(p_data, p_report + 1, (UINT16)(report_len - 1));
             break;
 
         case BTA_HH_MOUSE_RPT_ID: /* mouse report ID */

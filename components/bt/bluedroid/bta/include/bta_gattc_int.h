@@ -35,8 +35,7 @@
 /*****************************************************************************
 **  Constants and data types
 *****************************************************************************/
-enum
-{
+enum {
     BTA_GATTC_API_OPEN_EVT   = BTA_SYS_EVT_START(BTA_ID_GATTC),
     BTA_GATTC_INT_OPEN_FAIL_EVT,
     BTA_GATTC_API_CANCEL_OPEN_EVT,
@@ -89,31 +88,28 @@ typedef UINT16 tBTA_GATTC_INT_EVT;
 #define BTA_GATTC_CONN_MAX      GATT_MAX_PHY_CHANNEL
 
 #ifndef BTA_GATTC_CLCB_MAX
-    #define BTA_GATTC_CLCB_MAX      GATT_CL_MAX_LCB
+#define BTA_GATTC_CLCB_MAX      GATT_CL_MAX_LCB
 #endif
 
 #define BTA_GATTC_WRITE_PREPARE          GATT_WRITE_PREPARE
 
 
 /* internal strucutre for GATTC register API  */
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBT_UUID                app_uuid;
     tBTA_GATTC_CBACK        *p_cback;
-}tBTA_GATTC_API_REG;
+} tBTA_GATTC_API_REG;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBTA_GATTC_IF           client_if;
-}tBTA_GATTC_INT_START_IF;
+} tBTA_GATTC_INT_START_IF;
 
 typedef tBTA_GATTC_INT_START_IF tBTA_GATTC_API_DEREG;
 typedef tBTA_GATTC_INT_START_IF tBTA_GATTC_INT_DEREG;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     BD_ADDR                 remote_bda;
     tBTA_GATTC_IF           client_if;
@@ -123,8 +119,7 @@ typedef struct
 
 typedef tBTA_GATTC_API_OPEN tBTA_GATTC_API_CANCEL_OPEN;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBTA_GATT_AUTH_REQ      auth_req;
     tBTA_GATT_SRVC_ID       srvc_id;
@@ -132,8 +127,7 @@ typedef struct
     tBTA_GATT_ID            *p_descr_type;
 } tBTA_GATTC_API_READ;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBTA_GATT_AUTH_REQ      auth_req;
     tBTA_GATT_SRVC_ID       srvc_id;
@@ -143,16 +137,14 @@ typedef struct
     UINT16                  offset;
     UINT16                  len;
     UINT8                   *p_value;
-}tBTA_GATTC_API_WRITE;
+} tBTA_GATTC_API_WRITE;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     BOOLEAN                 is_execute;
-}tBTA_GATTC_API_EXEC;
+} tBTA_GATTC_API_EXEC;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBTA_GATT_SRVC_ID       srvc_id;
     tBTA_GATT_ID            char_id;
@@ -160,30 +152,26 @@ typedef struct
 
 typedef tGATT_CL_COMPLETE tBTA_GATTC_CMPL;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     UINT8                   op_code;
     tGATT_STATUS            status;
     tBTA_GATTC_CMPL         *p_cmpl;
-}tBTA_GATTC_OP_CMPL;
+} tBTA_GATTC_OP_CMPL;
 
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     tBT_UUID            *p_srvc_uuid;
-}tBTA_GATTC_API_SEARCH;
+} tBTA_GATTC_API_SEARCH;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBTA_GATT_AUTH_REQ      auth_req;
     UINT8                   num_attr;
     tBTA_GATTC_ATTR_ID      *p_id_list;
-}tBTA_GATTC_API_READ_MULTI;
+} tBTA_GATTC_API_READ_MULTI;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     BD_ADDR_PTR             remote_bda;
     tBTA_GATTC_IF           client_if;
@@ -191,31 +179,27 @@ typedef struct
 } tBTA_GATTC_API_LISTEN;
 
 
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT16              mtu;
-}tBTA_GATTC_API_CFG_MTU;
+} tBTA_GATTC_API_CFG_MTU;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     BD_ADDR                 remote_bda;
     tBTA_GATTC_IF           client_if;
     UINT8                   role;
     tBT_TRANSPORT           transport;
     tGATT_DISCONN_REASON    reason;
-}tBTA_GATTC_INT_CONN;
+} tBTA_GATTC_INT_CONN;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     BD_ADDR                 remote_bda;
     tBTA_GATTC_IF           client_if;
-}tBTA_GATTC_ENC_CMPL;
+} tBTA_GATTC_ENC_CMPL;
 
-typedef union
-{
+typedef union {
     BT_HDR                      hdr;
     tBTA_GATTC_API_REG          api_reg;
     tBTA_GATTC_API_DEREG        api_dereg;
@@ -244,14 +228,12 @@ typedef union
 
 
 /* GATT server cache on the client */
-typedef union
-{
+typedef union {
     UINT8               uuid128[LEN_UUID_128];
     UINT16              uuid16;
-}tBTA_GATTC_UUID;
+} tBTA_GATTC_UUID;
 
-typedef struct gattc_attr_cache
-{
+typedef struct gattc_attr_cache {
     tBTA_GATTC_UUID         *p_uuid;
     struct                  gattc_attr_cache *p_next;
     UINT16                  uuid_len;
@@ -265,8 +247,7 @@ typedef struct gattc_attr_cache
 } __attribute__((packed)) tBTA_GATTC_CACHE_ATTR;
 // btla-specific --
 
-typedef struct gattc_svc_cache
-{
+typedef struct gattc_svc_cache {
     tBTA_GATT_SRVC_ID       service_uuid;
     tBTA_GATTC_CACHE_ATTR   *p_attr;
     tBTA_GATTC_CACHE_ATTR   *p_last_attr;
@@ -278,26 +259,24 @@ typedef struct gattc_svc_cache
 } __attribute__((packed)) tBTA_GATTC_CACHE;
 // btla-specific --
 
-typedef struct
-{
+typedef struct {
     tBT_UUID            uuid;
     UINT16              s_handle;
     UINT16              e_handle;
     BOOLEAN             is_primary;
     UINT8               srvc_inst_id;
     tBTA_GATT_CHAR_PROP property;
-}tBTA_GATTC_ATTR_REC;
+} tBTA_GATTC_ATTR_REC;
 
 
 #define BTA_GATTC_MAX_CACHE_CHAR    40
 #define BTA_GATTC_ATTR_LIST_SIZE    (BTA_GATTC_MAX_CACHE_CHAR * sizeof(tBTA_GATTC_ATTR_REC))
 
 #ifndef BTA_GATTC_CACHE_SRVR_SIZE
-    #define BTA_GATTC_CACHE_SRVR_SIZE   600
+#define BTA_GATTC_CACHE_SRVR_SIZE   600
 #endif
 
-enum
-{
+enum {
     BTA_GATTC_IDLE_ST = 0,      /* Idle  */
     BTA_GATTC_W4_CONN_ST,       /* Wait for connection -  (optional) */
     BTA_GATTC_CONN_ST,          /* connected state */
@@ -305,8 +284,7 @@ enum
 };
 typedef UINT8 tBTA_GATTC_STATE;
 
-typedef struct
-{
+typedef struct {
     BOOLEAN             in_use;
     BD_ADDR             server_bda;
     BOOLEAN             connected;
@@ -345,15 +323,13 @@ typedef struct
 #define BTA_GATTC_NOTIF_REG_MAX     15
 #endif
 
-typedef struct
-{
+typedef struct {
     BOOLEAN             in_use;
     BD_ADDR             remote_bda;
     tBTA_GATTC_CHAR_ID  char_id;
-}tBTA_GATTC_NOTIF_REG;
+} tBTA_GATTC_NOTIF_REG;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATTC_CBACK        *p_cback;
     BOOLEAN                 in_use;
     tBTA_GATTC_IF           client_if;      /* client interface with BTE stack for this application */
@@ -361,11 +337,10 @@ typedef struct
     BOOLEAN                 dereg_pending;
     tBT_UUID                app_uuid;
     tBTA_GATTC_NOTIF_REG    notif_reg[BTA_GATTC_NOTIF_REG_MAX];
-}tBTA_GATTC_RCB;
+} tBTA_GATTC_RCB;
 
 /* client channel is a mapping between a BTA client(cl_id) and a remote BD address */
-typedef struct
-{
+typedef struct {
     UINT16              bta_conn_id;    /* client channel ID, unique for clcb */
     BD_ADDR             bda;
     tBTA_TRANSPORT      transport;      /* channel transport */
@@ -394,31 +369,27 @@ typedef UINT16 tBTA_GATTC_CIF_MASK;
 typedef UINT32 tBTA_GATTC_CIF_MASK;
 #endif
 
-typedef struct
-{
+typedef struct {
     BOOLEAN                 in_use;
     BD_ADDR                 remote_bda;
     tBTA_GATTC_CIF_MASK     cif_mask;
     tBTA_GATTC_CIF_MASK     cif_adv_mask;
 
-}tBTA_GATTC_BG_TCK;
+} tBTA_GATTC_BG_TCK;
 
-typedef struct
-{
+typedef struct {
     BOOLEAN             in_use;
     BD_ADDR             remote_bda;
-}tBTA_GATTC_CONN;
+} tBTA_GATTC_CONN;
 
-enum
-{
-   BTA_GATTC_STATE_DISABLED,
-   BTA_GATTC_STATE_ENABLING,
-   BTA_GATTC_STATE_ENABLED,
-   BTA_GATTC_STATE_DISABLING
+enum {
+    BTA_GATTC_STATE_DISABLED,
+    BTA_GATTC_STATE_ENABLING,
+    BTA_GATTC_STATE_ENABLED,
+    BTA_GATTC_STATE_DISABLING
 };
 
-typedef struct
-{
+typedef struct {
     UINT8             state;
 
     tBTA_GATTC_CONN     conn_track[BTA_GATTC_CONN_MAX];
@@ -430,7 +401,7 @@ typedef struct
 
     tSDP_DISCOVERY_DB   *p_sdp_db;
     UINT16              sdp_conn_id;
-}tBTA_GATTC_CB;
+} tBTA_GATTC_CB;
 
 /*****************************************************************************
 **  Global data
@@ -454,8 +425,8 @@ extern BOOLEAN bta_gattc_sm_execute(tBTA_GATTC_CLCB *p_clcb, UINT16 event, tBTA_
 extern void bta_gattc_disable(tBTA_GATTC_CB *p_cb);
 extern void bta_gattc_register(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_start_if(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data);
-extern void bta_gattc_process_api_open (tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA * p_msg);
-extern void bta_gattc_process_api_open_cancel (tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA * p_msg);
+extern void bta_gattc_process_api_open (tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
+extern void bta_gattc_process_api_open_cancel (tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 extern void bta_gattc_deregister(tBTA_GATTC_CB *p_cb, tBTA_GATTC_RCB  *p_clreg);
 extern void bta_gattc_process_enc_cmpl(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 
@@ -491,29 +462,29 @@ extern void bta_gattc_ci_close(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 extern void bta_gattc_ci_save(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_cache_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_ignore_op_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
-extern void bta_gattc_restart_discover(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA * p_msg);
+extern void bta_gattc_restart_discover(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_msg);
 extern void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN *p_data, tBTA_GATTC_RCB *p_clreg);
 extern void bta_gattc_cancel_bk_conn(tBTA_GATTC_API_CANCEL_OPEN *p_data);
 extern void bta_gattc_send_open_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status,
                                        BD_ADDR remote_bda, UINT16 conn_id, tBTA_TRANSPORT transport,  UINT16 mtu);
-extern void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA * p_msg);
+extern void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 extern void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 #if BLE_INCLUDED == TRUE
-extern void bta_gattc_listen(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA * p_msg);
-extern void bta_gattc_broadcast(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA * p_msg);
+extern void bta_gattc_listen(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
+extern void bta_gattc_broadcast(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 #endif
 /* utility functions */
-extern tBTA_GATTC_CLCB * bta_gattc_find_clcb_by_cif (UINT8 client_if, BD_ADDR remote_bda, tBTA_TRANSPORT transport);
-extern tBTA_GATTC_CLCB * bta_gattc_find_clcb_by_conn_id (UINT16 conn_id);
-extern tBTA_GATTC_CLCB * bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_TRANSPORT transport);
+extern tBTA_GATTC_CLCB *bta_gattc_find_clcb_by_cif (UINT8 client_if, BD_ADDR remote_bda, tBTA_TRANSPORT transport);
+extern tBTA_GATTC_CLCB *bta_gattc_find_clcb_by_conn_id (UINT16 conn_id);
+extern tBTA_GATTC_CLCB *bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_TRANSPORT transport);
 extern void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb);
-extern tBTA_GATTC_CLCB * bta_gattc_find_alloc_clcb(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_TRANSPORT transport);
-extern tBTA_GATTC_RCB * bta_gattc_cl_get_regcb(UINT8 client_if);
-extern tBTA_GATTC_SERV * bta_gattc_find_srcb(BD_ADDR bda);
-extern tBTA_GATTC_SERV * bta_gattc_srcb_alloc(BD_ADDR bda);
-extern tBTA_GATTC_SERV * bta_gattc_find_scb_by_cid (UINT16 conn_id);
-extern tBTA_GATTC_CLCB * bta_gattc_find_int_conn_clcb(tBTA_GATTC_DATA *p_msg);
-extern tBTA_GATTC_CLCB * bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA *p_msg);
+extern tBTA_GATTC_CLCB *bta_gattc_find_alloc_clcb(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_TRANSPORT transport);
+extern tBTA_GATTC_RCB *bta_gattc_cl_get_regcb(UINT8 client_if);
+extern tBTA_GATTC_SERV *bta_gattc_find_srcb(BD_ADDR bda);
+extern tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda);
+extern tBTA_GATTC_SERV *bta_gattc_find_scb_by_cid (UINT16 conn_id);
+extern tBTA_GATTC_CLCB *bta_gattc_find_int_conn_clcb(tBTA_GATTC_DATA *p_msg);
+extern tBTA_GATTC_CLCB *bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA *p_msg);
 
 extern BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 
@@ -527,7 +498,7 @@ extern BOOLEAN bta_gattc_mark_bg_conn (tBTA_GATTC_IF client_if,  BD_ADDR_PTR rem
 extern BOOLEAN bta_gattc_check_bg_conn (tBTA_GATTC_IF client_if,  BD_ADDR remote_bda, UINT8 role);
 extern UINT8 bta_gattc_num_reg_app(void);
 extern void bta_gattc_clear_notif_registration(UINT16 conn_id);
-extern tBTA_GATTC_SERV * bta_gattc_find_srvr_cache(BD_ADDR bda);
+extern tBTA_GATTC_SERV *bta_gattc_find_srvr_cache(BD_ADDR bda);
 extern BOOLEAN bta_gattc_charid_compare(tBTA_GATTC_CHAR_ID *p_src, tBTA_GATTC_CHAR_ID *p_tar);
 extern BOOLEAN bta_gattc_srvcid_compare(tBTA_GATT_SRVC_ID *p_src, tBTA_GATT_SRVC_ID *p_tar);
 extern void bta_gattc_cpygattid(tBTA_GATT_ID *p_des, tBTA_GATT_ID *p_src);
@@ -539,16 +510,16 @@ extern tBTA_GATT_STATUS bta_gattc_discover_procedure(UINT16 conn_id, tBTA_GATTC_
 extern tBTA_GATT_STATUS bta_gattc_discover_pri_service(UINT16 conn_id, tBTA_GATTC_SERV *p_server_cb, UINT8 disc_type);
 extern void bta_gattc_search_service(tBTA_GATTC_CLCB *p_clcb, tBT_UUID *p_uuid);
 extern tBTA_GATT_STATUS bta_gattc_query_cache(UINT16 conn_id, UINT8 query_type, tBTA_GATT_SRVC_ID *p_srvc_id,
-                                              tBTA_GATT_ID *p_start_rec,tBT_UUID *p_uuid_cond,
-                                              tBTA_GATT_ID *p_output, void *p_param);
+        tBTA_GATT_ID *p_start_rec, tBT_UUID *p_uuid_cond,
+        tBTA_GATT_ID *p_output, void *p_param);
 extern tBTA_GATT_STATUS bta_gattc_init_cache(tBTA_GATTC_SERV *p_srvc_cb);
 extern void bta_gattc_rebuild_cache(tBTA_GATTC_SERV *p_srcv, UINT16 num_attr, tBTA_GATTC_NV_ATTR *p_attr, UINT16 attr_index);
 extern BOOLEAN bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id);
 
 
-extern tBTA_GATTC_CONN * bta_gattc_conn_alloc(BD_ADDR remote_bda);
-extern tBTA_GATTC_CONN * bta_gattc_conn_find(BD_ADDR remote_bda);
-extern tBTA_GATTC_CONN * bta_gattc_conn_find_alloc(BD_ADDR remote_bda);
+extern tBTA_GATTC_CONN *bta_gattc_conn_alloc(BD_ADDR remote_bda);
+extern tBTA_GATTC_CONN *bta_gattc_conn_find(BD_ADDR remote_bda);
+extern tBTA_GATTC_CONN *bta_gattc_conn_find_alloc(BD_ADDR remote_bda);
 extern BOOLEAN bta_gattc_conn_dealloc(BD_ADDR remote_bda);
 
 #endif /* BTA_GATTC_INT_H */

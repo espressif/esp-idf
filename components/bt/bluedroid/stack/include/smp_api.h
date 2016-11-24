@@ -60,9 +60,9 @@
 #define SMP_COMPLT_EVT          7       /* SMP complete event */
 #define SMP_PEER_KEYPR_NOT_EVT  8       /* Peer keypress notification received event */
 #define SMP_SC_OOB_REQ_EVT      9       /* SC OOB request event (both local and peer OOB data */
-                                        /* can be expected in response) */
+/* can be expected in response) */
 #define SMP_SC_LOC_OOB_DATA_UP_EVT  10  /* SC OOB local data set is created */
-                                        /* (as result of SMP_CrLocScOobData(...)) */
+/* (as result of SMP_CrLocScOobData(...)) */
 #define SMP_BR_KEYS_REQ_EVT     12      /* SMP over BR keys request event */
 typedef UINT8   tSMP_EVT;
 
@@ -117,12 +117,11 @@ typedef UINT8 tSMP_STATUS;
 typedef UINT8  tSMP_IO_CAP;
 
 #ifndef SMP_DEFAULT_IO_CAPS
-    #define SMP_DEFAULT_IO_CAPS     SMP_IO_CAP_KBDISP
+#define SMP_DEFAULT_IO_CAPS     SMP_IO_CAP_KBDISP
 #endif
 
 /* OOB data present or not */
-enum
-{
+enum {
     SMP_OOB_NONE,
     SMP_OOB_PRESENT,
     SMP_OOB_UNKNOWN
@@ -130,8 +129,7 @@ enum
 typedef UINT8  tSMP_OOB_FLAG;
 
 /* type of OOB data required from application */
-enum
-{
+enum {
     SMP_OOB_INVALID_TYPE,
     SMP_OOB_PEER,
     SMP_OOB_LOCAL,
@@ -175,7 +173,7 @@ typedef UINT8   tSMP_OOB_DATA_TYPE;
 /* Secure Connections, MITM, Bonding */
 #define SMP_AUTH_SC_MITM_GB     (SMP_SC_SUPPORT_BIT | SMP_AUTH_YN_BIT | SMP_AUTH_GEN_BOND)
 
- /* All AuthReq RFU bits are set to 1 - NOTE: reserved bit in Bonding_Flags is not set */
+/* All AuthReq RFU bits are set to 1 - NOTE: reserved bit in Bonding_Flags is not set */
 #define SMP_AUTH_ALL_RFU_SET    0xF8
 
 typedef UINT8 tSMP_AUTH_REQ;
@@ -212,8 +210,7 @@ typedef UINT8 tSMP_KEYS;
 typedef UINT8 tSMP_SC_KEY_TYPE;
 
 /* data type for BTM_SP_IO_REQ_EVT */
-typedef struct
-{
+typedef struct {
     tSMP_IO_CAP     io_cap;         /* local IO capabilities */
     tSMP_OOB_FLAG   oob_data;       /* OOB data present (locally) for the peer device */
     tSMP_AUTH_REQ   auth_req;       /* Authentication required (for local device) */
@@ -222,64 +219,57 @@ typedef struct
     tSMP_KEYS       resp_keys;      /* responder keys */
 } tSMP_IO_REQ;
 
-typedef struct
-{
+typedef struct {
     tSMP_STATUS reason;
     tSMP_SEC_LEVEL sec_level;
     BOOLEAN is_pair_cancel;
     BOOLEAN smp_over_br;
 } tSMP_CMPL;
 
-typedef struct
-{
+typedef struct {
     BT_OCTET32  x;
     BT_OCTET32  y;
 } tSMP_PUBLIC_KEY;
 
 /* the data associated with the info sent to the peer via OOB interface */
-typedef struct
-{
+typedef struct {
     BOOLEAN         present;
     BT_OCTET16      randomizer;
     BT_OCTET16      commitment;
 
     tBLE_BD_ADDR    addr_sent_to;
     BT_OCTET32      private_key_used;   /* is used to calculate: */
-                    /* publ_key_used = P-256(private_key_used, curve_p256.G) - send it to the */
-                    /* other side */
-                    /* dhkey = P-256(private_key_used, publ key rcvd from the other side) */
+    /* publ_key_used = P-256(private_key_used, curve_p256.G) - send it to the */
+    /* other side */
+    /* dhkey = P-256(private_key_used, publ key rcvd from the other side) */
     tSMP_PUBLIC_KEY publ_key_used; /* P-256(private_key_used, curve_p256.G) */
 } tSMP_LOC_OOB_DATA;
 
 /* the data associated with the info received from the peer via OOB interface */
-typedef struct
-{
+typedef struct {
     BOOLEAN         present;
     BT_OCTET16      randomizer;
     BT_OCTET16      commitment;
     tBLE_BD_ADDR    addr_rcvd_from;
 } tSMP_PEER_OOB_DATA;
 
-typedef struct
-{
+typedef struct {
     tSMP_LOC_OOB_DATA   loc_oob_data;
     tSMP_PEER_OOB_DATA  peer_oob_data;
 } tSMP_SC_OOB_DATA;
 
 
-typedef union
-{
+typedef union {
     UINT32          passkey;
     tSMP_IO_REQ     io_req;     /* IO request */
     tSMP_CMPL       cmplt;
     tSMP_OOB_DATA_TYPE  req_oob_type;
     tSMP_LOC_OOB_DATA   loc_oob_data;
-}tSMP_EVT_DATA;
+} tSMP_EVT_DATA;
 
 
 /* AES Encryption output */
-typedef struct
-{
+typedef struct {
     UINT8   status;
     UINT8   param_len;
     UINT16  opcode;
@@ -486,7 +476,7 @@ extern void SMP_KeypressNotification (BD_ADDR bd_addr, UINT8 value);
 **  Returns         Boolean - TRUE: creation of local SC OOB data set started.
 *******************************************************************************/
 extern BOOLEAN SMP_CreateLocalSecureConnectionsOobData (
-                                                                  tBLE_BD_ADDR *addr_to_send_to);
+    tBLE_BD_ADDR *addr_to_send_to);
 
 #ifdef __cplusplus
 }

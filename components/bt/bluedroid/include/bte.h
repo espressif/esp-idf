@@ -37,13 +37,12 @@
 #endif
 
 /* Target Modes (based on jumper settings on hardware [see user manual]) */
-enum
-{
-                            /* BTE                  BBY                     */
-                            /* J3   J4              SW3-3   SW3-2   SW3-1   */
-                            /* -------------------------------------------- */
+enum {
+    /* BTE                  BBY                     */
+    /* J3   J4              SW3-3   SW3-2   SW3-1   */
+    /* -------------------------------------------- */
     BTE_MODE_SERIAL_APP,    /* OUT  OUT             OFF     OFF     OFF     Sample serial port application      */
-    BTE_MODE_APPL,    	    /* IN   OUT             OFF     OFF     ON      Target used with Tester through RPC */
+    BTE_MODE_APPL,          /* IN   OUT             OFF     OFF     ON      Target used with Tester through RPC */
     BTE_MODE_RESERVED,      /* OUT  IN              OFF     ON      OFF     Reserved                            */
     BTE_MODE_SAMPLE_APPS,   /* IN   IN              OFF     ON      ON      Sample applications (ICP/HSP)       */
     BTE_MODE_DONGLE,        /* not yet supported    ON      OFF     OFF     Dongle mode                         */
@@ -67,7 +66,7 @@ void bte_get_startup_options(UINT32 *p_options);        /* Platform specific fun
 #define BUILD_L2PING          FALSE
 
 
-#define LINUX_FM_DRIVER_INCLUDED		FALSE
+#define LINUX_FM_DRIVER_INCLUDED        FALSE
 
 
 /* hcisu userial operations. should probably go into bt_types to avoid collisions! */

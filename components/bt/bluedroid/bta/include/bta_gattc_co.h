@@ -42,7 +42,7 @@
 **
 *******************************************************************************/
 extern void bta_gattc_co_cache_open(BD_ADDR server_bda, UINT16 evt,
-                                            UINT16 conn_id, BOOLEAN to_save);
+                                    UINT16 conn_id, BOOLEAN to_save);
 
 /*******************************************************************************
 **

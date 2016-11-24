@@ -269,7 +269,7 @@
 #define L2CAP_SDU_LEN_OFFSET       2   /* SDU length offset is 2 bytes */
 #define L2CAP_EXT_CONTROL_OVERHEAD 4   /* Extended Control Field       */
 #define L2CAP_MAX_HEADER_FCS       (L2CAP_PKT_OVERHEAD + L2CAP_EXT_CONTROL_OVERHEAD + L2CAP_SDU_LEN_OVERHEAD + L2CAP_FCS_LEN)
-                                   /* length(2), channel(2), control(4), SDU length(2) FCS(2) */
+/* length(2), channel(2), control(4), SDU length(2) FCS(2) */
 /* To optimize this, it must be a multiplum of the L2CAP PDU length AND match the 3DH5 air
  * including the l2cap headers in each packet - to match the latter - the -5 is added
  */

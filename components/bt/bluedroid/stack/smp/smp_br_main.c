@@ -23,8 +23,7 @@
 
 #if BLE_INCLUDED == TRUE
 
-const char *const smp_br_state_name [SMP_BR_STATE_MAX+1] =
-{
+const char *const smp_br_state_name [SMP_BR_STATE_MAX + 1] = {
     "SMP_BR_STATE_IDLE",
     "SMP_BR_STATE_WAIT_APP_RSP",
     "SMP_BR_STATE_PAIR_REQ_RSP",
@@ -32,8 +31,7 @@ const char *const smp_br_state_name [SMP_BR_STATE_MAX+1] =
     "SMP_BR_STATE_OUT_OF_RANGE"
 };
 
-const char *const smp_br_event_name [SMP_BR_MAX_EVT] =
-{
+const char *const smp_br_event_name [SMP_BR_MAX_EVT] = {
     "BR_PAIRING_REQ_EVT",
     "BR_PAIRING_RSP_EVT",
     "BR_CONFIRM_EVT",
@@ -71,8 +69,7 @@ const char *smp_get_br_state_name(tSMP_BR_STATE state);
 #define SMP_BR_SM_NUM_COLS     3
 typedef const UINT8 (*tSMP_BR_SM_TBL)[SMP_BR_SM_NUM_COLS];
 
-enum
-{
+enum {
     SMP_SEND_PAIR_REQ,
     SMP_BR_SEND_PAIR_RSP,
     SMP_SEND_PAIR_FAIL,
@@ -93,8 +90,7 @@ enum
     SMP_BR_SM_NO_ACTION
 };
 
-static const tSMP_ACT smp_br_sm_action[] =
-{
+static const tSMP_ACT smp_br_sm_action[] = {
     smp_send_pair_req,
     smp_br_send_pair_response,
     smp_send_pair_fail,
@@ -114,129 +110,118 @@ static const tSMP_ACT smp_br_sm_action[] =
     smp_idle_terminate
 };
 
-static const UINT8 smp_br_all_table[][SMP_BR_SM_NUM_COLS] =
-{
-/*                               Event                    Action           Next State */
-/* BR_PAIRING_FAILED        */  {SMP_PROC_PAIR_FAIL,  SMP_BR_PAIRING_COMPLETE, SMP_BR_STATE_IDLE},
-/* BR_AUTH_CMPL             */  {SMP_SEND_PAIR_FAIL,  SMP_BR_PAIRING_COMPLETE, SMP_BR_STATE_IDLE},
-/* BR_L2CAP_DISCONN         */  {SMP_PAIR_TERMINATE,  SMP_BR_SM_NO_ACTION, SMP_BR_STATE_IDLE}
+static const UINT8 smp_br_all_table[][SMP_BR_SM_NUM_COLS] = {
+    /*                               Event                    Action           Next State */
+    /* BR_PAIRING_FAILED        */  {SMP_PROC_PAIR_FAIL,  SMP_BR_PAIRING_COMPLETE, SMP_BR_STATE_IDLE},
+    /* BR_AUTH_CMPL             */  {SMP_SEND_PAIR_FAIL,  SMP_BR_PAIRING_COMPLETE, SMP_BR_STATE_IDLE},
+    /* BR_L2CAP_DISCONN         */  {SMP_PAIR_TERMINATE,  SMP_BR_SM_NO_ACTION, SMP_BR_STATE_IDLE}
 };
 
 /************ SMP Master FSM State/Event Indirection Table **************/
-static const UINT8 smp_br_master_entry_map[][SMP_BR_STATE_MAX] =
-{
-/* br_state name:               Idle      WaitApp  Pair    Bond
-                                          Rsp      ReqRsp  Pend       */
-/* BR_PAIRING_REQ           */  { 0,       0,       0,      0     },
-/* BR_PAIRING_RSP           */  { 0,       0,       1,      0     },
-/* BR_CONFIRM               */  { 0,       0,       0,      0     },
-/* BR_RAND                  */  { 0,       0,       0,      0     },
-/* BR_PAIRING_FAILED        */  { 0,       0x81,    0x81,   0     },
-/* BR_ENCRPTION_INFO        */  { 0,       0,       0,      0     },
-/* BR_MASTER_ID             */  { 0,       0,       0,      0     },
-/* BR_ID_INFO               */  { 0,       0,       0,      1     },
-/* BR_ID_ADDR               */  { 0,       0,       0,      2     },
-/* BR_SIGN_INFO             */  { 0,       0,       0,      3     },
-/* BR_SECURITY_REQ          */  { 0,       0,       0,      0     },
-/* BR_PAIR_PUBLIC_KEY_EVT   */  { 0,       0,       0,      0     },
-/* BR_PAIR_DHKEY_CHCK_EVT   */  { 0,       0,       0,      0     },
-/* BR_PAIR_KEYPR_NOTIF_EVT  */  { 0,       0,       0,      0     },
-/* BR_KEY_READY             */  { 0,       0,       0,      0     },
-/* BR_ENCRYPTED             */  { 0,       0,       0,      0     },
-/* BR_L2CAP_CONN            */  { 1,       0,       0,      0     },
-/* BR_L2CAP_DISCONN         */  { 2,       0x83,    0x83,   0x83  },
-/* BR_KEYS_RSP              */  { 0,       1,       0,      0     },
-/* BR_API_SEC_GRANT         */  { 0,       0,       0,      0     },
-/* BR_TK_REQ                */  { 0,       0,       0,      0     },
-/* BR_AUTH_CMPL             */  { 0,       0x82,    0x82,   0x82  },
-/* BR_ENC_REQ               */  { 0,       0,       0,      0     },
-/* BR_BOND_REQ              */  { 0,       0,       2,      0     },
-/* BR_DISCARD_SEC_REQ       */  { 0,       0,       0,      0     }
+static const UINT8 smp_br_master_entry_map[][SMP_BR_STATE_MAX] = {
+    /* br_state name:               Idle      WaitApp  Pair    Bond
+                                              Rsp      ReqRsp  Pend       */
+    /* BR_PAIRING_REQ           */  { 0,       0,       0,      0     },
+    /* BR_PAIRING_RSP           */  { 0,       0,       1,      0     },
+    /* BR_CONFIRM               */  { 0,       0,       0,      0     },
+    /* BR_RAND                  */  { 0,       0,       0,      0     },
+    /* BR_PAIRING_FAILED        */  { 0,       0x81,    0x81,   0     },
+    /* BR_ENCRPTION_INFO        */  { 0,       0,       0,      0     },
+    /* BR_MASTER_ID             */  { 0,       0,       0,      0     },
+    /* BR_ID_INFO               */  { 0,       0,       0,      1     },
+    /* BR_ID_ADDR               */  { 0,       0,       0,      2     },
+    /* BR_SIGN_INFO             */  { 0,       0,       0,      3     },
+    /* BR_SECURITY_REQ          */  { 0,       0,       0,      0     },
+    /* BR_PAIR_PUBLIC_KEY_EVT   */  { 0,       0,       0,      0     },
+    /* BR_PAIR_DHKEY_CHCK_EVT   */  { 0,       0,       0,      0     },
+    /* BR_PAIR_KEYPR_NOTIF_EVT  */  { 0,       0,       0,      0     },
+    /* BR_KEY_READY             */  { 0,       0,       0,      0     },
+    /* BR_ENCRYPTED             */  { 0,       0,       0,      0     },
+    /* BR_L2CAP_CONN            */  { 1,       0,       0,      0     },
+    /* BR_L2CAP_DISCONN         */  { 2,       0x83,    0x83,   0x83  },
+    /* BR_KEYS_RSP              */  { 0,       1,       0,      0     },
+    /* BR_API_SEC_GRANT         */  { 0,       0,       0,      0     },
+    /* BR_TK_REQ                */  { 0,       0,       0,      0     },
+    /* BR_AUTH_CMPL             */  { 0,       0x82,    0x82,   0x82  },
+    /* BR_ENC_REQ               */  { 0,       0,       0,      0     },
+    /* BR_BOND_REQ              */  { 0,       0,       2,      0     },
+    /* BR_DISCARD_SEC_REQ       */  { 0,       0,       0,      0     }
 };
 
-static const UINT8 smp_br_master_idle_table[][SMP_BR_SM_NUM_COLS] =
-{
-/*                                Event               Action               Next State */
-/* BR_L2CAP_CONN        */  {SMP_SEND_APP_CBACK, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_WAIT_APP_RSP},
-/* BR_L2CAP_DISCONN   */  {SMP_IDLE_TERMINATE,  SMP_BR_SM_NO_ACTION, SMP_BR_STATE_IDLE}
+static const UINT8 smp_br_master_idle_table[][SMP_BR_SM_NUM_COLS] = {
+    /*                                Event               Action               Next State */
+    /* BR_L2CAP_CONN        */  {SMP_SEND_APP_CBACK, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_WAIT_APP_RSP},
+    /* BR_L2CAP_DISCONN   */  {SMP_IDLE_TERMINATE,  SMP_BR_SM_NO_ACTION, SMP_BR_STATE_IDLE}
 };
 
-static const UINT8 smp_br_master_wait_appln_response_table[][SMP_BR_SM_NUM_COLS] =
-{
-/*                                Event               Action              Next State */
-/* BR_KEYS_RSP           */{SMP_SEND_PAIR_REQ, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_PAIR_REQ_RSP}
+static const UINT8 smp_br_master_wait_appln_response_table[][SMP_BR_SM_NUM_COLS] = {
+    /*                                Event               Action              Next State */
+    /* BR_KEYS_RSP           */{SMP_SEND_PAIR_REQ, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_PAIR_REQ_RSP}
 };
 
-static const UINT8 smp_br_master_pair_request_response_table [][SMP_BR_SM_NUM_COLS] =
-{
-/*                        Event               Action                  Next State */
-/* BR_PAIRING_RSP   */  {SMP_BR_PROC_PAIR_CMD, SMP_BR_CHECK_AUTH_REQ, SMP_BR_STATE_PAIR_REQ_RSP},
-/* BR_BOND_REQ      */  {SMP_BR_SM_NO_ACTION, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING}
+static const UINT8 smp_br_master_pair_request_response_table [][SMP_BR_SM_NUM_COLS] = {
+    /*                        Event               Action                  Next State */
+    /* BR_PAIRING_RSP   */  {SMP_BR_PROC_PAIR_CMD, SMP_BR_CHECK_AUTH_REQ, SMP_BR_STATE_PAIR_REQ_RSP},
+    /* BR_BOND_REQ      */  {SMP_BR_SM_NO_ACTION, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING}
 };
 
-static const UINT8 smp_br_master_bond_pending_table[][SMP_BR_SM_NUM_COLS] =
-{
-/*                                Event               Action              Next State */
-/* BR_ID_INFO               */{SMP_PROC_ID_INFO, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING},
-/* BR_ID_ADDR               */{SMP_PROC_ID_ADDR, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING},
-/* BR_SIGN_INFO             */{SMP_PROC_SRK_INFO, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING}
+static const UINT8 smp_br_master_bond_pending_table[][SMP_BR_SM_NUM_COLS] = {
+    /*                                Event               Action              Next State */
+    /* BR_ID_INFO               */{SMP_PROC_ID_INFO, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING},
+    /* BR_ID_ADDR               */{SMP_PROC_ID_ADDR, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING},
+    /* BR_SIGN_INFO             */{SMP_PROC_SRK_INFO, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING}
 };
 
-static const UINT8 smp_br_slave_entry_map[][SMP_BR_STATE_MAX] =
-{
-/* br_state name:               Idle      WaitApp  Pair    Bond
-                                          Rsp      ReqRsp  Pend      */
-/* BR_PAIRING_REQ           */  { 1,       0,       0,      0    },
-/* BR_PAIRING_RSP           */  { 0,       0,       0,      0    },
-/* BR_CONFIRM               */  { 0,       0,       0,      0    },
-/* BR_RAND                  */  { 0,       0,       0,      0    },
-/* BR_PAIRING_FAILED        */  { 0,       0x81,    0x81,   0x81 },
-/* BR_ENCRPTION_INFO        */  { 0,       0,       0,      0    },
-/* BR_MASTER_ID             */  { 0,       0,       0,      0    },
-/* BR_ID_INFO               */  { 0,       0,       0,      1    },
-/* BR_ID_ADDR               */  { 0,       0,       0,      2    },
-/* BR_SIGN_INFO             */  { 0,       0,       0,      3    },
-/* BR_SECURITY_REQ          */  { 0,       0,       0,      0    },
-/* BR_PAIR_PUBLIC_KEY_EVT   */  { 0,       0,       0,      0    },
-/* BR_PAIR_DHKEY_CHCK_EVT   */  { 0,       0,       0,      0    },
-/* BR_PAIR_KEYPR_NOTIF_EVT  */  { 0,       0,       0,      0    },
-/* BR_KEY_READY             */  { 0,       0,       0,      0    },
-/* BR_ENCRYPTED             */  { 0,       0,       0,      0    },
-/* BR_L2CAP_CONN            */  { 0,       0,       0,      0    },
-/* BR_L2CAP_DISCONN         */  { 0,       0x83,    0x83,   0x83 },
-/* BR_KEYS_RSP              */  { 0,       2,       0,      0    },
-/* BR_API_SEC_GRANT         */  { 0,       1,       0,      0    },
-/* BR_TK_REQ                */  { 0,       0,       0,      0    },
-/* BR_AUTH_CMPL             */  { 0,       0x82,    0x82,   0x82 },
-/* BR_ENC_REQ               */  { 0,       0,       0,      0    },
-/* BR_BOND_REQ              */  { 0,       3,       0,      0    },
-/* BR_DISCARD_SEC_REQ       */  { 0,       0,       0,      0    }
+static const UINT8 smp_br_slave_entry_map[][SMP_BR_STATE_MAX] = {
+    /* br_state name:               Idle      WaitApp  Pair    Bond
+                                              Rsp      ReqRsp  Pend      */
+    /* BR_PAIRING_REQ           */  { 1,       0,       0,      0    },
+    /* BR_PAIRING_RSP           */  { 0,       0,       0,      0    },
+    /* BR_CONFIRM               */  { 0,       0,       0,      0    },
+    /* BR_RAND                  */  { 0,       0,       0,      0    },
+    /* BR_PAIRING_FAILED        */  { 0,       0x81,    0x81,   0x81 },
+    /* BR_ENCRPTION_INFO        */  { 0,       0,       0,      0    },
+    /* BR_MASTER_ID             */  { 0,       0,       0,      0    },
+    /* BR_ID_INFO               */  { 0,       0,       0,      1    },
+    /* BR_ID_ADDR               */  { 0,       0,       0,      2    },
+    /* BR_SIGN_INFO             */  { 0,       0,       0,      3    },
+    /* BR_SECURITY_REQ          */  { 0,       0,       0,      0    },
+    /* BR_PAIR_PUBLIC_KEY_EVT   */  { 0,       0,       0,      0    },
+    /* BR_PAIR_DHKEY_CHCK_EVT   */  { 0,       0,       0,      0    },
+    /* BR_PAIR_KEYPR_NOTIF_EVT  */  { 0,       0,       0,      0    },
+    /* BR_KEY_READY             */  { 0,       0,       0,      0    },
+    /* BR_ENCRYPTED             */  { 0,       0,       0,      0    },
+    /* BR_L2CAP_CONN            */  { 0,       0,       0,      0    },
+    /* BR_L2CAP_DISCONN         */  { 0,       0x83,    0x83,   0x83 },
+    /* BR_KEYS_RSP              */  { 0,       2,       0,      0    },
+    /* BR_API_SEC_GRANT         */  { 0,       1,       0,      0    },
+    /* BR_TK_REQ                */  { 0,       0,       0,      0    },
+    /* BR_AUTH_CMPL             */  { 0,       0x82,    0x82,   0x82 },
+    /* BR_ENC_REQ               */  { 0,       0,       0,      0    },
+    /* BR_BOND_REQ              */  { 0,       3,       0,      0    },
+    /* BR_DISCARD_SEC_REQ       */  { 0,       0,       0,      0    }
 };
 
-static const UINT8 smp_br_slave_idle_table[][SMP_BR_SM_NUM_COLS] =
-{
-/*                               Event                Action              Next State */
-/* BR_PAIRING_REQ    */ {SMP_BR_PROC_PAIR_CMD, SMP_SEND_APP_CBACK, SMP_BR_STATE_WAIT_APP_RSP}
+static const UINT8 smp_br_slave_idle_table[][SMP_BR_SM_NUM_COLS] = {
+    /*                               Event                Action              Next State */
+    /* BR_PAIRING_REQ    */ {SMP_BR_PROC_PAIR_CMD, SMP_SEND_APP_CBACK, SMP_BR_STATE_WAIT_APP_RSP}
 };
 
-static const UINT8 smp_br_slave_wait_appln_response_table [][SMP_BR_SM_NUM_COLS] =
-{
-/*                               Event                 Action             Next State */
-/* BR_API_SEC_GRANT */ {SMP_BR_PROC_SEC_GRANT, SMP_SEND_APP_CBACK, SMP_BR_STATE_WAIT_APP_RSP},
-/* BR_KEYS_RSP     */{SMP_BR_PROC_SL_KEYS_RSP, SMP_BR_CHECK_AUTH_REQ,SMP_BR_STATE_WAIT_APP_RSP},
-/* BR_BOND_REQ        */ {SMP_BR_KEY_DISTRIBUTION, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING}
+static const UINT8 smp_br_slave_wait_appln_response_table [][SMP_BR_SM_NUM_COLS] = {
+    /*                               Event                 Action             Next State */
+    /* BR_API_SEC_GRANT */ {SMP_BR_PROC_SEC_GRANT, SMP_SEND_APP_CBACK, SMP_BR_STATE_WAIT_APP_RSP},
+    /* BR_KEYS_RSP     */{SMP_BR_PROC_SL_KEYS_RSP, SMP_BR_CHECK_AUTH_REQ, SMP_BR_STATE_WAIT_APP_RSP},
+    /* BR_BOND_REQ        */ {SMP_BR_KEY_DISTRIBUTION, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING}
 };
 
-static const UINT8 smp_br_slave_bond_pending_table[][SMP_BR_SM_NUM_COLS] =
-{
-/*                                Event               Action               Next State */
-/* BR_ID_INFO               */  {SMP_PROC_ID_INFO, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING},
-/* BR_ID_ADDR               */  {SMP_PROC_ID_ADDR, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING},
-/* BR_SIGN_INFO             */  {SMP_PROC_SRK_INFO, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING}
+static const UINT8 smp_br_slave_bond_pending_table[][SMP_BR_SM_NUM_COLS] = {
+    /*                                Event               Action               Next State */
+    /* BR_ID_INFO               */  {SMP_PROC_ID_INFO, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING},
+    /* BR_ID_ADDR               */  {SMP_PROC_ID_ADDR, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING},
+    /* BR_SIGN_INFO             */  {SMP_PROC_SRK_INFO, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING}
 };
 
-static const tSMP_BR_SM_TBL smp_br_state_table[][2] =
-{
+static const tSMP_BR_SM_TBL smp_br_state_table[][2] = {
     /* SMP_BR_STATE_IDLE */
     {smp_br_master_idle_table, smp_br_slave_idle_table},
 
@@ -252,8 +237,7 @@ static const tSMP_BR_SM_TBL smp_br_state_table[][2] =
 
 typedef const UINT8 (*tSMP_BR_ENTRY_TBL)[SMP_BR_STATE_MAX];
 
-static const tSMP_BR_ENTRY_TBL smp_br_entry_table[] =
-{
+static const tSMP_BR_ENTRY_TBL smp_br_entry_table[] = {
     smp_br_master_entry_map,
     smp_br_slave_entry_map
 };
@@ -266,16 +250,13 @@ static const tSMP_BR_ENTRY_TBL smp_br_entry_table[] =
 *******************************************************************************/
 void smp_set_br_state(tSMP_BR_STATE br_state)
 {
-    if (br_state < SMP_BR_STATE_MAX)
-    {
+    if (br_state < SMP_BR_STATE_MAX) {
         SMP_TRACE_DEBUG( "BR_State change: %s(%d) ==> %s(%d)",
-                          smp_get_br_state_name(smp_cb.br_state), smp_cb.br_state,
-                          smp_get_br_state_name(br_state), br_state );
+                         smp_get_br_state_name(smp_cb.br_state), smp_cb.br_state,
+                         smp_get_br_state_name(br_state), br_state );
         smp_cb.br_state = br_state;
-    }
-    else
-    {
-        SMP_TRACE_DEBUG("%s invalid br_state =%d", __FUNCTION__,br_state );
+    } else {
+        SMP_TRACE_DEBUG("%s invalid br_state =%d", __FUNCTION__, br_state );
     }
 }
 
@@ -296,8 +277,9 @@ const char *smp_get_br_state_name(tSMP_BR_STATE br_state)
 {
     const char *p_str = smp_br_state_name[SMP_BR_STATE_MAX];
 
-    if (br_state < SMP_BR_STATE_MAX)
+    if (br_state < SMP_BR_STATE_MAX) {
         p_str = smp_br_state_name[br_state];
+    }
 
     return p_str;
 }
@@ -305,13 +287,12 @@ const char *smp_get_br_state_name(tSMP_BR_STATE br_state)
 ** Function     smp_get_br_event_name
 ** Returns      The smp_br event name.
 *******************************************************************************/
-const char * smp_get_br_event_name(tSMP_BR_EVENT event)
+const char *smp_get_br_event_name(tSMP_BR_EVENT event)
 {
-    const char * p_str = smp_br_event_name[SMP_BR_MAX_EVT - 1];
+    const char *p_str = smp_br_event_name[SMP_BR_MAX_EVT - 1];
 
-    if (event < SMP_BR_MAX_EVT)
-    {
-        p_str = smp_br_event_name[event- 1];
+    if (event < SMP_BR_MAX_EVT) {
+        p_str = smp_br_event_name[event - 1];
     }
     return p_str;
 }
@@ -338,39 +319,32 @@ void smp_br_state_machine_event(tSMP_CB *p_cb, tSMP_BR_EVENT event, void *p_data
     tSMP_BR_ENTRY_TBL   entry_table =  smp_br_entry_table[p_cb->role];
 
     SMP_TRACE_EVENT("main %s", __func__);
-    if (curr_state >= SMP_BR_STATE_MAX)
-    {
+    if (curr_state >= SMP_BR_STATE_MAX) {
         SMP_TRACE_DEBUG( "Invalid br_state: %d", curr_state) ;
         return;
     }
 
     SMP_TRACE_DEBUG( "SMP Role: %s State: [%s (%d)], Event: [%s (%d)]",
-                      (p_cb->role == HCI_ROLE_SLAVE) ? "Slave" : "Master",
-                      smp_get_br_state_name( p_cb->br_state),
-                      p_cb->br_state, smp_get_br_event_name(event), event) ;
+                     (p_cb->role == HCI_ROLE_SLAVE) ? "Slave" : "Master",
+                     smp_get_br_state_name( p_cb->br_state),
+                     p_cb->br_state, smp_get_br_event_name(event), event) ;
 
     /* look up the state table for the current state */
     /* lookup entry / w event & curr_state */
     /* If entry is ignore, return.
      * Otherwise, get state table (according to curr_state or all_state) */
     if ((event <= SMP_BR_MAX_EVT) && ( (entry = entry_table[event - 1][curr_state])
-        != SMP_BR_SM_IGNORE ))
-    {
-        if (entry & SMP_BR_ALL_TABLE_MASK)
-        {
+                                       != SMP_BR_SM_IGNORE )) {
+        if (entry & SMP_BR_ALL_TABLE_MASK) {
             entry &= ~SMP_BR_ALL_TABLE_MASK;
             state_table = smp_br_all_table;
-        }
-        else
-        {
+        } else {
             state_table = smp_br_state_table[curr_state][p_cb->role];
         }
-    }
-    else
-    {
+    } else {
         SMP_TRACE_DEBUG( "Ignore event [%s (%d)] in state [%s (%d)]",
-                          smp_get_br_event_name(event), event,
-                          smp_get_br_state_name(curr_state), curr_state);
+                         smp_get_br_event_name(event), event,
+                         smp_get_br_state_name(curr_state), curr_state);
         return;
     }
 
@@ -382,14 +356,10 @@ void smp_br_state_machine_event(tSMP_CB *p_cb, tSMP_BR_EVENT event, void *p_data
      * The action function may set the Param for cback.
      * Depending on param, call cback or free buffer. */
     /* execute action functions */
-    for (UINT8 i = 0; i < SMP_BR_NUM_ACTIONS; i++)
-    {
-        if ((action = state_table[entry - 1][i]) != SMP_BR_SM_NO_ACTION)
-        {
+    for (UINT8 i = 0; i < SMP_BR_NUM_ACTIONS; i++) {
+        if ((action = state_table[entry - 1][i]) != SMP_BR_SM_NO_ACTION) {
             (*smp_br_sm_action[action])(p_cb, (tSMP_INT_DATA *)p_data);
-        }
-        else
-        {
+        } else {
             break;
         }
     }

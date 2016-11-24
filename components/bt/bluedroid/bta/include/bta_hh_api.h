@@ -93,8 +93,7 @@ typedef UINT16 tBTA_HH_EVT;
 #define BTA_HH_PROTO_UNKNOWN                    (0xff)
 typedef UINT8   tBTA_HH_PROTO_MODE;
 
-enum
-{
+enum {
     BTA_HH_KEYBD_RPT_ID  =               1,
     BTA_HH_MOUSE_RPT_ID
 };
@@ -114,8 +113,7 @@ typedef UINT8 tBTA_HH_BOOT_RPT_ID;
 #define BTA_HH_DEVT_OTHER        0x80
 typedef UINT8  tBTA_HH_DEVT;
 
-enum
-{
+enum {
     BTA_HH_OK,
     BTA_HH_HS_HID_NOT_READY,    /* handshake error : device not ready */
     BTA_HH_HS_INVALID_RPT_ID,   /* handshake error : invalid report ID */
@@ -149,22 +147,19 @@ typedef UINT8 tBTA_HH_STATUS;
 typedef UINT16 tBTA_HH_ATTR_MASK;
 
 /* supported type of device and corresponding application ID */
-typedef struct
-{
+typedef struct {
     tBTA_HH_DEVT        tod;        /* type of device               */
     UINT8               app_id;     /* corresponding application ID */
-}tBTA_HH_SPT_TOD;
+} tBTA_HH_SPT_TOD;
 
 /* configuration struct */
-typedef struct
-{
+typedef struct {
     UINT8                max_devt_spt; /* max number of types of devices spt */
     tBTA_HH_SPT_TOD     *p_devt_list;  /* supported types of device list     */
     UINT16               sdp_db_size;
-}tBTA_HH_CFG;
+} tBTA_HH_CFG;
 
-enum
-{
+enum {
     BTA_HH_RPTT_RESRV,      /* reserved         */
     BTA_HH_RPTT_INPUT,      /* input report     */
     BTA_HH_RPTT_OUTPUT,     /* output report    */
@@ -174,8 +169,7 @@ typedef UINT8 tBTA_HH_RPT_TYPE;
 
 /* HID_CONTROL operation code used in BTA_HhSendCtrl()
 */
-enum
-{
+enum {
     BTA_HH_CTRL_NOP         = 0 + HID_PAR_CONTROL_NOP ,/* mapping from BTE */
     BTA_HH_CTRL_HARD_RESET,                            /* hard reset       */
     BTA_HH_CTRL_SOFT_RESET,                            /* soft reset       */
@@ -194,8 +188,7 @@ typedef tHID_DEV_DSCP_INFO tBTA_HH_DEV_DESCR;
 
 
 /* report descriptor information */
-typedef struct
-{
+typedef struct {
     UINT16              vendor_id;      /* vendor ID */
     UINT16              product_id;     /* product ID */
     UINT16              version;        /* version */
@@ -209,11 +202,10 @@ typedef struct
     UINT8               flag;
 #endif
     tBTA_HH_DEV_DESCR   descriptor;
-}tBTA_HH_DEV_DSCP_INFO;
+} tBTA_HH_DEV_DSCP_INFO;
 
 /* callback event data for BTA_HH_OPEN_EVT */
-typedef struct
-{
+typedef struct {
     BD_ADDR         bda;                /* HID device bd address    */
     tBTA_HH_STATUS  status;             /* operation status         */
     UINT8           handle;             /* device handle            */
@@ -227,14 +219,12 @@ typedef struct
 typedef tBTA_HH_CONN tBTA_HH_DEV_INFO;
 
 /* callback event data */
-typedef struct
-{
+typedef struct {
     tBTA_HH_STATUS              status;     /* operation status         */
     UINT8                       handle;     /* device handle            */
 } tBTA_HH_CBDATA;
 
-enum
-{
+enum {
     BTA_HH_MOD_CTRL_KEY,
     BTA_HH_MOD_SHFT_KEY,
     BTA_HH_MOD_ALT_KEY,
@@ -243,55 +233,48 @@ enum
 };
 
 /* parsed boot mode keyboard report */
-typedef struct
-{
+typedef struct {
     UINT8               this_char[6];       /* virtual key code     */
     BOOLEAN             mod_key[BTA_HH_MOD_MAX_KEY];
-                                            /* ctrl, shift, Alt, GUI */
-                                            /* modifier key: is Shift key pressed */
-                                            /* modifier key: is Ctrl key pressed  */
-                                            /* modifier key: is Alt key pressed   */
-                                            /* modifier key: GUI up/down */
+    /* ctrl, shift, Alt, GUI */
+    /* modifier key: is Shift key pressed */
+    /* modifier key: is Ctrl key pressed  */
+    /* modifier key: is Alt key pressed   */
+    /* modifier key: GUI up/down */
     BOOLEAN             caps_lock;          /* is caps locked       */
     BOOLEAN             num_lock;           /* is Num key pressed   */
 } tBTA_HH_KEYBD_RPT;
 
 /* parsed boot mode mouse report */
-typedef struct
-{
+typedef struct {
     UINT8               mouse_button;       /* mouse button is clicked   */
     INT8                delta_x;            /* displacement x            */
     INT8                delta_y;            /* displacement y            */
-}tBTA_HH_MICE_RPT;
+} tBTA_HH_MICE_RPT;
 
 /* parsed Boot report */
-typedef struct
-{
+typedef struct {
     tBTA_HH_BOOT_RPT_ID dev_type;           /* type of device report */
-    union
-    {
+    union {
         tBTA_HH_KEYBD_RPT   keybd_rpt;      /* keyboard report      */
         tBTA_HH_MICE_RPT    mice_rpt;       /* mouse report         */
     }                   data_rpt;
 } tBTA_HH_BOOT_RPT;
 
 /* handshake data */
-typedef struct
-{
+typedef struct {
     tBTA_HH_STATUS  status;                 /* handshake status */
     UINT8           handle;                 /* device handle    */
-    union
-    {
+    union {
         tBTA_HH_PROTO_MODE      proto_mode; /* GET_PROTO_EVT :protocol mode */
         BT_HDR                  *p_rpt_data;   /* GET_RPT_EVT   : report data  */
         UINT8                   idle_rate;  /* GET_IDLE_EVT  : idle rate    */
     }               rsp_data;
 
-}tBTA_HH_HSDATA;
+} tBTA_HH_HSDATA;
 
 /* union of data associated with HD callback */
-typedef union
-{
+typedef union {
     tBTA_HH_DEV_INFO        dev_info;           /* BTA_HH_ADD_DEV_EVT, BTA_HH_RMV_DEV_EVT   */
     tBTA_HH_CONN            conn;               /* BTA_HH_OPEN_EVT      */
     tBTA_HH_CBDATA          dev_status;         /* BTA_HH_CLOSE_EVT,

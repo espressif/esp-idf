@@ -43,8 +43,7 @@ tAVRC_CB avrc_cb;
 #endif
 
 /* update AVRC_NUM_PROTO_ELEMS if this constant is changed */
-const tSDP_PROTOCOL_ELEM  avrc_proto_list [] =
-{
+const tSDP_PROTOCOL_ELEM  avrc_proto_list [] = {
     {UUID_PROTOCOL_L2CAP, 1, {AVCT_PSM, 0} },
 #if SDP_AVCTP_1_4 == TRUE
     {UUID_PROTOCOL_AVCTP, 1, {AVCT_REV_1_4, 0}  }
@@ -62,12 +61,14 @@ const tSDP_PROTOCOL_ELEM  avrc_proto_list [] =
 };
 
 #if SDP_AVRCP_1_4 == TRUE
-const tSDP_PROTO_LIST_ELEM  avrc_add_proto_list [] =
-{
-    {AVRC_NUM_PROTO_ELEMS,
+const tSDP_PROTO_LIST_ELEM  avrc_add_proto_list [] = {
     {
-    {UUID_PROTOCOL_L2CAP, 1, {AVCT_BR_PSM, 0} },
-    {UUID_PROTOCOL_AVCTP, 1, {AVCT_REV_1_3, 0}  }}}
+        AVRC_NUM_PROTO_ELEMS,
+        {
+            {UUID_PROTOCOL_L2CAP, 1, {AVCT_BR_PSM, 0} },
+            {UUID_PROTOCOL_AVCTP, 1, {AVCT_REV_1_3, 0}  }
+        }
+    }
 };
 #endif
 
@@ -138,7 +139,7 @@ static void avrc_sdp_cback(UINT16 status)
 **
 ******************************************************************************/
 UINT16 AVRC_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
-                tAVRC_SDP_DB_PARAMS *p_db, tAVRC_FIND_CBACK *p_cback)
+                        tAVRC_SDP_DB_PARAMS *p_db, tAVRC_FIND_CBACK *p_cback)
 {
     tSDP_UUID   uuid_list;
     BOOLEAN     result = TRUE;
@@ -147,24 +148,26 @@ UINT16 AVRC_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
                                    ATTR_ID_BT_PROFILE_DESC_LIST,
                                    ATTR_ID_SERVICE_NAME,
                                    ATTR_ID_SUPPORTED_FEATURES,
-                                   ATTR_ID_PROVIDER_NAME};
+                                   ATTR_ID_PROVIDER_NAME
+                                  };
 
     AVRC_TRACE_API("AVRC_FindService uuid: %x", service_uuid);
-    if( (service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET && service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL) ||
-        p_db == NULL || p_db->p_db == NULL || p_cback == NULL)
+    if ( (service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET && service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL) ||
+            p_db == NULL || p_db->p_db == NULL || p_cback == NULL) {
         return AVRC_BAD_PARAM;
+    }
 
     /* check if it is busy */
-    if( avrc_cb.service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET ||
-        avrc_cb.service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL)
+    if ( avrc_cb.service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET ||
+            avrc_cb.service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL) {
         return AVRC_NO_RESOURCES;
+    }
 
     /* set up discovery database */
     uuid_list.len = LEN_UUID_16;
     uuid_list.uu.uuid16 = service_uuid;
 
-    if(p_db->p_attrs == NULL || p_db->num_attr == 0)
-    {
+    if (p_db->p_attrs == NULL || p_db->num_attr == 0) {
         p_db->p_attrs  = a2d_attr_list;
         p_db->num_attr = AVRC_NUM_ATTR;
     }
@@ -172,8 +175,7 @@ UINT16 AVRC_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
     result = SDP_InitDiscoveryDb(p_db->p_db, p_db->db_len, 1, &uuid_list, p_db->num_attr,
                                  p_db->p_attrs);
 
-    if (result == TRUE)
-    {
+    if (result == TRUE) {
         /* store service_uuid and discovery db pointer */
         avrc_cb.p_db = p_db->p_db;
         avrc_cb.service_uuid = service_uuid;
@@ -218,7 +220,7 @@ UINT16 AVRC_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
 **
 ******************************************************************************/
 UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
-                char *p_provider_name, UINT16 categories, UINT32 sdp_handle)
+                      char *p_provider_name, UINT16 categories, UINT32 sdp_handle)
 {
     UINT16      browse_list[1];
     BOOLEAN     result = TRUE;
@@ -230,21 +232,20 @@ UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
 
     AVRC_TRACE_API("AVRC_AddRecord uuid: %x", service_uuid);
 
-    if( service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET && service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL )
+    if ( service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET && service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL ) {
         return AVRC_BAD_PARAM;
+    }
 
     /* add service class id list */
     class_list[0] = service_uuid;
 #if SDP_AVCTP_1_4 == TRUE
-    if( service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL )
-    {
+    if ( service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL ) {
         class_list[1] = UUID_SERVCLASS_AV_REM_CTRL_CONTROL;
         count = 2;
     }
 #else
 #if SDP_AVRCP_1_4 == TRUE
-    if( service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL )
-    {
+    if ( service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL ) {
         class_list[1] = UUID_SERVCLASS_AV_REM_CTRL_CONTROL;
         count = 2;
     }
@@ -273,20 +274,18 @@ UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
     p = temp;
     UINT16_TO_BE_STREAM(p, categories);
     result &= SDP_AddAttribute(sdp_handle, ATTR_ID_SUPPORTED_FEATURES, UINT_DESC_TYPE,
-              (UINT32)2, (UINT8*)temp);
+                               (UINT32)2, (UINT8 *)temp);
 
     /* add provider name */
-    if (p_provider_name != NULL)
-    {
+    if (p_provider_name != NULL) {
         result &= SDP_AddAttribute(sdp_handle, ATTR_ID_PROVIDER_NAME, TEXT_STR_DESC_TYPE,
-                    (UINT32)(strlen(p_provider_name)+1), (UINT8 *) p_provider_name);
+                                   (UINT32)(strlen(p_provider_name) + 1), (UINT8 *) p_provider_name);
     }
 
     /* add service name */
-    if (p_service_name != NULL)
-    {
+    if (p_service_name != NULL) {
         result &= SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE,
-                    (UINT32)(strlen(p_service_name)+1), (UINT8 *) p_service_name);
+                                   (UINT32)(strlen(p_service_name) + 1), (UINT8 *) p_service_name);
     }
 
     /* add browse group list */
@@ -322,8 +321,9 @@ UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name,
 ******************************************************************************/
 UINT8 AVRC_SetTraceLevel (UINT8 new_level)
 {
-    if (new_level != 0xFF)
+    if (new_level != 0xFF) {
         avrc_cb.trace_level = new_level;
+    }
 
     return (avrc_cb.trace_level);
 }

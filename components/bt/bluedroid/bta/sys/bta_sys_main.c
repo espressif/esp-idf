@@ -66,8 +66,7 @@ UINT8 btif_trace_level = BT_TRACE_LEVEL_WARNING;
 extern fixed_queue_t *btu_bta_msg_queue;
 void btu_bta_alarm_ready(fixed_queue_t *queue);
 
-static const tBTA_SYS_REG bta_sys_hw_reg =
-{
+static const tBTA_SYS_REG bta_sys_hw_reg = {
     bta_sys_sm_execute,
     NULL
 };
@@ -77,8 +76,7 @@ static const tBTA_SYS_REG bta_sys_hw_reg =
 typedef void (*tBTA_SYS_ACTION)(tBTA_SYS_HW_MSG *p_data);
 
 /* action function list */
-const tBTA_SYS_ACTION bta_sys_action[] =
-{
+const tBTA_SYS_ACTION bta_sys_action[] = {
     /* device manager local device API events - cf bta_sys.h for events */
     bta_sys_hw_api_enable,             /* 0  BTA_SYS_HW_API_ENABLE_EVT    */
     bta_sys_hw_evt_enabled,           /* 1  BTA_SYS_HW_EVT_ENABLED_EVT */
@@ -89,8 +87,7 @@ const tBTA_SYS_ACTION bta_sys_action[] =
 };
 
 /* state machine action enumeration list */
-enum
-{
+enum {
     /* device manager local device API events */
     BTA_SYS_HW_API_ENABLE,
     BTA_SYS_HW_EVT_ENABLED,
@@ -110,48 +107,44 @@ enum
 
 
 /* state table for OFF state */
-const UINT8 bta_sys_hw_off[][BTA_SYS_NUM_COLS] =
-{
-/* Event                    Action 1               Action 2             Next State */
-/* API_ENABLE    */  {BTA_SYS_HW_API_ENABLE,    BTA_SYS_IGNORE,     BTA_SYS_HW_STARTING},
-/* EVT_ENABLED   */  {BTA_SYS_IGNORE,           BTA_SYS_IGNORE,     BTA_SYS_HW_STARTING},
-/* STACK_ENABLED */  {BTA_SYS_IGNORE,           BTA_SYS_IGNORE,     BTA_SYS_HW_ON},
-/* API_DISABLE   */  {BTA_SYS_HW_EVT_DISABLED,  BTA_SYS_IGNORE,     BTA_SYS_HW_OFF},
-/* EVT_DISABLED  */  {BTA_SYS_IGNORE,           BTA_SYS_IGNORE,     BTA_SYS_HW_OFF},
-/* EVT_ERROR     */  {BTA_SYS_IGNORE,           BTA_SYS_IGNORE,     BTA_SYS_HW_OFF}
+const UINT8 bta_sys_hw_off[][BTA_SYS_NUM_COLS] = {
+    /* Event                    Action 1               Action 2             Next State */
+    /* API_ENABLE    */  {BTA_SYS_HW_API_ENABLE,    BTA_SYS_IGNORE,     BTA_SYS_HW_STARTING},
+    /* EVT_ENABLED   */  {BTA_SYS_IGNORE,           BTA_SYS_IGNORE,     BTA_SYS_HW_STARTING},
+    /* STACK_ENABLED */  {BTA_SYS_IGNORE,           BTA_SYS_IGNORE,     BTA_SYS_HW_ON},
+    /* API_DISABLE   */  {BTA_SYS_HW_EVT_DISABLED,  BTA_SYS_IGNORE,     BTA_SYS_HW_OFF},
+    /* EVT_DISABLED  */  {BTA_SYS_IGNORE,           BTA_SYS_IGNORE,     BTA_SYS_HW_OFF},
+    /* EVT_ERROR     */  {BTA_SYS_IGNORE,           BTA_SYS_IGNORE,     BTA_SYS_HW_OFF}
 };
 
-const UINT8 bta_sys_hw_starting[][BTA_SYS_NUM_COLS] =
-{
-/* Event                    Action 1                   Action 2               Next State */
-/* API_ENABLE    */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_STARTING}, /* wait for completion event */
-/* EVT_ENABLED   */  {BTA_SYS_HW_EVT_ENABLED,       BTA_SYS_IGNORE,         BTA_SYS_HW_STARTING},
-/* STACK_ENABLED */  {BTA_SYS_HW_EVT_STACK_ENABLED, BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
-/* API_DISABLE   */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_STOPPING}, /* successive disable/enable: change state wait for completion to disable */
-/* EVT_DISABLED  */  {BTA_SYS_HW_EVT_DISABLED,      BTA_SYS_HW_API_ENABLE,  BTA_SYS_HW_STARTING}, /* successive enable/disable: notify, then restart HW */
-/* EVT_ERROR */      {BTA_SYS_HW_ERROR,             BTA_SYS_IGNORE,         BTA_SYS_HW_ON}
+const UINT8 bta_sys_hw_starting[][BTA_SYS_NUM_COLS] = {
+    /* Event                    Action 1                   Action 2               Next State */
+    /* API_ENABLE    */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_STARTING}, /* wait for completion event */
+    /* EVT_ENABLED   */  {BTA_SYS_HW_EVT_ENABLED,       BTA_SYS_IGNORE,         BTA_SYS_HW_STARTING},
+    /* STACK_ENABLED */  {BTA_SYS_HW_EVT_STACK_ENABLED, BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
+    /* API_DISABLE   */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_STOPPING}, /* successive disable/enable: change state wait for completion to disable */
+    /* EVT_DISABLED  */  {BTA_SYS_HW_EVT_DISABLED,      BTA_SYS_HW_API_ENABLE,  BTA_SYS_HW_STARTING}, /* successive enable/disable: notify, then restart HW */
+    /* EVT_ERROR */      {BTA_SYS_HW_ERROR,             BTA_SYS_IGNORE,         BTA_SYS_HW_ON}
 };
 
-const UINT8 bta_sys_hw_on[][BTA_SYS_NUM_COLS] =
-{
-/* Event                    Action 1                   Action 2               Next State */
-/* API_ENABLE    */  {BTA_SYS_HW_API_ENABLE,        BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
-/* EVT_ENABLED   */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
-/* STACK_ENABLED */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
-/* API_DISABLE   */  {BTA_SYS_HW_API_DISABLE,       BTA_SYS_IGNORE,         BTA_SYS_HW_ON}, /* don't change the state here, as some other modules might be active */
-/* EVT_DISABLED */   {BTA_SYS_HW_ERROR,             BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
-/* EVT_ERROR */      {BTA_SYS_HW_ERROR,             BTA_SYS_IGNORE,         BTA_SYS_HW_ON}
+const UINT8 bta_sys_hw_on[][BTA_SYS_NUM_COLS] = {
+    /* Event                    Action 1                   Action 2               Next State */
+    /* API_ENABLE    */  {BTA_SYS_HW_API_ENABLE,        BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
+    /* EVT_ENABLED   */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
+    /* STACK_ENABLED */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
+    /* API_DISABLE   */  {BTA_SYS_HW_API_DISABLE,       BTA_SYS_IGNORE,         BTA_SYS_HW_ON}, /* don't change the state here, as some other modules might be active */
+    /* EVT_DISABLED */   {BTA_SYS_HW_ERROR,             BTA_SYS_IGNORE,         BTA_SYS_HW_ON},
+    /* EVT_ERROR */      {BTA_SYS_HW_ERROR,             BTA_SYS_IGNORE,         BTA_SYS_HW_ON}
 };
 
-const UINT8 bta_sys_hw_stopping[][BTA_SYS_NUM_COLS] =
-{
-/* Event                    Action 1                   Action 2               Next State */
-/* API_ENABLE    */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_STARTING}, /* change state, and wait for completion event to enable */
-/* EVT_ENABLED   */  {BTA_SYS_HW_EVT_ENABLED,       BTA_SYS_IGNORE,         BTA_SYS_HW_STOPPING}, /* successive enable/disable: finish the enable before disabling */
-/* STACK_ENABLED */  {BTA_SYS_HW_EVT_STACK_ENABLED, BTA_SYS_HW_API_DISABLE, BTA_SYS_HW_STOPPING}, /* successive enable/disable: notify, then stop */
-/* API_DISABLE   */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_STOPPING}, /* wait for completion event */
-/* EVT_DISABLED  */  {BTA_SYS_HW_EVT_DISABLED,      BTA_SYS_IGNORE,         BTA_SYS_HW_OFF},
-/* EVT_ERROR     */  {BTA_SYS_HW_API_DISABLE,       BTA_SYS_IGNORE,         BTA_SYS_HW_STOPPING}
+const UINT8 bta_sys_hw_stopping[][BTA_SYS_NUM_COLS] = {
+    /* Event                    Action 1                   Action 2               Next State */
+    /* API_ENABLE    */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_STARTING}, /* change state, and wait for completion event to enable */
+    /* EVT_ENABLED   */  {BTA_SYS_HW_EVT_ENABLED,       BTA_SYS_IGNORE,         BTA_SYS_HW_STOPPING}, /* successive enable/disable: finish the enable before disabling */
+    /* STACK_ENABLED */  {BTA_SYS_HW_EVT_STACK_ENABLED, BTA_SYS_HW_API_DISABLE, BTA_SYS_HW_STOPPING}, /* successive enable/disable: notify, then stop */
+    /* API_DISABLE   */  {BTA_SYS_IGNORE,               BTA_SYS_IGNORE,         BTA_SYS_HW_STOPPING}, /* wait for completion event */
+    /* EVT_DISABLED  */  {BTA_SYS_HW_EVT_DISABLED,      BTA_SYS_IGNORE,         BTA_SYS_HW_OFF},
+    /* EVT_ERROR     */  {BTA_SYS_HW_API_DISABLE,       BTA_SYS_IGNORE,         BTA_SYS_HW_STOPPING}
 };
 
 typedef const UINT8 (*tBTA_SYS_ST_TBL)[BTA_SYS_NUM_COLS];
@@ -177,15 +170,15 @@ const tBTA_SYS_ST_TBL bta_sys_st_tbl[] = {
 void bta_sys_init(void)
 {
     memset(&bta_sys_cb, 0, sizeof(tBTA_SYS_CB));
-    
+
     pthread_mutex_init(&bta_alarm_lock, NULL);
 
     bta_alarm_hash_map = hash_map_new(BTA_ALARM_HASH_MAP_SIZE,
-            hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
+                                      hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
     btu_bta_alarm_queue = fixed_queue_new(SIZE_MAX);
 
     fixed_queue_register_dequeue(btu_bta_alarm_queue,
-				 btu_bta_alarm_ready);
+                                 btu_bta_alarm_ready);
 
     appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
 
@@ -193,7 +186,7 @@ void bta_sys_init(void)
     bta_sys_register( BTA_ID_SYS,  &bta_sys_hw_reg);
 
     /* register for BTM notifications */
-    BTM_RegisterForDeviceStatusNotif ((tBTM_DEV_STATUS_CB*)&bta_sys_hw_btm_cback );
+    BTM_RegisterForDeviceStatusNotif ((tBTM_DEV_STATUS_CB *)&bta_sys_hw_btm_cback );
 
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
     bta_ar_init();
@@ -201,7 +194,8 @@ void bta_sys_init(void)
 
 }
 
-void bta_sys_free(void) {
+void bta_sys_free(void)
+{
     fixed_queue_free(btu_bta_alarm_queue, NULL);
     hash_map_free(bta_alarm_hash_map);
     pthread_mutex_destroy(&bta_alarm_lock);
@@ -232,14 +226,10 @@ BOOLEAN bta_sys_sm_execute(BT_HDR *p_msg)
     bta_sys_cb.state = state_table[p_msg->event & 0x00ff][BTA_SYS_NEXT_STATE];
 
     /* execute action functions */
-    for (i = 0; i < BTA_SYS_ACTIONS; i++)
-    {
-        if ((action = state_table[p_msg->event & 0x00ff][i]) != BTA_SYS_IGNORE)
-        {
-            (*bta_sys_action[action])( (tBTA_SYS_HW_MSG*) p_msg);
-        }
-        else
-        {
+    for (i = 0; i < BTA_SYS_ACTIONS; i++) {
+        if ((action = state_table[p_msg->event & 0x00ff][i]) != BTA_SYS_IGNORE) {
+            (*bta_sys_action[action])( (tBTA_SYS_HW_MSG *) p_msg);
+        } else {
             break;
         }
     }
@@ -250,13 +240,13 @@ BOOLEAN bta_sys_sm_execute(BT_HDR *p_msg)
 
 void bta_sys_hw_register( tBTA_SYS_HW_MODULE module, tBTA_SYS_HW_CBACK *cback)
 {
-    bta_sys_cb.sys_hw_cback[module]=cback;
+    bta_sys_cb.sys_hw_cback[module] = cback;
 }
 
 
 void bta_sys_hw_unregister( tBTA_SYS_HW_MODULE module )
 {
-    bta_sys_cb.sys_hw_cback[module]=NULL;
+    bta_sys_cb.sys_hw_cback[module] = NULL;
 }
 
 /*******************************************************************************
@@ -277,26 +267,21 @@ void bta_sys_hw_btm_cback( tBTM_DEV_STATUS status )
     APPL_TRACE_DEBUG(" bta_sys_hw_btm_cback was called with parameter: %i" , status );
 
     /* send a message to BTA SYS */
-    if ((sys_event = (tBTA_SYS_HW_MSG *) GKI_getbuf(sizeof(tBTA_SYS_HW_MSG))) != NULL)
-    {
-        if (status == BTM_DEV_STATUS_UP)
+    if ((sys_event = (tBTA_SYS_HW_MSG *) GKI_getbuf(sizeof(tBTA_SYS_HW_MSG))) != NULL) {
+        if (status == BTM_DEV_STATUS_UP) {
             sys_event->hdr.event = BTA_SYS_EVT_STACK_ENABLED_EVT;
-        else if (status == BTM_DEV_STATUS_DOWN)
+        } else if (status == BTM_DEV_STATUS_DOWN) {
             sys_event->hdr.event = BTA_SYS_ERROR_EVT;
-        else
-        {
+        } else {
             /* BTM_DEV_STATUS_CMD_TOUT is ignored for now. */
             GKI_freebuf (sys_event);
             sys_event = NULL;
         }
 
-        if (sys_event)
-        {
+        if (sys_event) {
             bta_sys_sendmsg(sys_event);
         }
-    }
-    else
-    {
+    } else {
         APPL_TRACE_DEBUG("ERROR bta_sys_hw_btm_cback couldn't send msg" );
     }
 }
@@ -320,20 +305,19 @@ void bta_sys_hw_error(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 
     APPL_TRACE_DEBUG("%s\n", __FUNCTION__);
 
-    for (module_index = 0; module_index < BTA_SYS_MAX_HW_MODULES; module_index++)
-    {
-        if( bta_sys_cb.sys_hw_module_active &  ((UINT32)1 << module_index )) {
-            switch( module_index)
-                {
-                case BTA_SYS_HW_BLUETOOTH:
-                   /* Send BTA_SYS_HW_ERROR_EVT to DM */
-                   if (bta_sys_cb.sys_hw_cback[module_index] != NULL)
-                       bta_sys_cb.sys_hw_cback[module_index] (BTA_SYS_HW_ERROR_EVT);
-                    break;
-                default:
-                    /* not yet supported */
-                    break;
+    for (module_index = 0; module_index < BTA_SYS_MAX_HW_MODULES; module_index++) {
+        if ( bta_sys_cb.sys_hw_module_active &  ((UINT32)1 << module_index )) {
+            switch ( module_index) {
+            case BTA_SYS_HW_BLUETOOTH:
+                /* Send BTA_SYS_HW_ERROR_EVT to DM */
+                if (bta_sys_cb.sys_hw_cback[module_index] != NULL) {
+                    bta_sys_cb.sys_hw_cback[module_index] (BTA_SYS_HW_ERROR_EVT);
                 }
+                break;
+            default:
+                /* not yet supported */
+                break;
+            }
         }
     }
 }
@@ -353,32 +337,29 @@ void bta_sys_hw_error(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 
 void bta_sys_hw_api_enable( tBTA_SYS_HW_MSG *p_sys_hw_msg )
 {
-    if ((!bta_sys_cb.sys_hw_module_active) && (bta_sys_cb.state != BTA_SYS_HW_ON))
-    {
+    if ((!bta_sys_cb.sys_hw_module_active) && (bta_sys_cb.state != BTA_SYS_HW_ON)) {
         /* register which HW module was turned on */
         bta_sys_cb.sys_hw_module_active |=  ((UINT32)1 << p_sys_hw_msg->hw_module );
 
         tBTA_SYS_HW_MSG *p_msg;
-        if ((p_msg = (tBTA_SYS_HW_MSG *) GKI_getbuf(sizeof(tBTA_SYS_HW_MSG))) != NULL)
-        {
+        if ((p_msg = (tBTA_SYS_HW_MSG *) GKI_getbuf(sizeof(tBTA_SYS_HW_MSG))) != NULL) {
             p_msg->hdr.event = BTA_SYS_EVT_ENABLED_EVT;
             p_msg->hw_module = p_sys_hw_msg->hw_module;
 
             bta_sys_sendmsg(p_msg);
         }
-    }
-    else
-    {
+    } else {
         /* register which HW module was turned on */
         bta_sys_cb.sys_hw_module_active |=  ((UINT32)1 << p_sys_hw_msg->hw_module );
 
         /* HW already in use, so directly notify the caller */
-        if (bta_sys_cb.sys_hw_cback[p_sys_hw_msg->hw_module ]!= NULL )
+        if (bta_sys_cb.sys_hw_cback[p_sys_hw_msg->hw_module ] != NULL ) {
             bta_sys_cb.sys_hw_cback[p_sys_hw_msg->hw_module ](  BTA_SYS_HW_ON_EVT   );
+        }
     }
 
     APPL_TRACE_EVENT ("bta_sys_hw_api_enable for %d, active modules 0x%04X\n",
-                    p_sys_hw_msg->hw_module, bta_sys_cb.sys_hw_module_active);
+                      p_sys_hw_msg->hw_module, bta_sys_cb.sys_hw_module_active);
 
 }
 
@@ -395,7 +376,7 @@ void bta_sys_hw_api_enable( tBTA_SYS_HW_MSG *p_sys_hw_msg )
 void bta_sys_hw_api_disable(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 {
     APPL_TRACE_DEBUG("bta_sys_hw_api_disable for %d, active modules: 0x%04X\n",
-        p_sys_hw_msg->hw_module, bta_sys_cb.sys_hw_module_active );
+                     p_sys_hw_msg->hw_module, bta_sys_cb.sys_hw_module_active );
 
     /* make sure the related SW blocks were stopped */
     bta_sys_disable( p_sys_hw_msg->hw_module );
@@ -406,20 +387,17 @@ void bta_sys_hw_api_disable(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 
 
     /* if there are still some SW modules using the HW, just provide an answer to the calling */
-    if( bta_sys_cb.sys_hw_module_active != 0  )
-    {
+    if ( bta_sys_cb.sys_hw_module_active != 0  ) {
         /*  if there are still some SW modules using the HW,  directly notify the caller */
-        if( bta_sys_cb.sys_hw_cback[p_sys_hw_msg->hw_module ]!= NULL )
+        if ( bta_sys_cb.sys_hw_cback[p_sys_hw_msg->hw_module ] != NULL ) {
             bta_sys_cb.sys_hw_cback[p_sys_hw_msg->hw_module ](  BTA_SYS_HW_OFF_EVT   );
-    }
-    else
-    {
+        }
+    } else {
         /* manually update the state of our system */
         bta_sys_cb.state = BTA_SYS_HW_STOPPING;
 
         tBTA_SYS_HW_MSG *p_msg;
-        if ((p_msg = (tBTA_SYS_HW_MSG *) GKI_getbuf(sizeof(tBTA_SYS_HW_MSG))) != NULL)
-        {
+        if ((p_msg = (tBTA_SYS_HW_MSG *) GKI_getbuf(sizeof(tBTA_SYS_HW_MSG))) != NULL) {
             p_msg->hdr.event = BTA_SYS_EVT_DISABLED_EVT;
             p_msg->hw_module = p_sys_hw_msg->hw_module;
 
@@ -463,10 +441,10 @@ void bta_sys_hw_evt_disabled(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 
     APPL_TRACE_DEBUG("bta_sys_hw_evt_disabled - module 0x%X\n", p_sys_hw_msg->hw_module);
 
-    for (hw_module_index = 0; hw_module_index < BTA_SYS_MAX_HW_MODULES; hw_module_index++)
-    {
-        if (bta_sys_cb.sys_hw_cback[hw_module_index] != NULL)
+    for (hw_module_index = 0; hw_module_index < BTA_SYS_MAX_HW_MODULES; hw_module_index++) {
+        if (bta_sys_cb.sys_hw_cback[hw_module_index] != NULL) {
             bta_sys_cb.sys_hw_cback[hw_module_index] (BTA_SYS_HW_OFF_EVT);
+        }
     }
 }
 
@@ -487,10 +465,10 @@ void bta_sys_hw_evt_stack_enabled(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 
     APPL_TRACE_DEBUG(" bta_sys_hw_evt_stack_enabled!notify the callers\n");
 
-    for (hw_module_index = 0; hw_module_index < BTA_SYS_MAX_HW_MODULES; hw_module_index++ )
-    {
-        if (bta_sys_cb.sys_hw_cback[hw_module_index] != NULL)
+    for (hw_module_index = 0; hw_module_index < BTA_SYS_MAX_HW_MODULES; hw_module_index++ ) {
+        if (bta_sys_cb.sys_hw_cback[hw_module_index] != NULL) {
             bta_sys_cb.sys_hw_cback[hw_module_index] (BTA_SYS_HW_ON_EVT);
+        }
     }
 }
 
@@ -518,17 +496,13 @@ void bta_sys_event(BT_HDR *p_msg)
     id = (UINT8) (p_msg->event >> 8);
 
     /* verify id and call subsystem event handler */
-    if ((id < BTA_ID_MAX) && (bta_sys_cb.reg[id] != NULL))
-    {
+    if ((id < BTA_ID_MAX) && (bta_sys_cb.reg[id] != NULL)) {
         freebuf = (*bta_sys_cb.reg[id]->evt_hdlr)(p_msg);
-    }
-    else
-    {
+    } else {
         APPL_TRACE_WARNING("BTA got unregistered event id %d\n", id);
     }
 
-    if (freebuf)
-    {
+    if (freebuf) {
         GKI_freebuf(p_msg);
     }
 
@@ -618,40 +592,42 @@ void bta_sys_sendmsg(void *p_msg)
 ** Returns          void
 **
 *******************************************************************************/
-void bta_alarm_cb(void *data) {
-  assert(data != NULL);
-  TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
+void bta_alarm_cb(void *data)
+{
+    assert(data != NULL);
+    TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-  fixed_queue_enqueue(btu_bta_alarm_queue, p_tle);
+    fixed_queue_enqueue(btu_bta_alarm_queue, p_tle);
 }
 
-void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms) {
-  assert(p_tle != NULL);
+void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)
+{
+    assert(p_tle != NULL);
 
-  // Get the alarm for this p_tle.
-  pthread_mutex_lock(&bta_alarm_lock);
-  if (!hash_map_has_key(bta_alarm_hash_map, p_tle)) {
-    hash_map_set(bta_alarm_hash_map, p_tle, osi_alarm_new("bta_sys", bta_alarm_cb, p_tle, 0));
-  }
-  pthread_mutex_unlock(&bta_alarm_lock);
+    // Get the alarm for this p_tle.
+    pthread_mutex_lock(&bta_alarm_lock);
+    if (!hash_map_has_key(bta_alarm_hash_map, p_tle)) {
+        hash_map_set(bta_alarm_hash_map, p_tle, osi_alarm_new("bta_sys", bta_alarm_cb, p_tle, 0));
+    }
+    pthread_mutex_unlock(&bta_alarm_lock);
 
- osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
-  if (alarm == NULL) {
-    LOG_ERROR("%s unable to create alarm.", __func__);
-    return;
-  }
+    osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
+    if (alarm == NULL) {
+        LOG_ERROR("%s unable to create alarm.", __func__);
+        return;
+    }
 
-  p_tle->event = type;
-  p_tle->ticks = timeout_ms;
-  //osi_alarm_set(alarm, (period_ms_t)timeout_ms, bta_alarm_cb, p_tle);
- osi_alarm_set(alarm, (period_ms_t)timeout_ms);
+    p_tle->event = type;
+    p_tle->ticks = timeout_ms;
+    //osi_alarm_set(alarm, (period_ms_t)timeout_ms, bta_alarm_cb, p_tle);
+    osi_alarm_set(alarm, (period_ms_t)timeout_ms);
 }
 
 bool hash_iter_ro_cb(hash_map_entry_t *hash_map_entry, void *context)
 {
-   osi_alarm_t *alarm = (osi_alarm_t *)hash_map_entry->data;
-    period_ms_t *p_remaining_ms = (period_ms_t*)context;
-    *p_remaining_ms +=osi_alarm_get_remaining_ms(alarm);
+    osi_alarm_t *alarm = (osi_alarm_t *)hash_map_entry->data;
+    period_ms_t *p_remaining_ms = (period_ms_t *)context;
+    *p_remaining_ms += osi_alarm_get_remaining_ms(alarm);
     return true;
 }
 
@@ -675,15 +651,16 @@ UINT32 bta_sys_get_remaining_ticks(TIMER_LIST_ENT *p_target_tle)
 ** Returns          void
 **
 *******************************************************************************/
-void bta_sys_stop_timer(TIMER_LIST_ENT *p_tle) {
-  assert(p_tle != NULL);
+void bta_sys_stop_timer(TIMER_LIST_ENT *p_tle)
+{
+    assert(p_tle != NULL);
 
- osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
-  if (alarm == NULL) {
-    LOG_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
-    return;
-  }
- osi_alarm_cancel(alarm);
+    osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
+    if (alarm == NULL) {
+        LOG_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
+        return;
+    }
+    osi_alarm_cancel(alarm);
 }
 
 /*******************************************************************************
@@ -702,23 +679,19 @@ void bta_sys_disable(tBTA_SYS_HW_MODULE module)
 
     APPL_TRACE_DEBUG("bta_sys_disable: module %i", module);
 
-    switch( module )
-    {
-        case BTA_SYS_HW_BLUETOOTH:
-            bta_id = BTA_ID_DM;
-            bta_id_max = BTA_ID_BLUETOOTH_MAX;
-            break;
-        default:
-            APPL_TRACE_WARNING("bta_sys_disable: unkown module");
-            return;
+    switch ( module ) {
+    case BTA_SYS_HW_BLUETOOTH:
+        bta_id = BTA_ID_DM;
+        bta_id_max = BTA_ID_BLUETOOTH_MAX;
+        break;
+    default:
+        APPL_TRACE_WARNING("bta_sys_disable: unkown module");
+        return;
     }
 
-    for ( ; bta_id <= bta_id_max; bta_id++)
-    {
-        if (bta_sys_cb.reg[bta_id] != NULL)
-        {
-            if (bta_sys_cb.is_reg[bta_id] == TRUE  &&  bta_sys_cb.reg[bta_id]->disable != NULL)
-            {
+    for ( ; bta_id <= bta_id_max; bta_id++) {
+        if (bta_sys_cb.reg[bta_id] != NULL) {
+            if (bta_sys_cb.is_reg[bta_id] == TRUE  &&  bta_sys_cb.reg[bta_id]->disable != NULL) {
                 (*bta_sys_cb.reg[bta_id]->disable)();
             }
         }

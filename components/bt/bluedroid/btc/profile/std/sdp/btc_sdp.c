@@ -22,7 +22,7 @@ esp_err_t esp_bt_sdp_enable(bt_sdp_cb_t *cback)
     return (status == BTA_SDP_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_sdp_search(esp_bd_addr_t bd_addr, esp_bt_uuid_t* uuid)
+esp_err_t esp_bt_sdp_search(esp_bd_addr_t bd_addr, esp_bt_uuid_t *uuid)
 {
     tBTA_SDP_STATUS status = BTA_SdpSearch(bd_addr, (tSDP_UUID *)uuid);
     return (status == BTA_SDP_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -90,9 +90,9 @@ bool esp_bt_sdp_add_protocol_list (uint32_t handle, uint16_t num_elem,
 }
 
 bool esp_bt_sdp_add_addition_protocol_lists(uint32_t handle, uint16_t num_elem,
-                                            sdp_proto_list_elem_t *p_proto_list)
+        sdp_proto_list_elem_t *p_proto_list)
 {
-  return SDP_AddAdditionProtoLists(handle, num_elem, (tSDP_PROTO_LIST_ELEM *)p_proto_list);
+    return SDP_AddAdditionProtoLists(handle, num_elem, (tSDP_PROTO_LIST_ELEM *)p_proto_list);
 }
 
 bool esp_bt_sdp_add_profile_dscp_list (uint32_t handle,
@@ -103,15 +103,15 @@ bool esp_bt_sdp_add_profile_dscp_list (uint32_t handle,
 }
 
 bool esp_bt_sdp_add_lang_base_attr_id_list(uint32_t handle,
-                                           uint16_t lang, uint16_t char_enc,
-                                           uint16_t base_id)
+        uint16_t lang, uint16_t char_enc,
+        uint16_t base_id)
 {
     return SDP_AddLanguageBaseAttrIDList(handle, lang, char_enc, base_id);
 }
 
 bool esp_bt_sdp_add_service_class_id_list(uint32_t handle,
-                                          uint16_t num_services,
-                                          uint16_t *p_service_uuids)
+        uint16_t num_services,
+        uint16_t *p_service_uuids)
 {
     return SDP_AddServiceClassIdList(handle, num_services, p_service_uuids);
 }

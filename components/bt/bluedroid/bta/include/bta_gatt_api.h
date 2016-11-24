@@ -50,8 +50,7 @@
 **  Common Definitions
 ***************************/
 /* GATT ID */
-typedef struct
-{
+typedef struct {
     tBT_UUID    uuid;           /* uuid of the attribute */
     UINT8       inst_id;        /* instance ID */
 } __attribute__((packed)) tBTA_GATT_ID;
@@ -99,7 +98,7 @@ typedef struct
 #define  BTA_GATT_ALREADY_OPEN              0x91                               /* 0x91 */
 #define  BTA_GATT_CANCEL                    0x92                               /* 0x92 */
 
-                                             /* 0xE0 ~ 0xFC reserved for future use */
+/* 0xE0 ~ 0xFC reserved for future use */
 #define  BTA_GATT_CCC_CFG_ERR                GATT_CCC_CFG_ERR     /* 0xFD Client Characteristic Configuration Descriptor Improperly Configured */
 #define  BTA_GATT_PRC_IN_PROGRESS            GATT_PRC_IN_PROGRESS /* 0xFE Procedure Already in progress */
 #define  BTA_GATT_OUT_OF_RANGE               GATT_OUT_OF_RANGE    /* 0xFFAttribute value out of range */
@@ -150,14 +149,13 @@ typedef UINT8 tBTA_GATTC_EVT;
 
 typedef tGATT_IF tBTA_GATTC_IF;
 
-typedef struct
-{
+typedef struct {
     UINT16              unit;       /* as UUIUD defined by SIG */
     UINT16              descr;       /* as UUID as defined by SIG */
     tGATT_FORMAT        format;
     INT8                exp;
     UINT8               name_spc;   /* The name space of the description */
-}tBTA_GATT_CHAR_PRES;
+} tBTA_GATT_CHAR_PRES;
 
 #define BTA_GATT_CLT_CONFIG_NONE               GATT_CLT_CONFIG_NONE         /* 0x0000    */
 #define BTA_GATT_CLT_CONFIG_NOTIFICATION       GATT_CLT_CONFIG_NOTIFICATION /* 0x0001 */
@@ -173,18 +171,16 @@ typedef UINT16  tBTA_GATT_SVR_CHAR_CONFIG;
 /* Characteristic Aggregate Format attribute value
 */
 #define BTA_GATT_AGGR_HANDLE_NUM_MAX        10
-typedef struct
-{
+typedef struct {
     UINT8                   num_handle;
     UINT16                  handle_list[BTA_GATT_AGGR_HANDLE_NUM_MAX];
 } tBTA_GATT_CHAR_AGGRE;
 typedef tGATT_VALID_RANGE           tBTA_GATT_VALID_RANGE;
 
-typedef struct
-{
+typedef struct {
     UINT16  len;
     UINT8   *p_value;
-}tBTA_GATT_UNFMT;
+} tBTA_GATT_UNFMT;
 
 #define BTA_GATT_MAX_ATTR_LEN       GATT_MAX_ATTR_LEN
 
@@ -203,53 +199,46 @@ typedef UINT8 tBTA_GATTC_WRITE_TYPE;
 #define BTA_GATT_CONN_NONE                      0x0101                          /* 0x0101 no connection to cancel  */
 typedef UINT16 tBTA_GATT_REASON;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATT_ID        id;
     BOOLEAN             is_primary;
-}tBTA_GATT_SRVC_ID;
+} tBTA_GATT_SRVC_ID;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATT_SRVC_ID       srvc_id;
     tBTA_GATT_ID            char_id;
-}tBTA_GATTC_CHAR_ID;
+} tBTA_GATTC_CHAR_ID;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATTC_CHAR_ID      char_id;
     tBTA_GATT_ID            descr_id;
-}tBTA_GATTC_CHAR_DESCR_ID;
+} tBTA_GATTC_CHAR_DESCR_ID;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATT_SRVC_ID       srvc_id;
     tBTA_GATT_SRVC_ID       incl_svc_id;
-}tBTA_GATTC_INCL_SVC_ID;
+} tBTA_GATTC_INCL_SVC_ID;
 
 #define     BTA_GATT_TYPE_CHAR          0
 #define     BTA_GATT_TYPE_CHAR_DESCR    1
 typedef UINT8 tBTA_GATT_ID_TYPE;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATT_ID_TYPE               id_type;
-    union
-    {
+    union {
         tBTA_GATTC_CHAR_ID         char_id;
         tBTA_GATTC_CHAR_DESCR_ID   char_descr_id;
 
     }                       id_value;
-}tBTA_GATTC_ATTR_ID;
+} tBTA_GATTC_ATTR_ID;
 
 #define BTA_GATTC_MULTI_MAX    GATT_MAX_READ_MULTI_HANDLES
 
-typedef struct
-{
+typedef struct {
     UINT8                       num_attr;
     tBTA_GATTC_ATTR_ID          id_list[BTA_GATTC_MULTI_MAX];
 
-}tBTA_GATTC_MULTI;
+} tBTA_GATTC_MULTI;
 
 #define BTA_GATT_AUTH_REQ_NONE           GATT_AUTH_REQ_NONE
 #define BTA_GATT_AUTH_REQ_NO_MITM        GATT_AUTH_REQ_NO_MITM            /* unauthenticated encryption */
@@ -259,8 +248,7 @@ typedef struct
 
 typedef tGATT_AUTH_REQ tBTA_GATT_AUTH_REQ;
 
-enum
-{
+enum {
     BTA_GATTC_ATTR_TYPE_INCL_SRVC,
     BTA_GATTC_ATTR_TYPE_CHAR,
     BTA_GATTC_ATTR_TYPE_CHAR_DESCR,
@@ -269,8 +257,7 @@ enum
 typedef UINT8 tBTA_GATTC_ATTR_TYPE;
 
 
-typedef struct
-{
+typedef struct {
     tBT_UUID    uuid;
     UINT16      s_handle;
     UINT16      e_handle;   /* used for service only */
@@ -278,96 +265,84 @@ typedef struct
     UINT8       id;
     UINT8       prop;       /* used when attribute type is characteristic */
     BOOLEAN     is_primary; /* used when attribute type is service */
-}tBTA_GATTC_NV_ATTR;
+} tBTA_GATTC_NV_ATTR;
 
 /* callback data structure */
-typedef struct
-{
+typedef struct {
     tBTA_GATT_STATUS    status;
     tBTA_GATTC_IF       client_if;
 // btla-specific ++
     tBT_UUID            app_uuid;
 // btla-specific --
-}tBTA_GATTC_REG;
+} tBTA_GATTC_REG;
 
-typedef struct
-{
+typedef struct {
     UINT8                       num_pres_fmt;   /* number of presentation format aggregated*/
     tBTA_GATTC_CHAR_DESCR_ID    pre_format[BTA_GATTC_MULTI_MAX];
-}tBTA_GATT_CHAR_AGGRE_VALUE;
+} tBTA_GATT_CHAR_AGGRE_VALUE;
 
-typedef union
-{
+typedef union {
     tBTA_GATT_CHAR_AGGRE_VALUE      aggre_value;
     tBTA_GATT_UNFMT                 unformat;
 
-}tBTA_GATT_READ_VAL;
+} tBTA_GATT_READ_VAL;
 
-typedef struct
-{
+typedef struct {
     UINT16              conn_id;
     tBTA_GATT_STATUS    status;
     tBTA_GATT_SRVC_ID   srvc_id;
     tBTA_GATT_ID        char_id;
     tBTA_GATT_ID        descr_type;
     tBTA_GATT_READ_VAL  *p_value;
-}tBTA_GATTC_READ;
+} tBTA_GATTC_READ;
 
-typedef struct
-{
+typedef struct {
     UINT16              conn_id;
     tBTA_GATT_STATUS    status;
     tBTA_GATT_SRVC_ID   srvc_id;
     tBTA_GATT_ID        char_id;
     tBTA_GATT_ID        descr_type;
-}tBTA_GATTC_WRITE;
+} tBTA_GATTC_WRITE;
 
-typedef struct
-{
+typedef struct {
     UINT16              conn_id;
     tBTA_GATT_STATUS    status;
-}tBTA_GATTC_EXEC_CMPL;
+} tBTA_GATTC_EXEC_CMPL;
 
-typedef struct
-{
+typedef struct {
     UINT16              conn_id;
     tBTA_GATT_STATUS    status;
-}tBTA_GATTC_SEARCH_CMPL;
+} tBTA_GATTC_SEARCH_CMPL;
 
-typedef struct
-{
+typedef struct {
     UINT16              conn_id;
     tBTA_GATT_SRVC_ID   service_uuid;
-}tBTA_GATTC_SRVC_RES;
+} tBTA_GATTC_SRVC_RES;
 
-typedef struct
-{
+typedef struct {
     UINT16              conn_id;
     tBTA_GATT_STATUS    status;
     UINT16              mtu;
-}tBTA_GATTC_CFG_MTU;
+} tBTA_GATTC_CFG_MTU;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATT_STATUS    status;
     UINT16              conn_id;
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
     tBTA_TRANSPORT      transport;
     UINT16              mtu;
-}tBTA_GATTC_OPEN;
+} tBTA_GATTC_OPEN;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATT_STATUS    status;
     UINT16              conn_id;
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
     tBTA_GATT_REASON    reason;         /* disconnect reason code, not useful when connect event is reported */
-}tBTA_GATTC_CLOSE;
+} tBTA_GATTC_CLOSE;
 
-typedef struct
-{
+typedef struct {
     UINT16              conn_id;
     BD_ADDR             bda;
     tBTA_GATTC_CHAR_ID  char_id;
@@ -375,32 +350,28 @@ typedef struct
     UINT16              len;
     UINT8               value[BTA_GATT_MAX_ATTR_LEN];
     BOOLEAN             is_notify;
-}tBTA_GATTC_NOTIFY;
+} tBTA_GATTC_NOTIFY;
 
-typedef struct
-{
+typedef struct {
     UINT16 conn_id;
     BOOLEAN congested; /* congestion indicator */
-}tBTA_GATTC_CONGEST;
+} tBTA_GATTC_CONGEST;
 
 // btla-specific ++
-typedef struct
-{
+typedef struct {
     tBTA_GATT_STATUS        status;
     tBTA_GATTC_IF           client_if;
     UINT16                  conn_id;
     BD_ADDR                 remote_bda;
-}tBTA_GATTC_OPEN_CLOSE;
+} tBTA_GATTC_OPEN_CLOSE;
 // btla-specific --
 
-typedef struct
-{
+typedef struct {
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
-}tBTA_GATTC_ENC_CMPL_CB;
+} tBTA_GATTC_ENC_CMPL_CB;
 
-typedef union
-{
+typedef union {
     tBTA_GATT_STATUS        status;
 
     tBTA_GATTC_SEARCH_CMPL  search_cmpl;          /* discovery complete */
@@ -485,8 +456,7 @@ typedef UINT8 tBTA_GATT_CHAR_PROP;
 
 /***********************  NV callback Data Definitions   **********************
 */
-typedef struct
-{
+typedef struct {
     tBT_UUID app_uuid128;
     tBT_UUID svc_uuid;
     UINT16   svc_inst;
@@ -531,27 +501,24 @@ typedef tGATT_WRITE_REQ tBTA_GATT_WRITE_REQ;
 /* callback data for server access request from client */
 typedef tGATTS_DATA tBTA_GATTS_REQ_DATA;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATT_STATUS    status;
     BD_ADDR             remote_bda;
     UINT32              trans_id;
     UINT16              conn_id;
     tBTA_GATTS_REQ_DATA *p_data;
-}tBTA_GATTS_REQ;
+} tBTA_GATTS_REQ;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATTS_IF       server_if;
     tBTA_GATT_STATUS    status;
 // btla-specific ++
     tBT_UUID            uuid;
 // btla-specific --
-}tBTA_GATTS_REG_OPER;
+} tBTA_GATTS_REG_OPER;
 
 
-typedef struct
-{
+typedef struct {
     tBTA_GATTS_IF       server_if;
     UINT16              service_id;
 // btla-specific ++
@@ -560,10 +527,9 @@ typedef struct
     tBTA_GATT_STATUS    status;
     tBT_UUID            uuid;
 // btla-specific --
-}tBTA_GATTS_CREATE;
+} tBTA_GATTS_CREATE;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATTS_IF       server_if;
     UINT16              service_id;
     UINT16              attr_id;
@@ -571,40 +537,35 @@ typedef struct
 // btla-specific ++
     tBT_UUID            char_uuid;
 // btla-specific --
-}tBTA_GATTS_ADD_RESULT;
+} tBTA_GATTS_ADD_RESULT;
 
-typedef struct
-{
+typedef struct {
     tBTA_GATTS_IF       server_if;
     UINT16              service_id;
     tBTA_GATT_STATUS    status;
-}tBTA_GATTS_SRVC_OPER;
+} tBTA_GATTS_SRVC_OPER;
 
 
-typedef struct
-{
+typedef struct {
     tBTA_GATTS_IF       server_if;
     BD_ADDR             remote_bda;
     UINT16              conn_id;
     tBTA_GATT_REASON    reason; /* report disconnect reason */
     tBTA_GATT_TRANSPORT transport;
-}tBTA_GATTS_CONN;
+} tBTA_GATTS_CONN;
 
-typedef struct
-{
+typedef struct {
     UINT16 conn_id;
     BOOLEAN congested; /* report channel congestion indicator */
-}tBTA_GATTS_CONGEST;
+} tBTA_GATTS_CONGEST;
 
-typedef struct
-{
+typedef struct {
     UINT16 conn_id; /* connection ID */
     tBTA_GATT_STATUS status; /* notification/indication status */
-}tBTA_GATTS_CONF;
+} tBTA_GATTS_CONF;
 
 /* GATTS callback data */
-typedef union
-{
+typedef union {
     tBTA_GATTS_REG_OPER     reg_oper;
     tBTA_GATTS_CREATE       create;
     tBTA_GATTS_SRVC_OPER    srvc_oper;
@@ -616,7 +577,7 @@ typedef union
     tBTA_GATTS_CONN         conn;       /* BTA_GATTS_CONN_EVT */
     tBTA_GATTS_CONGEST      congest;    /* BTA_GATTS_CONGEST_EVT callback data */
     tBTA_GATTS_CONF         confirm;    /* BTA_GATTS_CONF_EVT callback data */
-}tBTA_GATTS;
+} tBTA_GATTS;
 
 /* GATTS enable callback function */
 typedef void (tBTA_GATTS_ENB_CBACK)(tBTA_GATT_STATUS status);
@@ -762,10 +723,10 @@ extern void BTA_GATTC_ServiceSearchRequest(UINT16 conn_id, tBT_UUID *p_srvc_uuid
 **
 *******************************************************************************/
 extern tBTA_GATT_STATUS  BTA_GATTC_GetFirstChar (UINT16              conn_id,
-                                                 tBTA_GATT_SRVC_ID   *p_srvc_id,
-                                                 tBT_UUID            *p_char_uuid_cond,
-                                                 tBTA_GATTC_CHAR_ID  *p_char_result,
-                                                 tBTA_GATT_CHAR_PROP *p_property);
+        tBTA_GATT_SRVC_ID   *p_srvc_id,
+        tBT_UUID            *p_char_uuid_cond,
+        tBTA_GATTC_CHAR_ID  *p_char_result,
+        tBTA_GATT_CHAR_PROP *p_property);
 
 /*******************************************************************************
 **
@@ -787,10 +748,10 @@ extern tBTA_GATT_STATUS  BTA_GATTC_GetFirstChar (UINT16              conn_id,
 **
 *******************************************************************************/
 extern tBTA_GATT_STATUS  BTA_GATTC_GetNextChar (UINT16 conn_id,
-                                                tBTA_GATTC_CHAR_ID  *p_start_char_id,
-                                                tBT_UUID            *p_char_uuid_cond,
-                                                tBTA_GATTC_CHAR_ID  *p_char_result,
-                                                tBTA_GATT_CHAR_PROP *p_property);
+        tBTA_GATTC_CHAR_ID  *p_start_char_id,
+        tBT_UUID            *p_char_uuid_cond,
+        tBTA_GATTC_CHAR_ID  *p_char_result,
+        tBTA_GATT_CHAR_PROP *p_property);
 
 /*******************************************************************************
 **
@@ -810,8 +771,8 @@ extern tBTA_GATT_STATUS  BTA_GATTC_GetNextChar (UINT16 conn_id,
 **
 *******************************************************************************/
 extern tBTA_GATT_STATUS  BTA_GATTC_GetFirstCharDescr (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
-                                                      tBT_UUID *p_descr_uuid_cond,
-                                                      tBTA_GATTC_CHAR_DESCR_ID *p_descr_result);
+        tBT_UUID *p_descr_uuid_cond,
+        tBTA_GATTC_CHAR_DESCR_ID *p_descr_result);
 
 /*******************************************************************************
 **
@@ -832,9 +793,9 @@ extern tBTA_GATT_STATUS  BTA_GATTC_GetFirstCharDescr (UINT16 conn_id, tBTA_GATTC
 **
 *******************************************************************************/
 extern tBTA_GATT_STATUS  BTA_GATTC_GetNextCharDescr (UINT16 conn_id,
-                                                     tBTA_GATTC_CHAR_DESCR_ID *p_start_descr_id,
-                                                     tBT_UUID           *p_descr_uuid_cond,
-                                                     tBTA_GATTC_CHAR_DESCR_ID *p_descr_result);
+        tBTA_GATTC_CHAR_DESCR_ID *p_start_descr_id,
+        tBT_UUID           *p_descr_uuid_cond,
+        tBTA_GATTC_CHAR_DESCR_ID *p_descr_result);
 
 
 /*******************************************************************************
@@ -855,9 +816,9 @@ extern tBTA_GATT_STATUS  BTA_GATTC_GetNextCharDescr (UINT16 conn_id,
 **
 *******************************************************************************/
 extern tBTA_GATT_STATUS  BTA_GATTC_GetFirstIncludedService(UINT16 conn_id,
-                                                           tBTA_GATT_SRVC_ID    *p_srvc_id,
-                                                           tBT_UUID               *p_uuid_cond,
-                                                           tBTA_GATTC_INCL_SVC_ID *p_result);
+        tBTA_GATT_SRVC_ID    *p_srvc_id,
+        tBT_UUID               *p_uuid_cond,
+        tBTA_GATTC_INCL_SVC_ID *p_result);
 
 /*******************************************************************************
 **
@@ -878,9 +839,9 @@ extern tBTA_GATT_STATUS  BTA_GATTC_GetFirstIncludedService(UINT16 conn_id,
 **
 *******************************************************************************/
 extern tBTA_GATT_STATUS  BTA_GATTC_GetNextIncludedService(UINT16 conn_id,
-                                                          tBTA_GATTC_INCL_SVC_ID *p_start_id,
-                                                          tBT_UUID             *p_uuid_cond,
-                                                          tBTA_GATTC_INCL_SVC_ID *p_result);
+        tBTA_GATTC_INCL_SVC_ID *p_start_id,
+        tBT_UUID             *p_uuid_cond,
+        tBTA_GATTC_INCL_SVC_ID *p_result);
 
 /*******************************************************************************
 **
@@ -896,8 +857,8 @@ extern tBTA_GATT_STATUS  BTA_GATTC_GetNextIncludedService(UINT16 conn_id,
 **
 *******************************************************************************/
 extern void BTA_GATTC_ReadCharacteristic (UINT16 conn_id,
-                                          tBTA_GATTC_CHAR_ID *p_char_id,
-                                          tBTA_GATT_AUTH_REQ auth_req);
+        tBTA_GATTC_CHAR_ID *p_char_id,
+        tBTA_GATT_AUTH_REQ auth_req);
 
 /*******************************************************************************
 **
@@ -985,8 +946,8 @@ extern void BTA_GATTC_SendIndConfirm (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char
 **
 *******************************************************************************/
 extern tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications (tBTA_GATTC_IF      client_if,
-                                                            BD_ADDR            remote_bda,
-                                                            tBTA_GATTC_CHAR_ID *p_char_id);
+        BD_ADDR            remote_bda,
+        tBTA_GATTC_CHAR_ID *p_char_id);
 
 
 /*******************************************************************************
@@ -1003,8 +964,8 @@ extern tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications (tBTA_GATTC_IF      c
 **
 *******************************************************************************/
 extern tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications (tBTA_GATTC_IF      client_if,
-                                                              BD_ADDR            remote_bda,
-                                                              tBTA_GATTC_CHAR_ID *p_char_id);
+        BD_ADDR            remote_bda,
+        tBTA_GATTC_CHAR_ID *p_char_id);
 
 /*******************************************************************************
 **
@@ -1233,7 +1194,7 @@ extern void BTA_GATTS_AddIncludeService(UINT16 service_id, UINT16 included_servi
 **
 *******************************************************************************/
 extern void BTA_GATTS_AddCharacteristic (UINT16 service_id,  tBT_UUID   *p_char_uuid,
-                                         tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property);
+        tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property);
 
 /*******************************************************************************
 **
@@ -1253,8 +1214,8 @@ extern void BTA_GATTS_AddCharacteristic (UINT16 service_id,  tBT_UUID   *p_char_
 **
 *******************************************************************************/
 extern void BTA_GATTS_AddCharDescriptor (UINT16 service_id,
-                                         tBTA_GATT_PERM perm,
-                                         tBT_UUID  * p_descr_uuid);
+        tBTA_GATT_PERM perm,
+        tBT_UUID   *p_descr_uuid);
 
 /*******************************************************************************
 **
@@ -1304,7 +1265,7 @@ extern void BTA_GATTS_StopService(UINT16 service_id);
 ** Description      This function is called to read a characteristics descriptor.
 **
 ** Parameters       conn_id - connection identifier.
-**					attr_id - attribute ID to indicate.
+**                  attr_id - attribute ID to indicate.
 **                  data_len - indicate data length.
 **                  p_data: data to indicate.
 **                  need_confirm - if this indication expects a confirmation or not.
@@ -1313,9 +1274,9 @@ extern void BTA_GATTS_StopService(UINT16 service_id);
 **
 *******************************************************************************/
 extern void BTA_GATTS_HandleValueIndication (UINT16 conn_id, UINT16 attr_id,
-                                             UINT16 data_len,
-                                             UINT8 *p_data,
-                                             BOOLEAN need_confirm);
+        UINT16 data_len,
+        UINT8 *p_data,
+        BOOLEAN need_confirm);
 
 /*******************************************************************************
 **

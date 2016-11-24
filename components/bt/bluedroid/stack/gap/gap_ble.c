@@ -44,11 +44,10 @@ static void gap_ble_s_attr_request_cback (UINT16 conn_id, UINT32 trans_id, tGATT
 
 /* client connection callback */
 static void  gap_ble_c_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id, BOOLEAN connected,
-                                            tGATT_DISCONN_REASON reason, tGATT_TRANSPORT transport);
+                                      tGATT_DISCONN_REASON reason, tGATT_TRANSPORT transport);
 static void  gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS status, tGATT_CL_COMPLETE *p_data);
 
-static tGATT_CBACK gap_cback =
-{
+static tGATT_CBACK gap_cback = {
     gap_ble_c_connect_cback,
     gap_ble_c_cmpl_cback,
     NULL,
@@ -74,10 +73,8 @@ tGAP_CLCB *gap_find_clcb_by_bd_addr(BD_ADDR bda)
     UINT8 i_clcb;
     tGAP_CLCB    *p_clcb = NULL;
 
-    for (i_clcb = 0, p_clcb= gap_cb.clcb; i_clcb < GAP_MAX_CL; i_clcb++, p_clcb++)
-    {
-        if (p_clcb->in_use && !memcmp(p_clcb->bda, bda, BD_ADDR_LEN))
-        {
+    for (i_clcb = 0, p_clcb = gap_cb.clcb; i_clcb < GAP_MAX_CL; i_clcb++, p_clcb++) {
+        if (p_clcb->in_use && !memcmp(p_clcb->bda, bda, BD_ADDR_LEN)) {
             return p_clcb;
         }
     }
@@ -99,10 +96,8 @@ tGAP_CLCB *gap_ble_find_clcb_by_conn_id(UINT16 conn_id)
     UINT8 i_clcb;
     tGAP_CLCB    *p_clcb = NULL;
 
-    for (i_clcb = 0, p_clcb= gap_cb.clcb; i_clcb < GAP_MAX_CL; i_clcb++, p_clcb++)
-    {
-        if (p_clcb->in_use && p_clcb->connected && p_clcb->conn_id == conn_id)
-        {
+    for (i_clcb = 0, p_clcb = gap_cb.clcb; i_clcb < GAP_MAX_CL; i_clcb++, p_clcb++) {
+        if (p_clcb->in_use && p_clcb->connected && p_clcb->conn_id == conn_id) {
             return p_clcb;
         }
     }
@@ -124,10 +119,8 @@ tGAP_CLCB *gap_clcb_alloc (BD_ADDR bda)
     UINT8         i_clcb = 0;
     tGAP_CLCB    *p_clcb = NULL;
 
-    for (i_clcb = 0, p_clcb= gap_cb.clcb; i_clcb < GAP_MAX_CL; i_clcb++, p_clcb++)
-    {
-        if (!p_clcb->in_use)
-        {
+    for (i_clcb = 0, p_clcb = gap_cb.clcb; i_clcb < GAP_MAX_CL; i_clcb++, p_clcb++) {
+        if (!p_clcb->in_use) {
             memset(p_clcb, 0, sizeof(tGAP_CLCB));
             p_clcb->in_use = TRUE;
             memcpy (p_clcb->bda, bda, BD_ADDR_LEN);
@@ -150,13 +143,13 @@ void gap_ble_dealloc_clcb(tGAP_CLCB *p_clcb)
 {
     tGAP_BLE_REQ    *p_q;
 
-    while((p_q = (tGAP_BLE_REQ *)GKI_dequeue(&p_clcb->pending_req_q)) != NULL)
-    {
-         /* send callback to all pending requests if being removed*/
-         if (p_q->p_cback != NULL)
+    while ((p_q = (tGAP_BLE_REQ *)GKI_dequeue(&p_clcb->pending_req_q)) != NULL) {
+        /* send callback to all pending requests if being removed*/
+        if (p_q->p_cback != NULL) {
             (*p_q->p_cback)(FALSE, p_clcb->bda, 0, NULL);
+        }
 
-         GKI_freebuf (p_q);
+        GKI_freebuf (p_q);
     }
 
     memset(p_clcb, 0, sizeof(tGAP_CLCB));
@@ -175,8 +168,7 @@ BOOLEAN gap_ble_enqueue_request (tGAP_CLCB *p_clcb, UINT16 uuid, tGAP_BLE_CMPL_C
 {
     tGAP_BLE_REQ  *p_q = (tGAP_BLE_REQ *)GKI_getbuf(sizeof(tGAP_BLE_REQ));
 
-    if (p_q != NULL)
-    {
+    if (p_q != NULL) {
         p_q->p_cback = p_cback;
         p_q->uuid = uuid;
         GKI_enqueue(&p_clcb->pending_req_q, p_q);
@@ -194,12 +186,11 @@ BOOLEAN gap_ble_enqueue_request (tGAP_CLCB *p_clcb, UINT16 uuid, tGAP_BLE_CMPL_C
 ** Returns           TRUE is successul; FALSE otherwise
 **
 *******************************************************************************/
-BOOLEAN gap_ble_dequeue_request (tGAP_CLCB *p_clcb, UINT16 * p_uuid, tGAP_BLE_CMPL_CBACK **p_cback)
+BOOLEAN gap_ble_dequeue_request (tGAP_CLCB *p_clcb, UINT16 *p_uuid, tGAP_BLE_CMPL_CBACK **p_cback)
 {
     tGAP_BLE_REQ *p_q = (tGAP_BLE_REQ *)GKI_dequeue(&p_clcb->pending_req_q);;
 
-    if (p_q != NULL)
-    {
+    if (p_q != NULL) {
         *p_cback    = p_q->p_cback;
         *p_uuid     = p_q->uuid;
         GKI_freebuf((void *)p_q);
@@ -219,52 +210,50 @@ tGATT_STATUS gap_read_attr_value (UINT16 handle, tGATT_VALUE *p_value, BOOLEAN i
     UINT16      offset = p_value->offset;
     UINT8       *p_dev_name = NULL;
 
-    for (i = 0; i < GAP_MAX_CHAR_NUM; i ++, p_db_attr ++)
-    {
-        if (handle == p_db_attr->handle)
-        {
+    for (i = 0; i < GAP_MAX_CHAR_NUM; i ++, p_db_attr ++) {
+        if (handle == p_db_attr->handle) {
             if (p_db_attr->uuid != GATT_UUID_GAP_DEVICE_NAME &&
-                is_long == TRUE)
+                    is_long == TRUE) {
                 return GATT_NOT_LONG;
+            }
 
-            switch (p_db_attr->uuid)
-            {
-                case GATT_UUID_GAP_DEVICE_NAME:
-                    BTM_ReadLocalDeviceName((char **)&p_dev_name);
-                    if (strlen ((char *)p_dev_name) > GATT_MAX_ATTR_LEN)
-                        p_value->len = GATT_MAX_ATTR_LEN;
-                    else
-                        p_value->len = (UINT16)strlen ((char *)p_dev_name);
+            switch (p_db_attr->uuid) {
+            case GATT_UUID_GAP_DEVICE_NAME:
+                BTM_ReadLocalDeviceName((char **)&p_dev_name);
+                if (strlen ((char *)p_dev_name) > GATT_MAX_ATTR_LEN) {
+                    p_value->len = GATT_MAX_ATTR_LEN;
+                } else {
+                    p_value->len = (UINT16)strlen ((char *)p_dev_name);
+                }
 
-                    if (offset > p_value->len)
-                        return GATT_INVALID_OFFSET;
-                    else
-                    {
-                        p_value->len -= offset;
-                        p_dev_name += offset;
-                        ARRAY_TO_STREAM(p, p_dev_name, p_value->len);
-                        GAP_TRACE_EVENT("GATT_UUID_GAP_DEVICE_NAME len=0x%04x", p_value->len);
-                    }
-                    break;
+                if (offset > p_value->len) {
+                    return GATT_INVALID_OFFSET;
+                } else {
+                    p_value->len -= offset;
+                    p_dev_name += offset;
+                    ARRAY_TO_STREAM(p, p_dev_name, p_value->len);
+                    GAP_TRACE_EVENT("GATT_UUID_GAP_DEVICE_NAME len=0x%04x", p_value->len);
+                }
+                break;
 
-                case GATT_UUID_GAP_ICON:
-                    UINT16_TO_STREAM(p, p_db_attr->attr_value.icon);
-                    p_value->len = 2;
-                    break;
+            case GATT_UUID_GAP_ICON:
+                UINT16_TO_STREAM(p, p_db_attr->attr_value.icon);
+                p_value->len = 2;
+                break;
 
-                case GATT_UUID_GAP_PREF_CONN_PARAM:
-                    UINT16_TO_STREAM(p, p_db_attr->attr_value.conn_param.int_min); /* int_min */
-                    UINT16_TO_STREAM(p, p_db_attr->attr_value.conn_param.int_max); /* int_max */
-                    UINT16_TO_STREAM(p, p_db_attr->attr_value.conn_param.latency); /* latency */
-                    UINT16_TO_STREAM(p, p_db_attr->attr_value.conn_param.sp_tout);  /* sp_tout */
-                    p_value->len =8;
-                    break;
+            case GATT_UUID_GAP_PREF_CONN_PARAM:
+                UINT16_TO_STREAM(p, p_db_attr->attr_value.conn_param.int_min); /* int_min */
+                UINT16_TO_STREAM(p, p_db_attr->attr_value.conn_param.int_max); /* int_max */
+                UINT16_TO_STREAM(p, p_db_attr->attr_value.conn_param.latency); /* latency */
+                UINT16_TO_STREAM(p, p_db_attr->attr_value.conn_param.sp_tout);  /* sp_tout */
+                p_value->len = 8;
+                break;
 
-                /* address resolution */
-                case GATT_UUID_GAP_CENTRAL_ADDR_RESOL:
-                    UINT8_TO_STREAM(p, p_db_attr->attr_value.addr_resolution);
-                    p_value->len =1;
-                    break;
+            /* address resolution */
+            case GATT_UUID_GAP_CENTRAL_ADDR_RESOL:
+                UINT8_TO_STREAM(p, p_db_attr->attr_value.addr_resolution);
+                p_value->len = 1;
+                break;
             }
             return GATT_SUCCESS;
         }
@@ -280,8 +269,9 @@ tGATT_STATUS gap_proc_read (tGATTS_REQ_TYPE type, tGATT_READ_REQ *p_data, tGATTS
     tGATT_STATUS    status = GATT_NO_RESOURCES;
     UNUSED(type);
 
-    if (p_data->is_long)
+    if (p_data->is_long) {
         p_rsp->attr_value.offset = p_data->offset;
+    }
 
     p_rsp->attr_value.handle = p_data->handle;
 
@@ -305,11 +295,9 @@ UINT8 gap_proc_write_req( tGATTS_REQ_TYPE type, tGATT_WRITE_REQ *p_data)
     UINT8   i;
     UNUSED(type);
 
-    for (i = 0; i < GAP_MAX_CHAR_NUM; i ++, p_db_attr ++)
-    {
-        if (p_data-> handle == p_db_attr->handle)
-        {
-                return GATT_WRITE_NOT_PERMIT;
+    for (i = 0; i < GAP_MAX_CHAR_NUM; i ++, p_db_attr ++) {
+        if (p_data-> handle == p_db_attr->handle) {
+            return GATT_WRITE_NOT_PERMIT;
         }
     }
     return GATT_NOT_FOUND;
@@ -336,36 +324,37 @@ void gap_ble_s_attr_request_cback (UINT16 conn_id, UINT32 trans_id,
 
     memset(&rsp_msg, 0, sizeof(tGATTS_RSP));
 
-    switch (type)
-    {
-        case GATTS_REQ_TYPE_READ:
-            status = gap_proc_read(type, &p_data->read_req, &rsp_msg);
-            break;
+    switch (type) {
+    case GATTS_REQ_TYPE_READ:
+        status = gap_proc_read(type, &p_data->read_req, &rsp_msg);
+        break;
 
-        case GATTS_REQ_TYPE_WRITE:
-            if (!p_data->write_req.need_rsp)
-                ignore = TRUE;
-
-            status = gap_proc_write_req(type, &p_data->write_req);
-            break;
-
-        case GATTS_REQ_TYPE_WRITE_EXEC:
+    case GATTS_REQ_TYPE_WRITE:
+        if (!p_data->write_req.need_rsp) {
             ignore = TRUE;
-            GAP_TRACE_EVENT("Ignore GATTS_REQ_TYPE_WRITE_EXEC"  );
-            break;
+        }
 
-        case GATTS_REQ_TYPE_MTU:
-            GAP_TRACE_EVENT("Get MTU exchange new mtu size: %d", p_data->mtu);
-            ignore = TRUE;
-            break;
+        status = gap_proc_write_req(type, &p_data->write_req);
+        break;
 
-        default:
-            GAP_TRACE_EVENT("Unknown/unexpected LE GAP ATT request: 0x%02x", type);
-            break;
+    case GATTS_REQ_TYPE_WRITE_EXEC:
+        ignore = TRUE;
+        GAP_TRACE_EVENT("Ignore GATTS_REQ_TYPE_WRITE_EXEC"  );
+        break;
+
+    case GATTS_REQ_TYPE_MTU:
+        GAP_TRACE_EVENT("Get MTU exchange new mtu size: %d", p_data->mtu);
+        ignore = TRUE;
+        break;
+
+    default:
+        GAP_TRACE_EVENT("Unknown/unexpected LE GAP ATT request: 0x%02x", type);
+        break;
     }
 
-    if (!ignore)
+    if (!ignore) {
         GATTS_SendRsp (conn_id, trans_id, status, &rsp_msg);
+    }
 }
 
 /*******************************************************************************
@@ -379,8 +368,8 @@ void gap_ble_s_attr_request_cback (UINT16 conn_id, UINT32 trans_id,
 *******************************************************************************/
 void gap_attr_db_init(void)
 {
-    tBT_UUID        app_uuid = {LEN_UUID_128,{0}};
-    tBT_UUID        uuid     = {LEN_UUID_16,{UUID_SERVCLASS_GAP_SERVER}};
+    tBT_UUID        app_uuid = {LEN_UUID_128, {0}};
+    tBT_UUID        uuid     = {LEN_UUID_16, {UUID_SERVCLASS_GAP_SERVER}};
     UINT16          service_handle;
     tGAP_ATTR       *p_db_attr = &gap_cb.gatt_attr[0];
     tGATT_STATUS    status;
@@ -409,9 +398,9 @@ void gap_attr_db_init(void)
     */
     uuid.uu.uuid16   = p_db_attr->uuid = GATT_UUID_GAP_ICON;
     p_db_attr->handle = GATTS_AddCharacteristic(service_handle,
-                                                &uuid,
-                                                GATT_PERM_READ,
-                                                GATT_CHAR_PROP_BIT_READ);
+                        &uuid,
+                        GATT_PERM_READ,
+                        GATT_CHAR_PROP_BIT_READ);
     p_db_attr ++;
 
 #if ((defined BTM_PERIPHERAL_ENABLED) && (BTM_PERIPHERAL_ENABLED == TRUE))
@@ -424,9 +413,9 @@ void gap_attr_db_init(void)
     p_db_attr->attr_value.conn_param.latency = GAP_PREFER_CONN_LATENCY; /* 0 */
     p_db_attr->attr_value.conn_param.sp_tout = GAP_PREFER_CONN_SP_TOUT; /* 2000 */
     p_db_attr->handle = GATTS_AddCharacteristic(service_handle,
-                                                &uuid,
-                                                GATT_PERM_READ,
-                                                GATT_CHAR_PROP_BIT_READ);
+                        &uuid,
+                        GATT_PERM_READ,
+                        GATT_CHAR_PROP_BIT_READ);
     p_db_attr ++;
 #endif
 
@@ -434,7 +423,7 @@ void gap_attr_db_init(void)
     uuid.len = LEN_UUID_16;
     uuid.uu.uuid16 = p_db_attr->uuid = GATT_UUID_GAP_CENTRAL_ADDR_RESOL;
     p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid,
-                                                GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ);
+                        GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ);
     p_db_attr->attr_value.addr_resolution = 0;
     p_db_attr++;
 
@@ -444,7 +433,7 @@ void gap_attr_db_init(void)
     status = GATTS_StartService(gap_cb.gatt_if, service_handle, GAP_TRANSPORT_SUPPORTED );
 
     GAP_TRACE_EVENT ("GAP App gatt_if: %d  s_hdl = %d start_status=%d",
-                      gap_cb.gatt_if, service_handle, status);
+                     gap_cb.gatt_if, service_handle, status);
 
 
 
@@ -466,14 +455,11 @@ void GAP_BleAttrDBUpdate(UINT16 attr_uuid, tGAP_BLE_ATTR_VALUE *p_value)
 
     GAP_TRACE_EVENT("GAP_BleAttrDBUpdate attr_uuid=0x%04x\n", attr_uuid);
 
-    for (i = 0; i < GAP_MAX_CHAR_NUM; i ++, p_db_attr ++)
-    {
-        if (p_db_attr->uuid == attr_uuid)
-        {
+    for (i = 0; i < GAP_MAX_CHAR_NUM; i ++, p_db_attr ++) {
+        if (p_db_attr->uuid == attr_uuid) {
             GAP_TRACE_EVENT("Found attr_uuid=0x%04x\n", attr_uuid);
 
-            switch (attr_uuid)
-            {
+            switch (attr_uuid) {
             case GATT_UUID_GAP_ICON:
                 p_db_attr->attr_value.icon  =  p_value->icon;
                 break;
@@ -514,8 +500,7 @@ BOOLEAN gap_ble_send_cl_read_request(tGAP_CLCB *p_clcb)
     UINT16                  uuid = 0;
     BOOLEAN                 started = FALSE;
 
-    if (gap_ble_dequeue_request(p_clcb, &uuid, &p_clcb->p_cback))
-    {
+    if (gap_ble_dequeue_request(p_clcb, &uuid, &p_clcb->p_cback)) {
         memset(&param, 0, sizeof(tGATT_READ_PARAM));
 
         param.service.uuid.len       = LEN_UUID_16;
@@ -524,8 +509,7 @@ BOOLEAN gap_ble_send_cl_read_request(tGAP_CLCB *p_clcb)
         param.service.e_handle       = 0xFFFF;
         param.service.auth_req       = 0;
 
-        if (GATTC_Read(p_clcb->conn_id, GATT_READ_BY_TYPE, &param) == GATT_SUCCESS)
-        {
+        if (GATTC_Read(p_clcb->conn_id, GATT_READ_BY_TYPE, &param) == GATT_SUCCESS) {
             p_clcb->cl_op_uuid = uuid;
             started = TRUE;
         }
@@ -551,19 +535,16 @@ void gap_ble_cl_op_cmpl(tGAP_CLCB *p_clcb, BOOLEAN status, UINT16 len, UINT8 *p_
     GAP_TRACE_EVENT("gap_ble_cl_op_cmpl status: %d", status);
 
     p_clcb->cl_op_uuid = 0;
-    p_clcb->p_cback=NULL;
+    p_clcb->p_cback = NULL;
 
-    if (p_cback && op)
-    {
+    if (p_cback && op) {
         GAP_TRACE_EVENT("calling gap_ble_cl_op_cmpl");
         (* p_cback)(status, p_clcb->bda, len, (char *)p_name);
     }
 
     /* if no further activity is requested in callback, drop the link */
-    if (p_clcb->connected)
-    {
-        if (!gap_ble_send_cl_read_request(p_clcb))
-        {
+    if (p_clcb->connected) {
+        if (!gap_ble_send_cl_read_request(p_clcb)) {
             GATT_Disconnect(p_clcb->conn_id);
             gap_ble_dealloc_clcb(p_clcb);
         }
@@ -588,17 +569,13 @@ static void gap_ble_c_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_
     UNUSED(gatt_if);
     UNUSED(transport);
 
-    if (p_clcb != NULL)
-    {
-        if (connected)
-        {
+    if (p_clcb != NULL) {
+        if (connected) {
             p_clcb->conn_id = conn_id;
             p_clcb->connected = TRUE;
             /* start operation is pending */
             gap_ble_send_cl_read_request(p_clcb);
-        }
-        else
-        {
+        } else {
             p_clcb->connected = FALSE;
             gap_ble_cl_op_cmpl(p_clcb, FALSE, 0, NULL);
             /* clean up clcb */
@@ -625,51 +602,52 @@ static void gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS
     UINT16      len;
     UINT8       *pp;
 
-    if (p_clcb == NULL)
+    if (p_clcb == NULL) {
         return;
+    }
 
     op_type = p_clcb->cl_op_uuid;
 
     GAP_TRACE_EVENT ("gap_ble_c_cmpl_cback() - op_code: 0x%02x  status: 0x%02x  read_type: 0x%04x\n", op, status, op_type);
     /* Currently we only issue read commands */
-    if (op != GATTC_OPTYPE_READ)
+    if (op != GATTC_OPTYPE_READ) {
         return;
+    }
 
-    if (status != GATT_SUCCESS)
-    {
+    if (status != GATT_SUCCESS) {
         gap_ble_cl_op_cmpl(p_clcb, FALSE, 0, NULL);
         return;
     }
 
     pp = p_data->att_value.value;
 
-    switch (op_type)
-    {
-        case GATT_UUID_GAP_PREF_CONN_PARAM:
-            GAP_TRACE_EVENT ("GATT_UUID_GAP_PREF_CONN_PARAM");
-            /* Extract the peripheral preferred connection parameters and save them */
+    switch (op_type) {
+    case GATT_UUID_GAP_PREF_CONN_PARAM:
+        GAP_TRACE_EVENT ("GATT_UUID_GAP_PREF_CONN_PARAM");
+        /* Extract the peripheral preferred connection parameters and save them */
 
-            STREAM_TO_UINT16 (min, pp);
-            STREAM_TO_UINT16 (max, pp);
-            STREAM_TO_UINT16 (latency, pp);
-            STREAM_TO_UINT16 (tout, pp);
+        STREAM_TO_UINT16 (min, pp);
+        STREAM_TO_UINT16 (max, pp);
+        STREAM_TO_UINT16 (latency, pp);
+        STREAM_TO_UINT16 (tout, pp);
 
-            BTM_BleSetPrefConnParams (p_clcb->bda, min, max, latency, tout);
-            /* release the connection here */
-            gap_ble_cl_op_cmpl(p_clcb, TRUE, 0, NULL);
-            break;
+        BTM_BleSetPrefConnParams (p_clcb->bda, min, max, latency, tout);
+        /* release the connection here */
+        gap_ble_cl_op_cmpl(p_clcb, TRUE, 0, NULL);
+        break;
 
-        case GATT_UUID_GAP_DEVICE_NAME:
-            GAP_TRACE_EVENT ("GATT_UUID_GAP_DEVICE_NAME\n");
-            len = (UINT16)strlen((char *)pp);
-            if (len > GAP_CHAR_DEV_NAME_SIZE)
-                len = GAP_CHAR_DEV_NAME_SIZE;
-            gap_ble_cl_op_cmpl(p_clcb, TRUE, len, pp);
-            break;
+    case GATT_UUID_GAP_DEVICE_NAME:
+        GAP_TRACE_EVENT ("GATT_UUID_GAP_DEVICE_NAME\n");
+        len = (UINT16)strlen((char *)pp);
+        if (len > GAP_CHAR_DEV_NAME_SIZE) {
+            len = GAP_CHAR_DEV_NAME_SIZE;
+        }
+        gap_ble_cl_op_cmpl(p_clcb, TRUE, len, pp);
+        break;
 
-        case GATT_UUID_GAP_CENTRAL_ADDR_RESOL:
-            gap_ble_cl_op_cmpl(p_clcb, TRUE, 1, pp);
-            break;
+    case GATT_UUID_GAP_CENTRAL_ADDR_RESOL:
+        gap_ble_cl_op_cmpl(p_clcb, TRUE, 1, pp);
+        break;
     }
 }
 
@@ -688,39 +666,41 @@ BOOLEAN gap_ble_accept_cl_operation(BD_ADDR peer_bda, UINT16 uuid, tGAP_BLE_CMPL
     tGAP_CLCB *p_clcb;
     BOOLEAN started = FALSE;
 
-    if (p_cback == NULL && uuid != GATT_UUID_GAP_PREF_CONN_PARAM)
-        return(started);
+    if (p_cback == NULL && uuid != GATT_UUID_GAP_PREF_CONN_PARAM) {
+        return (started);
+    }
 
-    if ((p_clcb = gap_find_clcb_by_bd_addr (peer_bda)) == NULL)
-    {
-        if ((p_clcb = gap_clcb_alloc(peer_bda)) == NULL)
-        {
+    if ((p_clcb = gap_find_clcb_by_bd_addr (peer_bda)) == NULL) {
+        if ((p_clcb = gap_clcb_alloc(peer_bda)) == NULL) {
             GAP_TRACE_ERROR("gap_ble_accept_cl_operation max connection reached");
             return started;
         }
     }
 
     GAP_TRACE_EVENT ("%s() - BDA: %08x%04x  cl_op_uuid: 0x%04x",
-                      __FUNCTION__,
-                      (peer_bda[0]<<24)+(peer_bda[1]<<16)+(peer_bda[2]<<8)+peer_bda[3],
-                      (peer_bda[4]<<8)+peer_bda[5], uuid);
+                     __FUNCTION__,
+                     (peer_bda[0] << 24) + (peer_bda[1] << 16) + (peer_bda[2] << 8) + peer_bda[3],
+                     (peer_bda[4] << 8) + peer_bda[5], uuid);
 
-    if (GATT_GetConnIdIfConnected(gap_cb.gatt_if, peer_bda, &p_clcb->conn_id, BT_TRANSPORT_LE))
+    if (GATT_GetConnIdIfConnected(gap_cb.gatt_if, peer_bda, &p_clcb->conn_id, BT_TRANSPORT_LE)) {
         p_clcb->connected = TRUE;
+    }
 
     /* hold the link here */
-    if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, TRUE, BT_TRANSPORT_LE))
+    if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, TRUE, BT_TRANSPORT_LE)) {
         return started;
+    }
 
     /* enqueue the request */
     gap_ble_enqueue_request(p_clcb, uuid, p_cback);
 
-    if (p_clcb->connected && p_clcb->cl_op_uuid == 0)
+    if (p_clcb->connected && p_clcb->cl_op_uuid == 0) {
         started = gap_ble_send_cl_read_request(p_clcb);
-    else /* wait for connection up or pending operation to finish */
+    } else { /* wait for connection up or pending operation to finish */
         started = TRUE;
+    }
 
-   return started;
+    return started;
 }
 /*******************************************************************************
 **
@@ -779,19 +759,16 @@ BOOLEAN GAP_BleCancelReadPeerDevName (BD_ADDR peer_bda)
     tGAP_CLCB *p_clcb = gap_find_clcb_by_bd_addr (peer_bda);
 
     GAP_TRACE_EVENT ("GAP_BleCancelReadPeerDevName() - BDA: %08x%04x  cl_op_uuid: 0x%04x",
-                      (peer_bda[0]<<24)+(peer_bda[1]<<16)+(peer_bda[2]<<8)+peer_bda[3],
-                      (peer_bda[4]<<8)+peer_bda[5], (p_clcb == NULL)? 0 : p_clcb->cl_op_uuid);
+                     (peer_bda[0] << 24) + (peer_bda[1] << 16) + (peer_bda[2] << 8) + peer_bda[3],
+                     (peer_bda[4] << 8) + peer_bda[5], (p_clcb == NULL) ? 0 : p_clcb->cl_op_uuid);
 
-    if (p_clcb == NULL)
-    {
+    if (p_clcb == NULL) {
         GAP_TRACE_ERROR ("Cannot cancel current op is not get dev name");
         return FALSE;
     }
 
-    if (!p_clcb->connected)
-    {
-        if (!GATT_CancelConnect(gap_cb.gatt_if, peer_bda, TRUE))
-        {
+    if (!p_clcb->connected) {
+        if (!GATT_CancelConnect(gap_cb.gatt_if, peer_bda, TRUE)) {
             GAP_TRACE_ERROR ("Cannot cancel where No connection id");
             return FALSE;
         }
@@ -799,7 +776,7 @@ BOOLEAN GAP_BleCancelReadPeerDevName (BD_ADDR peer_bda)
 
     gap_ble_cl_op_cmpl(p_clcb, FALSE, 0, NULL);
 
-    return(TRUE);
+    return (TRUE);
 }
 
 #endif  /* BLE_INCLUDED */

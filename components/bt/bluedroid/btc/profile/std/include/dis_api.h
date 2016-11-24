@@ -67,51 +67,45 @@ typedef tDIS_ATTR_MASK tDIS_ATTR_BIT ;
 #define DIS_PNP_ID_SIZE             7
 
 
-typedef struct
-{
+typedef struct {
     UINT16      uuid;
     UINT16      handle;
-}tDIS_DB_ENTRY;
+} tDIS_DB_ENTRY;
 
-typedef struct
-{
+typedef struct {
     UINT16      len;
     UINT8       *p_data;
-}tDIS_STRING;
+} tDIS_STRING;
 
-typedef struct
-{
+typedef struct {
     UINT16       vendor_id;
     UINT16       product_id;
     UINT16       product_version;
     UINT8        vendor_id_src;
 
-}tDIS_PNP_ID;
+} tDIS_PNP_ID;
 
-typedef union
-{
+typedef union {
     UINT64              system_id;
     tDIS_PNP_ID         pnp_id;
     tDIS_STRING         data_str;
-}tDIS_ATTR;
+} tDIS_ATTR;
 
 #define DIS_MAX_STRING_DATA     7
 
-typedef struct
-{
+typedef struct {
     UINT16                  attr_mask;
     UINT64                  system_id;
     tDIS_PNP_ID             pnp_id;
     UINT8                   *data_string[DIS_MAX_STRING_DATA];
-}tDIS_VALUE;
+} tDIS_VALUE;
 
 //typedef void (tDIS_READ_CBACK)(BD_ADDR addr, tDIS_VALUE *p_dis_value);
 
-typedef struct
-{
+typedef struct {
     tDIS_DB_ENTRY           dis_attr[DIS_MAX_CHAR_NUM];
     tDIS_VALUE              dis_value;
-    
+
 //    tDIS_READ_CBACK         *p_read_dis_cback;
 
     UINT16                  service_handle;
@@ -119,9 +113,9 @@ typedef struct
 
     bool                    enabled;
 
-  //  UINT8                   dis_read_uuid_idx;
-  //  tDIS_ATTR_MASK          request_mask;
-}tDIS_CB;
+    //  UINT8                   dis_read_uuid_idx;
+    //  tDIS_ATTR_MASK          request_mask;
+} tDIS_CB;
 
 /*****************************************************************************
 **  Data structure used by Battery Service
@@ -133,12 +127,11 @@ typedef struct
 
 #define BATTERY_LEVEL_SIZE   1
 
-typedef struct
-{
+typedef struct {
     BD_ADDR remote_bda;
     BOOLEAN need_rsp;
     UINT16  clt_cfg;
-}tBA_WRITE_DATA;
+} tBA_WRITE_DATA;
 
 #define BA_READ_CLT_CFG_REQ     1
 #define BA_READ_PRE_FMT_REQ     2
@@ -153,25 +146,22 @@ typedef void (tBA_CBACK)(UINT32 trans_id, UINT16 conn_id, UINT8 app_id, UINT8 ev
 #define BA_LEVEL_RPT_REF        0x04
 typedef UINT8   tBA_LEVEL_DESCR;
 
-typedef struct
-{
+typedef struct {
     BOOLEAN         is_pri;
     tBA_LEVEL_DESCR     ba_level_descr;
     tGATT_TRANSPORT transport;
     tBA_CBACK       *p_cback;
 
-}tBA_REG_INFO;
+} tBA_REG_INFO;
 
-typedef union
-{
+typedef union {
     UINT8       ba_level;
     UINT16      clt_cfg;
     tGATT_CHAR_RPT_REF  rpt_ref;
     tGATT_CHAR_PRES     pres_fmt;
-}tBA_RSP_DATA;
+} tBA_RSP_DATA;
 
-typedef struct
-{
+typedef struct {
     UINT8       app_id;
     UINT16      ba_level_hdl;
     UINT16      clt_cfg_hdl;
@@ -183,14 +173,13 @@ typedef struct
     UINT16      pending_handle;
     //UINT8       pending_clcb_idx;
     UINT8       pending_evt;
-}tBA_INST;
+} tBA_INST;
 
-typedef struct
-{
+typedef struct {
     tBA_INST        battery_inst[BA_MAX_INT_NUM];
     UINT8           inst_id;
     bool            enabled;
-}tBATTERY_CB;
+} tBATTERY_CB;
 /*****************************************************************************
 **  External Function Declarations
 *****************************************************************************/
@@ -247,8 +236,8 @@ extern void dis_AddChar(UINT16 service_id);
 **   Process read DIS attribute request.
 *******************************************************************************/
 
-extern void dis_s_read_attr_value (tGATTS_DATA *p_data, tGATT_VALUE *p_value, 
-    UINT32 trans_id, UINT16 conn_id);
+extern void dis_s_read_attr_value (tGATTS_DATA *p_data, tGATT_VALUE *p_value,
+                                   UINT32 trans_id, UINT16 conn_id);
 /*****************************************************************************
 **  DIS Client Function
 *****************************************************************************/
@@ -262,7 +251,7 @@ extern void dis_s_read_attr_value (tGATTS_DATA *p_data, tGATT_VALUE *p_value,
 **
 *******************************************************************************/
 //extern BOOLEAN DIS_ReadDISInfo(BD_ADDR peer_bda, tDIS_READ_CBACK *p_cback,
- //                              tDIS_ATTR_MASK mask);
+//                              tDIS_ATTR_MASK mask);
 
 /*******************************************************************************
 **      BATTERY SERVICE API
@@ -315,8 +304,8 @@ extern void bas_service_cmpl(UINT16 service_id, tBTA_GATT_STATUS status);
 ** Description      Respond to a battery service request
 **
 *******************************************************************************/
-extern void Battery_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id, 
-    tGATT_STATUS st, UINT8 event, tBA_RSP_DATA *p_rsp);
+extern void Battery_Rsp (UINT32 trans_id, UINT16 conn_id, UINT8 app_id,
+                         tGATT_STATUS st, UINT8 event, tBA_RSP_DATA *p_rsp);
 /*******************************************************************************
 **
 ** Function         Battery_Notify
@@ -337,8 +326,8 @@ extern void bas_s_read_attr_value(tGATTS_DATA *p_data, UINT32 trans_id, UINT16 c
 **
 ** Description   it will be called when client send a write request
 ******************************************************************************/
-extern void bas_s_write_attr_value(tGATTS_DATA *p_data, UINT32 trans_id, 
-    UINT16 conn_id, BD_ADDR bd_addr);
+extern void bas_s_write_attr_value(tGATTS_DATA *p_data, UINT32 trans_id,
+                                   UINT16 conn_id, BD_ADDR bd_addr);
 
 extern void gatts_server_test(void);
 #ifdef __cplusplus

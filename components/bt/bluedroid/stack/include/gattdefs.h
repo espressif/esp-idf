@@ -34,7 +34,7 @@
 #define GATT_UUID_INCLUDE_SERVICE       0x2802
 #define GATT_UUID_CHAR_DECLARE          0x2803      /*  Characteristic Declaration*/
 
-#define GATT_UUID_CHAR_EXT_PROP         0x2900      /*	Characteristic Extended Properties */
+#define GATT_UUID_CHAR_EXT_PROP         0x2900      /*  Characteristic Extended Properties */
 #define GATT_UUID_CHAR_DESCRIPTION      0x2901      /*  Characteristic User Description*/
 #define GATT_UUID_CHAR_CLIENT_CONFIG    0x2902      /*  Client Characteristic Configuration */
 #define GATT_UUID_CHAR_SRVR_CONFIG      0x2903      /*  Server Characteristic Configuration */

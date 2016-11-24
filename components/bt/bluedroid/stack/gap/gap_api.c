@@ -36,8 +36,9 @@ tGAP_CB  gap_cb;
 *******************************************************************************/
 UINT8 GAP_SetTraceLevel (UINT8 new_level)
 {
-    if (new_level != 0xFF)
+    if (new_level != 0xFF) {
         gap_cb.trace_level = new_level;
+    }
 
     return (gap_cb.trace_level);
 }

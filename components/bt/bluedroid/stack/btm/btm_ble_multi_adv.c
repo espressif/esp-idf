@@ -52,7 +52,7 @@ tBTM_BLE_MULTI_ADV_INST_IDX_Q btm_multi_adv_idx_q;
 **  Externs
 ************************************************************************************/
 extern void btm_ble_update_dmt_flag_bits(UINT8 *flag_value,
-                                               const UINT16 connect_mode, const UINT16 disc_mode);
+        const UINT16 connect_mode, const UINT16 disc_mode);
 
 /*******************************************************************************
 **
@@ -70,7 +70,7 @@ void btm_ble_multi_adv_enq_op_q(UINT8 opcode, UINT8 inst_id, UINT8 cb_evt)
 
     p_op_q->p_inst_id[p_op_q->next_idx] = inst_id;
 
-    p_op_q->p_sub_code[p_op_q->next_idx] = (opcode |(cb_evt << 4));
+    p_op_q->p_sub_code[p_op_q->next_idx] = (opcode | (cb_evt << 4));
 
     p_op_q->next_idx = (p_op_q->next_idx + 1) %  BTM_BleMaxMultiAdvInstanceCount();
 }
@@ -115,8 +115,7 @@ void btm_ble_multi_adv_vsc_cmpl_cback (tBTM_VSC_CMPL *p_params)
     tBTM_BLE_MULTI_ADV_INST *p_inst ;
     UINT8   cb_evt = 0, opcode;
 
-    if (len  < 2)
-    {
+    if (len  < 2) {
         BTM_TRACE_ERROR("wrong length for btm_ble_multi_adv_vsc_cmpl_cback");
         return;
     }
@@ -128,56 +127,49 @@ void btm_ble_multi_adv_vsc_cmpl_cback (tBTM_VSC_CMPL *p_params)
 
     BTM_TRACE_DEBUG("op_code = %02x inst_id = %d cb_evt = %02x", opcode, inst_id, cb_evt);
 
-    if (opcode != subcode || inst_id == 0)
-    {
-        BTM_TRACE_ERROR("get unexpected VSC cmpl, expect: %d get: %d",subcode,opcode);
+    if (opcode != subcode || inst_id == 0) {
+        BTM_TRACE_ERROR("get unexpected VSC cmpl, expect: %d get: %d", subcode, opcode);
         return;
     }
 
     p_inst = &btm_multi_adv_cb.p_adv_inst[inst_id - 1];
 
-    switch (subcode)
-    {
-        case BTM_BLE_MULTI_ADV_ENB:
-        {
-            BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_ENB status = %d", status);
+    switch (subcode) {
+    case BTM_BLE_MULTI_ADV_ENB: {
+        BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_ENB status = %d", status);
 
-            /* Mark as not in use here, if instance cannot be enabled */
-            if (HCI_SUCCESS != status && BTM_BLE_MULTI_ADV_ENB_EVT == cb_evt)
-                btm_multi_adv_cb.p_adv_inst[inst_id-1].in_use = FALSE;
-            break;
+        /* Mark as not in use here, if instance cannot be enabled */
+        if (HCI_SUCCESS != status && BTM_BLE_MULTI_ADV_ENB_EVT == cb_evt) {
+            btm_multi_adv_cb.p_adv_inst[inst_id - 1].in_use = FALSE;
         }
-
-        case BTM_BLE_MULTI_ADV_SET_PARAM:
-        {
-            BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_SET_PARAM status = %d", status);
-            break;
-        }
-
-        case BTM_BLE_MULTI_ADV_WRITE_ADV_DATA:
-        {
-            BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_WRITE_ADV_DATA status = %d", status);
-            break;
-        }
-
-        case BTM_BLE_MULTI_ADV_WRITE_SCAN_RSP_DATA:
-        {
-            BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_WRITE_SCAN_RSP_DATA status = %d", status);
-            break;
-        }
-
-        case BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR:
-        {
-            BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR status = %d", status);
-            break;
-        }
-
-        default:
-            break;
+        break;
     }
 
-    if (cb_evt != 0 && p_inst->p_cback != NULL)
-    {
+    case BTM_BLE_MULTI_ADV_SET_PARAM: {
+        BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_SET_PARAM status = %d", status);
+        break;
+    }
+
+    case BTM_BLE_MULTI_ADV_WRITE_ADV_DATA: {
+        BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_WRITE_ADV_DATA status = %d", status);
+        break;
+    }
+
+    case BTM_BLE_MULTI_ADV_WRITE_SCAN_RSP_DATA: {
+        BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_WRITE_SCAN_RSP_DATA status = %d", status);
+        break;
+    }
+
+    case BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR: {
+        BTM_TRACE_DEBUG("BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR status = %d", status);
+        break;
+    }
+
+    default:
+        break;
+    }
+
+    if (cb_evt != 0 && p_inst->p_cback != NULL) {
         (p_inst->p_cback)(cb_evt, inst_id, p_inst->p_ref, status);
     }
     return;
@@ -198,7 +190,7 @@ void btm_ble_multi_adv_vsc_cmpl_cback (tBTM_VSC_CMPL *p_params)
 tBTM_STATUS btm_ble_enable_multi_adv (BOOLEAN enable, UINT8 inst_id, UINT8 cb_evt)
 {
     UINT8           param[BTM_BLE_MULTI_ADV_ENB_LEN], *pp;
-    UINT8           enb = enable ? 1: 0;
+    UINT8           enb = enable ? 1 : 0;
     tBTM_STATUS     rt;
 
     pp = param;
@@ -208,14 +200,13 @@ tBTM_STATUS btm_ble_enable_multi_adv (BOOLEAN enable, UINT8 inst_id, UINT8 cb_ev
     UINT8_TO_STREAM (pp, enb);
     UINT8_TO_STREAM (pp, inst_id);
 
-    BTM_TRACE_EVENT (" btm_ble_enable_multi_adv: enb %d, Inst ID %d",enb,inst_id);
+    BTM_TRACE_EVENT (" btm_ble_enable_multi_adv: enb %d, Inst ID %d", enb, inst_id);
 
     if ((rt = BTM_VendorSpecificCommand (HCI_BLE_MULTI_ADV_OCF,
-                                    BTM_BLE_MULTI_ADV_ENB_LEN,
-                                    param,
-                                    btm_ble_multi_adv_vsc_cmpl_cback))
-                                     == BTM_CMD_STARTED)
-    {
+                                         BTM_BLE_MULTI_ADV_ENB_LEN,
+                                         param,
+                                         btm_ble_multi_adv_vsc_cmpl_cback))
+            == BTM_CMD_STARTED) {
         btm_ble_multi_adv_enq_op_q(BTM_BLE_MULTI_ADV_ENB, inst_id, cb_evt);
     }
     return rt;
@@ -234,8 +225,9 @@ tBTM_STATUS btm_ble_enable_multi_adv (BOOLEAN enable, UINT8 inst_id, UINT8 cb_ev
 int btm_ble_tx_power[BTM_BLE_ADV_TX_POWER_MAX + 1] = BTM_BLE_ADV_TX_POWER;
 char btm_ble_map_adv_tx_power(int tx_power_index)
 {
-    if(0 <= tx_power_index && tx_power_index < BTM_BLE_ADV_TX_POWER_MAX)
+    if (0 <= tx_power_index && tx_power_index < BTM_BLE_ADV_TX_POWER_MAX) {
         return (char)btm_ble_tx_power[tx_power_index];
+    }
     return 0;
 }
 /*******************************************************************************
@@ -250,12 +242,12 @@ char btm_ble_map_adv_tx_power(int tx_power_index)
 **
 *******************************************************************************/
 tBTM_STATUS btm_ble_multi_adv_set_params (tBTM_BLE_MULTI_ADV_INST *p_inst,
-                                          tBTM_BLE_ADV_PARAMS *p_params,
-                                          UINT8 cb_evt)
+        tBTM_BLE_ADV_PARAMS *p_params,
+        UINT8 cb_evt)
 {
     UINT8           param[BTM_BLE_MULTI_ADV_SET_PARAM_LEN], *pp;
     tBTM_STATUS     rt;
-    BD_ADDR         dummy ={0,0,0,0,0,0};
+    BD_ADDR         dummy = {0, 0, 0, 0, 0, 0};
 
     pp = param;
     memset(param, 0, BTM_BLE_MULTI_ADV_SET_PARAM_LEN);
@@ -267,12 +259,10 @@ tBTM_STATUS btm_ble_multi_adv_set_params (tBTM_BLE_MULTI_ADV_INST *p_inst,
     UINT8_TO_STREAM  (pp, p_params->adv_type);
 
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-    if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE)
-    {
+    if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
         UINT8_TO_STREAM  (pp, BLE_ADDR_RANDOM);
         BDADDR_TO_STREAM (pp, p_inst->rpa);
-    }
-    else
+    } else
 #endif
     {
         UINT8_TO_STREAM  (pp, BLE_ADDR_PUBLIC);
@@ -280,43 +270,44 @@ tBTM_STATUS btm_ble_multi_adv_set_params (tBTM_BLE_MULTI_ADV_INST *p_inst,
     }
 
     BTM_TRACE_EVENT (" btm_ble_multi_adv_set_params,Min %d, Max %d,adv_type %d",
-        p_params->adv_int_min,p_params->adv_int_max,p_params->adv_type);
+                     p_params->adv_int_min, p_params->adv_int_max, p_params->adv_type);
 
     UINT8_TO_STREAM  (pp, 0);
     BDADDR_TO_STREAM (pp, dummy);
 
-    if (p_params->channel_map == 0 || p_params->channel_map > BTM_BLE_DEFAULT_ADV_CHNL_MAP)
+    if (p_params->channel_map == 0 || p_params->channel_map > BTM_BLE_DEFAULT_ADV_CHNL_MAP) {
         p_params->channel_map = BTM_BLE_DEFAULT_ADV_CHNL_MAP;
+    }
     UINT8_TO_STREAM (pp, p_params->channel_map);
 
-    if (p_params->adv_filter_policy >= AP_SCAN_CONN_POLICY_MAX)
+    if (p_params->adv_filter_policy >= AP_SCAN_CONN_POLICY_MAX) {
         p_params->adv_filter_policy = AP_SCAN_CONN_ALL;
+    }
     UINT8_TO_STREAM (pp, p_params->adv_filter_policy);
 
     UINT8_TO_STREAM (pp, p_inst->inst_id);
 
-    if (p_params->tx_power > BTM_BLE_ADV_TX_POWER_MAX)
+    if (p_params->tx_power > BTM_BLE_ADV_TX_POWER_MAX) {
         p_params->tx_power = BTM_BLE_ADV_TX_POWER_MAX;
+    }
     UINT8_TO_STREAM (pp, btm_ble_map_adv_tx_power(p_params->tx_power));
 
     BTM_TRACE_EVENT("set_params:Chnl Map %d,adv_fltr policy %d,ID:%d, TX Power%d",
-        p_params->channel_map,p_params->adv_filter_policy,p_inst->inst_id,p_params->tx_power);
+                    p_params->channel_map, p_params->adv_filter_policy, p_inst->inst_id, p_params->tx_power);
 
     if ((rt = BTM_VendorSpecificCommand (HCI_BLE_MULTI_ADV_OCF,
-                                    BTM_BLE_MULTI_ADV_SET_PARAM_LEN,
-                                    param,
-                                    btm_ble_multi_adv_vsc_cmpl_cback))
-           == BTM_CMD_STARTED)
-    {
+                                         BTM_BLE_MULTI_ADV_SET_PARAM_LEN,
+                                         param,
+                                         btm_ble_multi_adv_vsc_cmpl_cback))
+            == BTM_CMD_STARTED) {
         p_inst->adv_evt = p_params->adv_type;
 
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-        if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE)
-        {
+        if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
             /* start timer */
             p_inst->raddr_timer_ent.param = (TIMER_PARAM_TYPE) p_inst;
             btu_start_timer_oneshot(&p_inst->raddr_timer_ent, BTU_TTYPE_BLE_RANDOM_ADDR,
-                             BTM_BLE_PRIVATE_ADDR_INT);
+                                    BTM_BLE_PRIVATE_ADDR_INT);
         }
 #endif
         btm_ble_multi_adv_enq_op_q(BTM_BLE_MULTI_ADV_SET_PARAM, p_inst->inst_id, cb_evt);
@@ -342,8 +333,8 @@ tBTM_STATUS btm_ble_multi_adv_write_rpa (tBTM_BLE_MULTI_ADV_INST *p_inst, BD_ADD
     tBTM_STATUS     rt;
 
     BTM_TRACE_EVENT ("%s-BD_ADDR:%02x-%02x-%02x-%02x-%02x-%02x,inst_id:%d",
-                      __FUNCTION__, random_addr[5], random_addr[4], random_addr[3], random_addr[2],
-                      random_addr[1], random_addr[0], p_inst->inst_id);
+                     __FUNCTION__, random_addr[5], random_addr[4], random_addr[3], random_addr[2],
+                     random_addr[1], random_addr[0], p_inst->inst_id);
 
     memset(param, 0, BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR_LEN);
 
@@ -352,15 +343,14 @@ tBTM_STATUS btm_ble_multi_adv_write_rpa (tBTM_BLE_MULTI_ADV_INST *p_inst, BD_ADD
     UINT8_TO_STREAM(pp,  p_inst->inst_id);
 
     if ((rt = BTM_VendorSpecificCommand (HCI_BLE_MULTI_ADV_OCF,
-                                    BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR_LEN,
-                                    param,
-                                    btm_ble_multi_adv_vsc_cmpl_cback)) == BTM_CMD_STARTED)
-    {
+                                         BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR_LEN,
+                                         param,
+                                         btm_ble_multi_adv_vsc_cmpl_cback)) == BTM_CMD_STARTED) {
         /* start a periodical timer to refresh random addr */
         btu_stop_timer_oneshot(&p_inst->raddr_timer_ent);
         p_inst->raddr_timer_ent.param = (TIMER_PARAM_TYPE) p_inst;
         btu_start_timer_oneshot(&p_inst->raddr_timer_ent, BTU_TTYPE_BLE_RANDOM_ADDR,
-                         BTM_BLE_PRIVATE_ADDR_INT);
+                                BTM_BLE_PRIVATE_ADDR_INT);
 
         btm_ble_multi_adv_enq_op_q(BTM_BLE_MULTI_ADV_SET_RANDOM_ADDR, p_inst->inst_id, 0);
     }
@@ -384,22 +374,16 @@ void btm_ble_multi_adv_gen_rpa_cmpl(tBTM_RAND_ENC *p)
     UINT8 index = 0;
     tBTM_BLE_MULTI_ADV_INST *p_inst = NULL;
 
-     /* Retrieve the index of adv instance from stored Q */
-    if (btm_multi_adv_idx_q.front == -1)
-    {
+    /* Retrieve the index of adv instance from stored Q */
+    if (btm_multi_adv_idx_q.front == -1) {
         BTM_TRACE_ERROR(" %s can't locate advertise instance", __FUNCTION__);
         return;
-    }
-    else
-    {
+    } else {
         index = btm_multi_adv_idx_q.inst_index_queue[btm_multi_adv_idx_q.front];
-        if (btm_multi_adv_idx_q.front == btm_multi_adv_idx_q.rear)
-        {
+        if (btm_multi_adv_idx_q.front == btm_multi_adv_idx_q.rear) {
             btm_multi_adv_idx_q.front = -1;
             btm_multi_adv_idx_q.rear = -1;
-        }
-        else
-        {
+        } else {
             btm_multi_adv_idx_q.front = (btm_multi_adv_idx_q.front + 1) % BTM_BLE_MULTI_ADV_MAX;
         }
     }
@@ -407,8 +391,7 @@ void btm_ble_multi_adv_gen_rpa_cmpl(tBTM_RAND_ENC *p)
     p_inst = &(btm_multi_adv_cb.p_adv_inst[index]);
 
     BTM_TRACE_EVENT ("btm_ble_multi_adv_gen_rpa_cmpl inst_id = %d", p_inst->inst_id);
-    if (p)
-    {
+    if (p) {
         p->param_buf[2] &= (~BLE_RESOLVE_ADDR_MASK);
         p->param_buf[2] |= BLE_RESOLVE_ADDR_MSB;
 
@@ -416,12 +399,9 @@ void btm_ble_multi_adv_gen_rpa_cmpl(tBTM_RAND_ENC *p)
         p_inst->rpa[1] = p->param_buf[1];
         p_inst->rpa[0] = p->param_buf[2];
 
-        if (!SMP_Encrypt(btm_cb.devcb.id_keys.irk, BT_OCTET16_LEN, p->param_buf, 3, &output))
-        {
+        if (!SMP_Encrypt(btm_cb.devcb.id_keys.irk, BT_OCTET16_LEN, p->param_buf, 3, &output)) {
             BTM_TRACE_DEBUG("generate random address failed");
-        }
-        else
-        {
+        } else {
             /* set hash to be LSB of rpAddress */
             p_inst->rpa[5] = output.param_buf[0];
             p_inst->rpa[4] = output.param_buf[1];
@@ -429,8 +409,7 @@ void btm_ble_multi_adv_gen_rpa_cmpl(tBTM_RAND_ENC *p)
         }
 
         if (p_inst->inst_id != BTM_BLE_MULTI_ADV_DEFAULT_STD &&
-            p_inst->inst_id < BTM_BleMaxMultiAdvInstanceCount())
-        {
+                p_inst->inst_id < BTM_BleMaxMultiAdvInstanceCount()) {
             /* set it to controller */
             btm_ble_multi_adv_write_rpa(p_inst, p_inst->rpa);
         }
@@ -451,20 +430,14 @@ void btm_ble_multi_adv_gen_rpa_cmpl(tBTM_RAND_ENC *p)
 *******************************************************************************/
 void btm_ble_multi_adv_configure_rpa (tBTM_BLE_MULTI_ADV_INST *p_inst)
 {
-    if (btm_multi_adv_idx_q.front == (btm_multi_adv_idx_q.rear + 1) % BTM_BLE_MULTI_ADV_MAX)
-    {
+    if (btm_multi_adv_idx_q.front == (btm_multi_adv_idx_q.rear + 1) % BTM_BLE_MULTI_ADV_MAX) {
         BTM_TRACE_ERROR("outstanding rand generation exceeded max allowed ");
         return;
-    }
-    else
-    {
-        if (btm_multi_adv_idx_q.front == -1)
-        {
+    } else {
+        if (btm_multi_adv_idx_q.front == -1) {
             btm_multi_adv_idx_q.front = 0;
             btm_multi_adv_idx_q.rear = 0;
-        }
-        else
-        {
+        } else {
             btm_multi_adv_idx_q.rear = (btm_multi_adv_idx_q.rear + 1) % BTM_BLE_MULTI_ADV_MAX;
         }
         btm_multi_adv_idx_q.inst_index_queue[btm_multi_adv_idx_q.rear] = p_inst->index;
@@ -487,17 +460,16 @@ void btm_ble_multi_adv_reenable(UINT8 inst_id)
 {
     tBTM_BLE_MULTI_ADV_INST *p_inst = &btm_multi_adv_cb.p_adv_inst[inst_id - 1];
 
-    if (TRUE == p_inst->in_use)
-    {
-        if (p_inst->adv_evt != BTM_BLE_CONNECT_DIR_EVT)
+    if (TRUE == p_inst->in_use) {
+        if (p_inst->adv_evt != BTM_BLE_CONNECT_DIR_EVT) {
             btm_ble_enable_multi_adv (TRUE, p_inst->inst_id, 0);
-        else
-          /* mark directed adv as disabled if adv has been stopped */
+        } else
+            /* mark directed adv as disabled if adv has been stopped */
         {
-            (p_inst->p_cback)(BTM_BLE_MULTI_ADV_DISABLE_EVT,p_inst->inst_id,p_inst->p_ref,0);
-             p_inst->in_use = FALSE;
+            (p_inst->p_cback)(BTM_BLE_MULTI_ADV_DISABLE_EVT, p_inst->inst_id, p_inst->p_ref, 0);
+            p_inst->in_use = FALSE;
         }
-     }
+    }
 }
 
 /*******************************************************************************
@@ -516,13 +488,13 @@ void btm_ble_multi_adv_enb_privacy(BOOLEAN enable)
     UINT8 i;
     tBTM_BLE_MULTI_ADV_INST *p_inst = &btm_multi_adv_cb.p_adv_inst[0];
 
-    for (i = 0; i <  BTM_BleMaxMultiAdvInstanceCount() - 1; i ++, p_inst++)
-    {
+    for (i = 0; i <  BTM_BleMaxMultiAdvInstanceCount() - 1; i ++, p_inst++) {
         p_inst->in_use = FALSE;
-        if (enable)
+        if (enable) {
             btm_ble_multi_adv_configure_rpa (p_inst);
-        else
+        } else {
             btu_stop_timer_oneshot(&p_inst->raddr_timer_ent);
+        }
     }
 }
 
@@ -542,7 +514,7 @@ void btm_ble_multi_adv_enb_privacy(BOOLEAN enable)
 **
 *******************************************************************************/
 tBTM_STATUS BTM_BleEnableAdvInstance (tBTM_BLE_ADV_PARAMS *p_params,
-                                      tBTM_BLE_MULTI_ADV_CBACK *p_cback,void *p_ref)
+                                      tBTM_BLE_MULTI_ADV_CBACK *p_cback, void *p_ref)
 {
     UINT8 i;
     tBTM_STATUS rt = BTM_NO_RESOURCES;
@@ -550,45 +522,39 @@ tBTM_STATUS BTM_BleEnableAdvInstance (tBTM_BLE_ADV_PARAMS *p_params,
 
     BTM_TRACE_EVENT("BTM_BleEnableAdvInstance called");
 
-    if (0 == btm_cb.cmn_ble_vsc_cb.adv_inst_max)
-    {
+    if (0 == btm_cb.cmn_ble_vsc_cb.adv_inst_max) {
         BTM_TRACE_ERROR("Controller does not support Multi ADV");
         return BTM_ERR_PROCESSING;
     }
 
-    if (NULL == p_inst)
-    {
+    if (NULL == p_inst) {
         BTM_TRACE_ERROR("Invalid instance in BTM_BleEnableAdvInstance");
         return BTM_ERR_PROCESSING;
     }
 
-    for (i = 0; i <  BTM_BleMaxMultiAdvInstanceCount() - 1; i ++, p_inst++)
-    {
-        if (FALSE == p_inst->in_use)
-        {
+    for (i = 0; i <  BTM_BleMaxMultiAdvInstanceCount() - 1; i ++, p_inst++) {
+        if (FALSE == p_inst->in_use) {
             p_inst->in_use = TRUE;
             /* configure adv parameter */
-            if (p_params)
+            if (p_params) {
                 rt = btm_ble_multi_adv_set_params(p_inst, p_params, 0);
-            else
+            } else {
                 rt = BTM_CMD_STARTED;
+            }
 
             /* enable adv */
             BTM_TRACE_EVENT("btm_ble_enable_multi_adv being called with inst_id:%d",
-                p_inst->inst_id);
+                            p_inst->inst_id);
 
-            if (BTM_CMD_STARTED == rt)
-            {
+            if (BTM_CMD_STARTED == rt) {
                 if ((rt = btm_ble_enable_multi_adv (TRUE, p_inst->inst_id,
-                          BTM_BLE_MULTI_ADV_ENB_EVT)) == BTM_CMD_STARTED)
-                {
+                                                    BTM_BLE_MULTI_ADV_ENB_EVT)) == BTM_CMD_STARTED) {
                     p_inst->p_cback = p_cback;
                     p_inst->p_ref   = p_ref;
                 }
             }
 
-            if (BTM_CMD_STARTED != rt)
-            {
+            if (BTM_CMD_STARTED != rt) {
                 p_inst->in_use = FALSE;
                 BTM_TRACE_ERROR("BTM_BleEnableAdvInstance failed");
             }
@@ -618,26 +584,24 @@ tBTM_STATUS BTM_BleUpdateAdvInstParam (UINT8 inst_id, tBTM_BLE_ADV_PARAMS *p_par
 
     BTM_TRACE_EVENT("BTM_BleUpdateAdvInstParam called with inst_id:%d", inst_id);
 
-    if (0 == btm_cb.cmn_ble_vsc_cb.adv_inst_max)
-    {
+    if (0 == btm_cb.cmn_ble_vsc_cb.adv_inst_max) {
         BTM_TRACE_ERROR("Controller does not support Multi ADV");
         return BTM_ERR_PROCESSING;
     }
 
     if (inst_id <  BTM_BleMaxMultiAdvInstanceCount() &&
-        inst_id != BTM_BLE_MULTI_ADV_DEFAULT_STD &&
-        p_params != NULL)
-    {
-        if (FALSE == p_inst->in_use)
-        {
+            inst_id != BTM_BLE_MULTI_ADV_DEFAULT_STD &&
+            p_params != NULL) {
+        if (FALSE == p_inst->in_use) {
             BTM_TRACE_DEBUG("adv instance %d is not active", inst_id);
             return BTM_WRONG_MODE;
-        }
-        else
+        } else {
             btm_ble_enable_multi_adv(FALSE, inst_id, 0);
+        }
 
-        if (BTM_CMD_STARTED == btm_ble_multi_adv_set_params(p_inst, p_params, 0))
+        if (BTM_CMD_STARTED == btm_ble_multi_adv_set_params(p_inst, p_params, 0)) {
             rt = btm_ble_enable_multi_adv(TRUE, inst_id, BTM_BLE_MULTI_ADV_PARAM_EVT);
+        }
     }
     return rt;
 }
@@ -658,30 +622,30 @@ tBTM_STATUS BTM_BleUpdateAdvInstParam (UINT8 inst_id, tBTM_BLE_ADV_PARAMS *p_par
 **
 *******************************************************************************/
 tBTM_STATUS BTM_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
-                                    tBTM_BLE_AD_MASK data_mask,
-                                    tBTM_BLE_ADV_DATA *p_data)
+                                   tBTM_BLE_AD_MASK data_mask,
+                                   tBTM_BLE_ADV_DATA *p_data)
 {
     UINT8       param[BTM_BLE_MULTI_ADV_WRITE_DATA_LEN], *pp = param;
     UINT8       sub_code = (is_scan_rsp) ?
                            BTM_BLE_MULTI_ADV_WRITE_SCAN_RSP_DATA : BTM_BLE_MULTI_ADV_WRITE_ADV_DATA;
     UINT8       *p_len;
     tBTM_STATUS rt;
-    UINT8 *pp_temp = (UINT8*)(param + BTM_BLE_MULTI_ADV_WRITE_DATA_LEN -1);
+    UINT8 *pp_temp = (UINT8 *)(param + BTM_BLE_MULTI_ADV_WRITE_DATA_LEN - 1);
     tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
 
     BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-    if (0 == cmn_ble_vsc_cb.adv_inst_max)
-    {
+    if (0 == cmn_ble_vsc_cb.adv_inst_max) {
         BTM_TRACE_ERROR("Controller does not support Multi ADV");
         return BTM_ERR_PROCESSING;
     }
 
     btm_ble_update_dmt_flag_bits(&p_data->flag, btm_cb.btm_inq_vars.connectable_mode,
-                                        btm_cb.btm_inq_vars.discoverable_mode);
+                                 btm_cb.btm_inq_vars.discoverable_mode);
 
     BTM_TRACE_EVENT("BTM_BleCfgAdvInstData called with inst_id:%d", inst_id);
-    if (inst_id > BTM_BLE_MULTI_ADV_MAX || inst_id == BTM_BLE_MULTI_ADV_DEFAULT_STD)
+    if (inst_id > BTM_BLE_MULTI_ADV_MAX || inst_id == BTM_BLE_MULTI_ADV_DEFAULT_STD) {
         return BTM_ILLEGAL_VALUE;
+    }
 
     memset(param, 0, BTM_BLE_MULTI_ADV_WRITE_DATA_LEN);
 
@@ -692,11 +656,10 @@ tBTM_STATUS BTM_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
     UINT8_TO_STREAM(pp_temp, inst_id);
 
     if ((rt = BTM_VendorSpecificCommand (HCI_BLE_MULTI_ADV_OCF,
-                                    (UINT8)BTM_BLE_MULTI_ADV_WRITE_DATA_LEN,
-                                    param,
-                                    btm_ble_multi_adv_vsc_cmpl_cback))
-                                     == BTM_CMD_STARTED)
-    {
+                                         (UINT8)BTM_BLE_MULTI_ADV_WRITE_DATA_LEN,
+                                         param,
+                                         btm_ble_multi_adv_vsc_cmpl_cback))
+            == BTM_CMD_STARTED) {
         btm_ble_multi_adv_enq_op_q(sub_code, inst_id, BTM_BLE_MULTI_ADV_DATA_EVT);
     }
     return rt;
@@ -715,30 +678,27 @@ tBTM_STATUS BTM_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
 *******************************************************************************/
 tBTM_STATUS BTM_BleDisableAdvInstance (UINT8 inst_id)
 {
-     tBTM_STATUS rt = BTM_ILLEGAL_VALUE;
-     tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
+    tBTM_STATUS rt = BTM_ILLEGAL_VALUE;
+    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
 
-     BTM_TRACE_EVENT("BTM_BleDisableAdvInstance with inst_id:%d", inst_id);
+    BTM_TRACE_EVENT("BTM_BleDisableAdvInstance with inst_id:%d", inst_id);
 
-     BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
+    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
 
-     if (0 == cmn_ble_vsc_cb.adv_inst_max)
-     {
-         BTM_TRACE_ERROR("Controller does not support Multi ADV");
-         return BTM_ERR_PROCESSING;
-     }
+    if (0 == cmn_ble_vsc_cb.adv_inst_max) {
+        BTM_TRACE_ERROR("Controller does not support Multi ADV");
+        return BTM_ERR_PROCESSING;
+    }
 
-     if (inst_id < BTM_BleMaxMultiAdvInstanceCount() &&
-         inst_id != BTM_BLE_MULTI_ADV_DEFAULT_STD)
-     {
-         if ((rt = btm_ble_enable_multi_adv(FALSE, inst_id, BTM_BLE_MULTI_ADV_DISABLE_EVT))
-            == BTM_CMD_STARTED)
-         {
-            btm_ble_multi_adv_configure_rpa(&btm_multi_adv_cb.p_adv_inst[inst_id-1]);
-            btu_stop_timer_oneshot(&btm_multi_adv_cb.p_adv_inst[inst_id-1].raddr_timer_ent);
-            btm_multi_adv_cb.p_adv_inst[inst_id-1].in_use = FALSE;
-         }
-     }
+    if (inst_id < BTM_BleMaxMultiAdvInstanceCount() &&
+            inst_id != BTM_BLE_MULTI_ADV_DEFAULT_STD) {
+        if ((rt = btm_ble_enable_multi_adv(FALSE, inst_id, BTM_BLE_MULTI_ADV_DISABLE_EVT))
+                == BTM_CMD_STARTED) {
+            btm_ble_multi_adv_configure_rpa(&btm_multi_adv_cb.p_adv_inst[inst_id - 1]);
+            btu_stop_timer_oneshot(&btm_multi_adv_cb.p_adv_inst[inst_id - 1].raddr_timer_ent);
+            btm_multi_adv_cb.p_adv_inst[inst_id - 1].in_use = FALSE;
+        }
+    }
     return rt;
 }
 /*******************************************************************************
@@ -761,35 +721,29 @@ void btm_ble_multi_adv_vse_cback(UINT8 len, UINT8 *p)
     len--;
 
     BTM_TRACE_EVENT("btm_ble_multi_adv_vse_cback called with event:%d", sub_event);
-    if ((sub_event == HCI_VSE_SUBCODE_BLE_MULTI_ADV_ST_CHG) && (len >= 4))
-    {
+    if ((sub_event == HCI_VSE_SUBCODE_BLE_MULTI_ADV_ST_CHG) && (len >= 4)) {
         STREAM_TO_UINT8(adv_inst, p);
         ++p;
         STREAM_TO_UINT16(conn_handle, p);
 
-        if ((idx = btm_handle_to_acl_index(conn_handle)) != MAX_L2CAP_LINKS)
-        {
+        if ((idx = btm_handle_to_acl_index(conn_handle)) != MAX_L2CAP_LINKS) {
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
             if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE &&
-                adv_inst <= BTM_BLE_MULTI_ADV_MAX && adv_inst !=  BTM_BLE_MULTI_ADV_DEFAULT_STD)
-            {
+                    adv_inst <= BTM_BLE_MULTI_ADV_MAX && adv_inst !=  BTM_BLE_MULTI_ADV_DEFAULT_STD) {
                 memcpy(btm_cb.acl_db[idx].conn_addr, btm_multi_adv_cb.p_adv_inst[adv_inst - 1].rpa,
-                                BD_ADDR_LEN);
+                       BD_ADDR_LEN);
             }
 #endif
         }
 
         if (adv_inst < BTM_BleMaxMultiAdvInstanceCount() &&
-            adv_inst !=  BTM_BLE_MULTI_ADV_DEFAULT_STD)
-        {
+                adv_inst !=  BTM_BLE_MULTI_ADV_DEFAULT_STD) {
             BTM_TRACE_EVENT("btm_ble_multi_adv_reenable called");
             btm_ble_multi_adv_reenable(adv_inst);
         }
         /* re-enable connectibility */
-        else if (adv_inst == BTM_BLE_MULTI_ADV_DEFAULT_STD)
-        {
-            if (btm_cb.ble_ctr_cb.inq_var.connectable_mode == BTM_BLE_CONNECTABLE)
-            {
+        else if (adv_inst == BTM_BLE_MULTI_ADV_DEFAULT_STD) {
+            if (btm_cb.ble_ctr_cb.inq_var.connectable_mode == BTM_BLE_CONNECTABLE) {
                 btm_ble_set_connectability ( btm_cb.ble_ctr_cb.inq_var.connectable_mode );
             }
         }
@@ -812,26 +766,25 @@ void btm_ble_multi_adv_init()
 {
     UINT8 i = 0;
     memset(&btm_multi_adv_cb, 0, sizeof(tBTM_BLE_MULTI_ADV_CB));
-    memset (&btm_multi_adv_idx_q,0, sizeof (tBTM_BLE_MULTI_ADV_INST_IDX_Q));
+    memset (&btm_multi_adv_idx_q, 0, sizeof (tBTM_BLE_MULTI_ADV_INST_IDX_Q));
     btm_multi_adv_idx_q.front = -1;
     btm_multi_adv_idx_q.rear = -1;
 
-    if (btm_cb.cmn_ble_vsc_cb.adv_inst_max > 0)
-    {
-        btm_multi_adv_cb.p_adv_inst = GKI_getbuf( sizeof(tBTM_BLE_MULTI_ADV_INST)*
-                                                 (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
-        memset(btm_multi_adv_cb.p_adv_inst, 0, sizeof(tBTM_BLE_MULTI_ADV_INST)*
-                                               (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
+    if (btm_cb.cmn_ble_vsc_cb.adv_inst_max > 0) {
+        btm_multi_adv_cb.p_adv_inst = GKI_getbuf( sizeof(tBTM_BLE_MULTI_ADV_INST) *
+                                      (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
+        memset(btm_multi_adv_cb.p_adv_inst, 0, sizeof(tBTM_BLE_MULTI_ADV_INST) *
+               (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
 
         btm_multi_adv_cb.op_q.p_sub_code = GKI_getbuf( sizeof(UINT8) *
-                                                      (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
+                                           (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
         memset(btm_multi_adv_cb.op_q.p_sub_code, 0,
-               sizeof(UINT8)*(btm_cb.cmn_ble_vsc_cb.adv_inst_max));
+               sizeof(UINT8) * (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
 
         btm_multi_adv_cb.op_q.p_inst_id = GKI_getbuf( sizeof(UINT8) *
                                           (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
         memset(btm_multi_adv_cb.op_q.p_inst_id, 0,
-               sizeof(UINT8)*(btm_cb.cmn_ble_vsc_cb.adv_inst_max));
+               sizeof(UINT8) * (btm_cb.cmn_ble_vsc_cb.adv_inst_max));
     }
 
     /* Initialize adv instance indices and IDs. */
@@ -855,14 +808,17 @@ void btm_ble_multi_adv_init()
 *******************************************************************************/
 void btm_ble_multi_adv_cleanup(void)
 {
-    if (btm_multi_adv_cb.p_adv_inst)
+    if (btm_multi_adv_cb.p_adv_inst) {
         GKI_freebuf(btm_multi_adv_cb.p_adv_inst);
+    }
 
-    if (btm_multi_adv_cb.op_q.p_sub_code)
-         GKI_freebuf(btm_multi_adv_cb.op_q.p_sub_code);
+    if (btm_multi_adv_cb.op_q.p_sub_code) {
+        GKI_freebuf(btm_multi_adv_cb.op_q.p_sub_code);
+    }
 
-    if (btm_multi_adv_cb.op_q.p_inst_id)
+    if (btm_multi_adv_cb.op_q.p_inst_id) {
         GKI_freebuf(btm_multi_adv_cb.op_q.p_inst_id);
+    }
 
 }
 
@@ -877,15 +833,15 @@ void btm_ble_multi_adv_cleanup(void)
 ** Returns          void*
 **
 *******************************************************************************/
-void* btm_ble_multi_adv_get_ref(UINT8 inst_id)
+void *btm_ble_multi_adv_get_ref(UINT8 inst_id)
 {
     tBTM_BLE_MULTI_ADV_INST *p_inst = NULL;
 
-    if (inst_id < BTM_BleMaxMultiAdvInstanceCount())
-    {
+    if (inst_id < BTM_BleMaxMultiAdvInstanceCount()) {
         p_inst = &btm_multi_adv_cb.p_adv_inst[inst_id - 1];
-        if (NULL != p_inst)
+        if (NULL != p_inst) {
             return p_inst->p_ref;
+        }
     }
 
     return NULL;

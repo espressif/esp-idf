@@ -32,7 +32,7 @@
 #define HID_NUM_REPORTS          9
 
 
-#define ATT_SVC_HID 	0x1812
+#define ATT_SVC_HID     0x1812
 
 /// Maximal number of Report Char. that can be added in the DB for one HIDS - Up to 11
 #define HIDD_LE_NB_REPORT_INST_MAX            (5)
@@ -76,8 +76,7 @@
 
 
 /// HID Service Attributes Indexes
-enum
-{
+enum {
     HIDD_LE_IDX_SVC,
 
     // Included Service
@@ -125,8 +124,7 @@ enum
 
 
 /// Attribute Table Indexes
-enum
-{
+enum {
     HIDD_LE_INFO_CHAR,
     HIDD_LE_CTNL_PT_CHAR,
     HIDD_LE_REPORT_MAP_CHAR,
@@ -139,23 +137,21 @@ enum
 };
 
 ///att read event table Indexs
-enum
-{
-	HIDD_LE_READ_INFO_EVT,
-	HIDD_LE_READ_CTNL_PT_EVT,
-	HIDD_LE_READ_REPORT_MAP_EVT,
-	HIDD_LE_READ_REPORT_EVT,
-	HIDD_LE_READ_PROTO_MODE_EVT,
-	HIDD_LE_BOOT_KB_IN_REPORT_EVT,
-	HIDD_LE_BOOT_KB_OUT_REPORT_EVT,
-	HIDD_LE_BOOT_MOUSE_IN_REPORT_EVT,
+enum {
+    HIDD_LE_READ_INFO_EVT,
+    HIDD_LE_READ_CTNL_PT_EVT,
+    HIDD_LE_READ_REPORT_MAP_EVT,
+    HIDD_LE_READ_REPORT_EVT,
+    HIDD_LE_READ_PROTO_MODE_EVT,
+    HIDD_LE_BOOT_KB_IN_REPORT_EVT,
+    HIDD_LE_BOOT_KB_OUT_REPORT_EVT,
+    HIDD_LE_BOOT_MOUSE_IN_REPORT_EVT,
 
-	HID_LE_EVT_MAX
+    HID_LE_EVT_MAX
 };
 
 /// Client Characteristic Configuration Codes
-enum
-{
+enum {
     HIDD_LE_DESC_MASK = 0x10,
 
     HIDD_LE_BOOT_KB_IN_REPORT_CFG     = HIDD_LE_BOOT_KB_IN_REPORT_CHAR | HIDD_LE_DESC_MASK,
@@ -164,8 +160,7 @@ enum
 };
 
 /// Features Flag Values
-enum
-{
+enum {
     HIDD_LE_CFG_KEYBOARD      = 0x01,
     HIDD_LE_CFG_MOUSE         = 0x02,
     HIDD_LE_CFG_PROTO_MODE    = 0x04,
@@ -175,8 +170,7 @@ enum
 };
 
 /// Report Char. Configuration Flag Values
-enum
-{
+enum {
     HIDD_LE_CFG_REPORT_IN     = 0x01,
     HIDD_LE_CFG_REPORT_OUT    = 0x02,
     //HOGPD_CFG_REPORT_FEAT can be used as a mask to check Report type
@@ -192,85 +186,80 @@ enum
  ****************************************************************************************
  */
 
- /// HIDD Features structure
- typedef struct 
- {
-	 /// Service Features
-	 uint8_t svc_features;
-	 /// Number of Report Char. instances to add in the database
-	 uint8_t report_nb;
-	 /// Report Char. Configuration
-	 uint8_t report_char_cfg[HIDD_LE_NB_REPORT_INST_MAX];
- }hidd_feature_t;
+/// HIDD Features structure
+typedef struct {
+    /// Service Features
+    uint8_t svc_features;
+    /// Number of Report Char. instances to add in the database
+    uint8_t report_nb;
+    /// Report Char. Configuration
+    uint8_t report_char_cfg[HIDD_LE_NB_REPORT_INST_MAX];
+} hidd_feature_t;
 
 
- typedef struct
- {
-	 BOOLEAN		 in_use;
-	 BOOLEAN		 congest;
-	 uint16_t 		 conn_id;
-	 BOOLEAN		 connected;
-	 BD_ADDR		 remote_bda;
-	 uint32_t 		 trans_id;
-	 uint8_t		 cur_srvc_id;
- 
- }hidd_clcb_t;
+typedef struct {
+    BOOLEAN         in_use;
+    BOOLEAN         congest;
+    uint16_t        conn_id;
+    BOOLEAN         connected;
+    BD_ADDR         remote_bda;
+    uint32_t        trans_id;
+    uint8_t         cur_srvc_id;
 
- // HID report mapping table
-typedef struct
-{
-  uint16_t    handle;           // Handle of report characteristic
-  uint16_t    cccdHandle;       // Handle of CCCD for report characteristic
-  uint8_t     id;               // Report ID
-  uint8_t     type;             // Report type
-  uint8_t     mode;             // Protocol mode (report or boot)
+} hidd_clcb_t;
+
+// HID report mapping table
+typedef struct {
+    uint16_t    handle;           // Handle of report characteristic
+    uint16_t    cccdHandle;       // Handle of CCCD for report characteristic
+    uint8_t     id;               // Report ID
+    uint8_t     type;             // Report type
+    uint8_t     mode;             // Protocol mode (report or boot)
 } hidRptMap_t;
 
 
- typedef struct
- {
- 	/// hidd profile id
-	uint8_t app_id;
-	 /// Notified handle
+typedef struct {
+    /// hidd profile id
+    uint8_t app_id;
+    /// Notified handle
     uint16_t ntf_handle;
-	///Attribute handle Table
+    ///Attribute handle Table
     uint16_t att_tbl[HIDD_LE_CHAR_MAX];
-	/// Supported Features
-	hidd_feature_t	 hidd_feature[HIDD_LE_NB_HIDS_INST_MAX];
-	/// Current Protocol Mode
+    /// Supported Features
+    hidd_feature_t   hidd_feature[HIDD_LE_NB_HIDS_INST_MAX];
+    /// Current Protocol Mode
     uint8_t proto_mode[HIDD_LE_NB_HIDS_INST_MAX];
     /// Number of HIDS added in the database
     uint8_t hids_nb;
- 	uint8_t pending_evt;
-	uint16_t pending_hal;
- }hidd_inst_t;
+    uint8_t pending_evt;
+    uint16_t pending_hal;
+} hidd_inst_t;
 
 
- /* service engine control block */
- typedef struct
- {
-	 hidd_clcb_t			 hidd_clcb;			 /* connection link*/
-	 esp_gatt_if_t			 gatt_if;
-	 BOOLEAN				 enabled;
-	 BOOLEAN				 is_primery;
-	 hidd_inst_t			 hidd_inst;
-	 uint8_t				 inst_id;
- }hidd_le_env_t;
+/* service engine control block */
+typedef struct {
+    hidd_clcb_t             hidd_clcb;          /* connection link*/
+    esp_gatt_if_t           gatt_if;
+    BOOLEAN                 enabled;
+    BOOLEAN                 is_primery;
+    hidd_inst_t             hidd_inst;
+    uint8_t                 inst_id;
+} hidd_le_env_t;
 
- extern hidd_le_env_t hidd_le_env;
-
-
- void hidd_le_create_service(BOOLEAN is_primary);
-
- void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
-    esp_gatt_status_t status, uint8_t event, tGATTS_DATA *p_rsp);
-
- void hidd_read_attr_value(tGATTS_DATA *p_data, uint32_t trans_id);
-
- 
- tGATT_STATUS hidd_le_init (void);
+extern hidd_le_env_t hidd_le_env;
 
 
-#endif	///HIDD_LE_PROFILE_CFG
- 
+void hidd_le_create_service(BOOLEAN is_primary);
+
+void hidd_rsp (uint32_t trans_id, uint16_t conn_id, uint8_t app_id,
+               esp_gatt_status_t status, uint8_t event, tGATTS_DATA *p_rsp);
+
+void hidd_read_attr_value(tGATTS_DATA *p_data, uint32_t trans_id);
+
+
+tGATT_STATUS hidd_le_init (void);
+
+
+#endif  ///HIDD_LE_PROFILE_CFG
+
 

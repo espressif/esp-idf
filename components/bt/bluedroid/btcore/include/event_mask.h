@@ -24,7 +24,7 @@
 // HCI events the stack wishes to be informed about. See the bluetooth
 // spec for more information on what each bit means.
 typedef struct {
-  uint8_t as_array[8];
+    uint8_t as_array[8];
 } bt_event_mask_t;
 
 #endif /*_EVENT_MASK_H_*/

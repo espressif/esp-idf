@@ -16,11 +16,11 @@
  *
  ******************************************************************************/
 
- /******************************************************************************
-  *
-  *  This file contains simple pairing algorithms using Elliptic Curve Cryptography for private public key
-  *
-  ******************************************************************************/
+/******************************************************************************
+ *
+ *  This file contains simple pairing algorithms using Elliptic Curve Cryptography for private public key
+ *
+ ******************************************************************************/
 
 #pragma once
 

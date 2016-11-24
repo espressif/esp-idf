@@ -25,114 +25,126 @@
 #include "bt_trace.h"
 
 typedef struct fixed_queue_t {
-  
-  list_t *list;
-  osi_sem_t enqueue_sem;
-  osi_sem_t dequeue_sem;
-  pthread_mutex_t lock;
-  size_t capacity;
 
-  fixed_queue_cb dequeue_ready;
-/*
-  reactor_object_t *dequeue_object;
-  fixed_queue_cb dequeue_ready;
-  void *dequeue_context;
-*/
+    list_t *list;
+    osi_sem_t enqueue_sem;
+    osi_sem_t dequeue_sem;
+    pthread_mutex_t lock;
+    size_t capacity;
+
+    fixed_queue_cb dequeue_ready;
+    /*
+      reactor_object_t *dequeue_object;
+      fixed_queue_cb dequeue_ready;
+      void *dequeue_context;
+    */
 } fixed_queue_t;
 
 //static void internal_dequeue_ready(void *context);
 
-fixed_queue_t *fixed_queue_new(size_t capacity) {
-  fixed_queue_t *ret = osi_calloc(sizeof(fixed_queue_t));
-  if (!ret)
-    goto error;
+fixed_queue_t *fixed_queue_new(size_t capacity)
+{
+    fixed_queue_t *ret = osi_calloc(sizeof(fixed_queue_t));
+    if (!ret) {
+        goto error;
+    }
 
-  pthread_mutex_init(&ret->lock, NULL);
-  ret->capacity = capacity;
+    pthread_mutex_init(&ret->lock, NULL);
+    ret->capacity = capacity;
 
-  ret->list = list_new(NULL);
-  if (!ret->list)
-    goto error;
+    ret->list = list_new(NULL);
+    if (!ret->list) {
+        goto error;
+    }
 
 
-  osi_sem_new(&ret->enqueue_sem, capacity, capacity);
-  if (!ret->enqueue_sem)
-    goto error;
+    osi_sem_new(&ret->enqueue_sem, capacity, capacity);
+    if (!ret->enqueue_sem) {
+        goto error;
+    }
 
-  osi_sem_new(&ret->dequeue_sem, capacity, 0);
-  if (!ret->dequeue_sem)
-    goto error;
+    osi_sem_new(&ret->dequeue_sem, capacity, 0);
+    if (!ret->dequeue_sem) {
+        goto error;
+    }
 
-  return ret;
+    return ret;
 
 error:;
-  fixed_queue_free(ret, NULL);
-  return NULL;
+    fixed_queue_free(ret, NULL);
+    return NULL;
 }
 
-void fixed_queue_free(fixed_queue_t *queue, fixed_queue_free_cb free_cb) {
-  const list_node_t *node;
-  if (!queue)
-    return;
+void fixed_queue_free(fixed_queue_t *queue, fixed_queue_free_cb free_cb)
+{
+    const list_node_t *node;
+    if (!queue) {
+        return;
+    }
 
 //  fixed_queue_unregister_dequeue(queue);
 
-  if (free_cb)
-    for (node = list_begin(queue->list); node != list_end(queue->list); node = list_next(node))
-      free_cb(list_node(node));
+    if (free_cb)
+        for (node = list_begin(queue->list); node != list_end(queue->list); node = list_next(node)) {
+            free_cb(list_node(node));
+        }
 
-  list_free(queue->list);
-  osi_sem_free(&queue->enqueue_sem);
-  osi_sem_free(&queue->dequeue_sem);
-  pthread_mutex_destroy(&queue->lock);
-  osi_free(queue);
+    list_free(queue->list);
+    osi_sem_free(&queue->enqueue_sem);
+    osi_sem_free(&queue->dequeue_sem);
+    pthread_mutex_destroy(&queue->lock);
+    osi_free(queue);
 }
 
-bool fixed_queue_is_empty(fixed_queue_t *queue) {
-  bool is_empty = false;
-  assert(queue != NULL);
+bool fixed_queue_is_empty(fixed_queue_t *queue)
+{
+    bool is_empty = false;
+    assert(queue != NULL);
 
-  pthread_mutex_lock(&queue->lock);
-  is_empty = list_is_empty(queue->list);
-  pthread_mutex_unlock(&queue->lock);
+    pthread_mutex_lock(&queue->lock);
+    is_empty = list_is_empty(queue->list);
+    pthread_mutex_unlock(&queue->lock);
 
-  return is_empty;
+    return is_empty;
 }
 
-size_t fixed_queue_capacity(fixed_queue_t *queue) {
-  assert(queue != NULL);
+size_t fixed_queue_capacity(fixed_queue_t *queue)
+{
+    assert(queue != NULL);
 
-  return queue->capacity;
+    return queue->capacity;
 }
 
-void fixed_queue_enqueue(fixed_queue_t *queue, void *data) {
-  assert(queue != NULL);
-  assert(data != NULL);
+void fixed_queue_enqueue(fixed_queue_t *queue, void *data)
+{
+    assert(queue != NULL);
+    assert(data != NULL);
 
-  osi_sem_wait(&queue->enqueue_sem, 0);
-  
-  pthread_mutex_lock(&queue->lock);
+    osi_sem_wait(&queue->enqueue_sem, 0);
 
-  list_append(queue->list, data);
-  pthread_mutex_unlock(&queue->lock);
+    pthread_mutex_lock(&queue->lock);
 
-  osi_sem_signal(&queue->dequeue_sem);
+    list_append(queue->list, data);
+    pthread_mutex_unlock(&queue->lock);
+
+    osi_sem_signal(&queue->dequeue_sem);
 }
 
-void *fixed_queue_dequeue(fixed_queue_t *queue) {
-  void *ret = NULL;
-  assert(queue != NULL);
+void *fixed_queue_dequeue(fixed_queue_t *queue)
+{
+    void *ret = NULL;
+    assert(queue != NULL);
 
-  osi_sem_wait(&queue->dequeue_sem, 0);
+    osi_sem_wait(&queue->dequeue_sem, 0);
 
-  pthread_mutex_lock(&queue->lock);
-  ret = list_front(queue->list);
-  list_remove(queue->list, ret);
-  pthread_mutex_unlock(&queue->lock);
+    pthread_mutex_lock(&queue->lock);
+    ret = list_front(queue->list);
+    list_remove(queue->list, ret);
+    pthread_mutex_unlock(&queue->lock);
 
-  osi_sem_signal(&queue->enqueue_sem);
+    osi_sem_signal(&queue->enqueue_sem);
 
-  return ret;
+    return ret;
 }
 
 /*
@@ -158,25 +170,30 @@ int fixed_queue_get_dequeue_fd(const fixed_queue_t *queue) {
   return semaphore_get_fd(queue->dequeue_sem);
 }
 */
-void fixed_queue_register_dequeue(fixed_queue_t *queue, fixed_queue_cb ready_cb) {
-  assert(queue != NULL);
-  assert(ready_cb != NULL);
+void fixed_queue_register_dequeue(fixed_queue_t *queue, fixed_queue_cb ready_cb)
+{
+    assert(queue != NULL);
+    assert(ready_cb != NULL);
 
-  queue->dequeue_ready = ready_cb;
+    queue->dequeue_ready = ready_cb;
 }
 
-void fixed_queue_unregister_dequeue(fixed_queue_t *queue) {
-  assert(queue != NULL);
+void fixed_queue_unregister_dequeue(fixed_queue_t *queue)
+{
+    assert(queue != NULL);
 
-  queue->dequeue_ready = NULL;
+    queue->dequeue_ready = NULL;
 }
 
-void fixed_queue_process(fixed_queue_t *queue) {
-  if (queue == NULL)
-    return;
+void fixed_queue_process(fixed_queue_t *queue)
+{
+    if (queue == NULL) {
+        return;
+    }
 
-  if (queue->dequeue_ready)
-    queue->dequeue_ready(queue);
+    if (queue->dequeue_ready) {
+        queue->dequeue_ready(queue);
+    }
 }
 /*
 static void internal_dequeue_ready(void *context) {

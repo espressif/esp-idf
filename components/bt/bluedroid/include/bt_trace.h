@@ -25,31 +25,34 @@
 #include "rom/ets_sys.h"
 
 #ifdef CONFIG_BT_USE_ETS_PRINT
-#define BT_PRINTF	ets_printf
+#define BT_PRINTF   ets_printf
 #else
-#define BT_PRINTF	printf
+#define BT_PRINTF   printf
 #endif
 
 #ifndef assert
-#define assert(x)	do { if (!(x)) BT_PRINTF("bt host error %s %u\n", __FILE__, __LINE__); } while (0)
+#define assert(x)   do { if (!(x)) BT_PRINTF("bt host error %s %u\n", __FILE__, __LINE__); } while (0)
 #endif
 
 inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
 {
-  uint16_t i;
+    uint16_t i;
 
-  if (!data || !len)
-    return;
+    if (!data || !len) {
+        return;
+    }
 
-  if (prefix)
-    BT_PRINTF("%s:\t", prefix);
+    if (prefix) {
+        BT_PRINTF("%s:\t", prefix);
+    }
 
-  for (i = 0; i < len; i++) {
-    BT_PRINTF(" %02x", *(data + i));
-    if (!((i + 1) & 0xf))
-      BT_PRINTF("\n");
-  }
-  BT_PRINTF("\n");
+    for (i = 0; i < len; i++) {
+        BT_PRINTF(" %02x", *(data + i));
+        if (!((i + 1) & 0xf)) {
+            BT_PRINTF("\n");
+        }
+    }
+    BT_PRINTF("\n");
 }
 
 #ifdef BTTRC_DUMP_BUFFER
@@ -262,187 +265,187 @@ inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
 // btla-specific --
 
 /* Define common tracing for all */
-#define LOG_LEVEL_ERROR		1
-#define LOG_LEVEL_WARN		2
-#define LOG_LEVEL_INFO		3
-#define LOG_LEVEL_DEBUG		4
-#define LOG_LEVEL_VERBOSE	5
+#define LOG_LEVEL_ERROR     1
+#define LOG_LEVEL_WARN      2
+#define LOG_LEVEL_INFO      3
+#define LOG_LEVEL_DEBUG     4
+#define LOG_LEVEL_VERBOSE   5
 #ifndef LOG_LEVEL
-#define LOG_LEVEL	LOG_LEVEL_INFO
+#define LOG_LEVEL   LOG_LEVEL_INFO
 #endif
-#define LOG_ERROR(fmt, args...)			do {if (LOG_LEVEL >= LOG_LEVEL_ERROR) printf(fmt,## args);} while(0)
-#define LOG_WARN(fmt, args...)			do {if (LOG_LEVEL >= LOG_LEVEL_WARN) BT_PRINTF(fmt,## args);} while(0)
-#define LOG_INFO(fmt, args...)			do {if (LOG_LEVEL >= LOG_LEVEL_INFO) BT_PRINTF(fmt,## args);} while(0)
-#define LOG_DEBUG(fmt, args...)			do {if (LOG_LEVEL >= LOG_LEVEL_DEBUG) BT_PRINTF(fmt,## args);} while(0)
-#define LOG_VERBOSE(fmt, args...)		do {if (LOG_LEVEL >= LOG_LEVEL_VERBOSE) BT_PRINTF(fmt,## args);} while(0)
+#define LOG_ERROR(fmt, args...)         do {if (LOG_LEVEL >= LOG_LEVEL_ERROR) printf(fmt,## args);} while(0)
+#define LOG_WARN(fmt, args...)          do {if (LOG_LEVEL >= LOG_LEVEL_WARN) BT_PRINTF(fmt,## args);} while(0)
+#define LOG_INFO(fmt, args...)          do {if (LOG_LEVEL >= LOG_LEVEL_INFO) BT_PRINTF(fmt,## args);} while(0)
+#define LOG_DEBUG(fmt, args...)         do {if (LOG_LEVEL >= LOG_LEVEL_DEBUG) BT_PRINTF(fmt,## args);} while(0)
+#define LOG_VERBOSE(fmt, args...)       do {if (LOG_LEVEL >= LOG_LEVEL_VERBOSE) BT_PRINTF(fmt,## args);} while(0)
 
 /* Define tracing for the HCI unit
 */
-#define HCI_TRACE_ERROR(fmt, args...)		{if (btu_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt,## args);}
-#define HCI_TRACE_WARNING(fmt, args...)		{if (btu_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt,## args);}
-#define HCI_TRACE_EVENT(fmt, args...)		{if (btu_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt,## args);}
-#define HCI_TRACE_DEBUG(fmt, args...)		{if (btu_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt,## args);}
+#define HCI_TRACE_ERROR(fmt, args...)       {if (btu_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt,## args);}
+#define HCI_TRACE_WARNING(fmt, args...)     {if (btu_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt,## args);}
+#define HCI_TRACE_EVENT(fmt, args...)       {if (btu_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt,## args);}
+#define HCI_TRACE_DEBUG(fmt, args...)       {if (btu_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt,## args);}
 
 /* Define tracing for BTM
 */
-#define BTM_TRACE_ERROR(fmt, args...)		{if (btm_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define BTM_TRACE_WARNING(fmt, args...)		{if (btm_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define BTM_TRACE_API(fmt, args...)		{if (btm_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define BTM_TRACE_EVENT(fmt, args...)		{if (btm_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define BTM_TRACE_DEBUG(fmt, args...)		{if (btm_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define BTM_TRACE_ERROR(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define BTM_TRACE_WARNING(fmt, args...)     {if (btm_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define BTM_TRACE_API(fmt, args...)     {if (btm_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define BTM_TRACE_EVENT(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define BTM_TRACE_DEBUG(fmt, args...)       {if (btm_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
 
 /* Define tracing for the L2CAP unit
 */
-#define L2CAP_TRACE_ERROR(fmt, args...)		{if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define L2CAP_TRACE_WARNING(fmt, args...)	{if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define L2CAP_TRACE_API(fmt, args...)		{if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define L2CAP_TRACE_EVENT(fmt, args...)		{if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define L2CAP_TRACE_DEBUG(fmt, args...)		{if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define L2CAP_TRACE_ERROR(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define L2CAP_TRACE_WARNING(fmt, args...)   {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define L2CAP_TRACE_API(fmt, args...)       {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define L2CAP_TRACE_EVENT(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define L2CAP_TRACE_DEBUG(fmt, args...)     {if (l2cb.l2cap_trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
 
 /* Define tracing for the SDP unit
 */
-#define SDP_TRACE_ERROR(fmt, args...)		{if (sdp_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define SDP_TRACE_WARNING(fmt, args...)		{if (sdp_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define SDP_TRACE_API(fmt, args...)		{if (sdp_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define SDP_TRACE_EVENT(fmt, args...)		{if (sdp_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define SDP_TRACE_DEBUG(fmt, args...)		{if (sdp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define SDP_TRACE_ERROR(fmt, args...)       {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define SDP_TRACE_WARNING(fmt, args...)     {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define SDP_TRACE_API(fmt, args...)     {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define SDP_TRACE_EVENT(fmt, args...)       {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define SDP_TRACE_DEBUG(fmt, args...)       {if (sdp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
 
 /* Define tracing for the RFCOMM unit
 */
-#define RFCOMM_TRACE_ERROR(fmt, args...)	{if (rfc_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define RFCOMM_TRACE_WARNING(fmt, args...)	{if (rfc_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define RFCOMM_TRACE_API(fmt, args...)		{if (rfc_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define RFCOMM_TRACE_EVENT(fmt, args...)	{if (rfc_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define RFCOMM_TRACE_DEBUG(fmt, args...)	{if (rfc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define RFCOMM_TRACE_ERROR(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define RFCOMM_TRACE_WARNING(fmt, args...)  {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define RFCOMM_TRACE_API(fmt, args...)      {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define RFCOMM_TRACE_EVENT(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define RFCOMM_TRACE_DEBUG(fmt, args...)    {if (rfc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
 
 /* Generic Access Profile traces */
-#define GAP_TRACE_ERROR(fmt, args...)		{if (gap_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define GAP_TRACE_EVENT(fmt, args...)		{if (gap_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define GAP_TRACE_API(fmt, args...)		{if (gap_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define GAP_TRACE_WARNING(fmt, args...)		{if (gap_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define GAP_TRACE_ERROR(fmt, args...)       {if (gap_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define GAP_TRACE_EVENT(fmt, args...)       {if (gap_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define GAP_TRACE_API(fmt, args...)     {if (gap_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define GAP_TRACE_WARNING(fmt, args...)     {if (gap_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
 
 /* define traces for HID Host */
-#define HIDH_TRACE_ERROR(fmt, args...)		{if (hh_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define HIDH_TRACE_WARNING(fmt, args...)	{if (hh_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define HIDH_TRACE_API(fmt, args...)		{if (hh_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define HIDH_TRACE_EVENT(fmt, args...)		{if (hh_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define HIDH_TRACE_DEBUG(fmt, args...)		{if (hh_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define HIDH_TRACE_ERROR(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define HIDH_TRACE_WARNING(fmt, args...)    {if (hh_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define HIDH_TRACE_API(fmt, args...)        {if (hh_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define HIDH_TRACE_EVENT(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define HIDH_TRACE_DEBUG(fmt, args...)      {if (hh_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
 
 /* define traces for BNEP */
 
-#define BNEP_TRACE_ERROR(fmt, args...)		{if (bnep_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define BNEP_TRACE_WARNING(fmt, args...)	{if (bnep_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define BNEP_TRACE_API(fmt, args...)		{if (bnep_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define BNEP_TRACE_EVENT(fmt, args...)		{if (bnep_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define BNEP_TRACE_DEBUG(fmt, args...)		{if (bnep_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define BNEP_TRACE_ERROR(fmt, args...)      {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define BNEP_TRACE_WARNING(fmt, args...)    {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define BNEP_TRACE_API(fmt, args...)        {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define BNEP_TRACE_EVENT(fmt, args...)      {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define BNEP_TRACE_DEBUG(fmt, args...)      {if (bnep_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
 
 /* define traces for PAN */
 
-#define PAN_TRACE_ERROR(fmt, args...)		{if (pan_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define PAN_TRACE_WARNING(fmt, args...)		{if (pan_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define PAN_TRACE_API(fmt, args...)		{if (pan_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define PAN_TRACE_EVENT(fmt, args...)		{if (pan_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define PAN_TRACE_DEBUG(fmt, args...)		{if (pan_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define PAN_TRACE_ERROR(fmt, args...)       {if (pan_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define PAN_TRACE_WARNING(fmt, args...)     {if (pan_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define PAN_TRACE_API(fmt, args...)     {if (pan_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define PAN_TRACE_EVENT(fmt, args...)       {if (pan_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define PAN_TRACE_DEBUG(fmt, args...)       {if (pan_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
 
 /* Define tracing for the A2DP profile
 */
-#define A2D_TRACE_ERROR(fmt, args...)		{if (a2d_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define A2D_TRACE_WARNING(fmt, args...)		{if (a2d_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define A2D_TRACE_EVENT(fmt, args...)		{if (a2d_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define A2D_TRACE_DEBUG(fmt, args...)		{if (a2d_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define A2D_TRACE_API(fmt, args...)		{if (a2d_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define A2D_TRACE_ERROR(fmt, args...)       {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define A2D_TRACE_WARNING(fmt, args...)     {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define A2D_TRACE_EVENT(fmt, args...)       {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define A2D_TRACE_DEBUG(fmt, args...)       {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define A2D_TRACE_API(fmt, args...)     {if (a2d_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
 
 /* AVDTP
 */
-#define AVDT_TRACE_ERROR(fmt, args...)		{if (avdt_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define AVDT_TRACE_WARNING(fmt, args...)	{if (avdt_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define AVDT_TRACE_EVENT(fmt, args...)		{if (avdt_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define AVDT_TRACE_DEBUG(fmt, args...)		{if (avdt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define AVDT_TRACE_API(fmt, args...)		{if (avdt_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define AVDT_TRACE_ERROR(fmt, args...)      {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define AVDT_TRACE_WARNING(fmt, args...)    {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define AVDT_TRACE_EVENT(fmt, args...)      {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define AVDT_TRACE_DEBUG(fmt, args...)      {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define AVDT_TRACE_API(fmt, args...)        {if (avdt_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
 
 /* Define tracing for the AVCTP protocol
 */
-#define AVCT_TRACE_ERROR(fmt, args...)		{if (avct_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define AVCT_TRACE_WARNING(fmt, args...)	{if (avct_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define AVCT_TRACE_EVENT(fmt, args...)		{if (avct_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define AVCT_TRACE_DEBUG(fmt, args...)		{if (avct_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define AVCT_TRACE_API(fmt, args...)		{if (avct_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define AVCT_TRACE_ERROR(fmt, args...)      {if (avct_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define AVCT_TRACE_WARNING(fmt, args...)    {if (avct_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define AVCT_TRACE_EVENT(fmt, args...)      {if (avct_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define AVCT_TRACE_DEBUG(fmt, args...)      {if (avct_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define AVCT_TRACE_API(fmt, args...)        {if (avct_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
 
 /* Define tracing for the AVRCP profile
 */
-#define AVRC_TRACE_ERROR(fmt, args...)		{if (avrc_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define AVRC_TRACE_WARNING(fmt, args...)	{if (avrc_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define AVRC_TRACE_EVENT(fmt, args...)		{if (avrc_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define AVRC_TRACE_DEBUG(fmt, args...)		{if (avrc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define AVRC_TRACE_API(fmt, args...)		{if (avrc_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define AVRC_TRACE_ERROR(fmt, args...)      {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define AVRC_TRACE_WARNING(fmt, args...)    {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define AVRC_TRACE_EVENT(fmt, args...)      {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define AVRC_TRACE_DEBUG(fmt, args...)      {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define AVRC_TRACE_API(fmt, args...)        {if (avrc_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
 
 /* MCAP
 */
-#define MCA_TRACE_ERROR(fmt, args...)		{if (mca_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define MCA_TRACE_WARNING(fmt, args...)		{if (mca_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define MCA_TRACE_EVENT(fmt, args...)		{if (mca_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define MCA_TRACE_DEBUG(fmt, args...)		{if (mca_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define MCA_TRACE_API(fmt, args...)		{if (mca_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define MCA_TRACE_ERROR(fmt, args...)       {if (mca_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define MCA_TRACE_WARNING(fmt, args...)     {if (mca_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define MCA_TRACE_EVENT(fmt, args...)       {if (mca_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define MCA_TRACE_DEBUG(fmt, args...)       {if (mca_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define MCA_TRACE_API(fmt, args...)     {if (mca_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
 
 /* Define tracing for the ATT/GATT unit
 */
-#define GATT_TRACE_ERROR(fmt, args...)		{if (gatt_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define GATT_TRACE_WARNING(fmt, args...)	{if (gatt_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define GATT_TRACE_API(fmt, args...)		{if (gatt_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define GATT_TRACE_EVENT(fmt, args...)		{if (gatt_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define GATT_TRACE_DEBUG(fmt, args...)		{if (gatt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define GATT_TRACE_ERROR(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define GATT_TRACE_WARNING(fmt, args...)    {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define GATT_TRACE_API(fmt, args...)        {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define GATT_TRACE_EVENT(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define GATT_TRACE_DEBUG(fmt, args...)      {if (gatt_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
 
 /* Define tracing for the SMP unit
 */
-#define SMP_TRACE_ERROR(fmt, args...)		{if (smp_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define SMP_TRACE_WARNING(fmt, args...)		{if (smp_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define SMP_TRACE_API(fmt, args...)		{if (smp_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define SMP_TRACE_EVENT(fmt, args...)		{if (smp_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define SMP_TRACE_DEBUG(fmt, args...)		{if (smp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define SMP_TRACE_ERROR(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define SMP_TRACE_WARNING(fmt, args...)     {if (smp_cb.trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define SMP_TRACE_API(fmt, args...)     {if (smp_cb.trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define SMP_TRACE_EVENT(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define SMP_TRACE_DEBUG(fmt, args...)       {if (smp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
 
 extern UINT8 btif_trace_level;
 
 // define traces for application
-#define BTIF_TRACE_ERROR(fmt, args...)		{if (btif_trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_WARNING(fmt, args...)	{if (btif_trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_API(fmt, args...)		{if (btif_trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_EVENT(fmt, args...)		{if (btif_trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_DEBUG(fmt, args...)		{if (btif_trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define BTIF_TRACE_VERBOSE(fmt, args...)	{if (btif_trace_level >= BT_TRACE_LEVEL_VERBOSE)BT_PRINTF(fmt, ## args);}
+#define BTIF_TRACE_ERROR(fmt, args...)      {if (btif_trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define BTIF_TRACE_WARNING(fmt, args...)    {if (btif_trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define BTIF_TRACE_API(fmt, args...)        {if (btif_trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define BTIF_TRACE_EVENT(fmt, args...)      {if (btif_trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define BTIF_TRACE_DEBUG(fmt, args...)      {if (btif_trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define BTIF_TRACE_VERBOSE(fmt, args...)    {if (btif_trace_level >= BT_TRACE_LEVEL_VERBOSE)BT_PRINTF(fmt, ## args);}
 
 /* define traces for application */
 
-#define APPL_TRACE_ERROR(fmt, args...)		{if (appl_trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_WARNING(fmt, args...)	{if (appl_trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_API(fmt, args...)		{if (appl_trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_EVENT(fmt, args...)		{if (appl_trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_DEBUG(fmt, args...)		{if (appl_trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
-#define APPL_TRACE_VERBOSE(fmt, args...)	{if (appl_trace_level >= BT_TRACE_LEVEL_VERBOSE) BT_PRINTF(fmt, ## args);}
+#define APPL_TRACE_ERROR(fmt, args...)      {if (appl_trace_level >= BT_TRACE_LEVEL_ERROR) BT_PRINTF(fmt, ## args);}
+#define APPL_TRACE_WARNING(fmt, args...)    {if (appl_trace_level >= BT_TRACE_LEVEL_WARNING) BT_PRINTF(fmt, ## args);}
+#define APPL_TRACE_API(fmt, args...)        {if (appl_trace_level >= BT_TRACE_LEVEL_API) BT_PRINTF(fmt, ## args);}
+#define APPL_TRACE_EVENT(fmt, args...)      {if (appl_trace_level >= BT_TRACE_LEVEL_EVENT) BT_PRINTF(fmt, ## args);}
+#define APPL_TRACE_DEBUG(fmt, args...)      {if (appl_trace_level >= BT_TRACE_LEVEL_DEBUG) BT_PRINTF(fmt, ## args);}
+#define APPL_TRACE_VERBOSE(fmt, args...)    {if (appl_trace_level >= BT_TRACE_LEVEL_VERBOSE) BT_PRINTF(fmt, ## args);}
 
 /* Simplified Trace Helper Macro
 */
 #define bdld(fmt, args...) \
     do{\
         if((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_DEBUG) \
-		BT_PRINTF(fmt, ## args);		\
+        BT_PRINTF(fmt, ## args);        \
     }while(0)
 
 #define bdlw(fmt, args...) \
     do{\
         if((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_DEBUG) \
-		BT_PRINTF(fmt, ## args);		\
+        BT_PRINTF(fmt, ## args);        \
     }while(0)
 
 #define bdle(fmt, args...) \
     do{\
         if((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_DEBUG) \
-		BT_PRINTF(fmt, ## args);		\
+        BT_PRINTF(fmt, ## args);        \
     }while(0)
 
 #define bdla(assert_if) \
     do{\
         if(((MY_LOG_LEVEL) >= BT_TRACE_LEVEL_ERROR) && !(assert_if)) \
-		BT_PRINTF("%s: assert failed\n", #assert_if);		\
+        BT_PRINTF("%s: assert failed\n", #assert_if);       \
     }while(0)
 
 typedef UINT8 tBTTRC_PARAM_TYPE;

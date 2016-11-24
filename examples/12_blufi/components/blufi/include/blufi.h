@@ -21,9 +21,9 @@
 #include "esp_err.h"
 
 enum BLUFI_SIG {
-	BLUFI_SIG_SWITCH_CONTEXT = 0,
-	BLUFI_SIG_ENABLE,
-	BLUFI_SIG_DISABLE,
+    BLUFI_SIG_SWITCH_CONTEXT = 0,
+    BLUFI_SIG_ENABLE,
+    BLUFI_SIG_DISABLE,
 };
 
 typedef esp_err_t (*blufi_task_cb_t)(void *arg);

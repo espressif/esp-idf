@@ -51,8 +51,7 @@
 /*
 ** Define Port Data Transfere control block
 */
-typedef struct
-{
+typedef struct {
     BUFFER_Q queue;         /* Queue of buffers waiting to be sent */
     BOOLEAN  peer_fc;       /* TRUE if flow control is set based on peer's request */
     BOOLEAN  user_fc;       /* TRUE if flow control is set based on user's request  */
@@ -63,8 +62,7 @@ typedef struct
 /*
 ** Port control structure used to pass modem info
 */
-typedef struct
-{
+typedef struct {
 #define MODEM_SIGNAL_DTRDSR        0x01
 #define MODEM_SIGNAL_RTSCTS        0x02
 #define MODEM_SIGNAL_RI            0x04
@@ -88,12 +86,11 @@ typedef struct
 /*
 ** RFCOMM multiplexer Control Block
 */
-typedef struct
-{
+typedef struct {
     TIMER_LIST_ENT tle;       /* Timer list entry */
     BUFFER_Q  cmd_q;          /* Queue for command messages on this mux */
     UINT8     port_inx[RFCOMM_MAX_DLCI + 1];  /* Array for quick access to  */
-                                              /* tPORT based on dlci        */
+    /* tPORT based on dlci        */
     BD_ADDR   bd_addr;        /* BD ADDR of the peer if initiator */
     UINT16    lcid;           /* Local cid used for this channel */
     UINT16    peer_l2cap_mtu; /* Max frame that can be sent to peer L2CAP */
@@ -114,8 +111,7 @@ typedef struct
 /*
 ** RFCOMM Port Connection Control Block
 */
-struct t_rfc_port
-{
+struct t_rfc_port {
 #define RFC_PORT_STATE_IDLE          0
 #define RFC_PORT_STATE_WAIT_START    1
 #define RFC_PORT_STATE_OPENING       2
@@ -142,8 +138,7 @@ typedef struct t_rfc_port tRFC_PORT;
 /*
 ** Define control block containing information about PORT connection
 */
-struct t_port_info
-{
+struct t_port_info {
     UINT8   inx;            /* Index of this control block in the port_info array */
     BOOLEAN in_use;         /* True when structure is allocated */
 
@@ -197,12 +192,12 @@ struct t_port_info
     tPORT_DATA_CO_CALLBACK *p_data_co_callback;   /* Callback function with callouts and flowctrl */
     UINT16      credit_tx;                  /* Flow control credits for tx path */
     UINT16      credit_rx;                  /* Flow control credits for rx path, this is */
-                                            /* number of buffers peer is allowed to sent */
+    /* number of buffers peer is allowed to sent */
     UINT16      credit_rx_max;              /* Max number of credits we will allow this guy to sent */
     UINT16      credit_rx_low;              /* Number of credits when we send credit update */
     UINT16      rx_buf_critical;            /* port receive queue critical watermark level */
     BOOLEAN     keep_port_handle;           /* TRUE if port is not deallocated when closing */
-                                            /* it is set to TRUE for server when allocating port */
+    /* it is set to TRUE for server when allocating port */
     UINT16      keep_mtu;                   /* Max MTU that port can receive by server */
 };
 typedef struct t_port_info tPORT;
@@ -210,8 +205,7 @@ typedef struct t_port_info tPORT;
 
 /* Define the PORT/RFCOMM control structure
 */
-typedef struct
-{
+typedef struct {
     tPORT        port[MAX_RFC_PORTS];            /* Port info pool */
     tRFC_MCB     rfc_mcb[MAX_BD_CONNECTIONS];    /* RFCOMM bd_connections pool */
 } tPORT_CB;

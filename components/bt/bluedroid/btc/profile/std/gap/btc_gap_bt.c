@@ -21,7 +21,7 @@ esp_err_t esp_bt_gap_set_scan_mode(bt_scan_mode_t mode)
     tBTA_DM_DISC disc_mode;
     tBTA_DM_CONN conn_mode;
 
-    switch(mode) {
+    switch (mode) {
     case BT_SCAN_MODE_NONE:
         disc_mode = BTA_DM_NON_DISC;
         conn_mode = BTA_DM_NON_CONN;
@@ -44,6 +44,6 @@ esp_err_t esp_bt_gap_set_scan_mode(bt_scan_mode_t mode)
 
     // BTIF_TRACE_EVENT("set property scan mode : %x", mode);
     BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
-    
+
     return ESP_OK;
 }

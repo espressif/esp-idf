@@ -47,20 +47,19 @@ typedef struct {
     esp_bt_uuid_t uuid;
     int record_count;
     bt_sdp_record_t records[BT_SDP_MAX_RECORDS];
-} bt_sdp_search_comp_t; 
+} bt_sdp_search_comp_t;
 
 /* tBTA_SDP, bta_sdp_api.h */
-typedef union
-{
+typedef union {
     bt_sdp_status_t status;
     bt_sdp_search_comp_t sdp_search_comp;
 } bt_sdp_t;
 
-typedef void (bt_sdp_cb_t)(bt_sdp_evt_t event, bt_sdp_t *p_data, void * user_data);
+typedef void (bt_sdp_cb_t)(bt_sdp_evt_t event, bt_sdp_t *p_data, void *user_data);
 
 esp_err_t esp_bt_sdp_enable(bt_sdp_cb_t *cback);
 
-esp_err_t esp_bt_sdp_search(esp_bd_addr_t bd_addr, esp_bt_uuid_t* uuid);
+esp_err_t esp_bt_sdp_search(esp_bd_addr_t bd_addr, esp_bt_uuid_t *uuid);
 
 esp_err_t esp_bt_sdp_create_record_by_user(void *user_data);
 
@@ -83,8 +82,7 @@ typedef struct {
 } sdp_proto_elem_t; // tSDP_PROTOCOL_ELEM, sdp_api.h
 
 #define ESP_BT_SDP_MAX_LIST_ELEMS               SDP_MAX_LIST_ELEMS // sdp_api.h
-typedef struct
-{
+typedef struct {
     uint16_t              num_elems;
     sdp_proto_elem_t      list_elem[ESP_BT_SDP_MAX_LIST_ELEMS];
 } sdp_proto_list_elem_t; // tSDP_PROTO_LIST_ELEM, sdp_api.h
@@ -112,19 +110,19 @@ bool esp_bt_sdp_add_protocol_list (uint32_t handle, uint16_t num_elem,
                                    sdp_proto_elem_t *p_elem_list);
 
 bool esp_bt_sdp_add_addition_protocol_lists(uint32_t handle, uint16_t num_elem,
-                                            sdp_proto_list_elem_t *p_proto_list);
+        sdp_proto_list_elem_t *p_proto_list);
 
 bool esp_bt_sdp_add_profile_dscp_list (uint32_t handle,
                                        uint16_t profile_uuid,
                                        uint16_t version);
 
 bool esp_bt_sdp_add_lang_base_attr_id_list(uint32_t handle,
-                                           uint16_t lang, uint16_t char_enc,
-                                           uint16_t base_id);
+        uint16_t lang, uint16_t char_enc,
+        uint16_t base_id);
 
 bool esp_bt_sdp_add_service_class_id_list(uint32_t handle,
-                                          uint16_t num_services,
-                                          uint16_t *p_service_uuids);
+        uint16_t num_services,
+        uint16_t *p_service_uuids);
 
 bool esp_bt_sdp_delete_attribute(uint32_t handle, uint16_t attr_id);
 

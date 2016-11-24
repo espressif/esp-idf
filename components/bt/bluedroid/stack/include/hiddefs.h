@@ -29,29 +29,28 @@
 /*
 ** tHID_STATUS: HID result codes, returned by HID and device and host functions.
 */
-enum
-{
-   HID_SUCCESS,
-   HID_ERR_NOT_REGISTERED,
-   HID_ERR_ALREADY_REGISTERED,
-   HID_ERR_NO_RESOURCES,
-   HID_ERR_NO_CONNECTION,
-   HID_ERR_INVALID_PARAM,
-   HID_ERR_UNSUPPORTED,
-   HID_ERR_UNKNOWN_COMMAND,
-   HID_ERR_CONGESTED,
-   HID_ERR_CONN_IN_PROCESS,
-   HID_ERR_ALREADY_CONN,
-   HID_ERR_DISCONNECTING,
-   HID_ERR_SET_CONNABLE_FAIL,
-   /* Device specific error codes */
-   HID_ERR_HOST_UNKNOWN,
-   HID_ERR_L2CAP_FAILED,
-   HID_ERR_AUTH_FAILED,
-   HID_ERR_SDP_BUSY,
-   HID_ERR_GATT,
+enum {
+    HID_SUCCESS,
+    HID_ERR_NOT_REGISTERED,
+    HID_ERR_ALREADY_REGISTERED,
+    HID_ERR_NO_RESOURCES,
+    HID_ERR_NO_CONNECTION,
+    HID_ERR_INVALID_PARAM,
+    HID_ERR_UNSUPPORTED,
+    HID_ERR_UNKNOWN_COMMAND,
+    HID_ERR_CONGESTED,
+    HID_ERR_CONN_IN_PROCESS,
+    HID_ERR_ALREADY_CONN,
+    HID_ERR_DISCONNECTING,
+    HID_ERR_SET_CONNABLE_FAIL,
+    /* Device specific error codes */
+    HID_ERR_HOST_UNKNOWN,
+    HID_ERR_L2CAP_FAILED,
+    HID_ERR_AUTH_FAILED,
+    HID_ERR_SDP_BUSY,
+    HID_ERR_GATT,
 
-   HID_ERR_INVALID = 0xFF
+    HID_ERR_INVALID = 0xFF
 };
 
 typedef UINT8 tHID_STATUS;
@@ -129,16 +128,14 @@ typedef UINT8 tHID_STATUS;
 #define HID_SDP_DESCRIPTOR_REPORT                   (0x22)
 #define HID_SDP_DESCRIPTOR_PHYSICAL                 (0x23)
 
-typedef struct desc_info
-{
+typedef struct desc_info {
     UINT16 dl_len;
     UINT8 *dsc_list;
 } tHID_DEV_DSCP_INFO;
 
 #define HID_SSR_PARAM_INVALID    0xffff
 
-typedef struct sdp_info
-{
+typedef struct sdp_info {
     char svc_name[HID_MAX_SVC_NAME_LEN];   /*Service Name */
     char svc_descr[HID_MAX_SVC_DESCR_LEN]; /*Service Description*/
     char prov_name[HID_MAX_PROV_NAME_LEN]; /*Provider Name.*/

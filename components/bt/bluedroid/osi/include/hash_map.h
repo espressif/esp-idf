@@ -26,9 +26,9 @@ struct hash_map_t;
 typedef struct hash_map_t hash_map_t;
 
 typedef struct hash_map_entry_t {
-  const void *key;
-  void *data;
-  const hash_map_t *hash_map;
+    const void *key;
+    void *data;
+    const hash_map_t *hash_map;
 } hash_map_entry_t;
 
 typedef size_t hash_index_t;

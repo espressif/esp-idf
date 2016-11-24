@@ -48,8 +48,7 @@ BT_HDR *attp_build_mtu_cmd(UINT8 op_code, UINT16 rx_mtu)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + GATT_HDR_SIZE + L2CAP_MIN_OFFSET)) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + GATT_HDR_SIZE + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         UINT8_TO_STREAM (p, op_code);
@@ -74,8 +73,7 @@ BT_HDR *attp_build_exec_write_cmd (UINT8 op_code, UINT8 flag)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf(GATT_BUF_POOL_ID)) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getpoolbuf(GATT_BUF_POOL_ID)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -83,8 +81,7 @@ BT_HDR *attp_build_exec_write_cmd (UINT8 op_code, UINT8 flag)
 
         UINT8_TO_STREAM (p, op_code);
 
-        if (op_code == GATT_REQ_EXEC_WRITE)
-        {
+        if (op_code == GATT_REQ_EXEC_WRITE) {
             flag &= GATT_PREP_WRITE_EXEC;
             UINT8_TO_STREAM (p, flag);
             p_buf->len += 1;
@@ -109,8 +106,7 @@ BT_HDR *attp_build_err_cmd(UINT8 cmd_code, UINT16 err_handle, UINT8 reason)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + 5)) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + 5)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         UINT8_TO_STREAM (p, GATT_RSP_ERROR);
@@ -138,8 +134,7 @@ BT_HDR *attp_build_browse_cmd(UINT8 op_code, UINT16 s_hdl, UINT16 e_hdl, tBT_UUI
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + 8 + L2CAP_MIN_OFFSET)) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + 8 + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
         /* Describe the built message location and size */
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -168,8 +163,7 @@ BT_HDR *attp_build_read_by_type_value_cmd (UINT16 payload_size, tGATT_FIND_TYPE_
     UINT8       *p;
     UINT16      len = p_value_type->value_len;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -181,8 +175,9 @@ BT_HDR *attp_build_read_by_type_value_cmd (UINT16 payload_size, tGATT_FIND_TYPE_
 
         p_buf->len += gatt_build_uuid_to_stream(&p, p_value_type->uuid);
 
-        if (p_value_type->value_len +  p_buf->len > payload_size )
+        if (p_value_type->value_len +  p_buf->len > payload_size ) {
             len = payload_size - p_buf->len;
+        }
 
         memcpy (p, p_value_type->value, len);
         p_buf->len += len;
@@ -204,8 +199,7 @@ BT_HDR *attp_build_read_multi_cmd(UINT16 payload_size, UINT16 num_handle, UINT16
     BT_HDR      *p_buf = NULL;
     UINT8       *p, i = 0;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)(sizeof(BT_HDR) + num_handle * 2 + 1 + L2CAP_MIN_OFFSET))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)(sizeof(BT_HDR) + num_handle * 2 + 1 + L2CAP_MIN_OFFSET))) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -213,8 +207,7 @@ BT_HDR *attp_build_read_multi_cmd(UINT16 payload_size, UINT16 num_handle, UINT16
 
         UINT8_TO_STREAM (p, GATT_REQ_READ_MULTI);
 
-        for (i = 0; i < num_handle && p_buf->len + 2 <= payload_size; i ++)
-        {
+        for (i = 0; i < num_handle && p_buf->len + 2 <= payload_size; i ++) {
             UINT16_TO_STREAM (p, *(p_handle + i));
             p_buf->len += 2;
         }
@@ -236,8 +229,7 @@ BT_HDR *attp_build_handle_cmd(UINT8 op_code, UINT16 handle, UINT16 offset)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + 5 + L2CAP_MIN_OFFSET)) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + 5 + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -248,8 +240,7 @@ BT_HDR *attp_build_handle_cmd(UINT8 op_code, UINT16 handle, UINT16 offset)
         UINT16_TO_STREAM (p, handle);
         p_buf->len += 2;
 
-        if (op_code == GATT_REQ_READ_BLOB)
-        {
+        if (op_code == GATT_REQ_READ_BLOB) {
             UINT16_TO_STREAM (p, offset);
             p_buf->len += 2;
         }
@@ -272,8 +263,7 @@ BT_HDR *attp_build_opcode_cmd(UINT8 op_code)
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + 1 + L2CAP_MIN_OFFSET)) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getbuf(sizeof(BT_HDR) + 1 + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
         p_buf->offset = L2CAP_MIN_OFFSET;
 
@@ -298,42 +288,37 @@ BT_HDR *attp_build_value_cmd (UINT16 payload_size, UINT8 op_code, UINT16 handle,
     BT_HDR      *p_buf = NULL;
     UINT8       *p, *pp, pair_len, *p_pair_len;
 
-    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL)
-    {
-        p = pp =(UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
+    if ((p_buf = (BT_HDR *)GKI_getbuf((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
+        p = pp = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         UINT8_TO_STREAM (p, op_code);
         p_buf->offset = L2CAP_MIN_OFFSET;
         p_buf->len = 1;
 
-        if (op_code == GATT_RSP_READ_BY_TYPE)
-        {
+        if (op_code == GATT_RSP_READ_BY_TYPE) {
             p_pair_len = p;
             pair_len = len + 2;
             UINT8_TO_STREAM (p, pair_len);
             p_buf->len += 1;
         }
-        if (op_code != GATT_RSP_READ_BLOB && op_code != GATT_RSP_READ)
-        {
+        if (op_code != GATT_RSP_READ_BLOB && op_code != GATT_RSP_READ) {
             UINT16_TO_STREAM (p, handle);
             p_buf->len += 2;
         }
 
-        if (op_code == GATT_REQ_PREPARE_WRITE ||op_code == GATT_RSP_PREPARE_WRITE )
-        {
+        if (op_code == GATT_REQ_PREPARE_WRITE || op_code == GATT_RSP_PREPARE_WRITE ) {
             UINT16_TO_STREAM (p, offset);
             p_buf->len += 2;
         }
 
-        if (len > 0 && p_data != NULL)
-        {
+        if (len > 0 && p_data != NULL) {
             /* ensure data not exceed MTU size */
-            if (payload_size - p_buf->len < len)
-            {
+            if (payload_size - p_buf->len < len) {
                 len = payload_size - p_buf->len;
                 /* update handle value pair length */
-                if (op_code == GATT_RSP_READ_BY_TYPE)
+                if (op_code == GATT_RSP_READ_BY_TYPE) {
                     *p_pair_len = (len + 2);
+                }
 
                 GATT_TRACE_WARNING("attribute value too long, to be truncated to %d", len);
             }
@@ -357,19 +342,17 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP)
     UINT16      l2cap_ret;
 
 
-    if (p_tcb->att_lcid == L2CAP_ATT_CID)
+    if (p_tcb->att_lcid == L2CAP_ATT_CID) {
         l2cap_ret = L2CA_SendFixedChnlData (L2CAP_ATT_CID, p_tcb->peer_bda, p_toL2CAP);
-    else
+    } else {
         l2cap_ret = (UINT16) L2CA_DataWrite (p_tcb->att_lcid, p_toL2CAP);
-
-    if (l2cap_ret == L2CAP_DW_FAILED)
-    {
-        GATT_TRACE_ERROR("ATT   failed to pass msg:0x%0x to L2CAP",
-            *((UINT8 *)(p_toL2CAP + 1) + p_toL2CAP->offset));
-        return GATT_INTERNAL_ERROR;
     }
-    else if (l2cap_ret == L2CAP_DW_CONGESTED)
-    {
+
+    if (l2cap_ret == L2CAP_DW_FAILED) {
+        GATT_TRACE_ERROR("ATT   failed to pass msg:0x%0x to L2CAP",
+                         *((UINT8 *)(p_toL2CAP + 1) + p_toL2CAP->offset));
+        return GATT_INTERNAL_ERROR;
+    } else if (l2cap_ret == L2CAP_DW_CONGESTED) {
         GATT_TRACE_DEBUG("ATT congested, message accepted");
         return GATT_CONGESTED;
     }
@@ -388,16 +371,15 @@ BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg)
     BT_HDR          *p_cmd = NULL;
     UINT16          offset = 0;
 
-    switch (op_code)
-    {
+    switch (op_code) {
     case GATT_RSP_READ_BLOB:
     case GATT_RSP_PREPARE_WRITE:
         GATT_TRACE_EVENT ("ATT_RSP_READ_BLOB/GATT_RSP_PREPARE_WRITE: len = %d offset = %d",
-                    p_msg->attr_value.len, p_msg->attr_value.offset);
+                          p_msg->attr_value.len, p_msg->attr_value.offset);
         offset = p_msg->attr_value.offset;
-/* Coverity: [FALSE-POSITIVE error] intended fall through */
-/* Missing break statement between cases in switch statement */
-        /* fall through */
+    /* Coverity: [FALSE-POSITIVE error] intended fall through */
+    /* Missing break statement between cases in switch statement */
+    /* fall through */
     case GATT_RSP_READ_BY_TYPE:
     case GATT_RSP_READ:
     case GATT_HANDLE_VALUE_NOTIF:
@@ -431,8 +413,9 @@ BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg)
         break;
     }
 
-    if (!p_cmd)
+    if (!p_cmd) {
         GATT_TRACE_ERROR("No resources");
+    }
 
     return p_cmd;
 }
@@ -455,10 +438,8 @@ tGATT_STATUS attp_send_sr_msg (tGATT_TCB *p_tcb, BT_HDR *p_msg)
 {
     tGATT_STATUS     cmd_sent = GATT_NO_RESOURCES;
 
-    if (p_tcb != NULL)
-    {
-        if (p_msg != NULL)
-        {
+    if (p_tcb != NULL) {
+        if (p_msg != NULL) {
             p_msg->offset = L2CAP_MIN_OFFSET;
             cmd_sent = attp_send_msg_to_l2cap (p_tcb, p_msg);
         }
@@ -482,35 +463,29 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 cmd_code,
 {
     tGATT_STATUS att_ret = GATT_SUCCESS;
 
-    if (p_tcb != NULL)
-    {
+    if (p_tcb != NULL) {
         cmd_code &= ~GATT_AUTH_SIGN_MASK;
 
         /* no pending request or value confirmation */
         if (p_tcb->pending_cl_req == p_tcb->next_slot_inq ||
-            cmd_code == GATT_HANDLE_VALUE_CONF)
-        {
+                cmd_code == GATT_HANDLE_VALUE_CONF) {
             att_ret = attp_send_msg_to_l2cap(p_tcb, p_cmd);
-            if (att_ret == GATT_CONGESTED || att_ret == GATT_SUCCESS)
-            {
+            if (att_ret == GATT_CONGESTED || att_ret == GATT_SUCCESS) {
                 /* do not enq cmd if handle value confirmation or set request */
-                if (cmd_code != GATT_HANDLE_VALUE_CONF && cmd_code != GATT_CMD_WRITE)
-                {
+                if (cmd_code != GATT_HANDLE_VALUE_CONF && cmd_code != GATT_CMD_WRITE) {
                     gatt_start_rsp_timer (clcb_idx);
                     gatt_cmd_enq(p_tcb, clcb_idx, FALSE, cmd_code, NULL);
                 }
-            }
-            else
+            } else {
                 att_ret = GATT_INTERNAL_ERROR;
-        }
-        else
-        {
+            }
+        } else {
             att_ret = GATT_CMD_STARTED;
             gatt_cmd_enq(p_tcb, clcb_idx, TRUE, cmd_code, p_cmd);
         }
-    }
-    else
+    } else {
         att_ret = GATT_ERROR;
+    }
 
     return att_ret;
 }
@@ -536,48 +511,43 @@ tGATT_STATUS attp_send_cl_msg (tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code,
     BT_HDR          *p_cmd = NULL;
     UINT16          offset = 0, handle;
 
-    if (p_tcb != NULL)
-    {
-        switch (op_code)
-        {
+    if (p_tcb != NULL) {
+        switch (op_code) {
         case GATT_REQ_MTU:
-            if (p_msg->mtu <= GATT_MAX_MTU_SIZE)
-            {
+            if (p_msg->mtu <= GATT_MAX_MTU_SIZE) {
                 p_tcb->payload_size = p_msg->mtu;
                 p_cmd = attp_build_mtu_cmd(GATT_REQ_MTU, p_msg->mtu);
-            }
-            else
+            } else {
                 status = GATT_ILLEGAL_PARAMETER;
+            }
             break;
 
         case GATT_REQ_FIND_INFO:
         case GATT_REQ_READ_BY_TYPE:
         case GATT_REQ_READ_BY_GRP_TYPE:
             if (GATT_HANDLE_IS_VALID (p_msg->browse.s_handle) &&
-                GATT_HANDLE_IS_VALID (p_msg->browse.e_handle)  &&
-                p_msg->browse.s_handle <= p_msg->browse.e_handle)
-            {
+                    GATT_HANDLE_IS_VALID (p_msg->browse.e_handle)  &&
+                    p_msg->browse.s_handle <= p_msg->browse.e_handle) {
                 p_cmd = attp_build_browse_cmd(op_code,
-                                            p_msg->browse.s_handle,
-                                            p_msg->browse.e_handle,
-                                            p_msg->browse.uuid);
-            }
-            else
+                                              p_msg->browse.s_handle,
+                                              p_msg->browse.e_handle,
+                                              p_msg->browse.uuid);
+            } else {
                 status = GATT_ILLEGAL_PARAMETER;
+            }
             break;
 
         case GATT_REQ_READ_BLOB:
             offset = p_msg->read_blob.offset;
-            /* fall through */
+        /* fall through */
         case GATT_REQ_READ:
-            handle = (op_code == GATT_REQ_READ) ? p_msg->handle: p_msg->read_blob.handle;
+            handle = (op_code == GATT_REQ_READ) ? p_msg->handle : p_msg->read_blob.handle;
             /*  handle checking */
-            if (GATT_HANDLE_IS_VALID (handle))
-            {
+            if (GATT_HANDLE_IS_VALID (handle)) {
                 p_cmd = attp_build_handle_cmd(op_code, handle, offset);
-            }
-            else
+            } else {
                 status = GATT_ILLEGAL_PARAMETER;
+            }
             break;
 
         case GATT_HANDLE_VALUE_CONF:
@@ -586,20 +556,19 @@ tGATT_STATUS attp_send_cl_msg (tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code,
 
         case GATT_REQ_PREPARE_WRITE:
             offset = p_msg->attr_value.offset;
-            /* fall through */
+        /* fall through */
         case GATT_REQ_WRITE:
         case GATT_CMD_WRITE:
         case GATT_SIGN_CMD_WRITE:
-            if (GATT_HANDLE_IS_VALID (p_msg->attr_value.handle))
-            {
+            if (GATT_HANDLE_IS_VALID (p_msg->attr_value.handle)) {
                 p_cmd = attp_build_value_cmd (p_tcb->payload_size,
                                               op_code, p_msg->attr_value.handle,
                                               offset,
                                               p_msg->attr_value.len,
                                               p_msg->attr_value.value);
-            }
-            else
+            } else {
                 status = GATT_ILLEGAL_PARAMETER;
+            }
             break;
 
         case GATT_REQ_EXEC_WRITE:
@@ -620,12 +589,11 @@ tGATT_STATUS attp_send_cl_msg (tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code,
             break;
         }
 
-        if (p_cmd != NULL)
+        if (p_cmd != NULL) {
             status = attp_cl_send_cmd(p_tcb, clcb_idx, op_code, p_cmd);
+        }
 
-    }
-    else
-    {
+    } else {
         GATT_TRACE_ERROR("Peer device not connected");
     }
 

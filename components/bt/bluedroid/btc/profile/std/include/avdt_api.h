@@ -207,8 +207,7 @@ typedef UINT8 AVDT_REPORT_TYPE;
 **  Type Definitions
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
     UINT32  ntp_sec;        /* NTP time: seconds relative to 0h UTC on 1 January 1900 */
     UINT32  ntp_frac;       /* NTP time: the fractional part */
     UINT32  rtp_time;       /* timestamp in RTP header */
@@ -217,8 +216,7 @@ typedef struct
     UINT32  octet_count;    /* sender's octet count: same comment */
 } tAVDT_SENDER_INFO;
 
-typedef struct
-{
+typedef struct {
     UINT8   frag_lost;      /* fraction lost since last RR */
     UINT32  packet_lost;    /* cumulative number of packets lost since the beginning */
     UINT32  seq_num_rcvd;   /* extended highest sequence number received */
@@ -227,8 +225,7 @@ typedef struct
     UINT32  dlsr;           /* delay since last SR */
 } tAVDT_REPORT_BLK;
 
-typedef union
-{
+typedef union {
     tAVDT_SENDER_INFO   sr;
     tAVDT_REPORT_BLK    rr;
     UINT8               cname[AVDT_MAX_CNAME_SIZE + 1];
@@ -373,7 +370,7 @@ typedef void (tAVDT_DATA_CBACK)(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp,
 ** This function is required for SNK endpoints and not applicable for SRC endpoints.
 */
 typedef void (tAVDT_MEDIA_CBACK)(UINT8 handle, UINT8 *p_payload, UINT32 payload_len,
-                                UINT32 time_stamp, UINT16 seq_num, UINT8 m_pt, UINT8 marker);
+                                 UINT32 time_stamp, UINT16 seq_num, UINT8 m_pt, UINT8 marker);
 #endif
 
 #if AVDT_REPORTING == TRUE
@@ -382,7 +379,7 @@ typedef void (tAVDT_MEDIA_CBACK)(UINT8 handle, UINT8 *p_payload, UINT32 payload_
 ** created with AVDT_PSC_REPORT.
 */
 typedef void (tAVDT_REPORT_CBACK)(UINT8 handle, AVDT_REPORT_TYPE type,
-                                tAVDT_REPORT_DATA *p_data);
+                                  tAVDT_REPORT_DATA *p_data);
 #endif
 
 typedef UINT16 (tAVDT_GETCAP_REQ) (BD_ADDR bd_addr, UINT8 seid, tAVDT_CFG *p_cfg, tAVDT_CTRL_CBACK *p_cback);

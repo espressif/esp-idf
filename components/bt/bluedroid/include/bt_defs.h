@@ -14,7 +14,7 @@
 
 /**
  * bt_defs.h    Defines useful API for whole Bluedroid
- * 
+ *
  */
 #ifndef _BT_DEFS_H_
 #define _BT_DEFS_H_
@@ -55,21 +55,21 @@ do {                                                 \
 #define pthread_mutex_unlock          osi_mutex_unlock
 #else
 #define pthread_mutex_t               uint8_t
-#define pthread_mutex_init(x1, x2)    
-#define pthread_mutex_destroy(mutex)  
-#define pthread_mutex_lock(mutex)     
-#define pthread_mutex_unlock(mutex)   
+#define pthread_mutex_init(x1, x2)
+#define pthread_mutex_destroy(mutex)
+#define pthread_mutex_lock(mutex)
+#define pthread_mutex_unlock(mutex)
 #endif
 
 
 /*Bluetooth Address*/
 typedef struct {
-  uint8_t address[6];
+    uint8_t address[6];
 } __attribute__ ((__packed__)) bt_bdaddr_t;
 
 /** Bluetooth 128-bit UUID */
 typedef struct {
-   uint8_t uu[16];
+    uint8_t uu[16];
 } bt_uuid_t;
 
 /** Bluetooth Error Status */
@@ -94,54 +94,60 @@ typedef enum {
 #define CPU_LITTLE_ENDIAN
 #endif
 
-inline uint16_t swap_byte_16(uint16_t x) {
-  return (((x & 0x00ffU) << 8) |
-          ((x & 0xff00U) >> 8));
+inline uint16_t swap_byte_16(uint16_t x)
+{
+    return (((x & 0x00ffU) << 8) |
+            ((x & 0xff00U) >> 8));
 }
 
-inline uint32_t swap_byte_32(uint32_t x) {
-  return (((x & 0x000000ffUL) << 24) |
-          ((x & 0x0000ff00UL) << 8) |
-          ((x & 0x00ff0000UL) >> 8) |
-          ((x & 0xff000000UL) >> 24));
+inline uint32_t swap_byte_32(uint32_t x)
+{
+    return (((x & 0x000000ffUL) << 24) |
+            ((x & 0x0000ff00UL) << 8) |
+            ((x & 0x00ff0000UL) >> 8) |
+            ((x & 0xff000000UL) >> 24));
 }
 
 #ifndef ntohs
-inline uint16_t ntohs(uint16_t x) {
+inline uint16_t ntohs(uint16_t x)
+{
 #ifdef CPU_LITTLE_ENDIAN
-  return swap_byte_16(x);
+    return swap_byte_16(x);
 #else
-  return x;
+    return x;
 #endif
 }
 #endif /* #ifndef ntohs */
 
 #ifndef htons
-inline uint16_t htons(uint16_t x) {
+inline uint16_t htons(uint16_t x)
+{
 #ifdef CPU_LITTLE_ENDIAN
-  return swap_byte_16(x);
+    return swap_byte_16(x);
 #else
-  return x;
+    return x;
 #endif
 }
 #endif /* #ifndef htons */
 
 #ifndef ntohl
-inline uint32_t ntohl(uint32_t x) {
+inline uint32_t ntohl(uint32_t x)
+{
 #ifdef CPU_LITTLE_ENDIAN
-  return swap_byte_32(x);
+    return swap_byte_32(x);
 #else
-  return x;
+    return x;
 #endif
 }
 #endif /* #ifndef ntohl*/
 
 #ifndef htonl
-inline uint32_t htonl(uint32_t x) {
+inline uint32_t htonl(uint32_t x)
+{
 #ifdef CPU_LITTLE_ENDIAN
-  return swap_byte_32(x);
+    return swap_byte_32(x);
 #else
-  return x;
+    return x;
 #endif
 }
 #endif /* #ifndef htonl*/

@@ -33,8 +33,7 @@
 *****************************************************************************/
 
 /* SYS HW state */
-enum
-{
+enum {
     BTA_SYS_HW_OFF,
     BTA_SYS_HW_STARTING,
     BTA_SYS_HW_ON,
@@ -45,15 +44,13 @@ typedef UINT8 tBTA_SYS_HW_STATE;
 /* Collision callback */
 #define MAX_COLLISION_REG   5
 
-typedef struct
-{
+typedef struct {
     UINT8                   id[MAX_COLLISION_REG];
     tBTA_SYS_CONN_CBACK     *p_coll_cback[MAX_COLLISION_REG];
 } tBTA_SYS_COLLISION;
 
 /* system manager control block */
-typedef struct
-{
+typedef struct {
     tBTA_SYS_REG            *reg[BTA_ID_MAX];       /* registration structures */
     BOOLEAN                 is_reg[BTA_ID_MAX];     /* registration structures */
     tBTA_SYS_HW_STATE state;

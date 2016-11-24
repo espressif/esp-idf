@@ -24,31 +24,31 @@ static esp_profile_cb_t btc_profile_cb_tab[BTC_PID_NUM] = {};
 
 void esp_profile_cb_reset(void)
 {
-	int i;
+    int i;
 
-	for (i = 0; i < BTC_PID_NUM; i++) {
-		btc_profile_cb_tab[i] = NULL;
-	}
+    for (i = 0; i < BTC_PID_NUM; i++) {
+        btc_profile_cb_tab[i] = NULL;
+    }
 }
 
 int btc_profile_cb_set(btc_pid_t profile_id, esp_profile_cb_t cb)
 {
-	if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
-		return -1;
-	}
+    if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
+        return -1;
+    }
 
-	btc_profile_cb_tab[profile_id] = cb;
+    btc_profile_cb_tab[profile_id] = cb;
 
-	return 0;
+    return 0;
 }
 
 esp_profile_cb_t btc_profile_cb_get(btc_pid_t profile_id)
 {
-	if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
-		return NULL;
-	}
+    if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
+        return NULL;
+    }
 
-	return btc_profile_cb_tab[profile_id];
+    return btc_profile_cb_tab[profile_id];
 }
 
 

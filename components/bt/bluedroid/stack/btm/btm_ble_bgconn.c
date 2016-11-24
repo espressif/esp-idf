@@ -52,59 +52,68 @@ static const size_t background_connection_buckets = 42;
 static hash_map_t *background_connections = NULL;
 
 typedef struct background_connection_t {
-  bt_bdaddr_t address;
+    bt_bdaddr_t address;
 } background_connection_t;
 
-static bool bdaddr_equality_fn(const void *x, const void *y) {
-  return bdaddr_equals((bt_bdaddr_t *)x, (bt_bdaddr_t *)y);
+static bool bdaddr_equality_fn(const void *x, const void *y)
+{
+    return bdaddr_equals((bt_bdaddr_t *)x, (bt_bdaddr_t *)y);
 }
 
 static void background_connections_lazy_init()
 {
-  if (!background_connections) {
-    background_connections = hash_map_new(background_connection_buckets,
-                                      hash_function_bdaddr, NULL, osi_free, bdaddr_equality_fn);
-    assert(background_connections);
-  }
+    if (!background_connections) {
+        background_connections = hash_map_new(background_connection_buckets,
+                                              hash_function_bdaddr, NULL, osi_free, bdaddr_equality_fn);
+        assert(background_connections);
+    }
 }
 
-static void background_connection_add(bt_bdaddr_t *address) {
-  assert(address);
-  background_connections_lazy_init();
-  background_connection_t *connection = hash_map_get(background_connections, address);
-  if (!connection) {
-    connection = osi_calloc(sizeof(background_connection_t));
-    connection->address = *address;
-    hash_map_set(background_connections, &(connection->address), connection);
-  }
+static void background_connection_add(bt_bdaddr_t *address)
+{
+    assert(address);
+    background_connections_lazy_init();
+    background_connection_t *connection = hash_map_get(background_connections, address);
+    if (!connection) {
+        connection = osi_calloc(sizeof(background_connection_t));
+        connection->address = *address;
+        hash_map_set(background_connections, &(connection->address), connection);
+    }
 }
 
-static void background_connection_remove(bt_bdaddr_t *address) {
-  if (address && background_connections)
-    hash_map_erase(background_connections, address);
+static void background_connection_remove(bt_bdaddr_t *address)
+{
+    if (address && background_connections) {
+        hash_map_erase(background_connections, address);
+    }
 }
 
-static void background_connections_clear() {
-  if (background_connections)
-    hash_map_clear(background_connections);
+static void background_connections_clear()
+{
+    if (background_connections) {
+        hash_map_clear(background_connections);
+    }
 }
 
-static bool background_connections_pending_cb(hash_map_entry_t *hash_entry, void *context) {
-  bool *pending_connections = context;
-  background_connection_t *connection = hash_entry->data;
-  const bool connected = BTM_IsAclConnectionUp(connection->address.address, BT_TRANSPORT_LE);
-  if (!connected) {
-    *pending_connections = true;
-    return false;
-  }
-  return true;
+static bool background_connections_pending_cb(hash_map_entry_t *hash_entry, void *context)
+{
+    bool *pending_connections = context;
+    background_connection_t *connection = hash_entry->data;
+    const bool connected = BTM_IsAclConnectionUp(connection->address.address, BT_TRANSPORT_LE);
+    if (!connected) {
+        *pending_connections = true;
+        return false;
+    }
+    return true;
 }
 
-static bool background_connections_pending() {
-  bool pending_connections = false;
-  if (background_connections)
-    hash_map_foreach(background_connections, background_connections_pending_cb, &pending_connections);
-  return pending_connections;
+static bool background_connections_pending()
+{
+    bool pending_connections = false;
+    if (background_connections) {
+        hash_map_foreach(background_connections, background_connections_pending_cb, &pending_connections);
+    }
+    return pending_connections;
 }
 
 /*******************************************************************************
@@ -125,15 +134,12 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy)
     p_inq->sfp = scan_policy;
     p_inq->scan_type = p_inq->scan_type == BTM_BLE_SCAN_MODE_NONE ? BTM_BLE_SCAN_MODE_ACTI : p_inq->scan_type;
 
-    if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0)
-    {
+    if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0) {
         btsnd_hcic_ble_set_scan_params(p_inq->scan_type, (UINT16)scan_interval,
                                        (UINT16)scan_window,
                                        btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
                                        scan_policy);
-    }
-    else
-    {
+    } else {
         btm_ble_send_extended_scan_params(p_inq->scan_type, scan_interval, scan_window,
                                           btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
                                           scan_policy);
@@ -154,44 +160,35 @@ BOOLEAN btm_add_dev_to_controller (BOOLEAN to_add, BD_ADDR bd_addr)
     tBT_DEVICE_TYPE dev_type;
 
     if (p_dev_rec != NULL &&
-        p_dev_rec->device_type & BT_DEVICE_TYPE_BLE)
-    {
-        if (to_add)
-        {
-            if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_PUBLIC || !BTM_BLE_IS_RESOLVE_BDA(bd_addr))
-            {
+            p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
+        if (to_add) {
+            if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_PUBLIC || !BTM_BLE_IS_RESOLVE_BDA(bd_addr)) {
                 started = btsnd_hcic_ble_add_white_list (p_dev_rec->ble.ble_addr_type, bd_addr);
                 p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
-            }
-            else if (memcmp(p_dev_rec->ble.static_addr, bd_addr, BD_ADDR_LEN) != 0 &&
-                memcmp(p_dev_rec->ble.static_addr, dummy_bda, BD_ADDR_LEN) != 0)
-            {
+            } else if (memcmp(p_dev_rec->ble.static_addr, bd_addr, BD_ADDR_LEN) != 0 &&
+                       memcmp(p_dev_rec->ble.static_addr, dummy_bda, BD_ADDR_LEN) != 0) {
                 started = btsnd_hcic_ble_add_white_list (p_dev_rec->ble.static_addr_type,
-                                                         p_dev_rec->ble.static_addr);
+                          p_dev_rec->ble.static_addr);
                 p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
             }
-        }
-        else
-        {
-            if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_PUBLIC || !BTM_BLE_IS_RESOLVE_BDA(bd_addr))
-            {
+        } else {
+            if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_PUBLIC || !BTM_BLE_IS_RESOLVE_BDA(bd_addr)) {
                 started = btsnd_hcic_ble_remove_from_white_list (p_dev_rec->ble.ble_addr_type, bd_addr);
             }
             if (memcmp(p_dev_rec->ble.static_addr, dummy_bda, BD_ADDR_LEN) != 0 &&
-                memcmp(p_dev_rec->ble.static_addr, bd_addr, BD_ADDR_LEN) != 0)
-            {
+                    memcmp(p_dev_rec->ble.static_addr, bd_addr, BD_ADDR_LEN) != 0) {
                 started = btsnd_hcic_ble_remove_from_white_list (p_dev_rec->ble.static_addr_type, p_dev_rec->ble.static_addr);
             }
             p_dev_rec->ble.in_controller_list &= ~BTM_WHITE_LIST_BIT;
         }
     }    /* if not a known device, shall we add it? */
-    else
-    {
+    else {
         BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
 
         started = btsnd_hcic_ble_remove_from_white_list (addr_type, bd_addr);
-        if (to_add)
+        if (to_add) {
             started = btsnd_hcic_ble_add_white_list (addr_type, bd_addr);
+        }
     }
 
     return started;
@@ -209,15 +206,13 @@ BOOLEAN btm_execute_wl_dev_operation(void)
     UINT8   i = 0;
     BOOLEAN rt = TRUE;
 
-    for (i = 0; i < BTM_BLE_MAX_BG_CONN_DEV_NUM && rt; i ++, p_dev_op ++)
-    {
-        if (p_dev_op->in_use)
-        {
+    for (i = 0; i < BTM_BLE_MAX_BG_CONN_DEV_NUM && rt; i ++, p_dev_op ++) {
+        if (p_dev_op->in_use) {
             rt = btm_add_dev_to_controller(p_dev_op->to_add, p_dev_op->bd_addr);
             memset(p_dev_op, 0, sizeof(tBTM_BLE_WL_OP));
-        }
-        else
+        } else {
             break;
+        }
     }
     return rt;
 }
@@ -232,24 +227,19 @@ void btm_enq_wl_dev_operation(BOOLEAN to_add, BD_ADDR bd_addr)
     tBTM_BLE_WL_OP *p_dev_op = btm_cb.ble_ctr_cb.wl_op_q;
     UINT8   i = 0;
 
-    for (i = 0; i < BTM_BLE_MAX_BG_CONN_DEV_NUM; i ++, p_dev_op ++)
-    {
-        if (p_dev_op->in_use && !memcmp(p_dev_op->bd_addr, bd_addr, BD_ADDR_LEN))
-        {
+    for (i = 0; i < BTM_BLE_MAX_BG_CONN_DEV_NUM; i ++, p_dev_op ++) {
+        if (p_dev_op->in_use && !memcmp(p_dev_op->bd_addr, bd_addr, BD_ADDR_LEN)) {
             p_dev_op->to_add = to_add;
             return;
-        }
-        else if (!p_dev_op->in_use)
+        } else if (!p_dev_op->in_use) {
             break;
+        }
     }
-    if (i != BTM_BLE_MAX_BG_CONN_DEV_NUM)
-    {
+    if (i != BTM_BLE_MAX_BG_CONN_DEV_NUM) {
         p_dev_op->in_use = TRUE;
         p_dev_op->to_add = to_add;
         memcpy(p_dev_op->bd_addr, bd_addr, BD_ADDR_LEN);
-    }
-    else
-    {
+    } else {
         BTM_TRACE_ERROR("max pending WL operation reached, discard");
     }
     return;
@@ -267,16 +257,16 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
 
-    if (to_add && p_cb->white_list_avail_size == 0)
-    {
+    if (to_add && p_cb->white_list_avail_size == 0) {
         BTM_TRACE_ERROR("%s Whitelist full, unable to add device", __func__);
         return FALSE;
     }
 
-    if (to_add)
-        background_connection_add((bt_bdaddr_t*)bd_addr);
-    else
-        background_connection_remove((bt_bdaddr_t*)bd_addr);
+    if (to_add) {
+        background_connection_add((bt_bdaddr_t *)bd_addr);
+    } else {
+        background_connection_remove((bt_bdaddr_t *)bd_addr);
+    }
 
     btm_suspend_wl_activity(p_cb->wl_state);
     btm_enq_wl_dev_operation(to_add, bd_addr);
@@ -314,8 +304,9 @@ void btm_ble_clear_white_list_complete(UINT8 *p_data, UINT16 evt_len)
     BTM_TRACE_EVENT ("btm_ble_clear_white_list_complete");
     STREAM_TO_UINT8  (status, p_data);
 
-    if (status == HCI_SUCCESS)
+    if (status == HCI_SUCCESS) {
         p_cb->white_list_avail_size = controller_get_interface()->get_ble_white_list_size();
+    }
 }
 
 /*******************************************************************************
@@ -341,8 +332,9 @@ void btm_ble_white_list_init(UINT8 white_list_size)
 void btm_ble_add_2_white_list_complete(UINT8 status)
 {
     BTM_TRACE_EVENT("%s status=%d", __func__, status);
-    if (status == HCI_SUCCESS)
+    if (status == HCI_SUCCESS) {
         --btm_cb.ble_ctr_cb.white_list_avail_size;
+    }
 }
 
 /*******************************************************************************
@@ -356,8 +348,9 @@ void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len)
 {
     UNUSED(evt_len);
     BTM_TRACE_EVENT ("%s status=%d", __func__, *p);
-    if (*p == HCI_SUCCESS)
+    if (*p == HCI_SUCCESS) {
         ++btm_cb.ble_ctr_cb.white_list_avail_size;
+    }
 }
 
 /*******************************************************************************
@@ -381,11 +374,9 @@ BOOLEAN btm_ble_start_auto_conn(BOOLEAN start)
     UINT8 own_addr_type = p_cb->addr_mgnt_cb.own_addr_type;
     UINT8 peer_addr_type = BLE_ADDR_PUBLIC;
 
-    if (start)
-    {
+    if (start) {
         if (p_cb->conn_state == BLE_CONN_IDLE && background_connections_pending()
-            && btm_ble_topology_check(BTM_BLE_STATE_INIT))
-        {
+                && btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
             p_cb->wl_state  |= BTM_BLE_WL_INIT;
 
             btm_execute_wl_dev_operation();
@@ -394,14 +385,13 @@ BOOLEAN btm_ble_start_auto_conn(BOOLEAN start)
             btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_INIT);
 #endif
             scan_int = (p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF) ?
-                                          BTM_BLE_SCAN_SLOW_INT_1 : p_cb->scan_int;
+                       BTM_BLE_SCAN_SLOW_INT_1 : p_cb->scan_int;
             scan_win = (p_cb->scan_win == BTM_BLE_SCAN_PARAM_UNDEF) ?
-                                          BTM_BLE_SCAN_SLOW_WIN_1 : p_cb->scan_win;
+                       BTM_BLE_SCAN_SLOW_WIN_1 : p_cb->scan_win;
 
 #if BLE_PRIVACY_SPT == TRUE
             if (btm_cb.ble_ctr_cb.rl_state != BTM_BLE_RL_IDLE
-                    && controller_get_interface()->supports_ble_privacy())
-            {
+                    && controller_get_interface()->supports_ble_privacy()) {
                 own_addr_type |= BLE_ADDR_TYPE_ID_BIT;
                 peer_addr_type |= BLE_ADDR_TYPE_ID_BIT;
             }
@@ -418,32 +408,22 @@ BOOLEAN btm_ble_start_auto_conn(BOOLEAN start)
                                                 BTM_BLE_CONN_SLAVE_LATENCY_DEF,  /* UINT16 conn_latency  */
                                                 BTM_BLE_CONN_TIMEOUT_DEF,        /* UINT16 conn_timeout  */
                                                 0,                       /* UINT16 min_len       */
-                                                0))                      /* UINT16 max_len       */
-            {
+                                                0)) {                    /* UINT16 max_len       */
                 /* start auto connection failed */
                 exec =  FALSE;
                 p_cb->wl_state &= ~BTM_BLE_WL_INIT;
-            }
-            else
-            {
+            } else {
                 btm_ble_set_conn_st (BLE_BG_CONN);
             }
-        }
-        else
-        {
+        } else {
             exec = FALSE;
         }
-    }
-    else
-    {
-        if (p_cb->conn_state == BLE_BG_CONN)
-        {
+    } else {
+        if (p_cb->conn_state == BLE_BG_CONN) {
             btsnd_hcic_ble_create_conn_cancel();
             btm_ble_set_conn_st (BLE_CONN_CANCEL);
             p_cb->wl_state &= ~BTM_BLE_WL_INIT;
-        }
-        else
-        {
+        } else {
             BTM_TRACE_DEBUG("conn_st = %d, not in auto conn state, cannot stop", p_cb->conn_state);
             exec = FALSE;
         }
@@ -472,12 +452,11 @@ BOOLEAN btm_ble_start_select_conn(BOOLEAN start, tBTM_BLE_SEL_CBACK *p_select_cb
 
     BTM_TRACE_EVENT ("%s", __func__);
 
-    if (start)
-    {
-        if (!BTM_BLE_IS_SCAN_ACTIVE(p_cb->scan_activity))
-        {
-            if (p_select_cback != NULL)
+    if (start) {
+        if (!BTM_BLE_IS_SCAN_ACTIVE(p_cb->scan_activity)) {
+            if (p_select_cback != NULL) {
                 btm_cb.ble_ctr_cb.p_select_cback = p_select_cback;
+            }
 
             btm_execute_wl_dev_operation();
 
@@ -485,62 +464,52 @@ BOOLEAN btm_ble_start_select_conn(BOOLEAN start, tBTM_BLE_SEL_CBACK *p_select_cb
             btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_PASS;
 
             /* Process advertising packets only from devices in the white list */
-            if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0)
-            {
+            if (btm_cb.cmn_ble_vsc_cb.extended_scan_support == 0) {
                 /* use passive scan by default */
                 if (!btsnd_hcic_ble_set_scan_params(BTM_BLE_SCAN_MODE_PASS,
                                                     scan_int,
                                                     scan_win,
                                                     p_cb->addr_mgnt_cb.own_addr_type,
-                                                    SP_ADV_WL))
-                {
+                                                    SP_ADV_WL)) {
                     return FALSE;
                 }
-            }
-            else
-            {
+            } else {
                 if (!btm_ble_send_extended_scan_params(BTM_BLE_SCAN_MODE_PASS,
                                                        scan_int,
                                                        scan_win,
                                                        p_cb->addr_mgnt_cb.own_addr_type,
-                                                       SP_ADV_WL))
-                {
+                                                       SP_ADV_WL)) {
                     return FALSE;
                 }
             }
 
-            if (!btm_ble_topology_check(BTM_BLE_STATE_PASSIVE_SCAN))
-            {
+            if (!btm_ble_topology_check(BTM_BLE_STATE_PASSIVE_SCAN)) {
                 BTM_TRACE_ERROR("peripheral device cannot initiate passive scan for a selective connection");
                 return FALSE;
-            }
-            else if (background_connections_pending())
-            {
+            } else if (background_connections_pending()) {
 #if BLE_PRIVACY_SPT == TRUE
                 btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 #endif
-                if (!btsnd_hcic_ble_set_scan_enable(TRUE, TRUE)) /* duplicate filtering enabled */
-                     return FALSE;
-                 /* mark up inquiry status flag */
-                 p_cb->scan_activity |= BTM_LE_SELECT_CONN_ACTIVE;
-                 p_cb->wl_state |= BTM_BLE_WL_SCAN;
+                if (!btsnd_hcic_ble_set_scan_enable(TRUE, TRUE)) { /* duplicate filtering enabled */
+                    return FALSE;
+                }
+                /* mark up inquiry status flag */
+                p_cb->scan_activity |= BTM_LE_SELECT_CONN_ACTIVE;
+                p_cb->wl_state |= BTM_BLE_WL_SCAN;
             }
-        }
-        else
-        {
+        } else {
             BTM_TRACE_ERROR("scan active, can not start selective connection procedure");
             return FALSE;
         }
-    }
-    else /* disable selective connection mode */
-    {
+    } else { /* disable selective connection mode */
         p_cb->scan_activity &= ~BTM_LE_SELECT_CONN_ACTIVE;
         p_cb->p_select_cback = NULL;
         p_cb->wl_state &= ~BTM_BLE_WL_SCAN;
 
         /* stop scanning */
-        if (!BTM_BLE_IS_SCAN_ACTIVE(p_cb->scan_activity))
-            btm_ble_stop_scan(); /* duplicate filtering enabled */
+        if (!BTM_BLE_IS_SCAN_ACTIVE(p_cb->scan_activity)) {
+            btm_ble_stop_scan();    /* duplicate filtering enabled */
+        }
     }
     return TRUE;
 }
@@ -562,8 +531,7 @@ void btm_ble_initiate_select_conn(BD_ADDR bda)
     BTM_TRACE_EVENT ("btm_ble_initiate_select_conn");
 
     /* use direct connection procedure to initiate connection */
-    if (!L2CA_ConnectFixedChnl(L2CAP_ATT_CID, bda))
-    {
+    if (!L2CA_ConnectFixedChnl(L2CAP_ATT_CID, bda)) {
         BTM_TRACE_ERROR("btm_ble_initiate_select_conn failed");
     }
 }
@@ -583,10 +551,11 @@ BOOLEAN btm_ble_suspend_bg_conn(void)
 {
     BTM_TRACE_EVENT ("%s\n", __func__);
 
-    if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_AUTO)
+    if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_AUTO) {
         return btm_ble_start_auto_conn(FALSE);
-    else if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_SELECTIVE)
+    } else if (btm_cb.ble_ctr_cb.bg_conn_type == BTM_BLE_CONN_SELECTIVE) {
         return btm_ble_start_select_conn(FALSE, NULL);
+    }
 
     return FALSE;
 }
@@ -601,16 +570,13 @@ BOOLEAN btm_ble_suspend_bg_conn(void)
 *******************************************************************************/
 static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state)
 {
-    if (wl_state & BTM_BLE_WL_INIT)
-    {
+    if (wl_state & BTM_BLE_WL_INIT) {
         btm_ble_start_auto_conn(FALSE);
     }
-    if (wl_state & BTM_BLE_WL_SCAN)
-    {
+    if (wl_state & BTM_BLE_WL_SCAN) {
         btm_ble_start_select_conn(FALSE, NULL);
     }
-    if (wl_state & BTM_BLE_WL_ADV)
-    {
+    if (wl_state & BTM_BLE_WL_ADV) {
         btm_ble_stop_adv();
     }
 
@@ -628,9 +594,8 @@ static void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state)
 {
     btm_ble_resume_bg_conn();
 
-    if (wl_state & BTM_BLE_WL_ADV)
-    {
-       btm_ble_start_adv();
+    if (wl_state & BTM_BLE_WL_ADV) {
+        btm_ble_start_adv();
     }
 
 }
@@ -651,13 +616,14 @@ BOOLEAN btm_ble_resume_bg_conn(void)
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     BOOLEAN ret = FALSE;
 
-    if (p_cb->bg_conn_type != BTM_BLE_CONN_NONE)
-    {
-        if (p_cb->bg_conn_type == BTM_BLE_CONN_AUTO)
+    if (p_cb->bg_conn_type != BTM_BLE_CONN_NONE) {
+        if (p_cb->bg_conn_type == BTM_BLE_CONN_AUTO) {
             ret = btm_ble_start_auto_conn(TRUE);
+        }
 
-        if (p_cb->bg_conn_type == BTM_BLE_CONN_SELECTIVE)
+        if (p_cb->bg_conn_type == BTM_BLE_CONN_SELECTIVE) {
             ret = btm_ble_start_select_conn(TRUE, btm_cb.ble_ctr_cb.p_select_cback);
+        }
     }
 
     return ret;
@@ -688,10 +654,11 @@ void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st)
 {
     btm_cb.ble_ctr_cb.conn_state = new_st;
 
-    if (new_st == BLE_BG_CONN || new_st == BLE_DIR_CONN)
+    if (new_st == BLE_BG_CONN || new_st == BLE_DIR_CONN) {
         btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
-    else
+    } else {
         btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
+    }
 }
 
 /*******************************************************************************
@@ -725,9 +692,8 @@ BOOLEAN btm_send_pending_direct_conn(void)
     tBTM_BLE_CONN_REQ *p_req;
     BOOLEAN     rt = FALSE;
 
-    if (!GKI_queue_is_empty(&btm_cb.ble_ctr_cb.conn_pending_q))
-    {
-        p_req = (tBTM_BLE_CONN_REQ*)GKI_dequeue (&btm_cb.ble_ctr_cb.conn_pending_q);
+    if (!GKI_queue_is_empty(&btm_cb.ble_ctr_cb.conn_pending_q)) {
+        p_req = (tBTM_BLE_CONN_REQ *)GKI_dequeue (&btm_cb.ble_ctr_cb.conn_pending_q);
 
         rt = l2cble_init_direct_conn((tL2C_LCB *)(p_req->p_param));
 

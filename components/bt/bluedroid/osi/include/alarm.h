@@ -26,13 +26,13 @@
 typedef uint32_t period_ms_t;
 typedef void (*osi_alarm_callback_t)(void *data);
 
-#define ALARM_CBS_NUM	20
-#define ALARM_ID_BASE	1000
+#define ALARM_CBS_NUM   20
+#define ALARM_ID_BASE   1000
 typedef struct alarm_t {
-	/* timer id point to here */
-	TimerHandle_t alarm_hdl;
-	osi_alarm_callback_t cb;
-	void *cb_data;
+    /* timer id point to here */
+    TimerHandle_t alarm_hdl;
+    osi_alarm_callback_t cb;
+    void *cb_data;
 } osi_alarm_t;
 
 void osi_alarm_init(void);

@@ -24,8 +24,7 @@
 
 #include "gki_common.h"
 
-typedef struct
-{
+typedef struct {
     pthread_mutex_t lock;
     tGKI_COM_CB com;
 } tGKI_CB;

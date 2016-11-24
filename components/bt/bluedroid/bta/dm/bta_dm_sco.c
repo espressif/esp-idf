@@ -38,7 +38,7 @@
 **  Constants
 *****************************************************************************/
 
-#define BTA_DM_PCM_OVERLAP_SIZE			     48
+#define BTA_DM_PCM_OVERLAP_SIZE              48
 
 #define BTA_DM_PCM_SMPL_RATE_44100     44100
 #define BTA_DM_PCM_SMPL_RATE_22050     22050
@@ -49,11 +49,10 @@
 *****************************************************************************/
 
 typedef INT32   (*PCONVERT_TO_BT_FILTERED)  (UINT8 *pSrc, void *pDst, UINT32 dwSrcSamples,
-                             UINT32 dwSrcSps,INT32 *pLastCurPos, UINT8 *pOverlapArea);
+        UINT32 dwSrcSps, INT32 *pLastCurPos, UINT8 *pOverlapArea);
 typedef INT32   (*PCONVERT_TO_BT_NOFILTER)  (void *pSrc, void *pDst, UINT32 dwSrcSamples,
-                                             UINT32 dwSrcSps);
-typedef struct
-{
+        UINT32 dwSrcSps);
+typedef struct {
     UINT8               overlap_area[BTA_DM_PCM_OVERLAP_SIZE * 4];
     UINT32              cur_pos;    /* current position */
     UINT32              src_sps;    /* samples per second (source audio data) */
@@ -65,7 +64,7 @@ typedef struct
     UINT32              n_channels; /* number of channels (i.e. mono(1), stereo(2)...) */
     UINT32              sample_size;
     UINT32              can_be_filtered;
-    UINT32	            divisor;
+    UINT32              divisor;
 } tBTA_DM_PCM_RESAMPLE_CB;
 
 tBTA_DM_PCM_RESAMPLE_CB bta_dm_pcm_cb;
@@ -240,7 +239,7 @@ tBTA_DM_PCM_RESAMPLE_CB bta_dm_pcm_cb;
 **  Local Function
 *****************************************************************************/
 INT32 Convert_8M_ToBT_Filtered (UINT8 *pSrc, void *pDst, UINT32 dwSrcSamples,
-                    UINT32 dwSrcSps, INT32 *pLastCurPos, UINT8 *pOverlapArea)
+                                UINT32 dwSrcSps, INT32 *pLastCurPos, UINT8 *pOverlapArea)
 {
     INT32             CurrentPos = *pLastCurPos;
     SRC_TYPE        *pIn, *pInEnd;
@@ -252,30 +251,25 @@ INT32 Convert_8M_ToBT_Filtered (UINT8 *pSrc, void *pDst, UINT32 dwSrcSamples,
     memcpy (pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 2), pSrc, BTA_DM_PCM_OVERLAP_SIZE * 2);
 
     pOv    = (SRC_TYPE *)(pOverlapArea + BTA_DM_PCM_OVERLAP_SIZE);
-	pOvEnd = (SRC_TYPE *)(pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 3));
+    pOvEnd = (SRC_TYPE *)(pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 3));
 
     pIn     = (SRC_TYPE *)(pSrc + BTA_DM_PCM_OVERLAP_SIZE);
-	pInEnd  = (SRC_TYPE *)(pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - \
-        BTA_DM_PCM_OVERLAP_SIZE);
+    pInEnd  = (SRC_TYPE *)(pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - \
+                           BTA_DM_PCM_OVERLAP_SIZE);
 
-    if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_44100)
-    {
+    if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_44100) {
         CONVERT_44100_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_44100_TO_BLUETOOTH(pIn, pInEnd);
-    }
-    else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_22050)
-    {
+    } else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_22050) {
         CONVERT_22050_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_22050_TO_BLUETOOTH(pIn, pInEnd);
-    }
-    else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_11025)
-    {
+    } else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_11025) {
         CONVERT_11025_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_11025_TO_BLUETOOTH(pIn, pInEnd);
     }
 
     memcpy (pOverlapArea, pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - \
-        (BTA_DM_PCM_OVERLAP_SIZE * 2), BTA_DM_PCM_OVERLAP_SIZE * 2);
+            (BTA_DM_PCM_OVERLAP_SIZE * 2), BTA_DM_PCM_OVERLAP_SIZE * 2);
 
     *pLastCurPos = CurrentPos;
 
@@ -293,14 +287,12 @@ INT32 Convert_8M_ToBT_NoFilter (void *pSrc, void *pDst, UINT32 dwSrcSamples, UIN
     //
     CurrentPos = (dwSrcSps >> 1);
 
-    while (dwSrcSamples--)
-    {
+    while (dwSrcSamples--) {
         CurrentPos -= 8000;
 
-        if (CurrentPos >= 0)
+        if (CurrentPos >= 0) {
             pbSrc++;
-        else
-        {
+        } else {
             sWorker = *pbSrc++;
             sWorker -= 0x80;
             sWorker <<= 8;
@@ -336,29 +328,24 @@ INT32 Convert_16M_ToBT_Filtered (UINT8 *pSrc, void *pDst, UINT32 dwSrcSamples,
     memcpy (pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 2), pSrc, BTA_DM_PCM_OVERLAP_SIZE * 2);
 
     pOv    = (SRC_TYPE *)(pOverlapArea + BTA_DM_PCM_OVERLAP_SIZE);
-	pOvEnd = (SRC_TYPE *)(pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 3));
+    pOvEnd = (SRC_TYPE *)(pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 3));
 
     pIn     = (SRC_TYPE *)(pSrc + BTA_DM_PCM_OVERLAP_SIZE);
-	pInEnd  = (SRC_TYPE *)(pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - BTA_DM_PCM_OVERLAP_SIZE);
+    pInEnd  = (SRC_TYPE *)(pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - BTA_DM_PCM_OVERLAP_SIZE);
 
-    if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_44100)
-    {
+    if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_44100) {
         CONVERT_44100_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_44100_TO_BLUETOOTH(pIn, pInEnd);
-    }
-    else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_22050)
-    {
+    } else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_22050) {
         CONVERT_22050_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_22050_TO_BLUETOOTH(pIn, pInEnd);
-    }
-    else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_11025)
-    {
+    } else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_11025) {
         CONVERT_11025_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_11025_TO_BLUETOOTH(pIn, pInEnd);
     }
 
     memcpy (pOverlapArea, pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - \
-        (BTA_DM_PCM_OVERLAP_SIZE * 2), BTA_DM_PCM_OVERLAP_SIZE * 2);
+            (BTA_DM_PCM_OVERLAP_SIZE * 2), BTA_DM_PCM_OVERLAP_SIZE * 2);
 
     *pLastCurPos = CurrentPos;
 
@@ -375,14 +362,12 @@ INT32 Convert_16M_ToBT_NoFilter (void *pSrc, void *pDst, UINT32 dwSrcSamples, UI
     //
     CurrentPos = (dwSrcSps >> 1);
 
-    while (dwSrcSamples--)
-    {
+    while (dwSrcSamples--) {
         CurrentPos -= 8000;
 
-        if (CurrentPos >= 0)
+        if (CurrentPos >= 0) {
             psSrc++;
-        else
-        {
+        } else {
             *psDst++ = *psSrc++;
 
             CurrentPos += dwSrcSps;
@@ -413,34 +398,29 @@ INT32 Convert_8S_ToBT_Filtered (UINT8 *pSrc, void *pDst, UINT32 dwSrcSamples,
 #if BTA_DM_SCO_DEBUG
     APPL_TRACE_DEBUG("Convert_8S_ToBT_Filtered CurrentPos %d, SRC_TYPE %d, SRC_CHANNELS %d, \
         dwSrcSamples %d,  dwSrcSps %d",  	CurrentPos, sizeof (SRC_TYPE), SRC_CHANNELS, \
-        dwSrcSamples, dwSrcSps);
+                     dwSrcSamples, dwSrcSps);
 #endif
     memcpy (pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 2), pSrc, BTA_DM_PCM_OVERLAP_SIZE * 2);
 
     pOv    = (SRC_TYPE *)(pOverlapArea + BTA_DM_PCM_OVERLAP_SIZE);
-	pOvEnd = (SRC_TYPE *)(pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 3));
+    pOvEnd = (SRC_TYPE *)(pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 3));
 
     pIn     = (SRC_TYPE *)(pSrc + BTA_DM_PCM_OVERLAP_SIZE);
-	pInEnd  = (SRC_TYPE *)(pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - BTA_DM_PCM_OVERLAP_SIZE);
+    pInEnd  = (SRC_TYPE *)(pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - BTA_DM_PCM_OVERLAP_SIZE);
 
-    if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_44100)
-    {
+    if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_44100) {
         CONVERT_44100_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_44100_TO_BLUETOOTH(pIn, pInEnd);
-    }
-    else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_22050)
-    {
+    } else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_22050) {
         CONVERT_22050_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_22050_TO_BLUETOOTH(pIn, pInEnd);
-    }
-    else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_11025)
-    {
+    } else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_11025) {
         CONVERT_11025_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_11025_TO_BLUETOOTH(pIn, pInEnd);
     }
 
     memcpy (pOverlapArea, pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - \
-        (BTA_DM_PCM_OVERLAP_SIZE * 2), BTA_DM_PCM_OVERLAP_SIZE * 2);
+            (BTA_DM_PCM_OVERLAP_SIZE * 2), BTA_DM_PCM_OVERLAP_SIZE * 2);
 
     *pLastCurPos = CurrentPos;
 
@@ -458,14 +438,12 @@ INT32 Convert_8S_ToBT_NoFilter (void *pSrc, void *pDst, UINT32 dwSrcSamples, UIN
     //
     CurrentPos = (dwSrcSps >> 1);
 
-    while (dwSrcSamples--)
-    {
+    while (dwSrcSamples--) {
         CurrentPos -= 8000;
 
-        if (CurrentPos >= 0)
+        if (CurrentPos >= 0) {
             pbSrc += 2;
-        else
-        {
+        } else {
             sWorker = *(unsigned char *)pbSrc;
             sWorker -= 0x80;
             sWorker <<= 8;
@@ -510,29 +488,24 @@ INT32 Convert_16S_ToBT_Filtered (UINT8 *pSrc, void *pDst, UINT32 dwSrcSamples,
     memcpy (pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 2), pSrc, BTA_DM_PCM_OVERLAP_SIZE * 2);
 
     pOv    = (SRC_TYPE *)(pOverlapArea + BTA_DM_PCM_OVERLAP_SIZE);
-	pOvEnd = (SRC_TYPE *)(pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 3));
+    pOvEnd = (SRC_TYPE *)(pOverlapArea + (BTA_DM_PCM_OVERLAP_SIZE * 3));
 
     pIn     = (SRC_TYPE *)(pSrc + BTA_DM_PCM_OVERLAP_SIZE);
-	pInEnd  = (SRC_TYPE *)(pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - BTA_DM_PCM_OVERLAP_SIZE);
+    pInEnd  = (SRC_TYPE *)(pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - BTA_DM_PCM_OVERLAP_SIZE);
 
-    if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_44100)
-    {
+    if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_44100) {
         CONVERT_44100_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_44100_TO_BLUETOOTH(pIn, pInEnd);
-    }
-    else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_22050)
-    {
+    } else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_22050) {
         CONVERT_22050_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_22050_TO_BLUETOOTH(pIn, pInEnd);
-    }
-    else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_11025)
-    {
+    } else if (dwSrcSps == BTA_DM_PCM_SMPL_RATE_11025) {
         CONVERT_11025_TO_BLUETOOTH(pOv, pOvEnd);
         CONVERT_11025_TO_BLUETOOTH(pIn, pInEnd);
     }
 
     memcpy (pOverlapArea, pSrc + (dwSrcSamples * SRC_CHANNELS * sizeof (SRC_TYPE)) - \
-        (BTA_DM_PCM_OVERLAP_SIZE * 2), BTA_DM_PCM_OVERLAP_SIZE * 2);
+            (BTA_DM_PCM_OVERLAP_SIZE * 2), BTA_DM_PCM_OVERLAP_SIZE * 2);
 
     *pLastCurPos = CurrentPos;
 
@@ -550,14 +523,12 @@ INT32 Convert_16S_ToBT_NoFilter (void *pSrc, void *pDst, UINT32 dwSrcSamples, UI
     //
     CurrentPos = (dwSrcSps >> 1);
 
-    while (dwSrcSamples--)
-    {
+    while (dwSrcSamples--) {
         CurrentPos -= 8000;
 
-        if (CurrentPos >= 0)
+        if (CurrentPos >= 0) {
             psSrc += 2;
-        else
-        {
+        } else {
             /* CR 82894, to avoid overflow, divide before add */
             sWorker  = ((*psSrc) >> 1 );
             psSrc++;
@@ -596,56 +567,48 @@ void BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels)
     p_cb->bits          = bits;
     p_cb->n_channels    = n_channels;
     p_cb->sample_size   = 2;
-    p_cb->divisor	    = 2;
+    p_cb->divisor       = 2;
 
     memset(p_cb->overlap_area, 0, sizeof(p_cb->overlap_area) );
 
     if ((src_sps == BTA_DM_PCM_SMPL_RATE_44100) ||
-        (src_sps == BTA_DM_PCM_SMPL_RATE_22050) ||
-        (src_sps == BTA_DM_PCM_SMPL_RATE_11025))
-         p_cb->can_be_filtered = 1;
-    else
-         p_cb->can_be_filtered = 0;
+            (src_sps == BTA_DM_PCM_SMPL_RATE_22050) ||
+            (src_sps == BTA_DM_PCM_SMPL_RATE_11025)) {
+        p_cb->can_be_filtered = 1;
+    } else {
+        p_cb->can_be_filtered = 0;
+    }
 
 #if BTA_DM_SCO_DEBUG
     APPL_TRACE_DEBUG("bta_dm_pcm_init_samples: n_channels = %d bits = %d", n_channels, bits);
 #endif
-    if(n_channels == 1)
-    {
+    if (n_channels == 1) {
         /* mono */
-        if(bits == 8)
-        {
+        if (bits == 8) {
             p_cb->filter = (PCONVERT_TO_BT_FILTERED) Convert_8M_ToBT_Filtered;
             p_cb->nofilter = (PCONVERT_TO_BT_NOFILTER) Convert_8M_ToBT_NoFilter;
-	        p_cb->divisor	 = 1;
-        }
-        else
-        {
+            p_cb->divisor    = 1;
+        } else {
             p_cb->filter = (PCONVERT_TO_BT_FILTERED) Convert_16M_ToBT_Filtered;
             p_cb->nofilter = (PCONVERT_TO_BT_NOFILTER) Convert_16M_ToBT_NoFilter;
         }
-    }
-    else
-    {
+    } else {
         /* stereo */
-        if(bits == 8)
-        {
+        if (bits == 8) {
             p_cb->filter = (PCONVERT_TO_BT_FILTERED) Convert_8S_ToBT_Filtered;
             p_cb->nofilter = (PCONVERT_TO_BT_NOFILTER) Convert_8S_ToBT_NoFilter;
-        }
-        else
-        {
+        } else {
             p_cb->filter = (PCONVERT_TO_BT_FILTERED) Convert_16S_ToBT_Filtered;
             p_cb->nofilter = (PCONVERT_TO_BT_NOFILTER) Convert_16S_ToBT_NoFilter;
-	        p_cb->divisor	 = 4;
+            p_cb->divisor    = 4;
         }
     }
 
 #if BTA_DM_SCO_DEBUG
     APPL_TRACE_DEBUG("bta_pcm_init_dwn_sample: cur_pos %d, src_sps %d", \
-		p_cb->cur_pos, p_cb->src_sps);
+                     p_cb->cur_pos, p_cb->src_sps);
     APPL_TRACE_DEBUG("bta_pcm_init_dwn_sample: bits %d, n_channels %d, sample_size %d, ", \
-		p_cb->bits, p_cb->n_channels, p_cb->sample_size);
+                     p_cb->bits, p_cb->n_channels, p_cb->sample_size);
     APPL_TRACE_DEBUG("bta_pcm_init_dwn_sample: can_be_filtered %d, n_channels: %d, \
         divisor %d", p_cb->can_be_filtered, p_cb->n_channels, p_cb->divisor);
 #endif
@@ -675,15 +638,12 @@ INT32 BTA_DmPcmResample (void *p_src, UINT32 in_bytes, void *p_dst)
 #if BTA_DM_SCO_DEBUG
     APPL_TRACE_DEBUG("bta_pcm_resample : insamples  %d",  (in_bytes  / bta_dm_pcm_cb.divisor));
 #endif
-    if(bta_dm_pcm_cb.can_be_filtered)
-    {
+    if (bta_dm_pcm_cb.can_be_filtered) {
         out_sample = (*bta_dm_pcm_cb.filter) (p_src, p_dst, (in_bytes  / bta_dm_pcm_cb.divisor),
-            bta_dm_pcm_cb.src_sps, (INT32 *) &bta_dm_pcm_cb.cur_pos, bta_dm_pcm_cb.overlap_area);
-    }
-    else
-    {
+                                              bta_dm_pcm_cb.src_sps, (INT32 *) &bta_dm_pcm_cb.cur_pos, bta_dm_pcm_cb.overlap_area);
+    } else {
         out_sample = (*bta_dm_pcm_cb.nofilter) (p_src, p_dst,
-            (in_bytes / bta_dm_pcm_cb.divisor), bta_dm_pcm_cb.src_sps);
+                                                (in_bytes / bta_dm_pcm_cb.divisor), bta_dm_pcm_cb.src_sps);
     }
 
 #if BTA_DM_SCO_DEBUG

@@ -27,74 +27,82 @@
 #include "osi_arch.h"
 
 struct future_t {
-  bool ready_can_be_called;
-  osi_sem_t semaphore; // NULL semaphore means immediate future
-  void *result;
+    bool ready_can_be_called;
+    osi_sem_t semaphore; // NULL semaphore means immediate future
+    void *result;
 };
 
 static void future_free(future_t *future);
 
-future_t *future_new(void) {
-  future_t *ret = osi_calloc(sizeof(future_t));
-  if (!ret) {
-    LOG_ERROR("%s unable to allocate memory for return value.", __func__);
-    goto error;
-  }
+future_t *future_new(void)
+{
+    future_t *ret = osi_calloc(sizeof(future_t));
+    if (!ret) {
+        LOG_ERROR("%s unable to allocate memory for return value.", __func__);
+        goto error;
+    }
 
-  if (osi_sem_new(&ret->semaphore, 1, 0)!=0) {
-    LOG_ERROR("%s unable to allocate memory for the semaphore.", __func__);
-    goto error;
-  }
+    if (osi_sem_new(&ret->semaphore, 1, 0) != 0) {
+        LOG_ERROR("%s unable to allocate memory for the semaphore.", __func__);
+        goto error;
+    }
 
-  ret->ready_can_be_called = true;
-  return ret;
+    ret->ready_can_be_called = true;
+    return ret;
 error:;
-  future_free(ret);
-  return NULL;
+    future_free(ret);
+    return NULL;
 }
 
-future_t *future_new_immediate(void *value) {
-  future_t *ret = osi_calloc(sizeof(future_t));
-  if (!ret) {
-    LOG_ERROR("%s unable to allocate memory for return value.", __func__);
-    goto error;
-  }
+future_t *future_new_immediate(void *value)
+{
+    future_t *ret = osi_calloc(sizeof(future_t));
+    if (!ret) {
+        LOG_ERROR("%s unable to allocate memory for return value.", __func__);
+        goto error;
+    }
 
-  ret->result = value;
-  ret->ready_can_be_called = false;
- return ret;
+    ret->result = value;
+    ret->ready_can_be_called = false;
+    return ret;
 error:;
-  future_free(ret);
-  return NULL;
+    future_free(ret);
+    return NULL;
 }
 
-void future_ready(future_t *future, void *value) {
-  assert(future != NULL);
-  assert(future->ready_can_be_called);
+void future_ready(future_t *future, void *value)
+{
+    assert(future != NULL);
+    assert(future->ready_can_be_called);
 
-  future->ready_can_be_called = false;
-  future->result = value;
-  osi_sem_signal(&future->semaphore);
+    future->ready_can_be_called = false;
+    future->result = value;
+    osi_sem_signal(&future->semaphore);
 }
 
-void *future_await(future_t *future) {
-  assert(future != NULL);
+void *future_await(future_t *future)
+{
+    assert(future != NULL);
 
-  // If the future is immediate, it will not have a semaphore
-  if (future->semaphore)
-    osi_sem_wait(&future->semaphore, 0);
+    // If the future is immediate, it will not have a semaphore
+    if (future->semaphore) {
+        osi_sem_wait(&future->semaphore, 0);
+    }
 
-  void *result = future->result;
-  future_free(future);
-  return result;
+    void *result = future->result;
+    future_free(future);
+    return result;
 }
 
-static void future_free(future_t *future) {
-  if (!future)
-    return;
+static void future_free(future_t *future)
+{
+    if (!future) {
+        return;
+    }
 
-  if (!future->semaphore)
-    osi_sem_free(&future->semaphore);
+    if (!future->semaphore) {
+        osi_sem_free(&future->semaphore);
+    }
 
-  osi_free(future);
+    osi_free(future);
 }

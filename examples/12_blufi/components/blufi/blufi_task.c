@@ -45,36 +45,36 @@ static void blufi_task(void *arg)
 {
     BtTaskEvt_t e;
 
-	for (;;) {
-		if (pdTRUE == xQueueReceive(xBlufiTaskQueue, &e, (portTickType)portMAX_DELAY)) {
-			switch (e.sig) {
-				case BLUFI_SIG_SWITCH_CONTEXT:
-					if (e.cb) {
-						((BtTaskCb_t)e.cb)(e.arg);
-					}
-					break;
-				default:
-					break;
-			}
-		}
+    for (;;) {
+        if (pdTRUE == xQueueReceive(xBlufiTaskQueue, &e, (portTickType)portMAX_DELAY)) {
+            switch (e.sig) {
+            case BLUFI_SIG_SWITCH_CONTEXT:
+                if (e.cb) {
+                    ((BtTaskCb_t)e.cb)(e.arg);
+                }
+                break;
+            default:
+                break;
+            }
+        }
     }
 }
 
 static esp_err_t blufi_task_post(uint32_t sig, void *par, void *cb, void *arg)
 {
-     BtTaskEvt_t evt;
+    BtTaskEvt_t evt;
 
-     evt.sig = sig;
-     evt.par = par;
-     evt.cb = cb;
-     evt.arg = arg;
+    evt.sig = sig;
+    evt.par = par;
+    evt.cb = cb;
+    evt.arg = arg;
 
-     if (xQueueSend(xBlufiTaskQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
-         LOG_ERROR("Blufi Post failed\n");
-         return ESP_FAIL;
-     }
+    if (xQueueSend(xBlufiTaskQueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
+        LOG_ERROR("Blufi Post failed\n");
+        return ESP_FAIL;
+    }
 
-	return ESP_OK;
+    return ESP_OK;
 }
 
 esp_err_t blufi_transfer_context(blufi_task_cb_t cb, void *arg)
@@ -97,12 +97,14 @@ static void blufi_task_init(void)
     xTaskCreate(blufi_task, "BlUFI", 4096, NULL, configMAX_PRIORITIES - 3, xBlufiTaskHandle);
 }
 
-void blufi_init(void) {
-	blufi_task_init();
-	blufi_transfer_context(blufi_enable, NULL);
+void blufi_init(void)
+{
+    blufi_task_init();
+    blufi_transfer_context(blufi_enable, NULL);
 }
 
-void blufi_deinit(void) {
-	blufi_transfer_context(blufi_disable, blufi_task_deinit);
+void blufi_deinit(void)
+{
+    blufi_transfer_context(blufi_disable, blufi_task_deinit);
 }
 

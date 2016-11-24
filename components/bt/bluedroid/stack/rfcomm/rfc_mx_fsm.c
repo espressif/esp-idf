@@ -66,8 +66,7 @@ static void rfc_mx_conf_cnf (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg);
 *******************************************************************************/
 void rfc_mx_sm_execute (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 {
-    switch (p_mcb->state)
-    {
+    switch (p_mcb->state) {
     case RFC_MX_STATE_IDLE:
         rfc_mx_sm_state_idle (p_mcb, event, p_data);
         break;
@@ -114,15 +113,13 @@ void rfc_mx_sm_execute (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 void rfc_mx_sm_state_idle (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 {
     RFCOMM_TRACE_EVENT ("rfc_mx_sm_state_idle - evt:%d", event);
-    switch (event)
-    {
+    switch (event) {
     case RFC_MX_EVENT_START_REQ:
 
         /* Initialize L2CAP MTU */
         p_mcb->peer_l2cap_mtu = L2CAP_DEFAULT_MTU - RFCOMM_MIN_OFFSET - 1;
 
-        if ((p_mcb->lcid = L2CA_ConnectReq (BT_PSM_RFCOMM, p_mcb->bd_addr)) == 0)
-        {
+        if ((p_mcb->lcid = L2CA_ConnectReq (BT_PSM_RFCOMM, p_mcb->bd_addr)) == 0) {
             PORT_StartCnf (p_mcb, RFCOMM_ERROR);
             return;
         }
@@ -181,8 +178,7 @@ void rfc_mx_sm_state_idle (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 void rfc_mx_sm_state_wait_conn_cnf (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 {
     RFCOMM_TRACE_EVENT ("rfc_mx_sm_state_wait_conn_cnf - evt:%d", event);
-    switch (event)
-    {
+    switch (event) {
     case RFC_MX_EVENT_START_REQ:
         RFCOMM_TRACE_ERROR ("Mx error state %d event %d", p_mcb->state, event);
         return;
@@ -194,8 +190,7 @@ void rfc_mx_sm_state_wait_conn_cnf (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
         return;
 
     case RFC_MX_EVENT_CONN_CNF:
-        if (*((UINT16 *)p_data) != L2CAP_SUCCESS)
-        {
+        if (*((UINT16 *)p_data) != L2CAP_SUCCESS) {
             p_mcb->state = RFC_MX_STATE_IDLE;
 
             PORT_StartCnf (p_mcb, *((UINT16 *)p_data));
@@ -215,8 +210,7 @@ void rfc_mx_sm_state_wait_conn_cnf (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
         L2CA_DisconnectReq (p_mcb->lcid);
 
         /* we gave up outgoing connection request then try peer's request */
-        if (p_mcb->pending_lcid)
-        {
+        if (p_mcb->pending_lcid) {
             UINT16 i;
             UINT8  idx;
 
@@ -229,21 +223,17 @@ void rfc_mx_sm_state_wait_conn_cnf (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
             p_mcb->is_initiator = FALSE;
 
             /* update direction bit */
-            for (i = 0; i < RFCOMM_MAX_DLCI; i += 2)
-            {
-                if ((idx = p_mcb->port_inx[i]) != 0)
-                {
+            for (i = 0; i < RFCOMM_MAX_DLCI; i += 2) {
+                if ((idx = p_mcb->port_inx[i]) != 0) {
                     p_mcb->port_inx[i] = 0;
-                    p_mcb->port_inx[i+1] = idx;
+                    p_mcb->port_inx[i + 1] = idx;
                     rfc_cb.port.port[idx - 1].dlci += 1;
                     RFCOMM_TRACE_DEBUG ("RFCOMM MX - DLCI:%d -> %d", i, rfc_cb.port.port[idx - 1].dlci);
                 }
             }
 
             rfc_mx_sm_execute (p_mcb, RFC_MX_EVENT_CONN_IND, &(p_mcb->pending_id));
-        }
-        else
-        {
+        } else {
             PORT_CloseInd (p_mcb);
         }
         return;
@@ -265,8 +255,7 @@ void rfc_mx_sm_state_wait_conn_cnf (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 void rfc_mx_sm_state_configure (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 {
     RFCOMM_TRACE_EVENT ("rfc_mx_sm_state_configure - evt:%d", event);
-    switch (event)
-    {
+    switch (event) {
     case RFC_MX_EVENT_START_REQ:
     case RFC_MX_EVENT_CONN_CNF:
 
@@ -312,8 +301,7 @@ void rfc_mx_sm_sabme_wait_ua (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
     UNUSED(p_data);
 
     RFCOMM_TRACE_EVENT ("rfc_mx_sm_sabme_wait_ua - evt:%d", event);
-    switch (event)
-    {
+    switch (event) {
     case RFC_MX_EVENT_START_REQ:
     case RFC_MX_EVENT_CONN_CNF:
         RFCOMM_TRACE_ERROR ("Mx error state %d event %d", p_mcb->state, event);
@@ -346,7 +334,7 @@ void rfc_mx_sm_sabme_wait_ua (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 
     case RFC_EVENT_DM:
         rfc_timer_stop (p_mcb);
-        /* Case falls through */
+    /* Case falls through */
 
     case RFC_MX_EVENT_CONF_IND: /* workaround: we don't support reconfig */
     case RFC_MX_EVENT_CONF_CNF: /* workaround: we don't support reconfig */
@@ -373,8 +361,7 @@ void rfc_mx_sm_sabme_wait_ua (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 void rfc_mx_sm_state_wait_sabme (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 {
     RFCOMM_TRACE_EVENT ("rfc_mx_sm_state_wait_sabme - evt:%d", event);
-    switch (event)
-    {
+    switch (event) {
     case RFC_MX_EVENT_DISC_IND:
         p_mcb->state = RFC_MX_STATE_IDLE;
         PORT_CloseInd (p_mcb);
@@ -382,8 +369,7 @@ void rfc_mx_sm_state_wait_sabme (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 
     case RFC_EVENT_SABME:
         /* if we gave up outgoing connection request */
-        if (p_mcb->pending_lcid)
-        {
+        if (p_mcb->pending_lcid) {
             p_mcb->pending_lcid = 0;
 
             rfc_send_ua (p_mcb, RFCOMM_MX_DLCI);
@@ -394,19 +380,16 @@ void rfc_mx_sm_state_wait_sabme (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 
             /* MX channel collision has been resolved, continue to open ports */
             PORT_StartCnf (p_mcb, RFCOMM_SUCCESS);
-        }
-        else
-        {
+        } else {
             rfc_timer_stop (p_mcb);
             PORT_StartInd (p_mcb);
         }
         return;
 
     case RFC_MX_EVENT_START_RSP:
-        if (*((UINT16 *)p_data) != RFCOMM_SUCCESS)
+        if (*((UINT16 *)p_data) != RFCOMM_SUCCESS) {
             rfc_send_dm (p_mcb, RFCOMM_MX_DLCI, TRUE);
-        else
-        {
+        } else {
             rfc_send_ua (p_mcb, RFCOMM_MX_DLCI);
 
             p_mcb->state      = RFC_MX_STATE_CONNECTED;
@@ -443,8 +426,7 @@ void rfc_mx_sm_state_connected (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 
     RFCOMM_TRACE_EVENT ("rfc_mx_sm_state_connected - evt:%d", event);
 
-    switch (event)
-    {
+    switch (event) {
     case RFC_EVENT_TIMEOUT:
     case RFC_MX_EVENT_CLOSE_REQ:
         rfc_timer_start (p_mcb, RFC_DISC_TIMEOUT);
@@ -461,8 +443,7 @@ void rfc_mx_sm_state_connected (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
         /* Reply with UA.  If initiator bring down L2CAP connection */
         /* If server wait for some time if client decide to reinitiate channel */
         rfc_send_ua (p_mcb, RFCOMM_MX_DLCI);
-        if (p_mcb->is_initiator)
-        {
+        if (p_mcb->is_initiator) {
             L2CA_DisconnectReq (p_mcb->lcid);
         }
         /* notify all ports that connection is gone */
@@ -488,18 +469,15 @@ void rfc_mx_sm_state_disc_wait_ua (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
     BT_HDR *p_buf;
 
     RFCOMM_TRACE_EVENT ("rfc_mx_sm_state_disc_wait_ua - evt:%d", event);
-    switch (event)
-    {
+    switch (event) {
     case RFC_EVENT_UA:
     case RFC_EVENT_DM:
     case RFC_EVENT_TIMEOUT:
         L2CA_DisconnectReq (p_mcb->lcid);
 
-        if (p_mcb->restart_required)
-        {
+        if (p_mcb->restart_required) {
             /* Start Request was received while disconnecting.  Execute it again */
-            if ((p_mcb->lcid = L2CA_ConnectReq (BT_PSM_RFCOMM, p_mcb->bd_addr)) == 0)
-            {
+            if ((p_mcb->lcid = L2CA_ConnectReq (BT_PSM_RFCOMM, p_mcb->bd_addr)) == 0) {
                 PORT_StartCnf (p_mcb, RFCOMM_ERROR);
                 return;
             }
@@ -507,8 +485,9 @@ void rfc_mx_sm_state_disc_wait_ua (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
             rfc_save_lcid_mcb (p_mcb, p_mcb->lcid);
 
             /* clean up before reuse it */
-            while ((p_buf = (BT_HDR *)GKI_dequeue(&p_mcb->cmd_q)) != NULL)
+            while ((p_buf = (BT_HDR *)GKI_dequeue(&p_mcb->cmd_q)) != NULL) {
                 GKI_freebuf(p_buf);
+            }
 
             rfc_timer_start (p_mcb, RFC_MCB_INIT_INACT_TIMER);
 
@@ -570,14 +549,14 @@ static void rfc_mx_send_config_req (tRFC_MCB *p_mcb)
     cfg.mtu_present      = TRUE;
     cfg.mtu              = L2CAP_MTU_SIZE;
 
-/* Defaults set by memset
-    cfg.flush_to_present = FALSE;
-    cfg.qos_present      = FALSE;
-    cfg.fcr_present      = FALSE;
-    cfg.fcr.mode         = L2CAP_FCR_BASIC_MODE;
-    cfg.fcs_present      = FALSE;
-    cfg.fcs              = N/A when fcs_present is FALSE;
-*/
+    /* Defaults set by memset
+        cfg.flush_to_present = FALSE;
+        cfg.qos_present      = FALSE;
+        cfg.fcr_present      = FALSE;
+        cfg.fcr.mode         = L2CAP_FCR_BASIC_MODE;
+        cfg.fcs_present      = FALSE;
+        cfg.fcs              = N/A when fcs_present is FALSE;
+    */
     L2CA_ConfigReq (p_mcb->lcid, &cfg);
 }
 
@@ -596,10 +575,8 @@ static void rfc_mx_conf_cnf (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg)
 {
     RFCOMM_TRACE_EVENT ("rfc_mx_conf_cnf p_cfg:%08x res:%d ", p_cfg, (p_cfg) ? p_cfg->result : 0);
 
-    if (p_cfg->result != L2CAP_CFG_OK)
-    {
-        if (p_mcb->is_initiator)
-        {
+    if (p_cfg->result != L2CAP_CFG_OK) {
+        if (p_mcb->is_initiator) {
             PORT_StartCnf (p_mcb, p_cfg->result);
             L2CA_DisconnectReq (p_mcb->lcid);
         }
@@ -608,16 +585,12 @@ static void rfc_mx_conf_cnf (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg)
     }
 
     p_mcb->local_cfg_sent = TRUE;
-    if ((p_mcb->state == RFC_MX_STATE_CONFIGURE) && p_mcb->peer_cfg_rcvd)
-    {
-        if (p_mcb->is_initiator)
-        {
+    if ((p_mcb->state == RFC_MX_STATE_CONFIGURE) && p_mcb->peer_cfg_rcvd) {
+        if (p_mcb->is_initiator) {
             p_mcb->state = RFC_MX_STATE_SABME_WAIT_UA;
             rfc_send_sabme (p_mcb, RFCOMM_MX_DLCI);
             rfc_timer_start (p_mcb, RFC_T1_TIMEOUT);
-        }
-        else
-        {
+        } else {
             p_mcb->state = RFC_MX_STATE_WAIT_SABME;
             rfc_timer_start (p_mcb, RFCOMM_CONN_TIMEOUT); /* - increased from T2=20 to CONN=120
                                                 to allow the user more than 10 sec to type in the
@@ -639,10 +612,11 @@ static void rfc_mx_conf_ind (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg)
 {
     /* Save peer L2CAP MTU if present */
     /* RFCOMM adds 3-4 bytes in the beginning and 1 bytes FCS */
-    if (p_cfg->mtu_present)
+    if (p_cfg->mtu_present) {
         p_mcb->peer_l2cap_mtu = p_cfg->mtu - RFCOMM_MIN_OFFSET - 1;
-    else
+    } else {
         p_mcb->peer_l2cap_mtu = L2CAP_DEFAULT_MTU - RFCOMM_MIN_OFFSET - 1;
+    }
 
     p_cfg->mtu_present      = FALSE;
     p_cfg->flush_to_present = FALSE;
@@ -653,16 +627,12 @@ static void rfc_mx_conf_ind (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg)
     L2CA_ConfigRsp (p_mcb->lcid, p_cfg);
 
     p_mcb->peer_cfg_rcvd = TRUE;
-    if ((p_mcb->state == RFC_MX_STATE_CONFIGURE) && p_mcb->local_cfg_sent)
-    {
-        if (p_mcb->is_initiator)
-        {
+    if ((p_mcb->state == RFC_MX_STATE_CONFIGURE) && p_mcb->local_cfg_sent) {
+        if (p_mcb->is_initiator) {
             p_mcb->state = RFC_MX_STATE_SABME_WAIT_UA;
             rfc_send_sabme (p_mcb, RFCOMM_MX_DLCI);
             rfc_timer_start (p_mcb, RFC_T1_TIMEOUT);
-        }
-        else
-        {
+        } else {
             p_mcb->state = RFC_MX_STATE_WAIT_SABME;
             rfc_timer_start (p_mcb, RFCOMM_CONN_TIMEOUT); /* - increased from T2=20 to CONN=120
                                                 to allow the user more than 10 sec to type in the

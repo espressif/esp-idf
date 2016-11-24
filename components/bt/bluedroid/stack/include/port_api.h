@@ -34,8 +34,7 @@
 ** Define port settings structure send from the application in the
 ** set settings request, or to the application in the set settings indication.
 */
-typedef struct
-{
+typedef struct {
 
 #define PORT_BAUD_RATE_2400       0x00
 #define PORT_BAUD_RATE_4800       0x01
@@ -101,7 +100,7 @@ typedef int  (tPORT_DATA_CALLBACK) (UINT16 port_handle, void *p_data, UINT16 len
 #define DATA_CO_CALLBACK_TYPE_INCOMING          1
 #define DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE     2
 #define DATA_CO_CALLBACK_TYPE_OUTGOING          3
-typedef int  (tPORT_DATA_CO_CALLBACK) (UINT16 port_handle, UINT8* p_buf, UINT16 len, int type);
+typedef int  (tPORT_DATA_CO_CALLBACK) (UINT16 port_handle, UINT8 *p_buf, UINT16 len, int type);
 
 typedef void (tPORT_CALLBACK) (UINT32 code, UINT16 port_handle);
 
@@ -126,7 +125,7 @@ typedef void (tPORT_CALLBACK) (UINT32 code, UINT16 port_handle);
 
 #define PORT_EV_CONNECTED    0x00000200  /* RFCOMM connection established */
 #define PORT_EV_CONNECT_ERR  0x00008000  /* Was not able to establish connection */
-                                     /* or disconnected */
+/* or disconnected */
 #define PORT_EV_FC      0x00010000   /* data flow enabled flag changed by remote */
 #define PORT_EV_FCS     0x00020000   /* data flow enable status true = enabled */
 
@@ -217,9 +216,9 @@ extern "C"
 **
 *******************************************************************************/
 extern int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn,
-                                            BOOLEAN is_server, UINT16 mtu,
-                                            BD_ADDR bd_addr, UINT16 *p_handle,
-                                            tPORT_CALLBACK *p_mgmt_cb);
+                                    BOOLEAN is_server, UINT16 mtu,
+                                    BD_ADDR bd_addr, UINT16 *p_handle,
+                                    tPORT_CALLBACK *p_mgmt_cb);
 
 
 /*******************************************************************************
@@ -463,8 +462,7 @@ extern int PORT_GetModemStatus (UINT16 handle, UINT8 *p_control_signal);
 #define PORT_ERR_RXOVER     0x08    /* Input queue overflow occured */
 #define PORT_ERR_TXFULL     0x10    /* Output queue overflow occured */
 
-typedef struct
-{
+typedef struct {
 #define PORT_FLAG_CTS_HOLD  0x01    /* Tx is waiting for CTS signal */
 #define PORT_FLAG_DSR_HOLD  0x02    /* Tx is waiting for DSR signal */
 #define PORT_FLAG_RLSD_HOLD 0x04    /* Tx is waiting for RLSD signal */
@@ -600,7 +598,7 @@ extern int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len,
 ** Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
 **
 *******************************************************************************/
-extern int PORT_WriteDataCO (UINT16 handle, int* p_len);
+extern int PORT_WriteDataCO (UINT16 handle, int *p_len);
 
 /*******************************************************************************
 **

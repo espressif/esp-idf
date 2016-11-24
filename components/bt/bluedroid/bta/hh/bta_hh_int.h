@@ -42,8 +42,7 @@
 #endif
 
 /* state machine events, these events are handled by the state machine */
-enum
-{
+enum {
     BTA_HH_API_OPEN_EVT     = BTA_SYS_EVT_START(BTA_ID_HH),
     BTA_HH_API_CLOSE_EVT,
     BTA_HH_INT_OPEN_EVT,
@@ -87,23 +86,21 @@ typedef UINT16 tBTA_HH_INT_EVT;         /* HID host internal events */
 #define BTA_HH_REMOVE_DEV       1
 
 /* state machine states */
-enum
-{
+enum {
     BTA_HH_NULL_ST,
     BTA_HH_IDLE_ST,
     BTA_HH_W4_CONN_ST,
     BTA_HH_CONN_ST
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
-    ,BTA_HH_W4_SEC
+    , BTA_HH_W4_SEC
 #endif
-    ,BTA_HH_INVALID_ST    /* Used to check invalid states before executing SM function */
+    , BTA_HH_INVALID_ST   /* Used to check invalid states before executing SM function */
 
 };
 typedef UINT8 tBTA_HH_STATE;
 
 /* data structure used to send a command/data to HID device */
-typedef struct
-{
+typedef struct {
     BT_HDR           hdr;
     UINT8            t_type;
     UINT8            param;
@@ -113,36 +110,32 @@ typedef struct
 #endif
     UINT16           data;
     BT_HDR           *p_data;
-}tBTA_HH_CMD_DATA;
+} tBTA_HH_CMD_DATA;
 
 /* data type for BTA_HH_API_ENABLE_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT8               sec_mask;
-    UINT8               service_name[BTA_SERVICE_NAME_LEN+1];
+    UINT8               service_name[BTA_SERVICE_NAME_LEN + 1];
     tBTA_HH_CBACK   *p_cback;
 } tBTA_HH_API_ENABLE;
 
-typedef struct
-{
+typedef struct {
     BT_HDR          hdr;
     BD_ADDR         bd_addr;
     UINT8           sec_mask;
     tBTA_HH_PROTO_MODE  mode;
-}tBTA_HH_API_CONN;
+} tBTA_HH_API_CONN;
 
 /* internal event data from BTE HID callback */
-typedef struct
-{
+typedef struct {
     BT_HDR          hdr;
     BD_ADDR         addr;
     UINT32          data;
     BT_HDR          *p_data;
-}tBTA_HH_CBACK_DATA;
+} tBTA_HH_CBACK_DATA;
 
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     BD_ADDR             bda;
     UINT16              attr_mask;
@@ -150,27 +143,24 @@ typedef struct
     UINT8               sub_class;
     UINT8               app_id;
     tBTA_HH_DEV_DSCP_INFO      dscp_info;
-}tBTA_HH_MAINT_DEV;
+} tBTA_HH_MAINT_DEV;
 
 #if BTA_HH_LE_INCLUDED == TRUE
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT16              conn_id;
     tBTA_GATT_REASON    reason;         /* disconnect reason code, not useful when connect event is reported */
 
-}tBTA_HH_LE_CLOSE;
+} tBTA_HH_LE_CLOSE;
 
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT16              scan_int;
     UINT16              scan_win;
-}tBTA_HH_SCPP_UPDATE;
+} tBTA_HH_SCPP_UPDATE;
 #endif
 /* union of all event data types */
-typedef union
-{
+typedef union {
     BT_HDR                   hdr;
     tBTA_HH_API_ENABLE       api_enable;
     tBTA_HH_API_CONN         api_conn;
@@ -187,8 +177,7 @@ typedef union
 } tBTA_HH_DATA;
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
-typedef struct
-{
+typedef struct {
     UINT8                   index;
     BOOLEAN                 in_use;
     UINT8                   inst_id;    /* share service instance ID and report instance ID, as
@@ -199,14 +188,13 @@ typedef struct
     UINT8                   rpt_id;
     BOOLEAN                 client_cfg_exist;
     UINT16                  client_cfg_value;
-}tBTA_HH_LE_RPT;
+} tBTA_HH_LE_RPT;
 
 #ifndef BTA_HH_LE_RPT_MAX
 #define BTA_HH_LE_RPT_MAX       20
 #endif
 
-typedef struct
-{
+typedef struct {
     BOOLEAN                 in_use;
     tBTA_HH_LE_RPT          report[BTA_HH_LE_RPT_MAX];
 
@@ -221,7 +209,7 @@ typedef struct
     UINT16                  ext_rpt_ref;
     tBTA_HH_DEV_DESCR       descriptor;
 
-}tBTA_HH_LE_HID_SRVC;
+} tBTA_HH_LE_HID_SRVC;
 
 #ifndef BTA_HH_LE_HID_SRVC_MAX
 #define BTA_HH_LE_HID_SRVC_MAX      1
@@ -237,8 +225,7 @@ typedef struct
 #endif
 
 /* device control block */
-typedef struct
-{
+typedef struct {
     tBTA_HH_DEV_DSCP_INFO  dscp_info;      /* report descriptor and DI information */
     BD_ADDR             addr;           /* BD-Addr of the HID device */
     UINT16              attr_mask;      /* attribute mask */
@@ -285,8 +272,7 @@ typedef struct
 } tBTA_HH_DEV_CB;
 
 /* key board parsing control block */
-typedef struct
-{
+typedef struct {
     BOOLEAN             mod_key[4]; /* ctrl, shift(upper), Alt, GUI */
     BOOLEAN             num_lock;
     BOOLEAN             caps_lock;
@@ -296,14 +282,13 @@ typedef struct
 /******************************************************************************
 ** Main Control Block
 *******************************************************************************/
-typedef struct
-{
+typedef struct {
     tBTA_HH_KB_CB           kb_cb;                  /* key board control block,
                                                        suppose BTA will connect
                                                        to only one keyboard at
                                                         the same time */
     tBTA_HH_DEV_CB          kdev[BTA_HH_MAX_DEVICE]; /* device control block */
-    tBTA_HH_DEV_CB*         p_cur;              /* current device control
+    tBTA_HH_DEV_CB         *p_cur;              /* current device control
                                                        block idx, used in sdp */
     UINT8                   cb_index[BTA_HH_MAX_KNOWN]; /* maintain a CB index
                                                         map to dev handle */
@@ -312,7 +297,7 @@ typedef struct
     tBTA_GATTC_IF           gatt_if;
 #endif
     tBTA_HH_CBACK       *p_cback;               /* Application callbacks */
-    tSDP_DISCOVERY_DB*      p_disc_db;
+    tSDP_DISCOVERY_DB      *p_disc_db;
     UINT8                   trace_level;            /* tracing level */
     UINT8                   cnt_num;                /* connected device number */
     BOOLEAN                 w4_disable;             /* w4 disable flag */
@@ -340,8 +325,8 @@ extern void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event,
 extern void bta_hh_api_disc_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
 extern void bta_hh_open_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
 extern void bta_hh_close_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
-extern void bta_hh_data_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA * p_data);
-extern void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA * p_data);
+extern void bta_hh_data_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
+extern void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
 extern void bta_hh_start_sdp(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
 extern void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
 extern void bta_hh_write_dev_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
@@ -354,10 +339,10 @@ extern void bta_hh_open_failure(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
 /* utility functions */
 extern UINT8  bta_hh_find_cb(BD_ADDR bda);
 extern void bta_hh_parse_keybd_rpt(tBTA_HH_BOOT_RPT *p_kb_data,
-             UINT8 *p_report, UINT16 report_len);
+                                   UINT8 *p_report, UINT16 report_len);
 extern void bta_hh_parse_mice_rpt(tBTA_HH_BOOT_RPT *p_kb_data,
                                   UINT8 *p_report, UINT16 report_len);
-extern BOOLEAN bta_hh_tod_spt(tBTA_HH_DEV_CB *p_cb,UINT8 sub_class);
+extern BOOLEAN bta_hh_tod_spt(tBTA_HH_DEV_CB *p_cb, UINT8 sub_class);
 extern void bta_hh_clean_up_kdev(tBTA_HH_DEV_CB *p_cb);
 
 extern void bta_hh_add_device_to_list(tBTA_HH_DEV_CB *p_cb, UINT8 handle,
@@ -365,7 +350,7 @@ extern void bta_hh_add_device_to_list(tBTA_HH_DEV_CB *p_cb, UINT8 handle,
                                       tHID_DEV_DSCP_INFO *p_dscp_info,
                                       UINT8 sub_class, UINT16 max_latency, UINT16 min_tout, UINT8 app_id);
 extern void bta_hh_update_di_info(tBTA_HH_DEV_CB *p_cb, UINT16 vendor_id, UINT16 product_id,
-                           UINT16 version, UINT8 flag);
+                                  UINT16 version, UINT8 flag);
 extern void bta_hh_cleanup_disable(tBTA_HH_STATUS status);
 
 extern UINT8 bta_hh_dev_handle_to_cb_idx(UINT8 dev_handle);

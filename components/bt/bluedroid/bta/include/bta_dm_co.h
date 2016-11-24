@@ -28,7 +28,7 @@
 
 
 #ifndef BTA_SCO_OUT_PKT_SIZE
-    #define BTA_SCO_OUT_PKT_SIZE    BTM_SCO_DATA_SIZE_MAX
+#define BTA_SCO_OUT_PKT_SIZE    BTM_SCO_DATA_SIZE_MAX
 #endif
 
 #define BTA_SCO_CODEC_PCM       0       /* used for regular SCO */
@@ -39,13 +39,12 @@ typedef UINT8   tBTA_SCO_CODEC_TYPE;
 #define BTA_DM_SCO_SAMP_RATE_16K    16000
 
 /* SCO codec information */
-typedef struct
-{
+typedef struct {
     tBTA_SCO_CODEC_TYPE   codec_type;
-}tBTA_CODEC_INFO;
+} tBTA_CODEC_INFO;
 
-#define BTA_DM_SCO_ROUTE_PCM	BTM_SCO_ROUTE_PCM
-#define BTA_DM_SCO_ROUTE_HCI	BTM_SCO_ROUTE_HCI
+#define BTA_DM_SCO_ROUTE_PCM    BTM_SCO_ROUTE_PCM
+#define BTA_DM_SCO_ROUTE_HCI    BTM_SCO_ROUTE_HCI
 
 typedef tBTM_SCO_ROUTE_TYPE tBTA_DM_SCO_ROUTE_TYPE;
 
@@ -152,7 +151,7 @@ extern void bta_dm_co_rmt_oob(BD_ADDR bd_addr);
 **
 *******************************************************************************/
 extern tBTA_DM_SCO_ROUTE_TYPE bta_dm_sco_co_init(UINT32 rx_bw, UINT32 tx_bw,
-                                                 tBTA_CODEC_INFO *p_codec_info, UINT8 app_id);
+        tBTA_CODEC_INFO *p_codec_info, UINT8 app_id);
 
 
 /*******************************************************************************
@@ -242,7 +241,7 @@ extern void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
 **
 *******************************************************************************/
 extern void bta_dm_co_ble_load_local_keys (tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OCTET16 er,
-                                           tBTA_BLE_LOCAL_ID_KEYS *p_id_keys);
+        tBTA_BLE_LOCAL_ID_KEYS *p_id_keys);
 
 // btla-specific ++
 /*******************************************************************************

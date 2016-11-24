@@ -48,37 +48,33 @@ typedef UINT16  tDIS_ATTR_MASK;
 
 typedef tDIS_ATTR_MASK tDIS_ATTR_BIT ;
 
-typedef struct
-{
+typedef struct {
     UINT16      len;
     UINT8       *p_data;
-}tDIS_STRING;
+} tDIS_STRING;
 
-typedef struct
-{
+typedef struct {
     UINT16       vendor_id;
     UINT16       product_id;
     UINT16       product_version;
     UINT8        vendor_id_src;
 
-}tDIS_PNP_ID;
+} tDIS_PNP_ID;
 
-typedef union
-{
+typedef union {
     UINT64              system_id;
     tDIS_PNP_ID         pnp_id;
     tDIS_STRING         data_str;
-}tDIS_ATTR;
+} tDIS_ATTR;
 
 #define DIS_MAX_STRING_DATA     7
 
-typedef struct
-{
+typedef struct {
     UINT16                  attr_mask;
     UINT64                  system_id;
     tDIS_PNP_ID             pnp_id;
     UINT8                   *data_string[DIS_MAX_STRING_DATA];
-}tDIS_VALUE;
+} tDIS_VALUE;
 
 
 typedef void (tDIS_READ_CBACK)(BD_ADDR addr, tDIS_VALUE *p_dis_value);
@@ -86,12 +82,11 @@ typedef void (tDIS_READ_CBACK)(BD_ADDR addr, tDIS_VALUE *p_dis_value);
 /*****************************************************************************
 **  Data structure used by Battery Service
 *****************************************************************************/
-typedef struct
-{
+typedef struct {
     BD_ADDR remote_bda;
     BOOLEAN need_rsp;
     UINT16  clt_cfg;
-}tBA_WRITE_DATA;
+} tBA_WRITE_DATA;
 
 #define BA_READ_CLT_CFG_REQ     1
 #define BA_READ_PRE_FMT_REQ     2
@@ -106,22 +101,20 @@ typedef void (tBA_CBACK)(UINT8 app_id, UINT8 event, tBA_WRITE_DATA *p_data);
 #define BA_LEVEL_RPT_REF        0x04
 typedef UINT8   tBA_LEVEL_DESCR;
 
-typedef struct
-{
+typedef struct {
     BOOLEAN         is_pri;
     tBA_LEVEL_DESCR     ba_level_descr;
     tGATT_TRANSPORT transport;
     tBA_CBACK       *p_cback;
 
-}tBA_REG_INFO;
+} tBA_REG_INFO;
 
-typedef union
-{
+typedef union {
     UINT8       ba_level;
     UINT16      clt_cfg;
     tGATT_CHAR_RPT_REF  rpt_ref;
     tGATT_CHAR_PRES     pres_fmt;
-}tBA_RSP_DATA;
+} tBA_RSP_DATA;
 
 /*****************************************************************************
 **  External Function Declarations

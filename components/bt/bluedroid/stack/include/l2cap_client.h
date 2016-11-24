@@ -27,10 +27,10 @@ typedef struct buffer_t buffer_t;
 typedef struct l2cap_client_t l2cap_client_t;
 
 typedef struct {
-  void (*connected)(l2cap_client_t *client, void *context);
-  void (*disconnected)(l2cap_client_t *client, void *context);
-  void (*read_ready)(l2cap_client_t *client, buffer_t *packet, void *context);
-  void (*write_ready)(l2cap_client_t *client, void *context);
+    void (*connected)(l2cap_client_t *client, void *context);
+    void (*disconnected)(l2cap_client_t *client, void *context);
+    void (*read_ready)(l2cap_client_t *client, buffer_t *packet, void *context);
+    void (*write_ready)(l2cap_client_t *client, void *context);
 } l2cap_client_callbacks_t;
 
 // Returns a new buffer with enough space for |size| bytes of L2CAP payload.

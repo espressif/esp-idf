@@ -82,8 +82,7 @@ void RFCOMM_StartRsp (tRFC_MCB *p_mcb, UINT16 result)
 void RFCOMM_DlcEstablishReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
 {
     UNUSED(mtu);
-    if (p_mcb->state != RFC_MX_STATE_CONNECTED)
-    {
+    if (p_mcb->state != RFC_MX_STATE_CONNECTED) {
         PORT_DlcEstablishCnf (p_mcb, dlci, 0, RFCOMM_ERROR);
         return;
     }
@@ -91,7 +90,7 @@ void RFCOMM_DlcEstablishReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
     tPORT *p_port = port_find_mcb_dlci_port(p_mcb, dlci);
     if (p_port == NULL) {
         RFCOMM_TRACE_WARNING("%s Unable to find DLCI port dlci:%d", __func__,
-                dlci);
+                             dlci);
         return;
     }
 
@@ -110,8 +109,7 @@ void RFCOMM_DlcEstablishReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
 void RFCOMM_DlcEstablishRsp (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu, UINT16 result)
 {
     UNUSED(mtu);
-    if ((p_mcb->state != RFC_MX_STATE_CONNECTED) && (result == RFCOMM_SUCCESS))
-    {
+    if ((p_mcb->state != RFC_MX_STATE_CONNECTED) && (result == RFCOMM_SUCCESS)) {
         PORT_DlcReleaseInd (p_mcb, dlci);
         return;
     }
@@ -119,7 +117,7 @@ void RFCOMM_DlcEstablishRsp (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu, UINT16 res
     tPORT *p_port = port_find_mcb_dlci_port (p_mcb, dlci);
     if (p_port == NULL) {
         RFCOMM_TRACE_WARNING("%s Unable to find DLCI port dlci:%d", __func__,
-                dlci);
+                             dlci);
         return;
     }
     rfc_port_sm_execute(p_port, RFC_EVENT_ESTABLISH_RSP, &result);
@@ -146,12 +144,11 @@ void RFCOMM_ParNegReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
     tPORT *p_port = port_find_mcb_dlci_port(p_mcb, dlci);
     if (p_port == NULL) {
         RFCOMM_TRACE_WARNING("%s Unable to find DLCI port dlci:%d", __func__,
-                dlci);
+                             dlci);
         return;
     }
 
-    if (p_mcb->state != RFC_MX_STATE_CONNECTED)
-    {
+    if (p_mcb->state != RFC_MX_STATE_CONNECTED) {
         p_port->error = PORT_PAR_NEG_FAILED;
         return;
     }
@@ -162,14 +159,11 @@ void RFCOMM_ParNegReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
     flow = (p_mcb->flow == PORT_FC_UNDEFINED) ? PORT_FC_DEFAULT : p_mcb->flow;
 
     /* Set convergence layer and number of credits (k) */
-    if (flow == PORT_FC_CREDIT)
-    {
+    if (flow == PORT_FC_CREDIT) {
         cl = RFCOMM_PN_CONV_LAYER_CBFC_I;
         k = (p_port->credit_rx_max < RFCOMM_K_MAX) ? p_port->credit_rx_max : RFCOMM_K_MAX;
         p_port->credit_rx = k;
-    }
-    else
-    {
+    } else {
         cl = RFCOMM_PN_CONV_LAYER_TYPE_1;
         k = 0;
     }
@@ -193,8 +187,9 @@ void RFCOMM_ParNegReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
 *******************************************************************************/
 void RFCOMM_ParNegRsp (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu, UINT8 cl, UINT8 k)
 {
-    if (p_mcb->state != RFC_MX_STATE_CONNECTED)
+    if (p_mcb->state != RFC_MX_STATE_CONNECTED) {
         return;
+    }
 
     /* Send Parameter Negotiation Response UIH frame */
     rfc_send_pn (p_mcb, dlci, FALSE, mtu, cl, k);
@@ -214,8 +209,7 @@ void RFCOMM_ParNegRsp (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu, UINT8 cl, UINT8 
 *******************************************************************************/
 void RFCOMM_PortNegReq (tRFC_MCB *p_mcb, UINT8 dlci, tPORT_STATE *p_pars)
 {
-    if (p_mcb->state != RFC_MX_STATE_CONNECTED)
-    {
+    if (p_mcb->state != RFC_MX_STATE_CONNECTED) {
         PORT_PortNegCnf (p_mcb, dlci, NULL, RFCOMM_ERROR);
         return;
     }
@@ -223,15 +217,16 @@ void RFCOMM_PortNegReq (tRFC_MCB *p_mcb, UINT8 dlci, tPORT_STATE *p_pars)
     tPORT *p_port = port_find_mcb_dlci_port(p_mcb, dlci);
     if (p_port == NULL) {
         RFCOMM_TRACE_WARNING("%s Unable to find DLCI port dlci:%d", __func__,
-                dlci);
+                             dlci);
         return;
     }
 
     /* Send Parameter Negotiation Command UIH frame */
-    if (!p_pars)
+    if (!p_pars) {
         p_port->rfc.expected_rsp |= RFC_RSP_RPN_REPLY;
-    else
+    } else {
         p_port->rfc.expected_rsp |= RFC_RSP_RPN;
+    }
 
     rfc_send_rpn (p_mcb, dlci, TRUE, p_pars, RFCOMM_RPN_PM_MASK);
     rfc_port_timer_start (p_port, RFC_T2_TIMEOUT) ;
@@ -250,10 +245,11 @@ void RFCOMM_PortNegReq (tRFC_MCB *p_mcb, UINT8 dlci, tPORT_STATE *p_pars)
 void RFCOMM_PortNegRsp (tRFC_MCB *p_mcb, UINT8 dlci, tPORT_STATE *p_pars,
                         UINT16 param_mask)
 {
-    if (p_mcb->state != RFC_MX_STATE_CONNECTED)
+    if (p_mcb->state != RFC_MX_STATE_CONNECTED) {
         return;
+    }
 
-   rfc_send_rpn (p_mcb, dlci, FALSE, p_pars, param_mask);
+    rfc_send_rpn (p_mcb, dlci, FALSE, p_pars, param_mask);
 }
 
 
@@ -270,13 +266,14 @@ void RFCOMM_ControlReq (tRFC_MCB *p_mcb, UINT8 dlci, tPORT_CTRL *p_pars)
     tPORT *p_port = port_find_mcb_dlci_port(p_mcb, dlci);
     if (p_port == NULL) {
         RFCOMM_TRACE_WARNING("%s Unable to find DLCI port dlci:%d", __func__,
-                dlci);
+                             dlci);
         return;
     }
 
     if ((p_port->state != PORT_STATE_OPENED)
-     || (p_port->rfc.state  != RFC_STATE_OPENED))
+            || (p_port->rfc.state  != RFC_STATE_OPENED)) {
         return;
+    }
 
     p_port->port_ctrl |= PORT_CTRL_REQ_SENT;
 
@@ -302,13 +299,14 @@ void RFCOMM_FlowReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT8 enable)
     tPORT *p_port = port_find_mcb_dlci_port(p_mcb, dlci);
     if (p_port == NULL) {
         RFCOMM_TRACE_WARNING("%s Unable to find DLCI port dlci:%d", __func__,
-                dlci);
+                             dlci);
         return;
     }
 
     if ((p_port->state != PORT_STATE_OPENED)
-     || (p_port->rfc.state  != RFC_STATE_OPENED))
+            || (p_port->rfc.state  != RFC_STATE_OPENED)) {
         return;
+    }
 
     p_port->local_ctrl.fc = !enable;
 
@@ -333,13 +331,14 @@ void RFCOMM_LineStatusReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT8 status)
     tPORT *p_port = port_find_mcb_dlci_port(p_mcb, dlci);
     if (p_port == NULL) {
         RFCOMM_TRACE_WARNING("%s Unable to find DLCI port dlci:%d", __func__,
-                dlci);
+                             dlci);
         return;
     }
 
     if ((p_port->state != PORT_STATE_OPENED)
-     || (p_port->rfc.state  != RFC_STATE_OPENED))
+            || (p_port->rfc.state  != RFC_STATE_OPENED)) {
         return;
+    }
 
     p_port->rfc.expected_rsp |= RFC_RSP_RLS;
 

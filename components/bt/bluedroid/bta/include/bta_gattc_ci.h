@@ -31,8 +31,7 @@
 *****************************************************************************/
 
 /* Open Complete Event */
-typedef struct
-{
+typedef struct {
     BT_HDR            hdr;
     tBTA_GATT_STATUS  status;
 } tBTA_GATTC_CI_EVT;
@@ -40,8 +39,7 @@ typedef struct
 #define BTA_GATTC_NV_LOAD_MAX   10
 
 /* Read Ready Event */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     tBTA_GATT_STATUS    status;
     UINT16              num_attr;
@@ -72,7 +70,7 @@ extern "C"
 **
 *******************************************************************************/
 extern void bta_gattc_ci_cache_open(BD_ADDR server_bda, UINT16 evt,
-                                            tBTA_GATT_STATUS status, UINT16 conn_id);
+                                    tBTA_GATT_STATUS status, UINT16 conn_id);
 
 /*******************************************************************************
 **

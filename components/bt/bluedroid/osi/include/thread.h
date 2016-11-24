@@ -26,10 +26,10 @@
 #define portBASE_TYPE int
 
 struct bt_task_evt {
-    uint32_t	sig;	//task sig
-    void *		par;	//point to task param
-	void *		cb;		//point to function cb
-	void *		arg;	//point to function arg
+    uint32_t    sig;    //task sig
+    void       *par;    //point to task param
+    void       *cb;     //point to function cb
+    void       *arg;    //point to function arg
 };
 typedef struct bt_task_evt BtTaskEvt_t;
 

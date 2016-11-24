@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "prf_defs.h"
- 
-#if	(WX_AIRSYNC_CFG)
+
+#if (WX_AIRSYNC_CFG)
 
 #include "bt_target.h"
 #include "gatt_api.h"
@@ -25,23 +25,22 @@
 /// Maximum Transmission Unit
 #define ATT_DEFAULT_MTU                                 (23)
 
-#define BLE_WECHAT_MAX_DATA_LEN            (ATT_DEFAULT_MTU - 3) 	
+#define BLE_WECHAT_MAX_DATA_LEN            (ATT_DEFAULT_MTU - 3)
 
-  
- //define the key serivce uuid
-#define ATT_SVC_AIRSYNC	0xFEE7
- //define the airsync Char uuid
-#define ATT_CHAR_AIRSYNC_WIT	0xFEC7
-#define ATT_CHAR_AIRSYBC_NTF	0xFEC8
-#define ATT_CHAR_AIRSYNC_READ	0xFEC9
+
+//define the key serivce uuid
+#define ATT_SVC_AIRSYNC 0xFEE7
+//define the airsync Char uuid
+#define ATT_CHAR_AIRSYNC_WIT    0xFEC7
+#define ATT_CHAR_AIRSYBC_NTF    0xFEC8
+#define ATT_CHAR_AIRSYNC_READ   0xFEC9
 
 
 typedef void (tAIRSYNC_CBACK)(UINT8 app_id, UINT8 event, UINT8 len, UINT8 *data);
 
 
 /// WX AirSync Service Attributes Indexes
-enum
-{
+enum {
     WX_IDX_SVC,
     WX_IDX_AIRSYNC_WIT_CHAR,
     WX_IDX_AIRSYNC_WIT_VAL,
@@ -54,49 +53,45 @@ enum
     WX_IDX_NB,
 };
 
-typedef struct
-{
+typedef struct {
     BD_ADDR remote_bda;
     BOOLEAN need_rsp;
     UINT16  clt_cfg;
-}tAirSync_WRITE_DATA;
+} tAirSync_WRITE_DATA;
 
-typedef struct
-{
-    BOOLEAN		 in_use;
-    BOOLEAN		 congest;
-    UINT16 		 conn_id;
-    BOOLEAN		 connected;
-    BD_ADDR		 remote_bda;
-    UINT32 		 trans_id;
-    UINT8			 cur_srvc_id;
+typedef struct {
+    BOOLEAN      in_use;
+    BOOLEAN      congest;
+    UINT16       conn_id;
+    BOOLEAN      connected;
+    BD_ADDR      remote_bda;
+    UINT32       trans_id;
+    UINT8            cur_srvc_id;
 
-}tAirSync_CLCB;
+} tAirSync_CLCB;
 
 
-typedef struct
-{
-    UINT8			 app_id;
-    UINT16 		 airsync_wirt_hdl;
-    UINT16 		 airsync_ntf_hdl;
-    UINT16			 airsync_read_hdl;
-    UINT16 		 airsync_cfg_hdl;
- 
-    tAIRSYNC_CBACK		 *p_cback;
+typedef struct {
+    UINT8            app_id;
+    UINT16       airsync_wirt_hdl;
+    UINT16       airsync_ntf_hdl;
+    UINT16           airsync_read_hdl;
+    UINT16       airsync_cfg_hdl;
 
-}tAirSync_INST;
+    tAIRSYNC_CBACK       *p_cback;
+
+} tAirSync_INST;
 
 
 /* service engine control block */
-typedef struct
-{
-    tAirSync_CLCB			 clcb;			 /* connection link*/
-    tGATT_IF				 gatt_if;
-    BOOLEAN				 enabled;
-    BOOLEAN				 is_primery;
-    tAirSync_INST			 airsync_inst;
-    UINT8					 inst_id;
-}tAIRSYNC_CB_ENV;
+typedef struct {
+    tAirSync_CLCB            clcb;           /* connection link*/
+    tGATT_IF                 gatt_if;
+    BOOLEAN              enabled;
+    BOOLEAN              is_primery;
+    tAirSync_INST            airsync_inst;
+    UINT8                    inst_id;
+} tAIRSYNC_CB_ENV;
 
 void AirSync_CreateService(void);
 
@@ -111,5 +106,5 @@ tGATT_STATUS AirSync_Init(tAIRSYNC_CBACK *call_back);
 void AirSync_msg_notify(UINT8 len, UINT8 *button_msg);
 
 extern tAIRSYNC_CB_ENV airsync_cb_env;
- 
-#endif	///WX_AIRSYNC_CFG
+
+#endif  ///WX_AIRSYNC_CFG

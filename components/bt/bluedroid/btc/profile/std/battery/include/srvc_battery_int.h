@@ -30,8 +30,7 @@
 #define BATTERY_LEVEL_SIZE      1
 
 
-typedef struct
-{
+typedef struct {
     UINT8           app_id;
     UINT16          ba_level_hdl;
     UINT16          clt_cfg_hdl;
@@ -44,15 +43,14 @@ typedef struct
     UINT8           pending_clcb_idx;
     UINT8           pending_evt;
 
-}tBA_INST;
+} tBA_INST;
 
-typedef struct
-{
+typedef struct {
     tBA_INST                battery_inst[BA_MAX_INT_NUM];
     UINT8                   inst_id;
     BOOLEAN                 enabled;
 
-}tBATTERY_CB;
+} tBATTERY_CB;
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,9 +67,9 @@ extern tBATTERY_CB *battery_cb_ptr;
 
 extern BOOLEAN battery_valid_handle_range(UINT16 handle);
 
-extern UINT8 battery_s_write_attr_value(UINT8 clcb_idx, tGATT_WRITE_REQ * p_value,
-                                 tGATT_STATUS *p_status);
-extern UINT8 battery_s_read_attr_value (UINT8 clcb_idx, UINT16 handle, tGATT_VALUE *p_value, BOOLEAN is_long, tGATT_STATUS* p_status);
+extern UINT8 battery_s_write_attr_value(UINT8 clcb_idx, tGATT_WRITE_REQ *p_value,
+                                        tGATT_STATUS *p_status);
+extern UINT8 battery_s_read_attr_value (UINT8 clcb_idx, UINT16 handle, tGATT_VALUE *p_value, BOOLEAN is_long, tGATT_STATUS *p_status);
 
 
 

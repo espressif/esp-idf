@@ -66,8 +66,7 @@
 ** the states may seem a bit strange, but they are taken from
 ** the Bluetooth specification.
 */
-typedef enum
-{
+typedef enum {
     CST_CLOSED,                           /* Channel is in clodes state           */
     CST_ORIG_W4_SEC_COMP,                 /* Originator waits security clearence  */
     CST_TERM_W4_SEC_COMP,                 /* Acceptor waits security clearence    */
@@ -81,8 +80,7 @@ typedef enum
 
 /* Define the possible L2CAP link states
 */
-typedef enum
-{
+typedef enum {
     LST_DISCONNECTED,
     LST_CONNECT_HOLDING,
     LST_CONNECTING_WAIT_SWITCH,
@@ -157,8 +155,7 @@ typedef enum
 
 typedef uint8_t tL2C_BLE_FIXED_CHNLS_MASK;
 
-typedef struct
-{
+typedef struct {
     UINT8       next_tx_seq;                /* Next sequence number to be Tx'ed         */
     UINT8       last_rx_ack;                /* Last sequence number ack'ed by the peer  */
     UINT8       next_seq_expected;          /* Next peer sequence number expected       */
@@ -193,7 +190,7 @@ typedef struct
     UINT32      s_frames_rcvd[4];           /* S-frames rcvd (RR, REJ, RNR, SREJ)       */
     UINT32      xmit_window_closed;         /* # of times the xmit window was closed    */
     UINT32      controller_idle;            /* # of times less than 2 packets in controller */
-                                            /* when the xmit window was closed          */
+    /* when the xmit window was closed          */
     UINT32      pkts_retransmitted;         /* # of packets that were retransmitted     */
     UINT32      retrans_touts;              /* # of retransmission timouts              */
     UINT32      xmit_ack_touts;             /* # of xmit ack timouts                    */
@@ -224,19 +221,17 @@ typedef struct
 #define L2C_UCD_STATE_W4_RECEPTION  0x02
 #define L2C_UCD_STATE_W4_MTU        0x04
 
-typedef struct
-{
+typedef struct {
     UINT8               state;
     tL2CAP_UCD_CB_INFO  cb_info;
 } tL2C_UCD_REG;
 #endif
 
-typedef struct
-{
+typedef struct {
     BOOLEAN                 in_use;
     UINT16                  psm;
     UINT16                  real_psm;               /* This may be a dummy RCB for an o/b connection but */
-                                                    /* this is the real PSM that we need to connect to   */
+    /* this is the real PSM that we need to connect to   */
 #if (L2CAP_UCD_INCLUDED == TRUE)
     tL2C_UCD_REG            ucd;
 #endif
@@ -250,8 +245,7 @@ typedef struct
 ** Each CCB has unique local and remote CIDs. All channel control blocks on
 ** the same physical link and are chained together.
 */
-typedef struct t_l2c_ccb
-{
+typedef struct t_l2c_ccb {
     BOOLEAN             in_use;                 /* TRUE when in use, FALSE when not */
     tL2C_CHNL_STATE     chnl_state;             /* Channel state                    */
 
@@ -319,8 +313,7 @@ typedef struct t_l2c_ccb
 /***********************************************************************
 ** Define a queue of linked CCBs.
 */
-typedef struct
-{
+typedef struct {
     tL2C_CCB        *p_first_ccb;               /* The first channel in this queue */
     tL2C_CCB        *p_last_ccb;                /* The last  channel in this queue */
 } tL2C_CCB_Q;
@@ -337,8 +330,7 @@ typedef struct
 /* can be sent to headset even if higher priority channel (for example, AV media channel) */
 /* is congested.                                                                          */
 
-typedef struct
-{
+typedef struct {
     tL2C_CCB        *p_serve_ccb;               /* current serving ccb within priority group */
     tL2C_CCB        *p_first_ccb;               /* first ccb of priority group */
     UINT8           num_ccb;                    /* number of channels in priority group */
@@ -350,8 +342,7 @@ typedef struct
 /* Define a link control block. There is one link control block between
 ** this device and any other device (i.e. BD ADDR).
 */
-typedef struct t_l2c_linkcb
-{
+typedef struct t_l2c_linkcb {
     BOOLEAN             in_use;                     /* TRUE when in use, FALSE when not */
     tL2C_LINK_STATE     link_state;
 
@@ -377,7 +368,7 @@ typedef struct t_l2c_linkcb
     UINT16              sent_not_acked;             /* Num packets sent but not acked   */
 
     BOOLEAN             partial_segment_being_sent; /* Set TRUE when a partial segment  */
-                                                    /* is being sent.                   */
+    /* is being sent.                   */
     BOOLEAN             w4_info_rsp;                /* TRUE when info request is active */
     UINT8               info_rx_bits;               /* set 1 if received info type */
     UINT32              peer_ext_fea;               /* Peer's extended features mask    */
@@ -429,8 +420,7 @@ typedef struct t_l2c_linkcb
 
 /* Define the L2CAP control structure
 */
-typedef struct
-{
+typedef struct {
     UINT8           l2cap_trace_level;
     UINT16          controller_xmit_window;         /* Total ACL window for all links   */
 
@@ -460,7 +450,7 @@ typedef struct
 
 #if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
     UINT16          non_flushable_pbf;              /* L2CAP_PKT_START_NON_FLUSHABLE if controller supports */
-                                                    /* Otherwise, L2CAP_PKT_START */
+    /* Otherwise, L2CAP_PKT_START */
     BOOLEAN         is_flush_active;                /* TRUE if an HCI_Enhanced_Flush has been sent */
 #endif
 
@@ -499,8 +489,7 @@ typedef struct
 ** This structure is used to pass between functions, and not all the
 ** fields will always be filled in.
 */
-typedef struct
-{
+typedef struct {
     BD_ADDR         bd_addr;                        /* Remote BD address        */
     UINT8           status;                         /* Connection status        */
     UINT16          psm;                            /* PSM of the connection    */
@@ -577,7 +566,7 @@ extern void     l2cu_adj_id (tL2C_LCB *p_lcb, UINT8 adj_mask);
 extern BOOLEAN  l2c_is_cmd_rejected (UINT8 cmd_code, UINT8 id, tL2C_LCB *p_lcb);
 
 extern void     l2cu_send_peer_cmd_reject (tL2C_LCB *p_lcb, UINT16 reason,
-                                           UINT8 rem_id,UINT16 p1, UINT16 p2);
+        UINT8 rem_id, UINT16 p1, UINT16 p2);
 extern void     l2cu_send_peer_connect_req (tL2C_CCB *p_ccb);
 extern void     l2cu_send_peer_connect_rsp (tL2C_CCB *p_ccb, UINT16 result, UINT16 status);
 extern void     l2cu_send_peer_config_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg);
@@ -743,14 +732,14 @@ extern void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status);
 
 #if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE)
 extern void l2cble_process_rc_param_request_evt(UINT16 handle, UINT16 int_min, UINT16 int_max,
-                                                        UINT16 latency, UINT16 timeout);
+        UINT16 latency, UINT16 timeout);
 #endif
 
 extern void l2cble_update_data_length(tL2C_LCB *p_lcb);
 extern void l2cble_set_fixed_channel_tx_data_length(BD_ADDR remote_bda, UINT16 fix_cid,
-                                                                UINT16 tx_mtu);
+        UINT16 tx_mtu);
 extern void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len,
-                                                                UINT16 rx_data_len);
+        UINT16 rx_data_len);
 
 #endif
 extern void l2cu_process_fixed_disc_cback (tL2C_LCB *p_lcb);

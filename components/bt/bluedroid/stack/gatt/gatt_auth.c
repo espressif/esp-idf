@@ -54,29 +54,26 @@ static BOOLEAN gatt_sign_data (tGATT_CLCB *p_clcb)
 
     p_data = (UINT8 *)GKI_getbuf((UINT16)(p_attr->len + 3)); /* 3 = 2 byte handle + opcode */
 
-    if (p_data != NULL)
-    {
+    if (p_data != NULL) {
         p = p_data;
         UINT8_TO_STREAM(p, GATT_SIGN_CMD_WRITE);
         UINT16_TO_STREAM(p, p_attr->handle);
         ARRAY_TO_STREAM(p, p_attr->value, p_attr->len);
 
         /* sign data length should be attribulte value length plus 2B handle + 1B op code */
-        if ((payload_size - GATT_AUTH_SIGN_LEN - 3) < p_attr->len)
+        if ((payload_size - GATT_AUTH_SIGN_LEN - 3) < p_attr->len) {
             p_attr->len = payload_size - GATT_AUTH_SIGN_LEN - 3;
+        }
 
         p_signature = p_attr->value + p_attr->len;
         if (BTM_BleDataSignature(p_clcb->p_tcb->peer_bda,
-                                p_data,
-                                (UINT16)(p_attr->len + 3), /* 3 = 2 byte handle + opcode */
-                                p_signature))
-        {
+                                 p_data,
+                                 (UINT16)(p_attr->len + 3), /* 3 = 2 byte handle + opcode */
+                                 p_signature)) {
             p_attr->len += BTM_BLE_AUTH_SIGN_LEN;
             gatt_set_ch_state(p_clcb->p_tcb, GATT_CH_OPEN);
             gatt_act_write(p_clcb, GATT_SEC_SIGN_DATA);
-        }
-        else
-        {
+        } else {
             gatt_end_operation(p_clcb, GATT_INTERNAL_ERROR, NULL);
         }
 
@@ -112,13 +109,10 @@ void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
     p =  p_orig + cmd_len - 4;
     STREAM_TO_UINT32(counter, p);
 
-    if (BTM_BleVerifySignature(p_tcb->peer_bda, p_orig, cmd_len, counter, p))
-    {
+    if (BTM_BleVerifySignature(p_tcb->peer_bda, p_orig, cmd_len, counter, p)) {
         STREAM_TO_UINT8(op_code, p_orig);
         gatt_server_handle_client_req (p_tcb, op_code, (UINT16)(p_buf->len - 1), p_orig);
-    }
-    else
-    {
+    } else {
         /* if this is a bad signature, assume from attacker, ignore it  */
         GATT_TRACE_ERROR("Signature Verification Failed, data ignored");
     }
@@ -136,19 +130,15 @@ void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
 *******************************************************************************/
 void gatt_sec_check_complete(BOOLEAN sec_check_ok, tGATT_CLCB   *p_clcb, UINT8 sec_act)
 {
-    if (p_clcb && p_clcb->p_tcb && GKI_queue_is_empty(&p_clcb->p_tcb->pending_enc_clcb))
+    if (p_clcb && p_clcb->p_tcb && GKI_queue_is_empty(&p_clcb->p_tcb->pending_enc_clcb)) {
         gatt_set_sec_act(p_clcb->p_tcb, GATT_SEC_NONE);
+    }
 
-    if (!sec_check_ok)
-    {
+    if (!sec_check_ok) {
         gatt_end_operation(p_clcb, GATT_AUTH_FAIL, NULL);
-    }
-    else if (p_clcb->operation == GATTC_OPTYPE_WRITE)
-    {
+    } else if (p_clcb->operation == GATTC_OPTYPE_WRITE) {
         gatt_act_write(p_clcb, sec_act);
-    }
-    else if (p_clcb->operation == GATTC_OPTYPE_READ)
-    {
+    } else if (p_clcb->operation == GATTC_OPTYPE_READ) {
         gatt_act_read(p_clcb, p_clcb->counter);
     }
 }
@@ -171,26 +161,20 @@ void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_d
     UNUSED(p_ref_data);
 
     GATT_TRACE_DEBUG("gatt_enc_cmpl_cback");
-    if ((p_tcb = gatt_find_tcb_by_addr(bd_addr, transport)) != NULL)
-    {
-        if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING)
+    if ((p_tcb = gatt_find_tcb_by_addr(bd_addr, transport)) != NULL) {
+        if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING) {
             return;
+        }
 
-        if ((p_buf = (tGATT_PENDING_ENC_CLCB *)GKI_dequeue (&p_tcb->pending_enc_clcb)) != NULL)
-        {
-            if (result == BTM_SUCCESS)
-            {
-                if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENCRYPT_MITM )
-                {
+        if ((p_buf = (tGATT_PENDING_ENC_CLCB *)GKI_dequeue (&p_tcb->pending_enc_clcb)) != NULL) {
+            if (result == BTM_SUCCESS) {
+                if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENCRYPT_MITM ) {
                     BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flag, transport);
 
-                    if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
-                    {
+                    if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
                         status = TRUE;
                     }
-                }
-                else
-                {
+                } else {
                     status = TRUE;
                 }
             }
@@ -198,24 +182,18 @@ void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_d
             GKI_freebuf(p_buf);
             /* start all other pending operation in queue */
             count = GKI_queue_length(&p_tcb->pending_enc_clcb);
-            for (; count > 0; count --)
-            {
-                if ((p_buf = (tGATT_PENDING_ENC_CLCB *)GKI_dequeue (&p_tcb->pending_enc_clcb)) != NULL)
-                {
+            for (; count > 0; count --) {
+                if ((p_buf = (tGATT_PENDING_ENC_CLCB *)GKI_dequeue (&p_tcb->pending_enc_clcb)) != NULL) {
                     gatt_security_check_start(p_buf->p_clcb);
                     GKI_freebuf(p_buf);
-                }
-                else
+                } else {
                     break;
+                }
             }
-        }
-        else
-        {
+        } else {
             GATT_TRACE_ERROR("Unknown operation encryption completed");
         }
-    }
-    else
-    {
+    } else {
         GATT_TRACE_ERROR("enc callback for unknown bd_addr");
     }
 }
@@ -237,36 +215,28 @@ void gatt_notify_enc_cmpl(BD_ADDR bd_addr)
     UINT16       count;
     UINT8        i = 0;
 
-    if ((p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE)) != NULL)
-    {
-        for (i = 0; i < GATT_MAX_APPS; i++)
-        {
-            if (gatt_cb.cl_rcb[i].in_use && gatt_cb.cl_rcb[i].app_cb.p_enc_cmpl_cb)
-            {
+    if ((p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE)) != NULL) {
+        for (i = 0; i < GATT_MAX_APPS; i++) {
+            if (gatt_cb.cl_rcb[i].in_use && gatt_cb.cl_rcb[i].app_cb.p_enc_cmpl_cb) {
                 (*gatt_cb.cl_rcb[i].app_cb.p_enc_cmpl_cb)(gatt_cb.cl_rcb[i].gatt_if, bd_addr);
             }
         }
 
-        if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING)
-        {
+        if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING) {
             gatt_set_sec_act(p_tcb, GATT_SEC_NONE);
 
             count = GKI_queue_length(&p_tcb->pending_enc_clcb);
 
-            for (; count > 0; count --)
-            {
-                if ((p_buf = (tGATT_PENDING_ENC_CLCB *)GKI_dequeue (&p_tcb->pending_enc_clcb)) != NULL)
-                {
+            for (; count > 0; count --) {
+                if ((p_buf = (tGATT_PENDING_ENC_CLCB *)GKI_dequeue (&p_tcb->pending_enc_clcb)) != NULL) {
                     gatt_security_check_start(p_buf->p_clcb);
                     GKI_freebuf(p_buf);
-                }
-                else
+                } else {
                     break;
+                }
             }
         }
-    }
-    else
-    {
+    } else {
         GATT_TRACE_DEBUG("notify GATT for encryption completion of unknown device");
     }
     return;
@@ -282,8 +252,7 @@ void gatt_notify_enc_cmpl(BD_ADDR bd_addr)
 *******************************************************************************/
 void gatt_set_sec_act(tGATT_TCB *p_tcb, tGATT_SEC_ACTION sec_act)
 {
-    if (p_tcb)
-    {
+    if (p_tcb) {
         p_tcb->sec_act = sec_act;
     }
 }
@@ -299,8 +268,7 @@ void gatt_set_sec_act(tGATT_TCB *p_tcb, tGATT_SEC_ACTION sec_act)
 tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB *p_tcb)
 {
     tGATT_SEC_ACTION sec_act = GATT_SEC_NONE;
-    if (p_tcb)
-    {
+    if (p_tcb) {
         sec_act = p_tcb->sec_act;
     }
     return sec_act;
@@ -321,14 +289,15 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
     UINT8               sec_flag;
     tGATT_TCB           *p_tcb = p_clcb->p_tcb;
     tGATT_AUTH_REQ      auth_req = p_clcb->auth_req;
-    BOOLEAN             is_link_encrypted= FALSE;
-    BOOLEAN             is_link_key_known=FALSE;
-    BOOLEAN             is_key_mitm=FALSE;
+    BOOLEAN             is_link_encrypted = FALSE;
+    BOOLEAN             is_link_key_known = FALSE;
+    BOOLEAN             is_key_mitm = FALSE;
     UINT8               key_type;
     tBTM_BLE_SEC_REQ_ACT    sec_act = BTM_LE_SEC_NONE;
 
-    if (auth_req == GATT_AUTH_REQ_NONE )
+    if (auth_req == GATT_AUTH_REQ_NONE ) {
         return act;
+    }
 
     BTM_GetSecurityFlagsByTransport(p_tcb->peer_bda, &sec_flag, p_clcb->p_tcb->transport);
 
@@ -336,67 +305,61 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
 
     /* if a encryption is pending, need to wait */
     if (sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD &&
-        auth_req != GATT_AUTH_REQ_NONE)
+            auth_req != GATT_AUTH_REQ_NONE) {
         return GATT_SEC_ENC_PENDING;
+    }
 
-    if (sec_flag & (BTM_SEC_FLAG_ENCRYPTED| BTM_SEC_FLAG_LKEY_KNOWN))
-    {
-        if (sec_flag & BTM_SEC_FLAG_ENCRYPTED)
+    if (sec_flag & (BTM_SEC_FLAG_ENCRYPTED | BTM_SEC_FLAG_LKEY_KNOWN)) {
+        if (sec_flag & BTM_SEC_FLAG_ENCRYPTED) {
             is_link_encrypted = TRUE;
+        }
 
         is_link_key_known = TRUE;
 
-        if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
+        if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
             is_key_mitm = TRUE;
+        }
     }
 
     /* first check link key upgrade required or not */
-    switch (auth_req)
-    {
-        case GATT_AUTH_REQ_MITM:
-        case GATT_AUTH_REQ_SIGNED_MITM:
-            if (!is_key_mitm)
-                act = GATT_SEC_ENCRYPT_MITM;
-            break;
+    switch (auth_req) {
+    case GATT_AUTH_REQ_MITM:
+    case GATT_AUTH_REQ_SIGNED_MITM:
+        if (!is_key_mitm) {
+            act = GATT_SEC_ENCRYPT_MITM;
+        }
+        break;
 
-        case GATT_AUTH_REQ_NO_MITM:
-        case GATT_AUTH_REQ_SIGNED_NO_MITM:
-            if (!is_link_key_known)
-                act = GATT_SEC_ENCRYPT_NO_MITM;
-            break;
-        default:
-            break;
+    case GATT_AUTH_REQ_NO_MITM:
+    case GATT_AUTH_REQ_SIGNED_NO_MITM:
+        if (!is_link_key_known) {
+            act = GATT_SEC_ENCRYPT_NO_MITM;
+        }
+        break;
+    default:
+        break;
     }
 
     /* now check link needs to be encrypted or not if the link key upgrade is not required */
-    if (act == GATT_SEC_OK)
-    {
+    if (act == GATT_SEC_OK) {
         if (p_tcb->transport == BT_TRANSPORT_LE &&
-            (p_clcb->operation == GATTC_OPTYPE_WRITE) &&
-            (p_clcb->op_subtype == GATT_WRITE_NO_RSP))
-        {
+                (p_clcb->operation == GATTC_OPTYPE_WRITE) &&
+                (p_clcb->op_subtype == GATT_WRITE_NO_RSP)) {
             /* this is a write command request
                check data signing required or not */
-            if (!is_link_encrypted)
-            {
+            if (!is_link_encrypted) {
                 btm_ble_get_enc_key_type(p_tcb->peer_bda, &key_type);
 
                 if ( (key_type & BTM_LE_KEY_LCSRK) &&
-                     ((auth_req == GATT_AUTH_REQ_SIGNED_NO_MITM) ||
-                      (auth_req == GATT_AUTH_REQ_SIGNED_MITM)))
-                {
+                        ((auth_req == GATT_AUTH_REQ_SIGNED_NO_MITM) ||
+                         (auth_req == GATT_AUTH_REQ_SIGNED_MITM))) {
                     act = GATT_SEC_SIGN_DATA;
-                }
-                else
-                {
+                } else {
                     act = GATT_SEC_ENCRYPT;
                 }
             }
-        }
-        else
-        {
-            if (!is_link_encrypted)
-            {
+        } else {
+            if (!is_link_encrypted) {
                 act = GATT_SEC_ENCRYPT;
             }
         }
@@ -422,18 +385,18 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
 tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB *p_tcb)
 {
     tGATT_STATUS    encrypt_status = GATT_NOT_ENCRYPTED;
-    UINT8           sec_flag=0;
+    UINT8           sec_flag = 0;
 
     BTM_GetSecurityFlagsByTransport(p_tcb->peer_bda, &sec_flag, p_tcb->transport);
 
-    if ((sec_flag & BTM_SEC_FLAG_ENCRYPTED) && (sec_flag & BTM_SEC_FLAG_LKEY_KNOWN))
-    {
+    if ((sec_flag & BTM_SEC_FLAG_ENCRYPTED) && (sec_flag & BTM_SEC_FLAG_LKEY_KNOWN)) {
         encrypt_status = GATT_ENCRYPED_NO_MITM;
-        if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
+        if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
             encrypt_status = GATT_ENCRYPED_MITM;
+        }
     }
 
-    GATT_TRACE_DEBUG("gatt_get_link_encrypt_status status=0x%x",encrypt_status);
+    GATT_TRACE_DEBUG("gatt_get_link_encrypt_status status=0x%x", encrypt_status);
     return  encrypt_status ;
 }
 
@@ -450,20 +413,19 @@ tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB *p_tcb)
 static BOOLEAN gatt_convert_sec_action(tGATT_SEC_ACTION gatt_sec_act, tBTM_BLE_SEC_ACT *p_btm_sec_act )
 {
     BOOLEAN status = TRUE;
-    switch (gatt_sec_act)
-    {
-        case GATT_SEC_ENCRYPT:
-            *p_btm_sec_act = BTM_BLE_SEC_ENCRYPT;
-            break;
-        case GATT_SEC_ENCRYPT_NO_MITM:
-            *p_btm_sec_act = BTM_BLE_SEC_ENCRYPT_NO_MITM;
-            break;
-        case GATT_SEC_ENCRYPT_MITM:
-            *p_btm_sec_act = BTM_BLE_SEC_ENCRYPT_MITM;
-            break;
-        default:
-            status = FALSE;
-            break;
+    switch (gatt_sec_act) {
+    case GATT_SEC_ENCRYPT:
+        *p_btm_sec_act = BTM_BLE_SEC_ENCRYPT;
+        break;
+    case GATT_SEC_ENCRYPT_NO_MITM:
+        *p_btm_sec_act = BTM_BLE_SEC_ENCRYPT_NO_MITM;
+        break;
+    case GATT_SEC_ENCRYPT_MITM:
+        *p_btm_sec_act = BTM_BLE_SEC_ENCRYPT_MITM;
+        break;
+    default:
+        status = FALSE;
+        break;
     }
 
     return status;
@@ -488,43 +450,41 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
 
     gatt_sec_act = gatt_determine_sec_act(p_clcb);
 
-    if (sec_act_old == GATT_SEC_NONE)
+    if (sec_act_old == GATT_SEC_NONE) {
         gatt_set_sec_act(p_tcb, gatt_sec_act);
-
-    switch (gatt_sec_act )
-    {
-        case GATT_SEC_SIGN_DATA:
-            GATT_TRACE_DEBUG("gatt_security_check_start: Do data signing");
-            gatt_sign_data(p_clcb);
-            break;
-        case GATT_SEC_ENCRYPT:
-        case GATT_SEC_ENCRYPT_NO_MITM:
-        case GATT_SEC_ENCRYPT_MITM:
-            if (sec_act_old < GATT_SEC_ENCRYPT)
-            {
-                GATT_TRACE_DEBUG("gatt_security_check_start: Encrypt now or key upgreade first");
-                gatt_convert_sec_action(gatt_sec_act, &btm_ble_sec_act);
-                btm_status = BTM_SetEncryption(p_tcb->peer_bda, p_tcb->transport , gatt_enc_cmpl_cback, &btm_ble_sec_act);
-                if ( (btm_status != BTM_SUCCESS) && (btm_status != BTM_CMD_STARTED))
-                {
-                    GATT_TRACE_ERROR("gatt_security_check_start BTM_SetEncryption failed btm_status=%d", btm_status);
-                    status = FALSE;
-                }
-            }
-            if (status)
-                gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
-            break;
-        case GATT_SEC_ENC_PENDING:
-            gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
-            /* wait for link encrypotion to finish */
-            break;
-        default:
-            gatt_sec_check_complete(TRUE, p_clcb, gatt_sec_act);
-            break;
     }
 
-    if (status == FALSE)
-    {
+    switch (gatt_sec_act ) {
+    case GATT_SEC_SIGN_DATA:
+        GATT_TRACE_DEBUG("gatt_security_check_start: Do data signing");
+        gatt_sign_data(p_clcb);
+        break;
+    case GATT_SEC_ENCRYPT:
+    case GATT_SEC_ENCRYPT_NO_MITM:
+    case GATT_SEC_ENCRYPT_MITM:
+        if (sec_act_old < GATT_SEC_ENCRYPT) {
+            GATT_TRACE_DEBUG("gatt_security_check_start: Encrypt now or key upgreade first");
+            gatt_convert_sec_action(gatt_sec_act, &btm_ble_sec_act);
+            btm_status = BTM_SetEncryption(p_tcb->peer_bda, p_tcb->transport , gatt_enc_cmpl_cback, &btm_ble_sec_act);
+            if ( (btm_status != BTM_SUCCESS) && (btm_status != BTM_CMD_STARTED)) {
+                GATT_TRACE_ERROR("gatt_security_check_start BTM_SetEncryption failed btm_status=%d", btm_status);
+                status = FALSE;
+            }
+        }
+        if (status) {
+            gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
+        }
+        break;
+    case GATT_SEC_ENC_PENDING:
+        gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
+        /* wait for link encrypotion to finish */
+        break;
+    default:
+        gatt_sec_check_complete(TRUE, p_clcb, gatt_sec_act);
+        break;
+    }
+
+    if (status == FALSE) {
         gatt_set_sec_act(p_tcb, GATT_SEC_NONE);
         gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
     }

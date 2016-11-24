@@ -129,12 +129,12 @@ void btu_init_core(void)
 ******************************************************************************/
 void btu_free_core(void)
 {
-      // Free the mandatory core stack components
-      l2c_free();
+    // Free the mandatory core stack components
+    l2c_free();
 
 #if BLE_INCLUDED == TRUE
 #if (defined(GATT_INCLUDED) && GATT_INCLUDED == true)
-      gatt_free();
+    gatt_free();
 #endif
 #endif
 }
@@ -157,91 +157,99 @@ void BTU_StartUp(void)
     btu_cb.trace_level = HCI_INITIAL_TRACE_LEVEL;
 
     btu_bta_msg_queue = fixed_queue_new(SIZE_MAX);
-    if (btu_bta_msg_queue == NULL)
+    if (btu_bta_msg_queue == NULL) {
         goto error_exit;
+    }
 
     btu_general_alarm_hash_map = hash_map_new(BTU_GENERAL_ALARM_HASH_MAP_SIZE,
-            hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
-    if (btu_general_alarm_hash_map == NULL)
+                                 hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
+    if (btu_general_alarm_hash_map == NULL) {
         goto error_exit;
+    }
 
     pthread_mutex_init(&btu_general_alarm_lock, NULL);
 
     btu_general_alarm_queue = fixed_queue_new(SIZE_MAX);
-    if (btu_general_alarm_queue == NULL)
+    if (btu_general_alarm_queue == NULL) {
         goto error_exit;
+    }
 
     btu_oneshot_alarm_hash_map = hash_map_new(BTU_ONESHOT_ALARM_HASH_MAP_SIZE,
-            hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
-    if (btu_oneshot_alarm_hash_map == NULL)
+                                 hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
+    if (btu_oneshot_alarm_hash_map == NULL) {
         goto error_exit;
+    }
 
     pthread_mutex_init(&btu_oneshot_alarm_lock, NULL);
 
     btu_oneshot_alarm_queue = fixed_queue_new(SIZE_MAX);
-    if (btu_oneshot_alarm_queue == NULL)
+    if (btu_oneshot_alarm_queue == NULL) {
         goto error_exit;
+    }
 
     btu_l2cap_alarm_hash_map = hash_map_new(BTU_L2CAP_ALARM_HASH_MAP_SIZE,
-            hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
-    if (btu_l2cap_alarm_hash_map == NULL)
+                                            hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
+    if (btu_l2cap_alarm_hash_map == NULL) {
         goto error_exit;
+    }
 
     pthread_mutex_init(&btu_l2cap_alarm_lock, NULL);
 
     btu_l2cap_alarm_queue = fixed_queue_new(SIZE_MAX);
-    if (btu_l2cap_alarm_queue == NULL)
-         goto error_exit;
+    if (btu_l2cap_alarm_queue == NULL) {
+        goto error_exit;
+    }
 
     xBtuQueue = xQueueCreate(60, sizeof(BtTaskEvt_t));
     xTaskCreate(btu_task_thread_handler, "BtuT", 8192, NULL, configMAX_PRIORITIES - 1, &xBtuTaskHandle);
     btu_task_post(SIG_BTU_START_UP);
-/*
-    // Continue startup on bt workqueue thread.
-    thread_post(bt_workqueue_thread, btu_task_start_up, NULL);
-*/
+    /*
+        // Continue startup on bt workqueue thread.
+        thread_post(bt_workqueue_thread, btu_task_start_up, NULL);
+    */
     return;
 
-  error_exit:;
+error_exit:;
     LOG_ERROR("%s Unable to allocate resources for bt_workqueue", __func__);
     BTU_ShutDown();
 }
 
-void BTU_ShutDown(void) {
-  btu_task_shut_down();
-/*
-  fixed_queue_free(btu_bta_msg_queue, NULL);
-*/
-  hash_map_free(btu_general_alarm_hash_map);
-  pthread_mutex_destroy(&btu_general_alarm_lock);
-  fixed_queue_free(btu_general_alarm_queue, NULL);
+void BTU_ShutDown(void)
+{
+    btu_task_shut_down();
+    /*
+      fixed_queue_free(btu_bta_msg_queue, NULL);
+    */
+    hash_map_free(btu_general_alarm_hash_map);
+    pthread_mutex_destroy(&btu_general_alarm_lock);
+    fixed_queue_free(btu_general_alarm_queue, NULL);
 
-  hash_map_free(btu_oneshot_alarm_hash_map);
-  pthread_mutex_destroy(&btu_oneshot_alarm_lock);
-  fixed_queue_free(btu_oneshot_alarm_queue, NULL);
+    hash_map_free(btu_oneshot_alarm_hash_map);
+    pthread_mutex_destroy(&btu_oneshot_alarm_lock);
+    fixed_queue_free(btu_oneshot_alarm_queue, NULL);
 
-  hash_map_free(btu_l2cap_alarm_hash_map);
-  pthread_mutex_destroy(&btu_l2cap_alarm_lock);
-  fixed_queue_free(btu_l2cap_alarm_queue, NULL);
+    hash_map_free(btu_l2cap_alarm_hash_map);
+    pthread_mutex_destroy(&btu_l2cap_alarm_lock);
+    fixed_queue_free(btu_l2cap_alarm_queue, NULL);
 
-  //thread_free(bt_workqueue_thread);
-  vTaskDelete(xBtuTaskHandle);
-  vQueueDelete(xBtuQueue);
+    //thread_free(bt_workqueue_thread);
+    vTaskDelete(xBtuTaskHandle);
+    vQueueDelete(xBtuQueue);
 
-  btu_bta_msg_queue = NULL;
+    btu_bta_msg_queue = NULL;
 
-  btu_general_alarm_hash_map = NULL;
-  btu_general_alarm_queue = NULL;
+    btu_general_alarm_hash_map = NULL;
+    btu_general_alarm_queue = NULL;
 
-  btu_oneshot_alarm_hash_map = NULL;
-  btu_oneshot_alarm_queue = NULL;
+    btu_oneshot_alarm_hash_map = NULL;
+    btu_oneshot_alarm_queue = NULL;
 
-  btu_l2cap_alarm_hash_map = NULL;
-  btu_l2cap_alarm_queue = NULL;
+    btu_l2cap_alarm_hash_map = NULL;
+    btu_l2cap_alarm_queue = NULL;
 
 //  bt_workqueue_thread = NULL;
-  xBtuTaskHandle = NULL;
-  xBtuQueue = 0;
+    xBtuTaskHandle = NULL;
+    xBtuQueue = 0;
 }
 
 /*****************************************************************************

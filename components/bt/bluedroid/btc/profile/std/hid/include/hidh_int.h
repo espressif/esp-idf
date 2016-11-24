@@ -34,12 +34,11 @@ enum {
     HID_DEV_CONNECTED
 };
 
-typedef struct per_device_ctb
-{
+typedef struct per_device_ctb {
     BOOLEAN        in_use;
     BD_ADDR        addr;  /* BD-Addr of the host device */
     UINT16         attr_mask; /* 0x01- virtual_cable; 0x02- normally_connectable; 0x03- reconn_initiate;
-    			                 0x04- sdp_disable; */
+                                 0x04- sdp_disable; */
     UINT8          state;  /* Device state if in HOST-KNOWN mode */
     UINT8          conn_substate;
     UINT8          conn_tries; /* Remembers to the number of connection attempts while CONNECTING */
@@ -47,8 +46,7 @@ typedef struct per_device_ctb
     tHID_CONN      conn; /* L2CAP channel info */
 } tHID_HOST_DEV_CTB;
 
-typedef struct host_ctb
-{
+typedef struct host_ctb {
     tHID_HOST_DEV_CTB       devices[HID_HOST_MAX_DEVICES];
     tHID_HOST_DEV_CALLBACK  *callback;             /* Application callbacks */
     tL2CAP_CFG_INFO         l2cap_cfg;
@@ -64,7 +62,7 @@ typedef struct host_ctb
 } tHID_HOST_CTB;
 
 extern tHID_STATUS hidh_conn_snd_data(UINT8 dhandle, UINT8 trans_type, UINT8 param, \
-                                      UINT16 data,UINT8 rpt_id, BT_HDR *buf);
+                                      UINT16 data, UINT8 rpt_id, BT_HDR *buf);
 extern tHID_STATUS hidh_conn_reg (void);
 extern void hidh_conn_dereg( void );
 extern tHID_STATUS hidh_conn_disconnect (UINT8 dhandle);

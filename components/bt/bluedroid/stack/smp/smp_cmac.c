@@ -26,18 +26,17 @@
 
 #if SMP_INCLUDED == TRUE
 //    #include <stdio.h>
-    #include <string.h>
+#include <string.h>
 
-    #include "btm_ble_api.h"
-    #include "smp_int.h"
-    #include "hcimsgs.h"
+#include "btm_ble_api.h"
+#include "smp_int.h"
+#include "hcimsgs.h"
 
-typedef struct
-{
+typedef struct {
     UINT8               *text;
     UINT16              len;
     UINT16              round;
-}tCMAC_CB;
+} tCMAC_CB;
 
 tCMAC_CB    cmac_cb;
 
@@ -55,11 +54,10 @@ void print128(BT_OCTET16 x, const UINT8 *key_name)
 
     SMP_TRACE_WARNING("%s(MSB ~ LSB) = ", key_name);
 
-    for (i = 0; i < 4; i ++)
-    {
+    for (i = 0; i < 4; i ++) {
         SMP_TRACE_WARNING("%02x %02x %02x %02x",
-                           p[BT_OCTET16_LEN - i*4 -1], p[BT_OCTET16_LEN - i*4 -2],
-                           p[BT_OCTET16_LEN - i*4 -3], p[BT_OCTET16_LEN - i*4 -4]);
+                          p[BT_OCTET16_LEN - i * 4 - 1], p[BT_OCTET16_LEN - i * 4 - 2],
+                          p[BT_OCTET16_LEN - i * 4 - 3], p[BT_OCTET16_LEN - i * 4 - 4]);
     }
 #endif
 }
@@ -80,8 +78,9 @@ static void padding ( BT_OCTET16 dest, UINT8 length )
 {
     UINT8   i, *p = dest;
     /* original last block */
-    for ( i = length ; i < BT_OCTET16_LEN; i++ )
+    for ( i = length ; i < BT_OCTET16_LEN; i++ ) {
         p[BT_OCTET16_LEN - i - 1] = ( i == length ) ? 0x80 : 0;
+    }
 }
 /*******************************************************************************
 **
@@ -97,9 +96,8 @@ static void leftshift_onebit(UINT8 *input, UINT8 *output)
     UINT8   i, overflow = 0 , next_overflow = 0;
     SMP_TRACE_EVENT ("leftshift_onebit ");
     /* input[0] is LSB */
-    for ( i = 0; i < BT_OCTET16_LEN ; i ++ )
-    {
-        next_overflow = (input[i] & 0x80) ? 1:0;
+    for ( i = 0; i < BT_OCTET16_LEN ; i ++ ) {
+        next_overflow = (input[i] & 0x80) ? 1 : 0;
         output[i] = (input[i] << 1) | overflow;
         overflow = next_overflow;
     }
@@ -116,8 +114,7 @@ static void leftshift_onebit(UINT8 *input, UINT8 *output)
 *******************************************************************************/
 static void cmac_aes_cleanup(void)
 {
-    if (cmac_cb.text != NULL)
-    {
+    if (cmac_cb.text != NULL) {
         GKI_freebuf(cmac_cb.text);
     }
     memset(&cmac_cb, 0, sizeof(tCMAC_CB));
@@ -141,12 +138,10 @@ static BOOLEAN cmac_aes_k_calculate(BT_OCTET16 key, UINT8 *p_signature, UINT16 t
 
     SMP_TRACE_EVENT ("cmac_aes_k_calculate ");
 
-    while (i <= cmac_cb.round)
-    {
+    while (i <= cmac_cb.round) {
         smp_xor_128(&cmac_cb.text[(cmac_cb.round - i)*BT_OCTET16_LEN], x); /* Mi' := Mi (+) X  */
 
-        if (!SMP_Encrypt(key, BT_OCTET16_LEN, &cmac_cb.text[(cmac_cb.round - i)*BT_OCTET16_LEN], BT_OCTET16_LEN, &output))
-        {
+        if (!SMP_Encrypt(key, BT_OCTET16_LEN, &cmac_cb.text[(cmac_cb.round - i)*BT_OCTET16_LEN], BT_OCTET16_LEN, &output)) {
             err = 1;
             break;
         }
@@ -155,22 +150,21 @@ static BOOLEAN cmac_aes_k_calculate(BT_OCTET16 key, UINT8 *p_signature, UINT16 t
         i ++;
     }
 
-    if (!err)
-    {
+    if (!err) {
         p_mac = output.param_buf + (BT_OCTET16_LEN - tlen);
         memcpy(p_signature, p_mac, tlen);
 
         SMP_TRACE_DEBUG("tlen = %d p_mac = %d", tlen, p_mac);
         SMP_TRACE_DEBUG("p_mac[0] = 0x%02x p_mac[1] = 0x%02x p_mac[2] = 0x%02x p_mac[3] = 0x%02x",
-                         *p_mac, *(p_mac + 1), *(p_mac + 2), *(p_mac + 3));
+                        *p_mac, *(p_mac + 1), *(p_mac + 2), *(p_mac + 3));
         SMP_TRACE_DEBUG("p_mac[4] = 0x%02x p_mac[5] = 0x%02x p_mac[6] = 0x%02x p_mac[7] = 0x%02x",
-                         *(p_mac + 4), *(p_mac + 5), *(p_mac + 6), *(p_mac + 7));
+                        *(p_mac + 4), *(p_mac + 5), *(p_mac + 6), *(p_mac + 7));
 
         return TRUE;
 
-    }
-    else
+    } else {
         return FALSE;
+    }
 }
 /*******************************************************************************
 **
@@ -193,12 +187,10 @@ static void cmac_prepare_last_block (BT_OCTET16 k1, BT_OCTET16 k2)
 
     SMP_TRACE_WARNING("flag = %d round = %d", flag, cmac_cb.round);
 
-    if ( flag )
-    { /* last block is complete block */
+    if ( flag ) {
+        /* last block is complete block */
         smp_xor_128(&cmac_cb.text[0], k1);
-    }
-    else /* padding then xor with k2 */
-    {
+    } else { /* padding then xor with k2 */
         padding(&cmac_cb.text[0], (UINT8)(cmac_cb.len % 16));
 
         smp_xor_128(&cmac_cb.text[0], k2);
@@ -221,25 +213,19 @@ static void cmac_subkey_cont(tSMP_ENC *p)
     print128(pp, (const UINT8 *)"K1 before shift");
 
     /* If MSB(L) = 0, then K1 = L << 1 */
-    if ( (pp[BT_OCTET16_LEN - 1] & 0x80) != 0 )
-    {
+    if ( (pp[BT_OCTET16_LEN - 1] & 0x80) != 0 ) {
         /* Else K1 = ( L << 1 ) (+) Rb */
         leftshift_onebit(pp, k1);
         smp_xor_128(k1, const_Rb);
-    }
-    else
-    {
+    } else {
         leftshift_onebit(pp, k1);
     }
 
-    if ( (k1[BT_OCTET16_LEN - 1] & 0x80) != 0 )
-    {
+    if ( (k1[BT_OCTET16_LEN - 1] & 0x80) != 0 ) {
         /* K2 =  (K1 << 1) (+) Rb */
         leftshift_onebit(k1, k2);
         smp_xor_128(k2, const_Rb);
-    }
-    else
-    {
+    } else {
         /* If MSB(K1) = 0, then K2 = K1 << 1 */
         leftshift_onebit(k1, k2);
     }
@@ -267,12 +253,11 @@ static BOOLEAN cmac_generate_subkey(BT_OCTET16 key)
     tSMP_ENC output;
     SMP_TRACE_EVENT (" cmac_generate_subkey");
 
-    if (SMP_Encrypt(key, BT_OCTET16_LEN, z, BT_OCTET16_LEN, &output))
-    {
+    if (SMP_Encrypt(key, BT_OCTET16_LEN, z, BT_OCTET16_LEN, &output)) {
         cmac_subkey_cont(&output);;
-    }
-    else
+    } else {
         ret = FALSE;
+    }
 
     return ret;
 }
@@ -300,37 +285,34 @@ BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
 
     SMP_TRACE_EVENT ("%s", __func__);
 
-    if (n == 0)  n = 1;
+    if (n == 0) {
+        n = 1;
+    }
     len = n * BT_OCTET16_LEN;
 
     SMP_TRACE_WARNING("AES128_CMAC started, allocate buffer size = %d", len);
     /* allocate a memory space of multiple of 16 bytes to hold text  */
-    if ((cmac_cb.text = (UINT8 *)GKI_getbuf(len)) != NULL)
-    {
+    if ((cmac_cb.text = (UINT8 *)GKI_getbuf(len)) != NULL) {
         cmac_cb.round = n;
 
         memset(cmac_cb.text, 0, len);
         diff = len - length;
 
-        if (input != NULL && length > 0)
-        {
+        if (input != NULL && length > 0) {
             memcpy(&cmac_cb.text[diff] , input, (int)length);
             cmac_cb.len = length;
-        }
-        else
+        } else {
             cmac_cb.len = 0;
+        }
 
         /* prepare calculation for subkey s and last block of data */
-        if (cmac_generate_subkey(key))
-        {
+        if (cmac_generate_subkey(key)) {
             /* start calculation */
             ret = cmac_aes_k_calculate(key, p_signature, tlen);
         }
         /* clean up */
         cmac_aes_cleanup();
-    }
-    else
-    {
+    } else {
         ret = FALSE;
         SMP_TRACE_ERROR("No resources");
     }
@@ -338,7 +320,7 @@ BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
     return ret;
 }
 
-    #if 0 /* testing code, sample data from spec */
+#if 0 /* testing code, sample data from spec */
 void test_cmac_cback(UINT8 *p_mac, UINT16 tlen)
 {
     SMP_TRACE_EVENT ("test_cmac_cback ");
@@ -363,16 +345,15 @@ void test_cmac(void)
         0x3c, 0x4f, 0xcf, 0x09, 0x88, 0x15, 0xf7, 0xab,
         0xa6, 0xd2, 0xae, 0x28, 0x16, 0x15, 0x7e, 0x2b
     };
-    UINT8 i =0, tmp;
+    UINT8 i = 0, tmp;
     UINT16 len;
 
     len = 64;
 
-    for (i = 0; i < len/2; i ++)
-    {
+    for (i = 0; i < len / 2; i ++) {
         tmp = M[i];
-        M[i] = M[len -1 - i];
-        M[len -1 - i] = tmp;
+        M[i] = M[len - 1 - i];
+        M[len - 1 - i] = tmp;
     }
 
 
@@ -383,6 +364,6 @@ void test_cmac(void)
     aes_cipher_msg_auth_code(key, M, len, 128, test_cmac_cback, 0);
 
 }
-    #endif
+#endif
 #endif
 

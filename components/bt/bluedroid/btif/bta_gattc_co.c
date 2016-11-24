@@ -32,18 +32,17 @@
 #define GATT_CACHE_PREFIX "/data/misc/bluedroid/gatt_cache_"
 
 #ifdef BT_SUPPORT_NVM
-static FILE* sCacheFD = 0;
+static FILE *sCacheFD = 0;
 
 static void getFilename(char *buffer, BD_ADDR bda)
 {
     sprintf(buffer, "%s%02x%02x%02x%02x%02x%02x", GATT_CACHE_PREFIX
-        , bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+            , bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
 }
 
 static void cacheClose()
 {
-    if (sCacheFD != 0)
-    {
+    if (sCacheFD != 0) {
         fclose(sCacheFD);
         sCacheFD = 0;
     }
@@ -92,8 +91,9 @@ void bta_gattc_co_cache_open(BD_ADDR server_bda, UINT16 evt, UINT16 conn_id, BOO
 #ifdef BT_SUPPORT_NVM
     /* open NV cache and send call in */
     tBTA_GATT_STATUS    status = BTA_GATT_OK;
-    if (!btm_sec_is_a_bonded_dev(server_bda) || !cacheOpen(server_bda, to_save))
+    if (!btm_sec_is_a_bonded_dev(server_bda) || !cacheOpen(server_bda, to_save)) {
         status = BTA_GATT_ERROR;
+    }
 
     BTIF_TRACE_DEBUG("%s() - status=%d", __FUNCTION__, status);
     bta_gattc_ci_cache_open(server_bda, evt, status, conn_id);
@@ -123,13 +123,12 @@ void bta_gattc_co_cache_load(BD_ADDR server_bda, UINT16 evt, UINT16 start_index,
     tBTA_GATTC_NV_ATTR  attr[BTA_GATTC_NV_LOAD_MAX];
     tBTA_GATT_STATUS    status = BTA_GATT_ERROR;
 #ifdef BT_SUPPORT_NVM
-    if (sCacheFD && (0 == fseek(sCacheFD, start_index * sizeof(tBTA_GATTC_NV_ATTR), SEEK_SET)))
-    {
+    if (sCacheFD && (0 == fseek(sCacheFD, start_index * sizeof(tBTA_GATTC_NV_ATTR), SEEK_SET))) {
         num_attr = fread(attr, sizeof(tBTA_GATTC_NV_ATTR), BTA_GATTC_NV_LOAD_MAX, sCacheFD);
         status = (num_attr < BTA_GATTC_NV_LOAD_MAX ? BTA_GATT_OK : BTA_GATT_MORE);
     }
     BTIF_TRACE_DEBUG("%s() - sCacheFD=%p, start_index=%d, read=%d, status=%d",
-        __FUNCTION__, sCacheFD, start_index, num_attr, status);
+                     __FUNCTION__, sCacheFD, start_index, num_attr, status);
 #endif /* BT_SUPPORT_NVM */
 
     bta_gattc_ci_cache_load(server_bda, evt, num_attr, attr, status, conn_id);
@@ -157,8 +156,7 @@ void bta_gattc_co_cache_save (BD_ADDR server_bda, UINT16 evt, UINT16 num_attr,
     tBTA_GATT_STATUS    status = BTA_GATT_OK;
     UNUSED(attr_index);
 #ifdef BT_SUPPORT_NVM
-    if (sCacheFD != 0)
-    {
+    if (sCacheFD != 0) {
         int num = fwrite(p_attr_list, sizeof(tBTA_GATTC_NV_ATTR), num_attr, sCacheFD);
         BTIF_TRACE_DEBUG("%s() wrote %d", __FUNCTION__, num);
     }

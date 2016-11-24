@@ -38,8 +38,7 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
-static const UINT8 avrc_ctrl_event_map[] =
-{
+static const UINT8 avrc_ctrl_event_map[] = {
     AVRC_OPEN_IND_EVT,  /* AVCT_CONNECT_CFM_EVT */
     AVRC_OPEN_IND_EVT,  /* AVCT_CONNECT_IND_EVT */
     AVRC_CLOSE_IND_EVT, /* AVCT_DISCONNECT_CFM_EVT */
@@ -72,17 +71,16 @@ static const UINT8 avrc_ctrl_event_map[] =
 **
 ******************************************************************************/
 static void avrc_ctrl_cback(UINT8 handle, UINT8 event, UINT16 result,
-                                BD_ADDR peer_addr)
+                            BD_ADDR peer_addr)
 {
     UINT8   avrc_event;
 
-    if (event <= AVRC_MAX_RCV_CTRL_EVT && avrc_cb.ccb[handle].p_ctrl_cback)
-    {
+    if (event <= AVRC_MAX_RCV_CTRL_EVT && avrc_cb.ccb[handle].p_ctrl_cback) {
         avrc_event = avrc_ctrl_event_map[event];
-        if (event == AVCT_CONNECT_CFM_EVT)
-        {
-            if (result != 0) /* failed */
+        if (event == AVCT_CONNECT_CFM_EVT) {
+            if (result != 0) { /* failed */
                 avrc_event = AVRC_CLOSE_IND_EVT;
+            }
         }
         (*avrc_cb.ccb[handle].p_ctrl_cback)(handle, avrc_event, result, peer_addr);
     }
@@ -98,7 +96,7 @@ static void avrc_ctrl_cback(UINT8 handle, UINT8 event, UINT16 result,
 ** Returns          A pointer to the data payload.
 **
 ******************************************************************************/
-static UINT8 * avrc_get_data_ptr(BT_HDR *p_pkt)
+static UINT8 *avrc_get_data_ptr(BT_HDR *p_pkt)
 {
     return (UINT8 *)(p_pkt + 1) + p_pkt->offset;
 }
@@ -113,7 +111,7 @@ static UINT8 * avrc_get_data_ptr(BT_HDR *p_pkt)
 ** Returns          The buffer with the copied data.
 **
 ******************************************************************************/
-static BT_HDR * avrc_copy_packet(BT_HDR *p_pkt, int rsp_pkt_len)
+static BT_HDR *avrc_copy_packet(BT_HDR *p_pkt, int rsp_pkt_len)
 {
     const int offset = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
     const int pkt_len = MAX(rsp_pkt_len, p_pkt->len);
@@ -161,7 +159,7 @@ static void avrc_prep_end_frag(UINT8 handle)
     p_pkt_new           = p_fcb->p_fmsg;
     p_pkt_new->len      -= (AVRC_MAX_CTRL_DATA_LEN - AVRC_VENDOR_HDR_SIZE - AVRC_MIN_META_HDR_SIZE);
     p_pkt_new->offset   += (AVRC_MAX_CTRL_DATA_LEN - AVRC_VENDOR_HDR_SIZE - AVRC_MIN_META_HDR_SIZE);
-    p_data = (UINT8 *)(p_pkt_new+1) + p_pkt_new->offset;
+    p_data = (UINT8 *)(p_pkt_new + 1) + p_pkt_new->offset;
     *p_data++       = rsp_type;
     *p_data++       = (AVRC_SUB_PANEL << AVRC_SUBTYPE_SHIFT);
     *p_data++       = AVRC_OP_VENDOR;
@@ -195,19 +193,17 @@ static void avrc_send_continue_frag(UINT8 handle, UINT8 label)
 
     AVRC_TRACE_DEBUG("%s handle = %u label = %u len = %d",
                      __func__, handle, label, p_pkt->len);
-    if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN)
-    {
+    if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN) {
         int offset_len = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
         p_pkt_old = p_fcb->p_fmsg;
         p_pkt = (BT_HDR *)GKI_getbuf((UINT16)(AVRC_PACKET_LEN + offset_len + BT_HDR_SIZE));
-        if (p_pkt)
-        {
+        if (p_pkt) {
             p_pkt->len          = AVRC_MAX_CTRL_DATA_LEN;
             p_pkt->offset       = AVCT_MSG_OFFSET;
             p_pkt->layer_specific = p_pkt_old->layer_specific;
             p_pkt->event = p_pkt_old->event;
-            p_old = (UINT8 *)(p_pkt_old+1) + p_pkt_old->offset;
-            p_data = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+            p_old = (UINT8 *)(p_pkt_old + 1) + p_pkt_old->offset;
+            p_data = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
             memcpy (p_data, p_old, AVRC_MAX_CTRL_DATA_LEN);
             /* use AVRC continue packet type */
             p_data += AVRC_VENDOR_HDR_SIZE;
@@ -218,15 +214,13 @@ static void avrc_send_continue_frag(UINT8 handle, UINT8 label)
 
             /* prepare the left over for as an end fragment */
             avrc_prep_end_frag (handle);
-        }
-        else
-        {
+        } else {
             /* use the current GKI buffer to send Internal error status */
             p_pkt = p_fcb->p_fmsg;
             p_fcb->p_fmsg = NULL;
             p_fcb->frag_enabled = FALSE;
             AVRC_TRACE_ERROR ("AVRC_MsgReq no buffers for fragmentation - send internal error" );
-            p_data = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+            p_data = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
             *p_data++ = AVRC_PDU_REQUEST_CONTINUATION_RSP;
             *p_data++ = 0;
             UINT16_TO_BE_STREAM(p_data, 0);
@@ -236,9 +230,7 @@ static void avrc_send_continue_frag(UINT8 handle, UINT8 label)
             AVRC_BldResponse( handle, (tAVRC_RESPONSE *)&rej_rsp, &p_pkt);
             cr = AVCT_RSP;
         }
-    }
-    else
-    {
+    } else {
         /* end fragment. clean the control block */
         p_fcb->frag_enabled = FALSE;
         p_fcb->p_fmsg       = NULL;
@@ -255,8 +247,8 @@ static void avrc_send_continue_frag(UINT8 handle, UINT8 label)
 ** Returns          if not NULL, the response to send right away.
 **
 ******************************************************************************/
-static BT_HDR * avrc_proc_vendor_command(UINT8 handle, UINT8 label,
-                               BT_HDR *p_pkt, tAVRC_MSG_VENDOR *p_msg)
+static BT_HDR *avrc_proc_vendor_command(UINT8 handle, UINT8 label,
+                                        BT_HDR *p_pkt, tAVRC_MSG_VENDOR *p_msg)
 {
     BT_HDR      *p_rsp = NULL;
     UINT8       *p_data;
@@ -266,37 +258,30 @@ static BT_HDR * avrc_proc_vendor_command(UINT8 handle, UINT8 label,
     tAVRC_STS   status = AVRC_STS_NO_ERROR;
     tAVRC_FRAG_CB   *p_fcb;
 
-    p_begin  = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+    p_begin  = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data   = p_begin + AVRC_VENDOR_HDR_SIZE;
     pkt_type = *(p_data + 1) & AVRC_PKT_TYPE_MASK;
 
-    if (pkt_type != AVRC_PKT_SINGLE)
-    {
+    if (pkt_type != AVRC_PKT_SINGLE) {
         /* reject - commands can only be in single packets at AVRCP level */
         AVRC_TRACE_ERROR ("commands must be in single packet pdu:0x%x", *p_data );
         /* use the current GKI buffer to send the reject */
         status = AVRC_STS_BAD_CMD;
     }
     /* check if there are fragments waiting to be sent */
-    else if (avrc_cb.fcb[handle].frag_enabled)
-    {
+    else if (avrc_cb.fcb[handle].frag_enabled) {
         p_fcb = &avrc_cb.fcb[handle];
-        if (p_msg->company_id == AVRC_CO_METADATA)
-        {
-            switch (*p_data)
-            {
+        if (p_msg->company_id == AVRC_CO_METADATA) {
+            switch (*p_data) {
             case AVRC_PDU_ABORT_CONTINUATION_RSP:
                 /* aborted by CT - send accept response */
                 abort_frag = TRUE;
-                p_begin = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+                p_begin = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
                 *p_begin = (AVRC_RSP_ACCEPT & AVRC_CTYPE_MASK);
-                if (*(p_data + 4) != p_fcb->frag_pdu)
-                {
+                if (*(p_data + 4) != p_fcb->frag_pdu) {
                     *p_begin = (AVRC_RSP_REJ & AVRC_CTYPE_MASK);
                     *(p_data + 4) = AVRC_STS_BAD_PARAM;
-                }
-                else
-                {
+                } else {
                     p_data = (p_begin + AVRC_VENDOR_HDR_SIZE + 2);
                     UINT16_TO_BE_STREAM(p_data, 0);
                     p_pkt->len = (p_data - p_begin);
@@ -306,17 +291,14 @@ static BT_HDR * avrc_proc_vendor_command(UINT8 handle, UINT8 label,
                 break;
 
             case AVRC_PDU_REQUEST_CONTINUATION_RSP:
-                if (*(p_data + 4) == p_fcb->frag_pdu)
-                {
+                if (*(p_data + 4) == p_fcb->frag_pdu) {
                     avrc_send_continue_frag(handle, label);
                     p_msg->hdr.opcode = AVRC_OP_DROP_N_FREE;
-                }
-                else
-                {
+                } else {
                     /* the pdu id does not match - reject the command using the current GKI buffer */
                     AVRC_TRACE_ERROR("avrc_proc_vendor_command continue pdu: 0x%x does not match \
                     current re-assembly pdu: 0x%x",
-                        *(p_data + 4), p_fcb->frag_pdu);
+                                     *(p_data + 4), p_fcb->frag_pdu);
                     status = AVRC_STS_BAD_PARAM;
                     abort_frag = TRUE;
                 }
@@ -326,26 +308,23 @@ static BT_HDR * avrc_proc_vendor_command(UINT8 handle, UINT8 label,
                 /* implicit abort */
                 abort_frag = TRUE;
             }
-        }
-        else
-        {
+        } else {
             abort_frag = TRUE;
             /* implicit abort */
         }
 
-        if (abort_frag)
-        {
-            if (p_fcb->p_fmsg)
+        if (abort_frag) {
+            if (p_fcb->p_fmsg) {
                 GKI_freebuf(p_fcb->p_fmsg);
+            }
             p_fcb->p_fmsg = NULL;
             p_fcb->frag_enabled = FALSE;
         }
     }
 
-    if (status != AVRC_STS_NO_ERROR)
-    {
+    if (status != AVRC_STS_NO_ERROR) {
         /* use the current GKI buffer to build/send the reject message */
-        p_data = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+        p_data = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
         *p_data++ = AVRC_RSP_REJ;
         p_data += AVRC_VENDOR_HDR_SIZE; /* pdu */
         *p_data++ = 0;                  /* pkt_type */
@@ -369,7 +348,7 @@ static BT_HDR * avrc_proc_vendor_command(UINT8 handle, UINT8 label,
 **
 ******************************************************************************/
 static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_pkt,
-    tAVRC_MSG_VENDOR *p_msg)
+                               tAVRC_MSG_VENDOR *p_msg)
 {
     BT_HDR      *p_pkt = *pp_pkt;
     UINT8       *p_data;
@@ -383,7 +362,7 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
     tAVRC_RASM_CB   *p_rcb;
     tAVRC_NEXT_CMD   avrc_cmd;
 
-    p_data  = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+    p_data  = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
 
     /* Skip over vendor header (ctype, subunit*, opcode, CO_ID) */
     p_data += AVRC_VENDOR_HDR_SIZE;
@@ -391,35 +370,29 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
     pkt_type = *(p_data + 1) & AVRC_PKT_TYPE_MASK;
     AVRC_TRACE_DEBUG ("pkt_type %d", pkt_type );
     p_rcb = &avrc_cb.rcb[handle];
-    if (p_msg->company_id == AVRC_CO_METADATA)
-    {
+    if (p_msg->company_id == AVRC_CO_METADATA) {
         /* check if the message needs to be re-assembled */
-        if (pkt_type == AVRC_PKT_SINGLE || pkt_type == AVRC_PKT_START)
-        {
+        if (pkt_type == AVRC_PKT_SINGLE || pkt_type == AVRC_PKT_START) {
             /* previous fragments need to be dropped, when received another new message */
             p_rcb->rasm_offset = 0;
-            if (p_rcb->p_rmsg)
-            {
+            if (p_rcb->p_rmsg) {
                 GKI_freebuf(p_rcb->p_rmsg);
                 p_rcb->p_rmsg = NULL;
             }
         }
 
-        if (pkt_type != AVRC_PKT_SINGLE && cr == AVCT_RSP)
-        {
+        if (pkt_type != AVRC_PKT_SINGLE && cr == AVCT_RSP) {
             /* not a single response packet - need to re-assemble metadata messages */
-            if (pkt_type == AVRC_PKT_START)
-            {
+            if (pkt_type == AVRC_PKT_START) {
                 /* Allocate buffer for re-assembly */
                 p_rcb->rasm_pdu = *p_data;
-                if ((p_rcb->p_rmsg = (BT_HDR *)GKI_getbuf(GKI_MAX_BUF_SIZE)) != NULL)
-                {
+                if ((p_rcb->p_rmsg = (BT_HDR *)GKI_getbuf(GKI_MAX_BUF_SIZE)) != NULL) {
                     /* Copy START packet to buffer for re-assembling fragments*/
                     memcpy(p_rcb->p_rmsg, p_pkt, sizeof(BT_HDR));   /* Copy bt hdr */
 
                     /* Copy metadata message */
                     memcpy((UINT8 *)(p_rcb->p_rmsg + 1),
-                           (UINT8 *)(p_pkt+1) + p_pkt->offset, p_pkt->len);
+                           (UINT8 *)(p_pkt + 1) + p_pkt->offset, p_pkt->len);
 
                     /* offset of start of metadata response in reassembly buffer */
                     p_rcb->p_rmsg->offset = p_rcb->rasm_offset = 0;
@@ -427,9 +400,7 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
                     /* Free original START packet, replace with pointer to reassembly buffer  */
                     GKI_freebuf(p_pkt);
                     *pp_pkt = p_rcb->p_rmsg;
-                }
-                else
-                {
+                } else {
                     /* Unable to allocate buffer for fragmented avrc message. Reuse START
                                       buffer for reassembly (re-assembled message may fit into ACL buf) */
                     AVRC_TRACE_DEBUG ("Unable to allocate buffer for fragmented avrc message, \
@@ -441,9 +412,7 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
                 /* set offset to point to where to copy next - use the same re-asm logic as AVCT */
                 p_rcb->p_rmsg->offset += p_rcb->p_rmsg->len;
                 req_continue = TRUE;
-            }
-            else if (p_rcb->p_rmsg == NULL)
-            {
+            } else if (p_rcb->p_rmsg == NULL) {
                 /* Received a CONTINUE/END, but no corresponding START
                               (or previous fragmented response was dropped) */
                 AVRC_TRACE_DEBUG ("Received a CONTINUE/END without no corresponding START \
@@ -451,17 +420,14 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
                 drop_code = 5;
                 GKI_freebuf(p_pkt);
                 *pp_pkt = NULL;
-            }
-            else
-            {
+            } else {
                 /* get size of buffer holding assembled message */
                 buf_len = GKI_get_buf_size (p_rcb->p_rmsg) - sizeof(BT_HDR);
                 /* adjust offset and len of fragment for header byte */
                 p_pkt->offset += (AVRC_VENDOR_HDR_SIZE + AVRC_MIN_META_HDR_SIZE);
                 p_pkt->len -= (AVRC_VENDOR_HDR_SIZE + AVRC_MIN_META_HDR_SIZE);
                 /* verify length */
-                if ((p_rcb->p_rmsg->offset + p_pkt->len) > buf_len)
-                {
+                if ((p_rcb->p_rmsg->offset + p_pkt->len) > buf_len) {
                     AVRC_TRACE_WARNING("Fragmented message too big! - report the partial message");
                     p_pkt->len = buf_len - p_rcb->p_rmsg->offset;
                     pkt_type = AVRC_PKT_END;
@@ -471,14 +437,13 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
                 memcpy((UINT8 *)(p_rcb->p_rmsg + 1) + p_rcb->p_rmsg->offset,
                        (UINT8 *)(p_pkt + 1) + p_pkt->offset, p_pkt->len);
 
-                if (pkt_type == AVRC_PKT_END)
-                {
+                if (pkt_type == AVRC_PKT_END) {
                     p_rcb->p_rmsg->offset = p_rcb->rasm_offset;
                     p_rcb->p_rmsg->len += p_pkt->len;
                     p_pkt_new = p_rcb->p_rmsg;
                     p_rcb->rasm_offset = 0;
                     p_rcb->p_rmsg = NULL;
-                    p_msg->p_vendor_data   = (UINT8 *)(p_pkt_new+1) + p_pkt_new->offset;
+                    p_msg->p_vendor_data   = (UINT8 *)(p_pkt_new + 1) + p_pkt_new->offset;
                     p_msg->hdr.ctype       = p_msg->p_vendor_data[0] & AVRC_CTYPE_MASK;
                     /* 6 = ctype, subunit*, opcode & CO_ID */
                     p_msg->p_vendor_data  += AVRC_VENDOR_HDR_SIZE;
@@ -487,10 +452,8 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
                     *p_data++ = AVRC_PKT_SINGLE;
                     UINT16_TO_BE_STREAM(p_data, (p_msg->vendor_len - AVRC_MIN_META_HDR_SIZE));
                     AVRC_TRACE_DEBUG("end frag:%d, total len:%d, offset:%d", p_pkt->len,
-                        p_pkt_new->len, p_pkt_new->offset);
-                }
-                else
-                {
+                                     p_pkt_new->len, p_pkt_new->offset);
+                } else {
                     p_rcb->p_rmsg->offset += p_pkt->len;
                     p_rcb->p_rmsg->len += p_pkt->len;
                     p_pkt_new = NULL;
@@ -501,29 +464,22 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
             }
         }
 
-        if (cr == AVCT_CMD)
-        {
+        if (cr == AVCT_CMD) {
             p_rsp = avrc_proc_vendor_command(handle, label, *pp_pkt, p_msg);
-            if (p_rsp)
-            {
+            if (p_rsp) {
                 AVCT_MsgReq( handle, label, AVCT_RSP, p_rsp);
                 drop_code = 3;
-            }
-            else if (p_msg->hdr.opcode == AVRC_OP_DROP)
-            {
+            } else if (p_msg->hdr.opcode == AVRC_OP_DROP) {
                 drop_code = 1;
-            }
-            else if (p_msg->hdr.opcode == AVRC_OP_DROP_N_FREE)
+            } else if (p_msg->hdr.opcode == AVRC_OP_DROP_N_FREE) {
                 drop_code = 4;
+            }
 
-        }
-        else if (cr == AVCT_RSP && req_continue == TRUE)
-        {
+        } else if (cr == AVCT_RSP && req_continue == TRUE) {
             avrc_cmd.pdu    = AVRC_PDU_REQUEST_CONTINUATION_RSP;
             avrc_cmd.status = AVRC_STS_NO_ERROR;
             avrc_cmd.target_pdu = p_rcb->rasm_pdu;
-            if (AVRC_BldCommand ((tAVRC_COMMAND *)&avrc_cmd, &p_cmd) == AVRC_STS_NO_ERROR)
-            {
+            if (AVRC_BldCommand ((tAVRC_COMMAND *)&avrc_cmd, &p_cmd) == AVRC_STS_NO_ERROR) {
                 drop_code = 2;
                 AVRC_MsgReq (handle, (UINT8)(label), AVRC_CMD_CTRL, p_cmd);
             }
@@ -545,7 +501,7 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
 **
 ******************************************************************************/
 static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
-                               BT_HDR *p_pkt)
+                           BT_HDR *p_pkt)
 {
     UINT8       opcode;
     tAVRC_MSG   msg;
@@ -563,8 +519,7 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
     tAVRC_MSG_VENDOR *p_msg = &msg.vendor;
 
     if (cr == AVCT_CMD &&
-        (p_pkt->layer_specific & AVCT_DATA_CTRL && AVRC_PACKET_LEN < sizeof(p_pkt->len)))
-    {
+            (p_pkt->layer_specific & AVCT_DATA_CTRL && AVRC_PACKET_LEN < sizeof(p_pkt->len))) {
         /* Ignore the invalid AV/C command frame */
 #if (BT_USE_TRACES == TRUE)
         p_drop_msg = "dropped - too long AV/C cmd frame size";
@@ -573,8 +528,7 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
         return;
     }
 
-    if (cr == AVCT_REJ)
-    {
+    if (cr == AVCT_REJ) {
         /* The peer thinks that this PID is no longer open - remove this handle */
         /*  */
         GKI_freebuf(p_pkt);
@@ -582,26 +536,23 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
         return;
     }
 
-    p_data  = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+    p_data  = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     memset(&msg, 0, sizeof(tAVRC_MSG) );
     {
         msg.hdr.ctype           = p_data[0] & AVRC_CTYPE_MASK;
         AVRC_TRACE_DEBUG("avrc_msg_cback handle:%d, ctype:%d, offset:%d, len: %d",
-                handle, msg.hdr.ctype, p_pkt->offset, p_pkt->len);
+                         handle, msg.hdr.ctype, p_pkt->offset, p_pkt->len);
         msg.hdr.subunit_type    = (p_data[1] & AVRC_SUBTYPE_MASK) >> AVRC_SUBTYPE_SHIFT;
         msg.hdr.subunit_id      = p_data[1] & AVRC_SUBID_MASK;
         opcode                  = p_data[2];
     }
 
     if ( ((avrc_cb.ccb[handle].control & AVRC_CT_TARGET) && (cr == AVCT_CMD)) ||
-        ((avrc_cb.ccb[handle].control & AVRC_CT_CONTROL) && (cr == AVCT_RSP)) )
-    {
+            ((avrc_cb.ccb[handle].control & AVRC_CT_CONTROL) && (cr == AVCT_RSP)) ) {
 
-        switch(opcode)
-        {
+        switch (opcode) {
         case AVRC_OP_UNIT_INFO:
-            if (cr == AVCT_CMD)
-            {
+            if (cr == AVCT_CMD) {
                 /* send the response to the peer */
                 p_rsp = avrc_copy_packet(p_pkt, AVRC_OP_UNIT_INFO_RSP_LEN);
                 p_rsp_data = avrc_get_data_ptr(p_rsp);
@@ -619,9 +570,7 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
 #if (BT_USE_TRACES == TRUE)
                 p_drop_msg = "auto respond";
 #endif
-            }
-            else
-            {
+            } else {
                 /* parse response */
                 p_data += 4; /* 3 bytes: ctype, subunit*, opcode + octet 3 (is 7)*/
                 msg.unit.unit_type  = (*p_data & AVRC_SUBTYPE_MASK) >> AVRC_SUBTYPE_SHIFT;
@@ -632,8 +581,7 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
             break;
 
         case AVRC_OP_SUB_INFO:
-            if (cr == AVCT_CMD)
-            {
+            if (cr == AVCT_CMD) {
                 /* send the response to the peer */
                 p_rsp = avrc_copy_packet(p_pkt, AVRC_OP_SUB_UNIT_INFO_RSP_LEN);
                 p_rsp_data = avrc_get_data_ptr(p_rsp);
@@ -650,32 +598,30 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
 #if (BT_USE_TRACES == TRUE)
                 p_drop_msg = "auto responded";
 #endif
-            }
-            else
-            {
+            } else {
                 /* parse response */
                 p_data += AVRC_AVC_HDR_SIZE; /* 3 bytes: ctype, subunit*, opcode */
                 msg.sub.page    = (*p_data++ >> AVRC_SUB_PAGE_SHIFT) & AVRC_SUB_PAGE_MASK;
                 xx      = 0;
-                while (*p_data != AVRC_CMD_OPRND_PAD && xx<AVRC_SUB_TYPE_LEN)
-                {
+                while (*p_data != AVRC_CMD_OPRND_PAD && xx < AVRC_SUB_TYPE_LEN) {
                     msg.sub.subunit_type[xx] = *p_data++ >> AVRC_SUBTYPE_SHIFT;
-                    if (msg.sub.subunit_type[xx] == AVRC_SUB_PANEL)
+                    if (msg.sub.subunit_type[xx] == AVRC_SUB_PANEL) {
                         msg.sub.panel   = TRUE;
+                    }
                     xx++;
                 }
             }
             break;
 
         case AVRC_OP_VENDOR:
-            p_data  = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+            p_data  = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
             p_begin = p_data;
-            if (p_pkt->len < AVRC_VENDOR_HDR_SIZE) /* 6 = ctype, subunit*, opcode & CO_ID */
-            {
-                if (cr == AVCT_CMD)
+            if (p_pkt->len < AVRC_VENDOR_HDR_SIZE) { /* 6 = ctype, subunit*, opcode & CO_ID */
+                if (cr == AVCT_CMD) {
                     reject = TRUE;
-                else
+                } else {
                     drop = TRUE;
+                }
                 break;
             }
             p_data += AVRC_AVC_HDR_SIZE; /* skip the first 3 bytes: ctype, subunit*, opcode */
@@ -685,30 +631,29 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
             UINT8 drop_code = 0;
-            if (p_msg->company_id == AVRC_CO_METADATA)
-            {
+            if (p_msg->company_id == AVRC_CO_METADATA) {
                 /* Validate length for metadata message */
-                if (p_pkt->len < (AVRC_VENDOR_HDR_SIZE + AVRC_MIN_META_HDR_SIZE))
-                {
-                    if (cr == AVCT_CMD)
+                if (p_pkt->len < (AVRC_VENDOR_HDR_SIZE + AVRC_MIN_META_HDR_SIZE)) {
+                    if (cr == AVCT_CMD) {
                         reject = TRUE;
-                    else
+                    } else {
                         drop = TRUE;
+                    }
                     break;
                 }
 
                 /* Check+handle fragmented messages */
                 drop_code = avrc_proc_far_msg(handle, label, cr, &p_pkt, p_msg);
-                if (drop_code > 0)
+                if (drop_code > 0) {
                     drop = TRUE;
+                }
             }
-            if (drop_code > 0)
-            {
-                if (drop_code != 4)
+            if (drop_code > 0) {
+                if (drop_code != 4) {
                     do_free = FALSE;
+                }
 #if (BT_USE_TRACES == TRUE)
-                switch (drop_code)
-                {
+                switch (drop_code) {
                 case 1:
                     p_drop_msg = "sent_frag";
                     break;
@@ -730,48 +675,47 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
             break;
 
         case AVRC_OP_PASS_THRU:
-            if (p_pkt->len < 5) /* 3 bytes: ctype, subunit*, opcode & op_id & len */
-            {
-                if (cr == AVCT_CMD)
+            if (p_pkt->len < 5) { /* 3 bytes: ctype, subunit*, opcode & op_id & len */
+                if (cr == AVCT_CMD) {
                     reject = TRUE;
-                else
+                } else {
                     drop = TRUE;
+                }
                 break;
             }
             p_data += AVRC_AVC_HDR_SIZE; /* skip the first 3 bytes: ctype, subunit*, opcode */
             msg.pass.op_id  = (AVRC_PASS_OP_ID_MASK & *p_data);
-            if (AVRC_PASS_STATE_MASK & *p_data)
+            if (AVRC_PASS_STATE_MASK & *p_data) {
                 msg.pass.state  = TRUE;
-            else
+            } else {
                 msg.pass.state  = FALSE;
+            }
             p_data++;
             msg.pass.pass_len    = *p_data++;
-            if (msg.pass.pass_len != p_pkt->len - 5)
+            if (msg.pass.pass_len != p_pkt->len - 5) {
                 msg.pass.pass_len = p_pkt->len - 5;
-            if (msg.pass.pass_len)
+            }
+            if (msg.pass.pass_len) {
                 msg.pass.p_pass_data = p_data;
-            else
+            } else {
                 msg.pass.p_pass_data = NULL;
+            }
             break;
 
 
         default:
-            if ((avrc_cb.ccb[handle].control & AVRC_CT_TARGET) && (cr == AVCT_CMD))
-            {
+            if ((avrc_cb.ccb[handle].control & AVRC_CT_TARGET) && (cr == AVCT_CMD)) {
                 /* reject unsupported opcode */
                 reject = TRUE;
             }
             drop    = TRUE;
             break;
         }
-    }
-    else /* drop the event */
-    {
-            drop    = TRUE;
+    } else { /* drop the event */
+        drop    = TRUE;
     }
 
-    if (reject)
-    {
+    if (reject) {
         /* reject unsupported opcode */
         p_rsp = avrc_copy_packet(p_pkt, AVRC_OP_REJ_MSG_LEN);
         p_rsp_data = avrc_get_data_ptr(p_rsp);
@@ -783,30 +727,28 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
         drop    = TRUE;
     }
 
-    if (p_rsp)
-    {
+    if (p_rsp) {
         /* set to send response right away */
         AVCT_MsgReq( handle, label, cr, p_rsp);
         drop = TRUE;
     }
 
-    if (drop == FALSE)
-    {
+    if (drop == FALSE) {
         msg.hdr.opcode = opcode;
         (*avrc_cb.ccb[handle].p_msg_cback)(handle, label, opcode, &msg);
     }
 #if (BT_USE_TRACES == TRUE)
-    else
-    {
+    else {
         AVRC_TRACE_WARNING("avrc_msg_cback %s msg handle:%d, control:%d, cr:%d, opcode:x%x",
-                p_drop_msg,
-                handle, avrc_cb.ccb[handle].control, cr, opcode);
+                           p_drop_msg,
+                           handle, avrc_cb.ccb[handle].control, cr, opcode);
     }
 #endif
 
 
-    if (do_free)
+    if (do_free) {
         GKI_freebuf(p_pkt);
+    }
 }
 
 
@@ -828,38 +770,34 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
 **                  NULL if p_msg is NULL.
 **
 ******************************************************************************/
-static BT_HDR  * avrc_pass_msg(tAVRC_MSG_PASS *p_msg)
+static BT_HDR   *avrc_pass_msg(tAVRC_MSG_PASS *p_msg)
 {
     BT_HDR  *p_cmd = NULL;
     UINT8   *p_data;
 
     assert(p_msg != NULL);
-    assert(AVRC_CMD_POOL_SIZE > (AVRC_MIN_CMD_LEN+p_msg->pass_len));
+    assert(AVRC_CMD_POOL_SIZE > (AVRC_MIN_CMD_LEN + p_msg->pass_len));
 
-    if ((p_cmd = (BT_HDR *) GKI_getpoolbuf(AVRC_CMD_POOL_ID)) != NULL)
-    {
+    if ((p_cmd = (BT_HDR *) GKI_getpoolbuf(AVRC_CMD_POOL_ID)) != NULL) {
         p_cmd->offset   = AVCT_MSG_OFFSET;
         p_cmd->layer_specific   = AVCT_DATA_CTRL;
         p_data          = (UINT8 *)(p_cmd + 1) + p_cmd->offset;
         *p_data++       = (p_msg->hdr.ctype & AVRC_CTYPE_MASK);
         *p_data++       = (AVRC_SUB_PANEL << AVRC_SUBTYPE_SHIFT); /* Panel subunit & id=0 */
         *p_data++       = AVRC_OP_PASS_THRU;
-        *p_data         = (AVRC_PASS_OP_ID_MASK&p_msg->op_id);
-        if (p_msg->state)
+        *p_data         = (AVRC_PASS_OP_ID_MASK & p_msg->op_id);
+        if (p_msg->state) {
             *p_data     |= AVRC_PASS_STATE_MASK;
+        }
         p_data++;
 
-        if (p_msg->op_id == AVRC_ID_VENDOR)
-        {
+        if (p_msg->op_id == AVRC_ID_VENDOR) {
             *p_data++       = p_msg->pass_len;
-            if (p_msg->pass_len && p_msg->p_pass_data)
-            {
+            if (p_msg->pass_len && p_msg->p_pass_data) {
                 memcpy(p_data, p_msg->p_pass_data, p_msg->pass_len);
                 p_data += p_msg->pass_len;
             }
-        }
-        else /* set msg len to 0 for other op_id */
-        {
+        } else { /* set msg len to 0 for other op_id */
             /* set msg len to 0 for other op_id */
             *p_data++       = 0;
         }
@@ -925,8 +863,7 @@ UINT16 AVRC_Open(UINT8 *p_handle, tAVRC_CONN_CB *p_ccb, BD_ADDR_PTR peer_addr)
     cc.control      = p_ccb->control;       /* Control role (Control/Target) */
 
     status = AVCT_CreateConn(p_handle, &cc, peer_addr);
-    if (status == AVCT_SUCCESS)
-    {
+    if (status == AVCT_SUCCESS) {
         memcpy(&avrc_cb.ccb[*p_handle], p_ccb, sizeof(tAVRC_CONN_CB));
 #if (AVRC_METADATA_INCLUDED == TRUE)
         memset(&avrc_cb.fcb[*p_handle], 0, sizeof(tAVRC_FRAG_CB));
@@ -934,7 +871,7 @@ UINT16 AVRC_Open(UINT8 *p_handle, tAVRC_CONN_CB *p_ccb, BD_ADDR_PTR peer_addr)
 #endif
     }
     AVRC_TRACE_DEBUG("AVRC_Open role: %d, control:%d status:%d, handle:%d", cc.role, cc.control,
-        status, *p_handle);
+                     status, *p_handle);
 
     return status;
 }
@@ -991,17 +928,18 @@ UINT16 AVRC_MsgReq (UINT8 handle, UINT8 label, UINT8 ctype, BT_HDR *p_pkt)
     UINT16  len;
     BT_HDR  *p_pkt_new;
 
-    if (!p_pkt)
+    if (!p_pkt) {
         return AVRC_BAD_PARAM;
+    }
 
     AVRC_TRACE_DEBUG("%s handle = %u label = %u ctype = %u len = %d",
                      __func__, handle, label, ctype, p_pkt->len);
 
-    if (ctype >= AVRC_RSP_NOT_IMPL)
+    if (ctype >= AVRC_RSP_NOT_IMPL) {
         cr = AVCT_RSP;
+    }
 
-    if (p_pkt->event == AVRC_OP_VENDOR)
-    {
+    if (p_pkt->event == AVRC_OP_VENDOR) {
         /* add AVRCP Vendor Dependent headers */
         p_start = ((UINT8 *)(p_pkt + 1) + p_pkt->offset);
         p_pkt->offset -= AVRC_VENDOR_HDR_SIZE;
@@ -1011,9 +949,7 @@ UINT16 AVRC_MsgReq (UINT8 handle, UINT8 label, UINT8 ctype, BT_HDR *p_pkt)
         *p_data++       = (AVRC_SUB_PANEL << AVRC_SUBTYPE_SHIFT);
         *p_data++       = AVRC_OP_VENDOR;
         AVRC_CO_ID_TO_BE_STREAM(p_data, AVRC_CO_METADATA);
-    }
-    else if (p_pkt->event == AVRC_OP_PASS_THRU)
-    {
+    } else if (p_pkt->event == AVRC_OP_PASS_THRU) {
         /* add AVRCP Pass Through headers */
         p_start = ((UINT8 *)(p_pkt + 1) + p_pkt->offset);
         p_pkt->offset -= AVRC_PASS_THRU_SIZE;
@@ -1029,26 +965,23 @@ UINT16 AVRC_MsgReq (UINT8 handle, UINT8 label, UINT8 ctype, BT_HDR *p_pkt)
 
     /* abandon previous fragments */
     p_fcb = &avrc_cb.fcb[handle];
-    if (p_fcb->frag_enabled)
+    if (p_fcb->frag_enabled) {
         p_fcb->frag_enabled = FALSE;
+    }
 
-    if (p_fcb->p_fmsg)
-    {
+    if (p_fcb->p_fmsg) {
         GKI_freebuf(p_fcb->p_fmsg);
         p_fcb->p_fmsg = NULL;
     }
 
     /* AVRCP spec has not defined any control channel commands that needs fragmentation at this level
      * check for fragmentation only on the response */
-    if ((cr == AVCT_RSP) && (chk_frag == TRUE))
-    {
-        if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN)
-        {
+    if ((cr == AVCT_RSP) && (chk_frag == TRUE)) {
+        if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN) {
             int offset_len = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
             p_pkt_new = (BT_HDR *)GKI_getbuf((UINT16)(AVRC_PACKET_LEN + offset_len
-                + BT_HDR_SIZE));
-            if (p_pkt_new && (p_start != NULL))
-            {
+                                             + BT_HDR_SIZE));
+            if (p_pkt_new && (p_start != NULL)) {
                 p_fcb->frag_enabled = TRUE;
                 p_fcb->p_fmsg       = p_pkt;
                 p_fcb->frag_pdu     = *p_start;
@@ -1058,7 +991,7 @@ UINT16 AVRC_MsgReq (UINT8 handle, UINT8 label, UINT8 ctype, BT_HDR *p_pkt)
                 p_pkt->offset       = p_pkt_new->offset;
                 p_pkt->layer_specific = p_pkt_new->layer_specific;
                 p_pkt->event = p_pkt_new->event;
-                p_data = (UINT8 *)(p_pkt+1) + p_pkt->offset;
+                p_data = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
                 p_start -= AVRC_VENDOR_HDR_SIZE;
                 memcpy (p_data, p_start, AVRC_MAX_CTRL_DATA_LEN);
                 /* use AVRC start packet type */
@@ -1073,9 +1006,7 @@ UINT16 AVRC_MsgReq (UINT8 handle, UINT8 label, UINT8 ctype, BT_HDR *p_pkt)
                 avrc_prep_end_frag (handle);
                 AVRC_TRACE_DEBUG ("%s p_pkt len:%d/%d, next len:%d", __func__,
                                   p_pkt->len, len, p_fcb->p_fmsg->len );
-            }
-            else
-            {
+            } else {
                 AVRC_TRACE_ERROR ("AVRC_MsgReq no buffers for fragmentation" );
                 GKI_freebuf(p_pkt);
                 return AVRC_NO_RESOURCES;
@@ -1117,12 +1048,12 @@ UINT16 AVRC_PassCmd(UINT8 handle, UINT8 label, tAVRC_MSG_PASS *p_msg)
 {
     BT_HDR *p_buf;
     assert(p_msg != NULL);
-    if (p_msg)
-    {
+    if (p_msg) {
         p_msg->hdr.ctype    = AVRC_CMD_CTRL;
         p_buf = avrc_pass_msg(p_msg);
-        if (p_buf)
+        if (p_buf) {
             return AVCT_MsgReq( handle, label, AVCT_CMD, p_buf);
+        }
     }
     return AVRC_NO_RESOURCES;
 }
@@ -1156,11 +1087,11 @@ UINT16 AVRC_PassRsp(UINT8 handle, UINT8 label, tAVRC_MSG_PASS *p_msg)
 {
     BT_HDR *p_buf;
     assert(p_msg != NULL);
-    if (p_msg)
-    {
+    if (p_msg) {
         p_buf = avrc_pass_msg(p_msg);
-        if (p_buf)
+        if (p_buf) {
             return AVCT_MsgReq( handle, label, AVCT_RSP, p_buf);
+        }
     }
     return AVRC_NO_RESOURCES;
 }

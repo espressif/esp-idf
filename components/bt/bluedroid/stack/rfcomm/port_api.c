@@ -39,33 +39,33 @@
 
 /* Mapping from PORT_* result codes to human readable strings. */
 static const char *result_code_strings[] = {
-  "Success",
-  "Unknown error",
-  "Already opened",
-  "Command pending",
-  "App not registered",
-  "No memory",
-  "No resources",
-  "Bad BD address",
-  "Unspecified error",
-  "Bad handle",
-  "Not opened",
-  "Line error",
-  "Start failed",
-  "Parameter negotiation failed",
-  "Port negotiation failed",
-  "Sec failed",
-  "Peer connection failed",
-  "Peer failed",
-  "Peer timeout",
-  "Closed",
-  "TX full",
-  "Local closed",
-  "Local timeout",
-  "TX queue disabled",
-  "Page timeout",
-  "Invalid SCN",
-  "Unknown result code"
+    "Success",
+    "Unknown error",
+    "Already opened",
+    "Command pending",
+    "App not registered",
+    "No memory",
+    "No resources",
+    "Bad BD address",
+    "Unspecified error",
+    "Bad handle",
+    "Not opened",
+    "Line error",
+    "Start failed",
+    "Parameter negotiation failed",
+    "Port negotiation failed",
+    "Sec failed",
+    "Peer connection failed",
+    "Peer failed",
+    "Peer timeout",
+    "Closed",
+    "TX full",
+    "Local closed",
+    "Local timeout",
+    "TX queue disabled",
+    "Page timeout",
+    "Invalid SCN",
+    "Unknown result code"
 };
 
 /*******************************************************************************
@@ -110,12 +110,11 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
     UINT16     rfcomm_mtu;
 
     RFCOMM_TRACE_API ("RFCOMM_CreateConnection()  BDA: %02x-%02x-%02x-%02x-%02x-%02x",
-                       bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
+                      bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
 
     *p_handle = 0;
 
-    if (( scn == 0 )||(scn >= PORT_MAX_RFC_PORTS ))
-    {
+    if (( scn == 0 ) || (scn >= PORT_MAX_RFC_PORTS )) {
         /* Server Channel Number(SCN) should be in range 1...30 */
         RFCOMM_TRACE_ERROR ("RFCOMM_CreateConnection - invalid SCN");
         return (PORT_INVALID_SCN);
@@ -123,38 +122,35 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
 
     /* For client that originate connection on the existing none initiator */
     /* multiplexer channel DLCI should be odd */
-    if (p_mcb && !p_mcb->is_initiator && !is_server)
+    if (p_mcb && !p_mcb->is_initiator && !is_server) {
         dlci = (scn << 1) + 1;
-    else
+    } else {
         dlci = (scn << 1);
+    }
     RFCOMM_TRACE_API("RFCOMM_CreateConnection(): scn:%d, dlci:%d, is_server:%d mtu:%d, p_mcb:%p",
-                       scn, dlci, is_server, mtu, p_mcb);
+                     scn, dlci, is_server, mtu, p_mcb);
 
     /* For the server side always allocate a new port.  On the client side */
     /* do not allow the same (dlci, bd_addr) to be opened twice by application */
-    if (!is_server && ((p_port = port_find_port (dlci, bd_addr)) != NULL))
-    {
+    if (!is_server && ((p_port = port_find_port (dlci, bd_addr)) != NULL)) {
         /* if existing port is also a client port */
-        if (p_port->is_server == FALSE)
-        {
+        if (p_port->is_server == FALSE) {
             RFCOMM_TRACE_ERROR ("RFCOMM_CreateConnection - already opened state:%d, RFC state:%d, MCB state:%d",
-                p_port->state, p_port->rfc.state, p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0);
+                                p_port->state, p_port->rfc.state, p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0);
             return (PORT_ALREADY_OPENED);
         }
     }
 
-    if ((p_port = port_allocate_port (dlci, bd_addr)) == NULL)
-    {
+    if ((p_port = port_allocate_port (dlci, bd_addr)) == NULL) {
         RFCOMM_TRACE_WARNING ("RFCOMM_CreateConnection - no resources");
         return (PORT_NO_RESOURCES);
     }
-   RFCOMM_TRACE_API("RFCOMM_CreateConnection(): scn:%d, dlci:%d, is_server:%d mtu:%d, p_mcb:%p, p_port:%p",
-                       scn, dlci, is_server, mtu, p_mcb, p_port);
+    RFCOMM_TRACE_API("RFCOMM_CreateConnection(): scn:%d, dlci:%d, is_server:%d mtu:%d, p_mcb:%p, p_port:%p",
+                     scn, dlci, is_server, mtu, p_mcb, p_port);
 
     p_port->default_signal_state = (PORT_DTRDSR_ON | PORT_CTSRTS_ON | PORT_DCD_ON);
 
-    switch (uuid)
-    {
+    switch (uuid) {
     case UUID_PROTOCOL_OBEX:
         p_port->default_signal_state = PORT_OBEX_DEFAULT_SIGNAL_STATE;
         break;
@@ -188,14 +184,14 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
 
     rfcomm_mtu = L2CAP_MTU_SIZE - RFCOMM_DATA_OVERHEAD;
 
-    if (mtu)
+    if (mtu) {
         p_port->mtu      = (mtu < rfcomm_mtu) ? mtu : rfcomm_mtu;
-    else
+    } else {
         p_port->mtu      = rfcomm_mtu;
+    }
 
     /* server doesn't need to release port when closing */
-    if( is_server )
-    {
+    if ( is_server ) {
         p_port->keep_port_handle = TRUE;
 
         /* keep mtu that user asked, p_port->mtu could be updated during param negotiation */
@@ -207,12 +203,12 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
 
     p_port->p_mgmt_callback = p_mgmt_cb;
 
-    for (i = 0; i < BD_ADDR_LEN; i++)
+    for (i = 0; i < BD_ADDR_LEN; i++) {
         p_port->bd_addr[i] = bd_addr[i];
+    }
 
     /* If this is not initiator of the connection need to just wait */
-    if (p_port->is_server)
-    {
+    if (p_port->is_server) {
         return (PORT_SUCCESS);
     }
 
@@ -237,15 +233,13 @@ int RFCOMM_RemoveConnection (UINT16 handle)
     RFCOMM_TRACE_API ("RFCOMM_RemoveConnection() handle:%d", handle);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         RFCOMM_TRACE_ERROR ("RFCOMM_RemoveConnection() BAD handle:%d", handle);
         return (PORT_BAD_HANDLE);
     }
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         RFCOMM_TRACE_EVENT ("RFCOMM_RemoveConnection() Not opened:%d", handle);
         return (PORT_SUCCESS);
     }
@@ -273,8 +267,7 @@ int RFCOMM_RemoveServer (UINT16 handle)
     RFCOMM_TRACE_API ("RFCOMM_RemoveServer() handle:%d", handle);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         RFCOMM_TRACE_ERROR ("RFCOMM_RemoveServer() BAD handle:%d", handle);
         return (PORT_BAD_HANDLE);
     }
@@ -283,8 +276,7 @@ int RFCOMM_RemoveServer (UINT16 handle)
     /* Do not report any events to the client any more. */
     p_port->p_mgmt_callback = NULL;
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         RFCOMM_TRACE_EVENT ("RFCOMM_RemoveServer() Not opened:%d", handle);
         return (PORT_SUCCESS);
     }
@@ -318,15 +310,13 @@ int PORT_SetEventCallback (UINT16 port_handle, tPORT_CALLBACK *p_port_cb)
     tPORT  *p_port;
 
     /* Check if handle is valid to avoid crashing */
-    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS))
-    {
+    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[port_handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
@@ -351,8 +341,7 @@ int PORT_ClearKeepHandleFlag (UINT16 port_handle)
     tPORT  *p_port;
 
     /* Check if handle is valid to avoid crashing */
-    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS))
-    {
+    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
@@ -381,15 +370,13 @@ int PORT_SetDataCallback (UINT16 port_handle, tPORT_DATA_CALLBACK *p_port_cb)
     RFCOMM_TRACE_API ("PORT_SetDataCallback() handle:%d cb 0x%x", port_handle, p_port_cb);
 
     /* Check if handle is valid to avoid crashing */
-    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS))
-    {
+    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[port_handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
@@ -417,15 +404,13 @@ int PORT_SetDataCOCallback (UINT16 port_handle, tPORT_DATA_CO_CALLBACK *p_port_c
     RFCOMM_TRACE_API ("PORT_SetDataCOCallback() handle:%d cb 0x%x", port_handle, p_port_cb);
 
     /* Check if handle is valid to avoid crashing */
-    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS))
-    {
+    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[port_handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
@@ -453,15 +438,13 @@ int PORT_SetEventMask (UINT16 port_handle, UINT32 mask)
     RFCOMM_TRACE_API ("PORT_SetEventMask() handle:%d mask:0x%x", port_handle, mask);
 
     /* Check if handle is valid to avoid crashing */
-    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS))
-    {
+    if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[port_handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
@@ -490,28 +473,26 @@ int PORT_CheckConnection (UINT16 handle, BD_ADDR bd_addr, UINT16 *p_lcid)
     RFCOMM_TRACE_API ("PORT_CheckConnection() handle:%d", handle);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
     if (!p_port->rfc.p_mcb
-     || !p_port->rfc.p_mcb->peer_ready
-     || (p_port->rfc.state != RFC_STATE_OPENED))
-    {
+            || !p_port->rfc.p_mcb->peer_ready
+            || (p_port->rfc.state != RFC_STATE_OPENED)) {
         return (PORT_LINE_ERR);
     }
 
     memcpy (bd_addr, p_port->rfc.p_mcb->bd_addr, BD_ADDR_LEN);
-    if (p_lcid)
+    if (p_lcid) {
         *p_lcid = p_port->rfc.p_mcb->lcid;
+    }
 
     return (PORT_SUCCESS);
 }
@@ -535,33 +516,27 @@ BOOLEAN PORT_IsOpening (BD_ADDR bd_addr)
     BOOLEAN found_port;
 
     /* Check for any rfc_mcb which is in the middle of opening. */
-    for (xx = 0; xx < MAX_BD_CONNECTIONS; xx++)
-    {
+    for (xx = 0; xx < MAX_BD_CONNECTIONS; xx++) {
         if ((rfc_cb.port.rfc_mcb[xx].state > RFC_MX_STATE_IDLE) &&
-            (rfc_cb.port.rfc_mcb[xx].state < RFC_MX_STATE_CONNECTED))
-        {
+                (rfc_cb.port.rfc_mcb[xx].state < RFC_MX_STATE_CONNECTED)) {
             memcpy (bd_addr, rfc_cb.port.rfc_mcb[xx].bd_addr, BD_ADDR_LEN);
             return TRUE;
         }
 
-        if (rfc_cb.port.rfc_mcb[xx].state == RFC_MX_STATE_CONNECTED)
-        {
+        if (rfc_cb.port.rfc_mcb[xx].state == RFC_MX_STATE_CONNECTED) {
             found_port = FALSE;
             p_mcb = &rfc_cb.port.rfc_mcb[xx];
             p_port = &rfc_cb.port.port[0];
 
-            for (yy = 0; yy < MAX_RFC_PORTS; yy++, p_port++)
-            {
-                if (p_port->rfc.p_mcb == p_mcb)
-                {
+            for (yy = 0; yy < MAX_RFC_PORTS; yy++, p_port++) {
+                if (p_port->rfc.p_mcb == p_mcb) {
                     found_port = TRUE;
                     break;
                 }
             }
 
             if ((!found_port) ||
-                (found_port && (p_port->rfc.state < RFC_STATE_OPENED)))
-            {
+                    (found_port && (p_port->rfc.state < RFC_STATE_OPENED))) {
                 /* Port is not established yet. */
                 memcpy (bd_addr, rfc_cb.port.rfc_mcb[xx].bd_addr, BD_ADDR_LEN);
                 return TRUE;
@@ -593,32 +568,28 @@ int PORT_SetState (UINT16 handle, tPORT_STATE *p_settings)
     RFCOMM_TRACE_API ("PORT_SetState() handle:%d", handle);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (p_port->line_status)
-    {
+    if (p_port->line_status) {
         return (PORT_LINE_ERR);
     }
 
     RFCOMM_TRACE_API ("PORT_SetState() handle:%d FC_TYPE:0x%x", handle,
-                       p_settings->fc_type);
+                      p_settings->fc_type);
 
     baud_rate = p_port->user_port_pars.baud_rate;
     p_port->user_port_pars = *p_settings;
 
     /* for now we've been asked to pass only baud rate */
-    if (baud_rate != p_settings->baud_rate)
-    {
+    if (baud_rate != p_settings->baud_rate) {
         port_start_par_neg (p_port);
     }
     return (PORT_SUCCESS);
@@ -641,27 +612,24 @@ int PORT_GetRxQueueCnt (UINT16 handle, UINT16 *p_rx_queue_count)
     RFCOMM_TRACE_API ("PORT_GetRxQueueCnt() handle:%d", handle);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (p_port->line_status)
-    {
+    if (p_port->line_status) {
         return (PORT_LINE_ERR);
     }
 
     *p_rx_queue_count = p_port->rx.queue_size;
 
     RFCOMM_TRACE_API ("PORT_GetRxQueueCnt() p_rx_queue_count:%d, p_port->rx.queue.count = %d",
-		      *p_rx_queue_count, p_port->rx.queue_size);
+                      *p_rx_queue_count, p_port->rx.queue_size);
 
     return (PORT_SUCCESS);
 }
@@ -685,20 +653,17 @@ int PORT_GetState (UINT16 handle, tPORT_STATE *p_settings)
     RFCOMM_TRACE_API ("PORT_GetState() handle:%d", handle);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (p_port->line_status)
-    {
+    if (p_port->line_status) {
         return (PORT_LINE_ERR);
     }
 
@@ -726,23 +691,20 @@ int PORT_Control (UINT16 handle, UINT8 signal)
     RFCOMM_TRACE_API ("PORT_Control() handle:%d signal:0x%x", handle, signal);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
     old_modem_signal = p_port->local_ctrl.modem_signal;
     p_port->local_ctrl.break_signal = 0;
 
-    switch (signal)
-    {
+    switch (signal) {
     case PORT_SET_CTSRTS:
         p_port->local_ctrl.modem_signal |= PORT_CTSRTS_ON;
         break;
@@ -776,18 +738,19 @@ int PORT_Control (UINT16 handle, UINT8 signal)
         break;
     }
 
-    if (signal == PORT_BREAK)
+    if (signal == PORT_BREAK) {
         p_port->local_ctrl.break_signal = PORT_BREAK_DURATION;
-    else if (p_port->local_ctrl.modem_signal == old_modem_signal)
+    } else if (p_port->local_ctrl.modem_signal == old_modem_signal) {
         return (PORT_SUCCESS);
+    }
 
     port_start_control (p_port);
 
     RFCOMM_TRACE_EVENT ("PORT_Control DTR_DSR : %d, RTS_CTS : %d, RI : %d, DCD : %d",
-        ((p_port->local_ctrl.modem_signal & MODEM_SIGNAL_DTRDSR) ? 1 : 0),
-        ((p_port->local_ctrl.modem_signal & MODEM_SIGNAL_RTSCTS) ? 1 : 0),
-        ((p_port->local_ctrl.modem_signal & MODEM_SIGNAL_RI) ? 1 : 0),
-        ((p_port->local_ctrl.modem_signal & MODEM_SIGNAL_DCD) ? 1 : 0));
+                        ((p_port->local_ctrl.modem_signal & MODEM_SIGNAL_DTRDSR) ? 1 : 0),
+                        ((p_port->local_ctrl.modem_signal & MODEM_SIGNAL_RTSCTS) ? 1 : 0),
+                        ((p_port->local_ctrl.modem_signal & MODEM_SIGNAL_RI) ? 1 : 0),
+                        ((p_port->local_ctrl.modem_signal & MODEM_SIGNAL_DCD) ? 1 : 0));
 
     return (PORT_SUCCESS);
 }
@@ -814,57 +777,48 @@ int PORT_FlowControl (UINT16 handle, BOOLEAN enable)
     RFCOMM_TRACE_API ("PORT_FlowControl() handle:%d enable: %d", handle, enable);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (!p_port->rfc.p_mcb)
-    {
+    if (!p_port->rfc.p_mcb) {
         return (PORT_NOT_OPENED);
     }
 
     p_port->rx.user_fc = !enable;
 
-    if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT)
-    {
-        if (!p_port->rx.user_fc)
-        {
+    if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT) {
+        if (!p_port->rx.user_fc) {
             port_flow_control_peer(p_port, TRUE, 0);
         }
-    }
-    else
-    {
+    } else {
         old_fc = p_port->local_ctrl.fc;
 
         /* FC is set if user is set or peer is set */
         p_port->local_ctrl.fc = (p_port->rx.user_fc | p_port->rx.peer_fc);
 
-        if (p_port->local_ctrl.fc != old_fc)
+        if (p_port->local_ctrl.fc != old_fc) {
             port_start_control (p_port);
+        }
     }
 
     /* Need to take care of the case when we could not deliver events */
     /* to the application because we were flow controlled */
-    if (enable && (p_port->rx.queue_size != 0))
-    {
+    if (enable && (p_port->rx.queue_size != 0)) {
         events = PORT_EV_RXCHAR;
-        if (p_port->rx_flag_ev_pending)
-        {
+        if (p_port->rx_flag_ev_pending) {
             p_port->rx_flag_ev_pending = FALSE;
             events |= PORT_EV_RXFLAG;
         }
 
         events &= p_port->ev_mask;
-        if (p_port->p_callback && events)
-        {
+        if (p_port->p_callback && events) {
             p_port->p_callback (events, p_port->inx);
         }
     }
@@ -893,57 +847,48 @@ int PORT_FlowControl_MaxCredit (UINT16 handle, BOOLEAN enable)
     RFCOMM_TRACE_API ("PORT_FlowControl() handle:%d enable: %d", handle, enable);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (!p_port->rfc.p_mcb)
-    {
+    if (!p_port->rfc.p_mcb) {
         return (PORT_NOT_OPENED);
     }
 
     p_port->rx.user_fc = !enable;
 
-    if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT)
-    {
-        if (!p_port->rx.user_fc)
-        {
+    if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT) {
+        if (!p_port->rx.user_fc) {
             port_flow_control_peer(p_port, TRUE, p_port->credit_rx);
         }
-    }
-    else
-    {
+    } else {
         old_fc = p_port->local_ctrl.fc;
 
         /* FC is set if user is set or peer is set */
         p_port->local_ctrl.fc = (p_port->rx.user_fc | p_port->rx.peer_fc);
 
-        if (p_port->local_ctrl.fc != old_fc)
+        if (p_port->local_ctrl.fc != old_fc) {
             port_start_control (p_port);
+        }
     }
 
     /* Need to take care of the case when we could not deliver events */
     /* to the application because we were flow controlled */
-    if (enable && (p_port->rx.queue_size != 0))
-    {
+    if (enable && (p_port->rx.queue_size != 0)) {
         events = PORT_EV_RXCHAR;
-        if (p_port->rx_flag_ev_pending)
-        {
+        if (p_port->rx_flag_ev_pending) {
             p_port->rx_flag_ev_pending = FALSE;
             events |= PORT_EV_RXFLAG;
         }
 
         events &= p_port->ev_mask;
-        if (p_port->p_callback && events)
-        {
+        if (p_port->p_callback && events) {
             p_port->p_callback (events, p_port->inx);
         }
     }
@@ -968,15 +913,13 @@ int PORT_GetModemStatus (UINT16 handle, UINT8 *p_signal)
 {
     tPORT      *p_port;
 
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
@@ -1010,15 +953,13 @@ int PORT_ClearError (UINT16 handle, UINT16 *p_errors, tPORT_STATUS *p_status)
 
     RFCOMM_TRACE_API ("PORT_ClearError() handle:%d", handle);
 
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
@@ -1049,20 +990,17 @@ int PORT_SendError (UINT16 handle, UINT8 errors)
 
     RFCOMM_TRACE_API ("PORT_SendError() handle:%d errors:0x%x", handle, errors);
 
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (!p_port->rfc.p_mcb)
-    {
+    if (!p_port->rfc.p_mcb) {
         return (PORT_NOT_OPENED);
     }
 
@@ -1088,15 +1026,13 @@ int PORT_GetQueueStatus (UINT16 handle, tPORT_STATUS *p_status)
 
     /* RFCOMM_TRACE_API ("PORT_GetQueueStatus() handle:%d", handle); */
 
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
@@ -1107,14 +1043,17 @@ int PORT_GetQueueStatus (UINT16 handle, tPORT_STATUS *p_status)
 
     p_status->flags = 0;
 
-    if (!(p_port->peer_ctrl.modem_signal & PORT_CTSRTS_ON))
+    if (!(p_port->peer_ctrl.modem_signal & PORT_CTSRTS_ON)) {
         p_status->flags |= PORT_FLAG_CTS_HOLD;
+    }
 
-    if (!(p_port->peer_ctrl.modem_signal & PORT_DTRDSR_ON))
+    if (!(p_port->peer_ctrl.modem_signal & PORT_DTRDSR_ON)) {
         p_status->flags |= PORT_FLAG_DSR_HOLD;
+    }
 
-    if (!(p_port->peer_ctrl.modem_signal & PORT_DCD_ON))
+    if (!(p_port->peer_ctrl.modem_signal & PORT_DCD_ON)) {
         p_status->flags |= PORT_FLAG_RLSD_HOLD;
+    }
 
     return (PORT_SUCCESS);
 }
@@ -1141,42 +1080,41 @@ int PORT_Purge (UINT16 handle, UINT8 purge_flags)
     RFCOMM_TRACE_API ("PORT_Purge() handle:%d flags:0x%x", handle, purge_flags);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (purge_flags & PORT_PURGE_RXCLEAR)
-    {
+    if (purge_flags & PORT_PURGE_RXCLEAR) {
         PORT_SCHEDULE_LOCK;  /* to prevent missing credit */
 
         count = GKI_queue_length(&p_port->rx.queue);
 
-        while ((p_buf = (BT_HDR *)GKI_dequeue (&p_port->rx.queue)) != NULL)
+        while ((p_buf = (BT_HDR *)GKI_dequeue (&p_port->rx.queue)) != NULL) {
             GKI_freebuf (p_buf);
+        }
 
         p_port->rx.queue_size = 0;
 
         PORT_SCHEDULE_UNLOCK;
 
         /* If we flowed controlled peer based on rx_queue size enable data again */
-        if (count)
+        if (count) {
             port_flow_control_peer (p_port, TRUE, count);
+        }
     }
 
-    if (purge_flags & PORT_PURGE_TXCLEAR)
-    {
+    if (purge_flags & PORT_PURGE_TXCLEAR) {
         PORT_SCHEDULE_LOCK;  /* to prevent tx.queue_size from being negative */
 
-        while ((p_buf = (BT_HDR *)GKI_dequeue (&p_port->tx.queue)) != NULL)
+        while ((p_buf = (BT_HDR *)GKI_dequeue (&p_port->tx.queue)) != NULL) {
             GKI_freebuf (p_buf);
+        }
 
         p_port->tx.queue_size = 0;
 
@@ -1188,8 +1126,9 @@ int PORT_Purge (UINT16 handle, UINT8 purge_flags)
 
         events &= p_port->ev_mask;
 
-        if ((p_port->p_callback != NULL) && events)
+        if ((p_port->p_callback != NULL) && events) {
             (p_port->p_callback)(events, p_port->inx);
+        }
     }
 
     return (PORT_SUCCESS);
@@ -1221,33 +1160,29 @@ int PORT_ReadData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
     *p_len = 0;
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (p_port->line_status)
-    {
+    if (p_port->line_status) {
         return (PORT_LINE_ERR);
     }
 
     p_buf = (BT_HDR *)GKI_getfirst (&p_port->rx.queue);
-    if (!p_buf)
+    if (!p_buf) {
         return (PORT_SUCCESS);
+    }
 
     count = 0;
 
-    while (max_len && p_buf)
-    {
-        if (p_buf->len > max_len)
-        {
+    while (max_len && p_buf) {
+        if (p_buf->len > max_len) {
             memcpy (p_data, (UINT8 *)(p_buf + 1) + p_buf->offset, max_len);
             p_buf->offset += max_len;
             p_buf->len    -= max_len;
@@ -1261,9 +1196,7 @@ int PORT_ReadData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
             PORT_SCHEDULE_UNLOCK;
 
             break;
-        }
-        else
-        {
+        } else {
             memcpy (p_data, (UINT8 *)(p_buf + 1) + p_buf->offset, p_buf->len);
 
             *p_len  += p_buf->len;
@@ -1273,8 +1206,7 @@ int PORT_ReadData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
 
             p_port->rx.queue_size -= p_buf->len;
 
-            if (max_len)
-            {
+            if (max_len) {
                 p_data  += p_buf->len;
                 p_buf = (BT_HDR *)GKI_getnext (p_buf);
             }
@@ -1287,12 +1219,9 @@ int PORT_ReadData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
         }
     }
 
-    if (*p_len == 1)
-    {
+    if (*p_len == 1) {
         RFCOMM_TRACE_EVENT ("PORT_ReadData queue:%d returned:%d %x", p_port->rx.queue_size, *p_len, (p_data[0]));
-    }
-    else
-    {
+    } else {
         RFCOMM_TRACE_EVENT ("PORT_ReadData queue:%d returned:%d", p_port->rx.queue_size, *p_len);
     }
 
@@ -1323,27 +1252,23 @@ int PORT_Read (UINT16 handle, BT_HDR **pp_buf)
     RFCOMM_TRACE_API ("PORT_Read() handle:%d", handle);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (p_port->line_status)
-    {
+    if (p_port->line_status) {
         return (PORT_LINE_ERR);
     }
 
     PORT_SCHEDULE_LOCK;
 
     p_buf = (BT_HDR *)GKI_dequeue (&p_port->rx.queue);
-    if (p_buf)
-    {
+    if (p_buf) {
         p_port->rx.queue_size -= p_buf->len;
 
         PORT_SCHEDULE_UNLOCK;
@@ -1351,9 +1276,7 @@ int PORT_Read (UINT16 handle, BT_HDR **pp_buf)
         /* If rfcomm suspended traffic from the peer based on the rx_queue_size */
         /* check if it can be resumed now */
         port_flow_control_peer (p_port, TRUE, 1);
-    }
-    else
-    {
+    } else {
         PORT_SCHEDULE_UNLOCK;
     }
 
@@ -1376,8 +1299,7 @@ int PORT_Read (UINT16 handle, BT_HDR **pp_buf)
 static int port_write (tPORT *p_port, BT_HDR *p_buf)
 {
     /* We should not allow to write data in to server port when connection is not opened */
-    if (p_port->is_server && (p_port->rfc.state != RFC_STATE_OPENED))
-    {
+    if (p_port->is_server && (p_port->rfc.state != RFC_STATE_OPENED)) {
         GKI_freebuf (p_buf);
         return (PORT_CLOSED);
     }
@@ -1386,39 +1308,36 @@ static int port_write (tPORT *p_port, BT_HDR *p_buf)
     /* Peer is not ready or Port is not yet opened or initial port control */
     /* command has not been sent */
     if (p_port->tx.peer_fc
-     || !p_port->rfc.p_mcb
-     || !p_port->rfc.p_mcb->peer_ready
-     || (p_port->rfc.state != RFC_STATE_OPENED)
-     || ((p_port->port_ctrl & (PORT_CTRL_REQ_SENT | PORT_CTRL_IND_RECEIVED)) !=
-                              (PORT_CTRL_REQ_SENT | PORT_CTRL_IND_RECEIVED)))
-    {
+            || !p_port->rfc.p_mcb
+            || !p_port->rfc.p_mcb->peer_ready
+            || (p_port->rfc.state != RFC_STATE_OPENED)
+            || ((p_port->port_ctrl & (PORT_CTRL_REQ_SENT | PORT_CTRL_IND_RECEIVED)) !=
+                (PORT_CTRL_REQ_SENT | PORT_CTRL_IND_RECEIVED))) {
         if ((p_port->tx.queue_size  > PORT_TX_CRITICAL_WM)
-         || (GKI_queue_length(&p_port->tx.queue) > PORT_TX_BUF_CRITICAL_WM))
-        {
+                || (GKI_queue_length(&p_port->tx.queue) > PORT_TX_BUF_CRITICAL_WM)) {
             RFCOMM_TRACE_WARNING ("PORT_Write: Queue size: %d",
-                                   p_port->tx.queue_size);
+                                  p_port->tx.queue_size);
 
             GKI_freebuf (p_buf);
 
-            if ((p_port->p_callback != NULL) && (p_port->ev_mask & PORT_EV_ERR))
-                  p_port->p_callback (PORT_EV_ERR, p_port->inx);
+            if ((p_port->p_callback != NULL) && (p_port->ev_mask & PORT_EV_ERR)) {
+                p_port->p_callback (PORT_EV_ERR, p_port->inx);
+            }
 
             return (PORT_TX_FULL);
         }
 
         RFCOMM_TRACE_EVENT ("PORT_Write : Data is enqued. flow disabled %d peer_ready %d state %d ctrl_state %x",
-                             p_port->tx.peer_fc,
-                             (p_port->rfc.p_mcb && p_port->rfc.p_mcb->peer_ready),
-                             p_port->rfc.state,
-                             p_port->port_ctrl);
+                            p_port->tx.peer_fc,
+                            (p_port->rfc.p_mcb && p_port->rfc.p_mcb->peer_ready),
+                            p_port->rfc.state,
+                            p_port->port_ctrl);
 
         GKI_enqueue (&p_port->tx.queue, p_buf);
         p_port->tx.queue_size += p_buf->len;
 
         return (PORT_CMD_PENDING);
-    }
-    else
-    {
+    } else {
         RFCOMM_TRACE_EVENT ("PORT_Write : Data is being sent");
 
         RFCOMM_DataReq (p_port->rfc.p_mcb, p_port->dlci, p_buf);
@@ -1446,24 +1365,21 @@ int PORT_Write (UINT16 handle, BT_HDR *p_buf)
     RFCOMM_TRACE_API ("PORT_Write() handle:%d", handle);
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         GKI_freebuf (p_buf);
         return (PORT_BAD_HANDLE);
     }
 
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         GKI_freebuf (p_buf);
         return (PORT_NOT_OPENED);
     }
 
-    if (p_port->line_status)
-    {
+    if (p_port->line_status) {
         RFCOMM_TRACE_WARNING ("PORT_Write: Data dropped line_status:0x%x",
-                               p_port->line_status);
+                              p_port->line_status);
         GKI_freebuf (p_buf);
         return (PORT_LINE_ERR);
     }
@@ -1471,8 +1387,7 @@ int PORT_Write (UINT16 handle, BT_HDR *p_buf)
     rc = port_write (p_port, p_buf);
     event |= port_flow_control_user (p_port);
 
-    switch (rc)
-    {
+    switch (rc) {
     case PORT_TX_FULL:
         event |= PORT_EV_ERR;
         break;
@@ -1485,8 +1400,9 @@ int PORT_Write (UINT16 handle, BT_HDR *p_buf)
     event &= p_port->ev_mask;
 
     /* Send event to the application */
-    if (p_port->p_callback && event)
+    if (p_port->p_callback && event) {
         (p_port->p_callback)(event, p_port->inx);
+    }
 
     return (PORT_SUCCESS);
 }
@@ -1502,7 +1418,7 @@ int PORT_Write (UINT16 handle, BT_HDR *p_buf)
 **                  p_len      - Byte count returned
 **
 *******************************************************************************/
-int PORT_WriteDataCO (UINT16 handle, int* p_len)
+int PORT_WriteDataCO (UINT16 handle, int *p_len)
 {
 
     tPORT      *p_port;
@@ -1515,48 +1431,44 @@ int PORT_WriteDataCO (UINT16 handle, int* p_len)
     *p_len = 0;
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         RFCOMM_TRACE_WARNING ("PORT_WriteDataByFd() no port state:%d", p_port->state);
         return (PORT_NOT_OPENED);
     }
 
-    if (!p_port->peer_mtu)
-    {
+    if (!p_port->peer_mtu) {
         RFCOMM_TRACE_ERROR ("PORT_WriteDataByFd() peer_mtu:%d", p_port->peer_mtu);
         return (PORT_UNKNOWN_ERROR);
     }
     int available = 0;
     //if(ioctl(fd, FIONREAD, &available) < 0)
-    if(p_port->p_data_co_callback(handle, (UINT8*)&available, sizeof(available),
-                                DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE) == FALSE)
-    {
+    if (p_port->p_data_co_callback(handle, (UINT8 *)&available, sizeof(available),
+                                   DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE) == FALSE) {
         RFCOMM_TRACE_ERROR("p_data_co_callback DATA_CO_CALLBACK_TYPE_INCOMING_SIZE failed, available:%d", available);
         return (PORT_UNKNOWN_ERROR);
     }
-    if(available == 0)
+    if (available == 0) {
         return PORT_SUCCESS;
+    }
     /* Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len */
     length = RFCOMM_DATA_POOL_BUF_SIZE -
-            (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
+             (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
 
     /* If there are buffers scheduled for transmission check if requested */
     /* data fits into the end of the queue */
     PORT_SCHEDULE_LOCK;
 
     if (((p_buf = (BT_HDR *)GKI_getlast(&p_port->tx.queue)) != NULL)
-     && (((int)p_buf->len + available) <= (int)p_port->peer_mtu)
-     && (((int)p_buf->len + available) <= (int)length))
-    {
+            && (((int)p_buf->len + available) <= (int)p_port->peer_mtu)
+            && (((int)p_buf->len + available) <= (int)length)) {
         //if(recv(fd, (UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len, available, 0) != available)
-        if(p_port->p_data_co_callback(handle, (UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len,
-                                    available, DATA_CO_CALLBACK_TYPE_OUTGOING) == FALSE)
+        if (p_port->p_data_co_callback(handle, (UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len,
+                                       available, DATA_CO_CALLBACK_TYPE_OUTGOING) == FALSE)
 
         {
             RFCOMM_TRACE_ERROR("p_data_co_callback DATA_CO_CALLBACK_TYPE_OUTGOING failed, available:%d", available);
@@ -1580,39 +1492,39 @@ int PORT_WriteDataCO (UINT16 handle, int* p_len)
 
     //max_read = available < max_read ? available : max_read;
 
-    while (available)
-    {
+    while (available) {
         /* if we're over buffer high water mark, we're done */
         if ((p_port->tx.queue_size  > PORT_TX_HIGH_WM)
-         || (GKI_queue_length(&p_port->tx.queue) > PORT_TX_BUF_HIGH_WM))
-        {
+                || (GKI_queue_length(&p_port->tx.queue) > PORT_TX_BUF_HIGH_WM)) {
             port_flow_control_user(p_port);
             event |= PORT_EV_FC;
             RFCOMM_TRACE_EVENT ("tx queue is full,tx.queue_size:%d,tx.queue.count:%d,available:%d",
-                    p_port->tx.queue_size, GKI_queue_length(&p_port->tx.queue), available);
+                                p_port->tx.queue_size, GKI_queue_length(&p_port->tx.queue), available);
             break;
-         }
+        }
 
         /* continue with rfcomm data write */
         p_buf = (BT_HDR *)GKI_getpoolbuf (RFCOMM_DATA_POOL_ID);
-        if (!p_buf)
+        if (!p_buf) {
             break;
+        }
 
         p_buf->offset         = L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET;
         p_buf->layer_specific = handle;
 
-        if (p_port->peer_mtu < length)
+        if (p_port->peer_mtu < length) {
             length = p_port->peer_mtu;
-        if (available < (int)length)
+        }
+        if (available < (int)length) {
             length = (UINT16)available;
+        }
         p_buf->len = length;
         p_buf->event          = BT_EVT_TO_BTU_SP_DATA;
 
         //memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset, p_data, length);
         //if(recv(fd, (UINT8 *)(p_buf + 1) + p_buf->offset, (int)length, 0) != (int)length)
-        if(p_port->p_data_co_callback(handle, (UINT8 *)(p_buf + 1) + p_buf->offset, length,
-                                      DATA_CO_CALLBACK_TYPE_OUTGOING) == FALSE)
-        {
+        if (p_port->p_data_co_callback(handle, (UINT8 *)(p_buf + 1) + p_buf->offset, length,
+                                       DATA_CO_CALLBACK_TYPE_OUTGOING) == FALSE) {
             RFCOMM_TRACE_ERROR("p_data_co_callback DATA_CO_CALLBACK_TYPE_OUTGOING failed, length:%d", length);
             return (PORT_UNKNOWN_ERROR);
         }
@@ -1625,24 +1537,28 @@ int PORT_WriteDataCO (UINT16 handle, int* p_len)
         /* If queue went below the threashold need to send flow control */
         event |= port_flow_control_user (p_port);
 
-        if (rc == PORT_SUCCESS)
+        if (rc == PORT_SUCCESS) {
             event |= PORT_EV_TXCHAR;
+        }
 
-        if ((rc != PORT_SUCCESS) && (rc != PORT_CMD_PENDING))
+        if ((rc != PORT_SUCCESS) && (rc != PORT_CMD_PENDING)) {
             break;
+        }
 
         *p_len  += length;
         available -= (int)length;
     }
-    if (!available && (rc != PORT_CMD_PENDING) && (rc != PORT_TX_QUEUE_DISABLED))
+    if (!available && (rc != PORT_CMD_PENDING) && (rc != PORT_TX_QUEUE_DISABLED)) {
         event |= PORT_EV_TXEMPTY;
+    }
 
     /* Mask out all events that are not of interest to user */
     event &= p_port->ev_mask;
 
     /* Send event to the application */
-    if (p_port->p_callback && event)
+    if (p_port->p_callback && event) {
         (p_port->p_callback)(event, p_port->inx);
+    }
 
     return (PORT_SUCCESS);
 }
@@ -1675,36 +1591,32 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
     *p_len = 0;
 
     /* Check if handle is valid to avoid crashing */
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         RFCOMM_TRACE_WARNING ("PORT_WriteData() no port state:%d", p_port->state);
         return (PORT_NOT_OPENED);
     }
 
-    if (!max_len || !p_port->peer_mtu)
-    {
+    if (!max_len || !p_port->peer_mtu) {
         RFCOMM_TRACE_ERROR ("PORT_WriteData() peer_mtu:%d", p_port->peer_mtu);
         return (PORT_UNKNOWN_ERROR);
     }
 
     /* Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len */
     length = RFCOMM_DATA_POOL_BUF_SIZE -
-            (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
+             (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
 
     /* If there are buffers scheduled for transmission check if requested */
     /* data fits into the end of the queue */
     PORT_SCHEDULE_LOCK;
 
     if (((p_buf = (BT_HDR *)GKI_getlast(&p_port->tx.queue)) != NULL)
-     && ((p_buf->len + max_len) <= p_port->peer_mtu)
-     && ((p_buf->len + max_len) <= length))
-    {
+            && ((p_buf->len + max_len) <= p_port->peer_mtu)
+            && ((p_buf->len + max_len) <= length)) {
         memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len, p_data, max_len);
         p_port->tx.queue_size += max_len;
 
@@ -1718,25 +1630,28 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
 
     PORT_SCHEDULE_UNLOCK;
 
-    while (max_len)
-    {
+    while (max_len) {
         /* if we're over buffer high water mark, we're done */
         if ((p_port->tx.queue_size  > PORT_TX_HIGH_WM)
-         || (GKI_queue_length(&p_port->tx.queue) > PORT_TX_BUF_HIGH_WM))
+                || (GKI_queue_length(&p_port->tx.queue) > PORT_TX_BUF_HIGH_WM)) {
             break;
+        }
 
         /* continue with rfcomm data write */
         p_buf = (BT_HDR *)GKI_getpoolbuf (RFCOMM_DATA_POOL_ID);
-        if (!p_buf)
+        if (!p_buf) {
             break;
+        }
 
         p_buf->offset         = L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET;
         p_buf->layer_specific = handle;
 
-        if (p_port->peer_mtu < length)
+        if (p_port->peer_mtu < length) {
             length = p_port->peer_mtu;
-        if (max_len < length)
+        }
+        if (max_len < length) {
             length = max_len;
+        }
         p_buf->len = length;
         p_buf->event          = BT_EVT_TO_BTU_SP_DATA;
 
@@ -1749,26 +1664,30 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
         /* If queue went below the threashold need to send flow control */
         event |= port_flow_control_user (p_port);
 
-        if (rc == PORT_SUCCESS)
+        if (rc == PORT_SUCCESS) {
             event |= PORT_EV_TXCHAR;
+        }
 
-        if ((rc != PORT_SUCCESS) && (rc != PORT_CMD_PENDING))
+        if ((rc != PORT_SUCCESS) && (rc != PORT_CMD_PENDING)) {
             break;
+        }
 
         *p_len  += length;
         max_len -= length;
         p_data  += length;
 
     }
-    if (!max_len && (rc != PORT_CMD_PENDING) && (rc != PORT_TX_QUEUE_DISABLED))
+    if (!max_len && (rc != PORT_CMD_PENDING) && (rc != PORT_TX_QUEUE_DISABLED)) {
         event |= PORT_EV_TXEMPTY;
+    }
 
     /* Mask out all events that are not of interest to user */
     event &= p_port->ev_mask;
 
     /* Send event to the application */
-    if (p_port->p_callback && event)
+    if (p_port->p_callback && event) {
         (p_port->p_callback)(event, p_port->inx);
+    }
 
     return (PORT_SUCCESS);
 }
@@ -1792,24 +1711,20 @@ int PORT_Test (UINT16 handle, UINT8 *p_data, UINT16 len)
 
     RFCOMM_TRACE_API ("PORT_Test() len:%d", len);
 
-    if ((handle == 0) || (handle > MAX_RFC_PORTS))
-    {
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
         return (PORT_BAD_HANDLE);
     }
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED))
-    {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
         return (PORT_NOT_OPENED);
     }
 
-    if (len > ((p_port->mtu == 0) ? RFCOMM_DEFAULT_MTU : p_port->mtu))
-    {
+    if (len > ((p_port->mtu == 0) ? RFCOMM_DEFAULT_MTU : p_port->mtu)) {
         return (PORT_UNKNOWN_ERROR);
     }
 
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (RFCOMM_CMD_POOL_ID)) != NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (RFCOMM_CMD_POOL_ID)) != NULL) {
 
         p_buf->offset  = L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET + 2;
         p_buf->len = len;
@@ -1818,9 +1733,7 @@ int PORT_Test (UINT16 handle, UINT8 *p_data, UINT16 len)
 
         rfc_send_test (p_port->rfc.p_mcb, TRUE, p_buf);
         return (PORT_SUCCESS);
-    }
-    else
-    {
+    } else {
         return (PORT_NO_MEM);
     }
 }
@@ -1859,8 +1772,9 @@ void RFCOMM_Init (void)
 *******************************************************************************/
 UINT8 PORT_SetTraceLevel (UINT8 new_level)
 {
-    if (new_level != 0xFF)
+    if (new_level != 0xFF) {
         rfc_cb.trace_level = new_level;
+    }
 
     return (rfc_cb.trace_level);
 }
@@ -1875,10 +1789,11 @@ UINT8 PORT_SetTraceLevel (UINT8 new_level)
 ** Returns          a pointer to the human-readable string for the given result.
 **
 *******************************************************************************/
-const char *PORT_GetResultString (const uint8_t result_code) {
-  if (result_code > PORT_ERR_MAX) {
-    return result_code_strings[PORT_ERR_MAX];
-  }
+const char *PORT_GetResultString (const uint8_t result_code)
+{
+    if (result_code > PORT_ERR_MAX) {
+        return result_code_strings[PORT_ERR_MAX];
+    }
 
-  return result_code_strings[result_code];
+    return result_code_strings[result_code];
 }

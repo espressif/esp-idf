@@ -28,8 +28,7 @@
 
 /* Define the HID Connection Block
 */
-typedef struct hid_conn
-{
+typedef struct hid_conn {
 #define HID_CONN_STATE_UNUSED           (0)
 #define HID_CONN_STATE_CONNECTING_CTRL  (1)
 #define HID_CONN_STATE_CONNECTING_INTR  (2)

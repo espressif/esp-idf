@@ -90,36 +90,31 @@
 // btla-specific --
 
 /* Internal UUID sequence representation */
-typedef struct
-{
+typedef struct {
     UINT16     len;
     UINT8      value[MAX_UUID_SIZE];
 } tUID_ENT;
 
-typedef struct
-{
+typedef struct {
     UINT16      num_uids;
     tUID_ENT    uuid_entry[MAX_UUIDS_PER_SEQ];
 } tSDP_UUID_SEQ;
 
 
 /* Internal attribute sequence definitions */
-typedef struct
-{
+typedef struct {
     UINT16      start;
     UINT16      end;
 } tATT_ENT;
 
-typedef struct
-{
+typedef struct {
     UINT16      num_attr;
     tATT_ENT    attr_entry[MAX_ATTR_PER_SEQ];
 } tSDP_ATTR_SEQ;
 
 
 /* Define the attribute element of the SDP database record */
-typedef struct
-{
+typedef struct {
     UINT32  len;           /* Number of bytes in the entry */
     UINT8   *value_ptr;    /* Points to attr_pad */
     UINT16  id;
@@ -127,8 +122,7 @@ typedef struct
 } tSDP_ATTRIBUTE;
 
 /* An SDP record consists of a handle, and 1 or more attributes */
-typedef struct
-{
+typedef struct {
     UINT32              record_handle;
     UINT32              free_pad_ptr;
     UINT16              num_attributes;
@@ -138,23 +132,20 @@ typedef struct
 
 
 /* Define the SDP database */
-typedef struct
-{
+typedef struct {
     UINT32         di_primary_handle;       /* Device ID Primary record or NULL if nonexistent */
     UINT16         num_records;
     tSDP_RECORD    record[SDP_MAX_RECORDS];
 } tSDP_DB;
 
-enum
-{
+enum {
     SDP_IS_SEARCH,
     SDP_IS_ATTR_SEARCH,
 };
 
 #if SDP_SERVER_ENABLED == TRUE
 /* Continuation information for the SDP server response */
-typedef struct
-{
+typedef struct {
     UINT16            next_attr_index; /* attr index for next continuation response */
     UINT16            next_attr_start_id;  /* attr id to start with for the attr index in next cont. response */
     tSDP_RECORD       *prev_sdp_rec; /* last sdp record that was completely sent in the response */
@@ -164,8 +155,7 @@ typedef struct
 #endif  /* SDP_SERVER_ENABLED == TRUE */
 
 /* Define the SDP Connection Control Block */
-typedef struct
-{
+typedef struct {
 #define SDP_STATE_IDLE              0
 #define SDP_STATE_CONN_SETUP        1
 #define SDP_STATE_CFG_SETUP         2
@@ -217,8 +207,7 @@ typedef struct
 
 
 /*  The main SDP control block */
-typedef struct
-{
+typedef struct {
     tL2CAP_CFG_INFO   l2cap_my_cfg;             /* My L2CAP config     */
     tCONN_CB          ccb[SDP_MAX_CONNECTIONS];
 #if SDP_SERVER_ENABLED == TRUE
@@ -247,7 +236,7 @@ extern tSDP_CB *sdp_cb_ptr;
 
 /* Functions provided by sdp_main.c */
 extern void     sdp_init (void);
-extern void     sdp_disconnect (tCONN_CB*p_ccb, UINT16 reason);
+extern void     sdp_disconnect (tCONN_CB *p_ccb, UINT16 reason);
 
 #if (defined(SDP_DEBUG) && SDP_DEBUG == TRUE)
 extern UINT16 sdp_set_max_attr_list_size (UINT16 max_size);
@@ -293,7 +282,7 @@ extern UINT16 sdpu_get_list_len( tSDP_UUID_SEQ   *uid_seq, tSDP_ATTR_SEQ   *attr
 extern UINT16 sdpu_get_attrib_seq_len(tSDP_RECORD *p_rec, tSDP_ATTR_SEQ *attr_seq);
 extern UINT16 sdpu_get_attrib_entry_len(tSDP_ATTRIBUTE *p_attr);
 extern UINT8 *sdpu_build_partial_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr, UINT16 len, UINT16 *offset);
-extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8* p_uuid128);
+extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8 *p_uuid128);
 
 /* Functions provided by sdp_db.c
 */
