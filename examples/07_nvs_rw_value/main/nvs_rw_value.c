@@ -76,5 +76,5 @@ void app_main()
     }
     printf("Restarting now.\n");
     fflush(stdout);
-    system_restart();
+    esp_restart();
 }

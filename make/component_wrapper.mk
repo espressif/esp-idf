@@ -32,9 +32,6 @@ include $(IDF_PATH)/make/common.mk
 # Some of the following defaults may be overriden by the component's component.mk makefile,
 # during the next step:
 
-# Name of the component
-COMPONENT_NAME := $(lastword $(subst /, ,$(realpath $(COMPONENT_PATH))))
-
 # Absolute path of the .a file
 COMPONENT_LIBRARY = lib$(COMPONENT_NAME).a
 
@@ -198,13 +195,13 @@ embed_bin/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_bi
 
 embed_txt/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_txt
 	cp $$< $$@
-	echo -ne '\0' >> $$@  # null-terminate text files
+	printf '\0' >> $$@  # null-terminate text files
 
 # messing about with the embed_X subdirectory then using 'cd' for objcopy is because the
 # full path passed to OBJCOPY makes it into the name of the symbols in the .o file
 $(1).$(2).o: embed_$(2)/$$(notdir $(1)) | $$(dir $(1))
 	$(summary) EMBED $$@
-	cd embed_$(2); $(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) ../$$@
+	cd embed_$(2); $(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) $$(call resolvepath,$$@,../)
 
 CLEAN_FILES += embed_$(2)/$$(notdir $(1))
 endef

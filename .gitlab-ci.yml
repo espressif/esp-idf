@@ -46,6 +46,10 @@ build_template_app:
     - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
     - make defconfig
     - make all V=1
+    # Check if there are any stray printf/ets_printf references in WiFi libs
+    - cd ../components/esp32/lib
+    - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
+    - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
 
 
 .build_gitlab: &build_template
@@ -78,18 +82,17 @@ build_esp_idf_tests:
   <<: *build_template
   artifacts:
     paths:
-      - ./esp-idf-tests/build/*.bin
-      - ./esp-idf-tests/build/*.elf
-      - ./esp-idf-tests/build/*.map
-      - ./esp-idf-tests/build/bootloader/*.bin
+      - ./tools/unit-test-app/build/*.bin
+      - ./tools/unit-test-app/build/*.elf
+      - ./tools/unit-test-app/build/*.map
+      - ./tools/unit-test-app/build/bootloader/*.bin
     expire_in: 6 mos
 
   script:
-    - git clone $GITLAB_SSH_SERVER/idf/esp-idf-tests.git
-    - cd esp-idf-tests
+    - cd tools/unit-test-app
     - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
     - make defconfig
-    - make
+    - make TESTS_ALL=1
 
 build_examples:
   <<: *build_template
@@ -131,7 +134,7 @@ test_nvs_on_host:
   tags:
     - nvs_host_test
   script:
-    - cd components/nvs_flash/test
+    - cd components/nvs_flash/test_nvs_host
     - make test
 
 test_build_system:
@@ -289,7 +292,7 @@ deploy_docs:
   variables:
     # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
     LOCAL_ENV_CONFIG_PATH: /home/gitlab-runner/LocalConfig/ESP32_IDF
-    BIN_PATH: "$CI_PROJECT_DIR/esp-idf-tests/build/"
+    BIN_PATH: "$CI_PROJECT_DIR/tools/unit-test-app/build/"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     APP_NAME: "ut"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"

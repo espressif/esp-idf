@@ -21,7 +21,7 @@ void hello_task(void *pvParameter)
     }
     printf("Restarting now.\n");
     fflush(stdout);
-    system_restart();
+    esp_restart();
 }
 
 void app_main()

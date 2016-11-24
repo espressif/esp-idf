@@ -27,6 +27,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
+#include "soc/cpu.h"
 
 #include "esp_gdbstub.h"
 #include "esp_panic.h"
@@ -108,21 +109,10 @@ static const char *edesc[]={
 void commonErrorHandler(XtExcFrame *frame);
 
 //The fact that we've panic'ed probably means the other CPU is now running wild, possibly
-//messing up the serial output, so we kill it here.
-static void haltOtherCore() {
-	if (xPortGetCoreID()==0) {
-		//Kill app cpu
-		CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_APPCPU_C1_M);
-		SET_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, 0x21<<RTC_CNTL_SW_STALL_APPCPU_C1_S);
-		CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_APPCPU_C0_M);
-		SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, 2<<RTC_CNTL_SW_STALL_APPCPU_C0_S);
-	} else {
-		//Kill pro cpu
-		CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_PROCPU_C1_M);
-		SET_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, 0x21<<RTC_CNTL_SW_STALL_PROCPU_C1_S);
-		CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_PROCPU_C0_M);
-		SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, 2<<RTC_CNTL_SW_STALL_PROCPU_C0_S);
-	}
+//messing up the serial output, so we stall it here.
+static void haltOtherCore()
+{
+    esp_cpu_stall( xPortGetCoreID() == 0 ? 1 : 0 );
 }
 
 //Returns true when a debugger is attached using JTAG.

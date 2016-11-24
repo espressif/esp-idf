@@ -93,6 +93,10 @@ void periph_module_enable(periph_module_t periph)
             SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_UHCI1_CLK_EN);
             CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UHCI1_RST);
             break;
+        case PERIPH_PCNT_MODULE:
+            SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_PCNT_CLK_EN);
+            CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_PCNT_RST);
+            break;
         default:
             break;
     }
@@ -103,6 +107,10 @@ void periph_module_disable(periph_module_t periph)
 {
     portENTER_CRITICAL(&periph_spinlock);
     switch(periph) {
+        case PERIPH_RMT_MODULE:
+            CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_RMT_CLK_EN);
+            SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_RMT_RST);
+            break;
         case PERIPH_LEDC_MODULE:
             CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_LEDC_CLK_EN);
             SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_LEDC_RST);
@@ -166,6 +174,10 @@ void periph_module_disable(periph_module_t periph)
         case PERIPH_UHCI1_MODULE:
             CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_UHCI1_CLK_EN);
             SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UHCI1_RST);
+            break;
+        case PERIPH_PCNT_MODULE:
+            CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_PCNT_CLK_EN);
+            SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_PCNT_RST);
             break;
         default:
             break;

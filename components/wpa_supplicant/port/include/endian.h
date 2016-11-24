@@ -119,6 +119,7 @@ typedef	__uint64_t	uint64_t;
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
 
 /* Alignment-agnostic encode/decode bytestream to/from little/big endian. */
+#define INLINE                  __inline__
 
 static INLINE uint16_t
 be16dec(const void *pp)

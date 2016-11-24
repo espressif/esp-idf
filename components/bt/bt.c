@@ -115,7 +115,7 @@ static struct osi_funcs_t osi_funcs = {
     ._mutex_create = mutex_create_wrapper,
     ._mutex_lock = mutex_lock_wrapper,
     ._mutex_unlock = mutex_unlock_wrapper,
-    ._read_efuse_mac = system_efuse_read_mac,
+    ._read_efuse_mac = esp_efuse_read_mac,
 };
 
 static void bt_controller_task(void *pvParam)
