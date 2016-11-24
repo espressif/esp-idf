@@ -11,6 +11,8 @@
 # NB: gen_esp32part.py lives in the sdk/bin/ dir not component dir
 GEN_ESP32PART := $(PYTHON) $(COMPONENT_PATH)/gen_esp32part.py -q
 
+PARTITION_TABLE_OFFSET := 0x8000
+
 # Path to partition CSV file is relative to project path for custom
 # partition CSV files, but relative to component dir otherwise.$
 PARTITION_TABLE_ROOT := $(call dequote,$(if $(CONFIG_PARTITION_TABLE_CUSTOM),$(PROJECT_PATH),$(COMPONENT_PATH)))
@@ -18,28 +20,38 @@ PARTITION_TABLE_CSV_PATH := $(call dequote,$(abspath $(PARTITION_TABLE_ROOT)/$(s
 
 PARTITION_TABLE_BIN := $(BUILD_DIR_BASE)/$(notdir $(PARTITION_TABLE_CSV_PATH:.csv=.bin))
 
-$(PARTITION_TABLE_BIN): $(PARTITION_TABLE_CSV_PATH)
+ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN:.bin=-unsigned.bin)
+# add an extra signing step for secure partition table
+$(PARTITION_TABLE_BIN): $(PARTITION_TABLE_BIN_UNSIGNED)
+	$(Q) $(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
+else
+# secure bootloader disabled, both files are the same
+PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN)
+endif
+
+$(PARTITION_TABLE_BIN_UNSIGNED): $(PARTITION_TABLE_CSV_PATH) $(SDKCONFIG_MAKEFILE)
 	@echo "Building partitions from $(PARTITION_TABLE_CSV_PATH)..."
-	$(Q) $(GEN_ESP32PART) $< $@
+	$(GEN_ESP32PART) $< $@
 
 all_binaries: $(PARTITION_TABLE_BIN)
 
-PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash 0x4000 $(PARTITION_TABLE_BIN)
-ESPTOOL_ALL_FLASH_ARGS += 0x4000 $(PARTITION_TABLE_BIN)
+PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
+ESPTOOL_ALL_FLASH_ARGS += $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
 
 partition_table: $(PARTITION_TABLE_BIN)
 	@echo "Partition table binary generated. Contents:"
 	@echo $(SEPARATOR)
-	$(Q) $(GEN_ESP32PART) $<
+	$(GEN_ESP32PART) $<
 	@echo $(SEPARATOR)
 	@echo "Partition flashing command:"
 	@echo "$(PARTITION_TABLE_FLASH_CMD)"
 
 partition_table-flash: $(PARTITION_TABLE_BIN)
 	@echo "Flashing partition table..."
-	$(Q) $(PARTITION_TABLE_FLASH_CMD)
+	$(PARTITION_TABLE_FLASH_CMD)
 
 partition_table-clean:
-	$(Q) rm -f $(PARTITION_TABLE_BIN)
+	rm -f $(PARTITION_TABLE_BIN)
 
 clean: partition_table-clean

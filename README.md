@@ -1,5 +1,7 @@
 # Using Espressif IoT Development Framework with the ESP32
 
+[![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](http://esp-idf.readthedocs.io/en/latest/?badge=latest)
+
 # Setting Up ESP-IDF
 
 In the [docs](docs) directory you will find per-platform setup guides:
@@ -60,14 +62,15 @@ The simplest way to use the partition table is to `make menuconfig` and choose o
 
 In both cases the factory app is flashed at offset 0x10000. If you `make partition_table` then it will print a summary of the partition table.
 
-For more details about partition tables and how to create custom variations, view the `docs/partition_tables.rst` file.
+For more details about partition tables and how to create custom variations, view the `docs/partition-tables.rst` file.
 
 # Resources
 
-* The [docs directory of the esp-idf repository](docs) contains esp-idf documentation.
+* The [docs directory of the esp-idf repository](docs) contains source of [esp-idf](http://esp-idf.readthedocs.io/) documentation.
 
 * The [esp32.com forum](http://esp32.com/) is a place to ask questions and find community resources.
 
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
 
-* If you're interested in contributing to esp-idf, please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+* If you're interested in contributing to esp-idf, please check the [Contributions Guide](http://esp-idf.readthedocs.io/en/latest/contributing.html>).
+

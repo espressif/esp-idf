@@ -5,4 +5,3 @@ ifdef IS_BOOTLOADER_BUILD
 COMPONENT_OBJS := spi_flash_rom_patch.o
 endif
 
-include $(IDF_PATH)/make/component_common.mk

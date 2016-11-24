@@ -24,6 +24,7 @@
 #include <sys/reent.h>
 #include "rom/libc_stubs.h"
 #include "esp_vfs.h"
+#include "esp_newlib.h"
 
 static struct _reent s_reent;
 
@@ -79,7 +80,7 @@ static struct syscall_stub_table s_stub_table = {
     ._scanf_float = &_scanf_float,
 };
 
-void esp_setup_syscalls()
+void esp_setup_syscall_table()
 {
     syscall_table_ptr_pro = &s_stub_table;
     syscall_table_ptr_app = &s_stub_table;

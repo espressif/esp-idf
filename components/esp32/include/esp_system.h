@@ -33,6 +33,13 @@ extern "C" {
   */
 
 /**
+  * @attention  application don't need to call this function anymore. It do nothing and will
+  *             be removed in future version.
+  */
+void system_init(void) __attribute__ ((deprecated));
+
+
+/**
   * @brief  Get information of the SDK version.
   *
   * @param  null
@@ -168,8 +175,6 @@ bool system_rtc_mem_write(uint16_t dst, const void *src, uint16_t n);
   */
 esp_err_t system_efuse_read_mac(uint8_t mac[6]);
 
-
-void system_init(void);
 
 /**
   * @}

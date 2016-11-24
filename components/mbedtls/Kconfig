@@ -22,7 +22,7 @@ config MBEDTLS_SSL_MAX_CONTENT_LEN
 
 config MBEDTLS_DEBUG
    bool "Enable mbedTLS debugging"
-   default "no"
+   default n
    help
        Enable mbedTLS debugging functions.
        
@@ -33,5 +33,40 @@ config MBEDTLS_DEBUG
        Note thatm mbedTLS debugging is not related to the ESP logging
        functionality. See the "https_request_main" example for a
        sample function which connects the two together.
+
+config MBEDTLS_HARDWARE_AES
+   bool "Enable hardware AES acceleration"
+   default y
+   help
+       Enable hardware accelerated AES encryption & decryption.
+
+config MBEDTLS_HARDWARE_MPI
+   bool "Enable hardware MPI (bignum) acceleration"
+   default y
+   help
+       Enable hardware accelerated multiple precision integer operations.
+
+       Hardware accelerated multiplication, modulo multiplication,
+       and modular exponentiation for up to 4096 bit results.
+
+       These operations are used by RSA.
+
+config MBEDTLS_MPI_USE_INTERRUPT
+    bool "Use interrupt for MPI operations"
+    depends on MBEDTLS_HARDWARE_MPI
+    default y
+    help
+        Use an interrupt to coordinate MPI operations.
+
+        This allows other code to run on the CPU while an MPI operation is pending.
+        Otherwise the CPU busy-waits.
+
+config MBEDTLS_MPI_INTERRUPT_NUM
+    int "MPI Interrupt number"
+    depends on MBEDTLS_MPI_USE_INTERRUPT
+    default 18
+    help
+        CPU interrupt number for MPI interrupt to connect to. Must be otherwise unused.
+        Eventually this assignment will be handled automatically at runtime.
 
 endmenu

@@ -108,44 +108,45 @@ add_failure(SRunner *runner, int verbosity)
     }
 }
 
+static void run_test(SRunner *runner, int verbosity, TCase *tc, int i)
+{
+  if (tc->setup != NULL) {
+    /* setup */
+    if (setjmp(env)) {
+      add_failure(runner, verbosity);
+      return;
+    }
+    tc->setup();
+  }
+  /* test */
+  if (setjmp(env)) {
+    add_failure(runner, verbosity);
+    return;
+  }
+  (tc->tests[i])();
+
+  /* teardown */
+  if (tc->teardown != NULL) {
+    if (setjmp(env)) {
+      add_failure(runner, verbosity);
+      return;
+    }
+    tc->teardown();
+  }
+}
+
 void
 srunner_run_all(SRunner *runner, int verbosity)
 {
-    Suite *suite;
-    TCase *tc;
     assert(runner != NULL);
-    suite = runner->suite;
-    tc = suite->tests;
+    assert(runner->suite != NULL);
+    TCase *tc = runner->suite->tests;
     while (tc != NULL) {
-        int i;
-        for (i = 0; i < tc->ntests; ++i) {
+        for (int i = 0; i < tc->ntests; ++i) {
             runner->nchecks++;
-
-            if (tc->setup != NULL) {
-                /* setup */
-                if (setjmp(env)) {
-                    add_failure(runner, verbosity);
-                    continue;
-                }
-                tc->setup();
-            }
-            /* test */
-            if (setjmp(env)) {
-                add_failure(runner, verbosity);
-                continue;
-            }
-            (tc->tests[i])();
-
-            /* teardown */
-            if (tc->teardown != NULL) {
-                if (setjmp(env)) {
-                    add_failure(runner, verbosity);
-                    continue;
-                }
-                tc->teardown();
-            }
+            run_test(runner, verbosity, tc, i);
+            tc = tc->next_tcase;
         }
-        tc = tc->next_tcase;
     }
     if (verbosity) {
         int passed = runner->nchecks - runner->nfailures;

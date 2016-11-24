@@ -118,40 +118,29 @@ low_level_init(struct netif *netif)
 static err_t
 low_level_output(struct netif *netif, struct pbuf *p)
 {
-  struct pbuf *q;
-  wifi_interface_t wifi_if = tcpip_adapter_get_wifi_if(netif);
+    wifi_interface_t wifi_if = tcpip_adapter_get_wifi_if(netif);
+    struct pbuf *q = p;
+    err_t ret;
 
-  if (wifi_if >= WIFI_IF_MAX) {
-    return ERR_IF;
-  } 
-  
-#if ESP_LWIP
-    q = p;
-    u16_t pbuf_x_len = 0;
-    pbuf_x_len = q->len;
-    if(q->next !=NULL)
-    {
-        //char cnt = 0;
-        struct pbuf *tmp = q->next;
-        while(tmp != NULL)
-        {
-            memcpy( (u8_t *)( (u8_t *)(q->payload) + pbuf_x_len), (u8_t *)tmp->payload , tmp->len );
-            pbuf_x_len += tmp->len;
-            //cnt++;
-            tmp = tmp->next;
+    if (wifi_if >= WIFI_IF_MAX) {
+        return ERR_IF;
+    }
+
+    if(q->next == NULL) {
+        ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
+    } else {
+        LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
+        q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
+        if (q != NULL) {
+            pbuf_copy(q, p);
+        } else {
+            return ERR_MEM;
         }
+        ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
+        pbuf_free(q);
     }
-    
-    esp_wifi_internal_tx(wifi_if, q->payload, pbuf_x_len);
-    return ERR_OK;
-    
-#else
-    for(q = p; q != NULL; q = q->next) {
-        esp_wifi_internal_tx(wifi_if, q->payload, q->len);
-    }
-#endif
-
-  return ERR_OK;
+  
+    return ret; 
 }
 
 /**
@@ -164,39 +153,36 @@ low_level_output(struct netif *netif, struct pbuf *p)
  * @param netif the lwip network interface structure for this ethernetif
  */
 void
-#if ESP_LWIP
 wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
-#else
-wlanif_input(struct netif *netif, void *buffer, uint16 len)
-#endif
 {
   struct pbuf *p;
   
-#if ESP_LWIP
-    if(buffer== NULL)
+  if(!buffer || !netif)
     	goto _exit;
-    if(netif == NULL)
-    	goto _exit;
-#endif
 
-#if ESP_LWIP
-  p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
-  if (p == NULL){
-#if ESP_PERF
-      g_rx_alloc_pbuf_fail_cnt++;
-#endif
-      return;
-  }
-  p->payload = buffer;
-  p->eb = eb;
-#else
-  p = pbuf_alloc(PBUF_IP, len, PBUF_POOL);
+#if (ESP_L2_TO_L3_COPY == 1)
+  //p = pbuf_alloc(PBUF_IP, len, PBUF_POOL);
+  p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
+    #if ESP_PERF
+    g_rx_alloc_pbuf_fail_cnt++;
+    #endif
+    esp_wifi_internal_free_rx_buffer(eb);
     return;
   }
   memcpy(p->payload, buffer, len);
+  esp_wifi_internal_free_rx_buffer(eb);
+#else
+  p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
+  if (p == NULL){
+    #if ESP_PERF
+    g_rx_alloc_pbuf_fail_cnt++;
+    #endif
+    return;
+  }
+  p->payload = buffer;
+  p->eb = eb;
 #endif
-
 
   /* full packet send to tcpip_thread to process */
   if (netif->input(p, netif) != ERR_OK) {

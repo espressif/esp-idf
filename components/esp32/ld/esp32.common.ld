@@ -3,8 +3,38 @@ ENTRY(call_start_cpu0);
 
 SECTIONS
 {
+  /* RTC fast memory holds RTC wake stub code,
+     including from any source file named rtc_wake_stub*.c
+  */
+  .rtc.text :
+  {
+    . = ALIGN(4);
+    *(.rtc.literal .rtc.text)
+    *rtc_wake_stub*.o(.literal .text .literal.* .text.*)
+  } >rtc_iram_seg
+
+  /* RTC slow memory holds RTC wake stub
+     data/rodata, including from any source file
+     named rtc_wake_stub*.c
+  */
+  .rtc.data :
+  {
+    *(.rtc.data)
+    *(.rtc.rodata)
+    *rtc_wake_stub*.o(.data .rodata .data.* .rodata.* .bss .bss.*)
+  } > rtc_slow_seg
+
+  /* RTC bss, from any source file named rtc_wake_stub*.c */
+  .rtc.bss (NOLOAD) :
+  {
+    _rtc_bss_start = ABSOLUTE(.);
+    *rtc_wake_stub*.o(.bss .bss.*)
+    *rtc_wake_stub*.o(COMMON)
+    _rtc_bss_end = ABSOLUTE(.);
+  } > rtc_slow_seg
+
   /* Send .iram0 code to iram */
-  .iram0.vectors : 
+  .iram0.vectors :
   {
     /* Vectors go to IRAM */
     _init_start = ABSOLUTE(.);
@@ -155,16 +185,4 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _etext = .;
   } >iram0_2_seg
-
-  .rtc.text :
-  {
-    . = ALIGN(4);
-    *(.rtc.literal .rtc.text)
-  } >rtc_iram_seg
-
-  .rtc.data :
-  {
-    *(.rtc.data)
-    *(.rtc.rodata)
-  } > rtc_slow_seg
 }

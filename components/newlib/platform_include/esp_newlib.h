@@ -31,7 +31,13 @@ void esp_reent_init(struct _reent* r);
  * Called from the startup code, not intended to be called from application
  * code.
  */
-void esp_setup_syscalls();
+void esp_setup_syscall_table();
 
+/**
+ * Initialize hardware timer used as time source for newlib time functions.
+ *
+ * Called from the startup code, not intended to be called from application.
+ */
+void esp_setup_time_syscalls();
 
 #endif //__ESP_NEWLIB_H__

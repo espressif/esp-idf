@@ -113,6 +113,27 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define XIE_ARG         4
 #define XIE_SIZE        8
 
+
+/*
+  Macro get_percpu_entry_for - convert a per-core ID into a multicore entry.
+  Basically does reg=reg*portNUM_PROCESSORS+current_core_id
+  Multiple versions here to optimize for specific portNUM_PROCESSORS values.
+*/
+    .macro get_percpu_entry_for reg scratch
+#if (portNUM_PROCESSORS == 1)
+    /* No need to do anything */
+#elif  (portNUM_PROCESSORS == 2)
+    /* Optimized 2-core code. */
+    getcoreid \scratch
+    addx2 \reg,\reg,\scratch
+#else
+    /* Generalized n-core code. Untested! */
+    movi \scratch,portNUM_PROCESSORS
+    mull \scratch,\reg,\scratch
+    getcoreid \reg
+    add \reg,\scratch,\reg
+#endif
+   .endm
 /*
 --------------------------------------------------------------------------------
   Macro extract_msb - return the input with only the highest bit set.
@@ -229,6 +250,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     find_ms_setbit a3, a4, a3, 0            /* a3 = interrupt number */
 
+    get_percpu_entry_for a3, a12
     movi    a4, _xt_interrupt_table
     addx8   a3, a3, a4                      /* a3 = address of interrupt table entry */
     l32i    a4, a3, XIE_HANDLER             /* a4 = handler address */
@@ -395,6 +417,9 @@ panic_print_hex_ok:
     with index 0 containing the entry for user exceptions.
     Initialized with all 0s, meaning no handler is installed at each level.
     See comment in xtensa_rtos.h for more details.
+
+    *WARNING*  This array is for all CPUs, that is, installing a hook for 
+    one CPU will install it for all others as well!
 --------------------------------------------------------------------------------
 */
 
@@ -688,6 +713,7 @@ _xt_user_exc:
 
     rsr     a2, EXCCAUSE                    /* recover exc cause */
     movi    a3, _xt_exception_table
+    get_percpu_entry_for a3, a4
     addx4   a4, a2, a3                      /* a4 = address of exception table entry */
     l32i    a4, a4, 0                       /* a4 = handler address */
     #ifdef __XTENSA_CALL0_ABI__

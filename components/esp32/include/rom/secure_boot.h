@@ -25,7 +25,7 @@ void ets_secure_boot_start(void);
 
 void ets_secure_boot_finish(void);
 
-void ets_secure_boot_hash(uint32_t *buf);
+void ets_secure_boot_hash(const uint32_t *buf);
 
 void ets_secure_boot_obtain(void);
 

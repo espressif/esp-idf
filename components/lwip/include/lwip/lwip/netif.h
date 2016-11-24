@@ -190,11 +190,6 @@ struct netif {
   /** pointer to next in linked list */
   struct netif *next;
 
-#if ESP_LWIP
-//ip_addr_t  is changed   by marco  IPV4, IPV6
-  ip_addr_t link_local_addr;
-#endif
-
 #if LWIP_IPV4
   /** IP address configuration in network byte order */
   ip_addr_t ip_addr;
@@ -207,6 +202,10 @@ struct netif {
   /** The state of each IPv6 address (Tentative, Preferred, etc).
    * @see ip6_addr.h */
   u8_t ip6_addr_state[LWIP_IPV6_NUM_ADDRESSES];
+#if ESP_LWIP
+  void (*ipv6_addr_cb)(struct netif* netif, u8_t ip_idex); /* callback for ipv6 addr states changed */
+#endif
+
 #endif /* LWIP_IPV6 */
   /** This function is called by the network device driver
    *  to pass a packet up the TCP/IP stack. */

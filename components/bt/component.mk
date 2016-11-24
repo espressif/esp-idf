@@ -34,7 +34,7 @@ CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-brac
 
 LIBS := btdm_app
 
-COMPONENT_ADD_LDFLAGS := -lbt -L$(abspath lib) \
+COMPONENT_ADD_LDFLAGS := -lbt -L $(COMPONENT_PATH)/lib \
                            $(addprefix -l,$(LIBS)) \
                           $(LINKER_SCRIPTS)
 
@@ -75,5 +75,4 @@ include $(IDF_PATH)/make/component_common.mk
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 $(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
 
-# automatically trigger a git submodule update if BT library is missing
-$(eval $(call SubmoduleCheck,$(ALL_LIB_FILES),$(COMPONENT_PATH)/lib))
+COMPONENT_SUBMODULES += lib

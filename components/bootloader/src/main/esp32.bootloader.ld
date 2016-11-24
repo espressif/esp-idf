@@ -15,7 +15,7 @@ MEMORY
   of the various regions. The 'data access port' dram/drom regions map to the same iram/irom regions but
   are connected to the data port of the CPU and eg allow bytewise access. */
   dport0_seg (RW) :                 	org = 0x3FF00000, len = 0x10		/* IO */
-  iram_seg (RWX) :                 	org = 0x4009A000, len = 0x1000		
+  iram_seg (RWX) :                 	org = 0x40080000, len = 0x400		/* 1k of IRAM used by bootloader functions which need to flush/enable APP CPU cache */ 
   iram_pool_1_seg (RWX) :           org = 0x40078000, len = 0x8000    /* IRAM POOL1, used for APP CPU cache. We can abuse it in bootloader because APP CPU is still held in reset, until we enable APP CPU cache */
   dram_seg (RW) :                  	org = 0x3FFC0000, len = 0x20000		/* Shared RAM, minus rom bss/data/stack.*/
 }
