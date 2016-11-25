@@ -33,8 +33,8 @@ ifndef IS_BOOTLOADER_BUILD
 # for secure boot, add a signing step to get from unsiged app to signed app
 APP_BIN_UNSIGNED := $(APP_BIN:.bin=-unsigned.bin)
 
-$(APP_BIN): $(APP_BIN_UNSIGNED)
-	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $^  # signed in-place
+$(APP_BIN): $(APP_BIN_UNSIGNED) $(SECURE_BOOT_SIGNING_KEY)
+	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
 endif
 endif
 # non-secure boot (or bootloader), both these files are the same

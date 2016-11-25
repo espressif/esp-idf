@@ -17,14 +17,6 @@ ifdef CONFIG_SECURE_BOOT_ENABLED
 # this path is created relative to the component build directory
 SECURE_BOOT_VERIFICATION_KEY := $(abspath signature_verification_key.bin)
 
-$(SECURE_BOOT_SIGNING_KEY):
-	@echo "Need to generate secure boot signing key."
-	@echo "One way is to run this command:"
-	@echo "$(ESPSECUREPY) generate_signing_key $@"
-	@echo "Keep key file safe after generating."
-	@echo "(See secure boot documentation for risks & alternatives.)"
-	@exit 1
-
 $(SECURE_BOOT_VERIFICATION_KEY): $(SECURE_BOOT_SIGNING_KEY)
 	$(ESPSECUREPY) extract_public_key --keyfile $< $@
 
