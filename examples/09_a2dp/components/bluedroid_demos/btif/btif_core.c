@@ -316,7 +316,7 @@ bt_status_t btif_init_bluetooth(void) {
         goto error_exit;
     }
     xBtifQueue = xQueueCreate(60, sizeof(void *));
-    xTaskCreate(btif_task_thread_handler, "BtifT", 8192, NULL, configMAX_PRIORITIES - 1, &xBtifTaskHandle);
+    xTaskCreate(btif_task_thread_handler, "BtifT", 4096, NULL, configMAX_PRIORITIES - 1, &xBtifTaskHandle);
     fixed_queue_register_dequeue(btif_msg_queue, bt_jni_msg_ready);
     
     return BT_STATUS_SUCCESS;

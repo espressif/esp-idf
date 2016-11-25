@@ -112,7 +112,7 @@ int hci_start_up(void) {
     goto error;
 
   xHciHostQueue = xQueueCreate(60, sizeof(BtTaskEvt_t));
-  xTaskCreate(hci_host_thread_handler, "HciHostT", (4096+2048), NULL, configMAX_PRIORITIES - 3, &xHciHostTaskHandle);
+  xTaskCreate(hci_host_thread_handler, "HciHostT", (1024+2048), NULL, configMAX_PRIORITIES - 3, &xHciHostTaskHandle);
 
   packet_fragmenter->init(&packet_fragmenter_callbacks);
   hal->open(&hal_callbacks);
@@ -225,7 +225,6 @@ static void hci_host_thread_handler(void *arg)
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciHostQueue, &e, (portTickType)portMAX_DELAY)) {
-
             if (e.sig == 0xff) {
                 if (API_vhci_host_check_send_available()) {
                     /*Now Target only allowed one packet per TX*/
