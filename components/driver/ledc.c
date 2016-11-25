@@ -137,29 +137,32 @@ esp_err_t ledc_timer_config(ledc_timer_config_t* timer_conf)
         return ESP_ERR_INVALID_ARG;
     }
     if(timer_num > LEDC_TIMER_3) {
-        ESP_LOGE(LEDC_TAG, "Time Select %u", timer_num);
+        ESP_LOGE(LEDC_TAG, "invalid timer #%u", timer_num);
         return ESP_ERR_INVALID_ARG;
     }
     esp_err_t ret = ESP_OK;
-    uint32_t precision = (0x1 << bit_num);  //2**depth
-    uint64_t div_param = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision; //8bit fragment
-    int timer_clk_src;
-    /*Fail ,because the div_num overflow or too small*/
-    if(div_param <= 256 || div_param > LEDC_DIV_NUM_HSTIMER0_V) { //REF TICK
-        /*Selet the reference tick*/
+    uint32_t precision = (0x1 << bit_num);  // 2**depth
+    // Try calculating divisor based on LEDC_APB_CLK
+    ledc_clk_src_t timer_clk_src = LEDC_APB_CLK;
+    // div_param is a Q10.8 fixed point value
+    uint64_t div_param = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision;
+    if (div_param < 256) {
+        // divisor is too low
+        ESP_LOGE(LEDC_TAG, "requested frequency and bit depth can not be achieved, try reducing freq_hz or bit_num. div_param=%d", (uint32_t) div_param);
+        ret = ESP_FAIL;
+    }
+    if (div_param > LEDC_DIV_NUM_HSTIMER0_V) {
+        // APB_CLK results in divisor which too high. Try using REF_TICK as clock source.
+        timer_clk_src = LEDC_REF_TICK;
         div_param = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
-        if(div_param <= 256 || div_param > LEDC_DIV_NUM_HSTIMER0_V) {
-            ESP_LOGE(LEDC_TAG, "div param err,div_param=%u", (uint32_t)div_param);
+        if(div_param < 256 || div_param > LEDC_DIV_NUM_HSTIMER0_V) {
+            ESP_LOGE(LEDC_TAG, "requested frequency and bit depth can not be achieved, try increasing freq_hz or bit_num. div_param=%d", (uint32_t) div_param);
             ret = ESP_FAIL;
         }
-        timer_clk_src = LEDC_REF_TICK;
-    } else { //APB TICK
-        timer_clk_src = LEDC_APB_CLK;
     }
-    /*set timer parameters*/
-    /*timer settings decide the clk of counter and the period of PWM*/
+    // set timer parameters
     ledc_timer_set(speed_mode, timer_num, div_param, bit_num, timer_clk_src);
-    /*   reset timer.*/
+    // reset timer
     ledc_timer_rst(speed_mode, timer_num);
     return ret;
 }
@@ -174,7 +177,8 @@ esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc
     if(speed_mode == LEDC_HIGH_SPEED_MODE) {
         gpio_matrix_out(gpio_num, LEDC_HS_SIG_OUT0_IDX + ledc_channel, 0, 0);
     } else {
-
+        ESP_LOGE(LEDC_TAG, "low speed mode is not implemented");
+        return ESP_ERR_NOT_SUPPORTED;
     }
     return ESP_OK;
 }
