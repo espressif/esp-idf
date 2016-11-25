@@ -139,7 +139,7 @@ export COMPONENT_INCLUDES
 include $(IDF_PATH)/make/common.mk
 
 all:
-ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 	@echo "To flash app & partition table, run 'make flash' or:"
 else

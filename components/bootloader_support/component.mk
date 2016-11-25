@@ -12,7 +12,7 @@ COMPONENT_SRCDIRS := src
 #
 # Secure boot signing key support
 #
-ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+ifdef CONFIG_SECURE_BOOT_ENABLED
 
 # this path is created relative to the component build directory
 SECURE_BOOT_VERIFICATION_KEY := $(abspath signature_verification_key.bin)

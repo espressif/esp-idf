@@ -96,7 +96,7 @@ static bool secure_boot_generate(uint32_t image_len){
 static inline void burn_efuses()
 {
 #ifdef CONFIG_SECURE_BOOT_TEST_MODE
-    ESP_LOGE(TAG, "SECURE BOOT TEST MODE. Not really burning any efuses!");
+    ESP_LOGE(TAG, "SECURE BOOT TEST MODE. Not really burning any efuses! NOT SECURE");
 #else
     esp_efuse_burn_new_values();
 #endif
@@ -156,6 +156,7 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
     }
     ESP_LOGI(TAG, "Digest generation complete.");
 
+#ifndef CONFIG_SECURE_BOOT_TEST_MODE
     if (!efuse_key_read_protected) {
         ESP_LOGE(TAG, "Pre-loaded key is not read protected. Refusing to blow secure boot efuse.");
         return ESP_ERR_INVALID_STATE;
@@ -164,21 +165,26 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         ESP_LOGE(TAG, "Pre-loaded key is not write protected. Refusing to blow secure boot efuse.");
         return ESP_ERR_INVALID_STATE;
     }
+#endif
 
     ESP_LOGI(TAG, "blowing secure boot efuse...");
     ESP_LOGD(TAG, "before updating, EFUSE_BLK0_RDATA6 %x", REG_READ(EFUSE_BLK0_RDATA6_REG));
 
     uint32_t new_wdata6 = EFUSE_RD_ABS_DONE_0;
 
-    #ifdef CONFIG_SECURE_BOOT_DISABLE_JTAG
-    ESP_LOGI(TAG, "disabling JTAG...");
+#ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
+    ESP_LOGI(TAG, "Disable JTAG...");
     new_wdata6 |= EFUSE_RD_DISABLE_JTAG;
-    #endif
+#else
+    ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
+#endif
 
-    #ifdef CONFIG_SECURE_BOOT_DISABLE_ROM_BASIC
-    ESP_LOGI(TAG, "disabling UART bootloader...");
-    new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE_S;
-    #endif
+#ifndef CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC
+    ESP_LOGI(TAG, "Disable ROM BASIC interpreter fallback...");
+    new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE;
+#else
+    ESP_LOGW(TAG, "Not disabling ROM BASIC fallback - SECURITY COMPROMISED");
+#endif
 
     REG_WRITE(EFUSE_BLK0_WDATA6_REG, new_wdata6);
     burn_efuses();

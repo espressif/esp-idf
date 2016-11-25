@@ -32,7 +32,7 @@ $(BOOTLOADER_BIN): $(SDKCONFIG_MAKEFILE)
 
 clean: bootloader-clean
 
-ifdef CONFIG_SECURE_BOOTLOADER_DISABLED
+ifndef CONFIG_SECURE_BOOT_ENABLED
 # If secure boot disabled, bootloader flashing is integrated
 # with 'make flash' and no warnings are printed.
 
@@ -90,7 +90,10 @@ bootloader:
 	@exit 1
 endif
 
+ifndef CONFIG_SECURE_BOOT_ENABLED
+# don't build bootloader by default is secure boot is enabled
 all_binaries: $(BOOTLOADER_BIN)
+endif
 
 bootloader-clean:
 	$(BOOTLOADER_MAKE) app-clean

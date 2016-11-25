@@ -114,11 +114,37 @@ static esp_err_t initialise_flash_encryption(void)
     REG_WRITE(EFUSE_BLK0_WDATA5_REG, EFUSE_FLASH_CRYPT_CONFIG_M);
     esp_efuse_burn_new_values();
 
-#ifndef CONFIG_FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_WRITE
-    ESP_LOGI(TAG, "Disable UART bootloader write...");
-    //REG_WRITE(EFUSE_BLK0_
-
+    uint32_t new_wdata6 = 0;
+#ifndef CONFIG_FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_ENCRYPT
+    ESP_LOGI(TAG, "Disable UART bootloader encryption...");
+    new_wdata6 |= EFUSE_DISABLE_DL_ENCRYPT;
+#else
+    ESP_LOGW(TAG, "Not disabling UART bootloader encryption");
 #endif
+#ifndef CONFIG_FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_DECRYPT
+    ESP_LOGI(TAG, "Disable UART bootloader decryption...");
+    new_wdata6 |= EFUSE_DISABLE_DL_DECRYPT;
+#else
+    ESP_LOGW(TAG, "Not disabling UART bootloader decryption - SECURITY COMPROMISED");
+#endif
+#ifndef CONFIG_FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_CACHE
+    ESP_LOGI(TAG, "Disable UART bootloader MMU cache...");
+    new_wdata6 |= EFUSE_DISABLE_DL_CACHE;
+#else
+    ESP_LOGW(TAG, "Not disabling UART bootloader MMU cache - SECURITY COMPROMISED");
+#endif
+#ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
+    ESP_LOGI(TAG, "Disable JTAG...");
+    new_wdata6 |= EFUSE_RD_DISABLE_JTAG;
+#else
+    ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
+#endif
+
+    if (new_wdata6 != 0) {
+        REG_WRITE(EFUSE_BLK0_WDATA6_REG, new_wdata6);
+        esp_efuse_burn_new_values();
+    }
+
     return ESP_OK;
 }
 

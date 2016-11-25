@@ -118,7 +118,7 @@ bool load_partition_table(bootloader_state_t* bs)
     ESP_LOGI(TAG, "Partition Table:");
     ESP_LOGI(TAG, "## Label            Usage          Type ST Offset   Length");
 
-#ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+#ifdef CONFIG_SECURE_BOOT_ENABLED
     if(esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "Verifying partition table signature...");
         esp_err_t err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
@@ -226,7 +226,7 @@ static bool ota_select_valid(const esp_ota_select_entry_t *s)
 void bootloader_main()
 {
     ESP_LOGI(TAG, "Espressif ESP32 2nd stage bootloader v. %s", BOOT_VERSION);
-#if defined(CONFIG_SECURE_BOOTLOADER_ENABLED) || defined(CONFIG_FLASH_ENCRYPTION_ENABLED)
+#if defined(CONFIG_SECURE_BOOT_ENABLED) || defined(CONFIG_FLASH_ENCRYPTION_ENABLED)
     esp_err_t err;
 #endif
     esp_image_header_t fhdr;
@@ -322,7 +322,7 @@ void bootloader_main()
         return;
     }
 
-#ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+#ifdef CONFIG_SECURE_BOOT_ENABLED
     /* Generate secure digest from this bootloader to protect future
        modifications */
     ESP_LOGI(TAG, "Checking secure boot...");
@@ -374,7 +374,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
         return;
     }
 
-#ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+#ifdef CONFIG_SECURE_BOOT_ENABLED
     if (esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "Verifying app signature @ 0x%x (length 0x%x)", partition->offset, image_length);
         err = esp_secure_boot_verify_signature(partition->offset, image_length);
