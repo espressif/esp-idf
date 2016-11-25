@@ -19,6 +19,7 @@
 #ifndef GAP_API_H
 #define GAP_API_H
 
+#include "sdpdefs.h"
 #include "profiles_api.h"
 #include "btm_api.h"
 #include "l2c_api.h"

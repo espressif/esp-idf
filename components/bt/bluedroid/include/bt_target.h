@@ -978,7 +978,7 @@
 ******************************************************************************/
 
 #ifndef SDP_INCLUDED
-#define SDP_INCLUDED                TRUE
+#define SDP_INCLUDED                FALSE //TRUE
 #endif
 
 /* This is set to enable SDP server functionality. */
