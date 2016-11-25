@@ -39,7 +39,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #if XCHAL_HAVE_EXCEPTIONS
 
 /* Handler table is in xtensa_intr_asm.S */
-// Todo: Make multicore - JD
 
 extern xt_exc_handler _xt_exception_table[XCHAL_EXCCAUSE_NUM*portNUM_PROCESSORS];
 

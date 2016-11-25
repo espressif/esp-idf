@@ -32,6 +32,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_attr.h"
 
 #include "soc/dport_reg.h"
@@ -59,10 +60,7 @@ static void rsa_isr_initialise()
 {
     if (op_complete_sem == NULL) {
         op_complete_sem = xSemaphoreCreateBinary();
-        intr_matrix_set(xPortGetCoreID(), ETS_RSA_INTR_SOURCE, CONFIG_MBEDTLS_MPI_INTERRUPT_NUM);
-        xt_set_interrupt_handler(CONFIG_MBEDTLS_MPI_INTERRUPT_NUM, &rsa_complete_isr, NULL);
-        xthal_set_intclear(1 << CONFIG_MBEDTLS_MPI_INTERRUPT_NUM);
-        xt_ints_on(1 << CONFIG_MBEDTLS_MPI_INTERRUPT_NUM);
+        esp_intr_alloc(ETS_RSA_INTR_SOURCE, 0, rsa_complete_isr, NULL, NULL);
     }
 }
 

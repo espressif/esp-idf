@@ -27,6 +27,7 @@
 #include "sdkconfig.h"
 #include "esp_ipc.h"
 #include "esp_attr.h"
+#include "esp_intr_alloc.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
 
@@ -60,6 +61,8 @@ void IRAM_ATTR spi_flash_op_block_func(void* arg)
 {
     // Disable scheduler on this CPU
     vTaskSuspendAll();
+    // Restore interrupts that aren't located in IRAM
+    esp_intr_noniram_disable();
     uint32_t cpuid = (uint32_t) arg;
     // Disable cache so that flash operation can start
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
@@ -70,6 +73,8 @@ void IRAM_ATTR spi_flash_op_block_func(void* arg)
     }
     // Flash operation is complete, re-enable cache
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
+    // Restore interrupts that aren't located in IRAM
+    esp_intr_noniram_enable();
     // Re-enable scheduler
     xTaskResumeAll();
 }
@@ -104,6 +109,8 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
         // occupied by highest priority task
         assert(xPortGetCoreID() == cpuid);
     }
+    // Kill interrupts that aren't located in IRAM
+    esp_intr_noniram_disable();
     // Disable cache on this CPU as well
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
 }
@@ -130,6 +137,8 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
     }
     // Release API lock
     spi_flash_op_unlock();
+    // Re-enable non-iram interrupts
+    esp_intr_noniram_enable();
 }
 
 #else // CONFIG_FREERTOS_UNICORE
@@ -151,6 +160,7 @@ void spi_flash_op_unlock()
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
+    esp_intr_noniram_disable();
     spi_flash_op_lock();
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
@@ -159,6 +169,7 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 {
     spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
     spi_flash_op_unlock();
+    esp_intr_noniram_enable();
 }
 
 #endif // CONFIG_FREERTOS_UNICORE

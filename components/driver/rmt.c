@@ -21,6 +21,7 @@
 #include "esp_intr.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_intr_alloc.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/rmt_struct.h"
 #include "driver/periph_ctrl.h"
@@ -472,17 +473,15 @@ esp_err_t rmt_fill_tx_items(rmt_channel_t channel, rmt_item32_t* item, uint16_t 
     return ESP_OK;
 }
 
-esp_err_t rmt_isr_register(uint8_t rmt_intr_num, void (*fn)(void*), void * arg)
+esp_err_t rmt_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags)
 {
+    esp_err_t ret;
     RMT_CHECK((fn != NULL), RMT_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(s_rmt_driver_installed == false, "RMT DRIVER INSTALLED, CAN NOT REG ISR HANDLER", ESP_FAIL);
     portENTER_CRITICAL(&rmt_spinlock);
-    ESP_INTR_DISABLE(rmt_intr_num);
-    intr_matrix_set(xPortGetCoreID(), ETS_RMT_INTR_SOURCE, rmt_intr_num);
-    xt_set_interrupt_handler(rmt_intr_num, fn, arg);
-    ESP_INTR_ENABLE(rmt_intr_num);
+    ret=esp_intr_alloc(ETS_RMT_INTR_SOURCE, intr_alloc_flags, fn, arg, NULL);
     portEXIT_CRITICAL(&rmt_spinlock);
-    return ESP_OK;
+    return ret;
 }
 
 static int IRAM_ATTR rmt_get_mem_len(rmt_channel_t channel)
@@ -619,7 +618,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     return ESP_OK;
 }
 
-esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int rmt_intr_num)
+esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr_alloc_flags)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     if(p_rmt_obj[channel] != NULL) {
@@ -627,7 +626,6 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int rmt_
         return ESP_FAIL;
     }
 
-    ESP_INTR_DISABLE(rmt_intr_num);
     p_rmt_obj[channel] = (rmt_obj_t*) malloc(sizeof(rmt_obj_t));
 
     if(p_rmt_obj[channel] == NULL) {
@@ -652,11 +650,10 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int rmt_
         rmt_set_err_intr_en(channel, 1);
     }
     if(s_rmt_driver_installed == false) {
-        rmt_isr_register(rmt_intr_num, rmt_driver_isr_default, NULL);
+        rmt_isr_register(rmt_driver_isr_default, NULL, intr_alloc_flags);
         s_rmt_driver_installed = true;
     }
     rmt_set_tx_intr_en(channel, 1);
-    ESP_INTR_ENABLE(rmt_intr_num);
     return ESP_OK;
 }
 

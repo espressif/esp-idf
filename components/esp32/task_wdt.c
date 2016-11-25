@@ -27,6 +27,7 @@
 #include <esp_types.h>
 #include "esp_err.h"
 #include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_attr.h"
 #include "esp_freertos_hooks.h"
 #include "soc/timer_group_struct.h"
@@ -51,7 +52,7 @@ static wdt_task_t *wdt_task_list=NULL;
 static portMUX_TYPE taskwdt_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 
-static void IRAM_ATTR task_wdt_isr(void *arg) {
+static void task_wdt_isr(void *arg) {
     wdt_task_t *wdttask;
     const char *cpu;
     //Feed the watchdog so we do not reset
@@ -71,21 +72,21 @@ static void IRAM_ATTR task_wdt_isr(void *arg) {
         return;
     }
     //Watchdog got triggered because at least one task did not report in.
-    ets_printf(DRAM_STR("Task watchdog got triggered. The following tasks did not feed the watchdog in time:\n"));
+    ets_printf("Task watchdog got triggered. The following tasks did not feed the watchdog in time:\n");
     for (wdttask=wdt_task_list; wdttask!=NULL; wdttask=wdttask->next) {
         if (!wdttask->fed_watchdog) {
             cpu=xTaskGetAffinity(wdttask->task_handle)==0?DRAM_STR("CPU 0"):DRAM_STR("CPU 1");
             if (xTaskGetAffinity(wdttask->task_handle)==tskNO_AFFINITY) cpu=DRAM_STR("CPU 0/1");
-            ets_printf(DRAM_STR(" - %s (%s)\n"), pcTaskGetTaskName(wdttask->task_handle), cpu);
+            ets_printf(" - %s (%s)\n", pcTaskGetTaskName(wdttask->task_handle), cpu);
         }
     }
     ets_printf(DRAM_STR("Tasks currently running:\n"));
     for (int x=0; x<portNUM_PROCESSORS; x++) {
-        ets_printf(DRAM_STR("CPU %d: %s\n"), x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
+        ets_printf("CPU %d: %s\n", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
     }
 
 #if CONFIG_TASK_WDT_PANIC
-    ets_printf(DRAM_STR("Aborting.\n"));
+    ets_printf("Aborting.\n");
     abort();
 #endif
     portEXIT_CRITICAL(&taskwdt_spinlock);
@@ -201,12 +202,7 @@ void esp_task_wdt_init() {
 #if CONFIG_TASK_WDT_CHECK_IDLE_TASK
     esp_register_freertos_idle_hook(idle_hook);
 #endif
-    ESP_INTR_DISABLE(ETS_T0_WDT_INUM);
-    intr_matrix_set(xPortGetCoreID(), ETS_TG0_WDT_LEVEL_INTR_SOURCE, ETS_T0_WDT_INUM);
-    xt_set_interrupt_handler(ETS_T0_WDT_INUM, task_wdt_isr, NULL);
-    TIMERG0.int_clr_timers.wdt=1;
-    timer_group_intr_enable(TIMER_GROUP_0, TIMG_WDT_INT_ENA_M);
-    ESP_INTR_ENABLE(ETS_T0_WDT_INUM);
+    esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, NULL);
 }
 
 

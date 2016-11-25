@@ -257,11 +257,11 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty,
 /**
  * @brief   register LEDC interrupt handler, the handler is an ISR.
  *          The handler will be attached to the same CPU core that this function is running on.
- * @note
- *     Users should know that which CPU is running and then pick a INUM that is not used by system.
- *     We can find the information of INUM and interrupt level in soc.h.
- * @param   ledc_intr_num  LEDC interrupt number, check the info in soc.h, and please see the core-isa.h for more details
+ *
  * @param   fn Interrupt handler function.
+ * @param  arg User-supplied argument passed to the handler function.
+ * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  * @note
  *     Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
  * @param   arg Parameter for handler function
@@ -270,7 +270,7 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty,
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  */
-esp_err_t ledc_isr_register(uint32_t ledc_intr_num, void (*fn)(void*), void * arg);
+esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags);
 
 /**
  * @brief      configure LEDC settings
@@ -398,13 +398,8 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint
  * ----------------EXAMPLE OF LEDC INTERRUPT ------------------
  * @code{c}
  * //we have fade_end interrupt and counter overflow interrupt. we just give an example of fade_end interrupt here.
- * ledc_isr_register(18, ledc_isr_handler, NULL);           //hook the isr handler for LEDC interrupt
+ * ledc_isr_register(ledc_isr_handler, NULL, 0);           //hook the isr handler for LEDC interrupt
  * @endcode
- * @note
- *     1. the first parameter is INUM, you can pick one form interrupt level 1/2 which is not used by the system.
- *     2. user should arrange the INUMs that used, better not to use a same INUM for different interrupt source.
- *     3. do not pick the INUM that already occupied by the system.
- *     4. refer to soc.h to check which INUMs that can be used.
  *
  * ----------------EXAMPLE OF INTERRUPT HANDLER ---------------
  * @code{c}

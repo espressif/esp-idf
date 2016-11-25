@@ -16,8 +16,6 @@
 #include "driver/periph_ctrl.h"
 #include "driver/timer.h"
 
-#define TIMER_INTR_NUM_0 17              /*!< Interrupt number for hardware timer 0 */
-#define TIMER_INTR_NUM_1 18              /*!< Interrupt number for hardware timer 1*/
 #define TIMER_INTR_SEL TIMER_INTR_LEVEL  /*!< Timer level interrupt */
 #define TIMER_GROUP    TIMER_GROUP_0     /*!< Test on timer group 0 */
 #define TIMER_DIVIDER   16               /*!< Hardware timer clock divider */
@@ -157,7 +155,7 @@ void tg0_timer0_init()
     /*Enable timer interrupt*/
     timer_enable_intr(timer_group, timer_idx);
     /*Set ISR handler*/
-    timer_isr_register(timer_group, timer_idx, TIMER_INTR_NUM_0, TIMER_INTR_SEL, timer_group0_isr, (void*) timer_idx);
+    timer_isr_register(timer_group, timer_idx, timer_group0_isr, (void*) timer_idx, 0);
     /*Start timer counter*/
     timer_start(timer_group, timer_idx);
 }
@@ -187,7 +185,7 @@ void tg0_timer1_init()
     /*Enable timer interrupt*/
     timer_enable_intr(timer_group, timer_idx);
     /*Set ISR handler*/
-    timer_isr_register(timer_group, timer_idx, TIMER_INTR_NUM_1, TIMER_INTR_SEL, timer_group0_isr, (void*) timer_idx);
+    timer_isr_register(timer_group, timer_idx, timer_group0_isr, (void*) timer_idx, 0);
     /*Start timer counter*/
     timer_start(timer_group, timer_idx);
 }

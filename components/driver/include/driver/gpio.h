@@ -343,8 +343,9 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
  *          Users should know that which CPU is running and then pick a INUM that is not used by system.
  *          We can find the information of INUM and interrupt level in soc.h.
  *
- * @param  gpio_intr_num  GPIO interrupt number,check the info in soc.h, and please see the core-isa.h for more details
  * @param  fn  Interrupt handler function.
+ * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  *
  *         @note
  *         Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
@@ -355,7 +356,7 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
  *     - ESP_OK Success ;
  *     - ESP_ERR_INVALID_ARG GPIO error
  */
-esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg);
+esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags);
 
 
 
@@ -415,7 +416,7 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
  */
 
 /**
- *----------EXAMPLE TO CONIFGURE GPIO AS OUTPUT ------------ *
+ *----------EXAMPLE TO CONFIGURE GPIO AS OUTPUT ------------ *
  * @code{c}
  *     gpio_config_t io_conf;
  *     io_conf.intr_type = GPIO_INTR_DISABLE;             //disable interrupt
@@ -428,7 +429,7 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
  **/
 
 /**
- *----------EXAMPLE TO CONIFGURE GPIO AS OUTPUT ------------ *
+ *----------EXAMPLE TO CONFIGURE GPIO AS OUTPUT ------------ *
  * @code{c}
  *     io_conf.intr_type = GPIO_INTR_POSEDGE;             //set posedge interrupt
  *     io_conf.mode = GPIO_MODE_INPUT;                        //set as input
@@ -441,8 +442,7 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 /**
  *----------EXAMPLE TO SET ISR HANDLER ----------------------
  * @code{c}
- * //the first parameter is INUM, you can pick one form interrupt level 1/2 which is not used by the system.
- * gpio_isr_register(18,gpio_intr_test,NULL);    //hook the isr handler for GPIO interrupt
+ * gpio_isr_register(gpio_intr_test,NULL, 0);    //hook the isr handler for GPIO interrupt
  * @endcode
  * @note
  *     1. user should arrange the INUMs that used, better not to use a same INUM for different interrupt.

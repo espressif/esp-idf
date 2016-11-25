@@ -94,8 +94,8 @@ typedef enum {
 typedef struct {
     bool alarm_en; /*!< Timer alarm enable */
     bool counter_en; /*!< Counter enable */
-    timer_count_dir_t counter_dir; /*!< Counter direction  */
     timer_intr_mode_t intr_type; /*!< Interrupt mode */
+    timer_count_dir_t counter_dir; /*!< Counter direction  */
     bool auto_reload; /*!< Timer auto-reload */
     uint16_t divider; /*!< Counter clock divider*/
 } timer_config_t;
@@ -245,21 +245,17 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
 /**
  * @brief   register Timer interrupt handler, the handler is an ISR.
  *          The handler will be attached to the same CPU core that this function is running on.
- *          @note
- *          Users should know that which CPU is running and then pick a INUM that is not used by system.
- *          We can find the information of INUM and interrupt level in soc.h.
  *
  * @param group_num Timer group number
  * @param timer_num Timer index of timer group
- * @param timer_intr_num  TIMER interrupt number, check the info in soc.h, and please see the core-isa.h for more details
- * @param intr_type Timer interrupt type
  * @param fn Interrupt handler function.
  *        @note
  *        Code inside the handler function can only call functions in IRAM,  so cannot call other timer APIs.
  *        Use direct register access to access timers from inside the ISR.
  *
  * @param arg Parameter for handler function
- *
+ * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
@@ -268,7 +264,7 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, int timer_intr_num, timer_intr_mode_t intr_type, void (*fn)(void*), void * arg);
+esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, void (*fn)(void*), void * arg, int intr_alloc_flags);
 
 /** @brief Initializes and configure the timer.
  * 

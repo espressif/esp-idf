@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <esp_types.h>
 #include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
@@ -113,16 +114,14 @@ static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, uint32_t channel,
     return ESP_OK;
 }
 
-esp_err_t ledc_isr_register(uint32_t ledc_intr_num, void (*fn)(void*), void * arg)
+esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags)
 {
+    esp_err_t ret;
     LEDC_CHECK(fn, "ledc isr null", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&ledc_spinlock);
-    ESP_INTR_DISABLE(ledc_intr_num);
-    intr_matrix_set(xPortGetCoreID(), ETS_LEDC_INTR_SOURCE, ledc_intr_num);
-    xt_set_interrupt_handler(ledc_intr_num, fn, arg);
-    ESP_INTR_ENABLE(ledc_intr_num);
+    ret=esp_intr_alloc(ETS_LEDC_INTR_SOURCE, intr_alloc_flags, fn, arg, NULL);
     portEXIT_CRITICAL(&ledc_spinlock);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t ledc_timer_config(ledc_timer_config_t* timer_conf)
