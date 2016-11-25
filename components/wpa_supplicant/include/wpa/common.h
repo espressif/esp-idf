@@ -20,7 +20,7 @@
 #include "os.h"
 
 /* Define platform specific variable type macros */
-#if defined(__ESP32_SUPP_TYPE__)
+#if defined(ESP_PLATFORM)
 #include <stdint.h>
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -30,7 +30,7 @@ typedef int64_t s64;
 typedef int32_t s32;
 typedef int16_t s16;
 typedef int8_t s8;
-#endif /*__ESP32_SUPP_TYPE__*/
+#endif /*ESP_PLATFORM*/
 
 #if defined(__XTENSA__)
 #include <machine/endian.h>
