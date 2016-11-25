@@ -32,6 +32,7 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "esp_log.h"
+#include "driver/timer.h"
 
 #include "esp_task_wdt.h"
 
@@ -204,7 +205,7 @@ void esp_task_wdt_init() {
     intr_matrix_set(xPortGetCoreID(), ETS_TG0_WDT_LEVEL_INTR_SOURCE, ETS_T0_WDT_INUM);
     xt_set_interrupt_handler(ETS_T0_WDT_INUM, task_wdt_isr, NULL);
     TIMERG0.int_clr_timers.wdt=1;
-    TIMERG0.int_ena.wdt=1;
+    timer_group_intr_enable(TIMER_GROUP_0, TIMG_WDT_INT_ENA_M);
     ESP_INTR_ENABLE(ETS_T0_WDT_INUM);
 }
 

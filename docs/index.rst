@@ -97,11 +97,11 @@ Contents:
    Wi-Fi <api/esp_wifi>
    Bluetooth <api/bt>
    Watchdogs <api/wdts>
-
-   api/gpio
-   api/uart
-   api/ledc
-   api/rmt
+   GPIO <api/gpio>
+   UART <api/uart>
+   LED Control <api/ledc>
+   Remote Control <api/rmt>
+   Timer <api/timer>
    Pulse Counter <api/pcnt>
    SPI Flash and Partition APIs <api/spi_flash>
    Logging <api/log>
