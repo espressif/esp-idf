@@ -121,8 +121,12 @@ void mbedtls_sha512_clone( mbedtls_sha512_context *dst,
     if (src->mode == ESP_MBEDTLS_SHA512_HARDWARE) {
         /* Copy hardware digest state out to cloned state,
            which will be a software digest.
+
+           Always read 512 bits of state, even for SHA-384
+           (SHA-384 state is identical to SHA-512, only
+           digest is truncated.)
         */
-        esp_sha_read_digest_state(sha_type(dst), dst->state);
+        esp_sha_read_digest_state(SHA2_512, dst->state);
         dst->mode = ESP_MBEDTLS_SHA512_SOFTWARE;
     }
 }

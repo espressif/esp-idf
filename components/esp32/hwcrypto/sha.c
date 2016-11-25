@@ -82,7 +82,7 @@ inline static size_t sha_engine_index(esp_sha_type type) {
     }
 }
 
-/* Return state & digest length (in bytes) for a given SHA type */
+/* Return digest length (in bytes) for a given SHA type */
 inline static size_t sha_length(esp_sha_type type) {
     switch(type) {
     case SHA1:
@@ -90,7 +90,7 @@ inline static size_t sha_length(esp_sha_type type) {
     case SHA2_256:
         return 32;
     case SHA2_384:
-        return 64;
+        return 48;
     case SHA2_512:
         return 64;
     default:
