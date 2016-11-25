@@ -27,8 +27,6 @@ extern "C" {
   * @attention wpa2 enterprise authentication can only be used when ESP32 station is enabled.
   *            wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
   *
-  * @param  null
-  *
   * @return ESP_ERR_WIFI_OK: succeed.
   *         ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
@@ -40,14 +38,14 @@ esp_err_t esp_wifi_sta_wpa2_enterprise_enable(void);
   * @attention wpa2 enterprise authentication can only be used when ESP32 station is enabled.
   *            wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
   *
-  * @param  null
-  *
   * @return ESP_ERR_WIFI_OK: succeed.
   */
 esp_err_t esp_wifi_sta_wpa2_enterprise_disable(void);
 
 /**
   * @brief  Set username for PEAP/TTLS method.
+  *
+  * @attention The API only passes the parameter username to the global pointer variable in wpa2 enterprise module.
   *
   * @param  username: point to address where stores the username;
   *         len: length of username, limited to 1~127
@@ -60,18 +58,16 @@ esp_err_t esp_wifi_sta_set_enterprise_username(unsigned char *username, int len)
 
 /**
   * @brief  Clear username for PEAP/TTLS method.
-  *
-  * @param  null
-  *
-  * @return  null
   */
 void esp_wifi_sta_clear_enterprise_username(void);
 
 /**
   * @brief  Set password for PEAP/TTLS method..
   *
+  * @attention The API only passes the parameter password to the global pointer variable in wpa2 enterprise module.
+  *
   * @param  password: point to address where stores the password;
-  *         len: length of password
+  *         len: length of password(len > 0)
   *
   * @return ESP_ERR_WIFI_OK: succeed
   *         ESP_ERR_WIFI_ARG: fail(len <= 0)
@@ -81,15 +77,14 @@ esp_err_t esp_wifi_sta_set_enterprise_password(unsigned char *password, int len)
 
 /**
   * @brief  Clear password for PEAP/TTLS method..
-  *
-  * @param  null
-  *
-  * @return  null
   */
 void esp_wifi_sta_clear_enterprise_password(void);
 
 /**
-  * @brief  Set new password for PEAP/TTLS method..
+  * @brief  Set new password for MSCHAPv2 method..
+  *
+  * @attention The API only passes the parameter password to the global pointer variable in wpa2 enterprise module.
+  *            The new password is used to substitute the old password when eap-mschapv2 failure request message with error code ERROR_PASSWD_EXPIRED is received.
   *
   * @param  password: point to address where stores the password;
   *         len: length of password
@@ -102,16 +97,15 @@ void esp_wifi_sta_clear_enterprise_password(void);
 esp_err_t esp_wifi_sta_set_enterprise_new_password(unsigned char *password, int len);
 
 /**
-  * @brief  Clear new password for PEAP/TTLS method..
-  *
-  * @param  null
-  *
-  * @return  null
+  * @brief  Clear new password for MSCHAPv2 method..
   */
 void esp_wifi_sta_clear_enterprise_new_password(void);
 
 /**
   * @brief  Set CA certificate for PEAP/TTLS method.
+  *
+  * @attention The API only passes the parameter ca_cert to the global pointer variable in wpa2 enterprise module.
+  *            The ca_cert should be zero terminated.
   *
   * @param  ca_cert: point to address where stores the CA certificate;
   *         len: length of ca_cert
@@ -122,15 +116,14 @@ esp_err_t esp_wifi_sta_set_enterprise_ca_cert(unsigned char *ca_cert, int len);
 
 /**
   * @brief  Clear CA certificate for PEAP/TTLS method.
-  *
-  * @param  null
-  *
-  * @return  null
   */
 void esp_wifi_sta_clear_enterprise_ca_cert(void);
 
 /**
   * @brief  Set client certificate and key.
+  *
+  * @attention The API only passes the parameter client_cert, private_key and private_key_passwd to the global pointer variable in wpa2 enterprise module.
+  *            The client_cert, private_key and private_key_passwd should be zero terminated.
   *
   * @param  client_cert: point to address where stores the client certificate;
   *         client_cert_len: length of client certificate;
@@ -145,10 +138,6 @@ esp_err_t esp_wifi_sta_set_enterprise_cert_key(unsigned char *client_cert, int c
 
 /**
   * @brief  Clear client certificate and key.
-  *
-  * @param  null
-  *
-  * @return  null
   */
 void esp_wifi_sta_clear_enterprise_cert_key(void);
 
@@ -158,7 +147,7 @@ void esp_wifi_sta_clear_enterprise_cert_key(void);
   * @param  true: disable wpa2 enterprise certs time check
   *         false: enable wpa2 enterprise certs time check
   *
-  * @return  ESP_ERR_WIFI_OK: succeed
+  * @return  ESP_OK: succeed
   */
 esp_err_t esp_wifi_sta_set_enterprise_disable_time_check(bool disable);
 
@@ -167,7 +156,7 @@ esp_err_t esp_wifi_sta_set_enterprise_disable_time_check(bool disable);
   *
   * @param  disable: store disable value
   *
-  * @return  ESP_ERR_WIFI_OK: succeed
+  * @return  ESP_OK: succeed
   */
 esp_err_t esp_wifi_sta_get_enterprise_disable_time_check(bool *disable);
 
