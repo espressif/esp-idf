@@ -4,7 +4,7 @@
 
 COMPONENT_SRCDIRS := . hwcrypto
 
-LIBS := core net80211 phy rtc pp wpa smartconfig coexist wps
+LIBS := core net80211 phy rtc pp wpa smartconfig coexist wps wpa2
 
 LINKER_SCRIPTS += -T esp32_out.ld -T esp32.common.ld -T esp32.rom.ld -T esp32.peripherals.ld
 
