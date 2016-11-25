@@ -25,7 +25,6 @@
 typedef SHA_CTX sha_context;
 #else
 #include "hwcrypto/sha.h"
-typedef esp_sha_context sha_context;
 #endif
 
 typedef struct {
@@ -42,7 +41,9 @@ extern const uint8_t signature_verification_key_end[] asm("_binary_signature_ver
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
-    sha_context sha;
+#ifdef BOOTLOADER_BUILD
+    SHA_CTX sha;
+#endif
     uint8_t digest[32];
     ptrdiff_t keylen;
     const uint8_t *data;
@@ -83,12 +84,8 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     ets_sha_finish(&sha, SHA2_256, digest);
     ets_sha_disable();
 #else
-    /* Use thread-safe esp-idf SHA layer */
-    esp_sha256_init(&sha);
-    esp_sha256_start(&sha, false);
-    esp_sha256_update(&sha, data, length);
-    esp_sha256_finish(&sha, digest);
-    esp_sha256_free(&sha);
+    /* Use thread-safe esp-idf SHA function */
+    esp_sha(SHA2_256, data, length, digest);
 #endif
 
     keylen = signature_verification_key_end - signature_verification_key_start;

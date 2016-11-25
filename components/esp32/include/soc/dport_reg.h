@@ -94,6 +94,16 @@
 #define DPORT_PERI_RST_EN_V  0xFFFFFFFF
 #define DPORT_PERI_RST_EN_S  0
 
+/* The following bits apply to DPORT_PERI_CLK_EN_REG, DPORT_PERI_RST_EN_REG
+ */
+#define DPORT_PERI_EN_AES (1<<0)
+#define DPORT_PERI_EN_SHA (1<<1)
+#define DPORT_PERI_EN_RSA (1<<2)
+/* NB: Secure boot reset will hold SHA & AES in reset */
+#define DPORT_PERI_EN_SECUREBOOT (1<<3)
+/* NB: Digital signature reset will hold AES & RSA in reset */
+#define DPORT_PERI_EN_DIGITAL_SIGNATURE (1<<4)
+
 #define DPORT_WIFI_BB_CFG_REG          (DR_REG_DPORT_BASE + 0x024)
 /* DPORT_WIFI_BB_CFG : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */

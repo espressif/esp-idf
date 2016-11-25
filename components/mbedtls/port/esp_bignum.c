@@ -34,6 +34,8 @@
 #include "esp_intr.h"
 #include "esp_attr.h"
 
+#include "soc/dport_reg.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -72,7 +74,16 @@ void esp_mpi_acquire_hardware( void )
 {
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
-    ets_bigint_enable();
+    REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+    /* also clear reset on digital signature, otherwise RSA is held in reset */
+    REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
+                DPORT_PERI_EN_RSA
+                | DPORT_PERI_EN_DIGITAL_SIGNATURE);
+
+    REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+
+    while(REG_READ(RSA_CLEAN_REG) != 1);
+
 #ifdef CONFIG_MBEDTLS_MPI_USE_INTERRUPT
     rsa_isr_initialise();
 #endif
@@ -80,7 +91,12 @@ void esp_mpi_acquire_hardware( void )
 
 void esp_mpi_release_hardware( void )
 {
-    ets_bigint_disable();
+    REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+
+    /* don't reset digital signature unit, as this resets AES also */
+    REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
+    REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+
     _lock_release(&mpi_lock);
 }
 
