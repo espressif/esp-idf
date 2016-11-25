@@ -10,14 +10,14 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/hci/include			\
 				bluedroid/osi/include			\
 				bluedroid/utils/include			\
-				bluedroid/profiles/core/include			\
-				bluedroid/profiles/esp/blufi/include		\
-				bluedroid/profiles/esp/include		\
-				bluedroid/profiles/std/battery/include	\
-				bluedroid/profiles/std/dis/include	\
-				bluedroid/profiles/std/hid/include	\
-				bluedroid/profiles/std/rfcomm/include	\
-				bluedroid/profiles/std/include		\
+				bluedroid/btc/core/include		\
+				bluedroid/btc/profile/esp/blufi/include		\
+				bluedroid/btc/profile/esp/include		\
+				bluedroid/btc/profile/std/gatt/include	\
+				bluedroid/btc/profile/std/gap/include	\
+				bluedroid/btc/profile/std/sdp/include	\
+				bluedroid/btc/profile/std/include	\
+				bluedroid/btc/include		\
 				bluedroid/stack/btm/include		\
 				bluedroid/stack/btu/include		\
 				bluedroid/stack/gap/include		\
@@ -36,11 +36,11 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/include			\
 				include	
 
-CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses
+CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses -Wno-error=format
 
-LIBS := btdm_app coexist
+LIBS := btdm_app
 
-COMPONENT_ADD_LDFLAGS := -lbt -L$(abspath lib) \
+COMPONENT_ADD_LDFLAGS := -lbt -L $(COMPONENT_PATH)/lib \
                            $(addprefix -l,$(LIBS)) \
                           $(LINKER_SCRIPTS)
 
@@ -59,20 +59,11 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/hci				\
 			bluedroid/main				\
 			bluedroid/osi				\
-			bluedroid/profiles/core		\
-			bluedroid/profiles/esp/blufi	\
-			bluedroid/profiles/esp/ble_button	\
-			bluedroid/profiles/esp/wechat_AirSync	\
-			bluedroid/profiles/esp			\
-			bluedroid/profiles/std/battery		\
-			bluedroid/profiles/std/dis		\
-			bluedroid/profiles/std/hid		\
-			bluedroid/profiles/std/hid_le		\
-			bluedroid/profiles/std/rfcomm		\
-			bluedroid/profiles/std/sdp		\
-			bluedroid/profiles/std/gap		\
-			bluedroid/profiles/std			\
-			bluedroid/profiles			\
+			bluedroid/btc/core		\
+			bluedroid/btc/profile/esp/blufi	\
+			bluedroid/btc/profile/std/gap		\
+			bluedroid/btc/profile/std/gatt		\
+			bluedroid/btc/profile			\
 			bluedroid/stack/btm			\
 			bluedroid/stack/btu			\
 			bluedroid/stack/gap			\
@@ -97,5 +88,4 @@ include $(IDF_PATH)/make/component_common.mk
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 $(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
 
-# automatically trigger a git submodule update if BT library is missing
-$(eval $(call SubmoduleCheck,$(ALL_LIB_FILES),$(COMPONENT_PATH)/lib))
+COMPONENT_SUBMODULES += lib

@@ -16,11 +16,11 @@
  *
  ******************************************************************************/
 
- /******************************************************************************
-  *
-  *  This file contains simple pairing algorithms
-  *
-  ******************************************************************************/
+/******************************************************************************
+ *
+ *  This file contains simple pairing algorithms
+ *
+ ******************************************************************************/
 
 #include <string.h>
 #include "p_256_ecc_pp.h"
@@ -29,8 +29,7 @@ void p_256_init_curve(UINT32 keyLength)
 {
     elliptic_curve_t *ec;
 
-    if(keyLength == KEY_LENGTH_DWORDS_P256)
-    {
+    if (keyLength == KEY_LENGTH_DWORDS_P256) {
         ec = &curve_p256;
 
         ec->p[7] = 0xFFFFFFFF;

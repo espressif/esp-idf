@@ -99,30 +99,27 @@ typedef void (tGAP_CALLBACK) (UINT16 event, void *p_data);
 
 
 /* Definition of the GAP_FindAddrByName results structure */
-typedef struct
-{
+typedef struct {
     UINT16       status;
     BD_ADDR      bd_addr;
     tBTM_BD_NAME devname;
 } tGAP_FINDADDR_RESULTS;
 
-typedef struct
-{
+typedef struct {
     UINT16      int_min;
     UINT16      int_max;
     UINT16      latency;
     UINT16      sp_tout;
-}tGAP_BLE_PREF_PARAM;
+} tGAP_BLE_PREF_PARAM;
 
-typedef union
-{
+typedef union {
     tGAP_BLE_PREF_PARAM     conn_param;
     BD_ADDR                 reconn_bda;
     UINT16                  icon;
     UINT8                   *p_dev_name;
     UINT8                   addr_resolution;
 
-}tGAP_BLE_ATTR_VALUE;
+} tGAP_BLE_ATTR_VALUE;
 
 typedef void (tGAP_BLE_CMPL_CBACK)(BOOLEAN status, BD_ADDR addr, UINT16 length, char *p_name);
 
@@ -143,9 +140,9 @@ typedef void (tGAP_BLE_CMPL_CBACK)(BOOLEAN status, BD_ADDR addr, UINT16 length, 
 **
 *******************************************************************************/
 extern UINT16 GAP_ConnOpen (char *p_serv_name, UINT8 service_id, BOOLEAN is_server,
-                                    BD_ADDR p_rem_bda, UINT16 psm, tL2CAP_CFG_INFO *p_cfg,
-                                    tL2CAP_ERTM_INFO *ertm_info,
-                                    UINT16 security, UINT8 chan_mode_mask, tGAP_CONN_CALLBACK *p_cb);
+                            BD_ADDR p_rem_bda, UINT16 psm, tL2CAP_CFG_INFO *p_cfg,
+                            tL2CAP_ERTM_INFO *ertm_info,
+                            UINT16 security, UINT8 chan_mode_mask, tGAP_CONN_CALLBACK *p_cb);
 
 /*******************************************************************************
 **
@@ -173,7 +170,7 @@ extern UINT16 GAP_ConnClose (UINT16 gap_handle);
 **
 *******************************************************************************/
 extern UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data,
-                                        UINT16 max_len, UINT16 *p_len);
+                                UINT16 max_len, UINT16 *p_len);
 
 /*******************************************************************************
 **
@@ -232,7 +229,7 @@ extern UINT16 GAP_ConnBTWrite (UINT16 gap_handle, BT_HDR *p_buf);
 **
 *******************************************************************************/
 extern UINT16 GAP_ConnWriteData (UINT16 gap_handle, UINT8 *p_data,
-                                         UINT16 max_len, UINT16 *p_len);
+                                 UINT16 max_len, UINT16 *p_len);
 
 /*******************************************************************************
 **
@@ -374,7 +371,7 @@ extern BOOLEAN GAP_BleReadPeerDevName (BD_ADDR peer_bda, tGAP_BLE_CMPL_CBACK *p_
 **
 *******************************************************************************/
 extern BOOLEAN GAP_BleReadPeerAddressResolutionCap (BD_ADDR peer_bda,
-                                                    tGAP_BLE_CMPL_CBACK *p_cback);
+        tGAP_BLE_CMPL_CBACK *p_cback);
 
 /*******************************************************************************
 **

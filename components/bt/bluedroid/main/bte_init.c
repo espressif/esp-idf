@@ -183,14 +183,14 @@ void BTE_InitStack(void)
 
     //BTA Modules
 #if (BTA_INCLUDED == TRUE && BTA_DYNAMIC_MEMORY == TRUE)
-    memset((void*)bta_sys_cb_ptr, 0, sizeof(tBTA_SYS_CB));
-    memset((void*)bta_dm_cb_ptr, 0, sizeof(tBTA_DM_CB));
-    memset((void*)bta_dm_search_cb_ptr, 0, sizeof(tBTA_DM_SEARCH_CB));
-    memset((void*)bta_dm_di_cb_ptr, 0, sizeof(tBTA_DM_DI_CB));
-    memset((void*)bta_prm_cb_ptr, 0, sizeof(tBTA_PRM_CB));
-    memset((void*)bta_ag_cb_ptr, 0, sizeof(tBTA_AG_CB));
+    memset((void *)bta_sys_cb_ptr, 0, sizeof(tBTA_SYS_CB));
+    memset((void *)bta_dm_cb_ptr, 0, sizeof(tBTA_DM_CB));
+    memset((void *)bta_dm_search_cb_ptr, 0, sizeof(tBTA_DM_SEARCH_CB));
+    memset((void *)bta_dm_di_cb_ptr, 0, sizeof(tBTA_DM_DI_CB));
+    memset((void *)bta_prm_cb_ptr, 0, sizeof(tBTA_PRM_CB));
+    memset((void *)bta_ag_cb_ptr, 0, sizeof(tBTA_AG_CB));
 #if BTA_HS_INCLUDED == TRUE
-    memset((void*)bta_hs_cb_ptr, 0, sizeof(tBTA_HS_CB));
+    memset((void *)bta_hs_cb_ptr, 0, sizeof(tBTA_HS_CB));
 #endif
 #if BTA_AR_INCLUDED==TRUE
     memset((void *)bta_ar_cb_ptr, 0, sizeof(tBTA_AR_CB));

@@ -1,3 +1,6 @@
+Set up of Toolchain for Mac OS
+******************************
+
 Step 0: Prerequisites
 =====================
 

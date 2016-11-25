@@ -16,11 +16,11 @@
  *
  ******************************************************************************/
 
- /******************************************************************************
-  *
-  *  This file contains simple pairing algorithms
-  *
-  ******************************************************************************/
+/******************************************************************************
+ *
+ *  This file contains simple pairing algorithms
+ *
+ ******************************************************************************/
 #pragma once
 
 #include "bt_types.h"
@@ -48,13 +48,13 @@ DWORD multiprecision_add(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength); // c
 void multiprecision_add_mod(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength);
 DWORD multiprecision_sub(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength); // c=a-b
 void multiprecision_sub_mod(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength);
-void multiprecision_rshift(DWORD * c, DWORD * a, uint32_t keyLength);  // c=a>>1, return carrier
-void multiprecision_lshift_mod(DWORD * c, DWORD * a, uint32_t keyLength); // c=a<<b, return carrier
-DWORD multiprecision_lshift(DWORD * c, DWORD * a, uint32_t keyLength);  // c=a<<b, return carrier
+void multiprecision_rshift(DWORD *c, DWORD *a, uint32_t keyLength);    // c=a>>1, return carrier
+void multiprecision_lshift_mod(DWORD *c, DWORD *a, uint32_t keyLength);   // c=a<<b, return carrier
+DWORD multiprecision_lshift(DWORD *c, DWORD *a, uint32_t keyLength);    // c=a<<b, return carrier
 void multiprecision_mult(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength); // c=a*b
 void multiprecision_mersenns_mult_mod(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength);
 void multiprecision_mersenns_squa_mod(DWORD *c, DWORD *a, uint32_t keyLength);
-DWORD multiprecision_lshift(DWORD * c, DWORD * a, uint32_t keyLength);
+DWORD multiprecision_lshift(DWORD *c, DWORD *a, uint32_t keyLength);
 void multiprecision_mult(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength);
 void multiprecision_fast_mod(DWORD *c, DWORD *a);
 void multiprecision_fast_mod_P256(DWORD *c, DWORD *a);

@@ -25,38 +25,44 @@
 
 tGKI_CB gki_cb;
 
-int gki_init(void) {
-  memset(&gki_cb, 0, sizeof(gki_cb));
+int gki_init(void)
+{
+    memset(&gki_cb, 0, sizeof(gki_cb));
 
-  //pthread_mutexattr_t attr;
-  //pthread_mutexattr_init(&attr);
-  //pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
-  pthread_mutex_init(&gki_cb.lock, NULL);//&attr);
+    //pthread_mutexattr_t attr;
+    //pthread_mutexattr_init(&attr);
+    //pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&gki_cb.lock, NULL);//&attr);
 
-  gki_buffer_init();
-  return 0;
+    gki_buffer_init();
+    return 0;
 }
 
-void gki_clean_up(void) {
-  gki_buffer_cleanup();
+void gki_clean_up(void)
+{
+    gki_buffer_cleanup();
 
-  pthread_mutex_destroy(&gki_cb.lock);
+    pthread_mutex_destroy(&gki_cb.lock);
 }
 
-UINT32 GKI_get_os_tick_count(void) {
-  return osi_alarm_now();
+UINT32 GKI_get_os_tick_count(void)
+{
+    return osi_alarm_now();
 }
 
 // Sleep the calling thread unconditionally for |timeout_ms| milliseconds.
-void GKI_delay(UINT32 timeout_ms) {
-  osi_delay_ms(timeout_ms);
-  /*TODO:*/
+void GKI_delay(UINT32 timeout_ms)
+{
+    osi_delay_ms(timeout_ms);
+    /*TODO:*/
 }
 
-void GKI_enable(void) {
-  pthread_mutex_unlock(&gki_cb.lock);
+void GKI_enable(void)
+{
+    pthread_mutex_unlock(&gki_cb.lock);
 }
 
-void GKI_disable(void) {
-  pthread_mutex_lock(&gki_cb.lock);
+void GKI_disable(void)
+{
+    pthread_mutex_lock(&gki_cb.lock);
 }

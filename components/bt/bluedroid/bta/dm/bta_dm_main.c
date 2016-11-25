@@ -44,8 +44,7 @@ tBTA_DM_DI_CB       bta_dm_di_cb;
 typedef void (*tBTA_DM_ACTION)(tBTA_DM_MSG *p_data);
 
 /* action function list */
-const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] =
-{
+const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 
     /* device manager local device API events */
     bta_dm_enable,            /* 0  BTA_DM_API_ENABLE_EVT */
@@ -87,15 +86,15 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] =
     bta_dm_ble_set_conn_params,  /* BTA_DM_API_BLE_CONN_PARAM_EVT */
     bta_dm_ble_set_conn_scan_params,  /* BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT */
     bta_dm_ble_set_scan_params,  /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
-    bta_dm_ble_set_scan_fil_params,	/* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
-    bta_dm_ble_observe,			 /* BTA_DM_API_BLE_OBSERVE_EVT*/
+    bta_dm_ble_set_scan_fil_params, /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
+    bta_dm_ble_observe,          /* BTA_DM_API_BLE_OBSERVE_EVT*/
     bta_dm_ble_update_conn_params,   /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
-    /*******This handler function added by Yulong at 2016/9/9 to 
-    		support the random address setting for the APP******/
-    bta_dm_ble_set_rand_address,	/*BTA_DM_API_SET_RAND_ADDR_EVT*/
-     /*******This handler function added by Yulong at 2016/10/19 to 
-    		support stop the ble advertising setting by the APP******/
-    bta_dm_ble_stop_advertising,	/*BTA_DM_API_BLE_STOP_ADV_EVT*/
+    /*******This handler function added by Yulong at 2016/9/9 to
+            support the random address setting for the APP******/
+    bta_dm_ble_set_rand_address,    /*BTA_DM_API_SET_RAND_ADDR_EVT*/
+    /*******This handler function added by Yulong at 2016/10/19 to
+       support stop the ble advertising setting by the APP******/
+    bta_dm_ble_stop_advertising,    /*BTA_DM_API_BLE_STOP_ADV_EVT*/
 #if BLE_PRIVACY_SPT == TRUE
     bta_dm_ble_config_local_privacy,   /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
@@ -133,8 +132,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] =
 
 
 /* state machine action enumeration list */
-enum
-{
+enum {
     BTA_DM_API_SEARCH,                  /* 0 bta_dm_search_start */
     BTA_DM_API_SEARCH_CANCEL,           /* 1 bta_dm_search_cancel */
     BTA_DM_API_DISCOVER,                /* 2 bta_dm_discover */
@@ -161,29 +159,28 @@ enum
 
 
 /* action function list */
-const tBTA_DM_ACTION bta_dm_search_action[] =
-{
+const tBTA_DM_ACTION bta_dm_search_action[] = {
 
-  bta_dm_search_start,              /* 0 BTA_DM_API_SEARCH */
-  bta_dm_search_cancel,             /* 1 BTA_DM_API_SEARCH_CANCEL */
-  bta_dm_discover,                  /* 2 BTA_DM_API_DISCOVER */
-  bta_dm_inq_cmpl,                  /* 3 BTA_DM_INQUIRY_CMPL */
-  bta_dm_rmt_name,                  /* 4 BTA_DM_REMT_NAME */
-  bta_dm_sdp_result,                /* 5 BTA_DM_SDP_RESULT */
-  bta_dm_search_cmpl,               /* 6 BTA_DM_SEARCH_CMPL */
-  bta_dm_free_sdp_db,               /* 7 BTA_DM_FREE_SDP_DB */
-  bta_dm_disc_result,               /* 8 BTA_DM_DISC_RESULT */
-  bta_dm_search_result,             /* 9 BTA_DM_SEARCH_RESULT */
-  bta_dm_queue_search,              /* 10 BTA_DM_QUEUE_SEARCH */
-  bta_dm_queue_disc,                /* 11 BTA_DM_QUEUE_DISC */
-  bta_dm_search_clear_queue,        /* 12 BTA_DM_SEARCH_CLEAR_QUEUE */
-  bta_dm_search_cancel_cmpl,        /* 13 BTA_DM_SEARCH_CANCEL_CMPL */
-  bta_dm_search_cancel_notify,      /* 14 BTA_DM_SEARCH_CANCEL_NOTIFY */
-  bta_dm_search_cancel_transac_cmpl, /* 15 BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL */
-  bta_dm_disc_rmt_name,             /* 16 BTA_DM_DISC_RMT_NAME */
-  bta_dm_di_disc                    /* 17 BTA_DM_API_DI_DISCOVER */
+    bta_dm_search_start,              /* 0 BTA_DM_API_SEARCH */
+    bta_dm_search_cancel,             /* 1 BTA_DM_API_SEARCH_CANCEL */
+    bta_dm_discover,                  /* 2 BTA_DM_API_DISCOVER */
+    bta_dm_inq_cmpl,                  /* 3 BTA_DM_INQUIRY_CMPL */
+    bta_dm_rmt_name,                  /* 4 BTA_DM_REMT_NAME */
+    bta_dm_sdp_result,                /* 5 BTA_DM_SDP_RESULT */
+    bta_dm_search_cmpl,               /* 6 BTA_DM_SEARCH_CMPL */
+    bta_dm_free_sdp_db,               /* 7 BTA_DM_FREE_SDP_DB */
+    bta_dm_disc_result,               /* 8 BTA_DM_DISC_RESULT */
+    bta_dm_search_result,             /* 9 BTA_DM_SEARCH_RESULT */
+    bta_dm_queue_search,              /* 10 BTA_DM_QUEUE_SEARCH */
+    bta_dm_queue_disc,                /* 11 BTA_DM_QUEUE_DISC */
+    bta_dm_search_clear_queue,        /* 12 BTA_DM_SEARCH_CLEAR_QUEUE */
+    bta_dm_search_cancel_cmpl,        /* 13 BTA_DM_SEARCH_CANCEL_CMPL */
+    bta_dm_search_cancel_notify,      /* 14 BTA_DM_SEARCH_CANCEL_NOTIFY */
+    bta_dm_search_cancel_transac_cmpl, /* 15 BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL */
+    bta_dm_disc_rmt_name,             /* 16 BTA_DM_DISC_RMT_NAME */
+    bta_dm_di_disc                    /* 17 BTA_DM_API_DI_DISCOVER */
 #if BLE_INCLUDED == TRUE
-  ,bta_dm_close_gatt_conn
+    , bta_dm_close_gatt_conn
 #endif
 };
 
@@ -196,77 +193,73 @@ const tBTA_DM_ACTION bta_dm_search_action[] =
 
 
 /* state table for listen state */
-const UINT8 bta_dm_search_idle_st_table[][BTA_DM_SEARCH_NUM_COLS] =
-{
+const UINT8 bta_dm_search_idle_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
 
-/* Event                        Action 1                            Action 2                    Next State */
-/* API_SEARCH */            {BTA_DM_API_SEARCH,                BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
-/* API_SEARCH_CANCEL */     {BTA_DM_SEARCH_CANCEL_NOTIFY,      BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-/* API_SEARCH_DISC */       {BTA_DM_API_DISCOVER,              BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
-/* INQUIRY_CMPL */          {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-/* REMT_NAME_EVT */         {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-/* SDP_RESULT_EVT */        {BTA_DM_FREE_SDP_DB,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-/* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-/* DISCV_RES_EVT */         {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-/* API_DI_DISCOVER_EVT */   {BTA_DM_API_DI_DISCOVER,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
+    /* Event                        Action 1                            Action 2                    Next State */
+    /* API_SEARCH */            {BTA_DM_API_SEARCH,                BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+    /* API_SEARCH_CANCEL */     {BTA_DM_SEARCH_CANCEL_NOTIFY,      BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+    /* API_SEARCH_DISC */       {BTA_DM_API_DISCOVER,              BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+    /* INQUIRY_CMPL */          {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+    /* REMT_NAME_EVT */         {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+    /* SDP_RESULT_EVT */        {BTA_DM_FREE_SDP_DB,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+    /* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+    /* DISCV_RES_EVT */         {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+    /* API_DI_DISCOVER_EVT */   {BTA_DM_API_DI_DISCOVER,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
 #if BLE_INCLUDED == TRUE
-/* DISC_CLOSE_TOUT_EVT */   ,{BTA_DM_CLOSE_GATT_CONN,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE}
+    /* DISC_CLOSE_TOUT_EVT */   , {BTA_DM_CLOSE_GATT_CONN,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE}
 #endif
 };
-const UINT8 bta_dm_search_search_active_st_table[][BTA_DM_SEARCH_NUM_COLS] =
-{
+const UINT8 bta_dm_search_search_active_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
 
-/* Event                        Action 1                            Action 2                    Next State */
-/* API_SEARCH */            {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
-/* API_SEARCH_CANCEL */     {BTA_DM_API_SEARCH_CANCEL,         BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
-/* API_SEARCH_DISC */       {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
-/* INQUIRY_CMPL */          {BTA_DM_INQUIRY_CMPL,              BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
-/* REMT_NAME_EVT */         {BTA_DM_REMT_NAME,                 BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
-/* SDP_RESULT_EVT */        {BTA_DM_SDP_RESULT,                BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
-/* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CMPL,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-/* DISCV_RES_EVT */         {BTA_DM_SEARCH_RESULT,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
-/* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
+    /* Event                        Action 1                            Action 2                    Next State */
+    /* API_SEARCH */            {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+    /* API_SEARCH_CANCEL */     {BTA_DM_API_SEARCH_CANCEL,         BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
+    /* API_SEARCH_DISC */       {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+    /* INQUIRY_CMPL */          {BTA_DM_INQUIRY_CMPL,              BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+    /* REMT_NAME_EVT */         {BTA_DM_REMT_NAME,                 BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+    /* SDP_RESULT_EVT */        {BTA_DM_SDP_RESULT,                BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+    /* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CMPL,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+    /* DISCV_RES_EVT */         {BTA_DM_SEARCH_RESULT,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+    /* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
 #if BLE_INCLUDED == TRUE
-/* DISC_CLOSE_TOUT_EVT */   ,{BTA_DM_CLOSE_GATT_CONN,          BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
+    /* DISC_CLOSE_TOUT_EVT */   , {BTA_DM_CLOSE_GATT_CONN,          BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
 #endif
 
 };
 
-const UINT8 bta_dm_search_search_cancelling_st_table[][BTA_DM_SEARCH_NUM_COLS] =
-{
+const UINT8 bta_dm_search_search_cancelling_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
 
-/* Event                        Action 1                            Action 2                    Next State */
-/* API_SEARCH */            {BTA_DM_QUEUE_SEARCH,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
-/* API_SEARCH_CANCEL */     {BTA_DM_SEARCH_CLEAR_QUEUE,         BTA_DM_SEARCH_CANCEL_NOTIFY,   BTA_DM_SEARCH_CANCELLING},
-/* API_SEARCH_DISC */       {BTA_DM_QUEUE_DISC,                 BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
-/* INQUIRY_CMPL */          {BTA_DM_SEARCH_CANCEL_CMPL,         BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-/* REMT_NAME_EVT */         {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
-/* SDP_RESULT_EVT */        {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
-/* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
-/* DISCV_RES_EVT */         {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
-/* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,              BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING}
+    /* Event                        Action 1                            Action 2                    Next State */
+    /* API_SEARCH */            {BTA_DM_QUEUE_SEARCH,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
+    /* API_SEARCH_CANCEL */     {BTA_DM_SEARCH_CLEAR_QUEUE,         BTA_DM_SEARCH_CANCEL_NOTIFY,   BTA_DM_SEARCH_CANCELLING},
+    /* API_SEARCH_DISC */       {BTA_DM_QUEUE_DISC,                 BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
+    /* INQUIRY_CMPL */          {BTA_DM_SEARCH_CANCEL_CMPL,         BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+    /* REMT_NAME_EVT */         {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
+    /* SDP_RESULT_EVT */        {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
+    /* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
+    /* DISCV_RES_EVT */         {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
+    /* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,              BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING}
 #if BLE_INCLUDED == TRUE
-/* DISC_CLOSE_TOUT_EVT */   ,{BTA_DM_SEARCH_IGNORE,              BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING}
+    /* DISC_CLOSE_TOUT_EVT */   , {BTA_DM_SEARCH_IGNORE,              BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING}
 #endif
 
 };
 
-const UINT8 bta_dm_search_disc_active_st_table[][BTA_DM_SEARCH_NUM_COLS] =
-{
+const UINT8 bta_dm_search_disc_active_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
 
-/* Event                        Action 1                            Action 2                    Next State */
-/* API_SEARCH */            {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
-/* API_SEARCH_CANCEL */     {BTA_DM_SEARCH_CANCEL_NOTIFY,      BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
-/* API_SEARCH_DISC */       {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
-/* INQUIRY_CMPL */          {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
-/* REMT_NAME_EVT */         {BTA_DM_DISC_RMT_NAME,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
-/* SDP_RESULT_EVT */        {BTA_DM_SDP_RESULT,                BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
-/* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CMPL,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-/* DISCV_RES_EVT */         {BTA_DM_DISC_RESULT,               BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
-/* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE}
+    /* Event                        Action 1                            Action 2                    Next State */
+    /* API_SEARCH */            {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+    /* API_SEARCH_CANCEL */     {BTA_DM_SEARCH_CANCEL_NOTIFY,      BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
+    /* API_SEARCH_DISC */       {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+    /* INQUIRY_CMPL */          {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+    /* REMT_NAME_EVT */         {BTA_DM_DISC_RMT_NAME,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+    /* SDP_RESULT_EVT */        {BTA_DM_SDP_RESULT,                BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+    /* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CMPL,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+    /* DISCV_RES_EVT */         {BTA_DM_DISC_RESULT,               BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+    /* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE}
 
 #if BLE_INCLUDED == TRUE
-/* DISC_CLOSE_TOUT_EVT */   ,{BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE}
+    /* DISC_CLOSE_TOUT_EVT */   , {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE}
 #endif
 };
 
@@ -314,9 +307,8 @@ BOOLEAN bta_dm_sm_execute(BT_HDR *p_msg)
     APPL_TRACE_EVENT("bta_dm_sm_execute event:0x%x", event);
 
     /* execute action functions */
-    if(event < BTA_DM_NUM_ACTIONS)
-    {
-        (*bta_dm_action[event])( (tBTA_DM_MSG*) p_msg);
+    if (event < BTA_DM_NUM_ACTIONS) {
+        (*bta_dm_action[event])( (tBTA_DM_MSG *) p_msg);
     }
 
     return TRUE;
@@ -356,7 +348,7 @@ BOOLEAN bta_dm_search_sm_execute(BT_HDR *p_msg)
     int                 i;
 
     APPL_TRACE_EVENT("bta_dm_search_sm_execute state:%d, event:0x%x",
-        bta_dm_search_cb.state, p_msg->event);
+                     bta_dm_search_cb.state, p_msg->event);
 
     /* look up the state table for the current state */
     state_table = bta_dm_search_st_tbl[bta_dm_search_cb.state];
@@ -365,14 +357,10 @@ BOOLEAN bta_dm_search_sm_execute(BT_HDR *p_msg)
 
 
     /* execute action functions */
-    for (i = 0; i < BTA_DM_SEARCH_ACTIONS; i++)
-    {
-        if ((action = state_table[p_msg->event & 0x00ff][i]) != BTA_DM_SEARCH_IGNORE)
-        {
-            (*bta_dm_search_action[action])( (tBTA_DM_MSG*) p_msg);
-        }
-        else
-        {
+    for (i = 0; i < BTA_DM_SEARCH_ACTIONS; i++) {
+        if ((action = state_table[p_msg->event & 0x00ff][i]) != BTA_DM_SEARCH_IGNORE) {
+            (*bta_dm_search_action[action])( (tBTA_DM_MSG *) p_msg);
+        } else {
             break;
         }
     }

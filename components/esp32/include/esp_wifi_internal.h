@@ -62,16 +62,48 @@ void esp_wifi_internal_free_rx_buffer(void* buffer);
 /**
   * @brief  transmit the buffer via wifi driver
   *
-  * @attention1 TODO should modify the return type from bool to int
-  * 
   * @param  wifi_interface_t wifi_if : wifi interface id
   * @param  void *buffer : the buffer to be tansmit
   * @param  u16_t len : the length of buffer
   *
-  * @return True : success transmit the buffer to wifi driver
-  *         False : failed to transmit the buffer to wifi driver
+  * @return
+  *    - ERR_OK  : Successfully transmit the buffer to wifi driver
+  *    - ERR_MEM : Out of memory
+  *    - ERR_IF : WiFi driver error
+  *    - ERR_ARG : Invalid argument
   */
-bool esp_wifi_internal_tx(wifi_interface_t wifi_if, void *buffer, u16_t len);
+int esp_wifi_internal_tx(wifi_interface_t wifi_if, void *buffer, u16_t len);
+
+/**
+  * @brief     The WiFi RX callback function
+  *
+  *            Each time the WiFi need to forward the packets to high layer, the callback function will be called
+  *
+  */
+typedef esp_err_t (*wifi_rxcb_t)(void *buffer, uint16_t len, void *eb);
+
+/**
+  * @brief     Set the WiFi RX callback
+  *
+  * @attention 1. Currently we support only one RX callback for each interface
+  *
+  * @param     wifi_interface_t ifx : interface
+  * @param     wifi_rxcb_t fn : WiFi RX callback
+  *
+  * @return    ESP_OK : succeed
+  * @return    others : fail
+  */
+esp_err_t esp_wifi_internal_reg_rxcb(wifi_interface_t ifx, wifi_rxcb_t fn);
+
+/**
+  * @brief     Notify WIFI driver that the station got ip successfully
+  *
+  * @param     none
+  *
+  * @return    ESP_OK : succeed
+  * @return    others : fail
+  */
+esp_err_t esp_wifi_internal_set_sta_ip(void);
 
 #ifdef __cplusplus
 }

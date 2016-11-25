@@ -38,16 +38,16 @@
 #define SMP_MODEL_SEC_CONN_JUSTWORKS  4  /* Secure Connections mode, Just Works model */
 #define SMP_MODEL_SEC_CONN_NUM_COMP   5  /* Secure Connections mode, Numeric Comparison model */
 #define SMP_MODEL_SEC_CONN_PASSKEY_ENT 6 /* Secure Connections mode, Passkey Entry model, */
-                                    /* this side inputs the key */
+/* this side inputs the key */
 #define SMP_MODEL_SEC_CONN_PASSKEY_DISP 7   /* Secure Connections mode, Passkey Entry model, */
-                                    /* this side displays the key */
+/* this side displays the key */
 #define SMP_MODEL_SEC_CONN_OOB  8   /* Secure Connections mode, OOB model */
 #define SMP_MODEL_OUT_OF_RANGE  9
 typedef UINT8   tSMP_ASSO_MODEL;
 
 
 #ifndef SMP_MAX_CONN
-    #define SMP_MAX_CONN    2
+#define SMP_MAX_CONN    2
 #endif
 
 #define SMP_WAIT_FOR_RSP_TOUT           30
@@ -88,31 +88,31 @@ typedef UINT8   tSMP_ASSO_MODEL;
 #define SMP_PAIR_DHKEY_CHCK_EVT         SMP_OPCODE_PAIR_DHKEY_CHECK
 
 #define SMP_PUBL_KEY_EXCH_REQ_EVT       (SMP_SELF_DEF_EVT + 11) /* request to start public */
-                                                                /* key exchange */
+/* key exchange */
 
 #define SMP_LOC_PUBL_KEY_CRTD_EVT       (SMP_SELF_DEF_EVT + 12) /* local public key created */
 
 #define SMP_BOTH_PUBL_KEYS_RCVD_EVT     (SMP_SELF_DEF_EVT + 13) /* both local and peer public */
-                                                                /* keys are saved in cb */
+/* keys are saved in cb */
 
 #define SMP_SC_DHKEY_CMPLT_EVT          (SMP_SELF_DEF_EVT + 14) /* DHKey computation is completed,*/
-                                                                /* time to start SC phase1 */
+/* time to start SC phase1 */
 
 #define SMP_HAVE_LOC_NONCE_EVT          (SMP_SELF_DEF_EVT + 15) /* new local nonce is generated */
-                                                                /*and saved in p_cb->rand */
+/*and saved in p_cb->rand */
 
 #define SMP_SC_PHASE1_CMPLT_EVT         (SMP_SELF_DEF_EVT + 16) /* time to start SC phase2 */
 
 #define SMP_SC_CALC_NC_EVT              (SMP_SELF_DEF_EVT + 17) /* request to calculate number */
-                                                             /* for user check. Used only in the */
-                                                             /* numeric compare protocol */
+/* for user check. Used only in the */
+/* numeric compare protocol */
 
 /* Request to display the number for user check to the user.*/
 /* Used only in the numeric compare protocol */
 #define SMP_SC_DSPL_NC_EVT              (SMP_SELF_DEF_EVT + 18)
 
 #define SMP_SC_NC_OK_EVT                (SMP_SELF_DEF_EVT + 19) /* user confirms 'OK' numeric */
-                                                                /*comparison request */
+/*comparison request */
 
 /* both local and peer DHKey Checks are already present - it is used on slave to prevent race condition */
 #define SMP_SC_2_DHCK_CHKS_PRES_EVT     (SMP_SELF_DEF_EVT + 20)
@@ -122,7 +122,7 @@ typedef UINT8   tSMP_ASSO_MODEL;
 #define SMP_KEYPRESS_NOTIFICATION_EVENT (SMP_SELF_DEF_EVT + 22)
 
 #define SMP_SC_OOB_DATA_EVT             (SMP_SELF_DEF_EVT + 23) /* SC OOB data from some */
-                                                                /* repository is provided */
+/* repository is provided */
 
 #define SMP_CR_LOC_SC_OOB_DATA_EVT      (SMP_SELF_DEF_EVT + 24)
 #define SMP_MAX_EVT                      SMP_CR_LOC_SC_OOB_DATA_EVT
@@ -133,8 +133,7 @@ typedef UINT8 tSMP_EVENT;
 #define SMP_SEC_KEY_MASK                    0x00ff
 
 /* SMP pairing state */
-enum
-{
+enum {
     SMP_STATE_IDLE,
     SMP_STATE_WAIT_APP_RSP,
     SMP_STATE_SEC_REQ_PENDING,
@@ -187,8 +186,7 @@ typedef UINT8 tSMP_STATE;
 typedef UINT8 tSMP_BR_EVENT;
 
 /* SMP over BR/EDR pairing states */
-enum
-{
+enum {
     SMP_BR_STATE_IDLE = SMP_STATE_IDLE,
     SMP_BR_STATE_WAIT_APP_RSP,
     SMP_BR_STATE_PAIR_REQ_RSP,
@@ -198,8 +196,7 @@ enum
 typedef UINT8 tSMP_BR_STATE;
 
 /* random and encrption activity state */
-enum
-{
+enum {
     SMP_GEN_COMPARE = 1,
     SMP_GEN_CONFIRM,
 
@@ -217,8 +214,7 @@ enum
     SMP_GEN_NONCE_8_15
 };
 
-enum
-{
+enum {
     SMP_KEY_TYPE_TK,
     SMP_KEY_TYPE_CFM,
     SMP_KEY_TYPE_CMP,
@@ -226,20 +222,18 @@ enum
     SMP_KEY_TYPE_STK,
     SMP_KEY_TYPE_LTK
 };
-typedef struct
-{
+typedef struct {
     UINT8   key_type;
-    UINT8*  p_data;
-}tSMP_KEY;
+    UINT8  *p_data;
+} tSMP_KEY;
 
-typedef union
-{
+typedef union {
     UINT8       *p_data;    /* UINT8 type data pointer */
     tSMP_KEY    key;
     UINT16      reason;
     UINT32      passkey;
     tSMP_OOB_DATA_TYPE  req_oob_type;
-}tSMP_INT_DATA;
+} tSMP_INT_DATA;
 
 /* internal status mask */
 #define SMP_PAIR_FLAGS_WE_STARTED_DD           (1)
@@ -258,15 +252,13 @@ typedef union
 #define SMP_ENCRYT_DATA_SIZE               16
 #define SMP_ECNCRPYT_STATUS                HCI_SUCCESS
 
-typedef struct
-{
+typedef struct {
     BD_ADDR bd_addr;
-    BT_HDR* p_copy;
+    BT_HDR *p_copy;
 } tSMP_REQ_Q_ENTRY;
 
 /* SMP control block */
-typedef struct
-{
+typedef struct {
     tSMP_CALLBACK   *p_callback;
     TIMER_LIST_ENT  rsp_timer_ent;
     UINT8           trace_level;
@@ -308,7 +300,7 @@ typedef struct
     tSMP_AUTH_REQ   peer_auth_req;
     tSMP_AUTH_REQ   loc_auth_req;
     BOOLEAN         secure_connections_only_mode_required;/* TRUE if locally SM is required to operate */
-                                            /* either in Secure Connections mode or not at all */
+    /* either in Secure Connections mode or not at all */
     tSMP_ASSO_MODEL selected_association_model;
     BOOLEAN         le_secure_connections_mode_is_used;
     BOOLEAN le_sc_kp_notif_is_used;
@@ -339,7 +331,7 @@ typedef struct
     UINT8           rcvd_cmd_len;
     UINT16          total_tx_unacked;
     BOOLEAN         wait_for_authorization_complete;
-}tSMP_CB;
+} tSMP_CB;
 
 /* Server Action functions are of this type */
 typedef void (*tSMP_ACT)(tSMP_CB *p_cb, tSMP_INT_DATA *p_data);
@@ -374,19 +366,19 @@ extern void  smp_set_passk_entry_fail(BOOLEAN enable);
 extern void  smp_set_oob_fail(BOOLEAN enable);
 extern void  smp_set_peer_sc_notif(BOOLEAN enable);
 extern void smp_aes_cmac_rfc4493_chk (UINT8 *key, UINT8 *msg, UINT8 msg_len,
-                                              UINT8 mac_len, UINT8 *mac);
+                                      UINT8 mac_len, UINT8 *mac);
 extern void smp_f4_calc_chk (UINT8 *U, UINT8 *V, UINT8 *X, UINT8 *Z, UINT8 *mac);
 extern void smp_g2_calc_chk (UINT8 *U, UINT8 *V, UINT8 *X, UINT8 *Y);
 extern void smp_h6_calc_chk (UINT8 *key, UINT8 *key_id, UINT8 *mac);
 extern void smp_f5_key_calc_chk (UINT8 *w, UINT8 *mac);
 extern void smp_f5_mackey_or_ltk_calc_chk(UINT8 *t, UINT8 *counter,
-                                                  UINT8 *key_id, UINT8 *n1,
-                                                  UINT8 *n2, UINT8 *a1, UINT8 *a2,
-                                                  UINT8 *length, UINT8 *mac);
+        UINT8 *key_id, UINT8 *n1,
+        UINT8 *n2, UINT8 *a1, UINT8 *a2,
+        UINT8 *length, UINT8 *mac);
 extern void smp_f5_calc_chk (UINT8 *w, UINT8 *n1, UINT8 *n2, UINT8 *a1, UINT8 *a2,
-                                    UINT8 *mac_key, UINT8 *ltk);
+                             UINT8 *mac_key, UINT8 *ltk);
 extern void smp_f6_calc_chk (UINT8 *w, UINT8 *n1, UINT8 *n2, UINT8 *r,
-                                     UINT8 *iocap, UINT8 *a1, UINT8 *a2, UINT8 *mac);
+                             UINT8 *iocap, UINT8 *a1, UINT8 *a2, UINT8 *mac);
 /* smp_main */
 extern void         smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data);
 extern tSMP_STATE   smp_get_state(void);
@@ -478,7 +470,7 @@ extern void smp_cb_cleanup(tSMP_CB *p_cb);
 extern void smp_reset_control_value(tSMP_CB *p_cb);
 extern void smp_proc_pairing_cmpl(tSMP_CB *p_cb);
 extern void smp_convert_string_to_tk(BT_OCTET16 tk, UINT32 passkey);
-extern void smp_mask_enc_key(UINT8 loc_enc_size, UINT8 * p_data);
+extern void smp_mask_enc_key(UINT8 loc_enc_size, UINT8 *p_data);
 extern void smp_rsp_timeout(TIMER_LIST_ENT *p_tle);
 extern void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b);
 extern BOOLEAN smp_encrypt_data (UINT8 *key, UINT8 key_len,
@@ -520,22 +512,22 @@ extern BOOLEAN smp_calculate_long_term_key_from_link_key(tSMP_CB *p_cb);
 extern void smp_calculate_f4(UINT8 *u, UINT8 *v, UINT8 *x, UINT8 z, UINT8 *c);
 extern UINT32 smp_calculate_g2(UINT8 *u, UINT8 *v, UINT8 *x, UINT8 *y);
 extern BOOLEAN smp_calculate_f5(UINT8 *w, UINT8 *n1, UINT8 *n2, UINT8 *a1, UINT8 *a2,
-                           UINT8 *mac_key, UINT8 *ltk);
+                                UINT8 *mac_key, UINT8 *ltk);
 extern BOOLEAN smp_calculate_f5_mackey_or_long_term_key(UINT8 *t, UINT8 *counter,
-                                         UINT8 *key_id, UINT8 *n1, UINT8 *n2, UINT8 *a1,
-                                         UINT8 *a2, UINT8 *length, UINT8 *mac);
+        UINT8 *key_id, UINT8 *n1, UINT8 *n2, UINT8 *a1,
+        UINT8 *a2, UINT8 *length, UINT8 *mac);
 extern BOOLEAN smp_calculate_f5_key(UINT8 *w, UINT8 *t);
 extern BOOLEAN smp_calculate_f6(UINT8 *w, UINT8 *n1, UINT8 *n2, UINT8 *r, UINT8 *iocap,
-                               UINT8 *a1, UINT8 *a2, UINT8 *f3);
+                                UINT8 *a1, UINT8 *a2, UINT8 *f3);
 extern BOOLEAN smp_calculate_h6(UINT8 *w, UINT8 *keyid, UINT8 *h2);
 #if SMP_DEBUG == TRUE
 extern void smp_debug_print_nbyte_little_endian (UINT8 *p, const UINT8 *key_name,
-                                                 UINT8 len);
+        UINT8 len);
 #endif
 
 /* smp_cmac.c */
 extern BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
-                                                 UINT16 tlen, UINT8 *p_signature);
+                                        UINT16 tlen, UINT8 *p_signature);
 extern void print128(BT_OCTET16 x, const UINT8 *key_name);
 
 #endif

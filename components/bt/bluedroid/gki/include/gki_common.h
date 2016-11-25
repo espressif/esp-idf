@@ -21,29 +21,26 @@
 
 #include "gki.h"
 
-typedef struct _buffer_hdr
-{
-	struct _buffer_hdr *p_next;   /* next buffer in the queue */
-	UINT8   q_id;                 /* id of the queue */
-	UINT8   status;               /* FREE, UNLINKED or QUEUED */
-	UINT8   Type;
-        UINT16  size;
+typedef struct _buffer_hdr {
+    struct _buffer_hdr *p_next;   /* next buffer in the queue */
+    UINT8   q_id;                 /* id of the queue */
+    UINT8   status;               /* FREE, UNLINKED or QUEUED */
+    UINT8   Type;
+    UINT16  size;
 } BUFFER_HDR_T;
 
-typedef struct _free_queue
-{
-	BUFFER_HDR_T *_p_first;      /* first buffer in the queue */
-	BUFFER_HDR_T *_p_last;       /* last buffer in the queue */
-	UINT16		 size;             /* size of the buffers in the pool */
-	UINT16		 total;            /* toatal number of buffers */
-	UINT16		 cur_cnt;          /* number of  buffers currently allocated */
-	UINT16		 max_cnt;          /* maximum number of buffers allocated at any time */
+typedef struct _free_queue {
+    BUFFER_HDR_T *_p_first;      /* first buffer in the queue */
+    BUFFER_HDR_T *_p_last;       /* last buffer in the queue */
+    UINT16       size;             /* size of the buffers in the pool */
+    UINT16       total;            /* toatal number of buffers */
+    UINT16       cur_cnt;          /* number of  buffers currently allocated */
+    UINT16       max_cnt;          /* maximum number of buffers allocated at any time */
 } FREE_QUEUE_T;
 
 /* Put all GKI variables into one control block
 */
-typedef struct
-{
+typedef struct {
     /* Define the buffer pool management variables
     */
     FREE_QUEUE_T    freeq[GKI_NUM_TOTAL_BUF_POOLS];

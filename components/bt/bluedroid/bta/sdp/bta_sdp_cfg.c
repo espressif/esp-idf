@@ -31,8 +31,7 @@
 static UINT8 __attribute__ ((aligned(4))) bta_sdp_db_data[BTA_SDP_DB_SIZE];
 
 /* SDP configuration structure */
-const tBTA_SDP_CFG bta_sdp_cfg =
-{
+const tBTA_SDP_CFG bta_sdp_cfg = {
     BTA_SDP_DB_SIZE,
     (tSDP_DISCOVERY_DB *)bta_sdp_db_data /* The data buffer to keep SDP database */
 };

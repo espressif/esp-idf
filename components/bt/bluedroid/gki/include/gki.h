@@ -32,8 +32,7 @@ typedef void (TIMER_CBACK)(void *p_tle);
 #endif
 /* Define a timer list entry
 */
-typedef struct _tle
-{
+typedef struct _tle {
     struct _tle  *p_next;
     struct _tle  *p_prev;
     TIMER_CBACK  *p_cback;
@@ -48,8 +47,7 @@ typedef struct _tle
 /***********************************************************************
 ** This queue is a general purpose buffer queue, for application use.
 */
-typedef struct
-{
+typedef struct {
     void    *_p_first;
     void    *_p_last;
     UINT16   _count;

@@ -33,6 +33,9 @@
 #define __LWIPOPTS_H__
 
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
+#include <sys/fcntl.h>
 #include "esp_task.h"
 #include "sdkconfig.h"
 
@@ -62,8 +65,8 @@
  */
 #define SMEMCPY(dst,src,len)            memcpy(dst,src,len)
 
-extern unsigned long os_random(void);
-#define LWIP_RAND	rand
+#define LWIP_RAND       rand
+
 /*
    ------------------------------------
    ---------- Memory options ----------
@@ -197,13 +200,35 @@ extern unsigned long os_random(void);
  */
 #define LWIP_DHCP                       1
 
+#define DHCP_MAXRTX                     0
 
-#define DHCP_MAXRTX						0   //(*(volatile uint32*)0x600011E0)
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
    ------------------------------------
 */
+#if CONFIG_MDNS
+ /**
+  * LWIP_AUTOIP==1: Enable AUTOIP module.
+  */
+#define LWIP_AUTOIP                     1
+
+/**
+* LWIP_DHCP_AUTOIP_COOP==1: Allow DHCP and AUTOIP to be both enabled on
+* the same interface at the same time.
+*/
+#define LWIP_DHCP_AUTOIP_COOP           1
+
+/**
+* LWIP_DHCP_AUTOIP_COOP_TRIES: Set to the number of DHCP DISCOVER probes
+* that should be sent before falling back on AUTOIP. This can be set
+* as low as 1 to get an AutoIP address very quickly, but you should
+* be prepared to handle a changing IP address when DHCP overrides
+* AutoIP.
+*/
+#define LWIP_DHCP_AUTOIP_COOP_TRIES     2
+#endif
+
 /*
    ----------------------------------
    ---------- SNMP options ----------
@@ -305,6 +330,19 @@ extern unsigned long os_random(void);
    ---------- LOOPIF options ----------
    ------------------------------------
 */
+#if CONFIG_MDNS
+/**
+ * LWIP_NETIF_LOOPBACK==1: Support sending packets with a destination IP
+ * address equal to the netif IP address, looping them back up the stack.
+ */
+#define LWIP_NETIF_LOOPBACK             1
+
+/**
+ * LWIP_LOOPBACK_MAX_PBUFS: Maximum number of pbufs on queue for loopback
+ * sending for each netif (0 = disabled)
+ */
+#define LWIP_LOOPBACK_MAX_PBUFS         8
+#endif
 
 /*
    ------------------------------------
@@ -411,6 +449,15 @@ extern unsigned long os_random(void);
  */
 #define SO_REUSE                        CONFIG_LWIP_SO_REUSE
 
+#if CONFIG_MDNS
+/**
+ * SO_REUSE_RXTOALL==1: Pass a copy of incoming broadcast/multicast packets
+ * to all local matches if SO_REUSEADDR is turned on.
+ * WARNING: Adds a memcpy for every packet if passing to more than one pcb!
+ */
+#define SO_REUSE_RXTOALL                1
+#endif
+
 /*
    ----------------------------------------
    ---------- Statistics options ----------
@@ -512,6 +559,7 @@ extern unsigned long os_random(void);
 /* Enable all Espressif-only options */
 
 #define ESP_LWIP                        1
+#define ESP_LWIP_ARP                    1
 #define ESP_PER_SOC_TCP_WND             1
 #define ESP_THREAD_SAFE                 1
 #define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
@@ -522,7 +570,7 @@ extern unsigned long os_random(void);
 #define ESP_RANDOM_TCP_PORT             1
 #define ESP_IP4_ATON                    1
 #define ESP_LIGHT_SLEEP                 1
-
+#define ESP_L2_TO_L3_COPY               CONFIG_L2_TO_L3_COPY
 
 #define TCP_WND_DEFAULT                      (4*TCP_MSS)
 #define TCP_SND_BUF_DEFAULT                  (2*TCP_MSS)
@@ -550,12 +598,25 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_IP               0
 
-#define HEAP_HIGHWAT                    20*1024
-
 #define LWIP_NETCONN_FULLDUPLEX         1
 #define LWIP_NETCONN_SEM_PER_THREAD     1
 
+#define LWIP_DHCP_MAX_NTP_SERVERS       CONFIG_LWIP_DHCP_MAX_NTP_SERVERS
+#define LWIP_TIMEVAL_PRIVATE            0
 
+#define SNTP_SET_SYSTEM_TIME_US(sec, us)  \
+    do { \
+        struct timeval tv = { .tv_sec = sec, .tv_usec = us }; \
+        settimeofday(&tv, NULL); \
+    } while (0);
+
+#define SNTP_GET_SYSTEM_TIME(sec, us) \
+    do { \
+        struct timeval tv = { .tv_sec = 0, .tv_usec = 0 }; \
+        gettimeofday(&tv, NULL); \
+        (sec) = tv.tv_sec;  \
+        (us) = tv.tv_usec; \
+    } while (0);
 
 #define SOC_SEND_LOG //printf
 

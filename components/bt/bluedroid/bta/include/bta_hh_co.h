@@ -26,14 +26,13 @@
 
 #include "bta_hh_api.h"
 
-typedef struct
-{
+typedef struct {
     UINT16              rpt_uuid;
     UINT8               rpt_id;
     tBTA_HH_RPT_TYPE    rpt_type;
     UINT8               inst_id;
     UINT8               prop;
-}tBTA_HH_RPT_CACHE_ENTRY;
+} tBTA_HH_RPT_CACHE_ENTRY;
 
 /*******************************************************************************
 **
@@ -94,8 +93,8 @@ extern void bta_hh_co_close(UINT8 dev_handle, UINT8 app_id);
 **
 *******************************************************************************/
 extern void bta_hh_le_co_rpt_info(BD_ADDR remote_bda,
-                                          tBTA_HH_RPT_CACHE_ENTRY *p_entry,
-                                          UINT8 app_id);
+                                  tBTA_HH_RPT_CACHE_ENTRY *p_entry,
+                                  UINT8 app_id);
 
 /*******************************************************************************
 **
@@ -113,8 +112,8 @@ extern void bta_hh_le_co_rpt_info(BD_ADDR remote_bda,
 **
 *******************************************************************************/
 extern tBTA_HH_RPT_CACHE_ENTRY *bta_hh_le_co_cache_load (BD_ADDR remote_bda,
-                                                                 UINT8 *p_num_rpt,
-                                                                 UINT8 app_id);
+        UINT8 *p_num_rpt,
+        UINT8 app_id);
 
 /*******************************************************************************
 **

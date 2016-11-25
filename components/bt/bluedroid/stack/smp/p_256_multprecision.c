@@ -16,11 +16,11 @@
  *
  ******************************************************************************/
 
- /******************************************************************************
-  *
-  *  This file contains simple pairing algorithms
-  *
-  ******************************************************************************/
+/******************************************************************************
+ *
+ *  This file contains simple pairing algorithms
+ *
+ ******************************************************************************/
 
 #include <string.h>
 #include "bt_target.h"
@@ -29,24 +29,27 @@
 
 void multiprecision_init(DWORD *c, uint32_t keyLength)
 {
-    for (uint32_t i = 0; i < keyLength; i++)
+    for (uint32_t i = 0; i < keyLength; i++) {
         c[i] = 0;
+    }
 }
 
 void multiprecision_copy(DWORD *c, DWORD *a, uint32_t keyLength)
 {
-    for (uint32_t i = 0; i < keyLength; i++)
+    for (uint32_t i = 0; i < keyLength; i++) {
         c[i] = a[i];
+    }
 }
 
 int multiprecision_compare(DWORD *a, DWORD *b, uint32_t keyLength)
 {
-    for (int i = keyLength - 1; i >= 0; i--)
-    {
-        if (a[i] > b[i])
+    for (int i = keyLength - 1; i >= 0; i--) {
+        if (a[i] > b[i]) {
             return 1;
-        if (a[i] < b[i])
+        }
+        if (a[i] < b[i]) {
             return -1;
+        }
     }
     return 0;
 }
@@ -54,8 +57,9 @@ int multiprecision_compare(DWORD *a, DWORD *b, uint32_t keyLength)
 int multiprecision_iszero(DWORD *a, uint32_t keyLength)
 {
     for (uint32_t i = 0; i < keyLength; i++)
-        if (a[i])
+        if (a[i]) {
             return 0;
+        }
 
     return 1;
 }
@@ -64,8 +68,9 @@ UINT32 multiprecision_dword_bits(DWORD a)
 {
     uint32_t i;
     for (i = 0; i < DWORD_BITS; i++, a >>= 1)
-        if (a == 0)
+        if (a == 0) {
             break;
+        }
 
     return i;
 }
@@ -74,8 +79,9 @@ UINT32 multiprecision_most_signdwords(DWORD *a, uint32_t keyLength)
 {
     int  i;
     for (i = keyLength - 1; i >= 0; i--)
-        if (a[i])
-           break;
+        if (a[i]) {
+            break;
+        }
     return (i + 1);
 }
 
@@ -84,11 +90,12 @@ UINT32 multiprecision_most_signbits(DWORD *a, uint32_t keyLength)
     int aMostSignDWORDs;
 
     aMostSignDWORDs = multiprecision_most_signdwords(a, keyLength);
-    if (aMostSignDWORDs == 0)
+    if (aMostSignDWORDs == 0) {
         return 0;
+    }
 
-    return (((aMostSignDWORDs-1) << DWORD_BITS_SHIFT) +
-            multiprecision_dword_bits(a[aMostSignDWORDs-1]) );
+    return (((aMostSignDWORDs - 1) << DWORD_BITS_SHIFT) +
+            multiprecision_dword_bits(a[aMostSignDWORDs - 1]) );
 }
 
 DWORD multiprecision_add(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
@@ -96,14 +103,13 @@ DWORD multiprecision_add(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
     DWORD carrier;
     DWORD temp;
 
-    carrier=0;
-    for (uint32_t i = 0; i < keyLength; i++)
-    {
+    carrier = 0;
+    for (uint32_t i = 0; i < keyLength; i++) {
         temp = a[i] + carrier;
         carrier = (temp < carrier);
         temp += b[i];
         carrier |= (temp < b[i]);
-        c[i]=temp;
+        c[i] = temp;
     }
 
     return carrier;
@@ -115,9 +121,8 @@ DWORD multiprecision_sub(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
     DWORD borrow;
     DWORD temp;
 
-    borrow=0;
-    for (uint32_t i=0; i < keyLength; i++)
-    {
+    borrow = 0;
+    for (uint32_t i = 0; i < keyLength; i++) {
         temp = a[i] - borrow;
         borrow = (temp > a[i]);
         c[i] = temp - b[i];
@@ -128,35 +133,29 @@ DWORD multiprecision_sub(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
 }
 
 // c = a << 1
-void multiprecision_lshift_mod(DWORD * c, DWORD * a, uint32_t keyLength)
+void multiprecision_lshift_mod(DWORD *c, DWORD *a, uint32_t keyLength)
 {
     DWORD carrier;
     DWORD *modp;
 
-    if (keyLength == KEY_LENGTH_DWORDS_P192)
-    {
+    if (keyLength == KEY_LENGTH_DWORDS_P192) {
         modp = curve.p;
-    }
-    else if (keyLength == KEY_LENGTH_DWORDS_P256)
-    {
+    } else if (keyLength == KEY_LENGTH_DWORDS_P256) {
         modp = curve_p256.p;
-    }
-    else
+    } else {
         return;
+    }
 
     carrier = multiprecision_lshift(c, a, keyLength);
-    if (carrier)
-    {
+    if (carrier) {
         multiprecision_sub(c, c, modp, keyLength);
-    }
-    else if (multiprecision_compare(c, modp, keyLength)>=0)
-    {
+    } else if (multiprecision_compare(c, modp, keyLength) >= 0) {
         multiprecision_sub(c, c, modp, keyLength);
     }
 }
 
 // c=a>>1
-void multiprecision_rshift(DWORD * c, DWORD * a, uint32_t keyLength)
+void multiprecision_rshift(DWORD *c, DWORD *a, uint32_t keyLength)
 {
     int j;
     DWORD b = 1;
@@ -165,8 +164,7 @@ void multiprecision_rshift(DWORD * c, DWORD * a, uint32_t keyLength)
 
     DWORD carrier = 0;
     DWORD temp;
-    for (int i = keyLength-1; i >= 0; i--)
-    {
+    for (int i = keyLength - 1; i >= 0; i--) {
         temp = a[i]; // in case of c==a
         c[i] = (temp >> b) | carrier;
         carrier = temp << j;
@@ -176,15 +174,12 @@ void multiprecision_rshift(DWORD * c, DWORD * a, uint32_t keyLength)
 // Curve specific optimization when p is a pseudo-Mersenns prime, p=2^(KEY_LENGTH_BITS)-omega
 void multiprecision_mersenns_mult_mod(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
 {
-    DWORD cc[2*KEY_LENGTH_DWORDS_P256];
+    DWORD cc[2 * KEY_LENGTH_DWORDS_P256];
 
     multiprecision_mult(cc, a, b, keyLength);
-    if (keyLength == 6)
-    {
+    if (keyLength == 6) {
         multiprecision_fast_mod(c, cc);
-    }
-    else if (keyLength == 8)
-    {
+    } else if (keyLength == 8) {
         multiprecision_fast_mod_P256(c, cc);
     }
 }
@@ -201,24 +196,18 @@ void multiprecision_add_mod(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
     DWORD carrier;
     DWORD *modp;
 
-    if (keyLength == KEY_LENGTH_DWORDS_P192)
-    {
+    if (keyLength == KEY_LENGTH_DWORDS_P192) {
         modp = curve.p;
-    }
-    else if (keyLength == KEY_LENGTH_DWORDS_P256)
-    {
+    } else if (keyLength == KEY_LENGTH_DWORDS_P256) {
         modp = curve_p256.p;
-    }
-    else
+    } else {
         return;
+    }
 
     carrier = multiprecision_add(c, a, b, keyLength);
-    if (carrier)
-    {
+    if (carrier) {
         multiprecision_sub(c, c, modp, keyLength);
-    }
-    else if (multiprecision_compare(c, modp, keyLength) >= 0)
-    {
+    } else if (multiprecision_compare(c, modp, keyLength) >= 0) {
         multiprecision_sub(c, c, modp, keyLength);
     }
 }
@@ -229,24 +218,22 @@ void multiprecision_sub_mod(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
     DWORD borrow;
     DWORD *modp;
 
-    if (keyLength == KEY_LENGTH_DWORDS_P192)
-    {
+    if (keyLength == KEY_LENGTH_DWORDS_P192) {
         modp = curve.p;
-    }
-    else if(keyLength == KEY_LENGTH_DWORDS_P256)
-    {
+    } else if (keyLength == KEY_LENGTH_DWORDS_P256) {
         modp = curve_p256.p;
-    }
-    else
+    } else {
         return;
+    }
 
     borrow = multiprecision_sub(c, a, b, keyLength);
-    if(borrow)
+    if (borrow) {
         multiprecision_add(c, c, modp, keyLength);
+    }
 }
 
 // c=a<<b, b<DWORD_BITS, c has a buffer size of NumDWORDs+1
-DWORD multiprecision_lshift(DWORD * c, DWORD * a, uint32_t keyLength)
+DWORD multiprecision_lshift(DWORD *c, DWORD *a, uint32_t keyLength)
 {
     int j;
     uint32_t b = 1;
@@ -255,8 +242,7 @@ DWORD multiprecision_lshift(DWORD * c, DWORD * a, uint32_t keyLength)
     DWORD carrier = 0;
     DWORD temp;
 
-    for (uint32_t i = 0; i < keyLength; i++)
-    {
+    for (uint32_t i = 0; i < keyLength; i++) {
         temp = a[i];  // in case c==a
         c[i] = (temp << b) | carrier;
         carrier = temp >> j;
@@ -276,11 +262,9 @@ void multiprecision_mult(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
     multiprecision_init(c, keyLength);
 
     //assume little endian right now
-    for (uint32_t i = 0; i < keyLength; i++)
-    {
+    for (uint32_t i = 0; i < keyLength; i++) {
         U = 0;
-        for (uint32_t j = 0; j < keyLength; j++)
-        {
+        for (uint32_t j = 0; j < keyLength; j++) {
             uint64_t result;
             result = ((UINT64)a[i]) * ((uint64_t) b[j]);
             W = result >> 32;
@@ -288,11 +272,11 @@ void multiprecision_mult(DWORD *c, DWORD *a, DWORD *b, uint32_t keyLength)
             V = V + U;
             U = (V < U);
             U += W;
-            V = V + c[i+j];
-            U += (V < c[i+j]);
-            c[i+j] = V;
+            V = V + c[i + j];
+            U += (V < c[i + j]);
+            c[i + j] = V;
         }
-        c[i+keyLength] = U;
+        c[i + keyLength] = U;
     }
 }
 
@@ -303,7 +287,7 @@ void multiprecision_fast_mod(DWORD *c, DWORD *a)
     DWORD *modp = curve.p;
 
     c[0] = a[0] + a[6];
-    U=c[0] < a[0];
+    U = c[0] < a[0];
     c[0] += a[10];
     U += c[0] < a[10];
 
@@ -312,7 +296,7 @@ void multiprecision_fast_mod(DWORD *c, DWORD *a)
     c[1] += a[7];
     U += c[1] < a[7];
     c[1] += a[11];
-    U += c[1]< a[11];
+    U += c[1] < a[11];
 
     c[2] = a[2] + U;
     U = c[2] < a[2];
@@ -323,7 +307,7 @@ void multiprecision_fast_mod(DWORD *c, DWORD *a)
     c[2] += a[10];
     U += c[2] < a[10];
 
-    c[3] = a[3]+U;
+    c[3] = a[3] + U;
     U = c[3] < a[3];
     c[3] += a[7];
     U += c[3] < a[7];
@@ -332,14 +316,14 @@ void multiprecision_fast_mod(DWORD *c, DWORD *a)
     c[3] += a[11];
     U += c[3] < a[11];
 
-    c[4] = a[4]+U;
+    c[4] = a[4] + U;
     U = c[4] < a[4];
     c[4] += a[8];
     U += c[4] < a[8];
     c[4] += a[10];
     U += c[4] < a[10];
 
-    c[5] = a[5]+U;
+    c[5] = a[5] + U;
     U = c[5] < a[5];
     c[5] += a[9];
     U += c[5] < a[9];
@@ -361,12 +345,9 @@ void multiprecision_fast_mod(DWORD *c, DWORD *a)
     c[5] += V;
     V = c[5] < V;
 
-    if (V)
-    {
+    if (V) {
         multiprecision_sub(c, c, modp, KEY_LENGTH_DWORDS_P192);
-    }
-    else if(multiprecision_compare(c, modp, KEY_LENGTH_DWORDS_P192) >= 0)
-    {
+    } else if (multiprecision_compare(c, modp, KEY_LENGTH_DWORDS_P192) >= 0) {
         multiprecision_sub(c, c, modp, KEY_LENGTH_DWORDS_P192);
     }
 }
@@ -442,15 +423,12 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     U -= UA;
     c[0] -= A;
 
-    if (U & 0x80000000)
-    {
+    if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
         U = (a[1] < UU);
         c[1] = a[1] - UU;
-    }
-    else
-    {
+    } else {
         c[1] = a[1] + U;
         U = (c[1] < a[1]);
     }
@@ -462,15 +440,12 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     U -= UB;
     c[1] -= B;
 
-    if (U & 0x80000000)
-    {
+    if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
         U = (a[2] < UU);
         c[2] = a[2] - UU;
-    }
-    else
-    {
+    } else {
         c[2] = a[2] + U;
         U = (c[2] < a[2]);
     }
@@ -482,15 +457,12 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     U -= UC;
     c[2] -= C;
 
-    if (U & 0x80000000)
-    {
+    if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
         U = (a[3] < UU);
         c[3] = a[3] - UU;
-    }
-    else
-    {
+    } else {
         c[3] = a[3] + U;
         U = (c[3] < a[3]);
     }
@@ -510,15 +482,12 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     U -= UE;
     c[3] -= E;
 
-    if (U & 0x80000000)
-    {
+    if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
         U = (a[4] < UU);
         c[4] = a[4] - UU;
-    }
-    else
-    {
+    } else {
         c[4] = a[4] + U;
         U = (c[4] < a[4]);
     }
@@ -536,15 +505,12 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     U -= UF;
     c[4] -= F;
 
-    if (U & 0x80000000)
-    {
+    if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
         U = (a[5] < UU);
         c[5] = a[5] - UU;
-    }
-    else
-    {
+    } else {
         c[5] = a[5] + U;
         U = (c[5] < a[5]);
     }
@@ -560,15 +526,12 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     U -= UG;
     c[5] -= G;
 
-    if (U & 0x80000000)
-    {
+    if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
         U = (a[6] < UU);
         c[6] = a[6] - UU;
-    }
-    else
-    {
+    } else {
         c[6] = a[6] + U;
         U = (c[6] < a[6]);
     }
@@ -586,15 +549,12 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     U -= UE;
     c[6] -= E;
 
-    if (U & 0x80000000)
-    {
+    if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
         U = (a[7] < UU);
         c[7] = a[7] - UU;
-    }
-    else
-    {
+    } else {
         c[7] = a[7] + U;
         U = (c[7] < a[7]);
     }
@@ -611,41 +571,34 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     U -= UD;
     c[7] -= D;
 
-    if (U & 0x80000000)
-    {
-        while (U)
-        {
+    if (U & 0x80000000) {
+        while (U) {
             multiprecision_add(c, c, modp, KEY_LENGTH_DWORDS_P256);
             U++;
         }
-    }
-    else if (U)
-    {
-        while (U)
-        {
+    } else if (U) {
+        while (U) {
             multiprecision_sub(c, c, modp, KEY_LENGTH_DWORDS_P256);
             U--;
         }
     }
 
-    if (multiprecision_compare(c, modp, KEY_LENGTH_DWORDS_P256)>=0)
+    if (multiprecision_compare(c, modp, KEY_LENGTH_DWORDS_P256) >= 0) {
         multiprecision_sub(c, c, modp, KEY_LENGTH_DWORDS_P256);
+    }
 
 }
 
 void multiprecision_inv_mod(DWORD *aminus, DWORD *u, uint32_t keyLength)
 {
     DWORD v[KEY_LENGTH_DWORDS_P256];
-    DWORD A[KEY_LENGTH_DWORDS_P256+1];
-    DWORD C[KEY_LENGTH_DWORDS_P256+1];
+    DWORD A[KEY_LENGTH_DWORDS_P256 + 1];
+    DWORD C[KEY_LENGTH_DWORDS_P256 + 1];
     DWORD *modp;
 
-    if(keyLength == KEY_LENGTH_DWORDS_P256)
-    {
+    if (keyLength == KEY_LENGTH_DWORDS_P256) {
         modp = curve_p256.p;
-    }
-    else
-    {
+    } else {
         modp = curve.p;
     }
 
@@ -654,51 +607,42 @@ void multiprecision_inv_mod(DWORD *aminus, DWORD *u, uint32_t keyLength)
     multiprecision_init(C, keyLength);
     A[0] = 1;
 
-    while (!multiprecision_iszero(u, keyLength))
-    {
-        while (!(u[0] & 0x01))  // u is even
-        {
+    while (!multiprecision_iszero(u, keyLength)) {
+        while (!(u[0] & 0x01)) { // u is even
             multiprecision_rshift(u, u, keyLength);
-            if(!(A[0] & 0x01))  // A is even
+            if (!(A[0] & 0x01)) { // A is even
                 multiprecision_rshift(A, A, keyLength);
-            else
-            {
-                A[keyLength]=multiprecision_add(A, A, modp, keyLength); // A =A+p
+            } else {
+                A[keyLength] = multiprecision_add(A, A, modp, keyLength); // A =A+p
                 multiprecision_rshift(A, A, keyLength);
-                A[keyLength-1] |= (A[keyLength]<<31);
+                A[keyLength - 1] |= (A[keyLength] << 31);
             }
         }
 
-        while (!(v[0] & 0x01))  // v is even
-        {
+        while (!(v[0] & 0x01)) { // v is even
             multiprecision_rshift(v, v, keyLength);
-            if (!(C[0] & 0x01))  // C is even
-            {
+            if (!(C[0] & 0x01)) { // C is even
                 multiprecision_rshift(C, C, keyLength);
-            }
-            else
-            {
+            } else {
                 C[keyLength] = multiprecision_add(C, C, modp, keyLength); // C =C+p
                 multiprecision_rshift(C, C, keyLength);
-                C[keyLength-1] |= (C[keyLength] << 31);
+                C[keyLength - 1] |= (C[keyLength] << 31);
             }
         }
 
-        if (multiprecision_compare(u, v, keyLength) >= 0)
-        {
+        if (multiprecision_compare(u, v, keyLength) >= 0) {
             multiprecision_sub(u, u, v, keyLength);
             multiprecision_sub_mod(A, A, C, keyLength);
-        }
-        else
-        {
+        } else {
             multiprecision_sub(v, v, u, keyLength);
             multiprecision_sub_mod(C, C, A, keyLength);
         }
     }
 
-    if (multiprecision_compare(C, modp, keyLength) >= 0)
+    if (multiprecision_compare(C, modp, keyLength) >= 0) {
         multiprecision_sub(aminus, C, modp, keyLength);
-    else
+    } else {
         multiprecision_copy(aminus, C, keyLength);
+    }
 }
 

@@ -25,26 +25,26 @@
 //#include "utils/include/bt_utils.h"
 
 #if SMP_INCLUDED == TRUE
-const UINT8 smp_association_table[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] =
-{
+const UINT8 smp_association_table[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] = {
     /* initiator */
-    {{SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_PASSKEY,   SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_PASSKEY}, /* Display Only */
+    {   {SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_PASSKEY,   SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_PASSKEY}, /* Display Only */
         {SMP_MODEL_ENCRYPTION_ONLY,  SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_PASSKEY, SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_PASSKEY}, /* SMP_CAP_IO = 1 */
         {SMP_MODEL_KEY_NOTIF, SMP_MODEL_KEY_NOTIF,  SMP_MODEL_PASSKEY,   SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_KEY_NOTIF}, /* keyboard only */
         {SMP_MODEL_ENCRYPTION_ONLY,  SMP_MODEL_ENCRYPTION_ONLY,   SMP_MODEL_ENCRYPTION_ONLY,  SMP_MODEL_ENCRYPTION_ONLY,    SMP_MODEL_ENCRYPTION_ONLY},/* No Input No Output */
-        {SMP_MODEL_KEY_NOTIF, SMP_MODEL_KEY_NOTIF,  SMP_MODEL_PASSKEY,   SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_KEY_NOTIF}}, /* keyboard display */
+        {SMP_MODEL_KEY_NOTIF, SMP_MODEL_KEY_NOTIF,  SMP_MODEL_PASSKEY,   SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_KEY_NOTIF}
+    }, /* keyboard display */
     /* responder */
-    {{SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_ENCRYPTION_ONLY,   SMP_MODEL_KEY_NOTIF, SMP_MODEL_ENCRYPTION_ONLY,    SMP_MODEL_KEY_NOTIF}, /* Display Only */
+    {   {SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_ENCRYPTION_ONLY,   SMP_MODEL_KEY_NOTIF, SMP_MODEL_ENCRYPTION_ONLY,    SMP_MODEL_KEY_NOTIF}, /* Display Only */
         {SMP_MODEL_ENCRYPTION_ONLY,  SMP_MODEL_ENCRYPTION_ONLY,   SMP_MODEL_KEY_NOTIF,   SMP_MODEL_ENCRYPTION_ONLY,    SMP_MODEL_KEY_NOTIF}, /* SMP_CAP_IO = 1 */
         {SMP_MODEL_PASSKEY,   SMP_MODEL_PASSKEY,    SMP_MODEL_PASSKEY,   SMP_MODEL_ENCRYPTION_ONLY,    SMP_MODEL_PASSKEY}, /* keyboard only */
         {SMP_MODEL_ENCRYPTION_ONLY,  SMP_MODEL_ENCRYPTION_ONLY,   SMP_MODEL_ENCRYPTION_ONLY,  SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_ENCRYPTION_ONLY},/* No Input No Output */
-        {SMP_MODEL_PASSKEY,   SMP_MODEL_PASSKEY,    SMP_MODEL_KEY_NOTIF, SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_PASSKEY}} /* keyboard display */
+        {SMP_MODEL_PASSKEY,   SMP_MODEL_PASSKEY,    SMP_MODEL_KEY_NOTIF, SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_PASSKEY}
+    } /* keyboard display */
     /* display only */    /*SMP_CAP_IO = 1 */  /* keyboard only */   /* No InputOutput */  /* keyboard display */
 };
 
 #define SMP_KEY_DIST_TYPE_MAX       4
-const tSMP_ACT smp_distribute_act [] =
-{
+const tSMP_ACT smp_distribute_act [] = {
     smp_generate_ltk,
     smp_send_id_info,
     smp_generate_csrk,
@@ -54,8 +54,7 @@ const tSMP_ACT smp_distribute_act [] =
 static bool lmp_version_below(BD_ADDR bda, uint8_t version)
 {
     tACL_CONN *acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
-    if (acl == NULL || acl->lmp_version == 0)
-    {
+    if (acl == NULL || acl->lmp_version == 0) {
         SMP_TRACE_WARNING("%s cannot retrieve LMP version...", __func__);
         return false;
     }
@@ -70,35 +69,31 @@ static bool lmp_version_below(BD_ADDR bda, uint8_t version)
 static void smp_update_key_mask (tSMP_CB *p_cb, UINT8 key_type, BOOLEAN recv)
 {
     SMP_TRACE_DEBUG("%s before update role=%d recv=%d local_i_key = %02x, local_r_key = %02x\n",
-        __func__, p_cb->role, recv, p_cb->local_i_key, p_cb->local_r_key);
+                    __func__, p_cb->role, recv, p_cb->local_i_key, p_cb->local_r_key);
 
     if (((p_cb->le_secure_connections_mode_is_used) ||
-        (p_cb->smp_over_br)) &&
-        ((key_type == SMP_SEC_KEY_TYPE_ENC) || (key_type == SMP_SEC_KEY_TYPE_LK)))
-    {
+            (p_cb->smp_over_br)) &&
+            ((key_type == SMP_SEC_KEY_TYPE_ENC) || (key_type == SMP_SEC_KEY_TYPE_LK))) {
         /* in LE SC mode LTK, CSRK and BR/EDR LK are derived locally instead of
         ** being exchanged with the peer */
         p_cb->local_i_key &= ~key_type;
         p_cb->local_r_key &= ~key_type;
-    }
-    else
-    if (p_cb->role == HCI_ROLE_SLAVE)
-    {
-        if (recv)
+    } else if (p_cb->role == HCI_ROLE_SLAVE) {
+        if (recv) {
             p_cb->local_i_key &= ~key_type;
-        else
+        } else {
             p_cb->local_r_key &= ~key_type;
-    }
-    else
-    {
-        if (recv)
+        }
+    } else {
+        if (recv) {
             p_cb->local_r_key &= ~key_type;
-        else
+        } else {
             p_cb->local_i_key &= ~key_type;
+        }
     }
 
     SMP_TRACE_DEBUG("updated local_i_key = %02x, local_r_key = %02x\n", p_cb->local_i_key,
-                      p_cb->local_r_key);
+                    p_cb->local_r_key);
 }
 
 /*******************************************************************************
@@ -110,116 +105,108 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     tSMP_EVT_DATA   cb_data;
     tSMP_STATUS callback_rc;
     SMP_TRACE_DEBUG("%s p_cb->cb_evt=%d\n", __func__, p_cb->cb_evt);
-    if (p_cb->p_callback && p_cb->cb_evt != 0)
-    {
-        switch (p_cb->cb_evt)
-        {
-            case SMP_IO_CAP_REQ_EVT:
-                cb_data.io_req.auth_req = p_cb->peer_auth_req;
-                cb_data.io_req.oob_data = SMP_OOB_NONE;
-                cb_data.io_req.io_cap = SMP_DEFAULT_IO_CAPS;
-                cb_data.io_req.max_key_size = SMP_MAX_ENC_KEY_SIZE;
-                cb_data.io_req.init_keys = p_cb->local_i_key ;
-                cb_data.io_req.resp_keys = p_cb->local_r_key ;
-                SMP_TRACE_WARNING ( "io_cap = %d",cb_data.io_req.io_cap);
-                break;
+    if (p_cb->p_callback && p_cb->cb_evt != 0) {
+        switch (p_cb->cb_evt) {
+        case SMP_IO_CAP_REQ_EVT:
+            cb_data.io_req.auth_req = p_cb->peer_auth_req;
+            cb_data.io_req.oob_data = SMP_OOB_NONE;
+            cb_data.io_req.io_cap = SMP_DEFAULT_IO_CAPS;
+            cb_data.io_req.max_key_size = SMP_MAX_ENC_KEY_SIZE;
+            cb_data.io_req.init_keys = p_cb->local_i_key ;
+            cb_data.io_req.resp_keys = p_cb->local_r_key ;
+            SMP_TRACE_WARNING ( "io_cap = %d", cb_data.io_req.io_cap);
+            break;
 
-            case SMP_NC_REQ_EVT:
-                cb_data.passkey = p_data->passkey;
-                break;
-            case SMP_SC_OOB_REQ_EVT:
-                cb_data.req_oob_type = p_data->req_oob_type;
-                break;
-            case SMP_SC_LOC_OOB_DATA_UP_EVT:
-                cb_data.loc_oob_data = p_cb->sc_oob_data.loc_oob_data;
-                break;
+        case SMP_NC_REQ_EVT:
+            cb_data.passkey = p_data->passkey;
+            break;
+        case SMP_SC_OOB_REQ_EVT:
+            cb_data.req_oob_type = p_data->req_oob_type;
+            break;
+        case SMP_SC_LOC_OOB_DATA_UP_EVT:
+            cb_data.loc_oob_data = p_cb->sc_oob_data.loc_oob_data;
+            break;
 
-            case SMP_BR_KEYS_REQ_EVT:
-                cb_data.io_req.auth_req = 0;
-                cb_data.io_req.oob_data = SMP_OOB_NONE;
-                cb_data.io_req.io_cap = 0;
-                cb_data.io_req.max_key_size = SMP_MAX_ENC_KEY_SIZE;
-                cb_data.io_req.init_keys = SMP_BR_SEC_DEFAULT_KEY;
-                cb_data.io_req.resp_keys = SMP_BR_SEC_DEFAULT_KEY;
-                break;
+        case SMP_BR_KEYS_REQ_EVT:
+            cb_data.io_req.auth_req = 0;
+            cb_data.io_req.oob_data = SMP_OOB_NONE;
+            cb_data.io_req.io_cap = 0;
+            cb_data.io_req.max_key_size = SMP_MAX_ENC_KEY_SIZE;
+            cb_data.io_req.init_keys = SMP_BR_SEC_DEFAULT_KEY;
+            cb_data.io_req.resp_keys = SMP_BR_SEC_DEFAULT_KEY;
+            break;
 
-            default:
-                break;
+        default:
+            break;
         }
 
         callback_rc = (*p_cb->p_callback)(p_cb->cb_evt, p_cb->pairing_bda, &cb_data);
 
-        SMP_TRACE_DEBUG("callback_rc=%d  p_cb->cb_evt=%d\n",callback_rc, p_cb->cb_evt );
+        SMP_TRACE_DEBUG("callback_rc=%d  p_cb->cb_evt=%d\n", callback_rc, p_cb->cb_evt );
 
-        if (callback_rc == SMP_SUCCESS)
-        {
-            switch (p_cb->cb_evt)
-            {
-                case SMP_IO_CAP_REQ_EVT:
-                    p_cb->loc_auth_req   = cb_data.io_req.auth_req;
-                    p_cb->local_io_capability  = cb_data.io_req.io_cap;
-                    p_cb->loc_oob_flag = cb_data.io_req.oob_data;
-                    p_cb->loc_enc_size = cb_data.io_req.max_key_size;
-                    p_cb->local_i_key = cb_data.io_req.init_keys;
-                    p_cb->local_r_key = cb_data.io_req.resp_keys;
+        if (callback_rc == SMP_SUCCESS) {
+            switch (p_cb->cb_evt) {
+            case SMP_IO_CAP_REQ_EVT:
+                p_cb->loc_auth_req   = cb_data.io_req.auth_req;
+                p_cb->local_io_capability  = cb_data.io_req.io_cap;
+                p_cb->loc_oob_flag = cb_data.io_req.oob_data;
+                p_cb->loc_enc_size = cb_data.io_req.max_key_size;
+                p_cb->local_i_key = cb_data.io_req.init_keys;
+                p_cb->local_r_key = cb_data.io_req.resp_keys;
 
-                    if (!(p_cb->loc_auth_req & SMP_AUTH_BOND))
-                    {
-                        SMP_TRACE_WARNING ("Non bonding: No keys will be exchanged");
-                        p_cb->local_i_key = 0;
-                        p_cb->local_r_key = 0;
-                    }
+                if (!(p_cb->loc_auth_req & SMP_AUTH_BOND)) {
+                    SMP_TRACE_WARNING ("Non bonding: No keys will be exchanged");
+                    p_cb->local_i_key = 0;
+                    p_cb->local_r_key = 0;
+                }
 
-                    SMP_TRACE_WARNING ( "rcvd auth_req: 0x%02x, io_cap: %d \
+                SMP_TRACE_WARNING ( "rcvd auth_req: 0x%02x, io_cap: %d \
                         loc_oob_flag: %d loc_enc_size: %d,"
-                        "local_i_key: 0x%02x, local_r_key: 0x%02x\n",
-                        p_cb->loc_auth_req, p_cb->local_io_capability, p_cb->loc_oob_flag,
-                        p_cb->loc_enc_size, p_cb->local_i_key, p_cb->local_r_key);
+                                    "local_i_key: 0x%02x, local_r_key: 0x%02x\n",
+                                    p_cb->loc_auth_req, p_cb->local_io_capability, p_cb->loc_oob_flag,
+                                    p_cb->loc_enc_size, p_cb->local_i_key, p_cb->local_r_key);
 
-                    p_cb->secure_connections_only_mode_required =
-                        (btm_cb.security_mode == BTM_SEC_MODE_SC) ? TRUE : FALSE;
+                p_cb->secure_connections_only_mode_required =
+                    (btm_cb.security_mode == BTM_SEC_MODE_SC) ? TRUE : FALSE;
 
-                    if (p_cb->secure_connections_only_mode_required)
-                    {
-                        p_cb->loc_auth_req |= SMP_SC_SUPPORT_BIT;
-                    }
+                if (p_cb->secure_connections_only_mode_required) {
+                    p_cb->loc_auth_req |= SMP_SC_SUPPORT_BIT;
+                }
 
-                    if (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT)
+                if (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT)
                         || lmp_version_below(p_cb->pairing_bda, HCI_PROTO_VERSION_4_2)
                         || interop_match(INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
-                            (const bt_bdaddr_t *)&p_cb->pairing_bda))
-                    {
-                        p_cb->loc_auth_req &= ~SMP_KP_SUPPORT_BIT;
-                        p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
-                        p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
-                    }
-
-                    SMP_TRACE_WARNING("set auth_req: 0x%02x, local_i_key: 0x%02x, local_r_key: 0x%02x\n",
-                        p_cb->loc_auth_req, p_cb->local_i_key, p_cb->local_r_key);
-
-                    smp_sm_event(p_cb, SMP_IO_RSP_EVT, NULL);
-                    break;
-
-                case SMP_BR_KEYS_REQ_EVT:
-                    p_cb->loc_enc_size = cb_data.io_req.max_key_size;
-                    p_cb->local_i_key = cb_data.io_req.init_keys;
-                    p_cb->local_r_key = cb_data.io_req.resp_keys;
-
+                                         (const bt_bdaddr_t *)&p_cb->pairing_bda)) {
+                    p_cb->loc_auth_req &= ~SMP_KP_SUPPORT_BIT;
                     p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
                     p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
+                }
 
-                    SMP_TRACE_WARNING ( "for SMP over BR max_key_size: 0x%02x,\
+                SMP_TRACE_WARNING("set auth_req: 0x%02x, local_i_key: 0x%02x, local_r_key: 0x%02x\n",
+                                  p_cb->loc_auth_req, p_cb->local_i_key, p_cb->local_r_key);
+
+                smp_sm_event(p_cb, SMP_IO_RSP_EVT, NULL);
+                break;
+
+            case SMP_BR_KEYS_REQ_EVT:
+                p_cb->loc_enc_size = cb_data.io_req.max_key_size;
+                p_cb->local_i_key = cb_data.io_req.init_keys;
+                p_cb->local_r_key = cb_data.io_req.resp_keys;
+
+                p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
+                p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
+
+                SMP_TRACE_WARNING ( "for SMP over BR max_key_size: 0x%02x,\
                         local_i_key: 0x%02x, local_r_key: 0x%02x\n",
-                        p_cb->loc_enc_size, p_cb->local_i_key, p_cb->local_r_key);
+                                    p_cb->loc_enc_size, p_cb->local_i_key, p_cb->local_r_key);
 
-                    smp_br_state_machine_event(p_cb, SMP_BR_KEYS_RSP_EVT, NULL);
-                    break;
+                smp_br_state_machine_event(p_cb, SMP_BR_KEYS_RSP_EVT, NULL);
+                break;
             }
         }
     }
 
-    if (!p_cb->cb_evt && p_cb->discard_sec_req)
-    {
+    if (!p_cb->cb_evt && p_cb->discard_sec_req) {
         p_cb->discard_sec_req = FALSE;
         smp_sm_event(p_cb, SMP_DISCARD_SEC_REQ_EVT, NULL);
     }
@@ -238,8 +225,7 @@ void smp_send_pair_fail(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s status=%d failure=%d ", __func__, p_cb->status, p_cb->failure);
 
-    if (p_cb->status <= SMP_MAX_FAIL_RSN_PER_SPEC && p_cb->status != SMP_SUCCESS)
-    {
+    if (p_cb->status <= SMP_MAX_FAIL_RSN_PER_SPEC && p_cb->status != SMP_SUCCESS) {
         smp_send_cmd(SMP_OPCODE_PAIRING_FAILED, p_cb);
         p_cb->wait_for_authorization_complete = TRUE;
     }
@@ -255,8 +241,9 @@ void smp_send_pair_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s\n", __func__);
 
     /* erase all keys when master sends pairing req*/
-    if (p_dev_rec)
+    if (p_dev_rec) {
         btm_sec_clear_ble_keys(p_dev_rec);
+    }
     /* do not manipulate the key, let app decide,
        leave out to BTM to mandate key distribution for bonding case */
     smp_send_cmd(SMP_OPCODE_PAIRING_REQ, p_cb);
@@ -273,12 +260,12 @@ void smp_send_pair_rsp(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     p_cb->local_i_key &= p_cb->peer_i_key;
     p_cb->local_r_key &= p_cb->peer_r_key;
 
-    if (smp_send_cmd (SMP_OPCODE_PAIRING_RSP, p_cb))
-    {
-        if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB)
+    if (smp_send_cmd (SMP_OPCODE_PAIRING_RSP, p_cb)) {
+        if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
             smp_use_oob_private_key(p_cb, NULL);
-        else
+        } else {
             smp_decide_association_model(p_cb, NULL);
+        }
     }
 }
 
@@ -412,8 +399,7 @@ void smp_send_csrk_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s\n", __func__);
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_CSRK, FALSE);
 
-    if (smp_send_cmd(SMP_OPCODE_SIGN_INFO, p_cb))
-    {
+    if (smp_send_cmd(SMP_OPCODE_SIGN_INFO, p_cb)) {
         key.div = p_cb->div;
         key.sec_level = p_cb->sec_level;
         key.counter = 0; /* initialize the local counter */
@@ -453,40 +439,36 @@ void smp_proc_sec_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s sec_req_act=0x%x", __func__, sec_req_act);
 
-    switch (sec_req_act)
-    {
-        case  BTM_BLE_SEC_REQ_ACT_ENCRYPT:
-            SMP_TRACE_DEBUG("%s BTM_BLE_SEC_REQ_ACT_ENCRYPT", __func__);
-            smp_sm_event(p_cb, SMP_ENC_REQ_EVT, NULL);
-            break;
+    switch (sec_req_act) {
+    case  BTM_BLE_SEC_REQ_ACT_ENCRYPT:
+        SMP_TRACE_DEBUG("%s BTM_BLE_SEC_REQ_ACT_ENCRYPT", __func__);
+        smp_sm_event(p_cb, SMP_ENC_REQ_EVT, NULL);
+        break;
 
-        case BTM_BLE_SEC_REQ_ACT_PAIR:
-            p_cb->secure_connections_only_mode_required =
-                    (btm_cb.security_mode == BTM_SEC_MODE_SC) ? TRUE : FALSE;
+    case BTM_BLE_SEC_REQ_ACT_PAIR:
+        p_cb->secure_connections_only_mode_required =
+            (btm_cb.security_mode == BTM_SEC_MODE_SC) ? TRUE : FALSE;
 
-            /* respond to non SC pairing request as failure in SC only mode */
-            if (p_cb->secure_connections_only_mode_required &&
-                (auth_req & SMP_SC_SUPPORT_BIT) == 0)
-            {
-                reason = SMP_PAIR_AUTH_FAIL;
-                smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-            }
-            else
-            {
-                /* initialize local i/r key to be default keys */
-                p_cb->peer_auth_req = auth_req;
-                p_cb->local_r_key = p_cb->local_i_key = SMP_SEC_DEFAULT_KEY ;
-                p_cb->cb_evt = SMP_SEC_REQUEST_EVT;
-            }
-            break;
+        /* respond to non SC pairing request as failure in SC only mode */
+        if (p_cb->secure_connections_only_mode_required &&
+                (auth_req & SMP_SC_SUPPORT_BIT) == 0) {
+            reason = SMP_PAIR_AUTH_FAIL;
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+        } else {
+            /* initialize local i/r key to be default keys */
+            p_cb->peer_auth_req = auth_req;
+            p_cb->local_r_key = p_cb->local_i_key = SMP_SEC_DEFAULT_KEY ;
+            p_cb->cb_evt = SMP_SEC_REQUEST_EVT;
+        }
+        break;
 
-        case BTM_BLE_SEC_REQ_ACT_DISCARD:
-            p_cb->discard_sec_req = TRUE;
-            break;
+    case BTM_BLE_SEC_REQ_ACT_DISCARD:
+        p_cb->discard_sec_req = TRUE;
+        break;
 
-        default:
-            /* do nothing */
-            break;
+    default:
+        /* do nothing */
+        break;
     }
 }
 
@@ -496,14 +478,11 @@ void smp_proc_sec_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_proc_sec_grant(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    UINT8 res= *(UINT8 *)p_data;
+    UINT8 res = *(UINT8 *)p_data;
     SMP_TRACE_DEBUG("%s", __func__);
-    if (res != SMP_SUCCESS)
-    {
+    if (res != SMP_SUCCESS) {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, p_data);
-    }
-    else /*otherwise, start pairing */
-    {
+    } else { /*otherwise, start pairing */
         /* send IO request callback */
         p_cb->cb_evt = SMP_IO_CAP_REQ_EVT;
     }
@@ -531,8 +510,9 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s\n", __func__);
     /* erase all keys if it is slave proc pairing req*/
-    if (p_dev_rec && (p_cb->role == HCI_ROLE_SLAVE))
+    if (p_dev_rec && (p_cb->role == HCI_ROLE_SLAVE)) {
         btm_sec_clear_ble_keys(p_dev_rec);
+    }
 
     p_cb->flags |= SMP_PAIR_FLAG_ENC_AFTER_PAIR;
 
@@ -543,59 +523,49 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     STREAM_TO_UINT8(p_cb->peer_i_key, p);
     STREAM_TO_UINT8(p_cb->peer_r_key, p);
 
-    if (smp_command_has_invalid_parameters(p_cb))
-    {
+    if (smp_command_has_invalid_parameters(p_cb)) {
         reason = SMP_INVALID_PARAMETERS;
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
 
-    if (p_cb->role == HCI_ROLE_SLAVE)
-    {
-        if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD))
-        {
+    if (p_cb->role == HCI_ROLE_SLAVE) {
+        if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)) {
             /* peer (master) started pairing sending Pairing Request */
             p_cb->local_i_key = p_cb->peer_i_key;
             p_cb->local_r_key = p_cb->peer_r_key;
 
             p_cb->cb_evt = SMP_SEC_REQUEST_EVT;
-        }
-        else /* update local i/r key according to pairing request */
-        {
+        } else { /* update local i/r key according to pairing request */
             /* pairing started with this side (slave) sending Security Request */
             p_cb->local_i_key &= p_cb->peer_i_key;
             p_cb->local_r_key &= p_cb->peer_r_key;
             p_cb->selected_association_model = smp_select_association_model(p_cb);
 
             if (p_cb->secure_connections_only_mode_required &&
-                (!(p_cb->le_secure_connections_mode_is_used) ||
-               (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS)))
-            {
+                    (!(p_cb->le_secure_connections_mode_is_used) ||
+                     (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS))) {
                 SMP_TRACE_ERROR("%s pairing failed - slave requires secure connection only mode",
-                    __func__);
+                                __func__);
                 reason = SMP_PAIR_AUTH_FAIL;
                 smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
                 return;
             }
 
-            if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB)
-            {
-                if (smp_request_oob_data(p_cb)) return;
-            }
-            else
-            {
+            if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
+                if (smp_request_oob_data(p_cb)) {
+                    return;
+                }
+            } else {
                 smp_send_pair_rsp(p_cb, NULL);
             }
         }
-    }
-    else /* Master receives pairing response */
-    {
+    } else { /* Master receives pairing response */
         p_cb->selected_association_model = smp_select_association_model(p_cb);
 
         if (p_cb->secure_connections_only_mode_required &&
-            (!(p_cb->le_secure_connections_mode_is_used) ||
-           (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS)))
-        {
+                (!(p_cb->le_secure_connections_mode_is_used) ||
+                 (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS))) {
             SMP_TRACE_ERROR ("Master requires secure connection only mode \
                 but it can't be provided -> Master fails pairing");
             reason = SMP_PAIR_AUTH_FAIL;
@@ -603,12 +573,11 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             return;
         }
 
-        if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB)
-        {
-            if (smp_request_oob_data(p_cb)) return;
-        }
-        else
-        {
+        if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
+            if (smp_request_oob_data(p_cb)) {
+                return;
+            }
+        } else {
             smp_decide_association_model(p_cb, NULL);
         }
     }
@@ -625,14 +594,12 @@ void smp_proc_confirm(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s\n", __func__);
 
-    if (smp_command_has_invalid_parameters(p_cb))
-    {
+    if (smp_command_has_invalid_parameters(p_cb)) {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
 
-    if (p != NULL)
-    {
+    if (p != NULL) {
         /* save the SConfirm for comparison later */
         STREAM_TO_ARRAY(p_cb->rconfirm, p, BT_OCTET16_LEN);
     }
@@ -651,8 +618,7 @@ void smp_proc_init(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s", __func__);
 
-    if (smp_command_has_invalid_parameters(p_cb))
-    {
+    if (smp_command_has_invalid_parameters(p_cb)) {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
@@ -672,8 +638,7 @@ void smp_proc_rand(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s\n", __func__);
 
-    if (smp_command_has_invalid_parameters(p_cb))
-    {
+    if (smp_command_has_invalid_parameters(p_cb)) {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
@@ -697,8 +662,7 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s", __func__);
 
-    if (smp_command_has_invalid_parameters(p_cb))
-    {
+    if (smp_command_has_invalid_parameters(p_cb)) {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
@@ -721,16 +685,14 @@ void smp_process_pairing_commitment(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s", __func__);
 
-    if (smp_command_has_invalid_parameters(p_cb))
-    {
+    if (smp_command_has_invalid_parameters(p_cb)) {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
 
     p_cb->flags |= SMP_PAIR_FLAG_HAVE_PEER_COMM;
 
-    if (p != NULL)
-    {
+    if (p != NULL) {
         STREAM_TO_ARRAY(p_cb->remote_commitment, p, BT_OCTET16_LEN);
     }
 }
@@ -746,14 +708,12 @@ void smp_process_dhkey_check(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s", __func__);
 
-    if (smp_command_has_invalid_parameters(p_cb))
-    {
+    if (smp_command_has_invalid_parameters(p_cb)) {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
 
-    if (p != NULL)
-    {
+    if (p != NULL) {
         STREAM_TO_ARRAY(p_cb->remote_dhkey_check, p, BT_OCTET16_LEN);
     }
 
@@ -772,18 +732,14 @@ void smp_process_keypress_notification(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s", __func__);
     p_cb->status = *(UINT8 *)p_data;
 
-    if (smp_command_has_invalid_parameters(p_cb))
-    {
+    if (smp_command_has_invalid_parameters(p_cb)) {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
 
-    if (p != NULL)
-    {
+    if (p != NULL) {
         STREAM_TO_UINT8(p_cb->peer_keypress_notification, p);
-    }
-    else
-    {
+    } else {
         p_cb->peer_keypress_notification = BTM_SP_KEY_OUT_OF_RANGE;
     }
     p_cb->cb_evt = SMP_PEER_KEYPR_NOT_EVT;
@@ -802,16 +758,16 @@ void smp_br_process_pairing_command(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s", __func__);
     /* rejecting BR pairing request over non-SC BR link */
-    if (!p_dev_rec->new_encryption_key_is_p256 && p_cb->role == HCI_ROLE_SLAVE)
-    {
+    if (!p_dev_rec->new_encryption_key_is_p256 && p_cb->role == HCI_ROLE_SLAVE) {
         reason = SMP_XTRANS_DERIVE_NOT_ALLOW;
         smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &reason);
         return;
     }
 
     /* erase all keys if it is slave proc pairing req*/
-    if (p_dev_rec && (p_cb->role == HCI_ROLE_SLAVE))
+    if (p_dev_rec && (p_cb->role == HCI_ROLE_SLAVE)) {
         btm_sec_clear_ble_keys(p_dev_rec);
+    }
 
     p_cb->flags |= SMP_PAIR_FLAG_ENC_AFTER_PAIR;
 
@@ -822,8 +778,7 @@ void smp_br_process_pairing_command(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     STREAM_TO_UINT8(p_cb->peer_i_key, p);
     STREAM_TO_UINT8(p_cb->peer_r_key, p);
 
-    if (smp_command_has_invalid_parameters(p_cb))
-    {
+    if (smp_command_has_invalid_parameters(p_cb)) {
         reason = SMP_INVALID_PARAMETERS;
         smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &reason);
         return;
@@ -834,16 +789,13 @@ void smp_br_process_pairing_command(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     p_cb->local_i_key = p_cb->peer_i_key;
     p_cb->local_r_key = p_cb->peer_r_key;
 
-    if (p_cb->role == HCI_ROLE_SLAVE)
-    {
+    if (p_cb->role == HCI_ROLE_SLAVE) {
         p_dev_rec->new_encryption_key_is_p256 = FALSE;
         /* shortcut to skip Security Grant step */
         p_cb->cb_evt = SMP_BR_KEYS_REQ_EVT;
-    }
-    else /* Master receives pairing response */
-    {
+    } else { /* Master receives pairing response */
         SMP_TRACE_DEBUG("%s master rcvs valid PAIRING RESPONSE."
-                          " Supposed to move to key distribution phase. ", __func__);
+                        " Supposed to move to key distribution phase. ", __func__);
     }
 
     /* auth_req received via BR/EDR SM channel is set to 0,
@@ -858,14 +810,11 @@ void smp_br_process_pairing_command(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_br_process_security_grant(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    UINT8 res= *(UINT8 *)p_data;
+    UINT8 res = *(UINT8 *)p_data;
     SMP_TRACE_DEBUG("%s", __func__);
-    if (res != SMP_SUCCESS)
-    {
+    if (res != SMP_SUCCESS) {
         smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, p_data);
-    }
-    else /*otherwise, start pairing */
-    {
+    } else { /*otherwise, start pairing */
         /* send IO request callback */
         p_cb->cb_evt = SMP_BR_KEYS_REQ_EVT;
     }
@@ -881,8 +830,8 @@ void smp_br_check_authorization_request(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT8 reason = SMP_SUCCESS;
 
     SMP_TRACE_DEBUG("%s rcvs i_keys=0x%x r_keys=0x%x "
-                      "(i-initiator r-responder)", __FUNCTION__, p_cb->local_i_key,
-                      p_cb->local_r_key);
+                    "(i-initiator r-responder)", __FUNCTION__, p_cb->local_i_key,
+                    p_cb->local_r_key);
 
     /* In LE SC mode LK field is ignored when BR/EDR transport is used */
     p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
@@ -890,27 +839,24 @@ void smp_br_check_authorization_request(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     /* In LE SC mode only IRK, IAI, CSRK are exchanged with the peer.
     ** Set local_r_key on master to expect only these keys. */
-    if (p_cb->role == HCI_ROLE_MASTER)
-    {
+    if (p_cb->role == HCI_ROLE_MASTER) {
         p_cb->local_r_key &= (SMP_SEC_KEY_TYPE_ID | SMP_SEC_KEY_TYPE_CSRK);
     }
 
     SMP_TRACE_DEBUG("%s rcvs upgrades: i_keys=0x%x r_keys=0x%x "
-                      "(i-initiator r-responder)", __FUNCTION__, p_cb->local_i_key,
-                      p_cb->local_r_key);
+                    "(i-initiator r-responder)", __FUNCTION__, p_cb->local_i_key,
+                    p_cb->local_r_key);
 
     if (/*((p_cb->peer_auth_req & SMP_AUTH_BOND) ||
             (p_cb->loc_auth_req & SMP_AUTH_BOND)) &&*/
-        (p_cb->local_i_key || p_cb->local_r_key))
-    {
+        (p_cb->local_i_key || p_cb->local_r_key)) {
         smp_br_state_machine_event(p_cb, SMP_BR_BOND_REQ_EVT, NULL);
 
         /* if no peer key is expected, start master key distribution */
-        if (p_cb->role == HCI_ROLE_MASTER && p_cb->local_r_key == 0)
+        if (p_cb->role == HCI_ROLE_MASTER && p_cb->local_r_key == 0) {
             smp_key_distribution_by_transport(p_cb, NULL);
-    }
-    else
-    {
+        }
+    } else {
         smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &reason);
     }
 }
@@ -924,23 +870,21 @@ void smp_br_select_next_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     UINT8   reason = SMP_SUCCESS;
     SMP_TRACE_DEBUG("%s role=%d (0-master) r_keys=0x%x i_keys=0x%x",
-                       __func__, p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
+                    __func__, p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
 
-    if (p_cb->role == HCI_ROLE_SLAVE||
-        (!p_cb->local_r_key && p_cb->role == HCI_ROLE_MASTER))
-    {
+    if (p_cb->role == HCI_ROLE_SLAVE ||
+            (!p_cb->local_r_key && p_cb->role == HCI_ROLE_MASTER)) {
         smp_key_pick_key(p_cb, p_data);
     }
 
-    if (!p_cb->local_i_key && !p_cb->local_r_key)
-    {
+    if (!p_cb->local_i_key && !p_cb->local_r_key) {
         /* state check to prevent re-entrance */
-        if (smp_get_br_state() == SMP_BR_STATE_BOND_PENDING)
-        {
-            if (p_cb->total_tx_unacked == 0)
+        if (smp_get_br_state() == SMP_BR_STATE_BOND_PENDING) {
+            if (p_cb->total_tx_unacked == 0) {
                 smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &reason);
-            else
+            } else {
                 p_cb->wait_for_authorization_complete = TRUE;
+            }
         }
     }
 }
@@ -968,7 +912,7 @@ void smp_proc_master_id(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     tBTM_LE_PENC_KEYS   le_key;
 
     SMP_TRACE_DEBUG("%s\np_cb->peer_auth_req = %d,p_cb->loc_auth_req= %d\n", __func__,
-					p_cb->peer_auth_req,p_cb->loc_auth_req);
+                    p_cb->peer_auth_req, p_cb->loc_auth_req);
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_ENC, TRUE);
 
     STREAM_TO_UINT16(le_key.ediv, p);
@@ -1060,16 +1004,15 @@ void smp_proc_compare(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT8   reason;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
-    if (!memcmp(p_cb->rconfirm, p_data->key.p_data, BT_OCTET16_LEN))
-    {
+    if (!memcmp(p_cb->rconfirm, p_data->key.p_data, BT_OCTET16_LEN)) {
         /* compare the max encryption key size, and save the smaller one for the link */
-        if ( p_cb->peer_enc_size < p_cb->loc_enc_size)
+        if ( p_cb->peer_enc_size < p_cb->loc_enc_size) {
             p_cb->loc_enc_size = p_cb->peer_enc_size;
+        }
 
-        if (p_cb->role == HCI_ROLE_SLAVE)
+        if (p_cb->role == HCI_ROLE_SLAVE) {
             smp_sm_event(p_cb, SMP_RAND_EVT, NULL);
-        else
-        {
+        } else {
             /* master device always use received i/r key as keys to distribute */
             p_cb->local_i_key = p_cb->peer_i_key;
             p_cb->local_r_key = p_cb->peer_r_key;
@@ -1077,9 +1020,7 @@ void smp_proc_compare(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             smp_sm_event(p_cb, SMP_ENC_REQ_EVT, NULL);
         }
 
-    }
-    else
-    {
+    } else {
         reason = p_cb->failure = SMP_CONFIRM_VALUE_ERR;
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
     }
@@ -1094,16 +1035,14 @@ void smp_proc_sl_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT8 key_type = p_data->key.key_type;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
-    if (key_type == SMP_KEY_TYPE_TK)
-    {
+    if (key_type == SMP_KEY_TYPE_TK) {
         smp_generate_srand_mrand_confirm(p_cb, NULL);
-    }
-    else if (key_type == SMP_KEY_TYPE_CFM)
-    {
+    } else if (key_type == SMP_KEY_TYPE_CFM) {
         smp_set_state(SMP_STATE_WAIT_CONFIRM);
 
-        if (p_cb->flags & SMP_PAIR_FLAGS_CMD_CONFIRM)
+        if (p_cb->flags & SMP_PAIR_FLAGS_CMD_CONFIRM) {
             smp_sm_event(p_cb, SMP_CONFIRM_EVT, NULL);
+        }
     }
 }
 
@@ -1117,13 +1056,15 @@ void smp_start_enc(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT8 reason = SMP_ENC_FAIL;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
-    if (p_data != NULL)
+    if (p_data != NULL) {
         cmd = btm_ble_start_encrypt(p_cb->pairing_bda, TRUE, p_data->key.p_data);
-    else
+    } else {
         cmd = btm_ble_start_encrypt(p_cb->pairing_bda, FALSE, NULL);
+    }
 
-    if (cmd != BTM_CMD_STARTED && cmd != BTM_BUSY)
+    if (cmd != BTM_CMD_STARTED && cmd != BTM_BUSY) {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    }
 }
 
 /*******************************************************************************
@@ -1133,8 +1074,9 @@ void smp_start_enc(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 void smp_proc_discard(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     SMP_TRACE_DEBUG("%s\n", __func__);
-    if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD))
+    if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)) {
         smp_reset_control_value(p_cb);
+    }
 }
 
 /*******************************************************************************
@@ -1160,20 +1102,17 @@ void smp_check_auth_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT8 reason = enc_enable ? SMP_SUCCESS : SMP_ENC_FAIL;
 
     SMP_TRACE_DEBUG("%s rcvs enc_enable=%d i_keys=0x%x r_keys=0x%x "
-                      "(i-initiator r-responder)\n",
-                      __func__, enc_enable, p_cb->local_i_key, p_cb->local_r_key);
-    if (enc_enable == 1)
-    {
-        if (p_cb->le_secure_connections_mode_is_used)
-        {
+                    "(i-initiator r-responder)\n",
+                    __func__, enc_enable, p_cb->local_i_key, p_cb->local_r_key);
+    if (enc_enable == 1) {
+        if (p_cb->le_secure_connections_mode_is_used) {
             /* In LE SC mode LTK is used instead of STK and has to be always saved */
             p_cb->local_i_key |= SMP_SEC_KEY_TYPE_ENC;
             p_cb->local_r_key |= SMP_SEC_KEY_TYPE_ENC;
 
-           /* In LE SC mode LK is derived from LTK only if both sides request it */
-           if (!(p_cb->local_i_key & SMP_SEC_KEY_TYPE_LK) ||
-               !(p_cb->local_r_key & SMP_SEC_KEY_TYPE_LK))
-            {
+            /* In LE SC mode LK is derived from LTK only if both sides request it */
+            if (!(p_cb->local_i_key & SMP_SEC_KEY_TYPE_LK) ||
+                    !(p_cb->local_r_key & SMP_SEC_KEY_TYPE_LK)) {
                 p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
                 p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
             }
@@ -1181,39 +1120,33 @@ void smp_check_auth_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             /* In LE SC mode only IRK, IAI, CSRK are exchanged with the peer.
             ** Set local_r_key on master to expect only these keys.
             */
-            if (p_cb->role == HCI_ROLE_MASTER)
-            {
+            if (p_cb->role == HCI_ROLE_MASTER) {
                 p_cb->local_r_key &= (SMP_SEC_KEY_TYPE_ID | SMP_SEC_KEY_TYPE_CSRK);
             }
-        }
-        else
-        {
+        } else {
             /* in legacy mode derivation of BR/EDR LK is not supported */
             p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
             p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
         }
         SMP_TRACE_DEBUG("%s rcvs upgrades: i_keys=0x%x r_keys=0x%x "
-                          "(i-initiator r-responder)\n",
-                          __func__, p_cb->local_i_key, p_cb->local_r_key);
+                        "(i-initiator r-responder)\n",
+                        __func__, p_cb->local_i_key, p_cb->local_r_key);
 
         if (/*((p_cb->peer_auth_req & SMP_AUTH_BOND) ||
              (p_cb->loc_auth_req & SMP_AUTH_BOND)) &&*/
-            (p_cb->local_i_key || p_cb->local_r_key))
-        {
+            (p_cb->local_i_key || p_cb->local_r_key)) {
             smp_sm_event(p_cb, SMP_BOND_REQ_EVT, NULL);
+        } else {
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         }
-        else
-            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-    }
-    else if (enc_enable == 0)
-    {
+    } else if (enc_enable == 0) {
         /* if failed for encryption after pairing, send callback */
-        if (p_cb->flags & SMP_PAIR_FLAG_ENC_AFTER_PAIR)
+        if (p_cb->flags & SMP_PAIR_FLAG_ENC_AFTER_PAIR) {
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+        }
         /* if enc failed for old security information */
         /* if master device, clean up and abck to idle; slave device do nothing */
-        else if (p_cb->role == HCI_ROLE_MASTER)
-        {
+        else if (p_cb->role == HCI_ROLE_MASTER) {
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         }
     }
@@ -1229,12 +1162,10 @@ void smp_key_pick_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     UINT8   i = 0;
 
     SMP_TRACE_DEBUG("%s key_to_dist=0x%x\n", __func__, key_to_dist);
-    while (i < SMP_KEY_DIST_TYPE_MAX)
-    {
+    while (i < SMP_KEY_DIST_TYPE_MAX) {
         SMP_TRACE_DEBUG("key to send = %02x, i = %d\n",  key_to_dist, i);
 
-        if (key_to_dist & (1 << i))
-        {
+        if (key_to_dist & (1 << i)) {
             SMP_TRACE_DEBUG("smp_distribute_act[%d]\n", i);
             (* smp_distribute_act[i])(p_cb, p_data);
             break;
@@ -1250,29 +1181,26 @@ void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     UINT8   reason = SMP_SUCCESS;
     SMP_TRACE_DEBUG("\n%s role=%d (0-master) r_keys=0x%x i_keys=0x%x\n",
-                      __func__, p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
+                    __func__, p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
 
     if (p_cb->role == HCI_ROLE_SLAVE ||
-       (!p_cb->local_r_key && p_cb->role == HCI_ROLE_MASTER))
-    {
+            (!p_cb->local_r_key && p_cb->role == HCI_ROLE_MASTER)) {
         smp_key_pick_key(p_cb, p_data);
     }
 
-    if (!p_cb->local_i_key && !p_cb->local_r_key)
-    {
+    if (!p_cb->local_i_key && !p_cb->local_r_key) {
         /* state check to prevent re-entrant */
-        if (smp_get_state() == SMP_STATE_BOND_PENDING)
-        {
-            if (p_cb->derive_lk)
-            {
+        if (smp_get_state() == SMP_STATE_BOND_PENDING) {
+            if (p_cb->derive_lk) {
                 smp_derive_link_key_from_long_term_key(p_cb, NULL);
                 p_cb->derive_lk = FALSE;
             }
 
-            if (p_cb->total_tx_unacked == 0)
+            if (p_cb->total_tx_unacked == 0) {
                 smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-            else
+            } else {
                 p_cb->wait_for_authorization_complete = TRUE;
+            }
         }
     }
 }
@@ -1292,82 +1220,79 @@ void smp_decide_association_model(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s Association Model = %d\n", __func__, p_cb->selected_association_model);
 
-    switch (p_cb->selected_association_model)
-    {
-        case SMP_MODEL_ENCRYPTION_ONLY:  /* TK = 0, go calculate Confirm */
-            if (p_cb->role == HCI_ROLE_MASTER &&
+    switch (p_cb->selected_association_model) {
+    case SMP_MODEL_ENCRYPTION_ONLY:  /* TK = 0, go calculate Confirm */
+        if (p_cb->role == HCI_ROLE_MASTER &&
                 ((p_cb->peer_auth_req & SMP_AUTH_YN_BIT) != 0) &&
-                ((p_cb->loc_auth_req & SMP_AUTH_YN_BIT) == 0))
-            {
-                SMP_TRACE_ERROR ("IO capability does not meet authentication requirement\n");
-                failure = SMP_PAIR_AUTH_FAIL;
-                p = (tSMP_INT_DATA *)&failure;
-                int_evt = SMP_AUTH_CMPL_EVT;
-            }
-            else
-            {
-                p_cb->sec_level = SMP_SEC_UNAUTHENTICATE;
-                SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_UNAUTHENTICATE) \n", p_cb->sec_level );
-
-                key.key_type = SMP_KEY_TYPE_TK;
-                key.p_data = p_cb->tk;
-                p = (tSMP_INT_DATA *)&key;
-
-                memset(p_cb->tk, 0, BT_OCTET16_LEN);
-                /* TK, ready  */
-                int_evt = SMP_KEY_READY_EVT;
-            }
-            break;
-
-        case SMP_MODEL_PASSKEY:
-            p_cb->sec_level = SMP_SEC_AUTHENTICATED;
-            SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_AUTHENTICATED) \n", p_cb->sec_level );
-
-            p_cb->cb_evt = SMP_PASSKEY_REQ_EVT;
-            int_evt = SMP_TK_REQ_EVT;
-            break;
-
-        case SMP_MODEL_OOB:
-            SMP_TRACE_ERROR ("Association Model = SMP_MODEL_OOB\n");
-            p_cb->sec_level = SMP_SEC_AUTHENTICATED;
-            SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_AUTHENTICATED) \n", p_cb->sec_level );
-
-            p_cb->cb_evt = SMP_OOB_REQ_EVT;
-            int_evt = SMP_TK_REQ_EVT;
-            break;
-
-        case SMP_MODEL_KEY_NOTIF:
-            p_cb->sec_level = SMP_SEC_AUTHENTICATED;
-            SMP_TRACE_DEBUG("Need to generate Passkey\n");
-
-            /* generate passkey and notify application */
-            smp_generate_passkey(p_cb, NULL);
-            break;
-
-        case SMP_MODEL_SEC_CONN_JUSTWORKS:
-        case SMP_MODEL_SEC_CONN_NUM_COMP:
-        case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
-        case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
-        case SMP_MODEL_SEC_CONN_OOB:
-            int_evt = SMP_PUBL_KEY_EXCH_REQ_EVT;
-            break;
-
-        case SMP_MODEL_OUT_OF_RANGE:
-            SMP_TRACE_ERROR("Association Model = SMP_MODEL_OUT_OF_RANGE (failed)\n");
+                ((p_cb->loc_auth_req & SMP_AUTH_YN_BIT) == 0)) {
+            SMP_TRACE_ERROR ("IO capability does not meet authentication requirement\n");
+            failure = SMP_PAIR_AUTH_FAIL;
             p = (tSMP_INT_DATA *)&failure;
             int_evt = SMP_AUTH_CMPL_EVT;
-            break;
+        } else {
+            p_cb->sec_level = SMP_SEC_UNAUTHENTICATE;
+            SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_UNAUTHENTICATE) \n", p_cb->sec_level );
 
-        default:
-            SMP_TRACE_ERROR("Association Model = %d (SOMETHING IS WRONG WITH THE CODE)\n",
-                             p_cb->selected_association_model);
-            p = (tSMP_INT_DATA *)&failure;
-            int_evt = SMP_AUTH_CMPL_EVT;
+            key.key_type = SMP_KEY_TYPE_TK;
+            key.p_data = p_cb->tk;
+            p = (tSMP_INT_DATA *)&key;
+
+            memset(p_cb->tk, 0, BT_OCTET16_LEN);
+            /* TK, ready  */
+            int_evt = SMP_KEY_READY_EVT;
+        }
+        break;
+
+    case SMP_MODEL_PASSKEY:
+        p_cb->sec_level = SMP_SEC_AUTHENTICATED;
+        SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_AUTHENTICATED) \n", p_cb->sec_level );
+
+        p_cb->cb_evt = SMP_PASSKEY_REQ_EVT;
+        int_evt = SMP_TK_REQ_EVT;
+        break;
+
+    case SMP_MODEL_OOB:
+        SMP_TRACE_ERROR ("Association Model = SMP_MODEL_OOB\n");
+        p_cb->sec_level = SMP_SEC_AUTHENTICATED;
+        SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_AUTHENTICATED) \n", p_cb->sec_level );
+
+        p_cb->cb_evt = SMP_OOB_REQ_EVT;
+        int_evt = SMP_TK_REQ_EVT;
+        break;
+
+    case SMP_MODEL_KEY_NOTIF:
+        p_cb->sec_level = SMP_SEC_AUTHENTICATED;
+        SMP_TRACE_DEBUG("Need to generate Passkey\n");
+
+        /* generate passkey and notify application */
+        smp_generate_passkey(p_cb, NULL);
+        break;
+
+    case SMP_MODEL_SEC_CONN_JUSTWORKS:
+    case SMP_MODEL_SEC_CONN_NUM_COMP:
+    case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
+    case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
+    case SMP_MODEL_SEC_CONN_OOB:
+        int_evt = SMP_PUBL_KEY_EXCH_REQ_EVT;
+        break;
+
+    case SMP_MODEL_OUT_OF_RANGE:
+        SMP_TRACE_ERROR("Association Model = SMP_MODEL_OUT_OF_RANGE (failed)\n");
+        p = (tSMP_INT_DATA *)&failure;
+        int_evt = SMP_AUTH_CMPL_EVT;
+        break;
+
+    default:
+        SMP_TRACE_ERROR("Association Model = %d (SOMETHING IS WRONG WITH THE CODE)\n",
+                        p_cb->selected_association_model);
+        p = (tSMP_INT_DATA *)&failure;
+        int_evt = SMP_AUTH_CMPL_EVT;
     }
 
     SMP_TRACE_EVENT ("sec_level=%d \n", p_cb->sec_level );
-    if (int_evt)
+    if (int_evt) {
         smp_sm_event(p_cb, int_evt, p);
+    }
 }
 
 /*******************************************************************************
@@ -1379,30 +1304,27 @@ void smp_process_io_response(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     uint8_t reason = SMP_PAIR_AUTH_FAIL;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
-    if (p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)
-    {
+    if (p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
         /* pairing started by local (slave) Security Request */
         smp_set_state(SMP_STATE_SEC_REQ_PENDING);
         smp_send_cmd(SMP_OPCODE_SEC_REQ, p_cb);
-    }
-    else /* plan to send pairing respond */
-    {
+    } else { /* plan to send pairing respond */
         /* pairing started by peer (master) Pairing Request */
         p_cb->selected_association_model = smp_select_association_model(p_cb);
 
         if (p_cb->secure_connections_only_mode_required &&
-            (!(p_cb->le_secure_connections_mode_is_used) ||
-            (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS)))
-        {
+                (!(p_cb->le_secure_connections_mode_is_used) ||
+                 (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS))) {
             SMP_TRACE_ERROR ("Slave requires secure connection only mode \
                               but it can't be provided -> Slave fails pairing\n");
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
             return;
         }
 
-        if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB)
-        {
-            if (smp_request_oob_data(p_cb)) return;
+        if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
+            if (smp_request_oob_data(p_cb)) {
+                return;
+            }
         }
         smp_send_pair_rsp(p_cb, NULL);
     }
@@ -1439,8 +1361,7 @@ void smp_br_send_pair_response(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_pairing_cmpl(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    if (p_cb->total_tx_unacked == 0)
-    {
+    if (p_cb->total_tx_unacked == 0) {
         /* update connection parameter to remote preferred */
         L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, TRUE);
         /* process the pairing complete */
@@ -1467,8 +1388,7 @@ void smp_pair_terminate(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_idle_terminate(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    if (p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)
-    {
+    if (p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
         SMP_TRACE_DEBUG("Pairing terminated at IDLE state.\n");
         p_cb->status = SMP_FAIL;
         smp_proc_pairing_cmpl(p_cb);
@@ -1496,14 +1416,15 @@ void smp_fast_conn_param(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_both_have_public_keys(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    SMP_TRACE_DEBUG("%s\n",__func__);
+    SMP_TRACE_DEBUG("%s\n", __func__);
 
     /* invokes DHKey computation */
     smp_compute_dhkey(p_cb);
 
     /* on slave side invokes sending local public key to the peer */
-    if (p_cb->role == HCI_ROLE_SLAVE)
+    if (p_cb->role == HCI_ROLE_SLAVE) {
         smp_send_pair_public_key(p_cb, NULL);
+    }
 
     smp_sm_event(p_cb, SMP_SC_DHKEY_CMPLT_EVT, NULL);
 }
@@ -1518,42 +1439,38 @@ void smp_start_secure_connection_phase1(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     SMP_TRACE_DEBUG("%s\n", __func__);
 
-    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS)
-    {
+    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
         p_cb->sec_level = SMP_SEC_UNAUTHENTICATE;
         SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_UNAUTHENTICATE)\n ", p_cb->sec_level );
-    }
-    else
-    {
+    } else {
         p_cb->sec_level = SMP_SEC_AUTHENTICATED;
         SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_AUTHENTICATED)\n ", p_cb->sec_level );
     }
 
-    switch(p_cb->selected_association_model)
-    {
-        case SMP_MODEL_SEC_CONN_JUSTWORKS:
-        case SMP_MODEL_SEC_CONN_NUM_COMP:
-            memset(p_cb->local_random, 0, BT_OCTET16_LEN);
-            smp_start_nonce_generation(p_cb);
-            break;
-        case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
-            /* user has to provide passkey */
-            p_cb->cb_evt = SMP_PASSKEY_REQ_EVT;
-            smp_sm_event(p_cb, SMP_TK_REQ_EVT, NULL);
-            break;
-        case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
-            /* passkey has to be provided to user */
-            SMP_TRACE_DEBUG("Need to generate SC Passkey\n");
-            smp_generate_passkey(p_cb, NULL);
-            break;
-        case SMP_MODEL_SEC_CONN_OOB:
-            /* use the available OOB information */
-            smp_process_secure_connection_oob_data(p_cb, NULL);
-            break;
-        default:
-            SMP_TRACE_ERROR ("Association Model = %d is not used in LE SC\n",
-                              p_cb->selected_association_model);
-            break;
+    switch (p_cb->selected_association_model) {
+    case SMP_MODEL_SEC_CONN_JUSTWORKS:
+    case SMP_MODEL_SEC_CONN_NUM_COMP:
+        memset(p_cb->local_random, 0, BT_OCTET16_LEN);
+        smp_start_nonce_generation(p_cb);
+        break;
+    case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
+        /* user has to provide passkey */
+        p_cb->cb_evt = SMP_PASSKEY_REQ_EVT;
+        smp_sm_event(p_cb, SMP_TK_REQ_EVT, NULL);
+        break;
+    case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
+        /* passkey has to be provided to user */
+        SMP_TRACE_DEBUG("Need to generate SC Passkey\n");
+        smp_generate_passkey(p_cb, NULL);
+        break;
+    case SMP_MODEL_SEC_CONN_OOB:
+        /* use the available OOB information */
+        smp_process_secure_connection_oob_data(p_cb, NULL);
+        break;
+    default:
+        SMP_TRACE_ERROR ("Association Model = %d is not used in LE SC\n",
+                         p_cb->selected_association_model);
+        break;
     }
 }
 
@@ -1567,62 +1484,52 @@ void smp_process_local_nonce(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     SMP_TRACE_DEBUG("%s\n", __func__);
 
-    switch(p_cb->selected_association_model)
-    {
-        case SMP_MODEL_SEC_CONN_JUSTWORKS:
-        case SMP_MODEL_SEC_CONN_NUM_COMP:
-            if (p_cb->role == HCI_ROLE_SLAVE)
-            {
-                /* slave calculates and sends local commitment */
-                smp_calculate_local_commitment(p_cb);
-                smp_send_commitment(p_cb, NULL);
-                /* slave has to wait for peer nonce */
+    switch (p_cb->selected_association_model) {
+    case SMP_MODEL_SEC_CONN_JUSTWORKS:
+    case SMP_MODEL_SEC_CONN_NUM_COMP:
+        if (p_cb->role == HCI_ROLE_SLAVE) {
+            /* slave calculates and sends local commitment */
+            smp_calculate_local_commitment(p_cb);
+            smp_send_commitment(p_cb, NULL);
+            /* slave has to wait for peer nonce */
+            smp_set_state(SMP_STATE_WAIT_NONCE);
+        } else { /* i.e. master */
+            if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_COMM) {
+                /* slave commitment is already received, send local nonce, wait for remote nonce*/
+                SMP_TRACE_DEBUG("master in assoc mode = %d \
+                    already rcvd slave commitment - race condition\n",
+                                p_cb->selected_association_model);
+                p_cb->flags &= ~SMP_PAIR_FLAG_HAVE_PEER_COMM;
+                smp_send_rand(p_cb, NULL);
                 smp_set_state(SMP_STATE_WAIT_NONCE);
             }
-            else    /* i.e. master */
-            {
-                if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_COMM)
-                {
-                    /* slave commitment is already received, send local nonce, wait for remote nonce*/
-                    SMP_TRACE_DEBUG("master in assoc mode = %d \
-                    already rcvd slave commitment - race condition\n",
-                                      p_cb->selected_association_model);
-                    p_cb->flags &= ~SMP_PAIR_FLAG_HAVE_PEER_COMM;
-                    smp_send_rand(p_cb, NULL);
-                    smp_set_state(SMP_STATE_WAIT_NONCE);
-                }
-            }
-            break;
-        case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
-        case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
-            smp_calculate_local_commitment(p_cb);
+        }
+        break;
+    case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
+    case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
+        smp_calculate_local_commitment(p_cb);
 
-            if (p_cb->role == HCI_ROLE_MASTER)
-            {
+        if (p_cb->role == HCI_ROLE_MASTER) {
+            smp_send_commitment(p_cb, NULL);
+        } else { /* slave */
+            if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_COMM) {
+                /* master commitment is already received */
                 smp_send_commitment(p_cb, NULL);
+                smp_set_state(SMP_STATE_WAIT_NONCE);
             }
-            else    /* slave */
-            {
-                if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_COMM)
-                {
-                    /* master commitment is already received */
-                    smp_send_commitment(p_cb, NULL);
-                    smp_set_state(SMP_STATE_WAIT_NONCE);
-                }
-            }
-            break;
-        case SMP_MODEL_SEC_CONN_OOB:
-            if (p_cb->role == HCI_ROLE_MASTER)
-            {
-                smp_send_rand(p_cb, NULL);
-            }
+        }
+        break;
+    case SMP_MODEL_SEC_CONN_OOB:
+        if (p_cb->role == HCI_ROLE_MASTER) {
+            smp_send_rand(p_cb, NULL);
+        }
 
-            smp_set_state(SMP_STATE_WAIT_NONCE);
-            break;
-        default:
-            SMP_TRACE_ERROR ("Association Model = %d is not used in LE SC\n",
-                              p_cb->selected_association_model);
-            break;
+        smp_set_state(SMP_STATE_WAIT_NONCE);
+        break;
+    default:
+        SMP_TRACE_ERROR ("Association Model = %d is not used in LE SC\n",
+                         p_cb->selected_association_model);
+        break;
     }
 }
 
@@ -1639,76 +1546,64 @@ void smp_process_peer_nonce(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s start \n", __func__);
 
-    switch(p_cb->selected_association_model)
-    {
-        case SMP_MODEL_SEC_CONN_JUSTWORKS:
-        case SMP_MODEL_SEC_CONN_NUM_COMP:
-            /* in these models only master receives commitment */
-            if (p_cb->role == HCI_ROLE_MASTER)
-            {
-                if (!smp_check_commitment(p_cb))
-                {
-                    reason = p_cb->failure = SMP_CONFIRM_VALUE_ERR;
-                    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
-                    break;
-                }
-            }
-            else
-            {
-                /* slave sends local nonce */
-                smp_send_rand(p_cb, NULL);
-            }
-
-            if(p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS)
-            {
-                /* go directly to phase 2 */
-                smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
-            }
-            else    /* numeric comparison */
-            {
-                smp_set_state(SMP_STATE_WAIT_NONCE);
-                smp_sm_event(p_cb, SMP_SC_CALC_NC_EVT, NULL);
-            }
-            break;
-        case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
-        case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
-            if (!smp_check_commitment(p_cb))
-            {
+    switch (p_cb->selected_association_model) {
+    case SMP_MODEL_SEC_CONN_JUSTWORKS:
+    case SMP_MODEL_SEC_CONN_NUM_COMP:
+        /* in these models only master receives commitment */
+        if (p_cb->role == HCI_ROLE_MASTER) {
+            if (!smp_check_commitment(p_cb)) {
                 reason = p_cb->failure = SMP_CONFIRM_VALUE_ERR;
                 smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
                 break;
             }
+        } else {
+            /* slave sends local nonce */
+            smp_send_rand(p_cb, NULL);
+        }
 
-            if (p_cb->role == HCI_ROLE_SLAVE)
-            {
-                smp_send_rand(p_cb, NULL);
-            }
-
-            if (++p_cb->round < 20)
-            {
-                smp_set_state(SMP_STATE_SEC_CONN_PHS1_START);
-                p_cb->flags &= ~SMP_PAIR_FLAG_HAVE_PEER_COMM;
-                smp_start_nonce_generation(p_cb);
-                break;
-            }
-
+        if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
+            /* go directly to phase 2 */
             smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
+        } else { /* numeric comparison */
+            smp_set_state(SMP_STATE_WAIT_NONCE);
+            smp_sm_event(p_cb, SMP_SC_CALC_NC_EVT, NULL);
+        }
+        break;
+    case SMP_MODEL_SEC_CONN_PASSKEY_ENT:
+    case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
+        if (!smp_check_commitment(p_cb)) {
+            reason = p_cb->failure = SMP_CONFIRM_VALUE_ERR;
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
             break;
-        case SMP_MODEL_SEC_CONN_OOB:
-            if (p_cb->role == HCI_ROLE_SLAVE)
-            {
-                smp_send_rand(p_cb, NULL);
-            }
+        }
 
-            smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
+        if (p_cb->role == HCI_ROLE_SLAVE) {
+            smp_send_rand(p_cb, NULL);
+        }
+
+        if (++p_cb->round < 20) {
+            smp_set_state(SMP_STATE_SEC_CONN_PHS1_START);
+            p_cb->flags &= ~SMP_PAIR_FLAG_HAVE_PEER_COMM;
+            smp_start_nonce_generation(p_cb);
             break;
-        default:
-            SMP_TRACE_ERROR ("Association Model = %d is not used in LE SC\n",
-                              p_cb->selected_association_model);
-            break;
+        }
+
+        smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
+        break;
+    case SMP_MODEL_SEC_CONN_OOB:
+        if (p_cb->role == HCI_ROLE_SLAVE) {
+            smp_send_rand(p_cb, NULL);
+        }
+
+        smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
+        break;
+    default:
+        SMP_TRACE_ERROR ("Association Model = %d is not used in LE SC\n",
+                         p_cb->selected_association_model);
+        break;
     }
 
-    SMP_TRACE_DEBUG("%s end\n ",__FUNCTION__);
+    SMP_TRACE_DEBUG("%s end\n ", __FUNCTION__);
 }
 
 /*******************************************************************************
@@ -1722,8 +1617,7 @@ void smp_match_dhkey_checks(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s\n", __func__);
 
-    if (memcmp(p_data->key.p_data, p_cb->remote_dhkey_check, BT_OCTET16_LEN))
-    {
+    if (memcmp(p_data->key.p_data, p_cb->remote_dhkey_check, BT_OCTET16_LEN)) {
         SMP_TRACE_WARNING ("dhkey chcks do no match\n");
         p_cb->failure = reason;
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
@@ -1733,15 +1627,13 @@ void smp_match_dhkey_checks(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_EVENT ("dhkey chcks match\n");
 
     /* compare the max encryption key size, and save the smaller one for the link */
-    if (p_cb->peer_enc_size < p_cb->loc_enc_size)
+    if (p_cb->peer_enc_size < p_cb->loc_enc_size) {
         p_cb->loc_enc_size = p_cb->peer_enc_size;
-
-    if (p_cb->role == HCI_ROLE_SLAVE)
-    {
-        smp_sm_event(p_cb, SMP_PAIR_DHKEY_CHCK_EVT, NULL);
     }
-    else
-    {
+
+    if (p_cb->role == HCI_ROLE_SLAVE) {
+        smp_sm_event(p_cb, SMP_PAIR_DHKEY_CHCK_EVT, NULL);
+    } else {
         /* master device always use received i/r key as keys to distribute */
         p_cb->local_i_key = p_cb->peer_i_key;
         p_cb->local_r_key = p_cb->peer_r_key;
@@ -1758,7 +1650,7 @@ void smp_match_dhkey_checks(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_move_to_secure_connections_phase2(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    SMP_TRACE_DEBUG("%s\n",__func__);
+    SMP_TRACE_DEBUG("%s\n", __func__);
     smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
 }
 
@@ -1771,10 +1663,11 @@ void smp_move_to_secure_connections_phase2(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_phase_2_dhkey_checks_are_present(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    SMP_TRACE_DEBUG("%s\n",__func__);
+    SMP_TRACE_DEBUG("%s\n", __func__);
 
-    if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_DHK_CHK)
+    if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_DHK_CHK) {
         smp_sm_event(p_cb, SMP_SC_2_DHCK_CHKS_PRES_EVT, NULL);
+    }
 }
 
 /*******************************************************************************
@@ -1787,14 +1680,12 @@ void smp_phase_2_dhkey_checks_are_present(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_wait_for_both_public_keys(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    SMP_TRACE_DEBUG("%s\n",__func__);
+    SMP_TRACE_DEBUG("%s\n", __func__);
 
     if ((p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_PUBL_KEY) &&
-        (p_cb->flags & SMP_PAIR_FLAG_HAVE_LOCAL_PUBL_KEY))
-    {
+            (p_cb->flags & SMP_PAIR_FLAG_HAVE_LOCAL_PUBL_KEY)) {
         if ((p_cb->role == HCI_ROLE_SLAVE) &&
-            ((p_cb->req_oob_type == SMP_OOB_LOCAL) || (p_cb->req_oob_type == SMP_OOB_BOTH)))
-        {
+                ((p_cb->req_oob_type == SMP_OOB_LOCAL) || (p_cb->req_oob_type == SMP_OOB_BOTH))) {
             smp_set_state(SMP_STATE_PUBLIC_KEY_EXCH);
         }
         smp_sm_event(p_cb, SMP_BOTH_PUBL_KEYS_RCVD_EVT, NULL);
@@ -1829,24 +1720,18 @@ void smp_process_secure_connection_oob_data(tSMP_CB *p_cb, tSMP_INT_DATA *p_data
     SMP_TRACE_DEBUG("%s\n", __func__);
 
     tSMP_SC_OOB_DATA *p_sc_oob_data = &p_cb->sc_oob_data;
-    if (p_sc_oob_data->loc_oob_data.present)
-    {
+    if (p_sc_oob_data->loc_oob_data.present) {
         memcpy(p_cb->local_random, p_sc_oob_data->loc_oob_data.randomizer,
                sizeof(p_cb->local_random));
-    }
-    else
-    {
+    } else {
         SMP_TRACE_EVENT ("local OOB randomizer is absent\n");
         memset(p_cb->local_random, 0, sizeof (p_cb->local_random));
     }
 
-    if (!p_sc_oob_data->peer_oob_data.present)
-    {
+    if (!p_sc_oob_data->peer_oob_data.present) {
         SMP_TRACE_EVENT ("peer OOB data is absent\n");
         memset(p_cb->peer_random, 0, sizeof (p_cb->peer_random));
-    }
-    else
-    {
+    } else {
         memcpy(p_cb->peer_random, p_sc_oob_data->peer_oob_data.randomizer,
                sizeof(p_cb->peer_random));
         memcpy(p_cb->remote_commitment, p_sc_oob_data->peer_oob_data.commitment,
@@ -1854,15 +1739,13 @@ void smp_process_secure_connection_oob_data(tSMP_CB *p_cb, tSMP_INT_DATA *p_data
 
         UINT8 reason = SMP_CONFIRM_VALUE_ERR;
         /* check commitment */
-        if (!smp_check_commitment(p_cb))
-        {
+        if (!smp_check_commitment(p_cb)) {
             p_cb->failure = reason;
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
             return;
         }
 
-        if (p_cb->peer_oob_flag != SMP_OOB_PRESENT)
-        {
+        if (p_cb->peer_oob_flag != SMP_OOB_PRESENT) {
             /* the peer doesn't have local randomiser */
             SMP_TRACE_EVENT ("peer didn't receive local OOB data, set local randomizer to 0\n");
             memset(p_cb->local_random, 0, sizeof (p_cb->local_random));
@@ -1909,23 +1792,23 @@ void smp_set_local_oob_random_commitment(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 #if SMP_DEBUG == TRUE
     UINT8   *p_print = NULL;
     SMP_TRACE_DEBUG("local SC OOB data set:\n");
-    p_print = (UINT8*) &p_cb->sc_oob_data.loc_oob_data.addr_sent_to;
+    p_print = (UINT8 *) &p_cb->sc_oob_data.loc_oob_data.addr_sent_to;
     smp_debug_print_nbyte_little_endian (p_print, (const UINT8 *)"addr_sent_to",
                                          sizeof(tBLE_BD_ADDR));
-    p_print = (UINT8*) &p_cb->sc_oob_data.loc_oob_data.private_key_used;
+    p_print = (UINT8 *) &p_cb->sc_oob_data.loc_oob_data.private_key_used;
     smp_debug_print_nbyte_little_endian (p_print, (const UINT8 *)"private_key_used",
                                          BT_OCTET32_LEN);
-    p_print = (UINT8*) &p_cb->sc_oob_data.loc_oob_data.publ_key_used.x;
+    p_print = (UINT8 *) &p_cb->sc_oob_data.loc_oob_data.publ_key_used.x;
     smp_debug_print_nbyte_little_endian (p_print, (const UINT8 *)"publ_key_used.x",
                                          BT_OCTET32_LEN);
-    p_print = (UINT8*) &p_cb->sc_oob_data.loc_oob_data.publ_key_used.y;
+    p_print = (UINT8 *) &p_cb->sc_oob_data.loc_oob_data.publ_key_used.y;
     smp_debug_print_nbyte_little_endian (p_print, (const UINT8 *)"publ_key_used.y",
                                          BT_OCTET32_LEN);
-    p_print = (UINT8*) &p_cb->sc_oob_data.loc_oob_data.randomizer;
+    p_print = (UINT8 *) &p_cb->sc_oob_data.loc_oob_data.randomizer;
     smp_debug_print_nbyte_little_endian (p_print, (const UINT8 *)"randomizer",
                                          BT_OCTET16_LEN);
-    p_print = (UINT8*) &p_cb->sc_oob_data.loc_oob_data.commitment;
-    smp_debug_print_nbyte_little_endian (p_print,(const UINT8 *) "commitment",
+    p_print = (UINT8 *) &p_cb->sc_oob_data.loc_oob_data.commitment;
+    smp_debug_print_nbyte_little_endian (p_print, (const UINT8 *) "commitment",
                                          BT_OCTET16_LEN);
     SMP_TRACE_DEBUG("");
 #endif
@@ -1955,12 +1838,10 @@ void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
 
     SMP_TRACE_DEBUG("%s encr_enable=%d\n", __func__, encr_enable);
 
-    if (memcmp(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN) == 0)
-    {
+    if (memcmp(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN) == 0) {
         /* encryption completed with STK, remmeber the key size now, could be overwite
         *  when key exchange happens                                        */
-        if (p_cb->loc_enc_size != 0 && encr_enable)
-        {
+        if (p_cb->loc_enc_size != 0 && encr_enable) {
             /* update the link encryption key size if a SMP pairing just performed */
             btm_ble_update_sec_key_size(bda, p_cb->loc_enc_size);
         }
@@ -1984,22 +1865,19 @@ BOOLEAN smp_proc_ltk_request(BD_ADDR bda)
     SMP_TRACE_DEBUG("%s state = %d\n",  __func__, smp_cb.state);
     BOOLEAN match = FALSE;
 
-    if (!memcmp(bda, smp_cb.pairing_bda, BD_ADDR_LEN))
-    {
+    if (!memcmp(bda, smp_cb.pairing_bda, BD_ADDR_LEN)) {
         match = TRUE;
     } else {
         BD_ADDR dummy_bda = {0};
         tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bda);
         if (p_dev_rec != NULL &&
-            0 == memcmp(p_dev_rec->ble.pseudo_addr, smp_cb.pairing_bda, BD_ADDR_LEN) &&
-            0 != memcmp(p_dev_rec->ble.pseudo_addr, dummy_bda, BD_ADDR_LEN))
-        {
+                0 == memcmp(p_dev_rec->ble.pseudo_addr, smp_cb.pairing_bda, BD_ADDR_LEN) &&
+                0 != memcmp(p_dev_rec->ble.pseudo_addr, dummy_bda, BD_ADDR_LEN)) {
             match = TRUE;
         }
     }
 
-    if (match && smp_cb.state == SMP_STATE_ENCRYPTION_PENDING)
-    {
+    if (match && smp_cb.state == SMP_STATE_ENCRYPTION_PENDING) {
         smp_sm_event(&smp_cb, SMP_ENC_REQ_EVT, NULL);
         return TRUE;
     }
@@ -2062,8 +1940,7 @@ void smp_derive_link_key_from_long_term_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data
     tSMP_STATUS status = SMP_PAIR_FAIL_UNKNOWN;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
-    if (!smp_calculate_link_key_from_long_term_key(p_cb))
-    {
+    if (!smp_calculate_link_key_from_long_term_key(p_cb)) {
         SMP_TRACE_ERROR("%s failed\n", __FUNCTION__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
         return;
@@ -2086,9 +1963,8 @@ void smp_br_process_link_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     tSMP_STATUS status = SMP_PAIR_FAIL_UNKNOWN;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
-    if (!smp_calculate_long_term_key_from_link_key(p_cb))
-    {
-        SMP_TRACE_ERROR ("%s failed\n",__FUNCTION__);
+    if (!smp_calculate_long_term_key_from_link_key(p_cb)) {
+        SMP_TRACE_ERROR ("%s failed\n", __FUNCTION__);
         smp_sm_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &status);
         return;
     }
@@ -2107,12 +1983,9 @@ void smp_br_process_link_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 void smp_key_distribution_by_transport(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     SMP_TRACE_DEBUG("%s\n", __func__);
-    if (p_cb->smp_over_br)
-    {
+    if (p_cb->smp_over_br) {
         smp_br_select_next_key(p_cb, NULL);
-    }
-    else
-    {
+    } else {
         smp_key_distribution(p_cb, NULL);
     }
 }
@@ -2126,8 +1999,7 @@ void smp_br_pairing_complete(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     SMP_TRACE_DEBUG("%s\n", __func__);
 
-    if (p_cb->total_tx_unacked == 0)
-    {
+    if (p_cb->total_tx_unacked == 0) {
         /* process the pairing complete */
         smp_proc_pairing_cmpl(p_cb);
     }

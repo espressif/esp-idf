@@ -126,10 +126,6 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
 
 esp_err_t IRAM_ATTR spi_flash_write(size_t dest_addr, const void *src, size_t size)
 {
-    // TODO: replace this check with code which deals with unaligned sources
-    if (((ptrdiff_t) src) % 4 != 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
     // Destination alignment is also checked in ROM code, but we can give
     // better error code here
     // TODO: add handling of unaligned destinations
@@ -138,6 +134,12 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dest_addr, const void *src, size_t si
     }
     if (size % 4 != 0) {
         return ESP_ERR_INVALID_SIZE;
+    }
+    if ((uint32_t) src < 0x3ff00000) {
+        // if source address is in DROM, we won't be able to read it
+        // from within SPIWrite
+        // TODO: consider buffering source data using heap and writing it anyway?
+        return ESP_ERR_INVALID_ARG;
     }
     // Out of bound writes are checked in ROM code, but we can give better
     // error code here

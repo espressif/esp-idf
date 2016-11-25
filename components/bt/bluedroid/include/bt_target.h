@@ -41,9 +41,9 @@
 #include "dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
 
-#ifndef	CLASSIC_BT_INCLUDED
-#define	CLASSIC_BT_INCLUDED	TRUE
-#endif	///CLASSIC_BT_INCLUDED
+#ifndef CLASSIC_BT_INCLUDED
+#define CLASSIC_BT_INCLUDED TRUE
+#endif  ///CLASSIC_BT_INCLUDED
 
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
@@ -921,7 +921,7 @@
 #endif
 #endif
 
-	
+
 #if SMP_INCLUDED == TRUE && BLE_INCLUDED == FALSE
 #error "can't have SMP without BLE"
 #endif
@@ -1557,7 +1557,7 @@ Range: 2 octets
 #endif
 
 #ifndef HID_HOST_MAX_CONN_RETRY
-#define HID_HOST_MAX_CONN_RETRY     (3) 
+#define HID_HOST_MAX_CONN_RETRY     (3)
 #endif
 
 #ifndef HID_HOST_REPAGE_WIN

@@ -75,7 +75,7 @@ extern BOOLEAN bta_gatts_co_srv_chg(tBTA_GATTS_SRV_CHG_CMD cmd,
 **
 *******************************************************************************/
 extern  BOOLEAN bta_gatts_co_load_handle_range(UINT8 index,
-                                               tBTA_GATTS_HNDL_RANGE *p_handle);
+        tBTA_GATTS_HNDL_RANGE *p_handle);
 
 
 #endif /* BTA_GATTS_CO_H */

@@ -26,8 +26,8 @@ typedef void *(*alloc_fn)(size_t size);
 typedef void (*free_fn)(void *ptr);
 
 typedef struct {
-  alloc_fn alloc;
-  free_fn  free;
+    alloc_fn alloc;
+    free_fn  free;
 } allocator_t;
 
 // allocator_t abstractions for the osi_*alloc and osi_free functions

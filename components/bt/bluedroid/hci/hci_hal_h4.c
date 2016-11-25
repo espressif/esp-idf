@@ -34,23 +34,23 @@
 
 
 static const uint8_t preamble_sizes[] = {
-  HCI_COMMAND_PREAMBLE_SIZE,
-  HCI_ACL_PREAMBLE_SIZE,
-  HCI_SCO_PREAMBLE_SIZE,
-  HCI_EVENT_PREAMBLE_SIZE
+    HCI_COMMAND_PREAMBLE_SIZE,
+    HCI_ACL_PREAMBLE_SIZE,
+    HCI_SCO_PREAMBLE_SIZE,
+    HCI_EVENT_PREAMBLE_SIZE
 };
 
 static const uint16_t outbound_event_types[] = {
-  MSG_HC_TO_STACK_HCI_ERR,
-  MSG_HC_TO_STACK_HCI_ACL,
-  MSG_HC_TO_STACK_HCI_SCO,
-  MSG_HC_TO_STACK_HCI_EVT
+    MSG_HC_TO_STACK_HCI_ERR,
+    MSG_HC_TO_STACK_HCI_ACL,
+    MSG_HC_TO_STACK_HCI_SCO,
+    MSG_HC_TO_STACK_HCI_EVT
 };
 
 typedef struct {
-  const allocator_t *allocator;
-  size_t buffer_size;
-  fixed_queue_t *rx_q;
+    const allocator_t *allocator;
+    size_t buffer_size;
+    fixed_queue_t *rx_q;
 } hci_hal_env_t;
 
 
@@ -71,49 +71,52 @@ static void event_uart_has_bytes(fixed_queue_t *queue);
 
 static void hci_hal_env_init(
     size_t buffer_size,
-    size_t max_buffer_count) {
-  assert(buffer_size > 0);
-  assert(max_buffer_count > 0);
+    size_t max_buffer_count)
+{
+    assert(buffer_size > 0);
+    assert(max_buffer_count > 0);
 
-  hci_hal_env.allocator = buffer_allocator_get_interface();
-  hci_hal_env.buffer_size = buffer_size;
+    hci_hal_env.allocator = buffer_allocator_get_interface();
+    hci_hal_env.buffer_size = buffer_size;
 
-  hci_hal_env.rx_q = fixed_queue_new(max_buffer_count);
-  if (hci_hal_env.rx_q)
-    fixed_queue_register_dequeue(hci_hal_env.rx_q, event_uart_has_bytes);
-  else
-    LOG_ERROR("%s unable to create rx queue.\n", __func__);
+    hci_hal_env.rx_q = fixed_queue_new(max_buffer_count);
+    if (hci_hal_env.rx_q) {
+        fixed_queue_register_dequeue(hci_hal_env.rx_q, event_uart_has_bytes);
+    } else {
+        LOG_ERROR("%s unable to create rx queue.\n", __func__);
+    }
 
-  return;
+    return;
 }
 
-static void hci_hal_env_deinit(void) {
-  fixed_queue_free(hci_hal_env.rx_q, hci_hal_env.allocator->free);
+static void hci_hal_env_deinit(void)
+{
+    fixed_queue_free(hci_hal_env.rx_q, hci_hal_env.allocator->free);
 }
 
 static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
 {
-  assert(upper_callbacks != NULL);
-  callbacks = upper_callbacks;
+    assert(upper_callbacks != NULL);
+    callbacks = upper_callbacks;
 
-  hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX);
-  
-  xHciH4Queue = xQueueCreate(60, sizeof(BtTaskEvt_t));
-  xTaskCreate(hci_hal_h4_rx_handler, "HciH4T", 2048+1024, NULL, configMAX_PRIORITIES - 3, &xHciH4TaskHandle);
+    hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX);
 
-  //register vhci host cb
-  API_vhci_host_register_callback(&vhci_host_cb);
+    xHciH4Queue = xQueueCreate(60, sizeof(BtTaskEvt_t));
+    xTaskCreate(hci_hal_h4_rx_handler, "HciH4T", 2048 + 1024, NULL, configMAX_PRIORITIES - 3, &xHciH4TaskHandle);
 
+    //register vhci host cb
+    API_vhci_host_register_callback(&vhci_host_cb);
 
-  return true;
+    return true;
 }
 
-static void hal_close() {
-  hci_hal_env_deinit();
- 
-  /* delete task and queue */ 
-  vTaskDelete(xHciH4TaskHandle);
-  vQueueDelete(xHciH4Queue);
+static void hal_close()
+{
+    hci_hal_env_deinit();
+
+    /* delete task and queue */
+    vTaskDelete(xHciH4TaskHandle);
+    vQueueDelete(xHciH4Queue);
 }
 
 /**
@@ -125,31 +128,31 @@ static void hal_close() {
 static uint16_t transmit_data(serial_data_type_t type,
                               uint8_t *data, uint16_t length)
 {
-  uint8_t previous_byte;
+    uint8_t previous_byte;
 
-  assert(data != NULL);
-  assert(length > 0);
+    assert(data != NULL);
+    assert(length > 0);
 
-  if (type < DATA_TYPE_COMMAND || type > DATA_TYPE_SCO) {
-    LOG_ERROR("%s invalid data type: %d", __func__, type);
-    return 0;
-  }
+    if (type < DATA_TYPE_COMMAND || type > DATA_TYPE_SCO) {
+        LOG_ERROR("%s invalid data type: %d", __func__, type);
+        return 0;
+    }
 
-  // Write the signal byte right before the data
-  --data;
-  previous_byte = *data;
-  *(data) = type;
-  ++length;
+    // Write the signal byte right before the data
+    --data;
+    previous_byte = *data;
+    *(data) = type;
+    ++length;
 
-  BTTRC_DUMP_BUFFER("Transmit Pkt", data, length);
+    BTTRC_DUMP_BUFFER("Transmit Pkt", data, length);
 
-  // TX Data to target
-  API_vhci_host_send_packet(data, length);
+    // TX Data to target
+    API_vhci_host_send_packet(data, length);
 
-  // Be nice and restore the old value of that byte
-  *(data) = previous_byte;
+    // Be nice and restore the old value of that byte
+    *(data) = previous_byte;
 
-  return length - 1;
+    return length - 1;
 }
 
 // Internal functions
@@ -159,7 +162,7 @@ static void hci_hal_h4_rx_handler(void *arg)
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciH4Queue, &e, (portTickType)portMAX_DELAY)) {
-            if (e.sig == 0xff) {  
+            if (e.sig == 0xff) {
                 fixed_queue_process(hci_hal_env.rx_q);
             }
         }
@@ -173,111 +176,117 @@ void hci_hal_h4_task_post(void)
     evt.sig = 0xff;
     evt.par = 0;
 
-    if (xQueueSend(xHciH4Queue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
+    if (xQueueSend(xHciH4Queue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
         LOG_ERROR("xHciH4Queue failed\n");
     }
 }
 
-static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet) {
-  uint8_t type, hdr_size;
-  uint16_t length;
-  uint8_t *stream = packet->data + packet->offset;
+static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
+{
+    uint8_t type, hdr_size;
+    uint16_t length;
+    uint8_t *stream = packet->data + packet->offset;
 
-  if (!packet)
-    return;
-  STREAM_TO_UINT8(type, stream);
-  packet->offset++;
-  packet->len--;
-  if (type == HCI_BLE_EVENT) {
-    uint8_t len;
-    STREAM_TO_UINT8(len, stream);
-    LOG_ERROR("Workround stream corrupted during LE SCAN: pkt_len=%d ble_event_len=%d",
-              packet->len, len);
-    hci_hal_env.allocator->free(packet);
-    return;
-  }
-  if (type < DATA_TYPE_ACL || type > DATA_TYPE_EVENT) {
-    LOG_ERROR("%d Unknown HCI message type. Dropping this byte 0x%x,"
-              " min %x, max %x", __func__, type,
-              DATA_TYPE_ACL, DATA_TYPE_EVENT);
-    hci_hal_env.allocator->free(packet);
-    return;
-  }
-  hdr_size = preamble_sizes[type - 1];
-  if (packet->len < hdr_size) {
-    LOG_ERROR("Wrong packet length type=%s pkt_len=%d hdr_len=%d",
-              type, packet->len, hdr_size);
-    hci_hal_env.allocator->free(packet);
-    return;
-  }
-  if (type == DATA_TYPE_ACL) {
-    stream += hdr_size - 2;
-    STREAM_TO_UINT16(length, stream);
-  } else {
-    stream += hdr_size - 1;
-    STREAM_TO_UINT8(length, stream);
-  }
+    if (!packet) {
+        return;
+    }
+    STREAM_TO_UINT8(type, stream);
+    packet->offset++;
+    packet->len--;
+    if (type == HCI_BLE_EVENT) {
+        uint8_t len;
+        STREAM_TO_UINT8(len, stream);
+        LOG_ERROR("Workround stream corrupted during LE SCAN: pkt_len=%d ble_event_len=%d\n",
+                  packet->len, len);
+        hci_hal_env.allocator->free(packet);
+        return;
+    }
+    if (type < DATA_TYPE_ACL || type > DATA_TYPE_EVENT) {
+        LOG_ERROR("%s Unknown HCI message type. Dropping this byte 0x%x,"
+                  " min %x, max %x\n", __func__, type,
+                  DATA_TYPE_ACL, DATA_TYPE_EVENT);
+        hci_hal_env.allocator->free(packet);
+        return;
+    }
+    hdr_size = preamble_sizes[type - 1];
+    if (packet->len < hdr_size) {
+        LOG_ERROR("Wrong packet length type=%d pkt_len=%d hdr_len=%d",
+                  type, packet->len, hdr_size);
+        hci_hal_env.allocator->free(packet);
+        return;
+    }
+    if (type == DATA_TYPE_ACL) {
+        stream += hdr_size - 2;
+        STREAM_TO_UINT16(length, stream);
+    } else {
+        stream += hdr_size - 1;
+        STREAM_TO_UINT8(length, stream);
+    }
 
-  if ((length + hdr_size) != packet->len) {
-    LOG_ERROR("Wrong packet length type=%d hdr_len=%d pd_len=%d "
-              "pkt_len=%d", type, hdr_size, length, packet->len);
-    hci_hal_env.allocator->free(packet);
-    return;
-  }
+    if ((length + hdr_size) != packet->len) {
+        LOG_ERROR("Wrong packet length type=%d hdr_len=%d pd_len=%d "
+                  "pkt_len=%d", type, hdr_size, length, packet->len);
+        hci_hal_env.allocator->free(packet);
+        return;
+    }
 
-  packet->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
-  callbacks->packet_ready(packet);
+    packet->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
+    callbacks->packet_ready(packet);
 }
 
-static void event_uart_has_bytes(fixed_queue_t *queue) {
-  BT_HDR *packet;
-  while (!fixed_queue_is_empty(queue)) {
-    packet = fixed_queue_dequeue(queue);
-    hci_hal_h4_hdl_rx_packet(packet);
-  }
+static void event_uart_has_bytes(fixed_queue_t *queue)
+{
+    BT_HDR *packet;
+    while (!fixed_queue_is_empty(queue)) {
+        packet = fixed_queue_dequeue(queue);
+        hci_hal_h4_hdl_rx_packet(packet);
+    }
 }
 
-static void host_send_pkt_available_cb(void) {
-  //Controller rx cache buffer is ready for receiving new host packet
-  //Just Call Host main thread task to process pending packets.
-  hci_host_task_post();
+static void host_send_pkt_available_cb(void)
+{
+    //Controller rx cache buffer is ready for receiving new host packet
+    //Just Call Host main thread task to process pending packets.
+    hci_host_task_post();
 }
 
-static int host_recv_pkt_cb(uint8_t *data, uint16_t len) {
-  //Target has packet to host, malloc new buffer for packet
-  BT_HDR *pkt;
-  size_t pkt_size;
+static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
+{
+    //Target has packet to host, malloc new buffer for packet
+    BT_HDR *pkt;
+    size_t pkt_size;
 
-  pkt_size = BT_HDR_SIZE + len;
-  pkt = (BT_HDR *)hci_hal_env.allocator->alloc(pkt_size);
-  if (!pkt) {
-    LOG_ERROR("%s couldn't aquire memory for inbound data buffer.", __func__);
-    return -1;
-  }
-  pkt->offset = 0;
-  pkt->len = len;
-  pkt->layer_specific = 0;
-  memcpy(pkt->data, data, len);
-  fixed_queue_enqueue(hci_hal_env.rx_q, pkt);
-  hci_hal_h4_task_post();
+    pkt_size = BT_HDR_SIZE + len;
+    pkt = (BT_HDR *)hci_hal_env.allocator->alloc(pkt_size);
+    if (!pkt) {
+        LOG_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
+        return -1;
+    }
+    pkt->offset = 0;
+    pkt->len = len;
+    pkt->layer_specific = 0;
+    memcpy(pkt->data, data, len);
+    fixed_queue_enqueue(hci_hal_env.rx_q, pkt);
+    hci_hal_h4_task_post();
 
-  BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
+    BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
 
-  return 0;
+    return 0;
 }
 
 static const vhci_host_callback_t vhci_host_cb = {
-  .notify_host_send_available = host_send_pkt_available_cb,
-  .notify_host_recv = host_recv_pkt_cb,
+    .notify_host_send_available = host_send_pkt_available_cb,
+    .notify_host_recv = host_recv_pkt_cb,
 };
 
 static const hci_hal_t interface = {
-  hal_open,
-  hal_close,
-  transmit_data,
+    hal_open,
+    hal_close,
+    transmit_data,
 };
 
-const hci_hal_t *hci_hal_h4_get_interface() {
-  return &interface;
+const hci_hal_t *hci_hal_h4_get_interface()
+{
+    return &interface;
 }
 

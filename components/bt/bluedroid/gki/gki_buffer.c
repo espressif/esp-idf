@@ -54,8 +54,7 @@ static void gki_init_free_queue (UINT8 id, UINT16 size, UINT16 total, void *p_me
     act_size = (UINT16)(tempsize + BUFFER_PADDING_SIZE);
 
     /* Remember pool start and end addresses */
-    if(p_mem)
-    {
+    if (p_mem) {
         p_cb->pool_start[id] = (UINT8 *)p_mem;
         p_cb->pool_end[id]   = (UINT8 *)p_mem + (act_size * total);
     }
@@ -68,12 +67,10 @@ static void gki_init_free_queue (UINT8 id, UINT16 size, UINT16 total, void *p_me
     p_cb->freeq[id].max_cnt   = 0;
 
     /* Initialize  index table */
-    if(p_mem)
-    {
+    if (p_mem) {
         hdr = (BUFFER_HDR_T *)p_mem;
         p_cb->freeq[id]._p_first = hdr;
-        for (i = 0; i < total; i++)
-        {
+        for (i = 0; i < total; i++) {
             hdr->q_id    = id;
             hdr->status  = BUF_STATUS_FREE;
             magic        = (UINT32 *)((UINT8 *)hdr + BUFFER_HDR_SIZE + tempsize);
@@ -92,10 +89,8 @@ void gki_buffer_cleanup(void)
     UINT8   i;
     tGKI_COM_CB *p_cb = &gki_cb.com;
 
-    for (i=0; i < GKI_NUM_FIXED_BUF_POOLS; i++)
-    {
-        if ( 0 < p_cb->freeq[i].max_cnt )
-        {
+    for (i = 0; i < GKI_NUM_FIXED_BUF_POOLS; i++) {
+        if ( 0 < p_cb->freeq[i].max_cnt ) {
             osi_free(p_cb->pool_start[i]);
 
             p_cb->freeq[i].cur_cnt   = 0;
@@ -123,25 +118,24 @@ void gki_buffer_cleanup(void)
 void gki_buffer_init(void)
 {
     static const struct {
-      uint16_t size;
-      uint16_t count;
+        uint16_t size;
+        uint16_t count;
     } buffer_info[GKI_NUM_FIXED_BUF_POOLS] = {
-      { GKI_BUF0_SIZE, GKI_BUF0_MAX },
-      { GKI_BUF1_SIZE, GKI_BUF1_MAX },
-      { GKI_BUF2_SIZE, GKI_BUF2_MAX },
-      { GKI_BUF3_SIZE, GKI_BUF3_MAX },
-      { GKI_BUF4_SIZE, GKI_BUF4_MAX },
-      { GKI_BUF5_SIZE, GKI_BUF5_MAX },
-      { GKI_BUF6_SIZE, GKI_BUF6_MAX },
-      { GKI_BUF7_SIZE, GKI_BUF7_MAX },
-      { GKI_BUF8_SIZE, GKI_BUF8_MAX },
-      { GKI_BUF9_SIZE, GKI_BUF9_MAX },
+        { GKI_BUF0_SIZE, GKI_BUF0_MAX },
+        { GKI_BUF1_SIZE, GKI_BUF1_MAX },
+        { GKI_BUF2_SIZE, GKI_BUF2_MAX },
+        { GKI_BUF3_SIZE, GKI_BUF3_MAX },
+        { GKI_BUF4_SIZE, GKI_BUF4_MAX },
+        { GKI_BUF5_SIZE, GKI_BUF5_MAX },
+        { GKI_BUF6_SIZE, GKI_BUF6_MAX },
+        { GKI_BUF7_SIZE, GKI_BUF7_MAX },
+        { GKI_BUF8_SIZE, GKI_BUF8_MAX },
+        { GKI_BUF9_SIZE, GKI_BUF9_MAX },
     };
 
     tGKI_COM_CB *p_cb = &gki_cb.com;
 
-    for (int i = 0; i < GKI_NUM_TOTAL_BUF_POOLS; i++)
-    {
+    for (int i = 0; i < GKI_NUM_TOTAL_BUF_POOLS; i++) {
         p_cb->pool_start[i] = NULL;
         p_cb->pool_end[i]   = NULL;
         p_cb->pool_size[i]  = 0;
@@ -158,7 +152,7 @@ void gki_buffer_init(void)
     p_cb->pool_access_mask = GKI_DEF_BUFPOOL_PERM_MASK;
 
     for (int i = 0; i < GKI_NUM_FIXED_BUF_POOLS; ++i) {
-      gki_init_free_queue(i, buffer_info[i].size, buffer_info[i].count, NULL);
+        gki_init_free_queue(i, buffer_info[i].size, buffer_info[i].count, NULL);
     }
 }
 
@@ -195,18 +189,18 @@ void GKI_init_q (BUFFER_Q *p_q)
 *******************************************************************************/
 void *GKI_getbuf (UINT16 size)
 {
-  BUFFER_HDR_T *header = osi_malloc(size + BUFFER_HDR_SIZE);
-  assert(header != NULL);
-  if (header != NULL) {
-    header->status  = BUF_STATUS_UNLINKED;
-    header->p_next  = NULL;
-    header->Type    = 0;
-    header->size = size;
+    BUFFER_HDR_T *header = osi_malloc(size + BUFFER_HDR_SIZE);
+    assert(header != NULL);
+    if (header != NULL) {
+        header->status  = BUF_STATUS_UNLINKED;
+        header->p_next  = NULL;
+        header->Type    = 0;
+        header->size = size;
 
-    return header + 1;
-  } else {
-      return NULL;
-  }
+        return header + 1;
+    } else {
+        return NULL;
+    }
 }
 
 
@@ -227,7 +221,7 @@ void *GKI_getbuf (UINT16 size)
 *******************************************************************************/
 void *GKI_getpoolbuf (UINT8 pool_id)
 {
-  return GKI_getbuf(gki_cb.com.pool_size[pool_id]);
+    return GKI_getbuf(gki_cb.com.pool_size[pool_id]);
 }
 
 /*******************************************************************************
@@ -243,7 +237,7 @@ void *GKI_getpoolbuf (UINT8 pool_id)
 *******************************************************************************/
 void GKI_freebuf (void *p_buf)
 {
-  osi_free((BUFFER_HDR_T *)p_buf - 1);
+    osi_free((BUFFER_HDR_T *)p_buf - 1);
 }
 
 
@@ -260,8 +254,8 @@ void GKI_freebuf (void *p_buf)
 *******************************************************************************/
 UINT16 GKI_get_buf_size (void *p_buf)
 {
-  BUFFER_HDR_T *header = (BUFFER_HDR_T *)p_buf - 1;
-  return header->size;
+    BUFFER_HDR_T *header = (BUFFER_HDR_T *)p_buf - 1;
+    return header->size;
 }
 
 /*******************************************************************************
@@ -284,13 +278,12 @@ void GKI_enqueue (BUFFER_Q *p_q, void *p_buf)
     GKI_disable();
 
     /* Since the queue is exposed (C vs C++), keep the pointers in exposed format */
-    if (p_q->_p_last)
-    {
+    if (p_q->_p_last) {
         BUFFER_HDR_T *_p_last_hdr = (BUFFER_HDR_T *)((UINT8 *)p_q->_p_last - BUFFER_HDR_SIZE);
         _p_last_hdr->p_next = p_hdr;
-    }
-    else
+    } else {
         p_q->_p_first = p_buf;
+    }
 
     p_q->_p_last = p_buf;
     p_q->_count++;
@@ -318,8 +311,7 @@ void *GKI_dequeue (BUFFER_Q *p_q)
 
     GKI_disable();
 
-    if (!p_q || !p_q->_count)
-    {
+    if (!p_q || !p_q->_count) {
         GKI_enable();
         return (NULL);
     }
@@ -328,10 +320,9 @@ void *GKI_dequeue (BUFFER_Q *p_q)
 
     /* Keep buffers such that GKI header is invisible
     */
-    if (p_hdr->p_next)
+    if (p_hdr->p_next) {
         p_q->_p_first = ((UINT8 *)p_hdr->p_next + BUFFER_HDR_SIZE);
-    else
-    {
+    } else {
         p_q->_p_first = NULL;
         p_q->_p_last  = NULL;
     }
@@ -365,8 +356,7 @@ void *GKI_remove_from_queue (BUFFER_Q *p_q, void *p_buf)
 
     GKI_disable();
 
-    if (p_buf == p_q->_p_first)
-    {
+    if (p_buf == p_q->_p_first) {
         GKI_enable();
         return (GKI_dequeue (p_q));
     }
@@ -374,16 +364,15 @@ void *GKI_remove_from_queue (BUFFER_Q *p_q, void *p_buf)
     p_buf_hdr = (BUFFER_HDR_T *)((UINT8 *)p_buf - BUFFER_HDR_SIZE);
     p_prev    = (BUFFER_HDR_T *)((UINT8 *)p_q->_p_first - BUFFER_HDR_SIZE);
 
-    for ( ; p_prev; p_prev = p_prev->p_next)
-    {
+    for ( ; p_prev; p_prev = p_prev->p_next) {
         /* If the previous points to this one, move the pointers around */
-        if (p_prev->p_next == p_buf_hdr)
-        {
+        if (p_prev->p_next == p_buf_hdr) {
             p_prev->p_next = p_buf_hdr->p_next;
 
             /* If we are removing the last guy in the queue, update _p_last */
-            if (p_buf == p_q->_p_last)
+            if (p_buf == p_q->_p_last) {
                 p_q->_p_last = p_prev + 1;
+            }
 
             /* One less in the queue */
             p_q->_count--;
@@ -450,10 +439,11 @@ void *GKI_getnext (void *p_buf)
 
     p_hdr = (BUFFER_HDR_T *) ((UINT8 *) p_buf - BUFFER_HDR_SIZE);
 
-    if (p_hdr->p_next)
+    if (p_hdr->p_next) {
         return ((UINT8 *)p_hdr->p_next + BUFFER_HDR_SIZE);
-    else
+    } else {
         return (NULL);
+    }
 }
 
 /*******************************************************************************
@@ -491,8 +481,9 @@ UINT16 GKI_queue_length(BUFFER_Q *p_q)
 *******************************************************************************/
 UINT16 GKI_poolcount (UINT8 pool_id)
 {
-    if (pool_id >= GKI_NUM_TOTAL_BUF_POOLS)
+    if (pool_id >= GKI_NUM_TOTAL_BUF_POOLS) {
         return (0);
+    }
 
     return (gki_cb.com.freeq[pool_id].total);
 }
@@ -513,8 +504,9 @@ UINT16 GKI_poolfreecount (UINT8 pool_id)
 {
     FREE_QUEUE_T  *Q;
 
-    if (pool_id >= GKI_NUM_TOTAL_BUF_POOLS)
+    if (pool_id >= GKI_NUM_TOTAL_BUF_POOLS) {
         return (0);
+    }
 
     Q  = &gki_cb.com.freeq[pool_id];
 
@@ -534,8 +526,9 @@ UINT16 GKI_poolfreecount (UINT8 pool_id)
 *******************************************************************************/
 UINT16 GKI_get_pool_bufsize (UINT8 pool_id)
 {
-    if (pool_id < GKI_NUM_TOTAL_BUF_POOLS)
+    if (pool_id < GKI_NUM_TOTAL_BUF_POOLS) {
         return (gki_cb.com.freeq[pool_id].size);
+    }
 
     return (0);
 }
@@ -556,13 +549,15 @@ UINT16 GKI_poolutilization (UINT8 pool_id)
 {
     FREE_QUEUE_T  *Q;
 
-    if (pool_id >= GKI_NUM_TOTAL_BUF_POOLS)
+    if (pool_id >= GKI_NUM_TOTAL_BUF_POOLS) {
         return (100);
+    }
 
     Q  = &gki_cb.com.freeq[pool_id];
 
-    if (Q->total == 0)
+    if (Q->total == 0) {
         return (100);
+    }
 
     return ((Q->cur_cnt * 100) / Q->total);
 }

@@ -46,7 +46,7 @@ extern "C"
 **
 *******************************************************************************/
 extern void bta_dm_ci_io_req(BD_ADDR bd_addr, tBTA_IO_CAP io_cap,
-                                     tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req);
+                             tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req);
 
 /*******************************************************************************
 **

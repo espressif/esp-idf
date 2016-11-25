@@ -108,6 +108,7 @@
 
 /* configASSERT behaviour */
 #ifndef __ASSEMBLER__
+#include <stdlib.h> /* for abort() */
 #include "rom/ets_sys.h"
 
 #if defined(CONFIG_FREERTOS_ASSERT_DISABLE)
@@ -126,8 +127,6 @@
 #endif
 
 #if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-#include <stdlib.h>
-#include "rom/ets_sys.h"
 #define UNTESTED_FUNCTION() { ets_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
 #else
 #define UNTESTED_FUNCTION()
@@ -152,9 +151,9 @@
  *----------------------------------------------------------*/
 
 #define configUSE_PREEMPTION			1
-#define configUSE_IDLE_HOOK				( CONFIG_TASK_WDT_CHECK_IDLE_TASK )
+#define configUSE_IDLE_HOOK				( CONFIG_FREERTOS_LEGACY_IDLE_HOOK )
 
-#define configUSE_TICK_HOOK				( CONFIG_INT_WDT )
+#define configUSE_TICK_HOOK				( CONFIG_FREERTOS_LEGACY_TICK_HOOK )
 
 #define configTICK_RATE_HZ				( CONFIG_FREERTOS_HZ )
 
@@ -265,12 +264,6 @@
 #define INCLUDE_eTaskGetState               1
 #define configUSE_QUEUE_SETS                1
 
-#if (!defined XT_INTEXC_HOOKS)
-#define configXT_INTEXC_HOOKS               1   /* Exception hooks used by certain tests */
-#if configUSE_TRACE_FACILITY_2
-#define configASSERT_2						1	/* Specific to Xtensa port */
-#endif
-#endif
 
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0

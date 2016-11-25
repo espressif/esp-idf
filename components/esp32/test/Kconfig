@@ -1,0 +1,9 @@
+menu "TESTS"
+
+config FP_TEST_ENABLE
+    bool "Enable test fp"
+    default "y"
+    help
+        For FPGA single core CPU which has no floating point support, floating point test should be disabled.
+
+endmenu

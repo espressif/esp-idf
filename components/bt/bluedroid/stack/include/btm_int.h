@@ -75,25 +75,24 @@ typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 
 /* Define the ACL Management control structure
 */
-typedef struct
-{
-    UINT16          hci_handle;
-    UINT16          pkt_types_mask;
-    UINT16          clock_offset;
-    BD_ADDR         remote_addr;
-    DEV_CLASS       remote_dc;
-    BD_NAME         remote_name;
+typedef struct {
+UINT16          hci_handle;
+UINT16          pkt_types_mask;
+UINT16          clock_offset;
+BD_ADDR         remote_addr;
+DEV_CLASS       remote_dc;
+BD_NAME         remote_name;
 
-    UINT16          manufacturer;
-    UINT16          lmp_subversion;
-    UINT16          link_super_tout;
-    BD_FEATURES     peer_lmp_features[HCI_EXT_FEATURES_PAGE_MAX + 1];    /* Peer LMP Extended features mask table for the device */
-    UINT8           num_read_pages;
-    UINT8           lmp_version;
+UINT16          manufacturer;
+UINT16          lmp_subversion;
+UINT16          link_super_tout;
+BD_FEATURES     peer_lmp_features[HCI_EXT_FEATURES_PAGE_MAX + 1];    /* Peer LMP Extended features mask table for the device */
+UINT8           num_read_pages;
+UINT8           lmp_version;
 
-    BOOLEAN         in_use;
-    UINT8           link_role;
-    BOOLEAN         link_up_issued;     /* True if busy_level link up has been issued */
+BOOLEAN         in_use;
+UINT8           link_role;
+BOOLEAN         link_up_issued;     /* True if busy_level link up has been issued */
 
 #define BTM_ACL_SWKEY_STATE_IDLE                0
 #define BTM_ACL_SWKEY_STATE_MODE_CHANGE         1
@@ -101,21 +100,21 @@ typedef struct
 #define BTM_ACL_SWKEY_STATE_SWITCHING           3
 #define BTM_ACL_SWKEY_STATE_ENCRYPTION_ON       4
 #define BTM_ACL_SWKEY_STATE_IN_PROGRESS         5
-    UINT8           switch_role_state;
+UINT8           switch_role_state;
 
 #define BTM_ACL_ENCRYPT_STATE_IDLE              0
 #define BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF       1   /* encryption turning off */
 #define BTM_ACL_ENCRYPT_STATE_TEMP_FUNC         2   /* temporarily off for change link key or role switch */
 #define BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON        3   /* encryption turning on */
-    UINT8           encrypt_state;                  /* overall BTM encryption state */
+UINT8           encrypt_state;                  /* overall BTM encryption state */
 
 #if BLE_INCLUDED == TRUE
-    tBT_TRANSPORT   transport;
-    BD_ADDR         conn_addr;              /* local device address used for this connection */
-    UINT8           conn_addr_type;         /* local device address type for this connection */
-    BD_ADDR         active_remote_addr;     /* remote address used on this connection */
-    UINT8           active_remote_addr_type;         /* local device address type for this connection */
-    BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
+tBT_TRANSPORT   transport;
+BD_ADDR         conn_addr;              /* local device address used for this connection */
+UINT8           conn_addr_type;         /* local device address type for this connection */
+BD_ADDR         active_remote_addr;     /* remote address used on this connection */
+UINT8           active_remote_addr_type;         /* local device address type for this connection */
+BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
 
 #endif
 
@@ -130,48 +129,47 @@ typedef struct
 
 /* Define the Device Management control structure
 */
-typedef struct
-{
-    tBTM_DEV_STATUS_CB  *p_dev_status_cb;   /* Device status change callback        */
-    tBTM_VS_EVT_CB      *p_vend_spec_cb[BTM_MAX_VSE_CALLBACKS];     /* Register for vendor specific events  */
+typedef struct {
+tBTM_DEV_STATUS_CB  *p_dev_status_cb;   /* Device status change callback        */
+tBTM_VS_EVT_CB      *p_vend_spec_cb[BTM_MAX_VSE_CALLBACKS];     /* Register for vendor specific events  */
 
-    tBTM_CMPL_CB        *p_stored_link_key_cmpl_cb;   /* Read/Write/Delete stored link key    */
+tBTM_CMPL_CB        *p_stored_link_key_cmpl_cb;   /* Read/Write/Delete stored link key    */
 
-    TIMER_LIST_ENT       reset_timer;
-    tBTM_CMPL_CB         *p_reset_cmpl_cb;
+TIMER_LIST_ENT       reset_timer;
+tBTM_CMPL_CB         *p_reset_cmpl_cb;
 
-    TIMER_LIST_ENT       rln_timer;
-    tBTM_CMPL_CB        *p_rln_cmpl_cb;     /* Callback function to be called when  */
-                                            /* read local name function complete    */
-    TIMER_LIST_ENT       rssi_timer;
-    tBTM_CMPL_CB        *p_rssi_cmpl_cb;    /* Callback function to be called when  */
-                                            /* read rssi function completes         */
-    TIMER_LIST_ENT       lnk_quality_timer;
-    tBTM_CMPL_CB        *p_lnk_qual_cmpl_cb;/* Callback function to be called when  */
-                                            /* read link quality function completes */
-    TIMER_LIST_ENT       txpwer_timer;
-    tBTM_CMPL_CB        *p_txpwer_cmpl_cb;    /* Callback function to be called when  */
-                                            /* read inq tx power function completes  */
+TIMER_LIST_ENT       rln_timer;
+tBTM_CMPL_CB        *p_rln_cmpl_cb;     /* Callback function to be called when  */
+/* read local name function complete    */
+TIMER_LIST_ENT       rssi_timer;
+tBTM_CMPL_CB        *p_rssi_cmpl_cb;    /* Callback function to be called when  */
+/* read rssi function completes         */
+TIMER_LIST_ENT       lnk_quality_timer;
+tBTM_CMPL_CB        *p_lnk_qual_cmpl_cb;/* Callback function to be called when  */
+/* read link quality function completes */
+TIMER_LIST_ENT       txpwer_timer;
+tBTM_CMPL_CB        *p_txpwer_cmpl_cb;    /* Callback function to be called when  */
+/* read inq tx power function completes  */
 
-    TIMER_LIST_ENT       qossu_timer;
-    tBTM_CMPL_CB        *p_qossu_cmpl_cb;   /* Callback function to be called when  */
-                                            /* qos setup function completes         */
+TIMER_LIST_ENT       qossu_timer;
+tBTM_CMPL_CB        *p_qossu_cmpl_cb;   /* Callback function to be called when  */
+/* qos setup function completes         */
 
-    tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
-    tBTM_CMPL_CB        *p_switch_role_cb;  /* Callback function to be called when  */
-                                            /* requested switch role is completed   */
+tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
+tBTM_CMPL_CB        *p_switch_role_cb;  /* Callback function to be called when  */
+/* requested switch role is completed   */
 
-    TIMER_LIST_ENT       tx_power_timer;
-    tBTM_CMPL_CB        *p_tx_power_cmpl_cb;/* Callback function to be called       */
+TIMER_LIST_ENT       tx_power_timer;
+tBTM_CMPL_CB        *p_tx_power_cmpl_cb;/* Callback function to be called       */
 
-    DEV_CLASS            dev_class;         /* Local device class                   */
+DEV_CLASS            dev_class;         /* Local device class                   */
 
 #if BLE_INCLUDED == TRUE
 
-    tBTM_CMPL_CB        *p_le_test_cmd_cmpl_cb;   /* Callback function to be called when
+tBTM_CMPL_CB        *p_le_test_cmd_cmpl_cb;   /* Callback function to be called when
                                                   LE test mode command has been sent successfully */
 
-    BD_ADDR                 read_tx_pwr_addr;   /* read TX power target address     */
+BD_ADDR                 read_tx_pwr_addr;   /* read TX power target address     */
 
 #define BTM_LE_SUPPORT_STATE_SIZE   8
 UINT8                   le_supported_states[BTM_LE_SUPPORT_STATE_SIZE];
@@ -180,20 +178,20 @@ tBTM_BLE_LOCAL_ID_KEYS id_keys; /* local BLE ID keys */
 BT_OCTET16 ble_encryption_key_value; /* BLE encryption key */
 
 #if BTM_BLE_CONFORMANCE_TESTING == TRUE
-    BOOLEAN                 no_disc_if_pair_fail;
-    BOOLEAN                 enable_test_mac_val;
-    BT_OCTET8               test_mac;
-    BOOLEAN                 enable_test_local_sign_cntr;
-    UINT32                  test_local_sign_cntr;
+BOOLEAN                 no_disc_if_pair_fail;
+BOOLEAN                 enable_test_mac_val;
+BT_OCTET8               test_mac;
+BOOLEAN                 enable_test_local_sign_cntr;
+UINT32                  test_local_sign_cntr;
 #endif
 
 #endif  /* BLE_INCLUDED */
 
-    tBTM_IO_CAP          loc_io_caps;       /* IO capability of the local device */
-    tBTM_AUTH_REQ        loc_auth_req;      /* the auth_req flag  */
-    BOOLEAN              secure_connections_only;    /* Rejects service level 0 connections if */
-                                                     /* itself or peer device doesn't support */
-                                                     /* secure connections */
+tBTM_IO_CAP          loc_io_caps;       /* IO capability of the local device */
+tBTM_AUTH_REQ        loc_auth_req;      /* the auth_req flag  */
+BOOLEAN              secure_connections_only;    /* Rejects service level 0 connections if */
+/* itself or peer device doesn't support */
+/* secure connections */
 } tBTM_DEVCB;
 
 
@@ -211,42 +209,38 @@ BT_OCTET16 ble_encryption_key_value; /* BLE encryption key */
 #define BTM_MIN_INQ_TX_POWER    -70
 #define BTM_MAX_INQ_TX_POWER    20
 
-typedef struct
-{
-    UINT32          inq_count;          /* Used for determining if a response has already been      */
-                                        /* received for the current inquiry operation. (We do not   */
-                                        /* want to flood the caller with multiple responses from    */
-                                        /* the same device.                                         */
-    BD_ADDR         bd_addr;
+typedef struct {
+UINT32          inq_count;          /* Used for determining if a response has already been      */
+/* received for the current inquiry operation. (We do not   */
+/* want to flood the caller with multiple responses from    */
+/* the same device.                                         */
+BD_ADDR         bd_addr;
 } tINQ_BDADDR;
 
-typedef struct
-{
-    UINT32          time_of_resp;
-    UINT32          inq_count;          /* "timestamps" the entry with a particular inquiry count   */
-                                        /* Used for determining if a response has already been      */
-                                        /* received for the current inquiry operation. (We do not   */
-                                        /* want to flood the caller with multiple responses from    */
-                                        /* the same device.                                         */
-    tBTM_INQ_INFO   inq_info;
-    BOOLEAN         in_use;
+typedef struct {
+UINT32          time_of_resp;
+UINT32          inq_count;          /* "timestamps" the entry with a particular inquiry count   */
+/* Used for determining if a response has already been      */
+/* received for the current inquiry operation. (We do not   */
+/* want to flood the caller with multiple responses from    */
+/* the same device.                                         */
+tBTM_INQ_INFO   inq_info;
+BOOLEAN         in_use;
 
 #if (BLE_INCLUDED == TRUE)
-    BOOLEAN         scan_rsp;
+BOOLEAN         scan_rsp;
 #endif
 } tINQ_DB_ENT;
 
 
-enum
-{
-    INQ_NONE,
-    INQ_LE_OBSERVE,
-    INQ_GENERAL
+enum {
+INQ_NONE,
+INQ_LE_OBSERVE,
+INQ_GENERAL
 };
 typedef UINT8 tBTM_INQ_TYPE;
 
-typedef struct
-{
+typedef struct {
     tBTM_CMPL_CB *p_remname_cmpl_cb;
 
 #define BTM_EXT_RMT_NAME_TIMEOUT    40
@@ -277,8 +271,8 @@ typedef struct
     tBTM_INQ_RESULTS_CB *p_inq_ble_results_cb;/*results callback exclusively for LE observe*/
     tBTM_CMPL_CB    *p_inqfilter_cmpl_cb;   /* Called (if not NULL) after inquiry filter completed */
     UINT32           inq_counter;           /* Counter incremented each time an inquiry completes */
-                                            /* Used for determining whether or not duplicate devices */
-                                            /* have responded to the same inquiry */
+    /* Used for determining whether or not duplicate devices */
+    /* have responded to the same inquiry */
     TIMER_LIST_ENT   inq_timer_ent;
     tINQ_BDADDR     *p_bd_db;               /* Pointer to memory that holds bdaddrs */
     UINT16           num_bd_entries;        /* Number of entries in database */
@@ -291,12 +285,12 @@ typedef struct
     UINT16           per_max_delay;         /* Current periodic maximum delay */
     BOOLEAN          inqfilt_active;
     UINT8            pending_filt_complete_event; /* to take care of btm_event_filter_complete corresponding to */
-                                                  /* inquiry that has been cancelled*/
+    /* inquiry that has been cancelled*/
     UINT8            inqfilt_type;          /* Contains the inquiry filter type (BD ADDR, COD, or Clear) */
 
 #define BTM_INQ_INACTIVE_STATE      0
 #define BTM_INQ_CLR_FILT_STATE      1   /* Currently clearing the inquiry filter preceeding the inquiry request */
-                                        /* (bypassed if filtering is not used)                                  */
+    /* (bypassed if filtering is not used)                                  */
 #define BTM_INQ_SET_FILT_STATE      2   /* Sets the new filter (or turns off filtering) in this state */
 #define BTM_INQ_ACTIVE_STATE        3   /* Actual inquiry or periodic inquiry is in progress */
 #define BTM_INQ_REMNAME_STATE       4   /* Remote name requests are active  */
@@ -359,8 +353,7 @@ typedef void (tBTM_SCO_IND_CBACK) (UINT16 sco_inx) ;
 #define BTM_SCO_ROUTE_UNKNOWN       0xff
 
 /* Define the structure that contains (e)SCO data */
-typedef struct
-{
+typedef struct {
     tBTM_ESCO_CBACK    *p_esco_cback;   /* Callback for eSCO events     */
     tBTM_ESCO_PARAMS    setup;
     tBTM_ESCO_DATA      data;           /* Connection complete information */
@@ -369,8 +362,7 @@ typedef struct
 
 /* Define the structure used for SCO Management
 */
-typedef struct
-{
+typedef struct {
     tBTM_ESCO_INFO   esco;              /* Current settings             */
 #if BTM_SCO_HCI_INCLUDED == TRUE
     BUFFER_Q         xmit_data_q;       /* SCO data transmitting queue  */
@@ -385,8 +377,7 @@ typedef struct
 } tSCO_CONN;
 
 /* SCO Management control block */
-typedef struct
-{
+typedef struct {
     tBTM_SCO_IND_CBACK  *app_sco_ind_cb;
 #if BTM_SCO_HCI_INCLUDED == TRUE
     tBTM_SCO_DATA_CB     *p_data_cb;        /* Callback for SCO data over HCI */
@@ -411,7 +402,7 @@ typedef struct
 #if BTM_SCO_INCLUDED == TRUE
 void     btm_set_sco_ind_cback( tBTM_SCO_IND_CBACK *sco_ind_cb );
 void     btm_accept_sco_link(UINT16 sco_inx, tBTM_ESCO_PARAMS *p_setup,
-                                    tBTM_SCO_CB *p_conn_cb, tBTM_SCO_CB *p_disc_cb);
+                             tBTM_SCO_CB *p_conn_cb, tBTM_SCO_CB *p_disc_cb);
 void     btm_reject_sco_link(UINT16 sco_inx );
 void btm_sco_chk_pend_rolechange (UINT16 hci_handle);
 #else
@@ -425,8 +416,7 @@ void btm_sco_chk_pend_rolechange (UINT16 hci_handle);
 ** Define structure for Security Service Record.
 ** A record exists for each service registered with the Security Manager
 */
-typedef struct
-{
+typedef struct {
     UINT32          mx_proto_id;        /* Service runs over this multiplexer protocol */
     UINT32          orig_mx_chan_id;    /* Channel on the multiplexer protocol    */
     UINT32          term_mx_chan_id;    /* Channel on the multiplexer protocol    */
@@ -444,8 +434,7 @@ typedef struct
 
 #if BLE_INCLUDED == TRUE
 /* LE Security information of device in Slave Role */
-typedef struct
-{
+typedef struct {
     BT_OCTET16          irk;            /* peer diverified identity root */
     BT_OCTET16          pltk;           /* peer long term key */
     BT_OCTET16          pcsrk;          /* peer SRK peer device used to secured sign local data  */
@@ -463,10 +452,9 @@ typedef struct
 
     UINT32              counter;        /* peer sign counter for verifying rcv signed cmd */
     UINT32              local_counter;  /* local sign counter for sending signed write cmd*/
-}tBTM_SEC_BLE_KEYS;
+} tBTM_SEC_BLE_KEYS;
 
-typedef struct
-{
+typedef struct {
     BD_ADDR pseudo_addr; /* LE pseudo address of the device if different from device address  */
     tBLE_ADDR_TYPE      ble_addr_type;  /* LE device type: public or random address */
     tBLE_ADDR_TYPE      static_addr_type;   /* static address type */
@@ -495,8 +483,7 @@ typedef struct
 #endif  /* BLE_INCLUDED */
 
 /* Peering bond type */
-enum
-{
+enum {
     BOND_TYPE_UNKNOWN,
     BOND_TYPE_PERSISTENT,
     BOND_TYPE_TEMPORARY
@@ -507,8 +494,7 @@ typedef UINT8 tBTM_BOND_TYPE;
 ** Define structure for Security Device Record.
 ** A record exists for each device authenticated with this device
 */
-typedef struct
-{
+typedef struct {
     tBTM_SEC_SERV_REC   *p_cur_service;
     tBTM_SEC_CALLBACK   *p_callback;
     void                *p_ref_data;
@@ -551,7 +537,7 @@ typedef struct
 #define BTM_SEC_STATE_SWITCHING_ROLE     5
 #define BTM_SEC_STATE_DISCONNECTING      6 /* disconnecting BR/EDR */
 #define BTM_SEC_STATE_DELAY_FOR_ENC      7 /* delay to check for encryption to work around */
-                                           /* controller problems */
+    /* controller problems */
 #define BTM_SEC_STATE_DISCONNECTING_BLE  8 /* disconnecting BLE */
 #define BTM_SEC_STATE_DISCONNECTING_BOTH 9 /* disconnecting BR/EDR and BLE */
 
@@ -559,7 +545,7 @@ typedef struct
     BOOLEAN     is_originator;          /* TRUE if device is originating connection */
 #if (L2CAP_UCD_INCLUDED == TRUE)
     BOOLEAN     is_ucd;                 /* TRUE if device is sending or receiving UCD */
-                                        /* if incoming security failed, received UCD will be discarded */
+    /* if incoming security failed, received UCD will be discarded */
 #endif
     BOOLEAN     role_master;            /* TRUE if current mode is master     */
     UINT16      security_required;      /* Security required for connection   */
@@ -582,9 +568,9 @@ typedef struct
     tBTM_AUTH_REQ rmt_auth_req;         /* the auth_req flag as in the IO caps rsp evt */
     BOOLEAN     remote_supports_secure_connections;
     BOOLEAN     remote_features_needed; /* set to true if the local device is in */
-                                        /* "Secure Connections Only" mode and it receives */
-                                        /* HCI_IO_CAPABILITY_REQUEST_EVT from the peer before */
-                                        /* it knows peer's support for Secure Connections */
+    /* "Secure Connections Only" mode and it receives */
+    /* HCI_IO_CAPABILITY_REQUEST_EVT from the peer before */
+    /* it knows peer's support for Secure Connections */
 
     UINT16              ble_hci_handle;         /* use in DUMO connection */
     UINT8               enc_key_size;           /* current link encryption key size */
@@ -595,8 +581,8 @@ typedef struct
                                                     ** for SM over BR/EDR.
                                                     */
     BOOLEAN no_smp_on_br;       /* if set to TRUE then SMP on BR/EDR doesn't */
-                                /* work, i.e. link keys crosspairing */
-                                /* SC BR/EDR->SC LE doesn't happen */
+    /* work, i.e. link keys crosspairing */
+    /* SC BR/EDR->SC LE doesn't happen */
     tBTM_BOND_TYPE bond_type;   /* peering bond type */
 
 #if BLE_INCLUDED == TRUE
@@ -626,8 +612,7 @@ typedef struct
 /*
 ** Define device configuration structure
 */
-typedef struct
-{
+typedef struct {
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
     tBTM_LOC_BD_NAME bd_name;                    /* local Bluetooth device name */
 #endif
@@ -638,8 +623,7 @@ typedef struct
     UINT8            def_inq_scan_mode;          /* ??? limited/general/none */
 } tBTM_CFG;
 
-enum
-{
+enum {
     BTM_PM_ST_ACTIVE  = BTM_PM_STS_ACTIVE,
     BTM_PM_ST_HOLD    = BTM_PM_STS_HOLD,
     BTM_PM_ST_SNIFF   = BTM_PM_STS_SNIFF,
@@ -648,43 +632,37 @@ enum
 };
 typedef UINT8 tBTM_PM_STATE;
 
-enum
-{
+enum {
     BTM_PM_SET_MODE_EVT,    /* Set power mode API is called. */
     BTM_PM_UPDATE_EVT,
     BTM_PM_RD_MODE_EVT     /* Read power mode API is called. */
 };
 typedef UINT8 tBTM_PM_EVENT;
 
-typedef struct
-{
+typedef struct {
     UINT16          event;
     UINT16          len;
     UINT8           link_ind;
 } tBTM_PM_MSG_DATA;
 
-typedef struct
-{
+typedef struct {
     UINT8 hci_status;
     UINT8 mode;
     UINT16 interval;
 } tBTM_PM_MD_CHG_DATA;
 
-typedef struct
-{
+typedef struct {
     UINT8          pm_id;      /* the entity that calls SetPowerMode API */
     tBTM_PM_PWR_MD *p_pmd;
 } tBTM_PM_SET_MD_DATA;
 
-typedef struct
-{
+typedef struct {
     void        *p_data;
     UINT8        link_ind;
 } tBTM_PM_SM_DATA;
 
-typedef struct
-{
-    tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS+1]; /* the desired mode and parameters of the connection*/
+typedef struct {
+    tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1]; /* the desired mode and parameters of the connection*/
     tBTM_PM_PWR_MD set_mode;  /* the mode and parameters sent down to the host controller. */
     UINT16         interval;  /* the interval from last mode change event. */
 #if (BTM_SSR_INCLUDED == TRUE)
@@ -697,14 +675,12 @@ typedef struct
 } tBTM_PM_MCB;
 
 #define BTM_PM_REC_NOT_USED 0
-typedef struct
-{
+typedef struct {
     tBTM_PM_STATUS_CBACK *cback;/* to notify the registered party of mode change event */
     UINT8                 mask; /* registered request mask. 0, if this entry is not used */
 } tBTM_PM_RCB;
 
-enum
-{
+enum {
     BTM_BLI_ACL_UP_EVT,
     BTM_BLI_ACL_DOWN_EVT,
     BTM_BLI_PAGE_EVT,
@@ -716,8 +692,7 @@ enum
 typedef UINT8 tBTM_BLI_EVENT;
 
 /* Pairing State */
-enum
-{
+enum {
     BTM_PAIR_STATE_IDLE,                        /* Idle                                         */
     BTM_PAIR_STATE_GET_REM_NAME,                /* Getting the remote name (to check for SM4)   */
     BTM_PAIR_STATE_WAIT_PIN_REQ,                /* Started authentication, waiting for PIN req (PIN is pre-fetched) */
@@ -742,8 +717,7 @@ typedef UINT8 tBTM_PAIRING_STATE;
 #define BTM_PAIR_FLAGS_LE_ACTIVE        0x80    /* use this bit when SMP pairing is active */
 
 
-typedef struct
-{
+typedef struct {
     BOOLEAN             is_mux;
     BD_ADDR             bd_addr;
     UINT16              psm;
@@ -778,8 +752,7 @@ typedef BOOLEAN CONNECTION_TYPE;
 
 #define BTM_STATE_BUFFER_SIZE  5                  /* size of state buffer */
 
-typedef struct
-{
+typedef struct {
     tBTM_CFG    cfg;                        /* Device configuration */
 
     /****************************************************
@@ -797,7 +770,7 @@ typedef struct
     **      Power Management
     ****************************************************/
     tBTM_PM_MCB pm_mode_db[MAX_L2CAP_LINKS];   /* per ACL link */
-    tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS+1]; /* per application/module */
+    tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
     UINT8       pm_pend_link;  /* the index of acl_db, which has a pending PM cmd */
     UINT8       pm_pend_id;    /* the id pf the module, which has a pending PM cmd */
 
@@ -819,7 +792,7 @@ typedef struct
     tBTM_BLE_VSC_CB         cmn_ble_vsc_cb;
 #endif
 
-                                            /* Packet types supported by the local device */
+    /* Packet types supported by the local device */
     UINT16      btm_acl_pkt_types_supported;
     UINT16      btm_sco_pkt_types_supported;
 
@@ -915,12 +888,12 @@ void         btm_init (void);
 *******************************************
 */
 tBTM_STATUS  btm_initiate_rem_name (BD_ADDR remote_bda,
-                                           tBTM_INQ_INFO *p_cur,
-                                           UINT8 origin, UINT32 timeout,
-                                           tBTM_CMPL_CB *p_cb);
+                                    tBTM_INQ_INFO *p_cur,
+                                    UINT8 origin, UINT32 timeout,
+                                    tBTM_CMPL_CB *p_cb);
 
 void         btm_process_remote_name (BD_ADDR bda, BD_NAME name, UINT16 evt_len,
-                                             UINT8 hci_status);
+                                      UINT8 hci_status);
 void         btm_inq_rmt_name_failed(void);
 
 /* Inquiry related functions */
@@ -942,14 +915,14 @@ BOOLEAN btm_lookup_eir(BD_ADDR_PTR p_rem_addr);
 */
 void         btm_acl_init (void);
 void         btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
-                                     UINT16 hci_handle, UINT8 link_role, tBT_TRANSPORT transport);
+                              UINT16 hci_handle, UINT8 link_role, tBT_TRANSPORT transport);
 void         btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport);
 void         btm_acl_device_down (void);
 void         btm_acl_update_busy_level (tBTM_BLI_EVENT event);
 
 void         btm_cont_rswitch (tACL_CONN *p,
-                                      tBTM_SEC_DEV_REC *p_dev_rec,
-                                      UINT8 hci_status);
+                               tBTM_SEC_DEV_REC *p_dev_rec,
+                               UINT8 hci_status);
 
 UINT8        btm_handle_to_acl_index (UINT16 hci_handle);
 void         btm_read_link_policy_complete (UINT8 *p);
@@ -980,7 +953,7 @@ void btm_pm_reset(void);
 void btm_pm_sm_alloc(UINT8 ind);
 void btm_pm_proc_cmd_status(UINT8 status);
 void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode,
-                                     UINT16 interval);
+                              UINT16 interval);
 void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len);
 #if BTM_SCO_INCLUDED == TRUE
 void btm_sco_chk_pend_unpark (UINT8 hci_status, UINT16 hci_handle);
@@ -995,10 +968,10 @@ void btm_qos_setup_complete (UINT8 status, UINT16 handle, FLOW_SPEC *p_flow);
 */
 void btm_sco_init (void);
 void btm_sco_connected (UINT8 hci_status, BD_ADDR bda, UINT16 hci_handle,
-                               tBTM_ESCO_DATA *p_esco_data);
+                        tBTM_ESCO_DATA *p_esco_data);
 void btm_esco_proc_conn_chg (UINT8 status, UINT16 handle, UINT8 tx_interval,
-                                    UINT8 retrans_window, UINT16 rx_pkt_len,
-                                    UINT16 tx_pkt_len);
+                             UINT8 retrans_window, UINT16 rx_pkt_len,
+                             UINT16 tx_pkt_len);
 void btm_sco_conn_req (BD_ADDR bda,  DEV_CLASS dev_class, UINT8 link_type);
 void btm_sco_removed (UINT16 hci_handle, UINT8 reason);
 void btm_sco_acl_removed (BD_ADDR bda);
@@ -1030,7 +1003,7 @@ void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC *p_dev_rec);
 
 /* Vendor Specific Command complete evt handler */
 void btm_vsc_complete (UINT8 *p, UINT16 cc_opcode, UINT16 evt_len,
-                              tBTM_CMPL_CB *p_vsc_cplt_cback);
+                       tBTM_CMPL_CB *p_vsc_cplt_cback);
 void btm_inq_db_reset (void);
 void btm_vendor_specific_evt (UINT8 *p, UINT8 evt_len);
 void btm_delete_stored_link_key_complete (UINT8 *p);
@@ -1049,7 +1022,7 @@ tBTM_SEC_DEV_REC  *btm_find_or_alloc_dev (BD_ADDR bd_addr);
 tBTM_SEC_DEV_REC  *btm_find_dev_by_handle (UINT16 handle);
 tBTM_BOND_TYPE     btm_get_bond_type_dev(BD_ADDR bd_addr);
 BOOLEAN            btm_set_bond_type_dev(BD_ADDR bd_addr,
-                                                tBTM_BOND_TYPE bond_type);
+        tBTM_BOND_TYPE bond_type);
 
 /* Internal functions provided by btm_sec.c
 **********************************************

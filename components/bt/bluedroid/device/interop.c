@@ -26,31 +26,33 @@
 
 #define CASE_RETURN_STR(const) case const: return #const;
 
-static const char* interop_feature_string(const interop_feature_t feature) {
-  switch (feature) {
-    CASE_RETURN_STR(INTEROP_DISABLE_LE_SECURE_CONNECTIONS)
-    CASE_RETURN_STR(INTEROP_AUTO_RETRY_PAIRING)
-  }
+static const char *interop_feature_string(const interop_feature_t feature)
+{
+    switch (feature) {
+        CASE_RETURN_STR(INTEROP_DISABLE_LE_SECURE_CONNECTIONS)
+        CASE_RETURN_STR(INTEROP_AUTO_RETRY_PAIRING)
+    }
 
-  return "UNKNOWN";
+    return "UNKNOWN";
 }
 
 // Interface functions
 
-bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr) {
-  assert(addr);
+bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr)
+{
+    assert(addr);
 
-  const size_t db_size = sizeof(interop_database) / sizeof(interop_entry_t);
+    const size_t db_size = sizeof(interop_database) / sizeof(interop_entry_t);
 
-  for (size_t i = 0; i != db_size; ++i) {
-    if (feature == interop_database[i].feature &&
-        memcmp(addr, &interop_database[i].addr, interop_database[i].len) == 0) {
-      char bdstr[20] = {0};
-      LOG_WARN("%s() Device %s is a match for interop workaround %s", __func__,
-          bdaddr_to_string(addr, bdstr, sizeof(bdstr)), interop_feature_string(feature));
-      return true;
+    for (size_t i = 0; i != db_size; ++i) {
+        if (feature == interop_database[i].feature &&
+                memcmp(addr, &interop_database[i].addr, interop_database[i].len) == 0) {
+            char bdstr[20] = {0};
+            LOG_WARN("%s() Device %s is a match for interop workaround %s", __func__,
+                     bdaddr_to_string(addr, bdstr, sizeof(bdstr)), interop_feature_string(feature));
+            return true;
+        }
     }
-  }
 
-  return false;
+    return false;
 }

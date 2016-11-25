@@ -58,8 +58,8 @@ typedef bool BOOLEAN;
 */
 #define BT_EVT_MASK                 0xFF00
 #define BT_SUB_EVT_MASK             0x00FF
-                                                /* To Bluetooth Upper Layers        */
-                                                /************************************/
+/* To Bluetooth Upper Layers        */
+/************************************/
 #define BT_EVT_TO_BTU_L2C_EVT       0x0900      /* L2CAP event */
 #define BT_EVT_TO_BTU_HCI_EVT       0x1000      /* HCI Event                        */
 #define BT_EVT_TO_BTU_HCI_BR_EDR_EVT (0x0000 | BT_EVT_TO_BTU_HCI_EVT)      /* event from BR/EDR controller */
@@ -84,8 +84,8 @@ typedef bool BOOLEAN;
 #define BT_EVT_BTSIM                0x1B00      /* Insight BTSIM event */
 #define BT_EVT_BTISE                0x1C00      /* Insight Script Engine event */
 
-                                                /* To LM                            */
-                                                /************************************/
+/* To LM                            */
+/************************************/
 #define BT_EVT_TO_LM_HCI_CMD        0x2000      /* HCI Command                      */
 #define BT_EVT_TO_LM_HCI_ACL        0x2100      /* HCI ACL Data                     */
 #define BT_EVT_TO_LM_HCI_SCO        0x2200      /* HCI SCO Data                     */
@@ -122,7 +122,7 @@ typedef bool BOOLEAN;
 #define BT_EVT_TO_GAP_MSG           0x3b00
 
 /* for NFC                          */
-                                                /************************************/
+/************************************/
 #define BT_EVT_TO_NFC_NCI           0x4000      /* NCI Command, Notification or Data*/
 #define BT_EVT_TO_NFC_INIT          0x4100      /* Initialization message */
 #define BT_EVT_TO_NCI_LP            0x4200      /* Low power */
@@ -194,8 +194,7 @@ typedef bool BOOLEAN;
 
 /* Define the header of each buffer used in the Bluetooth stack.
 */
-typedef struct
-{
+typedef struct {
     uint16_t          event;
     uint16_t          len;
     uint16_t          offset;
@@ -416,16 +415,14 @@ typedef UINT8 ACCESS_CODE[ACCESS_CODE_BYTE_LEN];
 
 /* Maximum UUID size - 16 bytes, and structure to hold any type of UUID. */
 #define MAX_UUID_SIZE              16
-typedef struct
-{
+typedef struct {
 #define LEN_UUID_16     2
 #define LEN_UUID_32     4
 #define LEN_UUID_128    16
 
     UINT16          len;
 
-    union
-    {
+    union {
         UINT16      uuid16;
         UINT32      uuid32;
         UINT8       uuid128[MAX_UUID_SIZE];
@@ -463,8 +460,8 @@ typedef struct
 
 /* We will not allocate a PSM in the reserved range to 3rd party apps
 */
-#define BRCM_RESERVED_PSM_START	    0x5AE1
-#define BRCM_RESERVED_PSM_END	    0x5AFF
+#define BRCM_RESERVED_PSM_START     0x5AE1
+#define BRCM_RESERVED_PSM_END       0x5AFF
 
 #define BRCM_UTILITY_SERVICE_PSM    0x5AE1
 #define BRCM_MATCHER_PSM            0x5AE3
@@ -480,8 +477,7 @@ typedef struct
 #define BT_CONNECTED_USING_BREDR   1
 #define BT_CONNECTED_USING_AMP     2
 
-typedef struct
-{
+typedef struct {
     UINT32   is_connected;
     INT32    rssi;
     UINT32   bytes_sent;
@@ -511,8 +507,7 @@ typedef UINT8 tBT_TRANSPORT;
 
 #define BLE_ADDR_IS_STATIC(x)   ((x[0] & 0xC0) == 0xC0)
 
-typedef struct
-{
+typedef struct {
     tBLE_ADDR_TYPE      type;
     BD_ADDR             bda;
 } tBLE_BD_ADDR;
@@ -620,7 +615,7 @@ typedef UINT8 tBT_DEVICE_TYPE;
 #define TRACE_ORG_USER_SCR          0x00000800
 #define TRACE_ORG_TESTER            0x00000900
 #define TRACE_ORG_MAX_NUM           10          /* 32-bit mask; must be < 32 */
-#define TRACE_LITE_ORG_MAX_NUM		6
+#define TRACE_LITE_ORG_MAX_NUM      6
 #define TRACE_ORG_ALL               0x03ff
 #define TRACE_ORG_RPC_TRANS         0x04
 
@@ -715,7 +710,7 @@ typedef uint8_t BD_ADDR[BD_ADDR_LEN];
 
 /* global constant for "any" bd addr */
 static const BD_ADDR bd_addr_any = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-static const BD_ADDR bd_addr_null= {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const BD_ADDR bd_addr_null = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 /*****************************************************************************
 **  Functions
@@ -735,8 +730,7 @@ static inline void bdcpy(BD_ADDR a, const BD_ADDR b)
 {
     int i;
 
-    for (i = BD_ADDR_LEN; i != 0; i--)
-    {
+    for (i = BD_ADDR_LEN; i != 0; i--) {
         *a++ = *b++;
     }
 }
@@ -755,10 +749,8 @@ static inline int bdcmp(const BD_ADDR a, const BD_ADDR b)
 {
     int i;
 
-    for (i = BD_ADDR_LEN; i != 0; i--)
-    {
-        if (*a++ != *b++)
-        {
+    for (i = BD_ADDR_LEN; i != 0; i--) {
+        if (*a++ != *b++) {
             return -1;
         }
     }

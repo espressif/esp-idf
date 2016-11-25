@@ -26,8 +26,7 @@
 #include "gatt_api.h"
 #define GAP_MAX_BLOCKS 2        /* Concurrent GAP commands pending at a time*/
 /* Define the Generic Access Profile control structure */
-typedef struct
-{
+typedef struct {
     void          *p_data;      /* Pointer to any data returned in callback */
     tGAP_CALLBACK *gap_cback;   /* Pointer to users callback function */
     tGAP_CALLBACK *gap_inq_rslt_cback; /* Used for inquiry results */
@@ -37,8 +36,7 @@ typedef struct
 } tGAP_INFO;
 
 /* Define the control block for the FindAddrByName operation (Only 1 active at a time) */
-typedef struct
-{
+typedef struct {
     tGAP_CALLBACK           *p_cback;
     tBTM_INQ_INFO           *p_cur_inq; /* Pointer to the current inquiry database entry */
     tGAP_FINDADDR_RESULTS    results;
@@ -47,8 +45,7 @@ typedef struct
 
 /* Define the GAP Connection Control Block.
 */
-typedef struct
-{
+typedef struct {
 #define GAP_CCB_STATE_IDLE              0
 #define GAP_CCB_STATE_LISTENING         1
 #define GAP_CCB_STATE_CONN_SETUP        2
@@ -85,8 +82,7 @@ typedef struct
     tL2CAP_ERTM_INFO  ertm_info;            /* Pools and modes for ertm */
 } tGAP_CCB;
 
-typedef struct
-{
+typedef struct {
 #if ((defined AMP_INCLUDED) && (AMP_INCLUDED == TRUE))
     tAMP_APPL_INFO    reg_info;
 #else
@@ -99,12 +95,11 @@ typedef struct
 #if BLE_INCLUDED == TRUE
 #define GAP_MAX_CHAR_NUM          4
 
-typedef struct
-{
+typedef struct {
     UINT16                  handle;
     UINT16                  uuid;
     tGAP_BLE_ATTR_VALUE     attr_value;
-}tGAP_ATTR;
+} tGAP_ATTR;
 #endif
 /**********************************************************************
 ** M A I N   C O N T R O L   B L O C K
@@ -112,14 +107,12 @@ typedef struct
 
 #define GAP_MAX_CL GATT_CL_MAX_LCB
 
-typedef struct
-{
+typedef struct {
     UINT16 uuid;
     tGAP_BLE_CMPL_CBACK *p_cback;
 } tGAP_BLE_REQ;
 
-typedef struct
-{
+typedef struct {
     BD_ADDR                 bda;
     tGAP_BLE_CMPL_CBACK     *p_cback;
     UINT16                  conn_id;
@@ -128,10 +121,9 @@ typedef struct
     BOOLEAN                 connected;
     BUFFER_Q                pending_req_q;
 
-}tGAP_CLCB;
+} tGAP_CLCB;
 
-typedef struct
-{
+typedef struct {
     tGAP_INFO        blk[GAP_MAX_BLOCKS];
     tBTM_CMPL_CB    *btm_cback[GAP_MAX_BLOCKS];
     UINT8            trace_level;
@@ -153,10 +145,10 @@ typedef struct
 
 extern tGAP_CB  gap_cb;
 #if (GAP_CONN_INCLUDED == TRUE)
-    extern void gap_conn_init(void);
+extern void gap_conn_init(void);
 #endif
 #if (BLE_INCLUDED == TRUE)
-    extern void gap_attr_db_init(void);
+extern void gap_attr_db_init(void);
 #endif
 
 #endif

@@ -43,24 +43,26 @@ INT16 utl_str2int(const char *p_s)
 {
     INT32   val = 0;
 
-    for (;*p_s == ' ' && *p_s != 0; p_s++);
+    for (; *p_s == ' ' && *p_s != 0; p_s++);
 
-    if (*p_s == 0) return -1;
+    if (*p_s == 0) {
+        return -1;
+    }
 
-    for (;;)
-    {
-        if ((*p_s < '0') || (*p_s > '9')) return -1;
+    for (;;) {
+        if ((*p_s < '0') || (*p_s > '9')) {
+            return -1;
+        }
 
         val += (INT32) (*p_s++ - '0');
 
-        if (val > 32767) return -1;
-
-        if (*p_s == 0)
-        {
-            return (INT16) val;
+        if (val > 32767) {
+            return -1;
         }
-        else
-        {
+
+        if (*p_s == 0) {
+            return (INT16) val;
+        } else {
             val *= 10;
         }
     }
@@ -83,26 +85,21 @@ int utl_strucmp(const char *p_s, const char *p_t)
 {
     char c;
 
-    while (*p_s && *p_t)
-    {
+    while (*p_s && *p_t) {
         c = *p_t++;
-        if (c >= 'a' && c <= 'z')
-        {
+        if (c >= 'a' && c <= 'z') {
             c -= 0x20;
         }
-        if (*p_s++ != c)
-        {
+        if (*p_s++ != c) {
             return -1;
         }
     }
     /* if p_t hit null first, no match */
-    if (*p_t == 0 && *p_s != 0)
-    {
+    if (*p_t == 0 && *p_s != 0) {
         return 1;
     }
     /* else p_s hit null first, count as match */
-    else
-    {
+    else {
         return 0;
     }
 }
@@ -125,21 +122,16 @@ UINT8 utl_itoa(UINT16 i, char *p_s)
     char    *p = p_s;
     BOOLEAN fill = FALSE;
 
-    if (i == 0)
-    {
+    if (i == 0) {
         /* take care of zero case */
         *p++ = '0';
-    }
-    else
-    {
-        for(j = 10000; j > 0; j /= 10)
-        {
+    } else {
+        for (j = 10000; j > 0; j /= 10) {
             k = i / j;
             i %= j;
-            if (k > 0 || fill)
-            {
-              *p++ = k + '0';
-              fill = TRUE;
+            if (k > 0 || fill) {
+                *p++ = k + '0';
+                fill = TRUE;
             }
         }
     }
@@ -161,8 +153,7 @@ UINT8 utl_itoa(UINT16 i, char *p_s)
 *******************************************************************************/
 void utl_freebuf(void **p)
 {
-    if (*p != NULL)
-    {
+    if (*p != NULL) {
         GKI_freebuf(*p);
         *p = NULL;
     }
@@ -200,8 +191,7 @@ BOOLEAN utl_set_device_class(tBTA_UTL_COD *p_cod, UINT8 cmd)
     BTM_COD_MINOR_CLASS(minor, dev );
     BTM_COD_MAJOR_CLASS(major, dev );
 
-    switch(cmd)
-    {
+    switch (cmd) {
     case BTA_UTL_SET_COD_MAJOR_MINOR:
         minor = p_cod->minor & BTM_COD_MINOR_CLASS_MASK;
         major = p_cod->major & BTM_COD_MAJOR_CLASS_MASK;
@@ -238,8 +228,9 @@ BOOLEAN utl_set_device_class(tBTA_UTL_COD *p_cod, UINT8 cmd)
     /* convert the fields into the device class type */
     FIELDS_TO_COD(dev_class, minor, major, service);
 
-    if (BTM_SetDeviceClass(dev_class) == BTM_SUCCESS)
+    if (BTM_SetDeviceClass(dev_class) == BTM_SUCCESS) {
         return TRUE;
+    }
 
     return FALSE;
 }
@@ -259,10 +250,10 @@ BOOLEAN utl_isintstr(const char *p_s)
 {
     UINT16 i = 0;
 
-    for(i=0; p_s[i] != 0; i++)
-    {
-        if(((p_s[i] < '0') || (p_s[i] > '9')) && (p_s[i] != ';'))
+    for (i = 0; p_s[i] != 0; i++) {
+        if (((p_s[i] < '0') || (p_s[i] > '9')) && (p_s[i] != ';')) {
             return FALSE;
+        }
     }
 
     return TRUE;
@@ -283,14 +274,14 @@ BOOLEAN utl_isdialstr(const char *p_s)
 {
     UINT16 i = 0;
 
-    for(i=0; p_s[i] != 0; i++)
-    {
-        if(!(((p_s[i] >= '0') && (p_s[i] <= '9'))
-            || (p_s[i] == '*') || (p_s[i] == '+') || (p_s[i] == '#') || (p_s[i] == ';')
-            || ((p_s[i] >= 'A') && (p_s[i] <= 'C'))
-            || ((p_s[i] == 'p') || (p_s[i] == 'P')
-            || (p_s[i] == 'w') || (p_s[i] == 'W'))))
+    for (i = 0; p_s[i] != 0; i++) {
+        if (!(((p_s[i] >= '0') && (p_s[i] <= '9'))
+                || (p_s[i] == '*') || (p_s[i] == '+') || (p_s[i] == '#') || (p_s[i] == ';')
+                || ((p_s[i] >= 'A') && (p_s[i] <= 'C'))
+                || ((p_s[i] == 'p') || (p_s[i] == 'P')
+                    || (p_s[i] == 'w') || (p_s[i] == 'W')))) {
             return FALSE;
+        }
     }
 
     return TRUE;

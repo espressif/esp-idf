@@ -43,7 +43,8 @@
 
 
 static const UINT8  sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
-                                       0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB};
+                                       0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
+                                      };
 
 /*******************************************************************************
 **
@@ -61,10 +62,10 @@ tCONN_CB *sdpu_find_ccb_by_cid (UINT16 cid)
     tCONN_CB     *p_ccb;
 
     /* Look through each connection control block */
-    for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
-    {
-        if ((p_ccb->con_state != SDP_STATE_IDLE) && (p_ccb->connection_id == cid))
+    for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+        if ((p_ccb->con_state != SDP_STATE_IDLE) && (p_ccb->connection_id == cid)) {
             return (p_ccb);
+        }
     }
 
     /* If here, not found */
@@ -88,13 +89,12 @@ tCONN_CB *sdpu_find_ccb_by_db (tSDP_DISCOVERY_DB *p_db)
     UINT16       xx;
     tCONN_CB     *p_ccb;
 
-    if (p_db)
-    {
+    if (p_db) {
         /* Look through each connection control block */
-        for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
-        {
-            if ((p_ccb->con_state != SDP_STATE_IDLE) && (p_ccb->p_db == p_db))
+        for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+            if ((p_ccb->con_state != SDP_STATE_IDLE) && (p_ccb->p_db == p_db)) {
                 return (p_ccb);
+            }
         }
     }
 #endif
@@ -118,10 +118,8 @@ tCONN_CB *sdpu_allocate_ccb (void)
     tCONN_CB     *p_ccb;
 
     /* Look through each connection control block for a free one */
-    for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
-    {
-        if (p_ccb->con_state == SDP_STATE_IDLE)
-        {
+    for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+        if (p_ccb->con_state == SDP_STATE_IDLE) {
             memset (p_ccb, 0, sizeof (tCONN_CB));
 
             p_ccb->timer_entry.param = (UINT32) p_ccb;
@@ -156,9 +154,8 @@ void sdpu_release_ccb (tCONN_CB *p_ccb)
 #endif
 
     /* Free the response buffer */
-    if (p_ccb->rsp_list)
-    {
-       SDP_TRACE_DEBUG("releasing SDP rsp_list\n");
+    if (p_ccb->rsp_list) {
+        SDP_TRACE_DEBUG("releasing SDP rsp_list\n");
 
         GKI_freebuf(p_ccb->rsp_list);
         p_ccb->rsp_list = NULL;
@@ -183,34 +180,28 @@ UINT8 *sdpu_build_attrib_seq (UINT8 *p_out, UINT16 *p_attr, UINT16 num_attrs)
 
     /* First thing is the data element header. See if the length fits 1 byte */
     /* If no attributes, assume a 4-byte wildcard */
-    if (!p_attr)
+    if (!p_attr) {
         xx = 5;
-    else
+    } else {
         xx = num_attrs * 3;
+    }
 
-    if (xx > 255)
-    {
+    if (xx > 255) {
         UINT8_TO_BE_STREAM  (p_out, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_WORD);
         UINT16_TO_BE_STREAM (p_out, xx);
-    }
-    else
-    {
+    } else {
         UINT8_TO_BE_STREAM (p_out, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
         UINT8_TO_BE_STREAM (p_out, xx);
     }
 
     /* If there are no attributes specified, assume caller wants wildcard */
-    if (!p_attr)
-    {
+    if (!p_attr) {
         UINT8_TO_BE_STREAM  (p_out, (UINT_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
         UINT16_TO_BE_STREAM (p_out, 0);
         UINT16_TO_BE_STREAM (p_out, 0xFFFF);
-    }
-    else
-    {
+    } else {
         /* Loop through and put in all the attributes(s) */
-        for (xx = 0; xx < num_attrs; xx++, p_attr++)
-        {
+        for (xx = 0; xx < num_attrs; xx++, p_attr++) {
             UINT8_TO_BE_STREAM  (p_out, (UINT_DESC_TYPE << 3) | SIZE_TWO_BYTES);
             UINT16_TO_BE_STREAM (p_out, *p_attr);
         }
@@ -239,34 +230,29 @@ UINT8 *sdpu_build_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr)
 
     /* the attribute is in the db record.
      * assuming the attribute len is less than SDP_MAX_ATTR_LEN */
-    switch(p_attr->type)
-    {
+    switch (p_attr->type) {
     case TEXT_STR_DESC_TYPE:    /* 4 */
     case DATA_ELE_SEQ_DESC_TYPE:/* 6 */
     case DATA_ELE_ALT_DESC_TYPE:/* 7 */
     case URL_DESC_TYPE:         /* 8 */
 #if (SDP_MAX_ATTR_LEN > 0xFFFF)
-        if(p_attr->len > 0xFFFF)
-        {
+        if (p_attr->len > 0xFFFF) {
             UINT8_TO_BE_STREAM (p_out, (p_attr->type << 3) | SIZE_IN_NEXT_LONG);
             UINT32_TO_BE_STREAM (p_out, p_attr->len);
-        }
-        else
+        } else
 
 #endif /* 0xFFFF - 0xFF */
 #if (SDP_MAX_ATTR_LEN > 0xFF)
-        if(p_attr->len > 0xFF)
-        {
-            UINT8_TO_BE_STREAM (p_out, (p_attr->type << 3) | SIZE_IN_NEXT_WORD);
-            UINT16_TO_BE_STREAM (p_out, p_attr->len);
-        }
-        else
+            if (p_attr->len > 0xFF) {
+                UINT8_TO_BE_STREAM (p_out, (p_attr->type << 3) | SIZE_IN_NEXT_WORD);
+                UINT16_TO_BE_STREAM (p_out, p_attr->len);
+            } else
 
 #endif /* 0xFF and less*/
-        {
-            UINT8_TO_BE_STREAM (p_out, (p_attr->type << 3) | SIZE_IN_NEXT_BYTE);
-            UINT8_TO_BE_STREAM (p_out, p_attr->len);
-        }
+            {
+                UINT8_TO_BE_STREAM (p_out, (p_attr->type << 3) | SIZE_IN_NEXT_BYTE);
+                UINT8_TO_BE_STREAM (p_out, p_attr->len);
+            }
 
         if (p_attr->value_ptr != NULL) {
             ARRAY_TO_BE_STREAM (p_out, p_attr->value_ptr, (int)p_attr->len);
@@ -276,8 +262,7 @@ UINT8 *sdpu_build_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr)
     }
 
     /* Now, store the attribute value */
-    switch (p_attr->len)
-    {
+    switch (p_attr->len) {
     case 1:
         UINT8_TO_BE_STREAM (p_out, (p_attr->type << 3) | SIZE_ONE_BYTE);
         break;
@@ -324,11 +309,10 @@ void sdpu_build_n_send_error (tCONN_CB *p_ccb, UINT16 trans_num, UINT16 error_co
 
 
     SDP_TRACE_WARNING ("SDP - sdpu_build_n_send_error  code: 0x%x  CID: 0x%x\n",
-                        error_code, p_ccb->connection_id);
+                       error_code, p_ccb->connection_id);
 
     /* Get a buffer to use to build and send the packet to L2CAP */
-    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL)
-    {
+    if ((p_buf = (BT_HDR *)GKI_getpoolbuf (SDP_POOL_ID)) == NULL) {
         SDP_TRACE_ERROR ("SDP - no buf for err msg\n");
         return;
     }
@@ -345,8 +329,9 @@ void sdpu_build_n_send_error (tCONN_CB *p_ccb, UINT16 trans_num, UINT16 error_co
     UINT16_TO_BE_STREAM  (p_rsp, error_code);
 
     /* Unplugfest example traces do not have any error text */
-    if (p_error_text)
+    if (p_error_text) {
         ARRAY_TO_BE_STREAM (p_rsp, p_error_text, (int) strlen (p_error_text));
+    }
 
     /* Go back and put the parameter length into the buffer */
     rsp_param_len = p_rsp - p_rsp_param_len - 2;
@@ -387,11 +372,11 @@ UINT8 *sdpu_extract_uid_seq (UINT8 *p, UINT16 param_len, tSDP_UUID_SEQ *p_seq)
     type = descr >> 3;
     size = descr & 7;
 
-    if (type != DATA_ELE_SEQ_DESC_TYPE)
+    if (type != DATA_ELE_SEQ_DESC_TYPE) {
         return (NULL);
+    }
 
-    switch (size)
-    {
+    switch (size) {
     case SIZE_TWO_BYTES:
         seq_len = 2;
         break;
@@ -414,23 +399,23 @@ UINT8 *sdpu_extract_uid_seq (UINT8 *p, UINT16 param_len, tSDP_UUID_SEQ *p_seq)
         return (NULL);
     }
 
-    if (seq_len >= param_len)
+    if (seq_len >= param_len) {
         return (NULL);
+    }
 
     p_seq_end = p + seq_len;
 
     /* Loop through, extracting the UIDs */
-    for ( ; p < p_seq_end ; )
-    {
+    for ( ; p < p_seq_end ; ) {
         BE_STREAM_TO_UINT8 (descr, p);
         type = descr >> 3;
         size = descr & 7;
 
-        if (type != UUID_DESC_TYPE)
+        if (type != UUID_DESC_TYPE) {
             return (NULL);
+        }
 
-        switch (size)
-        {
+        switch (size) {
         case SIZE_TWO_BYTES:
             uuid_len = 2;
             break;
@@ -454,22 +439,23 @@ UINT8 *sdpu_extract_uid_seq (UINT8 *p, UINT16 param_len, tSDP_UUID_SEQ *p_seq)
         }
 
         /* If UUID length is valid, copy it across */
-        if ((uuid_len == 2) || (uuid_len == 4) || (uuid_len == 16))
-        {
+        if ((uuid_len == 2) || (uuid_len == 4) || (uuid_len == 16)) {
             p_seq->uuid_entry[p_seq->num_uids].len = (UINT16) uuid_len;
             BE_STREAM_TO_ARRAY (p, p_seq->uuid_entry[p_seq->num_uids].value, (int)uuid_len);
             p_seq->num_uids++;
-        }
-        else
+        } else {
             return (NULL);
+        }
 
         /* We can only do so many */
-        if (p_seq->num_uids >= MAX_UUIDS_PER_SEQ)
+        if (p_seq->num_uids >= MAX_UUIDS_PER_SEQ) {
             return (NULL);
+        }
     }
 
-    if (p != p_seq_end)
+    if (p != p_seq_end) {
         return (NULL);
+    }
 
     return (p);
 }
@@ -500,11 +486,11 @@ UINT8 *sdpu_extract_attr_seq (UINT8 *p, UINT16 param_len, tSDP_ATTR_SEQ *p_seq)
     type = descr >> 3;
     size = descr & 7;
 
-    if (type != DATA_ELE_SEQ_DESC_TYPE)
+    if (type != DATA_ELE_SEQ_DESC_TYPE) {
         return (p);
+    }
 
-    switch (size)
-    {
+    switch (size) {
     case SIZE_IN_NEXT_BYTE:
         BE_STREAM_TO_UINT8 (list_len, p);
         break;
@@ -521,23 +507,23 @@ UINT8 *sdpu_extract_attr_seq (UINT8 *p, UINT16 param_len, tSDP_ATTR_SEQ *p_seq)
         return (p);
     }
 
-    if (list_len > param_len)
+    if (list_len > param_len) {
         return (p);
+    }
 
     p_end_list = p + list_len;
 
     /* Loop through, extracting the attribute IDs */
-    for ( ; p < p_end_list ; )
-    {
+    for ( ; p < p_end_list ; ) {
         BE_STREAM_TO_UINT8 (descr, p);
         type = descr >> 3;
         size = descr & 7;
 
-        if (type != UINT_DESC_TYPE)
+        if (type != UINT_DESC_TYPE) {
             return (p);
+        }
 
-        switch (size)
-        {
+        switch (size) {
         case SIZE_TWO_BYTES:
             attr_len = 2;
             break;
@@ -559,22 +545,20 @@ UINT8 *sdpu_extract_attr_seq (UINT8 *p, UINT16 param_len, tSDP_ATTR_SEQ *p_seq)
         }
 
         /* Attribute length must be 2-bytes or 4-bytes for a paired entry. */
-        if (attr_len == 2)
-        {
+        if (attr_len == 2) {
             BE_STREAM_TO_UINT16 (p_seq->attr_entry[p_seq->num_attr].start, p);
             p_seq->attr_entry[p_seq->num_attr].end = p_seq->attr_entry[p_seq->num_attr].start;
-        }
-        else if (attr_len == 4)
-        {
+        } else if (attr_len == 4) {
             BE_STREAM_TO_UINT16 (p_seq->attr_entry[p_seq->num_attr].start, p);
             BE_STREAM_TO_UINT16 (p_seq->attr_entry[p_seq->num_attr].end, p);
-        }
-        else
+        } else {
             return (NULL);
+        }
 
         /* We can only do so many */
-        if (++p_seq->num_attr >= MAX_ATTR_PER_SEQ)
+        if (++p_seq->num_attr >= MAX_ATTR_PER_SEQ) {
             return (NULL);
+        }
     }
 
     return (p);
@@ -596,8 +580,7 @@ UINT8 *sdpu_get_len_from_type (UINT8 *p, UINT8 type, UINT32 *p_len)
     UINT16  u16;
     UINT32  u32;
 
-    switch (type & 7)
-    {
+    switch (type & 7) {
     case SIZE_ONE_BYTE:
         *p_len = 1;
         break;
@@ -646,8 +629,9 @@ BOOLEAN sdpu_is_base_uuid (UINT8 *p_uuid)
     UINT16    xx;
 
     for (xx = 4; xx < MAX_UUID_SIZE; xx++)
-        if (p_uuid[xx] != sdp_base_uuid[xx])
+        if (p_uuid[xx] != sdp_base_uuid[xx]) {
             return (FALSE);
+        }
 
     /* If here, matched */
     return (TRUE);
@@ -671,65 +655,57 @@ BOOLEAN sdpu_compare_uuid_arrays (UINT8 *p_uuid1, UINT32 len1, UINT8 *p_uuid2, U
     UINT8       nu1[MAX_UUID_SIZE];
     UINT8       nu2[MAX_UUID_SIZE];
 
-    if( ((len1 != 2) && (len1 != 4) && (len1 != 16)) ||
-        ((len2 != 2) && (len2 != 4) && (len2 != 16)) )
-    {
+    if ( ((len1 != 2) && (len1 != 4) && (len1 != 16)) ||
+            ((len2 != 2) && (len2 != 4) && (len2 != 16)) ) {
         SDP_TRACE_ERROR("%s: invalid length\n", __func__);
         return FALSE;
     }
 
     /* If lengths match, do a straight compare */
-    if (len1 == len2)
-    {
-        if (len1 == 2)
+    if (len1 == len2) {
+        if (len1 == 2) {
             return ((p_uuid1[0] == p_uuid2[0]) && (p_uuid1[1] == p_uuid2[1]));
+        }
         if (len1 == 4)
             return (  (p_uuid1[0] == p_uuid2[0]) && (p_uuid1[1] == p_uuid2[1])
-                   && (p_uuid1[2] == p_uuid2[2]) && (p_uuid1[3] == p_uuid2[3]) );
-        else
+                      && (p_uuid1[2] == p_uuid2[2]) && (p_uuid1[3] == p_uuid2[3]) );
+        else {
             return (memcmp (p_uuid1, p_uuid2, (size_t)len1) == 0);
-    }
-    else if (len1 > len2)
-    {
-        /* If the len1 was 4-byte, (so len2 is 2-byte), compare on the fly */
-        if (len1 == 4)
-        {
-            return ( (p_uuid1[0] == 0) && (p_uuid1[1] == 0)
-                  && (p_uuid1[2] == p_uuid2[0]) && (p_uuid1[3] == p_uuid2[1]) );
         }
-        else
-        {
+    } else if (len1 > len2) {
+        /* If the len1 was 4-byte, (so len2 is 2-byte), compare on the fly */
+        if (len1 == 4) {
+            return ( (p_uuid1[0] == 0) && (p_uuid1[1] == 0)
+                     && (p_uuid1[2] == p_uuid2[0]) && (p_uuid1[3] == p_uuid2[1]) );
+        } else {
             /* Normalize UUIDs to 16-byte form, then compare. Len1 must be 16 */
             memcpy (nu1, p_uuid1,       MAX_UUID_SIZE);
             memcpy (nu2, sdp_base_uuid, MAX_UUID_SIZE);
 
-            if (len2 == 4)
+            if (len2 == 4) {
                 memcpy (nu2, p_uuid2, len2);
-            else if (len2 == 2)
+            } else if (len2 == 2) {
                 memcpy (nu2 + 2, p_uuid2, len2);
+            }
 
             return (memcmp (nu1, nu2, MAX_UUID_SIZE) == 0);
         }
-    }
-    else
-    {
+    } else {
         /* len2 is greater than len1 */
         /* If the len2 was 4-byte, (so len1 is 2-byte), compare on the fly */
-        if (len2 == 4)
-        {
+        if (len2 == 4) {
             return ( (p_uuid2[0] == 0) && (p_uuid2[1] == 0)
-                  && (p_uuid2[2] == p_uuid1[0]) && (p_uuid2[3] == p_uuid1[1]) );
-        }
-        else
-        {
+                     && (p_uuid2[2] == p_uuid1[0]) && (p_uuid2[3] == p_uuid1[1]) );
+        } else {
             /* Normalize UUIDs to 16-byte form, then compare. Len1 must be 16 */
             memcpy (nu2, p_uuid2,       MAX_UUID_SIZE);
             memcpy (nu1, sdp_base_uuid, MAX_UUID_SIZE);
 
-            if (len1 == 4)
+            if (len1 == 4) {
                 memcpy (nu1, p_uuid1, (size_t)len1);
-            else if (len1 == 2)
+            } else if (len1 == 2) {
                 memcpy (nu1 + 2, p_uuid1, (size_t)len1);
+            }
 
             return (memcmp (nu1, nu2, MAX_UUID_SIZE) == 0);
         }
@@ -752,14 +728,14 @@ BOOLEAN sdpu_compare_uuid_arrays (UINT8 *p_uuid1, UINT32 len1, UINT8 *p_uuid2, U
 BOOLEAN sdpu_compare_bt_uuids (tBT_UUID *p_uuid1, tBT_UUID *p_uuid2)
 {
     /* Lengths must match for BT UUIDs to match */
-    if (p_uuid1->len == p_uuid2->len)
-    {
-        if (p_uuid1->len == 2)
+    if (p_uuid1->len == p_uuid2->len) {
+        if (p_uuid1->len == 2) {
             return (p_uuid1->uu.uuid16 == p_uuid2->uu.uuid16);
-        else if (p_uuid1->len == 4)
+        } else if (p_uuid1->len == 4) {
             return (p_uuid1->uu.uuid32 == p_uuid2->uu.uuid32);
-        else if (!memcmp (p_uuid1->uu.uuid128, p_uuid2->uu.uuid128, 16))
+        } else if (!memcmp (p_uuid1->uu.uuid128, p_uuid2->uu.uuid128, 16)) {
             return (TRUE);
+        }
     }
 
     return (FALSE);
@@ -787,13 +763,15 @@ BOOLEAN sdpu_compare_uuid_with_attr (tBT_UUID *p_btuuid, tSDP_DISC_ATTR *p_attr)
     UINT16      attr_len = SDP_DISC_ATTR_LEN (p_attr->attr_len_type);
 
     /* Since both UUIDs are compressed, lengths must match  */
-    if (p_btuuid->len != attr_len)
+    if (p_btuuid->len != attr_len) {
         return (FALSE);
+    }
 
-    if (p_btuuid->len == 2)
+    if (p_btuuid->len == 2) {
         return (BOOLEAN)(p_btuuid->uu.uuid16 == p_attr->attr_value.v.u16);
-    else if (p_btuuid->len == 4)
+    } else if (p_btuuid->len == 4) {
         return (BOOLEAN)(p_btuuid->uu.uuid32 == p_attr->attr_value.v.u32);
+    }
     /* coverity[overrun-buffer-arg] */
     /*
        Event overrun-buffer-arg: Overrun of static array "&p_attr->attr_value.v.array" of size 4 bytes by passing it to a function which indexes it with argument "16U" at byte position 15
@@ -802,8 +780,9 @@ BOOLEAN sdpu_compare_uuid_with_attr (tBT_UUID *p_btuuid, tSDP_DISC_ATTR *p_attr)
        The actual size of tSDP_DISC_ATVAL does not matter.
        If the array size in tSDP_DISC_ATVAL is increase, we would increase the system RAM usage unnecessarily
     */
-    else if (!memcmp (p_btuuid->uu.uuid128,(void*) p_attr->attr_value.v.array, MAX_UUID_SIZE))
+    else if (!memcmp (p_btuuid->uu.uuid128, (void *) p_attr->attr_value.v.array, MAX_UUID_SIZE)) {
         return (TRUE);
+    }
 
     return (FALSE);
 }
@@ -824,29 +803,24 @@ void sdpu_sort_attr_list( UINT16 num_attr, tSDP_DISCOVERY_DB *p_db )
     UINT16 x;
 
     /* Done if no attributes to sort */
-    if (num_attr <= 1)
-    {
+    if (num_attr <= 1) {
         return;
-    }
-    else if (num_attr > SDP_MAX_ATTR_FILTERS)
-    {
+    } else if (num_attr > SDP_MAX_ATTR_FILTERS) {
         num_attr = SDP_MAX_ATTR_FILTERS;
     }
 
     num_attr--; /* for the for-loop */
-    for( i = 0; i < num_attr; )
-    {
-        if( p_db->attr_filters[i] > p_db->attr_filters[i+1] )
-        {
+    for ( i = 0; i < num_attr; ) {
+        if ( p_db->attr_filters[i] > p_db->attr_filters[i + 1] ) {
             /* swap the attribute IDs and start from the beginning */
             x = p_db->attr_filters[i];
-            p_db->attr_filters[i] = p_db->attr_filters[i+1];
-            p_db->attr_filters[i+1] = x;
+            p_db->attr_filters[i] = p_db->attr_filters[i + 1];
+            p_db->attr_filters[i + 1] = x;
 
             i = 0;
-        }
-        else
+        } else {
             i++;
+        }
     }
 }
 
@@ -867,16 +841,16 @@ UINT16 sdpu_get_list_len(tSDP_UUID_SEQ *uid_seq, tSDP_ATTR_SEQ *attr_seq)
     UINT16 len = 0;
     UINT16 len1;
 
-    for (p_rec = sdp_db_service_search (NULL, uid_seq); p_rec; p_rec = sdp_db_service_search (p_rec, uid_seq))
-    {
+    for (p_rec = sdp_db_service_search (NULL, uid_seq); p_rec; p_rec = sdp_db_service_search (p_rec, uid_seq)) {
         len += 3;
 
         len1 = sdpu_get_attrib_seq_len(p_rec, attr_seq );
 
-        if (len1 != 0)
+        if (len1 != 0) {
             len += len1;
-        else
+        } else {
             len -= 3;
+        }
     }
     return len;
 }
@@ -897,35 +871,31 @@ UINT16 sdpu_get_attrib_seq_len(tSDP_RECORD *p_rec, tSDP_ATTR_SEQ *attr_seq)
     UINT16 len1 = 0;
     UINT16 xx;
     BOOLEAN is_range = FALSE;
-    UINT16 start_id=0, end_id=0;
+    UINT16 start_id = 0, end_id = 0;
 
-    for (xx = 0; xx < attr_seq->num_attr; xx++)
-    {
-        if (is_range == FALSE)
-        {
+    for (xx = 0; xx < attr_seq->num_attr; xx++) {
+        if (is_range == FALSE) {
             start_id = attr_seq->attr_entry[xx].start;
             end_id = attr_seq->attr_entry[xx].end;
         }
         p_attr = sdp_db_find_attr_in_rec (p_rec,
                                           start_id,
                                           end_id);
-        if (p_attr)
-        {
+        if (p_attr) {
             len1 += sdpu_get_attrib_entry_len (p_attr);
 
             /* If doing a range, stick with this one till no more attributes found */
-            if (start_id != end_id)
-            {
+            if (start_id != end_id) {
                 /* Update for next time through */
                 start_id = p_attr->id + 1;
                 xx--;
                 is_range = TRUE;
-            }
-            else
+            } else {
                 is_range = FALSE;
-        }
-        else
+            }
+        } else {
             is_range = FALSE;
+        }
     }
     return len1;
 }
@@ -945,38 +915,32 @@ UINT16 sdpu_get_attrib_entry_len(tSDP_ATTRIBUTE *p_attr)
 
     /* the attribute is in the db record.
      * assuming the attribute len is less than SDP_MAX_ATTR_LEN */
-    switch(p_attr->type)
-    {
+    switch (p_attr->type) {
     case TEXT_STR_DESC_TYPE:    /* 4 */
     case DATA_ELE_SEQ_DESC_TYPE:/* 6 */
     case DATA_ELE_ALT_DESC_TYPE:/* 7 */
     case URL_DESC_TYPE:         /* 8 */
 #if (SDP_MAX_ATTR_LEN > 0xFFFF)
-        if(p_attr->len > 0xFFFF)
-        {
+        if (p_attr->len > 0xFFFF) {
             len += 5;
-        }
-        else
+        } else
 
 #endif/* 0xFFFF - 0xFF */
 #if (SDP_MAX_ATTR_LEN > 0xFF)
-        if(p_attr->len > 0xFF)
-        {
-            len += 3;
-        }
-        else
+            if (p_attr->len > 0xFF) {
+                len += 3;
+            } else
 
 #endif /* 0xFF and less*/
-        {
-            len += 2;
-        }
+            {
+                len += 2;
+            }
         len += p_attr->len;
         return len;
-	}
+    }
 
     /* Now, the attribute value */
-    switch (p_attr->len)
-    {
+    switch (p_attr->len) {
     case 1:
     case 2:
     case 4:
@@ -1017,8 +981,7 @@ UINT8 *sdpu_build_partial_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr, UI
     size_t  len_to_copy;
     UINT16  attr_len;
 
-    if ((p_attr_buff = (UINT8 *) GKI_getbuf(sizeof(UINT8) * SDP_MAX_ATTR_LEN )) == NULL)
-    {
+    if ((p_attr_buff = (UINT8 *) GKI_getbuf(sizeof(UINT8) * SDP_MAX_ATTR_LEN )) == NULL) {
         SDP_TRACE_ERROR("sdpu_build_partial_attrib_entry cannot get a buffer!\n");
         return NULL;
     }
@@ -1027,7 +990,7 @@ UINT8 *sdpu_build_partial_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr, UI
     sdpu_build_attrib_entry(p_tmp_attr, p_attr);
     attr_len = sdpu_get_attrib_entry_len(p_attr);
 
-    len_to_copy = ((attr_len - *offset) < len) ? (attr_len - *offset): len;
+    len_to_copy = ((attr_len - *offset) < len) ? (attr_len - *offset) : len;
 
     memcpy(p_out, &p_attr_buff[*offset], len_to_copy);
 
@@ -1051,12 +1014,12 @@ UINT8 *sdpu_build_partial_attrib_entry (UINT8 *p_out, tSDP_ATTRIBUTE *p_attr, UI
 **
 *******************************************************************************/
 
-void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8* p_uuid128)
+void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8 *p_uuid128)
 {
     UINT16 uuid16_bo;
     memset(p_uuid128, 0, 16);
 
     memcpy(p_uuid128, sdp_base_uuid, MAX_UUID_SIZE);
     uuid16_bo = ntohs(uuid16);
-    memcpy(p_uuid128+ 2, &uuid16_bo, sizeof(uint16_t));
+    memcpy(p_uuid128 + 2, &uuid16_bo, sizeof(uint16_t));
 }

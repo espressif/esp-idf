@@ -55,22 +55,18 @@ static void l2c_ucd_discover_cback (BD_ADDR rem_bda, UINT8 info_type, UINT32 dat
 
     L2CAP_TRACE_DEBUG ("L2CAP - l2c_ucd_discover_cback");
 
-    for (xx = 0; xx < MAX_L2CAP_CLIENTS; xx++, p_rcb++)
-    {
-        if (p_rcb->in_use)
-        {
+    for (xx = 0; xx < MAX_L2CAP_CLIENTS; xx++, p_rcb++) {
+        if (p_rcb->in_use) {
             /* if this application is waiting UCD reception info */
             if (( info_type == L2CAP_UCD_INFO_TYPE_RECEPTION )
-                && ( p_rcb->ucd.state & L2C_UCD_STATE_W4_RECEPTION ))
-            {
+                    && ( p_rcb->ucd.state & L2C_UCD_STATE_W4_RECEPTION )) {
                 p_rcb->ucd.cb_info.pL2CA_UCD_Discover_Cb (rem_bda, info_type, data);
                 p_rcb->ucd.state &= ~(L2C_UCD_STATE_W4_RECEPTION);
             }
 
             /* if this application is waiting UCD MTU info */
             if (( info_type == L2CAP_UCD_INFO_TYPE_MTU )
-                && ( p_rcb->ucd.state & L2C_UCD_STATE_W4_MTU ))
-            {
+                    && ( p_rcb->ucd.state & L2C_UCD_STATE_W4_MTU )) {
                 p_rcb->ucd.cb_info.pL2CA_UCD_Discover_Cb (rem_bda, info_type, data);
                 p_rcb->ucd.state &= ~(L2C_UCD_STATE_W4_MTU);
             }
@@ -101,13 +97,10 @@ static void l2c_ucd_data_ind_cback (BD_ADDR rem_bda, BT_HDR *p_buf)
     p_buf->offset += L2CAP_UCD_OVERHEAD;
     p_buf->len    -= L2CAP_UCD_OVERHEAD;
 
-    if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
-    {
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL) {
         L2CAP_TRACE_ERROR ("L2CAP - no RCB for l2c_ucd_data_ind_cback, PSM: 0x%04x", psm);
         GKI_freebuf (p_buf);
-    }
-    else
-    {
+    } else {
         p_rcb->ucd.cb_info.pL2CA_UCD_Data_Cb(rem_bda, p_buf);
     }
 }
@@ -128,17 +121,14 @@ static void l2c_ucd_congestion_status_cback (BD_ADDR rem_bda, BOOLEAN is_congest
 
     L2CAP_TRACE_DEBUG ("L2CAP - l2c_ucd_congestion_status_cback");
 
-    for (xx = 0; xx < MAX_L2CAP_CLIENTS; xx++, p_rcb++)
-    {
+    for (xx = 0; xx < MAX_L2CAP_CLIENTS; xx++, p_rcb++) {
         if (( p_rcb->in_use )
-          &&( p_rcb->ucd.state != L2C_UCD_STATE_UNUSED ))
-        {
-            if ( p_rcb->ucd.cb_info.pL2CA_UCD_Congestion_Status_Cb )
-            {
+                && ( p_rcb->ucd.state != L2C_UCD_STATE_UNUSED )) {
+            if ( p_rcb->ucd.cb_info.pL2CA_UCD_Congestion_Status_Cb ) {
                 L2CAP_TRACE_DEBUG ("L2CAP - Calling UCDCongestionStatus_Cb (%d), PSM=0x%04x, BDA: %08x%04x,",
-                                    is_congested, p_rcb->psm,
-                                    (rem_bda[0]<<24)+(rem_bda[1]<<16)+(rem_bda[2]<<8)+rem_bda[3],
-                                    (rem_bda[4]<<8)+rem_bda[5]);
+                                   is_congested, p_rcb->psm,
+                                   (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
+                                   (rem_bda[4] << 8) + rem_bda[5]);
 
                 p_rcb->ucd.cb_info.pL2CA_UCD_Congestion_Status_Cb ( rem_bda, is_congested );
             }
@@ -206,14 +196,12 @@ BOOLEAN L2CA_UcdRegister ( UINT16 psm, tL2CAP_UCD_CB_INFO *p_cb_info )
     L2CAP_TRACE_API  ("L2CA_UcdRegister()  PSM: 0x%04x", psm);
 
     if ((!p_cb_info->pL2CA_UCD_Discover_Cb)
-     || (!p_cb_info->pL2CA_UCD_Data_Cb))
-    {
+            || (!p_cb_info->pL2CA_UCD_Data_Cb)) {
         L2CAP_TRACE_ERROR ("L2CAP - no callback registering PSM(0x%04x) on UCD", psm);
         return (FALSE);
     }
 
-    if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
-    {
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL) {
         L2CAP_TRACE_ERROR ("L2CAP - no RCB for L2CA_UcdRegister, PSM: 0x%04x", psm);
         return (FALSE);
     }
@@ -222,15 +210,11 @@ BOOLEAN L2CA_UcdRegister ( UINT16 psm, tL2CAP_UCD_CB_INFO *p_cb_info )
     p_rcb->ucd.cb_info = *p_cb_info;
 
     /* check if master rcb is created for UCD */
-    if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) == NULL)
-    {
-        if ((p_rcb = l2cu_allocate_rcb (L2C_UCD_RCB_ID)) == NULL)
-        {
+    if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) == NULL) {
+        if ((p_rcb = l2cu_allocate_rcb (L2C_UCD_RCB_ID)) == NULL) {
             L2CAP_TRACE_ERROR ("L2CAP - no RCB available for L2CA_UcdRegister");
             return (FALSE);
-        }
-        else
-        {
+        } else {
             /* these callback functions will forward data to each UCD application */
             p_rcb->ucd.cb_info.pL2CA_UCD_Discover_Cb            = l2c_ucd_discover_cback;
             p_rcb->ucd.cb_info.pL2CA_UCD_Data_Cb                = l2c_ucd_data_ind_cback;
@@ -270,8 +254,7 @@ BOOLEAN L2CA_UcdDeregister ( UINT16 psm )
 
     L2CAP_TRACE_API  ("L2CA_UcdDeregister()  PSM: 0x%04x", psm);
 
-    if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
-    {
+    if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL) {
         L2CAP_TRACE_ERROR ("L2CAP - no RCB for L2CA_UcdDeregister, PSM: 0x%04x", psm);
         return (FALSE);
     }
@@ -281,25 +264,22 @@ BOOLEAN L2CA_UcdDeregister ( UINT16 psm )
     /* check this was the last UCD registration */
     p_rcb = &l2cb.rcb_pool[0];
 
-    for (xx = 0; xx < MAX_L2CAP_CLIENTS; xx++, p_rcb++)
-    {
-        if ((p_rcb->in_use) && (p_rcb->ucd.state != L2C_UCD_STATE_UNUSED))
+    for (xx = 0; xx < MAX_L2CAP_CLIENTS; xx++, p_rcb++) {
+        if ((p_rcb->in_use) && (p_rcb->ucd.state != L2C_UCD_STATE_UNUSED)) {
             return (TRUE);
+        }
     }
 
     /* delete master rcb for UCD */
-    if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) != NULL)
-    {
+    if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) != NULL) {
         l2cu_release_rcb (p_rcb);
     }
 
     /* delete CCB for UCD */
     p_ccb = l2cb.ccb_pool;
-    for ( xx = 0; xx < MAX_L2CAP_CHANNELS; xx++ )
-    {
+    for ( xx = 0; xx < MAX_L2CAP_CHANNELS; xx++ ) {
         if (( p_ccb->in_use )
-          &&( p_ccb->local_cid == L2CAP_CONNECTIONLESS_CID ))
-        {
+                && ( p_ccb->local_cid == L2CAP_CONNECTIONLESS_CID )) {
             l2cu_release_ccb (p_ccb);
         }
         p_ccb++;
@@ -330,13 +310,12 @@ BOOLEAN L2CA_UcdDiscover ( UINT16 psm, BD_ADDR rem_bda, UINT8 info_type )
     tL2C_RCB        *p_rcb;
 
     L2CAP_TRACE_API ("L2CA_UcdDiscover()  PSM: 0x%04x  BDA: %08x%04x, InfoType=0x%02x", psm,
-                      (rem_bda[0]<<24)+(rem_bda[1]<<16)+(rem_bda[2]<<8)+rem_bda[3],
-                      (rem_bda[4]<<8)+rem_bda[5], info_type);
+                     (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
+                     (rem_bda[4] << 8) + rem_bda[5], info_type);
 
     /* Fail if the PSM is not registered */
     if (((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
-        ||( p_rcb->ucd.state == L2C_UCD_STATE_UNUSED ))
-    {
+            || ( p_rcb->ucd.state == L2C_UCD_STATE_UNUSED )) {
         L2CAP_TRACE_WARNING ("L2CAP - no RCB for L2CA_UcdDiscover, PSM: 0x%04x", psm);
         return (FALSE);
     }
@@ -344,27 +323,25 @@ BOOLEAN L2CA_UcdDiscover ( UINT16 psm, BD_ADDR rem_bda, UINT8 info_type )
     /* First, see if we already have a link to the remote */
     /* then find the channel control block for UCD. */
     if (((p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_BR_EDR)) == NULL)
-      ||((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL))
-    {
-        if ( l2c_ucd_connect (rem_bda) == FALSE )
-        {
+            || ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL)) {
+        if ( l2c_ucd_connect (rem_bda) == FALSE ) {
             return (FALSE);
         }
     }
 
     /* set waiting flags in rcb */
 
-    if ( info_type & L2CAP_UCD_INFO_TYPE_RECEPTION )
+    if ( info_type & L2CAP_UCD_INFO_TYPE_RECEPTION ) {
         p_rcb->ucd.state |= L2C_UCD_STATE_W4_RECEPTION;
+    }
 
-    if ( info_type & L2CAP_UCD_INFO_TYPE_MTU )
+    if ( info_type & L2CAP_UCD_INFO_TYPE_MTU ) {
         p_rcb->ucd.state |= L2C_UCD_STATE_W4_MTU;
+    }
 
     /* if link is already established */
-    if ((p_lcb)&&(p_lcb->link_state == LST_CONNECTED))
-    {
-        if (!p_ccb)
-        {
+    if ((p_lcb) && (p_lcb->link_state == LST_CONNECTED)) {
+        if (!p_ccb) {
             p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID);
         }
         l2c_ucd_check_pending_info_req(p_ccb);
@@ -397,13 +374,12 @@ UINT16 L2CA_UcdDataWrite (UINT16 psm, BD_ADDR rem_bda, BT_HDR *p_buf, UINT16 fla
     UINT8           *p;
 
     L2CAP_TRACE_API ("L2CA_UcdDataWrite()  PSM: 0x%04x  BDA: %08x%04x", psm,
-                      (rem_bda[0]<<24)+(rem_bda[1]<<16)+(rem_bda[2]<<8)+rem_bda[3],
-                      (rem_bda[4]<<8)+rem_bda[5]);
+                     (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
+                     (rem_bda[4] << 8) + rem_bda[5]);
 
     /* Fail if the PSM is not registered */
     if (((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
-        ||( p_rcb->ucd.state == L2C_UCD_STATE_UNUSED ))
-    {
+            || ( p_rcb->ucd.state == L2C_UCD_STATE_UNUSED )) {
         L2CAP_TRACE_WARNING ("L2CAP - no RCB for L2CA_UcdDataWrite, PSM: 0x%04x", psm);
         GKI_freebuf (p_buf);
         return (L2CAP_DW_FAILED);
@@ -412,18 +388,15 @@ UINT16 L2CA_UcdDataWrite (UINT16 psm, BD_ADDR rem_bda, BT_HDR *p_buf, UINT16 fla
     /* First, see if we already have a link to the remote */
     /*  then find the channel control block for UCD */
     if (((p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_BR_EDR)) == NULL)
-      ||((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL))
-    {
-        if ( l2c_ucd_connect (rem_bda) == FALSE )
-        {
+            || ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL)) {
+        if ( l2c_ucd_connect (rem_bda) == FALSE ) {
             GKI_freebuf (p_buf);
             return (L2CAP_DW_FAILED);
         }
 
         /* If we still don't have lcb and ccb after connect attempt, then can't proceed */
         if (((p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_BR_EDR)) == NULL)
-            || ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL))
-        {
+                || ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL)) {
             GKI_freebuf (p_buf);
             return (L2CAP_DW_FAILED);
         }
@@ -437,20 +410,18 @@ UINT16 L2CA_UcdDataWrite (UINT16 psm, BD_ADDR rem_bda, BT_HDR *p_buf, UINT16 fla
     UINT16_TO_STREAM (p, psm);
 
     /* UCD MTU check */
-    if ((p_lcb->ucd_mtu) && (p_buf->len > p_lcb->ucd_mtu))
-    {
+    if ((p_lcb->ucd_mtu) && (p_buf->len > p_lcb->ucd_mtu)) {
         L2CAP_TRACE_WARNING ("L2CAP - Handle: 0x%04x  UCD bigger than peer's UCD mtu size cannot be sent", p_lcb->handle);
         GKI_freebuf (p_buf);
         return (L2CAP_DW_FAILED);
     }
 
     /* If already congested, do not accept any more packets */
-    if (p_ccb->cong_sent)
-    {
+    if (p_ccb->cong_sent) {
         L2CAP_TRACE_ERROR ("L2CAP - Handle: 0x%04x UCD cannot be sent, already congested count: %u  buff_quota: %u",
-                            p_lcb->handle,
-                            (p_ccb->xmit_hold_q.count + p_lcb->ucd_out_sec_pending_q.count),
-                            p_ccb->buff_quota);
+                           p_lcb->handle,
+                           (p_ccb->xmit_hold_q.count + p_lcb->ucd_out_sec_pending_q.count),
+                           p_ccb->buff_quota);
 
         GKI_freebuf (p_buf);
         return (L2CAP_DW_FAILED);
@@ -461,10 +432,11 @@ UINT16 L2CA_UcdDataWrite (UINT16 psm, BD_ADDR rem_bda, BT_HDR *p_buf, UINT16 fla
 
     l2c_csm_execute (p_ccb, L2CEVT_L2CA_DATA_WRITE, p_buf);
 
-    if (p_ccb->cong_sent)
+    if (p_ccb->cong_sent) {
         return (L2CAP_DW_CONGESTED);
-    else
+    } else {
         return (L2CAP_DW_SUCCESS);
+    }
 }
 
 /*******************************************************************************
@@ -485,19 +457,16 @@ BOOLEAN L2CA_UcdSetIdleTimeout ( BD_ADDR rem_bda, UINT16 timeout )
     tL2C_CCB        *p_ccb;
 
     L2CAP_TRACE_API ("L2CA_UcdSetIdleTimeout()  Timeout: 0x%04x  BDA: %08x%04x", timeout,
-                      (rem_bda[0]<<24)+(rem_bda[1]<<16)+(rem_bda[2]<<8)+rem_bda[3],
-                      (rem_bda[4]<<8)+rem_bda[5]);
+                     (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
+                     (rem_bda[4] << 8) + rem_bda[5]);
 
     /* First, see if we already have a link to the remote */
     /* then find the channel control block. */
     if (((p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_BR_EDR)) == NULL)
-      ||((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL))
-    {
+            || ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL)) {
         L2CAP_TRACE_WARNING ("L2CAP - no UCD channel");
         return (FALSE);
-    }
-    else
-    {
+    } else {
         p_ccb->fixed_chnl_idle_tout = timeout;
         return (TRUE);
     }
@@ -518,18 +487,16 @@ BOOLEAN L2CA_UCDSetTxPriority ( BD_ADDR rem_bda, tL2CAP_CHNL_PRIORITY priority )
     tL2C_CCB        *p_ccb;
 
     L2CAP_TRACE_API ("L2CA_UCDSetTxPriority()  priority: 0x%02x  BDA: %08x%04x", priority,
-                      (rem_bda[0]<<24)+(rem_bda[1]<<16)+(rem_bda[2]<<8)+rem_bda[3],
-                      (rem_bda[4]<<8)+rem_bda[5]);
+                     (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
+                     (rem_bda[4] << 8) + rem_bda[5]);
 
-    if ((p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_BR_EDR)) == NULL)
-    {
+    if ((p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_BR_EDR)) == NULL) {
         L2CAP_TRACE_WARNING ("L2CAP - no LCB for L2CA_UCDSetTxPriority");
         return (FALSE);
     }
 
     /* Find the channel control block */
-    if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL)
-    {
+    if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL) {
         L2CAP_TRACE_WARNING ("L2CAP - no CCB for L2CA_UCDSetTxPriority");
         return (FALSE);
     }
@@ -558,47 +525,37 @@ static BOOLEAN l2c_ucd_connect ( BD_ADDR rem_bda )
     tL2C_RCB        *p_rcb;
 
     L2CAP_TRACE_DEBUG ("l2c_ucd_connect()  BDA: %08x%04x",
-                      (rem_bda[0]<<24)+(rem_bda[1]<<16)+(rem_bda[2]<<8)+rem_bda[3],
-                      (rem_bda[4]<<8)+rem_bda[5]);
+                       (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
+                       (rem_bda[4] << 8) + rem_bda[5]);
 
     /* Fail if we have not established communications with the controller */
-    if (!BTM_IsDeviceUp())
-    {
+    if (!BTM_IsDeviceUp()) {
         L2CAP_TRACE_WARNING ("l2c_ucd_connect - BTU not ready");
         return (FALSE);
     }
 
     /* First, see if we already have a link to the remote */
-    if ((p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_BR_EDR)) == NULL)
-    {
+    if ((p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_BR_EDR)) == NULL) {
         /* No link. Get an LCB and start link establishment */
         if ( ((p_lcb = l2cu_allocate_lcb (rem_bda, FALSE, BT_TRANSPORT_BR_EDR)) == NULL)
-         ||  (l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR) == FALSE) )
-        {
+                ||  (l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR) == FALSE) ) {
             L2CAP_TRACE_WARNING ("L2CAP - conn not started l2c_ucd_connect");
             return (FALSE);
         }
-    }
-    else if ( p_lcb->info_rx_bits & (1 << L2CAP_EXTENDED_FEATURES_INFO_TYPE) )
-    {
-        if (!(p_lcb->peer_ext_fea & L2CAP_EXTFEA_UCD_RECEPTION))
-        {
+    } else if ( p_lcb->info_rx_bits & (1 << L2CAP_EXTENDED_FEATURES_INFO_TYPE) ) {
+        if (!(p_lcb->peer_ext_fea & L2CAP_EXTFEA_UCD_RECEPTION)) {
             L2CAP_TRACE_WARNING ("L2CAP - UCD is not supported by peer, l2c_ucd_connect");
             return (FALSE);
         }
     }
 
     /* Find the channel control block. */
-    if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL)
-    {
+    if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) == NULL) {
         /* Allocate a channel control block */
-        if ((p_ccb = l2cu_allocate_ccb (p_lcb, 0)) == NULL)
-        {
+        if ((p_ccb = l2cu_allocate_ccb (p_lcb, 0)) == NULL) {
             L2CAP_TRACE_WARNING ("L2CAP - no CCB for l2c_ucd_connect");
             return (FALSE);
-        }
-        else
-        {
+        } else {
             /* Set CID for the connection */
             p_ccb->local_cid  = L2CAP_CONNECTIONLESS_CID;
             p_ccb->remote_cid = L2CAP_CONNECTIONLESS_CID;
@@ -609,8 +566,7 @@ static BOOLEAN l2c_ucd_connect ( BD_ADDR rem_bda )
             /* Set the default channel priority value to use */
             l2cu_change_pri_ccb (p_ccb, L2CAP_UCD_CH_PRIORITY);
 
-            if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) == NULL)
-            {
+            if ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) == NULL) {
                 L2CAP_TRACE_WARNING ("L2CAP - no UCD registered, l2c_ucd_connect");
                 return (FALSE);
             }
@@ -618,8 +574,7 @@ static BOOLEAN l2c_ucd_connect ( BD_ADDR rem_bda )
             p_ccb->p_rcb = p_rcb;
 
             /* There is no configuration, so if the link is up, the channel is up */
-            if (p_lcb->link_state == LST_CONNECTED)
-            {
+            if (p_lcb->link_state == LST_CONNECTED) {
                 p_ccb->chnl_state = CST_OPEN;
             }
         }
@@ -640,11 +595,13 @@ static BOOLEAN l2c_ucd_connect ( BD_ADDR rem_bda )
 void l2c_ucd_delete_sec_pending_q(tL2C_LCB  *p_lcb)
 {
     /* clean up any security pending UCD */
-    while (p_lcb->ucd_out_sec_pending_q.p_first)
+    while (p_lcb->ucd_out_sec_pending_q.p_first) {
         GKI_freebuf (GKI_dequeue (&p_lcb->ucd_out_sec_pending_q));
+    }
 
-    while (p_lcb->ucd_in_sec_pending_q.p_first)
+    while (p_lcb->ucd_in_sec_pending_q.p_first) {
         GKI_freebuf (GKI_dequeue (&p_lcb->ucd_in_sec_pending_q));
+    }
 }
 
 /*******************************************************************************
@@ -662,24 +619,18 @@ BOOLEAN l2c_ucd_check_pending_info_req(tL2C_CCB  *p_ccb)
     UINT16      xx;
     BOOLEAN     pending = FALSE;
 
-    if (p_ccb == NULL)
-    {
+    if (p_ccb == NULL) {
         L2CAP_TRACE_ERROR ("L2CAP - NULL p_ccb in l2c_ucd_check_pending_info_req");
         return (FALSE);
     }
 
-    for (xx = 0; xx < MAX_L2CAP_CLIENTS; xx++, p_rcb++)
-    {
-        if (p_rcb->in_use)
-        {
+    for (xx = 0; xx < MAX_L2CAP_CLIENTS; xx++, p_rcb++) {
+        if (p_rcb->in_use) {
             /* if application is waiting UCD reception info */
-            if (p_rcb->ucd.state & L2C_UCD_STATE_W4_RECEPTION)
-            {
+            if (p_rcb->ucd.state & L2C_UCD_STATE_W4_RECEPTION) {
                 /* if this information is available */
-                if ( p_ccb->p_lcb->info_rx_bits & (1 << L2CAP_EXTENDED_FEATURES_INFO_TYPE) )
-                {
-                    if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_UCD_RECEPTION))
-                    {
+                if ( p_ccb->p_lcb->info_rx_bits & (1 << L2CAP_EXTENDED_FEATURES_INFO_TYPE) ) {
+                    if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_UCD_RECEPTION)) {
                         L2CAP_TRACE_WARNING ("L2CAP - UCD is not supported by peer, l2c_ucd_check_pending_info_req");
 
                         l2c_ucd_delete_sec_pending_q(p_ccb->p_lcb);
@@ -687,34 +638,26 @@ BOOLEAN l2c_ucd_check_pending_info_req(tL2C_CCB  *p_ccb)
                     }
 
                     p_ccb->p_rcb->ucd.cb_info.pL2CA_UCD_Discover_Cb (p_ccb->p_lcb->remote_bd_addr,
-                                                                     L2CAP_UCD_INFO_TYPE_RECEPTION,
-                                                                     p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_UCD_RECEPTION);
-                }
-                else
-                {
+                            L2CAP_UCD_INFO_TYPE_RECEPTION,
+                            p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_UCD_RECEPTION);
+                } else {
                     pending = TRUE;
-                    if (p_ccb->p_lcb->w4_info_rsp == FALSE)
-                    {
+                    if (p_ccb->p_lcb->w4_info_rsp == FALSE) {
                         l2cu_send_peer_info_req (p_ccb->p_lcb, L2CAP_EXTENDED_FEATURES_INFO_TYPE);
                     }
                 }
             }
 
             /* if application is waiting for UCD MTU */
-            if (p_rcb->ucd.state & L2C_UCD_STATE_W4_MTU)
-            {
+            if (p_rcb->ucd.state & L2C_UCD_STATE_W4_MTU) {
                 /* if this information is available */
-                if ( p_ccb->p_lcb->info_rx_bits & (1 << L2CAP_CONNLESS_MTU_INFO_TYPE))
-                {
+                if ( p_ccb->p_lcb->info_rx_bits & (1 << L2CAP_CONNLESS_MTU_INFO_TYPE)) {
                     p_ccb->p_rcb->ucd.cb_info.pL2CA_UCD_Discover_Cb (p_ccb->p_lcb->remote_bd_addr,
-                                                                     L2CAP_UCD_INFO_TYPE_MTU,
-                                                                     p_ccb->p_lcb->ucd_mtu);
-                }
-                else
-                {
+                            L2CAP_UCD_INFO_TYPE_MTU,
+                            p_ccb->p_lcb->ucd_mtu);
+                } else {
                     pending = TRUE;
-                    if (p_ccb->p_lcb->w4_info_rsp == FALSE)
-                    {
+                    if (p_ccb->p_lcb->w4_info_rsp == FALSE) {
                         l2cu_send_peer_info_req (p_ccb->p_lcb, L2CAP_CONNLESS_MTU_INFO_TYPE);
                     }
                 }
@@ -755,9 +698,8 @@ BOOLEAN l2c_ucd_check_pending_out_sec_q(tL2C_CCB  *p_ccb)
     UINT16 psm;
     BT_HDR *p_buf;
 
-    if ( p_ccb->p_lcb->ucd_out_sec_pending_q.count )
-    {
-        p_buf = (BT_HDR*)(p_ccb->p_lcb->ucd_out_sec_pending_q.p_first);
+    if ( p_ccb->p_lcb->ucd_out_sec_pending_q.count ) {
+        p_buf = (BT_HDR *)(p_ccb->p_lcb->ucd_out_sec_pending_q.p_first);
         p = (UINT8 *)(p_buf + 1) + p_buf->offset;
         STREAM_TO_UINT16(psm, p)
 
@@ -784,9 +726,8 @@ void l2c_ucd_send_pending_out_sec_q(tL2C_CCB  *p_ccb)
 {
     BT_HDR *p_buf;
 
-    if ( p_ccb->p_lcb->ucd_out_sec_pending_q.count )
-    {
-        p_buf = (BT_HDR*)GKI_dequeue (&p_ccb->p_lcb->ucd_out_sec_pending_q);
+    if ( p_ccb->p_lcb->ucd_out_sec_pending_q.count ) {
+        p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->p_lcb->ucd_out_sec_pending_q);
 
         l2c_enqueue_peer_data (p_ccb, (BT_HDR *)p_buf);
         l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
@@ -807,12 +748,11 @@ void l2c_ucd_discard_pending_out_sec_q(tL2C_CCB  *p_ccb)
 {
     BT_HDR *p_buf;
 
-    p_buf = (BT_HDR*)GKI_dequeue (&p_ccb->p_lcb->ucd_out_sec_pending_q);
+    p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->p_lcb->ucd_out_sec_pending_q);
 
     /* we may need to report to application */
 
-    if (p_buf)
-    {
+    if (p_buf) {
         GKI_freebuf (p_buf);
     }
 }
@@ -832,9 +772,8 @@ BOOLEAN l2c_ucd_check_pending_in_sec_q(tL2C_CCB  *p_ccb)
     UINT16 psm;
     BT_HDR *p_buf;
 
-    if ( p_ccb->p_lcb->ucd_in_sec_pending_q.count )
-    {
-        p_buf = (BT_HDR*)(p_ccb->p_lcb->ucd_in_sec_pending_q.p_first);
+    if ( p_ccb->p_lcb->ucd_in_sec_pending_q.count ) {
+        p_buf = (BT_HDR *)(p_ccb->p_lcb->ucd_in_sec_pending_q.p_first);
         p = (UINT8 *)(p_buf + 1) + p_buf->offset;
         STREAM_TO_UINT16(psm, p)
 
@@ -861,9 +800,8 @@ void l2c_ucd_send_pending_in_sec_q(tL2C_CCB  *p_ccb)
 {
     BT_HDR *p_buf;
 
-    if ( p_ccb->p_lcb->ucd_in_sec_pending_q.count )
-    {
-        p_buf = (BT_HDR*)GKI_dequeue (&p_ccb->p_lcb->ucd_in_sec_pending_q);
+    if ( p_ccb->p_lcb->ucd_in_sec_pending_q.count ) {
+        p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->p_lcb->ucd_in_sec_pending_q);
 
         p_ccb->p_rcb->ucd.cb_info.pL2CA_UCD_Data_Cb(p_ccb->p_lcb->remote_bd_addr, (BT_HDR *)p_buf);
     }
@@ -883,10 +821,9 @@ void l2c_ucd_discard_pending_in_sec_q(tL2C_CCB  *p_ccb)
 {
     BT_HDR *p_buf;
 
-    p_buf = (BT_HDR*)GKI_dequeue (&p_ccb->p_lcb->ucd_in_sec_pending_q);
+    p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->p_lcb->ucd_in_sec_pending_q);
 
-    if (p_buf)
-    {
+    if (p_buf) {
         GKI_freebuf (p_buf);
     }
 }
@@ -907,19 +844,14 @@ BOOLEAN l2c_ucd_check_rx_pkts(tL2C_LCB  *p_lcb, BT_HDR *p_msg)
     tL2C_RCB   *p_rcb;
 
     if (((p_ccb = l2cu_find_ccb_by_cid (p_lcb, L2CAP_CONNECTIONLESS_CID)) != NULL)
-      ||((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) != NULL))
-    {
-        if (p_ccb == NULL)
-        {
+            || ((p_rcb = l2cu_find_rcb_by_psm (L2C_UCD_RCB_ID)) != NULL)) {
+        if (p_ccb == NULL) {
             /* Allocate a channel control block */
-            if ((p_ccb = l2cu_allocate_ccb (p_lcb, 0)) == NULL)
-            {
+            if ((p_ccb = l2cu_allocate_ccb (p_lcb, 0)) == NULL) {
                 L2CAP_TRACE_WARNING ("L2CAP - no CCB for UCD reception");
                 GKI_freebuf (p_msg);
                 return TRUE;
-            }
-            else
-            {
+            } else {
                 /* Set CID for the connection */
                 p_ccb->local_cid  = L2CAP_CONNECTIONLESS_CID;
                 p_ccb->remote_cid = L2CAP_CONNECTIONLESS_CID;
@@ -938,9 +870,9 @@ BOOLEAN l2c_ucd_check_rx_pkts(tL2C_LCB  *p_lcb, BT_HDR *p_msg)
         }
         l2c_csm_execute(p_ccb, L2CEVT_L2CAP_DATA, p_msg);
         return TRUE;
-    }
-    else
+    } else {
         return FALSE;
+    }
 }
 
 /*******************************************************************************
@@ -959,18 +891,14 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
     /* if the event is not processed by this function, this variable will be set to FALSE */
     BOOLEAN done = TRUE;
 
-    switch (p_ccb->chnl_state)
-    {
+    switch (p_ccb->chnl_state) {
     case CST_CLOSED:
-        switch (event)
-        {
+        switch (event) {
         case L2CEVT_LP_CONNECT_CFM:     /* Link came up         */
             /* check if waiting for UCD info */
-            if (!l2c_ucd_check_pending_info_req (p_ccb))
-            {
+            if (!l2c_ucd_check_pending_info_req (p_ccb)) {
                 /* check if any outgoing UCD packet is waiting security check */
-                if (!l2c_ucd_check_pending_out_sec_q(p_ccb))
-                {
+                if (!l2c_ucd_check_pending_out_sec_q(p_ccb)) {
                     p_ccb->chnl_state = CST_OPEN;
                 }
             }
@@ -986,11 +914,9 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 
         case L2CEVT_L2CAP_INFO_RSP:
             /* check if waiting for UCD info */
-            if (!l2c_ucd_check_pending_info_req (p_ccb))
-            {
+            if (!l2c_ucd_check_pending_info_req (p_ccb)) {
                 /* check if any outgoing UCD packet is waiting security check */
-                if (!l2c_ucd_check_pending_out_sec_q(p_ccb))
-                {
+                if (!l2c_ucd_check_pending_out_sec_q(p_ccb)) {
                     p_ccb->chnl_state = CST_OPEN;
                 }
             }
@@ -1003,12 +929,10 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         break;
 
     case CST_ORIG_W4_SEC_COMP:
-        switch (event)
-        {
+        switch (event) {
         case L2CEVT_SEC_RE_SEND_CMD:    /* BTM has enough info to proceed */
             /* check if any outgoing UCD packet is waiting security check */
-            if (!l2c_ucd_check_pending_out_sec_q(p_ccb))
-            {
+            if (!l2c_ucd_check_pending_out_sec_q(p_ccb)) {
                 p_ccb->chnl_state = CST_OPEN;
             }
             break;
@@ -1017,14 +941,11 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
             p_ccb->chnl_state = CST_OPEN;
             l2c_ucd_send_pending_out_sec_q(p_ccb);
 
-            if ( p_ccb->p_lcb->ucd_out_sec_pending_q.count )
-            {
+            if ( p_ccb->p_lcb->ucd_out_sec_pending_q.count ) {
                 /* start a timer to send next UCD packet in OPEN state */
                 /* it will prevent stack overflow */
                 btu_start_timer (&p_ccb->timer_entry, BTU_TTYPE_L2CAP_CHNL, 0);
-            }
-            else
-            {
+            } else {
                 /* start a timer for idle timeout of UCD */
                 btu_start_timer (&p_ccb->timer_entry, BTU_TTYPE_L2CAP_CHNL, p_ccb->fixed_chnl_idle_tout);
             }
@@ -1059,28 +980,23 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 
 
     case CST_TERM_W4_SEC_COMP:
-        switch (event)
-        {
+        switch (event) {
         case L2CEVT_SEC_COMP:
             p_ccb->chnl_state = CST_OPEN;
             l2c_ucd_send_pending_in_sec_q (p_ccb);
 
-            if ( p_ccb->p_lcb->ucd_in_sec_pending_q.count )
-            {
+            if ( p_ccb->p_lcb->ucd_in_sec_pending_q.count ) {
                 /* start a timer to check next UCD packet in OPEN state */
                 /* it will prevent stack overflow */
                 btu_start_timer (&p_ccb->timer_entry, BTU_TTYPE_L2CAP_CHNL, 0);
-            }
-            else
-            {
+            } else {
                 /* start a timer for idle timeout of UCD */
                 btu_start_timer (&p_ccb->timer_entry, BTU_TTYPE_L2CAP_CHNL, p_ccb->fixed_chnl_idle_tout);
             }
             break;
 
         case L2CEVT_SEC_COMP_NEG:
-            if (((tL2C_CONN_INFO *)p_data)->status == BTM_DELAY_CHECK)
-            {
+            if (((tL2C_CONN_INFO *)p_data)->status == BTM_DELAY_CHECK) {
                 done = FALSE;
                 break;
             }
@@ -1101,8 +1017,7 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 
         case L2CEVT_SEC_RE_SEND_CMD:        /* BTM has enough info to proceed */
             /* check if any incoming UCD packet is waiting security check */
-            if (!l2c_ucd_check_pending_in_sec_q(p_ccb))
-            {
+            if (!l2c_ucd_check_pending_in_sec_q(p_ccb)) {
                 p_ccb->chnl_state = CST_OPEN;
             }
             break;
@@ -1119,8 +1034,7 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         break;
 
     case CST_OPEN:
-        switch (event)
-        {
+        switch (event) {
         case L2CEVT_L2CAP_DATA:             /* Peer data packet rcvd    */
             /* stop idle timer of UCD */
             btu_stop_timer (&p_ccb->timer_entry);
@@ -1143,8 +1057,7 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         case L2CEVT_TIMEOUT:
             /* check if any UCD packet is waiting security check */
             if ((!l2c_ucd_check_pending_in_sec_q(p_ccb))
-              &&(!l2c_ucd_check_pending_out_sec_q(p_ccb)))
-            {
+                    && (!l2c_ucd_check_pending_out_sec_q(p_ccb))) {
                 l2cu_release_ccb (p_ccb);
             }
             break;

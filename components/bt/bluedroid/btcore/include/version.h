@@ -21,11 +21,11 @@
 #include <stdint.h>
 
 typedef struct {
-  uint8_t hci_version;
-  uint16_t hci_revision;
-  uint8_t lmp_version;
-  uint16_t manufacturer;
-  uint16_t lmp_subversion;
+    uint8_t hci_version;
+    uint16_t hci_revision;
+    uint8_t lmp_version;
+    uint16_t manufacturer;
+    uint16_t lmp_subversion;
 } bt_version_t;
 
 #endif /*_VERSION_H_*/

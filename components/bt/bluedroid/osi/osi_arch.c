@@ -38,17 +38,17 @@
 int
 osi_mutex_new(osi_mutex_t *pxMutex)
 {
-  int xReturn = -1;
+    int xReturn = -1;
 
-  *pxMutex = xSemaphoreCreateMutex();
+    *pxMutex = xSemaphoreCreateMutex();
 
-  if (*pxMutex != NULL) {
-    xReturn = 0;
-  }
+    if (*pxMutex != NULL) {
+        xReturn = 0;
+    }
 
-  //LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("osi_mutex_new: m=%p\n", *pxMutex));
+    //LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("osi_mutex_new: m=%p\n", *pxMutex));
 
-  return xReturn;
+    return xReturn;
 }
 
 /** Lock a mutex
@@ -56,14 +56,17 @@ osi_mutex_new(osi_mutex_t *pxMutex)
 void
 osi_mutex_lock(osi_mutex_t *pxMutex)
 {
-  while (xSemaphoreTake(*pxMutex, portMAX_DELAY) != pdPASS);
+    while (xSemaphoreTake(*pxMutex, portMAX_DELAY) != pdPASS);
 }
 
 int
 osi_mutex_trylock(osi_mutex_t *pxMutex)
 {
-  if (xSemaphoreTake(*pxMutex, 0) == pdPASS) return 0;
-  else return -1;
+    if (xSemaphoreTake(*pxMutex, 0) == pdPASS) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 /** Unlock a mutex
@@ -71,7 +74,7 @@ osi_mutex_trylock(osi_mutex_t *pxMutex)
 void
 osi_mutex_unlock(osi_mutex_t *pxMutex)
 {
-  xSemaphoreGive(*pxMutex);
+    xSemaphoreGive(*pxMutex);
 }
 
 /** Delete a semaphore
@@ -79,8 +82,8 @@ osi_mutex_unlock(osi_mutex_t *pxMutex)
 void
 osi_mutex_free(osi_mutex_t *pxMutex)
 {
-  //LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("osi_mutex_free: m=%p\n", *pxMutex));
-  vQueueDelete(*pxMutex);
+    //LWIP_DEBUGF(THREAD_SAFE_DEBUG, ("osi_mutex_free: m=%p\n", *pxMutex));
+    vQueueDelete(*pxMutex);
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -90,15 +93,15 @@ osi_mutex_free(osi_mutex_t *pxMutex)
 int
 osi_sem_new(osi_sem_t *sem, uint32_t max_count, uint32_t init_count)
 {
-  int xReturn = -1;
-  if (sem) {
-    *sem = xSemaphoreCreateCounting(max_count, init_count);
-    if ((*sem) != NULL) {
-      xReturn = 0;
+    int xReturn = -1;
+    if (sem) {
+        *sem = xSemaphoreCreateCounting(max_count, init_count);
+        if ((*sem) != NULL) {
+            xReturn = 0;
+        }
     }
-  }
 
-  return xReturn;
+    return xReturn;
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -106,7 +109,7 @@ osi_sem_new(osi_sem_t *sem, uint32_t max_count, uint32_t init_count)
 void
 osi_sem_signal(osi_sem_t *sem)
 {
-  xSemaphoreGive(*sem);
+    xSemaphoreGive(*sem);
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -128,38 +131,38 @@ osi_sem_signal(osi_sem_t *sem)
 uint32_t
 osi_sem_wait(osi_sem_t *sem, uint32_t timeout)
 {
-  portTickType StartTime, EndTime, Elapsed;
-  unsigned long ulReturn;
+    portTickType StartTime, EndTime, Elapsed;
+    unsigned long ulReturn;
 
-  StartTime = xTaskGetTickCount();
+    StartTime = xTaskGetTickCount();
 
-  if (timeout != 0) {
-    if (xSemaphoreTake(*sem, timeout / portTICK_RATE_MS) == pdTRUE) {
-      EndTime = xTaskGetTickCount();
-      Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
+    if (timeout != 0) {
+        if (xSemaphoreTake(*sem, timeout / portTICK_RATE_MS) == pdTRUE) {
+            EndTime = xTaskGetTickCount();
+            Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
 
-      if (Elapsed == 0) {
-        Elapsed = 1;
-      }
+            if (Elapsed == 0) {
+                Elapsed = 1;
+            }
 
-      ulReturn = Elapsed;
-    } else {
-      ulReturn = OSI_ARCH_TIMEOUT;
+            ulReturn = Elapsed;
+        } else {
+            ulReturn = OSI_ARCH_TIMEOUT;
+        }
+    } else { // must block without a timeout
+        while (xSemaphoreTake(*sem, portMAX_DELAY) != pdTRUE);
+
+        EndTime = xTaskGetTickCount();
+        Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
+
+        if (Elapsed == 0) {
+            Elapsed = 1;
+        }
+
+        ulReturn = Elapsed;
     }
-  } else { // must block without a timeout
-    while (xSemaphoreTake(*sem, portMAX_DELAY) != pdTRUE);
 
-    EndTime = xTaskGetTickCount();
-    Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
-
-    if (Elapsed == 0) {
-      Elapsed = 1;
-    }
-
-    ulReturn = Elapsed;
-  }
-
-  return ulReturn ; // return time blocked
+    return ulReturn ; // return time blocked
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -167,7 +170,7 @@ osi_sem_wait(osi_sem_t *sem, uint32_t timeout)
 void
 osi_sem_free(osi_sem_t *sem)
 {
-  vSemaphoreDelete(*sem);
+    vSemaphoreDelete(*sem);
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -181,13 +184,13 @@ osi_arch_init(void)
 uint32_t
 osi_now(void)
 {
-  return xTaskGetTickCount();
+    return xTaskGetTickCount();
 }
 
 
 void osi_delay_ms(uint32_t ms)
 {
-  vTaskDelay(ms/portTICK_RATE_MS);
+    vTaskDelay(ms / portTICK_RATE_MS);
 }
 
 

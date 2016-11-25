@@ -117,24 +117,24 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 {
     if (gki_init()) {
         LOG_ERROR("%s: Init GKI Module Failure.\n", __func__);
-		return -1;
-	}
+        return -1;
+    }
 
     hci = hci_layer_get_interface();
     if (!hci) {
-      LOG_ERROR("%s could not get hci layer interface.\n", __func__);
-	  return -2;
-	}
+        LOG_ERROR("%s could not get hci layer interface.\n", __func__);
+        return -2;
+    }
 
     btu_hci_msg_queue = fixed_queue_new(SIZE_MAX);
     if (btu_hci_msg_queue == NULL) {
-      LOG_ERROR("%s unable to allocate hci message queue.\n", __func__);
-      return -3;
+        LOG_ERROR("%s unable to allocate hci message queue.\n", __func__);
+        return -3;
     }
 
     bluedroid_init_done_cb = cb;
 
-    //Caution: No event dispatcher defined now in hci layer 
+    //Caution: No event dispatcher defined now in hci layer
     //data_dispatcher_register_default(hci->event_dispatcher, btu_hci_msg_queue);
     hci->set_data_queue(btu_hci_msg_queue);
 
@@ -147,7 +147,7 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
     //Enbale HCI
     bte_main_enable();
 
-	return 0;
+    return 0;
 }
 
 /******************************************************************************
@@ -167,16 +167,16 @@ void bte_main_shutdown(void)
 
     btu_hci_msg_queue = NULL;
 
-/*
-    module_clean_up(get_module(STACK_CONFIG_MODULE));
+    /*
+        module_clean_up(get_module(STACK_CONFIG_MODULE));
 
-    module_clean_up(get_module(COUNTER_MODULE));
-    module_clean_up(get_module(GKI_MODULE));
-*/
+        module_clean_up(get_module(COUNTER_MODULE));
+        module_clean_up(get_module(GKI_MODULE));
+    */
 
     gki_clean_up();
 
-	bte_main_disable();
+    bte_main_disable();
 }
 
 /******************************************************************************
@@ -214,12 +214,12 @@ static void bte_main_enable(void)
 ******************************************************************************/
 static void bte_main_disable(void)
 {
-/*
-    APPL_TRACE_DEBUG("%s", __FUNCTION__);
+    /*
+        APPL_TRACE_DEBUG("%s", __FUNCTION__);
 
-    module_shut_down(get_module(HCI_MODULE));
-    module_shut_down(get_module(BTSNOOP_MODULE));
-*/
+        module_shut_down(get_module(HCI_MODULE));
+        module_shut_down(get_module(BTSNOOP_MODULE));
+    */
 
     hci_shut_down();
 
@@ -307,13 +307,10 @@ void bte_main_hci_send (BT_HDR *p_msg, UINT16 event)
     //counter_add("main.tx.packets", 1);
     //counter_add("main.tx.bytes", p_msg->len);
 
-    if((sub_event == LOCAL_BR_EDR_CONTROLLER_ID) || \
-       (sub_event == LOCAL_BLE_CONTROLLER_ID))
-    {
+    if ((sub_event == LOCAL_BR_EDR_CONTROLLER_ID) || \
+            (sub_event == LOCAL_BLE_CONTROLLER_ID)) {
         hci->transmit_downward(event, p_msg);
-    }
-    else
-    {
+    } else {
         //APPL_TRACE_ERROR("Invalid Controller ID. Discarding message.");
         GKI_freebuf(p_msg);
     }

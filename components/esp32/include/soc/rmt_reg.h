@@ -2163,7 +2163,8 @@
 #define RMT_DATE_V  0xFFFFFFFF
 #define RMT_DATE_S  0
 
-
+/* RMT memory block address */
+#define RMT_CHANNEL_MEM(i)  (DR_REG_RMT_BASE + 0x800 + 64 * 4 * (i))
 
 
 #endif /*_SOC_RMT_REG_H_ */

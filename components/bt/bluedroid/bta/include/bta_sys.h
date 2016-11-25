@@ -42,8 +42,7 @@ typedef void (tBTA_SYS_DISABLE)(void);
 
 
 /* HW modules */
-enum
-{
+enum {
     BTA_SYS_HW_BLUETOOTH,
     BTA_SYS_HW_RT,
 
@@ -137,7 +136,7 @@ typedef UINT8 tBTA_SYS_CONN_STATUS;
 typedef UINT8 tBTA_SYS_PREF_ROLES;
 
 /* conn callback for role / low power manager*/
-typedef void (tBTA_SYS_CONN_CBACK)(tBTA_SYS_CONN_STATUS status,UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
+typedef void (tBTA_SYS_CONN_CBACK)(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 /* conn callback for role / low power manager*/
 typedef void (tBTA_SYS_SSR_CFG_CBACK)(UINT8 id, UINT8 app_id, UINT16 latency, UINT16 tout);
@@ -148,15 +147,13 @@ typedef void (tBTA_SYS_EIR_CBACK)(UINT16 uuid16, BOOLEAN adding);
 #endif
 
 /* registration structure */
-typedef struct
-{
+typedef struct {
     tBTA_SYS_EVT_HDLR   *evt_hdlr;
     tBTA_SYS_DISABLE    *disable;
 } tBTA_SYS_REG;
 
 /* data type to send events to BTA SYS HW manager */
-typedef struct
-{
+typedef struct {
     BT_HDR                hdr;
     tBTA_SYS_HW_MODULE   hw_module;
 } tBTA_SYS_HW_MSG;
@@ -180,8 +177,7 @@ extern UINT8 appl_trace_level;
 *****************************************************************************/
 
 /* events sent to SYS HW manager - must be kept synchronized with tables in bta_sys_main.c */
-enum
-{
+enum {
     /* device manager local device API events */
     BTA_SYS_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_SYS),
     BTA_SYS_EVT_ENABLED_EVT,
@@ -196,8 +192,7 @@ enum
 
 
 /* SYS HW status events - returned by SYS HW manager to other modules. */
-enum
-{
+enum {
     BTA_SYS_HW_OFF_EVT,
     BTA_SYS_HW_ON_EVT,
     BTA_SYS_HW_STARTING_EVT,
@@ -236,11 +231,11 @@ extern void bta_sys_hw_register( tBTA_SYS_HW_MODULE module, tBTA_SYS_HW_CBACK *c
 extern void bta_sys_hw_unregister( tBTA_SYS_HW_MODULE module );
 
 
-extern void bta_sys_rm_register(tBTA_SYS_CONN_CBACK * p_cback);
-extern void bta_sys_pm_register(tBTA_SYS_CONN_CBACK * p_cback);
+extern void bta_sys_rm_register(tBTA_SYS_CONN_CBACK *p_cback);
+extern void bta_sys_pm_register(tBTA_SYS_CONN_CBACK *p_cback);
 
-extern void bta_sys_policy_register(tBTA_SYS_CONN_CBACK * p_cback);
-extern void bta_sys_sco_register(tBTA_SYS_CONN_CBACK * p_cback);
+extern void bta_sys_policy_register(tBTA_SYS_CONN_CBACK *p_cback);
+extern void bta_sys_sco_register(tBTA_SYS_CONN_CBACK *p_cback);
 
 
 extern void bta_sys_conn_open(UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
@@ -255,17 +250,17 @@ extern void bta_sys_idle(UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 extern void bta_sys_busy(UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 #if (BTM_SSR_INCLUDED == TRUE)
-extern void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK * p_cback);
+extern void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK *p_cback);
 extern void bta_sys_chg_ssr_config (UINT8 id, UINT8 app_id, UINT16 max_latency, UINT16 min_tout);
 #endif
 
-extern void bta_sys_role_chg_register(tBTA_SYS_CONN_CBACK * p_cback);
+extern void bta_sys_role_chg_register(tBTA_SYS_CONN_CBACK *p_cback);
 extern void bta_sys_notify_role_chg(BD_ADDR_PTR p_bda, UINT8 new_role, UINT8 hci_status);
 extern void bta_sys_collision_register(UINT8 bta_id, tBTA_SYS_CONN_CBACK *p_cback);
 extern void bta_sys_notify_collision (BD_ADDR_PTR p_bda);
 
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
-extern void bta_sys_eir_register(tBTA_SYS_EIR_CBACK * p_cback);
+extern void bta_sys_eir_register(tBTA_SYS_EIR_CBACK *p_cback);
 extern void bta_sys_add_uuid(UINT16 uuid16);
 extern void bta_sys_remove_uuid(UINT16 uuid16);
 #else

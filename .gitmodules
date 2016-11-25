@@ -7,3 +7,6 @@
 [submodule "components/bt/lib"]
 	path = components/bt/lib
 	url = https://github.com/espressif/esp32-bt-lib.git
+[submodule "components/micro-ecc/micro-ecc"]
+	path = components/micro-ecc/micro-ecc
+	url = https://github.com/kmackay/micro-ecc.git

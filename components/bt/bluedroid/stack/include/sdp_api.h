@@ -70,22 +70,19 @@
 
 /* Define a callback function for when discovery is complete. */
 typedef void (tSDP_DISC_CMPL_CB) (UINT16 result);
-typedef void (tSDP_DISC_CMPL_CB2) (UINT16 result, void* user_data);
+typedef void (tSDP_DISC_CMPL_CB2) (UINT16 result, void *user_data);
 
-typedef struct
-{
+typedef struct {
     BD_ADDR         peer_addr;
     UINT16          peer_mtu;
 } tSDP_DR_OPEN;
 
-typedef struct
-{
+typedef struct {
     UINT8           *p_data;
     UINT16          data_len;
 } tSDP_DR_DATA;
 
-typedef union
-{
+typedef union {
     tSDP_DR_OPEN    open;
     tSDP_DR_DATA    data;
 } tSDP_DATA;
@@ -94,10 +91,8 @@ typedef union
 typedef void (tSDP_DISC_RES_CB) (UINT16 event, tSDP_DATA *p_data);
 
 /* Define a structure to hold the discovered service information. */
-typedef struct
-{
-    union
-    {
+typedef struct {
+    union {
         UINT8       u8;                         /* 8-bit integer            */
         UINT16      u16;                        /* 16-bit integer           */
         UINT32      u32;                        /* 32-bit integer           */
@@ -107,24 +102,21 @@ typedef struct
 
 } tSDP_DISC_ATVAL;
 
-typedef struct t_sdp_disc_attr
-{
+typedef struct t_sdp_disc_attr {
     struct t_sdp_disc_attr *p_next_attr;        /* Addr of next linked attr     */
     UINT16                  attr_id;            /* Attribute ID                 */
     UINT16                  attr_len_type;      /* Length and type fields       */
     tSDP_DISC_ATVAL         attr_value;         /* Variable length entry data   */
 } tSDP_DISC_ATTR;
 
-typedef struct t_sdp_disc_rec
-{
+typedef struct t_sdp_disc_rec {
     tSDP_DISC_ATTR          *p_first_attr;      /* First attribute of record    */
     struct t_sdp_disc_rec   *p_next_rec;        /* Addr of next linked record   */
     UINT32                  time_read;          /* The time the record was read */
     BD_ADDR                 remote_bd_addr;     /* Remote BD address            */
 } tSDP_DISC_REC;
 
-typedef struct
-{
+typedef struct {
     UINT32          mem_size;                   /* Memory size of the DB        */
     UINT32          mem_free;                   /* Memory still available       */
     tSDP_DISC_REC   *p_first_rec;               /* Addr of first record in DB   */
@@ -138,18 +130,16 @@ typedef struct
     UINT32          raw_size;                   /* size of raw_data */
     UINT32          raw_used;                   /* length of raw_data used */
 #endif
-}tSDP_DISCOVERY_DB;
+} tSDP_DISCOVERY_DB;
 
 /* This structure is used to add protocol lists and find protocol elements */
-typedef struct
-{
+typedef struct {
     UINT16      protocol_uuid;
     UINT16      num_params;
     UINT16      params[SDP_MAX_PROTOCOL_PARAMS];
 } tSDP_PROTOCOL_ELEM;
 
-typedef struct
-{
+typedef struct {
     UINT16              num_elems;
     tSDP_PROTOCOL_ELEM  list_elem[SDP_MAX_LIST_ELEMS];
 } tSDP_PROTO_LIST_ELEM;
@@ -157,8 +147,7 @@ typedef struct
 /* Device Identification (DI) data structure
 */
 /* Used to set the DI record */
-typedef struct t_sdp_di_record
-{
+typedef struct t_sdp_di_record {
     UINT16       vendor;
     UINT16       vendor_id_source;
     UINT16       product;
@@ -167,14 +156,13 @@ typedef struct t_sdp_di_record
     char         client_executable_url[SDP_MAX_ATTR_LEN];   /* optional */
     char         service_description[SDP_MAX_ATTR_LEN];     /* optional */
     char         documentation_url[SDP_MAX_ATTR_LEN];       /* optional */
-}tSDP_DI_RECORD;
+} tSDP_DI_RECORD;
 
 /* Used to get the DI record */
-typedef struct t_sdp_di_get_record
-{
+typedef struct t_sdp_di_get_record {
     UINT16          spec_id;
     tSDP_DI_RECORD  rec;
-}tSDP_DI_GET_RECORD;
+} tSDP_DI_GET_RECORD;
 
 
 /*****************************************************************************
@@ -223,8 +211,8 @@ extern BOOLEAN SDP_CancelServiceSearch (tSDP_DISCOVERY_DB *p_db);
 **
 *******************************************************************************/
 extern BOOLEAN SDP_ServiceSearchRequest (UINT8 *p_bd_addr,
-                                         tSDP_DISCOVERY_DB *p_db,
-                                         tSDP_DISC_CMPL_CB *p_cb);
+        tSDP_DISCOVERY_DB *p_db,
+        tSDP_DISC_CMPL_CB *p_cb);
 
 
 /*******************************************************************************
@@ -241,8 +229,8 @@ extern BOOLEAN SDP_ServiceSearchRequest (UINT8 *p_bd_addr,
 **
 *******************************************************************************/
 extern BOOLEAN SDP_ServiceSearchAttributeRequest (UINT8 *p_bd_addr,
-                                                  tSDP_DISCOVERY_DB *p_db,
-                                                  tSDP_DISC_CMPL_CB *p_cb);
+        tSDP_DISCOVERY_DB *p_db,
+        tSDP_DISC_CMPL_CB *p_cb);
 
 /*******************************************************************************
 **
@@ -259,8 +247,8 @@ extern BOOLEAN SDP_ServiceSearchAttributeRequest (UINT8 *p_bd_addr,
 **
 *******************************************************************************/
 extern BOOLEAN SDP_ServiceSearchAttributeRequest2 (UINT8 *p_bd_addr,
-                                                   tSDP_DISCOVERY_DB *p_db,
-                                                   tSDP_DISC_CMPL_CB2 *p_cb, void * user_data);
+        tSDP_DISCOVERY_DB *p_db,
+        tSDP_DISC_CMPL_CB2 *p_cb, void *user_data);
 
 /* API of utilities to find data in the local discovery database */
 
@@ -277,8 +265,8 @@ extern BOOLEAN SDP_ServiceSearchAttributeRequest2 (UINT8 *p_bd_addr,
 **
 *******************************************************************************/
 extern tSDP_DISC_REC *SDP_FindAttributeInDb (tSDP_DISCOVERY_DB *p_db,
-                                             UINT16 attr_id,
-                                             tSDP_DISC_REC *p_start_rec);
+        UINT16 attr_id,
+        tSDP_DISC_REC *p_start_rec);
 
 
 /*******************************************************************************
@@ -292,7 +280,7 @@ extern tSDP_DISC_REC *SDP_FindAttributeInDb (tSDP_DISCOVERY_DB *p_db,
 **
 *******************************************************************************/
 extern tSDP_DISC_ATTR *SDP_FindAttributeInRec (tSDP_DISC_REC *p_rec,
-                                               UINT16 attr_id);
+        UINT16 attr_id);
 
 
 /*******************************************************************************
@@ -308,8 +296,8 @@ extern tSDP_DISC_ATTR *SDP_FindAttributeInRec (tSDP_DISC_REC *p_rec,
 **
 *******************************************************************************/
 extern tSDP_DISC_REC *SDP_FindServiceInDb (tSDP_DISCOVERY_DB *p_db,
-                                           UINT16 service_uuid,
-                                           tSDP_DISC_REC *p_start_rec);
+        UINT16 service_uuid,
+        tSDP_DISC_REC *p_start_rec);
 
 
 /*******************************************************************************
@@ -329,8 +317,8 @@ extern tSDP_DISC_REC *SDP_FindServiceInDb (tSDP_DISCOVERY_DB *p_db,
 **
 *******************************************************************************/
 extern tSDP_DISC_REC *SDP_FindServiceUUIDInDb (tSDP_DISCOVERY_DB *p_db,
-                                               tBT_UUID *p_uuid,
-                                               tSDP_DISC_REC *p_start_rec);
+        tBT_UUID *p_uuid,
+        tSDP_DISC_REC *p_start_rec);
 
 /*******************************************************************************
 **
@@ -345,7 +333,7 @@ extern tSDP_DISC_REC *SDP_FindServiceUUIDInDb (tSDP_DISCOVERY_DB *p_db,
 ** Returns          TRUE if found, otherwise FALSE.
 **
 *******************************************************************************/
-extern BOOLEAN SDP_FindServiceUUIDInRec_128bit(tSDP_DISC_REC *p_rec, tBT_UUID * p_uuid);
+extern BOOLEAN SDP_FindServiceUUIDInRec_128bit(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid);
 
 /*******************************************************************************
 **
@@ -360,7 +348,7 @@ extern BOOLEAN SDP_FindServiceUUIDInRec_128bit(tSDP_DISC_REC *p_rec, tBT_UUID * 
 **
 *******************************************************************************/
 extern tSDP_DISC_REC *SDP_FindServiceInDb_128bit(tSDP_DISCOVERY_DB *p_db,
-                                                 tSDP_DISC_REC *p_start_rec);
+        tSDP_DISC_REC *p_start_rec);
 
 /*******************************************************************************
 **
@@ -374,8 +362,8 @@ extern tSDP_DISC_REC *SDP_FindServiceInDb_128bit(tSDP_DISCOVERY_DB *p_db,
 **
 *******************************************************************************/
 extern BOOLEAN SDP_FindProtocolListElemInRec (tSDP_DISC_REC *p_rec,
-                                              UINT16 layer_uuid,
-                                              tSDP_PROTOCOL_ELEM *p_elem);
+        UINT16 layer_uuid,
+        tSDP_PROTOCOL_ELEM *p_elem);
 
 
 /*******************************************************************************
@@ -390,8 +378,8 @@ extern BOOLEAN SDP_FindProtocolListElemInRec (tSDP_DISC_REC *p_rec,
 **
 *******************************************************************************/
 extern BOOLEAN SDP_FindAddProtoListsElemInRec (tSDP_DISC_REC *p_rec,
-                                               UINT16 layer_uuid,
-                                               tSDP_PROTOCOL_ELEM *p_elem);
+        UINT16 layer_uuid,
+        tSDP_PROTOCOL_ELEM *p_elem);
 
 
 /*******************************************************************************
@@ -409,8 +397,8 @@ extern BOOLEAN SDP_FindAddProtoListsElemInRec (tSDP_DISC_REC *p_rec,
 **
 *******************************************************************************/
 extern BOOLEAN SDP_FindProfileVersionInRec (tSDP_DISC_REC *p_rec,
-                                            UINT16 profile_uuid,
-                                            UINT16 *p_version);
+        UINT16 profile_uuid,
+        UINT16 *p_version);
 
 
 /* API into SDP for local service database updates */
@@ -544,7 +532,7 @@ extern BOOLEAN SDP_AddProtocolList (UINT32 handle, UINT16 num_elem,
 **
 *******************************************************************************/
 extern BOOLEAN SDP_AddAdditionProtoLists (UINT32 handle, UINT16 num_elem,
-                                          tSDP_PROTO_LIST_ELEM *p_proto_list);
+        tSDP_PROTO_LIST_ELEM *p_proto_list);
 
 
 /*******************************************************************************
@@ -560,8 +548,8 @@ extern BOOLEAN SDP_AddAdditionProtoLists (UINT32 handle, UINT16 num_elem,
 **
 *******************************************************************************/
 extern BOOLEAN SDP_AddProfileDescriptorList (UINT32 handle,
-                                             UINT16 profile_uuid,
-                                             UINT16 version);
+        UINT16 profile_uuid,
+        UINT16 version);
 
 
 /*******************************************************************************
@@ -577,8 +565,8 @@ extern BOOLEAN SDP_AddProfileDescriptorList (UINT32 handle,
 **
 *******************************************************************************/
 extern BOOLEAN SDP_AddLanguageBaseAttrIDList (UINT32 handle,
-                                              UINT16 lang, UINT16 char_enc,
-                                              UINT16 base_id);
+        UINT16 lang, UINT16 char_enc,
+        UINT16 base_id);
 
 
 /*******************************************************************************
@@ -594,8 +582,8 @@ extern BOOLEAN SDP_AddLanguageBaseAttrIDList (UINT32 handle,
 **
 *******************************************************************************/
 extern BOOLEAN SDP_AddServiceClassIdList (UINT32 handle,
-                                          UINT16 num_services,
-                                          UINT16 *p_service_uuids);
+        UINT16 num_services,
+        UINT16 *p_service_uuids);
 
 
 /*******************************************************************************

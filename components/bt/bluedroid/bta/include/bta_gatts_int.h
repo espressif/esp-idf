@@ -34,8 +34,7 @@
 /*****************************************************************************
 **  Constants and data types
 *****************************************************************************/
-enum
-{
+enum {
     BTA_GATTS_API_REG_EVT  = BTA_SYS_EVT_START(BTA_ID_GATTS),
     BTA_GATTS_INT_START_IF_EVT,
     BTA_GATTS_API_DEREG_EVT,
@@ -64,23 +63,20 @@ typedef UINT16 tBTA_GATTS_INT_EVT;
 #define BTA_GATTS_MAX_SRVC_NUM   GATT_MAX_SR_PROFILES
 
 /* internal strucutre for GATTC register API  */
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBT_UUID                app_uuid;
     tBTA_GATTS_CBACK        *p_cback;
-}tBTA_GATTS_API_REG;
+} tBTA_GATTS_API_REG;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBTA_GATTS_IF           server_if;
-}tBTA_GATTS_INT_START_IF;
+} tBTA_GATTS_INT_START_IF;
 
 typedef tBTA_GATTS_INT_START_IF tBTA_GATTS_API_DEREG;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBTA_GATTS_IF           server_if;
     tBT_UUID                service_uuid;
@@ -90,75 +86,66 @@ typedef struct
 
 } tBTA_GATTS_API_CREATE_SRVC;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBT_UUID                char_uuid;
     tBTA_GATT_PERM          perm;
     tBTA_GATT_CHAR_PROP     property;
 
-}tBTA_GATTS_API_ADD_CHAR;
+} tBTA_GATTS_API_ADD_CHAR;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     UINT16                  included_service_id;
 
-}tBTA_GATTS_API_ADD_INCL_SRVC;
+} tBTA_GATTS_API_ADD_INCL_SRVC;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                      hdr;
     tBT_UUID                    descr_uuid;
     tBTA_GATT_PERM              perm;
-}tBTA_GATTS_API_ADD_DESCR;
+} tBTA_GATTS_API_ADD_DESCR;
 
-typedef struct
-{
+typedef struct {
     BT_HDR  hdr;
     UINT16  attr_id;
     UINT16  len;
     BOOLEAN need_confirm;
     UINT8   value[BTA_GATT_MAX_ATTR_LEN];
-}tBTA_GATTS_API_INDICATION;
+} tBTA_GATTS_API_INDICATION;
 
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT32              trans_id;
     tBTA_GATT_STATUS    status;
     tBTA_GATTS_RSP      *p_rsp;
-}tBTA_GATTS_API_RSP;
+} tBTA_GATTS_API_RSP;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     tBTA_GATT_TRANSPORT     transport;
-}tBTA_GATTS_API_START;
+} tBTA_GATTS_API_START;
 
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     BD_ADDR                 remote_bda;
     tBTA_GATTS_IF           server_if;
     BOOLEAN                 is_direct;
     tBTA_GATT_TRANSPORT     transport;
 
-}tBTA_GATTS_API_OPEN;
+} tBTA_GATTS_API_OPEN;
 
 typedef tBTA_GATTS_API_OPEN tBTA_GATTS_API_CANCEL_OPEN;
 
-typedef struct
-{
+typedef struct {
     BT_HDR                  hdr;
     BD_ADDR_PTR             remote_bda;
     tBTA_GATTS_IF           server_if;
     BOOLEAN                 start;
 } tBTA_GATTS_API_LISTEN;
 
-typedef union
-{
+typedef union {
     BT_HDR                          hdr;
     tBTA_GATTS_API_REG              api_reg;
     tBTA_GATTS_API_DEREG            api_dereg;
@@ -178,17 +165,15 @@ typedef union
 } tBTA_GATTS_DATA;
 
 /* application registration control block */
-typedef struct
-{
+typedef struct {
     BOOLEAN             in_use;
     tBT_UUID            app_uuid;
     tBTA_GATTS_CBACK    *p_cback;
     tBTA_GATTS_IF        gatt_if;
-}tBTA_GATTS_RCB;
+} tBTA_GATTS_RCB;
 
 /* service registration control block */
-typedef struct
-{
+typedef struct {
     tBT_UUID    service_uuid;   /* service UUID */
     UINT16      service_id;     /* service handle */
     UINT8       inst_num;       /* instance ID */
@@ -196,16 +181,15 @@ typedef struct
     UINT8       idx;            /* self index of serviec CB */
     BOOLEAN     in_use;
 
-}tBTA_GATTS_SRVC_CB;
+} tBTA_GATTS_SRVC_CB;
 
 
 /* GATT server control block */
-typedef struct
-{
+typedef struct {
     BOOLEAN             enabled;
     tBTA_GATTS_RCB      rcb[BTA_GATTS_MAX_APP_NUM];
     tBTA_GATTS_SRVC_CB  srvc_cb[BTA_GATTS_MAX_SRVC_NUM];
-}tBTA_GATTS_CB;
+} tBTA_GATTS_CB;
 
 
 
@@ -218,7 +202,7 @@ typedef struct
 extern tBTA_GATTS_CB  bta_gatts_cb;
 #else
 extern tBTA_GATTS_CB *bta_gatts_cb_ptr;
-    #define bta_gatts_cb (*bta_gatts_cb_ptr)
+#define bta_gatts_cb (*bta_gatts_cb_ptr)
 #endif
 
 /*****************************************************************************
@@ -231,29 +215,29 @@ extern void bta_gatts_api_enable(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_data);
 extern void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_start_if(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_deregister(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
-extern void bta_gatts_create_srvc(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_add_include_srvc(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_delete_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_start_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_stop_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA * p_msg);
+extern void bta_gatts_create_srvc(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_add_include_srvc(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_delete_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_start_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_stop_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
 
-extern void bta_gatts_send_rsp(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg);
+extern void bta_gatts_send_rsp(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
 
 
-extern void bta_gatts_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_cancel_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg);
-extern void bta_gatts_listen(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA * p_msg);
+extern void bta_gatts_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_cancel_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_listen(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
 
 extern BOOLEAN bta_gatts_uuid_compare(tBT_UUID tar, tBT_UUID src);
 extern tBTA_GATTS_RCB *bta_gatts_find_app_rcb_by_app_if(tBTA_GATTS_IF server_if);
 extern UINT8 bta_gatts_find_app_rcb_idx_by_app_if(tBTA_GATTS_CB *p_cb, tBTA_GATTS_IF server_if);
 extern UINT8 bta_gatts_alloc_srvc_cb(tBTA_GATTS_CB *p_cb, UINT8 rcb_idx);
-extern tBTA_GATTS_SRVC_CB * bta_gatts_find_srvc_cb_by_srvc_id(tBTA_GATTS_CB *p_cb, UINT16 service_id);
-extern tBTA_GATTS_SRVC_CB * bta_gatts_find_srvc_cb_by_attr_id(tBTA_GATTS_CB *p_cb, UINT16 attr_id);
+extern tBTA_GATTS_SRVC_CB *bta_gatts_find_srvc_cb_by_srvc_id(tBTA_GATTS_CB *p_cb, UINT16 service_id);
+extern tBTA_GATTS_SRVC_CB *bta_gatts_find_srvc_cb_by_attr_id(tBTA_GATTS_CB *p_cb, UINT16 attr_id);
 
 
 #endif /* BTA_GATTS_INT_H */

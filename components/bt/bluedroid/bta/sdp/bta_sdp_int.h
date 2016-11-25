@@ -35,8 +35,7 @@
 **  Constants
 *****************************************************************************/
 
-enum
-{
+enum {
     /* these events are handled by the state machine */
     BTA_SDP_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_SDP),
     BTA_SDP_API_SEARCH_EVT,
@@ -45,8 +44,7 @@ enum
     BTA_SDP_MAX_INT_EVT
 };
 
-enum
-{
+enum {
     BTA_SDP_ACTIVE_NONE = 0,
     BTA_SDP_ACTIVE_YES       /* waiting for SDP result */
 };
@@ -54,30 +52,26 @@ enum
 
 
 /* data type for BTA_SDP_API_ENABLE_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR             hdr;
     tBTA_SDP_DM_CBACK  *p_cback;
 } tBTA_SDP_API_ENABLE;
 
 /* data type for BTA_SDP_API_SEARCH_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR          hdr;
     BD_ADDR         bd_addr;
     tSDP_UUID       uuid;
 } tBTA_SDP_API_SEARCH;
 
 /* data type for BTA_SDP_API_SEARCH_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR          hdr;
-    void*           user_data;
+    void           *user_data;
 } tBTA_SDP_API_RECORD_USER;
 
 /* union of all data types */
-typedef union
-{
+typedef union {
     /* GKI event buffer header */
     BT_HDR                                 hdr;
     tBTA_SDP_API_ENABLE                    enable;
@@ -86,8 +80,7 @@ typedef union
 } tBTA_SDP_MSG;
 
 /* SDP control block */
-typedef struct
-{
+typedef struct {
     UINT8              sdp_active;  /* see BTA_SDP_SDP_ACT_* */
     BD_ADDR            remote_addr;
     tBTA_SDP_DM_CBACK  *p_dm_cback;

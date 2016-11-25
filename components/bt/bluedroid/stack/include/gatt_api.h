@@ -64,7 +64,7 @@
 #define  GATT_NOT_ENCRYPTED                  0x8e
 #define  GATT_CONGESTED                      0x8f
 
-                                             /* 0xE0 ~ 0xFC reserved for future use */
+/* 0xE0 ~ 0xFC reserved for future use */
 #define  GATT_CCC_CFG_ERR                    0xFD /* Client Characteristic Configuration Descriptor Improperly Configured */
 #define  GATT_PRC_IN_PROGRESS                0xFE /* Procedure Already in progress */
 #define  GATT_OUT_OF_RANGE                   0xFF /* Attribute value out of range */
@@ -117,13 +117,13 @@ typedef UINT16 tGATT_DISCONN_REASON;
 /* MAX GATT MTU size
 */
 #ifndef GATT_MAX_MTU_SIZE
-    #define GATT_MAX_MTU_SIZE     517
+#define GATT_MAX_MTU_SIZE     517
 #endif
 
 /* max legth of an attribute value
 */
 #ifndef GATT_MAX_ATTR_LEN
-    #define GATT_MAX_ATTR_LEN     600
+#define GATT_MAX_ATTR_LEN     600
 #endif
 
 /* default GATT MTU size over LE link
@@ -146,7 +146,7 @@ typedef UINT16 tGATT_DISCONN_REASON;
 /* GATT notification caching timer, default to be three seconds
 */
 #ifndef GATTC_NOTIF_TIMEOUT
-    #define GATTC_NOTIF_TIMEOUT   3
+#define GATTC_NOTIF_TIMEOUT   3
 #endif
 
 /*****************************************************************************
@@ -200,8 +200,7 @@ typedef UINT8 tGATT_CHAR_PROP;
 
 /* Format of the value of a characteristic. enumeration type
 */
-enum
-{
+enum {
     GATT_FORMAT_RES,            /* rfu */
     GATT_FORMAT_BOOL,           /* 0x01 boolean */
     GATT_FORMAT_2BITS,           /* 0x02 2 bit */
@@ -236,8 +235,7 @@ typedef UINT8 tGATT_FORMAT;
 
 /* Characteristic Presentation Format Descriptor value
 */
-typedef struct
-{
+typedef struct {
     UINT16              unit;       /* as UUIUD defined by SIG */
     UINT16              descr;       /* as UUID as defined by SIG */
     tGATT_FORMAT        format;
@@ -247,16 +245,14 @@ typedef struct
 
 /* Characteristic Report reference Descriptor format
 */
-typedef struct
-{
+typedef struct {
     UINT8              rpt_id;       /* report ID */
     UINT8              rpt_type;       /* report type */
 } tGATT_CHAR_RPT_REF;
 
 
 #define GATT_VALID_RANGE_MAX_SIZE       16
-typedef struct
-{
+typedef struct {
     UINT8                   format;
     UINT16                  len;
     UINT8                   lower_range[GATT_VALID_RANGE_MAX_SIZE]; /* in little endian format */
@@ -266,8 +262,7 @@ typedef struct
 /* Characteristic Aggregate Format attribute value
 */
 #define GATT_AGGR_HANDLE_NUM_MAX        10
-typedef struct
-{
+typedef struct {
     UINT8                   num_handle;
     UINT16                  handle_list[GATT_AGGR_HANDLE_NUM_MAX];
 } tGATT_CHAR_AGGRE;
@@ -308,8 +303,7 @@ typedef UINT8 tGATT_AUTH_REQ;
 
 /* Attribute Value structure
 */
-typedef struct
-{
+typedef struct {
     UINT16          conn_id;
     UINT16          handle;     /* attribute handle */
     UINT16          offset;     /* attribute value offset, if no offfset is needed for the command, ignore it */
@@ -320,11 +314,10 @@ typedef struct
 
 /* Union of the event data which is used in the server respond API to carry the server response information
 */
-typedef union
-{
+typedef union {
     /* data type            member          event   */
     tGATT_VALUE             attr_value;     /* READ, HANDLE_VALUE_IND, PREPARE_WRITE */
-                                            /* READ_BLOB, READ_BY_TYPE */
+    /* READ_BLOB, READ_BY_TYPE */
     UINT16                  handle;         /* WRITE, WRITE_BLOB */
 
 } tGATTS_RSP;
@@ -340,16 +333,14 @@ typedef UINT8 tGATT_TRANSPORT;
 typedef UINT8   tGATT_EXEC_FLAG;
 
 /* read request always based on UUID */
-typedef struct
-{
+typedef struct {
     UINT16        handle;
     UINT16        offset;
     BOOLEAN       is_long;
 } tGATT_READ_REQ;
 
 /* write request data */
-typedef struct
-{
+typedef struct {
     UINT16          handle;     /* attribute handle */
     UINT16          offset;     /* attribute value offset, if no offfset is needed for the command, ignore it */
     UINT16          len;        /* length of attribute value */
@@ -359,13 +350,12 @@ typedef struct
 } tGATT_WRITE_REQ;
 
 /* callback data for server access request from client */
-typedef union
-{
+typedef union {
     tGATT_READ_REQ         read_req;       /* read request, read by Type, read blob */
 
     tGATT_WRITE_REQ        write_req;    /* write */
-                                         /* prepare write */
-                                         /* write blob */
+    /* prepare write */
+    /* write blob */
     UINT16                 handle;       /* handle value confirmation */
     UINT16                 mtu;          /* MTU exchange request */
     tGATT_EXEC_FLAG        exec_write;    /* execute write */
@@ -373,8 +363,7 @@ typedef union
 
 typedef UINT8 tGATT_SERV_IF;               /* GATT Service Interface */
 
-enum
-{
+enum {
     GATTS_REQ_TYPE_READ = 1,        /* Attribute read request */
     GATTS_REQ_TYPE_WRITE,           /* Attribute write request */
     GATTS_REQ_TYPE_WRITE_EXEC,      /* Execute write */
@@ -388,8 +377,7 @@ typedef UINT8   tGATTS_REQ_TYPE;
 /* Client Used Data Structure
 */
 /* definition of different discovery types */
-enum
-{
+enum {
     GATT_DISC_SRVC_ALL = 1,     /* discover all services */
     GATT_DISC_SRVC_BY_UUID,     /* discover service of a special type */
     GATT_DISC_INC_SRVC,         /* discover the included service within a service */
@@ -401,17 +389,15 @@ typedef UINT8   tGATT_DISC_TYPE;
 
 /* Discover parameters of different discovery types
 */
-typedef struct
-{
+typedef struct {
     tBT_UUID    service;
     UINT16      s_handle;
     UINT16      e_handle;
-}tGATT_DISC_PARAM;
+} tGATT_DISC_PARAM;
 
 /* GATT read type enumeration
 */
-enum
-{
+enum {
     GATT_READ_BY_TYPE =        1,
     GATT_READ_BY_HANDLE,
     GATT_READ_MULTIPLE,
@@ -423,8 +409,7 @@ typedef UINT8 tGATT_READ_TYPE;
 
 /* Read By Type Request (GATT_READ_BY_TYPE) Data
 */
-typedef struct
-{
+typedef struct {
     tGATT_AUTH_REQ      auth_req;
     UINT16              s_handle;
     UINT16              e_handle;
@@ -434,23 +419,20 @@ typedef struct
 /*   GATT_READ_MULTIPLE request data
 */
 #define GATT_MAX_READ_MULTI_HANDLES      10           /* Max attributes to read in one request */
-typedef struct
-{
+typedef struct {
     tGATT_AUTH_REQ          auth_req;
     UINT16                  num_handles;                            /* number of handles to read */
     UINT16                  handles[GATT_MAX_READ_MULTI_HANDLES];   /* handles list to be read */
 } tGATT_READ_MULTI;
 
 /*   Read By Handle Request (GATT_READ_BY_HANDLE) data */
-typedef struct
-{
+typedef struct {
     tGATT_AUTH_REQ         auth_req;
     UINT16                 handle;
 } tGATT_READ_BY_HANDLE;
 
 /*   READ_BT_HANDLE_Request data */
-typedef struct
-{
+typedef struct {
     tGATT_AUTH_REQ         auth_req;
     UINT16                 handle;
     UINT16                 offset;
@@ -458,8 +440,7 @@ typedef struct
 
 /* Read Request Data
 */
-typedef union
-{
+typedef union {
     tGATT_READ_BY_TYPE   service;
     tGATT_READ_BY_TYPE   char_type;        /* characterisitc type */
     tGATT_READ_MULTI     read_multiple;
@@ -468,8 +449,7 @@ typedef union
 } tGATT_READ_PARAM;
 
 /* GATT write type enumeration */
-enum
-{
+enum {
     GATT_WRITE_NO_RSP = 1,
     GATT_WRITE ,
     GATT_WRITE_PREPARE
@@ -478,8 +458,7 @@ typedef UINT8 tGATT_WRITE_TYPE;
 
 /* Client Operation Complete Callback Data
 */
-typedef union
-{
+typedef union {
     tGATT_VALUE          att_value;
     UINT16               mtu;
     UINT16               handle;
@@ -499,8 +478,7 @@ typedef UINT8 tGATTC_OPTYPE;
 
 /* characteristic declaration
 */
-typedef struct
-{
+typedef struct {
     tGATT_CHAR_PROP       char_prop;   /* characterisitc properties */
     UINT16                val_handle;  /* characteristic value attribute handle */
     tBT_UUID              char_uuid;   /* characteristic UUID type */
@@ -508,8 +486,7 @@ typedef struct
 
 /* primary service group data
 */
-typedef struct
-{
+typedef struct {
     UINT16          e_handle;       /* ending handle of the group */
     tBT_UUID        service_type;   /* group type */
 } tGATT_GROUP_VALUE;
@@ -517,15 +494,13 @@ typedef struct
 
 /* included service attribute value
 */
-typedef struct
-{
+typedef struct {
     tBT_UUID    service_type;       /* included service UUID */
     UINT16      s_handle;           /* starting handle */
     UINT16      e_handle;           /* ending handle */
 } tGATT_INCL_SRVC;
 
-typedef union
-{
+typedef union {
     tGATT_INCL_SRVC     incl_service;  /* include service value */
     tGATT_GROUP_VALUE   group_value;   /* Service UUID type.
                                           This field is used with GATT_DISC_SRVC_ALL
@@ -541,8 +516,7 @@ typedef union
 
 /* discover result record
 */
-typedef struct
-{
+typedef struct {
     tBT_UUID            type;
     UINT16              handle;
     tGATT_DISC_VALUE    value;
@@ -557,22 +531,22 @@ typedef struct
 #define GATT_INVALID_ACL_HANDLE              0xFFFF
 /* discover result callback function */
 typedef void (tGATT_DISC_RES_CB) (UINT16 conn_id, tGATT_DISC_TYPE disc_type,
-                                    tGATT_DISC_RES *p_data);
+                                  tGATT_DISC_RES *p_data);
 
 /* discover complete callback function */
 typedef void (tGATT_DISC_CMPL_CB) (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGATT_STATUS status);
 
 /* Define a callback function for when read/write/disc/config operation is completed. */
 typedef void (tGATT_CMPL_CBACK) (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS status,
-                tGATT_CL_COMPLETE *p_data);
+                                 tGATT_CL_COMPLETE *p_data);
 
 /* Define a callback function when an initialized connection is established. */
 typedef void (tGATT_CONN_CBACK) (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id, BOOLEAN connected,
-                                    tGATT_DISCONN_REASON reason, tBT_TRANSPORT transport);
+                                 tGATT_DISCONN_REASON reason, tBT_TRANSPORT transport);
 
 /* attribute request callback for ATT server */
 typedef void  (tGATT_REQ_CBACK )(UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYPE type,
-                                tGATTS_DATA *p_data);
+                                 tGATTS_DATA *p_data);
 
 /* channel congestion/uncongestion callback */
 typedef void (tGATT_CONGESTION_CBACK )(UINT16 conn_id, BOOLEAN congested);
@@ -585,8 +559,7 @@ typedef void (tGATT_ENC_CMPL_CB)(tGATT_IF gatt_if, BD_ADDR bda);
 ** GATT. This structure includes callback functions. All functions
 ** MUST be provided.
 */
-typedef struct
-{
+typedef struct {
     tGATT_CONN_CBACK                *p_conn_cb;
     tGATT_CMPL_CBACK                *p_cmpl_cb;
     tGATT_DISC_RES_CB               *p_disc_res_cb;
@@ -600,8 +573,7 @@ typedef struct
 */
 
 
-typedef struct
-{
+typedef struct {
     tBT_UUID app_uuid128;
     tBT_UUID svc_uuid;
     UINT16   svc_inst;
@@ -619,29 +591,25 @@ typedef struct
 #define GATTS_SRV_CHG_CMD_READ_CLENT       5
 typedef UINT8 tGATTS_SRV_CHG_CMD;
 
-typedef struct
-{
+typedef struct {
     BD_ADDR         bda;
     BOOLEAN         srv_changed;
 } tGATTS_SRV_CHG;
 
 
-typedef union
-{
+typedef union {
     tGATTS_SRV_CHG  srv_chg;
     UINT8           client_read_index; /* only used for sequential reading client srv chg info */
 } tGATTS_SRV_CHG_REQ;
 
-typedef union
-{
+typedef union {
     tGATTS_SRV_CHG srv_chg;
     UINT8 num_clients;
 } tGATTS_SRV_CHG_RSP;
 
 
 
-typedef struct
-{
+typedef struct {
     tGATTS_HNDL_RANGE   *p_new_srv_start;
 } tGATTS_PENDING_NEW_SRV_START;
 
@@ -649,10 +617,9 @@ typedef struct
 */
 typedef void  (tGATTS_NV_SAVE_CBACK)(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
 typedef BOOLEAN  (tGATTS_NV_SRV_CHG_CBACK)(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,
-                                            tGATTS_SRV_CHG_RSP *p_rsp);
+        tGATTS_SRV_CHG_RSP *p_rsp);
 
-typedef struct
-{
+typedef struct {
     tGATTS_NV_SAVE_CBACK       *p_nv_save_callback;
     tGATTS_NV_SRV_CHG_CBACK    *p_srv_chg_callback;
 } tGATT_APPL_INFO;
@@ -774,7 +741,7 @@ extern UINT16 GATTS_AddIncludeService (UINT16 service_handle,
 **
 *******************************************************************************/
 extern UINT16 GATTS_AddCharacteristic (UINT16 service_handle, tBT_UUID *char_uuid,
-                                       tGATT_PERM perm,tGATT_CHAR_PROP property);
+                                       tGATT_PERM perm, tGATT_CHAR_PROP property);
 
 /*******************************************************************************
 **
@@ -796,7 +763,7 @@ extern UINT16 GATTS_AddCharacteristic (UINT16 service_handle, tBT_UUID *char_uui
 **
 *******************************************************************************/
 extern UINT16 GATTS_AddCharDescriptor (UINT16 service_handle, tGATT_PERM perm,
-                                       tBT_UUID * p_descr_uuid);
+                                       tBT_UUID *p_descr_uuid);
 
 /*******************************************************************************
 **
@@ -860,8 +827,8 @@ extern void GATTS_StopService (UINT16 service_handle);
 **
 *******************************************************************************/
 extern  tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,
-                                                  UINT16 attr_handle,
-                                                  UINT16 val_len, UINT8 *p_val);
+        UINT16 attr_handle,
+        UINT16 val_len, UINT8 *p_val);
 
 /*******************************************************************************
 **
@@ -878,7 +845,7 @@ extern  tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,
 **
 *******************************************************************************/
 extern  tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
-                                                    UINT16 val_len, UINT8 *p_val);
+        UINT16 val_len, UINT8 *p_val);
 
 
 /*******************************************************************************
@@ -1149,7 +1116,7 @@ extern BOOLEAN GATT_GetConnectionInfor(UINT16 conn_id, tGATT_IF *p_gatt_if,
 **
 *******************************************************************************/
 extern BOOLEAN GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr,
-                                         UINT16 *p_conn_id, tBT_TRANSPORT transport);
+        UINT16 *p_conn_id, tBT_TRANSPORT transport);
 
 
 /*******************************************************************************
@@ -1179,8 +1146,8 @@ extern BOOLEAN GATT_Listen (tGATT_IF gatt_if, BOOLEAN start, BD_ADDR_PTR bd_addr
 **
 *******************************************************************************/
 extern void GATT_ConfigServiceChangeCCC (BD_ADDR remote_bda, BOOLEAN enable,
-                                                    tBT_TRANSPORT transport);
- 
+        tBT_TRANSPORT transport);
+
 #ifdef __cplusplus
 
 }

@@ -332,7 +332,7 @@
 #define HCI_BLE_LTK_REQ_REPLY           (0x001A | HCI_GRP_BLE_CMDS)
 #define HCI_BLE_LTK_REQ_NEG_REPLY       (0x001B | HCI_GRP_BLE_CMDS)
 #define HCI_BLE_READ_SUPPORTED_STATES   (0x001C | HCI_GRP_BLE_CMDS)
-                            /*0x001D, 0x001E and 0x001F are reserved*/
+/*0x001D, 0x001E and 0x001F are reserved*/
 #define HCI_BLE_RECEIVER_TEST           (0x001D | HCI_GRP_BLE_CMDS)
 #define HCI_BLE_TRANSMITTER_TEST        (0x001E | HCI_GRP_BLE_CMDS)
 /* BLE TEST COMMANDS */
@@ -1333,8 +1333,7 @@
 
 
 /* Define the extended flow specification fields used by AMP */
-typedef struct
-{
+typedef struct {
     UINT8       id;
     UINT8       stype;
     UINT16      max_sdu_size;
