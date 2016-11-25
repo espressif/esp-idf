@@ -78,6 +78,15 @@ int wpa_printf(const char* format, ...)
     return res;
 }
 
+int wpa2_printf(const char* format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    int res = lib_printf("wpa2", format, arg);
+    va_end(arg);
+    return res;
+}
+
 int wps_printf(const char* format, ...)
 {
     va_list arg;
