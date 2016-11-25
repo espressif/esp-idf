@@ -403,7 +403,7 @@
 
 /* Includes SCO if TRUE */
 #ifndef BTM_SCO_INCLUDED
-#define BTM_SCO_INCLUDED            TRUE       /* TRUE includes SCO code */
+#define BTM_SCO_INCLUDED            FALSE	//TRUE       /* TRUE includes SCO code */
 #endif
 
 /* Includes SCO if TRUE */
@@ -480,7 +480,7 @@
 
 /* The number of SCO links. */
 #ifndef BTM_MAX_SCO_LINKS
-#define BTM_MAX_SCO_LINKS           3
+#define BTM_MAX_SCO_LINKS           1	//3
 #endif
 
 /* The preferred type of SCO links (2-eSCO, 0-SCO). */
