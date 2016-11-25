@@ -17,11 +17,7 @@
 
 #include <stdint.h>
 #include "bt_defs.h"
-
-#define BTC_TASK_QUEUE_NUM  20
-#define BTC_TASK_STACK_SIZE 4096
-#define BTC_TASK_NAME       "btcT"
-#define BTC_TASK_PRIO       (configMAX_PRIORITIES - 5)
+#include "thread.h"
 
 typedef struct btc_msg {
     uint8_t sig;    //event signal
