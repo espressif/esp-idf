@@ -175,6 +175,26 @@ Deterministic ECDSA as specified by `RFC6979`.
   - In the bootloader, the public key (for signature verification) is flashed as 64 raw bytes.
 - Image signature is 68 bytes - a 4 byte version word (currently zero), followed by a 64 bytes of signature data. These 68 bytes are appended to an app image or partition table data.
 
+Manual Commands
+~~~~~~~~~~~~~~~
+
+Secure boot is integrated into the esp-idf build system, so `make` will automatically sign an app image if secure boot is enabled. `make bootloader` will produce a bootloader digest if menuconfig is configured for it.
+
+However, it is possible to use the `espsecure.py` tool to make standalone signatures and digests.
+
+To sign a binary image::
+
+  espsecure.py sign_data --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
+
+Keyfile is the PEM file containing an ECDSA private signing key.
+
+To generate a bootloader digest::
+
+  espsecure.py digest_secure_bootloader --keyfile ./securebootkey.bin --output ./bootloader-digest.bin build/bootloader/bootloader.bin
+
+Keyfile is the 32 byte raw secure boot key for the device. To flash this digest onto the device::
+
+  esptool.py write_flash 0x0 bootloader-digest.bin
 
 .. _RFC6979: https://tools.ietf.org/html/rfc6979
 .. _Flash Encryption: flash-encryption.rst
