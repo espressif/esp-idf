@@ -968,9 +968,6 @@ netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit)
     }
   }
   
-#if ESP_LWIP
-    ip6_addr_set( ip_2_ip6(&netif->link_local_addr), ip_2_ip6(&netif->ip6_addr[0]) );
-#endif
 
   /* Set address state. */
 #if LWIP_IPV6_DUP_DETECT_ATTEMPTS
@@ -1021,44 +1018,6 @@ netif_add_ip6_address(struct netif *netif, const ip6_addr_t *ip6addr, s8_t *chos
   }
   return ERR_VAL;
 }
-
-
-#if ESP_LWIP
-void
-netif_create_ip4_linklocal_address(struct netif * netif)
-{
-#if 1
-	ip_addr_t linklocal;
-	ip_addr_t linklocal_mask;
-	ip4_addr_t addr = {0};
-	/* Link-local prefix and mask. */
-	IP4_ADDR(ip_2_ip4(&linklocal), 169, 254, 0, 0);
-	IP4_ADDR(ip_2_ip4(&linklocal_mask), 255, 255, 0, 0);
-
-	if (!ip4_addr_netcmp( ip_2_ip4(&linklocal), ip_2_ip4(&netif->link_local_addr), ip_2_ip4(&linklocal_mask) ) &&
-		!ip4_addr_isany(ip_2_ip4(&netif->ip_addr)) ) {
-		IP4_ADDR( ip_2_ip4(&netif->link_local_addr), 169, 254, ip4_addr3( ip_2_ip4(&netif->ip_addr) )
-                                    , ip4_addr4( ip_2_ip4(&netif->ip_addr) )  );
-		return;
-	}
-
-	while ( !(addr.addr) || !ip4_addr4(&addr) )
-		//os_get_random((unsigned char *)&addr, sizeof(addr));
-            addr.addr = LWIP_RAND();
-
-
-	if ( ip_2_ip4(&netif->netmask)->addr > IP_CLASSB_NET &&
-		!ip4_addr_isany( ip_2_ip4(&netif->ip_addr) )) {  // random host address
-		IP4_ADDR( ip_2_ip4(&netif->link_local_addr), 169, 254, ip4_addr3( ip_2_ip4(&netif->ip_addr))
-                                , ip4_addr4(&addr));
-	} else {
-		IP4_ADDR( ip_2_ip4(&netif->link_local_addr), 169, 254, ip4_addr3(&addr), ip4_addr4(&addr) );
-	}
-#endif
-}
-
-#endif
-
 
 /** Dummy IPv6 output function for netifs not supporting IPv6
  */

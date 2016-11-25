@@ -28,6 +28,7 @@
 #include "esp_freertos_hooks.h"
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
+#include "driver/timer.h"
 
 #include "esp_int_wdt.h"
 
@@ -85,7 +86,7 @@ void esp_int_wdt_init() {
     TIMERG1.wdt_feed=1;
     TIMERG1.wdt_wprotect=0;
     TIMERG1.int_clr_timers.wdt=1;
-    TIMERG1.int_ena.wdt=1;
+    timer_group_intr_enable(TIMER_GROUP_1, TIMG_WDT_INT_ENA_M);
     esp_register_freertos_tick_hook(tick_hook);
     ESP_INTR_DISABLE(WDT_INT_NUM);
     intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);

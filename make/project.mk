@@ -94,6 +94,18 @@ COMPONENT_PATHS += $(abspath $(SRCDIRS))
 # A component is buildable if it has a component.mk makefile in it
 COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
 
+# If TESTS_ALL set to 1, set TEST_COMPONENTS to all components
+ifeq ($(TESTS_ALL),1)
+TEST_COMPONENTS := $(COMPONENTS)
+endif
+
+# If TEST_COMPONENTS is set, create variables for building unit tests
+ifdef TEST_COMPONENTS
+override TEST_COMPONENTS := $(foreach comp,$(TEST_COMPONENTS),$(wildcard $(IDF_PATH)/components/$(comp)/test))
+TEST_COMPONENT_PATHS := $(TEST_COMPONENTS)
+TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENTS),$(lastword $(subst /, ,$(dir $(comp))))_test)
+endif
+
 # Initialise project-wide variables which can be added to by
 # each component.
 #
@@ -113,7 +125,7 @@ COMPONENT_SUBMODULES :=
 # dependencies.
 #
 # See the component_project_vars.mk target in component_wrapper.mk
-COMPONENT_PROJECT_VARS := $(addsuffix /component_project_vars.mk,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
+COMPONENT_PROJECT_VARS := $(addsuffix /component_project_vars.mk,$(notdir $(COMPONENT_PATHS_BUILDABLE) ) $(TEST_COMPONENT_NAMES))
 COMPONENT_PROJECT_VARS := $(addprefix $(BUILD_DIR_BASE)/,$(COMPONENT_PROJECT_VARS))
 # this line is -include instead of include to prevent a spurious error message on make 3.81
 -include $(COMPONENT_PROJECT_VARS)
@@ -140,7 +152,7 @@ endif
 LDFLAGS ?= -nostdlib \
 	-L$(IDF_PATH)/lib \
 	-L$(IDF_PATH)/ld \
-	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(SRCDIRS)) \
+	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(TEST_COMPONENT_NAMES) $(SRCDIRS) ) \
 	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
 	-Wl,--gc-sections	\
@@ -257,7 +269,7 @@ endif
 # A "component" library is any library in the LDFLAGS where
 # the name of the library is also a name of the component
 APP_LIBRARIES = $(patsubst -l%,%,$(filter -l%,$(LDFLAGS)))
-COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)),$(APP_LIBRARIES))
+COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)) $(TEST_COMPONENT_NAMES),$(APP_LIBRARIES))
 
 # ELF depends on the library archive files for COMPONENT_LIBRARIES
 # the rules to build these are emitted as part of GenerateComponentTarget below
@@ -282,7 +294,7 @@ $(BUILD_DIR_BASE):
 #
 # Is recursively expanded by the GenerateComponentTargets macro
 define ComponentMake
-+$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(IDF_PATH)/make/component_wrapper.mk COMPONENT_MAKEFILE=$(1)/component.mk
++$(MAKE) -C $(BUILD_DIR_BASE)/$(2) -f $(IDF_PATH)/make/component_wrapper.mk COMPONENT_MAKEFILE=$(1)/component.mk COMPONENT_NAME=$(2)
 endef
 
 # Generate top-level component-specific targets for each component
@@ -325,6 +337,7 @@ $(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAK
 endef
 
 $(foreach component,$(COMPONENT_PATHS_BUILDABLE),$(eval $(call GenerateComponentTargets,$(component),$(notdir $(component)))))
+$(foreach component,$(TEST_COMPONENT_PATHS),$(eval $(call GenerateComponentTargets,$(component),$(lastword $(subst /, ,$(dir $(component))))_test)))
 
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)

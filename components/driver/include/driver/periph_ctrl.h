@@ -39,6 +39,8 @@ typedef enum {
     PERIPH_PWM3_MODULE,
     PERIPH_UHCI0_MODULE,
     PERIPH_UHCI1_MODULE,
+    PERIPH_RMT_MODULE,
+    PERIPH_PCNT_MODULE,
 } periph_module_t;
 
 /**

@@ -84,7 +84,8 @@ typedef struct {
 
 
 static uart_obj_t *p_uart_obj[UART_NUM_MAX] = {0};
-static uart_dev_t* UART[UART_NUM_MAX] = {&UART0, &UART1, &UART2};
+/* DRAM_ATTR is required to avoid UART array placed in flash, due to accessed from ISR */
+static DRAM_ATTR uart_dev_t* const UART[UART_NUM_MAX] = {&UART0, &UART1, &UART2};
 static portMUX_TYPE uart_spinlock[UART_NUM_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
 
 esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit)

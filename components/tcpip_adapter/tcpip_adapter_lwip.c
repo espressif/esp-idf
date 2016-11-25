@@ -23,7 +23,8 @@
 #include "lwip/tcpip.h"
 #include "lwip/dhcp.h"
 #include "lwip/ip_addr.h"
-
+#include "lwip/ip6_addr.h"
+#include "lwip/nd6.h"
 #include "netif/wlanif.h"
 
 #include "apps/dhcpserver.h"
@@ -32,6 +33,7 @@
 
 static struct netif *esp_netif[TCPIP_ADAPTER_IF_MAX];
 static tcpip_adapter_ip_info_t esp_ip[TCPIP_ADAPTER_IF_MAX];
+static tcpip_adapter_ip6_info_t esp_ip6[TCPIP_ADAPTER_IF_MAX];
 
 static tcpip_adapter_dhcp_status_t dhcps_status = TCPIP_ADAPTER_DHCP_INIT;
 static tcpip_adapter_dhcp_status_t dhcpc_status = TCPIP_ADAPTER_DHCP_INIT;
@@ -231,6 +233,69 @@ esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
         netif_set_addr(p_netif, &ip_info->ip, &ip_info->netmask, &ip_info->gw);
     }
 
+    return ESP_OK;
+}
+
+static void tcpip_adapter_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
+{
+    tcpip_adapter_ip6_info_t *ip6_info;
+
+    if (!p_netif) {
+        TCPIP_ADAPTER_DEBUG("null p_netif=%p\n", p_netif);
+        return;
+    }
+
+    if (p_netif == esp_netif[TCPIP_ADAPTER_IF_STA]) {
+        ip6_info = &esp_ip6[TCPIP_ADAPTER_IF_STA];
+    } else if(p_netif == esp_netif[TCPIP_ADAPTER_IF_AP]) {
+        ip6_info = &esp_ip6[TCPIP_ADAPTER_IF_AP]; 
+    } else {
+        return;
+    }
+
+    system_event_t evt;
+
+    ip6_addr_set(&ip6_info->ip, ip_2_ip6(&p_netif->ip6_addr[ip_idex]));
+
+    //notify event
+    evt.event_id = SYSTEM_EVENT_AP_STA_GOT_IP6;
+    memcpy(&evt.event_info.got_ip6.ip6_info, ip6_info, sizeof(tcpip_adapter_ip6_info_t));
+    esp_event_send(&evt);
+}
+
+esp_err_t tcpip_adapter_create_ip6_linklocal(tcpip_adapter_if_t tcpip_if)
+{
+    struct netif *p_netif;
+
+    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    p_netif = esp_netif[tcpip_if];
+    if(p_netif != NULL && netif_is_up(p_netif)) {
+        netif_create_ip6_linklocal_address(p_netif, 1);
+        nd6_set_cb(p_netif, tcpip_adapter_nd6_cb);
+
+        return ESP_OK;
+    } else {
+        return ESP_FAIL;
+    }
+}
+
+esp_err_t tcpip_adapter_get_ip6_linklocal(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6)
+{
+    struct netif *p_netif;
+
+    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || if_ip6 == NULL) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    p_netif = esp_netif[tcpip_if];
+    if (p_netif != NULL && netif_is_up(p_netif) && ip6_addr_ispreferred(netif_ip6_addr_state(p_netif, 0))) {
+        memcpy(if_ip6, &p_netif->ip6_addr[0], sizeof(ip6_addr_t));
+    } else {
+        return ESP_FAIL;
+    }
     return ESP_OK;
 }
 

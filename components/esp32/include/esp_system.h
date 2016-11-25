@@ -16,7 +16,7 @@
 #define __ESP_SYSTEM_H__
 
 #include <stdint.h>
-
+#include <stdbool.h>
 #include "esp_err.h"
 #include "esp_deepsleep.h"
 
@@ -24,166 +24,107 @@
 extern "C" {
 #endif
 
-/** \defgroup System_APIs System APIs
-  * @brief System APIs
-  */
-
-/** @addtogroup System_APIs
-  * @{
-  */
-
 /**
   * @attention  application don't need to call this function anymore. It do nothing and will
   *             be removed in future version.
   */
 void system_init(void) __attribute__ ((deprecated));
 
-
-/**
-  * @brief  Get information of the SDK version.
-  *
-  * @param  null
-  *
-  * @return Information of the SDK version.
-  */
-const char *system_get_sdk_version(void);
-
 /**
   * @brief  Reset to default settings.
   *
-  *         Reset to default settings of the following APIs : wifi_station_set_auto_connect,
-  *         wifi_set_phy_mode, wifi_softap_set_config related, wifi_station_set_config
-  *         related, and wifi_set_opmode.
-  *
-  * @param  null
-  *
-  * @return null
+  * Function has been deprecated, please use esp_wifi_restore instead.
+  * This name will be removed in a future release.
   */
-void system_restore(void);
+void system_restore(void) __attribute__ ((deprecated));
+
+/**
+  * @brief  Restart PRO and APP CPUs.
+  *
+  * This function can be called both from PRO and APP CPUs.
+  * After successful restart, CPU reset reason will be SW_CPU_RESET.
+  * Peripherals (except for WiFi, BT, UART0, SPI1, and legacy timers) are not reset.
+  * This function does not return.
+  */
+void esp_restart(void) __attribute__ ((noreturn));
 
 /**
   * @brief  Restart system.
   *
-  * @param  null
-  *
-  * @return null
+  * Function has been renamed to esp_restart.
+  * This name will be removed in a future release.
   */
-void system_restart(void);
+void system_restart(void) __attribute__ ((deprecated, noreturn));
 
 /**
   * @brief  Get system time, unit: microsecond.
   *
-  * @param  null
-  *
-  * @return System time, unit: microsecond.
+  * This function is deprecated. Use 'gettimeofday' function for 64-bit precision.
+  * This definition will be removed in a future release.
   */
-uint32_t system_get_time(void);
+uint32_t system_get_time(void)  __attribute__ ((deprecated));
 
 /**
   * @brief  Get the size of available heap.
   *
-  * @param  null
+  * Note that the returned value may be larger than the maximum contiguous block
+  * which can be allocated.
   *
-  * @return Available heap size.
+  * @return Available heap size, in bytes.
   */
-uint32_t system_get_free_heap_size(void);
+uint32_t esp_get_free_heap_size(void);
 
 /**
-  * @brief     Get RTC time, unit: RTC clock cycle.
+  * @brief  Get the size of available heap.
   *
-  * @param     null
+  * Function has been renamed to esp_get_free_heap_size.
+  * This name will be removed in a future release.
   *
-  * @return    RTC time.
+  * @return Available heap size, in bytes.
   */
-uint64_t system_get_rtc_time(void);
+uint32_t system_get_free_heap_size(void)  __attribute__ ((deprecated));
 
 /**
-  * @brief     Read user data from the RTC memory.
-  *
-  *            The user data segment (1024 bytes, as shown below) is used to store user data.
-  *
-  *             |<---- system data(512 bytes) ---->|<----------- user data(1024 bytes) --------->|
-  *
-  * @attention Read and write unit for data stored in the RTC memory is 4 bytes.
-  * @attention src_addr is the block number (4 bytes per block). So when reading data
-  *            at the beginning of the user data segment, src_addr will be 512/4 = 128,
-  *            n will be data length.
-  *
-  * @param     uint16 src : source address of rtc memory, src_addr >= 128
-  * @param     void *dst : data pointer
-  * @param     uint16 n : data length, unit: byte
-  *
-  * @return    true  : succeed
-  * @return    false : fail
-  */
-bool system_rtc_mem_read(uint16_t src, void *dst, uint16_t n);
-
-/**
-  * @brief     Write user data to  the RTC memory.
-  *
-  *            During deep-sleep, only RTC is working. So users can store their data
-  *            in RTC memory if it is needed. The user data segment below (1024 bytes)
-  *            is used to store the user data.
-  *
-  *            |<---- system data(512 bytes) ---->|<----------- user data(1024 bytes) --------->|
-  *
-  * @attention Read and write unit for data stored in the RTC memory is 4 bytes.
-  * @attention src_addr is the block number (4 bytes per block). So when storing data
-  *            at the beginning of the user data segment, src_addr will be 512/4 = 128,
-  *            n will be data length.
-  *
-  * @param     uint16 src : source address of rtc memory, src_addr >= 128
-  * @param     void *dst : data pointer
-  * @param     uint16 n : data length, unit: byte
-  *
-  * @return    true  : succeed
-  * @return    false : fail
-  */
-bool system_rtc_mem_write(uint16_t dst, const void *src, uint16_t n);
-
-/** \defgroup System_boot_APIs Boot APIs
-  * @brief boot APIs
-  */
-
-/** @addtogroup System_boot_APIs
-  * @{
-  */
-
-/**
-  * @}
-  */
-  
-/** \defgroup Hardware_MAC_APIs Hardware MAC APIs
-  * @brief Hardware MAC address APIs
-  *
-  * In WiFi MAC, only ESP32 station MAC is the hardware MAC, ESP32 softAP MAC is a software MAC 
-  * calculated from ESP32 station MAC. 
-  * So users need to call wifi_get_macaddr to query the ESP32 softAP MAC if ESP32 station MAC changed.
-  *
-  */
-
-/** @addtogroup Hardware_MAC_APIs
-  * @{
-  */
+ * @brief  Get one random 32-bit word from hardware RNG
+ *
+ * @return random value between 0 and UINT32_MAX
+ */
+uint32_t esp_random(void);
 
 /**
   * @brief  Read hardware MAC address.
   *
-  * @param  uint8 mac[6] : the hardware MAC address, length: 6 bytes.
+  * In WiFi MAC, only ESP32 station MAC is the hardware MAC, ESP32 softAP MAC is a software MAC 
+  * calculated from ESP32 station MAC. 
+  * So users need to call esp_wifi_get_macaddr to query the ESP32 softAP MAC if ESP32 station MAC changed.
   *
-  * @return esp_err_t
+  * @param  mac  hardware MAC address, length: 6 bytes.
+  *
+  * @return ESP_OK on success
   */
-esp_err_t system_efuse_read_mac(uint8_t mac[6]);
-
+esp_err_t esp_efuse_read_mac(uint8_t* mac);
 
 /**
-  * @}
+  * @brief  Read hardware MAC address.
+  *
+  * Function has been renamed to esp_efuse_read_mac.
+  * This name will be removed in a future release.
+  *
+  * @param  mac  hardware MAC address, length: 6 bytes.
+  * @return ESP_OK on success
   */
-
+esp_err_t system_efuse_read_mac(uint8_t mac[6]) __attribute__ ((deprecated));
 
 /**
-  * @}
-  */
+ * Get SDK version
+ *
+ * This function is deprecated and will be removed in a future release.
+ *
+ * @return constant string "master"
+ */
+const char* system_get_sdk_version(void)  __attribute__ ((deprecated));
+
+
 
 #ifdef __cplusplus
 }

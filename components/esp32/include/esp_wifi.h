@@ -187,6 +187,21 @@ esp_err_t esp_wifi_start(void);
 esp_err_t esp_wifi_stop(void);
 
 /**
+ * @brief  Restore WiFi stack persistent settings to default values
+ *
+ * This function will reset settings made using the following APIs:
+ * - esp_wifi_get_auto_connect,
+ * - esp_wifi_set_protocol,
+ * - esp_wifi_set_config related
+ * - esp_wifi_set_mode
+ *
+ * @return
+ *    - ESP_OK: succeed
+ *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
+ */
+esp_err_t esp_wifi_restore(void);
+
+/**
   * @brief     Connect the ESP32 WiFi station to the AP.
   *
   * @attention 1. This API only impact WIFI_MODE_STA or WIFI_MODE_APSTA mode

@@ -20,7 +20,6 @@
  *
  *
  */
-
 #ifndef AES_ALT_H
 #define AES_ALT_H
 
@@ -56,4 +55,4 @@ typedef esp_aes_context mbedtls_aes_context;
 }
 #endif
 
-#endif /* aes.h */
+#endif

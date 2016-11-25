@@ -27,7 +27,10 @@ Data Structures
 ^^^^^^^^^^^^^^^
 
 .. doxygenstruct:: ledc_channel_config_t
+   :members:
+
 .. doxygenstruct:: ledc_timer_config_t
+   :members:
 
 Macros
 ^^^^^^

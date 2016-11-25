@@ -31,6 +31,9 @@
 #include "esp_log.h"
 #include "cache_utils.h"
 
+/* bytes erased by SPIEraseBlock() ROM function */
+#define BLOCK_ERASE_SIZE 32768
+
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
 static const char* TAG = "spi_flash";
 static spi_flash_counters_t s_flash_stats;
@@ -100,7 +103,7 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
     }
     size_t start = start_addr / SPI_FLASH_SEC_SIZE;
     size_t end = start + size / SPI_FLASH_SEC_SIZE;
-    const size_t sectors_per_block = 16;
+    const size_t sectors_per_block = BLOCK_ERASE_SIZE / SPI_FLASH_SEC_SIZE;
     COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;

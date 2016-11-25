@@ -632,6 +632,22 @@ nd6_input(struct pbuf *p, struct netif *inp)
   pbuf_free(p);
 }
 
+#ifdef ESP_LWIP
+
+/** Set callback for ipv6 addr status changed .
+ *
+ * @param netif the netif from which to remove the struct dhcp
+ * @param cb    callback for dhcp
+ */
+void nd6_set_cb(struct netif *netif, void (*cb)(struct netif *netif, u8_t ip_index))
+{
+  LWIP_ASSERT("netif != NULL", netif != NULL);
+
+  if (netif != NULL && netif_is_up(netif)) {
+      netif->ipv6_addr_cb = cb;
+  }
+}
+#endif
 
 /**
  * Periodic timer for Neighbor discovery functions:
@@ -797,6 +813,12 @@ nd6_tmr(void)
         if ((netif->ip6_addr_state[i] & 0x07) >= LWIP_IPV6_DUP_DETECT_ATTEMPTS) {
           /* No NA received in response. Mark address as valid. */
           netif->ip6_addr_state[i] = IP6_ADDR_PREFERRED;
+#ifdef ESP_LWIP
+          if (netif->ipv6_addr_cb != NULL) {
+              netif->ipv6_addr_cb(netif, i);
+          }
+#endif
+
           /* TODO implement preferred and valid lifetimes. */
         } else if (netif->flags & NETIF_FLAG_UP) {
 #if LWIP_IPV6_MLD
