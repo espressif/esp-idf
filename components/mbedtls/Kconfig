@@ -24,15 +24,12 @@ config MBEDTLS_DEBUG
    bool "Enable mbedTLS debugging"
    default n
    help
-       Enable mbedTLS debugging functions.
-       
-       If this option is enabled, use the mbedtls_debug_set_threshold()
-       and mbedtls_ssl_conf_dbg() functions to obtain debugging output
-       from mbedTLS.
-       
-       Note thatm mbedTLS debugging is not related to the ESP logging
-       functionality. See the "https_request_main" example for a
-       sample function which connects the two together.
+       Enable mbedTLS debugging functions at compile time.
+
+       If this option is enabled, you can include
+	   "mbedtls/esp_debug.h" and call mbedtls_esp_enable_debug_log()
+	   at runtime in order to enable mbedTLS debug output via the ESP
+	   log mechanism.
 
 config MBEDTLS_HARDWARE_AES
    bool "Enable hardware AES acceleration"
