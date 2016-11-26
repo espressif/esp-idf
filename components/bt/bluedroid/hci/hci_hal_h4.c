@@ -102,7 +102,7 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
     hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX);
 
     xHciH4Queue = xQueueCreate(60, sizeof(BtTaskEvt_t));
-    xTaskCreate(hci_hal_h4_rx_handler, "HciH4T", 2048 + 1024, NULL, configMAX_PRIORITIES - 3, &xHciH4TaskHandle);
+    xTaskCreate(hci_hal_h4_rx_handler, "HciH4T", 1024 + 256, NULL, configMAX_PRIORITIES - 3, &xHciH4TaskHandle);
 
     //register vhci host cb
     API_vhci_host_register_callback(&vhci_host_cb);
@@ -159,7 +159,6 @@ static uint16_t transmit_data(serial_data_type_t type,
 static void hci_hal_h4_rx_handler(void *arg)
 {
     BtTaskEvt_t e;
-
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciH4Queue, &e, (portTickType)portMAX_DELAY)) {
             if (e.sig == 0xff) {

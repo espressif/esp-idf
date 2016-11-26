@@ -114,7 +114,7 @@ int hci_start_up(void)
     }
 
     xHciHostQueue = xQueueCreate(60, sizeof(BtTaskEvt_t));
-    xTaskCreate(hci_host_thread_handler, "HciHostT", (2048 + 1024), NULL, configMAX_PRIORITIES - 3, &xHciHostTaskHandle);
+    xTaskCreate(hci_host_thread_handler, "HciHostT", (1024+256), NULL, configMAX_PRIORITIES - 3, &xHciHostTaskHandle);
 
     packet_fragmenter->init(&packet_fragmenter_callbacks);
     hal->open(&hal_callbacks);
@@ -228,7 +228,6 @@ static void hci_host_thread_handler(void *arg)
      */
 
     BtTaskEvt_t e;
-
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciHostQueue, &e, (portTickType)portMAX_DELAY)) {
             if (e.sig == 0xff) {

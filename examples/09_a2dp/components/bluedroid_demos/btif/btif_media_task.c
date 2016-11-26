@@ -752,7 +752,6 @@ static void btif_media_task_post(uint32_t sig)
 static void btif_media_task_handler(void *arg)
 {
     BtTaskEvt_t *e;
-
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtifMediaQueue, &e, (portTickType)portMAX_DELAY)) {
             // LOG_ERROR("med evt %d\n", e->sig);
@@ -800,7 +799,7 @@ bool btif_a2dp_start_media_task(void)
     if (xBtifMediaQueue == 0) {
         goto error_exit;
     }
-    xTaskCreate(btif_media_task_handler, "BtifMediaT\n", 2048 + 1024, NULL, configMAX_PRIORITIES - 1, &xBtifMediaTaskHandle);
+    xTaskCreate(btif_media_task_handler, "BtifMediaT\n", 2048, NULL, configMAX_PRIORITIES - 1, &xBtifMediaTaskHandle);
     if (xBtifMediaTaskHandle == NULL) {
         goto error_exit;
     }
@@ -1193,7 +1192,6 @@ static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context)
 
         num_frames_to_process = btif_media_cb.frames_to_process;
         APPL_TRACE_DEBUG(" Process Frames + ");
-
         do {
             p_msg = (tBT_SBC_HDR *)GKI_getfirst(&(btif_media_cb.RxSbcQ));
             if (p_msg == NULL) {
