@@ -63,8 +63,7 @@
  * BTIF events for requests that require context switch to btif task
  * on downstreams path
  */
-enum
-{
+enum {
     BTIF_CORE_API_START = BTIF_SIG_START(BTIF_CORE),
     /* add here */
 
@@ -72,12 +71,12 @@ enum
     BTIF_DM_ENABLE_SERVICE,
     BTIF_DM_DISABLE_SERVICE,
     /* add here */
-    
+
 };
 
 enum {
     SIG_BTIF_WORK = 0xff
-};  
+};
 
 /*******************************************************************************
 **  Type definitions for callback functions
@@ -92,10 +91,9 @@ typedef void (tBTIF_COPY_CBACK) (UINT16 event, char *p_dest, char *p_src);
 ********************************************************************************/
 
 /* this type handles all btif context switches between BTU and HAL */
-typedef struct
-{
+typedef struct {
     BT_HDR               hdr;
-    tBTIF_CBACK*         p_cb;    /* context switch callback */
+    tBTIF_CBACK         *p_cb;    /* context switch callback */
 
     /* parameters passed to callback */
     UINT16               event;   /* message event id */
@@ -107,8 +105,8 @@ typedef struct
 **  Functions
 ********************************************************************************/
 
-bt_status_t btif_transfer_context (tBTIF_CBACK *p_cback, UINT16 event, char* p_params,
-                                    int param_len, tBTIF_COPY_CBACK *p_copy_cback);
+bt_status_t btif_transfer_context (tBTIF_CBACK *p_cback, UINT16 event, char *p_params,
+                                   int param_len, tBTIF_COPY_CBACK *p_copy_cback);
 tBTA_SERVICE_MASK btif_get_enabled_services_mask(void);
 bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id);
 bt_status_t btif_disable_service(tBTA_SERVICE_ID service_id);

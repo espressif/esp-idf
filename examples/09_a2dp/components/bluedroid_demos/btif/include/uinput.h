@@ -24,8 +24,8 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-  // #include <sys/time.h>
-  // #include <sys/ioctl.h>
+// #include <sys/time.h>
+// #include <sys/ioctl.h>
 
 /*******************************************************************************
 **  Constants & Macros
@@ -580,7 +580,7 @@ struct uinput_dev {
 };
 
 struct uinput_event {
-  // struct timeval time;  // temporarily remove this part;
+    // struct timeval time;  // temporarily remove this part;
     uint16_t type;
     uint16_t code;
     int32_t value;

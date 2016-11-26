@@ -34,7 +34,7 @@ int SBC_init(int pcm_sample_freq, int channels, int bits_per_sample);
 
 /*
  SBC_write - called repeatedly with pcm_in pointer
-	increasing by length until track is finished.
+    increasing by length until track is finished.
 
  pcm_in - pointer to PCM buffer
  length - any

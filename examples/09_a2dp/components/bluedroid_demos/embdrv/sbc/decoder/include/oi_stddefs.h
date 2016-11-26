@@ -46,14 +46,14 @@ extern "C" {
 #endif
 
 #ifdef HEW_TOOLCHAIN
-    #ifdef NULL
-        #undef NULL         /**< Override HEW toolchain NULL definition */
-    #endif
-    #define NULL 0          /**< HEW toolchain does not allow us to compare (void*) type to function pointer */
+#ifdef NULL
+#undef NULL         /**< Override HEW toolchain NULL definition */
+#endif
+#define NULL 0          /**< HEW toolchain does not allow us to compare (void*) type to function pointer */
 #else
-    #ifndef NULL
-        #define NULL ((void*)0) /**< This define statement sets NULL as a preprocessor alias for (void*)0 */
-    #endif
+#ifndef NULL
+#define NULL ((void*)0) /**< This define statement sets NULL as a preprocessor alias for (void*)0 */
+#endif
 #endif
 
 /**

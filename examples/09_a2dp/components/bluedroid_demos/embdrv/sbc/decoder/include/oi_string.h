@@ -112,7 +112,7 @@ OI_INT OI_MemCmp(void const *s1, void const *s2, OI_UINT32 n);
  * returns pDest.
  */
 
-OI_CHAR* OI_Strcpy(OI_CHAR *pDest,
+OI_CHAR *OI_Strcpy(OI_CHAR *pDest,
                    OI_CHAR const *pStr);
 
 /*
@@ -122,7 +122,7 @@ OI_CHAR* OI_Strcpy(OI_CHAR *pDest,
  * returns pDest.
  */
 
-OI_CHAR* OI_Strcat(OI_CHAR *pDest,
+OI_CHAR *OI_Strcat(OI_CHAR *pDest,
                    OI_CHAR const *pStr) ;
 
 /*

@@ -58,14 +58,14 @@ INLINE void OI_BITSTREAM_WriteUINT(OI_BITSTREAM *bs,
  * Use knowledge that the bitstream is aligned to optimize the write of a byte
  */
 PRIVATE void OI_BITSTREAM_WriteUINT8Aligned(OI_BITSTREAM *bs,
-                                            OI_UINT8 datum);
+        OI_UINT8 datum);
 
 /*
  * Use knowledge that the bitstream is aligned to optimize the write pair of nibbles
  */
 PRIVATE void OI_BITSTREAM_Write2xUINT4Aligned(OI_BITSTREAM *bs,
-                                              OI_UINT8 datum1,
-                                              OI_UINT8 datum2);
+        OI_UINT8 datum1,
+        OI_UINT8 datum2);
 
 /** Internally the bitstream looks ahead in the stream. When
  * OI_SBC_ReadScalefactors() goes to temporarily break the abstraction, it will

@@ -42,7 +42,7 @@
 
 
 
-const char* dump_uipc_event(tUIPC_EVENT event)
+const char *dump_uipc_event(tUIPC_EVENT event)
 {
     return NULL;
 }
@@ -62,14 +62,14 @@ void UIPC_Init(void *dummy)
     // EspAudio_Init();
 
     {
-    	int volumn;
+        int volumn;
         // TODO: review the stream param config parameter here
         EspAudioPlayerStreamCfg(StreamSampleRate_44k, 2, StreamBitLen_16BIT);
         EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
-	EspAudio_GetVolume(&volumn);
-	LOG_ERROR("UIPC: Vol: %d\n", volumn);
-	EspAudio_SetVolume(99);
-    }	
+        EspAudio_GetVolume(&volumn);
+        LOG_ERROR("UIPC: Vol: %d\n", volumn);
+        EspAudio_SetVolume(99);
+    }
     return;
 }
 
@@ -85,16 +85,16 @@ void UIPC_Init(void *dummy)
 BOOLEAN UIPC_Open(tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK *p_cback)
 {
     LOG_ERROR("UIPC_Open\n");
-    
+
     //if (ch_id == UIPC_CH_ID_AV_AUDIO) {
-	int volumn;
-        // TODO: review the stream param config parameter here
-        EspAudioPlayerStreamCfg(StreamSampleRate_44k, StreamChannel_Two, StreamBitLen_16BIT);
-        EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
-	EspAudio_GetVolume(&volumn);
-	LOG_ERROR("UIPC_Open: Vol: %d\n", volumn);
-	EspAudio_SetVolume(99);
-	// }
+    int volumn;
+    // TODO: review the stream param config parameter here
+    EspAudioPlayerStreamCfg(StreamSampleRate_44k, StreamChannel_Two, StreamBitLen_16BIT);
+    EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
+    EspAudio_GetVolume(&volumn);
+    LOG_ERROR("UIPC_Open: Vol: %d\n", volumn);
+    EspAudio_SetVolume(99);
+    // }
 
     /*
     if (p_cback) {
@@ -145,9 +145,9 @@ BOOLEAN UIPC_SendBuf(tUIPC_CH_ID ch_id, BT_HDR *p_msg)
 BOOLEAN UIPC_Send(tUIPC_CH_ID ch_id, UINT16 msg_evt, UINT8 *p_buf, UINT16 msglen)
 {
     if (ch_id == UIPC_CH_ID_AV_AUDIO) {
-    uint32_t t_now = system_get_time();
-    printf("t: %u, l %d\n", t_now, msglen);
-    EspAudioPlayerStreamWrite(p_buf, msglen);
+        uint32_t t_now = system_get_time();
+        printf("t: %u, l %d\n", t_now, msglen);
+        EspAudioPlayerStreamWrite(p_buf, msglen);
     }
     return TRUE;
 }

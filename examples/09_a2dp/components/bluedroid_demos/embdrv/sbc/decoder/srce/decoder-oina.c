@@ -37,13 +37,13 @@ This file exposes OINA-specific interfaces to decoder functions.
 #include <oi_codec_sbc_private.h>
 
 OI_STATUS OI_CODEC_SBC_DecoderConfigureRaw(OI_CODEC_SBC_DECODER_CONTEXT *context,
-                                           OI_BOOL enhanced,
-                                           OI_UINT8 frequency,
-                                           OI_UINT8 mode,
-                                           OI_UINT8 subbands,
-                                           OI_UINT8 blocks,
-                                           OI_UINT8 alloc,
-                                           OI_UINT8 maxBitpool)
+        OI_BOOL enhanced,
+        OI_UINT8 frequency,
+        OI_UINT8 mode,
+        OI_UINT8 subbands,
+        OI_UINT8 blocks,
+        OI_UINT8 alloc,
+        OI_UINT8 maxBitpool)
 {
     if (frequency > SBC_FREQ_48000) {
         return OI_STATUS_INVALID_PARAMETERS;
@@ -117,18 +117,15 @@ OI_STATUS OI_CODEC_SBC_DecoderLimit(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                     OI_BOOL                       enhanced,
                                     OI_UINT8                      subbands)
 {
-	if (enhanced)
-	{
+    if (enhanced) {
 #ifdef SBC_ENHANCED
         context->enhancedEnabled = TRUE;
 #else
         context->enhancedEnabled = FALSE;
 #endif
-	}
-	else
-	{
+    } else {
         context->enhancedEnabled = FALSE;
-	}
+    }
     context->restrictSubbands = subbands;
     context->limitFrameFormat = TRUE;
     return OI_OK;

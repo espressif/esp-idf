@@ -52,7 +52,7 @@ PRIVATE OI_STATUS FindSyncword(OI_CODEC_SBC_DECODER_CONTEXT *context,
     }
 
 #ifdef SBC_ENHANCED
-    if (context->limitFrameFormat && context->enhancedEnabled){
+    if (context->limitFrameFormat && context->enhancedEnabled) {
         /* If the context is restricted, only search for specified SYNCWORD */
         search1 = search2;
     } else if (context->enhancedEnabled == FALSE) {
@@ -164,7 +164,7 @@ static OI_STATUS DecodeBody(OI_CODEC_SBC_DECODER_CONTEXT *context,
     if (context->common.frameInfo.nrof_channels == 1 && context->common.pcmStride == 2) {
         OI_UINT i;
         for (i = 0; i < frameSamples; ++i) {
-            pcmData[2*i+1] = pcmData[2*i];
+            pcmData[2 * i + 1] = pcmData[2 * i];
         }
     }
 
@@ -371,8 +371,8 @@ OI_UINT8 OI_CODEC_SBC_FrameCount(OI_BYTE  *frameData,
     OI_UINT8 frameCount = 0;
     OI_UINT  frameLen;
 
-    while (frameBytes){
-        while (frameBytes && ((frameData[0] & 0xFE) != 0x9C)){
+    while (frameBytes) {
+        while (frameBytes && ((frameData[0] & 0xFE) != 0x9C)) {
             frameData++;
             frameBytes--;
         }
@@ -389,26 +389,26 @@ OI_UINT8 OI_CODEC_SBC_FrameCount(OI_BYTE  *frameData,
 
         /* Inline logic to avoid corrupting context */
         frameLen = blocks * frameData[2];
-        switch (mode){
-            case SBC_JOINT_STEREO:
-                frameLen += subbands + (8 * subbands);
-                break;
+        switch (mode) {
+        case SBC_JOINT_STEREO:
+            frameLen += subbands + (8 * subbands);
+            break;
 
-            case SBC_DUAL_CHANNEL:
-                frameLen *= 2;
-                /* fall through */
+        case SBC_DUAL_CHANNEL:
+            frameLen *= 2;
+        /* fall through */
 
-            default:
-                if (mode == SBC_MONO){
-                    frameLen += 4*subbands;
-                } else {
-                    frameLen += 8*subbands;
-                }
+        default:
+            if (mode == SBC_MONO) {
+                frameLen += 4 * subbands;
+            } else {
+                frameLen += 8 * subbands;
+            }
         }
 
         frameCount++;
         frameLen = SBC_HEADER_LEN + (frameLen + 7) / 8;
-        if (frameBytes > frameLen){
+        if (frameBytes > frameLen) {
             frameBytes -= frameLen;
             frameData += frameLen;
         } else {

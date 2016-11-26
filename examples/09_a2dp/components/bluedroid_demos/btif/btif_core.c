@@ -118,8 +118,9 @@ static void btif_context_switched(void *p_msg)
     tBTIF_CONTEXT_SWITCH_CBACK *p = (tBTIF_CONTEXT_SWITCH_CBACK *) p_msg;
 
     /* each callback knows how to parse the data */
-    if (p->p_cb)
+    if (p->p_cb) {
         p->p_cb(p->event, p->p_param);
+    }
 }
 
 
@@ -139,35 +140,29 @@ static void btif_context_switched(void *p_msg)
 **
 *******************************************************************************/
 
-bt_status_t btif_transfer_context (tBTIF_CBACK *p_cback, UINT16 event, char* p_params, int param_len, tBTIF_COPY_CBACK *p_copy_cback)
+bt_status_t btif_transfer_context (tBTIF_CBACK *p_cback, UINT16 event, char *p_params, int param_len, tBTIF_COPY_CBACK *p_copy_cback)
 {
     tBTIF_CONTEXT_SWITCH_CBACK *p_msg;
 
     BTIF_TRACE_VERBOSE("btif_transfer_context event %d, len %d", event, param_len);
 
     /* allocate and send message that will be executed in btif context */
-    if ((p_msg = (tBTIF_CONTEXT_SWITCH_CBACK *) GKI_getbuf(sizeof(tBTIF_CONTEXT_SWITCH_CBACK) + param_len)) != NULL)
-    {
+    if ((p_msg = (tBTIF_CONTEXT_SWITCH_CBACK *) GKI_getbuf(sizeof(tBTIF_CONTEXT_SWITCH_CBACK) + param_len)) != NULL) {
         p_msg->hdr.event = BT_EVT_CONTEXT_SWITCH_EVT; /* internal event */
         p_msg->p_cb = p_cback;
 
         p_msg->event = event;                         /* callback event */
 
         /* check if caller has provided a copy callback to do the deep copy */
-        if (p_copy_cback)
-        {
+        if (p_copy_cback) {
             p_copy_cback(event, p_msg->p_param, p_params);
-        }
-        else if (p_params)
-        {
+        } else if (p_params) {
             memcpy(p_msg->p_param, p_params, param_len);  /* callback parameter data */
         }
 
         btif_sendmsg(p_msg);
         return BT_STATUS_SUCCESS;
-    }
-    else
-    {
+    } else {
         /* let caller deal with a failed allocation */
         return BT_STATUS_NOMEM;
     }
@@ -178,7 +173,8 @@ int btif_is_enabled(void)
     return (stack_manager_is_stack_running());
 }
 
-void btif_init_ok(void) {
+void btif_init_ok(void)
+{
     BTIF_TRACE_DEBUG("btif_task: received trigger stack init event");
     future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
@@ -233,11 +229,12 @@ void btif_disable_bluetooth_evt(void)
 ** Returns          void
 **
 *******************************************************************************/
-static void bt_jni_msg_ready(fixed_queue_t *queue) {
+static void bt_jni_msg_ready(fixed_queue_t *queue)
+{
     BT_HDR *p_msg;
     while (!fixed_queue_is_empty(queue)) {
         p_msg = (BT_HDR *)fixed_queue_dequeue(queue);
-	BTIF_TRACE_VERBOSE("btif task fetched event %x", p_msg->event);
+        BTIF_TRACE_VERBOSE("btif task fetched event %x", p_msg->event);
         switch (p_msg->event) {
         case BT_EVT_CONTEXT_SWITCH_EVT:
             btif_context_switched(p_msg);
@@ -265,16 +262,18 @@ void btif_sendmsg(void *p_msg)
     btif_thread_post(SIG_BTIF_WORK);
 }
 
-static void btif_thread_post(uint32_t sig) {
+static void btif_thread_post(uint32_t sig)
+{
     BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
-    if (evt == NULL)
+    if (evt == NULL) {
         return;
+    }
 
     evt->sig = sig;
     evt->par = 0;
 
-    if (xQueueSend(xBtifQueue, &evt, 10/portTICK_RATE_MS) != pdTRUE) {
-            ets_printf("xBtifQueue failed\n");
+    if (xQueueSend(xBtifQueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
+        ets_printf("xBtifQueue failed\n");
     }
 }
 
@@ -308,7 +307,8 @@ void btif_task_thread_handler(void *arg)
 ** Returns          bt_status_t
 **
 *******************************************************************************/
-bt_status_t btif_init_bluetooth(void) {
+bt_status_t btif_init_bluetooth(void)
+{
     bte_main_boot_entry(btif_init_ok);
 
     btif_msg_queue = fixed_queue_new(SIZE_MAX);
@@ -318,7 +318,7 @@ bt_status_t btif_init_bluetooth(void) {
     xBtifQueue = xQueueCreate(60, sizeof(void *));
     xTaskCreate(btif_task_thread_handler, "BtifT", 4096, NULL, configMAX_PRIORITIES - 1, &xBtifTaskHandle);
     fixed_queue_register_dequeue(btif_msg_queue, bt_jni_msg_ready);
-    
+
     return BT_STATUS_SUCCESS;
 
 error_exit:;
@@ -392,10 +392,10 @@ bt_status_t btif_shutdown_bluetooth(void)
 
     vTaskDelete(xBtifTaskHandle);
     xBtifTaskHandle = NULL;
-    
+
     vQueueDelete(xBtifQueue);
     xBtifQueue = NULL;
-    
+
     bte_main_shutdown();
 
     return BT_STATUS_SUCCESS;
@@ -444,7 +444,7 @@ bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id)
     if (btif_is_enabled()) {
         btif_transfer_context(btif_dm_execute_service_request,
                               BTIF_DM_ENABLE_SERVICE,
-                              (char*)p_id, sizeof(tBTA_SERVICE_ID), NULL);
+                              (char *)p_id, sizeof(tBTA_SERVICE_ID), NULL);
     }
 
     return BT_STATUS_SUCCESS;
@@ -469,14 +469,14 @@ bt_status_t btif_disable_service(tBTA_SERVICE_ID service_id)
      * be triggerred. Otherwise, we just need to clear the service_id in the mask
      */
 
-    btif_enabled_services &=  (tBTA_SERVICE_MASK)(~(1<<service_id));
+    btif_enabled_services &=  (tBTA_SERVICE_MASK)(~(1 << service_id));
 
     BTIF_TRACE_DEBUG("%s: Current Services:0x%x", __FUNCTION__, btif_enabled_services);
 
     if (btif_is_enabled()) {
         btif_transfer_context(btif_dm_execute_service_request,
                               BTIF_DM_DISABLE_SERVICE,
-                              (char*)p_id, sizeof(tBTA_SERVICE_ID), NULL);
+                              (char *)p_id, sizeof(tBTA_SERVICE_ID), NULL);
     }
 
     return BT_STATUS_SUCCESS;

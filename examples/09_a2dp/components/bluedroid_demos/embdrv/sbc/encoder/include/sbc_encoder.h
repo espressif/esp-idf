@@ -28,7 +28,7 @@
 #define ENCODER_VERSION "0025"
 
 #ifdef BUILDCFG
-    #include "bt_target.h"
+#include "bt_target.h"
 #endif
 
 /*DEFINES*/
@@ -151,8 +151,7 @@
 
 #include "sbc_types.h"
 
-typedef struct SBC_ENC_PARAMS_TAG
-{
+typedef struct SBC_ENC_PARAMS_TAG {
     SINT16 s16SamplingFreq;                         /* 16k, 32k, 44.1k or 48k*/
     SINT16 s16ChannelMode;                          /* mono, dual, streo or joint streo*/
     SINT16 s16NumOfSubBands;                        /* 4 or 8 */
@@ -168,27 +167,27 @@ typedef struct SBC_ENC_PARAMS_TAG
 #endif
 
     SINT16 s16MaxBitNeed;
-    SINT16 as16ScaleFactor[SBC_MAX_NUM_OF_CHANNELS*SBC_MAX_NUM_OF_SUBBANDS];
+    SINT16 as16ScaleFactor[SBC_MAX_NUM_OF_CHANNELS * SBC_MAX_NUM_OF_SUBBANDS];
 
     SINT16 *ps16NextPcmBuffer;
 #if (SBC_NO_PCM_CPY_OPTION == TRUE)
     SINT16 *ps16PcmBuffer;
 #else
-    SINT16 as16PcmBuffer[SBC_MAX_NUM_FRAME*SBC_MAX_NUM_OF_BLOCKS * SBC_MAX_NUM_OF_CHANNELS * SBC_MAX_NUM_OF_SUBBANDS];
+    SINT16 as16PcmBuffer[SBC_MAX_NUM_FRAME * SBC_MAX_NUM_OF_BLOCKS * SBC_MAX_NUM_OF_CHANNELS * SBC_MAX_NUM_OF_SUBBANDS];
 #endif
 
     SINT16  s16ScartchMemForBitAlloc[16];
 
     SINT32  s32SbBuffer[SBC_MAX_NUM_OF_CHANNELS * SBC_MAX_NUM_OF_SUBBANDS * SBC_MAX_NUM_OF_BLOCKS];
 
-    SINT16 as16Bits[SBC_MAX_NUM_OF_CHANNELS*SBC_MAX_NUM_OF_SUBBANDS];
+    SINT16 as16Bits[SBC_MAX_NUM_OF_CHANNELS * SBC_MAX_NUM_OF_SUBBANDS];
 
     UINT8  *pu8Packet;
     UINT8  *pu8NextPacket;
     UINT16 FrameHeader;
     UINT16 u16PacketLength;
 
-}SBC_ENC_PARAMS;
+} SBC_ENC_PARAMS;
 
 #ifdef __cplusplus
 extern "C"

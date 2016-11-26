@@ -49,7 +49,7 @@ static tAVRC_STS avrc_bld_get_capability_rsp (tAVRC_GET_CAPS_RSP *p_rsp, BT_HDR 
 
     if (!(AVRC_IS_VALID_CAP_ID(p_rsp->capability_id)))
     {
-        AVRC_TRACE_ERROR("avrc_bld_get_capability_rsp bad parameter. p_rsp: %x", p_rsp);
+        AVRC_TRACE_ERROR("avrc_bld_get_capability_rsp bad parameter. p_rsp: %x", (int)p_rsp);
         status = AVRC_STS_BAD_PARAM;
         return status;
     }
@@ -331,7 +331,7 @@ static tAVRC_STS avrc_bld_app_setting_text_rsp (tAVRC_GET_APP_ATTR_TXT_RSP *p_rs
     {
         if  (len_left < (p_rsp->p_attrs[xx].str_len + 4))
         {
-            AVRC_TRACE_ERROR("avrc_bld_app_setting_text_rsp out of room (str_len:%d, left:%d)",
+            AVRC_TRACE_ERROR("avrc_bld_app_setting_text_rsp out of room %d(str_len:%d, left:%d)",
                 xx, p_rsp->p_attrs[xx].str_len, len_left);
             p_rsp->num_attr = num_added;
             sts = AVRC_STS_INTERNAL_ERR;

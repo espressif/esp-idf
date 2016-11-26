@@ -37,7 +37,7 @@ This file drives SBC decoding.
 #include "oi_bitstream.h"
 #include <stdio.h>
 
-OI_CHAR * const OI_Codec_Copyright = "Copyright 2002-2007 Open Interface North America, Inc. All rights reserved";
+OI_CHAR *const OI_Codec_Copyright = "Copyright 2002-2007 Open Interface North America, Inc. All rights reserved";
 
 INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                        OI_UINT32 *decoderData,
@@ -57,7 +57,7 @@ INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
     context->enhancedEnabled = enhanced ? TRUE : FALSE;
 #else
     context->enhancedEnabled = FALSE;
-    if (enhanced){
+    if (enhanced) {
         return OI_STATUS_INVALID_PARAMETERS;
     }
 #endif
@@ -132,8 +132,8 @@ INLINE void OI_SBC_ReadHeader(OI_CODEC_SBC_COMMON_CONTEXT *common, const OI_BYTE
  * Read scalefactor values and prepare the bitstream for OI_SBC_ReadSamples
  */
 PRIVATE void OI_SBC_ReadScalefactors(OI_CODEC_SBC_COMMON_CONTEXT *common,
-                             const OI_BYTE *b,
-                             OI_BITSTREAM *bs)
+                                     const OI_BYTE *b,
+                                     OI_BITSTREAM *bs)
 {
     OI_UINT i = common->frameInfo.nrof_subbands * common->frameInfo.nrof_channels;
     OI_INT8 *scale_factor = common->scale_factor;
@@ -179,7 +179,7 @@ PRIVATE void OI_SBC_ReadSamples(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_BITSTR
 {
     OI_CODEC_SBC_COMMON_CONTEXT *common = &context->common;
     OI_UINT nrof_blocks = common->frameInfo.nrof_blocks;
-    OI_INT32 * RESTRICT s = common->subdata;
+    OI_INT32 *RESTRICT s = common->subdata;
     OI_UINT8 *ptr = global_bs->ptr.w;
     OI_UINT32 value = global_bs->value;
     OI_UINT bitPtr = global_bs->bitPtr;
@@ -188,7 +188,7 @@ PRIVATE void OI_SBC_ReadSamples(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_BITSTR
     do {
         OI_UINT i;
         for (i = 0; i < iter_count; ++i) {
-            OI_UINT32 sf_by4 = ((OI_UINT32*)common->scale_factor)[i];
+            OI_UINT32 sf_by4 = ((OI_UINT32 *)common->scale_factor)[i];
             OI_UINT32 bits_by4 = common->bits.uint32[i];
             OI_UINT n;
             for (n = 0; n < 4; ++n) {

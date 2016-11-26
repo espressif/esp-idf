@@ -3,14 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include "bt_app_common.h"
 #include "btif_stack_manager.h"
-#include "btif_sdp.h"
-#include "esp_gap_api.h"
+#include "esp_gap_bt_api.h"
 #include "bta_api.h"
 #include "bt_av.h"
 
@@ -34,7 +32,6 @@ static void bt_stack_evt(tBT_APP_EVT event, tBT_APP_EVT_DATA *p_data);
 static void bt_stack_state_changed(bt_state_t state);
 
 static bt_bdaddr_t peer_bd_addr = {{0x00, 0x1b, 0xdc, 0x08, 0x0f, 0xe7}};
-// static bt_bdaddr_t peer_bd_addr = {{0xfc, 0x3f, 0x7c, 0xf1, 0x2c, 0x78}};
 
 static bt_callbacks_t bt_callbacks = {
     bt_stack_state_changed
@@ -43,7 +40,7 @@ static bt_callbacks_t bt_callbacks = {
 osi_alarm_t *app_alarm = NULL;
 
 static void btav_conn_state_cb(btav_connection_state_t state,
-			       bt_bdaddr_t *bd_addr)
+                               bt_bdaddr_t *bd_addr)
 {
     LOG_ERROR("===btav_conn_state_cb %d ===\n", state);
     (void) bd_addr;
@@ -90,25 +87,25 @@ static void bt_app_stack_evt(UINT16 event, char *p_param)
 {
     switch (event) {
     case BT_APP_EVT_STACK_ON: {
-	char *dev_name = "SDP_SERVER_CLIENT";
-	BTM_SetTraceLevel(BT_TRACE_LEVEL_WARNING);
+        char *dev_name = "SDP_SERVER_CLIENT";
+        BTM_SetTraceLevel(BT_TRACE_LEVEL_WARNING);
         btav_set_device_class();
-	BTA_DmSetDeviceName(dev_name);
+        BTA_DmSetDeviceName(dev_name);
         esp_bt_gap_set_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         btif_av_get_sink_interface()->init(&btav_cbs);
-        
+
         // app_alarm = osi_alarm_new("app_alarm", bt_sdp_add_record_to, NULL, 1000, false);
         app_alarm = osi_alarm_new("app_alarm", btav_open_to, NULL, 1000, false);
         osi_alarm_set(app_alarm, 1000);
     }
-        break;
+    break;
     case BT_APP_EVT_AV_OPEN_TO: {
         LOG_ERROR("**BT_APP_EVT_AV_OPEN_TO\n");
-	// btif_av_get_sink_interface()->connect(&peer_bd_addr);
+        // btif_av_get_sink_interface()->connect(&peer_bd_addr);
         osi_alarm_free(app_alarm);
         app_alarm = NULL;
     }
-        break;
+    break;
     default:
         break;
     }
@@ -117,8 +114,8 @@ static void bt_app_stack_evt(UINT16 event, char *p_param)
 static void bt_stack_evt(tBT_APP_EVT event, tBT_APP_EVT_DATA *p_data)
 {
     LOG_ERROR("bt_stack_evt: %d\n", (uint16_t)event);
-    bt_app_transfer_context(bt_app_stack_evt, (uint16_t)event, 
-           (void *)p_data, sizeof(tBT_APP_EVT_DATA), NULL);
+    bt_app_transfer_context(bt_app_stack_evt, (uint16_t)event,
+                            (void *)p_data, sizeof(tBT_APP_EVT_DATA), NULL);
 }
 
 static void bt_stack_state_changed(bt_state_t state)

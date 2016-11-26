@@ -112,9 +112,9 @@ INLINE OI_CHAR crc_iterate(OI_UINT8 oldcrc, OI_UINT8 next)
 {
     OI_UINT crc;
     OI_UINT idx;
-    idx = oldcrc^next;
+    idx = oldcrc ^ next;
     crc = crc8_wide[idx >> 1];
-    if (idx%2) {
+    if (idx % 2) {
         crc &= 0xff;
     } else {
         crc >>= 8;
@@ -128,8 +128,8 @@ INLINE OI_CHAR crc_iterate_top4(OI_UINT8 oldcrc, OI_UINT8 next)
     OI_UINT crc;
     OI_UINT idx;
     idx = (oldcrc ^ next) >> 4;
-    crc = crc8_wide[idx>>1];
-    if (idx%2) {
+    crc = crc8_wide[idx >> 1];
+    if (idx % 2) {
         crc &= 0xff;
     } else {
         crc >>= 8;
@@ -142,14 +142,14 @@ INLINE OI_CHAR crc_iterate_top4(OI_UINT8 oldcrc, OI_UINT8 next)
 
 INLINE OI_UINT8 crc_iterate_top4(OI_UINT8 oldcrc, OI_UINT8 next)
 {
-    return (oldcrc << 4) ^ crc8_narrow[(oldcrc^next) >> 4];
+    return (oldcrc << 4) ^ crc8_narrow[(oldcrc ^ next) >> 4];
 }
 
 #ifdef USE_NIBBLEWISE_CRC
 INLINE OI_UINT8 crc_iterate(OI_UINT8 crc, OI_UINT8 next)
 {
-    crc = (crc << 4) ^ crc8_narrow[(crc^next) >> 4];
-    crc = (crc << 4) ^ crc8_narrow[((crc>>4)^next)&0xf];
+    crc = (crc << 4) ^ crc8_narrow[(crc ^ next) >> 4];
+    crc = (crc << 4) ^ crc8_narrow[((crc >> 4)^next) & 0xf];
 
     return crc;
 }
@@ -157,7 +157,7 @@ INLINE OI_UINT8 crc_iterate(OI_UINT8 crc, OI_UINT8 next)
 #else   // USE_NIBBLEWISE_CRC
 INLINE OI_UINT8 crc_iterate(OI_UINT8 crc, OI_UINT8 next)
 {
-  return crc8_narrow[crc^next];
+    return crc8_narrow[crc ^ next];
 }
 
 #endif  // USE_NIBBLEWISE_CRC
@@ -182,7 +182,7 @@ PRIVATE OI_UINT8 OI_SBC_CalculateChecksum(OI_CODEC_SBC_FRAME_INFO *frame, OI_BYT
 
     for (i = 1; i < count; i++) {
         if (i != 3) {
-            crc = crc_iterate(crc,data[i]);
+            crc = crc_iterate(crc, data[i]);
         }
     }
 
@@ -227,17 +227,17 @@ PRIVATE void shift_buffer(SBC_BUFFER_T *dest, SBC_BUFFER_T *src, OI_UINT wordCou
 #ifdef USE_PLATFORM_MEMMOVE
     memmove(dest, src, wordCount * sizeof(SBC_BUFFER_T));
 #elif defined(USE_PLATFORM_MEMCPY)
-    OI_ASSERT(((OI_CHAR *)(dest) - (OI_CHAR *)(src)) >= wordCount*sizeof(*dest));
+    OI_ASSERT(((OI_CHAR *)(dest) - (OI_CHAR *)(src)) >= wordCount * sizeof(*dest));
     memcpy(dest, src, wordCount * sizeof(SBC_BUFFER_T));
 #else
     OI_UINT n;
     OI_INT32 *d;
     OI_INT32 *s;
-    n = wordCount / 4 / (sizeof(OI_INT32)/sizeof(*dest));
-    OI_ASSERT((n * 4 * (sizeof(OI_INT32)/sizeof(*dest))) == wordCount);
+    n = wordCount / 4 / (sizeof(OI_INT32) / sizeof(*dest));
+    OI_ASSERT((n * 4 * (sizeof(OI_INT32) / sizeof(*dest))) == wordCount);
 
-    d = (void*)(dest + wordCount);
-    s = (void*)(src + wordCount);
+    d = (void *)(dest + wordCount);
+    s = (void *)(src + wordCount);
 
     do {
         COPY4WORDS_BACK(d, s);

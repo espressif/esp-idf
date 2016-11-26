@@ -157,8 +157,8 @@
 #pragma arm section zidata = "sbc_s32_analysis_section"
 #endif
 static SINT32   s32DCTY[16]  = {0};
-static SINT32   s32X[ENC_VX_BUFFER_SIZE/2];
-static SINT16   *s16X=(SINT16*) s32X;      /* s16X must be 32 bits aligned cf  SHIFTUP_X8_2*/
+static SINT32   s32X[ENC_VX_BUFFER_SIZE / 2];
+static SINT16   *s16X = (SINT16 *) s32X;   /* s16X must be 32 bits aligned cf  SHIFTUP_X8_2*/
 #if (SBC_USE_ARM_PRAGMA==TRUE)
 #pragma arm section zidata
 #endif
@@ -830,7 +830,7 @@ static SINT16   *s16X=(SINT16*) s32X;      /* s16X must be 32 bits aligned cf  S
     s64Temp+=((SINT64)gas32CoeffFor4SBs[(i+24)] * (SINT64)s16X[ChOffset+i+24]);                                    \
     s64Temp+=((SINT64)gas32CoeffFor4SBs[(i+32)] * (SINT64)s16X[ChOffset+i+32]);                                    \
     s32DCTY[i]=(SINT32)(s64Temp>>16);\
-	/*printf("s32DCTY4: 0x%x \n", s32DCTY[i]);*/\
+    /*printf("s32DCTY4: 0x%x \n", s32DCTY[i]);*/\
 }
 #else
 #define WINDOW_ACCU_4(i) \
@@ -863,7 +863,7 @@ static SINT16   *s16X=(SINT16*) s32X;      /* s16X must be 32 bits aligned cf  S
     s64Temp+= ((((SINT64)gas32CoeffFor8SBs[(i+32)] * (SINT64)s16X[ChOffset+i+32])));                 \
     s64Temp+= ((((SINT64)gas32CoeffFor8SBs[(i+48)] * (SINT64)s16X[ChOffset+i+48])));                 \
     s64Temp+= ((((SINT64)gas32CoeffFor8SBs[(i+64)] * (SINT64)s16X[ChOffset+i+64])));                 \
-	/*printf("s32DCTY8: %d= 0x%x * %d\n", s32DCTY[i], gas32CoeffFor8SBs[i], s16X[ChOffset+i]);*/     \
+    /*printf("s32DCTY8: %d= 0x%x * %d\n", s32DCTY[i], gas32CoeffFor8SBs[i], s16X[ChOffset+i]);*/     \
     s32DCTY[i]=(SINT32)(s64Temp>>16);\
 }
 #else
@@ -879,7 +879,7 @@ static SINT16   *s16X=(SINT16*) s32X;      /* s16X must be 32 bits aligned cf  S
             +  (((SINT32)(UINT16)(gas32CoeffFor8SBs[((i+48) * 2) + 1]) * s16X[ChOffset+i+48]) >> 16);   \
     s32DCTY[i]+=(gas32CoeffFor8SBs[(i+64) * 2] * s16X[ChOffset+i+64])                                    \
             +  (((SINT32)(UINT16)(gas32CoeffFor8SBs[((i+64) * 2) + 1]) * s16X[ChOffset+i+64]) >> 16);   \
-	/*printf("s32DCTY8: %d = 0x%4x%4x * %d\n", s32DCTY[i], gas32CoeffFor8SBs[i * 2], (gas32CoeffFor8SBs[(i * 2) + 1]), s16X[ChOffset+i]);*/\
+    /*printf("s32DCTY8: %d = 0x%4x%4x * %d\n", s32DCTY[i], gas32CoeffFor8SBs[i * 2], (gas32CoeffFor8SBs[(i * 2) + 1]), s16X[ChOffset+i]);*/\
     /*s32DCTY[i]=(SINT32)(s64Temp>>16);*/\
 }
 #endif
@@ -897,7 +897,7 @@ static SINT16   *s16X=(SINT16*) s32X;      /* s16X must be 32 bits aligned cf  S
 #endif
 #endif
 
-static SINT16 ShiftCounter=0;
+static SINT16 ShiftCounter = 0;
 extern SINT16 EncMaxShiftCounter;
 /****************************************************************************
 * SbcAnalysisFilter - performs Analysis of the input audio stream
@@ -908,18 +908,18 @@ void SbcAnalysisFilter4(SBC_ENC_PARAMS *pstrEncParams)
 {
     SINT16 *ps16PcmBuf;
     SINT32 *ps32SbBuf;
-    SINT32  s32Blk,s32Ch;
+    SINT32  s32Blk, s32Ch;
     SINT32  s32NumOfChannels, s32NumOfBlocks;
-    SINT32 i,*ps32X,*ps32X2;
-    SINT32 Offset,Offset2,ChOffset;
+    SINT32 i, *ps32X, *ps32X2;
+    SINT32 Offset, Offset2, ChOffset;
 #if (SBC_ARM_ASM_OPT==TRUE)
-    register SINT32 s32Hi,s32Hi2;
+    register SINT32 s32Hi, s32Hi2;
 #else
 #if (SBC_IPAQ_OPT==TRUE)
 #if (SBC_IS_64_MULT_IN_WINDOW_ACCU == TRUE)
-    register SINT64 s64Temp,s64Temp2;
+    register SINT64 s64Temp, s64Temp2;
 #else
-	register SINT32 s32Temp,s32Temp2;
+    register SINT32 s32Temp, s32Temp2;
 #endif
 #else
 
@@ -936,61 +936,47 @@ void SbcAnalysisFilter4(SBC_ENC_PARAMS *pstrEncParams)
     ps16PcmBuf = pstrEncParams->ps16NextPcmBuffer;
 
     ps32SbBuf  = pstrEncParams->s32SbBuffer;
-    Offset2=(SINT32)(EncMaxShiftCounter+40);
-    for (s32Blk=0; s32Blk <s32NumOfBlocks; s32Blk++)
-    {
-        Offset=(SINT32)(EncMaxShiftCounter-ShiftCounter);
+    Offset2 = (SINT32)(EncMaxShiftCounter + 40);
+    for (s32Blk = 0; s32Blk < s32NumOfBlocks; s32Blk++) {
+        Offset = (SINT32)(EncMaxShiftCounter - ShiftCounter);
         /* Store new samples */
-        if (s32NumOfChannels==1)
-        {
-            s16X[3+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[2+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[1+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[0+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+        if (s32NumOfChannels == 1) {
+            s16X[3 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[2 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[1 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[0 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+        } else {
+            s16X[3 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 3 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[2 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 2 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[1 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 1 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[0 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 0 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
         }
-        else
-        {
-            s16X[3+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+3+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[2+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+2+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[1+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+1+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[0+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+0+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-        }
-        for (s32Ch=0;s32Ch<s32NumOfChannels;s32Ch++)
-        {
-            ChOffset=s32Ch*Offset2+Offset;
+        for (s32Ch = 0; s32Ch < s32NumOfChannels; s32Ch++) {
+            ChOffset = s32Ch * Offset2 + Offset;
 
             WINDOW_PARTIAL_4
 
             SBC_FastIDCT4(s32DCTY, ps32SbBuf);
 
-            ps32SbBuf +=SUB_BANDS_4;
+            ps32SbBuf += SUB_BANDS_4;
         }
-        if (s32NumOfChannels==1)
-        {
-            if (ShiftCounter>=EncMaxShiftCounter)
-            {
+        if (s32NumOfChannels == 1) {
+            if (ShiftCounter >= EncMaxShiftCounter) {
                 SHIFTUP_X4;
-                ShiftCounter=0;
+                ShiftCounter = 0;
+            } else {
+                ShiftCounter += SUB_BANDS_4;
             }
-            else
-            {
-                ShiftCounter+=SUB_BANDS_4;
-            }
-        }
-        else
-        {
-            if (ShiftCounter>=EncMaxShiftCounter)
-            {
+        } else {
+            if (ShiftCounter >= EncMaxShiftCounter) {
                 SHIFTUP_X4_2;
-                ShiftCounter=0;
-            }
-            else
-            {
-                ShiftCounter+=SUB_BANDS_4;
+                ShiftCounter = 0;
+            } else {
+                ShiftCounter += SUB_BANDS_4;
             }
         }
     }
@@ -1001,19 +987,19 @@ void SbcAnalysisFilter8 (SBC_ENC_PARAMS *pstrEncParams)
 {
     SINT16 *ps16PcmBuf;
     SINT32 *ps32SbBuf;
-    SINT32  s32Blk,s32Ch;                                     /* counter for block*/
-    SINT32 Offset,Offset2;
+    SINT32  s32Blk, s32Ch;                                    /* counter for block*/
+    SINT32 Offset, Offset2;
     SINT32  s32NumOfChannels, s32NumOfBlocks;
-    SINT32 i,*ps32X,*ps32X2;
+    SINT32 i, *ps32X, *ps32X2;
     SINT32 ChOffset;
 #if (SBC_ARM_ASM_OPT==TRUE)
-    register SINT32 s32Hi,s32Hi2;
+    register SINT32 s32Hi, s32Hi2;
 #else
 #if (SBC_IPAQ_OPT==TRUE)
 #if (SBC_IS_64_MULT_IN_WINDOW_ACCU == TRUE)
-    register SINT64 s64Temp,s64Temp2;
+    register SINT64 s64Temp, s64Temp2;
 #else
-	register SINT32 s32Temp,s32Temp2;
+    register SINT32 s32Temp, s32Temp2;
 #endif
 #else
 #if (SBC_IS_64_MULT_IN_WINDOW_ACCU == TRUE)
@@ -1028,73 +1014,59 @@ void SbcAnalysisFilter8 (SBC_ENC_PARAMS *pstrEncParams)
     ps16PcmBuf = pstrEncParams->ps16NextPcmBuffer;
 
     ps32SbBuf  = pstrEncParams->s32SbBuffer;
-    Offset2=(SINT32)(EncMaxShiftCounter+80);
-    for (s32Blk=0; s32Blk <s32NumOfBlocks; s32Blk++)
-    {
-        Offset=(SINT32)(EncMaxShiftCounter-ShiftCounter);
+    Offset2 = (SINT32)(EncMaxShiftCounter + 80);
+    for (s32Blk = 0; s32Blk < s32NumOfBlocks; s32Blk++) {
+        Offset = (SINT32)(EncMaxShiftCounter - ShiftCounter);
         /* Store new samples */
-        if (s32NumOfChannels==1)
-        {
-            s16X[7+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[6+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[5+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[4+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[3+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[2+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[1+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
-            s16X[0+Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+        if (s32NumOfChannels == 1) {
+            s16X[7 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[6 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[5 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[4 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[3 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[2 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[1 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+            s16X[0 + Offset] = *ps16PcmBuf;   ps16PcmBuf++;
+        } else {
+            s16X[7 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 7 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[6 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 6 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[5 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 5 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[4 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 4 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[3 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 3 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[2 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 2 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[1 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 1 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
+            s16X[0 + Offset] = *ps16PcmBuf;        ps16PcmBuf++;
+            s16X[Offset2 + 0 + Offset] = *ps16PcmBuf;     ps16PcmBuf++;
         }
-        else
-        {
-            s16X[7+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+7+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[6+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+6+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[5+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+5+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[4+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+4+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[3+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+3+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[2+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+2+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[1+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+1+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-            s16X[0+Offset] = *ps16PcmBuf;        ps16PcmBuf++;
-            s16X[Offset2+0+Offset] = *ps16PcmBuf;     ps16PcmBuf++;
-        }
-        for (s32Ch=0;s32Ch<s32NumOfChannels;s32Ch++)
-        {
-            ChOffset=s32Ch*Offset2+Offset;
+        for (s32Ch = 0; s32Ch < s32NumOfChannels; s32Ch++) {
+            ChOffset = s32Ch * Offset2 + Offset;
 
             WINDOW_PARTIAL_8
 
             SBC_FastIDCT8 (s32DCTY, ps32SbBuf);
 
-            ps32SbBuf +=SUB_BANDS_8;
+            ps32SbBuf += SUB_BANDS_8;
         }
-        if (s32NumOfChannels==1)
-        {
-            if (ShiftCounter>=EncMaxShiftCounter)
-            {
+        if (s32NumOfChannels == 1) {
+            if (ShiftCounter >= EncMaxShiftCounter) {
                 SHIFTUP_X8;
-                ShiftCounter=0;
+                ShiftCounter = 0;
+            } else {
+                ShiftCounter += SUB_BANDS_8;
             }
-            else
-            {
-                ShiftCounter+=SUB_BANDS_8;
-            }
-        }
-        else
-        {
-            if (ShiftCounter>=EncMaxShiftCounter)
-            {
+        } else {
+            if (ShiftCounter >= EncMaxShiftCounter) {
                 SHIFTUP_X8_2;
-                ShiftCounter=0;
-            }
-            else
-            {
-                ShiftCounter+=SUB_BANDS_8;
+                ShiftCounter = 0;
+            } else {
+                ShiftCounter += SUB_BANDS_8;
             }
         }
     }
@@ -1102,6 +1074,6 @@ void SbcAnalysisFilter8 (SBC_ENC_PARAMS *pstrEncParams)
 
 void SbcAnalysisInit (void)
 {
-    memset(s16X,0,ENC_VX_BUFFER_SIZE*sizeof(SINT16));
-    ShiftCounter=0;
+    memset(s16X, 0, ENC_VX_BUFFER_SIZE * sizeof(SINT16));
+    ShiftCounter = 0;
 }

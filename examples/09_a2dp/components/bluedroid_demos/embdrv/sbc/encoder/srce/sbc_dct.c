@@ -84,19 +84,19 @@ void SBC_FastIDCT8(SINT32 *pInVect, SINT32 *pOutVect)
 #endif
 #endif
 
-    register SINT32 x0, x1, x2, x3, x4, x5, x6, x7,temp;
+    register SINT32 x0, x1, x2, x3, x4, x5, x6, x7, temp;
     SINT32 res_even[4], res_odd[4];
     /*x0= (pInVect[4])/2 ;*/
-    SBC_IDCT_MULT(SBC_COS_PI_SUR_4,pInVect[4], x0);
+    SBC_IDCT_MULT(SBC_COS_PI_SUR_4, pInVect[4], x0);
     /*printf("x0 0x%x = %d = %d * %d\n", x0, x0, SBC_COS_PI_SUR_4, pInVect[4]);*/
 
-    x1 = (pInVect[3] + pInVect[5])  >>1;
-    x2 = (pInVect[2] + pInVect[6])  >>1;
-    x3 = (pInVect[1] + pInVect[7])  >>1;
-    x4 = (pInVect[0] + pInVect[8])  >>1;
-    x5 = (pInVect[9] - pInVect[15]) >>1;
-    x6 = (pInVect[10] - pInVect[14])>>1;
-    x7 = (pInVect[11] - pInVect[13])>>1;
+    x1 = (pInVect[3] + pInVect[5])  >> 1;
+    x2 = (pInVect[2] + pInVect[6])  >> 1;
+    x3 = (pInVect[1] + pInVect[7])  >> 1;
+    x4 = (pInVect[0] + pInVect[8])  >> 1;
+    x5 = (pInVect[9] - pInVect[15]) >> 1;
+    x6 = (pInVect[10] - pInVect[14]) >> 1;
+    x7 = (pInVect[11] - pInVect[13]) >> 1;
 
     /* 2-point IDCT of x0 and x4 as in (11) */
     temp = x0 ;
@@ -104,14 +104,14 @@ void SBC_FastIDCT8(SINT32 *pInVect, SINT32 *pOutVect)
     SBC_IDCT_MULT(SBC_COS_PI_SUR_4, ( temp - x4 ), x4);        /*x4 = ( temp - x4 ) * cos(1*pi/4) ; */
 
     /* rearrangement of x2 and x6 as in (15) */
-    x2 -=x6;
+    x2 -= x6;
     x6 <<= 1 ;
 
     /* 2-point IDCT of x2 and x6 and post-multiplication as in (15) */
-    SBC_IDCT_MULT(SBC_COS_PI_SUR_4,x6, x6); /*x6 = x6 * cos(1*pi/4) ; */
+    SBC_IDCT_MULT(SBC_COS_PI_SUR_4, x6, x6); /*x6 = x6 * cos(1*pi/4) ; */
     temp = x2 ;
-    SBC_IDCT_MULT(SBC_COS_PI_SUR_8,( x2 + x6 ), x2); /*x2 = ( x2 + x6 ) * cos(1*pi/8) ; */
-    SBC_IDCT_MULT(SBC_COS_3PI_SUR_8,( temp - x6 ), x6); /*x6 = ( temp - x6 ) * cos(3*pi/8) ;*/
+    SBC_IDCT_MULT(SBC_COS_PI_SUR_8, ( x2 + x6 ), x2); /*x2 = ( x2 + x6 ) * cos(1*pi/8) ; */
+    SBC_IDCT_MULT(SBC_COS_3PI_SUR_8, ( temp - x6 ), x6); /*x6 = ( temp - x6 ) * cos(3*pi/8) ;*/
 
     /* 4-point IDCT of x0,x2,x4 and x6 as in (11) */
     res_even[ 0 ] = x0 + x2 ;
@@ -122,9 +122,9 @@ void SBC_FastIDCT8(SINT32 *pInVect, SINT32 *pOutVect)
 
     /* rearrangement of x1,x3,x5,x7 as in (15) */
     x7 <<= 1 ;
-    x5 = ( x5 <<1 ) - x7 ;
-    x3 = ( x3 <<1 ) - x5 ;
-    x1 -= x3 >>1 ;
+    x5 = ( x5 << 1 ) - x7 ;
+    x3 = ( x3 << 1 ) - x5 ;
+    x1 -= x3 >> 1 ;
 
     /* two-dimensional IDCT of x1 and x5 */
     SBC_IDCT_MULT(SBC_COS_PI_SUR_4, x5, x5);          /*x5 = x5 * cos(1*pi/4) ; */
@@ -139,8 +139,8 @@ void SBC_FastIDCT8(SINT32 *pInVect, SINT32 *pOutVect)
 
     /* 2-point IDCT of x3 and x7 and post-multiplication as in (15) */
     temp = x3 ;
-    SBC_IDCT_MULT( SBC_COS_PI_SUR_8,( x3 + x7 ), x3);          /*x3 = ( x3 + x7 ) * cos(1*pi/8)  ; */
-    SBC_IDCT_MULT( SBC_COS_3PI_SUR_8,( temp - x7 ), x7);          /*x7 = ( temp - x7 ) * cos(3*pi/8) ;*/
+    SBC_IDCT_MULT( SBC_COS_PI_SUR_8, ( x3 + x7 ), x3);         /*x3 = ( x3 + x7 ) * cos(1*pi/8)  ; */
+    SBC_IDCT_MULT( SBC_COS_3PI_SUR_8, ( temp - x7 ), x7);         /*x7 = ( temp - x7 ) * cos(3*pi/8) ;*/
 
     /* 4-point IDCT of x1,x3,x5 and x7 and post multiplication by diagonal matrix as in (14) */
     SBC_IDCT_MULT((SBC_COS_PI_SUR_16),   ( x1 + x3 ) ,   res_odd[0]); /*res_odd[ 0 ] = ( x1 + x3 ) * cos(1*pi/16) ; */
@@ -160,21 +160,19 @@ void SBC_FastIDCT8(SINT32 *pInVect, SINT32 *pOutVect)
 #else
     UINT8 Index, k;
     SINT32 temp;
-	/*Calculate 4 subband samples by matrixing*/
-    for(Index=0; Index<8; Index++)
-    {
+    /*Calculate 4 subband samples by matrixing*/
+    for (Index = 0; Index < 8; Index++) {
         temp = 0;
-        for(k=0; k<16; k++)
-        {
+        for (k = 0; k < 16; k++) {
             /*temp += (SINT32)(((SINT64)M[(Index*strEncParams->numOfSubBands*2)+k] * Y[k]) >> 16 );*/
-            temp += (gas16AnalDCTcoeff8[(Index*8*2)+k] * (pInVect[k] >> 16));
-            temp += ((gas16AnalDCTcoeff8[(Index*8*2)+k] * (pInVect[k] & 0xFFFF)) >> 16);
+            temp += (gas16AnalDCTcoeff8[(Index * 8 * 2) + k] * (pInVect[k] >> 16));
+            temp += ((gas16AnalDCTcoeff8[(Index * 8 * 2) + k] * (pInVect[k] & 0xFFFF)) >> 16);
         }
         pOutVect[Index] = temp;
     }
 #endif
-/*    printf("pOutVect: 0x%x;0x%x;0x%x;0x%x;0x%x;0x%x;0x%x;0x%x\n",\
-        pOutVect[0],pOutVect[1],pOutVect[2],pOutVect[3],pOutVect[4],pOutVect[5],pOutVect[6],pOutVect[7]);*/
+    /*    printf("pOutVect: 0x%x;0x%x;0x%x;0x%x;0x%x;0x%x;0x%x;0x%x\n",\
+            pOutVect[0],pOutVect[1],pOutVect[2],pOutVect[3],pOutVect[4],pOutVect[5],pOutVect[6],pOutVect[7]);*/
 }
 
 /*******************************************************************************
@@ -206,38 +204,36 @@ void SBC_FastIDCT4(SINT32 *pInVect, SINT32 *pOutVect)
 #endif
 #endif
 #endif
-    SINT32 temp,x2;
+    SINT32 temp, x2;
     SINT32 tmp[8];
 
-    x2=pInVect[2]>>1;
-    temp=(pInVect[0]+pInVect[4]);
-    SBC_IDCT_MULT((SBC_COS_PI_SUR_4>>1), temp , tmp[0]);
-    tmp[1]=x2-tmp[0];
-    tmp[0]+=x2;
-    temp=(pInVect[1]+pInVect[3]);
-    SBC_IDCT_MULT((SBC_COS_3PI_SUR_8>>1), temp , tmp[3]);
-    SBC_IDCT_MULT((SBC_COS_PI_SUR_8>>1), temp , tmp[2]);
-    temp=(pInVect[5]-pInVect[7]);
-    SBC_IDCT_MULT((SBC_COS_3PI_SUR_8>>1), temp , tmp[5]);
-    SBC_IDCT_MULT((SBC_COS_PI_SUR_8>>1), temp , tmp[4]);
-    tmp[6]=tmp[2]+tmp[5];
-    tmp[7]=tmp[3]-tmp[4];
-    pOutVect[0] = (tmp[0]+tmp[6]);
-    pOutVect[1] = (tmp[1]+tmp[7]);
-    pOutVect[2] = (tmp[1]-tmp[7]);
-    pOutVect[3] = (tmp[0]-tmp[6]);
+    x2 = pInVect[2] >> 1;
+    temp = (pInVect[0] + pInVect[4]);
+    SBC_IDCT_MULT((SBC_COS_PI_SUR_4 >> 1), temp , tmp[0]);
+    tmp[1] = x2 - tmp[0];
+    tmp[0] += x2;
+    temp = (pInVect[1] + pInVect[3]);
+    SBC_IDCT_MULT((SBC_COS_3PI_SUR_8 >> 1), temp , tmp[3]);
+    SBC_IDCT_MULT((SBC_COS_PI_SUR_8 >> 1), temp , tmp[2]);
+    temp = (pInVect[5] - pInVect[7]);
+    SBC_IDCT_MULT((SBC_COS_3PI_SUR_8 >> 1), temp , tmp[5]);
+    SBC_IDCT_MULT((SBC_COS_PI_SUR_8 >> 1), temp , tmp[4]);
+    tmp[6] = tmp[2] + tmp[5];
+    tmp[7] = tmp[3] - tmp[4];
+    pOutVect[0] = (tmp[0] + tmp[6]);
+    pOutVect[1] = (tmp[1] + tmp[7]);
+    pOutVect[2] = (tmp[1] - tmp[7]);
+    pOutVect[3] = (tmp[0] - tmp[6]);
 #else
     UINT8 Index, k;
     SINT32 temp;
-	/*Calculate 4 subband samples by matrixing*/
-    for(Index=0; Index<4; Index++)
-    {
+    /*Calculate 4 subband samples by matrixing*/
+    for (Index = 0; Index < 4; Index++) {
         temp = 0;
-        for(k=0; k<8; k++)
-        {
+        for (k = 0; k < 8; k++) {
             /*temp += (SINT32)(((SINT64)M[(Index*strEncParams->numOfSubBands*2)+k] * Y[k]) >> 16 ); */
-            temp += (gas16AnalDCTcoeff4[(Index*4*2)+k] * (pInVect[k] >> 16));
-            temp += ((gas16AnalDCTcoeff4[(Index*4*2)+k] * (pInVect[k] & 0xFFFF)) >> 16);
+            temp += (gas16AnalDCTcoeff4[(Index * 4 * 2) + k] * (pInVect[k] >> 16));
+            temp += ((gas16AnalDCTcoeff4[(Index * 4 * 2) + k] * (pInVect[k] & 0xFFFF)) >> 16);
         }
         pOutVect[Index] = temp;
     }

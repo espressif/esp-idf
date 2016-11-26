@@ -40,12 +40,11 @@ static bt_status_t event_init_stack(bt_callbacks_t *cb)
             return BT_STATUS_FAIL;
         }
         if (ret == BT_STATUS_SUCCESS) {
-            bt_hal_cbacks = cb;            
+            bt_hal_cbacks = cb;
             stack_is_initialized = true;
         }
         return ret;
-    }
-    else {
+    } else {
         return BT_STATUS_DONE;
     }
 }
@@ -56,7 +55,7 @@ static bt_status_t event_start_up_stack(void)
         LOG_DEBUG("%s stack not initialized yet.\n", __func__);
         return BT_STATUS_NOT_READY;
     }
-    
+
     if (stack_is_running) {
         LOG_DEBUG("%s stack already brought up.\n", __func__);
         return BT_STATUS_DONE;
@@ -109,9 +108,9 @@ static bt_status_t event_clean_up_stack(void)
     if (stack_is_running) {
         event_shut_down_stack();
     }
-    
+
     LOG_DEBUG("%s is cleaning up the stack.\n", __func__);
-    
+
     stack_is_initialized = false;
 
     btif_shutdown_bluetooth();

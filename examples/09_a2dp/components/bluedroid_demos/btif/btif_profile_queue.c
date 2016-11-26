@@ -44,8 +44,8 @@
 *******************************************************************************/
 
 typedef enum {
-  BTIF_QUEUE_CONNECT_EVT,
-  BTIF_QUEUE_ADVANCE_EVT,
+    BTIF_QUEUE_CONNECT_EVT,
+    BTIF_QUEUE_ADVANCE_EVT,
 } btif_queue_event_t;
 
 typedef struct {
@@ -67,7 +67,8 @@ static const size_t MAX_REASONABLE_REQUESTS = 10;
 **  Queue helper functions
 *******************************************************************************/
 
-static void queue_int_add(connect_node_t *p_param) {
+static void queue_int_add(connect_node_t *p_param)
+{
     if (!connect_queue) {
         connect_queue = list_new(osi_free);
         assert(connect_queue != NULL);
@@ -89,25 +90,29 @@ static void queue_int_add(connect_node_t *p_param) {
     list_append(connect_queue, p_node);
 }
 
-static void queue_int_advance() {
-    if (connect_queue && !list_is_empty(connect_queue))
+static void queue_int_advance()
+{
+    if (connect_queue && !list_is_empty(connect_queue)) {
         list_remove(connect_queue, list_front(connect_queue));
+    }
 }
 
-static void queue_int_handle_evt(UINT16 event, char *p_param) {
-    switch(event) {
-        case BTIF_QUEUE_CONNECT_EVT:
-            queue_int_add((connect_node_t *)p_param);
-            break;
+static void queue_int_handle_evt(UINT16 event, char *p_param)
+{
+    switch (event) {
+    case BTIF_QUEUE_CONNECT_EVT:
+        queue_int_add((connect_node_t *)p_param);
+        break;
 
-        case BTIF_QUEUE_ADVANCE_EVT:
-            queue_int_advance();
-            break;
+    case BTIF_QUEUE_ADVANCE_EVT:
+        queue_int_advance();
+        break;
     }
 
     // if (stack_manager_get_interface()->get_stack_is_running())
-    if (stack_manager_is_stack_running())
+    if (stack_manager_is_stack_running()) {
         btif_queue_connect_next();
+    }
 }
 
 /*******************************************************************************
@@ -120,7 +125,8 @@ static void queue_int_handle_evt(UINT16 event, char *p_param) {
 ** Returns          BT_STATUS_SUCCESS if successful
 **
 *******************************************************************************/
-bt_status_t btif_queue_connect(uint16_t uuid, const bt_bdaddr_t *bda, btif_connect_cb_t connect_cb) {
+bt_status_t btif_queue_connect(uint16_t uuid, const bt_bdaddr_t *bda, btif_connect_cb_t connect_cb)
+{
     connect_node_t node;
     memset(&node, 0, sizeof(connect_node_t));
     memcpy(&node.bda, bda, sizeof(bt_bdaddr_t));
@@ -128,7 +134,7 @@ bt_status_t btif_queue_connect(uint16_t uuid, const bt_bdaddr_t *bda, btif_conne
     node.connect_cb = connect_cb;
 
     return btif_transfer_context(queue_int_handle_evt, BTIF_QUEUE_CONNECT_EVT,
-                          (char *)&node, sizeof(connect_node_t), NULL);
+                                 (char *)&node, sizeof(connect_node_t), NULL);
 }
 
 /*******************************************************************************
@@ -141,23 +147,27 @@ bt_status_t btif_queue_connect(uint16_t uuid, const bt_bdaddr_t *bda, btif_conne
 ** Returns          void
 **
 *******************************************************************************/
-void btif_queue_advance() {
+void btif_queue_advance()
+{
     btif_transfer_context(queue_int_handle_evt, BTIF_QUEUE_ADVANCE_EVT,
                           NULL, 0, NULL);
 }
 
 // This function dispatches the next pending connect request. It is called from
 // stack_manager when the stack comes up.
-bt_status_t btif_queue_connect_next(void) {
-    if (!connect_queue || list_is_empty(connect_queue))
+bt_status_t btif_queue_connect_next(void)
+{
+    if (!connect_queue || list_is_empty(connect_queue)) {
         return BT_STATUS_FAIL;
+    }
 
     connect_node_t *p_head = list_front(connect_queue);
 
     // If the queue is currently busy, we return success anyway,
     // since the connection has been queued...
-    if (p_head->busy)
+    if (p_head->busy) {
         return BT_STATUS_SUCCESS;
+    }
 
     p_head->busy = true;
     return p_head->connect_cb(&p_head->bda, p_head->uuid);
@@ -173,7 +183,8 @@ bt_status_t btif_queue_connect_next(void) {
 ** Returns          void
 **
 *******************************************************************************/
-void btif_queue_release() {
+void btif_queue_release()
+{
     list_free(connect_queue);
     connect_queue = NULL;
 }

@@ -232,8 +232,8 @@ void OI_VPrintf(const OI_CHAR *format, va_list argp);
  * @return   Number of characters written or -1 in the case of an error.
  */
 OI_INT32 OI_SNPrintf(OI_CHAR *buffer,
-                    OI_UINT16 bufLen,
-                    const OI_CHAR* format, ...);
+                     OI_UINT16 bufLen,
+                     const OI_CHAR *format, ...);
 
 
 /**
@@ -250,8 +250,8 @@ OI_INT32 OI_SNPrintf(OI_CHAR *buffer,
  * @return   Number of characters written or -1 in the case of an error.
  */
 OI_INT32 OI_VSNPrintf(OI_CHAR *buffer,
-                     OI_UINT16 bufLen,
-                     const OI_CHAR *format, va_list argp);
+                      OI_UINT16 bufLen,
+                      const OI_CHAR *format, va_list argp);
 
 
 /**
@@ -277,7 +277,7 @@ OI_INT OI_atoi(const OI_CHAR *str);
  *
  * @return       A pointer to the first character following the integer or the pointer passed in.
  */
-const OI_CHAR* OI_ScanInt(const OI_CHAR *str,
+const OI_CHAR *OI_ScanInt(const OI_CHAR *str,
                           OI_INT32 *val);
 
 
@@ -294,7 +294,7 @@ const OI_CHAR* OI_ScanInt(const OI_CHAR *str,
  *
  * @return       A pointer to the first character following the unsigned integer or the pointer passed in.
  */
-const OI_CHAR* OI_ScanUInt(const OI_CHAR *str,
+const OI_CHAR *OI_ScanUInt(const OI_CHAR *str,
                            OI_UINT32 *val);
 
 /**
@@ -307,7 +307,7 @@ const OI_CHAR* OI_ScanUInt(const OI_CHAR *str,
  *
  * @return       A pointer to the first character following the substring or the pointer passed in.
  */
-const OI_CHAR* OI_ScanStr(const OI_CHAR *str,
+const OI_CHAR *OI_ScanStr(const OI_CHAR *str,
                           OI_CHAR *outStr,
                           OI_UINT16 len);
 
@@ -327,7 +327,7 @@ const OI_CHAR* OI_ScanStr(const OI_CHAR *str,
  * @return       A pointer to the first character following the matched value or the pointer passed in
  *               if there was no matching text.
  */
-const OI_CHAR* OI_ScanAlt(const OI_CHAR *str,
+const OI_CHAR *OI_ScanAlt(const OI_CHAR *str,
                           const OI_CHAR *alts,
                           OI_INT *index);
 
@@ -342,7 +342,7 @@ const OI_CHAR* OI_ScanAlt(const OI_CHAR *str,
  *
  * @return       A pointer to the first character following the BD Addr or the pointer passed in.
  */
-const OI_CHAR* OI_ScanBdAddr(const OI_CHAR *str,
+const OI_CHAR *OI_ScanBdAddr(const OI_CHAR *str,
                              OI_BD_ADDR *addr);
 
 

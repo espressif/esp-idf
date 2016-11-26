@@ -1454,7 +1454,7 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
                     APPL_TRACE_DEBUG("start sig timer %d", p_data->hdr.offset);
                     if (p_data->hdr.offset == AVDT_ACP)
                     {
-                        APPL_TRACE_DEBUG("Incoming L2CAP acquired, set state as incoming", NULL);
+                        APPL_TRACE_DEBUG("Incoming L2CAP acquired, set state as incoming");
                         bdcpy(p_cb->p_scb[xx]->peer_addr, p_data->str_msg.bd_addr);
                         p_cb->p_scb[xx]->use_rc = TRUE;     /* allowing RC for incoming connection */
                         bta_av_ssm_execute(p_cb->p_scb[xx], BTA_AV_ACP_CONNECT_EVT, p_data);

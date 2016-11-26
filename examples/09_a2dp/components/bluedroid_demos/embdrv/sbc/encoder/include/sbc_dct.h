@@ -26,12 +26,12 @@
 #define SBC_DCT_H
 
 #if (SBC_ARM_ASM_OPT==TRUE)
-#define SBC_MULT_32_16_SIMPLIFIED(s16In2, s32In1, s32OutLow)					\
-{																			    \
-    __asm																		\
-{																				\
+#define SBC_MULT_32_16_SIMPLIFIED(s16In2, s32In1, s32OutLow)                    \
+{                                                                               \
+    __asm                                                                       \
+{                                                                               \
     MUL s32OutLow,(SINT32)s16In2, (s32In1>>15)        \
-}																				\
+}                                                                               \
 }
 #else
 #if (SBC_DSP_OPT==TRUE)

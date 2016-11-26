@@ -154,7 +154,7 @@ typedef struct {
 typedef struct {
     const OI_CHAR *codecInfo;
     OI_CODEC_SBC_FRAME_INFO frameInfo;
-    OI_INT8 scale_factor[SBC_MAX_CHANNELS*SBC_MAX_BANDS];
+    OI_INT8 scale_factor[SBC_MAX_CHANNELS * SBC_MAX_BANDS];
     OI_UINT32 frameCount;
     OI_INT32 *subdata;
 
@@ -163,8 +163,8 @@ typedef struct {
     OI_UINT filterBufferOffset;
 
     union {
-        OI_UINT8 uint8[SBC_MAX_CHANNELS*SBC_MAX_BANDS];
-        OI_UINT32 uint32[SBC_MAX_CHANNELS*SBC_MAX_BANDS/4];
+        OI_UINT8 uint8[SBC_MAX_CHANNELS * SBC_MAX_BANDS];
+        OI_UINT32 uint32[SBC_MAX_CHANNELS * SBC_MAX_BANDS / 4];
     } bits;
     OI_UINT8 maxBitneed;    /**< Running maximum bitneed */
     OI_BYTE formatByte;
@@ -287,13 +287,13 @@ OI_STATUS OI_CODEC_SBC_DecoderLimit(OI_CODEC_SBC_DECODER_CONTEXT *context,
  * @param maxBitpool     The maximum bitpool size for this context
  */
 OI_STATUS OI_CODEC_SBC_DecoderConfigureRaw(OI_CODEC_SBC_DECODER_CONTEXT *context,
-                                           OI_BOOL enhanced,
-                                           OI_UINT8 frequency,
-                                           OI_UINT8 mode,
-                                           OI_UINT8 subbands,
-                                           OI_UINT8 blocks,
-                                           OI_UINT8 alloc,
-                                           OI_UINT8 maxBitpool);
+        OI_BOOL enhanced,
+        OI_UINT8 frequency,
+        OI_UINT8 mode,
+        OI_UINT8 subbands,
+        OI_UINT8 blocks,
+        OI_UINT8 alloc,
+        OI_UINT8 maxBitpool);
 
 /**
  * Decode one SBC frame. The frame has no header bytes. The context must have been previously
@@ -451,11 +451,11 @@ OI_CHAR *OI_CODEC_Version(void);
 @{
 */
 
-extern const OI_CHAR* const OI_CODEC_SBC_FreqText[];
-extern const OI_CHAR* const OI_CODEC_SBC_ModeText[];
-extern const OI_CHAR* const OI_CODEC_SBC_SubbandsText[];
-extern const OI_CHAR* const OI_CODEC_SBC_BlocksText[];
-extern const OI_CHAR* const OI_CODEC_SBC_AllocText[];
+extern const OI_CHAR *const OI_CODEC_SBC_FreqText[];
+extern const OI_CHAR *const OI_CODEC_SBC_ModeText[];
+extern const OI_CHAR *const OI_CODEC_SBC_SubbandsText[];
+extern const OI_CHAR *const OI_CODEC_SBC_BlocksText[];
+extern const OI_CHAR *const OI_CODEC_SBC_AllocText[];
 
 /**
 @}

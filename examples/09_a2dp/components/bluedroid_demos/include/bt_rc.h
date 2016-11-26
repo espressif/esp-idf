@@ -103,8 +103,7 @@ typedef struct {
     uint8_t attr_values[BTRC_MAX_APP_SETTINGS];
 } btrc_player_settings_t;
 
-typedef union
-{
+typedef union {
     btrc_play_status_t play_status;
     btrc_uid_t track; /* queue position in NowPlaying */
     uint32_t song_pos;
@@ -123,7 +122,7 @@ typedef struct {
 
 /** Callback for the controller's supported feautres */
 typedef void (* btrc_remote_features_callback)(bt_bdaddr_t *bd_addr,
-                                                      btrc_remote_features_t features);
+        btrc_remote_features_t features);
 
 /** Callback for play status request */
 typedef void (* btrc_get_play_status_callback)();
@@ -197,7 +196,7 @@ typedef struct {
     /**
      * Register the BtRc callbacks
      */
-    bt_status_t (*init)( btrc_callbacks_t* callbacks );
+    bt_status_t (*init)( btrc_callbacks_t *callbacks );
 
     /** Respose to GetPlayStatus request. Contains the current
     **  1. Play status
@@ -245,8 +244,8 @@ typedef struct {
     ** p_params: Based on the event_id, this parameter should be populated
     */
     bt_status_t (*register_notification_rsp)(btrc_event_id_t event_id,
-                                             btrc_notification_type_t type,
-                                             btrc_register_notification_t *p_param);
+            btrc_notification_type_t type,
+            btrc_register_notification_t *p_param);
 
     /* AVRCP 1.4 enhancements */
 
@@ -282,7 +281,7 @@ typedef struct {
     /**
      * Register the BtRc callbacks
      */
-    bt_status_t (*init)( btrc_ctrl_callbacks_t* callbacks );
+    bt_status_t (*init)( btrc_ctrl_callbacks_t *callbacks );
 
     /** send pass through command to target */
     bt_status_t (*send_pass_through_cmd) ( bt_bdaddr_t *bd_addr, uint8_t key_code, uint8_t key_state );

@@ -82,7 +82,7 @@
 *****************************************************************************/
 const char *dump_rc_event(UINT8 event)
 {
-   switch(event) {
+    switch (event) {
         CASE_RETURN_STR(BTA_AV_RC_OPEN_EVT)
         CASE_RETURN_STR(BTA_AV_RC_CLOSE_EVT)
         CASE_RETURN_STR(BTA_AV_REMOTE_CMD_EVT)
@@ -91,15 +91,14 @@ const char *dump_rc_event(UINT8 event)
         CASE_RETURN_STR(BTA_AV_VENDOR_RSP_EVT)
         CASE_RETURN_STR(BTA_AV_META_MSG_EVT)
         CASE_RETURN_STR(BTA_AV_RC_FEAT_EVT)
-        default:
-            return "UNKNOWN_EVENT";
-   }
+    default:
+        return "UNKNOWN_EVENT";
+    }
 }
 
-const char * dump_rc_notification_event_id(UINT8 event_id)
+const char *dump_rc_notification_event_id(UINT8 event_id)
 {
-    switch(event_id)
-    {
+    switch (event_id) {
         CASE_RETURN_STR(AVRC_EVT_PLAY_STATUS_CHANGE)
         CASE_RETURN_STR(AVRC_EVT_TRACK_CHANGE)
         CASE_RETURN_STR(AVRC_EVT_TRACK_REACHED_END)
@@ -110,15 +109,14 @@ const char * dump_rc_notification_event_id(UINT8 event_id)
         CASE_RETURN_STR(AVRC_EVT_APP_SETTING_CHANGE)
         CASE_RETURN_STR(AVRC_EVT_VOLUME_CHANGE)
 
-        default:
-            return "Unhandled Event ID";
+    default:
+        return "Unhandled Event ID";
     }
 }
 
-const char*  dump_rc_pdu(UINT8 pdu)
+const char  *dump_rc_pdu(UINT8 pdu)
 {
-    switch(pdu)
-    {
+    switch (pdu) {
         CASE_RETURN_STR(AVRC_PDU_LIST_PLAYER_APP_ATTR)
         CASE_RETURN_STR(AVRC_PDU_LIST_PLAYER_APP_VALUES)
         CASE_RETURN_STR(AVRC_PDU_GET_CUR_PLAYER_APP_VALUE)
@@ -133,8 +131,8 @@ const char*  dump_rc_pdu(UINT8 pdu)
         CASE_RETURN_STR(AVRC_PDU_REQUEST_CONTINUATION_RSP)
         CASE_RETURN_STR(AVRC_PDU_ABORT_CONTINUATION_RSP)
         CASE_RETURN_STR(AVRC_PDU_SET_ABSOLUTE_VOLUME)
-        default:
-            return "Unknown PDU";
+    default:
+        return "Unknown PDU";
     }
 }
 
@@ -142,8 +140,7 @@ UINT32 devclass2uint(DEV_CLASS dev_class)
 {
     UINT32 cod = 0;
 
-    if(dev_class != NULL)
-    {
+    if (dev_class != NULL) {
         /* if COD is 0, irrespective of the device type set it to Unclassified device */
         cod = (dev_class[2]) | (dev_class[1] << 8) | (dev_class[0] << 16);
     }
@@ -157,9 +154,10 @@ void uint2devclass(UINT32 cod, DEV_CLASS dev_class)
 }
 
 static const UINT8  sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
-                                       0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB};
+                                       0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
+                                      };
 
-void uuid16_to_uuid128(uint16_t uuid16, bt_uuid_t* uuid128)
+void uuid16_to_uuid128(uint16_t uuid16, bt_uuid_t *uuid128)
 {
     uint16_t uuid16_bo;
     memset(uuid128, 0, sizeof(bt_uuid_t));
@@ -175,7 +173,7 @@ void string_to_uuid(char *str, bt_uuid_t *p_uuid)
     uint16_t uuid1, uuid2, uuid3, uuid5;
 
     sscanf(str, "%08x-%04hx-%04hx-%04hx-%08x%04hx",
-                &uuid0, &uuid1, &uuid2, &uuid3, &uuid4, &uuid5);
+           &uuid0, &uuid1, &uuid2, &uuid3, &uuid4, &uuid5);
 
     uuid0 = htonl(uuid0);
     uuid1 = htons(uuid1);

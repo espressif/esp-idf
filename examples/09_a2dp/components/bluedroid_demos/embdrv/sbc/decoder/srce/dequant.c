@@ -124,7 +124,7 @@ const OI_UINT32 dequant_long_unscaled[17];
 
 INLINE float dequant_float(OI_UINT32 raw, OI_UINT scale_factor, OI_UINT bits)
 {
-    float result = (1 << (scale_factor+1)) * ((raw * 2.0f + 1.0f) / ((1 << bits) - 1.0f) - 1.0f);
+    float result = (1 << (scale_factor + 1)) * ((raw * 2.0f + 1.0f) / ((1 << bits) - 1.0f) - 1.0f);
 
     result /= SBC_DEQUANT_SCALING_FACTOR;
 
@@ -163,7 +163,7 @@ INLINE OI_INT32 OI_SBC_Dequant(OI_UINT32 raw, OI_UINT scale_factor, OI_UINT bits
         float float_result;
 
         float_result = dequant_float(raw, scale_factor, bits);
-        integerized_float_result = (OI_INT32)floor(0.5f+float_result * (1 << 15));
+        integerized_float_result = (OI_INT32)floor(0.5f + float_result * (1 << 15));
 
         /* This detects overflow */
         OI_ASSERT(((result >= 0) && (integerized_float_result >= 0)) ||

@@ -33,7 +33,7 @@ PRIVATE OI_STATUS OI_CODEC_SBC_Alloc(OI_CODEC_SBC_COMMON_CONTEXT *common,
     int i;
     size_t filterBufferCount;
     size_t subdataSize;
-    OI_BYTE *codecData = (OI_BYTE*)codecDataAligned;
+    OI_BYTE *codecData = (OI_BYTE *)codecDataAligned;
 
     if (maxChannels < 1 || maxChannels > 2) {
         return OI_STATUS_INVALID_PARAMETERS;
@@ -60,7 +60,7 @@ PRIVATE OI_STATUS OI_CODEC_SBC_Alloc(OI_CODEC_SBC_COMMON_CONTEXT *common,
     common->filterBufferLen = filterBufferCount * SBC_MAX_BANDS;
 
     /* Allocate memory for the subband data */
-    common->subdata = (OI_INT32*)codecData;
+    common->subdata = (OI_INT32 *)codecData;
     codecData += subdataSize;
     OI_ASSERT(codecDataBytes >= subdataSize);
     codecDataBytes -= subdataSize;
@@ -68,7 +68,7 @@ PRIVATE OI_STATUS OI_CODEC_SBC_Alloc(OI_CODEC_SBC_COMMON_CONTEXT *common,
     /* Allocate memory for the synthesis buffers */
     for (i = 0; i < maxChannels; ++i) {
         size_t allocSize = common->filterBufferLen * sizeof(common->filterBuffer[0][0]);
-        common->filterBuffer[i] = (SBC_BUFFER_T*)codecData;
+        common->filterBuffer[i] = (SBC_BUFFER_T *)codecData;
         OI_ASSERT(codecDataBytes >= allocSize);
         codecData += allocSize;
         codecDataBytes -= allocSize;

@@ -78,7 +78,7 @@ extern "C" {
 #define OI_CPU_TYPE 12
 
 #ifndef OI_CPU_TYPE
-    #error "OI_CPU_TYPE type not defined"
+#error "OI_CPU_TYPE type not defined"
 #endif
 
 /**@}*/
@@ -151,11 +151,11 @@ typedef OI_UINT32 OI_ELEMENT_UNION; /**< Type for first element of a union to su
 /* The Hitachi SH C compiler defines _LIT or _BIG, depending on the endianness
     specified to the compiler on the command line. */
 #if defined(_LIT)
-    #define OI_CPU_BYTE_ORDER OI_LITTLE_ENDIAN_BYTE_ORDER  /**< If _LIT is defined, SH-3 platform byte ordering is little-endian. */
+#define OI_CPU_BYTE_ORDER OI_LITTLE_ENDIAN_BYTE_ORDER  /**< If _LIT is defined, SH-3 platform byte ordering is little-endian. */
 #elif defined(_BIG)
-    #define OI_CPU_BYTE_ORDER OI_BIG_ENDIAN_BYTE_ORDER     /**< If _BIG is defined, SH-3 platform byte ordering is big-endian. */
+#define OI_CPU_BYTE_ORDER OI_BIG_ENDIAN_BYTE_ORDER     /**< If _BIG is defined, SH-3 platform byte ordering is big-endian. */
 #else
-    #error SH compiler endianness undefined
+#error SH compiler endianness undefined
 #endif
 
 /** @name CPU/compiler-dependent primitive data type definitions for SH-3 processor family
@@ -313,7 +313,7 @@ typedef unsigned char   OI_UINT8;  /**< 8-bit unsigned integer values use native
 typedef unsigned short  OI_UINT16; /**< 16-bit unsigned integer values use native unsigned short integer data type for ARM7 processor. */
 typedef unsigned long   OI_UINT32; /**< 32-bit unsigned integer values use native unsigned long integer data type for ARM7 processor. */
 
-typedef void * OI_ELEMENT_UNION; /**< Type for first element of a union to support all data types up to pointer width. */
+typedef void *OI_ELEMENT_UNION;  /**< Type for first element of a union to support all data types up to pointer width. */
 
 /**@}*/
 
@@ -333,7 +333,7 @@ typedef unsigned char   OI_UINT8;  /**< 8-bit unsigned integer values use native
 typedef unsigned short  OI_UINT16; /**< 16-bit unsigned integer values use native unsigned short integer data type for ARM7 processor. */
 typedef unsigned long   OI_UINT32; /**< 32-bit unsigned integer values use native unsigned long integer data type for ARM7 processor. */
 
-typedef void * OI_ELEMENT_UNION; /**< Type for first element of a union to support all data types up to pointer width. */
+typedef void *OI_ELEMENT_UNION;  /**< Type for first element of a union to support all data types up to pointer width. */
 
 /**@}*/
 
@@ -491,7 +491,7 @@ typedef OI_UINT32 OI_ELEMENT_UNION; /**< Type for first element of a union to su
 
 
 #ifndef OI_CPU_BYTE_ORDER
-    #error "Byte order (endian-ness) not defined"
+#error "Byte order (endian-ness) not defined"
 #endif
 
 

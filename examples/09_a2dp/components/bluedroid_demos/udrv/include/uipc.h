@@ -50,7 +50,7 @@ typedef enum {
 
 typedef void (tUIPC_RCV_CBACK)(tUIPC_CH_ID ch_id, tUIPC_EVENT event); /* points to BT_HDR which describes event type and length of data; len contains the number of bytes of entire message (sizeof(BT_HDR) + offset + size of data) */
 
-const char* dump_uipc_event(tUIPC_EVENT event);
+const char *dump_uipc_event(tUIPC_EVENT event);
 
 /*******************************************************************************
 **

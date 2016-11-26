@@ -42,12 +42,12 @@ frame length and bitrate.
 OI_UINT32 OI_SBC_MaxBitpool(OI_CODEC_SBC_FRAME_INFO *frame)
 {
     switch (frame->mode) {
-        case SBC_MONO:
-        case SBC_DUAL_CHANNEL:
-            return 16 * frame->nrof_subbands;
-        case SBC_STEREO:
-        case SBC_JOINT_STEREO:
-            return 32 * frame->nrof_subbands;
+    case SBC_MONO:
+    case SBC_DUAL_CHANNEL:
+        return 16 * frame->nrof_subbands;
+    case SBC_STEREO:
+    case SBC_JOINT_STEREO:
+        return 32 * frame->nrof_subbands;
     }
 
     ERROR(("Invalid frame mode %d", frame->mode));
@@ -65,8 +65,14 @@ PRIVATE OI_UINT16 internal_CalculateFramelen(OI_CODEC_SBC_FRAME_INFO *frame)
     if (frame->mode == SBC_JOINT_STEREO) {
         result += nrof_subbands + (8 * nrof_subbands);
     } else {
-        if (frame->mode == SBC_DUAL_CHANNEL) { result += nbits; }
-        if (frame->mode == SBC_MONO) { result += 4*nrof_subbands; } else { result += 8*nrof_subbands; }
+        if (frame->mode == SBC_DUAL_CHANNEL) {
+            result += nbits;
+        }
+        if (frame->mode == SBC_MONO) {
+            result += 4 * nrof_subbands;
+        } else {
+            result += 8 * nrof_subbands;
+        }
     }
     return SBC_HEADER_LEN + (result + 7) / 8;
 }
@@ -83,9 +89,11 @@ PRIVATE OI_UINT32 internal_CalculateBitrate(OI_CODEC_SBC_FRAME_INFO *frame)
 
 INLINE OI_UINT16 OI_SBC_CalculateFrameAndHeaderlen(OI_CODEC_SBC_FRAME_INFO *frame, OI_UINT *headerLen_)
 {
-    OI_UINT headerLen = SBC_HEADER_LEN + frame->nrof_subbands * frame->nrof_channels/2;
+    OI_UINT headerLen = SBC_HEADER_LEN + frame->nrof_subbands * frame->nrof_channels / 2;
 
-    if (frame->mode == SBC_JOINT_STEREO) { headerLen++; }
+    if (frame->mode == SBC_JOINT_STEREO) {
+        headerLen++;
+    }
 
     *headerLen_ = headerLen;
     return internal_CalculateFramelen(frame);
@@ -116,9 +124,9 @@ INLINE OI_UINT16 OI_SBC_CalculateFrameAndHeaderlen(OI_CODEC_SBC_FRAME_INFO *fram
  *
  */
 OI_UINT computeBitneed(OI_CODEC_SBC_COMMON_CONTEXT *common,
-                              OI_UINT8 *bitneeds,
-                              OI_UINT ch,
-                              OI_UINT *preferredBitpool)
+                       OI_UINT8 *bitneeds,
+                       OI_UINT ch,
+                       OI_UINT *preferredBitpool)
 {
     static const OI_INT8 offset4[4][4] = {
         { -1, 0, 0, 0 },
@@ -244,10 +252,10 @@ OI_UINT computeBitneed(OI_CODEC_SBC_COMMON_CONTEXT *common,
  * @return   The adjustment.
  */
 OI_INT adjustToFitBitpool(const OI_UINT bitpool,
-                                 OI_UINT32 *bitneeds,
-                                 const OI_UINT subbands,
-                                 OI_UINT bitcount,
-                                 OI_UINT *excess)
+                          OI_UINT32 *bitneeds,
+                          const OI_UINT subbands,
+                          OI_UINT bitcount,
+                          OI_UINT *excess)
 {
     OI_INT maxBitadjust = 0;
     OI_INT bitadjust = (bitcount > bitpool) ? -8 : 8;
@@ -340,9 +348,9 @@ INLINE OI_INT allocExcessBits(OI_UINT8 *dest,
 }
 
 void oneChannelBitAllocation(OI_CODEC_SBC_COMMON_CONTEXT *common,
-                                    BITNEED_UNION1 *bitneeds,
-                                    OI_UINT ch,
-                                    OI_UINT bitcount)
+                             BITNEED_UNION1 *bitneeds,
+                             OI_UINT ch,
+                             OI_UINT bitcount)
 {
     const OI_UINT8 nrof_subbands = common->frameInfo.nrof_subbands;
     OI_UINT excess;

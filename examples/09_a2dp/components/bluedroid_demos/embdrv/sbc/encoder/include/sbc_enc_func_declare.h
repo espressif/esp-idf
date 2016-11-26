@@ -51,7 +51,7 @@ extern void SBC_FastIDCT4 (SINT32 *x0, SINT32 *pOutVect);
 extern void EncPacking(SBC_ENC_PARAMS *strEncParams);
 extern void EncQuantizer(SBC_ENC_PARAMS *);
 #if (SBC_DSP_OPT==TRUE)
-    SINT32 SBC_Multiply_32_16_Simplified(SINT32 s32In2Temp,SINT32 s32In1Temp);
+SINT32 SBC_Multiply_32_16_Simplified(SINT32 s32In2Temp, SINT32 s32In1Temp);
 #endif
 #endif
 

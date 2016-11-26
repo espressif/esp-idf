@@ -63,39 +63,35 @@
 typedef int tBTIF_STATUS;
 
 /* tBTIF_MEDIA_INIT_AUDIO msg structure */
-typedef struct
-{
-        BT_HDR hdr;
-        UINT16 SamplingFreq; /* 16k, 32k, 44.1k or 48k*/
-        UINT8 ChannelMode; /* mono, dual, stereo or joint stereo*/
-        UINT8 NumOfSubBands; /* 4 or 8 */
-        UINT8 NumOfBlocks; /* 4, 8, 12 or 16*/
-        UINT8 AllocationMethod; /* loudness or SNR*/
-        UINT16 MtuSize; /* peer mtu size */
+typedef struct {
+    BT_HDR hdr;
+    UINT16 SamplingFreq; /* 16k, 32k, 44.1k or 48k*/
+    UINT8 ChannelMode; /* mono, dual, stereo or joint stereo*/
+    UINT8 NumOfSubBands; /* 4 or 8 */
+    UINT8 NumOfBlocks; /* 4, 8, 12 or 16*/
+    UINT8 AllocationMethod; /* loudness or SNR*/
+    UINT16 MtuSize; /* peer mtu size */
 } tBTIF_MEDIA_INIT_AUDIO;
 
 #if (BTA_AV_INCLUDED == TRUE)
 /* tBTIF_MEDIA_UPDATE_AUDIO msg structure */
-typedef struct
-{
-        BT_HDR hdr;
-        UINT16 MinMtuSize; /* Minimum peer mtu size */
-        UINT8 MaxBitPool; /* Maximum peer bitpool */
-        UINT8 MinBitPool; /* Minimum peer bitpool */
+typedef struct {
+    BT_HDR hdr;
+    UINT16 MinMtuSize; /* Minimum peer mtu size */
+    UINT8 MaxBitPool; /* Maximum peer bitpool */
+    UINT8 MinBitPool; /* Minimum peer bitpool */
 } tBTIF_MEDIA_UPDATE_AUDIO;
 
 /* tBTIF_MEDIA_INIT_AUDIO_FEEDING msg structure */
-typedef struct
-{
-        BT_HDR hdr;
-        tBTIF_AV_FEEDING_MODE feeding_mode;
-        tBTIF_AV_MEDIA_FEEDINGS feeding;
+typedef struct {
+    BT_HDR hdr;
+    tBTIF_AV_FEEDING_MODE feeding_mode;
+    tBTIF_AV_MEDIA_FEEDINGS feeding;
 } tBTIF_MEDIA_INIT_AUDIO_FEEDING;
 
-typedef struct
-{
-        BT_HDR hdr;
-        UINT8 codec_info[AVDT_CODEC_SIZE];
+typedef struct {
+    BT_HDR hdr;
+    UINT8 codec_info[AVDT_CODEC_SIZE];
 } tBTIF_MEDIA_SINK_CFG_UPDATE;
 #endif
 
@@ -123,7 +119,7 @@ extern void btif_media_task(void);
  ** Returns          TRUE is success
  **
  *******************************************************************************/
-extern BOOLEAN btif_media_task_enc_init_req(tBTIF_MEDIA_INIT_AUDIO * p_msg);
+extern BOOLEAN btif_media_task_enc_init_req(tBTIF_MEDIA_INIT_AUDIO *p_msg);
 
 /*******************************************************************************
  **
@@ -135,7 +131,7 @@ extern BOOLEAN btif_media_task_enc_init_req(tBTIF_MEDIA_INIT_AUDIO * p_msg);
  **
  *******************************************************************************/
 #if (BTA_AV_INCLUDED == TRUE)
-extern BOOLEAN btif_media_task_enc_update_req(tBTIF_MEDIA_UPDATE_AUDIO * p_msg);
+extern BOOLEAN btif_media_task_enc_update_req(tBTIF_MEDIA_UPDATE_AUDIO *p_msg);
 #endif
 
 /*******************************************************************************
@@ -201,7 +197,7 @@ extern BT_HDR *btif_media_aa_readbuf(void);
  **
  ** Returns          size of the queue
  *******************************************************************************/
- UINT8 btif_media_sink_enque_buf(BT_HDR *p_buf);
+UINT8 btif_media_sink_enque_buf(BT_HDR *p_buf);
 
 
 
@@ -226,7 +222,7 @@ extern void btif_media_aa_writebuf(BT_HDR *pBuf, UINT32 timestamp, UINT16 seq_nu
  **
  *******************************************************************************/
 extern BOOLEAN btif_media_av_writebuf(UINT8 *p_media, UINT32 media_len,
-                                     UINT32 timestamp, UINT16 seq_num);
+                                      UINT32 timestamp, UINT16 seq_num);
 
 #if (BTA_AV_INCLUDED == TRUE)
 /*******************************************************************************

@@ -33,7 +33,7 @@ extern "C" {
 #endif
 
 
-   /** test it **/
+/** test it **/
 
 /**
  * OI_STATUS must fit in 16 bits, so status codes can range from 0 to 66535, inclusive.
@@ -129,7 +129,7 @@ typedef enum {
     OI_L2CAP_CONNECT_REFUSED_NO_RESOURCES  = 454, /**< L2CAP: Connect refused no resources */
 
     OI_L2CAP_CONFIG_BASE                   = 460, /**< L2CAP: Config base */
-    OI_L2CAP_CONFIG_FAIL_INVALID_PARAMETERS= 461, /**< L2CAP: Config fail invalid parameters */
+    OI_L2CAP_CONFIG_FAIL_INVALID_PARAMETERS = 461, /**< L2CAP: Config fail invalid parameters */
     OI_L2CAP_CONFIG_FAIL_NO_REASON         = 462, /**< L2CAP: Config fail no reason */
     OI_L2CAP_CONFIG_FAIL_UNKNOWN_OPTIONS   = 463, /**< L2CAP: Config fail unknown options */
 
@@ -541,7 +541,7 @@ typedef enum {
     OI_STATUS_RESERVED_FOR_BHAPI = 9200,
 
     /* Status code values reserved for Soundabout products */
-    OI_STATUS_RESERVED_FOR_SOUNDABOUT= 9400,
+    OI_STATUS_RESERVED_FOR_SOUNDABOUT = 9400,
 
     /*
      * Status code values greater than or equal to this value are reserved for use by applications.

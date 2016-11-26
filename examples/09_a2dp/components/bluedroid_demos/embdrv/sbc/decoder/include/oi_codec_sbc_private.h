@@ -127,21 +127,21 @@ typedef struct {
 #define DCTIII_8_SHIFT_OUT 14
 
 OI_UINT computeBitneed(OI_CODEC_SBC_COMMON_CONTEXT *common,
-                              OI_UINT8 *bitneeds,
-                              OI_UINT ch,
-                              OI_UINT *preferredBitpool);
+                       OI_UINT8 *bitneeds,
+                       OI_UINT ch,
+                       OI_UINT *preferredBitpool);
 
 void oneChannelBitAllocation(OI_CODEC_SBC_COMMON_CONTEXT *common,
-                                    BITNEED_UNION1 *bitneeds,
-                                    OI_UINT ch,
-                                    OI_UINT bitcount);
+                             BITNEED_UNION1 *bitneeds,
+                             OI_UINT ch,
+                             OI_UINT bitcount);
 
 
 OI_INT adjustToFitBitpool(const OI_UINT bitpool,
-                                 OI_UINT32 *bitneeds,
-                                 const OI_UINT subbands,
-                                 OI_UINT bitcount,
-                                 OI_UINT *excess);
+                          OI_UINT32 *bitneeds,
+                          const OI_UINT subbands,
+                          OI_UINT bitcount,
+                          OI_UINT *excess);
 
 INLINE OI_INT allocAdjustedBits(OI_UINT8 *dest,
                                 OI_INT bits,
@@ -181,16 +181,16 @@ PRIVATE OI_UINT8 OI_SBC_CalculateChecksum(OI_CODEC_SBC_FRAME_INFO *frame, OI_BYT
 
 /* Transform functions */
 PRIVATE void shift_buffer(SBC_BUFFER_T *dest, SBC_BUFFER_T *src, OI_UINT wordCount);
-PRIVATE void cosineModulateSynth4(SBC_BUFFER_T * RESTRICT out, OI_INT32 const * RESTRICT in);
+PRIVATE void cosineModulateSynth4(SBC_BUFFER_T *RESTRICT out, OI_INT32 const *RESTRICT in);
 PRIVATE void SynthWindow40_int32_int32_symmetry_with_sum(OI_INT16 *pcm, SBC_BUFFER_T buffer[80], OI_UINT strideShift);
 
-INLINE void dct3_4(OI_INT32 * RESTRICT out, OI_INT32 const * RESTRICT in);
+INLINE void dct3_4(OI_INT32 *RESTRICT out, OI_INT32 const *RESTRICT in);
 PRIVATE void analyze4_generated(SBC_BUFFER_T analysisBuffer[RESTRICT 40],
                                 OI_INT16 *pcm,
                                 OI_UINT strideShift,
                                 OI_INT32 subband[4]);
 
-INLINE void dct3_8(OI_INT32 * RESTRICT out, OI_INT32 const * RESTRICT in);
+INLINE void dct3_8(OI_INT32 *RESTRICT out, OI_INT32 const *RESTRICT in);
 
 PRIVATE void analyze8_generated(SBC_BUFFER_T analysisBuffer[RESTRICT 80],
                                 OI_INT16 *pcm,
@@ -199,9 +199,9 @@ PRIVATE void analyze8_generated(SBC_BUFFER_T analysisBuffer[RESTRICT 80],
 
 #ifdef SBC_ENHANCED
 PRIVATE void analyze8_enhanced_generated(SBC_BUFFER_T analysisBuffer[RESTRICT 112],
-                                         OI_INT16 *pcm,
-                                         OI_UINT strideShift,
-                                         OI_INT32 subband[8]);
+        OI_INT16 *pcm,
+        OI_UINT strideShift,
+        OI_INT32 subband[8]);
 #endif
 
 /* Decoder functions */

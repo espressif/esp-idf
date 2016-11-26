@@ -67,30 +67,30 @@ INLINE OI_INT32 default_mul_32s_32s_hi(OI_INT32 u, OI_INT32 v)
 
     u0 = u & 0xFFFF; u1 = u >> 16;
     v0 = v & 0xFFFF; v1 = v >> 16;
-    t = u0*v0;
-    t = u1*v0 + ((OI_UINT32)t >> 16);
+    t = u0 * v0;
+    t = u1 * v0 + ((OI_UINT32)t >> 16);
     w1 = t & 0xFFFF;
     w2 = t >> 16;
-    w1 = u0*v1 + w1;
-    return u1*v1 + w2 + (w1 >> 16);
+    w1 = u0 * v1 + w1;
+    return u1 * v1 + w2 + (w1 >> 16);
 }
 
 #define MUL_32S_32S_HI(_x, _y) default_mul_32s_32s_hi(_x, _y)
 
 
 #ifdef DEBUG_DCT
-PRIVATE void float_dct2_8(float * RESTRICT out, OI_INT32 const *RESTRICT in)
+PRIVATE void float_dct2_8(float *RESTRICT out, OI_INT32 const *RESTRICT in)
 {
 #define FIX(x,bits) (((int)floor(0.5f+((x)*((float)(1<<bits)))))/((float)(1<<bits)))
 #define FLOAT_BUTTERFLY(x,y) x += y; y = x - (y*2); OI_ASSERT(VALID_INT32(x)); OI_ASSERT(VALID_INT32(y));
 #define FLOAT_MULT_DCT(K, sample) (FIX(K,20) * sample)
 #define FLOAT_SCALE(x, y) (((x) / (double)(1 << (y))))
 
-    double L00,L01,L02,L03,L04,L05,L06,L07;
+    double L00, L01, L02, L03, L04, L05, L06, L07;
     double L25;
 
-    double in0,in1,in2,in3;
-    double in4,in5,in6,in7;
+    double in0, in1, in2, in3;
+    double in4, in5, in6, in7;
 
     in0 = FLOAT_SCALE(in[0], DCTII_8_SHIFT_IN); OI_ASSERT(VALID_INT32(in0));
     in1 = FLOAT_SCALE(in[1], DCTII_8_SHIFT_IN); OI_ASSERT(VALID_INT32(in1));
@@ -131,10 +131,10 @@ PRIVATE void float_dct2_8(float * RESTRICT out, OI_INT32 const *RESTRICT in)
     L05 += L06; OI_ASSERT(VALID_INT32(L05));
     L06 += L07; OI_ASSERT(VALID_INT32(L06));
 
-    L04/=2;
-    L05/=2;
-    L06/=2;
-    L07/=2;
+    L04 /= 2;
+    L05 /= 2;
+    L06 /= 2;
+    L07 /= 2;
 
     L05 = FLOAT_MULT_DCT(AAN_C4_FLOAT, L05); OI_ASSERT(VALID_INT32(L05));
 
@@ -150,12 +150,12 @@ PRIVATE void float_dct2_8(float * RESTRICT out, OI_INT32 const *RESTRICT in)
     FLOAT_BUTTERFLY(L07, L05);
 
     FLOAT_BUTTERFLY(L05, L04);
-    out[3] = (float)(FLOAT_SCALE(L04, DCTII_8_SHIFT_3-1)); OI_ASSERT(VALID_INT16(out[3]));
-    out[5] = (float)(FLOAT_SCALE(L05, DCTII_8_SHIFT_5-1)); OI_ASSERT(VALID_INT16(out[5]));
+    out[3] = (float)(FLOAT_SCALE(L04, DCTII_8_SHIFT_3 - 1)); OI_ASSERT(VALID_INT16(out[3]));
+    out[5] = (float)(FLOAT_SCALE(L05, DCTII_8_SHIFT_5 - 1)); OI_ASSERT(VALID_INT16(out[5]));
 
     FLOAT_BUTTERFLY(L07, L06);
-    out[7] = (float)(FLOAT_SCALE(L06, DCTII_8_SHIFT_7-1)); OI_ASSERT(VALID_INT16(out[7]));
-    out[1] = (float)(FLOAT_SCALE(L07, DCTII_8_SHIFT_1-1)); OI_ASSERT(VALID_INT16(out[1]));
+    out[7] = (float)(FLOAT_SCALE(L06, DCTII_8_SHIFT_7 - 1)); OI_ASSERT(VALID_INT16(out[7]));
+    out[1] = (float)(FLOAT_SCALE(L07, DCTII_8_SHIFT_1 - 1)); OI_ASSERT(VALID_INT16(out[1]));
 }
 #undef BUTTERFLY
 #endif
@@ -206,16 +206,16 @@ PRIVATE void float_dct2_8(float * RESTRICT out, OI_INT32 const *RESTRICT in)
  * [ 0  0  0  0  0  0  1  2 ]
  *
  */
-PRIVATE void dct2_8(SBC_BUFFER_T * RESTRICT out, OI_INT32 const *RESTRICT in)
+PRIVATE void dct2_8(SBC_BUFFER_T *RESTRICT out, OI_INT32 const *RESTRICT in)
 {
 #define BUTTERFLY(x,y) x += y; y = x - (y<<1);
 #define FIX_MULT_DCT(K, x) (MUL_32S_32S_HI(K,x)<<2)
 
-    OI_INT32 L00,L01,L02,L03,L04,L05,L06,L07;
+    OI_INT32 L00, L01, L02, L03, L04, L05, L06, L07;
     OI_INT32 L25;
 
-    OI_INT32 in0,in1,in2,in3;
-    OI_INT32 in4,in5,in6,in7;
+    OI_INT32 in0, in1, in2, in3;
+    OI_INT32 in4, in5, in6, in7;
 
 #if DCTII_8_SHIFT_IN != 0
     in0 = SCALE(in[0], DCTII_8_SHIFT_IN);
@@ -267,10 +267,10 @@ PRIVATE void dct2_8(SBC_BUFFER_T * RESTRICT out, OI_INT32 const *RESTRICT in)
     L05 += L06;
     L06 += L07;
 
-    L04/=2;
-    L05/=2;
-    L06/=2;
-    L07/=2;
+    L04 /= 2;
+    L05 /= 2;
+    L06 /= 2;
+    L07 /= 2;
 
     L05 = FIX_MULT_DCT(AAN_C4_FIX, L05);
 
@@ -286,12 +286,12 @@ PRIVATE void dct2_8(SBC_BUFFER_T * RESTRICT out, OI_INT32 const *RESTRICT in)
     BUTTERFLY(L07, L05);
 
     BUTTERFLY(L05, L04);
-    out[3] = (OI_INT16)SCALE(L04, DCTII_8_SHIFT_3-1);
-    out[5] = (OI_INT16)SCALE(L05, DCTII_8_SHIFT_5-1);
+    out[3] = (OI_INT16)SCALE(L04, DCTII_8_SHIFT_3 - 1);
+    out[5] = (OI_INT16)SCALE(L05, DCTII_8_SHIFT_5 - 1);
 
     BUTTERFLY(L07, L06);
-    out[7] = (OI_INT16)SCALE(L06, DCTII_8_SHIFT_7-1);
-    out[1] = (OI_INT16)SCALE(L07, DCTII_8_SHIFT_1-1);
+    out[7] = (OI_INT16)SCALE(L06, DCTII_8_SHIFT_7 - 1);
+    out[1] = (OI_INT16)SCALE(L07, DCTII_8_SHIFT_1 - 1);
 #undef BUTTERFLY
 
 #ifdef DEBUG_DCT

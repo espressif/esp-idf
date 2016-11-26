@@ -162,27 +162,27 @@ The output samples X[0..7] are defined as sums of W:
 #include "oi_codec_sbc_private.h"
 
 const OI_INT32 dec_window_4[21] = {
-           0,        /* +0.00000000E+00 */
-          97,        /* +5.36548976E-04 */
-         270,        /* +1.49188357E-03 */
-         495,        /* +2.73370904E-03 */
-         694,        /* +3.83720193E-03 */
-         704,        /* +3.89205149E-03 */
-         338,        /* +1.86581691E-03 */
-        -554,        /* -3.06012286E-03 */
-        1974,        /* +1.09137620E-02 */
-        3697,        /* +2.04385087E-02 */
-        5224,        /* +2.88757392E-02 */
-        5824,        /* +3.21939290E-02 */
-        4681,        /* +2.58767811E-02 */
-        1109,        /* +6.13245186E-03 */
-       -5214,        /* -2.88217274E-02 */
-      -14047,        /* -7.76463494E-02 */
-       24529,        /* +1.35593274E-01 */
-       35274,        /* +1.94987841E-01 */
-       44618,        /* +2.46636662E-01 */
-       50984,        /* +2.81828203E-01 */
-       53243,        /* +2.94315332E-01 */
+    0,        /* +0.00000000E+00 */
+    97,        /* +5.36548976E-04 */
+    270,        /* +1.49188357E-03 */
+    495,        /* +2.73370904E-03 */
+    694,        /* +3.83720193E-03 */
+    704,        /* +3.89205149E-03 */
+    338,        /* +1.86581691E-03 */
+    -554,        /* -3.06012286E-03 */
+    1974,        /* +1.09137620E-02 */
+    3697,        /* +2.04385087E-02 */
+    5224,        /* +2.88757392E-02 */
+    5824,        /* +3.21939290E-02 */
+    4681,        /* +2.58767811E-02 */
+    1109,        /* +6.13245186E-03 */
+    -5214,        /* -2.88217274E-02 */
+    -14047,        /* -7.76463494E-02 */
+    24529,        /* +1.35593274E-01 */
+    35274,        /* +1.94987841E-01 */
+    44618,        /* +2.46636662E-01 */
+    50984,        /* +2.81828203E-01 */
+    53243,        /* +2.94315332E-01 */
 };
 
 #define DCTII_4_K06_FIX ( 11585)/* S1.14      11585   0.707107*/
@@ -218,7 +218,7 @@ INLINE OI_INT32 default_mul_16s_32s_hi(OI_INT16 u, OI_INT32 v)
     OI_UINT16 v0;
     OI_INT16 v1;
 
-    OI_INT32 w,x;
+    OI_INT32 w, x;
 
     v0 = (OI_UINT16)(v & 0xffff);
     v1 = (OI_INT16) (v >> 16);
@@ -233,9 +233,9 @@ INLINE OI_INT32 default_mul_16s_32s_hi(OI_INT16 u, OI_INT32 v)
 
 #define LONG_MULT_DCT(K, sample) (MUL_16S_32S_HI(K, sample)<<2)
 
-PRIVATE void SynthWindow80_generated(OI_INT16 *pcm, SBC_BUFFER_T const * RESTRICT buffer, OI_UINT strideShift);
-PRIVATE void SynthWindow112_generated(OI_INT16 *pcm, SBC_BUFFER_T const * RESTRICT buffer, OI_UINT strideShift);
-PRIVATE void dct2_8(SBC_BUFFER_T * RESTRICT out, OI_INT32 const * RESTRICT x);
+PRIVATE void SynthWindow80_generated(OI_INT16 *pcm, SBC_BUFFER_T const *RESTRICT buffer, OI_UINT strideShift);
+PRIVATE void SynthWindow112_generated(OI_INT16 *pcm, SBC_BUFFER_T const *RESTRICT buffer, OI_UINT strideShift);
+PRIVATE void dct2_8(SBC_BUFFER_T *RESTRICT out, OI_INT32 const *RESTRICT x);
 
 typedef void (*SYNTH_FRAME)(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_INT16 *pcm, OI_UINT blkstart, OI_UINT blkcount);
 
@@ -273,7 +273,7 @@ PRIVATE void OI_SBC_SynthFrame_80(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_INT1
             }
             offset = context->common.filterBufferLen - 80;
         } else {
-            offset -= 1*8;
+            offset -= 1 * 8;
         }
 
         for (ch = 0; ch < nrof_channels; ch++) {
@@ -298,19 +298,19 @@ PRIVATE void OI_SBC_SynthFrame_4SB(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_INT
 
     for (blk = blkstart; blk < blkstop; blk++) {
         if (offset == 0) {
-            COPY_BACKWARD_32BIT_ALIGNED_72_HALFWORDS(context->common.filterBuffer[0] + context->common.filterBufferLen - 72,context->common.filterBuffer[0]);
+            COPY_BACKWARD_32BIT_ALIGNED_72_HALFWORDS(context->common.filterBuffer[0] + context->common.filterBufferLen - 72, context->common.filterBuffer[0]);
             if (nrof_channels == 2) {
-                COPY_BACKWARD_32BIT_ALIGNED_72_HALFWORDS(context->common.filterBuffer[1] + context->common.filterBufferLen - 72,context->common.filterBuffer[1]);
+                COPY_BACKWARD_32BIT_ALIGNED_72_HALFWORDS(context->common.filterBuffer[1] + context->common.filterBufferLen - 72, context->common.filterBuffer[1]);
             }
-            offset =context->common.filterBufferLen - 80;
+            offset = context->common.filterBufferLen - 80;
         } else {
             offset -= 8;
         }
         for (ch = 0; ch < nrof_channels; ch++) {
             cosineModulateSynth4(context->common.filterBuffer[ch] + offset, s);
             SynthWindow40_int32_int32_symmetry_with_sum(pcm + ch,
-                                                        context->common.filterBuffer[ch] + offset,
-                                                        pcmStrideShift);
+                    context->common.filterBuffer[ch] + offset,
+                    pcmStrideShift);
             s += 4;
         }
         pcm += (4 << pcmStrideShift);
@@ -332,7 +332,7 @@ PRIVATE void OI_SBC_SynthFrame_Enhanced(OI_CODEC_SBC_DECODER_CONTEXT *context, O
 
     for (blk = blkstart; blk < blkstop; blk++) {
         if (offset == 0) {
-            COPY_BACKWARD_32BIT_ALIGNED_104_HALFWORDS(context->common.filterBuffer[0] +context->common.filterBufferLen - 104, context->common.filterBuffer[0]);
+            COPY_BACKWARD_32BIT_ALIGNED_104_HALFWORDS(context->common.filterBuffer[0] + context->common.filterBufferLen - 104, context->common.filterBuffer[0]);
             if (nrof_channels == 2) {
                 COPY_BACKWARD_32BIT_ALIGNED_104_HALFWORDS(context->common.filterBuffer[1] + context->common.filterBufferLen - 104, context->common.filterBuffer[1]);
             }
@@ -383,7 +383,7 @@ PRIVATE void OI_SBC_SynthFrame(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_INT16 *
     } else if (context->common.frameInfo.enhanced) {
         SynthFrameEnhanced[nrof_channels](context, pcm, start_block, nrof_blocks);
 #endif /* SBC_ENHANCED */
-        } else {
+    } else {
         SynthFrame8SB[nrof_channels](context, pcm, start_block, nrof_blocks);
     }
 }
@@ -472,7 +472,7 @@ void SynthWindow40_int32_int32_symmetry_with_sum(OI_INT16 *pcm, SBC_BUFFER_T buf
   algebra system, manually converted to fixed-point arithmetic. S4 can be
   implemented using only assignment and negation.
   */
-PRIVATE void cosineModulateSynth4(SBC_BUFFER_T * RESTRICT out, OI_INT32 const * RESTRICT in)
+PRIVATE void cosineModulateSynth4(SBC_BUFFER_T *RESTRICT out, OI_INT32 const *RESTRICT in)
 {
     OI_INT32 f0, f1, f2, f3, f4, f7, f8, f9, f10;
     OI_INT32 y0, y1, y2, y3;
@@ -493,8 +493,8 @@ PRIVATE void cosineModulateSynth4(SBC_BUFFER_T * RESTRICT out, OI_INT32 const * 
     y3 = -SCALE(f8 + f9, DCT_SHIFT);
     y1 = -SCALE(f10 - f9, DCT_SHIFT);
 
-    out[0] = (OI_INT16)-y2;
-    out[1] = (OI_INT16)-y3;
+    out[0] = (OI_INT16) - y2;
+    out[1] = (OI_INT16) - y3;
     out[2] = (OI_INT16)0;
     out[3] = (OI_INT16)y3;
     out[4] = (OI_INT16)y2;

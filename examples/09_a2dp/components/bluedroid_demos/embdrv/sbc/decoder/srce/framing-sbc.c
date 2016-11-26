@@ -30,11 +30,11 @@
 
 #include "oi_codec_sbc_private.h"
 
-const OI_CHAR* const OI_CODEC_SBC_FreqText[] =     { "SBC_FREQ_16000", "SBC_FREQ_32000", "SBC_FREQ_44100", "SBC_FREQ_48000" };
-const OI_CHAR* const OI_CODEC_SBC_ModeText[] =     { "SBC_MONO", "SBC_DUAL_CHANNEL", "SBC_STEREO", "SBC_JOINT_STEREO" };
-const OI_CHAR* const OI_CODEC_SBC_SubbandsText[] = { "SBC_SUBBANDS_4", "SBC_SUBBANDS_8" };
-const OI_CHAR* const OI_CODEC_SBC_BlocksText[] =   { "SBC_BLOCKS_4", "SBC_BLOCKS_8", "SBC_BLOCKS_12", "SBC_BLOCKS_16" };
-const OI_CHAR* const OI_CODEC_SBC_AllocText[] =    { "SBC_LOUDNESS", "SBC_SNR" };
+const OI_CHAR *const OI_CODEC_SBC_FreqText[] =     { "SBC_FREQ_16000", "SBC_FREQ_32000", "SBC_FREQ_44100", "SBC_FREQ_48000" };
+const OI_CHAR *const OI_CODEC_SBC_ModeText[] =     { "SBC_MONO", "SBC_DUAL_CHANNEL", "SBC_STEREO", "SBC_JOINT_STEREO" };
+const OI_CHAR *const OI_CODEC_SBC_SubbandsText[] = { "SBC_SUBBANDS_4", "SBC_SUBBANDS_8" };
+const OI_CHAR *const OI_CODEC_SBC_BlocksText[] =   { "SBC_BLOCKS_4", "SBC_BLOCKS_8", "SBC_BLOCKS_12", "SBC_BLOCKS_16" };
+const OI_CHAR *const OI_CODEC_SBC_AllocText[] =    { "SBC_LOUDNESS", "SBC_SNR" };
 
 #ifdef OI_DEBUG
 void OI_CODEC_SBC_DumpConfig(OI_CODEC_SBC_FRAME_INFO *frameInfo)

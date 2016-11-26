@@ -73,7 +73,7 @@
 /******************************************************************************
 **  Externs
 ******************************************************************************/
-extern bt_status_t btif_sdp_execute_service(BOOLEAN b_enable);
+// extern bt_status_t btif_sdp_execute_service(BOOLEAN b_enable);
 extern bt_status_t btif_av_execute_service(BOOLEAN b_enable);
 extern bt_status_t btif_av_sink_execute_service(BOOLEAN b_enable);
 /******************************************************************************
@@ -82,11 +82,12 @@ extern bt_status_t btif_av_sink_execute_service(BOOLEAN b_enable);
 
 static void btif_dm_data_copy(uint16_t event, char *dst, char *src)
 {
-    tBTA_DM_SEC *dst_dm_sec = (tBTA_DM_SEC*)dst;
-    tBTA_DM_SEC *src_dm_sec = (tBTA_DM_SEC*)src;
+    tBTA_DM_SEC *dst_dm_sec = (tBTA_DM_SEC *)dst;
+    tBTA_DM_SEC *src_dm_sec = (tBTA_DM_SEC *)src;
 
-    if (!src_dm_sec)
+    if (!src_dm_sec) {
         return;
+    }
 
     assert(dst_dm_sec);
     memcpy(dst_dm_sec, src_dm_sec, sizeof(tBTA_DM_SEC));
@@ -107,14 +108,11 @@ static void btif_dm_data_free(uint16_t event, tBTA_DM_SEC *dm_sec)
 }
 
 bt_status_t btif_in_execute_service_request(tBTA_SERVICE_ID service_id,
-                                                BOOLEAN b_enable)
+        BOOLEAN b_enable)
 {
     BTIF_TRACE_DEBUG("%s service_id: %d\n", __FUNCTION__, service_id);
     /* Check the service_ID and invoke the profile's BT state changed API */
     switch (service_id) {
-    case BTA_SDP_SERVICE_ID:
-        btif_sdp_execute_service(b_enable);
-        break;
     case BTA_A2DP_SOURCE_SERVICE_ID:
         btif_av_execute_service(b_enable);
         break;
@@ -135,7 +133,7 @@ void btif_dm_execute_service_request(UINT16 event, char *p_param)
         b_enable = TRUE;
     }
 
-    btif_in_execute_service_request(*((tBTA_SERVICE_ID*)p_param), b_enable);
+    btif_in_execute_service_request(*((tBTA_SERVICE_ID *)p_param), b_enable);
 }
 
 /*******************************************************************************
@@ -147,9 +145,9 @@ void btif_dm_execute_service_request(UINT16 event, char *p_param)
 ** Returns          void
 **
 *******************************************************************************/
-static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
+static void btif_dm_upstreams_evt(UINT16 event, char *p_param)
 {
-    tBTA_DM_SEC *p_data = (tBTA_DM_SEC*)p_param;
+    tBTA_DM_SEC *p_data = (tBTA_DM_SEC *)p_param;
     tBTA_SERVICE_MASK service_mask;
     uint32_t i;
     BTIF_TRACE_EVENT("btif_dm_upstreams_cback  ev: %d\n", event);
@@ -159,9 +157,9 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
         /* for each of the enabled services in the mask, trigger the profile
          * enable */
         service_mask = btif_get_enabled_services_mask();
-        for (i=0; i <= BTA_MAX_SERVICE_ID; i++) {
+        for (i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
             if (service_mask &
-                (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
+                    (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
                 btif_in_execute_service_request(i, TRUE);
             }
         }
@@ -171,9 +169,9 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
         /* for each of the enabled services in the mask, trigger the profile
          * disable */
         service_mask = btif_get_enabled_services_mask();
-        for (i=0; i <= BTA_MAX_SERVICE_ID; i++) {
+        for (i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
             if (service_mask &
-                (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
+                    (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
                 btif_in_execute_service_request(i, FALSE);
             }
         }
@@ -233,7 +231,7 @@ void bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data)
 {
     /* switch context to btif task context (copy full union size for convenience) */
     bt_status_t status = btif_transfer_context(btif_dm_upstreams_evt, (uint16_t)event,
-                                (void*)p_data, sizeof(tBTA_DM_SEC), btif_dm_data_copy);
+                         (void *)p_data, sizeof(tBTA_DM_SEC), btif_dm_data_copy);
 
     /* catch any failed context transfers */
     ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed\n", status);

@@ -44,7 +44,7 @@ extern "C" {
     does not evaluate to true, the OI_ASSERT macro calls the host-dependent function,
     OI_AssertFail(), which reports the failure and generates a runtime error.
 */
-void OI_AssertFail(char* file, int line, char* reason);
+void OI_AssertFail(char *file, int line, char *reason);
 
 
 #define OI_ASSERT(condition) \

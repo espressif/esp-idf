@@ -54,7 +54,7 @@ extern "C" {
 typedef enum {
     /* profiles and protocols  --> Updates to oi_debug.c and oi_config_table.c */
 
-                                /*   XX --> Keep Enum values up-to-date! */
+    /*   XX --> Keep Enum values up-to-date! */
     OI_MODULE_AT,               /**< 00 AT command processing */
     OI_MODULE_A2DP,             /**< 01 Advanced Audio Distribution Profile */
     OI_MODULE_AVCTP,            /**< 02 Audio-Visual Control Transport Profile */

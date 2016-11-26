@@ -41,7 +41,7 @@
 ******************************************************************************/
 typedef UINT32 btif_sm_state_t;
 typedef UINT32 btif_sm_event_t;
-typedef void* btif_sm_handle_t;
+typedef void *btif_sm_handle_t;
 typedef BOOLEAN(*btif_sm_handler_t)(btif_sm_event_t event, void *data);
 
 
@@ -65,7 +65,7 @@ typedef BOOLEAN(*btif_sm_handler_t)(btif_sm_event_t event, void *data);
 **
 ******************************************************************************/
 btif_sm_handle_t btif_sm_init(const btif_sm_handler_t *p_handlers,
-                               btif_sm_state_t initial_state);
+                              btif_sm_state_t initial_state);
 
 /*****************************************************************************
 **
@@ -99,7 +99,7 @@ btif_sm_state_t btif_sm_get_state(btif_sm_handle_t handle);
 **
 ******************************************************************************/
 bt_status_t btif_sm_dispatch(btif_sm_handle_t handle, btif_sm_event_t event,
-                                void *data);
+                             void *data);
 
 /*****************************************************************************
 **
