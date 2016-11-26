@@ -515,7 +515,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                 switch(i % 3) {
                     //TX END
                     case 0:
-                        ESP_EARLY_LOGD(RMT_TAG, "RMT INTR : TX END\n");
+                        ESP_EARLY_LOGD(RMT_TAG, "RMT INTR : TX END");
                         xSemaphoreGiveFromISR(p_rmt->tx_sem, &HPTaskAwoken);
                         if(HPTaskAwoken == pdTRUE) {
                             portYIELD_FROM_ISR();
