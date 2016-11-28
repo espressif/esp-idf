@@ -113,11 +113,14 @@ void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_
  * value that is read is the SHA digest (in big endian
  * format). Otherwise, the value that is read is an interim SHA state.
  *
+ * @note If sha_type is SHA2_384, only 48 bytes of state will be read.
+ * This is enough for the final SHA2_384 digest, but if you want the
+ * interim SHA-384 state (to continue digesting) then pass SHA2_512 instead.
+ *
  * @param sha_type SHA algorithm in use.
  *
  * @param state Pointer to a memory buffer to hold the SHA state. Size
- * is 20 bytes (SHA1), 64 bytes (SHA2_256), or 128 bytes (SHA2_384 or
- * SHA2_512).
+ * is 20 bytes (SHA1), 32 bytes (SHA2_256), 48 bytes (SHA2_384) or 64 bytes (SHA2_512).
  *
  */
 void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state);
