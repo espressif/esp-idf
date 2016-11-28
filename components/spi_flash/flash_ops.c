@@ -132,34 +132,90 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dest_addr, const void *src, size_t si
     // Destination alignment is also checked in ROM code, but we can give
     // better error code here
     // TODO: add handling of unaligned destinations
-    if (dest_addr % 4 != 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (size % 4 != 0) {
-        return ESP_ERR_INVALID_SIZE;
-    }
-    if ((uint32_t) src < 0x3ff00000) {
-        // if source address is in DROM, we won't be able to read it
-        // from within SPIWrite
-        // TODO: consider buffering source data using heap and writing it anyway?
-        return ESP_ERR_INVALID_ARG;
-    }
+    uint8_t *temp_write_buf = NULL;
+    uint8_t pad_head = 0;
+    uint8_t pad_end = 0;
+    SpiFlashOpResult rc;
     // Out of bound writes are checked in ROM code, but we can give better
     // error code here
     if (dest_addr + size > g_rom_flashchip.chip_size) {
         return ESP_ERR_INVALID_SIZE;
     }
-    COUNTER_START();
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc;
-    rc = spi_flash_unlock();
-    if (rc == SPI_FLASH_RESULT_OK) {
-        rc = SPIWrite((uint32_t) dest_addr, (const uint32_t*) src, (int32_t) size);
-        COUNTER_ADD_BYTES(write, size);
+
+    while(size >= 1024) {
+        // max need pad byte num for 1024 is 4
+        temp_write_buf = (uint8_t*)malloc(1024 + 4);
+        if(temp_write_buf == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+
+        if(dest_addr%4 != 0) {
+            pad_head = dest_addr%4;
+            pad_end = 4 - pad_head;
+        }
+        memset(temp_write_buf,0xFF,pad_head);
+        memcpy(temp_write_buf + pad_head ,src,1024);
+        memset(temp_write_buf + pad_head + 1024, 0xFF,pad_end);
+        COUNTER_START();
+        spi_flash_disable_interrupts_caches_and_other_cpu();
+        rc = spi_flash_unlock();
+        if (rc == SPI_FLASH_RESULT_OK) {
+            rc = SPIWrite((uint32_t) (dest_addr - pad_head), (const uint32_t*) temp_write_buf, (int32_t) (1024 + pad_head + pad_end));
+            COUNTER_ADD_BYTES(write, 1024 + pad_head + pad_end);
+        }
+        COUNTER_STOP(write);
+        spi_flash_enable_interrupts_caches_and_other_cpu();  
+        if(rc != ESP_OK) {
+            free(temp_write_buf);
+            temp_write_buf = NULL;
+            return spi_flash_translate_rc(rc);
+        }
+
+        free(temp_write_buf);
+        temp_write_buf = NULL;
+        size -= 1024;
+        dest_addr += 1024;
+        src = (uint8_t*)src + 1024;
     }
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    COUNTER_STOP(write);
-    return spi_flash_translate_rc(rc);
+    if(size > 0) {
+        // max need pad byte num for rand size is 6
+        temp_write_buf = (uint8_t*)malloc(size + 6);
+        if(temp_write_buf == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+        if(dest_addr%4 != 0) {
+            pad_head = dest_addr%4;
+        }
+        if ((pad_head + size)%4 != 0){
+            pad_end = 4 - (pad_head + size) % 4;  
+        }
+        memset(temp_write_buf,0xFF,pad_head);
+        memcpy(temp_write_buf + pad_head, src, size);
+        memset(temp_write_buf + pad_head + size, 0xFF,pad_end);
+        COUNTER_START();
+        spi_flash_disable_interrupts_caches_and_other_cpu();
+        rc = spi_flash_unlock();
+        if (rc == SPI_FLASH_RESULT_OK) {
+            rc = SPIWrite((uint32_t) (dest_addr - pad_head), (const uint32_t*) temp_write_buf, (int32_t) (size + pad_head + pad_end));
+            COUNTER_ADD_BYTES(write, size + pad_head + pad_end);
+        }
+        COUNTER_STOP(write);
+        spi_flash_enable_interrupts_caches_and_other_cpu();
+        if(rc != ESP_OK) {
+            free(temp_write_buf);
+            temp_write_buf = NULL;
+            return spi_flash_translate_rc(rc);
+        }
+
+        free(temp_write_buf);
+        temp_write_buf = NULL;
+        size = 0;
+        dest_addr += size;
+        src = (uint8_t*)src + size;
+        return spi_flash_translate_rc(rc);
+    } 
+    return spi_flash_translate_rc(SPI_FLASH_RESULT_OK);
+
 }
 
 esp_err_t IRAM_ATTR spi_flash_read(size_t src_addr, void *dest, size_t size)
