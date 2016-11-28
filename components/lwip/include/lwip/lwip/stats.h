@@ -213,6 +213,23 @@ struct stats_mib2_netif_ctrs {
   u32_t ifouterrors;
 };
 
+struct stats_esp {
+    /* mbox post fail stats */
+    u32_t  rx_rawmbox_post_fail;
+    u32_t  rx_udpmbox_post_fail;
+    u32_t  rx_tcpmbox_post_fail;
+    u32_t  err_tcp_rxmbox_post_fail;
+    u32_t  err_tcp_acceptmbox_post_fail;
+    u32_t  acceptmbox_post_fail;
+    u32_t  free_mbox_post_fail;
+    u32_t  tcpip_inpkt_post_fail;
+    u32_t  tcpip_cb_post_fail;
+
+    /* memory malloc/free/failed stats */
+    u32_t  wlanif_input_pbuf_fail;
+    u32_t  wlanif_outut_pbuf_fail;
+};
+
 struct stats_ {
 #if LINK_STATS
   struct stats_proto link;
@@ -264,6 +281,9 @@ struct stats_ {
 #endif
 #if MIB2_STATS
   struct stats_mib2 mib2;
+#endif
+#if ESP_STATS
+  struct stats_esp esp;
 #endif
 };
 
@@ -438,6 +458,14 @@ void stats_init(void);
 #define MIB2_STATS_INC(x)
 #endif
 
+#if ESP_STATS
+#define ESP_STATS_INC(x) STATS_INC(x)
+#define ESP_STATS_DISPLAY() stats_display_esp(&lwip_stats.esp);
+#else
+#define ESP_STATS_INC(x)
+#define ESP_STATS_DISPLAY()
+#endif
+
 /* Display of statistics */
 #if LWIP_STATS_DISPLAY
 void stats_display(void);
@@ -446,6 +474,7 @@ void stats_display_igmp(struct stats_igmp *igmp, const char *name);
 void stats_display_mem(struct stats_mem *mem, const char *name);
 void stats_display_memp(struct stats_mem *mem, int index);
 void stats_display_sys(struct stats_sys *sys);
+void stats_display_esp(struct stats_esp *esp);
 #else /* LWIP_STATS_DISPLAY */
 #define stats_display()
 #define stats_display_proto(proto, name)
@@ -453,6 +482,7 @@ void stats_display_sys(struct stats_sys *sys);
 #define stats_display_mem(mem, name)
 #define stats_display_memp(mem, index)
 #define stats_display_sys(sys)
+#define stats_display_esp(esp)
 #endif /* LWIP_STATS_DISPLAY */
 
 #ifdef __cplusplus

@@ -18,6 +18,7 @@
 #include "lwip/tcp.h"
 #include "lwip/udp.h"
 #include "lwip/priv/tcp_priv.h"
+#include "lwip/stats.h"
 #include "lwip/priv/memp_priv.h"
 #include "lwip/memp.h"
 
@@ -127,6 +128,26 @@ void dbg_lwip_tcp_rxtx_show(void)
 void dbg_lwip_udp_rxtx_show(void)
 {
     printf("TBC\n");
+}
+
+void dbg_lwip_stats_show(void)
+{
+    TCP_STATS_DISPLAY();
+    UDP_STATS_DISPLAY();
+    ICMP_STATS_DISPLAY();
+    IGMP_STATS_DISPLAY();
+    IP_STATS_DISPLAY();
+    IPFRAG_STATS_DISPLAY();
+    ETHARP_STATS_DISPLAY();
+    LINK_STATS_DISPLAY();
+    MEM_STATS_DISPLAY();
+    SYS_STATS_DISPLAY();
+    IP6_STATS_DISPLAY();
+    ICMP6_STATS_DISPLAY();
+    IP6_FRAG_STATS_DISPLAY();
+    MLD6_STATS_DISPLAY();
+    ND6_STATS_DISPLAY();
+    ESP_STATS_DISPLAY();
 }
 
 #if (ESP_CNT_DEBUG == 1)

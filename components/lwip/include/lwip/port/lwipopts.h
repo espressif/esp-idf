@@ -379,22 +379,21 @@
  * The queue size value itself is platform-dependent, but is passed to
  * sys_mbox_new() when tcpip_init is called.
  */
-#define TCPIP_MBOX_SIZE                 16
+#define TCPIP_MBOX_SIZE                 32
 
 /**
  * DEFAULT_UDP_RECVMBOX_SIZE: The mailbox size for the incoming packets on a
  * NETCONN_UDP. The queue size value itself is platform-dependent, but is passed
  * to sys_mbox_new() when the recvmbox is created.
  */
-#define DEFAULT_UDP_RECVMBOX_SIZE       16
+#define DEFAULT_UDP_RECVMBOX_SIZE       6
 
 /**
  * DEFAULT_TCP_RECVMBOX_SIZE: The mailbox size for the incoming packets on a
  * NETCONN_TCP. The queue size value itself is platform-dependent, but is passed
  * to sys_mbox_new() when the recvmbox is created.
  */
-#define DEFAULT_TCP_RECVMBOX_SIZE       16
-//#define DEFAULT_TCP_RECVMBOX_SIZE       6
+#define DEFAULT_TCP_RECVMBOX_SIZE       6
 
 /**
  * DEFAULT_ACCEPTMBOX_SIZE: The mailbox size for the incoming connections.
@@ -466,7 +465,7 @@
 /**
  * LWIP_STATS==1: Enable statistics collection in lwip_stats.
  */
-#define LWIP_STATS                      0
+#define LWIP_STATS                      1
 
 /*
    ---------------------------------
@@ -556,6 +555,29 @@
  */
 #define TCPIP_DEBUG                     LWIP_DBG_OFF
 
+/**
+ * statistic debugs
+ */
+#define TCP_STATS                       LWIP_DBG_ON
+#define UDP_STATS                       LWIP_DBG_ON
+#define ICMP_STATS                      LWIP_DBG_ON
+#define IGMP_STATS                      LWIP_DBG_ON
+#define IP_STATS                        LWIP_DBG_ON
+#define IPFRAG_STATS                    LWIP_DBG_ON
+#define ETHARP_STATS                    LWIP_DBG_ON
+#define LINK_STATS                      LWIP_DBG_ON
+#define MEM_STATS                       LWIP_DBG_ON
+#define MEMM_STATS                      LWIP_DBG_ON
+#define SYS_STATS                       LWIP_DBG_ON
+#define IP6_STATS                       LWIP_DBG_ON
+#define IP6_FRAG_STATS                  LWIP_DBG_ON
+#define ICMP6_STATS                     LWIP_DBG_ON
+#define MLD6_STATS                      LWIP_DBG_ON
+#define ND6_STATS                       LWIP_DBG_ON
+#define MIB2_STATS                      LWIP_DBG_ON
+#define ESP_STATS                       LWIP_DBG_ON
+#define LWIP_STATS_DISPLAY              LWIP_DBG_ON
+
 /* Enable all Espressif-only options */
 
 #define ESP_LWIP                        1
@@ -572,9 +594,10 @@
 #define ESP_LIGHT_SLEEP                 1
 #define ESP_L2_TO_L3_COPY               CONFIG_L2_TO_L3_COPY
 #define ESP_CNT_DEBUG                   0
+#define ESP_DUAL_CORE                   0
 
-#define TCP_WND_DEFAULT                      (4*TCP_MSS)
-#define TCP_SND_BUF_DEFAULT                  (2*TCP_MSS)
+#define TCP_WND_DEFAULT                      (10*TCP_MSS)
+#define TCP_SND_BUF_DEFAULT                  (5*TCP_MSS)
 
 #if ESP_PER_SOC_TCP_WND
 #define TCP_WND(pcb)                         (pcb->per_soc_tcp_wnd)
