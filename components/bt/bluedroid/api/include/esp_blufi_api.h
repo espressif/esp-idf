@@ -79,7 +79,7 @@ esp_err_t esp_blufi_register_callback(esp_profile_cb_t callback);
 **
 ** @brief           This function is called to send config state to phone
 **
-** @param[in]       state: blufi config ok or not
+** @param[in]       state: blufi config OK or not
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -90,7 +90,7 @@ esp_err_t esp_blufi_send_config_state(esp_blufi_config_state_t state);
 **
 ** @function        esp_blufi_profile_init
 **
-** @brief           This function is called to init blufi_profile
+** @brief           This function is called to initialize blufi_profile
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -101,7 +101,7 @@ esp_err_t esp_blufi_profile_init(void);
 **
 ** @function        esp_blufi_profile_deinit
 **
-** @brief           This function is called to init blufi_profile
+** @brief           This function is called to de-initialize blufi_profile
 **
 ** @return          ESP_OK - success, other - failed
 **

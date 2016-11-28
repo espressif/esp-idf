@@ -109,16 +109,16 @@ typedef struct {
 typedef struct {
     bool                    set_scan_rsp;			/*!< Set this advertising data as scan response or not*/
     bool                    include_name;			/*!< Advertising data include device name or not */
-    bool                    include_txpower;		/*!< Advertising data include tx power */
-    int                     min_interval;			/*!< Advertising data show advertising min internval */
-    int                     max_interval;			/*!< Advertising data show advertising max internval */
-    int                     appearance;				/*!< Extenal appearance of device */
+    bool                    include_txpower;		/*!< Advertising data include TX power */
+    int                     min_interval;			/*!< Advertising data show advertising min interval */
+    int                     max_interval;			/*!< Advertising data show advertising max interval */
+    int                     appearance;				/*!< External appearance of device */
     uint16_t                manufacturer_len;		/*!< Manufacturer data length */
     uint8_t                 *p_manufacturer_data;	/*!< Manufacturer data point */
     uint16_t                service_data_len;		/*!< Service data length */
     uint8_t                 *p_service_data;		/*!< Service data point */
     uint16_t                service_uuid_len;		/*!< Service uuid length */
-    uint8_t                 *p_service_uuid;		/*!< Service uuid arrary point */
+    uint8_t                 *p_service_uuid;		/*!< Service uuid array point */
     uint8_t                 flag;					/*!< Advertising flag of discovery mode */
 } esp_ble_adv_data_t;
 
@@ -196,7 +196,7 @@ typedef enum {
     ESP_GAP_SEARCH_INQ_RES_EVT             = 0,      /* Inquiry result for a peer device. */
     ESP_GAP_SEARCH_INQ_CMPL_EVT            = 1,      /* Inquiry complete. */
     ESP_GAP_SEARCH_DISC_RES_EVT            = 2,      /* Discovery result for a peer device. */
-    ESP_GAP_SEARCH_DISC_BLE_RES_EVT        = 3,      /* Discovery result for BLE GATT based servoce on a peer device. */
+    ESP_GAP_SEARCH_DISC_BLE_RES_EVT        = 3,      /* Discovery result for BLE GATT based service on a peer device. */
     ESP_GAP_SEARCH_DISC_CMPL_EVT           = 4,      /* Discovery complete. */
     ESP_GAP_SEARCH_DI_DISC_CMPL_EVT        = 5,      /* Discovery complete. */
     ESP_GAP_SEARCH_SEARCH_CANCEL_CMPL_EVT  = 6,      /* Search cancelled */
@@ -218,10 +218,10 @@ typedef union {
     //ESP_GAP_BLE_SCAN_RESULT_EVT
     struct ble_scan_result_evt_param {
         esp_gap_search_evt_t search_evt;			/*!< Search event type */
-        esp_bd_addr_t bda;							/*!< BD address which has been searched */
+        esp_bd_addr_t bda;							/*!< Bluetooth device address which has been searched */
         esp_bt_dev_type_t dev_type;					/*!< Device type */
         esp_ble_addr_type_t ble_addr_type;			/*!< Ble device address type */
-        int rssi;									/*!< Searched device's rssi */
+        int rssi;									/*!< Searched device's RSSI */
         uint8_t  ble_adv[ESP_BLE_ADV_DATA_LEN_MAX]; /*!< Received EIR */
         int flag;									/*!< Advertising data flag bit */
         int num_resps;								/*!< Scan result number */
@@ -250,9 +250,8 @@ esp_err_t esp_ble_gap_register_callback(esp_profile_cb_t callback);
 ** @brief           This function is called to override the BTA default ADV parameters.
 **
 ** @param[in]       adv_data: Pointer to User defined ADV data structure. This
-**                  memory space can not be freed until p_adv_data_cback
+**                  memory space can not be freed until callback of config_adv_data
 **                  is received.
-** @param[in|out]   adv_data_cback: set adv data complete callback.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -268,7 +267,7 @@ esp_err_t esp_ble_gap_config_adv_data (esp_ble_adv_data_t *adv_data);
 ** @brief           This function is called to set scan parameters
 **
 ** @param[in]       esp_ble_scan_params: Pointer to User defined scan_params data structure. This
-**                  memory space can not be freed until scan_param_setup_cback
+**                  memory space can not be freed until callback of set_scan_params
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -280,9 +279,9 @@ esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params);
 **
 ** @function        esp_ble_gap_start_scanning
 **
-** @brief           This procedure keep the device scanning the peer device whith advertising on the air
+** @brief           This procedure keep the device scanning the peer device which advertising on the air
 **
-** @param[in]       duration: Keeping the scaning time, the unit is second.
+** @param[in]       duration: Keeping the scanning time, the unit is second.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -294,9 +293,9 @@ esp_err_t esp_ble_gap_start_scanning(uint32_t duration);
 **
 ** @function       esp_ble_gap_stop_scanning
 **
-** @brief            This function call to stop the device scanning the peer device whith advertising on the air
-** @param        void
-** @return          ESP_OK - success, other - failed
+** @brief          This function call to stop the device scanning the peer device which advertising on the air
+** @param          void
+** @return         ESP_OK - success, other - failed
 **
 *******************************************************************************/
 esp_err_t esp_ble_gap_stop_scanning(void);
@@ -307,7 +306,7 @@ esp_err_t esp_ble_gap_stop_scanning(void);
 **
 ** @brief           This function is called to start advertising.
 **
-** @param[in]       esp_ble_adv_params_all_t: ointer to User defined adv_params data structure.
+** @param[in]       esp_ble_adv_params_all_t: pointer to User defined adv_params data structure.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -337,7 +336,7 @@ esp_err_t esp_ble_gap_stop_advertising(void);
 **
 ** @brief           Update connection parameters, can only be used when connection is up.
 **
-** @param[in]       param   -  connection update params
+** @param[in]       param   -  connection update parameters
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -362,9 +361,9 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
 **
 ** @function        esp_ble_gap_set_rand_addr
 **
-** @brief           This function set the random address for the appliction
+** @brief           This function set the random address for the application
 **
-** @param[in]       rand_addr: the random address whith should be setting
+** @param[in]       rand_addr: the random address which should be setting
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -380,7 +379,7 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
 **
 ** @brief           Enable/disable privacy on the local device
 **
-** @param[in]       privacy_enable   - enable/disabe privacy on remote device.
+** @param[in]       privacy_enable   - enable/disable privacy on remote device.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -406,15 +405,15 @@ esp_err_t esp_ble_gap_set_device_name(const char *name);
 **
 ** @function        esp_ble_resolve_adv_data
 **
-** @brief             This function is called to get ADV data for a specific type.
+** @brief          This function is called to get ADV data for a specific type.
 **
-** @param[in]       p_adv - pointer of ADV data whitch to be resolved
+** @param[in]       adv_data - pointer of ADV data which to be resolved
 ** @param[in]       type   - finding ADV data type
-** @param[out]     p_length - return the length of ADV data not including type
+** @param[out]      length - return the length of ADV data not including type
 **
-** @return               pointer of ADV data
+** @return          pointer of ADV data
 **
 *******************************************************************************/
-uint8_t *esp_ble_resolve_adv_data(uint8_t *p_adv, uint8_t type, uint8_t *p_length);
+uint8_t *esp_ble_resolve_adv_data(uint8_t *adv_data, uint8_t type, uint8_t *p_length);
 
 #endif /* __ESP_GAP_BLE_API_H__ */

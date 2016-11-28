@@ -29,7 +29,7 @@
 #define ESP_GATTC_CLOSE_EVT                 5   /* GATTC  close request status event */
 #define ESP_GATTC_SEARCH_CMPL_EVT           6   /* GATT discovery complete event */
 #define ESP_GATTC_SEARCH_RES_EVT            7   /* GATT discovery result event */
-#define ESP_GATTC_READ_DESCR_EVT            8   /* GATT read characterisitc descriptor event */
+#define ESP_GATTC_READ_DESCR_EVT            8   /* GATT read characteristic descriptor event */
 #define ESP_GATTC_WRITE_DESCR_EVT           9   /* GATT write characteristic descriptor event */
 #define ESP_GATTC_NOTIFY_EVT                10  /* GATT attribute notification event */
 #define ESP_GATTC_PREP_WRITE_EVT            11  /* GATT prepare write  event */
@@ -213,7 +213,7 @@ typedef union {
 ** @brief           This function is called to register application callbacks
 **                  with GATTC module.
 **
-** @param[in]       callback - pointer to the application callback function.
+** @param[in]       callback : pointer to the application callback function.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -244,7 +244,7 @@ esp_err_t esp_ble_gattc_app_register(uint16_t app_id);
 ** @brief           This function is called to unregister an application
 **                  from GATTC module.
 **
-** @param[in]       gatt_if - app identifier.
+** @param[in]       gatt_if : app identifier.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -326,7 +326,7 @@ esp_err_t esp_ble_gattc_search_service(uint16_t conn_id, esp_bt_uuid_t *filter_u
 **
 ** @param[in]       conn_id: connection ID which identify the server.
 **
-** @param[in]       srvc_id: serivce ID
+** @param[in]       srvc_id: service ID
 **
 ** @param[in]       start_char_id:  the start characteristic ID
 **
@@ -348,7 +348,7 @@ esp_err_t esp_ble_gattc_get_characteristic(uint16_t conn_id,
 ** @param[in]       srvc_id: the service ID of which the characteristic is belonged to.
 ** @param[in]       char_id: Characteristic ID, if NULL find the first available
 **                  characteristic.
-** @param[in]       start_descr_id:  the sctart descriptor id
+** @param[in]       start_descr_id:  the start descriptor id
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -384,12 +384,12 @@ esp_err_t esp_ble_gattc_get_included_service(uint16_t conn_id,
 ** @function        esp_ble_gattc_read_char
 **
 ** @brief           This function is called to read a service's characteristics of
-**                  the given characteritisc ID.UTH_REQ_NO_SCATTERNET
+**                  the given characteriistic ID
 **
-** @param[in]       conn_id - connection ID.
-** @param[in]       srvc_id - service ID.
-** @param[in]       char_id - characteritic ID to read.
-** @param[in]       auth_req - authenticate request type
+** @param[in]       conn_id : connection ID.
+** @param[in]       srvc_id : service ID.
+** @param[in]       char_id : characteristic ID to read.
+** @param[in]       auth_req : authenticate request type
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -407,10 +407,10 @@ esp_err_t esp_ble_gattc_read_char (uint16_t conn_id,
 **
 ** @brief           This function is called to read a characteristics descriptor.
 **
-** @param[in]       conn_id - connection ID.
-** @param[in]       srvc_id - service ID.
-** @param[in]       descr_id - characteritic descriptor ID to read.
-** @param[in]       auth_req - authenticate request type
+** @param[in]       conn_id : connection ID.
+** @param[in]       srvc_id : service ID.
+** @param[in]       descr_id : characteristic descriptor ID to read.
+** @param[in]       auth_req : authenticate request type
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -428,11 +428,11 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
 **
 ** @brief           This function is called to write characteristic value.
 **
-** @param[in]       conn_id - connection ID.
-** @param[in]       srvc_id - service ID.
-** @param[in]       char_id - characteristic ID to write.
+** @param[in]       conn_id : connection ID.
+** @param[in]       srvc_id : service ID.
+** @param[in]       char_id : characteristic ID to write.
 ** @param[in]       value_len: length of the value to be written.
-** @param[in]       value - the value to be written.
+** @param[in]       value : the value to be written.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -451,12 +451,12 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
 **
 ** @brief           This function is called to write characteristic descriptor value.
 **
-** @param[in]       conn_id - connection ID
-** @param[in]       srvc_id - service ID.
-** @param[in]       char_id - characteristic ID.
-** @param[in]       descr_id - characteristic descriptor ID to write.
+** @param[in]       conn_id : connection ID
+** @param[in]       srvc_id : service ID.
+** @param[in]       char_id : characteristic ID.
+** @param[in]       descr_id : characteristic descriptor ID to write.
 ** @param[in]       value_len: length of the value to be written.
-** @param[in]       value - the value to be written.
+** @param[in]       value : the value to be written.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -477,11 +477,11 @@ esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
 **
 ** @brief           This function is called to prepare write a characteristic value.
 **
-** @param[in]       conn_id - connection ID.
-** @param[in]       char_id - GATT characteritic ID of the service.
-** @param[in]       offset - offset of the write value.
+** @param[in]       conn_id : connection ID.
+** @param[in]       char_id : GATT characteristic ID of the service.
+** @param[in]       offset : offset of the write value.
 ** @param[in]       value_len: length of the value to be written.
-** @param[in]       value - the value to be written.
+** @param[in]       value : the value to be written.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -496,12 +496,12 @@ esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
 
 /*******************************************************************************
 **
-** @function        esp_ble_gattc_execu_write
+** @function        esp_ble_gattc_execute_write
 **
 ** @brief           This function is called to execute write a prepare write sequence.
 **
-** @param[in]       conn_id - connection ID.
-** @param[in]       is_execute - execute or cancel.
+** @param[in]       conn_id : connection ID.
+** @param[in]       is_execute : execute or cancel.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -515,10 +515,10 @@ esp_err_t esp_ble_gattc_execute_write (uint16_t conn_id, bool is_execute);
 **
 ** @brief           This function is called to register for notification of a service.
 **
-** @param[in]       gatt_if - gatt interface id.
-** @param[in]       bda - target GATT server.
-** @param[in]       srvc_id - pointer to GATT service ID.
-** @param[in]       char_id - pointer to GATT characteristic ID.
+** @param[in]       gatt_if : gatt interface id.
+** @param[in]       bda : target GATT server.
+** @param[in]       srvc_id : pointer to GATT service ID.
+** @param[in]       char_id : pointer to GATT characteristic ID.
 **
 ** @return          OK if registration succeed, otherwise failed.
 **
@@ -536,12 +536,12 @@ esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gatt_if,
 **
 ** @brief           This function is called to de-register for notification of a service.
 **
-** @param[in]       gatt_if - gatt interface id.
-** @param[in]       bda - target GATT server.
-** @param[in]       srvc_id - pointer to GATT service ID.
-** @param[in]       char_id - pointer to GATT characteristic ID.
+** @param[in]       gatt_if : gatt interface id.
+** @param[in]       bda : target GATT server.
+** @param[in]       srvc_id : pointer to GATT service ID.
+** @param[in]       char_id : pointer to GATT characteristic ID.
 **
-** @return          OK if deregistration succeed, otherwise failed.
+** @return          OK if unregister succeed, otherwise failed.
 **
 *******************************************************************************/
 esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gatt_if,

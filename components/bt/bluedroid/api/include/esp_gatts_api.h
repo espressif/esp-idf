@@ -51,7 +51,7 @@
 typedef union {
     //ESP_GATTS_REG_EVT
     struct gatts_reg_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;						/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t app_id;				/*!< Application id which input in register API */
     } reg;								/*!< Gatt server callback param of ESP_GATTS_REG_EVT */
@@ -97,14 +97,14 @@ typedef union {
 
     // param for ESP_GATTS_CONF_EVT
     struct gatts_conf_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
     } conf;								/*!< Gatt server callback param of ESP_GATTS_CONF_EVT (confirm) */
 
     // param for ESP_GATTS_UNREG_EVT, NONE
     // param for ESP_GATTS_CREATE_EVT
     struct gatts_create_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t service_handle; 		/*!< Service attribute handle */
         esp_gatt_srvc_id_t service_id;	/*!< Service id, include service uuid and other information */
@@ -112,7 +112,7 @@ typedef union {
 
     // param for ESP_GATTS_ADD_INCL_SRVC_EVT
     struct gatts_add_incl_srvc_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t attr_handle;			/*!< Included service attribute handle */
         uint16_t service_handle;		/*!< Service attribute handle */
@@ -120,7 +120,7 @@ typedef union {
 
     // param for ESP_GATTS_ADD_CHAR_EVT
     struct gatts_add_char_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t attr_handle;			/*!< Characteristic attribute handle */
         uint16_t service_handle;		/*!< Service attribute handle */
@@ -129,7 +129,7 @@ typedef union {
 
     // param for ESP_GATTS_ADD_CHAR_DESCR_EVT
     struct gatts_add_char_descr_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t attr_handle;			/*!< Descriptor attribute handle */
         uint16_t service_handle;		/*!< Service attribute handle */
@@ -138,21 +138,21 @@ typedef union {
 
     // param for ESP_GATTS_DELETE_EVT
     struct gatts_delete_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t service_handle;		/*!< Service attribute handle */
     } del;								/*!< Gatt server callback param of ESP_GATTS_DELETE_EVT */
 
     // param for ESP_GATTS_START_EVT
     struct gatts_start_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t service_handle;		/*!< Service attribute handle */
     } start;							/*!< Gatt server callback param of ESP_GATTS_START_EVT */
 
     // param for ESP_GATTS_STOP_EVT
     struct gatts_stop_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t service_handle;		/*!< Service attribute handle */
     } stop;								/*!< Gatt server callback param of ESP_GATTS_STOP_EVT */
@@ -185,7 +185,7 @@ typedef union {
 
     // param for  ESP_GATTS_RESPONSE_EVT
     struct gatts_rsp_evt_param {
-        int status;						/*!< Operation status */
+        esp_gatt_status_t status;						/*!< Operation status */
         uint16_t handle;				/*!< Attribute handle which send response */
     } rsp;								/*!< Gatt server callback param of ESP_GATTS_RESPONSE_EVT */
 } esp_ble_gatts_cb_param_t;
@@ -223,7 +223,7 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id);
 **
 ** @function        esp_ble_gatts_app_unregister
 **
-** @brief           un-register with GATT Server.
+** @brief           unregister with GATT Server.
 **
 ** @param[in]       gatt_if: gatt interface id.
 **
@@ -245,7 +245,7 @@ esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatt_if);
 **
 ** @param[in]       gatt_if: gatt interface ID
 ** @param[in]       service_id: service ID.
-** @param[in]       num_handle: numble of handle requessted for this service.
+** @param[in]       num_handle: number of handle requested for this service.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -303,7 +303,7 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
 **                  it's done, a callback event BTA_GATTS_ADD_DESCR_EVT is called
 **                  to report the status and an ID number for this descriptor.
 **
-** @param[in]       service_handle: service handle to which this charatceristic descriptor is to
+** @param[in]       service_handle: service handle to which this characteristic descriptor is to
 **                              be added.
 ** @param[in]       perm: descriptor access permission.
 ** @param[in]       descr_uuid: descriptor UUID.
@@ -340,7 +340,7 @@ esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle);
 ** @brief           This function is called to start a service.
 **
 ** @param[in]       service_handle: the service handle to be started.
-** @param[in]       sup_transport: supported trasnport.
+** @param[in]       sup_transport: supported transport.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -390,7 +390,7 @@ esp_err_t esp_ble_gatts_send_indicate(uint16_t conn_id, uint16_t attr_handle,
 ** @brief           This function is called to send a response to a request.
 **
 ** @param[in]       conn_id - connection identifier.
-** @param[in]       trans_id - transfe id
+** @param[in]       trans_id - transfer id
 ** @param[in]       status - response status
 ** @param[in]       rsp - response data.
 **
@@ -406,10 +406,9 @@ esp_err_t esp_ble_gatts_send_response(uint16_t conn_id, uint32_t trans_id,
 ** @function        esp_ble_gatts_open
 **
 ** @brief           Open a direct open connection or add a background auto connection
-**                  bd address
 **
 ** @param[in]       gatt_if: application ID.
-** @param[in]       remote_bda: remote device BD address.
+** @param[in]       remote_bda: remote device bluetooth device address.
 ** @param[in]       is_direct: direct connection or background auto connection
 **
 ** @return          ESP_OK - success, other - failed
