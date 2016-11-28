@@ -125,7 +125,7 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bo
 **
 ** @brief           Close a connection to a GATT server.
 **
-** @param[in]       conn_id: connectino ID to be closed.
+** @param[in]       conn_id: connection ID to be closed.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -343,8 +343,8 @@ esp_err_t esp_ble_gattc_get_included_service(uint16_t conn_id,
 ** @brief           This function is called to read a service's characteristics of
 **                  the given characteritisc ID.UTH_REQ_NO_SCATTERNET
 **
-** @param[in]       conn_id - connectino ID.
-** @param[in]       srvc_id - serivcie ID.
+** @param[in]       conn_id - connection ID.
+** @param[in]       srvc_id - service ID.
 ** @param[in]       char_id - characteritic ID to read.
 ** @param[in]       auth_req - authenticate request type
 **
@@ -375,7 +375,7 @@ esp_err_t esp_ble_gattc_read_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id
 ** @brief           This function is called to read a characteristics descriptor.
 **
 ** @param[in]       conn_id - connection ID.
-** @param[in]       srvc_id - serivcie ID.
+** @param[in]       srvc_id - service ID.
 ** @param[in]       descr_id - characteritic descriptor ID to read.
 ** @param[in]       auth_req - authenticate request type
 **
@@ -410,7 +410,7 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
 ** @brief           This function is called to write characteristic value.
 **
 ** @param[in]       conn_id - connection ID.
-** @param[in]       srvc_id - serivcie ID.
+** @param[in]       srvc_id - service ID.
 ** @param[in]       char_id - characteristic ID to write.
 ** @param[in]       value_len: length of the value to be written.
 ** @param[in]       value - the value to be written.
@@ -448,7 +448,7 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
 ** @brief           This function is called to write characteristic descriptor value.
 **
 ** @param[in]       conn_id - connection ID
-** @param[in]       srvc_id - serivcie ID.
+** @param[in]       srvc_id - service ID.
 ** @param[in]       char_id - characteristic ID.
 ** @param[in]       descr_id - characteristic descriptor ID to write.
 ** @param[in]       value_len: length of the value to be written.

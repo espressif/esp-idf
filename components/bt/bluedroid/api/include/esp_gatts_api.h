@@ -193,7 +193,7 @@ esp_err_t esp_ble_gatts_register_callback(esp_profile_cb_t callback);
 **
 ** @function        esp_ble_gatts_app_register
 **
-** @brief           This function is called to register application identity
+** @brief           This function is called to register application identifier
 **
 **
 ** @return          ESP_OK - success, other - failed
@@ -241,7 +241,7 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatt_if,
 
 /*******************************************************************************
 **
-** @function        esp_ble_gatts_add_include_service
+** @function        esp_ble_gatts_add_included_service
 **
 ** @brief           This function is called to add an included service. After included
 **                  service is included, a callback event BTA_GATTS_ADD_INCL_SRVC_EVT
@@ -254,7 +254,7 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatt_if,
 ** @return          ESP_OK - success, other - failed
 **
 *******************************************************************************/
-esp_err_t esp_ble_gatts_add_include_service(uint16_t service_handle, uint16_t included_service_handle);
+esp_err_t esp_ble_gatts_add_included_service(uint16_t service_handle, uint16_t included_service_handle);
 
 
 
@@ -407,7 +407,7 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bo
 **
 ** @brief           Close a connection  a remote device.
 **
-** @param[in]       conn_id: connectino ID to be closed.
+** @param[in]       conn_id: connection ID to be closed.
 **
 ** @return          ESP_OK - success, other - failed
 **

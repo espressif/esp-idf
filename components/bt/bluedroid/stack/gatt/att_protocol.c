@@ -496,7 +496,7 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 cmd_code,
 ** Description      This function sends the client request or confirmation message
 **                  to server.
 **
-** Parameter        p_tcb: pointer to the connectino control block.
+** Parameter        p_tcb: pointer to the connection control block.
 **                  clcb_idx: clcb index
 **                  op_code: message op code.
 **                  p_msg: pointer to message parameters structure.

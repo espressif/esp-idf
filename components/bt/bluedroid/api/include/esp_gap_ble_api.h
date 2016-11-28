@@ -369,7 +369,7 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable);
 ** @return          ESP_OK - success, other - failed
 **
 *******************************************************************************/
-esp_err_t esp_ble_gap_set_device_name(char *name);
+esp_err_t esp_ble_gap_set_device_name(const char *name);
 
 
 /*******************************************************************************
@@ -385,6 +385,6 @@ esp_err_t esp_ble_gap_set_device_name(char *name);
 ** @return               pointer of ADV data
 **
 *******************************************************************************/
-uint8_t *esp_ble_resolve_adv_data( uint8_t *p_adv, uint8_t type, uint8_t *p_length );
+uint8_t *esp_ble_resolve_adv_data(uint8_t *p_adv, uint8_t type, uint8_t *p_length);
 
 #endif /* __ESP_GAP_BLE_API_H__ */

@@ -172,7 +172,7 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_gap_set_device_name(char *name)
+esp_err_t esp_ble_gap_set_device_name(const char *name)
 {
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
