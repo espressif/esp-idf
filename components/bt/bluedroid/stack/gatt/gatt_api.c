@@ -33,7 +33,8 @@
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "btm_int.h"
-
+#include "sdpdefs.h"
+#include "sdp_api.h"
 
 /*******************************************************************************
 **

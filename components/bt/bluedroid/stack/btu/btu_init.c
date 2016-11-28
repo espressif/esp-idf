@@ -200,9 +200,8 @@ void BTU_StartUp(void)
         goto error_exit;
     }
 
-    xBtuQueue = xQueueCreate(60, sizeof(BtTaskEvt_t));
-    xTaskCreate(btu_task_thread_handler, "BtuT", 2048 + 1024, NULL, configMAX_PRIORITIES - 1, &xBtuTaskHandle);
-
+    xBtuQueue = xQueueCreate(BTU_QUEUE_NUM, sizeof(BtTaskEvt_t));
+    xTaskCreate(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle);
     btu_task_post(SIG_BTU_START_UP);
     /*
         // Continue startup on bt workqueue thread.

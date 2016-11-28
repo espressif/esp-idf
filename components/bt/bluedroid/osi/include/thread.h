@@ -43,6 +43,26 @@ enum {
     // SIG_BTIF_WORK = 0xff
 };
 
+#define HCI_HOST_TASK_STACK_SIZE	1024
+#define HCI_HOST_TASK_PRIO			(configMAX_PRIORITIES - 3)
+#define HCI_HOST_TASK_NAME			"hciHostT"
+#define HCI_HOST_QUEUE_NUM			30
+
+#define HCI_H4_TASK_STACK_SIZE		1024
+#define HCI_H4_TASK_PRIO			(configMAX_PRIORITIES - 3)
+#define HCI_H4_TASK_NAME			"hciH4T"
+#define HCI_H4_QUEUE_NUM			30
+
+#define BTU_TASK_STACK_SIZE			4096
+#define BTU_TASK_PRIO				(configMAX_PRIORITIES - 1)
+#define BTU_TASK_NAME				"btuT"
+#define BTU_QUEUE_NUM				30
+
+#define BTC_TASK_QUEUE_NUM  		20
+#define BTC_TASK_STACK_SIZE 		CONFIG_BTC_TASK_STACK_SIZE	//by menuconfig
+#define BTC_TASK_NAME       		"btcT"
+#define BTC_TASK_PRIO       		(configMAX_PRIORITIES - 5)
+
 void btu_task_post(uint32_t sig);
 void hci_host_task_post(void);
 void hci_hal_h4_task_post(void);

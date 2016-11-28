@@ -2615,13 +2615,15 @@ BOOLEAN btm_ble_update_inq_result(tINQ_DB_ENT *p_i, UINT8 addr_type, UINT8 evt_t
                                              BTM_BLE_AD_TYPE_16SRV_CMPL, &len)) != NULL) {
                 UINT8 i;
                 for (i = 0; i + 2 <= len; i = i + 2) {
-                    /* if this BLE device support HID over LE, set HID Major in class of device */
+#if BTA_HH_LE_INCLUDED == TRUE
+					/* if this BLE device support HID over LE, set HID Major in class of device */
                     if ((p_uuid16[i] | (p_uuid16[i + 1] << 8)) == UUID_SERVCLASS_LE_HID) {
                         p_cur->dev_class[0] = 0;
                         p_cur->dev_class[1] = BTM_COD_MAJOR_PERIPHERAL;
                         p_cur->dev_class[2] = 0;
                         break;
                     }
+#endif /* BTA_HH_LE_INCLUDED */
                 }
             }
         }

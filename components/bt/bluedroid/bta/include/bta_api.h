@@ -29,6 +29,7 @@
 #include "bt_types.h"
 #include "btm_api.h"
 #include "uipc_msg.h"
+#include "sdp_api.h"
 
 #if BLE_INCLUDED == TRUE
 #include "btm_ble_api.h"

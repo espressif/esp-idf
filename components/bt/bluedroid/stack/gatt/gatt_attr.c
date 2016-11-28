@@ -28,6 +28,7 @@
 
 #include "gatt_api.h"
 #include "gatt_int.h"
+#include "sdpdefs.h"
 
 #if BLE_INCLUDED == TRUE
 

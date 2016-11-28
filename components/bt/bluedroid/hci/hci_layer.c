@@ -113,8 +113,8 @@ int hci_start_up(void)
         goto error;
     }
 
-    xHciHostQueue = xQueueCreate(60, sizeof(BtTaskEvt_t));
-    xTaskCreate(hci_host_thread_handler, "HciHostT", (1024+256), NULL, configMAX_PRIORITIES - 3, &xHciHostTaskHandle);
+    xHciHostQueue = xQueueCreate(HCI_HOST_QUEUE_NUM, sizeof(BtTaskEvt_t));
+    xTaskCreate(hci_host_thread_handler, HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, NULL, HCI_HOST_TASK_PRIO, &xHciHostTaskHandle);
 
     packet_fragmenter->init(&packet_fragmenter_callbacks);
     hal->open(&hal_callbacks);

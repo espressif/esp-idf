@@ -28,6 +28,7 @@
 #include "gatt_int.h"
 #include "btm_int.h"
 #include "hcimsgs.h"
+#include "sdpdefs.h"
 
 #define GAP_CHAR_ICON_SIZE          2
 #define GAP_CHAR_DEV_NAME_SIZE      248
