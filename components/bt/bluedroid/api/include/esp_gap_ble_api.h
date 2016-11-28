@@ -67,6 +67,7 @@ typedef enum {
     ADV_TYPE_DIRECT_IND_LOW     = 0x04,
 } esp_ble_adv_type_t;
 
+/// Advertising channel mask
 typedef enum {
     ADV_CHNL_37     = 0x01,
     ADV_CHNL_38     = 0x02,
@@ -86,32 +87,39 @@ typedef enum {
     ///Enumeration end value for advertising filter policy value check
 } esp_ble_adv_filter_t;
 
-
+/// Advertising parameters
 typedef struct {
-    uint16_t                adv_int_min;
-    uint16_t                adv_int_max;
-    esp_ble_adv_type_t      adv_type;
-    esp_ble_addr_type_t     own_addr_type;
-    esp_bd_addr_t           peer_addr;
-    esp_ble_addr_type_t     peer_addr_type;
-    esp_ble_adv_channel_t   channel_map;
-    esp_ble_adv_filter_t    adv_filter_policy;
+    uint16_t                adv_int_min;		/*!< Minimum advertising interval for
+												  undirected and low duty cycle directed advertising.
+ 												  Range: 0x0020 to 0x4000 Default: N = 0x0800 (1.28 second)
+												  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec */
+    uint16_t                adv_int_max;		/*!< Maximum advertising interval for
+												  undirected and low duty cycle directed advertising.
+ 												  Range: 0x0020 to 0x4000 Default: N = 0x0800 (1.28 second)
+												  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec Advertising max interval */
+    esp_ble_adv_type_t      adv_type;			/*!< Advertising type */
+    esp_ble_addr_type_t     own_addr_type;		/*!< Owner bluetooth device address type */
+    esp_bd_addr_t           peer_addr;			/*!< Peer device bluetooth device address */
+    esp_ble_addr_type_t     peer_addr_type;		/*!< Peer device bluetooth device address type */
+    esp_ble_adv_channel_t   channel_map;		/*!< Advertising channel map */
+    esp_ble_adv_filter_t    adv_filter_policy;	/*!< Advertising filter policy */
 } esp_ble_adv_params_t;
 
+/// Advertising data content, according to "Supplement to the Bluetooth Core Specification"
 typedef struct {
-    bool                    set_scan_rsp;
-    bool                    include_name;
-    bool                    include_txpower;
-    int                     min_interval;
-    int                     max_interval;
-    int                     appearance;
-    uint16_t                manufacturer_len;
-    uint8_t                 *p_manufacturer_data;
-    uint16_t                service_data_len;
-    uint8_t                 *p_service_data;
-    uint16_t                service_uuid_len;
-    uint8_t                 *p_service_uuid;
-    uint8_t                 flag;
+    bool                    set_scan_rsp;			/*!< Set this advertising data as scan response or not*/
+    bool                    include_name;			/*!< Advertising data include device name or not */
+    bool                    include_txpower;		/*!< Advertising data include tx power */
+    int                     min_interval;			/*!< Advertising data show advertising min internval */
+    int                     max_interval;			/*!< Advertising data show advertising max internval */
+    int                     appearance;				/*!< Extenal appearance of device */
+    uint16_t                manufacturer_len;		/*!< Manufacturer data length */
+    uint8_t                 *p_manufacturer_data;	/*!< Manufacturer data point */
+    uint16_t                service_data_len;		/*!< Service data length */
+    uint8_t                 *p_service_data;		/*!< Service data point */
+    uint16_t                service_uuid_len;		/*!< Service uuid length */
+    uint8_t                 *p_service_uuid;		/*!< Service uuid arrary point */
+    uint8_t                 flag;					/*!< Advertising flag of discovery mode */
 } esp_ble_adv_data_t;
 
 /// Own BD address source of the device
@@ -130,33 +138,55 @@ typedef enum {
     ESP_PROVIDED_RECON_ADDR,
 } esp_ble_own_addr_src_t;
 
-
+/// Ble scan type 
 typedef enum {
-    BLE_SCAN_TYPE_PASSIVE   =   0x0,
-    BLE_SCAN_TYPE_ACTIVE    =   0x1,
+    BLE_SCAN_TYPE_PASSIVE   =   0x0,			/*!< Passive scan */
+    BLE_SCAN_TYPE_ACTIVE    =   0x1,			/*!< Active scan */
 } esp_ble_scan_type_t;
 
+/// Ble scan filter type
 typedef enum {
-    BLE_SCAN_FILTER_ALLOW_ALL           = 0x0,
-    BLE_SCAN_FILTER_ALLOW_ONLY_WLST     = 0x1,
-    BLE_SCAN_FILTER_ALLOW_UND_RPA_DIR       = 0x2,
-    BLE_SCAN_FILTER_ALLOW_WLIST_PRA_DIR = 0x3,
+    BLE_SCAN_FILTER_ALLOW_ALL           = 0x0,	/*!< Accept all :
+												  1. advertisement packets except directed advertising packets not addressed to this device (default). */
+    BLE_SCAN_FILTER_ALLOW_ONLY_WLST     = 0x1,  /*!< Accept only : 
+												  1. advertisement packets from devices where the advertiser’s address is in the White list.
+												  2. Directed advertising packets which are not addressed for this device shall be ignored. */
+    BLE_SCAN_FILTER_ALLOW_UND_RPA_DIR   = 0x2,  /*!< Accept all :
+												  1. undirected advertisement packets, and
+												  2. directed advertising packets where the initiator address is a resolvable private address, and
+												  3. directed advertising packets addressed to this device. */
+    BLE_SCAN_FILTER_ALLOW_WLIST_PRA_DIR = 0x3,  /*!< Accept all :
+												  1. advertisement packets from devices where the advertiser’s address is in the White list, and
+												  2. directed advertising packets where the initiator address is a resolvable private address, and
+												  3. directed advertising packets addressed to this device.*/
 } esp_ble_scan_filter_t;
 
+/// Ble scan parameters
 typedef struct {
-    esp_ble_scan_type_t     scan_type;
-    esp_ble_addr_type_t     own_addr_type;
-    esp_ble_scan_filter_t   scan_filter_policy;
-    uint16_t                scan_interval;
-    uint16_t                scan_window;
+    esp_ble_scan_type_t     scan_type;				/*!< Scan type */
+    esp_ble_addr_type_t     own_addr_type;			/*!< Owner address type */
+    esp_ble_scan_filter_t   scan_filter_policy;		/*!< Scan filter policy */
+    uint16_t                scan_interval;			/*!< Scan interval. This is defined as the time interval from
+													  when the Controller started its last LE scan until it begins the subsequent LE scan.
+													  Range: 0x0004 to 0x4000 Default: 0x0010 (10 ms)
+													  Time = N * 0.625 msec
+													  Time Range: 2.5 msec to 10.24 seconds*/
+    uint16_t                scan_window;			/*!< Scan window. The duration of the LE scan. LE_Scan_Window
+													  shall be less than or equal to LE_Scan_Interval
+													  Range: 0x0004 to 0x4000 Default: 0x0010 (10 ms)
+													  Time = N * 0.625 msec
+													  Time Range: 2.5 msec to 10240 msec */
 } esp_ble_scan_params_t;
 
+/// Connection update parameters
 typedef struct {
-    esp_bd_addr_t bda;
-    uint16_t min_int;
-    uint16_t max_int;
-    uint16_t latency;
-    uint16_t timeout;
+    esp_bd_addr_t bda;								/*!< Bluetooth device address */
+    uint16_t min_int;								/*!< Min connection interval */
+    uint16_t max_int;								/*!< Max connection interval */
+    uint16_t latency;								/*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
+    uint16_t timeout;								/*!< Supervision timeout for the LE Link. Range: 0x000A to 0x0C80.
+													  Mandatory Range: 0x000A to 0x0C80 Time = N * 10 msec
+													  Time Range: 100 msec to 32 seconds */
 } esp_ble_conn_update_params_t;
 
 typedef void (*esp_gap_ble_cb_t)(esp_gap_ble_event_t event, void *param);
@@ -173,29 +203,29 @@ typedef enum {
 } esp_gap_search_evt_t;
 
 typedef union {
-    //ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT     0
+    //ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT
     struct ble_adv_data_cmpl_evt_param {
-        esp_bt_status_t status;
-    } adv_data_cmpl;
-    //ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT    1
+        esp_bt_status_t status;						/*!< Indicate the set advertising data operation success status */
+    } adv_data_cmpl;								/*!< Event parameter of ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT */ 
+    //ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT
     struct ble_scan_rsp_data_cmpl_evt_param {
-        esp_bt_status_t status;
-    } scan_rsp_data_cmpl;
-    //ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT       2
+        esp_bt_status_t status;						/*!< Indicate the set scan response data operation success status */
+    } scan_rsp_data_cmpl;							/*!< Event parameter of ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT */
+    //ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT
     struct ble_scan_param_cmpl_evt_param {
-        esp_bt_status_t status;
-    } scan_param_cmpl;
-    //ESP_GAP_BLE_SCAN_RESULT_EVT                   3
+        esp_bt_status_t status;						/*!< Indicate the set scan param operation success status */
+    } scan_param_cmpl;								/*!< Event parameter of ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT */
+    //ESP_GAP_BLE_SCAN_RESULT_EVT
     struct ble_scan_result_evt_param {
-        esp_gap_search_evt_t search_evt;
-        esp_bd_addr_t bda;
-        esp_bt_dev_type_t dev_type;
-        esp_ble_addr_type_t ble_addr_type;
-        int rssi;
-        uint8_t  ble_adv[ESP_BLE_ADV_DATA_LEN_MAX];                 /* received EIR */
-        int flag;
-        int num_resps;
-    } scan_rst;
+        esp_gap_search_evt_t search_evt;			/*!< Search event type */
+        esp_bd_addr_t bda;							/*!< BD address which has been searched */
+        esp_bt_dev_type_t dev_type;					/*!< Device type */
+        esp_ble_addr_type_t ble_addr_type;			/*!< Ble device address type */
+        int rssi;									/*!< Searched device's rssi */
+        uint8_t  ble_adv[ESP_BLE_ADV_DATA_LEN_MAX]; /*!< Received EIR */
+        int flag;									/*!< Advertising data flag bit */
+        int num_resps;								/*!< Scan result number */
+    } scan_rst;										/*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
 } esp_ble_gap_cb_param_t;
 
 /*******************************************************************************

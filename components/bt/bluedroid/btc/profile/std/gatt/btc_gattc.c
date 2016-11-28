@@ -521,7 +521,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         tBTA_GATTC_REG *reg_oper = &arg->reg_oper;
         param.reg.status = reg_oper->status;
         param.reg.gatt_if = reg_oper->client_if;
-        memcpy(&param.reg.uuid, &reg_oper->app_uuid, sizeof(esp_bt_uuid_t));
+        param.reg.app_id = reg_oper->app_uuid.uu.uuid16;
         BTC_GATTC_CB_TO_APP(ESP_GATTC_REG_EVT, &param);
         break;
     }
@@ -566,7 +566,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     case BTA_GATTC_SEARCH_RES_EVT: {
         tBTA_GATTC_SRVC_RES *srvc_res = &arg->srvc_res;
         param.search_res.conn_id = srvc_res->conn_id;
-        bta_to_btc_srvc_id(&param.search_res.service_id, &srvc_res->service_uuid);
+        bta_to_btc_srvc_id(&param.search_res.srvc_id, &srvc_res->service_uuid);
         BTC_GATTC_CB_TO_APP(ESP_GATTC_SEARCH_RES_EVT, &param);
         break;
     }
@@ -588,7 +588,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     case BTA_GATTC_NOTIF_EVT: {
         tBTA_GATTC_NOTIFY *notify = &arg->notify;
         param.notify.conn_id = notify->conn_id;
-        memcpy(&param.notify.bda, &notify->bda, sizeof(esp_bd_addr_t));
+        memcpy(&param.notify.remote_bda, &notify->bda, sizeof(esp_bd_addr_t));
         bta_to_btc_srvc_id(&param.notify.srvc_id, &notify->char_id.srvc_id);
         bta_to_btc_gatt_id(&param.notify.char_id, &notify->char_id.char_id);
         bta_to_btc_gatt_id(&param.notify.descr_id, &notify->descr_type);

@@ -38,13 +38,13 @@ typedef struct {
 #define ESP_UUID_LEN_16     2
 #define ESP_UUID_LEN_32     4
 #define ESP_UUID_LEN_128    16
-    uint16_t len;
+    uint16_t len;							/*!< UUID length, 16bit, 32bit or 128bit */
     union {
         uint16_t    uuid16;
         uint32_t    uuid32;
         uint8_t     uuid128[ESP_UUID_LEN_128];
-    } uuid;
-} __attribute__((packed)) esp_bt_uuid_t;   /* tBT_UUID in "bt_types.h" */
+    } uuid;									/*!< UUID */
+} __attribute__((packed)) esp_bt_uuid_t;
 
 typedef enum {
     ESP_BT_DEVICE_TYPE_BREDR   = 0x01,
@@ -53,7 +53,7 @@ typedef enum {
 } esp_bt_dev_type_t;
 
 #define ESP_BD_ADDR_LEN     6
-typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN];    /* BD_ADDR in bt_types.h */
+typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN];    /*!< Bluetooth device address */ 
 
 /// Own BD address source of the device
 typedef enum {

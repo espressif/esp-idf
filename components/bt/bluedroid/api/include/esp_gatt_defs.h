@@ -82,13 +82,13 @@ typedef enum {
 } esp_gatt_reason_t;
 
 typedef struct {
-    esp_bt_uuid_t   uuid;
-    uint8_t         inst_id;
+    esp_bt_uuid_t   uuid;					/*!< UUID */
+    uint8_t         inst_id;				/*!< Instance id */
 } __attribute__((packed)) esp_gatt_id_t;
 
 typedef struct {
-    esp_gatt_id_t   id;
-    bool            is_primary;
+    esp_gatt_id_t   id;						/*!< Gatt id, include uuid and instance */
+    bool            is_primary;				/*!< This service is primary or not */
 } __attribute__((packed)) esp_gatt_srvc_id_t;
 
 typedef enum {
@@ -130,20 +130,21 @@ typedef enum {
 
 #define ESP_GATT_MAX_ATTR_LEN   600 //as same as GATT_MAX_ATTR_LEN
 
+/// Gatt attribute value 
 typedef struct {
-    uint8_t           value[ESP_GATT_MAX_ATTR_LEN];
-    uint16_t          handle;
-    uint16_t          offset;
-    uint16_t          len;
-    uint8_t           auth_req;
+    uint8_t           value[ESP_GATT_MAX_ATTR_LEN];			/*!< Gatt attribute value */
+    uint16_t          handle;								/*!< Gatt attribute handle */
+    uint16_t          offset;								/*!< Gatt attribute value offset */
+    uint16_t          len;									/*!< Gatt attribute value length */
+    uint8_t           auth_req;								/*!< Gatt authentication request */
 } esp_gatt_value_t;
 
 /** GATT remote read request response type */
 typedef union {
-    esp_gatt_value_t attr_value;
-    uint16_t            handle;
+    esp_gatt_value_t attr_value;							/*!< Gatt attribute structure */
+    uint16_t            handle;								/*!< Gatt attribute handle */
 } esp_gatt_rsp_t;
 
-typedef uint32_t    esp_gatt_if_t;
+typedef uint32_t    esp_gatt_if_t;							/* Gatt interface type, different application on GATT client use different gatt_if */
 
 #endif /* __ESP_GATT_DEFS_H__ */
