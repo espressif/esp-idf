@@ -12,7 +12,7 @@ menu "BT UTILITY OPTION"
 visible if BT_ENABLED
 
 config BT_USE_ETS_PRINT
-	bool "BT use print which has lock"
+	bool "BT use print which has nolock"
 	default y
 	depends on BT_ENABLED
 	help

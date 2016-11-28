@@ -200,7 +200,7 @@ void BTU_StartUp(void)
         goto error_exit;
     }
 
-    xBtuQueue = xQueueCreate(60, sizeof(BtTaskEvt_t));
+    xBtuQueue = xQueueCreate(BTU_QUEUE_NUM, sizeof(BtTaskEvt_t));
     xTaskCreate(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle);
     btu_task_post(SIG_BTU_START_UP);
     /*
