@@ -59,7 +59,7 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK *p_cback)
     tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
     tBTA_SDP_API_ENABLE  *p_buf;
 
-    APPL_TRACE_API(__FUNCTION__);
+    APPL_TRACE_API("%s\n", __FUNCTION__);
     if (p_cback && FALSE == bta_sys_is_register(BTA_ID_SDP)) {
         memset(&bta_sdp_cb, 0, sizeof(tBTA_SDP_CB));
 
@@ -95,7 +95,7 @@ tBTA_SDP_STATUS BTA_SdpSearch(BD_ADDR bd_addr, tSDP_UUID *uuid)
     tBTA_SDP_STATUS ret = BTA_SDP_FAILURE;
     tBTA_SDP_API_SEARCH *p_msg;
 
-    APPL_TRACE_API(__FUNCTION__);
+    APPL_TRACE_API("%s\n", __FUNCTION__);
     if ((p_msg = (tBTA_SDP_API_SEARCH *)GKI_getbuf(sizeof(tBTA_SDP_API_SEARCH))) != NULL) {
         p_msg->hdr.event = BTA_SDP_API_SEARCH_EVT;
         bdcpy(p_msg->bd_addr, bd_addr);
@@ -125,7 +125,7 @@ tBTA_SDP_STATUS BTA_SdpCreateRecordByUser(void *user_data)
     tBTA_SDP_STATUS ret = BTA_SDP_FAILURE;
     tBTA_SDP_API_RECORD_USER *p_msg;
 
-    APPL_TRACE_API(__FUNCTION__);
+    APPL_TRACE_API("%s\n", __FUNCTION__);
     if ((p_msg = (tBTA_SDP_API_RECORD_USER *)GKI_getbuf(sizeof(tBTA_SDP_API_RECORD_USER))) != NULL) {
         p_msg->hdr.event = BTA_SDP_API_CREATE_RECORD_USER_EVT;
         p_msg->user_data = user_data;
@@ -153,7 +153,7 @@ tBTA_SDP_STATUS BTA_SdpRemoveRecordByUser(void *user_data)
     tBTA_SDP_STATUS ret = BTA_SDP_FAILURE;
     tBTA_SDP_API_RECORD_USER *p_msg;
 
-    APPL_TRACE_API(__FUNCTION__);
+    APPL_TRACE_API("%s\n", __FUNCTION__);
     if ((p_msg = (tBTA_SDP_API_RECORD_USER *)GKI_getbuf(sizeof(tBTA_SDP_API_RECORD_USER))) != NULL) {
         p_msg->hdr.event = BTA_SDP_API_REMOVE_RECORD_USER_EVT;
         p_msg->user_data = user_data;

@@ -22,13 +22,11 @@
 #include <stdio.h>
 #include "bt_types.h"
 
-#include "rom/ets_sys.h"
+#include "esp_log.h"
 
-#ifdef CONFIG_BT_USE_ETS_PRINT
-#define BT_PRINTF   ets_printf
-#else
-#define BT_PRINTF   printf
-#endif
+#define TAG		"BT"
+
+#define BT_PRINTF(fmt, ...)   ESP_LOGE(TAG, fmt, ##__VA_ARGS__)
 
 #ifndef assert
 #define assert(x)   do { if (!(x)) BT_PRINTF("bt host error %s %u\n", __FILE__, __LINE__); } while (0)
