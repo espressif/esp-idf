@@ -51,7 +51,10 @@ static inline void cpu_write_itlb(unsigned vpn, unsigned attr)
     asm volatile ("witlb  %1, %0; isync\n" :: "r" (vpn), "r" (attr));
 }
 
-/* Make page 0 access raise an exception.
+/**
+ * @brief Configure memory region protection
+ *
+ * Make page 0 access raise an exception.
  * Also protect some other unused pages so we can catch weirdness.
  * Useful attribute values:
  * 0 — cached, RW
@@ -70,9 +73,7 @@ static inline void cpu_configure_region_protection()
     cpu_write_itlb(0x20000000, 0);
 }
 
-
-
-/*
+/**
  * @brief Set CPU frequency to the value defined in menuconfig
  *
  * Called from cpu_start.c, not intended to be called from other places.
@@ -80,5 +81,17 @@ static inline void cpu_configure_region_protection()
  * CPU frequency changing is implemented.
  */
 void esp_set_cpu_freq(void);
+
+/**
+ * @brief Stall CPU using RTC controller
+ * @param cpu_id ID of the CPU to stall (0 = PRO, 1 = APP)
+ */
+void esp_cpu_stall(int cpu_id);
+
+/**
+ * @brief Un-stall CPU using RTC controller
+ * @param cpu_id ID of the CPU to un-stall (0 = PRO, 1 = APP)
+ */
+void esp_cpu_unstall(int cpu_id);
 
 #endif

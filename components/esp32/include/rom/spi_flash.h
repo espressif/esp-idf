@@ -384,7 +384,8 @@ SpiFlashOpResult SPIParamCfg(uint32_t deviceId, uint32_t chip_size, uint32_t blo
 SpiFlashOpResult SPIEraseChip(void);
 
 /**
-  * @brief Erase a block of flash.
+  * @brief Erase a 32KB block of flash
+  *        Uses SPI flash command 52h.
   *        Please do not call this function in SDK.
   *
   * @param  uint32_t block_num : Which block to erase.
@@ -410,6 +411,12 @@ SpiFlashOpResult SPIEraseSector(uint32_t sector_num);
 /**
   * @brief Erase some sectors.
   *        Please do not call this function in SDK.
+  *
+  * @note If calling this function, first set
+  *       g_rom_flashchip.block_size = 32768; or call SPIParamCfg()
+  *       with appropriate parameters. This is due to a ROM bug, the
+  *       block erase command in use is a 32KB erase but after reset
+  *       the block_size field is incorrectly set to 65536.
   *
   * @param  uint32_t start_addr : Start addr to erase, should be sector aligned.
   *

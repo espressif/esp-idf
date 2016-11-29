@@ -69,4 +69,16 @@ config MBEDTLS_MPI_INTERRUPT_NUM
         CPU interrupt number for MPI interrupt to connect to. Must be otherwise unused.
         Eventually this assignment will be handled automatically at runtime.
 
+config MBEDTLS_HARDWARE_SHA
+   bool "Enable hardware SHA acceleration"
+   default y
+   help
+       Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.
+
+       Due to a hardware limitation, hardware acceleration is only
+       guaranteed if SHA digests are calculated one at a time. If more
+       than one SHA digest is calculated at the same time, only will
+       be calculated fully in hardware and the rest will be calculated
+       (at least partially calculated) in software.
+
 endmenu

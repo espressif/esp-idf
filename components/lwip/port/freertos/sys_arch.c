@@ -37,6 +37,7 @@
 #include "lwip/sys.h"
 #include "lwip/mem.h"
 #include "arch/sys_arch.h"
+#include "lwip/stats.h"
 
 /* This is the number of threads that can be started with sys_thread_new() */
 #define SYS_THREAD_MAX 4
@@ -370,6 +371,7 @@ sys_mbox_free(sys_mbox_t *mbox)
     if (post_null){
       LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free: post null to mbox\n"));
       if (sys_mbox_trypost( mbox, NULL) != ERR_OK){
+        ESP_STATS_INC(esp.free_mbox_post_fail);
         LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_mbox_free: post null mbox fail\n"));
       } else {
         post_null = false;

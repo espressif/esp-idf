@@ -1319,6 +1319,36 @@
 #define PCNT_CORE_STATUS_U0_M  ((PCNT_CORE_STATUS_U0_V)<<(PCNT_CORE_STATUS_U0_S))
 #define PCNT_CORE_STATUS_U0_V  0xFFFFFFFF
 #define PCNT_CORE_STATUS_U0_S  0
+/*0: positive value to zero; 1: negative value to zero; 2: counter value negative ; 3: counter value positive*/
+#define PCNT_STATUS_CNT_MODE    0x3
+#define PCNT_STATUS_CNT_MODE_M  ((PCNT_STATUS_CNT_MODE_V)<<(PCNT_STATUS_CNT_MODE_S))
+#define PCNT_STATUS_CNT_MODE_V  0x3
+#define PCNT_STATUS_CNT_MODE_S  0
+/* counter value equals to thresh1*/
+#define PCNT_STATUS_THRES1    BIT(2)
+#define PCNT_STATUS_THRES1_M  BIT(2)
+#define PCNT_STATUS_THRES1_V  0x1
+#define PCNT_STATUS_THRES1_S  2
+/* counter value equals to thresh0*/
+#define PCNT_STATUS_THRES0    BIT(3)
+#define PCNT_STATUS_THRES0_M  BIT(3)
+#define PCNT_STATUS_THRES0_V  0x1
+#define PCNT_STATUS_THRES0_S  3
+/* counter value reaches h_lim*/
+#define PCNT_STATUS_L_LIM    BIT(4)
+#define PCNT_STATUS_L_LIM_M  BIT(4)
+#define PCNT_STATUS_L_LIM_V  0x1
+#define PCNT_STATUS_L_LIM_S  4
+/* counter value reaches l_lim*/
+#define PCNT_STATUS_H_LIM    BIT(5)
+#define PCNT_STATUS_H_LIM_M  BIT(5)
+#define PCNT_STATUS_H_LIM_V  0x1
+#define PCNT_STATUS_H_LIM_S  5
+/* counter value equals to zero*/
+#define PCNT_STATUS_ZERO    BIT(6)
+#define PCNT_STATUS_ZERO_M  BIT(6)
+#define PCNT_STATUS_ZERO_V  0x1
+#define PCNT_STATUS_ZERO_S  6
 
 #define PCNT_U1_STATUS_REG          (DR_REG_PCNT_BASE + 0x0094)
 /* PCNT_CORE_STATUS_U1 : RO ;bitpos:[31:0] ;default: 32'h0 ; */

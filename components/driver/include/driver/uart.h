@@ -167,25 +167,25 @@ esp_err_t uart_get_word_length(uart_port_t uart_num, uart_word_length_t* data_bi
  * @brief Set UART stop bits.
  *
  * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param bit_num  UART stop bits
+ * @param stop_bits  UART stop bits
  *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Fail
  */
-esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t bit_num);
+esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bits);
 
 /**
  * @brief Set UART stop bits.
  *
  * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param stop_bit  Pointer to accept value of UART stop bits.
+ * @param stop_bits  Pointer to accept value of UART stop bits.
  *
  * @return
  *     - ESP_FAIL Parameter error
  *     - ESP_OK   Success, result will be put in (*stop_bit)
  */
-esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bit);
+esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bits);
 
 /**
  * @brief Set UART parity.
@@ -216,13 +216,13 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
  * @brief Set UART baud rate.
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param baud_rate UART baud-rate.
+ * @param baudrate UART baud rate.
  *
  * @return
  *     - ESP_FAIL Parameter error
  *     - ESP_OK   Success
  */
-esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate);
+esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baudrate);
 
 /**
  * @brief Get UART bit-rate.
@@ -241,7 +241,7 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
  * @brief Set UART line inverse mode
  *
  * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param inverse_mask Choose the wires that need to be inversed.
+ * @param inverse_mask Choose the wires that need to be inverted.
  *        Inverse_mask should be chosen from UART_INVERSE_RXD/UART_INVERSE_TXD/UART_INVERSE_RTS/UART_INVERSE_CTS, combine with OR operation.
  *
  * @return

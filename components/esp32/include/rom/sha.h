@@ -1,9 +1,10 @@
 /*
   ROM functions for hardware SHA support.
 
-  It is not recommended to use these functions directly,
-  use the wrapper functions in hwcrypto/sha.h instead.
-
+  It is not recommended to use these functions directly.  If using
+  them from esp-idf then use the esp_sha_lock_engine() and
+  esp_sha_lock_memory_block() functions in hwcrypto/sha.h to ensure
+  exclusive access.
  */
 // Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
 //
@@ -38,6 +39,8 @@ enum SHA_TYPE {
     SHA2_256,
     SHA2_384,
     SHA2_512,
+
+
     SHA_INVALID = -1,
 };
 

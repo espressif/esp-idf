@@ -180,5 +180,23 @@ stats_display(void)
 }
 #endif /* LWIP_STATS_DISPLAY */
 
+#if ESP_STATS
+void stats_display_esp(struct stats_esp *esp)
+{
+  LWIP_PLATFORM_DIAG(("\nESP\n\t"));
+  LWIP_PLATFORM_DIAG(("esp.rx_rawmbox_post_fail:  %"U32_F"\n\t", (u32_t)esp->rx_rawmbox_post_fail));
+  LWIP_PLATFORM_DIAG(("esp.rx_udpmbox_post_fail:  %"U32_F"\n\t", (u32_t)esp->rx_udpmbox_post_fail));
+  LWIP_PLATFORM_DIAG(("esp.rx_tcpmbox_post_fail:  %"U32_F"\n\t", (u32_t)esp->rx_tcpmbox_post_fail));
+  LWIP_PLATFORM_DIAG(("esp.err_tcp_rxmbox_post_fail:  %"U32_F"\n\t", (u32_t)esp->err_tcp_rxmbox_post_fail));
+  LWIP_PLATFORM_DIAG(("esp.err_tcp_acceptmbox_post_fail:  %"U32_F"\n\t", (u32_t)esp->err_tcp_acceptmbox_post_fail));
+  LWIP_PLATFORM_DIAG(("esp.acceptmbox_post_fail:  %"U32_F"\n\t", (u32_t)esp->acceptmbox_post_fail));
+  LWIP_PLATFORM_DIAG(("esp.free_mbox_post_fail:  %"U32_F"\n\t", (u32_t)esp->free_mbox_post_fail));
+  LWIP_PLATFORM_DIAG(("esp.tcpip_inpkt_post_fail:  %"U32_F"\n\t", (u32_t)esp->tcpip_inpkt_post_fail));
+  LWIP_PLATFORM_DIAG(("esp.tcpip_cb_post_fail:  %"U32_F"\n\t", (u32_t)esp->tcpip_cb_post_fail));
+  LWIP_PLATFORM_DIAG(("esp.wlanif_input_pbuf_fail:  %"U32_F"\n\t", (u32_t)esp->wlanif_input_pbuf_fail));
+  LWIP_PLATFORM_DIAG(("esp.wlanif_outut_pbuf_fail:  %"U32_F"\n\t", (u32_t)esp->wlanif_outut_pbuf_fail));
+}
+#endif
+
 #endif /* LWIP_STATS */
 

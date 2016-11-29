@@ -17,6 +17,7 @@
 
 #include "esp_types.h"
 #include "esp_attr.h"
+#include "ets_sys.h"
 
 #ifdef __cplusplus
 extern "C" {

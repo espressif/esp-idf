@@ -10,6 +10,7 @@
 #include "soc/dport_reg.h"
 #include "esp_attr.h"
 #include "esp_deepsleep.h"
+#include "rtc.h"
 
 /* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
    is not thread-safe. */
@@ -46,3 +47,21 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void) {
 }
 
 void __attribute__((weak, alias("esp_default_wake_deep_sleep"))) esp_wake_deep_sleep(void);
+
+void esp_deep_sleep(uint64_t time_in_us)
+{
+    rtc_set_cpu_freq(CPU_XTAL);
+    if (esp_get_deep_sleep_wake_stub() == NULL) {
+        esp_set_deep_sleep_wake_stub(esp_wake_deep_sleep);
+    }
+    uint32_t period = rtc_slowck_cali(CALI_RTC_MUX, 128);
+    uint32_t cycle_l, cycle_h;
+    rtc_usec2rtc(time_in_us >> 32, time_in_us, period, &cycle_h, &cycle_l);
+    rtc_slp_prep_lite(1, 0);
+    rtc_sleep(cycle_h, cycle_l, TIMER_EXPIRE_EN, 0);
+    while (1) {
+        ;
+    }
+}
+
+void system_deep_sleep(uint64_t) __attribute__((alias("esp_deep_sleep")));
