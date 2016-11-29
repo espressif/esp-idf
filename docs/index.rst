@@ -97,6 +97,7 @@ Contents:
    Wi-Fi <api/esp_wifi>
    Bluetooth <api/bt>
    Watchdogs <api/wdts>
+   OTA <api/ota>
    GPIO <api/gpio>
    UART <api/uart>
    LED Control <api/ledc>
