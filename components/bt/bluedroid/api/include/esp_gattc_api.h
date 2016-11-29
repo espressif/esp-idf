@@ -66,16 +66,22 @@
 #define ESP_GATT_DEF_BLE_MTU_SIZE   23
 #define ESP_GATT_MAX_MTU_SIZE       517
 
-/* esp_ble_gattc_cb_param_t */
+/**
+ * @brief Gatt client callback parameters union
+ */
 typedef union {
-    /*registration data for ESP_GATTC_REG_EVT */
+    /**
+	 * @brief ESP_GATTC_REG_EVT
+	 */
     struct gattc_reg_evt_param {		
         esp_gatt_status_t status;		/*!< Operation status */
         esp_gatt_if_t gatt_if;			/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t app_id;				/*!< Application id which input in register API */
     } reg;								/*!< Gatt client callback param of ESP_GATTC_REG_EVT */
 
-    /* ESP_GATTC_OPEN_EVT */
+    /**
+     * @brief ESP_GATTC_OPEN_EVT
+     */
     struct gattc_open_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
@@ -84,35 +90,45 @@ typedef union {
         uint16_t mtu;					/*!< MTU size */
     } open;								/*!< Gatt client callback param of ESP_GATTC_OPEN_EVT */
 
-    /* ESP_GATTC_CLOSE_EVT */
+    /**
+     * @brief ESP_GATTC_CLOSE_EVT
+     */
     struct gattc_close_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
         esp_gatt_if_t gatt_if;			/*!< Gatt interface id, different application on gatt client different gatt_if */
         esp_bd_addr_t remote_bda;		/*!< Remote bluetooth device address */
-        esp_gatt_reason_t reason;		/*!< The reason of gatt close */
+        esp_gatt_conn_reason_t reason;	/*!< The reason of gatt connection close */
     } close;							/*!< Gatt client callback param of ESP_GATTC_CLOSE_EVT */
 
-    /* ESP_GATTC_CFG_MTU_EVT */
+    /**
+     * @brief ESP_GATTC_CFG_MTU_EVT
+     */
     struct gattc_cfg_mtu_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
         uint16_t mtu;					/*!< MTU size */
     } cfg_mtu;							/*!< Gatt client callback param of ESP_GATTC_CFG_MTU_EVT */
 
-    /* ESP_GATTC_SEARCH_CMPL_EVT */
+    /**
+     * @brief ESP_GATTC_SEARCH_CMPL_EVT
+     */
     struct gattc_search_cmpl_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
     } search_cmpl;						/*!< Gatt client callback param of ESP_GATTC_SEARCH_CMPL_EVT */
 
-    /* ESP_GATTC_SEARCH_RES_EVT */
+    /**
+     * @brief ESP_GATTC_SEARCH_RES_EVT
+     */
     struct gattc_search_res_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         esp_gatt_srvc_id_t srvc_id;	/*!< Service id, include service uuid and other information */
     } search_res;						/*!< Gatt client callback param of ESP_GATTC_SEARCH_RES_EVT */
 
-    /* ESP_GATTC_READ_CHAR_EVT,  ESP_GATTC_READ_DESCR_EVT */
+    /**
+     * @brief ESP_GATTC_READ_CHAR_EVT,  ESP_GATTC_READ_DESCR_EVT
+     */
     struct gattc_read_char_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
@@ -124,7 +140,9 @@ typedef union {
         uint16_t value_len;				/*!< Characteristic value length */
     } read; 							/*!< Gatt client callback param of ESP_GATTC_READ_CHAR_EVT */
 
-    /* ESP_GATTC_WRITE_CHAR_EVT, ESP_GATTC_PREP_WRITE_EVT, ESP_GATTC_WRITE_DESCR_EVT */
+    /**
+     * @brief ESP_GATTC_WRITE_CHAR_EVT, ESP_GATTC_PREP_WRITE_EVT, ESP_GATTC_WRITE_DESCR_EVT
+     */
     struct gattc_write_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
@@ -133,13 +151,17 @@ typedef union {
         esp_gatt_id_t descr_id;			/*!< Descriptor id, include descriptor uuid and other information */
     } write;							/*!< Gatt client callback param of ESP_GATTC_WRITE_DESCR_EVT */
 
-    /* ESP_GATTC_EXEC_EVT */
+    /**
+     * @brief ESP_GATTC_EXEC_EVT
+     */
     struct gattc_exec_cmpl_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
     } exec_cmpl;						/*!< Gatt client callback param of ESP_GATTC_EXEC_EVT */
 
-    /* ESP_GATTC_NOTIFY_EVT */
+    /**
+     * @brief ESP_GATTC_NOTIFY_EVT
+     */
     struct gattc_notify_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         esp_bd_addr_t remote_bda;		/*!< Remote bluetooth device address */
@@ -151,18 +173,24 @@ typedef union {
         bool is_notify;					/*!< True means notify, false means indicate */
     } notify;							/*!< Gatt client callback param of ESP_GATTC_NOTIFY_EVT */
 
-    /* ESP_GATTC_SRVC_CHG_EVT*/
+    /**
+     * @brief ESP_GATTC_SRVC_CHG_EVT
+	 */
     struct gattc_srvc_chg_evt_param {
         esp_bd_addr_t remote_bda;		/*!< Remote bluetooth device address */
     } srvc_chg;							/*!< Gatt client callback param of ESP_GATTC_SRVC_CHG_EVT */
 
-    /* ESP_GATTC_CONGEST_EVT */
+    /**
+     * @brief ESP_GATTC_CONGEST_EVT
+     */
     struct gattc_congest_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         bool congested;					/*!< Congested or not */
     } congest;							/*!< Gatt client callback param of ESP_GATTC_CONGEST_EVT */
 
-    /* ESP_GATTC_GET_CHAR_EVT */
+    /**
+     * @brief ESP_GATTC_GET_CHAR_EVT
+     */
     struct gattc_get_char_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
@@ -171,7 +199,9 @@ typedef union {
         esp_gatt_char_prop_t char_prop; /*!< Characteristic property */
     } get_char;							/*!< Gatt client callback param of ESP_GATTC_GET_CHAR_EVT */
 
-    /* ESP_GATTC_GET_DESCR_EVT */
+    /**
+     * @brief ESP_GATTC_GET_DESCR_EVT
+     */
     struct gattc_get_descr_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
@@ -180,7 +210,9 @@ typedef union {
         esp_gatt_id_t descr_id;			/*!< Descriptor id, include descriptor uuid and other information */
     } get_descr;						/*!< Gatt client callback param of ESP_GATTC_GET_DESCR_EVT */
 
-    /* ESP_GATTC_GET_INCL_SRVC_EVT */
+    /**
+     * @brief ESP_GATTC_GET_INCL_SRVC_EVT
+     */
     struct gattc_get_incl_srvc_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
@@ -188,14 +220,18 @@ typedef union {
         esp_gatt_srvc_id_t incl_srvc_id;/*!< Included service id, include service uuid and other information */
     } get_incl_srvc;					/*!< Gatt client callback param of ESP_GATTC_GET_INCL_SRVC_EVT */
 
-    /* ESP_GATTC_REG_FOR_NOTIFY_EVT */
+    /**
+     * @brief ESP_GATTC_REG_FOR_NOTIFY_EVT
+     */
     struct gattc_reg_for_notify_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         esp_gatt_srvc_id_t srvc_id; 	/*!< Service id, include service uuid and other information */
         esp_gatt_id_t char_id;			/*!< Characteristic id, include characteristic uuid and other information */
     } reg_for_notify;					/*!< Gatt client callback param of ESP_GATTC_REG_FOR_NOTIFY_EVT */
 
-	/* ESP_GATTC_UNREG_FOR_NOTIFY_EVT */
+	/**
+     * @brief ESP_GATTC_UNREG_FOR_NOTIFY_EVT
+     */
     struct gattc_unreg_for_notify_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         esp_gatt_srvc_id_t srvc_id; 	/*!< Service id, include service uuid and other information */

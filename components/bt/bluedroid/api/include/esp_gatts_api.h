@@ -47,16 +47,22 @@
 /* following is extra event */
 #define ESP_GATTS_RESPONSE_EVT            21
 
-/* esp_ble_gatts_cb_param_t */
+/**
+ * @brief Gatt server callback parameters union
+ */
 typedef union {
-    //ESP_GATTS_REG_EVT
+    /**
+     * @brief ESP_GATTS_REG_EVT
+     */
     struct gatts_reg_evt_param {
         esp_gatt_status_t status;						/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t app_id;				/*!< Application id which input in register API */
     } reg;								/*!< Gatt server callback param of ESP_GATTS_REG_EVT */
 
-    // param for ESP_GATTS_READ_EVT
+    /**
+     * @brief ESP_GATTS_READ_EVT
+     */
     struct gatts_read_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         uint32_t trans_id;				/*!< Transfer id */
@@ -66,7 +72,9 @@ typedef union {
         bool is_long;					/*!< The value is too long or not */
     } read;								/*!< Gatt server callback param of ESP_GATTS_READ_EVT */
 
-    // param for ESP_GATTS_WRITE_EVT
+    /**
+     * @brief ESP_GATTS_WRITE_EVT
+     */
     struct gatts_write_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         uint32_t trans_id;				/*!< Transfer id */
@@ -79,7 +87,9 @@ typedef union {
         uint8_t *value;					/*!< The write attribute value */
     } write;							/*!< Gatt server callback param of ESP_GATTS_WRITE_EVT */
 
-    // param for ESP_GATTS_EXEC_WRITE_EVT
+    /**
+     * @brief ESP_GATTS_EXEC_WRITE_EVT
+     */
     struct gatts_exec_write_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         uint32_t trans_id;				/*!< Transfer id */
@@ -89,20 +99,29 @@ typedef union {
         uint8_t exec_write_flag;		/*!< Execute write flag */
     } exec_write;						/*!< Gatt server callback param of ESP_GATTS_EXEC_WRITE_EVT */
 
-    // param for ESP_GATTS_MTU_EVT
+    /**
+     * @brief ESP_GATTS_MTU_EVT
+     */
     struct gatts_mtu_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         uint16_t mtu;					/*!< MTU size */
     } mtu;								/*!< Gatt server callback param of ESP_GATTS_MTU_EVT */
 
-    // param for ESP_GATTS_CONF_EVT
+    /**
+     * @brief ESP_GATTS_CONF_EVT
+     */
     struct gatts_conf_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
     } conf;								/*!< Gatt server callback param of ESP_GATTS_CONF_EVT (confirm) */
 
-    // param for ESP_GATTS_UNREG_EVT, NONE
-    // param for ESP_GATTS_CREATE_EVT
+    /**
+     * @brief ESP_GATTS_UNREG_EVT
+     */
+
+    /**
+     * @brief ESP_GATTS_CREATE_EVT
+     */
     struct gatts_create_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
@@ -110,7 +129,9 @@ typedef union {
         esp_gatt_srvc_id_t service_id;	/*!< Service id, include service uuid and other information */
     } create;							/*!< Gatt server callback param of ESP_GATTS_CREATE_EVT */
 
-    // param for ESP_GATTS_ADD_INCL_SRVC_EVT
+    /**
+     * @brief ESP_GATTS_ADD_INCL_SRVC_EVT
+     */
     struct gatts_add_incl_srvc_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
@@ -118,7 +139,9 @@ typedef union {
         uint16_t service_handle;		/*!< Service attribute handle */
     } add_incl_srvc;					/*!< Gatt server callback param of ESP_GATTS_ADD_INCL_SRVC_EVT */
 
-    // param for ESP_GATTS_ADD_CHAR_EVT
+    /**
+     * @brief ESP_GATTS_ADD_CHAR_EVT
+     */
     struct gatts_add_char_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
@@ -127,7 +150,9 @@ typedef union {
         esp_bt_uuid_t char_uuid;		/*!< Characteristic uuid */
     } add_char;							/*!< Gatt server callback param of ESP_GATTS_ADD_CHAR_EVT */
 
-    // param for ESP_GATTS_ADD_CHAR_DESCR_EVT
+    /**
+     * @brief ESP_GATTS_ADD_CHAR_DESCR_EVT
+     */
     struct gatts_add_char_descr_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
@@ -136,28 +161,36 @@ typedef union {
         esp_bt_uuid_t char_uuid;		/*!< Characteristic uuid */
     } add_char_descr;					/*!< Gatt server callback param of ESP_GATTS_ADD_CHAR_DESCR_EVT */
 
-    // param for ESP_GATTS_DELETE_EVT
+    /**
+     * @brief ESP_GATTS_DELETE_EVT
+     */
     struct gatts_delete_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t service_handle;		/*!< Service attribute handle */
     } del;								/*!< Gatt server callback param of ESP_GATTS_DELETE_EVT */
 
-    // param for ESP_GATTS_START_EVT
+    /**
+     * @brief ESP_GATTS_START_EVT
+     */
     struct gatts_start_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t service_handle;		/*!< Service attribute handle */
     } start;							/*!< Gatt server callback param of ESP_GATTS_START_EVT */
 
-    // param for ESP_GATTS_STOP_EVT
+    /**
+     * @brief ESP_GATTS_STOP_EVT
+     */
     struct gatts_stop_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t service_handle;		/*!< Service attribute handle */
     } stop;								/*!< Gatt server callback param of ESP_GATTS_STOP_EVT */
 
-    // param for ESP_GATTS_CONNECT_EVT
+    /**
+     * @brief ESP_GATTS_CONNECT_EVT
+     */
     struct gatts_connect_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
@@ -165,7 +198,9 @@ typedef union {
         bool is_connected;				/*!< Indicate it is connected or not */
     } connect;							/*!< Gatt server callback param of ESP_GATTS_CONNECT_EVT */
 
-    // param for ESP_GATTS_DISCONNECT_EVT
+    /**
+     * @brief ESP_GATTS_DISCONNECT_EVT
+     */
     struct gatts_disconnect_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         uint16_t gatt_if;				/*!< Gatt interface id, different application on gatt client different gatt_if */
@@ -173,17 +208,29 @@ typedef union {
         bool is_connected;				/*!< Indicate it is connected or not */
     } disconnect;						/*!< Gatt server callback param of ESP_GATTS_DISCONNECT_EVT */
 
-    // param for ESP_GATTS_OPEN_EVT none
-    // param for ESP_GATTS_CANCEL_OPEN_EVT none
-    // param for ESP_GATTS_CLOSE_EVT none
-    // param for ESP_GATTS_LISTEN_EVT none
-    // param for ESP_GATTS_CONGEST_EVT
+    /**
+     * @brief ESP_GATTS_OPEN_EVT
+     */
+    /**
+     * @brief ESP_GATTS_CANCEL_OPEN_EVT
+     */
+    /**
+     * @brief ESP_GATTS_CLOSE_EVT
+     */
+    /**
+     * @brief ESP_GATTS_LISTEN_EVT
+     */
+    /**
+     * @brief ESP_GATTS_CONGEST_EVT
+     */
     struct gatts_congest_evt_param {
         uint16_t conn_id;				/*!< Connection id */
         bool congested;					/*!< Congested or not */
     } congest;							/*!< Gatt server callback param of ESP_GATTS_CONGEST_EVT */
 
-    // param for  ESP_GATTS_RESPONSE_EVT
+    /**
+     * @brief ESP_GATTS_RESPONSE_EVT
+     */
     struct gatts_rsp_evt_param {
         esp_gatt_status_t status;						/*!< Operation status */
         uint16_t handle;				/*!< Attribute handle which send response */

@@ -42,18 +42,27 @@ typedef enum {
     ESP_BLUFI_DEINIT_FAILED = 0,
 } esp_blufi_deinit_state_t;
 
+/**
+ * @brief BLUFI callback parameters union 
+ */
 typedef union {
-    //ESP_BLUFI_EVENT_INIT_FINISH
+    /**
+	 * @brief ESP_BLUFI_EVENT_INIT_FINISH
+	 */
     struct blufi_init_finish_evt_param {
         esp_blufi_init_state_t state;				/*!< Initial status */
     } init_finish;									/*!< Blufi callback param of ESP_BLUFI_EVENT_INIT_FINISH */
 
-    //ESP_BLUFI_EVENT_DEINIT_FINISH
+    /**
+	 * @brief ESP_BLUFI_EVENT_DEINIT_FINISH
+	 */
     struct blufi_deinit_finish_evt_param {
         esp_blufi_deinit_state_t state;				/*!< De-initial status */
     } deinit_finish;								/*!< Blufi callback param of ESP_BLUFI_EVENT_DEINIT_FINISH */
 
-    //ESP_BLUFI_EVENT_RECV_DATA
+    /**
+     * @brief ESP_BLUFI_EVENT_RECV_DATA
+	 */
     struct blufi_recv_evt_param {
         uint8_t data[ESP_BLUFI_RECV_DATA_LEN_MAX];	/*!< Blufi receive data */
         uint8_t data_len;							/*!< Blufi receive data length */

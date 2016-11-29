@@ -21,7 +21,9 @@
 #define ESP_GATT_PREP_WRITE_CANCEL   0x00
 #define ESP_GATT_PREP_WRITE_EXEC     0x01
 
-/* Success code and error codes */
+/**
+ * @brief GATT success code and error codes
+ */
 typedef enum {
     ESP_GATT_OK                     =   0x0,
     ESP_GATT_INVALID_HANDLE         =   0x01,   /* 0x0001 */
@@ -69,28 +71,41 @@ typedef enum {
     ESP_GATT_OUT_OF_RANGE           =   0xff,   /* 0xFFAttribute value out of range */
 } esp_gatt_status_t;
 
+/**
+ * @brief Gatt Connection reason enum
+ */
 typedef enum {
-    ESP_GATT_CONN_UNKNOWN = 0,
-    ESP_GATT_CONN_L2C_FAILURE = 1, /* general L2cap failure  */
-    ESP_GATT_CONN_TIMEOUT = 0x08, /* 0x08 connection timeout  */
-    ESP_GATT_CONN_TERMINATE_PEER_USER = 0x13, /* 0x13 connection terminate by peer user  */
-    ESP_GATT_CONN_TERMINATE_LOCAL_HOST = 0x16, /* 0x16 connectionterminated by local host */
-    ESP_GATT_CONN_FAIL_ESTABLISH = 0x3e, /* 0x03E connection fail to establish  */
-    // ESP_GATT_CONN_LMP_TIMEOUT = 0x22, /* 0x22 connection fail for LMP response tout */
-    ESP_GATT_CONN_CONN_CANCEL = 0x0100,  /* 0x0100 L2CAP connection cancelled  */
-    ESP_GATT_CONN_NONE = 0x0101 /* 0x0101 no connection to cancel  */
-} esp_gatt_reason_t;
+    ESP_GATT_CONN_UNKNOWN = 0,						/*!< Gatt connection unknown */
+    ESP_GATT_CONN_L2C_FAILURE = 1,					/*!< General L2cap failure  */
+    ESP_GATT_CONN_TIMEOUT = 0x08,					/*!< Connection timeout  */
+    ESP_GATT_CONN_TERMINATE_PEER_USER = 0x13,		/*!< Connection terminate by peer user  */
+    ESP_GATT_CONN_TERMINATE_LOCAL_HOST = 0x16,		/*!< Connectionterminated by local host */
+    ESP_GATT_CONN_FAIL_ESTABLISH = 0x3e,			/*!< Connection fail to establish  */
+    ESP_GATT_CONN_LMP_TIMEOUT = 0x22,				/*!< Connection fail for LMP response tout */
+    ESP_GATT_CONN_CONN_CANCEL = 0x0100,				/*!< L2CAP connection cancelled  */
+    ESP_GATT_CONN_NONE = 0x0101						/*!< No connection to cancel  */
+} esp_gatt_conn_reason_t;
 
+/**
+ * @brief Gatt id, include uuid and instance id
+ */
 typedef struct {
     esp_bt_uuid_t   uuid;					/*!< UUID */
     uint8_t         inst_id;				/*!< Instance id */
 } __attribute__((packed)) esp_gatt_id_t;
 
+/**
+ * @brief Gatt service id, include id
+ *        (uuid and instance id) and primary flag
+ */
 typedef struct {
     esp_gatt_id_t   id;						/*!< Gatt id, include uuid and instance */
     bool            is_primary;				/*!< This service is primary or not */
 } __attribute__((packed)) esp_gatt_srvc_id_t;
 
+/**
+ * @brief Gatt authentication request type
+ */
 typedef enum {
     AUTH_REQ_NO_SCATTERNET,         /* Device doesn't support scatternet, it might
                                         support "role switch during connection" for
@@ -103,8 +118,9 @@ typedef enum {
                                         and slave roles */
 } esp_gatt_auth_req_t;
 
-/* Attribute permissions
-*/
+/**
+ * @brief Attribute permissions
+ */
 typedef enum {
     ESP_GATT_PERM_READ                  =   (1 << 0),   /* bit 0 -  0x0001 */
     ESP_GATT_PERM_READ_ENCRYPTED        =   (1 << 1),   /* bit 1 -  0x0002 */

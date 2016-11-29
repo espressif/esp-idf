@@ -202,20 +202,31 @@ typedef enum {
     ESP_GAP_SEARCH_SEARCH_CANCEL_CMPL_EVT  = 6,      /* Search cancelled */
 } esp_gap_search_evt_t;
 
+/**
+ * @brief Gap callback parameters union
+ */
 typedef union {
-    //ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT
+    /**
+     * @brief ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT
+     */
     struct ble_adv_data_cmpl_evt_param {
         esp_bt_status_t status;						/*!< Indicate the set advertising data operation success status */
     } adv_data_cmpl;								/*!< Event parameter of ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT */ 
-    //ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT
+    /**
+     * @brief ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT
+     */
     struct ble_scan_rsp_data_cmpl_evt_param {
         esp_bt_status_t status;						/*!< Indicate the set scan response data operation success status */
     } scan_rsp_data_cmpl;							/*!< Event parameter of ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT */
-    //ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT
+    /**
+     * @brief ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT
+     */
     struct ble_scan_param_cmpl_evt_param {
         esp_bt_status_t status;						/*!< Indicate the set scan param operation success status */
     } scan_param_cmpl;								/*!< Event parameter of ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT */
-    //ESP_GAP_BLE_SCAN_RESULT_EVT
+    /**
+     * @brief ESP_GAP_BLE_SCAN_RESULT_EVT
+     */
     struct ble_scan_result_evt_param {
         esp_gap_search_evt_t search_evt;			/*!< Search event type */
         esp_bd_addr_t bda;							/*!< Bluetooth device address which has been searched */
