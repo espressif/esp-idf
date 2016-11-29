@@ -131,6 +131,7 @@ typedef union {
         esp_gatt_srvc_id_t service_id;
         esp_gatt_id_t char_id;
         uint8_t *value;
+		esp_gatt_write_type_t write_type;
         esp_gatt_auth_req_t auth_req;
     } write_char;
     //BTC_GATTC_ACT_WRITE_CHAR_DESCR,
@@ -141,6 +142,7 @@ typedef union {
         esp_gatt_id_t char_id;
         esp_gatt_id_t descr_id;
         uint8_t *value;
+		esp_gatt_write_type_t write_type;
         esp_gatt_auth_req_t auth_req;
     } write_descr;
     //BTC_GATTC_ACT_PREPARE_WRITE,

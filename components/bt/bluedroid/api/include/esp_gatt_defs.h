@@ -161,6 +161,14 @@ typedef union {
     uint16_t            handle;								/*!< Gatt attribute handle */
 } esp_gatt_rsp_t;
 
+/**
+  * @brief Gatt write type
+  */
+typedef enum {
+	ESP_GATT_WRITE_TYPE_NO_RSP	=	1,						/*!< Gatt write attribute need no response */
+	ESP_GATT_WRITE_TYPE_RSP,								/*!< Gatt write attribute need remote response */
+} esp_gatt_write_type_t;
+
 typedef uint32_t    esp_gatt_if_t;							/* Gatt interface type, different application on GATT client use different gatt_if */
 
 #endif /* __ESP_GATT_DEFS_H__ */

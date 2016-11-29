@@ -18,18 +18,6 @@
 #include "btc_manage.h"
 #include "btc_gattc.h"
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_app_register_callback
-**
-** @brief           This function is called to register application callbacks
-**                  with GATTC module.
-**
-** @param[in]       callback - pointer to the application callback function.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_register_callback(esp_profile_cb_t callback)
 {
     if (callback == NULL) {
@@ -40,18 +28,6 @@ esp_err_t esp_ble_gattc_register_callback(esp_profile_cb_t callback)
     return ESP_OK;
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_app_register
-**
-** @brief           This function is called to register application
-**                  with GATTC module.
-**
-** @param[in]       app_id : Application Identitfy (UUID), for different application
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_app_register(uint16_t app_id)
 {
     btc_msg_t msg;
@@ -69,18 +45,6 @@ esp_err_t esp_ble_gattc_app_register(uint16_t app_id)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_app_unregister
-**
-** @brief           This function is called to unregister an application
-**                  from GATTC module.
-**
-** @param[in]       client_if - client interface identifier.
-**
-** @return          None
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gatt_if)
 {
     btc_msg_t msg;
@@ -94,20 +58,6 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gatt_if)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_conn
-**
-** @brief           Open a direct connection or add a background auto connection
-**                  bd address
-**
-** @param[in]       gatt_if: application identity.
-** @param[in]       remote_bda: remote device BD address.
-** @param[in]       is_direct: direct connection or background auto connection
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bool is_direct)
 {
     btc_msg_t msg;
@@ -123,17 +73,6 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bo
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_close
-**
-** @brief           Close a connection to a GATT server.
-**
-** @param[in]       conn_id: connection ID to be closed.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_close (uint16_t conn_id)
 {
     btc_msg_t msg;
@@ -147,20 +86,6 @@ esp_err_t esp_ble_gattc_close (uint16_t conn_id)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_config_mtu
-**
-** @brief           Configure the MTU size in the GATT channel. This can be done
-**                  only once per connection.
-**
-** @param[in]       conn_id: connection ID.
-**                  mtu: desired MTU size to use.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu)
 {
     btc_msg_t msg;
@@ -179,22 +104,6 @@ esp_err_t esp_ble_gattc_config_mtu (uint16_t conn_id, uint16_t mtu)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_search_service
-**
-** @brief           This function is called to request a GATT service discovery
-**                  on a GATT server. This function report service search result
-**                  by a callback event, and followed by a service search complete
-**                  event.
-**
-** @param[in]       conn_id: connection ID.
-** @param[in]       filter_uuid: a UUID of the service application is interested in.
-**                  If Null, discover for all services.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_search_service(uint16_t conn_id, esp_bt_uuid_t *filter_uuid)
 {
     btc_msg_t msg;
@@ -213,24 +122,6 @@ esp_err_t esp_ble_gattc_search_service(uint16_t conn_id, esp_bt_uuid_t *filter_u
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-
-
-/****************************************************************************************************
-**
-** @function        esp_ble_gattc_get_characteristic
-**
-** @brief           This function is called to find the first characteristic of the
-**                  service on the given server.
-**
-** @param[in]       conn_id: connection ID which identify the server.
-**
-** @param[in]       srvc_id: serivce ID
-**
-** @param[in]       start_char_id:  the start characteristic ID
-**
-** @return          ESP_OK - success, other - failed
-**
-*****************************************************************************************************/
 
 esp_err_t esp_ble_gattc_get_characteristic(uint16_t conn_id,
         esp_gatt_srvc_id_t *srvc_id,
@@ -255,23 +146,6 @@ esp_err_t esp_ble_gattc_get_characteristic(uint16_t conn_id,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-
-/****************************************************************************************************
-**
-** @function        esp_ble_gattc_get_descriptor
-**
-** @brief           This function is called to find the descriptor of the
-**                  service on the given server.
-**
-** @param[in]       conn_id: connection ID which identify the server.
-** @param[in]       srvc_id: the service ID of which the characteristic is belonged to.
-** @param[in]       char_id: Characteristic ID, if NULL find the first available
-**                  characteristic.
-** @param[in]       start_descr_id:  the sctart descriptor id
-**
-** @return          ESP_OK - success, other - failed
-**
-*****************************************************************************************************/
 esp_err_t esp_ble_gattc_get_descriptor(uint16_t conn_id,
                                        esp_gatt_srvc_id_t *srvc_id,
                                        esp_gatt_id_t *char_id,
@@ -299,23 +173,6 @@ esp_err_t esp_ble_gattc_get_descriptor(uint16_t conn_id,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-
-/****************************************************************************************************
-**
-** @function        esp_ble_gattc_get_include_service
-**
-** @brief           This function is called to find the first characteristic of the
-**                  service on the given server.
-**
-** @param[in]       conn_id: connection ID which identify the server.
-** @param[in]       srvc_id: the service ID of which the characteristic is belonged to.
-** @param[in]       start_incl_srvc_id: the start include service id
-**
-** @return          ESP_OK - success, other - failed
-**
-*****************************************************************************************************/
-
-
 esp_err_t esp_ble_gattc_get_included_service(uint16_t conn_id,
         esp_gatt_srvc_id_t *srvc_id,
         esp_gatt_srvc_id_t *start_incl_srvc_id)
@@ -340,21 +197,6 @@ esp_err_t esp_ble_gattc_get_included_service(uint16_t conn_id,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_read_char
-**
-** @brief           This function is called to read a service's characteristics of
-**                  the given characteritisc ID.UTH_REQ_NO_SCATTERNET
-**
-** @param[in]       conn_id - connection ID.
-** @param[in]       srvc_id - service ID.
-** @param[in]       char_id - characteritic ID to read.
-** @param[in]       auth_req - authenticate request type
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_read_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id,
                                    esp_gatt_id_t *char_id, esp_gatt_auth_req_t auth_req)
 {
@@ -372,20 +214,6 @@ esp_err_t esp_ble_gattc_read_char (uint16_t conn_id, esp_gatt_srvc_id_t *srvc_id
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_read_char_descr
-**
-** @brief           This function is called to read a characteristics descriptor.
-**
-** @param[in]       conn_id - connection ID.
-** @param[in]       srvc_id - service ID.
-** @param[in]       descr_id - characteritic descriptor ID to read.
-** @param[in]       auth_req - authenticate request type
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
         esp_gatt_srvc_id_t *srvc_id,
         esp_gatt_id_t  *char_id,
@@ -407,26 +235,12 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_write_char
-**
-** @brief           This function is called to write characteristic value.
-**
-** @param[in]       conn_id - connection ID.
-** @param[in]       srvc_id - service ID.
-** @param[in]       char_id - characteristic ID to write.
-** @param[in]       value_len: length of the value to be written.
-** @param[in]       value - the value to be written.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
                                     esp_gatt_srvc_id_t *srvc_id,
                                     esp_gatt_id_t *char_id,
                                     uint16_t value_len,
                                     uint8_t *value,
+									esp_gatt_write_type_t write_type,
                                     esp_gatt_auth_req_t auth_req)
 {
     btc_msg_t msg;
@@ -440,33 +254,19 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
     memcpy(&arg.write_char.char_id, char_id, sizeof(esp_gatt_id_t));
     arg.write_char.value_len = value_len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : value_len;
     arg.write_char.value = value;
+    arg.write_char.write_type = write_type;
     arg.write_char.auth_req = auth_req;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_write_char_descr
-**
-** @brief           This function is called to write characteristic descriptor value.
-**
-** @param[in]       conn_id - connection ID
-** @param[in]       srvc_id - service ID.
-** @param[in]       char_id - characteristic ID.
-** @param[in]       descr_id - characteristic descriptor ID to write.
-** @param[in]       value_len: length of the value to be written.
-** @param[in]       value - the value to be written.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
         esp_gatt_srvc_id_t *srvc_id,
         esp_gatt_id_t *char_id,
         esp_gatt_id_t *descr_id,
         uint16_t value_len,
         uint8_t *value,
+		esp_gatt_write_type_t write_type,
         esp_gatt_auth_req_t auth_req)
 {
     btc_msg_t msg;
@@ -481,26 +281,12 @@ esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
     memcpy(&arg.write_descr.descr_id, descr_id, sizeof(esp_gatt_id_t));
     arg.write_descr.value_len = value_len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : value_len;
     arg.write_descr.value = value;
+    arg.write_descr.write_type = write_type;
     arg.write_descr.auth_req = auth_req;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_prepare_write
-**
-** @brief           This function is called to prepare write a characteristic value.
-**
-** @param[in]       conn_id - connection ID.
-** @param[in]       char_id - GATT characteritic ID of the service.
-** @param[in]       offset - offset of the write value.
-** @param[in]       value_len: length of the value to be written.
-** @param[in]       value - the value to be written.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
                                       esp_gatt_srvc_id_t *srvc_id,
                                       esp_gatt_id_t *char_id,
@@ -527,20 +313,6 @@ esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-
-
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_execu_write
-**
-** @brief           This function is called to execute write a prepare write sequence.
-**
-** @param[in]       conn_id - connection ID.
-** @param[in]       is_execute - execute or cancel.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
 esp_err_t esp_ble_gattc_execute_write (uint16_t conn_id, bool is_execute)
 {
     btc_msg_t msg;
@@ -555,22 +327,6 @@ esp_err_t esp_ble_gattc_execute_write (uint16_t conn_id, bool is_execute)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-
-
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_register_for_notify
-**
-** @brief           This function is called to register for notification of a service.
-**
-** @param[in]       gatt_if - gatt interface id.
-** @param[in]       bda - target GATT server.
-** @param[in]       srvc_id - pointer to GATT service ID.
-** @param[in]       char_id - pointer to GATT characteristic ID.
-**
-** @return          OK if registration succeed, otherwise failed.
-**
-*******************************************************************************/
 esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gatt_if,
         esp_bd_addr_t server_bda,
         esp_gatt_srvc_id_t *srvc_id,
@@ -590,22 +346,6 @@ esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gatt_if,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-
-
-/*******************************************************************************
-**
-** @function        esp_ble_gattc_unregister_ntf
-**
-** @brief           This function is called to de-register for notification of a service.
-**
-** @param[in]       gatt_if - gatt interface id.
-** @param[in]       bda - target GATT server.
-** @param[in]       srvc_id - pointer to GATT service ID.
-** @param[in]       char_id - pointer to GATT characteristic ID.
-**
-** @return          OK if deregistration succeed, otherwise failed.
-**
-*******************************************************************************/
 esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gatt_if,
         esp_bd_addr_t server_bda,
         esp_gatt_srvc_id_t *srvc_id,

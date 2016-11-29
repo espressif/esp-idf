@@ -469,6 +469,8 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
 ** @param[in]       char_id : characteristic ID to write.
 ** @param[in]       value_len: length of the value to be written.
 ** @param[in]       value : the value to be written.
+** @param[in]       write_type : the type of attribute write operation.
+** @param[in]       auth_req : authentication request.
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -478,6 +480,7 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
                                     esp_gatt_id_t *char_id,
                                     uint16_t value_len,
                                     uint8_t *value,
+									esp_gatt_write_type_t write_type,
                                     esp_gatt_auth_req_t auth_req);
 
 
@@ -493,6 +496,9 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
 ** @param[in]       descr_id : characteristic descriptor ID to write.
 ** @param[in]       value_len: length of the value to be written.
 ** @param[in]       value : the value to be written.
+** @param[in]       write_type : the type of attribute write operation.
+** @param[in]       auth_req : authentication request.
+**
 **
 ** @return          ESP_OK - success, other - failed
 **
@@ -503,6 +509,7 @@ esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
         esp_gatt_id_t *descr_id,
         uint16_t value_len,
         uint8_t *value,
+		esp_gatt_write_type_t write_type,
         esp_gatt_auth_req_t auth_req);
 
 
@@ -518,6 +525,7 @@ esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
 ** @param[in]       offset : offset of the write value.
 ** @param[in]       value_len: length of the value to be written.
 ** @param[in]       value : the value to be written.
+** @param[in]       auth_req : authentication request.
 **
 ** @return          ESP_OK - success, other - failed
 **

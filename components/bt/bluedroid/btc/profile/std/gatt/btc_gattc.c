@@ -346,15 +346,13 @@ static void btc_gattc_read_char_descr(btc_ble_gattc_args_t *arg)
 
 static void btc_gattc_write_char(btc_ble_gattc_args_t *arg)
 {
-    //TODO: check the write type
     tBTA_GATTC_CHAR_ID in_char_id;
-    tBTA_GATTC_WRITE_TYPE write_type = BTA_GATTC_TYPE_WRITE;
 
     btc_to_bta_srvc_id(&in_char_id.srvc_id, &arg->write_char.service_id);
     btc_to_bta_gatt_id(&in_char_id.char_id, &arg->write_char.char_id);
 
     BTA_GATTC_WriteCharValue(arg->write_char.conn_id, &in_char_id,
-                             write_type,
+                             arg->write_char.write_type,
                              arg->write_char.value_len,
                              arg->write_char.value,
                              arg->write_char.auth_req);
@@ -362,10 +360,8 @@ static void btc_gattc_write_char(btc_ble_gattc_args_t *arg)
 
 static void btc_gattc_write_char_descr(btc_ble_gattc_args_t *arg)
 {
-    //TODO: check the write type
     tBTA_GATTC_CHAR_DESCR_ID in_char_descr_id;
     tBTA_GATT_UNFMT descr_val;
-    tBTA_GATTC_WRITE_TYPE write_type = BTA_GATTC_TYPE_WRITE;
     btc_to_bta_srvc_id(&in_char_descr_id.char_id.srvc_id, &arg->write_descr.service_id);
     btc_to_bta_gatt_id(&in_char_descr_id.char_id.char_id, &arg->write_descr.char_id);
     btc_to_bta_gatt_id(&in_char_descr_id.descr_id, &arg->write_descr.descr_id);
@@ -374,7 +370,7 @@ static void btc_gattc_write_char_descr(btc_ble_gattc_args_t *arg)
     descr_val.p_value = arg->write_descr.value;
 
     BTA_GATTC_WriteCharDescr(arg->write_descr.conn_id, &in_char_descr_id,
-                             write_type, &descr_val,
+                             arg->write_descr.write_type, &descr_val,
                              arg->write_descr.auth_req);
 }
 
