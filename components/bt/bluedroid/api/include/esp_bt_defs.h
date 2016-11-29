@@ -78,11 +78,9 @@ typedef enum {
     BLE_ADDR_TYPE_RPA_RANDOM    = 0x03,
 } esp_ble_addr_type_t;
 
-#define APP_ID_MIN  0x0000
-#define APP_ID_MAX  0x7fff
+#define ESP_APP_ID_MIN  0x0000
+#define ESP_APP_ID_MAX  0x7fff
 
 typedef void (* esp_profile_cb_t)(uint32_t event, void *param);
-
-#define API_BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == ESP_BLE_CONN_PARAM_UNDEF))
 
 #endif      ///__ESP_BT_DEFS_H__

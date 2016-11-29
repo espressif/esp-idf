@@ -57,6 +57,10 @@ esp_err_t esp_ble_gattc_app_register(uint16_t app_id)
     btc_msg_t msg;
     btc_ble_gattc_args_t arg;
 
+    if (app_id < ESP_APP_ID_MIN || app_id > ESP_APP_ID_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_APP_REGISTER;

@@ -367,8 +367,8 @@ void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params)
         disc_mode = BTA_DM_BLE_NON_DISCOVERABLE;
     }
 
-    if (!API_BLE_ISVALID_PARAM(ble_adv_params->adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
-            !API_BLE_ISVALID_PARAM(ble_adv_params->adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX)) {
+    if (!BLE_ISVALID_PARAM(ble_adv_params->adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
+            !BLE_ISVALID_PARAM(ble_adv_params->adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX)) {
         LOG_ERROR("Invalid advertisting interval parameters.\n");
         return ;
     }
@@ -424,8 +424,8 @@ static void btc_scan_params_callback(tGATT_IF gatt_if, tBTM_STATUS status)
 static void btc_ble_set_scan_params(esp_ble_scan_params_t *scan_params,
                                     tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback)
 {
-    if (API_BLE_ISVALID_PARAM(scan_params->scan_interval, BTM_BLE_SCAN_INT_MIN, BTM_BLE_SCAN_INT_MAX) &&
-            API_BLE_ISVALID_PARAM(scan_params->scan_window, BTM_BLE_SCAN_WIN_MIN, BTM_BLE_SCAN_WIN_MAX) &&
+    if (BLE_ISVALID_PARAM(scan_params->scan_interval, BTM_BLE_SCAN_INT_MIN, BTM_BLE_SCAN_INT_MAX) &&
+            BLE_ISVALID_PARAM(scan_params->scan_window, BTM_BLE_SCAN_WIN_MIN, BTM_BLE_SCAN_WIN_MAX) &&
             (scan_params->scan_type == BTM_BLE_SCAN_MODE_ACTI || scan_params->scan_type == BTM_BLE_SCAN_MODE_PASS)) {
         BTA_DmSetBleScanFilterParams(0 /*client_if*/,
                                      scan_params->scan_interval,
