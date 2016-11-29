@@ -30,7 +30,8 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (app_id < ESP_APP_ID_MIN || app_id > ESP_APP_ID_MAX) {
+    //if (app_id < ESP_APP_ID_MIN || app_id > ESP_APP_ID_MAX) {
+    if (app_id > ESP_APP_ID_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 

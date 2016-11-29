@@ -433,11 +433,4 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
     }
 
     btc_gatts_cb_param_copy_free(msg, p_data);
-
-    //ets_printf("yyy\n");
 }
-
-
-
-
-
