@@ -1,22 +1,8 @@
 OTA
 ===
 
-Overview
---------
-
-`Instructions`_
-
-Application Example
--------------------
-
-`Instructions`_
-
 API Reference
 -------------
-
-`Instructions`_
-
-.. _Instructions: template.html
 
 Header Files
 ^^^^^^^^^^^^
@@ -24,7 +10,7 @@ Header Files
   * `app_update/include/esp_ota_ops.h <https://github.com/espressif/esp-idf/blob/master/components/app_update/include/esp_ota_ops.h>`_
 
 Macros
-------
+^^^^^^
 
 .. doxygendefine:: ESP_ERR_OTA_BASE
 .. doxygendefine:: ESP_ERR_OTA_PARTITION_CONFLICT
