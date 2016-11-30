@@ -702,4 +702,20 @@ esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *ho
     }
 }
 
+esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **hostname)
+{
+    struct netif *p_netif = NULL;
+    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || hostname == NULL) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    p_netif = esp_netif[tcpip_if];
+    if (p_netif != NULL) {
+        *hostname = p_netif->hostname;
+        return ESP_OK;
+    } else {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+}
+
 #endif

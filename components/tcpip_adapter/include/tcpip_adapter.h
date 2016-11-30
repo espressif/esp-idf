@@ -418,6 +418,18 @@ esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapt
  */
 esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *hostname);
 
+/**
+ * @brief  Get the hostname from the interface
+ *
+ * @param[in]   tcpip_if: the interface which we will get the hostname
+ * @param[in]   hostname: the host name from the interfce
+ *
+ * @return ESP_OK:success
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY:interface status error
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS:parameter error
+ */
+esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **hostname);
+
 #ifdef __cplusplus
 }
 #endif
