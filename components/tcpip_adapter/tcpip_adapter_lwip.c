@@ -392,27 +392,29 @@ esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode_t opt_op, tcpip_a
                 uint32_t start_ip = 0;
                 uint32_t end_ip = 0;
                 dhcps_lease_t *poll = opt_val;
+                
+		if (poll->enable){
+                    memset(&info, 0x00, sizeof(tcpip_adapter_ip_info_t));
+                    tcpip_adapter_get_ip_info(WIFI_IF_AP, &info);
+                    softap_ip = htonl(info.ip.addr);
+                    start_ip = htonl(poll->start_ip.addr);
+                    end_ip = htonl(poll->end_ip.addr);
 
-                memset(&info, 0x00, sizeof(tcpip_adapter_ip_info_t));
-                tcpip_adapter_get_ip_info(WIFI_IF_AP, &info);
-                softap_ip = htonl(info.ip.addr);
-                start_ip = htonl(poll->start_ip.addr);
-                end_ip = htonl(poll->end_ip.addr);
+                    /*config ip information can't contain local ip*/
+                    if ((start_ip <= softap_ip) && (softap_ip <= end_ip))
+                        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
 
-                /*config ip information can't contain local ip*/
-                if ((start_ip <= softap_ip) && (softap_ip <= end_ip))
-                       return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+                    /*config ip information must be in the same segment as the local ip*/
+                    softap_ip >>= 8;
+                    if ((start_ip >> 8 != softap_ip)
+                        || (end_ip >> 8 != softap_ip)) {
+                           return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+                    }
 
-                /*config ip information must be in the same segment as the local ip*/
-                softap_ip >>= 8;
-                if ((start_ip >> 8 != softap_ip)
-                    || (end_ip >> 8 != softap_ip)) {
-                       return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
-                }
-
-                if (end_ip - start_ip > DHCPS_MAX_LEASE) {
-                       return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
-                }
+                    if (end_ip - start_ip > DHCPS_MAX_LEASE) {
+                        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+                    }
+		}
 
                 memcpy(opt_info, opt_val, opt_len);
                 break;
