@@ -204,6 +204,18 @@ typedef enum {
 } esp_gap_search_evt_t;
 
 /**
+ * @brief Ble scan result event type, to indicate the
+ *        result is scan response or advertising data or other
+ */
+typedef enum {
+	ESP_BLE_EVT_CONN_ADV         = 0x00,		/*!< Connectable undirected advertising (ADV_IND) */
+	ESP_BLE_EVT_CONN_DIR_ADV     = 0x01, 		/*!< Connectable directed advertising (ADV_DIRECT_IND) */
+	ESP_BLE_EVT_DISC_ADV         = 0x02,		/*!< Scannable undirected advertising (ADV_SCAN_IND) */
+	ESP_BLE_EVT_NON_CONN_ADV     = 0x03,		/*!< Non connectable undirected advertising (ADV_NONCONN_IND) */
+	ESP_BLE_EVT_SCAN_RSP         = 0x04,		/*!< Scan Response (SCAN_RSP) */
+} esp_ble_evt_type_t;
+
+/**
  * @brief Gap callback parameters union
  */
 typedef union {
@@ -233,6 +245,7 @@ typedef union {
         esp_bd_addr_t bda;							/*!< Bluetooth device address which has been searched */
         esp_bt_dev_type_t dev_type;					/*!< Device type */
         esp_ble_addr_type_t ble_addr_type;			/*!< Ble device address type */
+		esp_ble_evt_type_t ble_evt_type;			/*!< Ble scan result event type */
         int rssi;									/*!< Searched device's RSSI */
         uint8_t  ble_adv[ESP_BLE_ADV_DATA_LEN_MAX]; /*!< Received EIR */
         int flag;									/*!< Advertising data flag bit */
