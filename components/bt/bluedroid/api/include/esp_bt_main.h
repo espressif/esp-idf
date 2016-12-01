@@ -19,8 +19,6 @@
 #include "esp_err.h"
 
 /**
- * @function  esp_enable_bluetooth
- *
  * @brief     Enable bluetooth, must after esp_init_bluetooth()
  *
  * @return
@@ -30,8 +28,6 @@
 esp_err_t esp_enable_bluetooth(void);
 
 /**
- * @function  esp_disable_bluetooth
- *
  * @brief     Disable bluetooth, must prior to esp_deinit_bluetooth()
  *
  * @return
@@ -41,8 +37,6 @@ esp_err_t esp_enable_bluetooth(void);
 esp_err_t esp_disable_bluetooth(void);
 
 /**
- * @function  esp_init_bluetooth
- *
  * @brief     Init and alloc the resource for bluetooth, must be prior to every bluetooth stuff
  *
  * @return
@@ -52,8 +46,6 @@ esp_err_t esp_disable_bluetooth(void);
 esp_err_t esp_init_bluetooth(void);
 
 /**
- * @function  esp_deinit_bluetooth
- *
  * @brief     Deinit and free the resource for bluetooth, must be after every bluetooth stuff
  *
  * @return

@@ -239,12 +239,8 @@ typedef union {
 } esp_ble_gatts_cb_param_t;
 
 /**
- *
- * @function        esp_ble_gatts_register_callback
- *
  * @brief           This function is called to register application callbacks
  *                  with BTA GATTS module.
- *
  *
  * @return
  *                  - ESP_OK : success
@@ -256,11 +252,7 @@ esp_err_t esp_ble_gatts_register_callback(esp_profile_cb_t callback);
 
 
 /**
- *
- * @function        esp_ble_gatts_app_register
- *
  * @brief           This function is called to register application identifier
- *
  *
  * @return
  *                  - ESP_OK : success
@@ -272,9 +264,6 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id);
 
 
 /**
- *
- * @function        esp_ble_gatts_app_unregister
- *
  * @brief           unregister with GATT Server.
  *
  * @param[in]       gatt_if: gatt interface id.
@@ -288,9 +277,6 @@ esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatt_if);
 
 
 /**
- *
- * @function        esp_ble_gatts_create_service
- *
  * @brief           Create a service. When service creation is done, a callback
  *                  event BTA_GATTS_CREATE_SRVC_EVT is called to report status
  *                  and service ID to the profile. The service ID obtained in
@@ -312,9 +298,6 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatt_if,
 
 
 /**
- *
- * @function        esp_ble_gatts_add_included_service
- *
  * @brief           This function is called to add an included service. After included
  *                  service is included, a callback event BTA_GATTS_ADD_INCL_SRVC_EVT
  *                  is reported the included service ID.
@@ -333,9 +316,6 @@ esp_err_t esp_ble_gatts_add_included_service(uint16_t service_handle, uint16_t i
 
 
 /**
- *
- * @function        esp_ble_gatts_add_char
- *
  * @brief           This function is called to add a characteristic into a service.
  *
  * @param[in]       service_handle: service handle to which this included service is to
@@ -354,9 +334,6 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
 
 
 /**
- *
- * @function        esp_ble_gatts_add_char_descr
- *
  * @brief           This function is called to add characteristic descriptor. When
  *                  it's done, a callback event BTA_GATTS_ADD_DESCR_EVT is called
  *                  to report the status and an ID number for this descriptor.
@@ -378,13 +355,10 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
 
 
 /**
- *
- * @function        esp_ble_gatts_delete_service
- *
  * @brief           This function is called to delete a service. When this is done,
  *                  a callback event BTA_GATTS_DELETE_EVT is report with the status.
  *
- * @param[in]       service_handled: service_handle to be deleted.
+ * @param[in]       service_handle: service_handle to be deleted.
  *
  * @return
  *                  - ESP_OK : success
@@ -396,13 +370,9 @@ esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle);
 
 
 /**
- *
- * @function        esp_ble_gatts_start_service
- *
  * @brief           This function is called to start a service.
  *
  * @param[in]       service_handle: the service handle to be started.
- * @param[in]       sup_transport: supported transport.
  *
  * @return
  *                  - ESP_OK : success
@@ -414,9 +384,6 @@ esp_err_t esp_ble_gatts_start_service(uint16_t service_handle);
 
 
 /**
- *
- * @function        esp_ble_gatts_stop_service
- *
  * @brief           This function is called to stop a service.
  *
  * @param[in]       service_handle - service to be topped.
@@ -431,13 +398,10 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle);
 
 
 /**
- *
- * @function        esp_ble_gatts_send_indicate
- *
  * @brief           This function is called to read a characteristics descriptor.
  *
  * @param[in]       conn_id - connection id to indicate.
- * @param[in]       attribute_handle - attribute handle to indicate.
+ * @param[in]       attr_handle - attribute handle to indicate.
  * @param[in]       value_len - indicate value length.
  * @param[in]       value: value to indicate.
  * @param[in]       need_confirm - if this indication expects a confirmation or not.
@@ -452,9 +416,6 @@ esp_err_t esp_ble_gatts_send_indicate(uint16_t conn_id, uint16_t attr_handle,
 
 
 /**
- *
- * @function        esp_ble_gatts_send_rsp
- *
  * @brief           This function is called to send a response to a request.
  *
  * @param[in]       conn_id - connection identifier.
@@ -472,9 +433,6 @@ esp_err_t esp_ble_gatts_send_response(uint16_t conn_id, uint32_t trans_id,
 
 
 /**
- *
- * @function        esp_ble_gatts_open
- *
  * @brief           Open a direct open connection or add a background auto connection
  *
  * @param[in]       gatt_if: application ID.
@@ -489,9 +447,6 @@ esp_err_t esp_ble_gatts_send_response(uint16_t conn_id, uint32_t trans_id,
 esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bool is_direct);
 
 /**
- *
- * @function        esp_ble_gatts_close
- *
  * @brief           Close a connection  a remote device.
  *
  * @param[in]       conn_id: connection ID to be closed.
