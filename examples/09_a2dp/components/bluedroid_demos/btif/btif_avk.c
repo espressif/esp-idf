@@ -33,6 +33,7 @@
 #include "bt_defs.h"
 // #include <system/audio.h>
 // #include "bt_av.h"
+#include "esp_bt_defs.h"
 #include "esp_a2dp_api.h"
 #include "allocator.h"
 
@@ -94,13 +95,20 @@ typedef struct {
 /*****************************************************************************
 **  Static variables
 ******************************************************************************/
-static esp_a2d_callbacks_t *bt_av_sink_callbacks = NULL;
+// static esp_a2d_callbacks_t *bt_av_sink_callbacks = NULL;
+static esp_profile_cb_t bt_av_sink_callback = NULL;
 
 static btif_av_cb_t btif_av_cb = {0};
 // static TIMER_LIST_ENT tle_av_open_on_rc;
 
+#define BTIF_A2D_CB_TO_APP(_event, _param)    do { \
+	if (bt_av_sink_callback) { \
+	    bt_av_sink_callback(_event, _param); \
+	} \
+    } while (0)
+
 /* both interface and media task needs to be ready to alloc incoming request */
-#define CHECK_BTAV_INIT() if ((bt_av_sink_callbacks == NULL) \
+#define CHECK_BTAV_INIT() if ((bt_av_sink_callback == NULL) \
         || (btif_av_cb.sm_handle == NULL))\
 {\
      BTIF_TRACE_WARNING("%s: BTAV not initialized\n", __FUNCTION__);\
@@ -204,28 +212,26 @@ const char *dump_av_sm_event_name(btif_av_sm_event_t event)
 ******************************************************************************/
 static void btif_report_connection_state(esp_a2d_connection_state_t state, bt_bdaddr_t *bd_addr)
 {
-    if (bt_av_sink_callbacks != NULL) {
-        esp_bd_addr_t remote_bda;
-        if (bd_addr) {
-            memcpy(&remote_bda, bd_addr, sizeof(esp_bd_addr_t));
-        } else {
-            memset(&remote_bda, 0, sizeof(esp_bd_addr_t));
-        }
-        HAL_CBACK(bt_av_sink_callbacks, connection_state_cb, state, &remote_bda);
+    esp_a2d_cb_param_t param;
+    memset(&param, 0, sizeof(esp_a2d_cb_param_t));
+    
+    param.conn_stat.state = state;
+    if (bd_addr) {
+        memcpy(&param.conn_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
     }
+    BTIF_A2D_CB_TO_APP(ESP_A2D_CONNECTION_STATE_EVT, &param);
 }
 
 static void btif_report_audio_state(esp_a2d_audio_state_t state, bt_bdaddr_t *bd_addr)
 {
-    if (bt_av_sink_callbacks != NULL) {
-        esp_bd_addr_t remote_bda;
-        if (bd_addr) {
-            memcpy(&remote_bda, bd_addr, sizeof(esp_bd_addr_t));
-        } else {
-            memset(&remote_bda, 0, sizeof(esp_bd_addr_t));
-        }
-        HAL_CBACK(bt_av_sink_callbacks, audio_state_cb, state, &remote_bda);
+    esp_a2d_cb_param_t param;
+    memset(&param, 0, sizeof(esp_a2d_cb_param_t));
+
+    param.audio_stat.state = state;
+    if (bd_addr) {
+        memcpy(&param.audio_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
     }
+    BTIF_A2D_CB_TO_APP(ESP_A2D_AUDIO_STATE_EVT, &param);
 }
 
 /*****************************************************************************
@@ -368,14 +374,11 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
     } break;
 
     case BTIF_AV_SINK_CONFIG_REQ_EVT: {
-        esp_a2d_mcc_t mcc;
-        // copy to avoid alignment problems
-        memcpy(&mcc, p_data, sizeof(mcc));
-        BTIF_TRACE_DEBUG("BTIF_AV_SINK_CONFIG_REQ_EVT SBC 0x%x %x %x %x\n", mcc.cie.sbc.oct[0], mcc.cie.sbc.oct[1], mcc.cie.sbc.oct[2], mcc.cie.sbc.oct[3]);
-        if (btif_av_cb.peer_sep == AVDT_TSEP_SRC && bt_av_sink_callbacks != NULL) {
-            esp_bd_addr_t remote_bda;
-            memcpy(&remote_bda, &btif_av_cb.peer_bda, sizeof(esp_bd_addr_t));
-            HAL_CBACK(bt_av_sink_callbacks, audio_config_cb, &remote_bda, &mcc);
+        if (btif_av_cb.peer_sep == AVDT_TSEP_SRC && bt_av_sink_callback != NULL) {
+            esp_a2d_cb_param_t param;
+            memcpy(&param.audio_cfg.remote_bda, &btif_av_cb.peer_bda, sizeof(esp_bd_addr_t));
+            memcpy(&param.audio_cfg.mcc, p_data, sizeof(esp_a2d_mcc_t));
+            BTIF_A2D_CB_TO_APP(ESP_A2D_AUDIO_CFG_EVT, &param);
         }
     } break;
 
@@ -978,14 +981,13 @@ static bt_status_t init_src(btav_callbacks_t *callbacks)
 ** Returns          bt_status_t
 **
 *******************************************************************************/
-esp_err_t esp_a2d_sink_init(esp_a2d_callbacks_t *callbacks)
-// static bt_status_t init_sink(btav_callbacks_t *callbacks)
+esp_err_t esp_a2d_sink_init(esp_profile_cb_t callback)
 {
     BTIF_TRACE_EVENT("%s()\n", __func__);
 
     bt_status_t status = btif_av_init();
     if (status == BT_STATUS_SUCCESS) {
-        bt_av_sink_callbacks = callbacks;
+        bt_av_sink_callback = callback;
     }
 
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
@@ -1112,8 +1114,8 @@ void esp_a2d_sink_deinit(void)
 {
     BTIF_TRACE_EVENT("%s\n", __FUNCTION__);
 
-    if (bt_av_sink_callbacks) {
-        bt_av_sink_callbacks = NULL;
+    if (bt_av_sink_callback) {
+        bt_av_sink_callback = NULL;
         cleanup();
     }
 }

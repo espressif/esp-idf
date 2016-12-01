@@ -60,31 +60,31 @@ typedef enum {
     ESP_A2D_AUDIO_STATE_STARTED,
 } esp_a2d_audio_state_t;
 
-/** Callback for connection state change.
- *  state will have one of the values from btav_connection_state_t
- */
-typedef void (* esp_a2d_connection_state_cb_t)(esp_a2d_connection_state_t state,
-    esp_bd_addr_t *remote_bda);
+typedef enum {
+    ESP_A2D_CONNECTION_STATE_EVT = 0,           /*!< connection state changed */
+    ESP_A2D_AUDIO_STATE_EVT = 1,                /*!< audio stream state changed */
+    ESP_A2D_AUDIO_CFG_EVT = 2                   /*!< audio codec configuration received */
+} esp_a2d_cb_event_t;
 
-/** Callback for audiopath state change.
- *  state will have one of the values from btav_audio_state_t
- */
-typedef void (* esp_a2d_audio_state_cb_t)(esp_a2d_audio_state_t state,
-    esp_bd_addr_t *remote_bda);
-
-/** Callback for audio configuration change.
- *  Used only for the A2DP sink interface.
- *  state will have one of the values from btav_audio_state_t
- */
-typedef void (* esp_a2d_audio_config_cb_t)(esp_bd_addr_t *remote_bda,
-    esp_a2d_mcc_t *mcc);
-
-/** BT-a2dp callback structure. */
-typedef struct {
-    esp_a2d_connection_state_cb_t connection_state_cb;
-    esp_a2d_audio_state_cb_t audio_state_cb;
-    esp_a2d_audio_config_cb_t audio_config_cb;
-} esp_a2d_callbacks_t;
+typedef union {
+    /*< ESP_A2D_CONNECTION_STATE_EVT */
+    struct a2d_conn_stat_param {
+        esp_a2d_connection_state_t state;       /*!< one of values from esp_a2d_connection_state_t */
+        esp_bd_addr_t remote_bda;
+    } conn_stat;
+    
+    /*< ESP_A2D_AUDIO_STATE_EVT */
+    struct a2d_audio_stat_param {
+        esp_a2d_audio_state_t state;            /*!< one of the values from esp_a2d_audio_state_t */
+        esp_bd_addr_t remote_bda;
+    } audio_stat;
+    
+    /*< ESP_A2D_AUDIO_CFG_EVT */
+    struct a2d_audio_cfg_param {
+        esp_bd_addr_t remote_bda;
+        esp_a2d_mcc_t mcc;
+    } audio_cfg;
+} esp_a2d_cb_param_t;
 
 /**
  * NOTE:
@@ -92,19 +92,10 @@ typedef struct {
  *    and the Bluetooth stack.
  */
 
-typedef struct {
-    int (* open)(void);
-    void (* close)(void);
-    int (* ioctl)(int cmd, void *param); // not used for now
-    uint32_t (* write)(uint8_t *buf, uint32_t len);
-} esp_a2d_sink_audio_hal_t;
-
-#define ESP_A2D_AUDIO_HAL_IOC_WRITE_FLUSH            (1)   // ioctl command, which is not used for now
-
-
-/** Represents the A2DP sink interface.
+/**
+ * Represents the A2DP sink interface.
  */
-esp_err_t esp_a2d_sink_init(esp_a2d_callbacks_t *callbacks);
+esp_err_t esp_a2d_sink_init(esp_profile_cb_t callback);
 
 esp_err_t esp_a2d_sink_connect(esp_bd_addr_t *remote_bda);
 
