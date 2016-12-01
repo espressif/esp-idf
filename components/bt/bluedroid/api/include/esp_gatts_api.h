@@ -21,31 +21,32 @@
 #include "bta_gatt_api.h"
 #include "esp_err.h"
 
-/* GATT Server Data Structure */
-/* Server callback function events */
-#define ESP_GATTS_REG_EVT                 0
-#define ESP_GATTS_READ_EVT                1
-#define ESP_GATTS_WRITE_EVT               2
-#define ESP_GATTS_EXEC_WRITE_EVT          3
-#define ESP_GATTS_MTU_EVT                 4
-#define ESP_GATTS_CONF_EVT                5
-#define ESP_GATTS_UNREG_EVT               6
-#define ESP_GATTS_CREATE_EVT              7
-#define ESP_GATTS_ADD_INCL_SRVC_EVT       8
-#define ESP_GATTS_ADD_CHAR_EVT            9
-#define ESP_GATTS_ADD_CHAR_DESCR_EVT      10
-#define ESP_GATTS_DELETE_EVT             11
-#define ESP_GATTS_START_EVT               12
-#define ESP_GATTS_STOP_EVT                13
-#define ESP_GATTS_CONNECT_EVT             14
-#define ESP_GATTS_DISCONNECT_EVT          15
-#define ESP_GATTS_OPEN_EVT                16
-#define ESP_GATTS_CANCEL_OPEN_EVT         17
-#define ESP_GATTS_CLOSE_EVT               18
-#define ESP_GATTS_LISTEN_EVT              19
-#define ESP_GATTS_CONGEST_EVT             20
-/* following is extra event */
-#define ESP_GATTS_RESPONSE_EVT            21
+/// GATT Server callback function events
+typedef enum {
+	ESP_GATTS_REG_EVT                = 0,		/*!< When register application id, the event comes */
+	ESP_GATTS_READ_EVT               = 1,		/*!< When gatt client request read operation, the event comes */
+	ESP_GATTS_WRITE_EVT              = 2,		/*!< When gatt client request write operation, the event comes */
+	ESP_GATTS_EXEC_WRITE_EVT         = 3,		/*!< When gatt client request execute write, the event comes */
+	ESP_GATTS_MTU_EVT                = 4,		/*!< When set mtu complete, the event comes */
+	ESP_GATTS_CONF_EVT               = 5,		/*!< When receive confirm, the event comes */
+	ESP_GATTS_UNREG_EVT              = 6,		/*!< When unregister application id, the event comes */
+	ESP_GATTS_CREATE_EVT             = 7,		/*!< When create service complete, the event comes */
+	ESP_GATTS_ADD_INCL_SRVC_EVT      = 8,		/*!< When add included service complete, the event comes */
+	ESP_GATTS_ADD_CHAR_EVT           = 9,		/*!< When add characteristic complete, the event comes */
+	ESP_GATTS_ADD_CHAR_DESCR_EVT     = 10,		/*!< When add descriptor complete, the event comes */
+	ESP_GATTS_DELETE_EVT             = 11,		/*!< When delete service complete, the event comes */
+	ESP_GATTS_START_EVT              = 12,		/*!< When start service complete, the event comes */
+	ESP_GATTS_STOP_EVT               = 13,		/*!< When stop service complete, the event comes */
+	ESP_GATTS_CONNECT_EVT            = 14,		/*!< When gatt client connect, the event comes */
+	ESP_GATTS_DISCONNECT_EVT         = 15,		/*!< When gatt client disconnect, the event comes */
+	ESP_GATTS_OPEN_EVT               = 16,		/*!< When connect to peer, the event comes */
+	ESP_GATTS_CANCEL_OPEN_EVT        = 17,		/*!< When disconnect from peer, the event comes */
+	ESP_GATTS_CLOSE_EVT              = 18,		/*!< When gatt server close, the event comes */
+	ESP_GATTS_LISTEN_EVT             = 19,		/*!< When gatt listen to be connected the event comes */
+	ESP_GATTS_CONGEST_EVT            = 20,		/*!< When congest happen, the event comes */
+	/* following is extra event */
+	ESP_GATTS_RESPONSE_EVT           = 21,		/*!< When gatt send response complete, the event comes */
+} esp_gatts_cb_event_t;
 
 /**
  * @brief Gatt server callback parameters union
@@ -237,243 +238,255 @@ typedef union {
     } rsp;								/*!< Gatt server callback param of ESP_GATTS_RESPONSE_EVT */
 } esp_ble_gatts_cb_param_t;
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_register_callback
-**
-** @brief           This function is called to register application callbacks
-**                  with BTA GATTS module.
-**
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_register_callback
+ *
+ * @brief           This function is called to register application callbacks
+ *                  with BTA GATTS module.
+ *
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_register_callback(esp_profile_cb_t callback);
 
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_app_register
-**
-** @brief           This function is called to register application identifier
-**
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_app_register
+ *
+ * @brief           This function is called to register application identifier
+ *
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_app_register(uint16_t app_id);
 
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_app_unregister
-**
-** @brief           unregister with GATT Server.
-**
-** @param[in]       gatt_if: gatt interface id.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_app_unregister
+ *
+ * @brief           unregister with GATT Server.
+ *
+ * @param[in]       gatt_if: gatt interface id.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatt_if);
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_create_service
-**
-** @brief           Create a service. When service creation is done, a callback
-**                  event BTA_GATTS_CREATE_SRVC_EVT is called to report status
-**                  and service ID to the profile. The service ID obtained in
-**                  the callback function needs to be used when adding included
-**                  service and characteristics/descriptors into the service.
-**
-** @param[in]       gatt_if: gatt interface ID
-** @param[in]       service_id: service ID.
-** @param[in]       num_handle: number of handle requested for this service.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_create_service
+ *
+ * @brief           Create a service. When service creation is done, a callback
+ *                  event BTA_GATTS_CREATE_SRVC_EVT is called to report status
+ *                  and service ID to the profile. The service ID obtained in
+ *                  the callback function needs to be used when adding included
+ *                  service and characteristics/descriptors into the service.
+ *
+ * @param[in]       gatt_if: gatt interface ID
+ * @param[in]       service_id: service ID.
+ * @param[in]       num_handle: number of handle requested for this service.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatt_if,
                                        esp_gatt_srvc_id_t *service_id, uint16_t num_handle);
 
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_add_included_service
-**
-** @brief           This function is called to add an included service. After included
-**                  service is included, a callback event BTA_GATTS_ADD_INCL_SRVC_EVT
-**                  is reported the included service ID.
-**
-** @param[in]       service_handle: service handle to which this included service is to
-**                  be added.
-** @param[in]       included_service_handle: the service ID to be included.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_add_included_service
+ *
+ * @brief           This function is called to add an included service. After included
+ *                  service is included, a callback event BTA_GATTS_ADD_INCL_SRVC_EVT
+ *                  is reported the included service ID.
+ *
+ * @param[in]       service_handle: service handle to which this included service is to
+ *                  be added.
+ * @param[in]       included_service_handle: the service ID to be included.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_add_included_service(uint16_t service_handle, uint16_t included_service_handle);
 
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_add_char
-**
-** @brief           This function is called to add a characteristic into a service.
-**
-** @param[in]       service_handle: service handle to which this included service is to
-**                  be added.
-** @param[in]       char_uuid : Characteristic UUID.
-** @param[in]       perm      : Characteristic value declaration attribute permission.
-** @param[in]       property  : Characteristic Properties
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_add_char
+ *
+ * @brief           This function is called to add a characteristic into a service.
+ *
+ * @param[in]       service_handle: service handle to which this included service is to
+ *                  be added.
+ * @param[in]       char_uuid : Characteristic UUID.
+ * @param[in]       perm      : Characteristic value declaration attribute permission.
+ * @param[in]       property  : Characteristic Properties
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_uuid,
                                  esp_gatt_perm_t perm, esp_gatt_char_prop_t property);
 
 
-
-
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_add_char_descr
-**
-** @brief           This function is called to add characteristic descriptor. When
-**                  it's done, a callback event BTA_GATTS_ADD_DESCR_EVT is called
-**                  to report the status and an ID number for this descriptor.
-**
-** @param[in]       service_handle: service handle to which this characteristic descriptor is to
-**                              be added.
-** @param[in]       perm: descriptor access permission.
-** @param[in]       descr_uuid: descriptor UUID.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_add_char_descr
+ *
+ * @brief           This function is called to add characteristic descriptor. When
+ *                  it's done, a callback event BTA_GATTS_ADD_DESCR_EVT is called
+ *                  to report the status and an ID number for this descriptor.
+ *
+ * @param[in]       service_handle: service handle to which this characteristic descriptor is to
+ *                              be added.
+ * @param[in]       perm: descriptor access permission.
+ * @param[in]       descr_uuid: descriptor UUID.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
                                         esp_bt_uuid_t  *descr_uuid,
                                         esp_gatt_perm_t perm);
 
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_delete_service
-**
-** @brief           This function is called to delete a service. When this is done,
-**                  a callback event BTA_GATTS_DELETE_EVT is report with the status.
-**
-** @param[in]       service_handled: service_handle to be deleted.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_delete_service
+ *
+ * @brief           This function is called to delete a service. When this is done,
+ *                  a callback event BTA_GATTS_DELETE_EVT is report with the status.
+ *
+ * @param[in]       service_handled: service_handle to be deleted.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle);
 
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_start_service
-**
-** @brief           This function is called to start a service.
-**
-** @param[in]       service_handle: the service handle to be started.
-** @param[in]       sup_transport: supported transport.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_start_service
+ *
+ * @brief           This function is called to start a service.
+ *
+ * @param[in]       service_handle: the service handle to be started.
+ * @param[in]       sup_transport: supported transport.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_start_service(uint16_t service_handle);
 
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_stop_service
-**
-** @brief           This function is called to stop a service.
-**
-** @param[in]       service_handle - service to be topped.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_stop_service
+ *
+ * @brief           This function is called to stop a service.
+ *
+ * @param[in]       service_handle - service to be topped.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle);
 
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_send_indicate
-**
-** @brief           This function is called to read a characteristics descriptor.
-**
-** @param[in]       conn_id - connection id to indicate.
-** @param[in]       attribute_handle - attribute handle to indicate.
-** @param[in]       value_len - indicate value length.
-** @param[in]       value: value to indicate.
-** @param[in]       need_confirm - if this indication expects a confirmation or not.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_send_indicate
+ *
+ * @brief           This function is called to read a characteristics descriptor.
+ *
+ * @param[in]       conn_id - connection id to indicate.
+ * @param[in]       attribute_handle - attribute handle to indicate.
+ * @param[in]       value_len - indicate value length.
+ * @param[in]       value: value to indicate.
+ * @param[in]       need_confirm - if this indication expects a confirmation or not.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_send_indicate(uint16_t conn_id, uint16_t attr_handle,
                                       uint16_t value_len, uint8_t *value, bool need_confirm);
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_send_rsp
-**
-** @brief           This function is called to send a response to a request.
-**
-** @param[in]       conn_id - connection identifier.
-** @param[in]       trans_id - transfer id
-** @param[in]       status - response status
-** @param[in]       rsp - response data.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_send_rsp
+ *
+ * @brief           This function is called to send a response to a request.
+ *
+ * @param[in]       conn_id - connection identifier.
+ * @param[in]       trans_id - transfer id
+ * @param[in]       status - response status
+ * @param[in]       rsp - response data.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_send_response(uint16_t conn_id, uint32_t trans_id,
                                       esp_gatt_status_t status, esp_gatt_rsp_t *rsp);
 
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_open
-**
-** @brief           Open a direct open connection or add a background auto connection
-**
-** @param[in]       gatt_if: application ID.
-** @param[in]       remote_bda: remote device bluetooth device address.
-** @param[in]       is_direct: direct connection or background auto connection
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_open
+ *
+ * @brief           Open a direct open connection or add a background auto connection
+ *
+ * @param[in]       gatt_if: application ID.
+ * @param[in]       remote_bda: remote device bluetooth device address.
+ * @param[in]       is_direct: direct connection or background auto connection
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bool is_direct);
 
-/*******************************************************************************
-**
-** @function        esp_ble_gatts_close
-**
-** @brief           Close a connection  a remote device.
-**
-** @param[in]       conn_id: connection ID to be closed.
-**
-** @return          ESP_OK - success, other - failed
-**
-*******************************************************************************/
+/**
+ *
+ * @function        esp_ble_gatts_close
+ *
+ * @brief           Close a connection  a remote device.
+ *
+ * @param[in]       conn_id: connection ID to be closed.
+ *
+ * @return          - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
 esp_err_t esp_ble_gatts_close(uint16_t conn_id);
 
 

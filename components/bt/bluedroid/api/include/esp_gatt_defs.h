@@ -17,9 +17,11 @@
 
 #include "esp_bt_defs.h"
 
-/* attribute request data from the client */
-#define ESP_GATT_PREP_WRITE_CANCEL   0x00
-#define ESP_GATT_PREP_WRITE_EXEC     0x01
+/// Attribute write data type from the client
+typedef enum {
+	ESP_GATT_PREP_WRITE_CANCEL    = 0x00,		/*!< Prepare write cancel */
+	ESP_GATT_PREP_WRITE_EXEC      = 0x01,		/*!< Prepare write execute */
+} esp_gatt_prep_write_type;
 
 /**
  * @brief GATT success code and error codes
@@ -144,6 +146,7 @@ typedef enum {
     ESP_GATT_CHAR_PROP_BIT_EXT_PROP     =   (1 << 7),       /* 0x80 */
 } esp_gatt_char_prop_t;
 
+/// GATT maximum attribute length
 #define ESP_GATT_MAX_ATTR_LEN   600 //as same as GATT_MAX_ATTR_LEN
 
 /// Gatt attribute value 
@@ -169,6 +172,6 @@ typedef enum {
 	ESP_GATT_WRITE_TYPE_RSP,								/*!< Gatt write attribute need remote response */
 } esp_gatt_write_type_t;
 
-typedef uint32_t    esp_gatt_if_t;							/* Gatt interface type, different application on GATT client use different gatt_if */
+typedef uint32_t    esp_gatt_if_t;							/*!< Gatt interface type, different application on GATT client use different gatt_if */
 
 #endif /* __ESP_GATT_DEFS_H__ */
