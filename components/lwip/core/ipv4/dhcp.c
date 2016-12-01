@@ -713,7 +713,11 @@ void dhcp_cleanup(struct netif *netif)
  * @param netif the netif from which to remove the struct dhcp
  * @param cb    callback for dhcp
  */
+#ifdef ESP_LWIP
+void dhcp_set_cb(struct netif *netif, void (*cb)(struct netif*))
+#else
 void dhcp_set_cb(struct netif *netif, void (*cb)(void))
+#endif
 {
   LWIP_ASSERT("netif != NULL", netif != NULL);
 
@@ -1141,7 +1145,11 @@ dhcp_bind(struct netif *netif)
 
   /* Espressif add start. */
   if (dhcp->cb != NULL) {
+#ifdef ESP_LWIP
+      dhcp->cb(netif);
+#else
       dhcp->cb();
+#endif
   }
   /* Espressif add end. */
 }

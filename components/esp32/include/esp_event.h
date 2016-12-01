@@ -45,6 +45,11 @@ typedef enum {
     SYSTEM_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
     SYSTEM_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
     SYSTEM_EVENT_AP_STA_GOT_IP6,           /**< ESP32 station or ap interface v6IP addr is preferred */
+    SYSTEM_EVENT_ETH_START,                /**< ESP32 ethernet start */
+    SYSTEM_EVENT_ETH_STOP,                 /**< ESP32 ethernet stop */
+    SYSTEM_EVENT_ETH_CONNECTED,            /**< ESP32 ethernet phy link up */
+    SYSTEM_EVENT_ETH_DISCONNECTED,         /**< ESP32 ethernet phy link down */
+    SYSTEM_EVENT_ETH_GOT_IP,               /**< ESP32 ethernet got IP from connected AP */
     SYSTEM_EVENT_MAX
 } system_event_id_t;
 

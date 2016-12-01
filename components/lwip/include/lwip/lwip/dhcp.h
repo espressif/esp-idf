@@ -96,7 +96,11 @@ struct dhcp
 #endif /* LWIP_DHCP_BOOTPFILE */
 
   /* Espressif add start. */
+#ifdef ESP_LWIP
+  void (*cb)(struct netif*); /* callback for dhcp, add a parameter to show dhcp status if needed */
+#else
   void (*cb)(void); /* callback for dhcp, add a parameter to show dhcp status if needed */
+#endif
   /* Espressif add end. */
 };
 
@@ -146,7 +150,11 @@ void dhcp_set_struct(struct netif *netif, struct dhcp *dhcp);
 void dhcp_cleanup(struct netif *netif);
 /* Espressif add start. */
 /** set callback for DHCP */
+#ifdef ESP_LWIP
+void dhcp_set_cb(struct netif *netif, void (*cb)(struct netif*));
+#else
 void dhcp_set_cb(struct netif *netif, void (*cb)(void));
+#endif
 /* Espressif add end. */
 /** start DHCP configuration */
 err_t dhcp_start(struct netif *netif);

@@ -108,6 +108,7 @@ Contents:
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>
    Virtual Filesystem <api/vfs>
+   Ethernet <api/esp_eth>
    deep-sleep-stub
 
    Template <api/template>

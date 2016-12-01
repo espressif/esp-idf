@@ -13,12 +13,8 @@
 // limitations under the License.
 
 
-#ifndef _WLAN_LWIP_IF_H_
-#define _WLAN_LWIP_IF_H_
-
-#include "esp_wifi.h"
-
-#include "esp_wifi_internal.h"
+#ifndef _ETH_LWIP_IF_H_
+#define _ETH_LWIP_IF_H_
 
 #include "lwip/err.h"
 
@@ -26,11 +22,9 @@
 extern "C" {
 #endif
 
-err_t wlanif_init(struct netif *netif);
+err_t ethernetif_init(struct netif *netif);
 
-void wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb);
-
-wifi_interface_t wifi_get_interface(void *dev);
+void ethernetif_input(struct netif *netif, void *buffer, u16_t len);
 
 void netif_reg_addr_change_cb(void* cb);
 
@@ -38,4 +32,4 @@ void netif_reg_addr_change_cb(void* cb);
 }
 #endif
 
-#endif /*  _WLAN_LWIP_IF_H_ */
+#endif /*  _ETH_LWIP_IF_H_ */

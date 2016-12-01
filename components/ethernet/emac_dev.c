@@ -1,0 +1,142 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <stdio.h>
+#include <string.h>
+
+#include "rom/ets_sys.h"
+#include "rom/gpio.h"
+
+#include "soc/dport_reg.h"
+#include "soc/io_mux_reg.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/gpio_reg.h"
+#include "soc/gpio_sig_map.h"
+#include "soc/emac_reg_v2.h"
+#include "soc/emac_ex_reg.h"
+
+#include "esp_log.h"
+#include "driver/gpio.h"
+#include "sdkconfig.h"
+
+#include "emac_common.h"
+
+static const char *TAG = "emac";
+
+void emac_poll_tx_cmd(void)
+{
+    //write any to wake up dma
+    REG_WRITE(EMAC_DMATXPOLLDEMAND_REG, 1);
+}
+
+void emac_poll_rx_cmd(void)
+{
+    //write any to wake up dma
+    REG_WRITE(EMAC_DMARXPOLLDEMAND_REG, 1);
+}
+
+void emac_enable_dma_tx(void)
+{
+    REG_SET_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_START_STOP_TRANSMISSION_COMMAND);
+}
+
+void emac_enable_dma_rx(void)
+{
+    REG_SET_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_START_STOP_RECEIVE);
+}
+
+void emac_disable_dma_tx(void)
+{
+    REG_CLR_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_OPERATE_SECOND_FRAME);
+}
+
+void emac_disable_dma_rx(void)
+{
+    REG_CLR_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_START_STOP_RECEIVE);
+}
+
+uint32_t emac_read_tx_cur_reg(void)
+{
+    return REG_READ(EMAC_DMATXCURRDESC_REG);
+}
+
+uint32_t emac_read_rx_cur_reg(void)
+{
+    return REG_READ(EMAC_DMARXCURRDESC_REG);
+}
+
+uint32_t emac_read_mac_version(void)
+{
+    uint32_t data = 0;
+    data = REG_READ(EMAC_GMACVERSION_REG);
+    return data;
+}
+
+void emac_reset(void)
+{
+    REG_SET_BIT(EMAC_DMABUSMODE_REG, EMAC_SW_RST);
+
+    while (REG_GET_BIT(EMAC_DMABUSMODE_REG, EMAC_SW_RST) == 1) {
+        //nothing to do ,if stop here,maybe emac have not clk input.
+        ESP_LOGI(TAG, "emac reseting ....");
+    }
+
+    ESP_LOGI(TAG, "emac reset done");
+}
+
+void emac_enable_clk(bool enable)
+{
+    if (enable == true) {
+        REG_SET_BIT(EMAC_CLK_EN_REG, EMAC_CLK_EN);
+    } else {
+        REG_CLR_BIT(EMAC_CLK_EN_REG, EMAC_CLK_EN);
+    }
+}
+
+void emac_set_clk_mii(void)
+{
+    //select ex clock source
+    REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_EXT_OSC_EN);
+    //ex clk enable
+    REG_SET_BIT(EMAC_EX_OSCCLK_CONF_REG, EMAC_EX_OSC_CLK_SEL);
+
+    //set mii mode rx/tx clk enable
+    REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_MII_CLK_RX_EN);
+    REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_MII_CLK_TX_EN);
+}
+
+void emac_dma_init(void)
+{
+    REG_SET_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_FORWARD_UNDERSIZED_GOOD_FRAMES);
+    REG_SET_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_OPERATE_SECOND_FRAME);
+    REG_SET_FIELD(EMAC_DMABUSMODE_REG, EMAC_PROG_BURST_LEN, 4);
+}
+
+void emac_mac_init(void)
+{
+    REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACRX);
+    REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACTX);
+    REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
+    REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACMIIGMII);
+    REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACFESPEED);
+    REG_SET_BIT(EMAC_GMACFRAMEFILTER_REG, EMAC_PROMISCUOUS_MODE);
+}
+
+void emac_set_clk_rmii(void)
+{
+    //select ex clock source
+    REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_EXT_OSC_EN);
+    //ex clk enable
+    REG_SET_BIT(EMAC_EX_OSCCLK_CONF_REG, EMAC_EX_OSC_CLK_SEL);
+}
