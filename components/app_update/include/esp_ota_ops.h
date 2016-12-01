@@ -49,9 +49,10 @@ typedef uint32_t esp_ota_handle_t;
  * @param   image_size size of image need to be updated
  * @param   out_handle handle which should be used for esp_ota_write or esp_ota_end call
 
- * @return: ESP_OK if format ota image OK  
- *          ESP_ERR_OTA_PARTITION_CONFLICT  operate current running bin  
- *          ESP_ERR_OTA_SELECT_INFO_INVALID ota bin select info invalid
+ * @return: 
+ *    - ESP_OK: if format ota image OK  
+ *    - ESP_ERR_OTA_PARTITION_CONFLICT: operate current running bin  
+ *    - ESP_ERR_OTA_SELECT_INFO_INVALID: ota bin select info invalid
  */
 esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp_ota_handle_t* out_handle);
 
@@ -62,9 +63,10 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
  * @param   data  Pointer to data write to flash
  * @param   size  data size of recieved data
  *
- * @return: ESP_OK if write flash data OK 
- *          ESP_ERR_OTA_PARTITION_CONFLICT  operate current running bin  
- *          ESP_ERR_OTA_SELECT_INFO_INVALID ota bin select info invalid
+ * @return: 
+ *    - ESP_OK: if write flash data OK 
+ *    - ESP_ERR_OTA_PARTITION_CONFLICT: operate current running bin  
+ *    - ESP_ERR_OTA_SELECT_INFO_INVALID: ota bin select info invalid
  */
 esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
  
@@ -73,8 +75,9 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
  *
  * @param   handle  Handle obtained from esp_ota_begin 
  *
- * @return: ESP_OK if validate ota image pass
- *          ESP_ERR_OTA_VALIDATE_FAILED  validate the ota image is invalid
+ * @return: 
+ *    - ESP_OK: if validate ota image pass
+ *    - ESP_ERR_OTA_VALIDATE_FAILED: validate the ota image is invalid
  */
 esp_err_t esp_ota_end(esp_ota_handle_t handle);
 
@@ -86,8 +89,9 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle);
  *
  * @param   partition Pointer to partition structure which need to boot
  *
- * @return: ESP_OK if set next boot partition OK
- *          ESP_ERR_OTA_SELECT_INFO_INVALID ota bin select info invalid
+ * @return: 
+ *    - ESP_OK: if set next boot partition OK
+ *    - ESP_ERR_OTA_SELECT_INFO_INVALID: ota bin select info invalid
  */
 esp_err_t esp_ota_set_boot_partition(const esp_partition_t* partition);
 
