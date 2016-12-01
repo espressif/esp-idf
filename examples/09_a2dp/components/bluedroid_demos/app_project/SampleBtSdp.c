@@ -85,7 +85,8 @@ static void bt_app_stack_evt(UINT16 event, char *p_param)
         btav_set_device_class();
         BTA_DmSetDeviceName(dev_name);
         esp_bt_gap_set_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
-        esp_a2d_sink_init(esp_a2d_cb);
+        esp_a2d_register_callback(esp_a2d_cb);
+        esp_a2d_sink_init();
 
         // app_alarm = osi_alarm_new("app_alarm", bt_sdp_add_record_to, NULL, 1000, false);
         app_alarm = osi_alarm_new("app_alarm", btav_open_to, NULL, 1000, false);

@@ -95,7 +95,9 @@ typedef union {
 /**
  * Represents the A2DP sink interface.
  */
-esp_err_t esp_a2d_sink_init(esp_profile_cb_t callback);
+esp_err_t esp_a2d_register_callback(esp_profile_cb_t callback);
+
+esp_err_t esp_a2d_sink_init(void);
 
 esp_err_t esp_a2d_sink_connect(esp_bd_addr_t *remote_bda);
 

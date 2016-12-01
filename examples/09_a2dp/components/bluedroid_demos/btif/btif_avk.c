@@ -95,7 +95,7 @@ typedef struct {
 /*****************************************************************************
 **  Static variables
 ******************************************************************************/
-// static esp_a2d_callbacks_t *bt_av_sink_callbacks = NULL;
+
 static esp_profile_cb_t bt_av_sink_callback = NULL;
 
 static btif_av_cb_t btif_av_cb = {0};
@@ -108,8 +108,7 @@ static btif_av_cb_t btif_av_cb = {0};
     } while (0)
 
 /* both interface and media task needs to be ready to alloc incoming request */
-#define CHECK_BTAV_INIT() if ((bt_av_sink_callback == NULL) \
-        || (btif_av_cb.sm_handle == NULL))\
+#define CHECK_BTAV_INIT() if (btif_av_cb.sm_handle == NULL)\
 {\
      BTIF_TRACE_WARNING("%s: BTAV not initialized\n", __FUNCTION__);\
      return ESP_ERR_INVALID_STATE;\
@@ -374,7 +373,7 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
     } break;
 
     case BTIF_AV_SINK_CONFIG_REQ_EVT: {
-        if (btif_av_cb.peer_sep == AVDT_TSEP_SRC && bt_av_sink_callback != NULL) {
+        if (btif_av_cb.peer_sep == AVDT_TSEP_SRC) {
             esp_a2d_cb_param_t param;
             memcpy(&param.audio_cfg.remote_bda, &btif_av_cb.peer_bda, sizeof(esp_bd_addr_t));
             memcpy(&param.audio_cfg.mcc, p_data, sizeof(esp_a2d_mcc_t));
@@ -972,6 +971,22 @@ static bt_status_t init_src(btav_callbacks_t *callbacks)
 }
 
 #endif
+
+/**
+ *
+ * Function         register A2DP callback
+ *
+ * Description      Initializes the AV interface for sink mode
+ *
+ * Returns          bt_status_t
+ *
+ */
+esp_err_t esp_a2d_register_callback(esp_profile_cb_t callback)
+{
+    // TODO: add concurrency protection
+    bt_av_sink_callback = callback;
+}
+
 /*******************************************************************************
 **
 ** Function         init_sink
@@ -981,14 +996,11 @@ static bt_status_t init_src(btav_callbacks_t *callbacks)
 ** Returns          bt_status_t
 **
 *******************************************************************************/
-esp_err_t esp_a2d_sink_init(esp_profile_cb_t callback)
+esp_err_t esp_a2d_sink_init(void)
 {
     BTIF_TRACE_EVENT("%s()\n", __func__);
 
     bt_status_t status = btif_av_init();
-    if (status == BT_STATUS_SUCCESS) {
-        bt_av_sink_callback = callback;
-    }
 
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
