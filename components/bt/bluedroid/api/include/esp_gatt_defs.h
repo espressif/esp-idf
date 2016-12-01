@@ -158,7 +158,7 @@ typedef struct {
     uint8_t           auth_req;								/*!< Gatt authentication request */
 } esp_gatt_value_t;
 
-/** GATT remote read request response type */
+/// GATT remote read request response type
 typedef union {
     esp_gatt_value_t attr_value;							/*!< Gatt attribute structure */
     uint16_t            handle;								/*!< Gatt attribute handle */

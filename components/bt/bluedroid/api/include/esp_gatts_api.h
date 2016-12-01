@@ -246,7 +246,8 @@ typedef union {
  *                  with BTA GATTS module.
  *
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -261,7 +262,8 @@ esp_err_t esp_ble_gatts_register_callback(esp_profile_cb_t callback);
  * @brief           This function is called to register application identifier
  *
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -277,7 +279,8 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id);
  *
  * @param[in]       gatt_if: gatt interface id.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -298,7 +301,8 @@ esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatt_if);
  * @param[in]       service_id: service ID.
  * @param[in]       num_handle: number of handle requested for this service.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -319,7 +323,8 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatt_if,
  *                  be added.
  * @param[in]       included_service_handle: the service ID to be included.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -339,7 +344,8 @@ esp_err_t esp_ble_gatts_add_included_service(uint16_t service_handle, uint16_t i
  * @param[in]       perm      : Characteristic value declaration attribute permission.
  * @param[in]       property  : Characteristic Properties
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -360,7 +366,8 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
  * @param[in]       perm: descriptor access permission.
  * @param[in]       descr_uuid: descriptor UUID.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -379,7 +386,8 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
  *
  * @param[in]       service_handled: service_handle to be deleted.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -396,7 +404,8 @@ esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle);
  * @param[in]       service_handle: the service handle to be started.
  * @param[in]       sup_transport: supported transport.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -412,7 +421,8 @@ esp_err_t esp_ble_gatts_start_service(uint16_t service_handle);
  *
  * @param[in]       service_handle - service to be topped.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -432,7 +442,8 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle);
  * @param[in]       value: value to indicate.
  * @param[in]       need_confirm - if this indication expects a confirmation or not.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -451,7 +462,8 @@ esp_err_t esp_ble_gatts_send_indicate(uint16_t conn_id, uint16_t attr_handle,
  * @param[in]       status - response status
  * @param[in]       rsp - response data.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -469,7 +481,8 @@ esp_err_t esp_ble_gatts_send_response(uint16_t conn_id, uint32_t trans_id,
  * @param[in]       remote_bda: remote device bluetooth device address.
  * @param[in]       is_direct: direct connection or background auto connection
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -483,7 +496,8 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bo
  *
  * @param[in]       conn_id: connection ID to be closed.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */

@@ -247,7 +247,8 @@ typedef union {
  *
  * @param[in]       callback: callback function
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -263,7 +264,8 @@ esp_err_t esp_ble_gap_register_callback(esp_profile_cb_t callback);
  *                  memory space can not be freed until callback of config_adv_data
  *                  is received.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -279,7 +281,8 @@ esp_err_t esp_ble_gap_config_adv_data (esp_ble_adv_data_t *adv_data);
  * @param[in]       esp_ble_scan_params: Pointer to User defined scan_params data structure. This
  *                  memory space can not be freed until callback of set_scan_params
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -293,7 +296,8 @@ esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params);
  *
  * @param[in]       duration: Keeping the scanning time, the unit is second.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -305,7 +309,8 @@ esp_err_t esp_ble_gap_start_scanning(uint32_t duration);
  *
  * @brief          This function call to stop the device scanning the peer device which advertising on the air
  * @param          void
- * @return         - ESP_OK : success
+ * @return
+ *                 - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -318,7 +323,8 @@ esp_err_t esp_ble_gap_stop_scanning(void);
  *
  * @param[in]       esp_ble_adv_params_all_t: pointer to User defined adv_params data structure.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -333,7 +339,8 @@ esp_err_t esp_ble_gap_start_advertising (esp_ble_adv_params_t *adv_params);
  *
  * @param           None
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -348,7 +355,8 @@ esp_err_t esp_ble_gap_stop_advertising(void);
  *
  * @param[in]       param   -  connection update parameters
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -360,7 +368,8 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params);
  *
  * @brief           This function is to set maximum LE data packet size
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -375,7 +384,8 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
  *
  * @param[in]       rand_addr: the random address which should be setting
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -390,7 +400,8 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
  *
  * @param[in]       privacy_enable   - enable/disable privacy on remote device.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
@@ -404,7 +415,8 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable);
  *
  * @param[in]       name   -  device name.
  *
- * @return          - ESP_OK : success
+ * @return
+ *                  - ESP_OK : success
  *                  - other  : failed
  *
  */
