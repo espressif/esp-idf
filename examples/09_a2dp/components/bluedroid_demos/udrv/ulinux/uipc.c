@@ -87,13 +87,6 @@ BOOLEAN UIPC_Open(tUIPC_CH_ID ch_id, tUIPC_RCV_CBACK *p_cback)
     LOG_ERROR("UIPC_Open\n");
 
     //if (ch_id == UIPC_CH_ID_AV_AUDIO) {
-    int volumn;
-    // TODO: review the stream param config parameter here
-    EspAudioPlayerStreamCfg(StreamSampleRate_44k, StreamChannel_Two, StreamBitLen_16BIT);
-    EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
-    EspAudio_GetVolume(&volumn);
-    LOG_ERROR("UIPC_Open: Vol: %d\n", volumn);
-    EspAudio_SetVolume(99);
     // }
 
     /*
