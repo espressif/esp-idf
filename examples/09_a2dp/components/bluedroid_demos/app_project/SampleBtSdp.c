@@ -30,13 +30,8 @@ typedef union {
 
 // extern const btav_interface_t *btif_av_get_sink_interface(void);
 static void bt_stack_evt(tBT_APP_EVT event, tBT_APP_EVT_DATA *p_data);
-static void bt_stack_state_changed(bt_state_t state);
-
 // static bt_bdaddr_t peer_bd_addr = {{0x00, 0x1b, 0xdc, 0x08, 0x0f, 0xe7}};
 
-static bt_callbacks_t bt_callbacks = {
-    bt_stack_state_changed
-};
 
 osi_alarm_t *app_alarm = NULL;
 
@@ -112,19 +107,19 @@ static void bt_stack_evt(tBT_APP_EVT event, tBT_APP_EVT_DATA *p_data)
                             (void *)p_data, sizeof(tBT_APP_EVT_DATA), NULL);
 }
 
-static void bt_stack_state_changed(bt_state_t state)
-{
-    if (state == BT_STATE_ON) {
-        bt_stack_evt(BT_APP_EVT_STACK_ON, NULL);
-    }
-}
-
 void app_main_entry(void)
 {
-    bt_status_t stat;
-    stat = BTIF_InitStack(&bt_callbacks);
-    if (stat == BT_STATUS_SUCCESS) {
-        BTIF_EnableStack();
+    bt_status_t init, enable;
+    init = BTIF_InitStack();
+    if (init != BT_STATUS_SUCCESS) {
+        return;
     }
+
+    enable = BTIF_EnableStack();
+    if (enable != BT_STATUS_SUCCESS) {
+        return;
+    }
+    
+    bt_stack_evt(BT_APP_EVT_STACK_ON, NULL);
 }
 

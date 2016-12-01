@@ -20,17 +20,14 @@
 ************************************************************************************/
 static bool stack_is_initialized = false;
 static bool stack_is_running = false;
-static bt_callbacks_t *bt_hal_cbacks = NULL;
 static future_t *hack_future = NULL;
 
-static bt_status_t event_init_stack(bt_callbacks_t *cb);
+static bt_status_t event_init_stack(void);
 static bt_status_t event_start_up_stack(void);
 static bt_status_t event_shut_down_stack(void);
 static bt_status_t event_clean_up_stack(void);
-static void event_signal_stack_up(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param);
-static void event_signal_stack_down(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param);
 
-static bt_status_t event_init_stack(bt_callbacks_t *cb)
+static bt_status_t event_init_stack(void)
 {
     bt_status_t ret;
     if (!stack_is_initialized) {
@@ -40,7 +37,6 @@ static bt_status_t event_init_stack(bt_callbacks_t *cb)
             return BT_STATUS_FAIL;
         }
         if (ret == BT_STATUS_SUCCESS) {
-            bt_hal_cbacks = cb;
             stack_is_initialized = true;
         }
         return ret;
@@ -74,7 +70,6 @@ static bt_status_t event_start_up_stack(void)
 
     stack_is_running = true;
     LOG_DEBUG("%s finished\n", __func__);
-    btif_transfer_context(event_signal_stack_up, 0, NULL, 0, NULL);
     return BT_STATUS_SUCCESS;
 }
 
@@ -94,7 +89,6 @@ static bt_status_t event_shut_down_stack(void)
     future_await(hack_future);
 
     LOG_DEBUG("%s finished.\n", __func__);
-    btif_transfer_context(event_signal_stack_down, 0, NULL, 0, NULL);
     return BT_STATUS_SUCCESS;
 }
 
@@ -118,19 +112,9 @@ static bt_status_t event_clean_up_stack(void)
     return BT_STATUS_SUCCESS;
 }
 
-static void event_signal_stack_up(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param)
+bt_status_t BTIF_InitStack(void)
 {
-    HAL_CBACK(bt_hal_cbacks, adapter_state_changed_cb, BT_STATE_ON);
-}
-
-static void event_signal_stack_down(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param)
-{
-    HAL_CBACK(bt_hal_cbacks, adapter_state_changed_cb, BT_STATE_OFF);
-}
-
-bt_status_t BTIF_InitStack(bt_callbacks_t *cb)
-{
-    return event_init_stack(cb);
+    return event_init_stack();
 }
 
 bt_status_t BTIF_EnableStack(void)

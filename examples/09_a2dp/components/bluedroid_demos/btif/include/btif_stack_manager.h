@@ -20,7 +20,7 @@ typedef struct {
     adapter_state_changed_callback adapter_state_changed_cb;
 } bt_callbacks_t;
 
-bt_status_t BTIF_InitStack(bt_callbacks_t *cb);
+bt_status_t BTIF_InitStack(void);
 
 bt_status_t BTIF_EnableStack(void);
 
