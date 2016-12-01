@@ -32,7 +32,7 @@ typedef union {
 static void bt_stack_evt(tBT_APP_EVT event, tBT_APP_EVT_DATA *p_data);
 static void bt_stack_state_changed(bt_state_t state);
 
-static bt_bdaddr_t peer_bd_addr = {{0x00, 0x1b, 0xdc, 0x08, 0x0f, 0xe7}};
+// static bt_bdaddr_t peer_bd_addr = {{0x00, 0x1b, 0xdc, 0x08, 0x0f, 0xe7}};
 
 static bt_callbacks_t bt_callbacks = {
     bt_stack_state_changed
@@ -40,14 +40,14 @@ static bt_callbacks_t bt_callbacks = {
 
 osi_alarm_t *app_alarm = NULL;
 
-static void btav_conn_state_cb(esp_a2dp_connection_state_t state,
+static void btav_conn_state_cb(esp_a2d_connection_state_t state,
                                esp_bd_addr_t *bd_addr)
 {
     LOG_ERROR("===esp_a2dp_conn_state_cb %d ===\n", state);
     (void) bd_addr;
 }
 
-static void btav_audio_state_cb(esp_a2dp_audio_state_t state, esp_bd_addr_t *bd_addr)
+static void btav_audio_state_cb(esp_a2d_audio_state_t state, esp_bd_addr_t *bd_addr)
 {
     LOG_ERROR("===esp_a2dp_audio_state_cb %d ===\n", state);
     (void) bd_addr;
@@ -59,7 +59,7 @@ static void btav_audio_cfg_cb(esp_bd_addr_t *bd_addr, uint32_t sample_rate, uint
     (void) bd_addr;
 }
 
-static esp_a2dp_callbacks_t btav_cbs = {
+static esp_a2d_callbacks_t btav_cbs = {
     btav_conn_state_cb,
     btav_audio_state_cb,
     btav_audio_cfg_cb
@@ -92,7 +92,7 @@ static void bt_app_stack_evt(UINT16 event, char *p_param)
         btav_set_device_class();
         BTA_DmSetDeviceName(dev_name);
         esp_bt_gap_set_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
-	esp_a2dp_sink_init(&btav_cbs);
+	esp_a2d_sink_init(&btav_cbs);
         // btif_av_get_sink_interface()->init(&btav_cbs);
 
         // app_alarm = osi_alarm_new("app_alarm", bt_sdp_add_record_to, NULL, 1000, false);
