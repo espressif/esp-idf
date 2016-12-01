@@ -87,6 +87,7 @@ extern "C" {
 #define ESP_ERR_WIFI_SSID        (ESP_ERR_WIFI_BASE + 9)   /*!< SSID is invalid */
 #define ESP_ERR_WIFI_PASSWORD    (ESP_ERR_WIFI_BASE + 10)  /*!< Passord is invalid */
 #define ESP_ERR_WIFI_TIMEOUT     (ESP_ERR_WIFI_BASE + 11)  /*!< Timeout error */
+#define ESP_ERR_WIFI_WAKE_FAIL   (ESP_ERR_WIFI_BASE + 12)  /*!< WiFi is in sleep state(RF closed) and wakeup fail */
 
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
@@ -327,6 +328,8 @@ esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
 /**
   * @brief     Set current power save type
   *
+  * @attention Default power save type is WIFI_PS_NONE.
+  *
   * @param     type  power save type
   *
   * @return    ESP_ERR_WIFI_NOT_SUPPORT: not supported yet
@@ -335,6 +338,8 @@ esp_err_t esp_wifi_set_ps(wifi_ps_type_t type);
 
 /**
   * @brief     Get current power save type
+  *
+  * @attention Default power save type is WIFI_PS_NONE.
   *
   * @param[out]  type: store current power save type
   *

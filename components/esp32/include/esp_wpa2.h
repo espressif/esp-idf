@@ -128,7 +128,7 @@ void esp_wifi_sta_wpa2_ent_clear_ca_cert(void);
   * @param  client_cert: point to address where stores the client certificate;
   *         client_cert_len: length of client certificate;
   *         private_key: point to address where stores the private key;
-  *         private_key_len: length of private key;
+  *         private_key_len: length of private key, limited to 1~2048;
   *         private_key_password: point to address where stores the private key password;
   *         private_key_password_len: length of private key password;
   *
