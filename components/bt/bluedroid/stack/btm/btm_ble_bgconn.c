@@ -441,7 +441,7 @@ BOOLEAN btm_ble_start_auto_conn(BOOLEAN start)
 **                  p_select_cback: callback function to return application
 **                                  selection.
 **
-** Returns          BOOLEAN: selective connectino procedure is started.
+** Returns          BOOLEAN: selective connection procedure is started.
 **
 *******************************************************************************/
 BOOLEAN btm_ble_start_select_conn(BOOLEAN start, tBTM_BLE_SEL_CBACK *p_select_cback)
@@ -523,7 +523,7 @@ BOOLEAN btm_ble_start_select_conn(BOOLEAN start, tBTM_BLE_SEL_CBACK *p_select_cb
 **                  p_select_cback: callback function to return application
 **                                  selection.
 **
-** Returns          BOOLEAN: selective connectino procedure is started.
+** Returns          BOOLEAN: selective connection procedure is started.
 **
 *******************************************************************************/
 void btm_ble_initiate_select_conn(BD_ADDR bda)

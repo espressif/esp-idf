@@ -18,6 +18,8 @@
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 
+#define BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == ESP_BLE_CONN_PARAM_UNDEF))
+
 typedef enum {
     BTC_GAP_BLE_ACT_CFG_ADV_DATA = 0,
     BTC_GAP_BLE_ACT_SET_SCAN_PARAM,

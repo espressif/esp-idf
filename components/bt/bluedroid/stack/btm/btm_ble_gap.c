@@ -1353,11 +1353,10 @@ tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
 BOOLEAN BTM_BleSetRandAddress(BD_ADDR rand_addr)
 {
     BOOLEAN set_flag = false;
-    UINT8 len = sizeof(rand_addr);
-    if (len != BD_ADDR_LEN) {
-        APPL_TRACE_ERROR("Invalid random adress");
-        return false;
-    }
+
+	if (rand_addr == NULL)
+		return set_flag;
+
     //send the set random address to the controller
     set_flag = btsnd_hcic_ble_set_random_addr(rand_addr);
     return set_flag;

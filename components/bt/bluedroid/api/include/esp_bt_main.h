@@ -18,12 +18,40 @@
 #include "btc_main.h"
 #include "esp_err.h"
 
+/**
+ * @brief     Enable bluetooth, must after esp_init_bluetooth()
+ *
+ * @return
+ *            - ESP_OK : Succeed
+ *            - Other  : Failed
+ */
 esp_err_t esp_enable_bluetooth(void);
 
+/**
+ * @brief     Disable bluetooth, must prior to esp_deinit_bluetooth()
+ *
+ * @return
+ *            - ESP_OK : Succeed
+ *            - Other  : Failed
+ */
 esp_err_t esp_disable_bluetooth(void);
 
+/**
+ * @brief     Init and alloc the resource for bluetooth, must be prior to every bluetooth stuff
+ *
+ * @return
+ *            - ESP_OK : Succeed
+ *            - Other  : Failed
+ */
 esp_err_t esp_init_bluetooth(void);
 
+/**
+ * @brief     Deinit and free the resource for bluetooth, must be after every bluetooth stuff
+ *
+ * @return
+ *            - ESP_OK : Succeed
+ *            - Other  : Failed
+ */
 esp_err_t esp_deinit_bluetooth(void);
 
 

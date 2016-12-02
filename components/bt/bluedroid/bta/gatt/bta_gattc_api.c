@@ -196,7 +196,7 @@ void BTA_GATTC_CancelOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN i
 **
 ** Description      Close a connection to a GATT server.
 **
-** Parameters       conn_id: connectino ID to be closed.
+** Parameters       conn_id: connection ID to be closed.
 **
 ** Returns          void
 **
@@ -542,7 +542,7 @@ tBTA_GATT_STATUS  BTA_GATTC_GetNextIncludedService(UINT16 conn_id,
 ** Description      This function is called to read a service's characteristics of
 **                    the given characteritisc ID.
 **
-** Parameters       conn_id - connectino ID.
+** Parameters       conn_id - connection ID.
 **                    p_char_id - characteritic ID to read.
 **
 ** Returns          None
@@ -613,7 +613,7 @@ void BTA_GATTC_ReadCharDescr (UINT16 conn_id,
 ** Description      This function is called to read multiple characteristic or
 **                  characteristic descriptors.
 **
-** Parameters       conn_id - connectino ID.
+** Parameters       conn_id - connection ID.
 **                    p_read_multi - pointer to the read multiple parameter.
 **
 ** Returns          None

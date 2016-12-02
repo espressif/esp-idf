@@ -18,6 +18,9 @@
 #include "lwip/tcp.h"
 #include "lwip/udp.h"
 #include "lwip/priv/tcp_priv.h"
+#include "lwip/stats.h"
+#include "lwip/priv/memp_priv.h"
+#include "lwip/memp.h"
 
 #define DBG_LWIP_IP_SHOW(info, ip)  printf("%s type=%d ip=%x\n", (info), (ip).type, (ip).u_addr.ip4.addr)
 #define DBG_LWIP_IP_PCB_SHOW(pcb) \
@@ -126,4 +129,43 @@ void dbg_lwip_udp_rxtx_show(void)
 {
     printf("TBC\n");
 }
+
+void dbg_lwip_stats_show(void)
+{
+    TCP_STATS_DISPLAY();
+    UDP_STATS_DISPLAY();
+    ICMP_STATS_DISPLAY();
+    IGMP_STATS_DISPLAY();
+    IP_STATS_DISPLAY();
+    IPFRAG_STATS_DISPLAY();
+    ETHARP_STATS_DISPLAY();
+    LINK_STATS_DISPLAY();
+    MEM_STATS_DISPLAY();
+    SYS_STATS_DISPLAY();
+    IP6_STATS_DISPLAY();
+    ICMP6_STATS_DISPLAY();
+    IP6_FRAG_STATS_DISPLAY();
+    MLD6_STATS_DISPLAY();
+    ND6_STATS_DISPLAY();
+    ESP_STATS_DISPLAY();
+}
+
+#if (ESP_CNT_DEBUG == 1)
+
+uint32_t g_lwip_mem_cnt[MEMP_MAX][2];
+extern const struct memp_desc * const memp_pools[MEMP_MAX];
+
+void dbg_lwip_cnt_show(void)
+{
+    int i=0;
+
+    printf("-----lwip memory counter-----\n");
+    printf("%6s %8s %8s\n", "index", "alloc", "free");
+    for (i=0; i<MEMP_MAX; i++){
+        printf("%6u %8u %8u\n", i, g_lwip_mem_cnt[i][0], g_lwip_mem_cnt[i][1]);
+    }
+}
+
+
+#endif
 

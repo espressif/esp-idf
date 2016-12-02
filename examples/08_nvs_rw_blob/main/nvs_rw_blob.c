@@ -170,7 +170,7 @@ void app_main()
                 if (err != ESP_OK) printf("Error (%d) saving run time blob to NVS!\n", err);
                 printf("Restarting...\n");
                 fflush(stdout);
-                system_restart();
+                esp_restart();
             }
         }
         vTaskDelay(200 / portTICK_RATE_MS);

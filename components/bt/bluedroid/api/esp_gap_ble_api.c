@@ -172,7 +172,7 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_gap_set_device_name(char *name)
+esp_err_t esp_ble_gap_set_device_name(const char *name)
 {
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
@@ -189,21 +189,7 @@ esp_err_t esp_ble_gap_set_device_name(char *name)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-
-/*******************************************************************************
-**
-** Function           esp_ble_resolve_adv_data
-**
-** Description       This function is called to get ADV data for a specific type.
-**
-** Parameters       p_adv - pointer of ADV data
-**                      type   - finding ADV data type
-**                      p_length - return the length of ADV data not including type
-**
-** Returns              pointer of ADV data
-**
-*******************************************************************************/
-uint8_t *esp_ble_resolve_adv_data( uint8_t *p_adv, uint8_t type, uint8_t *p_length)
+uint8_t *esp_ble_resolve_adv_data( uint8_t *adv_data, uint8_t type, uint8_t *length)
 {
     if (((type < ESP_BLE_AD_TYPE_FLAG) || (type > ESP_BLE_AD_TYPE_128SERVICE_DATA)) &&
             (type != ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE)) {
@@ -211,11 +197,11 @@ uint8_t *esp_ble_resolve_adv_data( uint8_t *p_adv, uint8_t type, uint8_t *p_leng
         return NULL;
     }
 
-    if (p_adv == NULL) {
+    if (adv_data == NULL) {
         LOG_ERROR("Invalid p_eir data.\n");
         return NULL;
     }
 
-    return (BTM_CheckAdvData( p_adv, type, p_length));
+    return (BTM_CheckAdvData( adv_data, type, length));
 }
 

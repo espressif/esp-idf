@@ -127,7 +127,6 @@ void app_main()
     esp_err_t ret;
 
     nvs_flash_init();
-    system_init();
     initialise_wifi();
 
     //vTaskDelay(3000 / portTICK_PERIOD_MS);

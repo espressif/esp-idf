@@ -42,7 +42,7 @@
  * share the name with the existing functions from hal.h.
  * Including this header file will define XTHAL_USE_CACHE_MACROS 
  * which directs hal.h not to use the functions.
- *
+ */
 
 /*
  *  Single-cache-line operations in C-callable inline assembly.

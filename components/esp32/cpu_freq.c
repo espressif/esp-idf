@@ -16,25 +16,8 @@
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
 #include "sdkconfig.h"
-
-typedef enum{
-    XTAL_40M = 40,
-    XTAL_26M = 26,
-    XTAL_24M = 24,
-    XTAL_AUTO = 0
-} xtal_freq_t;
-
-typedef enum{
-    CPU_80M = 1,
-    CPU_160M = 2,
-    CPU_240M = 3,
-} cpu_freq_t;
-
-extern void phy_get_romfunc_addr();
-
-// TODO: these functions need to be moved from librtc to ESP-IDF
-extern void rtc_init_lite(xtal_freq_t xtal_freq);
-extern void rtc_set_cpu_freq(cpu_freq_t cpu_freq);
+#include "phy.h"
+#include "rtc.h"
 
 /*
  * This function is not exposed as an API at this point,

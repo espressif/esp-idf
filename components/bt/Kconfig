@@ -8,22 +8,9 @@ config BT_ENABLED
     help
         This compiles in the low-level BT stack.
 
-menu "BT UTILITY OPTION"
-visible if BT_ENABLED
-
-config BT_USE_ETS_PRINT
-	bool "BT use print which has lock"
-	default y
-	depends on BT_ENABLED
-	help
-		This select use print or ets_print
-
-endmenu #menu
-
 config BTC_TASK_STACK_SIZE
 	int "BT event (callback to application) task stack size"
 	default 2048
-	depends on BT_ENABLED
 	help
 		This select btc task stack size
 

@@ -22,13 +22,11 @@
 #include <stdio.h>
 #include "bt_types.h"
 
-#include "rom/ets_sys.h"
+#include "esp_log.h"
 
-#ifdef CONFIG_BT_USE_ETS_PRINT
-#define BT_PRINTF   ets_printf
-#else
-#define BT_PRINTF   printf
-#endif
+#define TAG		"BT"
+
+#define BT_PRINTF(fmt, ...)   ESP_LOGE(TAG, fmt, ##__VA_ARGS__)
 
 #ifndef assert
 #define assert(x)   do { if (!(x)) BT_PRINTF("bt host error %s %u\n", __FILE__, __LINE__); } while (0)
@@ -273,7 +271,7 @@ inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_LEVEL_INFO
 #endif
-#define LOG_ERROR(fmt, args...)         do {if (LOG_LEVEL >= LOG_LEVEL_ERROR) printf(fmt,## args);} while(0)
+#define LOG_ERROR(fmt, args...)         do {if (LOG_LEVEL >= LOG_LEVEL_ERROR) BT_PRINTF(fmt,## args);} while(0)
 #define LOG_WARN(fmt, args...)          do {if (LOG_LEVEL >= LOG_LEVEL_WARN) BT_PRINTF(fmt,## args);} while(0)
 #define LOG_INFO(fmt, args...)          do {if (LOG_LEVEL >= LOG_LEVEL_INFO) BT_PRINTF(fmt,## args);} while(0)
 #define LOG_DEBUG(fmt, args...)         do {if (LOG_LEVEL >= LOG_LEVEL_DEBUG) BT_PRINTF(fmt,## args);} while(0)

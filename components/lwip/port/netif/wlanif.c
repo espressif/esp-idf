@@ -118,11 +118,11 @@ low_level_init(struct netif *netif)
 static err_t
 low_level_output(struct netif *netif, struct pbuf *p)
 {
-    wifi_interface_t wifi_if = tcpip_adapter_get_wifi_if(netif);
+    wifi_interface_t wifi_if = tcpip_adapter_get_esp_if(netif);
     struct pbuf *q = p;
     err_t ret;
 
-    if (wifi_if >= WIFI_IF_MAX) {
+    if (wifi_if >= ESP_IF_MAX) {
         return ERR_IF;
     }
 
@@ -161,12 +161,9 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
     	goto _exit;
 
 #if (ESP_L2_TO_L3_COPY == 1)
-  //p = pbuf_alloc(PBUF_IP, len, PBUF_POOL);
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
-    #if ESP_PERF
-    g_rx_alloc_pbuf_fail_cnt++;
-    #endif
+    ESP_STATS_INC(esp.wlanif_input_pbuf_fail);
     esp_wifi_internal_free_rx_buffer(eb);
     return;
   }
@@ -175,9 +172,7 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
 #else
   p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
   if (p == NULL){
-    #if ESP_PERF
-    g_rx_alloc_pbuf_fail_cnt++;
-    #endif
+    ESP_STATS_INC(esp.wlanif_input_pbuf_fail);
     return;
   }
   p->payload = buffer;
@@ -241,7 +236,7 @@ wlanif_init(struct netif *netif)
    * The last argument should be replaced with your link speed, in units
    * of bits per second.
    */
-  NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED_OF_YOUR_NETIF_IN_BPS);
+  NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, 100);
 
   netif->name[0] = IFNAME0;
   netif->name[1] = IFNAME1;

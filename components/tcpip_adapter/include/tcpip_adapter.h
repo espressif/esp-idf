@@ -98,6 +98,7 @@ typedef struct {
 typedef enum {
     TCPIP_ADAPTER_IF_STA = 0,     /**< ESP32 station interface */
     TCPIP_ADAPTER_IF_AP,          /**< ESP32 soft-AP interface */
+    TCPIP_ADAPTER_IF_ETH,     /**< ESP32 ethernet interface */
     TCPIP_ADAPTER_IF_MAX
 } tcpip_adapter_if_t;
 
@@ -354,6 +355,10 @@ esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if);
  */
 esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
 
+
+
+esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb);
+
 /**
  * @brief  Get data from station interface
  *
@@ -387,11 +392,12 @@ esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void *eb);
  *
  * @param[in]  void *dev: adapter interface
  *
- * @return WIFI_IF_STA
- *         WIFI_IF_AP
- *         WIFI_IF_MAX
+ * @return ESP_IF_WIFI_STA
+ *         ESP_IF_WIFI_AP
+           ESP_IF_ETH
+ *         ESP_IF_MAX
  */
-wifi_interface_t tcpip_adapter_get_wifi_if(void *dev);
+esp_interface_t tcpip_adapter_get_esp_if(void *dev);
 
 /**
  * @brief  Get the station information list
@@ -417,6 +423,18 @@ esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapt
  *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS:parameter error
  */
 esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *hostname);
+
+/**
+ * @brief  Get the hostname from the interface
+ *
+ * @param[in]   tcpip_if: the interface which we will get the hostname
+ * @param[in]   hostname: the host name from the interfce
+ *
+ * @return ESP_OK:success
+ *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY:interface status error
+ *         ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS:parameter error
+ */
+esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **hostname);
 
 #ifdef __cplusplus
 }

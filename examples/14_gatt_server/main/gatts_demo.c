@@ -174,7 +174,7 @@ static void gatts_event_handler(uint32_t event, void *param)
         LOG_INFO("ADD_DESCR_EVT, status %d, gatt_if %d,  attr_handle %d, service_handle %d\n",
                  p->add_char.status, p->add_char.gatt_if, p->add_char.attr_handle, p->add_char.service_handle);
         break;
-    case ESP_GATTS_DELELTE_EVT:
+    case ESP_GATTS_DELETE_EVT:
         break;
     case ESP_GATTS_START_EVT:
         LOG_INFO("SERVICE_START_EVT, status %d, gatt_if %d, service_handle %d\n",

@@ -88,7 +88,7 @@ void app_main()
 
     const int deep_sleep_sec = 10;
     ESP_LOGI(TAG, "Entering deep sleep for %d seconds", deep_sleep_sec);
-    system_deep_sleep(1000000LL * deep_sleep_sec);
+    esp_deep_sleep(1000000LL * deep_sleep_sec);
 }
 
 static void obtain_time(void)
@@ -136,7 +136,7 @@ static void initialise_wifi(void)
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
+    ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_start() );
 }
 

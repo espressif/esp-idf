@@ -179,7 +179,7 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
         return ESP_ERR_INVALID_SIZE;
     }
     uint8_t sta_mac[6];
-    system_efuse_read_mac(sta_mac);
+    esp_efuse_read_mac(sta_mac);
     if (memcmp(sta_mac, cal_data_mac, sizeof(sta_mac)) != 0) {
         ESP_LOGE(TAG, "%s: calibration data MAC check failed: expected " \
                 MACSTR ", found " MACSTR,
@@ -210,7 +210,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
         return err;
     }
     uint8_t sta_mac[6];
-    system_efuse_read_mac(sta_mac);
+    esp_efuse_read_mac(sta_mac);
     err = nvs_set_blob(handle, PHY_CAL_MAC_KEY, sta_mac, sizeof(sta_mac));
     if (err != ESP_OK) {
         return err;

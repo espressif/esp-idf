@@ -30,8 +30,31 @@
 #define RSA_MULT_MODE_REG             (DR_REG_RSA_BASE + 0x80c)
 #define RSA_MULT_START_REG            (DR_REG_RSA_BASE + 0x810)
 
-#define RSA_INTERRUPT_REG             (DR_REG_RSA_BASE + 0X814)
+#define RSA_INTERRUPT_REG             (DR_REG_RSA_BASE + 0x814)
 
-#define RSA_CLEAN_ADDR                (DR_REG_RSA_BASE + 0X818)
+#define RSA_CLEAN_REG                 (DR_REG_RSA_BASE + 0x818)
+
+/* SHA acceleration registers */
+#define SHA_TEXT_BASE          ((DR_REG_SHA_BASE) + 0x00)
+
+#define SHA_1_START_REG         ((DR_REG_SHA_BASE) + 0x80)
+#define SHA_1_CONTINUE_REG      ((DR_REG_SHA_BASE) + 0x84)
+#define SHA_1_LOAD_REG          ((DR_REG_SHA_BASE) + 0x88)
+#define SHA_1_BUSY_REG          ((DR_REG_SHA_BASE) + 0x8c)
+
+#define SHA_256_START_REG       ((DR_REG_SHA_BASE) + 0x90)
+#define SHA_256_CONTINUE_REG    ((DR_REG_SHA_BASE) + 0x94)
+#define SHA_256_LOAD_REG        ((DR_REG_SHA_BASE) + 0x98)
+#define SHA_256_BUSY_REG        ((DR_REG_SHA_BASE) + 0x9c)
+
+#define SHA_384_START_REG       ((DR_REG_SHA_BASE) + 0xa0)
+#define SHA_384_CONTINUE_REG    ((DR_REG_SHA_BASE) + 0xa4)
+#define SHA_384_LOAD_REG        ((DR_REG_SHA_BASE) + 0xa8)
+#define SHA_384_BUSY_REG        ((DR_REG_SHA_BASE) + 0xac)
+
+#define SHA_512_START_REG       ((DR_REG_SHA_BASE) + 0xb0)
+#define SHA_512_CONTINUE_REG    ((DR_REG_SHA_BASE) + 0xb4)
+#define SHA_512_LOAD_REG        ((DR_REG_SHA_BASE) + 0xb8)
+#define SHA_512_BUSY_REG        ((DR_REG_SHA_BASE) + 0xbc)
 
 #endif

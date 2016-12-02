@@ -30,25 +30,34 @@ extern "C" {
   */
 
 /**
-  * @brief     Set the chip to deep-sleep mode.
-  *
-  *            The device will automatically wake up after the deep-sleep time set
-  *            by the users. Upon waking up, the device boots up from user_init.
-  *
-  * @attention  The parameter time_in_us to be "uint64" is for further development.
-  *                  Only the low 32 bits of parameter time_in_us are avalable now.
-  *
-  * @param     uint64 time_in_us : deep-sleep time, only the low 32bits are avalable now. unit: microsecond
-  *
-  * @return    null
-  */
-void system_deep_sleep(uint64_t time_in_us);
+ * @brief Enter deep-sleep mode
+ *
+ * The device will automatically wake up after the deep-sleep time
+ * Upon waking up, the device calls deep sleep wake stub, and then proceeds
+ * to load application.
+ *
+ * This function does not return.
+ *
+ * @param time_in_us  deep-sleep time, unit: microsecond
+ */
+void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
+
+
+/**
+ * @brief Enter deep-sleep mode
+ *
+ * Function has been renamed to esp_deep_sleep.
+ * This name is deprecated and will be removed in a future version.
+ *
+ * @param time_in_us  deep-sleep time, unit: microsecond
+ */
+void system_deep_sleep(uint64_t time_in_us) __attribute__((noreturn, deprecated));
 
 /**
  * @brief Default stub to run on wake from deep sleep.
  *
  * Allows for executing code immediately on wake from sleep, before
- * the software bootloader or esp-idf app has started up.
+ * the software bootloader or ESP-IDF app has started up.
  *
  * This function is weak-linked, so you can implement your own version
  * to run code immediately when the chip wakes from

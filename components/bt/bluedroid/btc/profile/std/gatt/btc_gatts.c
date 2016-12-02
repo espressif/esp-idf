@@ -382,7 +382,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.del.gatt_if = p_data->srvc_oper.server_if;
         param.del.service_handle = p_data->srvc_oper.service_id;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_DELELTE_EVT, &param);
+        BTC_GATTS_CB_TO_APP(ESP_GATTS_DELETE_EVT, &param);
         break;
     case BTA_GATTS_START_EVT:
         param.start.status = p_data->srvc_oper.status;
@@ -433,11 +433,4 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
     }
 
     btc_gatts_cb_param_copy_free(msg, p_data);
-
-    //ets_printf("yyy\n");
 }
-
-
-
-
-

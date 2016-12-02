@@ -1,246 +1,203 @@
-/*
- *  ESP32 hardware accelerated SHA1/256/512 implementation
- *  based on mbedTLS FIPS-197 compliant version.
- *
- *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- */
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #ifndef _ESP_SHA_H_
 #define _ESP_SHA_H_
 
 #include "rom/sha.h"
-
 #include "esp_types.h"
+
+/** @brief Low-level support functions for the hardware SHA engine
+ *
+ * @note If you're looking for a SHA API to use, try mbedtls component
+ * mbedtls/shaXX.h. That API supports hardware acceleration.
+ *
+ * The API in this header provides some building blocks for implementing a
+ * full SHA API such as the one in mbedtls, and also a basic SHA function esp_sha().
+ *
+ * Some technical details about the hardware SHA engine:
+ *
+ * - SHA accelerator engine calculates one digest at a time, per SHA
+ *   algorithm type. It initialises and maintains the digest state
+ *   internally. It is possible to read out an in-progress SHA digest
+ *   state, but it is not possible to restore a SHA digest state
+ *   into the engine.
+ *
+ * - The memory block SHA_TEXT_BASE is shared between all SHA digest
+ *   engines, so all engines must be idle before this memory block is
+ *   modified.
+ *
+ */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * \brief          SHA-1 context structure
- */
-typedef struct {
-    /* both types defined in rom/sha.h */
-    SHA_CTX context;
-    enum SHA_TYPE context_type;
-} esp_sha_context;
+/* Defined in rom/sha.h */
+typedef enum SHA_TYPE esp_sha_type;
 
-/**
- * \brief Lock access to SHA hardware unit
+/** @brief Calculate SHA1 or SHA2 sum of some data, using hardware SHA engine
  *
- * SHA hardware unit can only be used by one
- * consumer at a time.
+ * @note For more versatile SHA calculations, where data doesn't need
+ * to be passed all at once, try the mbedTLS mbedtls/shaX.h APIs. The
+ * hardware-accelerated mbedTLS implementation is also faster when
+ * hashing large amounts of data.
  *
- * esp_sha_xxx API calls automatically manage locking & unlocking of
- * hardware, this function is only needed if you want to call
- * ets_sha_xxx functions directly.
- */
-void esp_sha_acquire_hardware( void );
-
-/**
- * \brief Unlock access to SHA hardware unit
+ * @note It is not necessary to lock any SHA hardware before calling
+ * this function, thread safety is managed internally.
  *
- * esp_sha_xxx API calls automatically manage locking & unlocking of
- * hardware, this function is only needed if you want to call
- * ets_sha_xxx functions directly.
- */
-void esp_sha_release_hardware( void );
-
-/**
- * \brief          Initialize SHA-1 context
+ * @note If a TLS connection is open then this function may block
+ * indefinitely waiting for a SHA engine to become available. Use the
+ * mbedTLS SHA API to avoid this problem.
  *
- * \param ctx      SHA-1 context to be initialized
- */
-void esp_sha1_init( esp_sha_context *ctx );
-
-/**
- * \brief          Clear SHA-1 context
+ * @param sha_type SHA algorithm to use.
  *
- * \param ctx      SHA-1 context to be cleared
- */
-void esp_sha1_free( esp_sha_context *ctx );
-
-/**
- * \brief          Clone (the state of) a SHA-1 context
+ * @param input Input data buffer.
  *
- * \param dst      The destination context
- * \param src      The context to be cloned
- */
-void esp_sha1_clone( esp_sha_context *dst, const esp_sha_context *src );
-
-/**
- * \brief          SHA-1 context setup
+ * @param ilen Length of input data in bytes.
  *
- * \param ctx      context to be initialized
+ * @param output Buffer for output SHA digest. Output is 20 bytes for
+ * sha_type SHA1, 32 bytes for sha_type SHA2_256, 48 bytes for
+ * sha_type SHA2_384, 64 bytes for sha_type SHA2_512.
  */
-void esp_sha1_start( esp_sha_context *ctx );
+void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output);
 
-/**
- * \brief          SHA-1 process buffer
+/* @brief Begin to execute a single SHA block operation
  *
- * \param ctx      SHA-1 context
- * \param input    buffer holding the  data
- * \param ilen     length of the input data
- */
-void esp_sha1_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen );
-
-/**
- * \brief          SHA-1 final digest
+ * @note This is a piece of a SHA algorithm, rather than an entire SHA
+ * algorithm.
  *
- * \param ctx      SHA-1 context
- * \param output   SHA-1 checksum result
- */
-void esp_sha1_finish( esp_sha_context *ctx, unsigned char output[20] );
-
-/**
- * \brief          Calculate SHA-1 of input buffer
+ * @note Call esp_sha_try_lock_engine() before calling this
+ * function. Do not call esp_sha_lock_memory_block() beforehand, this
+ * is done inside the function.
  *
- * \param input    buffer holding the data
- * \param ilen     length of the input data
- * \param output   SHA-1 checksum result
- */
-void esp_sha1( const unsigned char *input, size_t ilen, unsigned char output[20] );
-
-/**
- * \brief          SHA-256 context structure
- */
-
-/**
- * \brief          Initialize SHA-256 context
+ * @param sha_type SHA algorithm to use.
  *
- * \param ctx      SHA-256 context to be initialized
- */
-void esp_sha256_init( esp_sha_context *ctx );
-
-/**
- * \brief          Clear SHA-256 context
+ * @param data_block Pointer to block of data. Block size is
+ * determined by algorithm (SHA1/SHA2_256 = 64 bytes,
+ * SHA2_384/SHA2_512 = 128 bytes)
  *
- * \param ctx      SHA-256 context to be cleared
- */
-void esp_sha256_free( esp_sha_context *ctx );
-
-/**
- * \brief          Clone (the state of) a SHA-256 context
+ * @param is_first_block If this parameter is true, the SHA state will
+ * be initialised (with the initial state of the given SHA algorithm)
+ * before the block is calculated. If false, the existing state of the
+ * SHA engine will be used.
  *
- * \param dst      The destination context
- * \param src      The context to be cloned
+ * @return As a performance optimisation, this function returns before
+ * the SHA block operation is complete. Both this function and
+ * esp_sha_read_state() will automatically wait for any previous
+ * operation to complete before they begin. If using the SHA registers
+ * directly in another way, call esp_sha_wait_idle() after calling this
+ * function but before accessing the SHA registers.
  */
-void esp_sha256_clone( esp_sha_context *dst, const esp_sha_context *src );
+void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block);
 
-/**
- * \brief          SHA-256 context setup
+/** @brief Read out the current state of the SHA digest loaded in the engine.
  *
- * \param ctx      context to be initialized
- * \param is224    0 = use SHA256, 1 = use SHA224
- */
-void esp_sha256_start( esp_sha_context *ctx, int is224 );
-
-/**
- * \brief          SHA-256 process buffer
+ * @note This is a piece of a SHA algorithm, rather than an entire SHA algorithm.
  *
- * \param ctx      SHA-256 context
- * \param input    buffer holding the  data
- * \param ilen     length of the input data
- */
-void esp_sha256_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen );
-
-/**
- * \brief          SHA-256 final digest
+ * @note Call esp_sha_try_lock_engine() before calling this
+ * function. Do not call esp_sha_lock_memory_block() beforehand, this
+ * is done inside the function.
  *
- * \param ctx      SHA-256 context
- * \param output   SHA-224/256 checksum result
- */
-void esp_sha256_finish( esp_sha_context *ctx, unsigned char output[32] );
-
-/**
- * \brief          Calculate SHA-256 of input buffer
+ * If the SHA suffix padding block has been executed already, the
+ * value that is read is the SHA digest (in big endian
+ * format). Otherwise, the value that is read is an interim SHA state.
  *
- * \param input    buffer holding the data
- * \param ilen     length of the input data
- * \param output   SHA-224/256 checksum result
- * \param is224    0 = use SHA256, 1 = use SHA224
- */
-void esp_sha256( const unsigned char *input, size_t ilen, unsigned char output[32], int is224 );
-
-//
-
-/**
- * \brief          SHA-512 context structure
- */
-
-/**
- * \brief          Initialize SHA-512 context
+ * @note If sha_type is SHA2_384, only 48 bytes of state will be read.
+ * This is enough for the final SHA2_384 digest, but if you want the
+ * interim SHA-384 state (to continue digesting) then pass SHA2_512 instead.
  *
- * \param ctx      SHA-512 context to be initialized
+ * @param sha_type SHA algorithm in use.
+ *
+ * @param state Pointer to a memory buffer to hold the SHA state. Size
+ * is 20 bytes (SHA1), 32 bytes (SHA2_256), 48 bytes (SHA2_384) or 64 bytes (SHA2_512).
+ *
  */
-void esp_sha512_init( esp_sha_context *ctx );
+void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state);
 
 /**
- * \brief          Clear SHA-512 context
+ * @brief Obtain exclusive access to a particular SHA engine
  *
- * \param ctx      SHA-512 context to be cleared
+ * @param sha_type Type of SHA engine to use.
+ *
+ * Blocks until engine is available. Note: Can block indefinitely
+ * while a TLS connection is open, suggest using
+ * esp_sha_try_lock_engine() and failing over to software SHA.
  */
-void esp_sha512_free( esp_sha_context *ctx );
+void esp_sha_lock_engine(esp_sha_type sha_type);
 
 /**
- * \brief          Clone (the state of) a SHA-512 context
+ * @brief Try and obtain exclusive access to a particular SHA engine
  *
- * \param dst      The destination context
- * \param src      The context to be cloned
+ * @param sha_type Type of SHA engine to use.
+ *
+ * @return Returns true if the SHA engine is locked for exclusive
+ * use. Call esp_sha_unlock_sha_engine() when done.  Returns false if
+ * the SHA engine is already in use, caller should use software SHA
+ * algorithm for this digest.
  */
-void esp_sha512_clone( esp_sha_context *dst, const esp_sha_context *src );
+bool esp_sha_try_lock_engine(esp_sha_type sha_type);
 
 /**
- * \brief          SHA-512 context setup
+ * @brief Unlock an engine previously locked with esp_sha_lock_engine() or esp_sha_try_lock_engine()
  *
- * \param ctx      context to be initialized
- * \param is384    0 = use SHA512, 1 = use SHA384
+ * @param sha_type Type of engine to release.
  */
-void esp_sha512_start( esp_sha_context *ctx, int is384 );
+void esp_sha_unlock_engine(esp_sha_type sha_type);
 
 /**
- * \brief          SHA-512 process buffer
+ * @brief Acquire exclusive access to the SHA shared memory block at SHA_TEXT_BASE
  *
- * \param ctx      SHA-512 context
- * \param input    buffer holding the  data
- * \param ilen     length of the input data
+ * This memory block is shared across all the SHA algorithm types.
+ *
+ * Caller should have already locked a SHA engine before calling this function.
+ *
+ * Note that it is possible to obtain exclusive access to the memory block even
+ * while it is in use by the SHA engine. Caller should use esp_sha_wait_idle()
+ * to ensure the SHA engine is not reading from the memory block in hardware.
+ *
+ * @note You do not need to lock the memory block before calling esp_sha_block() or esp_sha_read_digest_state(), these functions handle memory block locking internally.
+ *
+ * Call esp_sha_unlock_memory_block() when done.
  */
-void esp_sha512_update( esp_sha_context *ctx, const unsigned char *input, size_t ilen );
+void esp_sha_lock_memory_block(void);
 
 /**
- * \brief          SHA-512 final digest
+ * @brief Release exclusive access to the SHA register memory block at SHA_TEXT_BASE
  *
- * \param ctx      SHA-512 context
- * \param output   SHA-384/512 checksum result
- */
-void esp_sha512_finish( esp_sha_context *ctx, unsigned char output[64] );
-
-/**
- * \brief          Calculate SHA-512 of input buffer.
+ * Caller should have already locked a SHA engine before calling this function.
  *
- * \param input    buffer holding the data
- * \param ilen     length of the input data
- * \param output   SHA-384/512 checksum result
- * \param is384    0 = use SHA512, 1 = use SHA384
+ * Call following esp_sha_lock_memory_block().
  */
-void esp_sha512( const unsigned char *input, size_t ilen, unsigned char output[64], int is384 );
+void esp_sha_unlock_memory_block(void);
 
-//
+/** @brief Wait for the SHA engine to finish any current operation
+ *
+ * @note This function does not ensure exclusive access to any SHA
+ * engine. Caller should use esp_sha_try_lock_engine() and
+ * esp_sha_lock_memory_block() as required.
+ *
+ * @note Functions declared in this header file wait for SHA engine
+ * completion automatically, so you don't need to use this API for
+ * these. However if accessing SHA registers directly, you will need
+ * to call this before accessing SHA registers if using the
+ * esp_sha_block() function.
+ *
+ * @note This function busy-waits, so wastes CPU resources.
+ * Best to delay calling until you are about to need it.
+ *
+ */
+void esp_sha_wait_idle(void);
 
 #ifdef __cplusplus
 }

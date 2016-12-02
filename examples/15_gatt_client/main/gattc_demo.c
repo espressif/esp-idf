@@ -135,7 +135,7 @@ static void esp_gattc_cb(uint32_t event, void *param)
         esp_ble_gattc_search_service(conn_id, NULL);
         break;
     case ESP_GATTC_SEARCH_RES_EVT: {
-        esp_gatt_srvc_id_t *srvc_id = &p_data->search_res.service_id;
+        esp_gatt_srvc_id_t *srvc_id = &p_data->search_res.srvc_id;
         conn_id = p_data->open.conn_id;
         LOG_INFO("SEARCH RES: conn_id = %x\n", conn_id);
         if (srvc_id->id.uuid.len == ESP_UUID_LEN_16) {

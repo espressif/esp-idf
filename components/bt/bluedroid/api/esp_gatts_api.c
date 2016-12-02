@@ -30,7 +30,8 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
-    if (app_id < APP_ID_MIN || app_id > APP_ID_MAX) {
+    //if (app_id < ESP_APP_ID_MIN || app_id > ESP_APP_ID_MAX) {
+    if (app_id > ESP_APP_ID_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -73,7 +74,7 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatt_if,
 }
 
 
-esp_err_t esp_ble_gatts_add_include_service(uint16_t service_handle, uint16_t included_service_handle)
+esp_err_t esp_ble_gatts_add_included_service(uint16_t service_handle, uint16_t included_service_handle)
 {
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;

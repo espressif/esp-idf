@@ -1389,57 +1389,56 @@ tcp_kill_timewait(void)
 }
 
 #if ESP_LWIP
-/**
- * Kills the oldest connection that is in FIN_WAIT_2 state.
- * Called from tcp_alloc() if no more connections are available.
- */
-static void tcp_kill_finwait2(void)
-{
-	struct tcp_pcb *pcb, *inactive;
-	u32_t inactivity;
-	/* Go through the list of FIN_WAIT_2 pcbs and get the oldest pcb. */
-	inactivity = 0;
-	inactive = NULL;
-	for (pcb = tcp_active_pcbs; pcb != NULL; pcb = pcb->next) {
-		if (pcb->state == FIN_WAIT_2) {
-			if ((u32_t) (tcp_ticks - pcb->tmr) >= inactivity) {
-				inactivity = tcp_ticks - pcb->tmr;
-				inactive = pcb;
-			}
-		}
-	}
-	if (inactive != NULL) {
-		tcp_pcb_remove(&tcp_active_pcbs, inactive);
-		memp_free(MEMP_TCP_PCB, inactive);
-	}
-}
+typedef struct {
+    u8_t time_wait;
+    u8_t closing;
+    u8_t fin_wait2;
+    u8_t last_ack;
+    u8_t fin_wait1;
+    u8_t listen;
+    u8_t bound;
+    u8_t total;
+}tcp_pcb_num_t;
 
-/**
- * Kills the oldest connection that is in LAST_ACK state.
- * Called from tcp_alloc() if no more connections are available.
- */
-static void tcp_kill_lastack(void)
+void tcp_pcb_num_cal(tcp_pcb_num_t *tcp_pcb_num)
 {
-	struct tcp_pcb *pcb, *inactive;
-	u32_t inactivity;
-	/* Go through the list of LAST_ACK pcbs and get the oldest pcb. */
-	inactivity = 0;
-	inactive = NULL;
-	for (pcb = tcp_active_pcbs; pcb != NULL; pcb = pcb->next) {
-		if (pcb->state == LAST_ACK) {
-			if ((u32_t) (tcp_ticks - pcb->tmr) >= inactivity) {
-				inactivity = tcp_ticks - pcb->tmr;
-				inactive = pcb;
-			}
-		}
-	}
-	if (inactive != NULL) {
-		tcp_pcb_remove(&tcp_active_pcbs, inactive);
-		memp_free(MEMP_TCP_PCB, inactive);
-	}
+    struct tcp_pcb_listen *listen;
+    struct tcp_pcb *pcb;
+
+    if (!tcp_pcb_num){
+        return;
+    }
+
+    memset(tcp_pcb_num, 0, sizeof(*tcp_pcb_num));
+    for(pcb = tcp_tw_pcbs; pcb != NULL; pcb = pcb->next) {
+        tcp_pcb_num->total ++;
+        tcp_pcb_num->time_wait ++;
+    }
+
+    for (pcb = tcp_active_pcbs; pcb != NULL; pcb = pcb->next){
+        tcp_pcb_num->total ++;
+        if (pcb->state == FIN_WAIT_2){
+            tcp_pcb_num->fin_wait2 ++;
+        } else if (pcb->state == LAST_ACK) {
+            tcp_pcb_num->last_ack ++;
+        } else if (pcb->state == CLOSING) {
+            tcp_pcb_num->closing ++;
+        } else if (pcb->state == FIN_WAIT_1){
+            tcp_pcb_num->fin_wait1 ++;
+        }
+    }
+
+    for (listen = tcp_listen_pcbs.listen_pcbs; listen != NULL; listen = listen->next){
+        tcp_pcb_num->total ++;
+        tcp_pcb_num->listen ++;
+    }
+
+    for (pcb = tcp_bound_pcbs; pcb != NULL; pcb = pcb->next){
+        tcp_pcb_num->total ++;
+        tcp_pcb_num->bound ++;
+    }
 }
 #endif
-
 
 
 /**
@@ -1455,34 +1454,34 @@ tcp_alloc(u8_t prio)
   u32_t iss;
 
 #if ESP_LWIP
-    /*Kills the oldest connection that is in TIME_WAIT state.*/
-    u8_t time_wait_num = 0;
-    for(pcb = tcp_tw_pcbs; pcb != NULL; pcb = pcb->next) {
-        time_wait_num ++;
+    tcp_pcb_num_t tcp_pcb_num;
+
+    tcp_pcb_num_cal(&tcp_pcb_num);
+
+    if (tcp_pcb_num.total >= MEMP_NUM_TCP_PCB){
+        if (tcp_pcb_num.time_wait > 0){
+            tcp_kill_timewait();
+        } else if (tcp_pcb_num.last_ack > 0){
+            tcp_kill_state(LAST_ACK);
+        } else if (tcp_pcb_num.closing > 0){
+            tcp_kill_state(CLOSING);
+        } else if (tcp_pcb_num.fin_wait2 > 0){
+            tcp_kill_state(FIN_WAIT_2);
+        } else if (tcp_pcb_num.fin_wait1 > 0){
+            tcp_kill_state(FIN_WAIT_1);
+        } else {
+            tcp_kill_prio(prio);
+        }
     }
 
-    if (time_wait_num >= MEMP_NUM_TCP_PCB)
-        tcp_kill_timewait();
-
-    /*Kills the oldest connection that is in FIN_WAIT_2 state.*/
-    time_wait_num = 0;
-    for (pcb = tcp_active_pcbs; pcb != NULL; pcb = pcb->next){
-        if (pcb->state == FIN_WAIT_2)
-            time_wait_num ++;
+    tcp_pcb_num_cal(&tcp_pcb_num);
+    if (tcp_pcb_num.total >= MEMP_NUM_TCP_PCB){
+        LWIP_DEBUGF(TCP_DEBUG, ("tcp_alloc: no available tcp pcb %d %d %d %d %d %d %d %d\n",
+           tcp_pcb_num.total, tcp_pcb_num.time_wait, tcp_pcb_num.last_ack, tcp_pcb_num.closing,
+           tcp_pcb_num.fin_wait2, tcp_pcb_num.fin_wait1, tcp_pcb_num.listen, tcp_pcb_num.bound));
+        return NULL;
     }
 
-    if (time_wait_num >= MEMP_NUM_TCP_PCB)
-        tcp_kill_finwait2();
-
-    /*Kills the oldest connection that is in LAST_ACK state.*/
-    time_wait_num = 0;
-    for (pcb = tcp_active_pcbs; pcb != NULL; pcb = pcb->next){
-        if (pcb->state == LAST_ACK)
-            time_wait_num ++;
-    }
-
-    if (time_wait_num >= MEMP_NUM_TCP_PCB)
-  	  tcp_kill_lastack();
 #endif
 
   pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);

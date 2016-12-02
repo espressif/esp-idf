@@ -818,7 +818,7 @@ static void bta_gatts_send_request_cback (UINT16 conn_id,
             APPL_TRACE_ERROR("connection request on gatt_if[%d] is not interested", gatt_if);
         }
     } else {
-        APPL_TRACE_ERROR("request received on unknown connectino ID: %d", conn_id);
+        APPL_TRACE_ERROR("request received on unknown connection ID: %d", conn_id);
     }
 }
 
