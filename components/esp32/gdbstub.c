@@ -18,12 +18,9 @@
  * it allows inspecting the ESP32 state 
  *******************************************************************************/
 
-//ToDo: Clean up includes and sync to real rtos
 #include "rom/ets_sys.h"
-
 #include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
-
 #include "esp_gdbstub.h"
 #include "driver/gpio.h"
 
@@ -36,17 +33,10 @@ static char chsum;						//Running checksum of the output packet
 
 #define ATTR_GDBFN
 
-static void ATTR_GDBFN keepWDTalive() {
-	//ToDo for esp31/32
-}
-
-
 //Receive a char from the uart. Uses polling and feeds the watchdog.
 static int ATTR_GDBFN gdbRecvChar() {
 	int i;
-	while (((READ_PERI_REG(UART_STATUS_REG(0))>>UART_RXFIFO_CNT_S)&UART_RXFIFO_CNT)==0) {
-		keepWDTalive();
-	}
+	while (((READ_PERI_REG(UART_STATUS_REG(0))>>UART_RXFIFO_CNT_S)&UART_RXFIFO_CNT)==0) ;
 	i=READ_PERI_REG(UART_FIFO_REG(0));
 	return i;
 }
@@ -260,7 +250,11 @@ static void sendReason() {
 	gdbPacketStart();
 	gdbPacketChar('T');
 	i=gdbRegFile.expstate&0x7f;
-	if (i<sizeof(exceptionSignal)) return gdbPacketHex(exceptionSignal[i], 8); else gdbPacketHex(11, 8);
+	if (i<sizeof(exceptionSignal)) {
+		gdbPacketHex(exceptionSignal[i], 8); 
+	} else {
+		gdbPacketHex(11, 8);
+	}
 	gdbPacketEnd();
 }
 
@@ -340,7 +334,6 @@ static int gdbReadCommand() {
 	sentchs[1]=gdbRecvChar();
 	ptr=&sentchs[0];
 	rchsum=gdbGetHexVal(&ptr, 8);
-//	ets_printf("c %x r %x\n", chsum, rchsum);
 	if (rchsum!=chsum) {
 		gdbSendChar('-');
 		return ST_ERR;
