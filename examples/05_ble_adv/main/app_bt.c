@@ -1,3 +1,17 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -36,7 +50,7 @@ enum {
 
 static uint8_t hci_cmd_buf[128];
 
-/* 
+/*
  * @brief: BT controller callback function, used to notify the upper layer that
  *         controller is ready to receive command
  */
@@ -45,15 +59,16 @@ static void controller_rcv_pkt_ready(void)
     printf("controller rcv pkt ready\n");
 }
 
-/* 
+/*
  * @brief: BT controller callback function, to transfer data packet to upper
  *         controller is ready to receive command
  */
 static int host_rcv_pkt(uint8_t *data, uint16_t len)
 {
     printf("host rcv pkt: ");
-    for (uint16_t i=0; i<len; i++)
+    for (uint16_t i = 0; i < len; i++) {
         printf("%02x", data[i]);
+    }
     printf("\n");
     return 0;
 }
@@ -81,9 +96,9 @@ static uint16_t make_cmd_ble_set_adv_enable (uint8_t *buf, uint8_t adv_enable)
 }
 
 static uint16_t make_cmd_ble_set_adv_param (uint8_t *buf, uint16_t adv_int_min, uint16_t adv_int_max,
-                                            uint8_t adv_type, uint8_t addr_type_own,
-                                            uint8_t addr_type_dir, bd_addr_t direct_bda,
-                                            uint8_t channel_map, uint8_t adv_filter_policy)
+        uint8_t adv_type, uint8_t addr_type_own,
+        uint8_t addr_type_dir, bd_addr_t direct_bda,
+        uint8_t channel_map, uint8_t adv_filter_policy)
 {
     UINT8_TO_STREAM (buf, H4_TYPE_COMMAND);
     UINT16_TO_STREAM (buf, HCI_BLE_WRITE_ADV_PARAMS);
@@ -143,16 +158,16 @@ static void hci_cmd_send_ble_set_adv_param(void)
     uint8_t peer_addr[6] = {0x80, 0x81, 0x82, 0x83, 0x84, 0x85};
     uint8_t adv_chn_map = 0x07; // 37, 38, 39
     uint8_t adv_filter_policy = 0; // Process All Conn and Scan
-    
+
     uint16_t sz = make_cmd_ble_set_adv_param(hci_cmd_buf,
-                                             adv_intv_min,
-                                             adv_intv_max,
-                                             adv_type,
-                                             own_addr_type,
-                                             peer_addr_type,
-                                             peer_addr,
-                                             adv_chn_map,
-                                             adv_filter_policy);
+                  adv_intv_min,
+                  adv_intv_max,
+                  adv_type,
+                  own_addr_type,
+                  peer_addr_type,
+                  peer_addr,
+                  adv_chn_map,
+                  adv_filter_policy);
     API_vhci_host_send_packet(hci_cmd_buf, sz);
 }
 
@@ -162,10 +177,10 @@ static void hci_cmd_send_ble_set_adv_data(void)
     uint8_t name_len = (uint8_t)strlen(adv_name);
     uint8_t adv_data[31] = {0x02, 0x01, 0x06, 0x0, 0x09};
     uint8_t adv_data_len;
-    
+
     adv_data[3] = name_len + 1;
-    for (int i=0; i<name_len; i++) {
-        adv_data[5+i] = (uint8_t)adv_name[i];
+    for (int i = 0; i < name_len; i++) {
+        adv_data[5 + i] = (uint8_t)adv_name[i];
     }
     adv_data_len = 5 + name_len;
 

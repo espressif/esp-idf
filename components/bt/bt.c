@@ -73,7 +73,7 @@ static void IRAM_ATTR interrupt_restore(void)
     portEXIT_CRITICAL(&global_int_mux);
 }
 
-static void * IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init)
+static void *IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init)
 {
     return (void *)xSemaphoreCreateCounting(max, init);
 }
@@ -88,7 +88,7 @@ static int32_t IRAM_ATTR semphr_take_wrapper(void *semphr, uint32_t block_time_m
     return (int32_t)xSemaphoreTake(semphr, block_time_ms / portTICK_RATE_MS);
 }
 
-static void * IRAM_ATTR mutex_create_wrapper(void)
+static void *IRAM_ATTR mutex_create_wrapper(void)
 {
     return (void *)xSemaphoreCreateMutex();
 }
@@ -127,8 +127,8 @@ static void bt_controller_task(void *pvParam)
 void bt_controller_init()
 {
     xTaskCreatePinnedToCore(bt_controller_task, "btController",
-            ESP_TASK_BT_CONTROLLER_STACK, NULL,
-            ESP_TASK_BT_CONTROLLER_PRIO, NULL, 0);
+                            ESP_TASK_BT_CONTROLLER_STACK, NULL,
+                            ESP_TASK_BT_CONTROLLER_PRIO, NULL, 0);
 }
 
 #endif

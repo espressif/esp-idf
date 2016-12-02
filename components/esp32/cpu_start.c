@@ -51,6 +51,7 @@
 #include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
+#include "esp_coexist.h"
 #include "trax.h"
 
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
@@ -190,6 +191,12 @@ void start_cpu0_default(void)
 #if CONFIG_ESP32_PHY_AUTO_INIT
     nvs_flash_init();
     do_phy_init();
+#endif
+
+#if CONFIG_SW_COEXIST_ENABLE
+	if (coex_init() == ESP_OK) {
+        coexist_set_enable(true);
+	}
 #endif
 
     xTaskCreatePinnedToCore(&main_task, "main",

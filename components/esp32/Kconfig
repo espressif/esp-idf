@@ -20,12 +20,12 @@ config ESP32_DEFAULT_CPU_FREQ_MHZ
     default 160 if ESP32_DEFAULT_CPU_FREQ_160
     default 240 if ESP32_DEFAULT_CPU_FREQ_240
 
-choice ESP32_WIFI_OR_BT
-    prompt "Select stack to enable (WiFi or BT)"
-    default ESP32_ENABLE_WIFI
-    help
-        Temporarily, WiFi and BT stacks can not be used at the same time.
-        Select which stack to enable.
+#choice ESP32_WIFI_OR_BT
+#    prompt "Select stack to enable (WiFi or BT)"
+#    default ESP32_ENABLE_WIFI
+#    help
+#        Temporarily, WiFi and BT stacks can not be used at the same time.
+#        Select which stack to enable.
 
 config ESP32_ENABLE_STACK_WIFI
     bool "WiFi"
@@ -34,9 +34,17 @@ config ESP32_ENABLE_STACK_BT
     bool "BT"
     select MEMMAP_BT if ESP32_ENABLE_STACK_BT
     select BT_ENABLED if ESP32_ENABLE_STACK_BT
-config ESP32_ENABLE_STACK_NONE
-    bool "None"
-endchoice
+#config ESP32_ENABLE_STACK_NONE
+#    bool "None"
+#endchoice
+
+config SW_COEXIST_ENABLE
+	bool "Software do control of wifi/bt coexisit"
+    depends on ESP32_ENABLE_STACK_BT && ESP32_ENABLE_STACK_WIFI
+	default "n"
+	help
+		Software do something control of wifi/bt coexist. For some heavy traffic senario,
+		do sotware coexist, may be better.
 
 config MEMMAP_BT
     bool

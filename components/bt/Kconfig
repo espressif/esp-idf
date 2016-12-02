@@ -8,6 +8,12 @@ config BT_ENABLED
     help
         This compiles in the low-level BT stack.
 
+config BTC_TASK_STACK_SIZE
+	int "BT event (callback to application) task stack size"
+	default 2048
+	help
+		This select btc task stack size
+
 #config BT_BTLE
 #    bool "Enable BTLE"
 #    depends on BT_ENABLED
