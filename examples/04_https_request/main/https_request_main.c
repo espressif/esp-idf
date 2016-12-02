@@ -64,9 +64,9 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 
 /* Constants that aren't configurable in menuconfig */
-#define WEB_SERVER "www.howsmyssl.com"
+#define WEB_SERVER "api.gigafive.com"
 #define WEB_PORT "443"
-#define WEB_URL "https://www.howsmyssl.com/a/check"
+#define WEB_URL "https://api.gigafive.com/a/check"
 
 static const char *TAG = "example";
 
@@ -85,8 +85,15 @@ static const char *REQUEST = "GET " WEB_URL " HTTP/1.1\n"
    To embed it in the app binary, the PEM file is named
    in the component.mk COMPONENT_EMBED_TXTFILES variable.
 */
-extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
-extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
+extern const uint8_t client_cert_der_start[] asm("_binary_client_cert_der_start");
+extern const uint8_t client_cert_der_end[]   asm("_binary_client_cert_der_end");
+
+extern const uint8_t server_root_cert_der_start[] asm("_binary_server_root_cert_der_start");
+extern const uint8_t server_root_cert_der_end[]   asm("_binary_server_root_cert_der_end");
+
+extern const uint8_t privatekey_der_start[] asm("_binary_privatekey_der_start");
+extern const uint8_t privatekey_der_end[]   asm("_binary_privatekey_der_end");
+
 
 #ifdef MBEDTLS_DEBUG_C
 
@@ -182,6 +189,8 @@ static void https_get_task(void *pvParameters)
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
     mbedtls_x509_crt cacert;
+    mbedtls_x509_crt clicert;
+    mbedtls_pk_context pkey;
     mbedtls_ssl_config conf;
     mbedtls_net_context server_fd;
 
@@ -202,15 +211,29 @@ static void https_get_task(void *pvParameters)
 
     ESP_LOGI(TAG, "Loading the CA root certificate...");
 
-    ret = mbedtls_x509_crt_parse(&cacert, server_root_cert_pem_start,
-                                 server_root_cert_pem_end-server_root_cert_pem_start);
+    ret = mbedtls_x509_crt_parse(&cacert, server_root_cert_der_start,
+                                 server_root_cert_der_end-server_root_cert_der_start);
 
     if(ret < 0)
     {
-        ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+        ESP_LOGE(TAG, "mbedtls_x509_crt_parse (server) returned -0x%x\n\n", -ret);
         abort();
     }
-
+    ESP_LOGI(TAG, "Heap after SV Cert: %i\n\n", system_get_free_heap_size());
+    
+    ESP_LOGI(TAG, "Loading the client certificate...");
+    
+    ret = mbedtls_x509_crt_parse(&clicert, client_cert_der_start,
+                                 client_cert_der_end-client_cert_der_start);
+    
+    if(ret < 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_x509_crt_parse (client) returned -0x%x\n\n", -ret);
+        abort();
+    }
+    ESP_LOGI(TAG, "Heap after CL Cert: %i\n\n", system_get_free_heap_size());
+   
+    
     ESP_LOGI(TAG, "Setting hostname for TLS session...");
 
      /* Hostname set here should match CN in server certificate */
@@ -244,6 +267,24 @@ static void https_get_task(void *pvParameters)
     mbedtls_ssl_conf_dbg(&conf, mbedtls_debug, NULL);
 #endif
 
+    
+    if (( ret = mbedtls_pk_parse_key( &clicert, privatekey_der_start,
+                                         privatekey_der_end - privatekey_der_start, NULL, 0 )) != 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_pk_parse_keyfile returned -0x%x\n\n", -ret);
+        goto exit;
+    }
+    ESP_LOGI(TAG, "Heap after PK: %i\n\n", system_get_free_heap_size());
+    
+    
+    if (( ret = mbedtls_ssl_conf_own_cert( &conf, &clicert, &pkey ) ) != 0 )
+    {
+        ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned -0x%x\n\n", -ret);
+        goto exit;
+    }
+    ESP_LOGI(TAG, "Heap after CL cert: %i\n\n", system_get_free_heap_size());
+    
+    
     if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
     {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
@@ -371,5 +412,5 @@ void app_main()
 {
     nvs_flash_init();
     initialise_wifi();
-    xTaskCreate(&https_get_task, "https_get_task", 8192, NULL, 5, NULL);
+    xTaskCreate(&https_get_task, "https_get_task", 32768, NULL, 5, NULL);
 }
