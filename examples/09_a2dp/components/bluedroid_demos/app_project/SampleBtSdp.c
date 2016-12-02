@@ -6,59 +6,53 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "esp_system.h"
+#include "EspAudio.h"
+#include "EspAudioCom.h"
+
 #include "bt_app_common.h"
 #include "btif_stack_manager.h"
 #include "esp_gap_bt_api.h"
 #include "bta_api.h"
-// #include "bt_av.h"
 #include "esp_a2dp_api.h"
 
 /* utl_set_device_class() */
 #include "utl.h"
 
-#include "alarm.h"
 typedef enum {
-    BT_APP_EVT_STACK_ON,
-    BT_APP_EVT_STACK_OFF,
-    BT_APP_EVT_AV_OPEN_TO,
-    BT_APP_EVT
+    BT_APP_EVT_STACK_ON = 0xa0,
+    BT_APP_EVT_MAX
 } tBT_APP_EVT;
 
 typedef union {
-    uint32_t dummy;
+    esp_a2d_cb_param_t a2d;
 } tBT_APP_EVT_DATA;
 
-// extern const btav_interface_t *btif_av_get_sink_interface(void);
-static void bt_stack_evt(tBT_APP_EVT event, tBT_APP_EVT_DATA *p_data);
-// static bt_bdaddr_t peer_bd_addr = {{0x00, 0x1b, 0xdc, 0x08, 0x0f, 0xe7}};
+static void bt_app_evt(tBT_APP_EVT event, tBT_APP_EVT_DATA *p_data);
 
-
-osi_alarm_t *app_alarm = NULL;
-
-static void esp_a2d_cb(uint32_t event, void *param)
+static void bt_app_a2d_cb(uint32_t event, void *param)
 {
-    esp_a2d_cb_param_t *p = (esp_a2d_cb_param_t *)param;
     switch (event) {
     case ESP_A2D_CONNECTION_STATE_EVT:
-	LOG_ERROR("===a2dp conn_state_cb %d ===\n", p->conn_stat.state);
-	break;
     case ESP_A2D_AUDIO_STATE_EVT:
-	LOG_ERROR("===a2dp audio_state_cb %d ===\n", p->audio_stat.state);
-	break;
     case ESP_A2D_AUDIO_CFG_EVT:
-        LOG_ERROR("===a2dp audio_cfg_cb type %d ===\n", p->audio_cfg.mcc.type);
+    {
+        bt_app_evt(event, (tBT_APP_EVT_DATA *)param);
         break;
+    }
     default:
         LOG_ERROR("===a2dp invalid cb event: %d\n", event);
+        break;
     }
 }
 
-static void btav_open_to(void *context)
+static void bt_app_a2d_data_cb(uint8_t *data, uint32_t len)
 {
-    (void)(context);
-    bt_stack_evt(BT_APP_EVT_AV_OPEN_TO, NULL);
+    // uint32_t t_now = system_get_time();
+    // printf("t: %u, l %d\n", t_now, len);
+    EspAudioPlayerStreamWrite(data, len);
 }
-
+			    
 static void btav_set_device_class(void)
 {
     tBTA_UTL_COD cod;
@@ -71,39 +65,54 @@ static void btav_set_device_class(void)
               cod.major, cod.minor, cod.service);
 }
 
-static void bt_app_stack_evt(UINT16 event, char *p_param)
+static void bt_app_handle_evt(UINT16 event, char *p_param)
 {
+    esp_a2d_cb_param_t *a2d = NULL;
     switch (event) {
     case BT_APP_EVT_STACK_ON: {
         char *dev_name = "SDP_SERVER_CLIENT";
         BTM_SetTraceLevel(BT_TRACE_LEVEL_WARNING);
         btav_set_device_class();
         BTA_DmSetDeviceName(dev_name);
-        esp_bt_gap_set_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
-        esp_a2d_register_callback(esp_a2d_cb);
-        esp_a2d_sink_init();
 
-        // app_alarm = osi_alarm_new("app_alarm", bt_sdp_add_record_to, NULL, 1000, false);
-        app_alarm = osi_alarm_new("app_alarm", btav_open_to, NULL, 1000, false);
-        osi_alarm_set(app_alarm, 1000);
+        esp_a2d_register_callback(bt_app_a2d_cb);
+	esp_a2d_register_data_callback(bt_app_a2d_data_cb);
+
+        esp_a2d_sink_init();
+        esp_bt_gap_set_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
+        break;
     }
-    break;
-    case BT_APP_EVT_AV_OPEN_TO: {
-        LOG_ERROR("**BT_APP_EVT_AV_OPEN_TO\n");
-        // btif_av_get_sink_interface()->connect(&peer_bd_addr);
-        osi_alarm_free(app_alarm);
-        app_alarm = NULL;
+    case ESP_A2D_CONNECTION_STATE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(p_param);
+        LOG_ERROR("===a2dp conn_state_cb %d ===\n", a2d->conn_stat.state);
+        break;
     }
-    break;
+    case ESP_A2D_AUDIO_STATE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(p_param);
+        LOG_ERROR("===a2dp audio_state_cb %d ===\n", a2d->audio_stat.state);
+        break;
+    }
+    case ESP_A2D_AUDIO_CFG_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(p_param);
+        LOG_ERROR("===a2dp audio_cfg_cb type %d ===\n", a2d->audio_cfg.mcc.type);
+        if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
+            // temporarily hardcoded the PCM configuaration
+            EspAudioPlayerStreamCfg(StreamSampleRate_44k, 2, StreamBitLen_16BIT);
+            EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
+            EspAudio_SetVolume(99);
+        }
+        break;
+    }
     default:
+        LOG_ERROR("===application invalid event: %d\n", event);
         break;
     }
 }
 
-static void bt_stack_evt(tBT_APP_EVT event, tBT_APP_EVT_DATA *p_data)
+static void bt_app_evt(tBT_APP_EVT event, tBT_APP_EVT_DATA *p_data)
 {
-    LOG_ERROR("bt_stack_evt: %d\n", (uint16_t)event);
-    bt_app_transfer_context(bt_app_stack_evt, (uint16_t)event,
+    LOG_ERROR("bt_app_evt: %d\n", (uint16_t)event);
+    bt_app_transfer_context(bt_app_handle_evt, (uint16_t)event,
                             (void *)p_data, sizeof(tBT_APP_EVT_DATA), NULL);
 }
 
@@ -120,6 +129,6 @@ void app_main_entry(void)
         return;
     }
     
-    bt_stack_evt(BT_APP_EVT_STACK_ON, NULL);
+    bt_app_evt(BT_APP_EVT_STACK_ON, NULL);
 }
 

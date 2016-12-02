@@ -101,6 +101,7 @@ static esp_profile_cb_t bt_av_sink_callback = NULL;
 static btif_av_cb_t btif_av_cb = {0};
 // static TIMER_LIST_ENT tle_av_open_on_rc;
 
+// TODO: need protection against race
 #define BTIF_A2D_CB_TO_APP(_event, _param)    do { \
 	if (bt_av_sink_callback) { \
 	    bt_av_sink_callback(_event, _param); \
@@ -983,7 +984,7 @@ static bt_status_t init_src(btav_callbacks_t *callbacks)
  */
 esp_err_t esp_a2d_register_callback(esp_profile_cb_t callback)
 {
-    // TODO: add concurrency protection
+    // TODO: need protection against race
     bt_av_sink_callback = callback;
 }
 

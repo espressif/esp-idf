@@ -84,6 +84,7 @@
 #include "btif_media.h"
 #include "allocator.h"
 #include "bt_utils.h"
+#include "esp_a2dp_api.h"
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 OI_CODEC_SBC_DECODER_CONTEXT context;
@@ -346,6 +347,21 @@ static fixed_queue_t *btif_media_cmd_msg_queue = NULL;
 // static thread_t *worker_thread;
 static xTaskHandle  xBtifMediaTaskHandle = NULL;
 static QueueHandle_t xBtifMediaQueue = NULL;
+
+static esp_a2d_data_cb_t bt_av_sink_data_callback = NULL;
+
+esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t cb)
+{
+    // TODO: need protection against race
+    bt_av_sink_data_callback = cb;
+}
+
+// TODO: need protection against race
+#define BTIF_A2D_DATA_CB_TO_APP(data, len)    do { \
+	if (bt_av_sink_data_callback) { \
+	    bt_av_sink_data_callback(data, len); \
+	} \
+    } while (0)
 
 /*****************************************************************************
  **  temporary hacked functions. TODO: port these functions or remove them?
@@ -1431,7 +1447,9 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
     }
     // LOG_ERROR("pre-send: %d\n", availPcmBytes);
 
-    UIPC_Send(UIPC_CH_ID_AV_AUDIO, 0, (UINT8 *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
+    // UIPC_Send(UIPC_CH_ID_AV_AUDIO, 0, (UINT8 *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
+    BTIF_A2D_DATA_CB_TO_APP((uint8_t *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
+
 }
 #endif
 

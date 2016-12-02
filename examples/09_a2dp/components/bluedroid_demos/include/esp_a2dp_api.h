@@ -86,6 +86,8 @@ typedef union {
     } audio_cfg;
 } esp_a2d_cb_param_t;
 
+typedef void (* esp_a2d_data_cb_t)(uint8_t *buf, uint32_t len);
+
 /**
  * NOTE:
  * A2DP data path is handled via below function sets, between the Audio HAL
@@ -96,6 +98,8 @@ typedef union {
  * Represents the A2DP sink interface.
  */
 esp_err_t esp_a2d_register_callback(esp_profile_cb_t callback);
+
+esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t cb);
 
 esp_err_t esp_a2d_sink_init(void);
 
