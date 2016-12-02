@@ -36,6 +36,7 @@ Contents:
    build_system
    openocd
    Secure Boot <security/secure-boot>
+   ULP coprocessor <api/ulp.rst>
 
 .. API Reference
    ..

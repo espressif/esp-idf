@@ -26,7 +26,8 @@ INPUT = ../components/esp32/include/esp_wifi.h \
 	../components/esp32/include/esp_int_wdt.h \
 	../components/esp32/include/esp_task_wdt.h \
 	../components/app_update/include/esp_ota_ops.h \
-	../components/ethernet/include/esp_eth.h
+	../components/ethernet/include/esp_eth.h \
+	../components/ulp/include/esp32/ulp.h
 
 ## Get warnings for functions that have no documentation for their parameters or return value 
 ##
