@@ -1,5 +1,5 @@
 
-ifdef CONFIG_NEWLIB_NANO_FORMAT
+ifneq ("$(CONFIG_NEWLIB_NANO_FORMAT)","")
 LIBC_PATH := $(COMPONENT_PATH)/lib/libc_nano.a
 else
 LIBC_PATH := $(COMPONENT_PATH)/lib/libc.a

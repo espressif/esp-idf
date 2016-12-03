@@ -13,6 +13,7 @@ BOOTLOADER_BUILD_DIR=$(abspath $(BUILD_DIR_BASE)/bootloader)
 BOOTLOADER_BIN=$(BOOTLOADER_BUILD_DIR)/bootloader.bin
 
 # signing key path is resolved relative to the project directory
+CONFIG_SECURE_BOOT_SIGNING_KEY ?=
 SECURE_BOOT_SIGNING_KEY=$(abspath $(call dequote,$(CONFIG_SECURE_BOOT_SIGNING_KEY)))
 export SECURE_BOOT_SIGNING_KEY  # used by bootloader_support component
 
@@ -107,7 +108,7 @@ $(BOOTLOADER_DIGEST_BIN): $(BOOTLOADER_BIN) $(SECURE_BOOTLOADER_KEY)
 	@echo "DIGEST $(notdir $@)"
 	$(Q) $(ESPSECUREPY) digest_secure_bootloader -k $(SECURE_BOOTLOADER_KEY) -o $@ $<
 
-else
+else # CONFIG_SECURE_BOOT_ENABLED && !CONFIG_SECURE_BOOTLOADER_REFLASHABLE && !CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH
 bootloader:
 	@echo "Invalid bootloader target: bad sdkconfig?"
 	@exit 1
