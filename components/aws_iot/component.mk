@@ -2,7 +2,7 @@
 # Component Makefile
 #
 
-ifdef CONFIG_AWS_IOT_SDK
+ifeq ("$(CONFIG_AWS_IOT_SDK)","y")
 
 COMPONENT_ADD_INCLUDEDIRS := include aws-iot-device-sdk-embedded-C/include
 

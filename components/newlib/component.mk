@@ -1,5 +1,4 @@
 
-
 ifeq ("$(CONFIG_SPIRAM_CACHE_WORKAROUND)","y")
 LIBC_PATH := $(COMPONENT_PATH)/lib/libc-psram-workaround.a
 LIBM_PATH := $(COMPONENT_PATH)/lib/libm-psram-workaround.a
@@ -14,7 +13,7 @@ endif
 
 LIBM_PATH := $(COMPONENT_PATH)/lib/libm.a
 
-endif
+endif  # CONFIG_SPIRAM_CACHE_WORKAROUND
 
 COMPONENT_ADD_LDFLAGS := $(LIBC_PATH) $(LIBM_PATH) -lnewlib
 

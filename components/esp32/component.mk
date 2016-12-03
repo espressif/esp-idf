@@ -3,8 +3,9 @@
 #
 
 COMPONENT_SRCDIRS := . hwcrypto
-ifndef CONFIG_NO_BLOBS
-LIBS := core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
+LIBS ?=
+ifneq ("$(CONFIG_NO_BLOBS)","y")
+LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 phy
 endif
 
 #Linker scripts used to link the final application.
@@ -22,7 +23,7 @@ ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")
 LINKER_SCRIPTS += esp32.rom.nanofmt.ld
 endif
 
-ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+ifneq ("$(CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)","y")
 LINKER_SCRIPTS += esp32.rom.spiflash.ld
 endif
 

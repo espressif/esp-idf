@@ -56,6 +56,7 @@ $(error esp-idf build system doesn't support running 'clean' targets along with 
 endif
 endif
 
+OS ?=
 
 # make IDF_PATH a "real" absolute path
 # * works around the case where a shell character is embedded in the environment variable value.
@@ -113,6 +114,7 @@ export BUILD_DIR_BASE
 # or the directory contains subdirectories which are components.)
 # The project Makefile can override these component dirs, or add extras via EXTRA_COMPONENT_DIRS
 ifndef COMPONENT_DIRS
+EXTRA_COMPONENT_DIRS ?=
 COMPONENT_DIRS := $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components $(PROJECT_PATH)/main
 endif
 export COMPONENT_DIRS
@@ -146,15 +148,18 @@ export COMPONENTS
 COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPONENT_DIRS),$(wildcard $(dir $(cd))$(comp) $(cd)/$(comp)))))
 
 # If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components
+ifdef TESTS_ALL
 ifeq ($(TESTS_ALL),1)
 TEST_COMPONENTS_LIST := $(COMPONENTS)
 else
 # otherwise, use TEST_COMPONENTS
 TEST_COMPONENTS_LIST := $(TEST_COMPONENTS)
 endif
+else
+TEST_COMPONENTS_LIST :=
+endif
 TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
-TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
-
+TEST_COMPONENT_NAMES := $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
 
 # Initialise project-wide variables which can be added to by
 # each component.
@@ -189,9 +194,9 @@ export COMPONENT_INCLUDES
 include $(IDF_PATH)/make/common.mk
 
 all:
-ifdef CONFIG_SECURE_BOOT_ENABLED
+ifneq ("$(CONFIG_SECURE_BOOT_ENABLED)","")
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
-ifndef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
+ifeq ("$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","")
 	@echo "App built but not signed. Sign app & partition data before flashing, via espsecure.py:"
 	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
 	@echo "espsecure.py sign_data --keyfile KEYFILE $(PARTITION_TABLE_BIN)"
@@ -206,6 +211,7 @@ endif
 IDF_VER := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
 
 # Set default LDFLAGS
+EXTRA_LDFLAGS ?=
 LDFLAGS ?= -nostdlib \
 	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
@@ -228,6 +234,8 @@ LDFLAGS ?= -nostdlib \
 
 # CPPFLAGS used by C preprocessor
 # If any flags are defined in application Makefile, add them at the end. 
+CPPFLAGS ?=
+EXTRA_CPPFLAGS ?=
 CPPFLAGS := -DESP_PLATFORM -D IDF_VER=\"$(IDF_VER)\" -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
@@ -263,6 +271,8 @@ DEBUG_FLAGS ?= -ggdb
 
 # List of flags to pass to C compiler
 # If any flags are defined in application Makefile, add them at the end.
+CFLAGS ?=
+EXTRA_CFLAGS ?=
 CFLAGS := $(strip \
 	-std=gnu99 \
 	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
@@ -273,6 +283,8 @@ CFLAGS := $(strip \
 
 # List of flags to pass to C++ compiler
 # If any flags are defined in application Makefile, add them at the end.
+CXXFLAGS ?=
+EXTRA_CXXFLAGS ?=
 CXXFLAGS := $(strip \
 	-std=gnu++11 \
 	-fno-exceptions \
@@ -289,8 +301,16 @@ export CFLAGS CPPFLAGS CXXFLAGS
 HOSTCC := $(CC)
 HOSTLD := $(LD)
 HOSTAR := $(AR)
+ifdef OBJCOPY
 HOSTOBJCOPY := $(OBJCOPY)
+else
+HOSTOBJCOPY := objcopy
+endif
+ifdef SIZE
 HOSTSIZE := $(SIZE)
+else
+HOSTSIZE := size
+endif
 export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
 
 # Set target compiler. Defaults to whatever the user has
@@ -333,6 +353,7 @@ endif
 #
 # also depends on additional dependencies (linker scripts & binary libraries)
 # stored in COMPONENT_LINKER_DEPS, built via component.mk files' COMPONENT_ADD_LINKER_DEPS variable
+COMPONENT_LINKER_DEPS ?=
 $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a) $(COMPONENT_LINKER_DEPS) $(COMPONENT_PROJECT_VARS)
 	$(summary) LD $(patsubst $(PWD)/%,%,$@)
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
@@ -434,7 +455,7 @@ check-submodules: $(IDF_PATH)/$(1)/.git
 $(IDF_PATH)/$(1)/.git:
 	@echo "WARNING: Missing submodule $(1)..."
 	[ -e ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
-	[ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule init $(1)' in esp-idf root directory."; exit 1)
+	[ -x $$(which git) ] || ( echo "ERROR: Need to run 'git submodule init $(1)' in esp-idf root directory."; exit 1)
 	@echo "Attempting 'git submodule update --init $(1)' in esp-idf root directory..."
 	cd ${IDF_PATH} && git submodule update --init $(1)
 

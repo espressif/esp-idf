@@ -846,7 +846,7 @@ config ESP32_WIFI_NVS_ENABLED
 
 endmenu  # Wi-Fi
 
-menu Phy
+menu PHY
 
 config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     bool "Do phy calibration and store calibration data in NVS"
