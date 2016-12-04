@@ -23,13 +23,13 @@ Step 1: Download binary toolchain for the ESP32
 
 ESP32 toolchain for macOS is available for download from Espressif website:
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-59.tar.gz
+https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz
 
 Download this file, then extract it to the location you prefer, for example::
 
     mkdir -p ~/esp
     cd ~/esp
-    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-59.tar.gz
+    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz
 
 The toolchain will be extracted into ``~/esp/xtensa-esp32-elf/`` directory.
 
@@ -46,11 +46,13 @@ Then when you need the toolchain you can type ``get_esp32`` on the command line 
 Alternative Step 1: Compile the toolchain from source using crosstool-NG
 ========================================================================
 
-Instead of downloading binary toolchain from Espressif website (Step 1 above) you may build the toolchain yourself. 
+Instead of downloading binary toolchain from Espressif website (Step 1 above) you may build the toolchain yourself.
 
 If you can't think of a reason why you need to build it yourself, then probably it's better to stick with the binary version. However, here are some of the reasons why you might want to compile it from source:
 
 - if you want to customize toolchain build configuration
+
+- if you want to use a different GCC version (such as 4.8.5)
 
 - if you want to hack gcc or newlib or libstdc++
 
@@ -107,7 +109,7 @@ Open Terminal.app, navigate to the directory you want to clone ESP-IDF and clone
     git clone --recursive https://github.com/espressif/esp-idf.git
 
 
-ESP-IDF will be downloaded into ``~/esp/esp-idf``. 
+ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
 Note the ``--recursive`` option! If you have already cloned ESP-IDF without this option, run another command to get all the submodules::
 
@@ -136,7 +138,7 @@ In Terminal.app, go to the application directory which was obtained on the previ
 
     cd ~/esp/myapp
 
-Type a command like this to set the path to ESP-IDF directory:: 
+Type a command like this to set the path to ESP-IDF directory::
 
     export IDF_PATH=~/esp/esp-idf
 
@@ -160,4 +162,3 @@ Further reading
 ===============
 
 If you'd like to use the Eclipse IDE instead of running ``make``, check out the Eclipse setup guide in this directory.
-
