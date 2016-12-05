@@ -101,8 +101,7 @@ extern xt_handler_table_entry _xt_interrupt_table[XCHAL_NUM_INTERRUPTS*portNUM_P
 */
 void xt_unhandled_interrupt(void * arg)
 {
-	ets_printf("Unhandled interrupt!\n");
-    //exit(-1);
+	ets_printf("Unhandled interrupt %d on cpu %d!\n", (int)arg, xPortGetCoreID());
 }
 
 
