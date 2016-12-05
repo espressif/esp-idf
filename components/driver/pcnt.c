@@ -38,8 +38,8 @@ static portMUX_TYPE pcnt_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 esp_err_t pcnt_unit_config(pcnt_config_t *pcnt_config)
 {
-    uint8_t unit = pcnt_config->channel;
-    uint8_t channel = pcnt_config->unit;
+    uint8_t unit = pcnt_config->unit;
+    uint8_t channel = pcnt_config->channel;
     int input_io = pcnt_config->pulse_gpio_num;
     int ctrl_io = pcnt_config->ctrl_gpio_num;
 

@@ -45,7 +45,7 @@ typedef enum {
     PCNT_UNIT_MAX,
 } pcnt_unit_t; 
 
-typedef enum{
+typedef enum {
     PCNT_CHANNEL_0 = 0x00,           /*!< PCNT channel0 */
     PCNT_CHANNEL_1 = 0x01,           /*!< PCNT channel1 */
     PCNT_CHANNEL_MAX,
