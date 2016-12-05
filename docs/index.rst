@@ -36,6 +36,7 @@ Contents:
    Secure Boot <security/secure-boot>
    Deep Sleep Wake Stubs <deep-sleep-stub>
    ULP Coprocessor <ulp>
+   Unit Testing <unit-tests>
 
 .. toctree::
    :caption: API Reference
@@ -78,4 +79,3 @@ Indices
 =======
 
 * :ref:`genindex`
-
