@@ -32,7 +32,7 @@
 #include "bta_api.h"
 #include "gki.h"
 #include "btif_av_api.h"
-#include "audio_a2dp_hw.h"
+// #include "audio_a2dp_hw.h"
 
 /*******************************************************************************
  **  Constants
