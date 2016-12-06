@@ -346,10 +346,6 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
  * @param  fn  Interrupt handler function.
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- *
- *         @note
- *         Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
- *
  * @param  arg  Parameter for handler function
  *
  * @return

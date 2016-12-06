@@ -225,12 +225,13 @@ static vector_desc_t *find_desc_for_int(int intno, int cpu)
 
 //Returns a vector_desc entry for an intno/cpu.
 //Either returns a preexisting one or allocates a new one and inserts
-//it into the list.
+//it into the list. Returns NULL on malloc fail.
 static vector_desc_t *get_desc_for_int(int intno, int cpu) 
 {
     vector_desc_t *vd=find_desc_for_int(intno, cpu);
     if (vd==NULL) {
         vector_desc_t *newvd=malloc(sizeof(vector_desc_t));
+        if (newvd==NULL) return NULL;
         memset(newvd, 0, sizeof(vector_desc_t));
         newvd->intno_cpu=to_intno_cpu(intno, cpu);
         insert_vector_desc(newvd);
@@ -247,6 +248,10 @@ esp_err_t esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 
     portENTER_CRITICAL(&spinlock);
     vector_desc_t *vd=get_desc_for_int(intno, cpu);
+    if (vd==NULL) {
+        portEXIT_CRITICAL(&spinlock);
+        return ESP_ERR_NO_MEM;
+    } 
     vd->flags=VECDESC_FL_SHARED;
     if (is_int_ram) vd->flags|=VECDESC_FL_INIRAM;
     portEXIT_CRITICAL(&spinlock);
@@ -261,6 +266,10 @@ esp_err_t esp_intr_reserve(int intno, int cpu)
 
     portENTER_CRITICAL(&spinlock);
     vector_desc_t *vd=get_desc_for_int(intno, cpu);
+    if (vd==NULL) {
+        portEXIT_CRITICAL(&spinlock);
+        return ESP_ERR_NO_MEM;
+    } 
     vd->flags=VECDESC_FL_RESERVED;
     portEXIT_CRITICAL(&spinlock);
 
@@ -301,7 +310,7 @@ static int get_free_int(int flags, int cpu, int force)
 
     ALCHLOG(TAG, "get_free_int: start looking. Current cpu: %d", cpu);
     //Iterate over the 32 possible interrupts
-    for (x=0; x!=31; x++) {
+    for (x=0; x<32; x++) {
         //Grab the vector_desc for this vector.
         vector_desc_t *vd=find_desc_for_int(x, cpu);
         if (vd==NULL) vd=&empty_vect_desc;
@@ -430,6 +439,7 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
 esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler, 
                                         void *arg, int_handle_t *ret_handle) 
 {
+    int_handle_data_t *ret=NULL;
     int force=-1;
     ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %d): checking args", xPortGetCoreID());
     //Shared interrupts should be level-triggered.
@@ -462,6 +472,12 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     if (source==ETS_INTERNAL_SW1_INTR_SOURCE) force=ETS_INTERNAL_SW1_INTR_NO;
     if (source==ETS_INTERNAL_PROFILING_INTR_SOURCE) force=ETS_INTERNAL_PROFILING_INTR_NO;
 
+    //If we should return a handle, allocate it here.
+    if (ret_handle!=NULL) {
+        ret=malloc(sizeof(int_handle_data_t));
+        if (ret==NULL) return ESP_ERR_NO_MEM;
+    }
+
     portENTER_CRITICAL(&spinlock);
     int cpu=xPortGetCoreID();
     //See if we can find an interrupt that matches the flags.
@@ -469,15 +485,26 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     if (intr==-1) {
         //None found. Bail out.
         portEXIT_CRITICAL(&spinlock);
+        free(ret);
         return ESP_ERR_NOT_FOUND;
     }
     //Get an int vector desc for int.
     vector_desc_t *vd=get_desc_for_int(intr, cpu);
+    if (vd==NULL) {
+        portEXIT_CRITICAL(&spinlock);
+        free(ret);
+        return ESP_ERR_NO_MEM;
+    }
 
     //Allocate that int!
     if (flags&ESP_INTR_FLAG_SHARED) {
         //Populate vector entry and add to linked list.
         shared_vector_desc_t *sh_vec=malloc(sizeof(shared_vector_desc_t));
+        if (sh_vec==NULL) {
+            portEXIT_CRITICAL(&spinlock);
+            free(ret);
+            return ESP_ERR_NO_MEM;
+        }
         memset(sh_vec, 0, sizeof(shared_vector_desc_t));
         sh_vec->statusreg=(uint32_t*)intrstatusreg;
         sh_vec->statusmask=intrstatusmask;
@@ -506,10 +533,8 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     if (source>=0) {
         intr_matrix_set(cpu, source, intr);
     }
-    //If we should return a handle, allocate it here.
+    //Fill return handle if needed
     if (ret_handle!=NULL) {
-        int_handle_data_t *ret;
-        ret=malloc(sizeof(int_handle_data_t));
         ret->vector_desc=vd;
         ret->shared_vector_desc=vd->shared_vec_info;
         *ret_handle=ret;

@@ -215,8 +215,6 @@ esp_err_t pcnt_get_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
  *        The handler will be attached to the same CPU core that this function is running on.
  *
  * @param fn Interrupt handler function.
- *        @note
- *        Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
  * @param arg Parameter for handler function
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.

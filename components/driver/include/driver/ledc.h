@@ -262,8 +262,6 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty,
  * @param  arg User-supplied argument passed to the handler function.
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- * @note
- *     Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
  * @param   arg Parameter for handler function
  *
  * @return

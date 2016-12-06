@@ -755,7 +755,6 @@ esp_err_t rmt_get_ringbuf_handler(rmt_channel_t channel, RingbufHandle_t* buf_ha
  * ----------------EXAMPLE OF INTERRUPT HANDLER ---------------
  * @code{c}
  * #include "esp_attr.h"
- * //we should add 'IRAM_ATTR' attribution when we declare the isr function
  * void IRAM_ATTR rmt_isr_handler(void* arg)
  * {
  *    //read RMT interrupt status.
