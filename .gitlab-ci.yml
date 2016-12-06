@@ -247,6 +247,8 @@ deploy_docs:
     expire_in: 6 mos
 
   script:
+    # remove artifacts from last stage (UT logs)
+    - rm -rf $LOG_PATH || echo "log folder not exist"
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -254,8 +256,6 @@ deploy_docs:
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    # remove artifacts from last stage (UT logs)
-    - rm $LOG_PATH
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
@@ -270,6 +270,8 @@ deploy_docs:
     # can only be triggered
     - triggers
   script:
+    # remove artifacts from last stage (UT logs)
+    - rm -rf $LOG_PATH || echo "log folder not exist"
     # must be night build triggers, otherwise exit without test
     - test $NIGHT_BUILD = "Yes" || exit 0
     # add gitlab ssh key
@@ -279,8 +281,6 @@ deploy_docs:
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    # remove artifacts from last stage (UT logs)
-    - rm $LOG_PATH
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
