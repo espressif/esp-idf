@@ -1,10 +1,35 @@
 Config: {execute count: 1, execute order: in order}
-DUT: [SSC1]
+DUT: [SSC2, SSC1]
 Filter:
 - Add:
-    ID: [TCPIP_UDP_0104, TCPIP_UDP_0104, TCPIP_UDP_0104, TCPIP_UDP_0104, TCPIP_UDP_0104,
-      TCPIP_UDP_0102, TCPIP_UDP_0102, TCPIP_UDP_0102, TCPIP_UDP_0102, TCPIP_UDP_0102,
-      TCPIP_UDP_0103, TCPIP_UDP_0103, TCPIP_UDP_0103, TCPIP_UDP_0103, TCPIP_UDP_0103,
-      ^TCPIP_UDP_0307, ^TCPIP_UDP_0307, ^TCPIP_UDP_0307, ^TCPIP_UDP_0307, ^TCPIP_UDP_0307,
-      ^TCPIP_UDP_0306, ^TCPIP_UDP_0306, ^TCPIP_UDP_0306, ^TCPIP_UDP_0306, ^TCPIP_UDP_0306,
-      ^TCPIP_UDP_0305, ^TCPIP_UDP_0305, ^TCPIP_UDP_0305, ^TCPIP_UDP_0305, ^TCPIP_UDP_0305]
+    ID:
+      - TCPIP_UDP_0104  # STA mode, recvfrom basic test
+      - TCPIP_UDP_0104  # STA mode, recvfrom basic test
+      - TCPIP_UDP_0104  # STA mode, recvfrom basic test
+      - TCPIP_UDP_0104  # STA mode, recvfrom basic test
+      - TCPIP_UDP_0104  # STA mode, recvfrom basic test
+      - TCPIP_UDP_0109  # AP mode, sendto test. use different ip, port
+      - TCPIP_UDP_0109  # AP mode, sendto test. use different ip, port
+      - TCPIP_UDP_0109  # AP mode, sendto test. use different ip, port
+      - TCPIP_UDP_0109  # AP mode, sendto test. use different ip, port
+      - TCPIP_UDP_0109  # AP mode, sendto test. use different ip, port
+      - TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - TCPIP_UDP_0111  # AP mode, recvfrom basic test
+      - TCPIP_UDP_0111  # AP mode, recvfrom basic test
+      - TCPIP_UDP_0111  # AP mode, recvfrom basic test
+      - TCPIP_UDP_0111  # AP mode, recvfrom basic test
+      - TCPIP_UDP_0111  # AP mode, recvfrom basic test
+      - TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected
+      - TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected
+      - TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected
+      - TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected
+      - TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected

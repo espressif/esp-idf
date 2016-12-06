@@ -1,6 +1,7 @@
 Config: {execute count: 1, execute order: in order}
-DUT: [SSC3, SSC2, SSC1]
+DUT: [SSC1]
 Filter:
 - Add:
-    ID: [WIFI_PHY_0502, WIFI_PHY_0503, WIFI_PHY_0501, WIFI_PHY_0506, WIFI_PHY_0505,
-      WIFI_PHY_0504]
+    ID:
+      - WIFI_CONN_0902  # test wifi disconnect reason REASON_BEACON_TIMEOUT
+      - ^WIFI_CONN_0902  # test wifi disconnect reason REASON_BEACON_TIMEOUT

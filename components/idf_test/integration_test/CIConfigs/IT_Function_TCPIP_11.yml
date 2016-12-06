@@ -2,9 +2,34 @@ Config: {execute count: 1, execute order: in order}
 DUT: [SSC1]
 Filter:
 - Add:
-    ID: [TCPIP_UDP_0305, TCPIP_UDP_0305, TCPIP_UDP_0305, TCPIP_UDP_0305, TCPIP_UDP_0305,
-      TCPIP_UDP_0306, TCPIP_UDP_0306, TCPIP_UDP_0306, TCPIP_UDP_0306, TCPIP_UDP_0306,
-      TCPIP_UDP_0307, TCPIP_UDP_0307, TCPIP_UDP_0307, TCPIP_UDP_0307, TCPIP_UDP_0307,
-      TCPIP_UDP_0301, TCPIP_UDP_0301, TCPIP_UDP_0301, TCPIP_UDP_0301, TCPIP_UDP_0301,
-      TCPIP_UDP_0302, TCPIP_UDP_0302, TCPIP_UDP_0302, TCPIP_UDP_0302, TCPIP_UDP_0302,
-      TCPIP_DNS_0103, TCPIP_DNS_0103, TCPIP_DNS_0103, TCPIP_DNS_0103, TCPIP_DNS_0103]
+    ID:
+      - ^TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - ^TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - ^TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - ^TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - ^TCPIP_UDP_0110  # AP mode, sendto test with different length
+      - ^TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - ^TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - ^TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - ^TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - ^TCPIP_UDP_0301  # do UDP send after WIFI disconnected
+      - ^TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected
+      - ^TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected
+      - ^TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected
+      - ^TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected
+      - ^TCPIP_UDP_0302  # close UDP  socket after WIFI  disconnected
+      - ^TCPIP_UDP_0303  # do UDP  send after mode changed
+      - ^TCPIP_UDP_0303  # do UDP  send after mode changed
+      - ^TCPIP_UDP_0303  # do UDP  send after mode changed
+      - ^TCPIP_UDP_0303  # do UDP  send after mode changed
+      - ^TCPIP_UDP_0303  # do UDP  send after mode changed
+      - ^TCPIP_UDP_0304  # close UDP  socket after mode changed
+      - ^TCPIP_UDP_0304  # close UDP  socket after mode changed
+      - ^TCPIP_UDP_0304  # close UDP  socket after mode changed
+      - ^TCPIP_UDP_0304  # close UDP  socket after mode changed
+      - ^TCPIP_UDP_0304  # close UDP  socket after mode changed
+      - ^TCPIP_UDP_0305  # close UDP socket after PC NIC disabled
+      - ^TCPIP_UDP_0305  # close UDP socket after PC NIC disabled
+      - ^TCPIP_UDP_0305  # close UDP socket after PC NIC disabled
+      - ^TCPIP_UDP_0305  # close UDP socket after PC NIC disabled
+      - ^TCPIP_UDP_0305  # close UDP socket after PC NIC disabled
