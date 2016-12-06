@@ -103,9 +103,9 @@ esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t cb);
 
 esp_err_t esp_a2d_sink_init(void);
 
-esp_err_t esp_a2d_sink_connect(esp_bd_addr_t *remote_bda);
+esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
 
-esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t *remote_bda);
+esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda);
 
 void esp_a2d_sink_deinit(void);
 

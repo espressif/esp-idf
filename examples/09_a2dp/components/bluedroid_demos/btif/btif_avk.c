@@ -213,7 +213,7 @@ static void btif_report_connection_state(esp_a2d_connection_state_t state, bt_bd
     
     param.conn_stat.state = state;
     if (bd_addr) {
-        memcpy(&param.conn_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
+        memcpy(param.conn_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
     }
     BTIF_A2D_CB_TO_APP(ESP_A2D_CONNECTION_STATE_EVT, &param);
 }
@@ -225,7 +225,7 @@ static void btif_report_audio_state(esp_a2d_audio_state_t state, bt_bdaddr_t *bd
 
     param.audio_stat.state = state;
     if (bd_addr) {
-        memcpy(&param.audio_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
+        memcpy(param.audio_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
     }
     BTIF_A2D_CB_TO_APP(ESP_A2D_AUDIO_STATE_EVT, &param);
 }
@@ -372,7 +372,7 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
     case BTIF_AV_SINK_CONFIG_REQ_EVT: {
         if (btif_av_cb.peer_sep == AVDT_TSEP_SRC) {
             esp_a2d_cb_param_t param;
-            memcpy(&param.audio_cfg.remote_bda, &btif_av_cb.peer_bda, sizeof(esp_bd_addr_t));
+            memcpy(param.audio_cfg.remote_bda, &btif_av_cb.peer_bda, sizeof(esp_bd_addr_t));
             memcpy(&param.audio_cfg.mcc, p_data, sizeof(esp_a2d_mcc_t));
             BTIF_A2D_CB_TO_APP(ESP_A2D_AUDIO_CFG_EVT, &param);
         }
@@ -938,7 +938,7 @@ static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid)
     return BT_STATUS_SUCCESS;
 }
 
-esp_err_t esp_a2d_sink_connect(esp_bd_addr_t *remote_bda)
+esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda)
 {
     BTIF_TRACE_EVENT("%s\n", __FUNCTION__);
     CHECK_BTAV_INIT();
@@ -951,7 +951,7 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t *remote_bda)
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t *remote_bda)
+esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
 {
     bt_status_t stat;
     bt_bdaddr_t bd_addr;
