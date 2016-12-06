@@ -8,18 +8,13 @@
 #
 
 COMPONENT_ADD_INCLUDEDIRS :=	\
-				udrv/include				\
 				btif/include				\
-				audio_a2dp_hw/include			\
-				embdrv/sbc/encoder/include		\
 				embdrv/sbc/decoder/include		\
 				include					\
 
 COMPONENT_SRCDIRS :=	\
 			app_core				\
 			app_project				\
-			udrv/ulinux				\
-			embdrv/sbc/encoder/srce			\
 			embdrv/sbc/decoder/srce			\
 			btif/co					\
 			btif

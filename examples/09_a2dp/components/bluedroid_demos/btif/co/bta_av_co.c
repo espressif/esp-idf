@@ -32,7 +32,6 @@
 #include "bta_av_ci.h"
 #include "bta_av_sbc.h"
 #include "btif_media.h"
-#include "sbc_encoder.h"
 #include "btif_av_co.h"
 #include "btif_util.h"
 

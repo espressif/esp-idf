@@ -554,7 +554,6 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data)
 
         /* change state to idle, send acknowledgement if start is pending */
         if (btif_av_cb.flags & BTIF_AV_FLAG_PENDING_START) {
-            btif_a2dp_ack_fail();
             /* pending start flag will be cleared when exit current state */
         }
         btif_sm_change_state(btif_av_cb.sm_handle, BTIF_AV_STATE_IDLE);
@@ -567,7 +566,6 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data)
             BTA_AvStart();
         } else if (btif_av_cb.flags & BTIF_AV_FLAG_PENDING_START) {
             btif_av_cb.flags &= ~BTIF_AV_FLAG_PENDING_START;
-            btif_a2dp_ack_fail();
         }
         break;
 

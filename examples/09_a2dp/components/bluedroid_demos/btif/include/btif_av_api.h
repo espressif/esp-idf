@@ -31,7 +31,7 @@
 
 #include "bt_target.h"
 #include "bta_av_api.h"
-#include "uipc.h"
+// #include "uipc.h"
 
 #include "btif_media.h"
 #include "a2d_api.h"
