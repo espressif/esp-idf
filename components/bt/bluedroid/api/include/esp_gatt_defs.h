@@ -109,15 +109,11 @@ typedef struct {
  * @brief Gatt authentication request type
  */
 typedef enum {
-    AUTH_REQ_NO_SCATTERNET,         /* Device doesn't support scatternet, it might
-                                        support "role switch during connection" for
-                                        an incoming connection, when it already has
-                                        another connection in master role */
-    AUTH_REQ_PARTIAL_SCATTERNET,   /* Device supports partial scatternet. It can have
-                                        simulateous connection in Master and Slave roles
-                                        for short period of time */
-    AUTH_REQ_FULL_SCATTERNET       /* Device can have simultaneous connection in master
-                                        and slave roles */
+	ESP_GATT_AUTH_REQ_NONE              	= 0,
+	ESP_GATT_AUTH_REQ_NO_MITM           	= 1,   /* unauthenticated encryption */
+	ESP_GATT_AUTH_REQ_MITM              	= 2,   /* authenticated encryption */
+	ESP_GATT_AUTH_REQ_SIGNED_NO_MITM    	= 3,
+	ESP_GATT_AUTH_REQ_SIGNED_MITM       	= 4,
 } esp_gatt_auth_req_t;
 
 /**
