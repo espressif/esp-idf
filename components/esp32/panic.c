@@ -45,7 +45,7 @@ Note: The linker script will put everything in this file in IRAM/DRAM, so it als
 
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
 //printf may be broken, so we fix our own printing fns...
-inline static void panicPutchar(char c) {
+inline static void panicPutChar(char c) {
 	while (((READ_PERI_REG(UART_STATUS_REG(0))>>UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT)>=126) ;
 	WRITE_PERI_REG(UART_FIFO_REG(0), c);
 }
@@ -53,7 +53,7 @@ inline static void panicPutchar(char c) {
 inline static void panicPutStr(const char *c) {
 	int x=0;
 	while (c[x]!=0) {
-		panicPutchar(c[x]);
+		panicPutChar(c[x]);
 		x++;
 	}
 }
@@ -61,10 +61,9 @@ inline static void panicPutStr(const char *c) {
 inline static void panicPutHex(int a) {
 	int x;
 	int c;
-	panicPutchar(' ');
 	for (x=0; x<8; x++) {
 		c=(a>>28)&0xf;
-		if (c<10) panicPutchar('0'+c); else panicPutchar('a'+c-10);
+		if (c<10) panicPutChar('0'+c); else panicPutChar('a'+c-10);
 		a<<=4;
 	}
 }
@@ -73,13 +72,12 @@ inline static void panicPutDec(int a) {
 	int n1, n2;
 	n1=a%10;
 	n2=a/10;
-	panicPutchar(' ');
-	if (n2==0) panicPutchar(' '); else panicPutchar(n2+'0');
-	panicPutchar(n1+'0');
+	if (n2==0) panicPutChar(' '); else panicPutChar(n2+'0');
+	panicPutChar(n1+'0');
 }
 #else
 //No printing wanted. Stub out these functions.
-inline static void panicPutchar(char c) { }
+inline static void panicPutChar(char c) { }
 inline static void panicPutStr(const char *c) { }
 inline static void panicPutHex(int a) { }
 inline static void panicPutDec(int a) { }
@@ -228,6 +226,33 @@ static void disableAllWdts() {
 
 #endif
 
+static inline bool stackPointerIsSane(uint32_t sp) {
+	return !(sp < 0x3ffae010 || sp > 0x3ffffff0 || ((sp & 0xf) != 0));
+}
+static void putEntry(uint32_t pc, uint32_t sp) {
+	if (pc & 0x80000000) pc = (pc & 0x3fffffff) | 0x40000000;
+	panicPutStr(" 0x");
+	panicPutHex(pc);
+	panicPutStr(":0x");
+	panicPutHex(sp);
+}
+void doBacktrace(XtExcFrame *frame) {
+	uint32_t i = 0, pc = frame->pc, sp = frame->a1;
+	panicPutStr("\nBacktrace:");
+	/* Do not check sanity on first entry, PC could be smashed. */
+	putEntry(pc, sp);
+	pc = frame->a0;
+	while (i++ < 100) {
+		uint32_t psp = sp;
+		if (!stackPointerIsSane(sp) || i++ > 100) break;
+		sp = *((uint32_t *) (sp - 0x10 + 4));
+		putEntry(pc, sp);
+		pc = *((uint32_t *) (psp - 0x10));
+		if (pc < 0x40000000) break;
+	}
+	panicPutStr("\n\n");
+}
+
 /*
 We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
 serial port and either jump to the gdb stub, halt the CPU or reboot.
@@ -249,13 +274,15 @@ void commonErrorHandler(XtExcFrame *frame) {
 		for (y=0; y<4; y++) {
 			if (sdesc[x+y][0]!=0) {
 				panicPutStr(sdesc[x+y]);
-				panicPutStr(": ");
+				panicPutStr(": 0x");
 				panicPutHex(regs[x+y+1]);
 				panicPutStr("  ");
 			}
 		}
 		panicPutStr("\r\n");
 	}
+	/* With windowed ABI backtracing is easy, let's do it. */
+	doBacktrace(frame);
 #if CONFIG_ESP32_PANIC_GDBSTUB
 	disableAllWdts();
 	panicPutStr("Entering gdb stub now.\r\n");
