@@ -20,12 +20,13 @@
 #include "driver/ledc.h"
 #include "esp_log.h"
 
-static const char* LEDC_TAG = "LEDC";
+static const char* LEDC_TAG = "ledc";
 static portMUX_TYPE ledc_spinlock = portMUX_INITIALIZER_UNLOCKED;
-#define LEDC_CHECK(a, str, ret_val) if (!(a)) {                                         \
-        ESP_LOGE(LEDC_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
-        return (ret_val);                                                               \
-        }
+#define LEDC_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(LEDC_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
 
 esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t div_num, uint32_t bit_num, ledc_clk_src_t clk_src)
 {
