@@ -90,6 +90,7 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, s
 	panicPutStr("***ERROR*** A stack overflow in task ");
 	panicPutStr((char*)pcTaskName);
 	panicPutStr(" has been detected.\r\n");
+	configASSERT(0);
 }
 
 static const char *edesc[]={
