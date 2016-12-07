@@ -36,7 +36,6 @@
  * When counter value reaches thresh1 or thresh0 value, it will trigger interrupt.
  * When counter value reaches l_lim value or h_lim value, counter value will be reset to zero and trigger interrupt.
  */
-static const char* TAG = "PCNT_TEST";
 #define PCNT_TEST_UNIT    PCNT_UNIT_0
 #define PCNT_H_LIM_VAL    (10)
 #define PCNT_L_LIM_VAL    (-10)
