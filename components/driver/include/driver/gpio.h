@@ -117,32 +117,6 @@ extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
 #define GPIO_IS_VALID_GPIO(gpio_num)      ((gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0))   //to decide whether it is a valid GPIO number
 #define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 34))         //to decide whether it can be a valid GPIO number of output mode
 
-/**
- * @brief Pullup/pulldown information for a single GPIO pad
- */
-typedef struct {
-    uint32_t reg;       /*!< Register to modify to enable or disable pullups or pulldowns */
-    uint32_t pu;        /*!< Bit to set or clear in the above register to enable or disable the pullup, respectively */
-    uint32_t pd;        /*!< Bit to set or clear in the above register to enable or disable the pulldown, respectively */
-} gpio_pu_pd_desc_t;
-
-
-/**
- * Per-GPIO pullup/pulldown information
- * On the ESP32, some GPIOs need their pullups and pulldowns enabled and disabled in the RTC 
- * peripheral instead of in the GPIO peripheral. This array documents for every GPIO what bit
- * to set or clear.
- * 
- * This array is non-static, so if you need a very quick way of toggling the pull-up/downs, you can just
- * do e.g. REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu); inline.
- * 
- * ToDo: Functions using the contents of this array will do a read/modify/write on GPIO as well as RTC
- * registers. We may need to look into muxes/locks for other code that accesses these RTC registers when we
- * write drivers for the RTC stuff.
- */
-extern const gpio_pu_pd_desc_t gpio_pu_pd_desc[GPIO_PIN_COUNT];
-
-
 typedef enum {
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
     GPIO_NUM_1 = 1,     /*!< GPIO1, input and output */

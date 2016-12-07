@@ -23,7 +23,7 @@
 
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/saradc_reg.h"
+#include "soc/sens_reg.h"
 
 #include "sdkconfig.h"
 
@@ -263,8 +263,8 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
 
 esp_err_t ulp_run(uint32_t entry_point)
 {
-    SET_PERI_REG_MASK(SARADC_SAR_START_FORCE_REG, SARADC_ULP_CP_FORCE_START_TOP_M);
-    SET_PERI_REG_BITS(SARADC_SAR_START_FORCE_REG, SARADC_PC_INIT_V, entry_point, SARADC_PC_INIT_S);
-    SET_PERI_REG_MASK(SARADC_SAR_START_FORCE_REG, SARADC_ULP_CP_START_TOP_M);
+    SET_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_FORCE_START_TOP_M);
+    SET_PERI_REG_BITS(SENS_SAR_START_FORCE_REG, SENS_PC_INIT_V, entry_point, SENS_PC_INIT_S);
+    SET_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_START_TOP_M);
     return ESP_OK;
 }
