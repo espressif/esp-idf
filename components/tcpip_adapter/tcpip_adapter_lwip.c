@@ -706,34 +706,35 @@ esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapt
 
 esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *hostname)
 {
+#if LWIP_NETIF_HOSTNAME
     struct netif *p_netif;
-    static char hostinfo[TCPIP_HOSTNAME_MAX_SIZE + 1];
+    static char hostinfo[TCPIP_HOSTNAME_MAX_SIZE + 1][TCPIP_ADAPTER_IF_MAX];
 
     if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || hostname == NULL) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
     }
 
-    if (strlen(hostname) >= TCPIP_HOSTNAME_MAX_SIZE) {
+    if (strlen(hostname) > TCPIP_HOSTNAME_MAX_SIZE) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
     }
 
     p_netif = esp_netif[tcpip_if];
     if (p_netif != NULL) {
-        if (netif_is_up(p_netif)) {
-            return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
-        } else {
-            memset(hostinfo, 0, sizeof(hostinfo));
-            memcpy(hostinfo, hostname, strlen(hostname));
-            p_netif->hostname = hostinfo;
-            return ESP_OK;
-        }
+        memset(hostinfo[tcpip_if], 0, sizeof(hostinfo[tcpip_if]));
+        memcpy(hostinfo[tcpip_if], hostname, strlen(hostname));
+        p_netif->hostname = hostinfo[tcpip_if];
+        return ESP_OK;
     } else {
-        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+        return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
     }
+#else
+    return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
+#endif
 }
 
 esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **hostname)
 {
+#if LWIP_NETIF_HOSTNAME
     struct netif *p_netif = NULL;
     if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || hostname == NULL) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
@@ -746,6 +747,9 @@ esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **h
     } else {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
     }
+#else
+    return ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY;
+#endif
 }
 
 #endif
