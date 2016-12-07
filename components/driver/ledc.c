@@ -114,12 +114,12 @@ static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, uint32_t channel,
     return ESP_OK;
 }
 
-esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags)
+esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, ledc_isr_handle_t *handle)
 {
     esp_err_t ret;
     LEDC_CHECK(fn, "ledc isr null", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&ledc_spinlock);
-    ret=esp_intr_alloc(ETS_LEDC_INTR_SOURCE, intr_alloc_flags, fn, arg, NULL);
+    ret=esp_intr_alloc(ETS_LEDC_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ret;
 }

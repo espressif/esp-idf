@@ -267,9 +267,9 @@ esp_err_t pcnt_filter_disable(pcnt_unit_t unit)
     return ESP_OK;
 }
 
-esp_err_t pcnt_isr_register(void (*fun)(void*), void * arg, int intr_alloc_flags)
+esp_err_t pcnt_isr_register(void (*fun)(void*), void * arg, int intr_alloc_flags, pcnt_isr_handle_t *handle)
 {
     PCNT_CHECK(fun != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
-    return esp_intr_alloc(ETS_PCNT_INTR_SOURCE, intr_alloc_flags, fun, arg, NULL);
+    return esp_intr_alloc(ETS_PCNT_INTR_SOURCE, intr_alloc_flags, fun, arg, handle);
 }
 

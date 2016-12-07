@@ -55,7 +55,7 @@ typedef struct {
     uart_port_t uart_num;               /*!< UART port number*/
     int queue_size;                     /*!< UART event queue size*/
     QueueHandle_t xQueueUart;           /*!< UART queue handler*/
-    int_handle_t intr_handle;           /*!< UART interrupt handle*/
+    intr_handle_t intr_handle;          /*!< UART interrupt handle*/
     //rx parameters
     SemaphoreHandle_t rx_mux;           /*!< UART RX data mutex*/
     int rx_buf_size;                    /*!< RX ring buffer size */
@@ -292,7 +292,6 @@ esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg,
 {
     int ret;
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK(((intr_alloc_flags & ESP_INTR_FLAG_SHARED)==0), "UART doesn't support shared interrupts", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     switch(uart_num) {
         case UART_NUM_1:

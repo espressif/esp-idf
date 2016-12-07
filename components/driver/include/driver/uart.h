@@ -371,8 +371,7 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
  * @param fn  Interrupt handler function.
  * @param arg parameter for handler function
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
- *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. Note that the UART
- *            driver at the moment does not work with a shared interrupt.
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. 
  *
  * @return
  *     - ESP_OK   Success

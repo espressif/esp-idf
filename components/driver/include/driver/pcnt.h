@@ -12,6 +12,7 @@
 #include "soc/pcnt_struct.h"
 #include "soc/gpio_sig_map.h"
 #include "driver/gpio.h"
+#include "esp_intr_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,6 +76,8 @@ typedef struct {
     pcnt_unit_t unit;               /*!< PCNT unit number */
     pcnt_channel_t channel;         /*!< the PCNT channel */
 } pcnt_config_t;
+
+typedef intr_handle_t pcnt_isr_handle_t;
 
 /**
  * @brief Configure Pulse Counter unit
@@ -223,7 +226,7 @@ esp_err_t pcnt_get_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  */
-esp_err_t pcnt_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags);
+esp_err_t pcnt_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, pcnt_isr_handle_t *handle);
 
 /**
  * @brief Configure PCNT pulse signal input pin and control input pin

@@ -23,6 +23,7 @@
 #include "soc/gpio_sig_map.h"
 #include "rom/gpio.h"
 #include "esp_attr.h"
+#include "esp_intr_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -203,6 +204,9 @@ typedef enum {
     GPIO_FLOATING,                  /*!< Pad floating           */
 } gpio_pull_mode_t;
 
+
+
+typedef intr_handle_t gpio_isr_handle_t;
 typedef void (*gpio_event_callback)(gpio_num_t gpio_intr_num);
 
 /**
@@ -352,7 +356,7 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
  *     - ESP_OK Success ;
  *     - ESP_ERR_INVALID_ARG GPIO error
  */
-esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags);
+esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, gpio_isr_handle_t *handle);
 
 
 

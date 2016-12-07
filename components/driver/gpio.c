@@ -321,10 +321,10 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
     return ESP_OK;
 }
 
-esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags)
+esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, gpio_isr_handle_t *handle)
 {
     GPIO_CHECK(fn, "GPIO ISR null", ESP_ERR_INVALID_ARG);
-    return esp_intr_alloc(ETS_GPIO_INTR_SOURCE, intr_alloc_flags, fn, arg, NULL);
+    return esp_intr_alloc(ETS_GPIO_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
 }
 
 /*only level interrupt can be used for wake-up function*/

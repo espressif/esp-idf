@@ -117,6 +117,8 @@ typedef struct {
     };
 } rmt_config_t;
 
+typedef intr_handle_t rmt_isr_handle_t;
+
 /**
  * @brief Set RMT clock divider, channel clock is divided from source clock.
  *
@@ -574,13 +576,25 @@ esp_err_t rmt_config(rmt_config_t* rmt_param);
  * @param arg Parameter for handler function
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ * @param  If non-zero, a handle to later clean up the ISR gets stored here.
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  *     - ESP_FAIL System driver installed, can not register ISR handler for RMT
  */
-esp_err_t rmt_isr_register(void (* fn)(void* ), void * arg, int intr_alloc_flags);
+esp_err_t rmt_isr_register(void (* fn)(void* ), void * arg, int intr_alloc_flags, rmt_isr_handle_t *handle);
+
+/**
+ * @brief   Deregister previously registered RMT interrupt handler
+ *
+ * @param handle Handle obtained from rmt_isr_register
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Handle invalid
+ */
+esp_err_t rmt_isr_deregister(rmt_isr_handle_t handle);
 
 /**
  * @brief Fill memory data of channel with given RMT items.

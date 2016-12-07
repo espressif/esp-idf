@@ -21,6 +21,7 @@
 #include "soc/ledc_struct.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
+#include "esp_intr_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,6 +101,7 @@ typedef struct {
     uint32_t freq_hz;               /*!< LEDC timer frequency(Hz)*/
 } ledc_timer_config_t;
 
+typedef intr_handle_t ledc_isr_handle_t;
 
 /**
  * @brief      LEDC channel configuration
@@ -268,7 +270,7 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty,
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  */
-esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags);
+esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, ledc_isr_handle_t *handle);
 
 /**
  * @brief      configure LEDC settings

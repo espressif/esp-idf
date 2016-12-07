@@ -169,13 +169,15 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
 }
 
 esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, 
-    void (*fn)(void*), void * arg, int intr_alloc_flags)
+    void (*fn)(void*), void * arg, int intr_alloc_flags, timer_isr_handle_t *handle)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(fn != NULL, TIMER_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
 
     int intr_source = 0;
+    uint32_t status_reg = 0;
+    int mask = 0;
     switch(group_num) {
         case TIMER_GROUP_0:
         default:
@@ -184,6 +186,8 @@ esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
             } else {
                 intr_source = ETS_TG0_T0_EDGE_INTR_SOURCE + timer_num;
             }
+            status_reg = TIMG_INT_ST_TIMERS_REG(0);
+            mask = 1<<timer_num;
             break;
         case TIMER_GROUP_1:
             if((intr_alloc_flags & ESP_INTR_FLAG_EDGE) == 0) {
@@ -191,9 +195,11 @@ esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
             } else {
                 intr_source = ETS_TG1_T0_EDGE_INTR_SOURCE + timer_num;
             }
+            status_reg = TIMG_INT_ST_TIMERS_REG(1);
+            mask = 1<<timer_num;
             break;
     }
-    return esp_intr_alloc(intr_source, intr_alloc_flags, fn, arg, NULL);
+    return esp_intr_alloc_intrstatus(intr_source, intr_alloc_flags, status_reg, mask, fn, arg, handle);
 }
 
 esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, timer_config_t *config)

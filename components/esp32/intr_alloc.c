@@ -131,28 +131,12 @@ const static int_desc_t int_desc[32]={
     { 5, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //31
 };
 
-
-//For memory usage and to get an unique ID for every int on every CPU core, the
-//intrs and cpus are stored in in one int. These functions handle that.
-inline static int to_intno_cpu(int intno, int cpu) 
-{
-    return intno+cpu*32;
-}
-
-inline static int to_intno(int intno_cpu) 
-{
-    return (intno_cpu)&31;
-}
-
-inline static int to_cpu(int intno_cpu) 
-{
-    return (intno_cpu)/32;
-}
-
 typedef struct shared_vector_desc_t shared_vector_desc_t;
 typedef struct vector_desc_t vector_desc_t;
 
 struct shared_vector_desc_t {
+    int disabled: 1;
+    int source: 8;
     volatile uint32_t *statusreg;
     uint32_t statusmask;
     intr_handler_t isr;
@@ -166,20 +150,23 @@ struct shared_vector_desc_t {
 #define VECDESC_FL_SHARED       (1<<2)
 #define VECDESC_FL_NONSHARED    (1<<3)
 
+//Pack using bitfields for better memory use
 struct vector_desc_t {
-    int intno_cpu;                          //intno+cpu*32
-    int flags;                              //OR of VECDESC_FLAG_* defines
+    int flags: 16;                          //OR of VECDESC_FLAG_* defines
+    unsigned int cpu: 1;
+    unsigned int intno: 5;
+    int source: 8;                          //Interrupt mux flags, used when not shared
     shared_vector_desc_t *shared_vec_info;  //used when VECDESC_FL_SHARED
     vector_desc_t *next;
 };
 
-struct int_handle_data_t {
+struct intr_handle_data_t {
     vector_desc_t *vector_desc;
     shared_vector_desc_t *shared_vector_desc;
 };
 
 
-//Linked list of vector descriptions, sorted by intno_cpu value
+//Linked list of vector descriptions, sorted by cpu.intno value
 static vector_desc_t *vector_desc_head;
 
 //This bitmask has an 1 if the int should be disabled when the flash is disabled.
@@ -192,13 +179,14 @@ static bool non_iram_int_disabled_flag[portNUM_PROCESSORS];
 static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 //Inserts an item into vector_desc list so that the list is sorted
-//with an incrementing intno_cpu value.
+//with an incrementing cpu.intno value.
 static void insert_vector_desc(vector_desc_t *to_insert) 
 {
     vector_desc_t *vd=vector_desc_head;
     vector_desc_t *prev=NULL;
     while(vd!=NULL) {
-        if (vd->intno_cpu >= to_insert->intno_cpu) break;
+        if (vd->cpu > to_insert->cpu) break;
+        if (vd->cpu == to_insert->cpu && vd->intno >= to_insert->intno) break;
         prev=vd;
         vd=vd->next;
     }
@@ -217,7 +205,7 @@ static vector_desc_t *find_desc_for_int(int intno, int cpu)
 {
     vector_desc_t *vd=vector_desc_head;
     while(vd!=NULL) {
-        if (vd->intno_cpu==to_intno_cpu(intno, cpu)) break;
+        if (vd->cpu==cpu && vd->intno==intno) break;
         vd=vd->next;
     }
     return vd;
@@ -233,7 +221,8 @@ static vector_desc_t *get_desc_for_int(int intno, int cpu)
         vector_desc_t *newvd=malloc(sizeof(vector_desc_t));
         if (newvd==NULL) return NULL;
         memset(newvd, 0, sizeof(vector_desc_t));
-        newvd->intno_cpu=to_intno_cpu(intno, cpu);
+        newvd->intno=intno;
+        newvd->cpu=cpu;
         insert_vector_desc(newvd);
         return newvd;
     } else {
@@ -296,6 +285,7 @@ static bool int_has_handler(int intr, int cpu)
 
 //Locate a free interrupt compatible with the flags given.
 //The 'force' argument can be -1, or 0-31 to force checking a certain interrupt.
+//When a CPU is forced, the INTDESC_SPECIAL marked interrupts are also accepted.
 static int get_free_int(int flags, int cpu, int force)
 {
     int x;
@@ -323,8 +313,12 @@ static int get_free_int(int flags, int cpu, int force)
             x, int_desc[x].cpuflags[cpu]==INTDESC_RESVD, int_desc[x].level, 
             int_desc[x].type==INTTP_LEVEL?"LEVEL":"EDGE", int_has_handler(x, cpu));
         //Check if interrupt is not reserved by design
-        if (int_desc[x].cpuflags[cpu]==INTDESC_RESVD) { //ToDo: Check for SPECIAL and force!=-1
+        if (int_desc[x].cpuflags[cpu]==INTDESC_RESVD) {
             ALCHLOG(TAG, "....Unusable: reserved");
+            continue;
+        }
+        if (int_desc[x].cpuflags[cpu]==INTDESC_SPECIAL && force==-1) {
+            ALCHLOG(TAG, "....Unusable: special-purpose int");
             continue;
         }
         //Check if the interrupt level is acceptable
@@ -426,10 +420,12 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
     shared_vector_desc_t *sh_vec=vd->shared_vec_info;
     portENTER_CRITICAL(&spinlock);
     while(sh_vec) {
-        if ((sh_vec->statusreg == NULL) || (*sh_vec->statusreg & sh_vec->statusmask)) {
-            sh_vec->isr(sh_vec->arg);
-            sh_vec=sh_vec->next;
+        if (!sh_vec->disabled) {
+            if ((sh_vec->statusreg == NULL) || (*sh_vec->statusreg & sh_vec->statusmask)) {
+                sh_vec->isr(sh_vec->arg);
+            }
         }
+        sh_vec=sh_vec->next;
     }
     portEXIT_CRITICAL(&spinlock);
 }
@@ -437,19 +433,18 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
 
 //We use ESP_EARLY_LOG* here because this can be called before the scheduler is running.
 esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler, 
-                                        void *arg, int_handle_t *ret_handle) 
+                                        void *arg, intr_handle_t *ret_handle) 
 {
-    int_handle_data_t *ret=NULL;
+    intr_handle_data_t *ret=NULL;
     int force=-1;
+printf("Src %d reg/mask %x/%x\n", source, intrstatusreg, intrstatusmask);
     ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %d): checking args", xPortGetCoreID());
     //Shared interrupts should be level-triggered.
     if ((flags&ESP_INTR_FLAG_SHARED) && (flags&ESP_INTR_FLAG_EDGE)) return ESP_ERR_INVALID_ARG;
     //You can't set an handler / arg for a non-C-callable interrupt.
     if ((flags&ESP_INTR_FLAG_HIGH) && (handler)) return ESP_ERR_INVALID_ARG;
-    //Shared ints should have handler
-    if ((flags&ESP_INTR_FLAG_SHARED) && (!handler)) return ESP_ERR_INVALID_ARG;
-    //Only shared interrupts can have status reg / mask
-    if (intrstatusreg && (!(flags&ESP_INTR_FLAG_SHARED))) return ESP_ERR_INVALID_ARG;
+    //Shared ints should have handler and non-processor-local source
+    if ((flags&ESP_INTR_FLAG_SHARED) && (!handler || source<0)) return ESP_ERR_INVALID_ARG;
     //Statusreg should have a mask
     if (intrstatusreg && !intrstatusmask) return ESP_ERR_INVALID_ARG;
 
@@ -472,11 +467,9 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     if (source==ETS_INTERNAL_SW1_INTR_SOURCE) force=ETS_INTERNAL_SW1_INTR_NO;
     if (source==ETS_INTERNAL_PROFILING_INTR_SOURCE) force=ETS_INTERNAL_PROFILING_INTR_NO;
 
-    //If we should return a handle, allocate it here.
-    if (ret_handle!=NULL) {
-        ret=malloc(sizeof(int_handle_data_t));
-        if (ret==NULL) return ESP_ERR_NO_MEM;
-    }
+    //Allocate a return handle. If we end up not needing it, we'll free it later on.
+    ret=malloc(sizeof(intr_handle_data_t));
+    if (ret==NULL) return ESP_ERR_NO_MEM;
 
     portENTER_CRITICAL(&spinlock);
     int cpu=xPortGetCoreID();
@@ -511,6 +504,8 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         sh_vec->isr=handler;
         sh_vec->arg=arg;
         sh_vec->next=vd->shared_vec_info;
+        sh_vec->source=source;
+        sh_vec->disabled=0;
         vd->shared_vec_info=sh_vec;
         vd->flags|=VECDESC_FL_SHARED;
         //(Re-)set shared isr handler to new value.
@@ -522,6 +517,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
             xt_set_interrupt_handler(intr, handler, arg);
         }
         if (flags&ESP_INTR_FLAG_EDGE) xthal_set_intclear(1 << intr);
+        vd->source=source;
     }
     if (flags&ESP_INTR_FLAG_IRAM) {
         vd->flags|=VECDESC_FL_INIRAM;
@@ -533,22 +529,34 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     if (source>=0) {
         intr_matrix_set(cpu, source, intr);
     }
-    //Fill return handle if needed
-    if (ret_handle!=NULL) {
-        ret->vector_desc=vd;
-        ret->shared_vector_desc=vd->shared_vec_info;
-        *ret_handle=ret;
+
+    //Fill return handle data.
+    ret->vector_desc=vd;
+    ret->shared_vector_desc=vd->shared_vec_info;
+
+    //Enable int at CPU-level;
+    ESP_INTR_ENABLE(intr);
+
+    //If interrupt has to be started disabled, do that now; ints won't be enabled for real until the end
+    //of the critical section.
+    if (flags&ESP_INTR_FLAG_INTRDISABLED) {
+        esp_intr_disable(ret);
     }
 
-    //We enable the interrupt in any case. For shared interrupts, the interrupts are enabled as soon as we exit 
-    //the critical region anyway, so this is consistent.
     portEXIT_CRITICAL(&spinlock);
+
+    //Fill return handle if needed, otherwise free handle.
+    if (ret_handle!=NULL) {
+        *ret_handle=ret;
+    } else {
+        free(ret);
+    }
+
     ESP_EARLY_LOGD(TAG, "Connected src %d to int %d (cpu %d)", source, intr, cpu);
-    ESP_INTR_ENABLE(intr);
     return ESP_OK;
 }
 
-esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *arg, int_handle_t *ret_handle) 
+esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *arg, intr_handle_t *ret_handle) 
 {
     /*
       As an optimization, we can create a table with the possible interrupt status registers and masks for every single
@@ -559,13 +567,14 @@ esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *ar
 }
 
 
-esp_err_t esp_intr_free(int_handle_t handle) 
+esp_err_t esp_intr_free(intr_handle_t handle) 
 {
     bool free_shared_vector=false;
     if (!handle) return ESP_ERR_INVALID_ARG;
     //This routine should be called from the interrupt the task is scheduled on.
-    if (to_cpu(handle->vector_desc->intno_cpu)!=xPortGetCoreID()) return ESP_ERR_INVALID_ARG;
+    if (handle->vector_desc->cpu!=xPortGetCoreID()) return ESP_ERR_INVALID_ARG;
 
+    esp_intr_disable(handle);
     portENTER_CRITICAL(&spinlock);
     if (handle->vector_desc->flags&VECDESC_FL_SHARED) {
         //Find and kill the shared int 
@@ -593,46 +602,87 @@ esp_err_t esp_intr_free(int_handle_t handle)
 
     if ((handle->vector_desc->flags&VECDESC_FL_NONSHARED) || free_shared_vector) {
         ESP_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
-        //Interrupt is not shared. Just disable it and revert to the default interrupt handler.
-        ESP_INTR_DISABLE(to_intno(handle->vector_desc->intno_cpu));
-        xt_set_interrupt_handler(to_intno(handle->vector_desc->intno_cpu), xt_unhandled_interrupt, NULL);
+        //Reset to normal handler
+        xt_set_interrupt_handler(handle->vector_desc->intno, xt_unhandled_interrupt, (void*)handle->vector_desc->intno);
         //Theoretically, we could free the vector_desc... not sure if that's worth the few bytes of memory
         //we save.(We can also not use the same exit path for empty shared ints anymore if we delete 
         //the desc.) For now, just mark it as free. 
         handle->vector_desc->flags&=!(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED);
         //Also kill non_iram mask bit.
-        non_iram_int_mask[to_cpu(handle->vector_desc->intno_cpu)]&=~(1<<(to_intno(handle->vector_desc->intno_cpu)));
+        non_iram_int_mask[handle->vector_desc->cpu]&=~(1<<(handle->vector_desc->intno));
     }
     portEXIT_CRITICAL(&spinlock);
     free(handle);
     return ESP_OK;
 }
 
-int esp_intr_get_intno(int_handle_t handle)
+int esp_intr_get_intno(intr_handle_t handle)
 {
-    return to_intno(handle->vector_desc->intno_cpu);
+    return handle->vector_desc->intno;
 }
 
-int esp_intr_get_cpu(int_handle_t handle)
+int esp_intr_get_cpu(intr_handle_t handle)
 {
-    return to_cpu(handle->vector_desc->intno_cpu);
+    return handle->vector_desc->cpu;
 }
 
-esp_err_t esp_intr_enable(int_handle_t handle)
+/*
+ Interrupt disabling strategy:
+ If the source is >=0 (meaning a muxed interrupt), we disable it by muxing the interrupt to a non-connected
+ interrupt. If the source is <0 (meaning an internal, per-cpu interrupt), we disable it using ESP_INTR_DISABLE.
+ This allows us to, for the muxed CPUs, disable an int from the other core. It also allows disabling shared
+ interrupts.
+ */
+
+//Muxing an interrupt source to interrupt 6, 7, 11, 15, 16 or 29 cause the interrupt to effectively be disabled.
+#define INT_MUX_DISABLED_INTNO 6
+
+esp_err_t esp_intr_enable(intr_handle_t handle)
 {
     if (!handle) return ESP_ERR_INVALID_ARG;
-    if (handle->shared_vector_desc) return ESP_ERR_INVALID_ARG; //Shared ints can't be enabled using this function.
-    if (to_cpu(handle->vector_desc->intno_cpu)!=xPortGetCoreID()) return ESP_ERR_INVALID_ARG; //Can only enable ints on this cpu
-    ESP_INTR_ENABLE(to_intno(handle->vector_desc->intno_cpu));
+    portENTER_CRITICAL(&spinlock);
+    int source;
+    if (handle->shared_vector_desc) {
+        handle->shared_vector_desc->disabled=0;
+        source=handle->shared_vector_desc->source;
+    } else {
+        source=handle->vector_desc->source;
+    }
+    if (source >= 0) {
+        //Disabled using int matrix; re-connect to enable
+        intr_matrix_set(handle->vector_desc->cpu, source, handle->vector_desc->intno);
+    } else {
+        //Re-enable using cpu int ena reg
+        if (handle->vector_desc->cpu!=xPortGetCoreID()) return ESP_ERR_INVALID_ARG; //Can only enable these ints on this cpu
+        ESP_INTR_ENABLE(handle->vector_desc->intno);
+    }
+    portEXIT_CRITICAL(&spinlock);
     return ESP_OK;
 }
 
-esp_err_t esp_intr_disable(int_handle_t handle)
+esp_err_t esp_intr_disable(intr_handle_t handle)
 {
     if (!handle) return ESP_ERR_INVALID_ARG;
-    if (handle->shared_vector_desc) return ESP_ERR_INVALID_ARG; //Shared ints can't be disabled using this function.
-    if (to_cpu(handle->vector_desc->intno_cpu)!=xPortGetCoreID()) return ESP_ERR_INVALID_ARG; //Can only disable ints on this cpu
-    ESP_INTR_DISABLE(to_intno(handle->vector_desc->intno_cpu));
+    portENTER_CRITICAL(&spinlock);
+    int source;
+    if (handle->shared_vector_desc) {
+        handle->shared_vector_desc->disabled=1;
+        source=handle->shared_vector_desc->source;
+    } else {
+        source=handle->vector_desc->source;
+    }
+    if (source >= 0) {
+        //Disable using int matrix
+        intr_matrix_set(handle->vector_desc->cpu, source, INT_MUX_DISABLED_INTNO);
+    } else {
+        //Disable using per-cpu regs
+        if (handle->vector_desc->cpu!=xPortGetCoreID()) {
+            portEXIT_CRITICAL(&spinlock);
+            return ESP_ERR_INVALID_ARG; //Can only enable these ints on this cpu
+        }
+        ESP_INTR_DISABLE(handle->vector_desc->intno);
+    }
+    portEXIT_CRITICAL(&spinlock);
     return ESP_OK;
 }
 

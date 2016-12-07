@@ -19,6 +19,7 @@
 #include "soc/soc.h"
 #include "soc/timer_group_reg.h"
 #include "soc/timer_group_struct.h"
+#include "esp_intr_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,6 +100,13 @@ typedef struct {
     bool auto_reload; /*!< Timer auto-reload */
     uint16_t divider; /*!< Counter clock divider*/
 } timer_config_t;
+
+
+/**
+ * @brief Interrupt handle, used in order to free the isr after use.
+ * Aliases to an int handle for now.
+ */
+typedef intr_handle_t timer_isr_handle_t;
 
 /**
  * @brief Read the counter value of hardware timer.
@@ -264,7 +272,7 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, void (*fn)(void*), void * arg, int intr_alloc_flags);
+esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, void (*fn)(void*), void * arg, int intr_alloc_flags, timer_isr_handle_t *handle);
 
 /** @brief Initializes and configure the timer.
  * 

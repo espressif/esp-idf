@@ -47,6 +47,7 @@ extern "C" {
 #define ESP_INTR_FLAG_SHARED		(1<<8)	///< Interrupt can be shared between ISRs
 #define ESP_INTR_FLAG_EDGE			(1<<9)	///< Edge-triggered interrupt
 #define ESP_INTR_FLAG_IRAM			(1<<10)	///< ISR can be called if cache is disabled
+#define ESP_INTR_FLAG_INTRDISABLED	(1<<11)	///< Return with this interrupt disabled
 
 #define ESP_INTR_FLAG_LOWMED	(ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3) ///< Low and medium prio interrupts. These can be handled in C.
 #define ESP_INTR_FLAG_HIGH		(ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6|ESP_INTR_FLAG_NMI) ///< High level interrupts. Need to be handled in assembly.
@@ -79,8 +80,8 @@ extern "C" {
 typedef void (*intr_handler_t)(void *arg); 
 
 
-typedef struct int_handle_data_t int_handle_data_t;
-typedef int_handle_data_t* int_handle_t ;
+typedef struct intr_handle_data_t intr_handle_data_t;
+typedef intr_handle_data_t* intr_handle_t ;
 
 /**
  * @brief Mark an interrupt as a shared interrupt
@@ -134,7 +135,7 @@ esp_err_t esp_intr_reserve(int intno, int cpu);
  * @param handler The interrupt handler. Must be NULL when an interrupt of level >3
  *               is requested, because these types of interrupts aren't C-callable.
  * @param arg    Optional argument for passed to the interrupt handler
- * @param ret_handle Pointer to an int_handle_t to store a handle that can later be
+ * @param ret_handle Pointer to an intr_handle_t to store a handle that can later be
  *               used to request details or free the interrupt. Can be NULL if no handle
  *               is required.
  *
@@ -142,7 +143,7 @@ esp_err_t esp_intr_reserve(int intno, int cpu);
  *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags
  *         ESP_OK otherwise
  */
-esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *arg, int_handle_t *ret_handle);
+esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *arg, intr_handle_t *ret_handle);
 
 
 /**
@@ -171,7 +172,7 @@ esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *ar
  * @param handler The interrupt handler. Must be NULL when an interrupt of level >3
  *               is requested, because these types of interrupts aren't C-callable.
  * @param arg    Optional argument for passed to the interrupt handler
- * @param ret_handle Pointer to an int_handle_t to store a handle that can later be
+ * @param ret_handle Pointer to an intr_handle_t to store a handle that can later be
  *               used to request details or free the interrupt. Can be NULL if no handle
  *               is required.
  *
@@ -179,7 +180,7 @@ esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *ar
  *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags
  *         ESP_OK otherwise
  */
-esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler, void *arg, int_handle_t *ret_handle);
+esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler, void *arg, intr_handle_t *ret_handle);
 
 
 /**
@@ -194,7 +195,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
  *                             where the interrupt is allocated on.
  *         ESP_OK otherwise
  */
-esp_err_t esp_intr_free(int_handle_t handle);
+esp_err_t esp_intr_free(intr_handle_t handle);
 
 
 /**
@@ -204,7 +205,7 @@ esp_err_t esp_intr_free(int_handle_t handle);
  *
  * @return The core number where the interrupt is allocated
  */
-int esp_intr_get_cpu(int_handle_t handle);
+int esp_intr_get_cpu(intr_handle_t handle);
 
 /**
  * @brief Get the allocated interrupt for a certain handle
@@ -213,32 +214,36 @@ int esp_intr_get_cpu(int_handle_t handle);
  *
  * @return The interrupt number
  */
-int esp_intr_get_intno(int_handle_t handle);
+int esp_intr_get_intno(intr_handle_t handle);
 
 
 /**
  * @brief Disable the interrupt associated with the handle
  * 
  * @note This function can only disable non-shared inteerupts allocated on the CPU that runs this function.
+ * @warning Do not call this in a critical section; when the critical section ends the interrupt status
+ *          on critical section enter may be restored.
  *
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
  *         ESP_OK otherwise
  */
-esp_err_t esp_intr_disable(int_handle_t handle);
+esp_err_t esp_intr_disable(intr_handle_t handle);
 
 /**
  * @brief Ensable the interrupt associated with the handle
  * 
  * @note This function can only enable non-shared inteerupts allocated on the CPU that runs this function.
+ * @warning Do not call this in a critical section; when the critical section ends the interrupt status
+ *          on critical section enter may be restored.
  *
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
  *         ESP_OK otherwise
  */
-esp_err_t esp_intr_enable(int_handle_t handle);
+esp_err_t esp_intr_enable(intr_handle_t handle);
 
 
 /**
