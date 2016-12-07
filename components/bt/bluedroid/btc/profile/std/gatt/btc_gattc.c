@@ -584,7 +584,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     case BTA_GATTC_NOTIF_EVT: {
         tBTA_GATTC_NOTIFY *notify = &arg->notify;
         param.notify.conn_id = notify->conn_id;
-        memcpy(&param.notify.remote_bda, &notify->bda, sizeof(esp_bd_addr_t));
+        memcpy(param.notify.remote_bda, notify->bda, sizeof(esp_bd_addr_t));
         bta_to_btc_srvc_id(&param.notify.srvc_id, &notify->char_id.srvc_id);
         bta_to_btc_gatt_id(&param.notify.char_id, &notify->char_id.char_id);
         bta_to_btc_gatt_id(&param.notify.descr_id, &notify->descr_type);
@@ -605,7 +605,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         param.open.status = open->status;
         param.open.conn_id = open->conn_id;
         param.open.gatt_if = open->client_if;
-        memcpy(&param.open.remote_bda, &open->remote_bda, sizeof(esp_bd_addr_t));
+        memcpy(param.open.remote_bda, open->remote_bda, sizeof(esp_bd_addr_t));
         param.open.mtu = open->mtu;
         BTC_GATTC_CB_TO_APP(ESP_GATTC_OPEN_EVT, &param);
         break;
@@ -615,7 +615,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         param.close.status = close->status;
         param.close.conn_id = close->conn_id;
         param.close.gatt_if = close->client_if;
-        memcpy(&param.close.remote_bda, &close->remote_bda, sizeof(esp_bd_addr_t));
+        memcpy(param.close.remote_bda, close->remote_bda, sizeof(esp_bd_addr_t));
         param.close.reason = close->reason;
         BTC_GATTC_CB_TO_APP(ESP_GATTC_CLOSE_EVT, &param);
         break;
@@ -646,7 +646,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         break;
     }
     case BTA_GATTC_SRVC_CHG_EVT: {
-        memcpy(&param.srvc_chg.remote_bda, &arg->remote_bda, sizeof(esp_bd_addr_t));
+        memcpy(param.srvc_chg.remote_bda, arg->remote_bda, sizeof(esp_bd_addr_t));
         BTC_GATTC_CB_TO_APP(ESP_GATTC_SRVC_CHG_EVT, &param);
         break;
     }

@@ -340,7 +340,7 @@ esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gatt_if,
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_REG_FOR_NOTIFY;
     arg.reg_for_notify.gatt_if = gatt_if;
-    memcpy(&arg.reg_for_notify.remote_bda, &server_bda, sizeof(esp_bd_addr_t));
+    memcpy(arg.reg_for_notify.remote_bda, server_bda, sizeof(esp_bd_addr_t));
     memcpy(&arg.reg_for_notify.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     memcpy(&arg.reg_for_notify.char_id, char_id, sizeof(esp_gatt_id_t));
 
@@ -359,7 +359,7 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gatt_if,
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_UNREG_FOR_NOTIFY;
     arg.unreg_for_notify.gatt_if = gatt_if;
-    memcpy(&arg.unreg_for_notify.remote_bda, &server_bda, sizeof(esp_bd_addr_t));
+    memcpy(arg.unreg_for_notify.remote_bda, server_bda, sizeof(esp_bd_addr_t));
     memcpy(&arg.unreg_for_notify.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
     memcpy(&arg.unreg_for_notify.char_id, char_id, sizeof(esp_gatt_id_t));
 
