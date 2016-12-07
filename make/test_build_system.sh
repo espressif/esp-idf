@@ -155,6 +155,17 @@ function run_tests()
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS}
 
+    print_status "sdkconfig update triggers recompiles"
+    make
+    take_build_snapshot
+    touch sdkconfig
+    make
+    # pick one each of .c, .cpp, .S that #includes sdkconfig.h
+    # and therefore should rebuild
+    assert_rebuilt newlib/syscall_table.o
+    assert_rebuilt nvs_flash/src/nvs_api.o
+    assert_rebuilt freertos/xtensa_vectors.o
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
