@@ -26,6 +26,7 @@
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/timer_group_reg.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -89,10 +90,6 @@ static const char* TAG = "cpu_start";
 
 void IRAM_ATTR call_start_cpu0()
 {
-    //Kill wdt
-    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
-    REG_CLR_BIT(0x6001f048, BIT(14)); //DR_REG_BB_BASE+48
-
     cpu_configure_region_protection();
 
     //Move exception vectors to IRAM
@@ -247,6 +244,9 @@ static void do_global_ctors(void)
 
 static void main_task(void* args)
 {
+    // Now that the application is about to start, disable boot watchdogs
+    REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
+    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
     app_main();
     vTaskDelete(NULL);
 }
