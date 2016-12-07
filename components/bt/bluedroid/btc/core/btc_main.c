@@ -39,14 +39,18 @@ static void btc_sec_callback(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data)
     }
 }
 
-static bt_status_t btc_enable_bluetooth(void)
+static void btc_enable_bluetooth(void)
 {
-    BTA_EnableBluetooth(btc_sec_callback);
+    if (BTA_EnableBluetooth(btc_sec_callback) != BTA_SUCCESS) {
+        future_ready(*btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE), FUTURE_SUCCESS);
+	}
 }
 
-static bt_status_t btc_disable_bluetooth(void)
+static void btc_disable_bluetooth(void)
 {
-    BTA_DisableBluetooth();
+    if (BTA_DisableBluetooth() != BTA_SUCCESS) {
+        future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_SUCCESS);
+	}
 }
 
 void btc_init_callback(void)
@@ -54,7 +58,7 @@ void btc_init_callback(void)
     future_ready(*btc_main_get_future_p(BTC_MAIN_INIT_FUTURE), FUTURE_SUCCESS);
 }
 
-static bt_status_t btc_init_bluetooth(void)
+static void btc_init_bluetooth(void)
 {
     bte_main_boot_entry(btc_init_callback);
 }

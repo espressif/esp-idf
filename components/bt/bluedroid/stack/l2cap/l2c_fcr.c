@@ -1255,7 +1255,7 @@ static void process_stream_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf)
 
     /* Check if tx-sequence is the expected one */
     if (tx_seq != p_ccb->fcrb.next_seq_expected) {
-        L2CAP_TRACE_WARNING ("Rx L2CAP PDU: CID: 0x%04x  Lost frames Exp: %u  Got: %u  p_rx_sdu: 0x%08x",
+        L2CAP_TRACE_WARNING ("Rx L2CAP PDU: CID: 0x%04x  Lost frames Exp: %u  Got: %u  p_rx_sdu: %p",
                              p_ccb->local_cid, p_ccb->fcrb.next_seq_expected, tx_seq, p_ccb->fcrb.p_rx_sdu);
 
         /* Lost one or more packets, so flush the SAR queue */

@@ -477,7 +477,6 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB *p_clcb)
 *******************************************************************************/
 void GATT_ConfigServiceChangeCCC (BD_ADDR remote_bda, BOOLEAN enable, tBT_TRANSPORT transport)
 {
-    UINT16              conn_id = GATT_INVALID_CONN_ID;
     tGATT_PROFILE_CLCB   *p_clcb = gatt_profile_find_clcb_by_bd_addr (remote_bda, transport);
 
     if (p_clcb == NULL) {

@@ -127,7 +127,7 @@ UINT16 GAP_ConnOpen (char *p_serv_name, UINT8 service_id, BOOLEAN is_server,
 {
     tGAP_CCB    *p_ccb;
     UINT16       cid;
-    tBT_UUID    bt_uuid = {2, {GAP_PROTOCOL_ID}};
+    //tBT_UUID    bt_uuid = {2, {GAP_PROTOCOL_ID}};
 
     GAP_TRACE_EVENT ("GAP_CONN - Open Request");
 
@@ -718,7 +718,7 @@ static void gap_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 psm, UIN
 {
     UINT16       xx;
     tGAP_CCB     *p_ccb;
-    tBT_UUID    bt_uuid = {2, {GAP_PROTOCOL_ID}};
+    //tBT_UUID    bt_uuid = {2, {GAP_PROTOCOL_ID}};
 
     /* See if we have a CCB listening for the connection */
     for (xx = 0, p_ccb = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++) {

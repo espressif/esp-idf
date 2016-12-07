@@ -34,8 +34,8 @@
 #include "blufi_adv.h"
 #include "blufi_int.h"
 
-static uint8_t *success_msg = "BLUFI_CONFIG_OK";
-static uint8_t *failed_msg = "BLUFI_CONFIG_FAILED";
+const char success_msg[] = "BLUFI_CONFIG_OK";
+const char failed_msg[] = "BLUFI_CONFIG_FAILED";
 
 #define BTC_BLUFI_CB_TO_APP(_event, _param) ((esp_profile_cb_t)btc_profile_cb_get(BTC_PID_BLUFI))(_event, _param)
 
@@ -145,7 +145,6 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 {
     tBTA_GATTS_RSP rsp;
     tBT_UUID uuid = {LEN_UUID_16, {SVC_BLUFI_UUID}};
-    UINT8 len = 0;
     UINT8 *p_rec_data = NULL;
     tBTA_GATT_STATUS  status;
 
@@ -323,13 +322,13 @@ static void blufi_msg_notify(UINT8 *blufi_msg, UINT8 len)
 static void btc_blufi_config_success(void)
 {
     LOG_DEBUG("config success\n");
-    blufi_msg_notify(success_msg, strlen(success_msg));
+    blufi_msg_notify((uint8_t *)success_msg, strlen(success_msg));
 }
 
 static void btc_blufi_config_failed(void)
 {
     LOG_DEBUG("config faield\n");
-    blufi_msg_notify(failed_msg, strlen(failed_msg));
+    blufi_msg_notify((uint8_t *)failed_msg, strlen(failed_msg));
 }
 
 void btc_blufi_cb_handler(btc_msg_t *msg)

@@ -398,6 +398,8 @@ BOOLEAN SDP_FindServiceUUIDInRec(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid)
         p_attr = p_attr->p_next_attr;
     }
     return FALSE;
+#else
+    return FALSE;
 #endif
 }
 
@@ -450,6 +452,8 @@ BOOLEAN SDP_FindServiceUUIDInRec_128bit(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid)
         }
         p_attr = p_attr->p_next_attr;
     }
+    return FALSE;
+#else
     return FALSE;
 #endif
 }
@@ -935,6 +939,7 @@ UINT8 SDP_GetNumDiRecords( tSDP_DISCOVERY_DB *p_db )
 #endif
 }
 
+#if SDP_CLIENT_ENABLED == TRUE
 /*******************************************************************************
 **
 ** Function         SDP_AttrStringCopy
@@ -960,6 +965,7 @@ static void SDP_AttrStringCopy(char *dst, tSDP_DISC_ATTR *p_attr, UINT16 dst_siz
         dst[0] = '\0';
     }
 }
+#endif
 
 /*******************************************************************************
 **

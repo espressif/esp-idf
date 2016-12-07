@@ -280,7 +280,7 @@ void l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data
 
     UNUSED(transport);
 
-    L2CAP_TRACE_DEBUG ("l2c_link_sec_comp: %d, 0x%x", status, p_ref_data);
+    L2CAP_TRACE_DEBUG ("l2c_link_sec_comp: %d, %p", status, p_ref_data);
 
     if (status == BTM_SUCCESS_NO_SECURITY) {
         status = BTM_SUCCESS;

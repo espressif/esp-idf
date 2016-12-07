@@ -1192,7 +1192,7 @@ void l2cu_enqueue_ccb (tL2C_CCB *p_ccb)
     }
 
     if ( (!p_ccb->in_use) || (p_q == NULL) ) {
-        L2CAP_TRACE_ERROR ("l2cu_enqueue_ccb  CID: 0x%04x ERROR in_use: %u  p_lcb: 0x%08x",
+        L2CAP_TRACE_ERROR ("l2cu_enqueue_ccb  CID: 0x%04x ERROR in_use: %u  p_lcb: %p",
                            p_ccb->local_cid, p_ccb->in_use, p_ccb->p_lcb);
         return;
     }
@@ -1278,7 +1278,7 @@ void l2cu_dequeue_ccb (tL2C_CCB *p_ccb)
     }
 
     if ( (!p_ccb->in_use) || (p_q == NULL) || (p_q->p_first_ccb == NULL) ) {
-        L2CAP_TRACE_ERROR ("l2cu_dequeue_ccb  CID: 0x%04x ERROR in_use: %u  p_lcb: 0x%08x  p_q: 0x%08x  p_q->p_first_ccb: 0x%08x",
+        L2CAP_TRACE_ERROR ("l2cu_dequeue_ccb  CID: 0x%04x ERROR in_use: %u  p_lcb: %p  p_q: %p  p_q->p_first_ccb: %p",
                            p_ccb->local_cid, p_ccb->in_use, p_ccb->p_lcb, p_q, p_q ? p_q->p_first_ccb : 0);
         return;
     }
@@ -2423,7 +2423,7 @@ void l2cu_resubmit_pending_sec_req (BD_ADDR p_bda)
     tL2C_CCB        *p_next_ccb;
     int             xx;
 
-    L2CAP_TRACE_DEBUG ("l2cu_resubmit_pending_sec_req  p_bda: 0x%08x", p_bda);
+    L2CAP_TRACE_DEBUG ("l2cu_resubmit_pending_sec_req  p_bda: %p", p_bda);
 
     /* If we are called with a BDA, only resubmit for that BDA */
     if (p_bda) {
