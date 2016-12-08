@@ -99,8 +99,8 @@ typedef struct {
 const static int_desc_t int_desc[32]={
     { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //0
     { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //1
-    { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //2
-    { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //3
+    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //2
+    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //3
     { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_NORMAL} }, //4
     { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_NORMAL} }, //5
     { 1, INTTP_NA,    {INT6RES,        INT6RES       } }, //6
@@ -602,7 +602,7 @@ esp_err_t esp_intr_free(intr_handle_t handle)
     if ((handle->vector_desc->flags&VECDESC_FL_NONSHARED) || free_shared_vector) {
         ESP_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
         //Reset to normal handler
-        xt_set_interrupt_handler(handle->vector_desc->intno, xt_unhandled_interrupt, (void*)handle->vector_desc->intno);
+        xt_set_interrupt_handler(handle->vector_desc->intno, xt_unhandled_interrupt, (void*)((int)handle->vector_desc->intno));
         //Theoretically, we could free the vector_desc... not sure if that's worth the few bytes of memory
         //we save.(We can also not use the same exit path for empty shared ints anymore if we delete 
         //the desc.) For now, just mark it as free. 

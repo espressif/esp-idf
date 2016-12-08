@@ -309,6 +309,19 @@ esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg,
     return ret;
 }
 
+
+esp_err_t uart_isr_free(uart_port_t uart_num)
+{
+    esp_err_t ret;
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    if (p_uart_obj[uart_num]->intr_handle==NULL) return ESP_ERR_INVALID_ARG;
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    ret=esp_intr_free(p_uart_obj[uart_num]->intr_handle);
+    p_uart_obj[uart_num]->intr_handle=NULL;
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    return ret;
+}
+
 //internal signal can be output to multiple GPIO pads
 //only one GPIO pad can connect with input signal
 esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num)

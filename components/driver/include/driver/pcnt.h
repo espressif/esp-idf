@@ -221,6 +221,8 @@ esp_err_t pcnt_get_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
  * @param arg Parameter for handler function
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will
+ *            be returned here.
  *
  * @return
  *     - ESP_OK Success

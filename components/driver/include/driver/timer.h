@@ -258,12 +258,15 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
  * @param timer_num Timer index of timer group
  * @param fn Interrupt handler function.
  *        @note
- *        Code inside the handler function can only call functions in IRAM,  so cannot call other timer APIs.
- *        Use direct register access to access timers from inside the ISR.
+ *        In case the this is called with the INIRAM flag, code inside the handler function can 
+ *        only call functions in IRAM, so it cannot call other timer APIs.
+ *        Use direct register access to access timers from inside the ISR in this case.
  *
  * @param arg Parameter for handler function
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will
+ *            be returned here.
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.

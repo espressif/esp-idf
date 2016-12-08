@@ -379,6 +379,18 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
  */
 esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg, int intr_alloc_flags);
 
+
+/**
+ * @brief Free UART interrupt handler registered by uart_isr_register.
+ *
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_isr_free(uart_port_t uart_num);
+
 /**
  * @brief Set UART pin number
  *
