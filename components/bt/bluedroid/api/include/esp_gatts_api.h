@@ -21,6 +21,10 @@
 #include "bta_gatt_api.h"
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// GATT Server callback function events
 typedef enum {
 	ESP_GATTS_REG_EVT                = 0,		/*!< When register application id, the event comes */
@@ -458,5 +462,8 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bo
  */
 esp_err_t esp_ble_gatts_close(uint16_t conn_id);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ESP_GATTS_API_H__ */

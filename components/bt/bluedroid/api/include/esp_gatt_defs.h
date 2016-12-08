@@ -17,6 +17,10 @@
 
 #include "esp_bt_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// Attribute write data type from the client
 typedef enum {
 	ESP_GATT_PREP_WRITE_CANCEL    = 0x00,		/*!< Prepare write cancel */
@@ -109,11 +113,11 @@ typedef struct {
  * @brief Gatt authentication request type
  */
 typedef enum {
-	ESP_GATT_AUTH_REQ_NONE              	= 0,
-	ESP_GATT_AUTH_REQ_NO_MITM           	= 1,   /* unauthenticated encryption */
-	ESP_GATT_AUTH_REQ_MITM              	= 2,   /* authenticated encryption */
-	ESP_GATT_AUTH_REQ_SIGNED_NO_MITM    	= 3,
-	ESP_GATT_AUTH_REQ_SIGNED_MITM       	= 4,
+    ESP_GATT_AUTH_REQ_NONE              	= 0,
+    ESP_GATT_AUTH_REQ_NO_MITM           	= 1,   /* unauthenticated encryption */
+    ESP_GATT_AUTH_REQ_MITM              	= 2,   /* authenticated encryption */
+    ESP_GATT_AUTH_REQ_SIGNED_NO_MITM    	= 3,
+    ESP_GATT_AUTH_REQ_SIGNED_MITM       	= 4,
 } esp_gatt_auth_req_t;
 
 /**
@@ -169,5 +173,9 @@ typedef enum {
 } esp_gatt_write_type_t;
 
 typedef uint32_t    esp_gatt_if_t;							/*!< Gatt interface type, different application on GATT client use different gatt_if */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ESP_GATT_DEFS_H__ */
