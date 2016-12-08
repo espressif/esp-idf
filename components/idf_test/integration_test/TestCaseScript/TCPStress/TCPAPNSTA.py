@@ -12,6 +12,11 @@ class TestCase(TCActionBase.CommonTCActionBase):
 
     def __init__(self, test_case, test_env, timeout=30, log_path=TCActionBase.LOG_PATH):
         TCActionBase.CommonTCActionBase.__init__(self, test_case, test_env, timeout=timeout, log_path=log_path)
+        self.send_len = 1460
+        self.server_echo = True
+        self.sta_number = 4
+        self.test_time = 12 * 60
+        self.send_delay = 50
         # load param from excel
         cmd_set = test_case["cmd set"]
         for i in range(1, len(cmd_set)):
@@ -28,7 +33,6 @@ class TestCase(TCActionBase.CommonTCActionBase):
         try:
             # configurable params
             send_len = self.send_len
-            test_count = self.test_count
             server_echo = self.server_echo
             sta_number = self.sta_number
             test_time = self.test_time * 60
@@ -120,19 +124,16 @@ class TestCase(TCActionBase.CommonTCActionBase):
 
         start_time = time.time()
         # step 4, do send/recv
-        while test_count > 0:
-            _tmp_count = TEST_COUNT_ONE_ROUND if test_count - TEST_COUNT_ONE_ROUND > 0 else test_count
-            test_count -= TEST_COUNT_ONE_ROUND
-
+        while time.time() - start_time < test_time:
             checker_stings = []
             test_action_string = []
             for i in range(sta_number):
                 checker_stings.append("P SSC%d RE \+SEND:\d+,OK NC CLOSED" % (i+2))
                 test_action_string.append("SSC SSC%d soc -S -s <client_sock%d> -l %d -n %d -j %d" %
-                                          (i+2, i+2, send_len, _tmp_count, send_delay))
+                                          (i+2, i+2, send_len, TEST_COUNT_ONE_ROUND, send_delay))
                 if server_echo is True:
                     test_action_string.append("SSC SSC1 soc -S -s <accept_sock%d> -l %d -n %d -j %d" %
-                                              (i+2, send_len, _tmp_count, send_delay))
+                                              (i+2, send_len, TEST_COUNT_ONE_ROUND, send_delay))
                     checker_stings.append("P SSC1 RE \"\+SEND:%%%%s,OK\"%%%%(<accept_sock%d>) NC CLOSED)" %
                                           (i+2))
 
@@ -146,6 +147,8 @@ class TestCase(TCActionBase.CommonTCActionBase):
         if (time.time() - start_time) >= test_time:
             self.result_cntx.set_result("Succeed")
         else:
+            self.result_cntx.set_result("Failed")
+            # TODO: create a function to create TCP connections. reuse not copy paste code
             checker_stings = []
             test_action_string = []
             for i in range(sta_number + 1):
@@ -185,8 +188,6 @@ class TestCase(TCActionBase.CommonTCActionBase):
                 fail_string = "Fail, Fail to connect to server"
                 if self.load_and_exe_one_step(checker_stings, test_action_string, fail_string) is False:
                     return
-
-            self.result_cntx.set_result("Failed")
 
         # finally, execute done
 
