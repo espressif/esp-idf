@@ -64,7 +64,7 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_a
     }
 
     if (esp_netif[tcpip_if] == NULL) {
-        esp_netif[tcpip_if] = malloc(sizeof(struct netif));
+        esp_netif[tcpip_if] = calloc(1, sizeof(*esp_netif[tcpip_if]));
         if (esp_netif[tcpip_if] == NULL) {
             return ESP_ERR_NO_MEM;
         }
