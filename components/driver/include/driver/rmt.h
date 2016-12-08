@@ -568,15 +568,14 @@ esp_err_t rmt_config(rmt_config_t* rmt_param);
  * @brief   register RMT interrupt handler, the handler is an ISR.
  *
  *          The handler will be attached to the same CPU core that this function is running on.
- *          @note
- *          If you already called rmt_driver_install to use system RMT driver,
+ * @note If you already called rmt_driver_install to use system RMT driver,
  *          please do not register ISR handler again.
  *
  * @param fn Interrupt handler function.
  * @param arg Parameter for handler function
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- * @param  If non-zero, a handle to later clean up the ISR gets stored here.
+ * @param  handle If non-zero, a handle to later clean up the ISR gets stored here.
  *
  * @return
  *     - ESP_OK Success

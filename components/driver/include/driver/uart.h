@@ -381,7 +381,8 @@ esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg,
 
 
 /**
- * @brief Free UART interrupt handler registered by uart_isr_register.
+ * @brief Free UART interrupt handler registered by uart_isr_register. Must be called on the same core as
+ * uart_isr_register was called.
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  *

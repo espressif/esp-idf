@@ -176,7 +176,7 @@ static void pcnt_init(void)
     /*Reset counter value*/
     pcnt_counter_clear(PCNT_TEST_UNIT);
     /*Register ISR handler*/
-    pcnt_isr_register(pcnt_intr_handler, NULL, 0);
+    pcnt_isr_register(pcnt_intr_handler, NULL, 0, NULL);
     /*Enable interrupt for PCNT unit*/
     pcnt_intr_enable(PCNT_TEST_UNIT);
     /*Resume counting*/

@@ -29,7 +29,33 @@ interrupt for DevA is still pending, but because the int line never went low (De
 even when the int for DevB was cleared) the interrupt is never serviced.)
 
 
+Multicore issues
+----------------
 
+Peripherals that can generate interrupts can be divided in two types: external peripherals, outside the Xtensa
+cores in the ESP32, and internal peripherals, inside the ESP32. Interrupt handling differs slightly between
+these two types of peripherals.
+
+Each Xtensa core has its own set of internal peripherals: three timer comparators, a performance monitor and two
+software interrupts. These peripherals can only be configured from the core they are associated with. When
+generating an interrupt, the interrupt they generate is hard-wired to their associated core; it's not possible
+to have e.g. an internal timer comparator of one core generate an interrupt on another core. That is why these
+sources can only be managed using a task running on that specific core. Internal interrupt sources are still
+allocatable using esp_intr_alloc as normal, but they cannot be shared and will always have a fixed interrupt
+level (namely, the one associated in hardware with the peripheral). Internal interrupt sources are defined
+in esp_intr_alloc.h as ETS_INTERNAL_*_INTR_SOURCE.
+
+The remaining interrupt slots in both cores are wired to an interrupt multiplexer, which can be used to
+route any external interrupt source to any of these interrupt slots. Allocating an external interrupt will always
+allocate it on the core that does the allocation, and freeing the interrupt should always happen on the same
+core. Disabling and enabling the interrupt from another core is allowed, however. External interrupts can
+share an interrupt slot bu passing ESP_INTR_FLAG_SHARED as a flag to esp_intr_alloc. External interrupt sources 
+are defined in soc/soc.h as ETS_*_INTR_SOURCE.
+
+Care should be taken when allocating an interrupt using a task not pinned to a certain core; while running
+code not in a critical secion, these tasks can migrate between cores at any moment, possibly making an
+interrupt operation fail because of the reasons mentioned above. It is advised to always use 
+xTaskCreatePinnedToCore with a specific CoreID argument to create tasks that will handle interrupts.
 
 Application Example
 -------------------
@@ -58,6 +84,7 @@ Macros
 .. doxygendefine:: ESP_INTR_FLAG_SHARED
 .. doxygendefine:: ESP_INTR_FLAG_EDGE
 .. doxygendefine:: ESP_INTR_FLAG_IRAM
+.. doxygendefine:: ESP_INTR_FLAG_INTRDISABLED
 
 Type Definitions
 ^^^^^^^^^^^^^^^^

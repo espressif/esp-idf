@@ -157,7 +157,7 @@ void tg0_timer0_init()
     /*Enable timer interrupt*/
     timer_enable_intr(timer_group, timer_idx);
     /*Set ISR handler*/
-    timer_isr_register(timer_group, timer_idx, timer_group0_isr, (void*) timer_idx, ESP_INTR_FLAG_IRAM);
+    timer_isr_register(timer_group, timer_idx, timer_group0_isr, (void*) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
     /*Start timer counter*/
     timer_start(timer_group, timer_idx);
 }
@@ -187,7 +187,7 @@ void tg0_timer1_init()
     /*Enable timer interrupt*/
     timer_enable_intr(timer_group, timer_idx);
     /*Set ISR handler*/
-    timer_isr_register(timer_group, timer_idx, timer_group0_isr, (void*) timer_idx, ESP_INTR_FLAG_IRAM);
+    timer_isr_register(timer_group, timer_idx, timer_group0_isr, (void*) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
     /*Start timer counter*/
     timer_start(timer_group, timer_idx);
 }
