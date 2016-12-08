@@ -437,7 +437,6 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
 {
     intr_handle_data_t *ret=NULL;
     int force=-1;
-printf("Src %d reg/mask %x/%x\n", source, intrstatusreg, intrstatusmask);
     ESP_EARLY_LOGV(TAG, "esp_intr_alloc_intrstatus (cpu %d): checking args", xPortGetCoreID());
     //Shared interrupts should be level-triggered.
     if ((flags&ESP_INTR_FLAG_SHARED) && (flags&ESP_INTR_FLAG_EDGE)) return ESP_ERR_INVALID_ARG;
@@ -574,8 +573,8 @@ esp_err_t esp_intr_free(intr_handle_t handle)
     //This routine should be called from the interrupt the task is scheduled on.
     if (handle->vector_desc->cpu!=xPortGetCoreID()) return ESP_ERR_INVALID_ARG;
 
-    esp_intr_disable(handle);
     portENTER_CRITICAL(&spinlock);
+    esp_intr_disable(handle);
     if (handle->vector_desc->flags&VECDESC_FL_SHARED) {
         //Find and kill the shared int 
         shared_vector_desc_t *svd=handle->vector_desc->shared_vec_info;

@@ -93,7 +93,7 @@ typedef intr_handle_data_t* intr_handle_t ;
  * @param intno The number of the interrupt (0-31)
  * @param cpu CPU on which the interrupt should be marked as shared (0 or 1)
  * @param is_in_iram Shared interrupt is for handlers that reside in IRAM and
- *                   the int can be left enabled while the flash cache is out.
+ *                   the int can be left enabled while the flash cache is disabled.
  *
  * @return ESP_ERR_INVALID_ARG if cpu or intno is invalid
  *         ESP_OK otherwise
@@ -131,7 +131,8 @@ esp_err_t esp_intr_reserve(int intno, int cpu);
  *               choice of interrupts that this routine can choose from. If this value
  *               is 0, it will default to allocating a non-shared interrupt of level
  *               1, 2 or 3. If this is ESP_INTR_FLAG_SHARED, it will allocate a shared
- *               interrupt of level 1.
+ *               interrupt of level 1. Setting ESP_INTR_FLAG_INTRDISABLED will return 
+ *               from this function with the interrupt disabled.
  * @param handler The interrupt handler. Must be NULL when an interrupt of level >3
  *               is requested, because these types of interrupts aren't C-callable.
  * @param arg    Optional argument for passed to the interrupt handler
@@ -164,7 +165,8 @@ esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *ar
  *               choice of interrupts that this routine can choose from. If this value
  *               is 0, it will default to allocating a non-shared interrupt of level
  *               1, 2 or 3. If this is ESP_INTR_FLAG_SHARED, it will allocate a shared
- *               interrupt of level 1.
+ *               interrupt of level 1. Setting ESP_INTR_FLAG_INTRDISABLED will return 
+ *               from this function with the interrupt disabled.
  * @param intrstatusreg The address of an interrupt status register
  * @param intrstatusmask A mask. If a read of address intrstatusreg has any of the bits
  *               that are 1 in the mask set, the ISR will be called. If not, it will be
@@ -186,7 +188,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
 /**
  * @brief Disable and free an interrupt.
  *
- * Use an interrupt handle to disable the interrupt (if non-shared) and release the resources
+ * Use an interrupt handle to disable the interrupt and release the resources
  * associated with it.
  *
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
@@ -220,9 +222,8 @@ int esp_intr_get_intno(intr_handle_t handle);
 /**
  * @brief Disable the interrupt associated with the handle
  * 
- * @note This function can only disable non-shared inteerupts allocated on the CPU that runs this function.
- * @warning Do not call this in a critical section; when the critical section ends the interrupt status
- *          on critical section enter may be restored.
+ * @note For local interrupts (ESP_INTERNAL_* sources), this function has to be called on the
+ *       CPU the interrupt is allocated on. Other interrupts have no such restriction.
  *
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
  *
@@ -234,9 +235,8 @@ esp_err_t esp_intr_disable(intr_handle_t handle);
 /**
  * @brief Ensable the interrupt associated with the handle
  * 
- * @note This function can only enable non-shared inteerupts allocated on the CPU that runs this function.
- * @warning Do not call this in a critical section; when the critical section ends the interrupt status
- *          on critical section enter may be restored.
+ * @note For local interrupts (ESP_INTERNAL_* sources), this function has to be called on the
+ *       CPU the interrupt is allocated on. Other interrupts have no such restriction.
  *
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
  *

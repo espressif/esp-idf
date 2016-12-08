@@ -204,12 +204,12 @@ xt_ints_off:
     wsr     a5, INTENABLE        /* Reenable interrupts        */
     mov     a2, a3               /* Previous mask              */
 #else
-    movi    a3, 0
-    xsr     a3, INTENABLE        /* Disables all interrupts   */
-    or      a2, a3, a2           /* set bits in mask */
-    xor     a2, a3, a2           /* invert bits in mask set in mask, essentially clearing them */
-    wsr     a2, INTENABLE        /* Re-enable ints */
-    mov     a2, a3               /* return prev mask */
+    movi    a4, 0
+    xsr     a4, INTENABLE        /* Disables all interrupts   */
+    or      a3, a4, a2           /* set bits in mask */
+    xor     a3, a3, a2           /* invert bits in mask set in mask, essentially clearing them */
+    wsr     a3, INTENABLE        /* Re-enable ints */
+    mov     a2, a4               /* return prev mask */
 #endif
 #else
     movi    a2, 0                /* return zero */
