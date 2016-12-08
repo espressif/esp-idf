@@ -81,4 +81,24 @@ config MBEDTLS_HARDWARE_SHA
        be calculated fully in hardware and the rest will be calculated
        (at least partially calculated) in software.
 
+config MBEDTLS_HAVE_TIME
+   bool "Enable mbedtls time"
+   depends on !ESP32_TIME_SYSCALL_USE_NONE
+   default y
+   help
+       System has time.h and time().
+       The time does not need to be correct, only time differences are used,
+
+config MBEDTLS_HAVE_TIME_DATE
+   bool "Enable mbedtls time data"
+   depends on MBEDTLS_HAVE_TIME
+   default n
+   help
+       System has time.h and time(), gmtime() and the clock is correct.
+       The time needs to be correct (not necesarily very accurate, but at least
+       the date should be correct). This is used to verify the validity period of
+       X.509 certificates.
+
+       It is suggested that you should get the real time by "SNTP".
+
 endmenu
