@@ -33,6 +33,8 @@ typedef struct {
     uint32_t ie;        /*!< Mask of input enable */
     uint32_t pullup;    /*!< Mask of pullup enable */
     uint32_t pulldown;  /*!< Mask of pulldown enable */
+    uint32_t slpsel;    /*!< Mask of the bit to select pin as wakeup pin */
+    uint32_t slpie;     /*!< Mask of input enable in sleep mode */
     int rtc_num;        /*!< RTC IO number, or -1 if not an RTC GPIO */
 } rtc_gpio_desc_t;
 

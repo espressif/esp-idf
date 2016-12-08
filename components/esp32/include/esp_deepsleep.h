@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __ESP_DEEPSLEEP_H__
-#define __ESP_DEEPSLEEP_H_
+#pragma once
 
 #include <stdint.h>
+#include "esp_err.h"
+#include "driver/gpio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,11 +31,22 @@ extern "C" {
   */
 
 /**
+ * @brief Logic function used for EXT1 wakeup mode.
+ */
+typedef enum {
+    EXT1_WAKEUP_ALL_LOW = 0,    /*!< Wake the chip when all selected GPIOs go low */
+    EXT1_WAKEUP_ANY_HIGH = 1    /*!< Wake the chip when any of the selected GPIOs go high */
+} esp_ext1_wakeup_mode_t;
+
+/**
  * @brief Enter deep-sleep mode
  *
  * The device will automatically wake up after the deep-sleep time
  * Upon waking up, the device calls deep sleep wake stub, and then proceeds
  * to load application.
+ *
+ * Call to this function is equivalent to a call to esp_deep_sleep_enable_timer_wakeup
+ * followed by a call to esp_deep_sleep_start.
  *
  * This function does not return.
  *
@@ -42,6 +54,79 @@ extern "C" {
  */
 void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
 
+/**
+ * @brief Enable wakeup by ULP coprocessor
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled.
+ */
+esp_err_t esp_deep_sleep_enable_ulp_wakeup();
+
+/**
+ * @brief Enable wakeup by timer
+ * @param time_in_us  time before wakeup, in microseconds
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if value is out of range (TBD)
+ */
+esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us);
+
+/**
+ * @brief Enable wakeup using a pin
+ *
+ * This function uses external wakeup feature of RTC_IO peripheral.
+ * It will work only if RTC peripherals are kept on during deep sleep.
+ *
+ * This feature can monitor any pin which is an RTC IO. Once the pin transitions
+ * into the state given by level argument, the chip will be woken up.
+ *
+ * @param gpio_num  GPIO number used as wakeup source. Only GPIOs which are have RTC
+ *             functionality can be used: 0,2,4,12-15,25-27,32-39.
+ * @param level  input level which will trigger wakeup (0=low, 1=high)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
+ */
+esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
+
+/**
+ * @brief Enable wakeup using multiple pins
+ *
+ * This function uses external wakeup feature of RTC controller.
+ * It will work even if RTC peripherals are shut down during deep sleep.
+ *
+ * This feature can monitor any number of pins which are in RTC IOs.
+ * Once any of the selected pins goes into the state given by level argument,
+ * the chip will be woken up.
+ *
+ * @param mask  bit mask of GPIO numbers which will cause wakeup. Only GPIOs
+ *              which are have RTC functionality can be used in this bit map:
+ *              0,2,4,12-15,25-27,32-39.
+ * @param mode select logic function used to determine wakeup condition:
+ *            - EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
+ *            - EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
+ */
+esp_err_t esp_deep_sleep_enable_ext1_wakeup(uint64_t mask, esp_ext1_wakeup_mode_t mode);
+
+
+/**
+ * @brief Get the bit mask of GPIOs which caused wakeup (ext1)
+ *
+ * If wakeup was caused by another source, this function will return 0.
+ *
+ * @return bit mask, if GPIOn caused wakeup, BIT(n) will be set
+ */
+uint64_t esp_deep_sleep_get_ext1_wakeup_status();
+
+/**
+ * @brief Enter deep sleep with the configured wakeup options
+ *
+ * This function does not return.
+ */
+void esp_deep_sleep_start() __attribute__((noreturn));
 
 /**
  * @brief Enter deep-sleep mode
@@ -87,15 +172,17 @@ typedef void (*esp_deep_sleep_wake_stub_fn_t)(void);
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub);
 
 /**
- * @brief Return current wake from deep sleep stub, or NULL if
- * no stub is installed.
+ * @brief Get current wake from deep sleep stub
+ * @return Return current wake from deep sleep stub, or NULL if
+ *         no stub is installed.
  */
 esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void);
 
-/* The default esp-idf-provided esp_wake_deep_sleep() stub.
-
-   See docs/deep-sleep-stub.rst for details.
-*/
+/**
+ *  @brief The default esp-idf-provided esp_wake_deep_sleep() stub.
+ *
+ *  See docs/deep-sleep-stub.rst for details.
+ */
 void esp_default_wake_deep_sleep(void);
 
 /**
@@ -110,5 +197,3 @@ void esp_default_wake_deep_sleep(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __ESP_SYSTEM_H__ */

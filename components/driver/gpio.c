@@ -77,7 +77,7 @@ esp_err_t gpio_pullup_en(gpio_num_t gpio_num) {
     if(RTC_GPIO_IS_VALID_GPIO(gpio_num)){
         rtc_gpio_pullup_en(gpio_num);
     }else{
-         REG_SET_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
+        REG_SET_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
     }
     return ESP_OK;
 }
