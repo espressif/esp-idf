@@ -9,7 +9,7 @@ config TARGET_DOMAIN
 config TARGET_PORT_NUMBER
     int "Target port number"
     range 0 65535
-    default 433
+    default 443
     help
         Target port number for the example to connect to.
 
