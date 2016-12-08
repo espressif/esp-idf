@@ -170,7 +170,7 @@ void start_cpu0_default(void)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
-	uart_div_modify(CONFIG_CONSOLE_UART_NUM, (APB_CLK_FREQ << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (APB_CLK_FREQ << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
@@ -206,9 +206,9 @@ void start_cpu0_default(void)
 #endif
 
 #if CONFIG_SW_COEXIST_ENABLE
-	if (coex_init() == ESP_OK) {
+    if (coex_init() == ESP_OK) {
         coexist_set_enable(true);
-	}
+    }
 #endif
 
     xTaskCreatePinnedToCore(&main_task, "main",
