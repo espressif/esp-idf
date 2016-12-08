@@ -18,6 +18,8 @@
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "ets_sys.h"
+#include "soc/soc.h"
+#include "soc/uart_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -260,11 +262,16 @@ void uart_tx_flush(uint8_t uart_no);
 /**
   * @brief Wait until uart tx full empty and the last char send ok.
   *
-  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  * @param  uart_no : 0 for UART0, 1 for UART1, 2 for UART2
   *
-  * @return None.
+  * The function defined in ROM code has a bug, so we define the correct version
+  * here for compatibility.
   */
-void uart_tx_wait_idle(uint8_t uart_no);
+static inline void uart_tx_wait_idle(uint8_t uart_no) {
+    while(REG_GET_FIELD(UART_STATUS_REG(uart_no), UART_ST_UTX_OUT)) {
+        ;
+    }
+}
 
 /**
   * @brief Get an input char from message channel.

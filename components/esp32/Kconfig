@@ -138,6 +138,64 @@ config NEWLIB_STDOUT_ADDCR
         is usually done by an added CR character. Enabling this will make the
         standard output code automatically add a CR character before a LF.
 
+choice CONSOLE_UART
+    prompt "UART for console output"
+    default CONSOLE_UART_DEFAULT
+    help
+        Select whether to use UART for console output (through stdout and stderr).
+        - Default is to use UART0 on pins GPIO1(TX) and GPIO3(RX).
+        - If "Custom" is selected, UART0 or UART1 can be chosen,
+          and any pins can be selected.
+        - If "None" is selected, there will be no console output on any UART, except
+          for initial output from ROM bootloader. This output can be further suppressed by
+          bootstrapping GPIO13 pin to low logic level.
+
+config CONSOLE_UART_DEFAULT
+    bool "Default: UART0, TX=GPIO1, RX=GPIO3"
+config CONSOLE_UART_CUSTOM
+    bool "Custom"
+config CONSOLE_UART_NONE
+    bool "None"
+endchoice
+
+choice CONSOLE_UART_NUM
+	prompt "UART peripheral to use for console output (0-1)"
+	depends on CONSOLE_UART_CUSTOM
+    default CONSOLE_UART_CUSTOM_NUM_0
+    help
+    	Due of a ROM bug, UART2 is not supported for console output
+    	via ets_printf.
+
+config CONSOLE_UART_CUSTOM_NUM_0
+	bool "UART0"
+config CONSOLE_UART_CUSTOM_NUM_1
+	bool "UART1"
+endchoice
+
+config CONSOLE_UART_NUM
+	int
+	default 0 if CONSOLE_UART_DEFAULT || CONSOLE_UART_NONE
+	default 0 if CONSOLE_UART_CUSTOM_NUM_0
+	default 1 if CONSOLE_UART_CUSTOM_NUM_1
+
+config CONSOLE_UART_TX_GPIO
+	int "UART TX on GPIO#"
+	depends on CONSOLE_UART_CUSTOM
+	range 0 33
+	default 19
+
+config CONSOLE_UART_RX_GPIO
+	int "UART RX on GPIO#"
+	depends on CONSOLE_UART_CUSTOM
+	range 0 39
+	default 21
+
+config CONSOLE_UART_BAUDRATE
+	int "UART console baud rate"
+	depends on !CONSOLE_UART_NONE
+	default 115200
+	range 1200 4000000
+
 config ULP_COPROC_ENABLED
     bool "Enable Ultra Low Power (ULP) Coprocessor"
     default "n"

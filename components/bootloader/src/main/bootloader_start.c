@@ -23,6 +23,8 @@
 #include "rom/spi_flash.h"
 #include "rom/crc.h"
 #include "rom/rtc.h"
+#include "rom/uart.h"
+#include "rom/gpio.h"
 
 #include "soc/soc.h"
 #include "soc/cpu.h"
@@ -31,6 +33,8 @@
 #include "soc/efuse_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
+#include "soc/gpio_reg.h"
+#include "soc/gpio_sig_map.h"
 
 #include "sdkconfig.h"
 #include "esp_image_format.h"
@@ -62,7 +66,7 @@ void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t irom_size,
     uint32_t entry_addr);
 static void update_flash_config(const esp_image_header_t* pfhdr);
-
+static void uart_console_configure(void);
 
 void IRAM_ATTR call_start_cpu0()
 {
@@ -224,6 +228,7 @@ static bool ota_select_valid(const esp_ota_select_entry_t *s)
 
 void bootloader_main()
 {
+    uart_console_configure();
     ESP_LOGI(TAG, "Espressif ESP32 2nd stage bootloader v. %s", BOOT_VERSION);
 
     esp_image_header_t fhdr;
@@ -615,4 +620,64 @@ void print_flash_info(const esp_image_header_t* phdr)
     }
     ESP_LOGI(TAG, "SPI Flash Size : %s", str );
 #endif
+}
+
+static uint32_t get_apb_freq(void)
+{
+    // Get the value of APB clock from RTC memory.
+    // The value is initialized in ROM code, and updated by librtc.a
+    // when APB clock is changed.
+    // This value is stored in RTC_CNTL_STORE5_REG as follows:
+    // RTC_CNTL_STORE5_REG = (freq >> 12) | ((freq >> 12) << 16)
+    uint32_t apb_freq_reg = REG_READ(RTC_CNTL_STORE5_REG);
+    uint32_t apb_freq_l = apb_freq_reg & 0xffff;
+    uint32_t apb_freq_h = apb_freq_reg >> 16;
+    if (apb_freq_l == apb_freq_h && apb_freq_l != 0) {
+        return apb_freq_l << 12;
+    } else {
+        // fallback value
+        return APB_CLK_FREQ_ROM;
+    }
+}
+
+static void uart_console_configure(void)
+{
+#if CONFIG_CONSOLE_UART_NONE
+    ets_install_putc1(NULL);
+    ets_install_putc2(NULL);
+#else // CONFIG_CONSOLE_UART_NONE
+    uartAttach();
+    ets_install_uart_printf();
+
+#if CONFIG_CONSOLE_UART_CUSTOM
+    // Some constants to make the following code less upper-case
+    const int uart_num = CONFIG_CONSOLE_UART_NUM;
+    const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
+    const int uart_tx_gpio = CONFIG_CONSOLE_UART_TX_GPIO;
+    const int uart_rx_gpio = CONFIG_CONSOLE_UART_RX_GPIO;
+    // ROM bootloader may have put a lot of text into UART0 FIFO.
+    // Wait for it to be printed.
+    uart_tx_wait_idle(0);
+    // Switch to the new UART (this just changes UART number used for
+    // ets_printf in ROM code).
+    uart_tx_switch(uart_num);
+    // Set new baud rate
+    uart_div_modify(uart_num, (((uint64_t) get_apb_freq()) << 4) / uart_baud);
+    // If console is attached to UART1 or if non-default pins are used,
+    // need to reconfigure pins using GPIO matrix
+    if (uart_num != 0 || uart_tx_gpio != 1 || uart_rx_gpio != 3) {
+        // Change pin mode for GPIO1/3 from UART to GPIO
+        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_GPIO3);
+        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_GPIO1);
+        // Route GPIO signals to/from pins
+        // (arrays should be optimized away by the compiler)
+        const uint32_t tx_idx_list[3] = { U0TXD_OUT_IDX, U1TXD_OUT_IDX, U2TXD_OUT_IDX };
+        const uint32_t rx_idx_list[3] = { U0RXD_IN_IDX, U1RXD_IN_IDX, U2RXD_IN_IDX };
+        const uint32_t tx_idx = tx_idx_list[uart_num];
+        const uint32_t rx_idx = rx_idx_list[uart_num];
+        gpio_matrix_out(uart_tx_gpio, tx_idx, 0, 0);
+        gpio_matrix_in(uart_rx_gpio, rx_idx, 0);
+    }
+#endif // CONFIG_CONSOLE_UART_CUSTOM
+#endif // CONFIG_CONSOLE_UART_NONE
 }

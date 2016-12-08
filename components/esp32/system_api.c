@@ -105,10 +105,10 @@ void IRAM_ATTR esp_restart(void)
     Cache_Read_Disable(0);
     Cache_Read_Disable(1);
 
-    // Flush any data left in UART FIFO
-    uart_tx_flush(0);
-    uart_tx_flush(1);
-    uart_tx_flush(2);
+    // Flush any data left in UART FIFOs
+    uart_tx_wait_idle(0);
+    uart_tx_wait_idle(1);
+    uart_tx_wait_idle(2);
 
     // Reset wifi/bluetooth (bb/mac)
     SET_PERI_REG_MASK(DPORT_WIFI_RST_EN_REG, 0x1f);
