@@ -27,9 +27,9 @@ typedef enum {
 } pcnt_ctrl_mode_t;
 
 typedef enum {
-    PCNT_COUNT_DIS = 0,            /*!< Counter mode: Decrease counter value*/
+    PCNT_COUNT_DIS = 0,            /*!< Counter mode: Inhibit counter(counter value will not change in this condition)*/
     PCNT_COUNT_INC = 1,            /*!< Counter mode: Increase counter value*/
-    PCNT_COUNT_DEC = 2,            /*!< Counter mode: Inhibit counter(counter value will not change in this condition)*/
+    PCNT_COUNT_DEC = 2,            /*!< Counter mode: Decrease counter value*/
     PCNT_COUNT_MAX
 } pcnt_count_mode_t;
 
@@ -45,7 +45,7 @@ typedef enum {
     PCNT_UNIT_MAX,
 } pcnt_unit_t; 
 
-typedef enum{
+typedef enum {
     PCNT_CHANNEL_0 = 0x00,           /*!< PCNT channel0 */
     PCNT_CHANNEL_1 = 0x01,           /*!< PCNT channel1 */
     PCNT_CHANNEL_MAX,
