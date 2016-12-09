@@ -32,7 +32,7 @@
 #include "cache_utils.h"
 
 /* bytes erased by SPIEraseBlock() ROM function */
-#define BLOCK_ERASE_SIZE 32768
+#define BLOCK_ERASE_SIZE 65536
 
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
 static const char* TAG = "spi_flash";
