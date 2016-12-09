@@ -35,28 +35,33 @@ hardwiring addresses.
 //Amount of priority slots for the tag descriptors.
 #define NO_PRIOS 3
 
+typedef struct {
+	const char *name;
+	uint32_t prio[NO_PRIOS];
+} tag_desc_t;
+
 /*
 Tag descriptors. These describe the capabilities of a bit of memory that's tagged with the index into this table.
 Each tag contains NO_PRIOS entries; later entries are only taken if earlier ones can't fulfill the memory request.
 */
-static const uint32_t tagDesc[][NO_PRIOS]={
-    { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 },                    //Tag 0: Plain ole D-port RAM
-    { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC },    //Tag 1: Plain ole D-port RAM which has an alias on the I-port
-    { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 },                                 //Tag 2: IRAM
-    { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT },                   //Tag 3-8: PID 2-7 IRAM
-    { MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT },                   //
-    { MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT },                   //
-    { MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT },                   //
-    { MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT },                   //
-    { MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT },                   //
-    { MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT },                     //Tag 9-14: PID 2-7 DRAM
-    { MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT },                     //
-    { MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT },                     //
-    { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT },                     //
-    { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT },                     //
-    { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT },                     //
-    { MALLOC_CAP_SPISRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, //Tag 15: SPI SRAM data
-    { MALLOC_CAP_INVALID, MALLOC_CAP_INVALID, MALLOC_CAP_INVALID } //End
+static const tag_desc_t tag_desc[]={
+    { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }},                    //Tag 0: Plain ole D-port RAM
+    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }},    //Tag 1: Plain ole D-port RAM which has an alias on the I-port
+    { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 }},                                 //Tag 2: IRAM
+    { "PID2IRAM", { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //Tag 3-8: PID 2-7 IRAM
+    { "PID3IRAM", { MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
+    { "PID4IRAM", { MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
+    { "PID5IRAM", { MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
+    { "PID6IRAM", { MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
+    { "PID7IRAM", { MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
+    { "PID2DRAM", { MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //Tag 9-14: PID 2-7 DRAM
+    { "PID3DRAM", { MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
+    { "PID4DRAM", { MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
+    { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
+    { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
+    { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
+    { "SPISRAM", { MALLOC_CAP_SPISRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}}, //Tag 15: SPI SRAM data
+    { "", { MALLOC_CAP_INVALID, MALLOC_CAP_INVALID, MALLOC_CAP_INVALID }} //End
 };
 
 /*
@@ -214,8 +219,8 @@ void heap_alloc_caps_init() {
     ESP_EARLY_LOGI(TAG, "Initializing heap allocator:");
     for (i=0; regions[i].xSizeInBytes!=0; i++) {
         if (regions[i].xTag != -1) {
-            ESP_EARLY_LOGI(TAG, "Region %02d: %08X len %08X tag %d", i,
-                    (int)regions[i].pucStartAddress, regions[i].xSizeInBytes, regions[i].xTag);
+            ESP_EARLY_LOGI(TAG, "Region %02d: %08X len %08X tag %s", i,
+                    (int)regions[i].pucStartAddress, regions[i].xSizeInBytes, tag_desc[regions[i].xTag].name);
         }
     }
     //Initialize the malloc implementation.
@@ -241,14 +246,14 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
     uint32_t remCaps;
     for (prio=0; prio<NO_PRIOS; prio++) {
         //Iterate over tag descriptors for this priority
-        for (tag=0; tagDesc[tag][prio]!=MALLOC_CAP_INVALID; tag++) {
-            if ((tagDesc[tag][prio]&caps)!=0) {
+        for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
+            if ((tag_desc[tag].prio[prio]&caps)!=0) {
                 //Tag has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.
-                remCaps=caps&(~tagDesc[tag][prio]); //Remaining caps to be fulfilled
+                remCaps=caps&(~tag_desc[tag].prio[prio]); //Remaining caps to be fulfilled
                 j=prio+1;
                 while (remCaps!=0 && j<NO_PRIOS) {
-                    remCaps=remCaps&(~tagDesc[tag][j]);
+                    remCaps=remCaps&(~tag_desc[tag].prio[j]);
                     j++;
                 }
                 if (remCaps==0) {
