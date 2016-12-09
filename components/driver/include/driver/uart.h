@@ -366,21 +366,31 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
  * @brief register UART interrupt handler(ISR).
  *
  * @note UART ISR handler will be attached to the same CPU core that this function is running on.
- * Users should know that which CPU is running and then pick a INUM that is not used by system.
- * We can find the information of INUM and interrupt level in soc.h.
- *
- * @attention The ISR handler function MUST be defined with attribution of "IRAM_ATTR" for now.
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param uart_intr_num UART interrupt number,check the info in soc.h, and please refer to core-isa.h for more details
  * @param fn  Interrupt handler function.
  * @param arg parameter for handler function
+ * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. 
  *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_isr_register(uart_port_t uart_num, uint8_t uart_intr_num, void (*fn)(void*), void * arg);
+esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg, int intr_alloc_flags);
+
+
+/**
+ * @brief Free UART interrupt handler registered by uart_isr_register. Must be called on the same core as
+ * uart_isr_register was called.
+ *
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_isr_free(uart_port_t uart_num);
 
 /**
  * @brief Set UART pin number
@@ -461,14 +471,15 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  * @param tx_buffer_size UART TX ring buffer size.
  *        If set to zero, driver will not use TX buffer, TX function will block task until all data have been sent out..
  * @param queue_size UART event queue size/depth.
- * @param uart_intr_num UART interrupt number,check the info in soc.h, and please refer to core-isa.h for more details
  * @param uart_queue UART event queue handle, if set NULL, driver will not use an event queue.
+ * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, int uart_intr_num, void* uart_queue);
+esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, void* uart_queue, int intr_alloc_flags);
 
 /**
  * @brief Uninstall UART driver.
@@ -733,7 +744,7 @@ esp_err_t uart_flush(uart_port_t uart_num);
  *     //Set UART log level
  *     esp_log_level_set(TAG, ESP_LOG_INFO);
  *     //Install UART driver, and get the queue.
- *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, 17, &uart0_queue);
+ *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, &uart0_queue, 0);
  *     //Create a task to handler UART event from ISR
  *     xTaskCreate(uart_task, "uTask", 1024, (void*)uart_num, 10, NULL);
  * }

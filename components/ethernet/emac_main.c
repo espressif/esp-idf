@@ -35,6 +35,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_eth.h"
+#include "esp_intr_alloc.h"
 
 #include "emac_common.h"
 #include "emac_desc.h"
@@ -305,19 +306,16 @@ static void IRAM_ATTR emac_process_intr(void *arg)
     }
 }
 
+//ToDo: this should only be called once because this allocates the interrupt as well.
 static void emac_enable_intr()
 {
     //init emac intr
-    REG_SET_FIELD(DPORT_PRO_EMAC_INT_MAP_REG, DPORT_PRO_EMAC_INT_MAP, ETS_EMAC_INUM);
-    xt_set_interrupt_handler(ETS_EMAC_INUM, emac_process_intr, NULL);
-    xt_ints_on(1 << ETS_EMAC_INUM);
-
+    esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);
     REG_WRITE(EMAC_DMAINTERRUPT_EN_REG, EMAC_INTR_ENABLE_BIT);
 }
 
 static void emac_disable_intr()
 {
-    xt_ints_off(1 << ETS_EMAC_INUM);
     REG_WRITE(EMAC_DMAINTERRUPT_EN_REG, 0);
 }
 

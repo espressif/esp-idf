@@ -174,12 +174,6 @@ void start_cpu0_default(void)
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
-#if CONFIG_INT_WDT
-    esp_int_wdt_init();
-#endif
-#if CONFIG_TASK_WDT
-    esp_task_wdt_init();
-#endif
     esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
@@ -194,6 +188,12 @@ void start_cpu0_default(void)
     _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
 #endif
     do_global_ctors();
+#if CONFIG_INT_WDT
+    esp_int_wdt_init();
+#endif
+#if CONFIG_TASK_WDT
+    esp_task_wdt_init();
+#endif
 #if !CONFIG_FREERTOS_UNICORE
     esp_crosscore_int_init();
 #endif

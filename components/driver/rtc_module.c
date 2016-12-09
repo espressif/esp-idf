@@ -264,15 +264,10 @@ esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num)
 /*---------------------------------------------------------------
                     Touch Pad
 ---------------------------------------------------------------*/
-esp_err_t touch_pad_isr_handler_register(uint32_t touch_intr_num, void(*fn)(void *), void *arg)
+esp_err_t touch_pad_isr_handler_register(void(*fn)(void *), void *arg, int intr_alloc_flags, touch_isr_handle_t *handle)
 {
     RTC_MODULE_CHECK(fn, "Touch_Pad ISR null", ESP_ERR_INVALID_ARG);
-    ESP_INTR_DISABLE(touch_intr_num);
-    intr_matrix_set(xPortGetCoreID(), ETS_RTC_CORE_INTR_SOURCE, touch_intr_num);
-    xt_set_interrupt_handler(touch_intr_num, fn, arg);
-    ESP_INTR_ENABLE(touch_intr_num);
-
-    return ESP_OK;
+    return esp_intr_alloc(ETS_RTC_CORE_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
 }
 
 static esp_err_t touch_pad_get_io_num(touch_pad_t touch_num, gpio_num_t *gpio_num)
