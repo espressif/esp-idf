@@ -26,6 +26,16 @@ class TestCase(TCActionBase.CommonTCActionBase):
         self.result_cntx = TCActionBase.ResultCheckContext(self, test_env, self.tc_name)
         pass
 
+    def cleanup(self):
+        checker_stings = []
+        test_action_strings = []
+        for i in range(self.sta_number + 1):
+            checker_stings.append("R SSC%s C +RECVPRINT:1" % (i+1))
+            test_action_strings.append("SSC SSC%s soc -R -o 1" % (i+1))
+            fail_string = "Fail, Fail to turn on recv print"
+            self.load_and_exe_one_step(checker_stings, test_action_strings, fail_string)
+        pass
+
     def execute(self):
         TCActionBase.TCActionBase.execute(self)
         self.result_cntx.start()
@@ -54,6 +64,15 @@ class TestCase(TCActionBase.CommonTCActionBase):
         fail_string = "Fail, Fail to reboot"
         if self.load_and_exe_one_step(checker_stings, test_action_string, fail_string) is False:
             return
+
+        # switch off recv print
+        checker_stings = []
+        test_action_strings = []
+        for i in range(self.sta_number + 1):
+            checker_stings.append("R SSC%s C +RECVPRINT:0" % (i+1))
+            test_action_strings.append("SSC SSC%s soc -R -o 0" % (i+1))
+            fail_string = "Fail, Fail to turn off recv print"
+            self.load_and_exe_one_step(checker_stings, test_action_strings, fail_string)
 
         # step1 set ap on SSC1, create server
         checker_stings = ["R SSC1 C +MODE:OK"]

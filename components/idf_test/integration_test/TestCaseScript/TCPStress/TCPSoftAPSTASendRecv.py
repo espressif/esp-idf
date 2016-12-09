@@ -11,6 +11,13 @@ class TestCase(TCActionBase.CommonTCActionBase):
     def __init__(self, test_case, test_env, timeout=45, log_path=TCActionBase.LOG_PATH):
         TCActionBase.CommonTCActionBase.__init__(self, test_case, test_env,
                                                  timeout=timeout, log_path=log_path)
+        self.send_len = 1460
+        self.server_port = random.randint(10000, 50000)
+        self.server_port_2 = random.randint(10000, 50000)
+        self.server_echo = True
+        self.test_time = 12 * 60
+        self.sta_number = 3
+        self.send_delay = 50
         # load param from excel
         cmd_set = test_case["cmd set"]
         for i in range(1, len(cmd_set)):
@@ -20,6 +27,16 @@ class TestCase(TCActionBase.CommonTCActionBase):
         self.result_cntx = TCActionBase.ResultCheckContext(self, test_env, self.tc_name)
         pass
 
+    def cleanup(self):
+        checker_stings = []
+        test_action_strings = []
+        for i in range(self.sta_number + 2):
+            checker_stings.append("R SSC%s C +RECVPRINT:1" % (i+1))
+            test_action_strings.append("SSC SSC%s soc -R -o 1" % (i+1))
+            fail_string = "Fail, Fail to turn on recv print"
+            self.load_and_exe_one_step(checker_stings, test_action_strings, fail_string)
+        pass
+
     def execute(self):
         TCActionBase.TCActionBase.execute(self)
         self.result_cntx.start()
@@ -27,8 +44,7 @@ class TestCase(TCActionBase.CommonTCActionBase):
         try:
             # configurable params
             send_len = self.send_len
-            # test count
-            test_count = self.test_count
+            test_time = self.test_time * 60
             # server port
             server_port = self.server_port
             server_port_t = self.server_port_2
@@ -38,8 +54,6 @@ class TestCase(TCActionBase.CommonTCActionBase):
             server_echo = self.server_echo
             # station number
             sta_number = self.sta_number
-            # pass standard
-            pass_standard = self.pass_standard
             # send delay
             send_delay = self.send_delay
             # configurable params
@@ -58,6 +72,15 @@ class TestCase(TCActionBase.CommonTCActionBase):
             fail_string = "Fail, Fail to reboot"
             if self.load_and_exe_one_step(checker_stings, test_action_string, fail_string) is False:
                 return
+
+        # switch off recv print
+        checker_stings = []
+        test_action_strings = []
+        for i in range(self.sta_number + 2):
+            checker_stings.append("R SSC%s C +RECVPRINT:0" % (i+1))
+            test_action_strings.append("SSC SSC%s soc -R -o 0" % (i+1))
+            fail_string = "Fail, Fail to turn off recv print"
+            self.load_and_exe_one_step(checker_stings, test_action_strings, fail_string)
 
         # step1, set ap/STA mode on all target
         for i in range(sta_number + 2):
@@ -203,27 +226,25 @@ class TestCase(TCActionBase.CommonTCActionBase):
 
         start_time = time.time()
         # step 10, do send/recv
-        while test_count > 0:
-            _tmp_count = TEST_COUNT_ONE_ROUND if test_count - TEST_COUNT_ONE_ROUND > 0 else test_count
-            test_count -= TEST_COUNT_ONE_ROUND
+        while time.time() - start_time < test_time:
 
             checker_stings = []
             test_action_string = []
             if server_echo is True:
                 test_action_string.append("SSC SSC1 soc -S -s <accept_sock> -l %d -n %d -j %d" %
-                                          (send_len, _tmp_count, send_delay))
+                                          (send_len, TEST_COUNT_ONE_ROUND, send_delay))
                 checker_stings.append("P SSC1 RE \+SEND:\d+,OK NC CLOSED")
                 test_action_string.append("SSC SSC2 soc -S -s <server_sock> -l %d -n %d -j %d" %
-                                          (send_len, _tmp_count, send_delay))
+                                          (send_len, TEST_COUNT_ONE_ROUND, send_delay))
                 checker_stings.append("P SSC2 RE \+SEND:\d+,OK NC CLOSED")
 
             for i in range(sta_number):
                 checker_stings.append("P SSC%d RE \+SEND:\d+,OK NC CLOSED" % (i + 3))
                 test_action_string.append("SSC SSC%d soc -S -s <client_sock%d> -l %d -n %d -j %d" %
-                                          (i + 3, i + 3, send_len, _tmp_count, send_delay))
+                                          (i + 3, i + 3, send_len, TEST_COUNT_ONE_ROUND, send_delay))
             for i in range(sta_number):
                 test_action_string.append("SSC SSC2 soc -S -s <accept_sock%d> -l %d -n %d -j %d" %
-                                          (i + 3, send_len, _tmp_count, send_delay))
+                                          (i + 3, send_len, TEST_COUNT_ONE_ROUND, send_delay))
                 checker_stings.append("P SSC2 RE \+SEND:\d+,OK NC CLOSED")
 
             fail_string = "Fail, Failed to send/recv data"
@@ -232,9 +253,12 @@ class TestCase(TCActionBase.CommonTCActionBase):
                 break
             pass
 
-        if (time.time() - start_time) > pass_standard:
+        NativeLog.add_prompt_trace("time escape: %s" % (time.time() - start_time))
+
+        if (time.time() - start_time) > test_time:
             self.result_cntx.set_result("Succeed")
         else:
+            self.result_cntx.set_result("Failed")
             checker_stings = []
             test_action_string = []
             for i in range(sta_number + 2):
@@ -270,7 +294,7 @@ class TestCase(TCActionBase.CommonTCActionBase):
             fail_string = "Fail, SSC2 Fail to connect to SSC1 server"
             if self.load_and_exe_one_step(checker_stings, test_action_string, fail_string) is False:
                 return
-            #create server on SSC2
+            # create server on SSC2
             checker_stings = []
             test_action_string = []
             checker_stings.append("P SSC2 A <server_sock>:BIND:(\d+),OK")
@@ -283,7 +307,7 @@ class TestCase(TCActionBase.CommonTCActionBase):
             fail_string = "Fail, SSC2 Fail to listen"
             if self.load_and_exe_one_step(checker_stings, test_action_string, fail_string) is False:
                 return
-            #create client on SSC3-SSC5
+            # create client on SSC3-SSC5
             checker_stings = []
             test_action_string = []
             for i in range(sta_number):
@@ -301,10 +325,6 @@ class TestCase(TCActionBase.CommonTCActionBase):
                 fail_string = "Fail, Fail to connect to server"
                 if self.load_and_exe_one_step(checker_stings, test_action_string, fail_string) is False:
                     return
-
-            self.result_cntx.set_result("Failed")
-
-            # finally, execute done
 
     def result_check(self, port_name, data):
         TCActionBase.CommonTCActionBase.result_check(self, port_name, data)

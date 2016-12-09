@@ -22,8 +22,8 @@ class TestCase(TCActionBase.CommonTCActionBase):
 
     def cleanup(self):
         # step 0 turn on recv print
-        checker_stings = ["R SSC1 C +RECVPRINT:1"]
-        test_action_string = ["SSC SSC1 soc -R -o 1"]
+        checker_stings = ["P SSC1 C +RECVPRINT:1", "P SSC2 C +RECVPRINT:1"]
+        test_action_string = ["SSC SSC1 soc -R -o 1", "SSC SSC2 soc -R -o 1"]
         fail_string = "Fail, Fail to turn on recv print"
         self.load_and_exe_one_step(checker_stings, test_action_string, fail_string)
         pass

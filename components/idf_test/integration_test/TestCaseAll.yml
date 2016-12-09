@@ -4461,7 +4461,7 @@ test cases:
   - TCPStress/TCPSoftAPSTASendRecv
   - - send_len = 1460
     - [dummy]
-  - - test_count = 0xFFFFFF
+  - - test_time = 720
     - ['']
   - - server_port = "<test_tcp_port1>"
     - ['']
@@ -4472,8 +4472,6 @@ test cases:
   - - sta_number = 3
     - ['']
   - - send_delay = 50
-    - ['']
-  - - pass_standard = (4*3600)
     - ['']
   - - ap_ip = "<target_ap_ip>"
     - ['']
