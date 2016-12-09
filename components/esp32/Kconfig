@@ -138,6 +138,27 @@ config NEWLIB_STDOUT_ADDCR
         is usually done by an added CR character. Enabling this will make the
         standard output code automatically add a CR character before a LF.
 
+config NEWLIB_NANO_FORMAT
+    bool "Enable 'nano' formatting options for printf/scanf family"
+    default n
+    help
+        ESP32 ROM contains parts of newlib C library, including printf/scanf family
+        of functions. These functions have been compiled with so-called "nano"
+        formatting option. This option doesn't support 64-bit integer formats and C99
+        features, such as positional arguments. 
+
+        For more details about "nano" formatting option, please see newlib readme file,
+        search for '--enable-newlib-nano-formatted-io':
+        https://sourceware.org/newlib/README
+
+        If this option is enabled, build system will use functions available in
+        ROM, reducing the application binary size. Functions available in ROM run
+        faster than functions which run from flash. Functions available in ROM can
+        also run when flash instruction cache is disabled.
+
+        If you need 64-bit integer formatting support or C99 features, keep this
+        option disabled.
+
 choice CONSOLE_UART
     prompt "UART for console output"
     default CONSOLE_UART_DEFAULT
