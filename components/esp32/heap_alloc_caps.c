@@ -43,6 +43,7 @@ typedef struct {
 /*
 Tag descriptors. These describe the capabilities of a bit of memory that's tagged with the index into this table.
 Each tag contains NO_PRIOS entries; later entries are only taken if earlier ones can't fulfill the memory request.
+Make sure there are never more than HEAPREGIONS_MAX_TAGCOUNT (in heap_regions.h) tags (ex the last empty marker)
 */
 static const tag_desc_t tag_desc[]={
     { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }},                    //Tag 0: Plain ole D-port RAM
@@ -267,4 +268,53 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
     //Nothing usable found.
     return NULL;
 }
+
+
+size_t xPortGetFreeHeapSizeCaps( uint32_t caps )
+{
+    int prio;
+    int tag;
+    size_t ret=0;
+    for (prio=0; prio<NO_PRIOS; prio++) {
+        //Iterate over tag descriptors for this priority
+        for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
+            if ((tag_desc[tag].prio[prio]&caps)!=0) {
+                ret+=xPortGetFreeHeapSizeTagged(tag);
+            }
+        }
+    }
+    return ret;
+}
+
+size_t xPortGetMinimumEverFreeHeapSizeCaps( uint32_t caps )
+{
+    int prio;
+    int tag;
+    size_t ret=0;
+    for (prio=0; prio<NO_PRIOS; prio++) {
+        //Iterate over tag descriptors for this priority
+        for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
+            if ((tag_desc[tag].prio[prio]&caps)!=0) {
+                ret+=xPortGetMinimumEverFreeHeapSizeTagged(tag);
+            }
+        }
+    }
+    return ret;
+}
+
+size_t xPortGetFreeHeapSize( void )
+{
+    return xPortGetFreeHeapSizeCaps( MALLOC_CAP_8BIT );
+}
+
+size_t xPortGetMinimumEverFreeHeapSize( void )
+{
+    return xPortGetMinimumEverFreeHeapSizeCaps( MALLOC_CAP_8BIT );
+}
+
+
+
+
+
+
 

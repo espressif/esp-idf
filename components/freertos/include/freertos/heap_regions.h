@@ -16,6 +16,9 @@
 
 #include "freertos/FreeRTOS.h"
 
+/* The maximum amount of tags in use */
+#define HEAPREGIONS_MAX_TAGCOUNT 16
+
 
 typedef struct HeapRegionTagged
 {
@@ -28,7 +31,8 @@ typedef struct HeapRegionTagged
 
 void vPortDefineHeapRegionsTagged( const HeapRegionTagged_t * const pxHeapRegions );
 void *pvPortMallocTagged( size_t xWantedSize, BaseType_t tag );
-
+size_t xPortGetMinimumEverFreeHeapSizeTagged( BaseType_t tag );
+size_t xPortGetFreeHeapSizeTagged( BaseType_t tag );
 
 
 #endif

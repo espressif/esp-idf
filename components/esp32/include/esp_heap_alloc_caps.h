@@ -30,5 +30,7 @@
 
 void heap_alloc_caps_init();
 void *pvPortMallocCaps(size_t xWantedSize, uint32_t caps);
+size_t xPortGetFreeHeapSizeCaps( uint32_t caps );
+size_t xPortGetMinimumEverFreeHeapSizeCaps( uint32_t caps );
 
 #endif
