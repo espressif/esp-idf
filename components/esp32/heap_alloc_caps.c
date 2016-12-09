@@ -166,7 +166,7 @@ static void disable_mem_region(void *from, void *to) {
 ToDo: These are very dependent on the linker script, and the logic involving this works only
 because we're not using the SPI flash yet! If we enable that, this will break. ToDo: Rewrite by then.
 */
-extern int _bss_start, _heap_start;
+extern int _bss_start, _heap_start, _init_start, _iram_text_end;
 
 /*
 Initialize the heap allocator. We pass it a bunch of region descriptors, but we need to modify those first to accommodate for 
@@ -177,11 +177,11 @@ Same with loading of apps. Same with using SPI RAM.
 void heap_alloc_caps_init() {
     int i;
     //Disable the bits of memory where this code is loaded.
-    disable_mem_region(&_bss_start, &_heap_start);
+    disable_mem_region(&_bss_start, &_heap_start);            //DRAM used by bss/data static variables
+    disable_mem_region(&_init_start, &_iram_text_end);        //IRAM used by code
     disable_mem_region((void*)0x3ffae000, (void*)0x3ffb0000); //knock out ROM data region
     disable_mem_region((void*)0x40070000, (void*)0x40078000); //CPU0 cache region
     disable_mem_region((void*)0x40078000, (void*)0x40080000); //CPU1 cache region
-    disable_mem_region((void*)0x40080000, (void*)0x400a0000); //pool 2-5
 
     // TODO: this region should be checked, since we don't need to knock out all region finally
     disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe8000); //knock out ROM data region
@@ -216,11 +216,11 @@ void heap_alloc_caps_init() {
         }
     }
 
-    ESP_EARLY_LOGI(TAG, "Initializing heap allocator:");
+    ESP_EARLY_LOGI(TAG, "Initializing. RAM available for heap:");
     for (i=0; regions[i].xSizeInBytes!=0; i++) {
         if (regions[i].xTag != -1) {
-            ESP_EARLY_LOGI(TAG, "Region %02d: %08X len %08X tag %s", i,
-                    (int)regions[i].pucStartAddress, regions[i].xSizeInBytes, tag_desc[regions[i].xTag].name);
+            ESP_EARLY_LOGI(TAG, "At %08X len %08X (%d KiB): %s", 
+                    (int)regions[i].pucStartAddress, regions[i].xSizeInBytes, regions[i].xSizeInBytes/1024, tag_desc[regions[i].xTag].name);
         }
     }
     //Initialize the malloc implementation.
@@ -267,3 +267,4 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
     //Nothing usable found.
     return NULL;
 }
+
