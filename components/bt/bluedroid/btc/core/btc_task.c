@@ -56,7 +56,7 @@ static void btc_task(void *arg)
 
     for (;;) {
         if (pdTRUE == xQueueReceive(xBtcQueue, &msg, (portTickType)portMAX_DELAY)) {
-            LOG_DEBUG("%s msg %u %u %u %08x\n", __func__, msg.sig, msg.pid, msg.act, msg.arg);
+            LOG_DEBUG("%s msg %u %u %u %p\n", __func__, msg.sig, msg.pid, msg.act, msg.arg);
             switch (msg.sig) {
             case BTC_SIG_API_CALL:
                 profile_tab[msg.pid].btc_call(&msg);

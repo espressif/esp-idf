@@ -51,17 +51,17 @@ static void blufi_data_recv(uint8_t *data, int len)
     char *p = NULL;
     LOG_DEBUG("the data is:%s\n", data);
 
-    p = strstr(data, HEADER_SSID);
+    p = strstr((char *)data, HEADER_SSID);
     if (p) {
         LOG_ERROR("SSID: %s\n", p + strlen(HEADER_SSID) + 1);
         strcpy(tmp_ssid, p + strlen(HEADER_SSID) + 1);
     }
-    p = strstr(data, HEADER_PASSWD);
+    p = strstr((char *)data, HEADER_PASSWD);
     if (p) {
         LOG_ERROR("PASSWORD: %s\n", p + strlen(HEADER_PASSWD) + 1);
         strcpy(tmp_passwd, p + strlen(HEADER_PASSWD) + 1);
     }
-    p = strstr(data, HEADER_CONFIRM);
+    p = strstr((char *)data, HEADER_CONFIRM);
     if (p) {
         LOG_ERROR("CONFIRM\n");
         wifi_set_blue_config(tmp_ssid, tmp_passwd);

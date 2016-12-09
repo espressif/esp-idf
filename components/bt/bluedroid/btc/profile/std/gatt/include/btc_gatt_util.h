@@ -21,7 +21,7 @@
 #include "esp_gatt_defs.h"
 #include "esp_gattc_api.h"
 
-int btc128_to_bta_uuid(tBT_UUID *p_dest, uint8_t *p_src);
+void btc128_to_bta_uuid(tBT_UUID *p_dest, uint8_t *p_src);
 void btc_to_bta_uuid(tBT_UUID *p_dest, esp_bt_uuid_t *p_src);
 void btc_to_bta_gatt_id(tBTA_GATT_ID *p_dest, esp_gatt_id_t *p_src);
 void btc_to_bta_srvc_id(tBTA_GATT_SRVC_ID *p_dest, esp_gatt_srvc_id_t *p_src);

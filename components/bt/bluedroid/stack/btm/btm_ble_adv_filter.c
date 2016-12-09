@@ -118,7 +118,7 @@ void btm_ble_advfilt_enq_op_q(UINT8 action, UINT8 ocf, tBTM_BLE_FILT_CB_EVT cb_e
     btm_ble_adv_filt_cb.op_q.p_scan_cfg_cback[btm_ble_adv_filt_cb.op_q.next_idx] = p_cmpl_cback;
     btm_ble_adv_filt_cb.op_q.p_filt_param_cback[btm_ble_adv_filt_cb.op_q.next_idx]
         = p_filt_param_cback;
-    BTM_TRACE_DEBUG("btm_ble_advfilt_enq_op_q: act_ocf:%d, action:%d, ocf:%d,cb_evt;%d, cback:%x",
+    BTM_TRACE_DEBUG("btm_ble_advfilt_enq_op_q: act_ocf:%d, action:%d, ocf:%d,cb_evt;%d, cback:%p",
                     btm_ble_adv_filt_cb.op_q.action_ocf[btm_ble_adv_filt_cb.op_q.next_idx], action,
                     ocf, cb_evt, p_cmpl_cback);
     btm_ble_adv_filt_cb.op_q.next_idx = (btm_ble_adv_filt_cb.op_q.next_idx + 1)

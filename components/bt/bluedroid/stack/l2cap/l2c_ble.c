@@ -257,7 +257,6 @@ void l2cble_notify_le_connection (BD_ADDR bda)
 void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
                                UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout)
 {
-    int i;
     tL2C_LCB            *p_lcb;
     tBTM_SEC_DEV_REC    *p_dev_rec = btm_find_or_alloc_dev (bda);
 
@@ -358,7 +357,6 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
 void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
                                   UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout)
 {
-    int i;
     tL2C_LCB            *p_lcb;
     tBTM_SEC_DEV_REC    *p_dev_rec;
     UNUSED(type);
@@ -456,7 +454,6 @@ void l2cble_conn_comp(UINT16 handle, UINT8 role, BD_ADDR bda, tBLE_ADDR_TYPE typ
 static void l2cble_start_conn_update (tL2C_LCB *p_lcb)
 {
     UINT16 min_conn_int, max_conn_int, slave_latency, supervision_tout;
-    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_or_alloc_dev(p_lcb->remote_bd_addr);
     tACL_CONN *p_acl_cb = btm_bda_to_acl(p_lcb->remote_bd_addr, BT_TRANSPORT_LE);
 
     if (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PENDING) {

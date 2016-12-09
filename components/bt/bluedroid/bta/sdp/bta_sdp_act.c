@@ -298,7 +298,6 @@ static void bta_create_ops_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
 
 static void bta_create_sap_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_REC *p_rec)
 {
-    tSDP_DISCOVERY_DB *db = p_bta_sdp_cfg->p_sdp_db;
     tSDP_DISC_ATTR *p_attr;
     tSDP_PROTOCOL_ELEM pe;
     UINT16 pversion = -1;

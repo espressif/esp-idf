@@ -914,9 +914,9 @@ BOOLEAN SDP_DeleteAttribute (UINT32 handle, UINT16 attr_id)
 #if (SDP_RAW_DATA_INCLUDED == TRUE)
 INT32 SDP_ReadRecord(UINT32 handle, UINT8 *p_data, INT32 *p_data_len)
 {
-    INT32           len = 0;                        /* Number of bytes in the entry */
     INT32           offset = -1; /* default to not found */
 #if SDP_SERVER_ENABLED == TRUE
+    INT32           len = 0;                        /* Number of bytes in the entry */
     tSDP_RECORD     *p_rec;
     UINT16          start = 0;
     UINT16          end = 0xffff;

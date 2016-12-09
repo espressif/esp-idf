@@ -134,9 +134,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
 
 esp_err_t esp_ota_end(esp_ota_handle_t handle)
 {
-    esp_err_t ret;
     ota_ops_entry_t *it;
-    size_t image_size;
     for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
         if (it->handle == handle) {
             // an ota handle need to be ended after erased and wrote data in it
@@ -145,6 +143,8 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
             }
 
 #ifdef CONFIG_SECUREBOOTLOADER
+            esp_err_t ret;
+            size_t image_size;
             if (esp_image_basic_verify(it->part.address, &image_size) != ESP_OK) {
                 return ESP_ERR_OTA_VALIDATE_FAILED;
             }
@@ -286,12 +286,12 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
 esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
 {
     const esp_partition_t *find_partition = NULL;
-    size_t image_size;
     if (partition == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
 #ifdef CONFIG_SECUREBOOTLOADER
+    size_t image_size;
     if (esp_image_basic_verify(partition->address, &image_size) != ESP_OK) {
         return ESP_ERR_OTA_VALIDATE_FAILED;
     }

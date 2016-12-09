@@ -59,7 +59,7 @@ void btm_ble_cont_energy_cmpl_cback (tBTM_VSC_CMPL *p_params)
     STREAM_TO_UINT32(total_idle_time, p);
     STREAM_TO_UINT32(total_energy_used, p);
 
-    BTM_TRACE_DEBUG("energy_info status=%d,tx_t=%ld, rx_t=%ld, ener_used=%ld, idle_t=%ld",
+    BTM_TRACE_DEBUG("energy_info status=%d,tx_t=%u, rx_t=%u, ener_used=%u, idle_t=%u",
                     status, total_tx_time, total_rx_time, total_energy_used, total_idle_time);
 
     if (NULL != ble_energy_info_cb.p_ener_cback)

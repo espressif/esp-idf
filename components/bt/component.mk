@@ -30,8 +30,6 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/include			\
 				include	
 
-CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses -Wno-error=format
-
 LIBS := btdm_app
 
 COMPONENT_ADD_LDFLAGS := -lbt -L $(COMPONENT_PATH)/lib \
@@ -69,8 +67,6 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/api			\
 			bluedroid				\
 			.
-
-include $(IDF_PATH)/make/component_common.mk
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 $(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
