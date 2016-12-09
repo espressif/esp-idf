@@ -36,8 +36,8 @@ hardwiring addresses.
 #define NO_PRIOS 3
 
 typedef struct {
-	const char *name;
-	uint32_t prio[NO_PRIOS];
+    const char *name;
+    uint32_t prio[NO_PRIOS];
 } tag_desc_t;
 
 /*
