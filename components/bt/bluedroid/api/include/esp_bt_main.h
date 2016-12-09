@@ -15,7 +15,6 @@
 #ifndef __ESP_BT_MAIN_H__
 #define __ESP_BT_MAIN_H__
 
-#include "btc_main.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus

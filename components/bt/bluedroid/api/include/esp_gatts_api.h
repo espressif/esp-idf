@@ -15,10 +15,8 @@
 #ifndef __ESP_GATTS_API_H__
 #define __ESP_GATTS_API_H__
 
-#include "bt_types.h"
 #include "esp_bt_defs.h"
 #include "esp_gatt_defs.h"
-#include "bta_gatt_api.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
