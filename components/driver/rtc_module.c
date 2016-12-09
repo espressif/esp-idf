@@ -378,21 +378,6 @@ static esp_err_t touch_start(touch_pad_t touch_num)
     return ESP_OK;
 }
 
-static esp_err_t touch_stop(touch_pad_t touch_num)
-{
-    RTC_MODULE_CHECK(touch_num < TOUCH_PAD_MAX, "Touch_Pad Num Err", ESP_ERR_INVALID_ARG);
-    portENTER_CRITICAL(&rtc_spinlock);
-
-    //Disable Digital rtc control :work mode and out mode
-    CLEAR_PERI_REG_MASK(SENS_SAR_TOUCH_ENABLE_REG, (1 << (touch_num + SENS_TOUCH_PAD_WORKEN_S)) | \
-                        (1 << (touch_num + SENS_TOUCH_PAD_OUTEN2_S)) | \
-                        (1 << (touch_num + SENS_TOUCH_PAD_OUTEN1_S)));
-
-    portEXIT_CRITICAL(&rtc_spinlock);
-
-    return ESP_OK;
-}
-
 esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
 {
     RTC_MODULE_CHECK(touch_num < TOUCH_PAD_MAX, "Touch_Pad Num Err", ESP_ERR_INVALID_ARG);
@@ -528,7 +513,6 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 int adc1_get_voltage(adc1_channel_t channel)
 {
     uint16_t adc_value;
-    uint8_t atten = 0;
 
     RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
@@ -600,23 +584,6 @@ static esp_err_t dac_out_enable(dac_channel_t channel)
     } else if (channel == DAC_CHANNEL_2) {
         portENTER_CRITICAL(&rtc_spinlock);
         SET_PERI_REG_MASK(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_XPD_DAC | RTC_IO_PDAC2_DAC_XPD_FORCE);
-        portEXIT_CRITICAL(&rtc_spinlock);
-    } else {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    return ESP_OK;
-}
-
-static esp_err_t  dac_out_disable(dac_channel_t channel)
-{
-    if (channel == DAC_CHANNEL_1) {
-        portENTER_CRITICAL(&rtc_spinlock);
-        CLEAR_PERI_REG_MASK(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_XPD_DAC | RTC_IO_PDAC1_DAC_XPD_FORCE);
-        portEXIT_CRITICAL(&rtc_spinlock);
-    } else if (channel == DAC_CHANNEL_2) {
-        portENTER_CRITICAL(&rtc_spinlock);
-        CLEAR_PERI_REG_MASK(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_XPD_DAC | RTC_IO_PDAC2_DAC_XPD_FORCE);
         portEXIT_CRITICAL(&rtc_spinlock);
     } else {
         return ESP_ERR_INVALID_ARG;

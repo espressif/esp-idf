@@ -622,6 +622,7 @@ void print_flash_info(const esp_image_header_t* phdr)
 #endif
 }
 
+#if CONFIG_CONSOLE_UART_CUSTOM
 static uint32_t get_apb_freq(void)
 {
     // Get the value of APB clock from RTC memory.
@@ -639,6 +640,7 @@ static uint32_t get_apb_freq(void)
         return APB_CLK_FREQ_ROM;
     }
 }
+#endif
 
 static void uart_console_configure(void)
 {
