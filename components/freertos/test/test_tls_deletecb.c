@@ -16,7 +16,7 @@
 
 static void tskdelcb(int no, void *arg)
 {
-    printf("Delete callback: %d = %p!\n", no,  arg);
+    ets_printf("Delete callback: %d = %p!\n", no,  arg);
 }
 
 
