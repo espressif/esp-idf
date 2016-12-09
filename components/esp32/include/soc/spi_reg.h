@@ -69,14 +69,14 @@
 #define SPI_FLASH_PP_V  0x1
 #define SPI_FLASH_PP_S  25
 /* SPI_FLASH_SE : R/W ;bitpos:[24] ;default: 1'b0 ; */
-/*description: Sector erase enable(4KB). Sector erase operation will be triggered
+/*description: Sector erase enable. A 4KB sector is erased via SPI command 20H. Sector erase operation will be triggered
  when the bit is set. The bit will be cleared once the operation done.1: enable 0: disable.*/
 #define SPI_FLASH_SE  (BIT(24))
 #define SPI_FLASH_SE_M  (BIT(24))
 #define SPI_FLASH_SE_V  0x1
 #define SPI_FLASH_SE_S  24
 /* SPI_FLASH_BE : R/W ;bitpos:[23] ;default: 1'b0 ; */
-/*description: Block erase enable(32KB) .  Block erase operation will be triggered
+/*description: Block erase enable. A 64KB block is erased via SPI command D8H.  Block erase operation will be triggered
  when the bit is set. The bit will be cleared once the operation done.1: enable 0: disable.*/
 #define SPI_FLASH_BE  (BIT(23))
 #define SPI_FLASH_BE_M  (BIT(23))
