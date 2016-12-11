@@ -34,20 +34,6 @@ extern "C"
 #define RTC_DATA_LOW  0x50000000
 #define RTC_DATA_HIGH 0x50002000
 
-#define PART_TYPE_APP 0x00
-#define PART_SUBTYPE_FACTORY  0x00
-#define PART_SUBTYPE_OTA_FLAG 0x10
-#define PART_SUBTYPE_OTA_MASK 0x0f
-#define PART_SUBTYPE_TEST     0x20
-
-#define PART_TYPE_DATA 0x01
-#define PART_SUBTYPE_DATA_OTA 0x00
-#define PART_SUBTYPE_DATA_RF  0x01
-#define PART_SUBTYPE_DATA_WIFI 0x02
-
-#define PART_TYPE_END 0xff
-#define PART_SUBTYPE_END 0xff
-
 #define SPI_ERROR_LOG "spi flash error"
 
 typedef struct {

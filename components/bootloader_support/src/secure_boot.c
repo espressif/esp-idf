@@ -20,7 +20,6 @@
 
 #include "rom/cache.h"
 #include "rom/ets_sys.h"
-#include "rom/spi_flash.h"
 #include "rom/secure_boot.h"
 
 #include "soc/dport_reg.h"
@@ -31,14 +30,13 @@
 #include "sdkconfig.h"
 
 #include "bootloader_flash.h"
+#include "bootloader_random.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
+#include "esp_flash_encrypt.h"
+#include "esp_efuse.h"
 
 static const char* TAG = "secure_boot";
-
-#define HASH_BLOCK_SIZE 128
-#define IV_LEN HASH_BLOCK_SIZE
-#define DIGEST_LEN 64
 
 /**
  *  @function :     secure_boot_generate
@@ -47,39 +45,26 @@ static const char* TAG = "secure_boot";
  *  @inputs:        image_len - length of image to calculate digest for
  */
 static bool secure_boot_generate(uint32_t image_len){
-    SpiFlashOpResult spiRet;
-    /* buffer is uint32_t not uint8_t to meet ROM SPI API signature */
-    uint32_t buf[IV_LEN / sizeof(uint32_t)];
-    const void *image;
+    esp_err_t err;
+    esp_secure_boot_iv_digest_t digest;
+    const uint32_t *image;
 
     /* hardware secure boot engine only takes full blocks, so round up the
        image length. The additional data should all be 0xFF.
     */
-    if (image_len % HASH_BLOCK_SIZE != 0) {
-        image_len = (image_len / HASH_BLOCK_SIZE + 1) * HASH_BLOCK_SIZE;
+    if (image_len % sizeof(digest.iv) != 0) {
+        image_len = (image_len / sizeof(digest.iv) + 1) * sizeof(digest.iv);
     }
     ets_secure_boot_start();
-    ets_secure_boot_rd_iv(buf);
+    ets_secure_boot_rd_iv((uint32_t *)digest.iv);
     ets_secure_boot_hash(NULL);
-    Cache_Read_Disable(0);
     /* iv stored in sec 0 */
-    spiRet = SPIEraseSector(0);
-    if (spiRet != SPI_FLASH_RESULT_OK)
+    err = bootloader_flash_erase_sector(0);
+    if (err != ESP_OK)
     {
-        ESP_LOGE(TAG, "SPI erase failed %d", spiRet);
+        ESP_LOGE(TAG, "SPI erase failed: 0x%x", err);
         return false;
     }
-    Cache_Read_Enable(0);
-
-    /* write iv to flash, 0x0000, 128 bytes (1024 bits) */
-    ESP_LOGD(TAG, "write iv to flash.");
-    spiRet = SPIWrite(0, buf, IV_LEN);
-    if (spiRet != SPI_FLASH_RESULT_OK)
-    {
-        ESP_LOGE(TAG, "SPI write failed %d", spiRet);
-        return false;
-    }
-    bzero(buf, sizeof(buf));
 
     /* generate digest from image contents */
     image = bootloader_mmap(0x1000, image_len);
@@ -87,22 +72,22 @@ static bool secure_boot_generate(uint32_t image_len){
         ESP_LOGE(TAG, "bootloader_mmap(0x1000, 0x%x) failed", image_len);
         return false;
     }
-    for (int i = 0; i < image_len; i+= HASH_BLOCK_SIZE) {
-        ets_secure_boot_hash(image + i/sizeof(void *));
+    for (int i = 0; i < image_len; i+= sizeof(digest.iv)) {
+        ets_secure_boot_hash(&image[i/sizeof(uint32_t)]);
     }
     bootloader_munmap(image);
 
     ets_secure_boot_obtain();
-    ets_secure_boot_rd_abstract(buf);
+    ets_secure_boot_rd_abstract((uint32_t *)digest.digest);
     ets_secure_boot_finish();
 
-    ESP_LOGD(TAG, "write digest to flash.");
-    spiRet = SPIWrite(0x80, buf, DIGEST_LEN);
-    if (spiRet != SPI_FLASH_RESULT_OK) {
-        ESP_LOGE(TAG, "SPI write failed %d", spiRet);
+    ESP_LOGD(TAG, "write iv+digest to flash");
+    err = bootloader_flash_write(FLASH_OFFS_SECURE_BOOT_IV_DIGEST, &digest,
+                           sizeof(digest), esp_flash_encryption_enabled());
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "SPI write failed: 0x%x", err);
         return false;
     }
-    ESP_LOGD(TAG, "write digest to flash.");
     Cache_Read_Enable(0);
     return true;
 }
@@ -111,14 +96,9 @@ static bool secure_boot_generate(uint32_t image_len){
 static inline void burn_efuses()
 {
 #ifdef CONFIG_SECURE_BOOT_TEST_MODE
-    ESP_LOGE(TAG, "SECURE BOOT TEST MODE. Not really burning any efuses!");
+    ESP_LOGE(TAG, "SECURE BOOT TEST MODE. Not really burning any efuses! NOT SECURE");
 #else
-    REG_WRITE(EFUSE_CONF_REG, 0x5A5A);  /* efuse_pgm_op_ena, force no rd/wr disable */
-    REG_WRITE(EFUSE_CMD_REG,  0x02);    /* efuse_pgm_cmd */
-    while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_pagm_cmd=0 */
-    REG_WRITE(EFUSE_CONF_REG, 0x5AA5);  /* efuse_read_op_ena, release force */
-    REG_WRITE(EFUSE_CMD_REG,  0x01);    /* efuse_read_cmd */
-    while (REG_READ(EFUSE_CMD_REG));    /* wait for efuse_read_cmd=0 */
+    esp_efuse_burn_new_values();
 #endif
 }
 
@@ -131,7 +111,7 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         return ESP_OK;
     }
 
-    err = esp_image_basic_verify(0x1000, &image_len);
+    err = esp_image_basic_verify(0x1000, true, &image_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "bootloader image appears invalid! error %d", err);
         return err;
@@ -150,25 +130,12 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         && REG_READ(EFUSE_BLK2_RDATA5_REG) == 0
         && REG_READ(EFUSE_BLK2_RDATA6_REG) == 0
         && REG_READ(EFUSE_BLK2_RDATA7_REG) == 0) {
-        ESP_LOGI(TAG, "Generating new secure boot key...");
-        /* reuse the secure boot IV generation function to generate
-           the key, as this generator uses the hardware RNG. */
-        uint32_t buf[32];
-        ets_secure_boot_start();
-        ets_secure_boot_rd_iv(buf);
-        ets_secure_boot_finish();
-        for (int i = 0; i < 8; i++) {
-            ESP_LOGV(TAG, "EFUSE_BLK2_WDATA%d_REG = 0x%08x", i, buf[i]);
-            REG_WRITE(EFUSE_BLK2_WDATA0_REG + 4*i, buf[i]);
-        }
-        bzero(buf, sizeof(buf));
-        burn_efuses();
-        ESP_LOGI(TAG, "Read & write protecting new key...");
-        REG_WRITE(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_BLK2 | EFUSE_RD_DIS_BLK2);
-        burn_efuses();
-        efuse_key_read_protected = true;
-        efuse_key_write_protected = true;
 
+        /* On-device key generation is temporarily disabled, until
+         * RNG operation during bootloader is qualified.
+         * See docs/security/secure-boot.rst for details. */
+        ESP_LOGE(TAG, "On-device key generation is not yet available.");
+        return ESP_ERR_NOT_SUPPORTED;
     } else {
         ESP_LOGW(TAG, "Using pre-loaded secure boot key in EFUSE block 2");
     }
@@ -180,6 +147,7 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
     }
     ESP_LOGI(TAG, "Digest generation complete.");
 
+#ifndef CONFIG_SECURE_BOOT_TEST_MODE
     if (!efuse_key_read_protected) {
         ESP_LOGE(TAG, "Pre-loaded key is not read protected. Refusing to blow secure boot efuse.");
         return ESP_ERR_INVALID_STATE;
@@ -188,21 +156,26 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         ESP_LOGE(TAG, "Pre-loaded key is not write protected. Refusing to blow secure boot efuse.");
         return ESP_ERR_INVALID_STATE;
     }
+#endif
 
     ESP_LOGI(TAG, "blowing secure boot efuse...");
     ESP_LOGD(TAG, "before updating, EFUSE_BLK0_RDATA6 %x", REG_READ(EFUSE_BLK0_RDATA6_REG));
 
     uint32_t new_wdata6 = EFUSE_RD_ABS_DONE_0;
 
-    #ifdef CONFIG_SECURE_BOOT_DISABLE_JTAG
-    ESP_LOGI(TAG, "disabling JTAG...");
+#ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
+    ESP_LOGI(TAG, "Disable JTAG...");
     new_wdata6 |= EFUSE_RD_DISABLE_JTAG;
-    #endif
+#else
+    ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
+#endif
 
-    #ifdef CONFIG_SECURE_BOOT_DISABLE_UART_BOOTLOADER
-    ESP_LOGI(TAG, "disabling UART bootloader...");
-    new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE_S;
-    #endif
+#ifndef CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC
+    ESP_LOGI(TAG, "Disable ROM BASIC interpreter fallback...");
+    new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE;
+#else
+    ESP_LOGW(TAG, "Not disabling ROM BASIC fallback - SECURITY COMPROMISED");
+#endif
 
     REG_WRITE(EFUSE_BLK0_WDATA6_REG, new_wdata6);
     burn_efuses();

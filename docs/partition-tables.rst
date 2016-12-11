@@ -4,7 +4,7 @@ Partition Tables
 Overview
 --------
 
-A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to offset 0x4000 in the flash.
+A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to offset 0x8000 in the flash.
 
 Partition table length is 0xC00 bytes (maximum 95 partition table entries). If the partition table is signed due to `secure boot`, the signature is appended after the table data.
 

@@ -90,11 +90,11 @@ class PartitionTable(list):
         for o in range(0,len(b),32):
             data = b[o:o+32]
             if len(data) != 32:
-                raise InputError("Ran out of partition table data before reaching end marker")
+                raise InputError("Partition table length must be a multiple of 32 bytes")
             if data == '\xFF'*32:
-                break  # end of partition table
+                return result  # got end marker
             result.append(PartitionDefinition.from_binary(data))
-        return result
+        raise InputError("Partition table is missing an end-of-table marker")
 
     def to_binary(self):
         result = "".join(e.to_binary() for e in self)
@@ -105,7 +105,7 @@ class PartitionTable(list):
 
     def to_csv(self, simple_formatting=False):
         rows = [ "# Espressif ESP32 Partition Table",
-                 "# Name, Type, SubType, Offset, Size" ]
+                 "# Name, Type, SubType, Offset, Size, Flags" ]
         rows += [ x.to_csv(simple_formatting) for x in self ]
         return "\n".join(rows) + "\n"
 
@@ -140,6 +140,12 @@ class PartitionDefinition(object):
         DATA_TYPE : 0x04,
     }
 
+    # dictionary maps flag name (as used in CSV flags list, property name)
+    # to bit set in flags words in binary format
+    FLAGS = {
+        "encrypted" : 1
+    }
+
     # add subtypes for the 16 OTA slot values ("ota_XXX, etc.")
     for ota_slot in range(16):
         SUBTYPES[TYPES["app"]]["ota_%d" % ota_slot] = 0x10 + ota_slot
@@ -150,11 +156,12 @@ class PartitionDefinition(object):
         self.subtype = None
         self.offset = None
         self.size = None
+        self.encrypted = False
 
     @classmethod
     def from_csv(cls, line):
         """ Parse a line from the CSV """
-        line_w_defaults = line + ",,,"  # lazy way to support default fields
+        line_w_defaults = line + ",,,,"  # lazy way to support default fields
         fields = [ f.strip() for f in line_w_defaults.split(",") ]
 
         res = PartitionDefinition()
@@ -165,6 +172,14 @@ class PartitionDefinition(object):
         res.size = res.parse_address(fields[4])
         if res.size is None:
             raise InputError("Size field can't be empty")
+
+        flags = fields[5].split(":")
+        for flag in flags:
+            if flag in cls.FLAGS:
+                setattr(res, flag, True)
+            elif len(flag) > 0:
+                raise InputError("CSV flag column contains unknown flag '%s'" % (flag))
+
         return res
 
     def __eq__(self, other):
@@ -220,22 +235,30 @@ class PartitionDefinition(object):
             raise InputError("Partition definition length must be exactly 32 bytes. Got %d bytes." % len(b))
         res = cls()
         (magic, res.type, res.subtype, res.offset,
-         res.size, res.name, reserved) = struct.unpack(cls.STRUCT_FORMAT, b)
+         res.size, res.name, flags) = struct.unpack(cls.STRUCT_FORMAT, b)
         if "\x00" in res.name: # strip null byte padding from name string
             res.name = res.name[:res.name.index("\x00")]
         if magic != cls.MAGIC_BYTES:
             raise InputError("Invalid magic bytes (%r) for partition definition" % magic)
-        if reserved != 0:
-            critical("WARNING: Partition definition had unexpected reserved value 0x%08x. Newer binary format?" % reserved)
+        for flag,bit in cls.FLAGS.items():
+            if flags & (1<<bit):
+                setattr(res, flag, True)
+                flags &= ~(1<<bit)
+        if flags != 0:
+            critical("WARNING: Partition definition had unknown flag(s) 0x%08x. Newer binary format?" % flags)
         return res
 
+    def get_flags_list(self):
+        return [ flag for flag in self.FLAGS.keys() if getattr(self, flag) ]
+
     def to_binary(self):
+        flags = sum((1 << self.FLAGS[flag]) for flag in self.get_flags_list())
         return struct.pack(self.STRUCT_FORMAT,
                            self.MAGIC_BYTES,
                            self.type, self.subtype,
                            self.offset, self.size,
                            self.name,
-                           0) # reserved
+                           flags)
 
     def to_csv(self, simple_formatting=False):
         def addr_format(a, include_sizes):
@@ -251,11 +274,16 @@ class PartitionDefinition(object):
                     return k
             return "%d" % t
 
+        def generate_text_flags():
+            """ colon-delimited list of flags """
+            return ":".join(self.get_flags_list())
+
         return ",".join([ self.name,
                           lookup_keyword(self.type, self.TYPES),
                           lookup_keyword(self.subtype, self.SUBTYPES.get(self.type, {})),
                           addr_format(self.offset, False),
-                          addr_format(self.size, True) ])
+                          addr_format(self.size, True),
+                          generate_text_flags()])
 
 class InputError(RuntimeError):
     def __init__(self, e):

@@ -89,6 +89,10 @@ typedef struct esp_partition_iterator_opaque_* esp_partition_iterator_t;
 
 /**
  * @brief partition information structure
+ *
+ * This is not the format in flash, that format is esp_partition_info_t.
+ *
+ * However, this is the format used by this API.
  */
 typedef struct {
     esp_partition_type_t type;          /*!< partition type (app/data) */
