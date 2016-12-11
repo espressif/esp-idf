@@ -37,7 +37,7 @@
 const char success_msg[] = "BLUFI_CONFIG_OK";
 const char failed_msg[] = "BLUFI_CONFIG_FAILED";
 
-#define BTC_BLUFI_CB_TO_APP(_event, _param) ((esp_profile_cb_t)btc_profile_cb_get(BTC_PID_BLUFI))(_event, _param)
+#define BTC_BLUFI_CB_TO_APP(event, param) ((esp_blufi_cb_t)btc_profile_cb_get(BTC_PID_BLUFI))((event), (param))
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
@@ -147,6 +147,8 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     tBT_UUID uuid = {LEN_UUID_16, {SVC_BLUFI_UUID}};
     UINT8 *p_rec_data = NULL;
     tBTA_GATT_STATUS  status;
+    tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
+    tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
 
     LOG_DEBUG("blufi profile cb event = %x\n", event);
     switch (event) {
@@ -166,6 +168,8 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                   event, status, blufi_cb_env.gatt_if);
 
         LOG_DEBUG("set advertising parameters\n");
+        //set connectable,discoverable, pairable and paired only modes of local device
+        BTA_DmSetVisibility(disc_mode, conn_mode, (uint8_t)BTA_DM_NON_PAIRABLE, (uint8_t)BTA_DM_CONN_ALL);
         //set the advertising data to the btm layer
         BlufiBleConfigadvData(&esp32_adv_data[BLE_ADV_DATA_IDX], NULL);
         //set the adversting data to the btm layer

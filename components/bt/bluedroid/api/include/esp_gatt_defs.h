@@ -269,7 +269,9 @@ typedef enum {
 	ESP_GATT_WRITE_TYPE_RSP,								/*!< Gatt write attribute need remote response */
 } esp_gatt_write_type_t;
 
-typedef uint32_t    esp_gatt_if_t;							/*!< Gatt interface type, different application on GATT client use different gatt_if */
+#define ESP_GATT_IF_NONE    0xff                            /*!< If callback report gattc_if/gatts_if as this macro, means this event is not correspond to any app */
+
+typedef uint8_t    esp_gatt_if_t;							/*!< Gatt interface type, different application on GATT client use different gatt_if */
 
 #ifdef __cplusplus
 }

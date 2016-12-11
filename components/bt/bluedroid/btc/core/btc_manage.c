@@ -20,7 +20,7 @@
 #include "esp_bt_defs.h"
 #include "esp_gatt_defs.h"
 
-static esp_profile_cb_t btc_profile_cb_tab[BTC_PID_NUM] = {};
+static void *btc_profile_cb_tab[BTC_PID_NUM] = {};
 
 void esp_profile_cb_reset(void)
 {
@@ -31,7 +31,7 @@ void esp_profile_cb_reset(void)
     }
 }
 
-int btc_profile_cb_set(btc_pid_t profile_id, esp_profile_cb_t cb)
+int btc_profile_cb_set(btc_pid_t profile_id, void *cb)
 {
     if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
         return -1;
@@ -42,7 +42,7 @@ int btc_profile_cb_set(btc_pid_t profile_id, esp_profile_cb_t cb)
     return 0;
 }
 
-esp_profile_cb_t btc_profile_cb_get(btc_pid_t profile_id)
+void *btc_profile_cb_get(btc_pid_t profile_id)
 {
     if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
         return NULL;

@@ -31,7 +31,7 @@ typedef enum {
 	ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT ,			/*!< When scan response data set complete, the event comes */
 	ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT,				/*!< When scan parameters set complete, the event comes */
 	ESP_GAP_BLE_SCAN_RESULT_EVT,							/*!< When one scan result ready, the event comes each time */
-}esp_gap_ble_cb_event_t;
+} esp_gap_ble_cb_event_t;
 
 /// Advertising data maximum length
 #define ESP_BLE_ADV_DATA_LEN_MAX        31
@@ -258,6 +258,13 @@ typedef union {
 } esp_ble_gap_cb_param_t;
 
 /**
+ * @brief GAP callback function type
+ * @param event : Event type
+ * @param param : Point to callback parameter, currently is union type
+ */
+typedef void (* esp_gap_ble_cb_t)(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
+
+/**
  * @brief           This function is called to occur gap event, such as scan result
  *
  * @param[in]       callback: callback function
@@ -267,7 +274,7 @@ typedef union {
  *                  - other  : failed
  *
  */
-esp_err_t esp_ble_gap_register_callback(esp_profile_cb_t callback);
+esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback);
 
 
 /**

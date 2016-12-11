@@ -69,7 +69,7 @@ static void blufi_data_recv(uint8_t *data, int len)
 
 }
 
-static void blufi_callback(uint32_t event, void *param)
+static void blufi_callback(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param)
 {
     /* actually, should post to blufi_task handle the procedure,
      * now, as a demo, we do simplely */
@@ -90,11 +90,6 @@ static void blufi_callback(uint32_t event, void *param)
 
 static esp_err_t blufi_startup_in_blufi_task(void *arg)
 {
-    /*set connectable,discoverable, pairable and paired only modes of local device*/
-    tBTA_DM_DISC disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
-    tBTA_DM_CONN conn_mode = BTA_DM_BLE_CONNECTABLE;
-    BTA_DmSetVisibility(disc_mode, conn_mode, (uint8_t)BTA_DM_NON_PAIRABLE, (uint8_t)BTA_DM_CONN_ALL);
-
     esp_blufi_register_callback(blufi_callback);
     esp_blufi_profile_init();
 
@@ -110,8 +105,6 @@ static void blufi_startup(void)
 esp_err_t blufi_enable(void *arg)
 {
     esp_err_t err;
-
-    BTM_SetTraceLevel(BT_TRACE_LEVEL_ERROR);
 
     err = esp_enable_bluetooth();
     if (err) {
