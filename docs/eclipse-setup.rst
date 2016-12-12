@@ -56,7 +56,11 @@ Navigate to "C/C++ General" -> "Preprocessor Include Paths" property page:
 
 * In the list of providers, click "CDT GCC Build Output Parser" and type ``xtensa-esp32-elf-`` at the beginning of the Compiler command pattern. This means the full Compiler command pattern should be ``xtensa-esp32-elf-(g?cc)|([gc]\+\+)|(clang)``
 
-* Click OK to close the Properties dialog, and choose Project -> Build to build your project.
+* Click OK to close the Properties dialog.
+
+* If you want Eclipse to index and parse the ESP-IDF library include files, right-click the project and choose "New > Folder" from the context menu. Then click the "Advanced" button and check "Link to alternate location". Browse the "components" folder of ESP-IDF (*ie C:/Users/MyUser/Development/esp-idf/components*). Then click the "Finish" button.
+
+* Choose Project -> Build to build your project.
 
 Flash from Eclipse
 ------------------
