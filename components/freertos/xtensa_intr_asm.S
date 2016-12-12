@@ -158,8 +158,10 @@ xt_ints_on:
 #else
     movi    a3, 0
     xsr     a3, INTENABLE        /* Disables all interrupts   */
+    rsync
     or      a2, a3, a2           /* set bits in mask */
     wsr     a2, INTENABLE        /* Re-enable ints */
+    rsync
     mov     a2, a3               /* return prev mask */
 #endif
 #else
@@ -206,9 +208,11 @@ xt_ints_off:
 #else
     movi    a4, 0
     xsr     a4, INTENABLE        /* Disables all interrupts   */
+    rsync
     or      a3, a4, a2           /* set bits in mask */
     xor     a3, a3, a2           /* invert bits in mask set in mask, essentially clearing them */
     wsr     a3, INTENABLE        /* Re-enable ints */
+    rsync
     mov     a2, a4               /* return prev mask */
 #endif
 #else
