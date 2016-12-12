@@ -1,0 +1,6 @@
+Config: {execute count: 1, execute order: in order}
+DUT: [SSC3, SSC2, SSC1, SSC5, SSC4]
+Filter:
+- Add:
+    ID:
+      - TCPIP_TCP_5101  # 1 AP 4 STA TCP stable test

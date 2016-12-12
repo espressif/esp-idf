@@ -247,6 +247,8 @@ deploy_docs:
     expire_in: 6 mos
 
   script:
+    # remove artifacts from last stage (UT logs)
+    - rm -rf $LOG_PATH
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -268,6 +270,8 @@ deploy_docs:
     # can only be triggered
     - triggers
   script:
+    # remove artifacts from last stage (UT logs)
+    - rm -rf $LOG_PATH
     # must be night build triggers, otherwise exit without test
     - test $NIGHT_BUILD = "Yes" || exit 0
     # add gitlab ssh key
@@ -345,7 +349,6 @@ IT_Function_TCPIP_02:
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T2_1
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_02.yml
 
@@ -372,9 +375,72 @@ IT_Function_TCPIP_05:
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T2_1
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_05.yml
+
+IT_Stress_WIFI_01:
+  <<: *test_template_night
+  tags:
+    - ESP32_IDF
+    - SSC_T5_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_WIFI_01.yml
+
+IT_Stress_TCPIP_01:
+  <<: *test_template_night
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_TCPIP_01.yml
+
+IT_Stress_TCPIP_02:
+  <<: *test_template_night
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_TCPIP_02.yml
+
+IT_Stress_TCPIP_03:
+  <<: *test_template_night
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_TCPIP_03.yml
+
+IT_Stress_TCPIP_04:
+  <<: *test_template_night
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_TCPIP_04.yml
+
+IT_Stable_TCPIP_01:
+  <<: *test_template_night
+  tags:
+    - ESP32_IDF
+    - SSC_T5_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stable_TCPIP_01.yml
+
+IT_Stable_TCPIP_02:
+  <<: *test_template_night
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stable_TCPIP_02.yml
+
+IT_Stable_TCPIP_03:
+  <<: *test_template_night
+  tags:
+    - ESP32_IDF
+    - SSC_T5_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stable_TCPIP_03.yml
 
 IT_Function_TCPIP_06:
   <<: *test_template_night
@@ -388,7 +454,7 @@ IT_Function_WIFI_03:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T3_PhyMode
+    - SSC_T1_APC
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_03.yml
 
@@ -396,7 +462,7 @@ IT_Function_WIFI_04:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_APC
+    - SSC_T3_PhyMode
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_04.yml
 
@@ -422,7 +488,6 @@ IT_Function_TCPIP_07:
     - ESP32_IDF
     - SSC_T1_1
     - SSC_T1_2
-    - SSC_T2_1
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_07.yml
 
@@ -431,6 +496,7 @@ IT_Function_TCPIP_08:
   tags:
     - ESP32_IDF
     - SSC_T1_1
+    - SSC_T2_1
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_08.yml
 
@@ -439,6 +505,7 @@ IT_Function_TCPIP_09:
   tags:
     - ESP32_IDF
     - SSC_T1_1
+    - SSC_T1_2
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_09.yml
 
@@ -448,7 +515,6 @@ IT_Function_TCPIP_10:
     - ESP32_IDF
     - SSC_T1_1
     - SSC_T1_2
-    - SSC_T2_1
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_10.yml
 
@@ -457,7 +523,6 @@ IT_Function_TCPIP_11:
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T1_2
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_11.yml
 
@@ -468,3 +533,4 @@ IT_Function_TCPIP_12:
     - SSC_T1_1
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_12.yml
+
