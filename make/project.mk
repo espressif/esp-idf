@@ -368,7 +368,7 @@ $(IDF_PATH)/$(1)/.git:
 # Parse 'git submodule status' output for out-of-date submodule.
 # Status output prefixes status line with '+' if the submodule commit doesn't match
 ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(1) | grep '^+')","")
-$$(info WARNING: git submodule $(1) may be out of date. Run 'git submodule update' to update.)
+$$(info WARNING: esp-idf git submodule $(1) may be out of date. Run 'git submodule update' in IDF_PATH dir to update.)
 endif
 endef
 
