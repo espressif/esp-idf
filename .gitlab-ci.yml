@@ -248,7 +248,7 @@ deploy_docs:
 
   script:
     # remove artifacts from last stage (UT logs)
-    - rm -rf $LOG_PATH || echo "log folder not exist"
+    - rm -rf $LOG_PATH
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -271,7 +271,7 @@ deploy_docs:
     - triggers
   script:
     # remove artifacts from last stage (UT logs)
-    - rm -rf $LOG_PATH || echo "log folder not exist"
+    - rm -rf $LOG_PATH
     # must be night build triggers, otherwise exit without test
     - test $NIGHT_BUILD = "Yes" || exit 0
     # add gitlab ssh key
