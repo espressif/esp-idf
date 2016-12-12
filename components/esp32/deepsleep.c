@@ -26,6 +26,7 @@
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "sdkconfig.h"
 
 /* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
    is not thread-safe. */
@@ -66,6 +67,12 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void) {
     /* Clear MMU for CPU 0 */
     REG_SET_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MMU_IA_CLR);
     REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MMU_IA_CLR);
+#if CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY > 0
+    // ROM code has not started yet, so we need to set delay factor
+    // used by ets_delay_us first.
+    ets_update_cpu_frequency(ets_get_detected_xtal_freq() / 1000000);
+    ets_delay_us(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY);
+#endif
 }
 
 void __attribute__((weak, alias("esp_default_wake_deep_sleep"))) esp_wake_deep_sleep(void);
