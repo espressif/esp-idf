@@ -51,7 +51,7 @@ enum {
 #define HCI_H4_TASK_STACK_SIZE		1024
 #define HCI_H4_TASK_PRIO			(configMAX_PRIORITIES - 3)
 #define HCI_H4_TASK_NAME			"hciH4T"
-#define HCI_H4_QUEUE_NUM			30
+#define HCI_H4_QUEUE_NUM			40
 
 #define BTU_TASK_STACK_SIZE			4096
 #define BTU_TASK_PRIO				(configMAX_PRIORITIES - 1)

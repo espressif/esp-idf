@@ -20,15 +20,6 @@
 #include "allocator.h"
 #include "gki_int.h"
 
-#define ALIGN_POOL(pl_size)  ( (((pl_size) + 3) / sizeof(UINT32)) * sizeof(UINT32))
-#define BUFFER_HDR_SIZE     (sizeof(BUFFER_HDR_T))                  /* Offset past header */
-#define BUFFER_PADDING_SIZE (sizeof(BUFFER_HDR_T) + sizeof(UINT32)) /* Header + Magic Number */
-#define MAGIC_NO            0xDDBADDBA
-
-#define BUF_STATUS_FREE     0
-#define BUF_STATUS_UNLINKED 1
-#define BUF_STATUS_QUEUED   2
-
 /*******************************************************************************
 **
 ** Function         gki_init_free_queue
@@ -173,7 +164,7 @@ void GKI_init_q (BUFFER_Q *p_q)
 
 /*******************************************************************************
 **
-** Function         GKI_getbuf
+** Function         GKI_getbuf_func
 **
 ** Description      Called by an application to get a free buffer which
 **                  is of size greater or equal to the requested size.
@@ -187,7 +178,7 @@ void GKI_init_q (BUFFER_Q *p_q)
 ** Returns          A pointer to the buffer, or NULL if none available
 **
 *******************************************************************************/
-void *GKI_getbuf (UINT16 size)
+void *GKI_getbuf_func(UINT16 size)
 {
     BUFFER_HDR_T *header = osi_malloc(size + BUFFER_HDR_SIZE);
     header->status  = BUF_STATUS_UNLINKED;
@@ -198,10 +189,9 @@ void *GKI_getbuf (UINT16 size)
     return header + 1;
 }
 
-
 /*******************************************************************************
 **
-** Function         GKI_getpoolbuf
+** Function         GKI_getpoolbuf_func
 **
 ** Description      Called by an application to get a free buffer from
 **                  a specific buffer pool.
@@ -214,9 +204,9 @@ void *GKI_getbuf (UINT16 size)
 ** Returns          A pointer to the buffer, or NULL if none available
 **
 *******************************************************************************/
-void *GKI_getpoolbuf (UINT8 pool_id)
+void *GKI_getpoolbuf_func(UINT8 pool_id)
 {
-    return GKI_getbuf(gki_cb.com.pool_size[pool_id]);
+    return GKI_getbuf_func(gki_cb.com.pool_size[pool_id]);
 }
 
 /*******************************************************************************
@@ -234,7 +224,6 @@ void GKI_freebuf (void *p_buf)
 {
     osi_free((BUFFER_HDR_T *)p_buf - 1);
 }
-
 
 /*******************************************************************************
 **

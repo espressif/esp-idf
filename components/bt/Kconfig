@@ -14,6 +14,12 @@ config BTC_TASK_STACK_SIZE
 	help
 		This select btc task stack size
 
+config BLUEDROID_MEM_DEBUG
+	bool "Bluedroid memory debug"
+	default no
+	help
+		Bluedroid memory debug
+
 #config BT_BTLE
 #    bool "Enable BTLE"
 #    depends on BT_ENABLED

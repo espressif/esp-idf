@@ -37,6 +37,7 @@
 #include "hash_functions.h"
 #include "controller.h"
 #include "hci_layer.h"
+#include "bta_api.h"
 
 //#include "bluedroid_test.h"
 /*
@@ -104,6 +105,7 @@ fixed_queue_t *btu_hci_msg_queue;
 
 bluedroid_init_done_cb_t bluedroid_init_done_cb;
 
+extern void osi_mem_dbg_init(void);
 /******************************************************************************
 **
 ** Function         bte_main_boot_entry
@@ -115,6 +117,10 @@ bluedroid_init_done_cb_t bluedroid_init_done_cb;
 ******************************************************************************/
 int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 {
+#ifdef CONFIG_BLUEDROID_MEM_DEBUG
+    osi_mem_dbg_init();
+#endif
+
     if (gki_init()) {
         LOG_ERROR("%s: Init GKI Module Failure.\n", __func__);
         return -1;
@@ -163,6 +169,7 @@ void bte_main_shutdown(void)
 {
     //data_dispatcher_register_default(hci_layer_get_interface()->event_dispatcher, NULL);
     hci->set_data_queue(NULL);
+    fixed_queue_unregister_dequeue(btu_hci_msg_queue);
     fixed_queue_free(btu_hci_msg_queue, NULL);
 
     btu_hci_msg_queue = NULL;
@@ -174,9 +181,11 @@ void bte_main_shutdown(void)
         module_clean_up(get_module(GKI_MODULE));
     */
 
-    gki_clean_up();
-
+#if (BLE_INCLUDED == TRUE)
+    BTA_VendorCleanup();
+#endif
     bte_main_disable();
+    gki_clean_up();
 }
 
 /******************************************************************************

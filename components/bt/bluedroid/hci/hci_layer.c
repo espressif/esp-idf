@@ -198,7 +198,7 @@ static void hci_layer_deinit_env(void)
     command_waiting_response_t *cmd_wait_q;
 
     if (hci_host_env.command_queue) {
-        fixed_queue_free(hci_host_env.command_queue, osi_free);
+        fixed_queue_free(hci_host_env.command_queue, allocator_calloc.free);
     }
     if (hci_host_env.packet_queue) {
         fixed_queue_free(hci_host_env.packet_queue, buffer_allocator->free);

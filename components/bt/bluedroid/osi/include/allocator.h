@@ -36,8 +36,47 @@ extern const allocator_t allocator_calloc;
 
 char *osi_strdup(const char *str);
 
-void *osi_malloc(size_t size);
-void *osi_calloc(size_t size);
-void osi_free(void *ptr);
+void *osi_malloc_func(size_t size);
+void *osi_calloc_func(size_t size);
+void osi_free_func(void *ptr);
+
+#ifdef CONFIG_BLUEDROID_MEM_DEBUG
+
+void osi_mem_dbg_init(void);
+void osi_mem_dbg_record(void *p, int size, const char *func, int line);
+void osi_mem_dbg_clean(void *p);
+void osi_mem_dbg_show(void);
+
+#define osi_malloc(size)                                \
+({                                                      \
+    void *p;                                            \
+                                                        \
+    p = osi_malloc_func(size);                          \
+    osi_mem_dbg_record(p, size, __func__, __LINE__);    \
+    (void *)p;                                           \
+})
+
+#define osi_calloc(size)                                \
+({                                                      \
+    void *p;                                            \
+                                                        \
+    p = osi_calloc_func(size);                          \
+    osi_mem_dbg_record(p, size, __func__, __LINE__);    \
+    (void *)p;                                           \
+})
+
+#define osi_free(ptr)                                   \
+({                                                      \
+    osi_mem_dbg_clean(ptr);                             \
+    osi_free_func((ptr));                               \
+})
+
+#else
+
+#define osi_malloc                  osi_malloc_func
+#define osi_calloc                  osi_calloc_func
+#define osi_free                    osi_free_func
+
+#endif /* CONFIG_BLUEDROID_MEM_DEBUG */
 
 #endif /* _ALLOCATOR_H_ */
