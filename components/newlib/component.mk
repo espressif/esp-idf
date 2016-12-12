@@ -5,6 +5,10 @@ else
 LIBC_PATH := $(COMPONENT_PATH)/lib/libc.a
 endif
 
-COMPONENT_ADD_LDFLAGS := $(LIBC_PATH) $(COMPONENT_PATH)/lib/libm.a -lnewlib
+LIBM_PATH := $(COMPONENT_PATH)/lib/libm.a
+
+COMPONENT_ADD_LDFLAGS := $(LIBC_PATH) $(LIBM_PATH) -lnewlib
+
+COMPONENT_ADD_LINKER_DEPS := $(LIBC_PATH) $(LIBM_PATH)
 
 COMPONENT_ADD_INCLUDEDIRS := include platform_include

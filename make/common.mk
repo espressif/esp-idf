@@ -52,5 +52,5 @@ endef
 #
 # example $(call resolvepath,$(CONFIG_PATH),$(CONFIG_DIR))
 define resolvepath
-$(if $(filter /%,$(1)),$(1),$(subst //,/,$(2)/$(1)))
+$(foreach dir,$(1),$(if $(filter /%,$(dir)),$(dir),$(subst //,/,$(2)/$(dir))))
 endef

@@ -188,6 +188,10 @@ The following variables can be set inside ``component.mk`` to control build sett
   are available at all times. It is necessary if one component
   generates an include file which you then want to include in another
   component. Most components do not need to set this variable.
+- ``COMPONENT_ADD_LINKER_DEPS``: Optional list of component-relative paths
+  to files which should trigger a re-link of the ELF file if they change.
+  Typically used for linker script files and binary libraries. Most components do
+  not need to set this variable.
 
 The following variable only works for components that are part of esp-idf itself:
 
