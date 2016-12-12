@@ -21,11 +21,13 @@
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
 
-static const char* TIMER_TAG = "TIMER_GROUP";
-#define TIMER_CHECK(a, str, ret_val) if (!(a)) {                                       \
-        ESP_LOGE(TIMER_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
-        return (ret_val);                                                              \
-        }
+static const char* TIMER_TAG = "timer_group";
+#define TIMER_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(TIMER_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
+
 #define TIMER_GROUP_NUM_ERROR   "TIMER GROUP NUM ERROR"
 #define TIMER_NUM_ERROR         "HW TIMER NUM ERROR"
 #define TIMER_PARAM_ADDR_ERROR  "HW TIMER PARAM ADDR ERROR"

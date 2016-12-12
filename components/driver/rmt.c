@@ -44,14 +44,16 @@
 #define RMT_DRIVER_ERROR_STR      "RMT DRIVER ERR"
 #define RMT_DRIVER_LENGTH_ERROR_STR  "RMT PARAM LEN ERROR"
 
-static const char* RMT_TAG = "RMT";
+static const char* RMT_TAG = "rmt";
 static bool s_rmt_driver_installed = false;
 static rmt_isr_handle_t s_rmt_driver_intr_handle;
 
-#define RMT_CHECK(a, str, ret) if (!(a)) {                                           \
-        ESP_LOGE(RMT_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
-        return (ret);                                                                \
-        }
+#define RMT_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(RMT_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
+
 static portMUX_TYPE rmt_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 typedef struct {

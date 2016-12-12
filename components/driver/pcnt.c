@@ -24,12 +24,14 @@
 #define PCNT_COUNT_MODE_ERR_STR "PCNT COUNTER MODE ERROR"
 #define PCNT_CTRL_MODE_ERR_STR  "PCNT CTRL MODE ERROR"
 #define PCNT_EVT_TYPE_ERR_STR   "PCNT value type error"
-#define PCNT_CHECK(a,str,ret_val) if(!(a)) { \
-	    ESP_LOGE(PCNT_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str); \
-		return (ret_val); \
-        }
 
-static const char* PCNT_TAG = "PCNT";
+static const char* PCNT_TAG = "pcnt";
+#define PCNT_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(PCNT_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
+
 static portMUX_TYPE pcnt_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 #define PCNT_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)

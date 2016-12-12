@@ -29,11 +29,13 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 
-static const char* UART_TAG = "UART";
-#define UART_CHECK(a, str, ret) if (!(a)) {                                             \
-        ESP_LOGE(UART_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
-        return (ret);                                                                   \
-        }
+static const char* UART_TAG = "uart";
+#define UART_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(UART_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
+
 #define UART_EMPTY_THRESH_DEFAULT  (10)
 #define UART_FULL_THRESH_DEFAULT  (120)
 #define UART_TOUT_THRESH_DEFAULT   (10)

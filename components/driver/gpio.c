@@ -22,11 +22,12 @@
 #include "soc/soc.h"
 #include "esp_log.h"
 
-static const char* GPIO_TAG = "GPIO";
-#define GPIO_CHECK(a, str, ret_val) if (!(a)) {                                         \
-        ESP_LOGE(GPIO_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
-        return (ret_val);                                                               \
-        }
+static const char* GPIO_TAG = "gpio";
+#define GPIO_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(GPIO_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
 
 const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
     GPIO_PIN_REG_0,
