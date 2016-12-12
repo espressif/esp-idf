@@ -97,6 +97,7 @@ Contents:
    :maxdepth: 1
 
    Wi-Fi <api/esp_wifi>
+   Smart Config <api/esp_smartconfig>
    Bluetooth <api/bt>
    Watchdogs <api/wdts>
    OTA <api/ota>

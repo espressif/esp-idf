@@ -507,16 +507,14 @@ esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, uint8_t mac[6]);
 esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]);
 
 /**
-  * @brief The RX callback function in the promiscuous mode.
+  * @brief The RX callback function in the promiscuous mode. 
+  *        Each time a packet is received, the callback function will be called.
   *
-  * Each time a packet is received, the callback function will be called.
+  * @param buf  Data received. Type of data in buffer (wifi_promiscuous_pkt_t or wifi_pkt_rx_ctrl_t) indicated by 'type' parameter.
+  * @param type  promiscuous packet type.
   *
-  * @param buf  the data received
-  * @param len  data length
-  *
-  * @return    none
   */
-typedef void (* wifi_promiscuous_cb_t)(void *buf, uint16_t len);
+typedef void (* wifi_promiscuous_cb_t)(void *buf, wifi_promiscuous_pkt_type_t type);
 
 /**
   * @brief Register the RX callback function in the promiscuous mode.
