@@ -10,7 +10,7 @@
 # where this file is located.
 #
 
-.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules
+.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size
 all: all_binaries
 # see below for recipe of 'all' target
 #
@@ -28,6 +28,7 @@ help:
 	@echo "make all - Build app, bootloader, partition table"
 	@echo "make flash - Flash all components to a fresh chip"
 	@echo "make clean - Remove all build output"
+	@echo "make size - Display the memory footprint of the app"
 	@echo ""
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
@@ -232,7 +233,8 @@ HOSTCC := $(CC)
 HOSTLD := $(LD)
 HOSTAR := $(AR)
 HOSTOBJCOPY := $(OBJCOPY)
-export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY
+HOSTSIZE := $(SIZE)
+export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
 
 # Set target compiler. Defaults to whatever the user has
 # configured as prefix + ye olde gcc commands
@@ -241,7 +243,8 @@ CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
 LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
 AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
 OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
-export CC CXX LD AR OBJCOPY
+SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
+export CC CXX LD AR OBJCOPY SIZE
 
 PYTHON=$(call dequote,$(CONFIG_PYTHON))
 
@@ -342,6 +345,9 @@ $(foreach component,$(TEST_COMPONENT_PATHS),$(eval $(call GenerateComponentTarge
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)
 	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
+	
+size: $(APP_ELF)
+	$(SIZE) $(APP_ELF)
 
 # NB: this ordering is deliberate (app-clean before config-clean),
 # so config remains valid during all component clean targets
