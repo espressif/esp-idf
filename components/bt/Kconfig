@@ -10,7 +10,7 @@ config BT_ENABLED
 
 config BTC_TASK_STACK_SIZE
 	int "BT event (callback to application) task stack size"
-	default 2048
+	default 3072
 	help
 		This select btc task stack size
 
