@@ -28,12 +28,15 @@
 #include "soc/timer_group_reg.h"
 
 /* Base offset in flash for tests. */
-#define FLASH_BASE 0x100000
+#define FLASH_BASE 0x120000
+
+#ifndef CONFIG_SPI_FLASH_MINIMAL_TEST
+#define CONFIG_SPI_FLASH_MINIMAL_TEST 1
+#endif
 
 static void fill(char *dest, int32_t start, int32_t len)
 {
-    for (int32_t i = 0; i < len; i++)
-    {
+    for (int32_t i = 0; i < len; i++) {
         *(dest + i) = (char) (start + i);
     }
 }
@@ -41,15 +44,12 @@ static void fill(char *dest, int32_t start, int32_t len)
 static int cmp_or_dump(const void *a, const void *b, size_t len)
 {
     int r = memcmp(a, b, len);
-    if (r != 0)
-    {
-        for (int i = 0; i < len; i++)
-        {
+    if (r != 0) {
+        for (int i = 0; i < len; i++) {
             fprintf(stderr, "%02x", ((unsigned char *) a)[i]);
         }
         fprintf(stderr, "\n");
-        for (int i = 0; i < len; i++)
-        {
+        for (int i = 0; i < len; i++) {
             fprintf(stderr, "%02x", ((unsigned char *) b)[i]);
         }
         fprintf(stderr, "\n");
@@ -66,63 +66,64 @@ static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
     fill(((char *) src_buf) + src_off, src_off, len);
     ESP_ERROR_CHECK(spi_flash_erase_sector((FLASH_BASE + src_off) / SPI_FLASH_SEC_SIZE));
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    assert(SPIWrite(FLASH_BASE, src_buf, sizeof(src_buf)) == SPI_FLASH_RESULT_OK);
+    SpiFlashOpResult rc = SPIWrite(FLASH_BASE, src_buf, sizeof(src_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
+    TEST_ASSERT_EQUAL_INT(rc, SPI_FLASH_RESULT_OK);
     memset(dst_buf, 0x55, sizeof(dst_buf));
     memset(dst_gold, 0x55, sizeof(dst_gold));
     fill(dst_gold + dst_off, src_off, len);
 
     ESP_ERROR_CHECK(spi_flash_read(FLASH_BASE + src_off, dst_buf + dst_off, len));
-    assert(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)) == 0);
+    TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
 TEST_CASE("Test spi_flash_read", "[spi_flash_read]")
 {
-#if 1
-  test_read(0, 0, 0);
-  test_read(0, 0, 4);
-  test_read(0, 0, 16);
-  test_read(0, 0, 64);
-  test_read(0, 0, 1);
-  test_read(0, 1, 1);
-  test_read(1, 0, 1);
-  test_read(1, 1, 1);
-  test_read(1, 1, 2);
-  test_read(1, 1, 3);
-  test_read(1, 1, 4);
-  test_read(1, 1, 5);
-  test_read(3, 2, 5);
-  test_read(0, 0, 17);
-  test_read(0, 1, 17);
-  test_read(1, 0, 17);
-  test_read(1, 1, 17);
-  test_read(1, 1, 18);
-  test_read(1, 1, 19);
-  test_read(1, 1, 20);
-  test_read(1, 1, 21);
-  test_read(3, 2, 21);
-  test_read(4, 4, 60);
-  test_read(59, 0, 5);
-  test_read(60, 0, 4);
-  test_read(60, 0, 3);
-  test_read(60, 0, 2);
-  test_read(63, 0, 1);
-  test_read(64, 0, 0);
-  test_read(59, 59, 5);
-  test_read(60, 60, 4);
-  test_read(60, 60, 3);
-  test_read(60, 60, 2);
-  test_read(63, 63, 1);
-  test_read(64, 64, 0);
+#if CONFIG_SPI_FLASH_MINIMAL_TEST
+    test_read(0, 0, 0);
+    test_read(0, 0, 4);
+    test_read(0, 0, 16);
+    test_read(0, 0, 64);
+    test_read(0, 0, 1);
+    test_read(0, 1, 1);
+    test_read(1, 0, 1);
+    test_read(1, 1, 1);
+    test_read(1, 1, 2);
+    test_read(1, 1, 3);
+    test_read(1, 1, 4);
+    test_read(1, 1, 5);
+    test_read(3, 2, 5);
+    test_read(0, 0, 17);
+    test_read(0, 1, 17);
+    test_read(1, 0, 17);
+    test_read(1, 1, 17);
+    test_read(1, 1, 18);
+    test_read(1, 1, 19);
+    test_read(1, 1, 20);
+    test_read(1, 1, 21);
+    test_read(3, 2, 21);
+    test_read(4, 4, 60);
+    test_read(59, 0, 5);
+    test_read(60, 0, 4);
+    test_read(60, 0, 3);
+    test_read(60, 0, 2);
+    test_read(63, 0, 1);
+    test_read(64, 0, 0);
+    test_read(59, 59, 5);
+    test_read(60, 60, 4);
+    test_read(60, 60, 3);
+    test_read(60, 60, 2);
+    test_read(63, 63, 1);
+    test_read(64, 64, 0);
 #else
-  /* This will run a more thorough test but will slam flash pretty hard. */
-  for (int src_off = 1; src_off < 16; src_off++) {
-    for (int dst_off = 0; dst_off < 16; dst_off++) {
-      for (int len = 0; len < 32; len++) {
-        test_read(dst_off, src_off, len);
-      }
+    /* This will run a more thorough test but will slam flash pretty hard. */
+    for (int src_off = 1; src_off < 16; src_off++) {
+        for (int dst_off = 0; dst_off < 16; dst_off++) {
+            for (int len = 0; len < 32; len++) {
+                test_read(dst_off, src_off, len);
+            }
+        }
     }
-  }
 #endif
 }
 
@@ -136,12 +137,10 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     // Fills with 0xff
     ESP_ERROR_CHECK(spi_flash_erase_sector((FLASH_BASE + dst_off) / SPI_FLASH_SEC_SIZE));
     memset(dst_gold, 0xff, sizeof(dst_gold));
-    if (len > 0)
-    {
+    if (len > 0) {
         int pad_left_off = (dst_off & ~3U);
         memset(dst_gold + pad_left_off, 0xff, 4);
-        if (dst_off + len > pad_left_off + 4 && (dst_off + len) % 4 != 0)
-        {
+        if (dst_off + len > pad_left_off + 4 && (dst_off + len) % 4 != 0) {
             int pad_right_off = ((dst_off + len) & ~3U);
             memset(dst_gold + pad_right_off, 0xff, 4);
         }
@@ -149,59 +148,60 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     }
     ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE + dst_off, src_buf + src_off, len));
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    assert(SPIRead(FLASH_BASE, dst_buf, sizeof(dst_buf)) == SPI_FLASH_RESULT_OK);
+    SpiFlashOpResult rc = SPIRead(FLASH_BASE, dst_buf, sizeof(dst_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    assert(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)) == 0);
+    TEST_ASSERT_EQUAL_INT(rc, SPI_FLASH_RESULT_OK);
+    TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
 TEST_CASE("Test spi_flash_write", "[spi_flash_write]")
 {
-#if 1
-  test_write(0, 0, 0);
-  test_write(0, 0, 4);
-  test_write(0, 0, 16);
-  test_write(0, 0, 64);
-  test_write(0, 0, 1);
-  test_write(0, 1, 1);
-  test_write(1, 0, 1);
-  test_write(1, 1, 1);
-  test_write(1, 1, 2);
-  test_write(1, 1, 3);
-  test_write(1, 1, 4);
-  test_write(1, 1, 5);
-  test_write(3, 2, 5);
-  test_write(4, 4, 60);
-  test_write(59, 0, 5);
-  test_write(60, 0, 4);
-  test_write(60, 0, 3);
-  test_write(60, 0, 2);
-  test_write(63, 0, 1);
-  test_write(64, 0, 0);
-  test_write(59, 59, 5);
-  test_write(60, 60, 4);
-  test_write(60, 60, 3);
-  test_write(60, 60, 2);
-  test_write(63, 63, 1);
-  test_write(64, 64, 0);
+#if CONFIG_SPI_FLASH_MINIMAL_TEST
+    test_write(0, 0, 0);
+    test_write(0, 0, 4);
+    test_write(0, 0, 16);
+    test_write(0, 0, 64);
+    test_write(0, 0, 1);
+    test_write(0, 1, 1);
+    test_write(1, 0, 1);
+    test_write(1, 1, 1);
+    test_write(1, 1, 2);
+    test_write(1, 1, 3);
+    test_write(1, 1, 4);
+    test_write(1, 1, 5);
+    test_write(3, 2, 5);
+    test_write(4, 4, 60);
+    test_write(59, 0, 5);
+    test_write(60, 0, 4);
+    test_write(60, 0, 3);
+    test_write(60, 0, 2);
+    test_write(63, 0, 1);
+    test_write(64, 0, 0);
+    test_write(59, 59, 5);
+    test_write(60, 60, 4);
+    test_write(60, 60, 3);
+    test_write(60, 60, 2);
+    test_write(63, 63, 1);
+    test_write(64, 64, 0);
 #else
-  /* This will run a more thorough test but will slam flash pretty hard. */
-  for (int dst_off = 1; dst_off < 16; dst_off++) {
-    for (int src_off = 0; src_off < 16; src_off++) {
-      for (int len = 0; len < 16; len++) {
-        test_write(dst_off, src_off, len);
-      }
+    /* This will run a more thorough test but will slam flash pretty hard. */
+    for (int dst_off = 1; dst_off < 16; dst_off++) {
+        for (int src_off = 0; src_off < 16; src_off++) {
+            for (int len = 0; len < 16; len++) {
+                test_write(dst_off, src_off, len);
+            }
+        }
     }
-  }
 #endif
-  /*
-   * Test writing from ROM, IRAM and caches. We don't know what exactly will be
-   * written, we're testing that there's no crash here.
-   *
-   * NB: At the moment these only support aligned addresses, because memcpy
-   * is not aware of the 32-but load requirements for these regions.
-   */
-  ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40000000, 16));
-  ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40070000, 16));
-  ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40078000, 16));
-  ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40080000, 16));
+    /*
+     * Test writing from ROM, IRAM and caches. We don't know what exactly will be
+     * written, we're testing that there's no crash here.
+     *
+     * NB: At the moment these only support aligned addresses, because memcpy
+     * is not aware of the 32-but load requirements for these regions.
+     */
+    ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40000000, 16));
+    ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40070000, 16));
+    ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40078000, 16));
+    ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40080000, 16));
 }
