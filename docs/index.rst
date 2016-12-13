@@ -48,7 +48,8 @@ Contents:
      1.3. Flash encryption and secure boot: how they work and APIs
      1.4. Lower Power Coprocessor - TBA
      1.5. Watchdogs <api/wdts>
-     1.6. ...
+     1.6. Memory allocation <api/mem_alloc>
+     1.7. ...
    2. Memory - TBA
      2.1. Memory layout of the application (IRAM/IROM, limitations of each) - TBA
      2.2. Flash layout and partitions - TBA
@@ -111,6 +112,7 @@ Contents:
    Virtual Filesystem <api/vfs>
    Ethernet <api/esp_eth>
    Interrupt Allocation <api/intr_alloc>
+   Memory Allocation <api/mem_alloc>
    deep-sleep-stub
 
    Template <api/template>

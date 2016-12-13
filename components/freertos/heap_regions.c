@@ -147,8 +147,9 @@ task.h is included from an application file. */
 #define heapBITS_PER_BYTE       ( ( size_t ) 8 )
 
 /* Define the linked list structure.  This is used to link free blocks in order
-of their memory address. */
-/* This is optimized and assumes a region is never larger than 16MiB. */
+   of their memory address. This is optimized for size of the linked list struct
+   and assumes a region is never larger than 16MiB. */
+#define HEAPREGIONS_MAX_REGIONSIZE (16*1024*1024)
 typedef struct A_BLOCK_LINK
 {
     struct A_BLOCK_LINK *pxNextFreeBlock;   /*<< The next free block in the list. */
@@ -496,6 +497,7 @@ const HeapRegionTagged_t *pxHeapRegion;
         }
 
         configASSERT(pxHeapRegion->xTag < HEAPREGIONS_MAX_TAGCOUNT);
+        configASSERT(pxHeapRegion->xSizeInBytes < HEAPREGIONS_MAX_REGIONSIZE);
         xTotalRegionSize = pxHeapRegion->xSizeInBytes;
 
         /* Ensure the heap region starts on a correctly aligned boundary. */

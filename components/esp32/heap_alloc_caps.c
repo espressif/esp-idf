@@ -164,8 +164,9 @@ static void disable_mem_region(void *from, void *to) {
 
 
 /*
-ToDo: These are very dependent on the linker script, and the logic involving this works only
-because we're not using the SPI flash yet! If we enable that, this will break. ToDo: Rewrite by then.
+Warning: These variables are assumed to have the start and end of the data and iram
+area used statically by the program, respectively. These variables are defined in the ld
+file.
 */
 extern int _bss_start, _heap_start, _init_start, _iram_text_end;
 
@@ -177,6 +178,8 @@ Same with loading of apps. Same with using SPI RAM.
 */
 void heap_alloc_caps_init() {
     int i;
+    //Compile-time assert to see if we don't have more tags than is set in heap_regions.h
+    _Static_assert((sizeof(tag_desc)/sizeof(tag_desc[0]))-1 <= HEAPREGIONS_MAX_TAGCOUNT, "More than HEAPREGIONS_MAX_TAGCOUNT tags defined!");
     //Disable the bits of memory where this code is loaded.
     disable_mem_region(&_bss_start, &_heap_start);            //DRAM used by bss/data static variables
     disable_mem_region(&_init_start, &_iram_text_end);        //IRAM used by code
@@ -217,7 +220,7 @@ void heap_alloc_caps_init() {
         }
     }
 
-    ESP_EARLY_LOGI(TAG, "Initializing. RAM available for heap:");
+    ESP_EARLY_LOGI(TAG, "Initializing. RAM available for dynamic allocation:");
     for (i=0; regions[i].xSizeInBytes!=0; i++) {
         if (regions[i].xTag != -1) {
             ESP_EARLY_LOGI(TAG, "At %08X len %08X (%d KiB): %s", 
