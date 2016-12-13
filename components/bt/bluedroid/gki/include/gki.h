@@ -90,12 +90,12 @@ UINT16  GKI_poolutilization (UINT8);
     header->p_next  = NULL;                                         \
     header->Type    = 0;                                            \
     header->size = (_size);                                          \
-    (header + 1);                                                   \
+    (void *)(header + 1);                                                   \
 })
 
 #define GKI_getpoolbuf(_pool_id)                                     \
 ({                                                                  \
-    GKI_getbuf(gki_cb.com.pool_size[(_pool_id)]);                    \
+    (void *)GKI_getbuf(gki_cb.com.pool_size[(_pool_id)]);                    \
 })
            
 #else

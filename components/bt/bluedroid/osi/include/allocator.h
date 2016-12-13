@@ -44,38 +44,38 @@ void osi_free_func(void *ptr);
 
 void osi_mem_dbg_init(void);
 void osi_mem_dbg_record(void *p, int size, const char *func, int line);
-void osi_mem_dbg_clean(void *p);
+void osi_mem_dbg_clean(void *p, const char *func, int line);
 void osi_mem_dbg_show(void);
 
 #define osi_malloc(size)                                \
 ({                                                      \
     void *p;                                            \
                                                         \
-    p = osi_malloc_func(size);                          \
+    p = calloc(1, (size));                              \
     osi_mem_dbg_record(p, size, __func__, __LINE__);    \
-    (void *)p;                                           \
+    (void *)p;                                          \
 })
 
 #define osi_calloc(size)                                \
 ({                                                      \
     void *p;                                            \
                                                         \
-    p = osi_calloc_func(size);                          \
+    p = calloc(1, (size));                              \
     osi_mem_dbg_record(p, size, __func__, __LINE__);    \
-    (void *)p;                                           \
+    (void *)p;                                          \
 })
 
 #define osi_free(ptr)                                   \
 ({                                                      \
-    osi_mem_dbg_clean(ptr);                             \
-    osi_free_func((ptr));                               \
+    osi_mem_dbg_clean(ptr, __func__, __LINE__);         \
+    free((ptr));                                        \
 })
 
 #else
 
-#define osi_malloc                  osi_malloc_func
-#define osi_calloc                  osi_calloc_func
-#define osi_free                    osi_free_func
+#define osi_malloc(size)                  calloc(1, (size))
+#define osi_calloc(size)                  calloc(1, (size))
+#define osi_free(p)                       free((p))
 
 #endif /* CONFIG_BLUEDROID_MEM_DEBUG */
 

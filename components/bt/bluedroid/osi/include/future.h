@@ -20,7 +20,14 @@
 #define __FUTURE_H__
 // #pragma once
 
-typedef struct future_t future_t;
+#include "osi_arch.h"
+
+struct future {
+    bool ready_can_be_called;
+    osi_sem_t semaphore; // NULL semaphore means immediate future
+    void *result;
+};
+typedef struct future future_t;
 
 #define FUTURE_SUCCESS ((void *)1)
 #define FUTURE_FAIL ((void *)0)

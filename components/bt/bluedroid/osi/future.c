@@ -16,21 +16,12 @@
  *
  ******************************************************************************/
 
-// #define LOG_TAG "bt_osi_future"
-// #include <assert.h>
 #include "bt_trace.h"
 
 #include "allocator.h"
 #include "future.h"
 #include "osi.h"
-//#include "osi/include/log.h"
 #include "osi_arch.h"
-
-struct future_t {
-    bool ready_can_be_called;
-    osi_sem_t semaphore; // NULL semaphore means immediate future
-    void *result;
-};
 
 static void future_free(future_t *future);
 
@@ -100,7 +91,7 @@ static void future_free(future_t *future)
         return;
     }
 
-    if (!future->semaphore) {
+    if (future->semaphore) {
         osi_sem_free(&future->semaphore);
     }
 

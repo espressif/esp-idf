@@ -73,11 +73,11 @@ void osi_mem_dbg_record(void *p, int size, const char *func, int line)
     }
 
     if (i >= OSI_MEM_DBG_INFO_MAX) {
-        LOG_ERROR("%s full !!\n", __func__);
+        LOG_ERROR("%s full %s %d !!\n", __func__, func, line);
     }
 }
 
-void osi_mem_dbg_clean(void *p)
+void osi_mem_dbg_clean(void *p, const char *func, int line)
 {
     int i;
 
@@ -98,7 +98,7 @@ void osi_mem_dbg_clean(void *p)
     }
 
     if (i >= OSI_MEM_DBG_INFO_MAX) {
-        LOG_ERROR("%s full !!\n", __func__);
+        LOG_ERROR("%s full %s %d !!\n", __func__, func, line);
     }
 }
 
@@ -130,16 +130,35 @@ char *osi_strdup(const char *str)
 
 void *osi_malloc_func(size_t size)
 {
+#ifdef CONFIG_BLUEDROID_MEM_DEBUG
+    void *p;
+
+    p = calloc(1, size);
+    osi_mem_dbg_record(p, size, __func__, __LINE__);
+    return p;
+#else
     return calloc(1, size);
+#endif
 }
 
 void *osi_calloc_func(size_t size)
 {
+#ifdef CONFIG_BLUEDROID_MEM_DEBUG
+    void *p;
+
+    p = calloc(1, size);
+    osi_mem_dbg_record(p, size, __func__, __LINE__);
+    return p;
+#else
     return calloc(1, size);
+#endif
 }
 
 void osi_free_func(void *ptr)
 {
+#ifdef CONFIG_BLUEDROID_MEM_DEBUG
+    osi_mem_dbg_clean(ptr, __func__, __LINE__); 
+#endif
     free(ptr);
 }
 
