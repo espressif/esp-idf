@@ -726,12 +726,12 @@ void esp_intr_noniram_enable()
 //equivalents here.
 
 
-void ets_isr_unmask(unsigned int mask) {
-	xt_ints_on(mask);
+void IRAM_ATTR ets_isr_unmask(unsigned int mask) {
+    xt_ints_on(mask);
 }
 
-void ets_isr_mask(unsigned int mask) {
-	xt_ints_off(mask);
+void IRAM_ATTR ets_isr_mask(unsigned int mask) {
+    xt_ints_off(mask);
 }
 
 
