@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "esp_deepsleep.h"
+#include "esp_deep_sleep.h"
 
 #ifdef __cplusplus
 extern "C" {

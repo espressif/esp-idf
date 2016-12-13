@@ -14,18 +14,18 @@
 
 #include <stddef.h>
 #include <sys/lock.h>
+#include "esp_attr.h"
+#include "esp_deep_sleep.h"
+#include "esp_log.h"
 #include "rom/cache.h"
 #include "rom/rtc.h"
+#include "soc/cpu.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
-#include "esp_attr.h"
-#include "esp_deepsleep.h"
-#include "esp_log.h"
-#include "soc/cpu.h"
-#include "rtc.h"
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "rtc.h"
 #include "sdkconfig.h"
 
 /* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
