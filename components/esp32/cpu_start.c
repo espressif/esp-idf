@@ -228,8 +228,11 @@ void start_cpu1_default(void)
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
+    //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
+    //has started, but it isn't active *on this CPU* yet.
     esp_crosscore_int_init();
-    ESP_LOGI(TAG, "Starting scheduler on APP CPU.");
+
+    ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
 }
 #endif //!CONFIG_FREERTOS_UNICORE

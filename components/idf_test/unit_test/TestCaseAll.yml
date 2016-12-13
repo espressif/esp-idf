@@ -7,9 +7,9 @@ test cases:
   category: Function
   cmd set:
   - IDFUnitTest/UnitTest
-  - - test_case = "check if ROM is used for functions"
+  - - test_case = "check if ROM or Flash is used for functions"
     - [dummy]
-  comment: check if ROM is used for functions
+  comment: check if ROM or Flash is used for functions
   execution time: 0
   expected result: 1. set succeed
   initial condition: UTINIT1

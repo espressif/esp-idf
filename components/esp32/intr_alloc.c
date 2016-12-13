@@ -106,8 +106,8 @@ const static int_desc_t int_desc[32]={
     { 1, INTTP_NA,    {INT6RES,        INT6RES       } }, //6
     { 1, INTTP_NA,    {INTDESC_SPECIAL,INTDESC_SPECIAL}}, //7
     { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //8
-    { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //9
-    { 1, INTTP_EDGE , {INTDESC_RESVD,  INTDESC_NORMAL} }, //10
+    { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //9 //FRC1
+    { 1, INTTP_EDGE , {INTDESC_RESVD,  INTDESC_RESVD } }, //10 //FRC2
     { 3, INTTP_NA,    {INTDESC_SPECIAL,INTDESC_SPECIAL}}, //11
     { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //12
     { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //13
@@ -721,7 +721,18 @@ void esp_intr_noniram_enable()
         ::"r"(intmask):"a3");
 }
 
+//These functions are provided in ROM, but the ROM-based functions use non-multicore-capable
+//virtualized interrupt levels. Thus, we disable them in the ld file and provide working
+//equivalents here.
 
+
+void IRAM_ATTR ets_isr_unmask(unsigned int mask) {
+    xt_ints_on(mask);
+}
+
+void IRAM_ATTR ets_isr_mask(unsigned int mask) {
+    xt_ints_off(mask);
+}
 
 
 
