@@ -18,6 +18,7 @@
 #include "esp_heap_alloc_caps.h"
 #include "spiram.h"
 #include "esp_log.h"
+#include <stdbool.h>
 
 static const char* TAG = "heap_alloc_caps";
 
@@ -38,6 +39,7 @@ hardwiring addresses.
 typedef struct {
     const char *name;
     uint32_t prio[NO_PRIOS];
+    bool aliasedIram;
 } tag_desc_t;
 
 /*
@@ -46,23 +48,23 @@ Each tag contains NO_PRIOS entries; later entries are only taken if earlier ones
 Make sure there are never more than HEAPREGIONS_MAX_TAGCOUNT (in heap_regions.h) tags (ex the last empty marker)
 */
 static const tag_desc_t tag_desc[]={
-    { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }},                    //Tag 0: Plain ole D-port RAM
-    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }},    //Tag 1: Plain ole D-port RAM which has an alias on the I-port
-    { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 }},                                 //Tag 2: IRAM
-    { "PID2IRAM", { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //Tag 3-8: PID 2-7 IRAM
-    { "PID3IRAM", { MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
-    { "PID4IRAM", { MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
-    { "PID5IRAM", { MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
-    { "PID6IRAM", { MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
-    { "PID7IRAM", { MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }},                   //
-    { "PID2DRAM", { MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //Tag 9-14: PID 2-7 DRAM
-    { "PID3DRAM", { MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
-    { "PID4DRAM", { MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
-    { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
-    { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
-    { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }},                     //
-    { "SPISRAM", { MALLOC_CAP_SPISRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}}, //Tag 15: SPI SRAM data
-    { "", { MALLOC_CAP_INVALID, MALLOC_CAP_INVALID, MALLOC_CAP_INVALID }} //End
+    { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }, false},                        //Tag 0: Plain ole D-port RAM
+    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true},       //Tag 1: Plain ole D-port RAM which has an alias on the I-port
+    { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 }, false},                                     //Tag 2: IRAM
+    { "PID2IRAM", { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //Tag 3-8: PID 2-7 IRAM
+    { "PID3IRAM", { MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID4IRAM", { MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID5IRAM", { MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID6IRAM", { MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID7IRAM", { MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID2DRAM", { MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //Tag 9-14: PID 2-7 DRAM
+    { "PID3DRAM", { MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "PID4DRAM", { MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "SPISRAM", { MALLOC_CAP_SPISRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false},   //Tag 15: SPI SRAM data
+    { "", { MALLOC_CAP_INVALID, MALLOC_CAP_INVALID, MALLOC_CAP_INVALID }, false} //End
 };
 
 /*
@@ -231,12 +233,59 @@ void heap_alloc_caps_init() {
     vPortDefineHeapRegionsTagged( regions );
 }
 
+//First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
+#define DIRAM_IRAM_START 0x400A0000
+#define DIRAM_IRAM_END   0x400BFFFC
+#define DIRAM_DRAM_START 0x3FFE0000
+#define DIRAM_DRAM_END   0x3FFFFFFC
+
 /*
-Standard malloc() implementation. Will return ho-hum byte-accessible data memory.
+  This takes a memory chunk in a region that can be addressed as both DRAM as well as IRAM. It will convert it to
+  IRAM in such a way that it can be later freed. It assumes both the address as wel as the length to be word-aligned.
+  It returns a region that's 1 word smaller than the region given because it stores the original Dram address there.
+  
+  In theory, we can also make this work by prepending a struct that looks similar to the block link struct used by the
+  heap allocator itself, which will allow inspection tools relying on any block returned from any sort of malloc to
+  have such a block in front of it, work. We may do this later, if/when there is demand for it. For now, a simple
+  pointer is used.
+*/
+void *dram_alloc_to_iram_addr(void *addr, size_t len) 
+{
+    uint32_t dstart=(int)addr; //First word
+    uint32_t dend=((int)addr)+len-4; //Last word
+    configASSERT(dstart>=DIRAM_DRAM_START);
+    configASSERT(dend<=DIRAM_DRAM_END);
+    configASSERT((dstart&3)==0);
+    configASSERT((dend&3)==0);
+    uint32_t istart=DIRAM_IRAM_START+(DIRAM_DRAM_END-dend);
+    uint32_t *iptr=(uint32_t*)istart;
+    *iptr=dstart;
+    return (void*)(iptr+1);
+}
+
+/*
+Standard malloc() implementation. Will return standard no-frills byte-accessible data memory.
 */
 void *pvPortMalloc( size_t xWantedSize )
 {
     return pvPortMallocCaps( xWantedSize, MALLOC_CAP_8BIT );
+}
+
+/*
+ Standard free() implementation. Will pass memory on to the allocator unless it's an IRAM address where the
+ actual meory is allocated in DRAM, it will convert to the DRAM address then.
+ */
+void vPortFree( void *pv )
+{
+    if (((int)pv>=DIRAM_IRAM_START) && ((int)pv<=DIRAM_IRAM_END)) {
+        //Memory allocated here is actually allocated in the DRAM alias region and
+        //cannot be de-allocated as usual. dram_alloc_to_iram_addr stores a pointer to
+        //the equivalent DRAM address, though; free that.
+        uint32_t* dramAddrPtr=(uint32_t*)pv;
+        return vPortFreeTagged((void*)dramAddrPtr[-1]);
+    }
+
+    return vPortFreeTagged(pv);
 }
 
 /*
@@ -248,6 +297,17 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
     int tag, j;
     void *ret=NULL;
     uint32_t remCaps;
+    if (caps & MALLOC_CAP_EXEC) {
+        //MALLOC_CAP_EXEC forces an alloc from IRAM. There is a region which has both this
+        //as well as the following caps, but the following caps are not possible for IRAM.
+        //Thus, the combination is impossible and we return NULL directly, even although our tag_desc
+        //table would indicate there is a tag for this.
+        if ((caps & MALLOC_CAP_8BIT) || (caps & MALLOC_CAP_DMA)) {
+            return NULL;
+        }
+        //If any, EXEC memory should be 32-bit aligned, so round up to the next multiple of 4.
+        xWantedSize=(xWantedSize+3)&(~3);
+    }
     for (prio=0; prio<NO_PRIOS; prio++) {
         //Iterate over tag descriptors for this priority
         for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
@@ -262,8 +322,17 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
                 }
                 if (remCaps==0) {
                     //This tag can satisfy all the requested capabilities. See if we can grab some memory using it.
-                    ret=pvPortMallocTagged(xWantedSize, tag);
-                    if (ret!=NULL) return ret;
+                    if ((caps & MALLOC_CAP_EXEC) && tag_desc[tag].aliasedIram) {
+                        //This is special, insofar that what we're going to get back is probably a DRAM address. If so,
+                        //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
+                        //add a pointer to the DRAM equivalent before the address we're going to return.
+                        ret=pvPortMallocTagged(xWantedSize+4, tag);
+                        if (ret!=NULL) return dram_alloc_to_iram_addr(ret, xWantedSize+4);
+                    } else {
+                        //Just try to alloc, nothing special.
+                        ret=pvPortMallocTagged(xWantedSize, tag);
+                        if (ret!=NULL) return ret;
+                    }
                 }
             }
         }

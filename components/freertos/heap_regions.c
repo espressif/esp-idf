@@ -341,7 +341,7 @@ void *pvReturn = NULL;
 }
 /*-----------------------------------------------------------*/
 
-void vPortFree( void *pv )
+void vPortFreeTagged( void *pv )
 {
 uint8_t *puc = ( uint8_t * ) pv;
 BlockLink_t *pxLink;

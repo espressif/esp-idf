@@ -59,6 +59,15 @@ void vPortDefineHeapRegionsTagged( const HeapRegionTagged_t * const pxHeapRegion
 void *pvPortMallocTagged( size_t xWantedSize, BaseType_t tag );
 
 /**
+ * @brief Free memory allocated with pvPortMallocTagged
+ *
+ * This is basically an implementation of free().
+ *
+ * @param  pv Pointer to region allocated by pvPortMallocTagged
+ */
+void vPortFreeTagged( void *pv );
+
+/**
  * @brief Get the lowest amount of memory free for a certain tag
  *
  * This function allows the user to see what the least amount of

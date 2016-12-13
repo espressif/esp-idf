@@ -14,6 +14,9 @@ can create an OR-mask of the required capabilities and pass that to pvPortMalloc
 code internally allocates memory with ```pvPortMallocCaps(size, MALLOC_CAP_8BIT)``` in order to get data memory that is 
 byte-addressable.
 
+Because malloc uses this allocation system as well, memory allocated using pvPortMallocCaps can be freed by calling
+the standard ```free()``` function.
+
 Internally, this allocator is split in two pieces. The allocator in the FreeRTOS directory can allocate memory from
 tagged regions: a tag is an integer value and every region of free memory has one of these tags. The esp32-specific
 code initializes these regions with specific tags, and contains the logic to select applicable tags from the
@@ -59,11 +62,6 @@ Type Definitions
 
 .. doxygentypedef:: HeapRegionTagged_t
 
-Enumerations
-^^^^^^^^^^^^
-
-Structures
-^^^^^^^^^^
 
 Functions
 ^^^^^^^^^
@@ -74,5 +72,6 @@ Functions
 .. doxygenfunction:: xPortGetMinimumEverFreeHeapSizeCaps
 .. doxygenfunction:: vPortDefineHeapRegionsTagged
 .. doxygenfunction:: pvPortMallocTagged
+.. doxygenfunction:: vPortFreeTagged
 .. doxygenfunction:: xPortGetMinimumEverFreeHeapSizeTagged
 .. doxygenfunction:: xPortGetFreeHeapSizeTagged
