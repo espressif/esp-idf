@@ -44,7 +44,7 @@ enum {
 };
 
 #define HCI_HOST_TASK_STACK_SIZE	1500
-#define HCI_HOST_TASK_PRIO			(configMAX_PRIORITIES - 3)
+#define HCI_HOST_TASK_PRIO			(configMAX_PRIORITIES - 2)
 #define HCI_HOST_TASK_NAME			"hciHostT"
 #define HCI_HOST_QUEUE_NUM			40
 
@@ -54,7 +54,7 @@ enum {
 #define HCI_H4_QUEUE_NUM			60
 
 #define BTU_TASK_STACK_SIZE			4096
-#define BTU_TASK_PRIO				(configMAX_PRIORITIES - 1)
+#define BTU_TASK_PRIO				(configMAX_PRIORITIES - 4)
 #define BTU_TASK_NAME				"btuT"
 #define BTU_QUEUE_NUM				50
 

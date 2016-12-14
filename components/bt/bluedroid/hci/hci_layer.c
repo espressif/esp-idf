@@ -405,8 +405,8 @@ static void restart_comamnd_waiting_response_timer(
     timeout = osi_alarm_time_diff(COMMAND_PENDING_TIMEOUT, timeout);
     timeout = (timeout <= COMMAND_PENDING_TIMEOUT) ? timeout : COMMAND_PENDING_TIMEOUT;
 
-    osi_alarm_set(cmd_wait_q->command_response_timer, timeout);
     cmd_wait_q->timer_is_set = true;
+    osi_alarm_set(cmd_wait_q->command_response_timer, timeout);
 }
 
 static void command_timed_out(void *context)
@@ -488,14 +488,14 @@ static bool filter_incoming_event(BT_HDR *packet)
 
     return false;
 intercepted:
+    restart_comamnd_waiting_response_timer(&hci_host_env.cmd_waiting_q, false);
+
     /*Tell HCI Host Task to continue TX Pending commands*/
     if (hci_host_env.command_credits &&
             !fixed_queue_is_empty(hci_host_env.command_queue)) {
         hci_host_task_post();
     }
     //ke_event_set(KE_EVENT_HCI_HOST_THREAD);
-
-    restart_comamnd_waiting_response_timer(&hci_host_env.cmd_waiting_q, false);
 
     if (wait_entry) {
         // If it has a callback, it's responsible for freeing the packet
