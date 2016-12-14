@@ -183,7 +183,7 @@ int mymemcmp(char *a, char *b, int len)
 
 
 
-TEST_CASE("Unaligned DMA test (needs I2S)", "[hw]")
+TEST_CASE("Unaligned DMA test (needs I2S)", "[hw][ignore]")
 {
     int x;
     char src[2049], dest[2049];

@@ -52,7 +52,7 @@ static void create_file_with_text(const char* name, const char* text)
     TEST_ASSERT_EQUAL(0, fclose(f));
 }
 
-TEST_CASE("can create and write file on sd card", "[fatfs]")
+TEST_CASE("can create and write file on sd card", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
@@ -69,7 +69,7 @@ TEST_CASE("can create and write file on sd card", "[fatfs]")
     HEAP_SIZE_CHECK(0);
 }
 
-TEST_CASE("can read file on sd card", "[fatfs]")
+TEST_CASE("can read file on sd card", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
 
@@ -134,7 +134,7 @@ static void speed_test(void* buf, size_t buf_size, size_t file_size, bool write)
 }
 
 
-TEST_CASE("read speed test", "[fatfs]")
+TEST_CASE("read speed test", "[fatfs][ignore]")
 {
 
     HEAP_SIZE_CAPTURE();
@@ -151,7 +151,7 @@ TEST_CASE("read speed test", "[fatfs]")
     HEAP_SIZE_CHECK(0);
 }
 
-TEST_CASE("write speed test", "[fatfs]")
+TEST_CASE("write speed test", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
 
@@ -171,7 +171,7 @@ TEST_CASE("write speed test", "[fatfs]")
     HEAP_SIZE_CHECK(0);
 }
 
-TEST_CASE("can lseek", "[fatfs]")
+TEST_CASE("can lseek", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
@@ -208,7 +208,7 @@ TEST_CASE("can lseek", "[fatfs]")
     HEAP_SIZE_CHECK(0);
 }
 
-TEST_CASE("stat returns correct values", "[fatfs]")
+TEST_CASE("stat returns correct values", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
@@ -249,7 +249,7 @@ TEST_CASE("stat returns correct values", "[fatfs]")
     HEAP_SIZE_CHECK(0);
 }
 
-TEST_CASE("unlink removes a file", "[fatfs]")
+TEST_CASE("unlink removes a file", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
@@ -271,7 +271,7 @@ TEST_CASE("unlink removes a file", "[fatfs]")
     HEAP_SIZE_CHECK(0);
 }
 
-TEST_CASE("link copies a file, rename moves a file", "[fatfs]")
+TEST_CASE("link copies a file, rename moves a file", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
@@ -373,7 +373,7 @@ done:
 }
 
 
-TEST_CASE("multiple tasks can use same volume", "[fatfs]")
+TEST_CASE("multiple tasks can use same volume", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
@@ -434,7 +434,7 @@ TEST_CASE("multiple tasks can use same volume", "[fatfs]")
     HEAP_SIZE_CHECK(0);
 }
 
-TEST_CASE("can create and remove directories", "[fatfs]")
+TEST_CASE("can create and remove directories", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
@@ -470,7 +470,7 @@ TEST_CASE("can create and remove directories", "[fatfs]")
     HEAP_SIZE_CHECK(0);
 }
 
-TEST_CASE("opendir, readdir, rewinddir, seekdir work as expected", "[fatfs]")
+TEST_CASE("opendir, readdir, rewinddir, seekdir work as expected", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();

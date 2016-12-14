@@ -80,7 +80,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 }
 
 
-TEST_CASE("SPI Master test", "[spi]")
+TEST_CASE("SPI Master test", "[spi][ignore]")
 {
     spi_bus_config_t buscfg={
         .mosi_io_num=4,

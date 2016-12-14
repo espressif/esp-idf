@@ -62,7 +62,7 @@ static void flash_test_task(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_flash]")
+TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_flash][ignore]")
 {
     TaskHandle_t procpu_task;
     TaskHandle_t appcpu_task;
