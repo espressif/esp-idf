@@ -249,7 +249,7 @@ void heap_alloc_caps_init() {
   have such a block in front of it, work. We may do this later, if/when there is demand for it. For now, a simple
   pointer is used.
 */
-void *dram_alloc_to_iram_addr(void *addr, size_t len) 
+static void *dram_alloc_to_iram_addr(void *addr, size_t len) 
 {
     uint32_t dstart=(int)addr; //First word
     uint32_t dend=((int)addr)+len-4; //Last word
@@ -383,10 +383,5 @@ size_t xPortGetMinimumEverFreeHeapSize( void )
 {
     return xPortGetMinimumEverFreeHeapSizeCaps( MALLOC_CAP_8BIT );
 }
-
-
-
-
-
 
 
