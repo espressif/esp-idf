@@ -151,8 +151,6 @@ endif
 # Set default LDFLAGS
 
 LDFLAGS ?= -nostdlib \
-	-L$(IDF_PATH)/lib \
-	-L$(IDF_PATH)/ld \
 	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(TEST_COMPONENT_NAMES) $(SRCDIRS) ) \
 	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
@@ -276,7 +274,10 @@ COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)) $(TEST_COM
 
 # ELF depends on the library archive files for COMPONENT_LIBRARIES
 # the rules to build these are emitted as part of GenerateComponentTarget below
-$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a)
+#
+# also depends on additional dependencies (linker scripts & binary libraries)
+# stored in COMPONENT_LINKER_DEPS, built via component.mk files' COMPONENT_ADD_LINKER_DEPS variable
+$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a) $(COMPONENT_LINKER_DEPS)
 	$(summary) LD $(notdir $@)
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
@@ -374,7 +375,7 @@ $(IDF_PATH)/$(1)/.git:
 # Parse 'git submodule status' output for out-of-date submodule.
 # Status output prefixes status line with '+' if the submodule commit doesn't match
 ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(1) | grep '^+')","")
-$$(info WARNING: git submodule $(1) may be out of date. Run 'git submodule update' to update.)
+$$(info WARNING: esp-idf git submodule $(1) may be out of date. Run 'git submodule update' in IDF_PATH dir to update.)
 endif
 endef
 
