@@ -19,6 +19,7 @@
 #include "esp_log.h"
 #include "rom/cache.h"
 #include "rom/rtc.h"
+#include "rom/uart.h"
 #include "soc/cpu.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
@@ -35,6 +36,14 @@ static uint32_t s_wakeup_options = 0;
 static uint64_t s_sleep_duration = 0;
 
 static const char* TAG = "deepsleep";
+static esp_deep_sleep_pd_option_t s_pd_options[ESP_PD_DOMAIN_MAX] = {
+    ESP_PD_OPTION_AUTO,
+    ESP_PD_OPTION_AUTO,
+    ESP_PD_OPTION_AUTO,
+};
+
+static uint32_t get_power_down_flags();
+
 
 /* Wake from deep sleep stub
    See esp_deepsleep.h esp_wake_deep_sleep() comments for details.
@@ -85,6 +94,12 @@ void esp_deep_sleep(uint64_t time_in_us)
 
 void IRAM_ATTR esp_deep_sleep_start()
 {
+    uint32_t pd_flags = get_power_down_flags();
+
+    uart_tx_wait_idle(0);
+    uart_tx_wait_idle(1);
+    uart_tx_wait_idle(2);
+
     if (esp_get_deep_sleep_wake_stub() == NULL) {
         esp_set_deep_sleep_wake_stub(esp_wake_deep_sleep);
     }
@@ -96,7 +111,7 @@ void IRAM_ATTR esp_deep_sleep_start()
         uint32_t period = rtc_slowck_cali(CALI_RTC_MUX, 128);
         rtc_usec2rtc(s_sleep_duration >> 32, s_sleep_duration & 0xffffffff, period, &cycle_h, &cycle_l);
     }
-    rtc_slp_prep_lite(DEEP_SLEEP_PD_NORMAL, 0);
+    rtc_slp_prep_lite(pd_flags, 0);
     rtc_sleep(cycle_h, cycle_l, s_wakeup_options, 0);
     while (1) {
         ;
@@ -108,7 +123,7 @@ void system_deep_sleep(uint64_t) __attribute__((alias("esp_deep_sleep")));
 esp_err_t esp_deep_sleep_enable_ulp_wakeup()
 {
 #ifdef CONFIG_ULP_COPROC_ENABLED
-    s_wakeup_options |= SAR_TRIG_EN;
+    s_wakeup_options |= RTC_SAR_TRIG_EN;
     return ESP_OK;
 #else
     return ESP_ERR_INVALID_STATE;
@@ -117,7 +132,7 @@ esp_err_t esp_deep_sleep_enable_ulp_wakeup()
 
 esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us)
 {
-    s_wakeup_options |= TIMER_EXPIRE_EN;
+    s_wakeup_options |= RTC_TIMER_EXPIRE_EN;
     s_sleep_duration = time_in_us;
     return ESP_OK;
 }
@@ -141,7 +156,7 @@ esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 
 esp_err_t esp_deep_sleep_enable_ext1_wakeup(uint64_t mask, esp_ext1_wakeup_mode_t mode)
 {
-    if (mode > EXT1_WAKEUP_ANY_HIGH) {
+    if (mode > ESP_EXT1_WAKEUP_ANY_HIGH) {
         return ESP_ERR_INVALID_ARG;
     }
     // Translate bit map of GPIO numbers into the bit map of RTC IO numbers
@@ -187,4 +202,66 @@ uint64_t esp_deep_sleep_get_ext1_wakeup_status()
         gpio_mask |= BIT(gpio);
     }
     return gpio_mask;
+}
+
+esp_err_t esp_deep_sleep_pd_config(esp_deep_sleep_pd_domain_t domain,
+                                   esp_deep_sleep_pd_option_t option)
+{
+    if (domain >= ESP_PD_DOMAIN_MAX || option > ESP_PD_OPTION_AUTO) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    s_pd_options[domain] = option;
+    return ESP_OK;
+}
+
+static uint32_t get_power_down_flags()
+{
+    // Where needed, convert AUTO options to ON. Later interpret AUTO as OFF.
+
+    // RTC_SLOW_MEM is needed only for the ULP.
+    // If RTC_SLOW_MEM is Auto, and ULP wakeup isn't enabled, power down RTC_SLOW_MEM.
+    if (s_pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] == ESP_PD_OPTION_AUTO) {
+        if (s_wakeup_options & RTC_SAR_TRIG_EN) {
+            s_pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] = ESP_PD_OPTION_ON;
+        }
+    }
+
+    // RTC_FAST_MEM is needed for deep sleep stub.
+    // If RTC_FAST_MEM is Auto, keep it powered on, so that deep sleep stub
+    // can run.
+    // In the new chip revision, deep sleep stub will be optional,
+    // and this can be changed.
+    if (s_pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] == ESP_PD_OPTION_AUTO) {
+        s_pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] = ESP_PD_OPTION_ON;
+    }
+
+    // RTC_PERIPH is needed for EXT0 wakeup and for ULP.
+    // If RTC_PERIPH is auto, and both EXT0 and ULP aren't enabled,
+    // power down RTC_PERIPH.
+    if (s_pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
+        if (s_wakeup_options &
+                (RTC_SAR_TRIG_EN | RTC_EXT_EVENT0_TRIG_EN | RTC_EXT_EVENT1_TRIG_EN)) {
+            s_pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
+        }
+    }
+
+    const char* option_str[] = {"OFF", "ON", "OFF" /* Auto works as OFF */};
+    ESP_LOGD(TAG, "RTC_PERIPH: %s, RTC_SLOW_MEM: %s, RTC_FAST_MEM: %s",
+            option_str[s_pd_options[ESP_PD_DOMAIN_RTC_PERIPH]],
+            option_str[s_pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM]],
+            option_str[s_pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM]]);
+
+    // Prepare flags based on the selected options
+    uint32_t pd_flags = DEEP_SLEEP_PD_NORMAL;
+    if (s_pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] != ESP_PD_OPTION_ON) {
+        pd_flags |= DEEP_SLEEP_PD_RTC_FAST_MEM;
+    }
+    if (s_pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] != ESP_PD_OPTION_ON) {
+        pd_flags |= DEEP_SLEEP_PD_RTC_SLOW_MEM;
+    }
+    if (s_pd_options[ESP_PD_DOMAIN_RTC_PERIPH] != ESP_PD_OPTION_ON) {
+        pd_flags |= DEEP_SLEEP_PD_RTC_PERIPH;
+    }
+    ESP_LOGD(TAG, "power down flags: %02x", pd_flags);
+    return pd_flags;
 }

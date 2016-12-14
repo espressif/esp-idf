@@ -34,34 +34,29 @@ extern "C" {
  * @brief Logic function used for EXT1 wakeup mode.
  */
 typedef enum {
-    EXT1_WAKEUP_ALL_LOW = 0,    //!< Wake the chip when all selected GPIOs go low
-    EXT1_WAKEUP_ANY_HIGH = 1    //!< Wake the chip when any of the selected GPIOs go high
+    ESP_EXT1_WAKEUP_ALL_LOW = 0,    //!< Wake the chip when all selected GPIOs go low
+    ESP_EXT1_WAKEUP_ANY_HIGH = 1    //!< Wake the chip when any of the selected GPIOs go high
 } esp_ext1_wakeup_mode_t;
 
 /**
- * @brief Parts of RTC power domain which can be powered down in deep sleep
+ * @brief Power domains which can be powered down in deep sleep
  */
 typedef enum {
-    RTC_POWER_DOMAIN_PERIPH,    //!< RTC IO, sensors and ULP co-processor
-    RTC_POWER_DOMAIN_SLOW_MEM,  //!< RTC slow memory
-    RTC_POWER_DOMAIN_FAST_MEM,  //!< RTC fast memory
-} esp_rtc_power_domain_t;
+    ESP_PD_DOMAIN_RTC_PERIPH,      //!< RTC IO, sensors and ULP co-processor
+    ESP_PD_DOMAIN_RTC_SLOW_MEM,    //!< RTC slow memory
+    ESP_PD_DOMAIN_RTC_FAST_MEM,    //!< RTC fast memory
+    ESP_PD_DOMAIN_MAX              //!< Number of domains
+} esp_deep_sleep_pd_domain_t;
 
 /**
- * @brief Enter deep-sleep mode
- *
- * The device will automatically wake up after the deep-sleep time
- * Upon waking up, the device calls deep sleep wake stub, and then proceeds
- * to load application.
- *
- * Call to this function is equivalent to a call to esp_deep_sleep_enable_timer_wakeup
- * followed by a call to esp_deep_sleep_start.
- *
- * This function does not return.
- *
- * @param time_in_us  deep-sleep time, unit: microsecond
+ * @brief Power down options
  */
-void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
+typedef enum {
+    ESP_PD_OPTION_OFF,      //!< Power down the power domain in deep sleep
+    ESP_PD_OPTION_ON,       //!< Keep power domain enabled during deep sleep
+    ESP_PD_OPTION_AUTO      //!< Keep power domain enabled in deep sleep, if it is needed by one of the wakeup options. Otherwise power it down.
+} esp_deep_sleep_pd_option_t;
+
 
 /**
  * @brief Enable wakeup by ULP coprocessor
@@ -104,6 +99,12 @@ esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  * This function uses external wakeup feature of RTC controller.
  * It will work even if RTC peripherals are shut down during deep sleep.
  *
+ * @note Currently this doesn't actually work if RTC_PERIPH domain is
+ *       powered down. This is a known issue which will be resolved soon.
+ *       For now, unless esp_deep_sleep_pd_config function is used to
+ *       power down RTC_PERIPH domain, it will be kept on during deep sleep,
+ *       slightly increasing power consumption.
+ *
  * This feature can monitor any number of pins which are in RTC IOs.
  * Once any of the selected pins goes into the state given by level argument,
  * the chip will be woken up.
@@ -112,8 +113,8 @@ esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *              which are have RTC functionality can be used in this bit map:
  *              0,2,4,12-15,25-27,32-39.
  * @param mode select logic function used to determine wakeup condition:
- *            - EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
- *            - EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
+ *            - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
+ *            - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
@@ -130,8 +131,19 @@ esp_err_t esp_deep_sleep_enable_ext1_wakeup(uint64_t mask, esp_ext1_wakeup_mode_
  */
 uint64_t esp_deep_sleep_get_ext1_wakeup_status();
 
-
-void esp_deep_sleep_set_powerdown(esp_rtc_powerdown_t )
+/**
+ * @brief Set if specific power domain has to be powered down in deep sleep
+ *
+ * If not set set using this API, all power domains default to ESP_PD_OPTION_AUTO.
+ *
+ * @param domain  power domain to configure
+ * @param option  power down option (ESP_PD_OPTION_OFF, ESP_PD_OPTION_ON, or ESP_PD_OPTION_AUTO)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
+ */
+esp_err_t esp_deep_sleep_pd_config(esp_deep_sleep_pd_domain_t domain,
+                                   esp_deep_sleep_pd_option_t option);
 
 /**
  * @brief Enter deep sleep with the configured wakeup options
@@ -139,6 +151,22 @@ void esp_deep_sleep_set_powerdown(esp_rtc_powerdown_t )
  * This function does not return.
  */
 void esp_deep_sleep_start() __attribute__((noreturn));
+
+/**
+ * @brief Enter deep-sleep mode
+ *
+ * The device will automatically wake up after the deep-sleep time
+ * Upon waking up, the device calls deep sleep wake stub, and then proceeds
+ * to load application.
+ *
+ * Call to this function is equivalent to a call to esp_deep_sleep_enable_timer_wakeup
+ * followed by a call to esp_deep_sleep_start.
+ *
+ * This function does not return.
+ *
+ * @param time_in_us  deep-sleep time, unit: microsecond
+ */
+void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
 
 /**
  * @brief Enter deep-sleep mode

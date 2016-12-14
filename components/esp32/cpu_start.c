@@ -28,6 +28,8 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 
+#include "driver/rtc_io.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -174,6 +176,7 @@ void start_cpu0_default(void)
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
+    rtc_gpio_unhold_all();
     esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);

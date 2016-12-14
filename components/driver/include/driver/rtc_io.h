@@ -35,6 +35,7 @@ typedef struct {
     uint32_t pulldown;  /*!< Mask of pulldown enable */
     uint32_t slpsel;    /*!< Mask of the bit to select pin as wakeup pin */
     uint32_t slpie;     /*!< Mask of input enable in sleep mode */
+    uint32_t hold;      /*!< Mask of hold_force bit for RTC IO in RTC_CNTL_HOLD_FORCE_REG */
     int rtc_num;        /*!< RTC IO number, or -1 if not an RTC GPIO */
 } rtc_gpio_desc_t;
 
@@ -167,6 +168,18 @@ esp_err_t rtc_gpio_pullup_dis(gpio_num_t gpio_num);
  *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
  */
 esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num);
+
+/**
+ * @brief Disable "hold" signal for all RTC IOs
+ *
+ * Each RTC pad has a "hold" input signal from the RTC controller.
+ * If hold signal is set, pad latches current values of input enable,
+ * function, output enable, and other signals which come from the RTC mux.
+ * Hold signal is enabled before going into deep sleep for pins which
+ * are used for EXT1 wakeup.
+ */
+void rtc_gpio_unhold_all();
+
 
 #ifdef __cplusplus
 }
