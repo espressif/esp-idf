@@ -24,9 +24,9 @@ extern "C" {
 /// GATT INVALID UUID
 #define ESP_GATT_ILLEGAL_UUID                0
 
-/**
- * @brief GATT attribute types
-*/
+/**@{
+ * All "ESP_GATT_UUID_xxx" is attribute types
+ */
 #define ESP_GATT_UUID_PRI_SERVICE            0x2800
 #define ESP_GATT_UUID_SEC_SERVICE            0x2801
 #define ESP_GATT_UUID_INCLUDE_SERVICE        0x2802
@@ -114,6 +114,9 @@ extern "C" {
 /* Scan ESP_Parameter characteristics */
 #define ESP_GATT_UUID_SCAN_INT_WINDOW        0x2A4F
 #define ESP_GATT_UUID_SCAN_REFRESH           0x2A31
+/**
+ * @}
+ */
 
 /// Attribute write data type from the client
 typedef enum {
