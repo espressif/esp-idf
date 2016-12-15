@@ -16,8 +16,6 @@
 #include "driver/periph_ctrl.h"
 #include "driver/timer.h"
 
-#define TIMER_INTR_NUM_0 17              /*!< Interrupt number for hardware timer 0 */
-#define TIMER_INTR_NUM_1 18              /*!< Interrupt number for hardware timer 1*/
 #define TIMER_INTR_SEL TIMER_INTR_LEVEL  /*!< Timer level interrupt */
 #define TIMER_GROUP    TIMER_GROUP_0     /*!< Test on timer group 0 */
 #define TIMER_DIVIDER   16               /*!< Hardware timer clock divider */
@@ -88,7 +86,9 @@ void IRAM_ATTR timer_group0_isr(void *para)
         /*Timer0 is an example that don't reload counter value*/
         TIMERG0.hw_timer[timer_idx].update = 1;
 
-        /*We don't call a API here because they are not declared with IRAM_ATTR*/
+        /* We don't call a API here because they are not declared with IRAM_ATTR.
+           If we're okay with the timer irq not being serviced while SPI flash cache is disabled,
+           we can alloc this interrupt without the ESP_INTR_FLAG_IRAM flag and use the normal API. */
         TIMERG0.int_clr_timers.t0 = 1;
         uint64_t timer_val = ((uint64_t) TIMERG0.hw_timer[timer_idx].cnt_high) << 32
             | TIMERG0.hw_timer[timer_idx].cnt_low;
@@ -157,7 +157,7 @@ void tg0_timer0_init()
     /*Enable timer interrupt*/
     timer_enable_intr(timer_group, timer_idx);
     /*Set ISR handler*/
-    timer_isr_register(timer_group, timer_idx, TIMER_INTR_NUM_0, TIMER_INTR_SEL, timer_group0_isr, (void*) timer_idx);
+    timer_isr_register(timer_group, timer_idx, timer_group0_isr, (void*) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
     /*Start timer counter*/
     timer_start(timer_group, timer_idx);
 }
@@ -187,7 +187,7 @@ void tg0_timer1_init()
     /*Enable timer interrupt*/
     timer_enable_intr(timer_group, timer_idx);
     /*Set ISR handler*/
-    timer_isr_register(timer_group, timer_idx, TIMER_INTR_NUM_1, TIMER_INTR_SEL, timer_group0_isr, (void*) timer_idx);
+    timer_isr_register(timer_group, timer_idx, timer_group0_isr, (void*) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
     /*Start timer counter*/
     timer_start(timer_group, timer_idx);
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "esp_log.h"
+#include "esp_intr_alloc.h"
 #include "driver/pcnt.h"
 #include "driver/periph_ctrl.h"
 
@@ -23,12 +24,14 @@
 #define PCNT_COUNT_MODE_ERR_STR "PCNT COUNTER MODE ERROR"
 #define PCNT_CTRL_MODE_ERR_STR  "PCNT CTRL MODE ERROR"
 #define PCNT_EVT_TYPE_ERR_STR   "PCNT value type error"
-#define PCNT_CHECK(a,str,ret_val) if(!(a)) { \
-	    ESP_LOGE(PCNT_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str); \
-		return (ret_val); \
-        }
 
-static const char* PCNT_TAG = "PCNT";
+static const char* PCNT_TAG = "pcnt";
+#define PCNT_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(PCNT_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
+
 static portMUX_TYPE pcnt_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 #define PCNT_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
@@ -266,13 +269,9 @@ esp_err_t pcnt_filter_disable(pcnt_unit_t unit)
     return ESP_OK;
 }
 
-esp_err_t pcnt_isr_register(uint32_t pcnt_intr_num, void (*fun)(void*), void * arg)
+esp_err_t pcnt_isr_register(void (*fun)(void*), void * arg, int intr_alloc_flags, pcnt_isr_handle_t *handle)
 {
     PCNT_CHECK(fun != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
-    ESP_INTR_DISABLE(pcnt_intr_num);
-    intr_matrix_set(xPortGetCoreID(), ETS_PCNT_INTR_SOURCE, pcnt_intr_num);
-    xt_set_interrupt_handler(pcnt_intr_num, fun, arg);
-    ESP_INTR_ENABLE(pcnt_intr_num);
-    return ESP_OK;
+    return esp_intr_alloc(ETS_PCNT_INTR_SOURCE, intr_alloc_flags, fun, arg, handle);
 }
 

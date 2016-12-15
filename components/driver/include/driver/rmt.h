@@ -117,6 +117,8 @@ typedef struct {
     };
 } rmt_config_t;
 
+typedef intr_handle_t rmt_isr_handle_t;
+
 /**
  * @brief Set RMT clock divider, channel clock is divided from source clock.
  *
@@ -566,27 +568,32 @@ esp_err_t rmt_config(rmt_config_t* rmt_param);
  * @brief   register RMT interrupt handler, the handler is an ISR.
  *
  *          The handler will be attached to the same CPU core that this function is running on.
- *          Users should know that which CPU is running and then pick a INUM that is not used by system.
- *          We can find the information of INUM and interrupt level in soc.h.
- *          @note
- *          If you already called rmt_driver_install to use system RMT driver,
+ * @note If you already called rmt_driver_install to use system RMT driver,
  *          please do not register ISR handler again.
  *
- * @param rmt_intr_num RMT interrupt number, check the info in soc.h, and please see the core-isa.h for more details
- *
  * @param fn Interrupt handler function.
- *
- *          @note
- *          the handler function MUST be defined with attribution of "IRAM_ATTR".
- *
  * @param arg Parameter for handler function
+ * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ * @param  handle If non-zero, a handle to later clean up the ISR gets stored here.
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  *     - ESP_FAIL System driver installed, can not register ISR handler for RMT
  */
-esp_err_t rmt_isr_register(uint8_t rmt_intr_num, void (* fn)(void* ), void * arg);
+esp_err_t rmt_isr_register(void (* fn)(void* ), void * arg, int intr_alloc_flags, rmt_isr_handle_t *handle);
+
+/**
+ * @brief   Deregister previously registered RMT interrupt handler
+ *
+ * @param handle Handle obtained from rmt_isr_register
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Handle invalid
+ */
+esp_err_t rmt_isr_deregister(rmt_isr_handle_t handle);
 
 /**
  * @brief Fill memory data of channel with given RMT items.
@@ -727,7 +734,7 @@ esp_err_t rmt_get_ringbuf_handler(rmt_channel_t channel, RingbufHandle_t* buf_ha
  *     rmt_config(&rmt_tx);
  *
  *     //install system RMT driver, disable rx ringbuffer for transmitter.
- *     rmt_driver_install(rmt_tx.channel, 0, RMT_INTR_NUM);
+ *     rmt_driver_install(rmt_tx.channel, 0, 0);
  * }
  *
  * @endcode
@@ -747,25 +754,20 @@ esp_err_t rmt_get_ringbuf_handler(rmt_channel_t channel, RingbufHandle_t* buf_ha
  *     rmt_config(&rmt_rx);
  *
  *     //install system RMT driver.
- *     rmt_driver_install(rmt_rx.channel, 1000, RMT_INTR_NUM);
+ *     rmt_driver_install(rmt_rx.channel, 1000, 0);
  * }
  *
  * ----------------EXAMPLE OF RMT INTERRUPT ------------------
  * @code{c}
  *
- * rmt_isr_register(RMT_INTR_NUM, rmt_isr, NULL);           //hook the ISR handler for RMT interrupt
+ * rmt_isr_register(rmt_isr, NULL, 0);           //hook the ISR handler for RMT interrupt
  * @endcode
  * @note
  *     0. If you have called rmt_driver_install, you don't need to set ISR handler any more.
- *     1. the first parameter is INUM, you can pick one form interrupt level 1/2 which is not used by the system.
- *     2. user should arrange the INUMs that used, better not to use a same INUM for different interrupt source.
- *     3. do not pick the INUM that already occupied by the system.
- *     4. refer to soc.h to check which INUMs that can be used.
  *
  * ----------------EXAMPLE OF INTERRUPT HANDLER ---------------
  * @code{c}
  * #include "esp_attr.h"
- * //we should add 'IRAM_ATTR' attribution when we declare the isr function
  * void IRAM_ATTR rmt_isr_handler(void* arg)
  * {
  *    //read RMT interrupt status.

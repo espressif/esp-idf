@@ -2,5 +2,13 @@ Config: {execute count: 1, execute order: in order}
 DUT: [SSC2, SSC1]
 Filter:
 - Add:
-    ID: [WIFI_SCAN_0201, WIFI_PHY_0403, WIFI_PHY_0402, WIFI_PHY_0401, WIFI_PHY_0407,
-      WIFI_PHY_0406, WIFI_PHY_0405, WIFI_PHY_0404, WIFI_PHY_0408]
+    ID:
+      - WIFI_PHY_0401  # SoftAP ext AP in defferent channel, both bandwidth 20M, STA connect to AP then Softap get connected
+      - WIFI_PHY_0402  # SoftAP ext AP in defferent channel, both bandwidth 20M, Softap get connected than STA connect to AP
+      - WIFI_PHY_0403  # SoftAP ext AP in defferent channel, SoftAP 20M, ext AP 40M, STA connect to AP then Softap get connected
+      - WIFI_PHY_0404  # SoftAP ext AP in defferent channel, SoftAP 20M, ext AP 40M, Softap get connected than STA connect to AP
+      - WIFI_PHY_0405  # SoftAP ext AP in defferent channel, both bandwidth 40M, STA connect to AP then Softap get connected
+      - WIFI_PHY_0406  # SoftAP ext AP in defferent channel, both bandwidth 40M, Softap get connected than STA connect to AP
+      - WIFI_PHY_0407  # SoftAP ext AP in defferent channel, SoftAP 40M, ext AP 20M, STA connect to AP then Softap get connected
+      - WIFI_PHY_0408  # SoftAP ext AP in defferent channel, SoftAP 40M, ext AP 20M, Softap get connected than STA connect to AP
+      - WIFI_SCAN_0201  # STA in differnt PHY mode to scan AP in different PHY mode

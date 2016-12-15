@@ -10,7 +10,7 @@
 # where this file is located.
 #
 
-.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules
+.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size
 all: all_binaries
 # see below for recipe of 'all' target
 #
@@ -28,6 +28,7 @@ help:
 	@echo "make all - Build app, bootloader, partition table"
 	@echo "make flash - Flash all components to a fresh chip"
 	@echo "make clean - Remove all build output"
+	@echo "make size - Display the memory footprint of the app"
 	@echo ""
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
@@ -139,7 +140,7 @@ export COMPONENT_INCLUDES
 include $(IDF_PATH)/make/common.mk
 
 all:
-ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 	@echo "To flash app & partition table, run 'make flash' or:"
 else
@@ -150,8 +151,6 @@ endif
 # Set default LDFLAGS
 
 LDFLAGS ?= -nostdlib \
-	-L$(IDF_PATH)/lib \
-	-L$(IDF_PATH)/ld \
 	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(TEST_COMPONENT_NAMES) $(SRCDIRS) ) \
 	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
@@ -173,7 +172,7 @@ LDFLAGS ?= -nostdlib \
 
 # CPPFLAGS used by C preprocessor
 # If any flags are defined in application Makefile, add them at the end. 
-CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS) $(EXTRA_CPPFLAGS)
+CPPFLAGS := -DESP_PLATFORM -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
 COMMON_WARNING_FLAGS = -Wall -Werror=all \
@@ -189,8 +188,7 @@ COMMON_FLAGS = \
 	-ffunction-sections -fdata-sections \
 	-fstrict-volatile-bitfields \
 	-mlongcalls \
-	-nostdlib \
-	-MMD -MP
+	-nostdlib
 
 # Optimization flags are set based on menuconfig choice
 ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
@@ -232,7 +230,8 @@ HOSTCC := $(CC)
 HOSTLD := $(LD)
 HOSTAR := $(AR)
 HOSTOBJCOPY := $(OBJCOPY)
-export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY
+HOSTSIZE := $(SIZE)
+export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
 
 # Set target compiler. Defaults to whatever the user has
 # configured as prefix + ye olde gcc commands
@@ -241,7 +240,8 @@ CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
 LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
 AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
 OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
-export CC CXX LD AR OBJCOPY
+SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
+export CC CXX LD AR OBJCOPY SIZE
 
 PYTHON=$(call dequote,$(CONFIG_PYTHON))
 
@@ -273,7 +273,10 @@ COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)) $(TEST_COM
 
 # ELF depends on the library archive files for COMPONENT_LIBRARIES
 # the rules to build these are emitted as part of GenerateComponentTarget below
-$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a)
+#
+# also depends on additional dependencies (linker scripts & binary libraries)
+# stored in COMPONENT_LINKER_DEPS, built via component.mk files' COMPONENT_ADD_LINKER_DEPS variable
+$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a) $(COMPONENT_LINKER_DEPS)
 	$(summary) LD $(notdir $@)
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
@@ -342,6 +345,9 @@ $(foreach component,$(TEST_COMPONENT_PATHS),$(eval $(call GenerateComponentTarge
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)
 	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
+	
+size: $(APP_ELF)
+	$(SIZE) $(APP_ELF)
 
 # NB: this ordering is deliberate (app-clean before config-clean),
 # so config remains valid during all component clean targets
@@ -368,7 +374,7 @@ $(IDF_PATH)/$(1)/.git:
 # Parse 'git submodule status' output for out-of-date submodule.
 # Status output prefixes status line with '+' if the submodule commit doesn't match
 ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(1) | grep '^+')","")
-$$(info WARNING: git submodule $(1) may be out of date. Run 'git submodule update' to update.)
+$$(info WARNING: esp-idf git submodule $(1) may be out of date. Run 'git submodule update' in IDF_PATH dir to update.)
 endif
 endef
 

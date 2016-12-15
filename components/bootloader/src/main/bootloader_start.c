@@ -39,6 +39,7 @@
 #include "sdkconfig.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
+#include "esp_flash_encrypt.h"
 #include "bootloader_flash.h"
 
 #include "bootloader_config.h"
@@ -121,7 +122,7 @@ bool load_partition_table(bootloader_state_t* bs)
     ESP_LOGI(TAG, "Partition Table:");
     ESP_LOGI(TAG, "## Label            Usage          Type ST Offset   Length");
 
-#ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+#ifdef CONFIG_SECURE_BOOT_ENABLED
     if(esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "Verifying partition table signature...");
         esp_err_t err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
@@ -230,7 +231,9 @@ void bootloader_main()
 {
     uart_console_configure();
     ESP_LOGI(TAG, "Espressif ESP32 2nd stage bootloader v. %s", BOOT_VERSION);
-
+#if defined(CONFIG_SECURE_BOOT_ENABLED) || defined(CONFIG_FLASH_ENCRYPTION_ENABLED)
+    esp_err_t err;
+#endif
     esp_image_header_t fhdr;
     bootloader_state_t bs;
     SpiFlashOpResult spiRet1,spiRet2;
@@ -245,7 +248,7 @@ void bootloader_main()
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
     SPIUnlock();
 
-    if(esp_image_load_header(0x1000, &fhdr) != ESP_OK) {
+    if(esp_image_load_header(0x1000, true, &fhdr) != ESP_OK) {
         ESP_LOGE(TAG, "failed to load bootloader header!");
         return;
     }
@@ -324,12 +327,11 @@ void bootloader_main()
         return;
     }
 
-    ESP_LOGI(TAG, "Loading app partition at offset %08x", load_part_pos);
-
-#ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+#ifdef CONFIG_SECURE_BOOT_ENABLED
     /* Generate secure digest from this bootloader to protect future
        modifications */
-    esp_err_t err = esp_secure_boot_permanently_enable();
+    ESP_LOGI(TAG, "Checking secure boot...");
+    err = esp_secure_boot_permanently_enable();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Bootloader digest generation failed (%d). SECURE BOOT IS NOT ENABLED.", err);
         /* Allow booting to continue, as the failure is probably
@@ -338,15 +340,28 @@ void bootloader_main()
     }
 #endif
 
-    if(fhdr.encrypt_flag == 0x01) {
-        /* encrypt flash */
-        if (false == flash_encrypt(&bs)) {
-           ESP_LOGE(TAG, "flash encrypt failed");
-           return;
-        }
+#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
+    /* encrypt flash */
+    ESP_LOGI(TAG, "Checking flash encryption...");
+    bool flash_encryption_enabled = esp_flash_encryption_enabled();
+    err = esp_flash_encrypt_check_and_update();
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "Flash encryption check failed (%d).", err);
+      return;
     }
 
+    if (!flash_encryption_enabled && esp_flash_encryption_enabled()) {
+      /* Flash encryption was just enabled for the first time,
+         so issue a system reset to ensure flash encryption
+         cache resets properly */
+      ESP_LOGI(TAG, "Resetting with flash encryption enabled...");
+      REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+      return;
+    }
+#endif
+
     // copy loaded segments to RAM, set up caches for mapped segments, and start application
+    ESP_LOGI(TAG, "Loading app partition at offset %08x", load_part_pos);
     unpack_load_app(&load_part_pos);
 }
 
@@ -358,13 +373,13 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
     uint32_t image_length;
 
     /* TODO: verify the app image as part of OTA boot decision, so can have fallbacks */
-    err = esp_image_basic_verify(partition->offset, &image_length);
+    err = esp_image_basic_verify(partition->offset, true, &image_length);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to verify app image @ 0x%x (%d)", partition->offset, err);
         return;
     }
 
-#ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+#ifdef CONFIG_SECURE_BOOT_ENABLED
     if (esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "Verifying app signature @ 0x%x (length 0x%x)", partition->offset, image_length);
         err = esp_secure_boot_verify_signature(partition->offset, image_length);
@@ -376,7 +391,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
     }
 #endif
 
-    if (esp_image_load_header(partition->offset, &image_header) != ESP_OK) {
+    if (esp_image_load_header(partition->offset, true, &image_header) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to load app image header @ 0x%x", partition->offset);
         return;
     }
@@ -402,8 +417,8 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
         esp_image_segment_header_t segment_header;
         uint32_t data_offs;
         if(esp_image_load_segment_header(segment, partition->offset,
-                                         &image_header, &segment_header,
-                                         &data_offs) != ESP_OK) {
+                                         &image_header, true,
+                                         &segment_header, &data_offs) != ESP_OK) {
             ESP_LOGE(TAG, "failed to load segment header #%d", segment);
             return;
         }
@@ -622,6 +637,7 @@ void print_flash_info(const esp_image_header_t* phdr)
 #endif
 }
 
+#if CONFIG_CONSOLE_UART_CUSTOM
 static uint32_t get_apb_freq(void)
 {
     // Get the value of APB clock from RTC memory.
@@ -639,6 +655,7 @@ static uint32_t get_apb_freq(void)
         return APB_CLK_FREQ_ROM;
     }
 }
+#endif
 
 static void uart_console_configure(void)
 {

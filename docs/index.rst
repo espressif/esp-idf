@@ -110,6 +110,7 @@ Contents:
    Non-Volatile Storage <api/nvs_flash>
    Virtual Filesystem <api/vfs>
    Ethernet <api/esp_eth>
+   Interrupt Allocation <api/intr_alloc>
    deep-sleep-stub
 
    Template <api/template>

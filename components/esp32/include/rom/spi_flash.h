@@ -490,16 +490,20 @@ SpiFlashOpResult SPI_Prepare_Encrypt_Data(uint32_t flash_addr, uint32_t *data);
 void SPI_Write_Encrypt_Disable(void);
 
 /**
-  * @brief Encrpto writing data to flash, you should Erase it yourself if need.
-  *        Please do not call this function in SDK.
+  * @brief Write data to flash with transparent encryption.
+  * @note Sectors to be written should already be erased.
   *
-  * @param  uint32_t flash_addr : Address to write, should be 32 bytes aligned.
+  * @note Please do not call this function in SDK.
   *
-  * @param  uint32_t *data : The pointer to data which is to write.
+  * @param  uint32_t flash_addr : Address to write, should be 32 byte aligned.
+  *
+  * @param  uint32_t *data : The pointer to data to write. Note, this pointer must
+  *                          be 32 bit aligned and the content of the data will be
+  *                          modified by the encryption function.
   *
   * @param  uint32_t len : Length to write, should be 32 bytes aligned.
   *
-  * @return SPI_FLASH_RESULT_OK : Encrypto write OK.
+  * @return SPI_FLASH_RESULT_OK : Data written successfully.
   *         SPI_FLASH_RESULT_ERR : Encrypto write error.
   *         SPI_FLASH_RESULT_TIMEOUT : Encrypto write timeout.
   */

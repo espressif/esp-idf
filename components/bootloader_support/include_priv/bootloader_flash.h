@@ -18,6 +18,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <esp_err.h>
+#include "esp_spi_flash.h"
+
+#define FLASH_SECTOR_SIZE 0x1000
 
 /* Provide a Flash API for bootloader_support code,
    that can be used from bootloader or app code.
@@ -56,14 +59,45 @@ void bootloader_munmap(const void *mapping);
 /**
  * @brief  Read data from Flash.
  *
- * @note Both src and dest have to be 4-byte aligned.
+ *
+ * @note All of src, dest and size have to be 4-byte aligned.
  *
  * @param  src   source address of the data in Flash.
  * @param  dest  pointer to the destination buffer
  * @param  size  length of data
+ * @param  allow_decrypt If true and flash encryption is enabled, data on flash
+ *         will be decrypted transparently as part of the read.
+ *
+ * @return ESP_OK on success, ESP_ERR_FLASH_OP_FAIL on SPI failure,
+ * ESP_ERR_FLASH_OP_TIMEOUT on SPI timeout.
+ */
+esp_err_t bootloader_flash_read(size_t src_addr, void *dest, size_t size, bool allow_decrypt);
+
+
+/**
+ * @brief  Write data to Flash.
+ *
+ * @note All of dest_addr, src and size have to be 4-byte aligned. If write_encrypted is set, dest_addr and size must be 32-byte aligned.
+ *
+ * Note: In bootloader, when write_encrypted == true, the src buffer is encrypted in place.
+ *
+ * @param  dest_addr Destination address to write in Flash.
+ * @param  src Pointer to the data to write to flash
+ * @param  size Length of data in bytes.
+ * @param  write_encrypted If true, data will be written encrypted on flash.
+ *
+ * @return ESP_OK on success, ESP_ERR_FLASH_OP_FAIL on SPI failure,
+ * ESP_ERR_FLASH_OP_TIMEOUT on SPI timeout.
+ */
+esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool write_encrypted);
+
+/**
+ * @brief  Erase the Flash sector.
+ *
+ * @param  sector  Sector number, the count starts at sector 0, 4KB per sector.
  *
  * @return esp_err_t
  */
-esp_err_t bootloader_flash_read(size_t src_addr, void *dest, size_t size);
+esp_err_t bootloader_flash_erase_sector(size_t sector);
 
 #endif

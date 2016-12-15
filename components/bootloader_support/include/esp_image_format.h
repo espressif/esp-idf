@@ -77,33 +77,40 @@ typedef struct {
 /**
  * @brief Read an ESP image header from flash.
  *
+ * If encryption is enabled, data will be transparently decrypted.
+ *
  * @param src_addr Address in flash to load image header. Must be 4 byte aligned.
+ * @param log_errors Log error output if image header appears invalid.
  * @param[out] image_header Pointer to an esp_image_header_t struture to be filled with data. If the function fails, contents are undefined.
  *
  * @return ESP_OK if image header was loaded, ESP_ERR_IMAGE_FLASH_FAIL
  * if a SPI flash error occurs, ESP_ERR_IMAGE_INVALID if the image header
  * appears invalid.
  */
-esp_err_t esp_image_load_header(uint32_t src_addr, esp_image_header_t *image_header);
+esp_err_t esp_image_load_header(uint32_t src_addr, bool log_errors, esp_image_header_t *image_header);
 
 /**
  * @brief Read the segment header and data offset of a segment in the image.
  *
+ * If encryption is enabled, data will be transparently decrypted.
+ *
  * @param index Index of the segment to load information for.
  * @param src_addr Base address in flash of the image.
  * @param[in] image_header Pointer to the flash image header, already loaded by @ref esp_image_load_header().
+ * @param log_errors Log errors reading the segment header.
  * @param[out] segment_header Pointer to a segment header structure to be filled with data. If the function fails, contents are undefined.
  * @param[out] segment_data_offset Pointer to the data offset of the segment.
  *
  * @return ESP_OK if segment_header & segment_data_offset were loaded successfully, ESP_ERR_IMAGE_FLASH_FAIL if a SPI flash error occurs, ESP_ERR_IMAGE_INVALID if the image header appears invalid, ESP_ERR_INVALID_ARG if the index is invalid.
  */
-esp_err_t esp_image_load_segment_header(uint8_t index, uint32_t src_addr, const esp_image_header_t *image_header, esp_image_segment_header_t *segment_header, uint32_t *segment_data_offset);
+esp_err_t esp_image_load_segment_header(uint8_t index, uint32_t src_addr, const esp_image_header_t *image_header, bool log_errors, esp_image_segment_header_t *segment_header, uint32_t *segment_data_offset);
 
 
 /**
- * @brief Return length of an image in flash. Non-cryptographically validates image integrity in the process.
+ * @brief Non-cryptographically validate app image integrity. On success, length of image is provided to caller.
  *
- * If the image has a secure boot signature appended, the signature is not checked and this length is not included in the result.
+ * If the image has a secure boot signature appended, the signature is not checked and this length is not included in the
+ * output value.
  *
  * Image validation checks:
  * - Magic byte
@@ -111,13 +118,17 @@ esp_err_t esp_image_load_segment_header(uint8_t index, uint32_t src_addr, const 
  * - Total image no longer than 16MB
  * - 8 bit image checksum is valid
  *
+ * If flash encryption is enabled, the image will be tranpsarently decrypted.
+ *
  * @param src_addr Offset of the start of the image in flash. Must be 4 byte aligned.
+ * @param allow_decrypt If true and flash encryption is enabled, the image will be transparently decrypted.
+ * @param log_errors Log errors verifying the image.
  * @param[out] length Length of the image, set to a value if the image is valid. Can be null.
  *
  * @return ESP_OK if image is valid, ESP_FAIL or ESP_ERR_IMAGE_INVALID on errors.
  *
  */
-esp_err_t esp_image_basic_verify(uint32_t src_addr, uint32_t *length);
+esp_err_t esp_image_basic_verify(uint32_t src_addr, bool log_errors, uint32_t *length);
 
 
 typedef struct {

@@ -22,6 +22,7 @@
 #include "esp_flash_data_types.h"
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
+#include "esp_flash_encrypt.h"
 #include "esp_log.h"
 
 
@@ -164,7 +165,11 @@ static esp_err_t load_partitions()
         item->info.size = it->pos.size;
         item->info.type = it->type;
         item->info.subtype = it->subtype;
-        item->info.encrypted = false;
+        item->info.encrypted = it->flags & PART_FLAG_ENCRYPTED;
+        if (esp_flash_encryption_enabled() && it->type == PART_TYPE_APP) {
+            /* All app partitions are encrypted if encryption is turned on */
+            item->info.encrypted = true;
+        }
         // it->label may not be zero-terminated
         strncpy(item->info.label, (const char*) it->label, sizeof(it->label));
         item->info.label[sizeof(it->label)] = 0;
@@ -201,7 +206,24 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
     if (src_offset + size > partition->size) {
         return ESP_ERR_INVALID_SIZE;
     }
-    return spi_flash_read(partition->address + src_offset, dst, size);
+
+    if (!partition->encrypted) {
+        return spi_flash_read(partition->address + src_offset, dst, size);
+    } else {
+        /* Encrypted partitions need to be read via a cache mapping */
+        const void *buf;
+        spi_flash_mmap_handle_t handle;
+        esp_err_t err;
+
+        err = esp_partition_mmap(partition, src_offset, size,
+                                 SPI_FLASH_MMAP_DATA, &buf, &handle);
+        if (err != ESP_OK) {
+            return err;
+        }
+        memcpy(dst, buf, size);
+        spi_flash_munmap(handle);
+        return ESP_OK;
+    }
 }
 
 esp_err_t esp_partition_write(const esp_partition_t* partition,
@@ -218,7 +240,12 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
     if (dst_offset + size > partition->size) {
         return ESP_ERR_INVALID_SIZE;
     }
-    return spi_flash_write(partition->address + dst_offset, src, size);
+    dst_offset = partition->address + dst_offset;
+    if (partition->encrypted) {
+        return spi_flash_write_encrypted(dst_offset, src, size);
+    } else {
+        return spi_flash_write(dst_offset, src, size);
+    }
 }
 
 esp_err_t esp_partition_erase_range(const esp_partition_t* partition,

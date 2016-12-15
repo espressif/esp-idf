@@ -1,0 +1,6 @@
+Config: {execute count: 1, execute order: in order}
+DUT: [SSC2, SSC1]
+Filter:
+- Add:
+    ID:
+      - TCPIP_UDP_5001  # UDP send/recv stress test

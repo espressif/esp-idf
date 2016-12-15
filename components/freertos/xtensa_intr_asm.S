@@ -40,6 +40,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -------------------------------------------------------------------------------
 */
 
+
+#if XT_USE_SWPRI
+/* Warning - this is not multicore-compatible. */
     .data
     .global _xt_intdata
     .align  8
@@ -53,7 +56,7 @@ _xt_intdata:
 
 _xt_intenable:     .word   0             /* Virtual INTENABLE     */
 _xt_vpri_mask:     .word   0xFFFFFFFF    /* Virtual priority mask */
-
+#endif
 
 /*
 -------------------------------------------------------------------------------
@@ -124,7 +127,8 @@ _xt_exception_table:
   unsigned int xt_ints_on ( unsigned int mask )
 
   Enables a set of interrupts. Does not simply set INTENABLE directly, but
-  computes it as a function of the current virtual priority.
+  computes it as a function of the current virtual priority if XT_USE_SWPRI is
+  enabled.
   Can be called from interrupt handlers.
 -------------------------------------------------------------------------------
 */
@@ -137,7 +141,9 @@ _xt_exception_table:
 xt_ints_on:
 
     ENTRY0
+
 #if XCHAL_HAVE_INTERRUPTS
+#if XT_USE_SWPRI
     movi    a3, 0
     movi    a4, _xt_intdata
     xsr     a3, INTENABLE        /* Disables all interrupts   */
@@ -149,6 +155,15 @@ xt_ints_on:
     and     a5, a5, a6           /* a5 = _xt_intenable & _xt_vpri_mask */
     wsr     a5, INTENABLE        /* Reenable interrupts       */
     mov     a2, a3               /* Previous mask             */
+#else
+    movi    a3, 0
+    xsr     a3, INTENABLE        /* Disables all interrupts   */
+    rsync
+    or      a2, a3, a2           /* set bits in mask */
+    wsr     a2, INTENABLE        /* Re-enable ints */
+    rsync
+    mov     a2, a3               /* return prev mask */
+#endif
 #else
     movi    a2, 0                /* Return zero */
 #endif
@@ -162,7 +177,8 @@ xt_ints_on:
   unsigned int xt_ints_off ( unsigned int mask )
 
   Disables a set of interrupts. Does not simply set INTENABLE directly,
-  but computes it as a function of the current virtual priority.
+  but computes it as a function of the current virtual priority if XT_USE_SWPRI is
+  enabled.
   Can be called from interrupt handlers.
 -------------------------------------------------------------------------------
 */
@@ -176,6 +192,7 @@ xt_ints_off:
 
     ENTRY0
 #if XCHAL_HAVE_INTERRUPTS
+#if XT_USE_SWPRI
     movi    a3, 0
     movi    a4, _xt_intdata
     xsr     a3, INTENABLE        /* Disables all interrupts    */
@@ -188,6 +205,16 @@ xt_ints_off:
     and     a5, a5, a6           /* a5 = _xt_intenable & _xt_vpri_mask */
     wsr     a5, INTENABLE        /* Reenable interrupts        */
     mov     a2, a3               /* Previous mask              */
+#else
+    movi    a4, 0
+    xsr     a4, INTENABLE        /* Disables all interrupts   */
+    rsync
+    or      a3, a4, a2           /* set bits in mask */
+    xor     a3, a3, a2           /* invert bits in mask set in mask, essentially clearing them */
+    wsr     a3, INTENABLE        /* Re-enable ints */
+    rsync
+    mov     a2, a4               /* return prev mask */
+#endif
 #else
     movi    a2, 0                /* return zero */
 #endif

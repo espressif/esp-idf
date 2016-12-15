@@ -79,8 +79,8 @@
 //set bits of register controlled by mask
 #define REG_SET_BITS(_r, _b, _m) (*(volatile uint32_t*)(_r) = (*(volatile uint32_t*)(_r) & ~(_m)) | ((_b) & (_m)))
 
-//get field from register, used when _f is not left shifted by _f##_S
-#define REG_GET_FIELD(_r, _f) ((REG_READ(_r) >> (_f##_S)) & (_f))
+//get field from register, uses field _S & _V to determine mask
+#define REG_GET_FIELD(_r, _f) ((REG_READ(_r) >> (_f##_S)) & (_f##_V))
 
 //set field to register, used when _f is not left shifted by _f##_S
 #define REG_SET_FIELD(_r, _f, _v) (REG_WRITE((_r),((REG_READ(_r) & ~((_f) << (_f##_S)))|(((_v) & (_f))<<(_f##_S)))))
@@ -264,14 +264,14 @@
  *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
  *      0                       1               extern level            WMAC                    Reserved
  *      1                       1               extern level            BT/BLE Host VHCI        Reserved
- *      2                       1               extern level            FROM_CPU                FROM_CPU
- *      3                       1               extern level            TG0_WDT                 Reserved
+ *      2                       1               extern level
+ *      3                       1               extern level
  *      4                       1               extern level            WBB
  *      5                       1               extern level            BT Controller 
  *      6                       1               timer                   FreeRTOS Tick(L1)       FreeRTOS Tick(L1)
  *      7                       1               software                Reserved                Reserved
  *      8                       1               extern level            BLE Controller 
- *      9                       1               extern level            EMAC
+ *      9                       1               extern level
  *      10                      1               extern edge             Internal Timer
  *      11                      3               profiling
  *      12                      1               extern level
@@ -300,10 +300,7 @@
 //CPU0 Interrupt number reserved, not touch this.
 #define ETS_WMAC_INUM                           0
 #define ETS_BT_HOST_INUM                        1
-#define ETS_FROM_CPU_INUM                       2
-#define ETS_T0_WDT_INUM                         3
 #define ETS_WBB_INUM                            4
-#define ETS_EMAC_INUM                           9
 #define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24

@@ -12,6 +12,7 @@
 #include "soc/pcnt_struct.h"
 #include "soc/gpio_sig_map.h"
 #include "driver/gpio.h"
+#include "esp_intr_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,6 +76,8 @@ typedef struct {
     pcnt_unit_t unit;               /*!< PCNT unit number */
     pcnt_channel_t channel;         /*!< the PCNT channel */
 } pcnt_config_t;
+
+typedef intr_handle_t pcnt_isr_handle_t;
 
 /**
  * @brief Configure Pulse Counter unit
@@ -213,21 +216,19 @@ esp_err_t pcnt_get_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
 /**
  * @brief Register PCNT interrupt handler, the handler is an ISR.
  *        The handler will be attached to the same CPU core that this function is running on.
- *        @note
- *        Users should know that which CPU is running and then pick a INUM that is not used by system.
- *        We can find the information of INUM and interrupt level in soc.h.
  *
- * @param pcnt_intr_num PCNT interrupt number, check the info in soc.h, and please see the core-isa.h for more details
  * @param fn Interrupt handler function.
- *        @note
- *        Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
  * @param arg Parameter for handler function
+ * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will
+ *            be returned here.
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  */
-esp_err_t pcnt_isr_register(uint32_t pcnt_intr_num, void (*fn)(void*), void * arg);
+esp_err_t pcnt_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, pcnt_isr_handle_t *handle);
 
 /**
  * @brief Configure PCNT pulse signal input pin and control input pin

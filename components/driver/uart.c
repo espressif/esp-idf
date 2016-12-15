@@ -15,7 +15,9 @@
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_log.h"
+#include "esp_err.h"
 #include "malloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -27,11 +29,13 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 
-static const char* UART_TAG = "UART";
-#define UART_CHECK(a, str, ret) if (!(a)) {                                             \
-        ESP_LOGE(UART_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
-        return (ret);                                                                   \
-        }
+static const char* UART_TAG = "uart";
+#define UART_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(UART_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
+
 #define UART_EMPTY_THRESH_DEFAULT  (10)
 #define UART_FULL_THRESH_DEFAULT  (120)
 #define UART_TOUT_THRESH_DEFAULT   (10)
@@ -53,7 +57,7 @@ typedef struct {
     uart_port_t uart_num;               /*!< UART port number*/
     int queue_size;                     /*!< UART event queue size*/
     QueueHandle_t xQueueUart;           /*!< UART queue handler*/
-    int intr_num;                       /*!< UART interrupt number*/
+    intr_handle_t intr_handle;          /*!< UART interrupt handle*/
     //rx parameters
     SemaphoreHandle_t rx_mux;           /*!< UART RX data mutex*/
     int rx_buf_size;                    /*!< RX ring buffer size */
@@ -283,31 +287,41 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh)
     UART[uart_num]->conf1.txfifo_empty_thrhd = thresh & UART_TXFIFO_EMPTY_THRHD_V;
     UART[uart_num]->int_ena.txfifo_empty = enable & 0x1;
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
-    ESP_INTR_ENABLE(p_uart_obj[uart_num]->intr_num);
     return ESP_OK;
 }
 
-esp_err_t uart_isr_register(uart_port_t uart_num, uint8_t uart_intr_num, void (*fn)(void*), void * arg)
+esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg, int intr_alloc_flags)
 {
+    int ret;
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
-    ESP_INTR_DISABLE(uart_intr_num);
     switch(uart_num) {
         case UART_NUM_1:
-            intr_matrix_set(xPortGetCoreID(), ETS_UART1_INTR_SOURCE, uart_intr_num);
+            ret=esp_intr_alloc(ETS_UART1_INTR_SOURCE, intr_alloc_flags, fn, arg, &p_uart_obj[uart_num]->intr_handle);
             break;
         case UART_NUM_2:
-            intr_matrix_set(xPortGetCoreID(), ETS_UART2_INTR_SOURCE, uart_intr_num);
+            ret=esp_intr_alloc(ETS_UART2_INTR_SOURCE, intr_alloc_flags, fn, arg, &p_uart_obj[uart_num]->intr_handle);
             break;
         case UART_NUM_0:
             default:
-            intr_matrix_set(xPortGetCoreID(), ETS_UART0_INTR_SOURCE, uart_intr_num);
+            ret=esp_intr_alloc(ETS_UART0_INTR_SOURCE, intr_alloc_flags, fn, arg, &p_uart_obj[uart_num]->intr_handle);
             break;
     }
-    xt_set_interrupt_handler(uart_intr_num, fn, arg);
-    ESP_INTR_ENABLE(uart_intr_num);
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
-    return ESP_OK;
+    return ret;
+}
+
+
+esp_err_t uart_isr_free(uart_port_t uart_num)
+{
+    esp_err_t ret;
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    if (p_uart_obj[uart_num]->intr_handle==NULL) return ESP_ERR_INVALID_ARG;
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    ret=esp_intr_free(p_uart_obj[uart_num]->intr_handle);
+    p_uart_obj[uart_num]->intr_handle=NULL;
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    return ret;
 }
 
 //internal signal can be output to multiple GPIO pads
@@ -859,7 +873,7 @@ esp_err_t uart_flush(uart_port_t uart_num)
 
     //rx sem protect the ring buffer read related functions
     xSemaphoreTake(p_uart->rx_mux, (portTickType)portMAX_DELAY);
-    ESP_INTR_DISABLE(p_uart->intr_num);
+    esp_intr_disable(p_uart->intr_handle);
     while(true) {
         if(p_uart->rx_head_ptr) {
             vRingbufferReturnItem(p_uart->rx_ring_buf, p_uart->rx_head_ptr);
@@ -876,12 +890,12 @@ esp_err_t uart_flush(uart_port_t uart_num)
     p_uart->rx_ptr = NULL;
     p_uart->rx_cur_remain = 0;
     p_uart->rx_head_ptr = NULL;
-    ESP_INTR_ENABLE(p_uart->intr_num);
+    esp_intr_enable(p_uart->intr_handle);
     xSemaphoreGive(p_uart->rx_mux);
 
     if(p_uart->tx_buf_size > 0) {
         xSemaphoreTake(p_uart->tx_mux, (portTickType)portMAX_DELAY);
-        ESP_INTR_DISABLE(p_uart->intr_num);
+        esp_intr_disable(p_uart->intr_handle);
         UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
         UART[uart_num]->int_ena.txfifo_empty = 0;
         UART[uart_num]->int_clr.txfifo_empty = 1;
@@ -901,19 +915,18 @@ esp_err_t uart_flush(uart_port_t uart_num)
         p_uart->tx_ptr = NULL;
         p_uart->tx_waiting_brk = 0;
         p_uart->tx_waiting_fifo = false;
-        ESP_INTR_ENABLE(p_uart->intr_num);
+        esp_intr_enable(p_uart->intr_handle);
         xSemaphoreGive(p_uart->tx_mux);
     }
     uart_reset_fifo(uart_num);
     return ESP_OK;
 }
 
-esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, int uart_intr_num, void* uart_queue)
+esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, void* uart_queue, int intr_alloc_flags)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((rx_buffer_size > 0), "uart rx buffer length error", ESP_FAIL);
     if(p_uart_obj[uart_num] == NULL) {
-        ESP_INTR_DISABLE(uart_intr_num);
         p_uart_obj[uart_num] = (uart_obj_t*) malloc(sizeof(uart_obj_t));
         if(p_uart_obj[uart_num] == NULL) {
             ESP_LOGE(UART_TAG, "UART driver malloc error");
@@ -926,7 +939,6 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->tx_brk_sem = xSemaphoreCreateBinary();
         p_uart_obj[uart_num]->tx_mux = xSemaphoreCreateMutex();
         p_uart_obj[uart_num]->rx_mux = xSemaphoreCreateMutex();
-        p_uart_obj[uart_num]->intr_num = uart_intr_num;
         p_uart_obj[uart_num]->queue_size = queue_size;
         p_uart_obj[uart_num]->tx_ptr = NULL;
         p_uart_obj[uart_num]->tx_head = NULL;
@@ -959,7 +971,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         ESP_LOGE(UART_TAG, "UART driver already installed");
         return ESP_FAIL;
     }
-    uart_isr_register(uart_num, uart_intr_num, uart_rx_intr_handler_default, p_uart_obj[uart_num]);
+    uart_isr_register(uart_num, uart_rx_intr_handler_default, p_uart_obj[uart_num], intr_alloc_flags);
     uart_intr_config_t uart_intr = {
         .intr_enable_mask = UART_RXFIFO_FULL_INT_ENA_M
                             | UART_RXFIFO_TOUT_INT_ENA_M
@@ -972,7 +984,6 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         .txfifo_empty_intr_thresh = UART_EMPTY_THRESH_DEFAULT
     };
     uart_intr_config(uart_num, &uart_intr);
-    ESP_INTR_ENABLE(uart_intr_num);
     return ESP_OK;
 }
 
@@ -984,10 +995,9 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
         ESP_LOGI(UART_TAG, "ALREADY NULL");
         return ESP_OK;
     }
-    ESP_INTR_DISABLE(p_uart_obj[uart_num]->intr_num);
+    esp_intr_free(p_uart_obj[uart_num]->intr_handle);
     uart_disable_rx_intr(uart_num);
     uart_disable_tx_intr(uart_num);
-    uart_isr_register(uart_num, p_uart_obj[uart_num]->intr_num, NULL, NULL);
 
     if(p_uart_obj[uart_num]->tx_fifo_sem) {
         vSemaphoreDelete(p_uart_obj[uart_num]->tx_fifo_sem);

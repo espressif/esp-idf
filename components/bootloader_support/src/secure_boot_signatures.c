@@ -27,11 +27,6 @@ typedef SHA_CTX sha_context;
 #include "hwcrypto/sha.h"
 #endif
 
-typedef struct {
-    uint32_t version;
-    uint8_t signature[64];
-} signature_block_t;
-
 static const char* TAG = "secure_boot";
 
 extern const uint8_t signature_verification_key_start[] asm("_binary_signature_verification_key_bin_start");
@@ -47,7 +42,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     uint8_t digest[32];
     ptrdiff_t keylen;
     const uint8_t *data;
-    const signature_block_t *sigblock;
+    const esp_secure_boot_sig_block_t *sigblock;
     bool is_valid;
 #ifdef BOOTLOADER_BUILD
     const uint8_t *digest_data;
@@ -56,13 +51,13 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
 
-    data = bootloader_mmap(src_addr, length + sizeof(signature_block_t));
+    data = bootloader_mmap(src_addr, length + sizeof(esp_secure_boot_sig_block_t));
     if(data == NULL) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", src_addr, length+sizeof(signature_block_t));
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", src_addr, length+sizeof(esp_secure_boot_sig_block_t));
         return ESP_FAIL;
     }
 
-    sigblock = (const signature_block_t *)(data + length);
+    sigblock = (const esp_secure_boot_sig_block_t *)(data + length);
 
     if (sigblock->version != 0) {
         ESP_LOGE(TAG, "src 0x%x has invalid signature version field 0x%08x", src_addr, sigblock->version);

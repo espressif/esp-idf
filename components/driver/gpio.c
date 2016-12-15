@@ -14,6 +14,7 @@
 #include <esp_types.h>
 #include "esp_err.h"
 #include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
 #include "driver/gpio.h"
@@ -21,11 +22,12 @@
 #include "soc/soc.h"
 #include "esp_log.h"
 
-static const char* GPIO_TAG = "GPIO";
-#define GPIO_CHECK(a, str, ret_val) if (!(a)) {                                         \
-        ESP_LOGE(GPIO_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
-        return (ret_val);                                                               \
-        }
+static const char* GPIO_TAG = "gpio";
+#define GPIO_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(GPIO_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
 
 const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
     GPIO_PIN_REG_0,
@@ -320,14 +322,10 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
     return ESP_OK;
 }
 
-esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg)
+esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, gpio_isr_handle_t *handle)
 {
     GPIO_CHECK(fn, "GPIO ISR null", ESP_ERR_INVALID_ARG);
-    ESP_INTR_DISABLE(gpio_intr_num);
-    intr_matrix_set(xPortGetCoreID(), ETS_GPIO_INTR_SOURCE, gpio_intr_num);
-    xt_set_interrupt_handler(gpio_intr_num, fn, arg);
-    ESP_INTR_ENABLE(gpio_intr_num);
-    return ESP_OK;
+    return esp_intr_alloc(ETS_GPIO_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
 }
 
 /*only level interrupt can be used for wake-up function*/

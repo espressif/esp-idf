@@ -19,6 +19,7 @@ extern "C" {
 #endif
 #include "esp_intr.h"
 #include "esp_err.h"
+#include "esp_intr_alloc.h"
 #define TOUCH_PAD_SLEEP_CYCLE_CONFIG   (0x1000)//The Time is 150Khz,the Max value is 0xffff
 #define TOUCH_PAD_MEASURE_CYCLE_CONFIG (0xffff)//The Time is 8Mhz,the Max value is 0xffff
 typedef enum {
@@ -34,6 +35,9 @@ typedef enum {
     TOUCH_PAD_NUM9,    /*!< Touch pad channel 0 is GPIO32*/
     TOUCH_PAD_MAX,
 } touch_pad_t;
+
+typedef intr_handle_t touch_isr_handle_t;
+
 /**
  * @brief       Initialize touch module.
  *
@@ -79,44 +83,40 @@ esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t * touch_value);
 /**
  * @brief   register TouchPad interrupt handler, the handler is an ISR.
  *          The handler will be attached to the same CPU core that this function is running on.
- *          @note
- *          Users should know that which CPU is running and then pick a INUM that is not used by system.
- *          We can find the information of INUM and interrupt level in soc.h.
  *
- * @param  touch_intr_num  Touch interrupt number,check the info in soc.h, and please see the core-isa.h for more details
  * @param  fn  Interrupt handler function.
- *
- *         @note
- *         Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
- *
  * @param  arg  Parameter for handler function
+ * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will
+ *            be returned here.
  *
  * @return
  *     - ESP_OK Success ;
  *     - ESP_ERR_INVALID_ARG GPIO error
  */
-esp_err_t touch_pad_isr_handler_register(uint32_t touch_intr_num, void(*fn)(void*), void *arg);
+esp_err_t touch_pad_isr_handler_register(void(*fn)(void *), void *arg, int intr_alloc_flags, touch_isr_handle_t *handle);
 
 
 /**
  * ***************        ATTENTION       ********************/
 /**
  *@attention
-*Touch button is through the body's capacitive characteristics, 
-*there is a charge discharge circuit inside the. When the hands touch, 
-*the charge and discharge time will be slow.
-*Because of the different hardware, each pad needs to be calibrated at the factory.
-*We use touch_pad_read to determine factory parament.
-*/
+ *Touch button is through the body's capacitive characteristics, 
+ *there is a charge discharge circuit inside the. When the hands touch, 
+ *the charge and discharge time will be slow.
+ *Because of the different hardware, each pad needs to be calibrated at the factory.
+ *We use touch_pad_read to determine factory parameters.
+ */
 /**
- *----------EXAMPLE TO CONIFGURE GPIO AS OUTPUT ------------ *
+ *----------EXAMPLE TO CONFIGURE GPIO AS OUTPUT ------------ *
  * @code{c}
  *  touch_pad_init();                            
  *  void taskA(void* arg)
  *  {
  *      for(;;){
  *          vtaskDelay(20/portTICK_PERIOD_MS);
- *          ets_printf("tocuch pad value %u\n",touch_pad_read(0));//Take the touched status and untouched status value
+ *          ets_printf("touch pad value %u\n",touch_pad_read(0));//Take the touched status and untouched status value
  *      } 
  *  }
  * @endcode
@@ -124,22 +124,17 @@ esp_err_t touch_pad_isr_handler_register(uint32_t touch_intr_num, void(*fn)(void
 /**
  *----------EXAMPLE TO SET ISR HANDLER ----------------------
  * @code{c}
- * //the first parameter is INUM, you can pick one form interrupt level 1/2 which is not used by the system.
- * touch_pad_isr_handler_register(19,rtc_intr,NULL);    //hook the isr handler for TouchPad interrupt
+ *   touch_pad_isr_handler_register(rtc_intr,NULL, 0, NULL)    //hook the isr handler for TouchPad interrupt
  * @endcode
- * @note
- *     1. user should arrange the INUMs that used, better not to use a same INUM for different interrupt.
- *     2. do not pick the INUM that already occupied by the system.
- *     3. refer to soc.h to check which INUMs that can be used.
  */
 /**
  *----------EXAMPLE TO USE TOUCH_PAD------------ *
  * @code{c}
  *   touch_pad_init();//only init one time
  *   touch_pad_config(0,300);//set the intr threshold,use touch_pad_read to determine this threshold 
- *   touch_pad_isr_handler_register(19,rtc_intr,NULL)
+ *   touch_pad_isr_handler_register(rtc_intr,NULL, 0, NULL)
  *   #include "esp_attr.h"
- *   void IRAM_ATTR rtc_intr(void * arg)
+ *   void rtc_intr(void * arg)
  *   {
  *       uint32_t pad_intr = READ_PERI_REG(SARADC_SAR_TOUCH_CTRL2_REG) & 0x3ff;
  *       uint8_t i = 0;
