@@ -431,6 +431,10 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
         bta_sys_start_timer(&bta_dm_cb.disable_timer, 0, 5000);
     }
 
+#if BLE_PRIVACY_SPT == TRUE
+    btm_ble_resolving_list_cleanup ();  //by TH, because cmn_ble_vsc_cb.max_filter has something mistake as btm_ble_adv_filter_cleanup
+#endif
+
 }
 
 /*******************************************************************************
