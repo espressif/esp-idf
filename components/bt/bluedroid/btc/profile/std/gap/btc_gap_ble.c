@@ -313,24 +313,7 @@ static void btc_ble_set_adv_data(esp_ble_adv_data_t *adv_data,
 
 static void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params)
 {
-    tBTA_DM_DISC disc_mode = 0;
-    tBTA_DM_CONN conn_mode = 0;
     tBLE_BD_ADDR peer_addr;
-
-    if (ble_adv_params->adv_type == ADV_TYPE_NONCONN_IND) {
-        conn_mode = BTA_DM_BLE_NON_CONNECTABLE;
-    } else {
-        conn_mode = BTA_DM_BLE_CONNECTABLE;
-    }
-
-    if (ble_adv_params->adv_filter_policy == ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY) {
-        disc_mode = BTA_DM_BLE_GENERAL_DISCOVERABLE;
-    } else if (ble_adv_params->adv_filter_policy == ADV_FILTER_ALLOW_SCAN_WLST_CON_ANY
-               || ble_adv_params->adv_filter_policy == ADV_FILTER_ALLOW_SCAN_ANY_CON_WLST) {
-        disc_mode = BTA_DM_BLE_LIMITED_DISCOVERABLE;
-    } else if (ble_adv_params->adv_filter_policy == ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST) {
-        disc_mode = BTA_DM_BLE_NON_DISCOVERABLE;
-    }
 
     if (!BLE_ISVALID_PARAM(ble_adv_params->adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
             !BLE_ISVALID_PARAM(ble_adv_params->adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX)) {
@@ -351,7 +334,6 @@ static void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params)
     }
     LOG_DEBUG("API_Ble_AppStartAdvertising\n");
 
-    ///
     memcpy(peer_addr.bda, ble_adv_params->peer_addr, ESP_BD_ADDR_LEN);
     peer_addr.type = ble_adv_params->peer_addr_type;
     BTA_DmSetBleAdvParamsAll(ble_adv_params->adv_int_min,
@@ -361,9 +343,6 @@ static void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params)
                              ble_adv_params->channel_map,
                              ble_adv_params->adv_filter_policy,
                              &peer_addr);
-
-    /*set connectable,discoverable, pairable and paired only modes of local device*/
-    BTA_DmSetVisibility(disc_mode, conn_mode, (UINT8)BTA_DM_NON_PAIRABLE, (UINT8)BTA_DM_CONN_ALL);
 }
 
 
