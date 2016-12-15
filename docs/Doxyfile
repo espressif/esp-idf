@@ -30,7 +30,8 @@ INPUT = ../components/esp32/include/esp_wifi.h \
 	../components/ulp/include/esp32/ulp.h \
 	../components/esp32/include/esp_intr_alloc.h \
 	../components/esp32/include/esp_heap_alloc_caps.h \
-	../components/freertos/include/freertos/heap_regions.h
+	../components/freertos/include/freertos/heap_regions.h \
+	../components/esp32/include/esp_smartconfig.h
 
 ## Get warnings for functions that have no documentation for their parameters or return value 
 ##

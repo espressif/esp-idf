@@ -150,13 +150,14 @@ typedef union {
 
 typedef struct {
     uint8_t mac[6];  /**< mac address of sta that associated with ESP32 soft-AP */
-}wifi_sta_info_t;
+} wifi_sta_info_t;
 
 #define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32 soft-AP */
+
 typedef struct {
     wifi_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM]; /**< station list */
     int       num; /**< number of station that associated with ESP32 soft-AP */
-}wifi_sta_list_t;
+} wifi_sta_list_t;
 
 typedef enum {
     WIFI_STORAGE_FLASH,  /**< all configuration will strore in both memory and flash */
@@ -184,10 +185,52 @@ typedef enum {
     WIFI_VND_IE_ID_1,
 } wifi_vendor_ie_id_t;
 
+typedef struct {
+    signed rssi:8;            /**< signal intensity of packet */
+    unsigned rate:5;          /**< data rate */
+    unsigned :1;              /**< reserve */
+    unsigned sig_mode:2;      /**< 0:is not 11n packet; 1:is 11n packet */
+    unsigned :16;             /**< reserve */
+    unsigned mcs:7;           /**< if is 11n packet, shows the modulation(range from 0 to 76) */
+    unsigned cwb:1;           /**< if is 11n packet, shows if is HT40 packet or not */
+    unsigned :16;             /**< reserve */
+    unsigned smoothing:1;     /**< reserve */
+    unsigned not_sounding:1;  /**< reserve */
+    unsigned :1;              /**< reserve */
+    unsigned aggregation:1;   /**< Aggregation */
+    unsigned stbc:2;          /**< STBC */
+    unsigned fec_coding:1;    /**< if is 11n packet, shows if is LDPC packet or not */
+    unsigned sgi:1;           /**< SGI */
+    unsigned noise_floor:8;   /**< noise floor */
+    unsigned ampdu_cnt:8;     /**< ampdu cnt */
+    unsigned channel:4;       /**< which channel this packet in */
+    unsigned :12;             /**< reserve */
+    unsigned timestamp:32;    /**< timestamp */
+    unsigned :32;             /**< reserve */
+    unsigned :32;             /**< reserve */
+    unsigned sig_len:12;      /**< It is really lenth of packet */
+    unsigned :12;             /**< reserve */
+    unsigned rx_state:8;      /**< rx state */
+} wifi_pkt_rx_ctrl_t;
+
+typedef struct {
+    wifi_pkt_rx_ctrl_t rx_ctrl;
+    char payload[0];           /**< ieee80211 packet buff, The length of payload is described by sig_len */
+} wifi_promiscuous_pkt_t;
+
+/**
+  * @brief     Promiscuous frame type
+  *
+  */
+typedef enum {
+    WIFI_PKT_CTRL,  /**< control type, receive packet buf is wifi_pkt_rx_ctrl_t */
+    WIFI_PKT_MGMT,  /**< management type, receive packet buf is wifi_promiscuous_pkt_t */
+    WIFI_PKT_DATA,  /**< data type, receive packet buf is wifi_promiscuous_pkt_t */
+    WIFI_PKT_MISC,  /**< other type, receive packet buf is wifi_promiscuous_pkt_t */
+} wifi_promiscuous_pkt_type_t;
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* __ESP_WIFI_TYPES_H__ */
