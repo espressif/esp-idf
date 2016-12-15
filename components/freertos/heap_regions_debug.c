@@ -12,19 +12,17 @@ static size_t g_heap_struct_size;
 static mem_dbg_ctl_t g_mem_dbg;
 char g_mem_print = 0;
 static portMUX_TYPE *g_malloc_mutex = NULL;
-static unsigned int g_alloc_bit;
 #define MEM_DEBUG(...)
 
-void mem_debug_init(size_t size, void *start, void *end, portMUX_TYPE *mutex, unsigned int alloc_bit)
+void mem_debug_init(size_t size, void *start, void *end, portMUX_TYPE *mutex)
 {
-    MEM_DEBUG("size=%d start=%p end=%p mutex=%p alloc_bit=0x%x\n", size, start, end, mutex, alloc_bit);
+    MEM_DEBUG("size=%d start=%p end=%p mutex=%p%x\n", size, start, end, mutex);
     memset(&g_mem_dbg, 0, sizeof(g_mem_dbg));
     memset(&g_malloc_list, 0, sizeof(g_malloc_list));
     g_malloc_mutex = mutex;
     g_heap_struct_size = size;
     g_free_list = start;
     g_end = end;
-    g_alloc_bit = alloc_bit;
 }
 
 void mem_debug_push(char type, void *addr)
@@ -35,9 +33,9 @@ void mem_debug_push(char type, void *addr)
     MEM_DEBUG("push type=%d addr=%p\n", type, addr);
     if (g_mem_print){
         if (type == DEBUG_TYPE_MALLOC){
-            ets_printf("task=%s t=%s s=%u a=%p\n", debug_b->head.task?debug_b->head.task:"", type==DEBUG_TYPE_MALLOC?"m":"f", b->size&(~g_alloc_bit), addr);
+            ets_printf("task=%s t=%s s=%u a=%p\n", debug_b->head.task?debug_b->head.task:"", type==DEBUG_TYPE_MALLOC?"m":"f", b->size, addr);
         } else {
-            ets_printf("task=%s t=%s s=%u a=%p\n", debug_b->head.task?debug_b->head.task:"", type==DEBUG_TYPE_MALLOC?"m":"f", b->size&(~g_alloc_bit), addr);
+            ets_printf("task=%s t=%s s=%u a=%p\n", debug_b->head.task?debug_b->head.task:"", type==DEBUG_TYPE_MALLOC?"m":"f", b->size, addr);
         }
     } else {
         mem_dbg_info_t *info = &g_mem_dbg.info[g_mem_dbg.cnt%DEBUG_MAX_INFO_NUM];
@@ -58,7 +56,7 @@ void mem_debug_malloc_show(void)
     while (b){
         d = DEBUG_BLOCK(b);
         d->head.task[3] = '\0';
-        ets_printf("t=%s s=%u a=%p\n", d->head.task?d->head.task:"", b->size&(~g_alloc_bit), b);
+        ets_printf("t=%s s=%u a=%p\n", d->head.task?d->head.task:"", b->size, b);
         b = b->next;
     }
     taskEXIT_CRITICAL(g_malloc_mutex);
@@ -140,7 +138,7 @@ void mem_malloc_show(void)
 
     while (b){
         debug_b = DEBUG_BLOCK(b);
-        ets_printf("%s %p %p %u\n", debug_b->head.task, debug_b, b, b->size&(~g_alloc_bit));
+        ets_printf("%s %p %p %u\n", debug_b->head.task, debug_b, b, b->size);
         b = b->next;
     }
 }
@@ -149,7 +147,7 @@ void mem_malloc_block(void *data)
 {
     os_block_t *b = (os_block_t*)data;
 
-    MEM_DEBUG("mem malloc block data=%p, size=%u\n", data, b->size&(~g_alloc_bit));
+    MEM_DEBUG("mem malloc block data=%p, size=%u\n", data, b->size);
     mem_debug_push(DEBUG_TYPE_MALLOC, data);
 
     if (b){
@@ -165,7 +163,7 @@ void mem_free_block(void *data)
     os_block_t *pre = &g_malloc_list;
     debug_block_t *debug_b;
 
-    MEM_DEBUG("mem free block data=%p, size=%d\n", data, del->size&(~g_alloc_bit));
+    MEM_DEBUG("mem free block data=%p, size=%d\n", data, del->size);
     mem_debug_push(DEBUG_TYPE_FREE, data);
 
     if (!del) {
@@ -183,7 +181,7 @@ void mem_free_block(void *data)
     }
 
     debug_b = DEBUG_BLOCK(del);
-    ets_printf("%s %p %p %u already free\n", debug_b->head.task, debug_b, del, del->size&(~g_alloc_bit));
+    ets_printf("%s %p %p %u already free\n", debug_b->head.task, debug_b, del, del->size);
     mem_malloc_show();
     abort();
 }

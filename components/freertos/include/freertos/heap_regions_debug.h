@@ -60,7 +60,7 @@ typedef struct _mem_dbg_ctl{
 
 extern void mem_check_block(void * data);
 extern void mem_init_dog(void *data);
-extern void mem_debug_init(size_t size, void *start, void *end, portMUX_TYPE *mutex, unsigned int alloc_bit);
+extern void mem_debug_init(size_t size, void *start, void *end, portMUX_TYPE *mutex);
 extern void mem_malloc_block(void *data);
 extern void mem_free_block(void *data);
 extern void mem_check_all(void* pv);
