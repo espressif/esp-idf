@@ -17,6 +17,107 @@
 
 #include "esp_bt_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/// GATT INVALID UUID
+#define ESP_GATT_ILLEGAL_UUID                0
+
+/**@{
+ * All "ESP_GATT_UUID_xxx" is attribute types
+ */
+#define ESP_GATT_UUID_PRI_SERVICE            0x2800
+#define ESP_GATT_UUID_SEC_SERVICE            0x2801
+#define ESP_GATT_UUID_INCLUDE_SERVICE        0x2802
+#define ESP_GATT_UUID_CHAR_DECLARE           0x2803      /*  Characteristic Declaration*/
+
+#define ESP_GATT_UUID_CHAR_EXT_PROP          0x2900      /*  Characteristic Extended Properties */
+#define ESP_GATT_UUID_CHAR_DESCRIPTION       0x2901      /*  Characteristic User Description*/
+#define ESP_GATT_UUID_CHAR_CLIENT_CONFIG     0x2902      /*  Client Characteristic Configuration */
+#define ESP_GATT_UUID_CHAR_SRVR_CONFIG       0x2903      /*  Server Characteristic Configuration */
+#define ESP_GATT_UUID_CHAR_PRESENT_FORMAT    0x2904      /*  Characteristic Presentation Format*/
+#define ESP_GATT_UUID_CHAR_AGG_FORMAT        0x2905      /*  Characteristic Aggregate Format*/
+#define ESP_GATT_UUID_CHAR_VALID_RANGE       0x2906      /*  Characteristic Valid Range */
+#define ESP_GATT_UUID_EXT_RPT_REF_DESCR      0x2907
+#define ESP_GATT_UUID_RPT_REF_DESCR          0x2908
+
+/* GAP Profile Attributes */
+#define ESP_GATT_UUID_GAP_DEVICE_NAME        0x2A00
+#define ESP_GATT_UUID_GAP_ICON               0x2A01
+#define ESP_GATT_UUID_GAP_PREF_CONN_PARAM    0x2A04
+#define ESP_GATT_UUID_GAP_CENTRAL_ADDR_RESOL 0x2AA6
+
+/* Attribute Profile Attribute UUID */
+#define ESP_GATT_UUID_GATT_SRV_CHGD          0x2A05
+
+/* Link ESP_Loss Service */
+#define ESP_GATT_UUID_ALERT_LEVEL            0x2A06      /* Alert Level */
+#define ESP_GATT_UUID_TX_POWER_LEVEL         0x2A07      /* TX power level */
+
+/* Current Time Service */
+#define ESP_GATT_UUID_CURRENT_TIME           0x2A2B      /* Current Time */
+#define ESP_GATT_UUID_LOCAL_TIME_INFO        0x2A0F      /* Local time info */
+#define ESP_GATT_UUID_REF_TIME_INFO          0x2A14      /* reference time information */
+
+/* Network availability Profile */
+#define ESP_GATT_UUID_NW_STATUS              0x2A18      /* network availability status */
+#define ESP_GATT_UUID_NW_TRIGGER             0x2A1A      /* Network availability trigger */
+
+/* Phone alert */
+#define ESP_GATT_UUID_ALERT_STATUS           0x2A3F    /* alert status */
+#define ESP_GATT_UUID_RINGER_CP              0x2A40    /* ringer control point */
+#define ESP_GATT_UUID_RINGER_SETTING         0x2A41    /* ringer setting */
+
+/* Glucose Service */
+#define ESP_GATT_UUID_GM_MEASUREMENT         0x2A18
+#define ESP_GATT_UUID_GM_CONTEXT             0x2A34
+#define ESP_GATT_UUID_GM_CONTROL_POINT       0x2A52
+#define ESP_GATT_UUID_GM_FEATURE             0x2A51
+
+/* device information characteristic */
+#define ESP_GATT_UUID_SYSTEM_ID              0x2A23
+#define ESP_GATT_UUID_MODEL_NUMBER_STR       0x2A24
+#define ESP_GATT_UUID_SERIAL_NUMBER_STR      0x2A25
+#define ESP_GATT_UUID_FW_VERSION_STR         0x2A26
+#define ESP_GATT_UUID_HW_VERSION_STR         0x2A27
+#define ESP_GATT_UUID_SW_VERSION_STR         0x2A28
+#define ESP_GATT_UUID_MANU_NAME              0x2A29
+#define ESP_GATT_UUID_IEEE_DATA              0x2A2A
+#define ESP_GATT_UUID_PNP_ID                 0x2A50
+
+/* HID characteristics */
+#define ESP_GATT_UUID_HID_INFORMATION        0x2A4A
+#define ESP_GATT_UUID_HID_REPORT_MAP         0x2A4B
+#define ESP_GATT_UUID_HID_CONTROL_POINT      0x2A4C
+#define ESP_GATT_UUID_HID_REPORT             0x2A4D
+#define ESP_GATT_UUID_HID_PROTO_MODE         0x2A4E
+#define ESP_GATT_UUID_HID_BT_KB_INPUT        0x2A22
+#define ESP_GATT_UUID_HID_BT_KB_OUTPUT       0x2A32
+#define ESP_GATT_UUID_HID_BT_MOUSE_INPUT     0x2A33
+
+/* Battery Service characteristics */
+#define ESP_GATT_UUID_BATTERY_LEVEL          0x2A19
+
+/* Sensor Service */
+#define ESP_GATT_UUID_SC_CONTROL_POINT       0x2A55
+#define ESP_GATT_UUID_SENSOR_LOCATION        0x2A5D
+
+/* Runners speed and cadence service */
+#define ESP_GATT_UUID_RSC_MEASUREMENT        0x2A53
+#define ESP_GATT_UUID_RSC_FEATURE            0x2A54
+
+/* Cycling speed and cadence service */
+#define ESP_GATT_UUID_CSC_MEASUREMENT        0x2A5B
+#define ESP_GATT_UUID_CSC_FEATURE            0x2A5C
+
+/* Scan ESP_Parameter characteristics */
+#define ESP_GATT_UUID_SCAN_INT_WINDOW        0x2A4F
+#define ESP_GATT_UUID_SCAN_REFRESH           0x2A31
+/**
+ * @}
+ */
+
 /// Attribute write data type from the client
 typedef enum {
 	ESP_GATT_PREP_WRITE_CANCEL    = 0x00,		/*!< Prepare write cancel */
@@ -109,15 +210,11 @@ typedef struct {
  * @brief Gatt authentication request type
  */
 typedef enum {
-    AUTH_REQ_NO_SCATTERNET,         /* Device doesn't support scatternet, it might
-                                        support "role switch during connection" for
-                                        an incoming connection, when it already has
-                                        another connection in master role */
-    AUTH_REQ_PARTIAL_SCATTERNET,   /* Device supports partial scatternet. It can have
-                                        simulateous connection in Master and Slave roles
-                                        for short period of time */
-    AUTH_REQ_FULL_SCATTERNET       /* Device can have simultaneous connection in master
-                                        and slave roles */
+    ESP_GATT_AUTH_REQ_NONE              	= 0,
+    ESP_GATT_AUTH_REQ_NO_MITM           	= 1,   /* unauthenticated encryption */
+    ESP_GATT_AUTH_REQ_MITM              	= 2,   /* authenticated encryption */
+    ESP_GATT_AUTH_REQ_SIGNED_NO_MITM    	= 3,
+    ESP_GATT_AUTH_REQ_SIGNED_MITM       	= 4,
 } esp_gatt_auth_req_t;
 
 /**
@@ -173,5 +270,9 @@ typedef enum {
 } esp_gatt_write_type_t;
 
 typedef uint32_t    esp_gatt_if_t;							/*!< Gatt interface type, different application on GATT client use different gatt_if */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ESP_GATT_DEFS_H__ */

@@ -15,8 +15,11 @@
 #ifndef __ESP_BT_MAIN_H__
 #define __ESP_BT_MAIN_H__
 
-#include "btc_main.h"
 #include "esp_err.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief     Enable bluetooth, must after esp_init_bluetooth()
@@ -54,5 +57,8 @@ esp_err_t esp_init_bluetooth(void);
  */
 esp_err_t esp_deinit_bluetooth(void);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ESP_BT_MAIN_H__ */

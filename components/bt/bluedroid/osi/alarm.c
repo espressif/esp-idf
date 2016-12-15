@@ -62,7 +62,7 @@ static void alarm_cb_handler(TimerHandle_t xTimer)
     struct alarm_t *alarm;
 
     if (!xTimer) {
-        LOG_DEBUG("TimerName: NULL\n");
+        LOG_ERROR("TimerName: NULL\n");
         return;
     }
 

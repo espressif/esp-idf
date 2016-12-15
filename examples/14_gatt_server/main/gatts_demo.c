@@ -165,7 +165,7 @@ static void gatts_event_handler(uint32_t event, void *param)
 
         gl_test.char_handle = p->add_char.attr_handle;
         gl_test.descr_uuid.len = ESP_UUID_LEN_16;
-        gl_test.descr_uuid.uuid.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
+        gl_test.descr_uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
         esp_ble_gatts_add_char_descr(gl_test.service_handle, &gl_test.descr_uuid,
                                      ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE);
         break;
