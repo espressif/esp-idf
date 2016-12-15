@@ -610,10 +610,10 @@ esp_err_t uart_flush(uart_port_t uart_num);
  * //b1. Setup UART driver(with UART queue)
  * QueueHandle_t uart_queue;
  * //parameters here are just an example, tx buffer size is 2048
- * uart_driver_install(uart_num, 1024 * 2, 1024 * 2, 10, UART_INTR_NUM, &uart_queue);
+ * uart_driver_install(uart_num, 1024 * 2, 1024 * 2, 10, &uart_queue, 0);
  * //b2. Setup UART driver(without UART queue)
  * //parameters here are just an example, tx buffer size is 0
- * uart_driver_install(uart_num, 1024 * 2, 0, 10, UART_INTR_NUM, NULL);
+ * uart_driver_install(uart_num, 1024 * 2, 0, 10, NULL, 0);
  *@endcode
  *-----------------------------------------------------------------------------*
  * @code{c}
