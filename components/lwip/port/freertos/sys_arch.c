@@ -42,6 +42,8 @@
 /* This is the number of threads that can be started with sys_thread_new() */
 #define SYS_THREAD_MAX 4
 
+static bool g_lwip_in_critical_section = false;
+
 #if !LWIP_COMPAT_MUTEX
 /** Create a new mutex
  * @param mutex pointer to the mutex to create
@@ -122,7 +124,11 @@ sys_sem_new(sys_sem_t *sem, u8_t count)
 void
 sys_sem_signal(sys_sem_t *sem)
 {
-  xSemaphoreGive(*sem);
+  if (g_lwip_in_critical_section){
+    xSemaphoreGiveFromISR(*sem, NULL);
+  } else {
+    xSemaphoreGive(*sem);
+  }
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -453,6 +459,7 @@ sys_prot_t
 sys_arch_protect(void)
 {
   portENTER_CRITICAL(&g_lwip_mux);
+  g_lwip_in_critical_section = true;
   return (sys_prot_t) 1;
 }
 
@@ -467,6 +474,7 @@ void
 sys_arch_unprotect(sys_prot_t pval)
 {
   (void) pval;
+  g_lwip_in_critical_section = false;
   portEXIT_CRITICAL(&g_lwip_mux);
 }
 
