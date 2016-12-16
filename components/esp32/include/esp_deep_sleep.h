@@ -84,12 +84,17 @@ esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us);
  * This feature can monitor any pin which is an RTC IO. Once the pin transitions
  * into the state given by level argument, the chip will be woken up.
  *
+ * @note This function does not modify pin configuration. The pin is
+ *       configured in esp_deep_sleep_start, immediately before
+ *       entering deep sleep.
+ *
  * @param gpio_num  GPIO number used as wakeup source. Only GPIOs which are have RTC
  *             functionality can be used: 0,2,4,12-15,25-27,32-39.
  * @param level  input level which will trigger wakeup (0=low, 1=high)
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
+ *      - ESP_ERR_INVALID_ARG if the selected GPIO is not an RTC GPIO,
+ *        or the mode is invalid
  */
 esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
 
@@ -100,8 +105,17 @@ esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  * It will work even if RTC peripherals are shut down during deep sleep.
  *
  * This feature can monitor any number of pins which are in RTC IOs.
- * Once any of the selected pins goes into the state given by level argument,
+ * Once any of the selected pins goes into the state given by mode argument,
  * the chip will be woken up.
+ *
+ * @note This function does not modify pin configuration. The pins are
+ *       configured in esp_deep_sleep_start, immediately before
+ *       entering deep sleep.
+ *
+ * @note internal pullups and pulldowns don't work when RTC peripherals are
+ *       shut down. In this case, external resistors need to be added.
+ *       Alternatively, RTC peripherals (and pullups/pulldowns) may be
+ *       kept enabled using esp_deep_sleep_pd_config function.
  *
  * @param mask  bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *              which are have RTC functionality can be used in this bit map:
@@ -111,7 +125,8 @@ esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *            - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
+ *      - ESP_ERR_INVALID_ARG if any of the selected GPIOs is not an RTC GPIO,
+ *        or mode is invalid
  */
 esp_err_t esp_deep_sleep_enable_ext1_wakeup(uint64_t mask, esp_ext1_wakeup_mode_t mode);
 
@@ -126,7 +141,7 @@ esp_err_t esp_deep_sleep_enable_ext1_wakeup(uint64_t mask, esp_ext1_wakeup_mode_
 uint64_t esp_deep_sleep_get_ext1_wakeup_status();
 
 /**
- * @brief Set if specific power domain has to be powered down in deep sleep
+ * @brief Set power down mode for an RTC power domain in deep sleep
  *
  * If not set set using this API, all power domains default to ESP_PD_OPTION_AUTO.
  *
