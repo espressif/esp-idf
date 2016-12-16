@@ -29,11 +29,11 @@ extern "C" {
 typedef struct {
     uint32_t reg;       /*!< Register of RTC pad, or 0 if not an RTC GPIO */
     uint32_t mux;       /*!< Bit mask for selecting digital pad or RTC pad */
-    uint32_t func;      /*!< Mask of RTC pad function */
+    uint32_t func;      /*!< Shift of pad function (FUN_SEL) field */
     uint32_t ie;        /*!< Mask of input enable */
     uint32_t pullup;    /*!< Mask of pullup enable */
     uint32_t pulldown;  /*!< Mask of pulldown enable */
-    uint32_t slpsel;    /*!< Mask of the bit to select pin as wakeup pin */
+    uint32_t slpsel;    /*!< If slpsel bit is set, slpie will be used as pad input enabled signal in sleep mode */
     uint32_t slpie;     /*!< Mask of input enable in sleep mode */
     uint32_t hold;      /*!< Mask of hold_force bit for RTC IO in RTC_CNTL_HOLD_FORCE_REG */
     int rtc_num;        /*!< RTC IO number, or -1 if not an RTC GPIO */

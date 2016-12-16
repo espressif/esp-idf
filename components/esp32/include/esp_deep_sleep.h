@@ -99,12 +99,6 @@ esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  * This function uses external wakeup feature of RTC controller.
  * It will work even if RTC peripherals are shut down during deep sleep.
  *
- * @note Currently this doesn't actually work if RTC_PERIPH domain is
- *       powered down. This is a known issue which will be resolved soon.
- *       For now, unless esp_deep_sleep_pd_config function is used to
- *       power down RTC_PERIPH domain, it will be kept on during deep sleep,
- *       slightly increasing power consumption.
- *
  * This feature can monitor any number of pins which are in RTC IOs.
  * Once any of the selected pins goes into the state given by level argument,
  * the chip will be woken up.

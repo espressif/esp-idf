@@ -172,8 +172,13 @@ esp_err_t esp_deep_sleep_enable_ext1_wakeup(uint64_t mask, esp_ext1_wakeup_mode_
         const rtc_gpio_desc_t* desc = &rtc_gpio_desc[gpio];
         int rtc_pin = desc->rtc_num;
         rtc_gpio_mask |= BIT(rtc_pin);
+        REG_SET_BIT(desc->reg, desc->ie);
         REG_SET_BIT(desc->reg, desc->slpsel);
         REG_SET_BIT(desc->reg, desc->slpie);
+        REG_CLR_BIT(desc->reg, desc->pulldown);
+        REG_CLR_BIT(desc->reg, desc->pullup);
+        REG_SET_BIT(desc->reg, desc->mux);
+        REG_SET_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold);
     }
     REG_SET_BIT(RTC_CNTL_EXT_WAKEUP1_REG, RTC_CNTL_EXT_WAKEUP1_STATUS_CLR);
     REG_SET_FIELD(RTC_CNTL_EXT_WAKEUP1_REG, RTC_CNTL_EXT_WAKEUP1_SEL, rtc_gpio_mask);
@@ -240,7 +245,7 @@ static uint32_t get_power_down_flags()
     // power down RTC_PERIPH.
     if (s_pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
         if (s_wakeup_options &
-                (RTC_SAR_TRIG_EN | RTC_EXT_EVENT0_TRIG_EN | RTC_EXT_EVENT1_TRIG_EN)) {
+                (RTC_SAR_TRIG_EN | RTC_EXT_EVENT0_TRIG_EN)) {
             s_pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
         }
     }
