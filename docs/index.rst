@@ -35,6 +35,7 @@ Contents:
    partition-tables
    build_system
    openocd
+   Flash encryption <security/flash-encryption>
    Secure Boot <security/secure-boot>
    ULP coprocessor <api/ulp.rst>
 
@@ -114,6 +115,7 @@ Contents:
    Ethernet <api/esp_eth>
    Interrupt Allocation <api/intr_alloc>
    Memory Allocation <api/mem_alloc>
+   Deep Sleep <api/deep_sleep>
    deep-sleep-stub
 
    Template <api/template>

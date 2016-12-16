@@ -27,7 +27,7 @@
 
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/saradc_reg.h"
+#include "soc/sens_reg.h"
 
 #include "sdkconfig.h"
 
