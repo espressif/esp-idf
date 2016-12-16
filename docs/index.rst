@@ -114,6 +114,7 @@ Contents:
    Ethernet <api/esp_eth>
    Interrupt Allocation <api/intr_alloc>
    Memory Allocation <api/mem_alloc>
+   Deep Sleep <api/deep_sleep>
    deep-sleep-stub
 
    Template <api/template>

@@ -22,13 +22,6 @@
 extern "C" {
 #endif
 
-/** \defgroup Deep_Sleep_API Deep Sleep API
-  * @brief API for putting device into deep sleep
-  */
-
-/** @addtogroup Deep_Sleep_API
-  * @{
-  */
 
 /**
  * @brief Logic function used for EXT1 wakeup mode.
@@ -234,14 +227,6 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void);
  */
 void esp_default_wake_deep_sleep(void);
 
-/**
-  * @}
-  */
-
-
-/**
-  * @}
-  */
 
 #ifdef __cplusplus
 }
