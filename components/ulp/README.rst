@@ -83,8 +83,11 @@ ULP coprocessor instruction defines
 
 .. doxygendefine:: I_DELAY
 .. doxygendefine:: I_HALT
+.. doxygendefine:: I_END
 .. doxygendefine:: I_ST
 .. doxygendefine:: I_LD
+.. doxygendefine:: I_WR_REG
+.. doxygendefine:: I_RD_REG
 .. doxygendefine:: I_BL
 .. doxygendefine:: I_BGE
 .. doxygendefine:: I_BXR
