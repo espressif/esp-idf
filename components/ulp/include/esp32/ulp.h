@@ -600,7 +600,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 #define I_ANDI(reg_dest, reg_src, imm_) { .alu_imm = { \
     .dreg = reg_dest, \
     .sreg = reg_src, \
-    .imm = reg_imm_, \
+    .imm = imm_, \
     .unused = 0, \
     .sel = ALU_SEL_AND, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \

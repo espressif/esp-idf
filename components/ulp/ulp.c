@@ -263,8 +263,15 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
 
 esp_err_t ulp_run(uint32_t entry_point)
 {
-    SET_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_FORCE_START_TOP_M);
+    // disable ULP timer
+    CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+    // set entry point
     SET_PERI_REG_BITS(SENS_SAR_START_FORCE_REG, SENS_PC_INIT_V, entry_point, SENS_PC_INIT_S);
-    SET_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_START_TOP_M);
+    // disable force start
+    CLEAR_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_FORCE_START_TOP_M);
+    // make sure voltage is raised when RTC 8MCLK is enabled
+    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FOLW_8M);
+    // enable ULP timer
+    SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
     return ESP_OK;
 }
