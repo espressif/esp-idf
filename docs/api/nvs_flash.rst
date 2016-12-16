@@ -87,5 +87,4 @@ Functions
 .. doxygenfunction:: nvs_commit
 .. doxygenfunction:: nvs_close
 .. doxygenfunction:: nvs_flash_init
-.. doxygenfunction:: nvs_flash_init_custom
 

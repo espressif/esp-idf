@@ -35,6 +35,7 @@ Contents:
    partition-tables
    build_system
    openocd
+   Flash encryption <security/flash-encryption>
    Secure Boot <security/secure-boot>
    ULP coprocessor <api/ulp.rst>
 

@@ -1,5 +1,5 @@
 Pulse Counter
-========
+=============
 
 Overview
 --------
