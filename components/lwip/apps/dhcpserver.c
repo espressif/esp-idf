@@ -268,12 +268,14 @@ static u8_t *add_offer_options(u8_t *optptr)
 
         tcpip_adapter_get_ip_info(ESP_IF_WIFI_AP, &if_ip);
 
-        *optptr++ = DHCP_OPTION_ROUTER;
-        *optptr++ = 4;
-        *optptr++ = ip4_addr1(&if_ip.gw);
-        *optptr++ = ip4_addr2(&if_ip.gw);
-        *optptr++ = ip4_addr3(&if_ip.gw);
-        *optptr++ = ip4_addr4(&if_ip.gw);
+        if (!ip4_addr_isany_val(if_ip.gw)) {
+            *optptr++ = DHCP_OPTION_ROUTER;
+            *optptr++ = 4;
+            *optptr++ = ip4_addr1(&if_ip.gw);
+            *optptr++ = ip4_addr2(&if_ip.gw);
+            *optptr++ = ip4_addr3(&if_ip.gw);
+            *optptr++ = ip4_addr4(&if_ip.gw);
+        }
     }
 
 #ifdef USE_DNS
