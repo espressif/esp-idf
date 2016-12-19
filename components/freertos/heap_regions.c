@@ -174,7 +174,7 @@ static void prvInsertBlockIntoFreeList( BlockLink_t *pxBlockToInsert );
 /*-----------------------------------------------------------*/
 
 /* The size of the structure placed at the beginning of each allocated memory
-block must by correctly byte aligned. */
+block must be correctly byte aligned. */
 static const uint32_t uxHeapStructSize  = ( ( sizeof ( BlockLink_t ) + BLOCK_HEAD_LEN + BLOCK_TAIL_LEN + ( portBYTE_ALIGNMENT - 1 ) ) & ~portBYTE_ALIGNMENT_MASK );
 
 /* Create a couple of list links to mark the start and end of the list. */
@@ -583,7 +583,7 @@ const HeapRegionTagged_t *pxHeapRegion;
 
         #if (configENABLE_MEMORY_DEBUG == 1)
         {
-            mem_debug_init(uxHeapStructSize, &xStart, pxEnd, &xMallocMutex, xBlockAllocatedBit);
+            mem_debug_init(uxHeapStructSize, &xStart, pxEnd, &xMallocMutex);
             mem_check_all(0);
         }
         #endif
