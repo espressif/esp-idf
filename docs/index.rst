@@ -108,6 +108,7 @@ Contents:
    Remote Control <api/rmt>
    Timer <api/timer>
    Pulse Counter <api/pcnt>
+   Sigma-delta Modulation <api/sigmadelta>
    SPI Flash and Partition APIs <api/spi_flash>
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>

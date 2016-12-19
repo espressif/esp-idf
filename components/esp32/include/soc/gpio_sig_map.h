@@ -418,5 +418,5 @@
 #define SIG_IN_FUNC226_IDX			226
 #define SIG_IN_FUNC227_IDX			227
 #define SIG_IN_FUNC228_IDX			228
-
+#define SIG_GPIO_OUT_IDX            256
 #endif /* _SOC_GPIO_SIG_MAP_H_ */

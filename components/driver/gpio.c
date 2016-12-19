@@ -292,6 +292,7 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
             }
             if ((pGPIOConfig->mode) & GPIO_MODE_DEF_OUTPUT) {
                 output_en = 1;
+                gpio_matrix_out(io_num, SIG_GPIO_OUT_IDX, 0, 0);
                 gpio_output_enable(io_num);
             } else {
                 gpio_output_disable(io_num);
