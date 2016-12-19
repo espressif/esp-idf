@@ -142,6 +142,11 @@ include $(IDF_PATH)/make/common.mk
 all:
 ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+ifndef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
+	@echo "App built but not signed. Sign app & partition data before flashing, via espsecure.py:"
+	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
+	@echo "espsecure.py sign_data --keyfile KEYFILE $(PARTITION_TABLE_BIN)"
+endif
 	@echo "To flash app & partition table, run 'make flash' or:"
 else
 	@echo "To flash all build output, run 'make flash' or:"
@@ -283,8 +288,15 @@ $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp
 # Generation of $(APP_BIN) from $(APP_ELF) is added by the esptool
 # component's Makefile.projbuild
 app: $(APP_BIN)
+ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image
+	@echo "App built but not signed. Signing step via espsecure.py:"
+	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
+	@echo "Then flash app command is:"
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+else
 	@echo "App built. Default flash app command is:"
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+endif
 
 all_binaries: $(APP_BIN)
 
