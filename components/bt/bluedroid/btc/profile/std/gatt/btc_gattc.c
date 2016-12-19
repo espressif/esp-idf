@@ -422,7 +422,7 @@ static void btc_gattc_reg_for_notify(btc_ble_gattc_args_t *arg)
     memset(&param, 0, sizeof(esp_ble_gattc_cb_param_t));
     param.reg_for_notify.status = status;
     memcpy(&param.reg_for_notify.srvc_id, &arg->reg_for_notify.service_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&param.reg_for_notify.char_id, &arg->reg_for_notify.service_id, sizeof(esp_gatt_id_t));
+    memcpy(&param.reg_for_notify.char_id, &arg->reg_for_notify.char_id, sizeof(esp_gatt_id_t));
     BTC_GATTC_CB_TO_APP(ESP_GATTC_REG_FOR_NOTIFY_EVT, arg->reg_for_notify.gattc_if, &param);
 }
 

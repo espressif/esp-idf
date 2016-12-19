@@ -31,15 +31,20 @@
 #include "esp_bt_main.h"
 
 ///Declare the static function 
-static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *parama);
+static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
+static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
-#define GATTS_SERVICE_UUID_TEST     0x00FF
-#define GATTS_CHAR_UUID_TEST        0xFF01
-#define GATTS_DESCR_UUID_TEST       0x3333
-#define APP_ID_TEST                 0x18
-#define GATTS_NUM_HANDLE_TEST       4
+#define GATTS_SERVICE_UUID_TEST_A   0x00FF
+#define GATTS_CHAR_UUID_TEST_A      0xFF01
+#define GATTS_DESCR_UUID_TEST_A     0x3333
+#define GATTS_NUM_HANDLE_TEST_A     4
+
+#define GATTS_SERVICE_UUID_TEST_B   0x00EE
+#define GATTS_CHAR_UUID_TEST_B      0xEE01
+#define GATTS_DESCR_UUID_TEST_B     0x2222
+#define GATTS_NUM_HANDLE_TEST_B     4
+
 #define TEST_DEVICE_NAME            "ESP_GATTS_DEMO"
-
 #define TEST_MANUFACTURER_DATA_LEN  17
 static uint8_t test_service_uuid128[32] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
@@ -103,7 +108,7 @@ static struct gatts_profile_inst gl_profile_tab[PROFILE_NUM] = {
         .gatts_if = ESP_GATT_IF_NONE,       /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
     [PROFILE_B_APP_ID] = {
-        .gatts_cb = NULL,                   /* This demo does not implement, similar as profile A */
+        .gatts_cb = gatts_profile_b_event_handler,                   /* This demo does not implement, similar as profile A */
         .gatts_if = ESP_GATT_IF_NONE,       /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
 };
@@ -128,7 +133,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         gl_profile_tab[PROFILE_A_APP_ID].service_id.is_primary = true;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.inst_id = 0x00;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.len = ESP_UUID_LEN_16;
-        gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_TEST;
+        gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_TEST_A;
 
         LOG_INFO("%s %d\n", __func__, __LINE__);
         esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
@@ -136,7 +141,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         esp_ble_gap_config_adv_data(&test_adv_data);
 
         LOG_INFO("%s %d\n", __func__, __LINE__);
-        esp_ble_gatts_create_service(gatts_if, &gl_profile_tab[PROFILE_A_APP_ID].service_id, GATTS_NUM_HANDLE_TEST);
+        esp_ble_gatts_create_service(gatts_if, &gl_profile_tab[PROFILE_A_APP_ID].service_id, GATTS_NUM_HANDLE_TEST_A);
         LOG_INFO("%s %d\n", __func__, __LINE__);
         break;
     case ESP_GATTS_READ_EVT: {
@@ -168,7 +173,105 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         LOG_INFO("CREATE_SERVICE_EVT, status %d,  service_handle %d\n", param->create.status, param->create.service_handle);
         gl_profile_tab[PROFILE_A_APP_ID].service_handle = param->create.service_handle;
         gl_profile_tab[PROFILE_A_APP_ID].char_uuid.len = ESP_UUID_LEN_16;
-        gl_profile_tab[PROFILE_A_APP_ID].char_uuid.uuid.uuid16 = GATTS_CHAR_UUID_TEST;
+        gl_profile_tab[PROFILE_A_APP_ID].char_uuid.uuid.uuid16 = GATTS_CHAR_UUID_TEST_A;
+
+        esp_ble_gatts_start_service(gl_profile_tab[PROFILE_A_APP_ID].service_handle);
+
+        esp_ble_gatts_add_char(gl_profile_tab[PROFILE_A_APP_ID].service_handle, &gl_profile_tab[PROFILE_A_APP_ID].char_uuid,
+                               ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+                               ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY);
+        break;
+    case ESP_GATTS_ADD_INCL_SRVC_EVT:
+        break;
+    case ESP_GATTS_ADD_CHAR_EVT:
+        LOG_INFO("ADD_CHAR_EVT, status %d,  attr_handle %d, service_handle %d\n",
+                 param->add_char.status, param->add_char.attr_handle, param->add_char.service_handle);
+
+        gl_profile_tab[PROFILE_A_APP_ID].char_handle = param->add_char.attr_handle;
+        gl_profile_tab[PROFILE_A_APP_ID].descr_uuid.len = ESP_UUID_LEN_16;
+        gl_profile_tab[PROFILE_A_APP_ID].descr_uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
+        esp_ble_gatts_add_char_descr(gl_profile_tab[PROFILE_A_APP_ID].service_handle, &gl_profile_tab[PROFILE_A_APP_ID].descr_uuid,
+                                     ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE);
+        break;
+    case ESP_GATTS_ADD_CHAR_DESCR_EVT:
+        LOG_INFO("ADD_DESCR_EVT, status %d, attr_handle %d, service_handle %d\n",
+                 param->add_char.status, param->add_char.attr_handle, param->add_char.service_handle);
+        break;
+    case ESP_GATTS_DELETE_EVT:
+        break;
+    case ESP_GATTS_START_EVT:
+        LOG_INFO("SERVICE_START_EVT, status %d, service_handle %d\n",
+                 param->start.status, param->start.service_handle);
+        break;
+    case ESP_GATTS_STOP_EVT:
+        break;
+    case ESP_GATTS_CONNECT_EVT:
+        LOG_INFO("SERVICE_START_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:, is_conn %d\n",
+                 param->connect.conn_id,
+                 param->connect.remote_bda[0], param->connect.remote_bda[1], param->connect.remote_bda[2],
+                 param->connect.remote_bda[3], param->connect.remote_bda[4], param->connect.remote_bda[5],
+                 param->connect.is_connected);
+        gl_profile_tab[PROFILE_A_APP_ID].conn_id = param->connect.conn_id;
+        break;
+    case ESP_GATTS_DISCONNECT_EVT:
+    case ESP_GATTS_OPEN_EVT:
+    case ESP_GATTS_CANCEL_OPEN_EVT:
+    case ESP_GATTS_CLOSE_EVT:
+    case ESP_GATTS_LISTEN_EVT:
+    case ESP_GATTS_CONGEST_EVT:
+    default:
+        break;
+    }
+}
+
+static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
+    switch (event) {
+    case ESP_GATTS_REG_EVT:
+        LOG_INFO("REGISTER_APP_EVT, status %d, app_id %d\n", param->reg.status, param->reg.app_id);
+        gl_profile_tab[PROFILE_A_APP_ID].service_id.is_primary = true;
+        gl_profile_tab[PROFILE_A_APP_ID].service_id.id.inst_id = 0x00;
+        gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.len = ESP_UUID_LEN_16;
+        gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_TEST_B;
+
+        LOG_INFO("%s %d\n", __func__, __LINE__);
+        esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
+        LOG_INFO("%s %d\n", __func__, __LINE__);
+        esp_ble_gap_config_adv_data(&test_adv_data);
+
+        LOG_INFO("%s %d\n", __func__, __LINE__);
+        esp_ble_gatts_create_service(gatts_if, &gl_profile_tab[PROFILE_A_APP_ID].service_id, GATTS_NUM_HANDLE_TEST_B);
+        LOG_INFO("%s %d\n", __func__, __LINE__);
+        break;
+    case ESP_GATTS_READ_EVT: {
+        LOG_INFO("GATT_READ_EVT, conn_id %d, trans_id %d, handle %d\n", param->read.conn_id, param->read.trans_id, param->read.handle);
+        esp_gatt_rsp_t rsp;
+        memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
+        rsp.attr_value.handle = param->read.handle;
+        rsp.attr_value.len = 4;
+        rsp.attr_value.value[0] = 0xde;
+        rsp.attr_value.value[1] = 0xed;
+        rsp.attr_value.value[2] = 0xbe;
+        rsp.attr_value.value[3] = 0xef;
+        esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
+                                    ESP_GATT_OK, &rsp);
+        break;
+    }
+    case ESP_GATTS_WRITE_EVT: {
+        LOG_INFO("GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d\n", param->write.conn_id, param->write.trans_id, param->write.handle);
+        LOG_INFO("GATT_WRITE_EVT, value len %d, value %08x\n", param->write.len, *(uint32_t *)param->write.value);
+        esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+        break;
+    }
+    case ESP_GATTS_EXEC_WRITE_EVT:
+    case ESP_GATTS_MTU_EVT:
+    case ESP_GATTS_CONF_EVT:
+    case ESP_GATTS_UNREG_EVT:
+        break;
+    case ESP_GATTS_CREATE_EVT:
+        LOG_INFO("CREATE_SERVICE_EVT, status %d,  service_handle %d\n", param->create.status, param->create.service_handle);
+        gl_profile_tab[PROFILE_A_APP_ID].service_handle = param->create.service_handle;
+        gl_profile_tab[PROFILE_A_APP_ID].char_uuid.len = ESP_UUID_LEN_16;
+        gl_profile_tab[PROFILE_A_APP_ID].char_uuid.uuid.uuid16 = GATTS_CHAR_UUID_TEST_B;
 
         esp_ble_gatts_start_service(gl_profile_tab[PROFILE_A_APP_ID].service_handle);
 
@@ -270,6 +373,7 @@ void app_main()
     esp_ble_gatts_register_callback(gatts_event_handler);
     esp_ble_gap_register_callback(gap_event_handler);
     esp_ble_gatts_app_register(PROFILE_A_APP_ID);
+    esp_ble_gatts_app_register(PROFILE_B_APP_ID);
 
     return;
 }
