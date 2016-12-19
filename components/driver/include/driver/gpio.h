@@ -343,9 +343,6 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
 /**
  * @brief   register GPIO interrupt handler, the handler is an ISR.
  *          The handler will be attached to the same CPU core that this function is running on.
- *          @note
- *          Users should know that which CPU is running and then pick a INUM that is not used by system.
- *          We can find the information of INUM and interrupt level in soc.h.
  *
  * @param  fn  Interrupt handler function.
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
@@ -444,12 +441,8 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 /**
  *----------EXAMPLE TO SET ISR HANDLER ----------------------
  * @code{c}
- * gpio_isr_register(gpio_intr_test,NULL, 0);    //hook the isr handler for GPIO interrupt
+ * gpio_isr_register(gpio_intr_test, 0, NULL);    //hook the isr handler for GPIO interrupt
  * @endcode
- * @note
- *     1. user should arrange the INUMs that used, better not to use a same INUM for different interrupt.
- *     2. do not pick the INUM that already occupied by the system.
- *     3. refer to soc.h to check which INUMs that can be used.
  */
 /**
  *-------------EXAMPLE OF HANDLER FUNCTION-------------------*
