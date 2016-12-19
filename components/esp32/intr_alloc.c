@@ -636,7 +636,7 @@ int esp_intr_get_cpu(intr_handle_t handle)
 //Muxing an interrupt source to interrupt 6, 7, 11, 15, 16 or 29 cause the interrupt to effectively be disabled.
 #define INT_MUX_DISABLED_INTNO 6
 
-esp_err_t esp_intr_enable(intr_handle_t handle)
+esp_err_t IRAM_ATTR esp_intr_enable(intr_handle_t handle)
 {
     if (!handle) return ESP_ERR_INVALID_ARG;
     portENTER_CRITICAL(&spinlock);
@@ -659,7 +659,7 @@ esp_err_t esp_intr_enable(intr_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t esp_intr_disable(intr_handle_t handle)
+esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 {
     if (!handle) return ESP_ERR_INVALID_ARG;
     portENTER_CRITICAL(&spinlock);
