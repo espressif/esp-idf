@@ -28,12 +28,12 @@ ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_CO
 
 ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_APP_OFFSET) $(APP_BIN)
 
-ifdef CONFIG_SECURE_BOOT_ENABLED
+ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 ifndef IS_BOOTLOADER_BUILD
-# for secure boot, add a signing step to get from unsiged app to signed app
+# for locally signed secure boot image, add a signing step to get from unsigned app to signed app
 APP_BIN_UNSIGNED := $(APP_BIN:.bin=-unsigned.bin)
 
-$(APP_BIN): $(APP_BIN_UNSIGNED) $(SECURE_BOOT_SIGNING_KEY)
+$(APP_BIN): $(APP_BIN_UNSIGNED) $(SECURE_BOOT_SIGNING_KEY) $(SDKCONFIG_MAKEFILE)
 	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
 endif
 endif
