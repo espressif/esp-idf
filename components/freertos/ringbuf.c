@@ -600,7 +600,7 @@ void *xRingbufferReceiveUpToFromISR(RingbufHandle_t ringbuf, size_t *item_size, 
     configASSERT(rb);
     configASSERT(rb->flags & flag_bytebuf);
     portENTER_CRITICAL_ISR(&rb->mux);
-    itemData=rb->getItemFromRingbufImpl(rb, item_size, 0);
+    itemData=rb->getItemFromRingbufImpl(rb, item_size, wanted_size);
     portEXIT_CRITICAL_ISR(&rb->mux);
     return (void*)itemData;
 }
