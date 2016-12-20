@@ -22,9 +22,10 @@ typedef struct {
 
 /* Please keep this definition same as BlockLink_t */
 typedef struct _os_block_t {
-    struct _os_block_t *next;
-    size_t   size;
-    unsigned int xtag;
+    struct _os_block_t *next;               /*<< The next free block in the list. */
+    int size: 24;                           /*<< The size of the free block. */
+    int xtag: 7;                            /*<< Tag of this region */
+    int xAllocated: 1;                      /*<< 1 if allocated */
 }os_block_t;
 
 typedef struct {
@@ -50,7 +51,7 @@ typedef struct _mem_dbg_ctl{
 #define OS_BLOCK(_b)   ((os_block_t*)((debug_block_t*)((char*)(_b) + BLOCK_HEAD_LEN)))
 #define DEBUG_BLOCK(_b)  ((debug_block_t*)((char*)(_b) - BLOCK_HEAD_LEN))
 #define HEAD_DOG(_b) ((_b)->head.dog)
-#define TAIL_DOG(_b) (*(unsigned int*)((char*)(_b) + (((_b)->os_block.size & (~g_alloc_bit) ) - BLOCK_TAIL_LEN)))
+#define TAIL_DOG(_b) (*(unsigned int*)((char*)(_b) + (((_b)->os_block.size ) - BLOCK_TAIL_LEN)))
 
 #define DOG_ASSERT()\
 {\

@@ -83,7 +83,7 @@ void IRAM_ATTR timer_group0_isr(void *para)
     uint32_t intr_status = TIMERG0.int_st_timers.val;
     timer_event_t evt;
     if((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
-        /*Timer0 is an example that don't reload counter value*/
+        /*Timer0 is an example that doesn't reload counter value*/
         TIMERG0.hw_timer[timer_idx].update = 1;
 
         /* We don't call a API here because they are not declared with IRAM_ATTR.
@@ -197,9 +197,9 @@ void tg0_timer1_init()
  */
 void app_main()
 {
+    timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     tg0_timer0_init();
     tg0_timer1_init();
-    timer_queue = xQueueCreate(10, sizeof(timer_event_t));
-    xTaskCreate(timer_evt_task, "timer_evt_task", 1024, NULL, 5, NULL);
+    xTaskCreate(timer_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
 }
 
