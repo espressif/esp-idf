@@ -50,11 +50,14 @@ else ifdef CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH
 
 # One time flashing requires user to run esptool.py command themselves,
 # and warning is printed about inability to reflash.
+#
+# The flashing command is deliberately printed without an auto-reset
+# step, so the device doesn't immediately reset to flash itself.
 
 bootloader: $(BOOTLOADER_BIN)
 	@echo $(SEPARATOR)
 	@echo "Bootloader built. One-time flash command is:"
-	@echo "$(ESPTOOLPY_WRITE_FLASH) $(BOOTLOADER_OFFSET) $(BOOTLOADER_BIN)"
+	@echo "$(subst hard_reset,no_reset,$(ESPTOOLPY_WRITE_FLASH)) $(BOOTLOADER_OFFSET) $(BOOTLOADER_BIN)"
 	@echo $(SEPARATOR)
 	@echo "* IMPORTANT: After first boot, BOOTLOADER CANNOT BE RE-FLASHED on same device"
 
