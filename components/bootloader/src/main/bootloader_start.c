@@ -266,7 +266,7 @@ void bootloader_main()
 
     if (bs.ota_info.offset != 0) {              // check if partition table has OTA info partition
         //ESP_LOGE("OTA info sector handling is not implemented");
-        if (bs.ota_info.size < 2 * sizeof(esp_ota_select_entry_t)) {
+        if (bs.ota_info.size < 2 * SPI_SEC_SIZE) {
             ESP_LOGE(TAG, "ERROR: ota_info partition size %d is too small (minimum %d bytes)", bs.ota_info.size, sizeof(esp_ota_select_entry_t));
             return;
         }
@@ -275,10 +275,9 @@ void bootloader_main()
             ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", bs.ota_info.offset, bs.ota_info.size);
             return;
         }
-        sa = ota_select_map[0];
-        sb = ota_select_map[1];
+        memcpy(&sa, ota_select_map, sizeof(esp_ota_select_entry_t));
+        memcpy(&sb, (uint8_t *)ota_select_map + SPI_SEC_SIZE, sizeof(esp_ota_select_entry_t));
         bootloader_munmap(ota_select_map);
-
         if(sa.ota_seq == 0xFFFFFFFF && sb.ota_seq == 0xFFFFFFFF) {
             // init status flash 
             if (bs.factory.offset != 0) {        // if have factory bin,boot factory bin
