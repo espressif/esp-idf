@@ -5,7 +5,7 @@ The Example contains of OpenSSL server demo.
 First you should configure the project by "make menuconfig":
   Example Configuration -> 
     1. WIFI SSID: WIFI network to which your PC is also connected to. 
-    1. WIFI Password: WIFI password
+    2. WIFI Password: WIFI password
     
 IF you want to test the OpenSSL server demo: 
   1. compile the code and load the firmware 
