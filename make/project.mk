@@ -44,20 +44,25 @@ $(warning "esp-idf build system only supports GNU Make versions 3.81 or newer. Y
 endif
 endif
 
-# make IDF_PATH an absolute path
-# (works around the case where a shell character is embedded in the environment variable value.)
-export IDF_PATH:=$(wildcard $(IDF_PATH))
+# make IDF_PATH a "real" absolute path
+# * works around the case where a shell character is embedded in the environment variable value.
+# * changes Windows-style C:/blah/ paths to MSYS/Cygwin style /c/blah
+export IDF_PATH:=$(realpath $(wildcard $(IDF_PATH)))
 
 ifndef IDF_PATH
 $(error IDF_PATH variable is not set to a valid directory.)
 endif
 
-ifneq ("$(IDF_PATH)","$(wildcard $(IDF_PATH))")
+ifneq ("$(IDF_PATH)","$(realpath $(wildcard $(IDF_PATH)))")
 # due to the way make manages variables, this is hard to account for
 #
 # if you see this error, do the shell expansion in the shell ie
 # make IDF_PATH=~/blah not make IDF_PATH="~/blah"
 $(error If IDF_PATH is overriden on command line, it must be an absolute path with no embedded shell special characters)
+endif
+
+ifneq ("$(IDF_PATH)","$(subst :,,$(IDF_PATH))")
+$(error IDF_PATH cannot contain colons. If overriding IDF_PATH on Windows, use Cygwin-style /c/dir instead of C:/dir)
 endif
 
 # disable built-in make rules, makes debugging saner
