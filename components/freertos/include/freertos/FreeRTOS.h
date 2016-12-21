@@ -863,8 +863,8 @@ typedef struct xSTATIC_TCB
 	void				*pxDummy6;
 	uint8_t				ucDummy7[ configMAX_TASK_NAME_LEN ];
     UBaseType_t			uxDummyCoreId;
-	#if ( portSTACK_GROWTH > 0 )
-		void			*pxDummy8;
+	#if ( portSTACK_GROWTH > 0 || configENABLE_TASK_SNAPSHOT == 1 )
+		void            *pxDummy8;
 	#endif
 	#if ( portCRITICAL_NESTING_IN_TCB == 1 )
 		UBaseType_t		uxDummy9;

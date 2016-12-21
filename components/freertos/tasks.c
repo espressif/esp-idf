@@ -181,7 +181,7 @@ typedef struct tskTaskControlBlock
 	char				pcTaskName[ configMAX_TASK_NAME_LEN ];/*< Descriptive name given to the task when created.  Facilitates debugging only. */ /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 	BaseType_t			xCoreID;			/*< Core this task is pinned to */
 											/* If this moves around (other than pcTaskName size changes), please change the define in xtensa_vectors.S as well. */
-	#if ( portSTACK_GROWTH > 0 )
+	#if ( portSTACK_GROWTH > 0 || configENABLE_TASK_SNAPSHOT == 1 )
 		StackType_t		*pxEndOfStack;		/*< Points to the end of the stack on architectures where the stack grows up from low memory. */
 	#endif
 
@@ -885,6 +885,12 @@ UBaseType_t x;
 
 		/* Check the alignment of the calculated top of stack is correct. */
 		configASSERT( ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack & ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) == 0UL ) );
+		#if ( configENABLE_TASK_SNAPSHOT == 1 )
+		{
+			/* need stack end for core dumps */
+			pxNewTCB->pxEndOfStack = pxTopOfStack;
+		}
+#endif
 	}
 	#else /* portSTACK_GROWTH */
 	{
@@ -4911,6 +4917,102 @@ TickType_t uxReturn;
 	}
 
 #endif /* configUSE_TASK_NOTIFICATIONS */
+
+#if ( configENABLE_TASK_SNAPSHOT == 1 )
+
+	static void prvTaskGetSnapshotsFromList( TaskSnapshot_t *pxTaskSnapshotArray, UBaseType_t *uxTask, const UBaseType_t uxArraySize, List_t *pxList )
+	{
+		TCB_t *pxNextTCB, *pxFirstTCB;
+
+		if( listCURRENT_LIST_LENGTH( pxList ) > ( UBaseType_t ) 0 )
+		{
+			listGET_OWNER_OF_NEXT_ENTRY( pxFirstTCB, pxList );
+			do
+			{
+				listGET_OWNER_OF_NEXT_ENTRY( pxNextTCB, pxList );
+
+				if( *uxTask >= uxArraySize )
+					break;
+
+				pxTaskSnapshotArray[ *uxTask ].pxTCB = pxNextTCB;
+				pxTaskSnapshotArray[ *uxTask ].pxTopOfStack = (StackType_t *)pxNextTCB->pxTopOfStack;
+				#if( portSTACK_GROWTH < 0 )
+				{
+					pxTaskSnapshotArray[ *uxTask ].pxEndOfStack = pxNextTCB->pxEndOfStack;
+				}
+				#else
+				{
+					pxTaskSnapshotArray[ *uxTask ].pxEndOfStack = pxNextTCB->pxStack;
+				}
+				#endif
+
+				(*uxTask)++;
+
+			} while( pxNextTCB != pxFirstTCB );
+		}
+		else
+		{
+			mtCOVERAGE_TEST_MARKER();
+		}
+	}
+
+	UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, const UBaseType_t uxArraySize, UBaseType_t * const pxTcbSz )
+	{
+		UBaseType_t uxTask = 0, i = 0;
+
+		*pxTcbSz = sizeof(TCB_t);
+
+		//vTaskSuspendAll(); //WARNING: This only suspends one CPU. ToDo: suspend others as well. Mux using taskQueueMutex maybe?
+		{
+			/* Fill in an TaskStatus_t structure with information on each
+			task in the Ready state. */
+			i = configMAX_PRIORITIES;
+			do
+			{
+				i--;
+				prvTaskGetSnapshotsFromList( pxTaskSnapshotArray, &uxTask, uxArraySize, &( pxReadyTasksLists[ i ] ) );
+			} while( i > ( UBaseType_t ) tskIDLE_PRIORITY ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+
+			/* Fill in an TaskStatus_t structure with information on each
+			task in the Blocked state. */
+			prvTaskGetSnapshotsFromList( pxTaskSnapshotArray, &uxTask, uxArraySize, ( List_t * ) pxDelayedTaskList );
+			prvTaskGetSnapshotsFromList( pxTaskSnapshotArray, &uxTask, uxArraySize, ( List_t * ) pxOverflowDelayedTaskList );
+
+			#if( INCLUDE_vTaskDelete == 1 )
+			{
+				prvTaskGetSnapshotsFromList( pxTaskSnapshotArray, &uxTask, uxArraySize, &xTasksWaitingTermination );
+			}
+			#endif
+
+			#if ( INCLUDE_vTaskSuspend == 1 )
+			{
+				prvTaskGetSnapshotsFromList( pxTaskSnapshotArray, &uxTask, uxArraySize, &xSuspendedTaskList );
+			}
+			#endif
+		}
+		//( void ) xTaskResumeAll();
+#if 0
+		/* Convention: First num_cpus slots will have current task for that cpu. */
+		for (i = 0; i < portNUM_PROCESSORS; i++) {
+			if (pxCurrentTCB[i] == NULL || pxCurrentTCB == pxTaskSnapshotArray[i]) {
+				continue;
+			} else {
+				UBaseType_t j;
+				for (j = i; j < uxTask; j++) {
+					if (pxTaskSnapshotArray[j] == pxCurrentTCB[i]) {
+						TaskHandle_t tmp = pxTaskSnapshotArray[i];
+						pxTaskSnapshotArray[i] = pxTaskSnapshotArray[j];
+						pxTaskSnapshotArray[j] = tmp;
+						break;
+					}
+				}
+			}
+		}
+#endif
+		return uxTask;
+	}
+
+#endif
 
 #ifdef FREERTOS_MODULE_TEST
 	#include "tasks_test_access_functions.h"

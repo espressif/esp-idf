@@ -24,6 +24,10 @@
  */
 
 void esp_set_breakpoint_if_jtag(void *fn);
+void esp_panicPutchar(char c);
+void esp_panicPutStr(const char *c);
+void esp_panicPutHex(int a);
+void esp_panicPutDec(int a);
 
 #define ESP_WATCHPOINT_LOAD 0x40000000
 #define ESP_WATCHPOINT_STORE 0x80000000
