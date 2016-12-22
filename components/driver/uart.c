@@ -387,6 +387,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 
     if(rx_io_num >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
+        gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
         gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
         gpio_matrix_in(rx_io_num, rx_sig, 0);
     }
@@ -397,6 +398,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     }
     if(cts_io_num >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cts_io_num], PIN_FUNC_GPIO);
+        gpio_set_pull_mode(cts_io_num, GPIO_PULLUP_ONLY);
         gpio_set_direction(cts_io_num, GPIO_MODE_INPUT);
         gpio_matrix_in(cts_io_num, cts_sig, 0);
     }
@@ -639,10 +641,10 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
             uart_reg->int_clr.brk_det = 1;
             uart_event.type = UART_BREAK;
         } else if(uart_intr_status & UART_FRM_ERR_INT_ST_M) {
-            uart_reg->int_clr.parity_err = 1;
+            uart_reg->int_clr.frm_err = 1;
             uart_event.type = UART_FRAME_ERR;
         } else if(uart_intr_status & UART_PARITY_ERR_INT_ST_M) {
-            uart_reg->int_clr.frm_err = 1;
+            uart_reg->int_clr.parity_err = 1;
             uart_event.type = UART_PARITY_ERR;
         } else if(uart_intr_status & UART_TX_BRK_DONE_INT_ST_M) {
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
