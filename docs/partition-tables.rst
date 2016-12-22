@@ -125,5 +125,6 @@ Flashing the partition table
 
 A manual flashing command is also printed as part of ``make partition_table``.
 
+Note that updating the partition table doesn't erase data that may have been stored according to the old partition table. You can use ``make erase_flash`` (or ``esptool.py erase_flash``) to erase the entire flash contents.
 
 .. _secure boot: security/secure-boot.rst
