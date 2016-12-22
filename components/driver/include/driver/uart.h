@@ -477,7 +477,8 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  * @param tx_buffer_size UART TX ring buffer size.
  *        If set to zero, driver will not use TX buffer, TX function will block task until all data have been sent out..
  * @param queue_size UART event queue size/depth.
- * @param uart_queue UART event queue handle, if set NULL, driver will not use an event queue.
+ * @param uart_queue UART event queue handle (out param). On success, a new queue handle is written here to provide
+ *        access to UART events. If set to NULL, driver will not use an event queue.
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  *
@@ -485,7 +486,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, void* uart_queue, int intr_alloc_flags);
+esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t* uart_queue, int intr_alloc_flags);
 
 /**
  * @brief Uninstall UART driver.
