@@ -648,7 +648,7 @@ esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, u
  * //a. Set UART parameter
  * int uart_num = 0;                                       //uart port number
  * uart_config_t uart_config = {
- *    .baud_rate = UART_BITRATE_115200,                    //baudrate
+ *    .baud_rate = 115200,                                 //baudrate
  *    .data_bits = UART_DATA_8_BITS,                       //data bit mode
  *    .parity = UART_PARITY_DISABLE,                       //parity mode
  *    .stop_bits = UART_STOP_BITS_1,                       //stop bit mode
