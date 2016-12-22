@@ -108,11 +108,11 @@ void eth_task(void *pvParameter)
 {
     tcpip_adapter_ip_info_t ip;
     memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
-    vTaskDelay(2000 / portTICK_RATE_MS);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
 
     while (1) {
 
-        vTaskDelay(2000 / portTICK_RATE_MS);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
 
         if (tcpip_adapter_get_ip_info(ESP_IF_ETH, &ip) == 0) {
             ESP_LOGI(TAG, "\n~~~~~~~~~~~\n");

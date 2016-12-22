@@ -196,7 +196,7 @@ void app_main()
     portBASE_TYPE res;
     while(1)
     {
-        res = xQueueReceive(pcnt_evt_queue, &evt, 1000 / portTICK_RATE_MS);
+        res = xQueueReceive(pcnt_evt_queue, &evt, 1000 / portTICK_PERIOD_MS);
         if(res == pdTRUE) {
             pcnt_get_counter_value(PCNT_TEST_UNIT, &count);
             printf("Event PCNT unit[%d]; cnt: %d\n", evt.unit, count);

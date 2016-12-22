@@ -585,7 +585,7 @@ void emac_link_check_func(void *pv_parameters)
 
 static bool emac_link_check_timer_init(void)
 {
-    emac_timer = xTimerCreate("emac_timer", (2000 / portTICK_RATE_MS),
+    emac_timer = xTimerCreate("emac_timer", (2000 / portTICK_PERIOD_MS),
                               pdTRUE, (void *)rand(), emac_link_check_func);
     if (emac_timer == NULL) {
         return false;
@@ -844,7 +844,7 @@ esp_err_t IRAM_ATTR emac_post(emac_sig_t sig, emac_par_t par)
         evt.sig = sig;
         evt.par = par;
 
-        if (xQueueSend(emac_xqueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
+        if (xQueueSend(emac_xqueue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
             return ESP_FAIL;
         }
     }

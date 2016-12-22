@@ -146,7 +146,7 @@ void hci_host_task_post(void)
     evt.sig = 0xff;
     evt.par = 0;
 
-    if (xQueueSend(xHciHostQueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
+    if (xQueueSend(xHciHostQueue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
         LOG_ERROR("xHciHostQueue failed\n");
     }
 }
