@@ -161,7 +161,7 @@ static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 
 esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 {
-    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
     if (level) {
         if (gpio_num < 32) {
             GPIO.out_w1ts = (1 << gpio_num);
