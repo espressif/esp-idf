@@ -3499,24 +3499,20 @@ static void prvCheckTasksWaitingTermination( void )
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		while( uxTasksDeleted > ( UBaseType_t ) 0U )
 		{
-			//taskENTER_CRITICAL(&xTaskQueueMutex);
 			{
 				xListIsEmpty = listLIST_IS_EMPTY( &xTasksWaitingTermination );
 			}
-			//taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 			if( xListIsEmpty == pdFALSE )
 			{
 				TCB_t *pxTCB;
 
-				//taskENTER_CRITICAL(&xTaskQueueMutex);
 				{
 					pxTCB = ( TCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( ( &xTasksWaitingTermination ) );
 					( void ) uxListRemove( &( pxTCB->xGenericListItem ) );
 					--uxCurrentNumberOfTasks;
 					--uxTasksDeleted;
 				}
-				//taskEXIT_CRITICAL(&xTaskQueueMutex);
 				
 				#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
 				{
@@ -3809,9 +3805,6 @@ TCB_t *pxTCB;
 	TaskHandle_t xReturn;
 
                 vPortCPUAcquireMutex(&xTaskQueueMutex);
-		/* A critical section is not required as this is not called from
-		an interrupt and the current TCB will always be the same for any
-		individual execution thread. */
 		xReturn = pxCurrentTCB[ xPortGetCoreID() ];
                 vPortCPUReleaseMutex(&xTaskQueueMutex);
 
