@@ -341,7 +341,7 @@ esp_err_t rmt_set_tx_intr_en(rmt_channel_t channel, bool en)
     return ESP_OK;
 }
 
-esp_err_t rmt_set_evt_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh)
+esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(evt_thresh < 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
@@ -624,7 +624,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     rmt_set_rx_intr_en(channel, 0);
     rmt_set_err_intr_en(channel, 0);
     rmt_set_tx_intr_en(channel, 0);
-    rmt_set_evt_intr_en(channel, 0, 0xffff);
+    rmt_set_tx_thr_intr_en(channel, 0, 0xffff);
     if(p_rmt_obj[channel]->tx_sem) {
         vSemaphoreDelete(p_rmt_obj[channel]->tx_sem);
         p_rmt_obj[channel]->tx_sem = NULL;
@@ -697,7 +697,7 @@ esp_err_t rmt_write_items(rmt_channel_t channel, rmt_item32_t* rmt_item, int ite
         RMT.apb_conf.mem_tx_wrap_en = 1;
         len_rem -= item_block_len;
         RMT.conf_ch[channel].conf1.tx_conti_mode = 0;
-        rmt_set_evt_intr_en(channel, 1, item_sub_len);
+        rmt_set_tx_thr_intr_en(channel, 1, item_sub_len);
         p_rmt->tx_data = rmt_item + item_block_len;
         p_rmt->tx_len_rem = len_rem;
         p_rmt->tx_offset = 0;
