@@ -59,7 +59,7 @@ extern void Cache_Flush(int);
 void bootloader_main();
 static void unpack_load_app(const esp_partition_pos_t *app_node);
 void print_flash_info(const esp_image_header_t* pfhdr);
-void set_cache_and_start_app(uint32_t drom_addr,
+static void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t drom_load_addr,
     uint32_t drom_size,
     uint32_t irom_addr,
@@ -364,7 +364,6 @@ void bootloader_main()
     unpack_load_app(&load_part_pos);
 }
 
-
 static void unpack_load_app(const esp_partition_pos_t* partition)
 {
     esp_err_t err;
@@ -412,6 +411,9 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
              image_header.spi_size,
              (unsigned)image_header.entry_addr);
 
+    /* Important: From here on this function cannot access any global data (bss/data segments),
+       as loading the app image may overwrite these.
+    */
     for (int segment = 0; segment < image_header.segment_count; segment++) {
         esp_image_segment_header_t segment_header;
         uint32_t data_offs;
@@ -467,6 +469,31 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
                  segment_header.load_addr, segment_header.data_len, segment_header.data_len, (load)?"load":(map)?"map":"");
 
         if (load) {
+            intptr_t sp, start_addr, end_addr;
+            ESP_LOGV(TAG, "bootloader_mmap data_offs=%08x data_len=%08x", data_offs, segment_header.data_len);
+
+            start_addr = segment_header.load_addr;
+            end_addr = start_addr + segment_header.data_len;
+
+            /* Before loading segment, check it doesn't clobber
+               bootloader RAM... */
+
+            if (end_addr < 0x40000000) {
+                sp = (intptr_t)get_sp();
+                if (end_addr > sp) {
+                    ESP_LOGE(TAG, "Segment %d end address %08x overlaps bootloader stack %08x - can't load",
+                         segment, end_addr, sp);
+                    return;
+                }
+                if (end_addr > sp - 256) {
+                    /* We don't know for sure this is the stack high water mark, so warn if
+                       it seems like we may overflow.
+                    */
+                    ESP_LOGW(TAG, "Segment %d end address %08x close to stack pointer %08x",
+                             segment, end_addr, sp);
+                }
+            }
+
             const void *data = bootloader_mmap(data_offs, segment_header.data_len);
             if(!data) {
                 ESP_LOGE(TAG, "bootloader_mmap(0x%xc, 0x%x) failed",
@@ -487,7 +514,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
         image_header.entry_addr);
 }
 
-void set_cache_and_start_app(
+static void set_cache_and_start_app(
     uint32_t drom_addr,
     uint32_t drom_load_addr,
     uint32_t drom_size,

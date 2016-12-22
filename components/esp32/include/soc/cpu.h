@@ -26,6 +26,16 @@
 #define WSR(reg, newval)  asm volatile ("wsr %0, " #reg : : "r" (newval));
 #define XSR(reg, swapval) asm volatile ("xsr %0, " #reg : "+r" (swapval));
 
+/** @brief Read current stack pointer address
+ *
+ */
+static inline void *get_sp()
+{
+    void *sp;
+    asm volatile ("mov %0, sp;" : "=r" (sp));
+    return sp;
+}
+
 /* Return true if the CPU is in an interrupt context
    (PS.UM == 0)
 */
