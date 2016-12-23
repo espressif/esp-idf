@@ -508,7 +508,7 @@ static void gatt_le_data_ind (UINT16 chan, BD_ADDR bd_addr, BT_HDR *p_buf)
         GKI_freebuf (p_buf);
 
         if (p_tcb != NULL) {
-            GATT_TRACE_WARNING ("ATT - Ignored L2CAP data while in state: %d",
+            GATT_TRACE_WARNING ("ATT - Ignored L2CAP data while in state: %d\n",
                                 gatt_get_ch_state(p_tcb));
         }
     }
@@ -906,10 +906,10 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
                 }
             }
         } else {
-            GATT_TRACE_ERROR ("ATT - Rcvd L2CAP data, unknown cmd: 0x%x", op_code);
+            GATT_TRACE_ERROR ("ATT - Rcvd L2CAP data, unknown cmd: 0x%x\n", op_code);
         }
     } else {
-        GATT_TRACE_ERROR ("invalid data length, ignore");
+        GATT_TRACE_ERROR ("invalid data length, ignore\n");
     }
 
     GKI_freebuf (p_buf);

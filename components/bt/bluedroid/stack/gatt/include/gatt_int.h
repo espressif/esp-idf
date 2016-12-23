@@ -35,7 +35,10 @@
 #define GATT_GET_GATT_IF(conn_id)  ((tGATT_IF)((UINT8) (conn_id)))
 
 #define GATT_GET_SR_REG_PTR(index) (&gatt_cb.sr_reg[(UINT8) (index)]);
-#define GATT_TRANS_ID_MAX                   0x0fffffff      /* 4 MSB is reserved */
+#define GATT_TRANS_ID_MAX          0x0fffffff      /* 4 MSB is reserved */
+#define GATT_RSP_BY_APP            0x00
+#define GATT_RSP_BY_STACK          0x01
+#define GATT_RSP_DEFAULT           GATT_RSP_BY_APP          //need to rsp by the app.
 
 /* security action for GATT write and read request */
 #define GATT_SEC_NONE              0
@@ -61,16 +64,16 @@ typedef UINT8 tGATT_SEC_ACTION;
 #define GATT_ATTR_OP_SPT_PREP_WRITE        (0x00000001 << 10)
 #define GATT_ATTR_OP_SPT_EXE_WRITE         (0x00000001 << 11)
 #define GATT_ATTR_OP_SPT_HDL_VALUE_CONF    (0x00000001 << 12)
-#define GATT_ATTR_OP_SP_SIGN_WRITE        (0x00000001 << 13)
+#define GATT_ATTR_OP_SP_SIGN_WRITE         (0x00000001 << 13)
 
-#define GATT_INDEX_INVALID  0xff
+#define GATT_INDEX_INVALID      0xff
 
-#define GATT_PENDING_REQ_NONE    0
+#define GATT_PENDING_REQ_NONE   0
 
 
-#define GATT_WRITE_CMD_MASK  0xc0  /*0x1100-0000*/
-#define GATT_AUTH_SIGN_MASK  0x80  /*0x1000-0000*/
-#define GATT_AUTH_SIGN_LEN   12
+#define GATT_WRITE_CMD_MASK     0xc0  /*0x1100-0000*/
+#define GATT_AUTH_SIGN_MASK     0x80  /*0x1000-0000*/
+#define GATT_AUTH_SIGN_LEN      12
 
 #define GATT_HDR_SIZE           3 /* 1B opcode + 2B handle */
 
@@ -154,7 +157,7 @@ typedef union {
     tBT_UUID                uuid;               /* service declaration */
     tGATT_CHAR_DECL         char_decl;          /* characteristic declaration */
     tGATT_INCL_SRVC         incl_handle;        /* included service */
-
+    tGATT_ATTR_VAL          attr_val;
 } tGATT_ATTR_VALUE;
 
 /* Attribute UUID type
@@ -167,50 +170,49 @@ typedef UINT8   tGATT_ATTR_UUID_TYPE;
 /* 16 bits UUID Attribute in server database
 */
 typedef struct {
-    void                                *p_next;  /* pointer to the next attribute,
-                                                    either tGATT_ATTR16 or tGATT_ATTR128 */
-    tGATT_ATTR_VALUE                    *p_value;
-    tGATT_ATTR_UUID_TYPE                uuid_type;
-    tGATT_PERM                          permission;
-    UINT16                              handle;
-    UINT16                              uuid;
+    void                    *p_next;  /* pointer to the next attribute, either tGATT_ATTR16 or tGATT_ATTR128 */
+    tGATT_ATTR_VALUE        *p_value;
+    tGATT_ATTR_UUID_TYPE    uuid_type;
+    tGATT_PERM              permission;
+    tGATTS_ATTR_CONTROL     control;
+    UINT16                  handle;
+    UINT16                  uuid;
 } tGATT_ATTR16;
 
 /* 32 bits UUID Attribute in server database
 */
 typedef struct {
-    void                                *p_next;  /* pointer to the next attribute,
-                                                    either tGATT_ATTR16, tGATT_ATTR32 or tGATT_ATTR128 */
-    tGATT_ATTR_VALUE                    *p_value;
-    tGATT_ATTR_UUID_TYPE                uuid_type;
-    tGATT_PERM                          permission;
-    UINT16                              handle;
-    UINT32                              uuid;
+    void                    *p_next;  /* pointer to the next attribute, either tGATT_ATTR16, tGATT_ATTR32 or tGATT_ATTR128 */
+    tGATT_ATTR_VALUE        *p_value;
+    tGATT_ATTR_UUID_TYPE    uuid_type;
+    tGATT_PERM              permission;
+    tGATTS_ATTR_CONTROL     control;
+    UINT16                  handle;
+    UINT32                  uuid;
 } tGATT_ATTR32;
 
 
 /* 128 bits UUID Attribute in server database
 */
 typedef struct {
-    void                                *p_next;  /* pointer to the next attribute,
-                                                    either tGATT_ATTR16 or tGATT_ATTR128 */
-    tGATT_ATTR_VALUE                    *p_value;
-    tGATT_ATTR_UUID_TYPE                uuid_type;
-    tGATT_PERM                          permission;
-    UINT16                              handle;
-    UINT8                               uuid[LEN_UUID_128];
+    void                    *p_next;  /* pointer to the next attribute, either tGATT_ATTR16 or tGATT_ATTR128 */
+    tGATT_ATTR_VALUE        *p_value;
+    tGATT_ATTR_UUID_TYPE    uuid_type;
+    tGATT_PERM              permission;
+    tGATTS_ATTR_CONTROL     control;
+    UINT16                  handle;
+    UINT8                   uuid[LEN_UUID_128];
 } tGATT_ATTR128;
 
 /* Service Database definition
 */
 typedef struct {
-    void            *p_attr_list;               /* pointer to the first attribute,
-                                                  either tGATT_ATTR16 or tGATT_ATTR128 */
-    UINT8           *p_free_mem;                /* Pointer to free memory       */
-    BUFFER_Q        svc_buffer;                 /* buffer queue used for service database */
-    UINT32          mem_free;                   /* Memory still available       */
-    UINT16          end_handle;                 /* Last handle number           */
-    UINT16          next_handle;                /* Next usable handle value     */
+    void            *p_attr_list;       /* pointer to the first attribute, either tGATT_ATTR16 or tGATT_ATTR128 */
+    UINT8           *p_free_mem;        /* Pointer to free memory       */
+    BUFFER_Q        svc_buffer;         /* buffer queue used for service database */
+    UINT32          mem_free;           /* Memory still available       */
+    UINT16          end_handle;         /* Last handle number           */
+    UINT16          next_handle;        /* Next usable handle value     */
 } tGATT_SVC_DB;
 
 /* Data Structure used for GATT server                                        */
@@ -218,14 +220,14 @@ typedef struct {
 /* A service registration information record consists of beginning and ending */
 /* attribute handle, service UUID and a set of GATT server callback.          */
 typedef struct {
-    tGATT_SVC_DB    *p_db;      /* pointer to the service database */
+    tGATT_SVC_DB    *p_db;              /* pointer to the service database */
     tBT_UUID        app_uuid;           /* applicatino UUID */
-    UINT32          sdp_handle; /* primamry service SDP handle */
+    UINT32          sdp_handle;         /* primamry service SDP handle */
     UINT16          service_instance;   /* service instance number */
-    UINT16          type;       /* service type UUID, primary or secondary */
-    UINT16          s_hdl;      /* service starting handle */
-    UINT16          e_hdl;      /* service ending handle */
-    tGATT_IF        gatt_if;    /* this service is belong to which application */
+    UINT16          type;               /* service type UUID, primary or secondary */
+    UINT16          s_hdl;              /* service starting handle */
+    UINT16          e_hdl;              /* service ending handle */
+    tGATT_IF        gatt_if;            /* this service is belong to which application */
     BOOLEAN         in_use;
 } tGATT_SR_REG;
 
@@ -340,7 +342,7 @@ typedef struct {
     tGATT_CH_STATE  ch_state;
     UINT8           ch_flags;
 
-    tGATT_IF         app_hold_link[GATT_MAX_APPS];
+    tGATT_IF        app_hold_link[GATT_MAX_APPS];
 
     /* server needs */
     /* server response data */
@@ -350,13 +352,13 @@ typedef struct {
 
     TIMER_LIST_ENT  conf_timer_ent;     /* peer confirm to indication timer */
 
-    UINT8            prep_cnt[GATT_MAX_APPS];
-    UINT8            ind_count;
+    UINT8           prep_cnt[GATT_MAX_APPS];
+    UINT8           ind_count;
 
-    tGATT_CMD_Q       cl_cmd_q[GATT_CL_MAX_LCB];
-    TIMER_LIST_ENT    ind_ack_timer_ent;    /* local app confirm to indication timer */
-    UINT8             pending_cl_req;
-    UINT8             next_slot_inq;    /* index of next available slot in queue */
+    tGATT_CMD_Q     cl_cmd_q[GATT_CL_MAX_LCB];
+    TIMER_LIST_ENT  ind_ack_timer_ent;    /* local app confirm to indication timer */
+    UINT8           pending_cl_req;
+    UINT8           next_slot_inq;    /* index of next available slot in queue */
 
     BOOLEAN         in_use;
     UINT8           tcb_idx;
@@ -579,6 +581,7 @@ extern BOOLEAN gatt_cl_send_next_cmd_inq(tGATT_TCB *p_tcb);
 /* reserved handle list */
 extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_app_id (tBT_UUID *p_app_uuid128, tBT_UUID *p_svc_uuid, UINT16 svc_inst);
 extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_handle(UINT16 handle);
+extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_attr_handle(UINT16 attr_handle);
 extern tGATT_HDL_LIST_ELEM *gatt_alloc_hdl_buffer(void);
 extern void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM *p);
 extern BOOLEAN gatt_is_last_attribute(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM *p_start, tBT_UUID value);
@@ -664,12 +667,27 @@ extern void gatt_set_sec_act(tGATT_TCB *p_tcb, tGATT_SEC_ACTION sec_act);
 /* gatt_db.c */
 extern BOOLEAN gatts_init_service_db (tGATT_SVC_DB *p_db, tBT_UUID *p_service, BOOLEAN is_pri, UINT16 s_hdl, UINT16 num_handle);
 extern UINT16 gatts_add_included_service (tGATT_SVC_DB *p_db, UINT16 s_handle, UINT16 e_handle, tBT_UUID service);
-extern UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm, tGATT_CHAR_PROP property, tBT_UUID *p_char_uuid);
-extern UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm, tBT_UUID *p_dscp_uuid);
+extern UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
+                                                        tGATT_CHAR_PROP property,
+                                                        tBT_UUID *p_char_uuid, tGATT_ATTR_VAL *attr_val, 
+                                                        tGATTS_ATTR_CONTROL *control);
+extern UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm, 
+                                         tBT_UUID *p_dscp_uuid, tGATT_ATTR_VAL *attr_val,
+                                         tGATTS_ATTR_CONTROL *control);
+
+extern tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle, 
+                                    UINT16 length, UINT8 *value);
+
+extern tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle, 
+                                    UINT16 *length, UINT8 **value);
+extern BOOLEAN gatts_is_auto_response(UINT16 attr_handle);
 extern tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB *p_tcb, tGATT_SVC_DB *p_db, UINT8 op_code, BT_HDR *p_rsp, UINT16 s_handle,
         UINT16 e_handle, tBT_UUID type, UINT16 *p_len, tGATT_SEC_FLAG sec_flag, UINT8 key_size, UINT32 trans_id, UINT16 *p_cur_handle);
 extern tGATT_STATUS gatts_read_attr_value_by_handle(tGATT_TCB *p_tcb, tGATT_SVC_DB *p_db, UINT8 op_code, UINT16 handle, UINT16 offset,
         UINT8 *p_value, UINT16 *p_len, UINT16 mtu, tGATT_SEC_FLAG sec_flag, UINT8 key_size, UINT32 trans_id);
+extern tGATT_STATUS gatts_write_attr_value_by_handle(tGATT_SVC_DB *p_db,
+                                                            UINT16 handle, UINT16 offset,
+                                                            UINT8 *p_value, UINT16 len);
 extern tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code, UINT16 handle, UINT16 offset, UINT8 *p_data,
         UINT16 len, tGATT_SEC_FLAG sec_flag, UINT8 key_size);
 extern tGATT_STATUS gatts_read_attr_perm_check(tGATT_SVC_DB *p_db, BOOLEAN is_long, UINT16 handle, tGATT_SEC_FLAG sec_flag, UINT8 key_size);

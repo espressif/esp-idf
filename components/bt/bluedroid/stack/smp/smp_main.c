@@ -419,7 +419,7 @@ static const UINT8 smp_master_create_local_sec_conn_oob_data[][SMP_SM_NUM_COLS] 
 static const UINT8 smp_slave_entry_map[][SMP_STATE_MAX] = {
     /* state name:             Idle WaitApp SecReq Pair   Wait Confirm Rand PublKey SCPhs1  Wait  Wait  SCPhs2  Wait   DHKChk Enc   Bond  CrLocSc
                                      Rsp    Pend   ReqRsp Cfm               Exch    Strt    Cmtm  Nonce Strt    DHKChk        Pend  Pend  OobData   */
-    /* PAIR_REQ             */{ 2,    1,     1,      0,     0,   0,    0,   0,      0,      0,    0,    0,      0,     0,     0,    0,     0   },
+    /* PAIR_REQ             */{ 2,    0,     1,      0,     0,   0,    0,   0,      0,      0,    0,    0,      0,     0,     0,    0,     0   },
     /* PAIR_RSP             */{ 0,    0,     0,      0,     0,   0,    0,   0,      0,      0,    0,    0,      0,     0,     0,    0,     0   },
     /* CONFIRM              */{ 0,    4,     0,      1,     1,   0,    0,   0,      0,      0,    0,    0,      0,     0,     0,    0,     0   },
     /* RAND                 */{ 0,    0,     0,      0,     0,   1,    2,   0,      0,      0,    1,    0,      0,     0,     0,    0,     0   },

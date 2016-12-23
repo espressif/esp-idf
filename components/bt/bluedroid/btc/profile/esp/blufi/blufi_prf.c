@@ -88,6 +88,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     tBTA_GATTS_RSP rsp;
 
     LOG_DEBUG("blufi profile cb event = %x\n", event);
+
     switch (event) {
     case BTA_GATTS_REG_EVT:
         LOG_DEBUG("REG: status %d, app_uuid %04x, gatt_if %d\n", p_data->reg_oper.status, p_data->reg_oper.uuid.uu.uuid16, p_data->reg_oper.server_if);
@@ -187,7 +188,8 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         //add the frist blufi characteristic --> write characteristic
         BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_p2e,
                                     (GATT_PERM_WRITE),
-                                    (GATT_CHAR_PROP_BIT_WRITE));
+                                    (GATT_CHAR_PROP_BIT_WRITE),
+                                    NULL, NULL);
         break;
     case BTA_GATTS_ADD_CHAR_EVT:
         switch (p_data->add_result.char_uuid.uu.uuid16) {
@@ -196,14 +198,16 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
             BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_e2p,
                                         (GATT_PERM_READ),
-                                        (GATT_PERM_READ | GATT_CHAR_PROP_BIT_NOTIFY));
+                                        (GATT_PERM_READ | GATT_CHAR_PROP_BIT_NOTIFY),
+                                        NULL, NULL);
             break;
          case BLUFI_CHAR_E2P_UUID:  /* ESP32 to Phone */
             blufi_env.handle_char_e2p = p_data->add_result.attr_id;
 
             BTA_GATTS_AddCharDescriptor (blufi_env.handle_srvc,
                                          (GATT_PERM_READ | GATT_PERM_WRITE),
-                                         &blufi_descr_uuid_e2p);
+                                         &blufi_descr_uuid_e2p,
+                                         NULL, NULL);
             break;
          default:
             break;

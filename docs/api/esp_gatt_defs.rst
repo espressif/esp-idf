@@ -84,6 +84,8 @@ Macros
 .. doxygendefine:: ESP_GATT_UUID_SCAN_INT_WINDOW
 .. doxygendefine:: ESP_GATT_UUID_SCAN_REFRESH
 .. doxygendefine:: ESP_GATT_ILLEGAL_UUID
+.. doxygendefine:: ESP_GATT_ILLEGAL_HANDLE
+.. doxygendefine:: ESP_GATT_ATTR_HANDLE_MAX
 .. doxygendefine:: ESP_GATT_MAX_ATTR_LEN
 .. doxygendefine:: ESP_GATT_IF_NONE
 
@@ -105,6 +107,27 @@ Enumerations
 
 Structures
 ^^^^^^^^^^
+
+.. doxygenstruct:: esp_attr_desc_t
+    :members:
+
+.. doxygenstruct:: esp_attr_control_t
+    :members:
+
+.. doxygenstruct:: esp_gatts_attr_db_t
+    :members:
+
+.. doxygenstruct:: esp_attr_value_t
+    :members:
+
+.. doxygenstruct:: esp_gatts_incl_svc_desc_t
+    :members:
+
+.. doxygenstruct:: esp_gatts_incl128_svc_desc_t
+    :members:
+
+.. doxygenstruct:: esp_gatts_char_desc_t
+    :members:
 
 .. doxygenstruct:: esp_gatt_value_t
     :members:

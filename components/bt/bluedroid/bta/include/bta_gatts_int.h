@@ -48,6 +48,7 @@ enum {
     BTA_GATTS_API_START_SRVC_EVT,
     BTA_GATTS_API_STOP_SRVC_EVT,
     BTA_GATTS_API_RSP_EVT,
+    BTA_GATTS_API_SET_ATTR_VAL_EVT,
     BTA_GATTS_API_OPEN_EVT,
     BTA_GATTS_API_CANCEL_OPEN_EVT,
     BTA_GATTS_API_CLOSE_EVT,
@@ -91,19 +92,21 @@ typedef struct {
     tBT_UUID                char_uuid;
     tBTA_GATT_PERM          perm;
     tBTA_GATT_CHAR_PROP     property;
-
+    tBTA_GATTS_ATTR_CONTROL control;
+    tBTA_GATT_ATTR_VAL      attr_val;
 } tBTA_GATTS_API_ADD_CHAR;
 
 typedef struct {
     BT_HDR                  hdr;
     UINT16                  included_service_id;
-
 } tBTA_GATTS_API_ADD_INCL_SRVC;
 
 typedef struct {
-    BT_HDR                      hdr;
-    tBT_UUID                    descr_uuid;
-    tBTA_GATT_PERM              perm;
+    BT_HDR                  hdr;
+    tBT_UUID                descr_uuid;
+    tBTA_GATT_PERM          perm;
+    tBTA_GATTS_ATTR_CONTROL control;
+    tBTA_GATT_ATTR_VAL      attr_val;
 } tBTA_GATTS_API_ADD_DESCR;
 
 typedef struct {
@@ -120,6 +123,12 @@ typedef struct {
     tBTA_GATT_STATUS    status;
     tBTA_GATTS_RSP      *p_rsp;
 } tBTA_GATTS_API_RSP;
+
+typedef struct{
+    BT_HDR              hdr;
+    UINT16 length;
+    UINT8 *value;
+}tBTA_GATTS_API_SET_ATTR_VAL;
 
 typedef struct {
     BT_HDR                  hdr;
@@ -156,6 +165,7 @@ typedef union {
     tBTA_GATTS_API_START            api_start;
     tBTA_GATTS_API_INDICATION       api_indicate;
     tBTA_GATTS_API_RSP              api_rsp;
+    tBTA_GATTS_API_SET_ATTR_VAL     api_set_val;
     tBTA_GATTS_API_OPEN             api_open;
     tBTA_GATTS_API_CANCEL_OPEN      api_cancel_open;
 
@@ -169,7 +179,7 @@ typedef struct {
     BOOLEAN             in_use;
     tBT_UUID            app_uuid;
     tBTA_GATTS_CBACK    *p_cback;
-    tBTA_GATTS_IF        gatt_if;
+    tBTA_GATTS_IF       gatt_if;
 } tBTA_GATTS_RCB;
 
 /* service registration control block */
@@ -219,6 +229,8 @@ extern void bta_gatts_create_srvc(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_add_include_srvc(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
+extern void bta_gatts_get_attr_value(UINT16 attr_handle, UINT16 *length, UINT8 **value);
 extern void bta_gatts_delete_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_start_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
 extern void bta_gatts_stop_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg);
