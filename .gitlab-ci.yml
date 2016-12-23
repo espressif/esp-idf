@@ -14,9 +14,10 @@ before_script:
   - chmod 600 ~/.ssh/id_rsa
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
-  # if testing master branch, use github wifi libs.
-  # if testing other branches, use gitlab wifi libs (as maybe changes aren't merged to master yet)
-  - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-wifi-lib%ssh://git@gitlab.espressif.cn:27227/idf/esp32-wifi-lib%" .gitmodules
+  # if testing master branch, use github wifi and bt libs.
+  # if testing other branches, use gitlab wifi and bt libs (as maybe changes aren't merged to master yet)
+  - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-wifi-lib%${GITLAB_SSH_SERVER}/idf/esp32-wifi-lib%" .gitmodules
+  - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-bt-lib%${GITLAB_SSH_SERVER}/idf/esp32-bt-lib%" .gitmodules
   # fetch all submodules
   - git submodule update --init --recursive
 
