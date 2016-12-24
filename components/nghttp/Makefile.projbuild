@@ -1,4 +1,1 @@
-# Anyone compiling mbedTLS code needs the name of the
-# alternative config file
-
 CFLAGS += -DHAVE_CONFIG_H
