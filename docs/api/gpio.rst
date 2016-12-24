@@ -4,19 +4,16 @@ GPIO
 Overview
 --------
 
-`Instructions`_
+The ESP32 chip features 40 physical GPIO pads. Some GPIO pads cannot be used or do not have the corresponding pin on the chip package(refer to technical reference manual ). Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
+Note that GPIO6-11 are usually used for SPI flash. GPIO34-39 can only be set as input mode.
 
 Application Example
 -------------------
 
-`Instructions`_
+GPIO output and input interrupt example: `examples/21_gpio <https://github.com/espressif/esp-idf/tree/master/examples/21_gpio>`_.
 
 API Reference
 -------------
-
-`Instructions`_
-
-.. _Instructions: template.html
 
 Header Files
 ^^^^^^^^^^^^
@@ -110,7 +107,8 @@ Macros
 Type Definitions
 ^^^^^^^^^^^^^^^^
 
-.. doxygentypedef:: gpio_event_callback
+.. doxygentypedef:: gpio_isr_t
+.. doxygentypedef:: gpio_isr_handle_t
 
 Enumerations
 ^^^^^^^^^^^^
@@ -121,6 +119,13 @@ Enumerations
 .. doxygenenum:: gpio_pullup_t
 .. doxygenenum:: gpio_pulldown_t
 .. doxygenenum:: gpio_pull_mode_t
+
+Structures
+^^^^^^^^^^
+
+.. doxygenstruct:: gpio_config_t
+    :members:
+
 
 Functions
 ^^^^^^^^^
@@ -136,3 +141,12 @@ Functions
 .. doxygenfunction:: gpio_wakeup_enable
 .. doxygenfunction:: gpio_wakeup_disable
 .. doxygenfunction:: gpio_isr_register
+.. doxygenfunction:: gpio_pullup_en
+.. doxygenfunction:: gpio_pullup_dis
+.. doxygenfunction:: gpio_pulldown_en
+.. doxygenfunction:: gpio_pulldown_dis
+.. doxygenfunction:: gpio_install_isr_service
+.. doxygenfunction:: gpio_uninstall_isr_service
+.. doxygenfunction:: gpio_isr_handler_add
+.. doxygenfunction:: gpio_isr_handler_remove
+
