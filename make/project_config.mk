@@ -26,7 +26,7 @@ menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
 	$(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
 
 ifeq ("$(wildcard $(SDKCONFIG))","")
-ifeq ("$(filter defconfig,$(MAKECMDGOALS))","")
+ifeq ("$(call prereq_if_explicit,defconfig)","")
 # if not configuration is present and defconfig is not a target, run makeconfig
 $(SDKCONFIG): menuconfig
 else
