@@ -823,7 +823,7 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
     // LOG_ERROR("pre-send: %d\n", availPcmBytes);
 
     // UIPC_Send(UIPC_CH_ID_AV_AUDIO, 0, (UINT8 *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
-    BTIF_A2D_DATA_CB_TO_APP((uint8_t *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
+    BTIF_A2D_DATA_CB_TO_APP((const uint8_t *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
 
 }
 #endif

@@ -75,6 +75,11 @@ static bt_status_t event_start_up_stack(void)
 
 static bt_status_t event_shut_down_stack(void)
 {
+    if (!stack_is_initialized) {
+        LOG_DEBUG("%s stack not initialized yet.\n", __func__);
+        return BT_STATUS_NOT_READY;
+    }
+	
     if (!stack_is_running) {
         LOG_DEBUG("%s stack is already brought down.\n", __func__);
         return BT_STATUS_DONE;
@@ -152,7 +157,9 @@ esp_err_t esp_bt_disable_stack(void)
     status = event_shut_down_stack();
     switch (status) {
     case BT_STATUS_SUCCESS: return ESP_OK;
-    case BT_STATUS_DONE: return ESP_ERR_INVALID_STATE;
+    case BT_STATUS_NOT_READY:
+    case BT_STATUS_DONE:
+        return ESP_ERR_INVALID_STATE;
     default: return ESP_FAIL;
     }
 }

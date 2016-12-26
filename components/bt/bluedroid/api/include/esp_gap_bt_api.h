@@ -16,18 +16,45 @@
 #define __ESP_GAP_BT_API_H__
 
 #include <stdint.h>
-
 #include "esp_err.h"
 #include "esp_bt_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/// Discoverability and Connectability mode
 typedef enum {
-    BT_SCAN_MODE_NONE = 0,
-    BT_SCAN_MODE_CONNECTABLE,
-    BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE
+    BT_SCAN_MODE_NONE = 0,                      /*!< Neither discoverable nor connectable */
+    BT_SCAN_MODE_CONNECTABLE,                   /*!< Connectable but not discoverable */
+    BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE       /*!< both discoverable and connectaable */
 } bt_scan_mode_t;
 
+/**
+ * @brief           Set discoverability and connectability mode for legacy bluetooth
+ *
+ * @param[in]       mode: one of the enums of bt_scan_mode_t
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_ERR_INVALID_ARG: if argument invalid
+ */
 esp_err_t esp_bt_gap_set_scan_mode(bt_scan_mode_t mode);
 
+
+/**
+ * @brief           Set bluetooth device name 
+ *
+ * @param[in]       name: device name to be set, will be truncated if more than 32 characters
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_ERR_INVALID_ARG: if name is NULL pointer or empty string
+ */
 esp_err_t esp_bt_gap_set_device_name(const char *name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ESP_GAP_BT_API_H__ */
