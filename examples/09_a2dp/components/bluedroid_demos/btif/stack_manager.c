@@ -1,6 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include "btif_stack_manager.h"
+#include "esp_bt_stack_manager.h"
 #include "stack_manager.h"
 #include "bt_defs.h"
 #include "bt_trace.h"
@@ -112,24 +112,49 @@ static bt_status_t event_clean_up_stack(void)
     return BT_STATUS_SUCCESS;
 }
 
-bt_status_t BTIF_InitStack(void)
+esp_err_t esp_bt_init_stack(void)
 {
-    return event_init_stack();
+    bt_status_t status;
+    status = event_init_stack();
+    switch (status) {
+    case BT_STATUS_SUCCESS: return ESP_OK;
+    case BT_STATUS_DONE: return ESP_ERR_INVALID_STATE;
+    default: return ESP_FAIL;
+    }
 }
 
-bt_status_t BTIF_EnableStack(void)
+esp_err_t esp_bt_deinit_stack(void)
 {
-    return event_start_up_stack();
+    bt_status_t status;
+    status = event_clean_up_stack();
+    switch (status) {
+    case BT_STATUS_SUCCESS: return ESP_OK;
+    default: return ESP_ERR_INVALID_STATE;
+    }
 }
 
-bt_status_t BTIF_DisableStack(void)
+esp_err_t esp_bt_enable_stack(void)
 {
-    return event_shut_down_stack();
+    bt_status_t status;
+    status = event_start_up_stack();
+    switch (status) {
+    case BT_STATUS_SUCCESS: return ESP_OK;
+    case BT_STATUS_NOT_READY:
+    case BT_STATUS_DONE:
+        return ESP_ERR_INVALID_STATE;
+    default: return ESP_FAIL;
+    }
 }
 
-bt_status_t BTIF_CleanUpStack(void)
+esp_err_t esp_bt_disable_stack(void)
 {
-    return event_clean_up_stack();
+    bt_status_t status;
+    status = event_shut_down_stack();
+    switch (status) {
+    case BT_STATUS_SUCCESS: return ESP_OK;
+    case BT_STATUS_DONE: return ESP_ERR_INVALID_STATE;
+    default: return ESP_FAIL;
+    }
 }
 
 bool stack_manager_is_stack_running(void)

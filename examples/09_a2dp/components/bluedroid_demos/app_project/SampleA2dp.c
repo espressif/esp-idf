@@ -11,13 +11,10 @@
 #include "EspAudioCom.h"
 
 #include "bt_app_common.h"
-#include "btif_stack_manager.h"
+#include "esp_bt_stack_manager.h"
 #include "esp_gap_bt_api.h"
 #include "bta_api.h"
 #include "esp_a2dp_api.h"
-
-/* utl_set_device_class() */
-#include "utl.h"
 
 typedef enum {
     BT_APP_EVT_STACK_ON = 0xa0,
@@ -48,23 +45,9 @@ static void bt_app_a2d_cb(uint32_t event, void *param)
 
 static void bt_app_a2d_data_cb(uint8_t *data, uint32_t len)
 {
-    // uint32_t t_now = system_get_time();
-    // printf("t: %u, l %d\n", t_now, len);
-    EspAudioPlayerStreamWrite(data, len);
+    EspAudioPlayerStreamWrite(data, len, 10);
 }
 			    
-static void btav_set_device_class(void)
-{
-    tBTA_UTL_COD cod;
-    memset(&cod, 0, sizeof(tBTA_UTL_COD));
-    cod.major = BTM_COD_MAJOR_AUDIO;
-    cod.minor = BTM_COD_MINOR_LOUDSPEAKER;
-    cod.service = BTM_COD_SERVICE_CAPTURING | BTM_COD_SERVICE_AUDIO;
-    utl_set_device_class(&cod, BTA_UTL_SET_COD_ALL);
-    BT_APP_TRACE_ERROR("set class of device: major 0x%x, minor 0x%x, service 0x%x\n",
-              cod.major, cod.minor, cod.service);
-}
-
 static void bt_app_handle_evt(UINT16 event, void *p_param)
 {
     BT_APP_TRACE_EVENT("bt_app_handle_evt 0x%x\n", event);
@@ -72,9 +55,8 @@ static void bt_app_handle_evt(UINT16 event, void *p_param)
     switch (event) {
     case BT_APP_EVT_STACK_ON: {
         char *dev_name = "ESP_SPEAKER";
-        BTM_SetTraceLevel(BT_TRACE_LEVEL_WARNING);
-        btav_set_device_class();
-        BTA_DmSetDeviceName(dev_name);
+        // BTM_SetTraceLevel(BT_TRACE_LEVEL_WARNING);
+	esp_bt_gap_set_device_name(dev_name);
 
         esp_a2d_register_callback(bt_app_a2d_cb);
         esp_a2d_register_data_callback(bt_app_a2d_data_cb);
@@ -115,13 +97,13 @@ static void bt_app_handle_evt(UINT16 event, void *p_param)
 void app_main_entry(void)
 {
     bt_status_t init, enable;
-    init = BTIF_InitStack();
-    if (init != BT_STATUS_SUCCESS) {
+    init = esp_bt_init_stack();
+    if (init != ESP_OK) {
         return;
     }
 
-    enable = BTIF_EnableStack();
-    if (enable != BT_STATUS_SUCCESS) {
+    enable = esp_bt_enable_stack();
+    if (enable != ESP_OK) {
         return;
     }
 

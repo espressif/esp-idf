@@ -28,4 +28,5 @@ typedef enum {
 
 esp_err_t esp_bt_gap_set_scan_mode(bt_scan_mode_t mode);
 
+esp_err_t esp_bt_gap_set_device_name(const char *name);
 #endif /* __ESP_GAP_BT_API_H__ */

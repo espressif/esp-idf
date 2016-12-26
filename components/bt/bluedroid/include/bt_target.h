@@ -466,7 +466,7 @@
 #define BTM_DEFAULT_DISC_INTERVAL   0x0800
 #endif
 
-/* Default class of device
+/* 
 * {SERVICE_CLASS, MAJOR_CLASS, MINOR_CLASS}
 *
 * SERVICE_CLASS:0x5A (Bit17 -Networking,Bit19 - Capturing,Bit20 -Object Transfer,Bit22 -Telephony)
@@ -474,8 +474,20 @@
 * MINOR_CLASS:0x0C - SMART_PHONE
 *
 */
+#define BTA_DM_COD_SMARTPHONE {0x5A, 0x02, 0x0C}
+
+/*
+* {SERVICE_CLASS, MAJOR_CLASS, MINOR_CLASS}
+*
+* SERVICE_CLASS:0x2C (Bit21 - Audio, Bit19 - Capturing)
+* MAJOR_CLASS:0x04 - Audio/Video
+* MINOR_CLASS:0x05 - LoudSpeaker
+*/
+#define BTA_DM_COD_LOUDSPEAKER {0x2C, 0x04, 0x14}
+
+/* Default class of device */
 #ifndef BTA_DM_COD
-#define BTA_DM_COD {0x5A, 0x02, 0x0C}
+#define BTA_DM_COD BTA_DM_COD_LOUDSPEAKER
 #endif
 
 /* The number of SCO links. */

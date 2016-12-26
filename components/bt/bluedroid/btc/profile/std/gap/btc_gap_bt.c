@@ -15,6 +15,7 @@
 #include "esp_gap_bt_api.h"
 #include "bta_api.h"
 #include "bt_trace.h"
+#include <string.h>
 
 esp_err_t esp_bt_gap_set_scan_mode(bt_scan_mode_t mode)
 {
@@ -45,5 +46,18 @@ esp_err_t esp_bt_gap_set_scan_mode(bt_scan_mode_t mode)
     // BTIF_TRACE_EVENT("set property scan mode : %x", mode);
     BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
 
+    return ESP_OK;
+}
+
+esp_err_t esp_bt_gap_set_device_name(const char *name)
+{
+    if (name == NULL || *name == '\0') {
+	return ESP_ERR_INVALID_ARG;
+    }
+    #define ESP_GAP_DEVICE_NAME_MAX (32)
+    char dev_name[ESP_GAP_DEVICE_NAME_MAX+1];
+    strncpy(dev_name, name, ESP_GAP_DEVICE_NAME_MAX);
+    dev_name[ESP_GAP_DEVICE_NAME_MAX] = '\0';
+    BTA_DmSetDeviceName(dev_name);
     return ESP_OK;
 }
