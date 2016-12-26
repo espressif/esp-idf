@@ -10,8 +10,8 @@
 
 uint32_t buffer[1024];
 
-static const uint32_t start = 0x200000;
-static const uint32_t end = 0x300000;
+static const uint32_t start = 0x100000;
+static const uint32_t end = 0x200000;
 
 
 

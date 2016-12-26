@@ -89,11 +89,6 @@ static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks;
 static int hci_layer_init_env(void);
 static void hci_layer_deinit_env(void);
 static void hci_host_thread_handler(void *arg);
-static int hci_send_async_command(bt_vendor_opcode_t opcode, void *param);
-static void event_finish_startup(void *context);
-static void firmware_config_callback(bool success);
-static void event_postload(void);
-static void sco_config_callback(bool success);
 static void event_command_ready(fixed_queue_t *queue);
 static void event_packet_ready(fixed_queue_t *queue);
 static void restart_comamnd_waiting_response_timer(
@@ -203,7 +198,7 @@ static void hci_layer_deinit_env(void)
     command_waiting_response_t *cmd_wait_q;
 
     if (hci_host_env.command_queue) {
-        fixed_queue_free(hci_host_env.command_queue, osi_free);
+        fixed_queue_free(hci_host_env.command_queue, allocator_calloc.free);
     }
     if (hci_host_env.packet_queue) {
         fixed_queue_free(hci_host_env.packet_queue, buffer_allocator->free);
@@ -318,24 +313,8 @@ static void transmit_downward(uint16_t type, void *data)
     hci_host_task_post();
 }
 
-// Postload functions
-static void event_postload(void)
-{
-    if (hci_send_async_command(BT_VND_OP_SCO_CFG, NULL) == -1) {
-        // If couldn't configure sco, we won't get the sco configuration callback
-        // so go pretend to do it now
-        sco_config_callback(false);
-
-    }
-}
-
-static void sco_config_callback(UNUSED_ATTR bool success)
-{
-    LOG_INFO("%s postload finished.", __func__);
-}
 
 // Command/packet transmitting functions
-
 static void event_command_ready(fixed_queue_t *queue)
 {
     waiting_command_t *wait_entry = NULL;
@@ -423,8 +402,8 @@ static void restart_comamnd_waiting_response_timer(
     timeout = osi_alarm_time_diff(COMMAND_PENDING_TIMEOUT, timeout);
     timeout = (timeout <= COMMAND_PENDING_TIMEOUT) ? timeout : COMMAND_PENDING_TIMEOUT;
 
-    osi_alarm_set(cmd_wait_q->command_response_timer, timeout);
     cmd_wait_q->timer_is_set = true;
+    osi_alarm_set(cmd_wait_q->command_response_timer, timeout);
 }
 
 static void command_timed_out(void *context)
@@ -506,14 +485,14 @@ static bool filter_incoming_event(BT_HDR *packet)
 
     return false;
 intercepted:
+    restart_comamnd_waiting_response_timer(&hci_host_env.cmd_waiting_q, false);
+
     /*Tell HCI Host Task to continue TX Pending commands*/
     if (hci_host_env.command_credits &&
             !fixed_queue_is_empty(hci_host_env.command_queue)) {
         hci_host_task_post();
     }
     //ke_event_set(KE_EVENT_HCI_HOST_THREAD);
-
-    restart_comamnd_waiting_response_timer(&hci_host_env.cmd_waiting_q, false);
 
     if (wait_entry) {
         // If it has a callback, it's responsible for freeing the packet
@@ -589,10 +568,6 @@ static waiting_command_t *get_waiting_command(command_opcode_t opcode)
 
     pthread_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
     return NULL;
-}
-
-static int hci_send_async_command(bt_vendor_opcode_t opcode, void *param)
-{
 }
 
 static void init_layer_interface()

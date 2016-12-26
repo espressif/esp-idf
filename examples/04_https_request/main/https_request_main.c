@@ -38,6 +38,7 @@
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
 
+#include "mbedtls/platform.h"
 #include "mbedtls/net.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"

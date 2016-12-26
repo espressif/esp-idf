@@ -228,7 +228,7 @@ UINT16 L2CA_ErtmConnectReq (UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_ERTM_INFO *p_e
     tL2C_RCB        *p_rcb;
 
     //counter_add("l2cap.conn.req", 1);
-    L2CAP_TRACE_API ("L2CA_ErtmConnectReq()  PSM: 0x%04x  BDA: %08x%04x  p_ertm_info: 0x%08x allowed:0x%x preferred:%d", psm,
+    L2CAP_TRACE_API ("L2CA_ErtmConnectReq()  PSM: 0x%04x  BDA: %08x%04x  p_ertm_info: %p allowed:0x%x preferred:%d", psm,
                      (p_bd_addr[0] << 24) + (p_bd_addr[1] << 16) + (p_bd_addr[2] << 8) + p_bd_addr[3],
                      (p_bd_addr[4] << 8) + p_bd_addr[5], p_ertm_info,
                      (p_ertm_info) ? p_ertm_info->allowed_modes : 0,
@@ -252,7 +252,7 @@ UINT16 L2CA_ErtmConnectReq (UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_ERTM_INFO *p_e
         if ( ((p_lcb = l2cu_allocate_lcb (p_bd_addr, FALSE, BT_TRANSPORT_BR_EDR)) == NULL)
                 /* currently use BR/EDR for ERTM mode l2cap connection */
                 ||  (l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR) == FALSE) ) {
-            L2CAP_TRACE_WARNING ("L2CAP - conn not started for PSM: 0x%04x  p_lcb: 0x%08x", psm, p_lcb);
+            L2CAP_TRACE_WARNING ("L2CAP - conn not started for PSM: 0x%04x  p_lcb: %p", psm, p_lcb);
             return (0);
         }
     }
@@ -390,7 +390,7 @@ BOOLEAN L2CA_ErtmConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 re
     tL2C_CCB        *p_ccb;
 
     //counter_add("l2cap.conn.rsp", 1);
-    L2CAP_TRACE_API ("L2CA_ErtmConnectRsp()  CID: 0x%04x  Result: %d  Status: %d  BDA: %08x%04x  p_ertm_info:0x%08x",
+    L2CAP_TRACE_API ("L2CA_ErtmConnectRsp()  CID: 0x%04x  Result: %d  Status: %d  BDA: %08x%04x  p_ertm_info:%p",
                      lcid, result, status,
                      (p_bd_addr[0] << 24) + (p_bd_addr[1] << 16) + (p_bd_addr[2] << 8) + p_bd_addr[3],
                      (p_bd_addr[4] << 8) + p_bd_addr[5], p_ertm_info);
@@ -1824,7 +1824,7 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
     }
 
     if (num_to_flush != L2CAP_FLUSH_CHANS_GET) {
-        L2CAP_TRACE_API ("L2CA_FlushChannel (FLUSH)  CID: 0x%04x  NumToFlush: %d  QC: %u  pFirst: 0x%08x",
+        L2CAP_TRACE_API ("L2CA_FlushChannel (FLUSH)  CID: 0x%04x  NumToFlush: %d  QC: %u  pFirst: %p",
                          lcid, num_to_flush, GKI_queue_length(&p_ccb->xmit_hold_q), GKI_getfirst(&p_ccb->xmit_hold_q));
     } else {
         L2CAP_TRACE_API ("L2CA_FlushChannel (QUERY)  CID: 0x%04x", lcid);

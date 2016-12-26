@@ -15,11 +15,13 @@
 #ifndef __ESP_BLUFI_API_H__
 #define __ESP_BLUFI_API_H__
 
-#include "bt_types.h"
 #include "esp_bt_defs.h"
 #include "esp_gatt_defs.h"
-#include "bta_gatt_api.h"
 #include "esp_err.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ESP_BLUFI_RECV_DATA_LEN_MAX (64+1)
 
@@ -112,6 +114,8 @@ esp_err_t esp_blufi_profile_init(void);
  */
 esp_err_t esp_blufi_profile_deinit(void);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLUFI_API_ */

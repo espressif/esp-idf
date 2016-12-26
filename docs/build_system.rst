@@ -188,6 +188,10 @@ The following variables can be set inside ``component.mk`` to control build sett
   are available at all times. It is necessary if one component
   generates an include file which you then want to include in another
   component. Most components do not need to set this variable.
+- ``COMPONENT_ADD_LINKER_DEPS``: Optional list of component-relative paths
+  to files which should trigger a re-link of the ELF file if they change.
+  Typically used for linker script files and binary libraries. Most components do
+  not need to set this variable.
 
 The following variable only works for components that are part of esp-idf itself:
 
@@ -244,7 +248,12 @@ The following variables can be set inside ``component.mk`` to control the build 
   settings. Component-specific additions can be made via ``CXXFLAGS
   +=``. It is also possible (although not recommended) to override
   this variable completely for a component.
-- ``FLAGS_basename`` allows you to set compilation flags to apply to a single source file only. For example, this can useful for disabling warnings in a single upstream source file. The ``basename`` portion is the directory (relative to ``COMPONENT_PATH``) and the base filename (without extension) of the source file. For example, if a file inside ``COMPONENT_PATH`` is ``library/alpha/widget.c`` then you can set variable ``FLAGS_library/alpha/widget := -DTEST`` to pass the TEST macro when compiling this source file only.
+
+To apply compilation flags to a single source file, you can add a variable override as a target, ie::
+
+  apps/dhcpserver.o: CFLAGS += -Wno-unused-variable
+
+This can be useful if there is upstream code that emits warnings.
 
 Component Configuration
 -----------------------

@@ -920,7 +920,7 @@ void gatt_process_read_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb,  UINT8 op_code,
                     gatt_end_operation(p_clcb, GATT_SUCCESS, (void *)p_clcb->p_attr_buf);
                 }
             } else { /* exception, should not happen */
-                GATT_TRACE_ERROR("attr offset = %d p_attr_buf = %d ", offset, p_clcb->p_attr_buf);
+                GATT_TRACE_ERROR("attr offset = %d p_attr_buf = %p ", offset, p_clcb->p_attr_buf);
                 gatt_end_operation(p_clcb, GATT_NO_RESOURCES, (void *)p_clcb->p_attr_buf);
             }
         }

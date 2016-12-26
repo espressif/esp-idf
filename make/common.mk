@@ -52,5 +52,19 @@ endef
 #
 # example $(call resolvepath,$(CONFIG_PATH),$(CONFIG_DIR))
 define resolvepath
-$(if $(filter /%,$(1)),$(1),$(subst //,/,$(2)/$(1)))
+$(foreach dir,$(1),$(if $(filter /%,$(dir)),$(dir),$(subst //,/,$(2)/$(dir))))
+endef
+
+
+# macro to include a target only if it's on the list of targets that make
+# was invoked with
+#
+# This allows you to have something like an "order-only phony prerequisite",
+# ie a prerequisite that determines an order phony targets have to run in.
+#
+# Because normal order-only prerequisites don't work with phony targets.
+#
+# example $(call prereq_if_explicit,erase_flash)
+define prereq_if_explicit
+$(filter $(1),$(MAKECMDGOALS))
 endef

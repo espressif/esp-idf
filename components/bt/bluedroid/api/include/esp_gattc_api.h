@@ -15,10 +15,13 @@
 #ifndef __ESP_GATTC_API_H__
 #define __ESP_GATTC_API_H__
 
-#include "bt_types.h"
 #include "esp_bt_defs.h"
 #include "esp_gatt_defs.h"
 #include "esp_err.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /// GATT Client callback function events
 typedef enum {
@@ -572,5 +575,8 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gatt_if,
         esp_gatt_srvc_id_t *srvc_id,
         esp_gatt_id_t *char_id);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ESP_GATTC_API_H__ */

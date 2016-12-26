@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <esp_types.h>
 #include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
@@ -20,12 +21,13 @@
 #include "driver/ledc.h"
 #include "esp_log.h"
 
-static const char* LEDC_TAG = "LEDC";
+static const char* LEDC_TAG = "ledc";
 static portMUX_TYPE ledc_spinlock = portMUX_INITIALIZER_UNLOCKED;
-#define LEDC_CHECK(a, str, ret_val) if (!(a)) {                                         \
-        ESP_LOGE(LEDC_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
-        return (ret_val);                                                               \
-        }
+#define LEDC_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(LEDC_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
 
 esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t div_num, uint32_t bit_num, ledc_clk_src_t clk_src)
 {
@@ -113,16 +115,14 @@ static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, uint32_t channel,
     return ESP_OK;
 }
 
-esp_err_t ledc_isr_register(uint32_t ledc_intr_num, void (*fn)(void*), void * arg)
+esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, ledc_isr_handle_t *handle)
 {
+    esp_err_t ret;
     LEDC_CHECK(fn, "ledc isr null", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&ledc_spinlock);
-    ESP_INTR_DISABLE(ledc_intr_num);
-    intr_matrix_set(xPortGetCoreID(), ETS_LEDC_INTR_SOURCE, ledc_intr_num);
-    xt_set_interrupt_handler(ledc_intr_num, fn, arg);
-    ESP_INTR_ENABLE(ledc_intr_num);
+    ret=esp_intr_alloc(ETS_LEDC_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
     portEXIT_CRITICAL(&ledc_spinlock);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t ledc_timer_config(ledc_timer_config_t* timer_conf)

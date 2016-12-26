@@ -15,16 +15,19 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
 
-static const char* TIMER_TAG = "TIMER_GROUP";
-#define TIMER_CHECK(a, str, ret_val) if (!(a)) {                                       \
-        ESP_LOGE(TIMER_TAG,"%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);    \
-        return (ret_val);                                                              \
-        }
+static const char* TIMER_TAG = "timer_group";
+#define TIMER_CHECK(a, str, ret_val) \
+    if (!(a)) { \
+        ESP_LOGE(TIMER_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
+        return (ret_val); \
+    }
+
 #define TIMER_GROUP_NUM_ERROR   "TIMER GROUP NUM ERROR"
 #define TIMER_NUM_ERROR         "HW TIMER NUM ERROR"
 #define TIMER_PARAM_ADDR_ERROR  "HW TIMER PARAM ADDR ERROR"
@@ -167,36 +170,38 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
     return ESP_OK;
 }
 
-esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, int timer_intr_num,
-    timer_intr_mode_t intr_type, void (*fn)(void*), void * arg)
+esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, 
+    void (*fn)(void*), void * arg, int intr_alloc_flags, timer_isr_handle_t *handle)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(fn != NULL, TIMER_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
 
-    ESP_INTR_DISABLE(timer_intr_num);
     int intr_source = 0;
+    uint32_t status_reg = 0;
+    int mask = 0;
     switch(group_num) {
         case TIMER_GROUP_0:
         default:
-            if(intr_type == TIMER_INTR_LEVEL) {
+            if((intr_alloc_flags & ESP_INTR_FLAG_EDGE) == 0) {
                 intr_source = ETS_TG0_T0_LEVEL_INTR_SOURCE + timer_num;
             } else {
                 intr_source = ETS_TG0_T0_EDGE_INTR_SOURCE + timer_num;
             }
+            status_reg = TIMG_INT_ST_TIMERS_REG(0);
+            mask = 1<<timer_num;
             break;
         case TIMER_GROUP_1:
-            if(intr_type == TIMER_INTR_LEVEL) {
+            if((intr_alloc_flags & ESP_INTR_FLAG_EDGE) == 0) {
                 intr_source = ETS_TG1_T0_LEVEL_INTR_SOURCE + timer_num;
             } else {
                 intr_source = ETS_TG1_T0_EDGE_INTR_SOURCE + timer_num;
             }
+            status_reg = TIMG_INT_ST_TIMERS_REG(1);
+            mask = 1<<timer_num;
             break;
     }
-    intr_matrix_set(xPortGetCoreID(), intr_source, timer_intr_num);
-    xt_set_interrupt_handler(timer_intr_num, fn, arg);
-    ESP_INTR_ENABLE(timer_intr_num);
-    return ESP_OK;
+    return esp_intr_alloc_intrstatus(intr_source, intr_alloc_flags, status_reg, mask, fn, arg, handle);
 }
 
 esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, timer_config_t *config)

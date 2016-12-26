@@ -10,7 +10,7 @@
 # where this file is located.
 #
 
-.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules
+.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size
 all: all_binaries
 # see below for recipe of 'all' target
 #
@@ -26,8 +26,10 @@ help:
 	@echo "make defconfig - Set defaults for all new configuration options"
 	@echo ""
 	@echo "make all - Build app, bootloader, partition table"
-	@echo "make flash - Flash all components to a fresh chip"
+	@echo "make flash - Flash app, bootloader, partition table to a chip"
 	@echo "make clean - Remove all build output"
+	@echo "make size - Display the memory footprint of the app"
+	@echo "make erase_flash - Erase entire flash contents"
 	@echo ""
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
@@ -41,6 +43,27 @@ ifndef MAKE_RESTARTS
 ifeq ("$(filter 4.% 3.81 3.82,$(MAKE_VERSION))","")
 $(warning "esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.")
 endif
+endif
+
+# make IDF_PATH a "real" absolute path
+# * works around the case where a shell character is embedded in the environment variable value.
+# * changes Windows-style C:/blah/ paths to MSYS/Cygwin style /c/blah
+export IDF_PATH:=$(realpath $(wildcard $(IDF_PATH)))
+
+ifndef IDF_PATH
+$(error IDF_PATH variable is not set to a valid directory.)
+endif
+
+ifneq ("$(IDF_PATH)","$(realpath $(wildcard $(IDF_PATH)))")
+# due to the way make manages variables, this is hard to account for
+#
+# if you see this error, do the shell expansion in the shell ie
+# make IDF_PATH=~/blah not make IDF_PATH="~/blah"
+$(error If IDF_PATH is overriden on command line, it must be an absolute path with no embedded shell special characters)
+endif
+
+ifneq ("$(IDF_PATH)","$(subst :,,$(IDF_PATH))")
+$(error IDF_PATH cannot contain colons. If overriding IDF_PATH on Windows, use Cygwin-style /c/dir instead of C:/dir)
 endif
 
 # disable built-in make rules, makes debugging saner
@@ -139,8 +162,13 @@ export COMPONENT_INCLUDES
 include $(IDF_PATH)/make/common.mk
 
 all:
-ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+ifndef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
+	@echo "App built but not signed. Sign app & partition data before flashing, via espsecure.py:"
+	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
+	@echo "espsecure.py sign_data --keyfile KEYFILE $(PARTITION_TABLE_BIN)"
+endif
 	@echo "To flash app & partition table, run 'make flash' or:"
 else
 	@echo "To flash all build output, run 'make flash' or:"
@@ -150,8 +178,6 @@ endif
 # Set default LDFLAGS
 
 LDFLAGS ?= -nostdlib \
-	-L$(IDF_PATH)/lib \
-	-L$(IDF_PATH)/ld \
 	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(TEST_COMPONENT_NAMES) $(SRCDIRS) ) \
 	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
@@ -173,7 +199,7 @@ LDFLAGS ?= -nostdlib \
 
 # CPPFLAGS used by C preprocessor
 # If any flags are defined in application Makefile, add them at the end. 
-CPPFLAGS := -DESP_PLATFORM $(CPPFLAGS) $(EXTRA_CPPFLAGS)
+CPPFLAGS := -DESP_PLATFORM -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
 COMMON_WARNING_FLAGS = -Wall -Werror=all \
@@ -189,8 +215,7 @@ COMMON_FLAGS = \
 	-ffunction-sections -fdata-sections \
 	-fstrict-volatile-bitfields \
 	-mlongcalls \
-	-nostdlib \
-	-MMD -MP
+	-nostdlib
 
 # Optimization flags are set based on menuconfig choice
 ifneq ("$(CONFIG_OPTIMIZATION_LEVEL_RELEASE)","")
@@ -232,7 +257,8 @@ HOSTCC := $(CC)
 HOSTLD := $(LD)
 HOSTAR := $(AR)
 HOSTOBJCOPY := $(OBJCOPY)
-export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY
+HOSTSIZE := $(SIZE)
+export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
 
 # Set target compiler. Defaults to whatever the user has
 # configured as prefix + ye olde gcc commands
@@ -241,7 +267,8 @@ CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
 LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
 AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
 OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
-export CC CXX LD AR OBJCOPY
+SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
+export CC CXX LD AR OBJCOPY SIZE
 
 PYTHON=$(call dequote,$(CONFIG_PYTHON))
 
@@ -273,15 +300,25 @@ COMPONENT_LIBRARIES = $(filter $(notdir $(COMPONENT_PATHS_BUILDABLE)) $(TEST_COM
 
 # ELF depends on the library archive files for COMPONENT_LIBRARIES
 # the rules to build these are emitted as part of GenerateComponentTarget below
-$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a)
+#
+# also depends on additional dependencies (linker scripts & binary libraries)
+# stored in COMPONENT_LINKER_DEPS, built via component.mk files' COMPONENT_ADD_LINKER_DEPS variable
+$(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a) $(COMPONENT_LINKER_DEPS)
 	$(summary) LD $(notdir $@)
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
 # Generation of $(APP_BIN) from $(APP_ELF) is added by the esptool
 # component's Makefile.projbuild
 app: $(APP_BIN)
+ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image
+	@echo "App built but not signed. Signing step via espsecure.py:"
+	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
+	@echo "Then flash app command is:"
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+else
 	@echo "App built. Default flash app command is:"
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+endif
 
 all_binaries: $(APP_BIN)
 
@@ -343,6 +380,9 @@ app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)
 	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
+size: $(APP_ELF)
+	$(SIZE) $(APP_ELF)
+
 # NB: this ordering is deliberate (app-clean before config-clean),
 # so config remains valid during all component clean targets
 config-clean: app-clean
@@ -368,7 +408,7 @@ $(IDF_PATH)/$(1)/.git:
 # Parse 'git submodule status' output for out-of-date submodule.
 # Status output prefixes status line with '+' if the submodule commit doesn't match
 ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(1) | grep '^+')","")
-$$(info WARNING: git submodule $(1) may be out of date. Run 'git submodule update' to update.)
+$$(info WARNING: esp-idf git submodule $(1) may be out of date. Run 'git submodule update' in IDF_PATH dir to update.)
 endif
 endef
 

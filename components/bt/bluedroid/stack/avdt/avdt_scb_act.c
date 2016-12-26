@@ -438,7 +438,7 @@ void avdt_scb_hdl_pkt_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     {
         if (p_end - p < 4) /* length check. maximum length of AL header = 4 */
         {
-            AVDT_TRACE_WARNING("p_end: 0x%x - p:0x%x < 4\n", p_end, p);
+            AVDT_TRACE_WARNING("p_end: %p - p:%p < 4\n", p_end, p);
             break;
         }
 
@@ -587,7 +587,7 @@ void avdt_scb_hdl_pkt_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
             {
                 if(p_scb->p_media_buf + p_scb->frag_off - p_payload < 4)
                 {
-                    AVDT_TRACE_WARNING("length check frag_off:%d p_media_buf:%d p_payload:%d\n",
+                    AVDT_TRACE_WARNING("length check frag_off:%d p_media_buf:%p p_payload:%p\n",
                         p_scb->frag_off, p_scb->p_media_buf, p_payload);
                     break;/* length check */
                 }
@@ -598,7 +598,7 @@ void avdt_scb_hdl_pkt_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 
             if(p_payload >= p_scb->p_media_buf + p_scb->frag_off)
             {
-                AVDT_TRACE_WARNING("length check2 frag_off:%d p_media_buf:%d p_payload:%d\n",
+                AVDT_TRACE_WARNING("length check2 frag_off:%d p_media_buf:%p p_payload:%p\n",
                     p_scb->frag_off, p_scb->p_media_buf, p_payload);
                 break;/* length check */
             }

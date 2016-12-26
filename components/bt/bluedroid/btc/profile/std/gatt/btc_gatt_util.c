@@ -59,7 +59,7 @@ int uuidType(unsigned char *p_uuid)
     return LEN_UUID_128;
 }
 
-int btc128_to_bta_uuid(tBT_UUID *p_dest, uint8_t *p_src)
+void btc128_to_bta_uuid(tBT_UUID *p_dest, uint8_t *p_src)
 {
     int i = 0;
 

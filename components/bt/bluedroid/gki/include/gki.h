@@ -21,8 +21,18 @@
 
 #include "bt_target.h"
 #include "bt_types.h"
+#include "gki_common.h"
+#include "gki_int.h"
+#include "allocator.h"
 
-//static const char GKI_MODULE[] = "gki_module";
+#define ALIGN_POOL(pl_size)  ( (((pl_size) + 3) / sizeof(UINT32)) * sizeof(UINT32))
+#define BUFFER_HDR_SIZE     (sizeof(BUFFER_HDR_T))                  /* Offset past header */
+#define BUFFER_PADDING_SIZE (sizeof(BUFFER_HDR_T) + sizeof(UINT32)) /* Header + Magic Number */
+#define MAGIC_NO            0xDDBADDBA
+
+#define BUF_STATUS_FREE     0
+#define BUF_STATUS_UNLINKED 1
+#define BUF_STATUS_QUEUED   2
 
 /* Timer list entry callback type
 */
@@ -62,14 +72,37 @@ typedef struct {
 
 /* To get and release buffers, change owner and get size
 */
-void    GKI_freebuf (void *);
-void   *GKI_getbuf (UINT16);
+void   *GKI_getbuf_func(UINT16);
+void   *GKI_getpoolbuf_func(UINT8);
+void    GKI_freebuf(void *);
 UINT16  GKI_get_buf_size (void *);
 void   *GKI_getpoolbuf (UINT8);
 UINT16  GKI_poolcount (UINT8);
 UINT16  GKI_poolfreecount (UINT8);
 UINT16  GKI_poolutilization (UINT8);
 
+#ifdef CONFIG_BLUEDROID_MEM_DEBUG
+
+#define GKI_getbuf(_size)                                            \
+({                                                                  \
+    BUFFER_HDR_T *header = osi_malloc((_size) + BUFFER_HDR_SIZE);      \
+    header->status  = BUF_STATUS_UNLINKED;                          \
+    header->p_next  = NULL;                                         \
+    header->Type    = 0;                                            \
+    header->size = (_size);                                          \
+    (void *)(header + 1);                                                   \
+})
+
+#define GKI_getpoolbuf(_pool_id)                                     \
+({                                                                  \
+    (void *)GKI_getbuf(gki_cb.com.pool_size[(_pool_id)]);                    \
+})
+           
+#else
+#define GKI_getbuf          GKI_getbuf_func
+#define GKI_getpoolbuf      GKI_getpoolbuf_func
+
+#endif /* CONFIG_BLUEDROID_MEM_DEBUG */
 
 /* User buffer queue management
 */

@@ -43,7 +43,6 @@ static const char* NEC_TAG = "NEC";
 #define RMT_TX_GPIO_NUM  16     /*!< GPIO number for transmitter signal */
 #define RMT_RX_CHANNEL    0     /*!< RMT channel for receiver */
 #define RMT_RX_GPIO_NUM  19     /*!< GPIO number for receiver */
-#define RMT_INTR_NUM     19     /*!< RMT interrupt number, select from soc.h */
 #define RMT_CLK_DIV      100    /*!< RMT counter clock divider */
 #define RMT_TICK_10_US    (80000000/RMT_CLK_DIV/100000)   /*!< RMT counter value for 10 us.(Source clock is APB clock) */
 
@@ -254,7 +253,7 @@ static void rmt_tx_init()
     rmt_tx.tx_config.idle_output_en = true;
     rmt_tx.rmt_mode = 0;
     rmt_config(&rmt_tx);
-    rmt_driver_install(rmt_tx.channel, 0, RMT_INTR_NUM);
+    rmt_driver_install(rmt_tx.channel, 0, 0);
 }
 
 /*
@@ -272,7 +271,7 @@ void rmt_rx_init()
     rmt_rx.rx_config.filter_ticks_thresh = 100;
     rmt_rx.rx_config.idle_threshold = rmt_item32_tIMEOUT_US / 10 * (RMT_TICK_10_US);
     rmt_config(&rmt_rx);
-    rmt_driver_install(rmt_rx.channel, 1000, RMT_INTR_NUM);
+    rmt_driver_install(rmt_rx.channel, 1000, 0);
 }
 
 /**

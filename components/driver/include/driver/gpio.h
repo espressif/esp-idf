@@ -23,6 +23,7 @@
 #include "soc/gpio_sig_map.h"
 #include "rom/gpio.h"
 #include "esp_attr.h"
+#include "esp_intr_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,32 +118,6 @@ extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
 #define GPIO_IS_VALID_GPIO(gpio_num)      ((gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0))   //to decide whether it is a valid GPIO number
 #define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 34))         //to decide whether it can be a valid GPIO number of output mode
 
-/**
- * @brief Pullup/pulldown information for a single GPIO pad
- */
-typedef struct {
-    uint32_t reg;       /*!< Register to modify to enable or disable pullups or pulldowns */
-    uint32_t pu;        /*!< Bit to set or clear in the above register to enable or disable the pullup, respectively */
-    uint32_t pd;        /*!< Bit to set or clear in the above register to enable or disable the pulldown, respectively */
-} gpio_pu_pd_desc_t;
-
-
-/**
- * Per-GPIO pullup/pulldown information
- * On the ESP32, some GPIOs need their pullups and pulldowns enabled and disabled in the RTC 
- * peripheral instead of in the GPIO peripheral. This array documents for every GPIO what bit
- * to set or clear.
- * 
- * This array is non-static, so if you need a very quick way of toggling the pull-up/downs, you can just
- * do e.g. REG_SET_BIT(gpio_pu_pd_desc[gpio_num].reg, gpio_pu_pd_desc[gpio_num].pu); inline.
- * 
- * ToDo: Functions using the contents of this array will do a read/modify/write on GPIO as well as RTC
- * registers. We may need to look into muxes/locks for other code that accesses these RTC registers when we
- * write drivers for the RTC stuff.
- */
-extern const gpio_pu_pd_desc_t gpio_pu_pd_desc[GPIO_PIN_COUNT];
-
-
 typedef enum {
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
     GPIO_NUM_1 = 1,     /*!< GPIO1, input and output */
@@ -229,6 +204,9 @@ typedef enum {
     GPIO_FLOATING,                  /*!< Pad floating           */
 } gpio_pull_mode_t;
 
+
+
+typedef intr_handle_t gpio_isr_handle_t;
 typedef void (*gpio_event_callback)(gpio_num_t gpio_intr_num);
 
 /**
@@ -365,23 +343,19 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
 /**
  * @brief   register GPIO interrupt handler, the handler is an ISR.
  *          The handler will be attached to the same CPU core that this function is running on.
- *          @note
- *          Users should know that which CPU is running and then pick a INUM that is not used by system.
- *          We can find the information of INUM and interrupt level in soc.h.
  *
- * @param  gpio_intr_num  GPIO interrupt number,check the info in soc.h, and please see the core-isa.h for more details
  * @param  fn  Interrupt handler function.
- *
- *         @note
- *         Note that the handler function MUST be defined with attribution of "IRAM_ATTR".
- *
+ * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  * @param  arg  Parameter for handler function
+ * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will
+ *            be returned here.
  *
  * @return
  *     - ESP_OK Success ;
  *     - ESP_ERR_INVALID_ARG GPIO error
  */
-esp_err_t gpio_isr_register(uint32_t gpio_intr_num, void (*fn)(void*), void * arg);
+esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, gpio_isr_handle_t *handle);
 
 
 
@@ -441,7 +415,7 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
  */
 
 /**
- *----------EXAMPLE TO CONIFGURE GPIO AS OUTPUT ------------ *
+ *----------EXAMPLE TO CONFIGURE GPIO AS OUTPUT ------------ *
  * @code{c}
  *     gpio_config_t io_conf;
  *     io_conf.intr_type = GPIO_INTR_DISABLE;             //disable interrupt
@@ -454,7 +428,7 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
  **/
 
 /**
- *----------EXAMPLE TO CONIFGURE GPIO AS OUTPUT ------------ *
+ *----------EXAMPLE TO CONFIGURE GPIO AS OUTPUT ------------ *
  * @code{c}
  *     io_conf.intr_type = GPIO_INTR_POSEDGE;             //set posedge interrupt
  *     io_conf.mode = GPIO_MODE_INPUT;                        //set as input
@@ -467,13 +441,8 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 /**
  *----------EXAMPLE TO SET ISR HANDLER ----------------------
  * @code{c}
- * //the first parameter is INUM, you can pick one form interrupt level 1/2 which is not used by the system.
- * gpio_isr_register(18,gpio_intr_test,NULL);    //hook the isr handler for GPIO interrupt
+ * gpio_isr_register(gpio_intr_test, 0, NULL);    //hook the isr handler for GPIO interrupt
  * @endcode
- * @note
- *     1. user should arrange the INUMs that used, better not to use a same INUM for different interrupt.
- *     2. do not pick the INUM that already occupied by the system.
- *     3. refer to soc.h to check which INUMs that can be used.
  */
 /**
  *-------------EXAMPLE OF HANDLER FUNCTION-------------------*

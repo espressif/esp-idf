@@ -6,27 +6,27 @@ COMPONENT_SRCDIRS := . hwcrypto
 
 LIBS := core net80211 phy rtc pp wpa smartconfig coexist wps wpa2
 
-LINKER_SCRIPTS += -T esp32_out.ld -T esp32.common.ld -T esp32.rom.ld -T esp32.peripherals.ld
+LINKER_SCRIPTS += esp32.common.ld esp32.rom.ld esp32.peripherals.ld
+
+ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")
+LINKER_SCRIPTS += esp32.rom.nanofmt.ld
+endif
 
 COMPONENT_ADD_LDFLAGS := -lesp32 \
-                           $(COMPONENT_PATH)/libhal.a \
-                           -L$(COMPONENT_PATH)/lib \
-                           $(addprefix -l,$(LIBS)) \
-                          -L $(COMPONENT_PATH)/ld \
-                          $(LINKER_SCRIPTS)
+                         $(COMPONENT_PATH)/libhal.a \
+                         -L$(COMPONENT_PATH)/lib \
+                         $(addprefix -l,$(LIBS)) \
+                         -L $(COMPONENT_PATH)/ld \
+                         -T esp32_out.ld \
+                         $(addprefix -T ,$(LINKER_SCRIPTS))
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
 
 COMPONENT_SUBMODULES += lib
 
-# this is a hack to make sure the app is re-linked if the binary
-# libraries change or are updated. If they change, the main esp32
-# library will be rebuild by AR andthis will trigger a re-linking of
-# the entire app.
-#
-# It would be better for components to be able to expose any of these
-# non-standard dependencies via get_variable, but this will do for now.
-$(COMPONENT_LIBRARY): $(ALL_LIB_FILES)
+# final linking of project ELF depends on all binary libraries, and
+# all linker scripts (except esp32_out.ld, as this is code generated here.)
+COMPONENT_ADD_LINKER_DEPS := $(ALL_LIB_FILES) $(addprefix ld/,$(LINKER_SCRIPTS))
 
 # Preprocess esp32.ld linker script into esp32_out.ld
 #

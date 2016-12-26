@@ -1,15 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 #include "unity.h"
 #include "rom/ets_sys.h"
+#include "rom/uart.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_log.h"
 
 #define unity_printf ets_printf
-
-// Functions which are defined in ROM, linker script provides addresses for these:
-int uart_tx_one_char(uint8_t c);
-void uart_tx_wait_idle(uint8_t uart_no);
-int UartRxString(uint8_t* dst, uint8_t max_length);
 
 // Pointers to the head and tail of linked list of test description structs:
 static struct test_desc_t* s_unity_tests_first = NULL;
@@ -114,35 +114,46 @@ static void trim_trailing_space(char* str)
     }
 }
 
+static int print_test_menu(void)
+{
+    int test_counter = 0;
+    unity_printf("\n\nHere's the test menu, pick your combo:\n");
+    for (const struct test_desc_t* test = s_unity_tests_first;
+         test != NULL;
+         test = test->next, ++test_counter)
+    {
+        unity_printf("(%d)\t\"%s\" %s\n", test_counter + 1, test->name, test->desc);
+    }
+    return test_counter;
+}
+
 void unity_run_menu()
 {
-    while (true) 
+    int test_count = print_test_menu();
+    while (true)
     {
-        int test_counter = 0;
-        unity_printf("\n\nHere's the test menu, pick your combo:\n");
-        for (const struct test_desc_t* test = s_unity_tests_first; 
-             test != NULL; 
-             test = test->next, ++test_counter)
+        char cmdline[256] = { 0 };
+        while(strlen(cmdline) == 0)
         {
-            unity_printf("(%d)\t\"%s\" %s\n", test_counter + 1, test->name, test->desc);
+            /* Flush anything already in the RX buffer */
+            while(uart_rx_one_char((uint8_t *) cmdline) == OK) {
+            }
+            /* Read input */
+            UartRxString((uint8_t*) cmdline, sizeof(cmdline) - 1);
+            trim_trailing_space(cmdline);
+            if(strlen(cmdline) == 0) {
+                /* if input was newline, print a new menu */
+                print_test_menu();
+            }
         }
-        
-        char cmdline[256];
-        UartRxString((uint8_t*) cmdline, sizeof(cmdline) - 1);
-        trim_trailing_space(cmdline);
 
-        if (strlen(cmdline) == 0)
-        {
-            continue;
-        }
-    
         UNITY_BEGIN();
-        
-        if (cmdline[0] == '*') 
+
+        if (cmdline[0] == '*')
         {
             unity_run_all_tests();
         }
-        else if (cmdline[0] =='[') 
+        else if (cmdline[0] =='[')
         {
             unity_run_tests_with_filter(cmdline);
         }
@@ -150,16 +161,21 @@ void unity_run_menu()
         {
             unity_run_single_test_by_name(cmdline);
         }
-        else 
+        else
         {
             int test_index = strtol(cmdline, NULL, 10);
-            if (test_index >= 1 && test_index <= test_counter)
+            if (test_index >= 1 && test_index <= test_count)
             {
+                uint32_t start = esp_log_timestamp(); /* hacky way to get ms */
                 unity_run_single_test_by_index(test_index - 1);
+                uint32_t end = esp_log_timestamp();
+                printf("Test ran in %dms\n", end - start);
             }
         }
 
         UNITY_END();
+
+        printf("Enter next test, or 'enter' to see menu\n");
     }
 }
 

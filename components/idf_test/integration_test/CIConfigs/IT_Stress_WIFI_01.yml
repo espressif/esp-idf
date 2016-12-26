@@ -1,0 +1,6 @@
+Config: {execute count: 1, execute order: in order}
+DUT: [SSC3, SSC2, SSC1, SSC5, SSC4]
+Filter:
+- Add:
+    ID:
+      - WIFI_CONN_5101  # max sta connect to SotfAP and disconnect

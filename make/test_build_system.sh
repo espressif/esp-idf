@@ -141,6 +141,30 @@ function run_tests()
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} partitions_singleapp.bin
     [ -f ${BUILD}/partition*.bin ] || failure "A partition table should have been built in CRLF mode"
 
+    print_status "Touching rom ld file should re-link app and bootloader"
+    make
+    take_build_snapshot
+    touch ${IDF_PATH}/components/esp32/ld/esp32.rom.ld
+    make
+    assert_rebuilt ${APP_BINS} ${BOOTLOADER_BINS}
+
+    print_status "Touching peripherals ld file should only re-link app"
+    take_build_snapshot
+    touch ${IDF_PATH}/components/esp32/ld/esp32.peripherals.ld
+    make
+    assert_rebuilt ${APP_BINS}
+    assert_not_rebuilt ${BOOTLOADER_BINS}
+
+    print_status "sdkconfig update triggers recompiles"
+    make
+    take_build_snapshot
+    touch sdkconfig
+    make
+    # pick one each of .c, .cpp, .S that #includes sdkconfig.h
+    # and therefore should rebuild
+    assert_rebuilt newlib/syscall_table.o
+    assert_rebuilt nvs_flash/src/nvs_api.o
+    assert_rebuilt freertos/xtensa_vectors.o
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

@@ -64,7 +64,7 @@ static void background_connections_lazy_init()
 {
     if (!background_connections) {
         background_connections = hash_map_new(background_connection_buckets,
-                                              hash_function_bdaddr, NULL, osi_free, bdaddr_equality_fn);
+                                              hash_function_bdaddr, NULL, allocator_calloc.free, bdaddr_equality_fn);
         assert(background_connections);
     }
 }

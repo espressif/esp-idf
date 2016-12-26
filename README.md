@@ -64,6 +64,12 @@ In both cases the factory app is flashed at offset 0x10000. If you `make partiti
 
 For more details about partition tables and how to create custom variations, view the `docs/partition-tables.rst` file.
 
+# Erasing Flash
+
+The `make flash` target does not erase the entire flash contents. However it is sometimes useful to set the device back to a totally erased state, particularly when making partition table changes or OTA app updates. To erase the entire flash, run `make erase_flash`.
+
+This can be combined with other targets, ie `make erase_flash flash` will erase everything and then re-flash the new app, bootloader and partition table.
+
 # Resources
 
 * The [docs directory of the esp-idf repository](docs) contains source of [esp-idf](http://esp-idf.readthedocs.io/) documentation.

@@ -3,18 +3,32 @@ menuconfig ETHERNET
     default n
     help
         Enable this option to enable ethernet driver and show the menu with ethernet features.
-        
 
 config DMA_RX_BUF_NUM
-    int "Dma Rx Buf Num"
+    int "DMA Rx Buf Num"
     default  10
     depends on ETHERNET
     help
         Dma rx buf num ,can not be 0 .
 
 config DMA_TX_BUF_NUM
-    int "Dma Tx Buf Num"
+    int "DMA Tx Buf Num"
     default 10
     depends on ETHERNET
     help
         Dma tx Buf num ,can not be 0.
+
+config EMAC_L2_TO_L3_RX_BUF_MODE
+    bool "L2 To L3 RX BUF COPY MODE"
+    default n
+    depends on ETHERNET
+    help
+        Receive Buf user copy mode or pointer mode.
+
+config EMAC_TASK_PRIORITY
+    int "EMAC_TASK_PRIORITY"
+    default 20
+    depends on ETHERNET
+    help
+        Emac task priority ,suggest 3 ~ 23.
+

@@ -474,6 +474,7 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start)
     return status;
 }
 
+#if BLE_VND_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         btm_vsc_brcm_features_complete
@@ -485,7 +486,6 @@ tBTM_STATUS BTM_BleBroadcast(BOOLEAN start)
 *******************************************************************************/
 static void btm_ble_vendor_capability_vsc_cmpl_cback (tBTM_VSC_CMPL *p_vcs_cplt_params)
 {
-#if BLE_VND_INCLUDED == TRUE
     UINT8 status = 0xFF;
     UINT8 *p;
 
@@ -549,8 +549,8 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback (tBTM_VSC_CMPL *p_vcs_cplt_
     if (p_ctrl_le_feature_rd_cmpl_cback != NULL) {
         p_ctrl_le_feature_rd_cmpl_cback(status);
     }
-#endif
 }
+#endif
 
 /*******************************************************************************
 **
@@ -1064,7 +1064,6 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
 {
     tBTM_LE_RANDOM_CB *p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
-    tBTM_STATUS status = BTM_SUCCESS;
 
     BTM_TRACE_EVENT ("BTM_BleSetAdvParamsStartAdv\n");
 
@@ -1075,6 +1074,14 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
     if (!BTM_BLE_ISVALID_PARAM(adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
             !BTM_BLE_ISVALID_PARAM(adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX)) {
         return BTM_ILLEGAL_VALUE;
+    }
+
+    if(adv_type == BTM_BLE_CONNECT_DIR_EVT){
+        btm_ble_set_topology_mask(BTM_BLE_STATE_HI_DUTY_DIR_ADV_BIT);
+    }else if(adv_type == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT){
+        btm_ble_set_topology_mask(BTM_BLE_STATE_LO_DUTY_DIR_ADV_BIT);
+    }else if(adv_type == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT){
+        btm_ble_set_topology_mask(BTM_BLE_STATE_NON_CONN_ADV_BIT);
     }
 
     p_cb->adv_interval_min = adv_int_min;
@@ -1103,7 +1110,7 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
                                      chnl_map,
                                      p_cb->afp);
 
-    btm_ble_start_adv();
+    return btm_ble_start_adv();
 }
 
 

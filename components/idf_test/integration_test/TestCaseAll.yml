@@ -4308,6 +4308,287 @@ test cases:
   test point 2: TCP handling abnormal event
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: TCPIP_TCP_5001
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - TCPStress/TCPConnection
+  - - max_connection = 5
+    - [dummy]
+  - - execute_time = 300
+    - ['']
+  - - connect_method = ["C_01", "C_02", "C_05", "C_07"]
+    - ['']
+  - - disconnect_method = ["D_01", "D_03", "D_05", "D_06"]
+    - ['']
+  - - pc_ip = "pc_ip"
+    - ['']
+  - - target_ip = "target_ip"
+    - ['']
+  comment: ''
+  execution time: 5.0
+  expected result: 1. succeed
+  initial condition: STAM2
+  initial condition description (auto): sta mode, join AP, DHCP on
+  level: Integration
+  module: TCPIP
+  steps: '1. random choose connect method to do connect, random choose a method to
+    close
+
+    Loop executing step 1'
+  sub module: TCP
+  summary: test possible TCP connect/disconnect method
+  test environment: SSC_T1_1
+  test environment description (auto): 'PC has 2 wired NIC connected to AP.
+
+    PC has 1 WiFi NIC.
+
+    1 SSC target connect with PC by UART.'
+  test point 1: function + stress
+  test point 2: TCP connect and disconnect test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
+  ID: TCPIP_TCP_5101
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - TCPStress/TCPAPNSTA
+  - - send_len = 1460
+    - [dummy]
+  - - test_time = 720
+    - ['']
+  - - server_port = "<test_tcp_port1>"
+    - ['']
+  - - server_echo = True
+    - ['']
+  - - sta_number = 4
+    - ['']
+  - - send_delay = 50
+    - ['']
+  - - ap_ip = "<target_ap_ip>"
+    - ['']
+  comment: ''
+  execution time: 12.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. succeed
+
+    4. all TCP connection not disconnected'
+  initial condition: None
+  initial condition description (auto): none
+  level: Integration
+  module: TCPIP
+  steps: '1. all sta connect to softap
+
+    2. create tcp server on softap
+
+    3. all sta connect to softap tcp server
+
+    4. do bi-direction send on all tcp connections'
+  sub module: TCP
+  summary: 1 AP 4 STA TCP stable test
+  test environment: SSC_T5_1
+  test environment description (auto): 5 SSC target connect with PC by UART.
+  test point 1: stable
+  test point 2: TCP stable test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
+  ID: TCPIP_TCP_5102
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - TCPStress/TCPRandomSend
+  - - delay_config = [0, 0.01, 0.1, 0.5, 1]
+    - [dummy]
+  - - send_count = 1000
+    - ['']
+  - - test_time = 300
+    - ['']
+  comment: ''
+  execution time: 12.0
+  expected result: '1. succeed
+
+    2. succeed'
+  initial condition: STAM2
+  initial condition description (auto): sta mode, join AP, DHCP on
+  level: Integration
+  module: TCPIP
+  steps: '1. create TCP connection
+
+    2. PC send random length data to target'
+  sub module: TCP
+  summary: send random length segment to target
+  test environment: SSC_T1_1
+  test environment description (auto): 'PC has 2 wired NIC connected to AP.
+
+    PC has 1 WiFi NIC.
+
+    1 SSC target connect with PC by UART.'
+  test point 1: stable
+  test point 2: TCP stable test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
+  ID: TCPIP_TCP_5103
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - TCPStress/TCPSoftAPSTASendRecv
+  - - send_len = 1460
+    - [dummy]
+  - - test_time = 720
+    - ['']
+  - - server_port = "<test_tcp_port1>"
+    - ['']
+  - - server_port_2 = "<test_tcp_port2>"
+    - ['']
+  - - server_echo = True
+    - ['']
+  - - sta_number = 3
+    - ['']
+  - - send_delay = 50
+    - ['']
+  - - ap_ip = "<target_ap_ip>"
+    - ['']
+  comment: ''
+  execution time: 12.0
+  expected result: '1. succeed
+
+    2. verify reciveid data on target and PC succeed'
+  initial condition: None
+  initial condition description (auto): none
+  level: Integration
+  module: TCPIP
+  steps: '1. create TCP connection
+
+    2. send specified pattern on both direction'
+  sub module: TCP
+  summary: TCP SoftSTA send/recv stress test
+  test environment: SSC_T5_1
+  test environment description (auto): 5 SSC target connect with PC by UART.
+  test point 1: stable
+  test point 2: TCP stable test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
+  ID: TCPIP_TCP_5201
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - TCPStress/TCPSendRecv
+  - - send_len = 1460
+    - [dummy]
+  - - test_time = 300
+    - ['']
+  - - duplex = True
+    - ['']
+  - - conn_num = 5
+    - ['']
+  - - send_delay = 20
+    - ['']
+  comment: ''
+  execution time: 12.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. all TCP connection not disconnected'
+  initial condition: T2_1
+  initial condition description (auto): target 1 as SoftAP, target 2 as STA
+  level: Integration
+  module: TCPIP
+  steps: '1. sta connect to softap
+
+    2. create multiple tcp connection
+
+    3. do send/recv on all tcp connections'
+  sub module: TCP
+  summary: TCP send/recv stress test
+  test environment: SSC_T2_1
+  test environment description (auto): 'PC has 1 wired NIC connected to AP.
+
+    PC has 1 WiFi NIC.
+
+    2 SSC target connect with PC by UART.'
+  test point 1: stress
+  test point 2: TCP stress test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
+  ID: TCPIP_TCP_5202
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - TCPStress/TCPDataValidation
+  - - test_time = 1440
+    - [dummy]
+  - - tx_enable = True
+    - ['']
+  - - rx_enable = True
+    - ['']
+  - - conn_num = 1
+    - ['']
+  - - send_len = 1024
+    - ['']
+  comment: ''
+  execution time: 24.0
+  expected result: '1. succeed
+
+    2. verify reciveid data on target and PC succeed'
+  initial condition: STAM2
+  initial condition description (auto): sta mode, join AP, DHCP on
+  level: Integration
+  module: TCPIP
+  steps: '1. create TCP connection
+
+    2. send specified pattern on both direction'
+  sub module: TCP
+  summary: TCP send/recv data validation
+  test environment: SSC_T1_1
+  test environment description (auto): 'PC has 2 wired NIC connected to AP.
+
+    PC has 1 WiFi NIC.
+
+    1 SSC target connect with PC by UART.'
+  test point 1: stress
+  test point 2: TCP stress test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
   ID: TCPIP_UDP_0101
   SDK: '8266_NonOS
 
@@ -5654,6 +5935,55 @@ test cases:
   test point 2: UDP handling abnormal event
   version: v1 (2016-8-15)
 - CI ready: 'Yes'
+  ID: TCPIP_UDP_5001
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - UDPStress/UDPSendRecv
+  - - send_len = 1460
+    - [dummy]
+  - - test_time = 300
+    - ['']
+  - - duplex = True
+    - ['']
+  - - conn_num = 5
+    - ['']
+  - - send_delay = 20
+    - ['']
+  comment: ''
+  execution time: 12.0
+  expected result: '1. succeed
+
+    2. succeed
+
+    3. succeed'
+  initial condition: T2_1
+  initial condition description (auto): target 1 as SoftAP, target 2 as STA
+  level: Integration
+  module: TCPIP
+  steps: '1. sta connect to softap
+
+    2. create multiple udp
+
+    3. do send/recv on all udp'
+  sub module: UDP
+  summary: UDP send/recv stress test
+  test environment: SSC_T2_1
+  test environment description (auto): 'PC has 1 wired NIC connected to AP.
+
+    PC has 1 WiFi NIC.
+
+    2 SSC target connect with PC by UART.'
+  test point 1: stress
+  test point 2: UDP stress test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
   ID: WIFI_ADDR_0101
   SDK: '8266_NonOS
 
@@ -6666,6 +6996,53 @@ test cases:
   test point 1: basic function
   test point 2: wifi disconnect reason test
   version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: WIFI_CONN_5101
+  SDK: '8266_NonOS
+
+    8266_RTOS
+
+    ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - WiFiStress/SoftAPNSTA
+  - - sta_num = 4
+    - [dummy]
+  - - max_sta = 4
+    - ['']
+  - - test_time = 300
+    - ['']
+  - - delay1 = [0, 1]
+    - ['']
+  - - delay2 = [0, 1]
+    - ['']
+  - - change_mac = True
+    - ['']
+  - - channel = 1
+    - ['']
+  comment: ''
+  execution time: 5.0
+  expected result: '1. succeed
+
+    2. JAP succeed'
+  initial condition: None
+  initial condition description (auto): none
+  level: Integration
+  module: WIFI MAC
+  steps: '1. 1 target set to softap mode and rest set to sta mode
+
+    2. all sta random join and disconnect from softap
+
+    Loop step 2'
+  sub module: WIFI Connect
+  summary: max sta connect to SotfAP and disconnect
+  test environment: SSC_T5_1
+  test environment description (auto): 5 SSC target connect with PC by UART.
+  test point 1: stress
+  test point 2: SoftAP WIFI connect/disconnect stress test
+  version: v2 (2016-11-15)
 - CI ready: 'Yes'
   ID: WIFI_MODE_0101
   SDK: '8266_NonOS

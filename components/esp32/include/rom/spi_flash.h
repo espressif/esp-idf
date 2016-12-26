@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -384,8 +384,8 @@ SpiFlashOpResult SPIParamCfg(uint32_t deviceId, uint32_t chip_size, uint32_t blo
 SpiFlashOpResult SPIEraseChip(void);
 
 /**
-  * @brief Erase a 32KB block of flash
-  *        Uses SPI flash command 52h.
+  * @brief Erase a 64KB block of flash
+  *        Uses SPI flash command D8H.
   *        Please do not call this function in SDK.
   *
   * @param  uint32_t block_num : Which block to erase.
@@ -398,6 +398,7 @@ SpiFlashOpResult SPIEraseBlock(uint32_t block_num);
 
 /**
   * @brief Erase a sector of flash.
+  *        Uses SPI flash command 20H.
   *        Please do not call this function in SDK.
   *
   * @param  uint32_t sector_num : Which sector to erase.
@@ -411,12 +412,6 @@ SpiFlashOpResult SPIEraseSector(uint32_t sector_num);
 /**
   * @brief Erase some sectors.
   *        Please do not call this function in SDK.
-  *
-  * @note If calling this function, first set
-  *       g_rom_flashchip.block_size = 32768; or call SPIParamCfg()
-  *       with appropriate parameters. This is due to a ROM bug, the
-  *       block erase command in use is a 32KB erase but after reset
-  *       the block_size field is incorrectly set to 65536.
   *
   * @param  uint32_t start_addr : Start addr to erase, should be sector aligned.
   *
@@ -495,16 +490,20 @@ SpiFlashOpResult SPI_Prepare_Encrypt_Data(uint32_t flash_addr, uint32_t *data);
 void SPI_Write_Encrypt_Disable(void);
 
 /**
-  * @brief Encrpto writing data to flash, you should Erase it yourself if need.
-  *        Please do not call this function in SDK.
+  * @brief Write data to flash with transparent encryption.
+  * @note Sectors to be written should already be erased.
   *
-  * @param  uint32_t flash_addr : Address to write, should be 32 bytes aligned.
+  * @note Please do not call this function in SDK.
   *
-  * @param  uint32_t *data : The pointer to data which is to write.
+  * @param  uint32_t flash_addr : Address to write, should be 32 byte aligned.
+  *
+  * @param  uint32_t *data : The pointer to data to write. Note, this pointer must
+  *                          be 32 bit aligned and the content of the data will be
+  *                          modified by the encryption function.
   *
   * @param  uint32_t len : Length to write, should be 32 bytes aligned.
   *
-  * @return SPI_FLASH_RESULT_OK : Encrypto write OK.
+  * @return SPI_FLASH_RESULT_OK : Data written successfully.
   *         SPI_FLASH_RESULT_ERR : Encrypto write error.
   *         SPI_FLASH_RESULT_TIMEOUT : Encrypto write timeout.
   */

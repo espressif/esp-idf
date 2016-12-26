@@ -38,7 +38,6 @@
 #define TEST_DEVICE_NAME            "ESP_GATTS_DEMO"
 
 #define TEST_MANUFACTURER_DATA_LEN  17
-static uint16_t test_service_uuid = GATTS_SERVICE_UUID_TEST;
 static uint8_t test_service_uuid128[32] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
     //first uuid, 16bit, [12],[13] is the value
@@ -47,7 +46,7 @@ static uint8_t test_service_uuid128[32] = {
     0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xAB, 0xCD, 0xAB, 0xCD,
 };
 
-static uint8_t test_manufacturer[TEST_MANUFACTURER_DATA_LEN] =  {0x12, 0x23, 0x45, 0x56};
+//static uint8_t test_manufacturer[TEST_MANUFACTURER_DATA_LEN] =  {0x12, 0x23, 0x45, 0x56};
 static esp_ble_adv_data_t test_adv_data = {
     .set_scan_rsp = false,
     .include_name = true,
@@ -166,7 +165,7 @@ static void gatts_event_handler(uint32_t event, void *param)
 
         gl_test.char_handle = p->add_char.attr_handle;
         gl_test.descr_uuid.len = ESP_UUID_LEN_16;
-        gl_test.descr_uuid.uuid.uuid16 = GATT_UUID_CHAR_CLIENT_CONFIG;
+        gl_test.descr_uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
         esp_ble_gatts_add_char_descr(gl_test.service_handle, &gl_test.descr_uuid,
                                      ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE);
         break;

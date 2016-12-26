@@ -26,6 +26,9 @@
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/timer_group_reg.h"
+
+#include "driver/rtc_io.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -53,6 +56,9 @@
 #include "esp_phy_init.h"
 #include "esp_coexist.h"
 #include "trax.h"
+
+#define STRINGIFY(s) STRINGIFY2(s)
+#define STRINGIFY2(s) #s
 
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default")));
 void start_cpu0_default(void) IRAM_ATTR;
@@ -86,19 +92,12 @@ static const char* TAG = "cpu_start";
 
 void IRAM_ATTR call_start_cpu0()
 {
-    //Kill wdt
-    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
-    REG_CLR_BIT(0x6001f048, BIT(14)); //DR_REG_BB_BASE+48
-
     cpu_configure_region_protection();
 
     //Move exception vectors to IRAM
     asm volatile (\
                   "wsr    %0, vecbase\n" \
                   ::"r"(&_init_start));
-
-    uartAttach();
-    ets_install_uart_printf();
 
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
 
@@ -145,6 +144,15 @@ void IRAM_ATTR call_start_cpu1()
 
     cpu_configure_region_protection();
 
+#if CONFIG_CONSOLE_UART_NONE
+    ets_install_putc1(NULL);
+    ets_install_putc2(NULL);
+#else // CONFIG_CONSOLE_UART_NONE
+    uartAttach();
+    ets_install_uart_printf();
+    uart_tx_switch(CONFIG_CONSOLE_UART_NUM);
+#endif
+
     ESP_EARLY_LOGI(TAG, "App cpu up.");
     app_cpu_started = 1;
     start_cpu1();
@@ -164,24 +172,31 @@ void start_cpu0_default(void)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
-    uart_div_modify(0, (APB_CLK_FREQ << 4) / 115200);
+    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (APB_CLK_FREQ << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
+    rtc_gpio_unhold_all();
+    esp_setup_time_syscalls();
+    esp_vfs_dev_uart_register();
+    esp_reent_init(_GLOBAL_REENT);
+#ifndef CONFIG_CONSOLE_UART_NONE
+    const char* default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_CONSOLE_UART_NUM);
+    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
+    _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
+    _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
+#else
+    _GLOBAL_REENT->_stdin  = (FILE*) &__sf_fake_stdin;
+    _GLOBAL_REENT->_stdout = (FILE*) &__sf_fake_stdout;
+    _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
+#endif
+    do_global_ctors();
 #if CONFIG_INT_WDT
     esp_int_wdt_init();
 #endif
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
-    esp_setup_time_syscalls();
-    esp_vfs_dev_uart_register();
-    esp_reent_init(_GLOBAL_REENT);
-    const char* default_uart_dev = "/dev/uart/0";
-    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
-    _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
-    _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
-    do_global_ctors();
 #if !CONFIG_FREERTOS_UNICORE
     esp_crosscore_int_init();
 #endif
@@ -194,9 +209,9 @@ void start_cpu0_default(void)
 #endif
 
 #if CONFIG_SW_COEXIST_ENABLE
-	if (coex_init() == ESP_OK) {
+    if (coex_init() == ESP_OK) {
         coexist_set_enable(true);
-	}
+    }
 #endif
 
     xTaskCreatePinnedToCore(&main_task, "main",
@@ -216,8 +231,11 @@ void start_cpu1_default(void)
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
+    //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
+    //has started, but it isn't active *on this CPU* yet.
     esp_crosscore_int_init();
-    ESP_LOGI(TAG, "Starting scheduler on APP CPU.");
+
+    ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
 }
 #endif //!CONFIG_FREERTOS_UNICORE
@@ -232,6 +250,9 @@ static void do_global_ctors(void)
 
 static void main_task(void* args)
 {
+    // Now that the application is about to start, disable boot watchdogs
+    REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
+    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
     app_main();
     vTaskDelete(NULL);
 }

@@ -96,7 +96,7 @@ void gatt_dequeue_sr_cmd (tGATT_TCB *p_tcb)
     /* Double check in case any buffers are queued */
     GATT_TRACE_DEBUG("gatt_dequeue_sr_cmd" );
     if (p_tcb->sr_cmd.p_rsp_msg) {
-        GATT_TRACE_ERROR("free p_tcb->sr_cmd.p_rsp_msg = %d", p_tcb->sr_cmd.p_rsp_msg);
+        GATT_TRACE_ERROR("%s free msg %p", __func__, p_tcb->sr_cmd.p_rsp_msg);
 
         GKI_freebuf (p_tcb->sr_cmd.p_rsp_msg);
     }

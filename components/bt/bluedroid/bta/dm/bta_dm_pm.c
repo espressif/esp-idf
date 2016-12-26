@@ -337,7 +337,6 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 {
 
     UINT8 i, j;
-    UINT16 policy_setting;
     UINT8 *p = NULL;
     tBTA_DM_PEER_DEVICE *p_dev;
 

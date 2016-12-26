@@ -7,8 +7,8 @@
 #include "freertos/task.h"
 
 #include "esp_system.h"
-#include "EspAudio.h"
-#include "EspAudioCom.h"
+// #include "EspAudio.h"
+// #include "EspAudioCom.h"
 
 #include "bt_app_common.h"
 #include "esp_bt_stack_manager.h"
@@ -45,7 +45,8 @@ static void bt_app_a2d_cb(uint32_t event, void *param)
 
 static void bt_app_a2d_data_cb(uint8_t *data, uint32_t len)
 {
-    EspAudioPlayerStreamWrite(data, len, 10);
+    // EspAudioPlayerStreamWrite(data, len, 10);
+    return;
 }
 			    
 static void bt_app_handle_evt(UINT16 event, void *p_param)
@@ -81,9 +82,9 @@ static void bt_app_handle_evt(UINT16 event, void *p_param)
         if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
             // temporarily hardcoded the PCM configuaration
             BT_APP_TRACE_ERROR("configure audio player\n");
-            EspAudioPlayerStreamCfg(StreamSampleRate_44k, 2, StreamBitLen_16BIT);
-            EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
-            EspAudio_SetVolume(99);
+            // EspAudioPlayerStreamCfg(StreamSampleRate_44k, 2, StreamBitLen_16BIT);
+            // EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
+            // EspAudio_SetVolume(99);
         }
         break;
     }

@@ -62,18 +62,6 @@ static BOOLEAN bta_dm_check_av(UINT16 event);
 static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
 
 
-#if BLE_INCLUDED == TRUE
-static void bta_dm_acl_change_cback(BD_ADDR p_bda, DEV_CLASS p_dc,
-                                    BD_NAME p_bdn, UINT8 *features,
-                                    BOOLEAN is_new, UINT16 handle,
-                                    tBT_TRANSPORT transport);
-#else
-static void bta_dm_acl_change_cback(BD_ADDR p_bda, DEV_CLASS p_dc,
-                                    BD_NAME p_bdn, UINT8 *features,
-                                    BOOLEAN is_new);
-#endif
-
-
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 /* Extended Inquiry Response */
@@ -442,6 +430,10 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
         bta_dm_cb.disable_timer.param = 0;
         bta_sys_start_timer(&bta_dm_cb.disable_timer, 0, 5000);
     }
+
+#if BLE_PRIVACY_SPT == TRUE
+    btm_ble_resolving_list_cleanup ();  //by TH, because cmn_ble_vsc_cb.max_filter has something mistake as btm_ble_adv_filter_cleanup
+#endif
 
 }
 
@@ -1647,7 +1639,7 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
                 if (  bta_dm_search_cb.p_sdp_db != NULL && bta_dm_search_cb.p_sdp_db->raw_used != 0   &&
                         bta_dm_search_cb.p_sdp_db->raw_data != NULL) {
                     APPL_TRACE_DEBUG(
-                        "%s raw_data used = 0x%x raw_data_ptr = 0x%x", __func__,
+                        "%s raw_data used = 0x%x raw_data_ptr = %p", __func__,
                         bta_dm_search_cb.p_sdp_db->raw_used,
                         bta_dm_search_cb.p_sdp_db->raw_data);
 
@@ -1991,7 +1983,6 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
 {
 
     tSDP_UUID    uuid;
-    UINT16       num_attrs = 1;
     tBTA_DM_MSG *p_msg;
 
     memset (&uuid, 0, sizeof(tSDP_UUID));
@@ -2169,7 +2160,7 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
 
     bdcpy(bta_dm_search_cb.peer_bdaddr, remote_bd_addr);
 
-    APPL_TRACE_DEBUG("%s name_discover_done = %d p_btm_inq_info 0x%x state = %d, transport=%d",
+    APPL_TRACE_DEBUG("%s name_discover_done = %d p_btm_inq_info %p state = %d, transport=%d",
                      __func__,
                      bta_dm_search_cb.name_discover_done,
                      bta_dm_search_cb.p_btm_inq_info,
@@ -2231,7 +2222,7 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
 
 #if (BLE_INCLUDED == TRUE && (defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
             if ( bta_dm_search_cb.p_btm_inq_info ) {
-                APPL_TRACE_DEBUG("%s p_btm_inq_info 0x%x results.device_type 0x%x services_to_search 0x%x",
+                APPL_TRACE_DEBUG("%s p_btm_inq_info %p results.device_type 0x%x services_to_search 0x%x",
                                  __func__,
                                  bta_dm_search_cb.p_btm_inq_info,
                                  bta_dm_search_cb.p_btm_inq_info->results.device_type,
@@ -2955,48 +2946,6 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data)
     }
 
 }
-
-/*******************************************************************************
-**
-** Function         bta_dm_acl_change_cback
-**
-** Description      Callback from btm when acl connection goes up or down
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-#if BLE_INCLUDED == TRUE
-static void bta_dm_acl_change_cback(BD_ADDR p_bda, DEV_CLASS p_dc, BD_NAME p_bdn,
-                                    UINT8 *features, BOOLEAN is_new, UINT16 handle,
-                                    tBT_TRANSPORT transport)
-#else
-static void bta_dm_acl_change_cback(BD_ADDR p_bda, DEV_CLASS p_dc, BD_NAME p_bdn,
-                                    UINT8 *features, BOOLEAN is_new)
-#endif
-{
-    tBTA_DM_ACL_CHANGE *p_msg = (tBTA_DM_ACL_CHANGE *) GKI_getbuf(sizeof(tBTA_DM_ACL_CHANGE));
-    if (p_msg != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_ACL_CHANGE));
-
-        bdcpy(p_msg->bd_addr, p_bda);
-        p_msg->is_new = is_new;
-#if BLE_INCLUDED == TRUE
-        p_msg->handle = handle;
-        p_msg->transport = transport;
-#endif
-        /* This is collision case */
-        if (features != NULL) {
-            if ((features[0] == 0xFF) && !is_new) {
-                p_msg->event = BTM_BL_COLLISION_EVT;
-            }
-        }
-
-        p_msg->hdr.event = BTA_DM_ACL_CHANGE_EVT;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
 
 /*******************************************************************************
 **
@@ -4018,7 +3967,7 @@ void bta_dm_encrypt_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_
         break;
     }
 
-    APPL_TRACE_DEBUG("bta_dm_encrypt_cback status =%d p_callback=0x%x", bta_status, p_callback);
+    APPL_TRACE_DEBUG("bta_dm_encrypt_cback status =%d p_callback=%p", bta_status, p_callback);
 
     if (p_callback) {
         (*p_callback)(bd_addr, transport, bta_status);
@@ -4150,8 +4099,6 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
     tBTM_STATUS status = BTM_SUCCESS;
     tBTA_DM_SEC sec_event;
     char *p_name = NULL;
-    UINT8 i;
-    tBT_DEVICE_TYPE dev_type;
 
     if (!bta_dm_cb.p_sec_cback) {
         return BTM_NOT_AUTHORIZED;
@@ -5255,7 +5202,7 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id)
 
 
     if ( bta_dm_search_cb.ble_raw_used + sizeof(tBTA_GATT_ID) < bta_dm_search_cb.ble_raw_size ) {
-        APPL_TRACE_DEBUG("ADDING BLE SERVICE uuid=0x%x, ble_ptr = 0x%x, ble_raw_used = 0x%x",
+        APPL_TRACE_DEBUG("ADDING BLE SERVICE uuid=0x%x, ble_ptr = %p, ble_raw_used = 0x%x",
                          service_id.uuid.uu.uuid16, bta_dm_search_cb.p_ble_rawdata, bta_dm_search_cb.ble_raw_used);
 
         if (bta_dm_search_cb.p_ble_rawdata) {

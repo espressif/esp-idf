@@ -1,10 +1,35 @@
 Config: {execute count: 1, execute order: in order}
-DUT: [SSC2, SSC1]
+DUT: [SSC1]
 Filter:
 - Add:
-    ID: [TCPIP_IGMP_0202, TCPIP_IGMP_0203, ^TCPIP_TCP_0403, ^TCPIP_TCP_0408, TCPIP_UDP_0201,
-      ^TCPIP_DHCP_0301, ^TCPIP_TCP_0101, ^TCPIP_TCP_0103, ^TCPIP_TCP_0105, ^TCPIP_TCP_0104,
-      ^TCPIP_TCP_0107, ^TCPIP_TCP_0106, ^TCPIP_DHCP_0210, ^TCPIP_DHCP_0211, ^TCPIP_DHCP_0212,
-      ^TCPIP_TCP_0404, TCPIP_TCP_0212, TCPIP_TCP_0210, ^TCPIP_TCP_0406, ^TCPIP_TCP_0407,
-      ^TCPIP_TCP_0401, ^TCPIP_TCP_0210, ^TCPIP_TCP_0212, TCPIP_DHCP_0211, TCPIP_DHCP_0210,
-      TCPIP_DHCP_0212, TCPIP_DHCP_0101, TCPIP_DHCP_0103, TCPIP_DHCP_0206, TCPIP_DHCP_0207]
+    ID:
+      - TCPIP_TCP_0105  # STA mode, close for different types of TCP sockets test
+      - TCPIP_TCP_0106  # STA mode, create max TCP sockets test
+      - TCPIP_TCP_0107  # STA mode, accept max TCP client by server test
+      - TCPIP_TCP_0110  # AP mode, connect test. use different ip, port
+      - TCPIP_TCP_0111  # AP mode, server listen test. use different kinds of port
+      - TCPIP_TCP_0112  # AP mode, send/recv basic test
+      - TCPIP_TCP_0113  # AP mode, shutdown basic test
+      - TCPIP_TCP_0114  # AP mode, close for different types of TCP sockets test
+      - TCPIP_TCP_0115  # AP mode, create max TCP sockets test
+      - TCPIP_TCP_0116  # AP mode, accept max TCP client by server test
+      - TCPIP_TCP_0201  # STA mode, connect test. use socket in state that can't connect
+      - TCPIP_TCP_0202  # STA mode, server listen test. use socket in state that can't listen
+      - TCPIP_TCP_0203  # send test. use socket in state that can't send
+      - TCPIP_TCP_0204  # STA mode, recv buffer test
+      - TCPIP_TCP_0206  # STA mode, get active socket info test
+      - TCPIP_TCP_0207  # AP mode, connect test. use socket in state that can't connect
+      - TCPIP_TCP_0208  # AP mode, server listen test. use socket in state that can't listen
+      - TCPIP_TCP_0210  # AP mode, recv buffer test
+      - TCPIP_TCP_0212  # AP mode, get active socket info test
+      - TCPIP_TCP_0401  # do TCP send after WIFI disconnected
+      - TCPIP_TCP_0402  # close TCP socket after WIFI  disconnected
+      - TCPIP_TCP_0403  # do TCP send after mode changed
+      - TCPIP_TCP_0404  # close TCP socket after mode changed
+      - TCPIP_TCP_0406  # close TCP socket after PC NIC disabled
+      - TCPIP_TCP_0407  # do TCP send after IP changed
+      - TCPIP_TCP_0408  # close TCP socket after IP changed
+      - TCPIP_TCP_0411  # do TCP send after socket changed
+      - TCPIP_TCP_0412  # close TCP send after socket changed
+      - TCPIP_UDP_0101  # STA mode, udp bind test. use different ip, port
+      - TCPIP_UDP_0105  # STA mode, close UDP sockets test

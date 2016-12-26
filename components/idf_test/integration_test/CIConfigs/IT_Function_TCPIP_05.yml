@@ -1,8 +1,21 @@
 Config: {execute count: 1, execute order: in order}
-DUT: [SSC2, SSC1]
+DUT: [SSC1]
 Filter:
 - Add:
-    ID: [^TCPIP_IGMP_0204, ^TCPIP_TCP_0412, TCPIP_TCP_0411, TCPIP_TCP_0412, ^TCPIP_UDP_0112,
-      ^TCPIP_UDP_0113, ^TCPIP_UDP_0114, ^TCPIP_UDP_0202, ^TCPIP_UDP_0201, ^TCPIP_IP_0101,
-      ^TCPIP_TCP_0402, TCPIP_TCP_0114, TCPIP_TCP_0116, TCPIP_TCP_0111, TCPIP_TCP_0113,
-      TCPIP_TCP_0112]
+    ID:
+      - ^TCPIP_TCP_0404  # close TCP socket after mode changed
+      - ^TCPIP_TCP_0406  # close TCP socket after PC NIC disabled
+      - ^TCPIP_TCP_0407  # do TCP send after IP changed
+      - ^TCPIP_TCP_0408  # close TCP socket after IP changed
+      - ^TCPIP_TCP_0411  # do TCP send after socket changed
+      - ^TCPIP_TCP_0412  # close TCP send after socket changed
+      - ^TCPIP_UDP_0101  # STA mode, udp bind test. use different ip, port
+      - ^TCPIP_UDP_0105  # STA mode, close UDP sockets test
+      - ^TCPIP_UDP_0106  # STA mode, create max udp socket test
+      - ^TCPIP_UDP_0107  # STA mode, get active socket info test
+      - ^TCPIP_UDP_0108  # AP mode, udp bind test. use different ip, port
+      - ^TCPIP_UDP_0112  # AP mode, close UDP sockets test
+      - ^TCPIP_UDP_0113  # AP mode, create max udp socket test
+      - ^TCPIP_UDP_0114  # AP mode, get active socket info test
+      - ^TCPIP_UDP_0201  # STA mode, recv buffer test
+      - ^TCPIP_UDP_0202  # AP mode, recv buffer test

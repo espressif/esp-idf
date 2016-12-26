@@ -10,8 +10,8 @@ sys.path.append("..")
 from gen_esp32part import *
 
 SIMPLE_CSV = """
-# Name,Type,SubType,Offset,Size
-factory,0,2,65536,1048576
+# Name,Type,SubType,Offset,Size,Flags
+factory,0,2,65536,1048576,
 """
 
 LONGER_BINARY_TABLE = ""
@@ -36,10 +36,14 @@ LONGER_BINARY_TABLE += "\xAA\x50\x10\x00" + \
                        "\x00\x10\x00\x00" + \
                        "second" + ("\0"*10) + \
                        "\x00\x00\x00\x00"
+LONGER_BINARY_TABLE += "\xFF" * 32
 
 def _strip_trailing_ffs(binary_table):
-    while binary_table.endswith("\xFF"):
-        binary_table = binary_table[0:len(binary_table)-1]
+    """
+    Strip all FFs down to the last 32 bytes (terminating entry)
+    """
+    while binary_table.endswith("\xFF"*64):
+        binary_table = binary_table[0:len(binary_table)-32]
     return binary_table
 
 class CSVParserTests(unittest.TestCase):
@@ -161,7 +165,7 @@ first, 0x30, 0xEE, 0x100400, 0x300000
 """
         t = PartitionTable.from_csv(csv)
         tb = _strip_trailing_ffs(t.to_binary())
-        self.assertEqual(len(tb), 32)
+        self.assertEqual(len(tb), 64)
         self.assertEqual('\xAA\x50', tb[0:2]) # magic
         self.assertEqual('\x30\xee', tb[2:4]) # type, subtype
         eo, es = struct.unpack("<LL", tb[4:12])
@@ -175,9 +179,21 @@ second,0x31, 0xEF,         , 0x100000
 """
         t = PartitionTable.from_csv(csv)
         tb = _strip_trailing_ffs(t.to_binary())
-        self.assertEqual(len(tb), 64)
+        self.assertEqual(len(tb), 96)
         self.assertEqual('\xAA\x50', tb[0:2])
         self.assertEqual('\xAA\x50', tb[32:34])
+
+
+    def test_encrypted_flag(self):
+        csv = """
+# Name, Type, Subtype, Offset, Size, Flags
+first, app, factory,, 1M, encrypted
+"""
+        t = PartitionTable.from_csv(csv)
+        self.assertTrue(t[0].encrypted)
+        tb = _strip_trailing_ffs(t.to_binary())
+        tr = PartitionTable.from_binary(tb)
+        self.assertTrue(tr[0].encrypted)
 
 
 class BinaryParserTests(unittest.TestCase):
@@ -188,14 +204,15 @@ class BinaryParserTests(unittest.TestCase):
                 "\x00\x00\x10\x00" + \
                 "\x00\x00\x20\x00" + \
                 "0123456789abc\0\0\0" + \
-                "\x00\x00\x00\x00"
+                "\x00\x00\x00\x00" + \
+                "\xFF" * 32
         # verify that parsing 32 bytes as a table
         # or as a single Definition are the same thing
         t = PartitionTable.from_binary(entry)
         self.assertEqual(len(t), 1)
         t[0].verify()
 
-        e = PartitionDefinition.from_binary(entry)
+        e = PartitionDefinition.from_binary(entry[:32])
         self.assertEqual(t[0], e)
         e.verify()
 

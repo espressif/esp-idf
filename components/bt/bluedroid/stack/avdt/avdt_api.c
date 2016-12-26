@@ -1203,7 +1203,7 @@ extern UINT16 AVDT_WriteDataReq(UINT8 handle, UINT8 *p_data, UINT32 data_len,
             || p_scb->curr_cfg.mux_tsid_media == 0)
         {
             result = AVDT_ERR_BAD_STATE;
-            AVDT_TRACE_WARNING("p_scb->p_pkt=%x, p_scb->p_ccb=%x, IsQueueEmpty=%x, p_scb->frag_off=%x\n",
+            AVDT_TRACE_WARNING("p_scb->p_pkt=%p, p_scb->p_ccb=%p, IsQueueEmpty=%x, p_scb->frag_off=%x\n",
                 p_scb->p_pkt, p_scb->p_ccb, GKI_queue_is_empty(&p_scb->frag_q), p_scb->frag_off);
             break;
         }

@@ -70,7 +70,7 @@ static const size_t MAX_REASONABLE_REQUESTS = 10;
 static void queue_int_add(connect_node_t *p_param)
 {
     if (!connect_queue) {
-        connect_queue = list_new(osi_free);
+        connect_queue = list_new(osi_free_func);
         assert(connect_queue != NULL);
     }
 

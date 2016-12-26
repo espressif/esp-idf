@@ -61,14 +61,6 @@ config MBEDTLS_MPI_USE_INTERRUPT
         This allows other code to run on the CPU while an MPI operation is pending.
         Otherwise the CPU busy-waits.
 
-config MBEDTLS_MPI_INTERRUPT_NUM
-    int "MPI Interrupt number"
-    depends on MBEDTLS_MPI_USE_INTERRUPT
-    default 18
-    help
-        CPU interrupt number for MPI interrupt to connect to. Must be otherwise unused.
-        Eventually this assignment will be handled automatically at runtime.
-
 config MBEDTLS_HARDWARE_SHA
    bool "Enable hardware SHA acceleration"
    default y
@@ -80,5 +72,25 @@ config MBEDTLS_HARDWARE_SHA
        than one SHA digest is calculated at the same time, only will
        be calculated fully in hardware and the rest will be calculated
        (at least partially calculated) in software.
+
+config MBEDTLS_HAVE_TIME
+   bool "Enable mbedtls time"
+   depends on !ESP32_TIME_SYSCALL_USE_NONE
+   default y
+   help
+       System has time.h and time().
+       The time does not need to be correct, only time differences are used,
+
+config MBEDTLS_HAVE_TIME_DATE
+   bool "Enable mbedtls time data"
+   depends on MBEDTLS_HAVE_TIME
+   default n
+   help
+       System has time.h and time(), gmtime() and the clock is correct.
+       The time needs to be correct (not necesarily very accurate, but at least
+       the date should be correct). This is used to verify the validity period of
+       X.509 certificates.
+
+       It is suggested that you should get the real time by "SNTP".
 
 endmenu

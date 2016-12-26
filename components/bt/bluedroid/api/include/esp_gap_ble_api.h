@@ -21,6 +21,10 @@
 #include "esp_err.h"
 #include "esp_bt_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// GAP BLE callback event type
 typedef enum {
 	ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT        = 0,		/*!< When advertising data set complete, the event comes */
@@ -420,5 +424,9 @@ esp_err_t esp_ble_gap_set_device_name(const char *name);
  *
  */
 uint8_t *esp_ble_resolve_adv_data(uint8_t *adv_data, uint8_t type, uint8_t *length);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ESP_GAP_BLE_API_H__ */

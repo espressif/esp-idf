@@ -39,7 +39,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #if XCHAL_HAVE_EXCEPTIONS
 
 /* Handler table is in xtensa_intr_asm.S */
-// Todo: Make multicore - JD
 
 extern xt_exc_handler _xt_exception_table[XCHAL_EXCCAUSE_NUM*portNUM_PROCESSORS];
 
@@ -101,8 +100,7 @@ extern xt_handler_table_entry _xt_interrupt_table[XCHAL_NUM_INTERRUPTS*portNUM_P
 */
 void xt_unhandled_interrupt(void * arg)
 {
-	ets_printf("Unhandled interrupt!\n");
-    //exit(-1);
+	ets_printf("Unhandled interrupt %d on cpu %d!\n", (int)arg, xPortGetCoreID());
 }
 
 

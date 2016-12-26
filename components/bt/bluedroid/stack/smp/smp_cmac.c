@@ -154,7 +154,7 @@ static BOOLEAN cmac_aes_k_calculate(BT_OCTET16 key, UINT8 *p_signature, UINT16 t
         p_mac = output.param_buf + (BT_OCTET16_LEN - tlen);
         memcpy(p_signature, p_mac, tlen);
 
-        SMP_TRACE_DEBUG("tlen = %d p_mac = %d", tlen, p_mac);
+        SMP_TRACE_DEBUG("tlen = %d p_mac = %p", tlen, p_mac);
         SMP_TRACE_DEBUG("p_mac[0] = 0x%02x p_mac[1] = 0x%02x p_mac[2] = 0x%02x p_mac[3] = 0x%02x",
                         *p_mac, *(p_mac + 1), *(p_mac + 2), *(p_mac + 3));
         SMP_TRACE_DEBUG("p_mac[4] = 0x%02x p_mac[5] = 0x%02x p_mac[6] = 0x%02x p_mac[7] = 0x%02x",

@@ -1,10 +1,11 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 #include "unity.h"
-
+#include "sdkconfig.h"
 
 TEST_CASE("test ctype functions", "[newlib]")
 {
@@ -22,6 +23,10 @@ TEST_CASE("test atoX functions", "[newlib]")
     TEST_ASSERT_EQUAL_INT(2147483647, atoi("2147483647"));
     TEST_ASSERT_EQUAL_INT(42, atoi("000000042"));
     TEST_ASSERT_EQUAL_INT(0, strtol("foo", NULL, 10));
+    TEST_ASSERT_EQUAL(0.123443, atof("0.123443"));
+    TEST_ASSERT_EQUAL(0.123443f, atoff("0.123443"));
+    TEST_ASSERT_EQUAL(31.41238, strtod("0.3141238e2", NULL));
+    TEST_ASSERT_EQUAL(0.025f, strtof("0.025", NULL));
 }
 
 TEST_CASE("test sprintf function", "[newlib]")
@@ -81,22 +86,64 @@ TEST_CASE("test time functions", "[newlib]")
 }
 
 
-static int checkFnRom(void *fn, char *name)
+static bool fn_in_rom(void *fn, char *name)
 {
-    int fnaddr = (int)fn;
-    printf("%s: 0X%x\n", name, fnaddr);
-    if ((fnaddr >= 0x40000000) && (fnaddr < 0x40070000)) {
-        return 1;
-    } else {
-        return 0;
-    }
+    const int fnaddr = (int)fn;
+    return (fnaddr >= 0x40000000) && (fnaddr < 0x40070000);
 }
 
 
-TEST_CASE("check if ROM is used for functions", "[newlib]")
+TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
 {
-    TEST_ASSERT(checkFnRom(printf, "printf"));
-    TEST_ASSERT(checkFnRom(sscanf, "sscanf"));
-    TEST_ASSERT(checkFnRom(atoi, "atoi"));
-    TEST_ASSERT(checkFnRom(strtol, "strtol"));
+#ifdef CONFIG_NEWLIB_NANO_FORMAT
+    TEST_ASSERT(fn_in_rom(printf, "printf"));
+    TEST_ASSERT(fn_in_rom(sscanf, "sscanf"));
+#else
+    TEST_ASSERT_FALSE(fn_in_rom(printf, "printf"));
+    TEST_ASSERT_FALSE(fn_in_rom(sscanf, "sscanf"));
+#endif
+    TEST_ASSERT(fn_in_rom(atoi,   "atoi"));
+    TEST_ASSERT(fn_in_rom(strtol, "strtol"));
+}
+
+#ifndef CONFIG_NEWLIB_NANO_FORMAT
+TEST_CASE("test 64bit int formats", "[newlib]")
+{
+    char* res = NULL;
+    const uint64_t val = 123456789012LL;
+
+    asprintf(&res, "%llu", val);
+    TEST_ASSERT_NOT_NULL(res);
+    TEST_ASSERT_EQUAL_STRING("123456789012", res);
+
+    uint64_t sval;
+    int ret = sscanf(res, "%llu", &sval);
+    free(res);
+
+    TEST_ASSERT_EQUAL(1, ret);
+    TEST_ASSERT_EQUAL(val, sval);
+}
+#else
+TEST_CASE("test 64bit int formats", "[newlib]")
+{
+    char* res = NULL;
+    const uint64_t val = 123456789012LL;
+
+    asprintf(&res, "%llu", val);
+    TEST_ASSERT_NOT_NULL(res);
+    TEST_ASSERT_EQUAL_STRING("lu", res);
+
+    uint64_t sval;
+    int ret = sscanf(res, "%llu", &sval);
+    free(res);
+
+    TEST_ASSERT_EQUAL(0, ret);
+}
+#endif
+
+
+TEST_CASE("fmod and fmodf work as expected", "[newlib]")
+{
+    TEST_ASSERT_EQUAL(0.1, fmod(10.1, 2.0));
+    TEST_ASSERT_EQUAL(0.1f, fmodf(10.1f, 2.0f));
 }

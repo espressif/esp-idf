@@ -22,6 +22,7 @@
 #include <sys/times.h>
 #include <sys/lock.h>
 #include "esp_attr.h"
+#include "esp_intr_alloc.h"
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/frc_timer_reg.h"
@@ -105,9 +106,7 @@ void esp_setup_time_syscalls()
     SET_PERI_REG_MASK(FRC_TIMER_CTRL_REG(0),
             FRC_TIMER_ENABLE | \
             FRC_TIMER_INT_ENABLE);
-    intr_matrix_set(xPortGetCoreID(), ETS_TIMER1_INTR_SOURCE, ETS_FRC1_INUM);
-    xt_set_interrupt_handler(ETS_FRC1_INUM, &frc_timer_isr, NULL);
-    xt_ints_on(1 << ETS_FRC1_INUM);
+    esp_intr_alloc(ETS_TIMER1_INTR_SOURCE, 0, &frc_timer_isr, NULL, NULL);
 #endif // WITH_FRC1
 }
 

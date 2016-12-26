@@ -18,6 +18,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// Status Return Value
 typedef enum {
     ESP_BT_STATUS_SUCCESS          =  0,          /* Successful operation. */
@@ -99,4 +103,8 @@ typedef enum {
  */
 typedef void (* esp_profile_cb_t)(uint32_t event, void *param);
 
-#endif      ///__ESP_BT_DEFS_H__
+#ifdef __cplusplus
+}
+#endif
+
+#endif     /* __ESP_BT_DEFS_H__ */

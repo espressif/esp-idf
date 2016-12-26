@@ -28,7 +28,7 @@
 #include "freertos/xtensa_api.h"
 #include "rom/ets_sys.h"
 
-#define RTC_TIMER_TICKS_TO_MS(ticks)            ((ticks/625)<<1 + (ticks-(ticks/625)*625)/312)
+#define RTC_TIMER_TICKS_TO_MS(ticks)            (((ticks/625)<<1) + (ticks-(ticks/625)*625)/312)
 
 
 #define BT_ALARM_START_WAIT_TICKS   100
@@ -49,7 +49,7 @@ static struct alarm_t *alarm_cbs_lookfor_available(void)
 
     for (i = 0; i < ALARM_CBS_NUM; i++) {
         if (alarm_cbs[i].alarm_hdl == NULL) { //available
-            LOG_DEBUG(">>>> %d %08x<<<<\n", i, &alarm_cbs[i]);
+            LOG_DEBUG("%s %d %p\n", __func__, i, &alarm_cbs[i]);
             return &alarm_cbs[i];
         }
     }
@@ -62,12 +62,12 @@ static void alarm_cb_handler(TimerHandle_t xTimer)
     struct alarm_t *alarm;
 
     if (!xTimer) {
-        LOG_DEBUG("TimerName: NULL\n");
+        LOG_ERROR("TimerName: NULL\n");
         return;
     }
 
     alarm = pvTimerGetTimerID(xTimer);
-    LOG_DEBUG("TimerID %08x, Name %s\n", alarm, pcTimerGetTimerName(xTimer));
+    LOG_DEBUG("TimerID %p, Name %s\n", alarm, pcTimerGetTimerName(xTimer));
     if (alarm->cb) {
         alarm->cb(alarm->cb_data);
     }

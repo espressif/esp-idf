@@ -103,10 +103,8 @@ static UINT16  btm_sec_set_serv_level4_flags (UINT16 cur_security, BOOLEAN is_or
 
 static BOOLEAN btm_sec_queue_encrypt_request  (BD_ADDR bd_addr, tBT_TRANSPORT transport,
         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
-static void btm_sec_clean_pending_req_queue (BD_ADDR remote_bda, tBT_TRANSPORT transport) ;
 static void btm_sec_check_pending_enc_req (tBTM_SEC_DEV_REC  *p_dev_rec, tBT_TRANSPORT transport,
         UINT8 encr_enable);
-static BOOLEAN btm_sec_acceptor_rejects_bonding (tBTM_SEC_DEV_REC *p_dev_rec);
 
 static BOOLEAN btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC *p_dev_rec);
 static BOOLEAN btm_sec_is_master(tBTM_SEC_DEV_REC *p_dev_rec);
@@ -2050,11 +2048,11 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
         is_originator = FALSE;
     }
 
-    BTM_TRACE_DEBUG ("%s() conn_type: 0x%x, 0x%x\n", __func__, conn_type, p_ref_data);
+    BTM_TRACE_DEBUG ("%s() conn_type: 0x%x, %p\n", __func__, conn_type, p_ref_data);
 #else
     is_originator = conn_type;
 
-    BTM_TRACE_DEBUG ("%s() is_originator:%d, 0x%x\n", __func__, is_originator, p_ref_data);
+    BTM_TRACE_DEBUG ("%s() is_originator:%d, %p\n", __func__, is_originator, p_ref_data);
 #endif
 
     /* Find or get oldest record */
@@ -2932,7 +2930,7 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     }
 
     if (p_dev_rec) {
-        BTM_TRACE_EVENT ("Security Manager: rmt_name_complete PairState: %s  RemName: %s  status: %d State:%d  p_dev_rec: 0x%08x \n",
+        BTM_TRACE_EVENT ("Security Manager: rmt_name_complete PairState: %s  RemName: %s  status: %d State:%d  p_dev_rec: %p \n",
                          btm_pair_state_descr (btm_cb.pairing_state), p_bd_name,
                          status, p_dev_rec->sec_state, p_dev_rec);
     } else {
@@ -2981,7 +2979,7 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     /* If we were delaying asking UI for a PIN because name was not resolved, ask now */
     if ( (btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_LOCAL_PIN) && p_bd_addr
             &&  (memcmp (btm_cb.pairing_bda, p_bd_addr, BD_ADDR_LEN) == 0) ) {
-        BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete() delayed pin now being requested flags:0x%x, (p_pin_callback=0x%p)\n", btm_cb.pairing_flags, btm_cb.api.p_pin_callback);
+        BTM_TRACE_EVENT ("btm_sec_rmt_name_request_complete() delayed pin now being requested flags:0x%x, (p_pin_callback=%p)\n", btm_cb.pairing_flags, btm_cb.api.p_pin_callback);
 
         if (((btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) == 0) &&
                 ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_PIN_REQD) == 0) &&
@@ -3194,7 +3192,7 @@ void btm_io_capabilities_req (UINT8 *p)
 
     p_dev_rec->sm4 |= BTM_SM4_TRUE;
 
-    BTM_TRACE_EVENT("%s: State: %s  Flags: 0x%04x  p_cur_service: 0x%08x\n",
+    BTM_TRACE_EVENT("%s: State: %s  Flags: 0x%04x  p_cur_service: %p\n",
                     __FUNCTION__, btm_pair_state_descr(btm_cb.pairing_state),
                     btm_cb.pairing_flags, p_dev_rec->p_cur_service);
 
@@ -4939,7 +4937,7 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
              || (!p_dev_rec->is_originator
                  && ((p_dev_rec->dev_class[1] & BTM_COD_MAJOR_CLASS_MASK) == BTM_COD_MAJOR_PERIPHERAL)
                  &&  (p_dev_rec->dev_class[2] & BTM_COD_MINOR_KEYBOARD)) ) {
-        BTM_TRACE_WARNING("btm_sec_pin_code_request(): Pairing disabled:%d; PIN callback:%x, Dev Rec:%x!\n",
+        BTM_TRACE_WARNING("btm_sec_pin_code_request(): Pairing disabled:%d; PIN callback:%p, Dev Rec:%p!\n",
                           p_cb->pairing_disabled, p_cb->api.p_pin_callback, p_dev_rec);
 
         btsnd_hcic_pin_code_neg_reply (p_bda);
@@ -5818,36 +5816,6 @@ void btm_sec_set_peer_sec_caps(tACL_CONN *p_acl_cb, tBTM_SEC_DEV_REC *p_dev_rec)
         p_rem_bd_addr = (UINT8 *) rem_bd_addr;
         btm_io_capabilities_req(p_rem_bd_addr);
         p_dev_rec->remote_features_needed = FALSE;
-    }
-}
-
-/*******************************************************************************
-**
-** Function         btm_sec_clean_pending_req_queue
-**
-** Description      This function cleans up the pending security request when the
-**                  link to the target device dropped.
-**
-** Returns          void
-**
-*******************************************************************************/
-static void btm_sec_clean_pending_req_queue (BD_ADDR remote_bda, tBT_TRANSPORT transport)
-{
-    tBTM_SEC_QUEUE_ENTRY    *p_e;
-    BUFFER_Q                *bq = &btm_cb.sec_pending_q;
-
-    p_e = (tBTM_SEC_QUEUE_ENTRY *)GKI_getfirst(bq);
-
-    if (p_e != NULL) {
-        if (memcmp(p_e->bd_addr, remote_bda, BD_ADDR_LEN) == 0
-#if BLE_INCLUDED == TRUE
-                && p_e->transport == transport
-#endif
-           ) {
-            (*p_e->p_callback) (remote_bda, transport, p_e->p_ref_data, BTM_ERR_PROCESSING);
-            GKI_remove_from_queue(bq, (void *)p_e);
-        }
-        p_e = (tBTM_SEC_QUEUE_ENTRY *) GKI_getnext ((void *)p_e);
     }
 }
 

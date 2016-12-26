@@ -84,7 +84,6 @@ esp_err_t esp_ble_gap_start_scanning(uint32_t duration)
 esp_err_t esp_ble_gap_stop_scanning(void)
 {
     btc_msg_t msg;
-    btc_ble_gap_args_t arg;
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;

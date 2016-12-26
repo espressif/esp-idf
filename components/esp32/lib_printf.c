@@ -62,11 +62,8 @@ int phy_printf(const char* format, ...)
 
 int rtc_printf(const char* format, ...)
 {
-    va_list arg;
-    va_start(arg, format);
-    int res = lib_printf("rtc", format, arg);
-    va_end(arg);
-    return res;
+    // librtc.a printf temporary disabled due to UART baud rate switching bug.
+    return 0;
 }
 
 int wpa_printf(const char* format, ...)

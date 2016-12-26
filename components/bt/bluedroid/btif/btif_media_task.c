@@ -294,6 +294,7 @@ esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t cb)
 {
     // TODO: need protection against race
     bt_av_sink_data_callback = cb;
+    return ESP_OK;
 }
 
 // TODO: need protection against race

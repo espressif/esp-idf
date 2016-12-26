@@ -17,6 +17,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_intr.h"
+#include "esp_intr_alloc.h"
 
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
@@ -72,14 +73,11 @@ void esp_crosscore_int_init() {
     portENTER_CRITICAL(&reasonSpinlock);
     reason[xPortGetCoreID()]=0;
     portEXIT_CRITICAL(&reasonSpinlock);
-    ESP_INTR_DISABLE(ETS_FROM_CPU_INUM);
     if (xPortGetCoreID()==0) {
-        intr_matrix_set(xPortGetCoreID(), ETS_FROM_CPU_INTR0_SOURCE, ETS_FROM_CPU_INUM);
+        esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[xPortGetCoreID()], NULL);
     } else {
-        intr_matrix_set(xPortGetCoreID(), ETS_FROM_CPU_INTR1_SOURCE, ETS_FROM_CPU_INUM);
+        esp_intr_alloc(ETS_FROM_CPU_INTR1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[xPortGetCoreID()], NULL);
     }
-    xt_set_interrupt_handler(ETS_FROM_CPU_INUM, esp_crosscore_isr, (void*)&reason[xPortGetCoreID()]);
-    ESP_INTR_ENABLE(ETS_FROM_CPU_INUM);
 }
 
 void esp_crosscore_int_send_yield(int coreId) {

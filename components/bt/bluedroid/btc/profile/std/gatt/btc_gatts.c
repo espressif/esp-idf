@@ -232,8 +232,6 @@ void btc_gatts_call_handler(btc_msg_t *msg)
     }
     case BTC_GATTS_ACT_OPEN: {
         // Ensure device is in inquiry database
-        int addr_type = 0;
-        int device_type = 0;
         tBTA_GATT_TRANSPORT transport = BTA_GATT_TRANSPORT_LE;
 
         //TODO : implement address type and device type

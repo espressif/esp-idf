@@ -598,6 +598,8 @@ void bta_alarm_cb(void *data)
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
     fixed_queue_enqueue(btu_bta_alarm_queue, p_tle);
+
+    btu_task_post(SIG_BTU_WORK);
 }
 
 void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)

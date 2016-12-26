@@ -34,18 +34,6 @@
 
 static const char *TAG = "emac";
 
-void emac_poll_tx_cmd(void)
-{
-    //write any to wake up dma
-    REG_WRITE(EMAC_DMATXPOLLDEMAND_REG, 1);
-}
-
-void emac_poll_rx_cmd(void)
-{
-    //write any to wake up dma
-    REG_WRITE(EMAC_DMARXPOLLDEMAND_REG, 1);
-}
-
 void emac_enable_dma_tx(void)
 {
     REG_SET_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_START_STOP_TRANSMISSION_COMMAND);
@@ -66,15 +54,6 @@ void emac_disable_dma_rx(void)
     REG_CLR_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_START_STOP_RECEIVE);
 }
 
-uint32_t emac_read_tx_cur_reg(void)
-{
-    return REG_READ(EMAC_DMATXCURRDESC_REG);
-}
-
-uint32_t emac_read_rx_cur_reg(void)
-{
-    return REG_READ(EMAC_DMARXCURRDESC_REG);
-}
 
 uint32_t emac_read_mac_version(void)
 {
@@ -121,16 +100,18 @@ void emac_dma_init(void)
     REG_SET_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_FORWARD_UNDERSIZED_GOOD_FRAMES);
     REG_SET_BIT(EMAC_DMAOPERATION_MODE_REG, EMAC_OPERATE_SECOND_FRAME);
     REG_SET_FIELD(EMAC_DMABUSMODE_REG, EMAC_PROG_BURST_LEN, 4);
+    REG_SET_BIT(EMAC_DMAOPERATION_MODE_REG,EMAC_DMAOPERATION_MODE_REG);
 }
 
 void emac_mac_init(void)
 {
-    REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACRX);
-    REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACTX);
     REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
     REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACMIIGMII);
     REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACFESPEED);
     REG_SET_BIT(EMAC_GMACFRAMEFILTER_REG, EMAC_PROMISCUOUS_MODE);
+
+    REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACRX);
+    REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACTX);
 }
 
 void emac_set_clk_rmii(void)

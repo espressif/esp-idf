@@ -113,7 +113,8 @@ ethernet_low_level_output(struct netif *netif, struct pbuf *p)
   esp_interface_t eth_if = tcpip_adapter_get_esp_if(netif);
 
   if (eth_if != ESP_IF_ETH) {
-    printf("eth_if=%d netif=%p pbuf=%p len=%d\n", eth_if, netif, p, p->len); 
+    LWIP_DEBUGF(NETIF_DEBUG,("eth_if=%d netif=%p pbuf=%p len=%d\n", eth_if, netif, p, p->len)); 
+
     return ERR_IF;
   } 
   
@@ -134,7 +135,6 @@ ethernet_low_level_output(struct netif *netif, struct pbuf *p)
         }
     }
    
-    //printf("netif=%p pbuf=%p len=%d\n", netif, p, p->len); 
     return esp_eth_tx(q->payload, pbuf_x_len);
 #else
     for(q = p; q != NULL; q = q->next) {
@@ -160,7 +160,7 @@ ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
   
   if(buffer== NULL || netif == NULL)
     	goto _exit;
-
+#if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
     //g_rx_alloc_pbuf_fail_cnt++;
@@ -168,12 +168,28 @@ ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
   }
   memcpy(p->payload, buffer, len);
 
-  /* full packet send to tcpip_thread to process */
-  if (netif->input(p, netif) != ERR_OK) {
-    LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-    pbuf_free(p);
+/* full packet send to tcpip_thread to process */
+if (netif->input(p, netif) != ERR_OK) {
+  LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+  pbuf_free(p);
+}
+
+#else
+  p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
+  if (p == NULL){
+    return;
   }
-  
+  p->payload = buffer;
+  p->user_flag = PBUF_USER_FLAG_OWNER_ETH;
+  p->user_buf = buffer;
+ 
+  /* full packet send to tcpip_thread to process */
+if (netif->input(p, netif) != ERR_OK) {
+  LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+  p->user_flag = PBUF_USER_FLAG_OWNER_NULL;
+  pbuf_free(p);
+}
+#endif
 _exit:
 ;	  
 }

@@ -896,6 +896,7 @@ esp_err_t esp_a2d_register_callback(esp_profile_cb_t callback)
 {
     // TODO: need protection against race
     bt_av_sink_callback = callback;
+    return ESP_OK;
 }
 
 /*******************************************************************************

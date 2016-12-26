@@ -1,7 +1,7 @@
 menu "Bootloader config"
 choice LOG_BOOTLOADER_LEVEL
    bool "Bootloader log verbosity"
-   default LOG_BOOTLOADER_LEVEL_WARN
+   default LOG_BOOTLOADER_LEVEL_INFO
    help
        Specify how much output to see in bootloader logs.
 
@@ -32,23 +32,24 @@ endmenu
 
 
 
-menu "Secure boot configuration"
+menu "Security features"
 
-choice SECURE_BOOTLOADER
-    bool "Secure bootloader"
-    default SECURE_BOOTLOADER_DISABLED
+config SECURE_BOOT_ENABLED
+    bool "Enable secure boot in bootloader"
+    default N
     help
-        Build a bootloader with the secure boot flag enabled.
+        Build a bootloader which enables secure boot on first boot.
 
-        Secure bootloader can be one-time-flash (chip will only ever
-        boot that particular bootloader), or a digest key can be used
-        to allow the secure bootloader to be re-flashed with
-        modifications. Secure boot also permanently disables JTAG.
+        Once enabled, secure boot will not boot a modified bootloader. The bootloader will only load a partition table or boot an app if the data has a verified digital signature.
+
+        When enabling secure boot, JTAG and ROM BASIC Interpreter are permanently disabled by default.
 
         See docs/security/secure-boot.rst for details.
 
-config SECURE_BOOTLOADER_DISABLED
-       bool "Disabled"
+choice SECURE_BOOTLOADER_MODE
+    bool "Secure bootloader mode"
+    depends on SECURE_BOOT_ENABLED
+    default SECURE_BOOTLOADER_ONE_TIME_FLASH
 
 config SECURE_BOOTLOADER_ONE_TIME_FLASH
        bool "One-time flash"
@@ -62,18 +63,29 @@ config SECURE_BOOTLOADER_REFLASHABLE
     help
         Generate a reusable secure bootloader key, derived (via SHA-256) from the secure boot signing key.
 
-		This allows the secure bootloader to be re-flashed by anyone with access to the secure boot signing key.
+        This allows the secure bootloader to be re-flashed by anyone with access to the secure boot signing key.
 
         This option is less secure than one-time flash, because a leak of the digest key from one device allows reflashing of any device that uses it.
 
 endchoice
 
-config SECURE_BOOT_SIGNING_KEY
-     string "Secure boot signing key"
-	 depends on SECURE_BOOTLOADER_ENABLED
-	 default secure_boot_signing_key.pem
+config SECURE_BOOT_BUILD_SIGNED_BINARIES
+     bool "Sign binaries during build"
+     depends on SECURE_BOOT_ENABLED
+     default y
      help
-        Path to the key file used to sign partition tables and app images for secure boot.
+        Once secure boot is enabled, bootloader will only boot if partition table and app image are signed.
+
+        If enabled, these binary files are signed as part of the build process. The file named in "Secure boot private signing key" will be used to sign the image.
+
+        If disabled, unsigned app/partition data will be built. They must be signed manually using espsecure.py (for example, on a remote signing server.)
+
+config SECURE_BOOT_SIGNING_KEY
+     string "Secure boot private signing key"
+     depends on SECURE_BOOT_BUILD_SIGNED_BINARIES
+     default secure_boot_signing_key.pem
+     help
+        Path to the key file used to sign partition tables and app images for secure boot. Once secure boot is enabled, bootloader will only boot if partition table and app image are signed.
 
         Key file is an ECDSA private key (NIST256p curve) in PEM format.
 
@@ -84,35 +96,120 @@ config SECURE_BOOT_SIGNING_KEY
 
         See docs/security/secure-boot.rst for details.
 
-config SECURE_BOOT_DISABLE_JTAG
-       bool "First boot: Permanently disable JTAG"
-       depends on SECURE_BOOTLOADER_ENABLED
-       default Y
+config SECURE_BOOT_VERIFICATION_KEY
+    string "Secure boot public signature verification key"
+    depends on SECURE_BOOT_ENABLED && !SECURE_BOOT_BUILD_SIGNED_BINARIES
+    default signature_verification_key.bin
+    help
+       Path to a public key file used to verify signed images. This key is compiled into the bootloader,
+       and may also be used to verify signatures on OTA images after download.
+
+       Key file is in raw binary format, and can be extracted from a
+       PEM formatted private key using the espsecure.py
+       extract_public_key command.
+
+       See docs/security/secure-boot.rst for details.
+
+config SECURE_BOOT_INSECURE
+    bool "Allow potentially insecure options"
+    depends on SECURE_BOOT_ENABLED
+    default N
+    help
+       You can disable some of the default protections offered by secure boot, in order to enable testing or a custom combination of security features.
+
+       Only enable these options if you are very sure.
+
+       Refer to docs/security/secure-boot.rst and docs/security/flash-encryption.rst for details.
+
+config FLASH_ENCRYPTION_ENABLED
+    bool "Enable flash encryption on boot"
+    default N
+    help
+       If this option is set, flash contents will be encrypted by the bootloader on first boot.
+
+       Note: After first boot, the system will be permanently encrypted.
+       See docs/securityflash-encryption.rst for details.
+
+config FLASH_ENCRYPTION_INSECURE
+    bool "Allow potentially insecure options"
+    depends on FLASH_ENCRYPTION_ENABLED
+    default N
+    help
+       You can disable some of the default protections offered by flash encryption, in order to enable testing or a custom combination of security features.
+
+       Only enable these options if you are very sure.
+
+       Refer to docs/security/secure-boot.rst and docs/security/flash-encryption.rst for details.
+
+menu "Potentially insecure options"
+    visible if FLASH_ENCRYPTION_INSECURE || SECURE_BOOT_INSECURE
+
+# NOTE: Options in this menu NEED to have SECURE_BOOT_INSECURE
+# and/or FLASH_ENCRYPTION_INSECURE in "depends on", as the menu
+# itself doesn't enable/disable its children (if it's not set,
+# it's possible for the insecure menu to be disabled but the insecure option
+# to remain on which is very bad.)
+
+config SECURE_BOOT_ALLOW_ROM_BASIC
+       bool "Leave ROM BASIC Interpreter available on reset"
+       depends on SECURE_BOOT_INSECURE
+       default N
        help
-          Bootloader permanently disable JTAG (across entire chip) when enabling secure boot. This happens on first boot of the bootloader.
+          If not set (default), bootloader permanently disables ROM BASIC (on UART console) as a fallback if the bootloader image becomes invalid. This happens on first boot.
 
-          It is recommended this option remains set for production environments.
+          Only set this option in testing environments.
 
-config SECURE_BOOT_DISABLE_ROM_BASIC
-       bool "First boot: Permanently disable ROM BASIC fallback"
-       depends on SECURE_BOOTLOADER_ENABLED
-       default Y
+config SECURE_BOOT_ALLOW_JTAG
+       bool "Allow JTAG Debugging"
+       depends on SECURE_BOOT_INSECURE || FLASH_ENCRYPTION_INSECURE
+       default N
        help
-          Bootloader permanently disables ROM BASIC (on UART console) as a fallback if the bootloader image becomes invalid. This happens on first boot.
+          If not set (default), the bootloader will permanently disable JTAG (across entire chip) on first boot when either secure boot or flash encryption is enabled.
 
-          It is recommended this option remains set in production environments.
+          Setting this option leaves JTAG on for debugging, which negates all protections of flash encryption and some of the protections of secure boot.
+
+          Only set this option in testing environments.
+
+
+config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_ENCRYPT
+    bool "Leave UART bootloader encryption enabled"
+    depends on FLASH_ENCRYPTION_INSECURE
+    default N
+    help
+        If not set (default), the bootloader will permanently disable UART bootloader encryption access on first boot. If set, the UART bootloader will still be able to access hardware encryption.
+
+        It is recommended to only set this option in testing environments.
+
+config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_DECRYPT
+    bool "Leave UART bootloader decryption enabled"
+    depends on FLASH_ENCRYPTION_INSECURE
+    default N
+    help
+        If not set (default), the bootloader will permanently disable UART bootloader decryption access on first boot. If set, the UART bootloader will still be able to access hardware decryption.
+
+        Only set this option in testing environments. Setting this option allows complete bypass of flash encryption.
+
+config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_CACHE
+    bool "Leave UART bootloader flash cache enabled"
+    depends on FLASH_ENCRYPTION_INSECURE
+    default N
+    help
+        If not set (default), the bootloader will permanently disable UART bootloader flash cache access on first boot. If set, the UART bootloader will still be able to access the flash cache.
+
+        Only set this option in testing environments.
 
 config SECURE_BOOT_TEST_MODE
-       bool "Test mode: don't actually enable secure boot"
-       depends on SECURE_BOOTLOADER_ENABLED
+       bool "Secure boot test mode: don't permanently set any efuses"
+       depends on SECURE_BOOT_INSECURE
        default N
        help
           If this option is set, all permanent secure boot changes (via Efuse) are disabled.
 
-          This option is for testing purposes only - it effectively completely disables secure boot protection.
+          Log output will state changes which would be applied, but they will not be.
 
-config SECURE_BOOTLOADER_ENABLED
-    bool
-    default SECURE_BOOTLOADER_ONE_TIME_FLASH || SECURE_BOOTLOADER_REFLASHABLE
+          This option is for testing purposes only - it completely disables secure boot protection.
+
+
+endmenu  # potentially insecure
 
 endmenu

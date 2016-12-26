@@ -378,7 +378,6 @@ void btu_task_start_up(void)
 
 void btu_task_shut_down(void)
 {
-    fixed_queue_unregister_dequeue(btu_hci_msg_queue);
     fixed_queue_unregister_dequeue(btu_general_alarm_queue);
     fixed_queue_unregister_dequeue(btu_oneshot_alarm_queue);
     fixed_queue_unregister_dequeue(btu_l2cap_alarm_queue);

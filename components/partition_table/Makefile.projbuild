@@ -11,6 +11,7 @@
 # NB: gen_esp32part.py lives in the sdk/bin/ dir not component dir
 GEN_ESP32PART := $(PYTHON) $(COMPONENT_PATH)/gen_esp32part.py -q
 
+# Has a matching value in bootloader_support esp_flash_partitions.h
 PARTITION_TABLE_OFFSET := 0x8000
 
 # Path to partition CSV file is relative to project path for custom
@@ -20,11 +21,11 @@ PARTITION_TABLE_CSV_PATH := $(call dequote,$(abspath $(PARTITION_TABLE_ROOT)/$(s
 
 PARTITION_TABLE_BIN := $(BUILD_DIR_BASE)/$(notdir $(PARTITION_TABLE_CSV_PATH:.csv=.bin))
 
-ifdef CONFIG_SECURE_BOOTLOADER_ENABLED
+ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN:.bin=-unsigned.bin)
 # add an extra signing step for secure partition table
-$(PARTITION_TABLE_BIN): $(PARTITION_TABLE_BIN_UNSIGNED)
-	$(Q) $(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
+$(PARTITION_TABLE_BIN): $(PARTITION_TABLE_BIN_UNSIGNED) $(SDKCONFIG_MAKEFILE) $(SECURE_BOOT_SIGNING_KEY)
+	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
 else
 # secure bootloader disabled, both files are the same
 PARTITION_TABLE_BIN_UNSIGNED := $(PARTITION_TABLE_BIN)

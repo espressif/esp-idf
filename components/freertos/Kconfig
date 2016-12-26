@@ -3,7 +3,7 @@ menu "FreeRTOS"
 # This is actually also handled in the ESP32 startup code, not only in FreeRTOS.
 config FREERTOS_UNICORE
     bool "Run FreeRTOS only on first core"
-    default n
+    default y
     help
         This version of FreeRTOS normally takes control of all cores of 
         the CPU. Select this if you only want to start it on the first core.
