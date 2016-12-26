@@ -80,6 +80,7 @@
 
 #if ESP_LWIP
 #include "esp_wifi_internal.h"
+#include "esp_eth.h"
 #endif
 
 #define SIZEOF_STRUCT_PBUF        LWIP_MEM_ALIGN_SIZE(sizeof(struct pbuf))
@@ -351,7 +352,8 @@ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
   p->flags = 0;
   
 #if ESP_LWIP
-  p->eb = NULL; 
+  p->user_buf = NULL;
+  p->user_flag = PBUF_USER_FLAG_OWNER_NULL; 
 #endif
 
   LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_alloc(length=%"U16_F") == %p\n", length, (void *)p));
@@ -720,9 +722,13 @@ pbuf_free(struct pbuf *p)
         } else if (type == PBUF_ROM || type == PBUF_REF) {
         
 #if ESP_LWIP
-          if (type == PBUF_REF && p->eb != NULL ) esp_wifi_internal_free_rx_buffer(p->eb);
+          if (type == PBUF_REF && p->user_flag == PBUF_USER_FLAG_OWNER_WIFI ) {
+               esp_wifi_internal_free_rx_buffer(p->user_buf);
+          }
+          if (type == PBUF_REF && p->user_flag == PBUF_USER_FLAG_OWNER_ETH ) {  
+               esp_eth_free_rx_buf(p->user_buf);
+          }
 #endif
-
             memp_free(MEMP_PBUF, p);
             /* type == PBUF_RAM */
         } else {

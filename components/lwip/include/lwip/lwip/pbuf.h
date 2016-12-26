@@ -105,6 +105,12 @@ typedef enum {
 /** indicates this pbuf includes a TCP FIN flag */
 #define PBUF_FLAG_TCP_FIN   0x20U
 
+#if ESP_LWIP
+#define PBUF_USER_FLAG_OWNER_NULL   0
+#define PBUF_USER_FLAG_OWNER_WIFI   1
+#define PBUF_USER_FLAG_OWNER_ETH    2
+#endif
+
 struct pbuf {
   /** next pbuf in singly linked pbuf chain */
   struct pbuf *next;
@@ -138,7 +144,8 @@ struct pbuf {
   u16_t ref;
   
 #if ESP_LWIP
-  void  *eb;
+  void  *user_buf;
+  u8_t user_flag;
 #endif
 };
 
