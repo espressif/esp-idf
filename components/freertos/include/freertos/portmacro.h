@@ -213,7 +213,6 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux);
 #define portEXIT_CRITICAL_ISR(mux)    vPortCPUReleaseMutex(mux)
 #endif
 
-
 // Cleaner and preferred solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
 //NOT SMP-COMPATIBLE! Use only if all you want is to disable the interrupts locally!
@@ -224,6 +223,9 @@ static inline unsigned portENTER_CRITICAL_NESTED() { unsigned state = XTOS_SET_I
 #define portSET_INTERRUPT_MASK_FROM_ISR()            portENTER_CRITICAL_NESTED()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(state)     portEXIT_CRITICAL_NESTED(state)
 
+
+#define portDisableINT()       portENTER_CRITICAL_NESTED()
+#define portEnableINT(state)   portEXIT_CRITICAL_NESTED((state))
 
 /*
  * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
