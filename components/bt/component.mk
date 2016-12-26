@@ -10,6 +10,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/hci/include			\
 				bluedroid/osi/include			\
 				bluedroid/utils/include			\
+				bluedroid/embdrv/sbc/decoder/include	\
 				bluedroid/btc/core/include		\
 				bluedroid/btc/profile/esp/blufi/include		\
 				bluedroid/btc/profile/esp/include		\
@@ -18,6 +19,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/btc/profile/std/sdp/include	\
 				bluedroid/btc/profile/std/include	\
 				bluedroid/btc/include		\
+				bluedroid/btif/include			\
 				bluedroid/stack/btm/include		\
 				bluedroid/stack/btu/include		\
 				bluedroid/stack/gap/include		\
@@ -32,7 +34,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/stack/a2dp/include		\
 				bluedroid/stack/include			\
 				bluedroid/utils/include			\
-				bluedroid/api/include		\
+				bluedroid/api/include			\
 				bluedroid/include			\
 				include	
 
@@ -59,6 +61,7 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/hci				\
 			bluedroid/main				\
 			bluedroid/osi				\
+			bluedroid/embdrv/sbc/decoder/srce			\
 			bluedroid/btc/core		\
 			bluedroid/btc/profile/esp/blufi	\
 			bluedroid/btc/profile/std/gap		\

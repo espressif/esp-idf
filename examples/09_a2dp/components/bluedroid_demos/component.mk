@@ -8,16 +8,12 @@
 #
 
 COMPONENT_ADD_INCLUDEDIRS :=	\
-				btif/include				\
-				embdrv/sbc/decoder/include		\
-				include					\
+				include
 
 COMPONENT_SRCDIRS :=	\
 			app_core				\
-			app_project				\
-			embdrv/sbc/decoder/srce			\
-			btif/co					\
-			btif
+			app_project
+
 
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses -I./include
 

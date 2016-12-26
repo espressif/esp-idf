@@ -18,8 +18,12 @@ void app_main()
 {
     nvs_flash_init();
     system_init();
+    #include "psramApi.h"
+    psram_cache_enable();    
+    
     printf("Free memory: %d bytes\n", system_get_free_heap_size());
     EspAudio_Init();
     bt_controller_init();
     bt_app_task_start_up();
+    // bte_main_boot_entry(bt_app_core_start);
 }
