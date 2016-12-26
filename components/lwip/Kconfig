@@ -49,6 +49,19 @@ config LWIP_DHCP_MAX_NTP_SERVERS
 		First argument of sntp_setserver/sntp_setservername functions
 		is limited to this value. 
 
+config LWIP_IP_FRAG
+    bool "Enable fragment outgoing IP packets"
+    default 0
+    help 
+        Enabling this option allows fragmenting outgoing IP packets if their size
+        exceeds MTU.
+
+config LWIP_IP_REASSEMBLY
+    bool "Enable reassembly incoming fragmented IP packets"
+    default 0
+    help 
+        Enabling this option allows reassemblying incoming fragmented IP packets.
+
 endmenu
 
 
