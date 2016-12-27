@@ -1041,7 +1041,7 @@ UBaseType_t x;
 
 static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode, const BaseType_t xCoreID )
 {
-        TCB_t *curTCB;
+	TCB_t *curTCB;
 	BaseType_t i;
 
     /* Ensure interrupts don't access the task lists while the lists are being
@@ -1119,6 +1119,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 	if( xSchedulerRunning != pdFALSE )
 	{
+	       taskENTER_CRITICAL(&xTaskQueueMutex);
 		/* Scheduler is running. If the created task is of a higher priority than an executing task
 	       then it should run now.
 		   ToDo: This only works for the current core. If a task is scheduled on an other processor,
@@ -1135,7 +1136,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			{
 				taskYIELD_IF_USING_PREEMPTION();
 			}
-			else if( xCoreID != xPortGetCoreID() ) {//TODO
+			else if( xCoreID != xPortGetCoreID() ) {
 				taskYIELD_OTHER_CORE(xCoreID, pxNewTCB->uxPriority);
 			}
 			else
@@ -1147,6 +1148,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		{
 			mtCOVERAGE_TEST_MARKER();
 		}
+	        taskEXIT_CRITICAL(&xTaskQueueMutex);
 	}
 	else
 	{
@@ -2061,9 +2063,9 @@ void vTaskSuspendAll( void )
 	http://goo.gl/wu4acr */
 	unsigned state;
 
-	state = portDisableINT();
+	state = portENTER_CRITICAL_NESTED();
 	++uxSchedulerSuspended[ xPortGetCoreID() ];
-	portEnableINT(state);
+	portEXIT_CRITICAL_NESTED(state);
 }
 /*----------------------------------------------------------*/
 
@@ -3818,9 +3820,9 @@ TCB_t *pxTCB;
 	TaskHandle_t xReturn;
 	unsigned state;
 
-		state = portDisableINT();
+		state = portENTER_CRITICAL_NESTED();
 		xReturn = pxCurrentTCB[ xPortGetCoreID() ];
-		portEnableINT(state);
+		portEXIT_CRITICAL_NESTED(state);
 
 		return xReturn;
 	}
@@ -3848,7 +3850,7 @@ TCB_t *pxTCB;
 	BaseType_t xReturn;
 	unsigned state;
 
-		state = portDisableINT();
+		state = portENTER_CRITICAL_NESTED();
 		if( xSchedulerRunning == pdFALSE )
 		{
 			xReturn = taskSCHEDULER_NOT_STARTED;
@@ -3864,7 +3866,7 @@ TCB_t *pxTCB;
 				xReturn = taskSCHEDULER_SUSPENDED;
 			}
 		}
-		portEnableINT(state);
+		portEXIT_CRITICAL_NESTED(state);
 
 		return xReturn;
 	}
@@ -4403,7 +4405,7 @@ TickType_t uxReturn;
 	TCB_t *curTCB;
 
 		/* If xSemaphoreCreateMutex() is called before any tasks have been created
-		then xTaskGetCurrentTaskHandle() will be NULL. */
+		then pxCurrentTCB will be NULL. */
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		if( pxCurrentTCB[ xPortGetCoreID() ] != NULL )
 		{

@@ -195,12 +195,6 @@ config FREERTOS_PORTMUX_DEBUG_RECURSIVE
         If enabled, additional debug information will be printed for recursive
         portMUX usage.
 
-config FREERTOS_INT_DISABLING_DURATION_DEBUG
-    bool "Debug interrupt disabling duration"
-    default n
-    help
-        If enabled, the longest interrupt disabling duration will be recorded.
-
 endif # FREERTOS_DEBUG_INTERNALS
 
 endmenu

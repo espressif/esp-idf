@@ -224,9 +224,6 @@ static inline unsigned portENTER_CRITICAL_NESTED() { unsigned state = XTOS_SET_I
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(state)     portEXIT_CRITICAL_NESTED(state)
 
 
-#define portDisableINT()       portENTER_CRITICAL_NESTED()
-#define portEnableINT(state)   portEXIT_CRITICAL_NESTED((state))
-
 /*
  * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
  * *mux to compare, and if it's the same, will set *mux to set. It will return the old value
