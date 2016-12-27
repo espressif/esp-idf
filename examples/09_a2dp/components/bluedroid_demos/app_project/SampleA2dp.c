@@ -51,7 +51,7 @@ static void bt_app_a2d_data_cb(uint8_t *data, uint32_t len)
 			    
 static void bt_app_handle_evt(UINT16 event, void *p_param)
 {
-    BT_APP_TRACE_EVENT("bt_app_handle_evt 0x%x\n", event);
+    BT_APP_TRACE_DEBUG("bt_app_handle_evt 0x%x\n", event);
     esp_a2d_cb_param_t *a2d = NULL;
     switch (event) {
     case BT_APP_EVT_STACK_ON: {
@@ -68,20 +68,20 @@ static void bt_app_handle_evt(UINT16 event, void *p_param)
     }
     case ESP_A2D_CONNECTION_STATE_EVT: {
         a2d = (esp_a2d_cb_param_t *)(p_param);
-        BT_APP_TRACE_ERROR("===a2dp conn_state_cb %d ===\n", a2d->conn_stat.state);
+        BT_APP_TRACE_EVENT("===a2dp conn_state_cb %d ===\n", a2d->conn_stat.state);
         break;
     }
     case ESP_A2D_AUDIO_STATE_EVT: {
         a2d = (esp_a2d_cb_param_t *)(p_param);
-        BT_APP_TRACE_ERROR("===a2dp audio_state_cb %d ===\n", a2d->audio_stat.state);
+        BT_APP_TRACE_EVENT("===a2dp audio_state_cb %d ===\n", a2d->audio_stat.state);
         break;
     }
     case ESP_A2D_AUDIO_CFG_EVT: {
         a2d = (esp_a2d_cb_param_t *)(p_param);
-        BT_APP_TRACE_ERROR("===a2dp audio_cfg_cb type %d ===\n", a2d->audio_cfg.mcc.type);
+        BT_APP_TRACE_EVENT("===a2dp audio_cfg_cb type %d ===\n", a2d->audio_cfg.mcc.type);
         if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
             // temporarily hardcoded the PCM configuaration
-            BT_APP_TRACE_ERROR("configure audio player\n");
+            BT_APP_TRACE_EVENT("configure audio player\n");
             // EspAudioPlayerStreamCfg(StreamSampleRate_44k, 2, StreamBitLen_16BIT);
             // EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
             // EspAudio_SetVolume(99);

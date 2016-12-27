@@ -61,7 +61,7 @@ static bool bt_app_post_msg(bt_app_msg_t *msg)
 
 static void bt_app_context_switched(bt_app_msg_t *msg)
 {
-    BT_APP_TRACE_DEBUG(" context switched\n");
+    BT_APP_TRACE_DEBUG("bt app context switched\n");
     if (msg->cb) {
         msg->cb(msg->event, msg->param);
     }

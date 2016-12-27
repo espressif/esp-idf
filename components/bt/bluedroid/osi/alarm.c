@@ -107,7 +107,7 @@ osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void
 int osi_alarm_free(osi_alarm_t *alarm)
 {
     if (!alarm) {
-        LOG_ERROR("%s null\n", __func__);
+        LOG_INFO("%s null\n", __func__);
         return -1;
     }
 

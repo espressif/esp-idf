@@ -700,14 +700,7 @@ static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context) {}
 static void btif_media_thread_init(UNUSED_ATTR void *context)
 {
     memset(&btif_media_cb, 0, sizeof(btif_media_cb));
-    LOG_ERROR("med thread init\n");
-#if (UIPC_INCLUDED == TRUE)
-    UIPC_Init(NULL);
-    
-#if (BTA_AV_INCLUDED == TRUE)
-    UIPC_Open(UIPC_CH_ID_AV_CTRL , btif_a2dp_ctrl_cb);
-#endif ( BTA_AV_INCLUDED == TRUE)
-#endif /* UIPC_INCLUDED == TRUE */
+    LOG_INFO("media thread init\n");
     btif_media_cb.av_sm_hdl = btif_av_get_sm_handle();
     raise_priority_a2dp(TASK_HIGH_MEDIA);
     media_task_running = MEDIA_TASK_STATE_ON;
