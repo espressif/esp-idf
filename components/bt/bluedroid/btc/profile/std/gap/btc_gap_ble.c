@@ -201,7 +201,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                 }
 
                 if (NULL != bta_adv_data->p_services->p_uuid) {
-                    LOG_ERROR("%s - In 16-UUID_data", __FUNCTION__);
+                    LOG_DEBUG("%s - In 16-UUID_data", __FUNCTION__);
                     mask |= BTM_BLE_AD_BIT_SERVICE;
                     ++bta_adv_data->p_services->num_service;
                     *p_uuid_out16++ = bt_uuid.uu.uuid16;
@@ -221,7 +221,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                 }
 
                 if (NULL != bta_adv_data->p_service_32b->p_uuid) {
-                    LOG_ERROR("%s - In 32-UUID_data", __FUNCTION__);
+                    LOG_DEBUG("%s - In 32-UUID_data", __FUNCTION__);
                     mask |= BTM_BLE_AD_BIT_SERVICE_32;
                     ++bta_adv_data->p_service_32b->num_service;
                     *p_uuid_out32++ = bt_uuid.uu.uuid32;

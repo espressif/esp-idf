@@ -147,16 +147,16 @@ static void reassemble_and_dispatch(BT_HDR *packet)
 
         if (boundary_flag == START_PACKET_BOUNDARY) {
             if (partial_packet) {
-                LOG_ERROR("%s found unfinished packet for handle with start packet. Dropping old.\n", __func__);
-                LOG_ERROR("partial_packet->len = %x, offset = %x\n", partial_packet->len, partial_packet->len);
+                LOG_DEBUG("%s found unfinished packet for handle with start packet. Dropping old.\n", __func__);
+                LOG_DEBUG("partial_packet->len = %x, offset = %x\n", partial_packet->len, partial_packet->len);
 
-                for (int i = 0; i < partial_packet->len; i++) {
-                    LOG_ERROR("%x", partial_packet->data[i]);
-                }
-                LOG_ERROR("\n");
+                //for (int i = 0; i < partial_packet->len; i++) {
+                //    LOG_ERROR("%x", partial_packet->data[i]);
+                //}
+                //LOG_ERROR("\n");
                 hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
                 //buffer_allocator->free(partial_packet);
-                LOG_ERROR("+++++++++++++++++++\n");
+                //LOG_ERROR("+++++++++++++++++++\n");
             }
 
             uint16_t full_length = l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;
@@ -214,7 +214,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 STREAM_TO_UINT16(handle, stream);
                 STREAM_TO_UINT16(acl_length, stream);
                 STREAM_TO_UINT16(l2cap_length, stream);
-                LOG_ERROR("partial_packet->offset = %x\n", partial_packet->offset);
+                LOG_DEBUG("partial_packet->offset = %x\n", partial_packet->offset);
                 hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
                 partial_packet->offset = 0;
 
