@@ -54,7 +54,7 @@ config FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
 
 choice FREERTOS_CHECK_STACKOVERFLOW
     prompt "Check for stack overflow"
-    default FREERTOS_CHECK_STACKOVERFLOW_QUICK
+    default FREERTOS_CHECK_STACKOVERFLOW_CANARY
     help
         FreeRTOS can check for stack overflows in threads and trigger an user function
         called vApplicationStackOverflowHook when this happens.

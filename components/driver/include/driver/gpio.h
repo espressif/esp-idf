@@ -269,7 +269,7 @@ esp_err_t gpio_intr_disable(gpio_num_t gpio_num);
  *
  * @return
  *     - ESP_OK Success
- *     - GPIO_IS_VALID_GPIO GPIO number error
+ *     - ESP_ERR_INVALID_ARG GPIO number error
  *
  */
 esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level);

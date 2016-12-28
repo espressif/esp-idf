@@ -524,7 +524,9 @@ esp_err_t rmt_set_err_intr_en(rmt_channel_t channel, bool en);
 esp_err_t rmt_set_tx_intr_en(rmt_channel_t channel, bool en);
 
 /**
- * @brief Set RMT TX event interrupt enable
+ * @brief Set RMT TX threshold event interrupt enable
+ *
+ * Causes an interrupt when a threshold number of items have been transmitted.
  *
  * @param channel RMT channel (0 - 7)
  *
@@ -536,7 +538,7 @@ esp_err_t rmt_set_tx_intr_en(rmt_channel_t channel, bool en);
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  */
-esp_err_t rmt_set_evt_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh);
+esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh);
 
 /**
  * @brief Set RMT pins
