@@ -464,7 +464,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
     }
     UART[uart_num]->int_ena.val = intr_conf->intr_enable_mask;
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
-    return ESP_FAIL;
+    return ESP_OK;
 }
 
 //internal isr handler for default driver code.
