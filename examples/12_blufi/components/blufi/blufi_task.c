@@ -69,7 +69,7 @@ static esp_err_t blufi_task_post(uint32_t sig, void *par, void *cb, void *arg)
     evt.cb = cb;
     evt.arg = arg;
 
-    if (xQueueSend(xBlufiTaskQueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
+    if (xQueueSend(xBlufiTaskQueue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
         LOG_ERROR("Blufi Post failed\n");
         return ESP_FAIL;
     }

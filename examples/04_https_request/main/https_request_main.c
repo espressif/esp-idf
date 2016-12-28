@@ -362,7 +362,7 @@ static void https_get_task(void *pvParameters)
 
         for(int countdown = 10; countdown >= 0; countdown--) {
             ESP_LOGI(TAG, "%d...", countdown);
-            vTaskDelay(1000 / portTICK_RATE_MS);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
         ESP_LOGI(TAG, "Starting again!");
     }

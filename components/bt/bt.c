@@ -85,7 +85,7 @@ static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
 
 static int32_t IRAM_ATTR semphr_take_wrapper(void *semphr, uint32_t block_time_ms)
 {
-    return (int32_t)xSemaphoreTake(semphr, block_time_ms / portTICK_RATE_MS);
+    return (int32_t)xSemaphoreTake(semphr, block_time_ms / portTICK_PERIOD_MS);
 }
 
 static void *IRAM_ATTR mutex_create_wrapper(void)

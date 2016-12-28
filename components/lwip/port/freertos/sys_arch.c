@@ -164,9 +164,9 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
   StartTime = xTaskGetTickCount();
 
   if (timeout != 0) {
-    if (xSemaphoreTake(*sem, timeout / portTICK_RATE_MS) == pdTRUE) {
+    if (xSemaphoreTake(*sem, timeout / portTICK_PERIOD_MS) == pdTRUE) {
       EndTime = xTaskGetTickCount();
-      Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
+      Elapsed = (EndTime - StartTime) * portTICK_PERIOD_MS;
 
       if (Elapsed == 0) {
         Elapsed = 1;
@@ -180,7 +180,7 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
     while (xSemaphoreTake(*sem, portMAX_DELAY) != pdTRUE);
 
     EndTime = xTaskGetTickCount();
-    Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
+    Elapsed = (EndTime - StartTime) * portTICK_PERIOD_MS;
 
     if (Elapsed == 0) {
       Elapsed = 1;
@@ -293,9 +293,9 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
   sys_mutex_lock(&(*mbox)->lock);
 
   if (timeout != 0) {
-    if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), timeout / portTICK_RATE_MS)) {
+    if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), timeout / portTICK_PERIOD_MS)) {
       EndTime = xTaskGetTickCount();
-      Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
+      Elapsed = (EndTime - StartTime) * portTICK_PERIOD_MS;
 
       if (Elapsed == 0) {
         Elapsed = 1;
@@ -323,7 +323,7 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
     }
 
     EndTime = xTaskGetTickCount();
-    Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
+    Elapsed = (EndTime - StartTime) * portTICK_PERIOD_MS;
 
     if (Elapsed == 0) {
       Elapsed = 1;
@@ -566,7 +566,7 @@ void sys_thread_sem_deinit(void)
 
 void sys_delay_ms(uint32_t ms)
 {
-  vTaskDelay(ms/portTICK_RATE_MS);
+  vTaskDelay(ms / portTICK_PERIOD_MS);
 }
 
 

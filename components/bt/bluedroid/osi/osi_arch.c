@@ -137,9 +137,9 @@ osi_sem_wait(osi_sem_t *sem, uint32_t timeout)
     StartTime = xTaskGetTickCount();
 
     if (timeout != 0) {
-        if (xSemaphoreTake(*sem, timeout / portTICK_RATE_MS) == pdTRUE) {
+        if (xSemaphoreTake(*sem, timeout / portTICK_PERIOD_MS) == pdTRUE) {
             EndTime = xTaskGetTickCount();
-            Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
+            Elapsed = (EndTime - StartTime) * portTICK_PERIOD_MS;
 
             if (Elapsed == 0) {
                 Elapsed = 1;
@@ -153,7 +153,7 @@ osi_sem_wait(osi_sem_t *sem, uint32_t timeout)
         while (xSemaphoreTake(*sem, portMAX_DELAY) != pdTRUE);
 
         EndTime = xTaskGetTickCount();
-        Elapsed = (EndTime - StartTime) * portTICK_RATE_MS;
+        Elapsed = (EndTime - StartTime) * portTICK_PERIOD_MS;
 
         if (Elapsed == 0) {
             Elapsed = 1;
@@ -190,7 +190,7 @@ osi_now(void)
 
 void osi_delay_ms(uint32_t ms)
 {
-    vTaskDelay(ms / portTICK_RATE_MS);
+    vTaskDelay(ms / portTICK_PERIOD_MS);
 }
 
 
