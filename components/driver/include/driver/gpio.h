@@ -428,7 +428,7 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
  **/
 
 /**
- *----------EXAMPLE TO CONFIGURE GPIO AS OUTPUT ------------ *
+ *----------EXAMPLE TO CONFIGURE GPIO AS INPUT ------------ *
  * @code{c}
  *     io_conf.intr_type = GPIO_INTR_POSEDGE;             //set posedge interrupt
  *     io_conf.mode = GPIO_MODE_INPUT;                        //set as input
