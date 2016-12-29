@@ -54,9 +54,6 @@ static size_t s_vfs_count = 0;
 
 esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx)
 {
-    if (s_vfs_count >= VFS_MAX_COUNT) {
-        return ESP_ERR_NO_MEM;
-    }
     size_t len = strlen(base_path);
     if (len < 2 || len > ESP_VFS_PATH_MAX) {
         return ESP_ERR_INVALID_ARG;
@@ -68,14 +65,39 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
     if (entry == NULL) {
         return ESP_ERR_NO_MEM;
     }
+    size_t index;
+    for (index = 0; index < s_vfs_count; ++index) {
+        if (s_vfs[index] == NULL) {
+            break;
+        }
+    }
+    if (index == s_vfs_count) {
+        if (s_vfs_count >= VFS_MAX_COUNT) {
+            free(entry);
+            return ESP_ERR_NO_MEM;
+        }
+        ++s_vfs_count;
+    }
+    s_vfs[index] = entry;
     strcpy(entry->path_prefix, base_path); // we have already verified argument length
     memcpy(&entry->vfs, vfs, sizeof(esp_vfs_t));
     entry->path_prefix_len = len;
     entry->ctx = ctx;
-    entry->offset = s_vfs_count;
-    s_vfs[s_vfs_count] = entry;
-    ++s_vfs_count;
+    entry->offset = index;
     return ESP_OK;
+}
+
+esp_err_t esp_vfs_unregister(const char* base_path)
+{
+    for (size_t i = 0; i < s_vfs_count; ++i) {
+        vfs_entry_t* vfs = s_vfs[i];
+        if (memcmp(base_path, vfs->path_prefix, vfs->path_prefix_len) == 0) {
+            free(vfs);
+            s_vfs[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
 }
 
 static const vfs_entry_t* get_vfs_for_fd(int fd)

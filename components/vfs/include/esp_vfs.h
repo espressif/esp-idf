@@ -132,6 +132,15 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
 
 
 /**
+ * Unregister a virtual filesystem for given path prefix
+ *
+ * @param base_path  file prefix previously used in esp_vfs_register call
+ * @return ESP_OK if successful, ESP_ERR_INVALID_STATE if VFS for given prefix
+ *         hasn't been registered
+ */
+esp_err_t esp_vfs_unregister(const char* base_path);
+
+/**
  * These functions are to be used in newlib syscall table. They will be called by
  * newlib when it needs to use any of the syscalls.
  */
