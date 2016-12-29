@@ -10,7 +10,8 @@ extern "C" {
 #endif
 
 #include "integer.h"
-
+#include "sdmmc_cmd.h"
+#include "driver/sdmmc_host.h"
 
 /* Status of Disk Functions */
 typedef BYTE	DSTATUS;
@@ -29,12 +30,31 @@ typedef enum {
 /* Prototypes for disk control functions */
 
 
+/* Redefine names of disk IO functions to prevent name collisions */
+#define disk_initialize     ff_disk_initialize
+#define disk_status         ff_disk_status
+#define disk_read           ff_disk_read
+#define disk_write          ff_disk_write
+#define disk_ioctl          ff_disk_ioctl
+
+
 DSTATUS disk_initialize (BYTE pdrv);
 DSTATUS disk_status (BYTE pdrv);
 DRESULT disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
 DRESULT disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
 DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
 
+typedef struct {
+    DSTATUS (*init) (BYTE pdrv);
+    DSTATUS (*status) (BYTE pdrv);
+    DRESULT (*read) (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
+    DRESULT (*write) (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
+    DRESULT (*ioctl) (BYTE pdrv, BYTE cmd, void* buff);
+} ff_diskio_impl_t;
+
+void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl);
+
+void ff_diskio_register_sdmmc(BYTE pdrv, sdmmc_card_t* card);
 
 /* Disk Status Bits (DSTATUS) */
 

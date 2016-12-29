@@ -9,7 +9,7 @@
 
 #if _FS_REENTRANT
 /*------------------------------------------------------------------------*/
-/* Create a Synchronization Object
+/* Create a Synchronization Object                                        */
 /*------------------------------------------------------------------------*/
 /* This function is called in f_mount() function to create a new
 /  synchronization object, such as semaphore and mutex. When a 0 is returned,
