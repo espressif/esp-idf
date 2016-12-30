@@ -57,6 +57,16 @@ After the initial flash, you may just want to build and flash just your app, not
 
 (There's no downside to reflashing the bootloader and partition table each time, if they haven't changed.)
 
+# Parallel Builds
+
+esp-idf supports compiling multiple files in parallel, so all of the above commands can be run as `make -jN` where `N` is the number of parallel make processes to run (generally N should be equal to or one more than the number of CPU cores in your system.)
+
+Multiple make functions can be combined into one. For example: to build the app & bootloader using 5 jobs in parallel, then flash everything, and then display serial output from the ESP32 run:
+
+```
+make -j5 flash monitor
+```
+
 # The Partition Table
 
 Once you've compiled your project, the "build" directory will contain a binary file with a name like "my_app.bin". This is an ESP32 image binary that can be loaded by the bootloader.
