@@ -109,6 +109,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
 
     if (p_adv_data->flag != 0) {
         mask = BTM_BLE_AD_BIT_FLAGS;
+        bta_adv_data->flag = p_adv_data->flag;
     }
 
     if (p_adv_data->include_name) {
