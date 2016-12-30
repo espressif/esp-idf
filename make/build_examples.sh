@@ -30,10 +30,11 @@ for example in ${IDF_PATH}/examples/*; do
    # build non-verbose first
    BUILDLOG=$(mktemp -t examplebuild.XXXX.log)
    (
+       set -o pipefail  # so result of make all isn't lost when piping to tee
        set -e
        make clean defconfig
-       make all 2>&1 | tee $BUILDLOG
-    ) || (RESULT=$?; make V=1) # only build verbose if there's an error
+       make $* all 2>&1 | tee $BUILDLOG
+    ) || { RESULT=$?; make V=1; } # only build verbose if there's an error
     popd
     EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
 
