@@ -46,15 +46,15 @@ const int CONNECTED_BIT = BIT0;
 static wifi_config_t sta_config;
 
 static char tmp_ssid[33];
-static char tmp_passwd[33];
+static char tmp_passwd[65];
 static bool confirm = false;
 
 void wifi_set_blue_config(char *ssid, char *passwd)
 {
-    memset(tmp_ssid, 0, 33);
-    memset(tmp_passwd, 0, 33);
-    strcpy(tmp_ssid, ssid);
-    strcpy(tmp_passwd, passwd);
+    memset(tmp_ssid, 0, sizeof(tmp_ssid));
+    memset(tmp_passwd, 0, sizeof(tmp_passwd));
+    strlcpy(tmp_ssid, ssid, sizeof(tmp_ssid));
+    strlcpy(tmp_passwd, passwd, sizeof(tmp_passwd));
     confirm = true;
     LOG_DEBUG("confirm true\n");
 }
@@ -105,8 +105,8 @@ void wifiTestTask(void *pvParameters)
         if (confirm) {
             confirm = false;
 
-            strcpy(sta_config.sta.ssid, tmp_ssid);
-            strcpy(sta_config.sta.password, tmp_passwd);
+            memcpy(sta_config.sta.ssid, tmp_ssid, sizeof(sta_config.sta.ssid));
+            memcpy(sta_config.sta.password, tmp_passwd, sizeof(sta_config.sta.password));
             sta_config.sta.bssid_set = 0;
 
             ret = esp_wifi_disconnect();
