@@ -40,6 +40,7 @@
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
+#include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
 
 #include "bootloader_config.h"
@@ -116,16 +117,14 @@ bool load_partition_table(bootloader_state_t* bs)
 {
     const esp_partition_info_t *partitions;
     const int ESP_PARTITION_TABLE_DATA_LEN = 0xC00; /* length of actual data (signature is appended to this) */
-    const int MAX_PARTITIONS = ESP_PARTITION_TABLE_DATA_LEN / sizeof(esp_partition_info_t);
     char *partition_usage;
-
-    ESP_LOGI(TAG, "Partition Table:");
-    ESP_LOGI(TAG, "## Label            Usage          Type ST Offset   Length");
+    esp_err_t err;
+    int num_partitions;
 
 #ifdef CONFIG_SECURE_BOOT_ENABLED
     if(esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "Verifying partition table signature...");
-        esp_err_t err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
+        err = esp_secure_boot_verify_signature(ESP_PARTITION_TABLE_ADDR, ESP_PARTITION_TABLE_DATA_LEN);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to verify partition table signature.");
             return false;
@@ -141,16 +140,20 @@ bool load_partition_table(bootloader_state_t* bs)
     }
     ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_ADDR, (intptr_t)partitions);
 
-    for(int i = 0; i < MAX_PARTITIONS; i++) {
+    err = esp_partition_table_basic_verify(partitions, true, &num_partitions);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to verify partition table");
+        return false;
+    }
+
+    ESP_LOGI(TAG, "Partition Table:");
+    ESP_LOGI(TAG, "## Label            Usage          Type ST Offset   Length");
+
+    for(int i = 0; i < num_partitions; i++) {
         const esp_partition_info_t *partition = &partitions[i];
         ESP_LOGD(TAG, "load partition table entry 0x%x", (intptr_t)partition);
         ESP_LOGD(TAG, "type=%x subtype=%x", partition->type, partition->subtype);
         partition_usage = "unknown";
-
-        if (partition->magic != ESP_PARTITION_MAGIC) {
-            /* invalid partition definition indicates end-of-table */
-            break;
-        }
 
         /* valid partition table */
         switch(partition->type) {
