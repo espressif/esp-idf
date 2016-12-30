@@ -67,4 +67,12 @@ erase_flash:
 	@echo "Erasing entire flash..."
 	$(ESPTOOLPY_SERIAL) erase_flash
 
+MONITORBAUD ?= $(CONFIG_MONITOR_BAUD)
+
+# note: if you want to run miniterm from command line, can simply run
+# miniterm.py on the console. The '$(PYTHON) -m serial.tools.miniterm'
+# is to allow for the $(PYTHON) variable overriding the python path.
+monitor: $(call prereq_if_explicit,%flash)
+	$(PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw $(ESPPORT) $(MONITORBAUD)
+
 .PHONY: erase_flash

@@ -36,6 +36,16 @@ This will flash the entire project (app, bootloader and partition table) to a ne
 
 You don't need to run `make all` before running `make flash`, `make flash` will automatically rebuild anything which needs it.
 
+# Viewing Serial Output
+
+The `make monitor` target will use the already-installed [miniterm](http://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm) (a part of pyserial) to display serial output from the ESP32 on the terminal console.
+
+Exit miniterm by typing Ctrl-].
+
+To flash and monitor output in one pass, you can run:
+
+`make flash monitor`
+
 # Compiling & Flashing Just the App
 
 After the initial flash, you may just want to build and flash just your app, not the bootloader and partition table:
