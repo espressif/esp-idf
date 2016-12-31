@@ -15,7 +15,7 @@
 /*
  * Log library — implementation notes.
  *
- * Log library stores all tags provided to esp_log_set_level as a linked
+ * Log library stores all tags provided to esp_log_level_set as a linked
  * list. See uncached_tag_entry_t structure.
  *
  * To avoid looking up log level for given tag each time message is
