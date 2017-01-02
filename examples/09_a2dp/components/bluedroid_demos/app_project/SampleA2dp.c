@@ -13,7 +13,7 @@
 #include "bt_app_common.h"
 #include "esp_bt_stack_manager.h"
 #include "esp_gap_bt_api.h"
-#include "bta_api.h"
+// #include "bta_api.h"
 #include "esp_a2dp_api.h"
 
 typedef enum {
@@ -25,7 +25,7 @@ typedef union {
     esp_a2d_cb_param_t a2d;
 } bt_app_evt_arg;
 
-static void bt_app_handle_evt(UINT16 event, void *p_param);
+static void bt_app_handle_evt(uint16_t event, void *p_param);
 
 static void bt_app_a2d_cb(uint32_t event, void *param)
 {
@@ -43,20 +43,18 @@ static void bt_app_a2d_cb(uint32_t event, void *param)
     }
 }
 
-static void bt_app_a2d_data_cb(uint8_t *data, uint32_t len)
+static void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
-    // EspAudioPlayerStreamWrite(data, len, 10);
-    return;
+    // EspAudioPlayerStreamWrite((uint8_t *)data, len, 10);
 }
 			    
-static void bt_app_handle_evt(UINT16 event, void *p_param)
+static void bt_app_handle_evt(uint16_t event, void *p_param)
 {
     BT_APP_TRACE_DEBUG("bt_app_handle_evt 0x%x\n", event);
     esp_a2d_cb_param_t *a2d = NULL;
     switch (event) {
     case BT_APP_EVT_STACK_ON: {
         char *dev_name = "ESP_SPEAKER";
-        // BTM_SetTraceLevel(BT_TRACE_LEVEL_WARNING);
 	esp_bt_gap_set_device_name(dev_name);
 
         esp_a2d_register_callback(bt_app_a2d_cb);
@@ -97,7 +95,7 @@ static void bt_app_handle_evt(UINT16 event, void *p_param)
 
 void app_main_entry(void)
 {
-    bt_status_t init, enable;
+    esp_err_t init, enable;
     init = esp_bt_init_stack();
     if (init != ESP_OK) {
         return;
