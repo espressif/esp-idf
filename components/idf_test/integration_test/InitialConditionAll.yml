@@ -260,6 +260,8 @@ initial condition:
     - ['R SSC1 C +MAC:AP,OK']
   - - SSC SSC1 dhcp -S -o 2
     - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP']
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
     - ['R SSC1 C +SAP:OK']
   initial condition detail: testing ap on sta + ap mode (autogen by APM1)
@@ -271,6 +273,8 @@ initial condition:
     - ['R SSC1 C +MAC:AP,OK']
   - - SSC SSC1 dhcp -S -o 2
     - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP']
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
     - ['R SSC1 C +SAP:OK']
   restore post cmd set:
@@ -305,6 +309,8 @@ initial condition:
     - ['R SSC1 C +MAC:AP,OK']
   - - SSC SSC1 dhcp -S -o 2
     - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP']
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
     - ['R SSC1 C +SAP:OK']
   - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
@@ -319,6 +325,8 @@ initial condition:
     - ['R SSC1 C +MAC:AP,OK']
   - - SSC SSC1 dhcp -S -o 2
     - [R SSC1 C +DHCP]
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP']
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
     - ['R SSC1 C +SAP:OK']
   - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
@@ -2854,6 +2862,8 @@ initial condition:
     - ['R SSC1 C +MODE:OK']
   - - SSC SSC2 op -S -o 3
     - ['R SSC2 C +MODE:OK']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP']
   - - SSC SSC2 sta -D
     - ['R SSC2 C +QAP:']
   - - SSC SSC2 soc -T
@@ -2873,6 +2883,8 @@ initial condition:
     - ['R SSC1 C +MODE:OK']
   - - SSC SSC2 op -S -o 3
     - ['R SSC2 C +MODE:OK']
+  - - SSC SSC1 sta -D
+    - ['R SSC1 C +QAP']
   - - SSC SSC2 sta -D
     - ['R SSC2 C +QAP:']
   - - SSC SSC2 soc -T
