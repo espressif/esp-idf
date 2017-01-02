@@ -21,6 +21,8 @@
 #include <sys/types.h>
 #include <sys/reent.h>
 #include <sys/stat.h>
+#include <dirent.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -105,6 +107,38 @@ typedef struct
     union {
         int (*rename_p)(void* ctx, const char *src, const char *dst);
         int (*rename)(const char *src, const char *dst);
+    };
+    union {
+        DIR* (*opendir_p)(void* ctx, const char* name);
+        DIR* (*opendir)(const char* name);
+    };
+    union {
+        struct dirent* (*readdir_p)(void* ctx, DIR* pdir);
+        struct dirent* (*readdir)(DIR* pdir);
+    };
+    union {
+        int (*readdir_r_p)(void* ctx, DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
+        int (*readdir_r)(DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
+    };
+    union {
+        long (*telldir_p)(void* ctx, DIR* pdir);
+        long (*telldir)(DIR* pdir);
+    };
+    union {
+        void (*seekdir_p)(void* ctx, DIR* pdir, long offset);
+        void (*seekdir)(DIR* pdir, long offset);
+    };
+    union {
+        int (*closedir_p)(void* ctx, DIR* pdir);
+        int (*closedir)(DIR* pdir);
+    };
+    union {
+        int (*mkdir_p)(void* ctx, const char* name, mode_t mode);
+        int (*mkdir)(const char* name, mode_t mode);
+    };
+    union {
+        int (*rmdir_p)(void* ctx, const char* name);
+        int (*rmdir)(const char* name);
     };
 } esp_vfs_t;
 
