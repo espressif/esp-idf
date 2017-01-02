@@ -44,7 +44,7 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
     return ESP_OK;
 }
 
-static esp_err_t ledc_duty_config(ledc_mode_t speed_mode, uint32_t channel_num, uint32_t hpoint_val, uint32_t duty_val,
+static esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t hpoint_val, uint32_t duty_val,
     uint32_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
 {
     portENTER_CRITICAL(&ledc_spinlock);
@@ -58,7 +58,7 @@ static esp_err_t ledc_duty_config(ledc_mode_t speed_mode, uint32_t channel_num, 
     return ESP_OK;
 }
 
-esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint32_t timer_idx)
+esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t timer_idx)
 {
     LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "ledc mode error", ESP_ERR_INVALID_ARG);
     LEDC_CHECK(timer_idx <= LEDC_TIMER_3, "ledc timer error", ESP_ERR_INVALID_ARG);
@@ -239,7 +239,7 @@ esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idl
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
 }
-esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty, ledc_duty_direction_t fade_direction,
+esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty, ledc_duty_direction_t fade_direction,
     uint32_t step_num, uint32_t duty_cyle_num, uint32_t duty_scale)
 {
     LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "ledc mode error", ESP_ERR_INVALID_ARG);

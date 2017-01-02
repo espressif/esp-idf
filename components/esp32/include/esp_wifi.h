@@ -107,17 +107,15 @@ typedef struct {
   *         WiFi NVS structure etc, this WiFi also start WiFi task
   *
   * @attention 1. This API must be called before all other WiFi API can be called
-  * @attention 2. Generally we should init event_q in *config, WiFi driver will post the event
-  *               to this queue when event happens, such as, when station connects to WiFi, WiFi driver
-  *               will post station connected event to this queue. If the queue is not initialized, WiFi
-  *               will not post any events
+  * @attention 2. event_handler field in cfg should be set to a valid event handler function.
+  *            In most cases, use the WIFI_INIT_CONFIG_DEFAULT macro which sets esp_event_send().
   *
   * @param  config provide WiFi init configuration
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NO_MEM: out of memory
-  *    - others: refer to error code esp_err.h 
+  *    - others: refer to error code esp_err.h
   */
 esp_err_t esp_wifi_init(wifi_init_config_t *config);
 

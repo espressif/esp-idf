@@ -32,30 +32,64 @@
 #include "tcpip_adapter.h"
 #include "nvs_flash.h"
 #include "driver/gpio.h"
+#include "tlk110_phy.h"
 
 static const char *TAG = "eth_demo";
 
+#define DEFAULT_PHY_CONFIG (AUTO_MDIX_ENABLE|AUTO_NEGOTIATION_ENABLE|AN_1|AN_0|LED_CFG)
+
+void phy_tlk110_check_phy_init(void)
+{
+    while((esp_eth_smi_read(BASIC_MODE_STATUS_REG) & AUTO_NEGOTIATION_COMPLETE ) != AUTO_NEGOTIATION_COMPLETE)
+    {};
+    while((esp_eth_smi_read(PHY_STATUS_REG) & AUTO_NEGTIATION_STATUS ) != AUTO_NEGTIATION_STATUS)
+    {};
+    while((esp_eth_smi_read(CABLE_DIAGNOSTIC_CONTROL_REG) & DIAGNOSTIC_DONE ) != DIAGNOSTIC_DONE)
+    {};
+}
+
+eth_speed_mode_t phy_tlk110_get_speed_mode(void)
+{
+    if((esp_eth_smi_read(PHY_STATUS_REG) & SPEED_STATUS ) != SPEED_STATUS) {
+        return ETH_SPEED_MODE_100M;
+    } else {
+        return ETH_SPEED_MODE_10M;
+    }   
+}
+
+eth_duplex_mode_t phy_tlk110_get_duplex_mode(void)
+{
+    if((esp_eth_smi_read(PHY_STATUS_REG) & DUPLEX_STATUS ) == DUPLEX_STATUS) {
+        return ETH_MDOE_FULLDUPLEX;
+    } else {
+        return ETH_MODE_HALFDUPLEX;
+    }   
+}
+
+bool phy_tlk110_check_phy_link_status(void)
+{
+    return ((esp_eth_smi_read(BASIC_MODE_STATUS_REG) & LINK_STATUS) == LINK_STATUS );
+}
+
 void phy_tlk110_init(void)
 {
-    esp_eth_smi_write(0x1f, 0x8000);
-    ets_delay_us(20000);
+    esp_eth_smi_write(PHY_RESET_CONTROL_REG, SOFTWARE_RESET);
 
-    while (esp_eth_smi_read(0x2) != 0x2000) {
+    while (esp_eth_smi_read(PHY_IDENTIFIER_REG) != OUI_MSB_21TO6_DEF) {
     }
 
-    esp_eth_smi_write(0x9, 0x7400);
-    esp_eth_smi_write(0x9, 0xf400);
-    ets_delay_us(20000);
+    esp_eth_smi_write(SOFTWARE_STAP_CONTROL_REG, DEFAULT_PHY_CONFIG |SW_STRAP_CONFIG_DONE);
+    ets_delay_us(300);
 }
 
 void eth_gpio_config_rmii(void)
 {
     //txd0 to gpio19 ,can not change
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO19_U, 5);
-    //rx_en to gpio21 ,can not change
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO21_U, 5);
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO19_U, FUNC_GPIO19_EMAC_TXD0);
+    //tx_en to gpio21 ,can not change
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO21_U, FUNC_GPIO21_EMAC_TX_EN);
     //txd1 to gpio22 , can not change
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO22_U, 5);
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO22_U, FUNC_GPIO22_EMAC_TXD1);
     //rxd0 to gpio25 , can not change
     gpio_set_direction(25, GPIO_MODE_INPUT);
     //rxd1 to gpio26 ,can not change
@@ -74,11 +108,11 @@ void eth_task(void *pvParameter)
 {
     tcpip_adapter_ip_info_t ip;
     memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
-    vTaskDelay(2000 / portTICK_RATE_MS);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
 
     while (1) {
 
-        vTaskDelay(2000 / portTICK_RATE_MS);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
 
         if (tcpip_adapter_get_ip_info(ESP_IF_ETH, &ip) == 0) {
             ESP_LOGI(TAG, "\n~~~~~~~~~~~\n");
@@ -102,8 +136,13 @@ void app_main()
     config.phy_init = phy_tlk110_init;
     config.gpio_config = eth_gpio_config_rmii;
     config.tcpip_input = tcpip_adapter_eth_input;
+    config.phy_check_init = phy_tlk110_check_phy_init;
+    config.phy_check_link = phy_tlk110_check_phy_link_status;
+    config.phy_get_speed_mode = phy_tlk110_get_speed_mode;
+    config.phy_get_duplex_mode = phy_tlk110_get_duplex_mode;
 
     ret = esp_eth_init(&config);
+
     if(ret == ESP_OK) {
         esp_eth_enable();
         xTaskCreate(eth_task, "eth_task", 2048, NULL, (tskIDLE_PRIORITY + 2), NULL);

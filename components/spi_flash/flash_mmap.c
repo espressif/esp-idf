@@ -77,7 +77,7 @@ static void IRAM_ATTR spi_flash_mmap_init()
     }
 }
 
-esp_err_t IRAM_ATTR spi_flash_mmap(uint32_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
+esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
     esp_err_t ret;

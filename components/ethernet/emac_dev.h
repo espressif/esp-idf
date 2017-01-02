@@ -49,13 +49,51 @@ uint32_t emac_read_mac_version(void);
 void emac_dma_init(void);
 void emac_mac_init(void);
 void emac_enable_dma_tx(void);
-void emac_poll_tx_cmd(void);
-uint32_t emac_read_tx_cur_reg(void);
 void emac_enable_dma_rx(void);
-uint32_t emac_read_rx_cur_reg(void);
-void emac_poll_rx_cmd(void);
 void emac_disable_dma_tx(void);
 void emac_disable_dma_rx(void);
+
+uint32_t inline emac_read_tx_cur_reg(void)
+{
+    return REG_READ(EMAC_DMATXCURRDESC_REG);
+}
+
+uint32_t inline emac_read_rx_cur_reg(void)
+{
+    return REG_READ(EMAC_DMARXCURRDESC_REG);
+}
+
+void inline emac_poll_tx_cmd(void)
+{
+    //write any to wake up dma
+    REG_WRITE(EMAC_DMATXPOLLDEMAND_REG, 1);
+}
+
+void inline emac_poll_rx_cmd(void)
+{
+    //write any to wake up dma
+    REG_WRITE(EMAC_DMARXPOLLDEMAND_REG, 1);
+}
+
+void inline emac_disable_rx_intr(void)
+{
+    REG_CLR_BIT(EMAC_DMAINTERRUPT_EN_REG,EMAC_RECEIVE_INTERRUPT_ENABLE);
+}
+
+void inline emac_enable_rx_intr(void)
+{
+    REG_SET_BIT(EMAC_DMAINTERRUPT_EN_REG,EMAC_RECEIVE_INTERRUPT_ENABLE);
+}
+
+void inline emac_disable_rx_unavail_intr(void)
+{
+    REG_CLR_BIT(EMAC_DMAINTERRUPT_EN_REG,EMAC_RECEIVE_BUFFER_UNAVAILABLE_ENABLE);
+}
+
+void inline emac_enable_rx_unavail_intr(void)
+{
+    REG_SET_BIT(EMAC_DMAINTERRUPT_EN_REG,EMAC_RECEIVE_BUFFER_UNAVAILABLE_ENABLE);  
+}
 
 #ifdef __cplusplus
 }

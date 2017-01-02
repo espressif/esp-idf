@@ -352,7 +352,7 @@ void rmt_nec_tx_task()
         rmt_wait_tx_done(channel);
         //before we free the data, make sure sending is already done.
         free(item);
-        vTaskDelay(2000 / portTICK_RATE_MS);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
 }

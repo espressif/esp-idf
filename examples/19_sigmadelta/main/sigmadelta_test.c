@@ -46,7 +46,7 @@ void app_main()
     while(1) {
         sigmadelta_set_duty(SIGMADELTA_CHANNEL_0, duty);
         /*by changing delay time, you can change the blink frequency of LED. */
-        vTaskDelay(10 / portTICK_RATE_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
 
         duty += inc;
         if(duty == 127 || duty == -127) inc = (-1) * inc;

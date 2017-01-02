@@ -22,14 +22,20 @@
 extern "C" {
 #endif
 
-typedef void (*eth_phy_fun)(void);
-typedef esp_err_t (*eth_tcpip_input_fun)(void *buffer, uint16_t len, void *eb);
-typedef void (*eth_gpio_config_func)(void);
-
 typedef enum {
     ETH_MODE_RMII = 0,
     ETH_MDOE_MII,
 } eth_mode_t;
+
+typedef enum {
+    ETH_SPEED_MODE_10M = 0,
+    ETH_SPEED_MODE_100M,
+} eth_speed_mode_t;
+
+typedef enum {
+    ETH_MODE_HALFDUPLEX = 0,
+    ETH_MDOE_FULLDUPLEX,
+} eth_duplex_mode_t;
 
 typedef enum {
     PHY0 = 0,
@@ -66,6 +72,15 @@ typedef enum {
     PHY31,
 } eth_phy_base_t;
 
+typedef bool (*eth_phy_check_link_func)(void);
+typedef void (*eth_phy_check_init_func)(void);
+typedef eth_speed_mode_t (*eth_phy_get_speed_mode_func)(void);
+typedef eth_duplex_mode_t (*eth_phy_get_duplex_mode_func)(void);
+typedef void (*eth_phy_func)(void);
+typedef esp_err_t (*eth_tcpip_input_func)(void *buffer, uint16_t len, void *eb);
+typedef void (*eth_gpio_config_func)(void);
+
+
 /**
  * @brief ethernet configuration
  *
@@ -73,8 +88,12 @@ typedef enum {
 typedef struct {
     eth_phy_base_t  phy_addr;                   /*!< phy base addr (0~31) */
     eth_mode_t mac_mode;                        /*!< mac mode only support RMII now */
-    eth_tcpip_input_fun tcpip_input;            /*!< tcpip input func  */
-    eth_phy_fun phy_init;                       /*!< phy init func  */
+    eth_tcpip_input_func tcpip_input;            /*!< tcpip input func  */
+    eth_phy_func phy_init;                       /*!< phy init func  */
+    eth_phy_check_link_func phy_check_link;     /*!< phy check link func  */
+    eth_phy_check_init_func phy_check_init;     /*!< phy check init func  */
+    eth_phy_get_speed_mode_func phy_get_speed_mode;     /*!< phy check init func  */
+    eth_phy_get_duplex_mode_func phy_get_duplex_mode;     /*!< phy check init func  */
     eth_gpio_config_func gpio_config;           /*!< gpio config func  */
 } eth_config_t;
 
@@ -158,6 +177,16 @@ void esp_eth_smi_write(uint32_t reg_num, uint16_t value);
  * @return value what read from phy reg
  */
 uint16_t esp_eth_smi_read(uint32_t reg_num);
+
+/**
+ * @brief  Free emac rx buf.
+ *
+ * @note  buf can not be null,and it is tcpip input buf.
+ *
+ * @param[in] buf: start address of recevie packet data.
+ *
+ */
+void esp_eth_free_rx_buf(void *buf);
 
 #ifdef __cplusplus
 }

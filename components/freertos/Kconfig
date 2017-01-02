@@ -3,7 +3,7 @@ menu "FreeRTOS"
 # This is actually also handled in the ESP32 startup code, not only in FreeRTOS.
 config FREERTOS_UNICORE
     bool "Run FreeRTOS only on first core"
-    default y
+    default n
     help
         This version of FreeRTOS normally takes control of all cores of 
         the CPU. Select this if you only want to start it on the first core.
@@ -54,7 +54,7 @@ config FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
 
 choice FREERTOS_CHECK_STACKOVERFLOW
     prompt "Check for stack overflow"
-    default FREERTOS_CHECK_STACKOVERFLOW_QUICK
+    default FREERTOS_CHECK_STACKOVERFLOW_CANARY
     help
         FreeRTOS can check for stack overflows in threads and trigger an user function
         called vApplicationStackOverflowHook when this happens.
@@ -194,8 +194,6 @@ config FREERTOS_PORTMUX_DEBUG_RECURSIVE
     help
         If enabled, additional debug information will be printed for recursive
         portMUX usage.
-
-
 
 endif # FREERTOS_DEBUG_INTERNALS
 

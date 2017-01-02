@@ -80,7 +80,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg)
         return BT_STATUS_PARM_INVALID;
     }
 
-    if (xQueueSend(xBtcQueue, msg, 10 / portTICK_RATE_MS) != pdTRUE) {
+    if (xQueueSend(xBtcQueue, msg, 10 / portTICK_PERIOD_MS) != pdTRUE) {
         LOG_ERROR("Btc Post failed\n");
         return BT_STATUS_BUSY;
     }

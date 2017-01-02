@@ -176,7 +176,8 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
     return;
   }
   p->payload = buffer;
-  p->eb = eb;
+  p->user_buf = eb;
+  p->user_flag = PBUF_USER_FLAG_OWNER_WIFI;
 #endif
 
   /* full packet send to tcpip_thread to process */

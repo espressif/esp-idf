@@ -115,7 +115,7 @@ static void http_get_task(void *pvParameters)
 
         if(err != 0 || res == NULL) {
             ESP_LOGE(TAG, "DNS lookup failed err=%d res=%p", err, res);
-            vTaskDelay(1000 / portTICK_RATE_MS);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
             continue;
         }
 
@@ -129,7 +129,7 @@ static void http_get_task(void *pvParameters)
         if(s < 0) {
             ESP_LOGE(TAG, "... Failed to allocate socket.");
             freeaddrinfo(res);
-            vTaskDelay(1000 / portTICK_RATE_MS);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
             continue;
         }
         ESP_LOGI(TAG, "... allocated socket\r\n");
@@ -138,7 +138,7 @@ static void http_get_task(void *pvParameters)
             ESP_LOGE(TAG, "... socket connect failed errno=%d", errno);
             close(s);
             freeaddrinfo(res);
-            vTaskDelay(4000 / portTICK_RATE_MS);
+            vTaskDelay(4000 / portTICK_PERIOD_MS);
             continue;
         }
 
@@ -148,7 +148,7 @@ static void http_get_task(void *pvParameters)
         if (write(s, REQUEST, strlen(REQUEST)) < 0) {
             ESP_LOGE(TAG, "... socket send failed");
             close(s);
-            vTaskDelay(4000 / portTICK_RATE_MS);
+            vTaskDelay(4000 / portTICK_PERIOD_MS);
             continue;
         }
         ESP_LOGI(TAG, "... socket send success");
@@ -166,7 +166,7 @@ static void http_get_task(void *pvParameters)
         close(s);
         for(int countdown = 10; countdown >= 0; countdown--) {
             ESP_LOGI(TAG, "%d... ", countdown);
-            vTaskDelay(1000 / portTICK_RATE_MS);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
         ESP_LOGI(TAG, "Starting again!");
     }
