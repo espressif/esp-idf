@@ -56,9 +56,6 @@
 #define IFNAME1 'n'
 
 static char hostname[16];
-#if ESP_PERF
-uint32_t g_rx_alloc_pbuf_fail_cnt = 0;
-#endif
 
 /**
  * In this function, the hardware should be initialized.
@@ -163,7 +160,6 @@ ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
 #if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
-    //g_rx_alloc_pbuf_fail_cnt++;
     return;
   }
   memcpy(p->payload, buffer, len);

@@ -1438,6 +1438,7 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
   err = netbuf_ref(&buf, data, short_size);
 #endif /* LWIP_NETIF_TX_SINGLE_PBUF */
   if (err == ERR_OK) {
+    DBG_PERF_PATH_SET(DBG_PERF_DIR_TX, DBG_PERF_POINT_SOC_OUT);
     /* send the data */
     err = netconn_send(sock->conn, &buf);
   }
