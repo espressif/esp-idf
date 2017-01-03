@@ -228,7 +228,7 @@ static void hci_host_thread_handler(void *arg)
         if (pdTRUE == xQueueReceive(xHciHostQueue, &e, (portTickType)portMAX_DELAY)) {
 
             if (e.sig == 0xff) {
-                if (API_vhci_host_check_send_available()) {
+                if (esp_vhci_host_check_send_available()) {
                     /*Now Target only allowed one packet per TX*/
                     BT_HDR *pkt = packet_fragmenter->fragment_current_packet();
                     if (pkt != NULL) {

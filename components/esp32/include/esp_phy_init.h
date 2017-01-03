@@ -229,7 +229,7 @@ esp_err_t esp_phy_store_cal_data_to_nvs(const esp_phy_calibration_data_t* cal_da
  *
  * Applications which don't need to enable PHY on every start up should
  * disable this menuconfig option and call esp_phy_init before calling
- * esp_wifi_init or bt_controller_init. See do_phy_init function in
+ * esp_wifi_init or esp_bt_controller_init. See do_phy_init function in
  * cpu_start.c for an example of using this function.
  *
  * @param init_data  PHY parameters. Default set of parameters can

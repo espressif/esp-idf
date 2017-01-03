@@ -68,8 +68,8 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
         esp_blufi_send_config_state(ESP_BLUFI_CONFIG_OK);
-        esp_disable_bluetooth(); //close bluetooth function
-        //esp_deinit_bluetooth();  //free bluetooth resource
+        esp_bluedroid_disable(); //close bluetooth function
+        //esp_bluedroid_deinit();  //free bluetooth resource
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently
@@ -131,11 +131,11 @@ void app_main()
 
     //vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-    bt_controller_init();
+    esp_bt_controller_init();
     xTaskCreatePinnedToCore(&wifiTestTask, "wifiTestTask", 2048, NULL, 20, NULL, 0);
 
     LOG_ERROR("%s init bluetooth\n", __func__);
-    ret = esp_init_bluetooth();
+    ret = esp_bluedroid_init();
     if (ret) {
         LOG_ERROR("%s init bluetooth failed\n", __func__);
         return;

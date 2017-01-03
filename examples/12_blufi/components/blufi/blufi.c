@@ -107,7 +107,7 @@ esp_err_t blufi_enable(void *arg)
 {
     esp_err_t err;
 
-    err = esp_enable_bluetooth();
+    err = esp_bluedroid_enable();
     if (err) {
         LOG_ERROR("%s failed\n", __func__);
         return err;
@@ -122,7 +122,7 @@ esp_err_t blufi_disable(void *arg)
 {
     esp_err_t err;
 
-    err =  esp_disable_bluetooth();
+    err =  esp_bluedroid_disable();
 
     if (arg) {
         ((void (*)(void))arg)();

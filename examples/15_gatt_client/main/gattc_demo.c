@@ -37,6 +37,8 @@
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
 
+#define GATTC_TAG "GATTC_DEMO"
+
 ///Declare static functions
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
@@ -108,16 +110,16 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
 
     switch (event) {
     case ESP_GATTC_REG_EVT:
-        LOG_INFO("REG_EVT\n");
+        ESP_LOGI(GATTC_TAG, "REG_EVT\n");
         esp_ble_gap_set_scan_params(&ble_scan_params);
         break;
     case ESP_GATTC_OPEN_EVT:
         conn_id = p_data->open.conn_id;
 
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->open.remote_bda, sizeof(esp_bd_addr_t));
-        LOG_INFO("ESP_GATTC_OPEN_EVT conn_id %d, if %d, status %d, mtu %d\n", conn_id, gattc_if, p_data->open.status, p_data->open.mtu);
+        ESP_LOGI(GATTC_TAG, "ESP_GATTC_OPEN_EVT conn_id %d, if %d, status %d, mtu %d\n", conn_id, gattc_if, p_data->open.status, p_data->open.mtu);
 
-        LOG_INFO("REMOTE BDA  %02x:%02x:%02x:%02x:%02x:%02x\n",
+        ESP_LOGI(GATTC_TAG, "REMOTE BDA  %02x:%02x:%02x:%02x:%02x:%02x\n",
                             gl_profile_tab[PROFILE_A_APP_ID].remote_bda[0], gl_profile_tab[PROFILE_A_APP_ID].remote_bda[1], 
                             gl_profile_tab[PROFILE_A_APP_ID].remote_bda[2], gl_profile_tab[PROFILE_A_APP_ID].remote_bda[3],
                             gl_profile_tab[PROFILE_A_APP_ID].remote_bda[4], gl_profile_tab[PROFILE_A_APP_ID].remote_bda[5]
@@ -128,37 +130,37 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
     case ESP_GATTC_SEARCH_RES_EVT: {
         esp_gatt_srvc_id_t *srvc_id = &p_data->search_res.srvc_id;
         conn_id = p_data->search_res.conn_id;
-        LOG_INFO("SEARCH RES: conn_id = %x\n", conn_id);
+        ESP_LOGI(GATTC_TAG, "SEARCH RES: conn_id = %x\n", conn_id);
         if (srvc_id->id.uuid.len == ESP_UUID_LEN_16) {
-            LOG_INFO("UUID16: %x\n", srvc_id->id.uuid.uuid.uuid16);
+            ESP_LOGI(GATTC_TAG, "UUID16: %x\n", srvc_id->id.uuid.uuid.uuid16);
         } else if (srvc_id->id.uuid.len == ESP_UUID_LEN_32) {
-            LOG_INFO("UUID32: %x\n", srvc_id->id.uuid.uuid.uuid32);
+            ESP_LOGI(GATTC_TAG, "UUID32: %x\n", srvc_id->id.uuid.uuid.uuid32);
         } else if (srvc_id->id.uuid.len == ESP_UUID_LEN_128) {
-            LOG_INFO("UUID128: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n", srvc_id->id.uuid.uuid.uuid128[0],
+            ESP_LOGI(GATTC_TAG, "UUID128: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n", srvc_id->id.uuid.uuid.uuid128[0],
                      srvc_id->id.uuid.uuid.uuid128[1], srvc_id->id.uuid.uuid.uuid128[2], srvc_id->id.uuid.uuid.uuid128[3],
                      srvc_id->id.uuid.uuid.uuid128[4], srvc_id->id.uuid.uuid.uuid128[5], srvc_id->id.uuid.uuid.uuid128[6],
                      srvc_id->id.uuid.uuid.uuid128[7], srvc_id->id.uuid.uuid.uuid128[8], srvc_id->id.uuid.uuid.uuid128[9],
                      srvc_id->id.uuid.uuid.uuid128[10], srvc_id->id.uuid.uuid.uuid128[11], srvc_id->id.uuid.uuid.uuid128[12],
                      srvc_id->id.uuid.uuid.uuid128[13], srvc_id->id.uuid.uuid.uuid128[14], srvc_id->id.uuid.uuid.uuid128[15]);
         } else {
-            LOG_ERROR("UNKNOWN LEN %d\n", srvc_id->id.uuid.len);
+            ESP_LOGE(GATTC_TAG, "UNKNOWN LEN %d\n", srvc_id->id.uuid.len);
         }
         break;
     }
     case ESP_GATTC_SEARCH_CMPL_EVT:
         conn_id = p_data->search_cmpl.conn_id;
-        LOG_INFO("SEARCH_CMPL: conn_id = %x, status %d\n", conn_id, p_data->search_cmpl.status);
+        ESP_LOGI(GATTC_TAG, "SEARCH_CMPL: conn_id = %x, status %d\n", conn_id, p_data->search_cmpl.status);
         esp_ble_gattc_get_characteristic(gattc_if, conn_id, &alert_service_id, NULL);
         break;
     case ESP_GATTC_GET_CHAR_EVT:
         if (p_data->get_char.status != ESP_GATT_OK) {
             break;
         }
-        LOG_INFO("GET CHAR: conn_id = %x, status %d\n", p_data->get_char.conn_id, p_data->get_char.status);
-        LOG_INFO("GET CHAR: srvc_id = %04x, char_id = %04x\n", p_data->get_char.srvc_id.id.uuid.uuid.uuid16, p_data->get_char.char_id.uuid.uuid.uuid16);
+        ESP_LOGI(GATTC_TAG, "GET CHAR: conn_id = %x, status %d\n", p_data->get_char.conn_id, p_data->get_char.status);
+        ESP_LOGI(GATTC_TAG, "GET CHAR: srvc_id = %04x, char_id = %04x\n", p_data->get_char.srvc_id.id.uuid.uuid.uuid16, p_data->get_char.char_id.uuid.uuid.uuid16);
 
         if (p_data->get_char.char_id.uuid.uuid.uuid16 == 0x2a46) {
-            LOG_INFO("register notify\n");
+            ESP_LOGI(GATTC_TAG, "register notify\n");
             esp_ble_gattc_register_for_notify(gattc_if, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, &alert_service_id, &p_data->get_char.char_id);
         }
 
@@ -166,8 +168,8 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTC_REG_FOR_NOTIFY_EVT: {
         uint16_t notify_en = 1;
-        LOG_INFO("REG FOR NOTIFY: status %d\n", p_data->reg_for_notify.status);
-        LOG_INFO("REG FOR_NOTIFY: srvc_id = %04x, char_id = %04x\n", p_data->reg_for_notify.srvc_id.id.uuid.uuid.uuid16, p_data->reg_for_notify.char_id.uuid.uuid.uuid16);
+        ESP_LOGI(GATTC_TAG, "REG FOR NOTIFY: status %d\n", p_data->reg_for_notify.status);
+        ESP_LOGI(GATTC_TAG, "REG FOR_NOTIFY: srvc_id = %04x, char_id = %04x\n", p_data->reg_for_notify.srvc_id.id.uuid.uuid.uuid16, p_data->reg_for_notify.char_id.uuid.uuid.uuid16);
 
         esp_ble_gattc_write_char_descr(
                 gattc_if,
@@ -182,10 +184,10 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
         break;
     }
     case ESP_GATTC_NOTIFY_EVT:
-        LOG_INFO("NOTIFY: len %d, value %08x\n", p_data->notify.value_len, *(uint32_t *)p_data->notify.value);
+        ESP_LOGI(GATTC_TAG, "NOTIFY: len %d, value %08x\n", p_data->notify.value_len, *(uint32_t *)p_data->notify.value);
         break;
     case ESP_GATTC_WRITE_DESCR_EVT:
-        LOG_INFO("WRITE: status %d\n", p_data->write.status);
+        ESP_LOGI(GATTC_TAG, "WRITE: status %d\n", p_data->write.status);
         break;
     default:
         break;
@@ -199,16 +201,15 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
 
     switch (event) {
     case ESP_GATTC_REG_EVT:
-        LOG_INFO("REG_EVT\n");
-        //esp_ble_gap_set_scan_params(&ble_scan_params);
+        ESP_LOGI(GATTC_TAG, "REG_EVT\n");
         break;
     case ESP_GATTC_OPEN_EVT:
         conn_id = p_data->open.conn_id;
 
         memcpy(gl_profile_tab[PROFILE_B_APP_ID].remote_bda, p_data->open.remote_bda, sizeof(esp_bd_addr_t));
-        LOG_INFO("ESP_GATTC_OPEN_EVT conn_id %d, if %d, status %d, mtu %d\n", conn_id, gattc_if, p_data->open.status, p_data->open.mtu);
+        ESP_LOGI(GATTC_TAG, "ESP_GATTC_OPEN_EVT conn_id %d, if %d, status %d, mtu %d\n", conn_id, gattc_if, p_data->open.status, p_data->open.mtu);
 
-        LOG_INFO("REMOTE BDA  %02x:%02x:%02x:%02x:%02x:%02x\n",
+        ESP_LOGI(GATTC_TAG, "REMOTE BDA  %02x:%02x:%02x:%02x:%02x:%02x\n",
                             gl_profile_tab[PROFILE_B_APP_ID].remote_bda[0], gl_profile_tab[PROFILE_B_APP_ID].remote_bda[1], 
                             gl_profile_tab[PROFILE_B_APP_ID].remote_bda[2], gl_profile_tab[PROFILE_B_APP_ID].remote_bda[3],
                             gl_profile_tab[PROFILE_B_APP_ID].remote_bda[4], gl_profile_tab[PROFILE_B_APP_ID].remote_bda[5]
@@ -219,37 +220,37 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
     case ESP_GATTC_SEARCH_RES_EVT: {
         esp_gatt_srvc_id_t *srvc_id = &p_data->search_res.srvc_id;
         conn_id = p_data->search_res.conn_id;
-        LOG_INFO("SEARCH RES: conn_id = %x\n", conn_id);
+        ESP_LOGI(GATTC_TAG, "SEARCH RES: conn_id = %x\n", conn_id);
         if (srvc_id->id.uuid.len == ESP_UUID_LEN_16) {
-            LOG_INFO("UUID16: %x\n", srvc_id->id.uuid.uuid.uuid16);
+            ESP_LOGI(GATTC_TAG, "UUID16: %x\n", srvc_id->id.uuid.uuid.uuid16);
         } else if (srvc_id->id.uuid.len == ESP_UUID_LEN_32) {
-            LOG_INFO("UUID32: %x\n", srvc_id->id.uuid.uuid.uuid32);
+            ESP_LOGI(GATTC_TAG, "UUID32: %x\n", srvc_id->id.uuid.uuid.uuid32);
         } else if (srvc_id->id.uuid.len == ESP_UUID_LEN_128) {
-            LOG_INFO("UUID128: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n", srvc_id->id.uuid.uuid.uuid128[0],
+            ESP_LOGI(GATTC_TAG, "UUID128: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n", srvc_id->id.uuid.uuid.uuid128[0],
                      srvc_id->id.uuid.uuid.uuid128[1], srvc_id->id.uuid.uuid.uuid128[2], srvc_id->id.uuid.uuid.uuid128[3],
                      srvc_id->id.uuid.uuid.uuid128[4], srvc_id->id.uuid.uuid.uuid128[5], srvc_id->id.uuid.uuid.uuid128[6],
                      srvc_id->id.uuid.uuid.uuid128[7], srvc_id->id.uuid.uuid.uuid128[8], srvc_id->id.uuid.uuid.uuid128[9],
                      srvc_id->id.uuid.uuid.uuid128[10], srvc_id->id.uuid.uuid.uuid128[11], srvc_id->id.uuid.uuid.uuid128[12],
                      srvc_id->id.uuid.uuid.uuid128[13], srvc_id->id.uuid.uuid.uuid128[14], srvc_id->id.uuid.uuid.uuid128[15]);
         } else {
-            LOG_ERROR("UNKNOWN LEN %d\n", srvc_id->id.uuid.len);
+            ESP_LOGE(GATTC_TAG, "UNKNOWN LEN %d\n", srvc_id->id.uuid.len);
         }
         break;
     }
     case ESP_GATTC_SEARCH_CMPL_EVT:
         conn_id = p_data->search_cmpl.conn_id;
-        LOG_INFO("SEARCH_CMPL: conn_id = %x, status %d\n", conn_id, p_data->search_cmpl.status);
+        ESP_LOGI(GATTC_TAG, "SEARCH_CMPL: conn_id = %x, status %d\n", conn_id, p_data->search_cmpl.status);
         esp_ble_gattc_get_characteristic(gattc_if, conn_id, &alert_service_id, NULL);
         break;
     case ESP_GATTC_GET_CHAR_EVT:
         if (p_data->get_char.status != ESP_GATT_OK) {
             break;
         }
-        LOG_INFO("GET CHAR: conn_id = %x, status %d\n", p_data->get_char.conn_id, p_data->get_char.status);
-        LOG_INFO("GET CHAR: srvc_id = %04x, char_id = %04x\n", p_data->get_char.srvc_id.id.uuid.uuid.uuid16, p_data->get_char.char_id.uuid.uuid.uuid16);
+        ESP_LOGI(GATTC_TAG, "GET CHAR: conn_id = %x, status %d\n", p_data->get_char.conn_id, p_data->get_char.status);
+        ESP_LOGI(GATTC_TAG, "GET CHAR: srvc_id = %04x, char_id = %04x\n", p_data->get_char.srvc_id.id.uuid.uuid.uuid16, p_data->get_char.char_id.uuid.uuid.uuid16);
 
         if (p_data->get_char.char_id.uuid.uuid.uuid16 == 0x2a46) {
-            LOG_INFO("register notify\n");
+            ESP_LOGI(GATTC_TAG, "register notify\n");
             esp_ble_gattc_register_for_notify(gattc_if, gl_profile_tab[PROFILE_B_APP_ID].remote_bda, &alert_service_id, &p_data->get_char.char_id);
         }
 
@@ -257,8 +258,8 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTC_REG_FOR_NOTIFY_EVT: {
         uint16_t notify_en = 1;
-        LOG_INFO("REG FOR NOTIFY: status %d\n", p_data->reg_for_notify.status);
-        LOG_INFO("REG FOR_NOTIFY: srvc_id = %04x, char_id = %04x\n", p_data->reg_for_notify.srvc_id.id.uuid.uuid.uuid16, p_data->reg_for_notify.char_id.uuid.uuid.uuid16);
+        ESP_LOGI(GATTC_TAG, "REG FOR NOTIFY: status %d\n", p_data->reg_for_notify.status);
+        ESP_LOGI(GATTC_TAG, "REG FOR_NOTIFY: srvc_id = %04x, char_id = %04x\n", p_data->reg_for_notify.srvc_id.id.uuid.uuid.uuid16, p_data->reg_for_notify.char_id.uuid.uuid.uuid16);
 
         esp_ble_gattc_write_char_descr(
                 gattc_if,
@@ -273,10 +274,10 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
         break;
     }
     case ESP_GATTC_NOTIFY_EVT:
-        LOG_INFO("NOTIFY: len %d, value %08x\n", p_data->notify.value_len, *(uint32_t *)p_data->notify.value);
+        ESP_LOGI(GATTC_TAG, "NOTIFY: len %d, value %08x\n", p_data->notify.value_len, *(uint32_t *)p_data->notify.value);
         break;
     case ESP_GATTC_WRITE_DESCR_EVT:
-        LOG_INFO("WRITE: status %d\n", p_data->write.status);
+        ESP_LOGI(GATTC_TAG, "WRITE: status %d\n", p_data->write.status);
         break;
     default:
         break;
@@ -299,27 +300,22 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         switch (scan_result->scan_rst.search_evt) {
         case ESP_GAP_SEARCH_INQ_RES_EVT:
             for (int i = 0; i < 6; i++) {
-                LOG_INFO("%x:", scan_result->scan_rst.bda[i]);
+                ESP_LOGI(GATTC_TAG, "%x:", scan_result->scan_rst.bda[i]);
             }
-            LOG_INFO("\n");
+            ESP_LOGI(GATTC_TAG, "\n");
             adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv,
                                                 ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
-            LOG_INFO("adv_name_len=%x\n", adv_name_len);
+            ESP_LOGI(GATTC_TAG, "Searched Device Name Len %d\n", adv_name_len);
             for (int j = 0; j < adv_name_len; j++) {
-                LOG_INFO("%c", adv_name[j]);
+                ESP_LOGI(GATTC_TAG, "%c", adv_name[j]);
             }
-            LOG_INFO("\n");
-            for (int j = 0; j < adv_name_len; j++) {
-                LOG_INFO("%c", device_name[j]);
-            }
-            LOG_INFO("\n");
 
             if (adv_name != NULL) {
                 if (strcmp((char *)adv_name, device_name) == 0) {
-                    LOG_INFO("the name equal to Heart Rate\n");
+                    ESP_LOGI(GATTC_TAG, "Searched device %s\n", device_name);
                     if (connect == false) {
                         connect = true;
-                        LOG_INFO("Connect to the remote device.\n");
+                        ESP_LOGI(GATTC_TAG, "Connect to the remote device.\n");
                         esp_ble_gap_stop_scanning();
                         esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, scan_result->scan_rst.bda, true);
                         esp_ble_gattc_open(gl_profile_tab[PROFILE_B_APP_ID].gattc_if, scan_result->scan_rst.bda, true);
@@ -341,14 +337,14 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 
 static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
 {
-    LOG_INFO("EVT %d, gattc if %d\n", event, gattc_if);
+    ESP_LOGI(GATTC_TAG, "EVT %d, gattc if %d\n", event, gattc_if);
 
     /* If event is register event, store the gattc_if for each profile */
     if (event == ESP_GATTC_REG_EVT) {
         if (param->reg.status == ESP_GATT_OK) {
             gl_profile_tab[param->reg.app_id].gattc_if = gattc_if;
         } else {
-            LOG_INFO("Reg app failed, app_id %04x, status %d\n",
+            ESP_LOGI(GATTC_TAG, "Reg app failed, app_id %04x, status %d\n",
                     param->reg.app_id, 
                     param->reg.status);
             return;
@@ -374,17 +370,17 @@ void ble_client_appRegister(void)
 {
     esp_err_t status;
 
-    LOG_INFO("register callback\n");
+    ESP_LOGI(GATTC_TAG, "register callback\n");
 
     //register the scan callback function to the gap moudule
     if ((status = esp_ble_gap_register_callback(esp_gap_cb)) != ESP_OK) {
-        LOG_ERROR("gap register error, error code = %x\n", status);
+        ESP_LOGE(GATTC_TAG, "gap register error, error code = %x\n", status);
         return;
     }
 
     //register the callback function to the gattc module
     if ((status = esp_ble_gattc_register_callback(esp_gattc_cb)) != ESP_OK) {
-        LOG_ERROR("gattc register error, error code = %x\n", status);
+        ESP_LOGE(GATTC_TAG, "gattc register error, error code = %x\n", status);
         return;
     }
     esp_ble_gattc_app_register(PROFILE_A_APP_ID);
@@ -393,14 +389,14 @@ void ble_client_appRegister(void)
 
 void gattc_client_test(void)
 {
-    esp_init_bluetooth();
-    esp_enable_bluetooth();
+    esp_bluedroid_init();
+    esp_bluedroid_enable();
     ble_client_appRegister();
 }
 
 void app_main()
 {
-    bt_controller_init();
+    esp_bt_controller_init();
     gattc_client_test();
 }
 
