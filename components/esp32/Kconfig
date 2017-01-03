@@ -39,12 +39,13 @@ config ESP32_ENABLE_STACK_BT
 #endchoice
 
 config SW_COEXIST_ENABLE
-	bool "Software do control of wifi/bt coexisit"
+    bool "Software controls WiFi/BT coexistence"
     depends on ESP32_ENABLE_STACK_BT && ESP32_ENABLE_STACK_WIFI
-	default "n"
-	help
-		Software do something control of wifi/bt coexist. For some heavy traffic senario,
-		do sotware coexist, may be better.
+    default "n"
+    help
+        If enabled, WiFi & BT coexistence is controlled by software rather than hardware.
+        Recommended for heavy traffic scenarios. Both coexistence configuration options are
+        automatically managed, no user intervention is required.
 
 config MEMMAP_BT
     bool
