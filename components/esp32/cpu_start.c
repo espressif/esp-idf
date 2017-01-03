@@ -203,6 +203,8 @@ void start_cpu0_default(void)
 #endif
     esp_ipc_init();
     spi_flash_init();
+    /* init default OS-aware flash access critical section */
+    spi_flash_guard_set(&g_flash_guard_default_ops);
 
 #if CONFIG_ESP32_PHY_AUTO_INIT
     nvs_flash_init();

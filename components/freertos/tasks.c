@@ -4962,7 +4962,6 @@ TickType_t uxReturn;
 
 		*pxTcbSz = sizeof(TCB_t);
 
-		//vTaskSuspendAll(); //WARNING: This only suspends one CPU. ToDo: suspend others as well. Mux using taskQueueMutex maybe?
 		{
 			/* Fill in an TaskStatus_t structure with information on each
 			task in the Ready state. */
@@ -4990,25 +4989,6 @@ TickType_t uxReturn;
 			}
 			#endif
 		}
-		//( void ) xTaskResumeAll();
-#if 0
-		/* Convention: First num_cpus slots will have current task for that cpu. */
-		for (i = 0; i < portNUM_PROCESSORS; i++) {
-			if (pxCurrentTCB[i] == NULL || pxCurrentTCB == pxTaskSnapshotArray[i]) {
-				continue;
-			} else {
-				UBaseType_t j;
-				for (j = i; j < uxTask; j++) {
-					if (pxTaskSnapshotArray[j] == pxCurrentTCB[i]) {
-						TaskHandle_t tmp = pxTaskSnapshotArray[i];
-						pxTaskSnapshotArray[i] = pxTaskSnapshotArray[j];
-						pxTaskSnapshotArray[j] = tmp;
-						break;
-					}
-				}
-			}
-		}
-#endif
 		return uxTask;
 	}
 

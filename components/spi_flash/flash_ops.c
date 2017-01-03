@@ -58,35 +58,22 @@ static spi_flash_counters_t s_flash_stats;
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
-/* SPI flash access critical section management functions */
-typedef void (*spi_flash_guard_start_func_t)(void);
-typedef void (*spi_flash_guard_end_func_t)(void);
-
-/**
- * Structure holding SPI flash access critical section management functions
- */
-typedef struct {
-    spi_flash_guard_start_func_t    start;  // critical section start func
-    spi_flash_guard_end_func_t      end;    // critical section end func
-} spi_flash_guard_funcs_t;
-
 #define FLASH_GUARD_START(_gp_) do{if((_gp_)) (_gp_)->start();}while(0)
 #define FLASH_GUARD_END(_gp_)   do{if((_gp_)) (_gp_)->end();}while(0)
 
 static esp_err_t spi_flash_translate_rc(SpiFlashOpResult rc);
-static esp_err_t spi_flash_erase_range_internal(uint32_t start_addr, uint32_t size, const spi_flash_guard_funcs_t *flash_guard);
-static esp_err_t spi_flash_write_internal(size_t dst, const void *srcv, size_t size, const spi_flash_guard_funcs_t *flash_guard);
-static esp_err_t spi_flash_read_internal(size_t src, void *dstv, size_t size, const spi_flash_guard_funcs_t *flash_guard);
 
-const DRAM_ATTR spi_flash_guard_funcs_t s_flash_guard_ops = {
+const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_default_ops = {
         .start  = spi_flash_disable_interrupts_caches_and_other_cpu,
         .end    = spi_flash_enable_interrupts_caches_and_other_cpu
 };
 
-const DRAM_ATTR spi_flash_guard_funcs_t s_flash_guard_panic_ops = {
-        .start  = spi_flash_disable_interrupts_caches_and_other_cpu_panic,
-        .end    = spi_flash_enable_interrupts_caches_panic
+const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
+        .start  = spi_flash_disable_interrupts_caches_and_other_cpu_no_os,
+        .end    = spi_flash_enable_interrupts_caches_no_os
 };
+
+static const spi_flash_guard_funcs_t *s_flash_guard_ops;
 
 void spi_flash_init()
 {
@@ -94,6 +81,11 @@ void spi_flash_init()
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
     spi_flash_reset_counters();
 #endif
+}
+
+void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs)
+{
+    s_flash_guard_ops = funcs;
 }
 
 size_t spi_flash_get_chip_size()
@@ -121,16 +113,6 @@ esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
 
 esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
-    return spi_flash_erase_range_internal(start_addr, size, &s_flash_guard_ops);
-}
-
-esp_err_t IRAM_ATTR spi_flash_erase_range_panic(uint32_t start_addr, uint32_t size)
-{
-    return spi_flash_erase_range_internal(start_addr, size, &s_flash_guard_panic_ops);
-}
-
-static esp_err_t IRAM_ATTR spi_flash_erase_range_internal(uint32_t start_addr, uint32_t size, const spi_flash_guard_funcs_t *flash_guard)
-{
     if (start_addr % SPI_FLASH_SEC_SIZE != 0) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -144,7 +126,7 @@ static esp_err_t IRAM_ATTR spi_flash_erase_range_internal(uint32_t start_addr, u
     size_t end = start + size / SPI_FLASH_SEC_SIZE;
     const size_t sectors_per_block = BLOCK_ERASE_SIZE / SPI_FLASH_SEC_SIZE;
     COUNTER_START();
-    FLASH_GUARD_START(flash_guard);
+    FLASH_GUARD_START(s_flash_guard_ops);
     SpiFlashOpResult rc;
     rc = spi_flash_unlock();
     if (rc == SPI_FLASH_RESULT_OK) {
@@ -160,22 +142,12 @@ static esp_err_t IRAM_ATTR spi_flash_erase_range_internal(uint32_t start_addr, u
             }
         }
     }
-    FLASH_GUARD_END(flash_guard);
+    FLASH_GUARD_END(s_flash_guard_ops);
     COUNTER_STOP(erase);
     return spi_flash_translate_rc(rc);
 }
 
 esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
-{
-    return spi_flash_write_internal(dst, srcv, size, &s_flash_guard_ops);
-}
-
-esp_err_t IRAM_ATTR spi_flash_write_panic(size_t dst, const void *srcv, size_t size)
-{
-    return spi_flash_write_internal(dst, srcv, size, &s_flash_guard_panic_ops);
-}
-
-static esp_err_t IRAM_ATTR spi_flash_write_internal(size_t dst, const void *srcv, size_t size, const spi_flash_guard_funcs_t *flash_guard)
 {
     // Out of bound writes are checked in ROM code, but we can give better
     // error code here
@@ -208,9 +180,9 @@ static esp_err_t IRAM_ATTR spi_flash_write_internal(size_t dst, const void *srcv
     if (left_size > 0) {
         uint32_t t = 0xffffffff;
         memcpy(((uint8_t *) &t) + (dst - left_off), srcc, left_size);
-        FLASH_GUARD_START(flash_guard);
+        FLASH_GUARD_START(s_flash_guard_ops);
         rc = SPIWrite(left_off, &t, 4);
-        FLASH_GUARD_END(flash_guard);
+        FLASH_GUARD_END(s_flash_guard_ops);
         if (rc != SPI_FLASH_RESULT_OK) {
             goto out;
         }
@@ -226,9 +198,9 @@ static esp_err_t IRAM_ATTR spi_flash_write_internal(size_t dst, const void *srcv
         bool in_dram = true;
 #endif
         if (in_dram && (((uintptr_t) srcc) + mid_off) % 4 == 0) {
-            FLASH_GUARD_START(flash_guard);
+            FLASH_GUARD_START(s_flash_guard_ops);
             rc = SPIWrite(dst + mid_off, (const uint32_t *) (srcc + mid_off), mid_size);
-            FLASH_GUARD_END(flash_guard);
+            FLASH_GUARD_END(s_flash_guard_ops);
             if (rc != SPI_FLASH_RESULT_OK) {
                 goto out;
             }
@@ -242,9 +214,9 @@ static esp_err_t IRAM_ATTR spi_flash_write_internal(size_t dst, const void *srcv
                 uint32_t t[8];
                 uint32_t write_size = MIN(mid_size, sizeof(t));
                 memcpy(t, srcc + mid_off, write_size);
-                FLASH_GUARD_START(flash_guard);
+                FLASH_GUARD_START(s_flash_guard_ops);
                 rc = SPIWrite(dst + mid_off, t, write_size);
-                FLASH_GUARD_END(flash_guard);
+                FLASH_GUARD_END(s_flash_guard_ops);
                 if (rc != SPI_FLASH_RESULT_OK) {
                     goto out;
                 }
@@ -257,9 +229,9 @@ static esp_err_t IRAM_ATTR spi_flash_write_internal(size_t dst, const void *srcv
     if (right_size > 0) {
         uint32_t t = 0xffffffff;
         memcpy(&t, srcc + right_off, right_size);
-        FLASH_GUARD_START(flash_guard);
+        FLASH_GUARD_START(s_flash_guard_ops);
         rc = SPIWrite(dst + right_off, &t, 4);
-        FLASH_GUARD_END(flash_guard);
+        FLASH_GUARD_END(s_flash_guard_ops);
         if (rc != SPI_FLASH_RESULT_OK) {
             goto out;
         }
@@ -308,16 +280,6 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
 
 esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
 {
-    return spi_flash_read_internal(src, dstv, size, &s_flash_guard_ops);
-}
-
-esp_err_t IRAM_ATTR spi_flash_read_panic(size_t src, void *dstv, size_t size)
-{
-    return spi_flash_read_internal(src, dstv, size, &s_flash_guard_panic_ops);
-}
-
-static esp_err_t IRAM_ATTR spi_flash_read_internal(size_t src, void *dstv, size_t size, const spi_flash_guard_funcs_t *flash_guard)
-{
     // Out of bound reads are checked in ROM code, but we can give better
     // error code here
     if (src + size > g_rom_flashchip.chip_size) {
@@ -329,7 +291,7 @@ static esp_err_t IRAM_ATTR spi_flash_read_internal(size_t src, void *dstv, size_
 
     SpiFlashOpResult rc = SPI_FLASH_RESULT_OK;
     COUNTER_START();
-    FLASH_GUARD_START(flash_guard);
+    FLASH_GUARD_START(s_flash_guard_ops);
     /* To simplify boundary checks below, we handle small reads separately. */
     if (size < 16) {
         uint32_t t[6]; /* Enough for 16 bytes + 4 on either side for padding. */
@@ -403,7 +365,7 @@ static esp_err_t IRAM_ATTR spi_flash_read_internal(size_t src, void *dstv, size_
         memcpy(dstc + pad_right_off, t, pad_right_size);
     }
 out:
-    FLASH_GUARD_END(flash_guard);
+    FLASH_GUARD_END(s_flash_guard_ops);
     COUNTER_STOP(read);
     return spi_flash_translate_rc(rc);
 }

@@ -174,11 +174,25 @@ void spi_flash_munmap(spi_flash_mmap_handle_t handle);
 void spi_flash_mmap_dump();
 
 /**
+ * @brief SPI flash critical section enter function.
+ */
+typedef void (*spi_flash_guard_start_func_t)(void);
+/**
+ * @brief SPI flash critical section exit function.
+ */
+typedef void (*spi_flash_guard_end_func_t)(void);
+
+/**
+ * Structure holding SPI flash access critical section management functions
+ */
+typedef struct {
+    spi_flash_guard_start_func_t    start;  /**< critical section start func */
+    spi_flash_guard_end_func_t      end;    /**< critical section end func */
+} spi_flash_guard_funcs_t;
+
+/**
  * @brief  Erase a range of flash sectors.
  *
- * @note This version of function is to be called from panic handler.
- *       It does not use any OS primitives and IPC and implies that
- *       only calling CPU is active.
  *
  * @param  start_address  Address where erase operation has to start.
  *                                  Must be 4kB-aligned
@@ -186,42 +200,18 @@ void spi_flash_mmap_dump();
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_erase_range_panic(size_t start_address, size_t size);
+void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs);
 
+/** Default OS-aware flash access critical section functions */
+extern const spi_flash_guard_funcs_t g_flash_guard_default_ops;
 
-/**
- * @brief  Write data to Flash.
+/** Non-OS flash access critical section functions
  *
- * @note This version of function is to be called from panic handler.
+ * @note This version of functions is to be used when no OS is present or from panic handler.
  *       It does not use any OS primitives and IPC and implies that
  *       only calling CPU is active.
-
- * @note If source address is in DROM, this function will return
- *       ESP_ERR_INVALID_ARG.
- *
- * @param  dest  destination address in Flash. Must be a multiple of 4 bytes.
- * @param  src   pointer to the source buffer.
- * @param  size  length of data, in bytes. Must be a multiple of 4 bytes.
- *
- * @return esp_err_t
  */
-esp_err_t spi_flash_write_panic(size_t dest, const void *src, size_t size);
-
-
-/**
- * @brief  Read data from Flash.
- *
- * @note This version of function is to be called from panic handler.
- *       It does not use any OS primitives and IPC and implies that
- *       only calling CPU is active.
- *
- * @param  src   source address of the data in Flash.
- * @param  dest  pointer to the destination buffer
- * @param  size  length of data
- *
- * @return esp_err_t
- */
-esp_err_t spi_flash_read_panic(size_t src, void *dest, size_t size);
+extern const spi_flash_guard_funcs_t g_flash_guard_no_os_ops;
 
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
 

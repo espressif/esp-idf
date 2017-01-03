@@ -47,61 +47,61 @@
 
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
 //printf may be broken, so we fix our own printing fns...
-void esp_panicPutChar(char c)
+static void panicPutChar(char c)
 {
     while (((READ_PERI_REG(UART_STATUS_REG(0)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
     WRITE_PERI_REG(UART_FIFO_REG(0), c);
 }
 
-void esp_panicPutStr(const char *c)
+static void panicPutStr(const char *c)
 {
     int x = 0;
     while (c[x] != 0) {
-        esp_panicPutChar(c[x]);
+        panicPutChar(c[x]);
         x++;
     }
 }
 
-void esp_panicPutHex(int a)
+static void panicPutHex(int a)
 {
     int x;
     int c;
     for (x = 0; x < 8; x++) {
         c = (a >> 28) & 0xf;
         if (c < 10) {
-            esp_panicPutChar('0' + c);
+            panicPutChar('0' + c);
         } else {
-            esp_panicPutChar('a' + c - 10);
+            panicPutChar('a' + c - 10);
         }
         a <<= 4;
     }
 }
 
-void esp_panicPutDec(int a)
+static void panicPutDec(int a)
 {
     int n1, n2;
     n1 = a % 10;
     n2 = a / 10;
     if (n2 == 0) {
-        esp_panicPutChar(' ');
+        panicPutChar(' ');
     } else {
-        esp_panicPutChar(n2 + '0');
+        panicPutChar(n2 + '0');
     }
-    esp_panicPutChar(n1 + '0');
+    panicPutChar(n1 + '0');
 }
 #else
 //No printing wanted. Stub out these functions.
-void esp_panicPutChar(char c) { }
-void esp_panicPutStr(const char *c) { }
-void esp_panicPutHex(int a) { }
-void esp_panicPutDec(int a) { }
+static void panicPutChar(char c) { }
+static void panicPutStr(const char *c) { }
+static void panicPutHex(int a) { }
+static void panicPutDec(int a) { }
 #endif
 
 void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName )
 {
-    esp_panicPutStr("***ERROR*** A stack overflow in task ");
-    esp_panicPutStr((char *)pcTaskName);
-    esp_panicPutStr(" has been detected.\r\n");
+    panicPutStr("***ERROR*** A stack overflow in task ");
+    panicPutStr((char *)pcTaskName);
+    panicPutStr(" has been detected.\r\n");
     abort();
 }
 
@@ -220,25 +220,25 @@ void xt_unhandled_exception(XtExcFrame *frame)
     int x;
 
     haltOtherCore();
-    esp_panicPutStr("Guru Meditation Error of type ");
+    panicPutStr("Guru Meditation Error of type ");
     x = regs[20];
     if (x < 40) {
-        esp_panicPutStr(edesc[x]);
+        panicPutStr(edesc[x]);
     } else {
-        esp_panicPutStr("Unknown");
+        panicPutStr("Unknown");
     }
-    esp_panicPutStr(" occurred on core ");
-    esp_panicPutDec(xPortGetCoreID());
+    panicPutStr(" occurred on core ");
+    panicPutDec(xPortGetCoreID());
     if (esp_cpu_in_ocd_debug_mode()) {
-        esp_panicPutStr(" at pc=");
-        esp_panicPutHex(regs[1]);
-        esp_panicPutStr(". Setting bp and returning..\r\n");
+        panicPutStr(" at pc=");
+        panicPutHex(regs[1]);
+        panicPutStr(". Setting bp and returning..\r\n");
         //Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
         //will kick in exactly at the context the error happened.
         setFirstBreakpoint(regs[1]);
         return;
     }
-    esp_panicPutStr(". Exception was unhandled.\r\n");
+    panicPutStr(". Exception was unhandled.\r\n");
     commonErrorHandler(frame);
 }
 
@@ -293,16 +293,16 @@ static void putEntry(uint32_t pc, uint32_t sp)
     if (pc & 0x80000000) {
         pc = (pc & 0x3fffffff) | 0x40000000;
     }
-    esp_panicPutStr(" 0x");
-    esp_panicPutHex(pc);
-    esp_panicPutStr(":0x");
-    esp_panicPutHex(sp);
+    panicPutStr(" 0x");
+    panicPutHex(pc);
+    panicPutStr(":0x");
+    panicPutHex(sp);
 }
 
 static void doBacktrace(XtExcFrame *frame)
 {
     uint32_t i = 0, pc = frame->pc, sp = frame->a1;
-    esp_panicPutStr("\r\nBacktrace:");
+    panicPutStr("\r\nBacktrace:");
     /* Do not check sanity on first entry, PC could be smashed. */
     putEntry(pc, sp);
     pc = frame->a0;
@@ -318,7 +318,7 @@ static void doBacktrace(XtExcFrame *frame)
             break;
         }
     }
-    esp_panicPutStr("\r\n\r\n");
+    panicPutStr("\r\n\r\n");
 }
 
 /*
@@ -342,17 +342,17 @@ static void commonErrorHandler(XtExcFrame *frame)
        the register window is no longer useful.
     */
     if (!abort_called) {
-        esp_panicPutStr("Register dump:\r\n");
+        panicPutStr("Register dump:\r\n");
 
         for (x = 0; x < 24; x += 4) {
             for (y = 0; y < 4; y++) {
                 if (sdesc[x + y][0] != 0) {
-                    esp_panicPutStr(sdesc[x + y]);
-                    esp_panicPutStr(": 0x");
-                    esp_panicPutHex(regs[x + y + 1]);
-                    esp_panicPutStr("  ");
+                    panicPutStr(sdesc[x + y]);
+                    panicPutStr(": 0x");
+                    panicPutHex(regs[x + y + 1]);
+                    panicPutStr("  ");
                 }
-                esp_panicPutStr("\r\n");
+                panicPutStr("\r\n");
             }
         }
     }
@@ -362,7 +362,7 @@ static void commonErrorHandler(XtExcFrame *frame)
 
 #if CONFIG_ESP32_PANIC_GDBSTUB
     disableAllWdts();
-    esp_panicPutStr("Entering gdb stub now.\r\n");
+    panicPutStr("Entering gdb stub now.\r\n");
     esp_gdbstub_panic_handler(frame);
 #else
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
@@ -372,14 +372,14 @@ static void commonErrorHandler(XtExcFrame *frame)
     esp_core_dump_to_uart(frame);
 #endif
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
-    esp_panicPutStr("Rebooting...\r\n");
+    panicPutStr("Rebooting...\r\n");
     for (x = 0; x < 100; x++) {
         ets_delay_us(1000);
     }
     software_reset();
 #else
     disableAllWdts();
-    esp_panicPutStr("CPU halted.\r\n");
+    panicPutStr("CPU halted.\r\n");
     while (1);
 #endif
 #endif

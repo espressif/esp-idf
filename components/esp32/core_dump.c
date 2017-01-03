@@ -15,7 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-//#include "esp_attr.h"
 #include "esp_panic.h"
 #include "esp_partition.h"
 
@@ -26,10 +25,10 @@ const static char *TAG = "esp_core_dump";
 // TODO: allow user to set this in menuconfig or get tasks iteratively
 #define COREDUMP_MAX_TASKS_NUM    32
 
-typedef esp_err_t (*esp_core_dump_write_prepare_t)(void *priv, uint32_t *data_len);
-typedef esp_err_t (*esp_core_dump_write_start_t)(void *priv);
-typedef esp_err_t (*esp_core_dump_write_end_t)(void *priv);
-typedef esp_err_t (*esp_core_dump_flash_write_data_t)(void *priv, void * data, uint32_t data_len);
+typedef esp_err_t (*esp_core_dump_write_prepare_t)(void *priv, uint32_t *data_len, int verb);
+typedef esp_err_t (*esp_core_dump_write_start_t)(void *priv, int verb);
+typedef esp_err_t (*esp_core_dump_write_end_t)(void *priv, int verb);
+typedef esp_err_t (*esp_core_dump_flash_write_data_t)(void *priv, void * data, uint32_t data_len, int verb);
 
 typedef struct _core_dump_write_config_t
 {
@@ -67,14 +66,19 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
         if (tasks[i].pxTCB == xTaskGetCurrentTaskHandle()) {
             // set correct stack top for current task
             tasks[i].pxTopOfStack = (StackType_t *)frame;
+            if (verb)
+                ets_printf("Current task EXIT/PC/PS/A0/SP %x %x %x %x %x\r\n", frame->exit, frame->pc, frame->ps, frame->a0, frame->a1);
+        }
+        else {
             if (verb) {
-                esp_panicPutStr("Current task PC/A0/SP ");
-                esp_panicPutHex(frame->pc);
-                esp_panicPutStr(" ");
-                esp_panicPutHex(frame->a0);
-                esp_panicPutStr(" ");
-                esp_panicPutHex(frame->a1);
-                esp_panicPutStr("\r\n");
+                XtSolFrame *task_frame = (XtSolFrame *)tasks[i].pxTopOfStack;
+                if (task_frame->exit == 0) {
+                    ets_printf("Task EXIT/PC/PS/A0/SP %x %x %x %x %x\r\n", task_frame->exit, task_frame->pc, task_frame->ps, task_frame->a0, task_frame->a1);
+                }
+                else {
+                    XtExcFrame *task_frame2 = (XtExcFrame *)tasks[i].pxTopOfStack;
+                    ets_printf("Task EXIT/PC/PS/A0/SP %x %x %x %x %x\r\n", task_frame2->exit, task_frame2->pc, task_frame2->ps, task_frame2->a0, task_frame2->a1);
+                }
             }
         }
 #if( portSTACK_GROWTH < 0 )
@@ -83,13 +87,7 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
         len = (uint32_t)tasks[i].pxTopOfStack - (uint32_t)tasks[i].pxEndOfStack;
 #endif
         if (verb) {
-            esp_panicPutStr("stack len = ");
-            esp_panicPutHex(len);
-            esp_panicPutStr(" ");
-            esp_panicPutHex((int)tasks[i].pxTopOfStack);
-            esp_panicPutStr(" ");
-            esp_panicPutHex((int)tasks[i].pxEndOfStack);
-            esp_panicPutStr("\r\n");
+            ets_printf("Stack len = %lu (%x %x)\r\n", len, tasks[i].pxTopOfStack, tasks[i].pxEndOfStack);
         }
         // take stack padding into account
         if (len % sizeof(uint32_t))
@@ -99,28 +97,22 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
 
     // prepare write
     if (write_cfg->prepare) {
-        err = write_cfg->prepare(write_cfg->priv, &data_len);
+        err = write_cfg->prepare(write_cfg->priv, &data_len, verb);
         if (err != ESP_OK) {
-            esp_panicPutStr("ERROR: Failed to prepare core dump ");
-            esp_panicPutHex(err);
-            esp_panicPutStr("!\r\n");
+            ets_printf("ERROR: Failed to prepare core dump (%d)!\r\n", err);
             return;
         }
     }
 
     if (verb) {
-        esp_panicPutStr("Core dump len =");
-        esp_panicPutHex(data_len);
-        esp_panicPutStr("\r\n");
+        ets_printf("Core dump len = %lu\r\n", data_len);
     }
 
-    // write start marker
+    // write start
     if (write_cfg->start) {
-        err = write_cfg->start(write_cfg->priv);
+        err = write_cfg->start(write_cfg->priv, verb);
         if (err != ESP_OK) {
-            esp_panicPutStr("ERROR: Failed to start core dump ");
-            esp_panicPutHex(err);
-            esp_panicPutStr("!\r\n");
+            ets_printf("ERROR: Failed to start core dump (%d)!\r\n", err);
             return;
         }
     }
@@ -129,49 +121,33 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
     rom_data.data32[0] = data_len;
     rom_data.data32[1] = task_num;
     rom_data.data32[2] = tcb_sz;
-    err = write_cfg->write(write_cfg->priv, &rom_data, 3*sizeof(uint32_t));
+    err = write_cfg->write(write_cfg->priv, &rom_data, 3*sizeof(uint32_t), verb);
     if (err != ESP_OK) {
-        esp_panicPutStr("ERROR: Failed to write core dump header ");
-        esp_panicPutHex(err);
-        esp_panicPutStr("!\r\n");
+        ets_printf("ERROR: Failed to write core dump header (%d)!\r\n", err);
         return;
     }
 
     // write tasks
     for (i = 0; i < task_num; i++) {
         if (verb) {
-            esp_panicPutStr("Dump task ");
-            esp_panicPutHex((int)tasks[i].pxTCB);
-            esp_panicPutStr("\r\n");
+            ets_printf("Dump task %x\r\n", tasks[i].pxTCB);
         }
         // save TCB address, stack base and stack top addr
         rom_data.data32[0] = (uint32_t)tasks[i].pxTCB;
         rom_data.data32[1] = (uint32_t)tasks[i].pxTopOfStack;
         rom_data.data32[2] = (uint32_t)tasks[i].pxEndOfStack;
-        err = write_cfg->write(write_cfg->priv, &rom_data, 3*sizeof(uint32_t));
+        err = write_cfg->write(write_cfg->priv, &rom_data, 3*sizeof(uint32_t), verb);
         if (err != ESP_OK) {
-            esp_panicPutStr("ERROR: Failed to write task header ");
-            esp_panicPutHex(err);
-            esp_panicPutStr("!\r\n");
+            ets_printf("ERROR: Failed to write task header (%d)!\r\n", err);
             return;
         }
         // save TCB
-        err = write_cfg->write(write_cfg->priv, tasks[i].pxTCB, tcb_sz);
+        err = write_cfg->write(write_cfg->priv, tasks[i].pxTCB, tcb_sz, verb);
         if (err != ESP_OK) {
-            esp_panicPutStr("ERROR: Failed to write task header ");
-            esp_panicPutHex(err);
-            esp_panicPutStr("!\r\n");
+            ets_printf("ERROR: Failed to write TCB (%d)!\r\n", err);
             return;
         }
         // save task stack
-        /*int k;
-        for (k = 0; k < 8*4; k++) {
-            esp_panicPutStr("stack[");
-            esp_panicPutDec(k);
-            esp_panicPutStr("] = ");
-            esp_panicPutHex(((uint8_t *)tasks[i].pxTopOfStack)[k]);
-            esp_panicPutStr("\r\n");
-        }*/
         err = write_cfg->write(write_cfg->priv,
 #if( portSTACK_GROWTH < 0 )
                 tasks[i].pxTopOfStack,
@@ -180,22 +156,18 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
                 tasks[i].pxEndOfStack,
                 (uint32_t)tasks[i].pxTopOfStack - (uint32_t)tasks[i].pxEndOfStack
 #endif
-                );
+                , verb);
         if (err != ESP_OK) {
-            esp_panicPutStr("ERROR: Failed to write task header ");
-            esp_panicPutHex(err);
-            esp_panicPutStr("!\r\n");
+            ets_printf("ERROR: Failed to write task stack (%d)!\r\n", err);
             return;
         }
     }
 
-    // write end marker
+    // write end
     if (write_cfg->end) {
-        err = write_cfg->end(write_cfg->priv);
+        err = write_cfg->end(write_cfg->priv, verb);
         if (err != ESP_OK) {
-            esp_panicPutStr("ERROR: Failed to end core dump ");
-            esp_panicPutHex(err);
-            esp_panicPutStr("!\r\n");
+            ets_printf("ERROR: Failed to end core dump (%d)!\r\n", err);
             return;
         }
     }
@@ -204,8 +176,8 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 
 // magic numbers to control core dump data consistency
-#define COREDUMP_FLASH_MAGIC_START    0xDEADBEEFUL
-#define COREDUMP_FLASH_MAGIC_END      0xACDCFEEDUL
+#define COREDUMP_FLASH_MAGIC_START    0xE32C04EDUL
+#define COREDUMP_FLASH_MAGIC_END      0xE32C04EDUL
 
 typedef struct _core_dump_write_flash_data_t
 {
@@ -228,11 +200,9 @@ static uint32_t esp_core_dump_write_flash_padded(size_t off, uint8_t *data, uint
     } rom_data;
 
     data_len = (data_size / sizeof(uint32_t)) * sizeof(uint32_t);
-    err = spi_flash_write_panic(off, data, data_len);
+    err = spi_flash_write(off, data, data_len);
     if (err != ESP_OK) {
-        esp_panicPutStr("ERROR: Failed to write data");
-        esp_panicPutHex(err);
-        esp_panicPutStr("!\r\n");
+        ets_printf("ERROR: Failed to write data to flash (%d)!\r\n", err);
         return 0;
     }
 
@@ -242,11 +212,9 @@ static uint32_t esp_core_dump_write_flash_padded(size_t off, uint8_t *data, uint
         rom_data.data32 = 0;
         for (k = 0; k < len; k++)
             rom_data.data8[k] = *(data + data_len + k);
-        err = spi_flash_write_panic(off + data_len, &rom_data, sizeof(uint32_t));
+        err = spi_flash_write(off + data_len, &rom_data, sizeof(uint32_t));
         if (err != ESP_OK) {
-            esp_panicPutStr("ERROR: Failed to write data end");
-            esp_panicPutHex(err);
-            esp_panicPutStr("!\r\n");
+            ets_printf("ERROR: Failed to finish write data to flash (%d)!\r\n", err);
             return 0;
         }
         data_len += sizeof(uint32_t);
@@ -255,37 +223,27 @@ static uint32_t esp_core_dump_write_flash_padded(size_t off, uint8_t *data, uint
     return data_len;
 }
 
-static esp_err_t esp_core_dump_flash_write_prepare(void *priv, uint32_t *data_len)
+static esp_err_t esp_core_dump_flash_write_prepare(void *priv, uint32_t *data_len, int verb)
 {
     esp_err_t err;
     uint32_t sec_num;
     core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
 
-    esp_panicPutStr("Core dump len1 = ");
-    esp_panicPutHex(*data_len);
-    esp_panicPutStr("\r\n");
-
     // add space for 2 magics. TODO: change to CRC
-    *data_len += 2*sizeof(uint32_t);
-    if (*data_len > s_core_part_size) {
-        esp_panicPutStr("ERROR: Not enough space to save core dump!");
+    if ((*data_len + 2*sizeof(uint32_t)) > s_core_part_size) {
+        ets_printf("ERROR: Not enough space to save core dump!\r\n");
         return ESP_ERR_NO_MEM;
     }
-
-    esp_panicPutStr("Core dump len2 = ");
-    esp_panicPutHex(*data_len);
-    esp_panicPutStr("\r\n");
+    *data_len += 2*sizeof(uint32_t);
 
     wr_data->off = 0;
 
     sec_num = *data_len / SPI_FLASH_SEC_SIZE;
     if (*data_len % SPI_FLASH_SEC_SIZE)
         sec_num++;
-    err = spi_flash_erase_range_panic(s_core_part_start + 0, sec_num * SPI_FLASH_SEC_SIZE);
+    err = spi_flash_erase_range(s_core_part_start + 0, sec_num * SPI_FLASH_SEC_SIZE);
     if (err != ESP_OK) {
-        esp_panicPutStr("ERROR: Failed to erase flash ");
-        esp_panicPutHex(err);
-        esp_panicPutStr("!\r\n");
+        ets_printf("ERROR: Failed to erase flash (%d)!\r\n", err);
         return err;
     }
 
@@ -297,11 +255,9 @@ static esp_err_t esp_core_dump_flash_write_word(core_dump_write_flash_data_t *wr
     esp_err_t err = ESP_OK;
     uint32_t  data32 = word;
 
-    err = spi_flash_write_panic(s_core_part_start + wr_data->off, &data32, sizeof(uint32_t));
+    err = spi_flash_write(s_core_part_start + wr_data->off, &data32, sizeof(uint32_t));
     if (err != ESP_OK) {
-        esp_panicPutStr("Failed to write to flash ");
-        esp_panicPutHex(err);
-        esp_panicPutStr("!\r\n");
+        ets_printf("ERROR: Failed to write to flash (%d)!\r\n", err);
         return err;
     }
     wr_data->off += sizeof(uint32_t);
@@ -309,14 +265,14 @@ static esp_err_t esp_core_dump_flash_write_word(core_dump_write_flash_data_t *wr
     return err;
 }
 
-static esp_err_t esp_core_dump_flash_write_start(void *priv)
+static esp_err_t esp_core_dump_flash_write_start(void *priv, int verb)
 {
     core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
     // save magic 1
     return esp_core_dump_flash_write_word(wr_data, COREDUMP_FLASH_MAGIC_START);
 }
 
-static esp_err_t esp_core_dump_flash_write_end(void *priv)
+static esp_err_t esp_core_dump_flash_write_end(void *priv, int verb)
 {
     core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
     uint32_t i;
@@ -326,31 +282,27 @@ static esp_err_t esp_core_dump_flash_write_end(void *priv)
         uint32_t   data32[4];
     } rom_data;
 
-    // TEST READ START
-    esp_err_t err = spi_flash_read_panic(s_core_part_start + 0, &rom_data, sizeof(rom_data));
-    if (err != ESP_OK) {
-        esp_panicPutStr("ERROR: Failed to read flash ");
-        esp_panicPutHex(err);
-        esp_panicPutStr("!\r\n");
-        return err;
-    }
-    else {
-        esp_panicPutStr("Data from flash:\r\n");
-        for (i = 0; i < sizeof(rom_data)/sizeof(rom_data.data32[0]); i++) {
-            esp_panicPutHex(rom_data.data32[i]);
-            esp_panicPutStr("\r\n");
+    if (verb) {
+        // TEST READ START
+        esp_err_t err = spi_flash_read(s_core_part_start + 0, &rom_data, sizeof(rom_data));
+        if (err != ESP_OK) {
+            ets_printf("ERROR: Failed to read flash (%d)!\r\n", err);
+            return err;
         }
-//            rom_data[4] = 0;
-//            esp_panicPutStr(rom_data);
-//        esp_panicPutStr("\r\n");
+        else {
+            ets_printf("Data from flash:\r\n");
+            for (i = 0; i < sizeof(rom_data)/sizeof(rom_data.data32[0]); i++) {
+                ets_printf("%x\r\n", rom_data.data32[i]);
+            }
+        }
+        // TEST READ END
     }
-    // TEST READ END
 
     // save magic 2
     return esp_core_dump_flash_write_word(wr_data, COREDUMP_FLASH_MAGIC_END);
 }
 
-static esp_err_t esp_core_dump_flash_write_data(void *priv, void * data, uint32_t data_len)
+static esp_err_t esp_core_dump_flash_write_data(void *priv, void * data, uint32_t data_len, int verb)
 {
     esp_err_t err = ESP_OK;
     core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
@@ -375,9 +327,11 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, void * data, uint32_
  */
 void esp_core_dump_to_flash(XtExcFrame *frame)
 {
-#if 1
     core_dump_write_config_t wr_cfg;
     core_dump_write_flash_data_t wr_data;
+
+    /* init non-OS flash access critical section */
+    spi_flash_guard_set(&g_flash_guard_no_os_ops);
 
     wr_cfg.prepare = esp_core_dump_flash_write_prepare;
     wr_cfg.start = esp_core_dump_flash_write_start;
@@ -385,213 +339,13 @@ void esp_core_dump_to_flash(XtExcFrame *frame)
     wr_cfg.write = esp_core_dump_flash_write_data;
     wr_cfg.priv = &wr_data;
 
-    esp_panicPutStr("Save core dump to flash...\r\n");
-    esp_core_dump_write(frame, &wr_cfg, 1);
-#else
-    union
-    {
-        uint8_t    data8[16];
-        uint32_t   data32[4];
-    } rom_data;
-    //const esp_partition_t *core_part;
-    esp_err_t err;
-    TaskSnapshot_t tasks[COREDUMP_MAX_TASKS_NUM];
-    UBaseType_t tcb_sz, task_num;
-    uint32_t data_len = 0, i, len, sec_num;
-    size_t off;
-
-    esp_panicPutStr("Save core dump to flash...\r\n");
-    task_num = uxTaskGetSnapshotAll(tasks, COREDUMP_MAX_TASKS_NUM, &tcb_sz);
-    // take TCB padding into account, actual TCB size will be stored in header
-    if (tcb_sz % sizeof(uint32_t))
-        len = (tcb_sz / sizeof(uint32_t) + 1) * sizeof(uint32_t);
-    else
-        len = tcb_sz;
-    // header + magic2 + tasknum*(tcb + stack start/end + tcb addr)
-    data_len = 5*sizeof(uint32_t) + task_num*(len + 2*sizeof(uint32_t) + sizeof(uint32_t *));
-    for (i = 0; i < task_num; i++) {
-        if (tasks[i].pxTCB == xTaskGetCurrentTaskHandle()) {
-            // set correct stack top for current task
-            tasks[i].pxTopOfStack = (StackType_t *)frame;
-            esp_panicPutStr("Current task PC/A0/SP ");
-            esp_panicPutHex(frame->pc);
-            esp_panicPutStr(" ");
-            esp_panicPutHex(frame->a0);
-            esp_panicPutStr(" ");
-            esp_panicPutHex(frame->a1);
-            esp_panicPutStr("\r\n");
-        }
-#if( portSTACK_GROWTH < 0 )
-        len = (uint32_t)tasks[i].pxEndOfStack - (uint32_t)tasks[i].pxTopOfStack;
-#else
-        len = (uint32_t)tasks[i].pxTopOfStack - (uint32_t)tasks[i].pxEndOfStack;
-#endif
-        esp_panicPutStr("stack len = ");
-        esp_panicPutHex(len);
-        esp_panicPutStr(" ");
-        esp_panicPutHex((int)tasks[i].pxTopOfStack);
-        esp_panicPutStr(" ");
-        esp_panicPutHex((int)tasks[i].pxEndOfStack);
-        esp_panicPutStr("\r\n");
-        // take stack padding into account
-        if (len % sizeof(uint32_t))
-            len = (len / sizeof(uint32_t) + 1) * sizeof(uint32_t);
-        data_len += len;
-    }
-    esp_panicPutStr("Core dump len =");
-    esp_panicPutHex(data_len);
-    esp_panicPutStr("\r\n");
-    if (data_len > s_core_part_size) {
-        esp_panicPutStr("ERROR: Not enough space to save core dump!");
-        return;
-    }
-
-    // TEST READ START
-    err = spi_flash_read_panic(s_core_part_start + 0, &rom_data, sizeof(rom_data));
-    if (err != ESP_OK) {
-        esp_panicPutStr("ERROR: Failed to read flash ");
-        esp_panicPutHex(err);
-        esp_panicPutStr("!\r\n");
-        return;
-    }
-    else {
-        esp_panicPutStr("Data from flash:\r\n");
-        for (i = 0; i < sizeof(rom_data)/sizeof(rom_data.data32[0]); i++) {
-            esp_panicPutHex(rom_data.data32[i]);
-            esp_panicPutStr("\r\n");
-        }
-//            rom_data[4] = 0;
-//            esp_panicPutStr(rom_data);
-//        esp_panicPutStr("\r\n");
-    }
-    // TEST READ END
-
-    sec_num = data_len / SPI_FLASH_SEC_SIZE;
-    if (data_len % SPI_FLASH_SEC_SIZE)
-        sec_num++;
-    err = spi_flash_erase_range_panic(s_core_part_start + 0, sec_num * SPI_FLASH_SEC_SIZE);
-    if (err != ESP_OK) {
-        esp_panicPutStr("ERROR: Failed to erase flash ");
-        esp_panicPutHex(err);
-        esp_panicPutStr("!\r\n");
-        return;
-    }
-
-    rom_data.data32[0] = COREDUMP_FLASH_MAGIC_START;
-    rom_data.data32[1] = data_len;
-    rom_data.data32[2] = task_num;
-    rom_data.data32[3] = tcb_sz;
-    err = spi_flash_write_panic(s_core_part_start + 0, &rom_data, sizeof(rom_data));
-    if (err != ESP_OK) {
-        esp_panicPutStr("ERROR: Failed to write core dump header ");
-        esp_panicPutHex(err);
-        esp_panicPutStr("!\r\n");
-        return;
-    }
-    off = sizeof(rom_data);
-
-    for (i = 0; i < task_num; i++) {
-        esp_panicPutStr("Dump task ");
-        esp_panicPutHex((int)tasks[i].pxTCB);
-        esp_panicPutStr("\r\n");
-
-        // save TCB address, stack base and stack top addr
-        rom_data.data32[0] = (uint32_t)tasks[i].pxTCB;
-        rom_data.data32[1] = (uint32_t)tasks[i].pxTopOfStack;
-        rom_data.data32[2] = (uint32_t)tasks[i].pxEndOfStack;
-        err = spi_flash_write_panic(s_core_part_start + off, &rom_data, 3*sizeof(uint32_t));
-        if (err != ESP_OK) {
-            esp_panicPutStr("ERROR: Failed to write task header ");
-            esp_panicPutHex(err);
-            esp_panicPutStr("!\r\n");
-            return;
-        }
-        off += 3*sizeof(uint32_t);
-        // save TCB
-        len = esp_core_dump_write_flash_padded(s_core_part_start + off, tasks[i].pxTCB, tcb_sz);
-        if (len == 0)
-            return;
-        off += len;
-        // save task stack
-        /*int k;
-        for (k = 0; k < 8*4; k++) {
-            esp_panicPutStr("stack[");
-            esp_panicPutDec(k);
-            esp_panicPutStr("] = ");
-            esp_panicPutHex(((uint8_t *)tasks[i].pxTopOfStack)[k]);
-            esp_panicPutStr("\r\n");
-        }*/
-        len = esp_core_dump_write_flash_padded(s_core_part_start + off,
-#if( portSTACK_GROWTH < 0 )
-                tasks[i].pxTopOfStack,
-                (uint32_t)tasks[i].pxEndOfStack - (uint32_t)tasks[i].pxTopOfStack
-#else
-                tasks[i].pxEndOfStack,
-                (uint32_t)tasks[i].pxTopOfStack - (uint32_t)tasks[i].pxEndOfStack
-#endif
-                );
-        if (len == 0)
-            return;
-        off += len;
-    }
-
-    rom_data.data32[0] = COREDUMP_FLASH_MAGIC_END;
-    err = spi_flash_write_panic(s_core_part_start + off, &rom_data, sizeof(uint32_t));
-    if (err != ESP_OK) {
-        esp_panicPutStr("Failed to write to flash ");
-        esp_panicPutHex(err);
-        esp_panicPutStr("!\r\n");
-        return;
-    }
-#endif
-    esp_panicPutStr("Core dump has been saved to flash.\r\n");
+    ets_printf("Save core dump to flash...\r\n");
+    esp_core_dump_write(frame, &wr_cfg, 0);
+    ets_printf("Core dump has been saved to flash.\r\n");
 }
 #endif
 
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART
-#if 0
-#define BASE64_ENCODE_BODY(_src, _src_len, _dst)                                \
-    do {                                                                        \
-        static const char *b64 =                                                \
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; \
-        int i, j, a, b, c;                                                      \
-                                                                                \
-        for (i = j = 0; i < _src_len; i += 3) {                                  \
-            a = _src[i];                                                         \
-            b = i + 1 >= _src_len ? 0 : _src[i + 1];                              \
-            c = i + 2 >= _src_len ? 0 : _src[i + 2];                              \
-                                                                                \
-            /*BASE64_OUT(b64[a >> 2], _dst[j]);*/                                            \
-            _dst[j++] = b64[a >> 2]; \
-            /*BASE64_OUT(b64[((a & 3) << 4) | (b >> 4)], _dst[j]);*/                         \
-            _dst[j++] = b64[((a & 3) << 4) | (b >> 4)]; \
-            j++;                                                                \
-            if (i + 1 < _src_len) {                                              \
-                BASE64_OUT(b64[(b & 15) << 2 | (c >> 6)], _dst[j]);                      \
-                j++;                                                                \
-            }                                                                   \
-            if (i + 2 < _src_len) {                                              \
-                BASE64_OUT(b64[c & 63], _dst[j]);                                        \
-                j++;                                                                \
-            }                                                                   \
-        }                                                                       \
-                                                                                \
-        while (j % 4 != 0) {                                                    \
-            BASE64_OUT('=', _dst);                                                    \
-        }                                                                       \
-        BASE64_FLUSH(_dst)                                                          \
-    } while(0)
-
-#define BASE64_OUT(ch, _dst) \
-  do {                 \
-    _dst = (ch);   \
-  } while (0)
-
-#define BASE64_FLUSH(_dst) \
-  do {                 \
-    _dst = '\0';   \
-  } while (0)
-#endif
 static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8_t *dst) {
 //  BASE64_ENCODE_BODY(src, src_len, dst);
     static const char *b64 =
@@ -618,38 +372,26 @@ static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8
     dst[j++] = '\0';
 }
 
-/*static esp_err_t esp_core_dump_uart_write_prepare(void *priv, uint32_t *data_len)
+static esp_err_t esp_core_dump_uart_write_start(void *priv, int verb)
 {
     esp_err_t err = ESP_OK;
-    return err;
-}*/
-
-static esp_err_t esp_core_dump_uart_write_start(void *priv)
-{
-//    core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
-    esp_err_t err = ESP_OK;
-    esp_panicPutStr("================= CORE DUMP START =================\r\n");
+    ets_printf("================= CORE DUMP START =================\r\n");
     return err;
 }
 
-static esp_err_t esp_core_dump_uart_write_end(void *priv)
+static esp_err_t esp_core_dump_uart_write_end(void *priv, int verb)
 {
-//    core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
     esp_err_t err = ESP_OK;
-    esp_panicPutStr("================= CORE DUMP END =================\r\n");
+    ets_printf("================= CORE DUMP END =================\r\n");
     return err;
 }
 
-static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t data_len)
+static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t data_len, int verb)
 {
-//    core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
     esp_err_t err = ESP_OK;
     char buf[64 + 4], *addr = data;
     char *end = addr + data_len;
 
-//    esp_panicPutStr("CORE DUMP SEC: ");
-//    esp_panicPutDec(data_len);
-//    esp_panicPutStr("bytes\r\n");
 
     while (addr < end) {
         size_t len = end - addr;
@@ -659,15 +401,7 @@ static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t
         memcpy(tmp, addr, len);
         esp_core_dump_b64_encode((const uint8_t *)tmp, len, (uint8_t *)buf);
         addr += len;
-        esp_panicPutStr(buf);
-//        for (size_t i = 0; buf[i] != '\0'; i++) {
-//            panicPutChar(buf[i]);
-//        }
-        //if (addr % 96 == 0)
-        esp_panicPutStr("\r\n");
-        /* Feed the Cerberus. */
-//        TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-//        TIMERG0.wdt_feed = 1;
+        ets_printf("%s\r\n", buf);
     }
 
     return err;
@@ -676,17 +410,16 @@ static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t
 void esp_core_dump_to_uart(XtExcFrame *frame)
 {
     core_dump_write_config_t wr_cfg;
-    //core_dump_write_flash_data_t wr_data;
 
-    wr_cfg.prepare = NULL;//esp_core_dump_uart_write_prepare;
+    wr_cfg.prepare = NULL;
     wr_cfg.start = esp_core_dump_uart_write_start;
     wr_cfg.end = esp_core_dump_uart_write_end;
     wr_cfg.write = esp_core_dump_uart_write_data;
     wr_cfg.priv = NULL;
 
-    esp_panicPutStr("Save core dump to flash...\r\n");
+    ets_printf("Print core dump to uart...\r\n");
     esp_core_dump_write(frame, &wr_cfg, 0);
-    esp_panicPutStr("Core dump has been written to uart.\r\n");
+    ets_printf("Core dump has been written to uart.\r\n");
 }
 #endif
 

@@ -141,7 +141,7 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
     esp_intr_noniram_enable();
 }
 
-void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_panic()
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
 {
     const uint32_t cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
@@ -154,7 +154,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_panic()
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
 }
 
-void IRAM_ATTR spi_flash_enable_interrupts_caches_panic()
+void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os()
 {
     const uint32_t cpuid = xPortGetCoreID();
 
@@ -195,7 +195,7 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
     esp_intr_noniram_enable();
 }
 
-void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_panic()
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
 {
     // Kill interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
@@ -203,7 +203,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_panic()
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
 
-void IRAM_ATTR spi_flash_enable_interrupts_caches_panic()
+void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os()
 {
     // Re-enable cache on this CPU
     spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
