@@ -24,7 +24,7 @@
  */
 
 void esp_set_breakpoint_if_jtag(void *fn);
-void esp_panicPutchar(char c);
+void esp_panicPutChar(char c);
 void esp_panicPutStr(const char *c);
 void esp_panicPutHex(int a);
 void esp_panicPutDec(int a);

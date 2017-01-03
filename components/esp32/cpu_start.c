@@ -215,7 +215,7 @@ void start_cpu0_default(void)
     }
 #endif
 
-#if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
+#if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH || CONFIG_ESP32_ENABLE_COREDUMP_TO_UART
     esp_core_dump_init();
 #endif
 
