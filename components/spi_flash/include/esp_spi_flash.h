@@ -116,6 +116,23 @@ esp_err_t spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t si
  */
 esp_err_t spi_flash_read(size_t src_addr, void *dest, size_t size);
 
+
+/**
+ * @brief  Read data from Encrypted Flash.
+ *
+ * If flash encryption is enabled, this function will transparently decrypt data as it is read.
+ * If flash encryption is not enabled, this function behaves the same as spi_flash_read().
+ *
+ * See @ref esp_flash_encryption_enabled() for a function to check if flash encryption is enabled.
+ *
+ * @param  src   source address of the data in Flash.
+ * @param  dest  pointer to the destination buffer
+ * @param  size  length of data
+ *
+ * @return esp_err_t
+ */
+esp_err_t spi_flash_read_encrypted(size_t src, void *dstv, size_t size);
+
 /**
  * @brief Enumeration which specifies memory space requested in an mmap call
  */
