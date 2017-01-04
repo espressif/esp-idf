@@ -48,14 +48,23 @@ endif
 # make IDF_PATH a "real" absolute path
 # * works around the case where a shell character is embedded in the environment variable value.
 # * changes Windows-style C:/blah/ paths to MSYS/Cygwin style /c/blah
-export IDF_PATH:=$(realpath $(wildcard $(IDF_PATH)))
+ifdef MSYSTEM
+# On Windows MSYS2, make wildcard function returns empty string for paths of form /xyz
+# where /xyz is a directory inside the MSYS root - so we don't use it.
+SANITISED_IDF_PATH:=$(realpath $(IDF_PATH))
+else
+SANITISED_IDF_PATH:=$(realpath $(wildcard $(IDF_PATH)))
+endif
+
+export IDF_PATH := $(SANITISED_IDF_PATH)
 
 ifndef IDF_PATH
 $(error IDF_PATH variable is not set to a valid directory.)
 endif
 
-ifneq ("$(IDF_PATH)","$(realpath $(wildcard $(IDF_PATH)))")
-# due to the way make manages variables, this is hard to account for
+ifneq ("$(IDF_PATH)","$(SANITISED_IDF_PATH)")
+# implies IDF_PATH is override on make command line.
+# Due to the way make manages variables, this is hard to account for
 #
 # if you see this error, do the shell expansion in the shell ie
 # make IDF_PATH=~/blah not make IDF_PATH="~/blah"
