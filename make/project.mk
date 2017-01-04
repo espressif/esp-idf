@@ -187,6 +187,7 @@ LDFLAGS ?= -nostdlib \
 	-Wl,--start-group	\
 	$(COMPONENT_LDFLAGS) \
 	-lgcc \
+	-lstdc++ \
 	-Wl,--end-group \
 	-Wl,-EL
 
