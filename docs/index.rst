@@ -124,6 +124,7 @@ Contents:
    Deep Sleep <api/deep_sleep>
    deep-sleep-stub
 
+   mDNS <api/mdns>
    Template <api/template>
 
 .. toctree::
