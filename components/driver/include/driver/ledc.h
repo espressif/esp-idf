@@ -360,32 +360,27 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel
  *
  *
  * ----------------EXAMPLE OF LEDC SETTING ---------------------
- * @code{c}
- * //1. enable LEDC
- * //enable LEDC module, or you can not set any register of it.
- * periph_module_enable(PERIPH_LEDC_MODULE);
- * @endcode
  *
  * @code{c}
- * //2. set LEDC timer
+ * //1. set LEDC timer
  * ledc_timer_config_t timer_conf = {
  *     .bit_num = LEDC_TIMER_12_BIT,                        //set timer counter bit number
  *     .freq_hz = 1000,                                     //set frequency of pwm, here, 1000Hz
  *     .speed_mode = LEDC_HIGH_SPEED_MODE,                  //timer mode,
- *     .timer_num = LEDC_TIMER_0,                           //timer number
+ *     .timer_num = LEDC_TIMER_0                            //timer number
  * };
  * ledc_timer_config(&timer_conf);                          //setup timer.
  * @endcode
  *
  * @code{c}
- * //3. set LEDC channel
+ * //2. set LEDC channel
  * ledc_channel_config_t ledc_conf = {
- *     .channel = LEDC_CHANNEL_0;                           //set LEDC channel 0
- *     .duty = 1000;                                        //set the duty for initialization.(duty range is 0 ~ ((2**bit_num)-1)
- *     .gpio_num = 16;                                      //GPIO number
- *     .intr_type = LEDC_INTR_FADE_END;                     //GPIO INTR TYPE, as an example, we enable fade_end interrupt here.
- *     .speed_mode = LEDC_HIGH_SPEED_MODE;                  //set LEDC mode, from ledc_mode_t
- *     .timer_sel = LEDC_TIMER_0;                           //set LEDC timer source, if different channel use one timer, the frequency and bit_num of these channels should be the same
+ *     .channel = LEDC_CHANNEL_0,                           //set LEDC channel 0
+ *     .duty = 1000,                                        //set the duty for initialization.(duty range is 0 ~ ((2**bit_num)-1)
+ *     .gpio_num = 16,                                      //GPIO number
+ *     .intr_type = LEDC_INTR_FADE_END,                     //GPIO INTR TYPE, as an example, we enable fade_end interrupt here.
+ *     .speed_mode = LEDC_HIGH_SPEED_MODE,                  //set LEDC mode, from ledc_mode_t
+ *     .timer_sel = LEDC_TIMER_0                            //set LEDC timer source, if different channel use one timer, the frequency and bit_num of these channels should be the same
  * }
  * ledc_channel_config(&ledc_conf);                         //setup the configuration
  *
