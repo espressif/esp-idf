@@ -44,6 +44,7 @@
 #include "bootloader_flash.h"
 
 #include "bootloader_config.h"
+#include "rtc.h"
 
 extern int _bss_start;
 extern int _bss_end;
@@ -232,6 +233,13 @@ static bool ota_select_valid(const esp_ota_select_entry_t *s)
 
 void bootloader_main()
 {
+    /* Set CPU to 80MHz.
+       Start by ensuring it is set to XTAL, as PLL must be off first
+       (may still be on due to soft reset.)
+    */
+    rtc_set_cpu_freq(CPU_XTAL);
+    rtc_set_cpu_freq(CPU_80M);
+
     uart_console_configure();
     ESP_LOGI(TAG, "Espressif ESP32 2nd stage bootloader v. %s", BOOT_VERSION);
 #if defined(CONFIG_SECURE_BOOT_ENABLED) || defined(CONFIG_FLASH_ENCRYPTION_ENABLED)
@@ -666,26 +674,6 @@ void print_flash_info(const esp_image_header_t* phdr)
 #endif
 }
 
-#if CONFIG_CONSOLE_UART_CUSTOM
-static uint32_t get_apb_freq(void)
-{
-    // Get the value of APB clock from RTC memory.
-    // The value is initialized in ROM code, and updated by librtc.a
-    // when APB clock is changed.
-    // This value is stored in RTC_CNTL_STORE5_REG as follows:
-    // RTC_CNTL_STORE5_REG = (freq >> 12) | ((freq >> 12) << 16)
-    uint32_t apb_freq_reg = REG_READ(RTC_CNTL_STORE5_REG);
-    uint32_t apb_freq_l = apb_freq_reg & 0xffff;
-    uint32_t apb_freq_h = apb_freq_reg >> 16;
-    if (apb_freq_l == apb_freq_h && apb_freq_l != 0) {
-        return apb_freq_l << 12;
-    } else {
-        // fallback value
-        return APB_CLK_FREQ_ROM;
-    }
-}
-#endif
-
 static void uart_console_configure(void)
 {
 #if CONFIG_CONSOLE_UART_NONE
@@ -695,20 +683,21 @@ static void uart_console_configure(void)
     uartAttach();
     ets_install_uart_printf();
 
+    // ROM bootloader may have put a lot of text into UART0 FIFO.
+    // Wait for it to be printed.
+    uart_tx_wait_idle(0);
+
 #if CONFIG_CONSOLE_UART_CUSTOM
     // Some constants to make the following code less upper-case
     const int uart_num = CONFIG_CONSOLE_UART_NUM;
     const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
     const int uart_tx_gpio = CONFIG_CONSOLE_UART_TX_GPIO;
     const int uart_rx_gpio = CONFIG_CONSOLE_UART_RX_GPIO;
-    // ROM bootloader may have put a lot of text into UART0 FIFO.
-    // Wait for it to be printed.
-    uart_tx_wait_idle(0);
     // Switch to the new UART (this just changes UART number used for
     // ets_printf in ROM code).
     uart_tx_switch(uart_num);
     // Set new baud rate
-    uart_div_modify(uart_num, (((uint64_t) get_apb_freq()) << 4) / uart_baud);
+    uart_div_modify(uart_num, (APB_CLK_FREQ << 4) / uart_baud);
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
     if (uart_num != 0 || uart_tx_gpio != 1 || uart_rx_gpio != 3) {
@@ -726,4 +715,13 @@ static void uart_console_configure(void)
     }
 #endif // CONFIG_CONSOLE_UART_CUSTOM
 #endif // CONFIG_CONSOLE_UART_NONE
+}
+
+/* empty rtc_printf implementation, to work with librtc
+   linking. Can be removed once -lrtc is removed from bootloader's
+   main component.mk.
+*/
+int rtc_printf(void)
+{
+    return 0;
 }
