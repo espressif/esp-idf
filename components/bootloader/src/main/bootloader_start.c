@@ -680,6 +680,8 @@ static void uart_console_configure(void)
     ets_install_putc1(NULL);
     ets_install_putc2(NULL);
 #else // CONFIG_CONSOLE_UART_NONE
+    const int uart_num = CONFIG_CONSOLE_UART_NUM;
+
     uartAttach();
     ets_install_uart_printf();
 
@@ -689,15 +691,11 @@ static void uart_console_configure(void)
 
 #if CONFIG_CONSOLE_UART_CUSTOM
     // Some constants to make the following code less upper-case
-    const int uart_num = CONFIG_CONSOLE_UART_NUM;
-    const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
     const int uart_tx_gpio = CONFIG_CONSOLE_UART_TX_GPIO;
     const int uart_rx_gpio = CONFIG_CONSOLE_UART_RX_GPIO;
     // Switch to the new UART (this just changes UART number used for
     // ets_printf in ROM code).
     uart_tx_switch(uart_num);
-    // Set new baud rate
-    uart_div_modify(uart_num, (APB_CLK_FREQ << 4) / uart_baud);
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
     if (uart_num != 0 || uart_tx_gpio != 1 || uart_rx_gpio != 3) {
@@ -714,6 +712,11 @@ static void uart_console_configure(void)
         gpio_matrix_in(uart_rx_gpio, rx_idx, 0);
     }
 #endif // CONFIG_CONSOLE_UART_CUSTOM
+
+    // Set configured UART console baud rate
+    const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
+    uart_div_modify(uart_num, (APB_CLK_FREQ << 4) / uart_baud);
+
 #endif // CONFIG_CONSOLE_UART_NONE
 }
 
