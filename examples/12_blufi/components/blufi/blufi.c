@@ -30,6 +30,7 @@
 
 #include "bt_trace.h"
 #include "bt_types.h"
+#include "bta_api.h"
 
 #include "blufi.h"
 
