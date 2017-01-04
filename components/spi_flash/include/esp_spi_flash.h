@@ -92,14 +92,16 @@ esp_err_t spi_flash_write(size_t dest_addr, const void *src, size_t size);
  *
  * @note Flash encryption must be enabled for this function to work.
  *
- * @note Address in flash, dest, has to be 32-byte aligned.
+ * @note Destination flash address and length must be 16-byte
+ * aligned. Due to hardware limitations, this function is more
+ * efficient if both these arguments are 32-byte aligned. This is
+ * because the encryption engine natively deals with 32-byte rows of
+ * two AES blocks. Writing half a row (16 bytes) requires reading out
+ * the other 16 bytes and re-encrypting them back to the same value.
  *
- * @note If source address is in DROM, this function will return
- *       ESP_ERR_INVALID_ARG.
- *
- * @param  dest_addr destination address in Flash. Must be a multiple of 32 bytes.
+ * @param  dest_addr destination address in Flash. Must be a multiple of 16 bytes.
  * @param  src       pointer to the source buffer.
- * @param  size      length of data, in bytes. Must be a multiple of 32 bytes.
+ * @param  size      length of data, in bytes. Must be a multiple of 16 bytes.
  *
  * @return esp_err_t
  */
