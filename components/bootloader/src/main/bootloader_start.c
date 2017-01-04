@@ -25,6 +25,7 @@
 #include "rom/rtc.h"
 #include "rom/uart.h"
 #include "rom/gpio.h"
+#include "rom/secure_boot.h"
 
 #include "soc/soc.h"
 #include "soc/cpu.h"
@@ -42,7 +43,7 @@
 #include "esp_flash_encrypt.h"
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
-
+#include "bootloader_random.h"
 #include "bootloader_config.h"
 #include "rtc.h"
 
@@ -259,6 +260,9 @@ void bootloader_main()
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
     SPIUnlock();
 
+    ESP_LOGI(TAG, "Enabling RNG early entropy source...");
+    bootloader_random_enable();
+
     if(esp_image_load_header(0x1000, true, &fhdr) != ESP_OK) {
         ESP_LOGE(TAG, "failed to load bootloader header!");
         return;
@@ -369,6 +373,9 @@ void bootloader_main()
       return;
     }
 #endif
+
+    ESP_LOGI(TAG, "Disabling RNG early entropy source...");
+    bootloader_random_disable();
 
     // copy loaded segments to RAM, set up caches for mapped segments, and start application
     ESP_LOGI(TAG, "Loading app partition at offset %08x", load_part_pos);
