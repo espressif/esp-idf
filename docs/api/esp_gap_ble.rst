@@ -38,6 +38,7 @@ Macros
 Type Definitions
 ^^^^^^^^^^^^^^^^
 
+.. doxygentypedef:: esp_gap_ble_cb_t
 
 Enumerations
 ^^^^^^^^^^^^
