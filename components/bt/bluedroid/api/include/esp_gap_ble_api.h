@@ -25,6 +25,19 @@
 extern "C" {
 #endif
 
+/**@{
+ * BLE_ADV_DATA_FLAG data flag bit definition used for advertising data flag
+ */
+#define ESP_BLE_ADV_FLAG_LIMIT_DISC         (0x01 << 0)
+#define ESP_BLE_ADV_FLAG_GEN_DISC           (0x01 << 1)
+#define ESP_BLE_ADV_FLAG_BREDR_NOT_SPT      (0x01 << 2)
+#define ESP_BLE_ADV_FLAG_DMT_CONTROLLER_SPT (0x01 << 3)
+#define ESP_BLE_ADV_FLAG_DMT_HOST_SPT       (0x01 << 4)
+#define ESP_BLE_ADV_FLAG_NON_LIMIT_DISC     (0x00 )
+/**
+ * @}
+ */
+
 /// GAP BLE callback event type
 typedef enum {
 	ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT        = 0,		/*!< When advertising data set complete, the event comes */
@@ -126,7 +139,7 @@ typedef struct {
     uint8_t                 *p_service_data;		/*!< Service data point */
     uint16_t                service_uuid_len;		/*!< Service uuid length */
     uint8_t                 *p_service_uuid;		/*!< Service uuid array point */
-    uint8_t                 flag;					/*!< Advertising flag of discovery mode */
+    uint8_t                 flag;					/*!< Advertising flag of discovery mode, see BLE_ADV_DATA_FLAG detail */
 } esp_ble_adv_data_t;
 
 /// Own BD address source of the device
