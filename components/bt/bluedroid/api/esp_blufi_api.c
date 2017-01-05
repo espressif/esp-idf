@@ -22,7 +22,7 @@
 #include "btc_main.h"
 #include "future.h"
 
-esp_err_t esp_blufi_register_callback(esp_profile_cb_t callback)
+esp_err_t esp_blufi_register_callback(esp_blufi_cb_t callback)
 {
     return (btc_profile_cb_set(BTC_PID_BLUFI, callback) == 0 ? ESP_OK : ESP_FAIL);
 }

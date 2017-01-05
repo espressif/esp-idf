@@ -37,6 +37,7 @@ Macros
 Type Definitions
 ^^^^^^^^^^^^^^^^
 
+.. doxygentypedef:: esp_gatts_cb_t
 
 Enumerations
 ^^^^^^^^^^^^

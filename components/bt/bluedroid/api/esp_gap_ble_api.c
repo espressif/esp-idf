@@ -21,7 +21,7 @@
 #include "btc_gap_ble.h"
 
 
-esp_err_t esp_ble_gap_register_callback(esp_profile_cb_t callback)
+esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
 {
     return (btc_profile_cb_set(BTC_PID_GAP_BLE, callback) == 0 ? ESP_OK : ESP_FAIL);
 }

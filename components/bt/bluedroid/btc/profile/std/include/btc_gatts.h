@@ -44,11 +44,11 @@ typedef union {
     } app_reg;
     //BTC_GATTS_ACT_APP_UNREGISTER,
     struct app_unreg_args {
-        esp_gatt_if_t gatt_if;
+        esp_gatt_if_t gatts_if;
     } app_unreg;
     //BTC_GATTS_ACT_CREATE_SERVICE,
     struct create_srvc_args {
-        esp_gatt_if_t gatt_if;
+        esp_gatt_if_t gatts_if;
         esp_gatt_srvc_id_t service_id;
         uint16_t num_handle;
     } create_srvc;
@@ -99,7 +99,7 @@ typedef union {
     } send_rsp;
     //BTC_GATTS_ACT_OPEN,
     struct open_args {
-        esp_gatt_if_t gatt_if;
+        esp_gatt_if_t gatts_if;
         esp_bd_addr_t remote_bda;
         bool is_direct;
     } open;

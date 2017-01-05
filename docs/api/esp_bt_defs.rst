@@ -40,7 +40,6 @@ Type Definitions
 ^^^^^^^^^^^^^^^^
 
 .. doxygentypedef:: esp_bd_addr_t
-.. doxygentypedef:: esp_profile_cb_t
 
 Enumerations
 ^^^^^^^^^^^^

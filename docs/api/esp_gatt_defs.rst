@@ -85,6 +85,7 @@ Macros
 .. doxygendefine:: ESP_GATT_UUID_SCAN_REFRESH
 .. doxygendefine:: ESP_GATT_ILLEGAL_UUID
 .. doxygendefine:: ESP_GATT_MAX_ATTR_LEN
+.. doxygendefine:: ESP_GATT_IF_NONE
 
 Type Definitions
 ^^^^^^^^^^^^^^^^

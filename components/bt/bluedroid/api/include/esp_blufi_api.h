@@ -25,9 +25,11 @@ extern "C" {
 
 #define ESP_BLUFI_RECV_DATA_LEN_MAX (64+1)
 
-#define ESP_BLUFI_EVENT_INIT_FINISH         0
-#define ESP_BLUFI_EVENT_DEINIT_FINISH       1
-#define ESP_BLUFI_EVENT_RECV_DATA           2
+typedef enum {
+    ESP_BLUFI_EVENT_INIT_FINISH         = 0,
+    ESP_BLUFI_EVENT_DEINIT_FINISH       = 1,
+    ESP_BLUFI_EVENT_RECV_DATA           = 2,
+} esp_blufi_cb_event_t;
 
 /// BLUFI config status
 typedef enum {
@@ -75,6 +77,14 @@ typedef union {
 } esp_blufi_cb_param_t;
 
 /**
+ * @brief BLUFI callback function type
+ * @param event : Event type
+ * @param param : Point to callback parameter, currently is union type
+ */
+typedef void (* esp_blufi_cb_t)(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param);
+
+
+/**
  *
  * @brief           This function is called to receive blufi callback event
  *
@@ -83,7 +93,7 @@ typedef union {
  * @return          ESP_OK - success, other - failed
  *
  */
-esp_err_t esp_blufi_register_callback(esp_profile_cb_t callback);
+esp_err_t esp_blufi_register_callback(esp_blufi_cb_t callback);
 
 /**
  *

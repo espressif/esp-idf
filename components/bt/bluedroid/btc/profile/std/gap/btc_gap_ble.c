@@ -26,7 +26,7 @@
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
 
-#define BTC_GAP_BLE_CB_TO_APP(_event, _param) ((esp_profile_cb_t )btc_profile_cb_get(BTC_PID_GAP_BLE))(_event, _param)
+#define BTC_GAP_BLE_CB_TO_APP(event, param) ((esp_gap_ble_cb_t)btc_profile_cb_get(BTC_PID_GAP_BLE))((event), (param))
 
 
 static void btc_gap_adv_point_cleanup(void **buf)

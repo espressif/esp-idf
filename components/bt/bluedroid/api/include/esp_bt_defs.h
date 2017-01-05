@@ -96,13 +96,6 @@ typedef enum {
 /// Maximum of the application id
 #define ESP_APP_ID_MAX  0x7fff
 
-/**
- * @brief Each profile callback function type
- * @param event : Event type
- * @param param : Point to callback parameter, currently is union type
- */
-typedef void (* esp_profile_cb_t)(uint32_t event, void *param);
-
 #ifdef __cplusplus
 }
 #endif
