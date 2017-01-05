@@ -121,4 +121,101 @@ config ESPTOOLPY_FLASHSIZE
 	default "8MB" if ESPTOOLPY_FLASHSIZE_8MB
 	default "16MB" if ESPTOOLPY_FLASHSIZE_16MB
 
+config ESPTOOLPY_FLASHSIZE_DETECT
+    bool "Detect flash size when flashing bootloader"
+    default y
+    help
+        If this option is set, 'make flash' targets will automatically detect
+        the flash size and update the bootloader image when flashing.
+
+choice ESPTOOLPY_BEFORE
+    prompt "Before flashing"
+    default ESPTOOLPY_BEFORE_RESET
+    help
+        Configure whether esptool.py should reset the ESP32 before flashing.
+
+        Automatic resetting depends on the RTS & DTR signals being
+        wired from the serial port to the ESP32. Most USB development
+        boards do this internally.
+
+        The "Reset with ESP32R0 Windows workaround" option works
+        around an automatic reset bug in hardware, when using Windows
+        with some development boards. This fix only works if you're
+        using a silicon revision 0 ESP32.
+
+config ESPTOOLPY_BEFORE_RESET
+    bool "Reset to bootloader"
+config ESPTOOLPY_BEFORE_NORESET
+    bool "No reset"
+config ESPTOOLPY_BEFORE_ESP32R0
+    bool "Reset with ESP32R0 Windows workaround"
+endchoice
+
+config ESPTOOLPY_BEFORE
+    string
+    default "default_reset" if ESPTOOLPY_BEFORE_RESET
+    default "no_reset" if ESPTOOLPY_BEFORE_NORESET
+    default "esp32r0" if ESPTOOLPY_BEFORE_ESP32R0
+
+choice ESPTOOLPY_AFTER
+    prompt "After flashing"
+    default ESPTOOLPY_AFTER_RESET
+    help
+        Configure whether esptool.py should reset the ESP32 after flashing.
+
+        Automatic resetting depends on the RTS & DTR signals being
+        wired from the serial port to the ESP32. Most USB development
+        boards do this internally.
+
+config ESPTOOLPY_AFTER_RESET
+    bool "Reset after flashing"
+config ESPTOOLPY_AFTER_NORESET
+    bool "Stay in bootloader"
+endchoice
+
+config ESPTOOLPY_AFTER
+    string
+    default "hard_reset" if ESPTOOLPY_AFTER_RESET
+    default "no_reset" if ESPTOOLPY_AFTER_NORESET
+
+choice MONITOR_BAUD
+    prompt "'make monitor' baud rate"
+    default MONITOR_BAUD_115200B
+    help
+        Baud rate to use when running 'make monitor' to view serial output
+        from a running chip.
+
+        Can override by setting the MONITORBAUD environment variable.
+
+config MONITOR_BAUD_9600B
+    bool "9600 bps"
+config MONITOR_BAUD_57600B
+    bool "57600 bps"
+config MONITOR_BAUD_115200B
+    bool "115200 bps"
+config MONITOR_BAUD_230400B
+    bool "230400 bps"
+config MONITOR_BAUD_921600B
+    bool "921600 bps"
+config MONITOR_BAUD_2MB
+    bool "2 Mbps"
+config MONITOR_BAUD_OTHER
+    bool "Custom baud rate"
+
+endchoice
+
+config MONITOR_BAUD_OTHER_VAL
+    int "Custom baud rate value" if MONITOR_BAUD_OTHER
+    default 115200
+
+config MONITOR_BAUD
+    int
+    default 9600 if MONITOR_BAUD_9600B
+    default 57600 if MONITOR_BAUD_57600B
+    default 115200 if MONITOR_BAUD_115200B
+    default 230400 if MONITOR_BAUD_230400B
+    default 921600 if MONITOR_BAUD_921600B
+    default 2000000 if MONITOR_BAUD_2MB
+    default MONITOR_BAUD_OTHER_VAL if MONITOR_BAUD_OTHER
+
 endmenu

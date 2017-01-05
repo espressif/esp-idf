@@ -36,7 +36,7 @@
 /*
   Panic handlers; these get called when an unhandled exception occurs or the assembly-level
   task switching / interrupt code runs into an unrecoverable error. The default task stack
-  overflow handler also is in here.
+  overflow handler and abort handler are also in here.
 */
 
 /*
@@ -95,14 +95,28 @@ inline static void panicPutHex(int a) { }
 inline static void panicPutDec(int a) { }
 #endif
 
-
 void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName )
 {
     panicPutStr("***ERROR*** A stack overflow in task ");
     panicPutStr((char *)pcTaskName);
     panicPutStr(" has been detected.\r\n");
-    configASSERT(0);
+    abort();
 }
+
+static bool abort_called;
+
+void abort()
+{
+#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
+    ets_printf("abort() was called at PC 0x%08x\n", (intptr_t)__builtin_return_address(0) - 3);
+#endif
+    abort_called = true;
+    while(1) {
+        __asm__ ("break 0,0");
+        *((int*) 0) = 0;
+    }
+}
+
 
 static const char *edesc[] = {
     "IllegalInstruction", "Syscall", "InstructionFetchError", "LoadStoreError",
@@ -118,26 +132,13 @@ static const char *edesc[] = {
 };
 
 
-void commonErrorHandler(XtExcFrame *frame);
+static void commonErrorHandler(XtExcFrame *frame);
 
 //The fact that we've panic'ed probably means the other CPU is now running wild, possibly
 //messing up the serial output, so we stall it here.
 static void haltOtherCore()
 {
     esp_cpu_stall( xPortGetCoreID() == 0 ? 1 : 0 );
-}
-
-//Returns true when a debugger is attached using JTAG.
-static int inOCDMode()
-{
-#if CONFIG_ESP32_DEBUG_OCDAWARE
-    int dcr;
-    int reg = 0x10200C; //DSRSET register
-    asm("rer %0,%1":"=r"(dcr):"r"(reg));
-    return (dcr & 0x1);
-#else
-    return 0; //Always return no debugger is attached.
-#endif
 }
 
 void panicHandler(XtExcFrame *frame)
@@ -165,7 +166,7 @@ void panicHandler(XtExcFrame *frame)
     panicPutStr(reason);
     panicPutStr(")\r\n");
 
-    if (inOCDMode()) {
+    if (esp_cpu_in_ocd_debug_mode()) {
         asm("break.n 1");
     }
     commonErrorHandler(frame);
@@ -197,7 +198,7 @@ void xt_unhandled_exception(XtExcFrame *frame)
     }
     panicPutStr(" occurred on core ");
     panicPutDec(xPortGetCoreID());
-    if (inOCDMode()) {
+    if (esp_cpu_in_ocd_debug_mode()) {
         panicPutStr(" at pc=");
         panicPutHex(regs[1]);
         panicPutStr(". Setting bp and returning..\r\n");
@@ -255,6 +256,7 @@ static inline bool stackPointerIsSane(uint32_t sp)
 {
     return !(sp < 0x3ffae010 || sp > 0x3ffffff0 || ((sp & 0xf) != 0));
 }
+
 static void putEntry(uint32_t pc, uint32_t sp)
 {
     if (pc & 0x80000000) {
@@ -265,7 +267,8 @@ static void putEntry(uint32_t pc, uint32_t sp)
     panicPutStr(":0x");
     panicPutHex(sp);
 }
-void doBacktrace(XtExcFrame *frame)
+
+static void doBacktrace(XtExcFrame *frame)
 {
     uint32_t i = 0, pc = frame->pc, sp = frame->a1;
     panicPutStr("\nBacktrace:");
@@ -291,7 +294,7 @@ void doBacktrace(XtExcFrame *frame)
   We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
   serial port and either jump to the gdb stub, halt the CPU or reboot.
 */
-void commonErrorHandler(XtExcFrame *frame)
+static void commonErrorHandler(XtExcFrame *frame)
 {
     int *regs = (int *)frame;
     int x, y;
@@ -304,21 +307,28 @@ void commonErrorHandler(XtExcFrame *frame)
     //Feed the watchdogs, so they will give us time to print out debug info
     reconfigureAllWdts();
 
-    panicPutStr("Register dump:\r\n");
+    /* only dump registers for 'real' crashes, if crashing via abort()
+       the register window is no longer useful.
+    */
+    if (!abort_called) {
+        panicPutStr("Register dump:\r\n");
 
-    for (x = 0; x < 24; x += 4) {
-        for (y = 0; y < 4; y++) {
-            if (sdesc[x + y][0] != 0) {
-                panicPutStr(sdesc[x + y]);
-                panicPutStr(": 0x");
-                panicPutHex(regs[x + y + 1]);
-                panicPutStr("  ");
+        for (x = 0; x < 24; x += 4) {
+            for (y = 0; y < 4; y++) {
+                if (sdesc[x + y][0] != 0) {
+                    panicPutStr(sdesc[x + y]);
+                    panicPutStr(": 0x");
+                    panicPutHex(regs[x + y + 1]);
+                    panicPutStr("  ");
+                }
             }
+            panicPutStr("\r\n");
         }
-        panicPutStr("\r\n");
     }
+
     /* With windowed ABI backtracing is easy, let's do it. */
     doBacktrace(frame);
+
 #if CONFIG_ESP32_PANIC_GDBSTUB
     disableAllWdts();
     panicPutStr("Entering gdb stub now.\r\n");
@@ -339,8 +349,7 @@ void commonErrorHandler(XtExcFrame *frame)
 
 void esp_set_breakpoint_if_jtag(void *fn)
 {
-    if (!inOCDMode()) {
-        return;
+    if (esp_cpu_in_ocd_debug_mode()) {
+        setFirstBreakpoint((uint32_t)fn);
     }
-    setFirstBreakpoint((uint32_t)fn);
 }

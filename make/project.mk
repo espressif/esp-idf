@@ -30,6 +30,7 @@ help:
 	@echo "make clean - Remove all build output"
 	@echo "make size - Display the memory footprint of the app"
 	@echo "make erase_flash - Erase entire flash contents"
+	@echo "make monitor - Display serial output on terminal console"
 	@echo ""
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
