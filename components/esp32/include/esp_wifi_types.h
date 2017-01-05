@@ -121,7 +121,7 @@ typedef enum {
 #define WIFI_PROTOCOL_11N         4
 
 typedef enum {
-    WIFI_BW_HT20 = 0, /* Bandwidth is HT20 */
+    WIFI_BW_HT20 = 1, /* Bandwidth is HT20 */
     WIFI_BW_HT40,     /* Bandwidth is HT40 */
 } wifi_bandwidth_t;
 
