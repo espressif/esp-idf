@@ -95,7 +95,7 @@ typedef struct {
 static esp_profile_cb_t bt_av_sink_callback = NULL;
 
 static btif_av_cb_t btif_av_cb = {0};
-// static TIMER_LIST_ENT tle_av_open_on_rc;
+static TIMER_LIST_ENT tle_av_open_on_rc;
 
 // TODO: need protection against race
 #define BTIF_A2D_CB_TO_APP(_event, _param)    do { \
@@ -125,6 +125,7 @@ else\
     case BTA_AV_RC_FEAT_EVT: \
     case BTA_AV_REMOTE_RSP_EVT: \
     { \
+         btif_rc_handler(e, d);\
     }break; \
 
 static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *data);
@@ -146,6 +147,9 @@ static void btif_av_event_free_data(btif_sm_event_t event, void *p_data);
 /*************************************************************************
 ** Extern functions
 *************************************************************************/
+extern void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data);
+extern BOOLEAN btif_rc_get_connected_peer(BD_ADDR peer_addr);
+extern void btif_rc_check_handle_pending_play (BD_ADDR peer_addr, BOOLEAN bSendToApp);
 
 extern tBTA_AV_CO_FUNCTS bta_av_a2d_cos;
 /*****************************************************************************
@@ -202,6 +206,34 @@ const char *dump_av_sm_event_name(btif_av_sm_event_t event)
 /****************************************************************************
 **  Local helper functions
 *****************************************************************************/
+/*******************************************************************************
+**
+** Function         btif_initiate_av_open_tmr_hdlr
+**
+** Description      Timer to trigger AV open if the remote headset establishes
+**                  RC connection w/o AV connection. The timer is needed to IOP
+**                  with headsets that do establish AV after RC connection.
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btif_initiate_av_open_tmr_hdlr(TIMER_LIST_ENT *tle)
+{
+    BD_ADDR peer_addr;
+    UNUSED(tle);
+    btif_av_connect_req_t connect_req;
+    UNUSED(tle);
+    /* is there at least one RC connection - There should be */
+    if (btif_rc_get_connected_peer(peer_addr)) {
+        BTIF_TRACE_DEBUG("%s Issuing connect to the remote RC peer", __FUNCTION__);
+        /* In case of AVRCP connection request, we will initiate SRC connection */
+        connect_req.target_bda = (bt_bdaddr_t *)&peer_addr;
+        connect_req.uuid = UUID_SERVCLASS_AUDIO_SOURCE;
+        btif_sm_dispatch(btif_av_cb.sm_handle, BTIF_AV_CONNECT_REQ_EVT, (char *)&connect_req);
+    } else {
+        BTIF_TRACE_ERROR("%s No connected RC peers", __FUNCTION__);
+    }
+}
 
 /*****************************************************************************
 **  Static functions
@@ -280,15 +312,40 @@ static BOOLEAN btif_av_state_idle_handler(btif_sm_event_t event, void *p_data)
     } break;
 
     case BTA_AV_RC_OPEN_EVT:
+        /* IOP_FIX: Jabra 620 only does RC open without AV open whenever it connects. So
+         * as per the AV WP, an AVRC connection cannot exist without an AV connection. Therefore,
+         * we initiate an AV connection if an RC_OPEN_EVT is received when we are in AV_CLOSED state.
+         * We initiate the AV connection after a small 3s timeout to avoid any collisions from the
+         * headsets, as some headsets initiate the AVRC connection first and then
+         * immediately initiate the AV connection
+         *
+         * TODO: We may need to do this only on an AVRCP Play. FixMe
+         */
+
+        BTIF_TRACE_DEBUG("BTA_AV_RC_OPEN_EVT received w/o AV");
+        memset(&tle_av_open_on_rc, 0, sizeof(tle_av_open_on_rc));
+        tle_av_open_on_rc.param = (UINT32)btif_initiate_av_open_tmr_hdlr;
+        btu_start_timer(&tle_av_open_on_rc, BTU_TTYPE_USER_FUNC,
+                        BTIF_TIMEOUT_AV_OPEN_ON_RC_SECS);
+        btif_rc_handler(event, p_data);
+        break;
+
     case BTA_AV_REMOTE_CMD_EVT:
     case BTA_AV_VENDOR_CMD_EVT:
     case BTA_AV_META_MSG_EVT:
     case BTA_AV_RC_FEAT_EVT:
     case BTA_AV_REMOTE_RSP_EVT:
-    case BTA_AV_RC_CLOSE_EVT:
-        BTIF_TRACE_WARNING("%s : unhandled RC event:%s\n", __FUNCTION__,
-                           dump_av_sm_event_name(event));
+        btif_rc_handler(event, (tBTA_AV *)p_data);
         break;
+
+    case BTA_AV_RC_CLOSE_EVT:
+        if (tle_av_open_on_rc.in_use) {
+            BTIF_TRACE_DEBUG("BTA_AV_RC_CLOSE_EVT: Stopping AV timer.");
+            btu_stop_timer(&tle_av_open_on_rc);
+        }
+        btif_rc_handler(event, p_data);
+        break;
+
     default:
         BTIF_TRACE_WARNING("%s : unhandled event:%s\n", __FUNCTION__,
                            dump_av_sm_event_name(event));
@@ -354,7 +411,6 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
         btif_report_connection_state(state, &(btif_av_cb.peer_bda));
         /* change state to open/idle based on the status */
         btif_sm_change_state(btif_av_cb.sm_handle, av_state);
-#if (BTIF_AV_SRC_INCLUDED == TRUE)
         if (btif_av_cb.peer_sep == AVDT_TSEP_SNK) {
             /* if queued PLAY command,  send it now */
             btif_rc_check_handle_pending_play(p_bta_data->open.bd_addr,
@@ -365,7 +421,6 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
             /* Bring up AVRCP connection too */
             BTA_AvOpenRc(btif_av_cb.bta_handle);
         }
-#endif
         btif_queue_advance();
     } break;
 
@@ -461,8 +516,7 @@ static BOOLEAN btif_av_state_closing_handler(btif_sm_event_t event, void *p_data
 
     /* Handle the RC_CLOSE event for the cleanup */
     case BTA_AV_RC_CLOSE_EVT:
-        BTIF_TRACE_WARNING("%s : unhandled RC event:%s\n", __FUNCTION__,
-                           dump_av_sm_event_name(event));
+        btif_rc_handler(event, (tBTA_AV *)p_data);
         break;
 
     default:
@@ -540,6 +594,9 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data)
 
     case BTIF_AV_DISCONNECT_REQ_EVT:
         BTA_AvClose(btif_av_cb.bta_handle);
+        if (btif_av_cb.peer_sep == AVDT_TSEP_SRC) {
+            BTA_AvCloseRc(btif_av_cb.bta_handle);
+        }
 
         /* inform the application that we are disconnecting */
         btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTING, &(btif_av_cb.peer_bda));
@@ -656,6 +713,9 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
 
         /* request avdtp to close */
         BTA_AvClose(btif_av_cb.bta_handle);
+        if (btif_av_cb.peer_sep == AVDT_TSEP_SRC) {
+            BTA_AvCloseRc(btif_av_cb.bta_handle);
+        }
 
         /* inform the application that we are disconnecting */
         btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTING, &(btif_av_cb.peer_bda));
@@ -1108,7 +1168,9 @@ bt_status_t btif_av_execute_service(BOOLEAN b_enable)
         /* Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
          * auto-suspend av streaming on AG events(SCO or Call). The suspend shall
          * be initiated by the app/audioflinger layers */
-        BTA_AvEnable(BTA_SEC_AUTHENTICATE, (BTA_AV_FEAT_NO_SCO_SSPD),
+        BTA_AvEnable(BTA_SEC_AUTHENTICATE, (BTA_AV_FEAT_NO_SCO_SSPD)
+		     // | BTA_AV_FEAT_RCTG | BTA_AV_FEAT_METADATA | BTA_AV_FEAT_VENDOR
+		     | BTA_AV_FEAT_RCCT | BTA_AV_FEAT_ADV_CTRL,
                      bte_av_callback);
         BTA_AvRegister(BTA_AV_CHNL_AUDIO, BTIF_AV_SERVICE_NAME, 0, bte_av_media_callback, &bta_av_a2d_cos);
     } else {

@@ -532,9 +532,7 @@ extern "C" {
 #define BUS_GSC         0x1A
 
 /* User input interface */
-#define _IO(a, b)           (0)  // temporary hack
-#define _IOW(a, b, c)       (1)  // temporary hack
-
+#if UINPUT_INCLUDED
 #define UINPUT_IOCTL_BASE   'U'
 
 #define UI_DEV_CREATE       _IO(UINPUT_IOCTL_BASE, 1)
@@ -550,6 +548,8 @@ extern "C" {
 #define UI_SET_FFBIT        _IOW(UINPUT_IOCTL_BASE, 107, int)
 #define UI_SET_PHYS     _IOW(UINPUT_IOCTL_BASE, 108, char*)
 #define UI_SET_SWBIT        _IOW(UINPUT_IOCTL_BASE, 109, int)
+
+#endif /* UINPUT_INCLUDED */
 
 #ifndef NBITS
 #define NBITS(x) ((((x) - 1) / (sizeof(long) * 8)) + 1)
