@@ -69,9 +69,20 @@ config SECURE_BOOTLOADER_REFLASHABLE
 
 endchoice
 
-config SECURE_BOOT_SIGNING_KEY
-     string "Secure boot signing key"
+config SECURE_BOOT_BUILD_SIGNED_BINARIES
+     bool "Sign binaries during build"
      depends on SECURE_BOOT_ENABLED
+     default y
+     help
+        Once secure boot is enabled, bootloader will only boot if partition table and app image are signed.
+
+        If enabled, these binary files are signed as part of the build process. The file named in "Secure boot private signing key" will be used to sign the image.
+
+        If disabled, unsigned app/partition data will be built. They must be signed manually using espsecure.py (for example, on a remote signing server.)
+
+config SECURE_BOOT_SIGNING_KEY
+     string "Secure boot private signing key"
+     depends on SECURE_BOOT_BUILD_SIGNED_BINARIES
      default secure_boot_signing_key.pem
      help
         Path to the key file used to sign partition tables and app images for secure boot. Once secure boot is enabled, bootloader will only boot if partition table and app image are signed.
@@ -84,6 +95,20 @@ config SECURE_BOOT_SIGNING_KEY
         espsecure.py generate_signing_key secure_boot_signing_key.pem
 
         See docs/security/secure-boot.rst for details.
+
+config SECURE_BOOT_VERIFICATION_KEY
+    string "Secure boot public signature verification key"
+    depends on SECURE_BOOT_ENABLED && !SECURE_BOOT_BUILD_SIGNED_BINARIES
+    default signature_verification_key.bin
+    help
+       Path to a public key file used to verify signed images. This key is compiled into the bootloader,
+       and may also be used to verify signatures on OTA images after download.
+
+       Key file is in raw binary format, and can be extracted from a
+       PEM formatted private key using the espsecure.py
+       extract_public_key command.
+
+       See docs/security/secure-boot.rst for details.
 
 config SECURE_BOOT_INSECURE
     bool "Allow potentially insecure options"

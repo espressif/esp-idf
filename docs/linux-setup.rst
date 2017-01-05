@@ -17,7 +17,6 @@ To compile with ESP-IDF you need to get the following packages:
     
     sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
 
-
 Step 1: Download binary toolchain for the ESP32
 ==================================================
 
@@ -48,6 +47,16 @@ Alternatively, you may create an alias for the above command. This way you can g
     alias get_esp32="export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin"
 
 Then when you need the toolchain you can type ``get_esp32`` on the command line and the toolchain will be added to your ``PATH``.
+
+Arch Linux Users
+----------------
+
+To run the precompiled gdb (xtensa-esp32-elf-gdb) in Arch Linux requires ncurses 5, but Arch uses ncurses 6. Backwards compatibility libraries are available in AUR_ for native and lib32 configurations:
+- https://aur.archlinux.org/packages/ncurses5-compat-libs/
+- https://aur.archlinux.org/packages/lib32-ncurses5-compat-libs/
+
+(Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.)
+
 
 Alternative Step 1: Compile the toolchain from source using crosstool-NG
 ========================================================================
@@ -156,3 +165,4 @@ Further reading
 
 If you'd like to use the Eclipse IDE instead of running ``make``, check out the Eclipse setup guide in this directory.
 
+.. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository

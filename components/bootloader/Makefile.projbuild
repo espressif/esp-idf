@@ -43,18 +43,21 @@ bootloader: $(BOOTLOADER_BIN)
 
 ESPTOOL_ALL_FLASH_ARGS += $(BOOTLOADER_OFFSET) $(BOOTLOADER_BIN)
 
-bootloader-flash: $(BOOTLOADER_BIN)
+bootloader-flash: $(BOOTLOADER_BIN) $(call prereq_if_explicit,erase_flash)
 	$(ESPTOOLPY_WRITE_FLASH) 0x1000 $^
 
 else ifdef CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH
 
 # One time flashing requires user to run esptool.py command themselves,
 # and warning is printed about inability to reflash.
+#
+# The flashing command is deliberately printed without an auto-reset
+# step, so the device doesn't immediately reset to flash itself.
 
 bootloader: $(BOOTLOADER_BIN)
 	@echo $(SEPARATOR)
 	@echo "Bootloader built. One-time flash command is:"
-	@echo "$(ESPTOOLPY_WRITE_FLASH) $(BOOTLOADER_OFFSET) $(BOOTLOADER_BIN)"
+	@echo "$(subst hard_reset,no_reset,$(ESPTOOLPY_WRITE_FLASH)) $(BOOTLOADER_OFFSET) $(BOOTLOADER_BIN)"
 	@echo $(SEPARATOR)
 	@echo "* IMPORTANT: After first boot, BOOTLOADER CANNOT BE RE-FLASHED on same device"
 
@@ -65,8 +68,17 @@ else ifdef CONFIG_SECURE_BOOTLOADER_REFLASHABLE
 BOOTLOADER_DIGEST_BIN := $(BOOTLOADER_BUILD_DIR)/bootloader-reflash-digest.bin
 SECURE_BOOTLOADER_KEY := $(BOOTLOADER_BUILD_DIR)/secure-bootloader-key.bin
 
+ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 $(SECURE_BOOTLOADER_KEY): $(SECURE_BOOT_SIGNING_KEY)
-	$(Q) $(ESPSECUREPY) digest_private_key -k $< $@
+	$(ESPSECUREPY) digest_private_key -k $< $@
+else
+$(SECURE_BOOTLOADER_KEY):
+	@echo "No pre-generated key for a reflashable secure bootloader is available, due to signing configuration."
+	@echo "To generate one, you can use this command:"
+	@echo "espsecure.py generate_flash_encryption_key $@"
+	@echo "then re-run make."
+	exit 1
+endif
 
 bootloader: $(BOOTLOADER_DIGEST_BIN)
 	@echo $(SEPARATOR)

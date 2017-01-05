@@ -253,7 +253,7 @@ int ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t ledc_set_fade(ledc_mode_t speed_mode, uint32_t channel, uint32_t duty, ledc_duty_direction_t gradule_direction,
+esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty, ledc_duty_direction_t gradule_direction,
                         uint32_t step_num, uint32_t duty_cyle_num, uint32_t duty_scale);
 
 /**
@@ -354,7 +354,7 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, uint32_t timer_sel);
  *     - ESP_OK Success
  *
  */
-esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint32_t timer_idx);
+esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t timer_idx);
 
 /***************************EXAMPLE**********************************
  *
@@ -391,7 +391,7 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint
  *
  * ----------------EXAMPLE OF SETTING DUTY --- -----------------
  * @code{c}
- * uint32_t ledc_channel = LEDC_CHANNEL_0;                  //LEDC channel(0-73)
+ * ledc_channel_t ledc_channel = LEDC_CHANNEL_0;            //LEDC channel(0-73)
  * uint32_t duty = 2000;                                    //duty range is 0 ~ ((2**bit_num)-1)
  * LEDC_set_duty(LEDC_HIGH_SPEED_MODE, ledc_channel, duty); //set speed mode, channel, and duty.
  * ledc_update_duty(LEDC_HIGH_SPEED_MODE, ledc_channel);    //after set duty, we need to call ledc_update_duty to update the settings.

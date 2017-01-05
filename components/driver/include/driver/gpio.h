@@ -156,6 +156,7 @@ typedef enum {
     GPIO_NUM_37 = 37,   /*!< GPIO37, input mode only */
     GPIO_NUM_38 = 38,   /*!< GPIO38, input mode only */
     GPIO_NUM_39 = 39,   /*!< GPIO39, input mode only */
+    GPIO_NUM_MAX = 40,
 } gpio_num_t;
 
 typedef enum {
@@ -205,9 +206,8 @@ typedef enum {
 } gpio_pull_mode_t;
 
 
-
+typedef void (*gpio_isr_t)(void*);
 typedef intr_handle_t gpio_isr_handle_t;
-typedef void (*gpio_event_callback)(gpio_num_t gpio_intr_num);
 
 /**
  * @brief GPIO common configuration
@@ -269,7 +269,7 @@ esp_err_t gpio_intr_disable(gpio_num_t gpio_num);
  *
  * @return
  *     - ESP_OK Success
- *     - GPIO_IS_VALID_GPIO GPIO number error
+ *     - ESP_ERR_INVALID_ARG GPIO number error
  *
  */
 esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level);
@@ -343,9 +343,6 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
 /**
  * @brief   register GPIO interrupt handler, the handler is an ISR.
  *          The handler will be attached to the same CPU core that this function is running on.
- *          @note
- *          Users should know that which CPU is running and then pick a INUM that is not used by system.
- *          We can find the information of INUM and interrupt level in soc.h.
  *
  * @param  fn  Interrupt handler function.
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
@@ -359,8 +356,6 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
  *     - ESP_ERR_INVALID_ARG GPIO error
  */
 esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, gpio_isr_handle_t *handle);
-
-
 
 /**
   * @brief Enable pull-up on GPIO.
@@ -406,97 +401,55 @@ esp_err_t gpio_pulldown_en(gpio_num_t gpio_num);
   */
 esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 
+/**
+  * @brief Install a GPIO ISR service, so we can assign different ISR handler for different pins
+  *
+  * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_FAIL Operation fail
+  *     - ESP_ERR_NO_MEM No memory to install this service
+  */
+esp_err_t gpio_install_isr_service(int intr_alloc_flags);
 
 /**
- * ***************        ATTENTION       ********************/
-/**
- *@attention
- *     Each GPIO has its own separate configuration register, so we do not use
- *     a lock to serialize access to them. This works under the assumption that
- *     no situation will occur where two tasks try to configure the same GPIO
- *     pin simultaneously. It is up to the application developer to guarantee this.
- */
+  * @brief Un-install GPIO ISR service, free the resources.
+  */
+void gpio_uninstall_isr_service();
 
 /**
- *----------EXAMPLE TO CONFIGURE GPIO AS OUTPUT ------------ *
- * @code{c}
- *     gpio_config_t io_conf;
- *     io_conf.intr_type = GPIO_INTR_DISABLE;             //disable interrupt
- *     io_conf.mode = GPIO_MODE_OUTPUT;                       //set as output mode
- *     io_conf.pin_bit_mask = GPIO_SEL_18 | GPIO_SEL_19;      //bit mask of the pins that you want to set,e.g.GPIO18/19
- *     io_conf.pull_down_en = 0;                              //disable pull-down mode
- *     io_conf.pull_up_en = 0;                                //disable pull-up mode
- *     gpio_config(&io_conf);                                 //configure GPIO with the given settings
- * @endcode
- **/
+  * @brief Add ISR handler for the corresponding GPIO.
+  *
+  *        Interrupt handlers no longer need to be declared with IRAM_ATTR, unless you pass the ESP_INTR_FLAG_IRAM flag
+  *        when allocating the ISR in gpio_install_isr_service().
+  *        This ISR handler will be called from an ISR. So there probably is some stack size limit, and this limit
+  *        is smaller compared to a "raw" interrupt handler due to another level of indirection.
+  *
+  * @param gpio_num GPIO number
+  * @param isr_handler ISR handler function for the corresponding GPIO number.
+  * @param args parameter for ISR handler.
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_STATE Wrong state, the ISR service has not been initialized.
+  *     - ESP_ERR_INVALID_ARG Parameter error
+  */
+esp_err_t gpio_isr_handler_add(gpio_num_t gpio_num, gpio_isr_t isr_handler, void* args);
 
 /**
- *----------EXAMPLE TO CONFIGURE GPIO AS OUTPUT ------------ *
- * @code{c}
- *     io_conf.intr_type = GPIO_INTR_POSEDGE;             //set posedge interrupt
- *     io_conf.mode = GPIO_MODE_INPUT;                        //set as input
- *     io_conf.pin_bit_mask = GPIO_SEL_4 | GPIO_SEL_5;        //bit mask of the pins that you want to set, e.g.,GPIO4/5
- *     io_conf.pull_down_en = 0;                              //disable pull-down mode
- *     io_conf.pull_up_en = 1;                                //enable pull-up mode
- *     gpio_config(&io_conf);                                 //configure GPIO with the given settings
- * @endcode
- */
-/**
- *----------EXAMPLE TO SET ISR HANDLER ----------------------
- * @code{c}
- * gpio_isr_register(gpio_intr_test,NULL, 0);    //hook the isr handler for GPIO interrupt
- * @endcode
- * @note
- *     1. user should arrange the INUMs that used, better not to use a same INUM for different interrupt.
- *     2. do not pick the INUM that already occupied by the system.
- *     3. refer to soc.h to check which INUMs that can be used.
- */
-/**
- *-------------EXAMPLE OF HANDLER FUNCTION-------------------*
- * @code{c}
- * #include "esp_attr.h"
- * void IRAM_ATTR gpio_intr_test(void* arg)
- * {
- *     //GPIO intr process
- *     ets_printf("in gpio_intr\n");
- *     uint32_t gpio_num = 0;
- *     uint32_t gpio_intr_status = READ_PERI_REG(GPIO_STATUS_REG);   //read status to get interrupt status for GPIO0-31
- *     uint32_t gpio_intr_status_h = READ_PERI_REG(GPIO_STATUS1_REG);//read status1 to get interrupt status for GPIO32-39
- *     SET_PERI_REG_MASK(GPIO_STATUS_W1TC_REG, gpio_intr_status);    //Clear intr for gpio0-gpio31
- *     SET_PERI_REG_MASK(GPIO_STATUS1_W1TC_REG, gpio_intr_status_h); //Clear intr for gpio32-39
- *     do {
- *         if(gpio_num < 32) {
- *             if(gpio_intr_status & BIT(gpio_num)) { //gpio0-gpio31
- *                 ets_printf("Intr GPIO%d ,val: %d\n",gpio_num,gpio_get_level(gpio_num));
- *                 //This is an isr handler, you should post an event to process it in RTOS queue.
- *             }
- *         } else {
- *             if(gpio_intr_status_h & BIT(gpio_num - 32)) {
- *                 ets_printf("Intr GPIO%d, val : %d\n",gpio_num,gpio_get_level(gpio_num));
- *                 //This is an isr handler, you should post an event to process it in RTOS queue.
- *             }
- *         }
- *     } while(++gpio_num < GPIO_PIN_COUNT);
- * }
- * @endcode
- */
+  * @brief Remove ISR handler for the corresponding GPIO.
+  *
+  * @param gpio_num GPIO number
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_STATE Wrong state, the ISR service has not been initialized.
+  *     - ESP_ERR_INVALID_ARG Parameter error
+  */
+esp_err_t gpio_isr_handler_remove(gpio_num_t gpio_num);
 
-/**
- *----EXAMPLE OF I2C CONFIG AND PICK SIGNAL FOR IO MATRIX---*
- * @code{c}
- * gpio_config_t io_conf;
- * io_conf.intr_type = GPIO_INTR_DISABLE;                 //disable interrupt
- * io_conf.mode = GPIO_MODE_INPUT_OUTPUT_OD;              //set as output mode
- * io_conf.pin_bit_mask = GPIO_SEL_21 | GPIO_SEL_22;      //bit mask of the pins that you want to set,e.g.GPIO21/22
- * io_conf.pull_down_en = 0;                              //disable pull-down mode
- * io_conf.pull_up_en = 1;                                //enable pull-up mode
- * gpio_config(&io_conf);                                 //configure GPIO with the given settings
- * gpio_matrix_out(21, EXT_I2C_SCL_O_IDX, 0,  0);         //set output signal for io_matrix
- * gpio_matrix_out(22, EXT_I2C_SDA_O_IDX, 0,  0);         //set output signal for io_matrix
- * gpio_matrix_in( 22, EXT_I2C_SDA_I_IDX, 0);             //set input signal for io_matrix
- * @endcode
- *
- */
 
 #ifdef __cplusplus
 }

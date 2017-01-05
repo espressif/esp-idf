@@ -94,5 +94,7 @@ Functions
 .. doxygenfunction:: uart_write_bytes_with_break
 .. doxygenfunction:: uart_read_bytes
 .. doxygenfunction:: uart_flush
-
+.. doxygenfunction:: uart_get_buffered_data_len
+.. doxygenfunction:: uart_disable_pattern_det_intr
+.. doxygenfunction:: uart_enable_pattern_det_intr
 

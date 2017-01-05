@@ -22,12 +22,14 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_deep_sleep.h"
 
 #include "esp32/ulp.h"
 
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
+#include "driver/rtc_io.h"
 
 #include "sdkconfig.h"
 
@@ -92,3 +94,77 @@ TEST_CASE("ulp branch test", "[ulp]")
     }
     TEST_ASSERT_EQUAL(0, RTC_SLOW_MEM[64]);
 }
+
+TEST_CASE("ulp wakeup test", "[ulp]")
+{
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+    const ulp_insn_t program[] = {
+        I_MOVI(R1, 1024),
+        M_LABEL(1),
+        I_DELAY(32000),
+        I_SUBI(R1, R1, 1),
+        M_BXZ(3),
+        I_RSHI(R3, R1, 5),  // R3 = R1 / 32
+        I_ST(R1, R3, 16),
+        M_BX(1),
+        M_LABEL(3),
+        I_MOVI(R2, 42),
+        I_MOVI(R3, 15),
+        I_ST(R2, R3, 0),
+        I_END(1)
+    };
+    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    ulp_process_macros_and_load(0, program, &size);
+    ulp_run(0);
+    esp_deep_sleep_enable_ulp_wakeup();
+    esp_deep_sleep_start();
+}
+
+TEST_CASE("ulp controls RTC_IO", "[ulp]")
+{
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+    const ulp_insn_t program[] = {
+        I_MOVI(R0, 0),                  // R0 is LED state
+        I_MOVI(R2, 16),                 // loop R2 from 16 down to 0
+        M_LABEL(4),
+            I_SUBI(R2, R2, 1),
+            M_BXZ(6),
+            I_ADDI(R0, R0, 1),          // R0 = (R0 + 1) % 2
+            I_ANDI(R0, R0, 0x1),
+            M_BL(0, 1),                 // if R0 < 1 goto 0
+            M_LABEL(1),
+                I_WR_REG(RTC_GPIO_OUT_REG, 26, 27, 1), // RTC_GPIO12 = 1
+                M_BX(2),                // goto 2
+            M_LABEL(0),                 // 0:
+                I_WR_REG(RTC_GPIO_OUT_REG, 26, 27, 0), // RTC_GPIO12 = 0
+            M_LABEL(2),                 // 2:
+            I_MOVI(R1, 100),            // loop R1 from 100 down to 0
+            M_LABEL(3),
+                I_SUBI(R1, R1, 1),
+                M_BXZ(5),
+                I_DELAY(32000),         // delay for a while
+                M_BX(3),
+            M_LABEL(5),
+            M_BX(4),
+        M_LABEL(6),
+        I_END(1)                        // wake up the SoC
+    };
+    const gpio_num_t led_gpios[] = {
+        GPIO_NUM_2,
+        GPIO_NUM_0,
+        GPIO_NUM_4
+    };
+    for (size_t i = 0; i < sizeof(led_gpios)/sizeof(led_gpios[0]); ++i) {
+        rtc_gpio_init(led_gpios[i]);
+        rtc_gpio_set_direction(led_gpios[i], RTC_GPIO_MODE_OUTPUT_ONLY);
+        rtc_gpio_set_level(led_gpios[i], 0);
+    }
+    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    ulp_process_macros_and_load(0, program, &size);
+    ulp_run(0);
+    esp_deep_sleep_enable_ulp_wakeup();
+    esp_deep_sleep_start();
+}
+

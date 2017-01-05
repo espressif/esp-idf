@@ -27,7 +27,7 @@ static const char phy_init_magic_pre[] = PHY_INIT_MAGIC;
  * @brief Structure containing default recommended PHY initialization parameters.
  */
 static const esp_phy_init_data_t phy_init_data= {
-        .param_ver_id = 0,
+        .param_ver_id = 1,
         .crystal_select = 3,
         .wifi_rx_gain_swp_step_1 = 0x05,
         .wifi_rx_gain_swp_step_2 = 0x04,
@@ -75,7 +75,7 @@ static const esp_phy_init_data_t phy_init_data= {
         .target_power_qdb_1 = LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 76),
         .target_power_qdb_2 = LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 74),
         .target_power_qdb_3 = LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 68),
-        .target_power_qdb_4 = LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 64),
+        .target_power_qdb_4 = LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 60),
         .target_power_qdb_5 = LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 52),
         .target_power_index_mcs0 = 0,
         .target_power_index_mcs1 = 0,

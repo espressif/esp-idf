@@ -96,7 +96,7 @@ typedef enum {
 } wifi_second_chan_t;
 
 typedef struct {
-    char *ssid;          /**< SSID of AP */
+    uint8_t *ssid;       /**< SSID of AP */
     uint8_t *bssid;      /**< MAC address of AP */
     uint8_t channel;     /**< channel, scan the specific channel */
     bool show_hidden;    /**< enable to scan AP whose SSID is hidden */
@@ -126,8 +126,8 @@ typedef enum {
 } wifi_bandwidth_t;
 
 typedef struct {
-    char ssid[32];              /**< SSID of ESP32 soft-AP */
-    char password[64];          /**< Password of ESP32 soft-AP */
+    uint8_t ssid[32];           /**< SSID of ESP32 soft-AP */
+    uint8_t password[64];       /**< Password of ESP32 soft-AP */
     uint8_t ssid_len;           /**< Length of SSID. If softap_config.ssid_len==0, check the SSID until there is a termination character; otherwise, set the SSID length according to softap_config.ssid_len. */
     uint8_t channel;            /**< Channel of ESP32 soft-AP */
     wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
@@ -137,8 +137,8 @@ typedef struct {
 } wifi_ap_config_t;
 
 typedef struct {
-    char ssid[32];         /**< SSID of target AP*/
-    char password[64];     /**< password of target AP*/
+    uint8_t ssid[32];      /**< SSID of target AP*/
+    uint8_t password[64];  /**< password of target AP*/
     bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];     /**< MAC address of target AP*/
 } wifi_sta_config_t;
@@ -215,7 +215,7 @@ typedef struct {
 
 typedef struct {
     wifi_pkt_rx_ctrl_t rx_ctrl;
-    char payload[0];           /**< ieee80211 packet buff, The length of payload is described by sig_len */
+    uint8_t payload[0];       /**< ieee80211 packet buff, The length of payload is described by sig_len */
 } wifi_promiscuous_pkt_t;
 
 /**

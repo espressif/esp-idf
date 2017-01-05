@@ -25,6 +25,9 @@
 #include "lwip/ip_addr.h"
 #include "lwip/ip6_addr.h"
 #include "lwip/nd6.h"
+#if LWIP_DNS /* don't build if not configured for use in lwipopts.h */
+#include "lwip/dns.h"
+#endif
 #include "netif/wlanif.h"
 #include "netif/ethernetif.h"
 
@@ -213,7 +216,7 @@ esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
     tcpip_adapter_dhcp_status_t status;
 
     if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || ip_info == NULL ||
-            ip4_addr_isany_val(ip_info->ip) || ip4_addr_isany_val(ip_info->netmask) || ip4_addr_isany_val(ip_info->gw)) {
+            ip4_addr_isany_val(ip_info->ip) || ip4_addr_isany_val(ip_info->netmask)) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
     }
 
@@ -229,6 +232,12 @@ esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
         if (status != TCPIP_ADAPTER_DHCP_STOPPED) {
             return ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED;
         }
+#if LWIP_DNS /* don't build if not configured for use in lwipopts.h */
+        u8_t numdns = 0;
+        for (numdns = 0; numdns < DNS_MAX_SERVERS; numdns ++) {
+            dns_setserver(numdns, NULL);
+        }
+#endif
     }
 
     ip4_addr_copy(esp_ip[tcpip_if].ip, ip_info->ip);

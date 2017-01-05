@@ -25,7 +25,7 @@ This is a high level overview of the secure boot process. Step by step instructi
 
 1. The options to enable secure boot are provided in the ``make menuconfig`` hierarchy, under "Secure Boot Configuration".
 
-2. Secure Boot Configuration includes "Secure boot signing key", which is a file path. This file is a ECDSA public/private key pair in a PEM format file.
+2. Secure Boot defaults to signing images and partition table data during the build process. The "Secure boot private signing key" config item is a file path to a ECDSA public/private key pair in a PEM format file.
 
 3. The software bootloader image is built by esp-idf with secure boot support enabled and the public key (signature verification) portion of the secure boot signing key compiled in. This software bootloader image is flashed at offset 0x1000.
 
@@ -118,6 +118,27 @@ openssl ecparam -name prime256v1 -genkey -noout -out my_secure_boot_signing_key.
 ```
 
 Remember that the strength of the secure boot system depends on keeping the signing key private.
+
+Remote Signing of Images
+------------------------
+
+For production builds, it can be good practice to use a remote signing server rather than have the signing key on the build machine (which is the default esp-idf secure boot configuration). The espsecure.py command line program can be used to sign app images & partition table data for secure boot, on a remote system.
+
+To use remote signing, disable the option "Sign binaries during build". The private signing key does not need to be present on the build system. However, the public (signature verification) key is required because it is compiled into the bootloader (and can be used to verify image signatures during OTA updates.
+
+To extract the public key from the private key::
+
+  espsecure.py extract_public_key --keyfile PRIVATE_SIGNING_KEY PUBLIC_VERIFICATION_KEY
+
+The path to the public signature verification key needs to be specified in the menuconfig under "Secure boot public signature verification key" in order to build the secure bootloader.
+
+After the app image and partition table are built, the build system will print signing steps using espsecure.py::
+
+  espsecure.py sign_data --keyfile PRIVATE_SIGNING_KEY BINARY_FILE
+
+The above command appends the image signature to the existing binary. You can use the --output argument to place the binary with signature appended into a separate file::
+
+  espsecure.py sign_data --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
 
 Secure Boot Best Practices
 --------------------------

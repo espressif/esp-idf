@@ -23,6 +23,7 @@ extern "C" {
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "esp_err.h"
+#include "esp_intr_alloc.h"
 #include "driver/periph_ctrl.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -129,6 +130,7 @@ typedef enum {
     UART_PARITY_ERR,        /*!< UART RX parity event*/
     UART_DATA_BREAK,        /*!< UART TX data and break event*/
     UART_EVENT_MAX,         /*!< UART event max index*/
+    UART_PATTERN_DET,        /*!< UART pattern detected */
 } uart_event_type_t;
 
 /**
@@ -138,6 +140,8 @@ typedef struct {
     uart_event_type_t type; /*!< UART event type */
     size_t size;            /*!< UART data size for UART_DATA event*/
 } uart_event_t;
+
+typedef intr_handle_t uart_isr_handle_t;
 
 /**
  * @brief Set UART data bits.
@@ -372,12 +376,14 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
  * @param arg parameter for handler function
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. 
+ * @param handle Pointer to return handle. If non-NULL, a handle for the interrupt will
+ *        be returned here.
  *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg, int intr_alloc_flags);
+esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg, int intr_alloc_flags,  uart_isr_handle_t *handle);
 
 
 /**
@@ -467,11 +473,12 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  * We can find the information of INUM and interrupt level in soc.h.
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param rx_buffer_size UART RX ring buffer size
+ * @param rx_buffer_size UART RX ring buffer size, rx_buffer_size should be greater than UART_FIFO_LEN.
  * @param tx_buffer_size UART TX ring buffer size.
  *        If set to zero, driver will not use TX buffer, TX function will block task until all data have been sent out..
  * @param queue_size UART event queue size/depth.
- * @param uart_queue UART event queue handle, if set NULL, driver will not use an event queue.
+ * @param uart_queue UART event queue handle (out param). On success, a new queue handle is written here to provide
+ *        access to UART events. If set to NULL, driver will not use an event queue.
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  *
@@ -479,7 +486,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, void* uart_queue, int intr_alloc_flags);
+esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t* uart_queue, int intr_alloc_flags);
 
 /**
  * @brief Uninstall UART driver.
@@ -588,6 +595,48 @@ int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickTyp
  */
 esp_err_t uart_flush(uart_port_t uart_num);
 
+/**
+ * @brief   UART get RX ring buffer cached data length
+ *
+ * @param   uart_num UART port number.
+ * @param   size Pointer of size_t to accept cached data length
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
+
+/**
+ * @brief   UART disable pattern detect function.
+ *          Designed for applications like 'AT commands'.
+ *          When the hardware detect a series of one same character, the interrupt will be triggered.
+ *
+ * @param   uart_num UART port number.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num);
+
+/**
+ * @brief   UART enable pattern detect function.
+ *          Designed for applications like 'AT commands'.
+ *          When the hardware detect a series of one same character, the interrupt will be triggered.
+ *
+ * @param uart_num UART port number.
+ * @param pattern_chr character of the pattern
+ * @param chr_num number of the character, 8bit value.
+ * @param chr_tout timeout of the interval between each pattern characters, 24bit value, unit is APB(80Mhz) clock cycle.
+ * @param post_idle idle time after the last pattern character, 24bit value, unit is APB(80Mhz) clock cycle.
+ * @param pre_idle idle time before the first pattern character, 24bit value, unit is APB(80Mhz) clock cycle.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle);
 /***************************EXAMPLE**********************************
  *
  *
@@ -599,7 +648,7 @@ esp_err_t uart_flush(uart_port_t uart_num);
  * //a. Set UART parameter
  * int uart_num = 0;                                       //uart port number
  * uart_config_t uart_config = {
- *    .baud_rate = UART_BITRATE_115200,                    //baudrate
+ *    .baud_rate = 115200,                                 //baudrate
  *    .data_bits = UART_DATA_8_BITS,                       //data bit mode
  *    .parity = UART_PARITY_DISABLE,                       //parity mode
  *    .stop_bits = UART_STOP_BITS_1,                       //stop bit mode
@@ -658,7 +707,7 @@ esp_err_t uart_flush(uart_port_t uart_num);
  *     //Set UART1 pins(TX: IO16, RX: IO17, RTS: IO18, CTS: IO19)
  *     uart_set_pin(uart_num, 16, 17, 18, 19);
  *     //Install UART driver( We don't need an event queue here)
- *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 10, 17, NULL, RINGBUF_TYPE_BYTEBUF);
+ *     uart_driver_install(uart_num, 1024 * 2, 1024*4, 0, NULL, 0);
  *     uint8_t data[1000];
  *     while(1) {
  *         //Read data from UART
@@ -692,7 +741,6 @@ esp_err_t uart_flush(uart_port_t uart_num);
  *                     ESP_LOGI(TAG,"data, len: %d", event.size);
  *                     int len = uart_read_bytes(uart_num, dtmp, event.size, 10);
  *                     ESP_LOGI(TAG, "uart read: %d", len);
-                       uart_write_bytes(uart_num, (const char*)dtmp, len);
  *                     break;
  *                 //Event of HW FIFO overflow detected
  *                 case UART_FIFO_OVF:

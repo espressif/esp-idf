@@ -13,7 +13,7 @@ PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
 #
 ESPTOOLPY_SRC := $(COMPONENT_PATH)/esptool/esptool.py
 ESPTOOLPY := $(PYTHON) $(ESPTOOLPY_SRC) --chip esp32
-ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD)
+ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD) --before $(CONFIG_ESPTOOLPY_BEFORE) --after $(CONFIG_ESPTOOLPY_AFTER)
 
 # Supporting esptool command line tools
 ESPEFUSEPY := $(PYTHON) $(COMPONENT_PATH)/esptool/espefuse.py
@@ -21,19 +21,24 @@ ESPSECUREPY := $(PYTHON) $(COMPONENT_PATH)/esptool/espsecure.py
 export ESPSECUREPY  # is used in bootloader_support component
 
 ESPTOOL_FLASH_OPTIONS := --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) --flash_size $(ESPFLASHSIZE)
+ifdef CONFIG_ESPTOOLPY_FLASHSIZE_DETECT
+ESPTOOL_WRITE_FLASH_OPTIONS := --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) --flash_size detect
+else
+ESPTOOL_WRITE_FLASH_OPTIONS := $(ESPTOOL_FLASH_OPTIONS)
+endif
 
 ESPTOOL_ELF2IMAGE_OPTIONS :=
 
-ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z) $(ESPTOOL_FLASH_OPTIONS)
+ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z) $(ESPTOOL_WRITE_FLASH_OPTIONS)
 
 ESPTOOL_ALL_FLASH_ARGS += $(CONFIG_APP_OFFSET) $(APP_BIN)
 
-ifdef CONFIG_SECURE_BOOT_ENABLED
+ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 ifndef IS_BOOTLOADER_BUILD
-# for secure boot, add a signing step to get from unsiged app to signed app
+# for locally signed secure boot image, add a signing step to get from unsigned app to signed app
 APP_BIN_UNSIGNED := $(APP_BIN:.bin=-unsigned.bin)
 
-$(APP_BIN): $(APP_BIN_UNSIGNED) $(SECURE_BOOT_SIGNING_KEY)
+$(APP_BIN): $(APP_BIN_UNSIGNED) $(SECURE_BOOT_SIGNING_KEY) $(SDKCONFIG_MAKEFILE)
 	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
 endif
 endif
@@ -43,17 +48,31 @@ APP_BIN_UNSIGNED ?= $(APP_BIN)
 $(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC)
 	$(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
 
-flash: all_binaries $(ESPTOOLPY_SRC)
+flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash)
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(CONFIG_APP_OFFSET))..."
 ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 endif
 	$(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
-app-flash: $(APP_BIN) $(ESPTOOLPY_SRC)
+app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash)
 	@echo "Flashing app to serial port $(ESPPORT), offset $(CONFIG_APP_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
 
 # Submodules normally added in component.mk, but can be added
 # at the project level as long as qualified path
 COMPONENT_SUBMODULES += $(COMPONENT_PATH)/esptool
+
+erase_flash:
+	@echo "Erasing entire flash..."
+	$(ESPTOOLPY_SERIAL) erase_flash
+
+MONITORBAUD ?= $(CONFIG_MONITOR_BAUD)
+
+# note: if you want to run miniterm from command line, can simply run
+# miniterm.py on the console. The '$(PYTHON) -m serial.tools.miniterm'
+# is to allow for the $(PYTHON) variable overriding the python path.
+monitor: $(call prereq_if_explicit,%flash)
+	$(PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw $(ESPPORT) $(MONITORBAUD)
+
+.PHONY: erase_flash

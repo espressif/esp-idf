@@ -26,6 +26,16 @@
 #define WSR(reg, newval)  asm volatile ("wsr %0, " #reg : : "r" (newval));
 #define XSR(reg, swapval) asm volatile ("xsr %0, " #reg : "+r" (swapval));
 
+/** @brief Read current stack pointer address
+ *
+ */
+static inline void *get_sp()
+{
+    void *sp;
+    asm volatile ("mov %0, sp;" : "=r" (sp));
+    return sp;
+}
+
 /* Return true if the CPU is in an interrupt context
    (PS.UM == 0)
 */
@@ -93,5 +103,14 @@ void esp_cpu_stall(int cpu_id);
  * @param cpu_id ID of the CPU to un-stall (0 = PRO, 1 = APP)
  */
 void esp_cpu_unstall(int cpu_id);
+
+/**
+ * @brief Returns true if a JTAG debugger is attached to CPU
+ * OCD (on chip debug) port.
+ *
+ * @note If "Make exception and panic handlers JTAG/OCD aware"
+ * is disabled, this function always returns false.
+ */
+bool esp_cpu_in_ocd_debug_mode();
 
 #endif

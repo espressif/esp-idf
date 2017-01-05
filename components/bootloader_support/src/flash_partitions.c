@@ -13,31 +13,42 @@
 // limitations under the License.
 #include "esp_flash_partitions.h"
 #include "esp_log.h"
+#include "rom/spi_flash.h"
 
 static const char *TAG = "flash_parts";
 
 esp_err_t esp_partition_table_basic_verify(const esp_partition_info_t *partition_table, bool log_errors, int *num_partitions)
 {
   int num_parts;
+  uint32_t chip_size = g_rom_flashchip.chip_size;
   *num_partitions = 0;
 
   for(num_parts = 0; num_parts < ESP_PARTITION_TABLE_MAX_ENTRIES; num_parts++) {
     const esp_partition_info_t *part = &partition_table[num_parts];
 
-    if(part->magic == 0xFFFF
-       && part->type == PART_TYPE_END
-       && part->subtype == PART_SUBTYPE_END) {
+    if (part->magic == 0xFFFF
+        && part->type == PART_TYPE_END
+        && part->subtype == PART_SUBTYPE_END) {
       /* TODO: check md5 */
       ESP_LOGD(TAG, "partition table verified, %d entries", num_parts);
       *num_partitions = num_parts;
       return ESP_OK;
     }
 
-    if(part->magic != ESP_PARTITION_MAGIC) {
+    if (part->magic != ESP_PARTITION_MAGIC) {
         if (log_errors) {
             ESP_LOGE(TAG, "partition %d invalid magic number 0x%x", num_parts, part->magic);
         }
         return ESP_ERR_INVALID_STATE;
+    }
+
+    const esp_partition_pos_t *pos = &part->pos;
+    if (pos->offset > chip_size || pos->offset + pos->size > chip_size) {
+        if (log_errors) {
+            ESP_LOGE(TAG, "partition %d invalid - offset 0x%x size 0x%x exceeds flash chip size 0x%x",
+                     num_parts, pos->offset, pos->size, chip_size);
+        }
+        return ESP_ERR_INVALID_SIZE;
     }
   }
 

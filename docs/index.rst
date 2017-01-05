@@ -107,6 +107,7 @@ Contents:
    LED Control <api/ledc>
    Remote Control <api/rmt>
    Timer <api/timer>
+   I2C <api/i2c>
    Pulse Counter <api/pcnt>
    Sigma-delta Modulation <api/sigmadelta>
    SPI Flash and Partition APIs <api/spi_flash>

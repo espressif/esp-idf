@@ -713,7 +713,7 @@ _xt_user_exc:
 
     rsr     a2, EXCCAUSE                    /* recover exc cause */
     movi    a3, _xt_exception_table
-    get_percpu_entry_for a3, a4
+    get_percpu_entry_for a2, a4
     addx4   a4, a2, a3                      /* a4 = address of exception table entry */
     l32i    a4, a4, 0                       /* a4 = handler address */
     #ifdef __XTENSA_CALL0_ABI__

@@ -72,45 +72,59 @@ const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
     GPIO_PIN_REG_39
 };
 
-esp_err_t gpio_pullup_en(gpio_num_t gpio_num) {
+typedef struct {
+    gpio_isr_t fn;   /*!< isr function */
+    void* args;      /*!< isr function args */
+} gpio_isr_func_t;
+
+static gpio_isr_func_t* gpio_isr_func = NULL;
+static gpio_isr_handle_t gpio_isr_handle;
+static portMUX_TYPE gpio_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
+{
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
-    if(RTC_GPIO_IS_VALID_GPIO(gpio_num)){
+    if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         rtc_gpio_pullup_en(gpio_num);
-    }else{
+    } else {
         REG_SET_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
     }
     return ESP_OK;
 }
 
-esp_err_t gpio_pullup_dis(gpio_num_t gpio_num) {
+esp_err_t gpio_pullup_dis(gpio_num_t gpio_num)
+{
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
-    if(RTC_GPIO_IS_VALID_GPIO(gpio_num)){
+    if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         rtc_gpio_pullup_dis(gpio_num);
-    }else{
+    } else {
         REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
     }
     return ESP_OK;
 }
 
-esp_err_t gpio_pulldown_en(gpio_num_t gpio_num) {
+esp_err_t gpio_pulldown_en(gpio_num_t gpio_num)
+{
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
-    if(RTC_GPIO_IS_VALID_GPIO(gpio_num)){
+    if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         rtc_gpio_pulldown_en(gpio_num);
-    }else{
-         REG_SET_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PD);
+    } else {
+        REG_SET_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PD);
     }
     return ESP_OK;
 }
 
-esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num) {
+esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num)
+{
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
-    if(RTC_GPIO_IS_VALID_GPIO(gpio_num)){
-        rtc_gpio_pulldown_dis(gpio_num);   
-    }else{
+    if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
+        rtc_gpio_pulldown_dis(gpio_num);
+    } else {
         REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PD);
     }
     return ESP_OK;
 }
+
 esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
@@ -161,7 +175,7 @@ static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 
 esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 {
-    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
     if (level) {
         if (gpio_num < 32) {
             GPIO.out_w1ts = (1 << gpio_num);
@@ -323,6 +337,96 @@ esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
     return ESP_OK;
 }
 
+void IRAM_ATTR gpio_intr_service(void* arg)
+{
+    //GPIO intr process
+    uint32_t gpio_num = 0;
+    //read status to get interrupt status for GPIO0-31
+    uint32_t gpio_intr_status;
+    gpio_intr_status = GPIO.status;
+    //read status1 to get interrupt status for GPIO32-39
+    uint32_t gpio_intr_status_h;
+    gpio_intr_status_h = GPIO.status1.intr_st;
+
+    if (gpio_isr_func == NULL) {
+        return;
+    }
+    do {
+        if (gpio_num < 32) {
+            if (gpio_intr_status & BIT(gpio_num)) { //gpio0-gpio31
+                if (gpio_isr_func[gpio_num].fn != NULL) {
+                    gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
+                }
+                GPIO.status_w1tc = BIT(gpio_num);
+            }
+        } else {
+            if (gpio_intr_status_h & BIT(gpio_num - 32)) {
+                if (gpio_isr_func[gpio_num].fn != NULL) {
+                    gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
+                }
+                GPIO.status1_w1tc.intr_st = BIT(gpio_num - 32);
+            }
+        }
+    } while (++gpio_num < GPIO_PIN_COUNT);
+}
+
+esp_err_t gpio_isr_handler_add(gpio_num_t gpio_num, gpio_isr_t isr_handler, void* args)
+{
+    GPIO_CHECK(gpio_isr_func != NULL, "GPIO isr service is not installed, call gpio_install_isr_service() first", ESP_ERR_INVALID_STATE);
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&gpio_spinlock);
+    gpio_intr_disable(gpio_num);
+    if (gpio_isr_func) {
+        gpio_isr_func[gpio_num].fn = isr_handler;
+        gpio_isr_func[gpio_num].args = args;
+    }
+    gpio_intr_enable(gpio_num);
+    portEXIT_CRITICAL(&gpio_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t gpio_isr_handler_remove(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(gpio_isr_func != NULL, "GPIO isr service is not installed, call gpio_install_isr_service() first", ESP_ERR_INVALID_STATE);
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&gpio_spinlock);
+    gpio_intr_disable(gpio_num);
+    if (gpio_isr_func) {
+        gpio_isr_func[gpio_num].fn = NULL;
+        gpio_isr_func[gpio_num].args = NULL;
+    }
+    portEXIT_CRITICAL(&gpio_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t gpio_install_isr_service(int intr_alloc_flags)
+{
+    GPIO_CHECK(gpio_isr_func == NULL, "GPIO isr service already installed", ESP_FAIL);
+    esp_err_t ret;
+    portENTER_CRITICAL(&gpio_spinlock);
+    gpio_isr_func = (gpio_isr_func_t*) calloc(GPIO_NUM_MAX, sizeof(gpio_isr_func_t));
+    if (gpio_isr_func == NULL) {
+        ret = ESP_ERR_NO_MEM;
+    } else {
+        ret = gpio_isr_register(gpio_intr_service, NULL, intr_alloc_flags, &gpio_isr_handle);
+    }
+    portEXIT_CRITICAL(&gpio_spinlock);
+    return ret;
+}
+
+void gpio_uninstall_isr_service()
+{
+    if (gpio_isr_func == NULL) {
+        return;
+    }
+    portENTER_CRITICAL(&gpio_spinlock);
+    esp_intr_free(gpio_isr_handle);
+    free(gpio_isr_func);
+    gpio_isr_func = NULL;
+    portEXIT_CRITICAL(&gpio_spinlock);
+    return;
+}
+
 esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, gpio_isr_handle_t *handle)
 {
     GPIO_CHECK(fn, "GPIO ISR null", ESP_ERR_INVALID_ARG);
@@ -334,7 +438,7 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     esp_err_t ret = ESP_OK;
-    if ((intr_type == GPIO_INTR_LOW_LEVEL) || (intr_type == GPIO_INTR_HIGH_LEVEL)) {
+    if (( intr_type == GPIO_INTR_LOW_LEVEL ) || ( intr_type == GPIO_INTR_HIGH_LEVEL )) {
         GPIO.pin[gpio_num].int_type = intr_type;
         GPIO.pin[gpio_num].wakeup_enable = 0x1;
     } else {

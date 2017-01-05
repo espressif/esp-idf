@@ -14,9 +14,10 @@ before_script:
   - chmod 600 ~/.ssh/id_rsa
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
-  # if testing master branch, use github wifi libs.
-  # if testing other branches, use gitlab wifi libs (as maybe changes aren't merged to master yet)
-  - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-wifi-lib%ssh://git@gitlab.espressif.cn:27227/idf/esp32-wifi-lib%" .gitmodules
+  # if testing master branch, use github wifi and bt libs.
+  # if testing other branches, use gitlab wifi and bt libs (as maybe changes aren't merged to master yet)
+  - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-wifi-lib%${GITLAB_SSH_SERVER}/idf/esp32-wifi-lib%" .gitmodules
+  - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-bt-lib%${GITLAB_SSH_SERVER}/idf/esp32-bt-lib%" .gitmodules
   # fetch all submodules
   - git submodule update --init --recursive
 
@@ -149,11 +150,12 @@ test_build_system:
 
 test_report:
   stage: test_report
+  image: espressif/esp32-ci-env
   only:
     - master
     - triggers
   tags:
-    - test_report
+    - report
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
@@ -165,12 +167,33 @@ test_report:
       - $LOG_PATH
     expire_in: 12 mos
   script:
+    # calc log path
+    - VER_NUM=`git rev-list HEAD | wc -l | awk '{print $1}'`
+    - SHA_ID=`echo $CI_BUILD_REF | cut -c 1-7`
+    - REVISION="${VER_NUM}_${SHA_ID}"
+    # replace / to _ in branch name
+    - ESCAPED_BRANCH_NAME=`echo $CI_BUILD_REF_NAME | sed 's/\//___/g'`
+    # result path and artifacts path
+    - RESULT_PATH="$CI_PROJECT_NAME/$ESCAPED_BRANCH_NAME/$REVISION"
+    - ARTIFACTS_PATH="$GITLAB_HTTP_SERVER/idf/esp-idf/builds/$CI_BUILD_ID/artifacts/browse/$CI_BUILD_REF"
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     # generate report
-    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH
-
+    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH || FAIL=True
+    # commit to CI-test-result project
+    - git clone $GITLAB_SSH_SERVER/qa/CI-test-result.git
+    - rm -rf CI-test-result/RawData/$RESULT_PATH
+    - cp -R $CI_PROJECT_NAME CI-test-result/RawData
+    - cd CI-test-result
+    # config git user
+    - git config --global user.email "ci-test-result@espressif.com"
+    - git config --global user.name "ci-test-result"
+    # commit test result
+    - git add .
+    - git commit . -m "update test result for $CI_PROJECT_NAME/$CI_BUILD_REF_NAME/$CI_BUILD_REF, pipeline ID $CI_PIPELINE_ID" || exit 0
+    - git push origin master
+    - test "${FAIL}" = "True" && exit 1
 
 push_master_to_github:
   before_script:

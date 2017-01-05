@@ -74,7 +74,6 @@ endif
 # Correspond to the files named in COMPONENT_EMBED_FILES & COMPONENT_EMBED_TXTFILES
 COMPONENT_EMBED_OBJS ?= $(addsuffix .bin.o,$(COMPONENT_EMBED_FILES)) $(addsuffix .txt.o,$(COMPONENT_EMBED_TXTFILES))
 
-
 # If we're called to compile something, we'll get passed the COMPONENT_INCLUDES
 # variable with all the include dirs from all the components in random order. This
 # means we can accidentally grab a header from another component before grabbing our own.

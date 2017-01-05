@@ -22,15 +22,6 @@
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 
-void IRAM_ATTR abort()
-{
-    do
-    {
-        __asm__ ("break 0,0");
-        *((int*) 0) = 0;
-    } while(true);
-}
-
 void* IRAM_ATTR _malloc_r(struct _reent *r, size_t size)
 {
     return pvPortMalloc(size);

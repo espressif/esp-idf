@@ -26,9 +26,11 @@ help:
 	@echo "make defconfig - Set defaults for all new configuration options"
 	@echo ""
 	@echo "make all - Build app, bootloader, partition table"
-	@echo "make flash - Flash all components to a fresh chip"
+	@echo "make flash - Flash app, bootloader, partition table to a chip"
 	@echo "make clean - Remove all build output"
 	@echo "make size - Display the memory footprint of the app"
+	@echo "make erase_flash - Erase entire flash contents"
+	@echo "make monitor - Display serial output on terminal console"
 	@echo ""
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
@@ -42,6 +44,27 @@ ifndef MAKE_RESTARTS
 ifeq ("$(filter 4.% 3.81 3.82,$(MAKE_VERSION))","")
 $(warning "esp-idf build system only supports GNU Make versions 3.81 or newer. You may see unexpected results with other Makes.")
 endif
+endif
+
+# make IDF_PATH a "real" absolute path
+# * works around the case where a shell character is embedded in the environment variable value.
+# * changes Windows-style C:/blah/ paths to MSYS/Cygwin style /c/blah
+export IDF_PATH:=$(realpath $(wildcard $(IDF_PATH)))
+
+ifndef IDF_PATH
+$(error IDF_PATH variable is not set to a valid directory.)
+endif
+
+ifneq ("$(IDF_PATH)","$(realpath $(wildcard $(IDF_PATH)))")
+# due to the way make manages variables, this is hard to account for
+#
+# if you see this error, do the shell expansion in the shell ie
+# make IDF_PATH=~/blah not make IDF_PATH="~/blah"
+$(error If IDF_PATH is overriden on command line, it must be an absolute path with no embedded shell special characters)
+endif
+
+ifneq ("$(IDF_PATH)","$(subst :,,$(IDF_PATH))")
+$(error IDF_PATH cannot contain colons. If overriding IDF_PATH on Windows, use Cygwin-style /c/dir instead of C:/dir)
 endif
 
 # disable built-in make rules, makes debugging saner
@@ -142,6 +165,11 @@ include $(IDF_PATH)/make/common.mk
 all:
 ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+ifndef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
+	@echo "App built but not signed. Sign app & partition data before flashing, via espsecure.py:"
+	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
+	@echo "espsecure.py sign_data --keyfile KEYFILE $(PARTITION_TABLE_BIN)"
+endif
 	@echo "To flash app & partition table, run 'make flash' or:"
 else
 	@echo "To flash all build output, run 'make flash' or:"
@@ -283,8 +311,15 @@ $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp
 # Generation of $(APP_BIN) from $(APP_ELF) is added by the esptool
 # component's Makefile.projbuild
 app: $(APP_BIN)
+ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image
+	@echo "App built but not signed. Signing step via espsecure.py:"
+	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
+	@echo "Then flash app command is:"
+	@echo $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+else
 	@echo "App built. Default flash app command is:"
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(CONFIG_APP_OFFSET) $(APP_BIN)
+endif
 
 all_binaries: $(APP_BIN)
 
@@ -345,7 +380,7 @@ $(foreach component,$(TEST_COMPONENT_PATHS),$(eval $(call GenerateComponentTarge
 app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	$(summary) RM $(APP_ELF)
 	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
-	
+
 size: $(APP_ELF)
 	$(SIZE) $(APP_ELF)
 

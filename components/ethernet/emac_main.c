@@ -47,6 +47,8 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 
+#include "lwip/err.h"
+
 #define EMAC_EVT_QNUM 200
 #define EMAC_SIG_MAX 50
 
@@ -63,7 +65,8 @@ static xTaskHandle emac_task_hdl;
 static xQueueHandle emac_xqueue;
 static uint8_t emac_sig_cnt[EMAC_SIG_MAX] = {0};
 static TimerHandle_t emac_timer = NULL;
-
+static SemaphoreHandle_t emac_rx_xMutex = NULL;
+static SemaphoreHandle_t emac_tx_xMutex = NULL;
 static const char *TAG = "emac";
 
 static esp_err_t emac_ioctl(emac_sig_t sig, emac_par_t par);
@@ -82,20 +85,24 @@ void esp_eth_get_mac(uint8_t mac[6])
 
 static void emac_setup_tx_desc(struct dma_extended_desc *tx_desc , uint32_t size)
 {
-    tx_desc->basic.desc0 = EMAC_DESC_TX_OWN | EMAC_DESC_INT_COMPL | EMAC_DESC_LAST_SEGMENT | EMAC_DESC_FIRST_SEGMENT | EMAC_DESC_SECOND_ADDR_CHAIN;
     tx_desc->basic.desc1 = size & 0xfff;
+    tx_desc->basic.desc0 = EMAC_DESC_INT_COMPL | EMAC_DESC_LAST_SEGMENT | EMAC_DESC_FIRST_SEGMENT | EMAC_DESC_SECOND_ADDR_CHAIN;
+    tx_desc->basic.desc0 = EMAC_DESC_TX_OWN | EMAC_DESC_INT_COMPL | EMAC_DESC_LAST_SEGMENT | EMAC_DESC_FIRST_SEGMENT | EMAC_DESC_SECOND_ADDR_CHAIN;
 }
 
 static void emac_clean_tx_desc(struct dma_extended_desc *tx_desc)
 {
-    tx_desc->basic.desc0 = 0;
     tx_desc->basic.desc1 = 0;
+    tx_desc->basic.desc0 = 0;
 }
 
-static void emac_clean_rx_desc(struct dma_extended_desc *rx_desc)
+static void emac_clean_rx_desc(struct dma_extended_desc *rx_desc ,uint32_t buf_ptr)
 {
-    rx_desc->basic.desc0 = EMAC_DESC_RX_OWN;
+    if(buf_ptr != 0) {
+        rx_desc->basic.desc2 = buf_ptr;
+    }
     rx_desc->basic.desc1 = EMAC_DESC_RX_SECOND_ADDR_CHAIN | DMA_RX_BUF_SIZE;
+    rx_desc->basic.desc0 = EMAC_DESC_RX_OWN;
 }
 
 static void emac_set_tx_base_reg(void)
@@ -156,18 +163,15 @@ static void emac_init_dma_chain(void)
     dma_phy = (uint32_t)(emac_config.dma_erx);
     p = emac_config.dma_erx;
 
-    for (i = 0; i < (DMA_TX_BUF_NUM - 1); i++ ) {
+    for (i = 0; i < (DMA_RX_BUF_NUM - 1); i++ ) {
         dma_phy += sizeof(struct dma_extended_desc);
-        emac_clean_rx_desc(p);
+        emac_clean_rx_desc(p, (uint32_t)(&emac_dma_rx_buf[0]) + (i * DMA_RX_BUF_SIZE));
         p->basic.desc3 = dma_phy;
-        p->basic.desc2 = (uint32_t)(&emac_dma_rx_buf[0]) + (i * DMA_RX_BUF_SIZE);
         p++;
     }
-    p->basic.desc3 = (uint32_t)(emac_config.dma_erx);
-    p->basic.desc2 = (uint32_t)(&emac_dma_rx_buf[0]) + (i * DMA_RX_BUF_SIZE);
 
-    //init desc0 desc1
-    emac_clean_rx_desc(p);
+    emac_clean_rx_desc(p, (uint32_t)(&emac_dma_rx_buf[0]) + (i * DMA_RX_BUF_SIZE));
+    p->basic.desc3 = (uint32_t)(emac_config.dma_erx);
 }
 
 void esp_eth_smi_write(uint32_t reg_num, uint16_t value)
@@ -207,18 +211,32 @@ static void emac_set_user_config_data(eth_config_t *config )
     emac_config.phy_init = config->phy_init;
     emac_config.emac_tcpip_input = config->tcpip_input;
     emac_config.emac_gpio_config = config->gpio_config;
+    emac_config.emac_phy_check_link = config->phy_check_link;
+    emac_config.emac_phy_check_init = config->phy_check_init;
+    emac_config.emac_phy_get_speed_mode = config->phy_get_speed_mode;
+    emac_config.emac_phy_get_duplex_mode = config->phy_get_duplex_mode;
+}
+
+static void emac_enable_intr()
+{
+    REG_WRITE(EMAC_DMAINTERRUPT_EN_REG, EMAC_INTR_ENABLE_BIT);
+}
+
+static void emac_disable_intr()
+{
+    REG_WRITE(EMAC_DMAINTERRUPT_EN_REG, 0);
 }
 
 static esp_err_t emac_verify_args(void)
 {
     esp_err_t ret = ESP_OK;
 
-    if (emac_config.phy_addr > 31) {
+    if (emac_config.phy_addr > PHY31) {
         ESP_LOGE(TAG, "phy addr err");
         ret = ESP_FAIL;
     }
 
-    if (emac_config.mac_mode != EMAC_MODE_RMII) {
+    if (emac_config.mac_mode != ETH_MODE_RMII) {
         ESP_LOGE(TAG, "mac mode err,now only support RMII");
         ret = ESP_FAIL;
     }
@@ -235,6 +253,26 @@ static esp_err_t emac_verify_args(void)
 
     if (emac_config.emac_gpio_config == NULL) {
         ESP_LOGE(TAG, "gpio config func is null");
+        ret = ESP_FAIL;
+    }
+
+    if (emac_config.emac_phy_check_link == NULL) {
+        ESP_LOGE(TAG, "phy check link func is null");
+        ret = ESP_FAIL;
+    }
+
+    if (emac_config.emac_phy_check_init == NULL) {
+        ESP_LOGE(TAG, "phy check init func is null");
+        ret = ESP_FAIL;
+    }
+
+    if (emac_config.emac_phy_get_speed_mode == NULL) {
+        ESP_LOGE(TAG, "phy get speed mode func is null");
+        ret = ESP_FAIL;
+    }
+
+    if (emac_config.emac_phy_get_duplex_mode == NULL) {
+        ESP_LOGE(TAG, "phy get duplex mode func is null");
         ret = ESP_FAIL;
     }
 
@@ -255,7 +293,13 @@ static void emac_process_tx(void)
 {
     uint32_t cur_tx_desc = emac_read_tx_cur_reg();
 
-    while (((uint32_t) & (emac_config.dma_etx[emac_config.dirty_tx].basic.desc0) != cur_tx_desc)) {
+    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+        return;
+    }
+
+    xSemaphoreTakeRecursive( emac_tx_xMutex, ( TickType_t ) portMAX_DELAY );
+
+    while (((uint32_t) &(emac_config.dma_etx[emac_config.dirty_tx].basic.desc0) != cur_tx_desc)) {
         emac_clean_tx_desc(&(emac_config.dma_etx[emac_config.dirty_tx]));
         emac_config.dirty_tx = (emac_config.dirty_tx + 1) % DMA_TX_BUF_NUM;
         emac_config.cnt_tx --;
@@ -263,11 +307,33 @@ static void emac_process_tx(void)
         if (emac_config.cnt_tx < 0) {
             ESP_LOGE(TAG, "emac tx chain err");
         }
+        cur_tx_desc = emac_read_tx_cur_reg();
     }
+
+    xSemaphoreGiveRecursive( emac_tx_xMutex );
 }
 
+void esp_eth_free_rx_buf(void *buf)
+{
+    xSemaphoreTakeRecursive( emac_rx_xMutex, ( TickType_t ) portMAX_DELAY );
+
+    emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.cur_rx]),(uint32_t) buf);
+    emac_config.cur_rx = (emac_config.cur_rx + 1) % DMA_RX_BUF_NUM;
+    emac_config.cnt_rx--;
+    if(emac_config.cnt_rx < 0) {
+       ESP_LOGE(TAG, "emac rx buf err!!\n");
+    }
+    emac_poll_rx_cmd();
+
+    xSemaphoreGiveRecursive( emac_rx_xMutex );
+}
+
+#if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
 static void emac_process_rx(void)
 {
+    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+        return;
+    }
     uint32_t cur_rx_desc = emac_read_rx_cur_reg();
 
     while (((uint32_t) & (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc)) {
@@ -275,16 +341,115 @@ static void emac_process_rx(void)
         emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
                                      (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
 
-        emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.dirty_rx]));
+        emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.dirty_rx]),(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2));
         emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
-        if (emac_config.rx_need_poll != 0) {
-            emac_poll_rx_cmd();
-            emac_config.rx_need_poll = 0;
-        }
+
         //if open this ,one intr can do many intrs ?
-        //cur_rx_desc = emac_read_rx_cur_reg();
+        cur_rx_desc = emac_read_rx_cur_reg();
     }
+
+    emac_enable_rx_intr();
 }
+
+static void emac_process_rx_unavail(void)
+{
+    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+        return;
+    }
+
+    uint32_t dirty_cnt = 0;
+    while (dirty_cnt < DMA_RX_BUF_NUM) {
+
+        if(emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 == EMAC_DESC_RX_OWN) {
+            break;
+        }
+
+        dirty_cnt ++;
+        //copy data to lwip
+        emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
+                                     (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
+
+        emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.dirty_rx]),(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2));
+        emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
+    }
+    emac_enable_rx_intr();
+    emac_enable_rx_unavail_intr();
+    emac_poll_rx_cmd();
+}
+
+#else
+static void emac_process_rx_unavail(void)
+{
+    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+        return;
+    }
+
+    xSemaphoreTakeRecursive( emac_rx_xMutex, ( TickType_t ) portMAX_DELAY );
+
+    while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
+
+        //copy data to lwip 
+        emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
+                                     (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
+        emac_config.cnt_rx++;
+        if(emac_config.cnt_rx > DMA_RX_BUF_NUM) {
+            ESP_LOGE(TAG, "emac rx unavail buf err !!\n");
+        }
+        emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
+    }
+    emac_enable_rx_intr();
+    emac_enable_rx_unavail_intr();
+    xSemaphoreGiveRecursive( emac_rx_xMutex );
+}
+
+static void emac_process_rx(void)
+{
+    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+        return;
+    }
+
+    uint32_t cur_rx_desc = emac_read_rx_cur_reg();
+
+    xSemaphoreTakeRecursive( emac_rx_xMutex, ( TickType_t ) portMAX_DELAY );
+
+    if(((uint32_t) &(emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc)) {
+
+        while (((uint32_t) &(emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc) && emac_config.cnt_rx < DMA_RX_BUF_NUM ) {
+            //copy data to lwip
+            emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
+                               (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
+
+            emac_config.cnt_rx++;
+
+            if(emac_config.cnt_rx > DMA_RX_BUF_NUM ) {
+                ESP_LOGE(TAG, "emac rx buf err!!\n");
+            }
+            emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
+
+            cur_rx_desc = emac_read_rx_cur_reg();
+        }
+    } else {
+        if(emac_config.cnt_rx < DMA_RX_BUF_NUM) {
+            if((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 & EMAC_DESC_RX_OWN) == 0) {
+                while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
+
+                    //copy data to lwip
+                    emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
+                               (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
+                    emac_config.cnt_rx++;
+                    if(emac_config.cnt_rx > DMA_RX_BUF_NUM) {
+                        ESP_LOGE(TAG,"emac rx buf err!!!\n");
+                    }
+
+                    emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
+                }
+            }
+        }
+    }
+    emac_enable_rx_intr();
+    xSemaphoreGiveRecursive( emac_rx_xMutex );
+}
+#endif
 
 //TODO other events need to do something
 static void IRAM_ATTR emac_process_intr(void *arg)
@@ -295,35 +460,37 @@ static void IRAM_ATTR emac_process_intr(void *arg)
     //clr intrs
     REG_WRITE(EMAC_DMASTATUS_REG, event);
 
-    if (event & EMAC_RECV_BUF_UNAVAIL) {
-        emac_config.rx_need_poll = 1;
-    } else if (event & EMAC_TRANS_INT) {
-        emac_post(SIG_EMAC_TX_DONE, 0);
-    } else if (event & EMAC_RECV_INT) {
+    if (event & EMAC_RECV_INT) {
+        emac_disable_rx_intr();
         emac_post(SIG_EMAC_RX_DONE, 0);
-    } else {
-        //other events
+    }
+
+    if (event & EMAC_RECV_BUF_UNAVAIL) {
+        emac_disable_rx_unavail_intr();
+        emac_post(SIG_EMAC_RX_UNAVAIL,0);
+    }
+
+    if (event & EMAC_TRANS_INT) {
+        emac_post(SIG_EMAC_TX_DONE, 0);
     }
 }
 
-//ToDo: this should only be called once because this allocates the interrupt as well.
-static void emac_enable_intr()
+static void emac_check_phy_init(void)
 {
-    //init emac intr
-    esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);
-    REG_WRITE(EMAC_DMAINTERRUPT_EN_REG, EMAC_INTR_ENABLE_BIT);
-}
+    emac_config.emac_phy_check_init();
+    if(emac_config.emac_phy_get_duplex_mode() == ETH_MDOE_FULLDUPLEX) {
+        REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
+    } else {
+        REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
+    }
+    if(emac_config.emac_phy_get_speed_mode() == ETH_SPEED_MODE_100M) {
+        REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACFESPEED);
+    } else {
+        REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACFESPEED);
+    }
 
-static void emac_disable_intr()
-{
-    REG_WRITE(EMAC_DMAINTERRUPT_EN_REG, 0);
+    emac_mac_init();
 }
-
-static bool emac_check_phy_link_status(void)
-{
-    return ((esp_eth_smi_read(1) & 0x4) == 0x4 );
-}
-
 static void emac_process_link_updown(bool link_status)
 {
     system_event_t evt;
@@ -331,10 +498,10 @@ static void emac_process_link_updown(bool link_status)
     emac_config.phy_link_up = link_status;
 
     if (link_status == true) {
+        emac_check_phy_init();
         ESP_LOGI(TAG, "eth link_up!!!");
         emac_enable_dma_tx();
         emac_enable_dma_rx();
-        ets_delay_us(200000);
         evt.event_id = SYSTEM_EVENT_ETH_CONNECTED;
     } else {
         ESP_LOGI(TAG, "eth link_down!!!");
@@ -356,26 +523,20 @@ static void emac_hw_init(void)
     //ipc TODO
 }
 
-static esp_err_t emac_xmit(void *param)
+esp_err_t esp_eth_tx(uint8_t *buf, uint16_t size)
 {
-    struct emac_post_cmd  *post_cmd = (struct emac_post_cmd *)param;
-    struct emac_tx_cmd *cmd = (struct emac_tx_cmd *)(post_cmd->cmd);
     esp_err_t ret = ESP_OK;
-
-    void *buf = cmd->buf;
-    uint16_t size = cmd->size;
 
     if (emac_config.emac_status != EMAC_RUNTIME_START || emac_config.emac_status == EMAC_RUNTIME_NOT_INIT) {
         ESP_LOGI(TAG, "tx netif close");
-        cmd->err = ERR_IF;
-        ret = ESP_FAIL;
+        ret = ERR_IF;
         goto _exit;
     }
 
-    if (emac_config.cnt_tx == DMA_TX_BUF_NUM) {
-        ESP_LOGI(TAG, "tx buf full");
-        cmd->err = ERR_MEM;
-        ret = ESP_FAIL;
+    xSemaphoreTakeRecursive( emac_tx_xMutex, ( TickType_t ) portMAX_DELAY );
+    if (emac_config.cnt_tx == DMA_TX_BUF_NUM -1) {
+        ESP_LOGD(TAG, "tx buf full");
+        ret = ERR_MEM;
         goto _exit;
     }
 
@@ -390,26 +551,23 @@ static esp_err_t emac_xmit(void *param)
 
 _exit:
 
-    if (post_cmd->post_type == EMAC_POST_SYNC) {
-        xSemaphoreGive(emac_g_sem);
-    }
-
+    xSemaphoreGiveRecursive( emac_tx_xMutex );
     return ret;
 }
 
 static void emac_init_default_data(void)
 {
-    emac_config.rx_need_poll = 0;
+    memset((uint8_t *)&emac_config, 0,sizeof(struct emac_config_data));
 }
 
-void emac_link_check_func(void *pv_parameters)
+void emac_process_link_check(void) 
 {
     if (emac_config.emac_status != EMAC_RUNTIME_START ||
         emac_config.emac_status == EMAC_RUNTIME_NOT_INIT) {
         return;
     }
 
-    if (emac_check_phy_link_status() == true ) {
+    if (emac_config.emac_phy_check_link() == true ) {
         if (emac_config.phy_link_up == false) {
             emac_process_link_updown(true);
         }
@@ -420,9 +578,14 @@ void emac_link_check_func(void *pv_parameters)
     }
 }
 
+void emac_link_check_func(void *pv_parameters)
+{
+    emac_post(SIG_EMAC_CHECK_LINK,0);
+}
+
 static bool emac_link_check_timer_init(void)
 {
-    emac_timer = xTimerCreate("emac_timer", (1000 / portTICK_RATE_MS),
+    emac_timer = xTimerCreate("emac_timer", (2000 / portTICK_PERIOD_MS),
                               pdTRUE, (void *)rand(), emac_link_check_func);
     if (emac_timer == NULL) {
         return false;
@@ -473,18 +636,11 @@ static void emac_start(void *param)
 
     emac_set_tx_base_reg();
     emac_set_rx_base_reg();
-    emac_mac_init();
 
     emac_config.phy_init();
 
-    //for test
-    //emac_wait_linkup();
-
-    //mmc  not support
-
     //ptp TODO
 
-    //enable emac intr
     emac_enable_intr();
 
     emac_config.emac_status = EMAC_RUNTIME_START;
@@ -573,7 +729,7 @@ esp_err_t esp_eth_disable(void)
         return close_cmd.err;
     }
 
-    if (emac_config.emac_status != EMAC_RUNTIME_NOT_INIT) {
+    if (emac_config.emac_status == EMAC_RUNTIME_START) {
         if (emac_ioctl(SIG_EMAC_STOP, (emac_par_t)(&post_cmd)) != 0) {
             close_cmd.err = EMAC_CMD_FAIL;
         }
@@ -608,9 +764,6 @@ static esp_err_t emac_ioctl(emac_sig_t sig, emac_par_t par)
         case SIG_EMAC_TX_DONE:
             emac_process_tx();
             break;
-        case SIG_EMAC_TX:
-            emac_xmit((void *)par);
-            break;
         case SIG_EMAC_START:
             emac_start((void *)par);
             break;
@@ -626,29 +779,6 @@ static esp_err_t emac_ioctl(emac_sig_t sig, emac_par_t par)
     return ret;
 }
 
-esp_err_t esp_eth_tx(uint8_t *buf, uint16_t size)
-{
-    struct emac_post_cmd post_cmd;
-    struct emac_tx_cmd tx_cmd;
-
-    post_cmd.cmd = (void *)(&tx_cmd);
-
-    if (emac_check_phy_link_status() == false) {
-        emac_process_link_updown(false);
-        tx_cmd.err = ERR_IF;
-    } else {
-        tx_cmd.buf = buf;
-        tx_cmd.size = size;
-        tx_cmd.err = ERR_OK;
-
-        if (emac_ioctl(SIG_EMAC_TX, (emac_par_t)(&post_cmd)) != 0) {
-            tx_cmd.err = ERR_MEM;
-        }
-    }
-
-    return tx_cmd.err;
-}
-
 void emac_task(void *pv)
 {
     emac_event_t e;
@@ -662,17 +792,20 @@ void emac_task(void *pv)
             case SIG_EMAC_RX_DONE:
                 emac_process_rx();
                 break;
+            case SIG_EMAC_RX_UNAVAIL:
+                emac_process_rx_unavail();
+                break;
             case SIG_EMAC_TX_DONE:
                 emac_process_tx();
-                break;
-            case SIG_EMAC_TX:
-                emac_xmit((void *)e.par);
                 break;
             case SIG_EMAC_START:
                 emac_start((void *)e.par);
                 break;
             case SIG_EMAC_STOP:
                 emac_stop((void *)e.par);
+                break;
+            case SIG_EMAC_CHECK_LINK:
+                emac_process_link_check();
                 break;
             default:
                 ESP_LOGE(TAG, "unexpect sig %d", e.sig);
@@ -684,27 +817,35 @@ void emac_task(void *pv)
 
 esp_err_t IRAM_ATTR emac_post(emac_sig_t sig, emac_par_t par)
 {
-    portENTER_CRITICAL(&g_emac_mux);
+    if(sig <= SIG_EMAC_RX_DONE) {
+        if (emac_sig_cnt[sig]) {
+            return ESP_OK;
+        } else {
+            emac_sig_cnt[sig]++;
+            emac_event_t evt;
+            signed portBASE_TYPE ret;
+            evt.sig = sig;
+            evt.par = par;
+            portBASE_TYPE tmp;
 
-    if (emac_sig_cnt[sig] && sig != SIG_EMAC_TX) {
-        portEXIT_CRITICAL(&g_emac_mux);
-        return ESP_OK;
+            ret = xQueueSendFromISR(emac_xqueue, &evt, &tmp);
+
+            if(tmp != pdFALSE) {
+                portYIELD_FROM_ISR();
+            }
+
+            if(ret != pdPASS) {
+                return ESP_FAIL;
+            }
+        }
     } else {
         emac_sig_cnt[sig]++;
-        portEXIT_CRITICAL(&g_emac_mux);
         emac_event_t evt;
         evt.sig = sig;
         evt.par = par;
-        if (sig <= SIG_EMAC_RX_DONE) {
-            portBASE_TYPE tmp;
 
-            if (xQueueSendFromISR(emac_xqueue, &evt, &tmp) != pdPASS) {
-                return ESP_FAIL;
-            }
-        } else {
-            if (xQueueSend(emac_xqueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
-                return ESP_FAIL;
-            }
+        if (xQueueSend(emac_xqueue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
+            return ESP_FAIL;
         }
     }
 
@@ -737,7 +878,7 @@ esp_err_t esp_eth_init(eth_config_t *config)
     REG_SET_FIELD(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_PHY_INTF_SEL, EMAC_EX_PHY_INTF_RMII);
 
     emac_dma_init();
-    if (emac_config.mac_mode == EMAC_MODE_RMII) {
+    if (emac_config.mac_mode == ETH_MODE_RMII) {
         emac_set_clk_rmii();
     } else {
         emac_set_clk_mii();
@@ -752,8 +893,12 @@ esp_err_t esp_eth_init(eth_config_t *config)
 
     //init task for emac
     emac_g_sem = xSemaphoreCreateBinary();
+    emac_rx_xMutex = xSemaphoreCreateRecursiveMutex();
+    emac_tx_xMutex = xSemaphoreCreateRecursiveMutex();
     emac_xqueue = xQueueCreate(EMAC_EVT_QNUM, sizeof(emac_event_t));
-    xTaskCreate(emac_task, "emacT", 2048 * 4, NULL, (19), &emac_task_hdl);
+    xTaskCreate(emac_task, "emacT", 2048, NULL, EMAC_TASK_PRIORITY, &emac_task_hdl);
+
+    esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);
 
     emac_reset();
     emac_enable_clk(false);

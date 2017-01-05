@@ -19,6 +19,7 @@
 
 #include "esp_err.h"
 #include "emac_dev.h"
+#include "esp_eth.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,11 +33,6 @@ typedef struct {
     emac_par_t par;
 } emac_event_t;
 
-enum emac_mode {
-    EMAC_MODE_RMII = 0,
-    EMAC_MDOE_MII,
-};
-
 enum emac_runtime_status {
     EMAC_RUNTIME_NOT_INIT = 0,
     EMAC_RUNTIME_INIT,
@@ -45,36 +41,37 @@ enum emac_runtime_status {
 };
 
 enum {
+    SIG_EMAC_RX_UNAVAIL,
     SIG_EMAC_TX_DONE,
     SIG_EMAC_RX_DONE,
-    SIG_EMAC_TX,
     SIG_EMAC_START,
     SIG_EMAC_STOP,
+    SIG_EMAC_CHECK_LINK,
     SIG_EMAC_MAX
 };
 
-typedef void (*emac_phy_fun)(void);
-typedef esp_err_t (*emac_tcpip_input_fun)(void *buffer, uint16_t len, void *eb);
-typedef void (*emac_gpio_config_func)(void);
-
 struct emac_config_data {
-    unsigned int  phy_addr;
-    enum emac_mode mac_mode;
+    eth_phy_base_t phy_addr;
+    eth_mode_t mac_mode;
     struct dma_extended_desc *dma_etx;
-    unsigned int cur_tx;
-    unsigned int dirty_tx;
-    signed int cnt_tx;
+    uint32_t cur_tx;
+    uint32_t dirty_tx;
+    int32_t cnt_tx;
     struct dma_extended_desc *dma_erx;
-    unsigned int cur_rx;
-    unsigned int dirty_rx;
-    signed int cnt_rx;
-    unsigned int rx_need_poll;
+    uint32_t cur_rx;
+    uint32_t dirty_rx;
+    int32_t cnt_rx;
+    uint32_t rx_need_poll;
     bool phy_link_up;
     enum emac_runtime_status emac_status;
     uint8_t macaddr[6];
-    emac_phy_fun phy_init;
-    emac_tcpip_input_fun emac_tcpip_input;
-    emac_gpio_config_func emac_gpio_config;
+    eth_phy_func phy_init;
+    eth_tcpip_input_func emac_tcpip_input;
+    eth_gpio_config_func emac_gpio_config;
+    eth_phy_check_link_func emac_phy_check_link;
+    eth_phy_check_init_func emac_phy_check_init;
+    eth_phy_get_speed_mode_func emac_phy_get_speed_mode;
+    eth_phy_get_duplex_mode_func emac_phy_get_duplex_mode;
 };
 
 enum emac_post_type {
@@ -103,17 +100,14 @@ struct emac_close_cmd {
 #if CONFIG_ETHERNET
 #define DMA_RX_BUF_NUM CONFIG_DMA_RX_BUF_NUM
 #define DMA_TX_BUF_NUM CONFIG_DMA_TX_BUF_NUM
+#define EMAC_TASK_PRIORITY CONFIG_EMAC_TASK_PRIORITY
 #else
 #define DMA_RX_BUF_NUM 1
 #define DMA_TX_BUF_NUM 1
+#define EMAC_TASK_PRIORITY 10
 #endif
 #define DMA_RX_BUF_SIZE 1600
 #define DMA_TX_BUF_SIZE 1600
-
-//lwip err
-#define ERR_OK   0
-#define ERR_MEM -1
-#define ERR_IF  -16
 
 #define EMAC_CMD_OK 0
 #define EMAC_CMD_FAIL -1

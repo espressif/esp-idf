@@ -40,10 +40,15 @@ Application Example
 
    *INSTRUCTIONS*
 
-   1. Provide one or more practical examples to demonstrate functionality of this API.
-   2. Break down the code into parts and describe functionality of each part.
-   3. Provide screenshots if applicable.
-
+   1. Prepare one or more practical examples to demonstrate functionality of this API.
+   2. Each example should follow pattern of projects located in ``esp-idf/examples/`` folder.
+   3. Place example in this folder complete with ``README.md`` file.
+   4. Provide overview of demonstrated functionality in ``README.md``.
+   5. With good overview reader should be able to understand what example does without opening the source code.
+   6. Depending on complexity of example, break down description of code into parts and provide overview of functionality of each part.
+   7. Include flow diagram and screenshots of application output if applicable.
+   8. Finally add in this section synopsis of each example together with link to respective folder in ``esp-idf/examples/``.
+  
 API Reference
 -------------
 

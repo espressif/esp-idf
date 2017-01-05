@@ -338,7 +338,7 @@ void btu_task_post(uint32_t sig)
     evt.sig = sig;
     evt.par = 0;
 
-    if (xQueueSend(xBtuQueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
+    if (xQueueSend(xBtuQueue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
         LOG_ERROR("xBtuQueue failed\n");
     }
 }

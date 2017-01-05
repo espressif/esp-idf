@@ -213,7 +213,6 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux);
 #define portEXIT_CRITICAL_ISR(mux)    vPortCPUReleaseMutex(mux)
 #endif
 
-
 // Cleaner and preferred solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
 //NOT SMP-COMPATIBLE! Use only if all you want is to disable the interrupts locally!

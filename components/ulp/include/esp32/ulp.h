@@ -47,6 +47,10 @@ extern "C" {
 
 #define OPCODE_RD_REG 2         /*!< Instruction: read peripheral register (RTC_CNTL/RTC_IO/SARADC) (not implemented yet) */
 
+#define RD_REG_PERIPH_RTC_CNTL 0    /*!< Identifier of RTC_CNTL peripheral for RD_REG and WR_REG instructions */
+#define RD_REG_PERIPH_RTC_IO   1    /*!< Identifier of RTC_IO peripheral for RD_REG and WR_REG instructions */
+#define RD_REG_PERIPH_SENS     2    /*!< Identifier of SARADC peripheral for RD_REG and WR_REG instructions */
+
 #define OPCODE_I2C 3            /*!< Instruction: read/write I2C (not implemented yet) */
 
 #define OPCODE_DELAY 4          /*!< Instruction: delay (nop) for a given number of cycles */
@@ -191,8 +195,8 @@ typedef union {
         uint32_t addr : 8;          /*!< Address within either RTC_CNTL, RTC_IO, or SARADC */
         uint32_t periph_sel : 2;    /*!< Select peripheral: RTC_CNTL (0), RTC_IO(1), SARADC(2) */
         uint32_t data : 8;          /*!< 8 bits of data to write */
-        uint32_t high : 5;          /*!< High bit */
         uint32_t low : 5;           /*!< Low bit */
+        uint32_t high : 5;          /*!< High bit */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_WR_REG) */
     } wr_reg;                       /*!< Format of WR_REG instruction */
 
@@ -200,10 +204,10 @@ typedef union {
         uint32_t addr : 8;          /*!< Address within either RTC_CNTL, RTC_IO, or SARADC */
         uint32_t periph_sel : 2;    /*!< Select peripheral: RTC_CNTL (0), RTC_IO(1), SARADC(2) */
         uint32_t unused : 8;        /*!< Unused */
-        uint32_t high : 5;          /*!< High bit */
         uint32_t low : 5;           /*!< Low bit */
+        uint32_t high : 5;          /*!< High bit */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_WR_REG) */
-    } rd_reg;                       /*!< Format of WR_REG instruction */
+    } rd_reg;                       /*!< Format of RD_REG instruction */
 
     struct {
         uint32_t dreg : 2;          /*!< Register where to store ADC result */
@@ -256,6 +260,8 @@ typedef union {
 
 } ulp_insn_t;
 
+_Static_assert(sizeof(ulp_insn_t) == 4, "ULP coprocessor instruction size should be 4 bytes");
+
 /**
  * Delay (nop) for a given number of cycles
  */
@@ -271,6 +277,67 @@ typedef union {
     .unused = 0, \
     .opcode = OPCODE_HALT } }
 
+/**
+ * Map SoC peripheral register to periph_sel field of RD_REG and WR_REG
+ * instructions.
+ *
+ * @param reg peripheral register in RTC_CNTL_, RTC_IO_, SENS_ peripherals.
+ * @return periph_sel value for the peripheral to which this register belongs.
+ */
+static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
+    uint32_t ret = 3;
+    if (reg < DR_REG_RTCCNTL_BASE) {
+        assert(0 && "invalid register base");
+    } else if (reg < DR_REG_RTCIO_BASE) {
+        ret = RD_REG_PERIPH_RTC_CNTL;
+    } else if (reg < DR_REG_SENS_BASE) {
+        ret = RD_REG_PERIPH_RTC_IO;
+    } else if (reg < DR_REG_RTCMEM0_BASE){
+        ret = RD_REG_PERIPH_SENS;
+    } else {
+        assert(0 && "invalid register base");
+    }
+    return ret;
+}
+
+/**
+ * Write literal value to a peripheral register
+ *
+ * reg[high_bit : low_bit] = val
+ * This instruction can access RTC_CNTL_, RTC_IO_, and SENS_ peripheral registers.
+ */
+#define I_WR_REG(reg, low_bit, high_bit, val) {.wr_reg = {\
+    .addr = reg & 0xff, \
+    .periph_sel = SOC_REG_TO_ULP_PERIPH_SEL(reg), \
+    .data = val, \
+    .low = low_bit, \
+    .high = high_bit, \
+    .opcode = OPCODE_WR_REG } }
+
+/**
+ * Read from peripheral register into R0
+ *
+ * R0 = reg[high_bit : low_bit]
+ * This instruction can access RTC_CNTL_, RTC_IO_, and SENS_ peripheral registers.
+ */
+#define I_RD_REG(reg, low_bit, high_bit, val) {.wr_reg = {\
+    .addr = reg & 0xff, \
+    .periph_sel = SOC_REG_TO_ULP_PERIPH_SEL(reg), \
+    .unused = 0, \
+    .low = low_bit, \
+    .high = high_bit, \
+    .opcode = OPCODE_RD_REG } }
+
+/**
+ * End program.
+ *
+ * If wake == 1, wake up main CPU.
+ */
+#define I_END(wake) { .end = { \
+        .wakeup = wake, \
+        .unused = 0, \
+        .sub_opcode = SUB_OPCODE_END, \
+        .opcode = OPCODE_END } }
 
 /**
  * Store value from register reg_val into RTC memory.
@@ -541,7 +608,7 @@ typedef union {
 #define I_ANDI(reg_dest, reg_src, imm_) { .alu_imm = { \
     .dreg = reg_dest, \
     .sreg = reg_src, \
-    .imm = reg_imm_, \
+    .imm = imm_, \
     .unused = 0, \
     .sel = ALU_SEL_AND, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
