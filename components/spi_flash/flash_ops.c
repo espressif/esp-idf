@@ -250,6 +250,11 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
     }
 out:
     COUNTER_STOP(write);
+
+    spi_flash_op_lock();
+    spi_flash_mark_modified_region(dst, size);
+    spi_flash_op_unlock();
+
     return spi_flash_translate_rc(rc);
 }
 
@@ -286,6 +291,11 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
         bzero(encrypt_buf, sizeof(encrypt_buf));
     }
     COUNTER_ADD_BYTES(write, size);
+
+    spi_flash_op_lock();
+    spi_flash_mark_modified_region(dest_addr, size);
+    spi_flash_op_unlock();
+
     return spi_flash_translate_rc(rc);
 }
 

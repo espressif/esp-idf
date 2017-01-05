@@ -46,6 +46,15 @@
 #define VADDR1_FIRST_USABLE_ADDR 0x400D0000
 #define PRO_IRAM0_FIRST_USABLE_PAGE ((VADDR1_FIRST_USABLE_ADDR - VADDR1_START_ADDR) / FLASH_PAGE_SIZE + 64)
 
+/* Ensure pages in a region haven't been marked as written via
+   spi_flash_mark_modified_region(). If the page has
+   been written, flush the entire flash cache before returning.
+
+   This ensures stale cache entries are never read after fresh calls
+   to spi_flash_mmap(), while keeping the number of cache flushes to a
+   minimum.
+*/
+static void spi_flash_ensure_unmodified_region(size_t start_addr, size_t length);
 
 typedef struct mmap_entry_{
     uint32_t handle;
@@ -91,7 +100,11 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
     if (src_addr + size > g_rom_flashchip.chip_size) {
         return ESP_ERR_INVALID_ARG;
     }
+
     spi_flash_disable_interrupts_caches_and_other_cpu();
+
+    spi_flash_ensure_unmodified_region(src_addr, size);
+
     if (s_mmap_page_refcnt[0] == 0) {
         spi_flash_mmap_init();
     }
@@ -209,6 +222,62 @@ void spi_flash_mmap_dump()
         if (s_mmap_page_refcnt[i] != 0) {
             printf("page %d: refcnt=%d paddr=%d\n",
                     i, (int) s_mmap_page_refcnt[i], DPORT_PRO_FLASH_MMU_TABLE[i]);
+        }
+    }
+}
+
+/* 256-bit (up to 16MB of 64KB pages) bitset of all flash pages
+   that have been written to since last cache flush.
+
+   Before mmaping a page, need to flush caches if that page has been
+   written to.
+
+   Note: It's possible to do some additional performance tweaks to
+   this algorithm, as we actually only need to flush caches if a page
+   was first mmapped, then written to, then is about to be mmaped a
+   second time. This is a fair bit more complex though, so unless
+   there's an access pattern that this would significantly boost then
+   it's probably not worth it.
+*/
+static uint32_t written_pages[256/32];
+
+static void update_written_pages(size_t start_addr, size_t length, bool mark);
+
+void IRAM_ATTR spi_flash_mark_modified_region(size_t start_addr, size_t length)
+{
+    update_written_pages(start_addr, length, true);
+}
+
+static void IRAM_ATTR spi_flash_ensure_unmodified_region(size_t start_addr, size_t length)
+{
+    update_written_pages(start_addr, length, false);
+}
+
+/* generic implementation for the previous two functions */
+static inline IRAM_ATTR void update_written_pages(size_t start_addr, size_t length, bool mark)
+{
+    for (uint32_t addr = start_addr; addr < start_addr + length; addr += FLASH_PAGE_SIZE) {
+        int page = addr / FLASH_PAGE_SIZE;
+        if (page >= 256) {
+            return; /* invalid address */
+        }
+
+        int idx = page / 32;
+        uint32_t bit = 1 << (page % 32);
+
+        if (mark) {
+            written_pages[idx] |= bit;
+        } else if (written_pages[idx] & bit) {
+            /* it is tempting to write a version of this that only
+               flushes each CPU's cache as needed. However this is
+               tricky because mmaped memory can be used on un-pinned
+               cores, or the pointer passed between CPUs.
+            */
+            Cache_Flush(0);
+#ifndef CONFIG_FREERTOS_UNICORE
+            Cache_Flush(1);
+#endif
+            bzero(written_pages, sizeof(written_pages));
         }
     }
 }
