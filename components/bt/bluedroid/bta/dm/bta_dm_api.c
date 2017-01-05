@@ -1014,8 +1014,8 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
 #if BLE_INCLUDED == TRUE
     tBTA_DM_API_BLE_ADV_PARAMS_ALL    *p_msg;
 
-    APPL_TRACE_ERROR ("BTA_DmSetBleAdvParamsAll: %d, %d\n", adv_int_min, adv_int_max);
-    APPL_TRACE_ERROR ("adv_type = %d, addr_type_own = %d, chnl_map = %d, adv_fil_pol = %d\n",
+    APPL_TRACE_API ("BTA_DmSetBleAdvParamsAll: %d, %d\n", adv_int_min, adv_int_max);
+    APPL_TRACE_API ("adv_type = %d, addr_type_own = %d, chnl_map = %d, adv_fil_pol = %d\n",
                       adv_type, addr_type_own, chnl_map, adv_fil_pol);
     if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS_ALL *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_ADV_PARAMS_ALL)
                  + sizeof(tBLE_BD_ADDR))) != NULL) {

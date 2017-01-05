@@ -1,5 +1,5 @@
-VHCI
-====
+Controller && VHCI
+==================
 
 Overview
 --------
@@ -30,12 +30,24 @@ Header Files
 Type Definitions
 ^^^^^^^^^^^^^^^^
 
-.. doxygenstruct:: vhci_host_callback
+.. doxygentypedef:: esp_vhci_host_callback_t
+
+Enumerations
+^^^^^^^^^^^^
+
+
+Structures
+^^^^^^^^^^
+
+.. doxygenstruct:: esp_vhci_host_callback
+    :members:
+
 
 Functions
 ^^^^^^^^^
 
-.. doxygenfunction:: API_vhci_host_check_send_available
-.. doxygenfunction:: API_vhci_host_register_callback
-.. doxygenfunction:: API_vhci_host_send_packet
-.. doxygenfunction:: bt_controller_init
+.. doxygenfunction:: esp_bt_controller_init
+.. doxygenfunction:: esp_vhci_host_check_send_available
+.. doxygenfunction:: esp_vhci_host_send_packet
+.. doxygenfunction:: esp_vhci_host_register_callback
+
