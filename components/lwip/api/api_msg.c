@@ -202,8 +202,10 @@ recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p,
 #endif /* LWIP_NETBUF_RECVINFO */
   }
 
-#ifdef ESP_PERF
-  if (p->len > DBG_PERF_FILTER_LEN) DBG_PERF_PATH_SET(DBG_PERF_DIR_RX, DBG_PERF_POINT_LWIP_OUT);
+#if ESP_PERF
+  if (p->len > DBG_PERF_FILTER_LEN) {
+    DBG_PERF_PATH_SET(DBG_PERF_DIR_RX, DBG_PERF_POINT_LWIP_OUT);
+  }
 #endif
 
   len = p->tot_len;

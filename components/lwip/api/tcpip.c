@@ -219,7 +219,7 @@ tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
   msg->msg.inp.p = p;
   msg->msg.inp.netif = inp;
   msg->msg.inp.input_fn = input_fn;
-#ifdef ESP_PERF
+#if ESP_PERF
   if (p->len > DBG_PERF_FILTER_LEN) {
     DBG_PERF_PATH_SET(DBG_PERF_DIR_RX, DBG_PERF_POINT_WIFI_OUT);
   }
