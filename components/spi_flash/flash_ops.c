@@ -419,8 +419,6 @@ out:
     return spi_flash_translate_rc(rc);
 }
 
-#define FLASH_PAGE_SIZE 0x10000
-
 esp_err_t IRAM_ATTR spi_flash_read_encrypted(size_t src, void *dstv, size_t size)
 {
     if (src + size > g_rom_flashchip.chip_size) {
@@ -433,7 +431,7 @@ esp_err_t IRAM_ATTR spi_flash_read_encrypted(size_t src, void *dstv, size_t size
     esp_err_t err;
     const uint8_t *map;
     spi_flash_mmap_handle_t map_handle;
-    size_t map_src = src & ~(FLASH_PAGE_SIZE-1);
+    size_t map_src = src & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
     size_t map_size = size + (src - map_src);
 
     err = spi_flash_mmap(map_src, map_size, SPI_FLASH_MMAP_DATA, (const void **)&map, &map_handle);

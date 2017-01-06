@@ -31,6 +31,8 @@ extern "C" {
 
 #define SPI_FLASH_SEC_SIZE  4096    /**< SPI Flash sector size */
 
+#define SPI_FLASH_MMU_PAGE_SIZE 0x10000 /**< Flash cache MMU mapping page size */
+
 /**
  * @brief  Initialize SPI flash access driver
  *
@@ -161,7 +163,8 @@ typedef uint32_t spi_flash_mmap_handle_t;
  * page allocation, use spi_flash_mmap_dump function.
  *
  * @param src_addr  Physical address in flash where requested region starts.
- *                  This address *must* be aligned to 64kB boundary.
+ *                  This address *must* be aligned to 64kB boundary
+ *                  (SPI_FLASH_MMU_PAGE_SIZE).
  * @param size  Size of region which has to be mapped. This size will be rounded
  *              up to a 64k boundary.
  * @param memory  Memory space where the region should be mapped

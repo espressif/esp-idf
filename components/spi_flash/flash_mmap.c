@@ -39,12 +39,11 @@
 
 #define REGIONS_COUNT 4
 #define PAGES_PER_REGION 64
-#define FLASH_PAGE_SIZE 0x10000
 #define INVALID_ENTRY_VAL 0x100
 #define VADDR0_START_ADDR 0x3F400000
 #define VADDR1_START_ADDR 0x40000000
 #define VADDR1_FIRST_USABLE_ADDR 0x400D0000
-#define PRO_IRAM0_FIRST_USABLE_PAGE ((VADDR1_FIRST_USABLE_ADDR - VADDR1_START_ADDR) / FLASH_PAGE_SIZE + 64)
+#define PRO_IRAM0_FIRST_USABLE_PAGE ((VADDR1_FIRST_USABLE_ADDR - VADDR1_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + 64)
 
 /* Ensure pages in a region haven't been marked as written via
    spi_flash_mark_modified_region(). If the page has
@@ -124,8 +123,8 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
         region_addr = VADDR1_FIRST_USABLE_ADDR;
     }
     // region which should be mapped
-    int phys_page = src_addr / FLASH_PAGE_SIZE;
-    int page_count = (size + FLASH_PAGE_SIZE - 1) / FLASH_PAGE_SIZE;
+    int phys_page = src_addr / SPI_FLASH_MMU_PAGE_SIZE;
+    int page_count = (size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
     // The following part searches for a range of MMU entries which can be used.
     // Algorithm is essentially naïve strstr algorithm, except that unused MMU
     // entries are treated as wildcards.
@@ -171,7 +170,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
         new_entry->count = page_count;
         new_entry->handle = ++s_mmap_last_handle;
         *out_handle = new_entry->handle;
-        *out_ptr = (void*) (region_addr + start * FLASH_PAGE_SIZE);
+        *out_ptr = (void*) (region_addr + start * SPI_FLASH_MMU_PAGE_SIZE);
         ret = ESP_OK;
     }
     spi_flash_enable_interrupts_caches_and_other_cpu();
@@ -256,8 +255,8 @@ static void IRAM_ATTR spi_flash_ensure_unmodified_region(size_t start_addr, size
 /* generic implementation for the previous two functions */
 static inline IRAM_ATTR void update_written_pages(size_t start_addr, size_t length, bool mark)
 {
-    for (uint32_t addr = start_addr; addr < start_addr + length; addr += FLASH_PAGE_SIZE) {
-        int page = addr / FLASH_PAGE_SIZE;
+    for (uint32_t addr = start_addr; addr < start_addr + length; addr += SPI_FLASH_MMU_PAGE_SIZE) {
+        int page = addr / SPI_FLASH_MMU_PAGE_SIZE;
         if (page >= 256) {
             return; /* invalid address */
         }

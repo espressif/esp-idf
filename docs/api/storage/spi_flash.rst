@@ -17,6 +17,7 @@ Macros
 .. doxygendefine:: ESP_ERR_FLASH_OP_FAIL
 .. doxygendefine:: ESP_ERR_FLASH_OP_TIMEOUT
 .. doxygendefine:: SPI_FLASH_SEC_SIZE
+.. doxygendefine:: SPI_FLASH_MMU_PAGE_SIZE
 .. doxygendefine:: ESP_PARTITION_SUBTYPE_OTA
 
 Type Definitions
