@@ -36,13 +36,7 @@ typedef volatile struct {
         };
         uint32_t val;
     } cmd;
-    union {
-        struct {
-            uint32_t reserved      : 8;
-            uint32_t usr_addr_value:24;                     /*[31:8]:address to slave [7:0]:Reserved.*/
-        };
-        uint32_t val;
-    } addr;
+    uint32_t addr;                                          /*addr to slave / from master */
     union {
         struct {
             uint32_t reserved0:         10;                 /*reserved*/
@@ -177,9 +171,10 @@ typedef volatile struct {
             uint32_t cs2_dis:        1;                     /*SPI CS2 pin enable, 1: disable CS2, 0: spi_cs2 signal is from/to CS2 pin*/
             uint32_t reserved3:      2;                     /*reserved*/
             uint32_t ck_dis:         1;                     /*1: spi clk out disable  0: spi clk out enable*/
-            uint32_t master_cs_pol:  5;                     /*In the master mode  the bits are the polarity of spi cs line  the value is equivalent to spi_cs ^ spi_master_cs_pol.*/
-            uint32_t master_ck_sel:  5;                     /*In the master mode  spi cs line is enable as spi clk  it is combined with spi_cs0_dis spi_cs1_dis spi_cs2_dis.*/
-            uint32_t reserved16:    13;                     /*reserved*/
+            uint32_t master_cs_pol:  3;                     /*In the master mode  the bits are the polarity of spi cs line  the value is equivalent to spi_cs ^ spi_master_cs_pol.*/
+            uint32_t reserved9:      2;                     /*reserved*/
+            uint32_t master_ck_sel:  3;                     /*In the master mode  spi cs line is enable as spi clk  it is combined with spi_cs0_dis spi_cs1_dis spi_cs2_dis.*/
+            uint32_t reserved14:    15;                     /*reserved*/
             uint32_t ck_idle_edge:   1;                     /*1: spi clk line is high when idle     0: spi clk line is low when idle*/
             uint32_t cs_keep_active: 1;                     /*spi cs line keep low when the bit is set.*/
             uint32_t reserved31:     1;                     /*reserved*/
@@ -193,7 +188,11 @@ typedef volatile struct {
             uint32_t rd_sta_done:  1;                       /*The interrupt raw bit for the completion of read-status operation in the slave mode.*/
             uint32_t wr_sta_done:  1;                       /*The interrupt raw bit for the completion of write-status operation in the slave mode.*/
             uint32_t trans_done:   1;                       /*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode.*/
-            uint32_t int_en:       5;                       /*Interrupt enable bits for the below 5 sources*/
+            uint32_t rd_buf_inten: 1;                       /*The interrupt enable bit for the completion of read-buffer operation in the slave mode.*/
+            uint32_t wr_buf_inten: 1;                       /*The interrupt enable bit for the completion of write-buffer operation in the slave mode.*/
+            uint32_t rd_sta_inten: 1;                       /*The interrupt enable bit for the completion of read-status operation in the slave mode.*/
+            uint32_t wr_sta_inten: 1;                       /*The interrupt enable bit for the completion of write-status operation in the slave mode.*/
+            uint32_t trans_inten:  1;                       /*The interrupt enable bit for the completion of any operation in both the master mode and the slave mode.*/
             uint32_t cs_i_mode:    2;                       /*In the slave mode  this bits used to synchronize the input spi cs signal and eliminate spi cs  jitter.*/
             uint32_t reserved12:   5;                       /*reserved*/
             uint32_t last_command: 3;                       /*In the slave mode it is the value of command.*/
