@@ -184,6 +184,9 @@ typedef void (*spi_flash_guard_end_func_t)(void);
 
 /**
  * Structure holding SPI flash access critical section management functions
+ *
+ * @note Structure and corresponding guard functions should not reside in flash.
+ *       For example structure can be placed in DRAM and functions in IRAM sections.
  */
 typedef struct {
     spi_flash_guard_start_func_t    start;  /**< critical section start func */
@@ -191,25 +194,25 @@ typedef struct {
 } spi_flash_guard_funcs_t;
 
 /**
- * @brief  Erase a range of flash sectors.
+ * @brief  Sets guard functions to access flash.
  *
+ * @note Pointed structure and corresponding guard functions should not reside in flash.
+ *       For example structure can be placed in DRAM and functions in IRAM sections.
  *
- * @param  start_address  Address where erase operation has to start.
- *                                  Must be 4kB-aligned
- * @param  size  Size of erased range, in bytes. Must be divisible by 4kB.
- *
- * @return esp_err_t
+ * @param funcs pointer to structure holding flash access guard functions.
  */
 void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs);
 
-/** Default OS-aware flash access critical section functions */
+/**
+ * @brief Default OS-aware flash access guard functions
+ */
 extern const spi_flash_guard_funcs_t g_flash_guard_default_ops;
 
-/** Non-OS flash access critical section functions
+/**
+ * @brief Non-OS flash access guard functions
  *
- * @note This version of functions is to be used when no OS is present or from panic handler.
- *       It does not use any OS primitives and IPC and implies that
- *       only calling CPU is active.
+ * @note This version of flash guard functions is to be used when no OS is present or from panic handler.
+ *       It does not use any OS primitives and IPC and implies that only calling CPU is active.
  */
 extern const spi_flash_guard_funcs_t g_flash_guard_no_os_ops;
 

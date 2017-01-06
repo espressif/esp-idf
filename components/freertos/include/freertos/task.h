@@ -2185,7 +2185,15 @@ eSleepModeStatus eTaskConfirmSleepModeStatus( void ) PRIVILEGED_FUNCTION;
  */
 void *pvTaskIncrementMutexHeldCount( void );
 
-/* Used by core dump facility to get list of task handles. */
+/*
+ * This function fills array with TaskSnapshot_t structures for every task in the system.
+ * Used by core dump facility to get snapshots of all tasks in the system.
+ * Only available when configENABLE_TASK_SNAPSHOT is set to 1.
+ * @param pxTaskSnapshotArray Pointer to array of TaskSnapshot_t structures to store tasks snapshot data.
+ * @param uxArraySize Size of tasks snapshots array.
+ * @param pxTcbSz Pointer to store size of TCB.
+ * @return Number of elements stored in array.
+ */
 UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, const UBaseType_t uxArraySize, UBaseType_t * const pxTcbSz );
 
 #ifdef __cplusplus

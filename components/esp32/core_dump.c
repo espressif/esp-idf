@@ -316,15 +316,6 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, void * data, uint32_
     return err;
 }
 
-/*
- * |   MAGIC1   |
- * |  TOTAL_LEN |  TASKS_NUM | TCB_SIZE |
- * | TCB_ADDR_1 | STACK_TOP_1 | STACK_END_1 | TCB_1 | STACK_1 |
- * .            .       .         .
- * .            .       .         .
- * | TCB_ADDR_N | STACK_TOP_N | STACK_END_N | TCB_N | STACK_N |
- * |   MAGIC2   |
- */
 void esp_core_dump_to_flash(XtExcFrame *frame)
 {
     core_dump_write_config_t wr_cfg;
@@ -347,7 +338,6 @@ void esp_core_dump_to_flash(XtExcFrame *frame)
 
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART
 static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8_t *dst) {
-//  BASE64_ENCODE_BODY(src, src_len, dst);
     static const char *b64 =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int i, j, a, b, c;
