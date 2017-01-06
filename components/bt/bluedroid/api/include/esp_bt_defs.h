@@ -96,6 +96,9 @@ typedef enum {
 /// Maximum of the application id
 #define ESP_APP_ID_MAX  0x7fff
 
+#define ESP_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
+#define ESP_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
+
 #ifdef __cplusplus
 }
 #endif
