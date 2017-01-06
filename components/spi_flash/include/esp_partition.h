@@ -191,6 +191,13 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
  * Before writing data to flash, corresponding region of flash needs to be erased.
  * This can be done using esp_partition_erase_range function.
  *
+ * Partitions marked with an encryption flag will automatically be
+ * written via the spi_flash_write_encrypted() function. If writing to
+ * an encrypted partition, all write offsets and lengths must be
+ * multiples of 16 bytes. See the spi_flash_write_encrypted() function
+ * for more details. Unencrypted partitions do not have this
+ * restriction.
+ *
  * @param partition Pointer to partition structure obtained using
  *                  esp_partition_find_first or esp_partition_get.
  *                  Must be non-NULL.

@@ -92,12 +92,14 @@ esp_err_t spi_flash_write(size_t dest_addr, const void *src, size_t size);
  *
  * @note Flash encryption must be enabled for this function to work.
  *
- * @note Destination flash address and length must be 16-byte
- * aligned. Due to hardware limitations, this function is more
- * efficient if both these arguments are 32-byte aligned. This is
- * because the encryption engine natively deals with 32-byte rows of
- * two AES blocks. Writing half a row (16 bytes) requires reading out
- * the other 16 bytes and re-encrypting them back to the same value.
+ * @note Flash encryption must be enabled when calling this function.
+ * If flash encryption is disabled, the function returns
+ * ESP_ERR_INVALID_STATE.  Use esp_flash_encryption_enabled()
+ * function to determine if flash encryption is enabled.
+ *
+ * @note Both dest_addr and size must be multiples of 16 bytes. For
+ * absolute best performance, both dest_addr and size arguments should
+ * be multiples of 32 bytes.
  *
  * @param  dest_addr destination address in Flash. Must be a multiple of 16 bytes.
  * @param  src       pointer to the source buffer.
@@ -125,7 +127,7 @@ esp_err_t spi_flash_read(size_t src_addr, void *dest, size_t size);
  * If flash encryption is enabled, this function will transparently decrypt data as it is read.
  * If flash encryption is not enabled, this function behaves the same as spi_flash_read().
  *
- * See @ref esp_flash_encryption_enabled() for a function to check if flash encryption is enabled.
+ * See esp_flash_encryption_enabled() for a function to check if flash encryption is enabled.
  *
  * @param  src   source address of the data in Flash.
  * @param  dest  pointer to the destination buffer
@@ -133,7 +135,7 @@ esp_err_t spi_flash_read(size_t src_addr, void *dest, size_t size);
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_read_encrypted(size_t src, void *dstv, size_t size);
+esp_err_t spi_flash_read_encrypted(size_t src, void *dest, size_t size);
 
 /**
  * @brief Enumeration which specifies memory space requested in an mmap call
