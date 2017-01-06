@@ -3,6 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ble_adv
+PROJECT_NAME := ota
 
 include $(IDF_PATH)/make/project.mk
+
