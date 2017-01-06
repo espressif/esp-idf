@@ -184,7 +184,7 @@ esp_err_t blufi_security_init(void)
         return ESP_FAIL;
     }
 
-    memset(&blufi_sec, 0x0, sizeof(struct blufi_security));
+    memset(blufi_sec, 0x0, sizeof(struct blufi_security));
 
     mbedtls_dhm_init(&blufi_sec->dhm);
     mbedtls_aes_init(&blufi_sec->aes);
@@ -198,7 +198,7 @@ void blufi_security_deinit(void)
     mbedtls_dhm_free(&blufi_sec->dhm);
     mbedtls_aes_free(&blufi_sec->aes);
 
-    memset(&blufi_sec, 0x0, sizeof(struct blufi_security));
+    memset(blufi_sec, 0x0, sizeof(struct blufi_security));
 
     free(blufi_sec);
     blufi_sec =  NULL;
