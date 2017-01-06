@@ -1,23 +1,10 @@
 menu "Example Configuration"
 
-config TARGET_DOMAIN
-    string "Target Domain"
-    default "californium.eclipse.org"
-    help
-        Target domain for the example to connect to.
-
 config TARGET_DOMAIN_URI
     string "Target Uri"
     default "coap://californium.eclipse.org"
     help
         Target uri for the example to use.
-
-config TARGET_PORT_NUMBER
-    int "Target port number"
-    range 0 65535
-    default 5683
-    help
-        Target port number for the example to connect to.
 
 config WIFI_SSID
     string "WiFi SSID"
