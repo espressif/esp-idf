@@ -133,12 +133,8 @@
 #define SPI_FLASH_PER_S  16
 
 #define SPI_ADDR_REG(i)          (REG_SPI_BASE(i) + 0x4)
-/* SPI_USR_ADDR_VALUE : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
-/*description: [31:8]:address to slave [7:0]:Reserved.*/
-#define SPI_USR_ADDR_VALUE  0xFFFFFFFF
-#define SPI_USR_ADDR_VALUE_M  ((SPI_USR_ADDR_VALUE_V)<<(SPI_USR_ADDR_VALUE_S))
-#define SPI_USR_ADDR_VALUE_V  0xFFFFFFFF
-#define SPI_USR_ADDR_VALUE_S  0
+//The CSV actually is wrong here. It indicates that the lower 8 bits of this register are reserved. This is not true,
+//all 32 bits of SPI_ADDR_REG are usable/used.
 
 #define SPI_CTRL_REG(i)          (REG_SPI_BASE(i) + 0x8)
 /* SPI_WR_BIT_ORDER : R/W ;bitpos:[26] ;default: 1'b0 ; */
@@ -601,19 +597,19 @@
 #define SPI_CK_IDLE_EDGE_M  (BIT(29))
 #define SPI_CK_IDLE_EDGE_V  0x1
 #define SPI_CK_IDLE_EDGE_S  29
-/* SPI_MASTER_CK_SEL : R/W ;bitpos:[15:11] ;default: 5'b0 ; */
+/* SPI_MASTER_CK_SEL : R/W ;bitpos:[13:11] ;default: 3'b0 ; */
 /*description: In the master mode  spi cs line is enable as spi clk  it is combined
  with spi_cs0_dis spi_cs1_dis spi_cs2_dis.*/
-#define SPI_MASTER_CK_SEL  0x0000001F
+#define SPI_MASTER_CK_SEL  0x00000007
 #define SPI_MASTER_CK_SEL_M  ((SPI_MASTER_CK_SEL_V)<<(SPI_MASTER_CK_SEL_S))
-#define SPI_MASTER_CK_SEL_V  0x1F
+#define SPI_MASTER_CK_SEL_V  0x07
 #define SPI_MASTER_CK_SEL_S  11
-/* SPI_MASTER_CS_POL : R/W ;bitpos:[10:6] ;default: 5'b0 ; */
+/* SPI_MASTER_CS_POL : R/W ;bitpos:[8:6] ;default: 3'b0 ; */
 /*description: In the master mode  the bits are the polarity of spi cs line
   the value is equivalent to spi_cs ^ spi_master_cs_pol.*/
-#define SPI_MASTER_CS_POL  0x0000001F
+#define SPI_MASTER_CS_POL  0x00000007
 #define SPI_MASTER_CS_POL_M  ((SPI_MASTER_CS_POL_V)<<(SPI_MASTER_CS_POL_S))
-#define SPI_MASTER_CS_POL_V  0x1F
+#define SPI_MASTER_CS_POL_V  0x7
 #define SPI_MASTER_CS_POL_S  6
 /* SPI_CK_DIS : R/W ;bitpos:[5] ;default: 1'b0 ; */
 /*description: 1: spi clk out disable  0: spi clk out enable*/

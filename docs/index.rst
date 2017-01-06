@@ -70,7 +70,7 @@ Contents:
      6.4. UART
      6.5. I2C - TBA
      6.6. I2S - TBA
-     6.7. SPI - TBA
+     6.7. SPI - <api/spi_master>
      6.8. CAN - TBA
      6.9. SD Controller - TBA
      6.10. Infrared - TBA
@@ -111,6 +111,7 @@ Contents:
    Pulse Counter <api/pcnt>
    Sigma-delta Modulation <api/sigmadelta>
    SPI Flash and Partition APIs <api/spi_flash>
+   SPI Master API <api/spi_master>
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>
    Virtual Filesystem <api/vfs>
