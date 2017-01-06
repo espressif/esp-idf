@@ -71,6 +71,22 @@ bool phy_tlk110_check_phy_link_status(void)
     return ((esp_eth_smi_read(BASIC_MODE_STATUS_REG) & LINK_STATUS) == LINK_STATUS );
 }
 
+bool phy_tlk110_get_partner_pause_enable(void)
+{
+    if((esp_eth_smi_read(PHY_LINK_PARTNER_ABILITY_REG) & PARTNER_PAUSE) == PARTNER_PAUSE) {
+        return true;
+    } else {
+        return false;
+    }   
+}
+
+void phy_enable_flow_ctrl(void)
+{
+    uint32_t data = 0;
+    data = esp_eth_smi_read(AUTO_NEG_ADVERTISEMENT_REG);
+    esp_eth_smi_write(AUTO_NEG_ADVERTISEMENT_REG,data|ASM_DIR|PAUSE);
+}
+
 void phy_tlk110_init(void)
 {
     esp_eth_smi_write(PHY_RESET_CONTROL_REG, SOFTWARE_RESET);
@@ -78,8 +94,12 @@ void phy_tlk110_init(void)
     while (esp_eth_smi_read(PHY_IDENTIFIER_REG) != OUI_MSB_21TO6_DEF) {
     }
 
-    esp_eth_smi_write(SOFTWARE_STAP_CONTROL_REG, DEFAULT_PHY_CONFIG |SW_STRAP_CONFIG_DONE);
+    esp_eth_smi_write(SOFTWARE_STRAP_CONTROL_REG, DEFAULT_PHY_CONFIG |SW_STRAP_CONFIG_DONE);
+    
     ets_delay_us(300);
+
+    //if config.flow_ctrl_enable == true ,enable this 
+    phy_enable_flow_ctrl();
 }
 
 void eth_gpio_config_rmii(void)
@@ -140,6 +160,9 @@ void app_main()
     config.phy_check_link = phy_tlk110_check_phy_link_status;
     config.phy_get_speed_mode = phy_tlk110_get_speed_mode;
     config.phy_get_duplex_mode = phy_tlk110_get_duplex_mode;
+    //Only FULLDUPLEX mode support flow ctrl now!
+    config.flow_ctrl_enable = true;
+    config.phy_get_partner_pause_enable = phy_tlk110_get_partner_pause_enable;    
 
     ret = esp_eth_init(&config);
 

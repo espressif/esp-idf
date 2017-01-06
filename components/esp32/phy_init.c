@@ -39,8 +39,8 @@ esp_err_t esp_phy_init(const esp_phy_init_data_t* init_data,
     assert(calibration_data);
     // Initialize PHY pointer table
     phy_get_romfunc_addr();
-    REG_SET_BIT(DPORT_WIFI_RST_EN_REG, DPORT_MAC_RST);
-    REG_CLR_BIT(DPORT_WIFI_RST_EN_REG, DPORT_MAC_RST);
+    REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+    REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
     // Enable WiFi peripheral clock
     SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
     ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",

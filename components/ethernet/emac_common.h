@@ -72,6 +72,9 @@ struct emac_config_data {
     eth_phy_check_init_func emac_phy_check_init;
     eth_phy_get_speed_mode_func emac_phy_get_speed_mode;
     eth_phy_get_duplex_mode_func emac_phy_get_duplex_mode;
+    bool emac_flow_ctrl_enable;
+    bool emac_flow_ctrl_partner_support;
+    eth_phy_get_partner_pause_enable_func  emac_phy_get_partner_pause_enable;
 };
 
 enum emac_post_type {
@@ -108,6 +111,13 @@ struct emac_close_cmd {
 #endif
 #define DMA_RX_BUF_SIZE 1600
 #define DMA_TX_BUF_SIZE 1600
+
+//rest buf num
+#define FLOW_CONTROL_HIGH_WATERMARK 3
+//used buf num
+#define FLOW_CONTROL_LOW_WATERMARK  6
+
+#define PHY_LINK_CHECK_NUM  5
 
 #define EMAC_CMD_OK 0
 #define EMAC_CMD_FAIL -1
