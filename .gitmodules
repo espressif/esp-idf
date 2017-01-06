@@ -10,3 +10,6 @@
 [submodule "components/micro-ecc/micro-ecc"]
 	path = components/micro-ecc/micro-ecc
 	url = https://github.com/kmackay/micro-ecc.git
+[submodule "components/coap/libcoap"]
+	path = components/coap/libcoap
+	url = https://github.com/obgm/libcoap.git

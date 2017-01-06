@@ -1,0 +1,1 @@
+CFLAGS += -DWITH_POSIX
