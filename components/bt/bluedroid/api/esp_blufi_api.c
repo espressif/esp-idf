@@ -71,4 +71,8 @@ esp_err_t esp_blufi_profile_deinit(void)
     return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+uint16_t esp_blufi_get_version(void)
+{
+    return btc_blufi_get_version();
+}
 

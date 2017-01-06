@@ -328,6 +328,8 @@ void app_main()
         return;
     }
 
+    BLUFI_INFO("BLUFI VERSION %04x\n", esp_blufi_get_version());
+
     blufi_security_init();
     esp_ble_gap_register_callback(gap_event_handler);
 

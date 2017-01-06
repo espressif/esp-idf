@@ -233,8 +233,6 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     if (p_msg->api_reg.p_cback) {
         (*p_msg->api_reg.p_cback)(BTA_GATTS_REG_EVT, &cb_data);
     }
-
-    LOG_ERROR("status=%x\n", status);
 }
 
 

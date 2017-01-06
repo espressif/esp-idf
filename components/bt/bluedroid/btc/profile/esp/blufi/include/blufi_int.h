@@ -15,6 +15,10 @@
 #ifndef __BLUFI_INT_H__
 #define __BLUFI_INT_H__
 
+#define BTC_BLUFI_GREAT_VER   0x01  //Version + Subversion
+#define BTC_BLUFI_SUB_VER     0x00  //Version + Subversion
+#define BTC_BLUFI_VERSION     ((BTC_BLUFI_GREAT_VER<<8)|BTC_BLUFI_SUB_VER)  //Version + Subversion
+
 /* service engine control block */
 typedef struct {
     /* Protocol reference */
@@ -85,7 +89,8 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_TYPE_CTRL_SUBTYPE_CONN_TO_AP              0x03
 #define BLUFI_TYPE_CTRL_SUBTYPE_DISCONN_FROM_AP         0x04
 #define BLUFI_TYPE_CTRL_SUBTYPE_GET_WIFI_STATUS         0x05
-#define BLUFI_TYPE_CTRL_SUBTYPE_DEAUTHENTICATE_STA             0x06
+#define BLUFI_TYPE_CTRL_SUBTYPE_DEAUTHENTICATE_STA      0x06
+#define BLUFI_TYPE_CTRL_SUBTYPE_GET_VERSION             0x07
 
 #define BLUFI_TYPE_DATA                                 0x1
 #define BLUFI_TYPE_DATA_SUBTYPE_NEG                     0x00
@@ -104,7 +109,7 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_TYPE_DATA_SUBTYPE_CLIENT_PRIV_KEY         0x0d
 #define BLUFI_TYPE_DATA_SUBTYPE_SERVER_PRIV_KEY         0x0e
 #define BLUFI_TYPE_DATA_SUBTYPE_WIFI_REP                0x0f
-
+#define BLUFI_TYPE_DATA_SUBTYPE_REPLY_VERSION           0x10 
 #define BLUFI_TYPE_IS_CTRL(type)        (BLUFI_GET_TYPE((type)) == BLUFI_TYPE_CTRL)
 #define BLUFI_TYPE_IS_DATA(type)        (BLUFI_GET_TYPE((type)) == BLUFI_TYPE_DATA)
 
@@ -115,7 +120,8 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_TYPE_IS_CTRL_CONN_WIFI(type)           (BLUFI_TYPE_IS_CTRL((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_CTRL_SUBTYPE_CONN_TO_AP)
 #define BLUFI_TYPE_IS_CTRL_DISCONN_WIFI(type)        (BLUFI_TYPE_IS_CTRL((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_CTRL_SUBTYPE_DISCONN_FROM_AP)
 #define BLUFI_TYPE_IS_CTRL_GET_WIFI_STATUS(type)     (BLUFI_TYPE_IS_CTRL((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_CTRL_SUBTYPE_GET_WIFI_STATUS)
-#define BLUFI_TYPE_IS_CTRL_DEAUTHENTICATE_STA(type)         (BLUFI_TYPE_IS_CTRL((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_CTRL_SUBTYPE_DEAUTHENTICATE_STA)
+#define BLUFI_TYPE_IS_CTRL_DEAUTHENTICATE_STA(type)  (BLUFI_TYPE_IS_CTRL((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_CTRL_SUBTYPE_DEAUTHENTICATE_STA)
+#define BLUFI_TYPE_IS_CTRL_GET_VERSION(type)         (BLUFI_TYPE_IS_CTRL((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_CTRL_SUBTYPE_GET_VERSION)
 
 #define BLUFI_TYPE_IS_DATA_NEG(type)                 (BLUFI_TYPE_IS_DATA((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_DATA_SUBTYPE_NEG)
 #define BLUFI_TYPE_IS_DATA_STA_BSSID(type)           (BLUFI_TYPE_IS_DATA((type)) && BLUFI_GET_SUBTYPE((type)) == BLUFI_TYPE_DATA_SUBTYPE_STA_BSSID)
