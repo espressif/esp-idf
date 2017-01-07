@@ -32,7 +32,7 @@
 #define assert(x)   do { if (!(x)) BT_PRINTF("bt host error %s %u\n", __FILE__, __LINE__); } while (0)
 #endif
 
-inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
+inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 {
     uint16_t i;
 
@@ -41,14 +41,13 @@ inline void trc_dump_buffer(uint8_t *prefix, uint8_t *data, uint16_t len)
     }
 
     if (prefix) {
-        BT_PRINTF("%s:\t", prefix);
+        BT_PRINTF("%s: len %d\n", prefix, len);
     }
 
-    for (i = 0; i < len; i++) {
-        BT_PRINTF(" %02x", *(data + i));
-        if (!((i + 1) & 0xf)) {
-            BT_PRINTF("\n");
-        }
+    for (i = 0; i < len; i+=16) {
+        BT_PRINTF("%02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x\n",
+                *(data + i), *(data + i + 1), *(data + i + 2), *(data + i + 3), *(data + i + 4), *(data + i + 5), *(data + i + 6), *(data + i + 7), 
+                *(data + i + 8), *(data + i + 9), *(data + i + 10), *(data + i + 11), *(data + i + 12), *(data + i + 13), *(data + i + 14), *(data + i + 15));
     }
     BT_PRINTF("\n");
 }

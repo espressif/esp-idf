@@ -169,13 +169,14 @@ uint16_t get_uuid16(tBT_UUID *p_uuid)
         return (UINT16) p_uuid->uu.uuid32;
     }
 }
-uint16_t set_read_value(esp_ble_gattc_cb_param_t *p_dest, tBTA_GATTC_READ *p_src)
+uint16_t set_read_value(uint8_t *gattc_if, esp_ble_gattc_cb_param_t *p_dest, tBTA_GATTC_READ *p_src)
 {
     uint16_t descr_type = 0;
     uint16_t len = 0;
 
     p_dest->read.status = p_src->status;
-    p_dest->read.conn_id = p_src->conn_id;
+    p_dest->read.conn_id = BTC_GATT_GET_CONN_ID(p_src->conn_id);
+    *gattc_if = BTC_GATT_GET_GATT_IF(p_src->conn_id);
     bta_to_btc_srvc_id(&p_dest->read.srvc_id, &p_src->srvc_id);
     bta_to_btc_gatt_id(&p_dest->read.char_id, &p_src->char_id);
     bta_to_btc_gatt_id(&p_dest->read.descr_id, &p_src->descr_type);

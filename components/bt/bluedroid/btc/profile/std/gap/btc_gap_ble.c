@@ -26,7 +26,7 @@
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
 
-#define BTC_GAP_BLE_CB_TO_APP(_event, _param) ((esp_profile_cb_t )btc_profile_cb_get(BTC_PID_GAP_BLE))(_event, _param)
+#define BTC_GAP_BLE_CB_TO_APP(event, param) ((esp_gap_ble_cb_t)btc_profile_cb_get(BTC_PID_GAP_BLE))((event), (param))
 
 
 static void btc_gap_adv_point_cleanup(void **buf)
@@ -109,6 +109,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
 
     if (p_adv_data->flag != 0) {
         mask = BTM_BLE_AD_BIT_FLAGS;
+        bta_adv_data->flag = p_adv_data->flag;
     }
 
     if (p_adv_data->include_name) {
@@ -200,7 +201,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                 }
 
                 if (NULL != bta_adv_data->p_services->p_uuid) {
-                    LOG_ERROR("%s - In 16-UUID_data", __FUNCTION__);
+                    LOG_DEBUG("%s - In 16-UUID_data", __FUNCTION__);
                     mask |= BTM_BLE_AD_BIT_SERVICE;
                     ++bta_adv_data->p_services->num_service;
                     *p_uuid_out16++ = bt_uuid.uu.uuid16;
@@ -220,7 +221,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                 }
 
                 if (NULL != bta_adv_data->p_service_32b->p_uuid) {
-                    LOG_ERROR("%s - In 32-UUID_data", __FUNCTION__);
+                    LOG_DEBUG("%s - In 32-UUID_data", __FUNCTION__);
                     mask |= BTM_BLE_AD_BIT_SERVICE_32;
                     ++bta_adv_data->p_service_32b->num_service;
                     *p_uuid_out32++ = bt_uuid.uu.uuid32;

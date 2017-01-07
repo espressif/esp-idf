@@ -4,7 +4,7 @@ Bluetooth
 .. toctree::
    :caption: Bluetooth APIs
 
-   Bluetooth VHCI <vhci>
+   Bluetooth Controller && VHCI <controller_vhci>
    Bluetooth Common <bt_common>
    Bluetooth Classic
    Bluetooth LE <bt_le>

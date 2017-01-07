@@ -4,19 +4,18 @@ LED Control
 Overview
 --------
 
-`Instructions`_
+The LED control module is primarily designed to control the intensity of LEDs, although it can be used to generate PWM signals for other purposes as well. 
+It has 16 channels which can generate independent waveforms that can be used to drive e.g. RGB LED devices. For maximum flexibility, the high-speed as well 
+as the low-speed channels can be driven from one of four high-speed/low-speed timers. The PWM controller also has the ability to automatically increase or 
+decrease the duty cycle gradually, allowing for fades without any processor interference.
 
 Application Example
 -------------------
 
-`Instructions`_
+LEDC change duty cycle and fading control example: `examples/29_ledc <https://github.com/espressif/esp-idf/tree/master/examples/29_ledc>`_.
 
 API Reference
 -------------
-
-`Instructions`_
-
-.. _Instructions: template.html
 
 Header Files
 ^^^^^^^^^^^^
@@ -38,6 +37,11 @@ Macros
 .. doxygendefine:: LEDC_APB_CLK_HZ
 .. doxygendefine:: LEDC_REF_CLK_HZ
 
+Type Definitions
+^^^^^^^^^^^^^^^^
+
+.. doxygentypedef:: ledc_isr_handle_t
+
 Enumerations
 ^^^^^^^^^^^^
 
@@ -48,6 +52,16 @@ Enumerations
 .. doxygenenum:: ledc_timer_t
 .. doxygenenum:: ledc_channel_t
 .. doxygenenum:: ledc_timer_bit_t
+
+Structures
+^^^^^^^^^^
+
+.. doxygenstruct:: ledc_channel_config_t
+    :members:
+
+.. doxygenstruct:: ledc_timer_config_t
+    :members:
+
 
 Functions
 ^^^^^^^^^
@@ -67,3 +81,9 @@ Functions
 .. doxygenfunction:: ledc_timer_pause
 .. doxygenfunction:: ledc_timer_resume
 .. doxygenfunction:: ledc_bind_channel_timer
+.. doxygenfunction:: ledc_set_fade_with_step
+.. doxygenfunction:: ledc_set_fade_with_time
+.. doxygenfunction:: ledc_fade_func_install
+.. doxygenfunction:: ledc_fade_func_uninstall
+.. doxygenfunction:: ledc_fade_start
+

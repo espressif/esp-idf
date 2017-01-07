@@ -21,7 +21,7 @@
 static bool esp_already_enable = false;
 static bool esp_already_init = false;
 
-esp_err_t esp_enable_bluetooth(void)
+esp_err_t esp_bluedroid_enable(void)
 {
     btc_msg_t msg;
     future_t **future_p;
@@ -53,7 +53,7 @@ esp_err_t esp_enable_bluetooth(void)
     return ESP_OK;
 }
 
-esp_err_t esp_disable_bluetooth(void)
+esp_err_t esp_bluedroid_disable(void)
 {
     btc_msg_t msg;
     future_t **future_p;
@@ -85,7 +85,7 @@ esp_err_t esp_disable_bluetooth(void)
     return ESP_OK;
 }
 
-esp_err_t esp_init_bluetooth(void)
+esp_err_t esp_bluedroid_init(void)
 {
     btc_msg_t msg;
     future_t **future_p;
@@ -120,7 +120,7 @@ esp_err_t esp_init_bluetooth(void)
 }
 
 
-esp_err_t esp_deinit_bluetooth(void)
+esp_err_t esp_bluedroid_deinit(void)
 {
     btc_msg_t msg;
     future_t **future_p;

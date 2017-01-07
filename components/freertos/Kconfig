@@ -187,6 +187,7 @@ config FREERTOS_PORTMUX_DEBUG
         If enabled, debug information (including integrity checks) will be printed
         to UART for the port-specific MUX implementation.
 
+if !FREERTOS_UNICORE
 config FREERTOS_PORTMUX_DEBUG_RECURSIVE
     bool "Debug portMUX Recursion"
     depends on FREERTOS_PORTMUX_DEBUG
@@ -194,6 +195,7 @@ config FREERTOS_PORTMUX_DEBUG_RECURSIVE
     help
         If enabled, additional debug information will be printed for recursive
         portMUX usage.
+endif #FREERTOS_UNICORE
 
 endif # FREERTOS_DEBUG_INTERNALS
 

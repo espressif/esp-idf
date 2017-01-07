@@ -282,6 +282,7 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *fnName, int line) {
 #else
 void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 #endif
+#if !CONFIG_FREERTOS_UNICORE
 	uint32_t res;
 	uint32_t recCnt;
 	unsigned int irqStatus;
@@ -324,6 +325,7 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 	}
 #endif
 	portEXIT_CRITICAL_NESTED(irqStatus);
+#endif
 }
 
 /*
@@ -335,6 +337,7 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *fnName, int li
 #else
 portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 #endif
+#if !CONFIG_FREERTOS_UNICORE
 	uint32_t res=0;
 	uint32_t recCnt;
 	unsigned int irqStatus;
@@ -379,6 +382,9 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 	}
 	portEXIT_CRITICAL_NESTED(irqStatus);
 	return ret;
+#else //!CONFIG_FREERTOS_UNICORE
+	return 0;
+#endif
 }
 
 #if CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG

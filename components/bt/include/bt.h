@@ -29,35 +29,35 @@ extern "C" {
  *
  * This function should be called only once, before any other BT functions are called.
  */
-void bt_controller_init(void);
+void esp_bt_controller_init(void);
 
-/** @brief vhci_host_callback
+/** @brief esp_vhci_host_callback
  *  used for vhci call host function to notify what host need to do
  */
-typedef struct vhci_host_callback {
+typedef struct esp_vhci_host_callback {
     void (*notify_host_send_available)(void);               /*!< callback used to notify that the host can send packet to controller */
     int (*notify_host_recv)(uint8_t *data, uint16_t len);   /*!< callback used to notify that the controller has a packet to send to the host*/
-} vhci_host_callback_t;
+} esp_vhci_host_callback_t;
 
-/** @brief API_vhci_host_check_send_available
+/** @brief esp_vhci_host_check_send_available
  *  used for check actively if the host can send packet to controller or not.
  *  @return true for ready to send, false means cannot send packet
  */
-bool API_vhci_host_check_send_available(void);
+bool esp_vhci_host_check_send_available(void);
 
-/** @brief API_vhci_host_send_packet
+/** @brief esp_vhci_host_send_packet
  * host send packet to controller
  * @param data the packet point
  *,@param len the packet length
  */
-void API_vhci_host_send_packet(uint8_t *data, uint16_t len);
+void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
 
-/** @brief API_vhci_host_register_callback
+/** @brief esp_vhci_host_register_callback
  * register the vhci referece callback, the call back
  * struct defined by vhci_host_callback structure.
- * @param callback vhci_host_callback type variable
+ * @param callback esp_vhci_host_callback type variable
  */
-void API_vhci_host_register_callback(const vhci_host_callback_t *callback);
+void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
 
 #ifdef __cplusplus
 }

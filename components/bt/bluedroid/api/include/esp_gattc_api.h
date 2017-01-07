@@ -81,7 +81,6 @@ typedef union {
 	 */
     struct gattc_reg_evt_param {		
         esp_gatt_status_t status;		/*!< Operation status */
-        esp_gatt_if_t gatt_if;			/*!< Gatt interface id, different application on gatt client different gatt_if */
         uint16_t app_id;				/*!< Application id which input in register API */
     } reg;								/*!< Gatt client callback param of ESP_GATTC_REG_EVT */
 
@@ -91,7 +90,6 @@ typedef union {
     struct gattc_open_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
-        esp_gatt_if_t gatt_if;			/*!< Gatt interface id, different application on gatt client different gatt_if */
         esp_bd_addr_t remote_bda;		/*!< Remote bluetooth device address */
         uint16_t mtu;					/*!< MTU size */
     } open;								/*!< Gatt client callback param of ESP_GATTC_OPEN_EVT */
@@ -102,7 +100,6 @@ typedef union {
     struct gattc_close_evt_param {
         esp_gatt_status_t status;		/*!< Operation status */
         uint16_t conn_id;				/*!< Connection id */
-        esp_gatt_if_t gatt_if;			/*!< Gatt interface id, different application on gatt client different gatt_if */
         esp_bd_addr_t remote_bda;		/*!< Remote bluetooth device address */
         esp_gatt_conn_reason_t reason;	/*!< The reason of gatt connection close */
     } close;							/*!< Gatt client callback param of ESP_GATTC_CLOSE_EVT */
@@ -247,6 +244,14 @@ typedef union {
 
 } esp_ble_gattc_cb_param_t;				/*!< GATT client callback parameter union type */
 
+/**
+ * @brief GATT Client callback function type
+ * @param event : Event type
+ * @param gatts_if : GATT client access interface, normally
+ *                   different gattc_if correspond to different profile
+ * @param param : Point to callback parameter, currently is union type
+ */
+typedef void (* esp_gattc_cb_t)(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
 
 /**
  * @brief           This function is called to register application callbacks
@@ -259,7 +264,7 @@ typedef union {
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_register_callback(esp_profile_cb_t callback);
+esp_err_t esp_ble_gattc_register_callback(esp_gattc_cb_t callback);
 
 
 /**
@@ -280,20 +285,20 @@ esp_err_t esp_ble_gattc_app_register(uint16_t app_id);
  * @brief           This function is called to unregister an application
  *                  from GATTC module.
  *
- * @param[in]       gatt_if : app identifier.
+ * @param[in]       gattc_if: Gatt client access interface.
  *
  * @return
  *                  - ESP_OK: success
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gatt_if);
+esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if);
 
 
 /**
  * @brief           Open a direct connection or add a background auto connection
  *
- * @param[in]       gatt_if: application identity.
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       remote_bda: remote device bluetooth device address.
  * @param[in]       is_direct: direct connection or background auto connection
  *
@@ -302,12 +307,13 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gatt_if);
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bool is_direct);
+esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, bool is_direct);
 
 
 /**
  * @brief           Close a connection to a GATT server.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID to be closed.
  *
  * @return
@@ -315,13 +321,14 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gatt_if, esp_bd_addr_t remote_bda, bo
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_close(uint16_t conn_id);
+esp_err_t esp_ble_gattc_close (esp_gatt_if_t gattc_if, uint16_t conn_id);
 
 
 /**
  * @brief           Configure the MTU size in the GATT channel. This can be done
  *                  only once per connection.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID.
  * @param[in]       mtu: desired MTU size to use.
  *
@@ -330,7 +337,7 @@ esp_err_t esp_ble_gattc_close(uint16_t conn_id);
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_config_mtu(uint16_t conn_id, uint16_t mtu);
+esp_err_t esp_ble_gattc_config_mtu (esp_gatt_if_t gattc_if, uint16_t conn_id, uint16_t mtu);
 
 
 /**
@@ -339,6 +346,7 @@ esp_err_t esp_ble_gattc_config_mtu(uint16_t conn_id, uint16_t mtu);
  *                  by a callback event, and followed by a service search complete
  *                  event.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID.
  * @param[in]       filter_uuid: a UUID of the service application is interested in.
  *                  If Null, discover for all services.
@@ -348,32 +356,32 @@ esp_err_t esp_ble_gattc_config_mtu(uint16_t conn_id, uint16_t mtu);
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_search_service(uint16_t conn_id, esp_bt_uuid_t *filter_uuid);
+esp_err_t esp_ble_gattc_search_service(esp_gatt_if_t gattc_if, uint16_t conn_id, esp_bt_uuid_t *filter_uuid);
 
 
 /**
  * @brief           This function is called to find the first characteristic of the
  *                  service on the given server.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID which identify the server.
- *
  * @param[in]       srvc_id: service ID
- *
  * @param[in]       start_char_id:  the start characteristic ID
- *
  * @return
  *                  - ESP_OK: success
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_get_characteristic(uint16_t conn_id,
-        esp_gatt_srvc_id_t *srvc_id, esp_gatt_id_t *start_char_id);
-
+esp_err_t esp_ble_gattc_get_characteristic(esp_gatt_if_t gattc_if,
+                                            uint16_t conn_id,
+                                            esp_gatt_srvc_id_t *srvc_id,
+                                            esp_gatt_id_t *start_char_id);
 
 /**
  * @brief           This function is called to find the descriptor of the
  *                  service on the given server.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID which identify the server.
  * @param[in]       srvc_id: the service ID of which the characteristic is belonged to.
  * @param[in]       char_id: Characteristic ID, if NULL find the first available
@@ -385,8 +393,10 @@ esp_err_t esp_ble_gattc_get_characteristic(uint16_t conn_id,
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_get_descriptor(uint16_t conn_id,
-                                       esp_gatt_srvc_id_t *srvc_id, esp_gatt_id_t *char_id,
+esp_err_t esp_ble_gattc_get_descriptor(esp_gatt_if_t gattc_if,
+                                       uint16_t conn_id,
+                                       esp_gatt_srvc_id_t *srvc_id,
+                                       esp_gatt_id_t *char_id,
                                        esp_gatt_id_t *start_descr_id);
 
 
@@ -394,6 +404,7 @@ esp_err_t esp_ble_gattc_get_descriptor(uint16_t conn_id,
  * @brief           This function is called to find the first characteristic of the
  *                  service on the given server.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID which identify the server.
  * @param[in]       srvc_id: the service ID of which the characteristic is belonged to.
  * @param[in]       start_incl_srvc_id: the start include service id
@@ -403,14 +414,17 @@ esp_err_t esp_ble_gattc_get_descriptor(uint16_t conn_id,
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_get_included_service(uint16_t conn_id,
-        esp_gatt_srvc_id_t *srvc_id, esp_gatt_srvc_id_t *start_incl_srvc_id);
+esp_err_t esp_ble_gattc_get_included_service(esp_gatt_if_t gattc_if, 
+                                            uint16_t conn_id,
+                                            esp_gatt_srvc_id_t *srvc_id,
+                                            esp_gatt_srvc_id_t *start_incl_srvc_id);
 
 
 /**
  * @brief           This function is called to read a service's characteristics of
- *                  the given characteriistic ID
+ *                  the given characteristic ID
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID.
  * @param[in]       srvc_id : service ID.
  * @param[in]       char_id : characteristic ID to read.
@@ -421,15 +435,17 @@ esp_err_t esp_ble_gattc_get_included_service(uint16_t conn_id,
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_read_char (uint16_t conn_id,
-                                   esp_gatt_srvc_id_t *srvc_id,
-                                   esp_gatt_id_t *char_id,
-                                   esp_gatt_auth_req_t auth_req);
+esp_err_t esp_ble_gattc_read_char (esp_gatt_if_t gattc_if, 
+                                uint16_t conn_id,
+                                esp_gatt_srvc_id_t *srvc_id,
+                                esp_gatt_id_t *char_id,
+                                esp_gatt_auth_req_t auth_req);
 
 
 /**
  * @brief           This function is called to read a characteristics descriptor.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID.
  * @param[in]       srvc_id : service ID.
  * @param[in]       char_id : characteristic ID to read.
@@ -441,16 +457,18 @@ esp_err_t esp_ble_gattc_read_char (uint16_t conn_id,
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
-        esp_gatt_srvc_id_t *srvc_id,
-        esp_gatt_id_t  *char_id,
-        esp_gatt_id_t  *descr_id,
-        esp_gatt_auth_req_t auth_req);
+esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
+                                        uint16_t conn_id,
+                                        esp_gatt_srvc_id_t *srvc_id,
+                                        esp_gatt_id_t  *char_id,
+                                        esp_gatt_id_t  *descr_id,
+                                        esp_gatt_auth_req_t auth_req);
 
 
 /**
  * @brief           This function is called to write characteristic value.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID.
  * @param[in]       srvc_id : service ID.
  * @param[in]       char_id : characteristic ID to write.
@@ -464,7 +482,8 @@ esp_err_t esp_ble_gattc_read_char_descr (uint16_t conn_id,
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
+esp_err_t esp_ble_gattc_write_char( esp_gatt_if_t gattc_if,
+                                    uint16_t conn_id,
                                     esp_gatt_srvc_id_t *srvc_id,
                                     esp_gatt_id_t *char_id,
                                     uint16_t value_len,
@@ -476,6 +495,7 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
 /**
  * @brief           This function is called to write characteristic descriptor value.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID
  * @param[in]       srvc_id : service ID.
  * @param[in]       char_id : characteristic ID.
@@ -490,19 +510,21 @@ esp_err_t esp_ble_gattc_write_char( uint16_t conn_id,
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
-        esp_gatt_srvc_id_t *srvc_id,
-        esp_gatt_id_t *char_id,
-        esp_gatt_id_t *descr_id,
-        uint16_t value_len,
-        uint8_t *value,
-		esp_gatt_write_type_t write_type,
-        esp_gatt_auth_req_t auth_req);
+esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if, 
+                                        uint16_t conn_id,
+                                        esp_gatt_srvc_id_t *srvc_id,
+                                        esp_gatt_id_t *char_id,
+                                        esp_gatt_id_t *descr_id,
+                                        uint16_t value_len,
+                                        uint8_t *value,
+                                		esp_gatt_write_type_t write_type,
+                                        esp_gatt_auth_req_t auth_req);
 
 
 /**
  * @brief           This function is called to prepare write a characteristic value.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID.
  * @param[in]       srvc_id : service ID.
  * @param[in]       char_id : GATT characteristic ID of the service.
@@ -516,7 +538,8 @@ esp_err_t esp_ble_gattc_write_char_descr (uint16_t conn_id,
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
+esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if, 
+                                      uint16_t conn_id,
                                       esp_gatt_srvc_id_t *srvc_id,
                                       esp_gatt_id_t *char_id,
                                       uint16_t offset,
@@ -524,9 +547,11 @@ esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
                                       uint8_t *value,
                                       esp_gatt_auth_req_t auth_req);
 
+
 /**
  * @brief           This function is called to execute write a prepare write sequence.
  *
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID.
  * @param[in]       is_execute : execute or cancel.
  *
@@ -535,13 +560,13 @@ esp_err_t esp_ble_gattc_prepare_write(uint16_t conn_id,
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_execute_write (uint16_t conn_id, bool is_execute);
+esp_err_t esp_ble_gattc_execute_write (esp_gatt_if_t gattc_if, uint16_t conn_id, bool is_execute);
 
 
 /**
  * @brief           This function is called to register for notification of a service.
  *
- * @param[in]       gatt_if : gatt interface id.
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       server_bda : target GATT server.
  * @param[in]       srvc_id : pointer to GATT service ID.
  * @param[in]       char_id : pointer to GATT characteristic ID.
@@ -551,16 +576,16 @@ esp_err_t esp_ble_gattc_execute_write (uint16_t conn_id, bool is_execute);
  *                  - other: failed
  *
  */
-esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gatt_if,
-        esp_bd_addr_t server_bda,
-        esp_gatt_srvc_id_t *srvc_id,
-        esp_gatt_id_t *char_id);
+esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gattc_if,
+                                                    esp_bd_addr_t server_bda,
+                                                    esp_gatt_srvc_id_t *srvc_id,
+                                                    esp_gatt_id_t *char_id);
 
 
 /**
  * @brief           This function is called to de-register for notification of a service.
  *
- * @param[in]       gatt_if : gatt interface id.
+ * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       server_bda : target GATT server.
  * @param[in]       srvc_id : pointer to GATT service ID.
  * @param[in]       char_id : pointer to GATT characteristic ID.
@@ -570,10 +595,10 @@ esp_gatt_status_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gatt_if,
  *                  - other: failed
  *
  */
-esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gatt_if,
-        esp_bd_addr_t server_bda,
-        esp_gatt_srvc_id_t *srvc_id,
-        esp_gatt_id_t *char_id);
+esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
+                                                      esp_bd_addr_t server_bda,
+                                                      esp_gatt_srvc_id_t *srvc_id,
+                                                      esp_gatt_id_t *char_id);
 
 #ifdef __cplusplus
 }

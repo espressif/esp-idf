@@ -508,6 +508,12 @@ netconn_recv_data(struct netconn *conn, void **new_buf)
   }
 #endif /* (LWIP_UDP || LWIP_RAW) */
 
+#if ESP_PERF
+  if (len > DBG_PERF_FILTER_LEN) {
+    DBG_PERF_PATH_SET(DBG_PERF_DIR_RX, DBG_PERF_POINT_SOC_IN);
+  }
+#endif
+
 #if LWIP_SO_RCVBUF
   SYS_ARCH_DEC(conn->recv_avail, len);
 #endif /* LWIP_SO_RCVBUF */

@@ -51,11 +51,11 @@ typedef union {
     } app_reg;
     //BTC_GATTC_ACT_APP_UNREGISTER,
     struct app_unreg_arg {
-        esp_gatt_if_t gatt_if;
+        esp_gatt_if_t gattc_if;
     } app_unreg;
     //BTC_GATTC_ACT_OPEN,
     struct open_arg {
-        esp_gatt_if_t gatt_if;
+        esp_gatt_if_t gattc_if;
         esp_bd_addr_t remote_bda;
         bool is_direct;
     } open;
@@ -162,14 +162,14 @@ typedef union {
     } exec_write;
     //BTC_GATTC_ACT_REG_FOR_NOTIFY,
     struct reg_for_notify_arg {
-        esp_gatt_if_t gatt_if;
+        esp_gatt_if_t gattc_if;
         esp_bd_addr_t remote_bda;
         esp_gatt_srvc_id_t service_id;
         esp_gatt_id_t char_id;
     } reg_for_notify;
     //BTC_GATTC_ACT_UNREG_FOR_NOTIFY
     struct unreg_for_notify_arg {
-        esp_gatt_if_t gatt_if;
+        esp_gatt_if_t gattc_if;
         esp_bd_addr_t remote_bda;
         esp_gatt_srvc_id_t service_id;
         esp_gatt_id_t char_id;

@@ -109,6 +109,8 @@ typedef struct {
     wifi_second_chan_t second;            /**< second channel of AP */
     int8_t  rssi;                         /**< signal strength of AP */
     wifi_auth_mode_t authmode;            /**< authmode of AP */
+    uint32_t low_rate_enable:1;           /**< bit: 0 flag to identify if low rate is enabled or not */
+    uint32_t reserved:31;                 /**< bit: 1..31 reserved */
 } wifi_ap_record_t;
 
 typedef enum {
@@ -119,9 +121,10 @@ typedef enum {
 #define WIFI_PROTOCOL_11B         1
 #define WIFI_PROTOCOL_11G         2
 #define WIFI_PROTOCOL_11N         4
+#define WIFI_PROTOCOL_LR          8
 
 typedef enum {
-    WIFI_BW_HT20 = 0, /* Bandwidth is HT20 */
+    WIFI_BW_HT20 = 1, /* Bandwidth is HT20 */
     WIFI_BW_HT40,     /* Bandwidth is HT40 */
 } wifi_bandwidth_t;
 

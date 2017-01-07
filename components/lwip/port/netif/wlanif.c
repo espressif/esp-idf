@@ -57,9 +57,6 @@
 #define IFNAME1 'n'
 
 static char hostname[16];
-#if ESP_PERF
-uint32_t g_rx_alloc_pbuf_fail_cnt = 0;
-#endif
 
 /**
  * In this function, the hardware should be initialized.

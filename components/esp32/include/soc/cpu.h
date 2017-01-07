@@ -104,4 +104,13 @@ void esp_cpu_stall(int cpu_id);
  */
 void esp_cpu_unstall(int cpu_id);
 
+/**
+ * @brief Returns true if a JTAG debugger is attached to CPU
+ * OCD (on chip debug) port.
+ *
+ * @note If "Make exception and panic handlers JTAG/OCD aware"
+ * is disabled, this function always returns false.
+ */
+bool esp_cpu_in_ocd_debug_mode();
+
 #endif

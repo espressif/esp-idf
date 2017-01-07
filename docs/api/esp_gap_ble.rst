@@ -33,11 +33,18 @@ Header Files
 Macros
 ^^^^^^
 
+.. doxygendefine:: ESP_BLE_ADV_FLAG_LIMIT_DISC
+.. doxygendefine:: ESP_BLE_ADV_FLAG_GEN_DISC
+.. doxygendefine:: ESP_BLE_ADV_FLAG_BREDR_NOT_SPT
+.. doxygendefine:: ESP_BLE_ADV_FLAG_DMT_CONTROLLER_SPT
+.. doxygendefine:: ESP_BLE_ADV_FLAG_DMT_HOST_SPT
+.. doxygendefine:: ESP_BLE_ADV_FLAG_NON_LIMIT_DISC
 .. doxygendefine:: ESP_BLE_ADV_DATA_LEN_MAX
 
 Type Definitions
 ^^^^^^^^^^^^^^^^
 
+.. doxygentypedef:: esp_gap_ble_cb_t
 
 Enumerations
 ^^^^^^^^^^^^
