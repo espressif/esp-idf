@@ -180,7 +180,8 @@ test_report:
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     # generate report
-    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH || FAIL=True
+    - TEST_RESULT=Pass
+    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH || TEST_RESULT=Fail
     # commit to CI-test-result project
     - git clone $GITLAB_SSH_SERVER/qa/CI-test-result.git
     - rm -rf CI-test-result/RawData/$RESULT_PATH
@@ -193,7 +194,7 @@ test_report:
     - git add .
     - git commit . -m "update test result for $CI_PROJECT_NAME/$CI_BUILD_REF_NAME/$CI_BUILD_REF, pipeline ID $CI_PIPELINE_ID" || exit 0
     - git push origin master
-    - test "${FAIL}" = "True" && exit 1
+    - test "${TEST_RESULT}" = "Pass" || exit 1
 
 push_master_to_github:
   before_script:
