@@ -29,13 +29,19 @@ uint32_t IRAM_ATTR esp_random(void)
      * this function needs to wait for at least 16 APB clock cycles after reading
      * previous word. This implementation may actually wait a bit longer
      * due to extra time spent in arithmetic and branch statements.
+     *
+     * As a (probably unncessary) precaution to avoid returning the
+     * RNG state as-is, the result is XORed with additional
+     * WDEV_RND_REG reads while waiting.
      */
 
     static uint32_t last_ccount = 0;
     uint32_t ccount;
+    uint32_t result = 0;
     do {
         ccount = XTHAL_GET_CCOUNT();
+        result ^= REG_READ(WDEV_RND_REG);
     } while (ccount - last_ccount < XT_CLOCK_FREQ / APB_CLK_FREQ * 16);
     last_ccount = ccount;
-    return REG_READ(WDEV_RND_REG);
+    return result ^ REG_READ(WDEV_RND_REG);
 }

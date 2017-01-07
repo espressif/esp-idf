@@ -158,6 +158,7 @@
 #define DR_REG_RTCMEM0_BASE                     0x3ff61000
 #define DR_REG_RTCMEM1_BASE                     0x3ff62000
 #define DR_REG_RTCMEM2_BASE                     0x3ff63000
+#define DR_REG_SYSCON_BASE                      0x3ff66000
 #define DR_REG_HINF_BASE                        0x3ff4B000
 #define DR_REG_UHCI1_BASE                       0x3ff4C000
 #define DR_REG_I2S_BASE                         0x3ff4F000
