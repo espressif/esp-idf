@@ -7,6 +7,9 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <string.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -19,11 +22,6 @@
 #include "esp_partition.h"
 
 #include "nvs_flash.h"
-#include "lwip/err.h"
-#include "lwip/sockets.h"
-#include "lwip/sys.h"
-#include "lwip/netdb.h"
-#include "lwip/dns.h"
 
 #define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
 #define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
@@ -226,6 +224,10 @@ void __attribute__((noreturn)) task_fatal_error()
     ESP_LOGE(TAG, "Exiting task due to fatal error...");
     close(socket_id);
     (void)vTaskDelete(NULL);
+
+    while (1) {
+        ;
+    }
 }
 
 void main_task(void *pvParameter)

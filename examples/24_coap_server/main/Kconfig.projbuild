@@ -1,12 +1,5 @@
 menu "Example Configuration"
 
-config LOCAL_PORT_NUMBER
-    int "Local port number"
-    range 0 65535
-    default 5683
-    help
-        Local port number for the example to use.
-
 config WIFI_SSID
     string "WiFi SSID"
     default "myssid"
