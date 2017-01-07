@@ -103,7 +103,6 @@ SECTIONS
     *libesp32.a:panic.o(.rodata .rodata.*)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
-    _heap_start = ABSOLUTE(.);
   } >dram0_0_seg
 
   /* Shared RAM */
@@ -127,6 +126,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
+    _heap_start = ABSOLUTE(.);
   } >dram0_0_seg
 
   .flash.rodata :
