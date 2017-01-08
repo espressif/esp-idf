@@ -25,7 +25,7 @@ KCONFIG_TOOL_ENV=KCONFIG_AUTOHEADER=$(abspath $(BUILD_DIR_BASE)/include/sdkconfi
 	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" KCONFIG_CONFIG=$(SDKCONFIG) \
 	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)"
 
-menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig | defconfig
+menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(call prereq_if_explicit,defconfig)
 	$(summary) MENUCONFIG
 	$(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
 
@@ -39,14 +39,11 @@ $(SDKCONFIG): defconfig
 endif
 endif
 
-$(wildcard $(PROJECT_PATH)/sdkconfig.defaults): | menuconfig defconfig
-	cp $< $@
-
 # defconfig creates a default config, based on SDKCONFIG_DEFAULTS if present
 defconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
 	$(summary) DEFCONFIG
 ifneq ("$(wildcard $(SDKCONFIG_DEFAULTS))","")
-	cp $(SDKCONFIG_DEFAULTS) $(SDKCONFIG)
+	cat $(SDKCONFIG_DEFAULTS) >> $(SDKCONFIG)  # append defaults to sdkconfig, will override existing values
 endif
 	mkdir -p $(BUILD_DIR_BASE)/include/config
 	$(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/conf --olddefconfig $(IDF_PATH)/Kconfig
