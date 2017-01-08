@@ -54,9 +54,6 @@ static size_t s_vfs_count = 0;
 
 esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx)
 {
-    if (s_vfs_count >= VFS_MAX_COUNT) {
-        return ESP_ERR_NO_MEM;
-    }
     size_t len = strlen(base_path);
     if (len < 2 || len > ESP_VFS_PATH_MAX) {
         return ESP_ERR_INVALID_ARG;
@@ -68,14 +65,39 @@ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ct
     if (entry == NULL) {
         return ESP_ERR_NO_MEM;
     }
+    size_t index;
+    for (index = 0; index < s_vfs_count; ++index) {
+        if (s_vfs[index] == NULL) {
+            break;
+        }
+    }
+    if (index == s_vfs_count) {
+        if (s_vfs_count >= VFS_MAX_COUNT) {
+            free(entry);
+            return ESP_ERR_NO_MEM;
+        }
+        ++s_vfs_count;
+    }
+    s_vfs[index] = entry;
     strcpy(entry->path_prefix, base_path); // we have already verified argument length
     memcpy(&entry->vfs, vfs, sizeof(esp_vfs_t));
     entry->path_prefix_len = len;
     entry->ctx = ctx;
-    entry->offset = s_vfs_count;
-    s_vfs[s_vfs_count] = entry;
-    ++s_vfs_count;
+    entry->offset = index;
     return ESP_OK;
+}
+
+esp_err_t esp_vfs_unregister(const char* base_path)
+{
+    for (size_t i = 0; i < s_vfs_count; ++i) {
+        vfs_entry_t* vfs = s_vfs[i];
+        if (memcmp(base_path, vfs->path_prefix, vfs->path_prefix_len) == 0) {
+            free(vfs);
+            s_vfs[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
 }
 
 static const vfs_entry_t* get_vfs_for_fd(int fd)
@@ -140,6 +162,28 @@ static const vfs_entry_t* get_vfs_for_path(const char* path)
         ret = (*pvfs->vfs.func)(__VA_ARGS__);\
     }
 
+
+#define CHECK_AND_CALLV(r, pvfs, func, ...) \
+    if (pvfs->vfs.func == NULL) { \
+        __errno_r(r) = ENOSYS; \
+        return; \
+    } \
+    if (pvfs->vfs.flags & ESP_VFS_FLAG_CONTEXT_PTR) { \
+        (*pvfs->vfs.func ## _p)(pvfs->ctx, __VA_ARGS__); \
+    } else { \
+        (*pvfs->vfs.func)(__VA_ARGS__);\
+    }
+
+#define CHECK_AND_CALLP(ret, r, pvfs, func, ...) \
+    if (pvfs->vfs.func == NULL) { \
+        __errno_r(r) = ENOSYS; \
+        return NULL; \
+    } \
+    if (pvfs->vfs.flags & ESP_VFS_FLAG_CONTEXT_PTR) { \
+        ret = (*pvfs->vfs.func ## _p)(pvfs->ctx, __VA_ARGS__); \
+    } else { \
+        ret = (*pvfs->vfs.func)(__VA_ARGS__);\
+    }
 
 int esp_vfs_open(struct _reent *r, const char * path, int flags, int mode)
 {
@@ -285,5 +329,118 @@ int esp_vfs_rename(struct _reent *r, const char *src, const char *dst)
     const char* dst_within_vfs = translate_path(vfs, dst);
     int ret;
     CHECK_AND_CALL(ret, r, vfs, rename, src_within_vfs, dst_within_vfs);
+    return ret;
+}
+
+DIR* opendir(const char* name)
+{
+    const vfs_entry_t* vfs = get_vfs_for_path(name);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = ENOENT;
+        return NULL;
+    }
+    const char* path_within_vfs = translate_path(vfs, name);
+    DIR* ret;
+    CHECK_AND_CALLP(ret, r, vfs, opendir, path_within_vfs);
+    if (ret != NULL) {
+        ret->dd_vfs_idx = vfs->offset << VFS_INDEX_S;
+    }
+    return ret;
+}
+
+struct dirent* readdir(DIR* pdir)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+       __errno_r(r) = EBADF;
+        return NULL;
+    }
+    struct dirent* ret;
+    CHECK_AND_CALLP(ret, r, vfs, readdir, pdir);
+    return ret;
+}
+
+int readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, readdir_r, pdir, entry, out_dirent);
+    return ret;
+}
+
+long telldir(DIR* pdir)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+    long ret;
+    CHECK_AND_CALL(ret, r, vfs, telldir, pdir);
+    return ret;
+}
+
+void seekdir(DIR* pdir, long loc)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        errno = EBADF;
+        return;
+    }
+    CHECK_AND_CALLV(r, vfs, seekdir, pdir, loc);
+}
+
+void rewinddir(DIR* pdir)
+{
+    seekdir(pdir, 0);
+}
+
+int closedir(DIR* pdir)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(pdir->dd_vfs_idx);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, closedir, pdir);
+    return ret;
+}
+
+int mkdir(const char* name, mode_t mode)
+{
+    const vfs_entry_t* vfs = get_vfs_for_path(name);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = ENOENT;
+        return -1;
+    }
+    const char* path_within_vfs = translate_path(vfs, name);
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, mkdir, path_within_vfs, mode);
+    return ret;
+}
+
+int rmdir(const char* name)
+{
+    const vfs_entry_t* vfs = get_vfs_for_path(name);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = ENOENT;
+        return -1;
+    }
+    const char* path_within_vfs = translate_path(vfs, name);
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, rmdir, path_within_vfs);
     return ret;
 }

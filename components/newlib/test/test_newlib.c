@@ -3,7 +3,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <sys/time.h>
 #include "unity.h"
 #include "sdkconfig.h"
 
@@ -85,6 +87,33 @@ TEST_CASE("test time functions", "[newlib]")
 
 }
 
+
+TEST_CASE("test asctime", "[newlib]")
+{
+    char buf[64];
+    struct tm tm = { 0 };
+    tm.tm_year = 2016 - 1900;
+    tm.tm_mon = 0;
+    tm.tm_mday = 10;
+    tm.tm_hour = 16;
+    tm.tm_min = 30;
+    tm.tm_sec = 0;
+    time_t t = mktime(&tm);
+    const char* time_str = asctime(&tm);
+    strlcpy(buf, time_str, sizeof(buf));
+    printf("Setting time: %s", time_str);
+    struct timeval now = { .tv_sec = t };
+    settimeofday(&now, NULL);
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    time_t mtime = tv.tv_sec;
+    struct tm mtm;
+    localtime_r(&mtime, &mtm);
+    time_str = asctime(&mtm);
+    printf("Got time: %s", time_str);
+    TEST_ASSERT_EQUAL_STRING(buf, time_str);
+}
 
 static bool fn_in_rom(void *fn, char *name)
 {

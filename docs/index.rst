@@ -110,11 +110,13 @@ Contents:
    I2C <api/i2c>
    Pulse Counter <api/pcnt>
    Sigma-delta Modulation <api/sigmadelta>
+   SD/MMC <api/sdmmc>
    SPI Flash and Partition APIs <api/spi_flash>
    SPI Master API <api/spi_master>
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>
    Virtual Filesystem <api/vfs>
+   FAT Filesystem <api/fatfs>
    Ethernet <api/esp_eth>
    Interrupt Allocation <api/intr_alloc>
    Memory Allocation <api/mem_alloc>
