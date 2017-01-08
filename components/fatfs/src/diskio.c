@@ -1,5 +1,6 @@
 /*-----------------------------------------------------------------------*/
 /* Low level disk I/O module skeleton for FatFs     (C)ChaN, 2016        */
+/* ESP-IDF port Copyright 2016 Espressif Systems (Shanghai) PTE LTD      */
 /*-----------------------------------------------------------------------*/
 /* If a working storage control module is available, it should be        */
 /* attached to the FatFs via a glue function rather than modifying it.   */
@@ -56,7 +57,8 @@ DWORD get_fattime(void)
 {
     time_t t = time(NULL);
     struct tm *tmr = gmtime(&t);
-    return    ((DWORD)(tmr->tm_year - 80) << 25)
+    int year = tmr->tm_year < 80 ? 0 : tmr->tm_year - 80;
+    return    ((DWORD)(year) << 25)
             | ((DWORD)(tmr->tm_mon + 1) << 21)
             | ((DWORD)tmr->tm_mday << 16)
             | (WORD)(tmr->tm_hour << 11)
@@ -78,7 +80,7 @@ DRESULT ff_sdmmc_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
 {
     sdmmc_card_t* card = s_cards[pdrv];
     assert(card);
-    esp_err_t err = sdmmc_read_blocks(card, buff, sector, count);
+    esp_err_t err = sdmmc_read_sectors(card, buff, sector, count);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "sdmmc_read_blocks failed (%d)", err);
         return RES_ERROR;
@@ -90,7 +92,7 @@ DRESULT ff_sdmmc_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
 {
     sdmmc_card_t* card = s_cards[pdrv];
     assert(card);
-    esp_err_t err = sdmmc_write_blocks(card, buff, sector, count);
+    esp_err_t err = sdmmc_write_sectors(card, buff, sector, count);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "sdmmc_write_blocks failed (%d)", err);
         return RES_ERROR;
