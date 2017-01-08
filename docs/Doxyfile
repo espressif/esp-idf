@@ -32,7 +32,10 @@ INPUT = ../components/esp32/include/esp_wifi.h \
 	../components/esp32/include/esp_heap_alloc_caps.h \
 	../components/freertos/include/freertos/heap_regions.h \
 	../components/esp32/include/esp_smartconfig.h \
-	../components/esp32/include/esp_deep_sleep.h
+	../components/esp32/include/esp_deep_sleep.h \
+	../components/sdmmc/include/sdmmc_cmd.h \
+	../components/fatfs/src/esp_vfs_fat.h \
+	../components/fatfs/src/diskio.h
 
 ## Get warnings for functions that have no documentation for their parameters or return value 
 ##
