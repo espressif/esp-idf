@@ -1,12 +1,7 @@
-ULP coprocessor programming
-===========================
+Programming ULP coprocessor using C macros
+==========================================
 
-.. warning:: ULP coprocessor programming approach described here is experimental. It is probable that once binutils support for ULP is done, this preprocessor-based approach may be deprecated. We welcome discussion about and contributions to ULP programming tools.
-
-ULP coprocessor is a simple FSM which is designed to perform measurements using ADC, temperature sensor, and external I2C sensors, while main processors are in deep sleep mode. ULP coprocessor can access RTC_SLOW_MEM memory region, and registers in RTC_CNTL, RTC_IO, and SARADC peripherals. ULP coprocessor uses fixed-width 32-bit instructions, 32-bit memory addressing, and has 4 general purpose 16-bit registers.
-
-ULP coprocessor doesn't have a dedicated binutils port yet. Programming ULP coprocessor is possible by embedding assembly-like macros into an ESP32 application.
-Here is an example how this can be done::
+In addition to the existing binutils port for the ESP32 ULP coprocessor, it is possible to generate programs for the ULP by embedding assembly-like macros into an ESP32 application. Here is an example how this can be done::
 
     const ulp_insn_t program[] = {
         I_MOVI(R3, 16),         // R3 <- 16
