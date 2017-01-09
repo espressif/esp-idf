@@ -94,11 +94,13 @@ extern "C" {
  */
 typedef struct {
     system_event_handler_t event_handler;  /**< WiFi event handler */
+    uint32_t rx_buf_num;  /**< WiFi RX buffer number */
 } wifi_init_config_t;
 
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
+    .rx_buf_num = CONFIG_ESP32_WIFI_RX_BUFFER_NUM, \
 };
 
 /**

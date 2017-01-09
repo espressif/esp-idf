@@ -344,6 +344,15 @@ esp_err_t esp_blufi_profile_deinit(void);
  */
 esp_err_t esp_blufi_send_wifi_conn_report(wifi_mode_t opmode, esp_blufi_sta_conn_state_t sta_conn_state, uint8_t softap_conn_num, esp_blufi_extra_info_t *extra_info);
 
+/**
+ *
+ * @brief           Get BLUFI profile version
+ * 
+ * @return          Most 8bit significant is Great version, Least 8bit is Sub version
+ *
+ */
+uint16_t esp_blufi_get_version(void);
+
 #ifdef __cplusplus
 }
 #endif

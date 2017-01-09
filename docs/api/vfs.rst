@@ -31,6 +31,7 @@ Functions
 ^^^^^^^^^
 
 .. doxygenfunction:: esp_vfs_register
+.. doxygenfunction:: esp_vfs_unregister
 .. doxygenfunction:: esp_vfs_write
 .. doxygenfunction:: esp_vfs_lseek
 .. doxygenfunction:: esp_vfs_read

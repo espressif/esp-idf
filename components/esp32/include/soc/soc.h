@@ -153,11 +153,12 @@
 #define DR_REG_FRC_TIMER_BASE                   0x3ff47000
 #define DR_REG_RTCCNTL_BASE                     0x3ff48000
 #define DR_REG_RTCIO_BASE                       0x3ff48400
-#define DR_REG_SENS_BASE                      0x3ff48800
+#define DR_REG_SENS_BASE                        0x3ff48800
 #define DR_REG_IO_MUX_BASE                      0x3ff49000
 #define DR_REG_RTCMEM0_BASE                     0x3ff61000
 #define DR_REG_RTCMEM1_BASE                     0x3ff62000
 #define DR_REG_RTCMEM2_BASE                     0x3ff63000
+#define DR_REG_SYSCON_BASE                      0x3ff66000
 #define DR_REG_HINF_BASE                        0x3ff4B000
 #define DR_REG_UHCI1_BASE                       0x3ff4C000
 #define DR_REG_I2S_BASE                         0x3ff4F000

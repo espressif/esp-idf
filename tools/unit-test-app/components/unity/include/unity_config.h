@@ -61,11 +61,20 @@ void unity_run_all_tests();
 			.desc = desc_, \
 			.fn = &UNITY_TEST_UID(test_func_), \
 			.file = __FILE__, \
-			.line = __LINE__ \
+			.line = __LINE__, \
+			.next = NULL \
 		}; \
 		unity_testcase_register( & UNITY_TEST_UID(test_desc_) ); \
 	}\
 	static void UNITY_TEST_UID(test_func_) (void)
+/**
+ * Note: initialization of test_desc_t fields above has to be done exactly
+ * in the same order as the fields are declared in the structure.
+ * Otherwise the initializer will not be valid in C++ (which doesn't
+ * support designated initializers). G++ can parse the syntax, but
+ * field names are treated as annotations and don't affect initialization
+ * order. Also make sure all the fields are initialized.
+ */
 
 // shorthand to check esp_err_t return code
 #define TEST_ESP_OK(rc)	TEST_ASSERT_EQUAL_INT32(ESP_OK, rc)

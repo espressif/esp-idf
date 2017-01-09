@@ -90,6 +90,15 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
 
             btc_transfer_context(&msg, NULL, 0, NULL);
             break;
+        case BLUFI_TYPE_CTRL_SUBTYPE_GET_VERSION: {
+            uint8_t type = BLUFI_BUILD_TYPE(BLUFI_TYPE_DATA, BLUFI_TYPE_DATA_SUBTYPE_REPLY_VERSION);
+            uint8_t data[2];
+
+            data[0] = BTC_BLUFI_GREAT_VER;
+            data[1] = BTC_BLUFI_SUB_VER;
+            btc_blufi_send_encap(type, &data[0], sizeof(data));
+            break;
+        }
         default:
             LOG_ERROR("%s Unkown Ctrl pkt %02x\n", __func__, type);
             break;

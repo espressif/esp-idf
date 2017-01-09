@@ -78,12 +78,19 @@ static esp_err_t initialise_flash_encryption(void)
         && REG_READ(EFUSE_BLK1_RDATA5_REG) == 0
         && REG_READ(EFUSE_BLK1_RDATA6_REG) == 0
         && REG_READ(EFUSE_BLK1_RDATA7_REG) == 0) {
+        ESP_LOGI(TAG, "Generating new flash encryption key...");
+        uint32_t buf[8];
+        bootloader_fill_random(buf, sizeof(buf));
+        for (int i = 0; i < 8; i++) {
+            ESP_LOGV(TAG, "EFUSE_BLK1_WDATA%d_REG = 0x%08x", i, buf[i]);
+            REG_WRITE(EFUSE_BLK1_WDATA0_REG + 4*i, buf[i]);
+        }
+        bzero(buf, sizeof(buf));
+        esp_efuse_burn_new_values();
 
-        /* On-device key generation is temporarily disabled, until
-         * RNG operation during bootloader is qualified.
-         * See docs/security/flash-encryption.rst for details. */
-        ESP_LOGE(TAG, "On-device key generation is not yet available.");
-        return ESP_ERR_NOT_SUPPORTED;
+        ESP_LOGI(TAG, "Read & write protecting new key...");
+        REG_WRITE(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_BLK1 | EFUSE_RD_DIS_BLK1);
+        esp_efuse_burn_new_values();
     } else {
 
         if(!(efuse_key_read_protected && efuse_key_write_protected)) {

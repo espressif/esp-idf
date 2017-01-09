@@ -29,6 +29,7 @@
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 #include "esp_bt_main.h"
+#include "esp_bt_device.h"
 #include "blufi_demo.h"
 
 static void blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param);
@@ -327,6 +328,10 @@ void app_main()
         BLUFI_ERROR("%s init bluedroid failed\n", __func__);
         return;
     }
+
+    BLUFI_INFO("BD ADDR: "ESP_BD_ADDR_STR"\n", ESP_BD_ADDR_HEX(esp_bt_dev_get_address()));
+
+    BLUFI_INFO("BLUFI VERSION %04x\n", esp_blufi_get_version());
 
     blufi_security_init();
     esp_ble_gap_register_callback(gap_event_handler);

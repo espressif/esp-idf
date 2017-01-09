@@ -40,6 +40,12 @@ config LWIP_SO_REUSE
         Enabling this option allows binding to a port which remains in
         TIME_WAIT.
 
+config LWIP_SO_RCVBUF
+    bool "Enable SO_RCVBUF option"
+    default 0
+    help
+        Enabling this option allows checking for available data on a netconn.
+
 config LWIP_DHCP_MAX_NTP_SERVERS
 	int	"Maximum number of NTP servers"
 	default 1

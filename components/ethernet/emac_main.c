@@ -628,6 +628,7 @@ static void emac_start(void *param)
     cmd->err = EMAC_CMD_OK;
     emac_enable_clk(true);
 
+    emac_reset();
     emac_macaddr_init();
 
     emac_check_mac_addr();
@@ -839,7 +840,9 @@ esp_err_t IRAM_ATTR emac_post(emac_sig_t sig, emac_par_t par)
             }
         }
     } else {
+        portENTER_CRITICAL(&g_emac_mux);
         emac_sig_cnt[sig]++;
+        portEXIT_CRITICAL(&g_emac_mux);
         emac_event_t evt;
         evt.sig = sig;
         evt.par = par;
@@ -898,10 +901,8 @@ esp_err_t esp_eth_init(eth_config_t *config)
     emac_xqueue = xQueueCreate(EMAC_EVT_QNUM, sizeof(emac_event_t));
     xTaskCreate(emac_task, "emacT", 2048, NULL, EMAC_TASK_PRIORITY, &emac_task_hdl);
 
-    esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);
-
-    emac_reset();
     emac_enable_clk(false);
+    esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);
 
     emac_config.emac_status = EMAC_RUNTIME_INIT;
 

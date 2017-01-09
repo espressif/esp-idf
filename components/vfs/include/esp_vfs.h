@@ -21,6 +21,8 @@
 #include <sys/types.h>
 #include <sys/reent.h>
 #include <sys/stat.h>
+#include <dirent.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -106,6 +108,38 @@ typedef struct
         int (*rename_p)(void* ctx, const char *src, const char *dst);
         int (*rename)(const char *src, const char *dst);
     };
+    union {
+        DIR* (*opendir_p)(void* ctx, const char* name);
+        DIR* (*opendir)(const char* name);
+    };
+    union {
+        struct dirent* (*readdir_p)(void* ctx, DIR* pdir);
+        struct dirent* (*readdir)(DIR* pdir);
+    };
+    union {
+        int (*readdir_r_p)(void* ctx, DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
+        int (*readdir_r)(DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
+    };
+    union {
+        long (*telldir_p)(void* ctx, DIR* pdir);
+        long (*telldir)(DIR* pdir);
+    };
+    union {
+        void (*seekdir_p)(void* ctx, DIR* pdir, long offset);
+        void (*seekdir)(DIR* pdir, long offset);
+    };
+    union {
+        int (*closedir_p)(void* ctx, DIR* pdir);
+        int (*closedir)(DIR* pdir);
+    };
+    union {
+        int (*mkdir_p)(void* ctx, const char* name, mode_t mode);
+        int (*mkdir)(const char* name, mode_t mode);
+    };
+    union {
+        int (*rmdir_p)(void* ctx, const char* name);
+        int (*rmdir)(const char* name);
+    };
 } esp_vfs_t;
 
 
@@ -130,6 +164,15 @@ typedef struct
  */
 esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx);
 
+
+/**
+ * Unregister a virtual filesystem for given path prefix
+ *
+ * @param base_path  file prefix previously used in esp_vfs_register call
+ * @return ESP_OK if successful, ESP_ERR_INVALID_STATE if VFS for given prefix
+ *         hasn't been registered
+ */
+esp_err_t esp_vfs_unregister(const char* base_path);
 
 /**
  * These functions are to be used in newlib syscall table. They will be called by

@@ -41,6 +41,9 @@ typedef enum {
     PERIPH_UHCI1_MODULE,
     PERIPH_RMT_MODULE,
     PERIPH_PCNT_MODULE,
+    PERIPH_SPI_MODULE,
+    PERIPH_HSPI_MODULE,
+    PERIPH_VSPI_MODULE,
 } periph_module_t;
 
 /**

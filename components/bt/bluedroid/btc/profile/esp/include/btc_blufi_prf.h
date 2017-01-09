@@ -41,4 +41,7 @@ void btc_blufi_set_callbacks(esp_blufi_callbacks_t *callbacks);
 
 void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_blufi_call_deep_free(btc_msg_t *msg);
+
+uint16_t btc_blufi_get_version(void);
+
 #endif /* __BTC_BLUFI_PRF_H__ */

@@ -440,7 +440,7 @@
 /**
  * LWIP_SO_RCVBUF==1: Enable SO_RCVBUF processing.
  */
-#define LWIP_SO_RCVBUF                  0
+#define LWIP_SO_RCVBUF                  CONFIG_LWIP_SO_RCVBUF
 
 /**
  * SO_REUSE==1: Enable SO_REUSEADDR option.

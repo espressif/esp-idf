@@ -85,6 +85,26 @@ SECTIONS
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 
+  .dram0.data :
+  {
+    _data_start = ABSOLUTE(.);
+    KEEP(*(.data))
+    KEEP(*(.data.*))
+    KEEP(*(.gnu.linkonce.d.*))
+    KEEP(*(.data1))
+    KEEP(*(.sdata))
+    KEEP(*(.sdata.*))
+    KEEP(*(.gnu.linkonce.s.*))
+    KEEP(*(.sdata2))
+    KEEP(*(.sdata2.*))
+    KEEP(*(.gnu.linkonce.s2.*))
+    KEEP(*(.jcr))
+    *(.dram1 .dram1.*)
+    *libesp32.a:panic.o(.rodata .rodata.*)
+    _data_end = ABSOLUTE(.);
+    . = ALIGN(4);
+  } >dram0_0_seg
+
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
@@ -106,26 +126,6 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-  } >dram0_0_seg
-
-  .dram0.data :
-  {
-    _data_start = ABSOLUTE(.);
-    *(.data)
-    *(.data.*)
-    *(.gnu.linkonce.d.*)
-    *(.data1)
-    *(.sdata)
-    *(.sdata.*)
-    *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
-    *(.gnu.linkonce.s2.*)
-    *(.jcr)
-    *(.dram1 .dram1.*)
-    *libesp32.a:panic.o(.rodata .rodata.*)
-    _data_end = ABSOLUTE(.);
-    . = ALIGN(4);
     _heap_start = ABSOLUTE(.);
   } >dram0_0_seg
 

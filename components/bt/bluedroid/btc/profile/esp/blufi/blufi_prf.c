@@ -895,3 +895,7 @@ void btc_blufi_set_callbacks(esp_blufi_callbacks_t *callbacks)
     blufi_env.cbs = callbacks;
 }
 
+uint16_t btc_blufi_get_version(void)
+{
+    return BTC_BLUFI_VERSION;
+}

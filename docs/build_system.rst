@@ -477,3 +477,12 @@ is set then the component can instruct the linker to link other binaries instead
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _GNU Make Manual: https://www.gnu.org/software/make/manual/make.html
 .. _[_f1]: Actually, some components in esp-idf are "pure configuration" components that don't have a component.mk file, only a Makefile.projbuild and/or Kconfig.projbuild file. However, these components are unusual and most components have a component.mk file.
+
+
+Custom sdkconfig defaults
+-------------------------
+
+For example projects or other projects where you don't want to specify a full sdkconfig configuration, but you do want to override some key values from the esp-idf defaults, it is possible to create a file ``sdkconfig.defaults`` in the project directory. This file will be used when running ``make defconfig``, or creating a new config from scratch.
+
+To override the name of this file, set the ``SDKCONFIG_DEFAULTS`` environment variable.
+
