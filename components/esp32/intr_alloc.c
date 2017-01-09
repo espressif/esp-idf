@@ -691,7 +691,7 @@ void esp_intr_noniram_disable()
     int oldint;
     int cpu=xPortGetCoreID();
     int intmask=~non_iram_int_mask[cpu];
-    assert(non_iram_int_disabled_flag[cpu]==false);
+    if (non_iram_int_disabled_flag[cpu]) abort();
     non_iram_int_disabled_flag[cpu]=true;
     asm volatile (
         "movi %0,0\n"
@@ -709,7 +709,7 @@ void esp_intr_noniram_enable()
 {
     int cpu=xPortGetCoreID();
     int intmask=non_iram_int_disabled[cpu];
-    assert(non_iram_int_disabled_flag[cpu]==true);
+    if (!non_iram_int_disabled_flag[cpu]) abort();
     non_iram_int_disabled_flag[cpu]=false;
     asm volatile (
         "movi a3,0\n"
