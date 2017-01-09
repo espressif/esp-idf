@@ -273,7 +273,7 @@ autoip_bind(struct netif *netif)
 #if ESP_LWIP
   struct dhcp *dhcp = netif->dhcp;
   if (dhcp->cb != NULL) {
-    dhcp->cb();
+    dhcp->cb(netif);
   }
 #endif
   return ERR_OK;
