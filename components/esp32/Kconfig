@@ -134,6 +134,11 @@ config NEWLIB_STDOUT_ADDCR
         cursor one line down, not also move it to the beginning of the line. This
         is usually done by an added CR character. Enabling this will make the
         standard output code automatically add a CR character before a LF.
+        
+        With this option enabled, C standard library functions which read from UART 
+        (like scanf) will convert "\r\n" character sequences back to "\n".
+        
+        This option doesn't affect behavior of the UART driver (drivers/uart.h).
 
 config NEWLIB_NANO_FORMAT
     bool "Enable 'nano' formatting options for printf/scanf family"
