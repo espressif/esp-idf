@@ -197,6 +197,22 @@ config FREERTOS_PORTMUX_DEBUG_RECURSIVE
         portMUX usage.
 endif #FREERTOS_UNICORE
 
+
+config FREERTOS_WATCHPOINT_END_OF_STACK
+    bool "Set a debug watchpoint at the end of each stack"
+    default n
+    help
+        FreeRTOS can check if a stack has overflown its bounds by checking either the value of
+        the stack pointer or by checking the integrity of canary bytes. (See FREERTOS_CHECK_STACKOVERFLOW
+        for more information.) These checks only happen on a context switch, and the situation that caused
+        the stack overflow may already be long gone by then. This option will use the debug memory 
+        watchpoint 1 (the second one) to allow breaking into the debugger (or panic'ing) as soon as any 
+        of the last 32 bytes on the stack of a task are overwritten. The side effect is that using gdb, you
+        effectively only have one watchpoint; the 2nd one is overwritten as soon as a task switch happens.
+        
+        When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no OCD is attached, esp-idf
+        will panic on an unhandled debug exception.
+
 endif # FREERTOS_DEBUG_INTERNALS
 
 endmenu
