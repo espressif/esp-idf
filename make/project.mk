@@ -176,6 +176,10 @@ else
 endif
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
+
+# Git version of ESP-IDF (of the form v1.0-285-g5c4f707)
+IDF_VER := $(shell git describe)
+
 # Set default LDFLAGS
 
 LDFLAGS ?= -nostdlib \
@@ -200,7 +204,7 @@ LDFLAGS ?= -nostdlib \
 
 # CPPFLAGS used by C preprocessor
 # If any flags are defined in application Makefile, add them at the end. 
-CPPFLAGS := -DESP_PLATFORM -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
+CPPFLAGS := -DESP_PLATFORM -D IDF_VER=\"$(IDF_VER)\" -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
 COMMON_WARNING_FLAGS = -Wall -Werror=all \
