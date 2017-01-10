@@ -2811,8 +2811,7 @@ void vTaskSwitchContext( void )
 		traceTASK_SWITCHED_IN();
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-		//Set watchpoint 1 to watch the last 32 bytes of the stack.
-		esp_set_watchpoint(1, pxCurrentTCB[xPortGetCoreID()]->pxStack, 32, ESP_WATCHPOINT_STORE);
+		vPortSetStackWatchpoint(pxCurrentTCB[xPortGetCoreID()]->pxStack);
 #endif
 
 
