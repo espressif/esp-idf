@@ -427,11 +427,11 @@ config ESP32_DEEP_SLEEP_WAKEUP_DELAY
 
 endmenu
 
-menu "WiFi"
-
-config WIFI_ENABLED
-    bool "Enable WiFi stack"
+menuconfig WIFI_ENABLED
+    bool "WiFi"
     default y
+    help
+       Select this option to enable WiFi stack and show the submenu with WiFi configuration choices.
 
 config SW_COEXIST_ENABLE
     bool "Software controls WiFi/Bluetooth coexistence"
@@ -492,5 +492,3 @@ config ESP32_WIFI_RX_BUFFER_NUM
         Set the number of WiFi rx buffers. Each buffer takes approximately 1.6KB of RAM.
         Larger number for higher throughput but more memory. Smaller number for lower
         throughput but less memory.
-
-endmenu

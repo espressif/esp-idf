@@ -1,8 +1,8 @@
 menuconfig ETHERNET
-    bool "Enable Ethernet"
+    bool "Ethernet"
     default n
     help
-        Enable this option to enable ethernet driver and show the menu with ethernet features.
+        Select this option to enable ethernet driver and show the submenu with ethernet features.
 
 config DMA_RX_BUF_NUM
     int "DMA Rx Buf Num"

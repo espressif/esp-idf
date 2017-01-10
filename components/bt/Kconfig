@@ -1,7 +1,7 @@
-menu "Bluetooth"
-
-config BT_ENABLED
-    bool "Enable Bluetooth stack"
+menuconfig BT_ENABLED
+    bool "Bluetooth"
+    help
+        Select this option to enable Bluetooth stack and show the submenu with Bluetooth configuration choices.
 
 config BTC_TASK_STACK_SIZE
 	int "Bluetooth event (callback to application) task stack size"
@@ -16,8 +16,6 @@ config BLUEDROID_MEM_DEBUG
 	default n
 	help
 		Bluedroid memory debug
-
-endmenu
 
 # Memory reserved at start of DRAM for Bluetooth stack
 config BT_RESERVE_DRAM
