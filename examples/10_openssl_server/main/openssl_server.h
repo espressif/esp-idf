@@ -7,8 +7,10 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-#ifndef _OPENSSL_DEMO_H_
-#define _OPENSSL_DEMO_H_
+#ifndef _OPENSSL_SERVER_H_
+#define _OPENSSL_SERVER_H_
+
+#include "sdkconfig.h"
 
 /* The examples use simple WiFi configuration that you can set via
    'make menuconfig'.
