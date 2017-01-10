@@ -529,7 +529,12 @@ static void tcpip_adapter_dhcpc_cb(struct netif *netif)
     }
 
     if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY) ) {
-        tcpip_adapter_ip_info_t *ip_info = &esp_ip[TCPIP_ADAPTER_IF_STA];
+        tcpip_adapter_ip_info_t *ip_info = NULL;
+        if( netif == esp_netif[TCPIP_ADAPTER_IF_STA] ) {
+            ip_info = &esp_ip[TCPIP_ADAPTER_IF_STA];
+        } else if(netif == esp_netif[TCPIP_ADAPTER_IF_ETH] ) {
+            ip_info = &esp_ip[TCPIP_ADAPTER_IF_ETH];
+        } 
 
         //check whether IP is changed
         if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), &ip_info->ip) ||
