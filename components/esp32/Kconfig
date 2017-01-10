@@ -66,11 +66,34 @@ choice ESP32_COREDUMP_TO_FLASH_OR_UART
 
 config ESP32_ENABLE_COREDUMP_TO_FLASH
     bool "Flash"
+    select ESP32_ENABLE_COREDUMP
 config ESP32_ENABLE_COREDUMP_TO_UART
     bool "UART"
+    select ESP32_ENABLE_COREDUMP
 config ESP32_ENABLE_COREDUMP_TO_NONE
     bool "None"
 endchoice
+
+config ESP32_ENABLE_COREDUMP
+    bool
+    default F
+    help
+        Enables/disable core dump module.
+
+config ESP32_CORE_DUMP_UART_DELAY
+    int "Core dump print to UART delay"
+    depends on ESP32_ENABLE_COREDUMP_TO_UART
+    default 0
+    help
+        Config delay (in ms) before printing core dump to UART.
+        Delay can be interrupted by pressing Enter key.
+
+config ESP32_CORE_DUMP_LOG_LEVEL
+    int "Core dump module logging level"
+    depends on ESP32_ENABLE_COREDUMP
+    default 1
+    help
+        Config core dump module logging level (0-5).
 
 # Not implemented and/or needs new silicon rev to work
 config MEMMAP_SPISRAM

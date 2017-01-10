@@ -162,39 +162,39 @@ void panicHandler(XtExcFrame *frame)
         reason = reasons[regs[20]];
     }
     haltOtherCore();
-    esp_panicPutStr("Guru Meditation Error: Core ");
-    esp_panicPutDec(xPortGetCoreID());
-    esp_panicPutStr(" panic'ed (");
+    panicPutStr("Guru Meditation Error: Core ");
+    panicPutDec(xPortGetCoreID());
+    panicPutStr(" panic'ed (");
     if (!abort_called) {
-        esp_panicPutStr(reason);
-        esp_panicPutStr(")\r\n");
+        panicPutStr(reason);
+        panicPutStr(")\r\n");
             if (regs[20]==PANIC_RSN_DEBUGEXCEPTION) {
                 int debugRsn;
                 asm("rsr.debugcause %0":"=r"(debugRsn));
-                esp_panicPutStr("Debug exception reason: ");
-                if (debugRsn&XCHAL_DEBUGCAUSE_ICOUNT_MASK) esp_panicPutStr("SingleStep ");
-                if (debugRsn&XCHAL_DEBUGCAUSE_IBREAK_MASK) esp_panicPutStr("HwBreakpoint ");
+                panicPutStr("Debug exception reason: ");
+                if (debugRsn&XCHAL_DEBUGCAUSE_ICOUNT_MASK) panicPutStr("SingleStep ");
+                if (debugRsn&XCHAL_DEBUGCAUSE_IBREAK_MASK) panicPutStr("HwBreakpoint ");
                 if (debugRsn&XCHAL_DEBUGCAUSE_DBREAK_MASK) {
                     //Unlike what the ISA manual says, this core seemingly distinguishes from a DBREAK
                     //reason caused by watchdog 0 and one caused by watchdog 1 by setting bit 8 of the
                     //debugcause if the cause is watchdog 1 and clearing it if it's watchdog 0.
                     if (debugRsn&(1<<8)) {
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-                        esp_panicPutStr("Stack canary watchpoint triggered ");
+                        panicPutStr("Stack canary watchpoint triggered ");
 #else
-                        esp_panicPutStr("Watchpoint 1 triggered ");
+                        panicPutStr("Watchpoint 1 triggered ");
 #endif
                     } else {
-                        esp_panicPutStr("Watchpoint 0 triggered ");
+                        panicPutStr("Watchpoint 0 triggered ");
                     }
                 }
-                if (debugRsn&XCHAL_DEBUGCAUSE_BREAK_MASK) esp_panicPutStr("BREAK instr ");
-                if (debugRsn&XCHAL_DEBUGCAUSE_BREAKN_MASK) esp_panicPutStr("BREAKN instr ");
-                if (debugRsn&XCHAL_DEBUGCAUSE_DEBUGINT_MASK) esp_panicPutStr("DebugIntr ");
-                esp_panicPutStr("\r\n");
+                if (debugRsn&XCHAL_DEBUGCAUSE_BREAK_MASK) panicPutStr("BREAK instr ");
+                if (debugRsn&XCHAL_DEBUGCAUSE_BREAKN_MASK) panicPutStr("BREAKN instr ");
+                if (debugRsn&XCHAL_DEBUGCAUSE_DEBUGINT_MASK) panicPutStr("DebugIntr ");
+                panicPutStr("\r\n");
             }
         } else {
-            esp_panicPutStr("abort)\r\n");
+            panicPutStr("abort)\r\n");
         }
 
     if (esp_cpu_in_ocd_debug_mode()) {
