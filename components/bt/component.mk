@@ -1,6 +1,7 @@
 #
 # Component Makefile
 #
+ifdef CONFIG_BT_ENABLED
 
 COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/bta/sys/include		\
@@ -71,3 +72,5 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			.
 
 COMPONENT_SUBMODULES += lib
+
+endif

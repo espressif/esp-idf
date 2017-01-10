@@ -5,10 +5,3 @@
 # BT config
 #
 CONFIG_BT_ENABLED=y
-
-#
-# ESP32-specific config
-#
-CONFIG_ESP32_ENABLE_STACK_BT=y
-# CONFIG_ESP32_ENABLE_STACK_NONE is not set
-CONFIG_MEMMAP_BT=y
