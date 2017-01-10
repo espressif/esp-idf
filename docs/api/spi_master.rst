@@ -29,6 +29,17 @@ The spi_master driver uses the following terms:
 * Bus: The SPI bus, common to all SPI devices connected to one host. In general the bus consists of the
   spid, spiq, spiclk and optionally spiwp and spihd signals. The SPI slaves are connected to these 
   signals in parallel.
+
+  - spiq - Also known as MISO, this is the input of the serial stream into the ESP32
+
+  - spid - Also known as MOSI, this is the output of the serial stream from the ESP32
+
+  - spiclk - Clock signal. Each data bit is clocked out or in on the positive or negative edge of this signal
+
+  - spiwp - Write Protect signal. Only used for 4-bit (qio/qout) transactions.
+
+  - spihd - Hold signal. Only used for 4-bit (qio/qout) transactions.
+
 * Device: A SPI slave. Each SPI slave has its own chip select (CS) line, which is made active when
   a transmission to/from the SPI slave occurs.
 * Transaction: One instance of CS going active, data transfer from and/or to a device happening, and
@@ -113,11 +124,11 @@ Macros
 .. doxygendefine:: SPI_DEVICE_HALFDUPLEX
 .. doxygendefine:: SPI_DEVICE_CLK_AS_CS
 
-.. doxygendefine:: SPI_MODE_DIO
-.. doxygendefine:: SPI_MODE_QIO
-.. doxygendefine:: SPI_MODE_DIOQIO_ADDR
-.. doxygendefine:: SPI_USE_RXDATA
-.. doxygendefine:: SPI_USE_TXDATA
+.. doxygendefine:: SPI_TRANS_MODE_DIO
+.. doxygendefine:: SPI_TRANS_MODE_QIO
+.. doxygendefine:: SPI_TRANS_MODE_DIOQIO_ADDR
+.. doxygendefine:: SPI_TRANS_USE_RXDATA
+.. doxygendefine:: SPI_TRANS_USE_TXDATA
 
 Type Definitions
 ^^^^^^^^^^^^^^^^

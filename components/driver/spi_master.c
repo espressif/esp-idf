@@ -452,10 +452,10 @@ static void IRAM_ATTR spi_intr(void *arg)
 
     if (host->cur_trans) {
         //Okay, transaction is done. 
-        if ((host->cur_trans->rx_buffer || (host->cur_trans->flags & SPI_USE_RXDATA)) && host->cur_trans->rxlength<=THRESH_DMA_TRANS) {
+        if ((host->cur_trans->rx_buffer || (host->cur_trans->flags & SPI_TRANS_USE_RXDATA)) && host->cur_trans->rxlength<=THRESH_DMA_TRANS) {
             //Need to copy from SPI regs to result buffer.
             uint32_t *data;
-            if (host->cur_trans->flags & SPI_USE_RXDATA) {
+            if (host->cur_trans->flags & SPI_TRANS_USE_RXDATA) {
                 data=(uint32_t*)&host->cur_trans->rx_data[0];
             } else {
                 data=(uint32_t*)host->cur_trans->rx_buffer;
@@ -557,8 +557,8 @@ static void IRAM_ATTR spi_intr(void *arg)
         //QIO/DIO
         host->hw->ctrl.val &= ~(SPI_FREAD_DUAL|SPI_FREAD_QUAD|SPI_FREAD_DIO|SPI_FREAD_QIO);
         host->hw->user.val &= ~(SPI_FWRITE_DUAL|SPI_FWRITE_QUAD|SPI_FWRITE_DIO|SPI_FWRITE_QIO);
-        if (trans->flags & SPI_MODE_DIO) {
-            if (trans->flags & SPI_MODE_DIOQIO_ADDR) {
+        if (trans->flags & SPI_TRANS_MODE_DIO) {
+            if (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR) {
                 host->hw->ctrl.fread_dio=1;
                 host->hw->user.fwrite_dio=1;
             } else {
@@ -566,8 +566,8 @@ static void IRAM_ATTR spi_intr(void *arg)
                 host->hw->user.fwrite_dual=1;
             }
             host->hw->ctrl.fastrd_mode=1;
-        } else if (trans->flags & SPI_MODE_QIO) {
-            if (trans->flags & SPI_MODE_DIOQIO_ADDR) {
+        } else if (trans->flags & SPI_TRANS_MODE_QIO) {
+            if (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR) {
                 host->hw->ctrl.fread_qio=1;
                 host->hw->user.fwrite_qio=1;
             } else {
@@ -579,9 +579,9 @@ static void IRAM_ATTR spi_intr(void *arg)
 
 
         //Fill DMA descriptors
-        if (trans->rx_buffer || (trans->flags & SPI_USE_RXDATA)) {
+        if (trans->rx_buffer || (trans->flags & SPI_TRANS_USE_RXDATA)) {
             uint32_t *data;
-            if (trans->flags & SPI_USE_RXDATA) {
+            if (trans->flags & SPI_TRANS_USE_RXDATA) {
                 data=(uint32_t *)&trans->rx_data[0];
             } else {
                 data=trans->rx_buffer;
@@ -604,9 +604,9 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->user.usr_miso=0;
         }
 
-        if (trans->tx_buffer || (trans->flags & SPI_USE_TXDATA)) {
+        if (trans->tx_buffer || (trans->flags & SPI_TRANS_USE_TXDATA)) {
             uint32_t *data;
-            if (trans->flags & SPI_USE_TXDATA) {
+            if (trans->flags & SPI_TRANS_USE_TXDATA) {
                 data=(uint32_t *)&trans->tx_data[0];
             } else {
                 data=(uint32_t *)trans->tx_buffer;
@@ -657,10 +657,10 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
 {
     BaseType_t r;
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
-    SPI_CHECK((trans_desc->flags & SPI_USE_RXDATA)==0 ||trans_desc->length <= 32, "rxdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
-    SPI_CHECK((trans_desc->flags & SPI_USE_TXDATA)==0 ||trans_desc->length <= 32, "txdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(!((trans_desc->flags & (SPI_MODE_DIO|SPI_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible iface params", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(!((trans_desc->flags & (SPI_MODE_DIO|SPI_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_RXDATA)==0 ||trans_desc->length <= 32, "rxdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_TXDATA)==0 ||trans_desc->length <= 32, "txdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible iface params", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
     r=xQueueSend(handle->trans_queue, (void*)&trans_desc, ticks_to_wait);
     if (!r) return ESP_ERR_TIMEOUT;
     esp_intr_enable(handle->host->intr);

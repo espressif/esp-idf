@@ -168,7 +168,7 @@ void send_line(spi_device_handle_t spi, int ypos, uint16_t *line)
             trans[x].length=8*4;
             trans[x].user=(void*)1;
         }
-        trans[x].flags=SPI_USE_TXDATA;
+        trans[x].flags=SPI_TRANS_USE_TXDATA;
     }
     trans[0].tx_data[0]=0x2A;           //Column Address Set
     trans[1].tx_data[0]=0;              //Start Col High
@@ -183,7 +183,7 @@ void send_line(spi_device_handle_t spi, int ypos, uint16_t *line)
     trans[4].tx_data[0]=0x2C;           //memory write
     trans[5].tx_buffer=line;            //finally send the line data
     trans[5].length=320*2*8;            //Data length, in bits
-    trans[5].flags=0; //undo SPI_USE_TXDATA flag
+    trans[5].flags=0; //undo SPI_TRANS_USE_TXDATA flag
 
     //Queue all transactions.
     for (x=0; x<6; x++) {
