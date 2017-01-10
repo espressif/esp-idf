@@ -37,7 +37,7 @@ const static char *TAG = "Openssl_demo";
 
 #define OPENSSL_DEMO_SERVER_ACK "HTTP/1.1 200 OK\r\n" \
                                 "Content-Type: text/html\r\n" \
-                                "Content-Length: 98\r\n" \
+                                "Content-Length: 98\r\n\r\n" \
                                 "<html>\r\n" \
                                 "<head>\r\n" \
                                 "<title>OpenSSL demo</title></head><body>\r\n" \
@@ -71,7 +71,7 @@ static void openssl_demo_thread(void *p)
     const unsigned int prvtkey_pem_bytes = prvtkey_pem_end - prvtkey_pem_start;   
 
     ESP_LOGI(TAG, "SSL server context create ......");
-    ctx = SSL_CTX_new(TLS_server_method());
+    ctx = SSL_CTX_new(TLSv1_2_server_method());
     if (!ctx) {
         ESP_LOGI(TAG, "failed");
         goto failed1;
