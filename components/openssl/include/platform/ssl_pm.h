@@ -19,6 +19,7 @@
  extern "C" {
 #endif
 
+#include <string.h>
 #include "ssl_types.h"
 #include "ssl_port.h"
 
@@ -52,5 +53,9 @@ void pkey_pm_free(EVP_PKEY *pk);
 int pkey_pm_load(EVP_PKEY *pk, const unsigned char *buffer, int len);
 
 long ssl_pm_get_verify_result(const SSL *ssl);
+
+#ifdef __cplusplus
+ }
+#endif
 
 #endif

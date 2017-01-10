@@ -34,8 +34,10 @@ X509* __X509_new(X509 *ix)
     X509 *x;
 
     x = ssl_mem_zalloc(sizeof(X509));
-    if (!x)
-        SSL_RET(failed1, "ssl_mem_zalloc\n");
+    if (!x) {
+        SSL_DEBUG(SSL_X509_ERROR_LEVEL, "no enough memory > (x)");
+        goto no_mem;
+    }
 
     if (ix)
         x->method = ix->method;
@@ -43,14 +45,16 @@ X509* __X509_new(X509 *ix)
         x->method = X509_method();
 
     ret = X509_METHOD_CALL(new, x, ix);
-    if (ret)
-        SSL_RET(failed2, "x509_new\n");
+    if (ret) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "X509_METHOD_CALL(new) return %d", ret);
+        goto failed;
+    }
 
     return x;
 
-failed2:
+failed:
     ssl_mem_free(x);
-failed1:
+no_mem:
     return NULL;
 }
 
@@ -67,6 +71,8 @@ X509* X509_new(void)
  */
 void X509_free(X509 *x)
 {
+    SSL_ASSERT3(x);
+
     X509_METHOD_CALL(free, x);
 
     ssl_mem_free(x);
@@ -82,21 +88,25 @@ X509* d2i_X509(X509 **cert, const unsigned char *buffer, long len)
     int ret;
     X509 *x;
 
-    SSL_ASSERT(buffer);
-    SSL_ASSERT(len);
+    SSL_ASSERT2(buffer);
+    SSL_ASSERT2(len);
 
     if (cert && *cert) {
         x = *cert;
     } else {
         x = X509_new();
-        if (!x)
-            SSL_RET(failed1, "X509_new\n");
+        if (!x) {
+            SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "X509_new() return NULL");
+            goto failed1;
+        }
         m = 1;
     }
 
     ret = X509_METHOD_CALL(load, x, buffer, len);
-    if (ret)
-        SSL_RET(failed2, "x509_load\n");
+    if (ret) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "X509_METHOD_CALL(load) return %d", ret);
+        goto failed2;
+    }
 
     return x;
 
@@ -112,8 +122,8 @@ failed1:
  */
 int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
 {
-    SSL_ASSERT(ctx);
-    SSL_ASSERT(x);
+    SSL_ASSERT1(ctx);
+    SSL_ASSERT1(x);
 
     if (ctx->client_CA == x)
         return 1;
@@ -130,8 +140,8 @@ int SSL_CTX_add_client_CA(SSL_CTX *ctx, X509 *x)
  */
 int SSL_add_client_CA(SSL *ssl, X509 *x)
 {
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(x);
+    SSL_ASSERT1(ssl);
+    SSL_ASSERT1(x);
 
     if (ssl->client_CA == x)
         return 1;
@@ -148,8 +158,8 @@ int SSL_add_client_CA(SSL *ssl, X509 *x)
  */
 int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
 {
-    SSL_ASSERT(ctx);
-    SSL_ASSERT(x);
+    SSL_ASSERT1(ctx);
+    SSL_ASSERT1(x);
 
     if (ctx->cert->x509 == x)
         return 1;
@@ -166,8 +176,8 @@ int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
  */
 int SSL_use_certificate(SSL *ssl, X509 *x)
 {
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(x);
+    SSL_ASSERT1(ssl);
+    SSL_ASSERT1(x);
 
     if (ssl->cert->x509 == x)
         return 1;
@@ -184,7 +194,7 @@ int SSL_use_certificate(SSL *ssl, X509 *x)
  */
 X509 *SSL_get_certificate(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT2(ssl);
 
     return ssl->cert->x509;
 }
@@ -199,12 +209,16 @@ int SSL_CTX_use_certificate_ASN1(SSL_CTX *ctx, int len,
     X509 *x;
 
     x = d2i_X509(NULL, d, len);
-    if (!x)
-        SSL_RET(failed1, "d2i_X509\n");
+    if (!x) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "d2i_X509() return NULL");
+        goto failed1;
+    }
 
     ret = SSL_CTX_use_certificate(ctx, x);
-    if (!ret)
-        SSL_RET(failed2, "SSL_CTX_use_certificate\n");
+    if (!ret) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "SSL_CTX_use_certificate() return %d", ret);
+        goto failed2;
+    }
 
     return 1;
 
@@ -224,12 +238,16 @@ int SSL_use_certificate_ASN1(SSL *ssl, int len,
     X509 *x;
 
     x = d2i_X509(NULL, d, len);
-    if (!x)
-        SSL_RET(failed1, "d2i_X509\n");
+    if (!x) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "d2i_X509() return NULL");
+        goto failed1;
+    }
 
     ret = SSL_use_certificate(ssl, x);
-    if (!ret)
-        SSL_RET(failed2, "SSL_use_certificate\n");
+    if (!ret) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "SSL_use_certificate() return %d", ret);
+        goto failed2;
+    }
 
     return 1;
 
@@ -260,7 +278,7 @@ int SSL_use_certificate_file(SSL *ssl, const char *file, int type)
  */
 X509 *SSL_get_peer_certificate(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT2(ssl);
 
     return ssl->session->peer;
 }
