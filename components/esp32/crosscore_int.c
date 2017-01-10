@@ -73,11 +73,13 @@ void esp_crosscore_int_init() {
     portENTER_CRITICAL(&reasonSpinlock);
     reason[xPortGetCoreID()]=0;
     portEXIT_CRITICAL(&reasonSpinlock);
+    esp_err_t err;
     if (xPortGetCoreID()==0) {
-        esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[xPortGetCoreID()], NULL);
+        err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[xPortGetCoreID()], NULL);
     } else {
-        esp_intr_alloc(ETS_FROM_CPU_INTR1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[xPortGetCoreID()], NULL);
+        err = esp_intr_alloc(ETS_FROM_CPU_INTR1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[xPortGetCoreID()], NULL);
     }
+    assert(err == ESP_OK);
 }
 
 void esp_crosscore_int_send_yield(int coreId) {

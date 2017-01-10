@@ -446,6 +446,12 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     if ((flags&ESP_INTR_FLAG_SHARED) && (!handler || source<0)) return ESP_ERR_INVALID_ARG;
     //Statusreg should have a mask
     if (intrstatusreg && !intrstatusmask) return ESP_ERR_INVALID_ARG;
+    //If the ISR is marked to be IRAM-resident, the handler must not be in the cached region
+    if ((flags&ESP_INTR_FLAG_IRAM) &&
+            (ptrdiff_t) handler >= 0x400C0000 &&
+            (ptrdiff_t) handler < 0x50000000 ) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     //Default to prio 1 for shared interrupts. Default to prio 1, 2 or 3 for non-shared interrupts.
     if ((flags&ESP_INTR_FLAG_LEVELMASK)==0) {
