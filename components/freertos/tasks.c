@@ -78,6 +78,7 @@ task.h is included from an application file. */
 
 #include "rom/ets_sys.h"
 #include "esp_newlib.h"
+#include "esp_panic.h"
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
@@ -2808,6 +2809,11 @@ void vTaskSwitchContext( void )
 		/* ToDo: taskSELECT_HIGHEST_PRIORITY_TASK replacement code ends here. */
 
 		traceTASK_SWITCHED_IN();
+
+#if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
+		vPortSetStackWatchpoint(pxCurrentTCB[xPortGetCoreID()]->pxStack);
+#endif
+
 
 	}
 	portEXIT_CRITICAL_NESTED(irqstate);

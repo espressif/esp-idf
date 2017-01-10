@@ -32,6 +32,7 @@
 #include "esp_gdbstub.h"
 #include "esp_panic.h"
 #include "esp_attr.h"
+#include "esp_err.h"
 
 /*
   Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -163,8 +164,37 @@ void panicHandler(XtExcFrame *frame)
     panicPutStr("Guru Meditation Error: Core ");
     panicPutDec(xPortGetCoreID());
     panicPutStr(" panic'ed (");
-    panicPutStr(reason);
-    panicPutStr(")\r\n");
+    if (!abort_called) {
+        panicPutStr(reason);
+        panicPutStr(")\r\n");
+            if (regs[20]==PANIC_RSN_DEBUGEXCEPTION) {
+                int debugRsn;
+                asm("rsr.debugcause %0":"=r"(debugRsn));
+                panicPutStr("Debug exception reason: ");
+                if (debugRsn&XCHAL_DEBUGCAUSE_ICOUNT_MASK) panicPutStr("SingleStep ");
+                if (debugRsn&XCHAL_DEBUGCAUSE_IBREAK_MASK) panicPutStr("HwBreakpoint ");
+                if (debugRsn&XCHAL_DEBUGCAUSE_DBREAK_MASK) {
+                    //Unlike what the ISA manual says, this core seemingly distinguishes from a DBREAK
+                    //reason caused by watchdog 0 and one caused by watchdog 1 by setting bit 8 of the
+                    //debugcause if the cause is watchdog 1 and clearing it if it's watchdog 0.
+                    if (debugRsn&(1<<8)) {
+#if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
+                        panicPutStr("Stack canary watchpoint triggered ");
+#else
+                        panicPutStr("Watchpoint 1 triggered ");
+#endif
+                    } else {
+                        panicPutStr("Watchpoint 0 triggered ");
+                    }
+                }
+                if (debugRsn&XCHAL_DEBUGCAUSE_BREAK_MASK) panicPutStr("BREAK instr ");
+                if (debugRsn&XCHAL_DEBUGCAUSE_BREAKN_MASK) panicPutStr("BREAKN instr ");
+                if (debugRsn&XCHAL_DEBUGCAUSE_DEBUGINT_MASK) panicPutStr("DebugIntr ");
+                panicPutStr("\r\n");
+            }
+        } else {
+            panicPutStr("abort)\r\n");
+        }
 
     if (esp_cpu_in_ocd_debug_mode()) {
         asm("break.n 1");
@@ -353,3 +383,50 @@ void esp_set_breakpoint_if_jtag(void *fn)
         setFirstBreakpoint((uint32_t)fn);
     }
 }
+
+
+esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
+{
+    int x;
+    if (no<0 || no>1) return ESP_ERR_INVALID_ARG;
+    if (flags&(~0xC0000000)) return ESP_ERR_INVALID_ARG;
+    int dbreakc=0x3F;
+    //We support watching 2^n byte values, from 1 to 64. Calculate the mask for that.
+    for (x=0; x<7; x++) {
+        if (size==(1<<x)) break;
+        dbreakc<<=1;
+    }
+    if (x==7) return ESP_ERR_INVALID_ARG;
+    //Mask mask and add in flags.
+    dbreakc=(dbreakc&0x3f)|flags;
+
+    if (no==0) {
+        asm volatile(
+            "wsr.dbreaka0 %0\n" \
+            "wsr.dbreakc0 %1\n" \
+            ::"r"(adr),"r"(dbreakc));
+    } else {
+        asm volatile(
+            "wsr.dbreaka1 %0\n" \
+            "wsr.dbreakc1 %1\n" \
+            ::"r"(adr),"r"(dbreakc));
+    }
+    return ESP_OK;
+}
+
+void esp_clear_watchpoint(int no)
+{
+    //Setting a dbreakc register to 0 makes it trigger on neither load nor store, effectively disabling it.
+    int dbreakc=0;
+    if (no==0) {
+        asm volatile(
+            "wsr.dbreakc0 %0\n" \
+            ::"r"(dbreakc));
+    } else {
+        asm volatile(
+            "wsr.dbreakc1 %0\n" \
+            ::"r"(dbreakc));
+    }
+}
+
+

@@ -187,6 +187,13 @@ void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
 
 void vPortYieldOtherCore( BaseType_t coreid) PRIVILEGED_FUNCTION;
 
+
+/*
+ Callback to set a watchpoint on the end of the stack. Called every context switch to change the stack
+ watchpoint around.
+ */
+void vPortSetStackWatchpoint( void* pxStackStart );
+
 /*
  * The structures and methods of manipulating the MPU are contained within the
  * port layer.
