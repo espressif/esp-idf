@@ -396,7 +396,7 @@ static int spi_freq_for_pre_n(int fapb, int pre, int n) {
 static void spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
     int pre, n, h, l;
 
-    //In hw, n, h and l are 1-32, pre is 1-8K. Value written to register is one lower than used value.
+    //In hw, n, h and l are 1-64, pre is 1-8K. Value written to register is one lower than used value.
     if (hz>((fapb/4)*3)) {
         //Using Fapb directly will give us the best result here.
         hw->clock.clkcnt_l=0;
@@ -414,7 +414,7 @@ static void spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
         int bestpre=-1;
         int besterr=hz;
         int errval;
-        for (n=1; n<33; n++) {
+        for (n=1; n<=64; n++) {
             //Effectively, this does pre=round((fapb/n)/hz).
             pre=((fapb/n)+(hz/2))/hz;
             if (pre<0) pre=0;
