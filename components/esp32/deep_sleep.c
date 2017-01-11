@@ -91,7 +91,7 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void) {
 #if CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY > 0
     // ROM code has not started yet, so we need to set delay factor
     // used by ets_delay_us first.
-    ets_update_cpu_frequency(ets_get_detected_xtal_freq() / 1000000);
+    ets_update_cpu_frequency_rom(ets_get_detected_xtal_freq() / 1000000);
     // This delay is configured in menuconfig, it can be used to give
     // the flash chip some time to become ready.
     ets_delay_us(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY);
