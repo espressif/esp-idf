@@ -14,9 +14,13 @@
 
 
 #include "esp_bt_device.h"
+#include "esp_bt_main.h"
 #include "controller.h"
 
 const uint8_t *esp_bt_dev_get_address(void)
 {
+    if (ESP_BLUEDROID_STATUS_ENABLED != esp_bluedroid_get_status()) {
+	return NULL;
+    }
     return controller_get_interface()->get_address()->address;
 }
