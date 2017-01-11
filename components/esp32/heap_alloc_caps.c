@@ -192,7 +192,7 @@ void heap_alloc_caps_init() {
     // TODO: this region should be checked, since we don't need to knock out all region finally
     disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe8000); //knock out ROM data region
 
-#if CONFIG_MEMMAP_BT
+#if CONFIG_BT_ENABLED
     disable_mem_region((void*)0x3ffb0000, (void*)0x3ffc0000); //knock out BT data region
 #endif
 

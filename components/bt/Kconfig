@@ -1,41 +1,24 @@
-menu "BT config"
-visible if MEMMAP_BT
-
-
-config BT_ENABLED
-    bool
-    depends on ESP32_ENABLE_STACK_BT
+menuconfig BT_ENABLED
+    bool "Bluetooth"
     help
-        This compiles in the low-level BT stack.
+        Select this option to enable Bluetooth stack and show the submenu with Bluetooth configuration choices.
 
 config BTC_TASK_STACK_SIZE
-	int "BT event (callback to application) task stack size"
+	int "Bluetooth event (callback to application) task stack size"
+    depends on BT_ENABLED
 	default 3072
 	help
 		This select btc task stack size
 
 config BLUEDROID_MEM_DEBUG
 	bool "Bluedroid memory debug"
-	default no
+    depends on BT_ENABLED
+	default n
 	help
 		Bluedroid memory debug
-
-#config BT_BTLE
-#    bool "Enable BTLE"
-#    depends on BT_ENABLED
-#    help
-#        This compiles BTLE support
-#
-#config BT_BT
-#    bool "Enable classic BT"
-#    depends on BT_ENABLED
-#    help
-#        This enables classic BT support
-
-endmenu
 
 # Memory reserved at start of DRAM for Bluetooth stack
 config BT_RESERVE_DRAM
     hex
-    default 0x10000 if MEMMAP_BT
+    default 0x10000 if BT_ENABLED
     default 0
