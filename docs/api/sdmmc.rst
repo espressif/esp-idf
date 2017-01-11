@@ -15,7 +15,7 @@ Protocol layer works with the host via ``sdmmc_host_t`` structure. This structur
 Application Example
 -------------------
 
-An example which combines SDMMC driver with FATFS library is provided in ``examples/24_sd_card`` directory. This example initializes the card, writes and reads data from it using POSIX and C library APIs. See README.md file in the example directory for more information.
+An example which combines SDMMC driver with FATFS library is provided in ``examples/27_sd_card`` directory. This example initializes the card, writes and reads data from it using POSIX and C library APIs. See README.md file in the example directory for more information.
 
 
 Protocol layer APIs
