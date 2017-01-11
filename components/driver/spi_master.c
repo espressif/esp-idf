@@ -389,39 +389,51 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     return ESP_OK;
 }
 
+static int spi_freq_for_pre_n(int fapb, int pre, int n) {
+    return (fapb / (pre * n));
+}
+
 static void spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
     int pre, n, h, l;
-    //In hw, n, h and l are 1-32, pre is 0-8K. Value written to register is one lower than used value.
-    if (hz>(fapb/2)) {
-        //Can only solve this using fapb directly.
+
+    //In hw, n, h and l are 1-32, pre is 1-8K. Value written to register is one lower than used value.
+    if (hz>((fapb/4)*3)) {
+        //Using Fapb directly will give us the best result here.
         hw->clock.clkcnt_l=0;
         hw->clock.clkcnt_h=0;
         hw->clock.clkcnt_n=0;
         hw->clock.clkdiv_pre=0;
         hw->clock.clk_equ_sysclk=1;
     } else {
-        //For best duty cycle resolution, we want n to be as close to 32 as possible.
-        //ToDo: 
-        //This algo could use some tweaking; at the moment it either fixes n to 32 and
-        //uses the prescaler to get a suitable division factor, or sets the prescaler to 0
-        //and uses n to set a value. In practice, sometimes a better result can be 
-        //obtained by setting both n and pre to well-chosen valued... ToDo: fix up some algo to
-        //do this automatically (worst-case: bruteforce n/pre combo's) - JD
-        //Also ToDo:
-        //The ESP32 has a SPI_CK_OUT_HIGH_MODE and SPI_CK_OUT_LOW_MODE register; it looks like we can
-        //use those to specify the duty cycle in a more precise way. Figure out how to use these. - JD
-        n=(fapb/(hz*32));
-        if (n>32) {
-            //Need to use prescaler
-            n=32;
+        //For best duty cycle resolution, we want n to be as close to 32 as possible, but
+        //we also need a pre/n combo that gets us as close as possible to the intended freq.
+        //To do this, we bruteforce n and calculate the best pre to go along with that.
+        //If there's a choice between pre/n combos that give the same result, use the one
+        //with the higher n.
+        int bestn=-1;
+        int bestpre=-1;
+        int besterr=hz;
+        int errval;
+        for (n=1; n<33; n++) {
+            //Effectively, this does pre=round((fapb/n)/hz).
+            pre=((fapb/n)+(hz/2))/hz;
+            if (pre<0) pre=0;
+            if (pre>8192) pre=8192;
+            errval=abs(spi_freq_for_pre_n(fapb, pre, n)-hz);
+            if (errval<=besterr) {
+                besterr=errval;
+                bestn=n;
+                bestpre=pre;
+            }
         }
-        if (n<32) {
-            //No need for prescaler.
-            n=(fapb/hz);
-        }
-        pre=(fapb/n)/hz;
-        h=n;
-        l=(((256-duty_cycle)*n+127)/256);
+
+        n=bestn;
+        pre=bestpre;
+        l=n;
+        //This effectively does round((duty_cycle*n)/256)
+        h=(duty_cycle*n+127)/256;
+        if (h<=0) h=1;
+
         hw->clock.clk_equ_sysclk=0;
         hw->clock.clkcnt_n=n-1;
         hw->clock.clkdiv_pre=pre-1;
