@@ -21,11 +21,11 @@
 TEST_CASE("SPI Master test", "[spi]")
 {
     spi_bus_config_t buscfg={
-        .spid_io_num=4,
-        .spiq_io_num=16,
-        .spiclk_io_num=25,
-        .spiwp_io_num=-1,
-        .spihd_io_num=-1
+        .mosi_io_num=4,
+        .miso_io_num=16,
+        .sclk_io_num=25,
+        .quadwp_io_num=-1,
+        .quadhd_io_num=-1
     };
     spi_device_interface_config_t devcfg={
         .command_bits=8,
@@ -33,8 +33,6 @@ TEST_CASE("SPI Master test", "[spi]")
         .dummy_bits=0,
         .clock_speed_hz=8000,
         .duty_cycle_pos=128,
-        .cs_ena_pretrans=7,
-        .cs_ena_posttrans=7,
         .mode=0,
         .spics_io_num=21,
         .queue_size=3

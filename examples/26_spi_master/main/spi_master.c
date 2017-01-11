@@ -249,11 +249,11 @@ void app_main()
     esp_err_t ret;
     spi_device_handle_t spi;
     spi_bus_config_t buscfg={
-        .spiq_io_num=PIN_NUM_MISO,
-        .spid_io_num=PIN_NUM_MOSI,
-        .spiclk_io_num=PIN_NUM_CLK,
-        .spiwp_io_num=-1,
-        .spihd_io_num=-1
+        .miso_io_num=PIN_NUM_MISO,
+        .mosi_io_num=PIN_NUM_MOSI,
+        .sclk_io_num=PIN_NUM_CLK,
+        .quadwp_io_num=-1,
+        .quadhd_io_num=-1
     };
     spi_device_interface_config_t devcfg={
         .clock_speed_hz=10000000,               //Clock out at 10 MHz
