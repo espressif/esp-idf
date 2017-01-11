@@ -35,7 +35,12 @@
 
 #include "esp_blufi_api.h"
 
-#define BTC_BLUFI_CB_TO_APP(event, param) ((esp_blufi_event_cb_t)btc_profile_cb_get(BTC_PID_BLUFI))((event), (param))
+#define BTC_BLUFI_CB_TO_APP(event, param)     do { \
+        esp_blufi_event_cb_t btc_blufi_cb = (esp_blufi_event_cb_t)btc_profile_cb_get(BTC_PID_BLUFI); \
+        if (btc_blufi_cb) { \
+            btc_blufi_cb(event, param); \
+        } \
+    } while (0)
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]

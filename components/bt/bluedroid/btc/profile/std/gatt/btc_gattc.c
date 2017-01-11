@@ -22,7 +22,13 @@
 #include "bt_trace.h"
 #include "esp_gattc_api.h"
 
-#define BTC_GATTC_CB_TO_APP(event, gattc_if, param)    ((esp_gattc_cb_t )btc_profile_cb_get(BTC_PID_GATTC))((event), (gattc_if), (param))
+#define BTC_GATTC_CB_TO_APP(event, gattc_if, param)    do { \
+        esp_gattc_cb_t btc_gattc_cb = (esp_gattc_cb_t )btc_profile_cb_get(BTC_PID_GATTC); \
+        if (btc_gattc_cb) { \
+            btc_gattc_cb(event, gattc_if, param); \
+        } \
+    } while (0)
+
 
 void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {

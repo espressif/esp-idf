@@ -26,8 +26,12 @@
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
 
-#define BTC_GAP_BLE_CB_TO_APP(event, param) ((esp_gap_ble_cb_t)btc_profile_cb_get(BTC_PID_GAP_BLE))((event), (param))
-
+#define BTC_GAP_BLE_CB_TO_APP(event, param)      do { \
+        esp_gap_ble_cb_t btc_gap_ble_cb = (esp_gap_ble_cb_t)btc_profile_cb_get(BTC_PID_GAP_BLE); \
+        if (btc_gap_ble_cb) { \
+            btc_gap_ble_cb(event, param); \
+        } \
+    } while (0)
 
 static void btc_gap_adv_point_cleanup(void **buf)
 {

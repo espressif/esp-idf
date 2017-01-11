@@ -23,7 +23,12 @@
 
 #include "esp_gatts_api.h"
 
-#define BTC_GATTS_CB_TO_APP(event, gatts_if, param) ((esp_gatts_cb_t)btc_profile_cb_get(BTC_PID_GATTS))((event), (gatts_if), (param))
+#define BTC_GATTS_CB_TO_APP(event, gatts_if, param)     do { \
+        esp_gatts_cb_t btc_gatts_cb = (esp_gatts_cb_t)btc_profile_cb_get(BTC_PID_GATTS); \
+        if (btc_gatts_cb) { \
+            btc_gatts_cb(event, gatts_if, param); \
+        } \
+    } while (0)
 
 #define A2C_GATTS_EVT(_bta_event) (_bta_event) //BTA TO BTC EVT
 #define C2A_GATTS_EVT(_btc_event) (_btc_event) //BTC TO BTA EVT
@@ -299,9 +304,9 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.read.conn_id = BTC_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         param.read.trans_id = p_data->req_data.trans_id;
         memcpy(param.read.bda, p_data->req_data.remote_bda, ESP_BD_ADDR_LEN);
-        param.read.handle = p_data->req_data.p_data->read_req.handle,
-        param.read.offset = p_data->req_data.p_data->read_req.offset,
-        param.read.is_long = p_data->req_data.p_data->read_req.is_long,
+        param.read.handle = p_data->req_data.p_data->read_req.handle;
+        param.read.offset = p_data->req_data.p_data->read_req.offset;
+        param.read.is_long = p_data->req_data.p_data->read_req.is_long;
 
         BTC_GATTS_CB_TO_APP(ESP_GATTS_READ_EVT, gatts_if, &param);
         break;
