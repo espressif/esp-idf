@@ -178,7 +178,7 @@ endif
 
 
 # Git version of ESP-IDF (of the form v1.0-285-g5c4f707)
-IDF_VER := $(shell git describe)
+IDF_VER := $(shell git -C $(IDF_PATH) describe)
 
 # Set default LDFLAGS
 
