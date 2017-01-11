@@ -34,6 +34,8 @@ Type Definitions
 Enumerations
 ^^^^^^^^^^^^
 
+.. doxygenenum:: esp_bluedroid_status_t
+
 
 Structures
 ^^^^^^^^^^
@@ -42,6 +44,7 @@ Structures
 Functions
 ^^^^^^^^^
 
+.. doxygenfunction:: esp_bluedroid_get_status
 .. doxygenfunction:: esp_bluedroid_enable
 .. doxygenfunction:: esp_bluedroid_disable
 .. doxygenfunction:: esp_bluedroid_init

@@ -22,6 +22,23 @@ extern "C" {
 #endif
 
 /**
+ * @brief Bluetooth stack status type, to indicate whether the bluetooth stack is ready
+ */
+typedef enum {
+    ESP_BLUEDROID_STATUS_UNINITIALIZED   = 0,        /*!< Bluetooth not initialized */
+    ESP_BLUEDROID_STATUS_INITIALIZED,                /*!< Bluetooth initialized but not enabled */
+    ESP_BLUEDROID_STATUS_ENABLED                     /*!< Bluetooth initialized and enabled */
+} esp_bluedroid_status_t;
+
+/**
+ * @brief     Get bluetooth stack status
+ *
+ * @return    Bluetooth stack status
+ *
+ */
+esp_bluedroid_status_t esp_bluedroid_get_status(void);
+    
+/**
  * @brief     Enable bluetooth, must after esp_bluedroid_init()
  *
  * @return

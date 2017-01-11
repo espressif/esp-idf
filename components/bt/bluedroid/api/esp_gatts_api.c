@@ -15,6 +15,7 @@
 #include "string.h"
 #include "esp_gatt_defs.h"
 #include "esp_gatts_api.h"
+#include "esp_bt_main.h"
 #include "btc_manage.h"
 #include "btc_gatts.h"
 #include "btc_gatt_util.h"
@@ -23,6 +24,9 @@
 
 esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback)
 {
+    if (esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
+	return ESP_ERR_INVALID_STATE;
+    }
     return (btc_profile_cb_set(BTC_PID_GATTS, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
@@ -31,6 +35,10 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+    
     //if (app_id < ESP_APP_ID_MIN || app_id > ESP_APP_ID_MAX) {
     if (app_id > ESP_APP_ID_MAX) {
         return ESP_ERR_INVALID_ARG;
@@ -50,6 +58,10 @@ esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatts_if)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+	
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_APP_UNREGISTER;
@@ -64,6 +76,10 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_CREATE_SERVICE;
@@ -80,6 +96,10 @@ esp_err_t esp_ble_gatts_add_included_service(uint16_t service_handle, uint16_t i
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_ADD_INCLUDE_SERVICE;
@@ -96,6 +116,10 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+	
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_ADD_CHAR;
@@ -115,6 +139,10 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_ADD_CHAR_DESCR;
@@ -130,6 +158,10 @@ esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_DELETE_SERVICE;
@@ -143,6 +175,10 @@ esp_err_t esp_ble_gatts_start_service(uint16_t service_handle)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_START_SERVICE;
@@ -156,6 +192,10 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+	
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_STOP_SERVICE;
@@ -171,6 +211,10 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_SEND_INDICATE;
@@ -189,6 +233,10 @@ esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_SEND_RESPONSE;
@@ -205,6 +253,10 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda, b
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_OPEN;
@@ -220,6 +272,10 @@ esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+	return ESP_ERR_INVALID_STATE;
+    }
+	
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_CLOSE;
