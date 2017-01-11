@@ -46,11 +46,11 @@ typedef enum {
  * the IO_MUX or are -1. In that case, the IO_MUX is used, allowing for >40MHz speeds.
  */
 typedef struct {
-    int spid_io_num;                ///< GPIO pin for spi_d (=MOSI)signal, or -1 if not used.
-    int spiq_io_num;                ///< GPIO pin for spi_q (=MISO) signal, or -1 if not used.
-    int spiclk_io_num;              ///< GPIO pin for spi_clk signal, or -1 if not used.
-    int spiwp_io_num;               ///< GPIO pin for spi_wp signal, or -1 if not used.
-    int spihd_io_num;               ///< GPIO pin for spi_hd signal, or -1 if not used.
+    int mosi_io_num;                ///< GPIO pin for Master Out Slave In (=spi_d) signal, or -1 if not used.
+    int miso_io_num;                ///< GPIO pin for Master In Slave Out (=spi_q) signal, or -1 if not used.
+    int sclk_io_num;                ///< GPIO pin for Spi CLocK signal, or -1 if not used.
+    int quadwp_io_num;              ///< GPIO pin for WP (Write Protect) signal which is used as D2 in 4-bit communication modes, or -1 if not used.
+    int quadhd_io_num;              ///< GPIO pin for HD (HolD) signal which is used as D3 in 4-bit communication modes, or -1 if not used.
 } spi_bus_config_t;
 
 
@@ -80,17 +80,17 @@ typedef struct {
     int clock_speed_hz;             ///< Clock speed, in Hz
     int spics_io_num;               ///< CS GPIO pin for this device, or -1 if not used
     uint32_t flags;                 ///< Bitwise OR of SPI_DEVICE_* flags
-    int queue_size;                 ///< Transaction queue size
+    int queue_size;                 ///< Transaction queue size. This sets how many transactions can be 'in the air' (queued using spi_device_queue_trans but not yet finished using spi_device_get_trans_result) at the same time
     transaction_cb_t pre_cb;        ///< Callback to be called before a transmission is started. This callback is called within interrupt context.
     transaction_cb_t post_cb;       ///< Callback to be called after a transmission has completed. This callback is called within interrupt context.
 } spi_device_interface_config_t;
 
 
-#define SPI_MODE_DIO            (1<<0)  ///< Transmit/receive data in 2-bit mode
-#define SPI_MODE_QIO            (1<<1)  ///< Transmit/receive data in 4-bit mode
-#define SPI_MODE_DIOQIO_ADDR    (1<<2)  ///< Also transmit address in mode selected by SPI_MODE_DIO/SPI_MODE_QIO
-#define SPI_USE_RXDATA          (1<<2)  ///< Receive into rx_data member of spi_transaction_t instead into memory at rx_buffer.
-#define SPI_USE_TXDATA          (1<<3)  ///< Transmit tx_data member of spi_transaction_t instead of data at tx_buffer. Do not set tx_buffer when using this.
+#define SPI_TRANS_MODE_DIO            (1<<0)  ///< Transmit/receive data in 2-bit mode
+#define SPI_TRANS_MODE_QIO            (1<<1)  ///< Transmit/receive data in 4-bit mode
+#define SPI_TRANS_MODE_DIOQIO_ADDR    (1<<2)  ///< Also transmit address in mode selected by SPI_MODE_DIO/SPI_MODE_QIO
+#define SPI_TRANS_USE_RXDATA          (1<<2)  ///< Receive into rx_data member of spi_transaction_t instead into memory at rx_buffer.
+#define SPI_TRANS_USE_TXDATA          (1<<3)  ///< Transmit tx_data member of spi_transaction_t instead of data at tx_buffer. Do not set tx_buffer when using this.
 
 /**
  * This structure describes one SPI transaction

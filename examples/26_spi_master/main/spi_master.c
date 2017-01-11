@@ -168,7 +168,7 @@ void send_line(spi_device_handle_t spi, int ypos, uint16_t *line)
             trans[x].length=8*4;
             trans[x].user=(void*)1;
         }
-        trans[x].flags=SPI_USE_TXDATA;
+        trans[x].flags=SPI_TRANS_USE_TXDATA;
     }
     trans[0].tx_data[0]=0x2A;           //Column Address Set
     trans[1].tx_data[0]=0;              //Start Col High
@@ -183,7 +183,7 @@ void send_line(spi_device_handle_t spi, int ypos, uint16_t *line)
     trans[4].tx_data[0]=0x2C;           //memory write
     trans[5].tx_buffer=line;            //finally send the line data
     trans[5].length=320*2*8;            //Data length, in bits
-    trans[5].flags=0; //undo SPI_USE_TXDATA flag
+    trans[5].flags=0; //undo SPI_TRANS_USE_TXDATA flag
 
     //Queue all transactions.
     for (x=0; x<6; x++) {
@@ -249,11 +249,11 @@ void app_main()
     esp_err_t ret;
     spi_device_handle_t spi;
     spi_bus_config_t buscfg={
-        .spiq_io_num=PIN_NUM_MISO,
-        .spid_io_num=PIN_NUM_MOSI,
-        .spiclk_io_num=PIN_NUM_CLK,
-        .spiwp_io_num=-1,
-        .spihd_io_num=-1
+        .miso_io_num=PIN_NUM_MISO,
+        .mosi_io_num=PIN_NUM_MOSI,
+        .sclk_io_num=PIN_NUM_CLK,
+        .quadwp_io_num=-1,
+        .quadhd_io_num=-1
     };
     spi_device_interface_config_t devcfg={
         .clock_speed_hz=10000000,               //Clock out at 10 MHz

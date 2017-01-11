@@ -27,8 +27,19 @@ The spi_master driver uses the following terms:
   now, only HSPI or VSPI are actually supported in the driver; it will support all 3 peripherals 
   somewhere in the future.)
 * Bus: The SPI bus, common to all SPI devices connected to one host. In general the bus consists of the
-  spid, spiq, spiclk and optionally spiwp and spihd signals. The SPI slaves are connected to these 
+  miso, mosi, sclk and optionally quadwp and quadhd signals. The SPI slaves are connected to these 
   signals in parallel.
+
+  - miso - Also known as q, this is the input of the serial stream into the ESP32
+
+  - mosi - Also known as d, this is the output of the serial stream from the ESP32
+
+  - sclk - Clock signal. Each data bit is clocked out or in on the positive or negative edge of this signal
+
+  - quadwp - Write Protect signal. Only used for 4-bit (qio/qout) transactions.
+
+  - quadhd - Hold signal. Only used for 4-bit (qio/qout) transactions.
+
 * Device: A SPI slave. Each SPI slave has its own chip select (CS) line, which is made active when
   a transmission to/from the SPI slave occurs.
 * Transaction: One instance of CS going active, data transfer from and/or to a device happening, and
@@ -113,11 +124,11 @@ Macros
 .. doxygendefine:: SPI_DEVICE_HALFDUPLEX
 .. doxygendefine:: SPI_DEVICE_CLK_AS_CS
 
-.. doxygendefine:: SPI_MODE_DIO
-.. doxygendefine:: SPI_MODE_QIO
-.. doxygendefine:: SPI_MODE_DIOQIO_ADDR
-.. doxygendefine:: SPI_USE_RXDATA
-.. doxygendefine:: SPI_USE_TXDATA
+.. doxygendefine:: SPI_TRANS_MODE_DIO
+.. doxygendefine:: SPI_TRANS_MODE_QIO
+.. doxygendefine:: SPI_TRANS_MODE_DIOQIO_ADDR
+.. doxygendefine:: SPI_TRANS_USE_RXDATA
+.. doxygendefine:: SPI_TRANS_USE_TXDATA
 
 Type Definitions
 ^^^^^^^^^^^^^^^^

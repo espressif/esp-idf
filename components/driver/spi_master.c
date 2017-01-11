@@ -200,11 +200,11 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, spi_bus_config_t *bus_confi
     SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]==NULL, "host already in use", ESP_ERR_INVALID_STATE);
     
-    SPI_CHECK(bus_config->spid_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->spid_io_num), "spid pin invalid", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(bus_config->spiclk_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->spiclk_io_num), "spiclk pin invalid", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(bus_config->spiq_io_num<0 || GPIO_IS_VALID_GPIO(bus_config->spiq_io_num), "spiq pin invalid", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(bus_config->spiwp_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->spiwp_io_num), "spiwp pin invalid", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(bus_config->spihd_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->spihd_io_num), "spihd pin invalid", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(bus_config->mosi_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num), "spid pin invalid", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(bus_config->sclk_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->sclk_io_num), "spiclk pin invalid", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(bus_config->miso_io_num<0 || GPIO_IS_VALID_GPIO(bus_config->miso_io_num), "spiq pin invalid", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(bus_config->quadwp_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadwp_io_num), "spiwp pin invalid", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(bus_config->quadhd_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadhd_io_num), "spihd pin invalid", ESP_ERR_INVALID_ARG);
 
     //The host struct contains two dma descriptors, so we need DMA'able memory for this.
     spihost[host]=pvPortMallocCaps(sizeof(spi_host_t), MALLOC_CAP_DMA);
@@ -212,51 +212,51 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, spi_bus_config_t *bus_confi
     memset(spihost[host], 0, sizeof(spi_host_t));
     
     //Check if the selected pins correspond to the native pins of the peripheral
-    if (bus_config->spid_io_num >= 0 && bus_config->spid_io_num!=io_signal[host].spid_native) native=false;
-    if (bus_config->spiq_io_num >= 0 && bus_config->spiq_io_num!=io_signal[host].spiq_native) native=false;
-    if (bus_config->spiclk_io_num >= 0 && bus_config->spiclk_io_num!=io_signal[host].spiclk_native) native=false;
-    if (bus_config->spiwp_io_num >= 0 && bus_config->spiwp_io_num!=io_signal[host].spiwp_native) native=false;
-    if (bus_config->spihd_io_num >= 0 && bus_config->spihd_io_num!=io_signal[host].spihd_native) native=false;
+    if (bus_config->mosi_io_num >= 0 && bus_config->mosi_io_num!=io_signal[host].spid_native) native=false;
+    if (bus_config->miso_io_num >= 0 && bus_config->miso_io_num!=io_signal[host].spiq_native) native=false;
+    if (bus_config->sclk_io_num >= 0 && bus_config->sclk_io_num!=io_signal[host].spiclk_native) native=false;
+    if (bus_config->quadwp_io_num >= 0 && bus_config->quadwp_io_num!=io_signal[host].spiwp_native) native=false;
+    if (bus_config->quadhd_io_num >= 0 && bus_config->quadhd_io_num!=io_signal[host].spihd_native) native=false;
     
     spihost[host]->no_gpio_matrix=native;
     if (native) {
         //All SPI native pin selections resolve to 1, so we put that here instead of trying to figure
         //out which FUNC_GPIOx_xSPIxx to grab; they all are defined to 1 anyway.
-        if (bus_config->spid_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spid_io_num], 1);
-        if (bus_config->spiq_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spiq_io_num], 1);
-        if (bus_config->spiwp_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spiwp_io_num], 1);
-        if (bus_config->spihd_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spihd_io_num], 1);
-        if (bus_config->spiclk_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spiclk_io_num], 1);
+        if (bus_config->mosi_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], 1);
+        if (bus_config->miso_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], 1);
+        if (bus_config->quadwp_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], 1);
+        if (bus_config->quadhd_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], 1);
+        if (bus_config->sclk_io_num > 0) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], 1);
     } else {
         //Use GPIO 
-        if (bus_config->spid_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spid_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->spid_io_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(bus_config->spid_io_num, io_signal[host].spid_out, false, false);
-            gpio_matrix_in(bus_config->spid_io_num, io_signal[host].spid_in, false);
+        if (bus_config->mosi_io_num>0) {
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], PIN_FUNC_GPIO);
+            gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_OUTPUT);
+            gpio_matrix_out(bus_config->mosi_io_num, io_signal[host].spid_out, false, false);
+            gpio_matrix_in(bus_config->mosi_io_num, io_signal[host].spid_in, false);
         }
-        if (bus_config->spiq_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spiq_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->spiq_io_num, GPIO_MODE_INPUT);
-            gpio_matrix_out(bus_config->spiq_io_num, io_signal[host].spiq_out, false, false);
-            gpio_matrix_in(bus_config->spiq_io_num, io_signal[host].spiq_in, false);
+        if (bus_config->miso_io_num>0) {
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], PIN_FUNC_GPIO);
+            gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT);
+            gpio_matrix_out(bus_config->miso_io_num, io_signal[host].spiq_out, false, false);
+            gpio_matrix_in(bus_config->miso_io_num, io_signal[host].spiq_in, false);
         }
-        if (bus_config->spiwp_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spiwp_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->spiwp_io_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(bus_config->spiwp_io_num, io_signal[host].spiwp_out, false, false);
-            gpio_matrix_in(bus_config->spiwp_io_num, io_signal[host].spiwp_in, false);
+        if (bus_config->quadwp_io_num>0) {
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], PIN_FUNC_GPIO);
+            gpio_set_direction(bus_config->quadwp_io_num, GPIO_MODE_OUTPUT);
+            gpio_matrix_out(bus_config->quadwp_io_num, io_signal[host].spiwp_out, false, false);
+            gpio_matrix_in(bus_config->quadwp_io_num, io_signal[host].spiwp_in, false);
         }
-        if (bus_config->spihd_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spihd_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->spihd_io_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(bus_config->spihd_io_num, io_signal[host].spihd_out, false, false);
-            gpio_matrix_in(bus_config->spihd_io_num, io_signal[host].spihd_in, false);
+        if (bus_config->quadhd_io_num>0) {
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], PIN_FUNC_GPIO);
+            gpio_set_direction(bus_config->quadhd_io_num, GPIO_MODE_OUTPUT);
+            gpio_matrix_out(bus_config->quadhd_io_num, io_signal[host].spihd_out, false, false);
+            gpio_matrix_in(bus_config->quadhd_io_num, io_signal[host].spihd_in, false);
         }
-        if (bus_config->spiclk_io_num>0) {
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spiclk_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->spiclk_io_num, GPIO_MODE_OUTPUT);
-            gpio_matrix_out(bus_config->spiclk_io_num, io_signal[host].spiclk_out, false, false);
+        if (bus_config->sclk_io_num>0) {
+            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], PIN_FUNC_GPIO);
+            gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_OUTPUT);
+            gpio_matrix_out(bus_config->sclk_io_num, io_signal[host].spiclk_out, false, false);
         }
     }
     periph_module_enable(io_signal[host].module);
@@ -318,6 +318,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
     SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]!=NULL, "host not initialized", ESP_ERR_INVALID_STATE);
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(dev_config->clock_speed_hz > 0, "invalid sclk speed", ESP_ERR_INVALID_ARG);
     for (freecs=0; freecs<NO_CS; freecs++) {
         //See if this slot is free; reserve if it is by putting a dummy pointer in the slot. We use an atomic compare&swap to make this thread-safe.
         if (__sync_bool_compare_and_swap(&spihost[host]->device[freecs], NULL, (spi_device_t *)1)) break;
@@ -389,39 +390,51 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     return ESP_OK;
 }
 
+static int spi_freq_for_pre_n(int fapb, int pre, int n) {
+    return (fapb / (pre * n));
+}
+
 static void spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
     int pre, n, h, l;
-    //In hw, n, h and l are 1-32, pre is 0-8K. Value written to register is one lower than used value.
-    if (hz>(fapb/2)) {
-        //Can only solve this using fapb directly.
+
+    //In hw, n, h and l are 1-64, pre is 1-8K. Value written to register is one lower than used value.
+    if (hz>((fapb/4)*3)) {
+        //Using Fapb directly will give us the best result here.
         hw->clock.clkcnt_l=0;
         hw->clock.clkcnt_h=0;
         hw->clock.clkcnt_n=0;
         hw->clock.clkdiv_pre=0;
         hw->clock.clk_equ_sysclk=1;
     } else {
-        //For best duty cycle resolution, we want n to be as close to 32 as possible.
-        //ToDo: 
-        //This algo could use some tweaking; at the moment it either fixes n to 32 and
-        //uses the prescaler to get a suitable division factor, or sets the prescaler to 0
-        //and uses n to set a value. In practice, sometimes a better result can be 
-        //obtained by setting both n and pre to well-chosen valued... ToDo: fix up some algo to
-        //do this automatically (worst-case: bruteforce n/pre combo's) - JD
-        //Also ToDo:
-        //The ESP32 has a SPI_CK_OUT_HIGH_MODE and SPI_CK_OUT_LOW_MODE register; it looks like we can
-        //use those to specify the duty cycle in a more precise way. Figure out how to use these. - JD
-        n=(fapb/(hz*32));
-        if (n>32) {
-            //Need to use prescaler
-            n=32;
+        //For best duty cycle resolution, we want n to be as close to 32 as possible, but
+        //we also need a pre/n combo that gets us as close as possible to the intended freq.
+        //To do this, we bruteforce n and calculate the best pre to go along with that.
+        //If there's a choice between pre/n combos that give the same result, use the one
+        //with the higher n.
+        int bestn=-1;
+        int bestpre=-1;
+        int besterr=0;
+        int errval;
+        for (n=1; n<=64; n++) {
+            //Effectively, this does pre=round((fapb/n)/hz).
+            pre=((fapb/n)+(hz/2))/hz;
+            if (pre<=0) pre=1;
+            if (pre>8192) pre=8192;
+            errval=abs(spi_freq_for_pre_n(fapb, pre, n)-hz);
+            if (bestn==-1 || errval<=besterr) {
+                besterr=errval;
+                bestn=n;
+                bestpre=pre;
+            }
         }
-        if (n<32) {
-            //No need for prescaler.
-            n=(fapb/hz);
-        }
-        pre=(fapb/n)/hz;
-        h=n;
-        l=(((256-duty_cycle)*n+127)/256);
+
+        n=bestn;
+        pre=bestpre;
+        l=n;
+        //This effectively does round((duty_cycle*n)/256)
+        h=(duty_cycle*n+127)/256;
+        if (h<=0) h=1;
+
         hw->clock.clk_equ_sysclk=0;
         hw->clock.clkcnt_n=n-1;
         hw->clock.clkdiv_pre=pre-1;
@@ -452,10 +465,10 @@ static void IRAM_ATTR spi_intr(void *arg)
 
     if (host->cur_trans) {
         //Okay, transaction is done. 
-        if ((host->cur_trans->rx_buffer || (host->cur_trans->flags & SPI_USE_RXDATA)) && host->cur_trans->rxlength<=THRESH_DMA_TRANS) {
+        if ((host->cur_trans->rx_buffer || (host->cur_trans->flags & SPI_TRANS_USE_RXDATA)) && host->cur_trans->rxlength<=THRESH_DMA_TRANS) {
             //Need to copy from SPI regs to result buffer.
             uint32_t *data;
-            if (host->cur_trans->flags & SPI_USE_RXDATA) {
+            if (host->cur_trans->flags & SPI_TRANS_USE_RXDATA) {
                 data=(uint32_t*)&host->cur_trans->rx_data[0];
             } else {
                 data=(uint32_t*)host->cur_trans->rx_buffer;
@@ -557,8 +570,8 @@ static void IRAM_ATTR spi_intr(void *arg)
         //QIO/DIO
         host->hw->ctrl.val &= ~(SPI_FREAD_DUAL|SPI_FREAD_QUAD|SPI_FREAD_DIO|SPI_FREAD_QIO);
         host->hw->user.val &= ~(SPI_FWRITE_DUAL|SPI_FWRITE_QUAD|SPI_FWRITE_DIO|SPI_FWRITE_QIO);
-        if (trans->flags & SPI_MODE_DIO) {
-            if (trans->flags & SPI_MODE_DIOQIO_ADDR) {
+        if (trans->flags & SPI_TRANS_MODE_DIO) {
+            if (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR) {
                 host->hw->ctrl.fread_dio=1;
                 host->hw->user.fwrite_dio=1;
             } else {
@@ -566,8 +579,8 @@ static void IRAM_ATTR spi_intr(void *arg)
                 host->hw->user.fwrite_dual=1;
             }
             host->hw->ctrl.fastrd_mode=1;
-        } else if (trans->flags & SPI_MODE_QIO) {
-            if (trans->flags & SPI_MODE_DIOQIO_ADDR) {
+        } else if (trans->flags & SPI_TRANS_MODE_QIO) {
+            if (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR) {
                 host->hw->ctrl.fread_qio=1;
                 host->hw->user.fwrite_qio=1;
             } else {
@@ -579,9 +592,9 @@ static void IRAM_ATTR spi_intr(void *arg)
 
 
         //Fill DMA descriptors
-        if (trans->rx_buffer || (trans->flags & SPI_USE_RXDATA)) {
+        if (trans->rx_buffer || (trans->flags & SPI_TRANS_USE_RXDATA)) {
             uint32_t *data;
-            if (trans->flags & SPI_USE_RXDATA) {
+            if (trans->flags & SPI_TRANS_USE_RXDATA) {
                 data=(uint32_t *)&trans->rx_data[0];
             } else {
                 data=trans->rx_buffer;
@@ -604,9 +617,9 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->user.usr_miso=0;
         }
 
-        if (trans->tx_buffer || (trans->flags & SPI_USE_TXDATA)) {
+        if (trans->tx_buffer || (trans->flags & SPI_TRANS_USE_TXDATA)) {
             uint32_t *data;
-            if (trans->flags & SPI_USE_TXDATA) {
+            if (trans->flags & SPI_TRANS_USE_TXDATA) {
                 data=(uint32_t *)&trans->tx_data[0];
             } else {
                 data=(uint32_t *)trans->tx_buffer;
@@ -657,10 +670,10 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
 {
     BaseType_t r;
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
-    SPI_CHECK((trans_desc->flags & SPI_USE_RXDATA)==0 ||trans_desc->length <= 32, "rxdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
-    SPI_CHECK((trans_desc->flags & SPI_USE_TXDATA)==0 ||trans_desc->length <= 32, "txdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(!((trans_desc->flags & (SPI_MODE_DIO|SPI_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible iface params", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(!((trans_desc->flags & (SPI_MODE_DIO|SPI_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_RXDATA)==0 ||trans_desc->length <= 32, "rxdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_TXDATA)==0 ||trans_desc->length <= 32, "txdata transfer > 32bytes", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible iface params", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
     r=xQueueSend(handle->trans_queue, (void*)&trans_desc, ticks_to_wait);
     if (!r) return ESP_ERR_TIMEOUT;
     esp_intr_enable(handle->host->intr);
