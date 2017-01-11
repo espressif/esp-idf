@@ -23,10 +23,16 @@
 
 #include "esp_gatts_api.h"
 
-#define BTC_GATTS_CB_TO_APP(event, gatts_if, param) ((esp_gatts_cb_t)btc_profile_cb_get(BTC_PID_GATTS))((event), (gatts_if), (param))
-
 #define A2C_GATTS_EVT(_bta_event) (_bta_event) //BTA TO BTC EVT
 #define C2A_GATTS_EVT(_btc_event) (_btc_event) //BTC TO BTA EVT
+
+static inline void btc_gatts_cb_to_app(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
+{
+    esp_gatts_cb_t btc_gatts_cb = (esp_gatts_cb_t)btc_profile_cb_get(BTC_PID_GATTS);
+    if (btc_gatts_cb) {
+	btc_gatts_cb(event, gatts_if, param);
+    }
+}
 
 void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
@@ -227,7 +233,7 @@ void btc_gatts_call_handler(btc_msg_t *msg)
         }
 
         param.rsp.status = 0;
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_RESPONSE_EVT, BTC_GATT_GET_GATT_IF(arg->send_rsp.conn_id), &param);
+        btc_gatts_cb_to_app(ESP_GATTS_RESPONSE_EVT, BTC_GATT_GET_GATT_IF(arg->send_rsp.conn_id), &param);
         break;
     }
     case BTC_GATTS_ACT_OPEN: {
@@ -286,12 +292,12 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.reg.status = p_data->reg_oper.status;
         param.reg.app_id = p_data->reg_oper.uuid.uu.uuid16;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_REG_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_REG_EVT, gatts_if, &param);
         break;
     }
     case BTA_GATTS_DEREG_EVT: {
         gatts_if = p_data->reg_oper.server_if;
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_UNREG_EVT, gatts_if, NULL);
+        btc_gatts_cb_to_app(ESP_GATTS_UNREG_EVT, gatts_if, NULL);
         break;
     }
     case BTA_GATTS_READ_EVT: {
@@ -299,11 +305,11 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.read.conn_id = BTC_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         param.read.trans_id = p_data->req_data.trans_id;
         memcpy(param.read.bda, p_data->req_data.remote_bda, ESP_BD_ADDR_LEN);
-        param.read.handle = p_data->req_data.p_data->read_req.handle,
-        param.read.offset = p_data->req_data.p_data->read_req.offset,
-        param.read.is_long = p_data->req_data.p_data->read_req.is_long,
+        param.read.handle = p_data->req_data.p_data->read_req.handle;
+        param.read.offset = p_data->req_data.p_data->read_req.offset;
+        param.read.is_long = p_data->req_data.p_data->read_req.is_long;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_READ_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_READ_EVT, gatts_if, &param);
         break;
     }
     case BTA_GATTS_WRITE_EVT: {
@@ -318,7 +324,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.write.len = p_data->req_data.p_data->write_req.len;
         param.write.value = p_data->req_data.p_data->write_req.value;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_WRITE_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_WRITE_EVT, gatts_if, &param);
 
         break;
     }
@@ -329,7 +335,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         memcpy(param.exec_write.bda, p_data->req_data.remote_bda, ESP_BD_ADDR_LEN);
         param.exec_write.exec_write_flag = p_data->req_data.p_data->exec_write;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_EXEC_WRITE_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_EXEC_WRITE_EVT, gatts_if, &param);
         break;
     }
     case BTA_GATTS_MTU_EVT:
@@ -337,14 +343,14 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.mtu.conn_id = BTC_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         param.mtu.mtu = p_data->req_data.p_data->mtu;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_MTU_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_MTU_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_CONF_EVT:
         gatts_if = BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id);
         param.conf.conn_id = BTC_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         param.conf.status = p_data->req_data.status;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_CONF_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_CONF_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_CREATE_EVT:
         gatts_if = p_data->create.server_if;
@@ -353,7 +359,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.create.service_id.is_primary = p_data->create.is_primary;
         param.create.service_id.id.inst_id = p_data->create.svc_instance;
         bta_to_btc_uuid(&param.create.service_id.id.uuid, &p_data->create.uuid);
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_CREATE_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_CREATE_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_ADD_INCL_SRVC_EVT:
         gatts_if = p_data->add_result.server_if;
@@ -361,7 +367,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.add_incl_srvc.attr_handle = p_data->add_result.attr_id;
         param.add_incl_srvc.service_handle = p_data->add_result.service_id;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_ADD_INCL_SRVC_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_ADD_INCL_SRVC_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_ADD_CHAR_EVT:
         gatts_if = p_data->add_result.server_if;
@@ -370,7 +376,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.add_char.service_handle = p_data->add_result.service_id;
         bta_to_btc_uuid(&param.add_char.char_uuid, &p_data->add_result.char_uuid);
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_ADD_CHAR_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_ADD_CHAR_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_ADD_CHAR_DESCR_EVT:
         gatts_if = p_data->add_result.server_if;
@@ -379,27 +385,27 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.add_char_descr.service_handle = p_data->add_result.service_id;
         bta_to_btc_uuid(&param.add_char_descr.char_uuid, &p_data->add_result.char_uuid);
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_ADD_CHAR_DESCR_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_ADD_CHAR_DESCR_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_DELELTE_EVT:
         gatts_if = p_data->srvc_oper.server_if;
         param.del.status = p_data->srvc_oper.status;
         param.del.service_handle = p_data->srvc_oper.service_id;
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_DELETE_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_DELETE_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_START_EVT:
         gatts_if = p_data->srvc_oper.server_if;
         param.start.status = p_data->srvc_oper.status;
         param.start.service_handle = p_data->srvc_oper.service_id;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_START_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_START_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_STOP_EVT:
         gatts_if = p_data->srvc_oper.server_if;
         param.stop.status = p_data->srvc_oper.status;
         param.stop.service_handle = p_data->srvc_oper.service_id;
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_STOP_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_STOP_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_CONNECT_EVT:
         gatts_if = p_data->conn.server_if;
@@ -407,7 +413,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.connect.is_connected = true;
         memcpy(param.connect.remote_bda, p_data->conn.remote_bda, ESP_BD_ADDR_LEN);
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_CONNECT_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_CONNECT_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_DISCONNECT_EVT:
         gatts_if = p_data->conn.server_if;
@@ -415,7 +421,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.disconnect.is_connected = false;
         memcpy(param.disconnect.remote_bda, p_data->conn.remote_bda, ESP_BD_ADDR_LEN);
 
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_DISCONNECT_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_DISCONNECT_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_OPEN_EVT:
     // do nothing
@@ -430,7 +436,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         gatts_if = BTC_GATT_GET_GATT_IF(p_data->congest.conn_id);
         param.congest.conn_id = BTC_GATT_GET_CONN_ID(p_data->congest.conn_id);
         param.congest.congested = p_data->congest.congested;
-        BTC_GATTS_CB_TO_APP(ESP_GATTS_CONGEST_EVT, gatts_if, &param);
+        btc_gatts_cb_to_app(ESP_GATTS_CONGEST_EVT, gatts_if, &param);
         break;
     default:
         // do nothing
