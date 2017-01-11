@@ -1,0 +1,34 @@
+menu "Example Configuration"
+
+config WIFI_SSID
+    string "WiFi SSID"
+    default "wpa2_test"
+    help
+        SSID (network name) for the example to connect to.
+
+config EAP_METHOD
+    int "EAP METHOD"
+    default 1
+    help
+        EAP method (TLS, PEAP or TTLS) for the example to use.
+        TLS: 0, PEAP: 1, TTLS: 2
+		
+config EAP_ID
+    string "EAP ID"
+    default "example@espressif.com"
+    help
+        Identity in phase 1 of EAP procedure.
+        
+config EAP_USERNAME
+    string "EAP USERNAME"
+    default "espressif"
+    help
+        Username for EAP method (PEAP and TTLS).
+        
+config EAP_PASSWORD
+    string "EAP PASSWORD"
+    default "test11"
+    help
+        Password for EAP method (PEAP and TTLS).
+
+endmenu

@@ -1,0 +1,70 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 44 (0x2c)
+    Signature Algorithm: sha1WithRSAEncryption
+        Issuer: C=FR, ST=Radius, L=Somewhere, O=Example Inc./emailAddress=admin@example.com, CN=Example Certificate Authority
+        Validity
+            Not Before: Nov 23 02:55:07 2016 GMT
+            Not After : Jan 22 02:55:07 2017 GMT
+        Subject: C=FR, ST=Radius, O=Example Inc., CN=user@example.com/emailAddress=user@example.com
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:ac:41:d4:a2:46:0c:dc:67:1d:7b:89:36:7c:15:
+                    be:a2:c1:fe:4c:f2:fa:af:5d:76:0e:ee:b5:ca:d4:
+                    d3:01:c8:6b:30:50:df:2d:57:17:f4:43:47:97:ca:
+                    f1:8d:f7:c0:9d:56:b3:e7:17:7c:58:59:de:f3:be:
+                    b5:08:5d:f8:3a:ad:83:44:0d:31:c9:f1:3d:f1:9a:
+                    cf:84:0c:ad:d3:be:5c:bd:3d:58:b5:1d:2c:fe:70:
+                    8d:c5:b0:17:87:d4:8e:85:f7:51:4c:0f:d1:e0:8c:
+                    7b:a0:25:ab:91:7c:7f:eb:47:73:c9:4b:6c:8b:e6:
+                    c1:06:d5:94:30:63:ec:45:1a:f5:7f:46:2f:b3:84:
+                    78:5d:1c:37:1a:fa:57:ea:45:5e:45:40:ab:14:c7:
+                    81:b0:26:3d:7e:cf:da:db:f0:f1:40:a7:a1:4b:54:
+                    f3:96:1b:c9:30:3c:3c:d8:19:ba:c7:df:b1:ad:a2:
+                    d6:17:0a:d6:ed:31:b5:cb:12:39:f5:6e:92:6b:85:
+                    f2:9e:c7:06:6b:bb:89:ed:a7:5f:ec:56:12:46:fd:
+                    3a:74:d1:d2:31:30:1d:58:19:25:33:ff:11:ea:3a:
+                    52:33:b1:fb:d3:75:8d:1f:5e:36:a5:35:e0:11:5a:
+                    4a:2d:97:58:2c:3d:62:3c:32:af:83:69:a9:1a:32:
+                    1b:b7
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Extended Key Usage: 
+                TLS Web Client Authentication
+            X509v3 CRL Distribution Points: 
+
+                Full Name:
+                  URI:http://www.example.com/example_ca.crl
+
+    Signature Algorithm: sha1WithRSAEncryption
+         8b:8d:b6:19:ce:6f:6b:9e:1d:03:8b:6b:10:fc:99:d0:7a:2f:
+         e0:37:ce:b8:a4:e4:b9:a1:c2:36:ff:76:b2:ad:d7:d0:df:d1:
+         03:27:93:a7:4e:1e:bf:ed:d2:b7:65:2a:c9:c3:ab:20:aa:e3:
+         10:4c:75:3b:c4:02:ab:34:08:6e:61:91:cf:e3:02:35:6a:e5:
+         f3:25:96:51:92:82:6e:52:81:c1:f1:7b:68:02:b0:ce:f4:ba:
+         fd:6e:68:35:b3:7e:77:cb:a0:1e:11:5e:58:bf:f3:2a:ed:b3:
+         4c:82:21:5e:1b:47:b6:2f:f3:f5:c9:1b:6a:70:44:6d:ff:ad:
+         a6:e3
+-----BEGIN CERTIFICATE-----
+MIIDTjCCAregAwIBAgIBLDANBgkqhkiG9w0BAQUFADCBkzELMAkGA1UEBhMCRlIx
+DzANBgNVBAgMBlJhZGl1czESMBAGA1UEBwwJU29tZXdoZXJlMRUwEwYDVQQKDAxF
+eGFtcGxlIEluYy4xIDAeBgkqhkiG9w0BCQEWEWFkbWluQGV4YW1wbGUuY29tMSYw
+JAYDVQQDDB1FeGFtcGxlIENlcnRpZmljYXRlIEF1dGhvcml0eTAeFw0xNjExMjMw
+MjU1MDdaFw0xNzAxMjIwMjU1MDdaMHExCzAJBgNVBAYTAkZSMQ8wDQYDVQQIDAZS
+YWRpdXMxFTATBgNVBAoMDEV4YW1wbGUgSW5jLjEZMBcGA1UEAwwQdXNlckBleGFt
+cGxlLmNvbTEfMB0GCSqGSIb3DQEJARYQdXNlckBleGFtcGxlLmNvbTCCASIwDQYJ
+KoZIhvcNAQEBBQADggEPADCCAQoCggEBAKxB1KJGDNxnHXuJNnwVvqLB/kzy+q9d
+dg7utcrU0wHIazBQ3y1XF/RDR5fK8Y33wJ1Ws+cXfFhZ3vO+tQhd+Dqtg0QNMcnx
+PfGaz4QMrdO+XL09WLUdLP5wjcWwF4fUjoX3UUwP0eCMe6Alq5F8f+tHc8lLbIvm
+wQbVlDBj7EUa9X9GL7OEeF0cNxr6V+pFXkVAqxTHgbAmPX7P2tvw8UCnoUtU85Yb
+yTA8PNgZusffsa2i1hcK1u0xtcsSOfVukmuF8p7HBmu7ie2nX+xWEkb9OnTR0jEw
+HVgZJTP/Eeo6UjOx+9N1jR9eNqU14BFaSi2XWCw9Yjwyr4NpqRoyG7cCAwEAAaNP
+ME0wEwYDVR0lBAwwCgYIKwYBBQUHAwIwNgYDVR0fBC8wLTAroCmgJ4YlaHR0cDov
+L3d3dy5leGFtcGxlLmNvbS9leGFtcGxlX2NhLmNybDANBgkqhkiG9w0BAQUFAAOB
+gQCLjbYZzm9rnh0Di2sQ/JnQei/gN864pOS5ocI2/3ayrdfQ39EDJ5OnTh6/7dK3
+ZSrJw6sgquMQTHU7xAKrNAhuYZHP4wI1auXzJZZRkoJuUoHB8XtoArDO9Lr9bmg1
+s353y6AeEV5Yv/Mq7bNMgiFeG0e2L/P1yRtqcERt/62m4w==
+-----END CERTIFICATE-----
