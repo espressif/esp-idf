@@ -111,9 +111,13 @@ void IRAM_ATTR esp_restart(void)
     uart_tx_wait_idle(1);
     uart_tx_wait_idle(2);
 
-    // Reset wifi/bluetooth (bb/mac)
-    SET_PERI_REG_MASK(DPORT_WIFI_RST_EN_REG, 0x1f);
-    REG_WRITE(DPORT_WIFI_RST_EN_REG, 0);
+    // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
+    SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
+         DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
+         DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
+         DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST | 
+         DPROT_RW_BTMAC_RST | DPROT_RW_BTLP_RST);
+    REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart
     SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,

@@ -79,6 +79,7 @@ typedef eth_duplex_mode_t (*eth_phy_get_duplex_mode_func)(void);
 typedef void (*eth_phy_func)(void);
 typedef esp_err_t (*eth_tcpip_input_func)(void *buffer, uint16_t len, void *eb);
 typedef void (*eth_gpio_config_func)(void);
+typedef bool (*eth_phy_get_partner_pause_enable_func)(void);
 
 
 /**
@@ -95,6 +96,9 @@ typedef struct {
     eth_phy_get_speed_mode_func phy_get_speed_mode;     /*!< phy check init func  */
     eth_phy_get_duplex_mode_func phy_get_duplex_mode;     /*!< phy check init func  */
     eth_gpio_config_func gpio_config;           /*!< gpio config func  */
+    bool flow_ctrl_enable;                      /*!< flag of flow ctrl enable */
+    eth_phy_get_partner_pause_enable_func  phy_get_partner_pause_enable; /*!< get partner pause enable */
+    
 } eth_config_t;
 
 /**

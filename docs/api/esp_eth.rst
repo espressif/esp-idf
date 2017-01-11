@@ -28,6 +28,7 @@ Type Definitions
 .. doxygentypedef:: eth_phy_func
 .. doxygentypedef:: eth_tcpip_input_func
 .. doxygentypedef:: eth_gpio_config_func
+.. doxygentypedef:: eth_phy_get_partner_pause_enable_func
 
 Enumerations
 ^^^^^^^^^^^^

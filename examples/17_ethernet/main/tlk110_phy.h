@@ -5,7 +5,15 @@
 #define PHY_IDENTIFIER_REG              (0x2)
 #define OUI_MSB_21TO6_DEF                      0x2000
 
-#define SOFTWARE_STAP_CONTROL_REG       (0x9)
+#define AUTO_NEG_ADVERTISEMENT_REG      (0x4)
+#define ASM_DIR                            BIT(11)
+#define PAUSE                              BIT(10)
+
+#define PHY_LINK_PARTNER_ABILITY_REG    (0x5)
+#define PARTNER_ASM_DIR                    BIT(11)
+#define PARTNER_PAUSE                      BIT(10) 
+
+#define SOFTWARE_STRAP_CONTROL_REG       (0x9)
 #define SW_STRAP_CONFIG_DONE               BIT(15)
 #define AUTO_MDIX_ENABLE                   BIT(14)
 #define AUTO_NEGOTIATION_ENABLE            BIT(13)
