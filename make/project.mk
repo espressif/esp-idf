@@ -421,3 +421,30 @@ endef
 # filter/subst in expression ensures all submodule paths begin with $(IDF_PATH), and then strips that prefix
 # so the argument is suitable for use with 'git submodule' commands
 $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))
+
+
+# Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
+# The output normally looks as follows
+#     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-59-ga194053) 4.8.5
+# The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable,
+# the part after the brackets is extracted into TOOLCHAIN_GCC_VER.
+ifndef MAKE_RESTARTS
+TOOLCHAIN_COMMIT_DESC := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc\ \(([^)]*).*|\1|gp')
+TOOLCHAIN_GCC_VER := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc\ \(.*\)\ (.*)|\1|gp')
+
+# Officially supported version(s)
+SUPPORTED_TOOLCHAIN_COMMIT_DESC := crosstool-NG crosstool-ng-1.22.0-61-gab8375a
+SUPPORTED_TOOLCHAIN_GCC_VERSIONS := 5.2.0
+
+ifneq ($(TOOLCHAIN_COMMIT_DESC), $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
+$(info WARNING: Toolchain version is not supported: $(TOOLCHAIN_COMMIT_DESC))
+$(info Expected to see version: $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
+$(info Please check ESP-IDF setup instructions and update the toolchain, or proceed at your own risk.)
+endif
+ifeq (,$(findstring $(TOOLCHAIN_GCC_VER), $(SUPPORTED_TOOLCHAIN_GCC_VERSIONS)))
+$(warning WARNING: Compiler version is not supported: $(TOOLCHAIN_GCC_VER))
+$(info Expected to see version(s): $(SUPPORTED_TOOLCHAIN_GCC_VERSIONS))
+$(info Please check ESP-IDF setup instructions and update the toolchain, or proceed at your own risk.)
+endif
+endif #MAKE_RESTARTS 
+
