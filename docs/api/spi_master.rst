@@ -27,18 +27,18 @@ The spi_master driver uses the following terms:
   now, only HSPI or VSPI are actually supported in the driver; it will support all 3 peripherals 
   somewhere in the future.)
 * Bus: The SPI bus, common to all SPI devices connected to one host. In general the bus consists of the
-  spid, spiq, spiclk and optionally spiwp and spihd signals. The SPI slaves are connected to these 
+  miso, mosi, sclk and optionally quadwp and quadhd signals. The SPI slaves are connected to these 
   signals in parallel.
 
-  - spiq - Also known as MISO, this is the input of the serial stream into the ESP32
+  - miso - Also known as q, this is the input of the serial stream into the ESP32
 
-  - spid - Also known as MOSI, this is the output of the serial stream from the ESP32
+  - mosi - Also known as d, this is the output of the serial stream from the ESP32
 
-  - spiclk - Clock signal. Each data bit is clocked out or in on the positive or negative edge of this signal
+  - sclk - Clock signal. Each data bit is clocked out or in on the positive or negative edge of this signal
 
-  - spiwp - Write Protect signal. Only used for 4-bit (qio/qout) transactions.
+  - quadwp - Write Protect signal. Only used for 4-bit (qio/qout) transactions.
 
-  - spihd - Hold signal. Only used for 4-bit (qio/qout) transactions.
+  - quadhd - Hold signal. Only used for 4-bit (qio/qout) transactions.
 
 * Device: A SPI slave. Each SPI slave has its own chip select (CS) line, which is made active when
   a transmission to/from the SPI slave occurs.
