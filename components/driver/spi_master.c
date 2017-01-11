@@ -318,6 +318,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, spi_device_interface_config
     SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]!=NULL, "host not initialized", ESP_ERR_INVALID_STATE);
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(dev_config->clock_speed_hz > 0, "invalid sclk speed", ESP_ERR_INVALID_ARG);
     for (freecs=0; freecs<NO_CS; freecs++) {
         //See if this slot is free; reserve if it is by putting a dummy pointer in the slot. We use an atomic compare&swap to make this thread-safe.
         if (__sync_bool_compare_and_swap(&spihost[host]->device[freecs], NULL, (spi_device_t *)1)) break;
@@ -412,15 +413,15 @@ static void spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
         //with the higher n.
         int bestn=-1;
         int bestpre=-1;
-        int besterr=hz;
+        int besterr=0;
         int errval;
         for (n=1; n<=64; n++) {
             //Effectively, this does pre=round((fapb/n)/hz).
             pre=((fapb/n)+(hz/2))/hz;
-            if (pre<0) pre=0;
+            if (pre<=0) pre=1;
             if (pre>8192) pre=8192;
             errval=abs(spi_freq_for_pre_n(fapb, pre, n)-hz);
-            if (errval<=besterr) {
+            if (bestn==-1 || errval<=besterr) {
                 besterr=errval;
                 bestn=n;
                 bestpre=pre;
