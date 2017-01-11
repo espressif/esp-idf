@@ -302,12 +302,18 @@ static uint32_t get_power_down_flags()
 {
     // Where needed, convert AUTO options to ON. Later interpret AUTO as OFF.
 
-    // RTC_SLOW_MEM is needed only for the ULP.
-    // If RTC_SLOW_MEM is Auto, and ULP wakeup isn't enabled, power down RTC_SLOW_MEM.
-    if (s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] == ESP_PD_OPTION_AUTO) {
-        if (s_config.wakeup_triggers & RTC_SAR_TRIG_EN) {
-            s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] = ESP_PD_OPTION_ON;
-        }
+    // RTC_SLOW_MEM is needed for the ULP, so keep RTC_SLOW_MEM powered up if ULP
+    // is used and RTC_SLOW_MEM is Auto.
+    // If there is any data placed into .rtc.data or .rtc.bss segments, and
+    // RTC_SLOW_MEM is Auto, keep it powered up as well.
+
+    // These labels are defined in the linker script:
+    extern int _rtc_data_start, _rtc_data_end, _rtc_bss_start, _rtc_bss_end;
+
+    if (s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] == ESP_PD_OPTION_AUTO ||
+            &_rtc_data_end > &_rtc_data_start ||
+            &_rtc_bss_end > &_rtc_bss_start) {
+        s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] = ESP_PD_OPTION_ON;
     }
 
     // RTC_FAST_MEM is needed for deep sleep stub.
