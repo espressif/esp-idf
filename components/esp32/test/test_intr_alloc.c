@@ -201,3 +201,30 @@ TEST_CASE("Intr_alloc test, shared ints", "[esp32]")
 {
     timer_test(ESP_INTR_FLAG_SHARED);
 }
+
+TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[esp32]")
+{
+    void dummy(void* arg)
+    {
+    }
+    IRAM_ATTR void dummy_iram(void* arg)
+    {
+    }
+    RTC_IRAM_ATTR void dummy_rtc(void* arg)
+    {
+    }
+    intr_handle_t ih;
+    esp_err_t err = esp_intr_alloc(ETS_INTERNAL_PROFILING_INTR_SOURCE,
+            ESP_INTR_FLAG_IRAM, &dummy, NULL, &ih);
+    TEST_ASSERT_EQUAL_INT(ESP_ERR_INVALID_ARG, err);
+    err = esp_intr_alloc(ETS_INTERNAL_PROFILING_INTR_SOURCE,
+            ESP_INTR_FLAG_IRAM, &dummy_iram, NULL, &ih);
+    TEST_ESP_OK(err);
+    err = esp_intr_free(ih);
+    TEST_ESP_OK(err);
+    err = esp_intr_alloc(ETS_INTERNAL_PROFILING_INTR_SOURCE,
+            ESP_INTR_FLAG_IRAM, &dummy_rtc, NULL, &ih);
+    TEST_ESP_OK(err);
+    err = esp_intr_free(ih);
+    TEST_ESP_OK(err);
+}
