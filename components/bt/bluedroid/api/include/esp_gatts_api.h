@@ -74,7 +74,9 @@ typedef union {
         uint16_t handle;                /*!< The attribute handle */
         uint16_t offset;                /*!< Offset of the value, if the value is too long */
         bool is_long;                   /*!< The value is too long or not */
+        bool need_rsp;                  /*!< The read operation need to do response */
     } read;                             /*!< Gatt server callback param of ESP_GATTS_READ_EVT */
+
 
     /**
      * @brief ESP_GATTS_WRITE_EVT
@@ -227,7 +229,7 @@ typedef union {
      * @brief ESP_GATTS_RESPONSE_EVT
      */
     struct gatts_rsp_evt_param {
-        esp_gatt_status_t status;                       /*!< Operation status */
+        esp_gatt_status_t status;       /*!< Operation status */
         uint16_t handle;                /*!< Attribute handle which send response */
     } rsp;                              /*!< Gatt server callback param of ESP_GATTS_RESPONSE_EVT */
 

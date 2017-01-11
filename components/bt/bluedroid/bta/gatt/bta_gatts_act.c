@@ -403,16 +403,18 @@ void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
     UINT16          attr_id = 0;
     tBTA_GATTS      cb_data;
 
-    tGATT_ATTR_VAL *p_attr_val = NULL;
+    tGATT_ATTR_VAL *p_attr_val = NULL; 
     tGATTS_ATTR_CONTROL *p_control = NULL;
 
-    if (p_msg->api_add_char_descr.attr_val.attr_max_len != 0) {
-        p_attr_val = &p_msg->api_add_char_descr.attr_val;
+    if(p_msg->api_add_char.attr_val.attr_max_len != 0){
+        p_attr_val = &p_msg->api_add_char.attr_val;
     }
 
-    if (p_msg->api_add_char_descr.control.auto_rsp != 0) {
-        p_control = &p_msg->api_add_char_descr.control;
+    if(p_msg->api_add_char.control.auto_rsp != 0){
+        p_control = &p_msg->api_add_char.control;
     }
+
+
     attr_id = GATTS_AddCharacteristic(p_msg->api_add_char.hdr.layer_specific,
                                       &p_msg->api_add_char.char_uuid,
                                       p_msg->api_add_char.perm,
@@ -428,6 +430,9 @@ void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
         cb_data.add_result.status = BTA_GATT_OK;
     } else {
         cb_data.add_result.status = BTA_GATT_ERROR;
+    }
+    if((p_attr_val != NULL) && (p_attr_val->attr_val != NULL)){
+        GKI_freebuf(p_attr_val->attr_val);
     }
 
     if (p_rcb->p_cback) {
@@ -475,6 +480,9 @@ void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
         cb_data.add_result.status = BTA_GATT_OK;
     } else {
         cb_data.add_result.status = BTA_GATT_ERROR;
+    }
+    if((p_attr_val != NULL) && (p_attr_val->attr_val != NULL)){
+        GKI_freebuf(p_attr_val->attr_val);
     }
 
     if (p_rcb->p_cback) {

@@ -117,64 +117,6 @@ static struct gatts_profile_inst heart_rate_profile_tab[HEART_PROFILE_NUM] = {
  ****************************************************************************************
  */
 
-/// Full HRS Database Description - Used to add attributes into the database
-const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
-{
-    // Heart Rate Service Declaration
-    [HRS_IDX_SVC]                      	=  {{ESP_GATT_AUTO_RSP}, {
-    									{ESP_UUID_LEN_16, {ESP_GATT_UUID_PRI_SERVICE}}, 
-    									ESP_GATT_PERM_READ,
-    									sizeof(heart_rate_svc),
-                                         			sizeof(heart_rate_svc), (uint8_t *)&heart_rate_svc}},
-
-    // Heart Rate Measurement Characteristic Declaration
-    [HRS_IDX_HR_MEAS_CHAR]            = {{ESP_GATT_AUTO_RSP}, {
-    									{ESP_UUID_LEN_16, {ESP_GATT_UUID_CHAR_DECLARE}}, 
-    									ESP_GATT_PERM_READ,
-    									sizeof(heart_rate_meas_char),
-                                         			sizeof(heart_rate_meas_char), (uint8_t *)&heart_rate_meas_char}},
-    // Heart Rate Measurement Characteristic Value
-    [HRS_IDX_HR_MEAS_VAL]             	=   {{ESP_GATT_AUTO_RSP}, {
-    									{ESP_UUID_LEN_16, {ESP_GATT_HEART_RATE_MEAS}}, 
-    									ESP_GATT_PERM_READ,
-    									HRPS_HT_MEAS_MAX_LEN,
-                                         			0, NULL}},
-
-    // Heart Rate Measurement Characteristic - Client Characteristic Configuration Descriptor
-    [HRS_IDX_HR_MEAS_NTF_CFG]     	=    {{ESP_GATT_AUTO_RSP}, {
-    									{ESP_UUID_LEN_16, {ESP_GATT_UUID_CHAR_SRVR_CONFIG}}, 
-    									ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
-    									sizeof(uint16_t),
-                                         			0, NULL}},
-
-    // Body Sensor Location Characteristic Declaration
-    [HRS_IDX_BOBY_SENSOR_LOC_CHAR]  = {{ESP_GATT_AUTO_RSP}, {
-    									{ESP_UUID_LEN_16, {ESP_GATT_UUID_CHAR_DECLARE}}, 
-    									ESP_GATT_PERM_READ,
-    									sizeof(heart_rate_body_sensor_loc_char),
-                                         			sizeof(heart_rate_body_sensor_loc_char), (uint8_t *)&heart_rate_body_sensor_loc_char}},
-
-    // Body Sensor Location Characteristic Value
-    [HRS_IDX_BOBY_SENSOR_LOC_VAL]   = {{ESP_GATT_AUTO_RSP}, {
-    									{ESP_UUID_LEN_16, {ESP_GATT_BODY_SENSOR_LOCATION}}, 
-    									ESP_GATT_PERM_READ,
-    									sizeof(uint8_t),
-                                         			0, NULL}},
-
-    // Heart Rate Control Point Characteristic Declaration
-    [HRS_IDX_HR_CTNL_PT_CHAR]          = {{ESP_GATT_AUTO_RSP}, {
-    									{ESP_UUID_LEN_16, {ESP_GATT_UUID_CHAR_DECLARE}}, 
-    									ESP_GATT_PERM_READ,
-    									sizeof(heart_rate_cntl_point_char),
-                                         			sizeof(heart_rate_cntl_point_char), (uint8_t *)&heart_rate_cntl_point_char}},
-                                         			
-    // Heart Rate Control Point Characteristic Value
-    [HRS_IDX_HR_CTNL_PT_VAL]             = {{ESP_GATT_AUTO_RSP}, {
-    									{ESP_UUID_LEN_16, {ESP_GATT_HEART_RATE_CNTL_POINT}}, 
-    									ESP_GATT_PERM_WRITE,
-    									sizeof(uint8_t),
-                                         			0, NULL}},  
-};
 
 /*
  *  Heart Rate PROFILE ATTRIBUTES
@@ -182,31 +124,75 @@ const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
  */
 
 /// Heart Rate Sensor Service
-const uint16_t heart_rate_svc = ESP_GATT_UUID_HEART_RATE_SVC;
+static const uint16_t heart_rate_svc = ESP_GATT_UUID_HEART_RATE_SVC;
 
-/// Heart Rate Sensor Service - Heart Rate Measurement Characteristic
-const esp_gatts_char_desc_t heart_rate_meas_char = 
+#define CHAR_DECLARATION_SIZE   (sizeof(uint8_t))
+static const uint16_t primary_service_uuid = ESP_GATT_UUID_PRI_SERVICE;
+static const uint16_t character_declaration_uuid = ESP_GATT_UUID_CHAR_DECLARE;
+static const uint16_t character_client_config_uuid = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
+static const uint8_t char_prop_notify = ESP_GATT_CHAR_PROP_BIT_NOTIFY;
+static const uint8_t char_prop_read = ESP_GATT_CHAR_PROP_BIT_READ;
+static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_WRITE|ESP_GATT_CHAR_PROP_BIT_READ;
+
+/// Heart Rate Sensor Service - Heart Rate Measurement Characteristic, notify
+static const uint16_t heart_rate_meas_uuid = ESP_GATT_HEART_RATE_MEAS;
+static const uint8_t heart_measurement_ccc[2] ={ 0x00, 0x00};
+
+
+/// Heart Rate Sensor Service -Body Sensor Location characteristic, read
+static const uint16_t body_sensor_location_uuid = ESP_GATT_BODY_SENSOR_LOCATION;
+static const uint8_t body_sensor_loc_val[1] = {0x00};
+
+
+/// Heart Rate Sensor Service - Heart Rate Control Point characteristic, write&read
+static const uint16_t heart_rate_ctrl_point = ESP_GATT_HEART_RATE_CNTL_POINT;
+static const uint8_t heart_ctrl_point[1] = {0x00};
+
+/// Full HRS Database Description - Used to add attributes into the database
+static const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
 {
-	.prop = ESP_GATT_CHAR_PROP_BIT_NOTIFY,
-	.attr_hdl = 0,
-	.attr_uuid = {ESP_UUID_LEN_16, {ESP_GATT_HEART_RATE_MEAS}},
+    // Heart Rate Service Declaration
+    [HRS_IDX_SVC]                      	=  
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&primary_service_uuid, ESP_GATT_PERM_READ,
+      sizeof(uint16_t), sizeof(heart_rate_svc), (uint8_t *)&heart_rate_svc}},
+
+    // Heart Rate Measurement Characteristic Declaration
+    [HRS_IDX_HR_MEAS_CHAR]            = 
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
+      CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_notify}},
+      
+    // Heart Rate Measurement Characteristic Value
+    [HRS_IDX_HR_MEAS_VAL]             	=   
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&heart_rate_meas_uuid, ESP_GATT_PERM_READ,
+      HRPS_HT_MEAS_MAX_LEN,0, NULL}},
+
+    // Heart Rate Measurement Characteristic - Client Characteristic Configuration Descriptor
+    [HRS_IDX_HR_MEAS_NTF_CFG]     	=    
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
+      sizeof(uint16_t),sizeof(heart_measurement_ccc), (uint8_t *)heart_measurement_ccc}},
+
+    // Body Sensor Location Characteristic Declaration
+    [HRS_IDX_BOBY_SENSOR_LOC_CHAR]  = 
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
+      CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // Body Sensor Location Characteristic Value
+    [HRS_IDX_BOBY_SENSOR_LOC_VAL]   = 
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&body_sensor_location_uuid, ESP_GATT_PERM_READ,
+      sizeof(uint8_t), sizeof(body_sensor_loc_val), (uint8_t *)body_sensor_loc_val}},
+
+    // Heart Rate Control Point Characteristic Declaration
+    [HRS_IDX_HR_CTNL_PT_CHAR]          = 
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
+      CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
+                                         			
+    // Heart Rate Control Point Characteristic Value
+    [HRS_IDX_HR_CTNL_PT_VAL]             = 
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&heart_rate_ctrl_point, ESP_GATT_PERM_WRITE|ESP_GATT_PERM_READ,
+      sizeof(uint8_t), sizeof(heart_ctrl_point), (uint8_t *)heart_ctrl_point}},  
 };
 
-/// Heart Rate Sensor Service -Body Sensor Location characteristic
-const esp_gatts_char_desc_t heart_rate_body_sensor_loc_char = 
-{
-	.prop = ESP_GATT_CHAR_PROP_BIT_READ,
-	.attr_hdl = 0,
-	.attr_uuid = {ESP_UUID_LEN_16, {ESP_GATT_BODY_SENSOR_LOCATION}},
-};
 
-/// Heart Rate Sensor Service - Heart Rate Control Point characteristic
-const esp_gatts_char_desc_t heart_rate_cntl_point_char = 
-{
-	.prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
-	.attr_hdl = 0,
-	.attr_uuid = {ESP_UUID_LEN_16, {ESP_GATT_HEART_RATE_CNTL_POINT}},
-};
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {

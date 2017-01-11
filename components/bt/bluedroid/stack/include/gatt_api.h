@@ -349,6 +349,7 @@ typedef struct {
     UINT16        handle;
     UINT16        offset;
     BOOLEAN       is_long;
+    BOOLEAN       need_rsp;
 } tGATT_READ_REQ;
 
 /* write request data */

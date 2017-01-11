@@ -46,12 +46,3 @@ enum
 
     HRS_IDX_NB,
 };
-
-
-extern const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB];
-/// Heart Rate Sensor Service - only one instance for now
-extern const uint16_t heart_rate_svc;
-
-extern const esp_gatts_char_desc_t heart_rate_meas_char;
-extern const esp_gatts_char_desc_t heart_rate_body_sensor_loc_char;
-extern const esp_gatts_char_desc_t heart_rate_cntl_point_char;

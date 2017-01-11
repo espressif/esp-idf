@@ -274,47 +274,54 @@ void BTA_GATTS_AddCharDescriptor (UINT16 service_id,
                                   tBTA_GATTS_ATTR_CONTROL *control)
 {
     tBTA_GATTS_API_ADD_DESCR  *p_buf;
-    UINT16  len = 0;
-    if(attr_val != NULL) {
-        len = sizeof(tBTA_GATTS_API_ADD_DESCR) + attr_val->attr_len;
-    } else {
-        len = sizeof(tBTA_GATTS_API_ADD_DESCR);
-    }
+    UINT16  value_len = 0;
 
-    if ((p_buf = (tBTA_GATTS_API_ADD_DESCR *) GKI_getbuf(len)) != NULL) {
-        memset(p_buf, 0, len);
+    if ((p_buf = (tBTA_GATTS_API_ADD_DESCR *) GKI_getbuf(sizeof(tBTA_GATTS_API_ADD_DESCR))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_GATTS_API_ADD_DESCR));
 
         p_buf->hdr.event = BTA_GATTS_API_ADD_DESCR_EVT;
         p_buf->hdr.layer_specific = service_id;
         p_buf->perm = perm;
 
+        if(control != NULL){
+            p_buf->control.auto_rsp = control->auto_rsp;
+        }
+
         if (p_descr_uuid) {
             memcpy(&p_buf->descr_uuid, p_descr_uuid, sizeof(tBT_UUID));
         }
 
-        if(attr_val->attr_len != 0) {
+        if(attr_val != NULL){
             p_buf->attr_val.attr_len = attr_val->attr_len;
-            p_buf->attr_val.attr_max_len= attr_val->attr_max_len;
-            memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, attr_val->attr_len);
+            p_buf->attr_val.attr_max_len = attr_val->attr_max_len;
+            value_len =  attr_val->attr_len;
+            if (value_len != 0){
+                p_buf->attr_val.attr_val = (uint8_t*)GKI_getbuf(value_len);
+                if(p_buf->attr_val.attr_val != NULL){
+                    memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, value_len);
+                }
+                else{
+                    APPL_TRACE_ERROR("Allocate fail for %s\n", __func__);
+
+                }
+            }
         }
 
-        if(control != NULL) {
-            p_buf->control.auto_rsp = control->auto_rsp;
-        }
         bta_sys_sendmsg(p_buf);
     }
     return;
+
 }
 
 /*******************************************************************************
-**
-** Function         BTA_GATTS_DeleteService
-**
-** Description      This function is called to delete a service. When this is done,
-**                  a callback event BTA_GATTS_DELETE_EVT is report with the status.
-**
-** Parameters       service_id: service_id to be deleted.
-**
+ **
+ ** Function         BTA_GATTS_DeleteService
+ **
+ ** Description      This function is called to delete a service. When this is done,
+ **                  a callback event BTA_GATTS_DELETE_EVT is report with the status.
+ **
+ ** Parameters       service_id: service_id to be deleted.
+ **
 ** Returns          returns none.
 **
 *******************************************************************************/

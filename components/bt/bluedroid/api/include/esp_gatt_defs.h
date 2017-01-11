@@ -286,13 +286,14 @@ typedef enum {
  * @brief Attribute description (used to create database)
  */
  typedef struct
- {
-     esp_bt_uuid_t uuid;                    /*!< Element UUID */                                            
+ {   
+     uint16_t uuid_length;              /*!< UUID length */  
+     uint8_t  *uuid_p;                  /*!< UUID value */  
      uint16_t perm;                     /*!< Attribute permission */        
      uint16_t max_length;               /*!< Maximum length of the element*/    
      uint16_t length;                   /*!< Current length of the element*/    
-     uint8_t* value;                        /*!< Element value array*/  
- }esp_attr_desc_t;
+     uint8_t  *value;                   /*!< Element value array*/  
+ } esp_attr_desc_t;
 
 
 /**
@@ -303,7 +304,7 @@ typedef struct
 #define ESP_GATT_RSP_BY_APP             0
 #define ESP_GATT_AUTO_RSP               1
     uint8_t auto_rsp;           /*!< need the app response to the client if need_rsp set to 1*/  
-}esp_attr_control_t;
+} esp_attr_control_t;
 
 
 /**
@@ -312,8 +313,8 @@ typedef struct
 typedef struct
 {
     esp_attr_control_t      attr_control;       /*!< The attribue control type*/
-    esp_attr_desc_t         att_desc;       /*!< The attribue type*/
-}esp_gatts_attr_db_t;
+    esp_attr_desc_t         att_desc;           /*!< The attribue type*/
+} esp_gatts_attr_db_t;
 
 
 /**
@@ -323,8 +324,8 @@ typedef struct
 {
     uint16_t attr_max_len;                      /*!<  attribute max value length */     
     uint16_t attr_len;                          /*!<  attribute current value length */ 
-    uint8_t *attr_value;                        /*!<  the pointer to attribute value */
-}esp_attr_value_t;
+    uint8_t  *attr_value;                       /*!<  the pointer to attribute value */
+} esp_attr_value_t;
 
 
 /**
@@ -335,7 +336,7 @@ typedef struct
     uint16_t start_hdl;                             /*!< Gatt  start handle value of included service */
     uint16_t end_hdl;                               /*!< Gatt  end handle value of included service */
     uint16_t uuid;                                  /*!< Gatt  attribute value UUID of included service */
-}esp_gatts_incl_svc_desc_t;                 /*!< Gatt  include service entry element */
+} esp_gatts_incl_svc_desc_t;                        /*!< Gatt  include service entry element */
 
 /**
   * @brief Gatt  include 128 bit service entry element
@@ -344,18 +345,9 @@ typedef struct
 {
     uint16_t start_hdl;                             /*!< Gatt  start handle value of included 128 bit service */
     uint16_t end_hdl;                               /*!< Gatt  end handle value of included 128 bit service */
-}esp_gatts_incl128_svc_desc_t;              /*!< Gatt  include 128 bit service entry element */
+} esp_gatts_incl128_svc_desc_t;                     /*!< Gatt  include 128 bit service entry element */
 
 
-/**
-  * @brief Gatt  characteristic  entry element
-  */
-typedef struct 
-{
-    uint8_t prop;                                   /*!< Gatt attribute properties */
-    uint16_t attr_hdl;                              /*!< Gatt attribute handle */
-    esp_bt_uuid_t attr_uuid;                            /*!< Gatt attribute uuid typedle */
-}esp_gatts_char_desc_t;                     /*!< Gatt characteristic value descriptor */
 
 
 /// Gatt attribute value 

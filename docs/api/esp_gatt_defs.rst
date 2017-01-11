@@ -25,6 +25,29 @@ Header Files
 
 Macros
 ^^^^^^
+
+.. doxygendefine:: ESP_GATT_UUID_IMMEDIATE_ALERT_SVC
+.. doxygendefine:: ESP_GATT_UUID_LINK_LOSS_SVC
+.. doxygendefine:: ESP_GATT_UUID_TX_POWER_SVC
+.. doxygendefine:: ESP_GATT_UUID_CURRENT_TIME_SVC
+.. doxygendefine:: ESP_GATT_UUID_REF_TIME_UPDATE_SVC
+.. doxygendefine:: ESP_GATT_UUID_NEXT_DST_CHANGE_SVC
+.. doxygendefine:: ESP_GATT_UUID_GLUCOSE_SVC
+.. doxygendefine:: ESP_GATT_UUID_HEALTH_THERMOM_SVC
+.. doxygendefine:: ESP_GATT_UUID_DEVICE_INFO_SVC
+.. doxygendefine:: ESP_GATT_UUID_HEART_RATE_SVC
+.. doxygendefine:: ESP_GATT_UUID_PHONE_ALERT_STATUS_SVC
+.. doxygendefine:: ESP_GATT_UUID_BATTERY_SERVICE_SVC
+.. doxygendefine:: ESP_GATT_UUID_BLOOD_PRESSURE_SVC
+.. doxygendefine:: ESP_GATT_UUID_ALERT_NTF_SVC
+.. doxygendefine:: ESP_GATT_UUID_HID_SVC
+.. doxygendefine:: ESP_GATT_UUID_SCAN_PARAMETERS_SVC
+.. doxygendefine:: ESP_GATT_UUID_RUNNING_SPEED_CADENCE_SVC
+.. doxygendefine:: ESP_GATT_UUID_CYCLING_SPEED_CADENCE_SVC
+.. doxygendefine:: ESP_GATT_UUID_CYCLING_POWER_SVC
+.. doxygendefine:: ESP_GATT_UUID_LOCATION_AND_NAVIGATION_SVC
+.. doxygendefine:: ESP_GATT_UUID_USER_DATA_SVC
+.. doxygendefine:: ESP_GATT_UUID_WEIGHT_SCALE_SVC
 .. doxygendefine:: ESP_GATT_UUID_PRI_SERVICE
 .. doxygendefine:: ESP_GATT_UUID_SEC_SERVICE
 .. doxygendefine:: ESP_GATT_UUID_INCLUDE_SERVICE
@@ -74,6 +97,9 @@ Macros
 .. doxygendefine:: ESP_GATT_UUID_HID_BT_KB_INPUT
 .. doxygendefine:: ESP_GATT_UUID_HID_BT_KB_OUTPUT
 .. doxygendefine:: ESP_GATT_UUID_HID_BT_MOUSE_INPUT
+.. doxygendefine:: ESP_GATT_HEART_RATE_MEAS
+.. doxygendefine:: ESP_GATT_BODY_SENSOR_LOCATION
+.. doxygendefine:: ESP_GATT_HEART_RATE_CNTL_POINT
 .. doxygendefine:: ESP_GATT_UUID_BATTERY_LEVEL
 .. doxygendefine:: ESP_GATT_UUID_SC_CONTROL_POINT
 .. doxygendefine:: ESP_GATT_UUID_SENSOR_LOCATION
@@ -87,6 +113,8 @@ Macros
 .. doxygendefine:: ESP_GATT_ILLEGAL_HANDLE
 .. doxygendefine:: ESP_GATT_ATTR_HANDLE_MAX
 .. doxygendefine:: ESP_GATT_MAX_ATTR_LEN
+.. doxygendefine:: ESP_GATT_RSP_BY_APP
+.. doxygendefine:: ESP_GATT_AUTO_RSP
 .. doxygendefine:: ESP_GATT_IF_NONE
 
 Type Definitions
@@ -124,9 +152,6 @@ Structures
     :members:
 
 .. doxygenstruct:: esp_gatts_incl128_svc_desc_t
-    :members:
-
-.. doxygenstruct:: esp_gatts_char_desc_t
     :members:
 
 .. doxygenstruct:: esp_gatt_value_t

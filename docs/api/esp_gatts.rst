@@ -80,9 +80,6 @@ Structures
 .. doxygenstruct:: esp_ble_gatts_cb_param_t::gatts_add_char_descr_evt_param
     :members:
 
-.. doxygenstruct:: esp_ble_gatts_cb_param_t::gatts_add_attr_tab_evt_param
-    :members:
-
 .. doxygenstruct:: esp_ble_gatts_cb_param_t::gatts_delete_evt_param
     :members:
 
@@ -102,6 +99,9 @@ Structures
     :members:
 
 .. doxygenstruct:: esp_ble_gatts_cb_param_t::gatts_rsp_evt_param
+    :members:
+
+.. doxygenstruct:: esp_ble_gatts_cb_param_t::gatts_add_attr_tab_evt_param
     :members:
 
 .. doxygenstruct:: esp_ble_gatts_cb_param_t::gatts_set_attr_val_evt_param
