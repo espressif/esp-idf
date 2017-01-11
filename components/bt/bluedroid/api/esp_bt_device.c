@@ -19,7 +19,7 @@
 
 const uint8_t *esp_bt_dev_get_address(void)
 {
-    if (ESP_BLUEDROID_STATUS_ENABLED != esp_bluedroid_get_status()) {
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
 	return NULL;
     }
     return controller_get_interface()->get_address()->address;
