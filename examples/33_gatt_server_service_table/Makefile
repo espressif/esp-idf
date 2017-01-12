@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := gatt_server_table_creat_demo
+PROJECT_NAME := gatt_server_service_table_demo
 
 COMPONENT_ADD_INCLUDEDIRS := components/include
 

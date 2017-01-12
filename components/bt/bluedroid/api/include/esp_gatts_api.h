@@ -441,7 +441,8 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle);
 
 
 /**
- * @brief           This function is called to read a characteristics descriptor.
+ * @brief           Send indicate or notify to GATT client.
+ *                  Set param need_confirm as false will send notification, otherwise indication.
  *
  * @param[in]       gatts_if: GATT server access interface
  * @param[in]       conn_id - connection id to indicate.
