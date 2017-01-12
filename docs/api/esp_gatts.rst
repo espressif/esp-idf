@@ -101,6 +101,12 @@ Structures
 .. doxygenstruct:: esp_ble_gatts_cb_param_t::gatts_rsp_evt_param
     :members:
 
+.. doxygenstruct:: esp_ble_gatts_cb_param_t::gatts_add_attr_tab_evt_param
+    :members:
+
+.. doxygenstruct:: esp_ble_gatts_cb_param_t::gatts_set_attr_val_evt_param
+    :members:
+
 
 Functions
 ^^^^^^^^^
@@ -109,6 +115,7 @@ Functions
 .. doxygenfunction:: esp_ble_gatts_app_register
 .. doxygenfunction:: esp_ble_gatts_app_unregister
 .. doxygenfunction:: esp_ble_gatts_create_service
+.. doxygenfunction:: esp_ble_gatts_create_attr_tab
 .. doxygenfunction:: esp_ble_gatts_add_included_service
 .. doxygenfunction:: esp_ble_gatts_add_char
 .. doxygenfunction:: esp_ble_gatts_add_char_descr
@@ -117,6 +124,8 @@ Functions
 .. doxygenfunction:: esp_ble_gatts_stop_service
 .. doxygenfunction:: esp_ble_gatts_send_indicate
 .. doxygenfunction:: esp_ble_gatts_send_response
+.. doxygenfunction:: esp_ble_gatts_set_attr_value
+.. doxygenfunction:: esp_ble_gatts_get_attr_value
 .. doxygenfunction:: esp_ble_gatts_open
 .. doxygenfunction:: esp_ble_gatts_close
 

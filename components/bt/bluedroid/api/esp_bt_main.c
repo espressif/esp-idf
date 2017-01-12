@@ -24,13 +24,13 @@ static bool esp_already_init = false;
 esp_bluedroid_status_t esp_bluedroid_get_status(void)
 {
     if (esp_already_init) {
-	if (esp_already_enable) {
-	    return ESP_BLUEDROID_STATUS_ENABLED;
-	} else {
-	    return ESP_BLUEDROID_STATUS_INITIALIZED;
-	}
+        if (esp_already_enable) {
+            return ESP_BLUEDROID_STATUS_ENABLED;
+        } else {
+            return ESP_BLUEDROID_STATUS_INITIALIZED;
+        }
     } else {
-	return ESP_BLUEDROID_STATUS_UNINITIALIZED;
+        return ESP_BLUEDROID_STATUS_UNINITIALIZED;
     }
 }
 

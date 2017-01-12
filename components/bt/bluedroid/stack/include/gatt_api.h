@@ -63,6 +63,8 @@
 #define  GATT_ENCRYPED_NO_MITM               0x8d
 #define  GATT_NOT_ENCRYPTED                  0x8e
 #define  GATT_CONGESTED                      0x8f
+#define  GATT_STACK_RSP                      0x90
+#define  GATT_APP_RSP                        0x91
 
 /* 0xE0 ~ 0xFC reserved for future use */
 #define  GATT_CCC_CFG_ERR                    0xFD /* Client Characteristic Configuration Descriptor Improperly Configured */
@@ -117,36 +119,36 @@ typedef UINT16 tGATT_DISCONN_REASON;
 /* MAX GATT MTU size
 */
 #ifndef GATT_MAX_MTU_SIZE
-#define GATT_MAX_MTU_SIZE     517
+#define GATT_MAX_MTU_SIZE                   517
 #endif
 
 /* max legth of an attribute value
 */
 #ifndef GATT_MAX_ATTR_LEN
-#define GATT_MAX_ATTR_LEN     600
+#define GATT_MAX_ATTR_LEN                   600
 #endif
 
 /* default GATT MTU size over LE link
 */
-#define GATT_DEF_BLE_MTU_SIZE       23
+#define GATT_DEF_BLE_MTU_SIZE               23
 
 /* invalid connection ID
 */
-#define GATT_INVALID_CONN_ID        0xFFFF
+#define GATT_INVALID_CONN_ID                0xFFFF
 
 #ifndef GATT_CL_MAX_LCB
-#define GATT_CL_MAX_LCB     12 // 22
+#define GATT_CL_MAX_LCB                     12 // 22
 #endif
 
 #ifndef GATT_MAX_SCCB
-#define GATT_MAX_SCCB       10
+#define GATT_MAX_SCCB                       10
 #endif
 
 
 /* GATT notification caching timer, default to be three seconds
 */
 #ifndef GATTC_NOTIF_TIMEOUT
-#define GATTC_NOTIF_TIMEOUT   3
+#define GATTC_NOTIF_TIMEOUT                 3
 #endif
 
 /*****************************************************************************
@@ -155,22 +157,22 @@ typedef UINT16 tGATT_DISCONN_REASON;
 
 /* Attribute permissions
 */
-#define GATT_PERM_READ              (1 << 0) /* bit 0 */
-#define GATT_PERM_READ_ENCRYPTED    (1 << 1) /* bit 1 */
-#define GATT_PERM_READ_ENC_MITM     (1 << 2) /* bit 2 */
-#define GATT_PERM_WRITE             (1 << 4) /* bit 4 */
-#define GATT_PERM_WRITE_ENCRYPTED   (1 << 5) /* bit 5 */
-#define GATT_PERM_WRITE_ENC_MITM    (1 << 6) /* bit 6 */
-#define GATT_PERM_WRITE_SIGNED      (1 << 7) /* bit 7 */
-#define GATT_PERM_WRITE_SIGNED_MITM (1 << 8) /* bit 8 */
+#define GATT_PERM_READ                      (1 << 0) /* bit 0 */
+#define GATT_PERM_READ_ENCRYPTED            (1 << 1) /* bit 1 */
+#define GATT_PERM_READ_ENC_MITM             (1 << 2) /* bit 2 */
+#define GATT_PERM_WRITE                     (1 << 4) /* bit 4 */
+#define GATT_PERM_WRITE_ENCRYPTED           (1 << 5) /* bit 5 */
+#define GATT_PERM_WRITE_ENC_MITM            (1 << 6) /* bit 6 */
+#define GATT_PERM_WRITE_SIGNED              (1 << 7) /* bit 7 */
+#define GATT_PERM_WRITE_SIGNED_MITM         (1 << 8) /* bit 8 */
 typedef UINT16 tGATT_PERM;
 
 #define GATT_ENCRYPT_KEY_SIZE_MASK  (0xF000) /* the MS nibble of tGATT_PERM; key size 7=0; size 16=9 */
 
-#define GATT_READ_ALLOWED           (GATT_PERM_READ | GATT_PERM_READ_ENCRYPTED | GATT_PERM_READ_ENC_MITM)
-#define GATT_READ_AUTH_REQUIRED     (GATT_PERM_READ_ENCRYPTED)
-#define GATT_READ_MITM_REQUIRED     (GATT_PERM_READ_ENC_MITM)
-#define GATT_READ_ENCRYPTED_REQUIRED   (GATT_PERM_READ_ENCRYPTED | GATT_PERM_READ_ENC_MITM)
+#define GATT_READ_ALLOWED                   (GATT_PERM_READ | GATT_PERM_READ_ENCRYPTED | GATT_PERM_READ_ENC_MITM)
+#define GATT_READ_AUTH_REQUIRED             (GATT_PERM_READ_ENCRYPTED)
+#define GATT_READ_MITM_REQUIRED             (GATT_PERM_READ_ENC_MITM)
+#define GATT_READ_ENCRYPTED_REQUIRED        (GATT_PERM_READ_ENCRYPTED | GATT_PERM_READ_ENC_MITM)
 
 
 #define GATT_WRITE_ALLOWED          (GATT_PERM_WRITE | GATT_PERM_WRITE_ENCRYPTED | GATT_PERM_WRITE_ENC_MITM | \
@@ -312,6 +314,16 @@ typedef struct {
     UINT8           value[GATT_MAX_ATTR_LEN];  /* the actual attribute value */
 } tGATT_VALUE;
 
+typedef struct{
+    UINT16  attr_max_len;
+    UINT16  attr_len;
+    UINT8   *attr_val;
+}tGATT_ATTR_VAL;
+
+typedef struct{
+    uint8_t auto_rsp;
+}tGATTS_ATTR_CONTROL;
+
 /* Union of the event data which is used in the server respond API to carry the server response information
 */
 typedef union {
@@ -337,6 +349,7 @@ typedef struct {
     UINT16        handle;
     UINT16        offset;
     BOOLEAN       is_long;
+    BOOLEAN       need_rsp;
 } tGATT_READ_REQ;
 
 /* write request data */
@@ -740,8 +753,9 @@ extern UINT16 GATTS_AddIncludeService (UINT16 service_handle,
 **                  characteristic failed.
 **
 *******************************************************************************/
-extern UINT16 GATTS_AddCharacteristic (UINT16 service_handle, tBT_UUID *char_uuid,
-                                       tGATT_PERM perm, tGATT_CHAR_PROP property);
+extern UINT16 GATTS_AddCharacteristic (UINT16 service_handle, tBT_UUID *p_char_uuid,
+                                tGATT_PERM perm, tGATT_CHAR_PROP property, 
+                                tGATT_ATTR_VAL *attr_val, tGATTS_ATTR_CONTROL *control);
 
 /*******************************************************************************
 **
@@ -763,7 +777,8 @@ extern UINT16 GATTS_AddCharacteristic (UINT16 service_handle, tBT_UUID *char_uui
 **
 *******************************************************************************/
 extern UINT16 GATTS_AddCharDescriptor (UINT16 service_handle, tGATT_PERM perm,
-                                       tBT_UUID *p_descr_uuid);
+                                                                tBT_UUID   *p_descr_uuid, tGATT_ATTR_VAL *attr_val,
+                                                                tGATTS_ATTR_CONTROL *control);
 
 /*******************************************************************************
 **
@@ -864,6 +879,39 @@ extern  tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_
 *******************************************************************************/
 extern  tGATT_STATUS GATTS_SendRsp (UINT16 conn_id,  UINT32 trans_id,
                                     tGATT_STATUS status, tGATTS_RSP *p_msg);
+
+
+/*******************************************************************************
+**
+** Function         GATTS_SetAttributeValue
+**
+** Description      This function sends to set the attribute value .
+**
+** Parameter        attr_handle:the attribute handle
+**                      length: the attribute length
+**                      value: the value to be set to the attribute in the database
+**
+** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *value);
+
+
+/*******************************************************************************
+**
+** Function         GATTS_GetAttributeValue
+**
+** Description      This function sends to set the attribute value .
+**
+** Parameter        attr_handle: the attribute handle
+**                      length:the attribute value length in the database
+**                      value: the attribute value out put
+**
+** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 **value);
+
 
 
 /*******************************************************************************/
