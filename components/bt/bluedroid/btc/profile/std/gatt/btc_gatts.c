@@ -203,8 +203,8 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                 esp_gatt_srvc_id_t        esp_srvc_id;
 
                 esp_srvc_id.id.inst_id = srvc_inst_id;
-                btc_gatts_uuid_format_convert(&esp_srvc_id.id.uuid,gatts_attr_db[i].att_desc.uuid_length,
-                                              gatts_attr_db[i].att_desc.uuid_p);
+                btc_gatts_uuid_format_convert(&esp_srvc_id.id.uuid,gatts_attr_db[i].att_desc.length,
+                                              gatts_attr_db[i].att_desc.value);
     
                 btc_to_bta_srvc_id(&srvc_id, &esp_srvc_id);
                 BTA_GATTS_CreateService(gatts_if, &srvc_id.id.uuid, 
