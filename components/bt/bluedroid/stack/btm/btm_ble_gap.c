@@ -1089,7 +1089,6 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
     p_cb->adv_chnl_map = chnl_map;
     p_addr_cb->own_addr_type = own_bda_type;
     p_cb->evt_type = adv_type;
-    p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
     p_cb->afp = afp;
 
     if (p_dir_bda) {
