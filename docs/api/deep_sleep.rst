@@ -73,6 +73,8 @@ By default, ``esp_deep_sleep_start`` function will power down all RTC power doma
 
 Note: on the first revision of the ESP32, RTC fast memory will always be kept enabled in deep sleep, so that the deep sleep stub can run after reset. This can be overriden, if the application doesn't need clean reset behaviour after deep sleep.
 
+If some variables in the program are placed into RTC slow memory (for example, using ``RTC_DATA_ATTR`` attribute), RTC slow memory will be kept powered on by default. This can be overriden using ``esp_deep_sleep_pd_config`` function, if desired.
+
 .. doxygenfunction:: esp_deep_sleep_pd_config
 .. doxygenenum:: esp_deep_sleep_pd_domain_t
 .. doxygenenum:: esp_deep_sleep_pd_option_t

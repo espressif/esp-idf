@@ -381,6 +381,8 @@ choice ESP32_TIME_SYSCALL
           longer to run.
         - If no timers are used, gettimeofday and time functions
           return -1 and set errno to ENOSYS.
+        - When RTC is used for timekeeping, two RTC_STORE registers are
+          used to keep time in deep sleep mode.
 
 config ESP32_TIME_SYSCALL_USE_RTC
     bool "RTC"
