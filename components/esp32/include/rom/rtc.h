@@ -181,6 +181,9 @@ void set_rtc_memory_crc(void);
 /**
   * @brief Software Reset digital core.
   *
+  * It is not recommended to use this function in esp-idf, use
+  * esp_restart() instead.
+  *
   * @param  None
   *
   * @return None
@@ -189,6 +192,9 @@ void software_reset(void);
 
 /**
   * @brief Software Reset digital core.
+  *
+  * It is not recommended to use this function in esp-idf, use
+  * esp_restart() instead.
   *
   * @param  int cpu_no : The CPU to reset, 0 for PRO CPU, 1 for APP CPU.
   *
