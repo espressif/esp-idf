@@ -428,6 +428,7 @@ $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUB
 #     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-59-ga194053) 4.8.5
 # The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable,
 # the part after the brackets is extracted into TOOLCHAIN_GCC_VER.
+ifdef CONFIG_TOOLPREFIX
 ifndef MAKE_RESTARTS
 TOOLCHAIN_COMMIT_DESC := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*?\ \(([^)]*).*|\1|gp')
 TOOLCHAIN_GCC_VER := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*?\ \(.*\)\ (.*)|\1|gp')
@@ -450,5 +451,6 @@ endif
 else
 $(info WARNING: Failed to find Xtensa toolchain, may need to alter PATH or set one in the configuration menu)
 endif # TOOLCHAIN_COMMIT_DESC
-endif #MAKE_RESTARTS
 
+endif #MAKE_RESTARTS
+endif #CONFIG_TOOLPREFIX
