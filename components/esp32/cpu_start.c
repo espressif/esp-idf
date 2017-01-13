@@ -55,6 +55,7 @@
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
 #include "esp_coexist.h"
+#include "esp_core_dump.h"
 #include "trax.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -202,6 +203,8 @@ void start_cpu0_default(void)
 #endif
     esp_ipc_init();
     spi_flash_init();
+    /* init default OS-aware flash access critical section */
+    spi_flash_guard_set(&g_flash_guard_default_ops);
 
 #if CONFIG_ESP32_PHY_AUTO_INIT
     nvs_flash_init();
@@ -212,6 +215,10 @@ void start_cpu0_default(void)
     if (coex_init() == ESP_OK) {
         coexist_set_enable(true);
     }
+#endif
+
+#if CONFIG_ESP32_ENABLE_COREDUMP
+    esp_core_dump_init();
 #endif
 
     xTaskCreatePinnedToCore(&main_task, "main",

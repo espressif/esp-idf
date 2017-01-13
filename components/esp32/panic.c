@@ -33,6 +33,7 @@
 #include "esp_panic.h"
 #include "esp_attr.h"
 #include "esp_err.h"
+#include "esp_core_dump.h"
 
 /*
   Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -46,13 +47,13 @@
 
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
 //printf may be broken, so we fix our own printing fns...
-inline static void panicPutChar(char c)
+static void panicPutChar(char c)
 {
     while (((READ_PERI_REG(UART_STATUS_REG(0)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
     WRITE_PERI_REG(UART_FIFO_REG(0), c);
 }
 
-inline static void panicPutStr(const char *c)
+static void panicPutStr(const char *c)
 {
     int x = 0;
     while (c[x] != 0) {
@@ -61,7 +62,7 @@ inline static void panicPutStr(const char *c)
     }
 }
 
-inline static void panicPutHex(int a)
+static void panicPutHex(int a)
 {
     int x;
     int c;
@@ -76,7 +77,7 @@ inline static void panicPutHex(int a)
     }
 }
 
-inline static void panicPutDec(int a)
+static void panicPutDec(int a)
 {
     int n1, n2;
     n1 = a % 10;
@@ -90,10 +91,10 @@ inline static void panicPutDec(int a)
 }
 #else
 //No printing wanted. Stub out these functions.
-inline static void panicPutChar(char c) { }
-inline static void panicPutStr(const char *c) { }
-inline static void panicPutHex(int a) { }
-inline static void panicPutDec(int a) { }
+static void panicPutChar(char c) { }
+static void panicPutStr(const char *c) { }
+static void panicPutHex(int a) { }
+static void panicPutDec(int a) { }
 #endif
 
 void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName )
@@ -301,7 +302,7 @@ static void putEntry(uint32_t pc, uint32_t sp)
 static void doBacktrace(XtExcFrame *frame)
 {
     uint32_t i = 0, pc = frame->pc, sp = frame->a1;
-    panicPutStr("\nBacktrace:");
+    panicPutStr("\r\nBacktrace:");
     /* Do not check sanity on first entry, PC could be smashed. */
     putEntry(pc, sp);
     pc = frame->a0;
@@ -317,7 +318,7 @@ static void doBacktrace(XtExcFrame *frame)
             break;
         }
     }
-    panicPutStr("\n\n");
+    panicPutStr("\r\n\r\n");
 }
 
 /*
@@ -351,8 +352,8 @@ static void commonErrorHandler(XtExcFrame *frame)
                     panicPutHex(regs[x + y + 1]);
                     panicPutStr("  ");
                 }
+                panicPutStr("\r\n");
             }
-            panicPutStr("\r\n");
         }
     }
 
@@ -363,7 +364,14 @@ static void commonErrorHandler(XtExcFrame *frame)
     disableAllWdts();
     panicPutStr("Entering gdb stub now.\r\n");
     esp_gdbstub_panic_handler(frame);
-#elif CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
+#else
+#if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
+    esp_core_dump_to_flash(frame);
+#endif
+#if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART && !CONFIG_ESP32_PANIC_SILENT_REBOOT
+    esp_core_dump_to_uart(frame);
+#endif
+#if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
     for (x = 0; x < 100; x++) {
         ets_delay_us(1000);
@@ -373,6 +381,7 @@ static void commonErrorHandler(XtExcFrame *frame)
     disableAllWdts();
     panicPutStr("CPU halted.\r\n");
     while (1);
+#endif
 #endif
 }
 

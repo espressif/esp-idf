@@ -54,6 +54,47 @@ config TRACEMEM_RESERVE_DRAM
     default 0x4000 if MEMMAP_TRACEMEM && !MEMMAP_TRACEMEM_TWOBANKS
     default 0x0
 
+choice ESP32_COREDUMP_TO_FLASH_OR_UART
+    prompt "Core dump destination"
+    default ESP32_ENABLE_COREDUMP_TO_NONE
+    help
+        Select place to store core dump: flash, uart or none (to disable core dumps generation).
+
+        If core dump is configured to be stored in flash and custom partition table is used add 
+        corresponding entry to your CSV. For examples, please see predefined partition table CSV descriptions 
+        in the components/partition_table directory.
+
+config ESP32_ENABLE_COREDUMP_TO_FLASH
+    bool "Flash"
+    select ESP32_ENABLE_COREDUMP
+config ESP32_ENABLE_COREDUMP_TO_UART
+    bool "UART"
+    select ESP32_ENABLE_COREDUMP
+config ESP32_ENABLE_COREDUMP_TO_NONE
+    bool "None"
+endchoice
+
+config ESP32_ENABLE_COREDUMP
+    bool
+    default F
+    help
+        Enables/disable core dump module.
+
+config ESP32_CORE_DUMP_UART_DELAY
+    int "Core dump print to UART delay"
+    depends on ESP32_ENABLE_COREDUMP_TO_UART
+    default 0
+    help
+        Config delay (in ms) before printing core dump to UART.
+        Delay can be interrupted by pressing Enter key.
+
+config ESP32_CORE_DUMP_LOG_LEVEL
+    int "Core dump module logging level"
+    depends on ESP32_ENABLE_COREDUMP
+    default 1
+    help
+        Config core dump module logging level (0-5).
+
 # Not implemented and/or needs new silicon rev to work
 config MEMMAP_SPISRAM
     bool "Use external SPI SRAM chip as main memory"
