@@ -1,5 +1,5 @@
 Sigma-delta Modulation
-========
+======================
 
 Overview
 --------
