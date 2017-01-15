@@ -58,6 +58,17 @@ extern "C" {
 
 #define IPSTR "%d.%d.%d.%d"
 
+#define IPV62STR(ipaddr) IP6_ADDR_BLOCK1(&(ipaddr)),     \
+    IP6_ADDR_BLOCK2(&(ipaddr)),     \
+    IP6_ADDR_BLOCK3(&(ipaddr)),     \
+    IP6_ADDR_BLOCK4(&(ipaddr)),     \
+    IP6_ADDR_BLOCK5(&(ipaddr)),     \
+    IP6_ADDR_BLOCK6(&(ipaddr)),     \
+    IP6_ADDR_BLOCK7(&(ipaddr)),     \
+    IP6_ADDR_BLOCK8(&(ipaddr))
+
+#define IPV6STR "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x"
+
 typedef struct {
     ip4_addr_t ip;
     ip4_addr_t netmask;

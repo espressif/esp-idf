@@ -36,7 +36,8 @@ INPUT = ../components/esp32/include/esp_wifi.h \
 	../components/sdmmc/include/sdmmc_cmd.h \
 	../components/fatfs/src/esp_vfs_fat.h \
 	../components/fatfs/src/diskio.h \
-	../components/esp32/include/esp_core_dump.h
+	../components/esp32/include/esp_core_dump.h \
+	../components/mdns/include/mdns.h
 
 ## Get warnings for functions that have no documentation for their parameters or return value 
 ##
