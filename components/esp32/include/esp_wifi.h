@@ -58,6 +58,7 @@
 #define __ESP_WIFI_H__
 
 #include <stdint.h>
+#include "sdkconfig.h"
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
