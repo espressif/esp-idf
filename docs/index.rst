@@ -1,11 +1,7 @@
-ESP32 Programming Guide
-=======================
+ESP-IDF Programming Guide
+=========================
 
-.. caution::
-
-   Until ESP-IDF release 1.0, this documentation is a draft. It is incomplete and may have mistakes. Please mind your step!
-
-Documentation adressed to developers of applications for `ESP32 <https://espressif.com/en/products/hardware/esp32/overview>`_ by `Espressif <https://espressif.com/>`_ using `esp-idf <https://github.com/espressif/esp-idf>`_.
+This is the documentation for Espressif IoT Developement Framework (`esp-idf <https://github.com/espressif/esp-idf>`_). ESP-IDF is the official development framework for the `ESP32 <https://espressif.com/en/products/hardware/esp32/overview>`_ chip.
 
 
 Contents:
