@@ -89,12 +89,6 @@ typedef struct {
 #define INT15RES INTDESC_SPECIAL
 #endif
 
-#if CONFIG_FREERTOS_CORETIMER_2
-#define INT16RES INTDESC_RESVD
-#else
-#define INT16RES INTDESC_SPECIAL
-#endif
-
 //This is basically a software-readable version of the interrupt usage table in include/soc/soc.h
 const static int_desc_t int_desc[32]={
     { 1, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //0
@@ -113,7 +107,7 @@ const static int_desc_t int_desc[32]={
     { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //13
     { 7, INTTP_LEVEL, {INTDESC_RESVD,  INTDESC_RESVD } }, //14, NMI
     { 3, INTTP_NA,    {INT15RES,       INT15RES      } }, //15
-    { 5, INTTP_NA,    {INT16RES,       INT16RES      } }, //16
+    { 5, INTTP_NA,    {INTDESC_SPECIAL,INTDESC_SPECIAL} }, //16
     { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //17
     { 1, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //18
     { 2, INTTP_LEVEL, {INTDESC_NORMAL, INTDESC_NORMAL} }, //19
