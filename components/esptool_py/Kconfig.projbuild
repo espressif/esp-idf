@@ -2,7 +2,7 @@ menu "Serial flasher config"
 
 config ESPTOOLPY_PORT
 	string "Default serial port"
-	default "/dev/ttyUSB0"
+	default "/dev/ttyS4"
 	help
 		The serial port that's connected to the ESP chip. This can be overridden by setting the ESPPORT
 		environment variable.
