@@ -321,6 +321,8 @@ static void doBacktrace(XtExcFrame *frame)
     panicPutStr("\r\n\r\n");
 }
 
+void esp_restart_noos() __attribute__ ((noreturn));
+
 /*
   We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
   serial port and either jump to the gdb stub, halt the CPU or reboot.
@@ -373,10 +375,7 @@ static void commonErrorHandler(XtExcFrame *frame)
 #endif
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
-    for (x = 0; x < 100; x++) {
-        ets_delay_us(1000);
-    }
-    software_reset();
+    esp_restart_noos();
 #else
     disableAllWdts();
     panicPutStr("CPU halted.\r\n");
