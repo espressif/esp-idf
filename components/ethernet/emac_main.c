@@ -588,7 +588,7 @@ esp_err_t esp_eth_tx(uint8_t *buf, uint16_t size)
     if (emac_config.emac_status != EMAC_RUNTIME_START || emac_config.emac_status == EMAC_RUNTIME_NOT_INIT) {
         ESP_LOGI(TAG, "tx netif close");
         ret = ERR_IF;
-        goto _exit;
+        return ret;
     }
 
     xSemaphoreTakeRecursive( emac_tx_xMutex, ( TickType_t ) portMAX_DELAY );
