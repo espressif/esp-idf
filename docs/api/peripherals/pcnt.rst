@@ -9,7 +9,7 @@ The PCNT (Pulse Counter) module is designed to count the number of rising and/or
 Application Example
 -------------------
 
-Pulse counter with control signal and event interrupt example: `examples/16_pcnt <https://github.com/espressif/esp-idf/tree/master/examples/16_pcnt>`_.
+Pulse counter with control signal and event interrupt example: `examples/peripherals/pcnt <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/pcnt>`_.
 
 API Reference
 -------------

@@ -9,7 +9,7 @@ The RMT (Remote Control) module driver can be used to send and receive infrared 
 Application Example
 -------------------
 
-NEC remote control TX and RX example: `examples/11_rmt_nec_tx_rx <https://github.com/espressif/esp-idf/tree/master/examples/11_rmt_nec_tx_rx>`_.
+NEC remote control TX and RX example: `examples/peripherals/rmt_nec_tx_rx <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/rmt_nec_tx_rx>`_.
 
 API Reference
 -------------

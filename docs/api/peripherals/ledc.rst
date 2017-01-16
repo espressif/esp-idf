@@ -12,7 +12,7 @@ decrease the duty cycle gradually, allowing for fades without any processor inte
 Application Example
 -------------------
 
-LEDC change duty cycle and fading control example: `examples/29_ledc <https://github.com/espressif/esp-idf/tree/master/examples/29_ledc>`_.
+LEDC change duty cycle and fading control example: `examples/peripherals/ledc <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/ledc>`_.
 
 API Reference
 -------------

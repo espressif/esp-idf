@@ -13,7 +13,7 @@ Application Example
 
 Check `/examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
 
-`12_blufi <https://github.com/espressif/esp-idf/blob/master/examples/12_blufi/main/>`_ 
+`bluetooth/blufi <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/blufi/main/>`_ 
 
 This is a BLUFI demo. This demo can set ESP32's wifi to softap/station/softap&station mode and config wifi connections.
 

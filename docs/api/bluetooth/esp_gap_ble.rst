@@ -11,14 +11,14 @@ Application Example
 
 Check `/examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
 
-`14_gatts_demo <https://github.com/espressif/esp-idf/blob/master/examples/14_gatt_server/main/gatts_demo.c>`_ 
-`15_gattc_demo <https://github.com/espressif/esp-idf/blob/master/examples/15_gatt_client/main/gattc_demo.c>`_ 
+`14_gatts_demo <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_server/main/gatts_demo.c>`_ 
+`15_gattc_demo <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_client/main/gattc_demo.c>`_ 
 
 The two demos use different gap api, such like advertising, scan, set device name and others.
 
 `Instructions`_
 
-.. _Instructions: template.html
+.. _Instructions: ../template.html
 
 
 API Reference

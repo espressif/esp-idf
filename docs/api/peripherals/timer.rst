@@ -12,7 +12,7 @@ They are all 64-bit generic timers based on 16-bit prescalers and 64-bit auto-re
 Application Example
 -------------------
 
-64-bit hardware timer example: `examples/13_timer_group <https://github.com/espressif/esp-idf/tree/master/examples/13_timer_group>`_.
+64-bit hardware timer example: `examples/peripherals/timer_group <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/timer_group>`_.
 
 API Reference
 -------------

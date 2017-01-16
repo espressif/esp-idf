@@ -9,7 +9,7 @@ ESP32 has two I2C controllers which can be set as master mode or slave mode.
 Application Example
 -------------------
 
-I2C master and slave example: `examples/18_i2c <https://github.com/espressif/esp-idf/tree/master/examples/18_i2c>`_.
+I2C master and slave example: `examples/peripherals/i2c <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/i2c>`_.
 
 API Reference
 -------------

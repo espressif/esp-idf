@@ -7,7 +7,7 @@ Demonstrates how to read and write a single integer value and a blob (binary lar
 
 Example also shows how to implement diagnostics if read / write operation was successful. 
 
-If not done already, consider checking simpler example *07_nvs_rw_value*, that has been used as a starting point for preparing this one. 
+If not done already, consider checking simpler example *storage/nvs_rw_value*, that has been used as a starting point for preparing this one. 
 
 Detailed functional description of NVS and API is provided in [documentation](http://esp-idf.readthedocs.io/en/latest/api/nvs_flash.html).
 

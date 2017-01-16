@@ -30,12 +30,12 @@ Connect your host PC to the same AP that you will use for the ESP32.
 
 Python has a built-in HTTP server that can be used for example purposes.
 
-For our upgrade example OTA file, we're going to use the `01_hello_world` example.
+For our upgrade example OTA file, we're going to use the `get-started/hello_world` example.
 
 Open a new terminal to run the HTTP server, then run these commands to build the example and start the server:
 
 ```
-cd $IDF_PATH/examples/01_hello_world
+cd $IDF_PATH/examples/get-started/hello_world
 make
 cd build
 python -m SimpleHTTPServer 8070

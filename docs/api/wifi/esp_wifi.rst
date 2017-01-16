@@ -16,7 +16,7 @@ API Reference
 
 `Instructions`_
 
-.. _Instructions: template.html
+.. _Instructions: ../template.html
 
 Header Files
 ^^^^^^^^^^^^

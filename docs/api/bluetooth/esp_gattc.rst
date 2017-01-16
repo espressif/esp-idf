@@ -11,13 +11,13 @@ Application Example
 
 Check `/examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
 
-`15_gattc_demo <https://github.com/espressif/esp-idf/blob/master/examples/15_gatt_client/main/gattc_demo.c>`_ 
+`15_gattc_demo <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_client/main/gattc_demo.c>`_ 
 
 This is a gatt client demo. This demo can scan devices, connect to the gatt server and discover the service.
 
 `Instructions`_
 
-.. _Instructions: template.html
+.. _Instructions: ../template.html
 
 
 API Reference

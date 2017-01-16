@@ -10,7 +10,7 @@ Note that GPIO6-11 are usually used for SPI flash. GPIO34-39 can only be set as 
 Application Example
 -------------------
 
-GPIO output and input interrupt example: `examples/21_gpio <https://github.com/espressif/esp-idf/tree/master/examples/21_gpio>`_.
+GPIO output and input interrupt example: `examples/peripherals/gpio <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/gpio>`_.
 
 API Reference
 -------------

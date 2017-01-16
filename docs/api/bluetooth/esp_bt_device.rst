@@ -13,7 +13,7 @@ Application Example
 
 `Instructions`_
 
-.. _Instructions: template.html
+.. _Instructions: ../template.html
 
 
 API Reference

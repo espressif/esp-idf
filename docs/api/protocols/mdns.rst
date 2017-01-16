@@ -163,7 +163,7 @@ Example of using the methods above:
 Application Example
 -------------------
 
-mDNS server/scanner example: `examples/30_mdns_example <https://github.com/espressif/esp-idf/tree/master/examples/30_mdns_example>`_.
+mDNS server/scanner example: `examples/protocols/mdsn <https://github.com/espressif/esp-idf/tree/master/examples/protocols/mdsn>`_.
 
 API Reference
 -------------

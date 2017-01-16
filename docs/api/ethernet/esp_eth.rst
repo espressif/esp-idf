@@ -4,7 +4,7 @@ ETHERNET
 Application Example
 -------------------
 
-ethernet example: `examples/17_ethernet <https://github.com/espressif/esp-idf/tree/master/examples/17_ethernet>`_.
+ethernet example: `examples/ethernet/ethernet <https://github.com/espressif/esp-idf/tree/master/examples/ethernet/ethernet>`_.
 
 API Reference
 -------------
