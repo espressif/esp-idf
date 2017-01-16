@@ -94,6 +94,7 @@ static void IRAM_ATTR frc_timer_isr()
 
 #endif // WITH_FRC1
 
+#if defined(WITH_RTC) || defined(WITH_FRC1)
 static void set_boot_time(uint64_t time_us)
 {
     _lock_acquire(&s_boot_time_lock);
@@ -118,6 +119,7 @@ static uint64_t get_boot_time()
     _lock_release(&s_boot_time_lock);
     return result;
 }
+#endif //defined(WITH_RTC) || defined(WITH_FRC1)
 
 void esp_setup_time_syscalls()
 {
