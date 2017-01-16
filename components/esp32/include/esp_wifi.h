@@ -62,6 +62,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "rom/queue.h"
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
 #include "esp_event.h"
@@ -97,11 +98,14 @@ typedef struct {
     uint32_t rx_buf_num;  /**< WiFi RX buffer number */
 } wifi_init_config_t;
 
-
+#ifdef CONFIG_WIFI_ENABLED
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
     .rx_buf_num = CONFIG_ESP32_WIFI_RX_BUFFER_NUM, \
 };
+#else
+#define WIFI_INIT_CONFIG_DEFAULT #error Wifi is disabled in config, WIFI_INIT_CONFIG_DEFAULT will not work
+#endif
 
 /**
   * @brief  Init WiFi

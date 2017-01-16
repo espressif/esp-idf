@@ -17,6 +17,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_internal.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
 #include "rom/efuse.h"
 #include "rom/cache.h"
 #include "rom/uart.h"
@@ -74,7 +75,9 @@ esp_err_t system_efuse_read_mac(uint8_t mac[6]) __attribute__((alias("esp_efuse_
 
 void IRAM_ATTR esp_restart(void)
 {
+#ifdef CONFIG_WIFI_ENABLED
     esp_wifi_stop();
+#endif
 
     // Disable scheduler on this core.
     vTaskSuspendAll();
