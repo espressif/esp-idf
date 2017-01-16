@@ -100,7 +100,7 @@ The code which has to run after wake-up from deep sleep mode has to be placed in
 DRAM (data RAM)
 ^^^^^^^^^^^^^^^
 
-Non-constant static data and zero-initialized data is placed by the linker into 200 kB ``0x3FFB0000 — 0x3FFF0000`` region. Note that this region is reduced by 64kB (by shifting start address to ``0x3FFC0000``) if Bluetooth stack is used. Length of this region is also reduced by 16 kB or 32kB if trace memory is used. All space which is left in this region after placing static data there is used for the runtime heap.
+Non-constant static data and zero-initialized data is placed by the linker into the 256 kB ``0x3FFB0000 — 0x3FFF0000`` region. Note that this region is reduced by 64kB (by shifting start address to ``0x3FFC0000``) if Bluetooth stack is used. Length of this region is also reduced by 16 kB or 32kB if trace memory is used. All space which is left in this region after placing static data there is used for the runtime heap.
 
 Constant data may also be placed into DRAM, for example if it is used in an ISR handler (see notes in IRAM section above). To do that, ``DRAM_ATTR`` define can be used::
 
