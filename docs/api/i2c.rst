@@ -68,7 +68,7 @@ Functions
 .. doxygenfunction:: i2c_slave_write_buffer
 .. doxygenfunction:: i2c_slave_read
 .. doxygenfunction:: i2c_set_period
-.. doxygenfunction:: i2s_get_period
+.. doxygenfunction:: i2c_get_period
 .. doxygenfunction:: i2c_set_start_timing
 .. doxygenfunction:: i2c_get_start_timing
 .. doxygenfunction:: i2c_set_stop_timing

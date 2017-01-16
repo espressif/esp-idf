@@ -62,6 +62,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "rom/queue.h"
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
 #include "esp_event.h"
@@ -76,8 +77,8 @@ extern "C" {
 #define ESP_ERR_WIFI_ARG         ESP_ERR_INVALID_ARG       /*!< Invalid argument */
 #define ESP_ERR_WIFI_NOT_SUPPORT ESP_ERR_NOT_SUPPORTED     /*!< Indicates that API is not supported yet */
 
-#define ESP_ERR_WIFI_NOT_INIT    (ESP_ERR_WIFI_BASE + 1)   /*!< WiFi driver is not installed by esp_wifi_init */
-#define ESP_ERR_WIFI_NOT_START   (ESP_ERR_WIFI_BASE + 2)   /*!< WiFi driver is not started by esp_wifi_start */
+#define ESP_ERR_WIFI_NOT_INIT    (ESP_ERR_WIFI_BASE + 1)   /*!< WiFi driver was not installed by esp_wifi_init */
+#define ESP_ERR_WIFI_NOT_STARTED (ESP_ERR_WIFI_BASE + 2)   /*!< WiFi driver was not started by esp_wifi_start */
 #define ESP_ERR_WIFI_IF          (ESP_ERR_WIFI_BASE + 3)   /*!< WiFi interface error */
 #define ESP_ERR_WIFI_MODE        (ESP_ERR_WIFI_BASE + 4)   /*!< WiFi mode error */
 #define ESP_ERR_WIFI_STATE       (ESP_ERR_WIFI_BASE + 5)   /*!< WiFi internal state error */
@@ -85,7 +86,7 @@ extern "C" {
 #define ESP_ERR_WIFI_NVS         (ESP_ERR_WIFI_BASE + 7)   /*!< WiFi internal NVS module error */
 #define ESP_ERR_WIFI_MAC         (ESP_ERR_WIFI_BASE + 8)   /*!< MAC address is invalid */
 #define ESP_ERR_WIFI_SSID        (ESP_ERR_WIFI_BASE + 9)   /*!< SSID is invalid */
-#define ESP_ERR_WIFI_PASSWORD    (ESP_ERR_WIFI_BASE + 10)  /*!< Passord is invalid */
+#define ESP_ERR_WIFI_PASSWORD    (ESP_ERR_WIFI_BASE + 10)  /*!< Password is invalid */
 #define ESP_ERR_WIFI_TIMEOUT     (ESP_ERR_WIFI_BASE + 11)  /*!< Timeout error */
 #define ESP_ERR_WIFI_WAKE_FAIL   (ESP_ERR_WIFI_BASE + 12)  /*!< WiFi is in sleep state(RF closed) and wakeup fail */
 
@@ -97,11 +98,14 @@ typedef struct {
     uint32_t rx_buf_num;  /**< WiFi RX buffer number */
 } wifi_init_config_t;
 
-
+#ifdef CONFIG_WIFI_ENABLED
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
     .rx_buf_num = CONFIG_ESP32_WIFI_RX_BUFFER_NUM, \
 };
+#else
+#define WIFI_INIT_CONFIG_DEFAULT #error Wifi is disabled in config, WIFI_INIT_CONFIG_DEFAULT will not work
+#endif
 
 /**
   * @brief  Init WiFi
@@ -222,8 +226,8 @@ esp_err_t esp_wifi_connect(void);
   *
   * @return
   *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi was not initialized by eps_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi was not started by esp_wifi_start
   *    - ESP_ERR_WIFI_FAIL: other WiFi internal errors
   */
 esp_err_t esp_wifi_disconnect(void);
@@ -246,7 +250,7 @@ esp_err_t esp_wifi_clear_fast_connect(void);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi was not started by esp_wifi_start
   *    - ESP_ERR_WIFI_ARG: invalid argument
   *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
   */
@@ -266,7 +270,7 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi was not started by esp_wifi_start
   *    - ESP_ERR_WIFI_TIMEOUT: blocking scan is timeout
   *    - others: refer to error code in esp_err.h
   */
@@ -278,7 +282,7 @@ esp_err_t esp_wifi_scan_start(wifi_scan_config_t *config, bool block);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   */
 esp_err_t esp_wifi_scan_stop(void);
 
@@ -292,7 +296,7 @@ esp_err_t esp_wifi_scan_stop(void);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_WIFI_ARG: invalid argument
   */
 esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
@@ -307,7 +311,7 @@ esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_WIFI_ARG: invalid argument
   *    - ESP_ERR_WIFI_NO_MEM: out of memory
   */

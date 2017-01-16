@@ -4,11 +4,11 @@ Logging library
 Overview
 --------
 
-Log library has two ways of managing log verbosity: compile time, set via menuconfig; and runtime, using ``esp_log_set_level`` function.
+Log library has two ways of managing log verbosity: compile time, set via menuconfig; and runtime, using ``esp_log_level_set`` function.
 
 At compile time, filtering is done using ``CONFIG_LOG_DEFAULT_LEVEL`` macro, set via menuconfig. All logging statments for levels higher than ``CONFIG_LOG_DEFAULT_LEVEL`` will be removed by the preprocessor.
 
-At run time, all logs below ``CONFIG_LOG_DEFAULT_LEVEL`` are enabled by default. ``esp_log_set_level`` function may be used to set logging level per module. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings.
+At run time, all logs below ``CONFIG_LOG_DEFAULT_LEVEL`` are enabled by default. ``esp_log_level_set`` function may be used to set logging level per module. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings.
 
 How to use this library
 -----------------------
@@ -51,11 +51,11 @@ At component scope, define it in component makefile:
 
    CFLAGS += -D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG
 
-To configure logging output per module at runtime, add calls to ``esp_log_set_level`` function:
+To configure logging output per module at runtime, add calls to ``esp_log_level_set`` function:
 
 .. code-block:: c
 
-   esp_log_set_level("*", ESP_LOG_ERROR);        // set all components to ERROR level
-   esp_log_set_level("wifi", ESP_LOG_WARN);      // enable WARN logs from WiFi stack
-   esp_log_set_level("dhcpc", ESP_LOG_INFO);     // enable INFO logs from DHCP client
+   esp_log_level_set("*", ESP_LOG_ERROR);        // set all components to ERROR level
+   esp_log_level_set("wifi", ESP_LOG_WARN);      // enable WARN logs from WiFi stack
+   esp_log_level_set("dhcpc", ESP_LOG_INFO);     // enable INFO logs from DHCP client
 

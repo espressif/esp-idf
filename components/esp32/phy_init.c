@@ -23,10 +23,12 @@
 #include "esp_err.h"
 #include "esp_phy_init.h"
 #include "esp_system.h"
-#include "phy.h"
 #include "esp_log.h"
 #include "nvs.h"
 #include "sdkconfig.h"
+
+#ifdef CONFIG_WIFI_ENABLED
+#include "phy.h"
 #include "phy_init_data.h"
 
 static const char* TAG = "phy_init";
@@ -219,6 +221,4 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
     return err;
 }
 
-void register_chipv7_phy_stub()
-{
-}
+#endif // CONFIG_WIFI_ENABLED

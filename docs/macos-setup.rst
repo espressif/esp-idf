@@ -4,19 +4,13 @@ Set up of Toolchain for Mac OS
 Step 0: Prerequisites
 =====================
 
-Getting MacPorts or homebrew
-----------------------------
+- install pip::
 
-Whether you compile the toolchain from source or download binary toolchain, there are some dependencies which need to be installed on macOS first. These dependencies are installed with one of the package managers: homebrew or MacPorts. If you have these already, you can skip the following instructions.
+    sudo easy_install pip
 
-- Install XCode from Mac App Store
-- Open Terminal.app and run ``xcode-select --install``
-- Run ``sudo xcodebuild -license`` and agree to XCode license
-- Install MacPorts_ or homebrew_
+- install pyserial
 
-.. _homebrew: http://brew.sh/
-.. _MacPorts: https://www.macports.org/install.php
-
+    sudo pip install pyserial
 
 Step 1: Download binary toolchain for the ESP32
 ==================================================
@@ -64,13 +58,18 @@ In any case, here are the steps to compile the toolchain yourself.
 
 - Install dependencies:
 
+  - Install either MacPorts_ or homebrew_ package manager. MacPorts needs a full XCode installation, while homebrew only needs XCode command line tools.
+    
+    .. _homebrew: http://brew.sh/
+    .. _MacPorts: https://www.macports.org/install.php
+
   - with MacPorts::
 
-        sudo port install gsed gawk binutils gperf grep gettext ncurses
+        sudo port install gsed gawk binutils gperf grep gettext wget libtool autoconf automake
 
-  - with homebrew
+  - with homebrew::
 
-        brew install gnu-sed gawk binutils gperf grep gettext ncurses
+        brew install gnu-sed gawk binutils gperftools gettext wget help2man libtool autoconf automake
 
 Create a case-sensitive filesystem image::
 
