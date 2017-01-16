@@ -352,8 +352,8 @@ static void commonErrorHandler(XtExcFrame *frame)
                     panicPutHex(regs[x + y + 1]);
                     panicPutStr("  ");
                 }
-                panicPutStr("\r\n");
             }
+            panicPutStr("\r\n");
         }
     }
 
