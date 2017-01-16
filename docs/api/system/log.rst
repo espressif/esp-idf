@@ -1,16 +1,14 @@
-.. include:: ../../components/log/README.rst
+.. include:: ../../../components/log/README.rst
 
 Application Example
 -------------------
 
 `Instructions`_
 
+.. _Instructions: ../template.html
+
 API Reference
 -------------
-
-`Instructions`_
-
-.. _Instructions: template.html
 
 Header Files
 ^^^^^^^^^^^^

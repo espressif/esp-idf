@@ -1,9 +1,11 @@
-.. include:: ../../components/vfs/README.rst
+.. include:: ../../../components/vfs/README.rst
 
 Application Example
 -------------------
 
-`Instructions <http://esp-idf.readthedocs.io/en/latest/api/template.html>`_
+`Instructions`_
+
+.. _Instructions: ../template.html
 
 API Reference
 -------------

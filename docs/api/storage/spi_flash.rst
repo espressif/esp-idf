@@ -1,11 +1,11 @@
-.. include:: ../../components/spi_flash/README.rst
+.. include:: ../../../components/spi_flash/README.rst
 
 Application Example
 -------------------
 
 `Instructions`_
 
-.. _Instructions: template.html
+.. _Instructions: ../template.html
 
 API Reference
 -------------
