@@ -230,10 +230,6 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
                              size_t dst_offset, const void* src, size_t size)
 {
     assert(partition != NULL);
-    //todo : need add ecrypt write support ,size must be 32-bytes align 
-    if(partition->encrypted == true) {
-        return ESP_FAIL;
-    }
     if (dst_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
