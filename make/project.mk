@@ -430,8 +430,8 @@ $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUB
 # the part after the brackets is extracted into TOOLCHAIN_GCC_VER.
 ifdef CONFIG_TOOLPREFIX
 ifndef MAKE_RESTARTS
-TOOLCHAIN_COMMIT_DESC := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*?\ \(([^)]*).*|\1|gp')
-TOOLCHAIN_GCC_VER := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*?\ \(.*\)\ (.*)|\1|gp')
+TOOLCHAIN_COMMIT_DESC := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*\ \(([^)]*).*|\1|gp')
+TOOLCHAIN_GCC_VER := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*\ \(.*\)\ (.*)|\1|gp')
 
 # Officially supported version(s)
 SUPPORTED_TOOLCHAIN_COMMIT_DESC := crosstool-NG crosstool-ng-1.22.0-61-gab8375a
