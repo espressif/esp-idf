@@ -23,11 +23,6 @@ To register an FS driver, application needs to define in instance of esp_vfs_t s
         .fstat = &myfs_fstat,
         .close = &myfs_close,
         .read = &myfs_read,
-        .lseek = NULL,
-        .stat = NULL,
-        .link = NULL,
-        .unlink = NULL,
-        .rename = NULL
     };
 
     ESP_ERROR_CHECK(esp_vfs_register("/data", &myfs, NULL));
@@ -125,4 +120,31 @@ When VFS component receives a call from newlib which has a file descriptor, this
                                    +-------------+
 
 
+Standard IO streams (stdin, stdout, stderr)
+-------------------------------------------
+
+If "UART for console output" menuconfig option is not set to "None", then ``stdin``, ``stdout``, and ``stderr`` are configured to read from, and write to, a UART. It is possible to use UART0 or UART1 for standard IO. By default, UART0 is used, with 115200 baud rate, TX pin is GPIO1 and RX pin is GPIO3. These parameters can be changed in menuconfig.
+
+Writing to ``stdout`` or ``stderr`` will send characters to the UART transmit FIFO. Reading from ``stdin`` will retrieve characters from the UART receive FIFO.
+
+Note that while writing to ``stdout`` or ``stderr`` will block until all characters are put into the FIFO, reading from ``stdin`` is non-blocking. The function which reads from UART will get all the characters present in the FIFO (if any), and return. I.e. doing ``fscanf("%d\n", &var);`` may not have desired results. This is a temporary limitation which will be removed once ``fcntl`` is added to the VFS interface.
+
+Standard streams and FreeRTOS tasks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``FILE`` objects for ``stdin``, ``stdout``, and ``stderr`` are shared between all FreeRTOS tasks, but the pointers to these objects are are stored in per-task ``struct _reent``. The following code::
+
+    fprintf(stderr, "42\n");
+
+actually is translated to to this (by the preprocessor):
+
+    fprintf(__getreent()->_stderr, "42\n");
+
+where the ``__getreent()`` function returns a per-task pointer to ``struct _reent`` (`source <https://github.com/espressif/esp-idf/blob/master/components/newlib/include/sys/reent.h#L370-L417>`_). This structure is allocated on the TCB of each task. When a task is initialized, ``_stdin``, ``_stdout`` and ``_stderr`` members of ``struct _reent`` are set to the values of ``_stdin``, ``_stdout`` and ``_stderr`` of ``_GLOBAL_REENT`` (i.e. the structure which is used before FreeRTOS is started).
+
+Such a design has the following consequences:
+
+- It is possible to set ``stdin``, ``stdout``, and ``stderr`` for any given task without affecting other tasks, e.g. by doing ``stdin = fopen("/dev/uart/1", "r")``.
+- Closing default ``stdin``, ``stdout``, or ``stderr`` using ``fclose`` will close the ``FILE`` stream object — this will affect all other tasks.
+- To change the default ``stdin``, ``stdout``, ``stderr`` streams for new tasks, modify ``_GLOBAL_REENT->_stdin`` (``_stdout``, ``_stderr``) before creating the task.
 
