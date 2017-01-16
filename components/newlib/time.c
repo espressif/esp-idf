@@ -83,6 +83,11 @@ static volatile uint64_t s_microseconds = 0;
 
 static void IRAM_ATTR frc_timer_isr()
 {
+    // Write to FRC_TIMER_INT_REG may not take effect in some cases (root cause TBD)
+    // This extra write works around this issue.
+    // There is no register at DR_REG_FRC_TIMER_BASE + 0x60 (in fact, any DPORT register address can be used).
+    WRITE_PERI_REG(DR_REG_FRC_TIMER_BASE + 0x60, 0xabababab);
+    // Clear interrupt status
     WRITE_PERI_REG(FRC_TIMER_INT_REG(0), FRC_TIMER_INT_CLR);
     s_microseconds += FRC1_ISR_PERIOD_US;
 }
