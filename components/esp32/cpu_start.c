@@ -193,8 +193,8 @@ void start_cpu0_default(void)
 {
     esp_setup_syscall_table();
 //Enable trace memory and immediately start trace.
-#if CONFIG_MEMMAP_TRACEMEM
-#if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
+#if CONFIG_ESP32_TRAX
+#if CONFIG_ESP32_TRAX_TWOBANKS
     trax_enable(TRAX_ENA_PRO_APP);
 #else
     trax_enable(TRAX_ENA_PRO);
@@ -250,7 +250,7 @@ void start_cpu0_default(void)
 #if !CONFIG_FREERTOS_UNICORE
 void start_cpu1_default(void)
 {
-#if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
+#if CONFIG_ESP32_TRAX_TWOBANKS
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     // Wait for FreeRTOS initialization to finish on PRO CPU
