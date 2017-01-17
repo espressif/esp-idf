@@ -65,8 +65,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'ESP32 Programming Guide'
-copyright = u'2016, Espressif'
+project = u'ESP-IDF Programming Guide'
+copyright = u'2016 - 2017, Espressif'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
