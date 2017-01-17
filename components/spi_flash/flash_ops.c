@@ -103,16 +103,18 @@ SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
     return SPI_FLASH_RESULT_OK;
 }
 
-static inline void spi_flash_guard_start()
+static inline void IRAM_ATTR spi_flash_guard_start()
 {
-    if (s_flash_guard_ops)
+    if (s_flash_guard_ops) {
         s_flash_guard_ops->start();
+    }
 }
 
-static inline void spi_flash_guard_end()
+static inline void IRAM_ATTR spi_flash_guard_end()
 {
-    if (s_flash_guard_ops)
+    if (s_flash_guard_ops) {
         s_flash_guard_ops->end();
+    }
 }
 
 esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)

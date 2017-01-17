@@ -163,8 +163,10 @@ esp_err_t PageManager::requestNewPage()
         return err;
     }
 
+#ifndef NDEBUG
     assert(usedEntries == newPage->getUsedEntryCount());
-
+#endif
+    
     mPageList.erase(maxErasedItemsPageIt);
     mFreePageList.push_back(erasedPage);
 
