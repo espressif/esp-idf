@@ -698,7 +698,7 @@ void IRAM_ATTR esp_intr_noniram_disable()
     int intmask=~non_iram_int_mask[cpu];
     if (non_iram_int_disabled_flag[cpu]) abort();
     non_iram_int_disabled_flag[cpu]=true;
-    /*asm volatile (
+    asm volatile (
         "movi %0,0\n"
         "xsr %0,INTENABLE\n"    //disable all ints first
         "rsync\n"
@@ -706,14 +706,6 @@ void IRAM_ATTR esp_intr_noniram_disable()
         "wsr a3,INTENABLE\n"    //write back
         "rsync\n"
         :"=r"(oldint):"r"(intmask):"a3");
-    */
-    asm volatile (
-        "rsil %0,0\n"    //disable all ints first
-        "and a3,%0,%1\n" //mask ints that need disabling
-        "wsr.ps a3\n"    //write back
-        "rsync\n"
-        :"=r"(oldint):"r"(intmask):"a3");
-
     //Save which ints we did disable
     non_iram_int_disabled[cpu]=oldint&non_iram_int_mask[cpu];
 }
@@ -725,9 +717,11 @@ void IRAM_ATTR esp_intr_noniram_enable()
     if (!non_iram_int_disabled_flag[cpu]) abort();
     non_iram_int_disabled_flag[cpu]=false;
     asm volatile (
-        "rsil a3, 0\n"
+        "movi a3,0\n"
+        "xsr a3,INTENABLE\n"
+        "rsync\n"
         "or a3,a3,%0\n"
-        "wsr.ps a3\n"
+        "wsr a3,INTENABLE\n"
         "rsync\n"
         ::"r"(intmask):"a3");
 }
