@@ -691,15 +691,14 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
     return ESP_OK;
 }
 
-
-void esp_intr_noniram_disable() 
+void IRAM_ATTR esp_intr_noniram_disable() 
 {
     int oldint;
     int cpu=xPortGetCoreID();
     int intmask=~non_iram_int_mask[cpu];
     if (non_iram_int_disabled_flag[cpu]) abort();
     non_iram_int_disabled_flag[cpu]=true;
-    asm volatile (
+    /*asm volatile (
         "movi %0,0\n"
         "xsr %0,INTENABLE\n"    //disable all ints first
         "rsync\n"
@@ -707,22 +706,28 @@ void esp_intr_noniram_disable()
         "wsr a3,INTENABLE\n"    //write back
         "rsync\n"
         :"=r"(oldint):"r"(intmask):"a3");
+    */
+    asm volatile (
+        "rsil %0,0\n"    //disable all ints first
+        "and a3,%0,%1\n" //mask ints that need disabling
+        "wsr.ps a3\n"    //write back
+        "rsync\n"
+        :"=r"(oldint):"r"(intmask):"a3");
+
     //Save which ints we did disable
     non_iram_int_disabled[cpu]=oldint&non_iram_int_mask[cpu];
 }
 
-void esp_intr_noniram_enable() 
+void IRAM_ATTR esp_intr_noniram_enable() 
 {
     int cpu=xPortGetCoreID();
     int intmask=non_iram_int_disabled[cpu];
     if (!non_iram_int_disabled_flag[cpu]) abort();
     non_iram_int_disabled_flag[cpu]=false;
     asm volatile (
-        "movi a3,0\n"
-        "xsr a3,INTENABLE\n"
-        "rsync\n"
+        "rsil a3, 0\n"
         "or a3,a3,%0\n"
-        "wsr a3,INTENABLE\n"
+        "wsr.ps a3\n"
         "rsync\n"
         ::"r"(intmask):"a3");
 }
@@ -739,7 +744,3 @@ void IRAM_ATTR ets_isr_unmask(unsigned int mask) {
 void IRAM_ATTR ets_isr_mask(unsigned int mask) {
     xt_ints_off(mask);
 }
-
-
-
-
