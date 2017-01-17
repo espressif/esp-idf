@@ -45,6 +45,8 @@ Because RTC IO module is enabled in this mode, internal pullup or pulldown resis
 
 In revisions 0 and 1 of the ESP32, this wakeup source is incompatible with ULP and touch wakeup sources.
 
+.. warning:: After wake up from deep sleep, IO pad used for wakeup will be configured as RTC IO. Before using this pad as digital GPIO, reconfigure it using ``rtc_gpio_deinit(gpio_num)`` function.
+
 .. doxygenfunction:: esp_deep_sleep_enable_ext0_wakeup
 
 External wakeup (ext1)
@@ -60,6 +62,8 @@ This wakeup source is implemented by the RTC controller. As such, RTC peripheral
     esp_deep_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
     gpio_pullup_dis(gpio_num);
     gpio_pulldown_en(gpio_num);
+
+.. warning:: After wake up from deep sleep, IO pad(s) used for wakeup will be configured as RTC IO. Before using these pads as digital GPIOs, reconfigure them using ``rtc_gpio_deinit(gpio_num)`` function.
     
 The following function can be used to enable this wakeup mode:
 
