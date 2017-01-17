@@ -111,7 +111,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `drivers/include/drivers/spi_master.h <https://github.com/espressif/esp-idf/blob/master/components/drivers/include/drivers/spi_master.h>`_
+  * `driver/include/driver/spi_master.h <https://github.com/espressif/esp-idf/blob/master/components/driver/include/driver/spi_master.h>`_
 
 Macros
 ^^^^^^

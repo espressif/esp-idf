@@ -27,7 +27,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `bt/bluedroid/api/include/esp_gap_ble_api.h <https://github.com/espressif/esp-idf/blob/master/components/bt/bluedroid/api/include/esp_gap_ble.h>`_
+  * `bt/bluedroid/api/include/esp_gap_ble_api.h <https://github.com/espressif/esp-idf/blob/master/components/bt/bluedroid/api/include/esp_gap_ble_api.h>`_
 
 
 Macros
