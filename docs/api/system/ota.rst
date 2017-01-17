@@ -1,6 +1,11 @@
 OTA
 ===
 
+Application Example
+-------------------
+ 
+Demonstration of OTA (over the air) firmware update workflow: `examples/system/ota <https://github.com/espressif/esp-idf/tree/master/examples/system/ota>`_.
+
 API Reference
 -------------
 

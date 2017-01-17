@@ -6,17 +6,15 @@ Overview
 
 `Instructions`_
 
+.. _Instructions: ../template.html
+
 Application Example
 -------------------
 
-`Instructions`_
+Configure uart settings and install uart driver to read/write using UART0 and UART1 interfaces: `examples/peripherals/uart <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/uart>`_.
 
 API Reference
 -------------
-
-`Instructions`_
-
-.. _Instructions: ../template.html
 
 Header Files
 ^^^^^^^^^^^^
