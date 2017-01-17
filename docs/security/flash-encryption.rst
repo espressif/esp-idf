@@ -291,11 +291,13 @@ Flash Encryption Algorithm
 - Each 32 byte block is encrypted with a unique key which is derived from this main flash encryption key XORed with the offset of this block in the flash (a "key tweak").
 
 - The specific tweak depends on the setting of ``FLASH_CRYPT_CONFIG`` efuse. This is a 4 bit efuse, where each bit enables XORing of a particular range of the key bits:
+
   - Bit 1, bits 0-66 of the key are XORed.
   - Bit 2, bits 67-131 of the key are XORed.
   - Bit 3, bits 132-194 of the key are XORed.
   - Bit 4, bits 195-256 of the key are XORed.
-It is recommended that ``FLASH_CRYPT_CONFIG`` is always left to set the default value `0xF`, so that all key bits are XORed with the block offset. See `Setting FLASH_CRYPT_CONFIG` for details.
+
+  It is recommended that ``FLASH_CRYPT_CONFIG`` is always left to set the default value `0xF`, so that all key bits are XORed with the block offset. See `Setting FLASH_CRYPT_CONFIG` for details.
 
 - The high 19 bits of the block offset (bit 5 to bit 23) are XORed with the main flash encryption key. This range is chosen for two reasons: the maximum flash size is 16MB (24 bits), and each block is 32 bytes so the least significant 5 bits are always zero.
 

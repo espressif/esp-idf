@@ -28,7 +28,7 @@ Contents:
    :maxdepth: 1
 
    General Notes <general-notes>
-   Build System <build_system>
+   Build System <build-system>
    Debugging <openocd>
    ESP32 Core Dump <core_dump>
    Partition Tables <partition-tables>
