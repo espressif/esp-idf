@@ -164,7 +164,7 @@ void app_main()
      */
     while (1) {
         if (gpio_get_level(GPIO_NUM_0) == 0) {
-            vTaskDelay(1000 / portTICK_RATE_MS);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
             if(gpio_get_level(GPIO_NUM_0) == 0) {
                 err = save_run_time();
                 if (err != ESP_OK) printf("Error (%d) saving run time blob to NVS!\n", err);
@@ -173,6 +173,6 @@ void app_main()
                 esp_restart();
             }
         }
-        vTaskDelay(200 / portTICK_RATE_MS);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
     }
 }

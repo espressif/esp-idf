@@ -109,41 +109,41 @@ typedef UINT8 tBTA_GATT_STATUS;
 
 
 /* Client callback function events */
-#define BTA_GATTC_REG_EVT           0   /* GATT client is registered. */
-#define BTA_GATTC_DEREG_EVT         1   /* GATT client deregistered event */
-#define BTA_GATTC_OPEN_EVT          2   /* GATTC open request status  event */
-#define BTA_GATTC_READ_CHAR_EVT     3   /* GATT read characteristic event */
-#define BTA_GATTC_WRITE_CHAR_EVT    4   /* GATT write characteristic or char descriptor event */
-#define BTA_GATTC_CLOSE_EVT         5   /* GATTC  close request status event */
-#define BTA_GATTC_SEARCH_CMPL_EVT   6   /* GATT discovery complete event */
-#define BTA_GATTC_SEARCH_RES_EVT    7   /* GATT discovery result event */
-#define BTA_GATTC_READ_DESCR_EVT    8   /* GATT read characterisitc descriptor event */
-#define BTA_GATTC_WRITE_DESCR_EVT   9   /* GATT write characteristic descriptor event */
-#define BTA_GATTC_NOTIF_EVT         10  /* GATT attribute notification event */
-#define BTA_GATTC_PREP_WRITE_EVT    11  /* GATT prepare write  event */
-#define BTA_GATTC_EXEC_EVT          12  /* execute write complete event */
-#define BTA_GATTC_ACL_EVT           13  /* ACL up event */
-#define BTA_GATTC_CANCEL_OPEN_EVT   14  /* cancel open event */
-#define BTA_GATTC_SRVC_CHG_EVT      15  /* service change event */
-#define BTA_GATTC_LISTEN_EVT        16  /* listen event */
-#define BTA_GATTC_ENC_CMPL_CB_EVT   17  /* encryption complete callback event */
-#define BTA_GATTC_CFG_MTU_EVT       18  /* configure MTU complete event */
-#define BTA_GATTC_ADV_DATA_EVT      19  /* ADV data event */
-#define BTA_GATTC_MULT_ADV_ENB_EVT  20  /* Enable Multi ADV event */
-#define BTA_GATTC_MULT_ADV_UPD_EVT  21  /* Update parameter event */
-#define BTA_GATTC_MULT_ADV_DATA_EVT 22  /* Multi ADV data event */
-#define BTA_GATTC_MULT_ADV_DIS_EVT  23  /* Disable Multi ADV event */
-#define BTA_GATTC_CONGEST_EVT       24  /* Congestion event */
-#define BTA_GATTC_BTH_SCAN_ENB_EVT  25 /* Enable batch scan event */
-#define BTA_GATTC_BTH_SCAN_CFG_EVT  26 /* Config storage event */
-#define BTA_GATTC_BTH_SCAN_RD_EVT   27 /* Batch scan reports read event */
-#define BTA_GATTC_BTH_SCAN_THR_EVT  28 /* Batch scan threshold event */
-#define BTA_GATTC_BTH_SCAN_PARAM_EVT 29 /* Batch scan param event */
-#define BTA_GATTC_BTH_SCAN_DIS_EVT  30 /* Disable batch scan event */
-#define BTA_GATTC_SCAN_FLT_CFG_EVT  31 /* Scan filter config event */
-#define BTA_GATTC_SCAN_FLT_PARAM_EVT 32 /* Param filter event */
-#define BTA_GATTC_SCAN_FLT_STATUS_EVT 33 /* Filter status event */
-#define BTA_GATTC_ADV_VSC_EVT         34 /* ADV VSC event */
+#define BTA_GATTC_REG_EVT               0   /* GATT client is registered. */
+#define BTA_GATTC_DEREG_EVT             1   /* GATT client deregistered event */
+#define BTA_GATTC_OPEN_EVT              2   /* GATTC open request status  event */
+#define BTA_GATTC_READ_CHAR_EVT         3   /* GATT read characteristic event */
+#define BTA_GATTC_WRITE_CHAR_EVT        4   /* GATT write characteristic or char descriptor event */
+#define BTA_GATTC_CLOSE_EVT             5   /* GATTC  close request status event */
+#define BTA_GATTC_SEARCH_CMPL_EVT       6   /* GATT discovery complete event */
+#define BTA_GATTC_SEARCH_RES_EVT        7   /* GATT discovery result event */
+#define BTA_GATTC_READ_DESCR_EVT        8   /* GATT read characterisitc descriptor event */
+#define BTA_GATTC_WRITE_DESCR_EVT       9   /* GATT write characteristic descriptor event */
+#define BTA_GATTC_NOTIF_EVT             10  /* GATT attribute notification event */
+#define BTA_GATTC_PREP_WRITE_EVT        11  /* GATT prepare write  event */
+#define BTA_GATTC_EXEC_EVT              12  /* execute write complete event */
+#define BTA_GATTC_ACL_EVT               13  /* ACL up event */
+#define BTA_GATTC_CANCEL_OPEN_EVT       14  /* cancel open event */
+#define BTA_GATTC_SRVC_CHG_EVT          15  /* service change event */
+#define BTA_GATTC_LISTEN_EVT            16  /* listen event */
+#define BTA_GATTC_ENC_CMPL_CB_EVT       17  /* encryption complete callback event */
+#define BTA_GATTC_CFG_MTU_EVT           18  /* configure MTU complete event */
+#define BTA_GATTC_ADV_DATA_EVT          19  /* ADV data event */
+#define BTA_GATTC_MULT_ADV_ENB_EVT      20  /* Enable Multi ADV event */
+#define BTA_GATTC_MULT_ADV_UPD_EVT      21  /* Update parameter event */
+#define BTA_GATTC_MULT_ADV_DATA_EVT     22  /* Multi ADV data event */
+#define BTA_GATTC_MULT_ADV_DIS_EVT      23  /* Disable Multi ADV event */
+#define BTA_GATTC_CONGEST_EVT           24  /* Congestion event */
+#define BTA_GATTC_BTH_SCAN_ENB_EVT      25 /* Enable batch scan event */
+#define BTA_GATTC_BTH_SCAN_CFG_EVT      26 /* Config storage event */
+#define BTA_GATTC_BTH_SCAN_RD_EVT       27 /* Batch scan reports read event */
+#define BTA_GATTC_BTH_SCAN_THR_EVT      28 /* Batch scan threshold event */
+#define BTA_GATTC_BTH_SCAN_PARAM_EVT    29 /* Batch scan param event */
+#define BTA_GATTC_BTH_SCAN_DIS_EVT      30 /* Disable batch scan event */
+#define BTA_GATTC_SCAN_FLT_CFG_EVT      31 /* Scan filter config event */
+#define BTA_GATTC_SCAN_FLT_PARAM_EVT    32 /* Param filter event */
+#define BTA_GATTC_SCAN_FLT_STATUS_EVT   33 /* Filter status event */
+#define BTA_GATTC_ADV_VSC_EVT           34 /* ADV VSC event */
 
 typedef UINT8 tBTA_GATTC_EVT;
 
@@ -151,7 +151,7 @@ typedef tGATT_IF tBTA_GATTC_IF;
 
 typedef struct {
     UINT16              unit;       /* as UUIUD defined by SIG */
-    UINT16              descr;       /* as UUID as defined by SIG */
+    UINT16              descr;      /* as UUID as defined by SIG */
     tGATT_FORMAT        format;
     INT8                exp;
     UINT8               name_spc;   /* The name space of the description */
@@ -165,7 +165,7 @@ typedef UINT16  tBTA_GATT_CLT_CHAR_CONFIG;
 /* characteristic descriptor: server configuration value
 */
 #define BTA_GATT_SVR_CONFIG_NONE            GATT_SVR_CONFIG_NONE            /* 0x0000 */
-#define BTA_GATT_SVR_CONFIG_BROADCAST       GATT_SVR_CONFIG_BROADCAST       /*  0x0001 */
+#define BTA_GATT_SVR_CONFIG_BROADCAST       GATT_SVR_CONFIG_BROADCAST       /* 0x0001 */
 typedef UINT16  tBTA_GATT_SVR_CHAR_CONFIG;
 
 /* Characteristic Aggregate Format attribute value
@@ -367,8 +367,8 @@ typedef struct {
 // btla-specific --
 
 typedef struct {
-    tBTA_GATTC_IF       client_if;
-    BD_ADDR             remote_bda;
+    tBTA_GATTC_IF           client_if;
+    BD_ADDR                 remote_bda;
 } tBTA_GATTC_ENC_CMPL_CB;
 
 typedef union {
@@ -395,7 +395,6 @@ typedef void (tBTA_GATTC_ENB_CBACK)(tBTA_GATT_STATUS status);
 /* Client callback function */
 typedef void (tBTA_GATTC_CBACK)(tBTA_GATTC_EVT event, tBTA_GATTC *p_data);
 
-
 /* GATT Server Data Structure */
 /* Server callback function events */
 #define BTA_GATTS_REG_EVT                               0
@@ -419,6 +418,7 @@ typedef void (tBTA_GATTC_CBACK)(tBTA_GATTC_EVT event, tBTA_GATTC *p_data);
 #define BTA_GATTS_CLOSE_EVT                             18
 #define BTA_GATTS_LISTEN_EVT                            19
 #define BTA_GATTS_CONGEST_EVT                           20
+#define BTA_GATTS_SET_ATTR_VAL_EVT                      21
 
 typedef UINT8  tBTA_GATTS_EVT;
 typedef tGATT_IF tBTA_GATTS_IF;
@@ -434,20 +434,22 @@ typedef tGATT_IF tBTA_GATTS_IF;
 #define BTA_GATT_PERM_WRITE_SIGNED      GATT_PERM_WRITE_SIGNED      /* bit 7 -  0x0080 */
 #define BTA_GATT_PERM_WRITE_SIGNED_MITM GATT_PERM_WRITE_SIGNED_MITM /* bit 8 -  0x0100 */
 typedef UINT16 tBTA_GATT_PERM;
+typedef tGATT_ATTR_VAL tBTA_GATT_ATTR_VAL;
+typedef tGATTS_ATTR_CONTROL tBTA_GATTS_ATTR_CONTROL;
 
 #define BTA_GATTS_INVALID_APP   0xff
 
 #define BTA_GATTS_INVALID_IF    0
 
 /* definition of characteristic properties */
-#define BTA_GATT_CHAR_PROP_BIT_BROADCAST    GATT_CHAR_PROP_BIT_BROADCAST    /* 0x01 */
-#define BTA_GATT_CHAR_PROP_BIT_READ         GATT_CHAR_PROP_BIT_READ    /* 0x02 */
-#define BTA_GATT_CHAR_PROP_BIT_WRITE_NR     GATT_CHAR_PROP_BIT_WRITE_NR    /* 0x04 */
-#define BTA_GATT_CHAR_PROP_BIT_WRITE        GATT_CHAR_PROP_BIT_WRITE       /* 0x08 */
-#define BTA_GATT_CHAR_PROP_BIT_NOTIFY       GATT_CHAR_PROP_BIT_NOTIFY      /* 0x10 */
-#define BTA_GATT_CHAR_PROP_BIT_INDICATE     GATT_CHAR_PROP_BIT_INDICATE    /* 0x20 */
-#define BTA_GATT_CHAR_PROP_BIT_AUTH         GATT_CHAR_PROP_BIT_AUTH        /* 0x40 */
-#define BTA_GATT_CHAR_PROP_BIT_EXT_PROP     GATT_CHAR_PROP_BIT_EXT_PROP    /* 0x80 */
+#define BTA_GATT_CHAR_PROP_BIT_BROADCAST        GATT_CHAR_PROP_BIT_BROADCAST    /* 0x01 */
+#define BTA_GATT_CHAR_PROP_BIT_READ             GATT_CHAR_PROP_BIT_READ         /* 0x02 */
+#define BTA_GATT_CHAR_PROP_BIT_WRITE_NR         GATT_CHAR_PROP_BIT_WRITE_NR     /* 0x04 */
+#define BTA_GATT_CHAR_PROP_BIT_WRITE            GATT_CHAR_PROP_BIT_WRITE        /* 0x08 */
+#define BTA_GATT_CHAR_PROP_BIT_NOTIFY           GATT_CHAR_PROP_BIT_NOTIFY       /* 0x10 */
+#define BTA_GATT_CHAR_PROP_BIT_INDICATE         GATT_CHAR_PROP_BIT_INDICATE     /* 0x20 */
+#define BTA_GATT_CHAR_PROP_BIT_AUTH             GATT_CHAR_PROP_BIT_AUTH         /* 0x40 */
+#define BTA_GATT_CHAR_PROP_BIT_EXT_PROP         GATT_CHAR_PROP_BIT_EXT_PROP     /* 0x80 */
 typedef UINT8 tBTA_GATT_CHAR_PROP;
 
 #ifndef BTA_GATTC_CHAR_DESCR_MAX
@@ -476,8 +478,8 @@ typedef tGATTS_SRV_CHG     tBTA_GATTS_SRV_CHG;
 typedef tGATTS_SRV_CHG_REQ tBTA_GATTS_SRV_CHG_REQ;
 typedef tGATTS_SRV_CHG_RSP tBTA_GATTS_SRV_CHG_RSP;
 
-#define BTA_GATT_TRANSPORT_LE       GATT_TRANSPORT_LE
-#define BTA_GATT_TRANSPORT_BR_EDR   GATT_TRANSPORT_BR_EDR
+#define BTA_GATT_TRANSPORT_LE           GATT_TRANSPORT_LE
+#define BTA_GATT_TRANSPORT_BR_EDR       GATT_TRANSPORT_BR_EDR
 #define BTA_GATT_TRANSPORT_LE_BR_EDR    GATT_TRANSPORT_LE_BR_EDR
 typedef UINT8 tBTA_GATT_TRANSPORT;
 
@@ -539,6 +541,13 @@ typedef struct {
 // btla-specific --
 } tBTA_GATTS_ADD_RESULT;
 
+typedef struct{
+    tBTA_GATTS_IF       server_if;
+    UINT16              service_id;
+    UINT16              attr_id;
+    tBTA_GATT_STATUS    status;
+}tBAT_GATTS_ATTR_VAL_RESULT;
+
 typedef struct {
     tBTA_GATTS_IF       server_if;
     UINT16              service_id;
@@ -566,17 +575,18 @@ typedef struct {
 
 /* GATTS callback data */
 typedef union {
-    tBTA_GATTS_REG_OPER     reg_oper;
-    tBTA_GATTS_CREATE       create;
-    tBTA_GATTS_SRVC_OPER    srvc_oper;
-    tBTA_GATT_STATUS        status;      /* BTA_GATTS_LISTEN_EVT */
-    tBTA_GATTS_ADD_RESULT   add_result;  /* add included service: BTA_GATTS_ADD_INCL_SRVC_EVT
-                                           add char : BTA_GATTS_ADD_CHAR_EVT
-                                           add char descriptor: BTA_GATTS_ADD_CHAR_DESCR_EVT */
-    tBTA_GATTS_REQ          req_data;
-    tBTA_GATTS_CONN         conn;       /* BTA_GATTS_CONN_EVT */
-    tBTA_GATTS_CONGEST      congest;    /* BTA_GATTS_CONGEST_EVT callback data */
-    tBTA_GATTS_CONF         confirm;    /* BTA_GATTS_CONF_EVT callback data */
+    tBTA_GATTS_REG_OPER         reg_oper;
+    tBTA_GATTS_CREATE           create;
+    tBTA_GATTS_SRVC_OPER        srvc_oper;
+    tBTA_GATT_STATUS            status;         /* BTA_GATTS_LISTEN_EVT */
+    tBTA_GATTS_ADD_RESULT       add_result;     /* add included service: BTA_GATTS_ADD_INCL_SRVC_EVT
+                                                add char : BTA_GATTS_ADD_CHAR_EVT
+                                                add char descriptor: BTA_GATTS_ADD_CHAR_DESCR_EVT */
+    tBAT_GATTS_ATTR_VAL_RESULT  attr_val;
+    tBTA_GATTS_REQ              req_data;
+    tBTA_GATTS_CONN             conn;           /* BTA_GATTS_CONN_EVT */
+    tBTA_GATTS_CONGEST          congest;        /* BTA_GATTS_CONGEST_EVT callback data */
+    tBTA_GATTS_CONF             confirm;        /* BTA_GATTS_CONF_EVT callback data */
 } tBTA_GATTS;
 
 /* GATTS enable callback function */
@@ -1193,8 +1203,9 @@ extern void BTA_GATTS_AddIncludeService(UINT16 service_id, UINT16 included_servi
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_GATTS_AddCharacteristic (UINT16 service_id,  tBT_UUID   *p_char_uuid,
-        tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property);
+extern void BTA_GATTS_AddCharacteristic (UINT16 service_id,  tBT_UUID  *p_char_uuid,
+                                  tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property, tGATT_ATTR_VAL *attr_val, 
+                                  tBTA_GATTS_ATTR_CONTROL *control);
 
 /*******************************************************************************
 **
@@ -1214,8 +1225,9 @@ extern void BTA_GATTS_AddCharacteristic (UINT16 service_id,  tBT_UUID   *p_char_
 **
 *******************************************************************************/
 extern void BTA_GATTS_AddCharDescriptor (UINT16 service_id,
-        tBTA_GATT_PERM perm,
-        tBT_UUID   *p_descr_uuid);
+                                  tBTA_GATT_PERM perm,
+                                  tBT_UUID   *p_descr_uuid, tBTA_GATT_ATTR_VAL *attr_val, 
+                                  tBTA_GATTS_ATTR_CONTROL *control);
 
 /*******************************************************************************
 **
@@ -1295,6 +1307,38 @@ extern void BTA_GATTS_HandleValueIndication (UINT16 conn_id, UINT16 attr_id,
 extern void BTA_GATTS_SendRsp (UINT16 conn_id, UINT32 trans_id,
                                tBTA_GATT_STATUS status, tBTA_GATTS_RSP *p_msg);
 
+
+
+/*******************************************************************************
+**
+** Function         BTA_SetAttributeValue
+**
+** Description      This function is called to set the attribute value in the gatt database
+**
+** Parameters   attr_handle - the attribute value handle.
+**                      length - the value length which has been set to the attribute.
+**                      value - the pointer to the value
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *value);
+
+
+/*******************************************************************************
+**
+** Function         BTA_GetAttributeValue
+**
+** Description      This function is called to get the attribute value in the gatt database
+**
+** Parameters   attr_handle - the attribute value handle.
+**                      length - the value length which has been set to the attribute.
+**                      value - the pointer to the value
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 **value);
 
 /*******************************************************************************
 **

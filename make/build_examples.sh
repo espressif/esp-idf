@@ -11,10 +11,9 @@
 
 EXAMPLE_NUM=1
 RESULT=0
+FAILED_EXAMPLES=""
 
 RESULT_WARNINGS=22  # magic number result code for "warnings found"
-
-set -e
 
 for example in ${IDF_PATH}/examples/*; do
     [ -f ${example}/Makefile ] || continue
@@ -30,16 +29,17 @@ for example in ${IDF_PATH}/examples/*; do
    # build non-verbose first
    BUILDLOG=$(mktemp -t examplebuild.XXXX.log)
    (
+       set -o pipefail  # so result of make all isn't lost when piping to tee
        set -e
        make clean defconfig
-       make all 2>&1 | tee $BUILDLOG
-    ) || (RESULT=$?; make V=1) # only build verbose if there's an error
+       make $* all 2>&1 | tee $BUILDLOG
+    ) || { RESULT=$?; FAILED_EXAMPLES+=" ${example}"; make V=1; } # only build verbose if there's an error
     popd
     EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
 
-    if [ $RESULT -eq 0 ] && grep -q ": warning:" $BUILDLOG; then
-        echo "Build will fail, due to warnings in this example"
-        RESULT=$RESULT_WARNINGS
+    if grep -q ": warning:" $BUILDLOG; then
+        [ $RESULT -eq 0 ] && RESULT=$RESULT_WARNINGS
+        FAILED_EXAMPLES+=" ${example} (warnings)"
     fi
 
     rm -f $BUILDLOG
@@ -48,6 +48,8 @@ done
 if [ $RESULT -eq $RESULT_WARNINGS ]; then
     echo "Build would have passed, except for warnings."
 fi
+
+[ $RESULT -eq 0 ] || echo "Failed examples: $FAILED_EXAMPLES"
 
 exit $RESULT
 

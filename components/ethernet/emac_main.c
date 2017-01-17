@@ -68,6 +68,7 @@ static TimerHandle_t emac_timer = NULL;
 static SemaphoreHandle_t emac_rx_xMutex = NULL;
 static SemaphoreHandle_t emac_tx_xMutex = NULL;
 static const char *TAG = "emac";
+static bool pause_send = false;
 
 static esp_err_t emac_ioctl(emac_sig_t sig, emac_par_t par);
 esp_err_t emac_post(emac_sig_t sig, emac_par_t par);
@@ -96,9 +97,9 @@ static void emac_clean_tx_desc(struct dma_extended_desc *tx_desc)
     tx_desc->basic.desc0 = 0;
 }
 
-static void emac_clean_rx_desc(struct dma_extended_desc *rx_desc ,uint32_t buf_ptr)
+static void emac_clean_rx_desc(struct dma_extended_desc *rx_desc , uint32_t buf_ptr)
 {
-    if(buf_ptr != 0) {
+    if (buf_ptr != 0) {
         rx_desc->basic.desc2 = buf_ptr;
     }
     rx_desc->basic.desc1 = EMAC_DESC_RX_SECOND_ADDR_CHAIN | DMA_RX_BUF_SIZE;
@@ -215,6 +216,8 @@ static void emac_set_user_config_data(eth_config_t *config )
     emac_config.emac_phy_check_init = config->phy_check_init;
     emac_config.emac_phy_get_speed_mode = config->phy_get_speed_mode;
     emac_config.emac_phy_get_duplex_mode = config->phy_get_duplex_mode;
+    emac_config.emac_flow_ctrl_enable = config->flow_ctrl_enable;
+    emac_config.emac_phy_get_partner_pause_enable = config->phy_get_partner_pause_enable;
 }
 
 static void emac_enable_intr()
@@ -276,6 +279,11 @@ static esp_err_t emac_verify_args(void)
         ret = ESP_FAIL;
     }
 
+    if (emac_config.emac_flow_ctrl_enable == true && emac_config.emac_phy_get_partner_pause_enable == NULL) {
+        ESP_LOGE(TAG, "phy get partner pause enable func is null");
+        ret = ESP_FAIL;
+    }
+
     return ret;
 }
 
@@ -293,13 +301,13 @@ static void emac_process_tx(void)
 {
     uint32_t cur_tx_desc = emac_read_tx_cur_reg();
 
-    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+    if (emac_config.emac_status == EMAC_RUNTIME_STOP) {
         return;
     }
 
     xSemaphoreTakeRecursive( emac_tx_xMutex, ( TickType_t ) portMAX_DELAY );
 
-    while (((uint32_t) &(emac_config.dma_etx[emac_config.dirty_tx].basic.desc0) != cur_tx_desc)) {
+    while (((uint32_t) & (emac_config.dma_etx[emac_config.dirty_tx].basic.desc0) != cur_tx_desc)) {
         emac_clean_tx_desc(&(emac_config.dma_etx[emac_config.dirty_tx]));
         emac_config.dirty_tx = (emac_config.dirty_tx + 1) % DMA_TX_BUF_NUM;
         emac_config.cnt_tx --;
@@ -317,21 +325,43 @@ void esp_eth_free_rx_buf(void *buf)
 {
     xSemaphoreTakeRecursive( emac_rx_xMutex, ( TickType_t ) portMAX_DELAY );
 
-    emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.cur_rx]),(uint32_t) buf);
+    emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.cur_rx]), (uint32_t) buf);
     emac_config.cur_rx = (emac_config.cur_rx + 1) % DMA_RX_BUF_NUM;
     emac_config.cnt_rx--;
-    if(emac_config.cnt_rx < 0) {
-       ESP_LOGE(TAG, "emac rx buf err!!\n");
+    if (emac_config.cnt_rx < 0) {
+        ESP_LOGE(TAG, "emac rx buf err!!\n");
     }
     emac_poll_rx_cmd();
 
     xSemaphoreGiveRecursive( emac_rx_xMutex );
+
+    if (emac_config.emac_flow_ctrl_partner_support == true) {
+        portENTER_CRITICAL(&g_emac_mux);
+        if (pause_send == true && emac_config.cnt_rx < FLOW_CONTROL_LOW_WATERMARK) {
+            emac_send_pause_zero_frame_enable();
+            pause_send = false;
+        }
+        portEXIT_CRITICAL(&g_emac_mux);
+    }
+}
+
+static uint32_t IRAM_ATTR emac_get_rxbuf_count_in_intr(void)
+{
+    uint32_t cnt = 0;
+    uint32_t cur_rx_desc = emac_read_rx_cur_reg();
+    struct dma_extended_desc *cur_desc = (struct dma_extended_desc *)cur_rx_desc;
+
+    while (cur_desc->basic.desc0 == EMAC_DESC_RX_OWN) {
+        cnt++;
+        cur_desc = (struct dma_extended_desc *)cur_desc->basic.desc3;
+    }
+    return cnt;
 }
 
 #if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
 static void emac_process_rx(void)
 {
-    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+    if (emac_config.emac_status == EMAC_RUNTIME_STOP) {
         return;
     }
     uint32_t cur_rx_desc = emac_read_rx_cur_reg();
@@ -341,7 +371,7 @@ static void emac_process_rx(void)
         emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
                                      (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
 
-        emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.dirty_rx]),(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2));
+        emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.dirty_rx]), (emac_config.dma_erx[emac_config.dirty_rx].basic.desc2));
         emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
 
         //if open this ,one intr can do many intrs ?
@@ -353,14 +383,14 @@ static void emac_process_rx(void)
 
 static void emac_process_rx_unavail(void)
 {
-    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+    if (emac_config.emac_status == EMAC_RUNTIME_STOP) {
         return;
     }
 
     uint32_t dirty_cnt = 0;
     while (dirty_cnt < DMA_RX_BUF_NUM) {
 
-        if(emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 == EMAC_DESC_RX_OWN) {
+        if (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 == EMAC_DESC_RX_OWN) {
             break;
         }
 
@@ -369,7 +399,7 @@ static void emac_process_rx_unavail(void)
         emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
                                      (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
 
-        emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.dirty_rx]),(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2));
+        emac_clean_rx_desc(&(emac_config.dma_erx[emac_config.dirty_rx]), (emac_config.dma_erx[emac_config.dirty_rx].basic.desc2));
         emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
     }
     emac_enable_rx_intr();
@@ -380,7 +410,7 @@ static void emac_process_rx_unavail(void)
 #else
 static void emac_process_rx_unavail(void)
 {
-    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+    if (emac_config.emac_status == EMAC_RUNTIME_STOP) {
         return;
     }
 
@@ -388,11 +418,11 @@ static void emac_process_rx_unavail(void)
 
     while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
 
-        //copy data to lwip 
+        //copy data to lwip
         emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
                                      (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
         emac_config.cnt_rx++;
-        if(emac_config.cnt_rx > DMA_RX_BUF_NUM) {
+        if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
             ESP_LOGE(TAG, "emac rx unavail buf err !!\n");
         }
         emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
@@ -404,7 +434,7 @@ static void emac_process_rx_unavail(void)
 
 static void emac_process_rx(void)
 {
-    if(emac_config.emac_status == EMAC_RUNTIME_STOP) {
+    if (emac_config.emac_status == EMAC_RUNTIME_STOP) {
         return;
     }
 
@@ -412,16 +442,16 @@ static void emac_process_rx(void)
 
     xSemaphoreTakeRecursive( emac_rx_xMutex, ( TickType_t ) portMAX_DELAY );
 
-    if(((uint32_t) &(emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc)) {
+    if (((uint32_t) & (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc)) {
 
-        while (((uint32_t) &(emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc) && emac_config.cnt_rx < DMA_RX_BUF_NUM ) {
+        while (((uint32_t) & (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) != cur_rx_desc) && emac_config.cnt_rx < DMA_RX_BUF_NUM ) {
             //copy data to lwip
             emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
-                               (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
+                                         (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
 
             emac_config.cnt_rx++;
 
-            if(emac_config.cnt_rx > DMA_RX_BUF_NUM ) {
+            if (emac_config.cnt_rx > DMA_RX_BUF_NUM ) {
                 ESP_LOGE(TAG, "emac rx buf err!!\n");
             }
             emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
@@ -429,16 +459,16 @@ static void emac_process_rx(void)
             cur_rx_desc = emac_read_rx_cur_reg();
         }
     } else {
-        if(emac_config.cnt_rx < DMA_RX_BUF_NUM) {
-            if((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 & EMAC_DESC_RX_OWN) == 0) {
+        if (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
+            if ((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 & EMAC_DESC_RX_OWN) == 0) {
                 while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
 
                     //copy data to lwip
                     emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[emac_config.dirty_rx].basic.desc2),
-                               (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
+                                                 (((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
                     emac_config.cnt_rx++;
-                    if(emac_config.cnt_rx > DMA_RX_BUF_NUM) {
-                        ESP_LOGE(TAG,"emac rx buf err!!!\n");
+                    if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
+                        ESP_LOGE(TAG, "emac rx buf err!!!\n");
                     }
 
                     emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
@@ -462,12 +492,18 @@ static void IRAM_ATTR emac_process_intr(void *arg)
 
     if (event & EMAC_RECV_INT) {
         emac_disable_rx_intr();
+        if (emac_config.emac_flow_ctrl_partner_support == true) {
+            if (emac_get_rxbuf_count_in_intr() < FLOW_CONTROL_HIGH_WATERMARK && pause_send == false ) {
+                pause_send = true;
+                emac_send_pause_frame_enable();
+            }
+        }
         emac_post(SIG_EMAC_RX_DONE, 0);
     }
 
     if (event & EMAC_RECV_BUF_UNAVAIL) {
         emac_disable_rx_unavail_intr();
-        emac_post(SIG_EMAC_RX_UNAVAIL,0);
+        emac_post(SIG_EMAC_RX_UNAVAIL, 0);
     }
 
     if (event & EMAC_TRANS_INT) {
@@ -475,25 +511,43 @@ static void IRAM_ATTR emac_process_intr(void *arg)
     }
 }
 
+static void emac_set_macaddr_reg(void)
+{
+    REG_SET_FIELD(EMAC_GMACADDR0HIGH_REG, EMAC_MAC_ADDRESS0_HI, (emac_config.macaddr[0] << 8) | (emac_config.macaddr[1]));
+    REG_WRITE(EMAC_GMACADDR0LOW_REG, (emac_config.macaddr[2] << 24) |  (emac_config.macaddr[3] << 16) | (emac_config.macaddr[4] << 8) | (emac_config.macaddr[5]));
+}
+
 static void emac_check_phy_init(void)
 {
     emac_config.emac_phy_check_init();
-    if(emac_config.emac_phy_get_duplex_mode() == ETH_MDOE_FULLDUPLEX) {
+    if (emac_config.emac_phy_get_duplex_mode() == ETH_MDOE_FULLDUPLEX) {
         REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
     } else {
         REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
     }
-    if(emac_config.emac_phy_get_speed_mode() == ETH_SPEED_MODE_100M) {
+    if (emac_config.emac_phy_get_speed_mode() == ETH_SPEED_MODE_100M) {
         REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACFESPEED);
     } else {
         REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACFESPEED);
     }
-
-    emac_mac_init();
+    if (emac_config.emac_flow_ctrl_enable == true) {
+        if (emac_config.emac_phy_get_partner_pause_enable() == true && emac_config.emac_phy_get_duplex_mode() == ETH_MDOE_FULLDUPLEX) {
+            emac_enable_flowctrl();
+            emac_config.emac_flow_ctrl_partner_support = true;
+        } else {
+            emac_disable_flowctrl();
+            emac_config.emac_flow_ctrl_partner_support = false;
+        }
+    } else {
+        emac_disable_flowctrl();
+        emac_config.emac_flow_ctrl_partner_support = false;
+    }
+    emac_mac_enable_txrx();
 }
 static void emac_process_link_updown(bool link_status)
 {
     system_event_t evt;
+    uint8_t i = 0;
 
     emac_config.phy_link_up = link_status;
 
@@ -502,6 +556,10 @@ static void emac_process_link_updown(bool link_status)
         ESP_LOGI(TAG, "eth link_up!!!");
         emac_enable_dma_tx();
         emac_enable_dma_rx();
+        for (i = 0; i < PHY_LINK_CHECK_NUM; i++) {
+            emac_check_phy_init();
+        }
+
         evt.event_id = SYSTEM_EVENT_ETH_CONNECTED;
     } else {
         ESP_LOGI(TAG, "eth link_down!!!");
@@ -534,7 +592,7 @@ esp_err_t esp_eth_tx(uint8_t *buf, uint16_t size)
     }
 
     xSemaphoreTakeRecursive( emac_tx_xMutex, ( TickType_t ) portMAX_DELAY );
-    if (emac_config.cnt_tx == DMA_TX_BUF_NUM -1) {
+    if (emac_config.cnt_tx == DMA_TX_BUF_NUM - 1) {
         ESP_LOGD(TAG, "tx buf full");
         ret = ERR_MEM;
         goto _exit;
@@ -557,13 +615,13 @@ _exit:
 
 static void emac_init_default_data(void)
 {
-    memset((uint8_t *)&emac_config, 0,sizeof(struct emac_config_data));
+    memset((uint8_t *)&emac_config, 0, sizeof(struct emac_config_data));
 }
 
-void emac_process_link_check(void) 
+void emac_process_link_check(void)
 {
     if (emac_config.emac_status != EMAC_RUNTIME_START ||
-        emac_config.emac_status == EMAC_RUNTIME_NOT_INIT) {
+            emac_config.emac_status == EMAC_RUNTIME_NOT_INIT) {
         return;
     }
 
@@ -580,12 +638,12 @@ void emac_process_link_check(void)
 
 void emac_link_check_func(void *pv_parameters)
 {
-    emac_post(SIG_EMAC_CHECK_LINK,0);
+    emac_post(SIG_EMAC_CHECK_LINK, 0);
 }
 
 static bool emac_link_check_timer_init(void)
 {
-    emac_timer = xTimerCreate("emac_timer", (2000 / portTICK_RATE_MS),
+    emac_timer = xTimerCreate("emac_timer", (2000 / portTICK_PERIOD_MS),
                               pdTRUE, (void *)rand(), emac_link_check_func);
     if (emac_timer == NULL) {
         return false;
@@ -628,14 +686,18 @@ static void emac_start(void *param)
     cmd->err = EMAC_CMD_OK;
     emac_enable_clk(true);
 
+    emac_reset();
     emac_macaddr_init();
 
     emac_check_mac_addr();
 
     emac_set_mac_addr();
+    emac_set_macaddr_reg();
 
     emac_set_tx_base_reg();
     emac_set_rx_base_reg();
+
+    emac_mac_init();
 
     emac_config.phy_init();
 
@@ -817,7 +879,7 @@ void emac_task(void *pv)
 
 esp_err_t IRAM_ATTR emac_post(emac_sig_t sig, emac_par_t par)
 {
-    if(sig <= SIG_EMAC_RX_DONE) {
+    if (sig <= SIG_EMAC_RX_DONE) {
         if (emac_sig_cnt[sig]) {
             return ESP_OK;
         } else {
@@ -830,21 +892,23 @@ esp_err_t IRAM_ATTR emac_post(emac_sig_t sig, emac_par_t par)
 
             ret = xQueueSendFromISR(emac_xqueue, &evt, &tmp);
 
-            if(tmp != pdFALSE) {
+            if (tmp != pdFALSE) {
                 portYIELD_FROM_ISR();
             }
 
-            if(ret != pdPASS) {
+            if (ret != pdPASS) {
                 return ESP_FAIL;
             }
         }
     } else {
+        portENTER_CRITICAL(&g_emac_mux);
         emac_sig_cnt[sig]++;
+        portEXIT_CRITICAL(&g_emac_mux);
         emac_event_t evt;
         evt.sig = sig;
         evt.par = par;
 
-        if (xQueueSend(emac_xqueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
+        if (xQueueSend(emac_xqueue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
             return ESP_FAIL;
         }
     }
@@ -898,10 +962,8 @@ esp_err_t esp_eth_init(eth_config_t *config)
     emac_xqueue = xQueueCreate(EMAC_EVT_QNUM, sizeof(emac_event_t));
     xTaskCreate(emac_task, "emacT", 2048, NULL, EMAC_TASK_PRIORITY, &emac_task_hdl);
 
-    esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);
-
-    emac_reset();
     emac_enable_clk(false);
+    esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0, emac_process_intr, NULL, NULL);
 
     emac_config.emac_status = EMAC_RUNTIME_INIT;
 

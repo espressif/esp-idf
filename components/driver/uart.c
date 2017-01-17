@@ -387,6 +387,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 
     if(rx_io_num >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
+        gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
         gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
         gpio_matrix_in(rx_io_num, rx_sig, 0);
     }
@@ -397,6 +398,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     }
     if(cts_io_num >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cts_io_num], PIN_FUNC_GPIO);
+        gpio_set_pull_mode(cts_io_num, GPIO_PULLUP_ONLY);
         gpio_set_direction(cts_io_num, GPIO_MODE_INPUT);
         gpio_matrix_in(cts_io_num, cts_sig, 0);
     }
@@ -464,7 +466,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
     }
     UART[uart_num]->int_ena.val = intr_conf->intr_enable_mask;
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
-    return ESP_FAIL;
+    return ESP_OK;
 }
 
 //internal isr handler for default driver code.
@@ -639,10 +641,10 @@ static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
             uart_reg->int_clr.brk_det = 1;
             uart_event.type = UART_BREAK;
         } else if(uart_intr_status & UART_FRM_ERR_INT_ST_M) {
-            uart_reg->int_clr.parity_err = 1;
+            uart_reg->int_clr.frm_err = 1;
             uart_event.type = UART_FRAME_ERR;
         } else if(uart_intr_status & UART_PARITY_ERR_INT_ST_M) {
-            uart_reg->int_clr.frm_err = 1;
+            uart_reg->int_clr.parity_err = 1;
             uart_event.type = UART_PARITY_ERR;
         } else if(uart_intr_status & UART_TX_BRK_DONE_INT_ST_M) {
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
@@ -950,7 +952,7 @@ esp_err_t uart_flush(uart_port_t uart_num)
     return ESP_OK;
 }
 
-esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, void* uart_queue, int intr_alloc_flags)
+esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t *uart_queue, int intr_alloc_flags)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((rx_buffer_size > UART_FIFO_LEN), "uart rx buffer length error(>128)", ESP_FAIL);
@@ -978,7 +980,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
 
         if(uart_queue) {
             p_uart_obj[uart_num]->xQueueUart = xQueueCreate(queue_size, sizeof(uart_event_t));
-            *((QueueHandle_t*) uart_queue) = p_uart_obj[uart_num]->xQueueUart;
+            *uart_queue = p_uart_obj[uart_num]->xQueueUart;
             ESP_LOGI(UART_TAG, "queue free spaces: %d", uxQueueSpacesAvailable(p_uart_obj[uart_num]->xQueueUart));
         } else {
             p_uart_obj[uart_num]->xQueueUart = NULL;

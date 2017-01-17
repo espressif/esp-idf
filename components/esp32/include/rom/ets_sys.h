@@ -384,6 +384,18 @@ void ets_delay_us(uint32_t us);
 void ets_update_cpu_frequency(uint32_t ticks_per_us);
 
 /**
+  * @brief  Set the real CPU ticks per us to the ets, so that ets_delay_us will be accurate.
+  *
+  * @note This function only sets the tick rate for the current CPU. It is located in ROM,
+  *       so the deep sleep stub can use it even if IRAM is not initialized yet.
+  *
+  * @param  uint32_t ticks_per_us : CPU ticks per us.
+  *
+  * @return None
+  */
+void ets_update_cpu_frequency_rom(uint32_t ticks_per_us);
+
+/**
   * @brief  Get the real CPU ticks per us to the ets.
   *         This function do not return real CPU ticks per us, just the record in ets. It can be used to check with the real CPU frequency.
   *

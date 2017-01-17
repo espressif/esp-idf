@@ -40,5 +40,12 @@ void spi_flash_disable_interrupts_caches_and_other_cpu();
 // Enable cache, enable interrupts (to be added in future), resume scheduler
 void spi_flash_enable_interrupts_caches_and_other_cpu();
 
+// Disables non-IRAM interrupt handlers on current CPU and caches on both CPUs.
+// This function is implied to be called when other CPU is not running or running code from IRAM.
+void spi_flash_disable_interrupts_caches_and_other_cpu_no_os();
+
+// Enable cache, enable interrupts on current CPU.
+// This function is implied to be called when other CPU is not running or running code from IRAM.
+void spi_flash_enable_interrupts_caches_no_os();
 
 #endif //ESP_SPI_FLASH_CACHE_UTILS_H

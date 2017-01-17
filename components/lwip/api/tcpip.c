@@ -219,6 +219,12 @@ tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
   msg->msg.inp.p = p;
   msg->msg.inp.netif = inp;
   msg->msg.inp.input_fn = input_fn;
+#if ESP_PERF
+  if (p->len > DBG_PERF_FILTER_LEN) {
+    DBG_PERF_PATH_SET(DBG_PERF_DIR_RX, DBG_PERF_POINT_WIFI_OUT);
+  }
+#endif
+
   if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {
     ESP_STATS_INC(esp.tcpip_inpkt_post_fail);
     memp_free(MEMP_TCPIP_MSG_INPKT, msg);
@@ -492,20 +498,11 @@ tcpip_init(tcpip_init_done_fn initfunc, void *arg)
 #endif /* LWIP_TCPIP_CORE_LOCKING */
 
 
-#if ESP_LWIP
-#if ESP_DUAL_CORE
-  sys_thread_t xLwipTaskHandle = 0;
-  xTaskCreatePinnedToCore(tcpip_thread, TCPIP_THREAD_NAME, TCPIP_THREAD_STACKSIZE, NULL, TCPIP_THREAD_PRIO, NULL, 1);
-#else
   sys_thread_t xLwipTaskHandle = sys_thread_new(TCPIP_THREAD_NAME
                 , tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, TCPIP_THREAD_PRIO);
-#endif
 
   printf("tcpip_task_hdlxxx : %x, prio:%d,stack:%d\n",
 		 (u32_t)xLwipTaskHandle,TCPIP_THREAD_PRIO,TCPIP_THREAD_STACKSIZE);
-#else
-  sys_thread_new(TCPIP_THREAD_NAME, tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, TCPIP_THREAD_PRIO);
-#endif
 
 }
 

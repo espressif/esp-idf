@@ -92,7 +92,7 @@ typedef struct {
 **  Static variables
 ******************************************************************************/
 
-static esp_profile_cb_t bt_av_sink_callback = NULL;
+static esp_a2d_cb_t bt_av_sink_callback = NULL;
 
 static btif_av_cb_t btif_av_cb = {0};
 static TIMER_LIST_ENT tle_av_open_on_rc;
@@ -952,7 +952,7 @@ bt_status_t btif_av_init()
  * Returns          bt_status_t
  *
  */
-esp_err_t esp_a2d_register_callback(esp_profile_cb_t callback)
+esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback)
 {
     // TODO: need protection against race
     bt_av_sink_callback = callback;

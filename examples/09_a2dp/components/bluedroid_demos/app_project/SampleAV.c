@@ -8,8 +8,8 @@
 #include "freertos/timers.h"
 
 #include "esp_system.h"
-#include "EspAudio.h"
-#include "EspAudioCom.h"
+// #include "EspAudio.h"
+// #include "EspAudioCom.h"
 
 #include "bt_app_common.h"
 #include "esp_bt_stack_manager.h"
@@ -87,28 +87,7 @@ static void key_press_task_handler(void *arg)
     }
 }
 
-static void key_tmr_handler(TimerHandle_t xTimer)
-{
-    if (m_audio_state != ESP_A2D_AUDIO_STATE_STARTED) {
-        BT_APP_TRACE_EVENT("-----key_tmr_hdlr, return, audio state: %d\n", m_audio_state);
-        return;
-    }
-            
-    bt_app_evt_arg param;
-    memset(&param, 0, sizeof(bt_app_evt_arg));
-    if (m_key_state == 1) {
-        param.avrc_key.key_state = 1;
-        m_key_state = 0;
-    } else {
-        param.avrc_key.key_state = 0;
-        m_key_state = 1;
-    }
-    param.avrc_key.id = 0x41; // volume up
-    BT_APP_TRACE_EVENT("-----key_tmr_hdlr: %d, key_id %d---\n", m_key_state, param.avrc_key.id);
-    bt_app_transfer_context(bt_app_handle_evt, ESP_AVRC_KEY_STATE_TO, &param, sizeof(bt_app_evt_arg), NULL);
-}
-
-static void bt_app_a2d_cb(uint32_t event, void *param)
+static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 {
     switch (event) {
     case ESP_A2D_CONNECTION_STATE_EVT:
@@ -150,7 +129,7 @@ static btrc_ctrl_callbacks_t btrc_ctrl_cb = {
 
 static void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
-    EspAudioPlayerStreamWrite((uint8_t *)data, len, 10);
+    // EspAudioPlayerStreamWrite((uint8_t *)data, len, 10);
 }
 			    
 static void bt_app_handle_evt(uint16_t event, void *p_param)
@@ -162,7 +141,7 @@ static void bt_app_handle_evt(uint16_t event, void *p_param)
         char *dev_name = "ESP_SPEAKER";
 	esp_bt_gap_set_device_name(dev_name);
 
-        esp_a2d_register_callback(bt_app_a2d_cb);
+        esp_a2d_register_callback(&bt_app_a2d_cb);
         esp_a2d_register_data_callback(bt_app_a2d_data_cb);
 
         esp_a2d_sink_init();
@@ -184,13 +163,6 @@ static void bt_app_handle_evt(uint16_t event, void *p_param)
             m_key_tmr == 0) {
             BT_APP_TRACE_EVENT("mm1\n");
             xTaskCreate(key_press_task_handler, "keyT", 2048, NULL, 10, &xKeyTaskHandle);
-            #if 0
-            int32_t key_tmr_id = 10;
-            m_key_tmr = xTimerCreate("appKeyTmr", 3000 / portTICK_PERIOD_MS, pdTRUE, (void *) key_tmr_id, key_tmr_handler);
-            if (xTimerStart(m_key_tmr, 10 / portTICK_PERIOD_MS) != pdTRUE) {
-                BT_APP_TRACE_EVENT(" timer start failed\n");
-            }
-            #endif
         }
         break;
     }
@@ -200,9 +172,9 @@ static void bt_app_handle_evt(uint16_t event, void *p_param)
         if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
             // temporarily hardcoded the PCM configuaration
             BT_APP_TRACE_EVENT("configure audio player\n");
-            EspAudioPlayerStreamCfg(StreamSampleRate_44k, 2, StreamBitLen_16BIT);
-            EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
-            EspAudio_SetVolume(99);
+            // EspAudioPlayerStreamCfg(StreamSampleRate_44k, 2, StreamBitLen_16BIT);
+            // EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
+            // EspAudio_SetVolume(99);
         }
         break;
     }

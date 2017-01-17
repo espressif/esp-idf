@@ -3,8 +3,15 @@
 #
 
 COMPONENT_SRCDIRS := . hwcrypto
+LIBS := core rtc phy
+ifdef CONFIG_BT_ENABLED
+LIBS += coexist
+endif
+ifdef CONFIG_WIFI_ENABLED
+LIBS += net80211 pp wpa smartconfig coexist wps wpa2
+endif
 
-LIBS := core net80211 phy rtc pp wpa smartconfig coexist wps wpa2
+LIBS := $(sort $(LIBS))  # de-duplicate, we can handle different orders here
 
 LINKER_SCRIPTS += esp32.common.ld esp32.rom.ld esp32.peripherals.ld
 

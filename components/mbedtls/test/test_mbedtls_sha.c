@@ -166,7 +166,7 @@ TEST_CASE("mbedtls SHA self-tests multithreaded", "[mbedtls]")
     xTaskCreate(tskRunSHASelftests, "SHASelftests2", 8192, NULL, 3, NULL);
 
     for(int i = 0; i < 2; i++) {
-        if(!xSemaphoreTake(done_sem, 10000/portTICK_PERIOD_MS)) {
+        if(!xSemaphoreTake(done_sem, 12000/portTICK_PERIOD_MS)) {
             TEST_FAIL_MESSAGE("done_sem not released by test task");
         }
     }

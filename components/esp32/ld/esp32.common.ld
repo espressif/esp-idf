@@ -19,9 +19,11 @@ SECTIONS
   */
   .rtc.data :
   {
+    _rtc_data_start = ABSOLUTE(.);
     *(.rtc.data)
     *(.rtc.rodata)
     *rtc_wake_stub*.o(.data .rodata .data.* .rodata.* .bss .bss.*)
+    _rtc_data_end = ABSOLUTE(.);
   } > rtc_slow_seg
 
   /* RTC bss, from any source file named rtc_wake_stub*.c */
@@ -85,29 +87,6 @@ SECTIONS
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 
-  /* Shared RAM */
-  .dram0.bss (NOLOAD) :
-  {
-    . = ALIGN (8);
-    _bss_start = ABSOLUTE(.);
-    *(.dynsbss)
-    *(.sbss)
-    *(.sbss.*)
-    *(.gnu.linkonce.sb.*)
-    *(.scommon)
-    *(.sbss2)
-    *(.sbss2.*)
-    *(.gnu.linkonce.sb2.*)
-    *(.dynbss)
-    KEEP(*(.bss))
-    *(.bss.*)
-    *(.share.mem)
-    *(.gnu.linkonce.b.*)
-    *(COMMON)
-    . = ALIGN (8);
-    _bss_end = ABSOLUTE(.);
-  } >dram0_0_seg
-
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
@@ -126,6 +105,29 @@ SECTIONS
     *libesp32.a:panic.o(.rodata .rodata.*)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
+  } >dram0_0_seg
+
+  /* Shared RAM */
+  .dram0.bss (NOLOAD) :
+  {
+    . = ALIGN (8);
+    _bss_start = ABSOLUTE(.);
+    *(.dynsbss)
+    *(.sbss)
+    *(.sbss.*)
+    *(.gnu.linkonce.sb.*)
+    *(.scommon)
+    *(.sbss2)
+    *(.sbss2.*)
+    *(.gnu.linkonce.sb2.*)
+    *(.dynbss)
+    *(.bss)
+    *(.bss.*)
+    *(.share.mem)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
+    . = ALIGN (8);
+    _bss_end = ABSOLUTE(.);
     _heap_start = ABSOLUTE(.);
   } >dram0_0_seg
 

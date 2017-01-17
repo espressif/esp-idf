@@ -36,14 +36,14 @@
  * When counter value reaches thresh1 or thresh0 value, it will trigger interrupt.
  * When counter value reaches l_lim value or h_lim value, counter value will be reset to zero and trigger interrupt.
  */
-#define PCNT_TEST_UNIT    PCNT_UNIT_0
-#define PCNT_H_LIM_VAL    (10)
-#define PCNT_L_LIM_VAL    (-10)
-#define PCNT_THRESH1_VAL  (5)
-#define PCNT_THRESH0_VAL  (-5)
-#define PCNT_INPUT_SIG_IO   (4)
-#define PCNT_INPUT_CTRL_IO  (5)
-#define LEDC_OUPUT_IO      (18)
+#define PCNT_TEST_UNIT     PCNT_UNIT_0
+#define PCNT_H_LIM_VAL     10
+#define PCNT_L_LIM_VAL     -10
+#define PCNT_THRESH1_VAL   5
+#define PCNT_THRESH0_VAL   -5
+#define PCNT_INPUT_SIG_IO   4  /* Pulse Input GPIO  */
+#define PCNT_INPUT_CTRL_IO  5  /* Control GPIO HIGH=count up, LOW=count down */
+#define LEDC_OUTPUT_IO      18 /* Output GPIO */
 
 xQueueHandle pcnt_evt_queue;  /*A queue to handle pulse counter event*/
 
@@ -96,8 +96,8 @@ void IRAM_ATTR pcnt_intr_handler(void* arg)
 static void ledc_init(void)
 {
     ledc_channel_config_t ledc_channel;
-    /*use GPIO18 as output pin*/
-    ledc_channel.gpio_num = LEDC_OUPUT_IO;
+    /*use LEDC_OUTPUT_IO as output pin*/
+    ledc_channel.gpio_num = LEDC_OUTPUT_IO;
     /*LEDC high speed mode */
     ledc_channel.speed_mode = LEDC_HIGH_SPEED_MODE;
     /*use LEDC channel 1*/
@@ -125,9 +125,9 @@ static void ledc_init(void)
 static void pcnt_init(void)
 {
     pcnt_config_t pcnt_config = {
-        /*Set GPIO4 as pulse input gpio */
+        /*Set PCNT_INPUT_SIG_IO as pulse input gpio */
         .pulse_gpio_num = PCNT_INPUT_SIG_IO,
-        /*set gpio5 as control gpio */
+        /*set PCNT_INPUT_CTRL_IO as control gpio */
         .ctrl_gpio_num = PCNT_INPUT_CTRL_IO,
         /*Choose channel 0 */
         .channel = PCNT_CHANNEL_0,
@@ -196,7 +196,7 @@ void app_main()
     portBASE_TYPE res;
     while(1)
     {
-        res = xQueueReceive(pcnt_evt_queue, &evt, 1000 / portTICK_RATE_MS);
+        res = xQueueReceive(pcnt_evt_queue, &evt, 1000 / portTICK_PERIOD_MS);
         if(res == pdTRUE) {
             pcnt_get_counter_value(PCNT_TEST_UNIT, &count);
             printf("Event PCNT unit[%d]; cnt: %d\n", evt.unit, count);

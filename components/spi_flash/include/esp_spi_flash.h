@@ -78,13 +78,13 @@ esp_err_t spi_flash_erase_range(size_t start_address, size_t size);
  * @note If source address is in DROM, this function will return
  *       ESP_ERR_INVALID_ARG.
  *
- * @param  dest  destination address in Flash. Must be a multiple of 4 bytes.
- * @param  src   pointer to the source buffer.
- * @param  size  length of data, in bytes. Must be a multiple of 4 bytes.
+ * @param  dest_addr destination address in Flash. Must be a multiple of 4 bytes.
+ * @param  src       pointer to the source buffer.
+ * @param  size      length of data, in bytes. Must be a multiple of 4 bytes.
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_write(size_t dest, const void *src, size_t size);
+esp_err_t spi_flash_write(size_t dest_addr, const void *src, size_t size);
 
 
 /**
@@ -97,24 +97,24 @@ esp_err_t spi_flash_write(size_t dest, const void *src, size_t size);
  * @note If source address is in DROM, this function will return
  *       ESP_ERR_INVALID_ARG.
  *
- * @param  dest  destination address in Flash. Must be a multiple of 32 bytes.
- * @param  src   pointer to the source buffer.
- * @param  size  length of data, in bytes. Must be a multiple of 32 bytes.
+ * @param  dest_addr destination address in Flash. Must be a multiple of 32 bytes.
+ * @param  src       pointer to the source buffer.
+ * @param  size      length of data, in bytes. Must be a multiple of 32 bytes.
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_write_encrypted(size_t dest, const void *src, size_t size);
+esp_err_t spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size);
 
 /**
  * @brief  Read data from Flash.
  *
- * @param  src   source address of the data in Flash.
- * @param  dest  pointer to the destination buffer
- * @param  size  length of data
+ * @param  src_addr source address of the data in Flash.
+ * @param  dest     pointer to the destination buffer
+ * @param  size     length of data
  *
  * @return esp_err_t
  */
-esp_err_t spi_flash_read(size_t src, void *dest, size_t size);
+esp_err_t spi_flash_read(size_t src_addr, void *dest, size_t size);
 
 /**
  * @brief Enumeration which specifies memory space requested in an mmap call
@@ -149,7 +149,7 @@ typedef uint32_t spi_flash_mmap_handle_t;
  *
  * @return  ESP_OK on success, ESP_ERR_NO_MEM if pages can not be allocated
  */
-esp_err_t spi_flash_mmap(uint32_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
+esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
 /**
@@ -172,6 +172,49 @@ void spi_flash_munmap(spi_flash_mmap_handle_t handle);
  * MMU table and corresponding reference counts.
  */
 void spi_flash_mmap_dump();
+
+/**
+ * @brief SPI flash critical section enter function.
+ */
+typedef void (*spi_flash_guard_start_func_t)(void);
+/**
+ * @brief SPI flash critical section exit function.
+ */
+typedef void (*spi_flash_guard_end_func_t)(void);
+
+/**
+ * Structure holding SPI flash access critical section management functions
+ *
+ * @note Structure and corresponding guard functions should not reside in flash.
+ *       For example structure can be placed in DRAM and functions in IRAM sections.
+ */
+typedef struct {
+    spi_flash_guard_start_func_t    start;  /**< critical section start func */
+    spi_flash_guard_end_func_t      end;    /**< critical section end func */
+} spi_flash_guard_funcs_t;
+
+/**
+ * @brief  Sets guard functions to access flash.
+ *
+ * @note Pointed structure and corresponding guard functions should not reside in flash.
+ *       For example structure can be placed in DRAM and functions in IRAM sections.
+ *
+ * @param funcs pointer to structure holding flash access guard functions.
+ */
+void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs);
+
+/**
+ * @brief Default OS-aware flash access guard functions
+ */
+extern const spi_flash_guard_funcs_t g_flash_guard_default_ops;
+
+/**
+ * @brief Non-OS flash access guard functions
+ *
+ * @note This version of flash guard functions is to be used when no OS is present or from panic handler.
+ *       It does not use any OS primitives and IPC and implies that only calling CPU is active.
+ */
+extern const spi_flash_guard_funcs_t g_flash_guard_no_os_ops;
 
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
 

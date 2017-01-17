@@ -42,14 +42,14 @@ static void btc_sec_callback(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data)
 static void btc_enable_bluetooth(void)
 {
     if (BTA_EnableBluetooth(btc_sec_callback) != BTA_SUCCESS) {
-        future_ready(*btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE), FUTURE_SUCCESS);
+        future_ready(*btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE), FUTURE_FAIL);
 	}
 }
 
 static void btc_disable_bluetooth(void)
 {
     if (BTA_DisableBluetooth() != BTA_SUCCESS) {
-        future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_SUCCESS);
+        future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_FAIL);
 	}
 }
 

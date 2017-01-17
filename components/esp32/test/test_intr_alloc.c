@@ -98,7 +98,7 @@ static void timer_test(int flags) {
             esp_intr_get_intno(inth[0]), esp_intr_get_intno(inth[1]),
             esp_intr_get_intno(inth[2]), esp_intr_get_intno(inth[3]));
     printf("Timer values on start: %d %d %d %d\n", count[0], count[1], count[2], count[3]);
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer values after 1 sec: %d %d %d %d\n", count[0], count[1], count[2], count[3]);
     TEST_ASSERT(count[0]==0);
     TEST_ASSERT(count[1]!=0);
@@ -110,7 +110,7 @@ static void timer_test(int flags) {
     esp_intr_disable(inth[1]);
     esp_intr_disable(inth[2]);
     for (x=0; x<4; x++) count[x]=0;
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer values after 1 sec: %d %d %d %d\n", count[0], count[1], count[2], count[3]);
     TEST_ASSERT(count[0]!=0);
     TEST_ASSERT(count[1]==0);
@@ -122,7 +122,7 @@ static void timer_test(int flags) {
     esp_intr_disable(inth[0]);
     esp_intr_disable(inth[3]);
     for (x=0; x<4; x++) count[x]=0;
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer values after 1 sec: %d %d %d %d\n", count[0], count[1], count[2], count[3]);
     TEST_ASSERT(count[0]==0);
     TEST_ASSERT(count[1]!=0);
@@ -152,18 +152,18 @@ void local_timer_test()
     printf("Int timer 1 intno %d\n", esp_intr_get_intno(ih));
     xthal_set_ccompare(1, xthal_get_ccount()+8000000);
     int_timer_ctr=0;
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer val after 1 sec: %d\n", int_timer_ctr);
     TEST_ASSERT(int_timer_ctr!=0);
     printf("Disabling int\n");
     esp_intr_disable(ih);
     int_timer_ctr=0;
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer val after 1 sec: %d\n", int_timer_ctr);
     TEST_ASSERT(int_timer_ctr==0);
     printf("Re-enabling\n");
     esp_intr_enable(ih);
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer val after 1 sec: %d\n", int_timer_ctr);
     TEST_ASSERT(int_timer_ctr!=0);
 
@@ -173,12 +173,12 @@ void local_timer_test()
     r=esp_intr_alloc(ETS_INTERNAL_TIMER1_INTR_SOURCE, ESP_INTR_FLAG_INTRDISABLED, int_timer_handler, NULL, &ih);
     TEST_ASSERT(r==ESP_OK);
     int_timer_ctr=0;
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer val after 1 sec: %d\n", int_timer_ctr);
     TEST_ASSERT(int_timer_ctr==0);
     printf("Re-enabling\n");
     esp_intr_enable(ih);
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     printf("Timer val after 1 sec: %d\n", int_timer_ctr);
     TEST_ASSERT(int_timer_ctr!=0);
     r=esp_intr_free(ih);
@@ -200,4 +200,31 @@ TEST_CASE("Intr_alloc test, private ints", "[esp32]")
 TEST_CASE("Intr_alloc test, shared ints", "[esp32]")
 {
     timer_test(ESP_INTR_FLAG_SHARED);
+}
+
+TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[esp32]")
+{
+    void dummy(void* arg)
+    {
+    }
+    IRAM_ATTR void dummy_iram(void* arg)
+    {
+    }
+    RTC_IRAM_ATTR void dummy_rtc(void* arg)
+    {
+    }
+    intr_handle_t ih;
+    esp_err_t err = esp_intr_alloc(ETS_INTERNAL_PROFILING_INTR_SOURCE,
+            ESP_INTR_FLAG_IRAM, &dummy, NULL, &ih);
+    TEST_ASSERT_EQUAL_INT(ESP_ERR_INVALID_ARG, err);
+    err = esp_intr_alloc(ETS_INTERNAL_PROFILING_INTR_SOURCE,
+            ESP_INTR_FLAG_IRAM, &dummy_iram, NULL, &ih);
+    TEST_ESP_OK(err);
+    err = esp_intr_free(ih);
+    TEST_ESP_OK(err);
+    err = esp_intr_alloc(ETS_INTERNAL_PROFILING_INTR_SOURCE,
+            ESP_INTR_FLAG_IRAM, &dummy_rtc, NULL, &ih);
+    TEST_ESP_OK(err);
+    err = esp_intr_free(ih);
+    TEST_ESP_OK(err);
 }

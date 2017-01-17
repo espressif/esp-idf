@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include "esp_attr.h"
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
 #include "sdkconfig.h"
@@ -66,3 +67,10 @@ void esp_set_cpu_freq(void)
     ets_update_cpu_frequency(freq_mhz);
 }
 
+void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
+{
+    extern uint32_t g_ticks_per_us_pro;  // g_ticks_us defined in ROM for PRO CPU
+    extern uint32_t g_ticks_per_us_app;  // same defined for APP CPU
+    g_ticks_per_us_pro = ticks_per_us;
+    g_ticks_per_us_app = ticks_per_us;
+}

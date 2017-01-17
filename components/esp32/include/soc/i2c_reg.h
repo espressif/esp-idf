@@ -261,6 +261,8 @@
 #define I2C_RXFIFO_FULL_THRHD_V  0x1F
 #define I2C_RXFIFO_FULL_THRHD_S  0
 
+#define I2C_DATA_APB_REG(i)      (0x60013000 + (i) * 0x14000 + 0x001c)
+
 #define I2C_DATA_REG(i)          (REG_I2C_BASE(i) + 0x001c)
 /* I2C_FIFO_RDATA : RO ;bitpos:[7:0] ;default: 8'b0 ; */
 /*description: The register represent the byte  data read from rxfifo when use apb fifo access*/

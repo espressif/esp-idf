@@ -20,6 +20,6 @@ void app_main()
     // system_init();
     // printf("Free memory: %d bytes\n", system_get_free_heap_size());
     // EspAudio_Init();
-    bt_controller_init();
+    esp_bt_controller_init();
     bt_app_task_start_up();
 }

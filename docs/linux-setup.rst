@@ -10,13 +10,12 @@ Install some packages
 To compile with ESP-IDF you need to get the following packages:
 
 - Ubuntu and Debian::
-    
-    sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial 
+
+    sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial
 
 - Arch::
-    
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
 
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
 
 Step 1: Download binary toolchain for the ESP32
 ==================================================
@@ -25,17 +24,17 @@ ESP32 toolchain for Linux is available for download from Espressif website:
 
 - for 64-bit Linux::
 
-    https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-59.tar.gz
+    https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
 
 - for 32-bit Linux::
 
-    https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-59.tar.gz
+    https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-61-gab8375a-5.2.0.tar.gz
 
 Download this file, then extract it to the location you prefer, for example::
 
     mkdir -p ~/esp
     cd ~/esp
-    tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-59.tar.gz
+    tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
 
 The toolchain will be extracted into ``~/esp/xtensa-esp32-elf/`` directory.
 
@@ -49,14 +48,26 @@ Alternatively, you may create an alias for the above command. This way you can g
 
 Then when you need the toolchain you can type ``get_esp32`` on the command line and the toolchain will be added to your ``PATH``.
 
+Arch Linux Users
+----------------
+
+To run the precompiled gdb (xtensa-esp32-elf-gdb) in Arch Linux requires ncurses 5, but Arch uses ncurses 6. Backwards compatibility libraries are available in AUR_ for native and lib32 configurations:
+- https://aur.archlinux.org/packages/ncurses5-compat-libs/
+- https://aur.archlinux.org/packages/lib32-ncurses5-compat-libs/
+
+(Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.)
+
+
 Alternative Step 1: Compile the toolchain from source using crosstool-NG
 ========================================================================
 
-Instead of downloading binary toolchain from Espressif website (Step 1 above) you may build the toolchain yourself. 
+Instead of downloading binary toolchain from Espressif website (Step 1 above) you may build the toolchain yourself.
 
 If you can't think of a reason why you need to build it yourself, then probably it's better to stick with the binary version. However, here are some of the reasons why you might want to compile it from source:
 
 - if you want to customize toolchain build configuration
+
+- if you want to use a different GCC version (such as 4.8.5)
 
 - if you want to hack gcc or newlib or libstdc++
 
@@ -70,7 +81,7 @@ In any case, here are the steps to compile the toolchain yourself.
 
   - Ubuntu::
 
-        sudo apt-get install gawk gperf grep gettext ncurses python python-dev automake bison flex texinfo help2man libtool
+        sudo apt-get install gawk gperf grep gettext libncurses-dev python python-dev automake bison flex texinfo help2man libtool
 
   - Debian::
 
@@ -104,7 +115,7 @@ Open terminal, navigate to the directory you want to clone ESP-IDF and clone it 
     git clone --recursive https://github.com/espressif/esp-idf.git
 
 
-ESP-IDF will be downloaded into ``~/esp/esp-idf``. 
+ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
 Note the ``--recursive`` option! If you have already cloned ESP-IDF without this option, run another command to get all the submodules::
 
@@ -133,7 +144,7 @@ In terminal, go to the application directory which was obtained on the previous 
 
     cd ~/esp/myapp
 
-Type a command like this to set the path to ESP-IDF directory:: 
+Type a command like this to set the path to ESP-IDF directory::
 
     export IDF_PATH=~/esp/esp-idf
 
@@ -156,3 +167,4 @@ Further reading
 
 If you'd like to use the Eclipse IDE instead of running ``make``, check out the Eclipse setup guide in this directory.
 
+.. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository

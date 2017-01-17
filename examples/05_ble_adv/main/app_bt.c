@@ -73,7 +73,7 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
     return 0;
 }
 
-static vhci_host_callback_t vhci_host_cb = {
+static esp_vhci_host_callback_t vhci_host_cb = {
     controller_rcv_pkt_ready,
     host_rcv_pkt
 };
@@ -139,13 +139,13 @@ static uint16_t make_cmd_ble_set_adv_data(uint8_t *buf, uint8_t data_len, uint8_
 static void hci_cmd_send_reset(void)
 {
     uint16_t sz = make_cmd_reset (hci_cmd_buf);
-    API_vhci_host_send_packet(hci_cmd_buf, sz);
+    esp_vhci_host_send_packet(hci_cmd_buf, sz);
 }
 
 static void hci_cmd_send_ble_adv_start(void)
 {
     uint16_t sz = make_cmd_ble_set_adv_enable (hci_cmd_buf, 1);
-    API_vhci_host_send_packet(hci_cmd_buf, sz);
+    esp_vhci_host_send_packet(hci_cmd_buf, sz);
 }
 
 static void hci_cmd_send_ble_set_adv_param(void)
@@ -168,7 +168,7 @@ static void hci_cmd_send_ble_set_adv_param(void)
                   peer_addr,
                   adv_chn_map,
                   adv_filter_policy);
-    API_vhci_host_send_packet(hci_cmd_buf, sz);
+    esp_vhci_host_send_packet(hci_cmd_buf, sz);
 }
 
 static void hci_cmd_send_ble_set_adv_data(void)
@@ -185,7 +185,7 @@ static void hci_cmd_send_ble_set_adv_data(void)
     adv_data_len = 5 + name_len;
 
     uint16_t sz = make_cmd_ble_set_adv_data(hci_cmd_buf, adv_data_len, (uint8_t *)adv_data);
-    API_vhci_host_send_packet(hci_cmd_buf, sz);
+    esp_vhci_host_send_packet(hci_cmd_buf, sz);
 }
 
 /*
@@ -195,11 +195,11 @@ void bleAdvtTask(void *pvParameters)
 {
     int cmd_cnt = 0;
     bool send_avail = false;
-    API_vhci_host_register_callback(&vhci_host_cb);
+    esp_vhci_host_register_callback(&vhci_host_cb);
     printf("BLE advt task start\n");
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        send_avail = API_vhci_host_check_send_available();
+        send_avail = esp_vhci_host_check_send_available();
         if (send_avail) {
             switch (cmd_cnt) {
             case 0: hci_cmd_send_reset(); ++cmd_cnt; break;
@@ -214,7 +214,7 @@ void bleAdvtTask(void *pvParameters)
 
 void app_main()
 {
-    bt_controller_init();
+    esp_bt_controller_init();
     xTaskCreatePinnedToCore(&bleAdvtTask, "bleAdvtTask", 2048, NULL, 5, NULL, 0);
 }
 

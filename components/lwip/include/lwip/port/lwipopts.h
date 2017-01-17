@@ -154,14 +154,14 @@
  * this option does not affect outgoing packet sizes, which can be controlled
  * via IP_FRAG.
  */
-#define IP_REASSEMBLY                   0
+#define IP_REASSEMBLY                   CONFIG_LWIP_IP_REASSEMBLY
 
 /**
  * IP_FRAG==1: Fragment outgoing IP packets if their size exceeds MTU. Note
  * that this option does not affect incoming packet sizes, which can be
  * controlled via IP_REASSEMBLY.
  */
-#define IP_FRAG                         0
+#define IP_FRAG                         CONFIG_LWIP_IP_FRAG
 
 /**
  * IP_REASS_MAXAGE: Maximum time (in multiples of IP_TMR_INTERVAL - so seconds, normally)
@@ -189,6 +189,10 @@
    ---------- RAW options ----------
    ---------------------------------
 */
+/**
+ * LWIP_RAW==1: Enable application layer to hook into the IP layer itself.
+ */
+#define LWIP_RAW                        1
 
 /*
    ----------------------------------
@@ -402,6 +406,27 @@
  */
 #define DEFAULT_ACCEPTMBOX_SIZE         6
 
+/**
+ * DEFAULT_THREAD_STACKSIZE: The stack size used by any other lwIP thread.
+ * The stack size value itself is platform-dependent, but is passed to
+ * sys_thread_new() when the thread is created.
+ */
+#define DEFAULT_THREAD_STACKSIZE        TCPIP_THREAD_STACKSIZE
+
+/**
+ * DEFAULT_THREAD_PRIO: The priority assigned to any other lwIP thread.
+ * The priority value itself is platform-dependent, but is passed to
+ * sys_thread_new() when the thread is created.
+ */
+#define DEFAULT_THREAD_PRIO             TCPIP_THREAD_PRIO
+
+/**
+ * DEFAULT_RAW_RECVMBOX_SIZE: The mailbox size for the incoming packets on a
+ * NETCONN_RAW. The queue size value itself is platform-dependent, but is passed
+ * to sys_mbox_new() when the recvmbox is created.
+ */
+#define DEFAULT_RAW_RECVMBOX_SIZE       6
+
 /*
    ----------------------------------------------
    ---------- Sequential layer options ----------
@@ -440,7 +465,7 @@
 /**
  * LWIP_SO_RCVBUF==1: Enable SO_RCVBUF processing.
  */
-#define LWIP_SO_RCVBUF                  0
+#define LWIP_SO_RCVBUF                  CONFIG_LWIP_SO_RCVBUF
 
 /**
  * SO_REUSE==1: Enable SO_REUSEADDR option.
@@ -572,21 +597,37 @@
 #define ESP_LIGHT_SLEEP                 1
 #define ESP_L2_TO_L3_COPY               CONFIG_L2_TO_L3_COPY
 #define ESP_CNT_DEBUG                   0
-#define ESP_DUAL_CORE                   0
 
-#define TCP_WND_DEFAULT                      (4*TCP_MSS)
-#define TCP_SND_BUF_DEFAULT                  (2*TCP_MSS)
+#define TCP_WND_DEFAULT                 (4*TCP_MSS)
+#define TCP_SND_BUF_DEFAULT             (2*TCP_MSS)
+
+#if ESP_PERF
+#define DBG_PERF_PATH_SET(dir, point)
+#define DBG_PERF_FILTER_LEN             1000
+
+enum {
+  DBG_PERF_DIR_RX = 0,
+  DBG_PERF_DIR_TX,
+};
+
+enum {
+  DBG_PERF_POINT_INT       = 0,
+  DBG_PERF_POINT_WIFI_IN   = 1,
+  DBG_PERF_POINT_WIFI_OUT  = 2,
+  DBG_PERF_POINT_LWIP_IN   = 3,
+  DBG_PERF_POINT_LWIP_OUT  = 4,
+  DBG_PERF_POINT_SOC_IN    = 5,
+  DBG_PERF_POINT_SOC_OUT   = 6,
+};
+
+#else
+#define DBG_PERF_PATH_SET(dir, point)   
+#define DBG_PERF_FILTER_LEN             1000
+#endif
 
 #if ESP_PER_SOC_TCP_WND
-#define TCP_WND(pcb)                         (pcb->per_soc_tcp_wnd)
-#define TCP_SND_BUF(pcb)                     (pcb->per_soc_tcp_snd_buf)
-#else
-#if ESP_PERF
-extern unsigned char misc_prof_get_tcpw(void);
-extern unsigned char misc_prof_get_tcp_snd_buf(void);
-#define TCP_WND(pcb)                         (misc_prof_get_tcpw()*TCP_MSS)
-#define TCP_SND_BUF(pcb)                     (misc_prof_get_tcp_snd_buf()*TCP_MSS)
-#endif
+#define TCP_WND(pcb)                    (pcb->per_soc_tcp_wnd)
+#define TCP_SND_BUF(pcb)                (pcb->per_soc_tcp_snd_buf)
 #endif
 
 /**
@@ -595,6 +636,7 @@ extern unsigned char misc_prof_get_tcp_snd_buf(void);
 #define DHCP_DEBUG                      LWIP_DBG_OFF
 #define LWIP_DEBUG                      LWIP_DBG_OFF
 #define TCP_DEBUG                       LWIP_DBG_OFF
+#define ESP_STATS                       0
 
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_IP               0

@@ -130,12 +130,21 @@ esp_err_t esp_secure_boot_permanently_enable(void) {
         && REG_READ(EFUSE_BLK2_RDATA5_REG) == 0
         && REG_READ(EFUSE_BLK2_RDATA6_REG) == 0
         && REG_READ(EFUSE_BLK2_RDATA7_REG) == 0) {
+        ESP_LOGI(TAG, "Generating new secure boot key...");
+        uint32_t buf[8];
+        bootloader_fill_random(buf, sizeof(buf));
+        for (int i = 0; i < 8; i++) {
+            ESP_LOGV(TAG, "EFUSE_BLK2_WDATA%d_REG = 0x%08x", i, buf[i]);
+            REG_WRITE(EFUSE_BLK2_WDATA0_REG + 4*i, buf[i]);
+        }
+        bzero(buf, sizeof(buf));
+        burn_efuses();
+        ESP_LOGI(TAG, "Read & write protecting new key...");
+        REG_WRITE(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_BLK2 | EFUSE_RD_DIS_BLK2);
+        burn_efuses();
+        efuse_key_read_protected = true;
+        efuse_key_write_protected = true;
 
-        /* On-device key generation is temporarily disabled, until
-         * RNG operation during bootloader is qualified.
-         * See docs/security/secure-boot.rst for details. */
-        ESP_LOGE(TAG, "On-device key generation is not yet available.");
-        return ESP_ERR_NOT_SUPPORTED;
     } else {
         ESP_LOGW(TAG, "Using pre-loaded secure boot key in EFUSE block 2");
     }

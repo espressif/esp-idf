@@ -16,6 +16,7 @@
 #include "soc/cpu.h"
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "sdkconfig.h"
 
 void IRAM_ATTR esp_cpu_stall(int cpu_id)
 {
@@ -41,4 +42,16 @@ void IRAM_ATTR esp_cpu_unstall(int cpu_id)
         CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_PROCPU_C1_M);
         CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_PROCPU_C0_M);
     }
+}
+
+bool IRAM_ATTR esp_cpu_in_ocd_debug_mode()
+{
+#if CONFIG_ESP32_DEBUG_OCDAWARE
+    int dcr;
+    int reg=0x10200C; //DSRSET register
+    asm("rer %0,%1":"=r"(dcr):"r"(reg));
+    return (dcr&0x1);
+#else
+    return false; // Always return false if "OCD aware" is disabled
+#endif
 }

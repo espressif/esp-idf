@@ -20,41 +20,6 @@ config ESP32_DEFAULT_CPU_FREQ_MHZ
     default 160 if ESP32_DEFAULT_CPU_FREQ_160
     default 240 if ESP32_DEFAULT_CPU_FREQ_240
 
-#choice ESP32_WIFI_OR_BT
-#    prompt "Select stack to enable (WiFi or BT)"
-#    default ESP32_ENABLE_WIFI
-#    help
-#        Temporarily, WiFi and BT stacks can not be used at the same time.
-#        Select which stack to enable.
-
-config ESP32_ENABLE_STACK_WIFI
-    bool "WiFi"
-    select WIFI_ENABLED if ESP32_ENABLE_STACK_WIFI
-config ESP32_ENABLE_STACK_BT
-    bool "BT"
-    select MEMMAP_BT if ESP32_ENABLE_STACK_BT
-    select BT_ENABLED if ESP32_ENABLE_STACK_BT
-#config ESP32_ENABLE_STACK_NONE
-#    bool "None"
-#endchoice
-
-config SW_COEXIST_ENABLE
-	bool "Software do control of wifi/bt coexisit"
-    depends on ESP32_ENABLE_STACK_BT && ESP32_ENABLE_STACK_WIFI
-	default "n"
-	help
-		Software do something control of wifi/bt coexist. For some heavy traffic senario,
-		do sotware coexist, may be better.
-
-config MEMMAP_BT
-    bool
-    depends on ESP32_ENABLE_STACK_BT
-    help
-        The Bluetooth stack uses memory that cannot be used as generic memory anymore. This
-        reserves the space for that within the memory map of the compiled binary.
-        This option is required to enable BT stack.
-        Temporarily, this option is not compatible with WiFi stack.
-
 config MEMMAP_SMP
     bool "Reserve memory for two cores"
     default "y"
@@ -89,24 +54,56 @@ config TRACEMEM_RESERVE_DRAM
     default 0x4000 if MEMMAP_TRACEMEM && !MEMMAP_TRACEMEM_TWOBANKS
     default 0x0
 
+choice ESP32_COREDUMP_TO_FLASH_OR_UART
+    prompt "Core dump destination"
+    default ESP32_ENABLE_COREDUMP_TO_NONE
+    help
+        Select place to store core dump: flash, uart or none (to disable core dumps generation).
+
+        If core dump is configured to be stored in flash and custom partition table is used add 
+        corresponding entry to your CSV. For examples, please see predefined partition table CSV descriptions 
+        in the components/partition_table directory.
+
+config ESP32_ENABLE_COREDUMP_TO_FLASH
+    bool "Flash"
+    select ESP32_ENABLE_COREDUMP
+config ESP32_ENABLE_COREDUMP_TO_UART
+    bool "UART"
+    select ESP32_ENABLE_COREDUMP
+config ESP32_ENABLE_COREDUMP_TO_NONE
+    bool "None"
+endchoice
+
+config ESP32_ENABLE_COREDUMP
+    bool
+    default F
+    help
+        Enables/disable core dump module.
+
+config ESP32_CORE_DUMP_UART_DELAY
+    int "Core dump print to UART delay"
+    depends on ESP32_ENABLE_COREDUMP_TO_UART
+    default 0
+    help
+        Config delay (in ms) before printing core dump to UART.
+        Delay can be interrupted by pressing Enter key.
+
+config ESP32_CORE_DUMP_LOG_LEVEL
+    int "Core dump module logging level"
+    depends on ESP32_ENABLE_COREDUMP
+    default 1
+    help
+        Config core dump module logging level (0-5).
+
 # Not implemented and/or needs new silicon rev to work
 config MEMMAP_SPISRAM
     bool "Use external SPI SRAM chip as main memory"
     depends on ESP32_NEEDS_NEW_SILICON_REV
     default "n"
     help
-        The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the 
+        The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the
         main memory map. Enable this if you have this hardware and want to use it in the same
         way as on-chip RAM.
-
-config WIFI_ENABLED
-    bool
-    default "y"
-    depends on ESP32_ENABLE_STACK_WIFI
-    help
-        This compiles in the low-level WiFi stack.
-
-        Temporarily, this option is not compatible with BT stack.
 
 config SYSTEM_EVENT_QUEUE_SIZE
     int "System event queue size"
@@ -137,6 +134,11 @@ config NEWLIB_STDOUT_ADDCR
         cursor one line down, not also move it to the beginning of the line. This
         is usually done by an added CR character. Enabling this will make the
         standard output code automatically add a CR character before a LF.
+        
+        With this option enabled, C standard library functions which read from UART 
+        (like scanf) will convert "\r\n" character sequences back to "\n".
+        
+        This option doesn't affect behavior of the UART driver (drivers/uart.h).
 
 config NEWLIB_NANO_FORMAT
     bool "Enable 'nano' formatting options for printf/scanf family"
@@ -145,7 +147,7 @@ config NEWLIB_NANO_FORMAT
         ESP32 ROM contains parts of newlib C library, including printf/scanf family
         of functions. These functions have been compiled with so-called "nano"
         formatting option. This option doesn't support 64-bit integer formats and C99
-        features, such as positional arguments. 
+        features, such as positional arguments.
 
         For more details about "nano" formatting option, please see newlib readme file,
         search for '--enable-newlib-nano-formatted-io':
@@ -180,42 +182,42 @@ config CONSOLE_UART_NONE
 endchoice
 
 choice CONSOLE_UART_NUM
-	prompt "UART peripheral to use for console output (0-1)"
-	depends on CONSOLE_UART_CUSTOM
+    prompt "UART peripheral to use for console output (0-1)"
+    depends on CONSOLE_UART_CUSTOM
     default CONSOLE_UART_CUSTOM_NUM_0
     help
-    	Due of a ROM bug, UART2 is not supported for console output
-    	via ets_printf.
+        Due of a ROM bug, UART2 is not supported for console output
+        via ets_printf.
 
 config CONSOLE_UART_CUSTOM_NUM_0
-	bool "UART0"
+    bool "UART0"
 config CONSOLE_UART_CUSTOM_NUM_1
-	bool "UART1"
+    bool "UART1"
 endchoice
 
 config CONSOLE_UART_NUM
-	int
-	default 0 if CONSOLE_UART_DEFAULT || CONSOLE_UART_NONE
-	default 0 if CONSOLE_UART_CUSTOM_NUM_0
-	default 1 if CONSOLE_UART_CUSTOM_NUM_1
+    int
+    default 0 if CONSOLE_UART_DEFAULT || CONSOLE_UART_NONE
+    default 0 if CONSOLE_UART_CUSTOM_NUM_0
+    default 1 if CONSOLE_UART_CUSTOM_NUM_1
 
 config CONSOLE_UART_TX_GPIO
-	int "UART TX on GPIO#"
-	depends on CONSOLE_UART_CUSTOM
-	range 0 33
-	default 19
+    int "UART TX on GPIO#"
+    depends on CONSOLE_UART_CUSTOM
+    range 0 33
+    default 19
 
 config CONSOLE_UART_RX_GPIO
-	int "UART RX on GPIO#"
-	depends on CONSOLE_UART_CUSTOM
-	range 0 39
-	default 21
+    int "UART RX on GPIO#"
+    depends on CONSOLE_UART_CUSTOM
+    range 0 39
+    default 21
 
 config CONSOLE_UART_BAUDRATE
-	int "UART console baud rate"
-	depends on !CONSOLE_UART_NONE
-	default 115200
-	range 1200 4000000
+    int "UART console baud rate"
+    depends on !CONSOLE_UART_NONE
+    default 115200
+    range 1200 4000000
 
 config ULP_COPROC_ENABLED
     bool "Enable Ultra Low Power (ULP) Coprocessor"
@@ -246,13 +248,13 @@ choice ESP32_PANIC
     prompt "Panic handler behaviour"
     default ESP32_PANIC_PRINT_REBOOT
     help
-        If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is 
+        If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is
         invoked. Configure the panic handlers action here.
 
 config ESP32_PANIC_PRINT_HALT
     bool "Print registers and halt"
     help
-        Outputs the relevant registers over the serial port and halt the 
+        Outputs the relevant registers over the serial port and halt the
         processor. Needs a manual reset to restart.
 
 config ESP32_PANIC_PRINT_REBOOT
@@ -335,8 +337,8 @@ config TASK_WDT_CHECK_IDLE_TASK
     help
         With this turned on, the task WDT can detect if the idle task is not called within the task
         watchdog timeout period. The idle task not being called usually is a symptom of another
-        task hoarding the CPU. It is also a bad thing because FreeRTOS household tasks depend on the 
-        idle task getting some runtime every now and then. Take Care: With this disabled, this 
+        task hoarding the CPU. It is also a bad thing because FreeRTOS household tasks depend on the
+        idle task getting some runtime every now and then. Take Care: With this disabled, this
         watchdog will trigger if no tasks register themselves within the timeout value.
 
 config TASK_WDT_CHECK_IDLE_TASK_CPU1
@@ -353,7 +355,7 @@ config BROWNOUT_DET
     default y
     depends on NEEDS_ESP32_NEW_SILICON_REV
     help
-        The ESP32 has a built-in brownout detector which can detect if the voltage is lower than 
+        The ESP32 has a built-in brownout detector which can detect if the voltage is lower than
         a specific value. If this happens, it will reset the chip in order to prevent unintended
         behaviour.
 
@@ -407,25 +409,27 @@ config BROWNOUT_DET_RESETDELAY
 
 
 choice ESP32_TIME_SYSCALL
-	prompt "Timers used for gettimeofday function"
-	default ESP32_TIME_SYSCALL_USE_RTC_FRC1
-	help
-		This setting defines which hardware timers are used to
-		implement 'gettimeofday' and 'time' functions in C library.
-		
-		- If only FRC1 timer is used, gettimeofday will provide time at
-		  microsecond resolution. Time will not be preserved when going
-		  into deep sleep mode.
-		- If both FRC1 and RTC timers are used, timekeeping will
-		  continue in deep sleep. Time will be reported at 1 microsecond
-		  resolution.
-		- If only RTC timer is used, timekeeping will continue in
-		  deep sleep, but time will be measured at 6.(6) microsecond
-		  resolution. Also the gettimeofday function itself may take 
-		  longer to run.
-		- If no timers are used, gettimeofday and time functions
-		  return -1 and set errno to ENOSYS. 
-		  
+    prompt "Timers used for gettimeofday function"
+    default ESP32_TIME_SYSCALL_USE_RTC_FRC1
+    help
+        This setting defines which hardware timers are used to
+        implement 'gettimeofday' and 'time' functions in C library.
+
+        - If only FRC1 timer is used, gettimeofday will provide time at
+          microsecond resolution. Time will not be preserved when going
+          into deep sleep mode.
+        - If both FRC1 and RTC timers are used, timekeeping will
+          continue in deep sleep. Time will be reported at 1 microsecond
+          resolution.
+        - If only RTC timer is used, timekeeping will continue in
+          deep sleep, but time will be measured at 6.(6) microsecond
+          resolution. Also the gettimeofday function itself may take
+          longer to run.
+        - If no timers are used, gettimeofday and time functions
+          return -1 and set errno to ENOSYS.
+        - When RTC is used for timekeeping, two RTC_STORE registers are
+          used to keep time in deep sleep mode.
+
 config ESP32_TIME_SYSCALL_USE_RTC
     bool "RTC"
 config ESP32_TIME_SYSCALL_USE_RTC_FRC1
@@ -437,76 +441,102 @@ config ESP32_TIME_SYSCALL_USE_NONE
 endchoice
 
 choice ESP32_RTC_CLOCK_SOURCE
-	prompt "RTC clock source"
-	default ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
-	help
-		Choose which clock is used as RTC clock source.
-		The only available option for now is to use internal
-		150kHz RC oscillator.
+    prompt "RTC clock source"
+    default ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
+    help
+        Choose which clock is used as RTC clock source.
+        The only available option for now is to use internal
+        150kHz RC oscillator.
 
 config ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
-	bool "Internal RC"
+    bool "Internal RC"
 config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
-	bool "External 32kHz crystal"
-	depends on DOCUMENTATION_FOR_RTC_CNTL
+    bool "External 32kHz crystal"
+    depends on DOCUMENTATION_FOR_RTC_CNTL
 endchoice
 
-
 config ESP32_DEEP_SLEEP_WAKEUP_DELAY
-	int "Extra delay in deep sleep wake stub (in us)"
-	default 0
-	range 0 5000
-	help
-		When ESP32 exits deep sleep, the CPU and the flash chip are powered on
-		at the same time. CPU will run deep sleep stub first, and then
-		proceed to load code from flash. Some flash chips need sufficient
-		time to pass between power on and first read operation. By default,
-		without any extra delay, this time is approximately 900us.
-		
-		If you are using a flash chip which needs more than 900us to become
-		ready after power on, set this parameter to add extra delay
-		to the default deep sleep stub.
-		
-		If you are seeing "flash read err, 1000" message printed to the
-		console after deep sleep reset, try increasing this value. 
+    int "Extra delay in deep sleep wake stub (in us)"
+    default 0
+    range 0 5000
+    help
+        When ESP32 exits deep sleep, the CPU and the flash chip are powered on
+        at the same time. CPU will run deep sleep stub first, and then
+        proceed to load code from flash. Some flash chips need sufficient
+        time to pass between power on and first read operation. By default,
+        without any extra delay, this time is approximately 900us.
 
+        If you are using a flash chip which needs more than 900us to become
+        ready after power on, set this parameter to add extra delay
+        to the default deep sleep stub.
 
-config ESP32_PHY_AUTO_INIT
-	bool "Initialize PHY in startup code"
-	default y
-	help
-		If enabled, PHY will be initialized in startup code, before
-		app_main function runs.
-		If this is undesired, disable this option and call esp_phy_init
-		from the application before enabling WiFi or BT.
-		
-		If this option is enabled, startup code will also initialize 
-		NVS prior to initializing PHY.
-		
-		If unsure, choose 'y'. 
-
-config ESP32_PHY_INIT_DATA_IN_PARTITION
-	bool "Use a partition to store PHY init data"
-	default n
-	help
-		If enabled, PHY init data will be loaded from a partition.
-		When using a custom partition table, make sure that PHY data
-		partition is included (type: 'data', subtype: 'phy'). 
-		With default partition tables, this is done automatically. 
-		If PHY init data is stored in a partition, it has to be flashed there,
-		otherwise runtime error will occur.
-		
-		If this option is not enabled, PHY init data will be embedded
-		into the application binary.
-		
-		If unsure, choose 'n'.
-
-config ESP32_PHY_MAX_TX_POWER
-	int "Max TX power (dBm)"
-	range 0 20
-	default 20
-	help
-		Set maximum transmit power. Actual transmit power for high
-		data rates may be lower than this setting.
+        If you are seeing "flash read err, 1000" message printed to the
+        console after deep sleep reset, try increasing this value.
 
 endmenu
+
+menuconfig WIFI_ENABLED
+    bool "WiFi"
+    default y
+    help
+       Select this option to enable WiFi stack and show the submenu with WiFi configuration choices.
+
+config SW_COEXIST_ENABLE
+    bool "Software controls WiFi/Bluetooth coexistence"
+    depends on WIFI_ENABLED && BT_ENABLED
+    default n
+    help
+        If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
+        Recommended for heavy traffic scenarios. Both coexistence configuration options are
+        automatically managed, no user intervention is required.
+
+config ESP32_PHY_AUTO_INIT
+    bool "Initialize PHY in startup code"
+    depends on WIFI_ENABLED
+    default y
+    help
+        If enabled, PHY will be initialized in startup code, before
+        app_main function runs.
+        If this is undesired, disable this option and call esp_phy_init
+        from the application before enabling WiFi or BT.
+
+        If this option is enabled, startup code will also initialize
+        NVS prior to initializing PHY.
+
+        If unsure, choose 'y'.
+
+config ESP32_PHY_INIT_DATA_IN_PARTITION
+    bool "Use a partition to store PHY init data"
+    depends on WIFI_ENABLED
+    default n
+    help
+        If enabled, PHY init data will be loaded from a partition.
+        When using a custom partition table, make sure that PHY data
+        partition is included (type: 'data', subtype: 'phy').
+        With default partition tables, this is done automatically.
+        If PHY init data is stored in a partition, it has to be flashed there,
+        otherwise runtime error will occur.
+
+        If this option is not enabled, PHY init data will be embedded
+        into the application binary.
+
+        If unsure, choose 'n'.
+
+config ESP32_PHY_MAX_TX_POWER
+    int "Max TX power (dBm)"
+    range 0 20
+    default 20
+    depends on WIFI_ENABLED
+    help
+        Set maximum transmit power. Actual transmit power for high
+        data rates may be lower than this setting.
+
+config ESP32_WIFI_RX_BUFFER_NUM
+    int "Max number of WiFi RX buffers"
+    depends on WIFI_ENABLED
+    range 2 25
+    default 25
+    help
+        Set the number of WiFi rx buffers. Each buffer takes approximately 1.6KB of RAM.
+        Larger number for higher throughput but more memory. Smaller number for lower
+        throughput but less memory.

@@ -1,11 +1,7 @@
-ESP32 Programming Guide
-=======================
+ESP-IDF Programming Guide
+=========================
 
-.. caution::
-
-   Until ESP-IDF release 1.0, this documentation is a draft. It is incomplete and may have mistakes. Please mind your step!
-
-Documentation adressed to developers of applications for `ESP32 <https://espressif.com/en/products/hardware/esp32/overview>`_ by `Espressif <https://espressif.com/>`_ using `esp-idf <https://github.com/espressif/esp-idf>`_.
+This is the documentation for Espressif IoT Developement Framework (`esp-idf <https://github.com/espressif/esp-idf>`_). ESP-IDF is the official development framework for the `ESP32 <https://espressif.com/en/products/hardware/esp32/overview>`_ chip.
 
 
 Contents:
@@ -35,6 +31,7 @@ Contents:
    partition-tables
    build_system
    openocd
+   core_dump
    Flash encryption <security/flash-encryption>
    Secure Boot <security/secure-boot>
    ULP coprocessor <api/ulp.rst>
@@ -70,7 +67,7 @@ Contents:
      6.4. UART
      6.5. I2C - TBA
      6.6. I2S - TBA
-     6.7. SPI - TBA
+     6.7. SPI - <api/spi_master>
      6.8. CAN - TBA
      6.9. SD Controller - TBA
      6.10. Infrared - TBA
@@ -107,18 +104,23 @@ Contents:
    LED Control <api/ledc>
    Remote Control <api/rmt>
    Timer <api/timer>
+   I2C <api/i2c>
    Pulse Counter <api/pcnt>
    Sigma-delta Modulation <api/sigmadelta>
+   SD/MMC <api/sdmmc>
    SPI Flash and Partition APIs <api/spi_flash>
+   SPI Master API <api/spi_master>
    Logging <api/log>
    Non-Volatile Storage <api/nvs_flash>
    Virtual Filesystem <api/vfs>
+   FAT Filesystem <api/fatfs>
    Ethernet <api/esp_eth>
    Interrupt Allocation <api/intr_alloc>
    Memory Allocation <api/mem_alloc>
    Deep Sleep <api/deep_sleep>
    deep-sleep-stub
 
+   mDNS <api/mdns>
    Template <api/template>
 
 .. toctree::

@@ -135,7 +135,7 @@
 #define HSPICS2_IN_IDX			62
 #define HSPICS2_OUT_IDX			62
 #define VSPICLK_IN_IDX			63
-#define VSPICLK_OUT_MUX_IDX			63
+#define VSPICLK_OUT_IDX			63
 #define VSPIQ_IN_IDX			64
 #define VSPIQ_OUT_IDX			64
 #define VSPID_IN_IDX			65

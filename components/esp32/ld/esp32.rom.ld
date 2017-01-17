@@ -87,9 +87,9 @@ PROVIDE ( _ctype_ = 0x3ff96354 );
 PROVIDE ( __ctype_ptr__ = 0x3ff96350 );
 PROVIDE ( __ctzdi2 = 0x4000ca64 );
 PROVIDE ( __ctzsi2 = 0x4000c7f0 );
-PROVIDE ( _data_end = 0x4000d5c8 );
+PROVIDE ( _data_end_rom = 0x4000d5c8 );
 PROVIDE ( _data_end_btdm_rom = 0x4000d4f8 );
-PROVIDE ( _data_start = 0x4000d4f8 );
+PROVIDE ( _data_start_rom = 0x4000d4f8 );
 PROVIDE ( _data_start_btdm_rom = 0x4000d4f4 );
 PROVIDE ( _data_start_btdm = 0x3ffae6e0);
 PROVIDE ( _data_end_btdm = 0x3ffaff10);
@@ -202,7 +202,7 @@ PROVIDE ( ets_timer_init = 0x400084e8 );
 PROVIDE ( ets_timer_setfn = 0x40008350 );
 PROVIDE ( ets_unpack_flash_code = 0x40007018 );
 PROVIDE ( ets_unpack_flash_code_legacy = 0x4000694c );
-PROVIDE ( ets_update_cpu_frequency = 0x40008550 );
+PROVIDE ( ets_update_cpu_frequency_rom = 0x40008550 ); /* Updates g_ticks_per_us on the current CPU only; not on the other core */
 PROVIDE ( ets_waiti0 = 0x400067d8 );
 PROVIDE ( exc_cause_table = 0x3ff991d0 );
 PROVIDE ( _exit_r = 0x4000bd28 );
@@ -1725,6 +1725,8 @@ PROVIDE ( xthal_memcpy = 0x4000c0bc );
 PROVIDE ( xthal_set_ccompare = 0x4000c058 );
 PROVIDE ( xthal_set_intclear = 0x4000c1ec );
 PROVIDE ( _xtos_set_intlevel = 0x4000bfdc );
+PROVIDE ( g_ticks_per_us_pro = 0x3ffe01e0 );
+PROVIDE ( g_ticks_per_us_app = 0x3ffe40f0 );
 /* 
 These functions are xtos-related (or call xtos-related functions) and do not play well 
 with multicore FreeRTOS. Where needed, we provide alternatives that are multicore

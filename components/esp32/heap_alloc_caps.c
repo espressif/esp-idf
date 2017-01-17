@@ -170,7 +170,7 @@ Warning: These variables are assumed to have the start and end of the data and i
 area used statically by the program, respectively. These variables are defined in the ld
 file.
 */
-extern int _bss_start, _heap_start, _init_start, _iram_text_end;
+extern int _data_start, _heap_start, _init_start, _iram_text_end;
 
 /*
 Initialize the heap allocator. We pass it a bunch of region descriptors, but we need to modify those first to accommodate for 
@@ -183,7 +183,7 @@ void heap_alloc_caps_init() {
     //Compile-time assert to see if we don't have more tags than is set in heap_regions.h
     _Static_assert((sizeof(tag_desc)/sizeof(tag_desc[0]))-1 <= HEAPREGIONS_MAX_TAGCOUNT, "More than HEAPREGIONS_MAX_TAGCOUNT tags defined!");
     //Disable the bits of memory where this code is loaded.
-    disable_mem_region(&_bss_start, &_heap_start);            //DRAM used by bss/data static variables
+    disable_mem_region(&_data_start, &_heap_start);           //DRAM used by bss/data static variables
     disable_mem_region(&_init_start, &_iram_text_end);        //IRAM used by code
     disable_mem_region((void*)0x3ffae000, (void*)0x3ffb0000); //knock out ROM data region
     disable_mem_region((void*)0x40070000, (void*)0x40078000); //CPU0 cache region
@@ -192,7 +192,7 @@ void heap_alloc_caps_init() {
     // TODO: this region should be checked, since we don't need to knock out all region finally
     disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe8000); //knock out ROM data region
 
-#if CONFIG_MEMMAP_BT
+#if CONFIG_BT_ENABLED
     disable_mem_region((void*)0x3ffb0000, (void*)0x3ffc0000); //knock out BT data region
 #endif
 

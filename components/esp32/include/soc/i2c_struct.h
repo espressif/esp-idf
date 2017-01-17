@@ -16,7 +16,7 @@
 typedef volatile struct {
     union {
         struct {
-            uint32_t scl_low_period:14;             /*This register is used to configure the  low level width of SCL clock.*/
+            uint32_t period:14;             /*This register is used to configure the  low level width of SCL clock.*/
             uint32_t reserved14:    18;
         };
         uint32_t val;
@@ -58,7 +58,7 @@ typedef volatile struct {
     } status_reg;
     union {
         struct {
-            uint32_t tout:      20;                 /*This register is used to configure the max clock number of receiving  a data.*/
+            uint32_t tout:      20;                 /*This register is used to configure the max clock number of receiving a data, unit: APB clock cycle.*/
             uint32_t reserved20:12;
         };
         uint32_t val;
@@ -282,7 +282,7 @@ typedef volatile struct {
     uint32_t reserved_f4;
     uint32_t date;                                  /**/
     uint32_t reserved_fc;
-    uint32_t fifo_start_addr;                       /*This the start address for ram when use apb nonfifo access.*/
+    uint32_t ram_data[32];                          /*This the start address for ram when use apb nonfifo access.*/
 } i2c_dev_t;
 extern i2c_dev_t I2C0;
 extern i2c_dev_t I2C1;

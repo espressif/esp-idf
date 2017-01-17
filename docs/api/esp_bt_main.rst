@@ -34,6 +34,8 @@ Type Definitions
 Enumerations
 ^^^^^^^^^^^^
 
+.. doxygenenum:: esp_bluedroid_status_t
+
 
 Structures
 ^^^^^^^^^^
@@ -42,8 +44,9 @@ Structures
 Functions
 ^^^^^^^^^
 
-.. doxygenfunction:: esp_enable_bluetooth
-.. doxygenfunction:: esp_disable_bluetooth
-.. doxygenfunction:: esp_init_bluetooth
-.. doxygenfunction:: esp_deinit_bluetooth
+.. doxygenfunction:: esp_bluedroid_get_status
+.. doxygenfunction:: esp_bluedroid_enable
+.. doxygenfunction:: esp_bluedroid_disable
+.. doxygenfunction:: esp_bluedroid_init
+.. doxygenfunction:: esp_bluedroid_deinit
 

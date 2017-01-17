@@ -34,7 +34,6 @@
 #include "bta_gatts_int.h"
 #include "bta_gatts_co.h"
 #include "btm_ble_api.h"
-// #include "btif/include/btif_debug_conn.h"
 #include <string.h>
 
 static void bta_gatts_nv_save_cback(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
@@ -233,8 +232,6 @@ void bta_gatts_register(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     if (p_msg->api_reg.p_cback) {
         (*p_msg->api_reg.p_cback)(BTA_GATTS_REG_EVT, &cb_data);
     }
-
-    LOG_ERROR("status=%x\n", status);
 }
 
 
@@ -406,10 +403,22 @@ void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
     UINT16          attr_id = 0;
     tBTA_GATTS      cb_data;
 
+    tGATT_ATTR_VAL *p_attr_val = NULL; 
+    tGATTS_ATTR_CONTROL *p_control = NULL;
+
+    if(p_msg->api_add_char.attr_val.attr_max_len != 0){
+        p_attr_val = &p_msg->api_add_char.attr_val;
+    }
+
+    if(p_msg->api_add_char.control.auto_rsp != 0){
+        p_control = &p_msg->api_add_char.control;
+    }
+
+
     attr_id = GATTS_AddCharacteristic(p_msg->api_add_char.hdr.layer_specific,
                                       &p_msg->api_add_char.char_uuid,
                                       p_msg->api_add_char.perm,
-                                      p_msg->api_add_char.property);
+                                      p_msg->api_add_char.property, p_attr_val, p_control);
     cb_data.add_result.server_if = p_rcb->gatt_if;
     cb_data.add_result.service_id = p_msg->api_add_incl_srvc.hdr.layer_specific;
     cb_data.add_result.attr_id = attr_id;
@@ -422,11 +431,15 @@ void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
     } else {
         cb_data.add_result.status = BTA_GATT_ERROR;
     }
+    if((p_attr_val != NULL) && (p_attr_val->attr_val != NULL)){
+        GKI_freebuf(p_attr_val->attr_val);
+    }
 
     if (p_rcb->p_cback) {
         (*p_rcb->p_cback)(BTA_GATTS_ADD_CHAR_EVT, &cb_data);
     }
 }
+
 /*******************************************************************************
 **
 ** Function         bta_gatts_add_char_descr
@@ -441,10 +454,20 @@ void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
     tBTA_GATTS_RCB  *p_rcb = &bta_gatts_cb.rcb[p_srvc_cb->rcb_idx];
     UINT16          attr_id = 0;
     tBTA_GATTS      cb_data;
+    tGATT_ATTR_VAL *p_attr_val = NULL;
+    tGATTS_ATTR_CONTROL *p_control = NULL;
 
+    if (p_msg->api_add_char_descr.attr_val.attr_max_len != 0) {
+        p_attr_val = &p_msg->api_add_char_descr.attr_val;
+    }
+
+    if (p_msg->api_add_char_descr.control.auto_rsp != 0) {
+        p_control = &p_msg->api_add_char_descr.control;
+    }
     attr_id = GATTS_AddCharDescriptor(p_msg->api_add_char_descr.hdr.layer_specific,
                                       p_msg->api_add_char_descr.perm,
-                                      &p_msg->api_add_char_descr.descr_uuid);
+                                      &p_msg->api_add_char_descr.descr_uuid, p_attr_val,
+                                      p_control);
 
     cb_data.add_result.server_if = p_rcb->gatt_if;
     cb_data.add_result.service_id = p_msg->api_add_incl_srvc.hdr.layer_specific;
@@ -458,12 +481,50 @@ void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
     } else {
         cb_data.add_result.status = BTA_GATT_ERROR;
     }
+    if((p_attr_val != NULL) && (p_attr_val->attr_val != NULL)){
+        GKI_freebuf(p_attr_val->attr_val);
+    }
 
     if (p_rcb->p_cback) {
         (*p_rcb->p_cback)(BTA_GATTS_ADD_CHAR_DESCR_EVT, &cb_data);
     }
 
 }
+
+/*******************************************************************************
+**
+** Function         bta_gatts_add_char_descr
+**
+** Description      action function to add characteristic descriptor.
+**
+** Returns          none.
+**
+*******************************************************************************/
+void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
+{
+    tBTA_GATTS_RCB  *p_rcb = &bta_gatts_cb.rcb[p_srvc_cb->rcb_idx];
+    UINT16          attr_id = 0;
+    tBTA_GATTS      cb_data;
+    tBTA_GATT_STATUS gatts_status;
+    gatts_status = GATTS_SetAttributeValue(p_msg->api_add_char_descr.hdr.layer_specific,
+                                           p_msg->api_set_val.length,
+                                           p_msg->api_set_val.value);
+
+    cb_data.attr_val.server_if = p_rcb->gatt_if;
+    cb_data.attr_val.service_id = p_msg->api_set_val.hdr.layer_specific;
+    cb_data.attr_val.attr_id = attr_id;
+    cb_data.attr_val.status = gatts_status;
+
+    if (p_rcb->p_cback) {
+        (*p_rcb->p_cback)(BTA_GATTS_SET_ATTR_VAL_EVT, &cb_data);
+    }
+}
+
+void bta_gatts_get_attr_value(UINT16 attr_handle, UINT16 *length, UINT8 **value)
+{
+    GATTS_GetAttributeValue(attr_handle, length, value);
+}
+
 /*******************************************************************************
 **
 ** Function         bta_gatts_delete_service

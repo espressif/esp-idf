@@ -202,6 +202,12 @@ recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p,
 #endif /* LWIP_NETBUF_RECVINFO */
   }
 
+#if ESP_PERF
+  if (p->len > DBG_PERF_FILTER_LEN) {
+    DBG_PERF_PATH_SET(DBG_PERF_DIR_RX, DBG_PERF_POINT_LWIP_OUT);
+  }
+#endif
+
   len = p->tot_len;
   if (sys_mbox_trypost(&conn->recvmbox, buf) != ERR_OK) {
     ESP_STATS_INC(esp.rx_udpmbox_post_fail);

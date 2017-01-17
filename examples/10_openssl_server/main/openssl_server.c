@@ -43,7 +43,8 @@ const static char *TAG = "Openssl_demo";
                                 "<title>OpenSSL demo</title></head><body>\r\n" \
                                 "OpenSSL server demo!\r\n" \
                                 "</body>\r\n" \
-                                "</html>\r\n"
+                                "</html>\r\n" \
+                                "\r\n"
 
 static void openssl_demo_thread(void *p)
 {
@@ -70,7 +71,7 @@ static void openssl_demo_thread(void *p)
     const unsigned int prvtkey_pem_bytes = prvtkey_pem_end - prvtkey_pem_start;   
 
     ESP_LOGI(TAG, "SSL server context create ......");
-    ctx = SSL_CTX_new(SSLv3_server_method());
+    ctx = SSL_CTX_new(TLS_server_method());
     if (!ctx) {
         ESP_LOGI(TAG, "failed");
         goto failed1;
@@ -155,14 +156,21 @@ reconnect:
         if (ret <= 0) {
             break;
         }
-        if (strstr(recv_buf, "GET / HTTP/1.1")) {
-            SSL_write(ssl, send_data, send_bytes);
+        ESP_LOGI(TAG, "SSL read: %s", recv_buf);
+        if (strstr(recv_buf, "GET ") &&
+            strstr(recv_buf, " HTTP/1.1")) {
+            ESP_LOGI(TAG, "SSL get matched message")
+            ESP_LOGI(TAG, "SSL write message")
+            ret = SSL_write(ssl, send_data, send_bytes);
+            if (ret > 0) {
+                ESP_LOGI(TAG, "OK")
+            } else {
+                ESP_LOGI(TAG, "error")
+            }
             break;
         }
     } while (1);
     
-    ESP_LOGI(TAG, "result %d", ret);
-
     SSL_shutdown(ssl);
 failed5:
     close(new_socket);

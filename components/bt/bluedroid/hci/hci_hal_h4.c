@@ -57,7 +57,7 @@ typedef struct {
 static hci_hal_env_t hci_hal_env;
 static const hci_hal_t interface;
 static const hci_hal_callbacks_t *callbacks;
-static const vhci_host_callback_t vhci_host_cb;
+static const esp_vhci_host_callback_t vhci_host_cb;
 
 static xTaskHandle xHciH4TaskHandle;
 static xQueueHandle xHciH4Queue;
@@ -102,10 +102,10 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
     hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX);
 
     xHciH4Queue = xQueueCreate(HCI_H4_QUEUE_NUM, sizeof(BtTaskEvt_t));
-    xTaskCreate(hci_hal_h4_rx_handler, HCI_H4_TASK_NAME, HCI_H4_TASK_STACK_SIZE, NULL, HCI_H4_TASK_PRIO, &xHciH4TaskHandle);
+    xTaskCreatePinnedToCore(hci_hal_h4_rx_handler, HCI_H4_TASK_NAME, HCI_H4_TASK_STACK_SIZE, NULL, HCI_H4_TASK_PRIO, &xHciH4TaskHandle, 0);
 
     //register vhci host cb
-    API_vhci_host_register_callback(&vhci_host_cb);
+    esp_vhci_host_register_callback(&vhci_host_cb);
 
     return true;
 }
@@ -147,7 +147,7 @@ static uint16_t transmit_data(serial_data_type_t type,
     BTTRC_DUMP_BUFFER("Transmit Pkt", data, length);
 
     // TX Data to target
-    API_vhci_host_send_packet(data, length);
+    esp_vhci_host_send_packet(data, length);
 
     // Be nice and restore the old value of that byte
     *(data) = previous_byte;
@@ -175,7 +175,7 @@ void hci_hal_h4_task_post(void)
     evt.sig = 0xff;
     evt.par = 0;
 
-    if (xQueueSend(xHciH4Queue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
+    if (xQueueSend(xHciH4Queue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
         LOG_ERROR("xHciH4Queue failed\n");
     }
 }
@@ -273,7 +273,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     return 0;
 }
 
-static const vhci_host_callback_t vhci_host_cb = {
+static const esp_vhci_host_callback_t vhci_host_cb = {
     .notify_host_send_available = host_send_pkt_available_cb,
     .notify_host_recv = host_recv_pkt_cb,
 };

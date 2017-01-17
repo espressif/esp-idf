@@ -22,22 +22,39 @@ extern "C" {
 #endif
 
 /**
- * @brief     Enable bluetooth, must after esp_init_bluetooth()
- *
- * @return
- *            - ESP_OK : Succeed
- *            - Other  : Failed
+ * @brief Bluetooth stack status type, to indicate whether the bluetooth stack is ready
  */
-esp_err_t esp_enable_bluetooth(void);
+typedef enum {
+    ESP_BLUEDROID_STATUS_UNINITIALIZED   = 0,        /*!< Bluetooth not initialized */
+    ESP_BLUEDROID_STATUS_INITIALIZED,                /*!< Bluetooth initialized but not enabled */
+    ESP_BLUEDROID_STATUS_ENABLED                     /*!< Bluetooth initialized and enabled */
+} esp_bluedroid_status_t;
 
 /**
- * @brief     Disable bluetooth, must prior to esp_deinit_bluetooth()
+ * @brief     Get bluetooth stack status
+ *
+ * @return    Bluetooth stack status
+ *
+ */
+esp_bluedroid_status_t esp_bluedroid_get_status(void);
+    
+/**
+ * @brief     Enable bluetooth, must after esp_bluedroid_init()
  *
  * @return
  *            - ESP_OK : Succeed
  *            - Other  : Failed
  */
-esp_err_t esp_disable_bluetooth(void);
+esp_err_t esp_bluedroid_enable(void);
+
+/**
+ * @brief     Disable bluetooth, must prior to esp_bluedroid_deinit()
+ *
+ * @return
+ *            - ESP_OK : Succeed
+ *            - Other  : Failed
+ */
+esp_err_t esp_bluedroid_disable(void);
 
 /**
  * @brief     Init and alloc the resource for bluetooth, must be prior to every bluetooth stuff
@@ -46,7 +63,7 @@ esp_err_t esp_disable_bluetooth(void);
  *            - ESP_OK : Succeed
  *            - Other  : Failed
  */
-esp_err_t esp_init_bluetooth(void);
+esp_err_t esp_bluedroid_init(void);
 
 /**
  * @brief     Deinit and free the resource for bluetooth, must be after every bluetooth stuff
@@ -55,7 +72,7 @@ esp_err_t esp_init_bluetooth(void);
  *            - ESP_OK : Succeed
  *            - Other  : Failed
  */
-esp_err_t esp_deinit_bluetooth(void);
+esp_err_t esp_bluedroid_deinit(void);
 
 #ifdef __cplusplus
 }

@@ -421,7 +421,7 @@ bool btif_a2dp_start_media_task(void)
     if (xBtifMediaQueue == 0) {
         goto error_exit;
     }
-    xTaskCreate(btif_media_task_handler, "BtifMediaT\n", 2048, NULL, configMAX_PRIORITIES - 1, &xBtifMediaTaskHandle);
+    xTaskCreatePinnedToCore(btif_media_task_handler, "BtifMediaT\n", 2048, NULL, configMAX_PRIORITIES - 1, &xBtifMediaTaskHandle, 0);
     if (xBtifMediaTaskHandle == NULL) {
         goto error_exit;
     }

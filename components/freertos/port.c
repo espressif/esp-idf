@@ -282,6 +282,7 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *fnName, int line) {
 #else
 void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 #endif
+#if !CONFIG_FREERTOS_UNICORE
 	uint32_t res;
 	uint32_t recCnt;
 	unsigned int irqStatus;
@@ -324,6 +325,7 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 	}
 #endif
 	portEXIT_CRITICAL_NESTED(irqStatus);
+#endif
 }
 
 /*
@@ -335,6 +337,7 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *fnName, int li
 #else
 portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 #endif
+#if !CONFIG_FREERTOS_UNICORE
 	uint32_t res=0;
 	uint32_t recCnt;
 	unsigned int irqStatus;
@@ -379,6 +382,9 @@ portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 	}
 	portEXIT_CRITICAL_NESTED(irqStatus);
 	return ret;
+#else //!CONFIG_FREERTOS_UNICORE
+	return 0;
+#endif
 }
 
 #if CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG
@@ -386,5 +392,21 @@ void vPortFirstTaskHook(TaskFunction_t function) {
 	esp_set_breakpoint_if_jtag(function);
 }
 #endif
+
+
+void vPortSetStackWatchpoint( void* pxStackStart ) {
+	//Set watchpoint 1 to watch the last 32 bytes of the stack.
+	//Unfortunately, the Xtensa watchpoints can't set a watchpoint on a random [base - base+n] region because
+	//the size works by masking off the lowest address bits. For that reason, we futz a bit and watch the lowest 32
+	//bytes of the stack we can actually watch. In general, this can cause the watchpoint to be triggered at most
+	//28 bytes early. The value 32 is chosen because it's larger than the stack canary, which in FreeRTOS is 20 bytes.
+	//This way, we make sure we trigger before/when the stack canary is corrupted, not after.
+	int addr=(int)pxStackStart;
+	addr=(addr+31)&(~31);
+	esp_set_watchpoint(1, (char*)addr, 32, ESP_WATCHPOINT_STORE);
+}
+
+
+
 
 

@@ -70,6 +70,58 @@ static size_t IRAM_ATTR uart_write(int fd, const void * data, size_t size)
     return size;
 }
 
+static ssize_t IRAM_ATTR uart_read(int fd, void* data, size_t size)
+{
+    assert(fd >=0 && fd < 3);
+    uint8_t *data_c = (uint8_t *) data;
+    uart_dev_t* uart = s_uarts[fd];
+    size_t received = 0;
+    _lock_acquire_recursive(&s_uart_locks[fd]);
+    while (uart->status.rxfifo_cnt > 0 && received < size) {
+        uint8_t c = uart->fifo.rw_byte;
+#if CONFIG_NEWLIB_STDOUT_ADDCR
+        /* Convert \r\n sequences to \n.
+         * If \r is received, it is put into 'buffered_char' until the next
+         * character is received. Then depending on the character, we either
+         * drop \r (if the next one is \n) or output \r and then proceed to output
+         * the new character.
+         */
+        const int NONE = -1;
+        static int buffered_char = NONE;
+        if (buffered_char != NONE) {
+            if (buffered_char == '\r' && c == '\n') {
+                buffered_char = NONE;
+            } else {
+                data_c[received] = buffered_char;
+                buffered_char = NONE;
+                ++received;
+                if (received == size) {
+                    /* We have placed the buffered character into the output buffer
+                     * but there won't be enough space for the newly received one.
+                     * Keep the new character in buffered_char until read is called
+                     * again.
+                     */
+                    buffered_char = c;
+                    break;
+                }
+            }
+        }
+        if (c == '\r') {
+            buffered_char = c;
+            continue;
+        }
+#endif //CONFIG_NEWLIB_STDOUT_ADDCR
+        data_c[received] = c;
+        ++received;
+    }
+    _lock_release_recursive(&s_uart_locks[fd]);
+    if (received > 0) {
+        return received;
+    }
+    errno = EWOULDBLOCK;
+    return -1;
+}
+
 static int IRAM_ATTR uart_fstat(int fd, struct stat * st)
 {
     assert(fd >=0 && fd < 3);
@@ -92,7 +144,7 @@ void esp_vfs_dev_uart_register()
         .open = &uart_open,
         .fstat = &uart_fstat,
         .close = &uart_close,
-        .read = NULL, // TODO: implement reading from UART
+        .read = &uart_read,
         .lseek = NULL,
         .stat = NULL,
         .link = NULL,

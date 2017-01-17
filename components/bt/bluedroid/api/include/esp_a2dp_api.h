@@ -119,6 +119,13 @@ typedef union {
 } esp_a2d_cb_param_t;
 
 /**
+ * @brief           A2DP profile callback function, data is ou
+ * @param           event : Event type
+ * @param           param : Point to callback parameter
+ */
+typedef void (* esp_a2d_cb_t)(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param);
+
+/**
  * @brief           A2DP profile data callback function, data is ou
  *                 
  * @param[in]       buf: data received and decoded to PCM format, buf points to a static memory
@@ -140,7 +147,7 @@ typedef void (* esp_a2d_data_cb_t)(const uint8_t *buf, uint32_t len);
  *                  - ESP_OK: success
  *
  */
-esp_err_t esp_a2d_register_callback(esp_profile_cb_t callback);
+esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
 
 
 /**

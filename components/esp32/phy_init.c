@@ -23,10 +23,12 @@
 #include "esp_err.h"
 #include "esp_phy_init.h"
 #include "esp_system.h"
-#include "phy.h"
 #include "esp_log.h"
 #include "nvs.h"
 #include "sdkconfig.h"
+
+#ifdef CONFIG_WIFI_ENABLED
+#include "phy.h"
 #include "phy_init_data.h"
 
 static const char* TAG = "phy_init";
@@ -39,8 +41,8 @@ esp_err_t esp_phy_init(const esp_phy_init_data_t* init_data,
     assert(calibration_data);
     // Initialize PHY pointer table
     phy_get_romfunc_addr();
-    REG_SET_BIT(DPORT_WIFI_RST_EN_REG, DPORT_MAC_RST);
-    REG_CLR_BIT(DPORT_WIFI_RST_EN_REG, DPORT_MAC_RST);
+    REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+    REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
     // Enable WiFi peripheral clock
     SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
     ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
@@ -219,6 +221,4 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
     return err;
 }
 
-void register_chipv7_phy_stub()
-{
-}
+#endif // CONFIG_WIFI_ENABLED
