@@ -1,6 +1,10 @@
 #ifndef PANIC_H
 #define PANIC_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #define PANIC_RSN_NONE 0
 #define PANIC_RSN_DEBUGEXCEPTION 1
@@ -57,6 +61,10 @@ esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags);
 void esp_clear_watchpoint(int no);
 
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
