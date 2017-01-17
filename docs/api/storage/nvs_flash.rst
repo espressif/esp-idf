@@ -3,9 +3,9 @@
 Application Example
 -------------------
 
-Two examples are provided in ESP-IDF examples directory:
+Two examples are provided in ESP-IDF `examples/storage <https://github.com/espressif/esp-idf/tree/master/examples/storage>`_ directory:
 
-`storage/nvs_rw_value <https://github.com/espressif/esp-idf/blob/master/examples/storage/nvs_rw_value/main/nvs_rw_value.c>`_
+`nvs_rw_value <https://github.com/espressif/esp-idf/blob/master/examples/storage/nvs_rw_value>`_
 
   Demonstrates how to read and write a single integer value using NVS.
 
@@ -13,7 +13,7 @@ Two examples are provided in ESP-IDF examples directory:
 
   Example also shows how to check if read / write operation was successful, or certain value is not initialized in NVS. Diagnostic is provided in plain text to help track program flow and capture any issues on the way.
 
-`storage/nvs_rw_blob <https://github.com/espressif/esp-idf/blob/master/examples/storage/nvs_rw_blob/main/nvs_rw_blob.c>`_
+`nvs_rw_blob <https://github.com/espressif/esp-idf/blob/master/examples/storage/nvs_rw_blob>`_
 
   Demonstrates how to read and write a single integer value and a blob (binary large object) using NVS to preserve them between ESP32 module restarts.
 

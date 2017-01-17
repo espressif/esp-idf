@@ -1,25 +1,21 @@
 GAP API
-========
+=======
 
 Overview
 --------
 
 `Instructions`_
 
+.. _Instructions: ../template.html
+
 Application Example
 -------------------
 
-Check `/examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
+Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that contains the following examples:
 
-`14_gatts_demo <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_server/main/gatts_demo.c>`_ 
-`15_gattc_demo <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_client/main/gattc_demo.c>`_ 
+`gatt_server <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_server>`_, `gatt_client <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_client>`_ 
 
-The two demos use different gap api, such like advertising, scan, set device name and others.
-
-`Instructions`_
-
-.. _Instructions: ../template.html
-
+  The two demos use different gap api, such like advertising, scan, set device name and others.
 
 API Reference
 -------------

@@ -6,18 +6,16 @@ Overview
 
 `Instructions`_
 
+.. _Instructions: ../template.html
+
 Application Example
 -------------------
 
-Check `/examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
+Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
 
-`bluetooth/ble_adv <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/ble_adv/main/app_bt.c>`_ 
+`ble_adv <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/ble_adv>`_ 
 
   This is a BLE advertising demo with virtual HCI interface. Send Reset/ADV_PARAM/ADV_DATA/ADV_ENABLE HCI command for BLE advertising.
-
-`Instructions`_
-
-.. _Instructions: ../template.html
 
 API Reference
 -------------

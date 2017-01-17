@@ -6,19 +6,16 @@ Overview
 
 `Instructions`_
 
+.. _Instructions: ../template.html
+
 Application Example
 -------------------
 
-Check `/examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
+Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that contains the following example:
 
-`14_gatts_demo <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_server/main/gatts_demo.c>`_ 
+`gatt_server <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_server>`_ 
 
-This is a gatt server demo. Use gatt api to create a gatt server with send advertising. This gatt server can be connected and the service can be discovery.
-
-`Instructions`_
-
-.. _Instructions: ../template.html
-
+  This is a gatt server demo. Use gatt api to create a gatt server with send advertising. This gatt server can be connected and the service can be discovery.
 
 API Reference
 -------------
