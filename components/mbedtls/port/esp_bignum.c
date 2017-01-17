@@ -41,6 +41,22 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
+#if CONFIG_PINCORE_MODULE_ENABLED
+#include "pincore.h"
+#else
+#define PINCORE_START_CORE_PINNED_SECTION() \
+    do {
+
+#define PINCORE_STOP_CORE_PINNED_SECTION() \
+    } while(0)
+
+#define PINCORE_RETURN_FROM_SECTION(x) \
+    return x
+
+#define PINCORE_EXIT_FROM_SECTION() \
+    return
+#endif
+
 static const __attribute__((unused)) char *TAG = "bignum";
 
 #if defined(CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
@@ -235,6 +251,8 @@ static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words
 */
 static inline void execute_op(uint32_t op_reg)
 {
+    PINCORE_START_CORE_PINNED_SECTION();
+
     /* Clear interrupt status */
     REG_WRITE(RSA_INTERRUPT_REG, 1);
 
@@ -256,6 +274,8 @@ static inline void execute_op(uint32_t op_reg)
 
     /* clear the interrupt */
     REG_WRITE(RSA_INTERRUPT_REG, 1);
+
+    PINCORE_STOP_CORE_PINNED_SECTION();
 }
 
 /* Sub-stages of modulo multiplication/exponentiation operations */
