@@ -87,9 +87,9 @@ esp_err_t save_run_time(void)
     required_size += sizeof(uint32_t);
     run_time[required_size / sizeof(uint32_t) - 1] = xTaskGetTickCount() * portTICK_PERIOD_MS;
     err = nvs_set_blob(my_handle, "run_time", run_time, required_size);
-    if (err != ESP_OK) return err;
-
     free(run_time);
+
+    if (err != ESP_OK) return err;
 
     // Commit
     err = nvs_commit(my_handle);
