@@ -82,7 +82,7 @@ void esp_crosscore_int_init() {
     assert(err == ESP_OK);
 }
 
-void esp_crosscore_int_send_yield(int coreId) {
+void IRAM_ATTR esp_crosscore_int_send_yield(int coreId) {
     assert(coreId<portNUM_PROCESSORS);
     //Mark the reason we interrupt the other CPU
     portENTER_CRITICAL(&reasonSpinlock);
@@ -95,4 +95,3 @@ void esp_crosscore_int_send_yield(int coreId) {
         WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
     }
 }
-
