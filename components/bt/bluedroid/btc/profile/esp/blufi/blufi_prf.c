@@ -198,7 +198,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
             BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_e2p,
                                         (GATT_PERM_READ),
-                                        (GATT_PERM_READ | GATT_CHAR_PROP_BIT_NOTIFY),
+                                        (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY),
                                         NULL, NULL);
             break;
          case BLUFI_CHAR_E2P_UUID:  /* ESP32 to Phone */
