@@ -60,7 +60,7 @@ static void rsa_isr_initialise()
 {
     if (op_complete_sem == NULL) {
         op_complete_sem = xSemaphoreCreateBinary();
-        esp_intr_alloc(ETS_RSA_INTR_SOURCE, 0, rsa_complete_isr, NULL, NULL);
+        esp_intr_alloc(ETS_RSA_INTR_SOURCE, ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM, rsa_complete_isr, NULL, NULL);
     }
 }
 
