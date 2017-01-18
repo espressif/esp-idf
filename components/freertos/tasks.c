@@ -2381,26 +2381,15 @@ BaseType_t xSwitchRequired = pdFALSE;
 	   switch, even when this routine (running on core 0) unblocks a bunch of high-priority
 	   tasks... this is less than optimal -- JD. */
 	if ( xPortGetCoreID()!=0 ) {
+		#if ( configUSE_TICK_HOOK == 1 )
+		vApplicationTickHook();
+		#endif /* configUSE_TICK_HOOK */
+		esp_vApplicationTickHook();
+
 		/*
 		  We can't really calculate what we need, that's done on core 0... just assume we need a switch.
 		  ToDo: Make this more intelligent? -- JD
 		*/
-		{
-			/* Guard against the tick hook being called when the pended tick
-			count is being unwound (when the scheduler is being unlocked). */
-			if( ( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE ) || uxPendedTicks == ( UBaseType_t ) 0U )
-			{
-				#if ( configUSE_TICK_HOOK == 1 )
-				vApplicationTickHook();
-				#endif /* configUSE_TICK_HOOK */
-				esp_vApplicationTickHook();
-			}
-			else
-			{
-				mtCOVERAGE_TEST_MARKER();
-			}
-		}
-
 		return pdTRUE;
 	}
 
