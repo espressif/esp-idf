@@ -179,4 +179,8 @@ const char* system_get_sdk_version(void)
     return "master";
 }
 
+const char* esp_get_idf_version(void)
+{
+    return IDF_VER;
+}
 
