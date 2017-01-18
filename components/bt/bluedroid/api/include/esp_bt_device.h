@@ -26,7 +26,7 @@ extern "C" {
  *
  * @brief      Get bluetooth device address.  Must use after "esp_bluedroid_enable".
  * 
- * @return     bluetooth device address (six bytes)
+ * @return     bluetooth device address (six bytes), or NULL if bluetooth stack is not enabled
  */
 const uint8_t *esp_bt_dev_get_address(void);
 

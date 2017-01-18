@@ -279,21 +279,24 @@ void gatt_profile_db_init (void)
     GATT_StartIf(gatt_cb.gatt_if);
 
     service_handle = GATTS_CreateService (gatt_cb.gatt_if , &uuid, 0, GATTP_MAX_ATTR_NUM, TRUE);
+    GATT_TRACE_ERROR ("GATTS_CreateService:  handle of service handle%x", service_handle);
+	
     /* add Service Changed characteristic
     */
     uuid.uu.uuid16 = gatt_cb.gattp_attr.uuid = GATT_UUID_GATT_SRV_CHGD;
     gatt_cb.gattp_attr.service_change = 0;
     gatt_cb.gattp_attr.handle   =
-        gatt_cb.handle_of_h_r       = GATTS_AddCharacteristic(service_handle, &uuid, 0, GATT_CHAR_PROP_BIT_INDICATE);
+    gatt_cb.handle_of_h_r       = GATTS_AddCharacteristic(service_handle, &uuid, 0, GATT_CHAR_PROP_BIT_INDICATE,
+    												    NULL, NULL);
 
-    GATT_TRACE_DEBUG ("gatt_profile_db_init:  handle of service changed%d",
-                      gatt_cb.handle_of_h_r  );
+    GATT_TRACE_DEBUG ("gatt_profile_db_init:  handle of service changed%d\n",
+                      gatt_cb.handle_of_h_r);
 
     /* start service
     */
     status = GATTS_StartService (gatt_cb.gatt_if, service_handle, GATTP_TRANSPORT_SUPPORTED );
 
-    GATT_TRACE_DEBUG ("gatt_profile_db_init:  gatt_if=%d   start status%d",
+    GATT_TRACE_DEBUG ("gatt_profile_db_init:  gatt_if=%d   start status%d\n",
                       gatt_cb.gatt_if,  status);
 }
 

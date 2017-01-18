@@ -318,6 +318,34 @@ tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_handle(UINT16 handle)
     }
     return NULL;
 }
+
+/*******************************************************************************
+**
+** Function     gatt_find_hdl_buffer_by_attr_handle
+**
+** Description  Find handle range buffer by attribute handle.
+**
+** Returns    Pointer to the buffer, NULL no buffer available
+**
+*******************************************************************************/
+tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_attr_handle(UINT16 attr_handle)
+{
+    tGATT_HDL_LIST_INFO *p_list_info = &gatt_cb.hdl_list_info;
+    tGATT_HDL_LIST_ELEM      *p_list = NULL;
+
+    p_list = p_list_info->p_first;
+
+    while (p_list != NULL) {
+        if (p_list->in_use && (p_list->asgn_range.s_handle <= attr_handle) 
+			&& (p_list->asgn_range.e_handle >= attr_handle)) {
+            return (p_list);
+        }
+        p_list = p_list->p_next;
+    }
+    return NULL;
+}
+
+
 /*******************************************************************************
 **
 ** Function     gatt_find_hdl_buffer_by_app_id
@@ -1476,7 +1504,7 @@ tGATT_REG *gatt_get_regcb (tGATT_IF gatt_if)
     p_reg = &gatt_cb.cl_rcb[ii - 1];
 
     if (!p_reg->in_use) {
-        GATT_TRACE_WARNING("gatt_if found but not in use.");
+        GATT_TRACE_WARNING("gatt_if found but not in use.\n");
         return NULL;
     }
 

@@ -53,16 +53,18 @@ extern "C" {
   *     Rtc store registers     usage
   *     RTC_CNTL_STORE0_REG
   *     RTC_CNTL_STORE1_REG
-  *     RTC_CNTL_STORE2_REG
-  *     RTC_CNTL_STORE3_REG
-  *     RTC_CNTL_STORE4_REG     Reserved
-  *     RTC_CNTL_STORE5_REG     External Xtal Frequency
+  *     RTC_CNTL_STORE2_REG     Boot time, low word
+  *     RTC_CNTL_STORE3_REG     Boot time, high word
+  *     RTC_CNTL_STORE4_REG     External XTAL frequency
+  *     RTC_CNTL_STORE5_REG     APB bus frequency
   *     RTC_CNTL_STORE6_REG     FAST_RTC_MEMORY_ENTRY
   *     RTC_CNTL_STORE7_REG     FAST_RTC_MEMORY_CRC
   *************************************************************************************
   */
-#define RTC_ENTRY_ADDR_REG RTC_CNTL_STORE6_REG
-#define RTC_MEMORY_CRC_REG RTC_CNTL_STORE7_REG
+#define RTC_BOOT_TIME_LOW_REG   RTC_CNTL_STORE2_REG
+#define RTC_BOOT_TIME_HIGH_REG  RTC_CNTL_STORE3_REG
+#define RTC_ENTRY_ADDR_REG      RTC_CNTL_STORE6_REG
+#define RTC_MEMORY_CRC_REG      RTC_CNTL_STORE7_REG
 
 
 typedef enum {
@@ -179,6 +181,9 @@ void set_rtc_memory_crc(void);
 /**
   * @brief Software Reset digital core.
   *
+  * It is not recommended to use this function in esp-idf, use
+  * esp_restart() instead.
+  *
   * @param  None
   *
   * @return None
@@ -187,6 +192,9 @@ void software_reset(void);
 
 /**
   * @brief Software Reset digital core.
+  *
+  * It is not recommended to use this function in esp-idf, use
+  * esp_restart() instead.
   *
   * @param  int cpu_no : The CPU to reset, 0 for PRO CPU, 1 for APP CPU.
   *

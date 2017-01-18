@@ -189,6 +189,10 @@
    ---------- RAW options ----------
    ---------------------------------
 */
+/**
+ * LWIP_RAW==1: Enable application layer to hook into the IP layer itself.
+ */
+#define LWIP_RAW                        1
 
 /*
    ----------------------------------
@@ -284,12 +288,12 @@
 /**
  * TCP_MAXRTX: Maximum number of retransmissions of data segments.
  */
-#define TCP_MAXRTX                      12  //(*(volatile uint32*)0x600011E8)
+#define TCP_MAXRTX                      CONFIG_TCP_MAXRTX
 
 /**
  * TCP_SYNMAXRTX: Maximum number of retransmissions of SYN segments.
  */
-#define TCP_SYNMAXRTX                   6   //(*(volatile uint32*)0x600011E4)
+#define TCP_SYNMAXRTX                   CONFIG_TCP_SYNMAXRTX
 
 /**
  * TCP_LISTEN_BACKLOG: Enable the backlog option for tcp listen pcb.
@@ -401,6 +405,27 @@
  * sys_mbox_new() when the acceptmbox is created.
  */
 #define DEFAULT_ACCEPTMBOX_SIZE         6
+
+/**
+ * DEFAULT_THREAD_STACKSIZE: The stack size used by any other lwIP thread.
+ * The stack size value itself is platform-dependent, but is passed to
+ * sys_thread_new() when the thread is created.
+ */
+#define DEFAULT_THREAD_STACKSIZE        TCPIP_THREAD_STACKSIZE
+
+/**
+ * DEFAULT_THREAD_PRIO: The priority assigned to any other lwIP thread.
+ * The priority value itself is platform-dependent, but is passed to
+ * sys_thread_new() when the thread is created.
+ */
+#define DEFAULT_THREAD_PRIO             TCPIP_THREAD_PRIO
+
+/**
+ * DEFAULT_RAW_RECVMBOX_SIZE: The mailbox size for the incoming packets on a
+ * NETCONN_RAW. The queue size value itself is platform-dependent, but is passed
+ * to sys_mbox_new() when the recvmbox is created.
+ */
+#define DEFAULT_RAW_RECVMBOX_SIZE       6
 
 /*
    ----------------------------------------------

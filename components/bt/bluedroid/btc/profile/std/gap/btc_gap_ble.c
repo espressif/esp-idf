@@ -26,8 +26,13 @@
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
 
-#define BTC_GAP_BLE_CB_TO_APP(event, param) ((esp_gap_ble_cb_t)btc_profile_cb_get(BTC_PID_GAP_BLE))((event), (param))
-
+static inline void btc_gap_ble_cb_to_app(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
+{
+    esp_gap_ble_cb_t btc_gap_ble_cb = (esp_gap_ble_cb_t)btc_profile_cb_get(BTC_PID_GAP_BLE);
+    if (btc_gap_ble_cb) {
+	btc_gap_ble_cb(event, param);
+    }
+}
 
 static void btc_gap_adv_point_cleanup(void **buf)
 {
@@ -504,16 +509,16 @@ void btc_gap_ble_cb_handler(btc_msg_t *msg)
 
     switch (msg->act) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
-        BTC_GAP_BLE_CB_TO_APP(ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT, param);
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT, param);
         break;
     case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT :
-        BTC_GAP_BLE_CB_TO_APP(ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT, param);
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT, param);
         break;
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
-        BTC_GAP_BLE_CB_TO_APP(ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT, param);
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT, param);
         break;
     case ESP_GAP_BLE_SCAN_RESULT_EVT:
-        BTC_GAP_BLE_CB_TO_APP(ESP_GAP_BLE_SCAN_RESULT_EVT, param);
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_SCAN_RESULT_EVT, param);
         break;
     default:
         break;

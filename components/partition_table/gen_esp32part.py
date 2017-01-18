@@ -127,6 +127,7 @@ class PartitionDefinition(object):
             "ota" : 0x00,
             "phy" : 0x01,
             "nvs" : 0x02,
+            "coredump" : 0x03,
             "esphttpd" : 0x80,
             "fat" : 0x81,
             "spiffs" : 0x82,

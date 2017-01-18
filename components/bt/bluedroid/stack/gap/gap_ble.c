@@ -392,7 +392,8 @@ void gap_attr_db_init(void)
     */
     uuid.len = LEN_UUID_16;
     uuid.uu.uuid16 = p_db_attr->uuid = GATT_UUID_GAP_DEVICE_NAME;
-    p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid, GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ);
+    p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid, GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ,
+											NULL, NULL);
     p_db_attr ++;
 
     /* add Icon characteristic
@@ -401,7 +402,8 @@ void gap_attr_db_init(void)
     p_db_attr->handle = GATTS_AddCharacteristic(service_handle,
                         &uuid,
                         GATT_PERM_READ,
-                        GATT_CHAR_PROP_BIT_READ);
+                        GATT_CHAR_PROP_BIT_READ,
+                        NULL, NULL);
     p_db_attr ++;
 
 #if ((defined BTM_PERIPHERAL_ENABLED) && (BTM_PERIPHERAL_ENABLED == TRUE))
@@ -416,7 +418,8 @@ void gap_attr_db_init(void)
     p_db_attr->handle = GATTS_AddCharacteristic(service_handle,
                         &uuid,
                         GATT_PERM_READ,
-                        GATT_CHAR_PROP_BIT_READ);
+                        GATT_CHAR_PROP_BIT_READ,
+                        NULL, NULL);
     p_db_attr ++;
 #endif
 
@@ -424,7 +427,8 @@ void gap_attr_db_init(void)
     uuid.len = LEN_UUID_16;
     uuid.uu.uuid16 = p_db_attr->uuid = GATT_UUID_GAP_CENTRAL_ADDR_RESOL;
     p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid,
-                        GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ);
+                        GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ,
+                        NULL, NULL);
     p_db_attr->attr_value.addr_resolution = 0;
     p_db_attr++;
 

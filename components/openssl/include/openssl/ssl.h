@@ -214,6 +214,14 @@ const SSL_METHOD* TLSv1_1_client_method(void);
  */
 const SSL_METHOD* TLSv1_2_client_method(void);
 
+/**
+ * @brief create the target SSL context server method
+ *
+ * @param none
+ *
+ * @return the TLS any version SSL context client method
+ */
+const SSL_METHOD* TLS_client_method(void);
 
 /**
  * @brief create the target SSL context server method
@@ -259,6 +267,16 @@ const SSL_METHOD* TLSv1_server_method(void);
  * @return the SSLV3.0 version SSL context server method
  */
 const SSL_METHOD* SSLv3_server_method(void);
+
+/**
+ * @brief create the target SSL context server method
+ *
+ * @param none
+ *
+ * @return the TLS any version SSL context server method
+ */
+const SSL_METHOD* TLS_server_method(void);
+
 
 /**
  * @brief set the SSL context ALPN select callback function

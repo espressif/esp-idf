@@ -1,32 +1,36 @@
-# Using Espressif IoT Development Framework with the ESP32
+# Espressif IoT Development Framework
 
 [![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](http://esp-idf.readthedocs.io/en/latest/?badge=latest)
 
-# Setting Up ESP-IDF
+ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview>) chip.
 
-In the [docs](docs) directory you will find per-platform setup guides:
+# Developing With the ESP-IDF
 
-* [Windows Setup Guide](docs/windows-setup.rst)
-* [Mac OS Setup Guide](docs/macos-setup.rst)
-* [Linux Setup Guide](docs/linux-setup.rst)
+## Setting Up ESP-IDF
 
-# Finding A Project
+See setup guides for detailed instructions to set up the ESP-IDF:
 
-As well as the [esp-idf-template](https://github.com/espressif/esp-idf-template) project mentioned in the setup guide, esp-idf comes with some example projects in the [examples](examples) directory.
+* [Windows Setup Guide](http://esp-idf.readthedocs.io/en/latest/windows-setup.html)
+* [Mac OS Setup Guide](http://esp-idf.readthedocs.io/en/latest/macos-setup.html)
+* [Linux Setup Guide](http://esp-idf.readthedocs.io/en/latest/linux-setup.html)
 
-Once you've found the project you want to work with, change to its directory and you can configure and build it:
+## Finding a Project
 
-# Configuring your project
+As well as the [esp-idf-template](https://github.com/espressif/esp-idf-template) project mentioned in the setup guide, ESP-IDF comes with some example projects in the [examples](examples) directory.
+
+Once you've found the project you want to work with, change to its directory and you can configure and build it.
+
+## Configuring the Project
 
 `make menuconfig`
 
-# Compiling your project
+## Compiling the Project
 
 `make all`
 
 ... will compile app, bootloader and generate a partition table based on the config.
 
-# Flashing your project
+## Flashing the Project
 
 When `make all` finishes, it will print a command line to use esptool.py to flash the chip. However you can also do this from make by running:
 
@@ -36,7 +40,7 @@ This will flash the entire project (app, bootloader and partition table) to a ne
 
 You don't need to run `make all` before running `make flash`, `make flash` will automatically rebuild anything which needs it.
 
-# Viewing Serial Output
+## Viewing Serial Output
 
 The `make monitor` target will use the already-installed [miniterm](http://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm) (a part of pyserial) to display serial output from the ESP32 on the terminal console.
 
@@ -46,7 +50,7 @@ To flash and monitor output in one pass, you can run:
 
 `make flash monitor`
 
-# Compiling & Flashing Just the App
+## Compiling & Flashing Just the App
 
 After the initial flash, you may just want to build and flash just your app, not the bootloader and partition table:
 
@@ -57,9 +61,9 @@ After the initial flash, you may just want to build and flash just your app, not
 
 (There's no downside to reflashing the bootloader and partition table each time, if they haven't changed.)
 
-# Parallel Builds
+## Parallel Builds
 
-esp-idf supports compiling multiple files in parallel, so all of the above commands can be run as `make -jN` where `N` is the number of parallel make processes to run (generally N should be equal to or one more than the number of CPU cores in your system.)
+ESP-IDF supports compiling multiple files in parallel, so all of the above commands can be run as `make -jN` where `N` is the number of parallel make processes to run (generally N should be equal to or one more than the number of CPU cores in your system.)
 
 Multiple make functions can be combined into one. For example: to build the app & bootloader using 5 jobs in parallel, then flash everything, and then display serial output from the ESP32 run:
 
@@ -67,7 +71,7 @@ Multiple make functions can be combined into one. For example: to build the app 
 make -j5 flash monitor
 ```
 
-# The Partition Table
+## The Partition Table
 
 Once you've compiled your project, the "build" directory will contain a binary file with a name like "my_app.bin". This is an ESP32 image binary that can be loaded by the bootloader.
 
@@ -84,7 +88,7 @@ In both cases the factory app is flashed at offset 0x10000. If you `make partiti
 
 For more details about partition tables and how to create custom variations, view the `docs/partition-tables.rst` file.
 
-# Erasing Flash
+## Erasing Flash
 
 The `make flash` target does not erase the entire flash contents. However it is sometimes useful to set the device back to a totally erased state, particularly when making partition table changes or OTA app updates. To erase the entire flash, run `make erase_flash`.
 
@@ -92,11 +96,11 @@ This can be combined with other targets, ie `make erase_flash flash` will erase 
 
 # Resources
 
-* The [docs directory of the esp-idf repository](docs) contains source of [esp-idf](http://esp-idf.readthedocs.io/) documentation.
+* Documentation for the latest version: http://esp-idf.readthedocs.io/. This documentation is built from the [docs directory](docs) of this repository.
 
 * The [esp32.com forum](http://esp32.com/) is a place to ask questions and find community resources.
 
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
 
-* If you're interested in contributing to esp-idf, please check the [Contributions Guide](http://esp-idf.readthedocs.io/en/latest/contributing.html>).
+* If you're interested in contributing to ESP-IDF, please check the [Contributions Guide](http://esp-idf.readthedocs.io/en/latest/contributing.html>).
 

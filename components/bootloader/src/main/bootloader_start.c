@@ -242,7 +242,7 @@ void bootloader_main()
     rtc_set_cpu_freq(CPU_80M);
 
     uart_console_configure();
-    ESP_LOGI(TAG, "Espressif ESP32 2nd stage bootloader v. %s", BOOT_VERSION);
+    ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
 #if defined(CONFIG_SECURE_BOOT_ENABLED) || defined(CONFIG_FLASH_ENCRYPTION_ENABLED)
     esp_err_t err;
 #endif

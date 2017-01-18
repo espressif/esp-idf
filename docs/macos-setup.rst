@@ -4,32 +4,26 @@ Set up of Toolchain for Mac OS
 Step 0: Prerequisites
 =====================
 
-Getting MacPorts or homebrew
-----------------------------
+- install pip::
 
-Whether you compile the toolchain from source or download binary toolchain, there are some dependencies which need to be installed on macOS first. These dependencies are installed with one of the package managers: homebrew or MacPorts. If you have these already, you can skip the following instructions.
+    sudo easy_install pip
 
-- Install XCode from Mac App Store
-- Open Terminal.app and run ``xcode-select --install``
-- Run ``sudo xcodebuild -license`` and agree to XCode license
-- Install MacPorts_ or homebrew_
+- install pyserial
 
-.. _homebrew: http://brew.sh/
-.. _MacPorts: https://www.macports.org/install.php
-
+    sudo pip install pyserial
 
 Step 1: Download binary toolchain for the ESP32
 ==================================================
 
 ESP32 toolchain for macOS is available for download from Espressif website:
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-59.tar.gz
+https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz
 
 Download this file, then extract it to the location you prefer, for example::
 
     mkdir -p ~/esp
     cd ~/esp
-    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-59.tar.gz
+    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz
 
 The toolchain will be extracted into ``~/esp/xtensa-esp32-elf/`` directory.
 
@@ -46,11 +40,13 @@ Then when you need the toolchain you can type ``get_esp32`` on the command line 
 Alternative Step 1: Compile the toolchain from source using crosstool-NG
 ========================================================================
 
-Instead of downloading binary toolchain from Espressif website (Step 1 above) you may build the toolchain yourself. 
+Instead of downloading binary toolchain from Espressif website (Step 1 above) you may build the toolchain yourself.
 
 If you can't think of a reason why you need to build it yourself, then probably it's better to stick with the binary version. However, here are some of the reasons why you might want to compile it from source:
 
 - if you want to customize toolchain build configuration
+
+- if you want to use a different GCC version (such as 4.8.5)
 
 - if you want to hack gcc or newlib or libstdc++
 
@@ -62,13 +58,18 @@ In any case, here are the steps to compile the toolchain yourself.
 
 - Install dependencies:
 
+  - Install either MacPorts_ or homebrew_ package manager. MacPorts needs a full XCode installation, while homebrew only needs XCode command line tools.
+    
+    .. _homebrew: http://brew.sh/
+    .. _MacPorts: https://www.macports.org/install.php
+
   - with MacPorts::
 
-        sudo port install gsed gawk binutils gperf grep gettext ncurses
+        sudo port install gsed gawk binutils gperf grep gettext wget libtool autoconf automake
 
-  - with homebrew
+  - with homebrew::
 
-        brew install gnu-sed gawk binutils gperf grep gettext ncurses
+        brew install gnu-sed gawk binutils gperftools gettext wget help2man libtool autoconf automake
 
 Create a case-sensitive filesystem image::
 
@@ -107,7 +108,7 @@ Open Terminal.app, navigate to the directory you want to clone ESP-IDF and clone
     git clone --recursive https://github.com/espressif/esp-idf.git
 
 
-ESP-IDF will be downloaded into ``~/esp/esp-idf``. 
+ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
 Note the ``--recursive`` option! If you have already cloned ESP-IDF without this option, run another command to get all the submodules::
 
@@ -136,7 +137,7 @@ In Terminal.app, go to the application directory which was obtained on the previ
 
     cd ~/esp/myapp
 
-Type a command like this to set the path to ESP-IDF directory:: 
+Type a command like this to set the path to ESP-IDF directory::
 
     export IDF_PATH=~/esp/esp-idf
 
@@ -160,4 +161,3 @@ Further reading
 ===============
 
 If you'd like to use the Eclipse IDE instead of running ``make``, check out the Eclipse setup guide in this directory.
-

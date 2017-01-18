@@ -55,8 +55,6 @@
 #define IFNAME0 'e'
 #define IFNAME1 'n'
 
-static char hostname[16];
-
 /**
  * In this function, the hardware should be initialized.
  * Called from ethernetif_init().
@@ -78,14 +76,13 @@ ethernet_low_level_init(struct netif *netif)
   /* device capabilities */
   /* don't set NETIF_FLAG_ETHARP if this device is not an ethernet one */
   netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
-  
+
 #if ESP_LWIP
 #if LWIP_IGMP
-
-     netif->flags |= NETIF_FLAG_IGMP;
+  netif->flags |= NETIF_FLAG_IGMP;
 #endif
 #endif
-  /* Do whatever else is needed to initialize interface. */  
+  /* Do whatever else is needed to initialize interface. */
 }
 
 /**
@@ -113,30 +110,28 @@ ethernet_low_level_output(struct netif *netif, struct pbuf *p)
     LWIP_DEBUGF(NETIF_DEBUG,("eth_if=%d netif=%p pbuf=%p len=%d\n", eth_if, netif, p, p->len)); 
 
     return ERR_IF;
-  } 
-  
+  }
+
 #if ESP_LWIP
-    q = p;
-    u16_t pbuf_x_len = 0;
-    pbuf_x_len = q->len;
-    if(q->next !=NULL)
-    {
-        //char cnt = 0;
-        struct pbuf *tmp = q->next;
-        while(tmp != NULL)
-        {
-            memcpy( (u8_t *)( (u8_t *)(q->payload) + pbuf_x_len), (u8_t *)tmp->payload , tmp->len );
-            pbuf_x_len += tmp->len;
-            //cnt++;
-            tmp = tmp->next;
-        }
+  q = p;
+  u16_t pbuf_x_len = 0;
+  pbuf_x_len = q->len;
+  if(q->next !=NULL) {
+    //char cnt = 0;
+    struct pbuf *tmp = q->next;
+    while(tmp != NULL) {
+      memcpy( (u8_t *)( (u8_t *)(q->payload) + pbuf_x_len), (u8_t *)tmp->payload , tmp->len );
+      pbuf_x_len += tmp->len;
+      //cnt++;
+      tmp = tmp->next;
     }
-   
-    return esp_eth_tx(q->payload, pbuf_x_len);
+  }
+
+  return esp_eth_tx(q->payload, pbuf_x_len);
 #else
-    for(q = p; q != NULL; q = q->next) {
-        return esp_emac_tx(q->payload, q->len);
-    }
+  for(q = p; q != NULL; q = q->next) {
+    return esp_emac_tx(q->payload, q->len);
+  }
   return ERR_OK;
 #endif
 }
@@ -154,9 +149,9 @@ void
 ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
 {
   struct pbuf *p;
-  
+
   if(buffer== NULL || netif == NULL)
-    	goto _exit;
+    goto _exit;
 #if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
@@ -178,7 +173,7 @@ if (netif->input(p, netif) != ERR_OK) {
   p->payload = buffer;
   p->user_flag = PBUF_USER_FLAG_OWNER_ETH;
   p->user_buf = buffer;
- 
+
   /* full packet send to tcpip_thread to process */
 if (netif->input(p, netif) != ERR_OK) {
   LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
@@ -187,7 +182,7 @@ if (netif->input(p, netif) != ERR_OK) {
 }
 #endif
 _exit:
-;	  
+;
 }
 
 /**
@@ -211,14 +206,11 @@ ethernetif_init(struct netif *netif)
   /* Initialize interface hostname */
 
 #if ESP_LWIP
-  sprintf(hostname, "ESP_%02X%02X%02X", netif->hwaddr[3], netif->hwaddr[4], netif->hwaddr[5]);
-  netif->hostname = hostname;
-  
+  netif->hostname = "espressif";
 #else
-  sprintf(hostname, "ESP_%02X%02X%02X", netif->hwaddr[3], netif->hwaddr[4], netif->hwaddr[5]);
-  netif->hostname = hostname;
+  netif->hostname = "lwip";
 #endif
-  
+
 #endif /* LWIP_NETIF_HOSTNAME */
 
   /*
@@ -239,7 +231,7 @@ ethernetif_init(struct netif *netif)
   netif->output_ip6 = ethip6_output;
 #endif /* LWIP_IPV6 */
   netif->linkoutput = ethernet_low_level_output;
-  
+
   /* initialize the hardware */
   ethernet_low_level_init(netif);
 

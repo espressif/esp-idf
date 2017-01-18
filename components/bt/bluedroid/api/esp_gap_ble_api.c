@@ -14,6 +14,7 @@
 
 #include <string.h>
 
+#include "esp_bt_main.h"
 #include "esp_gap_ble_api.h"
 #include "bta_api.h"
 #include "bt_trace.h"
@@ -23,6 +24,9 @@
 
 esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
 {
+    if (esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
+        return ESP_ERR_INVALID_STATE;
+    }
     return (btc_profile_cb_set(BTC_PID_GAP_BLE, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
@@ -31,7 +35,11 @@ esp_err_t esp_ble_gap_config_adv_data(esp_ble_adv_data_t *adv_data)
 {
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
-
+    
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     if (adv_data == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -54,7 +62,11 @@ esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params)
 {
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
-
+    
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     if (scan_params == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -72,6 +84,10 @@ esp_err_t esp_ble_gap_start_scanning(uint32_t duration)
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_START_SCAN;
@@ -85,6 +101,10 @@ esp_err_t esp_ble_gap_stop_scanning(void)
 {
     btc_msg_t msg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_STOP_SCAN;
@@ -96,6 +116,10 @@ esp_err_t esp_ble_gap_start_advertising(esp_ble_adv_params_t *adv_params)
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {       
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_START_ADV;
@@ -108,6 +132,10 @@ esp_err_t esp_ble_gap_stop_advertising(void)
 {
     btc_msg_t msg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_STOP_ADV;
@@ -121,6 +149,10 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params)
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM;
@@ -134,6 +166,10 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {    
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN;
@@ -149,6 +185,10 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr)
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_SET_RAND_ADDRESS;
@@ -163,6 +203,10 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable)
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY;
@@ -176,6 +220,10 @@ esp_err_t esp_ble_gap_set_device_name(const char *name)
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     if (strlen(name) > ESP_GAP_DEVICE_NAME_MAX) {
         return ESP_ERR_INVALID_ARG;
     }

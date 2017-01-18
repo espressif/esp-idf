@@ -24,23 +24,45 @@ extern "C" {
 /**
   * @brief  Enable wpa2 enterprise authentication.
   *
-  * @attention wpa2 enterprise authentication can only be used when ESP32 station is enabled.
-  *            wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
+  * @attention 1. wpa2 enterprise authentication can only be used when ESP32 station is enabled.
+  * @attention 2. wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
   *
-  * @return ESP_ERR_WIFI_OK: succeed.
-  *         ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
+  * @return
+  *    - ESP_ERR_WIFI_OK: succeed.
+  *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
 esp_err_t esp_wifi_sta_wpa2_ent_enable(void);
 
 /**
   * @brief  Disable wpa2 enterprise authentication.
   *
-  * @attention wpa2 enterprise authentication can only be used when ESP32 station is enabled.
-  *            wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
+  * @attention 1. wpa2 enterprise authentication can only be used when ESP32 station is enabled.
+  * @attention 2. wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
   *
-  * @return ESP_ERR_WIFI_OK: succeed.
+  * @return
+  *    - ESP_ERR_WIFI_OK: succeed.
   */
 esp_err_t esp_wifi_sta_wpa2_ent_disable(void);
+
+/**
+  * @brief  Set identity for PEAP/TTLS method.
+  *
+  * @attention The API only passes the parameter identity to the global pointer variable in wpa2 enterprise module.
+  *
+  * @param  identity: point to address where stores the identity;
+  * @param  len: length of identity, limited to 1~127
+  *
+  * @return
+  *    - ESP_ERR_WIFI_OK: succeed
+  *    - ESP_ERR_WIFI_ARG: fail(len <= 0 or len >= 128)
+  *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
+  */
+esp_err_t esp_wifi_sta_wpa2_ent_set_identity(unsigned char *identity, int len);
+
+/**
+  * @brief  Clear identity for PEAP/TTLS method.
+  */
+void esp_wifi_sta_wpa2_ent_clear_identity(void);
 
 /**
   * @brief  Set username for PEAP/TTLS method.
@@ -48,11 +70,12 @@ esp_err_t esp_wifi_sta_wpa2_ent_disable(void);
   * @attention The API only passes the parameter username to the global pointer variable in wpa2 enterprise module.
   *
   * @param  username: point to address where stores the username;
-  *         len: length of username, limited to 1~127
+  * @param  len: length of username, limited to 1~127
   *
-  * @return ESP_ERR_WIFI_OK: succeed
-  *         ESP_ERR_WIFI_ARG: fail(len <= 0 or len >= 128)
-  *         ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
+  * @return
+  *    - ESP_ERR_WIFI_OK: succeed
+  *    - ESP_ERR_WIFI_ARG: fail(len <= 0 or len >= 128)
+  *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
 esp_err_t esp_wifi_sta_wpa2_ent_set_username(unsigned char *username, int len);
 
@@ -67,11 +90,12 @@ void esp_wifi_sta_wpa2_ent_clear_username(void);
   * @attention The API only passes the parameter password to the global pointer variable in wpa2 enterprise module.
   *
   * @param  password: point to address where stores the password;
-  *         len: length of password(len > 0)
+  * @param  len: length of password(len > 0)
   *
-  * @return ESP_ERR_WIFI_OK: succeed
-  *         ESP_ERR_WIFI_ARG: fail(len <= 0)
-  *         ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
+  * @return
+  *    - ESP_ERR_WIFI_OK: succeed
+  *    - ESP_ERR_WIFI_ARG: fail(len <= 0)
+  *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
 esp_err_t esp_wifi_sta_wpa2_ent_set_password(unsigned char *password, int len);
 
@@ -83,15 +107,16 @@ void esp_wifi_sta_wpa2_ent_clear_password(void);
 /**
   * @brief  Set new password for MSCHAPv2 method..
   *
-  * @attention The API only passes the parameter password to the global pointer variable in wpa2 enterprise module.
-  *            The new password is used to substitute the old password when eap-mschapv2 failure request message with error code ERROR_PASSWD_EXPIRED is received.
+  * @attention 1. The API only passes the parameter password to the global pointer variable in wpa2 enterprise module.
+  * @attention 2. The new password is used to substitute the old password when eap-mschapv2 failure request message with error code ERROR_PASSWD_EXPIRED is received.
   *
   * @param  password: point to address where stores the password;
-  *         len: length of password
+  * @param  len: length of password
   *
-  * @return ESP_ERR_WIFI_OK: succeed
-  *         ESP_ERR_WIFI_ARG: fail(len <= 0)
-  *         ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
+  * @return
+  *    - ESP_ERR_WIFI_OK: succeed
+  *    - ESP_ERR_WIFI_ARG: fail(len <= 0)
+  *    - ESP_ERR_WIFI_NO_MEM: fail(internal memory malloc fail)
   */
 
 esp_err_t esp_wifi_sta_wpa2_ent_set_new_password(unsigned char *password, int len);
@@ -104,13 +129,14 @@ void esp_wifi_sta_wpa2_ent_clear_new_password(void);
 /**
   * @brief  Set CA certificate for PEAP/TTLS method.
   *
-  * @attention The API only passes the parameter ca_cert to the global pointer variable in wpa2 enterprise module.
-  *            The ca_cert should be zero terminated.
+  * @attention 1. The API only passes the parameter ca_cert to the global pointer variable in wpa2 enterprise module.
+  * @attention 2. The ca_cert should be zero terminated.
   *
   * @param  ca_cert: point to address where stores the CA certificate;
-  *         len: length of ca_cert
+  * @param  len: length of ca_cert
   *
-  * @return ESP_ERR_WIFI_OK: succeed
+  * @return
+  *    - ESP_ERR_WIFI_OK: succeed
   */
 esp_err_t esp_wifi_sta_wpa2_ent_set_ca_cert(unsigned char *ca_cert, int len);
 
@@ -122,17 +148,18 @@ void esp_wifi_sta_wpa2_ent_clear_ca_cert(void);
 /**
   * @brief  Set client certificate and key.
   *
-  * @attention The API only passes the parameter client_cert, private_key and private_key_passwd to the global pointer variable in wpa2 enterprise module.
-  *            The client_cert, private_key and private_key_passwd should be zero terminated.
+  * @attention 1. The API only passes the parameter client_cert, private_key and private_key_passwd to the global pointer variable in wpa2 enterprise module.
+  * @attention 2. The client_cert, private_key and private_key_passwd should be zero terminated.
   *
   * @param  client_cert: point to address where stores the client certificate;
-  *         client_cert_len: length of client certificate;
-  *         private_key: point to address where stores the private key;
-  *         private_key_len: length of private key, limited to 1~2048;
-  *         private_key_password: point to address where stores the private key password;
-  *         private_key_password_len: length of private key password;
+  * @param  client_cert_len: length of client certificate;
+  * @param  private_key: point to address where stores the private key;
+  * @param  private_key_len: length of private key, limited to 1~2048;
+  * @param  private_key_password: point to address where stores the private key password;
+  * @param  private_key_password_len: length of private key password;
   *
-  * @return ESP_ERR_WIFI_OK: succeed
+  * @return
+  *    - ESP_ERR_WIFI_OK: succeed
   */
 esp_err_t esp_wifi_sta_wpa2_ent_set_cert_key(unsigned char *client_cert, int client_cert_len, unsigned char *private_key, int private_key_len, unsigned char *private_key_passwd, int private_key_passwd_len);
 
@@ -145,9 +172,10 @@ void esp_wifi_sta_wpa2_ent_clear_cert_key(void);
   * @brief  Set wpa2 enterprise certs time check(disable or not).
   *
   * @param  true: disable wpa2 enterprise certs time check
-  *         false: enable wpa2 enterprise certs time check
+  * @param  false: enable wpa2 enterprise certs time check
   *
-  * @return  ESP_OK: succeed
+  * @return
+  *    - ESP_OK: succeed
   */
 esp_err_t esp_wifi_sta_wpa2_ent_set_disable_time_check(bool disable);
 
@@ -156,7 +184,8 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_disable_time_check(bool disable);
   *
   * @param  disable: store disable value
   *
-  * @return  ESP_OK: succeed
+  * @return
+  *    - ESP_OK: succeed
   */
 esp_err_t esp_wifi_sta_wpa2_ent_get_disable_time_check(bool *disable);
 

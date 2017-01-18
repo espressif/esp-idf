@@ -268,7 +268,9 @@
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0
 
-
+#if CONFIG_ESP32_ENABLE_COREDUMP
+#define configENABLE_TASK_SNAPSHOT			1
+#endif
 
 
 #endif /* FREERTOS_CONFIG_H */

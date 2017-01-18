@@ -401,7 +401,7 @@ esp_err_t i2c_set_period(i2c_port_t i2c_num, int high_period, int low_period);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t i2s_get_period(i2c_port_t i2c_num, int* high_period, int* low_period);
+esp_err_t i2c_get_period(i2c_port_t i2c_num, int* high_period, int* low_period);
 
 /**
  * @brief set I2C master start signal timing

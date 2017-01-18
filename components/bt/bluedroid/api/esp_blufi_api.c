@@ -24,6 +24,10 @@
 
 esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
 {
+    if (esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     if (callbacks == NULL) {
         return ESP_FAIL;
     }
@@ -36,6 +40,10 @@ esp_err_t esp_blufi_send_wifi_conn_report(wifi_mode_t opmode, esp_blufi_sta_conn
 {
     btc_msg_t msg;
     btc_blufi_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLUFI;
@@ -53,6 +61,10 @@ esp_err_t esp_blufi_profile_init(void)
 {
     btc_msg_t msg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLUFI;
     msg.act = BTC_BLUFI_ACT_INIT;
@@ -63,6 +75,10 @@ esp_err_t esp_blufi_profile_init(void)
 esp_err_t esp_blufi_profile_deinit(void)
 {
     btc_msg_t msg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_BLUFI;

@@ -166,6 +166,7 @@ The following variables are set at the project level, but exported for use in th
 - ``CONFIG_*``: Each value in the project configuration has a corresponding variable available in make. All names begin with ``CONFIG_``.
 - ``CC``, ``LD``, ``AR``, ``OBJCOPY``: Full paths to each tool from the gcc xtensa cross-toolchain.
 - ``HOSTCC``, ``HOSTLD``, ``HOSTAR``: Full names of each tool from the host native toolchain.
+- ``IDF_VER``: Git version of ESP-IDF (produced by ``git describe``)
 
 If you modify any of these variables inside ``component.mk`` then this will not prevent other components from building but it may make your component hard to build and/or debug.
 
@@ -266,6 +267,14 @@ These settings are found under the "Component Settings" menu when menuconfig is 
 To create a component KConfig file, it is easiest to start with one of the KConfig files distributed with esp-idf.
 
 For an example, see `Adding conditional configuration`.
+
+Preprocessor Definitions
+------------------------
+
+ESP-IDF build systems adds the following C preprocessor definitions on the command line:
+
+- ``ESP_PLATFORM`` — Can be used to detect that build happens within ESP-IDF.
+- ``IDF_VER`` — Defined to a git version string.  E.g. ``v2.0`` for a tagged release or ``v1.0-275-g0efaa4f`` for an arbitrary commit.
 
 Build Process Internals
 -----------------------
@@ -455,7 +464,7 @@ The file's contents will be added to the .rodata section in flash, and are avail
 
 The names are generated from the full name of the file, as given in COMPONENT_EMBED_FILES. Characters /, ., etc. are replaced with underscores. The _binary prefix in the symbol name is added by objcopy and is the same for both text and binary files.
 
-For an example of using this technique, see examples/04_https_request - the certificate file contents are loaded from the text .pem file at compile time.
+For an example of using this technique, see examples/protocols/https_request - the certificate file contents are loaded from the text .pem file at compile time.
 
 
 Fully Overriding The Component Makefile

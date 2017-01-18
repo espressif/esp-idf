@@ -21,6 +21,19 @@
 static bool esp_already_enable = false;
 static bool esp_already_init = false;
 
+esp_bluedroid_status_t esp_bluedroid_get_status(void)
+{
+    if (esp_already_init) {
+        if (esp_already_enable) {
+            return ESP_BLUEDROID_STATUS_ENABLED;
+        } else {
+            return ESP_BLUEDROID_STATUS_INITIALIZED;
+        }
+    } else {
+        return ESP_BLUEDROID_STATUS_UNINITIALIZED;
+    }
+}
+
 esp_err_t esp_bluedroid_enable(void)
 {
     btc_msg_t msg;
@@ -114,7 +127,7 @@ esp_err_t esp_bluedroid_init(void)
         return ESP_FAIL;
     }
 
-    esp_already_init = true;;
+    esp_already_init = true;
 
     return ESP_OK;
 }

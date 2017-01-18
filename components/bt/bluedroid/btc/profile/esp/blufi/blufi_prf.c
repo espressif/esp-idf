@@ -35,8 +35,6 @@
 
 #include "esp_blufi_api.h"
 
-#define BTC_BLUFI_CB_TO_APP(event, param) ((esp_blufi_event_cb_t)btc_profile_cb_get(BTC_PID_BLUFI))((event), (param))
-
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
@@ -66,6 +64,14 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
 static void btc_blufi_recv_handler(uint8_t *data, int len);
 static void btc_blufi_send_ack(uint8_t seq);
 
+static inline void btc_blufi_cb_to_app(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param)
+{
+    esp_blufi_event_cb_t btc_blufi_cb = (esp_blufi_event_cb_t)btc_profile_cb_get(BTC_PID_BLUFI);
+    if (btc_blufi_cb) {
+	btc_blufi_cb(event, param);
+    }
+}
+
 static void blufi_create_service(void)
 {
     if (!blufi_env.enabled) {
@@ -82,6 +88,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     tBTA_GATTS_RSP rsp;
 
     LOG_DEBUG("blufi profile cb event = %x\n", event);
+
     switch (event) {
     case BTA_GATTS_REG_EVT:
         LOG_DEBUG("REG: status %d, app_uuid %04x, gatt_if %d\n", p_data->reg_oper.status, p_data->reg_oper.uuid.uu.uuid16, p_data->reg_oper.server_if);
@@ -181,7 +188,8 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         //add the frist blufi characteristic --> write characteristic
         BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_p2e,
                                     (GATT_PERM_WRITE),
-                                    (GATT_CHAR_PROP_BIT_WRITE));
+                                    (GATT_CHAR_PROP_BIT_WRITE),
+                                    NULL, NULL);
         break;
     case BTA_GATTS_ADD_CHAR_EVT:
         switch (p_data->add_result.char_uuid.uu.uuid16) {
@@ -190,14 +198,16 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
             BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_e2p,
                                         (GATT_PERM_READ),
-                                        (GATT_PERM_READ | GATT_CHAR_PROP_BIT_NOTIFY));
+                                        (GATT_PERM_READ | GATT_CHAR_PROP_BIT_NOTIFY),
+                                        NULL, NULL);
             break;
          case BLUFI_CHAR_E2P_UUID:  /* ESP32 to Phone */
             blufi_env.handle_char_e2p = p_data->add_result.attr_id;
 
             BTA_GATTS_AddCharDescriptor (blufi_env.handle_srvc,
                                          (GATT_PERM_READ | GATT_PERM_WRITE),
-                                         &blufi_descr_uuid_e2p);
+                                         &blufi_descr_uuid_e2p,
+                                         NULL, NULL);
             break;
          default:
             break;
@@ -677,75 +687,75 @@ void btc_blufi_cb_handler(btc_msg_t *msg)
 
     switch (msg->act) {
     case ESP_BLUFI_EVENT_INIT_FINISH: {
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_INIT_FINISH, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_INIT_FINISH, param);
         break;
     }
     case ESP_BLUFI_EVENT_DEINIT_FINISH: {
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_DEINIT_FINISH, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_DEINIT_FINISH, param);
         break;
     }
     case ESP_BLUFI_EVENT_BLE_CONNECT:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_BLE_CONNECT, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_BLE_CONNECT, param);
         break;
     case ESP_BLUFI_EVENT_BLE_DISCONNECT:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_BLE_DISCONNECT, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_BLE_DISCONNECT, param);
         break;
     case ESP_BLUFI_EVENT_SET_WIFI_OPMODE:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_SET_WIFI_OPMODE, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_SET_WIFI_OPMODE, param);
         break;
     case ESP_BLUFI_EVENT_REQ_CONNECT_TO_AP:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_REQ_CONNECT_TO_AP, NULL);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_REQ_CONNECT_TO_AP, NULL);
         break;
     case ESP_BLUFI_EVENT_REQ_DISCONNECT_FROM_AP:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_REQ_DISCONNECT_FROM_AP, NULL);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_REQ_DISCONNECT_FROM_AP, NULL);
         break;
     case ESP_BLUFI_EVENT_GET_WIFI_STATUS:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_GET_WIFI_STATUS, NULL);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_GET_WIFI_STATUS, NULL);
         break;
     case ESP_BLUFI_EVENT_DEAUTHENTICATE_STA:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_DEAUTHENTICATE_STA, NULL);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_DEAUTHENTICATE_STA, NULL);
         break;
     case ESP_BLUFI_EVENT_RECV_STA_BSSID:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_STA_BSSID, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_STA_BSSID, param);
         break;
     case ESP_BLUFI_EVENT_RECV_STA_SSID:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_STA_SSID, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_STA_SSID, param);
         break;
     case ESP_BLUFI_EVENT_RECV_STA_PASSWD:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_STA_PASSWD, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_STA_PASSWD, param);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_SSID:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_SOFTAP_SSID, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SOFTAP_SSID, param);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_PASSWD:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_SOFTAP_PASSWD, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SOFTAP_PASSWD, param);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_MAX_CONN_NUM:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_SOFTAP_MAX_CONN_NUM, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SOFTAP_MAX_CONN_NUM, param);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_AUTH_MODE:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_SOFTAP_AUTH_MODE, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SOFTAP_AUTH_MODE, param);
         break;
     case ESP_BLUFI_EVENT_RECV_SOFTAP_CHANNEL:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_SOFTAP_CHANNEL, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SOFTAP_CHANNEL, param);
         break;
     case ESP_BLUFI_EVENT_RECV_USERNAME:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_USERNAME, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_USERNAME, param);
         break;
     case ESP_BLUFI_EVENT_RECV_CA_CERT:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_CA_CERT, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_CA_CERT, param);
         break;
     case ESP_BLUFI_EVENT_RECV_CLIENT_CERT:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_CLIENT_CERT, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_CLIENT_CERT, param);
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_CERT:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_SERVER_CERT, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SERVER_CERT, param);
         break;
     case ESP_BLUFI_EVENT_RECV_CLIENT_PRIV_KEY:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_CLIENT_PRIV_KEY, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_CLIENT_PRIV_KEY, param);
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY:
-        BTC_BLUFI_CB_TO_APP(ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY, param);
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY, param);
         break;
     default:
         LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);
