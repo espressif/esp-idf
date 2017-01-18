@@ -1,4 +1,4 @@
-# 30_mdns example
+# mDNS example
 
 Shows how to use mDNS to advertise lookup services and hosts
 
