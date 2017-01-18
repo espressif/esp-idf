@@ -105,13 +105,18 @@ on the transmission. For received data, use ``rx_data`` and set ``SPI_USE_RXDATA
 not touch the ``tx_buffer`` or ``rx_buffer`` members, because they use the same memory locations
 as ``tx_data`` and ``rx_data``.
 
+Application Example
+-------------------
+ 
+Display graphics on the ILI9341-based 320x240 LCD: `examples/peripherals/spi_master <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/spi_master>`_.
+
 API Reference
 -------------
 
 Header Files
 ^^^^^^^^^^^^
 
-  * `drivers/include/drivers/spi_master.h <https://github.com/espressif/esp-idf/blob/master/components/drivers/include/drivers/spi_master.h>`_
+  * `driver/include/driver/spi_master.h <https://github.com/espressif/esp-idf/blob/master/components/driver/include/driver/spi_master.h>`_
 
 Macros
 ^^^^^^

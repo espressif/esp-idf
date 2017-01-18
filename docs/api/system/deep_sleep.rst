@@ -87,3 +87,8 @@ The following function can be used to enter deep sleep once wakeup sources are c
 
 .. doxygenfunction:: esp_deep_sleep_start
 
+Application Example
+-------------------
+ 
+Implementation of basic functionality of deep sleep is shown in `protocols/sntp <https://github.com/espressif/esp-idf/tree/master/examples/protocols/sntp>`_ example, where ESP module is periodically waken up to retrive time from NTP server.
+

@@ -3,9 +3,11 @@
 Application Example
 -------------------
 
-`Instructions`_
-
-.. _Instructions: ../template.html
+Log library is commonly used by most of esp-idf components and examples. For demonstration of log functionality check `examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that among others, contains the following examples:
+ 
+* `system/ota <https://github.com/espressif/esp-idf/tree/master/examples/system/ota>`_ 
+* `storage/sd_card <https://github.com/espressif/esp-idf/tree/master/examples/storage/sd_card>`_ 
+* `protocols/https_request <https://github.com/espressif/esp-idf/tree/master/examples/protocols/https_request>`_ 
 
 API Reference
 -------------

@@ -131,7 +131,7 @@ Component Makefiles
 
 Each project contains one or more components, which can either be part of esp-idf or added from other component directories.
 
-A component is any sub-directory that contains a `component.mk` file.[#f1]_.
+A component is any sub-directory that contains a `component.mk` file [#f1]_.
 
 Minimal Component Makefile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -464,7 +464,7 @@ The file's contents will be added to the .rodata section in flash, and are avail
 
 The names are generated from the full name of the file, as given in COMPONENT_EMBED_FILES. Characters /, ., etc. are replaced with underscores. The _binary prefix in the symbol name is added by objcopy and is the same for both text and binary files.
 
-For an example of using this technique, see examples/protocols/https_request - the certificate file contents are loaded from the text .pem file at compile time.
+For an example of using this technique, see `examples/protocols/https_request <https://github.com/espressif/esp-idf/tree/master/examples/protocols/https_request>`_ - the certificate file contents are loaded from the text .pem file at compile time.
 
 
 Fully Overriding The Component Makefile
@@ -485,7 +485,7 @@ is set then the component can instruct the linker to link other binaries instead
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _GNU Make Manual: https://www.gnu.org/software/make/manual/make.html
-.. _[_f1]: Actually, some components in esp-idf are "pure configuration" components that don't have a component.mk file, only a Makefile.projbuild and/or Kconfig.projbuild file. However, these components are unusual and most components have a component.mk file.
+.. [#f1] Actually, some components in esp-idf are "pure configuration" components that don't have a component.mk file, only a Makefile.projbuild and/or Kconfig.projbuild file. However, these components are unusual and most components have a component.mk file.
 
 
 Custom sdkconfig defaults

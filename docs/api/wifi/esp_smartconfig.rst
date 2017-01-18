@@ -1,5 +1,5 @@
 Smart Config
-===
+============
 
 API Reference
 -------------

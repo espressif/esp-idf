@@ -6,17 +6,15 @@ Overview
 
 `Instructions`_
 
+.. _Instructions: ../template.html
+
 Application Example
 -------------------
 
-`Instructions`_
+Simple code showing how to connect ESP32 module to an Access Point: `esp-idf-template <https://github.com/espressif/esp-idf-template>`_.
 
 API Reference
 -------------
-
-`Instructions`_
-
-.. _Instructions: ../template.html
 
 Header Files
 ^^^^^^^^^^^^

@@ -32,7 +32,8 @@ N/C           | WP          |
 This example doesn't utilize card detect (CD) and write protect (WP) signals from SD card slot.
 
 ### Note about GPIO2
-GPIO2 pin is used as a bootstrapping pin, and should be low to enter UART download mode. One way to do this is to connect GPIO0 and GPIO2 using a jumper, and then the auto-reset circuit on most development boards will pull GPIO2 low along with GPIO2, when entering download mode.
+
+GPIO2 pin is used as a bootstrapping pin, and should be low to enter UART download mode. One way to do this is to connect GPIO0 and GPIO2 using a jumper, and then the auto-reset circuit on most development boards will pull GPIO2 low along with GPIO0, when entering download mode.
 
 ### Note about GPIO12
 
