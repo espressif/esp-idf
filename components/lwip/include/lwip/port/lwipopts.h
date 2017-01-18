@@ -288,12 +288,12 @@
 /**
  * TCP_MAXRTX: Maximum number of retransmissions of data segments.
  */
-#define TCP_MAXRTX                      12  //(*(volatile uint32*)0x600011E8)
+#define TCP_MAXRTX                      CONFIG_TCP_MAXRTX
 
 /**
  * TCP_SYNMAXRTX: Maximum number of retransmissions of SYN segments.
  */
-#define TCP_SYNMAXRTX                   6   //(*(volatile uint32*)0x600011E4)
+#define TCP_SYNMAXRTX                   CONFIG_TCP_SYNMAXRTX
 
 /**
  * TCP_LISTEN_BACKLOG: Enable the backlog option for tcp listen pcb.
