@@ -187,7 +187,7 @@ static void uartRxInit(xQueueHandle q)
 }
 
 // TODO: split this thing into separate orthogonal tests
-TEST_CASE("Bunch of FreeRTOS tests", "[freertos]")
+TEST_CASE("Bunch of FreeRTOS tests", "[freertos][ignore]")
 {
     char *tst;
     TaskHandle_t th[12];

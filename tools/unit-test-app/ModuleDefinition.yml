@@ -1,0 +1,127 @@
+freertos:
+    module: System
+    module abbr: SYS
+    sub module: OS
+    sub module abbr: OS
+nvs:
+    module: System
+    module abbr: SYS
+    sub module: NVS
+    sub module abbr: NVS
+partition:
+    module: System    
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+ulp:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+fp:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+hw:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+tjpgd:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+miniz:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+mmap:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+bignum:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+newlib:
+    module: System
+    module abbr: SYS
+    sub module: Std Lib
+    sub module abbr: STD
+aes:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+mbedtls:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+spi_flash:
+    module: Driver
+    module abbr: DRV
+    sub module: SPI
+    sub module abbr: SPI
+spi_flash_read:
+    module: Driver
+    module abbr: DRV
+    sub module: SPI
+    sub module abbr: SPI
+spi_flash_write:
+    module: Driver
+    module abbr: DRV
+    sub module: SPI
+    sub module abbr: SPI
+esp32:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+deepsleep:
+    module: RTC
+    module abbr: RTC
+    sub module: Deep Sleep
+    sub module abbr: SLEEP
+sd:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+cxx:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+fatfs:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+delay:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+spi:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+vfs:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+misc:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
+
+

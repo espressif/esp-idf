@@ -116,7 +116,7 @@ static void tskRunSHA256Test(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("mbedtls SHA multithreading", "[mbedtls]")
+TEST_CASE("mbedtls SHA multithreading", "[mbedtls][ignore]")
 {
     done_sem = xSemaphoreCreateCounting(4, 0);
     xTaskCreate(tskRunSHA1Test, "SHA1Task1", 8192, NULL, 3, NULL);

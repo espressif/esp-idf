@@ -87,6 +87,8 @@ build_esp_idf_tests:
       - ./tools/unit-test-app/build/*.elf
       - ./tools/unit-test-app/build/*.map
       - ./tools/unit-test-app/build/bootloader/*.bin
+      - ./components/idf_test/unit_test/TestCaseAll.yml
+      - ./components/idf_test/unit_test/CIConfigs/*.yml
     expire_in: 6 mos
 
   script:
@@ -94,6 +96,7 @@ build_esp_idf_tests:
     - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
     - make defconfig
     - make TESTS_ALL=1
+    - python UnitTestParser.py
 
 build_examples:
   <<: *build_template
@@ -160,6 +163,7 @@ test_report:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
     REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
   artifacts:
     when: always
     paths:
@@ -180,8 +184,7 @@ test_report:
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     # generate report
-    - TEST_RESULT=Pass
-    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH || TEST_RESULT=Fail
+    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || FAIL=True
     # commit to CI-test-result project
     - git clone $GITLAB_SSH_SERVER/qa/CI-test-result.git
     - rm -rf CI-test-result/RawData/$RESULT_PATH
@@ -263,6 +266,7 @@ deploy_docs:
     # append test level folder to TEST_CASE_FILE_PATH in before_script of test job
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
 
   artifacts:
     when: always
@@ -284,7 +288,7 @@ deploy_docs:
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     # run test
-    - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
+    - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE bin_path $APP_NAME $BIN_PATH
 
 
 # template for overnight test jobs
@@ -309,7 +313,7 @@ deploy_docs:
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     # run test
-    - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH bin_path $APP_NAME $BIN_PATH
+    - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE bin_path $APP_NAME $BIN_PATH
 
 # template for unit test jobs
 .unit_test_template: &unit_test_template
@@ -324,6 +328,10 @@ deploy_docs:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     APP_NAME: "ut"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
+  
+  dependencies:
+    - build_esp_idf_tests
 
 UT_Function_SYS_01:
   <<: *unit_test_template
@@ -332,6 +340,14 @@ UT_Function_SYS_01:
     - UT_T1_1
   before_script:
     - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/UT_Function_SYS_01.yml
+
+UT_Function_SYS_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+  before_script:
+    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/UT_Function_SYS_02.yml
 
 IT_Function_SYS_01:
   <<: *test_template

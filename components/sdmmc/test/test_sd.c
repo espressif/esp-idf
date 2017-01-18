@@ -26,7 +26,7 @@
 #include <sys/time.h>
 
 
-TEST_CASE("can probe SD", "[sd]")
+TEST_CASE("can probe SD", "[sd][ignore]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -76,7 +76,7 @@ static void do_single_write_read_test(sdmmc_card_t* card,
     free(buffer);
 }
 
-TEST_CASE("can write and read back blocks", "[sd]")
+TEST_CASE("can write and read back blocks", "[sd][ignore]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;

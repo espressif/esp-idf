@@ -96,7 +96,7 @@ static void tskTwo(void *pvParameters)
 
 
 // TODO: split this thing into separate orthogonal tests
-TEST_CASE("Fast I/O bus test", "[hw]")
+TEST_CASE("Fast I/O bus test", "[hw][ignore]")
 {
     int i;
     if ((REG_UART_BASE(0) >> 16) != 0x3ff4) {
