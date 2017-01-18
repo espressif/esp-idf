@@ -14,3 +14,5 @@ Peripherals API
    LED Control <ledc>
    Remote Control <rmt>
 
+
+Example code for this API section is provided in `examples/peripherals <https://github.com/espressif/esp-idf/tree/master/examples/peripherals>`_ directory of ESP-IDF repository.
