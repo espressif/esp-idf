@@ -448,7 +448,7 @@ static void btc_gattc_unreg_for_notify(btc_ble_gattc_args_t *arg)
     memset(&param, 0, sizeof(esp_ble_gattc_cb_param_t));
     param.unreg_for_notify.status = status;
     memcpy(&param.unreg_for_notify.srvc_id, &arg->unreg_for_notify.service_id, sizeof(esp_gatt_srvc_id_t));
-    memcpy(&param.unreg_for_notify.char_id, &arg->unreg_for_notify.service_id, sizeof(esp_gatt_id_t));
+    memcpy(&param.unreg_for_notify.char_id, &arg->unreg_for_notify.char_id, sizeof(esp_gatt_id_t));
     btc_gattc_cb_to_app(ESP_GATTC_UNREG_FOR_NOTIFY_EVT, arg->unreg_for_notify.gattc_if, &param);
 }
 
