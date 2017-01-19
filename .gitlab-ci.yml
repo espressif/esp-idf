@@ -163,7 +163,7 @@ test_report:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
     REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
   artifacts:
     when: always
     paths:
@@ -328,7 +328,7 @@ deploy_docs:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     APP_NAME: "ut"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
   
   dependencies:
     - build_esp_idf_tests
