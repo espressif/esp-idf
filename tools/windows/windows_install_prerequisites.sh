@@ -25,6 +25,12 @@ pacman --noconfirm -Syu
 
 pacman --noconfirm -S gettext-devel gcc git make ncurses-devel flex bison gperf vim mingw-w64-i686-python2-pip unzip
 
+echo 'export PATH="$PATH:/mingw32/bin"' > /etc/profile.d/mingw32.sh
+
+set +e
+. /etc/profile
+set -e
+
 python -m pip install --upgrade pip
 
 pip install pyserial
