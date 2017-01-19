@@ -48,9 +48,7 @@ cd /opt
 unzip ~/${TOOLCHAIN_ZIP}
 rm ~/${TOOLCHAIN_ZIP}
 
-cat > /etc/profile.d/esp32_toolchain.sh << EOF
-export PATH="$PATH:/opt/xtensa-esp32-elf/bin"
-EOF
+echo 'export PATH="$PATH:/opt/xtensa-esp32-elf/bin"' > /etc/profile.d/esp32_toolchain.sh
 
 # clean up pacman packages to save some disk space
 pacman --noconfirm -R unzip
