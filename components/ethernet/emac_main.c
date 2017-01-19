@@ -216,7 +216,14 @@ static void emac_set_user_config_data(eth_config_t *config )
     emac_config.emac_phy_check_init = config->phy_check_init;
     emac_config.emac_phy_get_speed_mode = config->phy_get_speed_mode;
     emac_config.emac_phy_get_duplex_mode = config->phy_get_duplex_mode;
+#if DMA_RX_BUF_NUM > 9
     emac_config.emac_flow_ctrl_enable = config->flow_ctrl_enable;
+#else 
+    if(config->flow_ctrl_enable == true) {
+        ESP_LOGE(TAG, "eth flow ctrl init err!!! Please run make menuconfig and make sure DMA_RX_BUF_NUM > 9 .");
+    }
+    emac_config.emac_flow_ctrl_enable = false;
+#endif
     emac_config.emac_phy_get_partner_pause_enable = config->phy_get_partner_pause_enable;
 }
 
