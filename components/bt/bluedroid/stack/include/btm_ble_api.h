@@ -936,6 +936,22 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
 tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK  data_mask,
                                 tBTM_BLE_ADV_DATA *p_data);
 
+/*******************************************************************************
+**
+** Function         BTM_BleWriteAdvDataRaw
+**
+** Description      This function is called to write raw advertising data.
+**
+** Parameters:      p_raw_adv : point to raw advertising data
+**                  raw_adv_len : raw advertising data
+**
+** Returns          BTM_SUCCESS means success.
+**
+*******************************************************************************/
+//extern
+tBTM_STATUS BTM_BleWriteAdvDataRaw(UINT8 *p_raw_adv, UINT32 raw_adv_len);
+
+
 BOOLEAN BTM_BleSetRandAddress(BD_ADDR rand_addr);
 
 
@@ -1135,6 +1151,20 @@ tBTM_STATUS BTM_BleTrackAdvertiser(tBTM_BLE_TRACK_ADV_CBACK *p_track_cback,
 //extern
 tBTM_STATUS BTM_BleWriteScanRsp(tBTM_BLE_AD_MASK data_mask,
                                 tBTM_BLE_ADV_DATA *p_data);
+
+/*******************************************************************************
+**
+** Function         BTM_BleWriteScanRspRaw
+**
+** Description      This function is called to write raw scan response data
+**
+** Parameters:      None.
+**
+** Returns          void
+**
+*******************************************************************************/
+//extern
+tBTM_STATUS BTM_BleWriteScanRspRaw(UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len);
 
 /*******************************************************************************
 **

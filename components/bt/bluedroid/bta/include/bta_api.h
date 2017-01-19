@@ -2052,6 +2052,22 @@ extern void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask,
 
 /*******************************************************************************
 **
+** Function         BTA_DmBleSetAdvConfigRaw
+**
+** Description      This function is called to set raw Advertising data
+**
+** Parameters       p_raw_adv : raw advertising data.
+**                  raw_adv_len : raw advertising data length.
+**                  p_adv_data_cback : set adv data complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
+                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
+
+/*******************************************************************************
+**
 ** Function         BTA_DmBleSetScanRsp
 **
 ** Description      This function is called to override the BTA scan response.
@@ -2064,6 +2080,22 @@ extern void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask,
 extern void BTA_DmBleSetScanRsp (tBTA_BLE_AD_MASK data_mask,
                                  tBTA_BLE_ADV_DATA *p_adv_cfg,
                                  tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetScanRspRaw
+**
+** Description      This function is called to set raw scan response data
+**
+** Parameters       p_raw_scan_rsp : raw scan_rspertising data.
+**                  raw_scan_rsp_len : raw scan_rspertising data length.
+**                  p_scan_rsp_data_cback : set scan_rsp data complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len,
+                                    tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback);
 
 /*******************************************************************************
 **
