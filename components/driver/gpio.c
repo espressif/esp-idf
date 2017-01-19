@@ -133,15 +133,20 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type)
     return ESP_OK;
 }
 
-esp_err_t gpio_intr_enable(gpio_num_t gpio_num)
+static esp_err_t gpio_intr_enable_on_core (gpio_num_t gpio_num, uint32_t core_id)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
-    if (xPortGetCoreID() == 0) {
+    if (core_id == 0) {
         GPIO.pin[gpio_num].int_ena = GPIO_PRO_CPU_INTR_ENA;     //enable pro cpu intr
     } else {
         GPIO.pin[gpio_num].int_ena = GPIO_APP_CPU_INTR_ENA;     //enable pro cpu intr
     }
     return ESP_OK;
+}
+
+esp_err_t gpio_intr_enable(gpio_num_t gpio_num)
+{
+    return gpio_intr_enable_on_core (gpio_num, xPortGetCoreID());
 }
 
 esp_err_t gpio_intr_disable(gpio_num_t gpio_num)
@@ -380,7 +385,7 @@ esp_err_t gpio_isr_handler_add(gpio_num_t gpio_num, gpio_isr_t isr_handler, void
         gpio_isr_func[gpio_num].fn = isr_handler;
         gpio_isr_func[gpio_num].args = args;
     }
-    gpio_intr_enable(gpio_num);
+    gpio_intr_enable_on_core (gpio_num, esp_intr_get_cpu(gpio_isr_handle));
     portEXIT_CRITICAL(&gpio_spinlock);
     return ESP_OK;
 }
