@@ -25,8 +25,7 @@ extern "C" {
  */
 
 /**
- * @brief Initialize function pointer table in PHY library.
- * @note This function should be called before register_chipv7_phy.
+ * @brief Return ROM function pointer table from PHY library.
  */
 void phy_get_romfunc_addr(void);
 
