@@ -6,17 +6,18 @@ menuconfig ETHERNET
 
 config DMA_RX_BUF_NUM
     int "Number of DMA RX buffers"
-    range 1 10
+    range 3 20
     default 10
     depends on ETHERNET
     help
         Number of DMA receive buffers. Each buffer is 1600 bytes.
         Buffers are allocated statically.
         Larger number of buffers increases throughput.
+        If enable flow ctrl, the num must be above 9 .
 
 config DMA_TX_BUF_NUM
     int "Number of DMA RX buffers"
-    range 1 10
+    range 3 20
     default 10
     depends on ETHERNET
     help
