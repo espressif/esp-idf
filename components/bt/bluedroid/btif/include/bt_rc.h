@@ -276,34 +276,4 @@ typedef struct {
     btrc_connection_state_callback              connection_state_cb;
 } btrc_ctrl_callbacks_t;
 
-#if 0
-/** Represents the standard BT-RC AVRCP Controller interface. */
-typedef struct {
-
-    /** set to sizeof(BtRcInterface) */
-    size_t          size;
-    /**
-     * Register the BtRc callbacks
-     */
-    bt_status_t (*init)( btrc_ctrl_callbacks_t* callbacks );
-
-    /** send pass through command to target */
-    bt_status_t (*send_pass_through_cmd) ( bt_bdaddr_t *bd_addr, uint8_t key_code, uint8_t key_state );
-
-    /** Closes the interface. */
-    void  (*cleanup)( void );
-} btrc_ctrl_interface_t;
-#endif
-
-/**
- * Register the BtRc callbacks
- */
-bt_status_t btrc_ctrl_init(btrc_ctrl_callbacks_t *callbacks);
-
-/** send pass through command to target */
-bt_status_t btrc_ctrl_send_passthrough_cmd(bt_bdaddr_t *bd_addr, uint8_t key_code, uint8_t key_state);
-
-/** Closes the interface. */
-void btrc_ctrl_cleanup(void);
-
 #endif /* __BT_RC_H__ */

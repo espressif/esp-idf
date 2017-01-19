@@ -38,6 +38,7 @@
 #include "btif_av.h"
 #include "bt_rc.h"
 #include "uinput.h"
+#include "esp_avrc_api.h"
 
 /*****************************************************************************
 **  Constants & Macros
@@ -69,6 +70,14 @@
         BTIF_TRACE_WARNING("Function %s() called when RC is not connected", __FUNCTION__); \
         return BT_STATUS_NOT_READY;                                                         \
     }
+
+#define CHECK_ESP_RC_CONNECTED       do { \
+        BTIF_TRACE_DEBUG("## %s ##", __FUNCTION__); \
+        if (btif_rc_cb.rc_connected == FALSE) { \
+            BTIF_TRACE_WARNING("Function %s() called when RC is not connected", __FUNCTION__); \
+	    return ESP_ERR_INVALID_STATE; \
+        } \
+    } while (0)
 
 #define FILL_PDU_QUEUE(index, ctype, label, pending)        \
 {                                                           \
@@ -187,7 +196,15 @@ static void btif_rc_upstreams_rsp_evt(UINT16 event, tAVRC_RESPONSE *pavrc_resp, 
 ******************************************************************************/
 static btif_rc_cb_t btif_rc_cb;
 static btrc_callbacks_t *bt_rc_callbacks = NULL;
-static btrc_ctrl_callbacks_t *bt_rc_ctrl_callbacks = NULL;
+// static btrc_ctrl_callbacks_t *bt_rc_ctrl_callbacks = NULL;
+static esp_avrc_ct_cb_t bt_rc_ctrl_callback = NULL;
+
+// TODO: need protection against race
+#define BTIF_AVRC_CT_CB_TO_APP(_event, _param)    do { \
+	if (bt_rc_ctrl_callback) { \
+	    bt_rc_ctrl_callback(_event, _param); \
+	} \
+    } while (0)
 
 /*****************************************************************************
 **  Static functions
@@ -372,15 +389,16 @@ void handle_rc_features()
     }
 
     BTIF_TRACE_DEBUG("%s: rc_features=0x%x", __FUNCTION__, rc_features);
-    HAL_CBACK(bt_rc_callbacks, remote_features_cb, &rc_addr, rc_features)
-
+    // todo: uncomment the following line when added the AVRC target role
+    // HAL_CBACK(bt_rc_callbacks, remote_features_cb, &rc_addr, rc_features)
+    
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
      BTIF_TRACE_DEBUG("Checking for feature flags in btif_rc_handler with label %d",
                         btif_rc_cb.rc_vol_label);
      // Register for volume change on connect
-      if(btif_rc_cb.rc_features & BTA_AV_FEAT_ADV_CTRL &&
-         btif_rc_cb.rc_features & BTA_AV_FEAT_RCTG)
-      {
+     if(btif_rc_cb.rc_features & BTA_AV_FEAT_ADV_CTRL &&
+	btif_rc_cb.rc_features & BTA_AV_FEAT_RCTG)
+     {
          rc_transaction_t *p_transaction=NULL;
          bt_status_t status = BT_STATUS_NOT_READY;
          if(MAX_LABEL==btif_rc_cb.rc_vol_label)
@@ -405,7 +423,7 @@ void handle_rc_features()
             btif_rc_cb.rc_vol_label=p_transaction->lbl;
             register_volumechange(btif_rc_cb.rc_vol_label);
          }
-       }
+    }
 #endif
 }
 
@@ -461,9 +479,12 @@ void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
         bdcpy(rc_addr.address, btif_rc_cb.rc_addr);
         /* report connection state if device is AVRCP target */
         if (btif_rc_cb.rc_features & BTA_AV_FEAT_RCTG) {
-            if (bt_rc_ctrl_callbacks != NULL) {
-                HAL_CBACK(bt_rc_ctrl_callbacks, connection_state_cb, TRUE, &rc_addr);
-            }
+	    esp_avrc_ct_cb_param_t param;
+	    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+	    param.conn_stat.connected = true;
+	    param.conn_stat.feat_mask = btif_rc_cb.rc_features;
+	    memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
+	    BTIF_AVRC_CT_CB_TO_APP(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
         }
 #endif
     }
@@ -518,9 +539,11 @@ void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 #if (AVRC_CTLR_INCLUDED == TRUE)
     /* report connection state if device is AVRCP target */
     if (features & BTA_AV_FEAT_RCTG) {
-        if (bt_rc_ctrl_callbacks != NULL) {
-            HAL_CBACK(bt_rc_ctrl_callbacks, connection_state_cb, FALSE, &rc_addr);
-        }
+	esp_avrc_ct_cb_param_t param;
+	memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+	param.conn_stat.connected = false;
+	memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
+	BTIF_AVRC_CT_CB_TO_APP(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
     }
 #endif
 }
@@ -663,10 +686,14 @@ void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
 
         BTIF_TRACE_DEBUG("%s: rc_id=%d status=%s", __FUNCTION__, p_remote_rsp->rc_id, status);
 
-        release_transaction(p_remote_rsp->label);
-        if (bt_rc_ctrl_callbacks != NULL) {
-            HAL_CBACK(bt_rc_ctrl_callbacks, passthrough_rsp_cb, p_remote_rsp->rc_id, key_state);
-        }
+	do {
+	    esp_avrc_ct_cb_param_t param;
+	    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+            param.psth_rsp.tl = p_remote_rsp->label;
+	    param.psth_rsp.key_code = p_remote_rsp->rc_id;
+	    param.psth_rsp.key_state = key_state;
+	    BTIF_AVRC_CT_CB_TO_APP(ESP_AVRC_CT_PASSTHROUGH_RSP_EVT, &param);
+	} while (0);
     }
     else
     {
@@ -784,8 +811,8 @@ void handle_rc_metamsg_cmd (tBTA_AV_META_MSG *pmeta_msg)
             __FUNCTION__, dump_rc_pdu(avrc_command.cmd.pdu));
 
         /* Since handle_rc_metamsg_cmd() itself is called from
-            *btif context, no context switching is required. Invoke
-            * btif_rc_upstreams_evt directly from here. */
+         * btif context, no context switching is required. Invoke
+         * btif_rc_upstreams_evt directly from here. */
         btif_rc_upstreams_evt((uint16_t)avrc_command.cmd.pdu, &avrc_command, pmeta_msg->code,
                                pmeta_msg->label);
     }
@@ -800,7 +827,7 @@ void handle_rc_metamsg_cmd (tBTA_AV_META_MSG *pmeta_msg)
  ***************************************************************************/
 void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
 {
-    BTIF_TRACE_EVENT ("%s event:%s", __FUNCTION__, dump_rc_event(event));
+    BTIF_TRACE_DEBUG ("%s event:%s", __FUNCTION__, dump_rc_event(event));
     switch (event)
     {
         case BTA_AV_RC_OPEN_EVT:
@@ -1267,25 +1294,40 @@ static bt_status_t init(btrc_callbacks_t* callbacks )
     return result;
 }
 
+
 /*******************************************************************************
 **
-** Function         init_ctrl
+** Function         esp_avrc_ct_register_callback
+**
+** Description      Register AVRCP controller callback function
+**
+** Returns          esp_err_t
+**
+*******************************************************************************/
+esp_err_t esp_avrc_ct_register_callback(esp_avrc_ct_cb_t callback)
+{
+    if (bt_rc_ctrl_callback)
+	return ESP_FAIL;
+
+    bt_rc_ctrl_callback = callback;
+    return ESP_OK;
+}
+
+
+/*******************************************************************************
+**
+** Function         esp_avrc_ct_init
 **
 ** Description      Initializes the AVRC interface
 **
-** Returns          bt_status_t
+** Returns          esp_err_t
 **
 *******************************************************************************/
-// static bt_status_t init_ctrl(btrc_ctrl_callbacks_t* callbacks )
-bt_status_t btrc_ctrl_init(btrc_ctrl_callbacks_t *callbacks)
+esp_err_t esp_avrc_ct_init(void)
 {
     BTIF_TRACE_EVENT("## %s ##", __FUNCTION__);
-    bt_status_t result = BT_STATUS_SUCCESS;
+    esp_err_t result = ESP_OK;
 
-    if (bt_rc_ctrl_callbacks)
-        return BT_STATUS_DONE;
-
-    bt_rc_ctrl_callbacks = callbacks;
     memset (&btif_rc_cb, 0, sizeof(btif_rc_cb));
     btif_rc_cb.rc_vol_label=MAX_LABEL;
     btif_rc_cb.rc_volume=MAX_VOLUME;
@@ -1647,56 +1689,54 @@ static void cleanup()
 ** Returns          void
 **
 ***************************************************************************/
-void btrc_ctrl_cleanup(void)
-// static void cleanup_ctrl()
+void esp_avrc_ct_deinit(void)
 {
     BTIF_TRACE_EVENT("## %s ##", __FUNCTION__);
 
-    if (bt_rc_ctrl_callbacks)
+    if (bt_rc_ctrl_callback)
     {
-        bt_rc_ctrl_callbacks = NULL;
+        bt_rc_ctrl_callback = NULL;
     }
     memset(&btif_rc_cb, 0, sizeof(btif_rc_cb_t));
     lbl_destroy();
     BTIF_TRACE_EVENT("## %s ## completed", __FUNCTION__);
 }
 
-bt_status_t btrc_ctrl_send_passthrough_cmd(bt_bdaddr_t *bd_addr, uint8_t key_code, uint8_t key_state)
-// static bt_status_t send_passthrough_cmd(bt_bdaddr_t *bd_addr, uint8_t key_code, uint8_t key_state)
+esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+    if (tl >= 16 ||
+        key_state > ESP_AVRC_PT_CMD_STATE_RELEASED) {
+        return ESP_ERR_INVALID_ARG;
+    }
 #if (AVRC_CTLR_INCLUDED == TRUE)
-    CHECK_RC_CONNECTED
-    rc_transaction_t *p_transaction=NULL;
+    CHECK_ESP_RC_CONNECTED;
     BTIF_TRACE_DEBUG("%s: key-code: %d, key-state: %d", __FUNCTION__,
                                                     key_code, key_state);
     if (btif_rc_cb.rc_features & BTA_AV_FEAT_RCTG)
     {
-        bt_status_t tran_status = get_transaction(&p_transaction);
-        if(BT_STATUS_SUCCESS == tran_status && NULL != p_transaction)
-        {
-            BTA_AvRemoteCmd(btif_rc_cb.rc_handle, p_transaction->lbl,
-                (tBTA_AV_RC)key_code, (tBTA_AV_STATE)key_state);
-            status =  BT_STATUS_SUCCESS;
-            BTIF_TRACE_DEBUG("%s: succesfully sent passthrough command to BTA", __FUNCTION__);
-        }
-        else
-        {
-            status =  BT_STATUS_FAIL;
-            BTIF_TRACE_DEBUG("%s: error in fetching transaction", __FUNCTION__);
-        }
+        BTA_AvRemoteCmd(btif_rc_cb.rc_handle, tl,
+                        (tBTA_AV_RC)key_code, (tBTA_AV_STATE)key_state);
+        status =  BT_STATUS_SUCCESS;
+        BTIF_TRACE_EVENT("%s: succesfully sent passthrough command to BTA", __FUNCTION__);
     }
     else
     {
-        status =  BT_STATUS_FAIL;
+        status = BT_STATUS_FAIL;
         BTIF_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 #else
     BTIF_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
-    return status;
+
+    switch (status) {
+    case BT_STATUS_SUCCESS: return ESP_OK;
+    case BT_STATUS_UNSUPPORTED: return ESP_ERR_NOT_SUPPORTED;
+    default: return ESP_FAIL;
+    }
 }
 
+#if 0
 static const btrc_interface_t bt_rc_interface = {
     sizeof(bt_rc_interface),
     init,
@@ -1713,14 +1753,6 @@ static const btrc_interface_t bt_rc_interface = {
     cleanup,
 };
 
-#if 0
-static const btrc_ctrl_interface_t bt_rc_ctrl_interface = {
-    sizeof(bt_rc_ctrl_interface),
-    init_ctrl,
-    send_passthrough_cmd,
-    cleanup_ctrl,
-};
-#endif
 /*******************************************************************************
 **
 ** Function         btif_rc_get_interface
@@ -1736,22 +1768,8 @@ const btrc_interface_t *btif_rc_get_interface(void)
     return &bt_rc_interface;
 }
 
-/*******************************************************************************
-**
-** Function         btif_rc_ctrl_get_interface
-**
-** Description      Get the AVRCP Controller callback interface
-**
-** Returns          btav_interface_t
-**
-*******************************************************************************/
-#if 0
-const btrc_ctrl_interface_t *btif_rc_ctrl_get_interface(void)
-{
-    BTIF_TRACE_EVENT("%s", __FUNCTION__);
-    return &bt_rc_ctrl_interface;
-}
-#endif
+#endif /* #if 0*/
+
 /*******************************************************************************
 **      Function         initialize_transaction
 **
