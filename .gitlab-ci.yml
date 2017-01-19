@@ -184,7 +184,8 @@ test_report:
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     # generate report
-    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || FAIL=True
+    - TEST_RESULT=Pass
+    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || TEST_RESULT=Fail
     # commit to CI-test-result project
     - git clone $GITLAB_SSH_SERVER/qa/CI-test-result.git
     - rm -rf CI-test-result/RawData/$RESULT_PATH
