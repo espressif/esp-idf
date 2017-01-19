@@ -8,6 +8,7 @@
 #include "btif_common.h"
 #include "btif_api.h"
 #include "btif_dm.h"
+#include "btif_config.h"
 
 /************************************************************************************
 **  Constants & Macros
@@ -32,6 +33,7 @@ static bt_status_t event_init_stack(void)
     bt_status_t ret;
     if (!stack_is_initialized) {
         hack_future = future_new();
+        btif_config_init();
         ret = btif_init_bluetooth();
         if (future_await(hack_future) != FUTURE_SUCCESS) {
             return BT_STATUS_FAIL;
@@ -90,7 +92,7 @@ static bt_status_t event_shut_down_stack(void)
     stack_is_running = false;
 
     btif_disable_bluetooth();
-
+    btif_config_shut_down();
     future_await(hack_future);
 
     LOG_DEBUG("%s finished.\n", __func__);
@@ -111,7 +113,7 @@ static bt_status_t event_clean_up_stack(void)
     LOG_DEBUG("%s is cleaning up the stack.\n", __func__);
 
     stack_is_initialized = false;
-
+    btif_config_clean_up();
     btif_shutdown_bluetooth();
 
     return BT_STATUS_SUCCESS;

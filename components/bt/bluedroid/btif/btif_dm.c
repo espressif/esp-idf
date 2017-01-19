@@ -45,7 +45,7 @@
 #include "btif_api.h"
 #include "btif_util.h"
 #include "btif_dm.h"
-// #include "btif_storage.h"
+#include "btif_storage.h"
 // #include "btif_hh.h"
 // #include "btif_config.h"
 // #include "btif_sdp.h"
@@ -138,6 +138,97 @@ void btif_dm_execute_service_request(UINT16 event, char *p_param)
 
 /*******************************************************************************
 **
+** Function         btif_dm_auth_cmpl_evt
+**
+** Description      Executes authentication complete event in btif context
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
+{
+    /* Save link key, if not temporary */
+    bt_bdaddr_t bd_addr;
+    bt_status_t status;
+    BTIF_TRACE_EVENT("%s: bond state success %d, present %d, type%d\n", __func__, p_auth_cmpl->success,
+		p_auth_cmpl->key_present, p_auth_cmpl->key_type);
+
+    bdcpy(bd_addr.address, p_auth_cmpl->bd_addr);
+    if ( (p_auth_cmpl->success == TRUE) && (p_auth_cmpl->key_present) )
+    {
+	#if 0
+        if ((p_auth_cmpl->key_type < HCI_LKEY_TYPE_DEBUG_COMB) ||
+            (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB) ||
+            (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
+            (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB_P_256)
+            )
+        #endif
+	if (1)
+        {
+            bt_status_t ret;
+            BTIF_TRACE_WARNING("%s: Storing link key. key_type=0x%x",
+			     __FUNCTION__, p_auth_cmpl->key_type);
+            ret = btif_storage_add_bonded_device(&bd_addr,
+                                p_auth_cmpl->key, p_auth_cmpl->key_type,
+                                16);
+            ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
+        }
+        else
+        {
+            BTIF_TRACE_EVENT("%s: Temporary key. Not storing. key_type=0x%x",
+                __FUNCTION__, p_auth_cmpl->key_type);
+        }
+    }
+
+    // Skip SDP for certain  HID Devices
+    if (p_auth_cmpl->success)
+    {
+    }
+    else
+    {
+        // Map the HCI fail reason  to  bt status
+        switch(p_auth_cmpl->fail_reason)
+        {
+            case HCI_ERR_PAGE_TIMEOUT:
+		BTIF_TRACE_WARNING("%s() - Pairing timeout; retrying () ...", __FUNCTION__);
+		return;
+                /* Fall-through */
+            case HCI_ERR_CONNECTION_TOUT:
+                status =  BT_STATUS_RMT_DEV_DOWN;
+                break;
+
+            case HCI_ERR_PAIRING_NOT_ALLOWED:
+                status = BT_STATUS_AUTH_REJECTED;
+                break;
+
+            case HCI_ERR_LMP_RESPONSE_TIMEOUT:
+                status =  BT_STATUS_AUTH_FAILURE;
+                break;
+
+            /* map the auth failure codes, so we can retry pairing if necessary */
+            case HCI_ERR_AUTH_FAILURE:
+            case HCI_ERR_KEY_MISSING:
+                btif_storage_remove_bonded_device(&bd_addr);
+            case HCI_ERR_HOST_REJECT_SECURITY:
+            case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
+            case HCI_ERR_UNIT_KEY_USED:
+            case HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED:
+            case HCI_ERR_INSUFFCIENT_SECURITY:
+            case HCI_ERR_PEER_USER:
+            case HCI_ERR_UNSPECIFIED:
+                BTIF_TRACE_DEBUG(" %s() Authentication fail reason %d",
+                    __FUNCTION__, p_auth_cmpl->fail_reason);
+                    /* if autopair attempts are more than 1, or not attempted */
+                    status =  BT_STATUS_AUTH_FAILURE;
+                break;
+            default:
+                status =  BT_STATUS_FAIL;
+        }
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         btif_dm_upstreams_cback
 **
 ** Description      Executes UPSTREAMS events in btif context
@@ -164,6 +255,7 @@ static void btif_dm_upstreams_evt(UINT16 event, char *p_param)
             }
         }
         btif_enable_bluetooth_evt(p_data->enable.status);
+	btif_storage_load_bonded_devices();
         break;
     case BTA_DM_DISABLE_EVT:
         /* for each of the enabled services in the mask, trigger the profile
@@ -178,7 +270,10 @@ static void btif_dm_upstreams_evt(UINT16 event, char *p_param)
         btif_disable_bluetooth_evt();
         break;
     case BTA_DM_PIN_REQ_EVT:
+	break;
     case BTA_DM_AUTH_CMPL_EVT:
+	btif_dm_auth_cmpl_evt(&p_data->auth_cmpl);
+	break;
     case BTA_DM_BOND_CANCEL_CMPL_EVT:
     case BTA_DM_SP_CFM_REQ_EVT:
     case BTA_DM_SP_KEY_NOTIF_EVT:
