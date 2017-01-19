@@ -11,9 +11,9 @@ Use should concern these things:
 Application Example
 -------------------
 
-Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that contains the following example:
+Check :example:`bluetooth` folder in ESP-IDF examples, which contains the following example:
 
-`blufi <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/blufi>`_ 
+:example:`bluetooth/blufi` 
 
   This is a BLUFI demo. This demo can set ESP32's wifi to softap/station/softap&station mode and config wifi connections.
 
@@ -24,7 +24,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `bt/bluedroid/api/include/esp_blufi_api.h <https://github.com/espressif/esp-idf/blob/master/components/bt/bluedroid/api/include/esp_blufi_api.h>`_
+  * :component_file:`bt/bluedroid/api/include/esp_blufi_api.h`
 
 Macros
 ^^^^^^

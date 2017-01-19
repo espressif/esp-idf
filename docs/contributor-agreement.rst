@@ -12,8 +12,8 @@ Framework (esp-idf) ("We" or "Us").
 
 The purpose of this contributor agreement ("Agreement") is to clarify
 and document the rights granted by contributors to Us. To make this
-document effective, please follow the instructions at
-https://github.com/espressif/esp-idf/blob/master/CONTRIBUTING.rst.
+document effective, please follow the instructions at 
+:idf_file:`CONTRIBUTING.rst`
 
 1. DEFINITIONS
 ~~~~~~~~~~~~~~

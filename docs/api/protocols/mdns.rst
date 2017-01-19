@@ -163,7 +163,7 @@ Example of using the methods above:
 Application Example
 -------------------
 
-mDNS server/scanner example: `examples/protocols/mdns <https://github.com/espressif/esp-idf/tree/master/examples/protocols/mdns>`_.
+mDNS server/scanner example: :example:`protocols/mdns`.
 
 API Reference
 -------------
@@ -171,7 +171,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `components/mdns/include/mdns.h <https://github.com/espressif/esp-idf/blob/master/components/mdns/include/mdns.h>`_
+  * :component_file:`mdns/include/mdns.h`
 
 Macros
 ^^^^^^

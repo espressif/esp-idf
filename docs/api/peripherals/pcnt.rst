@@ -9,7 +9,7 @@ The PCNT (Pulse Counter) module is designed to count the number of rising and/or
 Application Example
 -------------------
 
-Pulse counter with control signal and event interrupt example: `examples/peripherals/pcnt <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/pcnt>`_.
+Pulse counter with control signal and event interrupt example: :example:`peripherals/pcnt`.
 
 API Reference
 -------------
@@ -17,7 +17,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `driver/pcnt.h <https://github.com/espressif/esp-idf/blob/master/components/driver/include/driver/pcnt.h>`_
+  * :component_file:`driver/include/driver/pcnt.h`
 
 
 Macros

@@ -4,7 +4,7 @@ ETHERNET
 Application Example
 -------------------
 
-ethernet example: `examples/ethernet/ethernet <https://github.com/espressif/esp-idf/tree/master/examples/ethernet/ethernet>`_.
+Ethernet example: :example:`ethernet/ethernet`.
 
 API Reference
 -------------
@@ -12,7 +12,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `components/ethernet/include/esp_eth.h <https://github.com/espressif/esp-idf/blob/master/components/ethernet/include/esp_eth.h>`_
+  * :component_file:`ethernet/include/esp_eth.h`
 
 Macros
 ^^^^^^

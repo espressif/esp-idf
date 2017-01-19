@@ -8,4 +8,4 @@ Wi-Fi API
    Smart Config <esp_smartconfig>
 
 
-Example code for this API section is provided in `examples/wifi <https://github.com/espressif/esp-idf/tree/master/examples/wifi>`_ directory of ESP-IDF repository.
+Example code for this API section is provided in :example:`wifi` directory of ESP-IDF examples.

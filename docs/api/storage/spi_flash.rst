@@ -13,8 +13,8 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `spi_flash/include/esp_spi_flash.h <https://github.com/espressif/esp-idf/blob/master/components/spi_flash/include/esp_spi_flash.h>`_
-  * `spi_flash/include/esp_partition.h <https://github.com/espressif/esp-idf/blob/master/components/spi_flash/include/esp_partition.h>`_
+  * :component_file:`spi_flash/include/esp_spi_flash.h`
+  * :component_file:`spi_flash/include/esp_partition.h`
 
 Macros
 ^^^^^^

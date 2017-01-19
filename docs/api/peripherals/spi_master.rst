@@ -108,7 +108,7 @@ as ``tx_data`` and ``rx_data``.
 Application Example
 -------------------
  
-Display graphics on the ILI9341-based 320x240 LCD: `examples/peripherals/spi_master <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/spi_master>`_.
+Display graphics on the ILI9341-based 320x240 LCD: :example:`peripherals/spi_master`.
 
 API Reference
 -------------
@@ -116,7 +116,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `driver/include/driver/spi_master.h <https://github.com/espressif/esp-idf/blob/master/components/driver/include/driver/spi_master.h>`_
+  * :component_file:`driver/include/driver/spi_master.h`
 
 Macros
 ^^^^^^
