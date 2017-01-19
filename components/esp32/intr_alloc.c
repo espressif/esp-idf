@@ -700,7 +700,7 @@ void esp_intr_noniram_disable()
         "and a3,%0,%1\n"        //mask ints that need disabling
         "wsr a3,INTENABLE\n"    //write back
         "rsync\n"
-        :"=r"(oldint):"r"(intmask):"a3");
+        :"=&r"(oldint):"r"(intmask):"a3");
     //Save which ints we did disable
     non_iram_int_disabled[cpu]=oldint&non_iram_int_mask[cpu];
 }
