@@ -501,8 +501,8 @@ tcpip_init(tcpip_init_done_fn initfunc, void *arg)
   sys_thread_t xLwipTaskHandle = sys_thread_new(TCPIP_THREAD_NAME
                 , tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, TCPIP_THREAD_PRIO);
 
-  printf("tcpip_task_hdlxxx : %x, prio:%d,stack:%d\n",
-		 (u32_t)xLwipTaskHandle,TCPIP_THREAD_PRIO,TCPIP_THREAD_STACKSIZE);
+  LWIP_DEBUGF(TCPIP_DEBUG, ("tcpip_task_hdlxxx : %x, prio:%d,stack:%d\n",
+		 (u32_t)xLwipTaskHandle,TCPIP_THREAD_PRIO,TCPIP_THREAD_STACKSIZE));
 
 }
 
