@@ -1,4 +1,4 @@
-menu "ESP32-specific config"
+menu "ESP32-specific"
 
 choice ESP32_DEFAULT_CPU_FREQ_MHZ
     prompt "CPU frequency"
@@ -490,9 +490,27 @@ config SW_COEXIST_ENABLE
         Recommended for heavy traffic scenarios. Both coexistence configuration options are
         automatically managed, no user intervention is required.
 
+
+config ESP32_WIFI_RX_BUFFER_NUM
+    int "Max number of WiFi RX buffers"
+    depends on WIFI_ENABLED
+    range 2 25
+    default 25
+    help
+        Set the number of WiFi rx buffers. Each buffer takes approximately 1.6KB of RAM.
+        Larger number for higher throughput but more memory. Smaller number for lower
+        throughput but less memory.
+
+config PHY_ENABLED
+	bool
+	default y if WIFI_ENABLED || BT_ENABLED
+
+menu PHY
+	visible if PHY_ENABLED
+
 config ESP32_PHY_AUTO_INIT
     bool "Initialize PHY in startup code"
-    depends on WIFI_ENABLED
+    depends on PHY_ENABLED
     default y
     help
         If enabled, PHY will be initialized in startup code, before
@@ -507,7 +525,7 @@ config ESP32_PHY_AUTO_INIT
 
 config ESP32_PHY_INIT_DATA_IN_PARTITION
     bool "Use a partition to store PHY init data"
-    depends on WIFI_ENABLED
+    depends on PHY_ENABLED
     default n
     help
         If enabled, PHY init data will be loaded from a partition.
@@ -521,22 +539,20 @@ config ESP32_PHY_INIT_DATA_IN_PARTITION
         into the application binary.
 
         If unsure, choose 'n'.
-
-config ESP32_PHY_MAX_TX_POWER
-    int "Max TX power (dBm)"
+	
+config ESP32_PHY_MAX_WIFI_TX_POWER
+    int "Max WiFi TX power (dBm)"
     range 0 20
     default 20
-    depends on WIFI_ENABLED
+    depends on PHY_ENABLED && WIFI_ENABLED
     help
-        Set maximum transmit power. Actual transmit power for high
+        Set maximum transmit power for WiFi radio. Actual transmit power for high
         data rates may be lower than this setting.
 
-config ESP32_WIFI_RX_BUFFER_NUM
-    int "Max number of WiFi RX buffers"
-    depends on WIFI_ENABLED
-    range 2 25
-    default 25
-    help
-        Set the number of WiFi rx buffers. Each buffer takes approximately 1.6KB of RAM.
-        Larger number for higher throughput but more memory. Smaller number for lower
-        throughput but less memory.
+config ESP32_PHY_MAX_TX_POWER
+	int
+	depends on PHY_ENABLED
+	default 20 if !WIFI_ENABLED
+	default ESP32_PHY_MAX_WIFI_TX_POWER if WIFI_ENABLED
+
+endmenu
