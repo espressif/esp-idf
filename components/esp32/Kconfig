@@ -539,8 +539,8 @@ config ESP32_PHY_INIT_DATA_IN_PARTITION
         into the application binary.
 
         If unsure, choose 'n'.
-
-config ESP32_PHY_MAX_TX_POWER
+	
+config ESP32_PHY_MAX_WIFI_TX_POWER
     int "Max WiFi TX power (dBm)"
     range 0 20
     default 20
@@ -548,5 +548,11 @@ config ESP32_PHY_MAX_TX_POWER
     help
         Set maximum transmit power for WiFi radio. Actual transmit power for high
         data rates may be lower than this setting.
-        
+
+config ESP32_PHY_MAX_TX_POWER
+	int
+	depends on PHY_ENABLED
+	default 20 if !WIFI_ENABLED
+	default ESP32_PHY_MAX_WIFI_TX_POWER if WIFI_ENABLED
+
 endmenu
