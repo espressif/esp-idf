@@ -3,7 +3,7 @@
 	url = https://github.com/espressif/esp32-wifi-lib.git
 [submodule "components/esptool_py/esptool"]
 	path = components/esptool_py/esptool
-	url = https://github.com/themadinventor/esptool.git
+	url = https://github.com/espressif/esptool.git
 [submodule "components/bt/lib"]
 	path = components/bt/lib
 	url = https://github.com/espressif/esp32-bt-lib.git
