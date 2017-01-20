@@ -18,9 +18,7 @@
 
 #define LOG_TAG "bt_btif_config"
 
-// #include <assert.h>
 #include <ctype.h>
-// #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -31,7 +29,6 @@
 #include "bdaddr.h"
 #include "btif_config.h"
 #include "btif_util.h"
-// #include "osi/include/compat.h"
 #include "config.h"
 #include "osi.h"
 
@@ -60,7 +57,7 @@ bool btif_get_device_type(const BD_ADDR bd_addr, int *p_device_type)
         return FALSE;
     }
 
-    LOG_DEBUG("%s: Device [%s] type %d", __FUNCTION__, bd_addr_str, *p_device_type);
+    LOG_DEBUG("%s: Device [%s] type %d\n", __FUNCTION__, bd_addr_str, *p_device_type);
     return TRUE;
 }
 
@@ -80,7 +77,7 @@ bool btif_get_address_type(const BD_ADDR bd_addr, int *p_addr_type)
         return FALSE;
     }
 
-    LOG_DEBUG("%s: Device [%s] address type %d", __FUNCTION__, bd_addr_str, *p_addr_type);
+    LOG_DEBUG("%s: Device [%s] address type %d\n", __FUNCTION__, bd_addr_str, *p_addr_type);
     return TRUE;
 }
 
@@ -92,15 +89,13 @@ static osi_alarm_t *alarm_timer;
 
 bool btif_config_init(void)
 {
-    // karl LOG_ERROR("btif config_init\n");
-
     pthread_mutex_init(&lock, NULL);
     config = config_new(CONFIG_FILE_PATH);
     if (!config) {
         LOG_WARN("%s unable to load config file; starting unconfigured.\n", __func__);
         config = config_new_empty();
         if (!config) {
-            LOG_ERROR("%s unable to allocate a config object.", __func__);
+            LOG_ERROR("%s unable to allocate a config object.\n", __func__);
             goto error;
         }
     }
@@ -114,11 +109,10 @@ bool btif_config_init(void)
     // write back to disk.
     alarm_timer = osi_alarm_new("btif_config", timer_config_save, NULL, CONFIG_SETTLE_PERIOD_MS, false);
     if (!alarm_timer) {
-        LOG_ERROR("%s unable to create alarm.", __func__);
+        LOG_ERROR("%s unable to create alarm.\n", __func__);
         goto error;
     }
 
-    // LOG_ERROR("btif config_init end ok\n");
     return true;
 
 error:;
@@ -127,7 +121,7 @@ error:;
     pthread_mutex_destroy(&lock);
     alarm_timer = NULL;
     config = NULL;
-    LOG_ERROR("btif config_init end failed\n");
+    LOG_ERROR("%s failed\n", __func__);
     return false;
 }
 
@@ -234,7 +228,7 @@ bool btif_config_set_str(const char *section, const char *key, const char *value
     assert(value != NULL);
 
     pthread_mutex_lock(&lock);
-    config_set_string(config, section, key, value);
+    config_set_string(config, section, key, value, false);
     pthread_mutex_unlock(&lock);
 
     return true;
@@ -316,7 +310,7 @@ bool btif_config_set_bin(const char *section, const char *key, const uint8_t *va
     }
 
     pthread_mutex_lock(&lock);
-    config_set_string(config, section, key, str);
+    config_set_string(config, section, key, str, false);
     pthread_mutex_unlock(&lock);
 
     osi_free(str);
@@ -374,13 +368,11 @@ void btif_config_flush(void)
 {
     assert(config != NULL);
     assert(alarm_timer != NULL);
-    LOG_ERROR("flush bgn\n"); // karl
-    // osi_alarm_cancel(alarm_timer);
+    osi_alarm_cancel(alarm_timer);
 
     pthread_mutex_lock(&lock);
     config_save(config, CONFIG_FILE_PATH);
     pthread_mutex_unlock(&lock);
-    LOG_ERROR("flush end\n"); // karl
 }
 
 int btif_config_clear(void)

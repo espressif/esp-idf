@@ -225,6 +225,7 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
                 status =  BT_STATUS_FAIL;
         }
     }
+    (void) status;
 }
 
 /*******************************************************************************

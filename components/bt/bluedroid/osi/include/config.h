@@ -81,7 +81,7 @@ void config_set_bool(config_t *config, const char *section, const char *key, boo
 // Sets a string value for the |key| in |section|. If |key| or |section| do
 // not already exist, this function creates them. |config|, |section|, |key|, and
 // |value| must not be NULL.
-void config_set_string(config_t *config, const char *section, const char *key, const char *value);
+void config_set_string(config_t *config, const char *section, const char *key, const char *value, bool insert_back);
 
 // Removes |section| from the |config| (and, as a result, all keys in the section).
 // Returns true if |section| was found and removed from |config|, false otherwise.
