@@ -122,6 +122,7 @@ typedef volatile struct {
             uint32_t lstimer1_ovf:        1;            /*The interrupt status bit for low speed channel1  counter overflow event.*/
             uint32_t lstimer2_ovf:        1;            /*The interrupt status bit for low speed channel2  counter overflow event.*/
             uint32_t lstimer3_ovf:        1;            /*The interrupt status bit for low speed channel3  counter overflow event.*/
+            uint32_t duty_chng_end_hsch0: 1;            /*The interrupt enable bit for high speed channel 0 duty change done event.*/
             uint32_t duty_chng_end_hsch1: 1;            /*The interrupt status bit for high speed channel 1 duty change done event.*/
             uint32_t duty_chng_end_hsch2: 1;            /*The interrupt status bit for high speed channel 2 duty change done event.*/
             uint32_t duty_chng_end_hsch3: 1;            /*The interrupt status bit for high speed channel 3 duty change done event.*/
