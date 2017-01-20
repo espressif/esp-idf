@@ -206,6 +206,7 @@ push_master_to_github:
   stage: deploy
   only:
     - master
+    - /^release\/v.*$/
   tags:
     - deploy
   when: on_success
@@ -229,6 +230,7 @@ deploy_docs:
   stage: deploy
   only:
    - master
+   - /^release\/v.*$/
    - triggers
   tags:
     - deploy
