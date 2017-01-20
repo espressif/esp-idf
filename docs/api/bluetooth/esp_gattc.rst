@@ -11,11 +11,11 @@ Overview
 Application Example
 -------------------
 
-Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that contains the following example:
+Check :example:`bluetooth` folder in ESP-IDF examples, which contains the following examples:
 
-`gatt_client <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_client>`_ 
+:example:`bluetooth/gatt_client`
 
-  This is a gatt client demo. This demo can scan devices, connect to the gatt server and discover the service.
+  This is a GATT client demo. This demo can scan devices, connect to the GATT server and discover the service.
 
 
 API Reference
@@ -24,7 +24,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `bt/bluedroid/api/include/esp_gattc_api.h <https://github.com/espressif/esp-idf/blob/master/components/bt/bluedroid/api/include/esp_gattc_api.h>`_
+  * :component_file:`bt/bluedroid/api/include/esp_gattc_api.h`
 
 Macros
 ^^^^^^

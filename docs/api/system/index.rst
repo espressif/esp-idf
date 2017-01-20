@@ -12,4 +12,4 @@ System API
    Logging <log>
 
 
-Example code for this API section is provided in `examples/system <https://github.com/espressif/esp-idf/tree/master/examples/system>`_ directory of ESP-IDF repository.
+Example code for this API section is provided in :example:`system` directory of ESP-IDF examples.

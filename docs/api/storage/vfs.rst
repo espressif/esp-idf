@@ -13,8 +13,8 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `vfs/include/esp_vfs.h <https://github.com/espressif/esp-idf/blob/master/components/vfs/include/esp_vfs.h>`_
-  * `vfs/include/esp_vfs_dev.h <https://github.com/espressif/esp-idf/blob/master/components/vfs/include/esp_vfs_dev.h>`_
+  * :component_file:`vfs/include/esp_vfs.h`
+  * :component_file:`vfs/include/esp_vfs_dev.h`
 
 Macros
 ^^^^^^

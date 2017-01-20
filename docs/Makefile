@@ -161,6 +161,30 @@ linkcheck:
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in $(BUILDDIR)/linkcheck/output.txt."
 
+gh-linkcheck:
+	@echo "Checking for hardcoded GitHub links"
+	@if (find ../ -name '*.rst' | xargs grep \
+		'https://github.com/espressif/esp-idf/tree\|https://github.com/espressif/esp-idf/blob\|https://github.com/espressif/esp-idf/raw'\
+		); \
+	then \
+		echo "WARNINIG: Some .rst files contain hardcoded Github links."; \
+		echo "Please check above output and replace links with one of the following:"; \
+		echo "- :idf:\`dir\` - points to directory inside ESP-IDF"; \
+		echo "- :idf_blob:\`file\` - points to file inside ESP-IDF"; \
+		echo "- :idf_raw:\`file\` - points to raw view of the file inside ESP-IDF"; \
+		echo "- :component:\`dir\` - points to directory inside ESP-IDF components dir"; \
+		echo "- :component_blob:\`file\` - points to file inside ESP-IDF components dir"; \
+		echo "- :component_raw:\`file\` - points to raw view of the file inside ESP-IDF"; \
+		echo "  components dir"; \
+		echo "- :example:\`dir\` - points to directory inside ESP-IDF examples dir"; \
+		echo "- :example_blob:\`file\` - points to file inside ESP-IDF examples dir"; \
+		echo "- :example_raw:\`file\` - points to raw view of the file inside ESP-IDF"; \
+		echo "  examples dir"; \
+		echo "These link types will point to the correct GitHub version automatically"; \
+		exit 1; \
+	fi
+	@echo "No hardcoded links found"
+
 doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \

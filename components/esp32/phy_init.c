@@ -27,7 +27,7 @@
 #include "nvs.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_WIFI_ENABLED
+#ifdef CONFIG_PHY_ENABLED
 #include "phy.h"
 #include "phy_init_data.h"
 
@@ -39,8 +39,7 @@ esp_err_t esp_phy_init(const esp_phy_init_data_t* init_data,
 {
     assert(init_data);
     assert(calibration_data);
-    // Initialize PHY pointer table
-    phy_get_romfunc_addr();
+
     REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
     REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
     // Enable WiFi peripheral clock
@@ -221,4 +220,4 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
     return err;
 }
 
-#endif // CONFIG_WIFI_ENABLED
+#endif // CONFIG_PHY_ENABLED

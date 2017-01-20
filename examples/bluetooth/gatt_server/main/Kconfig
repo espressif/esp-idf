@@ -1,0 +1,10 @@
+menu "Example 'GATT SERVER' Config"
+
+config SET_RAW_ADV_DATA
+    bool "adv data or scan_rsp data use raw data or structure"
+    default "y"
+    help
+        Set raw advertising data/scan response data by self or use adv_data/scan_rsp_data structure to
+        set advertising data/scan response data. If use structure, lower layer will encapsulate the packets.
+
+endmenu

@@ -3,11 +3,11 @@
 Application Example
 -------------------
 
-Log library is commonly used by most of esp-idf components and examples. For demonstration of log functionality check `examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that among others, contains the following examples:
+Log library is commonly used by most of esp-idf components and examples. For demonstration of log functionality check :idf:`examples` folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that among others, contains the following examples:
  
-* `system/ota <https://github.com/espressif/esp-idf/tree/master/examples/system/ota>`_ 
-* `storage/sd_card <https://github.com/espressif/esp-idf/tree/master/examples/storage/sd_card>`_ 
-* `protocols/https_request <https://github.com/espressif/esp-idf/tree/master/examples/protocols/https_request>`_ 
+* :example:`system/ota` 
+* :example:`storage/sd_card` 
+* :example:`protocols/https_request` 
 
 API Reference
 -------------
@@ -15,7 +15,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `log/include/esp_log.h <https://github.com/espressif/esp-idf/blob/master/components/log/include/esp_log.h>`_
+  * :component_file:`log/include/esp_log.h`
 
 Macros
 ^^^^^^

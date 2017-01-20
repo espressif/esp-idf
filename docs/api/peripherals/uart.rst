@@ -11,7 +11,7 @@ Overview
 Application Example
 -------------------
 
-Configure uart settings and install uart driver to read/write using UART0 and UART1 interfaces: `examples/peripherals/uart <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/uart>`_.
+Configure uart settings and install uart driver to read/write using UART0 and UART1 interfaces: :example:`peripherals/uart`.
 
 API Reference
 -------------
@@ -19,7 +19,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `driver/include/driver/uart.h <https://github.com/espressif/esp-idf/blob/master/components/driver/include/driver/uart.h>`_
+  * :component_file:`driver/include/driver/uart.h`
 
 Data Structures
 ^^^^^^^^^^^^^^^

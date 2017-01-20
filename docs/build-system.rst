@@ -464,7 +464,7 @@ The file's contents will be added to the .rodata section in flash, and are avail
 
 The names are generated from the full name of the file, as given in COMPONENT_EMBED_FILES. Characters /, ., etc. are replaced with underscores. The _binary prefix in the symbol name is added by objcopy and is the same for both text and binary files.
 
-For an example of using this technique, see `examples/protocols/https_request <https://github.com/espressif/esp-idf/tree/master/examples/protocols/https_request>`_ - the certificate file contents are loaded from the text .pem file at compile time.
+For an example of using this technique, see :example:`protocols/https_request` - the certificate file contents are loaded from the text .pem file at compile time.
 
 
 Fully Overriding The Component Makefile

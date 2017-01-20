@@ -59,8 +59,8 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `esp32/include/esp_int_wdt.h <https://github.com/espressif/esp-idf/blob/master/components/esp32/include/esp_int_wdt.h>`_
-  * `esp32/include/esp_task_wdt.h <https://github.com/espressif/esp-idf/blob/master/components/esp32/include/esp_task_wdt.h>`_
+  * :component_file:`esp32/include/esp_int_wdt.h`
+  * :component_file:`esp32/include/esp_task_wdt.h`
 
 
 Functions

@@ -7,4 +7,4 @@ Ethernet API
    Ethernet <esp_eth>
 
 
-Example code for this API section is provided in `examples/ethernet <https://github.com/espressif/esp-idf/tree/master/examples/ethernet>`_ directory of ESP-IDF repository.
+Example code for this API section is provided in :example:`ethernet` directory of ESP-IDF examples.

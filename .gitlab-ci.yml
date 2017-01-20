@@ -125,6 +125,7 @@ build_docs:
     - doxygen
     # If not building master branch, and there are Doxygen warnings, print them and bail out
     - test "${CI_BUILD_REF_NAME}" = "master" || test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
+    - make gh-linkcheck
     - make html
   artifacts:
     paths:
@@ -163,7 +164,7 @@ test_report:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
     REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
   artifacts:
     when: always
     paths:
@@ -184,7 +185,8 @@ test_report:
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     # generate report
-    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || FAIL=True
+    - TEST_RESULT=Pass
+    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || TEST_RESULT=Fail
     # commit to CI-test-result project
     - git clone $GITLAB_SSH_SERVER/qa/CI-test-result.git
     - rm -rf CI-test-result/RawData/$RESULT_PATH
@@ -205,6 +207,7 @@ push_master_to_github:
   stage: deploy
   only:
     - master
+    - /^release\/v.*$/
   tags:
     - deploy
   when: on_success
@@ -228,6 +231,7 @@ deploy_docs:
   stage: deploy
   only:
    - master
+   - /^release\/v.*$/
    - triggers
   tags:
     - deploy
@@ -245,6 +249,26 @@ deploy_docs:
     - tar czvf $GIT_VER.tar.gz $GIT_VER
     - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH
     - ssh $DOCS_SERVER -x "cd $DOCS_PATH && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+
+check_doc_links:
+  stage: test
+  image: espressif/esp32-ci-env
+  tags:
+    - check_doc_links
+  only:
+    # can only be triggered
+    - triggers
+  script:
+    # must be triggered with CHECK_LINKS=Yes, otherwise exit without test
+    - test $CHECK_LINKS = "Yes" || exit 0
+    # can only run on master branch (otherwise the commit is not on Github yet)
+    - test "${CI_BUILD_REF_NAME}" = "master" || exit 0
+    - cd docs
+    - make linkcheck
+  artifacts:
+    paths:
+      - docs/_build/linkcheck
+    expire_in: 1 mos
 
 
 # AUTO GENERATED PART START, DO NOT MODIFY CONTENT BELOW
@@ -328,7 +352,7 @@ deploy_docs:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     APP_NAME: "ut"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
   
   dependencies:
     - build_esp_idf_tests

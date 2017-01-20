@@ -66,7 +66,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `esp_intr_alloc.h <https://github.com/espressif/esp-idf/blob/master/components/esp32/include/esp_intr_alloc.h>`_
+  * :component_file:`esp32/include/esp_intr_alloc.h`
 
 
 Macros

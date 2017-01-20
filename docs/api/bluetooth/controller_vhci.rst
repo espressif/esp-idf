@@ -11,9 +11,9 @@ Overview
 Application Example
 -------------------
 
-Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
+Check :example:`bluetooth` folder in ESP-IDF examples, which contains the following example:
 
-`ble_adv <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/ble_adv>`_ 
+:example:`bluetooth/ble_adv`
 
   This is a BLE advertising demo with virtual HCI interface. Send Reset/ADV_PARAM/ADV_DATA/ADV_ENABLE HCI command for BLE advertising.
 
@@ -23,7 +23,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `bt/include/bt.h <https://github.com/espressif/esp-idf/blob/master/components/bt/include/bt.h>`_
+  * :component_file:`bt/include/bt.h`
 
 Type Definitions
 ^^^^^^^^^^^^^^^^

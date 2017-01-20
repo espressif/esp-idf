@@ -22,7 +22,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `bt/bluedroid/api/include/esp_bt_device.h <https://github.com/espressif/esp-idf/blob/master/components/bt/bluedroid/api/include/esp_bt_device.h>`_
+  * :component_file:`bt/bluedroid/api/include/esp_bt_device.h`
 
 
 Macros

@@ -11,11 +11,11 @@ Overview
 Application Example
 -------------------
 
-Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that contains the following example:
+Check :example:`bluetooth` folder in ESP-IDF examples, which contains the following example:
 
-`gatt_server <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_server>`_ 
+:example:`bluetooth/gatt_server` 
 
-  This is a gatt server demo. Use gatt api to create a gatt server with send advertising. This gatt server can be connected and the service can be discovery.
+  This is a GATT server demo. Use GATT API to create a GATT server with send advertising. This GATT server can be connected and the service can be discovery.
 
 API Reference
 -------------
@@ -23,7 +23,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `bt/bluedroid/api/include/esp_gatts_api.h <https://github.com/espressif/esp-idf/blob/master/components/bt/bluedroid/api/include/esp_gatts_api.h>`_
+  * :component_file:`bt/bluedroid/api/include/esp_gatts_api.h`
 
 Macros
 ^^^^^^

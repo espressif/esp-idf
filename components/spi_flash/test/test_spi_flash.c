@@ -7,6 +7,8 @@
 #include <esp_spi_flash.h>
 #include <esp_attr.h>
 
+#include "test_config.h"
+
 struct flash_test_ctx {
     uint32_t offset;
     bool fail;
@@ -31,8 +33,7 @@ static void flash_test_task(void *arg)
     vTaskDelay(0 / portTICK_PERIOD_MS);
 
     uint32_t val = 0xabcd1234;
-    const uint32_t n = 4096;
-    for (uint32_t offset = 0; offset < n; offset += 4) {
+    for (uint32_t offset = 0; offset < SPI_FLASH_SEC_SIZE; offset += 4) {
         if (spi_flash_write(sector * SPI_FLASH_SEC_SIZE + offset, (const uint8_t *) &val, 4) != ESP_OK) {
             printf("Write failed at offset=%d\r\n", offset);
             ctx->fail = true;
@@ -44,7 +45,7 @@ static void flash_test_task(void *arg)
     vTaskDelay(0 / portTICK_PERIOD_MS);
 
     uint32_t val_read;
-    for (uint32_t offset = 0; offset < n; offset += 4) {
+    for (uint32_t offset = 0; offset < SPI_FLASH_SEC_SIZE; offset += 4) {
         if (spi_flash_read(sector * SPI_FLASH_SEC_SIZE + offset, (uint8_t *) &val_read, 4) != ESP_OK) {
             printf("Read failed at offset=%d\r\n", offset);
             ctx->fail = true;

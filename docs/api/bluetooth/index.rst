@@ -9,4 +9,4 @@ Bluetooth API
    Bluetooth LE <bt_le>
 
 
-Example code for this API section is provided in `examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ directory of ESP-IDF repository.
+Example code for this API section is provided in :example:`bluetooth` directory of ESP-IDF examples.

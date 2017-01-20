@@ -7,7 +7,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `esp32/include/esp_smartconfig.h <https://github.com/espressif/esp-idf/blob/master/components/esp32/include/esp_smartconfig.h>`_
+  * :component_file:`esp32/include/esp_smartconfig.h`
 
 Type Definitions
 ^^^^^^^^^^^^^^^^

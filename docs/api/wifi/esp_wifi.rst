@@ -19,7 +19,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `esp32/include/esp_wifi.h <https://github.com/espressif/esp-idf/blob/master/components/esp32/include/esp_wifi.h>`_
+  * :component_file:`esp32/include/esp_wifi.h`
 
 Macros
 ------

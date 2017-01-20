@@ -11,11 +11,11 @@ Overview
 Application Example
 -------------------
 
-Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that contains the following examples:
+Check :example:`bluetooth` folder in ESP-IDF examples, which contains the following examples:
 
-`gatt_server <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_server>`_, `gatt_client <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_client>`_ 
+:example:`bluetooth/gatt_server`, :example:`bluetooth/gatt_client` 
 
-  The two demos use different gap api, such like advertising, scan, set device name and others.
+  The two demos use different GAP APIs, such like advertising, scan, set device name and others.
 
 API Reference
 -------------
@@ -23,7 +23,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `bt/bluedroid/api/include/esp_gap_ble_api.h <https://github.com/espressif/esp-idf/blob/master/components/bt/bluedroid/api/include/esp_gap_ble_api.h>`_
+  * :component_file:`bt/bluedroid/api/include/esp_gap_ble_api.h`
 
 
 Macros
@@ -36,6 +36,7 @@ Macros
 .. doxygendefine:: ESP_BLE_ADV_FLAG_DMT_HOST_SPT
 .. doxygendefine:: ESP_BLE_ADV_FLAG_NON_LIMIT_DISC
 .. doxygendefine:: ESP_BLE_ADV_DATA_LEN_MAX
+.. doxygendefine:: ESP_BLE_SCAN_RSP_DATA_LEN_MAX
 
 Type Definitions
 ^^^^^^^^^^^^^^^^
@@ -86,6 +87,12 @@ Structures
 .. doxygenstruct:: esp_ble_gap_cb_param_t::ble_scan_result_evt_param
     :members:
 
+.. doxygenstruct:: esp_ble_gap_cb_param_t::ble_adv_data_raw_cmpl_evt_param
+    :members:
+
+.. doxygenstruct:: esp_ble_gap_cb_param_t::ble_scan_rsp_data_raw_cmpl_evt_param
+    :members:
+
 
 Functions
 ^^^^^^^^^
@@ -103,4 +110,6 @@ Functions
 .. doxygenfunction:: esp_ble_gap_config_local_privacy
 .. doxygenfunction:: esp_ble_gap_set_device_name
 .. doxygenfunction:: esp_ble_resolve_adv_data
+.. doxygenfunction:: esp_ble_gap_config_adv_data_raw
+.. doxygenfunction:: esp_ble_gap_config_scan_rsp_data_raw
 

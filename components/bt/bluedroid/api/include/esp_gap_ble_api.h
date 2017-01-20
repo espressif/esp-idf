@@ -44,6 +44,8 @@ typedef enum {
     ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT,             /*!< When scan response data set complete, the event comes */
     ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT,                /*!< When scan parameters set complete, the event comes */
     ESP_GAP_BLE_SCAN_RESULT_EVT,                            /*!< When one scan result ready, the event comes each time */
+    ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT,              /*!< When raw advertising data set complete, the event comes */
+    ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT,         /*!< When raw advertising data set complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
 /// Advertising data maximum length
@@ -270,6 +272,18 @@ typedef union {
         int flag;                                   /*!< Advertising data flag bit */
         int num_resps;                              /*!< Scan result number */
     } scan_rst;                                     /*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
+    /**
+     * @brief ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT
+     */
+    struct ble_adv_data_raw_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the set raw advertising data operation success status */
+    } adv_data_raw_cmpl;                            /*!< Event parameter of ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT */ 
+    /**
+     * @brief ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT
+     */
+    struct ble_scan_rsp_data_raw_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the set raw advertising data operation success status */
+    } scan_rsp_data_raw_cmpl;                       /*!< Event parameter of ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -447,6 +461,33 @@ esp_err_t esp_ble_gap_set_device_name(const char *name);
  *
  */
 uint8_t *esp_ble_resolve_adv_data(uint8_t *adv_data, uint8_t type, uint8_t *length);
+
+/**
+ * @brief           This function is called to set raw advertising data. User need to fill
+ *                  ADV data by self.
+ *
+ * @param[in]       raw_data : raw advertising data
+ * @param[in]       raw_data_len : raw advertising data length , less than 31 bytes
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_config_adv_data_raw(uint8_t *raw_data, uint32_t raw_data_len);
+
+/**
+ * @brief           This function is called to set raw scan response data. User need to fill
+ *                  scan response data by self.
+ *
+ * @param[in]       raw_data : raw scan response data
+ * @param[in]       raw_data_len : raw scan response data length , less than 31 bytes
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_data_len);
 
 #ifdef __cplusplus
 }
