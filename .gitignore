@@ -27,6 +27,7 @@ examples/*/*/build
 docs/_build/
 docs/doxygen-warning-log.txt
 docs/xml/
+docs/man/
 
 # Unit test app files
 tools/unit-test-app/sdkconfig

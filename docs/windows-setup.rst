@@ -23,7 +23,7 @@ As an alternative to getting a pre-prepared environment, you can set up the envi
 
 * Run through the installer steps, and accept the "Run MSYS2 now" option at the end. A window will open with a MSYS2 terminal.
 
-* The ESP-IDF repository on github contains a script in the tools directory titled ``windows_install_prerequisites.sh``. If you haven't downloaded the ESP-IDF yet, that's OK - you can just `download that one file in Raw format from here <https://github.com/espressif/esp-idf/raw/master/tools/windows/windows_install_prerequisites.sh>`_. Save it somewhere on your computer.
+* The ESP-IDF repository on github contains a script in the tools directory titled ``windows_install_prerequisites.sh``. If you haven't downloaded the ESP-IDF yet, that's OK - you can just download that one file in Raw format from here: :idf_raw:`tools/windows/windows_install_prerequisites.sh`. Save it somewhere on your computer.
 
 * Type the path to the shell script into the MSYS2 terminal window. You can type it as a normal Windows path, but use forward-slashes instead of back-slashes. ie: ``C:/Users/myuser/Downloads/windows_install_prerequisites.sh``. You can read the script beforehand to check what it does.
 

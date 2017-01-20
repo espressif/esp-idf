@@ -4,7 +4,7 @@ OTA
 Application Example
 -------------------
  
-Demonstration of OTA (over the air) firmware update workflow: `examples/system/ota <https://github.com/espressif/esp-idf/tree/master/examples/system/ota>`_.
+Demonstration of OTA (over the air) firmware update workflow: :example:`system/ota`.
 
 API Reference
 -------------
@@ -12,7 +12,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `app_update/include/esp_ota_ops.h <https://github.com/espressif/esp-idf/blob/master/components/app_update/include/esp_ota_ops.h>`_
+  * :component_file:`app_update/include/esp_ota_ops.h`
 
 Macros
 ^^^^^^

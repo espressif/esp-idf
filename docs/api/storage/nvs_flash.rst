@@ -3,9 +3,9 @@
 Application Example
 -------------------
 
-Two examples are provided in ESP-IDF `examples/storage <https://github.com/espressif/esp-idf/tree/master/examples/storage>`_ directory:
+Two examples are provided in :example:`storage` directory of ESP-IDF examples:
 
-`nvs_rw_value <https://github.com/espressif/esp-idf/blob/master/examples/storage/nvs_rw_value>`_
+:example:`storage/nvs_rw_value`
 
   Demonstrates how to read and write a single integer value using NVS.
 
@@ -13,7 +13,7 @@ Two examples are provided in ESP-IDF `examples/storage <https://github.com/espre
 
   Example also shows how to check if read / write operation was successful, or certain value is not initialized in NVS. Diagnostic is provided in plain text to help track program flow and capture any issues on the way.
 
-`nvs_rw_blob <https://github.com/espressif/esp-idf/blob/master/examples/storage/nvs_rw_blob>`_
+:example:`storage/nvs_rw_blob`
 
   Demonstrates how to read and write a single integer value and a blob (binary large object) using NVS to preserve them between ESP32 module restarts.
 
@@ -29,8 +29,8 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `nvs_flash/include/nvs_flash.h <https://github.com/espressif/esp-idf/blob/master/components/nvs_flash/include/nvs_flash.h>`_
-  * `nvs_flash/include/nvs.h <https://github.com/espressif/esp-idf/blob/master/components/nvs_flash/include/nvs.h>`_
+  * :component_file:`nvs_flash/include/nvs_flash.h`
+  * :component_file:`nvs_flash/include/nvs.h`
 
 Macros
 ^^^^^^

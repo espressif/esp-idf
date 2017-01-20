@@ -10,7 +10,7 @@ This driver configures the channels of the sigma-delta module.
 Application Example
 -------------------
 
-Sigma-delta Modulation example: `examples/peripherals/sigmadelta <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/sigmadelta>`_.
+Sigma-delta Modulation example: :example:`peripherals/sigmadelta`.
 
 API Reference
 -------------
@@ -18,7 +18,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `driver/sigmadelta.h <https://github.com/espressif/esp-idf/blob/master/components/driver/include/driver/sigmadelta.h>`_
+  * :component_file:`driver/include/driver/sigmadelta.h`
 
 
 Macros

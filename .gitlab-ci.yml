@@ -125,6 +125,7 @@ build_docs:
     - doxygen
     # If not building master branch, and there are Doxygen warnings, print them and bail out
     - test "${CI_BUILD_REF_NAME}" = "master" || test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
+    - make gh-linkcheck
     - make html
   artifacts:
     paths:
@@ -246,6 +247,26 @@ deploy_docs:
     - tar czvf $GIT_VER.tar.gz $GIT_VER
     - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH
     - ssh $DOCS_SERVER -x "cd $DOCS_PATH && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+
+check_doc_links:
+  stage: test
+  image: espressif/esp32-ci-env
+  tags:
+    - check_doc_links
+  only:
+    # can only be triggered
+    - triggers
+  script:
+    # must be triggered with CHECK_LINKS=Yes, otherwise exit without test
+    - test $CHECK_LINKS = "Yes" || exit 0
+    # can only run on master branch (otherwise the commit is not on Github yet)
+    - test "${CI_BUILD_REF_NAME}" = "master" || exit 0
+    - cd docs
+    - make linkcheck
+  artifacts:
+    paths:
+      - docs/_build/linkcheck
+    expire_in: 1 mos
 
 
 # AUTO GENERATED PART START, DO NOT MODIFY CONTENT BELOW

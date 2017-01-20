@@ -37,8 +37,8 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `esp_heap_alloc_caps.h <https://github.com/espressif/esp-idf/blob/master/components/esp32/include/esp_heap_alloc_caps.h>`_
-  * `heap_regions.h <https://github.com/espressif/esp-idf/blob/master/components/freertos/include/freertos/heap_regions.h>`_
+  * :component_file:`esp32/include/esp_heap_alloc_caps.h`
+  * :component_file:`freertos/include/freertos/heap_regions.h`
 
 
 Macros

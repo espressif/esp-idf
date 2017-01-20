@@ -15,4 +15,4 @@ Peripherals API
    Remote Control <rmt>
 
 
-Example code for this API section is provided in `examples/peripherals <https://github.com/espressif/esp-idf/tree/master/examples/peripherals>`_ directory of ESP-IDF repository.
+Example code for this API section is provided in :example:`peripherals` directory of ESP-IDF examples.

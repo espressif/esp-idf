@@ -11,11 +11,11 @@ Overview
 Application Example
 -------------------
 
-Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that contains the following examples:
+Check :example:`bluetooth` folder in ESP-IDF examples, which contains the following examples:
 
-`gatt_server <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_server>`_, `gatt_client <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_client>`_ 
+:example:`bluetooth/gatt_server`, :example:`bluetooth/gatt_client` 
 
-  The two demos use different gap api, such like advertising, scan, set device name and others.
+  The two demos use different GAP APIs, such like advertising, scan, set device name and others.
 
 API Reference
 -------------
@@ -23,7 +23,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * `bt/bluedroid/api/include/esp_gap_ble_api.h <https://github.com/espressif/esp-idf/blob/master/components/bt/bluedroid/api/include/esp_gap_ble_api.h>`_
+  * :component_file:`bt/bluedroid/api/include/esp_gap_ble_api.h`
 
 
 Macros

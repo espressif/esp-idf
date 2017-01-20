@@ -21,7 +21,7 @@ Before sending us a Pull Request, please consider this list of points:
 
 * Is the code adequately commented for people to understand how it is structured?
 
-* Is there documentation or examples that go with code contributions? `There are additional suggestions for writing good examples in the examples README <https://github.com/espressif/esp-idf/tree/master/examples>`_.
+* Is there documentation or examples that go with code contributions? There are additional suggestions for writing good examples in :idf:`examples` readme.
 
 * Are comments and documentation written in clear English, with no spelling or grammar errors?
 
