@@ -163,7 +163,7 @@ test_report:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
     REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
   artifacts:
     when: always
     paths:
@@ -184,7 +184,8 @@ test_report:
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
     # generate report
-    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || FAIL=True
+    - TEST_RESULT=Pass
+    - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || TEST_RESULT=Fail
     # commit to CI-test-result project
     - git clone $GITLAB_SSH_SERVER/qa/CI-test-result.git
     - rm -rf CI-test-result/RawData/$RESULT_PATH
@@ -328,7 +329,7 @@ deploy_docs:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     APP_NAME: "ut"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
   
   dependencies:
     - build_esp_idf_tests
