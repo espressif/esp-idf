@@ -31,6 +31,8 @@ extern "C" {
 
 #define SPI_FLASH_SEC_SIZE  4096    /**< SPI Flash sector size */
 
+#define SPI_FLASH_MMU_PAGE_SIZE 0x10000 /**< Flash cache MMU mapping page size */
+
 /**
  * @brief  Initialize SPI flash access driver
  *
@@ -92,14 +94,18 @@ esp_err_t spi_flash_write(size_t dest_addr, const void *src, size_t size);
  *
  * @note Flash encryption must be enabled for this function to work.
  *
- * @note Address in flash, dest, has to be 32-byte aligned.
+ * @note Flash encryption must be enabled when calling this function.
+ * If flash encryption is disabled, the function returns
+ * ESP_ERR_INVALID_STATE.  Use esp_flash_encryption_enabled()
+ * function to determine if flash encryption is enabled.
  *
- * @note If source address is in DROM, this function will return
- *       ESP_ERR_INVALID_ARG.
+ * @note Both dest_addr and size must be multiples of 16 bytes. For
+ * absolute best performance, both dest_addr and size arguments should
+ * be multiples of 32 bytes.
  *
- * @param  dest_addr destination address in Flash. Must be a multiple of 32 bytes.
+ * @param  dest_addr destination address in Flash. Must be a multiple of 16 bytes.
  * @param  src       pointer to the source buffer.
- * @param  size      length of data, in bytes. Must be a multiple of 32 bytes.
+ * @param  size      length of data, in bytes. Must be a multiple of 16 bytes.
  *
  * @return esp_err_t
  */
@@ -115,6 +121,23 @@ esp_err_t spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t si
  * @return esp_err_t
  */
 esp_err_t spi_flash_read(size_t src_addr, void *dest, size_t size);
+
+
+/**
+ * @brief  Read data from Encrypted Flash.
+ *
+ * If flash encryption is enabled, this function will transparently decrypt data as it is read.
+ * If flash encryption is not enabled, this function behaves the same as spi_flash_read().
+ *
+ * See esp_flash_encryption_enabled() for a function to check if flash encryption is enabled.
+ *
+ * @param  src   source address of the data in Flash.
+ * @param  dest  pointer to the destination buffer
+ * @param  size  length of data
+ *
+ * @return esp_err_t
+ */
+esp_err_t spi_flash_read_encrypted(size_t src, void *dest, size_t size);
 
 /**
  * @brief Enumeration which specifies memory space requested in an mmap call
@@ -140,7 +163,8 @@ typedef uint32_t spi_flash_mmap_handle_t;
  * page allocation, use spi_flash_mmap_dump function.
  *
  * @param src_addr  Physical address in flash where requested region starts.
- *                  This address *must* be aligned to 64kB boundary.
+ *                  This address *must* be aligned to 64kB boundary
+ *                  (SPI_FLASH_MMU_PAGE_SIZE).
  * @param size  Size of region which has to be mapped. This size will be rounded
  *              up to a 64k boundary.
  * @param memory  Memory space where the region should be mapped

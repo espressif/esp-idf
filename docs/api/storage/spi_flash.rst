@@ -1,12 +1,5 @@
 .. include:: ../../../components/spi_flash/README.rst
 
-Application Example
--------------------
-
-`Instructions`_
-
-.. _Instructions: ../template.html
-
 API Reference
 -------------
 
@@ -15,6 +8,7 @@ Header Files
 
   * :component_file:`spi_flash/include/esp_spi_flash.h`
   * :component_file:`spi_flash/include/esp_partition.h`
+  * :component_file:`esp32/include/esp_flash_encrypt.h`
 
 Macros
 ^^^^^^
@@ -23,6 +17,7 @@ Macros
 .. doxygendefine:: ESP_ERR_FLASH_OP_FAIL
 .. doxygendefine:: ESP_ERR_FLASH_OP_TIMEOUT
 .. doxygendefine:: SPI_FLASH_SEC_SIZE
+.. doxygendefine:: SPI_FLASH_MMU_PAGE_SIZE
 .. doxygendefine:: ESP_PARTITION_SUBTYPE_OTA
 
 Type Definitions
@@ -51,7 +46,9 @@ Functions
 .. doxygenfunction:: spi_flash_erase_sector
 .. doxygenfunction:: spi_flash_erase_range
 .. doxygenfunction:: spi_flash_write
+.. doxygenfunction:: spi_flash_write_encrypted
 .. doxygenfunction:: spi_flash_read
+.. doxygenfunction:: spi_flash_read_encrypted
 .. doxygenfunction:: spi_flash_mmap
 .. doxygenfunction:: spi_flash_munmap
 .. doxygenfunction:: spi_flash_mmap_dump
@@ -64,4 +61,5 @@ Functions
 .. doxygenfunction:: esp_partition_write
 .. doxygenfunction:: esp_partition_erase_range
 .. doxygenfunction:: esp_partition_mmap
+.. doxygenfunction:: esp_flash_encryption_enabled
 
