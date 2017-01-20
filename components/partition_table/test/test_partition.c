@@ -26,7 +26,7 @@ TEST_CASE("Can read partition table", "[partition]")
     printf("%d\n", __builtin_clz(count));
 }
 
-TEST_CASE("Can write, read, mmap partition", "[partition]")
+TEST_CASE("Can write, read, mmap partition", "[partition][ignore]")
 {
     const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, NULL);
     TEST_ASSERT_NOT_NULL(p);

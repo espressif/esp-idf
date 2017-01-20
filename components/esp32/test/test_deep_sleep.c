@@ -4,7 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-TEST_CASE("esp_deepsleep works", "[deepsleep]")
+TEST_CASE("esp_deepsleep works", "[deepsleep][ignore]")
 {
     esp_deep_sleep(2000000);
 }
@@ -25,20 +25,20 @@ static void do_deep_sleep_from_app_cpu()
     }
 }
 
-TEST_CASE("wake up using timer", "[deepsleep]")
+TEST_CASE("wake up using timer", "[deepsleep][ignore]")
 {
     esp_deep_sleep_enable_timer_wakeup(2000000);
     esp_deep_sleep_start();
 }
 
-TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep]")
+TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][ignore]")
 {
     esp_deep_sleep_enable_timer_wakeup(2000000);
     do_deep_sleep_from_app_cpu();
 }
 
 
-TEST_CASE("wake up using ext0 (13 high)", "[deepsleep]")
+TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")
 {
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
     ESP_ERROR_CHECK(gpio_pullup_dis(GPIO_NUM_13));
@@ -47,7 +47,7 @@ TEST_CASE("wake up using ext0 (13 high)", "[deepsleep]")
     esp_deep_sleep_start();
 }
 
-TEST_CASE("wake up using ext0 (13 low)", "[deepsleep]")
+TEST_CASE("wake up using ext0 (13 low)", "[deepsleep][ignore]")
 {
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
     ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));
@@ -56,7 +56,7 @@ TEST_CASE("wake up using ext0 (13 low)", "[deepsleep]")
     esp_deep_sleep_start();
 }
 
-TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 high)", "[deepsleep]")
+TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 high)", "[deepsleep][ignore]")
 {
     // This test needs external pulldown
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
@@ -64,7 +64,7 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 high)", "[deepsleep]")
     esp_deep_sleep_start();
 }
 
-TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 low)", "[deepsleep]")
+TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 low)", "[deepsleep][ignore]")
 {
     // This test needs external pullup
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
@@ -72,7 +72,7 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 low)", "[deepsleep]")
     esp_deep_sleep_start();
 }
 
-TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 high)", "[deepsleep]")
+TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 high)", "[deepsleep][ignore]")
 {
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
     ESP_ERROR_CHECK(gpio_pullup_dis(GPIO_NUM_13));
@@ -82,7 +82,7 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 high)", "[deepsleep]")
     esp_deep_sleep_start();
 }
 
-TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 low)", "[deepsleep]")
+TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 low)", "[deepsleep][ignore]")
 {
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
     ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));

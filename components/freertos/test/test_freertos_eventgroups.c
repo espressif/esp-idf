@@ -38,7 +38,7 @@ static void task_event_group_call_response(void *param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("FreeRTOS Event Groups", "[freertos]")
+TEST_CASE("FreeRTOS Event Groups", "[freertos][ignore]")
 {
     eg = xEventGroupCreate();
 
@@ -89,7 +89,7 @@ static void task_test_sync(void *param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("FreeRTOS Event Group Sync", "[freertos]")
+TEST_CASE("FreeRTOS Event Group Sync", "[freertos][ignore]")
 {
     eg = xEventGroupCreate();
 

@@ -11,11 +11,11 @@ Use should concern these things:
 Application Example
 -------------------
 
-Check `/examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
+Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that contains the following example:
 
-`bluetooth/blufi <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/blufi/main/>`_ 
+`blufi <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/blufi>`_ 
 
-This is a BLUFI demo. This demo can set ESP32's wifi to softap/station/softap&station mode and config wifi connections.
+  This is a BLUFI demo. This demo can set ESP32's wifi to softap/station/softap&station mode and config wifi connections.
 
 
 API Reference

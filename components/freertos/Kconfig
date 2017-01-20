@@ -30,11 +30,6 @@ config FREERTOS_CORETIMER_1
     help
         Select this to use timer 1
 
-config FREERTOS_CORETIMER_2
-    bool "Timer 2 (int 16, level 5)"
-    help
-        Select this to use timer 2
-
 endchoice
 
 config FREERTOS_HZ

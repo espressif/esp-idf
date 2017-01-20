@@ -6,18 +6,16 @@ Overview
 
 `Instructions`_
 
+.. _Instructions: ../template.html
+
 Application Example
 -------------------
 
-Check `/examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf/>`_ repository, that contains the following example:
+Check `/examples/bluetooth <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>`_ folder of `espressif/esp-idf <https://github.com/espressif/esp-idf>`_ repository, that contains the following example:
 
-`15_gattc_demo <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_client/main/gattc_demo.c>`_ 
+`gatt_client <https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/gatt_client>`_ 
 
-This is a gatt client demo. This demo can scan devices, connect to the gatt server and discover the service.
-
-`Instructions`_
-
-.. _Instructions: ../template.html
+  This is a gatt client demo. This demo can scan devices, connect to the gatt server and discover the service.
 
 
 API Reference

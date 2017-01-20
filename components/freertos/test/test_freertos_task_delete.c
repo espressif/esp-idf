@@ -13,7 +13,7 @@ static void task_delete_self(void *param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("FreeRTOS Delete Tasks", "[freertos]")
+TEST_CASE("FreeRTOS Delete Tasks", "[freertos][ignore]")
 {
     xTaskCreatePinnedToCore(task_delete_self, "tsk_self_a", 4096, NULL, configMAX_PRIORITIES - 1, NULL, 0);
     xTaskCreatePinnedToCore(task_delete_self, "tsk_self_a", 4096, NULL, configMAX_PRIORITIES - 1, NULL, 0);

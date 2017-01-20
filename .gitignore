@@ -15,10 +15,13 @@ GPATH
 .#*
 \#*#
 
+# eclipse setting
+.settings
+
 # Example project files
-examples/*/sdkconfig
-examples/*/sdkconfig.old
-examples/*/build
+examples/*/*/sdkconfig
+examples/*/*/sdkconfig.old
+examples/*/*/build
 
 #Doc build artifacts
 docs/_build/

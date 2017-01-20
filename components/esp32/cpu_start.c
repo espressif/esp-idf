@@ -175,7 +175,9 @@ void start_cpu0_default(void)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
+#ifndef CONFIG_CONSOLE_UART_NONE
     uart_div_modify(CONFIG_CONSOLE_UART_NUM, (APB_CLK_FREQ << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+#endif
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif

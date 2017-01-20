@@ -28,7 +28,7 @@ Contents:
    :maxdepth: 1
 
    General Notes <general-notes>
-   Build System <build_system>
+   Build System <build-system>
    Debugging <openocd>
    ESP32 Core Dump <core_dump>
    Partition Tables <partition-tables>
@@ -36,6 +36,7 @@ Contents:
    Secure Boot <security/secure-boot>
    Deep Sleep Wake Stubs <deep-sleep-stub>
    ULP Coprocessor <ulp>
+   Unit Testing <unit-tests>
 
 .. toctree::
    :caption: API Reference
@@ -78,4 +79,3 @@ Indices
 =======
 
 * :ref:`genindex`
-
