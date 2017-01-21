@@ -502,6 +502,7 @@ static void IRAM_ATTR spi_intr(void *arg)
         //We have a transaction. Send it.
         spi_device_t *dev=host->device[i];
         host->cur_trans=trans;
+        host->cur_cs=i;
         //We should be done with the transmission.
         assert(host->hw->cmd.usr == 0);
         
@@ -510,7 +511,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             trans->rxlength=trans->length;
         }
         
-        //Reconfigure accoding to device settings, but only if we change CSses.
+        //Reconfigure according to device settings, but only if we change CSses.
         if (i!=prevCs) {
             //Assumes a hardcoded 80MHz Fapb for now. ToDo: figure out something better once we have
             //clock scaling working.
