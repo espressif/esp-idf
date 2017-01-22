@@ -206,6 +206,11 @@
 
 #define DHCP_MAXRTX                     0
 
+/**
+ * DHCP_DOES_ARP_CHECK==1: Do an ARP check on the offered address.
+ */
+#define DHCP_DOES_ARP_CHECK             CONFIG_LWIP_DHCP_DOES_ARP_CHECK
+
 /*
    ------------------------------------
    ---------- AUTOIP options ----------

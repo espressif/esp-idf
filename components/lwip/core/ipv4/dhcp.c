@@ -1029,7 +1029,12 @@ dhcp_discover(struct netif *netif)
     autoip_start(netif);
   }
 #endif /* LWIP_DHCP_AUTOIP_COOP */
-  msecs = (dhcp->tries < 6 ? 1 << dhcp->tries : 60) * 1000;
+
+  /* Since for embedded devices it's not that hard to miss a discover packet, so lower
+   * the discover retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,8,15,15)s.
+   * Original msecs = (dhcp->tries < 6 ? 1 << dhcp->tries : 60) * 1000;
+   */
+  msecs = (dhcp->tries < 6 ? 1 << dhcp->tries : 60) * 250;
   dhcp->request_timeout = (msecs + DHCP_FINE_TIMER_MSECS - 1) / DHCP_FINE_TIMER_MSECS;
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_discover(): set request timeout %"U16_F" msecs\n", msecs));
   return result;
