@@ -51,7 +51,6 @@
 tBTA_SYS_CB bta_sys_cb;
 #endif
 
-fixed_queue_t *btu_bta_alarm_queue;
 static hash_map_t *bta_alarm_hash_map;
 static const size_t BTA_ALARM_HASH_MAP_SIZE = 17;
 static pthread_mutex_t bta_alarm_lock;
@@ -62,8 +61,6 @@ static pthread_mutex_t bta_alarm_lock;
 UINT8 appl_trace_level = BT_TRACE_LEVEL_WARNING; //APPL_INITIAL_TRACE_LEVEL;
 UINT8 btif_trace_level = BT_TRACE_LEVEL_WARNING;
 
-// Communication queue between btu_task and bta.
-extern fixed_queue_t *btu_bta_msg_queue;
 void btu_bta_alarm_ready(fixed_queue_t *queue);
 
 static const tBTA_SYS_REG bta_sys_hw_reg = {
@@ -175,10 +172,6 @@ void bta_sys_init(void)
 
     bta_alarm_hash_map = hash_map_new(BTA_ALARM_HASH_MAP_SIZE,
                                       hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
-    btu_bta_alarm_queue = fixed_queue_new(SIZE_MAX);
-
-    fixed_queue_register_dequeue(btu_bta_alarm_queue,
-                                 btu_bta_alarm_ready);
 
     appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
 
@@ -196,7 +189,6 @@ void bta_sys_init(void)
 
 void bta_sys_free(void)
 {
-    fixed_queue_free(btu_bta_alarm_queue, NULL);
     hash_map_free(bta_alarm_hash_map);
     pthread_mutex_destroy(&bta_alarm_lock);
 }
@@ -575,10 +567,8 @@ void bta_sys_sendmsg(void *p_msg)
     // there is a procedure in progress that can schedule a task via this
     // message queue. This causes |btu_bta_msg_queue| to get cleaned up before
     // it gets used here; hence we check for NULL before using it.
-    if (btu_bta_msg_queue) {
-        fixed_queue_enqueue(btu_bta_msg_queue, p_msg);
-        //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-        btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
+    if (btu_task_post(SIG_BTU_BTA_MSG, p_msg,  TASK_POST_BLOCKING) != TASK_POST_SUCCESS) {
+        GKI_freebuf(p_msg);
     }
 }
 
@@ -597,9 +587,7 @@ void bta_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    fixed_queue_enqueue(btu_bta_alarm_queue, p_tle);
-
-    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_BTA_ALARM, p_tle, TASK_POST_BLOCKING);
 }
 
 void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)

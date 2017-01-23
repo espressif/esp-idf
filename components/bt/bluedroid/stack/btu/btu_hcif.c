@@ -47,7 +47,6 @@
 
 // TODO(zachoverflow): remove this horrible hack
 #include "btu.h"
-extern fixed_queue_t *btu_hci_msg_queue;
 
 extern void btm_process_cancel_complete(UINT8 status, UINT8 mode);
 extern void btm_ble_test_command_complete(UINT8 *p);
@@ -1009,9 +1008,7 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
 
     event->event = BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK;
 
-    fixed_queue_enqueue(btu_hci_msg_queue, event);
-    // ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_HCI_MSG, event, TASK_POST_BLOCKING);
 }
 
 
@@ -1209,9 +1206,7 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR *command, void *c
 
     event->event = BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK;
 
-    fixed_queue_enqueue(btu_hci_msg_queue, event);
-    //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
+    btu_task_post(SIG_BTU_HCI_MSG, event, TASK_POST_BLOCKING);
 }
 
 /*******************************************************************************
