@@ -39,16 +39,17 @@ void unity_flush()
 
 void unity_testcase_register(struct test_desc_t* desc)
 {
-    if (!s_unity_tests_first) 
+    if (!s_unity_tests_first)
     {
         s_unity_tests_first = desc;
+        s_unity_tests_last = desc;
     }
-    else 
+    else
     {
-        s_unity_tests_last->next = desc;
+        struct test_desc_t* temp = s_unity_tests_first;
+        s_unity_tests_first = desc;
+        s_unity_tests_first->next = temp;
     }
-    s_unity_tests_last = desc;
-    desc->next = NULL;
 }
 
 static void unity_run_single_test(const struct test_desc_t* test)
