@@ -88,7 +88,7 @@ static esp_ble_adv_data_t test_adv_data = {
     .service_data_len = 0,
     .p_service_data = NULL,
     .service_uuid_len = 32,
-    .p_service_uuid = test_service_uuid128,
+    .p_service_uuid = NULL, //test_service_uuid128,
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
 #endif /* CONFIG_SET_RAW_ADV_DATA */
