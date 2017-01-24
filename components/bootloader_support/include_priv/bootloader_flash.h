@@ -100,4 +100,6 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
  */
 esp_err_t bootloader_flash_erase_sector(size_t sector);
 
+esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size);
+
 #endif

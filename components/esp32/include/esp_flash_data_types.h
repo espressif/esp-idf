@@ -24,15 +24,6 @@ extern "C"
 #define ESP_PARTITION_TABLE_ADDR 0x8000
 #define ESP_PARTITION_MAGIC 0x50AA
 
-/* OTA selection structure (two copies in the OTA data partition.)
-   Size of 32 bytes is friendly to flash encryption */
-typedef struct {
-    uint32_t ota_seq;
-    uint8_t  seq_label[24];
-    uint32_t crc; /* CRC32 of ota_seq field only */
-} esp_ota_select_entry_t;
-
-
 typedef struct {
     uint32_t offset;
     uint32_t size;
@@ -46,13 +37,13 @@ typedef struct {
 	uint8_t  type;
     uint8_t  subtype;
     esp_partition_pos_t pos;
-	uint8_t  label[16];
+    uint8_t  label[16];
     uint32_t flags;
 } esp_partition_info_t;
 
 #define PART_TYPE_APP 0x00
 #define PART_SUBTYPE_FACTORY  0x00
-#define PART_SUBTYPE_OTA_FLAG 0x10
+#define PART_SUBTYPE_OTA_MIN 0x10
 #define PART_SUBTYPE_OTA_MASK 0x0f
 #define PART_SUBTYPE_TEST     0x20
 
@@ -60,6 +51,7 @@ typedef struct {
 #define PART_SUBTYPE_DATA_OTA 0x00
 #define PART_SUBTYPE_DATA_RF  0x01
 #define PART_SUBTYPE_DATA_WIFI 0x02
+#define PART_SUBTYPE_DATA_SPIFFS 0x82
 
 #define PART_TYPE_END 0xff
 #define PART_SUBTYPE_END 0xff

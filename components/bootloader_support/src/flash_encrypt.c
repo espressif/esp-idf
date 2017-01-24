@@ -285,8 +285,8 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
         } else {
             should_encrypt = false;
         }
-    } else if (partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_OTA) {
-        /* check if we have ota data partition and the partition should be encrypted unconditionally */
+    } else if (partition->type == PART_TYPE_DATA &&
+               partition->subtype == PART_SUBTYPE_DATA_OTA) {
         should_encrypt = true;
     }
 
@@ -295,7 +295,8 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
     }
     else {
         /* should_encrypt */
-        ESP_LOGI(TAG, "Encrypting partition %d at offset 0x%x...", index, partition->pos.offset);
+        ESP_LOGI(TAG, "Encrypting partition %s (%d) at offset 0x%x...",
+                 partition->label, index, partition->pos.offset);
 
         err = esp_flash_encrypt_region(partition->pos.offset, partition->pos.size);
         if (err != ESP_OK) {

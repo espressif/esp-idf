@@ -287,6 +287,16 @@ esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, 
                              const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
 
+/**
+ * @brief Get the partition that the device booted from.
+ *
+ * Returns partition that was used to boot the device.
+ *
+ * @return pointer to esp_partition_t structure, or NULL if no partition is found.
+ *         This pointer is valid for the lifetime of the application.
+ */
+const esp_partition_t *esp_partition_get_boot_partition(void);
+
 #ifdef __cplusplus
 }
 #endif

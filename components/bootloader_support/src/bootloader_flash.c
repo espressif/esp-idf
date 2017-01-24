@@ -70,6 +70,10 @@ esp_err_t bootloader_flash_erase_sector(size_t sector)
     return spi_flash_erase_sector(sector);
 }
 
+esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size) {
+    return spi_flash_erase_range(start_addr, size);
+}
+
 #else
 /* Bootloader version, uses ROM functions only */
 #include <soc/dport_reg.h>
@@ -241,6 +245,11 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
 esp_err_t bootloader_flash_erase_sector(size_t sector)
 {
     return spi_to_esp_err(esp_rom_spiflash_erase_sector(sector));
+}
+
+esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
+{
+    return spi_to_esp_err(esp_rom_spiflash_erase_area(start_addr, size));
 }
 
 #endif
