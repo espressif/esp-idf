@@ -69,6 +69,13 @@ esp_err_t esp_deep_sleep_enable_ulp_wakeup();
 esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us);
 
 /**
+ * @brief Enable wakeup by touch sensor
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_deep_sleep_enable_touchpad_wakeup();
+
+/**
  * @brief Enable wakeup using a pin
  *
  * This function uses external wakeup feature of RTC_IO peripheral.

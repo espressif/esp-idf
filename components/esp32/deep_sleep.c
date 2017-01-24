@@ -177,6 +177,12 @@ esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us)
     return ESP_OK;
 }
 
+esp_err_t esp_deep_sleep_enable_touchpad_wakeup()
+{
+    s_config.wakeup_triggers |= TOUCH_TRIG_EN;
+    return ESP_OK;
+}
+
 esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 {
     if (level < 0 || level > 1) {
