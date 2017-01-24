@@ -64,7 +64,7 @@ typedef struct {
 #define PART_TYPE_END 0xff
 #define PART_SUBTYPE_END 0xff
 
-#define PART_FLAG_ENCRYPTED (1<<0)
+#define PART_FLAG_ENCRYPTED (1<<1)
 
 #ifdef __cplusplus
 }
