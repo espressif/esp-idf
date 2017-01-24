@@ -463,7 +463,7 @@ int SSL_write(SSL *ssl, const void *buffer, int len)
         else
             bytes = send_bytes;
 
-        ret = SSL_METHOD_CALL(send, ssl, buffer, bytes);
+        ret = SSL_METHOD_CALL(send, ssl, pbuf, bytes);
         if (ret > 0) {
             pbuf += ret;
             send_bytes -= ret;
