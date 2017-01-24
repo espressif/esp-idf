@@ -1332,7 +1332,13 @@ static tGATT_STATUS gatts_send_app_read_request(tGATT_TCB *p_tcb, UINT8 op_code,
 
         gatt_sr_send_req_callback(conn_id,
                                   trans_id, GATTS_REQ_TYPE_READ, &sr_data);
-        return (tGATT_STATUS) GATT_PENDING;
+        
+        if (need_rsp) {
+            return (tGATT_STATUS) GATT_PENDING;
+        }
+        else{
+            return (tGATT_STATUS) GATT_STACK_RSP;
+        }
     } else {
         return (tGATT_STATUS) GATT_BUSY;    /* max pending command, application error */
     }
