@@ -53,9 +53,10 @@ typedef enum {
 
 /**
  * @brief Enable wakeup by ULP coprocessor
+ * @note ulp wakeup conflicts with touch wakeup.
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled.
+ *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled or if wakeup triggers conflict
  */
 esp_err_t esp_deep_sleep_enable_ulp_wakeup();
 
@@ -70,8 +71,10 @@ esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us);
 
 /**
  * @brief Enable wakeup by touch sensor
+ * @note Can not set touch wake-up if ulp or ext0 wake-up is enabled.
  * @return
  *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
 esp_err_t esp_deep_sleep_enable_touchpad_wakeup();
 
@@ -87,6 +90,7 @@ esp_err_t esp_deep_sleep_enable_touchpad_wakeup();
  * @note This function does not modify pin configuration. The pin is
  *       configured in esp_deep_sleep_start, immediately before
  *       entering deep sleep.
+ * @note This ext0 wakeup conflicts with touch wakeup.
  *
  * @param gpio_num  GPIO number used as wakeup source. Only GPIOs which are have RTC
  *             functionality can be used: 0,2,4,12-15,25-27,32-39.
@@ -95,6 +99,7 @@ esp_err_t esp_deep_sleep_enable_touchpad_wakeup();
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if the selected GPIO is not an RTC GPIO,
  *        or the mode is invalid
+ *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
 esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
 

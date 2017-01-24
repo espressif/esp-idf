@@ -26,6 +26,15 @@ The following function can be used to enable deep sleep wakeup using a timer.
 
 .. doxygenfunction:: esp_deep_sleep_enable_timer_wakeup
 
+Touch pad
+^^^^^
+
+RTC IO module contains logic to trigger wakeup when a touch sensor interrupt occurs. You need to configure the touch pad interrupt before the chip starts deep sleep.
+
+Note that, for now, this wakeup requires RTC peripherals to be powered off during deep sleep.
+
+.. doxygenfunction:: esp_deep_sleep_enable_touchpad_wakeup
+
 
 External wakeup (ext0)
 ^^^^^^^^^^^^^^^^^^^^^^
