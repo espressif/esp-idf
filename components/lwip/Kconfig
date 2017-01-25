@@ -82,6 +82,13 @@ config TCP_SYNMAXRTX
     help
         Set maximum number of retransmissions of SYN segments.
 
+config LWIP_DHCP_DOES_ARP_CHECK
+    bool "Enable an ARP check on the offered address"
+    default 1
+    help
+        Enabling this option allows check if the offered IP address is not already
+        in use by another host on the network.
+
 endmenu
 
 
