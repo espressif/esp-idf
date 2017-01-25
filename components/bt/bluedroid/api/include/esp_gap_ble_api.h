@@ -95,7 +95,7 @@ typedef enum {
 typedef enum {
     ADV_CHNL_37     = 0x01,
     ADV_CHNL_38     = 0x02,
-    ADV_CHNL_39     = 0x03,
+    ADV_CHNL_39     = 0x04,
     ADV_CHNL_ALL    = 0x07,
 } esp_ble_adv_channel_t;
 
