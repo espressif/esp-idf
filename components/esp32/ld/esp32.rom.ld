@@ -1677,21 +1677,11 @@ replace them and this way we can re-use the fixed RAM addresses these routines n
 */
 /*
 PROVIDE ( gpio_init = 0x40009c20 );
-PROVIDE ( gpio_input_get = 0x40009b88 );
-PROVIDE ( gpio_input_get_high = 0x40009b9c );
 PROVIDE ( gpio_intr_ack = 0x40009dd4 );
 PROVIDE ( gpio_intr_ack_high = 0x40009e1c );
 PROVIDE ( gpio_intr_handler_register = 0x40009e6c );
 PROVIDE ( gpio_intr_pending = 0x40009cec );
 PROVIDE ( gpio_intr_pending_high = 0x40009cf8 );
-PROVIDE ( gpio_matrix_in = 0x40009edc );
-PROVIDE ( gpio_matrix_out = 0x40009f0c );
-PROVIDE ( gpio_pad_hold = 0x4000a734 );
-PROVIDE ( gpio_pad_pulldown = 0x4000a348 );
-PROVIDE ( gpio_pad_pullup = 0x4000a22c );
-PROVIDE ( gpio_pad_select_gpio = 0x40009fdc );
-PROVIDE ( gpio_pad_set_drv = 0x4000a11c );
-PROVIDE ( gpio_pad_unhold = 0x4000a484 );
 PROVIDE ( gpio_pending_mask = 0x3ffe0038 );
 PROVIDE ( gpio_pending_mask_high = 0x3ffe0044 );
 PROVIDE ( gpio_pin_intr_state_set = 0x40009d04 );
@@ -1703,6 +1693,16 @@ PROVIDE ( gpio_register_set = 0x40009bbc );
 /* These are still part of that driver, but have been verified not to use static RAM, so they can be used. */
 PROVIDE ( gpio_output_set = 0x40009b24 );
 PROVIDE ( gpio_output_set_high = 0x40009b5c );
+PROVIDE ( gpio_input_get = 0x40009b88 );
+PROVIDE ( gpio_input_get_high = 0x40009b9c );
+PROVIDE ( gpio_matrix_in = 0x40009edc );
+PROVIDE ( gpio_matrix_out = 0x40009f0c );
+PROVIDE ( gpio_pad_select_gpio = 0x40009fdc );
+PROVIDE ( gpio_pad_set_drv = 0x4000a11c );
+PROVIDE ( gpio_pad_pulldown = 0x4000a348 );
+PROVIDE ( gpio_pad_pullup = 0x4000a22c );
+PROVIDE ( gpio_pad_hold = 0x4000a734 );
+PROVIDE ( gpio_pad_unhold = 0x4000a484 );
 
 /*
 These functions are part of the non-os kernel (etsc).
