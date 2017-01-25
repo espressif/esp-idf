@@ -59,6 +59,7 @@
 #include "esp_coexist.h"
 #include "esp_panic.h"
 #include "esp_core_dump.h"
+#include "esp_app_trace.h"
 #include "trax.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -222,6 +223,12 @@ void start_cpu0_default(void)
     _GLOBAL_REENT->_stdout = (FILE*) &__sf_fake_stdout;
     _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
 #endif
+#if CONFIG_ESP32_APPTRACE_ENABLE
+    esp_err_t err = esp_apptrace_init();
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to init apptrace module on CPU0 (%d)!", err);
+    }
+#endif
     do_global_ctors();
 #if CONFIG_INT_WDT
     esp_int_wdt_init();
@@ -252,6 +259,12 @@ void start_cpu1_default(void)
 {
 #if CONFIG_ESP32_TRAX_TWOBANKS
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
+#endif
+#if CONFIG_ESP32_APPTRACE_ENABLE
+    esp_err_t err = esp_apptrace_init();
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to init apptrace module on CPU1 (%d)!", err);
+    }
 #endif
     // Wait for FreeRTOS initialization to finish on PRO CPU
     while (port_xSchedulerRunning[0] == 0) {
