@@ -38,7 +38,7 @@
 
 #include "tcpip_adapter.h"
 
-#include "heap_alloc_caps.h"
+#include "esp_heap_alloc_caps.h"
 #include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
@@ -106,8 +106,6 @@ void IRAM_ATTR call_start_cpu0()
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
 
-    // Initialize heap allocator
-    heap_alloc_caps_init();
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
@@ -131,6 +129,15 @@ void IRAM_ATTR call_start_cpu0()
     ESP_EARLY_LOGI(TAG, "Single core mode");
     CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
 #endif
+
+    /* Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
+       If the heap allocator is initialized first, it will put free memory linked list items into
+       memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
+       corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
+       works around this problem. */
+    heap_alloc_caps_init();
+
+
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
     start_cpu0();
 }
@@ -250,6 +257,8 @@ static void main_task(void* args)
     // Now that the application is about to start, disable boot watchdogs
     REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
     REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
+    //Enable allocation in region where the startup stacks were located.
+    heap_alloc_enable_nonos_stack_tag();
     app_main();
     vTaskDelete(NULL);
 }
