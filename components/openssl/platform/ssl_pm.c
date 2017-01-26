@@ -238,10 +238,12 @@ static int ssl_pm_reload_crt(SSL *ssl)
         ret = 0;
     }
 
-    if (ret)
-        return -1;
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_conf_own_cert() return -0x%x", -ret);
+        ret = -1;
+    }
 
-    return 0;
+    return ret;
 }
 
 /*
@@ -252,8 +254,7 @@ static int mbedtls_handshake( mbedtls_ssl_context *ssl )
 {
     int ret = 0;
 
-    while (ssl->state != MBEDTLS_SSL_HANDSHAKE_OVER)
-    {
+    while (ssl->state != MBEDTLS_SSL_HANDSHAKE_OVER) {
         ret = mbedtls_ssl_handshake_step(ssl);
 
         SSL_DEBUG(SSL_PLATFORM_DEBUG_LEVEL, "ssl ret %d state %d", ret, ssl->state);
@@ -267,32 +268,31 @@ static int mbedtls_handshake( mbedtls_ssl_context *ssl )
 
 int ssl_pm_handshake(SSL *ssl)
 {
-    int ret, mbed_ret;
+    int ret;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
-    mbed_ret = ssl_pm_reload_crt(ssl);
-    if (mbed_ret)
+    ret = ssl_pm_reload_crt(ssl);
+    if (ret)
         return 0;
 
     ssl_speed_up_enter();
 
-    while((mbed_ret = mbedtls_handshake(&ssl_pm->ssl)) != 0) {
-        if (mbed_ret != MBEDTLS_ERR_SSL_WANT_READ && mbed_ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+    while((ret = mbedtls_handshake(&ssl_pm->ssl)) != 0) {
+        if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
            break;
         }
     }
 
     ssl_speed_up_exit();
 
-    if (!mbed_ret) {
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_handshake() return -0x%x", -ret);
+        ret = 0;
+    } else {
         struct x509_pm *x509_pm = (struct x509_pm *)ssl->session->peer->x509_pm;
 
-        ret = 1;
-
         x509_pm->ex_crt = (mbedtls_x509_crt *)mbedtls_ssl_get_peer_cert(&ssl_pm->ssl);
-    } else {
-        ret = 0;
-        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_handshake() return -0x%x", -mbed_ret);
+        ret = 1;
     }
 
     return ret;
@@ -300,19 +300,18 @@ int ssl_pm_handshake(SSL *ssl)
 
 int ssl_pm_shutdown(SSL *ssl)
 {
-    int ret, mbed_ret;
+    int ret;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
-    mbed_ret = mbedtls_ssl_close_notify(&ssl_pm->ssl);
-    if (!mbed_ret) {
+    ret = mbedtls_ssl_close_notify(&ssl_pm->ssl);
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_close_notify() return -0x%x", -ret);
+        ret = -1;
+    } else {
         struct x509_pm *x509_pm = (struct x509_pm *)ssl->session->peer->x509_pm;
-
-        ret = 0;
 
         x509_pm->ex_crt = NULL;
     }
-    else
-        ret = -1;
 
     return ret;
 }
@@ -325,32 +324,28 @@ int ssl_pm_clear(SSL *ssl)
 
 int ssl_pm_read(SSL *ssl, void *buffer, int len)
 {
-    int ret, mbed_ret;
+    int ret;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
-    mbed_ret = mbedtls_ssl_read(&ssl_pm->ssl, buffer, len);
-    if (mbed_ret < 0)
+    ret = mbedtls_ssl_read(&ssl_pm->ssl, buffer, len);
+    if (ret < 0) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_read() return -0x%x", -ret);
         ret = -1;
-    else if (mbed_ret == 0)
-        ret = 0;
-    else
-        ret = mbed_ret;
+    }
 
     return ret;
 }
 
 int ssl_pm_send(SSL *ssl, const void *buffer, int len)
 {
-    int ret, mbed_ret;
+    int ret;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
-    mbed_ret = mbedtls_ssl_write(&ssl_pm->ssl, buffer, len);
-    if (mbed_ret < 0)
+    ret = mbedtls_ssl_write(&ssl_pm->ssl, buffer, len);
+    if (ret < 0) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_write() return -0x%x", -ret);
         ret = -1;
-    else if (mbed_ret == 0)
-        ret = 0;
-    else
-        ret = mbed_ret;
+    }
 
     return ret;
 }
@@ -656,11 +651,11 @@ long ssl_pm_get_verify_result(const SSL *ssl)
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
     ret = mbedtls_ssl_get_verify_result(&ssl_pm->ssl);
-
-    if (!ret)
-        verify_result = X509_V_OK;
-    else
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_get_verify_result() return -0x%x", -ret);
         verify_result = X509_V_ERR_UNSPECIFIED;
+    } else
+        verify_result = X509_V_OK;
 
     return verify_result;
 }
