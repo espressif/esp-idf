@@ -124,7 +124,7 @@ static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t o
 
             esp_err_t err = esp_ota_write( out_handle, (const void *)ota_write_data, i_write_len);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=%x", err);
+                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%x", err);
                 return false;
             } else {
                 ESP_LOGI(TAG, "esp_ota_write header OK");
@@ -275,7 +275,7 @@ void main_task(void *pvParameter)
             memcpy(ota_write_data, text, buff_len);
             err = esp_ota_write( out_handle, (const void *)ota_write_data, buff_len);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=%x", err);
+                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%x", err);
                 task_fatal_error();
             }
             binary_file_length += buff_len;

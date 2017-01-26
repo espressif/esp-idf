@@ -27,6 +27,7 @@
 #include "esp_spi_flash.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
+#include "esp_flash_encrypt.h"
 #include "sdkconfig.h"
 
 #include "esp_ota_ops.h"
@@ -44,6 +45,10 @@ typedef struct ota_ops_entry_ {
     esp_partition_t part;
     uint32_t erased_size;
     uint32_t wrote_size;
+#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
+    uint8_t partial_bytes;
+    uint8_t partial_data[16];
+#endif
     LIST_ENTRY(ota_ops_entry_) entries;
 } ota_ops_entry_t;
 
@@ -126,7 +131,41 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
                 return ESP_ERR_OTA_VALIDATE_FAILED;
             }
 
-            ret = esp_partition_write(&it->part, it->wrote_size, data, size);
+#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
+            if (esp_flash_encryption_enabled()) {
+                /* Can only write 16 byte blocks to flash, so need to cache anything else */
+                size_t copy_len;
+
+                /* check if we have partially written data from earlier */
+                if (it->partial_bytes != 0) {
+                    copy_len = OTA_MIN(16 - it->partial_bytes, size);
+                    memcpy(it->partial_data + it->partial_bytes, data_bytes, copy_len);
+                    it->partial_bytes += copy_len;
+                    if (it->partial_bytes != 16) {
+                        return ESP_OK; /* nothing to write yet, just filling buffer */
+                    }
+                    /* write 16 byte to partition */
+                    ret = esp_partition_write(&it->part, it->wrote_size, it->partial_data, 16);
+                    if (ret != ESP_OK) {
+                        return ret;
+                    }
+                    it->partial_bytes = 0;
+                    memset(it->partial_data, 0xFF, 16);
+                    it->wrote_size += 16;
+                    data_bytes += copy_len;
+                    size -= copy_len;
+                }
+
+                /* check if we need to save trailing data that we're about to write */
+                it->partial_bytes = size % 16;
+                if (it->partial_bytes != 0) {
+                    size -= it->partial_bytes;
+                    memcpy(it->partial_data, data_bytes + size, it->partial_bytes);
+                }
+            }
+#endif
+
+            ret = esp_partition_write(&it->part, it->wrote_size, data_bytes, size);
             if(ret == ESP_OK){
                 it->wrote_size += size;
             }
@@ -143,12 +182,26 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
 {
     ota_ops_entry_t *it;
     size_t image_size;
+    esp_err_t __attribute__((unused)) ret;
+
     for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
         if (it->handle == handle) {
             // an ota handle need to be ended after erased and wrote data in it
             if ((it->erased_size == 0) || (it->wrote_size == 0)) {
                 return ESP_ERR_INVALID_ARG;
             }
+
+#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
+            if (it->partial_bytes > 0 && esp_flash_encryption_enabled()) {
+                /* Write out last 16 bytes, if necessary */
+                ret = esp_partition_write(&it->part, it->wrote_size, it->partial_data, 16);
+                if (ret != ESP_OK) {
+                    return ret;
+                }
+                it->wrote_size += 16;
+                it->partial_bytes = 0;
+            }
+#endif
 
             if (esp_image_basic_verify(it->part.address, true, &image_size) != ESP_OK) {
                 return ESP_ERR_OTA_VALIDATE_FAILED;
@@ -279,11 +332,9 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
             }
             return rewrite_ota_seq((SUB_TYPE_ID(subtype) + 1) % ota_app_count + i * ota_app_count, 0, find_partition);
 
-        } else if (s_ota_select[0].ota_seq == 0xFFFFFFFF && s_ota_select[1].ota_seq == 0xFFFFFFFF) {
-            return rewrite_ota_seq(SUB_TYPE_ID(subtype) + 1, 0, find_partition);
-
         } else {
-            return ESP_ERR_OTA_SELECT_INFO_INVALID;
+            /* Both OTA slots are invalid, probably because unformatted... */
+            return rewrite_ota_seq(SUB_TYPE_ID(subtype) + 1, 0, find_partition);
         }
 
     } else {
@@ -385,7 +436,7 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
                                         ESP_PARTITION_SUBTYPE_APP_OTA_MIN + (s_ota_select[1].ota_seq - 1) % ota_app_count, NULL);
 
     } else {
-        ESP_LOGE(TAG, "ota data invalid, no current app. Falling back to factory");
+        ESP_LOGE(TAG, "ota data invalid, no current app. Assuming factory");
         return esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
     }
 }
