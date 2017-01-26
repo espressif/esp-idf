@@ -79,6 +79,15 @@ build_ssc:
     - chmod +x gen_misc_ng.sh
     - ./gen_misc_ng.sh
 
+build_at:
+  <<: *build_template
+  script:
+    - git clone $GITLAB_SSH_SERVER/application/esp-at.git
+    - cd esp-at
+    - git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-at default branch..."
+    - make defconfig
+    - make
+
 build_esp_idf_tests:
   <<: *build_template
   artifacts:
