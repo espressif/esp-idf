@@ -16,13 +16,18 @@ ESP-IDF provides special script `espcoredump.py` to help users to retrieve and a
 Configuration
 -------------
 
-Currently there are three options related to core dump generation which user can choose in configuration menu of the application (`make menuconfig`):
+There are a number of core dump related configuration options which user can choose in configuration menu of the application (`make menuconfig`).
+
+1. Core dump data destination (`Components -> ESP32-specific config -> Core dump destination`):
 
 * Disable core dump generation
 * Save core dump to flash
 * Print core dump to UART
 
-These options can be choosen in Components -> ESP32-specific config -> Core dump destination menu item.
+2. Logging level of core dump module (`Components -> ESP32-specific config -> Core dump module logging level`). Value is a number from 0 (no output) to 5 (most verbose).
+
+3. Delay before core dump will be printed to UART (`Components -> ESP32-specific config -> Core dump print to UART delay`). Value is in ms.
+
 
 Save core dump to flash
 -----------------------
@@ -49,8 +54,8 @@ Print core dump to UART
 -----------------------
 
 When this option is selected base64-encoded core dumps are printed on UART upon system panic. In this case user should save core dump text body to some file manually and 
-then run the following command: `espcoredump.py -p </path/to/serial/port> info_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>`
-or `espcoredump.py -p </path/to/serial/port> dbg_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>`
+then run the following command: `espcoredump.py info_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>`
+or `espcoredump.py dbg_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>`
 
 Base64-encoded body of core dump will be between the following header and footer::
 
