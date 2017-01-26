@@ -106,6 +106,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
 
 esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
 {
+    const uint8_t *data_bytes = (const uint8_t *)data;
     esp_err_t ret;
     ota_ops_entry_t *it;
 
@@ -119,6 +120,12 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
         if (it->handle == handle) {
             // must erase the partition before writing to it
             assert(it->erased_size > 0 && "must erase the partition before writing to it");
+
+            if(it->wrote_size == 0 && size > 0 && data_bytes[0] != 0xE9) {
+                ESP_LOGE(TAG, "OTA image has invalid magic byte (expected 0xE9, saw 0x%02x", data_bytes[0]);
+                return ESP_ERR_OTA_VALIDATE_FAILED;
+            }
+
             ret = esp_partition_write(&it->part, it->wrote_size, data, size);
             if(ret == ESP_OK){
                 it->wrote_size += size;
@@ -135,6 +142,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
 esp_err_t esp_ota_end(esp_ota_handle_t handle)
 {
     ota_ops_entry_t *it;
+    size_t image_size;
     for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
         if (it->handle == handle) {
             // an ota handle need to be ended after erased and wrote data in it
@@ -142,12 +150,12 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
                 return ESP_ERR_INVALID_ARG;
             }
 
-#ifdef CONFIG_SECUREBOOTLOADER
-            esp_err_t ret;
-            size_t image_size;
-            if (esp_image_basic_verify(it->part.address, &image_size) != ESP_OK) {
+            if (esp_image_basic_verify(it->part.address, true, &image_size) != ESP_OK) {
                 return ESP_ERR_OTA_VALIDATE_FAILED;
             }
+
+#ifdef CONFIG_SECURE_BOOT_ENABLED
+            esp_err_t ret;
             ret = esp_secure_boot_verify_signature(it->part.address, image_size);
             if (ret != ESP_OK) {
                 return ESP_ERR_OTA_VALIDATE_FAILED;
@@ -285,17 +293,18 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
 
 esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
 {
+    size_t image_size;
     const esp_partition_t *find_partition = NULL;
     if (partition == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-#ifdef CONFIG_SECUREBOOTLOADER
-    size_t image_size;
-    if (esp_image_basic_verify(partition->address, &image_size) != ESP_OK) {
+    if (esp_image_basic_verify(partition->address, true, &image_size) != ESP_OK) {
         return ESP_ERR_OTA_VALIDATE_FAILED;
     }
-    ret = esp_secure_boot_verify_signature(partition->address, image_size);
+
+#ifdef CONFIG_SECURE_BOOT_ENABLED
+    esp_err_t ret = esp_secure_boot_verify_signature(partition->address, image_size);
     if (ret != ESP_OK) {
         return ESP_ERR_OTA_VALIDATE_FAILED;
     }
