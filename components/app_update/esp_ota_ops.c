@@ -349,33 +349,34 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
     }
     ota_app_count = get_ota_partition_count();
 
-    ESP_LOGD(TAG, "found ota bin max = %d", ota_app_count);
+    ESP_LOGD(TAG, "found ota app max = %d", ota_app_count);
+
     if (s_ota_select[0].ota_seq == 0xFFFFFFFF && s_ota_select[1].ota_seq == 0xFFFFFFFF) {
-        ESP_LOGD(TAG, "finding factory bin......");
+        ESP_LOGD(TAG, "finding factory app......");
 
         return esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
     } else if (ota_select_valid(&s_ota_select[0]) && ota_select_valid(&s_ota_select[1])) {
-        ESP_LOGD(TAG, "finding ota_%d bin......", \
+        ESP_LOGD(TAG, "finding ota_%d app......", \
                  ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ((OTA_MAX(s_ota_select[0].ota_seq, s_ota_select[1].ota_seq) - 1) % ota_app_count));
 
         return esp_partition_find_first(ESP_PARTITION_TYPE_APP, \
                                         ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ((OTA_MAX(s_ota_select[0].ota_seq, s_ota_select[1].ota_seq) - 1) % ota_app_count), NULL);
     } else if (ota_select_valid(&s_ota_select[0])) {
-        ESP_LOGD(TAG, "finding ota_%d bin......", \
+        ESP_LOGD(TAG, "finding ota_%d app......", \
                  ESP_PARTITION_SUBTYPE_APP_OTA_MIN + (s_ota_select[0].ota_seq - 1) % ota_app_count);
 
         return esp_partition_find_first(ESP_PARTITION_TYPE_APP, \
                                         ESP_PARTITION_SUBTYPE_APP_OTA_MIN + (s_ota_select[0].ota_seq - 1) % ota_app_count, NULL);
 
     } else if (ota_select_valid(&s_ota_select[1])) {
-        ESP_LOGD(TAG, "finding ota_%d bin......", \
+        ESP_LOGD(TAG, "finding ota_%d app......", \
                  ESP_PARTITION_SUBTYPE_APP_OTA_MIN + (s_ota_select[1].ota_seq - 1) % ota_app_count);
 
         return esp_partition_find_first(ESP_PARTITION_TYPE_APP, \
                                         ESP_PARTITION_SUBTYPE_APP_OTA_MIN + (s_ota_select[1].ota_seq - 1) % ota_app_count, NULL);
 
     } else {
-        ESP_LOGE(TAG, "not found current bin");
-        return NULL;
+        ESP_LOGE(TAG, "ota data invalid, no current app. Falling back to factory");
+        return esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
     }
 }
