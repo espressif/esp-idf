@@ -121,6 +121,45 @@ TEST_CASE("ulp wakeup test", "[ulp][ignore]")
     esp_deep_sleep_start();
 }
 
+TEST_CASE("ulp can write and read peripheral registers", "[ulp]")
+{
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+    REG_WRITE(RTC_CNTL_STORE1_REG, 0x89abcdef);
+
+    const ulp_insn_t program[] = {
+            I_MOVI(R1, 64),
+            I_RD_REG(RTC_CNTL_STORE1_REG, 0, 15),
+            I_ST(R0, R1, 0),
+            I_RD_REG(RTC_CNTL_STORE1_REG, 4, 11),
+            I_ST(R0, R1, 1),
+            I_RD_REG(RTC_CNTL_STORE1_REG, 16, 31),
+            I_ST(R0, R1, 2),
+            I_RD_REG(RTC_CNTL_STORE1_REG, 20, 27),
+            I_ST(R0, R1, 3),
+            I_WR_REG(RTC_CNTL_STORE0_REG, 0, 7, 0x89),
+            I_WR_REG(RTC_CNTL_STORE0_REG, 8, 15, 0xab),
+            I_WR_REG(RTC_CNTL_STORE0_REG, 16, 23, 0xcd),
+            I_WR_REG(RTC_CNTL_STORE0_REG, 24, 31, 0xef),
+            I_LD(R0, R1, 4),
+            I_ADDI(R0, R0, 1),
+            I_ST(R0, R1, 4),
+            I_END(0)
+    };
+    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
+    TEST_ESP_OK(ulp_run(0));
+    vTaskDelay(100/portTICK_PERIOD_MS);
+
+    TEST_ASSERT_EQUAL_HEX32(0xefcdab89, REG_READ(RTC_CNTL_STORE0_REG));
+    TEST_ASSERT_EQUAL_HEX16(0xcdef, RTC_SLOW_MEM[64] & 0xffff);
+    TEST_ASSERT_EQUAL_HEX16(0xde, RTC_SLOW_MEM[65] & 0xffff);
+    TEST_ASSERT_EQUAL_HEX16(0x89ab, RTC_SLOW_MEM[66] & 0xffff);
+    TEST_ASSERT_EQUAL_HEX16(0x9a, RTC_SLOW_MEM[67] & 0xffff);
+    TEST_ASSERT_EQUAL_HEX32(1 | (15 << 21) | (1 << 16), RTC_SLOW_MEM[68]);
+}
+
 TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");

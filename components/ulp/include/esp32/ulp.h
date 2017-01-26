@@ -307,7 +307,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * This instruction can access RTC_CNTL_, RTC_IO_, and SENS_ peripheral registers.
  */
 #define I_WR_REG(reg, low_bit, high_bit, val) {.wr_reg = {\
-    .addr = reg & 0xff, \
+    .addr = (reg & 0xff) / sizeof(uint32_t), \
     .periph_sel = SOC_REG_TO_ULP_PERIPH_SEL(reg), \
     .data = val, \
     .low = low_bit, \
@@ -320,8 +320,8 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * R0 = reg[high_bit : low_bit]
  * This instruction can access RTC_CNTL_, RTC_IO_, and SENS_ peripheral registers.
  */
-#define I_RD_REG(reg, low_bit, high_bit, val) {.wr_reg = {\
-    .addr = reg & 0xff, \
+#define I_RD_REG(reg, low_bit, high_bit) {.rd_reg = {\
+    .addr = (reg & 0xff) / sizeof(uint32_t), \
     .periph_sel = SOC_REG_TO_ULP_PERIPH_SEL(reg), \
     .unused = 0, \
     .low = low_bit, \
