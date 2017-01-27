@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "driver/gpio.h"
+#include "driver/touch_pad.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +50,18 @@ typedef enum {
     ESP_PD_OPTION_ON,       //!< Keep power domain enabled during deep sleep
     ESP_PD_OPTION_AUTO      //!< Keep power domain enabled in deep sleep, if it is needed by one of the wakeup options. Otherwise power it down.
 } esp_deep_sleep_pd_option_t;
+
+/**
+ * @brief Deep sleep wakeup cause
+ */
+typedef enum {
+    ESP_DEEP_SLEEP_WAKEUP_UNDEFINED,    //! Wakeup was not caused by deep sleep
+    ESP_DEEP_SLEEP_WAKEUP_EXT0,         //! Wakeup caused by external signal using RTC_IO
+    ESP_DEEP_SLEEP_WAKEUP_EXT1,         //! Wakeup caused by external signal using RTC_CNTL
+    ESP_DEEP_SLEEP_WAKEUP_TIMER,        //! Wakeup caused by timer
+    ESP_DEEP_SLEEP_WAKEUP_TOUCHPAD,     //! Wakeup caused by touchpad
+    ESP_DEEP_SLEEP_WAKEUP_ULP,          //! Wakeup caused by ULP program
+} esp_deep_sleep_wakeup_cause_t;
 
 
 /**
@@ -85,6 +98,15 @@ esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us);
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
 esp_err_t esp_deep_sleep_enable_touchpad_wakeup();
+
+/**
+ * @brief Get the touch pad which caused wakeup
+ *
+ * If wakeup was caused by another source, this function will return TOUCH_PAD_MAX;
+ *
+ * @return touch pad which caused wakeup
+ */
+touch_pad_t esp_deep_sleep_get_touchpad_wakeup_status();
 
 /**
  * @brief Enable wakeup using a pin
@@ -209,6 +231,15 @@ void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
  * @param time_in_us  deep-sleep time, unit: microsecond
  */
 void system_deep_sleep(uint64_t time_in_us) __attribute__((noreturn, deprecated));
+
+
+/**
+ * @brief Get the source which caused deep sleep wakeup
+ *
+ * @return wakeup cause, or ESP_DEEP_SLEEP_WAKEUP_UNDEFINED if reset reason is other than deep sleep reset.
+ */
+esp_deep_sleep_wakeup_cause_t esp_deep_sleep_get_wakeup_cause();
+
 
 /**
  * @brief Default stub to run on wake from deep sleep.
