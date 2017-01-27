@@ -31,7 +31,7 @@ Touch pad
 
 RTC IO module contains logic to trigger wakeup when a touch sensor interrupt occurs. You need to configure the touch pad interrupt before the chip starts deep sleep.
 
-Note that, for now, this wakeup requires RTC peripherals to be powered off during deep sleep.
+Revisions 0 and 1 of the ESP32 only support this wakeup mode when RTC peripherals are not forced to be powered on (i.e. ESP_PD_DOMAIN_RTC_PERIPH should be set to ESP_PD_OPTION_AUTO).
 
 .. doxygenfunction:: esp_deep_sleep_enable_touchpad_wakeup
 
@@ -43,6 +43,8 @@ RTC IO module contains logic to trigger wakeup when one of RTC GPIOs is set to a
 
 Because RTC IO module is enabled in this mode, internal pullup or pulldown resistors can also be used. They need to be configured by the application using ``rtc_gpio_pullup_en`` and ``rtc_gpio_pulldown_en`` functions, before calling ``esp_deep_sleep_start``.
 
+In revisions 0 and 1 of the ESP32, this wakeup source is incompatible with ULP and touch wakeup sources.
+
 .. doxygenfunction:: esp_deep_sleep_enable_ext0_wakeup
 
 External wakeup (ext1)
@@ -50,8 +52,8 @@ External wakeup (ext1)
 
 RTC controller contains logic to trigger wakeup using multiple RTC GPIOs. One of the two logic functions can be used to trigger wakeup:
 
-    - wake up if any of the selected pins is low
-    - wake up if all the selected pins are high
+    - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
+    - wake up if all the selected pins are low (``ESP_EXT1_WAKEUP_ALL_LOW``)
 
 This wakeup source is implemented by the RTC controller. As such, RTC peripherals and RTC memories can be powered off in this mode. However, if RTC peripherals are powered down, internal pullup and pulldown resistors will be disabled. To use internal pullup or pulldown resistors, request RTC peripherals power domain to be kept on during deep sleep, and configure pullup/pulldown resistors using ``rtc_gpio_`` functions, before entering deep sleep::
 
@@ -69,7 +71,9 @@ The following function can be used to enable this wakeup mode:
 ULP coprocessor wakeup
 ^^^^^^^^^^^^^^^^^^^^^^
 
-ULP coprocessor can run while the chip is in deep sleep, and may be used to poll sensors, monitor ADC or touch sensor values, and wake up the chip when a specific event is detected. ULP coprocessor is part of RTC peripherals power domain, and it runs the program stored in RTC slow memeory. Therefore RTC peripherals and RTC slow memory will be powered on during deep sleep if this wakeup mode is requested.
+ULP coprocessor can run while the chip is in deep sleep, and may be used to poll sensors, monitor ADC or touch sensor values, and wake up the chip when a specific event is detected. ULP coprocessor is part of RTC peripherals power domain, and it runs the program stored in RTC slow memeory. RTC slow memory will be powered on during deep sleep if this wakeup mode is requested. RTC peripherals will be automatically powered on before ULP coprocessor starts running the program; once the program stops running, RTC peripherals are automatically powered down again.
+
+Revisions 0 and 1 of the ESP32 only support this wakeup mode when RTC peripherals are not forced to be powered on (i.e. ESP_PD_DOMAIN_RTC_PERIPH should be set to ESP_PD_OPTION_AUTO).
 
 The following function can be used to enable this wakeup mode:
 
@@ -80,7 +84,7 @@ Power-down of RTC peripherals and memories
 
 By default, ``esp_deep_sleep_start`` function will power down all RTC power domains which are not needed by the enabled wakeup sources. To override this behaviour, the following function is provided:
 
-Note: on the first revision of the ESP32, RTC fast memory will always be kept enabled in deep sleep, so that the deep sleep stub can run after reset. This can be overriden, if the application doesn't need clean reset behaviour after deep sleep.
+Note: in revision 0 of the ESP32, RTC fast memory will always be kept enabled in deep sleep, so that the deep sleep stub can run after reset. This can be overriden, if the application doesn't need clean reset behaviour after deep sleep.
 
 If some variables in the program are placed into RTC slow memory (for example, using ``RTC_DATA_ATTR`` attribute), RTC slow memory will be kept powered on by default. This can be overriden using ``esp_deep_sleep_pd_config`` function, if desired.
 

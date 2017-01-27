@@ -163,8 +163,8 @@ void system_deep_sleep(uint64_t) __attribute__((alias("esp_deep_sleep")));
 esp_err_t esp_deep_sleep_enable_ulp_wakeup()
 {
 #ifdef CONFIG_ULP_COPROC_ENABLED
-    if(s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
-        ESP_LOGE(TAG, "Conflict wake-up triggers: touch");
+    if(s_config.wakeup_triggers & RTC_EXT_EVENT0_TRIG_EN) {
+        ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
     }
     s_config.wakeup_triggers |= RTC_SAR_TRIG_EN;
@@ -183,8 +183,8 @@ esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us)
 
 esp_err_t esp_deep_sleep_enable_touchpad_wakeup()
 {
-    if (s_config.wakeup_triggers & (RTC_SAR_TRIG_EN | RTC_EXT_EVENT0_TRIG_EN)) {
-        ESP_LOGE(TAG, "Conflict wake-up triggers: ulp/ext0");
+    if (s_config.wakeup_triggers & (RTC_EXT_EVENT0_TRIG_EN)) {
+        ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
     }
     s_config.wakeup_triggers |= RTC_TOUCH_TRIG_EN;
@@ -199,8 +199,8 @@ esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
     if (!RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
-        ESP_LOGE(TAG, "Conflict wake-up triggers: touch");
+    if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_SAR_TRIG_EN)) {
+        ESP_LOGE(TAG, "Conflicting wake-up triggers: touch / ULP");
         return ESP_ERR_INVALID_STATE;
     }
     s_config.ext0_rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
@@ -351,15 +351,14 @@ static uint32_t get_power_down_flags()
         s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] = ESP_PD_OPTION_ON;
     }
 
-    // RTC_PERIPH is needed for EXT0 wakeup and for ULP.
-    // If RTC_PERIPH is auto, and both EXT0 and ULP aren't enabled,
-    // power down RTC_PERIPH.
+    // RTC_PERIPH is needed for EXT0 wakeup.
+    // If RTC_PERIPH is auto, and EXT0 isn't enabled, power down RTC_PERIPH.
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
-        if (s_config.wakeup_triggers &
-                (RTC_SAR_TRIG_EN | RTC_EXT_EVENT0_TRIG_EN)) {
+        if (s_config.wakeup_triggers & RTC_EXT_EVENT0_TRIG_EN) {
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
-        } else if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
-            // We have to set power down PERIPH so as to enable wake-up from touch sensor.
+        } else if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_SAR_TRIG_EN)) {
+            // In both rev. 0 and rev. 1 of ESP32, forcing power up of RTC_PERIPH
+            // prevents ULP timer and touch FSMs from working correctly.
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_OFF;
         }
     }
