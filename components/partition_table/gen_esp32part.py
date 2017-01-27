@@ -144,7 +144,7 @@ class PartitionDefinition(object):
     # dictionary maps flag name (as used in CSV flags list, property name)
     # to bit set in flags words in binary format
     FLAGS = {
-        "encrypted" : 1
+        "encrypted" : 0
     }
 
     # add subtypes for the 16 OTA slot values ("ota_XXX, etc.")
