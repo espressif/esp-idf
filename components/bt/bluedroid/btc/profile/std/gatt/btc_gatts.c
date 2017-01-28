@@ -190,7 +190,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
             uuid = (gatts_attr_db[i].att_desc.uuid_p[1] << 8) + (gatts_attr_db[i].att_desc.uuid_p[0]);
         }
         else{
-            uuid = 0;
+            continue;
         }
         future_p = future_new();
         if (future_p == NULL) {
