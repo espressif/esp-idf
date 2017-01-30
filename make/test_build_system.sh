@@ -148,9 +148,9 @@ function run_tests()
     make
     assert_rebuilt ${APP_BINS} ${BOOTLOADER_BINS}
 
-    print_status "Touching peripherals ld file should only re-link app"
+    print_status "Touching app-only ld file should only re-link app"
     take_build_snapshot
-    touch ${IDF_PATH}/components/esp32/ld/esp32.peripherals.ld
+    touch ${IDF_PATH}/components/esp32/ld/esp32.common.ld
     make
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS}

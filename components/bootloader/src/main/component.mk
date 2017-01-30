@@ -8,6 +8,7 @@
 LINKER_SCRIPTS := \
 	esp32.bootloader.ld \
 	$(IDF_PATH)/components/esp32/ld/esp32.rom.ld \
+	$(IDF_PATH)/components/esp32/ld/esp32.peripherals.ld \
 	esp32.bootloader.rom.ld
 
 COMPONENT_ADD_LDFLAGS := -L $(COMPONENT_PATH) -lmain $(addprefix -T ,$(LINKER_SCRIPTS))
