@@ -250,11 +250,9 @@ static void file_cleanup(vfs_fat_ctx_t* ctx, int fd)
 }
 
 #define vfs_fat_fix_path(ctx, path) \
-    if (((vfs_fat_ctx_t*)ctx)->fat_drive[0]) { \
-        char buf_ ## path[strlen(path)+strlen(((vfs_fat_ctx_t*)ctx)->fat_drive)+1]; \
-        sprintf(buf_ ## path,"%s%s", ((vfs_fat_ctx_t*)ctx)->fat_drive, path); \
-        path = (const char *)buf_ ## path; \
-    }
+    char buf_ ## path[strlen(path)+strlen(((vfs_fat_ctx_t*)ctx)->fat_drive)+1]; \
+    sprintf(buf_ ## path,"%s%s", ((vfs_fat_ctx_t*)ctx)->fat_drive, path); \
+    path = (const char *)buf_ ## path;
 
 static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
 {
