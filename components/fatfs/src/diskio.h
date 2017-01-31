@@ -76,6 +76,13 @@ void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl);
  */
 void ff_diskio_register_sdmmc(BYTE pdrv, sdmmc_card_t* card);
 
+/**
+ * Get next available drive number
+ *
+ * @return 0xFF on fail, else the drive number
+ */
+BYTE ff_disk_getpdrv();
+
 /* Disk Status Bits (DSTATUS) */
 
 #define STA_NOINIT		0x01	/* Drive not initialized */

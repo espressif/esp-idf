@@ -22,6 +22,7 @@
 
 static const char* TAG = "vfs_fat_sdmmc";
 static sdmmc_card_t* s_card = NULL;
+static uint8_t s_pdrv = 0;
 
 esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     const sdmmc_host_t* host_config,
@@ -56,11 +57,18 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     }
 
     // connect SDMMC driver to FATFS
-    ff_diskio_register_sdmmc(0, s_card);
+    BYTE pdrv = ff_disk_getpdrv();
+    if (pdrv == 0xFF) {
+        ESP_LOGD(TAG, "the maximum count of volumes is already mounted");
+        goto fail;
+    }
+    ff_diskio_register_sdmmc(pdrv, s_card);
+    s_pdrv = pdrv;
+    char drv[3] = {(char)('0' + pdrv), ':', 0};
 
     // connect FATFS to VFS
     FATFS* fs;
-    err = esp_vfs_fat_register(base_path, "", mount_config->max_files, &fs);
+    err = esp_vfs_fat_register(base_path, drv, mount_config->max_files, &fs);
     if (err == ESP_ERR_INVALID_STATE) {
         // it's okay, already registered with VFS
     } else if (err != ESP_OK) {
@@ -69,7 +77,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     }
 
     // Try to mount partition
-    FRESULT res = f_mount(fs, "", 1);
+    FRESULT res = f_mount(fs, drv, 1);
     if (res != FR_OK) {
         err = ESP_FAIL;
         ESP_LOGW(TAG, "failed to mount card (%d)", res);
@@ -79,7 +87,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
         ESP_LOGW(TAG, "partitioning card");
         DWORD plist[] = {100, 0, 0, 0};
         workbuf = malloc(workbuf_size);
-        res = f_fdisk(0, plist, workbuf);
+        res = f_fdisk(s_pdrv, plist, workbuf);
         if (res != FR_OK) {
             err = ESP_FAIL;
             ESP_LOGD(TAG, "f_fdisk failed (%d)", res);
@@ -94,7 +102,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
         }
         free(workbuf);
         ESP_LOGW(TAG, "mounting again");
-        res = f_mount(fs, "", 0);
+        res = f_mount(fs, drv, 0);
         if (res != FR_OK) {
             err = ESP_FAIL;
             ESP_LOGD(TAG, "f_mount failed after formatting (%d)", res);
@@ -105,7 +113,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
 
 fail:
     free(workbuf);
-    esp_vfs_unregister(base_path);
+    esp_vfs_fat_unregister_ctx(base_path);
     free(s_card);
     s_card = NULL;
     return err;
@@ -117,7 +125,8 @@ esp_err_t esp_vfs_fat_sdmmc_unmount()
         return ESP_ERR_INVALID_STATE;
     }
     // unmount
-    f_mount(0, "", 0);
+    char drv[3] = {(char)('0' + s_pdrv), ':', 0};
+    f_mount(0, drv, 0);
     // release SD driver
     free(s_card);
     s_card = NULL;

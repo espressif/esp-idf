@@ -28,6 +28,7 @@
 
 typedef struct {
     char fat_drive[8];
+    char base_path[ESP_VFS_PATH_MAX];
     size_t max_files;
     FATFS fs;
     FIL files[0];
@@ -41,7 +42,6 @@ typedef struct {
     FILINFO filinfo;
     struct dirent cur_dirent;
 } vfs_fat_dir_t;
-
 
 static const char* TAG = "vfs_fat";
 
@@ -64,15 +64,42 @@ static int vfs_fat_closedir(void* ctx, DIR* pdir);
 static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_fat_rmdir(void* ctx, const char* name);
 
-
-static char s_base_path[ESP_VFS_PATH_MAX];
+static vfs_fat_ctx_t* s_fat_ctxs[_VOLUMES] = { NULL, NULL };
+//compatibility
 static vfs_fat_ctx_t* s_fat_ctx = NULL;
+
+static unsigned char esp_vfs_fat_get_ctx(const char* base_path)
+{
+    for(unsigned char i=0; i<_VOLUMES; i++) {
+        if (s_fat_ctxs[i] && !strcmp(s_fat_ctxs[i]->base_path, base_path)) {
+            return i;
+        }
+    }
+    return _VOLUMES;
+}
+
+static unsigned char esp_vfs_fat_get_empty_ctx()
+{
+    for(unsigned char i=0; i<_VOLUMES; i++) {
+        if (!s_fat_ctxs[i]) {
+            return i;
+        }
+    }
+    return _VOLUMES;
+}
 
 esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, size_t max_files, FATFS** out_fs)
 {
-    if (s_fat_ctx) {
+    unsigned char ctx = esp_vfs_fat_get_ctx(base_path);
+    if (ctx < _VOLUMES) {
         return ESP_ERR_INVALID_STATE;
     }
+
+    ctx = esp_vfs_fat_get_empty_ctx();
+    if (ctx == _VOLUMES) {
+        return ESP_ERR_NO_MEM;
+    }
+
     const esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_CONTEXT_PTR,
         .write_p = &vfs_fat_write,
@@ -95,22 +122,49 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .rmdir_p = &vfs_fat_rmdir
     };
     size_t ctx_size = sizeof(vfs_fat_ctx_t) + max_files * sizeof(FIL);
-    s_fat_ctx = (vfs_fat_ctx_t*) calloc(1, ctx_size);
-    if (s_fat_ctx == NULL) {
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) calloc(1, ctx_size);
+    if (fat_ctx == NULL) {
         return ESP_ERR_NO_MEM;
     }
-    s_fat_ctx->max_files = max_files;
-    strncpy(s_fat_ctx->fat_drive, fat_drive, sizeof(s_fat_ctx->fat_drive) - 1);
-    *out_fs = &s_fat_ctx->fs;
-    esp_err_t err = esp_vfs_register(base_path, &vfs, s_fat_ctx);
+    fat_ctx->max_files = max_files;
+
+    strncpy(fat_ctx->fat_drive, fat_drive, sizeof(fat_ctx->fat_drive) - 1);
+    fat_ctx->fat_drive[sizeof(fat_ctx->fat_drive) - 1] = 0;
+
+    strncpy(fat_ctx->base_path, base_path, sizeof(fat_ctx->base_path) - 1);
+    fat_ctx->base_path[sizeof(fat_ctx->base_path) - 1] = 0;
+
+    esp_err_t err = esp_vfs_register(base_path, &vfs, fat_ctx);
     if (err != ESP_OK) {
-        free(s_fat_ctx);
-        s_fat_ctx = NULL;
+        free(fat_ctx);
         return err;
     }
-    _lock_init(&s_fat_ctx->lock);
-    strncpy(s_base_path, base_path, sizeof(s_base_path) - 1);
-    s_base_path[sizeof(s_base_path) - 1] = 0;
+
+    _lock_init(&fat_ctx->lock);
+    s_fat_ctxs[ctx] = fat_ctx;
+
+    //compatibility
+    s_fat_ctx = fat_ctx;
+
+    *out_fs = &fat_ctx->fs;
+
+    return ESP_OK;
+}
+
+esp_err_t esp_vfs_fat_unregister_ctx(const char* base_path)
+{
+    unsigned char ctx = esp_vfs_fat_get_ctx(base_path);
+    if (ctx == _VOLUMES) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];
+    esp_err_t err = esp_vfs_unregister(fat_ctx->base_path);
+    if (err != ESP_OK) {
+        return err;
+    }
+    _lock_close(&fat_ctx->lock);
+    free(fat_ctx);
+    s_fat_ctxs[ctx] = NULL;
     return ESP_OK;
 }
 
@@ -119,12 +173,10 @@ esp_err_t esp_vfs_fat_unregister()
     if (s_fat_ctx == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
-    esp_err_t err = esp_vfs_unregister(s_base_path);
+    esp_err_t err = esp_vfs_fat_unregister_ctx(s_fat_ctx->base_path);
     if (err != ESP_OK) {
         return err;
     }
-    _lock_close(&s_fat_ctx->lock);
-    free(s_fat_ctx);
     s_fat_ctx = NULL;
     return ESP_OK;
 }
@@ -197,11 +249,19 @@ static void file_cleanup(vfs_fat_ctx_t* ctx, int fd)
     memset(&ctx->files[fd], 0, sizeof(FIL));
 }
 
+#define vfs_fat_fix_path(ctx, path) \
+    if (((vfs_fat_ctx_t*)ctx)->fat_drive[0]) { \
+        char buf_ ## path[strlen(path)+strlen(((vfs_fat_ctx_t*)ctx)->fat_drive)+1]; \
+        sprintf(buf_ ## path,"%s%s", ((vfs_fat_ctx_t*)ctx)->fat_drive, path); \
+        path = (const char *)buf_ ## path; \
+    }
+
 static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
 {
+    vfs_fat_fix_path(ctx, path);
     ESP_LOGV(TAG, "%s: path=\"%s\", flags=%x, mode=%x", __func__, path, flags, mode);
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
-    _lock_acquire(&s_fat_ctx->lock);
+    _lock_acquire(&fat_ctx->lock);
     int fd = get_next_fd(fat_ctx);
     if (fd < 0) {
         ESP_LOGE(TAG, "open: no free file descriptors");
@@ -218,7 +278,7 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
         goto out;
     }
 out:
-    _lock_release(&s_fat_ctx->lock);
+    _lock_release(&fat_ctx->lock);
     return fd;
 }
 
@@ -257,7 +317,7 @@ static ssize_t vfs_fat_read(void* ctx, int fd, void * dst, size_t size)
 static int vfs_fat_close(void* ctx, int fd)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
-    _lock_acquire(&s_fat_ctx->lock);
+    _lock_acquire(&fat_ctx->lock);
     FIL* file = &fat_ctx->files[fd];
     FRESULT res = f_close(file);
     file_cleanup(fat_ctx, fd);
@@ -267,7 +327,7 @@ static int vfs_fat_close(void* ctx, int fd)
         errno = fresult_to_errno(res);
         rc = -1;
     }
-    _lock_release(&s_fat_ctx->lock);
+    _lock_release(&fat_ctx->lock);
     return rc;
 }
 
@@ -308,6 +368,7 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
 
 static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
 {
+    vfs_fat_fix_path(ctx, path);
     FILINFO info;
     FRESULT res = f_stat(path, &info);
     if (res != FR_OK) {
@@ -337,6 +398,7 @@ static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
 
 static int vfs_fat_unlink(void* ctx, const char *path)
 {
+    vfs_fat_fix_path(ctx, path);
     FRESULT res = f_unlink(path);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
@@ -348,6 +410,8 @@ static int vfs_fat_unlink(void* ctx, const char *path)
 
 static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
 {
+    vfs_fat_fix_path(ctx, n1);
+    vfs_fat_fix_path(ctx, n2);
     const size_t copy_buf_size = 4096;
     void* buf = malloc(copy_buf_size);
     if (buf == NULL) {
@@ -402,6 +466,8 @@ fail1:
 
 static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
 {
+    vfs_fat_fix_path(ctx, src);
+    vfs_fat_fix_path(ctx, dst);
     FRESULT res = f_rename(src, dst);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
@@ -413,6 +479,7 @@ static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
 
 static DIR* vfs_fat_opendir(void* ctx, const char* name)
 {
+    vfs_fat_fix_path(ctx, name);
     vfs_fat_dir_t* fat_dir = calloc(1, sizeof(vfs_fat_dir_t));
     if (!fat_dir) {
         errno = ENOMEM;
@@ -517,6 +584,7 @@ static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset)
 static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode)
 {
     (void) mode;
+    vfs_fat_fix_path(ctx, name);
     FRESULT res = f_mkdir(name);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
@@ -528,6 +596,7 @@ static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode)
 
 static int vfs_fat_rmdir(void* ctx, const char* name)
 {
+    vfs_fat_fix_path(ctx, name);
     FRESULT res = f_unlink(name);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);

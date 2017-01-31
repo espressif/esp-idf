@@ -58,6 +58,20 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive,
 esp_err_t esp_vfs_fat_unregister();
 
 /**
+ * @brief Un-register FATFS from VFS
+ *
+ * @note FATFS structure returned by esp_vfs_fat_register is destroyed after
+ *       this call. Make sure to call f_mount function to unmount it before
+ *       calling esp_vfs_fat_unregister.
+ * @param base_path     path prefix where FATFS is registered. This is the same
+ *                      used when esp_vfs_fat_register was called
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if FATFS is not registered in VFS
+ */
+esp_err_t esp_vfs_fat_unregister_ctx(const char* base_path);
+
+/**
  * @brief Configuration arguments for esp_vfs_fat_sdmmc_mount function
  */
 typedef struct {
