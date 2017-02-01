@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdlib.h>
+#include <string.h>
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
@@ -23,6 +24,7 @@
 static const char* TAG = "vfs_fat_sdmmc";
 static sdmmc_card_t* s_card = NULL;
 static uint8_t s_pdrv = 0;
+static char * s_base_path = NULL;
 
 esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     const sdmmc_host_t* host_config,
@@ -36,6 +38,20 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     if (s_card != NULL) {
         return ESP_ERR_INVALID_STATE;
     }
+
+    // connect SDMMC driver to FATFS
+    BYTE pdrv = 0xFF;
+    if (ff_diskio_get_drive(&pdrv) != ESP_OK || pdrv == 0xFF) {
+        ESP_LOGD(TAG, "the maximum count of volumes is already mounted");
+        return ESP_ERR_NO_MEM;
+    }
+
+    s_base_path = strdup(base_path);
+    if(!s_base_path){
+        ESP_LOGD(TAG, "could not copy base_path");
+        return ESP_ERR_NO_MEM;
+    }
+
     // enable SDMMC
     sdmmc_host_init();
 
@@ -56,12 +72,6 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
         *out_card = s_card;
     }
 
-    // connect SDMMC driver to FATFS
-    BYTE pdrv = ff_disk_getpdrv();
-    if (pdrv == 0xFF) {
-        ESP_LOGD(TAG, "the maximum count of volumes is already mounted");
-        goto fail;
-    }
     ff_diskio_register_sdmmc(pdrv, s_card);
     s_pdrv = pdrv;
     char drv[3] = {(char)('0' + pdrv), ':', 0};
@@ -114,6 +124,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
 fail:
     free(workbuf);
     esp_vfs_fat_unregister_ctx(base_path);
+    ff_diskio_unregister(pdrv);
     free(s_card);
     s_card = NULL;
     return err;
@@ -128,8 +139,12 @@ esp_err_t esp_vfs_fat_sdmmc_unmount()
     char drv[3] = {(char)('0' + s_pdrv), ':', 0};
     f_mount(0, drv, 0);
     // release SD driver
+    ff_diskio_unregister(s_pdrv);
     free(s_card);
     s_card = NULL;
     sdmmc_host_deinit();
-    return esp_vfs_fat_unregister();
+    esp_err_t err = esp_vfs_fat_unregister_ctx(s_base_path);
+    free(s_base_path);
+    s_base_path = NULL;
+    return err;
 }

@@ -27,15 +27,16 @@ PARTITION VolToPart[] = {
     {1, 0}     /* Logical drive 1 ==> Physical drive 1, auto detection */
 };
 
-BYTE ff_disk_getpdrv()
+esp_err_t ff_diskio_get_drive(BYTE* out_pdrv)
 {
     BYTE i;
     for(i=0; i<_VOLUMES; i++) {
         if (!s_impls[i]) {
-            return i;
+            *out_pdrv = i;
+            return ESP_OK;
         }
     }
-    return 0xFF;
+    return ESP_ERR_NOT_FOUND;
 }
 
 void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl)
