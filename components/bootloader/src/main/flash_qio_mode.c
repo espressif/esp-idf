@@ -35,15 +35,32 @@
 
 static const char *TAG = "qio_mode";
 
+typedef unsigned (*read_status_fn_t)();
+typedef void (*write_status_fn_t)(unsigned);
+
 typedef struct __attribute__((packed)) {
     const char *manufacturer;
     uint8_t mfg_id; /* 8-bit JEDEC manufacturer ID */
     uint16_t flash_id; /* 16-bit JEDEC flash chip ID */
     uint16_t id_mask; /* Bits to match on in flash chip ID */
-    uint8_t read_status_command;
-    uint8_t write_status_command;
-    uint8_t status_qio_bit; /* Currently assumes same bit for read/write status */
+    read_status_fn_t read_status_fn;
+    write_status_fn_t write_status_fn;
+    uint8_t status_qio_bit;
 } qio_info_t;
+
+/* Read 8 bit status using RDSR command */
+static unsigned read_status_8b_rdsr();
+/* Read 8 bit status (second byte) using RDSR2 command */
+static unsigned read_status_8b_rdsr2();
+/* read 16 bit status using RDSR & RDSR2 (low and high bytes) */
+static unsigned read_status_16b_rdsr_rdsr2();
+
+/* Write 8 bit status using WRSR */
+static void write_status_8b_wrsr(unsigned new_status);
+/* Write 8 bit status (second byte) using WRSR2 */
+static void write_status_8b_wrsr2(unsigned new_status);
+/* Write 16 bit status using WRSR */
+static void write_status_16b_wrsr(unsigned new_status);
 
 /* Array of known flash chips and data to enable Quad I/O mode
 
@@ -56,29 +73,26 @@ typedef struct __attribute__((packed)) {
    with this bit set.
 
    Searching of this table stops when the first match is found.
-
-   (This table currently makes a lot of assumptions about how Quad I/O
-   mode is enabled, some flash chips in future may require more complex
-   handlers - for example a function pointer to a handler function.)
  */
 const static qio_info_t chip_data[] = {
-/*   Manufacturer,   mfg_id, flash_id, id mask, Read Cmd,  Write Cmd, QIE Bit */
-    { "MXIC",        0xC2,   0x2000, 0xFF00,    CMD_RDSR,  CMD_WRSR,  6 },
-    { "ISSI",        0x9D,   0x4000, 0xFF00,    CMD_RDSR,  CMD_WRSR,  6 },
+/*   Manufacturer,   mfg_id, flash_id, id mask, Read Status,                Write Status,          QIE Bit */
+    { "MXIC",        0xC2,   0x2000, 0xFF00,    read_status_8b_rdsr,        write_status_8b_wrsr,  6 },
+    { "ISSI",        0x9D,   0x4000, 0xFF00,    read_status_8b_rdsr,        write_status_8b_wrsr,  6 },
+    { "WinBond",     0xEF,   0x4000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr, 9 },
 
     /* Final entry is default entry, if no other IDs have matched.
 
        This approach works for chips including:
        GigaDevice (mfg ID 0xC8, flash IDs including 4016),
-       FM25Q32 (mfg ID 0xA1, flash IDs including 4016)
+       FM25Q32 (QOUT mode only, mfg ID 0xA1, flash IDs including 4016)
     */
-    { NULL,          0xFF,    0xFFFF, 0xFFFF,   CMD_RDSR2, CMD_WRSR2, 1 }, /* Bit 9 of status register (second byte) */
+    { NULL,          0xFF,    0xFFFF, 0xFFFF,   read_status_8b_rdsr2,       write_status_8b_wrsr2, 1 },
 };
 
 #define NUM_CHIPS (sizeof(chip_data) / sizeof(qio_info_t))
 
-static void enable_qio_mode(uint8_t read_status_command,
-                            uint8_t write_status_command,
+static void enable_qio_mode(read_status_fn_t read_status_fn,
+                            write_status_fn_t write_status_fn,
                             uint8_t status_qio_bit);
 
 /* Generic function to use the "user command" SPI controller functionality
@@ -125,30 +139,29 @@ void bootloader_enable_qio_mode(void)
         ESP_LOGI(TAG, "Enabling default flash chip QIO");
     }
 
-    enable_qio_mode(chip_data[i].read_status_command,
-                    chip_data[i].write_status_command,
+    enable_qio_mode(chip_data[i].read_status_fn,
+                    chip_data[i].write_status_fn,
                     chip_data[i].status_qio_bit);
 }
 
-static void enable_qio_mode(uint8_t read_status_command,
-                            uint8_t write_status_command,
+static void enable_qio_mode(read_status_fn_t read_status_fn,
+                            write_status_fn_t write_status_fn,
                             uint8_t status_qio_bit)
 {
-    uint32_t status_len = (status_qio_bit + 8) & ~7; /* 8, 16, 24 bit status values */
     uint32_t status;
 
     SPI_Wait_Idle(&g_rom_flashchip);
 
-    status = execute_flash_command(read_status_command, 0, 0, status_len);
+    status = read_status_fn();
     ESP_LOGD(TAG, "Initial flash chip status 0x%x", status);
 
     if ((status & (1<<status_qio_bit)) == 0) {
         execute_flash_command(CMD_WREN, 0, 0, 0);
-        execute_flash_command(write_status_command, status | (1<<status_qio_bit), status_len, 0);
+        write_status_fn(status | (1<<status_qio_bit));
 
         SPI_Wait_Idle(&g_rom_flashchip);
 
-        status = execute_flash_command(read_status_command, 0, 0, status_len);
+        status = read_status_fn();
         ESP_LOGD(TAG, "Updated flash chip status 0x%x", status);
         if ((status & (1<<status_qio_bit)) == 0) {
             ESP_LOGE(TAG, "Failed to set QIE bit, not enabling QIO mode");
@@ -168,6 +181,36 @@ static void enable_qio_mode(uint8_t read_status_command,
     mode = SPI_FLASH_QIO_MODE;
 #endif
     SPIMasterReadModeCnfig(mode);
+}
+
+static unsigned read_status_8b_rdsr()
+{
+    return execute_flash_command(CMD_RDSR, 0, 0, 8);
+}
+
+static unsigned read_status_8b_rdsr2()
+{
+    return execute_flash_command(CMD_RDSR2, 0, 0, 8);
+}
+
+static unsigned read_status_16b_rdsr_rdsr2()
+{
+    return execute_flash_command(CMD_RDSR, 0, 0, 8) | (execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
+}
+
+static void write_status_8b_wrsr(unsigned new_status)
+{
+    execute_flash_command(CMD_WRSR, new_status, 8, 0);
+}
+
+static void write_status_8b_wrsr2(unsigned new_status)
+{
+    execute_flash_command(CMD_WRSR2, new_status, 8, 0);
+}
+
+static void write_status_16b_wrsr(unsigned new_status)
+{
+    execute_flash_command(CMD_WRSR, new_status, 16, 0);
 }
 
 static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len)
