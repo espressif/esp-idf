@@ -12,15 +12,15 @@ import array
 import errno
 import base64
 
+idf_path = os.getenv('IDF_PATH')
+if idf_path:
+    sys.path.insert(0, os.path.join(idf_path, 'components', 'esptool_py', 'esptool'))
+
 try:
     import esptool
 except ImportError:
-    idf_path = os.getenv('IDF_PATH')
-    if idf_path is None:
-        print "Esptool is not found! Install it or set proper $IDF_PATH in environment."
-        sys.exit(2)
-    sys.path.append('%s/components/esptool_py/esptool' % idf_path)
-    import esptool
+    print "Esptool is not found! Set proper $IDF_PATH in environment."
+    sys.exit(2)
 
 __version__ = "0.1-dev"
 
