@@ -182,40 +182,10 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
 {
     ota_ops_entry_t *it;
     size_t image_size;
-    esp_err_t __attribute__((unused)) ret;
+    esp_err_t ret = ESP_OK;
 
     for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
         if (it->handle == handle) {
-            // an ota handle need to be ended after erased and wrote data in it
-            if ((it->erased_size == 0) || (it->wrote_size == 0)) {
-                return ESP_ERR_INVALID_ARG;
-            }
-
-#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
-            if (it->partial_bytes > 0 && esp_flash_encryption_enabled()) {
-                /* Write out last 16 bytes, if necessary */
-                ret = esp_partition_write(&it->part, it->wrote_size, it->partial_data, 16);
-                if (ret != ESP_OK) {
-                    return ret;
-                }
-                it->wrote_size += 16;
-                it->partial_bytes = 0;
-            }
-#endif
-
-            if (esp_image_basic_verify(it->part.address, true, &image_size) != ESP_OK) {
-                return ESP_ERR_OTA_VALIDATE_FAILED;
-            }
-
-#ifdef CONFIG_SECURE_BOOT_ENABLED
-            esp_err_t ret;
-            ret = esp_secure_boot_verify_signature(it->part.address, image_size);
-            if (ret != ESP_OK) {
-                return ESP_ERR_OTA_VALIDATE_FAILED;
-            }
-#endif
-
-            LIST_REMOVE(it, entries);
             break;
         }
     }
@@ -224,8 +194,44 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
         return ESP_ERR_NOT_FOUND;
     }
 
+    /* 'it' holds the ota_ops_entry_t for 'handle' */
+
+    // esp_ota_end() is only valid if some data was written to this handle
+    if ((it->erased_size == 0) || (it->wrote_size == 0)) {
+        ret = ESP_ERR_INVALID_ARG;
+        goto cleanup;
+    }
+
+#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
+    if (it->partial_bytes > 0 && esp_flash_encryption_enabled()) {
+        /* Write out last 16 bytes, if necessary */
+        ret = esp_partition_write(&it->part, it->wrote_size, it->partial_data, 16);
+        if (ret != ESP_OK) {
+            ret = ESP_ERR_INVALID_STATE;
+            goto cleanup;
+        }
+        it->wrote_size += 16;
+        it->partial_bytes = 0;
+    }
+#endif
+
+    if (esp_image_basic_verify(it->part.address, true, &image_size) != ESP_OK) {
+        ret = ESP_ERR_OTA_VALIDATE_FAILED;
+        goto cleanup;
+    }
+
+#ifdef CONFIG_SECURE_BOOT_ENABLED
+    ret = esp_secure_boot_verify_signature(it->part.address, image_size);
+    if (ret != ESP_OK) {
+        ret = ESP_ERR_OTA_VALIDATE_FAILED;
+        goto cleanup;
+    }
+#endif
+
+ cleanup:
+    LIST_REMOVE(it, entries);
     free(it);
-    return ESP_OK;
+    return ret;
 }
 
 static uint32_t ota_select_crc(const ota_select *s)
