@@ -75,7 +75,7 @@ esp_err_t esp_vfs_fat_unregister() __attribute__((deprecated));
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if FATFS is not registered in VFS
  */
-esp_err_t esp_vfs_fat_unregister_ctx(const char* base_path);
+esp_err_t esp_vfs_fat_unregister_path(const char* base_path);
 
 /**
  * @brief Configuration arguments for esp_vfs_fat_sdmmc_mount function

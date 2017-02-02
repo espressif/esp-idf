@@ -147,7 +147,7 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
     return ESP_OK;
 }
 
-esp_err_t esp_vfs_fat_unregister_ctx(const char* base_path)
+esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
 {
     size_t ctx = find_context_index_by_path(base_path);
     if (ctx == _VOLUMES) {
@@ -169,7 +169,7 @@ esp_err_t esp_vfs_fat_unregister()
     if (s_fat_ctx == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
-    esp_err_t err = esp_vfs_fat_unregister_ctx(s_fat_ctx->base_path);
+    esp_err_t err = esp_vfs_fat_unregister_path(s_fat_ctx->base_path);
     if (err != ESP_OK) {
         return err;
     }

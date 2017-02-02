@@ -123,7 +123,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
 
 fail:
     free(workbuf);
-    esp_vfs_fat_unregister_ctx(base_path);
+    esp_vfs_fat_unregister_path(base_path);
     ff_diskio_unregister(pdrv);
     free(s_card);
     s_card = NULL;
@@ -143,7 +143,7 @@ esp_err_t esp_vfs_fat_sdmmc_unmount()
     free(s_card);
     s_card = NULL;
     sdmmc_host_deinit();
-    esp_err_t err = esp_vfs_fat_unregister_ctx(s_base_path);
+    esp_err_t err = esp_vfs_fat_unregister_path(s_base_path);
     free(s_base_path);
     s_base_path = NULL;
     return err;
