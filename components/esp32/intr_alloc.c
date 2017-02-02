@@ -685,8 +685,7 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
     return ESP_OK;
 }
 
-
-void esp_intr_noniram_disable() 
+void IRAM_ATTR esp_intr_noniram_disable() 
 {
     int oldint;
     int cpu=xPortGetCoreID();
@@ -705,7 +704,7 @@ void esp_intr_noniram_disable()
     non_iram_int_disabled[cpu]=oldint&non_iram_int_mask[cpu];
 }
 
-void esp_intr_noniram_enable() 
+void IRAM_ATTR esp_intr_noniram_enable() 
 {
     int cpu=xPortGetCoreID();
     int intmask=non_iram_int_disabled[cpu];
@@ -733,7 +732,3 @@ void IRAM_ATTR ets_isr_unmask(unsigned int mask) {
 void IRAM_ATTR ets_isr_mask(unsigned int mask) {
     xt_ints_off(mask);
 }
-
-
-
-
