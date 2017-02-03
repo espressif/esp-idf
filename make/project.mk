@@ -370,12 +370,7 @@ $(BUILD_DIR_BASE)/$(2)/lib$(2).a: $(2)-build
 # If any component_project_vars.mk file is out of date, the make
 # process will call this target to rebuild it and then restart.
 #
-# Note: $(SDKCONFIG) is a normal prereq as we need to rebuild these
-# files whenever the config changes. $(SDKCONFIG_MAKEFILE) is an
-# order-only prereq because if it hasn't been rebuilt, we need to
-# build it first - but including it as a normal prereq can lead to
-# infinite restarts as the conf process will keep updating it.
-$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG) | $(BUILD_DIR_BASE)/$(2) $(SDKCONFIG_MAKEFILE)
+$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG_MAKEFILE) | $(BUILD_DIR_BASE)/$(2)
 	$(call ComponentMake,$(1),$(2)) component_project_vars.mk
 endef
 

@@ -6,8 +6,8 @@
 #
 # (Note that we only rebuild this makefile automatically for some
 # targets, see project_config.mk for details.)
-SDKCONFIG_MAKEFILE ?= $(abspath $(BUILD_DIR_BASE)/include/config/auto.conf)
--include $(SDKCONFIG_MAKEFILE)
+SDKCONFIG_MAKEFILE ?= $(BUILD_DIR_BASE)/include/config/auto.conf
+include $(SDKCONFIG_MAKEFILE)
 export SDKCONFIG_MAKEFILE  # sub-makes (like bootloader) will reuse this path
 
 #Handling of V=1/VERBOSE=1 flag
