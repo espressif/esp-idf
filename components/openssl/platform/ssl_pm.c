@@ -25,13 +25,7 @@
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
 
-#if 0
-    #define DEBUG_LOAD_BUF_STRING(str) SSL_DEBUG(1, "%s\n", str)
-#else
-    #define DEBUG_LOAD_BUF_STRING(str)
-#endif
-
-#define X509_INFO_STRING_LENGTH 1024
+#define X509_INFO_STRING_LENGTH 8192
 
 struct ssl_pm
 {
@@ -63,12 +57,35 @@ struct pkey_pm
     mbedtls_pk_context *ex_pkey;
 };
 
-
 unsigned int max_content_len;
-
 
 /*********************************************************************************************/
 /************************************ SSL arch interface *************************************/
+
+#ifdef CONFIG_OPENSSL_LOWLEVEL_DEBUG
+
+/* mbedtls debug level */
+#define MBEDTLS_DEBUG_LEVEL 4
+
+/**
+ * @brief mbedtls debug function
+ */
+static void ssl_platform_debug(void *ctx, int level,
+                     const char *file, int line,
+                     const char *str)
+{
+    /* Shorten 'file' from the whole file path to just the filename
+
+       This is a bit wasteful because the macros are compiled in with
+       the full _FILE_ path in each case.
+    */
+    char *file_sep = rindex(file, '/');
+    if(file_sep)
+        file = file_sep + 1;
+
+    SSL_DEBUG(SSL_DEBUG_ON, "%s:%d %s", file, line, str);
+}
+#endif
 
 /**
  * @brief create SSL low-level object
@@ -87,11 +104,13 @@ int ssl_pm_new(SSL *ssl)
     const SSL_METHOD *method = ssl->method;
 
     ssl_pm = ssl_mem_zalloc(sizeof(struct ssl_pm));
-    if (!ssl_pm)
-        SSL_ERR(ret, failed1, "ssl_mem_zalloc\n");
+    if (!ssl_pm) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "no enough memory > (ssl_pm)");
+        goto no_mem;
+    }
 
     max_content_len = ssl->ctx->read_buffer_len;
-    
+
     mbedtls_net_init(&ssl_pm->fd);
     mbedtls_net_init(&ssl_pm->cl_fd);
 
@@ -101,8 +120,10 @@ int ssl_pm_new(SSL *ssl)
     mbedtls_ssl_init(&ssl_pm->ssl);
 
     ret = mbedtls_ctr_drbg_seed(&ssl_pm->ctr_drbg, mbedtls_entropy_func, &ssl_pm->entropy, pers, pers_len);
-    if (ret)
-        SSL_ERR(ret, failed2, "mbedtls_ctr_drbg_seed:[-0x%x]\n", -ret);
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ctr_drbg_seed() return -0x%x", -ret);
+        goto mbedtls_err1;
+    }
 
     if (method->endpoint) {
         endpoint = MBEDTLS_SSL_IS_SERVER;
@@ -110,8 +131,10 @@ int ssl_pm_new(SSL *ssl)
         endpoint = MBEDTLS_SSL_IS_CLIENT;
     }
     ret = mbedtls_ssl_config_defaults(&ssl_pm->conf, endpoint, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
-    if (ret)
-        SSL_ERR(ret, failed2, "mbedtls_ssl_config_defaults:[-0x%x]\n", -ret);
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_config_defaults() return -0x%x", -ret);
+        goto mbedtls_err2;
+    }
 
     if (TLS_ANY_VERSION != ssl->version) {
         if (TLS1_2_VERSION == ssl->version)
@@ -132,11 +155,18 @@ int ssl_pm_new(SSL *ssl)
 
     mbedtls_ssl_conf_rng(&ssl_pm->conf, mbedtls_ctr_drbg_random, &ssl_pm->ctr_drbg);
 
+#ifdef CONFIG_OPENSSL_LOWLEVEL_DEBUG
+    mbedtls_debug_set_threshold(MBEDTLS_DEBUG_LEVEL);
+    mbedtls_ssl_conf_dbg(&ssl_pm->conf, ssl_platform_debug, NULL);
+#else
     mbedtls_ssl_conf_dbg(&ssl_pm->conf, NULL, NULL);
+#endif
 
     ret = mbedtls_ssl_setup(&ssl_pm->ssl, &ssl_pm->conf);
-    if (ret)
-        SSL_ERR(ret, failed3, "mbedtls_ssl_setup:[-0x%x]\n", -ret);
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_setup() return -0x%x", -ret);
+        goto mbedtls_err2;
+    }
 
     mbedtls_ssl_set_bio(&ssl_pm->ssl, &ssl_pm->fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
@@ -144,13 +174,13 @@ int ssl_pm_new(SSL *ssl)
 
     return 0;
 
-failed3:
+mbedtls_err2:
     mbedtls_ssl_config_free(&ssl_pm->conf);
     mbedtls_ctr_drbg_free(&ssl_pm->ctr_drbg);
-failed2:
+mbedtls_err1:
     mbedtls_entropy_free(&ssl_pm->entropy);
     ssl_mem_free(ssl_pm);
-failed1:
+no_mem:
     return -1;
 }
 
@@ -208,10 +238,12 @@ static int ssl_pm_reload_crt(SSL *ssl)
         ret = 0;
     }
 
-    if (ret)
-        return -1;
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_conf_own_cert() return -0x%x", -ret);
+        ret = -1;
+    }
 
-    return 0;
+    return ret;
 }
 
 /*
@@ -222,16 +254,11 @@ static int mbedtls_handshake( mbedtls_ssl_context *ssl )
 {
     int ret = 0;
 
-    if (ssl == NULL || ssl->conf == NULL)
-        return MBEDTLS_ERR_SSL_BAD_INPUT_DATA;
-
-    while (ssl->state != MBEDTLS_SSL_HANDSHAKE_OVER)
-    {
+    while (ssl->state != MBEDTLS_SSL_HANDSHAKE_OVER) {
         ret = mbedtls_ssl_handshake_step(ssl);
-        
-        SSL_DEBUG(1, "ssl ret %d state %d heap %d\n", 
-            ret, ssl->state, system_get_free_heap_size());
-        
+
+        SSL_DEBUG(SSL_PLATFORM_DEBUG_LEVEL, "ssl ret %d state %d", ret, ssl->state);
+
         if (ret != 0)
             break;
     }
@@ -241,36 +268,31 @@ static int mbedtls_handshake( mbedtls_ssl_context *ssl )
 
 int ssl_pm_handshake(SSL *ssl)
 {
-    int ret, mbed_ret;
+    int ret;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
-    mbed_ret = ssl_pm_reload_crt(ssl);
-    if (mbed_ret)
+    ret = ssl_pm_reload_crt(ssl);
+    if (ret)
         return 0;
 
-    SSL_DEBUG(1, "ssl_speed_up_enter ");
     ssl_speed_up_enter();
-    SSL_DEBUG(1, "OK\n");
-    
-    while((mbed_ret = mbedtls_handshake(&ssl_pm->ssl)) != 0) {
-        if (mbed_ret != MBEDTLS_ERR_SSL_WANT_READ && mbed_ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+
+    while((ret = mbedtls_handshake(&ssl_pm->ssl)) != 0) {
+        if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
            break;
         }
     }
-    
-    SSL_DEBUG(1, "ssl_speed_up_exit ");
-    ssl_speed_up_exit();
-    SSL_DEBUG(1, "OK\n");
 
-    if (!mbed_ret) {
+    ssl_speed_up_exit();
+
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_handshake() return -0x%x", -ret);
+        ret = 0;
+    } else {
         struct x509_pm *x509_pm = (struct x509_pm *)ssl->session->peer->x509_pm;
 
-        ret = 1;
-
         x509_pm->ex_crt = (mbedtls_x509_crt *)mbedtls_ssl_get_peer_cert(&ssl_pm->ssl);
-    } else {
-        ret = 0;
-        SSL_DEBUG(1, "mbedtls_ssl_handshake [-0x%x]\n", -mbed_ret);
+        ret = 1;
     }
 
     return ret;
@@ -278,19 +300,18 @@ int ssl_pm_handshake(SSL *ssl)
 
 int ssl_pm_shutdown(SSL *ssl)
 {
-    int ret, mbed_ret;
+    int ret;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
-    mbed_ret = mbedtls_ssl_close_notify(&ssl_pm->ssl);
-    if (!mbed_ret) {
+    ret = mbedtls_ssl_close_notify(&ssl_pm->ssl);
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_close_notify() return -0x%x", -ret);
+        ret = -1;
+    } else {
         struct x509_pm *x509_pm = (struct x509_pm *)ssl->session->peer->x509_pm;
-
-        ret = 0;
 
         x509_pm->ex_crt = NULL;
     }
-    else
-        ret = -1;
 
     return ret;
 }
@@ -303,32 +324,28 @@ int ssl_pm_clear(SSL *ssl)
 
 int ssl_pm_read(SSL *ssl, void *buffer, int len)
 {
-    int ret, mbed_ret;
+    int ret;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
-    mbed_ret = mbedtls_ssl_read(&ssl_pm->ssl, buffer, len);
-    if (mbed_ret < 0)
+    ret = mbedtls_ssl_read(&ssl_pm->ssl, buffer, len);
+    if (ret < 0) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_read() return -0x%x", -ret);
         ret = -1;
-    else if (mbed_ret == 0)
-        ret = 0;
-    else
-        ret = mbed_ret;
+    }
 
     return ret;
 }
 
 int ssl_pm_send(SSL *ssl, const void *buffer, int len)
 {
-    int ret, mbed_ret;
+    int ret;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
-    mbed_ret = mbedtls_ssl_write(&ssl_pm->ssl, buffer, len);
-    if (mbed_ret < 0)
+    ret = mbedtls_ssl_write(&ssl_pm->ssl, buffer, len);
+    if (ret < 0) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_write() return -0x%x", -ret);
         ret = -1;
-    else if (mbed_ret == 0)
-        ret = 0;
-    else
-        ret = mbed_ret;
+    }
 
     return ret;
 }
@@ -430,23 +447,28 @@ int x509_pm_show_info(X509 *x)
         return -1;
 
     buf = ssl_mem_malloc(X509_INFO_STRING_LENGTH);
-    if (!buf)
-        SSL_RET(failed1, "");
+    if (!buf) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "no enough memory > (buf)");
+        goto no_mem;
+    }
 
     ret = mbedtls_x509_crt_info(buf, X509_INFO_STRING_LENGTH - 1, "", x509_crt);
-    if (ret <= 0)
-        SSL_RET(failed2, "");
+    if (ret <= 0) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_x509_crt_info() return -0x%x", -ret);
+        goto mbedtls_err1;
+    }
+
     buf[ret] = 0;
 
     ssl_mem_free(buf);
 
-    SSL_DEBUG(1, "%s", buf);
+    SSL_DEBUG(SSL_DEBUG_ON, "%s", buf);
 
     return 0;
 
-failed2:
+mbedtls_err1:
     ssl_mem_free(buf);
-failed1:
+no_mem:
     return -1;
 }
 
@@ -455,8 +477,10 @@ int x509_pm_new(X509 *x, X509 *m_x)
     struct x509_pm *x509_pm;
 
     x509_pm = ssl_mem_zalloc(sizeof(struct x509_pm));
-    if (!x509_pm)
-        SSL_RET(failed1, "ssl_mem_zalloc\n");
+    if (!x509_pm) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "no enough memory > (x509_pm)");
+        goto failed1;
+    }
 
     x->x509_pm = x509_pm;
 
@@ -498,34 +522,38 @@ int x509_pm_load(X509 *x, const unsigned char *buffer, int len)
 
     if (!x509_pm->x509_crt) {
         x509_pm->x509_crt = ssl_mem_malloc(sizeof(mbedtls_x509_crt));
-        if (!x509_pm->x509_crt)
-            SSL_RET(failed1, "ssl_mem_malloc\n");
+        if (!x509_pm->x509_crt) {
+            SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "no enough memory > (x509_pm->x509_crt)");
+            goto no_mem;
+        }
     }
 
     load_buf = ssl_mem_malloc(len + 1);
-    if (!load_buf)
-        SSL_RET(failed2, "ssl_mem_malloc\n");
+    if (!load_buf) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "no enough memory > (load_buf)");
+        goto failed;
+    }
 
     ssl_memcpy(load_buf, buffer, len);
     load_buf[len] = '\0';
-
-    DEBUG_LOAD_BUF_STRING(load_buf);
 
     mbedtls_x509_crt_init(x509_pm->x509_crt);
 
     ret = mbedtls_x509_crt_parse(x509_pm->x509_crt, load_buf, len + 1);
     ssl_mem_free(load_buf);
 
-    if (ret)
-        SSL_RET(failed2, "mbedtls_x509_crt_parse, return [-0x%x]\n", -ret);
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_x509_crt_parse return -0x%x", -ret);
+        goto failed;
+    }
 
     return 0;
 
-failed2:
+failed:
     mbedtls_x509_crt_free(x509_pm->x509_crt);
     ssl_mem_free(x509_pm->x509_crt);
     x509_pm->x509_crt = NULL;
-failed1:
+no_mem:
     return -1;
 }
 
@@ -574,34 +602,38 @@ int pkey_pm_load(EVP_PKEY *pk, const unsigned char *buffer, int len)
 
     if (!pkey_pm->pkey) {
         pkey_pm->pkey = ssl_mem_malloc(sizeof(mbedtls_pk_context));
-        if (!pkey_pm->pkey)
-            SSL_RET(failed1, "ssl_mem_malloc\n");
+        if (!pkey_pm->pkey) {
+            SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "no enough memory > (pkey_pm->pkey)");
+            goto no_mem;
+        }
     }
 
     load_buf = ssl_mem_malloc(len + 1);
-    if (!load_buf)
-        SSL_RET(failed2, "ssl_mem_malloc\n");
+    if (!load_buf) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "no enough memory > (load_buf)");
+        goto failed;
+    }
 
     ssl_memcpy(load_buf, buffer, len);
     load_buf[len] = '\0';
-
-    DEBUG_LOAD_BUF_STRING(load_buf);
 
     mbedtls_pk_init(pkey_pm->pkey);
 
     ret = mbedtls_pk_parse_key(pkey_pm->pkey, load_buf, len + 1, NULL, 0);
     ssl_mem_free(load_buf);
 
-    if (ret)
-        SSL_RET(failed2, "mbedtls_pk_parse_key, return [-0x%x]\n", -ret);
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_pk_parse_key return -0x%x", -ret);
+        goto failed;
+    }
 
     return 0;
 
-failed2:
+failed:
     mbedtls_pk_free(pkey_pm->pkey);
     ssl_mem_free(pkey_pm->pkey);
     pkey_pm->pkey = NULL;
-failed1:
+no_mem:
     return -1;
 }
 
@@ -619,11 +651,11 @@ long ssl_pm_get_verify_result(const SSL *ssl)
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
     ret = mbedtls_ssl_get_verify_result(&ssl_pm->ssl);
-
-    if (!ret)
-        verify_result = X509_V_OK;
-    else
+    if (ret) {
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_get_verify_result() return -0x%x", -ret);
         verify_result = X509_V_ERR_UNSPECIFIED;
+    } else
+        verify_result = X509_V_OK;
 
     return verify_result;
 }
