@@ -6,7 +6,7 @@
 #
 # (Note that we only rebuild this makefile automatically for some
 # targets, see project_config.mk for details.)
-SDKCONFIG_MAKEFILE ?= $(BUILD_DIR_BASE)/include/config/auto.conf
+SDKCONFIG_MAKEFILE ?= $(abspath $(BUILD_DIR_BASE)/include/config/auto.conf)
 include $(SDKCONFIG_MAKEFILE)
 export SDKCONFIG_MAKEFILE  # sub-makes (like bootloader) will reuse this path
 
