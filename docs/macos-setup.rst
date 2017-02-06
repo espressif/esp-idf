@@ -4,6 +4,10 @@ Set up of Toolchain for Mac OS
 Step 0: Prerequisites
 =====================
 
+- install OSX USB Serial UART Driver
+
+  https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx
+
 - install pip::
 
     sudo easy_install pip
