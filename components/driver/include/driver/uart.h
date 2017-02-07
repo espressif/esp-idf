@@ -478,7 +478,8 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  * @param uart_queue UART event queue handle (out param). On success, a new queue handle is written here to provide
  *        access to UART events. If set to NULL, driver will not use an event queue.
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
- *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
+ *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. Do not set ESP_INTR_FLAG_IRAM here
+ *            (the driver's ISR handler is not located in IRAM)
  *
  * @return
  *     - ESP_OK   Success

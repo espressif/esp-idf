@@ -470,7 +470,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
 }
 
 //internal isr handler for default driver code.
-static void IRAM_ATTR uart_rx_intr_handler_default(void *param)
+static void uart_rx_intr_handler_default(void *param)
 {
     uart_obj_t *p_uart = (uart_obj_t*) param;
     uint8_t uart_num = p_uart->uart_num;
@@ -1002,6 +1002,9 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         ESP_LOGE(UART_TAG, "UART driver already installed");
         return ESP_FAIL;
     }
+
+    assert((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0); /* uart_rx_intr_handler_default is not in IRAM */
+
     uart_isr_register(uart_num, uart_rx_intr_handler_default, p_uart_obj[uart_num], intr_alloc_flags, &p_uart_obj[uart_num]->intr_handle);
     uart_intr_config_t uart_intr = {
         .intr_enable_mask = UART_RXFIFO_FULL_INT_ENA_M
