@@ -65,6 +65,8 @@
 #include "esp_clk.h"
 #include "trax.h"
 
+#include "psram.h"
+
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
 
