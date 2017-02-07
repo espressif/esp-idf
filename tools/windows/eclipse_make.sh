@@ -1,10 +1,4 @@
 #!/bin/bash
-# A wrapper for make on Windows with Eclipse
-#
-# Eclipse's output parser expects to see output of the form C:/dir/dir/file but our Make
-# process uses MinGW paths of the form /c/dir/dir/file. So parse these out...
-#
-# A little hacky as it looks for any single character of form /X/something.
-#
-echo "Running make in $(pwd)"
-make $@ V=1 | sed -E "s@/([a-z])/([^/+])@\1:/\2@g"
+echo "eclipse_make.sh has been replaced with eclipse_make.py. Check the Windows Eclipse docs for the new command."
+echo "This shell script will continue to work until the next major release."
+python ${IDF_PATH}/tools/windows/eclipse_make.py $@
