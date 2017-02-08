@@ -178,6 +178,10 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         }
 
         break;
+    case BTA_GATTS_MTU_EVT:
+        LOG_DEBUG("MTU size %d\n", p_data->req_data.p_data->mtu);
+        blufi_env.frag_size = p_data->req_data.p_data->mtu - BLUFI_MTU_RESERVED_SIZE;
+        break;
     case BTA_GATTS_CONF_EVT:
         LOG_DEBUG("CONIRM EVT\n");
         /* Nothing */
@@ -294,6 +298,7 @@ static tGATT_STATUS btc_blufi_profile_init(void)
 
     memset(&blufi_env, 0x0, sizeof(blufi_env));
     blufi_env.cbs = store_p;        /* if set callback prior, restore the point */
+    blufi_env.frag_size = BLUFI_FRAG_DATA_DEFAULT_LEN;
 
     /* register the BLUFI profile to the BTA_GATTS module*/
     BTA_GATTS_AppRegister(&blufi_app_uuid, blufi_profile_cb);
@@ -406,16 +411,16 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
     int ret;
 
     while (remain_len > 0) {
-        if (remain_len > BLUFI_FRAG_DATA_MAX_LEN) {
-            hdr = GKI_getbuf(sizeof(struct blufi_hdr) + 2 + BLUFI_FRAG_DATA_MAX_LEN + 2);
+        if (remain_len > blufi_env.frag_size) {
+            hdr = GKI_getbuf(sizeof(struct blufi_hdr) + 2 + blufi_env.frag_size + 2);
             if (hdr == NULL) {
                 LOG_ERROR("%s no mem\n", __func__);
                 return;
             }
             hdr->fc = 0x0;
-            hdr->data_len = BLUFI_FRAG_DATA_MAX_LEN + 2;
+            hdr->data_len = blufi_env.frag_size + 2;
             *(uint16_t *)hdr->data = remain_len;
-            memcpy(hdr->data + 2, &data[total_data_len - remain_len], BLUFI_FRAG_DATA_MAX_LEN); //copy first, easy for check sum
+            memcpy(hdr->data + 2, &data[total_data_len - remain_len], blufi_env.frag_size); //copy first, easy for check sum
             hdr->fc |= BLUFI_FC_FRAG;
         } else {
             hdr = GKI_getbuf(sizeof(struct blufi_hdr) + remain_len + 2);
