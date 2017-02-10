@@ -495,7 +495,7 @@ config ESP32_WIFI_RX_BUFFER_NUM
     int "Max number of WiFi RX buffers"
     depends on WIFI_ENABLED
     range 2 25
-    default 25
+    default 10
     help
         Set the number of WiFi rx buffers. Each buffer takes approximately 1.6KB of RAM.
         Larger number for higher throughput but more memory. Smaller number for lower
