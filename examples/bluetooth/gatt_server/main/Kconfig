@@ -1,10 +1,12 @@
 menu "Example 'GATT SERVER' Config"
 
 config SET_RAW_ADV_DATA
-    bool "adv data or scan_rsp data use raw data or structure"
-    default "y"
+    bool "Use raw data for advertising packets and scan response data"
     help
-        Set raw advertising data/scan response data by self or use adv_data/scan_rsp_data structure to
-        set advertising data/scan response data. If use structure, lower layer will encapsulate the packets.
+        If this config item is set, raw binary data will be used to generate advertising & scan response data.
+        This option uses the esp_ble_gap_config_adv_data_raw() and esp_ble_gap_config_scan_rsp_data_raw() functions.
+
+        If this config item is unset, advertising & scan response data is provided via a higher-level esp_ble_adv_data_t structure.
+        The lower layer will generate the BLE packets. This option has higher overhead at runtime.
 
 endmenu
