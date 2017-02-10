@@ -26,7 +26,7 @@ def check_path(path):
 
 def main():
     print("Running make in '%s'" % check_path(os.getcwd()))
-    make = subprocess.Popen(["make"] + sys.argv[1:] + ["V=1"], stdout=subprocess.PIPE)
+    make = subprocess.Popen(["make"] + sys.argv[1:] + ["BATCH_BUILD=1"], stdout=subprocess.PIPE)
     for line in iter(make.stdout.readline, ''):
          line = re.sub(UNIX_PATH_RE, lambda m: check_path(m.group(0)), line)
          print(line.rstrip())

@@ -9,6 +9,9 @@
 #
 [ -z ${IDF_PATH} ] && echo "IDF_PATH is not set" && exit 1
 
+export BATCH_BUILD=1
+export V=0 # only build verbose if there's an error
+
 EXAMPLE_NUM=1
 RESULT=0
 FAILED_EXAMPLES=""
@@ -36,7 +39,7 @@ for category in ${IDF_PATH}/examples/*; do
             set -e
             make clean defconfig
             make $* all 2>&1 | tee $BUILDLOG
-        ) || { RESULT=$?; FAILED_EXAMPLES+=" ${example}"; make V=1; } # only build verbose if there's an error
+        ) || { RESULT=$?; FAILED_EXAMPLES+=" ${example}"; make V=1; } # verbose output for errors
         popd
         EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
 

@@ -45,7 +45,7 @@ Project Properties
 
 * The new project will appear under Project Explorer. Right-click the project and choose Properties from the context menu.
 
-* Click on the "Environment" properties page under "C/C++ Build". Click "Add..." and enter name ``V`` and value ``1``.
+* Click on the "Environment" properties page under "C/C++ Build". Click "Add..." and enter name ``BATCH_BUILD`` and value ``1``.
 
 * Click "Add..." again, and enter name ``IDF_PATH``. The value should be the full path where ESP-IDF is installed.
 

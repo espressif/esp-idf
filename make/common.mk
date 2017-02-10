@@ -10,6 +10,11 @@ SDKCONFIG_MAKEFILE ?= $(abspath $(BUILD_DIR_BASE)/include/config/auto.conf)
 include $(SDKCONFIG_MAKEFILE)
 export SDKCONFIG_MAKEFILE  # sub-makes (like bootloader) will reuse this path
 
+# BATCH_BUILD flag disables interactive terminal features, defaults to verbose build
+ifdef BATCH_BUILD
+V ?= 1
+endif
+
 #Handling of V=1/VERBOSE=1 flag
 #
 # if V=1, $(summary) does nothing and $(details) will echo extra details

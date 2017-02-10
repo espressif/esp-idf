@@ -56,7 +56,15 @@ ifeq ("$(MAKE_RESTARTS)","")
 
 menuconfig: $(KCONFIG_TOOL_DIR)/mconf
 	$(summary) MENUCONFIG
+ifdef BATCH_BUILD
+	@echo "Can't run interactive configuration inside non-interactive build process."
+	@echo ""
+	@echo "Open a command line terminal and run 'make menuconfig' from there."
+	@echo "See esp-idf documentation for more details."
+	@exit 1
+else
 	$(call RunConf,mconf)
+endif
 
 # defconfig creates a default config, based on SDKCONFIG_DEFAULTS if present
 defconfig: $(KCONFIG_TOOL_DIR)/conf
@@ -70,6 +78,9 @@ endif
 # ensure generated config files are up to date
 $(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(KCONFIG_TOOL_DIR)/conf $(SDKCONFIG) $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD) | $(call prereq_if_explicit,defconfig) $(call prereq_if_explicit,menuconfig)
 	$(summary) GENCONFIG
+ifdef BATCH_BUILD  # can't prompt for new config values like on terminal
+	$(call RunConf,conf --olddefconfig)
+endif
 	$(call RunConf,conf --silentoldconfig)
 	touch $(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h  # ensure newer than sdkconfig
 
