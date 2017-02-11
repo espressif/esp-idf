@@ -98,7 +98,7 @@ typedef struct {
     eth_gpio_config_func gpio_config;           /*!< gpio config func  */
     bool flow_ctrl_enable;                      /*!< flag of flow ctrl enable */
     eth_phy_get_partner_pause_enable_func  phy_get_partner_pause_enable; /*!< get partner pause enable */
-    eth_phy_power_enable_func  phy_power_enable;
+    eth_phy_power_enable_func  phy_power_enable;  /*!< enable or disable phy power */
     
 } eth_config_t;
 
