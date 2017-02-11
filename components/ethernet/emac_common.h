@@ -75,6 +75,7 @@ struct emac_config_data {
     bool emac_flow_ctrl_enable;
     bool emac_flow_ctrl_partner_support;
     eth_phy_get_partner_pause_enable_func  emac_phy_get_partner_pause_enable;
+    eth_phy_power_enable_func  emac_phy_power_enable;
 };
 
 enum emac_post_type {

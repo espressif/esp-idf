@@ -87,6 +87,17 @@ void phy_enable_flow_ctrl(void)
     esp_eth_smi_write(AUTO_NEG_ADVERTISEMENT_REG,data|ASM_DIR|PAUSE);
 }
 
+void phy_tlk110_power_enable(bool enable)
+{
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO17_U, FUNC_GPIO17_GPIO17);
+    gpio_set_direction(17,GPIO_MODE_OUTPUT);
+    if(enable == true) {
+        gpio_set_level(17, 1);
+    } else {
+        gpio_set_level(17, 0);
+    }    
+}
+
 void phy_tlk110_init(void)
 {
     esp_eth_smi_write(PHY_RESET_CONTROL_REG, SOFTWARE_RESET);
@@ -117,11 +128,11 @@ void eth_gpio_config_rmii(void)
     //rmii clk  ,can not change
     gpio_set_direction(0, GPIO_MODE_INPUT);
 
-    //mdc to gpio4
-    gpio_matrix_out(4, EMAC_MDC_O_IDX, 0, 0);
-    //mdio to gpio2
-    gpio_matrix_out(2, EMAC_MDO_O_IDX, 0, 0);
-    gpio_matrix_in(2, EMAC_MDI_I_IDX, 0);
+    //mdc to gpio23 
+    gpio_matrix_out(23, EMAC_MDC_O_IDX, 0, 0);
+    //mdio to gpio18
+    gpio_matrix_out(18, EMAC_MDO_O_IDX, 0, 0);
+    gpio_matrix_in(18, EMAC_MDI_I_IDX, 0);
 }
 
 void eth_task(void *pvParameter)
@@ -163,6 +174,7 @@ void app_main()
     //Only FULLDUPLEX mode support flow ctrl now!
     config.flow_ctrl_enable = true;
     config.phy_get_partner_pause_enable = phy_tlk110_get_partner_pause_enable;    
+    config.phy_power_enable = phy_tlk110_power_enable;
 
     ret = esp_eth_init(&config);
 
