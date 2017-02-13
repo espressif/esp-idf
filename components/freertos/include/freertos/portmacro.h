@@ -127,7 +127,8 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 
 
 typedef struct {
-	volatile uint32_t mux;
+	volatile uint32_t owner;
+	uint32_t count;
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	const char *lastLockedFn;
 	int lastLockedLine;
@@ -143,24 +144,19 @@ typedef struct {
   * The magic number in the top 16 bits is there so we can detect uninitialized and corrupted muxes.
   */
 
-#define portMUX_MAGIC_VAL		0xB33F0000
 #define portMUX_FREE_VAL		0xB33FFFFF
-#define portMUX_MAGIC_MASK		0xFFFF0000
-#define portMUX_MAGIC_SHIFT		16
-#define portMUX_CNT_MASK		0x0000FF00
-#define portMUX_CNT_SHIFT		8
-#define portMUX_VAL_MASK		0x000000FF
-#define portMUX_VAL_SHIFT		0
 
 //Keep this in sync with the portMUX_TYPE struct definition please.
 #ifndef CONFIG_FREERTOS_PORTMUX_DEBUG
-#define portMUX_INITIALIZER_UNLOCKED { 					\
-		.mux = portMUX_MAGIC_VAL|portMUX_FREE_VAL 		\
+#define portMUX_INITIALIZER_UNLOCKED {					\
+		.owner = portMUX_FREE_VAL,						\
+		.count = 0,										\
 	}
 #else
-#define portMUX_INITIALIZER_UNLOCKED { 					\
-		.mux = portMUX_MAGIC_VAL|portMUX_FREE_VAL, 		\
-		.lastLockedFn = "(never locked)", 				\
+#define portMUX_INITIALIZER_UNLOCKED {					\
+		.owner = portMUX_FREE_VAL,						\
+		.count = 0,										\
+		.lastLockedFn = "(never locked)",				\
 		.lastLockedLine = -1							\
 	}
 #endif
@@ -173,8 +169,7 @@ typedef struct {
 #define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
 void vPortAssertIfInISR();
 
-
-#define portCRITICAL_NESTING_IN_TCB 1 
+#define portCRITICAL_NESTING_IN_TCB 1
 
 /*
 Modifications to portENTER_CRITICAL:
@@ -204,6 +199,8 @@ void vPortCPUInitializeMutex(portMUX_TYPE *mux);
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *function, int line);
 portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *function, int line);
+void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux, const char *function, int line);
+portBASE_TYPE vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux, const char *function, int line);
 void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line );
 void vTaskExitCritical( portMUX_TYPE *mux, const char *function, int line );
 #define portENTER_CRITICAL(mux)        vTaskEnterCritical(mux, __FUNCTION__, __LINE__)
@@ -215,6 +212,9 @@ void vTaskExitCritical( portMUX_TYPE *mux );
 void vTaskEnterCritical( portMUX_TYPE *mux );
 void vPortCPUAcquireMutex(portMUX_TYPE *mux);
 portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux);
+void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux);
+portBASE_TYPE vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux);
+
 #define portENTER_CRITICAL(mux)        vTaskEnterCritical(mux)
 #define portEXIT_CRITICAL(mux)         vTaskExitCritical(mux)
 #define portENTER_CRITICAL_ISR(mux)    vTaskEnterCritical(mux)
@@ -243,9 +243,8 @@ static inline unsigned portENTER_CRITICAL_NESTED() { unsigned state = XTOS_SET_I
  * ESP32, though. (Would show up directly if it did because the magic wouldn't match.)
  */
 static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set) {
-    __asm__ __volatile__(
+    __asm__ __volatile__ (
         "WSR 	    %2,SCOMPARE1 \n"
-        "ISYNC      \n"
         "S32C1I     %0, %1, 0	 \n"
         :"=r"(*set)
         :"r"(addr), "r"(compare), "0"(*set)

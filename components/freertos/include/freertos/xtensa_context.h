@@ -314,11 +314,10 @@ STRUCT_END(XtSolFrame)
 
 /*
  Macro to get the current core ID. Only uses the reg given as an argument.
- Reading PRID on the ESP108 architecture gives us 0xCDCD on the PRO processor
- and 0xABAB on the APP CPU. We distinguish between the two by simply checking 
- bit 1: it's 1 on the APP and 0 on the PRO processor.
+ Reading PRID on the ESP32 gives us 0xCDCD on the PRO processor (0)
+ and 0xABAB on the APP CPU (1). We distinguish between the two by simply checking
+ bit 13: it's 1 on the APP and 0 on the PRO processor.
 */
-
 #ifdef __ASSEMBLER__
 	.macro getcoreid reg
 	rsr.prid \reg
@@ -326,7 +325,8 @@ STRUCT_END(XtSolFrame)
 	.endm
 #endif
 
-
+#define CORE_ID_PRO 0xCDCD
+#define CORE_ID_APP 0xABAB
 
 /*
 -------------------------------------------------------------------------------
