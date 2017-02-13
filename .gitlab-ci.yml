@@ -291,8 +291,7 @@ check_doc_links:
   allow_failure: true
 
   variables:
-    # LOCAL_ENV_CONFIG_PATH: define in template and jobs can overwrite if required
-    LOCAL_ENV_CONFIG_PATH: /home/gitlab-runner/LocalConfig/ESP32_IDF
+    LOCAL_ENV_CONFIG_PATH: $CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF
     BIN_PATH: "$CI_PROJECT_DIR/SSC/ssc_bin/SSC"
     APP_NAME: "ssc"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
@@ -317,6 +316,8 @@ check_doc_links:
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    # clone local test env configs
+    - git clone $GITLAB_SSH_SERVER/qa/ci-test-runner-configs.git
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
@@ -342,6 +343,8 @@ check_doc_links:
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    # clone local test env configs
+    - git clone $GITLAB_SSH_SERVER/qa/ci-test-runner-configs.git
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
@@ -355,8 +358,7 @@ check_doc_links:
   stage: unit_test
 
   variables:
-    # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
-    LOCAL_ENV_CONFIG_PATH: /home/gitlab-runner/LocalConfig/ESP32_IDF
+    LOCAL_ENV_CONFIG_PATH: $CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF
     BIN_PATH: "$CI_PROJECT_DIR/tools/unit-test-app/build/"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     APP_NAME: "ut"

@@ -267,7 +267,7 @@ static void reconfigureAllWdts()
     TIMERG1.wdt_wprotect = 0;
 }
 
-#if CONFIG_ESP32_PANIC_GDBSTUB || CONFIG_ESP32_PANIC_PRINT_HALT
+#if CONFIG_ESP32_PANIC_GDBSTUB || CONFIG_ESP32_PANIC_PRINT_HALT || CONFIG_ESP32_ENABLE_COREDUMP
 /*
   This disables all the watchdogs for when we call the gdbstub.
 */
@@ -367,11 +367,15 @@ static void commonErrorHandler(XtExcFrame *frame)
     panicPutStr("Entering gdb stub now.\r\n");
     esp_gdbstub_panic_handler(frame);
 #else
+#if CONFIG_ESP32_ENABLE_COREDUMP
+    disableAllWdts();
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
     esp_core_dump_to_flash(frame);
 #endif
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART && !CONFIG_ESP32_PANIC_SILENT_REBOOT
     esp_core_dump_to_uart(frame);
+#endif
+    reconfigureAllWdts();
 #endif
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");

@@ -61,13 +61,17 @@ static spi_flash_counters_t s_flash_stats;
 static esp_err_t spi_flash_translate_rc(SpiFlashOpResult rc);
 
 const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_default_ops = {
-        .start  = spi_flash_disable_interrupts_caches_and_other_cpu,
-        .end    = spi_flash_enable_interrupts_caches_and_other_cpu
+        .start     = spi_flash_disable_interrupts_caches_and_other_cpu,
+        .end       = spi_flash_enable_interrupts_caches_and_other_cpu,
+        .op_lock   = spi_flash_op_lock,
+        .op_unlock = spi_flash_op_unlock
 };
 
 const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
-        .start  = spi_flash_disable_interrupts_caches_and_other_cpu_no_os,
-        .end    = spi_flash_enable_interrupts_caches_no_os
+        .start      = spi_flash_disable_interrupts_caches_and_other_cpu_no_os,
+        .end        = spi_flash_enable_interrupts_caches_no_os,
+        .op_lock    = 0,
+        .op_unlock  = 0
 };
 
 static const spi_flash_guard_funcs_t *s_flash_guard_ops;
@@ -80,12 +84,12 @@ void spi_flash_init()
 #endif
 }
 
-void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs)
+void IRAM_ATTR spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs)
 {
     s_flash_guard_ops = funcs;
 }
 
-size_t spi_flash_get_chip_size()
+size_t IRAM_ATTR spi_flash_get_chip_size()
 {
     return g_rom_flashchip.chip_size;
 }
@@ -105,15 +109,29 @@ static SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
 
 static inline void IRAM_ATTR spi_flash_guard_start()
 {
-    if (s_flash_guard_ops) {
+    if (s_flash_guard_ops && s_flash_guard_ops->start) {
         s_flash_guard_ops->start();
     }
 }
 
 static inline void IRAM_ATTR spi_flash_guard_end()
 {
-    if (s_flash_guard_ops) {
+    if (s_flash_guard_ops && s_flash_guard_ops->end) {
         s_flash_guard_ops->end();
+    }
+}
+
+static inline void IRAM_ATTR spi_flash_guard_op_lock()
+{
+    if (s_flash_guard_ops && s_flash_guard_ops->op_lock) {
+        s_flash_guard_ops->op_lock();
+    }
+}
+
+static inline void IRAM_ATTR spi_flash_guard_op_unlock()
+{
+    if (s_flash_guard_ops && s_flash_guard_ops->op_unlock) {
+        s_flash_guard_ops->op_unlock();
     }
 }
 
@@ -251,9 +269,9 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
 out:
     COUNTER_STOP(write);
 
-    spi_flash_op_lock();
+    spi_flash_guard_op_lock();
     spi_flash_mark_modified_region(dst, size);
-    spi_flash_op_unlock();
+    spi_flash_guard_op_unlock();
 
     return spi_flash_translate_rc(rc);
 }
@@ -320,9 +338,9 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
     }
     COUNTER_ADD_BYTES(write, size);
 
-    spi_flash_op_lock();
+    spi_flash_guard_op_lock();
     spi_flash_mark_modified_region(dest_addr, size);
-    spi_flash_op_unlock();
+    spi_flash_guard_op_unlock();
 
     return spi_flash_translate_rc(rc);
 }
@@ -444,7 +462,7 @@ esp_err_t IRAM_ATTR spi_flash_read_encrypted(size_t src, void *dstv, size_t size
 }
 
 
-static esp_err_t spi_flash_translate_rc(SpiFlashOpResult rc)
+static esp_err_t IRAM_ATTR spi_flash_translate_rc(SpiFlashOpResult rc)
 {
     switch (rc) {
     case SPI_FLASH_RESULT_OK:
