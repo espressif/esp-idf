@@ -19,10 +19,12 @@
 #include "esp_spi_flash.h"
 #include "soc/efuse_reg.h"
 
-/* Support functions for flash encryption features.
-
-   Can be compiled as part of app or bootloader code.
-*/
+/**
+ * @file esp_partition.h
+ * @brief Support functions for flash encryption features
+ *
+ * Can be compiled as part of app or bootloader code.
+ */
 
 /** @brief Is flash encryption currently enabled in hardware?
  *

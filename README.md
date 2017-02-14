@@ -59,7 +59,7 @@ After the initial flash, you may just want to build and flash just your app, not
 
 `make app-flash` will automatically rebuild the app if it needs it.
 
-(There's no downside to reflashing the bootloader and partition table each time, if they haven't changed.)
+(In normal development there's no downside to reflashing the bootloader and partition table each time, if they haven't changed.)
 
 ## Parallel Builds
 
