@@ -4,7 +4,8 @@
 #
 # Converts partition tables to/from CSV and binary formats.
 #
-# See the sdkng README.md file for details about how to use this tool.
+# See http://esp-idf.readthedocs.io/en/latest/partition-tables.html for explanation of
+# partition table structure and uses.
 import argparse
 import os
 import re
