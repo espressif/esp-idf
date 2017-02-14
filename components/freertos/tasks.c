@@ -310,7 +310,7 @@ PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended[ portNUM_PROCES
 
 /* For now, we use just one mux for all the critical sections. ToDo: give everything a bit more granularity;
   that could improve performance by not needlessly spinning in spinlocks for unrelated resources. */
-PRIVILEGED_DATA static portMUX_TYPE xTaskQueueMutex = portMUX_INITIALIZER_UNLOCKED;
+PRIVILEGED_DATA portMUX_TYPE xTaskQueueMutex = portMUX_INITIALIZER_UNLOCKED;
 PRIVILEGED_DATA static portMUX_TYPE xTickCountMutex = portMUX_INITIALIZER_UNLOCKED;
 
 #if ( configGENERATE_RUN_TIME_STATS == 1 )
@@ -2821,7 +2821,7 @@ TickType_t xTimeToWake;
 
 	configASSERT( pxEventList );
 
-	taskENTER_CRITICAL(&xTaskQueueMutex);
+	//taskENTER_CRITICAL(&xTaskQueueMutex);
 
 	/* Place the event list item of the TCB in the appropriate event list.
 	This is placed in the list in priority order so the highest priority task
@@ -2871,7 +2871,7 @@ TickType_t xTimeToWake;
 	}
 	#endif /* INCLUDE_vTaskSuspend */
 
-	taskEXIT_CRITICAL(&xTaskQueueMutex);
+	//taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 }
 /*-----------------------------------------------------------*/
@@ -3001,7 +3001,9 @@ BaseType_t xReturn;
 
 	/* THIS FUNCTION MUST BE CALLED FROM A CRITICAL SECTION.  It can also be
 	called from a critical section within an ISR. */
-	taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
+	
+	// taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
+	
 	/* The event list is sorted in priority order, so the first in the list can
 	be removed as it is known to be the highest priority.  Remove the TCB from
 	the delayed list, and add it to the ready list.
@@ -3025,9 +3027,9 @@ BaseType_t xReturn;
 	{
 		/* The delayed and ready lists cannot be accessed, so hold this task
 		pending until the scheduler is resumed. */
-		taskENTER_CRITICAL(&xTaskQueueMutex);
+		// taskENTER_CRITICAL(&xTaskQueueMutex);
 		vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxUnblockedTCB->xEventListItem ) );
-		taskEXIT_CRITICAL(&xTaskQueueMutex);
+		// taskEXIT_CRITICAL(&xTaskQueueMutex);
 	}
 
 	if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
@@ -3064,7 +3066,8 @@ BaseType_t xReturn;
 		prvResetNextTaskUnblockTime();
 	}
 	#endif
-	taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+	
+	// taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 
 	return xReturn;
 }

@@ -183,6 +183,7 @@ typedef xQUEUE Queue_t;
 _Static_assert(sizeof(StaticQueue_t) == sizeof(Queue_t), "StaticQueue_t != Queue_t");
 #endif
 
+extern portMUX_TYPE xTaskQueueMutex;
 
 /*-----------------------------------------------------------*/
 
@@ -286,11 +287,14 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			will still be empty.  If there are tasks blocked waiting to write to
 			the queue, then one should be unblocked as after this function exits
 			it will be possible to write to it. */
+			taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 			if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToSend ) ) == pdFALSE )
 			{
 				if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToSend ) ) == pdTRUE )
 				{
+					taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 					queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+					taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 				}
 				else
 				{
@@ -301,6 +305,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			{
 				mtCOVERAGE_TEST_MARKER();
 			}
+			taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 		}
 		else
 		{
@@ -764,6 +769,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					{
 						/* If there was a task waiting for data to arrive on the
 						queue then unblock it now. */
+						taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 						if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 						{
 							if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) == pdTRUE )
@@ -772,7 +778,9 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 								our own so yield immediately.  Yes it is ok to
 								do this from within the critical section - the
 								kernel takes care of that. */
+								taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 								queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+								taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 							}
 							else
 							{
@@ -791,12 +799,14 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 						{
 							mtCOVERAGE_TEST_MARKER();
 						}
+						taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 					}
 				}
 				#else /* configUSE_QUEUE_SETS */
 				{
 					/* If there was a task waiting for data to arrive on the
 					queue then unblock it now. */
+					taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 					if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 					{
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) == pdTRUE )
@@ -805,7 +815,9 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 							our own so yield immediately.  Yes it is ok to do
 							this from within the critical section - the kernel
 							takes care of that. */
+							taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 							queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+							taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 						}
 						else
 						{
@@ -824,6 +836,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					{
 						mtCOVERAGE_TEST_MARKER();
 					}
+					taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				}
 				#endif /* configUSE_QUEUE_SETS */
 
@@ -863,7 +876,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		now the critical section has been exited. */
 
 		taskENTER_CRITICAL(&pxQueue->mux);
-
+		taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 		/* Update the timeout state to see if it has expired yet. */
 		if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE )
 		{
@@ -878,18 +891,21 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				task is already in a ready list before it yields - in which
 				case the yield will not cause a context switch unless there
 				is also a higher priority task in the pending ready list. */
+				taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				taskEXIT_CRITICAL(&pxQueue->mux);
 				portYIELD_WITHIN_API();
 			}
 			else
 			{
 				/* Try again. */
+				taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				taskEXIT_CRITICAL(&pxQueue->mux);
 			}
 		}
 		else
 		{
 			/* The timeout has expired. */
+			taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 			taskEXIT_CRITICAL(&pxQueue->mux);
 
 			/* Return to the original privilege level before exiting the
@@ -925,15 +941,18 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 
 					/* If there was a task waiting for data to arrive on the
 					queue then unblock it now. */
+					taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 					if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 					{
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) == pdTRUE )
 						{
 							/* The unblocked task has a priority higher than
 							our own so yield immediately. */
+							taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 							taskEXIT_CRITICAL(&pxQueue->mux);
 							portYIELD_WITHIN_API();
 							taskENTER_CRITICAL(&pxQueue->mux);
+							taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 						}
 						else
 						{
@@ -944,6 +963,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					{
 						mtCOVERAGE_TEST_MARKER();
 					}
+					taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 
 					taskEXIT_CRITICAL(&pxQueue->mux);
 					return pdPASS;
@@ -965,6 +985,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			taskEXIT_CRITICAL(&pxQueue->mux);
 
 			taskENTER_CRITICAL(&pxQueue->mux);
+			taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 			{
 				if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE )
 				{
@@ -972,9 +993,11 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					{
 						traceBLOCKING_ON_QUEUE_SEND( pxQueue );
 						vTaskPlaceOnEventList( &( pxQueue->xTasksWaitingToSend ), xTicksToWait );
+						taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 						taskEXIT_CRITICAL(&pxQueue->mux);
 						portYIELD_WITHIN_API();
 						taskENTER_CRITICAL(&pxQueue->mux);
+						taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 					}
 					else
 					{
@@ -983,11 +1006,13 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				}
 				else
 				{
+					taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 					taskEXIT_CRITICAL(&pxQueue->mux);
 					traceQUEUE_SEND_FAILED( pxQueue );
 					return errQUEUE_FULL;
 				}
 			}
+			taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 			taskEXIT_CRITICAL(&pxQueue->mux);
 		}
 	}
@@ -1040,6 +1065,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 						}
 						#endif
 
+						taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 						if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToSend ) ) == pdFALSE )
 						{
 							if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToSend ) ) == pdTRUE )
@@ -1051,6 +1077,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 								mtCOVERAGE_TEST_MARKER();
 							}
 						}
+						taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 					}
 					else
 					{
@@ -1062,6 +1089,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 
 						/* The data is being left in the queue, so see if there are
 						any other tasks waiting for the data. */
+						taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 						if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 						{
 							/* Tasks that are removed from the event list will get added to
@@ -1080,6 +1108,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 						{
 							mtCOVERAGE_TEST_MARKER();
 						}
+						taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 					}
 
 					taskEXIT_CRITICAL();
@@ -1103,6 +1132,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			taskEXIT_CRITICAL();
 
 			taskENTER_CRITICAL();
+			taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 			{
 				if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE )
 				{
@@ -1137,11 +1167,13 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				}
 				else
 				{
+					taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 					taskEXIT_CRITICAL();
 					traceQUEUE_RECEIVE_FAILED( pxQueue );
 					return errQUEUE_EMPTY;
 				}
 			}
+			taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 			taskEXIT_CRITICAL();
 		}
 	}
@@ -1220,6 +1252,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				}
 				else
 				{
+					taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 					if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 					{
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) != pdFALSE )
@@ -1244,10 +1277,12 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					{
 						mtCOVERAGE_TEST_MARKER();
 					}
+					taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				}
 			}
 			#else /* configUSE_QUEUE_SETS */
 			{
+				taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 				if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 				{
 					if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) != pdFALSE )
@@ -1272,6 +1307,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				{
 					mtCOVERAGE_TEST_MARKER();
 				}
+				taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 			}
 			#endif /* configUSE_QUEUE_SETS */
 			xReturn = pdPASS;
@@ -1364,6 +1400,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				}
 				else
 				{
+					taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 					if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 					{
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) != pdFALSE )
@@ -1388,10 +1425,12 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					{
 						mtCOVERAGE_TEST_MARKER();
 					}
+					taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				}
 			}
 			#else /* configUSE_QUEUE_SETS */
 			{
+				taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 				if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 				{
 					if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) != pdFALSE )
@@ -1416,6 +1455,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				{
 					mtCOVERAGE_TEST_MARKER();
 				}
+				taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 			}
 			#endif /* configUSE_QUEUE_SETS */
 
@@ -1489,11 +1529,14 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					}
 					#endif /* configUSE_MUTEXES */
 
+					taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 					if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToSend ) ) == pdFALSE )
 					{
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToSend ) ) == pdTRUE )
 						{
+							taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 							queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+							taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 						}
 						else
 						{
@@ -1504,6 +1547,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					{
 						mtCOVERAGE_TEST_MARKER();
 					}
+					taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				}
 				else
 				{
@@ -1515,6 +1559,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 
 					/* The data is being left in the queue, so see if there are
 					any other tasks waiting for the data. */
+					taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 					if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToReceive ) ) == pdFALSE )
 					{
 						/* Tasks that are removed from the event list will get added to
@@ -1522,7 +1567,9 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) != pdFALSE )
 						{
 							/* The task waiting has a higher priority than this task. */
+							taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 							queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+							taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 						}
 						else
 						{
@@ -1533,6 +1580,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					{
 						mtCOVERAGE_TEST_MARKER();
 					}
+					taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				}
 
 				taskEXIT_CRITICAL(&pxQueue->mux);
@@ -1568,7 +1616,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		now the critical section has been exited. */
 
 		taskENTER_CRITICAL(&pxQueue->mux);
-
+		taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 		/* Update the timeout state to see if it has expired yet. */
 		if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE )
 		{
@@ -1590,17 +1638,20 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 				#endif
 
 				vTaskPlaceOnEventList( &( pxQueue->xTasksWaitingToReceive ), xTicksToWait );
+				taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				taskEXIT_CRITICAL(&pxQueue->mux);
 				portYIELD_WITHIN_API();
 			}
 			else
 			{
 				/* Try again. */
+				taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				taskEXIT_CRITICAL(&pxQueue->mux);
 			}
 		}
 		else
 		{
+			taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 			taskEXIT_CRITICAL(&pxQueue->mux);
 			traceQUEUE_RECEIVE_FAILED( pxQueue );
 			return errQUEUE_EMPTY;
@@ -1645,6 +1696,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			prvCopyDataFromQueue( pxQueue, pvBuffer );
 			--( pxQueue->uxMessagesWaiting );
 
+			taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 			if( listLIST_IS_EMPTY( &( pxQueue->xTasksWaitingToSend ) ) == pdFALSE )
 			{
 				if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToSend ) ) != pdFALSE )
@@ -1669,6 +1721,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			{
 				mtCOVERAGE_TEST_MARKER();
 			}
+			taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 
 			xReturn = pdPASS;
 		}
@@ -2392,6 +2445,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		list.  It will not block until the scheduler is unlocked - at which
 		time a yield will be performed.  */
 		taskENTER_CRITICAL(&pxQueue->mux);
+		taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 		if( pxQueue->uxMessagesWaiting == ( UBaseType_t ) 0U )
 		{
 			/* There is nothing in the queue, block for the specified period. */
@@ -2401,6 +2455,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		{
 			mtCOVERAGE_TEST_MARKER();
 		}
+		taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 		taskEXIT_CRITICAL(&pxQueue->mux);
 	}
 
@@ -2535,6 +2590,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			/* The data copied is the handle of the queue that contains data. */
 			xReturn = prvCopyDataToQueue( pxQueueSetContainer, &pxQueue, xCopyPosition );
 
+			taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 			if( listLIST_IS_EMPTY( &( pxQueueSetContainer->xTasksWaitingToReceive ) ) == pdFALSE )
 			{
 				if( xTaskRemoveFromEventList( &( pxQueueSetContainer->xTasksWaitingToReceive ) ) != pdFALSE )
@@ -2551,6 +2607,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			{
 				mtCOVERAGE_TEST_MARKER();
 			}
+			taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 		}
 		else
 		{
