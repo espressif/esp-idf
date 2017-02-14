@@ -31,12 +31,16 @@ OPENSSL_STACK* OPENSSL_sk_new(OPENSSL_sk_compfunc c)
     char **data;
 
     stack = ssl_mem_zalloc(sizeof(OPENSSL_STACK));
-    if (!stack)
-        SSL_RET(failed1, "ssl_mem_zalloc\n");
+    if (!stack) {
+        SSL_DEBUG(SSL_STACK_ERROR_LEVEL, "no enough memory > (stack)");
+        goto no_mem1;
+    }
 
     data = ssl_mem_zalloc(sizeof(*data) * MIN_NODES);
-    if (!data)
-        SSL_RET(failed2, "ssl_mem_zalloc\n");
+    if (!data) {
+        SSL_DEBUG(SSL_STACK_ERROR_LEVEL, "no enough memory > (data)");
+        goto no_mem2;
+    }
 
     stack->data = data;
     stack->num_alloc = MIN_NODES;
@@ -44,9 +48,9 @@ OPENSSL_STACK* OPENSSL_sk_new(OPENSSL_sk_compfunc c)
 
     return stack;
 
-failed2:
+no_mem2:
     ssl_mem_free(stack);
-failed1:
+no_mem1:
     return NULL;
 }
 
@@ -63,7 +67,7 @@ OPENSSL_STACK *OPENSSL_sk_new_null(void)
  */
 void OPENSSL_sk_free(OPENSSL_STACK *stack)
 {
-    SSL_ASSERT(stack);
+    SSL_ASSERT3(stack);
 
     ssl_mem_free(stack->data);
     ssl_mem_free(stack);

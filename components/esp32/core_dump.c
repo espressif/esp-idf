@@ -26,16 +26,17 @@
 #if CONFIG_ESP32_ENABLE_COREDUMP
 #define LOG_LOCAL_LEVEL CONFIG_ESP32_CORE_DUMP_LOG_LEVEL
 #include "esp_log.h"
-const static char *TAG = "esp_core_dump";
+const static DRAM_ATTR char TAG[] = "esp_core_dump";
 
-#define ESP_COREDUMP_LOGE( format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_ERROR)   { ets_printf(LOG_FORMAT(E, format), esp_log_early_timestamp(), TAG, ##__VA_ARGS__); }
-#define ESP_COREDUMP_LOGW( format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_WARN)    { ets_printf(LOG_FORMAT(W, format), esp_log_early_timestamp(), TAG, ##__VA_ARGS__); }
-#define ESP_COREDUMP_LOGI( format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO)    { ets_printf(LOG_FORMAT(I, format), esp_log_early_timestamp(), TAG, ##__VA_ARGS__); }
-#define ESP_COREDUMP_LOGD( format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG)   { ets_printf(LOG_FORMAT(D, format), esp_log_early_timestamp(), TAG, ##__VA_ARGS__); }
-#define ESP_COREDUMP_LOGV( format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_VERBOSE) { ets_printf(LOG_FORMAT(V, format), esp_log_early_timestamp(), TAG, ##__VA_ARGS__); }
+#define ESP_COREDUMP_LOG( level, format, ... )  if (LOG_LOCAL_LEVEL >= level)   { ets_printf(DRAM_STR(format), esp_log_early_timestamp(), (const char *)TAG, ##__VA_ARGS__); }
+#define ESP_COREDUMP_LOGE( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_ERROR, LOG_FORMAT(E, format), ##__VA_ARGS__)
+#define ESP_COREDUMP_LOGW( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_WARN, LOG_FORMAT(W, format), ##__VA_ARGS__)
+#define ESP_COREDUMP_LOGI( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_INFO, LOG_FORMAT(I, format), ##__VA_ARGS__)
+#define ESP_COREDUMP_LOGD( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_DEBUG, LOG_FORMAT(D, format), ##__VA_ARGS__)
+#define ESP_COREDUMP_LOGV( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_VERBOSE, LOG_FORMAT(V, format), ##__VA_ARGS__)
 
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
-#define ESP_COREDUMP_LOG_PROCESS( format, ... )  if (LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG)   { ets_printf(LOG_FORMAT(D, format), esp_log_early_timestamp(), TAG, ##__VA_ARGS__); }
+#define ESP_COREDUMP_LOG_PROCESS( format, ... )  ESP_COREDUMP_LOGD(format, ##__VA_ARGS__)
 #else
 #define ESP_COREDUMP_LOG_PROCESS( format, ... )  do{/*(__VA_ARGS__);*/}while(0)
 #endif
@@ -345,8 +346,9 @@ void esp_core_dump_to_flash(XtExcFrame *frame)
 #endif
 
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART
+
 static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8_t *dst) {
-    static const char *b64 =
+    const static DRAM_ATTR char b64[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int i, j, a, b, c;
 
@@ -373,14 +375,14 @@ static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8
 static esp_err_t esp_core_dump_uart_write_start(void *priv)
 {
     esp_err_t err = ESP_OK;
-    ets_printf("================= CORE DUMP START =================\r\n");
+    ets_printf(DRAM_STR("================= CORE DUMP START =================\r\n"));
     return err;
 }
 
 static esp_err_t esp_core_dump_uart_write_end(void *priv)
 {
     esp_err_t err = ESP_OK;
-    ets_printf("================= CORE DUMP END =================\r\n");
+    ets_printf(DRAM_STR("================= CORE DUMP END =================\r\n"));
     return err;
 }
 
@@ -398,7 +400,7 @@ static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t
         memcpy(tmp, addr, len);
         esp_core_dump_b64_encode((const uint8_t *)tmp, len, (uint8_t *)buf);
         addr += len;
-        ets_printf("%s\r\n", buf);
+        ets_printf(DRAM_STR("%s\r\n"), buf);
     }
 
     return err;
@@ -427,7 +429,8 @@ void esp_core_dump_to_uart(XtExcFrame *frame)
     wr_cfg.priv = NULL;
 
     //Make sure txd/rxd are enabled
-    gpio_pullup_dis(1);
+    // use direct reg access instead of gpio_pullup_dis which can cause exception when flash cache is disabled
+    REG_CLR_BIT(GPIO_PIN_REG_1, FUN_PU);
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
 
@@ -438,10 +441,6 @@ void esp_core_dump_to_uart(XtExcFrame *frame)
         tm_cur = xthal_get_ccount() / (XT_CLOCK_FREQ / 1000);
         if (tm_cur >= tm_end)
             break;
-        /* Feed the Cerberus. */
-        TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-        TIMERG0.wdt_feed = 1;
-        TIMERG0.wdt_wprotect = 0;
         ch = esp_core_dump_uart_get_char();
     }
     ESP_COREDUMP_LOGI("Print core dump to uart...");
@@ -455,18 +454,18 @@ void esp_core_dump_init()
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
     const esp_partition_t *core_part;
 
-    ESP_LOGI(TAG, "Init core dump to flash");
+    ESP_COREDUMP_LOGI("Init core dump to flash");
     core_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL);
     if (!core_part) {
-        ESP_LOGE(TAG, "No core dump partition found!");
+        ESP_COREDUMP_LOGE("No core dump partition found!");
         return;
     }
-    ESP_LOGI(TAG, "Found partition '%s' @ %x %d bytes", core_part->label, core_part->address, core_part->size);
+    ESP_COREDUMP_LOGI("Found partition '%s' @ %x %d bytes", core_part->label, core_part->address, core_part->size);
     s_core_part_start = core_part->address;
     s_core_part_size = core_part->size;
 #endif
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART
-    ESP_LOGI(TAG, "Init core dump to UART");
+    ESP_COREDUMP_LOGI("Init core dump to UART");
 #endif
 }
 

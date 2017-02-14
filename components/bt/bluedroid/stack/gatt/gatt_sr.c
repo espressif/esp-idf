@@ -1162,6 +1162,10 @@ static void gatts_process_read_req(tGATT_TCB *p_tcb, tGATT_SR_REG *p_rcb, UINT8 
     } else if (reason == GATT_SUCCESS || reason == GATT_STACK_RSP) {
         attp_send_sr_msg(p_tcb, p_msg);
         gatt_dequeue_sr_cmd(p_tcb);
+    } else {
+        if (p_msg) {
+            GKI_freebuf(p_msg);
+        }
     }
 
 }

@@ -15,34 +15,6 @@
 #ifndef _SSL_OPT_H_
 #define _SSL_OPT_H_
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
-/**
- * if not define "ESP32_IDF_PLATFORM", system will use esp8266 platform interface
- */
-#define ESP32_IDF_PLATFORM
-
-/**
- * openssl debug print function enable
- */
-#define SSL_DEBUG_ENBALE 0
-
-/** 
- * openssl debug print function level. function whose level is lower that "SSL_DEBUG_LEVEL"
- * will not print message
- */
-#define SSL_DEBUG_LEVEL 0
-
-/**
- * openssl assert function enable, it will check the input paramter and print the message
- */
-#define SSL_ASSERT_ENABLE 0
-
-/**
- * openssl location function enable, it will print location of the positioning error
- */
-#define SSL_DEBUG_LOCATION_ENABLE 0
+#include "sdkconfig.h"
 
 #endif

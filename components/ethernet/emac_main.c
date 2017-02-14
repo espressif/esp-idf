@@ -537,6 +537,10 @@ static void emac_check_phy_init(void)
     } else {
         REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACFESPEED);
     }
+#if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+    emac_disable_flowctrl();
+    emac_config.emac_flow_ctrl_partner_support = false;
+#else
     if (emac_config.emac_flow_ctrl_enable == true) {
         if (emac_config.emac_phy_get_partner_pause_enable() == true && emac_config.emac_phy_get_duplex_mode() == ETH_MDOE_FULLDUPLEX) {
             emac_enable_flowctrl();
@@ -549,6 +553,7 @@ static void emac_check_phy_init(void)
         emac_disable_flowctrl();
         emac_config.emac_flow_ctrl_partner_support = false;
     }
+#endif
     emac_mac_enable_txrx();
 }
 static void emac_process_link_updown(bool link_status)
