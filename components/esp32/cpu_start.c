@@ -294,7 +294,7 @@ static void do_phy_init()
 
     esp_phy_init(init_data, calibration_mode, cal_data);
 
-    if (calibration_mode != PHY_RF_CAL_NONE) {
+    if (calibration_mode != PHY_RF_CAL_NONE && err != ESP_OK) {
         err = esp_phy_store_cal_data_to_nvs(cal_data);
     } else {
         err = ESP_OK;
