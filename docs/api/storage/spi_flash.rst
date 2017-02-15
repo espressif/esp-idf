@@ -8,7 +8,7 @@ Header Files
 
   * :component_file:`spi_flash/include/esp_spi_flash.h`
   * :component_file:`spi_flash/include/esp_partition.h`
-  * :component_file:`esp32/include/esp_flash_encrypt.h`
+  * :component_file:`bootloader_support/include/esp_flash_encrypt.h`
 
 Macros
 ^^^^^^

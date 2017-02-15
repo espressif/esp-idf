@@ -35,16 +35,16 @@ endmenu
 menu "Security features"
 
 config SECURE_BOOT_ENABLED
-    bool "Enable secure boot in bootloader"
+    bool "Enable secure boot in bootloader (READ DOCS FIRST)"
     default N
     help
         Build a bootloader which enables secure boot on first boot.
 
-        Once enabled, secure boot will not boot a modified bootloader. The bootloader will only load a partition table or boot an app if the data has a verified digital signature.
+        Once enabled, secure boot will not boot a modified bootloader. The bootloader will only load a partition table or boot an app if the data has a verified digital signature. There are implications for reflashing updated apps once secure boot is enabled.
 
         When enabling secure boot, JTAG and ROM BASIC Interpreter are permanently disabled by default.
 
-        See docs/security/secure-boot.rst for details.
+        Refer to http://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
 
 choice SECURE_BOOTLOADER_MODE
     bool "Secure bootloader mode"
@@ -108,7 +108,7 @@ config SECURE_BOOT_VERIFICATION_KEY
        PEM formatted private key using the espsecure.py
        extract_public_key command.
 
-       See docs/security/secure-boot.rst for details.
+       Refer to http://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
 
 config SECURE_BOOT_INSECURE
     bool "Allow potentially insecure options"
@@ -119,16 +119,18 @@ config SECURE_BOOT_INSECURE
 
        Only enable these options if you are very sure.
 
-       Refer to docs/security/secure-boot.rst and docs/security/flash-encryption.rst for details.
+       Refer to http://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
 
 config FLASH_ENCRYPTION_ENABLED
-    bool "Enable flash encryption on boot"
+    bool "Enable flash encryption on boot (READ DOCS FIRST)"
     default N
     help
        If this option is set, flash contents will be encrypted by the bootloader on first boot.
 
-       Note: After first boot, the system will be permanently encrypted.
-       See docs/securityflash-encryption.rst for details.
+       Note: After first boot, the system will be permanently encrypted. Re-flashing an encrypted
+       system is complicated and not always possible.
+
+       Read http://esp-idf.readthedocs.io/en/latest/security/flash-encryption.html before enabling.
 
 config FLASH_ENCRYPTION_INSECURE
     bool "Allow potentially insecure options"
