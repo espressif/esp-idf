@@ -46,9 +46,21 @@ typedef enum {
     RTC_GPIO_MODE_DISABLED,    /*!< Pad (output + input) disable */
 } rtc_gpio_mode_t;
 
-#define RTC_GPIO_IS_VALID_GPIO(gpio_num)      ((gpio_num < GPIO_PIN_COUNT && rtc_gpio_desc[gpio_num].reg != 0))   //to decide whether it is a valid GPIO number
-
 extern const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT];
+
+/**
+ * @brief Determine if the specified GPIO is a valid RTC GPIO.
+ *
+ * @param gpio_num GPIO number
+ * @return true if GPIO is valid for RTC GPIO use. talse otherwise.
+ */
+inline static bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
+{
+    return gpio_num < GPIO_PIN_COUNT
+        && rtc_gpio_desc[gpio_num].reg != 0;
+}
+
+#define RTC_GPIO_IS_VALID_GPIO(gpio_num) rtc_gpio_is_valid(gpio_num) // Deprecated, use rtc_gpio_is_valid_gpio()
 
 /**
  * @brief Init a GPIO as RTC GPIO
