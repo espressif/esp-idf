@@ -28,6 +28,7 @@
 #include "esp_ipc.h"
 #include "esp_attr.h"
 #include "esp_spi_flash.h"
+#include "esp_flash_encrypt.h"
 #include "esp_log.h"
 #include "cache_utils.h"
 
@@ -52,8 +53,10 @@
    This ensures stale cache entries are never read after fresh calls
    to spi_flash_mmap(), while keeping the number of cache flushes to a
    minimum.
+
+   Returns true if cache was flushed.
 */
-static void spi_flash_ensure_unmodified_region(size_t start_addr, size_t length);
+static bool spi_flash_ensure_unmodified_region(size_t start_addr, size_t length);
 
 typedef struct mmap_entry_{
     uint32_t handle;
@@ -89,6 +92,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
     esp_err_t ret;
+    bool did_flush, need_flush = false;
     mmap_entry_t* new_entry = (mmap_entry_t*) malloc(sizeof(mmap_entry_t));
     if (new_entry == 0) {
         return ESP_ERR_NO_MEM;
@@ -102,7 +106,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
 
     spi_flash_disable_interrupts_caches_and_other_cpu();
 
-    spi_flash_ensure_unmodified_region(src_addr, size);
+    did_flush = spi_flash_ensure_unmodified_region(src_addr, size);
 
     if (s_mmap_page_refcnt[0] == 0) {
         spi_flash_mmap_init();
@@ -159,8 +163,11 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
                     (DPORT_PRO_FLASH_MMU_TABLE[i] == entry_val &&
                      DPORT_APP_FLASH_MMU_TABLE[i] == entry_val));
             if (s_mmap_page_refcnt[i] == 0) {
-                DPORT_PRO_FLASH_MMU_TABLE[i] = entry_val;
-                DPORT_APP_FLASH_MMU_TABLE[i] = entry_val;
+                if (DPORT_PRO_FLASH_MMU_TABLE[i] != entry_val || DPORT_APP_FLASH_MMU_TABLE[i] != entry_val) {
+                    DPORT_PRO_FLASH_MMU_TABLE[i] = entry_val;
+                    DPORT_APP_FLASH_MMU_TABLE[i] = entry_val;
+                    need_flush = true;
+                }
             }
             ++s_mmap_page_refcnt[i];
         }
@@ -173,6 +180,18 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
         *out_ptr = (void*) (region_addr + start * SPI_FLASH_MMU_PAGE_SIZE);
         ret = ESP_OK;
     }
+
+    /* This is a temporary fix for an issue where some
+       encrypted cache reads may see stale data.
+
+       Working on a long term fix that doesn't require invalidating
+       entire cache.
+    */
+    if (esp_flash_encryption_enabled() && !did_flush && need_flush) {
+        Cache_Flush(0);
+        Cache_Flush(1);
+    }
+
     spi_flash_enable_interrupts_caches_and_other_cpu();
     if (*out_ptr == NULL) {
         free(new_entry);
@@ -240,25 +259,29 @@ void spi_flash_mmap_dump()
 */
 static uint32_t written_pages[256/32];
 
-static void update_written_pages(size_t start_addr, size_t length, bool mark);
+static bool update_written_pages(size_t start_addr, size_t length, bool mark);
 
 void IRAM_ATTR spi_flash_mark_modified_region(size_t start_addr, size_t length)
 {
     update_written_pages(start_addr, length, true);
 }
 
-static void IRAM_ATTR spi_flash_ensure_unmodified_region(size_t start_addr, size_t length)
+static IRAM_ATTR bool spi_flash_ensure_unmodified_region(size_t start_addr, size_t length)
 {
-    update_written_pages(start_addr, length, false);
+    return update_written_pages(start_addr, length, false);
 }
 
 /* generic implementation for the previous two functions */
-static inline IRAM_ATTR void update_written_pages(size_t start_addr, size_t length, bool mark)
+static inline IRAM_ATTR bool update_written_pages(size_t start_addr, size_t length, bool mark)
 {
-    for (uint32_t addr = start_addr; addr < start_addr + length; addr += SPI_FLASH_MMU_PAGE_SIZE) {
+    /* align start_addr & length to full MMU pages */
+    uint32_t page_start_addr = start_addr & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
+    length += (start_addr - page_start_addr);
+    length = (length + SPI_FLASH_MMU_PAGE_SIZE - 1) & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
+    for (uint32_t addr = page_start_addr; addr < page_start_addr + length; addr += SPI_FLASH_MMU_PAGE_SIZE) {
         int page = addr / SPI_FLASH_MMU_PAGE_SIZE;
         if (page >= 256) {
-            return; /* invalid address */
+            return false; /* invalid address */
         }
 
         int idx = page / 32;
@@ -277,6 +300,8 @@ static inline IRAM_ATTR void update_written_pages(size_t start_addr, size_t leng
             Cache_Flush(1);
 #endif
             bzero(written_pages, sizeof(written_pages));
+            return true;
         }
     }
+    return false;
 }

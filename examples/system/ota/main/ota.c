@@ -95,7 +95,7 @@ static void initialise_wifi(void)
 }
 
 /*read buffer by byte still delim ,return read bytes counts*/
-int read_until(char *buffer, char delim, int len)
+static int read_until(char *buffer, char delim, int len)
 {
 //  /*TODO: delim check,buffer check,further: do an buffer length limited*/
     int i = 0;
@@ -109,7 +109,7 @@ int read_until(char *buffer, char delim, int len)
  * return true if packet including \r\n\r\n that means http packet header finished,start to receive packet body
  * otherwise return false
  * */
-bool resolve_pkg(char text[], int total_len, esp_ota_handle_t out_handle)
+static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t out_handle)
 {
     /* i means current position */
     int i = 0, i_read_len = 0;
@@ -121,17 +121,10 @@ bool resolve_pkg(char text[], int total_len, esp_ota_handle_t out_handle)
             memset(ota_write_data, 0, BUFFSIZE);
             /*copy first http packet body to write buffer*/
             memcpy(ota_write_data, &(text[i + 2]), i_write_len);
-            /*check write packet header first byte:0xE9 second byte:0x09 */
-            if (ota_write_data[0] == 0xE9 && i_write_len >= 2 && ota_write_data[1] == 0x09) {
-                ESP_LOGI(TAG, "OTA Write Header format Check OK. first byte is %02x ,second byte is %02x", ota_write_data[0], ota_write_data[1]);
-            } else {
-                ESP_LOGE(TAG, "OTA Write Header format Check Failed! first byte is %02x ,second byte is %02x", ota_write_data[0], ota_write_data[1]);
-                return false;
-            }
 
             esp_err_t err = esp_ota_write( out_handle, (const void *)ota_write_data, i_write_len);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=%x", err);
+                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%x", err);
                 return false;
             } else {
                 ESP_LOGI(TAG, "esp_ota_write header OK");
@@ -266,7 +259,7 @@ void main_task(void *pvParameter)
         task_fatal_error();
     }
 
-    bool pkg_body_start = false, flag = true;
+    bool resp_body_start = false, flag = true;
     /*deal with all receive packet*/
     while (flag) {
         memset(text, 0, TEXT_BUFFSIZE);
@@ -275,14 +268,14 @@ void main_task(void *pvParameter)
         if (buff_len < 0) { /*receive error*/
             ESP_LOGE(TAG, "Error: receive data error! errno=%d", errno);
             task_fatal_error();
-        } else if (buff_len > 0 && !pkg_body_start) { /*deal with packet header*/
+        } else if (buff_len > 0 && !resp_body_start) { /*deal with response header*/
             memcpy(ota_write_data, text, buff_len);
-            pkg_body_start = resolve_pkg(text, buff_len, out_handle);
-        } else if (buff_len > 0 && pkg_body_start) { /*deal with packet body*/
+            resp_body_start = read_past_http_header(text, buff_len, out_handle);
+        } else if (buff_len > 0 && resp_body_start) { /*deal with response body*/
             memcpy(ota_write_data, text, buff_len);
             err = esp_ota_write( out_handle, (const void *)ota_write_data, buff_len);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=%x", err);
+                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%x", err);
                 task_fatal_error();
             }
             binary_file_length += buff_len;

@@ -323,12 +323,15 @@ void bootloader_main()
         } else  {
             if(ota_select_valid(&sa) && ota_select_valid(&sb)) {
                 load_part_pos = bs.ota[(((sa.ota_seq > sb.ota_seq)?sa.ota_seq:sb.ota_seq) - 1)%bs.app_count];
-            }else if(ota_select_valid(&sa)) {
+            } else if(ota_select_valid(&sa)) {
                 load_part_pos = bs.ota[(sa.ota_seq - 1) % bs.app_count];
-            }else if(ota_select_valid(&sb)) {
+            } else if(ota_select_valid(&sb)) {
                 load_part_pos = bs.ota[(sb.ota_seq - 1) % bs.app_count];
-            }else {
-                ESP_LOGE(TAG, "ota data partition info error");
+            } else if (bs.factory.offset != 0) {
+                ESP_LOGE(TAG, "ota data partition invalid, falling back to factory");
+                load_part_pos = bs.factory;
+            } else {
+                ESP_LOGE(TAG, "ota data partition invalid and no factory, can't boot");
                 return;
             }
         }
