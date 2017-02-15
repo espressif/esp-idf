@@ -3012,9 +3012,14 @@ BaseType_t xReturn;
 
 	This function assumes that a check has already been made to ensure that
 	pxEventList is not empty. */
-	pxUnblockedTCB = ( TCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( pxEventList );
-	configASSERT( pxUnblockedTCB );
-	( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
+	if ( ( listLIST_IS_EMPTY( pxEventList ) ) == pdFALSE ) {
+		pxUnblockedTCB = ( TCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( pxEventList );
+		configASSERT( pxUnblockedTCB );
+		( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
+	} else {
+		taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+		return pdFALSE;
+	}
 
 	if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
 	{
@@ -3025,9 +3030,7 @@ BaseType_t xReturn;
 	{
 		/* The delayed and ready lists cannot be accessed, so hold this task
 		pending until the scheduler is resumed. */
-		taskENTER_CRITICAL(&xTaskQueueMutex);
 		vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxUnblockedTCB->xEventListItem ) );
-		taskEXIT_CRITICAL(&xTaskQueueMutex);
 	}
 
 	if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
