@@ -21,6 +21,8 @@
 static bool esp_already_enable = false;
 static bool esp_already_init = false;
 
+extern esp_err_t esp_phy_deinit(void);
+
 esp_bluedroid_status_t esp_bluedroid_get_status(void)
 {
     if (esp_already_init) {
@@ -163,6 +165,8 @@ esp_err_t esp_bluedroid_deinit(void)
     btc_deinit();
 
     esp_already_init = false;
+
+    esp_phy_deinit();
 
     return ESP_OK;
 }

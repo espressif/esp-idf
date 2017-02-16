@@ -31,6 +31,8 @@
 
 #if CONFIG_BT_ENABLED
 
+extern void do_phy_init(void);
+
 /* not for user call, so don't put to include file */
 extern void btdm_osi_funcs_register(void *osi_funcs);
 extern void btdm_controller_init(void);
@@ -145,6 +147,9 @@ void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
 static void bt_controller_task(void *pvParam)
 {
     btdm_osi_funcs_register(&osi_funcs);
+
+    do_phy_init();
+
     btdm_controller_init();
 }
 

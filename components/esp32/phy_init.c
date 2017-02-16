@@ -17,7 +17,14 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/xtensa_api.h"
+#include "freertos/task.h"
+#include "freertos/ringbuf.h"
+
 #include "rom/ets_sys.h"
+#include "rom/rtc.h"
 #include "soc/dport_reg.h"
 
 #include "esp_err.h"
@@ -25,30 +32,70 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs.h"
+#include "nvs_flash.h"
 #include "sdkconfig.h"
 
 #ifdef CONFIG_PHY_ENABLED
 #include "phy.h"
 #include "phy_init_data.h"
+#include "rtc.h"
 
 static const char* TAG = "phy_init";
 
+/* Count value to indicate if there is peripheral that has initialized PHY and RF */
+int g_phy_rf_init_count = 0;
 
-esp_err_t esp_phy_init(const esp_phy_init_data_t* init_data,
-        esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data)
+static xSemaphoreHandle g_phy_rf_init_mux = NULL;
+
+esp_err_t esp_phy_init(const void* init_data,
+        int mode, void* calibration_data, bool is_sleep)
 {
-    assert(init_data);
-    assert(calibration_data);
+    esp_phy_init_data_t* data = (esp_phy_init_data_t *)init_data;
+    esp_phy_calibration_mode_t cal_mode = (esp_phy_calibration_mode_t)mode;
+    esp_phy_calibration_data_t* cal_data = (esp_phy_calibration_data_t *)calibration_data;
 
-    REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
-    REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
-    // Enable WiFi peripheral clock
-    SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
-    ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
-            init_data, calibration_data, mode);
-    phy_set_wifi_mode_only(0);
-    register_chipv7_phy(init_data, calibration_data, mode);
-    coex_bt_high_prio();
+    assert((g_phy_rf_init_count <= 1) && (g_phy_rf_init_count >= 0));
+
+    if (g_phy_rf_init_mux == NULL) {
+        g_phy_rf_init_mux = xSemaphoreCreateMutex();
+        if (g_phy_rf_init_mux == NULL) {
+            ESP_LOGE(TAG, "Create PHY RF mutex fail");
+            return ESP_FAIL;
+        }
+    }
+
+    xSemaphoreTake(g_phy_rf_init_mux, portMAX_DELAY);
+    if (g_phy_rf_init_count == 0) {
+    	if (is_sleep == false) {
+    	    REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+    	    REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+    	}
+    	// Enable WiFi peripheral clock
+    	SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
+        ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
+                init_data, calibration_data, mode);
+        phy_set_wifi_mode_only(0);
+        register_chipv7_phy(data, cal_data, cal_mode);
+        coex_bt_high_prio();
+    }
+    g_phy_rf_init_count++;
+    xSemaphoreGive(g_phy_rf_init_mux);
+    return ESP_OK;
+}
+
+esp_err_t esp_phy_deinit(void)
+{
+    assert((g_phy_rf_init_count <= 2) && (g_phy_rf_init_count >= 1));
+
+    xSemaphoreTake(g_phy_rf_init_mux, portMAX_DELAY);
+    if (g_phy_rf_init_count == 1) {
+    	// Disable PHY and RF. This is a teporary function.
+        pm_close_rf();
+    	// Disable WiFi peripheral clock
+    	CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
+    }
+    g_phy_rf_init_count--;
+    xSemaphoreGive(g_phy_rf_init_mux);
     return ESP_OK;
 }
 
@@ -218,6 +265,41 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
     }
     err = nvs_set_blob(handle, PHY_CAL_DATA_KEY, cal_data, sizeof(*cal_data));
     return err;
+}
+
+void do_phy_init(void)
+{
+    esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
+    nvs_flash_init();
+    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
+        calibration_mode = PHY_RF_CAL_NONE;
+    }
+    const esp_phy_init_data_t* init_data = esp_phy_get_init_data();
+    if (init_data == NULL) {
+        ESP_LOGE(TAG, "failed to obtain PHY init data");
+        abort();
+    }
+    esp_phy_calibration_data_t* cal_data =
+            (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
+    if (cal_data == NULL) {
+        ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
+        abort();
+    }
+    esp_err_t err = esp_phy_load_cal_data_from_nvs(cal_data);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to load RF calibration data, falling back to full calibration");
+        calibration_mode = PHY_RF_CAL_FULL;
+    }
+
+    esp_phy_init(init_data, calibration_mode, cal_data, false);
+
+    if (calibration_mode != PHY_RF_CAL_NONE) {
+        err = esp_phy_store_cal_data_to_nvs(cal_data);
+    } else {
+        err = ESP_OK;
+    }
+    esp_phy_release_init_data(init_data);
+    free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 }
 
 #endif // CONFIG_PHY_ENABLED

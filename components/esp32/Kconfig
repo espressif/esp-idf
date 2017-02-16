@@ -508,21 +508,6 @@ config PHY_ENABLED
 menu PHY
 	visible if PHY_ENABLED
 
-config ESP32_PHY_AUTO_INIT
-    bool "Initialize PHY in startup code"
-    depends on PHY_ENABLED
-    default y
-    help
-        If enabled, PHY will be initialized in startup code, before
-        app_main function runs.
-        If this is undesired, disable this option and call esp_phy_init
-        from the application before enabling WiFi or BT.
-
-        If this option is enabled, startup code will also initialize
-        NVS prior to initializing PHY.
-
-        If unsure, choose 'y'.
-
 config ESP32_PHY_INIT_DATA_IN_PARTITION
     bool "Use a partition to store PHY init data"
     depends on PHY_ENABLED
