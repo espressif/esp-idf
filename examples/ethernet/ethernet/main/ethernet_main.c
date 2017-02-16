@@ -37,6 +37,9 @@
 static const char *TAG = "eth_demo";
 
 #define DEFAULT_PHY_CONFIG (AUTO_MDIX_ENABLE|AUTO_NEGOTIATION_ENABLE|AN_1|AN_0|LED_CFG)
+#define PIN_PHY_POWER 17
+#define PIN_SMI_MDC   23
+#define PIN_SMI_MDIO  18
 
 void phy_tlk110_check_phy_init(void)
 {
@@ -89,12 +92,12 @@ void phy_enable_flow_ctrl(void)
 
 void phy_tlk110_power_enable(bool enable)
 {
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO17_U, FUNC_GPIO17_GPIO17);
-    gpio_set_direction(17,GPIO_MODE_OUTPUT);
+    gpio_pad_select_gpio(PIN_PHY_POWER);
+    gpio_set_direction(PIN_PHY_POWER,GPIO_MODE_OUTPUT);
     if(enable == true) {
-        gpio_set_level(17, 1);
+        gpio_set_level(PIN_PHY_POWER, 1);
     } else {
-        gpio_set_level(17, 0);
+        gpio_set_level(PIN_PHY_POWER, 0);
     }    
 }
 
@@ -129,10 +132,10 @@ void eth_gpio_config_rmii(void)
     gpio_set_direction(0, GPIO_MODE_INPUT);
 
     //mdc to gpio23 
-    gpio_matrix_out(23, EMAC_MDC_O_IDX, 0, 0);
+    gpio_matrix_out(PIN_SMI_MDC, EMAC_MDC_O_IDX, 0, 0);
     //mdio to gpio18
-    gpio_matrix_out(18, EMAC_MDO_O_IDX, 0, 0);
-    gpio_matrix_in(18, EMAC_MDI_I_IDX, 0);
+    gpio_matrix_out(PIN_SMI_MDIO, EMAC_MDO_O_IDX, 0, 0);
+    gpio_matrix_in(PIN_SMI_MDIO, EMAC_MDI_I_IDX, 0);
 }
 
 void eth_task(void *pvParameter)
