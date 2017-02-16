@@ -24,7 +24,10 @@ extern "C" {
 #endif
 
 /**
- * @brief Pullup/pulldown information for a single GPIO pad
+ * @brief Pin function information for a single GPIO pad's RTC functions.
+ *
+ * This is an internal function of the driver, and is not usually useful
+ * for external use.
  */
 typedef struct {
     uint32_t reg;       /*!< Register of RTC pad, or 0 if not an RTC GPIO */
@@ -46,6 +49,13 @@ typedef enum {
     RTC_GPIO_MODE_DISABLED,    /*!< Pad (output + input) disable */
 } rtc_gpio_mode_t;
 
+/**
+ * @brief Provides access to a constant table of RTC I/O pin
+ * function information.
+ *
+ * This is an internal function of the driver, and is not usually useful
+ * for external use.
+ */
 extern const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT];
 
 /**
@@ -60,7 +70,7 @@ inline static bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
         && rtc_gpio_desc[gpio_num].reg != 0;
 }
 
-#define RTC_GPIO_IS_VALID_GPIO(gpio_num) rtc_gpio_is_valid(gpio_num) // Deprecated, use rtc_gpio_is_valid_gpio()
+#define RTC_GPIO_IS_VALID_GPIO(gpio_num) rtc_gpio_is_valid_gpio(gpio_num) // Deprecated, use rtc_gpio_is_valid_gpio()
 
 /**
  * @brief Init a GPIO as RTC GPIO

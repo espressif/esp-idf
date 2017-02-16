@@ -1,11 +1,15 @@
-GPIO
-====
+GPIO & RTC GPIO
+===============
 
 Overview
 --------
 
 The ESP32 chip features 40 physical GPIO pads. Some GPIO pads cannot be used or do not have the corresponding pin on the chip package(refer to technical reference manual ). Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
-Note that GPIO6-11 are usually used for SPI flash. GPIO34-39 can only be set as input mode.
+
+- Note that GPIO6-11 are usually used for SPI flash.
+- GPIO34-39 can only be set as input mode and do not have software pullup or pulldown functions.
+
+There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power and analog subsystem. These pin functions can be used when in deep sleep, when the :doc:`Ultra Low Power co-processor </ulp>` is running, or when analog functions such as ADC/DAC/etc are in use.
 
 Application Example
 -------------------
@@ -19,9 +23,13 @@ Header Files
 ^^^^^^^^^^^^
 
   * :component_file:`driver/include/driver/gpio.h`
+  * :component_file:`driver/include/driver/rtc_io.h`
 
 Macros
 ^^^^^^
+
+Normal GPIO
+~~~~~~~~~~~
 
 .. doxygendefine:: GPIO_SEL_0
 .. doxygendefine:: GPIO_SEL_1
@@ -107,11 +115,17 @@ Macros
 Type Definitions
 ^^^^^^^^^^^^^^^^
 
+Normal GPIO
+~~~~~~~~~~~
+
 .. doxygentypedef:: gpio_isr_t
 .. doxygentypedef:: gpio_isr_handle_t
 
 Enumerations
 ^^^^^^^^^^^^
+
+Normal GPIO
+~~~~~~~~~~~
 
 .. doxygenenum:: gpio_num_t
 .. doxygenenum:: gpio_int_type_t
@@ -120,15 +134,25 @@ Enumerations
 .. doxygenenum:: gpio_pulldown_t
 .. doxygenenum:: gpio_pull_mode_t
 
+RTC GPIO
+~~~~~~~~
+
+.. doxygenenum:: rtc_gpio_mode_t
+
 Structures
 ^^^^^^^^^^
+
+Normal GPIO
+~~~~~~~~~~~
 
 .. doxygenstruct:: gpio_config_t
     :members:
 
-
 Functions
 ^^^^^^^^^
+
+Normal GPIO
+~~~~~~~~~~~
 
 .. doxygenfunction:: gpio_config
 .. doxygenfunction:: gpio_set_intr_type
@@ -150,3 +174,18 @@ Functions
 .. doxygenfunction:: gpio_isr_handler_add
 .. doxygenfunction:: gpio_isr_handler_remove
 
+
+RTC GPIO
+~~~~~~~~
+
+.. doxygenfunction:: rtc_gpio_is_valid_gpio
+.. doxygenfunction:: rtc_gpio_init
+.. doxygenfunction:: rtc_gpio_deinit
+.. doxygenfunction:: rtc_gpio_get_level
+.. doxygenfunction:: rtc_gpio_set_level
+.. doxygenfunction:: rtc_gpio_set_direction
+.. doxygenfunction:: rtc_gpio_pullup_en
+.. doxygenfunction:: rtc_gpio_pulldown_en
+.. doxygenfunction:: rtc_gpio_pullup_dis
+.. doxygenfunction:: rtc_gpio_pulldown_dis
+.. doxygenfunction:: rtc_gpio_unhold_all
