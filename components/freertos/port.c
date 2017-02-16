@@ -407,7 +407,7 @@ void vPortSetStackWatchpoint( void* pxStackStart ) {
 }
 
 uint32_t xPortGetTickRateHz(void) {
-    return (uint32_t)configTICK_RATE_HZ;
+	return (uint32_t)configTICK_RATE_HZ;
 }
 
 

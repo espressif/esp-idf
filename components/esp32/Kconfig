@@ -507,6 +507,16 @@ config PHY_ENABLED
 
 menu PHY
 	visible if PHY_ENABLED
+	
+config ESP32_STORE_PHY_CAL_DATA_INTO_NVS
+    bool "Store PHY calibration data into NVS"
+    depends on PHY_ENABLED
+    default y
+    help
+        If this option is enabled, PHY initialization will also calibrate PHY data, and
+        store it into NVS.
+
+        If unsure, choose 'y'.
 
 config ESP32_PHY_INIT_DATA_IN_PARTITION
     bool "Use a partition to store PHY init data"

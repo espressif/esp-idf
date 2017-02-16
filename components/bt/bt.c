@@ -27,11 +27,10 @@
 #include "esp_task.h"
 #include "esp_intr.h"
 #include "esp_attr.h"
+#include "esp_phy_init.h"
 #include "bt.h"
 
 #if CONFIG_BT_ENABLED
-
-extern void do_phy_init(void);
 
 /* not for user call, so don't put to include file */
 extern void btdm_osi_funcs_register(void *osi_funcs);
@@ -148,7 +147,7 @@ static void bt_controller_task(void *pvParam)
 {
     btdm_osi_funcs_register(&osi_funcs);
 
-    do_phy_init();
+    esp_phy_load_cal_and_init();
 
     btdm_controller_init();
 }

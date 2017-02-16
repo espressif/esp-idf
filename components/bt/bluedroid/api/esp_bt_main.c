@@ -17,11 +17,10 @@
 #include "btc_task.h"
 #include "btc_main.h"
 #include "future.h"
+#include "esp_phy_init.h"
 
 static bool esp_already_enable = false;
 static bool esp_already_init = false;
-
-extern esp_err_t esp_phy_deinit(void);
 
 esp_bluedroid_status_t esp_bluedroid_get_status(void)
 {
@@ -166,7 +165,7 @@ esp_err_t esp_bluedroid_deinit(void)
 
     esp_already_init = false;
 
-    esp_phy_deinit();
+    esp_phy_rf_deinit();
 
     return ESP_OK;
 }
