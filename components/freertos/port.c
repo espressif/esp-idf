@@ -308,6 +308,9 @@ void vPortCPUInitializeMutex(portMUX_TYPE *mux) {
 }
 
 
+/*
+ * For kernel use: Acquire a per-CPU mux. Spinlocks, so don't hold on to these muxes for too long.
+ */
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 void vPortCPUAcquireMutex(portMUX_TYPE *mux, const char *fnName, int line) {
 	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
@@ -325,9 +328,6 @@ void vPortCPUAcquireMutex(portMUX_TYPE *mux) {
 /* XOR one core ID with this value to get the other core ID */
 #define CORE_ID_XOR_SWAP (CORE_ID_PRO ^ CORE_ID_APP)
 
-/*
- * For kernel use: Acquire a per-CPU mux. Spinlocks, so don't hold on to these muxes for too long.
- */
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux, const char *fnName, int line) {
 #else
@@ -372,11 +372,13 @@ void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux) {
 #endif
 	} while (res == otherCoreID);
 
-	assert(res == coreID || res == portMUX_FREE_VAL); /* any other value implies memory corruption */
+	assert(res == coreID || res == portMUX_FREE_VAL); /* any other value implies memory corruption or uninitialized mux */
 	assert((res == portMUX_FREE_VAL) == (mux->count == 0)); /* we're first to lock iff count is zero */
+    assert(mux->count < 0xFF); /* Bad count value implies memory corruption */
 
 	/* now we own it, we can increment the refcount */
 	mux->count++;
+
 
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	if (res==portMUX_FREE_VAL) { //initial lock
@@ -390,33 +392,31 @@ void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux) {
 #endif
 }
 
+/*
+ * For kernel use: Release a per-CPU mux
+ *
+ * Mux must be already locked by this core
+ */
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *fnName, int line) {
+void vPortCPUReleaseMutex(portMUX_TYPE *mux, const char *fnName, int line) {
 	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
-	portBASE_TYPE res = vPortCPUReleaseMutexIntsDisabled(mux, fnName, line);
+	vPortCPUReleaseMutexIntsDisabled(mux, fnName, line);
 	portEXIT_CRITICAL_NESTED(irqStatus);
-	return res;
 }
 #else
-portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux) {
+void vPortCPUReleaseMutex(portMUX_TYPE *mux) {
 	unsigned int irqStatus = portENTER_CRITICAL_NESTED();
-	portBASE_TYPE res = vPortCPUReleaseMutexIntsDisabled(mux);
+	vPortCPUReleaseMutexIntsDisabled(mux);
 	portEXIT_CRITICAL_NESTED(irqStatus);
-	return res;
 }
 #endif
 
-/*
- * For kernel use: Release a per-CPU mux. Returns true if everything is OK, false if mux
- * was already unlocked or is locked by a different core.
- */
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-portBASE_TYPE vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux, const char *fnName, int line) {
+void vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux, const char *fnName, int line) {
 #else
-portBASE_TYPE vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux) {
+void vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux) {
 #endif
 #if !CONFIG_FREERTOS_UNICORE
-	portBASE_TYPE res;
 	portBASE_TYPE coreID;
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	const char *lastLockedFn=mux->lastLockedFn;
@@ -425,19 +425,24 @@ portBASE_TYPE vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux) {
 	mux->lastLockedLine=line;
 	uint32_t owner = mux->owner;
 	if (owner != portMUX_FREE_VAL && owner != CORE_ID_PRO && owner != CORE_ID_APP) {
-		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p is uninitialized (0x%x)!\n", mux, mux->owner);
+		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p is invalid (0x%x)!\n", mux, mux->owner);
 	}
 #endif
 
+#if CONFIG_FREERTOS_PORTMUX_DEBUG || !defined(NDEBUG)
 	RSR(PRID, coreID);
-	res = (coreID == mux->owner);
+#endif
 
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	if (!res) {
+	if (coreID != mux->owner) {
 		ets_printf("ERROR: vPortCPUReleaseMutex: mux %p was already unlocked!\n", mux);
 		ets_printf("Last non-recursive unlock %s line %d, curr unlock %s line %d\n", lastLockedFn, lastLockedLine, fnName, line);
 	}
 #endif
+
+    assert(coreID == mux->owner); // This is a mutex we didn't lock, or it's corrupt
+    assert(mux->count > 0); // Indicates memory corruption
+    assert(mux->count < 0x100); // Indicates memory corruption
 
 	mux->count--;
 	if(mux->count == 0) {
@@ -448,12 +453,7 @@ portBASE_TYPE vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux) {
 		ets_printf("Recursive unlock: count=%d last locked %s line %d, curr %s line %d\n", mux->count, lastLockedFn, lastLockedLine, fnName, line);
 	}
 #endif
-
-	return res;
-
-#else //!CONFIG_FREERTOS_UNICORE
-	return 0;
-#endif
+#endif //!CONFIG_FREERTOS_UNICORE
 }
 
 #if CONFIG_FREERTOS_BREAK_ON_SCHEDULER_START_JTAG

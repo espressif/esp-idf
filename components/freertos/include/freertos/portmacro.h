@@ -127,7 +127,7 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 
 
 typedef struct {
-	volatile uint32_t owner;
+	uint32_t owner;
 	uint32_t count;
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	const char *lastLockedFn;
@@ -211,9 +211,9 @@ void vTaskExitCritical( portMUX_TYPE *mux, const char *function, int line );
 void vTaskExitCritical( portMUX_TYPE *mux );
 void vTaskEnterCritical( portMUX_TYPE *mux );
 void vPortCPUAcquireMutex(portMUX_TYPE *mux);
-portBASE_TYPE vPortCPUReleaseMutex(portMUX_TYPE *mux);
+void vPortCPUReleaseMutex(portMUX_TYPE *mux);
 void vPortCPUAcquireMutexIntsDisabled(portMUX_TYPE *mux);
-portBASE_TYPE vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux);
+void vPortCPUReleaseMutexIntsDisabled(portMUX_TYPE *mux);
 
 #define portENTER_CRITICAL(mux)        vTaskEnterCritical(mux)
 #define portEXIT_CRITICAL(mux)         vTaskExitCritical(mux)
