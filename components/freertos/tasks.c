@@ -4103,6 +4103,7 @@ For ESP32 FreeRTOS, vTaskEnterCritical implements both portENTER_CRITICAL and po
 
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 
+#include "portmux_impl.h"
 
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line )
