@@ -80,7 +80,7 @@ typedef void (*eth_phy_func)(void);
 typedef esp_err_t (*eth_tcpip_input_func)(void *buffer, uint16_t len, void *eb);
 typedef void (*eth_gpio_config_func)(void);
 typedef bool (*eth_phy_get_partner_pause_enable_func)(void);
-
+typedef void (*eth_phy_power_enable_func)(bool enable);
 
 /**
  * @brief ethernet configuration
@@ -98,6 +98,7 @@ typedef struct {
     eth_gpio_config_func gpio_config;           /*!< gpio config func  */
     bool flow_ctrl_enable;                      /*!< flag of flow ctrl enable */
     eth_phy_get_partner_pause_enable_func  phy_get_partner_pause_enable; /*!< get partner pause enable */
+    eth_phy_power_enable_func  phy_power_enable;  /*!< enable or disable phy power */
     
 } eth_config_t;
 
