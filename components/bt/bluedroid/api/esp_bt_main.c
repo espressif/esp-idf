@@ -17,7 +17,6 @@
 #include "btc_task.h"
 #include "btc_main.h"
 #include "future.h"
-#include "esp_phy_init.h"
 
 static bool esp_already_enable = false;
 static bool esp_already_init = false;
@@ -164,8 +163,6 @@ esp_err_t esp_bluedroid_deinit(void)
     btc_deinit();
 
     esp_already_init = false;
-
-    esp_phy_rf_deinit();
 
     return ESP_OK;
 }

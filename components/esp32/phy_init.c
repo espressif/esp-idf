@@ -40,6 +40,7 @@ static const char* TAG = "phy_init";
 
 /* Count value to indicate if there is peripheral that has initialized PHY and RF */
 static int s_phy_rf_init_count = 0;
+static bool s_mac_rst_flag = false;
 
 static _lock_t s_phy_rf_init_lock;
 
@@ -51,8 +52,11 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
     _lock_acquire(&s_phy_rf_init_lock);
     if (s_phy_rf_init_count == 0) {
         if (is_sleep == false) {
-            REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
-            REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+            if (s_mac_rst_flag == false) {
+                s_mac_rst_flag = true;
+                REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+                REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+            }
         }
         // Enable WiFi peripheral clock
         SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
