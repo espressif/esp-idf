@@ -29,6 +29,7 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#include "platform.h"
 #include "bignum.h"
 #include "ecp.h"
 
