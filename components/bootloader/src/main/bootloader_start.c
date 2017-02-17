@@ -106,14 +106,13 @@ void IRAM_ATTR call_start_cpu0()
 }
 
 
-/**
- *  @function :     load_partition_table
- *  @description:   Parse partition table, get useful data such as location of 
- *                  OTA info sector, factory app sector, and test app sector.
+/** @brief Load partition table
  *
- *  @inputs:        bs     bootloader state structure used to save the data
- *  @return:        return true, if the partition table is loaded (and MD5 checksum is valid)
+ *  Parse partition table, get useful data such as location of
+ *  OTA data partition, factory app partition, and test app partition.
  *
+ *  @param         bs     bootloader state structure used to save read data
+ *  @return        return true if the partition table was succesfully loaded and MD5 checksum is valid.
  */
 bool load_partition_table(bootloader_state_t* bs)
 {

@@ -82,7 +82,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         return ESP_ERR_NO_MEM;
     }
 
-    // if input image size is 0 or OTA_SIZE_UNKNOWN, will erase all areas in this partition
+    // If input image size is 0 or OTA_SIZE_UNKNOWN, erase entire partition
     if ((image_size == 0) || (image_size == OTA_SIZE_UNKNOWN)) {
         ret = esp_partition_erase_range(partition, 0, partition->size);
     } else {
@@ -301,7 +301,7 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
         //so current ota app sub type id is x , dest bin subtype is y,total ota app count is n
         //seq will add (x + n*1 + 1 - seq)%n
         if (SUB_TYPE_ID(subtype) >= ota_app_count) {
-            return ESP_ERR_NOT_FOUND;
+            return ESP_ERR_INVALID_ARG;
         }
 
         ret = esp_partition_mmap(find_partition, 0, find_partition->size, SPI_FLASH_MMAP_DATA, &result, &ota_data_map);
