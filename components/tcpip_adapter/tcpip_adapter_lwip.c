@@ -713,7 +713,7 @@ esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *ho
 {
 #if LWIP_NETIF_HOSTNAME
     struct netif *p_netif;
-    static char hostinfo[TCPIP_HOSTNAME_MAX_SIZE + 1][TCPIP_ADAPTER_IF_MAX];
+    static char hostinfo[TCPIP_ADAPTER_IF_MAX][TCPIP_HOSTNAME_MAX_SIZE + 1];
 
     if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || hostname == NULL) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
