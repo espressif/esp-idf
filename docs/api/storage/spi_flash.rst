@@ -26,6 +26,7 @@ Macros
 .. doxygendefine:: SPI_FLASH_SEC_SIZE
 .. doxygendefine:: SPI_FLASH_MMU_PAGE_SIZE
 .. doxygendefine:: ESP_PARTITION_SUBTYPE_OTA
+.. doxygendefine:: SPI_FLASH_CACHE2PHYS_FAIL
 
 Type Definitions
 ^^^^^^^^^^^^^^^^
@@ -59,6 +60,8 @@ Functions
 .. doxygenfunction:: spi_flash_mmap
 .. doxygenfunction:: spi_flash_munmap
 .. doxygenfunction:: spi_flash_mmap_dump
+.. doxygenfunction:: spi_flash_cache2phys
+.. doxygenfunction:: spi_flash_phys2cache
 .. doxygenfunction:: esp_partition_find
 .. doxygenfunction:: esp_partition_find_first
 .. doxygenfunction:: esp_partition_get
