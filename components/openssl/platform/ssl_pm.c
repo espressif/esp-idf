@@ -646,13 +646,13 @@ void ssl_pm_set_bufflen(SSL *ssl, int len)
 
 long ssl_pm_get_verify_result(const SSL *ssl)
 {
-    long ret;
+    uint32_t ret;
     long verify_result;
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
     ret = mbedtls_ssl_get_verify_result(&ssl_pm->ssl);
     if (ret) {
-        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_get_verify_result() return -0x%x", -ret);
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "mbedtls_ssl_get_verify_result() return 0x%x", ret);
         verify_result = X509_V_ERR_UNSPECIFIED;
     } else
         verify_result = X509_V_OK;
