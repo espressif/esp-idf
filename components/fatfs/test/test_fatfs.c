@@ -69,6 +69,55 @@ TEST_CASE("can create and write file on sd card", "[fatfs][ignore]")
     HEAP_SIZE_CHECK(0);
 }
 
+TEST_CASE("overwrite and append file on sd card", "[fatfs][ignore]")
+{
+    HEAP_SIZE_CAPTURE();
+
+    sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = true,
+        .max_files = 5
+    };
+    TEST_ESP_OK(esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, NULL));
+
+    /* Create new file with 'aaaa' */
+    const char *NAME = "/sdcard/hello.txt";
+    create_file_with_text(NAME, "aaaa");
+
+    /* Append 'bbbb' to file */
+    FILE *f_a = fopen(NAME, "a");
+    TEST_ASSERT_NOT_NULL(f_a);
+    TEST_ASSERT_NOT_EQUAL(EOF, fputs("bbbb", f_a));
+    TEST_ASSERT_EQUAL(0, fclose(f_a));
+
+    /* Read back 8 bytes from file, verify it's 'aaaabbbb' */
+    char buf[10] = { 0 };
+    FILE *f_r = fopen(NAME, "r");
+    TEST_ASSERT_NOT_NULL(f_r);
+    TEST_ASSERT_EQUAL(8, fread(buf, 1, 8, f_r));
+    TEST_ASSERT_EQUAL_STRING_LEN("aaaabbbb", buf, 8);
+
+    /* Be sure we're at end of file */
+    TEST_ASSERT_EQUAL(0, fread(buf, 1, 8, f_r));
+
+    TEST_ASSERT_EQUAL(0, fclose(f_r));
+
+    /* Overwrite file with 'cccc' */
+    create_file_with_text(NAME, "cccc");
+
+    /* Verify file now only contains 'cccc' */
+    f_r = fopen(NAME, "r");
+    TEST_ASSERT_NOT_NULL(f_r);
+    bzero(buf, sizeof(buf));
+    TEST_ASSERT_EQUAL(4, fread(buf, 1, 8, f_r)); // trying to read 8 bytes, only expecting 4
+    TEST_ASSERT_EQUAL_STRING_LEN("cccc", buf, 4);
+    TEST_ASSERT_EQUAL(0, fclose(f_r));
+
+    TEST_ESP_OK(esp_vfs_fat_sdmmc_unmount());
+    HEAP_SIZE_CHECK(0);
+}
+
 TEST_CASE("can read file on sd card", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
