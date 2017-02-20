@@ -265,6 +265,8 @@ esp_err_t ulp_run(uint32_t entry_point)
 {
     // disable ULP timer
     CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+    // wait for at least 1 RTC_SLOW_CLK cycle
+    ets_delay_us(10);
     // set entry point
     SET_PERI_REG_BITS(SENS_SAR_START_FORCE_REG, SENS_PC_INIT_V, entry_point, SENS_PC_INIT_S);
     // disable force start
