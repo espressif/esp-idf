@@ -71,5 +71,7 @@ Functions
 .. doxygenfunction:: esp_ota_begin
 .. doxygenfunction:: esp_ota_write
 .. doxygenfunction:: esp_ota_end
+.. doxygenfunction:: esp_ota_get_running_partition
 .. doxygenfunction:: esp_ota_set_boot_partition
 .. doxygenfunction:: esp_ota_get_boot_partition
+.. doxygenfunction:: esp_ota_get_next_update_partition

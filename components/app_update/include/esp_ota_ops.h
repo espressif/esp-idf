@@ -59,9 +59,10 @@ typedef uint32_t esp_ota_handle_t;
 
  * @return
  *    - ESP_OK: OTA operation commenced successfully.
- *    - ESP_ERR_INVALID_ARG: partition or out_handle arguments were NULL.
+ *    - ESP_ERR_INVALID_ARG: partition or out_handle arguments were NULL, or partition doesn't point to a non OTA app partition.
  *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
- *    - ESP_ERR_OTA_PARTITION_CONFLICT: Partition is currently in use, cannot update.
+ *    - ESP_ERR_OTA_PARTITION_CONFLICT: Partition holds the currently running firmware, cannot update in place.
+ *    - ESP_ERR_NOT_FOUND: Partition argument not found in partition table.
  *    - ESP_ERR_OTA_SELECT_INFO_INVALID: The OTA data partition contains invalid data.
  *    - ESP_ERR_INVALID_SIZE: Partition doesn't fit in configured flash size.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
@@ -121,11 +122,44 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle);
 esp_err_t esp_ota_set_boot_partition(const esp_partition_t* partition);
 
 /**
- * @brief Get partition info of currently running app
+ * @brief Get partition info of currently configured boot app
+ *
+ * If esp_ota_set_boot_partition() has been called, the partition which was set by that function will be returned.
+ *
+ * If esp_ota_set_boot_partition() has not been called, the result is
+ * equivalent to esp_ota_get_running_partition().
  *
  * @return Pointer to info for partition structure, or NULL if no partition is found or flash read operation failed. Returned pointer is valid for the lifetime of the application.
  */
 const esp_partition_t* esp_ota_get_boot_partition(void);
+
+
+/**
+ * @brief Get partition info of currently running app
+ *
+ * This function is different to esp_ota_get_boot_partition() in that
+ * it ignores any change of selected boot partition caused by
+ * esp_ota_set_boot_partition(). Only the app whose code is currently
+ * running will have its partition information returned.
+ *
+ * @return Pointer to info for partition structure, or NULL if no partition is found or flash read operation failed. Returned pointer is valid for the lifetime of the application.
+ */
+const esp_partition_t* esp_ota_get_running_partition(void);
+
+
+/**
+ * @brief Return the next OTA app partition which should be written with a new firmware.
+ *
+ * Call this function to find an OTA app partition which can be passed to esp_ota_begin().
+ *
+ * Finds next partition round-robin, starting from the current running partition.
+ *
+ * @param start_from If set, treat this partition info as describing the current running partition. Can be NULL, in which case esp_ota_get_running_partition() is used to find the currently running partition. The result of this function is never the same as this argument.
+ *
+ * @return Pointer to info for partition which should be updated next. NULL result indicates invalid OTA data partition, or that no eligible OTA app slot partition was found.
+ *
+ */
+const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *start_from);
 
 #ifdef __cplusplus
 }

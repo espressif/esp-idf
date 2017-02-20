@@ -108,6 +108,16 @@ esp_err_t esp_image_basic_verify(uint32_t src_addr, bool log_errors, uint32_t *p
         *p_length = 0;
     }
 
+    if (src_addr % SPI_FLASH_MMU_PAGE_SIZE != 0) {
+        /* Image must start on a 64KB boundary
+
+           (This is not a technical limitation, only the flash mapped regions need to be 64KB aligned.  But the most
+           consistent way to do this is to have all the offsets internal to the image correctly 64KB aligned, and then
+           start the image on a 64KB boundary also.)
+         */
+        return ESP_ERR_INVALID_ARG;
+    }
+
     err = esp_image_load_header(src_addr, log_errors, &image_header);
     if (err != ESP_OK) {
         return err;

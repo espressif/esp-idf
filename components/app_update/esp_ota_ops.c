@@ -33,6 +33,7 @@
 #include "esp_ota_ops.h"
 #include "rom/queue.h"
 #include "rom/crc.h"
+#include "soc/dport_reg.h"
 #include "esp_log.h"
 
 
@@ -74,6 +75,9 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
 
     if ((partition == NULL) || (out_handle == NULL)) {
         return ESP_ERR_INVALID_ARG;
+    }
+    if (partition == esp_ota_get_running_partition()) {
+        return ESP_ERR_OTA_PARTITION_CONFLICT;
     }
 
     ota_ops_entry_t *new_entry = (ota_ops_entry_t *) calloc(sizeof(ota_ops_entry_t), 1);
@@ -445,4 +449,74 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
         ESP_LOGE(TAG, "ota data invalid, no current app. Assuming factory");
         return esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
     }
+}
+
+
+const esp_partition_t* esp_ota_get_running_partition(void)
+{
+    /* Find the flash address of this exact function. By definition that is part
+       of the currently running firmware. Then find the enclosing partition. */
+
+    size_t phys_offs = spi_flash_cache2phys(esp_ota_get_running_partition);
+
+    assert (phys_offs != SPI_FLASH_CACHE2PHYS_FAIL); /* indicates cache2phys lookup is buggy */
+
+    esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_APP,
+                                                     ESP_PARTITION_SUBTYPE_ANY,
+                                                     NULL);
+    assert(it != NULL); /* has to be at least one app partition */
+
+    while (it != NULL) {
+        const esp_partition_t *p = esp_partition_get(it);
+        if (p->address <= phys_offs && p->address + p->size > phys_offs) {
+            esp_partition_iterator_release(it);
+            return p;
+        }
+        it = esp_partition_next(it);
+    }
+    esp_partition_iterator_release(it);
+    return NULL;
+}
+
+
+const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *start_from)
+{
+    const esp_partition_t *result = NULL;
+    bool next_is_result = false;
+    if (start_from == NULL) {
+        start_from = esp_ota_get_running_partition();
+    }
+    assert (start_from != NULL);
+
+    /* Two possibilities: either we want the OTA partition immediately after the
+       current running OTA partition, or we want the first OTA partition we see (for
+       the case when the last OTA partition is the running partition, or if the current
+       running partition is not OTA.)
+    */
+
+    esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_APP,
+                                                     ESP_PARTITION_SUBTYPE_ANY,
+                                                     NULL);
+    while (it != NULL) {
+        const esp_partition_t *p = esp_partition_get(it);
+        if(p->subtype >= ESP_PARTITION_SUBTYPE_APP_OTA_0
+           && p->subtype < ESP_PARTITION_SUBTYPE_APP_OTA_MAX) {
+            /* is OTA partition */
+            if (p == start_from || p->address == start_from->address) {
+                next_is_result = true; /* next OTA partition is the one */
+            }
+            else if (next_is_result) {
+                result = p; /* this is it! */
+                break;
+            }
+            else if (result == NULL) {
+                result = p; /* first OTA partition is the fallback */
+            }
+        }
+        it = esp_partition_next(it);
+    }
+
+    esp_partition_iterator_release(it);
+    return result;
+
 }
