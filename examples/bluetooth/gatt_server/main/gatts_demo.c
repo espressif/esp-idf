@@ -394,6 +394,11 @@ void app_main()
 
     esp_bt_controller_init();
 
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+    if (ret) {
+        ESP_LOGE(GATTS_TAG, "%s enable controller failed\n", __func__);
+        return;
+    }
     ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(GATTS_TAG, "%s init bluetooth failed\n", __func__);

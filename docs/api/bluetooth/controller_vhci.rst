@@ -33,6 +33,7 @@ Type Definitions
 Enumerations
 ^^^^^^^^^^^^
 
+.. doxygenenum:: esp_bt_mode_t
 
 Structures
 ^^^^^^^^^^
@@ -45,6 +46,10 @@ Functions
 ^^^^^^^^^
 
 .. doxygenfunction:: esp_bt_controller_init
+.. doxygenfunction:: esp_bt_controller_deinit
+.. doxygenfunction:: esp_bt_controller_enable
+.. doxygenfunction:: esp_bt_controller_disable
+.. doxygenfunction:: esp_bt_controller_get_status
 .. doxygenfunction:: esp_vhci_host_check_send_available
 .. doxygenfunction:: esp_vhci_host_send_packet
 .. doxygenfunction:: esp_vhci_host_register_callback

@@ -215,6 +215,11 @@ void bleAdvtTask(void *pvParameters)
 void app_main()
 {
     esp_bt_controller_init();
+
+    if (esp_bt_controller_enable(ESP_BT_MODE_BTDM) != ESP_OK) {
+        return;
+    }
+
     xTaskCreatePinnedToCore(&bleAdvtTask, "bleAdvtTask", 2048, NULL, 5, NULL, 0);
 }
 

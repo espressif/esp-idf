@@ -135,6 +135,10 @@ void rtc_slp_prep_lite(uint32_t deep_slp, uint32_t cpu_lp_mode);
  */
 uint32_t rtc_sleep(uint32_t cycles_h, uint32_t cycles_l, uint32_t wakeup_opt, uint32_t reject_opt);
 
+/**
+ * @brief Shutdown PHY and RF. TODO: convert this function to another one.
+ */
+void pm_close_rf(void);
 
 #ifdef __cplusplus
 }

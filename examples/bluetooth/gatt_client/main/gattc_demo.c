@@ -397,6 +397,8 @@ void gattc_client_test(void)
 void app_main()
 {
     esp_bt_controller_init();
+    esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+
     gattc_client_test();
 }
 

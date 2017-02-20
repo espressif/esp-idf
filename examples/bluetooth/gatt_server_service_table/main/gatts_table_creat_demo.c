@@ -29,6 +29,7 @@
 #include "esp_bt_main.h"
 #include "gatts_table_creat_demo.h"
 
+#define GATTS_TABLE_TAG "GATTS_TABLE_DEMO"
 
 #define HEART_PROFILE_NUM 			    1
 #define HEART_PROFILE_APP_IDX 			0
@@ -196,7 +197,7 @@ static const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-    LOG_ERROR("GAP_EVT, event %d\n", event);
+    ESP_LOGE(GATTS_TABLE_TAG, "GAP_EVT, event %d\n", event);
 
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
@@ -210,15 +211,15 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, 
 										   esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) 
 {
-    LOG_ERROR("event = %x\n",event);
+    ESP_LOGE(GATTS_TABLE_TAG, "event = %x\n",event);
     switch (event) {
     	case ESP_GATTS_REG_EVT:
-		LOG_INFO("%s %d\n", __func__, __LINE__);
+		ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
         	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
-        	LOG_INFO("%s %d\n", __func__, __LINE__);
+        	ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
        	esp_ble_gap_config_adv_data(&heart_rate_adv_config);
 
-        	LOG_INFO("%s %d\n", __func__, __LINE__);
+        	ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
 		esp_ble_gatts_create_attr_tab(heart_rate_gatt_db, gatts_if, 
 								HRS_IDX_NB, HEART_RATE_SVC_INST_ID);
        	break;
@@ -256,7 +257,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     	case ESP_GATTS_CONGEST_EVT:
 		break;
     case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
-		LOG_ERROR("The number handle =%x\n",param->add_attr_tab.num_handle);
+		ESP_LOGE(GATTS_TABLE_TAG, "The number handle =%x\n",param->add_attr_tab.num_handle);
 		if(param->add_attr_tab.num_handle == HRS_IDX_NB){			
 			memcpy(heart_rate_handle_table, param->add_attr_tab.handles, 
 					sizeof(heart_rate_handle_table));
@@ -275,14 +276,14 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, 
 									esp_ble_gatts_cb_param_t *param)
 {
-    LOG_INFO("EVT %d, gatts if %d\n", event, gatts_if);
+    ESP_LOGI(GATTS_TABLE_TAG, "EVT %d, gatts if %d\n", event, gatts_if);
 
     /* If event is register event, store the gatts_if for each profile */
     if (event == ESP_GATTS_REG_EVT) {
         if (param->reg.status == ESP_GATT_OK) {
             heart_rate_profile_tab[HEART_PROFILE_APP_IDX].gatts_if = gatts_if;
         } else {
-            LOG_INFO("Reg app failed, app_id %04x, status %d\n",
+            ESP_LOGI(GATTS_TABLE_TAG, "Reg app failed, app_id %04x, status %d\n",
                     param->reg.app_id, 
                     param->reg.status);
             return;
@@ -307,15 +308,22 @@ void app_main()
     esp_err_t ret;
 
     esp_bt_controller_init();
-    LOG_INFO("%s init bluetooth\n", __func__);
+
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+    if (ret) {
+        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed\n", __func__);
+        return;
+    }
+
+    ESP_LOGI(GATTS_TABLE_TAG, "%s init bluetooth\n", __func__);
     ret = esp_bluedroid_init();
     if (ret) {
-        LOG_ERROR("%s init bluetooth failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed\n", __func__);
         return;
     }
     ret = esp_bluedroid_enable();
     if (ret) {
-        LOG_ERROR("%s enable bluetooth failed\n", __func__);
+        ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed\n", __func__);
         return;
     }
 

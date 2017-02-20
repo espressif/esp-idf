@@ -18,6 +18,6 @@ ifdef IS_BOOTLOADER_BUILD
 # following lines are a workaround to link librtc into the
 # bootloader, until clock setting code is in a source-based esp-idf
 # component. See also rtc_printf() in bootloader_start.c
-COMPONENT_ADD_LDFLAGS += -L $(IDF_PATH)/components/esp32/lib/ -lrtc
+COMPONENT_ADD_LDFLAGS += -L $(IDF_PATH)/components/esp32/lib/ -lrtc_clk -lrtc
 COMPONENT_EXTRA_INCLUDES += $(IDF_PATH)/components/esp32/
 endif

@@ -26,6 +26,11 @@ extern "C" {
 esp_err_t coex_init(void);
 
 /**
+ * @brief De-init software coexist
+ */
+void coex_deinit(void);
+
+/**
  * @brief Get software coexist enable or not
  *
  * @return software coexist enable status.
