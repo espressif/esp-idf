@@ -271,7 +271,12 @@ _Static_assert(sizeof(ulp_insn_t) == 4, "ULP coprocessor instruction size should
     .cycles = cycles_ } }
 
 /**
- * Halt the coprocessor
+ * Halt the coprocessor.
+ *
+ * This instruction halts the coprocessor, but keeps ULP timer active.
+ * As such, ULP program will be restarted again by timer.
+ * To stop the program and prevent the timer from restarting the program,
+ * use I_END(0) instruction.
  */
 #define I_HALT() { .halt = {\
     .unused = 0, \
@@ -331,7 +336,10 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 /**
  * End program.
  *
- * If wake == 1, wake up main CPU.
+ * This instruction halts the coprocessor, and disables the ULP timer.
+ * If wake == 1, the main CPU is woken up from deep sleep.
+ * To stop the program but allow it to be restarted by timer, use I_HALT()
+ * or I_SLEEP() instructions.
  */
 #define I_END(wake) { .end = { \
         .wakeup = wake, \
@@ -340,14 +348,27 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
         .opcode = OPCODE_END } }
 
 /**
+ * End program and restart it after given amount of time.
+ *
+ * Time to restart the program is determined by the value of
+ * SENS_SLEEP_CYCLES_Sx register, where x == timer_idx.
+ * There are 5 SENS_SLEEP_CYCLES_Sx registers, so 0 <= timer_idx < 5.
+ */
+#define I_SLEEP(timer_idx) { .sleep = { \
+        .cycle_sel = timer_idx, \
+        .unused = 0, \
+        .sub_opcode = SUB_OPCODE_SLEEP, \
+        .opcode = OPCODE_END } }
+
+/**
  * Store value from register reg_val into RTC memory.
  *
  * The value is written to an offset calculated by adding value of
  * reg_addr register and offset_ field (this offset is expressed in 32-bit words).
  * 32 bits written to RTC memory are built as follows:
- * - 5 MSBs are zero
- * - next 11 bits hold the PC of current instruction, expressed in 32-bit words
- * - next 16 bits hold the actual value to be written
+ * - bits [31:21] hold the PC of current instruction, expressed in 32-bit words
+ * - bits [20:16] = 5'b1
+ * - bits [15:0] are assigned the contents of reg_val
  *
  * RTC_SLOW_MEM[addr + offset_] = { 5'b0, insn_PC[10:0], val[15:0] }
  */
