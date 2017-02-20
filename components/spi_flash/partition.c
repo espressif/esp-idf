@@ -85,6 +85,7 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
     assert(it);
     // iterator reached the end of linked list?
     if (it->next_item == NULL) {
+        esp_partition_iterator_release(it);
         return NULL;
     }
     _lock_acquire(&s_partition_list_lock);
