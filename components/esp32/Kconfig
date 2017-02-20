@@ -508,13 +508,14 @@ config PHY_ENABLED
 menu PHY
 	visible if PHY_ENABLED
 	
-config ESP32_STORE_PHY_CAL_DATA_INTO_NVS
-    bool "Store PHY calibration data into NVS"
+config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
+    bool "Do phy calibration and store calibration data in NVS"
     depends on PHY_ENABLED
     default y
     help
-        If this option is enabled, PHY initialization will also calibrate PHY data, and
-        store it into NVS.
+        If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
+        PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full calibration
+        will be performed and stored in NVS. In all other cases, only partial calibration will be performed. 
 
         If unsure, choose 'y'.
 

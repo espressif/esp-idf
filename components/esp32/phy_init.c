@@ -77,7 +77,7 @@ esp_err_t esp_phy_rf_deinit(void)
 
     _lock_acquire(&s_phy_rf_init_lock);
     if (s_phy_rf_init_count == 1) {
-        // Disable PHY and RF. This is a teporary function.
+        // Disable PHY and RF. TODO: convert this function to another one.
         pm_close_rf();
         // Disable WiFi peripheral clock
         CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
@@ -257,7 +257,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
 
 void esp_phy_load_cal_and_init(void)
 {
-#ifdef CONFIG_ESP32_STORE_PHY_CAL_DATA_INTO_NVS
+#ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     nvs_flash_init();
     esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
     if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
