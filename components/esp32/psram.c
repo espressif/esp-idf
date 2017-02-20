@@ -14,7 +14,7 @@
 
 #include "esp_types.h"
 #include "rom/ets_sys.h"
-#include "psram.h"
+#include "esp_psram.h"
 #include "soc/io_mux_reg.h"
 #include "soc/dport_reg.h"
 #include "rom/gpio.h"
@@ -27,6 +27,25 @@
 #include "string.h"
 #include "rom/spi_flash.h"
 #include "esp_err.h"
+
+#define PSRAM_READ              0x03
+#define PSRAM_FAST_READ         0x0B
+#define PSRAM_FAST_READ_QUAD    0xEB
+#define PSRAM_WRITE             0x02
+#define PSRAM_QUAD_WRITE        0x38
+#define PSRAM_ENTER_QMODE       0x35
+#define PSRAM_EXIT_QMODE        0xF5
+#define PSRAM_RESET_EN          0x66
+#define PSRAM_RESET             0x99
+#define PSRAM_SET_BURST_LEN     0xC0
+#define PSRAM_DEVICE_ID         0x9F
+
+typedef enum {
+    PSRAM_SPI_1  = 0x1,
+    PSRAM_SPI_2,
+    PSRAM_SPI_3,
+    PSRAM_SPI_MAX ,
+} psram_spi_num_t;
 
 static psram_cache_mode_t g_PsramMode = PSRAM_CACHE_MAX;
 extern void Cache_Flush(int);
@@ -580,7 +599,7 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
 
 
 //spi param init for psram
-void IRAM_ATTR  psram_spi_init(psram_spi_num_t spiNum,psram_cache_mode_t mode)
+void IRAM_ATTR psram_spi_init(psram_spi_num_t spiNum,psram_cache_mode_t mode)
 {
     uint8_t i, k;
     CLEAR_PERI_REG_MASK(SPI_SLAVE_REG(spiNum), SPI_TRANS_DONE << 5);

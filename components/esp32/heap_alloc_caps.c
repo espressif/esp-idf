@@ -16,7 +16,7 @@
 #include <freertos/heap_regions.h>
 
 #include "esp_heap_alloc_caps.h"
-#include "spiram.h"
+#include "esp_psram.h"
 #include "esp_log.h"
 #include <stdbool.h>
 
@@ -52,22 +52,22 @@ WARNING: The current code assumes the ROM stacks are located in tag 1; no alloca
 the FreeRTOS scheduler has started.
 */
 static const tag_desc_t tag_desc[]={
-    { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }, false},                        //Tag 0: Plain ole D-port RAM
-    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true},       //Tag 1: Plain ole D-port RAM which has an alias on the I-port
-    { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 }, false},                                     //Tag 2: IRAM
-    { "PID2IRAM", { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //Tag 3-8: PID 2-7 IRAM
-    { "PID3IRAM", { MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID4IRAM", { MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID5IRAM", { MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID6IRAM", { MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID7IRAM", { MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID2DRAM", { MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //Tag 9-14: PID 2-7 DRAM
-    { "PID3DRAM", { MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
-    { "PID4DRAM", { MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
-    { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
-    { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
-    { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
-    { "SPISRAM", { MALLOC_CAP_SPISRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false},   //Tag 15: SPI SRAM data
+    { "DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }, false},                        //Tag 0: Plain ole D-port RAM
+    { "D/IRAM", { MALLOC_CAP_INTERNAL, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true},         //Tag 1: Plain ole D-port RAM which has an alias on the I-port
+    { "IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 }, false},                                     //Tag 2: IRAM
+    { "PID2IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //Tag 3-8: PID 2-7 IRAM
+    { "PID3IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID4IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID5IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID6IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID7IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
+    { "PID2DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //Tag 9-14: PID 2-7 DRAM
+    { "PID3DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "PID4DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "PID5DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "PID6DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "PID7DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "SPIRAM", { MALLOC_CAP_SPIRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false},                         //Tag 15: SPI SRAM data
     { "", { MALLOC_CAP_INVALID, MALLOC_CAP_INVALID, MALLOC_CAP_INVALID }, false} //End
 };
 
@@ -239,8 +239,11 @@ void heap_alloc_caps_init() {
 #endif
 #endif
 
-#if 0
-    enable_spi_sram();
+#if MEMMAP_SPIRAM_ENABLE
+    if ( psram_enable(PSRAM_CACHE_F40M_S40M) != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "PSRAM enabled but initialization failed. Bailing out.");
+        abort();
+    }
 #else
     disable_mem_region((void*)0x3f800000, (void*)0x3f820000); //SPI SRAM not installed
 #endif
@@ -303,7 +306,22 @@ Standard malloc() implementation. Will return standard no-frills byte-accessible
 */
 void *pvPortMalloc( size_t xWantedSize )
 {
+#if CONFIG_MEMMAP_SPIRAM_ENABLE
+    void *ret;
+    if (xWantedSize > MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL) {
+        ret = pvPortMallocCaps ( xWantedSize, MALLOC_CAP_8BIT|MALLOC_CAP_SPIRAM );
+    } else {
+        ret = pvPortMallocCaps ( xWantedSize, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL );
+    }
+
+    if (ret == NULL) {
+        //Preferred memory pool has too little space left. Fall back to just grabbing any 8bit-capable memory.
+        ret = pvPortMallocCaps ( xWantedSize, MALLOC_CAP_8BIT );
+    }
+#else
+    //Only have internal memory. Just allocate there.
     return pvPortMallocCaps( xWantedSize, MALLOC_CAP_8BIT );
+#endif
 }
 
 /*

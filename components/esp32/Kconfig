@@ -95,15 +95,32 @@ config ESP32_CORE_DUMP_LOG_LEVEL
     help
         Config core dump module logging level (0-5).
 
-# Not implemented and/or needs new silicon rev to work
-config MEMMAP_SPISRAM
-    bool "Use external SPI SRAM chip as main memory"
-    depends on ESP32_NEEDS_NEW_SILICON_REV
+
+config MEMMAP_SPIRAM_ENABLE
+    bool "Add external SPI RAM to heap"
     default "n"
     help
-        The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the
-        main memory map. Enable this if you have this hardware and want to use it in the same
-        way as on-chip RAM.
+        The ESP32 can control an external SPI RAM chip, adding the memory it contains to the
+        main memory map. Enable this if you have this hardware (eg when you have the ESP-WROVER module, or
+        a board containing that module) and want to use it in the same way as on-chip DRAM.
+        This only works correctly with v1 (post Feb 2017) silicon.
+
+
+choice MEMMAP_SPIRAM_TYPE
+    prompt "Type of SPI RAM chip in use"
+    depends on MEMMAP_SPIRAM_ENABLE
+    default MEMMAP_SPIRAM_TYPE_ESPPSRAM32
+
+config MEMMAP_SPIRAM_TYPE_ESPPSRAM32
+    bool "ESP-PSRAM32 or IS25WP032"
+
+endchoice
+
+config MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL
+    depends on MEMMAP_SPIRAM_ENABLE
+    prompt "Always put malloc()s smaller than this size, in bytes, in internal RAM"
+    default 1024
+
 
 choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
     bool "Number of MAC address generated from the hardware MAC address in efuse"
