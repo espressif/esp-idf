@@ -334,6 +334,14 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .opcode = OPCODE_RD_REG } }
 
 /**
+ * Set or clear a bit in the peripheral register.
+ *
+ * Sets bit (1 << shift) of register reg to value val.
+ * This instruction can access RTC_CNTL_, RTC_IO_, and SENS_ peripheral registers.
+ */
+#define I_WR_REG_BIT(reg, shift, val) I_WR_REG(reg, shift, shift, val)
+
+/**
  * End program.
  *
  * This instruction halts the coprocessor, and disables the ULP timer.
