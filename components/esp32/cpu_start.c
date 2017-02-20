@@ -58,7 +58,7 @@
 #include "esp_core_dump.h"
 #include "trax.h"
 
-#include "psram.h"
+#include "esp_psram.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -116,6 +116,7 @@ void IRAM_ATTR call_start_cpu0()
     //Flush and enable icache for APP CPU
     Cache_Flush(1);
     Cache_Read_Enable(1);
+
     esp_cpu_unstall(1);
     //Enable clock gating and reset the app cpu.
     SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
@@ -138,7 +139,6 @@ void IRAM_ATTR call_start_cpu0()
        corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
        works around this problem. */
     heap_alloc_caps_init();
-
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
     start_cpu0();

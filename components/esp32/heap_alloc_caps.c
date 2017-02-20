@@ -52,21 +52,21 @@ WARNING: The current code assumes the ROM stacks are located in tag 1; no alloca
 the FreeRTOS scheduler has started.
 */
 static const tag_desc_t tag_desc[]={
-    { "DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }, false},                        //Tag 0: Plain ole D-port RAM
-    { "D/IRAM", { MALLOC_CAP_INTERNAL, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true},         //Tag 1: Plain ole D-port RAM which has an alias on the I-port
-    { "IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 }, false},                                     //Tag 2: IRAM
-    { "PID2IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //Tag 3-8: PID 2-7 IRAM
-    { "PID3IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID4IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID5IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID6IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID7IRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false},                   //
-    { "PID2DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //Tag 9-14: PID 2-7 DRAM
-    { "PID3DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
-    { "PID4DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
-    { "PID5DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
-    { "PID6DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
-    { "PID7DRAM", { MALLOC_CAP_INTERNAL|MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false},                     //
+    { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, MALLOC_CAP_INTERNAL }, false},                        //Tag 0: Plain ole D-port RAM
+    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC|MALLOC_CAP_INTERNAL }, true},         //Tag 1: Plain ole D-port RAM which has an alias on the I-port
+    { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, MALLOC_CAP_INTERNAL }, false},                                     //Tag 2: IRAM
+    { "PID2IRAM", { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                   //Tag 3-8: PID 2-7 IRAM
+    { "PID3IRAM", { MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                   //
+    { "PID4IRAM", { MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                   //
+    { "PID5IRAM", { MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                   //
+    { "PID6IRAM", { MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                   //
+    { "PID7IRAM", { MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                   //
+    { "PID2DRAM", { MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //Tag 9-14: PID 2-7 DRAM
+    { "PID3DRAM", { MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
+    { "PID4DRAM", { MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
+    { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
+    { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
+    { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
     { "SPIRAM", { MALLOC_CAP_SPIRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false},                         //Tag 15: SPI SRAM data
     { "", { MALLOC_CAP_INVALID, MALLOC_CAP_INVALID, MALLOC_CAP_INVALID }, false} //End
 };
@@ -91,7 +91,7 @@ be sorted from low to high start address.
 This array is *NOT* const because it gets modified depending on what pools are/aren't available.
 */
 static HeapRegionTagged_t regions[]={
-    { (uint8_t *)0x3F800000, 0x20000, 15, 0}, //SPI SRAM, if available
+    { (uint8_t *)0x3F800000, 0x400000, 15, 0}, //SPI SRAM, if available
     { (uint8_t *)0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
     { (uint8_t *)0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- if BT is enabled, used as BT HW shared memory
     { (uint8_t *)0x3FFB8000, 0x8000, 0, 0}, //pool 14 <- if BT is enabled, used data memory for BT ROM functions.
@@ -186,6 +186,36 @@ file.
 */
 extern int _data_start, _heap_start, _init_start, _iram_text_end;
 
+
+/*
+ Simple RAM test. Writes a word every 32 bytes. Takes about a second to complete for 4MiB. Returns
+ true when RAM seems OK, false when test fails.
+*/
+static bool test_spiram(size_t s)
+{
+    volatile int *spiram=(volatile int*)0x3F800000;
+    size_t p;
+    int errct=0;
+    int initial_err=-1;
+    for (p=0; p<s/4; p+=8) {
+        spiram[p]=p^0xAAAAAAAA;
+    }
+    for (p=0; p<s/4; p+=8) {
+        if (spiram[p]!=(p^0xAAAAAAAA)) {
+            errct++;
+            if (errct==1) initial_err=p*4;
+        }
+    }
+    if (errct) {
+        ESP_EARLY_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, s/32, initial_err+0x3F800000);
+        return false;
+    } else {
+        ESP_EARLY_LOGI(TAG, "SPI SRAM memory test OK");
+        return true;
+    }
+}
+
+
 /*
 Initialize the heap allocator. We pass it a bunch of region descriptors, but we need to modify those first to accommodate for 
 the data as loaded by the bootloader.
@@ -239,13 +269,16 @@ void heap_alloc_caps_init() {
 #endif
 #endif
 
-#if MEMMAP_SPIRAM_ENABLE
+#if CONFIG_MEMMAP_SPIRAM_ENABLE
     if ( psram_enable(PSRAM_CACHE_F40M_S40M) != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "PSRAM enabled but initialization failed. Bailing out.");
         abort();
     }
+#if CONFIG_MEMMAP_SPIRAM_TEST
+    if (!test_spiram(4*1024*1024)) abort();
+#endif
 #else
-    disable_mem_region((void*)0x3f800000, (void*)0x3f820000); //SPI SRAM not installed
+    disable_mem_region((void*)0x3f800000, (void*)0x3fc00000); //SPI SRAM not installed
 #endif
 
     //The heap allocator will treat every region given to it as separate. In order to get bigger ranges of contiguous memory,
@@ -306,9 +339,9 @@ Standard malloc() implementation. Will return standard no-frills byte-accessible
 */
 void *pvPortMalloc( size_t xWantedSize )
 {
-#if CONFIG_MEMMAP_SPIRAM_ENABLE
+#if CONFIG_MEMMAP_SPIRAM_ENABLE_MALLOC
     void *ret;
-    if (xWantedSize > MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL) {
+    if (xWantedSize > CONFIG_MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL) {
         ret = pvPortMallocCaps ( xWantedSize, MALLOC_CAP_8BIT|MALLOC_CAP_SPIRAM );
     } else {
         ret = pvPortMallocCaps ( xWantedSize, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL );
@@ -318,9 +351,10 @@ void *pvPortMalloc( size_t xWantedSize )
         //Preferred memory pool has too little space left. Fall back to just grabbing any 8bit-capable memory.
         ret = pvPortMallocCaps ( xWantedSize, MALLOC_CAP_8BIT );
     }
+    return ret;
 #else
     //Only have internal memory. Just allocate there.
-    return pvPortMallocCaps( xWantedSize, MALLOC_CAP_8BIT );
+    return pvPortMallocCaps( xWantedSize, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL );
 #endif
 }
 
@@ -403,13 +437,17 @@ size_t xPortGetFreeHeapSizeCaps( uint32_t caps )
 {
     int prio;
     int tag;
+    int cumTag;
     size_t ret=0;
-    for (prio=0; prio<NO_PRIOS; prio++) {
-        //Iterate over tag descriptors for this priority
-        for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
-            if ((tag_desc[tag].prio[prio]&caps)!=0) {
-                ret+=xPortGetFreeHeapSizeTagged(tag);
-            }
+    for (tag=0; tag_desc[tag].prio[0]!=MALLOC_CAP_INVALID; tag++) {
+        //Get tags for all priorities
+        cumTag=0;
+        for (prio=0; prio<NO_PRIOS; prio++) {
+            cumTag|=tag_desc[tag].prio[prio];
+        }
+        //Add to total if tag has all the capabilities in cap.
+        if ((cumTag&caps)==caps) {
+            ret+=xPortGetFreeHeapSizeTagged(tag);
         }
     }
     return ret;
@@ -419,13 +457,17 @@ size_t xPortGetMinimumEverFreeHeapSizeCaps( uint32_t caps )
 {
     int prio;
     int tag;
+    int cumTag;
     size_t ret=0;
-    for (prio=0; prio<NO_PRIOS; prio++) {
-        //Iterate over tag descriptors for this priority
-        for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
-            if ((tag_desc[tag].prio[prio]&caps)!=0) {
-                ret+=xPortGetMinimumEverFreeHeapSizeTagged(tag);
-            }
+    for (tag=0; tag_desc[tag].prio[0]!=MALLOC_CAP_INVALID; tag++) {
+        //Get tags for all priorities
+        cumTag=0;
+        for (prio=0; prio<NO_PRIOS; prio++) {
+            cumTag|=tag_desc[tag].prio[prio];
+        }
+        //Add to total if tag has all the capabilities in cap.
+        if ((cumTag&caps)==caps) {
+            ret+=xPortGetMinimumEverFreeHeapSizeTagged(tag);
         }
     }
     return ret;

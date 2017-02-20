@@ -95,16 +95,16 @@ config ESP32_CORE_DUMP_LOG_LEVEL
     help
         Config core dump module logging level (0-5).
 
-
 config MEMMAP_SPIRAM_ENABLE
-    bool "Add external SPI RAM to heap"
+    bool "Capability allocator can allocate SPI RAM memory"
     default "n"
     help
         The ESP32 can control an external SPI RAM chip, adding the memory it contains to the
-        main memory map. Enable this if you have this hardware (eg when you have the ESP-WROVER module, or
-        a board containing that module) and want to use it in the same way as on-chip DRAM.
+        memory map. Enable this if you have this hardware (eg when you have the ESP-WROVER module, or
+        a board containing that module) and want to allocate memory from it using
+        pvPortMallocCaps(size, MALLOC_CAP_SPIRAM ); This also enables the code that initializes the
+        RAM chip.
         This only works correctly with v1 (post Feb 2017) silicon.
-
 
 choice MEMMAP_SPIRAM_TYPE
     prompt "Type of SPI RAM chip in use"
@@ -116,11 +116,27 @@ config MEMMAP_SPIRAM_TYPE_ESPPSRAM32
 
 endchoice
 
-config MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL
+config MEMMAP_SPIRAM_TEST
+    bool "On SPI RAM init, do a quick memory test"
     depends on MEMMAP_SPIRAM_ENABLE
-    prompt "Always put malloc()s smaller than this size, in bytes, in internal RAM"
-    default 1024
+    default "n"
+    help
+        This does a quick memory test on boot-up. This takes about a second for 4MiB of SPI RAM.
 
+config MEMMAP_SPIRAM_ENABLE_MALLOC
+    bool "malloc() can also allocate in SPI SRAM"
+    depends on MEMMAP_SPIRAM_ENABLE
+    default "n"
+    help
+        If enabled, malloc() will return pointers to both internal as well as external
+        RAM. It will use a heuristic to determine when to return which. For now, the
+        heuristic is to allocate internal RAM for anything smaller than 
+        MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL bytes and external RAM for bigger sizes.
+
+config MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL
+    int "Always put malloc()s smaller than this size, in bytes, in internal RAM"
+    depends on MEMMAP_SPIRAM_ENABLE_MALLOC
+    default 1024
 
 choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
     bool "Number of MAC address generated from the hardware MAC address in efuse"
