@@ -59,7 +59,7 @@ typedef uint32_t esp_ota_handle_t;
 
  * @return
  *    - ESP_OK: OTA operation commenced successfully.
- *    - ESP_ERR_INVALID_ARG: partition or out_handle arguments were NULL, or partition doesn't point to a non OTA app partition.
+ *    - ESP_ERR_INVALID_ARG: partition or out_handle arguments were NULL, or partition doesn't point to an OTA app partition.
  *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
  *    - ESP_ERR_OTA_PARTITION_CONFLICT: Partition holds the currently running firmware, cannot update in place.
  *    - ESP_ERR_NOT_FOUND: Partition argument not found in partition table.

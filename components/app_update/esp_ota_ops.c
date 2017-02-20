@@ -43,7 +43,7 @@
 
 typedef struct ota_ops_entry_ {
     uint32_t handle;
-    esp_partition_t part;
+    const esp_partition_t *part;
     uint32_t erased_size;
     uint32_t wrote_size;
 #ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
@@ -69,21 +69,35 @@ static ota_select s_ota_select[2];
 
 const static char *TAG = "esp_ota_ops";
 
+/* Return true if this is an OTA app partition */
+static bool is_ota_partition(const esp_partition_t *p)
+{
+    return (p != NULL
+            && p->type == ESP_PARTITION_TYPE_APP
+            && p->subtype >= ESP_PARTITION_SUBTYPE_APP_OTA_0
+            && p->subtype < ESP_PARTITION_SUBTYPE_APP_OTA_MAX);
+}
+
 esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp_ota_handle_t *out_handle)
 {
+    ota_ops_entry_t *new_entry;
     esp_err_t ret = ESP_OK;
 
     if ((partition == NULL) || (out_handle == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (partition == esp_ota_get_running_partition()) {
-        return ESP_ERR_OTA_PARTITION_CONFLICT;
+
+    partition = esp_partition_verify(partition);
+    if (partition == NULL) {
+        return ESP_ERR_NOT_FOUND;
     }
 
-    ota_ops_entry_t *new_entry = (ota_ops_entry_t *) calloc(sizeof(ota_ops_entry_t), 1);
+    if (!is_ota_partition(partition)) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
-    if (new_entry == 0) {
-        return ESP_ERR_NO_MEM;
+    if (partition == esp_ota_get_running_partition()) {
+        return ESP_ERR_OTA_PARTITION_CONFLICT;
     }
 
     // If input image size is 0 or OTA_SIZE_UNKNOWN, erase entire partition
@@ -94,9 +108,12 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
     }
 
     if (ret != ESP_OK) {
-        free(new_entry);
-        new_entry = NULL;
         return ret;
+    }
+
+    new_entry = (ota_ops_entry_t *) calloc(sizeof(ota_ops_entry_t), 1);
+    if (new_entry == NULL) {
+        return ESP_ERR_NO_MEM;
     }
 
     LIST_INSERT_HEAD(&s_ota_ops_entries_head, new_entry, entries);
@@ -107,7 +124,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         new_entry->erased_size = image_size;
     }
 
-    memcpy(&new_entry->part, partition, sizeof(esp_partition_t));
+    new_entry->part = partition;
     new_entry->handle = ++s_ota_ops_last_handle;
     *out_handle = new_entry->handle;
     return ESP_OK;
@@ -169,7 +186,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
             }
 #endif
 
-            ret = esp_partition_write(&it->part, it->wrote_size, data_bytes, size);
+            ret = esp_partition_write(it->part, it->wrote_size, data_bytes, size);
             if(ret == ESP_OK){
                 it->wrote_size += size;
             }
@@ -219,13 +236,13 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
     }
 #endif
 
-    if (esp_image_basic_verify(it->part.address, true, &image_size) != ESP_OK) {
+    if (esp_image_basic_verify(it->part->address, true, &image_size) != ESP_OK) {
         ret = ESP_ERR_OTA_VALIDATE_FAILED;
         goto cleanup;
     }
 
 #ifdef CONFIG_SECURE_BOOT_ENABLED
-    ret = esp_secure_boot_verify_signature(it->part.address, image_size);
+    ret = esp_secure_boot_verify_signature(it->part->address, image_size);
     if (ret != ESP_OK) {
         ret = ESP_ERR_OTA_VALIDATE_FAILED;
         goto cleanup;
@@ -474,8 +491,8 @@ const esp_partition_t* esp_ota_get_running_partition(void)
         }
         it = esp_partition_next(it);
     }
-    esp_partition_iterator_release(it);
-    return NULL;
+
+    abort(); /* Partition table is invalid or corrupt */
 }
 
 
@@ -485,13 +502,16 @@ const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *
     bool next_is_result = false;
     if (start_from == NULL) {
         start_from = esp_ota_get_running_partition();
+    } else {
+        start_from = esp_partition_verify(start_from);
     }
     assert (start_from != NULL);
+    /* at this point, 'start_from' points to actual partition table data in flash */
 
-    /* Two possibilities: either we want the OTA partition immediately after the
-       current running OTA partition, or we want the first OTA partition we see (for
-       the case when the last OTA partition is the running partition, or if the current
-       running partition is not OTA.)
+
+    /* Two possibilities: either we want the OTA partition immediately after the current running OTA partition, or we
+       want the first OTA partition in the table (for the case when the last OTA partition is the running partition, or
+       if the current running partition is not OTA.)
     */
 
     esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_APP,
@@ -499,18 +519,20 @@ const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *
                                                      NULL);
     while (it != NULL) {
         const esp_partition_t *p = esp_partition_get(it);
-        if(p->subtype >= ESP_PARTITION_SUBTYPE_APP_OTA_0
-           && p->subtype < ESP_PARTITION_SUBTYPE_APP_OTA_MAX) {
-            /* is OTA partition */
-            if (p == start_from || p->address == start_from->address) {
-                next_is_result = true; /* next OTA partition is the one */
+        if(is_ota_partition(p)) {
+            if (result == NULL) {
+                /* Default to first OTA partition we find,
+                 will be used if nothing else matches */
+                result = p;
+            }
+
+            if (p == start_from) {
+                /* Next OTA partition is the one to use */
+                next_is_result = true;
             }
             else if (next_is_result) {
                 result = p; /* this is it! */
                 break;
-            }
-            else if (result == NULL) {
-                result = p; /* first OTA partition is the fallback */
             }
         }
         it = esp_partition_next(it);

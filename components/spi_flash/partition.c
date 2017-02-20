@@ -200,6 +200,28 @@ const esp_partition_t* esp_partition_get(esp_partition_iterator_t iterator)
     return iterator->info;
 }
 
+const esp_partition_t *esp_partition_verify(const esp_partition_t *partition)
+{
+    assert(partition != NULL);
+    const char *label = (strlen(partition->label) > 0) ? partition->label : NULL;
+    esp_partition_iterator_t it = esp_partition_find(partition->type,
+                                                     partition->subtype,
+                                                     label);
+    while (it != NULL) {
+        const esp_partition_t *p = esp_partition_get(it);
+        /* Can't memcmp() whole structure here as padding contents may be different */
+        if (p->address == partition->address
+            && partition->size == p->size
+            && partition->encrypted == p->encrypted) {
+            esp_partition_iterator_release(it);
+            return p;
+        }
+        it = esp_partition_next(it);
+    }
+    esp_partition_iterator_release(it);
+    return NULL;
+}
+
 esp_err_t esp_partition_read(const esp_partition_t* partition,
         size_t src_offset, void* dst, size_t size)
 {
