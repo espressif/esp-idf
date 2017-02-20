@@ -342,9 +342,9 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
             }
 
             if (s_ota_select[0].ota_seq >= s_ota_select[1].ota_seq) {
-                return rewrite_ota_seq((SUB_TYPE_ID(subtype) + 1) % ota_app_count + i * ota_app_count, 0, find_partition);
-            } else {
                 return rewrite_ota_seq((SUB_TYPE_ID(subtype) + 1) % ota_app_count + i * ota_app_count, 1, find_partition);
+            } else {
+                return rewrite_ota_seq((SUB_TYPE_ID(subtype) + 1) % ota_app_count + i * ota_app_count, 0, find_partition);
             }
 
         } else if (ota_select_valid(&s_ota_select[0])) {
