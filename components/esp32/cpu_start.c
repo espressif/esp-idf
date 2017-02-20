@@ -211,12 +211,6 @@ void start_cpu0_default(void)
     esp_core_dump_init();
 #endif
 
-#if CONFIG_SW_COEXIST_ENABLE
-    if (coex_init() == ESP_OK) {
-        coexist_set_enable(true);
-    }
-#endif
-
     xTaskCreatePinnedToCore(&main_task, "main",
             ESP_TASK_MAIN_STACK, NULL,
             ESP_TASK_MAIN_PRIO, NULL, 0);

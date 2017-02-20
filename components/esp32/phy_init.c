@@ -35,6 +35,7 @@
 #include "phy.h"
 #include "phy_init_data.h"
 #include "rtc.h"
+#include "esp_coexist.h"
 
 static const char* TAG = "phy_init";
 
@@ -65,6 +66,10 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
         phy_set_wifi_mode_only(0);
         register_chipv7_phy(init_data, calibration_data, mode);
         coex_bt_high_prio();
+    } else {
+#if CONFIG_SW_COEXIST_ENABLE
+        coex_init();
+#endif
     }
     s_phy_rf_init_count++;
     _lock_release(&s_phy_rf_init_lock);
@@ -81,6 +86,10 @@ esp_err_t esp_phy_rf_deinit(void)
         pm_close_rf();
         // Disable WiFi peripheral clock
         CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
+    } else {
+#if CONFIG_SW_COEXIST_ENABLE
+        coex_deinit();
+#endif
     }
     s_phy_rf_init_count--;
     _lock_release(&s_phy_rf_init_lock);
