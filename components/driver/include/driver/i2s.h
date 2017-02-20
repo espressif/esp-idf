@@ -32,9 +32,6 @@
 extern "C" {
 #endif
 
-#define I2S_PIN_NO_CHANGE      (-1)
-
-
 /**
  * @brief I2S bit width per sample.
  *
@@ -147,6 +144,8 @@ typedef struct {
     size_t              size;   /*!< I2S data size for I2S_DATA event*/
 } i2s_event_t;
 
+#define I2S_PIN_NO_CHANGE (-1) /*!< Use in i2s_pin_config_t for pins which should not be changed */
+
 /**
  * @brief I2S pin number for i2s_set_pin
  *
@@ -160,15 +159,18 @@ typedef struct {
 
 typedef intr_handle_t i2s_isr_handle_t;
 /**
- * @brief   Set I2S pin number
+ * @brief Set I2S pin number
  *
- *          @note
- *          Internal signal can be output to multiple GPIO pads
- *          Only one GPIO pad can connect with input signal
+ * @note
+ * The I2S peripheral output signals can be connected to multiple GPIO pads.
+ * However, the I2S peripheral input signal can only be connected to one GPIO pad.
  *
  * @param   i2s_num     I2S_NUM_0 or I2S_NUM_1
  *
- * @param   pin  I2S Pin struct, or NULL for  2-channels, 8-bits DAC pin configuration (GPIO25 & GPIO26)
+ * @param   pin         I2S Pin structure, or NULL to set 2-channel 8-bit internal DAC pin configuration (GPIO25 & GPIO26)
+ *
+ * Inside the pin configuration structure, set I2S_PIN_NO_CHANGE for any pin where
+ * the current configuration should not be changed.
  *
  * @return
  *     - ESP_OK   Success
@@ -177,15 +179,17 @@ typedef intr_handle_t i2s_isr_handle_t;
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
 
 /**
- * @brief   i2s install and start driver
+ * @brief Install and start I2S driver.
  *
- * @param   i2s_num         I2S_NUM_0, I2S_NUM_1
+ * @param i2s_num         I2S_NUM_0, I2S_NUM_1
  *
- * @param   i2s_config      I2S configurations - see i2s_config_t struct
+ * @param i2s_config      I2S configurations - see i2s_config_t struct
  *
- * @param   queue_size      I2S event queue size/depth.
+ * @param queue_size      I2S event queue size/depth.
  *
- * @param   i2s_queue       I2S event queue handle, if set NULL, driver will not use an event queue.
+ * @param i2s_queue       I2S event queue handle, if set NULL, driver will not use an event queue.
+ *
+ * This function must be called before any I2S driver read/write operations.
  *
  * @return
  *     - ESP_OK   Success
@@ -205,68 +209,88 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
 esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num);
 
 /**
- * @brief   i2s read data buffer to i2s dma buffer
+ * @brief Write data to I2S DMA transmit buffer.
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
  *
- * @param src      source address to write
+ * @param src      Source address to write from
  *
- * @param size     size of data (size in bytes)
+ * @param size     Size of data in bytes
  *
- * @param ticks_to_wait     Write timeout
+ * @param ticks_to_wait TX buffer wait timeout in RTOS ticks. If this
+ * many ticks pass without space becoming available in the DMA
+ * transmit buffer, then the function will return (note that if the
+ * data is written to the DMA buffer in pieces, the overall operation
+ * may still take longer than this timeout.) Pass portMAX_DELAY for no
+ * timeout.
  *
- * @return  number of written bytes
+ * Format of the data in source buffer is determined by the I2S
+ * configuration (see i2s_config_t).
+ *
+ * @return  Number of bytes written, or ESP_FAIL (-1) for parameter error. If a timeout occurred, bytes written will be less than total size.
  */
 int i2s_write_bytes(i2s_port_t i2s_num, const char *src, size_t size, TickType_t ticks_to_wait);
 
 /**
- * @brief   i2s write data buffer to i2s dma buffer
+ * @brief Read data from I2S DMA receive buffer
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
  *
- * @param dest     destination address to read
+ * @param dest     Destination address to read into
  *
- * @param size     size of data (size in bytes)
+ * @param size     Size of data in bytes
  *
- * @param ticks_to_wait     Read timeout
+ * @param ticks_to_wait RX buffer wait timeout in RTOS ticks. If this many ticks pass without bytes becoming available in the DMA receive buffer, then the function will return (note that if data is read from the DMA buffer in pieces, the overall operation may still take longer than this timeout.) Pass portMAX_DELAY for no timeout.
  *
- * @return  number of read bytes
+ * Format of the data in source buffer is determined by the I2S
+ * configuration (see i2s_config_t).
+ *
+ * @return  Number of bytes read, or ESP_FAIL (-1) for parameter error. If a timeout occurred, bytes read will be less than total size.
  */
 int i2s_read_bytes(i2s_port_t i2s_num, char* dest, size_t size, TickType_t ticks_to_wait);
 
 /**
- * @brief   i2s push 1 sample to i2s dma buffer, with the size parameter equal to one sample's size in bytes = bits_per_sample/8.
+ * @brief Push (write) a single sample to the I2S DMA TX buffer.
+ *
+ * Size of the sample is determined by the channel_format (mono or stereo)) & bits_per_sample configuration (see i2s_config_t).
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
  *
- * @param sample     destination address to write (depend on bits_per_sample, size of sample (in bytes) = 2*bits_per_sample/8)
+ * @param sample Pointer to buffer containing sample to write. Size of buffer (in bytes) = (number of channels) * bits_per_sample / 8.
  *
- * @param ticks_to_wait     Push timeout
+ * @param ticks_to_wait Push timeout in RTOS ticks. If space is not available in the DMA TX buffer within this period, no data is written and function returns 0.
  *
- * @return  number of push bytes
+ * @return Number of bytes successfully pushed to DMA buffer, or ESP_FAIL (-1) for parameter error. Will be either zero or the size of configured sample buffer.
  */
 int i2s_push_sample(i2s_port_t i2s_num, const char *sample, TickType_t ticks_to_wait);
 
 /**
- * @brief  Pop 1 sample to i2s dma buffer, with the size parameter equal to one sample's size in bytes = bits_per_sample/8.
+ * @brief Pop (read) a single sample from the I2S DMA RX buffer.
+ *
+ * Size of the sample is determined by the channel_format (mono or stereo)) & bits_per_sample configuration (see i2s_config_t).
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
  *
- * @param sample    destination address to write (depend on bits_per_sample, size of sample (in bytes) = 2*bits_per_sample/8)
+ * @param sample Buffer sample data will be read into. Size of buffer (in bytes) = (number of channels) * bits_per_sample / 8.
  *
- * @param ticks_to_wait     Pop timeout
+ * @param ticks_to_wait Pop timeout in RTOS ticks. If a sample is not available in the DMA buffer within this period, no data is read and function returns zero.
  *
- * @return  number of pop bytes
+ * @return Number of bytes successfully read from DMA buffer, or ESP_FAIL (-1) for parameter error. Byte count will be either zero or the size of the configured sample buffer.
+
  */
 int i2s_pop_sample(i2s_port_t i2s_num, char *sample, TickType_t ticks_to_wait);
 
 
 /**
- * @brief   Set clock rate used for I2S RX and TX
+ * @brief Set sample rate used for I2S RX and TX.
+ *
+ * The bit clock rate is determined by the sample rate and i2s_config_t configuration parameters (number of channels, bits_per_sample).
+ *
+ * `bit_clock = rate * (number of channels) * bits_per_sample`
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
  *
- * @param rate  I2S clock (ex: 8000, 44100...)
+ * @param rate I2S sample rate (ex: 8000, 44100...)
  *
  * @return
  *     - ESP_OK   Success
@@ -275,18 +299,9 @@ int i2s_pop_sample(i2s_port_t i2s_num, char *sample, TickType_t ticks_to_wait);
 esp_err_t i2s_set_sample_rates(i2s_port_t i2s_num, uint32_t rate);
 
 /**
- * @brief   Start driver
+ * @brief Stop I2S driver
  *
- * @param i2s_num  I2S_NUM_0, I2S_NUM_1
- *
-* @return
- *     - ESP_OK   Success
- *     - ESP_FAIL Parameter error
- */
-esp_err_t i2s_start(i2s_port_t i2s_num);
-
-/**
- * @brief   Stop driver
+ * Disables I2S TX/RX, until i2s_start() is called.
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
  *
@@ -297,7 +312,23 @@ esp_err_t i2s_start(i2s_port_t i2s_num);
 esp_err_t i2s_stop(i2s_port_t i2s_num);
 
 /**
- * @brief   Set the TX DMA buffer contents to all zeroes
+ * @brief Start I2S driver
+ *
+ * It is not necessary to call this function after i2s_driver_install() (it is started automatically), however it is necessary to call it after i2s_stop().
+ *
+ *
+ * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ *
+* @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t i2s_start(i2s_port_t i2s_num);
+
+/**
+ * @brief Zero the contents of the TX DMA buffer.
+ *
+ * Pushes zero-byte samples into the TX DMA buffer, until it is full.
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
  *
@@ -306,72 +337,6 @@ esp_err_t i2s_stop(i2s_port_t i2s_num);
  *     - ESP_FAIL Parameter error
  */
 esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
-
-/***************************EXAMPLE**********************************
- *
- *
- * ----------------EXAMPLE OF I2S SETTING ---------------------
- * @code{c}
- *
- * #include "freertos/queue.h"
- * #define I2S_INTR_NUM 17                                      //choose one interrupt number from soc.h
- * int i2s_num = 0;                                             //i2s port number
- * i2s_config_t i2s_config = {
- *    .mode = I2S_MODE_MASTER | I2S_MODE_TX,
- *    .sample_rate = 44100,
- *    .bits_per_sample = 16,                                    //16, 32
- *    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,             //format LEFT_RIGHT
- *    .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
- *    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
- *    .dma_buf_count = 8,
- *    .dma_buf_len = 64
- * };
- *
- * i2s_pin_config_t pin_config = {
- *      .bck_io_num = 26,
- *      .ws_io_num = 25,
- *      .data_out_num = 22,
- *      .data_in_num = I2S_PIN_NO_CHANGE
- * };
- *
- * i2s_driver_install(i2s_num, &i2s_config, 0, NULL);   //install and start i2s driver
- *
- * i2s_set_pin(i2s_num, &pin_config);
- *
- * i2s_set_sample_rates(i2s_num, 22050); //set sample rates
- *
- *
- * i2s_driver_uninstall(i2s_num); //stop & destroy i2s driver
- *@endcode
- *
- * ----------------EXAMPLE USING I2S WITH DAC ---------------------
- * @code{c}
- *
- * #include "freertos/queue.h"
- * #define I2S_INTR_NUM 17                                      //choose one interrupt number from soc.h
- * int i2s_num = 0;                                             //i2s port number
- * i2s_config_t i2s_config = {
- *    .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
- *    .sample_rate = 44100,
- *    .bits_per_sample = 8,                                    // Only 8-bit DAC support
- *    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,            //
- *    .communication_format = I2S_COMM_FORMAT_I2S_MSB,
- *    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
- *    .dma_buf_count = 8,
- *    .dma_buf_len = 64
- * };
- *
- *
- * i2s_driver_install(i2s_num, &i2s_config, 0, NULL);   //install and start i2s driver
- *
- * i2s_set_pin(i2s_num, NULL); //for internal DAC
- *
- * i2s_set_sample_rates(i2s_num, 22050); //set sample rates
- *
- * i2s_driver_uninstall(i2s_num); //stop & destroy i2s driver
- *@endcode
- *-----------------------------------------------------------------------------*
- ***************************END OF EXAMPLE**********************************/
 
 #ifdef __cplusplus
 }
