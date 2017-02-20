@@ -160,6 +160,60 @@ TEST_CASE("ulp can write and read peripheral registers", "[ulp]")
     TEST_ASSERT_EQUAL_HEX32(1 | (15 << 21) | (1 << 16), RTC_SLOW_MEM[68]);
 }
 
+TEST_CASE("ULP I_WR_REG instruction test", "[ulp]")
+{
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+    typedef struct {
+        int low;
+        int width;
+    } wr_reg_test_item_t;
+
+    const wr_reg_test_item_t test_items[] = {
+        {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}, {0, 7}, {0, 8},
+        {3, 1}, {3, 2}, {3, 3}, {3, 4}, {3, 5}, {3, 6}, {3, 7}, {3, 8},
+        {15, 1}, {15, 2}, {15, 3}, {15, 4}, {15, 5}, {15, 6}, {15, 7}, {15, 8},
+        {16, 1}, {16, 2}, {16, 3}, {16, 4}, {16, 5}, {16, 6}, {16, 7}, {16, 8},
+        {18, 1}, {18, 2}, {18, 3}, {18, 4}, {18, 5}, {18, 6}, {18, 7}, {18, 8},
+        {24, 1}, {24, 2}, {24, 3}, {24, 4}, {24, 5}, {24, 6}, {24, 7}, {24, 8},
+    };
+
+    const size_t test_items_count =
+            sizeof(test_items)/sizeof(test_items[0]);
+    for (size_t i = 0; i < test_items_count; ++i) {
+        const uint32_t mask = (uint32_t) (((1ULL << test_items[i].width) - 1) << test_items[i].low);
+        const uint32_t not_mask = ~mask;
+        printf("#%2d: low: %2d width: %2d mask: %08x expected: %08x ", i,
+                test_items[i].low, test_items[i].width,
+                mask, not_mask);
+
+        REG_WRITE(RTC_CNTL_STORE0_REG, 0xffffffff);
+        REG_WRITE(RTC_CNTL_STORE1_REG, 0x00000000);
+        const ulp_insn_t program[] = {
+            I_WR_REG(RTC_CNTL_STORE0_REG,
+                    test_items[i].low,
+                    test_items[i].low + test_items[i].width - 1,
+                    0),
+            I_WR_REG(RTC_CNTL_STORE1_REG,
+                    test_items[i].low,
+                    test_items[i].low + test_items[i].width - 1,
+                    0xff & ((1 << test_items[i].width) - 1)),
+            I_END(0),
+            I_HALT()
+        };
+        size_t size = sizeof(program)/sizeof(ulp_insn_t);
+        ulp_process_macros_and_load(0, program, &size);
+        ulp_run(0);
+        vTaskDelay(10/portTICK_PERIOD_MS);
+        uint32_t clear = REG_READ(RTC_CNTL_STORE0_REG);
+        uint32_t set = REG_READ(RTC_CNTL_STORE1_REG);
+        printf("clear: %08x set: %08x\n", clear, set);
+        TEST_ASSERT_EQUAL_HEX32(not_mask, clear);
+        TEST_ASSERT_EQUAL_HEX32(mask, set);
+    }
+}
+
+
 TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
