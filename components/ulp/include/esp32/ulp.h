@@ -222,7 +222,7 @@ typedef union {
     struct {
         uint32_t dreg : 2;          /*!< Register where to store temperature measurement result */
         uint32_t wait_delay: 14;    /*!< Cycles to wait after measurement is done */
-        uint32_t cycles: 12;        /*!< Cycles used to perform measurement */
+        uint32_t reserved: 12;      /*!< Reserved, set to 0 */
         uint32_t opcode: 4;         /*!< Opcode (OPCODE_TSENS) */
     } tsens;                        /*!< Format of TSENS instruction */
 
@@ -359,6 +359,18 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
         .unused = 0, \
         .sub_opcode = SUB_OPCODE_SLEEP, \
         .opcode = OPCODE_END } }
+
+/**
+ * Perform temperature sensor measurement and store it into reg_dest.
+ *
+ * Delay can be set between 1 and ((1 << 14) - 1). Higher values give
+ * higher measurement resolution.
+ */
+#define I_TSENS(reg_dest, delay) { .tsens = { \
+        .dreg = reg_dest, \
+        .wait_delay = delay, \
+        .reserved = 0, \
+        .opcode = OPCODE_TSENS } }
 
 /**
  * Store value from register reg_val into RTC memory.

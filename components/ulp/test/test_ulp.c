@@ -207,3 +207,55 @@ TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
     esp_deep_sleep_start();
 }
 
+
+TEST_CASE("ulp can use TSENS in deep sleep", "[ulp][ignore]")
+{
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+
+    hexdump(RTC_SLOW_MEM, CONFIG_ULP_COPROC_RESERVE_MEM / 4);
+    printf("\n\n");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+
+    // Allow TSENS to be controlled by the ULP
+    SET_PERI_REG_BITS(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_CLK_DIV, 10, SENS_TSENS_CLK_DIV_S);
+    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 3, SENS_FORCE_XPD_SAR_S);
+    CLEAR_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_POWER_UP);
+    CLEAR_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_DUMP_OUT);
+    CLEAR_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_POWER_UP_FORCE);
+
+    // data start offset
+    size_t offset = 20;
+    // number of samples to collect
+    RTC_SLOW_MEM[offset] = (CONFIG_ULP_COPROC_RESERVE_MEM) / 4 - offset - 8;
+    // sample counter
+    RTC_SLOW_MEM[offset + 1] = 0;
+
+    const ulp_insn_t program[] = {
+        I_MOVI(R1, offset),     // r1 <- offset
+        I_LD(R2, R1, 1),    // r2 <- counter
+        I_LD(R3, R1, 0),    // r3 <- length
+        I_SUBI(R3, R3, 1),  // end = length - 1
+        I_SUBR(R3, R3, R2), // r3 = length - counter
+        M_BXF(1),           // if overflow goto 1:
+            I_WR_REG(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR_S, SENS_FORCE_XPD_SAR_S + 1, 3),
+            I_TSENS(R0, 16383), // r0 <- tsens
+            I_WR_REG(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR_S, SENS_FORCE_XPD_SAR_S + 1, 0),
+            I_ST(R0, R2, offset + 4),
+            I_ADDI(R2, R2, 1),  // counter += 1
+            I_ST(R2, R1, 1),    // save counter
+            I_SLEEP(0),         // enter sleep
+            I_HALT(),
+        M_LABEL(1),             // done with measurements
+            I_END(0),           // stop ULP timer
+            I_HALT()
+    };
+
+    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
+    assert(offset >= size);
+
+    TEST_ESP_OK(ulp_run(0));
+    esp_deep_sleep_enable_timer_wakeup(4000000);
+    esp_deep_sleep_start();
+}
+
