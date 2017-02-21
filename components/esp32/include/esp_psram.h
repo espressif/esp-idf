@@ -10,6 +10,12 @@ typedef enum {
     PSRAM_CACHE_MAX,
 } psram_cache_mode_t;
 
-esp_err_t psram_enable(psram_cache_mode_t mode);
+typedef enum {
+    PSRAM_VADDR_MODE_NORMAL=0,
+    PSRAM_VADDR_MODE_LOWHIGH,
+    PSRAM_VADDR_MODE_EVENODD,
+} psram_vaddr_mode_t;
+
+esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode);
 
 #endif
