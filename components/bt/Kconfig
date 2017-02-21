@@ -17,6 +17,15 @@ config BLUEDROID_MEM_DEBUG
 	help
 		Bluedroid memory debug
 
+config BT_DRAM_RELEASE
+	bool "Release DRAM from Classic BT controller"
+    depends on BT_ENABLED
+	default n
+	help
+		This option should only be used when BLE only.
+		Open this option will release about 30K DRAM from Classic BT.
+		The released DRAM will be used as system heap memory.
+
 # Memory reserved at start of DRAM for Bluetooth stack
 config BT_RESERVE_DRAM
     hex

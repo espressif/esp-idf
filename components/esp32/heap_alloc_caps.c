@@ -193,7 +193,13 @@ void heap_alloc_caps_init() {
     disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe8000); //knock out ROM data region
 
 #if CONFIG_BT_ENABLED
+#if CONFIG_BT_DRAM_RELEASE
+    disable_mem_region((void*)0x3ffb0000, (void*)0x3ffb3000); //knock out BT data region
+    disable_mem_region((void*)0x3ffb8000, (void*)0x3ffbbb28); //knock out BT data region
+    disable_mem_region((void*)0x3ffbdb28, (void*)0x3ffc0000); //knock out BT data region
+#else
     disable_mem_region((void*)0x3ffb0000, (void*)0x3ffc0000); //knock out BT data region
+#endif
 #endif
 
 #if CONFIG_MEMMAP_TRACEMEM
