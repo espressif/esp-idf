@@ -4,9 +4,12 @@
 #
 # Converts partition tables to/from CSV and binary formats.
 #
-# See the sdkng README.md file for details about how to use this tool.
-import struct
+# See http://esp-idf.readthedocs.io/en/latest/partition-tables.html for explanation of
+# partition table structure and uses.
 import argparse
+import os
+import re
+import struct
 import sys
 
 MAX_PARTITION_LENGTH = 0xC00   # 3K for partition data (96 entries) leaves 1K in a 4K sector for signature
@@ -163,7 +166,13 @@ class PartitionDefinition(object):
     def from_csv(cls, line):
         """ Parse a line from the CSV """
         line_w_defaults = line + ",,,,"  # lazy way to support default fields
-        fields = [ f.strip() for f in line_w_defaults.split(",") ]
+        def expand_vars(f):
+            f = os.path.expandvars(f)
+            m = re.match(r'(?<!\\)\$([A-Za-z_][A-Za-z0-9_]*)', f)
+            if m:
+                raise InputError("unknown variable '%s'" % m.group(1))
+            return f
+        fields = [ expand_vars(f.strip()) for f in line_w_defaults.split(",") ]
 
         res = PartitionDefinition()
         res.name = fields[0]
@@ -346,5 +355,5 @@ if __name__ == '__main__':
     try:
         main()
     except InputError as e:
-        print(e)
+        print >>sys.stderr, e
         sys.exit(2)
