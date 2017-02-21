@@ -187,6 +187,7 @@ file.
 extern int _data_start, _heap_start, _init_start, _iram_text_end;
 
 
+#if CONFIG_MEMMAP_SPIRAM_TEST
 /*
  Simple RAM test. Writes a word every 32 bytes. Takes about a second to complete for 4MiB. Returns
  true when RAM seems OK, false when test fails.
@@ -214,7 +215,7 @@ static bool test_spiram(size_t s)
         return true;
     }
 }
-
+#endif
 
 /*
 Initialize the heap allocator. We pass it a bunch of region descriptors, but we need to modify those first to accommodate for 
