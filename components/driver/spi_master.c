@@ -600,7 +600,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             } else {
                 data=trans->rx_buffer;
             }
-            if (trans->rxlength<THRESH_DMA_TRANS) {
+            if (trans->rxlength <= THRESH_DMA_TRANS) {
                 //No need for DMA; we'll copy the result out of the work registers directly later.
             } else {
                 host->hw->user.usr_miso_highpart=0;
@@ -625,7 +625,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             } else {
                 data=(uint32_t *)trans->tx_buffer;
             }
-            if (trans->length < 8*32) {
+            if (trans->length <= THRESH_DMA_TRANS) {
                 //No need for DMA.
                 for (int x=0; x < trans->length; x+=32) {
                     //Use memcpy to get around alignment issues for txdata
