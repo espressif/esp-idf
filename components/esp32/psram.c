@@ -205,7 +205,6 @@ static void IRAM_ATTR psram_recv_start(psram_spi_num_t spiNum,uint32_t* pRxData,
 //setup spi command/addr/data/dummy in user mode
 static int psram_cmd_config(psram_spi_num_t spiNum, psram_cmd_t* pInData)
 {
-    uint8_t idx = 0;
     while (READ_PERI_REG(SPI_CMD_REG(spiNum))&SPI_USR);
 
     // Set command by user.
@@ -239,11 +238,9 @@ static int psram_cmd_config(psram_spi_num_t spiNum, psram_cmd_t* pInData)
         // Enable MOSI
         SET_PERI_REG_MASK(SPI_USER_REG(spiNum), SPI_USR_MOSI);
         // Load send buffer
-        int len = ((pInData->txDataBitLen / 32) + ((pInData->txDataBitLen % 32) ? 1 : 0));
+        int len = (pInData->txDataBitLen + 31) / 32;
         if(pTxVal != NULL) {
-            do {
-                WRITE_PERI_REG((SPI_W0_REG(spiNum) + (idx << 2)), *pTxVal++);
-            } while(++idx < len);
+            memcpy((void*)SPI_W0_REG(spiNum), pTxVal, len*4);
         }
         // Set data send buffer length.Max data length 64 bytes.
         SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(spiNum), SPI_USR_MOSI_DBITLEN, (pInData->txDataBitLen - 1), SPI_USR_MOSI_DBITLEN_S);
@@ -551,9 +548,7 @@ void IRAM_ATTR psram_spi_init(psram_spi_num_t spiNum,psram_cache_mode_t mode)
     }
     // Enable MOSI
     SET_PERI_REG_MASK(SPI_USER_REG(spiNum), SPI_CS_SETUP | SPI_CS_HOLD | SPI_USR_MOSI);
-    for (i = 0; i < 16; ++i) {
-        WRITE_PERI_REG((SPI_W0_REG(spiNum) + (i << 2)), 0);
-    }
+    memset((void*)SPI_W0_REG(spiNum), 0, 16*4);
 }
 
 
@@ -562,7 +557,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 {
     WRITE_PERI_REG(GPIO_ENABLE_W1TC_REG,BIT16|BIT17);//DISABLE OUPUT FOR IO16/17
 
-    assert(mode==PSRAM_CACHE_F40M_S40M); //we don't support any other mode for now.
+    assert(mode==PSRAM_CACHE_F40M_S40M && "we don't support any other mode for now.");
 
     s_psram_mode = mode;
 
