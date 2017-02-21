@@ -27,7 +27,9 @@
 #include "string.h"
 #include "rom/spi_flash.h"
 #include "esp_err.h"
+#incl;ude "rom/cache.h"
 
+//Commands for PSRAM chip
 #define PSRAM_READ              0x03
 #define PSRAM_FAST_READ         0x0B
 #define PSRAM_FAST_READ_QUAD    0xEB
@@ -47,8 +49,7 @@ typedef enum {
     PSRAM_SPI_MAX ,
 } psram_spi_num_t;
 
-static psram_cache_mode_t g_PsramMode = PSRAM_CACHE_MAX;
-extern void Cache_Flush(int);
+static psram_cache_mode_t s_psram_mode = PSRAM_CACHE_MAX;
 
 //For now, we only use F40M + S40M, and we don't have to go through gpio matrix
 #define GPIO_MATRIX_FOR_40M   0
@@ -85,34 +86,34 @@ static void psram_clear_spi_fifo(psram_spi_num_t spiNum)
 //set basic SPI write mode
 static void psram_set_basic_write_mode(psram_spi_num_t spiNum)
 {
-    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_QIO); //F WRITE QIO
-    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_DIO); //F WRITE DIO
-    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_QUAD); //F WRITE QUAD
-    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_DUAL); //F WRITE DUAL
+    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_QIO);
+    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_DIO);
+    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_QUAD);
+    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_DUAL);
 }
 //set QPI write mode
 static void psram_set_qio_write_mode(psram_spi_num_t spiNum)
 {
-    SET_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_QIO); //F WRITE QIO
-    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_DIO); //F WRITE DIO
-    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_QUAD); //F WRITE QUAD
-    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_DUAL); //F WRITE DUAL
+    SET_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_QIO);
+    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_DIO);
+    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_QUAD);
+    CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum),SPI_FWRITE_DUAL);
 }
 //set QPI read mode
 static void psram_set_qio_read_mode(psram_spi_num_t spiNum)
 {
-    SET_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_QIO); //f read qio
-    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_QUAD); //f read quad
-    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_DUAL); //f read dual
-    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_DIO); //f read dio
+    SET_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_QIO);
+    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_QUAD);
+    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_DUAL);
+    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_DIO);
 }
 //set SPI read mode
 static void psram_set_basic_read_mode(psram_spi_num_t spiNum)
 {
-    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_QIO); //f read qio
-    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_QUAD); //f read quad
-    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_DUAL); //f read dual
-    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_DIO); //f read dio
+    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_QIO);
+    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_QUAD);
+    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_DUAL);
+    CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum),SPI_FREAD_DIO);
 }
 
 //start sending and wait for finishing
@@ -122,8 +123,8 @@ static IRAM_ATTR void psram_cmd_start(psram_spi_num_t spiNum, psram_cmd_mode_t c
     CLEAR_PERI_REG_MASK(SPI_PIN_REG(PSRAM_SPI_1), SPI_CS1_DIS_M);
     SET_PERI_REG_MASK(SPI_PIN_REG(PSRAM_SPI_1), SPI_CS0_DIS_M);
 
-    uint32_t wr_mode_bkp = (READ_PERI_REG(SPI_USER_REG(spiNum)) >> SPI_FWRITE_DUAL_S) & 0xf;
-    uint32_t rd_mode_bkp = READ_PERI_REG(SPI_CTRL_REG(spiNum)) & (SPI_FREAD_DIO_M|SPI_FREAD_DUAL_M|SPI_FREAD_QUAD_M|SPI_FREAD_QIO_M);
+    uint32_t wr_mode_backup = (READ_PERI_REG(SPI_USER_REG(spiNum)) >> SPI_FWRITE_DUAL_S) & 0xf;
+    uint32_t rd_mode_backup = READ_PERI_REG(SPI_CTRL_REG(spiNum)) & (SPI_FREAD_DIO_M|SPI_FREAD_DUAL_M|SPI_FREAD_QUAD_M|SPI_FREAD_QIO_M);
     if(cmd_mode == PSRAM_CMD_SPI) {
         psram_set_basic_write_mode(spiNum);
         psram_set_basic_read_mode(spiNum);
@@ -146,9 +147,9 @@ static IRAM_ATTR void psram_cmd_start(psram_spi_num_t spiNum, psram_cmd_mode_t c
     CLEAR_PERI_REG_MASK( DPORT_HOST_INF_SEL_REG, 1<<14);
 
     //recover spi mode
-    SET_PERI_REG_BITS(SPI_USER_REG(spiNum), 0xf, wr_mode_bkp, SPI_FWRITE_DUAL_S);
+    SET_PERI_REG_BITS(SPI_USER_REG(spiNum), 0xf, wr_mode_backup, SPI_FWRITE_DUAL_S);
     CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum), (SPI_FREAD_DIO_M|SPI_FREAD_DUAL_M|SPI_FREAD_QUAD_M|SPI_FREAD_QIO_M));
-    SET_PERI_REG_MASK(SPI_CTRL_REG(spiNum), rd_mode_bkp);
+    SET_PERI_REG_MASK(SPI_CTRL_REG(spiNum), rd_mode_backup);
 
     //return cs to cs0
     SET_PERI_REG_MASK(SPI_PIN_REG(PSRAM_SPI_1),SPI_CS1_DIS_M);
@@ -162,8 +163,8 @@ static void IRAM_ATTR psram_recv_start(psram_spi_num_t spiNum,uint32_t* pRxData,
     CLEAR_PERI_REG_MASK(SPI_PIN_REG(PSRAM_SPI_1), SPI_CS1_DIS_M);
     SET_PERI_REG_MASK(SPI_PIN_REG(PSRAM_SPI_1), SPI_CS0_DIS_M);
 
-    uint32_t cmd_mode_bkp = (READ_PERI_REG(SPI_USER_REG(spiNum)) >> SPI_FWRITE_DUAL_S) & 0xf;
-    uint32_t rd_mode_bkp = READ_PERI_REG(SPI_CTRL_REG(spiNum)) & (SPI_FREAD_DIO_M|SPI_FREAD_DUAL_M|SPI_FREAD_QUAD_M|SPI_FREAD_QIO_M);
+    uint32_t cmd_mode_backup = (READ_PERI_REG(SPI_USER_REG(spiNum)) >> SPI_FWRITE_DUAL_S) & 0xf;
+    uint32_t rd_mode_backup = READ_PERI_REG(SPI_CTRL_REG(spiNum)) & (SPI_FREAD_DIO_M|SPI_FREAD_DUAL_M|SPI_FREAD_QUAD_M|SPI_FREAD_QIO_M);
     if(cmd_mode == PSRAM_CMD_SPI) {
         psram_set_basic_write_mode(spiNum);
         psram_set_basic_read_mode(spiNum);
@@ -186,9 +187,9 @@ static void IRAM_ATTR psram_recv_start(psram_spi_num_t spiNum,uint32_t* pRxData,
     CLEAR_PERI_REG_MASK( DPORT_HOST_INF_SEL_REG, 1<<14);
 
     //recover spi mode
-    SET_PERI_REG_BITS(SPI_USER_REG(spiNum), 0xf, cmd_mode_bkp, SPI_FWRITE_DUAL_S);
+    SET_PERI_REG_BITS(SPI_USER_REG(spiNum), PI_FWRITE_DUAL_M, cmd_mode_backup, SPI_FWRITE_DUAL_S);
     CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum), (SPI_FREAD_DIO_M|SPI_FREAD_DUAL_M|SPI_FREAD_QUAD_M|SPI_FREAD_QIO_M));
-    SET_PERI_REG_MASK(SPI_CTRL_REG(spiNum), rd_mode_bkp);
+    SET_PERI_REG_MASK(SPI_CTRL_REG(spiNum), rd_mode_backup);
 
     //return cs to cs0
     SET_PERI_REG_MASK(SPI_PIN_REG(PSRAM_SPI_1),SPI_CS1_DIS_M);
@@ -228,13 +229,13 @@ static int psram_cmd_config(psram_spi_num_t spiNum, psram_cmd_t* pInData)
         //SET_PERI_REG_BITS(SPI_ADDR_REG(spiNum), SPI_USR_ADDR_VALUE, *pInData->addr, SPI_USR_ADDR_VALUE_S);
         WRITE_PERI_REG(SPI_ADDR_REG(spiNum), *pInData->addr);
 
-    } else{
+    } else {
         CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum), SPI_USR_ADDR);
         SET_PERI_REG_BITS(SPI_USER1_REG(spiNum), SPI_USR_ADDR_BITLEN,0, SPI_USR_ADDR_BITLEN_S);
     }
     // Set data by user.
     uint32_t* pTxVal = pInData->txData;
-    if (pInData->txDataBitLen != 0 ) {
+    if ( pInData->txDataBitLen != 0 ) {
         // Enable MOSI
         SET_PERI_REG_MASK(SPI_USER_REG(spiNum), SPI_USR_MOSI);
         // Load send buffer
@@ -251,7 +252,7 @@ static int psram_cmd_config(psram_spi_num_t spiNum, psram_cmd_t* pInData)
         SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(spiNum), SPI_USR_MOSI_DBITLEN,0, SPI_USR_MOSI_DBITLEN_S);
     }
     // Set rx data by user.
-    if (pInData->rxDataBitLen != 0  ) {
+    if ( pInData->rxDataBitLen != 0 ) {
         // Enable MOSI
         SET_PERI_REG_MASK(SPI_USER_REG(spiNum), SPI_USR_MISO);
         // Set data send buffer length.Max data length 64 bytes.
@@ -260,10 +261,10 @@ static int psram_cmd_config(psram_spi_num_t spiNum, psram_cmd_t* pInData)
         CLEAR_PERI_REG_MASK(SPI_USER_REG(spiNum), SPI_USR_MISO);
         SET_PERI_REG_BITS(SPI_MISO_DLEN_REG(spiNum), SPI_USR_MISO_DBITLEN, 0, SPI_USR_MISO_DBITLEN_S);
     }
-    if(pInData->dummyBitLen != 0){
+    if( pInData->dummyBitLen != 0 ){
         SET_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1),SPI_USR_DUMMY); // dummy en
         SET_PERI_REG_BITS(SPI_USER1_REG(PSRAM_SPI_1),SPI_USR_DUMMY_CYCLELEN_V,pInData->dummyBitLen-1,SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
-    }else{
+    } else {
         CLEAR_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1),SPI_USR_DUMMY); // dummy en
         SET_PERI_REG_BITS(SPI_USER1_REG(PSRAM_SPI_1),SPI_USR_DUMMY_CYCLELEN_V,0,SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
     }
@@ -277,54 +278,54 @@ static int psram_cmd_config(psram_spi_num_t spiNum, psram_cmd_t* pInData)
 static void psram_dma_cmd_write_config(uint32_t dst, uint32_t len, uint32_t dummy_bits)
 {
     uint32_t addr = (PSRAM_QUAD_WRITE << 24) | dst;
-    psram_cmd_t pDat;
-    switch(g_PsramMode) {
+    psram_cmd_t ps_cmd;
+    switch(s_psram_mode) {
         case PSRAM_CACHE_F80M_S80M:
-            pDat.cmdBitLen = 0;
+            ps_cmd.cmdBitLen = 0;
             break;
         case PSRAM_CACHE_F80M_S40M:
         case PSRAM_CACHE_F40M_S40M:
         default:
-            pDat.cmdBitLen = 2;
+            ps_cmd.cmdBitLen = 2;
             break;
     }
-    pDat.cmd = 0;
-    pDat.addr = &addr;
-    pDat.addrBitLen = 32;
-    pDat.txData = NULL;
-    pDat.txDataBitLen = len * 8;
-    pDat.rxData = NULL;
-    pDat.rxDataBitLen = 0;
-    pDat.dummyBitLen = dummy_bits;
-    psram_cmd_config(PSRAM_SPI_1, &pDat);
+    ps_cmd.cmd = 0;
+    ps_cmd.addr = &addr;
+    ps_cmd.addrBitLen = 32;
+    ps_cmd.txData = NULL;
+    ps_cmd.txDataBitLen = len * 8;
+    ps_cmd.rxData = NULL;
+    ps_cmd.rxDataBitLen = 0;
+    ps_cmd.dummyBitLen = dummy_bits;
+    psram_cmd_config(PSRAM_SPI_1, &ps_cmd);
 }
 
 static void psram_dma_qio_read_config(psram_spi_num_t spiNum, uint32_t src, uint32_t len)
 {
     uint32_t addr = (PSRAM_FAST_READ_QUAD <<24) | src;
     uint32_t dummy_bits = 0;
-    psram_cmd_t pDat;
-    switch(g_PsramMode){
+    psram_cmd_t ps_cmd;
+    switch(s_psram_mode){
         case PSRAM_CACHE_F80M_S80M:
             dummy_bits = 6+extra_dummy;
-            pDat.cmdBitLen = 0;
+            ps_cmd.cmdBitLen = 0;
             break;
         case PSRAM_CACHE_F80M_S40M:
         case PSRAM_CACHE_F40M_S40M:
         default:
             dummy_bits = 6+extra_dummy;
-            pDat.cmdBitLen = 2;
+            ps_cmd.cmdBitLen = 2;
             break;
     }
-    pDat.cmd = 0;
-    pDat.addr = &addr;
-    pDat.addrBitLen = 4*8;
-    pDat.txDataBitLen = 0;
-    pDat.txData = NULL;
-    pDat.rxDataBitLen = len*8 ;
-    pDat.rxData = NULL;
-    pDat.dummyBitLen = dummy_bits;
-    psram_cmd_config(spiNum,&pDat);
+    ps_cmd.cmd = 0;
+    ps_cmd.addr = &addr;
+    ps_cmd.addrBitLen = 4*8;
+    ps_cmd.txDataBitLen = 0;
+    ps_cmd.txData = NULL;
+    ps_cmd.rxDataBitLen = len*8 ;
+    ps_cmd.rxData = NULL;
+    ps_cmd.dummyBitLen = dummy_bits;
+    psram_cmd_config(spiNum,&ps_cmd);
 //    psram_clear_spi_fifo(spiNum);
 }
 
@@ -333,27 +334,27 @@ static void psram_dma_qio_read_config(psram_spi_num_t spiNum, uint32_t src, uint
 //but they sent us a correction doc and told us it is 32 bytes for these samples
 static void psram_set_burst_length(psram_spi_num_t spiNum)
 {
-    psram_cmd_t pDat;
-    switch(g_PsramMode){
+    psram_cmd_t ps_cmd;
+    switch(s_psram_mode){
         case PSRAM_CACHE_F80M_S80M:
-            pDat.cmd = 0xC0;
-            pDat.cmdBitLen = 8;
+            ps_cmd.cmd = 0xC0;
+            ps_cmd.cmdBitLen = 8;
             break;
         case PSRAM_CACHE_F80M_S40M:
         case PSRAM_CACHE_F40M_S40M:
         default:
-            pDat.cmd = 0x0030;
-            pDat.cmdBitLen = 10;
+            ps_cmd.cmd = 0x0030;
+            ps_cmd.cmdBitLen = 10;
             break;
     }
-    pDat.addr = 0;
-    pDat.addrBitLen = 0;
-    pDat.txData = NULL;
-    pDat.txDataBitLen = 0;
-    pDat.rxData = NULL;
-    pDat.rxDataBitLen = 0;
-    pDat.dummyBitLen = 0;
-    psram_cmd_config(spiNum, &pDat);
+    ps_cmd.addr = 0;
+    ps_cmd.addrBitLen = 0;
+    ps_cmd.txData = NULL;
+    ps_cmd.txDataBitLen = 0;
+    ps_cmd.rxData = NULL;
+    ps_cmd.rxDataBitLen = 0;
+    ps_cmd.dummyBitLen = 0;
+    psram_cmd_config(spiNum, &ps_cmd);
     psram_cmd_start(spiNum, PSRAM_CMD_QPI);
 }
 
@@ -361,47 +362,47 @@ static void psram_set_burst_length(psram_spi_num_t spiNum)
 //seems not working
 static void psram_reset_mode(psram_spi_num_t spiNum)
 {
-    psram_cmd_t pDat;
+    psram_cmd_t ps_cmd;
     uint32_t cmd_rst = 0x99066;
-    pDat.txData = &cmd_rst;
-    pDat.txDataBitLen = 20;
-    pDat.addr = NULL;
-    pDat.addrBitLen = 0;
-    pDat.cmd = 0;
-    pDat.cmdBitLen = 0;
-    pDat.rxData = NULL;
-    pDat.rxDataBitLen = 0;
-    pDat.dummyBitLen = 0;
-    psram_cmd_config(spiNum, &pDat);
+    ps_cmd.txData = &cmd_rst;
+    ps_cmd.txDataBitLen = 20;
+    ps_cmd.addr = NULL;
+    ps_cmd.addrBitLen = 0;
+    ps_cmd.cmd = 0;
+    ps_cmd.cmdBitLen = 0;
+    ps_cmd.rxData = NULL;
+    ps_cmd.rxDataBitLen = 0;
+    ps_cmd.dummyBitLen = 0;
+    psram_cmd_config(spiNum, &ps_cmd);
     psram_cmd_start(spiNum, PSRAM_CMD_QPI);
 }
 
 //exit QPI mode(set back to SPI mode)
 static void psram_disable_qio_mode(psram_spi_num_t spiNum)
 {
-    psram_cmd_t pDat;
+    psram_cmd_t ps_cmd;
     uint32_t cmd_exit_qpi;
-    switch(g_PsramMode){
+    switch(s_psram_mode){
         case PSRAM_CACHE_F80M_S80M:
             cmd_exit_qpi = PSRAM_EXIT_QMODE;
-            pDat.txDataBitLen = 8;
+            ps_cmd.txDataBitLen = 8;
             break;
         case PSRAM_CACHE_F80M_S40M:
         case PSRAM_CACHE_F40M_S40M:
         default:
             cmd_exit_qpi = PSRAM_EXIT_QMODE<<8;
-            pDat.txDataBitLen = 16;
+            ps_cmd.txDataBitLen = 16;
             break;
     }
-    pDat.txData = &cmd_exit_qpi;
-    pDat.cmd = 0;
-    pDat.cmdBitLen = 0;
-    pDat.addr = 0;
-    pDat.addrBitLen = 0;
-    pDat.rxData = NULL;
-    pDat.rxDataBitLen = 0;
-    pDat.dummyBitLen = 0;
-    psram_cmd_config(spiNum, &pDat);
+    ps_cmd.txData = &cmd_exit_qpi;
+    ps_cmd.cmd = 0;
+    ps_cmd.cmdBitLen = 0;
+    ps_cmd.addr = 0;
+    ps_cmd.addrBitLen = 0;
+    ps_cmd.rxData = NULL;
+    ps_cmd.rxDataBitLen = 0;
+    ps_cmd.dummyBitLen = 0;
+    psram_cmd_config(spiNum, &ps_cmd);
     psram_cmd_start(spiNum, PSRAM_CMD_QPI);
 }
 
@@ -455,61 +456,59 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
 static void psram_read_id(uint32_t* dev_id)
 {
     psram_spi_num_t spiNum = PSRAM_SPI_1;
-//  psram_set_basic_write_mode(spiNum);
-//  psram_set_basic_read_mode(spiNum);
     uint32_t addr = (PSRAM_DEVICE_ID <<24) | 0;
     uint32_t dummy_bits = 0;
-    psram_cmd_t pDat;
-    switch(g_PsramMode){
+    psram_cmd_t ps_cmd;
+    switch(s_psram_mode){
         case PSRAM_CACHE_F80M_S80M:
             dummy_bits = 0+extra_dummy;
-            pDat.cmdBitLen = 0;
+            ps_cmd.cmdBitLen = 0;
             break;
         case PSRAM_CACHE_F80M_S40M:
         case PSRAM_CACHE_F40M_S40M:
         default:
             dummy_bits = 0+extra_dummy;
-            pDat.cmdBitLen = 2;   //this two bits is used for delay one byte in qio mode
+            ps_cmd.cmdBitLen = 2;   //this two bits is used for delay one byte in qio mode
             break;
     }
-    pDat.cmd = 0;
-    pDat.addr = &addr;
-    pDat.addrBitLen = 4*8;
-    pDat.txDataBitLen = 0;
-    pDat.txData = NULL;
-    pDat.rxDataBitLen = 4*8 ;
-    pDat.rxData = dev_id;
-    pDat.dummyBitLen = dummy_bits;
-    psram_cmd_config(spiNum,&pDat);
+    ps_cmd.cmd = 0;
+    ps_cmd.addr = &addr;
+    ps_cmd.addrBitLen = 4*8;
+    ps_cmd.txDataBitLen = 0;
+    ps_cmd.txData = NULL;
+    ps_cmd.rxDataBitLen = 4*8 ;
+    ps_cmd.rxData = dev_id;
+    ps_cmd.dummyBitLen = dummy_bits;
+    psram_cmd_config(spiNum,&ps_cmd);
     psram_clear_spi_fifo(spiNum);
-    psram_recv_start(spiNum,pDat.rxData,pDat.rxDataBitLen/8, PSRAM_CMD_SPI);
+    psram_recv_start(spiNum,ps_cmd.rxData,ps_cmd.rxDataBitLen/8, PSRAM_CMD_SPI);
 }
 
 
 //enter QPI mode
 static void IRAM_ATTR psram_enable_qio_mode(psram_spi_num_t spiNum)
 {
-    psram_cmd_t pDat;
-    switch(g_PsramMode){
+    psram_cmd_t ps_cmd;
+    switch(s_psram_mode){
         case PSRAM_CACHE_F80M_S80M:
-            pDat.cmd = PSRAM_ENTER_QMODE;
-            pDat.cmdBitLen = 8;
+            ps_cmd.cmd = PSRAM_ENTER_QMODE;
+            ps_cmd.cmdBitLen = 8;
             break;
         case PSRAM_CACHE_F80M_S40M:
         case PSRAM_CACHE_F40M_S40M:
         default:
-            pDat.cmd = 0x400d;
-            pDat.cmdBitLen = 10;
+            ps_cmd.cmd = 0x400d;
+            ps_cmd.cmdBitLen = 10;
             break;
     }
-    pDat.addr = 0;
-    pDat.addrBitLen = 0;
-    pDat.txData = NULL;
-    pDat.txDataBitLen = 0;
-    pDat.rxData = NULL;
-    pDat.rxDataBitLen = 0;
-    pDat.dummyBitLen = 0;
-    psram_cmd_config(spiNum, &pDat);
+    ps_cmd.addr = 0;
+    ps_cmd.addrBitLen = 0;
+    ps_cmd.txData = NULL;
+    ps_cmd.txDataBitLen = 0;
+    ps_cmd.rxData = NULL;
+    ps_cmd.rxDataBitLen = 0;
+    ps_cmd.dummyBitLen = 0;
+    psram_cmd_config(spiNum, &ps_cmd);
     psram_cmd_start(spiNum, PSRAM_CMD_SPI);
 }
 
@@ -565,7 +564,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 
     assert(mode==PSRAM_CACHE_F40M_S40M); //we don't support any other mode for now.
 
-    g_PsramMode = mode;
+    s_psram_mode = mode;
 
     SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG,BIT16);//DPORT_SPI_CLK_EN
     CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,BIT16);//DPORT_SPI_RST

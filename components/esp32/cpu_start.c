@@ -283,8 +283,6 @@ void start_cpu0_default(void)
     vTaskStartScheduler();
 }
 
-
-
 #if !CONFIG_FREERTOS_UNICORE
 void start_cpu1_default(void)
 {
