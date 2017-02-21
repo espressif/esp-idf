@@ -130,6 +130,7 @@ esp_err_t esp_wifi_init(wifi_init_config_t *config);
   *         Free all resource allocated in esp_wifi_init and stop WiFi task
   *
   * @attention 1. This API should be called if you want to remove WiFi driver from the system
+  * @attention 2. This API can not be called yet and will be done in the future.
   *
   * @return ESP_OK: succeed
   */

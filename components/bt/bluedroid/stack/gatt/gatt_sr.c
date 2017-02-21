@@ -1073,9 +1073,11 @@ void gatts_process_write_req (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 handle,
                     GATTS_REQ_TYPE_WRITE,
                     &sr_data);
 
-            if(status == GATT_SUCCESS){
+            if (status == GATT_SUCCESS) {
                 attp_send_sr_msg(p_tcb, p_msg);
                 gatt_dequeue_sr_cmd(p_tcb);
+            } else {
+                GKI_freebuf(p_msg);
             }
 
         } else {

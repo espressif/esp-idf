@@ -406,7 +406,9 @@ void vPortSetStackWatchpoint( void* pxStackStart ) {
 	esp_set_watchpoint(1, (char*)addr, 32, ESP_WATCHPOINT_STORE);
 }
 
-
+uint32_t xPortGetTickRateHz(void) {
+	return (uint32_t)configTICK_RATE_HZ;
+}
 
 
 

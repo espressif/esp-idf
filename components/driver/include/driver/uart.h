@@ -469,8 +469,6 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  * @brief Install UART driver.
  *
  * UART ISR handler will be attached to the same CPU core that this function is running on.
- * Users should know that which CPU is running and then pick a INUM that is not used by system.
- * We can find the information of INUM and interrupt level in soc.h.
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
  * @param rx_buffer_size UART RX ring buffer size, rx_buffer_size should be greater than UART_FIFO_LEN.
@@ -644,7 +642,6 @@ esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, u
  * @code{c}
  * //1. Setup UART
  * #include "freertos/queue.h"
- * #define UART_INTR_NUM 17                                //choose one interrupt number from soc.h
  * //a. Set UART parameter
  * int uart_num = 0;                                       //uart port number
  * uart_config_t uart_config = {

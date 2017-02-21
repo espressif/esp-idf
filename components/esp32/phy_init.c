@@ -17,7 +17,10 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include <sys/lock.h>
+
 #include "rom/ets_sys.h"
+#include "rom/rtc.h"
 #include "soc/dport_reg.h"
 
 #include "esp_err.h"
@@ -25,30 +28,71 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs.h"
+#include "nvs_flash.h"
 #include "sdkconfig.h"
 
 #ifdef CONFIG_PHY_ENABLED
 #include "phy.h"
 #include "phy_init_data.h"
+#include "rtc.h"
+#include "esp_coexist.h"
 
 static const char* TAG = "phy_init";
 
+/* Count value to indicate if there is peripheral that has initialized PHY and RF */
+static int s_phy_rf_init_count = 0;
+static bool s_mac_rst_flag = false;
 
-esp_err_t esp_phy_init(const esp_phy_init_data_t* init_data,
-        esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data)
+static _lock_t s_phy_rf_init_lock;
+
+esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
+        esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data, bool is_sleep)
 {
-    assert(init_data);
-    assert(calibration_data);
+    assert((s_phy_rf_init_count <= 1) && (s_phy_rf_init_count >= 0));
 
-    REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
-    REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
-    // Enable WiFi peripheral clock
-    SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
-    ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
-            init_data, calibration_data, mode);
-    phy_set_wifi_mode_only(0);
-    register_chipv7_phy(init_data, calibration_data, mode);
-    coex_bt_high_prio();
+    _lock_acquire(&s_phy_rf_init_lock);
+    if (s_phy_rf_init_count == 0) {
+        if (is_sleep == false) {
+            if (s_mac_rst_flag == false) {
+                s_mac_rst_flag = true;
+                REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+                REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+            }
+        }
+        // Enable WiFi peripheral clock
+        SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
+        ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
+                init_data, calibration_data, mode);
+        phy_set_wifi_mode_only(0);
+        register_chipv7_phy(init_data, calibration_data, mode);
+        coex_bt_high_prio();
+    } else {
+#if CONFIG_SW_COEXIST_ENABLE
+        coex_init();
+#endif
+    }
+    s_phy_rf_init_count++;
+    _lock_release(&s_phy_rf_init_lock);
+    return ESP_OK;
+}
+
+esp_err_t esp_phy_rf_deinit(void)
+{
+    assert((s_phy_rf_init_count <= 2) && (s_phy_rf_init_count >= 1));
+
+    _lock_acquire(&s_phy_rf_init_lock);
+    if (s_phy_rf_init_count == 1) {
+        // Disable PHY and RF. TODO: convert this function to another one.
+        pm_close_rf();
+        // Disable WiFi peripheral clock
+        CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
+    } else {
+#if CONFIG_SW_COEXIST_ENABLE
+        coex_deinit();
+#endif
+    }
+    s_phy_rf_init_count--;
+    _lock_release(&s_phy_rf_init_lock);
     return ESP_OK;
 }
 
@@ -218,6 +262,45 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
     }
     err = nvs_set_blob(handle, PHY_CAL_DATA_KEY, cal_data, sizeof(*cal_data));
     return err;
+}
+
+void esp_phy_load_cal_and_init(void)
+{
+#ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
+    nvs_flash_init();
+    esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
+    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
+        calibration_mode = PHY_RF_CAL_NONE;
+    }
+    const esp_phy_init_data_t* init_data = esp_phy_get_init_data();
+    if (init_data == NULL) {
+        ESP_LOGE(TAG, "failed to obtain PHY init data");
+        abort();
+    }
+    esp_phy_calibration_data_t* cal_data =
+            (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
+    if (cal_data == NULL) {
+        ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
+        abort();
+    }
+    esp_err_t err = esp_phy_load_cal_data_from_nvs(cal_data);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to load RF calibration data, falling back to full calibration");
+        calibration_mode = PHY_RF_CAL_FULL;
+    }
+
+    esp_phy_rf_init(init_data, calibration_mode, cal_data, false);
+
+    if (calibration_mode != PHY_RF_CAL_NONE && err != ESP_OK) {
+        err = esp_phy_store_cal_data_to_nvs(cal_data);
+    } else {
+        err = ESP_OK;
+    }
+    esp_phy_release_init_data(init_data);
+    free(cal_data); // PHY maintains a copy of calibration data, so we can free this
+#else
+    esp_phy_rf_init(NULL, PHY_RF_CAL_NONE, NULL, false);
+#endif
 }
 
 #endif // CONFIG_PHY_ENABLED

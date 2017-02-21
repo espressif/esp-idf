@@ -154,6 +154,17 @@ static BT_HDR *make_ble_read_suggested_default_data_length(void)
     return make_command_no_params(HCI_BLE_READ_DEFAULT_DATA_LENGTH);
 }
 
+static BT_HDR *make_ble_write_suggested_default_data_length(uint16_t SuggestedMaxTxOctets, uint16_t SuggestedMaxTxTime)
+{
+    uint8_t *stream;
+    uint8_t parameter_size = sizeof(uint16_t) + sizeof(uint16_t);
+    BT_HDR *packet = make_command(HCI_BLE_WRITE_DEFAULT_DATA_LENGTH, parameter_size, &stream);
+
+    UINT16_TO_STREAM(stream, SuggestedMaxTxOctets);
+    UINT16_TO_STREAM(stream, SuggestedMaxTxTime);
+    return packet;
+}
+
 static BT_HDR *make_ble_set_event_mask(const bt_event_mask_t *event_mask)
 {
     uint8_t *stream;
@@ -215,6 +226,7 @@ static const hci_packet_factory_t interface = {
     make_ble_read_local_supported_features,
     make_ble_read_resolving_list_size,
     make_ble_read_suggested_default_data_length,
+    make_ble_write_suggested_default_data_length,
     make_ble_set_event_mask
 };
 

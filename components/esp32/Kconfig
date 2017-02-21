@@ -495,7 +495,7 @@ config ESP32_WIFI_RX_BUFFER_NUM
     int "Max number of WiFi RX buffers"
     depends on WIFI_ENABLED
     range 2 25
-    default 25
+    default 10
     help
         Set the number of WiFi rx buffers. Each buffer takes approximately 1.6KB of RAM.
         Larger number for higher throughput but more memory. Smaller number for lower
@@ -507,19 +507,15 @@ config PHY_ENABLED
 
 menu PHY
 	visible if PHY_ENABLED
-
-config ESP32_PHY_AUTO_INIT
-    bool "Initialize PHY in startup code"
+	
+config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
+    bool "Do phy calibration and store calibration data in NVS"
     depends on PHY_ENABLED
     default y
     help
-        If enabled, PHY will be initialized in startup code, before
-        app_main function runs.
-        If this is undesired, disable this option and call esp_phy_init
-        from the application before enabling WiFi or BT.
-
-        If this option is enabled, startup code will also initialize
-        NVS prior to initializing PHY.
+        If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
+        PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full calibration
+        will be performed and stored in NVS. In all other cases, only partial calibration will be performed. 
 
         If unsure, choose 'y'.
 

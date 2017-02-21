@@ -152,7 +152,7 @@ static int fat_mode_conv(int m)
     }
     if ((m & O_CREAT) && (m & O_EXCL)) {
         res |= FA_CREATE_NEW;
-    } else if (m & O_CREAT) {
+    } else if ((m & O_CREAT) && (m & O_TRUNC)) {
         res |= FA_CREATE_ALWAYS;
     } else if (m & O_APPEND) {
         res |= FA_OPEN_ALWAYS;

@@ -73,11 +73,16 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
 /**
  * @brief   Finish the update and validate written data
  *
- * @param   handle  Handle obtained from esp_ota_begin 
+ * @param   handle  Handle obtained from esp_ota_begin.
  *
- * @return: 
- *    - ESP_OK: if validate ota image pass
- *    - ESP_ERR_OTA_VALIDATE_FAILED: validate the ota image is invalid
+ * @note After calling esp_ota_end(), the handle is no longer valid and any memory associated with it is freed (regardless of result).
+ *
+ * @return:
+ *    - ESP_OK: Newly written OTA app image is valid.
+ *    - ESP_ERR_NOT_FOUND: OTA handle was not found.
+ *    - ESP_ERR_INVALID_ARG: Handle was never written to.
+ *    - ESP_ERR_OTA_VALIDATE_FAILED: OTA image is invalid (either not a valid app image, or - if secure boot is enabled - signature failed to verify.)
+ *    - ESP_ERR_INVALID_STATE: If flash encryption is enabled, this result indicates an internal error writing the final encrypted bytes to flash.
  */
 esp_err_t esp_ota_end(esp_ota_handle_t handle);
 

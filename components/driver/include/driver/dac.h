@@ -29,25 +29,21 @@ typedef enum {
 } dac_channel_t;
 
 /**
- * @brief Set Dac output voltage.
+ * @brief Set DAC output voltage.
  *
- * Dac width is 8bit ,and the voltage max is vdd
+ * DAC output is 8-bit. Maximum (255) corresponds to VDD.
  *
- * @param channel dac channel
- * @param dac_value dac output value
+ * @note When this function is called, function for the DAC
+ * channel's GPIO pin is reconfigured for RTC DAC function.
+ *
+ * @param channel DAC channel
+ * @param dac_value DAC output value
  *
  * @return
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value);
-
-/**
- *----------EXAMPLE TO USE DAC------------ *
- * @code{c}
- * dac_out_voltage(DAC_CHANNEL_1,200);//the dac out voltage ≈ 200*vdd/255
- * @endcode
- **/
 
 #ifdef __cplusplus
 }

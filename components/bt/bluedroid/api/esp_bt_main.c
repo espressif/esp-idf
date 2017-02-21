@@ -16,6 +16,7 @@
 #include "esp_bt_main.h"
 #include "btc_task.h"
 #include "btc_main.h"
+#include "bt.h"
 #include "future.h"
 
 static bool esp_already_enable = false;
@@ -102,6 +103,11 @@ esp_err_t esp_bluedroid_init(void)
 {
     btc_msg_t msg;
     future_t **future_p;
+
+    if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        LOG_ERROR("%s conroller not init\n", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
 
     if (esp_already_init) {
         LOG_ERROR("%s already init\n", __func__);

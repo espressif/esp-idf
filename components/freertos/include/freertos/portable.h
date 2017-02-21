@@ -216,6 +216,9 @@ static inline uint32_t xPortGetCoreID() {
     return id;
 }
 
+/* Get tick rate per second */
+uint32_t xPortGetTickRateHz(void);
+
 #ifdef __cplusplus
 }
 #endif

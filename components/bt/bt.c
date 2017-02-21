@@ -27,6 +27,7 @@
 #include "esp_task.h"
 #include "esp_intr.h"
 #include "esp_attr.h"
+#include "esp_phy_init.h"
 #include "bt.h"
 
 #if CONFIG_BT_ENABLED
@@ -34,6 +35,11 @@
 /* not for user call, so don't put to include file */
 extern void btdm_osi_funcs_register(void *osi_funcs);
 extern void btdm_controller_init(void);
+extern void btdm_controller_schedule(void);
+extern void btdm_controller_deinit(void);
+extern int btdm_controller_enable(esp_bt_mode_t mode);
+extern int btdm_controller_disable(esp_bt_mode_t mode);
+extern void btdm_rf_bb_init(void);
 
 /* VHCI function interface */
 typedef struct vhci_host_callback {
@@ -69,6 +75,12 @@ struct osi_funcs_t {
     int32_t (*_mutex_unlock)(void *mutex);
     esp_err_t (* _read_efuse_mac)(uint8_t mac[6]);
 };
+
+/* Static variable declare */
+static bool btdm_bb_init_flag = false;
+static esp_bt_controller_status_t btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+
+static xTaskHandle btControllerTaskHandle;
 
 static portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -145,14 +157,87 @@ void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
 static void bt_controller_task(void *pvParam)
 {
     btdm_osi_funcs_register(&osi_funcs);
+
     btdm_controller_init();
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
+
+    /* Loop */
+    btdm_controller_schedule();
 }
 
 void esp_bt_controller_init()
 {
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return;
+    }
+
     xTaskCreatePinnedToCore(bt_controller_task, "btController",
                             ESP_TASK_BT_CONTROLLER_STACK, NULL,
-                            ESP_TASK_BT_CONTROLLER_PRIO, NULL, 0);
+                            ESP_TASK_BT_CONTROLLER_PRIO, &btControllerTaskHandle, 0);
+}
+
+void esp_bt_controller_deinit(void)
+{
+    vTaskDelete(btControllerTaskHandle);
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+}
+
+esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
+{
+    int ret;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_INITED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (mode != ESP_BT_MODE_BTDM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_phy_load_cal_and_init();
+
+    if (btdm_bb_init_flag == false) {
+        btdm_bb_init_flag = true;
+        btdm_rf_bb_init();  /* only initialise once */
+    }
+
+    ret = btdm_controller_enable(mode);
+    if (ret) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
+
+    return ESP_OK;
+}
+
+esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode)
+{
+    int ret;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (mode != ESP_BT_MODE_BTDM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ret = btdm_controller_disable(mode);
+    if (ret) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_phy_rf_deinit();
+
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
+
+    return ESP_OK;
+}
+
+esp_bt_controller_status_t esp_bt_controller_get_status(void)
+{
+    return btdm_controller_status;
 }
 
 #endif

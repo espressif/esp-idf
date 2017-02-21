@@ -23,13 +23,62 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Bluetooth mode for controller enable/disable
+ */
+typedef enum {
+    ESP_BT_MODE_ILDE       = 0x00,   /*!< Bluetooth is not run */
+    ESP_BT_MODE_BLE        = 0x01,   /*!< Run BLE mode */
+    ESP_BT_MODE_CLASSIC_BT = 0x02,   /*!< Run Classic BT mode */
+    ESP_BT_MODE_BTDM       = 0x03,   /*!< Run dual mode */
+} esp_bt_mode_t;
 
 /**
- * @brief  Initialize BT controller
+ * @brief Bluetooth controller enable/disable/initialised/de-initialised status
+ */
+typedef enum {
+    ESP_BT_CONTROLLER_STATUS_IDLE = 0,
+    ESP_BT_CONTROLLER_STATUS_INITED,
+    ESP_BT_CONTROLLER_STATUS_ENABLED,
+    ESP_BT_CONTROLLER_STATUS_NUM,
+} esp_bt_controller_status_t;
+
+/**
+ * @brief  Initialize BT controller to allocate task and other resource.
  *
  * This function should be called only once, before any other BT functions are called.
  */
 void esp_bt_controller_init(void);
+
+/**
+ * @brief  De-initialize BT controller to free resource and delete task.
+ *
+ * This function should be called only once, after any other BT functions are called.
+ * This function is not whole completed, esp_bt_controller_init cannot called after this function.
+ */
+void esp_bt_controller_deinit(void);
+
+/**
+ * @brief Enable BT controller
+ * @param mode : the mode(BLE/BT/BTDM) to enable.
+ *               Now only support BTDM.
+ * @return       ESP_OK - success, other - failed
+ */
+esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode);
+
+/**
+ * @brief  Disable BT controller
+ * @param mode : the mode(BLE/BT/BTDM) to disable.
+ *               Now only support BTDM.
+ * @return       ESP_OK - success, other - failed
+ */
+esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode);
+
+/**
+ * @brief  Get BT controller is initialised/de-initialised/enabled/disabled
+ * @return status value
+ */
+esp_bt_controller_status_t esp_bt_controller_get_status(void);
 
 /** @brief esp_vhci_host_callback
  *  used for vhci call host function to notify what host need to do

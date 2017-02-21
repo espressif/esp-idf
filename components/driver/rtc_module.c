@@ -87,7 +87,7 @@ const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT] = {
 ---------------------------------------------------------------*/
 esp_err_t rtc_gpio_init(gpio_num_t gpio_num)
 {
-    RTC_MODULE_CHECK(RTC_GPIO_IS_VALID_GPIO(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
     // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, (rtc_gpio_desc[gpio_num].mux));
@@ -100,7 +100,7 @@ esp_err_t rtc_gpio_init(gpio_num_t gpio_num)
 
 esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
 {
-    RTC_MODULE_CHECK(RTC_GPIO_IS_VALID_GPIO(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
     //Select Gpio as Digital Gpio
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, (rtc_gpio_desc[gpio_num].mux));
@@ -131,7 +131,7 @@ static esp_err_t rtc_gpio_output_disable(gpio_num_t gpio_num)
 
 static esp_err_t rtc_gpio_input_enable(gpio_num_t gpio_num)
 {
-    RTC_MODULE_CHECK(RTC_GPIO_IS_VALID_GPIO(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].ie);
     portEXIT_CRITICAL(&rtc_spinlock);
@@ -141,7 +141,7 @@ static esp_err_t rtc_gpio_input_enable(gpio_num_t gpio_num)
 
 static esp_err_t rtc_gpio_input_disable(gpio_num_t gpio_num)
 {
-    RTC_MODULE_CHECK(RTC_GPIO_IS_VALID_GPIO(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].ie);
     portEXIT_CRITICAL(&rtc_spinlock);
@@ -152,7 +152,7 @@ static esp_err_t rtc_gpio_input_disable(gpio_num_t gpio_num)
 esp_err_t rtc_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 {
     int rtc_gpio_num = rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;;
-    RTC_MODULE_CHECK(RTC_GPIO_IS_VALID_GPIO(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
 
     if (level) {
         WRITE_PERI_REG(RTC_GPIO_OUT_W1TS_REG, (1 << (rtc_gpio_num + RTC_GPIO_OUT_DATA_W1TS_S)));
@@ -167,7 +167,7 @@ uint32_t rtc_gpio_get_level(gpio_num_t gpio_num)
 {
     uint32_t level = 0;
     int rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
-    RTC_MODULE_CHECK(RTC_GPIO_IS_VALID_GPIO(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
 
     portENTER_CRITICAL(&rtc_spinlock);
     level = READ_PERI_REG(RTC_GPIO_IN_REG);
@@ -177,7 +177,7 @@ uint32_t rtc_gpio_get_level(gpio_num_t gpio_num)
 
 esp_err_t rtc_gpio_set_direction(gpio_num_t gpio_num, rtc_gpio_mode_t mode)
 {
-    RTC_MODULE_CHECK(RTC_GPIO_IS_VALID_GPIO(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
 
     switch (mode) {
     case RTC_GPIO_MODE_INPUT_ONLY:

@@ -317,6 +317,12 @@ void app_main()
 
     esp_bt_controller_init();
 
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+    if (ret) {
+        BLUFI_ERROR("%s enable bt controller failed\n", __func__);
+        return;
+    }
+
     ret = esp_bluedroid_init();
     if (ret) {
         BLUFI_ERROR("%s init bluedroid failed\n", __func__);

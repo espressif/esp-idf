@@ -4,7 +4,7 @@ Sigma-delta Modulation
 Overview
 --------
 
-ESP32 has a second-order sigma-delta modulation module. 
+ESP32 has a second-order sigma-delta modulation module.
 This driver configures the channels of the sigma-delta module.
 
 Application Example

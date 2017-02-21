@@ -40,6 +40,7 @@ typedef struct {
     BT_HDR *(*make_ble_read_local_supported_features)(void);
     BT_HDR *(*make_ble_read_resolving_list_size)(void);
     BT_HDR *(*make_ble_read_suggested_default_data_length)(void);
+    BT_HDR *(*make_ble_write_suggested_default_data_length)(uint16_t SuggestedMaxTxOctets, uint16_t SuggestedMaxTxTime);
     BT_HDR *(*make_ble_set_event_mask)(const bt_event_mask_t *event_mask);
 } hci_packet_factory_t;
 

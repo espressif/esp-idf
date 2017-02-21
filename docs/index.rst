@@ -53,10 +53,10 @@ Contents:
 .. toctree::
    :caption: Hardware Reference
 
-   Technical Reference Manual <http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>
-   Pin List and Functions <http://espressif.com/sites/default/files/documentation/esp32_chip_pin_list_en.pdf>
-   Chip Pinout <http://espressif.com/sites/default/files/documentation/esp32_pinout_v1_0.pdf>
-   Silicon Errata <http://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>
+   Technical Reference Manual (PDF) <http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>
+   Pin List and Functions (PDF) <http://espressif.com/sites/default/files/documentation/esp32_chip_pin_list_en.pdf>
+   Chip Pinout (PDF) <http://espressif.com/sites/default/files/documentation/esp32_pinout_v1_0.pdf>
+   Silicon Errata (PDF) <http://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>
    
 .. toctree::
    :caption: Contribute

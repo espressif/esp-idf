@@ -73,9 +73,6 @@ static bool app_cpu_started = false;
 static void do_global_ctors(void);
 static void main_task(void* args);
 extern void app_main(void);
-#if CONFIG_ESP32_PHY_AUTO_INIT
-static void do_phy_init();
-#endif
 
 extern int _bss_start;
 extern int _bss_end;
@@ -214,17 +211,6 @@ void start_cpu0_default(void)
     esp_core_dump_init();
 #endif
 
-#if CONFIG_ESP32_PHY_AUTO_INIT
-    nvs_flash_init();
-    do_phy_init();
-#endif
-
-#if CONFIG_SW_COEXIST_ENABLE
-    if (coex_init() == ESP_OK) {
-        coexist_set_enable(true);
-    }
-#endif
-
     xTaskCreatePinnedToCore(&main_task, "main",
             ESP_TASK_MAIN_STACK, NULL,
             ESP_TASK_MAIN_PRIO, NULL, 0);
@@ -267,40 +253,4 @@ static void main_task(void* args)
     app_main();
     vTaskDelete(NULL);
 }
-
-#if CONFIG_ESP32_PHY_AUTO_INIT
-static void do_phy_init()
-{
-    esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
-    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
-        calibration_mode = PHY_RF_CAL_NONE;
-    }
-    const esp_phy_init_data_t* init_data = esp_phy_get_init_data();
-    if (init_data == NULL) {
-        ESP_LOGE(TAG, "failed to obtain PHY init data");
-        abort();
-    }
-    esp_phy_calibration_data_t* cal_data =
-            (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
-    if (cal_data == NULL) {
-        ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
-        abort();
-    }
-    esp_err_t err = esp_phy_load_cal_data_from_nvs(cal_data);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "failed to load RF calibration data, falling back to full calibration");
-        calibration_mode = PHY_RF_CAL_FULL;
-    }
-
-    esp_phy_init(init_data, calibration_mode, cal_data);
-
-    if (calibration_mode != PHY_RF_CAL_NONE) {
-        err = esp_phy_store_cal_data_to_nvs(cal_data);
-    } else {
-        err = ESP_OK;
-    }
-    esp_phy_release_init_data(init_data);
-    free(cal_data); // PHY maintains a copy of calibration data, so we can free this
-}
-#endif //CONFIG_ESP32_PHY_AUTO_INIT
 

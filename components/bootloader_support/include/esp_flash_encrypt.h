@@ -15,14 +15,17 @@
 #define __ESP32_FLASH_ENCRYPT_H
 
 #include <stdbool.h>
-#include <esp_err.h>
+#include "esp_attr.h"
+#include "esp_err.h"
 #include "esp_spi_flash.h"
 #include "soc/efuse_reg.h"
 
-/* Support functions for flash encryption features.
-
-   Can be compiled as part of app or bootloader code.
-*/
+/**
+ * @file esp_partition.h
+ * @brief Support functions for flash encryption features
+ *
+ * Can be compiled as part of app or bootloader code.
+ */
 
 /** @brief Is flash encryption currently enabled in hardware?
  *
@@ -30,9 +33,17 @@
  *
  * @return true if flash encryption is enabled.
  */
-static inline bool esp_flash_encryption_enabled(void) {
+static inline IRAM_ATTR bool esp_flash_encryption_enabled(void) {
     uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
-    return __builtin_parity(flash_crypt_cnt) == 1;
+    /* __builtin_parity is in flash, so we calculate parity inline */
+    bool enabled = false;
+    while(flash_crypt_cnt) {
+        if (flash_crypt_cnt & 1) {
+            enabled = !enabled;
+        }
+        flash_crypt_cnt >>= 1;
+    }
+    return enabled;
 }
 
 /* @brief Update on-device flash encryption
