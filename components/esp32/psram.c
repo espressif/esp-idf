@@ -270,98 +270,9 @@ static int psram_cmd_config(psram_spi_num_t spiNum, psram_cmd_t* pInData)
     return 0;
 }
 
-//read psram data in fast read mode
-static void psram_read_data(psram_spi_num_t spiNum,uint32_t* dst,uint32_t src,uint32_t len)
-{
-    uint32_t addr = 0;
-    uint32_t dummy_bits = 0;
-    psram_cmd_t pDat;
-    addr = (PSRAM_FAST_READ <<24) | src;
-    switch(g_PsramMode){
-        case PSRAM_CACHE_F80M_S80M:
-            dummy_bits = 4+extra_dummy;
-            pDat.cmdBitLen = 0;
-            break;
-        case PSRAM_CACHE_F80M_S40M:
-        case PSRAM_CACHE_F40M_S40M:
-        default:
-            dummy_bits = 4+extra_dummy;
-            pDat.cmdBitLen = 2;
-            break;
-    }
-    pDat.cmd = 0;
-    pDat.addr = &addr;
-    pDat.addrBitLen = 4*8;
-    pDat.txDataBitLen = 0;
-    pDat.txData = NULL;
-    pDat.rxDataBitLen = len*8 ;
-    pDat.rxData = dst;
-    pDat.dummyBitLen = dummy_bits;
-    psram_cmd_config(spiNum,&pDat);
-    psram_clear_spi_fifo(spiNum);
-    psram_recv_start(spiNum,pDat.rxData,pDat.rxDataBitLen/8, PSRAM_CMD_QPI);
-}
 
-//read psram data in fast read quad mode
-static void psram_read_data_quad(psram_spi_num_t spiNum,uint32_t* dst,uint32_t src,uint32_t len)
-{
-    uint32_t addr = (PSRAM_FAST_READ_QUAD <<24) | src;
-    uint32_t dummy_bits = 0;
-    psram_cmd_t pDat;
-    switch(g_PsramMode){
-        case PSRAM_CACHE_F80M_S80M:
-            dummy_bits = 6+extra_dummy;
-            pDat.cmdBitLen = 0;
-            break;
-        case PSRAM_CACHE_F80M_S40M:
-        case PSRAM_CACHE_F40M_S40M:
-        default:
-            dummy_bits = 6+extra_dummy;
-            pDat.cmdBitLen = 2;
-            break;
-    }
-    pDat.cmd = 0;
-    pDat.addr = &addr;
-    pDat.addrBitLen = 4*8;
-    pDat.txDataBitLen = 0;
-    pDat.txData = NULL;
-    pDat.rxDataBitLen = len*8 ;
-    pDat.rxData = dst;
-    pDat.dummyBitLen = dummy_bits;
-    psram_cmd_config(spiNum,&pDat);
-    psram_clear_spi_fifo(spiNum);
-    psram_recv_start(spiNum,pDat.rxData,pDat.rxDataBitLen/8, PSRAM_CMD_QPI);
-}
-
-//write data to psram
-static void psram_write_data(uint32_t dst,uint32_t* src,uint32_t len)
-{
-    uint32_t addr = (PSRAM_QUAD_WRITE <<24) | dst;
-    psram_cmd_t pDat;
-    int dummy_bits = 0;
-    switch(g_PsramMode){
-        case PSRAM_CACHE_F80M_S80M:
-            dummy_bits = 0 + 0;
-            pDat.cmdBitLen = 0;
-            break;
-        case PSRAM_CACHE_F80M_S40M:
-        case PSRAM_CACHE_F40M_S40M:
-        default:
-            dummy_bits = 0 + 0;
-            pDat.cmdBitLen = 2;
-            break;
-    }
-    pDat.cmd = 0;
-    pDat.addr = &addr;
-    pDat.addrBitLen = 32;
-    pDat.txData = src;
-    pDat.txDataBitLen = len*8;
-    pDat.rxData = NULL;
-    pDat.rxDataBitLen = 0;
-    pDat.dummyBitLen = dummy_bits;
-    psram_cmd_config(PSRAM_SPI_1, &pDat);
-    psram_cmd_start(PSRAM_SPI_1, PSRAM_CMD_QPI);
-}
+//The following helper functions aren't used in this code right now, but may be useful for other SPI RAM chips.
+#if 0
 
 static void psram_dma_cmd_write_config(uint32_t dst, uint32_t len, uint32_t dummy_bits)
 {
@@ -417,40 +328,6 @@ static void psram_dma_qio_read_config(psram_spi_num_t spiNum, uint32_t src, uint
 //    psram_clear_spi_fifo(spiNum);
 }
 
-//read psram id
-static void psram_read_id(uint32_t* dev_id)
-{
-    psram_spi_num_t spiNum = PSRAM_SPI_1;
-//  psram_set_basic_write_mode(spiNum);
-//  psram_set_basic_read_mode(spiNum);
-    uint32_t addr = (PSRAM_DEVICE_ID <<24) | 0;
-    uint32_t dummy_bits = 0;
-    psram_cmd_t pDat;
-    switch(g_PsramMode){
-        case PSRAM_CACHE_F80M_S80M:
-            dummy_bits = 0+extra_dummy;
-            pDat.cmdBitLen = 0;
-            break;
-        case PSRAM_CACHE_F80M_S40M:
-        case PSRAM_CACHE_F40M_S40M:
-        default:
-            dummy_bits = 0+extra_dummy;
-            pDat.cmdBitLen = 2;   //this two bits is used for delay one byte in qio mode
-            break;
-    }
-    pDat.cmd = 0;
-    pDat.addr = &addr;
-    pDat.addrBitLen = 4*8;
-    pDat.txDataBitLen = 0;
-    pDat.txData = NULL;
-    pDat.rxDataBitLen = 4*8 ;
-    pDat.rxData = dev_id;
-    pDat.dummyBitLen = dummy_bits;
-    psram_cmd_config(spiNum,&pDat);
-    psram_clear_spi_fifo(spiNum);
-    psram_recv_start(spiNum,pDat.rxData,pDat.rxDataBitLen/8, PSRAM_CMD_SPI);
-}
-
 //switch psram burst length(32 bytes or 1024 bytes)
 //datasheet says it should be 1024 bytes by default
 //but they sent us a correction doc and told us it is 32 bytes for these samples
@@ -498,6 +375,7 @@ static void psram_reset_mode(psram_spi_num_t spiNum)
     psram_cmd_config(spiNum, &pDat);
     psram_cmd_start(spiNum, PSRAM_CMD_QPI);
 }
+
 //exit QPI mode(set back to SPI mode)
 static void psram_disable_qio_mode(psram_spi_num_t spiNum)
 {
@@ -526,33 +404,6 @@ static void psram_disable_qio_mode(psram_spi_num_t spiNum)
     psram_cmd_config(spiNum, &pDat);
     psram_cmd_start(spiNum, PSRAM_CMD_QPI);
 }
-//enter QPI mode
-static void IRAM_ATTR psram_enable_qio_mode(psram_spi_num_t spiNum)
-{
-    psram_cmd_t pDat;
-    switch(g_PsramMode){
-        case PSRAM_CACHE_F80M_S80M:
-            pDat.cmd = PSRAM_ENTER_QMODE;
-            pDat.cmdBitLen = 8;
-            break;
-        case PSRAM_CACHE_F80M_S40M:
-        case PSRAM_CACHE_F40M_S40M:
-        default:
-            pDat.cmd = 0x400d;
-            pDat.cmdBitLen = 10;
-            break;
-    }
-    pDat.addr = 0;
-    pDat.addrBitLen = 0;
-    pDat.txData = NULL;
-    pDat.txDataBitLen = 0;
-    pDat.rxData = NULL;
-    pDat.rxDataBitLen = 0;
-    pDat.dummyBitLen = 0;
-    psram_cmd_config(spiNum, &pDat);
-    psram_cmd_start(spiNum, PSRAM_CMD_SPI);
-}
-
 
 static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
 {
@@ -596,6 +447,72 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CLK_U,2);
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_CMD_U,2);
 }
+
+
+#endif
+
+//read psram id
+static void psram_read_id(uint32_t* dev_id)
+{
+    psram_spi_num_t spiNum = PSRAM_SPI_1;
+//  psram_set_basic_write_mode(spiNum);
+//  psram_set_basic_read_mode(spiNum);
+    uint32_t addr = (PSRAM_DEVICE_ID <<24) | 0;
+    uint32_t dummy_bits = 0;
+    psram_cmd_t pDat;
+    switch(g_PsramMode){
+        case PSRAM_CACHE_F80M_S80M:
+            dummy_bits = 0+extra_dummy;
+            pDat.cmdBitLen = 0;
+            break;
+        case PSRAM_CACHE_F80M_S40M:
+        case PSRAM_CACHE_F40M_S40M:
+        default:
+            dummy_bits = 0+extra_dummy;
+            pDat.cmdBitLen = 2;   //this two bits is used for delay one byte in qio mode
+            break;
+    }
+    pDat.cmd = 0;
+    pDat.addr = &addr;
+    pDat.addrBitLen = 4*8;
+    pDat.txDataBitLen = 0;
+    pDat.txData = NULL;
+    pDat.rxDataBitLen = 4*8 ;
+    pDat.rxData = dev_id;
+    pDat.dummyBitLen = dummy_bits;
+    psram_cmd_config(spiNum,&pDat);
+    psram_clear_spi_fifo(spiNum);
+    psram_recv_start(spiNum,pDat.rxData,pDat.rxDataBitLen/8, PSRAM_CMD_SPI);
+}
+
+
+//enter QPI mode
+static void IRAM_ATTR psram_enable_qio_mode(psram_spi_num_t spiNum)
+{
+    psram_cmd_t pDat;
+    switch(g_PsramMode){
+        case PSRAM_CACHE_F80M_S80M:
+            pDat.cmd = PSRAM_ENTER_QMODE;
+            pDat.cmdBitLen = 8;
+            break;
+        case PSRAM_CACHE_F80M_S40M:
+        case PSRAM_CACHE_F40M_S40M:
+        default:
+            pDat.cmd = 0x400d;
+            pDat.cmdBitLen = 10;
+            break;
+    }
+    pDat.addr = 0;
+    pDat.addrBitLen = 0;
+    pDat.txData = NULL;
+    pDat.txDataBitLen = 0;
+    pDat.rxData = NULL;
+    pDat.rxDataBitLen = 0;
+    pDat.dummyBitLen = 0;
+    psram_cmd_config(spiNum, &pDat);
+    psram_cmd_start(spiNum, PSRAM_CMD_SPI);
+}
+
 
 
 //spi param init for psram
@@ -644,7 +561,9 @@ void IRAM_ATTR psram_spi_init(psram_spi_num_t spiNum,psram_cache_mode_t mode)
 //psram gpio init , different working frequency we have different solutions
 esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)   //psram init
 {
-    WRITE_PERI_REG(GPIO_ENABLE_W1TC_REG,BIT16|BIT17);//DISALBE OUPUT FOR IO16/17
+    WRITE_PERI_REG(GPIO_ENABLE_W1TC_REG,BIT16|BIT17);//DISABLE OUPUT FOR IO16/17
+
+    assert(mode==PSRAM_CACHE_F40M_S40M); //we don't support any other mode for now.
 
     g_PsramMode = mode;
 

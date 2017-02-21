@@ -88,10 +88,10 @@ extern volatile int port_xSchedulerRunning[2];
 static const char* TAG = "cpu_start";
 
 
-#if CONFIG_FREERTOS_UNICORE
-#define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
-#else
+#if CONFIG_MEMMAP_SMP
 #define PSRAM_MODE PSRAM_VADDR_MODE_EVENODD
+#else
+#define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
 #endif
 
 /*

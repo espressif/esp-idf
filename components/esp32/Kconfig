@@ -106,9 +106,10 @@ config MEMMAP_SPIRAM_ENABLE
         RAM chip.
         This only works correctly with v1 (post Feb 2017) silicon.
 
+if MEMMAP_SPIRAM_ENABLE
+
 choice MEMMAP_SPIRAM_TYPE
     prompt "Type of SPI RAM chip in use"
-    depends on MEMMAP_SPIRAM_ENABLE
     default MEMMAP_SPIRAM_TYPE_ESPPSRAM32
 
 config MEMMAP_SPIRAM_TYPE_ESPPSRAM32
@@ -116,16 +117,21 @@ config MEMMAP_SPIRAM_TYPE_ESPPSRAM32
 
 endchoice
 
+config MEMMAP_SPIRAM_SIZE
+    int
+    default 4194304 if MEMMAP_SPIRAM_ENABLE && MEMMAP_SPIRAM_TYPE_ESPPSRAM32
+    default 0
+    help
+        Size of external SPI RAM
+
 config MEMMAP_SPIRAM_TEST
     bool "On SPI RAM init, do a quick memory test"
-    depends on MEMMAP_SPIRAM_ENABLE
     default "n"
     help
         This does a quick memory test on boot-up. This takes about a second for 4MiB of SPI RAM.
 
 config MEMMAP_SPIRAM_ENABLE_MALLOC
     bool "malloc() can also allocate in SPI SRAM"
-    depends on MEMMAP_SPIRAM_ENABLE
     default "n"
     help
         If enabled, malloc() will return pointers to both internal as well as external
@@ -137,6 +143,8 @@ config MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL
     int "Always put malloc()s smaller than this size, in bytes, in internal RAM"
     depends on MEMMAP_SPIRAM_ENABLE_MALLOC
     default 1024
+
+endif
 
 choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
     bool "Number of MAC address generated from the hardware MAC address in efuse"

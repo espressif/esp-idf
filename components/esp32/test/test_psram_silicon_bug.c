@@ -19,6 +19,7 @@ This code triggers a psram-related silicon bug in rev0 silicon. The bug is fixed
 #include <stdio.h>
 #include <string.h>
 #include "rom/ets_sys.h"
+#include "esp_heap_alloc_caps.h"
 
 
 typedef struct {
@@ -38,12 +39,12 @@ static int isValidPtr(void *ptr) {
 }
 
 
-void test_weird_corruption() {
-	//crashes
+int test_weird_corruption() {
+	int err=0;
 	xlumpinfo_t *marked = (xlumpinfo_t*)0x3fff2824;
 
 	size_t i, num_marked = 0, num_unmarked = 0;
-	int is_marked = 0, mark_end = 0;
+//	int is_marked = 0, mark_end = 0;
 	xlumpinfo_t *lump = xlumpinfo;
 	int x;
 
@@ -81,20 +82,43 @@ void test_weird_corruption() {
 				ets_printf("%08x ", ((uint32_t*)&xlumpinfo[x-1])[j]);
 			}
 			ets_printf("\n");
+			err++;
 		}
 	}
+	return err;
 }
 
 
 TEST_CASE("PSram big in rev0 silicon (Doom bug)", "[psram]")
 {
-	int i;
+	int i, r=0;
+	xlumpinfo_t *p;
+#if MEMMAP_SMP
+	printf("WARNING\n");
+	printf("WARNING - This bug only shows up when MEMMAP_SMP is disabled. You have it enabled now, so the test will erroneously pass.\n");
+	printf("WARNING\n");
+#endif
+#if !MEMMAP_SPIRAM_ENABLE
+	printf("WARNING\n");
+	printf("WARNING - This test needs psram enabled. You don't seem to have that; the test is likely to crash.\n");
+	printf("WARNING\n");
+#endif
 	printf("Stack ptr %p\n", &i);
+	p=pvPortMallocCaps(sizeof(xlumpinfo_t)*5600, MALLOC_CAP_SPIRAM);
+	xlumpinfo=p;
+	//Bug seems to only trigger when address ends in 2C
+	while (((int)xlumpinfo&0xff)!=0x2c) xlumpinfo=(xlumpinfo_t*)(((char*)xlumpinfo)+1);
+	printf("lumpinfo ptr %p\n", xlumpinfo);
+
 	for (i=0; i<xnumlumps; i++) {
 		sprintf(xlumpinfo[i].name, "DIGD");
 		xlumpinfo[i].wadfile=(int*)0x3ffef664;
 	}
 	ets_printf("Running corruption test...\n");
-	test_weird_corruption();
+	for (i=0; i<20; i++) {
+		r+=test_weird_corruption();
+	}
+	free(p);
+	TEST_ASSERT(r==0);
 }
 
