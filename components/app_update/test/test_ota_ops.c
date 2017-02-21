@@ -6,6 +6,7 @@
 #include <freertos/semphr.h>
 
 #include <unity.h>
+#include <test_utils.h>
 #include <esp_ota_ops.h>
 
 
@@ -38,3 +39,48 @@ TEST_CASE("esp_ota_begin() verifies arguments", "[ota]")
     TEST_ASSERT_EQUAL_HEX(ESP_ERR_NOT_FOUND, esp_ota_begin(&partition, OTA_SIZE_UNKNOWN, &handle));
     TEST_ASSERT_EQUAL(0, handle);
 }
+
+TEST_CASE("esp_ota_get_next_update_partition logic", "[ota]")
+{
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    const esp_partition_t *factory = esp_partition_find_first(ESP_PARTITION_TYPE_APP,
+                                                              ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+    const esp_partition_t *ota_0 = esp_partition_find_first(ESP_PARTITION_TYPE_APP,
+                                                            ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
+    const esp_partition_t *ota_1 = esp_partition_find_first(ESP_PARTITION_TYPE_APP,
+                                                            ESP_PARTITION_SUBTYPE_APP_OTA_1, NULL);
+    const esp_partition_t *ota_2 = esp_partition_find_first(ESP_PARTITION_TYPE_APP,
+                                                            ESP_PARTITION_SUBTYPE_APP_OTA_2, NULL);
+
+    TEST_ASSERT_NOT_NULL(running);
+    TEST_ASSERT_NOT_NULL(factory);
+    TEST_ASSERT_NOT_NULL(ota_0);
+    TEST_ASSERT_NOT_NULL(ota_1);
+    TEST_ASSERT_NULL(ota_2); /* this partition shouldn't exist in test partition table */
+
+    TEST_ASSERT_EQUAL_PTR(factory, running); /* this may not be true if/when we get OTA tests that do OTA updates */ 
+
+    /* (The test steps verify subtypes before verifying pointer equality, because the failure messages are more readable
+       this way.)
+     */
+
+    /* Factory app OTA updates OTA 0 slot */
+    const esp_partition_t *p = esp_ota_get_next_update_partition(NULL);
+    TEST_ASSERT_EQUAL_HEX8(ESP_PARTITION_SUBTYPE_APP_OTA_0, p->subtype);
+    TEST_ASSERT_EQUAL_PTR(ota_0, p);
+
+    p = esp_ota_get_next_update_partition(factory);
+    TEST_ASSERT_EQUAL_HEX8(ESP_PARTITION_SUBTYPE_APP_OTA_0, p->subtype);
+    TEST_ASSERT_EQUAL_PTR(ota_0, p);
+
+
+    /* OTA slot 0 updates OTA slot 1 */
+    p = esp_ota_get_next_update_partition(ota_0);
+    TEST_ASSERT_EQUAL_HEX8(ESP_PARTITION_SUBTYPE_APP_OTA_1, p->subtype);
+    TEST_ASSERT_EQUAL_PTR(ota_1, p);
+    /* OTA slot 1 updates OTA slot 0 */
+    p = esp_ota_get_next_update_partition(ota_1);
+    TEST_ASSERT_EQUAL_HEX8(ESP_PARTITION_SUBTYPE_APP_OTA_0, p->subtype);;
+    TEST_ASSERT_EQUAL_PTR(ota_0, p);
+}
+

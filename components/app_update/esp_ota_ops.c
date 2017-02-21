@@ -498,7 +498,7 @@ const esp_partition_t* esp_ota_get_running_partition(void)
 
 const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *start_from)
 {
-    const esp_partition_t *result = NULL;
+    const esp_partition_t *default_ota = NULL;
     bool next_is_result = false;
     if (start_from == NULL) {
         start_from = esp_ota_get_running_partition();
@@ -512,33 +512,34 @@ const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *
     /* Two possibilities: either we want the OTA partition immediately after the current running OTA partition, or we
        want the first OTA partition in the table (for the case when the last OTA partition is the running partition, or
        if the current running partition is not OTA.)
+
+       This loop iterates subtypes instead of using esp_partition_find, so we
+       get all OTA partitions in a known order (low slot to high slot).
     */
 
-    esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_APP,
-                                                     ESP_PARTITION_SUBTYPE_ANY,
-                                                     NULL);
-    while (it != NULL) {
-        const esp_partition_t *p = esp_partition_get(it);
-        if(is_ota_partition(p)) {
-            if (result == NULL) {
-                /* Default to first OTA partition we find,
-                 will be used if nothing else matches */
-                result = p;
-            }
-
-            if (p == start_from) {
-                /* Next OTA partition is the one to use */
-                next_is_result = true;
-            }
-            else if (next_is_result) {
-                result = p; /* this is it! */
-                break;
-            }
+    for (esp_partition_subtype_t t = ESP_PARTITION_SUBTYPE_APP_OTA_0;
+         t != ESP_PARTITION_SUBTYPE_APP_OTA_MAX;
+         t++) {
+        const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_APP, t, NULL);
+        if (p == NULL) {
+            continue;
         }
-        it = esp_partition_next(it);
+
+        if (default_ota == NULL) {
+            /* Default to first OTA partition we find,
+               will be used if nothing else matches */
+            default_ota = p;
+        }
+
+        if (p == start_from) {
+            /* Next OTA partition is the one to use */
+            next_is_result = true;
+        }
+        else if (next_is_result) {
+            return p;
+        }
     }
 
-    esp_partition_iterator_release(it);
-    return result;
+    return default_ota;
 
 }
