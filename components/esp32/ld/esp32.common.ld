@@ -84,6 +84,7 @@ SECTIONS
     *libphy.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
     *librtc_clk.a:(.literal .text .literal.* .text.*)
+    *libpp.a:pp.o(.literal .text .literal.* .text.*)
     *libpp.a:lmac.o(.literal .text .literal.* .text.*)
     *libpp.a:wdev.o(.literal .text .literal.* .text.*)
     *libcore.a:ets_timer.o(.literal .text .literal.* .text.*)
