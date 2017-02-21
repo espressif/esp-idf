@@ -89,16 +89,16 @@ int test_weird_corruption() {
 }
 
 
-TEST_CASE("PSram big in rev0 silicon (Doom bug)", "[psram]")
+TEST_CASE("PSram bug in rev0 silicon (Doom bug)", "[psram][ignore]")
 {
 	int i, r=0;
 	xlumpinfo_t *p;
-#if MEMMAP_SMP
+#if CONFIG_MEMMAP_SMP
 	printf("WARNING\n");
-	printf("WARNING - This bug only shows up when MEMMAP_SMP is disabled. You have it enabled now, so the test will erroneously pass.\n");
+	printf("WARNING - This bug sometimes doesn't show up unless MEMMAP_SMP is disabled. You have it enabled now, so the test may erroneously pass.\n");
 	printf("WARNING\n");
 #endif
-#if !MEMMAP_SPIRAM_ENABLE
+#if !CONFIG_MEMMAP_SPIRAM_ENABLE
 	printf("WARNING\n");
 	printf("WARNING - This test needs psram enabled. You don't seem to have that; the test is likely to crash.\n");
 	printf("WARNING\n");
