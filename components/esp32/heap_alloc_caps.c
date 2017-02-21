@@ -270,10 +270,6 @@ void heap_alloc_caps_init() {
 #endif
 
 #if CONFIG_MEMMAP_SPIRAM_ENABLE
-    if ( psram_enable(PSRAM_CACHE_F40M_S40M) != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "PSRAM enabled but initialization failed. Bailing out.");
-        abort();
-    }
 #if CONFIG_MEMMAP_SPIRAM_TEST
     if (!test_spiram(4*1024*1024)) abort();
 #endif

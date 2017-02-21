@@ -94,6 +94,13 @@ extern volatile int port_xSchedulerRunning[2];
 
 static const char* TAG = "cpu_start";
 
+
+#if CONFIG_FREERTOS_UNICORE
+#define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
+#else
+#define PSRAM_MODE PSRAM_VADDR_MODE_EVENODD
+#endif
+
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
  * and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
@@ -136,11 +143,23 @@ void IRAM_ATTR call_start_cpu0()
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
 
+#if CONFIG_MEMMAP_SPIRAM_ENABLE
+    if ( psram_enable(PSRAM_CACHE_F40M_S40M, PSRAM_MODE) != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "PSRAM enabled but initialization failed. Bailing out.");
+        abort();
+    }
+#endif
+
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
+
 
 #if !CONFIG_FREERTOS_UNICORE
     ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
     //Flush and enable icache for APP CPU
+
+    CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DRAM1);
+
+    cache_sram_mmu_set( 1, 0, 0x3f800000, 0, 32, 128 );
     Cache_Flush(1);
     Cache_Read_Enable(1);
 
@@ -151,6 +170,7 @@ void IRAM_ATTR call_start_cpu0()
     DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
     ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
+
 
     while (!app_cpu_started) {
         ets_delay_us(100);
@@ -262,6 +282,8 @@ void start_cpu0_default(void)
     ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
     vTaskStartScheduler();
 }
+
+
 
 #if !CONFIG_FREERTOS_UNICORE
 void start_cpu1_default(void)

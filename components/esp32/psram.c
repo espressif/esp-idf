@@ -71,7 +71,7 @@ typedef struct {
     uint32_t dummyBitLen;
 } psram_cmd_t;
 
-static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode);
+static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode);
 
 
 static void psram_clear_spi_fifo(psram_spi_num_t spiNum)
@@ -642,7 +642,7 @@ void IRAM_ATTR psram_spi_init(psram_spi_num_t spiNum,psram_cache_mode_t mode)
 
 
 //psram gpio init , different working frequency we have different solutions
-esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode)   //psram init
+esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)   //psram init
 {
     WRITE_PERI_REG(GPIO_ENABLE_W1TC_REG,BIT16|BIT17);//DISALBE OUPUT FOR IO16/17
 
@@ -713,12 +713,12 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode)   //psram init
         return ESP_FAIL;
     }
     psram_enable_qio_mode(PSRAM_SPI_1);
-    psram_cache_init(mode);
+    psram_cache_init(mode, vaddrmode);
     return ESP_OK;
 }
 
 //register initialization for sram cache params and r/w commands
-static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode)
+static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode)
 {
     CLEAR_PERI_REG_MASK(SPI_CLOCK_REG(0),SPI_CLK_EQU_SYSCLK_M);
     SET_PERI_REG_BITS(SPI_CLOCK_REG(0),SPI_CLKDIV_PRE_V,0,SPI_CLKDIV_PRE_S);
@@ -781,8 +781,24 @@ static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode)
                 SPI_CACHE_SRAM_USR_WR_CMD_VALUE_S); //0x38, write command value,(0x00 for delay)
             break;
     }
-    CLEAR_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL1_REG , DPORT_PRO_CACHE_MASK_DRAM1);//use Dram1 to visit ext sram.
+
+
+    CLEAR_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG , DPORT_PRO_DRAM_HL|DPORT_PRO_DRAM_SPLIT);
+    CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG , DPORT_APP_DRAM_HL|DPORT_APP_DRAM_SPLIT);
+    if (vaddrmode == PSRAM_VADDR_MODE_LOWHIGH) {
+        SET_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG , DPORT_PRO_DRAM_SPLIT);
+        SET_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG , DPORT_APP_DRAM_SPLIT);
+    } else if (vaddrmode == PSRAM_VADDR_MODE_EVENODD) {
+        SET_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG , DPORT_PRO_DRAM_HL);
+        SET_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG , DPORT_APP_DRAM_HL);
+    }
+
+    CLEAR_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL1_REG , DPORT_PRO_CACHE_MASK_DRAM1|DPORT_PRO_CACHE_MASK_OPSDRAM);//use Dram1 to visit ext sram.
     SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CMMU_SRAM_PAGE_MODE, 0, DPORT_PRO_CMMU_SRAM_PAGE_MODE_S); //cache page mode : 1 -->16k  4 -->2k  0-->32k,(accord with the settings in cache_sram_mmu_set)
+ 
+    CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG , DPORT_APP_CACHE_MASK_DRAM1|DPORT_APP_CACHE_MASK_OPSDRAM);//use Dram1 to visit ext sram.
+    SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CMMU_SRAM_PAGE_MODE, 0, DPORT_APP_CMMU_SRAM_PAGE_MODE_S); //cache page mode : 1 -->16k  4 -->2k  0-->32k,(accord with the settings in cache_sram_mmu_set)
+ 
     CLEAR_PERI_REG_MASK(SPI_PIN_REG(0), SPI_CS1_DIS_M); //ENABLE SPI0 CS1 TO PSRAM(CS0--FLASH; CS1--SRAM)
 }
 
