@@ -27,7 +27,7 @@
 #include "string.h"
 #include "rom/spi_flash.h"
 #include "esp_err.h"
-#incl;ude "rom/cache.h"
+#include "rom/cache.h"
 
 //Commands for PSRAM chip
 #define PSRAM_READ              0x03
@@ -187,7 +187,7 @@ static void IRAM_ATTR psram_recv_start(psram_spi_num_t spiNum,uint32_t* pRxData,
     CLEAR_PERI_REG_MASK( DPORT_HOST_INF_SEL_REG, 1<<14);
 
     //recover spi mode
-    SET_PERI_REG_BITS(SPI_USER_REG(spiNum), PI_FWRITE_DUAL_M, cmd_mode_backup, SPI_FWRITE_DUAL_S);
+    SET_PERI_REG_BITS(SPI_USER_REG(spiNum), SPI_FWRITE_DUAL_M, cmd_mode_backup, SPI_FWRITE_DUAL_S);
     CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spiNum), (SPI_FREAD_DIO_M|SPI_FREAD_DUAL_M|SPI_FREAD_QUAD_M|SPI_FREAD_QIO_M));
     SET_PERI_REG_MASK(SPI_CTRL_REG(spiNum), rd_mode_backup);
 
