@@ -230,7 +230,9 @@ void heap_alloc_caps_init() {
     disable_mem_region(&_data_start, &_heap_start);           //DRAM used by bss/data static variables
     disable_mem_region(&_init_start, &_iram_text_end);        //IRAM used by code
     disable_mem_region((void*)0x40070000, (void*)0x40078000); //CPU0 cache region
+#ifdef CONFIG_MEMMAP_SMP
     disable_mem_region((void*)0x40078000, (void*)0x40080000); //CPU1 cache region
+#endif
 
     /* Warning: The ROM stack is located in the 0x3ffe0000 area. We do not specifically disable that area here because
        after the scheduler has started, the ROM stack is not used anymore by anything. We handle it instead by not allowing
@@ -270,10 +272,13 @@ void heap_alloc_caps_init() {
 #endif
 
 #if CONFIG_MEMMAP_SPIRAM_ENABLE
+    if (CONFIG_MEMMAP_SPIRAM_SIZE < 0x400000) {
+        disable_mem_region((void*)0x3f800000+CONFIG_MEMMAP_SPIRAM_SIZE, (void*)0x3fc00000); //Disable unused SPI SRAM region
+    }
 #if CONFIG_MEMMAP_SPIRAM_TEST
-    if (!test_spiram(4*1024*1024)) abort();
+    if (!test_spiram(CONFIG_MEMMAP_SPIRAM_SIZE)) abort();
 #endif
-#else
+#else //!CONFIG_MEMMAP_SPIRAM_ENABLE
     disable_mem_region((void*)0x3f800000, (void*)0x3fc00000); //SPI SRAM not installed
 #endif
 
