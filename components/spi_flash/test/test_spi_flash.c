@@ -7,8 +7,6 @@
 #include <esp_spi_flash.h>
 #include <esp_attr.h>
 
-#include "test_config.h"
-
 struct flash_test_ctx {
     uint32_t offset;
     bool fail;
