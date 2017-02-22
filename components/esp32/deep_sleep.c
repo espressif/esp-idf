@@ -126,6 +126,9 @@ void IRAM_ATTR esp_deep_sleep_start()
     if (s_config.wakeup_triggers & EXT_EVENT1_TRIG_EN) {
         ext1_wakeup_prepare();
     }
+    if (s_config.wakeup_triggers & SAR_TRIG_EN) {
+        SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_WAKEUP_FORCE_EN);
+    }
     // TODO: move timer wakeup configuration into a similar function
     // once rtc_sleep is opensourced.
 
