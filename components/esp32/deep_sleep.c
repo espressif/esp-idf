@@ -22,6 +22,7 @@
 #include "rom/uart.h"
 #include "soc/cpu.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/sens_reg.h"
 #include "soc/dport_reg.h"
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
@@ -110,6 +111,13 @@ void IRAM_ATTR esp_deep_sleep_start()
 {
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
+
+    // Shut down parts of RTC which may have been left enabled by the wireless drivers
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG,
+            RTC_CNTL_CKGEN_I2C_PU | RTC_CNTL_PLL_I2C_PU |
+            RTC_CNTL_RFRX_PBUS_PU | RTC_CNTL_TXRF_I2C_PU);
+
+    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR_M, 0, SENS_FORCE_XPD_SAR_S);
 
     // Configure pins for external wakeup
     if (s_config.wakeup_triggers & EXT_EVENT0_TRIG_EN) {

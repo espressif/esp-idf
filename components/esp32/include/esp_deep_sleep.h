@@ -164,6 +164,14 @@ void esp_deep_sleep_start() __attribute__((noreturn));
  * Call to this function is equivalent to a call to esp_deep_sleep_enable_timer_wakeup
  * followed by a call to esp_deep_sleep_start.
  *
+ * esp_deep_sleep does not shut down WiFi, BT, and higher level protocol
+ * connections gracefully.
+ * Make sure relevant WiFi and BT stack functions are called to close any
+ * connections and deinitialize the peripherals. These include:
+ *     - esp_bluedroid_disable
+ *     - esp_bt_controller_disable
+ *     - esp_wifi_stop
+ *
  * This function does not return.
  *
  * @param time_in_us  deep-sleep time, unit: microsecond
