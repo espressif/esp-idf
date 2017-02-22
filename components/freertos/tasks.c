@@ -1056,11 +1056,15 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 	taskENTER_CRITICAL(&xTaskQueueMutex);
 	{
 		uxCurrentNumberOfTasks++;
-		if( pxCurrentTCB[ xPortGetCoreID() ] == NULL )
+		//If the task has no affinity and nothing is scheduled on this core, just throw it this core.
+		//If it has affinity, throw it on the core that needs it if nothing is already scheduled there.
+		BaseType_t xMyCore = xCoreID;
+		if ( xMyCore == tskNO_AFFINITY) xMyCore = xPortGetCoreID();
+		if( pxCurrentTCB[ xMyCore ] == NULL )
 		{
 			/* There are no other tasks, or all the other tasks are in
 			the suspended state - make this the current task. */
-			pxCurrentTCB[ xPortGetCoreID() ] = pxNewTCB;
+			pxCurrentTCB[ xMyCore ] = pxNewTCB;
 
 			if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
 			{
@@ -1121,12 +1125,13 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 		portSETUP_TCB( pxNewTCB );
 	}
-        curTCB =  pxCurrentTCB[ xPortGetCoreID() ];
+
 	taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 	if( xSchedulerRunning != pdFALSE )
 	{
 	       taskENTER_CRITICAL(&xTaskQueueMutex);
+		curTCB = pxCurrentTCB[ xPortGetCoreID() ];
 		/* Scheduler is running. If the created task is of a higher priority than an executing task
 	       then it should run now.
 		   ToDo: This only works for the current core. If a task is scheduled on an other processor,
@@ -1141,7 +1146,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			*/
 			if( tskCAN_RUN_HERE( xCoreID ) && curTCB->uxPriority < pxNewTCB->uxPriority )
 			{
-				taskYIELD_IF_USING_PREEMPTION();
+				taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
 			}
 			else if( xCoreID != xPortGetCoreID() ) {
 				taskYIELD_OTHER_CORE(xCoreID, pxNewTCB->uxPriority);
@@ -2659,11 +2664,13 @@ BaseType_t xSwitchRequired = pdFALSE;
 
 void vTaskSwitchContext( void )
 {
-	tskTCB * pxTCB;
-	//This can be called both from IRQ as well as normal context, so we can't 
-	//use taskENTER_CRITICAL() here. Instead, save the irq status and disable
-	//IRQs, so we can use taskENTER_CRITICAL_ISR and friends.
+	//Note: This can be called from interrupt context as well as from non-interrupt context (voluntary yield). The
+	//taskENTER_CRITICAL/taskEXIT_CRITICAL is modified to work in both scenarios for the ESP32, so we can freely use
+	//them here. However, in case of a voluntary yield, a nonvoluntary yield can still happen *during* the voluntary
+	//yield. Disabling interrupts using portENTER_CRITICAL_NESTED puts a stop to this and makes the rest of the code a 
+	//bit neater.
 	int irqstate=portENTER_CRITICAL_NESTED();
+	tskTCB * pxTCB;
 	if( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE )
 	{
 		/* The scheduler is currently suspended - do not allow a context
