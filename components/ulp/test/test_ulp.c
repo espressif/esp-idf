@@ -112,7 +112,9 @@ TEST_CASE("ulp wakeup test", "[ulp][ignore]")
         I_MOVI(R2, 42),
         I_MOVI(R3, 15),
         I_ST(R2, R3, 0),
-        I_END(1)
+        I_WAKE(),
+        I_END(),
+        I_HALT()
     };
     size_t size = sizeof(program)/sizeof(ulp_insn_t);
     ulp_process_macros_and_load(0, program, &size);
@@ -145,7 +147,8 @@ TEST_CASE("ulp can write and read peripheral registers", "[ulp]")
             I_LD(R0, R1, 4),
             I_ADDI(R0, R0, 1),
             I_ST(R0, R1, 4),
-            I_END(0)
+            I_END(),
+            I_HALT()
     };
     size_t size = sizeof(program)/sizeof(ulp_insn_t);
     TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
@@ -198,7 +201,7 @@ TEST_CASE("ULP I_WR_REG instruction test", "[ulp]")
                     test_items[i].low,
                     test_items[i].low + test_items[i].width - 1,
                     0xff & ((1 << test_items[i].width) - 1)),
-            I_END(0),
+            I_END(),
             I_HALT()
         };
         size_t size = sizeof(program)/sizeof(ulp_insn_t);
@@ -242,7 +245,9 @@ TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
             M_LABEL(5),
             M_BX(4),
         M_LABEL(6),
-        I_END(1)                        // wake up the SoC
+        I_WAKE(),                       // wake up the SoC
+        I_END(),                        // stop ULP program timer
+        I_HALT()
     };
     const gpio_num_t led_gpios[] = {
         GPIO_NUM_2,
@@ -261,6 +266,72 @@ TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
     esp_deep_sleep_start();
 }
 
+TEST_CASE("ulp power consumption in deep sleep", "[ulp]")
+{
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 4 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    ulp_insn_t insn = I_HALT();
+    RTC_SLOW_MEM[0] = *(uint32_t*) &insn;
+
+    REG_WRITE(SENS_ULP_CP_SLEEP_CYC0_REG, 0x8000);
+
+    ulp_run(0);
+
+    esp_deep_sleep_enable_ulp_wakeup();
+    esp_deep_sleep_enable_timer_wakeup(10 * 1000000);
+    esp_deep_sleep_start();
+}
+
+TEST_CASE("ulp timer setting", "[ulp]")
+{
+    /*
+     * Run a simple ULP program which increments the counter, for one second.
+     * Program calls I_HALT each time and gets restarted by the timer.
+     * Compare the expected number of times the program runs with the actual.
+     */
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 32 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+
+    const int offset = 6;
+    const ulp_insn_t program[] = {
+        I_MOVI(R1, offset),     // r1 <- offset
+        I_LD(R2, R1, 0),    // load counter
+        I_ADDI(R2, R2, 1),  // counter += 1
+        I_ST(R2, R1, 0),    // save counter
+        I_HALT(),
+    };
+
+    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
+    assert(offset >= size && "data offset needs to be greater or equal to program size");
+    TEST_ESP_OK(ulp_run(0));
+    // disable the ULP program timer — we will enable it later
+    CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+
+    const uint32_t cycles_to_test[] = {0x80, 0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000, 0x4000};
+    const size_t tests_count = sizeof(cycles_to_test) / sizeof(cycles_to_test[0]);
+    for (size_t i = 0; i < tests_count; ++i) {
+        // zero out the counter
+        RTC_SLOW_MEM[offset] = 0;
+        // set the number of slow clock cycles
+        REG_WRITE(SENS_ULP_CP_SLEEP_CYC0_REG, cycles_to_test[i]);
+        // enable the timer and wait for a second
+        SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        // get the counter value and stop the timer
+        uint32_t counter = RTC_SLOW_MEM[offset] & 0xffff;
+        CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+        // compare the actual and expected numbers of iterations of ULP program
+        float expected_period = (cycles_to_test[i] + 16) / (float) RTC_CNTL_SLOWCLK_FREQ + 5 / 8e6f;
+        float error = 1.0f - counter * expected_period;
+        printf("%u\t%u\t%.01f\t%.04f\n", cycles_to_test[i], counter, 1.0f / expected_period, error);
+        // Should be within 15%
+        TEST_ASSERT_INT_WITHIN(15, 0, (int) error * 100);
+        // Note: currently RTC_CNTL_SLOWCLK_FREQ is ballpark value — we need to determine it
+        // Precisely by running calibration similar to the one done in deep sleep.
+        // This may cause the test to fail on some chips which have the slow clock frequency
+        // way off.
+    }
+}
 
 TEST_CASE("ulp can use TSENS in deep sleep", "[ulp][ignore]")
 {
@@ -297,10 +368,87 @@ TEST_CASE("ulp can use TSENS in deep sleep", "[ulp][ignore]")
             I_ST(R0, R2, offset + 4),
             I_ADDI(R2, R2, 1),  // counter += 1
             I_ST(R2, R1, 1),    // save counter
-            I_SLEEP(0),         // enter sleep
+            I_HALT(),           // enter sleep
+        M_LABEL(1),             // done with measurements
+            I_END(),            // stop ULP timer
+            I_WAKE(),           // initiate wakeup
+            I_HALT()
+    };
+
+    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
+    assert(offset >= size);
+
+    TEST_ESP_OK(ulp_run(0));
+    esp_deep_sleep_enable_timer_wakeup(4000000);
+    esp_deep_sleep_enable_ulp_wakeup();
+    esp_deep_sleep_start();
+}
+
+TEST_CASE("can use ADC in deep sleep", "[ulp][ignore]")
+{
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+
+    hexdump(RTC_SLOW_MEM, CONFIG_ULP_COPROC_RESERVE_MEM / 4);
+    printf("\n\n");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+
+    SET_PERI_REG_BITS(SENS_SAR_START_FORCE_REG, SENS_SAR1_BIT_WIDTH, 3, SENS_SAR1_BIT_WIDTH_S);
+    SET_PERI_REG_BITS(SENS_SAR_START_FORCE_REG, SENS_SAR2_BIT_WIDTH, 3, SENS_SAR2_BIT_WIDTH_S);
+
+    SET_PERI_REG_BITS(SENS_SAR_READ_CTRL_REG, SENS_SAR1_SAMPLE_BIT, 0x3, SENS_SAR1_SAMPLE_BIT_S);
+    SET_PERI_REG_BITS(SENS_SAR_READ_CTRL2_REG, SENS_SAR2_SAMPLE_BIT, 0x3, SENS_SAR2_SAMPLE_BIT_S);
+
+    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS_START2_REG, SENS_MEAS2_START_FORCE);
+    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS_START1_REG, SENS_MEAS1_START_FORCE);
+
+    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 0, SENS_FORCE_XPD_SAR_S);
+    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_AMP, 2, SENS_FORCE_XPD_AMP_S);
+
+//    SAR1 invert result
+    SET_PERI_REG_MASK(SENS_SAR_READ_CTRL_REG, SENS_SAR1_DATA_INV);
+    SET_PERI_REG_MASK(SENS_SAR_READ_CTRL_REG, SENS_SAR2_DATA_INV);
+
+
+//    const int adc = 1;
+//    const int channel = 1;
+//    const int atten = 3;
+//    const int gpio_num = 0;
+
+    const int adc = 0;
+    const int channel = 0;
+    const int atten = 0;
+    const int gpio_num = 36;
+
+    rtc_gpio_init(gpio_num);
+
+    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS_START1_REG, SENS_SAR1_EN_PAD_FORCE_M);
+    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS_START2_REG, SENS_SAR2_EN_PAD_FORCE_M);
+
+    SET_PERI_REG_BITS(SENS_SAR_ATTEN1_REG, 3, atten, 2 * channel); //set SAR1 attenuation
+    SET_PERI_REG_BITS(SENS_SAR_ATTEN2_REG, 3, atten, 2 * channel); //set SAR2 attenuation
+
+    // data start offset
+    size_t offset = 20;
+    // number of samples to collect
+    RTC_SLOW_MEM[offset] = (CONFIG_ULP_COPROC_RESERVE_MEM) / 4 - offset - 8;
+    // sample counter
+    RTC_SLOW_MEM[offset + 1] = 0;
+
+    const ulp_insn_t program[] = {
+        I_MOVI(R1, offset),     // r1 <- offset
+        I_LD(R2, R1, 1),    // r2 <- counter
+        I_LD(R3, R1, 0),    // r3 <- length
+        I_SUBI(R3, R3, 1),  // end = length - 1
+        I_SUBR(R3, R3, R2), // r3 = length - counter
+        M_BXF(1),           // if overflow goto 1:
+            I_ADC(R0, adc, channel), // r0 <- ADC
+            I_ST(R0, R2, offset + 4),
+            I_ADDI(R2, R2, 1),  // counter += 1
+            I_ST(R2, R1, 1),    // save counter
             I_HALT(),
         M_LABEL(1),             // done with measurements
-            I_END(0),           // stop ULP timer
+            I_END(),            // stop ULP program timer
             I_HALT()
     };
 

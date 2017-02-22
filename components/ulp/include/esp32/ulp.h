@@ -81,7 +81,7 @@ extern "C" {
 #define B_CMP_L 0               /*!< Branch if R0 is less than an immediate */
 #define B_CMP_GE 1              /*!< Branch if R0 is greater than or equal to an immediate */
 
-#define OPCODE_END 9            /*!< Stop executing the program (not implemented yet) */
+#define OPCODE_END 9            /*!< Stop executing the program */
 #define SUB_OPCODE_END 0        /*!< Stop executing the program and optionally wake up the chip */
 #define SUB_OPCODE_SLEEP 1      /*!< Stop executing the program and run it again after selected interval */
 
@@ -342,27 +342,56 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 #define I_WR_REG_BIT(reg, shift, val) I_WR_REG(reg, shift, shift, val)
 
 /**
- * End program.
+ * Wake the SoC from deep sleep.
  *
- * This instruction halts the coprocessor, and disables the ULP timer.
- * If wake == 1, the main CPU is woken up from deep sleep.
- * To stop the program but allow it to be restarted by timer, use I_HALT()
- * or I_SLEEP() instructions.
+ * This instruction initiates wake up from deep sleep.
+ * Use esp_deep_sleep_enable_ulp_wakeup to enable deep sleep wakeup
+ * triggered by the ULP before going into deep sleep.
+ * Note that ULP program will still keep running until the I_HALT
+ * instruction, and it will still be restarted by timer at regular
+ * intervals, even when the SoC is woken up.
+ *
+ * To stop the ULP program, use I_HALT instruction.
+ *
+ * To disable the timer which start ULP program, use I_END()
+ * instruction. I_END instruction clears the
+ * RTC_CNTL_ULP_CP_SLP_TIMER_EN_S bit of RTC_CNTL_STATE0_REG
+ * register, which controls the ULP timer.
  */
-#define I_END(wake) { .end = { \
-        .wakeup = wake, \
+#define I_WAKE() { .end = { \
+        .wakeup = 1, \
         .unused = 0, \
         .sub_opcode = SUB_OPCODE_END, \
         .opcode = OPCODE_END } }
 
 /**
- * End program and restart it after given amount of time.
+ * Stop ULP program timer.
  *
- * Time to restart the program is determined by the value of
- * SENS_SLEEP_CYCLES_Sx register, where x == timer_idx.
- * There are 5 SENS_SLEEP_CYCLES_Sx registers, so 0 <= timer_idx < 5.
+ * This is a convenience macro which disables the ULP program timer.
+ * Once this instruction is used, ULP program will not be restarted
+ * anymore until ulp_run function is called.
+ *
+ * ULP program will continue running after this instruction. To stop
+ * the currently running program, use I_HALT().
  */
-#define I_SLEEP(timer_idx) { .sleep = { \
+#define I_END() \
+    I_WR_REG_BIT(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN_S, 0)
+/**
+ * Select the time interval used to run ULP program.
+ *
+ * This instructions selects which of the SENS_SLEEP_CYCLES_Sx
+ * registers' value is used by the ULP program timer.
+ * When the ULP program stops at I_HALT instruction, ULP program
+ * timer start counting. When the counter reaches the value of
+ * the selected SENS_SLEEP_CYCLES_Sx register, ULP program
+ * start running again from the start address (passed to the ulp_run
+ * function).
+ * There are 5 SENS_SLEEP_CYCLES_Sx registers, so 0 <= timer_idx < 5.
+ *
+ * By default, SENS_SLEEP_CYCLES_S0 register is used by the ULP
+ * program timer.
+ */
+#define I_SLEEP_CYCLE_SEL(timer_idx) { .sleep = { \
         .cycle_sel = timer_idx, \
         .unused = 0, \
         .sub_opcode = SUB_OPCODE_SLEEP, \
@@ -379,6 +408,21 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
         .wait_delay = delay, \
         .reserved = 0, \
         .opcode = OPCODE_TSENS } }
+
+/**
+ * Perform ADC measurement and store result in reg_dest.
+ *
+ * adc_idx selects ADC (0 or 1).
+ * pad_idx selects ADC pad (0 - 7).
+ */
+#define I_ADC(reg_dest, adc_idx, pad_idx) { .adc = {\
+        .dreg = reg_dest, \
+        .mux = pad_idx + 1, \
+        .sar_sel = adc_idx, \
+        .unused1 = 0, \
+        .cycles = 0, \
+        .unused2 = 0, \
+        .opcode = OPCODE_ADC } }
 
 /**
  * Store value from register reg_val into RTC memory.
