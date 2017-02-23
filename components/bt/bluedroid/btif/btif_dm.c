@@ -166,7 +166,7 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 	if (1)
         {
             bt_status_t ret;
-            BTIF_TRACE_WARNING("%s: Storing link key. key_type=0x%x",
+            BTIF_TRACE_EVENT("%s: Storing link key. key_type=0x%x",
 			     __FUNCTION__, p_auth_cmpl->key_type);
             ret = btif_storage_add_bonded_device(&bd_addr,
                                 p_auth_cmpl->key, p_auth_cmpl->key_type,

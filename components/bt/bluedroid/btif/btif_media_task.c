@@ -117,7 +117,7 @@ enum {
 enum {
     SIG_MEDIA_TASK_INIT = 0xf0,
     SIG_MEDIA_TASK_CLEAN_UP = 0xf1,
-    SIG_MEDIA_TASK_AVK_ALARM_TO = 0xf2,
+    SIG_MEDIA_TASK_AVK_DATA_READY = 0xf2,
     SIG_MEDIA_TASK_AA_ALARM_TO = 0xf3,
     SIG_MEDIA_TASK_CMD_READY = 0xf4
 };
@@ -228,7 +228,6 @@ typedef struct {
 
     UINT32  sample_rate;
     UINT8   channel_count;
-    osi_alarm_t *decode_alarm;
 #endif
 
 } tBTIF_MEDIA_CB;
@@ -255,7 +254,6 @@ extern OI_STATUS OI_CODEC_SBC_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context
         OI_BOOL enhanced);
 #endif
 static void btif_media_flush_q(BUFFER_Q *p_q);
-static void btif_media_task_aa_handle_stop_decoding(void );
 static void btif_media_task_aa_rx_flush(void);
 
 static const char *dump_media_event(UINT16 event);
@@ -271,12 +269,11 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR *p_msg);
 static void btif_media_task_aa_handle_decoder_reset(BT_HDR *p_msg);
 static void btif_media_task_aa_handle_clear_track(void);
 #endif
-static void btif_media_task_aa_handle_start_decoding(void);
 #endif
 BOOLEAN btif_media_task_clear_track(void);
 static void btif_media_task_handler(void *arg);
 
-static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context);
+static void btif_media_task_avk_data_ready(UNUSED_ATTR void *context);
 static void btif_media_thread_init(UNUSED_ATTR void *context);
 static void btif_media_thread_cleanup(UNUSED_ATTR void *context);
 extern BOOLEAN btif_hf_is_call_idle();
@@ -383,8 +380,8 @@ static void btif_media_task_handler(void *arg)
         if (pdTRUE == xQueueReceive(xBtifMediaQueue, &e, (portTickType)portMAX_DELAY)) {
             // LOG_ERROR("med evt %d\n", e->sig);
             switch (e->sig) {
-            case SIG_MEDIA_TASK_AVK_ALARM_TO:
-                btif_media_task_avk_handle_timer(NULL);
+            case SIG_MEDIA_TASK_AVK_DATA_READY:
+                btif_media_task_avk_data_ready(NULL);
                 break;
             case SIG_MEDIA_TASK_CMD_READY:
                 fixed_queue_process(btif_media_cmd_msg_queue);
@@ -531,7 +528,6 @@ void btif_a2dp_on_idle(void)
     if (btif_media_cb.peer_sep == AVDT_TSEP_SRC) {
         btif_media_cb.rx_flush = TRUE;
         btif_media_task_aa_rx_flush_req();
-        btif_media_task_aa_handle_stop_decoding();
         btif_media_task_clear_track();
         APPL_TRACE_DEBUG("Stopped BT track");
     }
@@ -608,7 +604,6 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND *p_av)
     if (btif_media_cb.peer_sep == AVDT_TSEP_SRC) { /*  Handling for A2DP SINK cases*/
         btif_media_cb.rx_flush = TRUE;
         btif_media_task_aa_rx_flush_req();
-        btif_media_task_aa_handle_stop_decoding();
         btif_media_cb.data_channel_open = FALSE;
         return;
     }
@@ -631,7 +626,6 @@ void btif_a2dp_on_suspended(tBTA_AV_SUSPEND *p_av)
     if (btif_media_cb.peer_sep == AVDT_TSEP_SRC) {
         btif_media_cb.rx_flush = TRUE;
         btif_media_task_aa_rx_flush_req();
-        btif_media_task_aa_handle_stop_decoding();
         return;
     }
 }
@@ -644,7 +638,7 @@ void btif_a2dp_set_rx_flush(BOOLEAN enable)
 }
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context)
+static void btif_media_task_avk_data_ready(UNUSED_ATTR void *context)
 {
     UINT8 count;
     tBT_SBC_HDR *p_msg;
@@ -694,7 +688,7 @@ static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context)
     }
 }
 #else
-static void btif_media_task_avk_handle_timer(UNUSED_ATTR void *context) {}
+static void btif_media_task_avk_data_ready(UNUSED_ATTR void *context) {}
 #endif
 
 static void btif_media_thread_init(UNUSED_ATTR void *context)
@@ -909,31 +903,6 @@ void btif_a2dp_set_peer_sep(UINT8 sep)
     btif_media_cb.peer_sep = sep;
 }
 
-static void btif_decode_alarm_cb(UNUSED_ATTR void *context)
-{
-    btif_media_task_post(SIG_MEDIA_TASK_AVK_ALARM_TO);
-}
-
-static void btif_media_task_aa_handle_stop_decoding(void)
-{
-    osi_alarm_free(btif_media_cb.decode_alarm);
-    btif_media_cb.decode_alarm = NULL;
-}
-
-static void btif_media_task_aa_handle_start_decoding(void)
-{
-    if (btif_media_cb.decode_alarm) {
-        return;
-    }
-
-    btif_media_cb.decode_alarm = osi_alarm_new("dec_timer\n", btif_decode_alarm_cb, NULL, BTIF_SINK_MEDIA_TIME_TICK, true);
-    if (!btif_media_cb.decode_alarm) {
-        APPL_TRACE_ERROR("%s unable to allocate decode alarm.\n", __func__);
-        return;
-    }
-    osi_alarm_set(btif_media_cb.decode_alarm, BTIF_SINK_MEDIA_TIME_TICK);
-}
-
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 
 static void btif_media_task_aa_handle_clear_track (void)
@@ -1105,12 +1074,8 @@ UINT8 btif_media_sink_enque_buf(BT_HDR *p_pkt)
         memcpy(p_msg, p_pkt, (sizeof(BT_HDR) + p_pkt->offset + p_pkt->len));
         p_msg->num_frames_to_be_processed = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
         BTIF_TRACE_VERBOSE("btif_media_sink_enque_buf %d + \n", p_msg->num_frames_to_be_processed);
-        // LOG_ERROR("sink enq %d\n", p_msg->num_frames_to_be_processed);
         GKI_enqueue(&(btif_media_cb.RxSbcQ), p_msg);
-        if (GKI_queue_length(&btif_media_cb.RxSbcQ) == MAX_A2DP_DELAYED_START_FRAME_COUNT) {
-            BTIF_TRACE_DEBUG(" Initiate Decoding ");
-            btif_media_task_aa_handle_start_decoding();
-        }
+        btif_media_task_post(SIG_MEDIA_TASK_AVK_DATA_READY);
     } else {
         /* let caller deal with a failed allocation */
         BTIF_TRACE_VERBOSE("btif_media_sink_enque_buf No Buffer left - ");

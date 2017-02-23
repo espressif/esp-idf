@@ -59,7 +59,7 @@ static bt_status_t btif_in_fetch_bonded_devices(int add)
             continue;
         }
 
-        BTIF_TRACE_WARNING("Remote device:%s\n", name);
+        BTIF_TRACE_EVENT("Remote device:%s\n", name);
         LINK_KEY link_key;
         size_t size = sizeof(link_key);
         if (btif_config_get_bin(name, "LinkKey", link_key, &size)) {
