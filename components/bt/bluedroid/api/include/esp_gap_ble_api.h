@@ -46,6 +46,8 @@ typedef enum {
     ESP_GAP_BLE_SCAN_RESULT_EVT,                            /*!< When one scan result ready, the event comes each time */
     ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT,              /*!< When raw advertising data set complete, the event comes */
     ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT,         /*!< When raw advertising data set complete, the event comes */
+    ESP_GAP_BLE_ADV_START_COMPLETE_EVT,                     /*!< When start advertising complete, the event comes */
+    ESP_GAP_BLE_SCAN_START_COMPLETE_EVT,                    /*!< When start scan complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
 /// Advertising data maximum length
@@ -284,6 +286,18 @@ typedef union {
     struct ble_scan_rsp_data_raw_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the set raw advertising data operation success status */
     } scan_rsp_data_raw_cmpl;                       /*!< Event parameter of ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_ADV_START_COMPLETE_EVT
+     */
+    struct ble_adv_start_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate advertising start operation success status */
+    } adv_start_cmpl;                               /*!< Event parameter of ESP_GAP_BLE_ADV_START_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SCAN_START_COMPLETE_EVT
+     */
+    struct ble_scan_start_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate scan start operation success status */
+    } scan_start_cmpl;                              /*!< Event parameter of ESP_GAP_BLE_SCAN_START_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
