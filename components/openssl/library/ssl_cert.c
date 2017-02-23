@@ -29,8 +29,10 @@ CERT *__ssl_cert_new(CERT *ic)
     EVP_PKEY *ipk;
 
     cert = ssl_mem_zalloc(sizeof(CERT));
-    if (!cert)
-        SSL_RET(failed1, "ssl_mem_zalloc\n");
+    if (!cert) {
+        SSL_DEBUG(SSL_CERT_ERROR_LEVEL, "no enough memory > (cert)");
+        goto no_mem;
+    }
 
     if (ic) {
         ipk = ic->pkey;
@@ -41,20 +43,24 @@ CERT *__ssl_cert_new(CERT *ic)
     }
 
     cert->pkey = __EVP_PKEY_new(ipk);
-    if (!cert->pkey)
-        SSL_RET(failed2, "__EVP_PKEY_new\n");
+    if (!cert->pkey) {
+        SSL_DEBUG(SSL_CERT_ERROR_LEVEL, "__EVP_PKEY_new() return NULL");
+        goto pkey_err;
+    }
 
     cert->x509 = __X509_new(ix);
-    if (!cert->x509)
-        SSL_RET(failed3, "__X509_new\n");
+    if (!cert->x509) {
+        SSL_DEBUG(SSL_CERT_ERROR_LEVEL, "__X509_new() return NULL");
+        goto x509_err;
+    }
 
     return cert;
 
-failed3:
+x509_err:
     EVP_PKEY_free(cert->pkey);
-failed2:
+pkey_err:
     ssl_mem_free(cert);
-failed1:
+no_mem:
     return NULL;
 }
 
@@ -71,6 +77,8 @@ CERT *ssl_cert_new(void)
  */
 void ssl_cert_free(CERT *cert)
 {
+    SSL_ASSERT3(cert);
+
     X509_free(cert->x509);
 
     EVP_PKEY_free(cert->pkey);

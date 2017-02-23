@@ -5,30 +5,48 @@ menuconfig ETHERNET
         Select this option to enable ethernet driver and show the submenu with ethernet features.
 
 config DMA_RX_BUF_NUM
-    int "DMA Rx Buf Num"
-    default  10
-    depends on ETHERNET
-    help
-        Dma rx buf num ,can not be 0 .
-
-config DMA_TX_BUF_NUM
-    int "DMA Tx Buf Num"
+    int "Number of DMA RX buffers"
+    range 3 20
     default 10
     depends on ETHERNET
     help
-        Dma tx Buf num ,can not be 0.
+        Number of DMA receive buffers. Each buffer is 1600 bytes.
+        Buffers are allocated statically.
+        Larger number of buffers increases throughput.
+        If enable flow ctrl, the num must be above 9 .
+
+config DMA_TX_BUF_NUM
+    int "Number of DMA RX buffers"
+    range 3 20
+    default 10
+    depends on ETHERNET
+    help
+        Number of DMA transmit buffers. Each buffer is 1600 bytes.
+        Buffers are allocated statically.
+        Larger number of buffers increases throughput.
 
 config EMAC_L2_TO_L3_RX_BUF_MODE
-    bool "L2 To L3 RX BUF COPY MODE"
+    bool "Enable copy between Layer2 and Layer3"
     default n
     depends on ETHERNET
     help
-        Receive Buf user copy mode or pointer mode.
+        If this options is selected, a copy of each received buffer will be created when
+        passing it from the Ethernet MAC (L2) to the IP stack (L3). Otherwise, IP stack
+        will receive pointers to the DMA buffers used by Ethernet MAC.
+        
+        When Ethernet MAC doesn't have any unused buffers left, it will drop incomming
+        packets (flow control may help with this problem, to some extent).
+        
+        The buffers for the IP stack are allocated from the heap, so the total number of
+        receive buffers is limited by the available heap size, if this option is selected.
+        
+        If unsure, choose n.
 
 config EMAC_TASK_PRIORITY
     int "EMAC_TASK_PRIORITY"
     default 20
+    range 3 22
     depends on ETHERNET
     help
-        Emac task priority ,suggest 3 ~ 23.
+        Ethernet MAC task priority.
 

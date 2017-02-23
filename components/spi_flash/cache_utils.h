@@ -48,4 +48,12 @@ void spi_flash_disable_interrupts_caches_and_other_cpu_no_os();
 // This function is implied to be called when other CPU is not running or running code from IRAM.
 void spi_flash_enable_interrupts_caches_no_os();
 
+// Mark the pages containing a flash region as having been
+// erased or written to. This means the flash cache needs
+// to be evicted before these pages can be flash_mmap()ed again,
+// as they may contain stale data
+//
+// Only call this while holding spi_flash_op_lock()
+void spi_flash_mark_modified_region(uint32_t start_addr, uint32_t length);
+
 #endif //ESP_SPI_FLASH_CACHE_UTILS_H

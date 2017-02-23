@@ -449,7 +449,8 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle);
  * @param[in]       attr_handle - attribute handle to indicate.
  * @param[in]       value_len - indicate value length.
  * @param[in]       value: value to indicate.
- * @param[in]       need_confirm - if this indication expects a confirmation or not.
+ * @param[in]       need_confirm - Whether a confirmation is required.
+ *                  false sends a GATT notification, true sends a GATT indication.
  *
  * @return
  *                  - ESP_OK : success

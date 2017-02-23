@@ -26,8 +26,10 @@ EVP_PKEY* __EVP_PKEY_new(EVP_PKEY *ipk)
     EVP_PKEY *pkey;
 
     pkey = ssl_mem_zalloc(sizeof(EVP_PKEY));
-    if (!pkey)
-        SSL_RET(failed1, "ssl_mem_zalloc\n");
+    if (!pkey) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "no enough memory > (pkey)");
+        goto no_mem;
+    }
 
     if (ipk) {
         pkey->method = ipk->method;
@@ -36,14 +38,16 @@ EVP_PKEY* __EVP_PKEY_new(EVP_PKEY *ipk)
     }
 
     ret = EVP_PKEY_METHOD_CALL(new, pkey, ipk);
-    if (ret)
-        SSL_RET(failed2, "EVP_PKEY_METHOD_CALL\n");
+    if (ret) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "EVP_PKEY_METHOD_CALL(new) return %d", ret);
+        goto failed;
+    }
 
     return pkey;
 
-failed2:
+failed:
     ssl_mem_free(pkey);
-failed1:
+no_mem:
     return NULL;
 }
 
@@ -60,6 +64,8 @@ EVP_PKEY* EVP_PKEY_new(void)
  */
 void EVP_PKEY_free(EVP_PKEY *pkey)
 {
+    SSL_ASSERT3(pkey);
+
     EVP_PKEY_METHOD_CALL(free, pkey);
 
     ssl_mem_free(pkey);
@@ -78,22 +84,27 @@ EVP_PKEY *d2i_PrivateKey(int type,
     int ret;
     EVP_PKEY *pkey;
 
-    SSL_ASSERT(pp);
-    SSL_ASSERT(*pp);
-    SSL_ASSERT(length);
+    SSL_ASSERT2(pp);
+    SSL_ASSERT2(*pp);
+    SSL_ASSERT2(length);
 
     if (a && *a) {
         pkey = *a;
     } else {
         pkey = EVP_PKEY_new();;
-        if (!pkey)
-            SSL_RET(failed1, "EVP_PKEY_new\n");
+        if (!pkey) {
+            SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "EVP_PKEY_new() return NULL");
+            goto failed1;
+        }
+
         m = 1;
     }
 
     ret = EVP_PKEY_METHOD_CALL(load, pkey, *pp, length);
-    if (ret)
-        SSL_RET(failed2, "EVP_PKEY_METHOD_CALL\n");
+    if (ret) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "EVP_PKEY_METHOD_CALL(load) return %d", ret);
+        goto failed2;
+    }
 
     if (a)
         *a = pkey;
@@ -112,8 +123,8 @@ failed1:
  */
 int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
 {
-    SSL_ASSERT(ctx);
-    SSL_ASSERT(pkey);
+    SSL_ASSERT1(ctx);
+    SSL_ASSERT1(pkey);
 
     if (ctx->cert->pkey == pkey)
         return 1;
@@ -131,8 +142,8 @@ int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey)
  */
 int SSL_use_PrivateKey(SSL *ssl, EVP_PKEY *pkey)
 {
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(pkey);
+    SSL_ASSERT1(ssl);
+    SSL_ASSERT1(pkey);
 
     if (ssl->cert->pkey == pkey)
         return 1;
@@ -155,12 +166,16 @@ int SSL_CTX_use_PrivateKey_ASN1(int type, SSL_CTX *ctx,
     EVP_PKEY *pk;
 
     pk = d2i_PrivateKey(0, NULL, &d, len);
-    if (!pk)
-        SSL_RET(failed1, "d2i_PrivateKey\n");
+    if (!pk) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "d2i_PrivateKey() return NULL");
+        goto failed1;
+    }
 
     ret = SSL_CTX_use_PrivateKey(ctx, pk);
-    if (!ret)
-        SSL_RET(failed2, "SSL_CTX_use_PrivateKey\n");
+    if (!ret) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "SSL_CTX_use_PrivateKey() return %d", ret);
+        goto failed2;
+    }
 
     return 1;
 
@@ -180,12 +195,16 @@ int SSL_use_PrivateKey_ASN1(int type, SSL *ssl,
     EVP_PKEY *pk;
 
     pk = d2i_PrivateKey(0, NULL, &d, len);
-    if (!pk)
-        SSL_RET(failed1, "d2i_PrivateKey\n");
+    if (!pk) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "d2i_PrivateKey() return NULL");
+        goto failed1;
+    }
 
     ret = SSL_use_PrivateKey(ssl, pk);
-    if (!ret)
-        SSL_RET(failed2, "SSL_use_PrivateKey\n");
+    if (!ret) {
+        SSL_DEBUG(SSL_PKEY_ERROR_LEVEL, "SSL_use_PrivateKey() return %d", ret);
+        goto failed2;
+    }
 
     return 1;
 

@@ -64,7 +64,7 @@ TEST_CASE("ulp add test", "[ulp]")
     TEST_ASSERT_EQUAL(10 + 11, RTC_SLOW_MEM[18] & 0xffff);
 }
 
-TEST_CASE("ulp branch test", "[ulp]")
+TEST_CASE("ulp branch test", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
@@ -95,7 +95,7 @@ TEST_CASE("ulp branch test", "[ulp]")
     TEST_ASSERT_EQUAL(0, RTC_SLOW_MEM[64]);
 }
 
-TEST_CASE("ulp wakeup test", "[ulp]")
+TEST_CASE("ulp wakeup test", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
@@ -121,7 +121,7 @@ TEST_CASE("ulp wakeup test", "[ulp]")
     esp_deep_sleep_start();
 }
 
-TEST_CASE("ulp controls RTC_IO", "[ulp]")
+TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);

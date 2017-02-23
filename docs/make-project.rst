@@ -4,7 +4,7 @@ Build and Flash with Make
 Finding a project
 -----------------
 
-As well as the `esp-idf-template <https://github.com/espressif/esp-idf-template>`_ project mentioned in the setup guide, esp-idf comes with some example projects on github in the `examples <https://github.com/espressif/esp-idf/tree/master/examples>`_ directory.
+As well as the `esp-idf-template <https://github.com/espressif/esp-idf-template>`_ project mentioned in the setup guide, ESP-IDF comes with some example projects on github in the :idf:`examples` directory.
 
 Once you've found the project you want to work with, change to its directory and you can configure and build it:
 

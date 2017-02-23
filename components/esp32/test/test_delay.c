@@ -37,7 +37,7 @@ static void test_delay_task(void* p)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("ets_delay produces correct delay on both CPUs", "[delay]")
+TEST_CASE("ets_delay produces correct delay on both CPUs", "[delay][ignore]")
 {
     int delay_ms = 50;
     const delay_test_arg_t args = { .delay_us = delay_ms * 1000, .method = 0 };

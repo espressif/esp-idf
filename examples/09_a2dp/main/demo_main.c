@@ -21,5 +21,9 @@ void app_main()
     // printf("Free memory: %d bytes\n", system_get_free_heap_size());
     // EspAudio_Init();
     esp_bt_controller_init();
+
+    if (esp_bt_controller_enable(ESP_BT_MODE_BTDM) != ESP_OK) {
+        return;
+    }
     bt_app_task_start_up();
 }

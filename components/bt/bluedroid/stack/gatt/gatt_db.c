@@ -651,27 +651,28 @@ tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                 case GATT_UUID_INCLUDE_SERVICE:
                     return GATT_NOT_FOUND;
                 default:
-                    if (p_cur->p_value->attr_val.attr_max_len < length) {
+                    if (p_cur->p_value != NULL && p_cur->p_value->attr_val.attr_max_len < length) {
                         GATT_TRACE_ERROR("gatts_set_attribute_vaule failt:Invalid value length");
                         return GATT_INVALID_ATTR_LEN;
-                    } else {
+                    } else if (p_cur->p_value != NULL && p_cur->p_value->attr_val.attr_max_len > 0) {
                         memcpy(p_cur->p_value->attr_val.attr_val, value, length);
                         p_cur->p_value->attr_val.attr_len = length;
+                    } else {
+                        return GATT_INVALID_ATTR_LEN;
                     }
                     break;
                 }
             } else {
-                if (p_cur->p_value->attr_val.attr_max_len < length) {
+                if (p_cur->p_value != NULL && p_cur->p_value->attr_val.attr_max_len < length) {
                     GATT_TRACE_ERROR("gatts_set_attribute_vaule failt:Invalid value length");
-                } else {
+                } else if (p_cur->p_value != NULL && p_cur->p_value->attr_val.attr_max_len > 0) {
                     memcpy(p_cur->p_value->attr_val.attr_val, value, length);
                     p_cur->p_value->attr_val.attr_len = length;
+                } else {
+                    return GATT_INVALID_ATTR_LEN;
                 }
-
             }
-
             break;
-
         }
 
         p_cur = p_cur->p_next;
@@ -699,8 +700,9 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                                        UINT16 *length, UINT8 **value)
 {
     tGATT_ATTR16  *p_cur;
-    GATT_TRACE_DEBUG("***********%s*************\n", __func__);
+
     GATT_TRACE_DEBUG("attr_handle = %x\n", attr_handle);
+
     if (p_db == NULL) {
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:p_db is NULL.\n");
         return GATT_INVALID_PDU;
@@ -713,7 +715,6 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
     p_cur    =  (tGATT_ATTR16 *) p_db->p_attr_list;
 
     while (p_cur != NULL) {
-        LOG_ERROR("p_ur->handle = %x\n", p_cur->handle);
         if (p_cur->handle == attr_handle) {
 
             if (p_cur->uuid_type == GATT_ATTR_UUID_TYPE_16) {
@@ -722,7 +723,7 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                 case GATT_UUID_INCLUDE_SERVICE:
                     break;
                 default:
-                    if (p_cur->p_value->attr_val.attr_len != 0) {
+                    if (p_cur->p_value &&  p_cur->p_value->attr_val.attr_len != 0) {
                         *length = p_cur->p_value->attr_val.attr_len;
                         *value = p_cur->p_value->attr_val.attr_val;
                         return GATT_SUCCESS;
@@ -747,7 +748,6 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
             break;
 
         }
-
 
         p_cur = p_cur->p_next;
     }
@@ -1332,7 +1332,13 @@ static tGATT_STATUS gatts_send_app_read_request(tGATT_TCB *p_tcb, UINT8 op_code,
 
         gatt_sr_send_req_callback(conn_id,
                                   trans_id, GATTS_REQ_TYPE_READ, &sr_data);
-        return (tGATT_STATUS) GATT_PENDING;
+        
+        if (need_rsp) {
+            return (tGATT_STATUS) GATT_PENDING;
+        }
+        else{
+            return (tGATT_STATUS) GATT_STACK_RSP;
+        }
     } else {
         return (tGATT_STATUS) GATT_BUSY;    /* max pending command, application error */
     }

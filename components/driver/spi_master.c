@@ -502,6 +502,7 @@ static void IRAM_ATTR spi_intr(void *arg)
         //We have a transaction. Send it.
         spi_device_t *dev=host->device[i];
         host->cur_trans=trans;
+        host->cur_cs=i;
         //We should be done with the transmission.
         assert(host->hw->cmd.usr == 0);
         
@@ -510,7 +511,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             trans->rxlength=trans->length;
         }
         
-        //Reconfigure accoding to device settings, but only if we change CSses.
+        //Reconfigure according to device settings, but only if we change CSses.
         if (i!=prevCs) {
             //Assumes a hardcoded 80MHz Fapb for now. ToDo: figure out something better once we have
             //clock scaling working.
@@ -599,7 +600,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             } else {
                 data=trans->rx_buffer;
             }
-            if (trans->rxlength<THRESH_DMA_TRANS) {
+            if (trans->rxlength <= THRESH_DMA_TRANS) {
                 //No need for DMA; we'll copy the result out of the work registers directly later.
             } else {
                 host->hw->user.usr_miso_highpart=0;
@@ -624,9 +625,9 @@ static void IRAM_ATTR spi_intr(void *arg)
             } else {
                 data=(uint32_t *)trans->tx_buffer;
             }
-            if (trans->rxlength < 8*32) {
+            if (trans->length <= THRESH_DMA_TRANS) {
                 //No need for DMA.
-                for (int x=0; x < trans->rxlength; x+=32) {
+                for (int x=0; x < trans->length; x+=32) {
                     //Use memcpy to get around alignment issues for txdata
                     uint32_t word;
                     memcpy(&word, &data[x/32], 4);
@@ -655,7 +656,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->addr=trans->address & 0xffffffff;
         }
         host->hw->user.usr_mosi=(trans->tx_buffer==NULL)?0:1;
-        host->hw->user.usr_miso=(trans->tx_buffer==NULL)?0:1;
+        host->hw->user.usr_miso=(trans->rx_buffer==NULL)?0:1;
 
         //Call pre-transmission callback, if any
         if (dev->cfg.pre_cb) dev->cfg.pre_cb(trans);

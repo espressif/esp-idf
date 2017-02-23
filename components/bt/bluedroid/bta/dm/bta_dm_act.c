@@ -4610,6 +4610,30 @@ void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_ble_set_adv_config_raw
+**
+** Description      This function set the customized ADV data configuration
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data)
+{
+    tBTA_STATUS status = BTA_FAILURE;
+
+    if (BTM_BleWriteAdvDataRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
+                               p_data->ble_set_adv_data_raw.raw_adv_len) == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+    }
+
+    if (p_data->ble_set_adv_data_raw.p_adv_data_cback) {
+        (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
+    }
+}
+
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ble_set_scan_rsp
 **
 ** Description      This function set the customized ADV scan resp. configuration
@@ -4628,6 +4652,29 @@ void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data)
 
     if (p_data->ble_set_adv_data.p_adv_data_cback) {
         (*p_data->ble_set_adv_data.p_adv_data_cback)(status);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_ble_set_scan_rsp_raw
+**
+** Description      This function set the raw scan response data
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data)
+{
+    tBTA_STATUS status = BTA_FAILURE;
+
+    if (BTM_BleWriteScanRspRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
+                               p_data->ble_set_adv_data_raw.raw_adv_len) == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+    }
+
+    if (p_data->ble_set_adv_data_raw.p_adv_data_cback) {
+        (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
     }
 }
 

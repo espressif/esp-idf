@@ -47,86 +47,95 @@ typedef void (*tBTA_DM_ACTION)(tBTA_DM_MSG *p_data);
 const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 
     /* device manager local device API events */
-    bta_dm_enable,            /* 0  BTA_DM_API_ENABLE_EVT */
-    bta_dm_disable,           /* 1  BTA_DM_API_DISABLE_EVT */
-    bta_dm_set_dev_name,      /* 2  BTA_DM_API_SET_NAME_EVT */
-    bta_dm_set_visibility,    /* 3  BTA_DM_API_SET_VISIBILITY_EVT */
-    bta_dm_acl_change,        /* 8  BTA_DM_ACL_CHANGE_EVT */
-    bta_dm_add_device,        /* 9  BTA_DM_API_ADD_DEVICE_EVT */
-    bta_dm_close_acl,        /* 10  BTA_DM_API_ADD_DEVICE_EVT */
+    bta_dm_enable,                          /* 0  BTA_DM_API_ENABLE_EVT */
+    bta_dm_disable,                         /* 1  BTA_DM_API_DISABLE_EVT */
+    bta_dm_set_dev_name,                    /* 2  BTA_DM_API_SET_NAME_EVT */
+    bta_dm_set_visibility,                  /* 3  BTA_DM_API_SET_VISIBILITY_EVT */
+    bta_dm_acl_change,                      /* 8  BTA_DM_ACL_CHANGE_EVT */
+    bta_dm_add_device,                      /* 9  BTA_DM_API_ADD_DEVICE_EVT */
+    bta_dm_close_acl,                       /* 10  BTA_DM_API_ADD_DEVICE_EVT */
 
     /* security API events */
-    bta_dm_bond,              /* 11  BTA_DM_API_BOND_EVT */
-    bta_dm_bond_cancel,       /* 12  BTA_DM_API_BOND_CANCEL_EVT */
-    bta_dm_pin_reply,         /* 13 BTA_DM_API_PIN_REPLY_EVT */
+    bta_dm_bond,                            /* 11  BTA_DM_API_BOND_EVT */
+    bta_dm_bond_cancel,                     /* 12  BTA_DM_API_BOND_CANCEL_EVT */
+    bta_dm_pin_reply,                       /* 13 BTA_DM_API_PIN_REPLY_EVT */
 
     /* power manger events */
-    bta_dm_pm_btm_status,     /* 16 BTA_DM_PM_BTM_STATUS_EVT */
-    bta_dm_pm_timer,          /* 17 BTA_DM_PM_TIMER_EVT*/
+    bta_dm_pm_btm_status,                   /* 16 BTA_DM_PM_BTM_STATUS_EVT */
+    bta_dm_pm_timer,                        /* 17 BTA_DM_PM_TIMER_EVT*/
 
     /* simple pairing events */
-    bta_dm_confirm,           /* 18 BTA_DM_API_CONFIRM_EVT */
+    bta_dm_confirm,                         /* 18 BTA_DM_API_CONFIRM_EVT */
 
-    bta_dm_set_encryption,    /* BTA_DM_API_SET_ENCRYPTION_EVT */
+    bta_dm_set_encryption,                  /* BTA_DM_API_SET_ENCRYPTION_EVT */
 
 #if (BTM_OOB_INCLUDED == TRUE)
-    bta_dm_loc_oob,           /* 20 BTA_DM_API_LOC_OOB_EVT */
-    bta_dm_ci_io_req_act,     /* 21 BTA_DM_CI_IO_REQ_EVT */
-    bta_dm_ci_rmt_oob_act,    /* 22 BTA_DM_CI_RMT_OOB_EVT */
+    bta_dm_loc_oob,                         /* 20 BTA_DM_API_LOC_OOB_EVT */
+    bta_dm_ci_io_req_act,                   /* 21 BTA_DM_CI_IO_REQ_EVT */
+    bta_dm_ci_rmt_oob_act,                  /* 22 BTA_DM_CI_RMT_OOB_EVT */
 #endif /* BTM_OOB_INCLUDED */
 
 
 #if BLE_INCLUDED == TRUE
-    bta_dm_add_blekey,          /*  BTA_DM_API_ADD_BLEKEY_EVT           */
-    bta_dm_add_ble_device,      /*  BTA_DM_API_ADD_BLEDEVICE_EVT        */
-    bta_dm_ble_passkey_reply,   /*  BTA_DM_API_BLE_PASSKEY_REPLY_EVT    */
-    bta_dm_ble_confirm_reply,   /*  BTA_DM_API_BLE_CONFIRM_REPLY_EVT    */
+    bta_dm_add_blekey,                      /*  BTA_DM_API_ADD_BLEKEY_EVT           */
+    bta_dm_add_ble_device,                  /*  BTA_DM_API_ADD_BLEDEVICE_EVT        */
+    bta_dm_ble_passkey_reply,               /*  BTA_DM_API_BLE_PASSKEY_REPLY_EVT    */
+    bta_dm_ble_confirm_reply,               /*  BTA_DM_API_BLE_CONFIRM_REPLY_EVT    */
     bta_dm_security_grant,
     bta_dm_ble_set_bg_conn_type,
-    bta_dm_ble_set_conn_params,  /* BTA_DM_API_BLE_CONN_PARAM_EVT */
-    bta_dm_ble_set_conn_scan_params,  /* BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT */
-    bta_dm_ble_set_scan_params,  /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
-    bta_dm_ble_set_scan_fil_params, /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
-    bta_dm_ble_observe,          /* BTA_DM_API_BLE_OBSERVE_EVT*/
-    bta_dm_ble_update_conn_params,   /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
-    /*******This handler function added by Yulong at 2016/9/9 to
-            support the random address setting for the APP******/
-    bta_dm_ble_set_rand_address,    /*BTA_DM_API_SET_RAND_ADDR_EVT*/
-    /*******This handler function added by Yulong at 2016/10/19 to
-       support stop the ble advertising setting by the APP******/
-    bta_dm_ble_stop_advertising,    /*BTA_DM_API_BLE_STOP_ADV_EVT*/
+    bta_dm_ble_set_conn_params,             /* BTA_DM_API_BLE_CONN_PARAM_EVT */
+    bta_dm_ble_set_conn_scan_params,        /* BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT */
+    bta_dm_ble_set_scan_params,             /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
+    bta_dm_ble_set_scan_fil_params,         /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
+    bta_dm_ble_observe,                     /* BTA_DM_API_BLE_OBSERVE_EVT*/
+    bta_dm_ble_update_conn_params,          /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
+    /* This handler function added by
+       Yulong at 2016/9/9 to support the
+       random address setting for the APP */
+    bta_dm_ble_set_rand_address,            /* BTA_DM_API_SET_RAND_ADDR_EVT*/
+    /* This handler function added by
+       Yulong at 2016/10/19 to support
+       stop the ble advertising setting
+       by the APP */
+    bta_dm_ble_stop_advertising,            /* BTA_DM_API_BLE_STOP_ADV_EVT*/
 #if BLE_PRIVACY_SPT == TRUE
-    bta_dm_ble_config_local_privacy,   /* BTA_DM_API_LOCAL_PRIVACY_EVT */
+    bta_dm_ble_config_local_privacy,        /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
-    bta_dm_ble_set_adv_params,     /* BTA_DM_API_BLE_ADV_PARAM_EVT */
-    bta_dm_ble_set_adv_params_all, /* BTA_DM_API_BLE_ADV_PARAM_All_EVT */
-    bta_dm_ble_set_adv_config,     /* BTA_DM_API_BLE_SET_ADV_CONFIG_EVT */
-    bta_dm_ble_set_scan_rsp,       /* BTA_DM_API_BLE_SET_SCAN_RSPT */
-    bta_dm_ble_broadcast,          /* BTA_DM_API_BLE_BROADCAST_EVT */
-    bta_dm_ble_set_data_length,    /* BTA_DM_API_SET_DATA_LENGTH_EVT */
+    bta_dm_ble_set_adv_params,              /* BTA_DM_API_BLE_ADV_PARAM_EVT */
+    bta_dm_ble_set_adv_params_all,          /* BTA_DM_API_BLE_ADV_PARAM_All_EVT */
+    bta_dm_ble_set_adv_config,              /* BTA_DM_API_BLE_SET_ADV_CONFIG_EVT */
+    /* New function to allow set raw adv
+       data to HCI */
+    bta_dm_ble_set_adv_config_raw,          /* BTA_DM_API_BLE_SET_ADV_CONFIG_RAW_EVT */
+    bta_dm_ble_set_scan_rsp,                /* BTA_DM_API_BLE_SET_SCAN_RSP_EVT */
+    /* New function to allow set raw scan 
+       response data to HCI */
+    bta_dm_ble_set_scan_rsp_raw,            /* BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT */
+    bta_dm_ble_broadcast,                   /* BTA_DM_API_BLE_BROADCAST_EVT */
+    bta_dm_ble_set_data_length,             /* BTA_DM_API_SET_DATA_LENGTH_EVT */
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    bta_dm_cfg_filter_cond,         /* BTA_DM_API_CFG_FILTER_COND_EVT */
-    bta_dm_scan_filter_param_setup, /* BTA_DM_API_SCAN_FILTER_SETUP_EVT */
-    bta_dm_enable_scan_filter,      /* BTA_DM_API_SCAN_FILTER_ENABLE_EVT */
+    bta_dm_cfg_filter_cond,                 /* BTA_DM_API_CFG_FILTER_COND_EVT */
+    bta_dm_scan_filter_param_setup,         /* BTA_DM_API_SCAN_FILTER_SETUP_EVT */
+    bta_dm_enable_scan_filter,              /* BTA_DM_API_SCAN_FILTER_ENABLE_EVT */
 #endif
-    bta_dm_ble_multi_adv_enb,           /*  BTA_DM_API_BLE_MULTI_ADV_ENB_EVT*/
-    bta_dm_ble_multi_adv_upd_param,     /*  BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT */
-    bta_dm_ble_multi_adv_data,          /*  BTA_DM_API_BLE_MULTI_ADV_DATA_EVT */
-    btm_dm_ble_multi_adv_disable,       /*  BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT */
-    bta_dm_ble_setup_storage,      /* BTA_DM_API_BLE_SETUP_STORAGE_EVT */
-    bta_dm_ble_enable_batch_scan,  /* BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT */
-    bta_dm_ble_disable_batch_scan, /* BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT */
-    bta_dm_ble_read_scan_reports,  /* BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT */
-    bta_dm_ble_track_advertiser,   /* BTA_DM_API_BLE_TRACK_ADVERTISER_EVT */
-    bta_dm_ble_get_energy_info,    /* BTA_DM_API_BLE_ENERGY_INFO_EVT */
+    bta_dm_ble_multi_adv_enb,               /*  BTA_DM_API_BLE_MULTI_ADV_ENB_EVT*/
+    bta_dm_ble_multi_adv_upd_param,         /*  BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT */
+    bta_dm_ble_multi_adv_data,              /*  BTA_DM_API_BLE_MULTI_ADV_DATA_EVT */
+    btm_dm_ble_multi_adv_disable,           /*  BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT */
+    bta_dm_ble_setup_storage,               /* BTA_DM_API_BLE_SETUP_STORAGE_EVT */
+    bta_dm_ble_enable_batch_scan,           /* BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT */
+    bta_dm_ble_disable_batch_scan,          /* BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT */
+    bta_dm_ble_read_scan_reports,           /* BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT */
+    bta_dm_ble_track_advertiser,            /* BTA_DM_API_BLE_TRACK_ADVERTISER_EVT */
+    bta_dm_ble_get_energy_info,             /* BTA_DM_API_BLE_ENERGY_INFO_EVT */
 #endif
 
-    bta_dm_enable_test_mode,    /*  BTA_DM_API_ENABLE_TEST_MODE_EVT     */
-    bta_dm_disable_test_mode,   /*  BTA_DM_API_DISABLE_TEST_MODE_EVT    */
-    bta_dm_execute_callback,    /*  BTA_DM_API_EXECUTE_CBACK_EVT        */
+    bta_dm_enable_test_mode,                /*  BTA_DM_API_ENABLE_TEST_MODE_EVT     */
+    bta_dm_disable_test_mode,               /*  BTA_DM_API_DISABLE_TEST_MODE_EVT    */
+    bta_dm_execute_callback,                /*  BTA_DM_API_EXECUTE_CBACK_EVT        */
 
-    bta_dm_remove_all_acl,      /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
-    bta_dm_remove_device,       /* BTA_DM_API_REMOVE_DEVICE_EVT */
+    bta_dm_remove_all_acl,                  /* BTA_DM_API_REMOVE_ALL_ACL_EVT */
+    bta_dm_remove_device,                   /* BTA_DM_API_REMOVE_DEVICE_EVT */
 };
 
 
@@ -161,24 +170,24 @@ enum {
 /* action function list */
 const tBTA_DM_ACTION bta_dm_search_action[] = {
 
-    bta_dm_search_start,              /* 0 BTA_DM_API_SEARCH */
-    bta_dm_search_cancel,             /* 1 BTA_DM_API_SEARCH_CANCEL */
-    bta_dm_discover,                  /* 2 BTA_DM_API_DISCOVER */
-    bta_dm_inq_cmpl,                  /* 3 BTA_DM_INQUIRY_CMPL */
-    bta_dm_rmt_name,                  /* 4 BTA_DM_REMT_NAME */
-    bta_dm_sdp_result,                /* 5 BTA_DM_SDP_RESULT */
-    bta_dm_search_cmpl,               /* 6 BTA_DM_SEARCH_CMPL */
-    bta_dm_free_sdp_db,               /* 7 BTA_DM_FREE_SDP_DB */
-    bta_dm_disc_result,               /* 8 BTA_DM_DISC_RESULT */
-    bta_dm_search_result,             /* 9 BTA_DM_SEARCH_RESULT */
-    bta_dm_queue_search,              /* 10 BTA_DM_QUEUE_SEARCH */
-    bta_dm_queue_disc,                /* 11 BTA_DM_QUEUE_DISC */
-    bta_dm_search_clear_queue,        /* 12 BTA_DM_SEARCH_CLEAR_QUEUE */
-    bta_dm_search_cancel_cmpl,        /* 13 BTA_DM_SEARCH_CANCEL_CMPL */
-    bta_dm_search_cancel_notify,      /* 14 BTA_DM_SEARCH_CANCEL_NOTIFY */
-    bta_dm_search_cancel_transac_cmpl, /* 15 BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL */
-    bta_dm_disc_rmt_name,             /* 16 BTA_DM_DISC_RMT_NAME */
-    bta_dm_di_disc                    /* 17 BTA_DM_API_DI_DISCOVER */
+    bta_dm_search_start,                /* 0 BTA_DM_API_SEARCH */
+    bta_dm_search_cancel,               /* 1 BTA_DM_API_SEARCH_CANCEL */
+    bta_dm_discover,                    /* 2 BTA_DM_API_DISCOVER */
+    bta_dm_inq_cmpl,                    /* 3 BTA_DM_INQUIRY_CMPL */
+    bta_dm_rmt_name,                    /* 4 BTA_DM_REMT_NAME */
+    bta_dm_sdp_result,                  /* 5 BTA_DM_SDP_RESULT */
+    bta_dm_search_cmpl,                 /* 6 BTA_DM_SEARCH_CMPL */
+    bta_dm_free_sdp_db,                 /* 7 BTA_DM_FREE_SDP_DB */
+    bta_dm_disc_result,                 /* 8 BTA_DM_DISC_RESULT */
+    bta_dm_search_result,               /* 9 BTA_DM_SEARCH_RESULT */
+    bta_dm_queue_search,                /* 10 BTA_DM_QUEUE_SEARCH */
+    bta_dm_queue_disc,                  /* 11 BTA_DM_QUEUE_DISC */
+    bta_dm_search_clear_queue,          /* 12 BTA_DM_SEARCH_CLEAR_QUEUE */
+    bta_dm_search_cancel_cmpl,          /* 13 BTA_DM_SEARCH_CANCEL_CMPL */
+    bta_dm_search_cancel_notify,        /* 14 BTA_DM_SEARCH_CANCEL_NOTIFY */
+    bta_dm_search_cancel_transac_cmpl,  /* 15 BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL */
+    bta_dm_disc_rmt_name,               /* 16 BTA_DM_DISC_RMT_NAME */
+    bta_dm_di_disc                      /* 17 BTA_DM_API_DI_DISCOVER */
 #if BLE_INCLUDED == TRUE
     , bta_dm_close_gatt_conn
 #endif

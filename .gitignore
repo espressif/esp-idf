@@ -15,15 +15,19 @@ GPATH
 .#*
 \#*#
 
+# eclipse setting
+.settings
+
 # Example project files
-examples/*/sdkconfig
-examples/*/sdkconfig.old
-examples/*/build
+examples/*/*/sdkconfig
+examples/*/*/sdkconfig.old
+examples/*/*/build
 
 #Doc build artifacts
 docs/_build/
 docs/doxygen-warning-log.txt
 docs/xml/
+docs/man/
 
 # Unit test app files
 tools/unit-test-app/sdkconfig

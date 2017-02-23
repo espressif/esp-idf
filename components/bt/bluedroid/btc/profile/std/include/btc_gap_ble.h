@@ -32,6 +32,8 @@ typedef enum {
     BTC_GAP_BLE_ACT_SET_RAND_ADDRESS,
     BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
     BTC_GAP_BLE_ACT_SET_DEV_NAME,
+    BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
+    BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -76,6 +78,16 @@ typedef union {
 #define ESP_GAP_DEVICE_NAME_MAX (32)
         char device_name[ESP_GAP_DEVICE_NAME_MAX + 1];
     } set_dev_name;
+    //BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
+    struct config_adv_data_raw_args {
+        uint8_t *raw_adv;
+        uint32_t raw_adv_len;
+    } cfg_adv_data_raw;
+    //BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW,
+    struct config_scan_rsp_data_raw_args {
+        uint8_t *raw_scan_rsp;
+        uint32_t raw_scan_rsp_len;
+    } cfg_scan_rsp_data_raw;
 } btc_ble_gap_args_t;
 
 void btc_gap_ble_call_handler(btc_msg_t *msg);

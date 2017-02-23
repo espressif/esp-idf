@@ -19,7 +19,7 @@ TEST_CASE("test ctype functions", "[newlib]")
     TEST_ASSERT_FALSE( isspace('0') || isspace('9') || isspace(')') || isspace('A') || isspace('*') || isspace('\x81') || isspace('a'));
 }
 
-TEST_CASE("test atoX functions", "[newlib]")
+TEST_CASE("test atoX functions", "[newlib][ignore]")
 {
     TEST_ASSERT_EQUAL_INT(-2147483648, atoi("-2147483648"));
     TEST_ASSERT_EQUAL_INT(2147483647, atoi("2147483647"));
@@ -153,7 +153,7 @@ TEST_CASE("test 64bit int formats", "[newlib]")
     TEST_ASSERT_EQUAL(val, sval);
 }
 #else
-TEST_CASE("test 64bit int formats", "[newlib]")
+TEST_CASE("test 64bit int formats", "[newlib][ignore]")
 {
     char* res = NULL;
     const uint64_t val = 123456789012LL;

@@ -268,10 +268,10 @@
  *      2                       1               extern level
  *      3                       1               extern level
  *      4                       1               extern level            WBB
- *      5                       1               extern level            BT Controller 
+ *      5                       1               extern level            BT/BLE Controller
  *      6                       1               timer                   FreeRTOS Tick(L1)       FreeRTOS Tick(L1)
  *      7                       1               software                Reserved                Reserved
- *      8                       1               extern level            BLE Controller 
+ *      8                       1               extern level            BT/BLE BB(RX/TX)
  *      9                       1               extern level
  *      10                      1               extern edge             Internal Timer
  *      11                      3               profiling

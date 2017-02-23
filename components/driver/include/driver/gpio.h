@@ -302,9 +302,9 @@ int gpio_get_level(gpio_num_t gpio_num);
 esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 
 /**
- * @brief  GPIO set pull
+ * @brief  Configure GPIO pull-up/pull-down resistors
  *
- * User this Function,configure GPIO pull mode,such as pull-up,pull-down
+ * Only pins that support both input & output have integrated pull-up and pull-down resistors. Input-only GPIOs 34-39 do not.
  *
  * @param  gpio_num GPIO number. If you want to set pull up or down mode for e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  pull GPIO pull up/down mode.
@@ -317,7 +317,7 @@ esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 
 /**
-  * @brief enable GPIO wake-up function.
+  * @brief Enable GPIO wake-up function.
   *
   * @param gpio_num GPIO number.
   *
@@ -341,15 +341,23 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
 
 /**
- * @brief   register GPIO interrupt handler, the handler is an ISR.
+ * @brief   Register GPIO interrupt handler, the handler is an ISR.
  *          The handler will be attached to the same CPU core that this function is running on.
+ *
+ * This ISR function is called whenever any GPIO interrupt occurs. See
+ * the alternative gpio_install_isr_service() and
+ * gpio_isr_handler_add() API in order to have the driver support
+ * per-GPIO ISRs.
  *
  * @param  fn  Interrupt handler function.
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  * @param  arg  Parameter for handler function
- * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will
- *            be returned here.
+ * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will be returned here.
+ *
+ * \verbatim embed:rst:leading-asterisk
+ * To disable or remove the ISR, pass the returned handle to the :doc:`interrupt allocation functions </api/system/intr_alloc>`.
+ * \endverbatim
  *
  * @return
  *     - ESP_OK Success ;
@@ -402,7 +410,9 @@ esp_err_t gpio_pulldown_en(gpio_num_t gpio_num);
 esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 
 /**
-  * @brief Install a GPIO ISR service, so we can assign different ISR handler for different pins
+  * @brief Install the driver's GPIO ISR handler service, which allows per-pin GPIO interrupt handlers.
+  *
+  * This function is incompatible with gpio_isr_register() - if that function is used, a single global ISR is registered for all GPIO interrupts. If this function is used, the ISR service provides a global GPIO ISR and individual pin handlers are registered via the gpio_isr_register() function.
   *
   * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
   *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
@@ -415,17 +425,24 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 esp_err_t gpio_install_isr_service(int intr_alloc_flags);
 
 /**
-  * @brief Un-install GPIO ISR service, free the resources.
+  * @brief Uninstall the driver's GPIO ISR service, freeing related resources.
   */
 void gpio_uninstall_isr_service();
 
 /**
-  * @brief Add ISR handler for the corresponding GPIO.
+  * @brief Add ISR handler for the corresponding GPIO pin.
   *
-  *        Interrupt handlers no longer need to be declared with IRAM_ATTR, unless you pass the ESP_INTR_FLAG_IRAM flag
-  *        when allocating the ISR in gpio_install_isr_service().
-  *        This ISR handler will be called from an ISR. So there probably is some stack size limit, and this limit
-  *        is smaller compared to a "raw" interrupt handler due to another level of indirection.
+  * Call this function after using gpio_install_isr_service() to
+  * install the driver's GPIO ISR handler service.
+  *
+  * The pin ISR handlers no longer need to be declared with IRAM_ATTR,
+  * unless you pass the ESP_INTR_FLAG_IRAM flag when allocating the
+  * ISR in gpio_install_isr_service().
+  *
+  * This ISR handler will be called from an ISR. So there is a stack
+  * size limit (configurable as "ISR stack size" in menuconfig). This
+  * limit is smaller compared to a global GPIO interrupt handler due
+  * to the additional level of indirection.
   *
   * @param gpio_num GPIO number
   * @param isr_handler ISR handler function for the corresponding GPIO number.
@@ -439,7 +456,7 @@ void gpio_uninstall_isr_service();
 esp_err_t gpio_isr_handler_add(gpio_num_t gpio_num, gpio_isr_t isr_handler, void* args);
 
 /**
-  * @brief Remove ISR handler for the corresponding GPIO.
+  * @brief Remove ISR handler for the corresponding GPIO pin.
   *
   * @param gpio_num GPIO number
   *

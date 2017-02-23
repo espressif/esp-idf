@@ -83,12 +83,17 @@ static volatile uint64_t s_microseconds = 0;
 
 static void IRAM_ATTR frc_timer_isr()
 {
+    // Write to FRC_TIMER_INT_REG may not take effect in some cases (root cause TBD)
+    // This extra write works around this issue.
+    // FRC_TIMER_LOAD_REG(0) is used here, but any other DPORT register address can also be used.
+    WRITE_PERI_REG(FRC_TIMER_LOAD_REG(0), FRC_TIMER_LOAD_VALUE(0));
     WRITE_PERI_REG(FRC_TIMER_INT_REG(0), FRC_TIMER_INT_CLR);
     s_microseconds += FRC1_ISR_PERIOD_US;
 }
 
 #endif // WITH_FRC1
 
+#if defined(WITH_RTC) || defined(WITH_FRC1)
 static void set_boot_time(uint64_t time_us)
 {
     _lock_acquire(&s_boot_time_lock);
@@ -113,6 +118,7 @@ static uint64_t get_boot_time()
     _lock_release(&s_boot_time_lock);
     return result;
 }
+#endif //defined(WITH_RTC) || defined(WITH_FRC1)
 
 void esp_setup_time_syscalls()
 {

@@ -27,8 +27,10 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 
+#include "test_config.h"
+
 /* Base offset in flash for tests. */
-#define FLASH_BASE 0x120000
+#define FLASH_BASE TEST_REGION_START
 
 #ifndef CONFIG_SPI_FLASH_MINIMAL_TEST
 #define CONFIG_SPI_FLASH_MINIMAL_TEST 1

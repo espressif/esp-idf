@@ -632,7 +632,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 */
 void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 {
-	TCB_t *curTCB = xTaskGetCurrentTaskHandle();
+	TCB_t *curTCB = pxCurrentTCB[xCoreID];
 	BaseType_t i;
 
 	if (xCoreID != tskNO_AFFINITY) {
@@ -1056,11 +1056,15 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 	taskENTER_CRITICAL(&xTaskQueueMutex);
 	{
 		uxCurrentNumberOfTasks++;
-		if( pxCurrentTCB[ xPortGetCoreID() ] == NULL )
+		//If the task has no affinity and nothing is scheduled on this core, just throw it this core.
+		//If it has affinity, throw it on the core that needs it if nothing is already scheduled there.
+		BaseType_t xMyCore = xCoreID;
+		if ( xMyCore == tskNO_AFFINITY) xMyCore = xPortGetCoreID();
+		if( pxCurrentTCB[ xMyCore ] == NULL )
 		{
 			/* There are no other tasks, or all the other tasks are in
 			the suspended state - make this the current task. */
-			pxCurrentTCB[ xPortGetCoreID() ] = pxNewTCB;
+			pxCurrentTCB[ xMyCore ] = pxNewTCB;
 
 			if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
 			{
@@ -1121,12 +1125,13 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 		portSETUP_TCB( pxNewTCB );
 	}
-        curTCB =  pxCurrentTCB[ xPortGetCoreID() ];
+
 	taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 	if( xSchedulerRunning != pdFALSE )
 	{
 	       taskENTER_CRITICAL(&xTaskQueueMutex);
+		curTCB = pxCurrentTCB[ xPortGetCoreID() ];
 		/* Scheduler is running. If the created task is of a higher priority than an executing task
 	       then it should run now.
 		   ToDo: This only works for the current core. If a task is scheduled on an other processor,
@@ -1141,7 +1146,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			*/
 			if( tskCAN_RUN_HERE( xCoreID ) && curTCB->uxPriority < pxNewTCB->uxPriority )
 			{
-				taskYIELD_IF_USING_PREEMPTION();
+				taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
 			}
 			else if( xCoreID != xPortGetCoreID() ) {
 				taskYIELD_OTHER_CORE(xCoreID, pxNewTCB->uxPriority);
@@ -2381,26 +2386,15 @@ BaseType_t xSwitchRequired = pdFALSE;
 	   switch, even when this routine (running on core 0) unblocks a bunch of high-priority
 	   tasks... this is less than optimal -- JD. */
 	if ( xPortGetCoreID()!=0 ) {
+		#if ( configUSE_TICK_HOOK == 1 )
+		vApplicationTickHook();
+		#endif /* configUSE_TICK_HOOK */
+		esp_vApplicationTickHook();
+
 		/*
 		  We can't really calculate what we need, that's done on core 0... just assume we need a switch.
 		  ToDo: Make this more intelligent? -- JD
 		*/
-		{
-			/* Guard against the tick hook being called when the pended tick
-			count is being unwound (when the scheduler is being unlocked). */
-			if( ( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE ) || uxPendedTicks == ( UBaseType_t ) 0U )
-			{
-				#if ( configUSE_TICK_HOOK == 1 )
-				vApplicationTickHook();
-				#endif /* configUSE_TICK_HOOK */
-				esp_vApplicationTickHook();
-			}
-			else
-			{
-				mtCOVERAGE_TEST_MARKER();
-			}
-		}
-
 		return pdTRUE;
 	}
 
@@ -2670,11 +2664,13 @@ BaseType_t xSwitchRequired = pdFALSE;
 
 void vTaskSwitchContext( void )
 {
-	tskTCB * pxTCB;
-	//This can be called both from IRQ as well as normal context, so we can't 
-	//use taskENTER_CRITICAL() here. Instead, save the irq status and disable
-	//IRQs, so we can use taskENTER_CRITICAL_ISR and friends.
+	//Note: This can be called from interrupt context as well as from non-interrupt context (voluntary yield). The
+	//taskENTER_CRITICAL/taskEXIT_CRITICAL is modified to work in both scenarios for the ESP32, so we can freely use
+	//them here. However, in case of a voluntary yield, a nonvoluntary yield can still happen *during* the voluntary
+	//yield. Disabling interrupts using portENTER_CRITICAL_NESTED puts a stop to this and makes the rest of the code a 
+	//bit neater.
 	int irqstate=portENTER_CRITICAL_NESTED();
+	tskTCB * pxTCB;
 	if( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE )
 	{
 		/* The scheduler is currently suspended - do not allow a context
@@ -3023,9 +3019,14 @@ BaseType_t xReturn;
 
 	This function assumes that a check has already been made to ensure that
 	pxEventList is not empty. */
-	pxUnblockedTCB = ( TCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( pxEventList );
-	configASSERT( pxUnblockedTCB );
-	( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
+	if ( ( listLIST_IS_EMPTY( pxEventList ) ) == pdFALSE ) {
+		pxUnblockedTCB = ( TCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( pxEventList );
+		configASSERT( pxUnblockedTCB );
+		( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
+	} else {
+		taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+		return pdFALSE;
+	}
 
 	if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
 	{
@@ -3036,9 +3037,7 @@ BaseType_t xReturn;
 	{
 		/* The delayed and ready lists cannot be accessed, so hold this task
 		pending until the scheduler is resumed. */
-		taskENTER_CRITICAL(&xTaskQueueMutex);
 		vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxUnblockedTCB->xEventListItem ) );
-		taskEXIT_CRITICAL(&xTaskQueueMutex);
 	}
 
 	if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )

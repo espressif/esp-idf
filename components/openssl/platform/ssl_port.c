@@ -14,15 +14,10 @@
 
 #include "ssl_port.h"
 
-#ifdef ESP32_IDF_PLATFORM
-
-#include "string.h"
-#include "malloc.h"
-
 /*********************************************************************************************/
 /********************************* SSL general interface *************************************/
 
-void* ssl_mem_zalloc(size_t size)
+void *ssl_mem_zalloc(size_t size)
 {
     void *p = malloc(size);
 
@@ -31,36 +26,4 @@ void* ssl_mem_zalloc(size_t size)
 
     return p;
 }
-
-void *ssl_mem_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-void ssl_mem_free(void *p)
-{
-    free(p);
-}
-
-void* ssl_memcpy(void *to, const void *from, size_t size)
-{
-    return memcpy(to, from, size);
-}
-
-size_t ssl_strlen(const char *src)
-{
-    return strlen(src);
-}
-
-void ssl_speed_up_enter(void)
-{
-
-}
-
-void ssl_speed_up_exit(void)
-{
-
-}
-
-#endif
 

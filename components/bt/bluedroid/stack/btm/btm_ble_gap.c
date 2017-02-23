@@ -1300,6 +1300,26 @@ tBTM_STATUS BTM_BleWriteScanRsp(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
 
 /*******************************************************************************
 **
+** Function         BTM_BleWriteScanRspRaw
+**
+** Description      This function is called to write raw scan response data
+**
+** Parameters:      None.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleWriteScanRspRaw(UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len)
+{
+    if (btsnd_hcic_ble_set_scan_rsp_data((UINT8)raw_scan_rsp_len, p_raw_scan_rsp)) {
+        return BTM_SUCCESS;
+    } else {
+        return BTM_NO_RESOURCES;
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         BTM_BleWriteAdvData
 **
 ** Description      This function is called to write advertising data.
@@ -1342,6 +1362,27 @@ tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
         return BTM_NO_RESOURCES;
     }
 
+}
+
+
+/*******************************************************************************
+**
+** Function         BTM_BleWriteAdvDataRaw
+**
+** Description      This function is called to write raw advertising data.
+**
+** Parameters:       None.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleWriteAdvDataRaw(UINT8 *p_raw_adv, UINT32 raw_adv_len)
+{
+    if (btsnd_hcic_ble_set_adv_data((UINT8)raw_adv_len, p_raw_adv)) {
+        return BTM_SUCCESS;
+    } else {
+        return BTM_NO_RESOURCES;
+    }
 }
 
 

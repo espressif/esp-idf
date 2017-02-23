@@ -33,6 +33,7 @@ typedef struct {
     BD_ADDR                 remote_bda;
     UINT32                  trans_id;
     UINT8                   congest;
+    UINT16                  frag_size;
 #define BLUFI_PREPAIR_BUF_MAX_SIZE 1024
     uint8_t                 *prepare_buf;
     int                     prepare_len;
@@ -160,7 +161,9 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_FC_IS_REQ_ACK(fc)   ((fc) & BLUFI_FC_REQ_ACK_MASK) 
 #define BLUFI_FC_IS_FRAG(fc)      ((fc) & BLUFI_FC_FRAG_MASK) 
 
-#define BLUFI_FRAG_DATA_MAX_LEN  50
+/* BLUFI HEADER + TOTAL(REMAIN) LENGTH + CRC + L2CAP RESERVED */
+#define BLUFI_MTU_RESERVED_SIZE     (sizeof(struct blufi_hdr) + 2 + 2 + 3)
+#define BLUFI_FRAG_DATA_DEFAULT_LEN (GATT_DEF_BLE_MTU_SIZE - BLUFI_MTU_RESERVED_SIZE)
 
 //function declare
 void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len);

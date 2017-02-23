@@ -2,7 +2,7 @@
 
 [![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](http://esp-idf.readthedocs.io/en/latest/?badge=latest)
 
-ESP-IDF is the official development framework for the `ESP32 <https://espressif.com/en/products/hardware/esp32/overview>`_ chip.
+ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview>) chip.
 
 # Developing With the ESP-IDF
 
@@ -23,6 +23,16 @@ Once you've found the project you want to work with, change to its directory and
 ## Configuring the Project
 
 `make menuconfig`
+
+* Opens a text-based configuration menu for the project.
+* Use up & down arrow keys to navigate the menu.
+* Use Enter key to go into a submenu, Escape key to go out or to exit.
+* Type `?` to see a help screen. Enter key exits the help screen.
+* Use Space key, or `Y` and `N` keys to enable (Yes) and disable (No) configuration items with checkboxes "`[*]`"
+* Pressing `?` while highlighting a configuration item displays help about that item.
+* Type `/` to search the configuration items.
+
+Once done configuring, press Escape multiple times to exit and say "Yes" to save the new configuration when prompted.
 
 ## Compiling the Project
 
@@ -59,7 +69,7 @@ After the initial flash, you may just want to build and flash just your app, not
 
 `make app-flash` will automatically rebuild the app if it needs it.
 
-(There's no downside to reflashing the bootloader and partition table each time, if they haven't changed.)
+(In normal development there's no downside to reflashing the bootloader and partition table each time, if they haven't changed.)
 
 ## Parallel Builds
 

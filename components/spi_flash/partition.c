@@ -166,10 +166,14 @@ static esp_err_t load_partitions()
         item->info.type = it->type;
         item->info.subtype = it->subtype;
         item->info.encrypted = it->flags & PART_FLAG_ENCRYPTED;
-        if (esp_flash_encryption_enabled() && it->type == PART_TYPE_APP) {
-            /* All app partitions are encrypted if encryption is turned on */
+        if (esp_flash_encryption_enabled() && (
+                it->type == PART_TYPE_APP
+                || (it->type == PART_TYPE_DATA && it->subtype == PART_SUBTYPE_DATA_OTA))) {
+            /* If encryption is turned on, all app partitions and OTA data
+               are always encrypted */
             item->info.encrypted = true;
         }
+
         // it->label may not be zero-terminated
         strncpy(item->info.label, (const char*) it->label, sizeof(it->label));
         item->info.label[sizeof(it->label)] = 0;
@@ -230,10 +234,6 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
                              size_t dst_offset, const void* src, size_t size)
 {
     assert(partition != NULL);
-    //todo : need add ecrypt write support ,size must be 32-bytes align 
-    if(partition->encrypted == true) {
-        return ESP_FAIL;
-    }
     if (dst_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
