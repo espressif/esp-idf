@@ -440,6 +440,7 @@ typedef struct {
     UINT8               label;          /* Message header "label" (sequence number) */
     BOOLEAN             reconn;         /* If TRUE, reinitiate connection after transitioning from CLOSING to IDLE state */
     UINT8               ret_count;      /* Command retransmission count */
+    UINT8               disc_rsn;       /* disconnection reason */
 } tAVDT_CCB;
 
 /* type for action functions */
@@ -463,6 +464,7 @@ typedef struct {
     UINT8           old_tc_state;       /* channel state before closed */
     UINT8           tcid;               /* TCID  */
     UINT8           type;               /* channel type */
+    UINT8           disc_rsn;           /* disconnection reason */
 } tAVDT_SCB_TC_CLOSE;
 
 /* type for scb event data */

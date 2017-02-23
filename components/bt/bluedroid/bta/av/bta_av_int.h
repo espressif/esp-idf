@@ -337,7 +337,7 @@ typedef struct {
     BD_ADDR             bd_addr;    /* bd address */
     UINT8               handle;
     UINT8               avdt_event;
-    BOOLEAN             initiator; /* TRUE, if local device initiates the SUSPEND */
+    BOOLEAN             initiator;  /* TRUE, if local device initiates the SUSPEND */
 } tBTA_AV_STR_MSG;
 
 /* data type for BTA_AV_AVRC_MSG_EVT */
@@ -516,6 +516,7 @@ typedef struct
     UINT8               wait;           /* set 0x1, when getting Caps as ACP, set 0x2, when started */
     UINT8               q_tag;          /* identify the associated q_info union member */
     BOOLEAN             no_rtp_hdr;     /* TRUE if add no RTP header*/
+    UINT8               disc_rsn;       /* disconenction reason */
     UINT16              uuid_int;       /*intended UUID of Initiator to connect to */
 } tBTA_AV_SCB;
 

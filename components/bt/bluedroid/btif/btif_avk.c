@@ -238,7 +238,7 @@ static void btif_initiate_av_open_tmr_hdlr(TIMER_LIST_ENT *tle)
 /*****************************************************************************
 **  Static functions
 ******************************************************************************/
-static void btif_report_connection_state(esp_a2d_connection_state_t state, bt_bdaddr_t *bd_addr)
+static void btif_report_connection_state(esp_a2d_connection_state_t state, bt_bdaddr_t *bd_addr, int disc_rsn)
 {
     esp_a2d_cb_param_t param;
     memset(&param, 0, sizeof(esp_a2d_cb_param_t));
@@ -246,6 +246,10 @@ static void btif_report_connection_state(esp_a2d_connection_state_t state, bt_bd
     param.conn_stat.state = state;
     if (bd_addr) {
         memcpy(param.conn_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
+    }
+    if (state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
+        param.conn_stat.disc_rsn = (disc_rsn == 0) ? ESP_A2D_DISC_RSN_NORMAL :
+            ESP_A2D_DISC_RSN_ABNORMAL;
     }
     BTIF_A2D_CB_TO_APP(ESP_A2D_CONNECTION_STATE_EVT, &param);
 }
@@ -374,7 +378,7 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
     switch (event) {
     case BTIF_SM_ENTER_EVT:
         /* inform the application that we are entering connecting state */
-        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_CONNECTING, &(btif_av_cb.peer_bda));
+        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_CONNECTING, &(btif_av_cb.peer_bda), 0);
         break;
 
     case BTIF_SM_EXIT_EVT:
@@ -382,7 +386,7 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
 
     case BTA_AV_REJECT_EVT:
         BTIF_TRACE_DEBUG(" Received  BTA_AV_REJECT_EVT \n");
-        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btif_av_cb.peer_bda));
+        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btif_av_cb.peer_bda), 0);
         btif_sm_change_state(btif_av_cb.sm_handle, BTIF_AV_STATE_IDLE);
         break;
 
@@ -408,7 +412,7 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
         }
 
         /* inform the application of the event */
-        btif_report_connection_state(state, &(btif_av_cb.peer_bda));
+        btif_report_connection_state(state, &(btif_av_cb.peer_bda), 0);
         /* change state to open/idle based on the status */
         btif_sm_change_state(btif_av_cb.sm_handle, av_state);
         if (btif_av_cb.peer_sep == AVDT_TSEP_SNK) {
@@ -442,7 +446,7 @@ static BOOLEAN btif_av_state_opening_handler(btif_sm_event_t event, void *p_data
             break;
         } else {
             BTIF_TRACE_DEBUG("%s: Moved from idle by Incoming Connection request\n", __func__);
-            btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, (bt_bdaddr_t *)p_data);
+            btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, (bt_bdaddr_t *)p_data, 0);
             btif_queue_advance();
             break;
         }
@@ -506,13 +510,15 @@ static BOOLEAN btif_av_state_closing_handler(btif_sm_event_t event, void *p_data
     case BTIF_SM_EXIT_EVT:
         break;
 
-    case BTA_AV_CLOSE_EVT:
-
+    case BTA_AV_CLOSE_EVT: {
+        tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
         /* inform the application that we are disconnecting */
-        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btif_av_cb.peer_bda));
+        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btif_av_cb.peer_bda),
+                                     close->disc_rsn);
 
         btif_sm_change_state(btif_av_cb.sm_handle, BTIF_AV_STATE_IDLE);
         break;
+    }
 
     /* Handle the RC_CLOSE event for the cleanup */
     case BTA_AV_RC_CLOSE_EVT:
@@ -599,15 +605,17 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data)
         }
 
         /* inform the application that we are disconnecting */
-        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTING, &(btif_av_cb.peer_bda));
+        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTING, &(btif_av_cb.peer_bda), 0);
         break;
 
-    case BTA_AV_CLOSE_EVT:
+    case BTA_AV_CLOSE_EVT: {
         /* avdtp link is closed */
         btif_a2dp_on_stopped(NULL);
 
+        tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
         /* inform the application that we are disconnected */
-        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btif_av_cb.peer_bda));
+        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btif_av_cb.peer_bda),
+                                     close->disc_rsn);
 
         /* change state to idle, send acknowledgement if start is pending */
         if (btif_av_cb.flags & BTIF_AV_FLAG_PENDING_START) {
@@ -615,6 +623,7 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data)
         }
         btif_sm_change_state(btif_av_cb.sm_handle, BTIF_AV_STATE_IDLE);
         break;
+    }
 
     case BTA_AV_RECONFIG_EVT:
         if ((btif_av_cb.flags & BTIF_AV_FLAG_PENDING_START) &&
@@ -633,7 +642,7 @@ static BOOLEAN btif_av_state_opened_handler(btif_sm_event_t event, void *p_data)
         } else {
             BTIF_TRACE_DEBUG("%s: Moved to opened by Other Incoming Conn req\n", __func__);
             btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED,
-                                         (bt_bdaddr_t *)p_data);
+                                         (bt_bdaddr_t *)p_data, ESP_A2D_DISC_RSN_NORMAL);
         }
         btif_queue_advance();
         break;
@@ -718,7 +727,7 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
         }
 
         /* inform the application that we are disconnecting */
-        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTING, &(btif_av_cb.peer_bda));
+        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTING, &(btif_av_cb.peer_bda), 0);
 
         /* wait in closing state until fully closed */
         btif_sm_change_state(btif_av_cb.sm_handle, BTIF_AV_STATE_CLOSING);
@@ -774,20 +783,23 @@ static BOOLEAN btif_av_state_started_handler(btif_sm_event_t event, void *p_data
 
         break;
 
-    case BTA_AV_CLOSE_EVT:
+    case BTA_AV_CLOSE_EVT: {
 
         btif_av_cb.flags |= BTIF_AV_FLAG_PENDING_STOP;
 
         /* avdtp link is closed */
         btif_a2dp_on_stopped(NULL);
-
+        
+        tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
         /* inform the application that we are disconnected */
-        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btif_av_cb.peer_bda));
+        btif_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btif_av_cb.peer_bda),
+                                     close->disc_rsn);
 
         btif_sm_change_state(btif_av_cb.sm_handle, BTIF_AV_STATE_IDLE);
         break;
-
-        CHECK_RC_EVENT(event, p_data);
+    }
+    
+    CHECK_RC_EVENT(event, p_data);
 
     default:
         BTIF_TRACE_WARNING("%s : unhandled event:%s\n", __FUNCTION__,

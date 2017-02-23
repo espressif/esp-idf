@@ -530,9 +530,14 @@ static void bta_av_proc_stream_evt(UINT8 handle, BD_ADDR bd_addr, UINT8 event, t
                 }
                 break;
             case AVDT_SUSPEND_IND_EVT:
-                    p_msg->msg.hdr.err_code = 0;
+                p_msg->msg.hdr.err_code = 0;
                 break;
-
+                /*
+            case AVDT_CLOSE_CFM_EVT:
+            case AVDT_CLOSE_IND_EVT:
+                p_msg->disc_rsn = p_data->hdr.err_param;
+                break;
+                */
             default:
                 break;
             }
@@ -1080,6 +1085,7 @@ void bta_av_cleanup(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     p_scb->cur_psc_mask = 0;
     p_scb->wait = 0;
     p_scb->num_disc_snks = 0;
+    p_scb->disc_rsn = 0;
     bta_sys_stop_timer(&p_scb->timer);
     if (p_scb->deregistring)
     {
@@ -2571,6 +2577,7 @@ void bta_av_str_closed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             p_scb->p_cos->close(p_scb->hndl, p_scb->codec_type, mtu);
             data.close.chnl = p_scb->chnl;
             data.close.hndl = p_scb->hndl;
+            data.close.disc_rsn = p_scb->disc_rsn;
             event = BTA_AV_CLOSE_EVT;
 
             bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);

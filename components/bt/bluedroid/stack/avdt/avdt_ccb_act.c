@@ -1077,6 +1077,7 @@ void avdt_ccb_ll_closed(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     tAVDT_CTRL_CBACK    *p_cback;
     BD_ADDR             bd_addr;
     tAVDT_CTRL          avdt_ctrl;
+    UINT8               disc_rsn;
     UNUSED(p_data);
 
     /* clear any pending commands */
@@ -1088,6 +1089,8 @@ void avdt_ccb_ll_closed(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
         p_cback = avdt_cb.p_conn_cback;
     memcpy(bd_addr, p_ccb->peer_addr, BD_ADDR_LEN);
 
+    disc_rsn = p_ccb->disc_rsn;
+    
     /* dealloc ccb */
     avdt_ccb_dealloc(p_ccb, NULL);
 
@@ -1095,6 +1098,8 @@ void avdt_ccb_ll_closed(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     if (p_cback)
     {
         avdt_ctrl.hdr.err_code = 0;
+        avdt_ctrl.hdr.err_param = disc_rsn;
+
         (*p_cback)(0, bd_addr, AVDT_DISCONNECT_IND_EVT, &avdt_ctrl);
     }
 }

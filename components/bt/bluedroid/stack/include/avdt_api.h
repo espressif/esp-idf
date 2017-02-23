@@ -203,6 +203,9 @@ typedef UINT8 AVDT_REPORT_TYPE;
 #define AVDT_NSC_RECONFIG           0x02    /* Reconfigure command not supported */
 #define AVDT_NSC_SECURITY           0x04    /* Security command not supported */
 
+/* AVDT disconnection reason */
+#define AVDT_DISC_RSN_NORMAL        0
+#define AVDT_DISC_RSN_ABNORMAL      (0xce)  /* unintentional disconnection */
 /*****************************************************************************
 **  Type Definitions
 *****************************************************************************/

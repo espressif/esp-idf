@@ -1508,6 +1508,7 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
                 if ((mask & p_lcb->conn_msk) && (p_cb->p_scb[xx]) &&
                     (bdcmp(p_cb->p_scb[xx]->peer_addr, p_data->str_msg.bd_addr) == 0))
                 {
+                    p_cb->p_scb[xx]->disc_rsn = p_data->str_msg.hdr.offset;
                     bta_av_ssm_execute(p_cb->p_scb[xx], BTA_AV_AVDT_DISCONNECT_EVT, NULL);
                 }
             }

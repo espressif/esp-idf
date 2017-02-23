@@ -83,6 +83,12 @@ typedef enum {
     ESP_A2D_CONNECTION_STATE_DISCONNECTING
 } esp_a2d_connection_state_t;
 
+/// Bluetooth A2DP disconnection reason
+typedef enum {
+    ESP_A2D_DISC_RSN_NORMAL = 0,
+    ESP_A2D_DISC_RSN_ABNORMAL
+} esp_a2d_disc_rsn_t;
+
 /// Bluetooth A2DP datapath states
 typedef enum {
     ESP_A2D_AUDIO_STATE_REMOTE_SUSPEND = 0,
@@ -103,6 +109,7 @@ typedef union {
     struct a2d_conn_stat_param {
         esp_a2d_connection_state_t state;       /*!< one of values from esp_a2d_connection_state_t */
         esp_bd_addr_t remote_bda;
+        esp_a2d_disc_rsn_t disc_rsn;            /* disconnection reason */
     } conn_stat;
     
     /*< ESP_A2D_AUDIO_STATE_EVT */
@@ -181,6 +188,18 @@ esp_err_t esp_a2d_sink_init(void);
  *
  */
 void esp_a2d_sink_deinit(void);
+
+
+/**
+ *
+ * @brief           This function is called to connect with the remote bluetooth device
+ *
+ * @return          
+ *                  - ESP_OK: connect request is sent to lower layer
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
 
 
 /**

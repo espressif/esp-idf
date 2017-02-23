@@ -331,6 +331,7 @@ typedef struct
 {
     tBTA_AV_CHNL    chnl;
     tBTA_AV_HNDL    hndl;
+    UINT8           disc_rsn;    /* disconnection reason */
 } tBTA_AV_CLOSE;
 
 /* data associated with BTA_AV_START_EVT */

@@ -326,9 +326,10 @@ void avdt_ad_tc_close_ind(tAVDT_TC_TBL *p_tbl, UINT16 reason)
     tAVDT_CCB   *p_ccb;
     tAVDT_SCB   *p_scb;
     tAVDT_SCB_TC_CLOSE  close;
-    UNUSED(reason);
+    // UNUSED(reason);
 
     close.old_tc_state = p_tbl->state;
+    
     /* clear avdt_ad_tc_tbl entry */
     p_tbl->state = AVDT_AD_ST_UNUSED;
     p_tbl->cfg_flags = 0;
@@ -336,10 +337,12 @@ void avdt_ad_tc_close_ind(tAVDT_TC_TBL *p_tbl, UINT16 reason)
 
     AVDT_TRACE_DEBUG("avdt_ad_tc_close_ind tcid: %d, old: %d\n",
         p_tbl->tcid, close.old_tc_state);
+    
     /* if signaling channel, notify ccb that channel open */
     if (p_tbl->tcid == 0)
     {
         p_ccb = avdt_ccb_by_idx(p_tbl->ccb_idx);
+        p_ccb->disc_rsn = (reason == AVDT_DISC_RSN_ABNORMAL) ? AVDT_DISC_RSN_ABNORMAL : AVDT_DISC_RSN_NORMAL;
         avdt_ccb_event(p_ccb, AVDT_CCB_LL_CLOSE_EVT, NULL);
     }
     /* if media or other channel, notify scb that channel close */
@@ -351,6 +354,7 @@ void avdt_ad_tc_close_ind(tAVDT_TC_TBL *p_tbl, UINT16 reason)
         {
             close.tcid = p_tbl->tcid;
             close.type = avdt_ad_tcid_to_type(p_tbl->tcid);
+            close.disc_rsn = (reason == AVDT_DISC_RSN_ABNORMAL) ? AVDT_DISC_RSN_ABNORMAL : AVDT_DISC_RSN_NORMAL;
             avdt_scb_event(p_scb, AVDT_SCB_TC_CLOSE_EVT, (tAVDT_SCB_EVT *)&close);
         }
     }

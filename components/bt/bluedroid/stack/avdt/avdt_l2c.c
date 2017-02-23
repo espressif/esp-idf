@@ -444,7 +444,7 @@ void avdt_l2c_config_ind_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
 void avdt_l2c_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
 {
     tAVDT_TC_TBL    *p_tbl;
-
+    UINT16          disc_rsn = AVDT_DISC_RSN_NORMAL;
     AVDT_TRACE_DEBUG("avdt_l2c_disconnect_ind_cback lcid: %d, ack_needed: %d\n",
         lcid, ack_needed);
     /* look up info for this channel */
@@ -454,9 +454,11 @@ void avdt_l2c_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
         {
             /* send L2CAP disconnect response */
             L2CA_DisconnectRsp(lcid);
+        } else {
+            disc_rsn = AVDT_DISC_RSN_ABNORMAL;
         }
 
-        avdt_ad_tc_close_ind(p_tbl, 0);
+        avdt_ad_tc_close_ind(p_tbl, disc_rsn);
     }
 }
 
