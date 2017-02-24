@@ -86,7 +86,7 @@ static void bt_app_handle_evt(uint16_t event, void *p_param)
         esp_avrc_ct_init();
         esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
         
-        esp_bt_gap_set_scan_mode(BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
+        esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         break;
     }
     case ESP_A2D_CONNECTION_STATE_EVT: {

@@ -13,42 +13,76 @@
 // limitations under the License.
 
 #include "esp_gap_bt_api.h"
+#include "btc_gap_bt.h"
 #include "bta_api.h"
 #include "bt_trace.h"
 #include <string.h>
 
-esp_err_t esp_bt_gap_set_scan_mode(bt_scan_mode_t mode)
+void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
+{
+    switch (msg->act) {
+    default:
+        // LOG_ERROR("Unhandled deep copy %d\n", msg->act);
+        break;
+    }
+}
+
+static void btc_gap_bt_arg_deep_free(btc_msg_t *msg)
+{
+    LOG_DEBUG("%s \n", __func__);
+    switch (msg->act) {
+    default:
+        // LOG_DEBUG("Unhandled deep free %d\n", msg->act);
+        break;
+    }
+}
+
+static void btc_bt_set_scan_mode(esp_bt_scan_mode_t mode)
 {
     tBTA_DM_DISC disc_mode;
     tBTA_DM_CONN conn_mode;
 
     switch (mode) {
-    case BT_SCAN_MODE_NONE:
+    case ESP_BT_SCAN_MODE_NONE:
         disc_mode = BTA_DM_NON_DISC;
         conn_mode = BTA_DM_NON_CONN;
         break;
 
-    case BT_SCAN_MODE_CONNECTABLE:
+    case ESP_BT_SCAN_MODE_CONNECTABLE:
         disc_mode = BTA_DM_NON_DISC;
         conn_mode = BTA_DM_CONN;
         break;
 
-    case BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
+    case ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
         disc_mode = BTA_DM_GENERAL_DISC;
         conn_mode = BTA_DM_CONN;
         break;
 
     default:
-        // BTIF_TRACE_ERROR("invalid scan mode (0x%x)", mode);
-        return ESP_ERR_INVALID_ARG;
+        LOG_WARN("invalid scan mode (0x%x)", mode);
+        return;
     }
 
-    // BTIF_TRACE_EVENT("set property scan mode : %x", mode);
     BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
-
-    return ESP_OK;
+    return;
 }
 
+void btc_gap_bt_call_handler(btc_msg_t *msg)
+{
+    btc_gap_bt_args_t *arg = (btc_gap_bt_args_t *)msg->arg;
+    LOG_DEBUG("%s act %d\n", __func__, msg->act);
+    switch (msg->act) {
+    case BTC_GAP_BT_ACT_SET_SCAN_MODE: {
+        btc_bt_set_scan_mode(arg->scan_mode.mode);
+        break;
+    }
+    default:
+        break;
+    }
+    btc_gap_bt_arg_deep_free(msg);
+}
+
+/* to be fixed */
 esp_err_t esp_bt_gap_set_device_name(const char *name)
 {
     if (name == NULL || *name == '\0') {

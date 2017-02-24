@@ -25,10 +25,10 @@ extern "C" {
 
 /// Discoverability and Connectability mode
 typedef enum {
-    BT_SCAN_MODE_NONE = 0,                      /*!< Neither discoverable nor connectable */
-    BT_SCAN_MODE_CONNECTABLE,                   /*!< Connectable but not discoverable */
-    BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE       /*!< both discoverable and connectaable */
-} bt_scan_mode_t;
+    ESP_BT_SCAN_MODE_NONE = 0,                      /*!< Neither discoverable nor connectable */
+    ESP_BT_SCAN_MODE_CONNECTABLE,                   /*!< Connectable but not discoverable */
+    ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE       /*!< both discoverable and connectaable */
+} esp_bt_scan_mode_t;
 
 /**
  * @brief           Set discoverability and connectability mode for legacy bluetooth
@@ -39,7 +39,7 @@ typedef enum {
  *                  - ESP_OK : Succeed
  *                  - ESP_ERR_INVALID_ARG: if argument invalid
  */
-esp_err_t esp_bt_gap_set_scan_mode(bt_scan_mode_t mode);
+esp_err_t esp_bt_gap_set_scan_mode(esp_bt_scan_mode_t mode);
 
 
 /**
