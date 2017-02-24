@@ -597,11 +597,14 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             }
             p_char_dscptr->p_value->attr_val.attr_len = attr_val->attr_len;
             p_char_dscptr->p_value->attr_val.attr_max_len  = attr_val->attr_max_len;
-            if (attr_val->attr_val != NULL) {
+            if (attr_val->attr_max_len != 0) {
                 p_char_dscptr->p_value->attr_val.attr_val = GKI_getbuf(attr_val->attr_max_len);
                 if (p_char_dscptr->p_value->attr_val.attr_val != NULL) {
                     memset(p_char_dscptr->p_value->attr_val.attr_val, 0, attr_val->attr_max_len);
-                    memcpy(p_char_dscptr->p_value->attr_val.attr_val, attr_val->attr_val, attr_val->attr_len);
+                    if(attr_val->attr_val != NULL) {
+                        memcpy(p_char_dscptr->p_value->attr_val.attr_val, 
+                               attr_val->attr_val, attr_val->attr_len);
+                    }
                 }
             }
         }
@@ -873,7 +876,7 @@ tGATT_STATUS gatts_write_attr_value_by_handle(tGATT_SVC_DB *p_db,
                 }
 
                 if (p_attr->p_value != NULL && (p_attr->p_value->attr_val.attr_max_len >=
-                                                offset + len)) {
+                                                offset + len) && p_attr->p_value->attr_val.attr_val != NULL) {
                     memcpy(p_attr->p_value->attr_val.attr_val + offset, p_value, len);
                     p_attr->p_value->attr_val.attr_len = len + offset;
                     return GATT_SUCCESS;
