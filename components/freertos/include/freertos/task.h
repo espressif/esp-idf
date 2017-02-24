@@ -159,7 +159,7 @@ typedef struct xTASK_PARAMETERS
 {
 	TaskFunction_t pvTaskCode;
 	const char * const pcName;	/*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-	uint16_t usStackDepth;
+	uint32_t usStackDepth;
 	void *pvParameters;
 	UBaseType_t uxPriority;
 	StackType_t *puxStackBuffer;
@@ -287,7 +287,7 @@ is used in assert() statements. */
  BaseType_t xTaskCreate(
 							  TaskFunction_t pvTaskCode,
 							  const char * const pcName,
-							  uint16_t usStackDepth,
+							  uint32_t usStackDepth,
 							  void *pvParameters,
 							  UBaseType_t uxPriority,
 							  TaskHandle_t *pvCreatedTask
@@ -377,7 +377,7 @@ is used in assert() statements. */
 #if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
     BaseType_t xTaskCreatePinnedToCore(	TaskFunction_t pxTaskCode,
 							            const char * const pcName,
-							            const uint16_t usStackDepth,
+							            const uint32_t usStackDepth,
 							            void * const pvParameters,
 							            UBaseType_t uxPriority,
 							            TaskHandle_t * const pxCreatedTask,
