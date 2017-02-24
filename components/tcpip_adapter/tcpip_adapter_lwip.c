@@ -60,8 +60,27 @@ void tcpip_adapter_init(void)
     }
 }
 
+static netif_init_fn tcpip_if_to_netif_init_fn(tcpip_adapter_if_t tcpip_if)
+{
+    switch(tcpip_if) {
+#ifdef CONFIG_WIFI_ENABLED
+    case TCPIP_ADAPTER_IF_AP:
+    case TCPIP_ADAPTER_IF_STA:
+        return wlanif_init;
+#endif
+#ifdef CONFIG_ETHERNET
+        case TCPIP_ADAPTER_IF_ETH:
+            return ethernetif_init;
+#endif
+        default:
+            return NULL;
+    }
+}
+
 esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
 {
+    netif_init_fn netif_init;
+
     if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || mac == NULL || ip_info == NULL) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
     }
@@ -72,11 +91,10 @@ esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, tcpip_a
             return ESP_ERR_NO_MEM;
         }
         memcpy(esp_netif[tcpip_if]->hwaddr, mac, NETIF_MAX_HWADDR_LEN);
-        if (tcpip_if == TCPIP_ADAPTER_IF_AP || tcpip_if == TCPIP_ADAPTER_IF_STA) {
-            netif_add(esp_netif[tcpip_if], &ip_info->ip, &ip_info->netmask, &ip_info->gw, NULL, wlanif_init, tcpip_input);
-        } else if (tcpip_if == TCPIP_ADAPTER_IF_ETH) {
-            netif_add(esp_netif[tcpip_if], &ip_info->ip, &ip_info->netmask, &ip_info->gw, NULL, ethernetif_init, tcpip_input);
-        }
+
+        netif_init = tcpip_if_to_netif_init_fn(tcpip_if);
+        assert(netif_init != NULL);
+        netif_add(esp_netif[tcpip_if], &ip_info->ip, &ip_info->netmask, &ip_info->gw, NULL, netif_init, tcpip_input);
     }
 
     if (tcpip_if == TCPIP_ADAPTER_IF_AP) {
@@ -757,4 +775,4 @@ esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **h
 #endif
 }
 
-#endif
+#endif /* CONFIG_TCPIP_LWIP */
