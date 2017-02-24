@@ -4534,12 +4534,11 @@ void bta_dm_ble_observe (tBTA_DM_MSG *p_data)
         bta_dm_search_cb.p_scan_cback = p_data->ble_observe.p_cback;
         if ((status = BTM_BleObserve(TRUE, p_data->ble_observe.duration,
                                      bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb)) != BTM_CMD_STARTED) {
-            tBTA_DM_SEARCH  data;
             APPL_TRACE_WARNING(" %s BTM_BleObserve  failed. status %d\n", __FUNCTION__, status);
-            data.inq_cmpl.num_resps = 0;
-            if (bta_dm_search_cb.p_scan_cback) {
-                bta_dm_search_cb.p_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
-            }
+        }
+        if (p_data->ble_observe.p_start_scan_cback) {
+            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
+            p_data->ble_observe.p_start_scan_cback(status);
         }
     } else {
         bta_dm_search_cb.p_scan_cback = NULL;
@@ -4576,13 +4575,21 @@ void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
 {
-    BTM_BleSetAdvParamsStartAdv(p_data->ble_set_adv_params_all.adv_int_min,
+    tBTA_STATUS status = BTA_FAILURE;
+
+    if (BTM_BleSetAdvParamsStartAdv(p_data->ble_set_adv_params_all.adv_int_min,
                                 p_data->ble_set_adv_params_all.adv_int_max,
                                 p_data->ble_set_adv_params_all.adv_type,
                                 p_data->ble_set_adv_params_all.addr_type_own,
                                 p_data->ble_set_adv_params_all.p_dir_bda,
                                 p_data->ble_set_adv_params_all.channel_map,
-                                p_data->ble_set_adv_params_all.adv_filter_policy);
+                                p_data->ble_set_adv_params_all.adv_filter_policy) == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+    }
+
+    if (p_data->ble_set_adv_params_all.p_start_adv_cback) {
+        (*p_data->ble_set_adv_params_all.p_start_adv_cback)(status);
+    }
 }
 
 /*******************************************************************************

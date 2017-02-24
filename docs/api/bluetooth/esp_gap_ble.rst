@@ -93,6 +93,12 @@ Structures
 .. doxygenstruct:: esp_ble_gap_cb_param_t::ble_scan_rsp_data_raw_cmpl_evt_param
     :members:
 
+.. doxygenstruct:: esp_ble_gap_cb_param_t::ble_adv_start_cmpl_evt_param
+    :members:
+
+.. doxygenstruct:: esp_ble_gap_cb_param_t::ble_scan_start_cmpl_evt_param
+    :members:
+
 
 Functions
 ^^^^^^^^^
