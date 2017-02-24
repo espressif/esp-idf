@@ -39,14 +39,19 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     sdmmc_host_init();
 
     // enable card slot
-    sdmmc_host_init_slot(host_config->slot, slot_config);
+    esp_err_t err = sdmmc_host_init_slot(host_config->slot, slot_config);
+    if (err != ESP_OK) {
+        return err;
+    }
+
     s_card = malloc(sizeof(sdmmc_card_t));
     if (s_card == NULL) {
-        return ESP_ERR_NO_MEM;
+        err = ESP_ERR_NO_MEM;
+        goto fail;
     }
 
     // probe and initialize card
-    esp_err_t err = sdmmc_card_init(host_config, s_card);
+    err = sdmmc_card_init(host_config, s_card);
     if (err != ESP_OK) {
         ESP_LOGD(TAG, "sdmmc_card_init failed 0x(%x)", err);
         goto fail;
@@ -104,6 +109,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     return ESP_OK;
 
 fail:
+    sdmmc_host_deinit();
     free(workbuf);
     esp_vfs_unregister(base_path);
     free(s_card);
