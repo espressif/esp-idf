@@ -23,7 +23,7 @@
 #define RMII_ENHANCED_MODE                 BIT(9) 
 
 #define PHY_STATUS_REG                  (0x10)
-#define AUTO_NEGTIATION_STATUS             BIT(4)
+#define AUTO_NEGOTIATION_STATUS             BIT(4)
 #define DUPLEX_STATUS                      BIT(2)
 #define SPEED_STATUS                       BIT(1)       
 
