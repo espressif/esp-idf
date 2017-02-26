@@ -1,0 +1,17 @@
+menu "Example Configuration"
+
+config PHY_TLK110
+    int "Use TLK110 PHY"
+	range 0 1
+	default 1
+	help
+		Set to 1 to enable TLK110, 0 to disable
+
+config PHY_LAN8720
+    int "Use LAN8720 PHY"
+	range 0 1
+	default 0
+	help
+		Set to 1 to enable LAN8720, 0 to disable
+
+endmenu
