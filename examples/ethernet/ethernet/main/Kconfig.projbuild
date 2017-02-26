@@ -1,0 +1,27 @@
+menu "Example Configuration"
+
+choice PHY_MODEL
+    prompt "Select the device used for the ethernet PHY"
+    default CONFIG_PHY_TLK110
+    help
+        Select the TI TLK110 or Microchip LAN8720 PHY
+
+config PHY_TLK110
+    bool "TI TLK110 PHY"
+    help
+        Select this to use the TI TLK110 PHY
+
+config PHY_LAN8720
+    bool "Microchip LAN8720 PHY"
+    help
+        Select this to use the Microchip LAN8720 PHY
+
+endchoice
+
+config PHY_ID
+    int "Enter the PHY ID (0-31) for the selected PHY model"
+    default 31
+    help
+        Select the PHY ID (0-31) for the selected PHY model
+
+endmenu
