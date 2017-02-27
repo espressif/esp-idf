@@ -138,7 +138,7 @@ uint32_t rtc_sleep(uint32_t cycles_h, uint32_t cycles_l, uint32_t wakeup_opt, ui
 /**
  * @brief Shutdown PHY and RF. TODO: convert this function to another one.
  */
-void pm_close_rf(void);
+void phy_close_rf(void);
 
 #ifdef __cplusplus
 }

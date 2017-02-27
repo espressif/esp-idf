@@ -82,8 +82,8 @@ esp_err_t esp_phy_rf_deinit(void)
 
     _lock_acquire(&s_phy_rf_init_lock);
     if (s_phy_rf_init_count == 1) {
-        // Disable PHY and RF. TODO: convert this function to another one.
-        pm_close_rf();
+        // Disable PHY and RF.
+        phy_close_rf();
         // Disable WiFi peripheral clock. Do not disable clock for generating random number.
         CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x874f);
     } else {
