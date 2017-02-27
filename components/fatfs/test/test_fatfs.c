@@ -52,6 +52,25 @@ static void create_file_with_text(const char* name, const char* text)
     TEST_ASSERT_EQUAL(0, fclose(f));
 }
 
+TEST_CASE("Mount fails cleanly without card inserted", "[fatfs][ignore]")
+{
+    HEAP_SIZE_CAPTURE();
+    sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = false,
+        .max_files = 5
+    };
+
+    for (int i = 0; i < 3; ++i) {
+        printf("Initializing card, attempt %d ", i);
+        esp_err_t err = esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, NULL);
+        printf(" err=%d\n", err);
+        TEST_ESP_ERR(ESP_FAIL, err);
+    }
+    HEAP_SIZE_CHECK(0);
+}
+
 TEST_CASE("can create and write file on sd card", "[fatfs][ignore]")
 {
     HEAP_SIZE_CAPTURE();
