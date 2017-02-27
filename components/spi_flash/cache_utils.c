@@ -205,16 +205,16 @@ void spi_flash_op_unlock()
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
-    esp_intr_noniram_disable();
     spi_flash_op_lock();
+    esp_intr_noniram_disable();
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
 
 void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 {
     spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
-    spi_flash_op_unlock();
     esp_intr_noniram_enable();
+    spi_flash_op_unlock();
 }
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()

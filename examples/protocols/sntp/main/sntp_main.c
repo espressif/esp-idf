@@ -110,6 +110,8 @@ static void obtain_time(void)
         time(&now);
         localtime_r(&now, &timeinfo);
     }
+
+    ESP_ERROR_CHECK( esp_wifi_stop() );
 }
 
 static void initialize_sntp(void)

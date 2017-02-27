@@ -203,6 +203,12 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
         esp_ble_gap_start_advertising(&heart_rate_adv_params);
         break;
+    case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
+        //advertising start complete event to indicate advertising start successfully or failed
+        if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed\n");
+        }
+        break;
     default:
         break;
     }

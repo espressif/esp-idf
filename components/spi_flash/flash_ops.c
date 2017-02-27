@@ -202,7 +202,9 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
     size_t mid_size = (size - left_size) & ~3U;
     size_t right_off = left_size + mid_size;
     size_t right_size = size - mid_size - left_size;
+    spi_flash_guard_start();
     rc = spi_flash_unlock();
+    spi_flash_guard_end();
     if (rc != SPI_FLASH_RESULT_OK) {
         goto out;
     }
@@ -289,7 +291,9 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
     COUNTER_START();
     spi_flash_disable_interrupts_caches_and_other_cpu();
     SpiFlashOpResult rc;
+    spi_flash_guard_start();
     rc = spi_flash_unlock();
+    spi_flash_guard_end();
     spi_flash_enable_interrupts_caches_and_other_cpu();
 
     if (rc == SPI_FLASH_RESULT_OK) {

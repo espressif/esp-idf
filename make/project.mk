@@ -49,14 +49,23 @@ endif
 # make IDF_PATH a "real" absolute path
 # * works around the case where a shell character is embedded in the environment variable value.
 # * changes Windows-style C:/blah/ paths to MSYS/Cygwin style /c/blah
-export IDF_PATH:=$(realpath $(wildcard $(IDF_PATH)))
+ifeq ("$(OS)","Windows_NT")
+# On Windows MSYS2, make wildcard function returns empty string for paths of form /xyz
+# where /xyz is a directory inside the MSYS root - so we don't use it.
+SANITISED_IDF_PATH:=$(realpath $(IDF_PATH))
+else
+SANITISED_IDF_PATH:=$(realpath $(wildcard $(IDF_PATH)))
+endif
+
+export IDF_PATH := $(SANITISED_IDF_PATH)
 
 ifndef IDF_PATH
 $(error IDF_PATH variable is not set to a valid directory.)
 endif
 
-ifneq ("$(IDF_PATH)","$(realpath $(wildcard $(IDF_PATH)))")
-# due to the way make manages variables, this is hard to account for
+ifneq ("$(IDF_PATH)","$(SANITISED_IDF_PATH)")
+# implies IDF_PATH was overriden on make command line.
+# Due to the way make manages variables, this is hard to account for
 #
 # if you see this error, do the shell expansion in the shell ie
 # make IDF_PATH=~/blah not make IDF_PATH="~/blah"
@@ -370,12 +379,7 @@ $(BUILD_DIR_BASE)/$(2)/lib$(2).a: $(2)-build
 # If any component_project_vars.mk file is out of date, the make
 # process will call this target to rebuild it and then restart.
 #
-# Note: $(SDKCONFIG) is a normal prereq as we need to rebuild these
-# files whenever the config changes. $(SDKCONFIG_MAKEFILE) is an
-# order-only prereq because if it hasn't been rebuilt, we need to
-# build it first - but including it as a normal prereq can lead to
-# infinite restarts as the conf process will keep updating it.
-$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG) | $(BUILD_DIR_BASE)/$(2) $(SDKCONFIG_MAKEFILE)
+$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG_MAKEFILE) | $(BUILD_DIR_BASE)/$(2)
 	$(call ComponentMake,$(1),$(2)) component_project_vars.mk
 endef
 

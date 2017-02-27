@@ -305,6 +305,17 @@ Second Level: Component Makefiles
 
 To better understand the component make process, have a read through the ``component_wrapper.mk`` file and some of the ``component.mk`` files included with esp-idf.
 
+Running Make Non-Interactively
+------------------------------
+
+When running ``make`` in a situation where you don't want interactive prompts (for example: inside an IDE or an automated build system) append ``BATCH_BUILD=1`` to the make arguments (or set it as an environment variable).
+
+Setting ``BATCH_BUILD`` implies the following:
+
+- Verbose output (same as ``V=1``, see below). If you don't want verbose output, also set ``V=0``.
+- If the project configuration is missing new configuration items (from new components or esp-idf updates) then the project use the default values, instead of prompting the user for each item.
+- If the build system needs to invoke ``menuconfig``, an error is printed and the build fails.
+
 Debugging The Make Process
 --------------------------
 

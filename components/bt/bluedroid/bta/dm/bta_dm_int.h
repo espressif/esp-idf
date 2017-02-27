@@ -471,7 +471,8 @@ typedef struct {
     BT_HDR                  hdr;
     BOOLEAN                 start;
     UINT16                  duration;
-    tBTA_DM_SEARCH_CBACK *p_cback;
+    tBTA_DM_SEARCH_CBACK    *p_cback;
+    tBTA_START_SCAN_CMPL_CBACK *p_start_scan_cback;
 } tBTA_DM_API_BLE_OBSERVE;
 
 typedef struct {
@@ -506,6 +507,7 @@ typedef struct {
     tBTM_BLE_ADV_CHNL_MAP   channel_map;
     tBTM_BLE_AFP            adv_filter_policy;
     tBLE_BD_ADDR            *p_dir_bda;
+    tBTA_START_ADV_CMPL_CBACK  *p_start_adv_cback;
 } tBTA_DM_API_BLE_ADV_PARAMS_ALL;
 
 

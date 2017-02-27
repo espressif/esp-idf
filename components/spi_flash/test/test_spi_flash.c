@@ -65,19 +65,24 @@ static void flash_test_task(void *arg)
 TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_flash][ignore]")
 {
     SemaphoreHandle_t done = xSemaphoreCreateCounting(4, 0);
-    struct flash_test_ctx ctx[4] = {
+    struct flash_test_ctx ctx[] = {
             { .offset = 0x100 + 6, .done = done },
             { .offset = 0x100 + 7, .done = done },
             { .offset = 0x100 + 8, .done = done },
+#ifndef CONFIG_FREERTOS_UNICORE
             { .offset = 0x100 + 9, .done = done }
+#endif
     };
 
-    xTaskCreatePinnedToCore(flash_test_task, "1", 2048, &ctx[0], 3, NULL, 0);
-    xTaskCreatePinnedToCore(flash_test_task, "2", 2048, &ctx[1], 3, NULL, 1);
-    xTaskCreatePinnedToCore(flash_test_task, "3", 2048, &ctx[2], 3, NULL, tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(flash_test_task, "4", 2048, &ctx[3], 3, NULL, tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(flash_test_task, "t0", 2048, &ctx[0], 3, NULL, 0);
+    xTaskCreatePinnedToCore(flash_test_task, "t1", 2048, &ctx[1], 3, NULL, tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(flash_test_task, "t2", 2048, &ctx[2], 3, NULL, tskNO_AFFINITY);
+#ifndef CONFIG_FREERTOS_UNICORE
+    xTaskCreatePinnedToCore(flash_test_task, "t3", 2048, &ctx[3], 3, NULL, 1);
+#endif
 
-    for (int i = 0; i < 4; ++i) {
+    const size_t task_count = sizeof(ctx)/sizeof(ctx[0]);
+    for (int i = 0; i < task_count; ++i) {
         xSemaphoreTake(done, portMAX_DELAY);
         TEST_ASSERT_FALSE(ctx[i].fail);
     }

@@ -20,59 +20,77 @@ $(KCONFIG_TOOL_DIR)/mconf $(KCONFIG_TOOL_DIR)/conf:
 	MAKEFLAGS=$(ORIGINAL_MAKEFLAGS) CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
-# use a wrapper environment for where we run Kconfig tools
-KCONFIG_TOOL_ENV=KCONFIG_AUTOHEADER=$(abspath $(BUILD_DIR_BASE)/include/sdkconfig.h) \
-	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" KCONFIG_CONFIG=$(SDKCONFIG) \
-	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)"
-
-menuconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(call prereq_if_explicit,defconfig)
-	$(summary) MENUCONFIG
-	$(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig
-
 ifeq ("$(wildcard $(SDKCONFIG))","")
-ifeq ("$(call prereq_if_explicit,defconfig)","")
-# if not configuration is present and defconfig is not a target, run defconfig then menuconfig
-$(SDKCONFIG): defconfig menuconfig
+ifeq ("$(filter defconfig, $(MAKECMDGOALS))","")
+# if no configuration file is present and defconfig is not a named
+# target, run defconfig then menuconfig to get the initial config
+$(SDKCONFIG): menuconfig
+menuconfig: defconfig
 else
-# otherwise, just defconfig
+# otherwise, just run defconfig
 $(SDKCONFIG): defconfig
 endif
 endif
 
+# macro for the commands to run kconfig tools conf or mconf.
+# $1 is the name (& args) of the conf tool to run
+define RunConf
+	mkdir -p $(BUILD_DIR_BASE)/include/config
+	cd $(BUILD_DIR_BASE); KCONFIG_AUTOHEADER=$(abspath $(BUILD_DIR_BASE)/include/sdkconfig.h) \
+	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" KCONFIG_CONFIG=$(SDKCONFIG) \
+	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)" \
+	$(KCONFIG_TOOL_DIR)/$1 $(IDF_PATH)/Kconfig
+endef
+
+ifeq ("$(MAKE_RESTARTS)","")
+# menuconfig, defconfig and "GENCONFIG" configuration generation only
+# ever run on the first make pass, subsequent passes don't run these
+# (make often wants to re-run them as the conf tool can regenerate the
+# sdkconfig input file as an output file, but this is not what the
+# user wants - a single config pass is enough to produce all output
+# files.)
+#
+# To prevent problems missing genconfig, ensure none of these targets
+# depend on any prerequisite that may cause a make restart as part of
+# the prerequisite's own recipe.
+
+menuconfig: $(KCONFIG_TOOL_DIR)/mconf
+	$(summary) MENUCONFIG
+ifdef BATCH_BUILD
+	@echo "Can't run interactive configuration inside non-interactive build process."
+	@echo ""
+	@echo "Open a command line terminal and run 'make menuconfig' from there."
+	@echo "See esp-idf documentation for more details."
+	@exit 1
+else
+	$(call RunConf,mconf)
+endif
+
 # defconfig creates a default config, based on SDKCONFIG_DEFAULTS if present
-defconfig: $(KCONFIG_TOOL_DIR)/mconf $(IDF_PATH)/Kconfig $(BUILD_DIR_BASE)
+defconfig: $(KCONFIG_TOOL_DIR)/conf
 	$(summary) DEFCONFIG
 ifneq ("$(wildcard $(SDKCONFIG_DEFAULTS))","")
 	cat $(SDKCONFIG_DEFAULTS) >> $(SDKCONFIG)  # append defaults to sdkconfig, will override existing values
 endif
-	mkdir -p $(BUILD_DIR_BASE)/include/config
-	$(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/conf --olddefconfig $(IDF_PATH)/Kconfig
+	$(call RunConf,conf --olddefconfig)
 
-# Work out of whether we have to build the Kconfig makefile
-# (auto.conf), or if we're in a situation where we don't need it
-NON_CONFIG_TARGETS := clean %-clean help menuconfig defconfig
-AUTO_CONF_REGEN_TARGET := $(SDKCONFIG_MAKEFILE)
-
-# disable AUTO_CONF_REGEN_TARGET if all targets are non-config targets
-# (and not building default target)
-ifneq ("$(MAKECMDGOALS)","")
-ifeq ($(filter $(NON_CONFIG_TARGETS), $(MAKECMDGOALS)),$(MAKECMDGOALS))
-AUTO_CONF_REGEN_TARGET :=
-# dummy target
-$(SDKCONFIG_MAKEFILE):
-endif
-endif
-
-$(AUTO_CONF_REGEN_TARGET) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(SDKCONFIG) $(KCONFIG_TOOL_DIR)/conf $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD)
+# if neither defconfig or menuconfig are requested, use the GENCONFIG rule to
+# ensure generated config files are up to date
+$(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(KCONFIG_TOOL_DIR)/conf $(SDKCONFIG) $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD) | $(call prereq_if_explicit,defconfig) $(call prereq_if_explicit,menuconfig)
 	$(summary) GENCONFIG
-	mkdir -p $(BUILD_DIR_BASE)/include/config
-	cd $(BUILD_DIR_BASE); $(KCONFIG_TOOL_ENV) $(KCONFIG_TOOL_DIR)/conf --silentoldconfig $(IDF_PATH)/Kconfig
-	touch $(AUTO_CONF_REGEN_TARGET) $(BUILD_DIR_BASE)/include/sdkconfig.h
-# touch to ensure both output files are newer - as 'conf' can also update sdkconfig (a dependency). Without this,
-# sometimes you can get an infinite make loop on Windows where sdkconfig always gets regenerated newer
-# than the target(!)
+ifdef BATCH_BUILD  # can't prompt for new config values like on terminal
+	$(call RunConf,conf --olddefconfig)
+endif
+	$(call RunConf,conf --silentoldconfig)
+	touch $(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h  # ensure newer than sdkconfig
 
-.PHONY: config-clean
+else  # "$(MAKE_RESTARTS)" != ""
+# on subsequent make passes, skip config generation entirely
+defconfig:
+menuconfig:
+endif
+
+.PHONY: config-clean defconfig menuconfig
 config-clean:
 	$(summary RM CONFIG)
 	$(MAKE) -C $(KCONFIG_TOOL_DIR) clean

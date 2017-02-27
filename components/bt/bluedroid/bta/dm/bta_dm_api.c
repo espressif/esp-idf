@@ -1009,7 +1009,7 @@ void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
 void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
                                UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
                                tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
-                               tBLE_BD_ADDR *p_dir_bda)
+                               tBLE_BD_ADDR *p_dir_bda, tBTA_START_ADV_CMPL_CBACK p_start_adv_cb)
 {
 #if BLE_INCLUDED == TRUE
     tBTA_DM_API_BLE_ADV_PARAMS_ALL    *p_msg;
@@ -1029,6 +1029,7 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
         p_msg->addr_type_own    = addr_type_own;
         p_msg->channel_map      = chnl_map;
         p_msg->adv_filter_policy    = adv_fil_pol;
+        p_msg->p_start_adv_cback    = p_start_adv_cb;
         if (p_dir_bda != NULL) {
             p_msg->p_dir_bda = (tBLE_BD_ADDR *)(p_msg + 1);
             memcpy(p_msg->p_dir_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
@@ -2127,7 +2128,8 @@ void BTA_DmCloseACL(BD_ADDR bd_addr, BOOLEAN remove_dev, tBTA_TRANSPORT transpor
 **
 *******************************************************************************/
 extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
-                             tBTA_DM_SEARCH_CBACK *p_results_cb)
+                             tBTA_DM_SEARCH_CBACK *p_results_cb,
+                             tBTA_START_SCAN_CMPL_CBACK *p_start_scan_cb)
 {
     tBTA_DM_API_BLE_OBSERVE   *p_msg;
 
@@ -2140,6 +2142,7 @@ extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
         p_msg->start = start;
         p_msg->duration = duration;
         p_msg->p_cback = p_results_cb;
+        p_msg->p_start_scan_cback = p_start_scan_cb;
 
         bta_sys_sendmsg(p_msg);
     }
