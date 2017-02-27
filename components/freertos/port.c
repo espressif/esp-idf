@@ -115,7 +115,7 @@ extern void _xt_coproc_init(void);
 /*-----------------------------------------------------------*/
 
 unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Duplicate of inaccessible xSchedulerRunning; needed at startup to avoid counting nesting
-unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level
+unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
 
 /*-----------------------------------------------------------*/
 
@@ -256,9 +256,24 @@ void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMOR
 #endif
 
 
+/*
+ * Returns true if the current core is in ISR context; low prio ISR, med prio ISR or timer tick ISR. High prio ISRs
+ * aren't detected here, but they normally cannot call C code, so that should not be an issue anyway.
+ */
+BaseType_t xPortInIsrContext()
+{
+	unsigned int irqStatus;
+	BaseType_t ret;
+	irqStatus=portENTER_CRITICAL_NESTED();
+	ret=(port_interruptNesting[xPortGetCoreID()] != 0);
+	portEXIT_CRITICAL_NESTED(irqStatus);
+	return ret;
+}
+
+
 void vPortAssertIfInISR()
 {
-	configASSERT(port_interruptNesting[xPortGetCoreID()]==0)
+	configASSERT(xPortInIsrContext());
 }
 
 /*

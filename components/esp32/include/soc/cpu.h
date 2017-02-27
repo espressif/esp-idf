@@ -36,16 +36,6 @@ static inline void *get_sp()
     return sp;
 }
 
-/* Return true if the CPU is in an interrupt context
-   (PS.UM == 0)
-*/
-static inline bool cpu_in_interrupt_context(void)
-{
-    uint32_t ps;
-    RSR(PS, ps);
-    return (ps & PS_UM) == 0;
-}
-
 /* Functions to set page attributes for Region Protection option in the CPU.
  * See Xtensa ISA Reference manual for explanation of arguments (section 4.6.3.2).
  */
