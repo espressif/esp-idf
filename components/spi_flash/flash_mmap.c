@@ -93,15 +93,15 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
 {
     esp_err_t ret;
     bool did_flush, need_flush = false;
-    mmap_entry_t* new_entry = (mmap_entry_t*) malloc(sizeof(mmap_entry_t));
-    if (new_entry == 0) {
-        return ESP_ERR_NO_MEM;
-    }
     if (src_addr & 0xffff) {
         return ESP_ERR_INVALID_ARG;
     }
     if (src_addr + size > g_rom_flashchip.chip_size) {
         return ESP_ERR_INVALID_ARG;
+    }
+    mmap_entry_t* new_entry = (mmap_entry_t*) malloc(sizeof(mmap_entry_t));
+    if (new_entry == 0) {
+        return ESP_ERR_NO_MEM;
     }
 
     spi_flash_disable_interrupts_caches_and_other_cpu();
@@ -122,7 +122,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
         region_addr = VADDR0_START_ADDR;
     } else {
         // only part of VAddr1 is usable, so adjust for that
-        region_begin = VADDR1_FIRST_USABLE_ADDR;
+        region_begin = PRO_IRAM0_FIRST_USABLE_PAGE;
         region_size = 3 * 64 - region_begin;
         region_addr = VADDR1_FIRST_USABLE_ADDR;
     }
@@ -177,7 +177,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
         new_entry->count = page_count;
         new_entry->handle = ++s_mmap_last_handle;
         *out_handle = new_entry->handle;
-        *out_ptr = (void*) (region_addr + start * SPI_FLASH_MMU_PAGE_SIZE);
+        *out_ptr = (void*) (region_addr + (start - region_begin) * SPI_FLASH_MMU_PAGE_SIZE);
         ret = ESP_OK;
     }
 
