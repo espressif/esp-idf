@@ -25,8 +25,7 @@ static void task_event_group_call_response(void *param)
     for (int i = 0; i < COUNT; i++) {
         /* Wait until the common "call" bit is set, starts off all tasks
            (clear on return) */
-        while (!xEventGroupWaitBits(eg, BIT_CALL, true, false, portMAX_DELAY)) {
-        }
+        TEST_ASSERT( xEventGroupWaitBits(eg, BIT_CALL, true, false, portMAX_DELAY) );
 
         /* Set our individual "response" bit */
         xEventGroupSetBits(eg, BIT_RESPONSE(task_num));
@@ -42,25 +41,25 @@ TEST_CASE("FreeRTOS Event Groups", "[freertos]")
     eg = xEventGroupCreate();
     done_sem = xSemaphoreCreateCounting(NUM_TASKS, 0);
 
-    /* Note: task_event_group_call_response all have higher priority than us, so will block together.
+    /* Note: task_event_group_call_response all have higher priority than this task, so on this core
+       they will always preempt this task.
 
-       This is important because we need to know they'll all have blocked on BIT_CALL each time we
-       signal it, or they get out of sync.
+       This is important because we need to know all tasks have blocked on BIT_CALL each time we signal it,
+       or they get out of sync.
      */
     for (int c = 0; c < NUM_TASKS; c++) {
         xTaskCreatePinnedToCore(task_event_group_call_response, "tsk_call_resp", 4096, (void *)c, configMAX_PRIORITIES - 1, NULL, c % portNUM_PROCESSORS);
     }
-    /* Scheduler weirdness (bug?), if we don't sleep a few ticks here then the tasks on the other CPU aren't running yet... */
-    vTaskDelay(10);
+
+    /* Tasks all start instantly, but this task will resume running at the same time as the higher priority tasks on the
+       other processor may still be setting up, so give a tick for them to also block on BIT_CALL... */
+    vTaskDelay(1);
 
     for (int i = 0; i < COUNT; i++) {
-        if (i % 100 == 0) {
-            //printf("Call %d\n", i);
-        }
         /* signal all tasks with "CALL" bit... */
         xEventGroupSetBits(eg, BIT_CALL);
 
-        TEST_ASSERT_EQUAL(ALL_RESPONSE_BITS, xEventGroupWaitBits(eg, ALL_RESPONSE_BITS, true, true, 100 / portMAX_DELAY));
+        TEST_ASSERT_EQUAL_HEX16(ALL_RESPONSE_BITS, xEventGroupWaitBits(eg, ALL_RESPONSE_BITS, true, true, 100 / portMAX_DELAY));
     }
 
     /* Ensure all tasks cleaned up correctly */
