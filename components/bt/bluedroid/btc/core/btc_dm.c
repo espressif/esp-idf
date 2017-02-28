@@ -1,13 +1,35 @@
 #include <stdlib.h>
 #include <string.h>
+#include "btc_common.h"
 #include "btc_dm.h"
 #include "btc_main.h"
 #include "bt_trace.h"
 #include "bt_target.h"
 #include "btif_storage.h" // TODO: replace with "btc"
+#include "bta_api.h"
 
-extern void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl); // todo: replace with "btc_xx"
 
+/******************************************************************************
+**  Constants & Macros
+******************************************************************************/
+#define BTA_SERVICE_ID_TO_SERVICE_MASK(id)       (1 << (id))
+
+/******************************************************************************
+**  Static variables
+******************************************************************************/
+static tBTA_SERVICE_MASK btc_enabled_services = 0;
+/******************************************************************************
+**  Static functions
+******************************************************************************/
+/******************************************************************************
+**  Externs
+******************************************************************************/
+extern bt_status_t btif_av_execute_service(BOOLEAN b_enable);
+extern bt_status_t btif_av_sink_execute_service(BOOLEAN b_enable);
+
+/******************************************************************************
+**  Functions
+******************************************************************************/
 static void btc_dm_sec_arg_deep_free(btc_msg_t *msg)
 {
     btc_dm_sec_args_t *arg = (btc_dm_sec_args_t *)(msg->arg);
@@ -35,7 +57,6 @@ void btc_dm_sec_arg_deep_copy(btc_msg_t *msg, void *dst, void *src)
         memcpy(dst_dm_sec->ble_key.p_key_value, src_dm_sec->ble_key.p_key_value, sizeof(tBTM_LE_KEY_VALUE));
     }
 }
-
 
 /*******************************************************************************
 **
@@ -72,6 +93,144 @@ static void btc_disable_bluetooth_evt(void)
     LOG_DEBUG("%s", __FUNCTION__);
 
     future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_SUCCESS);
+}
+
+static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
+{
+    /* Save link key, if not temporary */
+    bt_bdaddr_t bd_addr;
+    bt_status_t status;
+    LOG_DEBUG("%s: bond state success %d, present %d, type%d\n", __func__, p_auth_cmpl->success,
+		p_auth_cmpl->key_present, p_auth_cmpl->key_type);
+
+    bdcpy(bd_addr.address, p_auth_cmpl->bd_addr);
+    if ( (p_auth_cmpl->success == TRUE) && (p_auth_cmpl->key_present) )
+    {
+	#if 0
+        if ((p_auth_cmpl->key_type < HCI_LKEY_TYPE_DEBUG_COMB) ||
+            (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB) ||
+            (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
+            (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB_P_256)
+            )
+        #endif
+	if (1)
+        {
+            bt_status_t ret;
+            LOG_DEBUG("%s: Storing link key. key_type=0x%x",
+			     __FUNCTION__, p_auth_cmpl->key_type);
+            ret = btif_storage_add_bonded_device(&bd_addr,
+                                p_auth_cmpl->key, p_auth_cmpl->key_type,
+                                16);
+            BTC_ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
+        }
+        else
+        {
+            LOG_DEBUG("%s: Temporary key. Not storing. key_type=0x%x",
+                __FUNCTION__, p_auth_cmpl->key_type);
+        }
+    }
+
+    // Skip SDP for certain  HID Devices
+    if (p_auth_cmpl->success)
+    {
+    }
+    else
+    {
+        // Map the HCI fail reason  to  bt status
+        switch(p_auth_cmpl->fail_reason)
+        {
+            case HCI_ERR_PAGE_TIMEOUT:
+		LOG_WARN("%s() - Pairing timeout; retrying () ...", __FUNCTION__);
+		return;
+                /* Fall-through */
+            case HCI_ERR_CONNECTION_TOUT:
+                status =  BT_STATUS_RMT_DEV_DOWN;
+                break;
+
+            case HCI_ERR_PAIRING_NOT_ALLOWED:
+                status = BT_STATUS_AUTH_REJECTED;
+                break;
+
+            case HCI_ERR_LMP_RESPONSE_TIMEOUT:
+                status =  BT_STATUS_AUTH_FAILURE;
+                break;
+
+            /* map the auth failure codes, so we can retry pairing if necessary */
+            case HCI_ERR_AUTH_FAILURE:
+            case HCI_ERR_KEY_MISSING:
+                btif_storage_remove_bonded_device(&bd_addr);
+            case HCI_ERR_HOST_REJECT_SECURITY:
+            case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
+            case HCI_ERR_UNIT_KEY_USED:
+            case HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED:
+            case HCI_ERR_INSUFFCIENT_SECURITY:
+            case HCI_ERR_PEER_USER:
+            case HCI_ERR_UNSPECIFIED:
+                LOG_DEBUG(" %s() Authentication fail reason %d",
+                    __FUNCTION__, p_auth_cmpl->fail_reason);
+                    /* if autopair attempts are more than 1, or not attempted */
+                    status =  BT_STATUS_AUTH_FAILURE;
+                break;
+            default:
+                status =  BT_STATUS_FAIL;
+        }
+    }
+    (void) status;
+}
+
+tBTA_SERVICE_MASK btc_get_enabled_services_mask(void)
+{
+    return btc_enabled_services;
+}
+
+static bt_status_t btc_in_execute_service_request(tBTA_SERVICE_ID service_id,
+        BOOLEAN b_enable)
+{
+    LOG_DEBUG("%s service_id: %d\n", __FUNCTION__, service_id);
+    /* Check the service_ID and invoke the profile's BT state changed API */
+    switch (service_id) {
+    case BTA_A2DP_SOURCE_SERVICE_ID:
+        btif_av_execute_service(b_enable);
+        break;
+    case BTA_A2DP_SINK_SERVICE_ID:
+        btif_av_sink_execute_service(b_enable);
+        break;
+    default:
+        LOG_ERROR("%s: Unknown service being enabled\n", __FUNCTION__);
+        return BT_STATUS_FAIL;
+    }
+    return BT_STATUS_SUCCESS;
+}
+
+void btc_dm_execute_service_request(BOOLEAN enable, char *p_param)
+{
+    btc_in_execute_service_request(*((tBTA_SERVICE_ID *)p_param), enable);
+}
+
+bt_status_t btc_dm_enable_service(tBTA_SERVICE_ID service_id)
+{
+    tBTA_SERVICE_ID *p_id = &service_id;
+
+    btc_enabled_services |= (1 << service_id);
+
+    LOG_DEBUG("%s: current services:0x%x", __FUNCTION__, btc_enabled_services);
+
+    btc_dm_execute_service_request(TRUE, (char *)p_id);
+
+    return BT_STATUS_SUCCESS;
+}
+
+bt_status_t btc_dm_disable_service(tBTA_SERVICE_ID service_id)
+{
+    tBTA_SERVICE_ID *p_id = &service_id;
+
+    btc_enabled_services &= (tBTA_SERVICE_MASK)(~(1 << service_id));
+
+    LOG_DEBUG("%s: Current Services:0x%x", __FUNCTION__, btc_enabled_services);
+
+    btc_dm_execute_service_request(FALSE, (char *)p_id);
+
+    return BT_STATUS_SUCCESS;
 }
 
 void btc_dm_sec_cb_handler(btc_msg_t *msg)
@@ -116,7 +275,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_PIN_REQ_EVT:
 	break;
     case BTA_DM_AUTH_CMPL_EVT:
-	btif_dm_auth_cmpl_evt(&p_data->auth_cmpl);
+	btc_dm_auth_cmpl_evt(&p_data->auth_cmpl);
 	break;
     case BTA_DM_BOND_CANCEL_CMPL_EVT:
     case BTA_DM_SP_CFM_REQ_EVT:

@@ -34,4 +34,7 @@ void btc_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *data);
 void btc_dm_sec_cb_handler(btc_msg_t *msg);
 void btc_dm_sec_arg_deep_copy(btc_msg_t *msg, void *dst, void *src);
 
+bt_status_t btc_dm_enable_service(tBTA_SERVICE_ID service_id); // todo: replace bt_status_t
+bt_status_t btc_dm_disable_service(tBTA_SERVICE_ID service_id);
+
 #endif /* __BTC_DM_H__ */
