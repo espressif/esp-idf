@@ -23,6 +23,8 @@
 extern "C" {
 #endif
 
+#define ESP_BT_GAP_DEVICE_NAME_MAX                  (32)
+
 /// Discoverability and Connectability mode
 typedef enum {
     ESP_BT_SCAN_MODE_NONE = 0,                      /*!< Neither discoverable nor connectable */

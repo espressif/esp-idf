@@ -25,6 +25,7 @@
 #include "btc_gap_ble.h"
 #include "btc_gap_bt.h"
 #include "btc_blufi_prf.h"
+#include "btc_dm.h"
 #include "bta_gatt_api.h"
 
 
@@ -43,6 +44,7 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_SPP]       = {NULL, NULL},
     [BTC_PID_SPPLIKE]   = {NULL, NULL},
     [BTC_PID_BLUFI]     = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
+    [BTC_PID_DM_SEC]    = {NULL,                        btc_dm_sec_cb_handler   }
 };
 
 /*****************************************************************************

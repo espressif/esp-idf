@@ -20,15 +20,21 @@
 #include "btc_task.h"
 
 typedef enum {
-    BTC_GAP_BT_ACT_SET_SCAN_MODE = 0
+    BTC_GAP_BT_ACT_SET_SCAN_MODE = 0,
+    BTC_GAP_BT_ACT_SET_DEV_NAME
 } btc_gap_bt_act_t;
 
-/* btc_gap_bt_args_t */
+/* btc_bt_gap_args_t */
 typedef union {
-    // BTC_GAP_BT_ACT_SET_SCAN_MODE,
-    struct scan_mode_args {
+    // BTC_BT_GAP_ACT_SET_SCAN_MODE,
+    struct set_bt_scan_mode_args {
         esp_bt_scan_mode_t mode;
-    } scan_mode;
+    } set_scan_mode;
+
+    // BTC_BT_GAP_ACT_SET_DEV_NAME
+    struct set_bt_dev_name_args {
+        char device_name[ESP_BT_GAP_DEVICE_NAME_MAX + 1];
+    } set_dev_name;
 } btc_gap_bt_args_t;
 
 void btc_gap_bt_call_handler(btc_msg_t *msg);

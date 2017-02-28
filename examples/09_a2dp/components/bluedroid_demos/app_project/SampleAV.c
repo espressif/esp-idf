@@ -12,7 +12,7 @@
 // #include "EspAudioCom.h"
 
 #include "bt_app_common.h"
-#include "esp_bt_stack_manager.h"
+#include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
@@ -76,15 +76,16 @@ static void bt_app_handle_evt(uint16_t event, void *p_param)
     switch (event) {
     case BT_APP_EVT_STACK_ON: {
         char *dev_name = "ESP_SPEAKER";
+
 	esp_bt_gap_set_device_name(dev_name);
 
-        esp_a2d_register_callback(&bt_app_a2d_cb);
-        esp_a2d_register_data_callback(bt_app_a2d_data_cb);
+        // esp_a2d_register_callback(&bt_app_a2d_cb);
+        // esp_a2d_register_data_callback(bt_app_a2d_data_cb);
 
-        esp_a2d_sink_init();
+        // esp_a2d_sink_init();
 
-        esp_avrc_ct_init();
-        esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
+        // esp_avrc_ct_init();
+        // esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
         
         esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         break;
@@ -143,12 +144,14 @@ void bt_app_handle_rc_evt(uint16_t event, void *p_param)
 void app_main_entry(void)
 {
     esp_err_t init, enable;
-    init = esp_bt_init_stack();
+    // init = esp_bt_init_stack();
+    init = esp_bluedroid_init();
     if (init != ESP_OK) {
         return;
     }
 
-    enable = esp_bt_enable_stack();
+    // enable = esp_bt_enable_stack();
+    enable = esp_bluedroid_enable();
     if (enable != ESP_OK) {
         return;
     }

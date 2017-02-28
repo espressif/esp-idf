@@ -14,6 +14,7 @@
 
 #include "btc_task.h"
 #include "btc_main.h"
+#include "btc_dm.h"
 #include "future.h"
 #include "esp_err.h"
 #include "btif_config.h"
@@ -42,7 +43,7 @@ static void btc_sec_callback(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data)
 
 static void btc_enable_bluetooth(void)
 {
-    if (BTA_EnableBluetooth(btc_sec_callback) != BTA_SUCCESS) {
+    if (BTA_EnableBluetooth(btc_dm_sec_evt) != BTA_SUCCESS) {
         future_ready(*btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE), FUTURE_FAIL);
     }
 }

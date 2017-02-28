@@ -73,7 +73,11 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
     LOG_DEBUG("%s act %d\n", __func__, msg->act);
     switch (msg->act) {
     case BTC_GAP_BT_ACT_SET_SCAN_MODE: {
-        btc_bt_set_scan_mode(arg->scan_mode.mode);
+        btc_bt_set_scan_mode(arg->set_scan_mode.mode);
+        break;
+    }
+    case BTC_GAP_BT_ACT_SET_DEV_NAME: {
+        BTA_DmSetDeviceName(arg->set_dev_name.device_name);
         break;
     }
     default:
@@ -82,16 +86,7 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
     btc_gap_bt_arg_deep_free(msg);
 }
 
-/* to be fixed */
-esp_err_t esp_bt_gap_set_device_name(const char *name)
+void btc_gap_bt_cb_handler(btc_msg_t *msg)
 {
-    if (name == NULL || *name == '\0') {
-	return ESP_ERR_INVALID_ARG;
-    }
-    #define ESP_GAP_DEVICE_NAME_MAX (32)
-    char dev_name[ESP_GAP_DEVICE_NAME_MAX+1];
-    strncpy(dev_name, name, ESP_GAP_DEVICE_NAME_MAX);
-    dev_name[ESP_GAP_DEVICE_NAME_MAX] = '\0';
-    BTA_DmSetDeviceName(dev_name);
-    return ESP_OK;
+    // todo
 }

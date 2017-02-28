@@ -145,7 +145,8 @@ void btif_dm_execute_service_request(UINT16 event, char *p_param)
 ** Returns          void
 **
 *******************************************************************************/
-static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
+// static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
+void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
     /* Save link key, if not temporary */
     bt_bdaddr_t bd_addr;
