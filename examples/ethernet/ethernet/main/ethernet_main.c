@@ -33,20 +33,22 @@
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 
-extern void phy_device_check_phy_init(void);
-extern bool phy_device_check_phy_link_status(void);
-extern bool phy_device_get_partner_pause_enable(void);
-extern void phy_device_init(void);
-extern void phy_dump_device_registers();
-extern void phy_enable_flow_ctrl(void);
-eth_duplex_mode_t phy_device_get_duplex_mode(void);
-eth_speed_mode_t phy_device_get_speed_mode(void);
+extern void phy_update_config(eth_config_t *config);
 
-const char *demo_tag = "eth_demo";
+static const char *TAG = "eth_demo";
 
 #define PIN_PHY_POWER 17
 #define PIN_SMI_MDC   23
 #define PIN_SMI_MDIO  18
+
+// select phy device
+//extern eth_config_t lan8720_default_ethernet_phy_config;
+//#define PHY_CONFIG lan8720_default_ethernet_phy_config
+extern eth_config_t tlk110_default_ethernet_phy_config;
+#define PHY_CONFIG tlk110_default_ethernet_phy_config
+
+// uncomment for console debug messages
+#define DEMO_DEBUG 1
 
 
 void phy_device_power_enable(bool enable)
@@ -55,13 +57,13 @@ void phy_device_power_enable(bool enable)
     gpio_set_direction(PIN_PHY_POWER,GPIO_MODE_OUTPUT);
     if(enable == true) {
         gpio_set_level(PIN_PHY_POWER, 1);
-#ifdef CONFIG_PHY_DEBUG
-        ESP_LOGI(demo_tag, "phy_device_power_enable(TRUE)");
+#ifdef DEMO_DEBUG
+        ESP_LOGI(TAG, "phy_device_power_enable(TRUE)");
 #endif
     } else {
         gpio_set_level(PIN_PHY_POWER, 0);
-#ifdef CONFIG_PHY_DEBUG
-        ESP_LOGI(demo_tag, "power_enable(FALSE)");
+#ifdef DEMO_DEBUG
+        ESP_LOGI(TAG, "power_enable(FALSE)");
 #endif
     }
 }
@@ -102,14 +104,11 @@ void eth_task(void *pvParameter)
         vTaskDelay(2000 / portTICK_PERIOD_MS);
 
         if (tcpip_adapter_get_ip_info(ESP_IF_ETH, &ip) == 0) {
-#ifdef CONFIG_PHY_DEBUG
-            phy_dump_device_registers();
-#endif
-            ESP_LOGI(demo_tag, "~~~~~~~~~~~");
-            ESP_LOGI(demo_tag, "ETHIP:"IPSTR, IP2STR(&ip.ip));
-            ESP_LOGI(demo_tag, "ETHPMASK:"IPSTR, IP2STR(&ip.netmask));
-            ESP_LOGI(demo_tag, "ETHPGW:"IPSTR, IP2STR(&ip.gw));
-            ESP_LOGI(demo_tag, "~~~~~~~~~~~");
+            ESP_LOGI(TAG, "~~~~~~~~~~~");
+            ESP_LOGI(TAG, "ETHIP:"IPSTR, IP2STR(&ip.ip));
+            ESP_LOGI(TAG, "ETHPMASK:"IPSTR, IP2STR(&ip.netmask));
+            ESP_LOGI(TAG, "ETHPGW:"IPSTR, IP2STR(&ip.gw));
+            ESP_LOGI(TAG, "~~~~~~~~~~~");
         }
     }
 }
@@ -120,19 +119,9 @@ void app_main()
     tcpip_adapter_init();
     esp_event_loop_init(NULL, NULL);
 
-    eth_config_t config;
-    config.phy_addr = CONFIG_PHY_ID;
-    config.mac_mode = ETH_MODE_RMII;
+    eth_config_t config = PHY_CONFIG;
     config.gpio_config = eth_gpio_config_rmii;
     config.tcpip_input = tcpip_adapter_eth_input;
-    //Only FULLDUPLEX mode support flow ctrl now!
-    config.flow_ctrl_enable = true;
-    config.phy_init = phy_device_init;
-    config.phy_check_init = phy_device_check_phy_init;
-    config.phy_check_link = phy_device_check_phy_link_status;
-    config.phy_get_speed_mode = phy_device_get_speed_mode;
-    config.phy_get_duplex_mode = phy_device_get_duplex_mode;
-    config.phy_get_partner_pause_enable = phy_device_get_partner_pause_enable;
     config.phy_power_enable = phy_device_power_enable;
 
     ret = esp_eth_init(&config);

@@ -34,13 +34,3 @@
 #define SPEED_INDICATION_10T               BIT(2)
 #define DUPLEX_INDICATION_FULL             BIT(4)
 
-
-void phy_device_check_phy_init(void);
-bool phy_device_check_phy_link_status(void);
-bool phy_device_get_partner_pause_enable(void);
-void phy_device_init(void);
-void phy_device_power_enable(bool enable);
-void phy_dump_device_registers();
-void phy_enable_flow_ctrl(void);
-eth_duplex_mode_t phy_device_get_duplex_mode(void);
-eth_speed_mode_t phy_device_get_speed_mode(void);
