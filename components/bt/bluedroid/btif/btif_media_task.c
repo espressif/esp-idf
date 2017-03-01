@@ -26,8 +26,6 @@
  **
  ******************************************************************************/
 
-#define LOG_TAG "bt_btif_media"
-
 #include "bt_trace.h"
 #include <string.h>
 #include <stdio.h>
@@ -58,7 +56,7 @@
 
 #include "bt_defs.h"
 #include "btc_av.h"
-#include "btif_sm.h"
+#include "btc_sm.h"
 #include "btif_util.h"
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 #include "oi_codec_sbc.h"
@@ -335,24 +333,6 @@ UNUSED_ATTR static const char *dump_media_event(UINT16 event)
         return "UNKNOWN MEDIA EVENT";
     }
 }
-
-/*****************************************************************************
- **  A2DP CTRL PATH
- *****************************************************************************/
-#if 0
-// TODO: consider the necessity to add an API based on this function
-static void btif_audiopath_detached(void)
-{
-    APPL_TRACE_EVENT("## AUDIO PATH DETACHED ##");
-
-    /*  send stop request only if we are actively streaming and haven't received
-        a stop request. Potentially audioflinger detached abnormally */
-    if (btif_media_cb.is_tx_timer) {
-        /* post stop event and wait for audio path to stop */
-        btif_dispatch_sm_event(BTIF_AV_STOP_STREAM_REQ_EVT, NULL, 0);
-    }
-}
-#endif
 
 /*****************************************************************************
  **  BTIF ADAPTATION

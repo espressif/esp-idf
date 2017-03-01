@@ -28,7 +28,7 @@
 #include "esp_a2dp_api.h"
 #include "btc_task.h"
 #include "btif_common.h"
-#include "btif_sm.h"
+#include "btc_sm.h"
 #include "bta_av_api.h"
 
 
@@ -71,7 +71,7 @@ void btc_a2dp_evt_handler(btc_msg_t *msg);
 **
 *******************************************************************************/
 
-btif_sm_handle_t btc_av_get_sm_handle(void);
+btc_sm_handle_t btc_av_get_sm_handle(void);
 
 /*******************************************************************************
 **

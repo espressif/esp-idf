@@ -1,48 +1,45 @@
-/******************************************************************************
- *
- *  Copyright (C) 2009-2012 Broadcom Corporation
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- ******************************************************************************/
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 
 /*****************************************************************************
  *
- *  Filename:      btif_sm.h
+ *  Filename:      btc_sm.h
  *
- *  Description:   Generic BTIF state machine API
+ *  Description:   Generic BTC state machine API
  *
  *****************************************************************************/
 
-#ifndef BTIF_SM_H
-#define BTIF_SM_H
+#ifndef __BTC_SM_H__
+#define __BTC_SM_H__
 
 /*****************************************************************************
 **  Constants & Macros
 ******************************************************************************/
 
 /* Generic Enter/Exit state machine events */
-#define BTIF_SM_ENTER_EVT 0xFFFF
-#define BTIF_SM_EXIT_EVT  0xFFFE
+#define BTC_SM_ENTER_EVT 0xFFFF
+#define BTC_SM_EXIT_EVT  0xFFFE
 
 
 /*****************************************************************************
 **  Type definitions and return values
 ******************************************************************************/
-typedef UINT32 btif_sm_state_t;
-typedef UINT32 btif_sm_event_t;
-typedef void *btif_sm_handle_t;
-typedef BOOLEAN(*btif_sm_handler_t)(btif_sm_event_t event, void *data);
+typedef UINT32 btc_sm_state_t;
+typedef UINT32 btc_sm_event_t;
+typedef void *btc_sm_handle_t;
+typedef BOOLEAN (* btc_sm_handler_t)(btc_sm_event_t event, void *data);
 
 
 /*****************************************************************************
@@ -54,65 +51,65 @@ typedef BOOLEAN(*btif_sm_handler_t)(btif_sm_event_t event, void *data);
 
 /*****************************************************************************
 **
-** Function     btif_sm_init
+** Function     btc_sm_init
 **
 ** Description  Initializes the state machine with the state handlers
 **              The caller should ensure that the table and the corresponding
 **              states match. The location that 'p_handlers' points to shall
-**              be available until the btif_sm_shutdown API is invoked.
+**              be available until the btc_sm_shutdown API is invoked.
 **
 ** Returns      Returns a pointer to the initialized state machine handle.
 **
 ******************************************************************************/
-btif_sm_handle_t btif_sm_init(const btif_sm_handler_t *p_handlers,
-                              btif_sm_state_t initial_state);
+btc_sm_handle_t btc_sm_init(const btc_sm_handler_t *p_handlers,
+                              btc_sm_state_t initial_state);
 
 /*****************************************************************************
 **
-** Function     btif_sm_shutdown
+** Function     btc_sm_shutdown
 **
 ** Description  Tears down the state machine
 **
 ** Returns      None
 **
 ******************************************************************************/
-void btif_sm_shutdown(btif_sm_handle_t handle);
+void btc_sm_shutdown(btc_sm_handle_t handle);
 
 /*****************************************************************************
 **
-** Function     btif_sm_get_state
+** Function     btc_sm_get_state
 **
 ** Description  Fetches the current state of the state machine
 **
 ** Returns      Current state
 **
 ******************************************************************************/
-btif_sm_state_t btif_sm_get_state(btif_sm_handle_t handle);
+btc_sm_state_t btc_sm_get_state(btc_sm_handle_t handle);
 
 /*****************************************************************************
 **
-** Function     btif_sm_dispatch
+** Function     btc_sm_dispatch
 **
 ** Description  Dispatches the 'event' along with 'data' to the current state handler
 **
 ** Returns      Returns BT_STATUS_OK on success, BT_STATUS_FAIL otherwise
 **
 ******************************************************************************/
-bt_status_t btif_sm_dispatch(btif_sm_handle_t handle, btif_sm_event_t event,
+bt_status_t btc_sm_dispatch(btc_sm_handle_t handle, btc_sm_event_t event,
                              void *data);
 
 /*****************************************************************************
 **
-** Function     btif_sm_change_state
+** Function     btc_sm_change_state
 **
-** Description  Make a transition to the new 'state'. The 'BTIF_SM_EXIT_EVT'
+** Description  Make a transition to the new 'state'. The 'BTC_SM_EXIT_EVT'
 **              shall be invoked before exiting the current state. The
-**              'BTIF_SM_ENTER_EVT' shall be invoked before entering the new state
+**              'BTC_SM_ENTER_EVT' shall be invoked before entering the new state
 **
 **
 ** Returns      Returns BT_STATUS_OK on success, BT_STATUS_FAIL otherwise
 **
 ******************************************************************************/
-bt_status_t btif_sm_change_state(btif_sm_handle_t handle, btif_sm_state_t state);
+bt_status_t btc_sm_change_state(btc_sm_handle_t handle, btc_sm_state_t state);
 
-#endif /* BTIF_SM_H */
+#endif /* __BTC_SM_H__ */
