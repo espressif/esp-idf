@@ -45,6 +45,7 @@ extern void btdm_controller_deinit(void);
 extern int btdm_controller_enable(esp_bt_mode_t mode);
 extern int btdm_controller_disable(esp_bt_mode_t mode);
 extern void btdm_rf_bb_init(void);
+extern int esp_read_mac(uint8_t *mac, int type);
 
 /* VHCI function interface */
 typedef struct vhci_host_callback {
@@ -78,7 +79,7 @@ struct osi_funcs_t {
     void *(*_mutex_create)(void);
     int32_t (*_mutex_lock)(void *mutex);
     int32_t (*_mutex_unlock)(void *mutex);
-    esp_err_t (* _read_efuse_mac)(uint8_t mac[6]);
+    int32_t (* _read_efuse_mac)(uint8_t mac[6]);
 };
 
 /* Static variable declare */
@@ -129,6 +130,11 @@ static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex)
     return (int32_t)xSemaphoreGive(mutex);
 }
 
+static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
+{
+    return esp_read_mac(mac, ESP_MAC_BT);
+}
+
 static struct osi_funcs_t osi_funcs = {
     ._set_isr = xt_set_interrupt_handler,
     ._ints_on = xt_ints_on,
@@ -141,7 +147,7 @@ static struct osi_funcs_t osi_funcs = {
     ._mutex_create = mutex_create_wrapper,
     ._mutex_lock = mutex_lock_wrapper,
     ._mutex_unlock = mutex_unlock_wrapper,
-    ._read_efuse_mac = esp_efuse_read_mac,
+    ._read_efuse_mac = read_mac_wrapper
 };
 
 bool esp_vhci_host_check_send_available(void)

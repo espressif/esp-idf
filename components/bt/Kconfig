@@ -3,7 +3,7 @@ menuconfig BT_ENABLED
     help
         Select this option to enable Bluetooth stack and show the submenu with Bluetooth configuration choices.
 
-config ESP_MAC_OFFSET_BT_
+config ESP_MAC_OFFSET_BT
     int "MAC address offset value of WiFi station"
     depends on BT_ENABLED
     range 0 255

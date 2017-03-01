@@ -97,13 +97,13 @@ esp_err_t esp_read_mac(uint8_t* mac, int interface)
         break;
 #endif
 #if CONFIG_BT_ENABLED
-    case ESP_MAC_WIFI_BT:
+    case ESP_MAC_BT:
         memcpy(mac, efuse_mac, 6);
         mac[5] += CONFIG_ESP_MAC_OFFSET_BT;
         break;
 #endif
 #if CONFIG_ETHERNET
-    case ESP_MAC_WIFI_ETH:
+    case ESP_MAC_ETH:
         memcpy(mac, efuse_mac, 6);
         mac[5] += CONFIG_ESP_MAC_OFFSET_ETH;
         break;
