@@ -34,3 +34,4 @@
 #define SPEED_INDICATION_10T               BIT(2)
 #define DUPLEX_INDICATION_FULL             BIT(4)
 
+extern const eth_config_t lan8720_default_ethernet_phy_config;

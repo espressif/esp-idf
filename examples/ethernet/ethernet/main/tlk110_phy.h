@@ -32,3 +32,5 @@
 
 #define PHY_RESET_CONTROL_REG           (0x1f)
 #define SOFTWARE_RESET                     BIT(15)
+
+extern const eth_config_t tlk110_default_ethernet_phy_config;

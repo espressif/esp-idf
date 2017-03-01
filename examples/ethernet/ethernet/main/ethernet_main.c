@@ -33,22 +33,18 @@
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 
-extern void phy_update_config(eth_config_t *config);
+#ifdef CONFIG_PHY_LAN8720
+#include "lan8720_phy.h"
+#endif
+#ifdef CONFIG_PHY_TLK110
+#include "tlk110_phy.h"
+#endif
 
 static const char *TAG = "eth_demo";
 
 #define PIN_PHY_POWER 17
 #define PIN_SMI_MDC   23
 #define PIN_SMI_MDIO  18
-
-// select phy device
-//extern eth_config_t lan8720_default_ethernet_phy_config;
-//#define PHY_CONFIG lan8720_default_ethernet_phy_config
-extern eth_config_t tlk110_default_ethernet_phy_config;
-#define PHY_CONFIG tlk110_default_ethernet_phy_config
-
-// uncomment for console debug messages
-#define DEMO_DEBUG 1
 
 
 void phy_device_power_enable(bool enable)
@@ -57,14 +53,10 @@ void phy_device_power_enable(bool enable)
     gpio_set_direction(PIN_PHY_POWER,GPIO_MODE_OUTPUT);
     if(enable == true) {
         gpio_set_level(PIN_PHY_POWER, 1);
-#ifdef DEMO_DEBUG
-        ESP_LOGI(TAG, "phy_device_power_enable(TRUE)");
-#endif
+        ESP_LOGD(TAG, "phy_device_power_enable(TRUE)");
     } else {
         gpio_set_level(PIN_PHY_POWER, 0);
-#ifdef DEMO_DEBUG
-        ESP_LOGI(TAG, "power_enable(FALSE)");
-#endif
+        ESP_LOGD(TAG, "power_enable(FALSE)");
     }
 }
 
@@ -119,7 +111,12 @@ void app_main()
     tcpip_adapter_init();
     esp_event_loop_init(NULL, NULL);
 
-    eth_config_t config = PHY_CONFIG;
+#ifdef CONFIG_PHY_LAN8720
+    eth_config_t config = lan8720_default_ethernet_phy_config;
+#endif
+#ifdef CONFIG_PHY_TLK110
+    eth_config_t config = tlk110_default_ethernet_phy_config;
+#endif
     config.gpio_config = eth_gpio_config_rmii;
     config.tcpip_input = tcpip_adapter_eth_input;
     config.phy_power_enable = phy_device_power_enable;
