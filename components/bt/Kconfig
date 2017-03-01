@@ -3,6 +3,15 @@ menuconfig BT_ENABLED
     help
         Select this option to enable Bluetooth stack and show the submenu with Bluetooth configuration choices.
 
+config ESP_MAC_OFFSET_BT
+    int "MAC address offset value of WiFi station"
+    depends on BT_ENABLED
+    range 0 255
+    default 2
+    help
+       The offset value of bluetooth MAC address from the MAC address which is read from efuse.
+       This offset value must be different from that of WiFi softap, WiFi station and ethernet.
+
 config BTC_TASK_STACK_SIZE
 	int "Bluetooth event (callback to application) task stack size"
     depends on BT_ENABLED

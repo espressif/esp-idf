@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
+
 #include "esp_system.h"
 #include "esp_attr.h"
 #include "esp_wifi.h"
@@ -72,6 +74,47 @@ esp_err_t esp_efuse_read_mac(uint8_t* mac)
 
 esp_err_t system_efuse_read_mac(uint8_t mac[6]) __attribute__((alias("esp_efuse_read_mac")));
 
+esp_err_t esp_read_mac(uint8_t* mac, int interface)
+{
+    uint8_t efuse_mac[6];
+
+    if (mac == NULL) {
+        ESP_LOGE(TAG, "mac address param is NULL");
+        abort();
+    }
+
+    esp_efuse_read_mac(efuse_mac);
+
+    switch (interface) {
+#if CONFIG_WIFI_ENABLED
+    case ESP_MAC_WIFI_STA:
+        memcpy(mac, efuse_mac, 6);
+        mac[5] += CONFIG_ESP_MAC_OFFSET_WIFI_STA;
+        break;
+    case ESP_MAC_WIFI_SOFTAP:
+        memcpy(mac, efuse_mac, 6);
+        mac[5] += CONFIG_ESP_MAC_OFFSET_WIFI_SOFTAP;
+        break;
+#endif
+#if CONFIG_BT_ENABLED
+    case ESP_MAC_BT:
+        memcpy(mac, efuse_mac, 6);
+        mac[5] += CONFIG_ESP_MAC_OFFSET_BT;
+        break;
+#endif
+#if CONFIG_ETHERNET
+    case ESP_MAC_ETH:
+        memcpy(mac, efuse_mac, 6);
+        mac[5] += CONFIG_ESP_MAC_OFFSET_ETH;
+        break;
+#endif
+    default:
+        ESP_LOGW(TAG, "wrong mac type"); 
+        break;
+    }
+  
+    return ESP_OK;
+}
 
 void esp_restart_noos() __attribute__ ((noreturn));
 

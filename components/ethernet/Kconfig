@@ -4,6 +4,15 @@ menuconfig ETHERNET
     help
         Select this option to enable ethernet driver and show the submenu with ethernet features.
 
+config ESP_MAC_OFFSET_ETH
+    int "MAC address offset value of ethernet"
+    depends on ETHERNET
+    range 0 255
+    default 3
+    help
+       The offset value of ethernet MAC address from the MAC address which is read from efuse.
+       This offset value must be different from that of WiFi softap, bluetooth and WiFi station.
+
 config DMA_RX_BUF_NUM
     int "Number of DMA RX buffers"
     range 3 20
