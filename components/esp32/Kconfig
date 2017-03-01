@@ -481,6 +481,24 @@ menuconfig WIFI_ENABLED
     help
        Select this option to enable WiFi stack and show the submenu with WiFi configuration choices.
 
+config ESP_MAC_OFFSET_WIFI_STA
+    int "MAC address offset value of WiFi station"
+    depends on WIFI_ENABLED
+    range 0 255
+    default 0
+    help
+       The offset value of WiFi station MAC address from the MAC address which is read from efuse.
+       This offset value must be different from that of WiFi softap, bluetooth and ethernet.
+
+config ESP_MAC_OFFSET_WIFI_SOFTAP
+    int "MAC address offset value of WiFi softap"
+    depends on WIFI_ENABLED
+    range 0 255
+    default 1
+    help
+       The offset value of WiFi softap MAC address from the MAC address which is read from efuse.
+       This offset value must be different from that of WiFi station, bluetooth and ethernet.
+
 config SW_COEXIST_ENABLE
     bool "Software controls WiFi/Bluetooth coexistence"
     depends on WIFI_ENABLED && BT_ENABLED

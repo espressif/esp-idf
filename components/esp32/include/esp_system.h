@@ -24,6 +24,13 @@
 extern "C" {
 #endif
 
+enum {
+    ESP_MAC_WIFI_STA,
+    ESP_MAC_WIFI_SOFTAP,
+    ESP_MAC_BT,
+    ESP_MAC_ETH,
+};
+
 /**
   * @attention  application don't need to call this function anymore. It do nothing and will
   *             be removed in future version.
@@ -114,6 +121,19 @@ esp_err_t esp_efuse_read_mac(uint8_t* mac);
   * @return ESP_OK on success
   */
 esp_err_t system_efuse_read_mac(uint8_t mac[6]) __attribute__ ((deprecated));
+
+/**
+  * @brief  Read hardware MAC address and set MAC address of the interface.
+  *
+  * This function first reads hardware MAC address from efuse. Then set the MAC address of the interface
+  * including wifi station, wifi softap, bluetooth and ethernet according to the offset value in menuconfig.
+  *
+  * @param  mac  MAC address of the interface, length: 6 bytes.
+  * @param  interface  interface, 0:wifi station, 1:wifi softap, 2:bluetooth, 3:ethernet.
+  *
+  * @return ESP_OK on success
+  */
+esp_err_t esp_read_mac(uint8_t* mac, int interface);
 
 /**
  * Get SDK version

@@ -75,8 +75,7 @@ esp_err_t emac_post(emac_sig_t sig, emac_par_t par);
 
 static void emac_macaddr_init(void)
 {
-    esp_efuse_read_mac(&(emac_config.macaddr[0]));
-    emac_config.macaddr[5] = emac_config.macaddr[5] + 3;
+    esp_read_mac(&(emac_config.macaddr[0]), ESP_MAC_ETH);
 }
 
 void esp_eth_get_mac(uint8_t mac[6])
