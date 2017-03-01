@@ -1054,9 +1054,6 @@ _xt_coproc_exc:
 
     /* Co-processor exception occurred outside a thread (not supported). */
 .L_xt_coproc_invalid:
-    #if XCHAL_HAVE_DEBUG
-    break   1, 1                            /* unhandled user exception */
-    #endif
     movi    a0,PANIC_RSN_COPROCEXCEPTION
     wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* not in a thread (invalid) */

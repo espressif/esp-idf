@@ -1250,7 +1250,7 @@ TickType_t xTaskGetTickCountFromISR( void ) PRIVILEGED_FUNCTION;
 
 /**
  * task. h
- * <PRE>uint16_t uxTaskGetNumberOfTasks( void );</PRE>
+ * <PRE>UBaseType_t uxTaskGetNumberOfTasks( void );</PRE>
  *
  * @return The number of tasks that the real time kernel is currently managing.
  * This includes all ready, blocked and suspended tasks.  A task that
