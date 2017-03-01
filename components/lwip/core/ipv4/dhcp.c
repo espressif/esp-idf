@@ -550,10 +550,17 @@ dhcp_t1_timeout(struct netif *netif)
        DHCP_STATE_RENEWING, not DHCP_STATE_BOUND */
     dhcp_renew(netif);
     /* Calculate next timeout */
+#if ESP_DHCP_TIMER
+    if (((netif->dhcp->t2_timeout - dhcp->lease_used) / 2) >= (60 + DHCP_COARSE_TIMER_SECS / 2) )
+    {
+       netif->dhcp->t1_renew_time = (netif->dhcp->t2_timeout - dhcp->lease_used) / 2;
+    }
+#else
     if (((netif->dhcp->t2_timeout - dhcp->lease_used) / 2) >= ((60 + DHCP_COARSE_TIMER_SECS / 2) / DHCP_COARSE_TIMER_SECS))
     {
        netif->dhcp->t1_renew_time = ((netif->dhcp->t2_timeout - dhcp->lease_used) / 2);
     }
+#endif
   }
 }
 
@@ -576,10 +583,17 @@ dhcp_t2_timeout(struct netif *netif)
        DHCP_STATE_REBINDING, not DHCP_STATE_BOUND */
     dhcp_rebind(netif);
     /* Calculate next timeout */
+#if ESP_DHCP_TIMER
+    if (((netif->dhcp->t0_timeout - dhcp->lease_used) / 2) >= (60 + DHCP_COARSE_TIMER_SECS / 2))
+    {
+       netif->dhcp->t2_rebind_time = ((netif->dhcp->t0_timeout - dhcp->lease_used) / 2);
+    }
+#else
     if (((netif->dhcp->t0_timeout - dhcp->lease_used) / 2) >= ((60 + DHCP_COARSE_TIMER_SECS / 2) / DHCP_COARSE_TIMER_SECS))
     {
        netif->dhcp->t2_rebind_time = ((netif->dhcp->t0_timeout - dhcp->lease_used) / 2);
     }
+#endif
   }
 }
 
@@ -1060,6 +1074,47 @@ dhcp_bind(struct netif *netif)
   /* reset time used of lease */
   dhcp->lease_used = 0;
 
+#if ESP_DHCP_TIMER
+  if (dhcp->offered_t0_lease != 0xffffffffUL) {
+     /* set renewal period timer */
+     LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_bind(): t0 renewal timer %"U32_F" secs\n", dhcp->offered_t0_lease));
+     timeout = dhcp->offered_t0_lease;
+     dhcp->t0_timeout = timeout;
+     if (dhcp->t0_timeout == 0) {
+       dhcp->t0_timeout = 120;
+     }
+     LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_bind(): set request timeout %"U32_F" msecs\n", dhcp->offered_t0_lease*1000));
+  }
+
+  /* temporary DHCP lease? */
+  if (dhcp->offered_t1_renew != 0xffffffffUL) {
+    /* set renewal period timer */
+    LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_bind(): t1 renewal timer %"U32_F" secs\n", dhcp->offered_t1_renew));
+    timeout = dhcp->offered_t1_renew;
+    dhcp->t1_timeout = timeout;
+    if (dhcp->t1_timeout == 0) {
+      dhcp->t1_timeout = dhcp->t0_timeout>>1;
+    }
+    LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_bind(): set request timeout %"U32_F" msecs\n", dhcp->offered_t1_renew*1000));
+    dhcp->t1_renew_time = dhcp->t1_timeout;
+  }
+  /* set renewal period timer */
+  if (dhcp->offered_t2_rebind != 0xffffffffUL) {
+    LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_bind(): t2 rebind timer %"U32_F" secs\n", dhcp->offered_t2_rebind));
+    timeout = dhcp->offered_t2_rebind;
+    dhcp->t2_timeout = timeout;
+    if (dhcp->t2_timeout == 0) {
+      dhcp->t2_timeout = (dhcp->t0_timeout>>3)*7;
+    }
+    LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_bind(): set request timeout %"U32_F" msecs\n", dhcp->offered_t2_rebind*1000));
+    dhcp->t2_rebind_time = dhcp->t2_timeout;
+  }
+
+  /* If we have sub 1 minute lease, t2 and t1 will kick in at the same time. */
+  if ((dhcp->t1_timeout >= dhcp->t2_timeout) && (dhcp->t2_timeout > 0)) {
+    dhcp->t1_timeout = 0;
+  }
+#else
   if (dhcp->offered_t0_lease != 0xffffffffUL) {
      /* set renewal period timer */
      LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_bind(): t0 renewal timer %"U32_F" secs\n", dhcp->offered_t0_lease));
@@ -1108,6 +1163,7 @@ dhcp_bind(struct netif *netif)
   if ((dhcp->t1_timeout >= dhcp->t2_timeout) && (dhcp->t2_timeout > 0)) {
     dhcp->t1_timeout = 0;
   }
+#endif
 
   if (dhcp->subnet_mask_given) {
     /* copy offered network mask */
