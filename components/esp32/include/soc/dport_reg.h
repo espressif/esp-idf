@@ -1038,8 +1038,8 @@
 #define DPORT_CORE_RST_EN_REG          (DR_REG_DPORT_BASE + 0x0D0)
 /* DPORT_CORE_RST : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define DPROT_RW_BTLP_RST (BIT(10))
-#define DPROT_RW_BTMAC_RST (BIT(9))
+#define DPORT_RW_BTLP_RST (BIT(10))
+#define DPORT_RW_BTMAC_RST (BIT(9))
 #define DPORT_MACPWR_RST (BIT(8))
 #define DPORT_EMAC_RST (BIT(7))
 #define DPORT_SDIO_HOST_RST (BIT(6))
