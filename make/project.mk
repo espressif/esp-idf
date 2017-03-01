@@ -134,7 +134,7 @@ endif
 
 # If TEST_COMPONENTS is set, create variables for building unit tests
 ifdef TEST_COMPONENTS
-override TEST_COMPONENTS := $(foreach comp,$(TEST_COMPONENTS),$(wildcard $(IDF_PATH)/components/$(comp)/test))
+override TEST_COMPONENTS := $(foreach comp,$(TEST_COMPONENTS),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
 TEST_COMPONENT_PATHS := $(TEST_COMPONENTS)
 TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENTS),$(lastword $(subst /, ,$(dir $(comp))))_test)
 endif
