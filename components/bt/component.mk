@@ -67,6 +67,7 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/btc/profile/esp/blufi	\
 			bluedroid/btc/profile/std/gap		\
 			bluedroid/btc/profile/std/gatt		\
+			bluedroid/btc/profile/std/a2dp		\
 			bluedroid/btc/profile			\
 			bluedroid/stack/btm			\
 			bluedroid/stack/btu			\
