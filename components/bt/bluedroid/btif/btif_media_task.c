@@ -57,7 +57,7 @@
 #include "thread.h"
 
 #include "bt_defs.h"
-#include "btif_av.h"
+#include "btc_av.h"
 #include "btif_sm.h"
 #include "btif_util.h"
 #if (BTA_AV_SINK_INCLUDED == TRUE)
@@ -695,7 +695,7 @@ static void btif_media_thread_init(UNUSED_ATTR void *context)
 {
     memset(&btif_media_cb, 0, sizeof(btif_media_cb));
     LOG_INFO("media thread init\n");
-    btif_media_cb.av_sm_hdl = btif_av_get_sm_handle();
+    btif_media_cb.av_sm_hdl = btc_av_get_sm_handle();
     raise_priority_a2dp(TASK_HIGH_MEDIA);
     media_task_running = MEDIA_TASK_STATE_ON;
 }

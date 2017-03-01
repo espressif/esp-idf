@@ -19,16 +19,15 @@
  *  Description:   AV implementation
  *
  *****************************************************************************/
-
-#include "bt_trace.h"
 #include <string.h>
-
+#include "bt_trace.h"
 #include "bt_defs.h"
 #include "esp_bt_defs.h"
 #include "esp_a2dp_api.h"
 #include "allocator.h"
-
+#include "btc_dm.h"
 #include "btc_av.h"
+#include "btc_avrc.h"
 #include "btif_util.h"
 #include "btc_profile_queue.h"
 #include "bta_api.h"
@@ -119,7 +118,7 @@ else\
     case BTA_AV_RC_FEAT_EVT: \
     case BTA_AV_REMOTE_RSP_EVT: \
     { \
-         btif_rc_handler(e, d);\
+         btc_rc_handler(e, d);\
     }break; \
 
 static BOOLEAN btc_av_state_idle_handler(btif_sm_event_t event, void *data);
@@ -141,9 +140,6 @@ static void btc_av_event_free_data(btif_sm_event_t event, void *p_data);
 /*************************************************************************
 ** Extern functions
 *************************************************************************/
-extern void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data);
-extern BOOLEAN btif_rc_get_connected_peer(BD_ADDR peer_addr);
-extern void btif_rc_check_handle_pending_play (BD_ADDR peer_addr, BOOLEAN bSendToApp);
 
 extern tBTA_AV_CO_FUNCTS bta_av_a2d_cos;
 /*****************************************************************************
@@ -218,7 +214,7 @@ static void btc_initiate_av_open_tmr_hdlr(TIMER_LIST_ENT *tle)
     btc_av_connect_req_t connect_req;
     UNUSED(tle);
     /* is there at least one RC connection - There should be */
-    if (btif_rc_get_connected_peer(peer_addr)) {
+    if (btc_rc_get_connected_peer(peer_addr)) {
         LOG_DEBUG("%s Issuing connect to the remote RC peer", __FUNCTION__);
         /* In case of AVRCP connection request, we will initiate SRC connection */
         connect_req.target_bda = (bt_bdaddr_t *)&peer_addr;
@@ -325,7 +321,7 @@ static BOOLEAN btc_av_state_idle_handler(btif_sm_event_t event, void *p_data)
         tle_av_open_on_rc.param = (UINT32)btc_initiate_av_open_tmr_hdlr;
         btu_start_timer(&tle_av_open_on_rc, BTU_TTYPE_USER_FUNC,
                         BTC_TIMEOUT_AV_OPEN_ON_RC_SECS);
-        btif_rc_handler(event, p_data);
+        btc_rc_handler(event, p_data);
         break;
 
     case BTA_AV_REMOTE_CMD_EVT:
@@ -333,7 +329,7 @@ static BOOLEAN btc_av_state_idle_handler(btif_sm_event_t event, void *p_data)
     case BTA_AV_META_MSG_EVT:
     case BTA_AV_RC_FEAT_EVT:
     case BTA_AV_REMOTE_RSP_EVT:
-        btif_rc_handler(event, (tBTA_AV *)p_data);
+        btc_rc_handler(event, (tBTA_AV *)p_data);
         break;
 
     case BTA_AV_RC_CLOSE_EVT:
@@ -341,7 +337,7 @@ static BOOLEAN btc_av_state_idle_handler(btif_sm_event_t event, void *p_data)
             LOG_DEBUG("BTA_AV_RC_CLOSE_EVT: Stopping AV timer.");
             btu_stop_timer(&tle_av_open_on_rc);
         }
-        btif_rc_handler(event, p_data);
+        btc_rc_handler(event, p_data);
         break;
 
     default:
@@ -411,11 +407,11 @@ static BOOLEAN btc_av_state_opening_handler(btif_sm_event_t event, void *p_data)
         btif_sm_change_state(btc_av_cb.sm_handle, av_state);
         if (btc_av_cb.peer_sep == AVDT_TSEP_SNK) {
             /* if queued PLAY command,  send it now */
-            btif_rc_check_handle_pending_play(p_bta_data->open.bd_addr,
+            btc_rc_check_handle_pending_play(p_bta_data->open.bd_addr,
                                               (p_bta_data->open.status == BTA_AV_SUCCESS));
         } else if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
             /* if queued PLAY command,  send it now */
-            btif_rc_check_handle_pending_play(p_bta_data->open.bd_addr, FALSE);
+            btc_rc_check_handle_pending_play(p_bta_data->open.bd_addr, FALSE);
             /* Bring up AVRCP connection too */
             BTA_AvOpenRc(btc_av_cb.bta_handle);
         }
@@ -516,7 +512,7 @@ static BOOLEAN btc_av_state_closing_handler(btif_sm_event_t event, void *p_data)
 
     /* Handle the RC_CLOSE event for the cleanup */
     case BTA_AV_RC_CLOSE_EVT:
-        btif_rc_handler(event, (tBTA_AV *)p_data);
+        btc_rc_handler(event, (tBTA_AV *)p_data);
         break;
 
     default:
@@ -946,9 +942,9 @@ bt_status_t btc_av_init()
         btc_av_cb.sm_handle =
             btif_sm_init((const btif_sm_handler_t *)btc_av_state_handlers, BTC_AV_STATE_IDLE);
 
-        btif_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
+        btc_dm_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-        btif_enable_service(BTA_A2DP_SINK_SERVICE_ID);
+        btc_dm_enable_service(BTA_A2DP_SINK_SERVICE_ID);
 #endif
 
         btif_a2dp_on_init();

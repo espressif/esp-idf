@@ -79,13 +79,13 @@ static void bt_app_handle_evt(uint16_t event, void *p_param)
 
 	esp_bt_gap_set_device_name(dev_name);
 
-        // esp_a2d_register_callback(&bt_app_a2d_cb);
-        // esp_a2d_register_data_callback(bt_app_a2d_data_cb);
+        esp_a2d_register_callback(&bt_app_a2d_cb);
+        esp_a2d_register_data_callback(bt_app_a2d_data_cb);
 
-        // esp_a2d_sink_init();
+        esp_a2d_sink_init();
 
-        // esp_avrc_ct_init();
-        // esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
+        esp_avrc_ct_init();
+        esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
         
         esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         break;
