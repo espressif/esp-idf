@@ -233,6 +233,12 @@ size_t spi_flash_cache2phys(const void *cached);
  */
 const void *spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory);
 
+/** @brief Check at runtime if flash cache is enabled on both CPUs
+ *
+ * @return true if both CPUs have flash cache enabled, false otherwise.
+ */
+bool spi_flash_cache_enabled();
+
 /**
  * @brief SPI flash critical section enter function.
  */

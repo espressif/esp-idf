@@ -62,6 +62,7 @@ Functions
 .. doxygenfunction:: spi_flash_mmap_dump
 .. doxygenfunction:: spi_flash_cache2phys
 .. doxygenfunction:: spi_flash_phys2cache
+.. doxygenfunction:: spi_flash_cache_enabled
 .. doxygenfunction:: esp_partition_find
 .. doxygenfunction:: esp_partition_find_first
 .. doxygenfunction:: esp_partition_get
