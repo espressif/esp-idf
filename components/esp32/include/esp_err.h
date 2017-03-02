@@ -44,8 +44,15 @@ typedef int32_t esp_err_t;
  * Macro which can be used to check the error code,
  * and terminate the program in case the code is not ESP_OK.
  * Prints the failed statement to serial output.
+ *
+ * Note: this macro is not safe to use if flash cache
+ * may be disabled.
  */
+#ifdef NDEBUG
+#define ESP_ERROR_CHECK(x)
+#else
 #define ESP_ERROR_CHECK(x)   do { esp_err_t rc = (x); if (rc != ESP_OK) { ESP_LOGE("err", "esp_err_t = %d", rc); assert(0 && #x);} } while(0);
+#endif
 
 #ifdef __cplusplus
 }
