@@ -1,9 +1,9 @@
 import yaml
 import os
-import os.path
 import re
 import sys
 import shutil
+import CreateSectionTable
 
 
 MODULE_MAP = yaml.load(open("ModuleDefinition.yml", "r"))
@@ -39,40 +39,28 @@ IDF_PATH = os.getcwd()
 
 class Parser(object):
     @classmethod
-    def parse_test_folders(cls):
-        test_folder_paths = list()
-        os.chdir(os.path.join(IDF_PATH, "components"))
-        component_dirs = [d for d in os.listdir(".") if os.path.isdir(d)]
-        for dir in component_dirs:
-            os.chdir(dir)
-            if "test" in os.listdir("."):
-                test_folder_paths.append(os.path.join(os.getcwd(), "test"))
-            os.chdir("..")
-        Parser.parse_test_files(test_folder_paths)
-
-    @classmethod
-    def parse_test_files(cls, test_folder_paths):
-        for path in test_folder_paths:
-            os.chdir(path)
-            for file_path in os.listdir("."):
-                if file_path[-2:] == ".c":
-                    Parser.read_test_file(os.path.join(os.getcwd(), file_path), len(test_cases)+1)
+    def parse_test_addresses(cls):
+        table = CreateSectionTable.SectionTable(os.path.join(IDF_PATH, "tools", "unit-test-app", "build", "tmp"))
+        file_index = 1
+        test_index = 1
+        with open(os.path.join(IDF_PATH, "tools", "unit-test-app", "build", "tests"), "r") as file:
+            for line in file:
+                line = line.split()
+                test = int(line[0],16)
+                section = line[3]
+                name_addr = table.get_unsigned_int(section, test, 4)
+                desc_addr = table.get_unsigned_int(section, test + 4, 4)
+                name = table.get_string("any", name_addr)
+                desc = table.get_string("any", desc_addr)
+                Parser.parse_test_cases(file_index, test_index, "%s, %s" % (name, desc))
+                file_index += 1
+                test_index += 1
         os.chdir(os.path.join("..", ".."))
         Parser.dump_test_cases(test_cases)
 
     @classmethod
-    def read_test_file(cls, test_file_path, file_index):
-        test_index = 0
-        with open(test_file_path, "r") as file:
-            for line in file:
-                if re.match("TEST_CASE", line):
-                    test_index += 1
-                    tags = re.split(r"[\[\]\"]", line)
-                    Parser.parse_test_cases(file_index, test_index, tags)
-
-
-    @classmethod
     def parse_test_cases(cls, file_index, test_index, tags):
+        tags = re.split(r"[\[\]\"]", tags)
         ci_ready = "Yes"
         test_env = "UT_T1_1"
         for tag in tags:
@@ -80,7 +68,7 @@ class Parser(object):
                 ci_ready = "No"
             if re.match("test_env=", tag):
                 test_env = tag[9:]
-        module_name = tags[4]
+        module_name = tags[1]
         try:
             MODULE_MAP[module_name]
         except KeyError:
@@ -91,14 +79,14 @@ class Parser(object):
         test_case = dict(TEST_CASE_PATTERN)
         test_case.update({"module": MODULE_MAP[module_name]['module'], 
                           "CI ready": ci_ready,
-                          "cmd set": ["IDFUnitTest/UnitTest", [tags[1]]],
+                          "cmd set": ["IDFUnitTest/UnitTest", [tags[0][:-2]]],
                           "ID": id,
                           "test point 2": module_name,
-                          "steps": tags[1],
-                          "comment": tags[1],
+                          "steps": tags[0][:-2],
+                          "comment": tags[0][:-2],
                           "test environment": test_env,
                           "sub module": MODULE_MAP[module_name]['sub module'],
-                          "summary": tags[1]})
+                          "summary": tags[0][:-2]})
         if test_case["CI ready"] == "Yes":
             if test_ids.has_key(test_env):
                 test_ids[test_env].append(id)
@@ -160,7 +148,10 @@ class Parser(object):
 
 
 def main():
-    Parser.parse_test_folders()
+    os.chdir(os.path.join(IDF_PATH, "tools", "unit-test-app", "build"))
+    os.system('xtensa-esp32-elf-objdump -t unit-test-app.elf | grep test_desc > tests')
+    os.system('xtensa-esp32-elf-objdump -s unit-test-app.elf > tmp')
+    Parser.parse_test_addresses()
     Parser.parse_gitlab_ci()
     Parser.dump_ci_config()
     Parser.copy_module_def_file()
