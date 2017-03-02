@@ -31,18 +31,6 @@
 #define ESP_TASK_PRIO_MAX (configMAX_PRIORITIES)
 #define ESP_TASK_PRIO_MIN (0)
 
-/* Wifi library task */
-#define ESP_TASKD_WATCHDOG_PRIO       (ESP_TASK_PRIO_MAX - 1)
-#define ESP_TASKD_WATCHDOG_STACK      2048
-#define ESP_TASK_WPA2_PRIO            (ESP_TASK_PRIO_MAX - 1)
-#define ESP_TASK_WPA2_STACK           2048
-#define ESP_TASKD_WIFI_PRIO           (ESP_TASK_PRIO_MAX - 2)
-#define ESP_TASKD_WIFI_STACK          8196
-#define ESP_TASKD_WIFI_TIMER_PRIO     (ESP_TASK_PRIO_MAX - 3)
-#define ESP_TASKD_WIFI_TIMER_STACK    2048
-#define ESP_TASK_WPS_PRIO             (ESP_TASK_PRIO_MIN + 2)
-#define ESP_TASK_WPS_STACK            2048
-
 /* Bt contoller Task */
 /* controller */
 #define ESP_TASK_BT_CONTROLLER_PRIO   (ESP_TASK_PRIO_MAX - 1)
