@@ -79,12 +79,27 @@
 #define EFUSE_RD_WIFI_MAC_CRC_HIGH_S  0
 
 #define EFUSE_BLK0_RDATA3_REG          (DR_REG_EFUSE_BASE + 0x00c)
-/* EFUSE_RD_CHIP_VER_RESERVE : RO ;bitpos:[16:9] ;default: 8'b0 ; */
+/* EFUSE_RD_CHIP_VER_REV1 : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/*description: bit is set to 1 for rev1 silicon*/
+#define EFUSE_RD_CHIP_VER_REV1  (BIT(15))
+#define EFUSE_RD_CHIP_VER_REV1_M  ((EFUSE_RD_CHIP_VER_REV1_V)<<(EFUSE_RD_CHIP_VER_REV1_S))
+#define EFUSE_RD_CHIP_VER_REV1_V  0x1
+#define EFUSE_RD_CHIP_VER_REV1_S  15
+/* EFUSE_RD_CHIP_VER_RESERVE : R/W ;bitpos:[15:12] ;default: 3'b0 ; */
 /*description: */
-#define EFUSE_RD_CHIP_VER_RESERVE  0x000000FF
+#define EFUSE_RD_CHIP_VER_RESERVE  0x00000007
 #define EFUSE_RD_CHIP_VER_RESERVE_M  ((EFUSE_RD_CHIP_VER_RESERVE_V)<<(EFUSE_RD_CHIP_VER_RESERVE_S))
-#define EFUSE_RD_CHIP_VER_RESERVE_V  0xFF
-#define EFUSE_RD_CHIP_VER_RESERVE_S  9
+#define EFUSE_RD_CHIP_VER_RESERVE_V  0x7
+#define EFUSE_RD_CHIP_VER_RESERVE_S  12
+/* EFUSE_RD_CHIP_VER : R/W ;bitpos:[11:9] ;default: 3'b0 ; */
+/*description: chip package */
+#define EFUSE_RD_CHIP_VER  0x00000007
+#define EFUSE_RD_CHIP_VER_PKG_M  ((EFUSE_RD_CHIP_VER_PKG_V)<<(EFUSE_RD_CHIP_VER_PKG_S))
+#define EFUSE_RD_CHIP_VER_PKG_V  0x7
+#define EFUSE_RD_CHIP_VER_PKG_S  9
+#define EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6  0
+#define EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5  1
+#define EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5  2
 /* EFUSE_RD_SPI_PAD_CONFIG_HD : RO ;bitpos:[8:4] ;default: 5'b0 ; */
 /*description: read for SPI_pad_config_hd*/
 #define EFUSE_RD_SPI_PAD_CONFIG_HD  0x0000001F
@@ -297,12 +312,24 @@
 #define EFUSE_WIFI_MAC_CRC_HIGH_S  0
 
 #define EFUSE_BLK0_WDATA3_REG          (DR_REG_EFUSE_BASE + 0x028)
-/* EFUSE_CHIP_VER_RESERVE : R/W ;bitpos:[16:9] ;default: 8'b0 ; */
+/* EFUSE_CHIP_VER_REV1 : R/W ;bitpos:[16] ;default: 1'b0 ; */
 /*description: */
-#define EFUSE_CHIP_VER_RESERVE  0x000000FF
+#define EFUSE_CHIP_VER_REV1  (BIT(15))
+#define EFUSE_CHIP_VER_REV1_M  ((EFUSE_CHIP_VER_REV1_V)<<(EFUSE_CHIP_VER_REV1_S))
+#define EFUSE_CHIP_VER_REV1_V  0x1
+#define EFUSE_CHIP_VER_REV1_S  15
+/* EFUSE_CHIP_VER_RESERVE : R/W ;bitpos:[15:12] ;default: 3'b0 ; */
+/*description: */
+#define EFUSE_CHIP_VER_RESERVE  0x00000007
 #define EFUSE_CHIP_VER_RESERVE_M  ((EFUSE_CHIP_VER_RESERVE_V)<<(EFUSE_CHIP_VER_RESERVE_S))
-#define EFUSE_CHIP_VER_RESERVE_V  0xFF
-#define EFUSE_CHIP_VER_RESERVE_S  9
+#define EFUSE_CHIP_VER_RESERVE_V  0x7
+#define EFUSE_CHIP_VER_RESERVE_S  12
+/* EFUSE_CHIP_VER : R/W ;bitpos:[11:9] ;default: 3'b0 ; */
+/*description: */
+#define EFUSE_CHIP_VER_PKG  0x00000007
+#define EFUSE_CHIP_VER_PKG_M  ((EFUSE_CHIP_VER_PKG_V)<<(EFUSE_CHIP_VER_PKG_S))
+#define EFUSE_CHIP_VER_PKG_V  0x7
+#define EFUSE_CHIP_VER_PKG_S  9
 /* EFUSE_SPI_PAD_CONFIG_HD : R/W ;bitpos:[8:4] ;default: 5'b0 ; */
 /*description: program for SPI_pad_config_hd*/
 #define EFUSE_SPI_PAD_CONFIG_HD  0x0000001F

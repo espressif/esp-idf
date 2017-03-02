@@ -209,6 +209,38 @@ const char* system_get_sdk_version(void)  __attribute__ ((deprecated));
  */
 const char* esp_get_idf_version(void);
 
+
+/**
+ * @brief Chip models
+ */
+typedef enum {
+    CHIP_ESP32 = 1, //!< ESP32
+} esp_chip_model_t;
+
+/**
+ * Chip feature flags, used in esp_chip_info_t
+ */
+#define CHIP_FEATURE_EMB_FLASH      BIT(0)
+#define CHIP_FEATURE_WIFI_BGN       BIT(1)
+#define CHIP_FEATURE_BLE            BIT(4)
+#define CHIP_FEATURE_BT             BIT(5)
+
+/**
+ * @brief The structure represents information about the chip
+ */
+typedef struct {
+    esp_chip_model_t model;  //!< chip model, one of esp_chip_model_t
+    uint32_t features;       //!< bit mask of CHIP_FEATURE_x feature flags
+    uint8_t cores;           //!< number of CPU cores
+    uint8_t revision;        //!< chip revision number
+} esp_chip_info_t;
+
+/**
+ * @brief Fill an esp_chip_info_t structure with information about the chip
+ * @param[out] out_info structure to be filled
+ */
+void esp_chip_info(esp_chip_info_t* out_info);
+
 #ifdef __cplusplus
 }
 #endif
