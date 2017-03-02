@@ -114,7 +114,15 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((stop_bit < UART_STOP_BITS_MAX), "stop bit error", ESP_FAIL);
+
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    //workaround for hardware bug, when uart stop bit set as 2-bit mode.
+    if (stop_bit == UART_STOP_BITS_2) {
+        stop_bit = UART_STOP_BITS_1;
+        UART[uart_num]->rs485_conf.dl1_en = 1;
+    } else {
+        UART[uart_num]->rs485_conf.dl1_en = 0;
+    }
     UART[uart_num]->conf0.stop_bit_num = stop_bit;
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
@@ -123,7 +131,12 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
 esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bit)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    (*stop_bit) = UART[uart_num]->conf0.stop_bit_num;
+    //workaround for hardware bug, when uart stop bit set as 2-bit mode.
+    if (UART[uart_num]->rs485_conf.dl1_en == 1 && UART[uart_num]->conf0.stop_bit_num == UART_STOP_BITS_1) {
+        (*stop_bit) = UART_STOP_BITS_2;
+    } else {
+        (*stop_bit) = UART[uart_num]->conf0.stop_bit_num;
+    }
     return ESP_OK;
 }
 
@@ -437,12 +450,13 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     }
     uart_set_hw_flow_ctrl(uart_num, uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
     uart_set_baudrate(uart_num, uart_config->baud_rate);
+
     UART[uart_num]->conf0.val = (
         (uart_config->parity << UART_PARITY_S)
-            | (uart_config->stop_bits << UART_STOP_BIT_NUM_S)
             | (uart_config->data_bits << UART_BIT_NUM_S)
             | ((uart_config->flow_ctrl & UART_HW_FLOWCTRL_CTS) ? UART_TX_FLOW_EN : 0x0)
             | UART_TICK_REF_ALWAYS_ON_M);
+    uart_set_stop_bits(uart_num, uart_config->stop_bits);
     return ESP_OK;
 }
 
