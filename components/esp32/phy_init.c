@@ -60,7 +60,7 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
             }
         }
         // Enable WiFi peripheral clock
-        SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x87cf);
+        SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN | DPORT_WIFI_CLK_RNG_EN);
         ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
                 init_data, calibration_data, mode);
         phy_set_wifi_mode_only(0);
@@ -84,8 +84,8 @@ esp_err_t esp_phy_rf_deinit(void)
     if (s_phy_rf_init_count == 1) {
         // Disable PHY and RF.
         phy_close_rf();
-        // Disable WiFi peripheral clock. Do not disable clock for generating random number.
-        CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, 0x874f);
+        // Disable WiFi peripheral clock. Do not disable clock for hardware RNG
+        CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN);
     } else {
 #if CONFIG_SW_COEXIST_ENABLE
         coex_deinit();
