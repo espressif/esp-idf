@@ -55,6 +55,7 @@ typedef struct {
 
 #define SDMMC_SLOT_NO_CD      ((gpio_num_t) -1)     ///< indicates that card detect line is not used
 #define SDMMC_SLOT_NO_WP      ((gpio_num_t) -1)     ///< indicates that write protect line is not used
+#define SDMMC_SLOT_WIDTH_DEFAULT 0 ///< use the default width for the slot (8 for slot 0, 4 for slot 1)
 
 /**
  * Macro defining default configuration of SDMMC host slot
@@ -62,7 +63,7 @@ typedef struct {
 #define SDMMC_SLOT_CONFIG_DEFAULT() {\
     .gpio_cd = SDMMC_SLOT_NO_CD, \
     .gpio_wp = SDMMC_SLOT_NO_WP, \
-    .width   = 4, \
+    .width   = SDMMC_SLOT_WIDTH_DEFAULT, \
 }
 
 /**
