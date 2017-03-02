@@ -34,6 +34,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_core_dump.h"
+#include "esp_spi_flash.h"
 
 /*
   Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -107,16 +108,21 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, s
 
 static bool abort_called;
 
-void abort()
+static __attribute__((noreturn)) inline void invoke_abort()
 {
-#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
-    ets_printf("abort() was called at PC 0x%08x\n", (intptr_t)__builtin_return_address(0) - 3);
-#endif
     abort_called = true;
     while(1) {
         __asm__ ("break 0,0");
         *((int*) 0) = 0;
     }
+}
+
+void abort()
+{
+#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
+    ets_printf("abort() was called at PC 0x%08x\n", (intptr_t)__builtin_return_address(0) - 3);
+#endif
+    invoke_abort();
 }
 
 
@@ -441,4 +447,11 @@ void esp_clear_watchpoint(int no)
     }
 }
 
-
+void _esp_error_check_failed(esp_err_t rc, const char *file, int line, const char *function, const char *expression)
+{
+    ets_printf("ESP_ERROR_CHECK failed: esp_err_t 0x%x at 0x%08x\n", rc, (intptr_t)__builtin_return_address(0) - 3);
+    if (spi_flash_cache_enabled()) { // strings may be in flash cache
+        ets_printf("file: \"%s\" line %d\nfunc: %s\nexpression: %s\n", file, line, function, expression);
+    }
+    invoke_abort();
+}

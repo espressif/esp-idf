@@ -2,6 +2,7 @@ TEST_PROGRAM=test_nvs
 all: $(TEST_PROGRAM)
 
 SOURCE_FILES = \
+	esp_error_check_stub.cpp \
 	$(addprefix ../src/, \
 		nvs_types.cpp \
 		nvs_api.cpp \
