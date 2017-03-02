@@ -465,7 +465,7 @@ void btc_a2dp_on_init(void)
 
 void btc_a2dp_setup_codec(void)
 {
-    tBTIF_AV_MEDIA_FEEDINGS media_feeding;
+    tBTC_AV_MEDIA_FEEDINGS media_feeding;
     tBTC_STATUS status;
 
     APPL_TRACE_EVENT("## A2DP SETUP CODEC ##\n");
@@ -476,7 +476,7 @@ void btc_a2dp_setup_codec(void)
     media_feeding.cfg.pcm.sampling_freq = 44100;
     media_feeding.cfg.pcm.bit_per_sample = 16;
     media_feeding.cfg.pcm.num_channel = 2;
-    media_feeding.format = BTIF_AV_CODEC_PCM;
+    media_feeding.format = BTC_AV_CODEC_PCM;
 
     bta_av_co_audio_set_codec(&media_feeding, &status);
 

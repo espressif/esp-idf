@@ -26,7 +26,7 @@
 #include <stdbool.h>
 #include "bta_api.h"
 #include "gki.h"
-#include "btif_av_api.h"
+#include "btc_av_api.h"
 
 
 /*******************************************************************************
@@ -77,8 +77,8 @@ typedef struct {
 /* tBTC_MEDIA_INIT_AUDIO_FEEDING msg structure */
 typedef struct {
     BT_HDR hdr;
-    tBTIF_AV_FEEDING_MODE feeding_mode;
-    tBTIF_AV_MEDIA_FEEDINGS feeding;
+    tBTC_AV_FEEDING_MODE feeding_mode;
+    tBTC_AV_MEDIA_FEEDINGS feeding;
 } tBTC_MEDIA_INIT_AUDIO_FEEDING;
 
 typedef struct {

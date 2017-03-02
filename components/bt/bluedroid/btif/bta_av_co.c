@@ -145,8 +145,8 @@ typedef struct {
     /* Connected peer information */
     tBTA_AV_CO_PEER peers[BTA_AV_NUM_STRS];
     /* Current codec configuration - access to this variable must be protected */
-    tBTIF_AV_CODEC_INFO codec_cfg;
-    tBTIF_AV_CODEC_INFO codec_cfg_setconfig; /* remote peer setconfig preference */
+    tBTC_AV_CODEC_INFO codec_cfg;
+    tBTC_AV_CODEC_INFO codec_cfg_setconfig; /* remote peer setconfig preference */
 
     tBTA_AV_CO_CP cp;
 } tBTA_AV_CO_CB;
@@ -274,7 +274,7 @@ BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info, UINT8 *p_
     *p_protect_info = 0;
 
     /* reset remote preference through setconfig */
-    bta_av_co_cb.codec_cfg_setconfig.id = BTIF_AV_CODEC_NONE;
+    bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
 
     switch (index) {
     case BTIF_SV_AV_AA_SBC_INDEX:
@@ -772,7 +772,7 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
 
             /* Check if the configuration matches the current codec config */
             switch (bta_av_co_cb.codec_cfg.id) {
-            case BTIF_AV_CODEC_SBC:
+            case BTC_AV_CODEC_SBC:
                 if ((codec_type != BTA_AV_CODEC_SBC) || memcmp(p_codec_info, bta_av_co_cb.codec_cfg.info, 5)) {
                     recfg_needed = TRUE;
                 } else if ((num_protect == 1) && (!bta_av_co_cb.cp.active)) {
@@ -785,7 +785,7 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
                                  p_codec_info[BTA_AV_CO_SBC_MIN_BITPOOL_OFF],
                                  p_codec_info[BTA_AV_CO_SBC_MAX_BITPOOL_OFF] );
 
-                bta_av_co_cb.codec_cfg_setconfig.id = BTIF_AV_CODEC_SBC;
+                bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_SBC;
                 memcpy(bta_av_co_cb.codec_cfg_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
                 if (AVDT_TSEP_SNK == t_local_sep) {
                     /* If Peer is SRC, and our cfg subset matches with what is requested by peer, then
@@ -889,7 +889,7 @@ void bta_av_co_audio_close(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT16 m
     }
 
     /* reset remote preference through setconfig */
-    bta_av_co_cb.codec_cfg_setconfig.id = BTIF_AV_CODEC_NONE;
+    bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
 }
 
 /*******************************************************************************
@@ -1046,7 +1046,7 @@ static BOOLEAN bta_av_co_audio_codec_build_config(const UINT8 *p_codec_caps, UIN
     memset(p_codec_cfg, 0, AVDT_CODEC_SIZE);
 
     switch (bta_av_co_cb.codec_cfg.id) {
-    case BTIF_AV_CODEC_SBC:
+    case BTC_AV_CODEC_SBC:
         /*  only copy the relevant portions for this codec to avoid issues when
             comparing codec configs covering larger codec sets than SBC (7 bytes) */
         memcpy(p_codec_cfg, bta_av_co_cb.codec_cfg.info, BTA_AV_CO_SBC_MAX_BITPOOL_OFF + 1);
@@ -1081,7 +1081,7 @@ static BOOLEAN bta_av_co_audio_codec_cfg_matches_caps(UINT8 codec_id, const UINT
     FUNC_TRACE();
 
     switch (codec_id) {
-    case BTIF_AV_CODEC_SBC:
+    case BTC_AV_CODEC_SBC:
 
         APPL_TRACE_EVENT("bta_av_co_audio_codec_cfg_matches_caps : min %d/%d max %d/%d",
                          p_codec_caps[BTA_AV_CO_SBC_MIN_BITPOOL_OFF],
@@ -1247,7 +1247,7 @@ static BOOLEAN bta_av_co_audio_peer_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT
     for (index = 0; index < p_peer->num_sup_snks; index++) {
         if (p_peer->snks[index].codec_type == codec_type) {
             switch (bta_av_co_cb.codec_cfg.id) {
-            case BTIF_AV_CODEC_SBC:
+            case BTC_AV_CODEC_SBC:
                 if (p_snk_index) {
                     *p_snk_index = index;
                 }
@@ -1287,7 +1287,7 @@ static BOOLEAN bta_av_co_audio_peer_src_supports_codec(tBTA_AV_CO_PEER *p_peer, 
     for (index = 0; index < p_peer->num_sup_srcs; index++) {
         if (p_peer->srcs[index].codec_type == codec_type) {
             switch (bta_av_co_cb.codec_cfg.id) {
-            case BTIF_AV_CODEC_SBC:
+            case BTC_AV_CODEC_SBC:
                 if (p_src_index) {
                     *p_src_index = index;
                 }
@@ -1465,7 +1465,7 @@ void bta_av_co_audio_codec_reset(void)
     FUNC_TRACE();
 
     /* Reset the current configuration to SBC */
-    bta_av_co_cb.codec_cfg.id = BTIF_AV_CODEC_SBC;
+    bta_av_co_cb.codec_cfg.id = BTC_AV_CODEC_SBC;
 
     if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btif_av_sbc_default_config, bta_av_co_cb.codec_cfg.info) != A2D_SUCCESS) {
         APPL_TRACE_ERROR("bta_av_co_audio_codec_reset A2D_BldSbcInfo failed");
@@ -1485,10 +1485,10 @@ void bta_av_co_audio_codec_reset(void)
  ** Returns          TRUE if successful, FALSE otherwise
  **
  *******************************************************************************/
-BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTC_STATUS *p_status)
+BOOLEAN bta_av_co_audio_set_codec(const tBTC_AV_MEDIA_FEEDINGS *p_feeding, tBTC_STATUS *p_status)
 {
     tA2D_SBC_CIE sbc_config;
-    tBTIF_AV_CODEC_INFO new_cfg;
+    tBTC_AV_CODEC_INFO new_cfg;
 
     FUNC_TRACE();
 
@@ -1499,8 +1499,8 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTC
 
     /* Supported codecs */
     switch (p_feeding->format) {
-    case BTIF_AV_CODEC_PCM:
-        new_cfg.id = BTIF_AV_CODEC_SBC;
+    case BTC_AV_CODEC_PCM:
+        new_cfg.id = BTC_AV_CODEC_SBC;
 
         sbc_config = btif_av_sbc_default_config;
         if ((p_feeding->cfg.pcm.num_channel != 1) &&
@@ -1579,7 +1579,7 @@ BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_min
     *p_minmtu = 0xFFFF;
 
     GKI_disable();
-    if (bta_av_co_cb.codec_cfg.id == BTIF_AV_CODEC_SBC) {
+    if (bta_av_co_cb.codec_cfg.id == BTC_AV_CODEC_SBC) {
         if (A2D_ParsSbcInfo(p_sbc_config, bta_av_co_cb.codec_cfg.info, FALSE) == A2D_SUCCESS) {
             for (index = 0; index < BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers); index++) {
                 p_peer = &bta_av_co_cb.peers[index];
@@ -1659,7 +1659,7 @@ void bta_av_co_init(void)
     /* Reset the control block */
     memset(&bta_av_co_cb, 0, sizeof(bta_av_co_cb));
 
-    bta_av_co_cb.codec_cfg_setconfig.id = BTIF_AV_CODEC_NONE;
+    bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
 
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
     bta_av_co_cp_set_flag(BTA_AV_CP_SCMS_COPY_NEVER);
@@ -1722,7 +1722,7 @@ BOOLEAN bta_av_co_peer_cp_supported(tBTA_AV_HNDL hndl)
 BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max)
 {
     /* check if remote peer did a set config */
-    if (bta_av_co_cb.codec_cfg_setconfig.id == BTIF_AV_CODEC_NONE) {
+    if (bta_av_co_cb.codec_cfg_setconfig.id == BTC_AV_CODEC_NONE) {
         return FALSE;
     }
 

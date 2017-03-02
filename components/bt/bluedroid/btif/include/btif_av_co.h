@@ -109,7 +109,7 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTC_STATUS *p_status);
  ** Returns          TRUE if successful, FALSE otherwise
  **
  *******************************************************************************/
-BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTC_STATUS *p_status);
+BOOLEAN bta_av_co_audio_set_codec(const tBTC_AV_MEDIA_FEEDINGS *p_feeding, tBTC_STATUS *p_status);
 
 /*******************************************************************************
  **
