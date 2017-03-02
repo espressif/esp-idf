@@ -25,7 +25,7 @@
 #include "avrc_defs.h"
 #include "gki.h"
 
-#include "btif_common.h"
+#include "btc_common.h"
 #include "btif_util.h"
 #include "btc_av.h"
 #include "btc_avrc.h"
@@ -207,7 +207,7 @@ extern BOOLEAN btc_hf_call_terminated_recently();
 ******************************************************************************/
 void send_key (int fd, uint16_t key, int pressed)
 {
-    BTIF_TRACE_DEBUG("%s fd:%d key:%u pressed:%d, func not implemented", __FUNCTION__,
+    LOG_DEBUG("%s fd:%d key:%u pressed:%d, func not implemented", __FUNCTION__,
         fd, key, pressed);
 
     return;
@@ -243,7 +243,7 @@ static void handle_rc_features()
 
     LOG_DEBUG("%s: rc_features=0x%x", __FUNCTION__, rc_features);
     // todo: uncomment the following line when added the AVRC target role
-    // HAL_CBACK(bt_rc_callbacks, remote_features_cb, &rc_addr, rc_features)
+    // BTC_HAL_CBACK(bt_rc_callbacks, remote_features_cb, &rc_addr, rc_features)
     
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
      LOG_DEBUG("Checking for feature flags in btc_rc_handler with label %d",
@@ -464,7 +464,7 @@ static void handle_rc_passthrough_cmd ( tBTA_AV_REMOTE_CMD *p_remote_cmd)
 #ifdef BTC_HF_INCLUDED
        && (btc_hf_call_terminated_recently() == TRUE)
 #endif
-#if 0 // temporary hack since no btif_storage module is not ported for now
+#if 0 // temporary hack since no btc_storage module is not ported for now
        && (check_cod( (const bt_bdaddr_t*)&(btc_rc_vb.rc_addr), COD_AV_HEADSETS) != TRUE)
 #endif
        )
@@ -475,7 +475,7 @@ static void handle_rc_passthrough_cmd ( tBTA_AV_REMOTE_CMD *p_remote_cmd)
     }
 
     if (p_remote_cmd->rc_id == BTA_AV_RC_FAST_FOR || p_remote_cmd->rc_id == BTA_AV_RC_REWIND) {
-        HAL_CBACK(bt_rc_callbacks, passthrough_cmd_cb, p_remote_cmd->rc_id, pressed);
+        BTC_HAL_CBACK(bt_rc_callbacks, passthrough_cmd_cb, p_remote_cmd->rc_id, pressed);
         return;
     }
 
@@ -966,7 +966,7 @@ static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 c
         case AVRC_PDU_GET_PLAY_STATUS:
         {
             FILL_PDU_QUEUE(IDX_GET_PLAY_STATUS_RSP, ctype, label, TRUE)
-            HAL_CBACK(bt_rc_callbacks, get_play_status_cb);
+            BTC_HAL_CBACK(bt_rc_callbacks, get_play_status_cb);
         }
         break;
         case AVRC_PDU_LIST_PLAYER_APP_ATTR:
@@ -1033,7 +1033,7 @@ static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 c
                 }
             }
             FILL_PDU_QUEUE(IDX_GET_ELEMENT_ATTR_RSP, ctype, label, TRUE);
-            HAL_CBACK(bt_rc_callbacks, get_element_attr_cb, num_attr, element_attrs);
+            BTC_HAL_CBACK(bt_rc_callbacks, get_element_attr_cb, num_attr, element_attrs);
         }
         break;
         case AVRC_PDU_REGISTER_NOTIFICATION:
@@ -1048,7 +1048,7 @@ static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 c
                 btc_rc_vb.rc_notif[BTRC_EVT_PLAY_POS_CHANGED - 1].bNotify = FALSE;
                 return;
             }
-            HAL_CBACK(bt_rc_callbacks, register_notification_cb, pavrc_cmd->reg_notif.event_id,
+            BTC_HAL_CBACK(bt_rc_callbacks, register_notification_cb, pavrc_cmd->reg_notif.event_id,
                 pavrc_cmd->reg_notif.param);
         }
         break;
@@ -1099,7 +1099,7 @@ static void btc_rc_upstreams_rsp_evt(UINT16 event, tAVRC_RESPONSE *pavrc_resp, U
         {
              if(AVRC_RSP_CHANGED==ctype)
                  btc_rc_vb.rc_volume=pavrc_resp->reg_notif.param.volume;
-             HAL_CBACK(bt_rc_callbacks, volume_change_cb, pavrc_resp->reg_notif.param.volume,ctype)
+             BTC_HAL_CBACK(bt_rc_callbacks, volume_change_cb, pavrc_resp->reg_notif.param.volume,ctype)
         }
         break;
 
@@ -1109,7 +1109,7 @@ static void btc_rc_upstreams_rsp_evt(UINT16 event, tAVRC_RESPONSE *pavrc_resp, U
                 pavrc_resp->volume.volume,ctype);
             if(AVRC_RSP_ACCEPT==ctype)
                 btc_rc_vb.rc_volume=pavrc_resp->volume.volume;
-            HAL_CBACK(bt_rc_callbacks,volume_change_cb,pavrc_resp->volume.volume,ctype)
+            BTC_HAL_CBACK(bt_rc_callbacks,volume_change_cb,pavrc_resp->volume.volume,ctype)
         }
         break;
 

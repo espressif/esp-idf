@@ -27,7 +27,8 @@
 
 #include "esp_a2dp_api.h"
 #include "btc_task.h"
-#include "btif_common.h"
+// #include "btif_common.h"
+#include "btc_common.h"
 #include "btc_sm.h"
 #include "bta_av_api.h"
 

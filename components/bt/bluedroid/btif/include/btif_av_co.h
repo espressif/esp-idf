@@ -19,7 +19,7 @@
 #ifndef BTIF_AV_CO_H
 #define BTIF_AV_CO_H
 
-#include "btif_media.h"
+#include "btc_media.h"
 
 /*******************************************************************************
 **  Constants & Macros
@@ -96,7 +96,7 @@ void bta_av_co_audio_codec_reset(void);
  ** Returns          TRUE if all opened devices support this codec, FALSE otherwise
  **
  *******************************************************************************/
-BOOLEAN bta_av_co_audio_codec_supported(tBTIF_STATUS *p_status);
+BOOLEAN bta_av_co_audio_codec_supported(tBTC_STATUS *p_status);
 
 /*******************************************************************************
  **
@@ -109,7 +109,7 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTIF_STATUS *p_status);
  ** Returns          TRUE if successful, FALSE otherwise
  **
  *******************************************************************************/
-BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTIF_STATUS *p_status);
+BOOLEAN bta_av_co_audio_set_codec(const tBTIF_AV_MEDIA_FEEDINGS *p_feeding, tBTC_STATUS *p_status);
 
 /*******************************************************************************
  **

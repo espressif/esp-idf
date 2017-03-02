@@ -1,26 +1,22 @@
-/******************************************************************************
- *
- *  Copyright (C) 2009-2012 Broadcom Corporation
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- ******************************************************************************/
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /******************************************************************************
  **
- **  Name:          btif_media_task.c
+ **  Name:          btc_media_task.c
  **
- **  Description:   This is the multimedia module for the BTIF system.  It
+ **  Description:   This is the multimedia module for the BTC system.  It
  **                 contains task implementations AV, HS and HF profiles
  **                 audio & video processing
  **
@@ -48,7 +44,7 @@
 #include "l2c_api.h"
 
 #include "btif_av_co.h"
-#include "btif_media.h"
+#include "btc_media.h"
 
 #include "alarm.h"
 #include "bt_trace.h"
@@ -64,7 +60,6 @@
 #endif
 #include "stdio.h"
 
-#include "btif_media.h"
 #include "allocator.h"
 #include "bt_utils.h"
 #include "esp_a2dp_api.h"
@@ -88,22 +83,22 @@ OI_INT16 pcmData[15 * SBC_MAX_SAMPLES_PER_FRAME * SBC_MAX_CHANNELS];
 #define AUDIO_CHANNEL_OUT_STEREO 0x03
 #endif
 
-/* BTIF media cmd event definition : BTIF_MEDIA_TASK_CMD */
+/* BTC media cmd event definition : BTC_MEDIA_TASK_CMD */
 enum {
-    BTIF_MEDIA_START_AA_TX = 1,
-    BTIF_MEDIA_STOP_AA_TX,
-    BTIF_MEDIA_AA_RX_RDY,
-    BTIF_MEDIA_UIPC_RX_RDY,
-    BTIF_MEDIA_SBC_ENC_INIT,
-    BTIF_MEDIA_SBC_ENC_UPDATE,
-    BTIF_MEDIA_SBC_DEC_INIT,
-    BTIF_MEDIA_VIDEO_DEC_INIT,
-    BTIF_MEDIA_FLUSH_AA_TX,
-    BTIF_MEDIA_FLUSH_AA_RX,
-    BTIF_MEDIA_AUDIO_FEEDING_INIT,
-    BTIF_MEDIA_AUDIO_RECEIVING_INIT,
-    BTIF_MEDIA_AUDIO_SINK_CFG_UPDATE,
-    BTIF_MEDIA_AUDIO_SINK_CLEAR_TRACK
+    BTC_MEDIA_START_AA_TX = 1,
+    BTC_MEDIA_STOP_AA_TX,
+    BTC_MEDIA_AA_RX_RDY,
+    BTC_MEDIA_UIPC_RX_RDY,
+    BTC_MEDIA_SBC_ENC_INIT,
+    BTC_MEDIA_SBC_ENC_UPDATE,
+    BTC_MEDIA_SBC_DEC_INIT,
+    BTC_MEDIA_VIDEO_DEC_INIT,
+    BTC_MEDIA_FLUSH_AA_TX,
+    BTC_MEDIA_FLUSH_AA_RX,
+    BTC_MEDIA_AUDIO_FEEDING_INIT,
+    BTC_MEDIA_AUDIO_RECEIVING_INIT,
+    BTC_MEDIA_AUDIO_SINK_CFG_UPDATE,
+    BTC_MEDIA_AUDIO_SINK_CLEAR_TRACK
 };
 
 enum {
@@ -121,39 +116,39 @@ enum {
 };
 
 /* Macro to multiply the media task tick */
-#ifndef BTIF_MEDIA_NUM_TICK
-#define BTIF_MEDIA_NUM_TICK      1
+#ifndef BTC_MEDIA_NUM_TICK
+#define BTC_MEDIA_NUM_TICK      1
 #endif
 
 /* Media task tick in milliseconds, must be set to multiple of
    (1000/TICKS_PER_SEC) (10) */
 
-#define BTIF_MEDIA_TIME_TICK                     (20 * BTIF_MEDIA_NUM_TICK)
-#define A2DP_DATA_READ_POLL_MS    (BTIF_MEDIA_TIME_TICK / 2)
-#define BTIF_SINK_MEDIA_TIME_TICK                (20 * BTIF_MEDIA_NUM_TICK)
+#define BTC_MEDIA_TIME_TICK                     (20 * BTC_MEDIA_NUM_TICK)
+#define A2DP_DATA_READ_POLL_MS    (BTC_MEDIA_TIME_TICK / 2)
+#define BTC_SINK_MEDIA_TIME_TICK                (20 * BTC_MEDIA_NUM_TICK)
 
 
 /* buffer pool */
-#define BTIF_MEDIA_AA_POOL_ID GKI_POOL_ID_3
-#define BTIF_MEDIA_AA_BUF_SIZE GKI_BUF3_SIZE
+#define BTC_MEDIA_AA_POOL_ID GKI_POOL_ID_3
+#define BTC_MEDIA_AA_BUF_SIZE GKI_BUF3_SIZE
 
 /* offset */
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
-#define BTIF_MEDIA_AA_SBC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_SBC_HDR_SIZE + 1)
+#define BTC_MEDIA_AA_SBC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_SBC_HDR_SIZE + 1)
 #else
-#define BTIF_MEDIA_AA_SBC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_SBC_HDR_SIZE)
+#define BTC_MEDIA_AA_SBC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_SBC_HDR_SIZE)
 #endif
 
 /* Define the bitrate step when trying to match bitpool value */
-#ifndef BTIF_MEDIA_BITRATE_STEP
-#define BTIF_MEDIA_BITRATE_STEP 5
+#ifndef BTC_MEDIA_BITRATE_STEP
+#define BTC_MEDIA_BITRATE_STEP 5
 #endif
 
 /* Middle quality quality setting @ 44.1 khz */
 #define DEFAULT_SBC_BITRATE 328
 
-#ifndef BTIF_A2DP_NON_EDR_MAX_RATE
-#define BTIF_A2DP_NON_EDR_MAX_RATE 229
+#ifndef BTC_A2DP_NON_EDR_MAX_RATE
+#define BTC_A2DP_NON_EDR_MAX_RATE 229
 #endif
 
 #define USEC_PER_SEC 1000000L
@@ -205,11 +200,11 @@ typedef struct {
     INT32  aa_feed_residue;
     UINT32 counter;
     UINT32 bytes_per_tick;  /* pcm bytes read each media task tick */
-} tBTIF_AV_MEDIA_FEEDINGS_PCM_STATE;
+} tBTC_AV_MEDIA_FEEDINGS_PCM_STATE;
 
 typedef union {
-    tBTIF_AV_MEDIA_FEEDINGS_PCM_STATE pcm;
-} tBTIF_AV_MEDIA_FEEDINGS_STATE;
+    tBTC_AV_MEDIA_FEEDINGS_PCM_STATE pcm;
+} tBTC_AV_MEDIA_FEEDINGS_STATE;
 
 typedef struct {
 #if (BTA_AV_INCLUDED == TRUE)
@@ -228,7 +223,7 @@ typedef struct {
     UINT8   channel_count;
 #endif
 
-} tBTIF_MEDIA_CB;
+} tBTC_MEDIA_CB;
 
 typedef struct {
     long long rx;
@@ -251,37 +246,37 @@ extern OI_STATUS OI_CODEC_SBC_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context
         OI_UINT8 pcmStride,
         OI_BOOL enhanced);
 #endif
-static void btif_media_flush_q(BUFFER_Q *p_q);
-static void btif_media_task_aa_rx_flush(void);
+static void btc_media_flush_q(BUFFER_Q *p_q);
+static void btc_media_task_aa_rx_flush(void);
 
 static const char *dump_media_event(UINT16 event);
-static void btif_media_thread_handle_cmd(fixed_queue_t *queue);
+static void btc_media_thread_handle_cmd(fixed_queue_t *queue);
 
 /* Handle incoming media packets A2DP SINK streaming*/
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-static void btif_media_task_handle_inc_media(tBT_SBC_HDR *p_msg);
+static void btc_media_task_handle_inc_media(tBT_SBC_HDR *p_msg);
 #endif
 
 #if (BTA_AV_INCLUDED == TRUE)
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-static void btif_media_task_aa_handle_decoder_reset(BT_HDR *p_msg);
-static void btif_media_task_aa_handle_clear_track(void);
+static void btc_media_task_aa_handle_decoder_reset(BT_HDR *p_msg);
+static void btc_media_task_aa_handle_clear_track(void);
 #endif
 #endif
-BOOLEAN btif_media_task_clear_track(void);
-static void btif_media_task_handler(void *arg);
+BOOLEAN btc_media_task_clear_track(void);
+static void btc_media_task_handler(void *arg);
 
-static void btif_media_task_avk_data_ready(UNUSED_ATTR void *context);
-static void btif_media_thread_init(UNUSED_ATTR void *context);
-static void btif_media_thread_cleanup(UNUSED_ATTR void *context);
-extern BOOLEAN btif_hf_is_call_idle();
+static void btc_media_task_avk_data_ready(UNUSED_ATTR void *context);
+static void btc_media_thread_init(UNUSED_ATTR void *context);
+static void btc_media_thread_cleanup(UNUSED_ATTR void *context);
+extern BOOLEAN btc_is_call_idle();
 
-static tBTIF_MEDIA_CB btif_media_cb;
+static tBTC_MEDIA_CB btc_media_cb;
 static int media_task_running = MEDIA_TASK_STATE_OFF;
 
-static fixed_queue_t *btif_media_cmd_msg_queue = NULL;
-static xTaskHandle  xBtifMediaTaskHandle = NULL;
-static QueueHandle_t xBtifMediaQueue = NULL;
+static fixed_queue_t *btc_media_cmd_msg_queue = NULL;
+static xTaskHandle  xBtcMediaTaskHandle = NULL;
+static QueueHandle_t xBtcMediaQueue = NULL;
 
 static esp_a2d_data_cb_t bt_av_sink_data_callback = NULL;
 
@@ -293,7 +288,7 @@ esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t cb)
 }
 
 // TODO: need protection against race
-#define BTIF_A2D_DATA_CB_TO_APP(data, len)    do { \
+#define BTC_A2D_DATA_CB_TO_APP(data, len)    do { \
 	if (bt_av_sink_data_callback) { \
 	    bt_av_sink_data_callback(data, len); \
 	} \
@@ -302,7 +297,7 @@ esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t cb)
 /*****************************************************************************
  **  temporary hacked functions. TODO: port these functions or remove them?
  *****************************************************************************/
-BOOLEAN btif_hf_is_call_idle(void)
+BOOLEAN btc_is_call_idle(void)
 {
     return FALSE;
 }
@@ -314,20 +309,20 @@ BOOLEAN btif_hf_is_call_idle(void)
 UNUSED_ATTR static const char *dump_media_event(UINT16 event)
 {
     switch (event) {
-        CASE_RETURN_STR(BTIF_MEDIA_START_AA_TX)
-        CASE_RETURN_STR(BTIF_MEDIA_STOP_AA_TX)
-        CASE_RETURN_STR(BTIF_MEDIA_AA_RX_RDY)
-        CASE_RETURN_STR(BTIF_MEDIA_UIPC_RX_RDY)
-        CASE_RETURN_STR(BTIF_MEDIA_SBC_ENC_INIT)
-        CASE_RETURN_STR(BTIF_MEDIA_SBC_ENC_UPDATE)
-        CASE_RETURN_STR(BTIF_MEDIA_SBC_DEC_INIT)
-        CASE_RETURN_STR(BTIF_MEDIA_VIDEO_DEC_INIT)
-        CASE_RETURN_STR(BTIF_MEDIA_FLUSH_AA_TX)
-        CASE_RETURN_STR(BTIF_MEDIA_FLUSH_AA_RX)
-        CASE_RETURN_STR(BTIF_MEDIA_AUDIO_FEEDING_INIT)
-        CASE_RETURN_STR(BTIF_MEDIA_AUDIO_RECEIVING_INIT)
-        CASE_RETURN_STR(BTIF_MEDIA_AUDIO_SINK_CFG_UPDATE)
-        CASE_RETURN_STR(BTIF_MEDIA_AUDIO_SINK_CLEAR_TRACK)
+        CASE_RETURN_STR(BTC_MEDIA_START_AA_TX)
+        CASE_RETURN_STR(BTC_MEDIA_STOP_AA_TX)
+        CASE_RETURN_STR(BTC_MEDIA_AA_RX_RDY)
+        CASE_RETURN_STR(BTC_MEDIA_UIPC_RX_RDY)
+        CASE_RETURN_STR(BTC_MEDIA_SBC_ENC_INIT)
+        CASE_RETURN_STR(BTC_MEDIA_SBC_ENC_UPDATE)
+        CASE_RETURN_STR(BTC_MEDIA_SBC_DEC_INIT)
+        CASE_RETURN_STR(BTC_MEDIA_VIDEO_DEC_INIT)
+        CASE_RETURN_STR(BTC_MEDIA_FLUSH_AA_TX)
+        CASE_RETURN_STR(BTC_MEDIA_FLUSH_AA_RX)
+        CASE_RETURN_STR(BTC_MEDIA_AUDIO_FEEDING_INIT)
+        CASE_RETURN_STR(BTC_MEDIA_AUDIO_RECEIVING_INIT)
+        CASE_RETURN_STR(BTC_MEDIA_AUDIO_SINK_CFG_UPDATE)
+        CASE_RETURN_STR(BTC_MEDIA_AUDIO_SINK_CLEAR_TRACK)
 
     default:
         return "UNKNOWN MEDIA EVENT";
@@ -335,10 +330,10 @@ UNUSED_ATTR static const char *dump_media_event(UINT16 event)
 }
 
 /*****************************************************************************
- **  BTIF ADAPTATION
+ **  BTC ADAPTATION
  *****************************************************************************/
 
-static void btif_media_task_post(uint32_t sig)
+static void btc_media_task_post(uint32_t sig)
 {
     BtTaskEvt_t *evt = (BtTaskEvt_t *)osi_malloc(sizeof(BtTaskEvt_t));
     if (evt == NULL) {
@@ -348,29 +343,29 @@ static void btif_media_task_post(uint32_t sig)
     evt->sig = sig;
     evt->par = 0;
 
-    if (xQueueSend(xBtifMediaQueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
-        APPL_TRACE_ERROR("xBtifMediaQueue failed\n");
+    if (xQueueSend(xBtcMediaQueue, &evt, 10 / portTICK_RATE_MS) != pdTRUE) {
+        APPL_TRACE_ERROR("xBtcMediaQueue failed\n");
     }
 }
 
-static void btif_media_task_handler(void *arg)
+static void btc_media_task_handler(void *arg)
 {
     BtTaskEvt_t *e;
     for (;;) {
-        if (pdTRUE == xQueueReceive(xBtifMediaQueue, &e, (portTickType)portMAX_DELAY)) {
+        if (pdTRUE == xQueueReceive(xBtcMediaQueue, &e, (portTickType)portMAX_DELAY)) {
             // LOG_ERROR("med evt %d\n", e->sig);
             switch (e->sig) {
             case SIG_MEDIA_TASK_AVK_DATA_READY:
-                btif_media_task_avk_data_ready(NULL);
+                btc_media_task_avk_data_ready(NULL);
                 break;
             case SIG_MEDIA_TASK_CMD_READY:
-                fixed_queue_process(btif_media_cmd_msg_queue);
+                fixed_queue_process(btc_media_cmd_msg_queue);
                 break;
             case SIG_MEDIA_TASK_INIT:
-                btif_media_thread_init(NULL);
+                btc_media_thread_init(NULL);
                 break;
             case SIG_MEDIA_TASK_CLEAN_UP:
-                btif_media_thread_cleanup(NULL);
+                btc_media_thread_cleanup(NULL);
                 break;
             default:
                 APPL_TRACE_ERROR("media task unhandled evt: 0x%x\n", e->sig);
@@ -380,7 +375,7 @@ static void btif_media_task_handler(void *arg)
     }
 }
 
-bool btif_a2dp_start_media_task(void)
+bool btc_a2dp_start_media_task(void)
 {
     if (media_task_running != MEDIA_TASK_STATE_OFF) {
         APPL_TRACE_ERROR("warning : media task already running");
@@ -389,21 +384,21 @@ bool btif_a2dp_start_media_task(void)
 
     APPL_TRACE_EVENT("## A2DP START MEDIA THREAD ##");
 
-    btif_media_cmd_msg_queue = fixed_queue_new(SIZE_MAX);
-    if (btif_media_cmd_msg_queue == NULL) {
+    btc_media_cmd_msg_queue = fixed_queue_new(SIZE_MAX);
+    if (btc_media_cmd_msg_queue == NULL) {
         goto error_exit;
     }
 
-    xBtifMediaQueue = xQueueCreate(60, sizeof(void *));
-    if (xBtifMediaQueue == 0) {
+    xBtcMediaQueue = xQueueCreate(60, sizeof(void *));
+    if (xBtcMediaQueue == 0) {
         goto error_exit;
     }
-    xTaskCreatePinnedToCore(btif_media_task_handler, "BtifMediaT\n", 2048, NULL, configMAX_PRIORITIES - 1, &xBtifMediaTaskHandle, 0);
-    if (xBtifMediaTaskHandle == NULL) {
+    xTaskCreatePinnedToCore(btc_media_task_handler, "BtcMediaT\n", 2048, NULL, configMAX_PRIORITIES - 1, &xBtcMediaTaskHandle, 0);
+    if (xBtcMediaTaskHandle == NULL) {
         goto error_exit;
     }
-    fixed_queue_register_dequeue(btif_media_cmd_msg_queue, btif_media_thread_handle_cmd);
-    btif_media_task_post(SIG_MEDIA_TASK_INIT);
+    fixed_queue_register_dequeue(btc_media_cmd_msg_queue, btc_media_thread_handle_cmd);
+    btc_media_task_post(SIG_MEDIA_TASK_INIT);
 
     APPL_TRACE_EVENT("## A2DP MEDIA THREAD STARTED ##\n");
 
@@ -412,39 +407,39 @@ bool btif_a2dp_start_media_task(void)
 error_exit:;
     APPL_TRACE_ERROR("%s unable to start up media thread\n", __func__);
 
-    if (xBtifMediaTaskHandle != NULL) {
-        vTaskDelete(xBtifMediaTaskHandle);
-        xBtifMediaTaskHandle = NULL;
+    if (xBtcMediaTaskHandle != NULL) {
+        vTaskDelete(xBtcMediaTaskHandle);
+        xBtcMediaTaskHandle = NULL;
     }
 
-    if (xBtifMediaQueue != 0) {
-        vQueueDelete(xBtifMediaQueue);
-        xBtifMediaQueue = 0;
+    if (xBtcMediaQueue != 0) {
+        vQueueDelete(xBtcMediaQueue);
+        xBtcMediaQueue = 0;
     }
-    fixed_queue_free(btif_media_cmd_msg_queue, NULL);
-    btif_media_cmd_msg_queue = NULL;
+    fixed_queue_free(btc_media_cmd_msg_queue, NULL);
+    btc_media_cmd_msg_queue = NULL;
     return false;
 }
 
-void btif_a2dp_stop_media_task(void)
+void btc_a2dp_stop_media_task(void)
 {
     APPL_TRACE_EVENT("## A2DP STOP MEDIA THREAD ##\n");
 
     // Exit thread
-    btif_media_task_post(SIG_MEDIA_TASK_CLEAN_UP);
+    btc_media_task_post(SIG_MEDIA_TASK_CLEAN_UP);
     // TODO: wait until CLEAN up is done, then do task delete
-    vTaskDelete(xBtifMediaTaskHandle);
-    xBtifMediaTaskHandle = NULL;
-    vQueueDelete(xBtifMediaQueue);
-    xBtifMediaQueue = NULL;
+    vTaskDelete(xBtcMediaTaskHandle);
+    xBtcMediaTaskHandle = NULL;
+    vQueueDelete(xBtcMediaQueue);
+    xBtcMediaQueue = NULL;
 
-    fixed_queue_free(btif_media_cmd_msg_queue, NULL);
-    btif_media_cmd_msg_queue = NULL;
+    fixed_queue_free(btc_media_cmd_msg_queue, NULL);
+    btc_media_cmd_msg_queue = NULL;
 }
 
 /*****************************************************************************
 **
-** Function        btif_a2dp_on_init
+** Function        btc_a2dp_on_init
 **
 ** Description
 **
@@ -452,7 +447,7 @@ void btif_a2dp_stop_media_task(void)
 **
 *******************************************************************************/
 
-void btif_a2dp_on_init(void)
+void btc_a2dp_on_init(void)
 {
     //tput_mon(1, 0, 1);
 }
@@ -460,7 +455,7 @@ void btif_a2dp_on_init(void)
 
 /*****************************************************************************
 **
-** Function        btif_a2dp_setup_codec
+** Function        btc_a2dp_setup_codec
 **
 ** Description
 **
@@ -468,10 +463,10 @@ void btif_a2dp_on_init(void)
 **
 *******************************************************************************/
 
-void btif_a2dp_setup_codec(void)
+void btc_a2dp_setup_codec(void)
 {
     tBTIF_AV_MEDIA_FEEDINGS media_feeding;
-    tBTIF_STATUS status;
+    tBTC_STATUS status;
 
     APPL_TRACE_EVENT("## A2DP SETUP CODEC ##\n");
 
@@ -491,7 +486,7 @@ void btif_a2dp_setup_codec(void)
 
 /*****************************************************************************
 **
-** Function        btif_a2dp_on_idle
+** Function        btc_a2dp_on_idle
 **
 ** Description
 **
@@ -499,16 +494,16 @@ void btif_a2dp_setup_codec(void)
 **
 *******************************************************************************/
 
-void btif_a2dp_on_idle(void)
+void btc_a2dp_on_idle(void)
 {
     APPL_TRACE_EVENT("## ON A2DP IDLE ##\n");
 
     bta_av_co_init();
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-    if (btif_media_cb.peer_sep == AVDT_TSEP_SRC) {
-        btif_media_cb.rx_flush = TRUE;
-        btif_media_task_aa_rx_flush_req();
-        btif_media_task_clear_track();
+    if (btc_media_cb.peer_sep == AVDT_TSEP_SRC) {
+        btc_media_cb.rx_flush = TRUE;
+        btc_media_task_aa_rx_flush_req();
+        btc_media_task_clear_track();
         APPL_TRACE_DEBUG("Stopped BT track");
     }
 #endif
@@ -516,14 +511,14 @@ void btif_a2dp_on_idle(void)
 
 /*******************************************************************************
  **
- ** Function         btif_media_task_clear_track
+ ** Function         btc_media_task_clear_track
  **
  ** Description
  **
  ** Returns          TRUE is success
  **
  *******************************************************************************/
-BOOLEAN btif_media_task_clear_track(void)
+BOOLEAN btc_media_task_clear_track(void)
 {
     BT_HDR *p_buf;
 
@@ -531,16 +526,16 @@ BOOLEAN btif_media_task_clear_track(void)
         return FALSE;
     }
 
-    p_buf->event = BTIF_MEDIA_AUDIO_SINK_CLEAR_TRACK;
+    p_buf->event = BTC_MEDIA_AUDIO_SINK_CLEAR_TRACK;
 
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
-    btif_media_task_post(SIG_MEDIA_TASK_CMD_READY);
+    fixed_queue_enqueue(btc_media_cmd_msg_queue, p_buf);
+    btc_media_task_post(SIG_MEDIA_TASK_CMD_READY);
     return TRUE;
 }
 
 /*****************************************************************************
 **
-** Function        btif_reset_decoder
+** Function        btc_reset_decoder
 **
 ** Description
 **
@@ -548,29 +543,29 @@ BOOLEAN btif_media_task_clear_track(void)
 **
 *******************************************************************************/
 
-void btif_reset_decoder(UINT8 *p_av)
+void btc_reset_decoder(UINT8 *p_av)
 {
-    APPL_TRACE_EVENT("btif_reset_decoder");
-    APPL_TRACE_DEBUG("btif_reset_decoder p_codec_info[%x:%x:%x:%x:%x:%x]\n",
+    APPL_TRACE_EVENT("btc_reset_decoder");
+    APPL_TRACE_DEBUG("btc_reset_decoder p_codec_info[%x:%x:%x:%x:%x:%x]\n",
             p_av[1], p_av[2], p_av[3],
             p_av[4], p_av[5], p_av[6]);
 
-    tBTIF_MEDIA_SINK_CFG_UPDATE *p_buf;
-    if (NULL == (p_buf = GKI_getbuf(sizeof(tBTIF_MEDIA_SINK_CFG_UPDATE)))) {
-        APPL_TRACE_ERROR("btif_reset_decoder No Buffer ");
+    tBTC_MEDIA_SINK_CFG_UPDATE *p_buf;
+    if (NULL == (p_buf = GKI_getbuf(sizeof(tBTC_MEDIA_SINK_CFG_UPDATE)))) {
+        APPL_TRACE_ERROR("btc_reset_decoder No Buffer ");
         return;
     }
 
     memcpy(p_buf->codec_info, p_av, AVDT_CODEC_SIZE);
-    p_buf->hdr.event = BTIF_MEDIA_AUDIO_SINK_CFG_UPDATE;
+    p_buf->hdr.event = BTC_MEDIA_AUDIO_SINK_CFG_UPDATE;
 
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
-    btif_media_task_post(SIG_MEDIA_TASK_CMD_READY);
+    fixed_queue_enqueue(btc_media_cmd_msg_queue, p_buf);
+    btc_media_task_post(SIG_MEDIA_TASK_CMD_READY);
 }
 
 /*****************************************************************************
 **
-** Function        btif_a2dp_on_stopped
+** Function        btc_a2dp_on_stopped
 **
 ** Description
 **
@@ -578,13 +573,13 @@ void btif_reset_decoder(UINT8 *p_av)
 **
 *******************************************************************************/
 
-void btif_a2dp_on_stopped(tBTA_AV_SUSPEND *p_av)
+void btc_a2dp_on_stopped(tBTA_AV_SUSPEND *p_av)
 {
     APPL_TRACE_EVENT("## ON A2DP STOPPED ##\n");
-    if (btif_media_cb.peer_sep == AVDT_TSEP_SRC) { /*  Handling for A2DP SINK cases*/
-        btif_media_cb.rx_flush = TRUE;
-        btif_media_task_aa_rx_flush_req();
-        btif_media_cb.data_channel_open = FALSE;
+    if (btc_media_cb.peer_sep == AVDT_TSEP_SRC) { /*  Handling for A2DP SINK cases*/
+        btc_media_cb.rx_flush = TRUE;
+        btc_media_task_aa_rx_flush_req();
+        btc_media_cb.data_channel_open = FALSE;
         return;
     }
 }
@@ -592,7 +587,7 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND *p_av)
 
 /*****************************************************************************
 **
-** Function        btif_a2dp_on_suspended
+** Function        btc_a2dp_on_suspended
 **
 ** Description
 **
@@ -600,61 +595,61 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND *p_av)
 **
 *******************************************************************************/
 
-void btif_a2dp_on_suspended(tBTA_AV_SUSPEND *p_av)
+void btc_a2dp_on_suspended(tBTA_AV_SUSPEND *p_av)
 {
     APPL_TRACE_EVENT("## ON A2DP SUSPENDED ##\n");
-    if (btif_media_cb.peer_sep == AVDT_TSEP_SRC) {
-        btif_media_cb.rx_flush = TRUE;
-        btif_media_task_aa_rx_flush_req();
+    if (btc_media_cb.peer_sep == AVDT_TSEP_SRC) {
+        btc_media_cb.rx_flush = TRUE;
+        btc_media_task_aa_rx_flush_req();
         return;
     }
 }
 
 /* when true media task discards any rx frames */
-void btif_a2dp_set_rx_flush(BOOLEAN enable)
+void btc_a2dp_set_rx_flush(BOOLEAN enable)
 {
     APPL_TRACE_EVENT("## DROP RX %d ##\n", enable);
-    btif_media_cb.rx_flush = enable;
+    btc_media_cb.rx_flush = enable;
 }
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-static void btif_media_task_avk_data_ready(UNUSED_ATTR void *context)
+static void btc_media_task_avk_data_ready(UNUSED_ATTR void *context)
 {
     UINT8 count;
     tBT_SBC_HDR *p_msg;
     int num_sbc_frames;
     int num_frames_to_process;
 
-    count = btif_media_cb.RxSbcQ._count;
+    count = btc_media_cb.RxSbcQ._count;
     if (0 == count) {
         APPL_TRACE_DEBUG("  QUE  EMPTY ");
     } else {
-        if (btif_media_cb.rx_flush == TRUE) {
-            btif_media_flush_q(&(btif_media_cb.RxSbcQ));
+        if (btc_media_cb.rx_flush == TRUE) {
+            btc_media_flush_q(&(btc_media_cb.RxSbcQ));
             return;
         }
 
-        num_frames_to_process = btif_media_cb.frames_to_process;
+        num_frames_to_process = btc_media_cb.frames_to_process;
         APPL_TRACE_DEBUG(" Process Frames + ");
         do {
-            p_msg = (tBT_SBC_HDR *)GKI_getfirst(&(btif_media_cb.RxSbcQ));
+            p_msg = (tBT_SBC_HDR *)GKI_getfirst(&(btc_media_cb.RxSbcQ));
             if (p_msg == NULL) {
                 return;
             }
             num_sbc_frames  = p_msg->num_frames_to_be_processed; /* num of frames in Que Packets */
             APPL_TRACE_DEBUG(" Frames left in topmost packet %d\n", num_sbc_frames);
             APPL_TRACE_DEBUG(" Remaining frames to process in tick %d\n", num_frames_to_process);
-            APPL_TRACE_DEBUG(" Num of Packets in Que %d\n", btif_media_cb.RxSbcQ._count);
+            APPL_TRACE_DEBUG(" Num of Packets in Que %d\n", btc_media_cb.RxSbcQ._count);
 
             if ( num_sbc_frames > num_frames_to_process) { /*  Que Packet has more frames*/
                 p_msg->num_frames_to_be_processed = num_frames_to_process;
-                btif_media_task_handle_inc_media(p_msg);
+                btc_media_task_handle_inc_media(p_msg);
                 p_msg->num_frames_to_be_processed = num_sbc_frames - num_frames_to_process;
                 num_frames_to_process = 0;
                 break;
             } else {                                    /*  Que packet has less frames */
-                btif_media_task_handle_inc_media(p_msg);
-                p_msg = (tBT_SBC_HDR *)GKI_dequeue(&(btif_media_cb.RxSbcQ));
+                btc_media_task_handle_inc_media(p_msg);
+                p_msg = (tBT_SBC_HDR *)GKI_dequeue(&(btc_media_cb.RxSbcQ));
                 if ( p_msg == NULL ) {
                     APPL_TRACE_ERROR("Insufficient data in que ");
                     break;
@@ -668,66 +663,66 @@ static void btif_media_task_avk_data_ready(UNUSED_ATTR void *context)
     }
 }
 #else
-static void btif_media_task_avk_data_ready(UNUSED_ATTR void *context) {}
+static void btc_media_task_avk_data_ready(UNUSED_ATTR void *context) {}
 #endif
 
-static void btif_media_thread_init(UNUSED_ATTR void *context)
+static void btc_media_thread_init(UNUSED_ATTR void *context)
 {
-    memset(&btif_media_cb, 0, sizeof(btif_media_cb));
+    memset(&btc_media_cb, 0, sizeof(btc_media_cb));
     LOG_INFO("media thread init\n");
-    btif_media_cb.av_sm_hdl = btc_av_get_sm_handle();
+    btc_media_cb.av_sm_hdl = btc_av_get_sm_handle();
     raise_priority_a2dp(TASK_HIGH_MEDIA);
     media_task_running = MEDIA_TASK_STATE_ON;
 }
 
-static void btif_media_thread_cleanup(UNUSED_ATTR void *context)
+static void btc_media_thread_cleanup(UNUSED_ATTR void *context)
 {
     /* make sure no channels are restarted while shutting down */
     media_task_running = MEDIA_TASK_STATE_SHUTTING_DOWN;
 
-    btif_media_cb.data_channel_open = FALSE;
+    btc_media_cb.data_channel_open = FALSE;
     /* Clear media task flag */
     media_task_running = MEDIA_TASK_STATE_OFF;
 }
 
 /*******************************************************************************
  **
- ** Function         btif_media_flush_q
+ ** Function         btc_media_flush_q
  **
  ** Description
  **
  ** Returns          void
  **
  *******************************************************************************/
-static void btif_media_flush_q(BUFFER_Q *p_q)
+static void btc_media_flush_q(BUFFER_Q *p_q)
 {
     while (!GKI_queue_is_empty(p_q)) {
         GKI_freebuf(GKI_dequeue(p_q));
     }
 }
 
-static void btif_media_thread_handle_cmd(fixed_queue_t *queue)
+static void btc_media_thread_handle_cmd(fixed_queue_t *queue)
 {
     BT_HDR *p_msg;
     while (!fixed_queue_is_empty(queue)) {
         p_msg = (BT_HDR *)fixed_queue_dequeue(queue);
-        LOG_VERBOSE("btif_media_thread_handle_cmd : %d %s\n", p_msg->event,
+        LOG_VERBOSE("btc_media_thread_handle_cmd : %d %s\n", p_msg->event,
                     dump_media_event(p_msg->event));
 
         switch (p_msg->event) {
 #if (BTA_AV_INCLUDED == TRUE)
-        case BTIF_MEDIA_AUDIO_SINK_CFG_UPDATE:
+        case BTC_MEDIA_AUDIO_SINK_CFG_UPDATE:
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-            btif_media_task_aa_handle_decoder_reset(p_msg);
+            btc_media_task_aa_handle_decoder_reset(p_msg);
 #endif
             break;
-        case BTIF_MEDIA_AUDIO_SINK_CLEAR_TRACK:
+        case BTC_MEDIA_AUDIO_SINK_CLEAR_TRACK:
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-            btif_media_task_aa_handle_clear_track();
+            btc_media_task_aa_handle_clear_track();
 #endif
             break;
-        case BTIF_MEDIA_FLUSH_AA_RX:
-            btif_media_task_aa_rx_flush();
+        case BTC_MEDIA_FLUSH_AA_RX:
+            btc_media_task_aa_rx_flush();
             break;
 #endif
         default:
@@ -742,14 +737,14 @@ static void btif_media_thread_handle_cmd(fixed_queue_t *queue)
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 /*******************************************************************************
  **
- ** Function         btif_media_task_handle_inc_media
+ ** Function         btc_media_task_handle_inc_media
  **
  ** Description
  **
  ** Returns          void
  **
  *******************************************************************************/
-static void btif_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
+static void btc_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
 {
     UINT8 *sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
     int count;
@@ -760,13 +755,13 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
     UINT32 sbc_frame_len = p_msg->len - 1;
     availPcmBytes = 2 * sizeof(pcmData);
 
-    if ((btif_media_cb.peer_sep == AVDT_TSEP_SNK) || (btif_media_cb.rx_flush)) {
+    if ((btc_media_cb.peer_sep == AVDT_TSEP_SNK) || (btc_media_cb.rx_flush)) {
         APPL_TRACE_DEBUG(" State Changed happened in this tick ");
         return;
     }
 
     // ignore data if no one is listening
-    if (!btif_media_cb.data_channel_open) {
+    if (!btc_media_cb.data_channel_open) {
         return;
     }
 
@@ -790,7 +785,7 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
     // LOG_ERROR("pre-send: %d\n", availPcmBytes);
 
     // UIPC_Send(UIPC_CH_ID_AV_AUDIO, 0, (UINT8 *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
-    BTIF_A2D_DATA_CB_TO_APP((const uint8_t *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
+    BTC_A2D_DATA_CB_TO_APP((const uint8_t *)pcmData, (2 * sizeof(pcmData) - availPcmBytes));
 
 }
 #endif
@@ -799,18 +794,18 @@ static void btif_media_task_handle_inc_media(tBT_SBC_HDR *p_msg)
 
 /*******************************************************************************
  **
- ** Function         btif_media_task_aa_rx_flush_req
+ ** Function         btc_media_task_aa_rx_flush_req
  **
  ** Description
  **
  ** Returns          TRUE is success
  **
  *******************************************************************************/
-BOOLEAN btif_media_task_aa_rx_flush_req(void)
+BOOLEAN btc_media_task_aa_rx_flush_req(void)
 {
     BT_HDR *p_buf;
 
-    if (GKI_queue_is_empty(&(btif_media_cb.RxSbcQ)) == TRUE) { /*  Que is already empty */
+    if (GKI_queue_is_empty(&(btc_media_cb.RxSbcQ)) == TRUE) { /*  Que is already empty */
         return TRUE;
     }
 
@@ -818,31 +813,31 @@ BOOLEAN btif_media_task_aa_rx_flush_req(void)
         return FALSE;
     }
 
-    p_buf->event = BTIF_MEDIA_FLUSH_AA_RX;
+    p_buf->event = BTC_MEDIA_FLUSH_AA_RX;
 
-    fixed_queue_enqueue(btif_media_cmd_msg_queue, p_buf);
-    btif_media_task_post(SIG_MEDIA_TASK_CMD_READY);
+    fixed_queue_enqueue(btc_media_cmd_msg_queue, p_buf);
+    btc_media_task_post(SIG_MEDIA_TASK_CMD_READY);
     return TRUE;
 }
 
 /*******************************************************************************
  **
- ** Function         btif_media_task_aa_rx_flush
+ ** Function         btc_media_task_aa_rx_flush
  **
  ** Description
  **
  ** Returns          void
  **
  *******************************************************************************/
-static void btif_media_task_aa_rx_flush(void)
+static void btc_media_task_aa_rx_flush(void)
 {
     /* Flush all enqueued GKI SBC  buffers (encoded) */
-    APPL_TRACE_DEBUG("btif_media_task_aa_rx_flush");
+    APPL_TRACE_DEBUG("btc_media_task_aa_rx_flush");
 
-    btif_media_flush_q(&(btif_media_cb.RxSbcQ));
+    btc_media_flush_q(&(btc_media_cb.RxSbcQ));
 }
 
-int btif_a2dp_get_track_frequency(UINT8 frequency)
+int btc_a2dp_get_track_frequency(UINT8 frequency)
 {
     int freq = 48000;
     switch (frequency) {
@@ -862,7 +857,7 @@ int btif_a2dp_get_track_frequency(UINT8 frequency)
     return freq;
 }
 
-int btif_a2dp_get_track_channel_count(UINT8 channeltype)
+int btc_a2dp_get_track_channel_count(UINT8 channeltype)
 {
     int count = 1;
     switch (channeltype) {
@@ -878,30 +873,30 @@ int btif_a2dp_get_track_channel_count(UINT8 channeltype)
     return count;
 }
 
-void btif_a2dp_set_peer_sep(UINT8 sep)
+void btc_a2dp_set_peer_sep(UINT8 sep)
 {
-    btif_media_cb.peer_sep = sep;
+    btc_media_cb.peer_sep = sep;
 }
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 
-static void btif_media_task_aa_handle_clear_track (void)
+static void btc_media_task_aa_handle_clear_track (void)
 {
-    APPL_TRACE_DEBUG("btif_media_task_aa_handle_clear_track");
+    APPL_TRACE_DEBUG("btc_media_task_aa_handle_clear_track");
 }
 
 /*******************************************************************************
  **
- ** Function         btif_media_task_aa_handle_decoder_reset
+ ** Function         btc_media_task_aa_handle_decoder_reset
  **
  ** Description
  **
  ** Returns          void
  **
  *******************************************************************************/
-static void btif_media_task_aa_handle_decoder_reset(BT_HDR *p_msg)
+static void btc_media_task_aa_handle_decoder_reset(BT_HDR *p_msg)
 {
-    tBTIF_MEDIA_SINK_CFG_UPDATE *p_buf = (tBTIF_MEDIA_SINK_CFG_UPDATE *) p_msg;
+    tBTC_MEDIA_SINK_CFG_UPDATE *p_buf = (tBTC_MEDIA_SINK_CFG_UPDATE *) p_msg;
     tA2D_STATUS a2d_status;
     tA2D_SBC_CIE sbc_cie;
     OI_STATUS       status;
@@ -909,7 +904,7 @@ static void btif_media_task_aa_handle_decoder_reset(BT_HDR *p_msg)
     UINT32          num_blocks = 16;
     UINT32          num_subbands = 8;
 
-    APPL_TRACE_EVENT("btif_media_task_aa_handle_decoder_reset p_codec_info[%x:%x:%x:%x:%x:%x]\n",
+    APPL_TRACE_EVENT("btc_media_task_aa_handle_decoder_reset p_codec_info[%x:%x:%x:%x:%x:%x]\n",
               p_buf->codec_info[1], p_buf->codec_info[2], p_buf->codec_info[3],
               p_buf->codec_info[4], p_buf->codec_info[5], p_buf->codec_info[6]);
 
@@ -919,17 +914,17 @@ static void btif_media_task_aa_handle_decoder_reset(BT_HDR *p_msg)
         return;
     }
 
-    btif_media_cb.sample_rate = btif_a2dp_get_track_frequency(sbc_cie.samp_freq);
-    btif_media_cb.channel_count = btif_a2dp_get_track_channel_count(sbc_cie.ch_mode);
+    btc_media_cb.sample_rate = btc_a2dp_get_track_frequency(sbc_cie.samp_freq);
+    btc_media_cb.channel_count = btc_a2dp_get_track_channel_count(sbc_cie.ch_mode);
 
-    btif_media_cb.rx_flush = FALSE;
+    btc_media_cb.rx_flush = FALSE;
     APPL_TRACE_EVENT("Reset to sink role");
     status = OI_CODEC_SBC_DecoderReset(&context, contextData, sizeof(contextData), 2, 2, FALSE);
     if (!OI_SUCCESS(status)) {
         APPL_TRACE_ERROR("OI_CODEC_SBC_DecoderReset failed with error code %d\n", status);
     }
 
-    btif_media_cb.data_channel_open = TRUE;
+    btc_media_cb.data_channel_open = TRUE;
 
     switch (sbc_cie.samp_freq) {
     case A2D_SBC_IE_SAMP_FREQ_16:
@@ -1021,59 +1016,59 @@ static void btif_media_task_aa_handle_decoder_reset(BT_HDR *p_msg)
 
     APPL_TRACE_EVENT("\tBit pool Min:%d Max:%d\n", sbc_cie.min_bitpool, sbc_cie.max_bitpool);
 
-    btif_media_cb.frames_to_process = ((freq_multiple) / (num_blocks * num_subbands)) + 1;
-    APPL_TRACE_EVENT(" Frames to be processed in 20 ms %d\n", btif_media_cb.frames_to_process);
+    btc_media_cb.frames_to_process = ((freq_multiple) / (num_blocks * num_subbands)) + 1;
+    APPL_TRACE_EVENT(" Frames to be processed in 20 ms %d\n", btc_media_cb.frames_to_process);
 }
 #endif
 
 /*******************************************************************************
  **
- ** Function         btif_media_sink_enque_buf
+ ** Function         btc_media_sink_enque_buf
  **
  ** Description      This function is called by the av_co to fill A2DP Sink Queue
  **
  **
  ** Returns          size of the queue
  *******************************************************************************/
-UINT8 btif_media_sink_enque_buf(BT_HDR *p_pkt)
+UINT8 btc_media_sink_enque_buf(BT_HDR *p_pkt)
 {
     tBT_SBC_HDR *p_msg;
 
-    if (btif_media_cb.rx_flush == TRUE) { /* Flush enabled, do not enque*/
-        return GKI_queue_length(&btif_media_cb.RxSbcQ);
+    if (btc_media_cb.rx_flush == TRUE) { /* Flush enabled, do not enque*/
+        return GKI_queue_length(&btc_media_cb.RxSbcQ);
     }
-    if (GKI_queue_length(&btif_media_cb.RxSbcQ) == MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ) {
-        GKI_freebuf(GKI_dequeue(&(btif_media_cb.RxSbcQ)));
+    if (GKI_queue_length(&btc_media_cb.RxSbcQ) == MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ) {
+        GKI_freebuf(GKI_dequeue(&(btc_media_cb.RxSbcQ)));
     }
 
-    BTIF_TRACE_VERBOSE("btif_media_sink_enque_buf + ");
+    LOG_VERBOSE("btc_media_sink_enque_buf + ");
 
     /* allocate and Queue this buffer */
     if ((p_msg = (tBT_SBC_HDR *) GKI_getbuf(sizeof(tBT_SBC_HDR) +
                                             p_pkt->offset + p_pkt->len)) != NULL) {
         memcpy(p_msg, p_pkt, (sizeof(BT_HDR) + p_pkt->offset + p_pkt->len));
         p_msg->num_frames_to_be_processed = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
-        BTIF_TRACE_VERBOSE("btif_media_sink_enque_buf %d + \n", p_msg->num_frames_to_be_processed);
-        GKI_enqueue(&(btif_media_cb.RxSbcQ), p_msg);
-        btif_media_task_post(SIG_MEDIA_TASK_AVK_DATA_READY);
+        LOG_VERBOSE("btc_media_sink_enque_buf %d + \n", p_msg->num_frames_to_be_processed);
+        GKI_enqueue(&(btc_media_cb.RxSbcQ), p_msg);
+        btc_media_task_post(SIG_MEDIA_TASK_AVK_DATA_READY);
     } else {
         /* let caller deal with a failed allocation */
-        BTIF_TRACE_VERBOSE("btif_media_sink_enque_buf No Buffer left - ");
+        LOG_VERBOSE("btc_media_sink_enque_buf No Buffer left - ");
     }
-    return GKI_queue_length(&btif_media_cb.RxSbcQ);
+    return GKI_queue_length(&btc_media_cb.RxSbcQ);
 }
 
 
 /*******************************************************************************
  **
- ** Function         btif_media_aa_readbuf
+ ** Function         btc_media_aa_readbuf
  **
  ** Description      This function is called by the av_co to get the next buffer to send
  **
  **
  ** Returns          void
  *******************************************************************************/
-BT_HDR *btif_media_aa_readbuf(void)
+BT_HDR *btc_media_aa_readbuf(void)
 {
     return NULL;
 }

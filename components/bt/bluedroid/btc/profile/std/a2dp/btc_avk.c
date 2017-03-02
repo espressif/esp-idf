@@ -31,7 +31,7 @@
 #include "btif_util.h"
 #include "btc_profile_queue.h"
 #include "bta_api.h"
-#include "btif_media.h"
+#include "btc_media.h"
 #include "bta_av_api.h"
 #include "gki.h"
 #include "btu.h"
@@ -91,7 +91,7 @@ static btc_av_cb_t btc_av_cb = {0};
 static TIMER_LIST_ENT tle_av_open_on_rc;
 
 // TODO: need protection against race
-#define BTIF_A2D_CB_TO_APP(_event, _param)    do { \
+#define BTC_A2D_CB_TO_APP(_event, _param)    do { \
 	if (bt_av_sink_callback) { \
 	    bt_av_sink_callback(_event, _param); \
 	} \
@@ -241,7 +241,7 @@ static void btc_report_connection_state(esp_a2d_connection_state_t state, bt_bda
         param.conn_stat.disc_rsn = (disc_rsn == 0) ? ESP_A2D_DISC_RSN_NORMAL :
             ESP_A2D_DISC_RSN_ABNORMAL;
     }
-    BTIF_A2D_CB_TO_APP(ESP_A2D_CONNECTION_STATE_EVT, &param);
+    BTC_A2D_CB_TO_APP(ESP_A2D_CONNECTION_STATE_EVT, &param);
 }
 
 static void btc_report_audio_state(esp_a2d_audio_state_t state, bt_bdaddr_t *bd_addr)
@@ -253,7 +253,7 @@ static void btc_report_audio_state(esp_a2d_audio_state_t state, bt_bdaddr_t *bd_
     if (bd_addr) {
         memcpy(param.audio_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
     }
-    BTIF_A2D_CB_TO_APP(ESP_A2D_AUDIO_STATE_EVT, &param);
+    BTC_A2D_CB_TO_APP(ESP_A2D_AUDIO_STATE_EVT, &param);
 }
 
 /*****************************************************************************
@@ -277,7 +277,7 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
         memset(&btc_av_cb.peer_bda, 0, sizeof(bt_bdaddr_t));
         btc_av_cb.flags = 0;
         btc_av_cb.edr = 0;
-        btif_a2dp_on_idle();
+        btc_a2dp_on_idle();
         break;
 
     case BTC_SM_EXIT_EVT:
@@ -393,7 +393,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
             btc_av_cb.edr = p_bta_data->open.edr;
 
             btc_av_cb.peer_sep = p_bta_data->open.sep;
-            btif_a2dp_set_peer_sep(p_bta_data->open.sep);
+            btc_a2dp_set_peer_sep(p_bta_data->open.sep);
         } else {
             LOG_WARN("BTA_AV_OPEN_EVT::FAILED status: %d\n",
                                p_bta_data->open.status );
@@ -423,7 +423,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
             esp_a2d_cb_param_t param;
             memcpy(param.audio_cfg.remote_bda, &btc_av_cb.peer_bda, sizeof(esp_bd_addr_t));
             memcpy(&param.audio_cfg.mcc, p_data, sizeof(esp_a2d_mcc_t));
-            BTIF_A2D_CB_TO_APP(ESP_A2D_AUDIO_CFG_EVT, &param);
+            BTC_A2D_CB_TO_APP(ESP_A2D_AUDIO_CFG_EVT, &param);
         }
     } break;
 
@@ -484,17 +484,17 @@ static BOOLEAN btc_av_state_closing_handler(btc_sm_event_t event, void *p_data)
     switch (event) {
     case BTC_SM_ENTER_EVT:
         if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
-            btif_a2dp_set_rx_flush(TRUE);
+            btc_a2dp_set_rx_flush(TRUE);
         }
         break;
 
     case BTA_AV_STOP_EVT:
     case BTC_AV_STOP_STREAM_REQ_EVT:
         if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
-            btif_a2dp_set_rx_flush(TRUE);
+            btc_a2dp_set_rx_flush(TRUE);
         }
 
-        btif_a2dp_on_stopped(NULL);
+        btc_a2dp_on_stopped(NULL);
         break;
 
     case BTC_SM_EXIT_EVT:
@@ -576,7 +576,7 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
         }
 
         if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
-            btif_a2dp_set_rx_flush(FALSE); /*  remove flush state, ready for streaming*/
+            btc_a2dp_set_rx_flush(FALSE); /*  remove flush state, ready for streaming*/
         }
 
         /* change state to started, send acknowledgement if start is pending */
@@ -600,7 +600,7 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
 
     case BTA_AV_CLOSE_EVT: {
         /* avdtp link is closed */
-        btif_a2dp_on_stopped(NULL);
+        btc_a2dp_on_stopped(NULL);
 
         tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
         /* inform the application that we are disconnected */
@@ -692,7 +692,7 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
     case BTC_AV_STOP_STREAM_REQ_EVT:
     case BTC_AV_SUSPEND_STREAM_REQ_EVT:
 
-        /* set pending flag to ensure btif task is not trying to restart
+        /* set pending flag to ensure btc task is not trying to restart
            stream while suspend is in progress */
         btc_av_cb.flags |= BTC_AV_FLAG_LOCAL_SUSPEND_PENDING;
 
@@ -701,8 +701,8 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
         btc_av_cb.flags &= ~BTC_AV_FLAG_REMOTE_SUSPEND;
 
         if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
-            btif_a2dp_set_rx_flush(TRUE);
-            btif_a2dp_on_stopped(NULL);
+            btc_a2dp_set_rx_flush(TRUE);
+            btc_a2dp_on_stopped(NULL);
         }
 
         BTA_AvStop(TRUE);
@@ -729,7 +729,7 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
                          p_av->suspend.status, p_av->suspend.initiator);
 
         /* a2dp suspended, stop media task until resumed */
-        btif_a2dp_on_suspended(&p_av->suspend);
+        btc_a2dp_on_suspended(&p_av->suspend);
 
         /* if not successful, remain in current state */
         if (p_av->suspend.status != BTA_AV_SUCCESS) {
@@ -762,7 +762,7 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
     case BTA_AV_STOP_EVT:
 
         btc_av_cb.flags |= BTC_AV_FLAG_PENDING_STOP;
-        btif_a2dp_on_stopped(&p_av->suspend);
+        btc_a2dp_on_stopped(&p_av->suspend);
 
         btc_report_audio_state(ESP_A2D_AUDIO_STATE_STOPPED, &(btc_av_cb.peer_bda));
 
@@ -778,7 +778,7 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
         btc_av_cb.flags |= BTC_AV_FLAG_PENDING_STOP;
 
         /* avdtp link is closed */
-        btif_a2dp_on_stopped(NULL);
+        btc_a2dp_on_stopped(NULL);
         
         tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
         /* inform the application that we are disconnected */
@@ -887,11 +887,11 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
     tA2D_STATUS a2d_status;
     tA2D_SBC_CIE sbc_cie;
 
-    if (event == BTA_AV_MEDIA_DATA_EVT) { /* Switch to BTIF_MEDIA context */
+    if (event == BTA_AV_MEDIA_DATA_EVT) { /* Switch to BTC_MEDIA context */
         state = btc_sm_get_state(btc_av_cb.sm_handle);
         if ( (state == BTC_AV_STATE_STARTED) || /* send SBC packets only in Started State */
                 (state == BTC_AV_STATE_OPENED) ) {
-            que_len = btif_media_sink_enque_buf((BT_HDR *)p_data);
+            que_len = btc_media_sink_enque_buf((BT_HDR *)p_data);
             LOG_DEBUG(" Packets in Que %d\n", que_len);
         } else {
             return;
@@ -900,7 +900,7 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 
     if (event == BTA_AV_MEDIA_SINK_CFG_EVT) {
         /* send a command to BT Media Task */
-        btif_reset_decoder((UINT8 *)p_data);
+        btc_reset_decoder((UINT8 *)p_data);
 
 	/* currently only supportes SBC */
         a2d_status = A2D_ParsSbcInfo(&sbc_cie, (UINT8 *)p_data, FALSE);
@@ -925,7 +925,7 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 **
 ** Function         btc_av_init
 **
-** Description      Initializes btif AV if not already done
+** Description      Initializes btc AV if not already done
 **
 ** Returns          bt_status_t
 **
@@ -934,7 +934,7 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 bt_status_t btc_av_init()
 {
     if (btc_av_cb.sm_handle == NULL) {
-        if (!btif_a2dp_start_media_task()) {
+        if (!btc_a2dp_start_media_task()) {
             return BT_STATUS_FAIL;
         }
 
@@ -947,7 +947,7 @@ bt_status_t btc_av_init()
         btc_dm_enable_service(BTA_A2DP_SINK_SERVICE_ID);
 #endif
 
-        btif_a2dp_on_init();
+        btc_a2dp_on_init();
     }
 
     return BT_STATUS_SUCCESS;
@@ -1037,7 +1037,7 @@ esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
     LOG_INFO("%s\n", __FUNCTION__);
     CHECK_BTAV_INIT();
     memcpy(&(arg.disconnect), remote_bda, sizeof(bt_bdaddr_t));
-    /* Switch to BTIF context */
+    /* Switch to BTC context */
     stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
@@ -1054,11 +1054,11 @@ static void cleanup(void)
 {
     LOG_INFO("%s\n", __FUNCTION__);
 
-    btif_a2dp_stop_media_task();
+    btc_a2dp_stop_media_task();
 
-    btif_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
+    btc_dm_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-    btif_disable_service(BTA_A2DP_SINK_SERVICE_ID);
+    btc_dm_disable_service(BTA_A2DP_SINK_SERVICE_ID);
 #endif
 
     /* Also shut down the AV state machine */
@@ -1108,12 +1108,13 @@ BOOLEAN btc_av_stream_ready(void)
     LOG_DEBUG("btc_av_stream_ready : sm hdl %d, state %d, flags %x\n",
                      (int)btc_av_cb.sm_handle, state, btc_av_cb.flags);
 
+#if 0 /* karl */
     /* also make sure main adapter is enabled */
     if (btif_is_enabled() == 0) {
         LOG_INFO("main adapter not enabled");
         return FALSE;
     }
-
+#endif
     /* check if we are remotely suspended or stop is pending */
     if (btc_av_cb.flags & (BTC_AV_FLAG_REMOTE_SUSPEND | BTC_AV_FLAG_PENDING_STOP)) {
         return FALSE;
@@ -1258,7 +1259,7 @@ BOOLEAN btc_av_is_peer_edr(void)
 **
 ** Function        btc_av_clear_remote_suspend_flag
 **
-** Description     Clears btif_av_cd.flags if BTC_AV_FLAG_REMOTE_SUSPEND is set
+** Description     Clears btc_av_cb.flags if BTC_AV_FLAG_REMOTE_SUSPEND is set
 **
 ** Returns          void
 ******************************************************************************/

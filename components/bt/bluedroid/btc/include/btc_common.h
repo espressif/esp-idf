@@ -17,8 +17,19 @@
 #define __BTC_COMMON_H__
 
 #include "bt_trace.h"
+#include "bt_types.h"
+#include "osi.h"
 
 #define BTC_ASSERTC(cond, msg, val) if (!(cond)) { LOG_ERROR( \
     "### ASSERT : %s line %d %s (%d) ###", __FILE__, __LINE__, msg, val);}
+
+#define BTC_HAL_CBACK(P_CB, P_CBACK, ...)\
+    if (P_CB && P_CB->P_CBACK) {            \
+        LOG_INFO("HAL %s->%s", #P_CB, #P_CBACK); \
+        P_CB->P_CBACK(__VA_ARGS__);         \
+    }                                       \
+    else {                                  \
+        BTC_ASSERTC(0, "Callback is NULL", 0);  \
+    }
 
 #endif /* __BTC_COMMON_H__ */

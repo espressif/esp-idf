@@ -23,7 +23,7 @@
 
 #include "bt_defs.h"
 #include "allocator.h"
-#include "btif_common.h"
+#include "btc_common.h"
 #include "btc_sm.h"
 #include "gki.h"
 

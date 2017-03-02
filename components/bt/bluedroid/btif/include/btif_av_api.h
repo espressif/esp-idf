@@ -33,7 +33,7 @@
 #include "bta_av_api.h"
 // #include "uipc.h"
 
-#include "btif_media.h"
+#include "btc_media.h"
 #include "a2d_api.h"
 #include "a2d_sbc.h"
 
