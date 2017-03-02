@@ -45,7 +45,6 @@ extern void btdm_controller_deinit(void);
 extern int btdm_controller_enable(esp_bt_mode_t mode);
 extern int btdm_controller_disable(esp_bt_mode_t mode);
 extern void btdm_rf_bb_init(void);
-extern int esp_read_mac(uint8_t *mac, int type);
 
 /* VHCI function interface */
 typedef struct vhci_host_callback {

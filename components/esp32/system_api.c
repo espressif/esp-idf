@@ -74,42 +74,82 @@ esp_err_t esp_efuse_read_mac(uint8_t* mac)
 
 esp_err_t system_efuse_read_mac(uint8_t mac[6]) __attribute__((alias("esp_efuse_read_mac")));
 
-esp_err_t esp_read_mac(uint8_t* mac, int interface)
+esp_err_t esp_derive_mac(uint8_t* dst_mac, const uint8_t* src_mac)
+{
+    uint8_t idx;
+
+    if (dst_mac == NULL || src_mac == NULL) {
+        ESP_LOGE(TAG, "mac address param is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memcpy(dst_mac, src_mac, 6);
+    for (idx = 0; idx < 64; idx++) {
+        dst_mac[0] = src_mac[0] | 0x02;
+        dst_mac[0] ^= idx << 2;
+
+        if (memcmp(dst_mac, src_mac, 6)) {
+            break;
+        }
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 {
     uint8_t efuse_mac[6];
 
     if (mac == NULL) {
         ESP_LOGE(TAG, "mac address param is NULL");
-        abort();
+        return ESP_ERR_INVALID_ARG;
     }
+
+    if (type < ESP_MAC_WIFI_STA || type > ESP_MAC_ETH) {
+    	ESP_LOGE(TAG, "mac type is incorrect");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    _Static_assert(NUM_MAC_ADDRESS_FROM_EFUSE == FOUR_MAC_ADDRESS_FROM_EFUSE \
+            || NUM_MAC_ADDRESS_FROM_EFUSE == TWO_MAC_ADDRESS_FROM_EFUSE, \
+            "incorrect NUM_MAC_ADDRESS_FROM_EFUSE value");
 
     esp_efuse_read_mac(efuse_mac);
 
-    switch (interface) {
-#if CONFIG_WIFI_ENABLED
+    switch (type) {
     case ESP_MAC_WIFI_STA:
         memcpy(mac, efuse_mac, 6);
-        mac[5] += CONFIG_ESP_MAC_OFFSET_WIFI_STA;
         break;
     case ESP_MAC_WIFI_SOFTAP:
-        memcpy(mac, efuse_mac, 6);
-        mac[5] += CONFIG_ESP_MAC_OFFSET_WIFI_SOFTAP;
+        if (NUM_MAC_ADDRESS_FROM_EFUSE == FOUR_MAC_ADDRESS_FROM_EFUSE) {
+            memcpy(mac, efuse_mac, 6);
+            mac[5] += 1;
+        }
+        else if (NUM_MAC_ADDRESS_FROM_EFUSE == TWO_MAC_ADDRESS_FROM_EFUSE) {
+            esp_derive_mac(mac, efuse_mac);
+        }
         break;
-#endif
-#if CONFIG_BT_ENABLED
     case ESP_MAC_BT:
         memcpy(mac, efuse_mac, 6);
-        mac[5] += CONFIG_ESP_MAC_OFFSET_BT;
+        if (NUM_MAC_ADDRESS_FROM_EFUSE == FOUR_MAC_ADDRESS_FROM_EFUSE) {
+            mac[5] += 2;
+        }
+        else if (NUM_MAC_ADDRESS_FROM_EFUSE == TWO_MAC_ADDRESS_FROM_EFUSE) {
+            mac[5] += 1;
+        }
         break;
-#endif
-#if CONFIG_ETHERNET
     case ESP_MAC_ETH:
-        memcpy(mac, efuse_mac, 6);
-        mac[5] += CONFIG_ESP_MAC_OFFSET_ETH;
+        if (NUM_MAC_ADDRESS_FROM_EFUSE == FOUR_MAC_ADDRESS_FROM_EFUSE) {
+            memcpy(mac, efuse_mac, 6);
+            mac[5] += 3;
+        }
+        else if (NUM_MAC_ADDRESS_FROM_EFUSE == TWO_MAC_ADDRESS_FROM_EFUSE) {
+            efuse_mac[5] += 1;
+            esp_derive_mac(mac, efuse_mac);
+        }
         break;
-#endif
     default:
-        ESP_LOGW(TAG, "wrong mac type"); 
+        ESP_LOGW(TAG, "incorrect mac type");
         break;
     }
   

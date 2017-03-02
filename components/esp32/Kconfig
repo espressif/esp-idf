@@ -105,6 +105,28 @@ config MEMMAP_SPISRAM
         main memory map. Enable this if you have this hardware and want to use it in the same
         way as on-chip RAM.
 
+choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
+    bool "Number of MAC address generated from the hardware MAC address in efuse"
+    default FOUR_MAC_ADDRESS_FROM_EFUSE
+    help
+        Config the number of MAC address which is generated from the hardware MAC address in efuse.
+        If the number is two, the MAC addresses of WiFi station and bluetooth are generated from
+        the hardware MAC address in efuse. The MAC addresses of WiFi softap and ethernet are derived
+        from that of WiFi station and bluetooth respectively. 
+        If the number is four, the MAC addresses of WiFi station, WiFi softap, bluetooth and ethernet
+        are all generated from the hardware MAC address in efuse.
+
+config TWO_MAC_ADDRESS_FROM_EFUSE
+    bool "Two"
+config FOUR_MAC_ADDRESS_FROM_EFUSE
+    bool "Four"
+endchoice
+
+config NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
+    int 
+    default 2 if TWO_MAC_ADDRESS_FROM_EFUSE 
+    default 4 if FOUR_MAC_ADDRESS_FROM_EFUSE 
+
 config SYSTEM_EVENT_QUEUE_SIZE
     int "System event queue size"
     default 32
@@ -480,24 +502,6 @@ menuconfig WIFI_ENABLED
     default y
     help
        Select this option to enable WiFi stack and show the submenu with WiFi configuration choices.
-
-config ESP_MAC_OFFSET_WIFI_STA
-    int "MAC address offset value of WiFi station"
-    depends on WIFI_ENABLED
-    range 0 255
-    default 0
-    help
-       The offset value of WiFi station MAC address from the MAC address which is read from efuse.
-       This offset value must be different from that of WiFi softap, bluetooth and ethernet.
-
-config ESP_MAC_OFFSET_WIFI_SOFTAP
-    int "MAC address offset value of WiFi softap"
-    depends on WIFI_ENABLED
-    range 0 255
-    default 1
-    help
-       The offset value of WiFi softap MAC address from the MAC address which is read from efuse.
-       This offset value must be different from that of WiFi station, bluetooth and ethernet.
 
 config SW_COEXIST_ENABLE
     bool "Software controls WiFi/Bluetooth coexistence"
