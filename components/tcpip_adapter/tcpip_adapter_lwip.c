@@ -726,7 +726,7 @@ esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *ho
     p_netif = esp_netif[tcpip_if];
     if (p_netif != NULL) {
         memset(hostinfo[tcpip_if], 0, sizeof(hostinfo[tcpip_if]));
-        memcpy(hostinfo[tcpip_if], hostname, strlen(hostname));
+        strlcpy(hostinfo[tcpip_if], hostname, sizeof(hostinfo[tcpip_if]));
         p_netif->hostname = hostinfo[tcpip_if];
         return ESP_OK;
     } else {
