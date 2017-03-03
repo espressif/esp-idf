@@ -167,6 +167,7 @@ test_report:
   only:
     - master
     - triggers
+    - /^release\/v.*$/
   tags:
     - report
   variables:
@@ -287,6 +288,7 @@ check_doc_links:
   when: on_success
   only:
     - master
+    - /^release\/v.*$/
     - triggers
   allow_failure: true
 
