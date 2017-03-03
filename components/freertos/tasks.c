@@ -1046,25 +1046,59 @@ UBaseType_t x;
 }
 /*-----------------------------------------------------------*/
 
-static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode, const BaseType_t xCoreID )
+static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode, BaseType_t xCoreID )
 {
-	TCB_t *curTCB;
-	BaseType_t i;
+	TCB_t *curTCB, *tcb0, *tcb1;
 
     /* Ensure interrupts don't access the task lists while the lists are being
 	updated. */
 	taskENTER_CRITICAL(&xTaskQueueMutex);
 	{
 		uxCurrentNumberOfTasks++;
-		//If the task has no affinity and nothing is scheduled on this core, just throw it this core.
-		//If it has affinity, throw it on the core that needs it if nothing is already scheduled there.
-		BaseType_t xMyCore = xCoreID;
-		if ( xMyCore == tskNO_AFFINITY) xMyCore = xPortGetCoreID();
-		if( pxCurrentTCB[ xMyCore ] == NULL )
+
+		// Determine which core this task starts on
+		if ( xCoreID == tskNO_AFFINITY )
+		{
+			if ( portNUM_PROCESSORS == 1 )
+			{
+				xCoreID = 0;
+			}
+			else
+			{
+				// if the task has no affinity, put it on either core if nothing is currently scheduled there. Failing that,
+				// put it on the core where it will preempt the lowest priority running task. If neither of these are true,
+				// queue it on the currently running core.
+				tcb0 = pxCurrentTCB[0];
+				tcb1 = pxCurrentTCB[1];
+				if ( tcb0 == NULL )
+				{
+					xCoreID = 0;
+				}
+				else if ( tcb1 == NULL )
+				{
+					xCoreID = 1;
+				}
+				else if ( tcb0->uxPriority < pxNewTCB->uxPriority && tcb0->uxPriority < tcb1->uxPriority )
+				{
+					xCoreID = 0;
+				}
+				else if ( tcb1->uxPriority < pxNewTCB->uxPriority )
+				{
+					xCoreID = 1;
+				}
+				else
+				{
+					xCoreID = xPortGetCoreID(); // Both CPU have higher priority tasks running on them, so this won't run yet
+				}
+			}
+		}
+
+        // If nothing is running on this core, put the new task there now
+		if( pxCurrentTCB[ xCoreID ] == NULL )
 		{
 			/* There are no other tasks, or all the other tasks are in
 			the suspended state - make this the current task. */
-			pxCurrentTCB[ xMyCore ] = pxNewTCB;
+			pxCurrentTCB[ xCoreID ] = pxNewTCB;
 
 			if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
 			{
@@ -1090,19 +1124,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			so far. */
 			if( xSchedulerRunning == pdFALSE )
 			{
-				/* Scheduler isn't running yet. We need to determine on which CPU to run this task. */
-				for ( i=0; i<portNUM_PROCESSORS; i++ ) 
+				/* Scheduler isn't running yet. We need to determine on which CPU to run this task.
+				   Schedule now if either nothing is scheduled yet or we can replace a task of lower prio. */
+				if ( pxCurrentTCB[xCoreID] == NULL || pxCurrentTCB[xCoreID]->uxPriority <= pxNewTCB->uxPriority )
 				{
-					/* Can we schedule this task on core i? */
-					if (xCoreID == tskNO_AFFINITY || xCoreID == i) 
-					{
-						/* Schedule if nothing is scheduled yet, or overwrite a task of lower prio. */
-						if ( pxCurrentTCB[i] == NULL || pxCurrentTCB[i]->uxPriority <= pxNewTCB->uxPriority )
-						{
-							pxCurrentTCB[i] = pxNewTCB;
-							break;
-						}
-					}
+					pxCurrentTCB[xCoreID] = pxNewTCB;
 				}
 			}
 			else
@@ -1130,37 +1156,27 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 	if( xSchedulerRunning != pdFALSE )
 	{
-	       taskENTER_CRITICAL(&xTaskQueueMutex);
-		curTCB = pxCurrentTCB[ xPortGetCoreID() ];
+		taskENTER_CRITICAL(&xTaskQueueMutex);
+
+		curTCB = pxCurrentTCB[ xCoreID ];
 		/* Scheduler is running. If the created task is of a higher priority than an executing task
-	       then it should run now.
-		   ToDo: This only works for the current core. If a task is scheduled on an other processor,
-		   the other processor will keep running the task it's working on, and only switch to the newer 
-		   task on a timer interrupt. */
-		//No mux here, uxPriority is mostly atomic and there's not really any harm if this check misfires.
-		if( curTCB->uxPriority < pxNewTCB->uxPriority )
+		   then it should run now.
+		*/
+		if( curTCB == NULL || curTCB->uxPriority < pxNewTCB->uxPriority )
 		{
-			/* Scheduler is running. If the created task is of a higher priority than an executing task
-			  then it should run now.
-			  No mux here, uxPriority is mostly atomic and there's not really any harm if this check misfires.
-			*/
-			if( tskCAN_RUN_HERE( xCoreID ) && curTCB->uxPriority < pxNewTCB->uxPriority )
+			if( xCoreID == xPortGetCoreID() )
 			{
 				taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
 			}
-			else if( xCoreID != xPortGetCoreID() ) {
+			else {
 				taskYIELD_OTHER_CORE(xCoreID, pxNewTCB->uxPriority);
-			}
-			else
-			{
-				mtCOVERAGE_TEST_MARKER();
 			}
 		}
 		else
 		{
 			mtCOVERAGE_TEST_MARKER();
 		}
-	        taskEXIT_CRITICAL(&xTaskQueueMutex);
+		taskEXIT_CRITICAL(&xTaskQueueMutex);
 	}
 	else
 	{

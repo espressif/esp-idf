@@ -119,11 +119,8 @@ typedef struct xEventGroupDefinition
 		UBaseType_t uxEventGroupNumber;
 	#endif
 
+	portMUX_TYPE eventGroupMux;
 } EventGroup_t;
-
-
-/* Again: one mux for all events. Maybe this can be made more granular. ToDo: look into that. -JD */
-static portMUX_TYPE xEventGroupMux = portMUX_INITIALIZER_UNLOCKED;
 
 
 /*-----------------------------------------------------------*/
@@ -156,6 +153,8 @@ EventGroup_t *pxEventBits;
 		traceEVENT_GROUP_CREATE_FAILED();
 	}
 
+    vPortCPUInitializeMutex(&pxEventBits->eventGroupMux);
+
 	return ( EventGroupHandle_t ) pxEventBits;
 }
 /*-----------------------------------------------------------*/
@@ -176,6 +175,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 	#endif
 
 	vTaskSuspendAll();
+	taskENTER_CRITICAL(&pxEventBits->eventGroupMux);
 	{
 		uxOriginalBitValue = pxEventBits->uxEventBits;
 
@@ -217,6 +217,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 			}
 		}
 	}
+	taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 	xAlreadyYielded = xTaskResumeAll();
 
 	if( xTicksToWait != ( TickType_t ) 0 )
@@ -239,7 +240,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 		if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
 		{
 			/* The task timed out, just return the current event bit value. */
-			taskENTER_CRITICAL( &xEventGroupMux );
+			taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
 			{
 				uxReturn = pxEventBits->uxEventBits;
 
@@ -256,7 +257,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 					mtCOVERAGE_TEST_MARKER();
 				}
 			}
-			taskEXIT_CRITICAL( &xEventGroupMux );
+			taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 
 			xTimeoutOccurred = pdTRUE;
 		}
@@ -295,6 +296,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 	#endif
 
 	vTaskSuspendAll();
+	taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
 	{
 		const EventBits_t uxCurrentEventBits = pxEventBits->uxEventBits;
 
@@ -361,6 +363,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 			traceEVENT_GROUP_WAIT_BITS_BLOCK( xEventGroup, uxBitsToWaitFor );
 		}
 	}
+	taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 	xAlreadyYielded = xTaskResumeAll();
 
 	if( xTicksToWait != ( TickType_t ) 0 )
@@ -382,7 +385,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 
 		if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
 		{
-			taskENTER_CRITICAL( &xEventGroupMux );
+			taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
 			{
 				/* The task timed out, just return the current event bit value. */
 				uxReturn = pxEventBits->uxEventBits;
@@ -405,7 +408,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 					mtCOVERAGE_TEST_MARKER();
 				}
 			}
-			taskEXIT_CRITICAL( &xEventGroupMux );
+			taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 
 			/* Prevent compiler warnings when trace macros are not used. */
 			xTimeoutOccurred = pdFALSE;
@@ -434,7 +437,7 @@ EventBits_t uxReturn;
 	configASSERT( xEventGroup );
 	configASSERT( ( uxBitsToClear & eventEVENT_BITS_CONTROL_BYTES ) == 0 );
 
-	taskENTER_CRITICAL( &xEventGroupMux );
+	taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
 	{
 		traceEVENT_GROUP_CLEAR_BITS( xEventGroup, uxBitsToClear );
 
@@ -445,7 +448,7 @@ EventBits_t uxReturn;
 		/* Clear the bits. */
 		pxEventBits->uxEventBits &= ~uxBitsToClear;
 	}
-	taskEXIT_CRITICAL( &xEventGroupMux );
+	taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 
 	return uxReturn;
 }
@@ -498,7 +501,9 @@ BaseType_t xMatchFound = pdFALSE;
 
 	pxList = &( pxEventBits->xTasksWaitingForBits );
 	pxListEnd = listGET_END_MARKER( pxList ); /*lint !e826 !e740 The mini list structure is used as the list end to save RAM.  This is checked and valid. */
+
 	vTaskSuspendAll();
+	taskENTER_CRITICAL(&pxEventBits->eventGroupMux);
 	{
 		traceEVENT_GROUP_SET_BITS( xEventGroup, uxBitsToSet );
 
@@ -570,6 +575,7 @@ BaseType_t xMatchFound = pdFALSE;
 		bit was set in the control word. */
 		pxEventBits->uxEventBits &= ~uxBitsToClear;
 	}
+	taskEXIT_CRITICAL(&pxEventBits->eventGroupMux);
 	( void ) xTaskResumeAll();
 
 	return pxEventBits->uxEventBits;
@@ -578,10 +584,11 @@ BaseType_t xMatchFound = pdFALSE;
 
 void vEventGroupDelete( EventGroupHandle_t xEventGroup )
 {
-EventGroup_t *pxEventBits = ( EventGroup_t * ) xEventGroup;
-const List_t *pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
+	EventGroup_t *pxEventBits = ( EventGroup_t * ) xEventGroup;
+	const List_t *pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
 
 	vTaskSuspendAll();
+	taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
 	{
 		traceEVENT_GROUP_DELETE( xEventGroup );
 
@@ -593,6 +600,7 @@ const List_t *pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
 			( void ) xTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
 		}
 
+		taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 		vPortFree( pxEventBits );
 	}
 	( void ) xTaskResumeAll();
