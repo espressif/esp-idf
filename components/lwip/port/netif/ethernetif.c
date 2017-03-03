@@ -82,7 +82,10 @@ ethernet_low_level_init(struct netif *netif)
   netif->flags |= NETIF_FLAG_IGMP;
 #endif
 #endif
-  /* Do whatever else is needed to initialize interface. */
+
+#ifndef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+  netif->l2_buffer_free_notify = esp_eth_free_rx_buf;
+#endif
 }
 
 /**
@@ -152,11 +155,12 @@ ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
 
   if(buffer== NULL || netif == NULL)
     goto _exit;
-#if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+#ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
     return;
   }
+  p->l2_owner = NULL;
   memcpy(p->payload, buffer, len);
 
 /* full packet send to tcpip_thread to process */
@@ -171,13 +175,13 @@ if (netif->input(p, netif) != ERR_OK) {
     return;
   }
   p->payload = buffer;
-  p->user_flag = PBUF_USER_FLAG_OWNER_ETH;
-  p->user_buf = buffer;
+  p->l2_owner = netif;
+  p->l2_buf = buffer;
 
   /* full packet send to tcpip_thread to process */
 if (netif->input(p, netif) != ERR_OK) {
   LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-  p->user_flag = PBUF_USER_FLAG_OWNER_NULL;
+  p->l2_owner = NULL;
   pbuf_free(p);
 }
 #endif
