@@ -63,7 +63,7 @@ typedef enum {
     ESP_PARTITION_SUBTYPE_APP_OTA_13 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 13,//!< OTA partition 13
     ESP_PARTITION_SUBTYPE_APP_OTA_14 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 14,//!< OTA partition 14
     ESP_PARTITION_SUBTYPE_APP_OTA_15 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 15,//!< OTA partition 15
-    ESP_PARTITION_SUBTYPE_APP_OTA_MAX = 15,                                   //!< Max subtype of OTA partition
+    ESP_PARTITION_SUBTYPE_APP_OTA_MAX = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 16,//!< Max subtype of OTA partition
     ESP_PARTITION_SUBTYPE_APP_TEST = 0x20,                                    //!< Test application partition
 
     ESP_PARTITION_SUBTYPE_DATA_OTA = 0x00,                                    //!< OTA selection partition
@@ -164,6 +164,26 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t iterator);
  *
  */
 void esp_partition_iterator_release(esp_partition_iterator_t iterator);
+
+/**
+ * @brief Verify partition data
+ *
+ * Given a pointer to partition data, verify this partition exists in the partition table (all fields match.)
+ *
+ * This function is also useful to take partition data which may be in a RAM buffer and convert it to a pointer to the
+ * permanent partition data stored in flash.
+ *
+ * Pointers returned from this function can be compared directly to the address of any pointer returned from
+ * esp_partition_get(), as a test for equality.
+ *
+ * @param partition Pointer to partition data to verify. Must be non-NULL. All fields of this structure must match the
+ * partition table entry in flash for this function to return a successful match.
+ *
+ * @return
+ * - If partition not found, returns NULL.
+ * - If found, returns a pointer to the esp_partition_t structure in flash. This pointer is always valid for the lifetime of the application.
+ */
+const esp_partition_t *esp_partition_verify(const esp_partition_t *partition);
 
 /**
  * @brief Read data from the partition

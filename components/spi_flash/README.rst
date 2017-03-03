@@ -1,15 +1,15 @@
-SPI flash related APIs
-======================
+SPI Flash APIs
+==============
 
 Overview
 --------
-Spi_flash component contains APIs related to reading, writing, erasing,
+The spi_flash component contains APIs related to reading, writing, erasing,
 memory mapping data in the external SPI flash. It also has higher-level
-APIs which work with partition table and partitions.
+APIs which work with partitions defined in the :doc:`partition table </partition-tables>`.
 
-Note that all the functionality is limited to the "main" flash chip,
-i.e. the flash chip from which program runs. For ``spi_flash_*`` functions, 
-this is software limitation. Underlying ROM functions which work with SPI flash 
+Note that all the functionality is limited to the "main" SPI flash chip,
+the same SPI flash chip from which program runs. For ``spi_flash_*`` functions,
+this is a software limitation. The underlying ROM functions which work with SPI flash
 do not have provisions for working with flash chips attached to SPI peripherals
 other than SPI0.
 
@@ -24,73 +24,112 @@ This is the set of APIs for working with data in flash:
 - ``spi_flash_erase_range`` used to erase range of addresses in flash
 - ``spi_flash_get_chip_size`` returns flash chip size, in bytes, as configured in menuconfig
 
-There are some data alignment limitations which need to be considered when using
-spi_flash_read/spi_flash_write functions:
+Generally, try to avoid using the raw SPI flash functions in favour of
+partition-specific functions.
 
-- buffer in RAM must be 4-byte aligned
-- size must be 4-byte aligned
-- address in flash must be 4-byte aligned
+SPI Flash Size
+--------------
 
-These alignment limitations are purely software, and should be removed in future
-versions.
+The SPI flash size is configured by writing a field in the software bootloader
+image header, flashed at offset 0x1000.
 
-It is assumed that correct SPI flash chip size is set at compile time using
-menuconfig. While run-time detection of SPI flash chip size is possible, it is
-not implemented yet. Applications which need this (e.g. to provide one firmware
-binary for different flash sizes) can do flash chip size detection and set
-the correct flash chip size in ``chip_size`` member of ``g_rom_flashchip``
-structure. This size is used by ``spi_flash_*`` functions for bounds checking.
+By default, the SPI flash size is detected by esptool.py when this bootloader is
+written to flash, and the header is updated with the correct
+size. Alternatively, it is possible to generate a fixed flash size by disabling
+detection in ``make menuconfig`` (under Serial Flasher Config).
 
-SPI flash APIs disable instruction and data caches while reading/writing/erasing.
-See implementation notes below on details how this happens. For application
-this means that at some periods of time, code can not be run from flash,
-and constant data can not be fetched from flash by the CPU. This is not an
-issue for normal code which runs in a task, because SPI flash APIs prevent
-other tasks from running while caches are disabled. This is an issue for
-interrupt handlers, which can still be called while flash operation is in
-progress. If the interrupt handler is not placed into IRAM, there is a
-possibility that interrupt will happen at the time when caches are disabled,
-which will cause an illegal instruction exception.
+If it is necessary to override the configured flash size at runtime, is is
+possible to set the ``chip_size`` member of ``g_rom_flashchip`` structure. This
+size is used by ``spi_flash_*`` functions (in both software & ROM) for bounds
+checking.
 
-To prevent this, make sure that all ISR code, and all functions called from ISR
-code are placed into IRAM, or are located in ROM. Most useful C library
-functions are located in ROM, so they can be called from ISR.
+Concurrency Constraints
+-----------------------
 
-To place a function into IRAM, use ``IRAM_ATTR`` attribute, e.g.::
+Because the SPI flash is also used for firmware execution (via the instruction &
+data caches), these caches much be disabled while reading/writing/erasing. This
+means that both CPUs must be running code from IRAM and only reading data from
+DRAM while flash write operations occur.
 
-	#include "esp_attr.h"
-	
-	void IRAM_ATTR gpio_isr_handler(void* arg)
-	{
-		// ...		
-	}
-	
-When flash encryption is enabled, ``spi_flash_read`` will read data as it is
-stored in flash (without decryption), and ``spi_flash_write`` will write data
-in plain text. In other words, ``spi_flash_read/write`` APIs don't have
-provisions to deal with encrypted data.
+Refer to the :ref:`application memory layout <memory-layout>` documentation for
+an explanation of the differences between IRAM, DRAM and flash cache.
 
+To avoid reading flash cache accidentally, when one CPU commences a flash write
+or erase operation the other CPU is put into a blocked state and all
+non-IRAM-safe interrupts are disabled on both CPUs, until the flash operation
+completes.
+
+.. _iram-safe-interrupt-handlers:
+
+IRAM-Safe Interrupt Handlers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you have an interrupt handler that you want to execute even when a flash
+operation is in progress (for example, for low latency operations), set the
+``ESP_INTR_FLAG_IRAM`` flag when the :doc:`interrupt handler is registered
+</api/system/intr_alloc>`.
+
+You must ensure all data and functions accessed by these interrupt handlers are
+located in IRAM or DRAM. This includes any functions that the handler calls.
+
+Use the ``IRAM_ATTR`` attribute for functions::
+
+    #include "esp_attr.h"
+
+    void IRAM_ATTR gpio_isr_handler(void* arg)
+    {
+        // ...
+    }
+
+Use the ``DRAM_ATTR`` and ``DRAM_STR`` attributes for constant data::
+
+    void IRAM_ATTR gpio_isr_handler(void* arg)
+    {
+       const static DRAM_ATTR uint8_t INDEX_DATA[] = { 45, 33, 12, 0 };
+       const static char *MSG = DRAM_STR("I am a string stored in RAM");
+    }
+
+Note that knowing which data should be marked with ``DRAM_ATTR`` can be hard,
+the compiler will sometimes recognise that a variable or expression is constant
+(even if it is not marked ``const``) and optimise it into flash, unless it is
+marked with ``DRAM_ATTR``.
+
+If a function or symbol is not correctly put into IRAM/DRAM and the interrupt
+handler reads from the flash cache during a flash operation, it will cause a
+crash due to Illegal Instruction exception (for code which should be in IRAM) or
+garbage data to be read (for constant data which should be in DRAM).
 
 Partition table APIs
 --------------------
 
-ESP-IDF uses partition table to maintain information about various regions of
+ESP-IDF projects use a partition table to maintain information about various regions of
 SPI flash memory (bootloader, various application binaries, data, filesystems).
-More information about partition tables can be found in docs/partition_tables.rst.
+More information about partition tables can be found :doc:`here </partition-tables>`.
 
 This component provides APIs to enumerate partitions found in the partition table
 and perform operations on them. These functions are declared in ``esp_partition.h``:
 
-- ``esp_partition_find`` used to search partition table for entries with specific type, returns an opaque iterator
+- ``esp_partition_find`` used to search partition table for entries with
+  specific type, returns an opaque iterator
 - ``esp_partition_get`` returns a structure describing the partition, for the given iterator
 - ``esp_partition_next`` advances iterator to the next partition found
 - ``esp_partition_iterator_release`` releases iterator returned by ``esp_partition_find``
-- ``esp_partition_find_first`` is a convenience function which returns structure describing the first partition found by esp_partition_find
-- ``esp_partition_read``, ``esp_partition_write``, ``esp_partition_erase_range`` are equivalent to ``spi_flash_read``, ``spi_flash_write``, ``spi_flash_erase_range``, but operate within partition boundaries
+- ``esp_partition_find_first`` is a convenience function which returns structure
+  describing the first partition found by esp_partition_find
+- ``esp_partition_read``, ``esp_partition_write``, ``esp_partition_erase_range``
+  are equivalent to ``spi_flash_read``, ``spi_flash_write``,
+  ``spi_flash_erase_range``, but operate within partition boundaries
 
 Most application code should use ``esp_partition_*`` APIs instead of lower level
 ``spi_flash_*`` APIs. Partition APIs do bounds checking and calculate correct
 offsets in flash based on data stored in partition table.
+
+SPI Flash Encryption
+--------------------
+
+It is possible to encrypt SPI flash contents, and have it transparenlty decrypted by hardware.
+
+Refer to the :doc:`Flash Encryption documentation </security/flash-encryption>` for more details.
 
 Memory mapping APIs
 -------------------
@@ -105,10 +144,10 @@ about memory mapping hardware.
 
 Note that some number of 64KB pages is used to map the application
 itself into memory, so the actual number of available 64KB pages may be less.
- 
+
 Reading data from flash using a memory mapped region is the only way to decrypt
-contents of flash when flash encryption is enabled. Decryption is performed at
-hardware level.
+contents of flash when :doc:`flash encryption </security/flash-encryption>` is enabled.
+Decryption is performed at hardware level.
 
 Memory mapping APIs are declared in ``esp_spi_flash.h`` and ``esp_partition.h``:
 
@@ -119,40 +158,8 @@ Memory mapping APIs are declared in ``esp_spi_flash.h`` and ``esp_partition.h``:
 Differences between ``spi_flash_mmap`` and ``esp_partition_mmap`` are as follows:
 
 - ``spi_flash_mmap`` must be given a 64KB aligned physical address
-- ``esp_partition_mmap`` may be given an arbitrary offset within the partition, it will adjust returned pointer to mapped memory as necessary
+- ``esp_partition_mmap`` may be given an arbitrary offset within the partition,
+  it will adjust returned pointer to mapped memory as necessary
 
 Note that because memory mapping happens in 64KB blocks, it may be possible to
-read data outside of the partition provided to ``esp_partition_mmap``. 
-
-Implementation notes
---------------------
-
-In order to perform some flash operations, we need to make sure both CPUs
-are not running any code from flash for the duration of the flash operation.
-In a single-core setup this is easy: we disable interrupts/scheduler and do
-the flash operation. In the dual-core setup this is slightly more complicated.
-We need to make sure that the other CPU doesn't run any code from flash.
-
-
-When SPI flash API is called on CPU A (can be PRO or APP), we start
-spi_flash_op_block_func function on CPU B using esp_ipc_call API. This API
-wakes up high priority task on CPU B and tells it to execute given function,
-in this case spi_flash_op_block_func. This function disables cache on CPU B and
-signals that cache is disabled by setting s_flash_op_can_start flag.
-Then the task on CPU A disables cache as well, and proceeds to execute flash
-operation.
-
-While flash operation is running, interrupts can still run on CPUs A and B.
-We assume that all interrupt code is placed into RAM. Once interrupt allocation
-API is added, we should add a flag to request interrupt to be disabled for
-the duration of flash operations.
-
-Once flash operation is complete, function on CPU A sets another flag,
-s_flash_op_complete, to let the task on CPU B know that it can re-enable
-cache and release the CPU. Then the function on CPU A re-enables the cache on
-CPU A as well and returns control to the calling code.
-
-Additionally, all API functions are protected with a mutex (s_flash_op_mutex).
-
-In a single core environment (CONFIG_FREERTOS_UNICORE enabled), we simply
-disable both caches, no inter-CPU communication takes place.
+read data outside of the partition provided to ``esp_partition_mmap``.

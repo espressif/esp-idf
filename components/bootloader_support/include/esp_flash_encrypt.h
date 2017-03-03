@@ -33,7 +33,7 @@
  *
  * @return true if flash encryption is enabled.
  */
-static inline IRAM_ATTR bool esp_flash_encryption_enabled(void) {
+static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_enabled(void) {
     uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
     /* __builtin_parity is in flash, so we calculate parity inline */
     bool enabled = false;

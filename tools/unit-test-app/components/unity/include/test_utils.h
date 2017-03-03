@@ -1,4 +1,4 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,14 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-// Common header for SPI flash test data
 #pragma once
 
-/* Define a region of flash we can mess up for testing...
+// Utilities for esp-idf unit tests
 
-   This is pretty ugly, better to do something with a partition but
-   this is OK for now.
- */
-#define TEST_REGION_START 0x180000
-#define TEST_REGION_END   0x1E0000
+#include <esp_partition.h>
+
+/* Return the 'flash_test' custom data partition (type 0x55)
+   defined in the custom partition table.
+*/
+const esp_partition_t *get_test_data_partition();
+
