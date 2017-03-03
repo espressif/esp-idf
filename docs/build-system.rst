@@ -144,7 +144,7 @@ The minimal ``component.mk`` file is an empty file(!). If the file is empty, the
 
 See `example component makefiles` for more complete component makefile examples.
 
-Note that there is a different between an empty ``component.mk`` file (which invokes default component build behaviour) and no ``component.mk`` file (which means no default component build behaviour will occur.) It is possible for a component to have no `component.mk` file, if it only contains other files which influence the project configuration or build process.
+Note that there is a difference between an empty ``component.mk`` file (which invokes default component build behaviour) and no ``component.mk`` file (which means no default component build behaviour will occur.) It is possible for a component to have no `component.mk` file, if it only contains other files which influence the project configuration or build process.
 
 .. component variables:
 

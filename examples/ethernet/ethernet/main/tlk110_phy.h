@@ -13,7 +13,7 @@
 #define PARTNER_ASM_DIR                    BIT(11)
 #define PARTNER_PAUSE                      BIT(10) 
 
-#define SOFTWARE_STRAP_CONTROL_REG       (0x9)
+#define SW_STRAP_CONTROL_REG            (0x9)
 #define SW_STRAP_CONFIG_DONE               BIT(15)
 #define AUTO_MDIX_ENABLE                   BIT(14)
 #define AUTO_NEGOTIATION_ENABLE            BIT(13)
@@ -23,7 +23,7 @@
 #define RMII_ENHANCED_MODE                 BIT(9) 
 
 #define PHY_STATUS_REG                  (0x10)
-#define AUTO_NEGTIATION_STATUS             BIT(4)
+#define AUTO_NEGOTIATION_STATUS             BIT(4)
 #define DUPLEX_STATUS                      BIT(2)
 #define SPEED_STATUS                       BIT(1)       
 

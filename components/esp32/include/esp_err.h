@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef __ESP_ERR_H__
-#define __ESP_ERR_H__
+#pragma once
 
 #include <stdint.h>
+#include <stdio.h>
 #include <assert.h>
 
 #ifdef __cplusplus
@@ -40,15 +40,38 @@ typedef int32_t esp_err_t;
 
 #define ESP_ERR_WIFI_BASE       0x3000 /*!< Starting number of WiFi error codes */
 
+void _esp_error_check_failed(esp_err_t rc, const char *file, int line, const char *function, const char *expression) __attribute__((noreturn));
+
+#ifndef __ASSERT_FUNC
+/* This won't happen on IDF, which defines __ASSERT_FUNC in assert.h, but it does happen when building on the host which
+   uses /usr/include/assert.h or equivalent.
+*/
+#ifdef __ASSERT_FUNCTION
+#define __ASSERT_FUNC __ASSERT_FUNCTION /* used in glibc assert.h */
+#else
+#define __ASSERT_FUNC "??"
+#endif
+#endif
+
 /**
  * Macro which can be used to check the error code,
  * and terminate the program in case the code is not ESP_OK.
- * Prints the failed statement to serial output.
+ * Prints the error code, error location, and the failed statement to serial output.
+ *
+ * Disabled if assertions are disabled.
  */
-#define ESP_ERROR_CHECK(x)   do { esp_err_t rc = (x); if (rc != ESP_OK) { assert(0 && #x);} } while(0);
+#ifdef NDEBUG
+#define ESP_ERROR_CHECK(x) do { (x); } while (0)
+#else
+#define ESP_ERROR_CHECK(x) do {                                         \
+        esp_err_t rc = (x);                                             \
+        if (rc != ESP_OK) {                                             \
+            _esp_error_check_failed(rc, __FILE__, __LINE__,             \
+                                    __ASSERT_FUNC, #x);                 \
+        }                                                               \
+    } while(0);
+#endif
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __ESP_ERR_H__ */

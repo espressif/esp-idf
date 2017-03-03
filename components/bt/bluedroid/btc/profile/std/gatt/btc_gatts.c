@@ -182,12 +182,15 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
     future_t *future_p;
     esp_ble_gatts_cb_param_t param;
 
-    //set the attribute table create service flag to ture 
+    //set the attribute table create service flag to true
     btc_creat_tab_env.is_tab_creat_svc = true;
     btc_creat_tab_env.num_handle = max_nb_attr;
     for(int i = 0; i < max_nb_attr; i++){
         if(gatts_attr_db[i].att_desc.uuid_length== ESP_UUID_LEN_16){
             uuid = (gatts_attr_db[i].att_desc.uuid_p[1] << 8) + (gatts_attr_db[i].att_desc.uuid_p[0]);
+        }
+        else{
+            continue;
         }
         future_p = future_new();
         if (future_p == NULL) {

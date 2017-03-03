@@ -731,7 +731,7 @@ esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *ho
 {
 #if LWIP_NETIF_HOSTNAME
     struct netif *p_netif;
-    static char hostinfo[TCPIP_HOSTNAME_MAX_SIZE + 1][TCPIP_ADAPTER_IF_MAX];
+    static char hostinfo[TCPIP_ADAPTER_IF_MAX][TCPIP_HOSTNAME_MAX_SIZE + 1];
 
     if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || hostname == NULL) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
@@ -744,7 +744,7 @@ esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *ho
     p_netif = esp_netif[tcpip_if];
     if (p_netif != NULL) {
         memset(hostinfo[tcpip_if], 0, sizeof(hostinfo[tcpip_if]));
-        memcpy(hostinfo[tcpip_if], hostname, strlen(hostname));
+        strlcpy(hostinfo[tcpip_if], hostname, sizeof(hostinfo[tcpip_if]));
         p_netif->hostname = hostinfo[tcpip_if];
         return ESP_OK;
     } else {

@@ -476,8 +476,7 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
         param.scan_rst.ble_addr_type = p_data->inq_res.ble_addr_type;
 		param.scan_rst.ble_evt_type = p_data->inq_res.ble_evt_type;
         param.scan_rst.flag = p_data->inq_res.flag;
-        memcpy(param.scan_rst.ble_adv, p_data->inq_res.p_eir,
-               ESP_BLE_ADV_DATA_LEN_MAX);
+        memcpy(param.scan_rst.ble_adv, p_data->inq_res.p_eir, sizeof(param.scan_rst.ble_adv));
         break;
     }
     case BTA_DM_INQ_CMPL_EVT: {
