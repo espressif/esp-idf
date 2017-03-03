@@ -44,10 +44,11 @@
 
 static const char *TAG = "eth_example";
 
-#define PIN_PHY_POWER 17
-#define PIN_SMI_MDC   23
-#define PIN_SMI_MDIO  18
+#define PIN_PHY_POWER CONFIG_PHY_POWER_PIN
+#define PIN_SMI_MDC   CONFIG_PHY_SMI_MDC_PIN
+#define PIN_SMI_MDIO  CONFIG_PHY_SMI_MDIO_PIN
 
+#ifdef CONFIG_PHY_USE_POWER_PIN
 /* This replaces the default PHY power on/off function with one that
    also uses a GPIO for power on/off.
 
@@ -81,6 +82,7 @@ static void phy_device_power_enable_via_gpio(bool enable)
         DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable(true);
     }
 }
+#endif
 
 static void eth_gpio_config_rmii(void)
 {
@@ -124,13 +126,15 @@ void app_main()
 
     eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
     /* Set the PHY address in the example configuration */
-    config.phy_addr = CONFIG_PHY_ID;
+    config.phy_addr = CONFIG_PHY_ADDRESS;
     config.gpio_config = eth_gpio_config_rmii;
     config.tcpip_input = tcpip_adapter_eth_input;
 
+#ifdef CONFIG_PHY_USE_POWER_PIN
     /* Replace the default 'power enable' function with an example-specific
        one that toggles a power GPIO. */
     config.phy_power_enable = phy_device_power_enable_via_gpio;
+#endif
 
     ret = esp_eth_init(&config);
 
