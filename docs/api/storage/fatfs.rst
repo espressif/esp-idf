@@ -8,7 +8,7 @@ Additionally, FatFs has been modified to support run-time pluggable disk IO laye
 Using FatFs with VFS
 --------------------
 
-``esp_vfs_fat.h`` header file defines functions to connect FatFs with VFS. ``esp_vfs_fat_register`` function allocates a ``FATFS`` structure, and registers a given path prefix in VFS. Subsequent operations on files starting with this prefix are forwarded to FatFs APIs. ``esp_vfs_fat_unregister`` function deletes the registration with VFS, and frees the ``FATFS`` structure.
+``esp_vfs_fat.h`` header file defines functions to connect FatFs with VFS. ``esp_vfs_fat_register`` function allocates a ``FATFS`` structure, and registers a given path prefix in VFS. Subsequent operations on files starting with this prefix are forwarded to FatFs APIs. ``esp_vfs_fat_unregister_path`` function deletes the registration with VFS, and frees the ``FATFS`` structure.
 
 Most applications will use the following flow when working with ``esp_vfs_fat_`` functions:
 
@@ -28,12 +28,12 @@ Most applications will use the following flow when working with ``esp_vfs_fat_``
 
 8. Call ``ff_diskio_register`` with NULL ``ff_diskio_impl_t*`` argument and the same drive number.
 
-9. Call ``esp_vfs_fat_unregister`` to remove FatFs from VFS, and free the ``FATFS`` structure allocated on step 1.
+9. Call ``esp_vfs_fat_unregister_path`` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated on step 1.
 
 Convenience functions, ``esp_vfs_fat_sdmmc_mount`` and ``esp_vfs_fat_sdmmc_unmount``, which wrap these steps and also handle SD card initialization, are described in the next section. 
 
 .. doxygenfunction:: esp_vfs_fat_register
-.. doxygenfunction:: esp_vfs_fat_unregister
+.. doxygenfunction:: esp_vfs_fat_unregister_path
 
 
 Using FatFs with VFS and SD cards

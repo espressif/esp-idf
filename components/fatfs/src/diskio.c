@@ -18,39 +18,71 @@
 #include <sys/time.h>
 
 static const char* TAG = "ff_diskio";
-static ff_diskio_impl_t s_impls[_VOLUMES] = { { 0 } };
+static ff_diskio_impl_t * s_impls[_VOLUMES];
 static sdmmc_card_t* s_cards[_VOLUMES] = { NULL };
+static bool s_impls_initialized = false;
 
 PARTITION VolToPart[] = {
     {0, 1},    /* Logical drive 0 ==> Physical drive 0, 1st partition */
     {1, 0}     /* Logical drive 1 ==> Physical drive 1, auto detection */
 };
 
+esp_err_t ff_diskio_get_drive(BYTE* out_pdrv)
+{
+    BYTE i;
+    for(i=0; i<_VOLUMES; i++) {
+        if (!s_impls[i]) {
+            *out_pdrv = i;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_NOT_FOUND;
+}
+
 void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl)
 {
     assert(pdrv < _VOLUMES);
-    memcpy(&s_impls[pdrv], discio_impl, sizeof(ff_diskio_impl_t));
+
+    if (!s_impls_initialized) {
+        s_impls_initialized = true;
+        memset(s_impls, 0, _VOLUMES * sizeof(ff_diskio_impl_t*));
+    }
+
+    if (s_impls[pdrv]) {
+        ff_diskio_impl_t* im = s_impls[pdrv];
+        s_impls[pdrv] = NULL;
+        free(im);
+    }
+
+    if (!discio_impl) {
+        return;
+    }
+
+    ff_diskio_impl_t * impl = (ff_diskio_impl_t *)malloc(sizeof(ff_diskio_impl_t));
+    assert(impl != NULL);
+    memcpy(impl, discio_impl, sizeof(ff_diskio_impl_t));
+    s_impls[pdrv] = impl;
 }
 
 DSTATUS ff_disk_initialize (BYTE pdrv)
 {
-    return s_impls[pdrv].init(pdrv);
+    return s_impls[pdrv]->init(pdrv);
 }
 DSTATUS ff_disk_status (BYTE pdrv)
 {
-    return s_impls[pdrv].status(pdrv);
+    return s_impls[pdrv]->status(pdrv);
 }
 DRESULT ff_disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
 {
-    return s_impls[pdrv].read(pdrv, buff, sector, count);
+    return s_impls[pdrv]->read(pdrv, buff, sector, count);
 }
 DRESULT ff_disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
 {
-    return s_impls[pdrv].write(pdrv, buff, sector, count);
+    return s_impls[pdrv]->write(pdrv, buff, sector, count);
 }
 DRESULT ff_disk_ioctl (BYTE pdrv, BYTE cmd, void* buff)
 {
-    return s_impls[pdrv].ioctl(pdrv, cmd, buff);
+    return s_impls[pdrv]->ioctl(pdrv, cmd, buff);
 }
 
 DWORD get_fattime(void)
