@@ -87,7 +87,8 @@ void phy_lan8720_init(void)
     phy_enable_flow_ctrl();
 }
 
-const eth_config_t lan8720_default_ethernet_phy_config = {
+#ifdef CONFIG_PHY_LAN8720
+const eth_config_t default_ethernet_phy_config = {
     .phy_addr = CONFIG_PHY_ID,
     .mac_mode = ETH_MODE_RMII,
     //Only FULLDUPLEX mode support flow ctrl now!
@@ -99,6 +100,7 @@ const eth_config_t lan8720_default_ethernet_phy_config = {
     .phy_get_duplex_mode = phy_lan8720_get_duplex_mode,
     .phy_get_partner_pause_enable = phy_lan8720_get_partner_pause_enable
 };
+#endif
 
 void phy_dump_lan8720_registers()
 {

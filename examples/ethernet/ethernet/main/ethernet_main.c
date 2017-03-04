@@ -33,13 +33,6 @@
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 
-#ifdef CONFIG_PHY_LAN8720
-#include "lan8720_phy.h"
-#endif
-#ifdef CONFIG_PHY_TLK110
-#include "tlk110_phy.h"
-#endif
-
 static const char *TAG = "eth_demo";
 
 #define PIN_PHY_POWER 17
@@ -111,12 +104,7 @@ void app_main()
     tcpip_adapter_init();
     esp_event_loop_init(NULL, NULL);
 
-#ifdef CONFIG_PHY_LAN8720
-    eth_config_t config = lan8720_default_ethernet_phy_config;
-#endif
-#ifdef CONFIG_PHY_TLK110
-    eth_config_t config = tlk110_default_ethernet_phy_config;
-#endif
+    eth_config_t config = default_ethernet_phy_config;
     config.gpio_config = eth_gpio_config_rmii;
     config.tcpip_input = tcpip_adapter_eth_input;
     config.phy_power_enable = phy_device_power_enable;

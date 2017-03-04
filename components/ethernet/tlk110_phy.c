@@ -92,7 +92,8 @@ void phy_tlk110_init(void)
     phy_enable_flow_ctrl();
 }
 
-const eth_config_t tlk110_default_ethernet_phy_config = {
+#ifdef CONFIG_PHY_TLK110
+const eth_config_t default_ethernet_phy_config = {
     .phy_addr = CONFIG_PHY_ID,
     .mac_mode = ETH_MODE_RMII,
     //Only FULLDUPLEX mode support flow ctrl now!
@@ -104,6 +105,7 @@ const eth_config_t tlk110_default_ethernet_phy_config = {
     .phy_get_duplex_mode = phy_tlk110_get_duplex_mode,
     .phy_get_partner_pause_enable = phy_tlk110_get_partner_pause_enable
 };
+#endif
 
 void phy_dump_tlk110_registers()
 {
