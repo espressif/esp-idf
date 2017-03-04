@@ -45,7 +45,7 @@ typedef int32_t esp_err_t;
  * and terminate the program in case the code is not ESP_OK.
  * Prints the failed statement to serial output.
  */
-#define ESP_ERROR_CHECK(x)   do { esp_err_t rc = (x); if (rc != ESP_OK) { assert(0 && #x);} } while(0);
+#define ESP_ERROR_CHECK(x)   do { esp_err_t rc = (x); if (rc != ESP_OK) { ESP_LOGE("err", "esp_err_t = %d", rc); assert(0 && #x);} } while(0);
 
 #ifdef __cplusplus
 }
