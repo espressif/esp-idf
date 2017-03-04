@@ -193,6 +193,8 @@ uint16_t esp_eth_smi_read(uint32_t reg_num);
  */
 void esp_eth_free_rx_buf(void *buf);
 
+extern const eth_config_t default_ethernet_phy_config;
+
 #ifdef __cplusplus
 }
 #endif
