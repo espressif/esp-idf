@@ -302,17 +302,24 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
 
     // Configure pins
     const sdmmc_slot_info_t* pslot = &s_slot_info[slot];
+
+    if (slot_config->width > pslot->width) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     configure_pin(pslot->clk);
     configure_pin(pslot->cmd);
     configure_pin(pslot->d0);
-    configure_pin(pslot->d1);
-    configure_pin(pslot->d2);
-    configure_pin(pslot->d3);
-    if (pslot->width == 8) {
-        configure_pin(pslot->d4);
-        configure_pin(pslot->d5);
-        configure_pin(pslot->d6);
-        configure_pin(pslot->d7);
+    if (slot_config->width >= 4) {
+        configure_pin(pslot->d1);
+        configure_pin(pslot->d2);
+        configure_pin(pslot->d3);
+        if (slot_config->width == 8) {
+            configure_pin(pslot->d4);
+            configure_pin(pslot->d5);
+            configure_pin(pslot->d6);
+            configure_pin(pslot->d7);
+        }
     }
     if (gpio_cd != -1) {
         gpio_set_direction(gpio_cd, GPIO_MODE_INPUT);
