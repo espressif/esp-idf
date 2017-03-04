@@ -32,92 +32,39 @@
 #include "tcpip_adapter.h"
 #include "nvs_flash.h"
 #include "driver/gpio.h"
+
+#ifdef CONFIG_PHY_LAN8720
+#include "lan8720_phy.h"
+#endif
+#ifdef CONFIG_PHY_TLK110
 #include "tlk110_phy.h"
+#endif
 
 static const char *TAG = "eth_demo";
 
-#define DEFAULT_PHY_CONFIG (AUTO_MDIX_ENABLE|AUTO_NEGOTIATION_ENABLE|AN_1|AN_0|LED_CFG)
 #define PIN_PHY_POWER 17
 #define PIN_SMI_MDC   23
 #define PIN_SMI_MDIO  18
 
-void phy_tlk110_check_phy_init(void)
-{
-    while((esp_eth_smi_read(BASIC_MODE_STATUS_REG) & AUTO_NEGOTIATION_COMPLETE ) != AUTO_NEGOTIATION_COMPLETE)
-    {};
-    while((esp_eth_smi_read(PHY_STATUS_REG) & AUTO_NEGTIATION_STATUS ) != AUTO_NEGTIATION_STATUS)
-    {};
-    while((esp_eth_smi_read(CABLE_DIAGNOSTIC_CONTROL_REG) & DIAGNOSTIC_DONE ) != DIAGNOSTIC_DONE)
-    {};
-}
 
-eth_speed_mode_t phy_tlk110_get_speed_mode(void)
-{
-    if((esp_eth_smi_read(PHY_STATUS_REG) & SPEED_STATUS ) != SPEED_STATUS) {
-        return ETH_SPEED_MODE_100M;
-    } else {
-        return ETH_SPEED_MODE_10M;
-    }   
-}
-
-eth_duplex_mode_t phy_tlk110_get_duplex_mode(void)
-{
-    if((esp_eth_smi_read(PHY_STATUS_REG) & DUPLEX_STATUS ) == DUPLEX_STATUS) {
-        return ETH_MDOE_FULLDUPLEX;
-    } else {
-        return ETH_MODE_HALFDUPLEX;
-    }   
-}
-
-bool phy_tlk110_check_phy_link_status(void)
-{
-    return ((esp_eth_smi_read(BASIC_MODE_STATUS_REG) & LINK_STATUS) == LINK_STATUS );
-}
-
-bool phy_tlk110_get_partner_pause_enable(void)
-{
-    if((esp_eth_smi_read(PHY_LINK_PARTNER_ABILITY_REG) & PARTNER_PAUSE) == PARTNER_PAUSE) {
-        return true;
-    } else {
-        return false;
-    }   
-}
-
-void phy_enable_flow_ctrl(void)
-{
-    uint32_t data = 0;
-    data = esp_eth_smi_read(AUTO_NEG_ADVERTISEMENT_REG);
-    esp_eth_smi_write(AUTO_NEG_ADVERTISEMENT_REG,data|ASM_DIR|PAUSE);
-}
-
-void phy_tlk110_power_enable(bool enable)
+void phy_device_power_enable(bool enable)
 {
     gpio_pad_select_gpio(PIN_PHY_POWER);
     gpio_set_direction(PIN_PHY_POWER,GPIO_MODE_OUTPUT);
     if(enable == true) {
         gpio_set_level(PIN_PHY_POWER, 1);
+        ESP_LOGD(TAG, "phy_device_power_enable(TRUE)");
     } else {
         gpio_set_level(PIN_PHY_POWER, 0);
-    }    
-}
-
-void phy_tlk110_init(void)
-{
-    esp_eth_smi_write(PHY_RESET_CONTROL_REG, SOFTWARE_RESET);
-
-    while (esp_eth_smi_read(PHY_IDENTIFIER_REG) != OUI_MSB_21TO6_DEF) {
+        ESP_LOGD(TAG, "power_enable(FALSE)");
     }
-
-    esp_eth_smi_write(SOFTWARE_STRAP_CONTROL_REG, DEFAULT_PHY_CONFIG |SW_STRAP_CONFIG_DONE);
-    
-    ets_delay_us(300);
-
-    //if config.flow_ctrl_enable == true ,enable this 
-    phy_enable_flow_ctrl();
 }
 
 void eth_gpio_config_rmii(void)
 {
+    //crs_dv to gpio27 ,can not change (default so not needed but physical signal must be connected)
+    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO27_U, FUNC_GPIO27_EMAC_RX_DV);
+
     //txd0 to gpio19 ,can not change
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO19_U, FUNC_GPIO19_EMAC_TXD0);
     //tx_en to gpio21 ,can not change
@@ -131,7 +78,7 @@ void eth_gpio_config_rmii(void)
     //rmii clk  ,can not change
     gpio_set_direction(0, GPIO_MODE_INPUT);
 
-    //mdc to gpio23 
+    //mdc to gpio23
     gpio_matrix_out(PIN_SMI_MDC, EMAC_MDC_O_IDX, 0, 0);
     //mdio to gpio18
     gpio_matrix_out(PIN_SMI_MDIO, EMAC_MDO_O_IDX, 0, 0);
@@ -149,11 +96,11 @@ void eth_task(void *pvParameter)
         vTaskDelay(2000 / portTICK_PERIOD_MS);
 
         if (tcpip_adapter_get_ip_info(ESP_IF_ETH, &ip) == 0) {
-            ESP_LOGI(TAG, "\n~~~~~~~~~~~\n");
+            ESP_LOGI(TAG, "~~~~~~~~~~~");
             ESP_LOGI(TAG, "ETHIP:"IPSTR, IP2STR(&ip.ip));
             ESP_LOGI(TAG, "ETHPMASK:"IPSTR, IP2STR(&ip.netmask));
             ESP_LOGI(TAG, "ETHPGW:"IPSTR, IP2STR(&ip.gw));
-            ESP_LOGI(TAG, "\n~~~~~~~~~~~\n");
+            ESP_LOGI(TAG, "~~~~~~~~~~~");
         }
     }
 }
@@ -164,20 +111,15 @@ void app_main()
     tcpip_adapter_init();
     esp_event_loop_init(NULL, NULL);
 
-    eth_config_t config;
-    config.phy_addr = PHY31;
-    config.mac_mode = ETH_MODE_RMII;
-    config.phy_init = phy_tlk110_init;
+#ifdef CONFIG_PHY_LAN8720
+    eth_config_t config = lan8720_default_ethernet_phy_config;
+#endif
+#ifdef CONFIG_PHY_TLK110
+    eth_config_t config = tlk110_default_ethernet_phy_config;
+#endif
     config.gpio_config = eth_gpio_config_rmii;
     config.tcpip_input = tcpip_adapter_eth_input;
-    config.phy_check_init = phy_tlk110_check_phy_init;
-    config.phy_check_link = phy_tlk110_check_phy_link_status;
-    config.phy_get_speed_mode = phy_tlk110_get_speed_mode;
-    config.phy_get_duplex_mode = phy_tlk110_get_duplex_mode;
-    //Only FULLDUPLEX mode support flow ctrl now!
-    config.flow_ctrl_enable = true;
-    config.phy_get_partner_pause_enable = phy_tlk110_get_partner_pause_enable;    
-    config.phy_power_enable = phy_tlk110_power_enable;
+    config.phy_power_enable = phy_device_power_enable;
 
     ret = esp_eth_init(&config);
 
