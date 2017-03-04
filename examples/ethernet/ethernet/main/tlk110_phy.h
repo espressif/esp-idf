@@ -13,7 +13,7 @@
 #define PARTNER_ASM_DIR                    BIT(11)
 #define PARTNER_PAUSE                      BIT(10) 
 
-#define SOFTWARE_STRAP_CONTROL_REG       (0x9)
+#define SW_STRAP_CONTROL_REG       (0x9)
 #define SW_STRAP_CONFIG_DONE               BIT(15)
 #define AUTO_MDIX_ENABLE                   BIT(14)
 #define AUTO_NEGOTIATION_ENABLE            BIT(13)
