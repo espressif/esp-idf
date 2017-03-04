@@ -62,6 +62,11 @@ void bootloader_fill_random(void *buffer, size_t length)
 
 void bootloader_random_enable(void)
 {
+    /* Ensure the hardware RNG is enabled following a soft reset.  This should always be the case already (this clock is
+       never disabled while the CPU is running), this is a "belts and braces" type check.
+     */
+    SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_RNG_EN);
+
     /* Enable SAR ADC in test mode to feed ADC readings of the 1.1V
        reference via I2S into the RNG entropy input.
 
