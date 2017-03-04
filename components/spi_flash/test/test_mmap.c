@@ -138,6 +138,8 @@ TEST_CASE("Can mmap into data address space", "[spi_flash]")
 
 TEST_CASE("Can mmap into instruction address space", "[mmap]")
 {
+    setup_mmap_tests();
+
     printf("Mapping %x (+%x)\n", start, end - start);
     spi_flash_mmap_handle_t handle1;
     const void *ptr1;
@@ -288,3 +290,23 @@ TEST_CASE("mmap consistent with phys2cache/cache2phys", "[spi_flash]")
 
     TEST_ASSERT_EQUAL_HEX(SPI_FLASH_CACHE2PHYS_FAIL, spi_flash_cache2phys(ptr));
 }
+
+TEST_CASE("munmap followed by mmap flushes cache", "[spi_flash]")
+{
+    setup_mmap_tests();
+
+    const esp_partition_t *p = get_test_data_partition();
+
+    const uint32_t* data;
+    spi_flash_mmap_handle_t handle;
+    TEST_ESP_OK( esp_partition_mmap(p, 0, SPI_FLASH_MMU_PAGE_SIZE,
+            SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
+    uint32_t buf[16];
+    memcpy(buf, data, sizeof(buf));
+
+    spi_flash_munmap(handle);
+    TEST_ESP_OK( esp_partition_mmap(p, SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMU_PAGE_SIZE,
+            SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
+    TEST_ASSERT_NOT_EQUAL(0, memcmp(buf, data, sizeof(buf)));
+}
+
