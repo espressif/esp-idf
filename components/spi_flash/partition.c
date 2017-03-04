@@ -184,6 +184,7 @@ static esp_err_t load_partitions()
         } else {
             SLIST_INSERT_AFTER(last, item, next);
         }
+        last = item;
     }
     spi_flash_munmap(handle);
     return ESP_OK;
