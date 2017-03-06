@@ -187,12 +187,12 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
     }
 
     /* This is a temporary fix for an issue where some
-       encrypted cache reads may see stale data.
+       cache reads may see stale data.
 
        Working on a long term fix that doesn't require invalidating
        entire cache.
     */
-    if (esp_flash_encryption_enabled() && !did_flush && need_flush) {
+    if (!did_flush && need_flush) {
         Cache_Flush(0);
         Cache_Flush(1);
     }

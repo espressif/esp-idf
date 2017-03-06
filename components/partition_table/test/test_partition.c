@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "unity.h"
+#include "test_utils.h"
 #include "esp_partition.h"
 
 
@@ -9,26 +10,30 @@ TEST_CASE("Can read partition table", "[partition]")
 
     const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
     TEST_ASSERT_NOT_NULL(p);
-    TEST_ASSERT_EQUAL(p->address, 0x10000);
-    TEST_ASSERT_EQUAL(p->subtype, ESP_PARTITION_SUBTYPE_APP_FACTORY);
+    TEST_ASSERT_EQUAL(0x10000, p->address);
+    TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, p->subtype);
 
     esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, NULL);
     TEST_ASSERT_NOT_NULL(it);
     int count = 0;
+    const esp_partition_t* prev = NULL;
     for (; it != NULL; it = esp_partition_next(it)) {
         const esp_partition_t *p = esp_partition_get(it);
         TEST_ASSERT_NOT_NULL(p);
+        if (prev) {
+            TEST_ASSERT_TRUE_MESSAGE(prev->address < p->address, "incorrect partition order");
+        }
+        prev = p;
         ++count;
     }
     esp_partition_iterator_release(it);
-    TEST_ASSERT_EQUAL(count, 2);
-
-    printf("%d\n", __builtin_clz(count));
+    TEST_ASSERT_EQUAL(3, count);
 }
 
 TEST_CASE("Can write, read, mmap partition", "[partition][ignore]")
 {
-    const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, NULL);
+    const esp_partition_t *p = get_test_data_partition();
+    printf("Using partition %s at 0x%x, size 0x%x\n", p->label, p->address, p->size);
     TEST_ASSERT_NOT_NULL(p);
     const size_t max_size = 2 * SPI_FLASH_SEC_SIZE;
     uint8_t *data = (uint8_t *) malloc(max_size);
@@ -46,9 +51,6 @@ TEST_CASE("Can write, read, mmap partition", "[partition][ignore]")
         }
         for (size_t i = 0; i < block_size / 4; ++i) {
             ((uint32_t *) (data))[i] = rand();
-            if (i == 0 && offset == 0) {
-                printf("write: %08x\n", ((uint32_t *) (data))[i]);
-            }
         }
         TEST_ASSERT_EQUAL(ESP_OK, esp_partition_write(p, offset, data, block_size));
     }
