@@ -213,7 +213,7 @@ LDFLAGS ?= -nostdlib \
 #  before including project.mk. Default flags will be added before the ones provided in application Makefile.
 
 # CPPFLAGS used by C preprocessor
-# If any flags are defined in application Makefile, add them at the end. 
+# If any flags are defined in application Makefile, add them at the end.
 CPPFLAGS := -DESP_PLATFORM -D IDF_VER=\"$(IDF_VER)\" -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
@@ -277,12 +277,12 @@ export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
 
 # Set target compiler. Defaults to whatever the user has
 # configured as prefix + ye olde gcc commands
-CC := $(call dequote,$(CONFIG_TOOLPREFIX))gcc
-CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
-LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
-AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
-OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
-SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
+CC := $(TOOLCHAIN_PATH)$(call dequote,$(CONFIG_TOOLPREFIX))gcc
+CXX := $(TOOLCHAIN_PATH)$(call dequote,$(CONFIG_TOOLPREFIX))c++
+LD := $(TOOLCHAIN_PATH)$(call dequote,$(CONFIG_TOOLPREFIX))ld
+AR := $(TOOLCHAIN_PATH)$(call dequote,$(CONFIG_TOOLPREFIX))ar
+OBJCOPY := $(TOOLCHAIN_PATH)$(call dequote,$(CONFIG_TOOLPREFIX))objcopy
+SIZE := $(TOOLCHAIN_PATH)$(call dequote,$(CONFIG_TOOLPREFIX))size
 export CC CXX LD AR OBJCOPY SIZE
 
 PYTHON=$(call dequote,$(CONFIG_PYTHON))
