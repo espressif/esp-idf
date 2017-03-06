@@ -133,6 +133,16 @@ typedef struct {
     UINT8   reason;
 } tGATT_ERROR;
 
+/* Execute write response structure */
+typedef struct {
+    UINT8   op_code;
+}__attribute__((packed)) tGATT_EXEC_WRITE_RSP;
+
+/* Write request response structure */
+typedef struct {
+    UINT8   op_code;
+}__attribute__((packed)) tGATT_WRITE_REQ_RSP;
+
 /* server response message to ATT protocol
 */
 typedef union {
@@ -329,6 +339,32 @@ typedef struct {
     UINT16               count;
 } tGATT_SRV_LIST_INFO;
 
+/* prepare write queue data */
+typedef struct{
+    //len: length of value
+    tGATT_ATTR16  *p_attr;
+    UINT16 len;
+    UINT8 op_code;
+    UINT16 handle;
+    UINT16 offset;
+    UINT8 value[2];
+}__attribute__((packed)) tGATT_PREPARE_WRITE_QUEUE_DATA;
+
+/* structure to store prepare write packts information */
+typedef struct{
+    //only store prepare write packets which need
+    //to be responded by stack (not by application)
+    BUFFER_Q queue;
+
+    //store the total number of prepare write packets
+    //including that should be responded by stack or by application
+    UINT16 total_num;
+
+    //store application error code for prepare write,
+    //invalid offset && invalid length
+    UINT8 error_code_app;
+}tGATT_PREPARE_WRITE_RECORD;
+
 typedef struct {
     BUFFER_Q        pending_enc_clcb;   /* pending encryption channel q */
     tGATT_SEC_ACTION sec_act;
@@ -362,6 +398,7 @@ typedef struct {
 
     BOOLEAN         in_use;
     UINT8           tcb_idx;
+    tGATT_PREPARE_WRITE_RECORD prepare_write_record;    /* prepare write packets record */
 } tGATT_TCB;
 
 
