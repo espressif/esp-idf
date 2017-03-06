@@ -88,7 +88,7 @@ static inline void __attribute__ ((deprecated)) PIN_PULLDWN_EN(uint32_t PIN_NAME
 #define FUNC_GPIO0_GPIO0_0                          0
 
 #define PERIPHS_IO_MUX_U0TXD_U            (DR_REG_IO_MUX_BASE +0x88)
-#define FUNC_U0TXD_EMAC_RXD2                        3
+#define FUNC_U0TXD_EMAC_RXD2                        5
 #define FUNC_U0TXD_GPIO1                            2
 #define FUNC_U0TXD_CLK_OUT3                         1
 #define FUNC_U0TXD_U0TXD                            0
@@ -181,7 +181,7 @@ static inline void __attribute__ ((deprecated)) PIN_PULLDWN_EN(uint32_t PIN_NAME
 #define PERIPHS_IO_MUX_MTMS_U             (DR_REG_IO_MUX_BASE +0x30)
 #define FUNC_MTMS_EMAC_TXD2                         5
 #define FUNC_MTMS_SD_CLK                            4
-#define FUNC_MTMS_HS2_CLk                           3
+#define FUNC_MTMS_HS2_CLK                           3
 #define FUNC_MTMS_GPIO14                            2
 #define FUNC_MTMS_HSPICLK                           1
 #define FUNC_MTMS_MTMS                              0
