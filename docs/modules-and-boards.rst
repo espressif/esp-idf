@@ -17,13 +17,14 @@ The smallest module intended for installation in final products. Can be also use
    :alt: ESP-WROOM-32 module (front and back)
 
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP-WROOM-32-v3.2_sch.pdf>`__ (PDF)
+* `Datasheet <https://espressif.com/sites/default/files/documentation/esp_wroom_32_datasheet_en.pdf>`__ (PDF)
 * `ESP32 Module Reference Design <https://espressif.com/sites/default/files/documentation/esp32_module_reference_design.zip>`_ (ZIP) containing: OrCAD schematic, PCB layout, gerbers and BOM
 
    
 ESP32 Core Board V2 / ESP32 DevKitC
 -----------------------------------
 
-Small and convenient development module with break out pin headers and minimum additional components. Includes USB to serial programming interface that also provides power supply for the module. Has press buttons to reset the module and put it in upload mode. 
+Small and convenient development board with break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has press buttons to reset the board and put it in upload mode. 
 
 .. image:: http://dl.espressif.com/dl/schematics/pictures/esp32-core-board-v2.jpg
    :align: center
@@ -33,7 +34,6 @@ Small and convenient development module with break out pin headers and minimum a
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`__ (PDF)
 * `ESP32 Development Board Reference Design <https://espressif.com/sites/default/files/documentation/esp32_development_board_reference_design.zip>`_ (ZIP) containing: OrCAD schematic, PCB layout, gerbers and BOM
 * `ESP32-DevKitC Getting Started Guide <https://espressif.com/sites/default/files/documentation/esp32-devkitc_getting_started_guide_en.pdf>`_ (PDF)
-
 
 
 ESP32 Demo Board V2
@@ -59,6 +59,7 @@ Development board that has dual port USB to serial converter for programming and
    :alt: ESP32 WROVER KIT V1 / ESP32 DevKitJ V1 board
 
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP32-DevKitJ-v1_sch.pdf>`__ (PDF)
+* `JTAG Debugging for ESP32 <https://espressif.com/sites/default/files/documentation/jtag_debugging_for_esp32_en.pdf>`__
 
 
 ESP32 WROVER KIT V2
@@ -73,5 +74,5 @@ This is an updated version of ESP32 DevKitJ V1 described above with design impro
 
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf>`__ (PDF)
 * `ESP-WROVER-KIT Getting Started Guide <https://espressif.com/sites/default/files/documentation/esp-wrover-kit_getting_started_guide_en.pdf>`_ (PDF)
-
+* `JTAG Debugging for ESP32 <https://espressif.com/sites/default/files/documentation/jtag_debugging_for_esp32_en.pdf>`__ (PDF)
 
