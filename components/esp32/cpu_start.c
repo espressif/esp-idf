@@ -95,10 +95,10 @@ extern volatile int port_xSchedulerRunning[2];
 static const char* TAG = "cpu_start";
 
 
-#if CONFIG_MEMMAP_SMP
-#define PSRAM_MODE PSRAM_VADDR_MODE_EVENODD
-#else
+#if CONFIG_FREERTOS_UNICORE
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
+#else
+#define PSRAM_MODE PSRAM_VADDR_MODE_EVENODD
 #endif
 
 /*
@@ -147,6 +147,8 @@ void IRAM_ATTR call_start_cpu0()
     if ( psram_enable(PSRAM_CACHE_F40M_S40M, PSRAM_MODE) != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "PSRAM enabled but initialization failed. Bailing out.");
         abort();
+    } else {
+        ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", (PSRAM_MODE==PSRAM_VADDR_MODE_EVENODD)?"even/odd (2-core)":"normal (1-core");
     }
 #endif
 

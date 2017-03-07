@@ -272,7 +272,7 @@ void heap_alloc_caps_init() {
 #endif
 #endif
 
-#if CONFIG_MEMMAP_SPIRAM_ENABLE
+#if CONFIG_MEMMAP_SPIRAM_ENABLE && !CONFIG_MEMMAP_SPIRAM_NO_HEAPALLOC
     if (CONFIG_MEMMAP_SPIRAM_SIZE < 0x400000) {
         disable_mem_region((void*)0x3f800000+CONFIG_MEMMAP_SPIRAM_SIZE, (void*)0x3fc00000); //Disable unused SPI SRAM region
     }
