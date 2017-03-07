@@ -34,7 +34,13 @@
 /* Bt contoller Task */
 /* controller */
 #define ESP_TASK_BT_CONTROLLER_PRIO   (ESP_TASK_PRIO_MAX - 1)
-#define ESP_TASK_BT_CONTROLLER_STACK  4096
+#ifdef CONFIG_NEWLIB_NANO_FORMAT
+#define BT_TASK_EXTRA_STACK_SIZE      (0)
+#else
+#define BT_TASK_EXTRA_STACK_SIZE      (512)
+#endif
+#define ESP_TASK_BT_CONTROLLER_STACK  (3584 + BT_TASK_EXTRA_STACK_SIZE)
+
 
 /* idf task */
 #define ESP_TASKD_EVENT_PRIO          (ESP_TASK_PRIO_MAX - 5)
