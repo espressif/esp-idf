@@ -528,7 +528,7 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             if (p_char_val->p_value->attr_val.attr_val == NULL) {
                deallocate_attr_in_db(p_db, p_char_decl);
                deallocate_attr_in_db(p_db, p_char_val);
-               GATT_TRACE_ERROR("Warning in %s, line=%d, insufficient resource to allocate for attribute value\n", __func__, __LINE__);
+               GATT_TRACE_WARNING("Warning in %s, line=%d, insufficient resource to allocate for attribute value\n", __func__, __LINE__);
                return 0;
             }
             
@@ -536,7 +536,7 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             memset(p_char_val->p_value->attr_val.attr_val, 0, attr_val->attr_max_len);
             if (attr_val->attr_val != NULL) {
                 if (attr_val->attr_max_len < attr_val->attr_len){
-                    GATT_TRACE_ERROR("Error in %s, Line=%d, attribute actual length(%d) should not larger than max size(%d)\n",
+                    GATT_TRACE_ERROR("Error in %s, Line=%d, attribute actual length (%d) should not larger than max size (%d)\n",
                                     __func__, __LINE__, attr_val->attr_len, attr_val->attr_max_len);
                 }
                 UINT16 actual_len = (attr_val->attr_max_len < attr_val->attr_len) ? (attr_val->attr_max_len) : (attr_val->attr_len);
@@ -638,8 +638,8 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
 
     if (attr_val != NULL){
         if (attr_val->attr_len > attr_val->attr_max_len){
-            GATT_TRACE_ERROR("Error in %s, line=%d,attribute actual length should not be larger than max length\n",\
-                    __func__, __LINE__);
+            GATT_TRACE_ERROR("Error in %s, line=%d,attribute actual length (%d) should not be larger than max length (%d)\n",\
+                    __func__, __LINE__, attr_val->attr_len, attr_val->attr_max_len);
             return 0;
         }
     }
@@ -664,7 +664,7 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
                 p_char_dscptr->p_value->attr_val.attr_val = GKI_getbuf(attr_val->attr_max_len);
                 if (p_char_dscptr->p_value->attr_val.attr_val == NULL) {
                     deallocate_attr_in_db(p_db, p_char_dscptr);
-                    GATT_TRACE_ERROR("Warning in %s, line=%d, insufficient resource to allocate for descriptor value\n", __func__, __LINE__);
+                    GATT_TRACE_WARNING("Warning in %s, line=%d, insufficient resource to allocate for descriptor value\n", __func__, __LINE__);
                     return 0;
                 }
 

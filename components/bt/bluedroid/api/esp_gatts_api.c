@@ -158,8 +158,8 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
 
     if (char_val != NULL){
         if (char_val->attr_len > char_val->attr_max_len){
-            LOG_ERROR("Error in %s, line=%d,attribute actual length should not be larger than max length\n",\
-                            __func__, __LINE__);
+            LOG_ERROR("Error in %s, line=%d,attribute actual length (%d)  should not be larger than max length (%d)\n",\
+                            __func__, __LINE__, char_val->attr_len, char_val->attr_max_len);
             return ESP_ERR_INVALID_ARG;
         }
     }
@@ -214,8 +214,8 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
 
     if (char_descr_val != NULL){
         if (char_descr_val->attr_len > char_descr_val->attr_max_len){
-            LOG_ERROR("Error in %s, line=%d,attribute actual length should not be larger than max length\n",\
-                            __func__, __LINE__);
+            LOG_ERROR("Error in %s, line=%d,attribute actual length (%d) should not be larger than max length (%d)\n",\
+                            __func__, __LINE__, char_descr_val->attr_len, char_descr_val->attr_max_len);
             return ESP_ERR_INVALID_ARG;
         }
     }

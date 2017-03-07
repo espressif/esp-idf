@@ -387,8 +387,8 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
         is_prepare_write_valid = TRUE;
     }
     else if(prepare_record->total_num < queue_num) {
-        GATT_TRACE_ERROR("Error in %s, line=%d, prepare write total number(=%d) \
-                        should not smaller than prepare queue number(=%d)\n", \
+        GATT_TRACE_ERROR("Error in %s, line=%d, prepare write total number (%d) \
+                        should not smaller than prepare queue number (%d)\n", \
                         __func__, __LINE__,prepare_record->total_num, queue_num); 
     }
     else if (prepare_record->error_code_app != GATT_SUCCESS){
@@ -1141,8 +1141,6 @@ void gatts_process_write_req (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 handle,
             status = GATT_BUSY; /* max pending command, application error */
         }
     }
-    //test isl
-    GATT_TRACE_ERROR("!!!write opcode=0x%x, need_rsp=0x%x, status=0x%x\n",op_code, sr_data.write_req.need_rsp, status); 
 
     /* response should be sent only for write_request */
     if ((op_code == GATT_REQ_WRITE) && (sr_data.write_req.need_rsp == FALSE)){
