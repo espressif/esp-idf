@@ -3,7 +3,26 @@
 #
 ifdef CONFIG_BT_ENABLED
 
-COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
+COMPONENT_SRCDIRS := .
+
+COMPONENT_ADD_INCLUDEDIRS := include
+
+LIBS := btdm_app
+
+COMPONENT_ADD_LDFLAGS     := -lbt -L $(COMPONENT_PATH)/lib \
+                           $(addprefix -l,$(LIBS))
+
+# re-link program if BT binary libs change
+COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
+
+COMPONENT_SUBMODULES += lib
+
+endif
+
+
+ifdef CONFIG_BLUEDROID_ENABLED
+
+COMPONENT_ADD_INCLUDEDIRS +=	bluedroid/bta/include			\
 				bluedroid/bta/sys/include		\
 				bluedroid/btcore/include		\
 				bluedroid/device/include		\
@@ -29,17 +48,8 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/stack/include			\
 				bluedroid/api/include		\
 				bluedroid/include			\
-				include	
 
-LIBS := btdm_app
-
-COMPONENT_ADD_LDFLAGS := -lbt -L $(COMPONENT_PATH)/lib \
-                           $(addprefix -l,$(LIBS))
-
-# re-link program if BT binary libs change
-COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
-
-COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
+COMPONENT_SRCDIRS += 	bluedroid/bta/dm			\
 			bluedroid/bta/gatt			\
 			bluedroid/bta/hh			\
 			bluedroid/bta/sdp			\
@@ -69,8 +79,5 @@ COMPONENT_SRCDIRS := 	bluedroid/bta/dm			\
 			bluedroid/stack				\
 			bluedroid/api			\
 			bluedroid				\
-			.
-
-COMPONENT_SUBMODULES += lib
 
 endif
