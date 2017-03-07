@@ -183,6 +183,11 @@ tBTA_SERVICE_MASK btc_get_enabled_services_mask(void)
     return btc_enabled_services;
 }
 
+void btc_clear_services_mask(void)
+{
+    btc_enabled_services = 0;
+}
+
 static bt_status_t btc_in_execute_service_request(tBTA_SERVICE_ID service_id,
         BOOLEAN b_enable)
 {
@@ -241,13 +246,23 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     LOG_DEBUG("btc_dm_upstreams_cback  ev: %d\n", msg->act);
 
     switch (msg->act) {
-    case BTA_DM_ENABLE_EVT:
+    case BTA_DM_ENABLE_EVT: {
+        btc_clear_services_mask();
 	btc_storage_load_bonded_devices();
         btc_enable_bluetooth_evt(p_data->enable.status);
         break;
-    case BTA_DM_DISABLE_EVT:
+    }
+    case BTA_DM_DISABLE_EVT: {
+        tBTA_SERVICE_MASK service_mask = btc_get_enabled_services_mask();
+        for (int i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
+            if (service_mask &
+                    (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
+                btc_in_execute_service_request(i, FALSE);
+            }
+        }
         btc_disable_bluetooth_evt();
         break;
+    }
     case BTA_DM_PIN_REQ_EVT:
 	break;
     case BTA_DM_AUTH_CMPL_EVT:

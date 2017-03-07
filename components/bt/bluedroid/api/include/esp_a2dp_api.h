@@ -186,8 +186,12 @@ esp_err_t esp_a2d_sink_init(void);
  *
  * @brief           This function is called to deinit and free the resources for A2DP sink module
  *
+ * @return          
+ *                  - ESP_OK: success
+ *                  - ESP_FAIL: others
+ *
  */
-void esp_a2d_sink_deinit(void);
+esp_err_t esp_a2d_sink_deinit(void);
 
 
 /**

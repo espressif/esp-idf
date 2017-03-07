@@ -37,6 +37,7 @@
 #include "btu.h"
 #include "bt_utils.h"
 #include "btc_common.h"
+#include "btc_manage.h"
 
 /*****************************************************************************
 **  Constants & Macros
@@ -84,18 +85,8 @@ typedef struct {
 /*****************************************************************************
 **  Static variables
 ******************************************************************************/
-
-static esp_a2d_cb_t bt_av_sink_callback = NULL;
-
 static btc_av_cb_t btc_av_cb = {0};
 static TIMER_LIST_ENT tle_av_open_on_rc;
-
-// TODO: need protection against race
-#define BTC_A2D_CB_TO_APP(_event, _param)    do { \
-	if (bt_av_sink_callback) { \
-	    bt_av_sink_callback(_event, _param); \
-	} \
-    } while (0)
 
 /* both interface and media task needs to be ready to alloc incoming request */
 #define CHECK_BTAV_INIT() if (btc_av_cb.sm_handle == NULL)\
@@ -145,6 +136,13 @@ extern tBTA_AV_CO_FUNCTS bta_av_a2d_cos;
 /*****************************************************************************
 ** Local helper functions
 ******************************************************************************/
+static inline void btc_a2d_cb_to_app(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
+{
+    esp_a2d_cb_t btc_a2d_cb = (esp_a2d_cb_t)btc_profile_cb_get(BTC_PID_A2DP);
+    if (btc_a2d_cb) {
+	btc_a2d_cb(event, param);
+    }
+}
 
 static const char *dump_av_sm_state_name(btc_av_state_t state)
 {
@@ -241,7 +239,7 @@ static void btc_report_connection_state(esp_a2d_connection_state_t state, bt_bda
         param.conn_stat.disc_rsn = (disc_rsn == 0) ? ESP_A2D_DISC_RSN_NORMAL :
             ESP_A2D_DISC_RSN_ABNORMAL;
     }
-    BTC_A2D_CB_TO_APP(ESP_A2D_CONNECTION_STATE_EVT, &param);
+    btc_a2d_cb_to_app(ESP_A2D_CONNECTION_STATE_EVT, &param);
 }
 
 static void btc_report_audio_state(esp_a2d_audio_state_t state, bt_bdaddr_t *bd_addr)
@@ -253,7 +251,7 @@ static void btc_report_audio_state(esp_a2d_audio_state_t state, bt_bdaddr_t *bd_
     if (bd_addr) {
         memcpy(param.audio_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
     }
-    BTC_A2D_CB_TO_APP(ESP_A2D_AUDIO_STATE_EVT, &param);
+    btc_a2d_cb_to_app(ESP_A2D_AUDIO_STATE_EVT, &param);
 }
 
 /*****************************************************************************
@@ -423,7 +421,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
             esp_a2d_cb_param_t param;
             memcpy(param.audio_cfg.remote_bda, &btc_av_cb.peer_bda, sizeof(esp_bd_addr_t));
             memcpy(&param.audio_cfg.mcc, p_data, sizeof(esp_a2d_mcc_t));
-            BTC_A2D_CB_TO_APP(ESP_A2D_AUDIO_CFG_EVT, &param);
+            btc_a2d_cb_to_app(ESP_A2D_AUDIO_CFG_EVT, &param);
         }
     } break;
 
@@ -953,22 +951,6 @@ bt_status_t btc_av_init()
     return BT_STATUS_SUCCESS;
 }
 
-/**
- *
- * Function         register A2DP callback
- *
- * Description      Initializes the AV interface for sink mode
- *
- * Returns          bt_status_t
- *
- */
-esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback)
-{
-    // TODO: need protection against race
-    bt_av_sink_callback = callback;
-    return ESP_OK;
-}
-
 /*******************************************************************************
 **
 ** Function         init_sink
@@ -978,13 +960,13 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback)
 ** Returns          bt_status_t
 **
 *******************************************************************************/
-esp_err_t esp_a2d_sink_init(void)
+bt_status_t btc_a2d_sink_init(void)
 {
     LOG_INFO("%s()\n", __func__);
 
     bt_status_t status = btc_av_init();
 
-    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return status;
 }
 
 /*******************************************************************************
@@ -1009,38 +991,14 @@ static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid)
     return BT_STATUS_SUCCESS;
 }
 
-esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda)
+bt_status_t btc_a2d_sink_connect(bt_bdaddr_t* remote_bda)
 {
     LOG_INFO("%s\n", __FUNCTION__);
     CHECK_BTAV_INIT();
 
-    bt_status_t stat;
-    bt_bdaddr_t bd_addr;
-    memcpy(&bd_addr, remote_bda, sizeof(bt_bdaddr_t));
-
-    stat = btc_queue_connect(UUID_SERVCLASS_AUDIO_SINK, &bd_addr, connect_int);
-    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return btc_queue_connect(UUID_SERVCLASS_AUDIO_SINK, remote_bda, connect_int);
 }
 
-esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
-{
-    bt_status_t stat;
-    btc_av_args_t arg;
-    btc_msg_t msg;
-    
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_A2DP;
-    msg.act = BTC_AV_DISCONNECT_REQ_EVT;
-
-    memset(&arg, 0, sizeof(btc_av_args_t));
-    
-    LOG_INFO("%s\n", __FUNCTION__);
-    CHECK_BTAV_INIT();
-    memcpy(&(arg.disconnect), remote_bda, sizeof(bt_bdaddr_t));
-    /* Switch to BTC context */
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
-    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
-}
 /*******************************************************************************
 **
 ** Function         cleanup
@@ -1050,7 +1008,7 @@ esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
 ** Returns          None
 **
 *******************************************************************************/
-static void cleanup(void)
+static void btc_a2d_sink_deinit(void)
 {
     LOG_INFO("%s\n", __FUNCTION__);
 
@@ -1064,16 +1022,6 @@ static void cleanup(void)
     /* Also shut down the AV state machine */
     btc_sm_shutdown(btc_av_cb.sm_handle);
     btc_av_cb.sm_handle = NULL;
-}
-
-void esp_a2d_sink_deinit(void)
-{
-    LOG_INFO("%s\n", __FUNCTION__);
-
-    if (bt_av_sink_callback) {
-        bt_av_sink_callback = NULL;
-        cleanup();
-    }
 }
 
 /*******************************************************************************
@@ -1264,6 +1212,30 @@ void btc_av_clear_remote_suspend_flag(void)
 
 void btc_a2dp_evt_handler(btc_msg_t *msg)
 {
-    btc_sm_dispatch(btc_av_cb.sm_handle, msg->act, (void *)(msg->arg));
+    if (msg->act < BTC_AV_MAX_SM_EVT) {
+        btc_sm_dispatch(btc_av_cb.sm_handle, msg->act, (void *)(msg->arg));
+    } else {
+        btc_av_args_t *arg = (btc_av_args_t *)(msg->arg);
+        switch (msg->act) {
+        case BTC_AV_SINK_API_INIT_EVT: {
+            btc_a2d_sink_init();
+            // todo: callback to application
+            break;
+        }
+        case BTC_AV_SINK_API_DEINIT_EVT: {
+            btc_a2d_sink_deinit();
+            // todo: callback to application
+            break;
+        }
+        case BTC_AV_SINK_API_CONNECT_EVT: {
+            btc_a2d_sink_connect(&arg->connect);
+            // todo: callback to application
+            break;
+        }
+        default:
+            LOG_WARN("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
+        }
+    }
+
     btc_av_event_free_data(msg->act, msg->arg);
 }
