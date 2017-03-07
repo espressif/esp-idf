@@ -43,7 +43,7 @@
 #include "bta_av_ci.h"
 #include "l2c_api.h"
 
-#include "btif_av_co.h"
+#include "btc_av_co.h"
 #include "btc_media.h"
 
 #include "alarm.h"

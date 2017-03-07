@@ -19,7 +19,7 @@
 /******************************************************************************
  *
  *  This is the advanced audio/video call-out function implementation for
- *  BTIF.
+ *  BTC.
  *
  ******************************************************************************/
 
@@ -32,7 +32,7 @@
 #include "bta_av_ci.h"
 #include "bta_av_sbc.h"
 #include "btc_media.h"
-#include "btif_av_co.h"
+#include "btc_av_co.h"
 #include "btif_util.h"
 
 /*****************************************************************************
@@ -86,13 +86,13 @@ const tA2D_SBC_CIE bta_av_co_sbc_sink_caps = {
     A2D_SBC_IE_MIN_BITPOOL /* min_bitpool */
 };
 
-#if !defined(BTIF_AV_SBC_DEFAULT_SAMP_FREQ)
-#define BTIF_AV_SBC_DEFAULT_SAMP_FREQ A2D_SBC_IE_SAMP_FREQ_44
+#if !defined(BTC_AV_SBC_DEFAULT_SAMP_FREQ)
+#define BTC_AV_SBC_DEFAULT_SAMP_FREQ A2D_SBC_IE_SAMP_FREQ_44
 #endif
 
 /* Default SBC codec configuration */
-const tA2D_SBC_CIE btif_av_sbc_default_config = {
-    BTIF_AV_SBC_DEFAULT_SAMP_FREQ,   /* samp_freq */
+const tA2D_SBC_CIE btc_av_sbc_default_config = {
+    BTC_AV_SBC_DEFAULT_SAMP_FREQ,   /* samp_freq */
     A2D_SBC_IE_CH_MD_JOINT,         /* ch_mode */
     A2D_SBC_IE_BLOCKS_16,           /* block_len */
     A2D_SBC_IE_SUBBAND_8,           /* num_subbands */
@@ -116,8 +116,8 @@ typedef struct {
 
 typedef struct {
     BD_ADDR         addr;               /* address of audio/video peer */
-    tBTA_AV_CO_SINK snks[BTIF_SV_AV_AA_SEP_INDEX]; /* array of supported sinks */
-    tBTA_AV_CO_SINK srcs[BTIF_SV_AV_AA_SEP_INDEX]; /* array of supported srcs */
+    tBTA_AV_CO_SINK snks[BTC_SV_AV_AA_SEP_INDEX]; /* array of supported sinks */
+    tBTA_AV_CO_SINK srcs[BTC_SV_AV_AA_SEP_INDEX]; /* array of supported srcs */
     UINT8           num_snks;           /* total number of sinks at peer */
     UINT8           num_srcs;           /* total number of srcs at peer */
     UINT8           num_seps;           /* total number of seids at peer */
@@ -277,7 +277,7 @@ BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info, UINT8 *p_
     bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
 
     switch (index) {
-    case BTIF_SV_AV_AA_SBC_INDEX:
+    case BTC_SV_AV_AA_SBC_INDEX:
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
     {
         UINT8 *p = p_protect_info;
@@ -298,7 +298,7 @@ BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info, UINT8 *p_
         /* Codec is valid */
     return TRUE;
 #if (BTA_AV_SINK_INCLUDED == TRUE)
-    case BTIF_SV_AV_AA_SBC_SINK_INDEX:
+    case BTC_SV_AV_AA_SBC_SINK_INDEX:
         *p_codec_type = BTA_AV_CODEC_SBC;
 
         /* This should not fail because we are using constants for parameters */
@@ -379,7 +379,7 @@ void bta_av_build_src_cfg (UINT8 *p_pref_cfg, UINT8 *p_src_cap)
     UINT8           status = 0;
 
     /* initialize it to default SBC configuration */
-    A2D_BldSbcInfo(AVDT_MEDIA_AUDIO, (tA2D_SBC_CIE *) &btif_av_sbc_default_config, p_pref_cfg);
+    A2D_BldSbcInfo(AVDT_MEDIA_AUDIO, (tA2D_SBC_CIE *) &btc_av_sbc_default_config, p_pref_cfg);
     /* now try to build a preferred one */
     /* parse configuration */
     if ((status = A2D_ParsSbcInfo(&src_cap, p_src_cap, TRUE)) != 0) {
@@ -1467,7 +1467,7 @@ void bta_av_co_audio_codec_reset(void)
     /* Reset the current configuration to SBC */
     bta_av_co_cb.codec_cfg.id = BTC_AV_CODEC_SBC;
 
-    if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btif_av_sbc_default_config, bta_av_co_cb.codec_cfg.info) != A2D_SUCCESS) {
+    if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btc_av_sbc_default_config, bta_av_co_cb.codec_cfg.info) != A2D_SUCCESS) {
         APPL_TRACE_ERROR("bta_av_co_audio_codec_reset A2D_BldSbcInfo failed");
     }
 
@@ -1502,7 +1502,7 @@ BOOLEAN bta_av_co_audio_set_codec(const tBTC_AV_MEDIA_FEEDINGS *p_feeding, tBTC_
     case BTC_AV_CODEC_PCM:
         new_cfg.id = BTC_AV_CODEC_SBC;
 
-        sbc_config = btif_av_sbc_default_config;
+        sbc_config = btc_av_sbc_default_config;
         if ((p_feeding->cfg.pcm.num_channel != 1) &&
                 (p_feeding->cfg.pcm.num_channel != 2)) {
             APPL_TRACE_ERROR("bta_av_co_audio_set_codec PCM channel number unsupported");
@@ -1610,7 +1610,7 @@ BOOLEAN bta_av_co_audio_get_sbc_config(tA2D_SBC_CIE *p_sbc_config, UINT16 *p_min
 
     if (!result) {
         /* Not SBC, still return the default values */
-        *p_sbc_config = btif_av_sbc_default_config;
+        *p_sbc_config = btc_av_sbc_default_config;
     }
     GKI_enable();
 

@@ -17,6 +17,7 @@ COMPONENT_ADD_INCLUDEDIRS :=	bluedroid/bta/include			\
 				bluedroid/btc/profile/esp/include		\
 				bluedroid/btc/profile/std/gatt/include	\
 				bluedroid/btc/profile/std/gap/include	\
+				bluedroid/btc/profile/std/a2dp/include	\
 				bluedroid/btc/profile/std/sdp/include	\
 				bluedroid/btc/profile/std/include	\
 				bluedroid/btc/include		\
