@@ -550,11 +550,11 @@ static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psra
     CLEAR_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_DRAM_HL|DPORT_PRO_DRAM_SPLIT);
     CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_DRAM_HL|DPORT_APP_DRAM_SPLIT);
     if (vaddrmode == PSRAM_VADDR_MODE_LOWHIGH) {
-        SET_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_DRAM_SPLIT);
-        SET_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_DRAM_SPLIT);
-    } else if (vaddrmode == PSRAM_VADDR_MODE_EVENODD) {
         SET_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_DRAM_HL);
         SET_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_DRAM_HL);
+    } else if (vaddrmode == PSRAM_VADDR_MODE_EVENODD) {
+        SET_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_DRAM_SPLIT);
+        SET_PERI_REG_MASK(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_DRAM_SPLIT);
     }
 
     CLEAR_PERI_REG_MASK(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DRAM1|DPORT_PRO_CACHE_MASK_OPSDRAM); //use Dram1 to visit ext sram.
@@ -564,5 +564,48 @@ static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psra
     //cache page mode : 1 -->16k  4 -->2k  0-->32k,(accord with the settings in cache_sram_mmu_set)
     SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CMMU_SRAM_PAGE_MODE, 0, DPORT_APP_CMMU_SRAM_PAGE_MODE_S);
     CLEAR_PERI_REG_MASK(SPI_PIN_REG(0), SPI_CS1_DIS_M); //ENABLE SPI0 CS1 TO PSRAM(CS0--FLASH; CS1--SRAM)
+}
+
+/*
+ Before flushing the cache, if psram is enabled, we need to write back the data in the cache to the psram first,
+ otherwise it will get lost. For now, we just read 64/128K of random PSRAM memory to do this. Yes, we should be
+ able to optimize this. Later.
+*/
+void IRAM_ATTR esp_psram_writeback_cache() 
+{
+	int x;
+	volatile int i=0;
+	volatile uint8_t *psram=(volatile uint8_t*)0x3F800000;
+	int cacheWasDisabled=0;
+
+	//We need cache enabled for this to work. Re-enable it if needed; make sure we 
+	//disable it again on exit as well.
+	if (REG_GET_BIT(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_CACHE_ENABLE)==0) {
+			cacheWasDisabled|=(1<<0);
+			SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 1, DPORT_PRO_CACHE_ENABLE_S);
+	}
+#ifndef CONFIG_FREERTOS_UNICORE
+	if (REG_GET_BIT(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_CACHE_ENABLE)==0) {
+		cacheWasDisabled|=(1<<1);
+		SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL_REG, 1, 1, DPORT_APP_CACHE_ENABLE_S);
+	}
+#endif
+
+#if CONFIG_FREERTOS_UNICORE
+	for (x=0; x<1024*64; x+=32) {
+		i+=psram[x];
+	}
+#else
+	for (x=0; x<1024*64; x+=32) {
+		i+=psram[x];
+		i+=psram[x+(1024*1024*2)+(1024*64)]; //address picked to also clear cache of app cpu in low/high mode
+	}
+	ets_printf("%x\n", i);
+#endif
+
+	if (cacheWasDisabled&(1<<0)) SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 0, DPORT_PRO_CACHE_ENABLE_S);
+#ifndef CONFIG_FREERTOS_UNICORE
+	if (cacheWasDisabled&(1<<1)) SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL_REG, 1, 0, DPORT_APP_CACHE_ENABLE_S);
+#endif
 }
 

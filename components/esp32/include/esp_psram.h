@@ -51,4 +51,14 @@ typedef enum {
  */
 esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode);
 
+
+/**
+ * @brief Write back all psram data contained in the cache
+ *
+ * Before the flash/psram cache is flushed (=invalidated on esp32), the psram 
+ * data that resides there needs to be written back This routine does that.
+ */
+void esp_psram_writeback_cache();
+
+
 #endif

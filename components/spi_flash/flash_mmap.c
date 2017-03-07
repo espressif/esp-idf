@@ -31,6 +31,7 @@
 #include "esp_flash_encrypt.h"
 #include "esp_log.h"
 #include "cache_utils.h"
+#include "esp_psram.h"
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
@@ -193,6 +194,9 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
        entire cache.
     */
     if (!did_flush && need_flush) {
+#if CONFIG_MEMMAP_SPIRAM_ENABLE
+        esp_psram_writeback_cache();
+#endif
         Cache_Flush(0);
         Cache_Flush(1);
     }
@@ -298,6 +302,9 @@ static inline IRAM_ATTR bool update_written_pages(size_t start_addr, size_t leng
                tricky because mmaped memory can be used on un-pinned
                cores, or the pointer passed between CPUs.
             */
+#if CONFIG_MEMMAP_SPIRAM_ENABLE
+            esp_psram_writeback_cache();
+#endif
             Cache_Flush(0);
 #ifndef CONFIG_FREERTOS_UNICORE
             Cache_Flush(1);

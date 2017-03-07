@@ -124,8 +124,17 @@ config MEMMAP_SPIRAM_SIZE
     help
         Size of external SPI RAM
 
+config MEMMAP_SPIRAM_NO_HEAPALLOC
+    bool "Initialize PSRAM memory but do not add to heap allocator"
+    default "n"
+    help
+        This initializes the PSRAM as normal, but does not make the heap allocator aware of the
+        memory region. You can use the memory region from 0x3F800000-0x3FBFFFFF freely, but
+        need to do your own memory management there.
+
 config MEMMAP_SPIRAM_TEST
     bool "On SPI RAM init, do a quick memory test"
+    depends on !MEMMAP_SPIRAM_NO_HEAPALLOC
     default "n"
     help
         This does a quick memory test on boot-up. This takes about a second for 4MiB of SPI RAM.
@@ -142,7 +151,13 @@ config MEMMAP_SPIRAM_ENABLE_MALLOC
 config MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL
     int "Always put malloc()s smaller than this size, in bytes, in internal RAM"
     depends on MEMMAP_SPIRAM_ENABLE_MALLOC
-    default 1024
+    range 4096 4194304
+    default 4096
+    help
+        Always tries to allocate heap allocation requests smaller than defined here in
+        internal RAM instead of PSRAM; allocations larger than this will initially
+        go to PSRAM. If either of these initial allocations fails, allocation in the 
+        other memory region will be attempted as a backup option.
 
 endif
 
