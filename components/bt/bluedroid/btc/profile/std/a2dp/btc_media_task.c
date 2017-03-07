@@ -53,7 +53,7 @@
 #include "bt_defs.h"
 #include "btc_av.h"
 #include "btc_sm.h"
-#include "btif_util.h"
+#include "btc_util.h"
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 #include "oi_codec_sbc.h"
 #include "oi_status.h"

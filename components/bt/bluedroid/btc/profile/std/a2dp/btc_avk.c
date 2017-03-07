@@ -28,7 +28,7 @@
 #include "btc_dm.h"
 #include "btc_av.h"
 #include "btc_avrc.h"
-#include "btif_util.h"
+#include "btc_util.h"
 #include "btc_profile_queue.h"
 #include "bta_api.h"
 #include "btc_media.h"

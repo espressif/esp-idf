@@ -1,54 +1,33 @@
-/******************************************************************************
- *
- *  Copyright (c) 2014 The Android Open Source Project
- *  Copyright (C) 2009-2012 Broadcom Corporation
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- ******************************************************************************/
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /************************************************************************************
  *
- *  Filename:      btif_util.c
+ *  Filename:      btc_util.c
  *
  *  Description:   Miscellaneous helper functions
  *
  *
  ***********************************************************************************/
 
-// #include <hardware/bluetooth.h>
-// #include <hardware/bt_hf.h>
-// #include <hardware/bt_av.h>
-// #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
-
-#define LOG_TAG "bt_btif_util"
-// #include "btif_common.h"
-// #include "bta_api.h"
-// #include "gki.h"
-// #include "btu.h"
-// #include "bte.h"
-// #include "btif_dm.h"
-#include "btif_util.h"
-// #include "bta_ag_api.h"
+#include "btc_util.h"
 #include "bta_av_api.h"
-// #include "bta_hh_api.h"
-// #include "bta_hf_client_api.h"
-// #include "avrc_defs.h"
 #include "bt_defs.h"
 
 /************************************************************************************
@@ -211,4 +190,3 @@ void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str)
             ntohl(uuid4), ntohs(uuid5));
     return;
 }
-

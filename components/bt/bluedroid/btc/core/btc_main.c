@@ -17,7 +17,7 @@
 #include "btc_dm.h"
 #include "future.h"
 #include "esp_err.h"
-#include "btif_config.h"
+#include "btc_config.h"
 
 static future_t *main_future[BTC_MAIN_FUTURE_NUM];
 
@@ -62,7 +62,7 @@ void btc_init_callback(void)
 
 static void btc_init_bluetooth(void)
 {
-    btif_config_init();
+    btc_config_init();
     bte_main_boot_entry(btc_init_callback);
 }
 
@@ -70,7 +70,7 @@ static void btc_init_bluetooth(void)
 static void btc_deinit_bluetooth(void)
 {
     bte_main_shutdown();
-    btif_config_clean_up();
+    btc_config_clean_up();
     future_ready(*btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE), FUTURE_SUCCESS);
 }
 

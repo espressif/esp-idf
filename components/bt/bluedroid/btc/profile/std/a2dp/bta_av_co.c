@@ -33,7 +33,7 @@
 #include "bta_av_sbc.h"
 #include "btc_media.h"
 #include "btc_av_co.h"
-#include "btif_util.h"
+#include "btc_util.h"
 
 /*****************************************************************************
  **  Constants

@@ -5,7 +5,7 @@
 #include "btc_main.h"
 #include "bt_trace.h"
 #include "bt_target.h"
-#include "btif_storage.h" // TODO: replace with "btc"
+#include "btc_storage.h"
 #include "bta_api.h"
 
 
@@ -118,7 +118,7 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
             bt_status_t ret;
             LOG_DEBUG("%s: Storing link key. key_type=0x%x",
 			     __FUNCTION__, p_auth_cmpl->key_type);
-            ret = btif_storage_add_bonded_device(&bd_addr,
+            ret = btc_storage_add_bonded_device(&bd_addr,
                                 p_auth_cmpl->key, p_auth_cmpl->key_type,
                                 16);
             BTC_ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
@@ -158,7 +158,7 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
             /* map the auth failure codes, so we can retry pairing if necessary */
             case HCI_ERR_AUTH_FAILURE:
             case HCI_ERR_KEY_MISSING:
-                btif_storage_remove_bonded_device(&bd_addr);
+                btc_storage_remove_bonded_device(&bd_addr);
             case HCI_ERR_HOST_REJECT_SECURITY:
             case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
             case HCI_ERR_UNIT_KEY_USED:
@@ -254,7 +254,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         }
         btif_enable_bluetooth_evt(p_data->enable.status);
 #endif /* KARL_NOT_IGNORE */
-	btif_storage_load_bonded_devices();
+	btc_storage_load_bonded_devices();
         btc_enable_bluetooth_evt(p_data->enable.status);
         break;
     case BTA_DM_DISABLE_EVT:

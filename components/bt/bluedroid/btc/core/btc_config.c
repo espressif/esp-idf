@@ -1,22 +1,16 @@
-/******************************************************************************
- *
- *  Copyright (C) 2014 Google, Inc.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- ******************************************************************************/
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 
-#define LOG_TAG "bt_btif_config"
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <ctype.h>
 #include <stdio.h>
@@ -27,8 +21,8 @@
 #include "alarm.h"
 #include "allocator.h"
 #include "bdaddr.h"
-#include "btif_config.h"
-#include "btif_util.h"
+#include "btc_config.h"
+#include "btc_util.h"
 #include "config.h"
 #include "osi.h"
 
@@ -41,7 +35,7 @@ static void timer_config_save(void *data);
 
 // TODO(zachoverflow): Move these two functions out, because they are too specific for this file
 // {grumpy-cat/no, monty-python/you-make-me-sad}
-bool btif_get_device_type(const BD_ADDR bd_addr, int *p_device_type)
+bool btc_get_device_type(const BD_ADDR bd_addr, int *p_device_type)
 {
     if (p_device_type == NULL) {
         return FALSE;
@@ -53,7 +47,7 @@ bool btif_get_device_type(const BD_ADDR bd_addr, int *p_device_type)
     bdstr_t bd_addr_str;
     bdaddr_to_string(&bda, bd_addr_str, sizeof(bd_addr_str));
 
-    if (!btif_config_get_int(bd_addr_str, "DevType", p_device_type)) {
+    if (!btc_config_get_int(bd_addr_str, "DevType", p_device_type)) {
         return FALSE;
     }
 
@@ -61,7 +55,7 @@ bool btif_get_device_type(const BD_ADDR bd_addr, int *p_device_type)
     return TRUE;
 }
 
-bool btif_get_address_type(const BD_ADDR bd_addr, int *p_addr_type)
+bool btc_get_address_type(const BD_ADDR bd_addr, int *p_addr_type)
 {
     if (p_addr_type == NULL) {
         return FALSE;
@@ -73,7 +67,7 @@ bool btif_get_address_type(const BD_ADDR bd_addr, int *p_addr_type)
     bdstr_t bd_addr_str;
     bdaddr_to_string(&bda, bd_addr_str, sizeof(bd_addr_str));
 
-    if (!btif_config_get_int(bd_addr_str, "AddrType", p_addr_type)) {
+    if (!btc_config_get_int(bd_addr_str, "AddrType", p_addr_type)) {
         return FALSE;
     }
 
@@ -87,7 +81,7 @@ static osi_alarm_t *alarm_timer;
 
 // Module lifecycle functions
 
-bool btif_config_init(void)
+bool btc_config_init(void)
 {
     pthread_mutex_init(&lock, NULL);
     config = config_new(CONFIG_FILE_PATH);
@@ -107,7 +101,7 @@ bool btif_config_init(void)
     // TODO(sharvil): use a non-wake alarm for this once we have
     // API support for it. There's no need to wake the system to
     // write back to disk.
-    alarm_timer = osi_alarm_new("btif_config", timer_config_save, NULL, CONFIG_SETTLE_PERIOD_MS, false);
+    alarm_timer = osi_alarm_new("btc_config", timer_config_save, NULL, CONFIG_SETTLE_PERIOD_MS, false);
     if (!alarm_timer) {
         LOG_ERROR("%s unable to create alarm.\n", __func__);
         goto error;
@@ -125,15 +119,15 @@ error:;
     return false;
 }
 
-bool btif_config_shut_down(void)
+bool btc_config_shut_down(void)
 {
-    btif_config_flush();
+    btc_config_flush();
     return true;
 }
 
-bool btif_config_clean_up(void)
+bool btc_config_clean_up(void)
 {
-    btif_config_flush();
+    btc_config_flush();
 
     osi_alarm_free(alarm_timer);
     config_free(config);
@@ -143,7 +137,7 @@ bool btif_config_clean_up(void)
     return true;
 }
 
-bool btif_config_has_section(const char *section)
+bool btc_config_has_section(const char *section)
 {
     assert(config != NULL);
     assert(section != NULL);
@@ -155,7 +149,7 @@ bool btif_config_has_section(const char *section)
     return ret;
 }
 
-bool btif_config_exist(const char *section, const char *key)
+bool btc_config_exist(const char *section, const char *key)
 {
     assert(config != NULL);
     assert(section != NULL);
@@ -168,7 +162,7 @@ bool btif_config_exist(const char *section, const char *key)
     return ret;
 }
 
-bool btif_config_get_int(const char *section, const char *key, int *value)
+bool btc_config_get_int(const char *section, const char *key, int *value)
 {
     assert(config != NULL);
     assert(section != NULL);
@@ -185,7 +179,7 @@ bool btif_config_get_int(const char *section, const char *key, int *value)
     return ret;
 }
 
-bool btif_config_set_int(const char *section, const char *key, int value)
+bool btc_config_set_int(const char *section, const char *key, int value)
 {
     assert(config != NULL);
     assert(section != NULL);
@@ -198,7 +192,7 @@ bool btif_config_set_int(const char *section, const char *key, int value)
     return true;
 }
 
-bool btif_config_get_str(const char *section, const char *key, char *value, int *size_bytes)
+bool btc_config_get_str(const char *section, const char *key, char *value, int *size_bytes)
 {
     assert(config != NULL);
     assert(section != NULL);
@@ -220,7 +214,7 @@ bool btif_config_get_str(const char *section, const char *key, char *value, int 
     return true;
 }
 
-bool btif_config_set_str(const char *section, const char *key, const char *value)
+bool btc_config_set_str(const char *section, const char *key, const char *value)
 {
     assert(config != NULL);
     assert(section != NULL);
@@ -234,7 +228,7 @@ bool btif_config_set_str(const char *section, const char *key, const char *value
     return true;
 }
 
-bool btif_config_get_bin(const char *section, const char *key, uint8_t *value, size_t *length)
+bool btc_config_get_bin(const char *section, const char *key, uint8_t *value, size_t *length)
 {
     assert(config != NULL);
     assert(section != NULL);
@@ -269,7 +263,7 @@ bool btif_config_get_bin(const char *section, const char *key, uint8_t *value, s
     return true;
 }
 
-size_t btif_config_get_bin_length(const char *section, const char *key)
+size_t btc_config_get_bin_length(const char *section, const char *key)
 {
     assert(config != NULL);
     assert(section != NULL);
@@ -287,7 +281,7 @@ size_t btif_config_get_bin_length(const char *section, const char *key)
     return ((value_len % 2) != 0) ? 0 : (value_len / 2);
 }
 
-bool btif_config_set_bin(const char *section, const char *key, const uint8_t *value, size_t length)
+bool btc_config_set_bin(const char *section, const char *key, const uint8_t *value, size_t length)
 {
     const char *lookup = "0123456789abcdef";
 
@@ -317,33 +311,33 @@ bool btif_config_set_bin(const char *section, const char *key, const uint8_t *va
     return true;
 }
 
-const btif_config_section_iter_t *btif_config_section_begin(void)
+const btc_config_section_iter_t *btc_config_section_begin(void)
 {
     assert(config != NULL);
-    return (const btif_config_section_iter_t *)config_section_begin(config);
+    return (const btc_config_section_iter_t *)config_section_begin(config);
 }
 
-const btif_config_section_iter_t *btif_config_section_end(void)
+const btc_config_section_iter_t *btc_config_section_end(void)
 {
     assert(config != NULL);
-    return (const btif_config_section_iter_t *)config_section_end(config);
+    return (const btc_config_section_iter_t *)config_section_end(config);
 }
 
-const btif_config_section_iter_t *btif_config_section_next(const btif_config_section_iter_t *section)
+const btc_config_section_iter_t *btc_config_section_next(const btc_config_section_iter_t *section)
 {
     assert(config != NULL);
     assert(section != NULL);
-    return (const btif_config_section_iter_t *)config_section_next((const config_section_node_t *)section);
+    return (const btc_config_section_iter_t *)config_section_next((const config_section_node_t *)section);
 }
 
-const char *btif_config_section_name(const btif_config_section_iter_t *section)
+const char *btc_config_section_name(const btc_config_section_iter_t *section)
 {
     assert(config != NULL);
     assert(section != NULL);
     return config_section_name((const config_section_node_t *)section);
 }
 
-bool btif_config_remove(const char *section, const char *key)
+bool btc_config_remove(const char *section, const char *key)
 {
     assert(config != NULL);
     assert(section != NULL);
@@ -356,7 +350,7 @@ bool btif_config_remove(const char *section, const char *key)
     return ret;
 }
 
-void btif_config_save(void)
+void btc_config_save(void)
 {
     assert(alarm_timer != NULL);
     assert(config != NULL);
@@ -364,7 +358,7 @@ void btif_config_save(void)
     osi_alarm_set(alarm_timer, CONFIG_SETTLE_PERIOD_MS);
 }
 
-void btif_config_flush(void)
+void btc_config_flush(void)
 {
     assert(config != NULL);
     assert(alarm_timer != NULL);
@@ -375,7 +369,7 @@ void btif_config_flush(void)
     pthread_mutex_unlock(&lock);
 }
 
-int btif_config_clear(void)
+int btc_config_clear(void)
 {
     assert(config != NULL);
     assert(alarm_timer != NULL);
