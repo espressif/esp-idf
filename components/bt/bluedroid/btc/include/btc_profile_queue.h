@@ -14,7 +14,7 @@
 
 /*******************************************************************************
  *
- *  Filename:      btC_profile_queue.h
+ *  Filename:      btc_profile_queue.h
  *
  *  Description:   Bluetooth remote device connection queuing
  *

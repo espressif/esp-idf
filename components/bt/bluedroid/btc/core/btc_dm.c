@@ -238,38 +238,14 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     btc_dm_sec_args_t *arg = (btc_dm_sec_args_t *)(msg->arg);
     tBTA_DM_SEC *p_data = &(arg->sec);
     // tBTA_SERVICE_MASK service_mask;
-    LOG_DEBUG("btif_dm_upstreams_cback  ev: %d\n", msg->act);
+    LOG_DEBUG("btc_dm_upstreams_cback  ev: %d\n", msg->act);
 
     switch (msg->act) {
     case BTA_DM_ENABLE_EVT:
-#if KARL_NOT_IGNORE
-        /* for each of the enabled services in the mask, trigger the profile
-         * enable */
-        service_mask = btif_get_enabled_services_mask();
-        for (int i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
-            if (service_mask &
-                    (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
-                btif_in_execute_service_request(i, TRUE);
-            }
-        }
-        btif_enable_bluetooth_evt(p_data->enable.status);
-#endif /* KARL_NOT_IGNORE */
 	btc_storage_load_bonded_devices();
         btc_enable_bluetooth_evt(p_data->enable.status);
         break;
     case BTA_DM_DISABLE_EVT:
-#if KARL_NOT_IGNORE
-        /* for each of the enabled services in the mask, trigger the profile
-         * disable */
-        service_mask = btif_get_enabled_services_mask();
-        for (int i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
-            if (service_mask &
-                    (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
-                btif_in_execute_service_request(i, FALSE);
-            }
-        }
-        btif_disable_bluetooth_evt();
-#endif /* KARL_NOT_IGNORE */
         btc_disable_bluetooth_evt();
         break;
     case BTA_DM_PIN_REQ_EVT:

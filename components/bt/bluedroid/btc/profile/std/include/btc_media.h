@@ -16,7 +16,7 @@
  *
  *  Filename:      btc_media.h
  *
- *  Description:   This is the audio module for the BTIF system.
+ *  Description:   This is the audio module for the BTC system.
  *
  *******************************************************************************/
 
@@ -93,7 +93,7 @@ typedef struct {
 
 /*******************************************************************************
  **
- ** Function         btif_av_task
+ ** Function         btc_av_task
  **
  ** Description
  **
@@ -173,7 +173,7 @@ extern BOOLEAN btc_media_task_aa_tx_flush_req(void);
  **
  ** Function         btc_media_aa_readbuf
  **
- ** Description      Read an audio GKI buffer from the BTIF media TX queue
+ ** Description      Read an audio GKI buffer from the BTC media TX queue
  **
  ** Returns          pointer on a GKI aa buffer ready to send
  **
@@ -197,7 +197,7 @@ UINT8 btc_media_sink_enque_buf(BT_HDR *p_buf);
  **
  ** Function         btc_media_aa_writebuf
  **
- ** Description      Enqueue a Advance Audio media GKI buffer to be processed by btif media task.
+ ** Description      Enqueue a Advance Audio media GKI buffer to be processed by btc media task.
  **
  ** Returns          TRUE is success
  **
@@ -208,7 +208,7 @@ extern void btc_media_aa_writebuf(BT_HDR *pBuf, UINT32 timestamp, UINT16 seq_num
  **
  ** Function         btc_media_av_writebuf
  **
- ** Description      Enqueue a video media GKI buffer to be processed by btif media task.
+ ** Description      Enqueue a video media GKI buffer to be processed by btc media task.
  **
  ** Returns          TRUE is success
  **
@@ -242,7 +242,7 @@ extern BOOLEAN btc_media_task_audio_feeding_init_req(tBTC_MEDIA_INIT_AUDIO_FEEDI
 extern void dump_codec_info(unsigned char *p_codec);
 
 /**
- * Local adaptation helper functions between btif and media task
+ * Local adaptation helper functions between btc and media task
  */
 
 bool btc_a2dp_start_media_task(void);

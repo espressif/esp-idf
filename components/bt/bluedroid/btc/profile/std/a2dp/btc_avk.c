@@ -1108,13 +1108,6 @@ BOOLEAN btc_av_stream_ready(void)
     LOG_DEBUG("btc_av_stream_ready : sm hdl %d, state %d, flags %x\n",
                      (int)btc_av_cb.sm_handle, state, btc_av_cb.flags);
 
-#if 0 /* karl */
-    /* also make sure main adapter is enabled */
-    if (btif_is_enabled() == 0) {
-        LOG_INFO("main adapter not enabled");
-        return FALSE;
-    }
-#endif
     /* check if we are remotely suspended or stop is pending */
     if (btc_av_cb.flags & (BTC_AV_FLAG_REMOTE_SUSPEND | BTC_AV_FLAG_PENDING_STOP)) {
         return FALSE;

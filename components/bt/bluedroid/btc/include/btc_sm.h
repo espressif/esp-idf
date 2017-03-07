@@ -45,7 +45,7 @@ typedef BOOLEAN (* btc_sm_handler_t)(btc_sm_event_t event, void *data);
 /*****************************************************************************
 **  Functions
 **
-**  NOTE: THESE APIs SHOULD BE INVOKED ONLY IN THE BTIF CONTEXT
+**  NOTE: THESE APIs SHOULD BE INVOKED ONLY IN THE BTC CONTEXT
 **
 ******************************************************************************/
 

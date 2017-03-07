@@ -60,7 +60,7 @@ typedef UINT8 tBTC_AV_CHNL;
 
 typedef UINT8 tBTC_AV_HNDL;
 
-/* Operation id list for BTIF_AvRemoteCmd */
+/* Operation id list for BTC_AvRemoteCmd */
 #define BTC_AV_ID_SELECT      0x00    /* select */
 #define BTC_AV_ID_UP          0x01    /* up */
 #define BTC_AV_ID_DOWN        0x02    /* down */
@@ -130,7 +130,7 @@ typedef UINT8 tBTC_AV_STATE;
 
 typedef UINT8 tBTC_AV_RC_HNDL;
 
-/* Command codes for BTIF_AvVendorCmd */
+/* Command codes for BTC_AvVendorCmd */
 #define BTC_AV_CMD_CTRL         0
 #define BTC_AV_CMD_STATUS       1
 #define BTC_AV_CMD_SPEC_INQ     2
@@ -171,7 +171,7 @@ typedef UINT8 tBTC_AV_CHANNEL_MODE;
  * Structure used to configure the AV codec capabilities/config
  */
 typedef struct {
-    tBTC_AV_CODEC_ID id;            /* Codec ID (in terms of BTIF) */
+    tBTC_AV_CODEC_ID id;             /* Codec ID (in terms of BTC) */
     UINT8 info[AVDT_CODEC_SIZE];     /* Codec info (can be config or capabilities) */
 } tBTC_AV_CODEC_INFO;
 

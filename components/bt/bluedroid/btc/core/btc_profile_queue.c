@@ -113,7 +113,7 @@ bt_status_t btc_queue_connect(uint16_t uuid, const bt_bdaddr_t *bda, btc_connect
 }
 /*******************************************************************************
 **
-** Function         btif_queue_advance
+** Function         btc_queue_advance
 **
 ** Description      Clear the queue's busy status and advance to the next
 **                  scheduled connection.

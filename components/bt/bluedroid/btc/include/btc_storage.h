@@ -23,7 +23,7 @@
 **
 ** Function         btc_storage_add_bonded_device
 **
-** Description      BTIF storage API - Adds the newly bonded device to NVRAM
+** Description      BTC storage API - Adds the newly bonded device to NVRAM
 **                  along with the link-key, Key type and Pin key length
 **
 ** Returns          BT_STATUS_SUCCESS if the store was successful,
@@ -39,7 +39,7 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
 **
 ** Function         btc_storage_remove_bonded_device
 **
-** Description      BTIF storage API - Deletes the bonded device from NVRAM
+** Description      BTC storage API - Deletes the bonded device from NVRAM
 **
 ** Returns          BT_STATUS_SUCCESS if the deletion was successful,
 **                  BT_STATUS_FAIL otherwise
@@ -51,7 +51,7 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr);
 **
 ** Function         btc_storage_remove_bonded_device
 **
-** Description      BTIF storage API - Deletes the bonded device from NVRAM
+** Description      BTC storage API - Deletes the bonded device from NVRAM
 **
 ** Returns          BT_STATUS_SUCCESS if the deletion was successful,
 **                  BT_STATUS_FAIL otherwise

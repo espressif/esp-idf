@@ -27,7 +27,6 @@
 
 #include "esp_a2dp_api.h"
 #include "btc_task.h"
-// #include "btif_common.h"
 #include "btc_common.h"
 #include "btc_sm.h"
 #include "bta_av_api.h"
@@ -115,7 +114,7 @@ void btc_dispatch_sm_event(btc_av_sm_event_t event, void *p_data, int len);
 **
 ** Function         btc_av_init
 **
-** Description      Initializes btif AV if not already done
+** Description      Initializes btc AV if not already done
 **
 ** Returns          bt_status_t
 **
