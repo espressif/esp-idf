@@ -31,6 +31,7 @@
 #include "esp_spi_flash.h"
 #include "esp_log.h"
 #include "cache_utils.h"
+#include "esp_heap_alloc_caps.h"
 
 /* bytes erased by SPIEraseBlock() ROM function */
 #define BLOCK_ERASE_SIZE 65536
@@ -102,6 +103,7 @@ size_t IRAM_ATTR spi_flash_get_chip_size()
 
 static inline void IRAM_ATTR spi_flash_guard_start()
 {
+    assert(esp32_task_stack_is_internal() && "SPI operation called from task which has its stack in external memory");
     if (s_flash_guard_ops && s_flash_guard_ops->start) {
         s_flash_guard_ops->start();
     }

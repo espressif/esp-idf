@@ -149,6 +149,30 @@ void heap_alloc_enable_nonos_stack_tag()
     nonos_stack_in_use=false;
 }
 
+bool esp32_ptr_has_memory_caps(void *ptr, int caps) {
+    int tag=-1;
+    //Look up region tag of pointer
+    for (int i=0; regions[i].xSizeInBytes!=0; i++) {
+        if (regions[i].xTag != -1 && 
+                (uint8_t*)ptr >= regions[i].pucStartAddress && 
+                (uint8_t*)ptr < regions[i].pucStartAddress+regions[i].xSizeInBytes) {
+            tag=regions[i].xTag;
+            break;
+        }
+    }
+    if (tag==-1) return false;
+    //Mask off all the caps the tag does have. What should remain is the caps the tag does not have.
+    for (int i=0; i<NO_PRIOS; i++) caps&=~(tag_desc[tag].prio[i]);
+    //If any remain, ptr does not have all given caps.
+    return (caps==0);
+}
+
+
+bool esp32_task_stack_is_internal() {
+    int i;
+    return esp32_ptr_has_memory_caps(&i, MALLOC_CAP_INTERNAL);
+}
+
 //Modify regions array to disable the given range of memory.
 static void disable_mem_region(void *from, void *to) {
     int i;

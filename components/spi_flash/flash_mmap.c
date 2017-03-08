@@ -32,6 +32,7 @@
 #include "esp_log.h"
 #include "cache_utils.h"
 #include "esp_psram.h"
+#include "esp_heap_alloc_caps.h"
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds

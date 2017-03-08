@@ -510,7 +510,7 @@ static int vfs_fat_closedir(void* ctx, DIR* pdir)
 static struct dirent* vfs_fat_readdir(void* ctx, DIR* pdir)
 {
     vfs_fat_dir_t* fat_dir = (vfs_fat_dir_t*) pdir;
-    struct dirent* out_dirent;
+    struct dirent* out_dirent=NULL;
     int err = vfs_fat_readdir_r(ctx, pdir, &fat_dir->cur_dirent, &out_dirent);
     if (err != 0) {
         errno = err;

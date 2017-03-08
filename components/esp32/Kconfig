@@ -141,6 +141,7 @@ config MEMMAP_SPIRAM_TEST
 
 config MEMMAP_SPIRAM_ENABLE_MALLOC
     bool "malloc() can also allocate in SPI SRAM"
+    depends on !MEMMAP_SPIRAM_NO_HEAPALLOC
     default "n"
     help
         If enabled, malloc() will return pointers to both internal as well as external
