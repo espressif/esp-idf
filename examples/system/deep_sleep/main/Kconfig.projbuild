@@ -1,0 +1,20 @@
+menu "Example Configuration"
+
+config ENABLE_TOUCH_WAKEUP
+    bool "Enable touch wake up"
+    default y
+    help
+        This option enables wake up from deep sleep using touch pads
+        TOUCH8 and TOUCH9, which correspond to GPIO33 and GPIO32.
+
+config ENABLE_ULP_TEMPERATURE_WAKEUP
+    bool "Enable temperature monitoring by ULP"
+    default y
+    help
+        This option enables wake up from deep sleep using ULP.
+        ULP program monitors the on-chip temperature sensor and
+        wakes up the chip when the temperature goes outside of
+        the window defined by the initial temperature and a threshold
+        around it. 
+
+endmenu
