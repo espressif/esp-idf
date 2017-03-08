@@ -64,7 +64,7 @@ TEST_CASE("ulp add test", "[ulp]")
     TEST_ASSERT_EQUAL(10 + 11, RTC_SLOW_MEM[18] & 0xffff);
 }
 
-TEST_CASE("ulp branch test", "[ulp][ignore]")
+TEST_CASE("ulp branch test", "[ulp]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
@@ -266,7 +266,7 @@ TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
     esp_deep_sleep_start();
 }
 
-TEST_CASE("ulp power consumption in deep sleep", "[ulp]")
+TEST_CASE("ulp power consumption in deep sleep", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 4 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
     ulp_insn_t insn = I_HALT();
