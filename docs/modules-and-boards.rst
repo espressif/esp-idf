@@ -18,7 +18,7 @@ The smallest module intended for installation in final products. Can be also use
 
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP-WROOM-32-v3.2_sch.pdf>`__ (PDF)
 * `Datasheet <https://espressif.com/sites/default/files/documentation/esp_wroom_32_datasheet_en.pdf>`__ (PDF)
-* `ESP32 Module Reference Design <https://espressif.com/sites/default/files/documentation/esp32_module_reference_design.zip>`_ (ZIP) containing: OrCAD schematic, PCB layout, gerbers and BOM
+* `ESP32 Module Reference Design <https://espressif.com/sites/default/files/documentation/esp32_module_reference_design.zip>`_ (ZIP) containing OrCAD schematic, PCB layout, gerbers and BOM
 
    
 ESP32 Core Board V2 / ESP32 DevKitC
@@ -32,8 +32,10 @@ Small and convenient development board with break out pin headers and minimum ad
    :alt: ESP32 Core Board V2 / ESP32 DevKitC board
 
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`__ (PDF)
-* `ESP32 Development Board Reference Design <https://espressif.com/sites/default/files/documentation/esp32_development_board_reference_design.zip>`_ (ZIP) containing: OrCAD schematic, PCB layout, gerbers and BOM
+* `ESP32 Development Board Reference Design <https://espressif.com/sites/default/files/documentation/esp32_development_board_reference_design.zip>`_ (ZIP) containing OrCAD schematic, PCB layout, gerbers and BOM
 * `ESP32-DevKitC Getting Started Guide <https://espressif.com/sites/default/files/documentation/esp32-devkitc_getting_started_guide_en.pdf>`_ (PDF)
+* `CP210x USB to UART Bridge VCP Drivers <http://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
+
 
 
 ESP32 Demo Board V2
@@ -46,6 +48,7 @@ One of first feature rich evaluation boards that contains several pin headers, d
    :alt: ESP32 Demo Board V2 board
 
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP32-Demo-Board-V2_sch.pdf>`__ (PDF)
+* `FTDI Virtual COM Port Drivers`_ Note: Drivers install automatically on most of OS / there is no need to install them manually
 
 
 ESP32 WROVER KIT V1 / ESP32 DevKitJ V1
@@ -59,7 +62,8 @@ Development board that has dual port USB to serial converter for programming and
    :alt: ESP32 WROVER KIT V1 / ESP32 DevKitJ V1 board
 
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP32-DevKitJ-v1_sch.pdf>`__ (PDF)
-* `JTAG Debugging for ESP32 <https://espressif.com/sites/default/files/documentation/jtag_debugging_for_esp32_en.pdf>`__
+* `FTDI Virtual COM Port Drivers`_ Note: Drivers install automatically on most of OS / there is no need to install them manually 
+* `JTAG Debugging for ESP32`_ (PDF)
 
 
 ESP32 WROVER KIT V2
@@ -74,5 +78,10 @@ This is an updated version of ESP32 DevKitJ V1 described above with design impro
 
 * `Schematic <http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf>`__ (PDF)
 * `ESP-WROVER-KIT Getting Started Guide <https://espressif.com/sites/default/files/documentation/esp-wrover-kit_getting_started_guide_en.pdf>`_ (PDF)
-* `JTAG Debugging for ESP32 <https://espressif.com/sites/default/files/documentation/jtag_debugging_for_esp32_en.pdf>`__ (PDF)
+* `FTDI Virtual COM Port Drivers`_ Note: Drivers install automatically on most of OS / there is no need to install them manually
+* `JTAG Debugging for ESP32`_ (PDF)
+
+
+.. _JTAG Debugging for ESP32: https://github.com/espressif/esp-idf/
+.. _FTDI Virtual COM Port Drivers: http://www.ftdichip.com/Drivers/D2XX.htm
 
