@@ -600,7 +600,6 @@ void IRAM_ATTR esp_psram_writeback_cache()
 		i+=psram[x];
 		i+=psram[x+(1024*1024*2)+(1024*64)]; //address picked to also clear cache of app cpu in low/high mode
 	}
-	ets_printf("%x\n", i);
 #endif
 
 	if (cacheWasDisabled&(1<<0)) SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 0, DPORT_PRO_CACHE_ENABLE_S);
