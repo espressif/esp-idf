@@ -129,3 +129,40 @@ resets the CPU cores, not the peripherals, which may lead to undefined behaviour
 after-reset state of peripherals. Secondly, 'mon reset halt' stops before FreeRTOS is initialized. 
 OpenOCD assumes (in the default configuration, you can change this by editing esp32.cfg) a running 
 FreeRTOS and may get confused.
+
+Eclipse debugging
+-----------------
+
+*Warning: The Eclipse integration is not completely stable!*
+
+For some users it might be easier to use Eclipse debugging instead of console GDB. Luckily, the GDB integration within Eclipse is quite good,
+so it is easy to debug the ESP32.
+
+Following steps have to be performed to start debugging with Eclipse:
+
+- Install the *C/C++ GDB Hardware Debugging plugin* for Eclipse via "Help" -> "Install New Software"
+- Restart Eclipse and open the Debug Configurations dialog via "Run" -> "Debug configurations"
+- Add a new "GDB Hardware Debugging" configuration
+- Change following fields of the new debugging configuration:
+  * *Main* Click on *Search Project...* and select the right .elf file for your project (normally the project name).
+    Ensure that the *Standard GDB Hardware Debugging Launcher* is used. It can be changed via *Select other...* on the bottom of this dialog.
+  * *Debugger* Type ``xtensa-esp32-elf-gdb```as *GDB command*. The command set is defined as *Standard*, the protocol version is *mi*.
+    Select the option *Use remote target* and choose *Generic TCP/IP* as JTAG device. The hostname should be *localhost* and the port number
+    either *3333* (Core 0) or *3334* (Core 1).
+  * *Startup* Uncheck everything, except *Load image* and *Load symbols*. Both settings should be left to the default value (use project binary).
+  * *Common* Uncheck *Launch in background* and check *Debug* in *Display in favorites menu*
+
+After performing these steps, debugging with Eclipse should be possible. Please ensure
+to follow the next steps exactly in this order, otherwise it is possible to experience troubles. If something does not work,
+restart from the beginning.
+
+**Starting a debug session:**
+
+- Connect the JTAG hardware to the ESP32 (can be skipped after the first time)
+- Plug in the ESP32
+- Plug in the JTAG hardware
+- Start OpenOCD (the command is shown above)
+- Start the Eclipse debug session via the *Debug* button
+- Press at least one time *Resume* and *Pause* in the Eclipse Debug workspace, otherwise the debug state is inconsistent.
+
+
