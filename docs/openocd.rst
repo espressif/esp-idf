@@ -145,13 +145,13 @@ Following steps have to be performed to start debugging with Eclipse:
 - Add a new "GDB Hardware Debugging" configuration
 - Change following fields of the new debugging configuration:
 
-  * *Main* Click on *Search Project...* and select the right .elf file for your project (normally the project name).
+  * **Main** Click on *Search Project...* and select the right .elf file for your project (normally the project name).
     Ensure that the *Standard GDB Hardware Debugging Launcher* is used. It can be changed via *Select other...* on the bottom of this dialog.
-  * *Debugger* Type ``xtensa-esp32-elf-gdb```as *GDB command*. The command set is defined as *Standard*, the protocol version is *mi*.
+  * **Debugger** Type ``xtensa-esp32-elf-gdb```as *GDB command*. The command set is defined as *Standard*, the protocol version is *mi*.
     Select the option *Use remote target* and choose *Generic TCP/IP* as JTAG device. The hostname should be *localhost* and the port number
     either *3333* (Core 0) or *3334* (Core 1).
-  * *Startup* Uncheck everything, except *Load image* and *Load symbols*. Both settings should be left to the default value (use project binary).
-  * *Common* Uncheck *Launch in background* and check *Debug* in *Display in favorites menu*
+  * **Startup** Uncheck everything, except *Load image* and *Load symbols*. Both settings should be left to the default value (use project binary).
+  * **Common** Uncheck *Launch in background* and check *Debug* in *Display in favorites menu*
 
 After performing these steps, debugging with Eclipse should be possible. Please ensure
 to follow the next steps exactly in this order, otherwise it is possible to experience troubles. If something does not work,
