@@ -1135,8 +1135,7 @@ void gatts_process_write_req (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 handle,
                     trans_id,
                     GATTS_REQ_TYPE_WRITE,
                     &sr_data);
-        } 
-        else {
+        } else {
             GATT_TRACE_ERROR("Error in %s, line=%d, max pending command, send error\n", __func__, __LINE__);
             status = GATT_BUSY; /* max pending command, application error */
         }
@@ -1237,8 +1236,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                             LOG_ERROR("Error in %s, attribute of handle 0x%x not allocate value buffer\n",
                                         __func__, handle);
                             status = GATT_ESP_ERROR;
-                        }
-                         else {
+                        } else {
                              //valid prepare write request, need to send response and queue the data
                              //status: GATT_SUCCESS
                              is_need_prepare_write_rsp = TRUE;
@@ -1248,8 +1246,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                     p_attr = (tGATT_ATTR16 *)p_attr->p_next;
                 }
             }
-        }
-        else{
+        } else{
             status = GATT_ESP_ERROR;
             GATT_TRACE_ERROR("Error in %s, Line %d: GATT BUSY\n", __func__, __LINE__);
         }
@@ -1259,8 +1256,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
         queue_data = (tGATT_PREPARE_WRITE_QUEUE_DATA *)GKI_getbuf(len + sizeof(tGATT_PREPARE_WRITE_QUEUE_DATA));
         if (queue_data == NULL){
             status = GATT_PREPARE_Q_FULL;
-        }
-        else {
+        } else {
             queue_data->p_attr = p_attr_temp;
             queue_data->len = len;
             queue_data->handle = handle;
@@ -1283,8 +1279,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                 LOG_ERROR("Error in %s, line=%d, fail to send prepare_write_rsp, status=0x%x\n",
                             __func__, __LINE__, rsp_send_status);
             }
-        }
-        else{
+        } else{
             LOG_ERROR("Error in %s, line=%d, queue_data should not be NULL here, fail to send prepare_write_rsp\n",
                         __func__, __LINE__);
         }
@@ -1300,8 +1295,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
         sr_data.write_req.need_rsp = (status == GATT_APP_RSP) ? TRUE : FALSE;
         memcpy(sr_data.write_req.value, p, len);
         gatt_sr_send_req_callback(conn_id, trans_id, GATTS_REQ_TYPE_WRITE, &sr_data);
-    }
-    else{
+    } else{
         gatt_send_error_rsp(p_tcb, status, GATT_REQ_PREPARE_WRITE, handle, TRUE);
     }
 

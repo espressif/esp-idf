@@ -276,8 +276,7 @@ static tGATT_STATUS read_attr_value (void *p_attr,
             //if offset is greater than max_len, should respond with an error*/
             else if (offset > p_attr16->p_value->attr_val.attr_len){
                 status = GATT_INVALID_OFFSET;
-            }
-            else { 
+            } else { 
                 UINT8 *value = (UINT8 *)(p_attr16->p_value->attr_val.attr_val) + offset;
                 UINT16 len_left = p_attr16->p_value->attr_val.attr_len - offset;
                 len = (mtu >= len_left) ? (len_left) : mtu;
@@ -650,8 +649,7 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
         deallocate_attr_in_db(p_db, p_char_dscptr);
         GATT_TRACE_DEBUG("gatts_add_char_descr Fail for adding char descriptors.");
         return 0;
-    } 
-    else {
+    } else {
         p_char_dscptr->control.auto_rsp = (control == NULL) ? GATT_RSP_DEFAULT : (control->auto_rsp);
         if (attr_val != NULL) {
             if (!copy_extra_byte_in_db(p_db, (void **)&p_char_dscptr->p_value, sizeof(tGATT_ATTR_VAL))) {
@@ -736,8 +734,7 @@ tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
             else if (p_cur->p_value->attr_val.attr_max_len < length) {
                 GATT_TRACE_ERROR("gatts_set_attribute_value failed:Invalid value length");
                 return GATT_INVALID_ATTR_LEN;
-            }
-            else{
+            } else{
                 memcpy(p_cur->p_value->attr_val.attr_val, value, length);
                 p_cur->p_value->attr_val.attr_len = length;
             }
