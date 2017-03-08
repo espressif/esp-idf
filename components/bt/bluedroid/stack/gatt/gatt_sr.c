@@ -378,20 +378,17 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
             is_prepare_write_valid = TRUE;
         }
         GATT_TRACE_DEBUG("Send execute_write_rsp\n");
-    }
-    else if ((prepare_record->error_code_app == GATT_SUCCESS) && 
+    } else if ((prepare_record->error_code_app == GATT_SUCCESS) && 
         (prepare_record->total_num > queue_num)){
         //No error for stack_rsp's handles and there exist some app_rsp's handles, 
         //so exec_write_rsp depends to app's response; but stack_rsp's data is valid
         //TODO: there exist problem if stack_rsp's data is valid but app_rsp's data is not valid.
         is_prepare_write_valid = TRUE;
-    }
-    else if(prepare_record->total_num < queue_num) {
+    } else if(prepare_record->total_num < queue_num) {
         GATT_TRACE_ERROR("Error in %s, line=%d, prepare write total number (%d) \
                         should not smaller than prepare queue number (%d)\n", \
                         __func__, __LINE__,prepare_record->total_num, queue_num); 
-    }
-    else if (prepare_record->error_code_app != GATT_SUCCESS){
+    } else if (prepare_record->error_code_app != GATT_SUCCESS){
         GATT_TRACE_DEBUG("Send error code for execute_write, code=0x%x\n", prepare_record->error_code_app);
         is_need_dequeue_sr_cmd = (prepare_record->total_num == queue_num) ? TRUE : FALSE;
         gatt_send_error_rsp(p_tcb, prepare_record->error_code_app, GATT_REQ_EXEC_WRITE, 0, is_need_dequeue_sr_cmd);
@@ -1148,8 +1145,7 @@ void gatts_process_write_req (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 handle,
             gatt_write_req_rsp.op_code = GATT_RSP_WRITE;                      
             gatt_send_packet(p_tcb, (UINT8 *)(&gatt_write_req_rsp), sizeof(gatt_write_req_rsp)); 
             gatt_dequeue_sr_cmd(p_tcb);
-        } 
-        else if (status != GATT_PENDING){
+        } else if (status != GATT_PENDING){
             /* note: in case of GATT_BUSY, will respond this application error to remote device */
             gatt_send_error_rsp (p_tcb, status, op_code, handle, TRUE);
         }
@@ -1219,20 +1215,17 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                         p_attr_temp = p_attr;
                         if (p_attr->control.auto_rsp == GATT_RSP_BY_APP) {
                             status = GATT_APP_RSP;
-                        }
-                        else if (p_attr->p_value != NULL &&
+                        } else if (p_attr->p_value != NULL &&
                             offset > p_attr->p_value->attr_val.attr_max_len) {
                             status = GATT_INVALID_OFFSET; 
                              is_need_prepare_write_rsp = TRUE;
                              is_need_queue_data = TRUE;
-                        }
-                        else if (p_attr->p_value != NULL &&
+                        } else if (p_attr->p_value != NULL &&
                             ((offset + len) > p_attr->p_value->attr_val.attr_max_len)){
                             status = GATT_INVALID_ATTR_LEN;
                             is_need_prepare_write_rsp = TRUE;
                             is_need_queue_data = TRUE;
-                        }
-                         else if (p_attr->p_value == NULL) {
+                        } else if (p_attr->p_value == NULL) {
                             LOG_ERROR("Error in %s, attribute of handle 0x%x not allocate value buffer\n",
                                         __func__, handle);
                             status = GATT_ESP_ERROR;

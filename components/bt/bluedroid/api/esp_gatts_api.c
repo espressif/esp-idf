@@ -148,8 +148,7 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
             LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_val should not be NULL here\n",\
                             __func__, __LINE__);
             return ESP_ERR_INVALID_ARG;
-        }
-        else if (char_val->attr_max_len == 0){
+        } else if (char_val->attr_max_len == 0){
             LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
                             __func__, __LINE__);
             return ESP_ERR_INVALID_ARG;

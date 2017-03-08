@@ -272,9 +272,9 @@ static tGATT_STATUS read_attr_value (void *p_attr,
             if (p_attr16->p_value == NULL || p_attr16->p_value->attr_val.attr_val == NULL) {
                 status = GATT_ESP_ERROR;
             }
-            /*if offset equal to max_len, should respond with zero byte value
-            //if offset is greater than max_len, should respond with an error*/
             else if (offset > p_attr16->p_value->attr_val.attr_len){
+			/*if offset equal to max_len, should respond with zero byte value
+            //if offset is greater than max_len, should respond with an error*/
                 status = GATT_INVALID_OFFSET;
             } else { 
                 UINT8 *value = (UINT8 *)(p_attr16->p_value->attr_val.attr_val) + offset;
@@ -476,8 +476,7 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute, attr_val should not be NULL here\n",\
                             __func__, __LINE__);
             return 0;
-        }
-        else if (attr_val->attr_max_len == 0){
+        } else if (attr_val->attr_max_len == 0){
             GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
                             __func__, __LINE__);
             return 0;
@@ -627,8 +626,7 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute, attr_val should not be NULL here\n",\
                     __func__, __LINE__);
             return 0;
-        }
-        else if (attr_val->attr_max_len == 0){
+        } else if (attr_val->attr_max_len == 0){
             GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
                     __func__, __LINE__);
             return 0;
@@ -730,8 +728,7 @@ tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                     || (p_cur->p_value->attr_val.attr_max_len == 0)){
                 GATT_TRACE_ERROR("Error in %s, line=%d, attribute value should not be NULL here\n", __func__, __LINE__);
                 return GATT_NOT_FOUND;
-            }
-            else if (p_cur->p_value->attr_val.attr_max_len < length) {
+            } else if (p_cur->p_value->attr_val.attr_max_len < length) {
                 GATT_TRACE_ERROR("gatts_set_attribute_value failed:Invalid value length");
                 return GATT_INVALID_ATTR_LEN;
             } else{
@@ -942,12 +939,10 @@ tGATT_STATUS gatts_write_attr_value_by_handle(tGATT_SVC_DB *p_db,
                     memcpy(p_attr->p_value->attr_val.attr_val + offset, p_value, len);
                     p_attr->p_value->attr_val.attr_len = len + offset;
                     return GATT_SUCCESS;
-                } 
-                else if (p_attr->p_value->attr_val.attr_max_len < offset + len){
+                } else if (p_attr->p_value->attr_val.attr_max_len < offset + len){
                     GATT_TRACE_DEBUG("Remote device try to write with a length larger then attribute's max length\n");
                     return GATT_INVALID_ATTR_LEN;               
-                }
-                else if ((p_attr->p_value == NULL) || (p_attr->p_value->attr_val.attr_val == NULL)){
+                } else if ((p_attr->p_value == NULL) || (p_attr->p_value->attr_val.attr_val == NULL)){
                     GATT_TRACE_ERROR("Error in %s, line=%d, %s should not be NULL here\n", __func__, __LINE__, \
                                     (p_attr->p_value == NULL) ? "p_value" : "attr_val.attr_val");
                     return GATT_ESP_ERROR;
