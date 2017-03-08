@@ -215,27 +215,27 @@ void heap_alloc_caps_init() {
        is a somewhat risky action in theory, because on initializing the allocator, it will go and write linked
        list entries at the start and end of all regions. For the ESP32, these linked list entries happen to end
        up in a region that is not touched by the stack; they can be placed safely there.*/
-    disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe0440); //knock out ROM PRO data region
-    disable_mem_region((void*)0x3ffe4000, (void*)0x3ffe4350); //knock out ROM APP data region
+    disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe0440); //Reserve ROM PRO data region
+    disable_mem_region((void*)0x3ffe4000, (void*)0x3ffe4350); //Reserve ROM APP data region
 
 #if CONFIG_BT_ENABLED
 #if CONFIG_BT_DRAM_RELEASE
-    disable_mem_region((void*)0x3ffb0000, (void*)0x3ffb3000); //knock out BT data region
-    disable_mem_region((void*)0x3ffb8000, (void*)0x3ffbbb28); //knock out BT data region
-    disable_mem_region((void*)0x3ffbdb28, (void*)0x3ffc0000); //knock out BT data region
+    disable_mem_region((void*)0x3ffb0000, (void*)0x3ffb3000); //Reserve BT data region
+    disable_mem_region((void*)0x3ffb8000, (void*)0x3ffbbb28); //Reserve BT data region
+    disable_mem_region((void*)0x3ffbdb28, (void*)0x3ffc0000); //Reserve BT data region
 #else
-    disable_mem_region((void*)0x3ffb0000, (void*)0x3ffc0000); //knock out BT hardware shared memory & BT data region
+    disable_mem_region((void*)0x3ffb0000, (void*)0x3ffc0000); //Reserve BT hardware shared memory & BT data region
 #endif
-    disable_mem_region((void*)0x3ffae000, (void*)0x3ffaff10); //knock out ROM data region, inc region needed for BT ROM routines
+    disable_mem_region((void*)0x3ffae000, (void*)0x3ffaff10); //Reserve ROM data region, inc region needed for BT ROM routines
 #else
-    disable_mem_region((void*)0x3ffae000, (void*)0x3ffae2a0); //knock out ROM data region
+    disable_mem_region((void*)0x3ffae000, (void*)0x3ffae2a0); //Reserve ROM data region
 #endif
 
 #if CONFIG_MEMMAP_TRACEMEM
 #if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
-    disable_mem_region((void*)0x3fff8000, (void*)0x40000000); //knock out trace mem region
+    disable_mem_region((void*)0x3fff8000, (void*)0x40000000); //Reserve trace mem region
 #else
-    disable_mem_region((void*)0x3fff8000, (void*)0x3fffc000); //knock out trace mem region
+    disable_mem_region((void*)0x3fff8000, (void*)0x3fffc000); //Reserve trace mem region
 #endif
 #endif
 

@@ -1675,7 +1675,7 @@ PROVIDE ( uart_tx_wait_idle = 0x40009278 );
 These functions are part of the ROM GPIO driver. We do not use them; the provided esp-idf functions
 replace them and this way we can re-use the fixed RAM addresses these routines need.
 */
-/*
+/* <-- So you don't read over it: This comment disables the next lines.
 PROVIDE ( gpio_init = 0x40009c20 );
 PROVIDE ( gpio_intr_ack = 0x40009dd4 );
 PROVIDE ( gpio_intr_ack_high = 0x40009e1c );
