@@ -403,13 +403,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
         btc_report_connection_state(state, &(btc_av_cb.peer_bda), 0);
         /* change state to open/idle based on the status */
         btc_sm_change_state(btc_av_cb.sm_handle, av_state);
-        if (btc_av_cb.peer_sep == AVDT_TSEP_SNK) {
-            /* if queued PLAY command,  send it now */
-            btc_rc_check_handle_pending_play(p_bta_data->open.bd_addr,
-                                              (p_bta_data->open.status == BTA_AV_SUCCESS));
-        } else if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
-            /* if queued PLAY command,  send it now */
-            btc_rc_check_handle_pending_play(p_bta_data->open.bd_addr, FALSE);
+        if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
             /* Bring up AVRCP connection too */
             BTA_AvOpenRc(btc_av_cb.bta_handle);
         }
