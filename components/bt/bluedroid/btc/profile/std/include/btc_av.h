@@ -43,32 +43,30 @@ typedef enum {
     BTC_AV_STOP_STREAM_REQ_EVT,
     BTC_AV_SUSPEND_STREAM_REQ_EVT,
     BTC_AV_SINK_CONFIG_REQ_EVT,
-    BTC_AV_MAX_SM_EVT
 } btc_av_sm_event_t;
 
 typedef enum {
-    BTC_AV_SINK_API_INIT_EVT = BTC_AV_MAX_SM_EVT + 1,
+    BTC_AV_SINK_API_INIT_EVT = 0,
     BTC_AV_SINK_API_DEINIT_EVT,
     BTC_AV_SINK_API_CONNECT_EVT,
+    BTC_AV_SINK_API_DISCONNECT_EVT
 } btc_av_act_t;
 
 /* btc_av_args_t */
 typedef union {
-    // BTC_AV_SINK_CONFIG_REQ_EVT
+    // BTC_AV_SINK_CONFIG_REQ_EVT -- internal event
     esp_a2d_mcc_t mcc;
-    // BTC_AV_DISCONNECT_REQ_EVT
-    bt_bdaddr_t disconnect;
     // BTC_AV_SINK_API_CONNECT_EVT
     bt_bdaddr_t connect;
-    // Event set--tBTA_AV_EVT
-    tBTA_AV data;
 } btc_av_args_t;
 
 /*******************************************************************************
 **  BTC AV API
 ********************************************************************************/
 
-void btc_a2dp_evt_handler(btc_msg_t *msg);
+void btc_a2dp_call_handler(btc_msg_t *msg);
+
+void btc_a2dp_cb_handler(btc_msg_t *msg);
 
 /*******************************************************************************
 **

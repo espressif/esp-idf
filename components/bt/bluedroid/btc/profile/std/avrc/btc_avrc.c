@@ -441,7 +441,7 @@ static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code
     return status;
 }
 
-void btc_avrc_evt_handler(btc_msg_t *msg)
+void btc_avrc_call_handler(btc_msg_t *msg)
 {
     btc_avrc_args_t *arg = (btc_avrc_args_t *)(msg->arg);
     switch (msg->act) {

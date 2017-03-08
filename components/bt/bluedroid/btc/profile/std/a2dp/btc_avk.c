@@ -89,15 +89,11 @@ static btc_av_cb_t btc_av_cb = {0};
 static TIMER_LIST_ENT tle_av_open_on_rc;
 
 /* both interface and media task needs to be ready to alloc incoming request */
-#define CHECK_BTAV_INIT() if (btc_av_cb.sm_handle == NULL)\
-{\
-     LOG_WARN("%s: BTAV not initialized\n", __FUNCTION__);\
-     return ESP_ERR_INVALID_STATE;\
-}\
-else\
-{\
-     LOG_INFO("%s\n", __FUNCTION__);\
-}
+#define CHECK_BTAV_INIT() do \
+{ \
+    assert (btc_av_cb.sm_handle != NULL); \
+} while (0)
+
 
 /* Helper macro to avoid code duplication in the state machine handlers */
 #define CHECK_RC_EVENT(e, d) \
@@ -865,7 +861,7 @@ static void bte_av_callback(tBTA_AV_EVT event, tBTA_AV *p_data)
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_A2DP;
     msg.act = (uint8_t) event;
-    stat = btc_transfer_context(&msg, (btc_av_args_t *)p_data, sizeof(tBTA_AV), btc_av_event_deep_copy);
+    stat = btc_transfer_context(&msg, p_data, sizeof(tBTA_AV), btc_av_event_deep_copy);
 
     if (stat) {
         LOG_ERROR("%s transfer failed\n", __func__);
@@ -923,7 +919,7 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 **
 *******************************************************************************/
 
-bt_status_t btc_av_init()
+bt_status_t btc_av_init(void)
 {
     if (btc_av_cb.sm_handle == NULL) {
         if (!btc_a2dp_start_media_task()) {
@@ -956,11 +952,9 @@ bt_status_t btc_av_init()
 *******************************************************************************/
 bt_status_t btc_a2d_sink_init(void)
 {
-    LOG_INFO("%s()\n", __func__);
+    LOG_DEBUG("%s()\n", __func__);
 
-    bt_status_t status = btc_av_init();
-
-    return status;
+    return btc_av_init();
 }
 
 /*******************************************************************************
@@ -987,7 +981,7 @@ static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid)
 
 bt_status_t btc_a2d_sink_connect(bt_bdaddr_t* remote_bda)
 {
-    LOG_INFO("%s\n", __FUNCTION__);
+    LOG_DEBUG("%s\n", __FUNCTION__);
     CHECK_BTAV_INIT();
 
     return btc_queue_connect(UUID_SERVCLASS_AUDIO_SINK, remote_bda, connect_int);
@@ -1204,32 +1198,41 @@ void btc_av_clear_remote_suspend_flag(void)
     btc_av_cb.flags &= ~BTC_AV_FLAG_REMOTE_SUSPEND;
 }
 
-void btc_a2dp_evt_handler(btc_msg_t *msg)
+void btc_a2dp_call_handler(btc_msg_t *msg)
 {
-    if (msg->act < BTC_AV_MAX_SM_EVT) {
+    btc_av_args_t *arg = (btc_av_args_t *)(msg->arg);
+    switch (msg->act) {
+    case BTC_AV_SINK_CONFIG_REQ_EVT: {
         btc_sm_dispatch(btc_av_cb.sm_handle, msg->act, (void *)(msg->arg));
-    } else {
-        btc_av_args_t *arg = (btc_av_args_t *)(msg->arg);
-        switch (msg->act) {
-        case BTC_AV_SINK_API_INIT_EVT: {
-            btc_a2d_sink_init();
-            // todo: callback to application
-            break;
-        }
-        case BTC_AV_SINK_API_DEINIT_EVT: {
-            btc_a2d_sink_deinit();
-            // todo: callback to application
-            break;
-        }
-        case BTC_AV_SINK_API_CONNECT_EVT: {
-            btc_a2d_sink_connect(&arg->connect);
-            // todo: callback to application
-            break;
-        }
-        default:
-            LOG_WARN("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
-        }
+        break;
     }
+    case BTC_AV_SINK_API_INIT_EVT: {
+        btc_a2d_sink_init();
+        // todo: callback to application
+        break;
+    }
+    case BTC_AV_SINK_API_DEINIT_EVT: {
+        btc_a2d_sink_deinit();
+        // todo: callback to application
+        break;
+    }
+    case BTC_AV_SINK_API_CONNECT_EVT: {
+        btc_a2d_sink_connect(&arg->connect);
+        // todo: callback to application
+        break;
+    }
+    case BTC_AV_SINK_API_DISCONNECT_EVT: {
+        CHECK_BTAV_INIT();
+        btc_sm_dispatch(btc_av_cb.sm_handle, BTC_AV_DISCONNECT_REQ_EVT, NULL);
+        break;
+    }
+    default:
+        LOG_WARN("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
+    }
+}
 
+void btc_a2dp_cb_handler(btc_msg_t *msg)
+{
+    btc_sm_dispatch(btc_av_cb.sm_handle, msg->act, (void *)(msg->arg));
     btc_av_event_free_data(msg->act, msg->arg);
 }

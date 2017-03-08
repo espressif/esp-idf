@@ -40,7 +40,7 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_GATTS]     = {btc_gatts_call_handler,      btc_gatts_cb_handler    },
     [BTC_PID_GATTC]     = {btc_gattc_call_handler,      btc_gattc_cb_handler    },
     [BTC_PID_GAP_BLE]   = {btc_gap_ble_call_handler,    btc_gap_ble_cb_handler  },
-    [BTC_PID_GAP_BT]    = {btc_gap_bt_call_handler,     btc_gap_bt_cb_handler   },
+    [BTC_PID_GAP_BT]    = {btc_gap_bt_call_handler,     NULL                    },
     [BTC_PID_SDP]       = {NULL, NULL},
     [BTC_PID_BLE_HID]   = {NULL, NULL},
     [BTC_PID_BT_HID]    = {NULL, NULL},
@@ -49,8 +49,8 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_BLUFI]     = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
     [BTC_PID_DM_SEC]    = {NULL,                        btc_dm_sec_cb_handler   },
     [BTC_PID_PRF_QUE]   = {btc_profile_queue_handler,   NULL                    },
-    [BTC_PID_A2DP]      = {btc_a2dp_evt_handler,        btc_a2dp_evt_handler    },
-    [BTC_PID_AVRC]      = {btc_avrc_evt_handler,        NULL                    }
+    [BTC_PID_A2DP]      = {btc_a2dp_call_handler,       btc_a2dp_cb_handler     },
+    [BTC_PID_AVRC]      = {btc_avrc_call_handler,       NULL                    }
 };
 
 /*****************************************************************************

@@ -85,8 +85,3 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
     }
     btc_gap_bt_arg_deep_free(msg);
 }
-
-void btc_gap_bt_cb_handler(btc_msg_t *msg)
-{
-    // todo
-}

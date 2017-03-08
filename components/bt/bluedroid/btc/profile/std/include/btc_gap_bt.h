@@ -38,7 +38,6 @@ typedef union {
 } btc_gap_bt_args_t;
 
 void btc_gap_bt_call_handler(btc_msg_t *msg);
-void btc_gap_bt_cb_handler(btc_msg_t *msg);
 
 void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 

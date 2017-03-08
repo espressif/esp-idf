@@ -69,6 +69,6 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr);
 /*******************************************************************************
 **  BTC AVRC API
 ********************************************************************************/
-void btc_avrc_evt_handler(btc_msg_t *msg);
+void btc_avrc_call_handler(btc_msg_t *msg);
 
 #endif /* __BTC_AVRC_H__ */
