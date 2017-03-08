@@ -107,6 +107,28 @@ typedef struct {
     uint8_t attr_values[BTRC_MAX_APP_SETTINGS];
 } btrc_player_settings_t;
 
+typedef enum {
+    BTC_AVRC_CTRL_API_INIT_EVT = 0,
+    BTC_AVRC_CTRL_API_DEINIT_EVT,
+    BTC_AVRC_CTRL_API_SND_PTCMD_EVT
+} btc_avrc_act_t;
+
+typedef struct {
+    uint8_t tl; /* transaction label */
+    uint8_t key_code;
+    uint8_t key_state;
+} pt_cmd_t;
+
+/* btc_avrc_args_t */
+typedef union {
+    // BTC_AVRC_CTRL_API_SND_PT_CMD_EVT
+    struct {
+        uint8_t tl;
+        uint8_t key_code;
+        uint8_t key_state;
+    } pt_cmd;
+} btc_avrc_args_t;
+
 typedef union
 {
     btrc_play_status_t play_status;
@@ -266,22 +288,22 @@ typedef struct {
 } btrc_interface_t;
 
 
+/** BT-RC Controller callback structure. */
+
 typedef void (* btrc_passthrough_rsp_callback) (int id, int key_state);
 
 typedef void (* btrc_connection_state_callback) (bool state, bt_bdaddr_t *bd_addr);
-
-/** BT-RC Controller callback structure. */
-typedef struct {
-    /** set to sizeof(BtRcCallbacks) */
-    size_t      size;
-    btrc_passthrough_rsp_callback               passthrough_rsp_cb;
-    btrc_connection_state_callback              connection_state_cb;
-} btrc_ctrl_callbacks_t;
 
 void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data);
 
 BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr);
 
 void btc_rc_check_handle_pending_play (BD_ADDR peer_addr, BOOLEAN bSendToApp);
+
+
+/*******************************************************************************
+**  BTC AVRC API
+********************************************************************************/
+void btc_avrc_evt_handler(btc_msg_t *msg);
 
 #endif /* __BTC_AVRC_H__ */

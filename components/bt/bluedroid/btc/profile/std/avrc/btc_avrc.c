@@ -29,6 +29,7 @@
 #include "btc_util.h"
 #include "btc_av.h"
 #include "btc_avrc.h"
+#include "btc_manage.h"
 #include "uinput.h"
 #include "esp_avrc_api.h"
 
@@ -181,15 +182,6 @@ static void handle_rc_metamsg_cmd (tBTA_AV_META_MSG *pmeta_msg);
 ******************************************************************************/
 static btc_rc_cb_t btc_rc_vb;
 static btrc_callbacks_t *bt_rc_callbacks = NULL;
-// static btrc_ctrl_callbacks_t *bt_rc_ctrl_callbacks = NULL;
-static esp_avrc_ct_cb_t bt_rc_ctrl_callback = NULL;
-
-// TODO: need protection against race
-#define BTC_AVRC_CT_CB_TO_APP(_event, _param)    do { \
-	if (bt_rc_ctrl_callback) { \
-	    bt_rc_ctrl_callback(_event, _param); \
-	} \
-    } while (0)
 
 /*****************************************************************************
 **  Static functions
@@ -205,6 +197,14 @@ extern BOOLEAN btc_hf_call_terminated_recently();
 /*****************************************************************************
 **   Local uinput helper functions
 ******************************************************************************/
+static inline void btc_avrc_ct_cb_to_app(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)
+{
+    esp_a2d_cb_t btc_avrc_cb = (esp_a2d_cb_t)btc_profile_cb_get(BTC_PID_AVRC);
+    if (btc_avrc_cb) {
+	btc_avrc_cb(event, param);
+    }
+}
+
 void send_key (int fd, uint16_t key, int pressed)
 {
     LOG_DEBUG("%s fd:%d key:%u pressed:%d, func not implemented", __FUNCTION__,
@@ -337,7 +337,7 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
 	    param.conn_stat.connected = true;
 	    param.conn_stat.feat_mask = btc_rc_vb.rc_features;
 	    memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
-	    BTC_AVRC_CT_CB_TO_APP(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+	    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
         }
 #endif
     }
@@ -396,7 +396,7 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 	memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
 	param.conn_stat.connected = false;
 	memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
-	BTC_AVRC_CT_CB_TO_APP(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+	btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
     }
 #endif
 }
@@ -547,7 +547,7 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
             param.psth_rsp.tl = p_remote_rsp->label;
 	    param.psth_rsp.key_code = p_remote_rsp->rc_id;
 	    param.psth_rsp.key_state = key_state;
-	    BTC_AVRC_CT_CB_TO_APP(ESP_AVRC_CT_PASSTHROUGH_RSP_EVT, &param);
+	    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_PASSTHROUGH_RSP_EVT, &param);
 	} while (0);
     }
     else
@@ -1123,6 +1123,7 @@ static void btc_rc_upstreams_rsp_evt(UINT16 event, tAVRC_RESPONSE *pavrc_resp, U
 **  AVRCP API Functions
 ************************************************************************************/
 
+#if 0
 /*******************************************************************************
 **
 ** Function         esp_avrc_ct_register_callback
@@ -1140,28 +1141,25 @@ esp_err_t esp_avrc_ct_register_callback(esp_avrc_ct_cb_t callback)
     bt_rc_ctrl_callback = callback;
     return ESP_OK;
 }
-
+#endif
 
 /*******************************************************************************
 **
-** Function         esp_avrc_ct_init
+** Function         btc_avrc_ct_init
 **
 ** Description      Initializes the AVRC interface
 **
 ** Returns          esp_err_t
 **
 *******************************************************************************/
-esp_err_t esp_avrc_ct_init(void)
+static void btc_avrc_ct_init(void)
 {
     LOG_INFO("## %s ##", __FUNCTION__);
-    esp_err_t result = ESP_OK;
 
     memset (&btc_rc_vb, 0, sizeof(btc_rc_vb));
     btc_rc_vb.rc_vol_label=MAX_LABEL;
     btc_rc_vb.rc_volume=MAX_VOLUME;
     lbl_init();
-
-    return result;
 }
 
 
@@ -1296,20 +1294,16 @@ static void handle_rc_metamsg_rsp(tBTA_AV_META_MSG *pmeta_msg)
 ** Returns          void
 **
 ***************************************************************************/
-void esp_avrc_ct_deinit(void)
+static void btc_avrc_ct_deinit(void)
 {
     LOG_INFO("## %s ##", __FUNCTION__);
 
-    if (bt_rc_ctrl_callback)
-    {
-        bt_rc_ctrl_callback = NULL;
-    }
     memset(&btc_rc_vb, 0, sizeof(btc_rc_cb_t));
     lbl_destroy();
     LOG_INFO("## %s ## completed", __FUNCTION__);
 }
 
-esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
+static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
     if (tl >= 16 ||
@@ -1336,11 +1330,7 @@ esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t
     LOG_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
-    switch (status) {
-    case BT_STATUS_SUCCESS: return ESP_OK;
-    case BT_STATUS_UNSUPPORTED: return ESP_ERR_NOT_SUPPORTED;
-    default: return ESP_FAIL;
-    }
+    return status;
 }
 
 /*******************************************************************************
@@ -1494,4 +1484,28 @@ void release_transaction(UINT8 lbl)
 void lbl_destroy()
 {
     pthread_mutex_destroy(&(device.lbllock));
+}
+
+void btc_avrc_evt_handler(btc_msg_t *msg)
+{
+    btc_avrc_args_t *arg = (btc_avrc_args_t *)(msg->arg);
+    switch (msg->act) {
+    case BTC_AVRC_CTRL_API_INIT_EVT: {
+        btc_avrc_ct_init();
+        // todo: callback to application
+        break;
+    }
+    case BTC_AVRC_CTRL_API_DEINIT_EVT: {
+        btc_avrc_ct_deinit();
+        // todo: callback to application
+        break;
+    }
+    case BTC_AVRC_CTRL_API_SND_PTCMD_EVT: {
+        btc_avrc_ct_send_passthrough_cmd(arg->pt_cmd.tl, arg->pt_cmd.key_code, arg->pt_cmd.key_state);
+        // todo: callback to application
+        break;
+    }
+    default:
+        LOG_WARN("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
+    }
 }

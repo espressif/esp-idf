@@ -110,7 +110,7 @@ esp_err_t esp_avrc_ct_init(void);
  * @brief           This function is called to deinit AVRCP controller module
  *
  */
-void esp_avrc_ct_deinit(void);
+esp_err_t esp_avrc_ct_deinit(void);
 
 
 /**

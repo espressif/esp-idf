@@ -28,6 +28,7 @@
 #include "btc_dm.h"
 #include "btc_profile_queue.h"
 #include "btc_av.h"
+#include "btc_avrc.h"
 #include "bta_gatt_api.h"
 
 
@@ -48,7 +49,8 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_BLUFI]     = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
     [BTC_PID_DM_SEC]    = {NULL,                        btc_dm_sec_cb_handler   },
     [BTC_PID_PRF_QUE]   = {btc_profile_queue_handler,   NULL                    },
-    [BTC_PID_A2DP]      = {btc_a2dp_evt_handler,        btc_a2dp_evt_handler    }
+    [BTC_PID_A2DP]      = {btc_a2dp_evt_handler,        btc_a2dp_evt_handler    },
+    [BTC_PID_AVRC]      = {btc_avrc_evt_handler,        NULL                    }
 };
 
 /*****************************************************************************
