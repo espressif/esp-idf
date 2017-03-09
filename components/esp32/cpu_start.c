@@ -55,6 +55,7 @@
 #include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
+#include "esp_cache_err_int.h"
 #include "esp_coexist.h"
 #include "esp_panic.h"
 #include "esp_core_dump.h"
@@ -228,6 +229,7 @@ void start_cpu0_default(void)
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
+    esp_cache_err_int_init();
     esp_crosscore_int_init();
     esp_ipc_init();
     spi_flash_init();
@@ -257,6 +259,7 @@ void start_cpu1_default(void)
     }
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.
+    esp_cache_err_int_init();
     esp_crosscore_int_init();
 
     ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
