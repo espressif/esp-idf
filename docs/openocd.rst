@@ -157,7 +157,8 @@ After performing these steps, debugging with Eclipse should be possible. Please 
 to follow the next steps exactly in this order, otherwise it is possible to experience troubles. If something does not work,
 restart from the beginning.
 
-**Starting a debug session:**
+Starting a debug session
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Connect the JTAG hardware to the ESP32 (can be skipped after the first time)
 - Plug in the ESP32
