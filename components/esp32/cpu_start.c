@@ -54,6 +54,7 @@
 #include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
+#include "esp_cache_err_int.h"
 #include "esp_coexist.h"
 #include "esp_core_dump.h"
 #include "trax.h"
@@ -229,6 +230,7 @@ void start_cpu0_default(void)
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
+    esp_cache_err_int_init();	
 #if !CONFIG_FREERTOS_UNICORE
     esp_crosscore_int_init();
 #endif

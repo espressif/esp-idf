@@ -120,7 +120,7 @@ static __attribute__((noreturn)) inline void invoke_abort()
 void abort()
 {
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
-    ets_printf("abort() was called at PC 0x%08x\n", (intptr_t)__builtin_return_address(0) - 3);
+    ets_printf("abort() was called at PC 0x%08x on core %d\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
 #endif
     invoke_abort();
 }
@@ -149,6 +149,19 @@ static void haltOtherCore()
     esp_cpu_stall( xPortGetCoreID() == 0 ? 1 : 0 );
 }
 
+
+static void setFirstBreakpoint(uint32_t pc)
+{
+    asm(
+        "wsr.ibreaka0 %0\n" \
+        "rsr.ibreakenable a3\n" \
+        "movi a4,1\n" \
+        "or a4, a4, a3\n" \
+        "wsr.ibreakenable a4\n" \
+        ::"r"(pc):"a3", "a4");
+}
+
+
 void panicHandler(XtExcFrame *frame)
 {
     int *regs = (int *)frame;
@@ -161,6 +174,7 @@ void panicHandler(XtExcFrame *frame)
         "Coprocessor exception",
         "Interrupt wdt timeout on CPU0",
         "Interrupt wdt timeout on CPU1",
+        "Cache disabled but cached memory region accessed",
     };
     const char *reason = reasons[0];
     //The panic reason is stored in the EXCCAUSE register.
@@ -204,20 +218,10 @@ void panicHandler(XtExcFrame *frame)
         }
 
     if (esp_cpu_in_ocd_debug_mode()) {
-        asm("break.n 1");
+        setFirstBreakpoint(regs[1]);
+        return;
     }
     commonErrorHandler(frame);
-}
-
-static void setFirstBreakpoint(uint32_t pc)
-{
-    asm(
-        "wsr.ibreaka0 %0\n" \
-        "rsr.ibreakenable a3\n" \
-        "movi a4,1\n" \
-        "or a4, a4, a3\n" \
-        "wsr.ibreakenable a4\n" \
-        ::"r"(pc):"a3", "a4");
 }
 
 void xt_unhandled_exception(XtExcFrame *frame)

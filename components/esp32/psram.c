@@ -581,8 +581,8 @@ void IRAM_ATTR esp_psram_writeback_cache()
 	//We need cache enabled for this to work. Re-enable it if needed; make sure we 
 	//disable it again on exit as well.
 	if (REG_GET_BIT(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_CACHE_ENABLE)==0) {
-			cacheWasDisabled|=(1<<0);
-			SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 1, DPORT_PRO_CACHE_ENABLE_S);
+		cacheWasDisabled|=(1<<0);
+		SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 1, DPORT_PRO_CACHE_ENABLE_S);
 	}
 #ifndef CONFIG_FREERTOS_UNICORE
 	if (REG_GET_BIT(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_CACHE_ENABLE)==0) {
@@ -602,9 +602,15 @@ void IRAM_ATTR esp_psram_writeback_cache()
 	}
 #endif
 
-	if (cacheWasDisabled&(1<<0)) SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 0, DPORT_PRO_CACHE_ENABLE_S);
+	if (cacheWasDisabled&(1<<0)) {
+		while (GET_PERI_REG_BITS2(DPORT_PRO_DCACHE_DBUG0_REG, DPORT_PRO_CACHE_STATE, DPORT_PRO_CACHE_STATE_S) != 1) ;
+		SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 0, DPORT_PRO_CACHE_ENABLE_S);
+	}
 #ifndef CONFIG_FREERTOS_UNICORE
-	if (cacheWasDisabled&(1<<1)) SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL_REG, 1, 0, DPORT_APP_CACHE_ENABLE_S);
+	if (cacheWasDisabled&(1<<1)) {
+		while (GET_PERI_REG_BITS2(DPORT_APP_DCACHE_DBUG0_REG, DPORT_APP_CACHE_STATE, DPORT_APP_CACHE_STATE_S) != 1);
+		SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL_REG, 1, 0, DPORT_APP_CACHE_ENABLE_S);
+	}
 #endif
 }
 
