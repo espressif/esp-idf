@@ -118,6 +118,26 @@ void gatt_free_pending_enc_queue(tGATT_TCB *p_tcb)
 
 /*******************************************************************************
 **
+** Function         gatt_free_pending_prepare_write_queue
+**
+** Description       Free all buffers in pending prepare write packets queue
+**
+** Returns       None
+**
+*******************************************************************************/
+void gatt_free_pending_prepare_write_queue(tGATT_TCB *p_tcb)
+{
+    GATT_TRACE_DEBUG("gatt_free_pending_prepare_write_queue");
+    /* release all queued prepare write packets */
+    while (!GKI_queue_is_empty(&(p_tcb->prepare_write_record.queue))) {
+        GKI_freebuf (GKI_dequeue (&(p_tcb->prepare_write_record.queue)));
+    }
+    p_tcb->prepare_write_record.total_num = 0;
+    p_tcb->prepare_write_record.error_code_app = GATT_SUCCESS;
+}
+
+/*******************************************************************************
+**
 ** Function         gatt_delete_dev_from_srv_chg_clt_list
 **
 ** Description    Delete a device from the service changed client lit
@@ -2108,6 +2128,7 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
         btu_stop_timer (&p_tcb->conf_timer_ent);
         gatt_free_pending_ind(p_tcb);
         gatt_free_pending_enc_queue(p_tcb);
+        gatt_free_pending_prepare_write_queue(p_tcb);
 
         for (i = 0; i < GATT_MAX_APPS; i ++) {
             p_reg = &gatt_cb.cl_rcb[i];

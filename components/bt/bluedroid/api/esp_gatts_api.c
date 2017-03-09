@@ -142,6 +142,27 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
         return ESP_ERR_INVALID_STATE;
     }
 
+    /* parameter validation check */
+    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
+        if (char_val == NULL){
+            LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_val should not be NULL here\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+        } else if (char_val->attr_max_len == 0){
+            LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    if (char_val != NULL){
+        if (char_val->attr_len > char_val->attr_max_len){
+            LOG_ERROR("Error in %s, line=%d,attribute actual length (%d)  should not be larger than max length (%d)\n",\
+                            __func__, __LINE__, char_val->attr_len, char_val->attr_max_len);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
     memset(&arg, 0, sizeof(btc_ble_gatts_args_t));
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -175,6 +196,29 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
+
+    /* parameter validation check */
+    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
+        if (char_descr_val == NULL){
+            LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_descr_val should not be NULL here\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+        }
+        else if (char_descr_val->attr_max_len == 0){
+            LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    if (char_descr_val != NULL){
+        if (char_descr_val->attr_len > char_descr_val->attr_max_len){
+            LOG_ERROR("Error in %s, line=%d,attribute actual length (%d) should not be larger than max length (%d)\n",\
+                            __func__, __LINE__, char_descr_val->attr_len, char_descr_val->attr_max_len);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
     
     memset(&arg, 0, sizeof(btc_ble_gatts_args_t));
     msg.sig = BTC_SIG_API_CALL;
