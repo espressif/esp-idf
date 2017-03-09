@@ -127,17 +127,16 @@ COMPONENT_PATHS += $(abspath $(SRCDIRS))
 # A component is buildable if it has a component.mk makefile in it
 COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
 
-# If TESTS_ALL set to 1, set TEST_COMPONENTS to all components
+# If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components
 ifeq ($(TESTS_ALL),1)
-TEST_COMPONENTS := $(COMPONENTS)
+TEST_COMPONENTS_LIST := $(COMPONENTS)
+else
+# otherwise, use TEST_COMPONENTS
+TEST_COMPONENTS_LIST := $(TEST_COMPONENTS)
 endif
+TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
+TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
 
-# If TEST_COMPONENTS is set, create variables for building unit tests
-ifdef TEST_COMPONENTS
-override TEST_COMPONENTS := $(foreach comp,$(TEST_COMPONENTS),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
-TEST_COMPONENT_PATHS := $(TEST_COMPONENTS)
-TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENTS),$(lastword $(subst /, ,$(dir $(comp))))_test)
-endif
 
 # Initialise project-wide variables which can be added to by
 # each component.
