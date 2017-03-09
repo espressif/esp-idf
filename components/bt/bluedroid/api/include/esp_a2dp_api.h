@@ -18,6 +18,10 @@
 #include "esp_err.h"
 #include "esp_bt_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// Media codec types supported by A2DP
 #define ESP_A2D_MCT_SBC         (0)             /*!< SBC */
 #define ESP_A2D_MCT_M12         (0x01)          /*!< MPEG-1, 2 Audio */
@@ -27,11 +31,7 @@
 typedef uint8_t esp_a2d_mct_t;
 
 /**
- * @brief Codec specific information elements as defined in A2DP spec.
- */
-
-/**
- * @brief SBC codec specific information
+ * @brief SBC codec specific information as defined in A2DP spec
  */
 typedef struct {
 #define ESP_A2D_CIE_LEN_SBC          (4)
@@ -39,7 +39,7 @@ typedef struct {
 } esp_a2d_cie_sbc_t;
 
 /**
- * @brief MPEG-1,2 Audio codec specific information
+ * @brief MPEG-1,2 Audio codec specific information as defined in A2DP spec
  */
 typedef struct {
 #define ESP_A2D_CIE_LEN_M12          (4)
@@ -47,7 +47,7 @@ typedef struct {
 } esp_a2d_cie_m12_t;
 
 /**
- * @brief MPEG-2,4 AAC codec specific information
+ * @brief MPEG-2,4 AAC codec specific information as defined in A2DP spec
  */
 typedef struct {
 #define ESP_A2D_CIE_LEN_M24          (6)
@@ -55,7 +55,7 @@ typedef struct {
 } esp_a2d_cie_m24_t;
 
 /**
- * @brief ATRAC family codec specific information
+ * @brief ATRAC family codec specific information as defined in A2DP spec
  */
 typedef struct {
 #define ESP_A2D_CIE_LEN_ATRAC        (7)
@@ -77,94 +77,99 @@ typedef struct {
 
 /// Bluetooth A2DP connection states
 typedef enum {
-    ESP_A2D_CONNECTION_STATE_DISCONNECTED = 0,
-    ESP_A2D_CONNECTION_STATE_CONNECTING,
-    ESP_A2D_CONNECTION_STATE_CONNECTED,
-    ESP_A2D_CONNECTION_STATE_DISCONNECTING
+    ESP_A2D_CONNECTION_STATE_DISCONNECTED = 0, /*!< connection released  */
+    ESP_A2D_CONNECTION_STATE_CONNECTING,       /*!< connecting remote device */
+    ESP_A2D_CONNECTION_STATE_CONNECTED,        /*!< connection established */
+    ESP_A2D_CONNECTION_STATE_DISCONNECTING     /*!< disconnecting remote device */
 } esp_a2d_connection_state_t;
 
 /// Bluetooth A2DP disconnection reason
 typedef enum {
-    ESP_A2D_DISC_RSN_NORMAL = 0,
-    ESP_A2D_DISC_RSN_ABNORMAL
+    ESP_A2D_DISC_RSN_NORMAL = 0,               /*!< Finished disconnection that is initiated by local or remote device */
+    ESP_A2D_DISC_RSN_ABNORMAL                  /*!< Abnormal disconnection caused by signal loss */
 } esp_a2d_disc_rsn_t;
 
 /// Bluetooth A2DP datapath states
 typedef enum {
-    ESP_A2D_AUDIO_STATE_REMOTE_SUSPEND = 0,
-    ESP_A2D_AUDIO_STATE_STOPPED,
-    ESP_A2D_AUDIO_STATE_STARTED,
+    ESP_A2D_AUDIO_STATE_REMOTE_SUSPEND = 0,    /*!< audio stream datapath suspended by remote device */
+    ESP_A2D_AUDIO_STATE_STOPPED,               /*!< audio stream datapath stopped */
+    ESP_A2D_AUDIO_STATE_STARTED,               /*!< audio stream datapath started */
 } esp_a2d_audio_state_t;
 
 /// A2DP callback events
 typedef enum {
-    ESP_A2D_CONNECTION_STATE_EVT = 0,           /*!< connection state changed event */
-    ESP_A2D_AUDIO_STATE_EVT = 1,                /*!< audio stream transmission state changed event */
-    ESP_A2D_AUDIO_CFG_EVT = 2                   /*!< audio codec configuration received */
+    ESP_A2D_CONNECTION_STATE_EVT = 0,          /*!< connection state changed event */
+    ESP_A2D_AUDIO_STATE_EVT = 1,               /*!< audio stream transmission state changed event */
+    ESP_A2D_AUDIO_CFG_EVT = 2                  /*!< audio codec is configured */
 } esp_a2d_cb_event_t;
 
 /// A2DP state callback parameters
 typedef union {
     /*< ESP_A2D_CONNECTION_STATE_EVT */
     struct a2d_conn_stat_param {
-        esp_a2d_connection_state_t state;       /*!< one of values from esp_a2d_connection_state_t */
-        esp_bd_addr_t remote_bda;
-        esp_a2d_disc_rsn_t disc_rsn;            /* disconnection reason */
+        esp_a2d_connection_state_t state;      /*!< one of values from esp_a2d_connection_state_t */
+        esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
+        esp_a2d_disc_rsn_t disc_rsn;           /*!< reason of disconnection for "DISCONNECTED" */
     } conn_stat;
     
     /*< ESP_A2D_AUDIO_STATE_EVT */
     struct a2d_audio_stat_param {
-        esp_a2d_audio_state_t state;            /*!< one of the values from esp_a2d_audio_state_t */
-        esp_bd_addr_t remote_bda;
+        esp_a2d_audio_state_t state;           /*!< one of the values from esp_a2d_audio_state_t */
+        esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
     } audio_stat;
     
     /*< ESP_A2D_AUDIO_CFG_EVT */
     struct a2d_audio_cfg_param {
-        esp_bd_addr_t remote_bda;
-        esp_a2d_mcc_t mcc;                      /*!< A2DP media codec capability information */
+        esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
+        esp_a2d_mcc_t mcc;                     /*!< A2DP media codec capability information */
     } audio_cfg;
 } esp_a2d_cb_param_t;
 
 /**
- * @brief           A2DP profile callback function, data is ou
+ * @brief           A2DP profile callback function type
  * @param           event : Event type
- * @param           param : Point to callback parameter
+ * @param           param : Pointer to callback parameter
  */
 typedef void (* esp_a2d_cb_t)(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param);
 
 /**
- * @brief           A2DP profile data callback function, data is ou
- *                 
- * @param[in]       buf: data received and decoded to PCM format, buf points to a static memory
- *                  and can be overwritten in later times
- * @param[in]       len: size(in bytes) in buf
+ * @brief           A2DP profile data callback function
+ *
+ * @param[in]       buf : data received from A2DP source device and is PCM format decoder from SBC decoder;
+ *                  buf references to a static memory block and can be overwritten by upcoming data
+ *
+ * @param[in]       len : size(in bytes) in buf
  *
  */
 typedef void (* esp_a2d_data_cb_t)(const uint8_t *buf, uint32_t len);
 
 
 /**
- * @brief           This function is called to register application callbacks
- *                  with A2DP module; callbacks will provide the upstream events
- *                  (type esp_a2d_cb_event_t) and paramters(type esp_a2d_cb_param_t)
+ * @brief           Register application callback function to A2DP module. This function should be called
+ *                  only after esp_bluedroid_enable() completes successfully
  *                  
  * @param[in]       callback: A2DP sink event callback function
  *
  * @return
  *                  - ESP_OK: success
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
 esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
 
 
 /**
- * @brief           This function is called to register A2DP sink data output function
- *                  for now only supports SBC codec, and the output is PCM data stream
+ * @brief           Register A2DP sink data output function; For now the output is PCM data stream decoded
+ *                  from SBC format. This function should be called only after esp_bluedroid_enable() 
+ *                  completes successfully
  *                  
  * @param[in]       callback: A2DP data callback function
  *
  * @return
  *                  - ESP_OK: success
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
 esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t cb);
@@ -172,10 +177,12 @@ esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t cb);
 
 /**
  *
- * @brief           This function is called to initialize the bluetooth A2DP sink module
+ * @brief           Initialize the bluetooth A2DP sink module. This function should be called
+ *                  after esp_bluedroid_enable() completes successfully
  *
  * @return          
- *                  - ESP_OK: success
+ *                  - ESP_OK: if the initialization request is sent successfully
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -184,10 +191,12 @@ esp_err_t esp_a2d_sink_init(void);
 
 /**
  *
- * @brief           This function is called to deinit and free the resources for A2DP sink module
+ * @brief           De-initialize for A2DP sink module. This function 
+ *                  should be called only after esp_bluedroid_enable() completes successfully
  *
  * @return          
  *                  - ESP_OK: success
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -196,10 +205,13 @@ esp_err_t esp_a2d_sink_deinit(void);
 
 /**
  *
- * @brief           This function is called to connect with the remote bluetooth device
+ * @brief           Connect the remote bluetooth device bluetooth, must after esp_a2d_sink_init()
+ *
+ * @param[in]       remote_bda: remote bluetooth device address
  *
  * @return          
  *                  - ESP_OK: connect request is sent to lower layer
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -208,13 +220,20 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
 
 /**
  *
- * @brief           This function is called to disconnect with the remote bluetooth device
+ * @brief           Disconnect the remote bluetooth device
  *
+ * @param[in]       remote_bda: remote bluetooth device address
  * @return          
  *                  - ESP_OK: disconnect request is sent to lower layer
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
 esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* __ESP_A2DP_API_H__ */

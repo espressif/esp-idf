@@ -44,15 +44,22 @@ esp_err_t esp_bt_gap_set_device_name(const char *name)
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-    
-    if (strlen(name) > ESP_BT_GAP_DEVICE_NAME_MAX) {
+
+    if (name != NULL) {
+        size_t len = strlen(name);
+        if (len > 0 || len <= ESP_BT_GAP_DEVICE_NAME_MAX) {
+            strcpy(arg.set_dev_name.device_name, name);
+        } else {
+            return ESP_ERR_INVALID_ARG;
+        }
+    } else {
         return ESP_ERR_INVALID_ARG;
     }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BT;
     msg.act = BTC_GAP_BT_ACT_SET_DEV_NAME;
-    strcpy(arg.set_dev_name.device_name, name);
+
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

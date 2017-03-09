@@ -15,10 +15,14 @@
 #ifndef __ESP_AVRC_API_H__
 #define __ESP_AVRC_API_H__
 
-#include "esp_err.h"
-#include "esp_bt_defs.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_err.h"
+#include "esp_bt_defs.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /// AVRC feature bit mask
 typedef enum {
@@ -63,30 +67,31 @@ typedef union {
     
     /*< ESP_AVRC_CT_PASSTHROUGH_RSP_EVT */
     struct avrc_ct_psth_rsp_param {
-        uint8_t tl;                               /*!< transaction label, 0 to 15 */
-        uint8_t key_code;
-        uint8_t key_state;                        /*!< 0 for  */
+        uint8_t tl;                              /*!< transaction label, 0 to 15 */
+        uint8_t key_code;                        /*!< passthrough command code */
+        uint8_t key_state;                       /*!< 0 for PRESSED, 1 for RELEASED */
     } psth_rsp;
 } esp_avrc_ct_cb_param_t;
 
 
 /**
- * @brief AVRCP controler callback function type
- * @param event : Event type
- * @param param : Point to callback parameter, currently is union type
+ * @brief           AVRCP controller callback function type
+ * @param           event : Event type
+ * @param           param : Pointer to callback parameter union
  */
 typedef void (* esp_avrc_ct_cb_t)(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param);
 
 
 /**
- * @brief           This function is called to register application callbacks
- *                  to AVRCP module; callbacks will provide the upstream events
- *                  (type esp_avrc_ct_cb_event_t) and paramters(type esp_avrc_ct_cb_param_t)
+ * @brief           Register application callbacks to AVRCP module; for now only AVRCP Controller
+ *                  role is supported. This function should be called after esp_bluedroid_enable() 
+ *                  completes successfully
  *                  
- * @param[in]       callback: A2DP sink event callback function
+ * @param[in]       callback: AVRCP controller callback function
  *
  * @return
  *                  - ESP_OK: success
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -95,10 +100,12 @@ esp_err_t esp_avrc_ct_register_callback(esp_avrc_ct_cb_t callback);
 
 /**
  *
- * @brief           This function is called to initialize the bluetooth AVRCP controller module
+ * @brief           Initialize the bluetooth AVRCP controller module, This function should be called
+ *                  after esp_bluedroid_enable() completes successfully
  *
  * @return          
  *                  - ESP_OK: success
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -107,15 +114,36 @@ esp_err_t esp_avrc_ct_init(void);
 
 /**
  *
- * @brief           This function is called to deinit AVRCP controller module
+ * @brief           De-initialize AVRCP controller module. This function should be called after
+ *                  after esp_bluedroid_enable() completes successfully
  *
+ * @return          
+ *                  - ESP_OK: success
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
  */
 esp_err_t esp_avrc_ct_deinit(void);
 
 
 /**
- * send pass through command to target
+ * @brief           Send passthrough command to AVRCP target, This function should be called after
+ *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established
+ *
+ * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ * @param[in]       key_code : passthrough command code, e.g. ESP_AVRC_PT_CMD_PLAY, ESP_AVRC_PT_CMD_STOP, etc.
+ * @param[in]       key_state : passthrough command key state, ESP_AVRC_PT_CMD_STATE_PRESSED or
+ *                  ESP_AVRC_PT_CMD_STATE_PRESSED
+ *
+ * @return          
+ *                  - ESP_OK: success
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
  */
 esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ESP_AVRC_API_H__ */

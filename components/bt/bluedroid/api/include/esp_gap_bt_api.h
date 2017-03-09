@@ -23,6 +23,7 @@
 extern "C" {
 #endif
 
+
 #define ESP_BT_GAP_DEVICE_NAME_MAX                  (32)
 
 /// Discoverability and Connectability mode
@@ -33,27 +34,34 @@ typedef enum {
 } esp_bt_scan_mode_t;
 
 /**
- * @brief           Set discoverability and connectability mode for legacy bluetooth
+ * @brief           Set discoverability and connectability mode for legacy bluetooth. This function should
+ *                  be called after esp_bluedroid_enable() completes successfully
  *
- * @param[in]       mode: one of the enums of bt_scan_mode_t
+ * @param[in]       mode : one of the enums of bt_scan_mode_t
  *
  * @return
  *                  - ESP_OK : Succeed
  *                  - ESP_ERR_INVALID_ARG: if argument invalid
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
  */
 esp_err_t esp_bt_gap_set_scan_mode(esp_bt_scan_mode_t mode);
 
 
 /**
- * @brief           Set bluetooth device name 
+ * @brief           Set bluetooth device name. This function should be called after esp_bluedroid_enable() 
+ *                  completes successfully
  *
- * @param[in]       name: device name to be set, will be truncated if more than 32 characters
+ * @param[in]       name : device name to be set, string length should not exceed ESP_BT_GAP_DEVICE_NAME_MAX
  *
  * @return
  *                  - ESP_OK : Succeed
- *                  - ESP_ERR_INVALID_ARG: if name is NULL pointer or empty string
+ *                  - ESP_ERR_INVALID_ARG : if name is NULL pointer or empty, or string length out of limit
+ *                  - ESP_INVALID_STATE : if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL : others
  */
 esp_err_t esp_bt_gap_set_device_name(const char *name);
+
 
 #ifdef __cplusplus
 }
