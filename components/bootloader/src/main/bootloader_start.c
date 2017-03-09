@@ -248,7 +248,7 @@ void bootloader_main()
 #endif
     esp_image_header_t fhdr;
     bootloader_state_t bs;
-    SpiFlashOpResult spiRet1,spiRet2;
+    esp_rom_spiflash_result_t spiRet1,spiRet2;
     esp_ota_select_entry_t sa,sb;
     const esp_ota_select_entry_t *ota_select_map;
 
@@ -258,7 +258,7 @@ void bootloader_main()
     /* disable watch dog here */
     REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
-    SPIUnlock();
+    esp_rom_spiflash_unlock();
 
     ESP_LOGI(TAG, "Enabling RNG early entropy source...");
     bootloader_random_enable();
@@ -298,7 +298,7 @@ void bootloader_main()
         memcpy(&sb, (uint8_t *)ota_select_map + SPI_SEC_SIZE, sizeof(esp_ota_select_entry_t));
         bootloader_munmap(ota_select_map);
         if(sa.ota_seq == 0xFFFFFFFF && sb.ota_seq == 0xFFFFFFFF) {
-            // init status flash 
+            // init status flash
             if (bs.factory.offset != 0) {        // if have factory bin,boot factory bin
                 load_part_pos = bs.factory;
             } else {
@@ -308,19 +308,19 @@ void bootloader_main()
                 sb.ota_seq = 0x00;
                 sb.crc = ota_select_crc(&sb);
 
-                Cache_Read_Disable(0);  
-                spiRet1 = SPIEraseSector(bs.ota_info.offset/0x1000);
-                spiRet2 = SPIEraseSector(bs.ota_info.offset/0x1000+1);
-                if (spiRet1 != SPI_FLASH_RESULT_OK || spiRet2 != SPI_FLASH_RESULT_OK ) {  
+                Cache_Read_Disable(0);
+                spiRet1 = esp_rom_spiflash_erase_sector(bs.ota_info.offset/0x1000);
+                spiRet2 = esp_rom_spiflash_erase_sector(bs.ota_info.offset/0x1000+1);
+                if (spiRet1 != ESP_ROM_SPIFLASH_RESULT_OK || spiRet2 != ESP_ROM_SPIFLASH_RESULT_OK ) {
                     ESP_LOGE(TAG, SPI_ERROR_LOG);
                     return;
-                } 
-                spiRet1 = SPIWrite(bs.ota_info.offset,(uint32_t *)&sa,sizeof(esp_ota_select_entry_t));
-                spiRet2 = SPIWrite(bs.ota_info.offset + 0x1000,(uint32_t *)&sb,sizeof(esp_ota_select_entry_t));
-                if (spiRet1 != SPI_FLASH_RESULT_OK || spiRet2 != SPI_FLASH_RESULT_OK ) {  
+                }
+                spiRet1 = esp_rom_spiflash_write(bs.ota_info.offset,(uint32_t *)&sa,sizeof(esp_ota_select_entry_t));
+                spiRet2 = esp_rom_spiflash_write(bs.ota_info.offset + 0x1000,(uint32_t *)&sb,sizeof(esp_ota_select_entry_t));
+                if (spiRet1 != ESP_ROM_SPIFLASH_RESULT_OK || spiRet2 != ESP_ROM_SPIFLASH_RESULT_OK ) {
                     ESP_LOGE(TAG, SPI_ERROR_LOG);
                     return;
-                } 
+                }
                 Cache_Read_Enable(0);
             }
             //TODO:write data in ota info
@@ -545,7 +545,7 @@ static void set_cache_and_start_app(
     uint32_t drom_size,
     uint32_t irom_addr,
     uint32_t irom_load_addr,
-    uint32_t irom_size, 
+    uint32_t irom_size,
     uint32_t entry_addr)
 {
     ESP_LOGD(TAG, "configure drom and irom and start");
@@ -602,7 +602,7 @@ static void update_flash_config(const esp_image_header_t* pfhdr)
     }
     Cache_Read_Disable( 0 );
     // Set flash chip size
-    SPIParamCfg(g_rom_flashchip.deviceId, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
+    esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
     Cache_Flush(0);

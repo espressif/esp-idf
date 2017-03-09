@@ -17,6 +17,10 @@ ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")
 LINKER_SCRIPTS += esp32.rom.nanofmt.ld
 endif
 
+ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+LINKER_SCRIPTS += esp32.rom.spiflash.ld
+endif
+
 COMPONENT_ADD_LDFLAGS := -lesp32 \
                          $(COMPONENT_PATH)/libhal.a \
                          -L$(COMPONENT_PATH)/lib \

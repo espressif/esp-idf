@@ -97,6 +97,7 @@ SECTIONS
     *libnet80211.a:ieee80211_misc.o(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
     *libcoexist.a:(.literal .text .literal.* .text.*)
+    *libspi_flash.a:spi_flash_rom_patch.o(.literal .text .literal.* .text.*)
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 

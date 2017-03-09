@@ -42,7 +42,7 @@
 #define MAX_READ_CHUNK 16384
 
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-static const char* TAG = "spi_flash";
+static const char *TAG = "spi_flash";
 static spi_flash_counters_t s_flash_stats;
 
 #define COUNTER_START()     uint32_t ts_begin = xthal_get_ccount()
@@ -64,20 +64,20 @@ static spi_flash_counters_t s_flash_stats;
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
-static esp_err_t spi_flash_translate_rc(SpiFlashOpResult rc);
+static esp_err_t spi_flash_translate_rc(esp_rom_spiflash_result_t rc);
 
 const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_default_ops = {
-        .start     = spi_flash_disable_interrupts_caches_and_other_cpu,
-        .end       = spi_flash_enable_interrupts_caches_and_other_cpu,
-        .op_lock   = spi_flash_op_lock,
-        .op_unlock = spi_flash_op_unlock
+    .start     = spi_flash_disable_interrupts_caches_and_other_cpu,
+    .end       = spi_flash_enable_interrupts_caches_and_other_cpu,
+    .op_lock   = spi_flash_op_lock,
+    .op_unlock = spi_flash_op_unlock
 };
 
 const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
-        .start      = spi_flash_disable_interrupts_caches_and_other_cpu_no_os,
-        .end        = spi_flash_enable_interrupts_caches_no_os,
-        .op_lock    = 0,
-        .op_unlock  = 0
+    .start      = spi_flash_disable_interrupts_caches_and_other_cpu_no_os,
+    .end        = spi_flash_enable_interrupts_caches_no_os,
+    .op_lock    = 0,
+    .op_unlock  = 0
 };
 
 static const spi_flash_guard_funcs_t *s_flash_guard_ops;
@@ -90,7 +90,7 @@ void spi_flash_init()
 #endif
 }
 
-void IRAM_ATTR spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs)
+void IRAM_ATTR spi_flash_guard_set(const spi_flash_guard_funcs_t *funcs)
 {
     s_flash_guard_ops = funcs;
 }
@@ -128,19 +128,19 @@ static inline void IRAM_ATTR spi_flash_guard_op_unlock()
     }
 }
 
-static SpiFlashOpResult IRAM_ATTR spi_flash_unlock()
+static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock()
 {
     static bool unlocked = false;
     if (!unlocked) {
         spi_flash_guard_start();
-        SpiFlashOpResult rc = SPIUnlock();
+        esp_rom_spiflash_result_t rc = esp_rom_spiflash_unlock();
         spi_flash_guard_end();
-        if (rc != SPI_FLASH_RESULT_OK) {
+        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
             return rc;
         }
         unlocked = true;
     }
-    return SPI_FLASH_RESULT_OK;
+    return ESP_ROM_SPIFLASH_RESULT_OK;
 }
 
 esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
@@ -163,16 +163,17 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
     size_t end = start + size / SPI_FLASH_SEC_SIZE;
     const size_t sectors_per_block = BLOCK_ERASE_SIZE / SPI_FLASH_SEC_SIZE;
     COUNTER_START();
-    SpiFlashOpResult rc = spi_flash_unlock();
-    if (rc == SPI_FLASH_RESULT_OK) {
-        for (size_t sector = start; sector != end && rc == SPI_FLASH_RESULT_OK; ) {
+    esp_rom_spiflash_result_t rc;
+    rc = spi_flash_unlock();
+    if (rc == ESP_ROM_SPIFLASH_RESULT_OK) {
+        for (size_t sector = start; sector != end && rc == ESP_ROM_SPIFLASH_RESULT_OK; ) {
             spi_flash_guard_start();
             if (sector % sectors_per_block == 0 && end - sector > sectors_per_block) {
-                rc = SPIEraseBlock(sector / sectors_per_block);
+                rc = esp_rom_spiflash_erase_block(sector / sectors_per_block);
                 sector += sectors_per_block;
                 COUNTER_ADD_BYTES(erase, sectors_per_block * SPI_FLASH_SEC_SIZE);
             } else {
-                rc = SPIEraseSector(sector);
+                rc = esp_rom_spiflash_erase_sector(sector);
                 ++sector;
                 COUNTER_ADD_BYTES(erase, SPI_FLASH_SEC_SIZE);
             }
@@ -194,7 +195,7 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
         return ESP_OK;
     }
 
-    SpiFlashOpResult rc = SPI_FLASH_RESULT_OK;
+    esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
     COUNTER_START();
     const char *srcc = (const char *) srcv;
     /*
@@ -210,16 +211,16 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
     size_t right_off = left_size + mid_size;
     size_t right_size = size - mid_size - left_size;
     rc = spi_flash_unlock();
-    if (rc != SPI_FLASH_RESULT_OK) {
+    if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
         goto out;
     }
     if (left_size > 0) {
         uint32_t t = 0xffffffff;
         memcpy(((uint8_t *) &t) + (dst - left_off), srcc, left_size);
         spi_flash_guard_start();
-        rc = SPIWrite(left_off, &t, 4);
+        rc = esp_rom_spiflash_write(left_off, &t, 4);
         spi_flash_guard_end();
-        if (rc != SPI_FLASH_RESULT_OK) {
+        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
             goto out;
         }
         COUNTER_ADD_BYTES(write, 4);
@@ -234,7 +235,7 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
 #else
         bool direct_write = true;
 #endif
-        while(mid_size > 0 && rc == SPI_FLASH_RESULT_OK) {
+        while(mid_size > 0 && rc == ESP_ROM_SPIFLASH_RESULT_OK) {
             uint32_t write_buf[8];
             uint32_t write_size;
             const uint32_t *write_src = (const uint32_t *) (srcc + mid_off);
@@ -246,13 +247,13 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
                 write_src = write_buf;
             }
             spi_flash_guard_start();
-            rc = SPIWrite(dst + mid_off, write_src, write_size);
+            rc = esp_rom_spiflash_write(dst + mid_off, (const uint32_t *) (srcc + mid_off), mid_size);
             spi_flash_guard_end();
             COUNTER_ADD_BYTES(write, write_size);
             mid_size -= write_size;
             mid_off += write_size;
         }
-        if (rc != SPI_FLASH_RESULT_OK) {
+        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
             goto out;
         }
     }
@@ -261,9 +262,9 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
         uint32_t t = 0xffffffff;
         memcpy(&t, srcc + right_off, right_size);
         spi_flash_guard_start();
-        rc = SPIWrite(dst + right_off, &t, 4);
+        rc = esp_rom_spiflash_write(dst + right_off, &t, 4);
         spi_flash_guard_end();
-        if (rc != SPI_FLASH_RESULT_OK) {
+        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
             goto out;
         }
         COUNTER_ADD_BYTES(write, 4);
@@ -289,13 +290,13 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
     }
 
     COUNTER_START();
-    SpiFlashOpResult rc = spi_flash_unlock();
-
-    if (rc == SPI_FLASH_RESULT_OK) {
-        /* SPI_Encrypt_Write encrypts data in RAM as it writes,
+    esp_rom_spiflash_result_t rc;
+    rc = spi_flash_unlock();
+    if (rc == ESP_ROM_SPIFLASH_RESULT_OK) {
+        /* esp_rom_spiflash_write_encrypted encrypts data in RAM as it writes,
            so copy to a temporary buffer - 32 bytes at a time.
 
-           Each call to SPI_Encrypt_Write takes a 32 byte "row" of
+           Each call to esp_rom_spiflash_write_encrypted takes a 32 byte "row" of
            data to encrypt, and each row is two 16 byte AES blocks
            that share a key (as derived from flash address).
         */
@@ -311,25 +312,23 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
                 memcpy(encrypt_buf + 16, ssrc + i, 16);
                 /* decrypt the first block from flash, will reencrypt to same bytes */
                 spi_flash_read_encrypted(row_addr, encrypt_buf, 16);
-            }
-            else if (size - i == 16) {
+            } else if (size - i == 16) {
                 /* 16 bytes left, is first block of a 32 byte row */
                 row_size = 16;
                 /* copy to first block in buffer */
                 memcpy(encrypt_buf, ssrc + i, 16);
                 /* decrypt the second block from flash, will reencrypt to same bytes */
                 spi_flash_read_encrypted(row_addr + 16, encrypt_buf + 16, 16);
-            }
-            else {
+            } else {
                 /* Writing a full 32 byte row (2 blocks) */
                 row_size = 32;
                 memcpy(encrypt_buf, ssrc + i, 32);
             }
 
             spi_flash_guard_start();
-            rc = SPI_Encrypt_Write(row_addr, (uint32_t *)encrypt_buf, 32);
+            rc = esp_rom_spiflash_write_encrypted(row_addr, (uint32_t *)encrypt_buf, 32);
             spi_flash_guard_end();
-            if (rc != SPI_FLASH_RESULT_OK) {
+            if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
                 break;
             }
         }
@@ -356,7 +355,7 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
         return ESP_OK;
     }
 
-    SpiFlashOpResult rc = SPI_FLASH_RESULT_OK;
+    esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
     COUNTER_START();
     spi_flash_guard_start();
     /* To simplify boundary checks below, we handle small reads separately. */
@@ -365,8 +364,8 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
         uint32_t read_src = src & ~3U;
         uint32_t left_off = src & 3U;
         uint32_t read_size = (left_off + size + 3) & ~3U;
-        rc = SPIRead(read_src, t, read_size);
-        if (rc != SPI_FLASH_RESULT_OK) {
+        rc = esp_rom_spiflash_read(read_src, t, read_size);
+        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
             goto out;
         }
         COUNTER_ADD_BYTES(read, read_size);
@@ -402,8 +401,8 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
         uint32_t mid_read = 0;
         while (mid_remaining > 0) {
             uint32_t read_size = MIN(mid_remaining, MAX_READ_CHUNK);
-            rc = SPIRead(src + src_mid_off + mid_read, (uint32_t *) (dstc + dst_mid_off + mid_read), read_size);
-            if (rc != SPI_FLASH_RESULT_OK) {
+            rc = esp_rom_spiflash_read(src + src_mid_off + mid_read, (uint32_t *) (dstc + dst_mid_off + mid_read), read_size);
+            if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
                 goto out;
             }
             mid_remaining -= read_size;
@@ -426,8 +425,8 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
     }
     if (pad_left_size > 0) {
         uint32_t t;
-        rc = SPIRead(pad_left_src, &t, 4);
-        if (rc != SPI_FLASH_RESULT_OK) {
+        rc = esp_rom_spiflash_read(pad_left_src, &t, 4);
+        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
             goto out;
         }
         COUNTER_ADD_BYTES(read, 4);
@@ -436,8 +435,8 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
     if (pad_right_size > 0) {
         uint32_t t[2];
         int32_t read_size = (pad_right_size <= 4 ? 4 : 8);
-        rc = SPIRead(pad_right_src, t, read_size);
-        if (rc != SPI_FLASH_RESULT_OK) {
+        rc = esp_rom_spiflash_read(pad_right_src, t, read_size);
+        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
             goto out;
         }
         COUNTER_ADD_BYTES(read, read_size);
@@ -461,7 +460,7 @@ esp_err_t IRAM_ATTR spi_flash_read_encrypted(size_t src, void *dstv, size_t size
     esp_err_t err;
     const uint8_t *map;
     spi_flash_mmap_handle_t map_handle;
-    size_t map_src = src & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
+    size_t map_src = src & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
     size_t map_size = size + (src - map_src);
 
     err = spi_flash_mmap(map_src, map_size, SPI_FLASH_MMAP_DATA, (const void **)&map, &map_handle);
@@ -474,14 +473,14 @@ esp_err_t IRAM_ATTR spi_flash_read_encrypted(size_t src, void *dstv, size_t size
 }
 
 
-static esp_err_t IRAM_ATTR spi_flash_translate_rc(SpiFlashOpResult rc)
+static esp_err_t IRAM_ATTR spi_flash_translate_rc(esp_rom_spiflash_result_t rc)
 {
     switch (rc) {
-    case SPI_FLASH_RESULT_OK:
+    case ESP_ROM_SPIFLASH_RESULT_OK:
         return ESP_OK;
-    case SPI_FLASH_RESULT_TIMEOUT:
+    case ESP_ROM_SPIFLASH_RESULT_TIMEOUT:
         return ESP_ERR_FLASH_OP_TIMEOUT;
-    case SPI_FLASH_RESULT_ERR:
+    case ESP_ROM_SPIFLASH_RESULT_ERR:
     default:
         return ESP_ERR_FLASH_OP_FAIL;
     }
@@ -489,13 +488,13 @@ static esp_err_t IRAM_ATTR spi_flash_translate_rc(SpiFlashOpResult rc)
 
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
-static inline void dump_counter(spi_flash_counter_t* counter, const char* name)
+static inline void dump_counter(spi_flash_counter_t *counter, const char *name)
 {
     ESP_LOGI(TAG, "%s  count=%8d  time=%8dus  bytes=%8d\n", name,
              counter->count, counter->time, counter->bytes);
 }
 
-const spi_flash_counters_t* spi_flash_get_counters()
+const spi_flash_counters_t *spi_flash_get_counters()
 {
     return &s_flash_stats;
 }
