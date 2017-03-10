@@ -230,7 +230,7 @@ void *pvReturn = NULL;
             pxBlock = xStart.pxNextFreeBlock;
             while( ( ( pxBlock->xTag != tag ) ||  ( pxBlock->xBlockSize < xWantedSize ) ) && ( pxBlock->pxNextFreeBlock != NULL ) )
             {
-             ets_printf("Block %x -> %x\n", (uint32_t)pxBlock, (uint32_t)pxBlock->pxNextFreeBlock);
+//             ets_printf("Block %x -> %x\n", (uint32_t)pxBlock, (uint32_t)pxBlock->pxNextFreeBlock);
 
                                     #if (configENABLE_MEMORY_DEBUG == 1)
                                     {
@@ -419,8 +419,6 @@ uint8_t *puc;
     than the block being inserted. */
     for( pxIterator = &xStart; pxIterator->pxNextFreeBlock < pxBlockToInsert; pxIterator = pxIterator->pxNextFreeBlock )
     {
-		ets_printf("i %p\n", pxIterator);
-		ets_printf("n %p\n", pxIterator->pxNextFreeBlock);
 
         /* Nothing to do here, just iterate to the right position. */
     }
