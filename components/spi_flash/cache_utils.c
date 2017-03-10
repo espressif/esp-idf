@@ -30,6 +30,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
+#include "esp_psram.h"
 
 static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_state);
 static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
@@ -59,6 +60,13 @@ void spi_flash_op_unlock()
     xSemaphoreGive(s_flash_op_mutex);
 }
 
+/*
+ If you're going to modify this, keep in mind that while the flash caches of the pro and app
+ cpu are separate, the psram cache is *not*. If one of the CPUs returns from a flash routine 
+ with its cache enabled but the other CPUs cache is not enabled yet, you will have problems
+ when accessing psram from the former CPU.
+*/
+
 void IRAM_ATTR spi_flash_op_block_func(void* arg)
 {
     // Disable scheduler on this CPU
@@ -76,8 +84,6 @@ void IRAM_ATTR spi_flash_op_block_func(void* arg)
     while (!s_flash_op_complete) {
         // busy loop here and wait for the other CPU to finish flash operation
     }
-    // Flash operation is complete, re-enable cache
-    spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
     // Restore interrupts that aren't located in IRAM
     esp_intr_noniram_enable();
     // Re-enable scheduler
@@ -110,8 +116,8 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
         esp_err_t ret = esp_ipc_call(other_cpuid, &spi_flash_op_block_func, (void*) other_cpuid);
         assert(ret == ESP_OK);
         while (!s_flash_op_can_start) {
-            // Busy loop and wait for spi_flash_op_block_func to disable cache
-            // on the other CPU
+            // Busy loop and wait for spi_flash_op_block_func to run so we can 
+            // disable cache of the other CPU
         }
         // Disable scheduler on the current CPU
         vTaskSuspendAll();
@@ -121,8 +127,9 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
     }
     // Kill interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
-    // Disable cache on this CPU as well
+    // Disable cache on both CPUs as well
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
+    spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
 }
 
 void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
@@ -135,8 +142,9 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
     s_flash_op_cpu = -1;
 #endif
 
-    // Re-enable cache on this CPU
+    // Re-enable cache on both CPUs
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
+    spi_flash_restore_cache(other_cpuid, s_flash_op_cache_state[other_cpuid]);
 
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
         // Scheduler is not running yet — this means we are running on PRO CPU.
