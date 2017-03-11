@@ -16,5 +16,8 @@ int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
                     u8 *buf, size_t len, u8 *bssid,
                     u16 auth_transaction, u16 status);
 u16 wpa_res_to_status_code(enum wpa_validate_result res);
-
+#ifdef CONFIG_OWE_SOFTAP
+uint16_t owe_process_assoc_req(struct sta_info *sta, const uint8_t *owe_dh,
+                                uint8_t owe_dh_len);
+#endif
 #endif /* IEEE802_11_H */

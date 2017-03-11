@@ -150,6 +150,13 @@ static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
     }
 #endif /*CONFIG_SAE*/
 
+#ifdef CONFIG_OWE_SOFTAP
+   if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) && sta && sta->owe_pmk) {
+       return sta->owe_pmk;
+   }
+#endif /* CONFIG_OWE_SOFTAP */
+
+
     return (u8*)hostapd_get_psk(hapd->conf, addr, prev_psk);
 }
 

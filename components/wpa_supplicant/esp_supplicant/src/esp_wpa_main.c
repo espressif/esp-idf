@@ -389,7 +389,7 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8 *rsnxe, u16 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *rsn_selection_ie)
+static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8 *rsnxe, u16 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *rsn_selection_ie, uint8_t *owe_dh, uint8_t owe_ie_len)
 {
     struct sta_info *sta_info = NULL;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
@@ -451,7 +451,8 @@ process_old_sta:
         goto fail;
     }
 #endif
-    if (hostap_new_assoc_sta(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype, pairwise_cipher, &reason, rsn_selection_ie)) {
+
+    if (hostap_new_assoc_sta(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype, pairwise_cipher, &reason, rsn_selection_ie, owe_dh, owe_ie_len)) {
         goto done;
     } else {
         goto fail;

@@ -127,6 +127,10 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 
 	wpabuf_free(sta->wps_ie);
 #endif
+#ifdef CONFIG_OWE_SOFTAP
+       bin_clear_free(sta->owe_pmk, PMK_LEN);
+       crypto_ecdh_deinit(sta->owe_ecdh);
+#endif /* CONFIG_OWE_SOFTAP */
 
 	os_free(sta);
 }

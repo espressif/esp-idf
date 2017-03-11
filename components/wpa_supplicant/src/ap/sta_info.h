@@ -69,6 +69,10 @@ struct sta_info {
 	struct wpabuf *sae_data;
 #endif /* CONFIG_SAE */
 #endif /* ESP_SUPPLICANT */
+#ifdef CONFIG_OWE_SOFTAP
+       u8 *owe_pmk;
+       struct crypto_ecdh *owe_ecdh;
+#endif /* CONFIG_OWE_SOFTAP */
 
 };
 
