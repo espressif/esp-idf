@@ -48,7 +48,8 @@ static bool authmode_has_rsn(uint8_t authmode)
     return (authmode == WIFI_AUTH_WPA2_PSK ||
             authmode == WIFI_AUTH_WPA_WPA2_PSK ||
             authmode == WIFI_AUTH_WPA3_PSK ||
-            authmode == WIFI_AUTH_WPA2_WPA3_PSK);
+            authmode == WIFI_AUTH_WPA2_WPA3_PSK ||
+            authmode == WIFI_AUTH_OWE);
 }
 
 void *hostap_init(void)
@@ -192,6 +193,13 @@ void *hostap_init(void)
 
 #endif /* CONFIG_IEEE80211W */
     esp_wifi_ap_set_group_mgmt_cipher_internal(cipher_type_map_supp_to_public(auth_conf->group_mgmt_cipher));
+
+#ifdef CONFIG_OWE_SOFTAP
+    if (authmode == WIFI_AUTH_OWE) {
+        auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_OWE;
+    }
+#endif /* CONFIG_OWE_SOFTAP */
+
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_AP);
     auth_conf->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
     auth_conf->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_REQ_ENABLE : SPP_AMSDU_REQ_DISABLE);
