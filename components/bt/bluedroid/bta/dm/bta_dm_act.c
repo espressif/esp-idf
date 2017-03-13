@@ -65,7 +65,9 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 /* Extended Inquiry Response */
+#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
 static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data);
+#endif /* (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE) */
 
 static void bta_dm_set_eir (char *local_name);
 
@@ -2714,6 +2716,7 @@ static UINT8 bta_dm_authentication_complete_cback(BD_ADDR bd_addr, DEV_CLASS dev
     return BTM_SUCCESS;
 }
 
+#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
 /*******************************************************************************
 **
 ** Function         bta_dm_sp_cback
@@ -2868,6 +2871,7 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
     APPL_TRACE_EVENT("dm status: %d", status);
     return status;
 }
+#endif /* (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE) */
 
 /*******************************************************************************
 **

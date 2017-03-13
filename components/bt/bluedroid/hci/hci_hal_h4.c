@@ -107,6 +107,7 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
     //register vhci host cb
     esp_vhci_host_register_callback(&vhci_host_cb);
 
+
     return true;
 }
 
@@ -159,6 +160,7 @@ static uint16_t transmit_data(serial_data_type_t type,
 static void hci_hal_h4_rx_handler(void *arg)
 {
     BtTaskEvt_t e;
+
     for (;;) {
         if (pdTRUE == xQueueReceive(xHciH4Queue, &e, (portTickType)portMAX_DELAY)) {
             if (e.sig == 0xff) {

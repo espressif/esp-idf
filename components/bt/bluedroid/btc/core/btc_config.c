@@ -101,7 +101,7 @@ bool btc_config_init(void)
     // TODO(sharvil): use a non-wake alarm for this once we have
     // API support for it. There's no need to wake the system to
     // write back to disk.
-    alarm_timer = osi_alarm_new("btc_config", timer_config_save, NULL, CONFIG_SETTLE_PERIOD_MS, false);
+    alarm_timer = osi_alarm_new("btc_config", timer_config_save, NULL, CONFIG_SETTLE_PERIOD_MS);
     if (!alarm_timer) {
         LOG_ERROR("%s unable to create alarm.\n", __func__);
         goto error;

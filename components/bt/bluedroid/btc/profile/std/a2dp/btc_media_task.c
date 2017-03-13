@@ -228,14 +228,6 @@ static void btc_media_data_post(void)
     }
 }
 
-static void btc_media_data_handler(BtTaskEvt_t *e)
-{
-    if (e == NULL) {
-        return;
-    }
-    btc_media_task_avk_data_ready(NULL);
-}
-
 static void btc_media_ctrl_handler(BtTaskEvt_t *e)
 {
     if (e == NULL)

@@ -152,7 +152,7 @@ static const char *dump_av_sm_state_name(btc_av_state_t state)
     }
 }
 
-static const char *dump_av_sm_event_name(btc_av_sm_event_t event)
+UNUSED_ATTR static const char *dump_av_sm_event_name(btc_av_sm_event_t event)
 {
     switch ((int)event) {
         CASE_RETURN_STR(BTA_AV_ENABLE_EVT)

@@ -38,6 +38,7 @@
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
 #endif
+#include "osi.h"
 
 /*****************************************************************************
 ** Constants and types
@@ -407,7 +408,7 @@ static tBTA_AV_SCB * bta_av_alloc_scb(tBTA_AV_CHNL chnl)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_av_free_scb(tBTA_AV_SCB *p_scb)
+UNUSED_ATTR static void bta_av_free_scb(tBTA_AV_SCB *p_scb)
 {
     // NOTE(google) This free currently is not called
     assert(p_scb != NULL);

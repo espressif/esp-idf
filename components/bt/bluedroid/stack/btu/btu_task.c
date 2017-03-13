@@ -524,7 +524,7 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
     // Get the alarm for the timer list entry.
     pthread_mutex_lock(&btu_general_alarm_lock);
     if (!hash_map_has_key(btu_general_alarm_hash_map, p_tle)) {
-        alarm = osi_alarm_new("btu_gen", btu_general_alarm_cb, (void *)p_tle, 0, false);
+        alarm = osi_alarm_new("btu_gen", btu_general_alarm_cb, (void *)p_tle, 0);
         hash_map_set(btu_general_alarm_hash_map, p_tle, alarm);
     }
     pthread_mutex_unlock(&btu_general_alarm_lock);
@@ -614,7 +614,7 @@ void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ti
     // Get the alarm for the timer list entry.
     pthread_mutex_lock(&btu_l2cap_alarm_lock);
     if (!hash_map_has_key(btu_l2cap_alarm_hash_map, p_tle)) {
-        alarm = osi_alarm_new("btu_l2cap", btu_l2cap_alarm_cb, (void *)p_tle, 0, false);
+        alarm = osi_alarm_new("btu_l2cap", btu_l2cap_alarm_cb, (void *)p_tle, 0);
         hash_map_set(btu_l2cap_alarm_hash_map, p_tle, (void *)alarm);
     }
     pthread_mutex_unlock(&btu_l2cap_alarm_lock);
@@ -685,7 +685,7 @@ void btu_start_timer_oneshot(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_
     // Get the alarm for the timer list entry.
     pthread_mutex_lock(&btu_oneshot_alarm_lock);
     if (!hash_map_has_key(btu_oneshot_alarm_hash_map, p_tle)) {
-        alarm = osi_alarm_new("btu_oneshot", btu_oneshot_alarm_cb, (void *)p_tle, 0, false);
+        alarm = osi_alarm_new("btu_oneshot", btu_oneshot_alarm_cb, (void *)p_tle, 0);
         hash_map_set(btu_oneshot_alarm_hash_map, p_tle, alarm);
     }
     pthread_mutex_unlock(&btu_oneshot_alarm_lock);

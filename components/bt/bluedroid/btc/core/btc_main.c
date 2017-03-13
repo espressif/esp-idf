@@ -29,18 +29,6 @@ future_t **btc_main_get_future_p(btc_main_future_type_t type)
     return &main_future[type];
 }
 
-static void btc_sec_callback(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data)
-{
-    switch (event) {
-    case BTA_DM_ENABLE_EVT:
-        future_ready(*btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE), FUTURE_SUCCESS);
-        break;
-    case BTA_DM_DISABLE_EVT:
-        future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_SUCCESS);
-        break;
-    }
-}
-
 static void btc_enable_bluetooth(void)
 {
     if (BTA_EnableBluetooth(btc_dm_sec_evt) != BTA_SUCCESS) {

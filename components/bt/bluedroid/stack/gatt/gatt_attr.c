@@ -279,7 +279,7 @@ void gatt_profile_db_init (void)
     GATT_StartIf(gatt_cb.gatt_if);
 
     service_handle = GATTS_CreateService (gatt_cb.gatt_if , &uuid, 0, GATTP_MAX_ATTR_NUM, TRUE);
-    GATT_TRACE_DEBUG ("GATTS_CreateService:  handle of service handle%x", service_handle);
+    GATT_TRACE_ERROR ("GATTS_CreateService:  handle of service handle%x", service_handle);
 	
     /* add Service Changed characteristic
     */

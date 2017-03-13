@@ -20,7 +20,6 @@
 #define _ALARM_H_
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 
@@ -40,7 +39,7 @@ void osi_alarm_init(void);
 
 // Creates a new alarm object. The returned object must be freed by calling
 // |alarm_free|. Returns NULL on failure.
-osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void *data, period_ms_t timer_expire, bool is_periodc);
+osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void *data, period_ms_t timer_expire);
 
 // Frees an alarm object created by |alarm_new|. |alarm| may be NULL. If the
 // alarm is pending, it will be cancelled. It is not safe to call |alarm_free|
