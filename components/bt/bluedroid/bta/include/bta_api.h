@@ -400,6 +400,8 @@ typedef struct {
 
 typedef void (tBTA_SET_ADV_DATA_CMPL_CBACK) (tBTA_STATUS status);
 
+typedef void (tBTA_START_ADV_CMPL_CBACK) (tBTA_STATUS status);
+
 /* advertising channel map */
 #define BTA_BLE_ADV_CHNL_37 BTM_BLE_ADV_CHNL_37
 #define BTA_BLE_ADV_CHNL_38 BTM_BLE_ADV_CHNL_38
@@ -1094,6 +1096,8 @@ typedef void (tBTA_BLE_SCAN_REP_CBACK) (tBTA_DM_BLE_REF_VALUE ref_value, UINT8 r
 typedef void (tBTA_BLE_SCAN_SETUP_CBACK) (tBTA_BLE_BATCH_SCAN_EVT evt,
         tBTA_DM_BLE_REF_VALUE ref_value,
         tBTA_STATUS status);
+
+typedef void (tBTA_START_SCAN_CMPL_CBACK) (tBTA_STATUS status); 
 
 typedef void (tBTA_BLE_TRACK_ADV_CMPL_CBACK)(int action, tBTA_STATUS status,
         tBTA_DM_BLE_PF_AVBL_SPACE avbl_space,
@@ -1891,7 +1895,7 @@ extern void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
 extern void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
                                       UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
                                       tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
-                                      tBLE_BD_ADDR *p_dir_bda);
+                                      tBLE_BD_ADDR *p_dir_bda, tBTA_START_ADV_CMPL_CBACK p_start_adv_cb);
 
 
 /*******************************************************************************
@@ -1997,7 +2001,8 @@ extern void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport,
 **
 *******************************************************************************/
 extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
-                             tBTA_DM_SEARCH_CBACK *p_results_cb);
+                             tBTA_DM_SEARCH_CBACK *p_results_cb,
+                             tBTA_START_SCAN_CMPL_CBACK *p_start_scan_cb);
 
 extern void BTA_DmBleStopAdvertising(void);
 

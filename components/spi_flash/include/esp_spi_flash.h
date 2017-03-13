@@ -197,6 +197,48 @@ void spi_flash_munmap(spi_flash_mmap_handle_t handle);
  */
 void spi_flash_mmap_dump();
 
+
+#define SPI_FLASH_CACHE2PHYS_FAIL UINT32_MAX /*<! Result from spi_flash_cache2phys() if flash cache address is invalid */
+
+/**
+ * @brief Given a memory address where flash is mapped, return the corresponding physical flash offset.
+ *
+ * Cache address does not have have been assigned via spi_flash_mmap(), any address in flash map space can be looked up.
+ *
+ * @param cached Pointer to flashed cached memory.
+ *
+ * @return
+ * - SPI_FLASH_CACHE2PHYS_FAIL If cache address is outside flash cache region, or the address is not mapped.
+ * - Otherwise, returns physical offset in flash
+ */
+size_t spi_flash_cache2phys(const void *cached);
+
+/** @brief Given a physical offset in flash, return the address where it is mapped in the memory space.
+ *
+ * Physical address does not have to have been assigned via spi_flash_mmap(), any address in flash can be looked up.
+ *
+ * @note Only the first matching cache address is returned. If MMU flash cache table is configured so multiple entries
+ * point to the same physical address, there may be more than one cache address corresponding to that physical
+ * address. It is also possible for a single physical address to be mapped to both the IROM and DROM regions.
+ *
+ * @note This function doesn't impose any alignment constraints, but if memory argument is SPI_FLASH_MMAP_INST and
+ * phys_offs is not 4-byte aligned, then reading from the returned pointer will result in a crash.
+ *
+ * @param phys_offs Physical offset in flash memory to look up.
+ * @param memory Memory type to look up a flash cache address mapping for (IROM or DROM)
+ *
+ * @return
+ * - NULL if the physical address is invalid or not mapped to flash cache of the specified memory type.
+ * - Cached memory address (in IROM or DROM space) corresponding to phys_offs.
+ */
+const void *spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory);
+
+/** @brief Check at runtime if flash cache is enabled on both CPUs
+ *
+ * @return true if both CPUs have flash cache enabled, false otherwise.
+ */
+bool spi_flash_cache_enabled();
+
 /**
  * @brief SPI flash critical section enter function.
  */

@@ -52,7 +52,7 @@ static uint64_t get_rtc_time_us()
     uint64_t low = READ_PERI_REG(RTC_CNTL_TIME0_REG);
     uint64_t high = READ_PERI_REG(RTC_CNTL_TIME1_REG);
     uint64_t ticks = (high << 32) | low;
-    return ticks * 100 / (RTC_CTNL_SLOWCLK_FREQ / 10000);    // scale RTC_CTNL_SLOWCLK_FREQ to avoid overflow
+    return ticks * 100 / (RTC_CNTL_SLOWCLK_FREQ / 10000);    // scale RTC_CNTL_SLOWCLK_FREQ to avoid overflow
 }
 #endif // WITH_RTC
 

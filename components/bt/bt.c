@@ -32,9 +32,14 @@
 
 #if CONFIG_BT_ENABLED
 
+/* Bluetooth system and controller config */
+#define BTDM_CFG_BT_EM_RELEASE      (1<<0)
+#define BTDM_CFG_BT_DATA_RELEASE    (1<<1)
+/* Other reserved for future */
+
 /* not for user call, so don't put to include file */
 extern void btdm_osi_funcs_register(void *osi_funcs);
-extern void btdm_controller_init(void);
+extern void btdm_controller_init(uint32_t config_mask);
 extern void btdm_controller_schedule(void);
 extern void btdm_controller_deinit(void);
 extern int btdm_controller_enable(esp_bt_mode_t mode);
@@ -73,7 +78,7 @@ struct osi_funcs_t {
     void *(*_mutex_create)(void);
     int32_t (*_mutex_lock)(void *mutex);
     int32_t (*_mutex_unlock)(void *mutex);
-    esp_err_t (* _read_efuse_mac)(uint8_t mac[6]);
+    int32_t (* _read_efuse_mac)(uint8_t mac[6]);
 };
 
 /* Static variable declare */
@@ -124,6 +129,11 @@ static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex)
     return (int32_t)xSemaphoreGive(mutex);
 }
 
+static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
+{
+    return esp_read_mac(mac, ESP_MAC_BT);
+}
+
 static struct osi_funcs_t osi_funcs = {
     ._set_isr = xt_set_interrupt_handler,
     ._ints_on = xt_ints_on,
@@ -136,7 +146,7 @@ static struct osi_funcs_t osi_funcs = {
     ._mutex_create = mutex_create_wrapper,
     ._mutex_lock = mutex_lock_wrapper,
     ._mutex_unlock = mutex_unlock_wrapper,
-    ._read_efuse_mac = esp_efuse_read_mac,
+    ._read_efuse_mac = read_mac_wrapper
 };
 
 bool esp_vhci_host_check_send_available(void)
@@ -154,11 +164,25 @@ void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
     API_vhci_host_register_callback((const vhci_host_callback_t *)callback);
 }
 
+static uint32_t btdm_config_mask_load(void)
+{
+    uint32_t mask = 0x0;
+
+#ifdef CONFIG_BT_DRAM_RELEASE
+    mask |= (BTDM_CFG_BT_EM_RELEASE | BTDM_CFG_BT_DATA_RELEASE);
+#endif
+    return mask;
+}
+
 static void bt_controller_task(void *pvParam)
 {
+    uint32_t btdm_cfg_mask = 0;
+
     btdm_osi_funcs_register(&osi_funcs);
 
-    btdm_controller_init();
+    btdm_cfg_mask = btdm_config_mask_load();
+    btdm_controller_init(btdm_cfg_mask);
+
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
     /* Loop */

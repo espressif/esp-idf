@@ -94,14 +94,45 @@ extern "C" {
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
  */
 typedef struct {
-    system_event_handler_t event_handler;  /**< WiFi event handler */
-    uint32_t rx_buf_num;  /**< WiFi RX buffer number */
+    system_event_handler_t event_handler;          /**< WiFi event handler */
+    int                    static_rx_buf_num;      /**< WiFi static RX buffer number */
+    int                    dynamic_rx_buf_num;     /**< WiFi dynamic RX buffer number */
+    int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
+    int                    ampdu_enable;           /**< WiFi AMPDU feature enable flag */
+    int                    nvs_enable;             /**< WiFi NVS flash enable flag */
+    int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
+    int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
+#if CONFIG_ESP32_WIFI_AMPDU_ENABLED
+#define WIFI_AMPDU_ENABLED        1
+#else
+#define WIFI_AMPDU_ENABLED        0
+#endif
+
+#if CONFIG_ESP32_WIFI_NVS_ENABLED
+#define WIFI_NVS_ENABLED          1
+#else
+#define WIFI_NVS_ENABLED          0
+#endif
+
+#if CONFIG_NEWLIB_NANO_FORMAT
+#define WIFI_NANO_FORMAT_ENABLED  1
+#else
+#define WIFI_NANO_FORMAT_ENABLED  0
+#endif
+ 
+#define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
 #ifdef CONFIG_WIFI_ENABLED
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
-    .rx_buf_num = CONFIG_ESP32_WIFI_RX_BUFFER_NUM, \
+    .static_rx_buf_num = CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM,\
+    .dynamic_rx_buf_num = CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM,\
+    .dynamic_tx_buf_num = CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM,\
+    .ampdu_enable = WIFI_AMPDU_ENABLED,\
+    .nvs_enable = WIFI_NVS_ENABLED,\
+    .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
+    .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 #else
 #define WIFI_INIT_CONFIG_DEFAULT #error Wifi is disabled in config, WIFI_INIT_CONFIG_DEFAULT will not work
@@ -113,8 +144,11 @@ typedef struct {
   *         WiFi NVS structure etc, this WiFi also start WiFi task
   *
   * @attention 1. This API must be called before all other WiFi API can be called
-  * @attention 2. event_handler field in cfg should be set to a valid event handler function.
-  *            In most cases, use the WIFI_INIT_CONFIG_DEFAULT macro which sets esp_event_send().
+  * @attention 2. Always use WIFI_INIT_CONFIG_DEFAULT macro to init the config to default values, this can
+  *               guarantee all the fields got correct value when more fields are added into wifi_init_config_t
+  *               in future release. If you want to set your owner initial values, overwrite the default values
+  *               which are set by WIFI_INIT_CONFIG_DEFAULT, please be notified that the field 'magic' of 
+  *               wifi_init_config_t should always be WIFI_INIT_CONFIG_MAGIC!
   *
   * @param  config provide WiFi init configuration
   *
@@ -130,7 +164,6 @@ esp_err_t esp_wifi_init(wifi_init_config_t *config);
   *         Free all resource allocated in esp_wifi_init and stop WiFi task
   *
   * @attention 1. This API should be called if you want to remove WiFi driver from the system
-  * @attention 2. This API can not be called yet and will be done in the future.
   *
   * @return ESP_OK: succeed
   */
@@ -422,6 +455,7 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   * @brief     Set primary/secondary channel of ESP32
   *
   * @attention 1. This is a special API for sniffer
+  * @attention 2. This API should be called after esp_wifi_start() or esp_wifi_set_promiscuous()
   *
   * @param     primary  for HT20, primary is the channel number, for HT40, primary is the primary channel
   * @param     second   for HT20, second is ignored, for HT40, second is the second channel

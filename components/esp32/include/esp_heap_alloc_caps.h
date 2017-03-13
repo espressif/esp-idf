@@ -39,6 +39,16 @@
 void heap_alloc_caps_init();
 
 /**
+ * @brief Enable the memory region where the startup stacks are located for allocation
+ *
+ * On startup, the pro/app CPUs have a certain memory region they use as stack, so we 
+ * cannot do allocations in the regions these stack frames are. When FreeRTOS is 
+ * completely started, they do not use that memory anymore and allocation there can 
+ * be re-enabled.
+ */
+void heap_alloc_enable_nonos_stack_tag();
+
+/**
  * @brief Allocate a chunk of memory which has the given capabilities
  *
  * @param xWantedSize Size, in bytes, of the amount of memory to allocate
@@ -74,5 +84,7 @@ size_t xPortGetFreeHeapSizeCaps( uint32_t caps );
  * @return Amount of free bytes in the regions
  */
 size_t xPortGetMinimumEverFreeHeapSizeCaps( uint32_t caps );
+
+
 
 #endif

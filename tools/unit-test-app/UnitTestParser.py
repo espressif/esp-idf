@@ -1,5 +1,6 @@
 import yaml
 import os
+import os.path
 import re
 import sys
 import shutil
@@ -41,7 +42,7 @@ class Parser(object):
     def parse_test_folders(cls):
         test_folder_paths = list()
         os.chdir(os.path.join(IDF_PATH, "components"))
-        component_dirs = os.listdir(".")
+        component_dirs = [d for d in os.listdir(".") if os.path.isdir(d)]
         for dir in component_dirs:
             os.chdir(dir)
             if "test" in os.listdir("."):

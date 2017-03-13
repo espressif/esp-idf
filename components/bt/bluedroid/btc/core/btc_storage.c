@@ -41,14 +41,14 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     bdstr_t bdstr;
 
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
-    LOG_INFO("add to storage: Remote device:%s\n", bdstr);
+    LOG_DEBUG("add to storage: Remote device:%s\n", bdstr);
 
     int ret = btc_config_set_int(bdstr, "LinkKeyType", (int)key_type);
     ret &= btc_config_set_int(bdstr, "PinLength", (int)pin_length);
     ret &= btc_config_set_bin(bdstr, "LinkKey", link_key, sizeof(LINK_KEY));
     /* write bonded info immediately */
     btc_config_flush();
-    LOG_INFO("Storage add rslt %d\n", ret);
+    LOG_DEBUG("Storage add rslt %d\n", ret);
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
@@ -72,7 +72,7 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
             continue;
         }
 
-        LOG_INFO("Remote device:%s\n", name);
+        LOG_DEBUG("Remote device:%s\n", name);
         LINK_KEY link_key;
         size_t size = sizeof(link_key);
         if (btc_config_get_bin(name, "LinkKey", link_key, &size)) {
@@ -99,7 +99,7 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
             }
         }
         if (!bt_linkkey_file_found) {
-            LOG_INFO("Remote device:%s, no link key\n", name);
+            LOG_DEBUG("Remote device:%s, no link key\n", name);
         }
     }
     return BT_STATUS_SUCCESS;
@@ -122,7 +122,7 @@ bt_status_t btc_storage_load_bonded_devices(void)
 {
     bt_status_t status;
     status = btc_in_fetch_bonded_devices(1);
-    LOG_INFO("Storage load rslt %d\n", status);
+    LOG_DEBUG("Storage load rslt %d\n", status);
     return status;
 }
 
@@ -140,7 +140,7 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr)
 {
     bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
-    LOG_INFO("Add to storage: Remote device:%s\n", bdstr);
+    LOG_DEBUG("Add to storage: Remote device:%s\n", bdstr);
 
     int ret = 1;
     if (btc_config_exist(bdstr, "LinkKeyType")) {

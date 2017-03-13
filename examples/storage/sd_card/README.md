@@ -37,24 +37,23 @@ GPIO2 pin is used as a bootstrapping pin, and should be low to enter UART downlo
 
 ### Note about GPIO12
 
-GPIO12 is used as a bootstrapping pin to select output voltage of an internal regulator which powers the flash chip. 
+GPIO12 is used as a bootstrapping pin to select output voltage of an internal regulator which powers the flash chip (VDD_SDIO). This pin has an internal pulldown so if left unconnected it will read low at reset (selecting default 3.3V operation). When adding a pullup to this pin for SD card operation, consider the following:
 
-- For boards which don't use the internal regulator, GPIO12 can be pulled high.
-- On boards which use the internal regulator and a 3.3V flash chip, GPIO12 should be pulled up high, which is compatible with SD card operation.
-- For boards which use 3.3V flash chip, GPIO12 needs to be low at reset.
-    * In this case, internal pullup can be enabled using a `gpio_pullup_en(GPIO_NUM_12);` call. Most SD cards work fine when an internal pullup on GPIO12 line is enabled. Note that if ESP32 experiences a power-on reset while the SD card is sending data, high level on GPIO12 can be latched into the bootstrapping register, and ESP32 will enter a boot loop until external reset with correct GPIO12 level is applied.
-    * Another option is to program flash voltage selection efuses: set `XPD_SDIO_TIEH=1`, `XPD_SDIO_FORCE=1`, and `XPD_SDIO_REG = 1`. This will permanently select 3.3V output voltage for the internal regulator, and GPIO12 will not be used as a bootstrapping pin anymore. Then it is safe to connect a pullup resistor to GPIO12. This option is suggested for production use.
+- For boards which don't use the internal regulator (VDD_SDIO) to power the flash, GPIO12 can be pulled high.
+- For boards which use 1.8V flash chip, GPIO12 needs to be pulled high at reset. This is fully compatible with SD card operation.
+- On boards which use the internal regulator and a 3.3V flash chip, GPIO12 must be low at reset. This is incompatible with SD card operation.
+    * In most cases, external pullup can be omitted and an internal pullup can be enabled using a `gpio_pullup_en(GPIO_NUM_12);` call. Most SD cards work fine when an internal pullup on GPIO12 line is enabled. Note that if ESP32 experiences a power-on reset while the SD card is sending data, high level on GPIO12 can be latched into the bootstrapping register, and ESP32 will enter a boot loop until external reset with correct GPIO12 level is applied.
+    * Another option is to burn the flash voltage selection efuses. This will permanently select 3.3V output voltage for the internal regulator, and GPIO12 will not be used as a bootstrapping pin. Then it is safe to connect a pullup resistor to GPIO12. This option is suggested for production use.
 
-The following commands can be used to program flash voltage selection efuses **to 3.3V**:
+The following command can be used to program flash voltage selection efuses **to 3.3V**:
 
 ```sh
-	# Override flash regulator configuration using efuses
-	components/esptool_py/esptool/espefuse.py burn_efuse XPD_SDIO_FORCE
-	# Select 3.3V output voltage
-	components/esptool_py/esptool/espefuse.py burn_efuse XPD_SDIO_TIEH
-	# Enable internal voltage regulator
-	components/esptool_py/esptool/espefuse.py burn_efuse XPD_SDIO_REG
+    components/esptool_py/esptool/espefuse.py set_flash_voltage 3.3V
 ```
+
+This command will burn the `XPD_SDIO_TIEH`, `XPD_SDIO_FORCE`, and `XPD_SDIO_REG` efuses. With all three burned to value 1, the internal VDD_SDIO flash voltage regulator is permanently enabled at 3.3V. See the technical reference manual for more details.
+
+`espefuse.py` has a `--do-not-confirm` option if running from an automated flashing script.
 
 ## 4-line and 1-line modes
 

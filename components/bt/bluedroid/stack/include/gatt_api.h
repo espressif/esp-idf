@@ -65,6 +65,8 @@
 #define  GATT_CONGESTED                      0x8f
 #define  GATT_STACK_RSP                      0x90
 #define  GATT_APP_RSP                        0x91
+//Error caused by customer application or stack bug
+#define  GATT_ESP_ERROR                      0X9f
 
 /* 0xE0 ~ 0xFC reserved for future use */
 #define  GATT_CCC_CFG_ERR                    0xFD /* Client Characteristic Configuration Descriptor Improperly Configured */

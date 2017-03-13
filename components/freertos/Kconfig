@@ -76,17 +76,38 @@ config FREERTOS_CHECK_STACKOVERFLOW_CANARY
         (configCHECK_FOR_STACK_OVERFLOW=2)
 endchoice
 
+config FREERTOS_WATCHPOINT_END_OF_STACK
+    bool "Set a debug watchpoint as a stack overflow check"
+    default n
+    help
+        FreeRTOS can check if a stack has overflown its bounds by checking either the value of
+        the stack pointer or by checking the integrity of canary bytes. (See FREERTOS_CHECK_STACKOVERFLOW
+        for more information.) These checks only happen on a context switch, and the situation that caused
+        the stack overflow may already be long gone by then. This option will use the debug memory
+        watchpoint 1 (the second one) to allow breaking into the debugger (or panic'ing) as soon as any
+        of the last 32 bytes on the stack of a task are overwritten. The side effect is that using gdb, you
+        effectively only have one watchpoint; the 2nd one is overwritten as soon as a task switch happens.
+
+        This check only triggers if the stack overflow writes within 4 bytes of the end of the stack, rather than
+        overshooting further, so it is worth combining this approach with one of the other stack overflow check methods.
+
+        When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no OCD is attached, esp-idf
+        will panic on an unhandled debug exception.
+
 config FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
-    int "Amount of thread local storage pointers"
-    range 0 256 if !WIFI_ENABLED
-    range 1 256 if WIFI_ENABLED
+    int "Number of thread local storage pointers"
+    range 0 256 if !(WIFI_ENABLED || ETHERNET)
+    range 1 256 if WIFI_ENABLED || ETHERNET
     default 1
     help
         FreeRTOS has the ability to store per-thread pointers in the task
-        control block. This controls the amount of pointers available;
-        0 turns off this functionality.
+        control block. This controls the number of pointers available.
 
-        If using the WiFi stack, this value must be at least 1.
+        Value 0 turns off this functionality.
+
+        If using the LWIP TCP/IP stack (with WiFi or Ethernet), this value must be at least 1. See the
+        LWIP_THREAD_LOCAL_STORAGE_INDEX config item in LWIP configuration to determine which thread-local-storage
+        pointer is reserved for LWIP.
 
 choice FREERTOS_ASSERT
     prompt "FreeRTOS assertions"
@@ -164,6 +185,17 @@ config FREERTOS_LEGACY_TICK_HOOK
 
 endif #FREERTOS_LEGACY_HOOKS
 
+config FREERTOS_MAX_TASK_NAME_LEN
+    int "Maximum task name length"
+    range 1 256
+    default 16
+    help
+        Changes the maximum task name length. Each task allocated will
+        include this many bytes for a task name. Using a shorter value
+        saves a small amount of RAM, a longer value allows more complex
+        names.
+
+        For most uses, the default of 16 is OK.
 
 menuconfig FREERTOS_DEBUG_INTERNALS
     bool "Debug FreeRTOS internals"
@@ -191,22 +223,6 @@ config FREERTOS_PORTMUX_DEBUG_RECURSIVE
         If enabled, additional debug information will be printed for recursive
         portMUX usage.
 endif #FREERTOS_UNICORE
-
-
-config FREERTOS_WATCHPOINT_END_OF_STACK
-    bool "Set a debug watchpoint at the end of each stack"
-    default n
-    help
-        FreeRTOS can check if a stack has overflown its bounds by checking either the value of
-        the stack pointer or by checking the integrity of canary bytes. (See FREERTOS_CHECK_STACKOVERFLOW
-        for more information.) These checks only happen on a context switch, and the situation that caused
-        the stack overflow may already be long gone by then. This option will use the debug memory 
-        watchpoint 1 (the second one) to allow breaking into the debugger (or panic'ing) as soon as any 
-        of the last 32 bytes on the stack of a task are overwritten. The side effect is that using gdb, you
-        effectively only have one watchpoint; the 2nd one is overwritten as soon as a task switch happens.
-        
-        When this watchpoint is hit, gdb will stop with a SIGTRAP message. When no OCD is attached, esp-idf
-        will panic on an unhandled debug exception.
 
 endif # FREERTOS_DEBUG_INTERNALS
 

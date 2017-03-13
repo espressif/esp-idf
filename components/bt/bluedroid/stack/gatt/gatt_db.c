@@ -268,14 +268,21 @@ static tGATT_STATUS read_attr_value (void *p_attr,
             status = GATT_SUCCESS;
         }
     } else { /* characteristic description or characteristic value */
-
         if (p_attr16->control.auto_rsp == GATT_RSP_BY_STACK) {
-            if (p_attr16->p_value != NULL && p_attr16->p_value->attr_val.attr_val != NULL) {
-                uint8_t *value = p_attr16->p_value->attr_val.attr_val + offset;
-                len = (mtu >= p_attr16->p_value->attr_val.attr_len) ? (p_attr16->p_value->attr_val.attr_len) : mtu;
-                ARRAY_TO_STREAM(p, value, len);
+            if (p_attr16->p_value == NULL || p_attr16->p_value->attr_val.attr_val == NULL) {
+                status = GATT_ESP_ERROR;
             }
-            status = GATT_STACK_RSP;
+            else if (offset > p_attr16->p_value->attr_val.attr_len){
+			/*if offset equal to max_len, should respond with zero byte value
+            //if offset is greater than max_len, should respond with an error*/
+                status = GATT_INVALID_OFFSET;
+            } else { 
+                UINT8 *value = (UINT8 *)(p_attr16->p_value->attr_val.attr_val) + offset;
+                UINT16 len_left = p_attr16->p_value->attr_val.attr_len - offset;
+                len = (mtu >= len_left) ? (len_left) : mtu;
+                ARRAY_TO_STREAM(p, value, len);
+                status = GATT_STACK_RSP;
+            }
 
         } else {
             status = GATT_PENDING;
@@ -463,6 +470,27 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
     tBT_UUID        uuid = {LEN_UUID_16, {GATT_UUID_CHAR_DECLARE}};
 
     GATT_TRACE_DEBUG("gatts_add_characteristic perm=0x%0x property=0x%0x\n", perm, property);
+    /* parameter validation check */
+    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
+        if (attr_val == NULL){
+            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute, attr_val should not be NULL here\n",\
+                            __func__, __LINE__);
+            return 0;
+        } else if (attr_val->attr_max_len == 0){
+            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
+                            __func__, __LINE__);
+            return 0;
+        }
+    }
+
+    if (attr_val != NULL){
+        if (attr_val->attr_len > attr_val->attr_max_len){
+            GATT_TRACE_ERROR("Error in %s, line=%d,attribute actual length should not be larger than max length\n",\
+                            __func__, __LINE__);
+            return 0;
+        }
+    }
+
 
     if ((p_char_decl = (tGATT_ATTR16 *)allocate_attr_in_db(p_db, &uuid, GATT_PERM_READ)) != NULL) {
         if (!copy_extra_byte_in_db(p_db, (void **)&p_char_decl->p_value, sizeof(tGATT_CHAR_DECL))) {
@@ -483,10 +511,9 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             p_char_val->control.auto_rsp  =  control->auto_rsp;
         } else {
             p_char_val->control.auto_rsp = GATT_RSP_DEFAULT;
-
         }
 
-        if (attr_val  != NULL) {
+        if (attr_val != NULL) {
             if (!copy_extra_byte_in_db(p_db, (void **)&p_char_val->p_value, sizeof(tGATT_ATTR_VAL))) {
                 deallocate_attr_in_db(p_db, p_char_val);
                 return 0;
@@ -496,12 +523,23 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             p_char_val->p_value->attr_val.attr_len = attr_val->attr_len;
             p_char_val->p_value->attr_val.attr_max_len = attr_val->attr_max_len;
             p_char_val->p_value->attr_val.attr_val = GKI_getbuf(attr_val->attr_max_len);
-            if (p_char_val->p_value->attr_val.attr_val != NULL) {
-                GATT_TRACE_DEBUG("attribute value not NULL");
-                memcpy(p_char_val->p_value->attr_val.attr_val, attr_val->attr_val, attr_val->attr_len);
+            if (p_char_val->p_value->attr_val.attr_val == NULL) {
+               deallocate_attr_in_db(p_db, p_char_decl);
+               deallocate_attr_in_db(p_db, p_char_val);
+               GATT_TRACE_WARNING("Warning in %s, line=%d, insufficient resource to allocate for attribute value\n", __func__, __LINE__);
+               return 0;
             }
-        } else {
-            p_char_val->p_value = NULL;
+            
+            //initiate characteristic attribute value part
+            memset(p_char_val->p_value->attr_val.attr_val, 0, attr_val->attr_max_len);
+            if (attr_val->attr_val != NULL) {
+                if (attr_val->attr_max_len < attr_val->attr_len){
+                    GATT_TRACE_ERROR("Error in %s, Line=%d, attribute actual length (%d) should not larger than max size (%d)\n",
+                                    __func__, __LINE__, attr_val->attr_len, attr_val->attr_max_len);
+                }
+                UINT16 actual_len = (attr_val->attr_max_len < attr_val->attr_len) ? (attr_val->attr_max_len) : (attr_val->attr_len);
+                memcpy(p_char_val->p_value->attr_val.attr_val, attr_val->attr_val, actual_len);
+            }
         }
 
         return p_char_val->handle;
@@ -582,14 +620,35 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
 
     GATT_TRACE_DEBUG("gatts_add_char_descr uuid=0x%04x\n", p_descr_uuid->uu.uuid16);
 
+    /* parameter validation check */
+    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
+        if (attr_val == NULL){
+            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute, attr_val should not be NULL here\n",\
+                    __func__, __LINE__);
+            return 0;
+        } else if (attr_val->attr_max_len == 0){
+            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
+                    __func__, __LINE__);
+            return 0;
+        }
+    }
+
+    if (attr_val != NULL){
+        if (attr_val->attr_len > attr_val->attr_max_len){
+            GATT_TRACE_ERROR("Error in %s, line=%d,attribute actual length (%d) should not be larger than max length (%d)\n",\
+                    __func__, __LINE__, attr_val->attr_len, attr_val->attr_max_len);
+            return 0;
+        }
+    }
+
+
     /* Add characteristic descriptors */
     if ((p_char_dscptr = (tGATT_ATTR16 *)allocate_attr_in_db(p_db, p_descr_uuid, perm)) == NULL) {
+        deallocate_attr_in_db(p_db, p_char_dscptr);
         GATT_TRACE_DEBUG("gatts_add_char_descr Fail for adding char descriptors.");
         return 0;
     } else {
-        if (control != NULL) {
-            p_char_dscptr->control.auto_rsp = control->auto_rsp;
-        }
+        p_char_dscptr->control.auto_rsp = (control == NULL) ? GATT_RSP_DEFAULT : (control->auto_rsp);
         if (attr_val != NULL) {
             if (!copy_extra_byte_in_db(p_db, (void **)&p_char_dscptr->p_value, sizeof(tGATT_ATTR_VAL))) {
                 deallocate_attr_in_db(p_db, p_char_dscptr);
@@ -597,10 +656,17 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
             }
             p_char_dscptr->p_value->attr_val.attr_len = attr_val->attr_len;
             p_char_dscptr->p_value->attr_val.attr_max_len  = attr_val->attr_max_len;
-            if (attr_val->attr_val != NULL) {
+            if (attr_val->attr_max_len != 0) {
                 p_char_dscptr->p_value->attr_val.attr_val = GKI_getbuf(attr_val->attr_max_len);
-                if (p_char_dscptr->p_value->attr_val.attr_val != NULL) {
-                    memset(p_char_dscptr->p_value->attr_val.attr_val, 0, attr_val->attr_max_len);
+                if (p_char_dscptr->p_value->attr_val.attr_val == NULL) {
+                    deallocate_attr_in_db(p_db, p_char_dscptr);
+                    GATT_TRACE_WARNING("Warning in %s, line=%d, insufficient resource to allocate for descriptor value\n", __func__, __LINE__);
+                    return 0;
+                }
+
+                //initiate characteristic attribute value part
+                memset(p_char_dscptr->p_value->attr_val.attr_val, 0, attr_val->attr_max_len);
+                if(attr_val->attr_val != NULL) {
                     memcpy(p_char_dscptr->p_value->attr_val.attr_val, attr_val->attr_val, attr_val->attr_len);
                 }
             }
@@ -625,7 +691,7 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
 **
 *******************************************************************************/
 tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
-                                       UINT16 length, UINT8 *value)
+                                               UINT16 length, UINT8 *value)
 {
     tGATT_ATTR16  *p_cur;
 
@@ -637,50 +703,45 @@ tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
         GATT_TRACE_DEBUG("gatts_set_attribute_value Fail:p_db->p_attr_list is NULL.\n");
         return GATT_INVALID_PDU;
     }
+    if ((length > 0) && (value == NULL)){
+        GATT_TRACE_ERROR("Error in %s, line=%d, value should not be NULL here\n",__func__, __LINE__);
+        return GATT_INVALID_PDU;
+    }
 
     p_cur    =  (tGATT_ATTR16 *) p_db->p_attr_list;
 
     while (p_cur != NULL) {
         if (p_cur->handle == attr_handle) {
-
+            /* for characteristic should not be set, return GATT_NOT_FOUND */
             if (p_cur->uuid_type == GATT_ATTR_UUID_TYPE_16) {
                 switch (p_cur->uuid) {
-                case GATT_UUID_PRI_SERVICE:
-                case GATT_UUID_SEC_SERVICE:
-                case GATT_UUID_CHAR_DECLARE:
-                case GATT_UUID_INCLUDE_SERVICE:
-                    return GATT_NOT_FOUND;
-                default:
-                    if (p_cur->p_value != NULL && p_cur->p_value->attr_val.attr_max_len < length) {
-                        GATT_TRACE_ERROR("gatts_set_attribute_vaule failt:Invalid value length");
-                        return GATT_INVALID_ATTR_LEN;
-                    } else if (p_cur->p_value != NULL && p_cur->p_value->attr_val.attr_max_len > 0) {
-                        memcpy(p_cur->p_value->attr_val.attr_val, value, length);
-                        p_cur->p_value->attr_val.attr_len = length;
-                    } else {
-                        return GATT_INVALID_ATTR_LEN;
-                    }
-                    break;
+                    case GATT_UUID_PRI_SERVICE:
+                    case GATT_UUID_SEC_SERVICE:
+                    case GATT_UUID_CHAR_DECLARE:
+                        return GATT_NOT_FOUND;
+                        break;
                 }
-            } else {
-                if (p_cur->p_value != NULL && p_cur->p_value->attr_val.attr_max_len < length) {
-                    GATT_TRACE_ERROR("gatts_set_attribute_vaule failt:Invalid value length");
-                } else if (p_cur->p_value != NULL && p_cur->p_value->attr_val.attr_max_len > 0) {
-                    memcpy(p_cur->p_value->attr_val.attr_val, value, length);
-                    p_cur->p_value->attr_val.attr_len = length;
-                } else {
-                    return GATT_INVALID_ATTR_LEN;
-                }
+            }
+
+            /* in other cases, value can be set*/
+            if ((p_cur->p_value == NULL) || (p_cur->p_value->attr_val.attr_val == NULL) \
+                    || (p_cur->p_value->attr_val.attr_max_len == 0)){
+                GATT_TRACE_ERROR("Error in %s, line=%d, attribute value should not be NULL here\n", __func__, __LINE__);
+                return GATT_NOT_FOUND;
+            } else if (p_cur->p_value->attr_val.attr_max_len < length) {
+                GATT_TRACE_ERROR("gatts_set_attribute_value failed:Invalid value length");
+                return GATT_INVALID_ATTR_LEN;
+            } else{
+                memcpy(p_cur->p_value->attr_val.attr_val, value, length);
+                p_cur->p_value->attr_val.attr_len = length;
             }
             break;
         }
-
         p_cur = p_cur->p_next;
     }
 
     return GATT_SUCCESS;
 }
-
 
 /*******************************************************************************
 **
@@ -872,20 +933,25 @@ tGATT_STATUS gatts_write_attr_value_by_handle(tGATT_SVC_DB *p_db,
                     return GATT_APP_RSP;
                 }
 
-                if (p_attr->p_value != NULL && (p_attr->p_value->attr_val.attr_max_len >=
-                                                offset + len)) {
+                if ((p_attr->p_value != NULL) && 
+                    (p_attr->p_value->attr_val.attr_max_len >= offset + len) && 
+                    p_attr->p_value->attr_val.attr_val != NULL) {
                     memcpy(p_attr->p_value->attr_val.attr_val + offset, p_value, len);
                     p_attr->p_value->attr_val.attr_len = len + offset;
                     return GATT_SUCCESS;
-                } else {
-                    return GATT_NOT_LONG;
+                } else if (p_attr->p_value->attr_val.attr_max_len < offset + len){
+                    GATT_TRACE_DEBUG("Remote device try to write with a length larger then attribute's max length\n");
+                    return GATT_INVALID_ATTR_LEN;               
+                } else if ((p_attr->p_value == NULL) || (p_attr->p_value->attr_val.attr_val == NULL)){
+                    GATT_TRACE_ERROR("Error in %s, line=%d, %s should not be NULL here\n", __func__, __LINE__, \
+                                    (p_attr->p_value == NULL) ? "p_value" : "attr_val.attr_val");
+                    return GATT_ESP_ERROR;
                 }
             }
 
             p_attr = (tGATT_ATTR16 *)p_attr->p_next;
 
         }
-
     }
 
     return status;

@@ -330,6 +330,10 @@ struct netif {
   u16_t loop_cnt_current;
 #endif /* LWIP_LOOPBACK_MAX_PBUFS */
 #endif /* ENABLE_LOOPBACK */
+
+#if ESP_LWIP
+  void (*l2_buffer_free_notify)(void *user_buf); /* Allows LWIP to notify driver when a L2-supplied pbuf can be freed */
+#endif
 };
 
 #if LWIP_CHECKSUM_CTRL_PER_NETIF

@@ -105,6 +105,28 @@ config MEMMAP_SPISRAM
         main memory map. Enable this if you have this hardware and want to use it in the same
         way as on-chip RAM.
 
+choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
+    bool "Number of MAC address generated from the hardware MAC address in efuse"
+    default FOUR_MAC_ADDRESS_FROM_EFUSE
+    help
+        Config the number of MAC address which is generated from the hardware MAC address in efuse.
+        If the number is two, the MAC addresses of WiFi station and bluetooth are generated from
+        the hardware MAC address in efuse. The MAC addresses of WiFi softap and ethernet are derived
+        from that of WiFi station and bluetooth respectively. 
+        If the number is four, the MAC addresses of WiFi station, WiFi softap, bluetooth and ethernet
+        are all generated from the hardware MAC address in efuse.
+
+config TWO_MAC_ADDRESS_FROM_EFUSE
+    bool "Two"
+config FOUR_MAC_ADDRESS_FROM_EFUSE
+    bool "Four"
+endchoice
+
+config NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
+    int 
+    default 2 if TWO_MAC_ADDRESS_FROM_EFUSE 
+    default 4 if FOUR_MAC_ADDRESS_FROM_EFUSE 
+
 config SYSTEM_EVENT_QUEUE_SIZE
     int "System event queue size"
     default 32
@@ -491,15 +513,61 @@ config SW_COEXIST_ENABLE
         automatically managed, no user intervention is required.
 
 
-config ESP32_WIFI_RX_BUFFER_NUM
-    int "Max number of WiFi RX buffers"
+config ESP32_WIFI_STATIC_RX_BUFFER_NUM
+    int "Max number of WiFi static RX buffers"
     depends on WIFI_ENABLED
     range 2 25
     default 10
     help
-        Set the number of WiFi rx buffers. Each buffer takes approximately 1.6KB of RAM.
-        Larger number for higher throughput but more memory. Smaller number for lower
-        throughput but less memory.
+        Set the number of WiFi static rx buffers. Each buffer takes approximately 1.6KB of RAM.
+        The static rx buffers are allocated when esp_wifi_init is called, they are not freed
+        until esp_wifi_deinit is called. 
+        WiFi hardware use these buffers to receive packets, generally larger number for higher
+        throughput but more memory, smaller number for lower throughput but less memory.
+
+config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
+    int "Max number of WiFi dynamic RX buffers"
+    depends on WIFI_ENABLED
+    range 0 64
+    default 0
+    help
+        Set the number of WiFi dynamic rx buffers, 0 means no limitation for dynamic rx buffer
+        allocation. The size of dynamic rx buffers is not fixed.
+        For each received packet in static rx buffers, WiFi driver makes a copy
+        to dynamic rx buffers and then deliver it to high layer stack. The dynamic rx buffer
+        is freed when the application, such as socket, successfully received the packet.
+        For some applications, the WiFi driver receiving speed is faster than application 
+        consuming speed, we may run out of memory if no limitation for the dynamic rx buffer
+        number.  Generally the number of dynamic rx buffer should be no less than static
+        rx buffer number if it is not 0. 
+
+config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
+    int "Max number of WiFi dynamic TX buffers"
+    depends on WIFI_ENABLED
+    range 16 64
+    default 32
+    help
+        Set the number of WiFi dynamic tx buffers, 0 means no limitation for dynamic tx buffer
+        allocation. The size of dynamic tx buffers is not fixed.
+        For each tx packet from high layer stack, WiFi driver make a copy of it. For some applications,
+        especially the UDP application, the high layer deliver speed is faster than the WiFi tx
+        speed, we may run out of memory if no limitation for the dynamic tx buffer number. 
+
+
+config ESP32_WIFI_AMPDU_ENABLED
+    bool "WiFi AMPDU"
+    depends on WIFI_ENABLED
+    default y
+    help
+        Select this option to enable AMPDU feature
+
+
+config ESP32_WIFI_NVS_ENABLED
+    bool "WiFi NVS flash"
+    depends on WIFI_ENABLED
+    default y
+    help
+        Select this option to enable WiFi NVS flash
 
 config PHY_ENABLED
 	bool

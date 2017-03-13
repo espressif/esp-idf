@@ -84,7 +84,9 @@ low_level_init(struct netif *netif)
 #endif
 #endif
 
-  /* Do whatever else is needed to initialize interface. */
+#if !ESP_L2_TO_L3_COPY
+  netif->l2_buffer_free_notify = esp_wifi_internal_free_rx_buffer;
+#endif
 }
 
 /**
@@ -119,6 +121,7 @@ low_level_output(struct netif *netif, struct pbuf *p)
     LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
     q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
     if (q != NULL) {
+      q->l2_owner = NULL;
       pbuf_copy(q, p);
     } else {
       return ERR_MEM;
@@ -154,6 +157,7 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
     esp_wifi_internal_free_rx_buffer(eb);
     return;
   }
+  p->l2_owner = NULL;
   memcpy(p->payload, buffer, len);
   esp_wifi_internal_free_rx_buffer(eb);
 #else
@@ -163,8 +167,8 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
     return;
   }
   p->payload = buffer;
-  p->user_buf = eb;
-  p->user_flag = PBUF_USER_FLAG_OWNER_WIFI;
+  p->l2_owner = netif;
+  p->l2_buf = eb;
 #endif
 
   /* full packet send to tcpip_thread to process */

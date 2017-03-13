@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "driver/gpio.h"
+#include "driver/touch_pad.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,12 +51,28 @@ typedef enum {
     ESP_PD_OPTION_AUTO      //!< Keep power domain enabled in deep sleep, if it is needed by one of the wakeup options. Otherwise power it down.
 } esp_deep_sleep_pd_option_t;
 
+/**
+ * @brief Deep sleep wakeup cause
+ */
+typedef enum {
+    ESP_DEEP_SLEEP_WAKEUP_UNDEFINED,    //! Wakeup was not caused by deep sleep
+    ESP_DEEP_SLEEP_WAKEUP_EXT0,         //! Wakeup caused by external signal using RTC_IO
+    ESP_DEEP_SLEEP_WAKEUP_EXT1,         //! Wakeup caused by external signal using RTC_CNTL
+    ESP_DEEP_SLEEP_WAKEUP_TIMER,        //! Wakeup caused by timer
+    ESP_DEEP_SLEEP_WAKEUP_TOUCHPAD,     //! Wakeup caused by touchpad
+    ESP_DEEP_SLEEP_WAKEUP_ULP,          //! Wakeup caused by ULP program
+} esp_deep_sleep_wakeup_cause_t;
+
 
 /**
  * @brief Enable wakeup by ULP coprocessor
+ * @note In revisions 0 and 1 of the ESP32, ULP wakeup source
+ *       can not be used when RTC_PERIPH power domain is forced
+ *       to be powered on (ESP_PD_OPTION_ON) or when ext0 wakeup
+ *       source is used.
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled.
+ *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled or if wakeup triggers conflict
  */
 esp_err_t esp_deep_sleep_enable_ulp_wakeup();
 
@@ -67,6 +84,29 @@ esp_err_t esp_deep_sleep_enable_ulp_wakeup();
  *      - ESP_ERR_INVALID_ARG if value is out of range (TBD)
  */
 esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us);
+
+/**
+ * @brief Enable wakeup by touch sensor
+ *
+ * @note In revisions 0 and 1 of the ESP32, touch wakeup source
+ *       can not be used when RTC_PERIPH power domain is forced
+ *       to be powered on (ESP_PD_OPTION_ON) or when ext0 wakeup
+ *       source is used.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
+ */
+esp_err_t esp_deep_sleep_enable_touchpad_wakeup();
+
+/**
+ * @brief Get the touch pad which caused wakeup
+ *
+ * If wakeup was caused by another source, this function will return TOUCH_PAD_MAX;
+ *
+ * @return touch pad which caused wakeup
+ */
+touch_pad_t esp_deep_sleep_get_touchpad_wakeup_status();
 
 /**
  * @brief Enable wakeup using a pin
@@ -81,6 +121,9 @@ esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us);
  *       configured in esp_deep_sleep_start, immediately before
  *       entering deep sleep.
  *
+ * @note In revisions 0 and 1 of the ESP32, ext0 wakeup source
+ *       can not be used together with touch or ULP wakeup sources.
+ *
  * @param gpio_num  GPIO number used as wakeup source. Only GPIOs which are have RTC
  *             functionality can be used: 0,2,4,12-15,25-27,32-39.
  * @param level  input level which will trigger wakeup (0=low, 1=high)
@@ -88,6 +131,7 @@ esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us);
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if the selected GPIO is not an RTC GPIO,
  *        or the mode is invalid
+ *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
 esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
 
@@ -187,6 +231,15 @@ void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
  * @param time_in_us  deep-sleep time, unit: microsecond
  */
 void system_deep_sleep(uint64_t time_in_us) __attribute__((noreturn, deprecated));
+
+
+/**
+ * @brief Get the source which caused deep sleep wakeup
+ *
+ * @return wakeup cause, or ESP_DEEP_SLEEP_WAKEUP_UNDEFINED if reset reason is other than deep sleep reset.
+ */
+esp_deep_sleep_wakeup_cause_t esp_deep_sleep_get_wakeup_cause();
+
 
 /**
  * @brief Default stub to run on wake from deep sleep.

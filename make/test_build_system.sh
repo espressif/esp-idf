@@ -29,7 +29,9 @@
 [ -z ${TMP} ] && TMP="/tmp"
 # override ESP_IDF_TEMPLATE_GIT to point to a local dir if you're testing and want fast iterations
 [ -z ${ESP_IDF_TEMPLATE_GIT} ] && ESP_IDF_TEMPLATE_GIT=https://github.com/espressif/esp-idf-template.git
-export V=1
+
+# uncomment next line to produce a lot more debug output
+#export V=1
 
 function run_tests()
 {
@@ -133,7 +135,7 @@ function run_tests()
     # make a copy of esp-idf and CRLFify it
     CRLF_ESPIDF=${TESTDIR}/esp-idf-crlf
     mkdir -p ${CRLF_ESPIDF}
-    cp -rv ${IDF_PATH}/* ${CRLF_ESPIDF}
+    cp -r ${IDF_PATH}/* ${CRLF_ESPIDF}
     # don't CRLFify executable files, as Linux will fail to execute them
     find ${CRLF_ESPIDF} -type f ! -perm 755 -exec unix2dos {} \;
     make IDF_PATH=${CRLF_ESPIDF} || failure "Failed to build with CRLFs in source"
@@ -148,9 +150,9 @@ function run_tests()
     make
     assert_rebuilt ${APP_BINS} ${BOOTLOADER_BINS}
 
-    print_status "Touching peripherals ld file should only re-link app"
+    print_status "Touching app-only ld file should only re-link app"
     take_build_snapshot
-    touch ${IDF_PATH}/components/esp32/ld/esp32.peripherals.ld
+    touch ${IDF_PATH}/components/esp32/ld/esp32.common.ld
     make
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS}

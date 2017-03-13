@@ -7,7 +7,7 @@ System API
    Memory Allocation <mem_alloc>
    Interrupt Allocation <intr_alloc>
    Watchdogs <wdts>
-   OTA <ota>
+   Over The Air Updates (OTA) <ota>
    Deep Sleep <deep_sleep>
    Logging <log>
 

@@ -606,7 +606,7 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
     case BTA_AV_RECONFIG_EVT:
         if ((btc_av_cb.flags & BTC_AV_FLAG_PENDING_START) &&
                 (p_av->reconfig.status == BTA_AV_SUCCESS)) {
-            APPL_TRACE_WARNING("reconfig done BTA_AVstart()\n");
+            LOG_WARN("reconfig done BTA_AVstart()\n");
             BTA_AvStart();
         } else if (btc_av_cb.flags & BTC_AV_FLAG_PENDING_START) {
             btc_av_cb.flags &= ~BTC_AV_FLAG_PENDING_START;
@@ -905,7 +905,7 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
             memcpy(&(arg.mcc.cie), (uint8_t *)p_data + 3, ESP_A2D_CIE_LEN_SBC);
             btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
         } else {
-            APPL_TRACE_ERROR("ERROR dump_codec_info A2D_ParsSbcInfo fail:%d\n", a2d_status);
+            LOG_ERROR("ERROR dump_codec_info A2D_ParsSbcInfo fail:%d\n", a2d_status);
         }
     }
 }
@@ -972,7 +972,7 @@ static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid)
     btc_av_connect_req_t connect_req;
     connect_req.target_bda = bd_addr;
     connect_req.uuid = uuid;
-    LOG_INFO("%s\n", __FUNCTION__);
+    LOG_DEBUG("%s\n", __FUNCTION__);
 
     btc_sm_dispatch(btc_av_cb.sm_handle, BTC_AV_CONNECT_REQ_EVT, (char *)&connect_req);
 
@@ -998,7 +998,7 @@ bt_status_t btc_a2d_sink_connect(bt_bdaddr_t* remote_bda)
 *******************************************************************************/
 static void btc_a2d_sink_deinit(void)
 {
-    LOG_INFO("%s\n", __FUNCTION__);
+    LOG_DEBUG("%s\n", __FUNCTION__);
 
     btc_a2dp_stop_media_task();
 

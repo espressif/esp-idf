@@ -19,13 +19,13 @@
 #include "bt.h"
 #include "future.h"
 
-static bool esp_already_enable = false;
-static bool esp_already_init = false;
+static bool bd_already_enable = false;
+static bool bd_already_init = false;
 
 esp_bluedroid_status_t esp_bluedroid_get_status(void)
 {
-    if (esp_already_init) {
-        if (esp_already_enable) {
+    if (bd_already_init) {
+        if (bd_already_enable) {
             return ESP_BLUEDROID_STATUS_ENABLED;
         } else {
             return ESP_BLUEDROID_STATUS_INITIALIZED;
@@ -40,15 +40,20 @@ esp_err_t esp_bluedroid_enable(void)
     btc_msg_t msg;
     future_t **future_p;
 
-    if (esp_already_enable) {
-        LOG_ERROR("%s already enable\n", __func__);
+    if (!bd_already_init) {
+        LOG_ERROR("Bludroid not initialised\n");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (bd_already_enable) {
+        LOG_ERROR("Bluedroid already enabled\n");
         return ESP_ERR_INVALID_STATE;
     }
 
     future_p = btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
-        LOG_ERROR("%s failed\n", __func__);
+        LOG_ERROR("Bluedroid enable failed\n");
         return ESP_ERR_NO_MEM;
     }
 
@@ -58,11 +63,11 @@ esp_err_t esp_bluedroid_enable(void)
     btc_transfer_context(&msg, NULL, 0, NULL);
 
     if (future_await(*future_p) == FUTURE_FAIL) {
-        LOG_ERROR("%s failed\n", __func__);
+        LOG_ERROR("Bluedroid enable failed\n");
         return ESP_FAIL;
     }
 
-    esp_already_enable = true;
+    bd_already_enable = true;
 
     return ESP_OK;
 }
@@ -72,15 +77,15 @@ esp_err_t esp_bluedroid_disable(void)
     btc_msg_t msg;
     future_t **future_p;
 
-    if (!esp_already_enable) {
-        LOG_ERROR("%s already disable\n", __func__);
+    if (!bd_already_enable) {
+        LOG_ERROR("Bluedroid already disabled\n");
         return ESP_ERR_INVALID_STATE;
     }
 
     future_p = btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
-        LOG_ERROR("%s failed\n", __func__);
+        LOG_ERROR("Bluedroid disable failed\n");
         return ESP_ERR_NO_MEM;
     }
 
@@ -90,11 +95,11 @@ esp_err_t esp_bluedroid_disable(void)
     btc_transfer_context(&msg, NULL, 0, NULL);
 
     if (future_await(*future_p) == FUTURE_FAIL) {
-        LOG_ERROR("%s failed\n", __func__);
+        LOG_ERROR("Bluedroid disable failed\n");
         return ESP_FAIL;
     }
 
-    esp_already_enable = false;
+    bd_already_enable = false;
 
     return ESP_OK;
 }
@@ -105,19 +110,19 @@ esp_err_t esp_bluedroid_init(void)
     future_t **future_p;
 
     if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        LOG_ERROR("%s conroller not init\n", __func__);
+        LOG_ERROR("Conroller not initialised\n");
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (esp_already_init) {
-        LOG_ERROR("%s already init\n", __func__);
+    if (bd_already_init) {
+        LOG_ERROR("Bluedroid already initialised\n");
         return ESP_ERR_INVALID_STATE;
     }
 
     future_p = btc_main_get_future_p(BTC_MAIN_INIT_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
-        LOG_ERROR("%s failed\n", __func__);
+        LOG_ERROR("Bluedroid initialise failed\n");
         return ESP_ERR_NO_MEM;
     }
 
@@ -129,11 +134,11 @@ esp_err_t esp_bluedroid_init(void)
     btc_transfer_context(&msg, NULL, 0, NULL);
 
     if (future_await(*future_p) == FUTURE_FAIL) {
-        LOG_ERROR("%s failed\n", __func__);
+        LOG_ERROR("Bluedroid initialise failed\n");
         return ESP_FAIL;
     }
 
-    esp_already_init = true;
+    bd_already_init = true;
 
     return ESP_OK;
 }
@@ -144,15 +149,20 @@ esp_err_t esp_bluedroid_deinit(void)
     btc_msg_t msg;
     future_t **future_p;
 
-    if (!esp_already_init) {
-        LOG_ERROR("%s already deinit\n", __func__);
+    if (!bd_already_init) {
+        LOG_ERROR("Bluedroid already de-initialised\n");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (bd_already_enable) {
+        LOG_ERROR("Bludroid already enabled, do disable first\n");
         return ESP_ERR_INVALID_STATE;
     }
 
     future_p = btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
-        LOG_ERROR("%s failed\n", __func__);
+        LOG_ERROR("Bluedroid de-initialise failed\n");
         return ESP_ERR_NO_MEM;
     }
 
@@ -162,15 +172,14 @@ esp_err_t esp_bluedroid_deinit(void)
     btc_transfer_context(&msg, NULL, 0, NULL);
 
     if (future_await(*future_p) == FUTURE_FAIL) {
-        LOG_ERROR("%s failed\n", __func__);
+        LOG_ERROR("Bluedroid de-initialise failed\n");
         return ESP_FAIL;
     }
 
     btc_deinit();
 
-    esp_already_init = false;
+    bd_already_init = false;
 
     return ESP_OK;
 }
-
 

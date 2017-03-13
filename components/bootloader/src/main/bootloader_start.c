@@ -46,6 +46,7 @@
 #include "bootloader_random.h"
 #include "bootloader_config.h"
 #include "rtc.h"
+#include "flash_qio_mode.h"
 
 extern int _bss_start;
 extern int _bss_end;
@@ -106,14 +107,13 @@ void IRAM_ATTR call_start_cpu0()
 }
 
 
-/**
- *  @function :     load_partition_table
- *  @description:   Parse partition table, get useful data such as location of 
- *                  OTA info sector, factory app sector, and test app sector.
+/** @brief Load partition table
  *
- *  @inputs:        bs     bootloader state structure used to save the data
- *  @return:        return true, if the partition table is loaded (and MD5 checksum is valid)
+ *  Parse partition table, get useful data such as location of
+ *  OTA data partition, factory app partition, and test app partition.
  *
+ *  @param         bs     bootloader state structure used to save read data
+ *  @return        return true if the partition table was succesfully loaded and MD5 checksum is valid.
  */
 bool load_partition_table(bootloader_state_t* bs)
 {
@@ -262,6 +262,10 @@ void bootloader_main()
 
     ESP_LOGI(TAG, "Enabling RNG early entropy source...");
     bootloader_random_enable();
+
+#if CONFIG_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
+    bootloader_enable_qio_mode();
+#endif
 
     if(esp_image_load_header(0x1000, true, &fhdr) != ESP_OK) {
         ESP_LOGE(TAG, "failed to load bootloader header!");
@@ -635,28 +639,21 @@ void print_flash_info(const esp_image_header_t* phdr)
     }
     ESP_LOGI(TAG, "SPI Speed      : %s", str );
 
-    switch ( phdr->spi_mode ) {
-    case ESP_IMAGE_SPI_MODE_QIO:
+    /* SPI mode could have been set to QIO during boot already,
+       so test the SPI registers not the flash header */
+    uint32_t spi_ctrl = REG_READ(SPI_CTRL_REG(0));
+    if (spi_ctrl & SPI_FREAD_QIO) {
         str = "QIO";
-        break;
-    case ESP_IMAGE_SPI_MODE_QOUT:
+    } else if (spi_ctrl & SPI_FREAD_QUAD) {
         str = "QOUT";
-        break;
-    case ESP_IMAGE_SPI_MODE_DIO:
+    } else if (spi_ctrl & SPI_FREAD_DIO) {
         str = "DIO";
-        break;
-    case ESP_IMAGE_SPI_MODE_DOUT:
+    } else if (spi_ctrl & SPI_FREAD_DUAL) {
         str = "DOUT";
-        break;
-    case ESP_IMAGE_SPI_MODE_FAST_READ:
+    } else if (spi_ctrl & SPI_FASTRD_MODE) {
         str = "FAST READ";
-        break;
-    case ESP_IMAGE_SPI_MODE_SLOW_READ:
+    } else {
         str = "SLOW READ";
-        break;
-    default:
-        str = "DIO";
-        break;
     }
     ESP_LOGI(TAG, "SPI Mode       : %s", str );
 

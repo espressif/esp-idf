@@ -55,6 +55,7 @@ While PRO CPU does initialization in ``start_cpu0`` function, APP CPU spins in `
 
 Main task is the task which runs ``app_main`` function. Main task stack size and priority can be configured in ``menuconfig``. Application can use this task for initial application-specific setup, for example to launch other tasks. Application can also use main task for event loops and other general purpose activities. If ``app_main`` function returns, main task is deleted.
 
+.. _memory-layout:
 
 Application memory layout
 -------------------------

@@ -504,10 +504,23 @@ void SPI_Write_Encrypt_Disable(void);
   * @param  uint32_t len : Length to write, should be 32 bytes aligned.
   *
   * @return SPI_FLASH_RESULT_OK : Data written successfully.
-  *         SPI_FLASH_RESULT_ERR : Encrypto write error.
+  *         SPI_FLASH_RESULT_ERR : Encryption write error.
   *         SPI_FLASH_RESULT_TIMEOUT : Encrypto write timeout.
   */
 SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, uint32_t *data, uint32_t len);
+
+
+/** @brief Wait until SPI flash write operation is complete
+ *
+ * @note Please do not call this function in SDK.
+ *
+ * Reads the Write In Progress bit of the SPI flash status register,
+ * repeats until this bit is zero (indicating write complete).
+ *
+ * @return SPI_FLASH_RESULT_OK : Write is complete
+ *         SPI_FLASH_RESULT_ERR : Error while reading status.
+ */
+SpiFlashOpResult SPI_Wait_Idle(SpiFlashChip *spi);
 
 
 /** @brief Global SpiFlashChip structure used by ROM functions

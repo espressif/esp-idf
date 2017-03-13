@@ -89,7 +89,7 @@ Download ``crosstool-NG`` and build it::
     cd ~/esp
     git clone -b xtensa-1.22.x https://github.com/espressif/crosstool-NG.git
     cd crosstool-NG
-    ./bootstrap && ./configure --prefix=$PWD && make install
+    ./bootstrap && ./configure --enable-local && make install
 
 Build the toolchain::
 

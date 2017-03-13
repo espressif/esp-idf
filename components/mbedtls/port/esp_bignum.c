@@ -43,6 +43,9 @@
 
 static const __attribute__((unused)) char *TAG = "bignum";
 
+#define ciL    (sizeof(mbedtls_mpi_uint))         /* chars in limb  */
+#define biL    (ciL << 3)                         /* bits  in limb  */
+
 #if defined(CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
 static SemaphoreHandle_t op_complete_sem;
 
@@ -72,6 +75,7 @@ void esp_mpi_acquire_hardware( void )
 {
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
+
     REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
     /* also clear reset on digital signature, otherwise RSA is held in reset */
     REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
@@ -81,6 +85,8 @@ void esp_mpi_acquire_hardware( void )
     REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
     while(REG_READ(RSA_CLEAN_REG) != 1);
+
+    // Note: from enabling RSA clock to here takes about 1.3us
 
 #ifdef CONFIG_MBEDTLS_MPI_USE_INTERRUPT
     rsa_isr_initialise();
@@ -416,6 +422,7 @@ static int modular_multiply_finish(mbedtls_mpi *Z, const mbedtls_mpi *X, const m
 #if defined(MBEDTLS_MPI_MUL_MPI_ALT) /* MBEDTLS_MPI_MUL_MPI_ALT */
 
 static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t num_words);
+static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t Y_bits, size_t words_result);
 
 /* Z = X * Y */
 int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y )
@@ -468,12 +475,19 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     if (words_mult * 32 > 2048) {
         /* Calculate new length of Z */
         words_z = bits_to_hardware_words(bits_x + bits_y);
-        if (words_z * 32 > 4096) {
-            ESP_LOGE(TAG, "ERROR: %d bit result %d bits * %d bits too large for hardware unit\n", words_z * 32, bits_x, bits_y);
-            return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
-        }
-        else {
+        if (words_z * 32 <= 4096) {
+            /* Note: it's possible to use mpi_mult_mpi_overlong
+               for this case as well, but it's very slightly
+               slower and requires a memory allocation.
+            */
             return mpi_mult_mpi_failover_mod_mult(Z, X, Y, words_z);
+        } else {
+            /* Still too long for the hardware unit... */
+            if(bits_y > bits_x) {
+                return mpi_mult_mpi_overlong(Z, X, Y, bits_y, words_z);
+            } else {
+                return mpi_mult_mpi_overlong(Z, Y, X, bits_x, words_z);
+            }
         }
     }
 
@@ -558,6 +572,65 @@ static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, 
     esp_mpi_release_hardware();
 
  cleanup:
+    return ret;
+}
+
+/* Deal with the case when X & Y are too long for the hardware unit, by splitting one operand
+   into two halves.
+
+   Y must be the longer operand
+
+   Slice Y into Yp, Ypp such that:
+   Yp = lower 'b' bits of Y
+   Ypp = upper 'b' bits of Y (right shifted)
+
+   Such that
+   Z = X * Y
+   Z = X * (Yp + Ypp<<b)
+   Z = (X * Yp) + (X * Ypp<<b)
+
+   Note that this function may recurse multiple times, if both X & Y
+   are too long for the hardware multiplication unit.
+*/
+static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t bits_y, size_t words_result)
+{
+    int ret;
+    mbedtls_mpi Ztemp;
+    const size_t limbs_y = (bits_y + biL - 1) / biL;
+    /* Rather than slicing in two on bits we slice on limbs (32 bit words) */
+    const size_t limbs_slice = limbs_y / 2;
+    /* Yp holds lower bits of Y (declared to reuse Y's array contents to save on copying) */
+    const mbedtls_mpi Yp = {
+        .p = Y->p,
+        .n = limbs_slice,
+        .s = Y->s
+    };
+    /* Ypp holds upper bits of Y, right shifted (also reuses Y's array contents) */
+    const mbedtls_mpi Ypp = {
+        .p = Y->p + limbs_slice,
+        .n = limbs_y - limbs_slice,
+        .s = Y->s
+    };
+    mbedtls_mpi_init(&Ztemp);
+
+    /* Grow Z to result size early, avoid interim allocations */
+    mbedtls_mpi_grow(Z, words_result);
+
+    /* Get result Ztemp = Yp * X (need temporary variable Ztemp) */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi(&Ztemp, X, &Yp) );
+
+    /* Z = Ypp * Y */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi(Z, X, &Ypp) );
+
+    /* Z = Z << b */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_shift_l(Z, limbs_slice * biL) );
+
+    /* Z += Ztemp */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi(Z, Z, &Ztemp) );
+
+ cleanup:
+    mbedtls_mpi_free(&Ztemp);
+
     return ret;
 }
 

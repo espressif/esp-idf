@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdlib.h>
+#include <string.h>
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
@@ -22,6 +23,8 @@
 
 static const char* TAG = "vfs_fat_sdmmc";
 static sdmmc_card_t* s_card = NULL;
+static uint8_t s_pdrv = 0;
+static char * s_base_path = NULL;
 
 esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     const sdmmc_host_t* host_config,
@@ -35,18 +38,37 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     if (s_card != NULL) {
         return ESP_ERR_INVALID_STATE;
     }
+
+    // connect SDMMC driver to FATFS
+    BYTE pdrv = 0xFF;
+    if (ff_diskio_get_drive(&pdrv) != ESP_OK || pdrv == 0xFF) {
+        ESP_LOGD(TAG, "the maximum count of volumes is already mounted");
+        return ESP_ERR_NO_MEM;
+    }
+
+    s_base_path = strdup(base_path);
+    if(!s_base_path){
+        ESP_LOGD(TAG, "could not copy base_path");
+        return ESP_ERR_NO_MEM;
+    }
+
     // enable SDMMC
     sdmmc_host_init();
 
     // enable card slot
-    sdmmc_host_init_slot(host_config->slot, slot_config);
+    esp_err_t err = sdmmc_host_init_slot(host_config->slot, slot_config);
+    if (err != ESP_OK) {
+        return err;
+    }
+
     s_card = malloc(sizeof(sdmmc_card_t));
     if (s_card == NULL) {
-        return ESP_ERR_NO_MEM;
+        err = ESP_ERR_NO_MEM;
+        goto fail;
     }
 
     // probe and initialize card
-    esp_err_t err = sdmmc_card_init(host_config, s_card);
+    err = sdmmc_card_init(host_config, s_card);
     if (err != ESP_OK) {
         ESP_LOGD(TAG, "sdmmc_card_init failed 0x(%x)", err);
         goto fail;
@@ -55,12 +77,13 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
         *out_card = s_card;
     }
 
-    // connect SDMMC driver to FATFS
-    ff_diskio_register_sdmmc(0, s_card);
+    ff_diskio_register_sdmmc(pdrv, s_card);
+    s_pdrv = pdrv;
+    char drv[3] = {(char)('0' + pdrv), ':', 0};
 
     // connect FATFS to VFS
     FATFS* fs;
-    err = esp_vfs_fat_register(base_path, "", mount_config->max_files, &fs);
+    err = esp_vfs_fat_register(base_path, drv, mount_config->max_files, &fs);
     if (err == ESP_ERR_INVALID_STATE) {
         // it's okay, already registered with VFS
     } else if (err != ESP_OK) {
@@ -69,7 +92,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     }
 
     // Try to mount partition
-    FRESULT res = f_mount(fs, "", 1);
+    FRESULT res = f_mount(fs, drv, 1);
     if (res != FR_OK) {
         err = ESP_FAIL;
         ESP_LOGW(TAG, "failed to mount card (%d)", res);
@@ -79,7 +102,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
         ESP_LOGW(TAG, "partitioning card");
         DWORD plist[] = {100, 0, 0, 0};
         workbuf = malloc(workbuf_size);
-        res = f_fdisk(0, plist, workbuf);
+        res = f_fdisk(s_pdrv, plist, workbuf);
         if (res != FR_OK) {
             err = ESP_FAIL;
             ESP_LOGD(TAG, "f_fdisk failed (%d)", res);
@@ -94,7 +117,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
         }
         free(workbuf);
         ESP_LOGW(TAG, "mounting again");
-        res = f_mount(fs, "", 0);
+        res = f_mount(fs, drv, 0);
         if (res != FR_OK) {
             err = ESP_FAIL;
             ESP_LOGD(TAG, "f_mount failed after formatting (%d)", res);
@@ -104,8 +127,10 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     return ESP_OK;
 
 fail:
+    sdmmc_host_deinit();
     free(workbuf);
-    esp_vfs_unregister(base_path);
+    esp_vfs_fat_unregister_path(base_path);
+    ff_diskio_unregister(pdrv);
     free(s_card);
     s_card = NULL;
     return err;
@@ -117,10 +142,15 @@ esp_err_t esp_vfs_fat_sdmmc_unmount()
         return ESP_ERR_INVALID_STATE;
     }
     // unmount
-    f_mount(0, "", 0);
+    char drv[3] = {(char)('0' + s_pdrv), ':', 0};
+    f_mount(0, drv, 0);
     // release SD driver
+    ff_diskio_unregister(s_pdrv);
     free(s_card);
     s_card = NULL;
     sdmmc_host_deinit();
-    return esp_vfs_fat_unregister();
+    esp_err_t err = esp_vfs_fat_unregister_path(s_base_path);
+    free(s_base_path);
+    s_base_path = NULL;
+    return err;
 }

@@ -49,7 +49,7 @@ static void queue_int_add(connect_node_t *p_param)
 
     for (const list_node_t *node = list_begin(connect_queue); node != list_end(connect_queue); node = list_next(node)) {
         if (((connect_node_t *)list_node(node))->uuid == p_param->uuid) {
-            LOG_INFO("%s dropping duplicate connect request for uuid: %04x", __func__, p_param->uuid);
+            LOG_DEBUG("%s dropping duplicate connect request for uuid: %04x", __func__, p_param->uuid);
             return;
         }
     }

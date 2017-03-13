@@ -45,7 +45,7 @@ void phy_tlk110_check_phy_init(void)
 {
     while((esp_eth_smi_read(BASIC_MODE_STATUS_REG) & AUTO_NEGOTIATION_COMPLETE ) != AUTO_NEGOTIATION_COMPLETE)
     {};
-    while((esp_eth_smi_read(PHY_STATUS_REG) & AUTO_NEGTIATION_STATUS ) != AUTO_NEGTIATION_STATUS)
+    while((esp_eth_smi_read(PHY_STATUS_REG) & AUTO_NEGOTIATION_STATUS ) != AUTO_NEGOTIATION_STATUS)
     {};
     while((esp_eth_smi_read(CABLE_DIAGNOSTIC_CONTROL_REG) & DIAGNOSTIC_DONE ) != DIAGNOSTIC_DONE)
     {};
@@ -108,7 +108,7 @@ void phy_tlk110_init(void)
     while (esp_eth_smi_read(PHY_IDENTIFIER_REG) != OUI_MSB_21TO6_DEF) {
     }
 
-    esp_eth_smi_write(SOFTWARE_STRAP_CONTROL_REG, DEFAULT_PHY_CONFIG |SW_STRAP_CONFIG_DONE);
+    esp_eth_smi_write(SW_STRAP_CONTROL_REG, DEFAULT_PHY_CONFIG | SW_STRAP_CONFIG_DONE);
     
     ets_delay_us(300);
 

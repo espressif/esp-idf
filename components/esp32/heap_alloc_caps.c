@@ -36,6 +36,7 @@ hardwiring addresses.
 //Amount of priority slots for the tag descriptors.
 #define NO_PRIOS 3
 
+
 typedef struct {
     const char *name;
     uint32_t prio[NO_PRIOS];
@@ -46,6 +47,9 @@ typedef struct {
 Tag descriptors. These describe the capabilities of a bit of memory that's tagged with the index into this table.
 Each tag contains NO_PRIOS entries; later entries are only taken if earlier ones can't fulfill the memory request.
 Make sure there are never more than HEAPREGIONS_MAX_TAGCOUNT (in heap_regions.h) tags (ex the last empty marker)
+
+WARNING: The current code assumes the ROM stacks are located in tag 1; no allocation from this tag can be done until
+the FreeRTOS scheduler has started.
 */
 static const tag_desc_t tag_desc[]={
     { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }, false},                        //Tag 0: Plain ole D-port RAM
@@ -89,8 +93,8 @@ This array is *NOT* const because it gets modified depending on what pools are/a
 static HeapRegionTagged_t regions[]={
     { (uint8_t *)0x3F800000, 0x20000, 15, 0}, //SPI SRAM, if available
     { (uint8_t *)0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
-    { (uint8_t *)0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- can be used for BT
-    { (uint8_t *)0x3FFB8000, 0x8000, 0, 0}, //pool 14 <- can be used for BT
+    { (uint8_t *)0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- if BT is enabled, used as BT HW shared memory
+    { (uint8_t *)0x3FFB8000, 0x8000, 0, 0}, //pool 14 <- if BT is enabled, used data memory for BT ROM functions.
     { (uint8_t *)0x3FFC0000, 0x2000, 0, 0}, //pool 10-13, mmu page 0
     { (uint8_t *)0x3FFC2000, 0x2000, 0, 0}, //pool 10-13, mmu page 1
     { (uint8_t *)0x3FFC4000, 0x2000, 0, 0}, //pool 10-13, mmu page 2
@@ -134,6 +138,16 @@ static HeapRegionTagged_t regions[]={
     { NULL, 0, 0, 0} //end
 };
 
+/* For the startup code, the stacks live in memory tagged by this tag. Hence, we only enable allocating from this tag 
+   once FreeRTOS has started up completely. */
+#define NONOS_STACK_TAG 1
+
+static bool nonos_stack_in_use=true;
+
+void heap_alloc_enable_nonos_stack_tag()
+{
+    nonos_stack_in_use=false;
+}
 
 //Modify regions array to disable the given range of memory.
 static void disable_mem_region(void *from, void *to) {
@@ -185,22 +199,43 @@ void heap_alloc_caps_init() {
     //Disable the bits of memory where this code is loaded.
     disable_mem_region(&_data_start, &_heap_start);           //DRAM used by bss/data static variables
     disable_mem_region(&_init_start, &_iram_text_end);        //IRAM used by code
-    disable_mem_region((void*)0x3ffae000, (void*)0x3ffb0000); //knock out ROM data region
     disable_mem_region((void*)0x40070000, (void*)0x40078000); //CPU0 cache region
     disable_mem_region((void*)0x40078000, (void*)0x40080000); //CPU1 cache region
 
-    // TODO: this region should be checked, since we don't need to knock out all region finally
-    disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe8000); //knock out ROM data region
+    /* Warning: The ROM stack is located in the 0x3ffe0000 area. We do not specifically disable that area here because
+       after the scheduler has started, the ROM stack is not used anymore by anything. We handle it instead by not allowing
+       any mallocs from tag 1 (the IRAM/DRAM region) until the scheduler has started.
+
+       The 0x3ffe0000 region also contains static RAM for various ROM functions. The following lines
+       reserve the regions for UART and ETSC, so these functions are usable. Libraries like xtos, which are
+       not usable in FreeRTOS anyway, are commented out in the linker script so they cannot be used; we
+       do not disable their memory regions here and they will be used as general purpose heap memory.
+
+       Enabling the heap allocator for this region but disabling allocation here until FreeRTOS is started up
+       is a somewhat risky action in theory, because on initializing the allocator, vPortDefineHeapRegionsTagged
+        will go and write linked list entries at the start and end of all regions. For the ESP32, these linked 
+       list entries happen to end up in a region that is not touched by the stack; they can be placed safely there.*/
+    disable_mem_region((void*)0x3ffe0000, (void*)0x3ffe0440); //Reserve ROM PRO data region
+    disable_mem_region((void*)0x3ffe4000, (void*)0x3ffe4350); //Reserve ROM APP data region
 
 #if CONFIG_BT_ENABLED
-    disable_mem_region((void*)0x3ffb0000, (void*)0x3ffc0000); //knock out BT data region
+#if CONFIG_BT_DRAM_RELEASE
+    disable_mem_region((void*)0x3ffb0000, (void*)0x3ffb3000); //Reserve BT data region
+    disable_mem_region((void*)0x3ffb8000, (void*)0x3ffbbb28); //Reserve BT data region
+    disable_mem_region((void*)0x3ffbdb28, (void*)0x3ffc0000); //Reserve BT data region
+#else
+    disable_mem_region((void*)0x3ffb0000, (void*)0x3ffc0000); //Reserve BT hardware shared memory & BT data region
+#endif
+    disable_mem_region((void*)0x3ffae000, (void*)0x3ffaff10); //Reserve ROM data region, inc region needed for BT ROM routines
+#else
+    disable_mem_region((void*)0x3ffae000, (void*)0x3ffae2a0); //Reserve ROM data region
 #endif
 
 #if CONFIG_MEMMAP_TRACEMEM
 #if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
-    disable_mem_region((void*)0x3fff8000, (void*)0x40000000); //knock out trace mem region
+    disable_mem_region((void*)0x3fff8000, (void*)0x40000000); //Reserve trace mem region
 #else
-    disable_mem_region((void*)0x3fff8000, (void*)0x3fffc000); //knock out trace mem region
+    disable_mem_region((void*)0x3fff8000, (void*)0x3fffc000); //Reserve trace mem region
 #endif
 #endif
 
@@ -311,6 +346,10 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
     for (prio=0; prio<NO_PRIOS; prio++) {
         //Iterate over tag descriptors for this priority
         for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
+            if (nonos_stack_in_use && tag == NONOS_STACK_TAG) {
+                //Non-os stack lives here and is still in use. Don't alloc here.
+                continue;
+            }
             if ((tag_desc[tag].prio[prio]&caps)!=0) {
                 //Tag has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.

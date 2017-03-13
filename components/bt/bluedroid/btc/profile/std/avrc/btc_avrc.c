@@ -145,8 +145,6 @@ static void handle_rc_features(void)
     }
 
     LOG_DEBUG("%s: rc_features=0x%x", __FUNCTION__, rc_features);
-    // todo: uncomment the following line when added the AVRC target role
-    // BTC_HAL_CBACK(bt_rc_callbacks, remote_features_cb, &rc_addr, rc_features)
 }
 
 
@@ -386,7 +384,7 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr)
 *******************************************************************************/
 static void btc_avrc_ct_init(void)
 {
-    LOG_INFO("## %s ##", __FUNCTION__);
+    LOG_DEBUG("## %s ##", __FUNCTION__);
 
     memset (&btc_rc_vb, 0, sizeof(btc_rc_vb));
     btc_rc_vb.rc_vol_label=MAX_LABEL;

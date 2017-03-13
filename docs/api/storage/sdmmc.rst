@@ -79,6 +79,7 @@ Of all the funtions listed below, only ``sdmmc_host_init``, ``sdmmc_host_init_sl
 .. doxygendefine:: SDMMC_HOST_SLOT_0
 .. doxygendefine:: SDMMC_HOST_SLOT_1
 .. doxygendefine:: SDMMC_HOST_DEFAULT
+.. doxygendefine:: SDMMC_SLOT_WIDTH_DEFAULT
 
 .. doxygenfunction:: sdmmc_host_init_slot
 
