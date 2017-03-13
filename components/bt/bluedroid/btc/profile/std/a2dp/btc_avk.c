@@ -1226,6 +1226,10 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
         btc_sm_dispatch(btc_av_cb.sm_handle, BTC_AV_DISCONNECT_REQ_EVT, NULL);
         break;
     }
+    case BTC_AV_SINK_API_REG_DATA_CB_EVT: {
+        btc_a2dp_sink_reg_data_cb(arg->data_cb);
+        break;
+    }
     default:
         LOG_WARN("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
     }

@@ -172,7 +172,7 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
  *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
-esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t cb);
+esp_err_t esp_a2d_register_data_callback(esp_a2d_data_cb_t callback);
 
 
 /**

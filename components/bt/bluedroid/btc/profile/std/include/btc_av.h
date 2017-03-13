@@ -49,7 +49,8 @@ typedef enum {
     BTC_AV_SINK_API_INIT_EVT = 0,
     BTC_AV_SINK_API_DEINIT_EVT,
     BTC_AV_SINK_API_CONNECT_EVT,
-    BTC_AV_SINK_API_DISCONNECT_EVT
+    BTC_AV_SINK_API_DISCONNECT_EVT,
+    BTC_AV_SINK_API_REG_DATA_CB_EVT,
 } btc_av_act_t;
 
 /* btc_av_args_t */
@@ -58,6 +59,8 @@ typedef union {
     esp_a2d_mcc_t mcc;
     // BTC_AV_SINK_API_CONNECT_EVT
     bt_bdaddr_t connect;
+    // BTC_AV_SINK_API_REG_DATA_CB_EVT
+    esp_a2d_data_cb_t data_cb;
 } btc_av_args_t;
 
 /*******************************************************************************
@@ -68,6 +71,7 @@ void btc_a2dp_call_handler(btc_msg_t *msg);
 
 void btc_a2dp_cb_handler(btc_msg_t *msg);
 
+void btc_a2dp_sink_reg_data_cb(esp_a2d_data_cb_t callback);
 /*******************************************************************************
 **
 ** Function         btc_av_get_sm_handle
