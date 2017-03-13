@@ -203,14 +203,14 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
  */
 static int net_would_block( const mbedtls_net_context *ctx )
 {
+    int error = mbedtls_net_errno(ctx->fd);
+
     /*
      * Never return 'WOULD BLOCK' on a non-blocking socket
      */
     if ( ( fcntl( ctx->fd, F_GETFL, 0) & O_NONBLOCK ) != O_NONBLOCK ) {
         return ( 0 );
     }
-
-    int error = mbedtls_net_errno(ctx->fd);
 
     switch ( error ) {
 #if defined EAGAIN
