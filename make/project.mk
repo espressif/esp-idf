@@ -404,6 +404,9 @@ clean: config-clean
 # This only works for components inside IDF_PATH
 check-submodules:
 
+# Dump the git status for the whole working copy once, then grep it for each submodule. This saves a lot of time on Windows.
+GIT_STATUS := $(shell cd ${IDF_PATH} && git status --porcelain=v1 --ignore-submodules=dirty)
+
 # Generate a target to check this submodule
 # $(1) - submodule directory, relative to IDF_PATH
 define GenerateSubmoduleCheckTarget
@@ -415,9 +418,8 @@ $(IDF_PATH)/$(1)/.git:
 	@echo "Attempting 'git submodule update --init $(1)' in esp-idf root directory..."
 	cd ${IDF_PATH} && git submodule update --init $(1)
 
-# Parse 'git submodule status' output for out-of-date submodule.
-# Status output prefixes status line with '+' if the submodule commit doesn't match
-ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(1) | grep '^+')","")
+# Parse 'git status' output to check if the submodule commit is different to expected
+ifneq ("$(filter $(1),$(GIT_STATUS))","")
 $$(info WARNING: esp-idf git submodule $(1) may be out of date. Run 'git submodule update' in IDF_PATH dir to update.)
 endif
 endef
