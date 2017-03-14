@@ -139,11 +139,11 @@ typedef UINT16 tGATT_DISCONN_REASON;
 #define GATT_INVALID_CONN_ID                0xFFFF
 
 #ifndef GATT_CL_MAX_LCB
-#define GATT_CL_MAX_LCB                     4 // 22
+#define GATT_CL_MAX_LCB                     12 // 22
 #endif
 
 #ifndef GATT_MAX_SCCB
-#define GATT_MAX_SCCB                       4
+#define GATT_MAX_SCCB                       10
 #endif
 
 
