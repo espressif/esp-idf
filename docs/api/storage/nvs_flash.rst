@@ -48,6 +48,7 @@ Macros
 .. doxygendefine:: ESP_ERR_NVS_PAGE_FULL
 .. doxygendefine:: ESP_ERR_NVS_INVALID_STATE
 .. doxygendefine:: ESP_ERR_NVS_INVALID_LENGTH
+.. doxygendefine:: ESP_ERR_NVS_NO_FREE_PAGES
 
 Type Definitions
 ^^^^^^^^^^^^^^^^
@@ -61,6 +62,7 @@ Enumerations
 
 Functions
 ^^^^^^^^^
+.. doxygenfunction:: nvs_flash_init
 .. doxygenfunction:: nvs_open
 .. doxygenfunction:: nvs_set_i8
 .. doxygenfunction:: nvs_set_u8
@@ -86,5 +88,5 @@ Functions
 .. doxygenfunction:: nvs_erase_all
 .. doxygenfunction:: nvs_commit
 .. doxygenfunction:: nvs_close
-.. doxygenfunction:: nvs_flash_init
+
 

@@ -1108,6 +1108,23 @@ TEST_CASE("read/write failure (TW8406)", "[nvs]")
     }
 }
 
+TEST_CASE("nvs_flash_init checks for an empty page", "[nvs]")
+{
+    const size_t blob_size = 2048; // big enough so that only one can fit into a page
+    uint8_t blob[blob_size] = {0};
+    SpiFlashEmulator emu(5);
+    TEST_ESP_OK( nvs_flash_init_custom(0, 5) );
+    nvs_handle handle;
+    TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
+    TEST_ESP_OK( nvs_set_blob(handle, "1", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "2", blob, blob_size) );
+    TEST_ESP_OK( nvs_set_blob(handle, "3", blob, blob_size) );
+    TEST_ESP_OK( nvs_commit(handle) );
+    nvs_close(handle);
+    // first two pages are now full, third one is writable, last two are empty
+    // init should fail
+    TEST_ESP_ERR( nvs_flash_init_custom(0, 3), ESP_ERR_NVS_NO_FREE_PAGES );
+}
 
 TEST_CASE("dump all performance data", "[nvs]")
 {
