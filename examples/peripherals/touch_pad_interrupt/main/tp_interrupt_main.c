@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
 #include "esp_log.h"
 
 #include "driver/touch_pad.h"
@@ -95,9 +93,6 @@ static void touch_pad_rtc_intr(void * arg)
 
 void app_main()
 {
-    ESP_LOGI(TAG, "Starting");
-    nvs_flash_init();
-
     // Initialize touch pad peripheral
     ESP_LOGI(TAG, "Initializing touch pad");
     touch_pad_init();
