@@ -1,0 +1,32 @@
+menuconfig AWS_IOT_SDK
+    bool "Amazon Web Services IoT Platform"
+    help
+       Select this option to enable support for the AWS IoT platform,
+       via the esp-idf component for the AWS IoT Device C SDK.
+
+config AWS_IOT_MQTT_HOST
+    string "AWS IoT Endpoint Hostname"
+    depends on AWS_IOT_SDK
+    default ""
+    help
+        Default endpoint host name to connect to AWS IoT MQTT/S gateway
+
+        This is the custom endpoint hostname and is specific to an AWS
+        IoT account. You can find it by logging into your AWS IoT
+        Console and clicking the Settings button. The endpoint hostname
+        is shown under the "Custom Endpoint" heading on this page.
+
+        If you need per-device hostnames for different regions or
+        accounts, you can override the default hostname in your app.
+
+config AWS_IOT_MQTT_PORT
+    int "AWS IoT MQTT Port"
+    depends on AWS_IOT_SDK
+    default 8883
+    range 0 65535
+    help
+        Default port number to connect to AWS IoT MQTT/S gateway
+
+        If you need per-device port numbers for different regions, you can
+        override the default port number in your app.
+

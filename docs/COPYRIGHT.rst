@@ -26,6 +26,8 @@ Additional third party copyrighted code is included under the following licenses
 
 * `FreeBSD net80211`_ Copyright (c) 2004-2008 Sam Leffler, Errno Consulting and licensed under the BSD license.
 
+* `JSMN`_ JSON Parser (components/jsmn) Copyright (c) 2010 Serge A. Zaitsev and licensed under the MIT license.
+
 Where source code headers specify Copyright & License information, this information takes precedence over the summaries made here.
 
 ROM Source Code Copyrights
@@ -103,3 +105,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _wpa_supplicant: http://w1.fi/wpa_supplicant/
 .. _FreeBSD net80211: https://github.com/freebsd/freebsd/tree/master/sys/net80211
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
+.. _JSMN: http://zserge.com/jsmn.html

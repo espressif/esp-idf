@@ -1,0 +1,108 @@
+menu "FAT Filesystem support"
+
+choice FATFS_CHOOSE_CODEPAGE
+   prompt "OEM Code Page"
+   default FATFS_CODEPAGE_ASCII
+   help
+      OEM code page used for file name encodings. Required to
+      be set to a non-ASCII value to use Long Filenames.
+
+config FATFS_CODEPAGE_ASCII
+   bool "ASCII (CP1, no long filenames)"
+config FATFS_CODEPAGE_437
+   bool "US (CP437)"
+config FATFS_CODEPAGE_720
+   bool "Arabic (CP720)"
+config FATFS_CODEPAGE_737
+   bool "Greek (CP737)"
+config FATFS_CODEPAGE_771
+   bool "KBL (CP771)"
+config FATFS_CODEPAGE_775
+   bool "Baltic (CP775)"
+config FATFS_CODEPAGE_850
+   bool "Latin 1 (CP850)"
+config FATFS_CODEPAGE_852
+   bool "Latin 2 (CP852)"
+config FATFS_CODEPAGE_855
+   bool "Cyrillic (CP855)"
+config FATFS_CODEPAGE_857
+   bool "Turkish (CP857)"
+config FATFS_CODEPAGE_860
+   bool "Portugese (CP860)"
+config FATFS_CODEPAGE_861
+   bool "Icelandic (CP861)"
+config FATFS_CODEPAGE_862
+   bool "Hebrew (CP862)"
+config FATFS_CODEPAGE_863
+   bool "Canadian French (CP863)"
+config FATFS_CODEPAGE_864
+   bool "Arabic (CP864)"
+config FATFS_CODEPAGE_865
+   bool "Nordic (CP865)"
+config FATFS_CODEPAGE_866
+   bool "Russian (CP866)"
+config FATFS_CODEPAGE_869
+   bool "Greek 2 (CP869)"
+config FATFS_CODEPAGE_932
+   bool "Japanese (DBCS) (CP932)"
+config FATFS_CODEPAGE_936
+   bool "Simplified Chinese (DBCS) (CP936)"
+config FATFS_CODEPAGE_949
+   bool "Korean (DBCS) (CP949)"
+config FATFS_CODEPAGE_950
+   bool "Traditional Chinese (DBCS) (CP950)"
+
+endchoice
+
+config FATFS_CODEPAGE
+   int
+   default 1 if FATFS_CODEPAGE_ASCII
+   default 437 if FATFS_CODEPAGE_437
+   default 720 if FATFS_CODEPAGE_720
+   default 737 if FATFS_CODEPAGE_737
+   default 771 if FATFS_CODEPAGE_771
+   default 775 if FATFS_CODEPAGE_775
+   default 850 if FATFS_CODEPAGE_850
+   default 852 if FATFS_CODEPAGE_852
+   default 855 if FATFS_CODEPAGE_855
+   default 857 if FATFS_CODEPAGE_857
+   default 860 if FATFS_CODEPAGE_860
+   default 861 if FATFS_CODEPAGE_861
+   default 862 if FATFS_CODEPAGE_862
+   default 863 if FATFS_CODEPAGE_863
+   default 864 if FATFS_CODEPAGE_864
+   default 865 if FATFS_CODEPAGE_865
+   default 866 if FATFS_CODEPAGE_866
+   default 869 if FATFS_CODEPAGE_869
+   default 932 if FATFS_CODEPAGE_932
+   default 936 if FATFS_CODEPAGE_936
+   default 949 if FATFS_CODEPAGE_949
+   default 950 if FATFS_CODEPAGE_950
+   default 1
+
+choice FATFS_LONG_FILENAMES
+   prompt "Long filename support"
+   default FATFS_LFN_NONE
+   depends on !FATFS_CODEPAGE_ASCII
+   help
+      Support long filenames in FAT. Long filename data increases
+      memory usage. FATFS can be configured to store the buffer for
+      long filename data in stack or heap.
+
+config FATFS_LFN_NONE
+   bool "No long filenames"
+config FATFS_LFN_HEAP
+   bool "Long filename buffer in heap"
+config FATFS_LFN_STACK
+   bool "Long filename buffer on stack"
+endchoice
+
+config FATFS_MAX_LFN
+   int "Max long filename length"
+   depends on !FATFS_LFN_NONE
+   default 255
+   range 12 255
+   help
+      Maximum long filename length. Can be reduced to save RAM.
+
+endmenu
