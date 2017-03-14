@@ -125,13 +125,13 @@ static void fragment_and_dispatch(BT_HDR *packet)
 
 static void reassemble_and_dispatch(BT_HDR *packet)
 {
+    LOG_DEBUG("reassemble_and_dispatch\n");
+
     if ((packet->event & MSG_EVT_MASK) == MSG_HC_TO_STACK_HCI_ACL) {
         uint8_t *stream = packet->data + packet->offset;
         uint16_t handle;
         uint16_t l2cap_length;
         uint16_t acl_length;
-        uint8_t boundary_flag;
-        BT_HDR *partial_packet;
 
         STREAM_TO_UINT16(handle, stream);
         STREAM_TO_UINT16(acl_length, stream);
@@ -139,23 +139,22 @@ static void reassemble_and_dispatch(BT_HDR *packet)
 
         assert(acl_length == packet->len - HCI_ACL_PREAMBLE_SIZE);
 
-        boundary_flag = GET_BOUNDARY_FLAG(handle);
+        uint8_t boundary_flag = GET_BOUNDARY_FLAG(handle);
         handle = handle & HANDLE_MASK;
 
-        partial_packet = (BT_HDR *)hash_map_get(partial_packets, (void *)(uintptr_t)handle);
+        BT_HDR *partial_packet = (BT_HDR *)hash_map_get(partial_packets, (void *)(uintptr_t)handle);
 
         if (boundary_flag == START_PACKET_BOUNDARY) {
-            uint16_t full_length;
             if (partial_packet) {
-                LOG_WARN("%s found unfinished packet for handle with start packet. Dropping old.", __func__);
+                LOG_WARN("%s found unfinished packet for handle with start packet. Dropping old.\n", __func__);
                 hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
                 buffer_allocator->free(partial_packet);
             }
 
-            full_length = l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;
+            uint16_t full_length = l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;
             if (full_length <= packet->len) {
                 if (full_length < packet->len) {
-                    LOG_WARN("%s found l2cap full length %d less than the hci length %d.", __func__, l2cap_length, packet->len);
+                    LOG_WARN("%s found l2cap full length %d less than the hci length %d.\n", __func__, l2cap_length, packet->len);
                 }
 
                 callbacks->reassembled(packet);
@@ -178,19 +177,17 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             // Free the old packet buffer, since we don't need it anymore
             buffer_allocator->free(packet);
         } else {
-            uint16_t projected_offset;
             if (!partial_packet) {
-                LOG_WARN("%s got continuation for unknown packet. Dropping it.", __func__);
+                LOG_ERROR("%s got continuation for unknown packet. Dropping it.\n", __func__);
                 buffer_allocator->free(packet);
                 return;
             }
 
             packet->offset += HCI_ACL_PREAMBLE_SIZE; // skip ACL preamble
             packet->len -= HCI_ACL_PREAMBLE_SIZE;
-
-            projected_offset = partial_packet->offset + packet->len;
+            uint16_t projected_offset = partial_packet->offset + packet->len;
             if (projected_offset > partial_packet->len) { // len stores the expected length
-                LOG_WARN("%s got packet which would exceed expected length of %d. Truncating.", __func__, partial_packet->len);
+                LOG_ERROR("%s got packet which would exceed expected length of %d. Truncating.\n", __func__, partial_packet->len);
                 packet->len = partial_packet->len - partial_packet->offset;
                 projected_offset = partial_packet->len;
             }
@@ -200,6 +197,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 packet->data + packet->offset,
                 packet->len
             );
+
             // Free the old packet buffer, since we don't need it anymore
             buffer_allocator->free(packet);
             partial_packet->offset = projected_offset;

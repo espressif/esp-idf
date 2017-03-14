@@ -366,7 +366,8 @@ static void fragmenter_transmit_finished(BT_HDR *packet, bool all_fragments_sent
         // This is kind of a weird case, since we're dispatching a partially sent packet
         // up to a higher layer.
         // TODO(zachoverflow): rework upper layer so this isn't necessary.
-        dispatch_reassembled(packet);
+        buffer_allocator->free(packet);
+        //dispatch_reassembled(packet);
         //data_dispatcher_dispatch(interface.event_dispatcher, packet->event & MSG_EVT_MASK, packet);
     }
 }
