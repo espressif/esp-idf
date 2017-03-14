@@ -541,9 +541,50 @@ config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
         number.  Generally the number of dynamic rx buffer should be no less than static
         rx buffer number if it is not 0. 
 
+choice ESP32_WIFI_TX_BUFFER
+    prompt "Type of WiFi TX buffers"
+    depends on WIFI_ENABLED
+    default ESP32_WIFI_DYNAMIC_TX_BUFFER
+    help
+        Select type of WiFi tx buffers and show the submenu with the number of WiFi tx buffers choice. 
+        If "STATIC" is selected, WiFi tx buffers are allocated when WiFi is initialized and released
+        when WiFi is de-initialized. If "DYNAMIC" is selected, WiFi tx buffer is allocated when tx
+        data is delivered from LWIP to WiFi and released when tx data is sent out by WiFi.
+        The size of each static tx buffers is fixed to about 1.6KB and the size of dynamic tx buffers is 
+        depend on the length of the data delivered from LWIP.
+        If PSRAM is enabled, "STATIC" should be selected to guarantee enough WiFi tx buffers. 
+        If PSRAM is disabled, "DYNAMIC" should be selected to improve the utilization of RAM. 
+
+config ESP32_WIFI_STATIC_TX_BUFFER
+    bool "STATIC"
+config ESP32_WIFI_DYNAMIC_TX_BUFFER
+    bool "DYNAMIC"
+endchoice
+
+config ESP32_WIFI_TX_BUFFER_TYPE
+    int
+    depends on WIFI_ENABLED
+    default 0 if ESP32_WIFI_STATIC_TX_BUFFER
+    default 1 if ESP32_WIFI_DYNAMIC_TX_BUFFER
+
+config ESP32_WIFI_STATIC_TX_BUFFER_NUM
+    int "Max number of WiFi static TX buffers"
+    depends on WIFI_ENABLED 
+    depends on ESP32_WIFI_STATIC_TX_BUFFER
+    range 16 64
+    default 32
+    help
+        Set the number of WiFi static tx buffers. Each buffer takes approximately 1.6KB of RAM.
+        The static rx buffers are allocated when esp_wifi_init is called, they are not released
+        until esp_wifi_deinit is called.
+        For each tx packet from high layer stack, WiFi driver make a copy of it. For some applications,
+        especially the UDP application, the high layer deliver speed is faster than the WiFi tx
+        speed, we may run out of static tx buffers. 
+
 config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
     int "Max number of WiFi dynamic TX buffers"
-    depends on WIFI_ENABLED
+    depends on WIFI_ENABLED 
+    depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
     range 16 64
     default 32
     help
@@ -552,7 +593,6 @@ config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
         For each tx packet from high layer stack, WiFi driver make a copy of it. For some applications,
         especially the UDP application, the high layer deliver speed is faster than the WiFi tx
         speed, we may run out of memory if no limitation for the dynamic tx buffer number. 
-
 
 config ESP32_WIFI_AMPDU_ENABLED
     bool "WiFi AMPDU"
