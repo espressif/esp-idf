@@ -312,7 +312,7 @@ void app_main()
 {
     esp_err_t ret;
 
-    nvs_flash_init();
+    ESP_ERROR_CHECK( nvs_flash_init() );
     initialise_wifi();
 
     esp_bt_controller_init();

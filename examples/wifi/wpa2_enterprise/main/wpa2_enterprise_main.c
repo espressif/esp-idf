@@ -148,7 +148,7 @@ static void wpa2_enterprise_task(void *pvParameters)
 
 void app_main()
 {
-    nvs_flash_init();
+    ESP_ERROR_CHECK( nvs_flash_init() );
     initialise_wifi();
     xTaskCreate(&wpa2_enterprise_task, "wpa2_enterprise_task", 4096, NULL, 5, NULL);
 }

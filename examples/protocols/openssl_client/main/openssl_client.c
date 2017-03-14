@@ -220,6 +220,6 @@ static void wifi_conn_init(void)
 
 void app_main(void)
 {
-    nvs_flash_init();
+    ESP_ERROR_CHECK( nvs_flash_init() );
     wifi_conn_init();
 }
