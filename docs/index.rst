@@ -22,6 +22,7 @@ Contents:
 
    Make <make-project>
    Eclipse IDE <eclipse-setup>
+   IDF Monitor <idf-monitor>
 
 .. toctree::
    :caption: What Else?
