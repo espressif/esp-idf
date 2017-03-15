@@ -67,7 +67,7 @@ static const tag_desc_t tag_desc[]={
     { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
     { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
     { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
-    { "SPIRAM", { MALLOC_CAP_SPIRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false},                         //Tag 15: SPI SRAM data
+    { "SPIRAM", { MALLOC_CAP_SPIRAM, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false},                         //Tag 15: SPI SRAM data
     { "", { MALLOC_CAP_INVALID, MALLOC_CAP_INVALID, MALLOC_CAP_INVALID }, false} //End
 };
 
