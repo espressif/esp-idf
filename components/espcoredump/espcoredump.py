@@ -695,7 +695,9 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
         super(ESPCoreDumpFlashLoader, self).__init__()
         if not tool_path:
             self.path = esptool.__file__
-            self.path = self.path[:-1]
+            _,e = os.path.splitext(self.path)
+            if e == '.pyc':
+                self.path = self.path[:-1]
         else:
             self.path =  tool_path
         self.port = port
@@ -776,7 +778,7 @@ class GDBMIOutRecordHandler(object):
         """Base method to execute GDB/MI output record handler function
         """
         if self.verbose:
-            print "%s.execute '%s'" % (self.__class__.__name__, ln)
+            print "%s.execute: [[%s]]" % (self.__class__.__name__, ln)
 
 
 class GDBMIOutStreamHandler(GDBMIOutRecordHandler):
@@ -916,6 +918,37 @@ def info_corefile(args):
                         out_handlers[h].execute(ln)
                         break
 
+    def gdbmi_start(handlers):
+        p = subprocess.Popen(
+                bufsize = 0,
+                args = [args.gdb,
+                    '--quiet', # inhibit dumping info at start-up
+                    '--nx', # inhibit window interface
+                    '--nw', # ignore .gdbinit
+                    '--interpreter=mi2', # use GDB/MI v2
+                    '--core=%s' % core_fname, # core file
+                    args.prog],
+                stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
+                close_fds = CLOSE_FDS
+                )
+        gdbmi_read2prompt(p.stdout, handlers)
+        return p
+
+    def gdbmi_getinfo(p, handlers, gdb_cmd):
+        for t in handlers:
+            handlers[t].result_class = None
+        p.stdin.write("-interpreter-exec console \"%s\"\n" % gdb_cmd)
+        gdbmi_read2prompt(p.stdout, handlers)
+        if not handlers[GDBMIResultHandler.TAG].result_class or handlers[GDBMIResultHandler.TAG].result_class == GDBMIResultHandler.RC_EXIT:
+            print "GDB exited (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str)
+            p.wait()
+            print "Problem occured! GDB exited, restart it."
+            p = gdbmi_start(handlers)
+        elif handlers[GDBMIResultHandler.TAG].result_class != GDBMIResultHandler.RC_DONE:
+            print "GDB/MI command failed (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str)
+        return p
+
+
     loader = None
     if not args.core:
         loader = ESPCoreDumpFlashLoader(args.off, port=args.port)
@@ -934,22 +967,6 @@ def info_corefile(args):
                 loader.cleanup()
                 return
 
-    handlers = {}
-    handlers[GDBMIResultHandler.TAG] = GDBMIResultHandler(verbose=False)
-    handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
-    p = subprocess.Popen(
-            bufsize = 0,
-            args = [args.gdb,
-                '--quiet', # inhibit dumping info at start-up
-                '--nx', # inhibit window interface
-                '--nw', # ignore .gdbinit
-                '--interpreter=mi2', # use GDB/MI v2
-                '--core=%s' % core_fname, # core file
-                args.prog],
-            stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
-            close_fds = CLOSE_FDS
-            )
-    gdbmi_read2prompt(p.stdout, handlers)
     exe_elf = ESPCoreDumpElfFile(args.prog)
     core_elf = ESPCoreDumpElfFile(core_fname)
     merged_segs = []
@@ -995,26 +1012,22 @@ def info_corefile(args):
         if not merged:
             merged_segs.append((s.name, s.addr, len(s.data), s.attr_str(), False))
 
+    handlers = {}
+    handlers[GDBMIResultHandler.TAG] = GDBMIResultHandler(verbose=False)
+    handlers[GDBMIStreamConsoleHandler.TAG] = GDBMIStreamConsoleHandler(None, verbose=False)
+    p = gdbmi_start(handlers)
+
     print "==============================================================="
     print "==================== ESP32 CORE DUMP START ===================="
 
     handlers[GDBMIResultHandler.TAG].result_class = None
     handlers[GDBMIStreamConsoleHandler.TAG].func = gdbmi_console_stream_handler
     print "\n================== CURRENT THREAD REGISTERS ==================="
-    p.stdin.write("-interpreter-exec console \"info registers\"\n")
-    gdbmi_read2prompt(p.stdout, handlers)
-    if handlers[GDBMIResultHandler.TAG].result_class != GDBMIResultHandler.RC_DONE:
-        print "GDB/MI command failed (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str)
+    p = gdbmi_getinfo(p, handlers, "info registers")
     print "\n==================== CURRENT THREAD STACK ====================="
-    p.stdin.write("-interpreter-exec console \"bt\"\n")
-    gdbmi_read2prompt(p.stdout, handlers)
-    if handlers[GDBMIResultHandler.TAG].result_class != GDBMIResultHandler.RC_DONE:
-        print "GDB/MI command failed (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str)
+    p = gdbmi_getinfo(p, handlers, "bt")
     print "\n======================== THREADS INFO ========================="
-    p.stdin.write("-interpreter-exec console \"info threads\"\n")
-    gdbmi_read2prompt(p.stdout, handlers)
-    if handlers[GDBMIResultHandler.TAG].result_class != GDBMIResultHandler.RC_DONE:
-        print "GDB/MI command failed (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str)
+    p = gdbmi_getinfo(p, handlers, "info threads")
     print "\n======================= ALL MEMORY REGIONS ========================"
     print "Name   Address   Size   Attrs"
     for ms in merged_segs:
@@ -1025,10 +1038,7 @@ def info_corefile(args):
         print "\n====================== CORE DUMP MEMORY CONTENTS ========================"
         for cs in core_elf.program_segments:
             print ".coredump.tasks 0x%x 0x%x %s" % (cs.addr, len(cs.data), cs.attr_str())
-            p.stdin.write("-interpreter-exec console \"x/%dx 0x%x\"\n" % (len(cs.data)/4, cs.addr))
-            gdbmi_read2prompt(p.stdout, handlers)
-            if handlers[GDBMIResultHandler.TAG].result_class != GDBMIResultHandler.RC_DONE:
-                print "GDB/MI command failed (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str)
+            p = gdbmi_getinfo(p, handlers, "x/%dx 0x%x" % (len(cs.data)/4, cs.addr))
 
     print "\n===================== ESP32 CORE DUMP END ====================="
     print "==============================================================="
