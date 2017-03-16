@@ -9,6 +9,10 @@
 
 #include <esp_err.h>
 
+/* Some definitions applicable to Unity running in FreeRTOS */
+#define UNITY_FREERTOS_PRIORITY 5
+#define UNITY_FREERTOS_CPU 0
+
 #define UNITY_EXCLUDE_FLOAT
 #define UNITY_EXCLUDE_DOUBLE
 
