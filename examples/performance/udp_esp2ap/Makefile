@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := UDP_send
+PROJECT_NAME := udp_esp2ap
 
 include $(IDF_PATH)/make/project.mk
 
