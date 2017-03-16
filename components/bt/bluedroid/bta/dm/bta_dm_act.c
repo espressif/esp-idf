@@ -4111,7 +4111,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
     memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
     switch (event) {
     case BTM_LE_IO_REQ_EVT:
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+        // #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
 
         bta_dm_co_ble_io_req(bda,
                              &p_data->io_req.io_cap,
@@ -4120,7 +4120,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
                              &p_data->io_req.max_key_size,
                              &p_data->io_req.init_keys,
                              &p_data->io_req.resp_keys);
-#endif
+        // #endif
 #if BTM_OOB_INCLUDED == FALSE
         status = BTM_SUCCESS;
 #endif

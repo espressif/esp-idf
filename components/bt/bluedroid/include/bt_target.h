@@ -34,16 +34,44 @@
 #include "bdroid_buildcfg.h"
 #endif
 
+#include "sdkconfig.h"
 #include "bt_types.h"   /* This must be defined AFTER buildcfg.h */
 
 /* Include common GKI definitions used by this platform */
 #include "gki_target.h"
 #include "dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
+#if CONFIG_CLASSIC_BT_ENABLED
 
-#ifndef CLASSIC_BT_INCLUDED
-#define CLASSIC_BT_INCLUDED TRUE
-#endif  ///CLASSIC_BT_INCLUDED
+#define BTA_PAN_INCLUDED            FALSE
+#define BTA_HH_INCLUDED             FALSE
+#define BTA_AR_INCLUDED             TRUE
+#define BTA_AV_INCLUDED             TRUE
+#define BTA_AV_SINK_INCLUDED        TRUE
+#define SDP_INCLUDED                TRUE
+#define RFCOMM_INCLUDED             FALSE
+#define PAN_INCLUDED                FALSE
+#define HID_HOST_INCLUDED           FALSE
+#define A2D_INCLUDED                TRUE
+#define AVRC_INCLUDED               TRUE
+#define MCA_INCLUDED                FALSE
+
+#else /* #if CONFIG_CLASSIC_BT_ENABLED */
+
+#define BTA_PAN_INCLUDED            FALSE
+#define BTA_HH_INCLUDED             FALSE
+#define BTA_AR_INCLUDED             FALSE
+#define BTA_AV_INCLUDED             FALSE
+#define BTA_AV_SINK_INCLUDED        FALSE
+#define SDP_INCLUDED                FALSE
+#define RFCOMM_INCLUDED             FALSE
+#define PAN_INCLUDED                FALSE
+#define HID_HOST_INCLUDED           FALSE
+#define A2D_INCLUDED                FALSE
+#define AVRC_INCLUDED               FALSE
+#define MCA_INCLUDED                FALSE
+
+#endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
