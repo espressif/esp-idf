@@ -33,13 +33,21 @@
 #if CONFIG_BT_ENABLED
 
 /* Bluetooth system and controller config */
-#define BTDM_CFG_BT_EM_RELEASE      (1<<0)
-#define BTDM_CFG_BT_DATA_RELEASE    (1<<1)
+#define BTDM_CFG_BT_EM_RELEASE              (1<<0)
+#define BTDM_CFG_BT_DATA_RELEASE            (1<<1)
+#define BTDM_CFG_HCI_UART                   (1<<2)
+#define BTDM_CFG_CONTROLLER_RUN_APP_CPU     (1<<3)
 /* Other reserved for future */
+
+/* Controller config options, depend on config mask */
+struct btdm_config_options {
+    uint8_t hci_uart_no;
+    uint32_t hci_uart_baudrate;
+};
 
 /* not for user call, so don't put to include file */
 extern void btdm_osi_funcs_register(void *osi_funcs);
-extern void btdm_controller_init(uint32_t config_mask);
+extern void btdm_controller_init(uint32_t config_mask, struct btdm_config_options *opts);
 extern void btdm_controller_schedule(void);
 extern void btdm_controller_deinit(void);
 extern int btdm_controller_enable(esp_bt_mode_t mode);
@@ -171,17 +179,37 @@ static uint32_t btdm_config_mask_load(void)
 #ifdef CONFIG_BT_DRAM_RELEASE
     mask |= (BTDM_CFG_BT_EM_RELEASE | BTDM_CFG_BT_DATA_RELEASE);
 #endif
+#ifdef CONFIG_HCI_UART
+    mask |= BTDM_CFG_HCI_UART;
+#endif
+#ifdef CONFIG_BTDM_CONTROLLER_RUN_APP_CPU
+    mask |= BTDM_CFG_CONTROLLER_RUN_APP_CPU;
+#endif
     return mask;
+}
+
+static void btdm_config_opts_load(struct btdm_config_options *opts)
+{
+    if (opts == NULL) {
+        return;
+    }
+#ifdef CONFIG_HCI_UART
+    opts->hci_uart_no = CONFIG_HCI_UART_NO;
+    opts->hci_uart_baudrate = CONFIG_HCI_UART_BAUDRATE;
+#endif
 }
 
 static void bt_controller_task(void *pvParam)
 {
+    struct btdm_config_options btdm_cfg_opts;
     uint32_t btdm_cfg_mask = 0;
 
     btdm_osi_funcs_register(&osi_funcs);
 
     btdm_cfg_mask = btdm_config_mask_load();
-    btdm_controller_init(btdm_cfg_mask);
+    btdm_config_opts_load(&btdm_cfg_opts);
+
+    btdm_controller_init(btdm_cfg_mask, &btdm_cfg_opts);
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 

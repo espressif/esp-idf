@@ -1,0 +1,10 @@
+# Override some defaults so BT stack is enabled
+# in this example
+
+#
+# BT config
+#
+CONFIG_BT_ENABLED=y
+CONFIG_HCI_UART=y
+CONFIG_HCI_UART_NO=1
+CONFIG_HCI_UART_BAUDRATE=921600
