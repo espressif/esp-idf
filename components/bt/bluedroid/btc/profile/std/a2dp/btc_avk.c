@@ -140,7 +140,7 @@ static inline void btc_a2d_cb_to_app(esp_a2d_cb_event_t event, esp_a2d_cb_param_
     }
 }
 
-static const char *dump_av_sm_state_name(btc_av_state_t state)
+UNUSED_ATTR static const char *dump_av_sm_state_name(btc_av_state_t state)
 {
     switch (state) {
         CASE_RETURN_STR(BTC_AV_STATE_IDLE)
