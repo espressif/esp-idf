@@ -296,6 +296,8 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   * @attention If this API is called, the found APs are stored in WiFi driver dynamic allocated memory and the
   *            will be freed in esp_wifi_get_ap_list, so generally, call esp_wifi_get_ap_list to cause
   *            the memory to be freed once the scan is done
+  * @attention The values of maximum active scan time and passive scan time per channel are limited to 1500 milliseconds.
+  *            Values above 1500ms may cause station to disconnect from AP and are not recommended.
   *
   * @param     config  configuration of scanning
   * @param     block if block is true, this API will block the caller until the scan is done, otherwise
