@@ -70,6 +70,8 @@ TAG_SERIAL = 1
 # regex matches an potential PC value (0x4xxxxxxx)
 MATCH_PCADDR = re.compile(r'0x4[0-9a-f]{7}', re.IGNORECASE)
 
+DEFAULT_TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
+
 class StoppableThread(object):
     """
     Provide a Thread-like class which can be 'cancelled' via a subclass-provided
@@ -193,7 +195,7 @@ class Monitor(object):
 
     Main difference is that all event processing happens in the main thread, not the worker threads.
     """
-    def __init__(self, serial_instance, elf_file, make="make"):
+    def __init__(self, serial_instance, elf_file, make="make", toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF"):
         super(Monitor, self).__init__()
         self.event_queue = queue.Queue()
         self.console = miniterm.Console()
@@ -207,8 +209,15 @@ class Monitor(object):
         self.serial_reader = SerialReader(self.serial, self.event_queue)
         self.elf_file = elf_file
         self.make = make
+        self.toolchain_prefix = DEFAULT_TOOLCHAIN_PREFIX
         self.menu_key = CTRL_T
         self.exit_key = CTRL_RBRACKET
+
+        self.translate_eol = {
+            "CRLF": lambda c: c.replace(b"\n", b"\r\n"),
+            "CR":   lambda c: c.replace(b"\n", b"\r"),
+            "LF":   lambda c: c.replace(b"\r", b"\n"),
+        }[eol]
 
         # internal state
         self._pressed_menu_key = False
@@ -246,6 +255,7 @@ class Monitor(object):
             self.serial_reader.stop()
         else:
             try:
+                key = self.translate_eol(key)
                 self.serial.write(codecs.encode(key))
             except serial.SerialException:
                 pass # this shouldn't happen, but sometimes port has closed in serial thread
@@ -327,7 +337,9 @@ class Monitor(object):
                              .format(key_description(CTRL_A)))
             sys.stderr.write("--- Press any other key to resume monitor (resets target).\n")
             sys.stderr.write(ANSI_NORMAL)
-            k = self.console.getkey()
+            k = CTRL_T  # ignore CTRL-T here, so people can muscle-memory Ctrl-T Ctrl-F, etc.
+            while k == CTRL_T:
+                k = self.console.getkey()
         finally:
             self.console.cleanup()
         if k == self.exit_key:
@@ -350,8 +362,8 @@ class Monitor(object):
 
     def lookup_pc_address(self, pc_addr):
         translation = subprocess.check_output(
-            ["xtensa-esp32-elf-addr2line", "-pfia",
-             "-e", self.elf_file, pc_addr],
+            ["%saddr2line" % self.toolchain_prefix,
+             "-pfia", "-e", self.elf_file, pc_addr],
             cwd=".")
         if not "?? ??:0" in translation:
             sys.stderr.write(ANSI_YELLOW + translation + ANSI_NORMAL)
@@ -375,7 +387,7 @@ class Monitor(object):
         with self:  # disable console control
             sys.stderr.write(ANSI_NORMAL)
             try:
-                subprocess.call(["xtensa-esp32-elf-gdb",
+                subprocess.call(["%sgdb" % self.toolchain_prefix,
                                 "-ex", "set serial baud %d" % self.serial.baudrate,
                                 "-ex", "target remote %s" % self.serial.port,
                                 "-ex", "interrupt",  # monitor has already parsed the first 'reason' command, need a second
@@ -405,10 +417,27 @@ def main():
         type=str, default='make')
 
     parser.add_argument(
+        '--toolchain-prefix',
+        help="Triplet prefix to add before cross-toolchain names",
+        default=DEFAULT_TOOLCHAIN_PREFIX)
+
+    parser.add_argument(
+        "--eol",
+        choices=['CR', 'LF', 'CRLF'],
+        type=lambda c: c.upper(),
+        help="End of line to use when sending to the serial port",
+        default='CRLF')
+
+    parser.add_argument(
         'elf_file', help='ELF file of application',
         type=argparse.FileType('r'))
 
     args = parser.parse_args()
+
+    if args.port.startswith("/dev/tty."):
+        args.port = args.port.replace("/dev/tty.", "/dev/cu.")
+        sys.stderr.write("WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched. ")
+        sys.stderr.write("Using %s instead...\n" % args.port)
 
     serial_instance = serial.serial_for_url(args.port, args.baud,
                                             do_not_open=True)
@@ -428,7 +457,7 @@ def main():
     except KeyError:
         pass  # not running a make jobserver
 
-    monitor = Monitor(serial_instance, args.elf_file.name, args.make)
+    monitor = Monitor(serial_instance, args.elf_file.name, args.make, args.eol)
 
     sys.stderr.write('--- idf_monitor on {p.name} {p.baudrate} ---\n'.format(
         p=serial_instance))
