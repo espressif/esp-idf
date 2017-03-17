@@ -240,7 +240,7 @@ push_master_to_github:
     #
     # NB: In gitlab 9.x, CI_BUILD_REF was deprecated. New name is CI_COMMIT_REF. If below command suddenly
     # generates bash syntax errors, this is probably why.
-    - eval $(git for-each-ref --shell bash --format 'if [ $CI_BUILD_REF == %(objectname) ]; then git checkout -b %(refname:strip=3); git push --follow-tags github %(refname:strip=3); fi;' $GITHUB_PUSH_REFS)
+    - eval $(git for-each-ref --shell bash --format 'if [ $CI_BUILD_REF == %(objectname) ]; then git checkout -B %(refname:strip=3); git push --follow-tags github %(refname:strip=3); fi;' $GITHUB_PUSH_REFS)
 
 
 deploy_docs:
