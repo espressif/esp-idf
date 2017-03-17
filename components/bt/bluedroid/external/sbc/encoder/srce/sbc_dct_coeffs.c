@@ -22,8 +22,11 @@
  *  analysis.
  *
  ******************************************************************************/
-
+#include "bt_target.h"
 #include "sbc_encoder.h"
+
+#if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE)
+
 /*DCT coeff for 4 sub-band case.*/
 #if (SBC_FAST_DCT == FALSE)
 const SINT16 gas16AnalDCTcoeff4[] = {
@@ -196,3 +199,5 @@ const SINT16 gas16AnalDCTcoeff8[] = {
     (SINT16)(0.5556 * 32768)
 };
 #endif
+
+#endif /* #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE) */

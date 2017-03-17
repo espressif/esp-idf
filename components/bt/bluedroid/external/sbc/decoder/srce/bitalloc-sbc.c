@@ -27,8 +27,10 @@
 
 /**@addgroup codec_internal*/
 /**@{*/
-
+#include "bt_target.h"
 #include <oi_codec_sbc_private.h>
+
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 static void dualBitAllocation(OI_CODEC_SBC_COMMON_CONTEXT *common)
 {
@@ -163,3 +165,4 @@ OI_UINT16 OI_CODEC_SBC_CalculateFramelen(OI_CODEC_SBC_FRAME_INFO *frame)
 }
 
 /**@}*/
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

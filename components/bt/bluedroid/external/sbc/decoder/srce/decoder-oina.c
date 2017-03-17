@@ -33,8 +33,10 @@ This file exposes OINA-specific interfaces to decoder functions.
 @{
 */
 
-
+#include "bt_target.h"
 #include <oi_codec_sbc_private.h>
+
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 OI_STATUS OI_CODEC_SBC_DecoderConfigureRaw(OI_CODEC_SBC_DECODER_CONTEXT *context,
         OI_BOOL enhanced,
@@ -135,3 +137,5 @@ OI_STATUS OI_CODEC_SBC_DecoderLimit(OI_CODEC_SBC_DECODER_CONTEXT *context,
 /**
 @}
 */
+
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

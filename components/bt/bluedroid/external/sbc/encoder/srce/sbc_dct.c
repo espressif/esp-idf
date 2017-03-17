@@ -21,12 +21,13 @@
  *  source file for fast dct operations
  *
  ******************************************************************************/
-
+#include "bt_target.h"
 #include "sbc_encoder.h"
 #include "sbc_enc_func_declare.h"
 #include "sbc_dct.h"
 
 
+#if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -239,3 +240,5 @@ void SBC_FastIDCT4(SINT32 *pInVect, SINT32 *pOutVect)
     }
 #endif
 }
+
+#endif /* #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE) */

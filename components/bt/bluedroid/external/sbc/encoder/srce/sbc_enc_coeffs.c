@@ -21,8 +21,10 @@
  *  This file contains the Windowing coeffs for synthesis filter
  *
  ******************************************************************************/
-
+#include "bt_target.h"
 #include "sbc_encoder.h"
+
+#if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE)
 
 #if (SBC_ARM_ASM_OPT==FALSE && SBC_IPAQ_OPT==FALSE)
 #if (SBC_IS_64_MULT_IN_WINDOW_ACCU ==  FALSE)
@@ -313,3 +315,4 @@ const SINT32 gas32CoeffFor8SBs[] = {
 #endif
 #endif
 
+#endif /* #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE) */

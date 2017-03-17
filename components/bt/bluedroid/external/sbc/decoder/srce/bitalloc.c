@@ -36,8 +36,11 @@ frame length and bitrate.
 @{
 */
 
+#include "bt_target.h"
 #include "oi_utils.h"
 #include <oi_codec_sbc_private.h>
+
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 OI_UINT32 OI_SBC_MaxBitpool(OI_CODEC_SBC_FRAME_INFO *frame)
 {
@@ -398,3 +401,5 @@ void monoBitAllocation(OI_CODEC_SBC_COMMON_CONTEXT *common)
 /**
 @}
 */
+
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

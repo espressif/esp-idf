@@ -158,8 +158,10 @@ The output samples X[0..7] are defined as sums of W:
 @addtogroup codec_internal
 @{
 */
-
+#include "bt_target.h"
 #include "oi_codec_sbc_private.h"
+
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 const OI_INT32 dec_window_4[21] = {
     0,        /* +0.00000000E+00 */
@@ -503,8 +505,7 @@ PRIVATE void cosineModulateSynth4(SBC_BUFFER_T *RESTRICT out, OI_INT32 const *RE
     out[7] = (OI_INT16)y1;
 }
 
-
-
 /**
 @}
 */
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

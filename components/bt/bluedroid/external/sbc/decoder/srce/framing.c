@@ -33,9 +33,11 @@ Checksum and header-related functions.
 @{
 */
 
+#include "bt_target.h"
 #include "oi_codec_sbc_private.h"
 #include "oi_assert.h"
 
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 /* asdasd */
 
@@ -247,3 +249,5 @@ PRIVATE void shift_buffer(SBC_BUFFER_T *dest, SBC_BUFFER_T *src, OI_UINT wordCou
 /**
 @}
 */
+
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

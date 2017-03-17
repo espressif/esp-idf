@@ -28,8 +28,11 @@
 /**@addtogroup codec_internal */
 /**@{*/
 
+#include "bt_target.h"
 #include "oi_codec_sbc_private.h"
 #include "oi_bitstream.h"
+
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 #define SPECIALIZE_READ_SAMPLES_JOINT
 
@@ -463,3 +466,4 @@ PRIVATE void OI_SBC_ReadSamplesJoint(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_B
 
 /**@}*/
 
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

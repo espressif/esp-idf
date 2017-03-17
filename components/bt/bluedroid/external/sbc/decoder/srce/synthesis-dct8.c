@@ -33,8 +33,10 @@
  * factorization. The scaling factors are folded into the windowing
  * constants. 29 adds and 5 16x32 multiplies per 8 samples.
  */
-
+#include "bt_target.h"
 #include "oi_codec_sbc_private.h"
+
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 #define AAN_C4_FIX (759250125)/* S1.30  759250125   0.707107*/
 
@@ -303,3 +305,4 @@ PRIVATE void dct2_8(SBC_BUFFER_T *RESTRICT out, OI_INT32 const *RESTRICT in)
 }
 
 /**@}*/
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

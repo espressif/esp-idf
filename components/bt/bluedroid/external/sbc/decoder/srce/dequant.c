@@ -95,7 +95,10 @@
 
  */
 
+#include "bt_target.h"
 #include <oi_codec_sbc_private.h>
+
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 #ifndef SBC_DEQUANT_LONG_SCALED_OFFSET
 #define SBC_DEQUANT_LONG_SCALED_OFFSET 1555931970
@@ -208,3 +211,5 @@ INLINE OI_INT32 OI_SBC_Dequant_Unscaled(OI_UINT32 raw, OI_UINT scale_factor, OI_
 /**
 @}
 */
+
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

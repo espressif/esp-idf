@@ -30,8 +30,10 @@
 
 
  */
-
+#include "bt_target.h"
 #include <oi_codec_sbc_private.h>
+
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 #ifndef CLIP_INT16
 #define CLIP_INT16(x) do { if (x > OI_INT16_MAX) { x = OI_INT16_MAX; } else if (x < OI_INT16_MIN) { x = OI_INT16_MIN; } } while (0)
@@ -133,3 +135,5 @@ PRIVATE void SynthWindow80_generated(OI_INT16 *pcm, SBC_BUFFER_T const *RESTRICT
     /* 1 - stage 4 */ pcm_a += (MUL_16S_16S(9539, buffer[ 72])) >> 4;
     /* 1 - stage 4 */ pcm_a /= 32768; CLIP_INT16(pcm_a); pcm[4 << strideShift] = (OI_INT16)pcm_a;
 }
+
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

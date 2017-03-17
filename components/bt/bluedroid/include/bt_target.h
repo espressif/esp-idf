@@ -57,6 +57,8 @@
 #define A2D_INCLUDED                TRUE
 #define AVCT_INCLUDED               TRUE
 #define AVRC_INCLUDED               TRUE
+#define SBC_DEC_INCLUDED            TRUE
+#define SBC_ENC_INCLUDED            FALSE
 #define MCA_INCLUDED                FALSE
 #define BTC_SM_INCLUDED             TRUE
 #define BTC_PRF_QUEUE_INCLUDED      TRUE
@@ -79,6 +81,8 @@
 #define A2D_INCLUDED                FALSE
 #define AVCT_INCLUDED               FALSE
 #define AVRC_INCLUDED               FALSE
+#define SBC_DEC_INCLUDED            FALSE
+#define SBC_ENC_INCLUDED            FALSE
 #define MCA_INCLUDED                FALSE
 #define BTC_SM_INCLUDED             FALSE
 #define BTC_PRF_QUEUE_INCLUDED      FALSE

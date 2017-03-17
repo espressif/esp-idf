@@ -24,8 +24,11 @@
  ******************************************************************************/
 
 /*Includes*/
+#include "bt_target.h"
 #include "sbc_encoder.h"
 #include "sbc_enc_func_declare.h"
+
+#if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE)
 
 /*global arrays*/
 const SINT16 sbc_enc_as16Offset4[4][4] = {  { -1, 0, 0, 0}, { -2, 0, 0, 1},
@@ -181,3 +184,5 @@ void sbc_enc_bit_alloc_mono(SBC_ENC_PARAMS *pstrCodecParams)
     }
 }
 /*End of BitAlloc() function*/
+
+#endif /* #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE) */

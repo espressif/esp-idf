@@ -33,10 +33,11 @@ version number of the eSBC codec
 /**********************************************************************************
   $Revision: #1 $
 ***********************************************************************************/
-
+#include "bt_target.h"
 #include "oi_stddefs.h"
 #include "oi_codec_sbc_private.h"
 
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 /** Version string for the BLUEmagic 3.0 protocol stack and profiles */
 PRIVATE OI_CHAR *const codecVersion = "v1.5"
 #ifdef OI_SBC_EVAL
@@ -56,3 +57,5 @@ OI_CHAR *OI_CODEC_Version(void)
 /**
 @}
 */
+
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */

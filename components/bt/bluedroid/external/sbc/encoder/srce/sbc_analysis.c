@@ -22,6 +22,7 @@
  *  stream.
  *
  ******************************************************************************/
+#include "bt_target.h"
 #include <string.h>
 #include "sbc_encoder.h"
 #include "sbc_enc_func_declare.h"
@@ -1077,3 +1078,5 @@ void SbcAnalysisInit (void)
     memset(s16X, 0, ENC_VX_BUFFER_SIZE * sizeof(SINT16));
     ShiftCounter = 0;
 }
+
+#endif /* #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE) */

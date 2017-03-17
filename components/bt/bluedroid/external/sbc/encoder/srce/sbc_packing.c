@@ -21,9 +21,11 @@
  *  This file contains code for packing the Encoded data into bit streams.
  *
  ******************************************************************************/
-
+#include "bt_target.h"
 #include "sbc_encoder.h"
 #include "sbc_enc_func_declare.h"
+
+#if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE)
 
 #if (SBC_ARM_ASM_OPT==TRUE)
 #define Mult32(s32In1,s32In2,s32OutLow)                                                 \
@@ -251,3 +253,4 @@ void EncPacking(SBC_ENC_PARAMS *pstrEncParams)
     pstrEncParams->pu8NextPacket += pstrEncParams->u16PacketLength; /* move the pointer to the end in case there is more than one frame to encode */
 }
 
+#endif /* #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE) */

@@ -27,6 +27,8 @@
 #include "sbc_encoder.h"
 #include "sbc_enc_func_declare.h"
 
+#if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE)
+
 SINT16 EncMaxShiftCounter;
 
 /*************************************************************************************************
@@ -397,3 +399,5 @@ void SBC_Encoder_Init(SBC_ENC_PARAMS *pstrEncParams)
     memset(&sbc_prtc_cb, 0, sizeof(tSBC_PRTC_CB));
     sbc_prtc_cb.base = 6 + pstrEncParams->s16NumOfChannels * pstrEncParams->s16NumOfSubBands / 2;
 }
+
+#endif /* #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE) */

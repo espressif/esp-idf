@@ -16,9 +16,11 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-
+#include "bt_target.h"
 #include <stdlib.h>
 #include <oi_codec_sbc_private.h>
+
+#if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE)
 
 /**********************************************************************************
   $Revision: #1 $
@@ -76,3 +78,5 @@ PRIVATE OI_STATUS OI_CODEC_SBC_Alloc(OI_CODEC_SBC_COMMON_CONTEXT *common,
 
     return OI_OK;
 }
+
+#endif /* #if (defined(SBC_DEC_INCLUDED) && SBC_DEC_INCLUDED == TRUE) */
