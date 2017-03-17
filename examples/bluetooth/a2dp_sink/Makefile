@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := bluedroid_demos
+PROJECT_NAME := a2dp_sink
 
 COMPONENT_ADD_INCLUDEDIRS := components/include
 

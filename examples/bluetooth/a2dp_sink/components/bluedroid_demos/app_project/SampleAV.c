@@ -8,14 +8,15 @@
 #include "freertos/timers.h"
 
 #include "esp_system.h"
-// #include "EspAudio.h"
-// #include "EspAudioCom.h"
 
 #include "bt_app_common.h"
 #include "esp_bt_main.h"
+#include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
+
+static uint32_t m_pkt_cnt = 0;
 
 typedef enum {
     BT_APP_EVT_STACK_ON = 0xa0,
@@ -52,6 +53,9 @@ static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 
 static void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
+    if (++m_pkt_cnt % 50 == 0) {
+        BT_APP_TRACE_ERROR("audio data pkt cnt %u\n", m_pkt_cnt);
+    }
     // EspAudioPlayerStreamWrite((uint8_t *)data, len, 10);
 }
 
@@ -77,7 +81,7 @@ static void bt_app_handle_evt(uint16_t event, void *p_param)
     case BT_APP_EVT_STACK_ON: {
         char *dev_name = "ESP_SPEAKER";
 
-	esp_bt_gap_set_device_name(dev_name);
+	esp_bt_dev_set_device_name(dev_name);
 
         esp_a2d_register_callback(&bt_app_a2d_cb);
         esp_a2d_register_data_callback(bt_app_a2d_data_cb);
@@ -144,13 +148,11 @@ void bt_app_handle_rc_evt(uint16_t event, void *p_param)
 void app_main_entry(void)
 {
     esp_err_t init, enable;
-    // init = esp_bt_init_stack();
     init = esp_bluedroid_init();
     if (init != ESP_OK) {
         return;
     }
 
-    // enable = esp_bt_enable_stack();
     enable = esp_bluedroid_enable();
     if (enable != ESP_OK) {
         return;
