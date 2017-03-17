@@ -22,10 +22,12 @@
  *
  ******************************************************************************/
 #include <string.h>
-
+#include "bt_target.h"
 #include "gki.h"
 #include "avrc_api.h"
 #include "avrc_int.h"
+
+#if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
 #ifndef SDP_AVRCP_1_4
 #define SDP_AVRCP_1_4      FALSE
@@ -350,3 +352,4 @@ void AVRC_Init(void)
 #endif
 }
 
+#endif /* #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE) */

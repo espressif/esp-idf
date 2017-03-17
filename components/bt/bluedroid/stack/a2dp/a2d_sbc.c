@@ -31,6 +31,8 @@
 #include "a2d_sbc.h"
 #include "bt_utils.h"
 
+#if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE)
+
 /*************************************************************************************************
  * SBC descramble code
  * Purpose: to tie the SBC code with BTE/mobile stack code,
@@ -397,3 +399,4 @@ void A2D_ParsSbcMplHdr(UINT8 *p_src, BOOLEAN *p_frag, BOOLEAN *p_start, BOOLEAN 
     }
 }
 
+#endif /* #if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE) */

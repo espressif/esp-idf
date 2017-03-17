@@ -1,3 +1,18 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "bt_target.h"
 #include <stdlib.h>
 #include <string.h>
 #include "btc_common.h"
@@ -24,9 +39,10 @@ static tBTA_SERVICE_MASK btc_enabled_services = 0;
 /******************************************************************************
 **  Externs
 ******************************************************************************/
+#if BTC_AV_INCLUDED
 extern bt_status_t btc_av_execute_service(BOOLEAN b_enable);
 extern bt_status_t btc_av_sink_execute_service(BOOLEAN b_enable);
-
+#endif
 /******************************************************************************
 **  Functions
 ******************************************************************************/
@@ -194,12 +210,14 @@ static bt_status_t btc_in_execute_service_request(tBTA_SERVICE_ID service_id,
     LOG_DEBUG("%s service_id: %d\n", __FUNCTION__, service_id);
     /* Check the service_ID and invoke the profile's BT state changed API */
     switch (service_id) {
+#if BTC_AV_INCLUDED
     case BTA_A2DP_SOURCE_SERVICE_ID:
         btc_av_execute_service(b_enable);
         break;
     case BTA_A2DP_SINK_SERVICE_ID:
         btc_av_sink_execute_service(b_enable);
         break;
+#endif
     default:
         LOG_ERROR("%s: Unknown service being enabled\n", __FUNCTION__);
         return BT_STATUS_FAIL;

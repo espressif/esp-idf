@@ -29,6 +29,8 @@
 #include "avct_api.h"
 #include "avct_int.h"
 
+#if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE)
+
 /*******************************************************************************
 **
 ** Function         avct_ccb_alloc
@@ -148,3 +150,5 @@ tAVCT_CCB *avct_ccb_by_idx(UINT8 idx)
     }
     return p_ccb;
 }
+
+#endif /* #if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE) */

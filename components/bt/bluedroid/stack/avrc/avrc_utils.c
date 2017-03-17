@@ -16,11 +16,12 @@
  *
  ******************************************************************************/
 #include <string.h>
-
+#include "bt_target.h"
 #include "gki.h"
 #include "avrc_api.h"
 #include "avrc_int.h"
 
+#if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
 
@@ -237,3 +238,4 @@ BOOLEAN avrc_is_valid_opcode(UINT8 opcode)
 
 #endif /* (AVRC_METADATA_INCLUDED == TRUE) */
 
+#endif /* #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE) */

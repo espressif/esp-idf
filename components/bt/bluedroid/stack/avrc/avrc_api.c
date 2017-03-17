@@ -24,10 +24,12 @@
 // #include <assert.h>
 #include "bt_trace.h"
 #include <string.h>
-
+#include "bt_target.h"
 #include "gki.h"
 #include "avrc_api.h"
 #include "avrc_int.h"
+
+#if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
 /*****************************************************************************
 **  Global data
@@ -1167,3 +1169,4 @@ UINT16 AVRC_PassRsp(UINT8 handle, UINT8 label, tAVRC_MSG_PASS *p_msg)
     return AVRC_NO_RESOURCES;
 }
 
+#endif /* #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE) */

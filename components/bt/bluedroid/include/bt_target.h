@@ -43,6 +43,7 @@
 
 #if CONFIG_CLASSIC_BT_ENABLED
 
+#define BTA_SDP_INCLUDED            TRUE
 #define BTA_PAN_INCLUDED            FALSE
 #define BTA_HH_INCLUDED             FALSE
 #define BTA_AR_INCLUDED             TRUE
@@ -52,12 +53,19 @@
 #define RFCOMM_INCLUDED             FALSE
 #define PAN_INCLUDED                FALSE
 #define HID_HOST_INCLUDED           FALSE
+#define AVDT_INCLUDED               TRUE
 #define A2D_INCLUDED                TRUE
+#define AVCT_INCLUDED               TRUE
 #define AVRC_INCLUDED               TRUE
 #define MCA_INCLUDED                FALSE
+#define BTC_SM_INCLUDED             TRUE
+#define BTC_PRF_QUEUE_INCLUDED      TRUE
+#define BTC_GAP_BT_INCLUDED         TRUE
+#define BTC_AV_INCLUDED             TRUE
 
 #else /* #if CONFIG_CLASSIC_BT_ENABLED */
 
+#define BTA_SDP_INCLUDED            FALSE
 #define BTA_PAN_INCLUDED            FALSE
 #define BTA_HH_INCLUDED             FALSE
 #define BTA_AR_INCLUDED             FALSE
@@ -67,9 +75,15 @@
 #define RFCOMM_INCLUDED             FALSE
 #define PAN_INCLUDED                FALSE
 #define HID_HOST_INCLUDED           FALSE
+#define AVDT_INCLUDED               FALSE
 #define A2D_INCLUDED                FALSE
+#define AVCT_INCLUDED               FALSE
 #define AVRC_INCLUDED               FALSE
 #define MCA_INCLUDED                FALSE
+#define BTC_SM_INCLUDED             FALSE
+#define BTC_PRF_QUEUE_INCLUDED      FALSE
+#define BTC_GAP_BT_INCLUDED         FALSE
+#define BTC_AV_INCLUDED             FALSE
 
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 

@@ -33,6 +33,8 @@
 #include "gki.h"
 #include "btu.h"
 
+#if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
+
 /* This table is used to lookup the callback event that matches a particular
 ** state machine API request event.  Note that state machine API request
 ** events are at the beginning of the event list starting at zero, thus
@@ -2174,3 +2176,4 @@ void avdt_scb_queue_frags(tAVDT_SCB *p_scb, UINT8 **pp_data, UINT32 *p_data_len,
 }
 #endif
 
+#endif /* #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE) */

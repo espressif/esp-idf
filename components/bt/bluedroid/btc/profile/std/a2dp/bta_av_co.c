@@ -22,8 +22,8 @@
  *  BTC.
  *
  ******************************************************************************/
-
 #include "string.h"
+#include "bt_target.h"
 #include "a2d_api.h"
 #include "a2d_sbc.h"
 #include "bta_sys.h"
@@ -34,6 +34,8 @@
 #include "btc_media.h"
 #include "btc_av_co.h"
 #include "btc_util.h"
+
+#if BTC_AV_INCLUDED
 
 /*****************************************************************************
  **  Constants
@@ -1745,3 +1747,5 @@ tBTA_AV_CO_FUNCTS bta_av_a2d_cos = {
     bta_av_co_audio_src_data_path,
     bta_av_co_audio_delay
 };
+
+#endif /* #if BTC_AV_INCLUDED */

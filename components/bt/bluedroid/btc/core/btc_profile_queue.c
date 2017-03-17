@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "bt_target.h"
 #include <string.h>
 #include "esp_bt_main.h"
 #include "bt_trace.h"
 #include "bt_defs.h"
-
 #include "btc_profile_queue.h"
 #include "gki.h"
 #include "list.h"
 #include "allocator.h"
 
+#if BTC_PRF_QUEUE_INCLUDED
 /*******************************************************************************
 **  Local type definitions
 *******************************************************************************/
@@ -167,3 +168,5 @@ void btc_queue_release(void)
     list_free(connect_queue);
     connect_queue = NULL;
 }
+
+#endif /* if BTC_PRF_QUEUE_INCLUDED */

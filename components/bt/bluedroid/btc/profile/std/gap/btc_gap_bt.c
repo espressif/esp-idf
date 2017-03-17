@@ -17,7 +17,9 @@
 #include "bta_api.h"
 #include "bt_trace.h"
 #include <string.h>
+#include "bt_target.h"
 
+#if BTC_GAP_BT_INCLUDED
 void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
     switch (msg->act) {
@@ -85,3 +87,5 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
     }
     btc_gap_bt_arg_deep_free(msg);
 }
+
+#endif /* #if BTC_GAP_BT_INCLUDED */

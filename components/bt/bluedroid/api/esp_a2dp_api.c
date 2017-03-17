@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "bt_target.h"
 #include <string.h>
 #include "esp_err.h"
 #include "esp_a2dp_api.h"
 #include "esp_bt_main.h"
 #include "btc_manage.h"
 #include "btc_av.h"
+
+#if BTC_AV_INCLUDED
 
 esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback)
 {
@@ -126,3 +129,5 @@ esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
     stat = btc_transfer_context(&msg, NULL, 0, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
+
+#endif /* #if BTC_AV_INCLUDED */

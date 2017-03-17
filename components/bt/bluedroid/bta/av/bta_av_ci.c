@@ -23,6 +23,7 @@
  *
  ******************************************************************************/
 
+#include "bt_target.h"
 #include "bta_api.h"
 #include "bta_sys.h"
 #include "bta_av_int.h"
@@ -30,6 +31,7 @@
 
 #include <string.h>
 
+#if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_av_ci_src_data_ready
@@ -97,3 +99,4 @@ void bta_av_ci_setconfig(tBTA_AV_HNDL hndl, UINT8 err_code, UINT8 category,
     }
 }
 
+#endif /* #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE) */

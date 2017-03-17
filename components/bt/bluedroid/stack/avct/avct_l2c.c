@@ -31,6 +31,8 @@
 #include "l2c_api.h"
 #include "l2cdefs.h"
 
+#if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE)
+
 /* Configuration flags. */
 #define AVCT_L2C_CFG_IND_DONE   (1<<0)
 #define AVCT_L2C_CFG_CFM_DONE   (1<<1)
@@ -434,3 +436,4 @@ void avct_l2c_data_ind_cback(UINT16 lcid, BT_HDR *p_buf)
     }
 }
 
+#endif /* #if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE) */

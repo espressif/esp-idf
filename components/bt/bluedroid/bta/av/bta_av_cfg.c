@@ -30,6 +30,8 @@
 #include "bta_api.h"
 #include "bta_av_int.h"
 
+#if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
+
 #ifndef BTA_AV_RC_PASS_RSP_CODE
 #define BTA_AV_RC_PASS_RSP_CODE     BTA_AV_RSP_NOT_IMPL
 #endif
@@ -205,3 +207,5 @@ UINT16 *p_bta_av_rc_id_ac = NULL;
 #endif
 
 UINT16 *p_bta_av_rc_id = (UINT16 *) bta_av_rc_id;
+
+#endif /* if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE) */

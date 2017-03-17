@@ -36,6 +36,7 @@
 #include "gki.h"
 #include "btu.h"
 
+#if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 /*****************************************************************************
 ** constants
 *****************************************************************************/
@@ -1899,3 +1900,5 @@ void avdt_msg_ind(tAVDT_CCB *p_ccb, BT_HDR *p_buf)
         avdt_ccb_event(p_ccb, AVDT_CCB_RCVRSP_EVT, NULL);
     }
 }
+
+#endif /* #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE) */

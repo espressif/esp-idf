@@ -19,6 +19,7 @@
  *  Description:   AV implementation
  *
  *****************************************************************************/
+#include "bt_target.h"
 #include <string.h>
 #include "bt_trace.h"
 #include "bt_defs.h"
@@ -38,6 +39,8 @@
 #include "bt_utils.h"
 #include "btc_common.h"
 #include "btc_manage.h"
+
+#if BTC_AV_INCLUDED
 
 /*****************************************************************************
 **  Constants & Macros
@@ -1240,3 +1243,5 @@ void btc_a2dp_cb_handler(btc_msg_t *msg)
     btc_sm_dispatch(btc_av_cb.sm_handle, msg->act, (void *)(msg->arg));
     btc_av_event_free_data(msg->act, msg->arg);
 }
+
+#endif /* #if BTC_AV_INCLUDED */

@@ -33,6 +33,8 @@
 #include "gki.h"
 #include "btu.h"
 
+#if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
+
 /*****************************************************************************
 ** state machine constants and types
 *****************************************************************************/
@@ -797,3 +799,4 @@ void avdt_scb_peer_seid_list(tAVDT_MULTI *p_multi)
     }
 }
 
+#endif /* #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE) */

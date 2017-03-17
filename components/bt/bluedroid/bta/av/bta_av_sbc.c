@@ -23,11 +23,14 @@
  *
  ******************************************************************************/
 
+#include "bt_target.h"
 #include "a2d_api.h"
 #include "a2d_sbc.h"
 #include "bta_av_sbc.h"
 #include "utl.h"
 #include "bt_utils.h"
+
+#if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
 
 typedef int (tBTA_AV_SBC_ACT)(void *p_src, void *p_dst,
                                UINT32 src_samples, UINT32 dst_samples,
@@ -664,3 +667,4 @@ void bta_av_sbc_bld_hdr(BT_HDR *p_buf, UINT16 fr_per_pkt)
     A2D_BldSbcMplHdr(p, FALSE, FALSE, FALSE, (UINT8) fr_per_pkt);
 }
 
+#endif /* #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE) */

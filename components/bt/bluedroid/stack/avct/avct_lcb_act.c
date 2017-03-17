@@ -31,6 +31,8 @@
 #include "gki.h"
 #include "btm_api.h"
 
+#if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE)
+
 /* packet header length lookup table */
 const UINT8 avct_lcb_pkt_type_len[] = {
     AVCT_HDR_LEN_SINGLE,
@@ -732,3 +734,5 @@ void avct_lcb_msg_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
         }
     }
 }
+
+#endif /* #if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE) */

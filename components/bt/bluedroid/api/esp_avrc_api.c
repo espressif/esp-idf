@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "bt_target.h"
 #include <string.h>
 #include "esp_err.h"
 #include "esp_avrc_api.h"
 #include "esp_bt_main.h"
 #include "btc_manage.h"
 #include "btc_avrc.h"
+
+#if BTC_AV_INCLUDED
 
 esp_err_t esp_avrc_ct_register_callback(esp_avrc_ct_cb_t callback)
 {
@@ -89,3 +92,5 @@ esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
+
+#endif /* #if BTC_AV_INCLUDED */

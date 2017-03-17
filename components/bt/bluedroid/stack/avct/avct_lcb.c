@@ -31,6 +31,8 @@
 #include "avct_int.h"
 #include "gki.h"
 
+#if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE)
+
 /*****************************************************************************
 ** state machine constants and types
 *****************************************************************************/
@@ -470,4 +472,4 @@ BOOLEAN avct_lcb_last_ccb(tAVCT_LCB *p_lcb, tAVCT_CCB *p_ccb_last)
 }
 
 
-
+#endif /* #if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE) */

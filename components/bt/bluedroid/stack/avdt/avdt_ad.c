@@ -35,7 +35,7 @@
 #include "l2c_api.h"
 #include "l2cdefs.h"
 
-
+#if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         avdt_ad_type_to_tcid
@@ -643,3 +643,4 @@ void avdt_ad_close_req(UINT8 type, tAVDT_CCB *p_ccb, tAVDT_SCB *p_scb)
     }
 }
 
+#endif /* #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE) */

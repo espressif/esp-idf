@@ -34,6 +34,7 @@
 #include "btm_api.h"
 #include "btm_int.h"
 
+#if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 
 /* callback function declarations */
 void avdt_l2c_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 id);
@@ -529,3 +530,4 @@ void avdt_l2c_data_ind_cback(UINT16 lcid, BT_HDR *p_buf)
         GKI_freebuf(p_buf);
 }
 
+#endif /* #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE) */

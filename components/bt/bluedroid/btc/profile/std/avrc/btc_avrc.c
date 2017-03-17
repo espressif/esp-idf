@@ -19,18 +19,19 @@
  *  Description:   Bluetooth AVRC implementation
  *
  *****************************************************************************/
+#include "bt_target.h"
 #include <string.h>
 #include "bta_api.h"
 #include "bta_av_api.h"
 #include "avrc_defs.h"
 #include "gki.h"
-
 #include "btc_common.h"
 #include "btc_util.h"
 #include "btc_av.h"
 #include "btc_avrc.h"
 #include "btc_manage.h"
 #include "esp_avrc_api.h"
+#if BTC_AV_INCLUDED
 
 /*****************************************************************************
 **  Constants & Macros
@@ -462,3 +463,5 @@ void btc_avrc_call_handler(btc_msg_t *msg)
         LOG_WARN("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
     }
 }
+
+#endif /* #if BTC_AV_INCLUDED */

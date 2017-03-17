@@ -33,12 +33,12 @@
 #include "btm_api.h"
 #include "btu.h"
 
+#if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 
 /* Control block for AVDT */
 #if AVDT_DYNAMIC_MEMORY == FALSE
 tAVDT_CB avdt_cb;
 #endif
-
 
 /*******************************************************************************
 **
@@ -1434,3 +1434,5 @@ UINT8 AVDT_SetTraceLevel (UINT8 new_level)
 
     return (avdt_cb.trace_level);
 }
+
+#endif /*  #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE) */

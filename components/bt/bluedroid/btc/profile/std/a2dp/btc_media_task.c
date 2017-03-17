@@ -22,12 +22,11 @@
  **
  ******************************************************************************/
 
+#include "bt_target.h"
 #include "bt_trace.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-
-#include "bt_target.h"
 #include "fixed_queue.h"
 #include "gki.h"
 #include "bta_api.h"
@@ -58,6 +57,8 @@
 #include "oi_codec_sbc.h"
 #include "oi_status.h"
 // #endif
+
+#if BTC_AV_INCLUDED
 
 // #if (BTA_AV_SINK_INCLUDED == TRUE)
 OI_CODEC_SBC_DECODER_CONTEXT context;
@@ -1009,3 +1010,5 @@ void dump_codec_info(unsigned char *p_codec)
     APPL_TRACE_DEBUG("\tBit pool Min:%d Max:%d\n", sbc_cie.min_bitpool, sbc_cie.max_bitpool);
 
 }
+
+#endif /* #if BTC_AV_INCLUDED */

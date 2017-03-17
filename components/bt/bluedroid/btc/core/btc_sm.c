@@ -20,13 +20,14 @@
  *  Description:   Generic BTC state machine API
  *
  *****************************************************************************/
-
+#include "bt_target.h"
 #include "bt_defs.h"
 #include "allocator.h"
 #include "btc_common.h"
 #include "btc_sm.h"
 #include "gki.h"
 
+#if BTC_SM_INCLUDED
 /*****************************************************************************
 **  Constants & Macros
 ******************************************************************************/
@@ -195,3 +196,5 @@ bt_status_t btc_sm_change_state(btc_sm_handle_t handle, btc_sm_state_t state)
 
     return status;
 }
+
+#endif /* #if BTC_SM_INCLUDED */

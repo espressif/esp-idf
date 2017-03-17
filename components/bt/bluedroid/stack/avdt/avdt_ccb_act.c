@@ -34,6 +34,8 @@
 #include "btu.h"
 #include "btm_api.h"
 
+#if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
+
 /*******************************************************************************
 **
 ** Function         avdt_ccb_clear_ccb
@@ -1131,3 +1133,5 @@ void avdt_ccb_ll_opened(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
         (*p_ccb->p_conn_cback)(0, p_ccb->peer_addr, AVDT_CONNECT_IND_EVT, &avdt_ctrl);
     }
 }
+
+#endif /* #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE) */

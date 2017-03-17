@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "bt_target.h"
 #include <string.h>
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
 #include "bt_trace.h"
 #include "btc_manage.h"
 #include "btc_gap_bt.h"
+
+#if BTC_GAP_BT_INCLUDED
 
 esp_err_t esp_bt_gap_set_scan_mode(esp_bt_scan_mode_t mode)
 {
@@ -63,3 +66,5 @@ esp_err_t esp_bt_gap_set_device_name(const char *name)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+#endif /* #if BTC_GAP_BT_INCLUDED */

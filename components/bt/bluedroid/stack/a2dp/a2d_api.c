@@ -28,6 +28,8 @@
 #include "a2d_int.h"
 #include "avdt_api.h"
 
+#if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE)
+
 /*****************************************************************************
 **  Global data
 *****************************************************************************/
@@ -393,3 +395,4 @@ void A2D_Init(void)
 #endif
 }
 
+#endif /* #if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE) */

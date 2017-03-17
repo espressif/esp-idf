@@ -33,6 +33,8 @@
 #include "avct_api.h"
 #include "avct_int.h"
 
+#if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE)
+
 /* Control block for AVCT */
 #if AVCT_DYNAMIC_MEMORY == FALSE
 tAVCT_CB avct_cb;
@@ -471,3 +473,4 @@ UINT16 AVCT_MsgReq(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR *p_msg)
     return result;
 }
 
+#endif /* #if (defined(AVCT_INCLUDED) && AVCT_INCLUDED == TRUE) */

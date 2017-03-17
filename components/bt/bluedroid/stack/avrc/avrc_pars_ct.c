@@ -16,12 +16,14 @@
  *
  ******************************************************************************/
 #include <string.h>
-
+#include "bt_target.h"
 #include "gki.h"
 #include "avrc_api.h"
 #include "avrc_defs.h"
 #include "avrc_int.h"
 #include "bt_utils.h"
+
+#if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
 /*****************************************************************************
 **  Global data
@@ -148,3 +150,5 @@ tAVRC_STS AVRC_ParsResponse (tAVRC_MSG *p_msg, tAVRC_RESPONSE *p_result, UINT8 *
 
 
 #endif /* (AVRC_METADATA_INCLUDED == TRUE) */
+
+#endif /* #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE) */
