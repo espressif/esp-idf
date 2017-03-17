@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __BTC_GAP_BT_H__
-#define __BTC_GAP_BT_H__
+#ifndef __BTC_DEV_H__
+#define __BTC_DEV_H__
 
 #include "esp_bt_defs.h"
-#include "esp_gap_bt_api.h"
+#include "esp_bt_device.h"
 #include "btc_task.h"
 
 typedef enum {
-    BTC_GAP_BT_ACT_SET_SCAN_MODE = 0,
-} btc_gap_bt_act_t;
+    BTC_DEV_ACT_SET_DEVICE_NAME
+} btc_dev_act_t;
 
-/* btc_bt_gap_args_t */
+/* btc_dev_args_t */
 typedef union {
-    // BTC_BT_GAP_ACT_SET_SCAN_MODE,
-    struct set_bt_scan_mode_args {
-        esp_bt_scan_mode_t mode;
-    } set_scan_mode;
-} btc_gap_bt_args_t;
+    // BTC_BT_GAP_ACT_SET_DEV_NAME
+    struct set_bt_dev_name_args {
+#define ESP_DEV_DEVICE_NAME_MAX (32)
+        char device_name[ESP_DEV_DEVICE_NAME_MAX + 1];
+    } set_dev_name;
+} btc_dev_args_t;
 
-void btc_gap_bt_call_handler(btc_msg_t *msg);
+void btc_dev_call_handler(btc_msg_t *msg);
 
-void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+#endif /* __BTC_DEV_H__ */
 
-#endif /* __BTC_GAP_BT_H__ */

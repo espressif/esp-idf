@@ -78,10 +78,6 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_bt_set_scan_mode(arg->set_scan_mode.mode);
         break;
     }
-    case BTC_GAP_BT_ACT_SET_DEV_NAME: {
-        BTA_DmSetDeviceName(arg->set_dev_name.device_name);
-        break;
-    }
     default:
         break;
     }

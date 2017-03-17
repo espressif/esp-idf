@@ -20,6 +20,7 @@
 #include "gki.h"
 #include "bt_defs.h"
 #include "btc_main.h"
+#include "btc_dev.h"
 #include "btc_gatts.h"
 #include "btc_gattc.h"
 #include "btc_gap_ble.h"
@@ -39,6 +40,7 @@ static xQueueHandle xBtcQueue = 0;
 
 static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_MAIN_INIT] = {btc_main_call_handler,       NULL                    },
+    [BTC_PID_DEV]       = {btc_dev_call_handler,        NULL                    },
     [BTC_PID_GATTS]     = {btc_gatts_call_handler,      btc_gatts_cb_handler    },
     [BTC_PID_GATTC]     = {btc_gattc_call_handler,      btc_gattc_cb_handler    },
     [BTC_PID_GAP_BLE]   = {btc_gap_ble_call_handler,    btc_gap_ble_cb_handler  },

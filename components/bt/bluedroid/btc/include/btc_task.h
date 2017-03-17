@@ -36,6 +36,7 @@ typedef enum {
 
 typedef enum {
     BTC_PID_MAIN_INIT = 0,
+    BTC_PID_DEV,
     BTC_PID_GATTS,
     BTC_PID_GATTC,
     BTC_PID_GAP_BLE,

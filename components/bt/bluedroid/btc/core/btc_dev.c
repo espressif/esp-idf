@@ -12,31 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "bt_target.h"
 #include <string.h>
-#include "esp_bt_main.h"
-#include "esp_gap_bt_api.h"
-#include "bt_trace.h"
+#include "bta_api.h"
+#include "btc_task.h"
 #include "btc_manage.h"
-#include "btc_gap_bt.h"
+#include "btc_dev.h"
 
-#if BTC_GAP_BT_INCLUDED
-
-esp_err_t esp_bt_gap_set_scan_mode(esp_bt_scan_mode_t mode)
+void btc_dev_call_handler(btc_msg_t *msg)
 {
-    btc_msg_t msg;
-    btc_gap_bt_args_t arg;
+    btc_dev_args_t *arg = (btc_dev_args_t *)msg->arg;
 
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
+    LOG_DEBUG("%s act %d\n", __FUNCTION__, msg->act);
+
+    switch (msg->act) {
+    case BTC_DEV_ACT_SET_DEVICE_NAME:
+        BTA_DmSetDeviceName(arg->set_dev_name.device_name);
+        break;
+    default:
+        break;
     }
-    
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_GAP_BT;
-    msg.act = BTC_GAP_BT_ACT_SET_SCAN_MODE;
-    arg.set_scan_mode.mode = mode;
-
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-
-#endif /* #if BTC_GAP_BT_INCLUDED */
