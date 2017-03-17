@@ -32,6 +32,7 @@ build_template_app:
     IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
+    IDF_CI_BUILD: "1"
 
   script:
     - git clone https://github.com/espressif/esp-idf-template.git
@@ -224,6 +225,7 @@ push_master_to_github:
   image: espressif/esp32-ci-env
   variables:
     GIT_STRATEGY: clone
+    GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -232,7 +234,14 @@ push_master_to_github:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git remote add github git@github.com:espressif/esp-idf.git
-    - git push --follow-tags github HEAD
+    # What the next line of script does: goes through the list of refs for all branches we push to github,
+    # generates a snippet of shell which is evaluated. The snippet checks CI_BUILD_REF against the SHA
+    # (aka objectname) at tip of each branch, and if any SHAs match then it checks out the local branch
+    # and then pushes that ref to a corresponding github branch
+    #
+    # NB: In gitlab 9.x, CI_BUILD_REF was deprecated. New name is CI_COMMIT_REF. If below command suddenly
+    # generates bash syntax errors, this is probably why.
+    - eval $(git for-each-ref --shell bash --format 'if [ $CI_BUILD_REF == %(objectname) ]; then git checkout -B %(refname:strip=3); git push --follow-tags github %(refname:strip=3); fi;' $GITHUB_PUSH_REFS)
 
 
 deploy_docs:

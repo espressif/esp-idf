@@ -72,7 +72,7 @@ endif
 
 # Object files with embedded binaries to add to the component library
 # Correspond to the files named in COMPONENT_EMBED_FILES & COMPONENT_EMBED_TXTFILES
-COMPONENT_EMBED_OBJS ?= $(addsuffix .bin.o,$(COMPONENT_EMBED_FILES)) $(addsuffix .txt.o,$(COMPONENT_EMBED_TXTFILES))
+COMPONENT_EMBED_OBJS ?= $(addsuffix .bin.o,$(notdir $(COMPONENT_EMBED_FILES))) $(addsuffix .txt.o,$(notdir $(COMPONENT_EMBED_TXTFILES)))
 
 # If we're called to compile something, we'll get passed the COMPONENT_INCLUDES
 # variable with all the include dirs from all the components in random order. This
@@ -199,9 +199,9 @@ embed_txt/$$(notdir $(1)): $(call resolvepath,$(1),$(COMPONENT_PATH)) | embed_tx
 
 # messing about with the embed_X subdirectory then using 'cd' for objcopy is because the
 # full path passed to OBJCOPY makes it into the name of the symbols in the .o file
-$(1).$(2).o: embed_$(2)/$$(notdir $(1)) | $$(dir $(1))
+$$(notdir $(1)).$(2).o: embed_$(2)/$$(notdir $(1))
 	$(summary) EMBED $$@
-	cd embed_$(2); $(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) $$(call resolvepath,$$@,../)
+	cd embed_$(2); $(OBJCOPY) $(OBJCOPY_EMBED_ARGS) $$(notdir $$<) ../$$@
 
 CLEAN_FILES += embed_$(2)/$$(notdir $(1))
 endef

@@ -1,0 +1,9 @@
+# Enable AWS IoT SDK support
+CONFIG_AWS_IOT_SDK=y
+
+# Enable FATFS read only with long filename support
+# for loading Cert/CA/etc from filesystem
+# (if enabled in config)
+CONFIG_FATFS_READONLY=y
+CONFIG_FATFS_CODEPAGE_437=y
+CONFIG_FATFS_LFN_HEAP=y

@@ -40,7 +40,7 @@
 
 #include "mbedtls/platform.h"
 #include "mbedtls/net.h"
-#include "mbedtls/debug.h"
+#include "mbedtls/esp_debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
@@ -88,50 +88,6 @@ static const char *REQUEST = "GET " WEB_URL " HTTP/1.1\n"
 */
 extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
 extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
-
-#ifdef MBEDTLS_DEBUG_C
-
-#define MBEDTLS_DEBUG_LEVEL 4
-
-/* mbedtls debug function that translates mbedTLS debug output
-   to ESP_LOGx debug output.
-
-   MBEDTLS_DEBUG_LEVEL 4 means all mbedTLS debug output gets sent here,
-   and then filtered to the ESP logging mechanism.
-*/
-static void mbedtls_debug(void *ctx, int level,
-                     const char *file, int line,
-                     const char *str)
-{
-    const char *MBTAG = "mbedtls";
-    char *file_sep;
-
-    /* Shorten 'file' from the whole file path to just the filename
-
-       This is a bit wasteful because the macros are compiled in with
-       the full _FILE_ path in each case.
-    */
-    file_sep = rindex(file, '/');
-    if(file_sep)
-        file = file_sep+1;
-
-    switch(level) {
-    case 1:
-        ESP_LOGI(MBTAG, "%s:%d %s", file, line, str);
-        break;
-    case 2:
-    case 3:
-        ESP_LOGD(MBTAG, "%s:%d %s", file, line, str);
-    case 4:
-        ESP_LOGV(MBTAG, "%s:%d %s", file, line, str);
-        break;
-    default:
-        ESP_LOGE(MBTAG, "Unexpected log level %d: %s", level, str);
-        break;
-    }
-}
-
-#endif
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -240,9 +196,8 @@ static void https_get_task(void *pvParameters)
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
     mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-#ifdef MBEDTLS_DEBUG_C
-    mbedtls_debug_set_threshold(MBEDTLS_DEBUG_LEVEL);
-    mbedtls_ssl_conf_dbg(&conf, mbedtls_debug, NULL);
+#ifdef CONFIG_MBEDTLS_DEBUG
+    mbedtls_esp_enable_debug_log(&conf, 4);
 #endif
 
     if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
