@@ -96,8 +96,8 @@ extern int bta_av_sbc_up_sample (void *p_src, void *p_dst,
 **
 *******************************************************************************/
 extern int bta_av_sbc_up_sample_16s (void *p_src, void *p_dst,
-                                 UINT32 src_samples, UINT32 dst_samples,
-                                 UINT32 *p_ret);
+                                     UINT32 src_samples, UINT32 dst_samples,
+                                     UINT32 *p_ret);
 
 /*******************************************************************************
 **
@@ -138,8 +138,8 @@ extern int bta_av_sbc_up_sample_16m (void *p_src, void *p_dst,
 **
 *******************************************************************************/
 extern int bta_av_sbc_up_sample_8s (void *p_src, void *p_dst,
-                                 UINT32 src_samples, UINT32 dst_samples,
-                                 UINT32 *p_ret);
+                                    UINT32 src_samples, UINT32 dst_samples,
+                                    UINT32 *p_ret);
 
 /*******************************************************************************
 **
@@ -159,8 +159,8 @@ extern int bta_av_sbc_up_sample_8s (void *p_src, void *p_dst,
 **
 *******************************************************************************/
 extern int bta_av_sbc_up_sample_8m (void *p_src, void *p_dst,
-                                     UINT32 src_samples, UINT32 dst_samples,
-                                     UINT32 *p_ret);
+                                    UINT32 src_samples, UINT32 dst_samples,
+                                    UINT32 *p_ret);
 
 /*******************************************************************************
 **

@@ -754,8 +754,7 @@ typedef UINT8 tAVRC_UID[AVRC_UID_SIZE];
 /*
 This structure contains the header parameters of an AV/C message.
 */
-typedef struct
-{
+typedef struct {
     UINT8   ctype;          /* Command type.  */
     UINT8   subunit_type;   /* Subunit type. */
     UINT8   subunit_id;     /* Subunit ID.  This value is typically ignored in AVRCP,
@@ -765,8 +764,7 @@ typedef struct
 } tAVRC_HDR;
 
 /* This structure contains a UNIT INFO message. */
-typedef struct
-{
+typedef struct {
     tAVRC_HDR   hdr;        /* Message header. */
     UINT32      company_id; /* Company identifier. */
     UINT8       unit_type;  /* Unit type.  Uses the same values as subunit type. */
@@ -774,11 +772,10 @@ typedef struct
 } tAVRC_MSG_UNIT;
 
 /* This structure contains a SUBUNIT INFO message. */
-typedef struct
-{
+typedef struct {
     tAVRC_HDR   hdr;        /* Message header. */
     UINT8       subunit_type[AVRC_SUB_TYPE_LEN];
-                            /* Array containing subunit type values.  */
+    /* Array containing subunit type values.  */
     BOOLEAN     panel;      /* TRUE if the panel subunit type is in the
                              * subunit_type array, FALSE otherwise. */
     UINT8       page;       /* Specifies which part of the subunit type table is
@@ -787,8 +784,7 @@ typedef struct
 } tAVRC_MSG_SUB;
 
 /* This structure contains a VENDOR DEPENDENT message. */
-typedef struct
-{
+typedef struct {
     tAVRC_HDR   hdr;        /* Message header. */
     UINT32      company_id; /* Company identifier. */
     UINT8      *p_vendor_data;/* Pointer to vendor dependent data. */
@@ -796,8 +792,7 @@ typedef struct
 } tAVRC_MSG_VENDOR;
 
 /* PASS THROUGH message structure */
-typedef struct
-{
+typedef struct {
     tAVRC_HDR   hdr;        /* hdr.ctype Unused.
                              * hdr.subunit_type Unused.
                              * hdr.subunit_id Unused. */
@@ -814,8 +809,7 @@ typedef struct
 #define AVRC_RSP            AVCT_RSP    /* Response message */
 
 /* Browsing channel message structure */
-typedef struct
-{
+typedef struct {
     tAVRC_HDR   hdr;            /* hdr.ctype AVRC_CMD or AVRC_RSP.
                                  * hdr.subunit_type Unused.
                                  * hdr.subunit_id Unused. */
@@ -825,8 +819,7 @@ typedef struct
 } tAVRC_MSG_BROWSE;
 
 /* This is a union of all message type structures. */
-typedef union
-{
+typedef union {
     tAVRC_HDR           hdr;    /* Message header. */
     tAVRC_MSG_UNIT      unit;   /* UNIT INFO message. */
     tAVRC_MSG_SUB       sub;    /* SUBUNIT INFO message. */
@@ -842,7 +835,7 @@ typedef union
                                               (a <= AVRC_EVT_APP_SETTING_CHANGE)) ? TRUE : FALSE)
 
 #define AVRC_IS_VALID_ATTRIBUTE(a)          (((((a > 0) && a <= AVRC_PLAYER_SETTING_SCAN)) || \
-					      (a >= AVRC_PLAYER_SETTING_LOW_MENU_EXT)) ? TRUE : FALSE)
+                          (a >= AVRC_PLAYER_SETTING_LOW_MENU_EXT)) ? TRUE : FALSE)
 
 #define AVRC_IS_VALID_MEDIA_ATTRIBUTE(a)    ((a >= AVRC_MEDIA_ATTR_ID_TITLE) && \
                                              (a <= AVRC_MEDIA_ATTR_ID_PLAYING_TIME) ? TRUE : FALSE)
@@ -889,20 +882,17 @@ typedef struct {
 #define AVRC_CAP_MAX_NUM_EVT_ID     16
 #endif
 
-typedef union
-{
+typedef union {
     UINT32  company_id[AVRC_CAP_MAX_NUM_COMP_ID];
     UINT8   event_id[AVRC_CAP_MAX_NUM_EVT_ID];
 } tAVRC_CAPS_PARAM;
 
-typedef struct
-{
+typedef struct {
     UINT8   attr_id;
     UINT8   attr_val;
 } tAVRC_APP_SETTING;
 
-typedef struct
-{
+typedef struct {
     UINT8   attr_id;
     UINT16  charset_id;
     UINT8   str_len;
@@ -911,8 +901,7 @@ typedef struct
 
 typedef UINT8 tAVRC_FEATURE_MASK[AVRC_FEATURE_MASK_SIZE];
 
-typedef struct
-{
+typedef struct {
     UINT16              player_id;      /* A unique identifier for this media player.*/
     UINT8               major_type;     /* Use AVRC_MJ_TYPE_AUDIO, AVRC_MJ_TYPE_VIDEO, AVRC_MJ_TYPE_BC_AUDIO, or AVRC_MJ_TYPE_BC_VIDEO.*/
     UINT32              sub_type;       /* Use AVRC_SUB_TYPE_NONE, AVRC_SUB_TYPE_AUDIO_BOOK, or AVRC_SUB_TYPE_PODCAST*/
@@ -922,8 +911,7 @@ typedef struct
     tAVRC_FULL_NAME     name;           /* The player name, name length and character set id.*/
 } tAVRC_ITEM_PLAYER;
 
-typedef struct
-{
+typedef struct {
     tAVRC_UID           uid;            /* The uid of this folder */
     UINT8               type;           /* Use AVRC_FOLDER_TYPE_MIXED, AVRC_FOLDER_TYPE_TITLES,
                                            AVRC_FOLDER_TYPE_ALNUMS, AVRC_FOLDER_TYPE_ARTISTS, AVRC_FOLDER_TYPE_GENRES,
@@ -932,28 +920,24 @@ typedef struct
     tAVRC_FULL_NAME     name;           /* The folder name, name length and character set id. */
 } tAVRC_ITEM_FOLDER;
 
-typedef struct
-{
+typedef struct {
     UINT32              attr_id;        /* Use AVRC_MEDIA_ATTR_ID_TITLE, AVRC_MEDIA_ATTR_ID_ARTIST, AVRC_MEDIA_ATTR_ID_ALBUM,
                                            AVRC_MEDIA_ATTR_ID_TRACK_NUM, AVRC_MEDIA_ATTR_ID_NUM_TRACKS,
                                            AVRC_MEDIA_ATTR_ID_GENRE, AVRC_MEDIA_ATTR_ID_PLAYING_TIME */
     tAVRC_FULL_NAME     name;           /* The attribute value, value length and character set id. */
 } tAVRC_ATTR_ENTRY;
 
-typedef struct
-{
+typedef struct {
     tAVRC_UID           uid;            /* The uid of this media element item */
     UINT8               type;           /* Use AVRC_MEDIA_TYPE_AUDIO or AVRC_MEDIA_TYPE_VIDEO. */
     tAVRC_FULL_NAME     name;           /* The media name, name length and character set id. */
     UINT8               attr_count;     /* The number of attributes in p_attr_list */
-    tAVRC_ATTR_ENTRY*   p_attr_list;    /* Attribute entry list. */
+    tAVRC_ATTR_ENTRY   *p_attr_list;    /* Attribute entry list. */
 } tAVRC_ITEM_MEDIA;
 
-typedef struct
-{
+typedef struct {
     UINT8                   item_type;  /* AVRC_ITEM_PLAYER, AVRC_ITEM_FOLDER, or AVRC_ITEM_MEDIA */
-    union
-    {
+    union {
         tAVRC_ITEM_PLAYER   player;     /* The properties of a media player item.*/
         tAVRC_ITEM_FOLDER   folder;     /* The properties of a folder item.*/
         tAVRC_ITEM_MEDIA    media;      /* The properties of a media item.*/
@@ -961,8 +945,7 @@ typedef struct
 } tAVRC_ITEM;
 
 /* GetCapability */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -970,8 +953,7 @@ typedef struct
 } tAVRC_GET_CAPS_CMD;
 
 /* ListPlayerAppValues */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -979,8 +961,7 @@ typedef struct
 } tAVRC_LIST_APP_VALUES_CMD;
 
 /* GetCurAppValue */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -989,8 +970,7 @@ typedef struct
 } tAVRC_GET_CUR_APP_VALUE_CMD;
 
 /* SetAppValue */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -999,8 +979,7 @@ typedef struct
 } tAVRC_SET_APP_VALUE_CMD;
 
 /* GetAppAttrTxt */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1009,8 +988,7 @@ typedef struct
 } tAVRC_GET_APP_ATTR_TXT_CMD;
 
 /* GetAppValueTxt */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1020,8 +998,7 @@ typedef struct
 } tAVRC_GET_APP_VAL_TXT_CMD;
 
 /* InformCharset */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1030,8 +1007,7 @@ typedef struct
 } tAVRC_INFORM_CHARSET_CMD;
 
 /* InformBatteryStatus */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1039,8 +1015,7 @@ typedef struct
 } tAVRC_BATTERY_STATUS_CMD;
 
 /* GetElemAttrs */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1049,8 +1024,7 @@ typedef struct
 } tAVRC_GET_ELEM_ATTRS_CMD;
 
 /* RegNotify */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1059,8 +1033,7 @@ typedef struct
 } tAVRC_REG_NOTIF_CMD;
 
 /* SetAddrPlayer */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1068,8 +1041,7 @@ typedef struct
 } tAVRC_SET_ADDR_PLAYER_CMD;
 
 /* SetBrowsedPlayer */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1077,8 +1049,7 @@ typedef struct
 } tAVRC_SET_BR_PLAYER_CMD;
 
 /* SetAbsVolume */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1086,8 +1057,7 @@ typedef struct
 } tAVRC_SET_VOLUME_CMD;
 
 /* GetFolderItems */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1099,8 +1069,7 @@ typedef struct
 } tAVRC_GET_ITEMS_CMD;
 
 /* ChangePath */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1110,8 +1079,7 @@ typedef struct
 } tAVRC_CHG_PATH_CMD;
 
 /* GetItemAttrs */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1123,8 +1091,7 @@ typedef struct
 } tAVRC_GET_ATTRS_CMD;
 
 /* Search */
-typedef struct
-{
+typedef struct {
     UINT8           pdu;
     tAVRC_STS       status;
     UINT8           opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1132,8 +1099,7 @@ typedef struct
 } tAVRC_SEARCH_CMD;
 
 /* PlayItem */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1143,8 +1109,7 @@ typedef struct
 } tAVRC_PLAY_ITEM_CMD;
 
 /* AddToNowPlaying */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
@@ -1153,24 +1118,21 @@ typedef struct
     UINT16      uid_counter;
 } tAVRC_ADD_TO_PLAY_CMD;
 
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
 } tAVRC_CMD;
 
 /* Continue and Abort */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
     UINT8       target_pdu;
 } tAVRC_NEXT_CMD;
 
-typedef union
-{
+typedef union {
     UINT8                       pdu;
     tAVRC_CMD                   cmd;
     tAVRC_GET_CAPS_CMD          get_caps;               /* GetCapability */
@@ -1200,8 +1162,7 @@ typedef union
 } tAVRC_COMMAND;
 
 /* GetCapability */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1211,8 +1172,7 @@ typedef struct
 } tAVRC_GET_CAPS_RSP;
 
 /* ListPlayerAppAttr */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1221,8 +1181,7 @@ typedef struct
 } tAVRC_LIST_APP_ATTR_RSP;
 
 /* ListPlayerAppValues */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1231,8 +1190,7 @@ typedef struct
 } tAVRC_LIST_APP_VALUES_RSP;
 
 /* GetCurAppValue */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1241,8 +1199,7 @@ typedef struct
 } tAVRC_GET_CUR_APP_VALUE_RSP;
 
 /* GetAppAttrTxt */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1251,8 +1208,7 @@ typedef struct
 } tAVRC_GET_APP_ATTR_TXT_RSP;
 
 /* GetElemAttrs */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1261,8 +1217,7 @@ typedef struct
 } tAVRC_GET_ELEM_ATTRS_RSP;
 
 /* GetPlayStatus */
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1272,8 +1227,7 @@ typedef struct
 } tAVRC_GET_PLAY_STATUS_RSP;
 
 /* notification event parameter for AddressedPlayer change */
-typedef struct
-{
+typedef struct {
     UINT16              player_id;
     UINT16              uid_counter;
 } tAVRC_ADDR_PLAYER_PARAM;
@@ -1283,15 +1237,13 @@ typedef struct
 #endif
 
 /* notification event parameter for Player Application setting change */
-typedef struct
-{
+typedef struct {
     UINT8               num_attr;
     UINT8               attr_id[AVRC_MAX_APP_SETTINGS];
     UINT8               attr_value[AVRC_MAX_APP_SETTINGS];
 } tAVRC_PLAYER_APP_PARAM;
 
-typedef union
-{
+typedef union {
     tAVRC_PLAYSTATE         play_status;
     tAVRC_UID               track;
     UINT32                  play_pos;
@@ -1304,8 +1256,7 @@ typedef union
 } tAVRC_NOTIF_RSP_PARAM;
 
 /* RegNotify */
-typedef struct
-{
+typedef struct {
     UINT8                   pdu;
     tAVRC_STS               status;
     UINT8                   opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1314,8 +1265,7 @@ typedef struct
 } tAVRC_REG_NOTIF_RSP;
 
 /* SetAbsVolume */
-typedef struct
-{
+typedef struct {
     UINT8               pdu;
     tAVRC_STS           status;
     UINT8               opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1323,8 +1273,7 @@ typedef struct
 } tAVRC_SET_VOLUME_RSP;
 
 /* SetBrowsedPlayer */
-typedef struct
-{
+typedef struct {
     UINT8               pdu;
     tAVRC_STS           status;
     UINT8               opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1336,8 +1285,7 @@ typedef struct
 } tAVRC_SET_BR_PLAYER_RSP;
 
 /* GetFolderItems */
-typedef struct
-{
+typedef struct {
     UINT8               pdu;
     tAVRC_STS           status;
     UINT8               opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1347,8 +1295,7 @@ typedef struct
 } tAVRC_GET_ITEMS_RSP;
 
 /* ChangePath */
-typedef struct
-{
+typedef struct {
     UINT8               pdu;
     tAVRC_STS           status;
     UINT8               opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1356,8 +1303,7 @@ typedef struct
 } tAVRC_CHG_PATH_RSP;
 
 /* GetItemAttrs */
-typedef struct
-{
+typedef struct {
     UINT8               pdu;
     tAVRC_STS           status;
     UINT8               opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1366,8 +1312,7 @@ typedef struct
 } tAVRC_GET_ATTRS_RSP;
 
 /* Search */
-typedef struct
-{
+typedef struct {
     UINT8               pdu;
     tAVRC_STS           status;
     UINT8               opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
@@ -1376,15 +1321,13 @@ typedef struct
 } tAVRC_SEARCH_RSP;
 
 
-typedef struct
-{
+typedef struct {
     UINT8       pdu;
     tAVRC_STS   status;
     UINT8       opcode;         /* Op Code (copied from avrc_cmd.opcode by AVRC_BldResponse user. invalid one to generate according to pdu) */
 } tAVRC_RSP;
 
-typedef union
-{
+typedef union {
     UINT8                           pdu;
     tAVRC_RSP                       rsp;
     tAVRC_GET_CAPS_RSP              get_caps;               /* GetCapability */

@@ -62,7 +62,7 @@ typedef BOOLEAN (* btc_sm_handler_t)(btc_sm_event_t event, void *data);
 **
 ******************************************************************************/
 btc_sm_handle_t btc_sm_init(const btc_sm_handler_t *p_handlers,
-                              btc_sm_state_t initial_state);
+                            btc_sm_state_t initial_state);
 
 /*****************************************************************************
 **
@@ -96,7 +96,7 @@ btc_sm_state_t btc_sm_get_state(btc_sm_handle_t handle);
 **
 ******************************************************************************/
 bt_status_t btc_sm_dispatch(btc_sm_handle_t handle, btc_sm_event_t event,
-                             void *data);
+                            void *data);
 
 /*****************************************************************************
 **

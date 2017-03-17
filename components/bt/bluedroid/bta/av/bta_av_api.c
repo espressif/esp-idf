@@ -38,8 +38,7 @@
 **  Constants
 *****************************************************************************/
 
-static const tBTA_SYS_REG bta_av_reg =
-{
+static const tBTA_SYS_REG bta_av_reg = {
     bta_av_hdl_event,
     BTA_AvDisable
 };
@@ -64,8 +63,7 @@ void BTA_AvEnable(tBTA_SEC sec_mask, tBTA_AV_FEAT features, tBTA_AV_CBACK *p_cba
     /* register with BTA system manager */
     bta_sys_register(BTA_ID_AV, &bta_av_reg);
 
-    if ((p_buf = (tBTA_AV_API_ENABLE *) GKI_getbuf(sizeof(tBTA_AV_API_ENABLE))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_ENABLE *) GKI_getbuf(sizeof(tBTA_AV_API_ENABLE))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_ENABLE_EVT;
         p_buf->p_cback  = p_cback;
         p_buf->features = features;
@@ -88,8 +86,7 @@ void BTA_AvDisable(void)
     BT_HDR  *p_buf;
 
     bta_sys_deregister(BTA_ID_AV);
-    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL) {
         p_buf->event = BTA_AV_API_DISABLE_EVT;
         bta_sys_sendmsg(p_buf);
     }
@@ -113,22 +110,18 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name, UINT8 app_id,
     tBTA_AV_API_REG  *p_buf;
 
 
-    if ((p_buf = (tBTA_AV_API_REG *) GKI_getbuf(sizeof(tBTA_AV_API_REG))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_REG *) GKI_getbuf(sizeof(tBTA_AV_API_REG))) != NULL) {
         p_buf->hdr.layer_specific   = chnl;
         p_buf->hdr.event = BTA_AV_API_REGISTER_EVT;
-        if(p_service_name)
-        {
+        if (p_service_name) {
             BCM_STRNCPY_S(p_buf->p_service_name, sizeof(p_buf->p_service_name), p_service_name, BTA_SERVICE_NAME_LEN);
-            p_buf->p_service_name[BTA_SERVICE_NAME_LEN-1] = 0;
-        }
-        else
-        {
+            p_buf->p_service_name[BTA_SERVICE_NAME_LEN - 1] = 0;
+        } else {
             p_buf->p_service_name[0] = 0;
         }
         p_buf->app_id = app_id;
         p_buf->p_app_data_cback = p_data_cback;
-	p_buf->bta_av_cos = bta_av_cos;
+        p_buf->bta_av_cos = bta_av_cos;
         bta_sys_sendmsg(p_buf);
     }
 }
@@ -146,8 +139,7 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl)
 {
     BT_HDR  *p_buf;
 
-    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL) {
         p_buf->layer_specific   = hndl;
         p_buf->event = BTA_AV_API_DEREGISTER_EVT;
         bta_sys_sendmsg(p_buf);
@@ -166,12 +158,11 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl)
 **
 *******************************************************************************/
 void BTA_AvOpen(BD_ADDR bd_addr, tBTA_AV_HNDL handle, BOOLEAN use_rc, tBTA_SEC sec_mask,
-                                                                             UINT16 uuid)
+                UINT16 uuid)
 {
     tBTA_AV_API_OPEN  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_OPEN *) GKI_getbuf(sizeof(tBTA_AV_API_OPEN))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_OPEN *) GKI_getbuf(sizeof(tBTA_AV_API_OPEN))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_OPEN_EVT;
         p_buf->hdr.layer_specific   = handle;
         bdcpy(p_buf->bd_addr, bd_addr);
@@ -196,8 +187,7 @@ void BTA_AvClose(tBTA_AV_HNDL handle)
 {
     BT_HDR  *p_buf;
 
-    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL) {
         p_buf->event = BTA_AV_API_CLOSE_EVT;
         p_buf->layer_specific   = handle;
         bta_sys_sendmsg(p_buf);
@@ -217,8 +207,7 @@ void BTA_AvDisconnect(BD_ADDR bd_addr)
 {
     tBTA_AV_API_DISCNT  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_DISCNT *) GKI_getbuf(sizeof(tBTA_AV_API_DISCNT))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_DISCNT *) GKI_getbuf(sizeof(tBTA_AV_API_DISCNT))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_DISCONNECT_EVT;
         bdcpy(p_buf->bd_addr, bd_addr);
         bta_sys_sendmsg(p_buf);
@@ -238,8 +227,7 @@ void BTA_AvStart(void)
 {
     BT_HDR  *p_buf;
 
-    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL) {
         p_buf->event = BTA_AV_API_START_EVT;
         bta_sys_sendmsg(p_buf);
     }
@@ -258,8 +246,7 @@ void BTA_AvEnable_Sink(int enable)
 {
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     BT_HDR  *p_buf;
-    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL)
-    {
+    if ((p_buf = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL) {
         p_buf->event = BTA_AV_API_SINK_ENABLE_EVT;
         p_buf->layer_specific = enable;
         bta_sys_sendmsg(p_buf);
@@ -284,8 +271,7 @@ void BTA_AvStop(BOOLEAN suspend)
 {
     tBTA_AV_API_STOP  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_STOP *) GKI_getbuf(sizeof(tBTA_AV_API_STOP))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_STOP *) GKI_getbuf(sizeof(tBTA_AV_API_STOP))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_STOP_EVT;
         p_buf->flush   = TRUE;
         p_buf->suspend = suspend;
@@ -311,8 +297,7 @@ void BTA_AvReconfig(tBTA_AV_HNDL hndl, BOOLEAN suspend, UINT8 sep_info_idx,
 {
     tBTA_AV_API_RCFG  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_RCFG *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_RCFG) + num_protect))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_RCFG *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_RCFG) + num_protect))) != NULL) {
         p_buf->hdr.layer_specific   = hndl;
         p_buf->hdr.event    = BTA_AV_API_RECONFIG_EVT;
         p_buf->num_protect  = num_protect;
@@ -339,17 +324,13 @@ void BTA_AvProtectReq(tBTA_AV_HNDL hndl, UINT8 *p_data, UINT16 len)
 {
     tBTA_AV_API_PROTECT_REQ  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_PROTECT_REQ *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_PROTECT_REQ) + len))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_PROTECT_REQ *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_PROTECT_REQ) + len))) != NULL) {
         p_buf->hdr.layer_specific   = hndl;
         p_buf->hdr.event = BTA_AV_API_PROTECT_REQ_EVT;
         p_buf->len       = len;
-        if (p_data == NULL)
-        {
+        if (p_data == NULL) {
             p_buf->p_data = NULL;
-        }
-        else
-        {
+        } else {
             p_buf->p_data = (UINT8 *) (p_buf + 1);
             memcpy(p_buf->p_data, p_data, len);
         }
@@ -373,18 +354,14 @@ void BTA_AvProtectRsp(tBTA_AV_HNDL hndl, UINT8 error_code, UINT8 *p_data, UINT16
 {
     tBTA_AV_API_PROTECT_RSP  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_PROTECT_RSP *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_PROTECT_RSP) + len))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_PROTECT_RSP *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_PROTECT_RSP) + len))) != NULL) {
         p_buf->hdr.layer_specific   = hndl;
         p_buf->hdr.event    = BTA_AV_API_PROTECT_RSP_EVT;
         p_buf->len          = len;
         p_buf->error_code   = error_code;
-        if (p_data == NULL)
-        {
+        if (p_data == NULL) {
             p_buf->p_data = NULL;
-        }
-        else
-        {
+        } else {
             p_buf->p_data = (UINT8 *) (p_buf + 1);
             memcpy(p_buf->p_data, p_data, len);
         }
@@ -406,8 +383,7 @@ void BTA_AvRemoteCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_RC rc_id, tBTA_AV_STA
 {
     tBTA_AV_API_REMOTE_CMD  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_REMOTE_CMD *) GKI_getbuf(sizeof(tBTA_AV_API_REMOTE_CMD))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_REMOTE_CMD *) GKI_getbuf(sizeof(tBTA_AV_API_REMOTE_CMD))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_REMOTE_CMD_EVT;
         p_buf->hdr.layer_specific   = rc_handle;
         p_buf->msg.op_id = rc_id;
@@ -434,8 +410,7 @@ void BTA_AvVendorCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE cmd_code, UINT8 
 {
     tBTA_AV_API_VENDOR  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_VENDOR *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_VENDOR) + len))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_VENDOR *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_VENDOR) + len))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_VENDOR_CMD_EVT;
         p_buf->hdr.layer_specific   = rc_handle;
         p_buf->msg.hdr.ctype = cmd_code;
@@ -444,12 +419,9 @@ void BTA_AvVendorCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE cmd_code, UINT8 
         p_buf->msg.company_id = p_bta_av_cfg->company_id;
         p_buf->label = label;
         p_buf->msg.vendor_len = len;
-        if (p_data == NULL)
-        {
+        if (p_data == NULL) {
             p_buf->msg.p_vendor_data = NULL;
-        }
-        else
-        {
+        } else {
             p_buf->msg.p_vendor_data = (UINT8 *) (p_buf + 1);
             memcpy(p_buf->msg.p_vendor_data, p_data, len);
         }
@@ -473,25 +445,22 @@ void BTA_AvVendorRsp(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE rsp_code, UINT8 
 {
     tBTA_AV_API_VENDOR  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_VENDOR *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_VENDOR) + len))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_VENDOR *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_VENDOR) + len))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_VENDOR_RSP_EVT;
         p_buf->hdr.layer_specific   = rc_handle;
         p_buf->msg.hdr.ctype = rsp_code;
         p_buf->msg.hdr.subunit_type = AVRC_SUB_PANEL;
         p_buf->msg.hdr.subunit_id = 0;
-        if(company_id)
+        if (company_id) {
             p_buf->msg.company_id = company_id;
-        else
+        } else {
             p_buf->msg.company_id = p_bta_av_cfg->company_id;
+        }
         p_buf->label = label;
         p_buf->msg.vendor_len = len;
-        if (p_data == NULL)
-        {
+        if (p_data == NULL) {
             p_buf->msg.p_vendor_data = NULL;
-        }
-        else
-        {
+        } else {
             p_buf->msg.p_vendor_data = (UINT8 *) (p_buf + 1);
             memcpy(p_buf->msg.p_vendor_data, p_data, len);
         }
@@ -513,8 +482,7 @@ void BTA_AvOpenRc(tBTA_AV_HNDL handle)
 {
     tBTA_AV_API_OPEN_RC  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_OPEN_RC *) GKI_getbuf(sizeof(tBTA_AV_API_OPEN_RC))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_OPEN_RC *) GKI_getbuf(sizeof(tBTA_AV_API_OPEN_RC))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_RC_OPEN_EVT;
         p_buf->hdr.layer_specific   = handle;
         bta_sys_sendmsg(p_buf);
@@ -534,8 +502,7 @@ void BTA_AvCloseRc(UINT8 rc_handle)
 {
     tBTA_AV_API_CLOSE_RC  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_CLOSE_RC *) GKI_getbuf(sizeof(tBTA_AV_API_CLOSE_RC))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_CLOSE_RC *) GKI_getbuf(sizeof(tBTA_AV_API_CLOSE_RC))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_RC_CLOSE_EVT;
         p_buf->hdr.layer_specific   = rc_handle;
         bta_sys_sendmsg(p_buf);
@@ -555,12 +522,11 @@ void BTA_AvCloseRc(UINT8 rc_handle)
 **
 *******************************************************************************/
 void BTA_AvMetaRsp(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE rsp_code,
-                               BT_HDR *p_pkt)
+                   BT_HDR *p_pkt)
 {
     tBTA_AV_API_META_RSP  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_META_RSP *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_META_RSP)))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_META_RSP *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_META_RSP)))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_META_RSP_EVT;
         p_buf->hdr.layer_specific   = rc_handle;
         p_buf->rsp_code = rsp_code;
@@ -592,8 +558,7 @@ void BTA_AvMetaCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CMD cmd_code, BT_HDR *p
 {
     tBTA_AV_API_META_RSP  *p_buf;
 
-    if ((p_buf = (tBTA_AV_API_META_RSP *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_META_RSP)))) != NULL)
-    {
+    if ((p_buf = (tBTA_AV_API_META_RSP *) GKI_getbuf((UINT16) (sizeof(tBTA_AV_API_META_RSP)))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_META_RSP_EVT;
         p_buf->hdr.layer_specific   = rc_handle;
         p_buf->p_pkt = p_pkt;

@@ -60,7 +60,7 @@ enum {
 *****************************************************************************/
 /* sub control block type - common data members for tAVCT_LCB and tAVCT_BCB */
 typedef struct {
-    UINT16              peer_mtu;	    /* peer l2c mtu */
+    UINT16              peer_mtu;       /* peer l2c mtu */
     UINT16              ch_result;      /* L2CAP connection result value */
     UINT16              ch_lcid;        /* L2CAP channel LCID */
     UINT8               allocated;      /* 0, not allocated. index+1, otherwise. */
@@ -71,7 +71,7 @@ typedef struct {
 
 /* link control block type */
 typedef struct {
-    UINT16              peer_mtu;	    /* peer l2c mtu */
+    UINT16              peer_mtu;       /* peer l2c mtu */
     UINT16              ch_result;      /* L2CAP connection result value */
     UINT16              ch_lcid;        /* L2CAP channel LCID */
     UINT8               allocated;      /* 0, not allocated. index+1, otherwise. */
@@ -87,7 +87,7 @@ typedef struct {
 
 /* browse control block type */
 typedef struct {
-    UINT16              peer_mtu;	    /* peer l2c mtu */
+    UINT16              peer_mtu;       /* peer l2c mtu */
     UINT16              ch_result;      /* L2CAP connection result value */
     UINT16              ch_lcid;        /* L2CAP channel LCID */
     UINT8               allocated;      /* 0, not allocated. index+1, otherwise. */

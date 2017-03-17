@@ -63,45 +63,38 @@ static void a2d_sdp_cback(UINT16 status)
 
     A2D_TRACE_API("a2d_sdp_cback status: %d", status);
 
-    if (status == SDP_SUCCESS)
-    {
+    if (status == SDP_SUCCESS) {
         /* loop through all records we found */
-        do
-        {
+        do {
             /* get next record; if none found, we're done */
             if ((p_rec = SDP_FindServiceInDb(a2d_cb.find.p_db,
-                            a2d_cb.find.service_uuid, p_rec)) == NULL)
-            {
+                                             a2d_cb.find.service_uuid, p_rec)) == NULL) {
                 break;
             }
             memset(&a2d_svc, 0, sizeof(tA2D_Service));
 
             /* get service name */
             if ((p_attr = SDP_FindAttributeInRec(p_rec,
-                            ATTR_ID_SERVICE_NAME)) != NULL)
-            {
+                                                 ATTR_ID_SERVICE_NAME)) != NULL) {
                 a2d_svc.p_service_name = (char *) p_attr->attr_value.v.array;
                 a2d_svc.service_len    = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
             }
 
             /* get provider name */
             if ((p_attr = SDP_FindAttributeInRec(p_rec,
-                            ATTR_ID_PROVIDER_NAME)) != NULL)
-            {
+                                                 ATTR_ID_PROVIDER_NAME)) != NULL) {
                 a2d_svc.p_provider_name = (char *) p_attr->attr_value.v.array;
                 a2d_svc.provider_len    = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
             }
 
             /* get supported features */
             if ((p_attr = SDP_FindAttributeInRec(p_rec,
-                            ATTR_ID_SUPPORTED_FEATURES)) != NULL)
-            {
+                                                 ATTR_ID_SUPPORTED_FEATURES)) != NULL) {
                 a2d_svc.features = p_attr->attr_value.v.u16;
             }
 
             /* get AVDTP version */
-            if (SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_AVDTP, &elem))
-            {
+            if (SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_AVDTP, &elem)) {
                 a2d_svc.avdt_version = elem.params[0];
                 A2D_TRACE_DEBUG("avdt_version: 0x%x", a2d_svc.avdt_version);
             }
@@ -115,8 +108,7 @@ static void a2d_sdp_cback(UINT16 status)
 
     a2d_cb.find.service_uuid = 0;
     /* return info from sdp record in app callback function */
-    if (a2d_cb.find.p_cback != NULL)
-    {
+    if (a2d_cb.find.p_cback != NULL) {
         (*a2d_cb.find.p_cback)(found, &a2d_svc);
     }
 
@@ -169,7 +161,7 @@ void a2d_set_avdt_sdp_ver (UINT16 avdt_sdp_ver)
 **
 ******************************************************************************/
 tA2D_STATUS A2D_AddRecord(UINT16 service_uuid, char *p_service_name, char *p_provider_name,
-        UINT16 features, UINT32 sdp_handle)
+                          UINT16 features, UINT32 sdp_handle)
 {
     UINT16      browse_list[1];
     BOOLEAN     result = TRUE;
@@ -179,14 +171,15 @@ tA2D_STATUS A2D_AddRecord(UINT16 service_uuid, char *p_service_name, char *p_pro
 
     A2D_TRACE_API("A2D_AddRecord uuid: %x", service_uuid);
 
-    if( (sdp_handle == 0) ||
-        (service_uuid != UUID_SERVCLASS_AUDIO_SOURCE && service_uuid != UUID_SERVCLASS_AUDIO_SINK) )
+    if ( (sdp_handle == 0) ||
+            (service_uuid != UUID_SERVCLASS_AUDIO_SOURCE && service_uuid != UUID_SERVCLASS_AUDIO_SINK) ) {
         return A2D_INVALID_PARAMS;
+    }
 
     /* add service class id list */
     result &= SDP_AddServiceClassIdList(sdp_handle, 1, &service_uuid);
 
-    memset((void*) proto_list, 0 , A2D_NUM_PROTO_ELEMS*sizeof(tSDP_PROTOCOL_ELEM));
+    memset((void *) proto_list, 0 , A2D_NUM_PROTO_ELEMS * sizeof(tSDP_PROTOCOL_ELEM));
 
     /* add protocol descriptor list   */
     proto_list[0].protocol_uuid = UUID_PROTOCOL_L2CAP;
@@ -202,26 +195,23 @@ tA2D_STATUS A2D_AddRecord(UINT16 service_uuid, char *p_service_name, char *p_pro
     result &= SDP_AddProfileDescriptorList(sdp_handle, UUID_SERVCLASS_ADV_AUDIO_DISTRIBUTION, A2D_VERSION);
 
     /* add supported feature */
-    if (features != 0)
-    {
+    if (features != 0) {
         p = temp;
         UINT16_TO_BE_STREAM(p, features);
         result &= SDP_AddAttribute(sdp_handle, ATTR_ID_SUPPORTED_FEATURES, UINT_DESC_TYPE,
-                  (UINT32)2, (UINT8*)temp);
+                                   (UINT32)2, (UINT8 *)temp);
     }
 
     /* add provider name */
-    if (p_provider_name != NULL)
-    {
+    if (p_provider_name != NULL) {
         result &= SDP_AddAttribute(sdp_handle, ATTR_ID_PROVIDER_NAME, TEXT_STR_DESC_TYPE,
-                    (UINT32)(strlen(p_provider_name)+1), (UINT8 *) p_provider_name);
+                                   (UINT32)(strlen(p_provider_name) + 1), (UINT8 *) p_provider_name);
     }
 
     /* add service name */
-    if (p_service_name != NULL)
-    {
+    if (p_service_name != NULL) {
         result &= SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE,
-                    (UINT32)(strlen(p_service_name)+1), (UINT8 *) p_service_name);
+                                   (UINT32)(strlen(p_service_name) + 1), (UINT8 *) p_service_name);
     }
 
     /* add browse group list */
@@ -268,7 +258,7 @@ tA2D_STATUS A2D_AddRecord(UINT16 service_uuid, char *p_service_name, char *p_pro
 **
 ******************************************************************************/
 tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
-                        tA2D_SDP_DB_PARAMS *p_db, tA2D_FIND_CBACK *p_cback)
+                            tA2D_SDP_DB_PARAMS *p_db, tA2D_FIND_CBACK *p_cback)
 {
     tSDP_UUID   uuid_list;
     BOOLEAN     result = TRUE;
@@ -277,23 +267,25 @@ tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
                                    ATTR_ID_SUPPORTED_FEATURES,
                                    ATTR_ID_SERVICE_NAME,
                                    ATTR_ID_PROTOCOL_DESC_LIST,
-                                   ATTR_ID_PROVIDER_NAME};
+                                   ATTR_ID_PROVIDER_NAME
+                                  };
 
     A2D_TRACE_API("A2D_FindService uuid: %x", service_uuid);
-    if( (service_uuid != UUID_SERVCLASS_AUDIO_SOURCE && service_uuid != UUID_SERVCLASS_AUDIO_SINK) ||
-        p_db == NULL || p_db->p_db == NULL || p_cback == NULL)
+    if ( (service_uuid != UUID_SERVCLASS_AUDIO_SOURCE && service_uuid != UUID_SERVCLASS_AUDIO_SINK) ||
+            p_db == NULL || p_db->p_db == NULL || p_cback == NULL) {
         return A2D_INVALID_PARAMS;
+    }
 
-    if( a2d_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SOURCE ||
-        a2d_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SINK)
+    if ( a2d_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SOURCE ||
+            a2d_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SINK) {
         return A2D_BUSY;
+    }
 
     /* set up discovery database */
     uuid_list.len = LEN_UUID_16;
     uuid_list.uu.uuid16 = service_uuid;
 
-    if(p_db->p_attrs == NULL || p_db->num_attr == 0)
-    {
+    if (p_db->p_attrs == NULL || p_db->num_attr == 0) {
         p_db->p_attrs  = a2d_attr_list;
         p_db->num_attr = A2D_NUM_ATTR;
     }
@@ -301,8 +293,7 @@ tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
     result = SDP_InitDiscoveryDb(p_db->p_db, p_db->db_len, 1, &uuid_list, p_db->num_attr,
                                  p_db->p_attrs);
 
-    if (result == TRUE)
-    {
+    if (result == TRUE) {
         /* store service_uuid and discovery db pointer */
         a2d_cb.find.p_db = p_db->p_db;
         a2d_cb.find.service_uuid = service_uuid;
@@ -310,8 +301,7 @@ tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
 
         /* perform service search */
         result = SDP_ServiceSearchAttributeRequest(bd_addr, p_db->p_db, a2d_sdp_cback);
-        if(FALSE == result)
-        {
+        if (FALSE == result) {
             a2d_cb.find.service_uuid = 0;
         }
     }
@@ -342,8 +332,9 @@ tA2D_STATUS A2D_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
 ******************************************************************************/
 UINT8 A2D_SetTraceLevel (UINT8 new_level)
 {
-    if (new_level != 0xFF)
+    if (new_level != 0xFF) {
         a2d_cb.trace_level = new_level;
+    }
 
     return (a2d_cb.trace_level);
 }
@@ -360,12 +351,11 @@ UINT8 A2D_BitsSet(UINT8 num)
 {
     UINT8   count;
     BOOLEAN res;
-    if(num == 0)
+    if (num == 0) {
         res = A2D_SET_ZERO_BIT;
-    else
-    {
+    } else {
         count = (num & (num - 1));
-        res = ((count==0)?A2D_SET_ONE_BIT:A2D_SET_MULTL_BIT);
+        res = ((count == 0) ? A2D_SET_ONE_BIT : A2D_SET_MULTL_BIT);
     }
     return res;
 }

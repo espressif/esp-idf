@@ -98,8 +98,7 @@ typedef UINT8 tA2D_STATUS;
 
 /* This data type is used in A2D_FindService() to initialize the SDP database
  * to hold the result service search. */
-typedef struct
-{
+typedef struct {
     UINT32              db_len;  /* Length, in bytes, of the discovery database */
     UINT16              num_attr;/* The number of attributes in p_attrs */
     tSDP_DISCOVERY_DB  *p_db;    /* Pointer to the discovery database */
@@ -110,20 +109,19 @@ typedef struct
 } tA2D_SDP_DB_PARAMS;
 
 /* This data type is used in tA2D_FIND_CBACK to report the result of the SDP discovery process. */
-typedef struct
-{
+typedef struct {
     UINT16  service_len;    /* Length, in bytes, of the service name */
     UINT16  provider_len;   /* Length, in bytes, of the provider name */
-    char *  p_service_name; /* Pointer the service name.  This character string may not be null terminated.
+    char   *p_service_name; /* Pointer the service name.  This character string may not be null terminated.
                              * Use the service_len parameter to safely copy this string */
-    char *  p_provider_name;/* Pointer the provider name.  This character string may not be null terminated.
+    char   *p_provider_name;/* Pointer the provider name.  This character string may not be null terminated.
                              * Use the provider_len parameter to safely copy this string */
     UINT16  features;       /* Profile supported features */
     UINT16  avdt_version;   /* AVDTP protocol version */
 } tA2D_Service;
 
 /* This is the callback to notify the result of the SDP discovery process. */
-typedef void (tA2D_FIND_CBACK)(BOOLEAN found, tA2D_Service * p_service);
+typedef void (tA2D_FIND_CBACK)(BOOLEAN found, tA2D_Service *p_service);
 
 
 /*****************************************************************************
@@ -164,7 +162,7 @@ extern "C"
 **
 ******************************************************************************/
 extern tA2D_STATUS A2D_AddRecord(UINT16 service_uuid, char *p_service_name, char *p_provider_name,
-        UINT16 features, UINT32 sdp_handle);
+                                 UINT16 features, UINT32 sdp_handle);
 
 /******************************************************************************
 **

@@ -119,7 +119,7 @@ extern void bta_ar_dereg_avct(tBTA_SYS_ID sys_id);
 **
 ******************************************************************************/
 extern void bta_ar_reg_avrc(UINT16 service_uuid, char *p_service_name,
-							 char *p_provider_name, UINT16 categories, tBTA_SYS_ID sys_id);
+                            char *p_provider_name, UINT16 categories, tBTA_SYS_ID sys_id);
 
 /******************************************************************************
 **

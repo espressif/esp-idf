@@ -91,7 +91,7 @@ void btc_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *data)
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_DM_SEC;
     msg.act = event;
-        
+
     btc_transfer_context(&msg, (btc_dm_sec_args_t *)data, sizeof(btc_dm_sec_args_t), btc_dm_sec_arg_deep_copy);
 }
 
@@ -117,78 +117,70 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
     bt_bdaddr_t bd_addr;
     bt_status_t status;
     LOG_DEBUG("%s: bond state success %d, present %d, type%d\n", __func__, p_auth_cmpl->success,
-		p_auth_cmpl->key_present, p_auth_cmpl->key_type);
+              p_auth_cmpl->key_present, p_auth_cmpl->key_type);
 
     bdcpy(bd_addr.address, p_auth_cmpl->bd_addr);
-    if ( (p_auth_cmpl->success == TRUE) && (p_auth_cmpl->key_present) )
-    {
-	#if 0
+    if ( (p_auth_cmpl->success == TRUE) && (p_auth_cmpl->key_present) ) {
+#if 0
         if ((p_auth_cmpl->key_type < HCI_LKEY_TYPE_DEBUG_COMB) ||
-            (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB) ||
-            (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
-            (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB_P_256)
-            )
-        #endif
-	if (1)
-        {
-            bt_status_t ret;
-            LOG_DEBUG("%s: Storing link key. key_type=0x%x",
-			     __FUNCTION__, p_auth_cmpl->key_type);
-            ret = btc_storage_add_bonded_device(&bd_addr,
-                                p_auth_cmpl->key, p_auth_cmpl->key_type,
-                                16);
-            BTC_ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
-        }
-        else
-        {
-            LOG_DEBUG("%s: Temporary key. Not storing. key_type=0x%x",
-                __FUNCTION__, p_auth_cmpl->key_type);
-        }
+                (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB) ||
+                (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
+                (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB_P_256)
+           )
+#endif
+            if (1) {
+                bt_status_t ret;
+                LOG_DEBUG("%s: Storing link key. key_type=0x%x",
+                          __FUNCTION__, p_auth_cmpl->key_type);
+                ret = btc_storage_add_bonded_device(&bd_addr,
+                                                    p_auth_cmpl->key, p_auth_cmpl->key_type,
+                                                    16);
+                BTC_ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
+            } else {
+                LOG_DEBUG("%s: Temporary key. Not storing. key_type=0x%x",
+                          __FUNCTION__, p_auth_cmpl->key_type);
+            }
     }
 
     // Skip SDP for certain  HID Devices
-    if (p_auth_cmpl->success)
-    {
-    }
-    else
-    {
+    if (p_auth_cmpl->success) {
+    } else {
         // Map the HCI fail reason  to  bt status
-        switch(p_auth_cmpl->fail_reason)
-        {
-            case HCI_ERR_PAGE_TIMEOUT:
-		LOG_WARN("%s() - Pairing timeout; retrying () ...", __FUNCTION__);
-		return;
-                /* Fall-through */
-            case HCI_ERR_CONNECTION_TOUT:
-                status =  BT_STATUS_RMT_DEV_DOWN;
-                break;
+        switch (p_auth_cmpl->fail_reason) {
+        case HCI_ERR_PAGE_TIMEOUT:
+            LOG_WARN("%s() - Pairing timeout; retrying () ...", __FUNCTION__);
+            return;
+        /* Fall-through */
+        case HCI_ERR_CONNECTION_TOUT:
+            status =  BT_STATUS_RMT_DEV_DOWN;
+            break;
 
-            case HCI_ERR_PAIRING_NOT_ALLOWED:
-                status = BT_STATUS_AUTH_REJECTED;
-                break;
+        case HCI_ERR_PAIRING_NOT_ALLOWED:
+            status = BT_STATUS_AUTH_REJECTED;
+            break;
 
-            case HCI_ERR_LMP_RESPONSE_TIMEOUT:
-                status =  BT_STATUS_AUTH_FAILURE;
-                break;
+        case HCI_ERR_LMP_RESPONSE_TIMEOUT:
+            status =  BT_STATUS_AUTH_FAILURE;
+            break;
 
-            /* map the auth failure codes, so we can retry pairing if necessary */
-            case HCI_ERR_AUTH_FAILURE:
-            case HCI_ERR_KEY_MISSING:
-                btc_storage_remove_bonded_device(&bd_addr);
-            case HCI_ERR_HOST_REJECT_SECURITY:
-            case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
-            case HCI_ERR_UNIT_KEY_USED:
-            case HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED:
-            case HCI_ERR_INSUFFCIENT_SECURITY:
-            case HCI_ERR_PEER_USER:
-            case HCI_ERR_UNSPECIFIED:
-                LOG_DEBUG(" %s() Authentication fail reason %d",
-                    __FUNCTION__, p_auth_cmpl->fail_reason);
-                    /* if autopair attempts are more than 1, or not attempted */
-                    status =  BT_STATUS_AUTH_FAILURE;
-                break;
-            default:
-                status =  BT_STATUS_FAIL;
+        /* map the auth failure codes, so we can retry pairing if necessary */
+        case HCI_ERR_AUTH_FAILURE:
+        case HCI_ERR_KEY_MISSING:
+            btc_storage_remove_bonded_device(&bd_addr);
+        case HCI_ERR_HOST_REJECT_SECURITY:
+        case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
+        case HCI_ERR_UNIT_KEY_USED:
+        case HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED:
+        case HCI_ERR_INSUFFCIENT_SECURITY:
+        case HCI_ERR_PEER_USER:
+        case HCI_ERR_UNSPECIFIED:
+            LOG_DEBUG(" %s() Authentication fail reason %d",
+                      __FUNCTION__, p_auth_cmpl->fail_reason);
+            /* if autopair attempts are more than 1, or not attempted */
+            status =  BT_STATUS_AUTH_FAILURE;
+            break;
+        default:
+            status =  BT_STATUS_FAIL;
         }
     }
     (void) status;
@@ -266,7 +258,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     switch (msg->act) {
     case BTA_DM_ENABLE_EVT: {
         btc_clear_services_mask();
-	btc_storage_load_bonded_devices();
+        btc_storage_load_bonded_devices();
         btc_enable_bluetooth_evt(p_data->enable.status);
         break;
     }
@@ -282,10 +274,10 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         break;
     }
     case BTA_DM_PIN_REQ_EVT:
-	break;
+        break;
     case BTA_DM_AUTH_CMPL_EVT:
-	btc_dm_auth_cmpl_evt(&p_data->auth_cmpl);
-	break;
+        btc_dm_auth_cmpl_evt(&p_data->auth_cmpl);
+        break;
     case BTA_DM_BOND_CANCEL_CMPL_EVT:
     case BTA_DM_SP_CFM_REQ_EVT:
     case BTA_DM_SP_KEY_NOTIF_EVT:

@@ -80,7 +80,7 @@ void btc_profile_queue_handler(btc_msg_t *msg)
         queue_int_advance();
         break;
     }
-    
+
     if (esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_ENABLED) {
         btc_queue_connect_next();
     }

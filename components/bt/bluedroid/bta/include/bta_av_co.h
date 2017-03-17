@@ -50,8 +50,7 @@
 
 #define BTA_AV_CO_DEFAULT_AUDIO_OFFSET      AVDT_MEDIA_OFFSET
 
-enum
-{
+enum {
     BTA_AV_CO_ST_INIT,
     BTA_AV_CO_ST_IN,
     BTA_AV_CO_ST_OUT,
@@ -61,8 +60,7 @@ enum
 
 
 /* data type for the Audio Codec Information*/
-typedef struct
-{
+typedef struct {
     UINT16  bit_rate;       /* SBC encoder bit rate in kbps */
     UINT16  bit_rate_busy;  /* SBC encoder bit rate in kbps */
     UINT16  bit_rate_swampd;/* SBC encoder bit rate in kbps */
@@ -100,7 +98,7 @@ extern BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info,
 **
 *******************************************************************************/
 extern void bta_av_co_audio_disc_res(tBTA_AV_HNDL hndl, UINT8 num_seps,
-                    UINT8 num_snk, UINT8 num_src, BD_ADDR addr, UINT16 uuid_local);
+                                     UINT8 num_snk, UINT8 num_src, BD_ADDR addr, UINT16 uuid_local);
 
 /*******************************************************************************
 **
@@ -161,8 +159,8 @@ extern UINT8 bta_av_co_video_getconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_ty
 **
 *******************************************************************************/
 extern void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                        UINT8 *p_codec_info, UINT8 seid, BD_ADDR addr,
-                                        UINT8 num_protect, UINT8 *p_protect_info,UINT8 t_local_sep, UINT8 avdt_handle);
+                                      UINT8 *p_codec_info, UINT8 seid, BD_ADDR addr,
+                                      UINT8 num_protect, UINT8 *p_protect_info, UINT8 t_local_sep, UINT8 avdt_handle);
 
 /*******************************************************************************
 **
@@ -307,8 +305,8 @@ extern void bta_av_co_video_stop(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type);
 **                  Otherwise, a GKI buffer (BT_HDR*) containing the audio data.
 **
 *******************************************************************************/
-extern void * bta_av_co_audio_src_data_path(tBTA_AV_CODEC codec_type,
-                                            UINT32 *p_len, UINT32 *p_timestamp);
+extern void *bta_av_co_audio_src_data_path(tBTA_AV_CODEC codec_type,
+        UINT32 *p_len, UINT32 *p_timestamp);
 
 /*******************************************************************************
 **
@@ -321,8 +319,8 @@ extern void * bta_av_co_audio_src_data_path(tBTA_AV_CODEC codec_type,
 **                  Otherwise, a video data buffer (UINT8*).
 **
 *******************************************************************************/
-extern void * bta_av_co_video_src_data_path(tBTA_AV_CODEC codec_type,
-                                            UINT32 *p_len, UINT32 *p_timestamp);
+extern void *bta_av_co_video_src_data_path(tBTA_AV_CODEC codec_type,
+        UINT32 *p_len, UINT32 *p_timestamp);
 
 /*******************************************************************************
 **

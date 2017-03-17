@@ -140,7 +140,7 @@ btc_sm_state_t btc_sm_get_state(btc_sm_handle_t handle)
 **
 ******************************************************************************/
 bt_status_t btc_sm_dispatch(btc_sm_handle_t handle, btc_sm_event_t event,
-                             void *data)
+                            void *data)
 {
     bt_status_t status = BT_STATUS_SUCCESS;
 

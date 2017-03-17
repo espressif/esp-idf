@@ -42,15 +42,13 @@
 *****************************************************************************/
 
 /* Control block used by A2D_FindService(). */
-typedef struct
-{
+typedef struct {
     tA2D_FIND_CBACK     *p_cback;       /* pointer to application callback */
     tSDP_DISCOVERY_DB   *p_db;          /* pointer to discovery database */
     UINT16              service_uuid;   /* service UUID of search */
 } tA2D_FIND_CB;
 
-typedef struct
-{
+typedef struct {
     tA2D_FIND_CB    find;   /* find service control block */
     UINT8           trace_level;
     BOOLEAN         use_desc;

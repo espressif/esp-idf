@@ -45,19 +45,19 @@ const UINT32  bta_av_meta_caps_co_ids[] = {
 #define BTA_AV_RC_SUPF_CT       (AVRC_SUPF_CT_CAT2)
 
 /* Added to modify
-**	1. flush timeout
-**	2. Remove Group navigation support in SupportedFeatures
-**	3. GetCapabilities supported event_ids list
-**	4. GetCapabilities supported event_ids count
+**  1. flush timeout
+**  2. Remove Group navigation support in SupportedFeatures
+**  3. GetCapabilities supported event_ids list
+**  4. GetCapabilities supported event_ids count
 */
 /* Flushing partial avdtp packets can cause some headsets to disconnect the link
    if receiving partial a2dp frames */
 const UINT16  bta_av_audio_flush_to[] = {
-     0, /* 1 stream */
-     0, /* 2 streams */
-     0, /* 3 streams */
-     0, /* 4 streams */
-     0  /* 5 streams */
+    0, /* 1 stream */
+    0, /* 2 streams */
+    0, /* 3 streams */
+    0, /* 4 streams */
+    0  /* 5 streams */
 };     /* AVDTP audio transport channel flush timeout */
 
 /* Note: Android doesnt support AVRC_SUPF_TG_GROUP_NAVI  */
@@ -88,8 +88,7 @@ const UINT8  bta_av_meta_caps_evt_ids[] = {
 #define BTA_AV_MAX_RC_BR_MTU      1008
 #endif
 
-const tBTA_AV_CFG bta_av_cfg =
-{
+const tBTA_AV_CFG bta_av_cfg = {
     AVRC_CO_BROADCOM,       /* AVRCP Company ID */
 #if AVRC_METADATA_INCLUDED == TRUE
     512,                    /* AVRCP MTU at L2CAP for control channel */
@@ -119,8 +118,7 @@ const tBTA_AV_CFG bta_av_cfg =
 
 tBTA_AV_CFG *p_bta_av_cfg = (tBTA_AV_CFG *) &bta_av_cfg;
 
-const UINT16 bta_av_rc_id[] =
-{
+const UINT16 bta_av_rc_id[] = {
     0x0000, /* bit mask: 0=SELECT, 1=UP, 2=DOWN, 3=LEFT,
                          4=RIGHT, 5=RIGHT_UP, 6=RIGHT_DOWN, 7=LEFT_UP,
                          8=LEFT_DOWN, 9=ROOT_MENU, 10=SETUP_MENU, 11=CONT_MENU,
@@ -168,8 +166,7 @@ const UINT16 bta_av_rc_id[] =
 };
 
 #if (BTA_AV_RC_PASS_RSP_CODE == BTA_AV_RSP_INTERIM)
-const UINT16 bta_av_rc_id_ac[] =
-{
+const UINT16 bta_av_rc_id_ac[] = {
     0x0000, /* bit mask: 0=SELECT, 1=UP, 2=DOWN, 3=LEFT,
                          4=RIGHT, 5=RIGHT_UP, 6=RIGHT_DOWN, 7=LEFT_UP,
                          8=LEFT_DOWN, 9=ROOT_MENU, 10=SETUP_MENU, 11=CONT_MENU,

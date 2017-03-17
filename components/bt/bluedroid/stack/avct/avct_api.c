@@ -77,8 +77,9 @@ void AVCT_Register(UINT16 mtu, UINT16 mtu_br, UINT8 sec_mask)
     BTM_SetSecurityLevel(TRUE, "", BTM_SEC_SERVICE_AVCTP_BROWSE, sec_mask, AVCT_BR_PSM, 0, 0);
     BTM_SetSecurityLevel(FALSE, "", BTM_SEC_SERVICE_AVCTP_BROWSE, sec_mask, AVCT_BR_PSM, 0, 0);
 
-    if (mtu_br < AVCT_MIN_BROWSE_MTU)
+    if (mtu_br < AVCT_MIN_BROWSE_MTU) {
         mtu_br = AVCT_MIN_BROWSE_MTU;
+    }
     avct_cb.mtu_br = mtu_br;
 #endif
 
@@ -88,8 +89,9 @@ void AVCT_Register(UINT16 mtu, UINT16 mtu_br, UINT8 sec_mask)
     avct_cb.trace_level = BT_TRACE_LEVEL_NONE;
 #endif
 
-    if (mtu < AVCT_MIN_CONTROL_MTU)
+    if (mtu < AVCT_MIN_CONTROL_MTU) {
         mtu = AVCT_MIN_CONTROL_MTU;
+    }
     /* store mtu */
     avct_cb.mtu = mtu;
 }
@@ -141,37 +143,29 @@ UINT16 AVCT_CreateConn(UINT8 *p_handle, tAVCT_CC *p_cc, BD_ADDR peer_addr)
     AVCT_TRACE_API("AVCT_CreateConn: %d, control:%d", p_cc->role, p_cc->control);
 
     /* Allocate ccb; if no ccbs, return failure */
-    if ((p_ccb = avct_ccb_alloc(p_cc)) == NULL)
-    {
+    if ((p_ccb = avct_ccb_alloc(p_cc)) == NULL) {
         result = AVCT_NO_RESOURCES;
-    }
-    else
-    {
+    } else {
         /* get handle */
         *p_handle = avct_ccb_to_idx(p_ccb);
 
         /* if initiator connection */
-        if (p_cc->role == AVCT_INT)
-        {
+        if (p_cc->role == AVCT_INT) {
             /* find link; if none allocate a new one */
-            if ((p_lcb = avct_lcb_by_bd(peer_addr)) == NULL)
-            {
-                if ((p_lcb = avct_lcb_alloc(peer_addr)) == NULL)
-                {
+            if ((p_lcb = avct_lcb_by_bd(peer_addr)) == NULL) {
+                if ((p_lcb = avct_lcb_alloc(peer_addr)) == NULL) {
                     /* no link resources; free ccb as well */
                     avct_ccb_dealloc(p_ccb, AVCT_NO_EVT, 0, NULL);
                     result = AVCT_NO_RESOURCES;
                 }
             }
             /* check if PID already in use */
-            else if (avct_lcb_has_pid(p_lcb, p_cc->pid))
-            {
+            else if (avct_lcb_has_pid(p_lcb, p_cc->pid)) {
                 avct_ccb_dealloc(p_ccb, AVCT_NO_EVT, 0, NULL);
                 result = AVCT_PID_IN_USE;
             }
 
-            if (result == AVCT_SUCCESS)
-            {
+            if (result == AVCT_SUCCESS) {
                 /* bind lcb to ccb */
                 p_ccb->p_lcb = p_lcb;
                 AVCT_TRACE_DEBUG("ch_state: %d", p_lcb->ch_state);
@@ -203,18 +197,15 @@ UINT16 AVCT_RemoveConn(UINT8 handle)
     AVCT_TRACE_API("AVCT_RemoveConn");
 
     /* map handle to ccb */
-    if ((p_ccb = avct_ccb_by_idx(handle)) == NULL)
-    {
+    if ((p_ccb = avct_ccb_by_idx(handle)) == NULL) {
         result = AVCT_BAD_HANDLE;
     }
     /* if connection not bound to lcb, dealloc */
-    else if (p_ccb->p_lcb == NULL)
-    {
+    else if (p_ccb->p_lcb == NULL) {
         avct_ccb_dealloc(p_ccb, AVCT_NO_EVT, 0, NULL);
     }
     /* send unbind event to lcb */
-    else
-    {
+    else {
         avct_lcb_event(p_ccb->p_lcb, AVCT_LCB_UL_UNBIND_EVT, (tAVCT_LCB_EVT *) &p_ccb);
     }
     return result;
@@ -247,44 +238,32 @@ UINT16 AVCT_CreateBrowse (UINT8 handle, UINT8 role)
     AVCT_TRACE_API("AVCT_CreateBrowse: %d", role);
 
     /* map handle to ccb */
-    if ((p_ccb = avct_ccb_by_idx(handle)) == NULL)
-    {
+    if ((p_ccb = avct_ccb_by_idx(handle)) == NULL) {
         return AVCT_BAD_HANDLE;
-    }
-    else
-    {
+    } else {
         /* mark this CCB as supporting browsing channel */
-        if ((p_ccb->allocated & AVCT_ALOC_BCB) == 0)
-        {
+        if ((p_ccb->allocated & AVCT_ALOC_BCB) == 0) {
             p_ccb->allocated |= AVCT_ALOC_BCB;
         }
     }
 
     /* if initiator connection */
-    if (role == AVCT_INT)
-    {
+    if (role == AVCT_INT) {
         /* the link control block must exist before this function is called as INT. */
-        if ((p_ccb->p_lcb == NULL) || (p_ccb->p_lcb->allocated == 0))
-        {
+        if ((p_ccb->p_lcb == NULL) || (p_ccb->p_lcb->allocated == 0)) {
             result = AVCT_NOT_OPEN;
-        }
-        else
-        {
+        } else {
             /* find link; if none allocate a new one */
             index = p_ccb->p_lcb->allocated;
-            if (index > AVCT_NUM_LINKS)
-            {
+            if (index > AVCT_NUM_LINKS) {
                 result = AVCT_BAD_HANDLE;
-            }
-            else
-            {
+            } else {
                 p_bcb = &avct_cb.bcb[index - 1];
                 p_bcb->allocated = index;
             }
         }
 
-        if (result == AVCT_SUCCESS)
-        {
+        if (result == AVCT_SUCCESS) {
             /* bind bcb to ccb */
             p_ccb->p_bcb = p_bcb;
             AVCT_TRACE_DEBUG("ch_state: %d", p_bcb->ch_state);
@@ -322,12 +301,10 @@ UINT16 AVCT_RemoveBrowse (UINT8 handle)
     AVCT_TRACE_API("AVCT_RemoveBrowse");
 
     /* map handle to ccb */
-    if ((p_ccb = avct_ccb_by_idx(handle)) == NULL)
-    {
+    if ((p_ccb = avct_ccb_by_idx(handle)) == NULL) {
         result = AVCT_BAD_HANDLE;
-    }
-    else if (p_ccb->p_bcb != NULL)
-    /* send unbind event to bcb */
+    } else if (p_ccb->p_bcb != NULL)
+        /* send unbind event to bcb */
     {
         avct_bcb_event(p_ccb->p_bcb, AVCT_LCB_UL_UNBIND_EVT, (tAVCT_LCB_EVT *) &p_ccb);
     }
@@ -354,8 +331,7 @@ UINT16 AVCT_GetBrowseMtu (UINT8 handle)
 #if (AVCT_BROWSE_INCLUDED == TRUE)
     tAVCT_CCB           *p_ccb;
 
-    if ((p_ccb = avct_ccb_by_idx(handle)) != NULL && p_ccb->p_bcb != NULL)
-    {
+    if ((p_ccb = avct_ccb_by_idx(handle)) != NULL && p_ccb->p_bcb != NULL) {
         peer_mtu = p_ccb->p_bcb->peer_mtu;
     }
 #else
@@ -380,10 +356,8 @@ UINT16 AVCT_GetPeerMtu (UINT8 handle)
     tAVCT_CCB   *p_ccb;
 
     /* map handle to ccb */
-    if ((p_ccb = avct_ccb_by_idx(handle)) != NULL)
-    {
-        if (p_ccb->p_lcb)
-        {
+    if ((p_ccb = avct_ccb_by_idx(handle)) != NULL) {
+        if (p_ccb->p_lcb) {
             peer_mtu = p_ccb->p_lcb->peer_mtu;
         }
     }
@@ -421,27 +395,23 @@ UINT16 AVCT_MsgReq(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR *p_msg)
     AVCT_TRACE_API("AVCT_MsgReq");
 
     /* verify p_msg parameter */
-    if (p_msg == NULL)
-    {
+    if (p_msg == NULL) {
         return AVCT_NO_RESOURCES;
     }
     AVCT_TRACE_API("len: %d", p_msg->len);
 
     /* map handle to ccb */
-    if ((p_ccb = avct_ccb_by_idx(handle)) == NULL)
-    {
+    if ((p_ccb = avct_ccb_by_idx(handle)) == NULL) {
         result = AVCT_BAD_HANDLE;
         GKI_freebuf(p_msg);
     }
     /* verify channel is bound to link */
-    else if (p_ccb->p_lcb == NULL)
-    {
+    else if (p_ccb->p_lcb == NULL) {
         result = AVCT_NOT_OPEN;
         GKI_freebuf(p_msg);
     }
 
-    if (result == AVCT_SUCCESS)
-    {
+    if (result == AVCT_SUCCESS) {
         ul_msg.p_buf = p_msg;
         ul_msg.p_ccb = p_ccb;
         ul_msg.label = label;
@@ -449,16 +419,12 @@ UINT16 AVCT_MsgReq(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR *p_msg)
 
 #if (AVCT_BROWSE_INCLUDED == TRUE)
         /* send msg event to bcb */
-        if (p_msg->layer_specific == AVCT_DATA_BROWSE)
-        {
-            if (p_ccb->p_bcb == NULL && (p_ccb->allocated & AVCT_ALOC_BCB) == 0)
-            {
+        if (p_msg->layer_specific == AVCT_DATA_BROWSE) {
+            if (p_ccb->p_bcb == NULL && (p_ccb->allocated & AVCT_ALOC_BCB) == 0) {
                 /* BCB channel is not open and not allocated */
                 result = AVCT_BAD_HANDLE;
                 GKI_freebuf(p_msg);
-            }
-            else
-            {
+            } else {
                 p_ccb->p_bcb = avct_bcb_by_lcb(p_ccb->p_lcb);
                 avct_bcb_event(p_ccb->p_bcb, AVCT_LCB_UL_MSG_EVT, (tAVCT_LCB_EVT *) &ul_msg);
             }

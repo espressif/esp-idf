@@ -36,14 +36,13 @@
 #define BTA_AR_AVK_MASK     0x02
 
 /* data associated with BTA_AR */
-typedef struct
-{
+typedef struct {
     tAVDT_CTRL_CBACK *p_av_conn_cback;       /* av connection callback function */
     tAVDT_CTRL_CBACK *p_avk_conn_cback;      /* avk connection callback function */
     UINT8           avdt_registered;
     UINT8           avct_registered;
-	UINT32          sdp_tg_handle;
-	UINT32          sdp_ct_handle;
+    UINT32          sdp_tg_handle;
+    UINT32          sdp_ct_handle;
     UINT16          ct_categories[2];
     UINT8           tg_registered;
     tBTA_AV_HNDL    hndl;       /* Handle associated with the stream that rejected the connection. */

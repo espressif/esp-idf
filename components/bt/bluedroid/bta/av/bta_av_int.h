@@ -36,8 +36,7 @@
 **  Constants
 *****************************************************************************/
 
-enum
-{
+enum {
     /* these events are handled by the AV main state machine */
     BTA_AV_API_DISABLE_EVT = BTA_SYS_EVT_START(BTA_ID_AV),
     BTA_AV_API_REMOTE_CMD_EVT,
@@ -159,29 +158,28 @@ enum
 #if 0
 /* function types for call-out functions */
 typedef BOOLEAN (*tBTA_AV_CO_INIT) (UINT8 *p_codec_type, UINT8 *p_codec_info,
-                                   UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 index);
+                                    UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 index);
 typedef void (*tBTA_AV_CO_DISC_RES) (tBTA_AV_HNDL hndl, UINT8 num_seps,
                                      UINT8 num_snk, UINT8 num_src, BD_ADDR addr, UINT16 uuid_local);
 typedef UINT8 (*tBTA_AV_CO_GETCFG) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                     UINT8 *p_codec_info, UINT8 *p_sep_info_idx, UINT8 seid,
-                                     UINT8 *p_num_protect, UINT8 *p_protect_info);
+                                    UINT8 *p_codec_info, UINT8 *p_sep_info_idx, UINT8 seid,
+                                    UINT8 *p_num_protect, UINT8 *p_protect_info);
 typedef void (*tBTA_AV_CO_SETCFG) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
-                                     UINT8 *p_codec_info, UINT8 seid, BD_ADDR addr,
-                                     UINT8 num_protect, UINT8 *p_protect_info,
-                                     UINT8 t_local_sep, UINT8 avdt_handle);
+                                   UINT8 *p_codec_info, UINT8 seid, BD_ADDR addr,
+                                   UINT8 num_protect, UINT8 *p_protect_info,
+                                   UINT8 t_local_sep, UINT8 avdt_handle);
 typedef void (*tBTA_AV_CO_OPEN) (tBTA_AV_HNDL hndl,
                                  tBTA_AV_CODEC codec_type, UINT8 *p_codec_info,
-                                   UINT16 mtu);
+                                 UINT16 mtu);
 typedef void (*tBTA_AV_CO_CLOSE) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT16 mtu);
-typedef void (*tBTA_AV_CO_START) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,UINT8 *p_codec_info, BOOLEAN *p_no_rtp_hdr);
+typedef void (*tBTA_AV_CO_START) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT8 *p_codec_info, BOOLEAN *p_no_rtp_hdr);
 typedef void (*tBTA_AV_CO_STOP) (tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type);
-typedef void * (*tBTA_AV_CO_DATAPATH) (tBTA_AV_CODEC codec_type,
-                                       UINT32 *p_len, UINT32 *p_timestamp);
+typedef void *(*tBTA_AV_CO_DATAPATH) (tBTA_AV_CODEC codec_type,
+                                      UINT32 *p_len, UINT32 *p_timestamp);
 typedef void (*tBTA_AV_CO_DELAY) (tBTA_AV_HNDL hndl, UINT16 delay);
 
 /* the call-out functions for one stream */
-typedef struct
-{
+typedef struct {
     tBTA_AV_CO_INIT     init;
     tBTA_AV_CO_DISC_RES disc_res;
     tBTA_AV_CO_GETCFG   getcfg;
@@ -196,8 +194,7 @@ typedef struct
 #endif
 
 /* data type for BTA_AV_API_ENABLE_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     tBTA_AV_CBACK       *p_cback;
     tBTA_AV_FEAT        features;
@@ -205,18 +202,16 @@ typedef struct
 } tBTA_AV_API_ENABLE;
 
 /* data type for BTA_AV_API_REG_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
-    char                p_service_name[BTA_SERVICE_NAME_LEN+1];
+    char                p_service_name[BTA_SERVICE_NAME_LEN + 1];
     UINT8               app_id;
     tBTA_AV_DATA_CBACK       *p_app_data_cback;
     tBTA_AV_CO_FUNCTS   *bta_av_cos;
 } tBTA_AV_API_REG;
 
 
-enum
-{
+enum {
     BTA_AV_RS_NONE,     /* straight API call */
     BTA_AV_RS_OK,       /* the role switch result - successful */
     BTA_AV_RS_FAIL,     /* the role switch result - failed */
@@ -224,8 +219,7 @@ enum
 };
 typedef UINT8 tBTA_AV_RS_RES;
 /* data type for BTA_AV_API_OPEN_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     BD_ADDR             bd_addr;
     BOOLEAN             use_rc;
@@ -235,31 +229,27 @@ typedef struct
 } tBTA_AV_API_OPEN;
 
 /* data type for BTA_AV_API_STOP_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     BOOLEAN             suspend;
     BOOLEAN             flush;
 } tBTA_AV_API_STOP;
 
 /* data type for BTA_AV_API_DISCONNECT_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     BD_ADDR             bd_addr;
 } tBTA_AV_API_DISCNT;
 
 /* data type for BTA_AV_API_PROTECT_REQ_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT8               *p_data;
     UINT16              len;
 } tBTA_AV_API_PROTECT_REQ;
 
 /* data type for BTA_AV_API_PROTECT_RSP_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT8               *p_data;
     UINT16              len;
@@ -267,36 +257,31 @@ typedef struct
 } tBTA_AV_API_PROTECT_RSP;
 
 /* data type for BTA_AV_API_REMOTE_CMD_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     tAVRC_MSG_PASS      msg;
     UINT8               label;
 } tBTA_AV_API_REMOTE_CMD;
 
 /* data type for BTA_AV_API_VENDOR_CMD_EVT and RSP */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     tAVRC_MSG_VENDOR    msg;
     UINT8               label;
 } tBTA_AV_API_VENDOR;
 
 /* data type for BTA_AV_API_RC_OPEN_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
 } tBTA_AV_API_OPEN_RC;
 
 /* data type for BTA_AV_API_RC_CLOSE_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
 } tBTA_AV_API_CLOSE_RC;
 
 /* data type for BTA_AV_API_META_RSP_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     BOOLEAN             is_rsp;
     UINT8               label;
@@ -306,8 +291,7 @@ typedef struct
 
 
 /* data type for BTA_AV_API_RECONFIG_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT8               codec_info[AVDT_CODEC_SIZE];    /* codec configuration */
     UINT8               *p_protect_info;
@@ -317,8 +301,7 @@ typedef struct
 } tBTA_AV_API_RCFG;
 
 /* data type for BTA_AV_CI_SETCONFIG_OK_EVT and BTA_AV_CI_SETCONFIG_FAIL_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     tBTA_AV_HNDL        hndl;
     UINT8               err_code;
@@ -341,8 +324,7 @@ typedef struct {
 } tBTA_AV_STR_MSG;
 
 /* data type for BTA_AV_AVRC_MSG_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     tAVRC_MSG           msg;
     UINT8               handle;
@@ -351,39 +333,34 @@ typedef struct
 } tBTA_AV_RC_MSG;
 
 /* data type for BTA_AV_AVRC_OPEN_EVT, BTA_AV_AVRC_CLOSE_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     BD_ADDR             peer_addr;
     UINT8               handle;
 } tBTA_AV_RC_CONN_CHG;
 
 /* data type for BTA_AV_CONN_CHG_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     BD_ADDR             peer_addr;
     BOOLEAN             is_up;
 } tBTA_AV_CONN_CHG;
 
 /* data type for BTA_AV_ROLE_CHANGE_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT8               new_role;
     UINT8               hci_status;
 } tBTA_AV_ROLE_RES;
 
 /* data type for BTA_AV_SDP_DISC_OK_EVT */
-typedef struct
-{
+typedef struct {
     BT_HDR              hdr;
     UINT16              avdt_version;   /* AVDTP protocol version */
 } tBTA_AV_SDP_RES;
 
 /* type for SEP control block */
-typedef struct
-{
+typedef struct {
     UINT8               av_handle;         /* AVDTP handle */
     tBTA_AV_CODEC       codec_type;        /* codec type */
     UINT8               tsep;              /* SEP type of local SEP */
@@ -403,8 +380,7 @@ typedef struct
 #define BTA_AV_ROLE_SUSPEND_OPT     0x40    /* Suspend on Start option is set */
 
 /* union of all event datatypes */
-typedef union
-{
+typedef union {
     BT_HDR                  hdr;
     tBTA_AV_API_ENABLE      api_enable;
     tBTA_AV_API_REG         api_reg;
@@ -428,8 +404,7 @@ typedef union
 
 typedef void (tBTA_AV_VDP_DATA_ACT)(void *p_scb);
 
-typedef struct
-{
+typedef struct {
     tBTA_AV_VDP_DATA_ACT    *p_act;
     UINT8                   *p_frame;
     UINT16                  buf_size;
@@ -438,8 +413,7 @@ typedef struct
     UINT32                  timestamp;
 } tBTA_AV_VF_INFO;
 
-typedef union
-{
+typedef union {
     tBTA_AV_VF_INFO     vdp;            /* used for video channels only */
     tBTA_AV_API_OPEN    open;           /* used only before open and role switch
                                            is needed on another AV channel */
@@ -465,8 +439,7 @@ typedef union
 #define BTA_AV_COLL_API_CALLED          0x02 /* API open was called while incoming timer is running */
 
 /* type for AV stream control block */
-typedef struct
-{
+typedef struct {
     const tBTA_AV_ACT   *p_act_tbl;     /* the action table for stream state machine */
     const tBTA_AV_CO_FUNCTS *p_cos;     /* the associated callout functions */
     tSDP_DISCOVERY_DB   *p_disc_db;     /* pointer to discovery database */
@@ -528,8 +501,7 @@ typedef struct
 
 /* type for AV RCP control block */
 /* index to this control block is the rc handle */
-typedef struct
-{
+typedef struct {
     UINT8   status;
     UINT8   handle;
     UINT8   shdl;   /* stream handle (hdi + 1) */
@@ -538,15 +510,13 @@ typedef struct
 } tBTA_AV_RCB;
 #define BTA_AV_NUM_RCB      (BTA_AV_NUM_STRS  + 2)
 
-enum
-{
+enum {
     BTA_AV_LCB_FREE,
     BTA_AV_LCB_FIND
 };
 
 /* type for AV ACL Link control block */
-typedef struct
-{
+typedef struct {
     BD_ADDR             addr;           /* peer BD address */
     UINT8               conn_msk;       /* handle mask of connected stream handle */
     UINT8               lidx;           /* index + 1 */
@@ -557,13 +527,12 @@ typedef void (*tBTA_AV_SACT)(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 
 
 /* type for AV control block */
-typedef struct
-{
+typedef struct {
     tBTA_AV_SCB         *p_scb[BTA_AV_NUM_STRS];    /* stream control block */
     tSDP_DISCOVERY_DB   *p_disc_db;     /* pointer to discovery database */
     tBTA_AV_CBACK       *p_cback;       /* application callback function */
     tBTA_AV_RCB         rcb[BTA_AV_NUM_RCB];  /* RCB control block */
-    tBTA_AV_LCB         lcb[BTA_AV_NUM_LINKS+1];  /* link control block */
+    tBTA_AV_LCB         lcb[BTA_AV_NUM_LINKS + 1]; /* link control block */
     TIMER_LIST_ENT      sig_tmr;        /* link timer */
     TIMER_LIST_ENT      acp_sig_tmr;    /* timer to monitor signalling when accepting */
     UINT32              sdp_a2d_handle; /* SDP record handle for audio src */
@@ -616,7 +585,7 @@ extern UINT16 *p_bta_av_rc_id_ac;
 extern const tBTA_AV_SACT bta_av_a2d_action[];
 // extern const tBTA_AV_CO_FUNCTS bta_av_a2d_cos;
 extern const tBTA_AV_SACT bta_av_vdp_action[];
-extern tAVDT_CTRL_CBACK * const bta_av_dt_cback[];
+extern tAVDT_CTRL_CBACK *const bta_av_dt_cback[];
 extern void bta_av_stream_data_cback(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp, UINT8 m_pt);
 
 /*****************************************************************************
@@ -635,7 +604,7 @@ extern BOOLEAN bta_av_is_scb_incoming (tBTA_AV_SCB *p_scb);
 extern void bta_av_set_scb_sst_init (tBTA_AV_SCB *p_scb);
 extern BOOLEAN bta_av_is_scb_init (tBTA_AV_SCB *p_scb);
 extern void bta_av_set_scb_sst_incoming (tBTA_AV_SCB *p_scb);
-extern tBTA_AV_LCB * bta_av_find_lcb(BD_ADDR addr, UINT8 op);
+extern tBTA_AV_LCB *bta_av_find_lcb(BD_ADDR addr, UINT8 op);
 
 
 /* main functions */
@@ -673,7 +642,7 @@ extern void bta_av_rc_meta_rsp (tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data);
 extern void bta_av_rc_free_rsp (tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data);
 extern void bta_av_rc_free_msg (tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data);
 
-extern tBTA_AV_RCB * bta_av_get_rcb_by_shdl(UINT8 shdl);
+extern tBTA_AV_RCB *bta_av_get_rcb_by_shdl(UINT8 shdl);
 extern void bta_av_del_rc(tBTA_AV_RCB *p_rcb);
 
 /* ssm action functions */

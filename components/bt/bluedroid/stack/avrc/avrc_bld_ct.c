@@ -98,7 +98,7 @@ static tAVRC_STS avrc_bld_set_abs_volume_cmd (tAVRC_SET_VOLUME_CMD *p_cmd, BT_HD
 **                  Otherwise, the error code.
 **
 *******************************************************************************/
-static tAVRC_STS avrc_bld_vol_change_notfn(BT_HDR * p_pkt)
+static tAVRC_STS avrc_bld_vol_change_notfn(BT_HDR *p_pkt)
 {
     UINT8   *p_data, *p_start;
 
@@ -109,7 +109,7 @@ static tAVRC_STS avrc_bld_vol_change_notfn(BT_HDR * p_pkt)
     p_data = p_start + 2; /* pdu + rsvd */
     /* add fixed length 5 -*/
     UINT16_TO_BE_STREAM(p_data, 5);
-    UINT8_TO_BE_STREAM(p_data,AVRC_EVT_VOLUME_CHANGE);
+    UINT8_TO_BE_STREAM(p_data, AVRC_EVT_VOLUME_CHANGE);
     UINT32_TO_BE_STREAM(p_data, 0);
     p_pkt->len = (p_data - p_start);
     return AVRC_STS_NO_ERROR;
@@ -128,15 +128,14 @@ static tAVRC_STS avrc_bld_vol_change_notfn(BT_HDR * p_pkt)
 *******************************************************************************/
 static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
 {
-    UINT16 offset = 0, chnl = AVCT_DATA_CTRL, len=AVRC_META_CMD_POOL_SIZE;
-    BT_HDR *p_pkt=NULL;
+    UINT16 offset = 0, chnl = AVCT_DATA_CTRL, len = AVRC_META_CMD_POOL_SIZE;
+    BT_HDR *p_pkt = NULL;
     UINT8  opcode;
 
     opcode = avrc_opcode_from_pdu(p_cmd->pdu);
     AVRC_TRACE_API("avrc_bld_init_cmd_buffer: pdu=%x, opcode=%x", p_cmd->pdu, opcode);
 
-    switch (opcode)
-    {
+    switch (opcode) {
     case AVRC_OP_PASS_THRU:
         offset  = AVRC_MSG_PASS_THRU_OFFSET;
         break;
@@ -148,8 +147,7 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
 
     /* allocate and initialize the buffer */
     p_pkt = (BT_HDR *)GKI_getbuf(len);
-    if (p_pkt)
-    {
+    if (p_pkt) {
         UINT8 *p_data, *p_start;
 
         p_pkt->layer_specific = chnl;
@@ -159,11 +157,11 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
         p_start = p_data;
 
         /* pass thru - group navigation - has a two byte op_id, so dont do it here */
-        if (opcode != AVRC_OP_PASS_THRU)
+        if (opcode != AVRC_OP_PASS_THRU) {
             *p_data++ = p_cmd->pdu;
+        }
 
-        switch (opcode)
-        {
+        switch (opcode) {
         case AVRC_OP_VENDOR:
             /* reserved 0, packet_type 0 */
             UINT8_TO_BE_STREAM(p_data, 0);
@@ -197,17 +195,14 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
     BOOLEAN alloc = FALSE;
 
     AVRC_TRACE_API("AVRC_BldCommand: pdu=%x status=%x", p_cmd->cmd.pdu, p_cmd->cmd.status);
-    if (!p_cmd || !pp_pkt)
-    {
+    if (!p_cmd || !pp_pkt) {
         AVRC_TRACE_API("AVRC_BldCommand. Invalid parameters passed. p_cmd=%p, pp_pkt=%p",
-            p_cmd, pp_pkt);
+                       p_cmd, pp_pkt);
         return AVRC_STS_BAD_PARAM;
     }
 
-    if (*pp_pkt == NULL)
-    {
-        if ((*pp_pkt = avrc_bld_init_cmd_buffer(p_cmd)) == NULL)
-        {
+    if (*pp_pkt == NULL) {
+        if ((*pp_pkt = avrc_bld_init_cmd_buffer(p_cmd)) == NULL) {
             AVRC_TRACE_API("AVRC_BldCommand: Failed to initialize command buffer");
             return AVRC_STS_INTERNAL_ERR;
         }
@@ -216,8 +211,7 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
     status = AVRC_STS_NO_ERROR;
     p_pkt = *pp_pkt;
 
-    switch (p_cmd->pdu)
-    {
+    switch (p_cmd->pdu) {
     case AVRC_PDU_REQUEST_CONTINUATION_RSP:     /*        0x40 */
         status = avrc_bld_next_cmd(&p_cmd->continu, p_pkt);
         break;
@@ -233,15 +227,15 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
 
     case AVRC_PDU_REGISTER_NOTIFICATION:      /* 0x31 */
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
-        if(AVRC_EVT_VOLUME_CHANGE==p_cmd->reg_notif.event_id)
-           status=avrc_bld_vol_change_notfn(p_pkt);
+        if (AVRC_EVT_VOLUME_CHANGE == p_cmd->reg_notif.event_id) {
+            status = avrc_bld_vol_change_notfn(p_pkt);
+        }
 #endif
         break;
 
     }
 
-    if (alloc && (status != AVRC_STS_NO_ERROR) )
-    {
+    if (alloc && (status != AVRC_STS_NO_ERROR) ) {
         GKI_freebuf(p_pkt);
         *pp_pkt = NULL;
     }
