@@ -35,19 +35,19 @@ typedef enum {
 } esp_avrc_features_t;
 
 /// AVRC passthrough command code
-enum {
+typedef enum {
     ESP_AVRC_PT_CMD_PLAY = 0x44,                 /*!< play */
     ESP_AVRC_PT_CMD_STOP = 0x45,                 /*!< stop */
     ESP_AVRC_PT_CMD_PAUSE = 0x46,                /*!< pause */
     ESP_AVRC_PT_CMD_FORWARD = 0x4B,              /*!< forward */
     ESP_AVRC_PT_CMD_BACKWARD = 0x4C              /*!< backward */
-};
+} esp_avrc_pt_cmd_t;
 
 /// AVRC passthrough command state
-enum {
+typedef enum {
     ESP_AVRC_PT_CMD_STATE_PRESSED = 0,           /*!< key pressed */
     ESP_AVRC_PT_CMD_STATE_RELEASED = 1           /*!< key released */
-};
+} esp_avrc_pt_cmd_state_t;
 
 /// AVRC Controller callback events
 typedef enum {
@@ -58,19 +58,23 @@ typedef enum {
 
 /// AVRC controller callback parameters
 typedef union {
-    /*< ESP_AVRC_CT_CONNECTION_STATE_EVT */
+    /**
+     * @brief ESP_AVRC_CT_CONNECTION_STATE_EVT
+     */
     struct avrc_ct_conn_stat_param {
-        bool connected;
-	uint32_t feat_mask;
-        esp_bd_addr_t remote_bda;
-    } conn_stat;
+        bool connected;                          /*!< whether AVRC connection is set up */
+	uint32_t feat_mask;                      /*!< AVRC feature mask of remote device */
+        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+    } conn_stat;                                 /*!< AVRC connection status */
     
-    /*< ESP_AVRC_CT_PASSTHROUGH_RSP_EVT */
+    /**
+     * @brief ESP_AVRC_CT_PASSTHROUGH_RSP_EVT
+     */
     struct avrc_ct_psth_rsp_param {
         uint8_t tl;                              /*!< transaction label, 0 to 15 */
         uint8_t key_code;                        /*!< passthrough command code */
         uint8_t key_state;                       /*!< 0 for PRESSED, 1 for RELEASED */
-    } psth_rsp;
+    } psth_rsp;                                  /*!< passthrough command response */
 } esp_avrc_ct_cb_param_t;
 
 

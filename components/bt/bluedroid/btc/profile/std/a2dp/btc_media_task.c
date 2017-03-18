@@ -231,8 +231,9 @@ static void btc_media_data_post(void)
 
 static void btc_media_ctrl_handler(BtTaskEvt_t *e)
 {
-    if (e == NULL)
+    if (e == NULL) {
         return;
+    }
     switch (e->sig) {
     case SIG_MEDIA_TASK_CMD_READY:
         fixed_queue_process(btc_media_cmd_msg_queue);
@@ -280,15 +281,15 @@ bool btc_a2dp_start_media_task(void)
     xBtcMediaDataQueue = xQueueCreate(MEDIA_DATA_Q_LEN, sizeof(void *));
     configASSERT(xBtcMediaDataQueue);
     xQueueAddToSet(xBtcMediaDataQueue, xBtcMediaQueueSet);
-    
+
     xBtcMediaCtrlQueue = xQueueCreate(MEDIA_CTRL_Q_LEN, sizeof(void *));
     configASSERT(xBtcMediaCtrlQueue);
     xQueueAddToSet(xBtcMediaCtrlQueue, xBtcMediaQueueSet);
-        
+
     if (!xBtcMediaDataQueue || !xBtcMediaCtrlQueue || !xBtcMediaQueueSet ) {
         goto error_exit;
     }
-    
+
     xTaskCreatePinnedToCore(btc_media_task_handler, "BtcMediaT\n", 2048, NULL, configMAX_PRIORITIES - 1, &xBtcMediaTaskHandle, 0);
     if (xBtcMediaTaskHandle == NULL) {
         goto error_exit;
@@ -321,7 +322,7 @@ error_exit:;
         vQueueDelete(xBtcMediaCtrlQueue);
         xBtcMediaCtrlQueue = NULL;
     }
-            
+
     fixed_queue_free(btc_media_cmd_msg_queue, NULL);
     btc_media_cmd_msg_queue = NULL;
     return false;
@@ -336,13 +337,13 @@ void btc_a2dp_stop_media_task(void)
     // TODO: wait until CLEAN up is done, then do task delete
     vTaskDelete(xBtcMediaTaskHandle);
     xBtcMediaTaskHandle = NULL;
-    
+
     vQueueDelete(xBtcMediaDataQueue);
     xBtcMediaDataQueue = NULL;
 
     vQueueDelete(xBtcMediaCtrlQueue);
     xBtcMediaCtrlQueue = NULL;
-    
+
     fixed_queue_free(btc_media_cmd_msg_queue, NULL);
     btc_media_cmd_msg_queue = NULL;
 }
@@ -452,8 +453,8 @@ void btc_reset_decoder(UINT8 *p_av)
 {
     APPL_TRACE_EVENT("btc_reset_decoder");
     APPL_TRACE_DEBUG("btc_reset_decoder p_codec_info[%x:%x:%x:%x:%x:%x]\n",
-            p_av[1], p_av[2], p_av[3],
-            p_av[4], p_av[5], p_av[6]);
+                     p_av[1], p_av[2], p_av[3],
+                     p_av[4], p_av[5], p_av[6]);
 
     tBTC_MEDIA_SINK_CFG_UPDATE *p_buf;
     if (NULL == (p_buf = GKI_getbuf(sizeof(tBTC_MEDIA_SINK_CFG_UPDATE)))) {
@@ -584,7 +585,7 @@ static void btc_media_thread_handle_cmd(fixed_queue_t *queue)
     while (!fixed_queue_is_empty(queue)) {
         p_msg = (BT_HDR *)fixed_queue_dequeue(queue);
         APPL_TRACE_VERBOSE("btc_media_thread_handle_cmd : %d %s\n", p_msg->event,
-                    dump_media_event(p_msg->event));
+                           dump_media_event(p_msg->event));
 
         switch (p_msg->event) {
         case BTC_MEDIA_AUDIO_SINK_CFG_UPDATE:
@@ -766,8 +767,8 @@ static void btc_media_task_aa_handle_decoder_reset(BT_HDR *p_msg)
     UINT32          num_subbands = 8;
 
     APPL_TRACE_EVENT("btc_media_task_aa_handle_decoder_reset p_codec_info[%x:%x:%x:%x:%x:%x]\n",
-              p_buf->codec_info[1], p_buf->codec_info[2], p_buf->codec_info[3],
-              p_buf->codec_info[4], p_buf->codec_info[5], p_buf->codec_info[6]);
+                     p_buf->codec_info[1], p_buf->codec_info[2], p_buf->codec_info[3],
+                     p_buf->codec_info[4], p_buf->codec_info[5], p_buf->codec_info[6]);
 
     a2d_status = A2D_ParsSbcInfo(&sbc_cie, p_buf->codec_info, FALSE);
     if (a2d_status != A2D_SUCCESS) {
@@ -897,7 +898,7 @@ UINT8 btc_media_sink_enque_buf(BT_HDR *p_pkt)
     if (btc_media_cb.rx_flush == TRUE) { /* Flush enabled, do not enque*/
         return GKI_queue_length(&btc_media_cb.RxSbcQ);
     }
-    
+
     if (GKI_queue_length(&btc_media_cb.RxSbcQ) >= MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ) {
         APPL_TRACE_WARNING("Pkt dropped\n");
     }

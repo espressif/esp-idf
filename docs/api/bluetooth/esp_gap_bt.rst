@@ -1,10 +1,8 @@
-BT DEVICE APIs
-===============
+CLASSIC BLUETOOTH GAP API
+=========================
 
 Overview
 --------
-
-Bluetooth device reference APIs.
 
 `Instructions`_
 
@@ -22,7 +20,7 @@ API Reference
 Header Files
 ^^^^^^^^^^^^
 
-  * :component_file:`bt/bluedroid/api/include/esp_bt_device.h`
+  * :component_file:`bt/bluedroid/api/include/esp_gap_bt_api.h`
 
 
 Macros
@@ -36,6 +34,7 @@ Type Definitions
 Enumerations
 ^^^^^^^^^^^^
 
+.. doxygenenum:: esp_bt_scan_mode_t
 
 Structures
 ^^^^^^^^^^
@@ -44,6 +43,5 @@ Structures
 Functions
 ^^^^^^^^^
 
-.. doxygenfunction:: esp_bt_dev_get_address
-.. doxygenfunction:: esp_bt_dev_set_device_name
+.. doxygenfunction:: esp_bt_gap_set_scan_mode
 

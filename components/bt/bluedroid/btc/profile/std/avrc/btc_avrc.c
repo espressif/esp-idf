@@ -48,7 +48,7 @@
         LOG_DEBUG("## %s ##", __FUNCTION__); \
         if (btc_rc_vb.rc_connected == FALSE) { \
             LOG_WARN("Function %s() called when RC is not connected", __FUNCTION__); \
-	    return ESP_ERR_INVALID_STATE; \
+        return ESP_ERR_INVALID_STATE; \
         } \
     } while (0)
 
@@ -60,8 +60,7 @@ typedef struct {
     UINT8 label;
 } btc_rc_reg_notifications_t;
 
-typedef struct
-{
+typedef struct {
     UINT8   label;
     UINT8   ctype;
     BOOLEAN is_rsp_pending;
@@ -86,8 +85,7 @@ typedef struct {
     UINT8 handle;
 } rc_transaction_t;
 
-typedef struct
-{
+typedef struct {
     pthread_mutex_t lbllock;
     rc_transaction_t transaction[MAX_TRANSACTIONS_PER_SESSION];
 } rc_device_t;
@@ -113,7 +111,7 @@ static inline void btc_avrc_ct_cb_to_app(esp_avrc_ct_cb_event_t event, esp_avrc_
 {
     esp_avrc_ct_cb_t btc_avrc_cb = (esp_avrc_ct_cb_t)btc_profile_cb_get(BTC_PID_AVRC);
     if (btc_avrc_cb) {
-	btc_avrc_cb(event, param);
+        btc_avrc_cb(event, param);
     }
 }
 
@@ -129,19 +127,16 @@ static void handle_rc_features(void)
     // the following bit here:
     //    btc_rc_vb.rc_features &= ~BTA_AV_FEAT_ADV_CTRL;
 
-    if (btc_rc_vb.rc_features & BTA_AV_FEAT_BROWSE)
-    {
+    if (btc_rc_vb.rc_features & BTA_AV_FEAT_BROWSE) {
         rc_features |= BTRC_FEAT_BROWSE;
     }
 
     if ( (btc_rc_vb.rc_features & BTA_AV_FEAT_ADV_CTRL) &&
-         (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG))
-    {
+            (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG)) {
         rc_features |= BTRC_FEAT_ABSOLUTE_VOLUME;
     }
 
-    if (btc_rc_vb.rc_features & BTA_AV_FEAT_METADATA)
-    {
+    if (btc_rc_vb.rc_features & BTA_AV_FEAT_METADATA) {
         rc_features |= BTRC_FEAT_METADATA;
     }
 
@@ -164,16 +159,13 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
     bt_bdaddr_t rc_addr;
 #endif
 
-    if(p_rc_open->status == BTA_AV_SUCCESS)
-    {
+    if (p_rc_open->status == BTA_AV_SUCCESS) {
         //check if already some RC is connected
-        if (btc_rc_vb.rc_connected)
-        {
+        if (btc_rc_vb.rc_connected) {
             LOG_ERROR("Got RC OPEN in connected state, Connected RC: %d \
-                and Current RC: %d", btc_rc_vb.rc_handle,p_rc_open->rc_handle );
+                and Current RC: %d", btc_rc_vb.rc_handle, p_rc_open->rc_handle );
             if ((btc_rc_vb.rc_handle != p_rc_open->rc_handle)
-                && (bdcmp(btc_rc_vb.rc_addr, p_rc_open->peer_addr)))
-            {
+                    && (bdcmp(btc_rc_vb.rc_addr, p_rc_open->peer_addr))) {
                 LOG_DEBUG("Got RC connected for some other handle");
                 BTA_AvCloseRc(p_rc_open->rc_handle);
                 return;
@@ -188,25 +180,24 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
         btc_rc_vb.rc_handle = p_rc_open->rc_handle;
 
         /* on locally initiated connection we will get remote features as part of connect */
-        if (btc_rc_vb.rc_features != 0)
+        if (btc_rc_vb.rc_features != 0) {
             handle_rc_features();
+        }
 #if (AVRC_CTLR_INCLUDED == TRUE)
         bdcpy(rc_addr.address, btc_rc_vb.rc_addr);
         /* report connection state if device is AVRCP target */
         if (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG) {
-	    esp_avrc_ct_cb_param_t param;
-	    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
-	    param.conn_stat.connected = true;
-	    param.conn_stat.feat_mask = btc_rc_vb.rc_features;
-	    memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
-	    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+            esp_avrc_ct_cb_param_t param;
+            memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+            param.conn_stat.connected = true;
+            param.conn_stat.feat_mask = btc_rc_vb.rc_features;
+            memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
+            btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
         }
 #endif
-    }
-    else
-    {
+    } else {
         LOG_ERROR("%s Connect failed with error code: %d",
-            __FUNCTION__, p_rc_open->status);
+                  __FUNCTION__, p_rc_open->status);
         btc_rc_vb.rc_connected = FALSE;
     }
 }
@@ -227,8 +218,7 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 #endif
     LOG_DEBUG("%s: rc_handle: %d", __FUNCTION__, p_rc_close->rc_handle);
     if ((p_rc_close->rc_handle != btc_rc_vb.rc_handle)
-        && (bdcmp(btc_rc_vb.rc_addr, p_rc_close->peer_addr)))
-    {
+            && (bdcmp(btc_rc_vb.rc_addr, p_rc_close->peer_addr))) {
         LOG_ERROR("Got disconnect of unknown device");
         return;
     }
@@ -241,8 +231,8 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
     features = btc_rc_vb.rc_features;
 #endif
     btc_rc_vb.rc_features = 0;
-    btc_rc_vb.rc_vol_label=MAX_LABEL;
-    btc_rc_vb.rc_volume=MAX_VOLUME;
+    btc_rc_vb.rc_vol_label = MAX_LABEL;
+    btc_rc_vb.rc_volume = MAX_VOLUME;
 #if (AVRC_CTLR_INCLUDED == TRUE)
     bdcpy(rc_addr.address, btc_rc_vb.rc_addr);
 #endif
@@ -250,11 +240,11 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 #if (AVRC_CTLR_INCLUDED == TRUE)
     /* report connection state if device is AVRCP target */
     if (features & BTA_AV_FEAT_RCTG) {
-	esp_avrc_ct_cb_param_t param;
-	memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
-	param.conn_stat.connected = false;
-	memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
-	btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+        esp_avrc_ct_cb_param_t param;
+        memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+        param.conn_stat.connected = false;
+        memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
+        btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
     }
 #endif
 }
@@ -271,33 +261,27 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
 {
 #if (AVRC_CTLR_INCLUDED == TRUE)
     const char *status;
-    if (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG)
-    {
+    if (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG) {
         int key_state;
-        if (p_remote_rsp->key_state == AVRC_STATE_RELEASE)
-        {
+        if (p_remote_rsp->key_state == AVRC_STATE_RELEASE) {
             status = "released";
             key_state = 1;
-        }
-        else
-        {
+        } else {
             status = "pressed";
             key_state = 0;
         }
 
         LOG_DEBUG("%s: rc_id=%d status=%s", __FUNCTION__, p_remote_rsp->rc_id, status);
 
-	do {
-	    esp_avrc_ct_cb_param_t param;
-	    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+        do {
+            esp_avrc_ct_cb_param_t param;
+            memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
             param.psth_rsp.tl = p_remote_rsp->label;
-	    param.psth_rsp.key_code = p_remote_rsp->rc_id;
-	    param.psth_rsp.key_state = key_state;
-	    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_PASSTHROUGH_RSP_EVT, &param);
-	} while (0);
-    }
-    else
-    {
+            param.psth_rsp.key_code = p_remote_rsp->rc_id;
+            param.psth_rsp.key_state = key_state;
+            btc_avrc_ct_cb_to_app(ESP_AVRC_CT_PASSTHROUGH_RSP_EVT, &param);
+        } while (0);
+    } else {
         LOG_ERROR("%s DUT does not support AVRCP controller role", __FUNCTION__);
     }
 #else
@@ -316,41 +300,36 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
 void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
 {
     LOG_DEBUG ("%s event:%s", __FUNCTION__, dump_rc_event(event));
-    switch (event)
-    {
-        case BTA_AV_RC_OPEN_EVT:
-        {
-            LOG_DEBUG("Peer_features:%x", p_data->rc_open.peer_features);
-            handle_rc_connect( &(p_data->rc_open) );
-        }break;
+    switch (event) {
+    case BTA_AV_RC_OPEN_EVT: {
+        LOG_DEBUG("Peer_features:%x", p_data->rc_open.peer_features);
+        handle_rc_connect( &(p_data->rc_open) );
+    } break;
 
-        case BTA_AV_RC_CLOSE_EVT:
-        {
-            handle_rc_disconnect( &(p_data->rc_close) );
-        }break;
+    case BTA_AV_RC_CLOSE_EVT: {
+        handle_rc_disconnect( &(p_data->rc_close) );
+    } break;
 
 #if (AVRC_CTLR_INCLUDED == TRUE)
-        case BTA_AV_REMOTE_RSP_EVT:
-        {
-            LOG_DEBUG("RSP: rc_id:0x%x key_state:%d", p_data->remote_rsp.rc_id,
-                      p_data->remote_rsp.key_state);
-            handle_rc_passthrough_rsp( (&p_data->remote_rsp) );
-        }
-        break;
+    case BTA_AV_REMOTE_RSP_EVT: {
+        LOG_DEBUG("RSP: rc_id:0x%x key_state:%d", p_data->remote_rsp.rc_id,
+                  p_data->remote_rsp.key_state);
+        handle_rc_passthrough_rsp( (&p_data->remote_rsp) );
+    }
+    break;
 #endif
-        case BTA_AV_RC_FEAT_EVT:
-        {
-            LOG_DEBUG("Peer_features:%x", p_data->rc_feat.peer_features);
-            btc_rc_vb.rc_features = p_data->rc_feat.peer_features;
-            handle_rc_features();
-        }
-        break;
+    case BTA_AV_RC_FEAT_EVT: {
+        LOG_DEBUG("Peer_features:%x", p_data->rc_feat.peer_features);
+        btc_rc_vb.rc_features = p_data->rc_feat.peer_features;
+        handle_rc_features();
+    }
+    break;
 
-        // below events are not handled for now
-        case BTA_AV_META_MSG_EVT:
-        case BTA_AV_REMOTE_CMD_EVT:
-        default:
-            LOG_DEBUG("Unhandled RC event : 0x%x", event);
+    // below events are not handled for now
+    case BTA_AV_META_MSG_EVT:
+    case BTA_AV_REMOTE_CMD_EVT:
+    default:
+        LOG_DEBUG("Unhandled RC event : 0x%x", event);
     }
 }
 
@@ -388,8 +367,8 @@ static void btc_avrc_ct_init(void)
     LOG_DEBUG("## %s ##", __FUNCTION__);
 
     memset (&btc_rc_vb, 0, sizeof(btc_rc_vb));
-    btc_rc_vb.rc_vol_label=MAX_LABEL;
-    btc_rc_vb.rc_volume=MAX_VOLUME;
+    btc_rc_vb.rc_vol_label = MAX_LABEL;
+    btc_rc_vb.rc_volume = MAX_VOLUME;
 }
 
 
@@ -414,22 +393,19 @@ static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
     if (tl >= 16 ||
-        key_state > ESP_AVRC_PT_CMD_STATE_RELEASED) {
+            key_state > ESP_AVRC_PT_CMD_STATE_RELEASED) {
         return ESP_ERR_INVALID_ARG;
     }
 #if (AVRC_CTLR_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
     LOG_DEBUG("%s: key-code: %d, key-state: %d", __FUNCTION__,
-                                                    key_code, key_state);
-    if (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG)
-    {
+              key_code, key_state);
+    if (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG) {
         BTA_AvRemoteCmd(btc_rc_vb.rc_handle, tl,
                         (tBTA_AV_RC)key_code, (tBTA_AV_STATE)key_state);
         status =  BT_STATUS_SUCCESS;
         LOG_INFO("%s: succesfully sent passthrough command to BTA", __FUNCTION__);
-    }
-    else
-    {
+    } else {
         status = BT_STATUS_FAIL;
         LOG_DEBUG("%s: feature not supported", __FUNCTION__);
     }

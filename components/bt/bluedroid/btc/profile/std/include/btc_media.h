@@ -214,7 +214,7 @@ extern void btc_media_aa_writebuf(BT_HDR *pBuf, UINT32 timestamp, UINT16 seq_num
  **
  *******************************************************************************/
 extern BOOLEAN btc_media_av_writebuf(UINT8 *p_media, UINT32 media_len,
-                                      UINT32 timestamp, UINT16 seq_num);
+                                     UINT32 timestamp, UINT16 seq_num);
 
 #if (BTA_AV_INCLUDED == TRUE)
 /*******************************************************************************

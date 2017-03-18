@@ -28,52 +28,23 @@ extern "C" {
 #define ESP_A2D_MCT_M24         (0x02)          /*!< MPEG-2, 4 AAC */
 #define ESP_A2D_MCT_ATRAC       (0x04)          /*!< ATRAC family */
 #define ESP_A2D_MCT_NON_A2DP    (0xff)
+
 typedef uint8_t esp_a2d_mct_t;
 
-/**
- * @brief SBC codec specific information as defined in A2DP spec
- */
+/// A2DP media codec capabilities union
 typedef struct {
+    esp_a2d_mct_t type;                        /*!< A2DP media codec type */
 #define ESP_A2D_CIE_LEN_SBC          (4)
-    uint8_t oct[ESP_A2D_CIE_LEN_SBC];
-} esp_a2d_cie_sbc_t;
-
-/**
- * @brief MPEG-1,2 Audio codec specific information as defined in A2DP spec
- */
-typedef struct {
 #define ESP_A2D_CIE_LEN_M12          (4)
-    uint8_t oct[ESP_A2D_CIE_LEN_M12];
-} esp_a2d_cie_m12_t;
-
-/**
- * @brief MPEG-2,4 AAC codec specific information as defined in A2DP spec
- */
-typedef struct {
 #define ESP_A2D_CIE_LEN_M24          (6)
-    uint8_t oct[ESP_A2D_CIE_LEN_M24];
-} esp_a2d_cie_m24_t;
-
-/**
- * @brief ATRAC family codec specific information as defined in A2DP spec
- */
-typedef struct {
 #define ESP_A2D_CIE_LEN_ATRAC        (7)
-    uint8_t oct[ESP_A2D_CIE_LEN_ATRAC];
-} esp_a2d_cie_atrac_t;
-
-/**
- * @brief A2DP media codec capabilities union
- */
-typedef struct {
-    esp_a2d_mct_t type;         /*!< A2DP media codec type */
     union {
-        esp_a2d_cie_sbc_t sbc;
-        esp_a2d_cie_m12_t m12;
-        esp_a2d_cie_m24_t m24;
-        esp_a2d_cie_atrac_t atrac;
-    } cie;
-} esp_a2d_mcc_t;
+        uint8_t sbc[ESP_A2D_CIE_LEN_SBC];
+        uint8_t m12[ESP_A2D_CIE_LEN_M12];
+        uint8_t m24[ESP_A2D_CIE_LEN_M24];
+        uint8_t atrac[ESP_A2D_CIE_LEN_ATRAC];
+    } cie;                                     /*!< A2DP codec information element */
+} __attribute__((packed)) esp_a2d_mcc_t;
 
 /// Bluetooth A2DP connection states
 typedef enum {
@@ -105,24 +76,30 @@ typedef enum {
 
 /// A2DP state callback parameters
 typedef union {
-    /*< ESP_A2D_CONNECTION_STATE_EVT */
+    /**
+     * @brief  ESP_A2D_CONNECTION_STATE_EVT
+     */
     struct a2d_conn_stat_param {
         esp_a2d_connection_state_t state;      /*!< one of values from esp_a2d_connection_state_t */
         esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
         esp_a2d_disc_rsn_t disc_rsn;           /*!< reason of disconnection for "DISCONNECTED" */
-    } conn_stat;
+    } conn_stat;                               /*!< A2DP connection status */
     
-    /*< ESP_A2D_AUDIO_STATE_EVT */
+    /**
+     * @brief ESP_A2D_AUDIO_STATE_EVT
+     */
     struct a2d_audio_stat_param {
         esp_a2d_audio_state_t state;           /*!< one of the values from esp_a2d_audio_state_t */
         esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
-    } audio_stat;
+    } audio_stat;                              /*!< audio stream playing state */
     
-    /*< ESP_A2D_AUDIO_CFG_EVT */
+    /**
+     * @brief ESP_A2D_AUDIO_CFG_EVT
+     */
     struct a2d_audio_cfg_param {
         esp_bd_addr_t remote_bda;              /*!< remote bluetooth device address */
         esp_a2d_mcc_t mcc;                     /*!< A2DP media codec capability information */
-    } audio_cfg;
+    } audio_cfg;                               /*!< media codec configuration infomation */
 } esp_a2d_cb_param_t;
 
 /**
