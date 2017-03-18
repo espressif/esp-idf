@@ -2,13 +2,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
-
 #include "esp_system.h"
-
 #include "bt_app_common.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
@@ -16,47 +13,49 @@
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
 
-static uint32_t m_pkt_cnt = 0;
+
 
 typedef enum {
     BT_APP_EVT_STACK_ON = 0xa0,
     BT_APP_EVT_MAX
 } bt_app_evt_t;
 
-
 typedef union {
     esp_a2d_cb_param_t a2d;
     esp_avrc_ct_cb_event_t rc;
 } bt_app_evt_arg;
 
+
+static uint32_t m_pkt_cnt = 0;
 static esp_a2d_audio_state_t m_audio_state = ESP_A2D_AUDIO_STATE_STOPPED;
 
 static void bt_app_handle_evt(uint16_t event, void *p_param);
-
 static void bt_app_handle_rc_evt(uint16_t event, void *p_param);
+static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param);
+static void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len);
+static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param);
+static void bt_app_handle_evt(uint16_t event, void *p_param);
 
 static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 {
     switch (event) {
     case ESP_A2D_CONNECTION_STATE_EVT:
     case ESP_A2D_AUDIO_STATE_EVT:
-    case ESP_A2D_AUDIO_CFG_EVT:
-    {
-	bt_app_transfer_context(bt_app_handle_evt, event, param, sizeof(bt_app_evt_arg), NULL);
+    case ESP_A2D_AUDIO_CFG_EVT: {
+        bt_app_transfer_context(bt_app_handle_evt, event, param, sizeof(bt_app_evt_arg), NULL);
         break;
     }
     default:
-        BT_APP_TRACE_ERROR("===a2dp invalid cb event: %d\n", event);
+        BT_APP_TRACE_ERROR("===a2dp invalid cb event: %d===\n", event);
         break;
     }
 }
 
 static void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
-    if (++m_pkt_cnt % 50 == 0) {
+    if (++m_pkt_cnt % 100 == 0) {
         BT_APP_TRACE_ERROR("audio data pkt cnt %u\n", m_pkt_cnt);
     }
-    // EspAudioPlayerStreamWrite((uint8_t *)data, len, 10);
 }
 
 static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)
@@ -68,20 +67,20 @@ static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t
         break;
     }
     default:
-        BT_APP_TRACE_ERROR("===a2dp invalid cb event: %d\n", event);
+        BT_APP_TRACE_ERROR("===a2dp invalid cb event: %d===\n", event);
         break;
     }
 }
 
 static void bt_app_handle_evt(uint16_t event, void *p_param)
 {
-    BT_APP_TRACE_DEBUG("bt_app_handle_evt 0x%x\n", event);
+    BT_APP_TRACE_DEBUG("===bt_app_handle_evt 0x%x===\n", event);
     esp_a2d_cb_param_t *a2d = NULL;
     switch (event) {
     case BT_APP_EVT_STACK_ON: {
         char *dev_name = "ESP_SPEAKER";
 
-	esp_bt_dev_set_device_name(dev_name);
+        esp_bt_dev_set_device_name(dev_name);
 
         esp_a2d_register_callback(&bt_app_a2d_cb);
         esp_a2d_register_data_callback(bt_app_a2d_data_cb);
@@ -90,7 +89,7 @@ static void bt_app_handle_evt(uint16_t event, void *p_param)
 
         esp_avrc_ct_init();
         esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
-        
+
         esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         break;
     }
@@ -107,21 +106,18 @@ static void bt_app_handle_evt(uint16_t event, void *p_param)
     }
     case ESP_A2D_AUDIO_CFG_EVT: {
         a2d = (esp_a2d_cb_param_t *)(p_param);
-        BT_APP_TRACE_EVENT("===a2dp audio_cfg_cb type %d ===\n", a2d->audio_cfg.mcc.type);
+        BT_APP_TRACE_EVENT("===a2dp audio_cfg_cb type %d===\n", a2d->audio_cfg.mcc.type);
+        // for now only SBC stream is supported
         if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
-            // temporarily hardcoded the PCM configuaration
             BT_APP_TRACE_EVENT("configure audio player\n");
-            // EspAudioPlayerStreamCfg(StreamSampleRate_44k, 2, StreamBitLen_16BIT);
-            // EspAudio_SetupStream("stream.pcm", InputSrcType_Stream);
-            // EspAudio_SetVolume(99);
         }
         break;
     }
     default:
-        BT_APP_TRACE_ERROR("===application invalid event: %d\n", event);
+        BT_APP_TRACE_ERROR("===application invalid event: %d===\n", event);
         break;
     }
-    
+
 }
 
 void bt_app_handle_rc_evt(uint16_t event, void *p_param)
@@ -140,7 +136,7 @@ void bt_app_handle_rc_evt(uint16_t event, void *p_param)
         break;
     }
     default:
-        BT_APP_TRACE_ERROR("===application invalid event: %d\n", event);
+        BT_APP_TRACE_ERROR("===application invalid event: %d===\n", event);
         break;
     }
 }

@@ -19,7 +19,7 @@ extern int bt_app_trace_level;
 
 #define BT_APP_TRACE_ERROR(fmt, args...)       {if (bt_app_trace_level >= BT_APP_TRACE_LEVEL_ERROR) BT_APP_PRINTF(fmt, ## args);}
 #define BT_APP_TRACE_WARNING(fmt, args...)     {if (bt_app_trace_level >= BT_APP_TRACE_LEVEL_WARNING) BT_APP_PRINTF(fmt, ## args);}
-#define BT_APP_TRACE_API(fmt, args...)     {if (bt_app_trace_level >= BT_APP_TRACE_LEVEL_API) BT_APP_PRINTF(fmt, ## args);}
+#define BT_APP_TRACE_API(fmt, args...)         {if (bt_app_trace_level >= BT_APP_TRACE_LEVEL_API) BT_APP_PRINTF(fmt, ## args);}
 #define BT_APP_TRACE_EVENT(fmt, args...)       {if (bt_app_trace_level >= BT_APP_TRACE_LEVEL_EVENT) BT_APP_PRINTF(fmt, ## args);}
 #define BT_APP_TRACE_DEBUG(fmt, args...)       {if (bt_app_trace_level >= BT_APP_TRACE_LEVEL_DEBUG) BT_APP_PRINTF(fmt, ## args);}
 

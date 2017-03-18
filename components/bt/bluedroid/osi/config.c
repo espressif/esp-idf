@@ -22,15 +22,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include <sys/stat.h>
 
 #include "allocator.h"
 #include "config.h"
 #include "list.h"
 #include "bt_trace.h"
 
-#define CONFIG_FILE_MAX_SIZE      (512)
-#define CONFIG_KEY                "cfg_key1"
+#define CONFIG_FILE_MAX_SIZE      (1024)
+#define CONFIG_KEY                "bt_cfg_key"
 typedef struct {
     char *key;
     char *value;
