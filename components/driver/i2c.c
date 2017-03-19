@@ -66,6 +66,7 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_GPIO_PULLUP_ERR_STR         "this i2c pin do not support internal pull-up"
 #define I2C_FIFO_FULL_THRESH_VAL   (28)
 #define I2C_FIFO_EMPTY_THRESH_VAL  (5)
+#define I2C_IO_INIT_LEVEL          (1)
 
 typedef struct {
     uint8_t byte_num;  /*!< cmd byte number */
@@ -626,6 +627,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_
             break;
     }
     if (sda_io_num >= 0) {
+        gpio_set_level(sda_io_num, I2C_IO_INIT_LEVEL);
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[sda_io_num], PIN_FUNC_GPIO);
         gpio_set_direction(sda_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
         if (sda_pullup_en == GPIO_PULLUP_ENABLE) {
@@ -638,6 +640,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_
     }
 
     if (scl_io_num >= 0) {
+        gpio_set_level(scl_io_num, I2C_IO_INIT_LEVEL);
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[scl_io_num], PIN_FUNC_GPIO);
         if (mode == I2C_MODE_MASTER) {
             gpio_set_direction(scl_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
