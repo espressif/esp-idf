@@ -135,7 +135,7 @@ typedef struct {
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 #else
-#define WIFI_INIT_CONFIG_DEFAULT #error Wifi is disabled in config, WIFI_INIT_CONFIG_DEFAULT will not work
+#define WIFI_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable wifi in menuconfig to use esp_wifi.h");
 #endif
 
 /**
