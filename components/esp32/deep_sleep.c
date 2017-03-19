@@ -291,7 +291,7 @@ static void ext1_wakeup_prepare()
             REG_SET_BIT(desc->reg, desc->ie);
             REG_CLR_BIT(desc->reg, desc->pulldown);
             REG_CLR_BIT(desc->reg, desc->pullup);
-            REG_SET_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold);
+            REG_SET_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold_force);
         }
         // Keep track of pins which are processed to bail out early
         rtc_gpio_mask &= ~BIT(rtc_pin);
