@@ -38,12 +38,13 @@
 #include "lwip/mem.h"
 #include "arch/sys_arch.h"
 #include "lwip/stats.h"
+#include "esp_log.h"
 
 /* This is the number of threads that can be started with sys_thread_new() */
 #define SYS_THREAD_MAX 4
+#define TAG "lwip_arch"
 
-static bool g_lwip_in_critical_section = false;
-static BaseType_t g_lwip_critical_section_needs_taskswitch;
+static sys_mutex_t g_lwip_protect_mutex = NULL;
 
 #if !LWIP_COMPAT_MUTEX
 /** Create a new mutex
@@ -125,18 +126,7 @@ sys_sem_new(sys_sem_t *sem, u8_t count)
 void
 sys_sem_signal(sys_sem_t *sem)
 {
-  if (g_lwip_in_critical_section){
-    /* In function event_callback in sockets.c, lwip signals a semaphore inside a critical 
-     * section. According to the FreeRTOS documentation for FreertosTaskEnterCritical, it's 
-     * not allowed to call any FreeRTOS API function within a critical region. Unfortunately,  
-     * it's not feasible to rework the affected region in LWIP. As a solution, when in a 
-     * critical region, we call xSemaphoreGiveFromISR. This routine is hand-vetted to work 
-     * in a critical region and it will not cause a task switch.
-     */
-    xSemaphoreGiveFromISR(*sem, &g_lwip_critical_section_needs_taskswitch);
-  } else {
     xSemaphoreGive(*sem);
-  }
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -394,7 +384,7 @@ sys_mbox_free(sys_mbox_t *mbox)
     }
 
     if (count == (MAX_POLL_CNT-1)){
-      printf("WARNING: mbox %p had a consumer who never unblocked. Leaking!\n", (*mbox)->os_mbox);
+      ESP_LOGW(TAG, "WARNING: mbox %p had a consumer who never unblocked. Leaking!\n", (*mbox)->os_mbox);
     }
     sys_delay_ms(PER_POLL_DELAY);
   }
@@ -440,6 +430,9 @@ sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, int stacksize
 void
 sys_init(void)
 {
+    if (ERR_OK != sys_mutex_new(&g_lwip_protect_mutex)) {
+        ESP_LOGE(TAG, "sys_init: failed to init lwip protect mutex\n");
+    }
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -449,7 +442,6 @@ sys_now(void)
   return xTaskGetTickCount();
 }
 
-static portMUX_TYPE g_lwip_mux = portMUX_INITIALIZER_UNLOCKED;
 /*
   This optional function does a "fast" critical region protection and returns
   the previous protection level. This function is only called during very short
@@ -466,8 +458,7 @@ static portMUX_TYPE g_lwip_mux = portMUX_INITIALIZER_UNLOCKED;
 sys_prot_t
 sys_arch_protect(void)
 {
-  portENTER_CRITICAL(&g_lwip_mux);
-  g_lwip_in_critical_section = true;
+  sys_mutex_lock(&g_lwip_protect_mutex);
   return (sys_prot_t) 1;
 }
 
@@ -481,13 +472,7 @@ sys_arch_protect(void)
 void
 sys_arch_unprotect(sys_prot_t pval)
 {
-  (void) pval;
-  g_lwip_in_critical_section = false;
-  portEXIT_CRITICAL(&g_lwip_mux);
-  if (g_lwip_critical_section_needs_taskswitch){
-    g_lwip_critical_section_needs_taskswitch = 0;
-    portYIELD();
-  }
+  sys_mutex_unlock(&g_lwip_protect_mutex);
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -497,7 +482,7 @@ sys_arch_unprotect(sys_prot_t pval)
 void
 sys_arch_assert(const char *file, int line)
 {
-  printf("\nAssertion: %d in %s\n", line, file);
+  ESP_LOGE(TAG, "\nAssertion: %d in %s\n", line, file);
 
 //  vTaskEnterCritical();
   while(1);
@@ -537,14 +522,14 @@ sys_sem_t* sys_thread_sem_init(void)
   sys_sem_t *sem = (sys_sem_t*)malloc(sizeof(sys_sem_t*));
 
   if (!sem){
-    printf("sem f1\n");
+    ESP_LOGE(TAG, "thread_sem_init: out of memory");
     return 0;
   }
 
   *sem = xSemaphoreCreateBinary();
   if (!(*sem)){
     free(sem);
-    printf("sem f2\n");
+    ESP_LOGE(TAG, "thread_sem_init: out of memory");
     return 0;
   }
 
