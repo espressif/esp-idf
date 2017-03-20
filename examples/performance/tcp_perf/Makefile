@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := tcp_esp2ap
+PROJECT_NAME := tcp_perf
 
 include $(IDF_PATH)/make/project.mk
 
