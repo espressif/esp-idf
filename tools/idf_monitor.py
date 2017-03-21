@@ -148,7 +148,15 @@ class ConsoleReader(StoppableThread):
             self.console.cleanup()
 
     def _cancel(self):
-        self.console.cancel()
+        if hasattr(self.console, "cancel"):
+            self.console.cancel()
+        elif os.name == 'posix':
+            # this is the way cancel() is implemented in pyserial 3.1 or newer,
+            # older pyserial doesn't have this method, hence this hack.
+            #
+            # on Windows there is a different (also hacky) fix, applied above.
+            import fcntl, termios
+            fcntl.ioctl(self.console.fd, termios.TIOCSTI, b'\0')
 
 class SerialReader(StoppableThread):
     """ Read serial data from the serial port and push to the
