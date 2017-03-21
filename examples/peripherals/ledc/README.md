@@ -14,3 +14,4 @@
  
  * This example use GPIO18/19/4/5 as LEDC ouput, and it will change the duty repeatedly.
 
+ * GPIO18/19 are from high speed channel group. GPIO4/5 are from low speed channel group.
