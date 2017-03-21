@@ -239,6 +239,11 @@ else
 OPTIMIZATION_FLAGS = -Og
 endif
 
+# Enable psram cache bug workaround in compiler if selected
+ifeq ("$(CONFIG_SPIRAM_CACHE_WORKAROUND)", "y")
+COMMON_FLAGS+=-mfix-esp32-psram-cache-issue
+endif
+
 # Enable generation of debugging symbols
 # (we generate even in Release mode, as this has no impact on final binary size.)
 DEBUG_FLAGS ?= -ggdb
