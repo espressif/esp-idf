@@ -50,6 +50,9 @@ The process is the same as for checking out the ESP-IDF from github. Change to t
 
 **IMPORTANT:** The esp-idf build system does not support spaces in paths to esp-idf or to projects.
 
+You can also find a range of example projects under the "examples" directory in IDF. These example project directories can be copied to outside IDF in order to begin your own projects.
+
+
 Step 4: Configuring the project
 ===============================
 
