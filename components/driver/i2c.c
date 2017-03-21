@@ -862,19 +862,23 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
         I2C[i2c_num]->command[p_i2c->cmd_idx].byte_num = cmd->byte_num;
         I2C[i2c_num]->command[p_i2c->cmd_idx].op_code = cmd->op_code;
         if (cmd->op_code == I2C_CMD_WRITE) {
+            uint32_t wr_filled = 0;
             //TODO: to reduce interrupt number
             if (cmd->data) {
                 while (p_i2c->tx_fifo_remain > 0 && cmd->byte_num > 0) {
                     WRITE_PERI_REG(I2C_DATA_APB_REG(i2c_num), *cmd->data++);
                     p_i2c->tx_fifo_remain--;
                     cmd->byte_num--;
+                    wr_filled++;
                 }
             } else {
                 WRITE_PERI_REG(I2C_DATA_APB_REG(i2c_num), cmd->byte_cmd);
                 p_i2c->tx_fifo_remain--;
                 cmd->byte_num--;
+                wr_filled ++;
             }
-            I2C[i2c_num]->command[p_i2c->cmd_idx].byte_num -= cmd->byte_num;
+            //Workaround for register field operation.
+            I2C[i2c_num]->command[p_i2c->cmd_idx].byte_num = wr_filled;
             I2C[i2c_num]->command[p_i2c->cmd_idx + 1].val = 0;
             I2C[i2c_num]->command[p_i2c->cmd_idx + 1].op_code = I2C_CMD_END;
             p_i2c->tx_fifo_remain = I2C_FIFO_LEN;
