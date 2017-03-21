@@ -116,6 +116,13 @@ config SPIRAM_CACHE_WORKAROUND
         when the cache line needs to be fetched from external RAM and an interrupt occurs. This enables a
         fix in the compiler that makes sure the specific code that is vulnerable to this will not be emitted.
 
+config SPIRAM_CACHE_WORKAROUND_TEST
+    bool "Debug: Test workaround by generating a lot of interrupts"
+    default "n"
+    help
+        This setting helps testing the SPIRAM cache workaround. It generates a lot of interrupts so
+        the bug, if still existing, triggers quicker.
+
 choice MEMMAP_SPIRAM_TYPE
     prompt "Type of SPI RAM chip in use"
     default MEMMAP_SPIRAM_TYPE_ESPPSRAM32

@@ -58,6 +58,7 @@
 #include "esp_coexist.h"
 #include "esp_core_dump.h"
 #include "trax.h"
+#include "esp_psram_tst.h"
 
 #include "esp_psram.h"
 
@@ -243,6 +244,10 @@ void start_cpu0_default(void)
     esp_core_dump_init();
 #endif
 
+#if CONFIG_SPIRAM_CACHE_WORKAROUND_TEST
+    psram_tst_setup();
+#endif
+
     xTaskCreatePinnedToCore(&main_task, "main",
             ESP_TASK_MAIN_STACK, NULL,
             ESP_TASK_MAIN_PRIO, NULL, 0);
@@ -263,6 +268,9 @@ void start_cpu1_default(void)
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.
     esp_crosscore_int_init();
+#if CONFIG_SPIRAM_CACHE_WORKAROUND_TEST
+    psram_tst_setup();
+#endif
 
     ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
