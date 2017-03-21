@@ -71,6 +71,10 @@ SECTIONS
     *(.init.literal)
     *(.init)
     _init_end = ABSOLUTE(.);
+
+    /* This goes here, not at top of linker script, so addr2line finds it last,
+       and uses it in preference to the first symbol in IRAM */
+    _iram_start = ABSOLUTE(0);
   } > iram0_0_seg
 
   .iram0.text :
@@ -193,5 +197,11 @@ SECTIONS
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
     _etext = .;
+
+    /* Similar to _iram_start, this symbol goes here so it is
+       resolved by addr2line in preference to the first symbol in
+       the flash.text segment.
+    */
+    _flash_cache_start = ABSOLUTE(0);
   } >iram0_2_seg
 }
