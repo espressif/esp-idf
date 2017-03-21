@@ -4,21 +4,33 @@ Some simple codes help to test the wifi performance.
 
 Including TCP/UDP TX/RX throughput.
 
-#tcp_perf
+# tcp_perf
 
-Using tcp.
+This example is used to test tcp throughput and delay time. First you should set options in menuconfig.
 
-This example is used to test tcp throughput and delay time.
+You can set esp32 as AP/STA, client/sever, sender/receiver. Make sure that STAcan connect to AP with your configuration in menuconfig.
 
-First you should set menuconfig.
+So the tcp_perf can be used in following scenes:
 
-You can set esp32 will be use as AP/STA, client/sever, sender/receiver in menuconfig. Also some config such as SSID, PASSWORD, SEVER_IP can be set in menuconfig.
+* esp32 to Router (using esp32 as STA)
+* esp32 to Wifi adaptor (using esp32 as AP)
+* esp32 to esp32 (using one of them as AP, the other STA)
 
-Open AP, then open STA, when they make a connect, they will send/receive data.You will see the calc result in com output. Make sure that your set can let them connect.
+After connection established, TCP sever and TCP client can send data to each other. The result of throughput will show by COM.
 
-Explaining more in [main.c](tcp_perf/main/main.c).
+Explaining more in [main.c](./tcp_perf/main/main.c).
+
+# udp_perf
+
+Similar with tcp_perf.
+
+There are some points need to notice.
+
+* A packet will be send from client to sever.So the sever can konw the ip&port of client.
+
+* To easy use this example, it's better to use udp sever as recviver.
 
 
-
+# More
 
 See the [README.md](../README.md) file in the upper level [examples](../) directory for more information about examples.

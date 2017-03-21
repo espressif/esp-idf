@@ -1,0 +1,75 @@
+menu "Example Configuration"
+
+#choice 
+#    prompt "UCP_PERF_MODE "
+#	default MODE_UDP_SHIELDBOX
+#	help
+#	    This option set performance mode.
+#		
+#	    - for "Performance in shieldbox" setting,it will receive data by udp.
+#	    - for "Performance in air" setting, it will send data by udp.
+#	    
+#	    - for "Performance in long distance" setting, it will send data by udp.
+#		
+#					
+#config MODE_UDP_SHIELDBOX
+#    bool "Performance in shieldbox"
+#config MODE_UDP_AIR
+#    bool "Performance in air"
+#config MODE_UDP_LONG_DISTANCE
+#    bool "Performance in long distance"
+#endchoice
+#
+config UDP_PERF_WIFI_MODE_AP
+    bool "softap mode enable"
+	default n
+	help
+	    yes:ESP32 is softap. no:ESP32 is station.
+
+config UDP_PERF_SEVER
+    bool "TCP performance sever enable"
+	default n
+	help
+	    yes:ESP32 is UDP sever. no:ESP32 is UDP client.
+		
+	    We suggest to make this config be same with "Station mode".
+
+config UDP_PERF_TX
+    bool "UDP performance TX test enable"
+	default y
+	help
+	    yes:UDP TX test. no:UDP RX test.
+
+config UDP_PERF_WIFI_SSID
+    string "WiFi SSID"
+	default "tp_wifi_test1"
+	help
+	    SSID (network name) for the example to connect to.
+
+config UDP_PERF_WIFI_PASSWORD
+    string "WiFi Password"
+	default "1234567890"
+	help
+	    WiFi password (WPA or WPA2) for the example to use.
+		
+config UDP_PERF_SEVER_PORT
+    int "UDP sever port"
+	default 4567
+	help 
+	    Which will the udp sever use.
+				
+config UDP_PERF_SERVER_IP
+    string "UDP server ip"
+	default "192.168.4.1" 
+	help
+	    IP of UDP server.
+		
+	    Ignore in UDP sever.
+	
+config UDP_PERF_PKT_SIZE
+    int "Size of UDP packet"
+	default 1460
+	help
+	    the data send&recv packet size. 
+		
+endmenu

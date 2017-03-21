@@ -1,84 +1,84 @@
 menu "Example Configuration"
 
-choice 
-    prompt "TCP_PERF_MODE "
-	default MODE_TCP_SHIELDBOX
-	help
-		This option performance mode.
-	
-		- for "Performance in shieldbox" setting,it will receive data by tcp.
-		
-		- for "Performance in air" setting, it will send data by tcp.
-
-		- for "Performance in long distance" setting, it will send data by tcp.
-		
-					
-config MODE_TCP_SHIELDBOX
-	bool "Performance in shieldbox"
-config MODE_TCP_AIR
-    bool "Performance in air"
-config MODE_TCP_LONG_DISTANCE
-    bool "Performance in long distance"
-endchoice
+#choice 
+#    prompt "TCP_PERF_MODE "
+#	default MODE_TCP_SHIELDBOX
+#	help
+#	    This option set performance mode.
+#		
+#            - for "Performance in shieldbox" setting,it will receive data by tcp.
+#		
+#	    - for "Performance in air" setting, it will send data by tcp.
+#		
+#	    - for "Performance in long distance" setting, it will send data by tcp.
+#		
+#					
+#config MODE_TCP_SHIELDBOX
+#    bool "Performance in shieldbox"
+#config MODE_TCP_AIR
+#    bool "Performance in air"
+#config MODE_TCP_LONG_DISTANCE
+#    bool "Performance in long distance"
+#endchoice
 
 config TCP_PERF_WIFI_MODE_AP
     bool "softap mode enable"
-    default n
-    help
-        yes:ESP32 is softap. no:ESP32 is station.
+	default n
+	help
+	    yes:ESP32 is softap. no:ESP32 is station.
 
 config TCP_PERF_SEVER
     bool "TCP performance sever enable"
-    default n
-    help
-		yes:ESP32 is TCP sever. no:ESP32 is TCP client.
-
-		We suggest to make this config be same with "Station mode".
+	default n
+	help
+	    yes:ESP32 is TCP sever. no:ESP32 is TCP client.
+		
+	    We suggest to make this config be same with "Station mode".
 
 config TCP_PERF_TX
     bool "TCP performance TX test enable"
-    default n
-    help
-        yes:TCP TX test. no:TCP RX test.
+	default n
+	help
+	    yes:TCP TX test. no:TCP RX test.
 
 config TCP_PERF_DELAY_DEBUG
     bool "TCP performance delay info enable"
-    default n
-    help
-        Show TCP performance delay info.
-
-		Ignore in TCP RX.
+	default n
+	help
+	    Show TCP performance delay info.
+		
+	    Ignore in TCP RX.
 
 config TCP_PERF_WIFI_SSID
     string "WiFi SSID"
-    default "tp_wifi_test1"
-    help
-        SSID (network name) for the example to connect to.
+	default "tp_wifi_test1"
+	help
+	    SSID (network name) for the example to connect to.
 
 config TCP_PERF_WIFI_PASSWORD
     string "WiFi Password"
-    default "1234567890"
-    help
-        WiFi password (WPA or WPA2) for the example to use.
-
+	default "1234567890"
+	help
+	    WiFi password (WPA or WPA2) for the example to use.
+		
 config TCP_PERF_SEVER_PORT
-	int "TCP sever port"
+    int "TCP sever port"
 	default 4567
 	help 
-		Which will the tcp sever use.
-		
+	    Which will the tcp sever use.
+				
 config TCP_PERF_SERVER_IP
-	string "TCP server ip"
+    string "TCP server ip"
 	default "192.168.4.1" 
 	help
-		IP of TCP server.
-
-		Ignore in TCP sever.
+	    IP of TCP server.
+		
+	    Ignore in TCP sever.
 	
 config TCP_PERF_PKT_SIZE
-	int "Size of TCP packet"
+    int "Size of TCP packet"
 	default 1460
 	help
-		the data send&recv packet size. 
-
+	    the data send&recv packet size. 
+		
 endmenu
