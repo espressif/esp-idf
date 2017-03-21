@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset=utf-8 http-equiv="Content-Language" content="en"/>
+ <title>Setup</title>
+<style type="text/css">
+th,td { padding: 5px; }
+.td-right { text-align: right; }
+.td-left { text-align: left; }
+.td-center { text-align: center; }
+.td-top { vertical-align: top; }
+.td-middle { vertical-align: middle; }
+.td-bottom { vertical-align: bottom; }
+.center-align { text-align: center; }
+.center-div { margin-left: auto; margin-right: auto; }
+.right-div { margin-left: auto; margin-right: 0; }
+.left-div { margin-left: 0; margin-right: auto; }
+td.bigt { font-size:40pt; font-weight:normal; text-align:center; color:#000000; }
+td.stt { font-size:14pt; font-weight:bold; text-align:center; color:#000000; }
+td.scc { font-size:10pt; font-weight:normal; text-align:center; color:#404040;  background-color: rgba(240, 240, 240, 0.6); } 
+tdmin { font-size:9pt; font-weight:normal; text-align:center; color:#404040; } 
+td.l { background-color: rgba(40, 40, 24, 0.6); color:#c0c0c0; }
+tr.ra { background-color: rgba(240, 240, 224, 0.6); color:#303030; }
+tr.ras { background-color: rgba(255, 255, 255, 0.8); color:#101010; }
+tr.rl { }
+.sub { font-size:24pt; font-weight:normal; text-align:center; color:#000000; }
+.tabt { font-size:14pt; font-weight:bold; text-align:center; color:#404040; }
+.tabv { font-size:14pt; font-weight:normal; text-align:center; color:#000000; }
+.it { font-size:14pt; font-weight:bold; text-align:right; color:#404040; }
+.iv { font-size:14pt; font-weight:normal; text-align:left; color:#000000; }
+
+.btn { font-size:18pt; font-weight:normal; text-align:center; color:#000000; }
+.group2 { vertical-align:middle;
+	text-align:center;
+	background-color: rgba(240, 240, 224, 0.6); 
+	padding:12px; 
+	border-radius:10px; }
+.div128 { position:relative; overflow:hidden; top: 0px; left: 0px; min-width:128px; width:128px; min-height:128px; height:128px; border:0; }
+.div64 { position:relative; overflow:hidden; top: 0px; left: 0px; min-width:64px; width:64px; min-height:64px; height:64px; border:0; }
+.div48 { position:relative; overflow:hidden; top: 0px; left: 0px; min-width:48px; width:48px; min-height:48px; height:48px; border:0; }
+.div32 { position:relative; overflow:hidden; top: 0px; left: 0px; min-width:32px; width:32px; min-height:32px; height:32px; border:0; }
+.div24 { position:relative; overflow:hidden; top: 0px; left: 0px; min-width:24px; width:24px; min-height:24px; height:24px; border:0; }
+.img128 { position: absolute; width: 128px; height: 1048px; top: 0px; left: 0px }
+#wifi { top: -128px }
+#product { top: -512px }
+#logo { top: -640px }
+#router { top: -768px }
+.progr { width:100%; height:32px;  background-color: rgba(240, 240, 24, 0.6); color:#c0c0c0; }
+.progr-ok { width:100%; height:32px;  background-color: rgba(240, 240, 24, 1.0); color:#e0e060; }
+.progr-fail { width:100%; height:32px;  background-color: rgba(240, 240, 24, 1.0); color:#c00000; }
+.progr-done { width:100%; height:32px;  background-color: rgba(240, 240, 24, 1.0); color:#00c000; }
+#preload-01 { background: url(spinner.gif) no-repeat -9999px -9999px; }
+
+</style>
+</head>
+
+<body style="background-image:url(backdrop.jpg); background-repeat: no-repeat; background-size: cover;">
+	<div id=waiting style="width: 54px; height:52px; margin: auto auto; text-align: center;"><img src=spinner.gif></div>
+	<div id=realpage style="display:none">
+<table class="center-div" style="width: 600px;"><tr><td class="td-center">
+<table>
+ <tr>
+  <td valign=middle align=center>
+   <a href="https://libwebsockets.org">
+	   <div class=div128>
+		   <img id=logo src="setup.png" class=img128>
+	   </div></a>
+</td>  <td class="bigt">Setup</td>
+<td align=center>
+	   <div class=div128>
+		   <img id=wifi src="setup.png" class=img128></div>
+  </td>
+
+ </tr>
+
+ <tr>
+  <td colspan=3 style="padding-top: 14px; padding-bottom:20px">
+	<table class="center-div" style="width: 450px">
+	 <tr>
+		 <td style="vertical-align: top"><div class=div128><img id=product src="setup.png" class=img128></div></td>
+	  <td class="group2" style="background-color: rgba(240, 240, 224, 0.4); font-size: 18pt">
+		<table class="center-div" style="padding:12px; ">
+			<tr><td class="tabt">Info:</td><td colspan=3 class="tabv" style="text-align:left"><span id=model></span></td></tr>
+			<tr><td class="tabt">Region:</td><td class="tabv" colspan=3>
+	<select name="region" id="region" style="font-size: 14pt" onchange="regch();">
+		<option value="0">China + Taiwan</option>
+		<option value="1">Japan</option>
+		<option value="2" selected>USA</option>
+		<option value="3">EU + UK</option>
+	</select>
+				</td></tr>
+				<tr><td class="tabt">Access Pw:</td><td colspan=3 class="tabv"><div id=access style="display:none">
+							user:<input type="password" id="access_pw" size="8"></input><button id=access_btn value="set" name="Set" onclick="set_access_pw();">Set</button>
+						</div></td></tr>
+		<tr><td colspan=2><input type=button class="btn" name="identify" value="ID device"
+		onclick="do_identify();" style="font-size: 18pt"></td><td colspan=2>
+			<input type=button class="btn" name="reset" value="Reset device"
+                                onclick="do_reset();" style="font-size: 18pt"></td></tr>
+		</table>
+	  </td>
+	  <td style="vertical-align: top"><div class=div128><img id="inet" src="setup.png" class=img128 style="top: -384px; left: 0px" ></div></td>
+	  <td id=conn_td style="background-color: rgba(240, 240, 224, 0.4); font-size: 18pt">
+		<table class="center-div" id=conn_data style="padding:12px;display:none">
+			<tr><td class="it">Joined&nbsp;AP:</td><td class="iv" style="text-align:left"><span id=conn_ap></span></td></tr>
+			  <tr><td class="it">IP:</td><td class="iv" style="text-align:left"><span id=conn_ip></span></td></tr>
+			  <tr><td class="it">Netmask:</td><td class="iv" style="text-align:left"><span id=conn_mask></span></td></tr>
+			  <tr><td class="it">Gateway:</td><td class="iv" style="text-align:left"><span id=conn_gw></span></td></tr>
+		</table>
+	  </td>
+	 </tr>
+        </table>
+  </td>
+ </tr> 
+
+     <tr>
+      <td colspan=4 style="padding-top: 14px; padding-bottom:20px; vertical-align:top">
+	<table class="center-div" style="width: 350px">
+	 <tr>
+          <td class="group2" style="width:350px; vertical-align:top;">
+	    <table><tr><td style="vertical-align:top;">
+	      <div class=div128><img id=router class=img128 src="./setup.png"></div>
+	     </td>
+             <td>
+              <span class="sub">Select the AP to join</span>
+	       <table class="center-div" style="padding-top: 12px;">
+		<tr><td colspan=6 align=center style="font-size: 18pt">
+		 <span id=pwt style="color:#808080">AP Password: </span>
+		 <input disabled type="password" id="pw" oninput="rch(1);" style="font-size: 18pt" size="8">
+		 &nbsp;&nbsp;<input type=button value="Join AP" style="font-size: 18pt" disabled id=join onclick="do_join();"></td>
+		</tr>
+	       </table>
+	      </td>
+             </tr>
+	     <tr><td colspan=6 align=center>
+	      <div id="scan" width="100%">Scanning...</div>
+	     </td></tr>
+	    </table>
+           </td>
+
+	   <td style="vertical-align:top">
+		<table><tr><td style="vertical-align:top; width: 200px">
+
+                <table>
+                <tr><td colspan=2 class=group2>
+
+				<table><tr><td colspan=3>
+			<table><tr><td width=128 style="vertical-align: top"><div class=div128>
+					<img class=img128 src="./setup.png"></div></td><td><span class=sub>Update</span></td></tr></table>
+					</td></tr><tr><td>
+
+					<table><tr><td colspan=2 class=stt width=100%>Application</td></tr>
+						<tr><td><div id=img-ota-icon class=div64><img id="img-ota-icon-img" src="setup.png"
+										class=img128 style="top: -920px; left: -64px"></div></td>
+						    <td class=scc><div id=img-ota></div></td>
+						    </tr>
+						<tr><td colspan=2 algn=center style="text-align:center"><div id=img-ota-upd></div></td></tr>
+
+						<tr><td class=stt colspan=2 width=100%>Setup</td></tr>
+						<tr><td><div id=img-factory-icon class=div64><img id="img-factory-icon-img" src="setup.png"
+										  class=img128 style="top: -920px; left: 0px"></div></td>
+								  <td class=scc><div id=img-factory></div></td></tr>
+						<tr><td colspan=2 align=center style="text-align:center"><div id=img-factory-upd></div></td></tr>
+						</table>
+				</td><tr><tr><td colspan=3 class=stt>Manual upload:</td></tr><tr><td>
+
+				<form name=multipart action="otaform" method="post" enctype="multipart/form-data" onsubmit="do_upload(this); return false;">
+				<table><tr><td>
+			<input type="file" name="ota" id="ota" size="20" accept=".bin" onchange="file_change();" style="font-size: 12pt"></td><td colspan=2>
+			<span id=file_info style="font-size:12pt;"></span></td></tr><tr><td colspan=3>
+			<input type="submit" id="update" name="upload" disabled value="Upload" style="font-size: 18pt"></td></tr>
+			<tr><td colspan=3><progress id=progr value=0 max=100 class=progr>Upload Progress</progress>
+				</td></tr></table>
+				</td></tr>
+			</table>
+		</form>
+                </td></tr>
+
+                </table>
+       </td></tr></table>
+     </td>
+   </tr></table>
+  </td>
+ </tr> 
+
+</table>
+</td>
+</tr>
+</table>
+
+	</div>
+
+<script>
+	var ws, sel, host, old, once = 0;
+	
+function san(s)
+{
+	if (!s)
+		return "";
+	if (s.search("<") != -1)
+		return "invalid string";
+	
+	return s;
+}
+
+function image_summary(s)
+{
+	if (s.user)
+		return san(s.app) + "<br>" + san(s.git) + "<br>" + san(s.user) + "@" + san(s.builder) + "<br>" + san(s.date);
+
+	return "empty";
+}
+
+function get_appropriate_ws_url()
+{
+	var pcol;
+	var u = document.URL;
+
+	/*
+	 * We open the websocket encrypted if this page came on an
+	 * https:// url itself, otherwise unencrypted
+	 */
+
+	if (u.substring(0, 5) == "https") {
+		pcol = "wss://";
+		u = u.substr(8);
+	} else {
+		pcol = "ws://";
+		if (u.substring(0, 4) == "http")
+			u = u.substr(7);
+	}
+
+	u = u.split('/');
+
+	/* + "/xxx" bit is for IE10 workaround */
+
+	return pcol + u[0] + "/xxx";
+}
+
+	if (typeof MozWebSocket != "undefined")
+		ws = new MozWebSocket(get_appropriate_ws_url(),
+				      "esplws-scan");
+	else
+		ws = new WebSocket(get_appropriate_ws_url(),
+				   "esplws-scan");
+
+	try {
+		ws.onopen = function() {
+			document.getElementById("scan").textContent = "open";
+
+		} 
+
+		ws.onmessage =function got_packet(msg) {
+	//		document.getElementById("scan").innerHTML = "<pre>" + msg.data + "</pre>\n";
+			var best, hit, n, m, s, b, a, cs, jso = JSON.parse(msg.data);
+			
+			cs = get_radio();
+		
+			host = jso.host;
+			if (once == 0) {
+				document.getElementById("model").textContent = jso.model+"-"+jso.serial+"-"+jso.opts;
+				document.getElementById("region").value = jso.region;
+				if (jso.forced_button != 1)
+				document.getElementById("access").innerHTML = "<span style=\"font-size:10pt;\">Access password can only be set when device forced into factory mode using physical button</span>";
+
+				document.getElementById("access").style.display = "block";
+
+				cs = jso.ssid;
+				once = 1;
+			}
+
+			if (jso.auton) {
+
+				document.getElementById("progr").value = parseInt(jso.pos / jso.len * 100);
+
+				if (jso.pos == jso.len) {
+					document.getElementById("realpage").style.display = "none";
+					document.getElementById("waiting").style.display = "block";
+					document.getElementById("progr").class = "progr-ok";
+					setTimeout(function() { window.location.href = location.origin + "/"; }, 1000 );
+				}
+
+			} else {
+
+			document.getElementById("img-factory").innerHTML = image_summary(jso.img_factory);
+			document.getElementById("img-ota").innerHTML = image_summary(jso.img_ota);
+
+			if (jso.latest.app && jso.latest.factory) {
+
+				if (jso.latest.app && (!jso.img_ota.user || jso.img_ota.unixtime < jso.latest.app.unixtime)) {
+									 document.getElementById("img-ota-upd").innerHTML = "<table width=100%><tr><td width=49%></td><td align=center><div id=img-ota-upd-icon class=div48><img id=\"img-ota-upd-icon-img\" src=\"setup.png\" class=img128 style=\"top: -984px; left: 0px\"></div></td><td><button onclick=\"get_latest(0);\" style=\"font-size: 14pt\">Update&nbsp;to&nbsp;latest</button></td><td width=49%></td></tr></table>";
+				} else {
+					document.getElementById("img-ota-upd").innerHTML = "<table width=100%><tr><td width=49%></td><td align=center><div id=img-ota-upd-icon class=div48><img id=\"img-ota-upd-icon-img\" src=\"setup.png\" class=img128 style=\"top: -984px; left: -48px\"></div></td><td>Already latest</td><td width=49%></td></tr></table>";
+				}
+
+				if (jso.latest.factory && (!jso.img_factory.user || jso.img_factory.unixtime < jso.latest.factory.unixtime)) {
+					document.getElementById("img-factory-upd").innerHTML = 
+						"<table width=100%><tr><td width=49%></td><td align=center><div id=img-factory-upd-icon class=div48>"+
+						"<img id=\"img-factory-upd-icon-img\" src=\"setup.png\" class=img128 style=\"top: -984px; left: 0px\"></div>"+
+						"</td><td><button onclick=\"get_latest(1);\" style=\"font-size: 14pt\">Update&nbsp;to&nbsp;latest</button>"+
+						"<br>(NB: Updating Setup erases Application)</td><td width=49%></td></tr></table>";
+				} else {
+					document.getElementById("img-factory-upd").innerHTML =
+						"<table width=100%><tr><td width=49%></td><td align=center><div id=img-factory-upd-icon class=div48>"+
+						"<img id=\"img-factory-upd-icon-img\" src=\"setup.png\" class=img128 style=\"top: -984px; left: -48px\">"+
+						"</div></td><td>Already latest</td><td width=49%></td></tr></table>";
+				}
+
+			}
+
+			if (jso.inet == 1) {
+				document.getElementById("inet").style.top = "-256px";
+				document.getElementById("conn_td").class = "group2";
+				document.getElementById("conn_data").style.display = "block";
+				document.getElementById("conn_ap").textContent = jso.ssid;
+				document.getElementById("conn_ip").textContent = jso.conn_ip;
+				document.getElementById("conn_mask").textContent = jso.conn_mask;
+				document.getElementById("conn_gw").textContent = jso.conn_gw;
+			} else {
+				document.getElementById("inet").style.top = "-384px";
+				document.getElementById("conn_td").class = "";
+				document.getElementById("conn_data").style.display = "none";
+				document.getElementById("conn_ap").textContent = "";
+				document.getElementById("conn_ip").textContent = "";
+				document.getElementById("conn_mask").textContent = "";
+				document.getElementById("conn_gw").textContent = "";
+			}
+
+			s = "<tr class=rl><td class=l style=\"overflow:hidden;width:24px;\">sel</td>"+
+			    "<td class=l style=\"overflow:hidden;width:120px;\">SSID</td>"+
+			    "<td class=l style=\"overflow:hidden;width:24px;\">Chan</td>"+
+			    "<td class=l style=\"overflow:hidden;width:80px;\">RSSI</td>"+
+			    "<td class=l style=\"overflow:hidden;width:30px;\">Auth</td>"+
+			    "<td class=l style=\"overflow:hidden;width:120px;\">BSSID</td></tr>";
+	
+			for (m = 0; m < jso.aps.length; m++) {
+			
+				best = -128;
+
+				for (n = 0; n < jso.aps.length; n++)
+					if (parseInt(jso.aps[n].rssi) > best) {
+						best = parseInt(jso.aps[n].rssi);
+						hit = n;
+					}
+				b = 0;
+				if (best > -76)
+					b++;
+				if (best > -71)
+					b++;
+				if (best > -65)
+					b++;
+				if (best > -61)
+					b++;
+		
+				a= "";
+				for (n = 0; n < 5; n++)
+					if (n <= b)
+						a = a + "&#x25C9;"; /* filled in */
+					else
+						a = a + "&#x25CC;";
+				var sel = "", ra = "ra";
+				if (cs == san(jso.aps[hit].ssid)) {
+					sel = " checked=\"checked\" ";
+					ra = "ras";
+					rch(parseInt(jso.aps[hit].auth));
+				}
+
+				s = s + "<tr class=\"" + ra + "\" id=\""+san(jso.aps[hit].ssid)+"\">" +
+					  "<td align=center style=\"overflow:hidden;\"><input type=radio name=ap value=\"" + san(jso.aps[hit].ssid) +
+					  	"\" "+ sel + "onchange=\"rch(" + parseInt(jso.aps[hit].auth) +
+					  	");\"></td>" +
+					  	
+					  "<td align=center style=\"overflow:hidden;\"><b>" + san(jso.aps[hit].ssid) + "</b></td>" +
+					  "<td align=center style=\"overflow:hidden;\">" + san(jso.aps[hit].chan) + "</td>" +
+					  "<td align=center style=\"overflow:hidden;\">" + a + "</td>" +
+					  "<td align=center style=\"overflow:hidden;\"><div class=div24>"+
+					        "<img class=img128 src=\"./setup.png\" style=\"top: -896px; left:-" +
+						24 * parseInt(jso.aps[hit].auth) + "px\"></div></td>" +
+					   "<td align=center style=\"overflow:hidden;\" ><span style=\"font-size:8pt\">" + san(jso.aps[hit].bssid) + "</span></td>" +
+					"</tr>";
+					
+				jso.aps[hit].rssi = "-129";
+			}
+		
+			document.getElementById("scan").innerHTML = 
+				"<table style=\"table-layout:fixed; width:398px; word-break:break-all;border-spacing: 3px; padding: 3px;\">" + s + "</table>";
+
+			document.getElementById("waiting").style.display = "none";
+			document.getElementById("realpage").style.display = "block";
+			}				
+		} 
+
+		ws.onclose = function(){
+			// document.getElementById("scan").textContent = "closed";
+		}
+	} catch(exception) {
+		alert('<p>Error' + exception);
+	}
+
+function get_radio()
+{
+	var s = document.getElementsByName('ap');
+	for ( var i = 0; i < s.length; i++)
+	    if (s[i].checked) {
+	        sel = s[i].value;
+	        break;
+	    }
+
+	return sel;
+}
+
+function do_join()
+{
+	var s = "{\"ssid\":\"" + get_radio() + "\",\"pw\":\"" +
+			document.getElementById("pw").value + "\",\"region\":\"" +
+			document.getElementById("region").value + "\"}", h;
+	try {
+		ws.send(s);
+	} catch(exception) {
+		alert('Sorry, there was a problem' + exception);
+	}
+
+	alert("AP set to " + get_radio());
+/*
+	if (document.getElementById("serial").value)
+		h = document.getElementById("model").textContent + "-" +
+		    document.getElementById("serial").textContent;
+	else
+		h = host;
+	
+	document.getElementById('main').innerHTML =
+		"Thanks, the device is now using the new settings.  " +
+		"Please reconnect yourself to AP <b>" + get_radio() +
+		"</b> and access the device at " +
+		"<a href=\"https://" + host + "\">http://" + h + "</a>";
+*/
+}
+function regch()
+{
+	var s = "{\"setting\":\"1\",\"region\":\"" +
+			document.getElementById("region").value + "\"}", h;
+	try {
+		console.log(s);
+		ws.send(s);
+	} catch(exception) {
+		alert('Sorry, there was a problem' + exception);
+	}
+}
+
+function set_access_pw()
+{
+	var s = "{\"setting\":\"1\",\"access_pw\":\"" +
+			document.getElementById("access_pw").value + "\"}", h;
+	try {
+		console.log(s);
+		ws.send(s);
+	} catch(exception) {
+		alert('Sorry, there was a problem' + exception);
+	}
+}
+
+
+function do_identify()
+{
+	var s = "{\"identify\":\"1\"}";
+	try {
+		ws.send(s);
+	} catch(exception) {
+		alert('Sorry, there was a problem' + exception);
+	}
+}
+
+function do_reset()
+{
+	var s = "{\"reset\":\"1\"}";
+	try {
+		ws.send(s);
+	} catch(exception) {
+		alert('Sorry, there was a problem' + exception);
+	}
+
+	ws.close();
+	alert("Resetting...");
+}
+
+function file_change()
+{
+        document.getElementById('update').disabled = 0;
+}
+
+function reacquire()
+{
+	var xhr = new XMLHttpRequest();
+
+	xhr.onreadystatechange = function(e) {
+		if (xhr.readyState == 4) {
+		   if (xhr.status == 200) {
+			   setTimeout(function() { window.location.href = location.origin + "/"; }, 200 );
+		   } else {
+		   	setTimeout(function() { reacquire(); }, 500 );
+		   }
+		}
+	};
+
+	// xhr.timeout = 5;
+	xhr.open("GET", location.origin + "/", true);
+	xhr.send();
+}
+
+function do_upload(f)
+{
+	var xhr = new XMLHttpRequest();
+
+        document.getElementById('update').disabled = 1;
+	ws.close();
+	document.getElementById("progr").class = "progr-ok";
+
+	xhr.upload.addEventListener("progress", function(e) {
+		document.getElementById("progr").value = parseInt(e.loaded / e.total * 100);
+
+		if (e.loaded == e.total) {
+			document.getElementById("realpage").style.display = "none";
+			document.getElementById("waiting").style.display = "block";
+		}
+	
+	}, false);
+
+	xhr.onreadystatechange = function(e) {
+		   console.log("rs" + xhr.readyState + " status " + xhr.status); 
+		if (xhr.readyState == 4) {
+			document.getElementById("realpage").style.display = "none";
+			document.getElementById("waiting").style.display = "block";
+			document.getElementById("progr").class = "progr-ok";
+			setTimeout(function() { window.location.href = location.origin + "/"; }, 1000 );
+		}
+	};
+
+	xhr.open("POST", f.action, true);
+	xhr.send(new FormData(f));
+
+	return false;
+}
+
+function get_latest(n)
+{
+	if (n == 0)
+		ws.send("update-ota");
+	else
+		ws.send("update-factory");
+}
+
+function rch(need_pw)
+{
+	var _old = old;
+	var sel = get_radio();
+	var butok = 1;
+
+	if (sel == "")
+		butok = 0;
+
+        if (_old && _old != "" && _old != sel)
+	      document.getElementById(_old).className = "ra";
+	old = sel;
+
+	if (sel && sel != "")
+		if (document.getElementById(sel))
+			document.getElementById(sel).className = "ras";
+
+	document.getElementById('pw').disabled = !butok || need_pw == 0;
+	if (!butok || need_pw == 0)
+		document.getElementById('pwt').style.color = "#808080";
+	else
+		document.getElementById('pwt').style.color = "#000000";
+
+	if (need_pw != 0)
+		if (!document.getElementById("pw").value)
+			butok = 0;
+
+	document.getElementById('join').disabled = !butok;
+}
+	
+</script>
+
+</body>
+</html>
+

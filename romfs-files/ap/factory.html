@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset=utf-8 http-equiv="Content-Language" content="en"/>
+ <title>Factory Configuration Page</title>
+<style type="text/css">
+th,td { padding: 5px; }
+.td-right { text-align: right; }
+.td-left { text-align: left; }
+.td-center { text-align: center; }
+.td-top { vertical-align: top; }
+.td-middle { vertical-align: middle; }
+.td-bottom { vertical-align: bottom; }
+.center-align { text-align: center; }
+.center-div { margin-left: auto; margin-right: auto; }
+.right-div { margin-left: auto; margin-right: 0; }
+.left-div { margin-left: 0; margin-right: auto; }
+td.bigt { font-size:40pt; font: Arial; font-weight:normal; text-align:center; color:#000000; }
+td.l { background-color: rgba(40, 40, 24, 0.6); color:#c0c0c0; }
+tr.ra { background-color: rgba(240, 240, 224, 0.6); color:#303030; }
+tr.ras { background-color: rgba(255, 255, 255, 0.8); color:#101010; }
+tr.rl { }
+.sub { font-size:24pt; font: Arial; font-weight:normal; text-align:center; color:#000000; }
+.tabt { font-size:18pt; font: Arial; font-weight:bold; text-align:center; color:#404040; }
+.tabv { font-size:18pt; font: Arial; font-weight:normal; text-align:center; color:#000000; }
+.btn { font-size:18pt; font: Arial; font-weight:normal; text-align:center; color:#000000; }
+.group2 { vertical-align:middle;
+	text-align:center;
+	background-color: rgba(240, 240, 224, 0.6); 
+	padding:12px; 
+	border-radius:10px;}
+</style>
+</head>
+
+<body style="background-image:url(factory-backdrop.jpg); background-repeat: no-repeat; background-size: cover;">
+
+<table class="center-div" style="width: 600px;""><tr><td class="td-center">
+<table>
+ <tr>
+  <td valign=middle align=center>
+   <a href="https://libwebsockets.org">
+    <img src="factory.png"></a>
+  </td>
+  <td class="bigt">Factory Setup</td>
+ </tr>
+
+ <tr>
+  <td colspan=2 style="padding-top: 14px; padding-bottom:20px">
+  	<div id=main style="display:none">
+        <form name=multipart action="factory" method="post" enctype="multipart/form-data">
+
+	<table class="center-div" style="width: 450px">
+	 <tr>
+	  <td style="vertical-align: top"><img src="product.png"></td>
+	  <td class="group2" style="background-color: rgba(240, 240, 224, 0.4); font-size: 18pt">
+		<table class="center-div" style="padding:12px; ">
+			<tr><td class="tabt">Model</td><td class="tabv" style="text-align:left"><span id=model></span></td></tr>
+			<tr><td class="tabt">Serial</td><td class="tabv" style="text-align:left">
+					<input type=text id=serial name=serial size="8" style="font-size: 18pt"></input></td></tr>
+			<tr><td class="tabt">Factory Options</td><td class="tabv" style="text-align:left">
+					<input type=text id=opts name=opts size="8" style="font-size: 18pt"></input></td></tr>
+
+			<tr><td colspan=2><input type=button class="btn" name="identify" value="ID Device"
+				onclick="do_identify();" style="font-size: 18pt">&nbsp;
+			<input type=button class="btn" name="identify" value="Factory Reset"
+				onclick="do_factory_reset();" style="font-size: 18pt">
+			</td></tr>
+
+		<tr><td colspan=2>
+		<table><tr class=ras><td><img src="./ssl-pub.png"></td><td>
+  <span style="font-size:14pt;">Public DER SSL certificate: </span>
+  <input type="file" name="pub" id="pub" size="20" accept=".der" style="font-size: 12pt"><br>
+  <span id=file_info style="font-size:12pt;"></span>
+  <div id=warn-pub style="display:none"><table><tr><td><img src="./warning.png"></td><td>Certificate already exists</td></tr></table></div>
+				</td></tr><tr class=ras><td><img src="./ssl-pri.png"></td><td>
+  <span style="font-size:14pt;">Private DER SSL key: </span>
+  <input type="file" name="pri" id="pri" size="20" accept=".der" style="font-size: 12pt"><br>
+  	<span id=file_info style="font-size:12pt;"></span>
+  <div id=warn-pri style="display:none"><table><tr><td><img src="./warning.png"></td><td>Certificate already exists</td></tr></table></div>
+
+  		</td></tr><tr><td colspan=2>
+	
+		<span style="font-size:14pt;color: rgba(0.0.0. 0.5)">Press Upload to write the certificate and key, and reboot into SSL mode at <a href="https://192.168.4.1">https://192.168.4.1</a> using the uploaded SSL identity.</span>
+				<br>	
+  <input type="submit" id="upload" name="upload" value="Upload" style="font-size: 18pt">
+		</td></tr></table>
+
+		</td></tr>
+
+		</table>
+        </form>
+	</div>
+	  </td>
+	 </tr>
+        </table>
+  </td>
+ </tr> 
+
+</table>
+</td>
+</tr>
+</table>
+
+<script>
+	var ws, sel, host, old, once = 0, mac;
+	
+function san(s)
+{
+	if (s.search("<") != -1)
+		return "invalid string";
+	
+	return s;
+}
+
+function get_appropriate_ws_url()
+{
+	var pcol;
+	var u = document.URL;
+
+	/*
+	 * We open the websocket encrypted if this page came on an
+	 * https:// url itself, otherwise unencrypted
+	 */
+
+	if (u.substring(0, 5) == "https") {
+		pcol = "wss://";
+		u = u.substr(8);
+	} else {
+		pcol = "ws://";
+		if (u.substring(0, 4) == "http")
+			u = u.substr(7);
+	}
+
+	u = u.split('/');
+
+	/* + "/xxx" bit is for IE10 workaround */
+
+	return pcol + u[0] + "/xxx";
+}
+
+	var auth = [ "open", "wep", "wpa1", "wpa2", "wpa1" ];
+
+	if (typeof MozWebSocket != "undefined")
+		ws = new MozWebSocket(get_appropriate_ws_url(),
+				      "esplws-scan");
+	else
+		ws = new WebSocket(get_appropriate_ws_url(),
+				   "esplws-scan");
+
+	try {
+		ws.onopen = function() {
+			document.getElementById("scan").textContent = "open";
+
+		} 
+
+		ws.onmessage =function got_packet(msg) {
+			// document.getElementById("scan").textContent = msg.data + "\n";
+			var best, hit, n, m, s, b, a, cs, jso = JSON.parse(msg.data);
+			
+			host = jso.host;
+			if (once == 0) {
+				document.getElementById("model").textContent = jso.model;
+				document.getElementById("serial").value = jso.serial;
+				document.getElementById("opts").value = jso.opts;
+
+				if (jso.ssl_pub == 1)
+					document.getElementById("warn-pub").style.display = "block";
+				if (jso.ssl_pri == 1)
+					document.getElementById("warn-pri").style.display = "block";
+				mac = jso.mac;
+				once = 1;
+				if (jso.forced_button != 1)
+					document.getElementById("main").innerHTML = "Factory page only available when device physically forced into setup using button";
+
+				document.getElementById("main").style.display = "block";
+			}
+		} 
+
+		ws.onclose = function(){
+			document.getElementById("scan").textContent = "closed";
+		}
+	} catch(exception) {
+		alert('<p>Error' + exception);
+	}
+
+
+function do_identify()
+{
+        var s = "{\"identify\":\"1\"}";
+        try {
+                ws.send(s);
+        } catch(exception) {
+                alert('Sorry, there was a problem' + exception);
+        }
+}
+
+function do_factory_reset()
+{
+        var s = "{\"factory-reset\":\"1\"}";
+        try {
+                ws.send(s);
+        } catch(exception) {
+                alert('Sorry, there was a problem' + exception);
+        }
+
+	document.write("<html>Factory Reset...<br>Please reconnect to AP to 'ESP_"+
+		mac.substring(6, 12) +
+		"' and go to <a href=\"http://192.168.4.1\">http://192.168.4.1</a>.</html>");
+}
+
+</script>
+
+</body>
+</html>
+

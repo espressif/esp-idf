@@ -1,2 +1,4 @@
 build/
 sdkconfig.old
+ssl-cert.der
+ssl-key.der
