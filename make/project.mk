@@ -241,13 +241,14 @@ OPTIMIZATION_FLAGS = -Og
 endif
 
 # Enable generation of debugging symbols
-OPTIMIZATION_FLAGS += -ggdb
+# (we generate even in Release mode, as this has no impact on final binary size.)
+DEBUG_FLAGS ?= -ggdb
 
 # List of flags to pass to C compiler
 # If any flags are defined in application Makefile, add them at the end.
 CFLAGS := $(strip \
 	-std=gnu99 \
-	$(OPTIMIZATION_FLAGS) \
+	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration \
 	$(CFLAGS) \
@@ -259,7 +260,7 @@ CXXFLAGS := $(strip \
 	-std=gnu++11 \
 	-fno-exceptions \
 	-fno-rtti \
-	$(OPTIMIZATION_FLAGS) \
+	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
 	$(CXXFLAGS) \
