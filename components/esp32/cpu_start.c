@@ -92,7 +92,7 @@ static const char* TAG = "cpu_start";
 #if CONFIG_FREERTOS_UNICORE
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
 #else
-#define PSRAM_MODE PSRAM_VADDR_MODE_LOWHIGH
+#define PSRAM_MODE PSRAM_VADDR_MODE_EVENODD
 #endif
 
 /*

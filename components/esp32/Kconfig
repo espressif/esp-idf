@@ -108,6 +108,14 @@ config MEMMAP_SPIRAM_ENABLE
 
 if MEMMAP_SPIRAM_ENABLE
 
+config SPIRAM_CACHE_WORKAROUND
+    bool "Enable workaround for bug in SPI RAM cache for V1 silicon"
+    default "y"
+    help
+        V1 ESP32 silicon has a bug that can cause a write to PSRAM not to take place in some situations
+        when the cache line needs to be fetched from external RAM and an interrupt occurs. This enables a
+        fix in the compiler that makes sure the specific code that is vulnerable to this will not be emitted.
+
 choice MEMMAP_SPIRAM_TYPE
     prompt "Type of SPI RAM chip in use"
     default MEMMAP_SPIRAM_TYPE_ESPPSRAM32
