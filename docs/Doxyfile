@@ -1,7 +1,7 @@
 # This is Doxygen configuration file
 #
 # Doxygen provides over 260 configuration statements
-# To make this file easier to follow, 
+# To make this file easier to follow,
 # it contains only statements that are non-default
 #
 # NOTE:
@@ -17,7 +17,7 @@ PROJECT_NAME = "ESP32 Programming Guide"
 
 ## The 'INPUT' statement below is used as input by script 'gen-df-input.py'
 ## to automatically generate API reference list files heder_file.inc
-## These files are placed in '_inc' directory 
+## These files are placed in '_inc' directory
 ## and used to include in API reference documentation
 
 INPUT = \
@@ -126,10 +126,14 @@ INPUT = \
     ## ULP Coprocessor - API Guides
     ##
     ## NOTE: for line below header_file.inc is not used
-    ../components/ulp/include/esp32/ulp.h
+    ../components/ulp/include/esp32/ulp.h \
+    ##
+    ## Application Level Tracing - API Reference
+    ##
+    ../components/app_trace/include/esp_app_trace.h
 
 
-## Get warnings for functions that have no documentation for their parameters or return value 
+## Get warnings for functions that have no documentation for their parameters or return value
 ##
 WARN_NO_PARAMDOC = YES
 

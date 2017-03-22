@@ -268,7 +268,7 @@ static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, u
 void vPortYield( void );
 void _frxt_setup_switch( void );
 #define portYIELD()					vPortYield()
-#define portYIELD_FROM_ISR()		_frxt_setup_switch()
+#define portYIELD_FROM_ISR()        {traceISR_EXIT_TO_SCHEDULER(); _frxt_setup_switch();}
 
 static inline uint32_t xPortGetCoreID();
 

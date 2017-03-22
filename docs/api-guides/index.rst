@@ -14,4 +14,4 @@ API Guides
    Deep Sleep Wake Stubs <deep-sleep-stub>
    ULP Coprocessor <ulp>
    Unit Testing <unit-tests>
-
+   Application Level Tracing <app_trace>

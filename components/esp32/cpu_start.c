@@ -188,7 +188,7 @@ void IRAM_ATTR call_start_cpu1()
                   "wsr    %0, vecbase\n" \
                   ::"r"(&_init_start));
 
-    ets_set_appcpu_boot_addr(0); 
+    ets_set_appcpu_boot_addr(0);
     cpu_configure_region_protection();
 
 #if CONFIG_CONSOLE_UART_NONE
@@ -257,6 +257,9 @@ void start_cpu0_default(void)
     if (err != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "Failed to init apptrace module on CPU0 (%d)!", err);
     }
+#endif
+#if CONFIG_SYSVIEW_ENABLE
+    SEGGER_SYSVIEW_Conf();
 #endif
     do_global_ctors();
 #if CONFIG_INT_WDT
