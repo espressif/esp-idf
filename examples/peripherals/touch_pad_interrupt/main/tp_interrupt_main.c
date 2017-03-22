@@ -17,7 +17,7 @@
 
 static const char* TAG = "Touch pad";
 
-static bool touch_pad_activated[TOUCH_PAD_MAX];
+static bool s_pad_activated[TOUCH_PAD_MAX];
 
 
 /*
@@ -29,7 +29,7 @@ static bool touch_pad_activated[TOUCH_PAD_MAX];
   Do not touch any pads when this routine
   is running (on application start).
  */
-static void touch_pad_set_thresholds(void)
+static void tp_example_set_thresholds(void)
 {
     uint16_t touch_value;
     for (int i=0; i<TOUCH_PAD_MAX; i++) {
@@ -44,17 +44,17 @@ static void touch_pad_set_thresholds(void)
   If so, then print it out on a serial monitor.
   Clear related entry in the table afterwards
  */
-static void touch_pad_read_task(void *pvParameter)
+static void tp_example_read_task(void *pvParameter)
 {
     static int show_message;
     while (1) {
         for (int i=0; i<TOUCH_PAD_MAX; i++) {
-            if (touch_pad_activated[i] == true) {
+            if (s_pad_activated[i] == true) {
                 ESP_LOGI(TAG, "T%d activated!", i);
                 // Wait a while for the pad being released
                 vTaskDelay(200 / portTICK_PERIOD_MS);
                 // Clear information on pad activation
-                touch_pad_activated[i] = false;
+                s_pad_activated[i] = false;
                 // Reset the counter triggering a message
                 // that application is running
                 show_message = 1;
@@ -73,7 +73,7 @@ static void touch_pad_read_task(void *pvParameter)
   Handle an interrupt triggered when a pad is touched.
   Recognize what pad has been touched and save it in a table.
  */
-static void touch_pad_rtc_intr(void * arg)
+static void tp_example_rtc_intr(void * arg)
 {
     uint32_t pad_intr = READ_PERI_REG(SENS_SAR_TOUCH_CTRL2_REG) & 0x3ff;
     uint32_t rtc_intr = READ_PERI_REG(RTC_CNTL_INT_ST_REG);
@@ -84,7 +84,7 @@ static void touch_pad_rtc_intr(void * arg)
     if (rtc_intr & RTC_CNTL_TOUCH_INT_ST) {
         for (int i = 0; i < TOUCH_PAD_MAX; i++) {
             if ((pad_intr >> i) & 0x01) {
-                touch_pad_activated[i] = true;
+                s_pad_activated[i] = true;
             }
         }
     }
@@ -96,9 +96,9 @@ void app_main()
     // Initialize touch pad peripheral
     ESP_LOGI(TAG, "Initializing touch pad");
     touch_pad_init();
-    touch_pad_set_thresholds();
-    touch_pad_isr_handler_register(touch_pad_rtc_intr, NULL, 0, NULL);
+    tp_example_set_thresholds();
+    touch_pad_isr_handler_register(tp_example_rtc_intr, NULL, 0, NULL);
 
     // Start a task to show what pads have been touched
-    xTaskCreate(&touch_pad_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
 }

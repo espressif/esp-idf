@@ -34,7 +34,7 @@
 #include "driver/gpio.h"
 #include "tlk110_phy.h"
 
-static const char *TAG = "eth_demo";
+static const char *TAG = "eth_example";
 
 #define DEFAULT_PHY_CONFIG (AUTO_MDIX_ENABLE|AUTO_NEGOTIATION_ENABLE|AN_1|AN_0|LED_CFG)
 #define PIN_PHY_POWER 17

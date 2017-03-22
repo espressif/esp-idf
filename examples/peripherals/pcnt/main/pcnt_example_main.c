@@ -53,7 +53,7 @@ typedef struct {
     uint32_t status; /*pulse counter internal status*/
 } pcnt_evt_t;
 
-void IRAM_ATTR pcnt_intr_handler(void* arg)
+static void IRAM_ATTR pcnt_example_intr_handler(void* arg)
 {
     uint32_t intr_status = PCNT.int_st.val;
     int i;
@@ -122,7 +122,7 @@ static void ledc_init(void)
     ledc_timer_config(&ledc_timer);
 }
 
-static void pcnt_init(void)
+static void pcnt_example_init(void)
 {
     pcnt_config_t pcnt_config = {
         /*Set PCNT_INPUT_SIG_IO as pulse input gpio */
@@ -175,7 +175,7 @@ static void pcnt_init(void)
     /*Reset counter value*/
     pcnt_counter_clear(PCNT_TEST_UNIT);
     /*Register ISR handler*/
-    pcnt_isr_register(pcnt_intr_handler, NULL, 0, NULL);
+    pcnt_isr_register(pcnt_example_intr_handler, NULL, 0, NULL);
     /*Enable interrupt for PCNT unit*/
     pcnt_intr_enable(PCNT_TEST_UNIT);
     /*Resume counting*/
@@ -189,7 +189,7 @@ void app_main()
     /*Init PCNT event queue */
     pcnt_evt_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
     /*Init PCNT functions*/
-    pcnt_init();
+    pcnt_example_init();
 
     int16_t count = 0;
     pcnt_evt_t evt;

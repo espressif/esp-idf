@@ -135,7 +135,7 @@ static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t u
     return false;
 }
 
-bool connect_to_http_server()
+static bool connect_to_http_server()
 {
     ESP_LOGI(TAG, "Server IP: %s Server Port:%s", EXAMPLE_SERVER_IP, EXAMPLE_SERVER_PORT);
     sprintf(http_request, "GET %s HTTP/1.1\r\nHost: %s:%s \r\n\r\n", EXAMPLE_FILENAME, EXAMPLE_SERVER_IP, EXAMPLE_SERVER_PORT);
@@ -168,7 +168,7 @@ bool connect_to_http_server()
     return false;
 }
 
-void __attribute__((noreturn)) task_fatal_error()
+static void __attribute__((noreturn)) task_fatal_error()
 {
     ESP_LOGE(TAG, "Exiting task due to fatal error...");
     close(socket_id);
@@ -179,7 +179,7 @@ void __attribute__((noreturn)) task_fatal_error()
     }
 }
 
-void main_task(void *pvParameter)
+static void ota_example_task(void *pvParameter)
 {
     esp_err_t err;
     /* update handle : set by esp_ota_begin(), must be freed via esp_ota_end() */
@@ -295,5 +295,5 @@ void app_main()
     ESP_ERROR_CHECK( err );
 
     initialise_wifi();
-    xTaskCreate(&main_task, "main_task", 8192, NULL, 5, NULL);
+    xTaskCreate(&ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
 }

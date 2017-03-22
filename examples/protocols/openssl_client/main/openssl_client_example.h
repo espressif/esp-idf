@@ -7,8 +7,8 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-#ifndef _OPENSSL_DEMO_H_
-#define _OPENSSL_DEMO_H_
+#ifndef _OPENSSL_EXAMPLE_H_
+#define _OPENSSL_EXAMPLE_H_
 
 /* The examples use simple WiFi configuration that you can set via
    'make menuconfig'.
@@ -23,21 +23,21 @@
    you can set via 'make menuconfig'.
 
    If you'd rather not, just change the below entries to strings with
-   the config you want - ie #define OPENSSL_DEMO_TARGET_NAME "www.baidu.com"
-   and ie #define OPENSSL_DEMO_TARGET_TCP_PORT 433 
+   the config you want - ie #define OPENSSL_EXAMPLE_TARGET_NAME "www.baidu.com"
+   and ie #define OPENSSL_EXAMPLE_TARGET_TCP_PORT 433 
 */
-#define OPENSSL_DEMO_TARGET_NAME        CONFIG_TARGET_DOMAIN
-#define OPENSSL_DEMO_TARGET_TCP_PORT    CONFIG_TARGET_PORT_NUMBER
+#define OPENSSL_EXAMPLE_TARGET_NAME        CONFIG_TARGET_DOMAIN
+#define OPENSSL_EXAMPLE_TARGET_TCP_PORT    CONFIG_TARGET_PORT_NUMBER
 
-#define OPENSSL_DEMO_REQUEST            "{\"path\": \"/v1/ping/\", \"method\": \"GET\"}\r\n"
+#define OPENSSL_EXAMPLE_REQUEST            "{\"path\": \"/v1/ping/\", \"method\": \"GET\"}\r\n"
 
-#define OPENSSL_DEMO_THREAD_NAME        "OpenSSL_demo"
-#define OPENSSL_DEMO_THREAD_STACK_WORDS 10240
-#define OPENSSL_DEMO_THREAD_PRORIOTY    8
+#define OPENSSL_EXAMPLE_TASK_NAME        "openssl_example"
+#define OPENSSL_EXAMPLE_TASK_STACK_WORDS 10240
+#define OPENSSL_EXAMPLE_TASK_PRORIOTY    8
 
-#define OPENSSL_DEMO_RECV_BUF_LEN       1024
+#define OPENSSL_EXAMPLE_RECV_BUF_LEN       1024
 
-#define OPENSSL_DEMO_LOCAL_TCP_PORT     443
+#define OPENSSL_EXAMPLE_LOCAL_TCP_PORT     443
 
 #endif
 
