@@ -491,7 +491,7 @@ static esp_err_t IRAM_ATTR spi_flash_translate_rc(SpiFlashOpResult rc)
 
 static inline void dump_counter(spi_flash_counter_t* counter, const char* name)
 {
-    ESP_LOGI(TAG, "%s  count=%8d  time=%8dms  bytes=%8d\n", name,
+    ESP_LOGI(TAG, "%s  count=%8d  time=%8dus  bytes=%8d\n", name,
              counter->count, counter->time, counter->bytes);
 }
 
