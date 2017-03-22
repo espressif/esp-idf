@@ -643,15 +643,15 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     if(p_rmt_obj[channel] != NULL) {
-        ESP_LOGD(RMT_TAG, "RMT DRIVER ALREADY INSTALLED");
-        return ESP_FAIL;
+        ESP_LOGD(RMT_TAG, "RMT driver already installed");
+        return ESP_ERR_INVALID_STATE;
     }
 
     p_rmt_obj[channel] = (rmt_obj_t*) malloc(sizeof(rmt_obj_t));
 
     if(p_rmt_obj[channel] == NULL) {
         ESP_LOGE(RMT_TAG, "RMT driver malloc error");
-        return ESP_FAIL;
+        return ESP_ERR_NO_MEM;
     }
     memset(p_rmt_obj[channel], 0, sizeof(rmt_obj_t));
 
