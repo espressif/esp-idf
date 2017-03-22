@@ -555,7 +555,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                         if(p_rmt->rx_buf) {
                             BaseType_t res = xRingbufferSendFromISR(p_rmt->rx_buf, (void*) RMTMEM.chan[channel].data32, item_len * 4, &HPTaskAwoken);
                             if(res == pdFALSE) {
-                                ESP_LOGE(RMT_TAG, "RMT RX BUFFER FULL");
+                                ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER FULL");
                             } else {
 
                             }
