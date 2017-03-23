@@ -56,10 +56,19 @@ CTRL_T = '\x14'
 CTRL_RBRACKET = '\x1d'  # Ctrl+]
 
 # ANSI terminal codes
-ANSI_BLUE = '\033[0;34m'
 ANSI_RED = '\033[1;31m'
 ANSI_YELLOW = '\033[0;33m'
 ANSI_NORMAL = '\033[0m'
+
+def color_print(message, color):
+    """ Print a message to stderr with colored highlighting """
+    sys.stderr.write("%s%s%s\n" % (color, message,  ANSI_NORMAL))
+
+def yellow_print(message):
+    color_print(message, ANSI_YELLOW)
+
+def red_print(message):
+    color_print(message, ANSI_RED)
 
 __version__ = "1.0"
 
@@ -288,7 +297,7 @@ class Monitor(object):
         if c == self.exit_key or c == self.menu_key:  # send verbatim
             self.serial.write(codecs.encode(c))
         elif c in [ CTRL_H, 'h', 'H', '?' ]:
-            sys.stderr.write(self.get_help_text())
+            red_print(self.get_help_text())
         elif c == CTRL_R:  # Reset device via RTS
             self.serial.setRTS(True)
             time.sleep(0.2)
@@ -298,7 +307,7 @@ class Monitor(object):
         elif c == CTRL_A:  # Recompile & upload app only
             self.run_make("app-flash")
         else:
-            sys.stderr.write('--- unknown menu character {} --\n'.format(key_description(c)))
+            red_print('--- unknown menu character {} --'.format(key_description(c)))
 
     def get_help_text(self):
         return """
@@ -335,16 +344,15 @@ class Monitor(object):
     def prompt_next_action(self, reason):
         self.console.setup()  # set up console to trap input characters
         try:
-            sys.stderr.write(ANSI_RED)
-            sys.stderr.write("--- {}\n".format(reason))
-            sys.stderr.write("--- Press {} to exit monitor.\n"
-                             .format(key_description(self.exit_key)))
-            sys.stderr.write("--- Press {} to run 'make flash'.\n"
-                             .format(key_description(CTRL_F)))
-            sys.stderr.write("--- Press {} to run 'make app-flash'.\n"
-                             .format(key_description(CTRL_A)))
-            sys.stderr.write("--- Press any other key to resume monitor (resets target).\n")
-            sys.stderr.write(ANSI_NORMAL)
+            red_print("""
+--- {}
+--- Press {} to exit monitor.
+--- Press {} to run 'make flash'.
+--- Press {} to run 'make app-flash'.
+--- Press any other key to resume monitor (resets target).""".format(reason,
+                                                                     key_description(self.exit_key),
+                                                                     key_description(CTRL_F),
+                                                                     key_description(CTRL_A)))
             k = CTRL_T  # ignore CTRL-T here, so people can muscle-memory Ctrl-T Ctrl-F, etc.
             while k == CTRL_T:
                 k = self.console.getkey()
@@ -358,7 +366,7 @@ class Monitor(object):
 
     def run_make(self, target):
         with self:
-            sys.stderr.write("%s--- Running make %s...\n" % (ANSI_NORMAL, target))
+            yellow_print("Running make %s..." % target)
             p = subprocess.Popen([self.make,
                                   target ])
             try:
@@ -374,7 +382,7 @@ class Monitor(object):
              "-pfia", "-e", self.elf_file, pc_addr],
             cwd=".")
         if not "?? ??:0" in translation:
-            sys.stderr.write(ANSI_YELLOW + translation + ANSI_NORMAL)
+            yellow_print(translation)
 
     def check_gdbstub_trigger(self, c):
         self._gdb_buffer = self._gdb_buffer[-6:] + c  # keep the last 7 characters seen
@@ -388,7 +396,7 @@ class Monitor(object):
             if chsum == calc_chsum:
                 self.run_gdb()
             else:
-                sys.stderr.write("Malformed gdb message... calculated checksum %02x received %02x\n" % (chsum, calc_chsum))
+                red_print("Malformed gdb message... calculated checksum %02x received %02x" % (chsum, calc_chsum))
 
 
     def run_gdb(self):
@@ -444,8 +452,8 @@ def main():
 
     if args.port.startswith("/dev/tty."):
         args.port = args.port.replace("/dev/tty.", "/dev/cu.")
-        sys.stderr.write("WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched. ")
-        sys.stderr.write("Using %s instead...\n" % args.port)
+        yellow_print("--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.")
+        yellow_print("--- Using %s instead..." % args.port)
 
     serial_instance = serial.serial_for_url(args.port, args.baud,
                                             do_not_open=True)
@@ -467,9 +475,9 @@ def main():
 
     monitor = Monitor(serial_instance, args.elf_file.name, args.make, args.eol)
 
-    sys.stderr.write('--- idf_monitor on {p.name} {p.baudrate} ---\n'.format(
+    yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(
         p=serial_instance))
-    sys.stderr.write('--- Quit: {} | Menu: {} | Help: {} followed by {} ---\n'.format(
+    yellow_print('--- Quit: {} | Menu: {} | Help: {} followed by {} ---'.format(
         key_description(monitor.exit_key),
         key_description(monitor.menu_key),
         key_description(monitor.menu_key),
