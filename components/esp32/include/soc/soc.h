@@ -184,6 +184,7 @@
 #define DR_REG_TIMERGROUP1_BASE                 0x3ff60000
 #define DR_REG_SPI2_BASE                        0x3ff64000
 #define DR_REG_SPI3_BASE                        0x3ff65000
+#define DR_REG_APB_CTRL_BASE                    0x3ff66000
 #define DR_REG_I2C1_EXT_BASE                    0x3ff67000
 #define DR_REG_SDMMC_BASE                       0x3ff68000
 #define DR_REG_EMAC_BASE                        0x3ff69000
