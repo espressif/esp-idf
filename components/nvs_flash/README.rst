@@ -9,9 +9,11 @@ Non-volatile storage (NVS) library is designed to store key-value pairs in flash
 Underlying storage
 ^^^^^^^^^^^^^^^^^^
 
-Currently NVS uses a portion of main flash memory through ``spi_flash_{read|write|erase}`` APIs. The range of flash sectors to be used by the library is provided to ``nvs_flash_init`` function.
+Currently NVS uses a portion of main flash memory through ``spi_flash_{read|write|erase}`` APIs. The library uses the first partition with ``data`` type and ``nvs`` subtype.
 
 Future versions of this library may add other storage backends to keep data in another flash chip (SPI or I2C), RTC, FRAM, etc.
+
+.. note:: if an NVS partition is truncated (for example, when the partition table layout is changed), its contents should be erased. ESP-IDF build system provides a ``make erase_flash`` target to erase all contents of the flash chip.
 
 Keys and values
 ^^^^^^^^^^^^^^^

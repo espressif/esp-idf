@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
 #include "driver/i2s.h"
 #include <math.h>
 
@@ -48,7 +46,6 @@ void app_main()
         .data_in_num = -1                                                       //Not used
     };
 
-    nvs_flash_init();
     i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
     i2s_set_pin(I2S_NUM, &pin_config);
 

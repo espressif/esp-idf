@@ -118,7 +118,7 @@ const esp_phy_init_data_t* esp_phy_get_init_data()
     }
     esp_err_t err = esp_partition_read(partition, 0, init_data_store, init_data_store_length);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "failed to read PHY data partition (%d)", err);
+        ESP_LOGE(TAG, "failed to read PHY data partition (0x%x)", err);
         return NULL;
     }
     if (memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) != 0 ||
@@ -167,10 +167,15 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
 
 esp_err_t esp_phy_load_cal_data_from_nvs(esp_phy_calibration_data_t* out_cal_data)
 {
-    nvs_handle handle;
-    esp_err_t err = nvs_open(PHY_NAMESPACE, NVS_READONLY, &handle);
+    esp_err_t err = nvs_flash_init();
     if (err != ESP_OK) {
-        ESP_LOGD(TAG, "%s: failed to open NVS namespace (%d)", __func__, err);
+        ESP_LOGW(TAG, "%s: failed to initialize NVS (0x%x)", __func__, err);
+        return err;
+    }
+    nvs_handle handle;
+    err = nvs_open(PHY_NAMESPACE, NVS_READONLY, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGD(TAG, "%s: failed to open NVS namespace (0x%x)", __func__, err);
         return err;
     }
     else {
@@ -185,7 +190,7 @@ esp_err_t esp_phy_store_cal_data_to_nvs(const esp_phy_calibration_data_t* cal_da
     nvs_handle handle;
     esp_err_t err = nvs_open(PHY_NAMESPACE, NVS_READWRITE, &handle);
     if (err != ESP_OK) {
-        ESP_LOGD(TAG, "%s: failed to open NVS namespace (%d)", __func__, err);
+        ESP_LOGD(TAG, "%s: failed to open NVS namespace (0x%x)", __func__, err);
         return err;
     }
     else {
@@ -202,7 +207,7 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
     uint32_t cal_data_version;
     err = nvs_get_u32(handle, PHY_CAL_VERSION_KEY, &cal_data_version);
     if (err != ESP_OK) {
-        ESP_LOGD(TAG, "%s: failed to get cal_version (%d)", __func__, err);
+        ESP_LOGD(TAG, "%s: failed to get cal_version (0x%x)", __func__, err);
         return err;
     }
     uint32_t cal_format_version = phy_get_rf_cal_version() & (~BIT(16));
@@ -216,7 +221,7 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
     size_t length = sizeof(cal_data_mac);
     err = nvs_get_blob(handle, PHY_CAL_MAC_KEY, cal_data_mac, &length);
     if (err != ESP_OK) {
-        ESP_LOGD(TAG, "%s: failed to get cal_mac (%d)", __func__, err);
+        ESP_LOGD(TAG, "%s: failed to get cal_mac (0x%x)", __func__, err);
         return err;
     }
     if (length != sizeof(cal_data_mac)) {
@@ -234,7 +239,7 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
     length = sizeof(*out_cal_data);
     err = nvs_get_blob(handle, PHY_CAL_DATA_KEY, out_cal_data, &length);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: failed to get cal_data(%d)", __func__, err);
+        ESP_LOGE(TAG, "%s: failed to get cal_data(0x%x)", __func__, err);
         return err;
     }
     if (length != sizeof(*out_cal_data)) {
@@ -267,7 +272,6 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
 void esp_phy_load_cal_and_init(void)
 {
 #ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
-    nvs_flash_init();
     esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
     if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
         calibration_mode = PHY_RF_CAL_NONE;
@@ -285,7 +289,7 @@ void esp_phy_load_cal_and_init(void)
     }
     esp_err_t err = esp_phy_load_cal_data_from_nvs(cal_data);
     if (err != ESP_OK) {
-        ESP_LOGW(TAG, "failed to load RF calibration data, falling back to full calibration");
+        ESP_LOGW(TAG, "failed to load RF calibration data (0x%x), falling back to full calibration", err);
         calibration_mode = PHY_RF_CAL_FULL;
     }
 

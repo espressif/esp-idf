@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
 
 #include "driver/touch_pad.h"
 
@@ -34,8 +32,6 @@ void touch_pad_read_task(void *pvParameter)
 
 void app_main()
 {
-    nvs_flash_init();
-
     // Initialize touch pad peripheral
     touch_pad_init();
 
