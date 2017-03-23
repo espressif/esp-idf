@@ -23,7 +23,7 @@ before_script:
 
 build_template_app:
   stage: build
-  image: espressif/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build
 
@@ -57,7 +57,7 @@ build_template_app:
   stage: build
   tags:
     - build
-  image: espressif/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
 
   variables:
     SDK_PATH: "$CI_PROJECT_DIR"
@@ -127,7 +127,7 @@ build_examples:
 
 build_docs:
   stage: build
-  image: espressif/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build_docs
   script:
@@ -145,7 +145,7 @@ build_docs:
 
 test_nvs_on_host:
   stage: test
-  image: espressif/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - nvs_host_test
   script:
@@ -154,7 +154,7 @@ test_nvs_on_host:
 
 test_build_system:
   stage: test
-  image: espressif/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build_test
   variables:
@@ -164,7 +164,7 @@ test_build_system:
 
 test_report:
   stage: test_report
-  image: espressif/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   only:
     - master
     - triggers
@@ -222,7 +222,7 @@ push_master_to_github:
   tags:
     - deploy
   when: on_success
-  image: espressif/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   variables:
     GIT_STRATEGY: clone
     GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
@@ -254,7 +254,7 @@ deploy_docs:
    - triggers
   tags:
     - deploy
-  image: espressif/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -271,7 +271,7 @@ deploy_docs:
 
 check_doc_links:
   stage: test
-  image: espressif/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - check_doc_links
   only:
