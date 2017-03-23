@@ -49,9 +49,11 @@ static void tcp_conn(void *pvParameters)
     int socret;
     
 #if ESP_TCP_MODE_SEVER
+    vTaskDelay(3000 / portTICK_RATE_MS);
     ESP_LOGI(TAG, "creat_tcp_sever.");
     socret=creat_tcp_sever();
 #else /*ESP_TCP_MODE_SEVER*/
+    vTaskDelay(20000 / portTICK_RATE_MS);
     ESP_LOGI(TAG, "creat_tcp_client.");
     socret = creat_tcp_client();
 #endif
@@ -72,6 +74,13 @@ static void tcp_conn(void *pvParameters)
 	totle_data = 0;
 	vTaskDelay(3000 / portTICK_RATE_MS);//every 3s
 	pps = totle_data / 3;
+	if (totle_data <= 0) {
+	    int err_ret = check_socket_error_code();
+	    if (err_ret == ECONNRESET) {
+		ESP_LOGI(TAG, "disconnected... stop.");
+		break;
+	    }
+	}
 
 #if ESP_TCP_PERF_TX
 	ESP_LOGI(TAG, "tcp send %d byte per sec!", pps);

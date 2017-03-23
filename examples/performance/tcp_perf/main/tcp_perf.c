@@ -4,11 +4,11 @@
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
 /*socket*/
-static int sever_socket;
+static int sever_socket = 0;
 static struct sockaddr_in sever_addr;
 static struct sockaddr_in client_addr;
 static unsigned int socklen = sizeof(client_addr);
-static int connect_soc;
+static int connect_soc = 0;
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -25,18 +25,19 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     	ESP_LOGI(TAG, "event_handler:SYSTEM_EVENT_STA_GOT_IP!");
     	ESP_LOGI(TAG, "got ip:%s\n",
 		ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-        connectedflag=1;
+        connectedflag = 1;
         break;
     case SYSTEM_EVENT_AP_STACONNECTED:
     	ESP_LOGI(TAG, "station:"MACSTR" join,AID=%d\n",
 		MAC2STR(event->event_info.sta_connected.mac),
 		event->event_info.sta_connected.aid);
-    	connectedflag=1;
+    	connectedflag = 1;
     	break;
     case SYSTEM_EVENT_AP_STADISCONNECTED:
     	ESP_LOGI(TAG, "station:"MACSTR"leave,AID=%d\n",
 		MAC2STR(event->event_info.sta_disconnected.mac),
 		event->event_info.sta_disconnected.aid);
+    	connectedflag = 0;
     	break;
     default:
         break;
@@ -118,7 +119,7 @@ void recv_data(void *pvParameters)
 	    totle_data += len;
 	}
 	else {
-	    perror("recv_data error");
+	    show_socket_error_code(connect_soc);
 	    vTaskDelay(500 / portTICK_RATE_MS);
 	}
     }
@@ -131,25 +132,29 @@ int creat_tcp_sever()
     ESP_LOGI(TAG, "sever socket....port=%d\n", DEFAULT_PORT);
     sever_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (sever_socket < 0) {
-	perror("socket() error:");
+    	show_socket_error_code(sever_socket);
+	//perror("socket() error:");
 	return -1;
     }
     sever_addr.sin_family = AF_INET;
     sever_addr.sin_port = htons(DEFAULT_PORT);
     sever_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(sever_socket, (struct sockaddr*)&sever_addr, sizeof(sever_addr)) < 0) {
-	perror("bind() error");
+    	show_socket_error_code(sever_socket);
+	//perror("bind() error");
 	close(sever_socket);
 	return -1;
     }
     if (listen(sever_socket, 5) < 0) {
-	perror("listen() error");
+    	show_socket_error_code(sever_socket);
+	//perror("listen() error");
 	close(sever_socket);
 	return -1;
     }
     connect_soc = accept(sever_socket, (struct sockaddr*)&client_addr, &socklen);
     if (connect_soc<0) {
-	perror("accept() error");
+    	show_socket_error_code(connect_soc);
+	//perror("accept() error");
 	close(sever_socket);
 	return -1;
     }
@@ -164,7 +169,8 @@ int creat_tcp_client()
     		DEFAULT_SEVER_IP, DEFAULT_PORT);
     connect_soc = socket(AF_INET, SOCK_STREAM, 0);
     if (connect_soc < 0) {
-	perror("socket failed!");
+    	show_socket_error_code(connect_soc);
+	//perror("socket failed!");
 	return -1;
     }
     sever_addr.sin_family = AF_INET;
@@ -172,7 +178,8 @@ int creat_tcp_client()
     sever_addr.sin_addr.s_addr = inet_addr(DEFAULT_SEVER_IP);
     ESP_LOGI(TAG, "connecting to sever...");
     if (connect(connect_soc, (struct sockaddr *)&sever_addr, sizeof(sever_addr)) < 0) {
-	perror("connect to sever error!");
+    	show_socket_error_code(connect_soc);
+	//perror("connect to sever error!");
 	return -1;
     }
     ESP_LOGI(TAG, "connect to sever success!");
@@ -215,12 +222,15 @@ void wifi_init_softap()
     wifi_config_t wifi_config = {
         .ap = {
             .ssid = DEFAULT_SSID,
-            .ssid_len=0,
+            .ssid_len = 0,
             .max_connection=MAX_STA_CONN,
             .password = DEFAULT_PWD,
-            .authmode=WIFI_AUTH_WPA_WPA2_PSK
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
+    if (strlen(DEFAULT_PWD) ==0) {
+	wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    }
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
@@ -228,6 +238,72 @@ void wifi_init_softap()
 
     ESP_LOGI(TAG, "wifi_init_softap finished.SSID:%s password:%s \n",
     	    DEFAULT_SSID, DEFAULT_PWD);
+}
+
+
+
+
+char* tcpip_get_reason(int err)
+{
+	switch (err) {
+	case 0:
+		return "reason: other reason";
+	case ENOMEM:
+		return "reason: out of memory";
+	case ENOBUFS:
+		return "reason: buffer error";
+	case EWOULDBLOCK:
+		return "reason: timeout, try again";
+	case EHOSTUNREACH:
+		return "reason: routing problem";
+	case EINPROGRESS:
+		return "reason: operation in progress";
+	case EINVAL:
+		return "reason: invalid value";
+	case EADDRINUSE:
+		return "reason: address in use";
+	case EALREADY:
+		return "reason: conn already connected";
+	case EISCONN:
+		return "reason: conn already established";
+	case ECONNABORTED:
+		return "reason: connection aborted";
+	case ECONNRESET:
+		return "reason: connection is reset";
+	case ENOTCONN:
+		return "reason: connection closed";
+	case EIO:
+		return "reason: invalid argument";
+	case -1:
+		return "reason: low level netif error";
+	default:
+		return "reason not found";
+	}
+}
+
+int show_socket_error_code(int soc)
+{
+	int result;
+    u32_t optlen = sizeof(int);
+    getsockopt(soc, SOL_SOCKET, SO_ERROR, &result, &optlen);
+    ESP_LOGI(TAG, "soc error %d reason: %s", result, tcpip_get_reason(result));
+    return result;
+}
+
+int check_socket_error_code()
+{
+	int ret;
+#if ESP_TCP_MODE_SEVER
+	ESP_LOGI(TAG, "check sever_socket sever_socket");
+	ret = show_socket_error_code(sever_socket);
+	if(ret == ECONNRESET)
+		return ret;
+#endif
+	ESP_LOGI(TAG, "check sever_socket connect_soc");
+	ret = show_socket_error_code(connect_soc);
+	if(ret == ECONNRESET)
+		return ret;
+	return 0;
 }
 
 void close_socket()

@@ -41,10 +41,12 @@ static void udp_conn(void *pvParameters)
     int socret;
     
 #if ESP_UDP_MODE_SEVER
+    vTaskDelay(3000 / portTICK_RATE_MS);
     ESP_LOGI(TAG, "creat_udp_sever.");
     socret=creat_udp_sever();
     //vTaskDelay(1000/portTICK_RATE_MS);
 #else /*ESP_UDP_MODE_SEVER*/
+    vTaskDelay(20000 / portTICK_RATE_MS);
     ESP_LOGI(TAG, "creat_udp_client.");
     socret = creat_udp_client();
 #endif

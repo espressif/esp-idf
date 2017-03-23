@@ -70,8 +70,11 @@ void recv_data(void *pvParameters);
 //close all socket
 void close_socket();
 
+//show socket error code. return: error code
+int show_socket_error_code(int soc);
 
-
+//check working socket
+int check_socket_error_code();
 
 
 #ifdef __cplusplus

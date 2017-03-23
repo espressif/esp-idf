@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := udp_esp2ap
+PROJECT_NAME := udp_perf
 
 include $(IDF_PATH)/make/project.mk
 
