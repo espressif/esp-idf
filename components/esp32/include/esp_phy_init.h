@@ -232,12 +232,11 @@ esp_err_t esp_phy_store_cal_data_to_nvs(const esp_phy_calibration_data_t* cal_da
  *                   function.
  * @param mode  Calibration mode (Full, partial, or no calibration)
  * @param[inout] calibration_data
- * @param is_sleep WiFi wakes up from sleep or not
  * @return ESP_OK on success.
  * @return ESP_FAIL on fail.
  */
 esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
-        esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data, bool is_sleep);
+        esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data);
 
 /**
  * @brief De-initialize PHY and RF module
