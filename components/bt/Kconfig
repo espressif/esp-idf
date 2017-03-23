@@ -1,7 +1,14 @@
 menuconfig BT_ENABLED
     bool "Bluetooth"
     help
-        Select this option to enable Bluetooth stack and show the submenu with Bluetooth configuration choices.
+        Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
+
+config BLUEDROID_ENABLED
+	bool "Bluedroid Bluetooth stack enabled"
+    depends on BT_ENABLED
+	default y
+	help
+		This enables the default Bluedroid Bluetooth stack
 
 config BTC_TASK_STACK_SIZE
 	int "Bluetooth event (callback to application) task stack size"

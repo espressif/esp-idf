@@ -2,7 +2,7 @@
 
 [![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](http://esp-idf.readthedocs.io/en/latest/?badge=latest)
 
-ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview>) chip.
+ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview) chip.
 
 # Developing With the ESP-IDF
 
