@@ -83,12 +83,14 @@ endif
 simple_monitor: $(call prereq_if_explicit,%flash)
 	$(MONITOR_PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw $(ESPPORT) $(MONITORBAUD)
 
+MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --make "$(MAKE)"
+
 monitor: $(call prereq_if_explicit,%flash)
 	$(summary) MONITOR
 	[ -f $(APP_ELF) ] || echo "*** 'make monitor' target requires an app to be compiled and flashed first."
 	[ -f $(APP_ELF) ] || echo "*** Run 'make flash monitor' to build, flash and monitor"
 	[ -f $(APP_ELF) ] || echo "*** Or alternatively 'make simple_monitor' to view the serial port as-is."
 	[ -f $(APP_ELF) ] || exit 1
-	$(MONITOR_PYTHON) $(IDF_PATH)/tools/idf_monitor.py --port $(ESPPORT) --make "$(MAKE)" $(APP_ELF)
+	$(MONITOR_PYTHON) $(IDF_PATH)/tools/idf_monitor.py $(MONITOR_OPTS) $(APP_ELF)
 
 .PHONY: erase_flash
