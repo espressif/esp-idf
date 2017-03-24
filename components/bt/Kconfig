@@ -33,12 +33,12 @@ config BT_DRAM_RELEASE
 	Open this option will release about 30K DRAM from Classic BT.
 	The released DRAM will be used as system heap memory.
 
-#config BTDM_CONTROLLER_RUN_APP_CPU
-#    bool "Run controller on APP CPU"
-#    depends on BT_ENABLED
-#    default n
-#    help
-#        Run controller on APP CPU.
+config BTDM_CONTROLLER_RUN_APP_CPU
+    bool "Run controller on APP CPU"
+    depends on BT_ENABLED && !FREERTOS_UNICORE && 0
+    default n
+    help
+        Run controller on APP CPU.
 
 menuconfig HCI_UART
     bool "HCI use UART as IO"
