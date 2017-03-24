@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "soc/cpu.h"
 
 #define unity_printf ets_printf
 
@@ -167,10 +168,13 @@ void unity_run_menu()
             int test_index = strtol(cmdline, NULL, 10);
             if (test_index >= 1 && test_index <= test_count)
             {
-                uint32_t start = esp_log_timestamp(); /* hacky way to get ms */
+                uint32_t start;
+                RSR(CCOUNT, start);
                 unity_run_single_test_by_index(test_index - 1);
-                uint32_t end = esp_log_timestamp();
-                printf("Test ran in %dms\n", end - start);
+                uint32_t end;
+                RSR(CCOUNT, end);
+                uint32_t ms = (end - start) / (XT_CLOCK_FREQ / 1000);
+                printf("Test ran in %dms\n", ms);
             }
         }
 

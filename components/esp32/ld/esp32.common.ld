@@ -85,6 +85,7 @@ SECTIONS
     *libfreertos.a:(.literal .text .literal.* .text.*)
     *libesp32.a:panic.o(.literal .text .literal.* .text.*)
     *libesp32.a:core_dump.o(.literal .text .literal.* .text.*)
+    *libesp32.a:heap_alloc_caps.o(.literal .text .literal.* .text.*)
     *libphy.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
     *librtc_clk.a:(.literal .text .literal.* .text.*)
