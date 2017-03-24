@@ -41,24 +41,16 @@ static const char* TAG = "phy_init";
 
 /* Count value to indicate if there is peripheral that has initialized PHY and RF */
 static int s_phy_rf_init_count = 0;
-static bool s_mac_rst_flag = false;
 
 static _lock_t s_phy_rf_init_lock;
 
 esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
-        esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data, bool is_sleep)
+        esp_phy_calibration_mode_t mode, esp_phy_calibration_data_t* calibration_data)
 {
     assert((s_phy_rf_init_count <= 1) && (s_phy_rf_init_count >= 0));
 
     _lock_acquire(&s_phy_rf_init_lock);
     if (s_phy_rf_init_count == 0) {
-        if (is_sleep == false) {
-            if (s_mac_rst_flag == false) {
-                s_mac_rst_flag = true;
-                REG_SET_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
-                REG_CLR_BIT(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
-            }
-        }
         // Enable WiFi peripheral clock
         SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN | DPORT_WIFI_CLK_RNG_EN);
         ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
@@ -293,7 +285,7 @@ void esp_phy_load_cal_and_init(void)
         calibration_mode = PHY_RF_CAL_FULL;
     }
 
-    esp_phy_rf_init(init_data, calibration_mode, cal_data, false);
+    esp_phy_rf_init(init_data, calibration_mode, cal_data);
 
     if (calibration_mode != PHY_RF_CAL_NONE && err != ESP_OK) {
         err = esp_phy_store_cal_data_to_nvs(cal_data);
@@ -303,7 +295,7 @@ void esp_phy_load_cal_and_init(void)
     esp_phy_release_init_data(init_data);
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 #else
-    esp_phy_rf_init(NULL, PHY_RF_CAL_NONE, NULL, false);
+    esp_phy_rf_init(NULL, PHY_RF_CAL_NONE, NULL);
 #endif
 }
 
