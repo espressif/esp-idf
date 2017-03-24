@@ -79,6 +79,8 @@ struct osi_funcs_t {
     int32_t (*_mutex_lock)(void *mutex);
     int32_t (*_mutex_unlock)(void *mutex);
     int32_t (* _read_efuse_mac)(uint8_t mac[6]);
+    void (* _srand)(unsigned int seed);
+    int (* _rand)(void);
 };
 
 /* Static variable declare */
@@ -134,6 +136,16 @@ static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
     return esp_read_mac(mac, ESP_MAC_BT);
 }
 
+static void IRAM_ATTR srand_wrapper(unsigned int seed)
+{
+    /* empty function */
+}
+
+static int IRAM_ATTR rand_wrapper(void)
+{
+    return (int)esp_random();
+}
+
 static struct osi_funcs_t osi_funcs = {
     ._set_isr = xt_set_interrupt_handler,
     ._ints_on = xt_ints_on,
@@ -146,7 +158,9 @@ static struct osi_funcs_t osi_funcs = {
     ._mutex_create = mutex_create_wrapper,
     ._mutex_lock = mutex_lock_wrapper,
     ._mutex_unlock = mutex_unlock_wrapper,
-    ._read_efuse_mac = read_mac_wrapper
+    ._read_efuse_mac = read_mac_wrapper,
+    ._srand = srand_wrapper,
+    ._rand = rand_wrapper,
 };
 
 bool esp_vhci_host_check_send_available(void)
