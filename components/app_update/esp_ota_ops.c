@@ -46,10 +46,8 @@ typedef struct ota_ops_entry_ {
     const esp_partition_t *part;
     uint32_t erased_size;
     uint32_t wrote_size;
-#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
     uint8_t partial_bytes;
     uint8_t partial_data[16];
-#endif
     LIST_ENTRY(ota_ops_entry_) entries;
 } ota_ops_entry_t;
 
@@ -152,7 +150,6 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
                 return ESP_ERR_OTA_VALIDATE_FAILED;
             }
 
-#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
             if (esp_flash_encryption_enabled()) {
                 /* Can only write 16 byte blocks to flash, so need to cache anything else */
                 size_t copy_len;
@@ -166,7 +163,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
                         return ESP_OK; /* nothing to write yet, just filling buffer */
                     }
                     /* write 16 byte to partition */
-                    ret = esp_partition_write(&it->part, it->wrote_size, it->partial_data, 16);
+                    ret = esp_partition_write(it->part, it->wrote_size, it->partial_data, 16);
                     if (ret != ESP_OK) {
                         return ret;
                     }
@@ -184,7 +181,6 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
                     memcpy(it->partial_data, data_bytes + size, it->partial_bytes);
                 }
             }
-#endif
 
             ret = esp_partition_write(it->part, it->wrote_size, data_bytes, size);
             if(ret == ESP_OK){
@@ -223,10 +219,9 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
         goto cleanup;
     }
 
-#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
-    if (it->partial_bytes > 0 && esp_flash_encryption_enabled()) {
+    if (it->partial_bytes > 0) {
         /* Write out last 16 bytes, if necessary */
-        ret = esp_partition_write(&it->part, it->wrote_size, it->partial_data, 16);
+        ret = esp_partition_write(it->part, it->wrote_size, it->partial_data, 16);
         if (ret != ESP_OK) {
             ret = ESP_ERR_INVALID_STATE;
             goto cleanup;
@@ -234,7 +229,6 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
         it->wrote_size += 16;
         it->partial_bytes = 0;
     }
-#endif
 
     if (esp_image_basic_verify(it->part->address, true, &image_size) != ESP_OK) {
         ret = ESP_ERR_OTA_VALIDATE_FAILED;
