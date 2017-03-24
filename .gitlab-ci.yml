@@ -14,10 +14,11 @@ before_script:
   - chmod 600 ~/.ssh/id_rsa
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
-  # if testing master branch, use github wifi and bt libs.
-  # if testing other branches, use gitlab wifi and bt libs (as maybe changes aren't merged to master yet)
-  - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-wifi-lib%${GITLAB_SSH_SERVER}/idf/esp32-wifi-lib%" .gitmodules
-  - test "${CI_BUILD_REF_NAME}" = "master" || sed -i "s%https://github.com/espressif/esp32-bt-lib%${GITLAB_SSH_SERVER}/idf/esp32-bt-lib%" .gitmodules
+  # Set IS_PRIVATE or IS_PUBLIC depending on if our branch is public or not
+  #
+  # (the same regular expressions are used to set these are used in 'only:' sections below
+  - source make/configure_ci_environment.sh
+
   # fetch all submodules
   - git submodule update --init --recursive
 
@@ -134,7 +135,7 @@ build_docs:
     - cd docs
     - doxygen
     # If not building master branch, and there are Doxygen warnings, print them and bail out
-    - test "${CI_BUILD_REF_NAME}" = "master" || test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
+    - test -n $IS_PRIVATE && test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
     - make gh-linkcheck
     - make html
   artifacts:
@@ -160,6 +161,7 @@ test_build_system:
   variables:
     IDF_PATH: "$CI_PROJECT_DIR"
   script:
+    - ./make/test_configure_ci_environment.sh
     - ./make/test_build_system.sh
 
 test_report:
@@ -168,7 +170,8 @@ test_report:
   only:
     - master
     - triggers
-    - /^release\/v.*$/
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
   tags:
     - report
   variables:
@@ -218,7 +221,8 @@ push_master_to_github:
   stage: deploy
   only:
     - master
-    - /^release\/v.*$/
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
   tags:
     - deploy
   when: on_success
@@ -250,7 +254,8 @@ deploy_docs:
   stage: deploy
   only:
    - master
-   - /^release\/v.*$/
+   - /^release\/v/
+   - /^v\d+\.\d+(\.\d+)?($|-)/
    - triggers
   tags:
     - deploy
@@ -297,7 +302,8 @@ check_doc_links:
   when: on_success
   only:
     - master
-    - /^release\/v.*$/
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
     - triggers
   allow_failure: true
 
