@@ -25,22 +25,30 @@ pacman --noconfirm -Syu
 
 pacman --noconfirm -S gettext-devel gcc git make ncurses-devel flex bison gperf vim mingw-w64-i686-python2-pip unzip
 
+echo 'export PATH="$PATH:/mingw32/bin"' > /etc/profile.d/mingw32.sh
+
+set +e
+. /etc/profile
+set -e
+
 python -m pip install --upgrade pip
 
 pip install pyserial
 
 # TODO: automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/
-TOOLCHAIN_ZIP=xtensa-esp32-elf-win32-1.22.0-59.zip
+TOOLCHAIN_ZIP=xtensa-esp32-elf-win32-1.22.0-61-gab8375a-5.2.0.zip
 echo "Downloading precompiled toolchain ${TOOLCHAIN_ZIP}..."
 cd ~
-curl -LO --retry 10 http://dl.espressif.com/dl/${TOOLCHAIN_ZIP}
+if [ ! -e ${TOOLCHAIN_ZIP} ] || ! unzip -t ${TOOLCHAIN_ZIP}; then
+    [ -e ${TOOLCHAIN_ZIP} ] && rm ${TOOLCHAIN_ZIP}
+    curl -LO --retry 10 http://dl.espressif.com/dl/${TOOLCHAIN_ZIP}
+fi
+[ -d /opt ] || mkdir /opt
 cd /opt
 unzip ~/${TOOLCHAIN_ZIP}
 rm ~/${TOOLCHAIN_ZIP}
 
-cat > /etc/profile.d/esp32_toolchain.sh << EOF
-export PATH="$PATH:/opt/xtensa-esp32-elf/bin"
-EOF
+echo 'export PATH="$PATH:/opt/xtensa-esp32-elf/bin"' > /etc/profile.d/esp32_toolchain.sh
 
 # clean up pacman packages to save some disk space
 pacman --noconfirm -R unzip
