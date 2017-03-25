@@ -52,9 +52,6 @@
 
 #include "tcpip_adapter.h"
 
-/* Define those to better describe your network interface. */
-#define IFNAME0 'e'
-#define IFNAME1 'n'
 
 /**
  * In this function, the hardware should be initialized.
@@ -216,8 +213,6 @@ wlanif_init(struct netif *netif)
    */
   NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, 100);
 
-  netif->name[0] = IFNAME0;
-  netif->name[1] = IFNAME1;
   /* We directly use etharp_output() here to save a function call.
    * You can instead declare your own function an call etharp_output()
    * from it if you have to do some checks before sending (e.g. if link
@@ -233,3 +228,17 @@ wlanif_init(struct netif *netif)
 
   return ERR_OK;
 }
+
+err_t wlanif_init_sta(struct netif *netif) {
+  netif->name[0] = 's';
+  netif->name[1] = 't';
+  return wlanif_init(netif);
+}
+
+err_t wlanif_init_ap(struct netif *netif) {
+  netif->name[0] = 'a';
+  netif->name[1] = 'p';
+  return wlanif_init(netif);
+}
+
+
