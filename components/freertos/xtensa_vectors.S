@@ -469,28 +469,10 @@ Debug Exception.
     .section    .DebugExceptionVector.text, "ax"
     .global     _DebugExceptionVector
     .align      4
-
+    .global     xt_debugexception
 _DebugExceptionVector:
-
-    #ifdef XT_SIMULATOR
-    /*
-    In the simulator, let the debugger (if any) handle the debug exception,
-    or simply stop the simulation:
-    */
-    wsr     a2, EXCSAVE+XCHAL_DEBUGLEVEL    /* save a2 where sim expects it */
-    movi    a2, SYS_gdb_enter_sktloop
-    simcall                                 /* have ISS handle debug exc. */
-    #elif 0 /* change condition to 1 to use the HAL minimal debug handler */
-    wsr     a3, EXCSAVE+XCHAL_DEBUGLEVEL
-    movi    a3, xthal_debugexc_defhndlr_nw  /* use default debug handler */
-    jx      a3
-    #else
-    wsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL    /* save original a0 somewhere */
-    movi    a0,PANIC_RSN_DEBUGEXCEPTION
-    wsr     a0,EXCCAUSE
-    call0   _xt_panic                       /* does not return */
-    rfi     XCHAL_DEBUGLEVEL                /* make a0 point here not later */
-    #endif
+    wsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL    /* preserve a0 */
+    call0   xt_debugexception            /* load exception handler */
 
     .end        literal_prefix
 

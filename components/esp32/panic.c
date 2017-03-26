@@ -227,7 +227,10 @@ void panicHandler(XtExcFrame *frame)
 void xt_unhandled_exception(XtExcFrame *frame)
 {
     int *regs = (int *)frame;
-    int x;
+    int x=0;
+
+    //Disable all interrupts, so a backtrace isn't interrupted by needless stuff
+    asm volatile("wsr %0,INTENABLE\nesync\n"::"r"(x));
 
     haltOtherCore();
     panicPutStr("Guru Meditation Error of type ");
