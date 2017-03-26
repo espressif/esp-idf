@@ -282,7 +282,7 @@ Encrypted Partition Flag
 
 Some partitions are encrypted by default. Otherwise, it is possible to mark any partition as requiring encryption:
 
-In the :doc:`partition table </partition-tables>` description CSV files, there is a field for flags.
+In the :doc:`partition table <../api-guides/partition-tables>` description CSV files, there is a field for flags.
 
 Usually left blank, if you write "encrypted" in this field then the partition will be marked as encrypted in the partition table, and data written here will be treated as encrypted (same as an app partition)::
 

@@ -43,5 +43,13 @@ Legal Part
 
 Before a contribution can be accepted, you will need to sign our :doc:`contributor-agreement`. You will be prompted for this automatically as part of the Pull Request process.
 
+Related Documents
+-----------------
 
+.. toctree::
+    :maxdepth: 1
 
+    style-guide
+    documenting-code
+    ../api-reference/template
+    contributor-agreement
