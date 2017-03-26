@@ -5,9 +5,28 @@
 #include "soc/soc.h"
 
 /*
-This file contains the default handlers for the high interrupt levels. The default behavious
-is to just exit the interrupt.
+This file contains the default handlers for the high interrupt levels as well as some specialized exceptions. 
+The default behaviour is to just exit the interrupt or call the panic handler on the exceptions
 */
+
+
+#if XCHAL_HAVE_DEBUG
+    .global    xt_debugexception
+    .weak xt_debugexception
+    .set xt_debugexception, _xt_debugexception
+    .section .iram1,"ax"
+    .type       _xt_debugexception,@function
+    .align      4
+
+_xt_debugexception:
+    movi    a0,PANIC_RSN_DEBUGEXCEPTION
+    wsr     a0,EXCCAUSE
+    call0   _xt_panic                       /* does not return */
+    rsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL
+    rfi     XCHAL_DEBUGLEVEL
+
+#endif /* Debug exception */
+
 
 #if XCHAL_NUM_INTLEVELS >=2 && XCHAL_EXCM_LEVEL <2 && XCHAL_DEBUGLEVEL !=2
     .global    xt_highint2
