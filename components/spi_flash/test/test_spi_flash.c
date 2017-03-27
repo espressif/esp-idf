@@ -6,6 +6,8 @@
 #include <unity.h>
 #include <esp_spi_flash.h>
 #include <esp_attr.h>
+#include "driver/timer.h"
+#include "esp_intr_alloc.h"
 
 struct flash_test_ctx {
     uint32_t offset;
@@ -85,5 +87,83 @@ TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_fla
         TEST_ASSERT_FALSE(ctx[i].fail);
     }
     vSemaphoreDelete(done);
+}
+
+
+
+typedef struct {
+    size_t buf_size;
+    uint8_t* buf;
+    size_t flash_addr;
+    size_t repeat_count;
+    SemaphoreHandle_t done;
+} read_task_arg_t;
+
+
+typedef struct {
+    size_t delay_time_us;
+    size_t repeat_count;
+} block_task_arg_t;
+
+static void IRAM_ATTR timer_isr(void* varg) {
+    block_task_arg_t* arg = (block_task_arg_t*) varg;
+    TIMERG0.int_clr_timers.t0 = 1;
+    TIMERG0.hw_timer[0].config.alarm_en = 1;
+    ets_delay_us(arg->delay_time_us);
+    arg->repeat_count++;
+}
+
+static void read_task(void* varg) {
+    read_task_arg_t* arg = (read_task_arg_t*) varg;
+    for (size_t i = 0; i < arg->repeat_count; ++i) {
+        ESP_ERROR_CHECK( spi_flash_read(arg->flash_addr, arg->buf, arg->buf_size) );
+    }
+    xSemaphoreGive(arg->done);
+    vTaskDelay(1);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash]")
+{
+    const size_t size = 128;
+    read_task_arg_t read_arg = {
+            .buf_size = size,
+            .buf = (uint8_t*) malloc(size),
+            .flash_addr = 0,
+            .repeat_count = 1000,
+            .done = xSemaphoreCreateBinary()
+    };
+
+    timer_config_t config = {
+            .alarm_en = true,
+            .counter_en = false,
+            .intr_type = TIMER_INTR_LEVEL,
+            .counter_dir = TIMER_COUNT_UP,
+            .auto_reload = true,
+            .divider = 80
+    };
+
+    block_task_arg_t block_arg = {
+            .repeat_count = 0,
+            .delay_time_us = 100
+    };
+
+    ESP_ERROR_CHECK( timer_init(TIMER_GROUP_0, TIMER_0, &config) );
+    timer_pause(TIMER_GROUP_0, TIMER_0);
+    ESP_ERROR_CHECK( timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 120) );
+    intr_handle_t handle;
+    ESP_ERROR_CHECK( timer_isr_register(TIMER_GROUP_0, TIMER_0, &timer_isr, &block_arg, ESP_INTR_FLAG_IRAM, &handle) );
+    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
+    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
+    timer_start(TIMER_GROUP_0, TIMER_0);
+
+    xTaskCreatePinnedToCore(read_task, "r", 2048, &read_arg, 3, NULL, 1);
+    xSemaphoreTake(read_arg.done, portMAX_DELAY);
+
+    timer_pause(TIMER_GROUP_0, TIMER_0);
+    timer_disable_intr(TIMER_GROUP_0, TIMER_0);
+    esp_intr_free(handle);
+    vSemaphoreDelete(read_arg.done);
+    free(read_arg.buf);
 }
 
