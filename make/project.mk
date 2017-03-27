@@ -244,6 +244,10 @@ ifeq ("$(CONFIG_SPIRAM_CACHE_WORKAROUND)", "y")
 COMMON_FLAGS+=-mfix-esp32-psram-cache-issue
 endif
 
+ifeq ("$(CONFIG_SPIRAM_CACHE_ALWAYS_MEMBARRIER)", "y")
+COMMON_FLAGS+=-malways-memw
+endif
+
 # Enable generation of debugging symbols
 # (we generate even in Release mode, as this has no impact on final binary size.)
 DEBUG_FLAGS ?= -ggdb
