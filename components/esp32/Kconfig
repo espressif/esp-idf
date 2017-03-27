@@ -116,6 +116,13 @@ config SPIRAM_CACHE_WORKAROUND
         when the cache line needs to be fetched from external RAM and an interrupt occurs. This enables a
         fix in the compiler that makes sure the specific code that is vulnerable to this will not be emitted.
 
+config SPIRAM_CACHE_ALWAYS_MEMBARRIER
+    bool "Heavy-handed workaround for bug: Always do memory barrier"
+    default "n"
+    help
+        This will introduce a memory barrier before EVERY load/store. This will get rid of most coherency
+        issues, but at the cost of a lot of performance. Don't enable unless you know you need this!
+
 config SPIRAM_CACHE_WORKAROUND_TEST
     bool "Debug: Test workaround by generating a lot of interrupts"
     default "n"
