@@ -185,7 +185,7 @@ void start_cpu0_default(void)
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
-    rtc_gpio_unhold_all();
+    rtc_gpio_force_hold_dis_all();
     esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
