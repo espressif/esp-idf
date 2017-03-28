@@ -73,8 +73,31 @@ static const char *RTC_MODULE_TAG = "RTC_MODULE";
     return ESP_FAIL;\
 }
 
+#define ADC2_CHECK_FUNCTION_RET(fun_ret) do { if(fun_ret!=ESP_OK){\
+    ESP_LOGE(RTC_MODULE_TAG,"%s:%d\n",__FUNCTION__,__LINE__);\
+    return ESP_FAIL;\
+} }while (0)
+
 portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static SemaphoreHandle_t rtc_touch_mux = NULL;
+/*
+In ADC2, there're two locks used for different cases:
+1. lock shared with app and WIFI: 
+   when wifi using the ADC2, we assume it will never stop, 
+   so app checks the lock and returns immediately if failed.
+
+2. lock shared between tasks: 
+   when several tasks sharing the ADC2, we want to guarantee 
+   all the requests will be handled.
+   Since conversions are short (about 31us), app returns the lock very soon, 
+   we use a spinlock to stand there waiting to do conversions one by one.
+
+adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
+*/
+//prevent ADC2 being used by wifi and other tasks at the same time.
+static _lock_t adc2_wifi_lock = NULL;
+//prevent ADC2 being used by tasks (regardless of WIFI)
+portMUX_TYPE adc2_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 typedef struct {
     TimerHandle_t timer;
@@ -1034,9 +1057,7 @@ static esp_err_t adc_set_atten(adc_unit_t adc_unit, adc_channel_t channel, adc_a
 void adc_power_on()
 {
     portENTER_CRITICAL(&rtc_spinlock);
-    //Bit1  0:Fsm  1: SW mode
-    //Bit0  0:SW mode power down  1: SW mode power on
-    SENS.sar_meas_wait2.force_xpd_sar = ADC_FORCE_ENABLE;
+    SENS.sar_meas_wait2.force_xpd_sar = ADC_FORCE_FSM;
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
@@ -1216,11 +1237,12 @@ int adc1_get_raw(adc1_channel_t channel)
 {
     uint16_t adc_value;
     RTC_MODULE_CHECK(channel < ADC1_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
+
+    adc_power_on(); 
+
     portENTER_CRITICAL(&rtc_spinlock);
     //Adc Controler is Rtc module,not ulp coprocessor
     SENS.sar_meas_start1.meas1_start_force = 1;
-    //Bit1=0:Fsm  Bit1=1(Bit0=0:PownDown Bit10=1:Powerup)
-    SENS.sar_meas_wait2.force_xpd_sar = 0;
     //Disable Amp Bit1=0:Fsm  Bit1=1(Bit0=0:PownDown Bit10=1:Powerup)
     SENS.sar_meas_wait2.force_xpd_amp = 0x2;
     //Open the ADC1 Data port Not ulp coprocessor
@@ -1249,11 +1271,12 @@ int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw()
 
 void adc1_ulp_enable(void)
 {
+    adc_power_on();
+
     portENTER_CRITICAL(&rtc_spinlock);
     SENS.sar_meas_start1.meas1_start_force = 0;
     SENS.sar_meas_start1.sar1_en_pad_force = 0;
     SENS.sar_meas_wait2.force_xpd_amp = 0x2;
-    SENS.sar_meas_wait2.force_xpd_sar = 0;
     SENS.sar_meas_ctrl.amp_rst_fb_fsm = 0;
     SENS.sar_meas_ctrl.amp_short_ref_fsm = 0;
     SENS.sar_meas_ctrl.amp_short_ref_gnd_fsm = 0;
@@ -1305,6 +1328,110 @@ esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
         return ESP_ERR_INVALID_ARG;
     }
 
+    return ESP_OK;
+}
+
+esp_err_t adc2_wifi_acquire()
+{
+    //lazy initialization
+    //for wifi, block until acquire the lock
+    _lock_acquire( &adc2_wifi_lock );
+    ESP_LOGD( RTC_MODULE_TAG, "Wi-Fi takes adc2 lock." );
+    return ESP_OK;
+}
+
+esp_err_t adc2_wifi_release()
+{
+    RTC_MODULE_CHECK((uint32_t*)adc2_wifi_lock != NULL, "wifi release called before acquire", ESP_ERR_INVALID_STATE );
+
+    _lock_release( &adc2_wifi_lock );
+    ESP_LOGD( RTC_MODULE_TAG, "Wi-Fi returns adc2 lock." );
+    return ESP_OK;
+}
+
+static esp_err_t adc2_pad_init(adc2_channel_t channel)
+{
+    gpio_num_t gpio_num = 0;
+    ADC2_CHECK_FUNCTION_RET(adc2_pad_get_io_num(channel, &gpio_num));
+    ADC2_CHECK_FUNCTION_RET(rtc_gpio_init(gpio_num));
+    ADC2_CHECK_FUNCTION_RET(rtc_gpio_output_disable(gpio_num));
+    ADC2_CHECK_FUNCTION_RET(rtc_gpio_input_disable(gpio_num));
+    ADC2_CHECK_FUNCTION_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+    return ESP_OK;
+}
+
+esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
+{
+    RTC_MODULE_CHECK(channel < ADC2_CHANNEL_MAX, "ADC2 Channel Err", ESP_ERR_INVALID_ARG);
+    RTC_MODULE_CHECK(atten <= ADC_ATTEN_11db, "ADC2 Atten Err", ESP_ERR_INVALID_ARG);
+
+    adc2_pad_init(channel);
+    portENTER_CRITICAL( &adc2_spinlock );
+
+    //lazy initialization
+    //avoid collision with other tasks
+    if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
+        //try the lock, return if failed (wifi using).
+        portEXIT_CRITICAL( &adc2_spinlock );
+        return ESP_ERR_TIMEOUT;
+    }
+    SENS.sar_atten2 = ( SENS.sar_atten2 & ~(3<<(channel*2)) ) | ((atten&3) << (channel*2));
+    _lock_release( &adc2_wifi_lock );
+    
+    portEXIT_CRITICAL( &adc2_spinlock );
+    return ESP_OK;
+}
+
+static inline void adc2_config_width(adc_bits_width_t width_bit)
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    //sar_start_force shared with ADC1
+    SENS.sar_start_force.sar2_bit_width = width_bit;
+    portEXIT_CRITICAL(&rtc_spinlock);
+
+    //Invert the adc value,the Output value is invert
+    SENS.sar_read_ctrl2.sar2_data_inv = 1;
+    //Set The adc sample width,invert adc value,must digital sar2_bit_width[1:0]=3
+    SENS.sar_read_ctrl2.sar2_sample_bit = width_bit;
+    //Take the control from WIFI    
+    SENS.sar_read_ctrl2.sar2_pwdet_force = 0;
+}
+
+//registers in critical section with adc1:
+//SENS_SAR_START_FORCE_REG, 
+esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* raw_out)
+{
+    uint16_t adc_value = 0;
+    RTC_MODULE_CHECK(channel < ADC2_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
+
+    //in critical section with whole rtc module
+    adc_power_on();
+
+    //avoid collision with other tasks
+    portENTER_CRITICAL(&adc2_spinlock); 
+    //lazy initialization
+    //try the lock, return if failed (wifi using).
+    if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
+        portEXIT_CRITICAL( &adc2_spinlock );
+        return ESP_ERR_TIMEOUT;
+    }
+    //in critical section with whole rtc module
+    adc2_config_width( width_bit );
+    
+    //Adc Controler is Rtc module,not ulp coprocessor
+    SENS.sar_meas_start2.meas2_start_force = 1; //force pad mux and force start
+    //Open the ADC2 Data port Not ulp coprocessor
+    SENS.sar_meas_start2.sar2_en_pad_force = 1; //open the ADC2 data port
+    //Select channel
+    SENS.sar_meas_start2.sar2_en_pad = 1 << channel; //pad enable
+    SENS.sar_meas_start2.meas2_start_sar = 0; //start force 0
+    SENS.sar_meas_start2.meas2_start_sar = 1; //start force 1
+    while (SENS.sar_meas_start2.meas2_done_sar == 0) {}; //read done
+    adc_value = SENS.sar_meas_start2.meas2_data_sar;
+    _lock_release( &adc2_wifi_lock );
+    portEXIT_CRITICAL(&adc2_spinlock);
+
+    *raw_out = (int)adc_value;
     return ESP_OK;
 }
 
@@ -1491,6 +1618,8 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     int Sens_Vp1;
     int Sens_Vn1;
     int hall_value;
+    
+    adc_power_on();
 
     portENTER_CRITICAL(&rtc_spinlock);
     SENS.sar_touch_ctrl1.xpd_hall_force = 1;     // hall sens force enable
@@ -1503,7 +1632,7 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     RTCIO.hall_sens.hall_phase = 1;
     Sens_Vp1 = adc1_get_raw(ADC1_CHANNEL_0);
     Sens_Vn1 = adc1_get_raw(ADC1_CHANNEL_3);
-    SENS.sar_meas_wait2.force_xpd_sar = 0;
+
     SENS.sar_touch_ctrl1.xpd_hall_force = 0;
     SENS.sar_touch_ctrl1.hall_phase_force = 0;
     portEXIT_CRITICAL(&rtc_spinlock);
