@@ -48,6 +48,20 @@ typedef enum {
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
 
+typedef enum {
+    ADC2_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO4 */
+    ADC2_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO0 */
+    ADC2_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO2 */
+    ADC2_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO15 */
+    ADC2_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO13 */
+    ADC2_CHANNEL_5,     /*!< ADC1 channel 5 is GPIO12 */
+    ADC2_CHANNEL_6,     /*!< ADC1 channel 6 is GPIO14 */
+    ADC2_CHANNEL_7,     /*!< ADC1 channel 7 is GPIO27 */
+	ADC2_CHANNEL_8,     /*!< ADC1 channel 7 is GPIO25 */
+	ADC2_CHANNEL_9,     /*!< ADC1 channel 7 is GPIO26 */
+	ADC2_CHANNEL_MAX,
+} adc2_channel_t;
+
 /**
  * @brief Configure ADC1 capture width.
  *
@@ -62,6 +76,19 @@ typedef enum {
 esp_err_t adc1_config_width(adc_bits_width_t width_bit);
 
 /**
+ * @brief Configure ADC2 capture width.
+ *
+ * The configuration is for all channels of ADC2
+ *
+ * @param width_bit Bit capture width for ADC2
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+ esp_err_t adc2_config_width(adc_bits_width_t width_bit);
+
+ /**
  * @brief Configure the ADC1 channel, including setting attenuation.
  *
  * @note This function also configures the input GPIO pin mux to
@@ -93,6 +120,37 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten);
 
 /**
+ * @brief Configure the ADC2 channel, including setting attenuation.
+ *
+ * @note This function also configures the input GPIO pin mux to
+ * connect it to the ADC2 channel. It must be called before calling
+ * adc2_get_voltage() for this channel.
+ *
+ * The default ADC full-scale voltage is 1.1V. To read higher voltages (up to the pin maximum voltage,
+ * usually 3.3V) requires setting >0dB signal attenuation for that ADC channel.
+ *
+ * When VDD_A is 3.3V:
+ *
+ * - 0dB attenuaton (ADC_ATTEN_0db) gives full-scale voltage 1.1V
+ * - 2.5dB attenuation (ADC_ATTEN_2_5db) gives full-scale voltage 1.5V
+ * - 6dB attenuation (ADC_ATTEN_6db) gives full-scale voltage 2.2V
+ * - 11dB attenuation (ADC_ATTEN_11db) gives full-scale voltage 3.9V (see note below)
+ *
+ * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC2 configured
+ * bit width, this value is: 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
+ *
+ * @note At 11dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
+ *
+ * @param channel ADC2 channel to configure
+ * @param atten  Attenuation level
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
+
+/**
  * @brief Take an ADC1 reading on a single channel
  *
  * @note Call adc1_config_width() before the first time this
@@ -108,6 +166,23 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten);
  *     -  Other: ADC1 channel reading.
  */
 int adc1_get_voltage(adc1_channel_t channel);
+
+/**
+ * @brief Take an ADC2 reading on a single channel
+ *
+ * @note Call adc2_config_width() before the first time this
+ * function is called.
+ *
+ * @note For a given channel, adc2_config_channel_atten(channel)
+ * must be called before the first time this function is called.
+ *
+ * @param  channel ADC2 channel to read
+ *
+ * @return
+ *     - -1: Parameter error
+ *     -  Other: ADC2 channel reading.
+ */
+int adc2_get_voltage(adc2_channel_t channel);
 
 /**
  * @brief Read Hall Sensor
