@@ -65,8 +65,9 @@
 #define BIT(nr)                 (1UL << (nr))
 #else
 #define BIT(nr)                 (1 << (nr))
-#endif //__ASSEMBLER__
+#endif
 
+#ifndef __ASSEMBLER__
 //write value to register
 #define REG_WRITE(_r, _v)    (*(volatile uint32_t *)(_r)) = (_v)
 
