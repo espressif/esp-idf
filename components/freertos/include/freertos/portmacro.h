@@ -80,6 +80,8 @@ extern "C" {
 #include <xtensa/config/system.h>	/* required for XSHAL_CLIB */
 #include <xtensa/xtruntime.h>
 
+#include <esp_heap_alloc_caps.h>
+
 //#include "xtensa_context.h"
 
 /*-----------------------------------------------------------
@@ -223,6 +225,10 @@ static inline unsigned portENTER_CRITICAL_NESTED() { unsigned state = XTOS_SET_I
 #define portSET_INTERRUPT_MASK_FROM_ISR()            portENTER_CRITICAL_NESTED()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(state)     portEXIT_CRITICAL_NESTED(state)
 
+//Because the ROM routines don't necessarily handle a stack in external RAM correctly, we force
+//the stack memory to always be internal.
+#define pvPortMallocTcbMem(size) pvPortMallocCaps(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
+#define pvPortMallocStackMem(size)  pvPortMallocCaps(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
 
 /*
  * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
