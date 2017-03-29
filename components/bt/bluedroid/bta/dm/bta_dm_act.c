@@ -4467,7 +4467,7 @@ void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
 {
-    UINT8 len = sizeof(p_data->set_addr);
+    UINT8 len = sizeof(p_data->set_addr.address);
     if (len != BD_ADDR_LEN) {
         APPL_TRACE_ERROR("Invalid random adress");
         return;
