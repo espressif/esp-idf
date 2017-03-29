@@ -41,13 +41,13 @@
 
 static xQueueHandle gpio_evt_queue = NULL;
 
-void IRAM_ATTR gpio_isr_handler(void* arg)
+static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
     xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
 }
 
-void gpio_task_example(void* arg)
+static void gpio_task_example(void* arg)
 {
     uint32_t io_num;
     for(;;) {
@@ -62,7 +62,7 @@ void app_main()
     gpio_config_t io_conf;
     //disable interrupt
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-    //set as output mode        
+    //set as output mode
     io_conf.mode = GPIO_MODE_OUTPUT;
     //bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = GPIO_OUTPUT_PIN_SEL;

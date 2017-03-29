@@ -17,7 +17,7 @@
   Read values sensed at all available touch pads.
   Print out values in a loop on a serial monitor.
  */
-void touch_pad_read_task(void *pvParameter)
+static void tp_example_read_task(void *pvParameter)
 {
     while (1) {
         uint16_t touch_value;
@@ -36,6 +36,6 @@ void app_main()
     touch_pad_init();
 
     // Start task to read values sensed by pads
-    xTaskCreate(&touch_pad_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
 
 }

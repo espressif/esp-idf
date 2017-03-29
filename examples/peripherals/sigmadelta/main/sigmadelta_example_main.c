@@ -20,7 +20,7 @@
 /**
  * @brief Sigma-delta initialization.
  */
-static void sigmadelta_init(void)
+static void sigmadelta_example_init(void)
 {
    sigmadelta_config_t sigmadelta_cfg = {
        /* Sigma-delta channel0*/
@@ -40,7 +40,7 @@ static void sigmadelta_init(void)
  */
 void app_main()
 {
-    sigmadelta_init();
+    sigmadelta_example_init();
     int8_t duty = 0;
     int inc = 1;
     while(1) {

@@ -44,7 +44,7 @@ static void inline print_u64(uint64_t val)
     printf("0x%08x%08x\n", (uint32_t) (val >> 32), (uint32_t) (val));
 }
 
-void timer_evt_task(void *arg)
+static void timer_example_evt_task(void *arg)
 {
     while(1) {
         timer_event_t evt;
@@ -135,7 +135,7 @@ void IRAM_ATTR timer_group0_isr(void *para)
 /*
  * @brief timer group0 hardware timer0 init
  */
-void tg0_timer0_init()
+static void example_tg0_timer0_init()
 {
     int timer_group = TIMER_GROUP_0;
     int timer_idx = TIMER_0;
@@ -165,7 +165,7 @@ void tg0_timer0_init()
 /*
  * @brief timer group0 hardware timer1 init
  */
-void tg0_timer1_init()
+static void example_tg0_timer1_init()
 {
     int timer_group = TIMER_GROUP_0;
     int timer_idx = TIMER_1;
@@ -198,8 +198,8 @@ void tg0_timer1_init()
 void app_main()
 {
     timer_queue = xQueueCreate(10, sizeof(timer_event_t));
-    tg0_timer0_init();
-    tg0_timer1_init();
-    xTaskCreate(timer_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
+    example_tg0_timer0_init();
+    example_tg0_timer1_init();
+    xTaskCreate(timer_example_evt_task, "timer_evt_task", 2048, NULL, 5, NULL);
 }
 

@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := uart
+PROJECT_NAME := uart_events
 
 include $(IDF_PATH)/make/project.mk
 

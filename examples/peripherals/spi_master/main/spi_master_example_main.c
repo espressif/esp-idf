@@ -147,7 +147,7 @@ void ili_init(spi_device_handle_t spi)
 //before sending the line data itself; a total of 6 transactions. (We can't put all of this in just one transaction
 //because the D/C line needs to be toggled in the middle.)
 //This routine queues these commands up so they get sent as quickly as possible.
-void send_line(spi_device_handle_t spi, int ypos, uint16_t *line) 
+static void send_line(spi_device_handle_t spi, int ypos, uint16_t *line) 
 {
     esp_err_t ret;
     int x;
@@ -198,7 +198,7 @@ void send_line(spi_device_handle_t spi, int ypos, uint16_t *line)
 }
 
 
-void send_line_finish(spi_device_handle_t spi) 
+static void send_line_finish(spi_device_handle_t spi) 
 {
     spi_transaction_t *rtrans;
     esp_err_t ret;
@@ -214,7 +214,7 @@ void send_line_finish(spi_device_handle_t spi)
 //Simple routine to generate some patterns and send them to the LCD. Don't expect anything too
 //impressive. Because the SPI driver handles transactions in the background, we can calculate the next line 
 //while the previous one is being sent.
-void display_pretty_colors(spi_device_handle_t spi) 
+static void display_pretty_colors(spi_device_handle_t spi) 
 {
     uint16_t line[2][320];
     int x, y, frame=0;

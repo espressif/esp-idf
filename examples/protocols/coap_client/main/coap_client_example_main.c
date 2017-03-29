@@ -65,7 +65,7 @@ static void message_handler(struct coap_context_t *ctx, const coap_endpoint_t *l
     }
 }
 
-static void coap_demo_thread(void *p)
+static void coap_example_task(void *p)
 {
     struct hostent *hp;
     struct ip4_addr *ip4_addr;
@@ -201,5 +201,5 @@ void app_main(void)
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
     wifi_conn_init();
-    xTaskCreate(coap_demo_thread, "coap", 2048, NULL, 5, NULL);
+    xTaskCreate(coap_example_task, "coap", 2048, NULL, 5, NULL);
 }
