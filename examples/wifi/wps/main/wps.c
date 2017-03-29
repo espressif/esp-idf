@@ -1,6 +1,6 @@
 /* WiFi Connection Example using WPS
  * 
- * WPS_TYPE_PBC: Start esp32 and it will inter wps PBC mode. Then push the buttom of wps on router down. The esp32 will connected to the router.
+ * WPS_TYPE_PBC: Start esp32 and it will enter wps PBC mode. Then push the button of wps on router down. The esp32 will connected to the router.
  *
  * WPS_TYPE_PIN: Start esp32, You'll see PIN code which is a eight-digit number showing on COM. Enter the PIN code in router and then the esp32 will connected to router.
  */
@@ -12,19 +12,20 @@
 #include "esp_event_loop.h"
 
 
-/*set wps mode here*/
+/*set wps mode via "make menuconfig"*/
+#if CONFIG_EXAMPLE_WPS_TYPE_PBC
 #define WPS_TEST_MODE WPS_TYPE_PBC
-//#define WPS_TEST_MODE WPS_TYPE_PIN
-//#define WPS_TEST_MODE WPS_TYPE_MAX 
-
+#elif CONFIG_EXAMPLE_WPS_TYPE_PIN
+#define WPS_TEST_MODE WPS_TYPE_PIN
+#else
+#define WPS_TEST_MODE WPS_TYPE_DISABLE
+#endif
 
 #ifndef PIN2STR
 #define PIN2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5], (a)[6], (a)[7]
 #define PINSTR "%c%c%c%c%c%c%c%c"
 #endif
 
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
-static EventGroupHandle_t wifi_event_group;
 
 static const char *TAG = "example_wps";
 
@@ -79,7 +80,6 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 static void start_wps(void)
 {
     tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();

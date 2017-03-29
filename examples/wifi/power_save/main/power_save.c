@@ -2,7 +2,7 @@
  * this example shows how to use power save mode
  * 
  * set a router or a AP using the same SSID&PASSWORD as configuration of this example.
- * start esp32 and when it connected to AP it will inter power save mode
+ * start esp32 and when it connected to AP it will enter power save mode
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -13,8 +13,14 @@
 /*set the ssid and password via "make menuconfig"*/
 #define DEFAULT_SSID CONFIG_WIFI_SSID
 #define DEFAULT_PWD CONFIG_WIFI_PASSWORD
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
-static EventGroupHandle_t wifi_event_group;
+
+#if CONFIG_POWER_SAVE_MODEM
+#define DEFAULT_PS_MODE WIFI_PS_MODEM
+//#elif CONFIG_POWER_SAVE_NONE
+//#define DEFAULT_PS_MODE WIFI_PS_NONE
+#else
+#define DEFAULT_PS_MODE WIFI_PS_NONE
+#endif
 
 static const char *TAG = "power_save";
 
@@ -25,7 +31,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     case SYSTEM_EVENT_STA_START:
 	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
 	ESP_ERROR_CHECK(esp_wifi_connect());
-        break;
+	break;
     case SYSTEM_EVENT_STA_GOT_IP:
 	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
 	ESP_LOGI(TAG, "got ip:%s\n",
@@ -34,18 +40,17 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     case SYSTEM_EVENT_STA_DISCONNECTED:
 	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
 	ESP_ERROR_CHECK(esp_wifi_connect());
-        break;
+	break;
     default:
         break;
     }
     return ESP_OK;
 }
 
-/*init wifi as sta and set pawer save mode*/
+/*init wifi as sta and set power save mode*/
 static void wifi_power_save(void)
 {
     tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -58,9 +63,9 @@ static void wifi_power_save(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
-    
-    ESP_LOGI(TAG, "esp_wifi_set_ps(WIFI_PS_MODEM).");
-    esp_wifi_set_ps(WIFI_PS_MODEM);
+
+    ESP_LOGI(TAG, "esp_wifi_set_ps().");
+    esp_wifi_set_ps(DEFAULT_PS_MODE);
 }
 
 void app_main()

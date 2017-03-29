@@ -4,8 +4,8 @@ This example shows how to use power save mode of wifi.
 
 Power save mode only works in sta mode.
 
-* No power save: This is default mode. And the esp32 will work at full speed.
+* No power save: This is default mode. And the esp32 will work with full power.
 
-* modem sleep: If you set power save mode as modem sleep, after connected to AP about 10s, esp32 will wake up and sleep periodically. When it sleeps, the current will be much lower than it works.
+* modem sleep: If you set power save mode as modem sleep, 10s later after connecting to AP, esp32 will wake up and sleep(turn off RF and PHY) periodically.
 
 * others: not supported yet.
