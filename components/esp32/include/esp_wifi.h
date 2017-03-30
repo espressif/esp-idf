@@ -97,12 +97,26 @@ typedef struct {
     system_event_handler_t event_handler;          /**< WiFi event handler */
     int                    static_rx_buf_num;      /**< WiFi static RX buffer number */
     int                    dynamic_rx_buf_num;     /**< WiFi dynamic RX buffer number */
+    int                    tx_buf_type;            /**< WiFi TX buffer type */
+    int                    static_tx_buf_num;      /**< WiFi static TX buffer number */
     int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
     int                    ampdu_enable;           /**< WiFi AMPDU feature enable flag */
     int                    nvs_enable;             /**< WiFi NVS flash enable flag */
     int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
+
+#ifdef CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM
+#define WIFI_STATIC_TX_BUFFER_NUM CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM
+#else
+#define WIFI_STATIC_TX_BUFFER_NUM 0
+#endif
+
+#ifdef CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
+#define WIFI_DYNAMIC_TX_BUFFER_NUM CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
+#else
+#define WIFI_DYNAMIC_TX_BUFFER_NUM 0
+#endif
 
 #if CONFIG_ESP32_WIFI_AMPDU_ENABLED
 #define WIFI_AMPDU_ENABLED        1
@@ -128,7 +142,9 @@ typedef struct {
     .event_handler = &esp_event_send, \
     .static_rx_buf_num = CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM,\
     .dynamic_rx_buf_num = CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM,\
-    .dynamic_tx_buf_num = CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM,\
+    .tx_buf_type = CONFIG_ESP32_WIFI_TX_BUFFER_TYPE,\
+    .static_tx_buf_num = WIFI_STATIC_TX_BUFFER_NUM,\
+    .dynamic_tx_buf_num = WIFI_DYNAMIC_TX_BUFFER_NUM,\
     .ampdu_enable = WIFI_AMPDU_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
