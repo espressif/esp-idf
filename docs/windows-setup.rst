@@ -4,7 +4,7 @@ Set up of Toolchain for Windows
 Step 1: Quick Steps
 ===================
 
-Windows doesn't have a built-in "make" environment, so as well as installing the toolchain you will need a GNU-compatible environment. We use the MSYS2_ environment to provide this. You don't need to use this environment all the time (you can use Eclipse_ or some other front-end), but it runs behind the scenes.
+Windows doesn't have a built-in "make" environment, so as well as installing the toolchain you will need a GNU-compatible environment. We use the MSYS2_ environment to provide this. You don't need to use this environment all the time (you can use :doc:`Eclipse </eclipse-setup>` or some other front-end), but it runs behind the scenes.
 
 The quick setup is to download the Windows all-in-one toolchain & MSYS zip file from dl.espressif.com:
 
@@ -62,10 +62,8 @@ Type a command like this to set the path to ESP-IDF directory: ``export IDF_PATH
 
 Use ``cd`` to change to the project directory (not the ESP-IDF directory.) Type ``make menuconfig`` to configure your project, then ``make`` to build it, ``make clean`` to remove built files, and ``make flash`` to flash (use the menuconfig to set the serial port for flashing.)
 
-If you'd like to use the Eclipse IDE instead of running ``make``, check out the Eclipse setup guide in this directory.
+If you'd like to use the Eclipse IDE instead of running ``make``, check out the :doc:`Eclipse guide </eclipse-setup>`.
 
 
-.. _Eclipse: eclipse-setup.rst
-.. _MSYS2: https://msys2.github.io/
 .. _github: https://github.com/espressif/esp-idf-template
 .. _known issue: https://github.com/espressif/esp-idf/issues/11

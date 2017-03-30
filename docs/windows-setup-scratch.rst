@@ -63,3 +63,5 @@ Or with credentials::
     export http_proxy='http://user:password@http.proxy.server:PORT'
 
 Add this line to ``/etc/profile`` in the MSYS directory in order to permanently enable the proxy when using MSYS.
+
+.. _MSYS2: https://msys2.github.io/
