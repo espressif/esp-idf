@@ -21,16 +21,14 @@ config CLASSIC_BT_ENABLED
     bool "Classic Bluetooth"
     depends on BT_ENABLED
     default n
-    help
-        BT_DRAM_RELEASE should be set TRUE if Classic Bluetooth is enabled
 
 config BT_DRAM_RELEASE
     bool "Release DRAM from Classic BT controller"
-    depends on BT_ENABLED
+    depends on BT_ENABLED && !CLASSIC_BT_ENABLED
     default n
     help
         This option should only be used when BLE only.
-        Open this option will release about 30K DRAM from Classic BT.
+        Enabling this option will release about 30K DRAM from Classic BT.
         The released DRAM will be used as system heap memory.
 
 # Memory reserved at start of DRAM for Bluetooth stack
