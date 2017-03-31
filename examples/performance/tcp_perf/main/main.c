@@ -19,6 +19,12 @@ step3:
     you can see the info in com port output.
 */
 
+#include <errno.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_log.h"
+#include "esp_err.h"
+
 #include "tcp_perf.h"
 
 int connectedflag = 0;
@@ -57,7 +63,7 @@ static void tcp_conn(void *pvParameters)
     ESP_LOGI(TAG, "creat_tcp_client.");
     socret = creat_tcp_client();
 #endif
-    if(-1 == socret) {
+    if(ESP_FAIL == socret) {
 	ESP_LOGI(TAG, "creat tcp socket error,stop.");
 	vTaskDelete(NULL);
     }
@@ -103,7 +109,6 @@ static void tcp_conn(void *pvParameters)
 
 void app_main(void)
 {
-    nvs_flash_init();
 #if ESP_WIFI_MODE_AP
     ESP_LOGI(TAG, "ESP_WIFI_MODE_AP\n");
     wifi_init_softap();

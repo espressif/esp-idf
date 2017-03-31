@@ -1,9 +1,17 @@
 
+#include <string.h>
+#include <sys/socket.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_wifi.h"
+#include "esp_event_loop.h"
+#include "esp_log.h"
+
+
 #include "udp_perf.h"
 
 
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
-static EventGroupHandle_t wifi_event_group;
+
 static int mysocket;
 
 static struct sockaddr_in remote_addr;
@@ -49,7 +57,6 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 void wifi_init_sta()
 {
     tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL) );
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -73,7 +80,6 @@ void wifi_init_sta()
 void wifi_init_softap()
 {
     tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -99,14 +105,14 @@ void wifi_init_softap()
     	    DEFAULT_SSID, DEFAULT_PWD);
 }
 
-//creat a udp sever socket. return 0:success -1:error
+//creat a udp sever socket. return ESP_OK:success ESP_FAIL:error
 int creat_udp_sever()
 {
     ESP_LOGI(TAG, "creat_udp_sever()");
     mysocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (mysocket < 0) {
 	perror("socket failed:");
-	return -1;
+	return ESP_FAIL;
     }
     struct sockaddr_in sever_addr;
     sever_addr.sin_family = AF_INET;
@@ -115,26 +121,26 @@ int creat_udp_sever()
     if (bind(mysocket, (struct sockaddr *)&sever_addr, sizeof(sever_addr)) < 0) {
 	perror("bind local port error:");
 	close(mysocket);
-	return -1;
+	return ESP_FAIL;
     }
-    return 0;
+    return ESP_OK;
 }
 
-//creat a udp client socket. return 0:success -1:error
+//creat a udp client socket. return ESP_OK:success ESP_FAIL:error
 int creat_udp_client()
 {
     ESP_LOGI(TAG, "creat_udp_client()");
     mysocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (mysocket < 0) {
 	perror("socket failed:");
-	return -1;
+	return ESP_FAIL;
     }
     /*for client remote_addr is also sever_addr*/
     remote_addr.sin_family = AF_INET;
     remote_addr.sin_port = htons(DEFAULT_PORT);
     remote_addr.sin_addr.s_addr = inet_addr(DEFAULT_SEVER_IP);
 
-    return 0;
+    return ESP_OK;
 }
 
 

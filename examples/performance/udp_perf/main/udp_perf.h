@@ -1,22 +1,6 @@
 #ifndef __UDP_PERF_H__
 #define __UDP_PERF_H__
 
-#include <stdio.h>
-#include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
-#include "esp_wifi.h"
-#include "esp_event_loop.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include "driver/uart.h"
-#include "soc/uart_struct.h"
-#include "esp_log.h"
-
-
 
 
 #ifdef __cplusplus

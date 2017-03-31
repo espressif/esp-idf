@@ -1,8 +1,16 @@
 
+
+#include <string.h>
+#include <sys/socket.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_wifi.h"
+#include "esp_event_loop.h"
+#include "esp_log.h"
+
+
 #include "tcp_perf.h"
 
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
-static EventGroupHandle_t wifi_event_group;
 /*socket*/
 static int sever_socket = 0;
 static struct sockaddr_in sever_addr;
@@ -126,7 +134,7 @@ void recv_data(void *pvParameters)
 }
 
 
-//use this esp32 as a tcp sever. return 0:success -1:error
+//use this esp32 as a tcp sever. return ESP_OK:success ESP_FAIL:error
 int creat_tcp_sever()
 {
     ESP_LOGI(TAG, "sever socket....port=%d\n", DEFAULT_PORT);
@@ -134,7 +142,7 @@ int creat_tcp_sever()
     if (sever_socket < 0) {
     	show_socket_error_code(sever_socket);
 	//perror("socket() error:");
-	return -1;
+	return ESP_FAIL;
     }
     sever_addr.sin_family = AF_INET;
     sever_addr.sin_port = htons(DEFAULT_PORT);
@@ -143,26 +151,26 @@ int creat_tcp_sever()
     	show_socket_error_code(sever_socket);
 	//perror("bind() error");
 	close(sever_socket);
-	return -1;
+	return ESP_FAIL;
     }
     if (listen(sever_socket, 5) < 0) {
     	show_socket_error_code(sever_socket);
 	//perror("listen() error");
 	close(sever_socket);
-	return -1;
+	return ESP_FAIL;
     }
     connect_soc = accept(sever_socket, (struct sockaddr*)&client_addr, &socklen);
     if (connect_soc<0) {
     	show_socket_error_code(connect_soc);
 	//perror("accept() error");
 	close(sever_socket);
-	return -1;
+	return ESP_FAIL;
     }
     /*connection established，now can send/recv*/
     ESP_LOGI(TAG, "tcp connection established!");
-    return 0;
+    return ESP_OK;
 }
-//use this esp32 as a tcp client. return 0:success -1:error
+//use this esp32 as a tcp client. return ESP_OK:success ESP_FAIL:error
 int creat_tcp_client()
 {
     ESP_LOGI(TAG, "client socket....severip:port=%s:%d\n", 
@@ -171,7 +179,7 @@ int creat_tcp_client()
     if (connect_soc < 0) {
     	show_socket_error_code(connect_soc);
 	//perror("socket failed!");
-	return -1;
+	return ESP_FAIL;
     }
     sever_addr.sin_family = AF_INET;
     sever_addr.sin_port = htons(DEFAULT_PORT);
@@ -180,17 +188,16 @@ int creat_tcp_client()
     if (connect(connect_soc, (struct sockaddr *)&sever_addr, sizeof(sever_addr)) < 0) {
     	show_socket_error_code(connect_soc);
 	//perror("connect to sever error!");
-	return -1;
+	return ESP_FAIL;
     }
     ESP_LOGI(TAG, "connect to sever success!");
-    return 0;
+    return ESP_OK;
 }
 
 //wifi_init_sta
 void wifi_init_sta()
 {
     tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL) );
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -214,7 +221,6 @@ void wifi_init_sta()
 void wifi_init_softap()
 {
     tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();

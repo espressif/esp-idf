@@ -5,12 +5,12 @@ menu "Example Configuration"
 #	default MODE_TCP_SHIELDBOX
 #	help
 #	    This option set performance mode.
+#	    
+#	    - Testing in shieldbox for "Performance in shieldbox" setting.
 #		
-#            - for "Performance in shieldbox" setting,it will receive data by tcp.
-#		
-#	    - for "Performance in air" setting, it will send data by tcp.
-#		
-#	    - for "Performance in long distance" setting, it will send data by tcp.
+#	    - Testing in air for "Performance in air" setting.
+#	    		
+#	    - Testing in long distance for "Performance in long distance" setting.
 #		
 #					
 #config MODE_TCP_SHIELDBOX
@@ -51,7 +51,7 @@ config TCP_PERF_DELAY_DEBUG
 
 config TCP_PERF_WIFI_SSID
     string "WiFi SSID"
-	default "tp_wifi_test1"
+	default "esp_wifi_test1"
 	help
 	    SSID (network name) for the example to connect to.
 

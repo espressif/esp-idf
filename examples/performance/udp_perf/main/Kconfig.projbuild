@@ -1,15 +1,16 @@
 menu "Example Configuration"
 
 #choice 
-#    prompt "UCP_PERF_MODE "
-#	default MODE_UDP_SHIELDBOX
+#   prompt "TCP_PERF_MODE "
+#	default MODE_TCP_SHIELDBOX
 #	help
 #	    This option set performance mode.
-#		
-#	    - for "Performance in shieldbox" setting,it will receive data by udp.
-#	    - for "Performance in air" setting, it will send data by udp.
 #	    
-#	    - for "Performance in long distance" setting, it will send data by udp.
+#	    - Testing in shieldbox for "Performance in shieldbox" setting.
+#		
+#	    - Testing in air for "Performance in air" setting.
+#	    		
+#	    - Testing in long distance for "Performance in long distance" setting.
 #		
 #					
 #config MODE_UDP_SHIELDBOX
@@ -28,7 +29,7 @@ config UDP_PERF_WIFI_MODE_AP
 
 config UDP_PERF_SEVER
     bool "TCP performance sever enable"
-	default n
+	default y
 	help
 	    yes:ESP32 is UDP sever. no:ESP32 is UDP client.
 		
@@ -36,13 +37,13 @@ config UDP_PERF_SEVER
 
 config UDP_PERF_TX
     bool "UDP performance TX test enable"
-	default y
+	default n
 	help
 	    yes:UDP TX test. no:UDP RX test.
 
 config UDP_PERF_WIFI_SSID
     string "WiFi SSID"
-	default "tp_wifi_test1"
+	default "esp_wifi_test1"
 	help
 	    SSID (network name) for the example to connect to.
 
