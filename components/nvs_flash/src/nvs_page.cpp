@@ -811,10 +811,37 @@ void Page::invalidateCache()
 {
     mFindInfo = CachedFindInfo();
 }
+    
+const char* Page::pageStateToName(PageState ps)
+{
+    switch (ps) {
+        case PageState::CORRUPT:
+            return "CORRUPT";
+            
+        case PageState::ACTIVE:
+            return "ACTIVE";
+            
+        case PageState::FREEING:
+            return "FREEING";
+            
+        case PageState::FULL:
+            return "FULL";
+            
+        case PageState::INVALID:
+            return "INVALID";
+            
+        case PageState::UNINITIALIZED:
+            return "UNINITIALIZED";
+            
+        default:
+            assert(0 && "invalid state value");
+            return "";
+    }
+}
 
 void Page::debugDump() const
 {
-    printf("state=%x addr=%x seq=%d\nfirstUsed=%d nextFree=%d used=%d erased=%d\n", (int) mState, mBaseAddress, mSeqNumber, static_cast<int>(mFirstUsedEntry), static_cast<int>(mNextFreeEntry), mUsedEntryCount, mErasedEntryCount);
+    printf("state=%x (%s) addr=%x seq=%d\nfirstUsed=%d nextFree=%d used=%d erased=%d\n", (uint32_t) mState, pageStateToName(mState), mBaseAddress, mSeqNumber, static_cast<int>(mFirstUsedEntry), static_cast<int>(mNextFreeEntry), mUsedEntryCount, mErasedEntryCount);
     size_t skip = 0;
     for (size_t i = 0; i < ENTRY_COUNT; ++i) {
         printf("%3d: ", static_cast<int>(i));

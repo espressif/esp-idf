@@ -11,8 +11,10 @@ void unityTask(void *pvParameters)
     while(1);
 }
 
-void app_main() 
+void app_main()
 {
+    // Note: if unpinning this task, change the way run times are calculated in
+    // unity_platform
     xTaskCreatePinnedToCore(unityTask, "unityTask", 4096, NULL, 5, NULL, 0);
 }
 

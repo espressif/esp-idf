@@ -127,7 +127,7 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_start() );
 }
 
-static void wpa2_enterprise_task(void *pvParameters)
+static void wpa2_enterprise_example_task(void *pvParameters)
 {
     tcpip_adapter_ip_info_t ip;
     memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
@@ -148,7 +148,7 @@ static void wpa2_enterprise_task(void *pvParameters)
 
 void app_main()
 {
-    nvs_flash_init();
+    ESP_ERROR_CHECK( nvs_flash_init() );
     initialise_wifi();
-    xTaskCreate(&wpa2_enterprise_task, "wpa2_enterprise_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&wpa2_enterprise_example_task, "wpa2_enterprise_example_task", 4096, NULL, 5, NULL);
 }

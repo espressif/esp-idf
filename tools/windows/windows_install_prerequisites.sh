@@ -1,7 +1,11 @@
 #!/bin/bash
 #
-# Setup script to configure an MSYS2 environment for Espressif IoT Development Framework (ESP-IDF).
-# See docs/windows-setup.rst for details.
+# Setup script to configure an MSYS2 environment for ESP-IDF.
+#
+# Use of this script is optional, there is also a prebuilt MSYS2 environment available
+# which can be downloaded and used as-is.
+#
+# See http://esp-idf.readthedocs.io/en/latest/windows-setup.html for full details.
 
 if [ "$OSTYPE" != "msys" ]; then
   echo "This setup script expects to be run from an MSYS2 environment on Windows."
@@ -9,6 +13,12 @@ if [ "$OSTYPE" != "msys" ]; then
 fi
 if ! [ -x /bin/pacman ]; then
   echo "This setup script expects to use the pacman package manager from MSYS2."
+  exit 1
+fi
+if [ "$MSYSTEM" != "MINGW32" ]; then
+  echo "This setup script must be started from the 'MSYS2 MinGW 32-bit' start menu shortcut"
+  echo "OR by running `cygpath -w /mingw32.exe`"
+  echo "(The current MSYSTEM mode is $MSYSTEM but it expects it to be MINGW32)"
   exit 1
 fi
 
@@ -21,16 +31,16 @@ fi
 
 set -e
 
-pacman --noconfirm -Syu
+pacman --noconfirm -Syu # This step may require the terminal to be closed and restarted
 
-pacman --noconfirm -S gettext-devel gcc git make ncurses-devel flex bison gperf vim mingw-w64-i686-python2-pip unzip
+pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bison gperf vim mingw-w64-i686-python2-pip unzip winpty
 
 python -m pip install --upgrade pip
 
 pip install pyserial
 
-# TODO: automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/
-TOOLCHAIN_ZIP=xtensa-esp32-elf-win32-1.22.0-59.zip
+# Automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/
+TOOLCHAIN_ZIP=xtensa-esp32-elf-win32-1.22.0-61-gab8375a-5.2.0.zip
 echo "Downloading precompiled toolchain ${TOOLCHAIN_ZIP}..."
 cd ~
 curl -LO --retry 10 http://dl.espressif.com/dl/${TOOLCHAIN_ZIP}
@@ -39,22 +49,30 @@ unzip ~/${TOOLCHAIN_ZIP}
 rm ~/${TOOLCHAIN_ZIP}
 
 cat > /etc/profile.d/esp32_toolchain.sh << EOF
-export PATH="$PATH:/opt/xtensa-esp32-elf/bin"
+# This file was created by ESP-IDF windows_install_prerequisites.sh
+# and will be overwritten if that script is run again.
+export PATH="\$PATH:/opt/xtensa-esp32-elf/bin"
 EOF
 
 # clean up pacman packages to save some disk space
 pacman --noconfirm -R unzip
 pacman --noconfirm -Scc
 
-echo "************************************************"
-echo "MSYS2 environment is now ready to use ESP-IDF."
-echo "Run 'source /etc/profile' to add the toolchain to"
-echo "your path. Execute 'msys_shell.cmd' to launch an"
-echo "MSYS terminal."
-echo
-echo "Once ESP-IDF is downloaded/checked out, set the"
-echo "environment variable IDF_PATH in /etc/profile to"
-echo "point to the directory."
-echo "************************************************"
-echo
+cat << EOF
+************************************************
+MSYS2 environment is now ready to use ESP-IDF.
 
+1) Run 'source /etc/profile' to add the toolchain to
+your path in this terminal. This command produces no output.
+You only need to do this once, future terminals do this
+automatically when opened.
+
+2) After ESP-IDF is set up (see setup guide), edit the file
+`cygpath -w /etc/profile`
+and add a line to set the variable IDF_PATH so it points to the
+IDF directory, ie:
+
+export IDF_PATH=/c/path/to/esp-idf/directory
+
+************************************************
+EOF

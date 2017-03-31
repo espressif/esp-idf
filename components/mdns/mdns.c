@@ -46,6 +46,7 @@
 #define MDNS_ANSWER_A               0x01
 #define MDNS_ANSWER_AAAA            0x10
 #define MDNS_ANSWER_NSEC            0x20
+#define MDNS_ANSWER_SDPTR           0x80
 
 #define MDNS_SERVICE_PORT           5353                    // UDP port that the server runs on
 #define MDNS_SERVICE_STACK_DEPTH    4096                    // Stack size for the service thread
@@ -797,6 +798,52 @@ static uint16_t _mdns_append_ptr_record(uint8_t * packet, uint16_t * index, mdns
 }
 
 /**
+ * @brief  appends DNS-SD PTR record for service to a packet, incrementing the index
+ *
+ * @param  packet       MDNS packet
+ * @param  index        offset in the packet
+ * @param  server       the server that is hosting the service
+ * @param  service      the service to add record for
+ *
+ * @return length of added data: 0 on error or length on success
+ */
+static uint16_t _mdns_append_sdptr_record(uint8_t * packet, uint16_t * index, mdns_server_t * server, mdns_service_t * service)
+{
+    const char * str[3];
+    const char * sd_str[4];
+    uint16_t record_length = 0;
+    uint8_t part_length;
+    
+    sd_str[0] = (char*)"_services";
+    sd_str[1] = (char*)"_dns-sd";
+    sd_str[2] = (char*)"_udp";
+    sd_str[3] = MDNS_DEFAULT_DOMAIN;
+
+    str[0] = service->service;
+    str[1] = service->proto;
+    str[2] = MDNS_DEFAULT_DOMAIN;
+
+    part_length = _mdns_append_fqdn(packet, index, sd_str, 4);
+    
+    record_length += part_length;
+
+    part_length = _mdns_append_type(packet, index, MDNS_ANSWER_PTR, MDNS_ANSWER_PTR_TTL);
+    if (!part_length) {
+        return 0;
+    }
+    record_length += part_length;
+
+    uint16_t data_len_location = *index - 2;
+    part_length = _mdns_append_fqdn(packet, index, str, 3);
+    if (!part_length) {
+        return 0;
+    }
+    _mdns_set_u16(packet, data_len_location, part_length);
+    record_length += part_length;
+    return record_length;
+}
+
+/**
  * @brief  appends TXT record for service to a packet, incrementing the index
  *
  * @param  packet       MDNS packet
@@ -1042,6 +1089,13 @@ static void _mdns_send_answers(mdns_server_t * server, mdns_answer_item_t * answ
                 }
                 answer_count += 1;
             }
+            
+            if (answers->answer & MDNS_ANSWER_SDPTR) {
+                if (!_mdns_append_sdptr_record(packet, &index, server, answers->service)) {
+                    return;
+                }
+                answer_count += 1;
+            }
         }
         mdns_answer_item_t * a = answers;
         answers = answers->next;
@@ -1271,6 +1325,20 @@ static void _mdns_parse_packet(mdns_server_t * server, const uint8_t * data, siz
                     if (name->host[0] && server->hostname && server->hostname[0] && !strcmp(name->host, server->hostname)) {
                         answers = _mdns_add_answer(answers, NULL, MDNS_ANSWER_A);
                     }
+                }
+                continue;
+            }
+            
+            //is this a dns-sd service discovery meta query?
+            if (!strcmp(name->host, "_services") && !strcmp(name->service, "_dns-sd") && !strcmp(name->proto, "_udp") && !strcmp(name->domain, MDNS_DEFAULT_DOMAIN) && type == MDNS_TYPE_PTR)
+            {
+                //add answers for all services
+                mdns_srv_item_t * s = server->services;
+                while(s) {
+                    if (s->service->service && s->service->proto) {
+                        answers = _mdns_add_answer(answers, s->service, MDNS_ANSWER_SDPTR);
+                    }
+                    s = s->next;
                 }
                 continue;
             }

@@ -43,10 +43,21 @@ typedef intr_handle_t touch_isr_handle_t;
  *
  *This function int touch pad module ,enable touch module
  *
- * @return    None
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Touch pad init error
  *
  */
-void touch_pad_init();
+esp_err_t touch_pad_init();
+
+/**
+ * @brief Uninstall TouchPad driver.
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Touch pad deinit error
+ */
+esp_err_t touch_pad_deinit();
 
 /**
  * @brief       Configure touch pad interrupt threshold.
@@ -60,6 +71,7 @@ void touch_pad_init();
  *
  * @return    - ESP_OK Success
  *            - ESP_ERR_INVALID_ARG Touch pad error
+ *            - ESP_FAIL Touch pad not initialized
  *
  */
 esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold);
@@ -76,6 +88,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold);
  *
  *  @return   - ESP_OK Success
  *            - ESP_ERR_INVALID_ARG Touch pad error
+ *            - ESP_FAIL Touch pad not initialized
  *
  */
 esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t * touch_value);

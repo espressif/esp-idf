@@ -29,8 +29,7 @@ extern "C" {
 
 typedef enum {
     LEDC_HIGH_SPEED_MODE = 0, /*!< LEDC high speed speed_mode */
-    //in this version, we only support high speed speed_mode. We will access low speed speed_mode later
-    //LEDC_LOW_SPEED_MODE,    /*!< LEDC low speed speed_mode */
+    LEDC_LOW_SPEED_MODE,    /*!< LEDC low speed speed_mode */
     LEDC_SPEED_MODE_MAX,      /*!< LEDC speed limit */
 } ledc_mode_t;
 
@@ -137,8 +136,6 @@ esp_err_t ledc_timer_config(ledc_timer_config_t* timer_conf);
  *        After ledc_set_duty, ledc_set_fade, we need to call this function to update the settings.
  *
  * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode,
- *        now we only support high-speed mode.
- *        We will access low-speed mode in next version
  * @param channel LEDC channel(0-7), select from ledc_channel_t
  *
  * @return
@@ -152,7 +149,7 @@ esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
  * @brief LEDC stop.
  *        Disable LEDC output, and set idle level
  *
- * @param  speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param  speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param  channel LEDC channel(0-7), select from ledc_channel_t
  * @param  idle_level Set output idle level after LEDC stops.
  *
@@ -165,7 +162,7 @@ esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idl
 /**
  * @brief LEDC set channel frequency(Hz)
  *
- * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param  timer_num LEDC timer index(0-3), select from ledc_timer_t
  * @param  freq_hz Set the LEDC frequency
  *
@@ -179,7 +176,7 @@ esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num, uint32_t
 /**
  * @brief      LEDC get channel frequency(Hz)
  *
- * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param timer_num LEDC timer index(0-3), select from ledc_timer_t
  *
  * @return
@@ -192,7 +189,7 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num);
  * @brief LEDC set duty
  *        Only after calling ledc_update_duty will the duty update.
  *
- * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param channel LEDC channel(0-7), select from ledc_channel_t
  * @param duty Set the LEDC duty, the duty range is [0, (2**bit_num) - 1]
  *
@@ -205,7 +202,7 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
 /**
  * @brief LEDC get duty
  *
- * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param channel LEDC channel(0-7), select from ledc_channel_t
  *
  * @return
@@ -218,7 +215,7 @@ int ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
  * @brief LEDC set gradient
  *        Set LEDC gradient, After the function calls the ledc_update_duty function, the function can take effect.
  *
- * @param  speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param  speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param  channel LEDC channel(0-7), select from ledc_channel_t
  * @param  duty Set the start of the gradient duty, the duty range is [0, (2**bit_num) - 1]
  * @param  gradule_direction Set the direction of the gradient
@@ -254,7 +251,7 @@ esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags,
 /**
  * @brief Configure LEDC settings
  *
- * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param timer_sel  Timer index(0-3), there are 4 timers in LEDC module
  * @param div_num Timer clock divide number, the timer clock is divided from the selected clock source
  * @param bit_num The count number of one period, counter range is 0 ~ ((2 ** bit_num) - 1)
@@ -269,7 +266,7 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
 /**
  * @brief Reset LEDC timer
  *
- * @param  speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param  speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param  timer_sel LEDC timer index(0-3), select from ledc_timer_t
  *
  * @return
@@ -281,7 +278,7 @@ esp_err_t ledc_timer_rst(ledc_mode_t speed_mode, uint32_t timer_sel);
 /**
  * @brief Pause LEDC timer counter
  *
- * @param  speed_mode  Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param  speed_mode  Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param  timer_sel LEDC timer index(0-3), select from ledc_timer_t
  *
  * @return
@@ -294,7 +291,7 @@ esp_err_t ledc_timer_pause(ledc_mode_t speed_mode, uint32_t timer_sel);
 /**
  * @brief Resume LEDC timer
  *
- * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param timer_sel LEDC timer index(0-3), select from ledc_timer_t
  *
  * @return
@@ -306,7 +303,7 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, uint32_t timer_sel);
 /**
  * @brief Bind LEDC channel with the selected timer
  *
- * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode, now we only support high-speed mode. We will access low-speed mode in next version
+ * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param channel LEDC channel index(0-7), select from ledc_channel_t
  * @param timer_idx LEDC timer index(0-3), select from ledc_timer_t
  *
@@ -321,7 +318,6 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint
  *        Call ledc_fade_start() after this to start fading.
  *
  * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode,
- *                   For now we only support high-speed mode. We will access low-speed mode soon.
  * @param channel LEDC channel index(0-7), select from ledc_channel_t
  * @param target_duty Target duty of fading.( 0 - (2 ** bit_num - 1)))
  * @param scale Controls the increase or decrease step scale.
@@ -331,6 +327,7 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, uint32_t channel, uint
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_STATE Fade function not installed.
+ *     - ESP_FAIL Fade function init error
  */
 esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel, int target_duty, int scale, int cycle_num);
 
@@ -339,7 +336,6 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
  *        Call ledc_fade_start() after this to start fading.
  *
  * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode,
- *                   For now we only support high-speed mode. We will access low-speed mode soon.
  * @param channel LEDC channel index(0-7), select from ledc_channel_t
  * @param target_duty Target duty of fading.( 0 - (2 ** bit_num - 1)))
  * @param max_fade_time_ms The maximum time of the fading ( ms ).
@@ -348,6 +344,7 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_STATE Fade function not installed.
+ *     - ESP_FAIL Fade function init error
  */
 esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, int target_duty, int max_fade_time_ms);
 
@@ -358,7 +355,6 @@ esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel
  *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  *
  * @return
- *     - ESP_ERR_NO_MEM No enough memory
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_STATE Fade function already installed.
  */
@@ -373,6 +369,7 @@ void ledc_fade_func_uninstall();
 /**
  * @brief Start LEDC fading.
  *
+ * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param channel LEDC channel number
  * @param wait_done Whether to block until fading done.
  *
@@ -381,7 +378,7 @@ void ledc_fade_func_uninstall();
  *     - ESP_ERR_INVALID_STATE Fade function not installed.
  *     - ESP_ERR_INVALID_ARG Parameter error.
  */
-esp_err_t ledc_fade_start(ledc_channel_t channel, ledc_fade_mode_t wait_done);
+esp_err_t ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_fade_mode_t wait_done);
 
 #ifdef __cplusplus
 }

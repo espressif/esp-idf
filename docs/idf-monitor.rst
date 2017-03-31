@@ -102,6 +102,7 @@ Known Issues with idf_monitor
 Issues Observed on Windows
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- If you are using the supported Windows environment and receive the error "winpty: command not found" then run ``pacman -S winpty`` to fix.
 - Arrow keys and some other special keys in gdb don't work, due to Windows Console limitations.
 - Occasionally when "make" exits, it may stall for up to 30 seconds before idf_monitor resumes.
 - Occasionally when "gdb" is run, it may stall for a short time before it begins communicating with the gdbstub.

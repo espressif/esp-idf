@@ -86,7 +86,7 @@ void emac_reset(void)
 
     while (REG_GET_BIT(EMAC_DMABUSMODE_REG, EMAC_SW_RST) == 1) {
         //nothing to do ,if stop here,maybe emac have not clk input.
-        ESP_LOGI(TAG, "emac reseting ....");
+        ESP_LOGI(TAG, "emac resetting ....");
     }
 
     ESP_LOGI(TAG, "emac reset done");

@@ -38,7 +38,8 @@ typedef struct {
     uint32_t pulldown;  /*!< Mask of pulldown enable */
     uint32_t slpsel;    /*!< If slpsel bit is set, slpie will be used as pad input enabled signal in sleep mode */
     uint32_t slpie;     /*!< Mask of input enable in sleep mode */
-    uint32_t hold;      /*!< Mask of hold_force bit for RTC IO in RTC_CNTL_HOLD_FORCE_REG */
+    uint32_t hold;      /*!< Mask of hold enable */
+    uint32_t hold_force;/*!< Mask of hold_force bit for RTC IO in RTC_CNTL_HOLD_FORCE_REG */
     int rtc_num;        /*!< RTC IO number, or -1 if not an RTC GPIO */
 } rtc_gpio_desc_t;
 
@@ -192,15 +193,44 @@ esp_err_t rtc_gpio_pullup_dis(gpio_num_t gpio_num);
 esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num);
 
 /**
- * @brief Disable "hold" signal for all RTC IOs
+ * @brief Enable hold function on an RTC IO pad
  *
- * Each RTC pad has a "hold" input signal from the RTC controller.
- * If hold signal is set, pad latches current values of input enable,
+ * Enabling HOLD function will cause the pad to latch current values of
+ * input enable, output enable, output value, function, drive strength values.
+ * This function is useful when going into light or deep sleep mode to prevent
+ * the pin configuration from changing.
+ *
+ * @param gpio_num GPIO number (e.g. GPIO_NUM_12)
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ */
+esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num);
+
+/**
+ * @brief Disable hold function on an RTC IO pad
+ *
+ * Disabling hold function will allow the pad receive the values of
+ * input enable, output enable, output value, function, drive strength from
+ * RTC_IO peripheral.
+ *
+ * @param gpio_num GPIO number (e.g. GPIO_NUM_12)
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ */
+esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num);
+
+/**
+ * @brief Disable force hold signal for all RTC IOs
+ *
+ * Each RTC pad has a "force hold" input signal from the RTC controller.
+ * If this signal is set, pad latches current values of input enable,
  * function, output enable, and other signals which come from the RTC mux.
- * Hold signal is enabled before going into deep sleep for pins which
+ * Force hold signal is enabled before going into deep sleep for pins which
  * are used for EXT1 wakeup.
  */
-void rtc_gpio_unhold_all();
+void rtc_gpio_force_hold_dis_all();
 
 
 #ifdef __cplusplus

@@ -197,6 +197,81 @@ config FREERTOS_MAX_TASK_NAME_LEN
 
         For most uses, the default of 16 is OK.
 
+config SUPPORT_STATIC_ALLOCATION
+    bool "Enable FreeRTOS static allocation API"
+    default n
+    help
+        FreeRTOS gives the application writer the ability to instead provide the memory
+        themselves, allowing the following objects to optionally be created without any
+        memory being allocated dynamically:
+
+            - Tasks
+            - Software Timers
+            - Queues
+            - Event Groups
+            - Binary Semaphores
+            - Counting Semaphores
+            - Recursive Semaphores
+            - Mutexes
+
+        Whether it is preferable to use static or dynamic memory allocation is dependent on
+        the application, and the preference of the application writer. Both methods have pros
+        and cons, and both methods can be used within the same RTOS application.
+
+        Creating RTOS objects using statically allocated RAM has the benefit of providing the
+        application writer with more control: RTOS objects can be placed at specific memory locations.
+        The maximum RAM footprint can be determined at link time, rather than run time.
+        The application writer does not need to concern themselves with graceful handling of memory allocation failures.
+        It allows the RTOS to be used in applications that simply don't allow any dynamic memory allocation
+        (although FreeRTOS includes allocation schemes that can overcome most objections).
+
+config ENABLE_STATIC_TASK_CLEAN_UP_HOOK
+    bool "Enable static task clean up hook"
+    depends on SUPPORT_STATIC_ALLOCATION
+    default n
+    help
+        Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.
+
+        Bear in mind that if this option is enabled you will need to implement the following function:
+
+            void vPortCleanUpTCB ( void *pxTCB ) {
+                // place clean up code here
+            }
+
+config TIMER_TASK_PRIORITY
+    int "FreeRTOS timer task priority"
+    range 1 25
+    default 1
+    help
+        The timer service task (primarily) makes use of existing FreeRTOS features, allowing timer
+        functionality to be added to an application with minimal impact on the size of the application's
+        executable binary.
+
+        Use this constant to define the priority that the timer task will run at.
+
+config TIMER_TASK_STACK_DEPTH
+    int "FreeRTOS timer task stack size"
+    range 1536 32768
+    default 2048
+    help
+        The timer service task (primarily) makes use of existing FreeRTOS features, allowing timer
+        functionality to be added to an application with minimal impact on the size of the application's
+        executable binary.
+
+        Use this constant to define the size (in bytes) of the stack allocated for the timer task.
+
+config TIMER_QUEUE_LENGTH
+    int "FreeRTOS timer queue length"
+    range 5 20
+    default 10
+    help
+        FreeRTOS provides a set of timer related API functions. Many of these functions use a standard
+        FreeRTOS queue to send commands to the timer service task. The queue used for this purpose is
+        called the 'timer command queue'. The 'timer command queue' is private to the FreeRTOS timer
+        implementation, and cannot be accessed directly.
+
+        For most uses the default value of 10 is OK.
+
 menuconfig FREERTOS_DEBUG_INTERNALS
     bool "Debug FreeRTOS internals"
     default n

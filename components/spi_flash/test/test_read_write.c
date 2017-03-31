@@ -87,7 +87,7 @@ static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE("Test spi_flash_read", "[spi_flash_read]")
+TEST_CASE("Test spi_flash_read", "[spi_flash]")
 {
     setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST
@@ -165,7 +165,7 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE("Test spi_flash_write", "[spi_flash_write]")
+TEST_CASE("Test spi_flash_write", "[spi_flash]")
 {
     setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST

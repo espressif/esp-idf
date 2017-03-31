@@ -32,4 +32,7 @@ In addition, here are some tips for creating good examples:
 
 * A good example is documented and the basic options can be configured.
 * A good example does not contain a lot of code. If there is a lot of generic code in the example, consider refactoring that code into a standalone component and then use the component's API in your example.
+* Names (of files, functions, variables, etc.) inside examples should be distinguishable from names of other parts of IDF (ideally, use `example` in names.)
+* Functions and variables used inside examples should be declared static where possible.
+* Examples should demonstrate one distinct thing each. Avoid multi-purposed "demo" examples, split these into multiple examples instead.
 * Examples must be licensed under the Apache License 2.0 or (preferably for examples) if possible you can declare the example to be Public Domain / Creative Commons Zero.

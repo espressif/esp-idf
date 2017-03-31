@@ -132,8 +132,8 @@ _frxt_int_enter:
     l32i    a2,  a2, 0                  /* a2 = current TCB                */
     beqz    a2,  1f
     s32i    a1,  a2, TOPOFSTACK_OFFS    /* pxCurrentTCB->pxTopOfStack = SP */
-    movi    a1,  port_IntStackTop       /* a1 = top of intr stack          */
-	movi	a2,  configISR_STACK_SIZE
+    movi    a1,  port_IntStack+configISR_STACK_SIZE   /* a1 = top of intr stack for CPU 0  */
+    movi    a2,  configISR_STACK_SIZE   /* add configISR_STACK_SIZE * cpu_num to arrive at top of stack for cpu_num */
 	mull	a2,  a4, a2
 	add     a1,  a1, a2					/* for current proc */
 
