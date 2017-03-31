@@ -20,39 +20,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
+#include "driver/spi_common.h"
 
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-
-/**
- * @brief Enum with the three SPI peripherals that are software-accessible in it
- */
-typedef enum {
-    SPI_HOST=0,                     ///< SPI1, SPI
-    HSPI_HOST=1,                    ///< SPI2, HSPI
-    VSPI_HOST=2                     ///< SPI3, VSPI
-} spi_host_device_t;
-
-
-/**
- * @brief This is a configuration structure for a SPI bus.
- *
- * You can use this structure to specify the GPIO pins of the bus. Normally, the driver will use the
- * GPIO matrix to route the signals. An exception is made when all signals either can be routed through 
- * the IO_MUX or are -1. In that case, the IO_MUX is used, allowing for >40MHz speeds.
- */
-typedef struct {
-    int mosi_io_num;                ///< GPIO pin for Master Out Slave In (=spi_d) signal, or -1 if not used.
-    int miso_io_num;                ///< GPIO pin for Master In Slave Out (=spi_q) signal, or -1 if not used.
-    int sclk_io_num;                ///< GPIO pin for Spi CLocK signal, or -1 if not used.
-    int quadwp_io_num;              ///< GPIO pin for WP (Write Protect) signal which is used as D2 in 4-bit communication modes, or -1 if not used.
-    int quadhd_io_num;              ///< GPIO pin for HD (HolD) signal which is used as D3 in 4-bit communication modes, or -1 if not used.
-} spi_bus_config_t;
-
 
 #define SPI_DEVICE_TXBIT_LSBFIRST          (1<<0)  ///< Transmit command/address/data LSB first instead of the default MSB first
 #define SPI_DEVICE_RXBIT_LSBFIRST          (1<<1)  ///< Receive data LSB first instead of the default MSB first
@@ -122,9 +96,10 @@ typedef struct spi_device_t* spi_device_handle_t;  ///< Handle for a device on a
  *
  * @param host SPI peripheral that controls this bus
  * @param bus_config Pointer to a spi_bus_config_t struct specifying how the host should be initialized
- * @param dma_chan Either 1 or 2. A SPI bus used by this driver must have a DMA channel associated with
- *                 it. The SPI hardware has two DMA channels to share. This parameter indicates which
- *                 one to use.
+ * @param dma_chan Either channel 1 or 2, or 0 in the case when no DMA is required. Selecting a DMA channel
+ *                 for a SPI bus allows transfers on the bus to have sizes only limited by the amount of 
+ *                 internal memory. Selecting no DMA channel (by passing the value 0) limits the amount of
+ *                 bytes transfered to a maximum of 32.
  * @return 
  *         - ESP_ERR_INVALID_ARG   if configuration is invalid
  *         - ESP_ERR_INVALID_STATE if host already is in use

@@ -14,6 +14,7 @@ Peripherals API
    SD/MMC Card Host <../storage/sdmmc>
    Sigma-delta Modulation <sigmadelta>
    SPI Master <spi_master>
+   SPI Slave <spi_slave>
    Remote Control <rmt>
    Timer <timer>
    UART <uart>

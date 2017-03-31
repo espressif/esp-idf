@@ -8,8 +8,7 @@ The ESP32 has four SPI peripheral devices, called SPI0, SPI1, HSPI and VSPI. SPI
 the flash cache the ESP32 uses to map the SPI flash device it is connected to into memory. SPI1 is
 connected to the same hardware lines as SPI0 and is used to write to the flash chip. HSPI and VSPI
 are free to use. SPI1, HSPI and VSPI all have three chip select lines, allowing them to drive up to
-three SPI devices each as a master. The SPI peripherals also can be used in slave mode, driven from 
-another SPI master.
+three SPI devices each as a master.
 
 The spi_master driver
 ^^^^^^^^^^^^^^^^^^^^^
@@ -74,7 +73,7 @@ Using the spi_master driver
 - Initialize a SPI bus by calling ``spi_bus_initialize``. Make sure to set the correct IO pins in
   the ``bus_config`` struct. Take care to set signals that are not needed to -1.
 
-- Tell the driver about a SPI slave device conencted to the bus by calling spi_bus_add_device. 
+- Tell the driver about a SPI slave device connected to the bus by calling spi_bus_add_device. 
   Make sure to configure any timing requirements the device has in the ``dev_config`` structure.
   You should now have a handle for the device, to be used when sending it a transaction.
 
