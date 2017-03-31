@@ -153,6 +153,9 @@ esp_err_t spi_bus_free(spi_host_device_t host);
  * peripheral and routes it to the indicated GPIO. All SPI master devices have three CS pins and can thus control
  * up to three devices.
  *
+ * @note While in general, speeds up to 80MHz on the dedicated SPI pins and 40MHz on GPIO-matrix-routed pins are
+ *       supported, full-duplex transfers routed over the GPIO matrix only support speeds up to 26MHz.
+ *
  * @param host SPI peripheral to allocate device on
  * @param dev_config SPI interface protocol config for the device
  * @param handle Pointer to variable to hold the device handle
