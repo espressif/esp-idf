@@ -529,6 +529,10 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
                GATT_TRACE_WARNING("Warning in %s, line=%d, insufficient resource to allocate for attribute value\n", __func__, __LINE__);
                return 0;
             }
+            else {
+                //add mask to indicate that p_value->attr_val.attr_val is dynamic allocated
+                p_char_val->mask |= GATT_ATTR_VALUE_ALLOCATED;
+            }
             
             //initiate characteristic attribute value part
             memset(p_char_val->p_value->attr_val.attr_val, 0, attr_val->attr_max_len);
@@ -662,6 +666,10 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
                     deallocate_attr_in_db(p_db, p_char_dscptr);
                     GATT_TRACE_WARNING("Warning in %s, line=%d, insufficient resource to allocate for descriptor value\n", __func__, __LINE__);
                     return 0;
+                }
+                else {
+                    //add mask to indicate that p_value->attr_val.attr_val is dynamic allocated
+                    p_char_dscptr->mask |= GATT_ATTR_VALUE_ALLOCATED;
                 }
 
                 //initiate characteristic attribute value part

@@ -214,6 +214,7 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
 
                 if (p_list) {
                     gatt_remove_an_item_from_list(p_list_info, p_list);
+                    gatt_free_attr_value_buffer(p_list);
                     gatt_free_hdl_buffer(p_list);
                 }
                 return (0);
@@ -227,6 +228,7 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
         GATT_TRACE_ERROR ("GATTS_ReserveHandles: service DB initialization failed\n");
         if (p_list) {
             gatt_remove_an_item_from_list(p_list_info, p_list);
+            gatt_free_attr_value_buffer(p_list);
             gatt_free_hdl_buffer(p_list);
         }
 
@@ -413,6 +415,7 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
     }
 
     gatt_remove_an_item_from_list(p_list_info, p_list);
+    gatt_free_attr_value_buffer(p_list);
     gatt_free_hdl_buffer(p_list);
 
     return (TRUE);

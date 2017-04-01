@@ -166,6 +166,30 @@ void btc_gatts_arg_deep_free(btc_msg_t *msg)
         }
         break;
     }
+    case BTC_GATTS_ACT_ADD_CHAR:{
+        if (arg->add_char.char_val.attr_value != NULL) {
+            GKI_freebuf(arg->add_char.char_val.attr_value);
+        }
+        break;
+    }
+    case BTC_GATTS_ACT_ADD_CHAR_DESCR:{
+        if (arg->add_descr.descr_val.attr_value != NULL){
+            GKI_freebuf(arg->add_descr.descr_val.attr_value);
+        }
+        break;
+    }
+    case BTC_GATTS_ACT_CREATE_ATTR_TAB:{
+        if (arg->create_attr_tab.gatts_attr_db != NULL){
+            GKI_freebuf(arg->create_attr_tab.gatts_attr_db);
+        }
+        break;
+    }
+    case BTC_GATTS_ACT_SET_ATTR_VALUE:{
+        if (arg->set_attr_val.value != NULL){
+            GKI_freebuf(arg->set_attr_val.value);
+        }
+    }
+
     default:
         LOG_DEBUG("%s Unhandled deep free %d\n", __func__, msg->act);
         break;
