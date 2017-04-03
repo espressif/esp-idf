@@ -1,0 +1,166 @@
+Input: in/test-14.bin
+Packet Length: 568
+Questions: 18
+  Q: _airport._tcp.local. PTR IN
+  Q: _http._tcp.local. PTR IN
+  Q: _printer._tcp.local. PTR IN
+  Q: _sub._http._tcp.local. PTR IN
+  Q: _airplay._tcp.local. PTR IN
+  Q: _raop._tcp.local. PTR IN
+  Q: _uscan._tcp.local. PTR IN
+  Q: _uscans._tcp.local. PTR IN
+  Q: _ippusb._tcp.local. PTR IN
+  Q: _scanner._tcp.local. PTR IN
+  Q: _ipp._tcp.local. PTR IN
+  Q: _ipps._tcp.local. PTR IN
+  Q: _pdl-datastream._tcp.local. PTR IN
+  Q: _ptp._tcp.local. PTR IN
+  Q: _sleep-proxy._udp.local. PTR IN
+  Q: 9801A7E58FA1@Hristo's AirPort Express._raop._tcp.local. TXT IN
+  Q: Hristo's AirPort Express._airport._tcp.local. TXT IN
+  Q: Hristo's Time Capsule._airport._tcp.local. TXT IN
+Answers: 7 + 0
+  A: _airport._tcp.local. PTR IN 2272 [2] Hristo's AirPort Express._airport._tcp.local.
+  A: _airport._tcp.local. PTR IN 2272 [2] Hristo's Time Capsule._airport._tcp.local.
+  A: _http._tcp.local. PTR IN 2535 [23] HP LaserJet CP1025nw._http._tcp.local.
+  A: _printer._tcp.local. PTR IN 2535 [23] HP LaserJet CP1025nw._printer._tcp.local.
+  A: _ipp._tcp.local. PTR IN 2535 [23] HP LaserJet CP1025nw._ipp._tcp.local.
+  A: _pdl-datastream._tcp.local. PTR IN 2535 [23] HP LaserJet CP1025nw._pdl-datastream._tcp.local.
+  A: _sleep-proxy._udp.local. PTR IN 2535 [38] 50-34-10-70.1 Hristo's Time Capsule._sleep-proxy._udp.local.
+
+Input: in/test-15.bin
+Packet Length: 524
+Answers: 3 + 3
+  A: Hristo's AirPort Express._airport._tcp.local. TXT IN FLUSH 4500 [166] waMA=98-01-A7-E5-8F-A1,raMA=98-01-A7-E8-C2-2E,raM2=98-01-A7-E8-C2-2F,raNm=your-ssid,raCh=1,rCh2=52,raSt=0,raNA=1,syFl=0x8A0C,syAP=115,syVs=7.6.8,srcv=76800.1,bjSd=23
+  A: 9801A7E58FA1@Hristo's AirPort Express._raop._tcp.local. TXT IN FLUSH 4500 [134] txtvers=1; ch=2; cn=0,1; et=0,4; sv=false; da=true; sr=44100; ss=16; pw=false; vn=65537; tp=TCP,UDP; vs=105.1; am=AirPort10,115; fv=76800.1; sf=0x1
+  A: _raop._tcp.local. PTR IN 4500 [2] 9801A7E58FA1@Hristo's AirPort Express._raop._tcp.local.
+  A: 9801A7E58FA1@Hristo's AirPort Express._raop._tcp.local. SRV IN FLUSH 120 [32] 5000 Hristos-AirPort-Express.local.
+  A: Hristo's AirPort Express.local. NSEC IN FLUSH 4500 [9] Hristo's AirPort Express._airport._tcp.local.  00 05 00 00 80 00 40
+  A: 9801A7E58FA1@Hristo's AirPort Express.local. NSEC IN FLUSH 4500 [9] 9801A7E58FA1@Hristo's AirPort Express._raop._tcp.local.  00 05 00 00 80 00 40
+
+Input: in/test-16.bin
+Packet Length: 254
+Answers: 1 + 1
+  A: Hristo's Time Capsule._airport._tcp.local. TXT IN FLUSH 4500 [168] waMA=70-73-CB-B4-C9-B3,raMA=70-73-CB-BB-04-E7,raM2=70-73-CB-BB-04-E8,raNm=nbis-test,raCh=11,rCh2=132,raSt=0,raNA=0,syFl=0x820C,syAP=116,syVs=7.6.8,srcv=76800.1,bjSd=30
+  A: Hristo's Time Capsule.local. NSEC IN FLUSH 4500 [9] Hristo's Time Capsule._airport._tcp.local.  00 05 00 00 80 00 40
+
+Input: in/test-28.bin
+Packet Length: 62
+Questions: 1
+  Q: Hristo's Time Capsule._afpovertcp._tcp.local. SRV IN FLUSH
+
+Input: in/test-29.bin
+Packet Length: 39
+Questions: 2
+  Q: minifritz.local. A IN FLUSH
+  Q: minifritz.local. AAAA IN FLUSH
+
+Input: in/test-31.bin
+Packet Length: 91
+Answers: 2 + 1
+  A: minifritz.local. AAAA IN FLUSH 120 [16] fe80:0000:0000:0000:142e:54ff:b8c4:fd09
+  A: minifritz.local. A IN FLUSH 120 [4] 192.168.254.16
+  A: minifritz.local. NSEC IN FLUSH 120 [8] minifritz...local.  00 04 40 00 00 08
+
+Input: in/test-53.bin
+Packet Length: 140
+Questions: 2
+  Q: _smb._tcp.local. PTR IN
+  Q: Sofiya-Ivanovas-MacBook.local. A IN
+Answers: 2 + 0
+  A: _smb._tcp.local. PTR IN 3061 [29] Sofiya Ivanova’s MacBook._smb._tcp.local.
+  A: _smb._tcp.local. PTR IN 3062 [24] Hristo's Time Capsule._smb._tcp.local.
+
+Input: in/test-56.bin
+Packet Length: 262
+Answers: 2 + 6
+  A: Hristo’s Mac mini._device-info._tcp.local. TXT IN 4500 [28] model=Macmini6,2; osxvers=16
+  A: _smb._tcp.local. PTR IN 4500 [22] Hristo’s Mac mini._smb._tcp.local.
+  A: Hristo’s Mac mini._smb._tcp.local. TXT IN FLUSH 4500 [1] 
+  A: Hristo’s Mac mini._smb._tcp.local. SRV IN FLUSH 120 [18] 445 minifritz.local.
+  A: minifritz.local. AAAA IN FLUSH 120 [16] fe80:0000:0000:0000:142e:54ff:b8c4:fd09
+  A: minifritz.local. A IN FLUSH 120 [4] 192.168.254.16
+  A: Hristo’s Mac mini.local. NSEC IN FLUSH 4500 [9] Hristo’s Mac mini._smb._tcp.local.  00 05 00 00 80 00 40
+  A: minifritz.local. NSEC IN FLUSH 120 [8] minifritz...local.  00 04 40 00 00 08
+
+Input: in/test-63.bin
+Packet Length: 147
+Questions: 2
+  Q: _afpovertcp._tcp.local. PTR IN
+  Q: Sofiya-Ivanovas-MacBook.local. A IN
+Answers: 2 + 0
+  A: _afpovertcp._tcp.local. PTR IN 2881 [29] Sofiya Ivanova’s MacBook._afpovertcp._tcp.local.
+  A: _afpovertcp._tcp.local. PTR IN 2881 [24] Hristo's Time Capsule._afpovertcp._tcp.local.
+
+Input: in/test-66.bin
+Packet Length: 269
+Answers: 2 + 6
+  A: Hristo’s Mac mini._device-info._tcp.local. TXT IN 4500 [28] model=Macmini6,2; osxvers=16
+  A: _afpovertcp._tcp.local. PTR IN 4500 [22] Hristo’s Mac mini._afpovertcp._tcp.local.
+  A: Hristo’s Mac mini._afpovertcp._tcp.local. TXT IN FLUSH 4500 [1] 
+  A: Hristo’s Mac mini._afpovertcp._tcp.local. SRV IN FLUSH 120 [18] 548 minifritz.local.
+  A: minifritz.local. AAAA IN FLUSH 120 [16] fe80:0000:0000:0000:142e:54ff:b8c4:fd09
+  A: minifritz.local. A IN FLUSH 120 [4] 192.168.254.16
+  A: Hristo’s Mac mini.local. NSEC IN FLUSH 4500 [9] Hristo’s Mac mini._afpovertcp._tcp.local.  00 05 00 00 80 00 40
+  A: minifritz.local. NSEC IN FLUSH 120 [8] minifritz...local.  00 04 40 00 00 08
+
+Input: in/test-83.bin
+Packet Length: 105
+Answers: 1 + 2
+  A: Sofiya-Ivanovas-MacBook.local. A IN FLUSH 120 [4] 192.168.254.20
+  A: Sofiya-Ivanovas-MacBook.local. AAAA IN FLUSH 120 [16] fe80:0000:0000:0000:021c:b3ff:feb2:72a3
+  A: Sofiya-Ivanovas-MacBook.local. NSEC IN FLUSH 120 [8] Sofiya-Ivanovas-MacBook...local.  00 04 40 00 00 08
+
+Input: in/test-88.bin
+Packet Length: 48
+Questions: 2
+  Q: _rfb._tcp.local. PTR IN
+  Q: _airport._tcp.local. PTR IN
+
+Input: in/test-89.bin
+Packet Length: 459
+Answers: 2 + 7
+  A: _airport._tcp.local. PTR IN 4500 [24] Hristo's Time Capsule._airport._tcp.local.
+  A: Hristo's Time Capsule._device-info._tcp.local. TXT IN 4500 [23] model=TimeCapsule6,116
+  A: Hristos-Time-Capsule.local. A IN FLUSH 120 [4] 192.168.254.49
+  A: Hristo's Time Capsule._airport._tcp.local. TXT IN FLUSH 4500 [168] waMA=70-73-CB-B4-C9-B3,raMA=70-73-CB-BB-04-E7,raM2=70-73-CB-BB-04-E8,raNm=nbis-test,raCh=11,rCh2=132,raSt=0,raNA=0,syFl=0x820C,syAP=116,syVs=7.6.8,srcv=76800.1,bjSd=30
+  A: Hristos-Time-Capsule.local. AAAA IN FLUSH 120 [16] fe80:0000:0000:0000:7273:cbff:feb4:c9b3
+  A: Hristo's Time Capsule._airport._tcp.local. SRV IN FLUSH 120 [8] 5009 Hristos-Time-Capsule.local.
+  A: Hristos-Time-Capsule.local. A IN FLUSH 120 [4] 169.254.23.40
+  A: Hristos-Time-Capsule.local. NSEC IN FLUSH 120 [8] Hristos-Time-Capsule...local.  00 04 40 00 00 08
+  A: Hristo's Time Capsule.local. NSEC IN FLUSH 4500 [9] Hristo's Time Capsule._airport._tcp.local.  00 05 00 00 80 00 40
+
+Input: in/test-91.bin
+Packet Length: 279
+Answers: 2 + 6
+  A: Sofiya Ivanova’s MacBook._device-info._tcp.local. TXT IN 4500 [17] model=Macmini2,1
+  A: _rfb._tcp.local. PTR IN 4500 [29] Sofiya Ivanova’s MacBook._rfb._tcp.local.
+  A: Sofiya Ivanova’s MacBook._rfb._tcp.local. TXT IN FLUSH 4500 [1] 
+  A: Sofiya Ivanova’s MacBook._rfb._tcp.local. SRV IN FLUSH 120 [32] 5900 Sofiya-Ivanovas-MacBook.local.
+  A: Sofiya-Ivanovas-MacBook.local. AAAA IN FLUSH 120 [16] fe80:0000:0000:0000:021c:b3ff:feb2:72a3
+  A: Sofiya-Ivanovas-MacBook.local. A IN FLUSH 120 [4] 192.168.254.20
+  A: Sofiya Ivanova’s MacBook.local. NSEC IN FLUSH 4500 [9] Sofiya Ivanova’s MacBook._rfb._tcp.local.  00 05 00 00 80 00 40
+  A: Sofiya-Ivanovas-MacBook.local. NSEC IN FLUSH 120 [8] Sofiya-Ivanovas-MacBook...local.  00 04 40 00 00 08
+
+Input: in/test-95.bin
+Packet Length: 286
+Questions: 3
+  Q: _afpovertcp._tcp.local. PTR IN
+  Q: _smb._tcp.local. PTR IN
+  Q: _adisk._tcp.local. PTR IN
+Answers: 6 + 0
+  A: _afpovertcp._tcp.local. PTR IN 2353 [29] Sofiya Ivanova’s MacBook._afpovertcp._tcp.local.
+  A: _afpovertcp._tcp.local. PTR IN 3973 [22] Hristo’s Mac mini._afpovertcp._tcp.local.
+  A: _afpovertcp._tcp.local. PTR IN 2353 [24] Hristo's Time Capsule._afpovertcp._tcp.local.
+  A: _smb._tcp.local. PTR IN 2353 [29] Sofiya Ivanova’s MacBook._smb._tcp.local.
+  A: _smb._tcp.local. PTR IN 3792 [22] Hristo’s Mac mini._smb._tcp.local.
+  A: _smb._tcp.local. PTR IN 2353 [24] Hristo's Time Capsule._smb._tcp.local.
+
+Input: in/test-96.bin
+Packet Length: 319
+Answers: 2 + 3
+  A: Hristo's Time Capsule._device-info._tcp.local. TXT IN 4500 [23] model=TimeCapsule6,116
+  A: _adisk._tcp.local. PTR IN 4500 [24] Hristo's Time Capsule._adisk._tcp.local.
+  A: Hristo's Time Capsule._adisk._tcp.local. TXT IN FLUSH 4500 [110] sys=waMA=70:73:CB:B4:C9:B3,adVF=0x1000; dk2=adVF=0x1083,adVN=Capsule,adVU=55fabb8b-a63b-5441-9874-6edb504eb30a
+  A: Hristo's Time Capsule._adisk._tcp.local. SRV IN FLUSH 120 [29] 9 Hristos-Time-Capsule.local.
+  A: Hristo's Time Capsule.local. NSEC IN FLUSH 4500 [9] Hristo's Time Capsule._adisk._tcp.local.  00 05 00 00 80 00 40
