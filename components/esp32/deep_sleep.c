@@ -126,6 +126,9 @@ void IRAM_ATTR esp_deep_sleep_start()
     if (s_config.wakeup_triggers & EXT_EVENT1_TRIG_EN) {
         ext1_wakeup_prepare();
     }
+    if (s_config.wakeup_triggers & SAR_TRIG_EN) {
+        SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_WAKEUP_FORCE_EN);
+    }
     // TODO: move timer wakeup configuration into a similar function
     // once rtc_sleep is opensourced.
 
@@ -163,6 +166,10 @@ void system_deep_sleep(uint64_t) __attribute__((alias("esp_deep_sleep")));
 esp_err_t esp_deep_sleep_enable_ulp_wakeup()
 {
 #ifdef CONFIG_ULP_COPROC_ENABLED
+    if(s_config.wakeup_triggers & RTC_EXT_EVENT0_TRIG_EN) {
+        ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
+        return ESP_ERR_INVALID_STATE;
+    }
     s_config.wakeup_triggers |= RTC_SAR_TRIG_EN;
     return ESP_OK;
 #else
@@ -177,6 +184,26 @@ esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us)
     return ESP_OK;
 }
 
+esp_err_t esp_deep_sleep_enable_touchpad_wakeup()
+{
+    if (s_config.wakeup_triggers & (RTC_EXT_EVENT0_TRIG_EN)) {
+        ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
+        return ESP_ERR_INVALID_STATE;
+    }
+    s_config.wakeup_triggers |= RTC_TOUCH_TRIG_EN;
+    return ESP_OK;
+}
+
+touch_pad_t esp_deep_sleep_get_touchpad_wakeup_status()
+{
+    if (esp_deep_sleep_get_wakeup_cause() != ESP_DEEP_SLEEP_WAKEUP_TOUCHPAD) {
+        return TOUCH_PAD_MAX;
+    }
+    uint32_t touch_mask = REG_GET_FIELD(SENS_SAR_TOUCH_CTRL2_REG, SENS_TOUCH_MEAS_EN);
+    assert(touch_mask != 0 && "wakeup reason is RTC_TOUCH_TRIG_EN but SENS_TOUCH_MEAS_EN is zero");
+    return (touch_pad_t) (__builtin_ffs(touch_mask) - 1);
+}
+
 esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 {
     if (level < 0 || level > 1) {
@@ -184,6 +211,10 @@ esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
     }
     if (!RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
+    }
+    if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_SAR_TRIG_EN)) {
+        ESP_LOGE(TAG, "Conflicting wake-up triggers: touch / ULP");
+        return ESP_ERR_INVALID_STATE;
     }
     s_config.ext0_rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     s_config.ext0_trigger_level = level;
@@ -260,7 +291,7 @@ static void ext1_wakeup_prepare()
             REG_SET_BIT(desc->reg, desc->ie);
             REG_CLR_BIT(desc->reg, desc->pulldown);
             REG_CLR_BIT(desc->reg, desc->pullup);
-            REG_SET_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold);
+            REG_SET_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold_force);
         }
         // Keep track of pins which are processed to bail out early
         rtc_gpio_mask &= ~BIT(rtc_pin);
@@ -276,8 +307,7 @@ static void ext1_wakeup_prepare()
 
 uint64_t esp_deep_sleep_get_ext1_wakeup_status()
 {
-    int wakeup_reason = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_CAUSE);
-    if (wakeup_reason != RTC_EXT_EVENT1_TRIG) {
+    if (esp_deep_sleep_get_wakeup_cause() != ESP_DEEP_SLEEP_WAKEUP_EXT1) {
         return 0;
     }
     uint32_t status = REG_GET_FIELD(RTC_CNTL_EXT_WAKEUP1_STATUS_REG, RTC_CNTL_EXT_WAKEUP1_STATUS);
@@ -294,6 +324,28 @@ uint64_t esp_deep_sleep_get_ext1_wakeup_status()
         gpio_mask |= BIT(gpio);
     }
     return gpio_mask;
+}
+
+esp_deep_sleep_wakeup_cause_t esp_deep_sleep_get_wakeup_cause()
+{
+    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET) {
+        return ESP_DEEP_SLEEP_WAKEUP_UNDEFINED;
+    }
+
+    uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_CAUSE);
+    if (wakeup_cause & RTC_EXT_EVENT0_TRIG) {
+        return ESP_DEEP_SLEEP_WAKEUP_EXT0;
+    } else if (wakeup_cause & RTC_EXT_EVENT1_TRIG) {
+        return ESP_DEEP_SLEEP_WAKEUP_EXT1;
+    } else if (wakeup_cause & RTC_TIMER_EXPIRE) {
+        return ESP_DEEP_SLEEP_WAKEUP_TIMER;
+    } else if (wakeup_cause & RTC_TOUCH_TRIG) {
+        return ESP_DEEP_SLEEP_WAKEUP_TOUCHPAD;
+    } else if (wakeup_cause & RTC_SAR_TRIG) {
+        return ESP_DEEP_SLEEP_WAKEUP_ULP;
+    } else {
+        return ESP_DEEP_SLEEP_WAKEUP_UNDEFINED;
+    }
 }
 
 esp_err_t esp_deep_sleep_pd_config(esp_deep_sleep_pd_domain_t domain,
@@ -333,13 +385,15 @@ static uint32_t get_power_down_flags()
         s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] = ESP_PD_OPTION_ON;
     }
 
-    // RTC_PERIPH is needed for EXT0 wakeup and for ULP.
-    // If RTC_PERIPH is auto, and both EXT0 and ULP aren't enabled,
-    // power down RTC_PERIPH.
+    // RTC_PERIPH is needed for EXT0 wakeup.
+    // If RTC_PERIPH is auto, and EXT0 isn't enabled, power down RTC_PERIPH.
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
-        if (s_config.wakeup_triggers &
-                (RTC_SAR_TRIG_EN | RTC_EXT_EVENT0_TRIG_EN)) {
+        if (s_config.wakeup_triggers & RTC_EXT_EVENT0_TRIG_EN) {
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
+        } else if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_SAR_TRIG_EN)) {
+            // In both rev. 0 and rev. 1 of ESP32, forcing power up of RTC_PERIPH
+            // prevents ULP timer and touch FSMs from working correctly.
+            s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_OFF;
         }
     }
 

@@ -948,13 +948,13 @@ esp_err_t esp_eth_init(eth_config_t *config)
         emac_set_user_config_data(config);
     }
 
-    emac_config.emac_phy_power_enable(true);    
-
     ret = emac_verify_args();
 
     if (ret != ESP_OK) {
         goto _exit;
     }
+
+    emac_config.emac_phy_power_enable(true);    
 
     //before set emac reg must enable clk
     emac_enable_clk(true);

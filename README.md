@@ -2,7 +2,7 @@
 
 [![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](http://esp-idf.readthedocs.io/en/latest/?badge=latest)
 
-ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview>) chip.
+ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview) chip.
 
 # Developing With the ESP-IDF
 
@@ -52,9 +52,9 @@ You don't need to run `make all` before running `make flash`, `make flash` will 
 
 ## Viewing Serial Output
 
-The `make monitor` target will use the already-installed [miniterm](http://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm) (a part of pyserial) to display serial output from the ESP32 on the terminal console.
+The `make monitor` target uses the [idf_monitor tool](http://esp-idf.readthedocs.io/en/latest/idf-monitor.html) to display serial output from the ESP32. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](http://esp-idf.readthedocs.io/en/latest/idf-monitor.html).
 
-Exit miniterm by typing Ctrl-].
+Exit the monitor by typing Ctrl-].
 
 To flash and monitor output in one pass, you can run:
 

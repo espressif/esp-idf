@@ -21,7 +21,8 @@ typedef volatile struct {
                     uint32_t timer_sel:  2;              /*There are four high speed timers  the two bits are used to select one of them for high speed channel.  2'b00: seletc hstimer0.   2'b01: select hstimer1.  2'b10: select hstimer2.    2'b11: select hstimer3.*/
                     uint32_t sig_out_en: 1;              /*This is the output enable control bit for high speed channel*/
                     uint32_t idle_lv:    1;              /*This bit is used to control the output value when high speed channel is off.*/
-                    uint32_t reserved4: 27;
+                    uint32_t low_speed_update: 1;        /*This bit is only useful for low speed timer channels, reserved for high speed timers*/
+                    uint32_t reserved4: 26;
                     uint32_t clk_en:     1;              /*This bit is clock gating control signal. when software configure LED_PWM internal registers  it controls the register clock.*/
                 };
                 uint32_t val;
@@ -204,8 +205,12 @@ typedef volatile struct {
     } int_clr;
     union {
         struct {
-            uint32_t apb_clk_sel: 1;                   /*This bit is used to set the frequency of slow_clk. 1'b1:80mhz  1'b0:8mhz*/
+            uint32_t apb_clk_sel: 1;                   /*This bit decides the slow clock for LEDC low speed channels, so we want to replace the field name with slow_clk_sel*/
             uint32_t reserved1:  31;
+        };
+        struct {
+            uint32_t slow_clk_sel: 1;                  /*This bit is used to set the frequency of slow_clk. 1'b1:80mhz  1'b0:8mhz, (only used by LEDC low speed channels/timers)*/
+            uint32_t reserved:  31;
         };
         uint32_t val;
     } conf;

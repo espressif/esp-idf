@@ -69,10 +69,28 @@ erase_flash:
 
 MONITORBAUD ?= $(CONFIG_MONITOR_BAUD)
 
+MONITOR_PYTHON := $(PYTHON)
+
+ifeq ("$(OS)","Windows_NT")
+# miniterm and idf_monitor both need a Windows Console PTY in order
+# to correctly handle user input
+MONITOR_PYTHON := winpty $(PYTHON)
+endif
+
 # note: if you want to run miniterm from command line, can simply run
 # miniterm.py on the console. The '$(PYTHON) -m serial.tools.miniterm'
 # is to allow for the $(PYTHON) variable overriding the python path.
+simple_monitor: $(call prereq_if_explicit,%flash)
+	$(MONITOR_PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw $(ESPPORT) $(MONITORBAUD)
+
+MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --make "$(MAKE)"
+
 monitor: $(call prereq_if_explicit,%flash)
-	$(PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw $(ESPPORT) $(MONITORBAUD)
+	$(summary) MONITOR
+	[ -f $(APP_ELF) ] || echo "*** 'make monitor' target requires an app to be compiled and flashed first."
+	[ -f $(APP_ELF) ] || echo "*** Run 'make flash monitor' to build, flash and monitor"
+	[ -f $(APP_ELF) ] || echo "*** Or alternatively 'make simple_monitor' to view the serial port as-is."
+	[ -f $(APP_ELF) ] || exit 1
+	$(MONITOR_PYTHON) $(IDF_PATH)/tools/idf_monitor.py $(MONITOR_OPTS) $(APP_ELF)
 
 .PHONY: erase_flash

@@ -619,22 +619,17 @@ esp_err_t rmt_fill_tx_items(rmt_channel_t channel, rmt_item32_t* item, uint16_t 
  *
  * @param channel RMT channel (0 - 7)
  *
- * @param rx_buf_size Size of RMT RX ringbuffer.
+ * @param rx_buf_size Size of RMT RX ringbuffer. Can be 0 if the RX ringbuffer is not used.
  *
- *        @note
- *        If we do not need RX ringbuffer, just set rx_buf_size to 0.
- *
- *        @note
- *        When we call rmt_driver_install function, it will register a driver ISR handler,
- *        DO NOT REGISTER ISR HANDLER AGAIN.
- *
- * @param rmt_intr_num RMT interrupt number.
+ * @param intr_alloc_flags Flags for the RMT driver interrupt handler. Pass 0 for default flags. See esp_intr_alloc.h for details.
  *
  * @return
+ *     - ESP_ERR_INVALID_STATE Driver is already installed, call rmt_driver_uninstall first.
+ *     - ESP_ERR_NO_MEM Memory allocation failure
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  */
-esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int rmt_intr_num);
+esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr_alloc_flags);
 
 /**
  * @brief Uninstall RMT driver.

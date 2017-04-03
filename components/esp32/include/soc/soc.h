@@ -15,7 +15,9 @@
 #ifndef _ESP32_SOC_H_
 #define _ESP32_SOC_H_
 
+#ifndef __ASSEMBLER__
 #include <stdint.h>
+#endif
 
 //Register Bits{{
 #define BIT31   0x80000000
@@ -59,7 +61,11 @@
 #define ETS_UNCACHED_ADDR(addr) (addr)
 #define ETS_CACHED_ADDR(addr) (addr) 
 
+#ifndef __ASSEMBLER__
 #define BIT(nr)                 (1UL << (nr))
+#else
+#define BIT(nr)                 (1 << (nr))
+#endif //__ASSEMBLER__
 
 //write value to register
 #define REG_WRITE(_r, _v)    (*(volatile uint32_t *)(_r)) = (_v)

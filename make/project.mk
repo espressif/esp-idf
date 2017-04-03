@@ -30,7 +30,8 @@ help:
 	@echo "make clean - Remove all build output"
 	@echo "make size - Display the memory footprint of the app"
 	@echo "make erase_flash - Erase entire flash contents"
-	@echo "make monitor - Display serial output on terminal console"
+	@echo "make monitor - Run idf_monitor tool to monitor serial output from app"
+	@echo "make simple_monitor - Monitor serial output on terminal console"
 	@echo ""
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
@@ -127,17 +128,16 @@ COMPONENT_PATHS += $(abspath $(SRCDIRS))
 # A component is buildable if it has a component.mk makefile in it
 COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
 
-# If TESTS_ALL set to 1, set TEST_COMPONENTS to all components
+# If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components
 ifeq ($(TESTS_ALL),1)
-TEST_COMPONENTS := $(COMPONENTS)
+TEST_COMPONENTS_LIST := $(COMPONENTS)
+else
+# otherwise, use TEST_COMPONENTS
+TEST_COMPONENTS_LIST := $(TEST_COMPONENTS)
 endif
+TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
+TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
 
-# If TEST_COMPONENTS is set, create variables for building unit tests
-ifdef TEST_COMPONENTS
-override TEST_COMPONENTS := $(foreach comp,$(TEST_COMPONENTS),$(wildcard $(IDF_PATH)/components/$(comp)/test))
-TEST_COMPONENT_PATHS := $(TEST_COMPONENTS)
-TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENTS),$(lastword $(subst /, ,$(dir $(comp))))_test)
-endif
 
 # Initialise project-wide variables which can be added to by
 # each component.
@@ -186,8 +186,7 @@ endif
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 
-# Git version of ESP-IDF (of the form v1.0-285-g5c4f707)
-IDF_VER := $(shell git -C $(IDF_PATH) describe)
+IDF_VER := $(shell git -C $(IDF_PATH) describe --always --tags --dirty)
 
 # Set default LDFLAGS
 
@@ -241,13 +240,14 @@ OPTIMIZATION_FLAGS = -Og
 endif
 
 # Enable generation of debugging symbols
-OPTIMIZATION_FLAGS += -ggdb
+# (we generate even in Release mode, as this has no impact on final binary size.)
+DEBUG_FLAGS ?= -ggdb
 
 # List of flags to pass to C compiler
 # If any flags are defined in application Makefile, add them at the end.
 CFLAGS := $(strip \
 	-std=gnu99 \
-	$(OPTIMIZATION_FLAGS) \
+	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration \
 	$(CFLAGS) \
@@ -259,7 +259,7 @@ CXXFLAGS := $(strip \
 	-std=gnu++11 \
 	-fno-exceptions \
 	-fno-rtti \
-	$(OPTIMIZATION_FLAGS) \
+	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
 	$(CXXFLAGS) \
@@ -404,20 +404,22 @@ clean: config-clean
 # This only works for components inside IDF_PATH
 check-submodules:
 
+# Dump the git status for the whole working copy once, then grep it for each submodule. This saves a lot of time on Windows.
+GIT_STATUS := $(shell cd ${IDF_PATH} && git status --porcelain --ignore-submodules=dirty)
+
 # Generate a target to check this submodule
 # $(1) - submodule directory, relative to IDF_PATH
 define GenerateSubmoduleCheckTarget
 check-submodules: $(IDF_PATH)/$(1)/.git
 $(IDF_PATH)/$(1)/.git:
 	@echo "WARNING: Missing submodule $(1)..."
-	[ -d ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
+	[ -e ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
 	[ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule init $(1)' in esp-idf root directory."; exit 1)
 	@echo "Attempting 'git submodule update --init $(1)' in esp-idf root directory..."
 	cd ${IDF_PATH} && git submodule update --init $(1)
 
-# Parse 'git submodule status' output for out-of-date submodule.
-# Status output prefixes status line with '+' if the submodule commit doesn't match
-ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(1) | grep '^+')","")
+# Parse 'git status' output to check if the submodule commit is different to expected
+ifneq ("$(filter $(1),$(GIT_STATUS))","")
 $$(info WARNING: esp-idf git submodule $(1) may be out of date. Run 'git submodule update' in IDF_PATH dir to update.)
 endif
 endef

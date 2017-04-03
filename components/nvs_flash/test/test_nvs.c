@@ -6,14 +6,26 @@
 #include "unity.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-#include "esp_spi_flash.h"
+#include "esp_partition.h"
+#include "esp_log.h"
 #include <string.h>
 
+static const char* TAG = "test_nvs";
 
 TEST_CASE("various nvs tests", "[nvs]")
 {
     nvs_handle handle_1;
-    TEST_ESP_OK(nvs_flash_init());
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_LOGW(TAG, "nvs_flash_init failed (0x%x), erasing partition and retrying", err);
+        const esp_partition_t* nvs_partition = esp_partition_find_first(
+                ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+        assert(nvs_partition && "partition table must have an NVS partition");
+        ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
     TEST_ESP_ERR(nvs_open("test_namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
 
     TEST_ESP_ERR(nvs_set_i32(handle_1, "foo", 0x12345678), ESP_ERR_NVS_INVALID_HANDLE);

@@ -130,6 +130,9 @@ This will download ``esp-idf-template`` project into ``~/esp/myapp`` directory.
 
 **IMPORTANT:** The esp-idf build system does not support spaces in paths to esp-idf or to projects.
 
+You can also find a range of example projects under the "examples" directory in IDF. These example project directories can be copied to outside IDF in order to begin your own projects.
+
+
 Step 4: Building and flashing the application
 =============================================
 

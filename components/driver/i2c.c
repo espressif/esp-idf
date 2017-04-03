@@ -66,6 +66,7 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_GPIO_PULLUP_ERR_STR         "this i2c pin do not support internal pull-up"
 #define I2C_FIFO_FULL_THRESH_VAL   (28)
 #define I2C_FIFO_EMPTY_THRESH_VAL  (5)
+#define I2C_IO_INIT_LEVEL          (1)
 
 typedef struct {
     uint8_t byte_num;  /*!< cmd byte number */
@@ -626,6 +627,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_
             break;
     }
     if (sda_io_num >= 0) {
+        gpio_set_level(sda_io_num, I2C_IO_INIT_LEVEL);
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[sda_io_num], PIN_FUNC_GPIO);
         gpio_set_direction(sda_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
         if (sda_pullup_en == GPIO_PULLUP_ENABLE) {
@@ -638,6 +640,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_
     }
 
     if (scl_io_num >= 0) {
+        gpio_set_level(scl_io_num, I2C_IO_INIT_LEVEL);
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[scl_io_num], PIN_FUNC_GPIO);
         if (mode == I2C_MODE_MASTER) {
             gpio_set_direction(scl_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
@@ -862,19 +865,23 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
         I2C[i2c_num]->command[p_i2c->cmd_idx].byte_num = cmd->byte_num;
         I2C[i2c_num]->command[p_i2c->cmd_idx].op_code = cmd->op_code;
         if (cmd->op_code == I2C_CMD_WRITE) {
+            uint32_t wr_filled = 0;
             //TODO: to reduce interrupt number
             if (cmd->data) {
                 while (p_i2c->tx_fifo_remain > 0 && cmd->byte_num > 0) {
                     WRITE_PERI_REG(I2C_DATA_APB_REG(i2c_num), *cmd->data++);
                     p_i2c->tx_fifo_remain--;
                     cmd->byte_num--;
+                    wr_filled++;
                 }
             } else {
                 WRITE_PERI_REG(I2C_DATA_APB_REG(i2c_num), cmd->byte_cmd);
                 p_i2c->tx_fifo_remain--;
                 cmd->byte_num--;
+                wr_filled ++;
             }
-            I2C[i2c_num]->command[p_i2c->cmd_idx].byte_num -= cmd->byte_num;
+            //Workaround for register field operation.
+            I2C[i2c_num]->command[p_i2c->cmd_idx].byte_num = wr_filled;
             I2C[i2c_num]->command[p_i2c->cmd_idx + 1].val = 0;
             I2C[i2c_num]->command[p_i2c->cmd_idx + 1].op_code = I2C_CMD_END;
             p_i2c->tx_fifo_remain = I2C_FIFO_LEN;

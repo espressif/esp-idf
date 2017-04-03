@@ -125,7 +125,7 @@ static void query_mdns_service(mdns_server_t * mdns, const char * service, const
     }
 }
 
-static void mdns_task(void *pvParameters)
+static void mdns_example_task(void *pvParameters)
 {
     mdns_server_t * mdns = NULL;
     while(1) {
@@ -178,7 +178,7 @@ static void mdns_task(void *pvParameters)
 
 void app_main()
 {
-    nvs_flash_init();
+    ESP_ERROR_CHECK( nvs_flash_init() );
     initialise_wifi();
-    xTaskCreate(&mdns_task, "mdns_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&mdns_example_task, "mdns_example_task", 2048, NULL, 5, NULL);
 }
