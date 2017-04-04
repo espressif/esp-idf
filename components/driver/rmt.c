@@ -344,8 +344,8 @@ esp_err_t rmt_set_tx_intr_en(rmt_channel_t channel, bool en)
 esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
-    RMT_CHECK(evt_thresh < 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
     if(en) {
+        RMT_CHECK(evt_thresh < 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
         RMT.tx_lim_ch[channel].limit = evt_thresh;
         rmt_set_tx_wrap_en(channel, true);
         rmt_set_intr_enable_mask(BIT(channel + 24));
