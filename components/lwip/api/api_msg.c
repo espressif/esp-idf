@@ -128,7 +128,7 @@ recv_raw(void *arg, struct raw_pcb *pcb, struct pbuf *p,
 
       len = q->tot_len;
       if (sys_mbox_trypost(&conn->recvmbox, buf) != ERR_OK) {
-        ESP_STATS_INC(esp.rx_rawmbox_post_fail);
+        ESP_STATS_DROP_INC(esp.rx_rawmbox_post_fail);
         netbuf_delete(buf);
         return 0;
       } else {
@@ -210,7 +210,7 @@ recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p,
 
   len = p->tot_len;
   if (sys_mbox_trypost(&conn->recvmbox, buf) != ERR_OK) {
-    ESP_STATS_INC(esp.rx_udpmbox_post_fail);
+    ESP_STATS_DROP_INC(esp.rx_udpmbox_post_fail);
     netbuf_delete(buf);
     return;
   } else {
@@ -270,7 +270,7 @@ recv_tcp(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
   }
 
   if (sys_mbox_trypost(&conn->recvmbox, p) != ERR_OK) {
-    ESP_STATS_INC(esp.rx_tcpmbox_post_fail);
+    ESP_STATS_DROP_INC(esp.rx_tcpmbox_post_fail);
     /* don't deallocate p: it is presented to us later again from tcp_fasttmr! */
     return ERR_MEM;
   } else {
@@ -401,14 +401,14 @@ err_tcp(void *arg, err_t err)
   if (sys_mbox_valid(&conn->recvmbox)) {
     /* use trypost to prevent deadlock */
     if (sys_mbox_trypost(&conn->recvmbox, NULL) != ERR_OK){
-      ESP_STATS_INC(esp.err_tcp_rxmbox_post_fail);
+      ESP_STATS_DROP_INC(esp.err_tcp_rxmbox_post_fail);
     }
   }
   /* pass NULL-message to acceptmbox to wake up pending accept */
   if (sys_mbox_valid(&conn->acceptmbox)) {
     /* use trypost to preven deadlock */
     if (sys_mbox_trypost(&conn->acceptmbox, NULL) != ERR_OK) {
-      ESP_STATS_INC(esp.err_tcp_rxmbox_post_fail);
+      ESP_STATS_DROP_INC(esp.err_tcp_rxmbox_post_fail);
     }
   }
 
@@ -489,7 +489,7 @@ accept_function(void *arg, struct tcp_pcb *newpcb, err_t err)
   newconn->last_err = err;
 
   if (sys_mbox_trypost(&conn->acceptmbox, newconn) != ERR_OK) {
-    ESP_STATS_INC(esp.acceptmbox_post_fail);
+    ESP_STATS_DROP_INC(esp.acceptmbox_post_fail);
     /* When returning != ERR_OK, the pcb is aborted in tcp_process(),
        so do nothing here! */
     /* remove all references to this netconn from the pcb */
