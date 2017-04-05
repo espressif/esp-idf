@@ -79,6 +79,8 @@ extern "C" {
 #include <xtensa/config/core.h>
 #include <xtensa/config/system.h>	/* required for XSHAL_CLIB */
 #include <xtensa/xtruntime.h>
+#include "esp_crosscore_int.h"
+
 
 //#include "xtensa_context.h"
 
@@ -261,6 +263,18 @@ void vPortYield( void );
 void _frxt_setup_switch( void );
 #define portYIELD()					vPortYield()
 #define portYIELD_FROM_ISR()		_frxt_setup_switch()
+
+static inline uint32_t xPortGetCoreID();
+
+/* Yielding within an API call (when interrupts are off), means the yield should be delayed
+   until interrupts are re-enabled.
+
+   To do this, we use the "cross-core" interrupt as a trigger to yield on this core when interrupts are re-enabled.This
+   is the same interrupt & code path which is used to trigger a yield between CPUs, although in this case the yield is
+   happening on the same CPU.
+*/
+#define portYIELD_WITHIN_API() esp_crosscore_int_send_yield(xPortGetCoreID())
+
 /*-----------------------------------------------------------*/
 
 /* Task function macros as described on the FreeRTOS.org WEB site. */

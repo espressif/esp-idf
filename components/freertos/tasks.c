@@ -120,14 +120,8 @@ functions but without including stdio.h here. */
 	/* If the cooperative scheduler is being used then a yield should not be
 	performed just because a higher priority task has been woken. */
 	#define taskYIELD_IF_USING_PREEMPTION()
-	#define queueYIELD_IF_USING_PREEMPTION_MUX(mux)
 #else
 	#define taskYIELD_IF_USING_PREEMPTION() portYIELD_WITHIN_API()
-	#define taskYIELD_IF_USING_PREEMPTION_MUX(mux) { \
-					taskEXIT_CRITICAL(mux); \
-					portYIELD_WITHIN_API(); \
-					taskENTER_CRITICAL(mux); \
-					} while(0)
 #endif
 
 
@@ -1166,7 +1160,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		{
 			if( xCoreID == xPortGetCoreID() )
 			{
-				taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
+				taskYIELD_IF_USING_PREEMPTION();
 			}
 			else {
 				taskYIELD_OTHER_CORE(xCoreID, pxNewTCB->uxPriority);
@@ -1703,7 +1697,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 				if( xYieldRequired == pdTRUE )
 				{
-					taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
+					taskYIELD_IF_USING_PREEMPTION();
 				}
 				else
 				{
@@ -1895,7 +1889,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 						/* This yield may not cause the task just resumed to run,
 						but will leave the lists in the correct state for the
 						next yield. */
-						taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
+						taskYIELD_IF_USING_PREEMPTION();
 					}
 					else if( pxTCB->xCoreID != xPortGetCoreID() )
 					{
@@ -2206,7 +2200,7 @@ BaseType_t xAlreadyYielded = pdFALSE;
 						xAlreadyYielded = pdTRUE;
 					}
 					#endif
-					taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
+					taskYIELD_IF_USING_PREEMPTION();
 				}
 				else
 				{

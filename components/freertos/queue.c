@@ -123,15 +123,9 @@ zero. */
 #if( configUSE_PREEMPTION == 0 )
 	/* If the cooperative scheduler is being used then a yield should not be
 	performed just because a higher priority task has been woken. */
-	#define queueYIELD_IF_USING_PREEMPTION_MUX()
 	#define queueYIELD_IF_USING_PREEMPTION()
 #else
 	#define queueYIELD_IF_USING_PREEMPTION() portYIELD_WITHIN_API()
-	#define queueYIELD_IF_USING_PREEMPTION_MUX(mux) { \
-					taskEXIT_CRITICAL(mux); \
-					portYIELD_WITHIN_API(); \
-					taskENTER_CRITICAL(mux); \
-					} while(0)
 #endif
 
 /*
@@ -290,7 +284,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			{
 				if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToSend ) ) == pdTRUE )
 				{
-					queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+					queueYIELD_IF_USING_PREEMPTION();
 				}
 				else
 				{
@@ -753,7 +747,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 							/* The queue is a member of a queue set, and posting
 							to the queue set caused a higher priority task to
 							unblock. A context switch is required. */
-							queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+							queueYIELD_IF_USING_PREEMPTION();
 						}
 						else
 						{
@@ -772,7 +766,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 								our own so yield immediately.  Yes it is ok to
 								do this from within the critical section - the
 								kernel takes care of that. */
-								queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+								queueYIELD_IF_USING_PREEMPTION();
 							}
 							else
 							{
@@ -785,7 +779,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 							executed if the task was holding multiple mutexes
 							and the mutexes were given back in an order that is
 							different to that in which they were taken. */
-							queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+							queueYIELD_IF_USING_PREEMPTION();
 						}
 						else
 						{
@@ -805,7 +799,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 							our own so yield immediately.  Yes it is ok to do
 							this from within the critical section - the kernel
 							takes care of that. */
-							queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+							queueYIELD_IF_USING_PREEMPTION();
 						}
 						else
 						{
@@ -818,7 +812,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 						executed if the task was holding multiple mutexes and
 						the mutexes were given back in an order that is
 						different to that in which they were taken. */
-						queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+						queueYIELD_IF_USING_PREEMPTION();
 					}
 					else
 					{
@@ -1493,7 +1487,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 					{
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToSend ) ) == pdTRUE )
 						{
-							queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+							queueYIELD_IF_USING_PREEMPTION();
 						}
 						else
 						{
@@ -1522,7 +1516,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 						if( xTaskRemoveFromEventList( &( pxQueue->xTasksWaitingToReceive ) ) != pdFALSE )
 						{
 							/* The task waiting has a higher priority than this task. */
-							queueYIELD_IF_USING_PREEMPTION_MUX(&pxQueue->mux);
+							queueYIELD_IF_USING_PREEMPTION();
 						}
 						else
 						{
