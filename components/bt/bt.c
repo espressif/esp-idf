@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -39,15 +40,9 @@
 #define BTDM_CFG_CONTROLLER_RUN_APP_CPU     (1<<3)
 /* Other reserved for future */
 
-/* Controller config options, depend on config mask */
-struct btdm_config_options {
-    uint8_t hci_uart_no;
-    uint32_t hci_uart_baudrate;
-};
-
 /* not for user call, so don't put to include file */
 extern void btdm_osi_funcs_register(void *osi_funcs);
-extern void btdm_controller_init(uint32_t config_mask, struct btdm_config_options *opts);
+extern void btdm_controller_init(uint32_t config_mask, esp_bt_controller_config_t *config_opts);
 extern void btdm_controller_schedule(void);
 extern void btdm_controller_deinit(void);
 extern int btdm_controller_enable(esp_bt_mode_t mode);
@@ -94,7 +89,7 @@ struct osi_funcs_t {
 /* Static variable declare */
 static bool btdm_bb_init_flag = false;
 static esp_bt_controller_status_t btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
-
+static esp_bt_controller_config_t btdm_cfg_opts;
 static xTaskHandle btControllerTaskHandle;
 
 static portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
@@ -193,7 +188,7 @@ static uint32_t btdm_config_mask_load(void)
 #ifdef CONFIG_BT_DRAM_RELEASE
     mask |= (BTDM_CFG_BT_EM_RELEASE | BTDM_CFG_BT_DATA_RELEASE);
 #endif
-#ifdef CONFIG_HCI_UART
+#ifdef CONFIG_BT_HCI_UART
     mask |= BTDM_CFG_HCI_UART;
 #endif
 #ifdef CONFIG_BTDM_CONTROLLER_RUN_APP_CPU
@@ -202,54 +197,50 @@ static uint32_t btdm_config_mask_load(void)
     return mask;
 }
 
-static void btdm_config_opts_load(struct btdm_config_options *opts)
-{
-    if (opts == NULL) {
-        return;
-    }
-#ifdef CONFIG_HCI_UART
-    opts->hci_uart_no = CONFIG_HCI_UART_NO;
-    opts->hci_uart_baudrate = CONFIG_HCI_UART_BAUDRATE;
-#endif
-}
-
 static void bt_controller_task(void *pvParam)
 {
-    struct btdm_config_options btdm_cfg_opts;
     uint32_t btdm_cfg_mask = 0;
 
-    btdm_osi_funcs_register(&osi_funcs);
-
     btdm_cfg_mask = btdm_config_mask_load();
-    btdm_config_opts_load(&btdm_cfg_opts);
+
+    btdm_osi_funcs_register(&osi_funcs);
 
     btdm_controller_init(btdm_cfg_mask, &btdm_cfg_opts);
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
-
     /* Loop */
     btdm_controller_schedule();
 }
 
-void esp_bt_controller_init()
+esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
+    BaseType_t ret;
+
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
-        return;
+        return ESP_ERR_INVALID_STATE;
     }
 
-#ifdef CONFIG_BTDM_CONTROLLER_RUN_APP_CPU
-    xTaskCreatePinnedToCore(bt_controller_task, "btController",
+    if (cfg == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memcpy(&btdm_cfg_opts, cfg, sizeof(esp_bt_controller_config_t));
+
+    ret = xTaskCreatePinnedToCore(bt_controller_task, "btController",
                             ESP_TASK_BT_CONTROLLER_STACK, NULL,
-                            ESP_TASK_BT_CONTROLLER_PRIO, &btControllerTaskHandle, 1);
-#else
-    xTaskCreatePinnedToCore(bt_controller_task, "btController",
-                            ESP_TASK_BT_CONTROLLER_STACK, NULL,
-                            ESP_TASK_BT_CONTROLLER_PRIO, &btControllerTaskHandle, 0);
-#endif
+                            ESP_TASK_BT_CONTROLLER_PRIO, &btControllerTaskHandle, CONFIG_BTDM_CONTROLLER_RUN_CPU);
+
+    if (ret != pdPASS) {
+        memset(&btdm_cfg_opts, 0x0, sizeof(esp_bt_controller_config_t));
+        return ESP_ERR_NO_MEM;
+    }
+
+    return ESP_OK;
 }
 
 void esp_bt_controller_deinit(void)
 {
+    memset(&btdm_cfg_opts, 0x0, sizeof(esp_bt_controller_config_t));
     vTaskDelete(btControllerTaskHandle);
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 }

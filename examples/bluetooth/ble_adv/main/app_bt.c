@@ -13,10 +13,13 @@
 // limitations under the License.
 
 #include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "bt.h"
-#include <string.h>
+#include "esp_log.h"
+
+static const char *tag = "BLE_ADV";
 
 #define HCI_H4_CMD_PREAMBLE_SIZE           (4)
 
@@ -214,9 +217,15 @@ void bleAdvtTask(void *pvParameters)
 
 void app_main()
 {
-    esp_bt_controller_init();
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    
+    if (esp_bt_controller_init(&bt_cfg) != ESP_OK) {
+        ESP_LOGI(tag, "Bluetooth controller initialize failed");
+        return;
+    }
 
     if (esp_bt_controller_enable(ESP_BT_MODE_BTDM) != ESP_OK) {
+        ESP_LOGI(tag, "Bluetooth controller enable failed");
         return;
     }
 

@@ -18,9 +18,42 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/**
+ * @brief Controller config options, depend on config mask.
+ *        Config mask indicate which functions enabled, this means 
+ *        some options or parameters of some functions enabled by config mask.
+ */
+typedef struct {
+    uint8_t hci_uart_no;            /*!< If use UART1/2 as HCI IO interface, indicate UART number */
+    uint32_t hci_uart_baudrate;     /*!< If use UART1/2 as HCI IO interface, indicate UART baudrate */
+} esp_bt_controller_config_t;
+
+#ifdef CONFIG_BT_ENABLED
+
+#ifdef CONFIG_BT_HCI_UART_NO
+#define BT_HCI_UART_NO_DEFAULT CONFIG_BT_HCI_UART_NO
+#else
+#define BT_HCI_UART_NO_DEFAULT 1
+#endif /* BT_HCI_UART_NO_DEFAULT */
+
+#ifdef CONFIG_BT_HCI_UART_BAUDRATE
+#define BT_HCI_UART_BAUDRATE_DEFAULT CONFIG_BT_HCI_UART_BAUDRATE
+#else
+#define BT_HCI_UART_BAUDRATE_DEFAULT 921600
+#endif /* BT_HCI_UART_BAUDRATE_DEFAULT */
+
+#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() { \
+    .hci_uart_no = BT_HCI_UART_NO_DEFAULT,\
+    .hci_uart_baudrate = BT_HCI_UART_BAUDRATE_DEFAULT,\
+};
+#else
+#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use bt.h");
 #endif
 
 /**
@@ -45,10 +78,11 @@ typedef enum {
 
 /**
  * @brief  Initialize BT controller to allocate task and other resource.
- *
+ * @param  cfg: Initial configuration of BT controller.
  * This function should be called only once, before any other BT functions are called.
+ * @return       ESP_OK - success, other - failed
  */
-void esp_bt_controller_init(void);
+esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
 
 /**
  * @brief  De-initialize BT controller to free resource and delete task.

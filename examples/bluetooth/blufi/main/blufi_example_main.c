@@ -315,7 +315,11 @@ void app_main()
     ESP_ERROR_CHECK( nvs_flash_init() );
     initialise_wifi();
 
-    esp_bt_controller_init();
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    ret = esp_bt_controller_init(&bt_cfg);
+    if (ret) {
+        BLUFI_ERROR("%s initialize bt controller failed\n", __func__);
+    }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
     if (ret) {

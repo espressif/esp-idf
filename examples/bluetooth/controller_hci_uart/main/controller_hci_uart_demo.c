@@ -23,21 +23,30 @@ static const char *tag = "CONTROLLER_UART_HCI";
 
 static void uart_gpio_reset(void)
 {
-    ESP_LOGI(tag, "HCI UART Pin select: TX 5, RX, 18, CTS 23, RTS 19\n");
+#if CONFIG_BT_HCI_UART_NO
+    ESP_LOGI(tag, "HCI UART%d Pin select: TX 5, RX, 18, CTS 23, RTS 19", CONFIG_BT_HCI_UART_NO);
 
-#if CONFIG_HCI_UART_NO
-    uart_set_pin(CONFIG_HCI_UART_NO, 5, 18, 19, 23);
+    uart_set_pin(CONFIG_BT_HCI_UART_NO, 5, 18, 19, 23);
 #endif
 }
 
 void app_main()
 { 
+    esp_err_t ret;
+
     /* As the UART1/2 pin conflict with flash pin, so do matrix of the signal and pin */
     uart_gpio_reset();
- 
-    esp_bt_controller_init();
 
-    if (esp_bt_controller_enable(ESP_BT_MODE_BTDM) != ESP_OK) {
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    ret = esp_bt_controller_init(&bt_cfg);
+    if (ret != ESP_OK) {
+        ESP_LOGE(tag, "Bluetooth Controller initialize failed, ret %d", ret);
+        return;
+    }
+
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+    if (ret != ESP_OK) {
+        ESP_LOGE(tag, "Bluetooth Controller initialize failed, ret %d", ret);
         return;
     }
 }
