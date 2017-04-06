@@ -52,14 +52,15 @@ TEST_CASE("FreeRTOS Event Groups", "[freertos]")
     }
 
     /* Tasks all start instantly, but this task will resume running at the same time as the higher priority tasks on the
-       other processor may still be setting up, so give a tick for them to also block on BIT_CALL... */
-    vTaskDelay(1);
+       other processor may still be setting up, so allow time for them to also block on BIT_CALL... */
+    vTaskDelay(10);
 
     for (int i = 0; i < COUNT; i++) {
         /* signal all tasks with "CALL" bit... */
         xEventGroupSetBits(eg, BIT_CALL);
 
-        TEST_ASSERT_EQUAL_HEX16(ALL_RESPONSE_BITS, xEventGroupWaitBits(eg, ALL_RESPONSE_BITS, true, true, 100 / portMAX_DELAY));
+        /* Only wait for 1 tick, the wakeup should be immediate... */
+        TEST_ASSERT_EQUAL_HEX16(ALL_RESPONSE_BITS, xEventGroupWaitBits(eg, ALL_RESPONSE_BITS, true, true, 1));
     }
 
     /* Ensure all tasks cleaned up correctly */
