@@ -69,9 +69,12 @@ void IRAM_ATTR spi_flash_op_block_func(void* arg)
     uint32_t cpuid = (uint32_t) arg;
     // Disable cache so that flash operation can start
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
+    // s_flash_op_complete flag is cleared on *this* CPU, otherwise the other
+    // CPU may reset the flag back to false before IPC task has a chance to check it
+    // (if it is preempted by an ISR taking non-trivial amount of time)
+    s_flash_op_complete = false;
     s_flash_op_can_start = true;
     while (!s_flash_op_complete) {
-        // until we have a way to use interrupts for inter-CPU communication,
         // busy loop here and wait for the other CPU to finish flash operation
     }
     // Flash operation is complete, re-enable cache
@@ -105,7 +108,6 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
         // Signal to the spi_flash_op_block_task on the other CPU that we need it to
         // disable cache there and block other tasks from executing.
         s_flash_op_can_start = false;
-        s_flash_op_complete = false;
         esp_err_t ret = esp_ipc_call(other_cpuid, &spi_flash_op_block_func, (void*) other_cpuid);
         assert(ret == ESP_OK);
         while (!s_flash_op_can_start) {

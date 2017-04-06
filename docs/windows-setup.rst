@@ -56,7 +56,7 @@ You can also find a range of example projects under the "examples" directory in 
 Step 4: Configuring the project
 ===============================
 
-Open an MSYS2 terminal window by running ``C:\msys32\msys2_shell.cmd``. The environment in this window is a bash shell.
+Open an MSYS2 terminal window by running ``C:\msys32\mingw32.exe``. The environment in this window is a bash shell.
 
 Type a command like this to set the path to ESP-IDF directory: ``export IDF_PATH="C:/path/to/esp-idf"`` (note the forward-slashes not back-slashes for the path). If you don't want to run this command every time you open an MSYS2 window, create a new file in ``C:/msys32/etc/profile.d/`` and paste this line in - then it will be run each time you open an MYS2 terminal.
 

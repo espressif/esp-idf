@@ -144,8 +144,6 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
     //data_dispatcher_register_default(hci->event_dispatcher, btu_hci_msg_queue);
     hci->set_data_queue(btu_hci_msg_queue);
 
-    osi_alarm_init();
-
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
     //bte_load_ble_conf(BTE_BLE_STACK_CONF_FILE);
 #endif

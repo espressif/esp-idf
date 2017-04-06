@@ -18,6 +18,7 @@
 #include "future.h"
 #include "esp_err.h"
 #include "btc_config.h"
+#include "alarm.h"
 
 static future_t *main_future[BTC_MAIN_FUTURE_NUM];
 
@@ -51,6 +52,8 @@ void btc_init_callback(void)
 
 static void btc_init_bluetooth(void)
 {
+    osi_alarm_create_mux();
+    osi_alarm_init();
     btc_config_init();
     bte_main_boot_entry(btc_init_callback);
 }
@@ -60,6 +63,8 @@ static void btc_deinit_bluetooth(void)
 {
     bte_main_shutdown();
     btc_config_clean_up();
+    osi_alarm_deinit();
+    osi_alarm_delete_mux();
     future_ready(*btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE), FUTURE_SUCCESS);
 }
 
