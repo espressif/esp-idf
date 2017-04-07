@@ -284,10 +284,36 @@ static void disableAllWdts()
     TIMERG0.wdt_wprotect = 0;
     TIMERG1.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
     TIMERG1.wdt_config0.en = 0;
-    TIMERG0.wdt_wprotect = 0;
+    TIMERG1.wdt_wprotect = 0;
 }
 
 #endif
+
+static void esp_panic_wdt_start()
+{
+    if (REG_GET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN)) {
+        return;
+    }
+    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
+    WRITE_PERI_REG(RTC_CNTL_WDTFEED_REG, 1);
+    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_SYS_RESET_LENGTH, 7);
+    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_CPU_RESET_LENGTH, 7);
+    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_RESET_SYSTEM);
+    // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
+    // @ 115200 UART speed it will take more than 6 sec to print them out.
+    WRITE_PERI_REG(RTC_CNTL_WDTCONFIG1_REG, RTC_CNTL_SLOWCLK_FREQ*7);
+    REG_SET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN);
+    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
+}
+
+void esp_panic_wdt_stop()
+{
+    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
+    WRITE_PERI_REG(RTC_CNTL_WDTFEED_REG, 1);
+    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_OFF);
+    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN);
+    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
+}
 
 static inline bool stackPointerIsSane(uint32_t sp)
 {
@@ -343,6 +369,9 @@ static void commonErrorHandler(XtExcFrame *frame)
         "A14     ", "A15     ", "SAR     ", "EXCCAUSE", "EXCVADDR", "LBEG    ", "LEND    ", "LCOUNT  "
     };
 
+    // start panic WDT to restart system if we hang in this handler
+    esp_panic_wdt_start();
+
     //Feed the watchdogs, so they will give us time to print out debug info
     reconfigureAllWdts();
 
@@ -370,6 +399,7 @@ static void commonErrorHandler(XtExcFrame *frame)
 
 #if CONFIG_ESP32_PANIC_GDBSTUB
     disableAllWdts();
+    esp_panic_wdt_stop();
     panicPutStr("Entering gdb stub now.\r\n");
     esp_gdbstub_panic_handler(frame);
 #else
@@ -383,6 +413,7 @@ static void commonErrorHandler(XtExcFrame *frame)
 #endif
     reconfigureAllWdts();
 #endif
+    esp_panic_wdt_stop();
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
     esp_restart_noos();
