@@ -61,7 +61,10 @@ void _esp_error_check_failed(esp_err_t rc, const char *file, int line, const cha
  * Disabled if assertions are disabled.
  */
 #ifdef NDEBUG
-#define ESP_ERROR_CHECK(x) do { (x); } while (0)
+#define ESP_ERROR_CHECK(x) do {                                         \
+        esp_err_t rc = (x);                                             \
+        (void) sizeof(rc);                                              \
+    } while(0);
 #else
 #define ESP_ERROR_CHECK(x) do {                                         \
         esp_err_t rc = (x);                                             \
