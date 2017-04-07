@@ -44,23 +44,23 @@ enum {
 };
 
 #define HCI_HOST_TASK_STACK_SIZE        (2048 + BT_TASK_EXTRA_STACK_SIZE)
-#define HCI_HOST_TASK_PRIO              (configMAX_PRIORITIES - 2)
+#define HCI_HOST_TASK_PRIO              (configMAX_PRIORITIES - 3)
 #define HCI_HOST_TASK_NAME              "hciHostT"
 #define HCI_HOST_QUEUE_NUM              40
 
 #define HCI_H4_TASK_STACK_SIZE          (2048 + BT_TASK_EXTRA_STACK_SIZE)
-#define HCI_H4_TASK_PRIO                (configMAX_PRIORITIES - 3)
+#define HCI_H4_TASK_PRIO                (configMAX_PRIORITIES - 4)
 #define HCI_H4_TASK_NAME                "hciH4T"
 #define HCI_H4_QUEUE_NUM                60
 
 #define BTU_TASK_STACK_SIZE             (3584 + BT_TASK_EXTRA_STACK_SIZE)
-#define BTU_TASK_PRIO                   (configMAX_PRIORITIES - 4)
+#define BTU_TASK_PRIO                   (configMAX_PRIORITIES - 5)
 #define BTU_TASK_NAME                   "btuT"
 #define BTU_QUEUE_NUM                   50
 
 #define BTC_TASK_STACK_SIZE             (CONFIG_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
 #define BTC_TASK_NAME                   "btcT"
-#define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 5)
+#define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 6)
 #define BTC_TASK_QUEUE_NUM              20
 
 void btu_task_post(uint32_t sig);
