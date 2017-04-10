@@ -105,9 +105,8 @@ build_esp_idf_tests:
 
   script:
     - cd tools/unit-test-app
-    - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
     - make TESTS_ALL=1
-    - python UnitTestParser.py
+    - python tools/UnitTestParser.py
 
 build_examples:
   <<: *build_template
@@ -142,7 +141,6 @@ build_docs:
     paths:
       - docs/_build/html
     expire_in: 1 mos
-
 
 test_nvs_on_host:
   stage: test
@@ -294,6 +292,21 @@ check_doc_links:
       - docs/_build/linkcheck
     expire_in: 1 mos
 
+check_commit_msg:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  before_script:
+    - echo "skip update submodule"
+  script:
+    - git checkout ${CI_BUILD_REF_NAME}
+    # commit start with "WIP: " need to be squashed before merge
+    - 'git log --pretty=%s master..${CI_BUILD_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
 
 # AUTO GENERATED PART START, DO NOT MODIFY CONTENT BELOW
 # template for test jobs
@@ -380,7 +393,7 @@ check_doc_links:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     APP_NAME: "ut"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
   
   dependencies:
     - build_esp_idf_tests

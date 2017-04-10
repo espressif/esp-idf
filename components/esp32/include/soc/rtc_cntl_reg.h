@@ -1650,6 +1650,12 @@
 #define RTC_CNTL_WDT_PAUSE_IN_SLP_M  (BIT(7))
 #define RTC_CNTL_WDT_PAUSE_IN_SLP_V  0x1
 #define RTC_CNTL_WDT_PAUSE_IN_SLP_S  7
+/* RTC_CNTL_WDT_STGX : */
+/*description: stage action selection values */
+#define RTC_WDT_STG_SEL_OFF             0
+#define RTC_WDT_STG_SEL_INT             1
+#define RTC_WDT_STG_SEL_RESET_CPU       2
+#define RTC_WDT_STG_SEL_RESET_SYSTEM    3
 
 #define RTC_CNTL_WDTCONFIG1_REG          (DR_REG_RTCCNTL_BASE + 0x90)
 /* RTC_CNTL_WDT_STG0_HOLD : R/W ;bitpos:[31:0] ;default: 32'd128000 ; */

@@ -38,6 +38,9 @@ Enumerations
 Structures
 ^^^^^^^^^^
 
+.. doxygenstruct:: esp_bt_controller_config_t
+    :members:
+
 .. doxygenstruct:: esp_vhci_host_callback
     :members:
 
