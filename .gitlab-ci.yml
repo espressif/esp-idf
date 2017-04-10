@@ -143,7 +143,6 @@ build_docs:
       - docs/_build/html
     expire_in: 1 mos
 
-
 test_nvs_on_host:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
@@ -294,6 +293,21 @@ check_doc_links:
       - docs/_build/linkcheck
     expire_in: 1 mos
 
+check_commit_msg:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  before_script:
+    - echo "skip update submodule"
+  script:
+    - git checkout ${CI_BUILD_REF_NAME}
+    # commit start with "WIP: " need to be squashed before merge
+    - 'git log --pretty=%s master..${CI_BUILD_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
 
 # AUTO GENERATED PART START, DO NOT MODIFY CONTENT BELOW
 # template for test jobs
