@@ -76,7 +76,7 @@ class Parser(object):
                     if tc["test environment"] in self.test_env_tags:
                         self.test_env_tags[tc["test environment"]].append(tc["ID"])
                     else:
-                        self.test_env_tags.update({tc["test environment"]: [tc]})
+                        self.test_env_tags.update({tc["test environment"]: [tc["ID"]]})
                 test_cases.append(tc)
 
         os.remove("section_table.tmp")
