@@ -18,7 +18,11 @@
 extern "C" {
 #endif
 
+#ifndef MDNS_TEST_MODE
 #include <tcpip_adapter.h>
+#else
+#include "esp32_compat.h"
+#endif
 
 struct mdns_server_s;
 typedef struct mdns_server_s mdns_server_t;
