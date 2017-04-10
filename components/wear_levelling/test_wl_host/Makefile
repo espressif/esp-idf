@@ -20,16 +20,19 @@ INCLUDE_FLAGS = $(addprefix -I,\
 	../include \
 	../private_include \
 	../../esp32/include \
+	../../soc/esp32/include \
 	../../log/include \
 	../../spi_flash/include \
 	../../nvs_flash/test_nvs_host \
 	../../../tools/catch \
 ) 
 
+GCOV ?= gcov
+
 CPPFLAGS += $(INCLUDE_FLAGS) -D CONFIG_LOG_DEFAULT_LEVEL
 CFLAGS += -fprofile-arcs -ftest-coverage
 CXXFLAGS += -std=c++11 -Wall -Werror  -fprofile-arcs -ftest-coverage
-LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage
+LDFLAGS += -lstdc++ -fprofile-arcs -ftest-coverage
 
 OBJ_FILES = $(SOURCE_FILES:.cpp=.o)
 
@@ -38,7 +41,7 @@ COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
 $(OBJ_FILES): %.o: %.cpp
 
 $(TEST_PROGRAM): $(OBJ_FILES)
-	$(LD) $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES)
+	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES)
 
 $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)
