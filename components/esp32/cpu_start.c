@@ -227,9 +227,7 @@ void start_cpu0_default(void)
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
-#if !CONFIG_FREERTOS_UNICORE
     esp_crosscore_int_init();
-#endif
     esp_ipc_init();
     spi_flash_init();
     /* init default OS-aware flash access critical section */
