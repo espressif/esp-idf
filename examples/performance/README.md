@@ -6,30 +6,28 @@ Including TCP/UDP TX/RX throughput.
 
 # tcp_perf
 
-This example is used to test tcp throughput and delay time. First you should set options in menuconfig.
+This example is used to test tcp throughput and delay time. 
 
-Steps:
+Step1: Set options in `make menuconfig` like ssid, password, server ip and server port. And choose what the esp32 will work as.
 
-* Step1: Set a AP and a STA with same SSID & PASSWORD. You can set one esp32 as AP and another esp32 as STA, also you can use Router or wifi adaptor instead one of the them.
+* AP or STA. You can set one esp32 as AP and another esp32 as STA with same ssid & password, also you can use Router or wifi adapter instead of one of these.
 
-* Step2: Set a tcp client and a sever. Make sure the client has correct sever ip & port so they can get connected. It's okay if you creat a tcp sever & client using PC since one of the wifi device is't esp32.
+* Client or server. Make sure the client has correct server ip & port so they can get connected. It's okay if you create a tcp server & client using PC since one of the wifi device is't esp32.
 
-* Step3: Set a sender and a receiver. Set one of them sending data and the other receiving.
+* Send or receive. Set one of them sending data and the other receiving.
 
-* Step4: Save your settings and make bin file downloading to flash.
+Step2: Exit menuconfig, saving the new settings. Then build the app and flash it to the ESP32.
 
-* Step5: Start test. 
-
-Here are some things that might help you do the test easily.
+Step3: Start test. And here are some things that might help you do the test easily.
 
 * You'd better turn on the AP before the STA.
-* The tcp sever should be built before the tcp client.
-* If you use a esp32 as AP, you'd better use it as tcp sever also.
-* Once the tcp connection crashed, esp32 should be restarted to rebuild tcp connection.
+* The tcp server should be started before the tcp client.
+* If you use a esp32 as AP, you'd better use it as tcp server also.
+* Once the tcp connection crashed, esp32 should be restarted to re-establish TCP connection.
 
-After connection established, TCP sever and TCP client can send data to each other. The result of throughput will show by COM.
+Step4: View the result. After connection established, TCP server and TCP client can send data to each other. The result of throughput will be printed in the serial log.
 
-Explaining more in [main.c](./tcp_perf/main/main.c).
+See [main.c](./tcp_perf/main/main.c) for full details.
 
 # udp_perf
 
@@ -37,9 +35,9 @@ This example is similar to tcp_perf. Also the steps is similar to tcp_perf.
 
 There's a obvious difference between udp_perf and tcp perf:
 
-Before formal sending & receiving, a packet will be send from client to sever. So the sever can konw the ip&port of client. Maybe it's easily to use if you set the udp sever as receiver.
+Before formal sending & receiving, a packet will be send from client to server. So the server can know the ip&port of client. It is usually eaiser to set the UDP server as the receiver.
 
-Explaining more in [main.c](./udp_perf/main/main.c).
+See [main.c](./udp_perf/main/main.c) for full details.
 
 # More
 

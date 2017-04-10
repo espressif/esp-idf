@@ -1,8 +1,8 @@
 menu "Example Configuration"
 
 #choice 
-#   prompt "TCP_PERF_MODE "
-#	default MODE_TCP_SHIELDBOX
+#   prompt "UDP_PERF_MODE "
+#	default MODE_UDP_SHIELDBOX
 #	help
 #	    This option set performance mode.
 #	    
@@ -21,25 +21,60 @@ menu "Example Configuration"
 #    bool "Performance in long distance"
 #endchoice
 #
-config UDP_PERF_WIFI_MODE_AP
-    bool "softap mode enable"
-	default n
-	help
-	    yes:ESP32 is softap. no:ESP32 is station.
 
-config UDP_PERF_SEVER
-    bool "TCP performance sever enable"
-	default y
-	help
-	    yes:ESP32 is UDP sever. no:ESP32 is UDP client.
+choice UDP_PERF_WIFI_MODE
+    prompt "AP or STA"
+    default UDP_PERF_ESP_IS_STATION
+    help
+        Whether the esp32 is softAP or station.
+
+config UDP_PERF_ESP_IS_SOFTAP
+    bool "SoftAP"
+config UDP_PERF_ESP_IS_STATION
+    bool "Station"
+endchoice
+
+config UDP_PERF_WIFI_MODE_AP
+    bool
+    default y if UDP_PERF_ESP_IS_SOFTAP
+    default n if UDP_PERF_ESP_IS_STATION
+
+choice UDP_PERF_SERVER_CLIENT
+    prompt "server or client"
+    default UDP_PERF_ESP_IS_CLIENT
+    help
+	Whether the esp32 is tcp server or client.
 		
-	    We suggest to make this config be same with "Station mode".
+	We suggest to choose "client" if you choose "station" in "wifi mode".
+
+config UDP_PERF_ESP_IS_SERVER
+    bool "server"
+config UDP_PERF_ESP_IS_CLIENT
+    bool "client"
+endchoice
+
+config UDP_PERF_SERVER
+    bool
+    default y if UDP_PERF_ESP_IS_SERVER
+    default n if UDP_PERF_ESP_IS_CLIENT
+
+choice UDP_PERF_TX_RX
+    prompt "send or receive"
+    default UDP_PERF_ESP_RECV
+    help
+	Whether the esp32 will send or receive.
+
+config UDP_PERF_ESP_SEND
+    bool "send"
+config UDP_PERF_ESP_RECV
+    bool "receive"
+endchoice
 
 config UDP_PERF_TX
-    bool "UDP performance TX test enable"
-	default n
-	help
-	    yes:UDP TX test. no:UDP RX test.
+    bool
+    default y if UDP_PERF_ESP_SEND
+    default n if UDP_PERF_ESP_RECV
+
 
 config UDP_PERF_WIFI_SSID
     string "WiFi SSID"
@@ -53,11 +88,11 @@ config UDP_PERF_WIFI_PASSWORD
 	help
 	    WiFi password (WPA or WPA2) for the example to use.
 		
-config UDP_PERF_SEVER_PORT
-    int "UDP sever port"
+config UDP_PERF_SERVER_PORT
+    int "UDP server port"
 	default 4567
 	help 
-	    Which will the udp sever use.
+	    Which will the udp server use.
 				
 config UDP_PERF_SERVER_IP
     string "UDP server ip"
@@ -65,7 +100,7 @@ config UDP_PERF_SERVER_IP
 	help
 	    IP of UDP server.
 		
-	    Ignore in UDP sever.
+	    Ignore in UDP server.
 	
 config UDP_PERF_PKT_SIZE
     int "Size of UDP packet"

@@ -10,14 +10,15 @@ step1:
     init wifi as AP/STA using config SSID/PASSWORD.
 
 step2:
-    creat a udp sever/client socket using config PORT/(IP).
-    if sever: wating for the first message of client.
-    if client: sending a packet to sever first.
+    create a udp server/client socket using config PORT/(IP).
+    if server: wating for the first message of client.
+    if client: sending a packet to server first.
 
 step3:
     send/receive data to/from each other.
-    you can see the info in com port output.
+    you can see the info in serial output.
 */
+
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -26,9 +27,6 @@ step3:
 
 #include "udp_perf.h"
 
-int connectedflag = 0;
-int totle_data = 0;
-int success_pack = 0;
 
 //this task establish a UDP connection and receive data from UDP
 static void udp_conn(void *pvParameters)
@@ -43,20 +41,19 @@ static void udp_conn(void *pvParameters)
     ESP_LOGI(TAG, "sta has connected to ap.");
     
     /*create udp socket*/
-    int socret;
+    int socket_ret;
     
-#if ESP_UDP_MODE_SEVER
+#if ESP_UDP_MODE_SERVER
     vTaskDelay(3000 / portTICK_RATE_MS);
-    ESP_LOGI(TAG, "creat_udp_sever.");
-    socret=creat_udp_sever();
-    //vTaskDelay(1000/portTICK_RATE_MS);
-#else /*ESP_UDP_MODE_SEVER*/
+    ESP_LOGI(TAG, "create_udp_server.");
+    socket_ret=create_udp_server();
+#else /*ESP_UDP_MODE_SERVER*/
     vTaskDelay(20000 / portTICK_RATE_MS);
-    ESP_LOGI(TAG, "creat_udp_client.");
-    socret = creat_udp_client();
+    ESP_LOGI(TAG, "create_udp_client.");
+    socket_ret = create_udp_client();
 #endif
-    if(ESP_FAIL == socret) {
-	ESP_LOGI(TAG, "creat udp socket error,stop.");
+    if(ESP_FAIL == socket_ret) {
+	ESP_LOGI(TAG, "create udp socket error,stop.");
 	vTaskDelete(NULL);
     }
     
@@ -66,14 +63,14 @@ static void udp_conn(void *pvParameters)
 
     int pps;
     while (1) {
-	totle_data = 0;
+	total_data = 0;
 	vTaskDelay(3000 / portTICK_RATE_MS);//every 3s
-	pps = totle_data / 3;
+	pps = total_data / 3;
 
 #if ESP_UDP_PERF_TX
-	ESP_LOGI(TAG, "udp send %d byte per sec! totle pack: %d \n", pps, success_pack);
+	ESP_LOGI(TAG, "udp send %d byte per sec! total pack: %d \n", pps, success_pack);
 #else
-	ESP_LOGI(TAG, "udp recv %d byte per sec! totle pack: %d \n", pps, success_pack);
+	ESP_LOGI(TAG, "udp recv %d byte per sec! total pack: %d \n", pps, success_pack);
 #endif /*ESP_UDP_PERF_TX*/
     }
     close_socket();

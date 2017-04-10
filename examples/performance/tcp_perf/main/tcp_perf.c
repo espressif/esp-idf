@@ -1,4 +1,16 @@
-
+// Copyright 2013-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <string.h>
 #include <sys/socket.h>
@@ -12,11 +24,24 @@
 #include "tcp_perf.h"
 
 /*socket*/
-static int sever_socket = 0;
-static struct sockaddr_in sever_addr;
+static int server_socket = 0;
+static struct sockaddr_in server_addr;
 static struct sockaddr_in client_addr;
 static unsigned int socklen = sizeof(client_addr);
-static int connect_soc = 0;
+static int connect_socket = 0;
+
+int connectedflag = 0;
+int total_data = 0;
+
+#if ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO
+
+int total_pack = 0;
+int send_success = 0;
+int send_fail = 0;
+int delay_classify[5] = { 0 };
+
+#endif /*ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO*/
+
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -70,25 +95,23 @@ void send_data(void *pvParameters)
     while(1) {
 
 #if ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO
-    	//vTaskDelay(1000/portTICK_RATE_MS);
-    	totle_pack++;
+    	total_pack++;
     	gettimeofday(&tv_start, NULL);
 #endif /*ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO*/
     	
 	//send function
-    	len = send(connect_soc, databuff, DEFAULT_PKTSIZE, 0);
+    	len = send(connect_socket, databuff, DEFAULT_PKTSIZE, 0);
 
 #if ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO
     	gettimeofday(&tv_finish, NULL);
 #endif /*ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO*/
 	if(len > 0) {
-	    totle_data += len;
+	    total_data += len;
 	    
 #if ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO
 	    send_success++;
 	    send_delay_ms = (tv_finish.tv_sec - tv_start.tv_sec) * 1000
 		+ (tv_finish.tv_usec - tv_start.tv_usec) / 1000;
-	    //ESP_LOGI(TAG, "send_delay_ms=%ld",send_delay_ms);
 	    if(send_delay_ms < 30)
 		delay_classify[0]++;
 	    else if(send_delay_ms < 100)
@@ -108,10 +131,11 @@ void send_data(void *pvParameters)
 	    send_fail++;
 #endif /*ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO*/
 	    
-	    /*for faster sending,don't show error code
-	     *if it can't work as expectations,unnote the two lines here
+	    /*Most of the error code will be send window full.
+         *So, for faster sending,don't show error code.
+	     *if it can't work as expectations,unnote the two lines here.
 	     **/
-	    //perror("data_count error");
+	    //show_socket_error_code(connect_socket);
 	    //vTaskDelay(500/portTICK_RATE_MS);
 	}
     } 
@@ -122,48 +146,44 @@ void recv_data(void *pvParameters)
     int len = 0;
     char databuff[DEFAULT_PKTSIZE];
     while (1) {
-	len = recv(connect_soc, databuff, DEFAULT_PKTSIZE, 0);
+	len = recv(connect_socket, databuff, DEFAULT_PKTSIZE, 0);
 	if (len > 0) {
-	    totle_data += len;
+	    total_data += len;
 	}
 	else {
-	    show_socket_error_code(connect_soc);
+	    show_socket_error_code(connect_socket);
 	    vTaskDelay(500 / portTICK_RATE_MS);
 	}
     }
 }
 
 
-//use this esp32 as a tcp sever. return ESP_OK:success ESP_FAIL:error
-int creat_tcp_sever()
+//use this esp32 as a tcp server. return ESP_OK:success ESP_FAIL:error
+esp_err_t create_tcp_server()
 {
-    ESP_LOGI(TAG, "sever socket....port=%d\n", DEFAULT_PORT);
-    sever_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (sever_socket < 0) {
-    	show_socket_error_code(sever_socket);
-	//perror("socket() error:");
+    ESP_LOGI(TAG, "server socket....port=%d\n", DEFAULT_PORT);
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket < 0) {
+    	show_socket_error_code(server_socket);
 	return ESP_FAIL;
     }
-    sever_addr.sin_family = AF_INET;
-    sever_addr.sin_port = htons(DEFAULT_PORT);
-    sever_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bind(sever_socket, (struct sockaddr*)&sever_addr, sizeof(sever_addr)) < 0) {
-    	show_socket_error_code(sever_socket);
-	//perror("bind() error");
-	close(sever_socket);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(DEFAULT_PORT);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    	show_socket_error_code(server_socket);
+	close(server_socket);
 	return ESP_FAIL;
     }
-    if (listen(sever_socket, 5) < 0) {
-    	show_socket_error_code(sever_socket);
-	//perror("listen() error");
-	close(sever_socket);
+    if (listen(server_socket, 5) < 0) {
+    	show_socket_error_code(server_socket);
+	close(server_socket);
 	return ESP_FAIL;
     }
-    connect_soc = accept(sever_socket, (struct sockaddr*)&client_addr, &socklen);
-    if (connect_soc<0) {
-    	show_socket_error_code(connect_soc);
-	//perror("accept() error");
-	close(sever_socket);
+    connect_socket = accept(server_socket, (struct sockaddr*)&client_addr, &socklen);
+    if (connect_socket<0) {
+    	show_socket_error_code(connect_socket);
+	close(server_socket);
 	return ESP_FAIL;
     }
     /*connection established，now can send/recv*/
@@ -171,26 +191,24 @@ int creat_tcp_sever()
     return ESP_OK;
 }
 //use this esp32 as a tcp client. return ESP_OK:success ESP_FAIL:error
-int creat_tcp_client()
+esp_err_t create_tcp_client()
 {
-    ESP_LOGI(TAG, "client socket....severip:port=%s:%d\n", 
-    		DEFAULT_SEVER_IP, DEFAULT_PORT);
-    connect_soc = socket(AF_INET, SOCK_STREAM, 0);
-    if (connect_soc < 0) {
-    	show_socket_error_code(connect_soc);
-	//perror("socket failed!");
+    ESP_LOGI(TAG, "client socket....serverip:port=%s:%d\n", 
+    		DEFAULT_SERVER_IP, DEFAULT_PORT);
+    connect_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (connect_socket < 0) {
+    	show_socket_error_code(connect_socket);
 	return ESP_FAIL;
     }
-    sever_addr.sin_family = AF_INET;
-    sever_addr.sin_port = htons(DEFAULT_PORT);
-    sever_addr.sin_addr.s_addr = inet_addr(DEFAULT_SEVER_IP);
-    ESP_LOGI(TAG, "connecting to sever...");
-    if (connect(connect_soc, (struct sockaddr *)&sever_addr, sizeof(sever_addr)) < 0) {
-    	show_socket_error_code(connect_soc);
-	//perror("connect to sever error!");
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(DEFAULT_PORT);
+    server_addr.sin_addr.s_addr = inet_addr(DEFAULT_SERVER_IP);
+    ESP_LOGI(TAG, "connecting to server...");
+    if (connect(connect_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    	show_socket_error_code(connect_socket);
 	return ESP_FAIL;
     }
-    ESP_LOGI(TAG, "connect to sever success!");
+    ESP_LOGI(TAG, "connect to server success!");
     return ESP_OK;
 }
 
@@ -251,72 +269,71 @@ void wifi_init_softap()
 
 char* tcpip_get_reason(int err)
 {
-	switch (err) {
+    switch (err) {
 	case 0:
-		return "reason: other reason";
+	    return "reason: other reason";
 	case ENOMEM:
-		return "reason: out of memory";
+	    return "reason: out of memory";
 	case ENOBUFS:
-		return "reason: buffer error";
+	    return "reason: buffer error";
 	case EWOULDBLOCK:
-		return "reason: timeout, try again";
+	    return "reason: timeout, try again";
 	case EHOSTUNREACH:
-		return "reason: routing problem";
+	    return "reason: routing problem";
 	case EINPROGRESS:
-		return "reason: operation in progress";
+	    return "reason: operation in progress";
 	case EINVAL:
-		return "reason: invalid value";
+	    return "reason: invalid value";
 	case EADDRINUSE:
-		return "reason: address in use";
+	    return "reason: address in use";
 	case EALREADY:
-		return "reason: conn already connected";
+	    return "reason: conn already connected";
 	case EISCONN:
-		return "reason: conn already established";
+	    return "reason: conn already established";
 	case ECONNABORTED:
-		return "reason: connection aborted";
+	    return "reason: connection aborted";
 	case ECONNRESET:
-		return "reason: connection is reset";
+	    return "reason: connection is reset";
 	case ENOTCONN:
-		return "reason: connection closed";
+	    return "reason: connection closed";
 	case EIO:
-		return "reason: invalid argument";
+	    return "reason: invalid argument";
 	case -1:
-		return "reason: low level netif error";
+	    return "reason: low level netif error";
 	default:
-		return "reason not found";
-	}
+	    return "reason not found";
+    }
 }
 
-int show_socket_error_code(int soc)
+int show_socket_error_code(int socket)
 {
-	int result;
+    int result;
     u32_t optlen = sizeof(int);
-    getsockopt(soc, SOL_SOCKET, SO_ERROR, &result, &optlen);
-    ESP_LOGI(TAG, "soc error %d reason: %s", result, tcpip_get_reason(result));
+    getsockopt(socket, SOL_SOCKET, SO_ERROR, &result, &optlen);
+    ESP_LOGI(TAG, "socket error %d reason: %s", result, tcpip_get_reason(result));
     return result;
 }
 
 int check_socket_error_code()
 {
-	int ret;
-#if ESP_TCP_MODE_SEVER
-	ESP_LOGI(TAG, "check sever_socket sever_socket");
-	ret = show_socket_error_code(sever_socket);
-	if(ret == ECONNRESET)
-		return ret;
+    int ret;
+#if ESP_TCP_MODE_SERVER
+    ESP_LOGI(TAG, "check server_socket");
+    ret = show_socket_error_code(server_socket);
+    if(ret == ECONNRESET)
+	return ret;
 #endif
-	ESP_LOGI(TAG, "check sever_socket connect_soc");
-	ret = show_socket_error_code(connect_soc);
-	if(ret == ECONNRESET)
-		return ret;
-	return 0;
+    ESP_LOGI(TAG, "check connect_socket");
+    ret = show_socket_error_code(connect_socket);
+    if(ret == ECONNRESET)
+	return ret;
+    return 0;
 }
 
 void close_socket()
 {
-    close(connect_soc);
-    close(sever_socket);
+    close(connect_socket);
+    close(server_socket);
 }
-
 
 

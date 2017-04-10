@@ -1,3 +1,16 @@
+// Copyright 2013-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <string.h>
 #include <sys/socket.h>
@@ -16,6 +29,10 @@ static int mysocket;
 
 static struct sockaddr_in remote_addr;
 static unsigned int socklen;
+
+int connectedflag = 0;
+int total_data = 0;
+int success_pack = 0;
 
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
@@ -105,40 +122,40 @@ void wifi_init_softap()
     	    DEFAULT_SSID, DEFAULT_PWD);
 }
 
-//creat a udp sever socket. return ESP_OK:success ESP_FAIL:error
-int creat_udp_sever()
+//create a udp server socket. return ESP_OK:success ESP_FAIL:error
+esp_err_t create_udp_server()
 {
-    ESP_LOGI(TAG, "creat_udp_sever()");
+    ESP_LOGI(TAG, "create_udp_server()");
     mysocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (mysocket < 0) {
-	perror("socket failed:");
+	show_socket_error_code(mysocket);
 	return ESP_FAIL;
     }
-    struct sockaddr_in sever_addr;
-    sever_addr.sin_family = AF_INET;
-    sever_addr.sin_port = htons(DEFAULT_PORT);
-    sever_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bind(mysocket, (struct sockaddr *)&sever_addr, sizeof(sever_addr)) < 0) {
-	perror("bind local port error:");
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(DEFAULT_PORT);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(mysocket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+	show_socket_error_code(mysocket);
 	close(mysocket);
 	return ESP_FAIL;
     }
     return ESP_OK;
 }
 
-//creat a udp client socket. return ESP_OK:success ESP_FAIL:error
-int creat_udp_client()
+//create a udp client socket. return ESP_OK:success ESP_FAIL:error
+esp_err_t create_udp_client()
 {
-    ESP_LOGI(TAG, "creat_udp_client()");
+    ESP_LOGI(TAG, "create_udp_client()");
     mysocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (mysocket < 0) {
-	perror("socket failed:");
+	show_socket_error_code(mysocket);
 	return ESP_FAIL;
     }
-    /*for client remote_addr is also sever_addr*/
+    /*for client remote_addr is also server_addr*/
     remote_addr.sin_family = AF_INET;
     remote_addr.sin_port = htons(DEFAULT_PORT);
-    remote_addr.sin_addr.s_addr = inet_addr(DEFAULT_SEVER_IP);
+    remote_addr.sin_addr.s_addr = inet_addr(DEFAULT_SERVER_IP);
 
     return ESP_OK;
 }
@@ -155,7 +172,7 @@ void send_recv_data(void *pvParameters)
     /*send&receive first packet*/
     socklen = sizeof(remote_addr);
     memset(databuff, PACK_BYTE_IS, DEFAULT_PKTSIZE);
-#if ESP_UDP_MODE_SEVER
+#if ESP_UDP_MODE_SERVER
     ESP_LOGI(TAG, "first recvfrom:");
     len = recvfrom(mysocket, databuff, DEFAULT_PKTSIZE, 0, (struct sockaddr *)&remote_addr, &socklen);
 #else
@@ -167,7 +184,7 @@ void send_recv_data(void *pvParameters)
 	ESP_LOGI(TAG, "transfer data with %s:%u\n",
 		inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
     } else {
-	perror("first recv&send error:");
+	show_socket_error_code(mysocket);
 	close(mysocket);
 	vTaskDelete(NULL);
     }
@@ -185,19 +202,65 @@ void send_recv_data(void *pvParameters)
 #else
 	len = recvfrom(mysocket, databuff, DEFAULT_PKTSIZE, 0, (struct sockaddr *)&remote_addr, &socklen);
 #endif
-	//printf("%d\n",len);
-	//vTaskDelay(100/portTICK_RATE_MS);
 	if (len > 0) {
-	    totle_data += len;
+	    total_data += len;
 	    success_pack++;
 	} else {
-	    //perror("data_count:\n");
+	    //show_socket_error_code(mysocket);
 	    /*you'd better turn off watch dog in menuconfig
 	     *Component config->ESP32-specific->Task watchdog.
 	     **/
 	    //vTaskDelay(1/portTICK_RATE_MS);
 	}
     }
+}
+
+
+char* tcpip_get_reason(int err)
+{
+    switch (err) {
+    case 0:
+        return "reason: other reason";
+    case ENOMEM:
+        return "reason: out of memory";
+    case ENOBUFS:
+        return "reason: buffer error";
+    case EWOULDBLOCK:
+        return "reason: timeout, try again";
+    case EHOSTUNREACH:
+        return "reason: routing problem";
+    case EINPROGRESS:
+        return "reason: operation in progress";
+    case EINVAL:
+        return "reason: invalid value";
+    case EADDRINUSE:
+        return "reason: address in use";
+    case EALREADY:
+        return "reason: conn already connected";
+    case EISCONN:
+        return "reason: conn already established";
+    case ECONNABORTED:
+        return "reason: connection aborted";
+    case ECONNRESET:
+        return "reason: connection is reset";
+    case ENOTCONN:
+        return "reason: connection closed";
+    case EIO:
+        return "reason: invalid argument";
+    case -1:
+        return "reason: low level netif error";
+    default:
+        return "reason not found";
+    }
+}
+
+int show_socket_error_code(int socket)
+{
+    int result;
+    u32_t optlen = sizeof(int);
+    getsockopt(socket, SOL_SOCKET, SO_ERROR, &result, &optlen);
+    ESP_LOGI(TAG, "socket error %d reason: %s", result, tcpip_get_reason(result));
+    return result;
 }
 
 

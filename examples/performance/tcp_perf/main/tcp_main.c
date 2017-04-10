@@ -10,13 +10,13 @@ step1:
     init wifi as AP/STA using config SSID/PASSWORD.
 
 step2:
-    creat a tcp sever/client socket using config PORT/(IP).
-    if sever: wating for connect.
-    if client connect to sever.
+    create a tcp server/client socket using config PORT/(IP).
+    if server: wating for connect.
+    if client connect to server.
 step3:
     send/receive data to/from each other.
     if the tcp connect established. esp will send or receive data.
-    you can see the info in com port output.
+    you can see the info in serial output.
 */
 
 #include <errno.h>
@@ -27,17 +27,7 @@ step3:
 
 #include "tcp_perf.h"
 
-int connectedflag = 0;
-int totle_data = 0;
 
-#if ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO
-
-int totle_pack = 0;
-int send_success = 0;
-int send_fail = 0;
-int delay_classify[5] = { 0 };
-
-#endif /*ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO*/
 
 //this task establish a TCP connection and receive data from TCP
 static void tcp_conn(void *pvParameters)
@@ -52,19 +42,19 @@ static void tcp_conn(void *pvParameters)
     ESP_LOGI(TAG, "sta has connected to ap.");
     
     /*create tcp socket*/
-    int socret;
+    int socket_ret;
     
-#if ESP_TCP_MODE_SEVER
+#if ESP_TCP_MODE_SERVER
     vTaskDelay(3000 / portTICK_RATE_MS);
-    ESP_LOGI(TAG, "creat_tcp_sever.");
-    socret=creat_tcp_sever();
-#else /*ESP_TCP_MODE_SEVER*/
+    ESP_LOGI(TAG, "create_tcp_server.");
+    socket_ret=create_tcp_server();
+#else /*ESP_TCP_MODE_SERVER*/
     vTaskDelay(20000 / portTICK_RATE_MS);
-    ESP_LOGI(TAG, "creat_tcp_client.");
-    socret = creat_tcp_client();
+    ESP_LOGI(TAG, "create_tcp_client.");
+    socket_ret = create_tcp_client();
 #endif
-    if(ESP_FAIL == socret) {
-	ESP_LOGI(TAG, "creat tcp socket error,stop.");
+    if(ESP_FAIL == socket_ret) {
+	ESP_LOGI(TAG, "create tcp socket error,stop.");
 	vTaskDelete(NULL);
     }
     
@@ -77,10 +67,10 @@ static void tcp_conn(void *pvParameters)
 #endif
     int pps;
     while (1) {
-	totle_data = 0;
+	total_data = 0;
 	vTaskDelay(3000 / portTICK_RATE_MS);//every 3s
-	pps = totle_data / 3;
-	if (totle_data <= 0) {
+	pps = total_data / 3;
+	if (total_data <= 0) {
 	    int err_ret = check_socket_error_code();
 	    if (err_ret == ECONNRESET) {
 		ESP_LOGI(TAG, "disconnected... stop.");
@@ -91,9 +81,9 @@ static void tcp_conn(void *pvParameters)
 #if ESP_TCP_PERF_TX
 	ESP_LOGI(TAG, "tcp send %d byte per sec!", pps);
 #if ESP_TCP_DELAY_INFO
-	ESP_LOGI(TAG, "tcp send packet totle:%d  succeed:%d  failed:%d\n"
+	ESP_LOGI(TAG, "tcp send packet total:%d  succeed:%d  failed:%d\n"
 		"time(ms):0-30:%d 30-100:%d 100-300:%d 300-1000:%d 1000+:%d\n",
-		totle_pack, send_success, send_fail, delay_classify[0],
+		total_pack, send_success, send_fail, delay_classify[0],
 		delay_classify[1], delay_classify[2], delay_classify[3], delay_classify[4]);
 #endif /*ESP_TCP_DELAY_INFO*/
 #else
