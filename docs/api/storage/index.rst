@@ -9,6 +9,7 @@ Storage API
    Non-Volatile Storage <nvs_flash>
    Virtual Filesystem <vfs>
    FAT Filesystem <fatfs>
+   Wear Levelling <wear-levelling>
 
 
 Example code for this API section is provided in :example:`storage` directory of ESP-IDF examples.
