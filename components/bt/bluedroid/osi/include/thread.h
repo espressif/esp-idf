@@ -61,7 +61,7 @@ enum {
 #define BTC_TASK_STACK_SIZE             (CONFIG_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
 #define BTC_TASK_NAME                   "btcT"
 #define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 6)
-#define BTC_TASK_QUEUE_NUM              20
+#define BTC_TASK_QUEUE_NUM              60
 
 void btu_task_post(uint32_t sig);
 void hci_host_task_post(void);

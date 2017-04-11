@@ -1003,6 +1003,8 @@ typedef struct {
     tBTM_BLE_EVT_TYPE   ble_evt_type;
     tBT_DEVICE_TYPE     device_type;
     UINT8               flag;
+    UINT8               adv_data_len;
+    UINT8               scan_rsp_len;
 #endif
 
 } tBTA_DM_INQ_RES;

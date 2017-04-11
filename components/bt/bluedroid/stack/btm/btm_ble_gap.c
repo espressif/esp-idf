@@ -1080,7 +1080,7 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
         btm_ble_set_topology_mask(BTM_BLE_STATE_HI_DUTY_DIR_ADV_BIT);
     }else if(adv_type == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT){
         btm_ble_set_topology_mask(BTM_BLE_STATE_LO_DUTY_DIR_ADV_BIT);
-    }else if(adv_type == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT){
+    }else if(adv_type == BTM_BLE_NON_CONNECT_EVT){
         btm_ble_set_topology_mask(BTM_BLE_STATE_NON_CONN_ADV_BIT);
     }
 
@@ -2367,12 +2367,13 @@ void btm_ble_cache_adv_data(tBTM_INQ_RESULTS *p_cur, UINT8 data_len, UINT8 *p, U
     tBTM_BLE_INQ_CB     *p_le_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
     UINT8 *p_cache;
     UINT8 length;
-    UNUSED(p_cur);
 
     /* cache adv report/scan response data */
     if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
         p_le_inq_cb->adv_len = 0;
         memset(p_le_inq_cb->adv_data_cache, 0, BTM_BLE_CACHE_ADV_DATA_MAX);
+        p_cur->adv_data_len = 0;
+        p_cur->scan_rsp_len = 0;
     }
 
     if (data_len > 0) {
@@ -2389,6 +2390,13 @@ void btm_ble_cache_adv_data(tBTM_INQ_RESULTS *p_cur, UINT8 data_len, UINT8 *p, U
             p += length;
             STREAM_TO_UINT8(length, p);
         }
+    }
+
+    if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
+        p_cur->adv_data_len = p_le_inq_cb->adv_len;
+    }
+    else {
+        p_cur->scan_rsp_len = p_le_inq_cb->adv_len - p_cur->adv_data_len;
     }
 
     /* parse service UUID from adv packet and save it in inq db eir_uuid */

@@ -476,6 +476,9 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
         param.scan_rst.ble_addr_type = p_data->inq_res.ble_addr_type;
 		param.scan_rst.ble_evt_type = p_data->inq_res.ble_evt_type;
         param.scan_rst.flag = p_data->inq_res.flag;
+        param.scan_rst.num_resps = 1;
+        param.scan_rst.adv_data_len = p_data->inq_res.adv_data_len;
+        param.scan_rst.scan_rsp_len = p_data->inq_res.scan_rsp_len;
         memcpy(param.scan_rst.ble_adv, p_data->inq_res.p_eir, sizeof(param.scan_rst.ble_adv));
         break;
     }
@@ -530,7 +533,7 @@ static void btc_ble_start_scanning(uint8_t duration,
                                    tBTA_DM_SEARCH_CBACK *results_cb,
                                    tBTA_START_SCAN_CMPL_CBACK *start_scan_cb)
 {
-    if ((duration != 0) && (results_cb != NULL) && (start_scan_cb != NULL)) {
+    if ((results_cb != NULL) && (start_scan_cb != NULL)) {
         ///Start scan the device
         BTA_DmBleObserve(true, duration, results_cb, start_scan_cb);
     } else {

@@ -273,6 +273,8 @@ typedef union {
         uint8_t  ble_adv[ESP_BLE_ADV_DATA_LEN_MAX + ESP_BLE_SCAN_RSP_DATA_LEN_MAX];     /*!< Received EIR */
         int flag;                                   /*!< Advertising data flag bit */
         int num_resps;                              /*!< Scan result number */
+        uint8_t adv_data_len;                       /*!< Adv data length */
+        uint8_t scan_rsp_len;                       /*!< Scan response length */
     } scan_rst;                                     /*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
     /**
      * @brief ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT
