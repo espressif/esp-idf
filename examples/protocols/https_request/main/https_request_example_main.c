@@ -71,10 +71,10 @@ const int CONNECTED_BIT = BIT0;
 
 static const char *TAG = "example";
 
-static const char *REQUEST = "GET " WEB_URL " HTTP/1.1\n"
-    "Host: "WEB_SERVER"\n"
-    "User-Agent: esp-idf/1.0 esp32\n"
-    "\n";
+static const char *REQUEST = "GET " WEB_URL " HTTP/1.0\r\n"
+    "Host: "WEB_SERVER"\r\n"
+    "User-Agent: esp-idf/1.0 esp32\r\n"
+    "\r\n";
 
 /* Root cert for howsmyssl.com, taken from server_root_cert.pem
 
