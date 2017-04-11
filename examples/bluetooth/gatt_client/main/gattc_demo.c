@@ -308,6 +308,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             for (int i = 0; i < 6; i++) {
                 ESP_LOGI(GATTC_TAG, "%x:", scan_result->scan_rst.bda[i]);
             }
+            ESP_LOGI(GATTC_TAG, "Searched Adv Data Len %d, Scan Response Len %d\n", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
             ESP_LOGI(GATTC_TAG, "\n");
             adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv,
                                                 ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
