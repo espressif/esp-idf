@@ -1,9 +1,9 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_BB_REG_H_
-#define _SOC_BB_REG_H_
+#pragma once
 
-/* Some of the baseband control registers.
+#include "soc/soc.h"
+
+/* Some of the RF frontend control registers.
  * PU/PD fields defined here are used in sleep related functions.
  */
 
-#define BBPD_CTRL (DR_REG_BB_BASE + 0x0054)
-#define BB_FFT_FORCE_PU (BIT(3))
-#define BB_FFT_FORCE_PU_S 3
-#define BB_FFT_FORCE_PD (BIT(2))
-#define BB_FFT_FORCE_PD_S 2
-#define BB_DC_EST_FORCE_PU (BIT(1))
-#define BB_DC_EST_FORCE_PU_S 1
-#define BB_DC_EST_FORCE_PD (BIT(0))
-#define BB_DC_EST_FORCE_PD_S 0
+#define FE_GEN_CTRL (DR_REG_FE_BASE + 0x0090)
+#define FE_IQ_EST_FORCE_PU (BIT(5))
+#define FE_IQ_EST_FORCE_PU_S 5
+#define FE_IQ_EST_FORCE_PD (BIT(4))
+#define FE_IQ_EST_FORCE_PD_S 4
 
-
-#endif /* _SOC_BB_REG_H_ */
-
+#define FE2_TX_INTERP_CTRL (DR_REG_FE2_BASE + 0x00f0)
+#define FE2_TX_INF_FORCE_PU (BIT(10))
+#define FE2_TX_INF_FORCE_PU_S 10
+#define FE2_TX_INF_FORCE_PD (BIT(9))
+#define FE2_TX_INF_FORCE_PD_S 9

@@ -21,6 +21,7 @@
 
 #include "rom/ets_sys.h"
 #include "rom/rtc.h"
+#include "soc/rtc.h"
 #include "soc/dport_reg.h"
 
 #include "esp_err.h"
@@ -34,7 +35,6 @@
 #ifdef CONFIG_PHY_ENABLED
 #include "phy.h"
 #include "phy_init_data.h"
-#include "rtc.h"
 #include "esp_coexist.h"
 
 static const char* TAG = "phy_init";

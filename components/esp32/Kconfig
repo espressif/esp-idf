@@ -2,7 +2,7 @@ menu "ESP32-specific"
 
 choice ESP32_DEFAULT_CPU_FREQ_MHZ
     prompt "CPU frequency"
-    default ESP32_DEFAULT_CPU_FREQ_240
+    default ESP32_DEFAULT_CPU_FREQ_160
     help
         CPU frequency to be set on application startup.
 
@@ -467,14 +467,11 @@ choice ESP32_RTC_CLOCK_SOURCE
     default ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
     help
         Choose which clock is used as RTC clock source.
-        The only available option for now is to use internal
-        150kHz RC oscillator.
 
 config ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
-    bool "Internal RC"
+    bool "Internal 150kHz RC oscillator"
 config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
     bool "External 32kHz crystal"
-    depends on DOCUMENTATION_FOR_RTC_CNTL
 endchoice
 
 config ESP32_DEEP_SLEEP_WAKEUP_DELAY

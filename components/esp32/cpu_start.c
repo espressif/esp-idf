@@ -23,6 +23,7 @@
 #include "rom/cache.h"
 
 #include "soc/cpu.h"
+#include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc_cntl_reg.h"
@@ -201,7 +202,7 @@ void start_cpu0_default(void)
 #endif
     esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
 #ifndef CONFIG_CONSOLE_UART_NONE
-    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (APB_CLK_FREQ << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (rtc_clk_apb_freq_get() << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
 #endif
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();

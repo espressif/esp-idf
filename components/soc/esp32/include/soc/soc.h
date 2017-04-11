@@ -179,6 +179,8 @@
 #define DR_REG_LEDC_BASE                        0x3ff59000
 #define DR_REG_EFUSE_BASE                       0x3ff5A000
 #define DR_REG_SPI_ENCRYPT_BASE                 0x3ff5B000
+#define DR_REG_NRX_BASE                         0x3ff5CC00
+#define DR_REG_BB_BASE                          0x3ff5D000
 #define DR_REG_PWM_BASE                         0x3ff5E000
 #define DR_REG_TIMERGROUP0_BASE                 0x3ff5F000
 #define DR_REG_TIMERGROUP1_BASE                 0x3ff60000

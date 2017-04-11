@@ -511,6 +511,8 @@
 #define RTC_IO_DEBUG_SEL0_M  ((RTC_IO_DEBUG_SEL0_V)<<(RTC_IO_DEBUG_SEL0_S))
 #define RTC_IO_DEBUG_SEL0_V  0x1F
 #define RTC_IO_DEBUG_SEL0_S  0
+#define RTC_IO_DEBUG_SEL0_32K_XTAL 4
+#define RTC_IO_DEBUG_SEL0_150K_OSC 5
 
 #define RTC_IO_DIG_PAD_HOLD_REG          (DR_REG_RTCIO_BASE + 0x74)
 /* RTC_IO_DIG_PAD_HOLD : R/W ;bitpos:[31:0] ;default: 1'd0 ; */
