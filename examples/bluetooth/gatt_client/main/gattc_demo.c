@@ -317,7 +317,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             }
 
             if (adv_name != NULL) {
-                if (strcmp((char *)adv_name, device_name) == 0) {
+                if (strncmp((char *)adv_name, device_name, adv_name_len) == 0) {
                     ESP_LOGI(GATTC_TAG, "Searched device %s\n", device_name);
                     if (connect == false) {
                         connect = true;
