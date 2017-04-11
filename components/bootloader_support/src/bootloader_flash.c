@@ -127,14 +127,14 @@ void bootloader_munmap(const void *mapping)
     }
 }
 
-static esp_err_t spi_to_esp_err(SpiFlashOpResult r)
+static esp_err_t spi_to_esp_err(esp_rom_spiflash_result_t r)
 {
     switch(r) {
-    case SPI_FLASH_RESULT_OK:
+    case ESP_ROM_SPIFLASH_RESULT_OK:
         return ESP_OK;
-    case SPI_FLASH_RESULT_ERR:
+    case ESP_ROM_SPIFLASH_RESULT_ERR:
         return ESP_ERR_FLASH_OP_FAIL;
-    case SPI_FLASH_RESULT_TIMEOUT:
+    case ESP_ROM_SPIFLASH_RESULT_TIMEOUT:
         return ESP_ERR_FLASH_OP_TIMEOUT;
     default:
         return ESP_FAIL;
@@ -145,7 +145,7 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
 {
     Cache_Read_Disable(0);
     Cache_Flush(0);
-    SpiFlashOpResult r = SPIRead(src_addr, dest, size);
+    esp_rom_spiflash_result_t r = esp_rom_spiflash_read(src_addr, dest, size);
     Cache_Read_Enable(0);
 
     return spi_to_esp_err(r);
@@ -221,21 +221,21 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
         return ESP_FAIL;
     }
 
-    err = spi_to_esp_err(SPIUnlock());
+    err = spi_to_esp_err(esp_rom_spiflash_unlock());
     if (err != ESP_OK) {
         return err;
     }
 
     if (write_encrypted) {
-        return spi_to_esp_err(SPI_Encrypt_Write(dest_addr, src, size));
+        return spi_to_esp_err(esp_rom_spiflash_write_encrypted(dest_addr, src, size));
     } else {
-        return spi_to_esp_err(SPIWrite(dest_addr, src, size));
+        return spi_to_esp_err(esp_rom_spiflash_write(dest_addr, src, size));
     }
 }
 
 esp_err_t bootloader_flash_erase_sector(size_t sector)
 {
-    return spi_to_esp_err(SPIEraseSector(sector));
+    return spi_to_esp_err(esp_rom_spiflash_erase_sector(sector));
 }
 
 #endif

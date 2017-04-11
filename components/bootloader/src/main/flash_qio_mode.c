@@ -110,7 +110,7 @@ void bootloader_enable_qio_mode(void)
     int i;
 
     ESP_LOGD(TAG, "Probing for QIO mode enable...");
-    SPI_Wait_Idle(&g_rom_flashchip);
+    esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
     /* Set up some of the SPIFLASH user/ctrl variables which don't change
        while we're probing using execute_flash_command() */
@@ -150,7 +150,7 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
 {
     uint32_t status;
 
-    SPI_Wait_Idle(&g_rom_flashchip);
+    esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
     status = read_status_fn();
     ESP_LOGD(TAG, "Initial flash chip status 0x%x", status);
@@ -159,7 +159,7 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
         execute_flash_command(CMD_WREN, 0, 0, 0);
         write_status_fn(status | (1<<status_qio_bit));
 
-        SPI_Wait_Idle(&g_rom_flashchip);
+        esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
         status = read_status_fn();
         ESP_LOGD(TAG, "Updated flash chip status 0x%x", status);
@@ -174,13 +174,13 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
 
     ESP_LOGD(TAG, "Enabling QIO mode...");
 
-    SpiFlashRdMode mode;
+    esp_rom_spiflash_read_mode_t mode;
 #if CONFIG_FLASHMODE_QOUT
-    mode = SPI_FLASH_QOUT_MODE;
+    mode = ESP_ROM_SPIFLASH_QOUT_MODE;
 #else
-    mode = SPI_FLASH_QIO_MODE;
+    mode = ESP_ROM_SPIFLASH_QIO_MODE;
 #endif
-    SPIMasterReadModeCnfig(mode);
+    esp_rom_spiflash_master_config_readmode(mode);
 }
 
 static unsigned read_status_8b_rdsr()
