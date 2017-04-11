@@ -206,8 +206,8 @@ static int net_would_block( const mbedtls_net_context *ctx, int *errout )
     int error = mbedtls_net_errno(ctx->fd);
 
     if ( errout ) {
-		*errout = error;
-	}
+        *errout = error;
+    }
 
     /*
      * Never return 'WOULD BLOCK' on a non-blocking socket
