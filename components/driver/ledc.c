@@ -461,6 +461,7 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
     int duty_cur = LEDC.channel_group[speed_mode].channel[channel].duty_rd.duty_read >> LEDC_DUTY_DECIMAL_BIT_NUM;
     int duty_delta = target_duty > duty_cur ? target_duty - duty_cur : duty_cur - target_duty;
     if (duty_delta == 0) {
+		portEXIT_CRITICAL(&ledc_spinlock);
         return ESP_OK;
     }
     s_ledc_fade_rec[channel].speed_mode = speed_mode;
