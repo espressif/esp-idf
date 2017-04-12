@@ -167,7 +167,6 @@ static void setFirstBreakpoint(uint32_t pc)
 
 void panicHandler(XtExcFrame *frame)
 {
-    int *regs = (int *)frame;
     int core_id = xPortGetCoreID();
     //Please keep in sync with PANIC_RSN_* defines
     const char *reasons[] = {
@@ -182,8 +181,8 @@ void panicHandler(XtExcFrame *frame)
     };
     const char *reason = reasons[0];
     //The panic reason is stored in the EXCCAUSE register.
-    if (regs[20] <= PANIC_RSN_MAX) {
-        reason = reasons[regs[20]];
+    if (frame->exccause <= PANIC_RSN_MAX) {
+        reason = reasons[frame->exccause];
     }
     if (frame->exccause == PANIC_RSN_CACHEERR && esp_cache_err_get_cpuid() != core_id) {
         // Cache error interrupt will be handled by the panic handler
@@ -197,7 +196,7 @@ void panicHandler(XtExcFrame *frame)
     if (!abort_called) {
         panicPutStr(reason);
         panicPutStr(")\r\n");
-            if (regs[20]==PANIC_RSN_DEBUGEXCEPTION) {
+            if (frame->exccause == PANIC_RSN_DEBUGEXCEPTION) {
                 int debugRsn;
                 asm("rsr.debugcause %0":"=r"(debugRsn));
                 panicPutStr("Debug exception reason: ");
@@ -227,7 +226,7 @@ void panicHandler(XtExcFrame *frame)
         }
 
     if (esp_cpu_in_ocd_debug_mode()) {
-        setFirstBreakpoint(regs[1]);
+        setFirstBreakpoint(frame->pc);
         return;
     }
     commonErrorHandler(frame);
@@ -235,14 +234,11 @@ void panicHandler(XtExcFrame *frame)
 
 void xt_unhandled_exception(XtExcFrame *frame)
 {
-    int *regs = (int *)frame;
-    int x;
-
     haltOtherCore();
     panicPutStr("Guru Meditation Error of type ");
-    x = regs[20];
-    if (x < 40) {
-        panicPutStr(edesc[x]);
+    int exccause = frame->exccause;
+    if (exccause < 40) {
+        panicPutStr(edesc[exccause]);
     } else {
         panicPutStr("Unknown");
     }
@@ -250,11 +246,11 @@ void xt_unhandled_exception(XtExcFrame *frame)
     panicPutDec(xPortGetCoreID());
     if (esp_cpu_in_ocd_debug_mode()) {
         panicPutStr(" at pc=");
-        panicPutHex(regs[1]);
+        panicPutHex(frame->pc);
         panicPutStr(". Setting bp and returning..\r\n");
         //Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
         //will kick in exactly at the context the error happened.
-        setFirstBreakpoint(regs[1]);
+        setFirstBreakpoint(frame->pc);
         return;
     }
     panicPutStr(". Exception was unhandled.\r\n");
