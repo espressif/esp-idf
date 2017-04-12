@@ -290,7 +290,7 @@ bool btc_a2dp_start_media_task(void)
         goto error_exit;
     }
 
-    xTaskCreatePinnedToCore(btc_media_task_handler, "BtcMediaT\n", 2048, NULL, configMAX_PRIORITIES - 1, &xBtcMediaTaskHandle, 0);
+    xTaskCreatePinnedToCore(btc_media_task_handler, "BtcMediaT\n", 2048, NULL, configMAX_PRIORITIES - 3, &xBtcMediaTaskHandle, 0);
     if (xBtcMediaTaskHandle == NULL) {
         goto error_exit;
     }

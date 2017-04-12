@@ -1,37 +1,48 @@
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-
-#include "bt_app_common.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/FreeRTOSConfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "esp_log.h"
+#include "bt_app_core.h"
 
-int bt_app_trace_level = BT_APP_TRACE_LEVEL_DEBUG;
-
-static bool bt_app_post_msg(bt_app_msg_t *msg);
-static void bt_app_context_switched(bt_app_msg_t *msg);
 static void bt_app_task_handler(void *arg);
-extern void app_main_entry(void);
+static bool bt_app_send_msg(bt_app_msg_t *msg);
+static void bt_app_work_dispatched(bt_app_msg_t *msg);
 
 static xQueueHandle bt_app_task_queue = NULL;
 static xTaskHandle bt_app_task_handle = NULL;
 
-bool bt_app_transfer_context (bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback)
+bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback)
 {
+    ESP_LOGD(BT_APP_CORE_TAG, "%s event 0x%x, param len %d", __func__, event, param_len);
+    
     bt_app_msg_t msg;
-
     memset(&msg, 0, sizeof(bt_app_msg_t));
-    BT_APP_TRACE_EVENT("btapp_transfer_context evt 0x%x, len %d\n", event, param_len);
 
-    msg.sig = BT_APP_SIG_CONTEXT_SWITCH;
+    msg.sig = BT_APP_SIG_WORK_DISPATCH;
     msg.event = event;
     msg.cb = p_cback;
 
     if (param_len == 0) {
-        return bt_app_post_msg(&msg);
+        return bt_app_send_msg(&msg);
     } else if (p_params && param_len > 0) {
         if ((msg.param = malloc(param_len)) != NULL) {
             memcpy(msg.param, p_params, param_len);
@@ -39,29 +50,28 @@ bool bt_app_transfer_context (bt_app_cb_t p_cback, uint16_t event, void *p_param
             if (p_copy_cback) {
                 p_copy_cback(&msg, msg.param, p_params);
             }
-            return bt_app_post_msg(&msg);
+            return bt_app_send_msg(&msg);
         }
     }
 
     return false;
 }
 
-static bool bt_app_post_msg(bt_app_msg_t *msg)
+static bool bt_app_send_msg(bt_app_msg_t *msg)
 {
     if (msg == NULL) {
         return false;
     }
 
     if (xQueueSend(bt_app_task_queue, msg, 10 / portTICK_RATE_MS) != pdTRUE) {
-        BT_APP_TRACE_ERROR("bt_app msg post failed\n");
+        ESP_LOGE(BT_APP_CORE_TAG, "%s xQueue send failed", __func__);
         return false;
     }
     return true;
 }
 
-static void bt_app_context_switched(bt_app_msg_t *msg)
+static void bt_app_work_dispatched(bt_app_msg_t *msg)
 {
-    BT_APP_TRACE_DEBUG("bt app context switched\n");
     if (msg->cb) {
         msg->cb(msg->event, msg->param);
     }
@@ -69,17 +79,16 @@ static void bt_app_context_switched(bt_app_msg_t *msg)
 
 static void bt_app_task_handler(void *arg)
 {
-    app_main_entry();
     bt_app_msg_t msg;
     for (;;) {
         if (pdTRUE == xQueueReceive(bt_app_task_queue, &msg, (portTickType)portMAX_DELAY)) {
-            BT_APP_TRACE_EVENT("btapp handle evt, sig 0x%x, 0x%x\n", msg.sig, msg.event);
+            ESP_LOGD(BT_APP_CORE_TAG, "%s, sig 0x%x, 0x%x", __func__, msg.sig, msg.event);
             switch (msg.sig) {
-            case BT_APP_SIG_CONTEXT_SWITCH:
-                bt_app_context_switched(&msg);
+            case BT_APP_SIG_WORK_DISPATCH:
+                bt_app_work_dispatched(&msg);
                 break;
             default:
-                BT_APP_TRACE_WARNING("unhandled BT_APP event (%d)\n", msg.sig);
+                ESP_LOGW(BT_APP_CORE_TAG, "%s, unhandled sig: %d", __func__, msg.sig);
                 break;
             } // switch (msg.sig)
 

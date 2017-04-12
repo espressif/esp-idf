@@ -5,7 +5,5 @@
 
 PROJECT_NAME := a2dp_sink
 
-COMPONENT_ADD_INCLUDEDIRS := components/include
-
 include $(IDF_PATH)/make/project.mk
 
