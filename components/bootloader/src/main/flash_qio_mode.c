@@ -180,7 +180,8 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
 #else
     mode = ESP_ROM_SPIFLASH_QIO_MODE;
 #endif
-    esp_rom_spiflash_master_config_readmode(mode);
+    esp_rom_spiflash_config_readmode(mode);
+
 }
 
 static unsigned read_status_8b_rdsr()

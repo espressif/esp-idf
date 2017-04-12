@@ -279,25 +279,13 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read_user_cmd(uint32_t *status, uint8
   *
   * @param  esp_rom_spiflash_read_mode_t mode : QIO/QOUT/DIO/DOUT/FastRD/SlowRD.
   *
-  * @param  uint8_t legacy: In legacy mode, more SPI command is used in line.
+  * This function does not try to set the QIO Enable bit in the status register, caller is responsible for this.
   *
   * @return ESP_ROM_SPIFLASH_RESULT_OK : config OK.
   *         ESP_ROM_SPIFLASH_RESULT_ERR : config error.
   *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : config timeout.
   */
-esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read_mode_t mode, bool legacy);
-
-/**
-  * @brief Config SPI Flash read mode when Flash is running in some mode.
-  *        Please do not call this function in SDK.
-  *
-  * @param  esp_rom_spiflash_read_mode_t mode : QIO/QOUT/DIO/DOUT/FastRD/SlowRD.
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : config OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : config error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : config timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_master_config_readmode(esp_rom_spiflash_read_mode_t mode);
+esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read_mode_t mode);
 
 /**
   * @brief Config SPI Flash clock divisor.

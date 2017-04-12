@@ -87,9 +87,6 @@ extern uint8_t g_rom_spiflash_dummy_len_plus[];
 
 
 static esp_rom_spiflash_result_t esp_rom_spiflash_enable_write(esp_rom_spiflash_chip_t *spi);
-static esp_rom_spiflash_result_t esp_rom_spiflash_enable_qmode(esp_rom_spiflash_chip_t *spi);
-static esp_rom_spiflash_result_t esp_rom_spiflash_disable_qmode(esp_rom_spiflash_chip_t *spi);
-
 
 //only support spi1
 static esp_rom_spiflash_result_t esp_rom_spiflash_erase_chip_internal(esp_rom_spiflash_chip_t *spi)
@@ -309,65 +306,6 @@ static esp_rom_spiflash_result_t esp_rom_spiflash_enable_write(esp_rom_spiflash_
     return ESP_ROM_SPIFLASH_RESULT_OK;
 }
 
-static esp_rom_spiflash_result_t esp_rom_spiflash_enable_qmode(esp_rom_spiflash_chip_t *spi)
-{
-    uint32_t flash_status;
-    uint32_t status;
-    //read QE bit, not write if QE
-    if (ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_read_statushigh(spi, &status)) {
-        return ESP_ROM_SPIFLASH_RESULT_ERR;
-    }
-    if (status & ESP_ROM_SPIFLASH_QE) {
-        return ESP_ROM_SPIFLASH_RESULT_OK;
-    }
-
-    //enable 2 byte status writing
-    SET_PERI_REG_MASK(PERIPHS_SPI_FLASH_CTRL, ESP_ROM_SPIFLASH_TWO_BYTE_STATUS_EN);
-
-    if ( ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_enable_write(spi)) {
-        return ESP_ROM_SPIFLASH_RESULT_ERR;
-    }
-
-    esp_rom_spiflash_read_status(spi, &flash_status);
-
-    if ( ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_write_status(spi, flash_status | ESP_ROM_SPIFLASH_QE)) {
-        return ESP_ROM_SPIFLASH_RESULT_ERR;
-    }
-
-    return ESP_ROM_SPIFLASH_RESULT_OK;
-}
-
-static esp_rom_spiflash_result_t esp_rom_spiflash_disable_qmode(esp_rom_spiflash_chip_t *spi)
-{
-    uint32_t flash_status;
-    uint32_t status;
-
-    //read QE bit, not write if not QE
-    if (ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_read_statushigh(spi, &status)) {
-        return ESP_ROM_SPIFLASH_RESULT_ERR;
-    }
-    //ets_printf("status %08x, line:%u\n", status, __LINE__);
-
-    if (!(status & ESP_ROM_SPIFLASH_QE)) {
-        return ESP_ROM_SPIFLASH_RESULT_OK;
-    }
-
-    //enable 2 byte status writing
-    SET_PERI_REG_MASK(PERIPHS_SPI_FLASH_CTRL, ESP_ROM_SPIFLASH_TWO_BYTE_STATUS_EN);
-
-    if ( ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_enable_write(spi)) {
-        return ESP_ROM_SPIFLASH_RESULT_ERR;
-    }
-
-    esp_rom_spiflash_read_status(spi, &flash_status);
-    //keep low 8 bit
-    if ( ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_write_status(spi, flash_status & 0xff)) {
-        return ESP_ROM_SPIFLASH_RESULT_ERR;
-    }
-
-    return ESP_ROM_SPIFLASH_RESULT_OK;
-}
-
 static void spi_cache_mode_switch(uint32_t  modebit)
 {
     if ((modebit & SPI_FREAD_QIO) && (modebit & SPI_FASTRD_MODE)) {
@@ -431,7 +369,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_lock()
 }
 
 
-esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read_mode_t mode, bool legacy)
+esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read_mode_t mode)
 {
     uint32_t  modebit;
 
@@ -451,15 +389,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read
     case ESP_ROM_SPIFLASH_FASTRD_MODE:  modebit = SPI_FASTRD_MODE; break;
     case ESP_ROM_SPIFLASH_SLOWRD_MODE:  modebit = 0; break;
     default : modebit = 0;
-    }
-
-    if ((ESP_ROM_SPIFLASH_QIO_MODE == mode) || (ESP_ROM_SPIFLASH_QOUT_MODE == mode)) {
-        esp_rom_spiflash_enable_qmode(&g_rom_spiflash_chip);
-    } else {
-        //do not need disable QMode in faster boot
-        if (legacy) {
-            esp_rom_spiflash_disable_qmode(&g_rom_spiflash_chip);
-        }
     }
 
     SET_PERI_REG_MASK(PERIPHS_SPI_FLASH_CTRL, modebit);
@@ -668,7 +597,10 @@ esp_rom_spiflash_result_t esp_rom_spiflash_erase_area(uint32_t start_addr, uint3
     uint32_t sector_num_per_block;
 
     //set read mode to Fastmode ,not QDIO mode for erase
-    esp_rom_spiflash_config_readmode(ESP_ROM_SPIFLASH_SLOWRD_MODE, true);
+    //
+    // TODO: this is probably a bug as it doesn't re-enable QIO mode, not serious as this
+    // function is not used in IDF.
+    esp_rom_spiflash_config_readmode(ESP_ROM_SPIFLASH_SLOWRD_MODE);
 
     //check if area is oversize of flash
     if ((start_addr + area_len) > g_rom_spiflash_chip.chip_size) {
