@@ -185,12 +185,12 @@ static void testRingbuffer(int type)
 }
 
 // TODO: split this thing into separate orthogonal tests
-TEST_CASE("FreeRTOS ringbuffer test, no splitting items", "[freertos]")
+TEST_CASE("FreeRTOS ringbuffer test, no splitting items", "[freertos][ignore]")
 {
     testRingbuffer(0);
 }
 
-TEST_CASE("FreeRTOS ringbuffer test, w/ splitting items", "[freertos]")
+TEST_CASE("FreeRTOS ringbuffer test, w/ splitting items", "[freertos][ignore]")
 {
     testRingbuffer(1);
 }

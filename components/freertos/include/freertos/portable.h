@@ -187,6 +187,19 @@ void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
 
 void vPortYieldOtherCore( BaseType_t coreid) PRIVILEGED_FUNCTION;
 
+
+/*
+ Callback to set a watchpoint on the end of the stack. Called every context switch to change the stack
+ watchpoint around.
+ */
+void vPortSetStackWatchpoint( void* pxStackStart );
+
+/*
+ * Returns true if the current core is in ISR context; low prio ISR, med prio ISR or timer tick ISR. High prio ISRs
+ * aren't detected here, but they normally cannot call C code, so that should not be an issue anyway.
+ */
+BaseType_t xPortInIsrContext();
+
 /*
  * The structures and methods of manipulating the MPU are contained within the
  * port layer.
@@ -208,6 +221,9 @@ static inline uint32_t xPortGetCoreID() {
         :"=r"(id));
     return id;
 }
+
+/* Get tick rate per second */
+uint32_t xPortGetTickRateHz(void);
 
 #ifdef __cplusplus
 }

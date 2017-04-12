@@ -9,8 +9,6 @@
 
 struct kconf_id;
 
-static const struct kconf_id *kconf_id_lookup(register const char *str, register unsigned int len);
-
 %%
 mainmenu,	T_MAINMENU,	TF_COMMAND
 menu,		T_MENU,		TF_COMMAND

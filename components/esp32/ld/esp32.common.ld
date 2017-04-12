@@ -19,9 +19,11 @@ SECTIONS
   */
   .rtc.data :
   {
+    _rtc_data_start = ABSOLUTE(.);
     *(.rtc.data)
     *(.rtc.rodata)
     *rtc_wake_stub*.o(.data .rodata .data.* .rodata.* .bss .bss.*)
+    _rtc_data_end = ABSOLUTE(.);
   } > rtc_slow_seg
 
   /* RTC bss, from any source file named rtc_wake_stub*.c */
@@ -69,6 +71,10 @@ SECTIONS
     *(.init.literal)
     *(.init)
     _init_end = ABSOLUTE(.);
+
+    /* This goes here, not at top of linker script, so addr2line finds it last,
+       and uses it in preference to the first symbol in IRAM */
+    _iram_start = ABSOLUTE(0);
   } > iram0_0_seg
 
   .iram0.text :
@@ -78,10 +84,19 @@ SECTIONS
     *(.iram1 .iram1.*)
     *libfreertos.a:(.literal .text .literal.* .text.*)
     *libesp32.a:panic.o(.literal .text .literal.* .text.*)
+    *libesp32.a:core_dump.o(.literal .text .literal.* .text.*)
+    *libesp32.a:heap_alloc_caps.o(.literal .text .literal.* .text.*)
     *libphy.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
-    *libpp.a:(.literal .text .literal.* .text.*)
+    *libsoc.a:(.literal .text .literal.* .text.*)
+    *libpp.a:pp.o(.literal .text .literal.* .text.*)
+    *libpp.a:lmac.o(.literal .text .literal.* .text.*)
+    *libpp.a:wdev.o(.literal .text .literal.* .text.*)
+    *libcore.a:ets_timer.o(.literal .text .literal.* .text.*)
+    *libnet80211.a:ieee80211_misc.o(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
+    *libcoexist.a:(.literal .text .literal.* .text.*)
+    *libspi_flash.a:spi_flash_rom_patch.o(.literal .text .literal.* .text.*)
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 
@@ -184,5 +199,11 @@ SECTIONS
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
     _etext = .;
+
+    /* Similar to _iram_start, this symbol goes here so it is
+       resolved by addr2line in preference to the first symbol in
+       the flash.text segment.
+    */
+    _flash_cache_start = ABSOLUTE(0);
   } >iram0_2_seg
 }

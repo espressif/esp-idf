@@ -7,8 +7,13 @@
 # (Note that we only rebuild this makefile automatically for some
 # targets, see project_config.mk for details.)
 SDKCONFIG_MAKEFILE ?= $(abspath $(BUILD_DIR_BASE)/include/config/auto.conf)
--include $(SDKCONFIG_MAKEFILE)
+include $(SDKCONFIG_MAKEFILE)
 export SDKCONFIG_MAKEFILE  # sub-makes (like bootloader) will reuse this path
+
+# BATCH_BUILD flag disables interactive terminal features, defaults to verbose build
+ifdef BATCH_BUILD
+V ?= 1
+endif
 
 #Handling of V=1/VERBOSE=1 flag
 #

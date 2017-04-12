@@ -30,7 +30,8 @@ help:
 	@echo "make clean - Remove all build output"
 	@echo "make size - Display the memory footprint of the app"
 	@echo "make erase_flash - Erase entire flash contents"
-	@echo "make monitor - Display serial output on terminal console"
+	@echo "make monitor - Run idf_monitor tool to monitor serial output from app"
+	@echo "make simple_monitor - Monitor serial output on terminal console"
 	@echo ""
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
@@ -49,14 +50,23 @@ endif
 # make IDF_PATH a "real" absolute path
 # * works around the case where a shell character is embedded in the environment variable value.
 # * changes Windows-style C:/blah/ paths to MSYS/Cygwin style /c/blah
-export IDF_PATH:=$(realpath $(wildcard $(IDF_PATH)))
+ifeq ("$(OS)","Windows_NT")
+# On Windows MSYS2, make wildcard function returns empty string for paths of form /xyz
+# where /xyz is a directory inside the MSYS root - so we don't use it.
+SANITISED_IDF_PATH:=$(realpath $(IDF_PATH))
+else
+SANITISED_IDF_PATH:=$(realpath $(wildcard $(IDF_PATH)))
+endif
+
+export IDF_PATH := $(SANITISED_IDF_PATH)
 
 ifndef IDF_PATH
 $(error IDF_PATH variable is not set to a valid directory.)
 endif
 
-ifneq ("$(IDF_PATH)","$(realpath $(wildcard $(IDF_PATH)))")
-# due to the way make manages variables, this is hard to account for
+ifneq ("$(IDF_PATH)","$(SANITISED_IDF_PATH)")
+# implies IDF_PATH was overriden on make command line.
+# Due to the way make manages variables, this is hard to account for
 #
 # if you see this error, do the shell expansion in the shell ie
 # make IDF_PATH=~/blah not make IDF_PATH="~/blah"
@@ -118,17 +128,16 @@ COMPONENT_PATHS += $(abspath $(SRCDIRS))
 # A component is buildable if it has a component.mk makefile in it
 COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
 
-# If TESTS_ALL set to 1, set TEST_COMPONENTS to all components
+# If TESTS_ALL set to 1, set TEST_COMPONENTS_LIST to all components
 ifeq ($(TESTS_ALL),1)
-TEST_COMPONENTS := $(COMPONENTS)
+TEST_COMPONENTS_LIST := $(COMPONENTS)
+else
+# otherwise, use TEST_COMPONENTS
+TEST_COMPONENTS_LIST := $(TEST_COMPONENTS)
 endif
+TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
+TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
 
-# If TEST_COMPONENTS is set, create variables for building unit tests
-ifdef TEST_COMPONENTS
-override TEST_COMPONENTS := $(foreach comp,$(TEST_COMPONENTS),$(wildcard $(IDF_PATH)/components/$(comp)/test))
-TEST_COMPONENT_PATHS := $(TEST_COMPONENTS)
-TEST_COMPONENT_NAMES :=  $(foreach comp,$(TEST_COMPONENTS),$(lastword $(subst /, ,$(dir $(comp))))_test)
-endif
 
 # Initialise project-wide variables which can be added to by
 # each component.
@@ -176,6 +185,9 @@ else
 endif
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
+
+IDF_VER := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
+
 # Set default LDFLAGS
 
 LDFLAGS ?= -nostdlib \
@@ -201,7 +213,7 @@ LDFLAGS ?= -nostdlib \
 
 # CPPFLAGS used by C preprocessor
 # If any flags are defined in application Makefile, add them at the end. 
-CPPFLAGS := -DESP_PLATFORM -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
+CPPFLAGS := -DESP_PLATFORM -D IDF_VER=\"$(IDF_VER)\" -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
 
 # Warnings-related flags relevant both for C and C++
 COMMON_WARNING_FLAGS = -Wall -Werror=all \
@@ -228,13 +240,14 @@ OPTIMIZATION_FLAGS = -Og
 endif
 
 # Enable generation of debugging symbols
-OPTIMIZATION_FLAGS += -ggdb
+# (we generate even in Release mode, as this has no impact on final binary size.)
+DEBUG_FLAGS ?= -ggdb
 
 # List of flags to pass to C compiler
 # If any flags are defined in application Makefile, add them at the end.
 CFLAGS := $(strip \
 	-std=gnu99 \
-	$(OPTIMIZATION_FLAGS) \
+	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration \
 	$(CFLAGS) \
@@ -246,7 +259,7 @@ CXXFLAGS := $(strip \
 	-std=gnu++11 \
 	-fno-exceptions \
 	-fno-rtti \
-	$(OPTIMIZATION_FLAGS) \
+	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
 	$(CXXFLAGS) \
@@ -366,12 +379,7 @@ $(BUILD_DIR_BASE)/$(2)/lib$(2).a: $(2)-build
 # If any component_project_vars.mk file is out of date, the make
 # process will call this target to rebuild it and then restart.
 #
-# Note: $(SDKCONFIG) is a normal prereq as we need to rebuild these
-# files whenever the config changes. $(SDKCONFIG_MAKEFILE) is an
-# order-only prereq because if it hasn't been rebuilt, we need to
-# build it first - but including it as a normal prereq can lead to
-# infinite restarts as the conf process will keep updating it.
-$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG) | $(BUILD_DIR_BASE)/$(2) $(SDKCONFIG_MAKEFILE)
+$(BUILD_DIR_BASE)/$(2)/component_project_vars.mk: $(1)/component.mk $(COMMON_MAKEFILES) $(SDKCONFIG_MAKEFILE) | $(BUILD_DIR_BASE)/$(2)
 	$(call ComponentMake,$(1),$(2)) component_project_vars.mk
 endef
 
@@ -396,20 +404,22 @@ clean: config-clean
 # This only works for components inside IDF_PATH
 check-submodules:
 
+# Dump the git status for the whole working copy once, then grep it for each submodule. This saves a lot of time on Windows.
+GIT_STATUS := $(shell cd ${IDF_PATH} && git status --porcelain --ignore-submodules=dirty)
+
 # Generate a target to check this submodule
 # $(1) - submodule directory, relative to IDF_PATH
 define GenerateSubmoduleCheckTarget
 check-submodules: $(IDF_PATH)/$(1)/.git
 $(IDF_PATH)/$(1)/.git:
 	@echo "WARNING: Missing submodule $(1)..."
-	[ -d ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
+	[ -e ${IDF_PATH}/.git ] || ( echo "ERROR: esp-idf must be cloned from git to work."; exit 1)
 	[ -x $(which git) ] || ( echo "ERROR: Need to run 'git submodule init $(1)' in esp-idf root directory."; exit 1)
 	@echo "Attempting 'git submodule update --init $(1)' in esp-idf root directory..."
 	cd ${IDF_PATH} && git submodule update --init $(1)
 
-# Parse 'git submodule status' output for out-of-date submodule.
-# Status output prefixes status line with '+' if the submodule commit doesn't match
-ifneq ("$(shell cd ${IDF_PATH} && git submodule status $(1) | grep '^+')","")
+# Parse 'git status' output to check if the submodule commit is different to expected
+ifneq ("$(filter $(1),$(GIT_STATUS))","")
 $$(info WARNING: esp-idf git submodule $(1) may be out of date. Run 'git submodule update' in IDF_PATH dir to update.)
 endif
 endef
@@ -417,3 +427,36 @@ endef
 # filter/subst in expression ensures all submodule paths begin with $(IDF_PATH), and then strips that prefix
 # so the argument is suitable for use with 'git submodule' commands
 $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))
+
+
+# Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
+# The output normally looks as follows
+#     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-59-ga194053) 4.8.5
+# The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable,
+# the part after the brackets is extracted into TOOLCHAIN_GCC_VER.
+ifdef CONFIG_TOOLPREFIX
+ifndef MAKE_RESTARTS
+TOOLCHAIN_COMMIT_DESC := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*\ \(([^)]*).*|\1|gp')
+TOOLCHAIN_GCC_VER := $(shell $(CC) --version | sed -E -n 's|xtensa-esp32-elf-gcc.*\ \(.*\)\ (.*)|\1|gp')
+
+# Officially supported version(s)
+SUPPORTED_TOOLCHAIN_COMMIT_DESC := crosstool-NG crosstool-ng-1.22.0-61-gab8375a
+SUPPORTED_TOOLCHAIN_GCC_VERSIONS := 5.2.0
+
+ifdef TOOLCHAIN_COMMIT_DESC
+ifneq ($(TOOLCHAIN_COMMIT_DESC), $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
+$(info WARNING: Toolchain version is not supported: $(TOOLCHAIN_COMMIT_DESC))
+$(info Expected to see version: $(SUPPORTED_TOOLCHAIN_COMMIT_DESC))
+$(info Please check ESP-IDF setup instructions and update the toolchain, or proceed at your own risk.)
+endif
+ifeq (,$(findstring $(TOOLCHAIN_GCC_VER), $(SUPPORTED_TOOLCHAIN_GCC_VERSIONS)))
+$(info WARNING: Compiler version is not supported: $(TOOLCHAIN_GCC_VER))
+$(info Expected to see version(s): $(SUPPORTED_TOOLCHAIN_GCC_VERSIONS))
+$(info Please check ESP-IDF setup instructions and update the toolchain, or proceed at your own risk.)
+endif
+else
+$(info WARNING: Failed to find Xtensa toolchain, may need to alter PATH or set one in the configuration menu)
+endif # TOOLCHAIN_COMMIT_DESC
+
+endif #MAKE_RESTARTS
+endif #CONFIG_TOOLPREFIX

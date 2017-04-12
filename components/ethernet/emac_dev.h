@@ -52,6 +52,9 @@ void emac_enable_dma_tx(void);
 void emac_enable_dma_rx(void);
 void emac_disable_dma_tx(void);
 void emac_disable_dma_rx(void);
+void emac_enable_flowctrl(void);
+void emac_disable_flowctrl(void);
+void emac_mac_enable_txrx(void);
 
 uint32_t inline emac_read_tx_cur_reg(void)
 {
@@ -77,22 +80,32 @@ void inline emac_poll_rx_cmd(void)
 
 void inline emac_disable_rx_intr(void)
 {
-    REG_CLR_BIT(EMAC_DMAINTERRUPT_EN_REG,EMAC_RECEIVE_INTERRUPT_ENABLE);
+    REG_CLR_BIT(EMAC_DMAINTERRUPT_EN_REG, EMAC_RECEIVE_INTERRUPT_ENABLE);
 }
 
 void inline emac_enable_rx_intr(void)
 {
-    REG_SET_BIT(EMAC_DMAINTERRUPT_EN_REG,EMAC_RECEIVE_INTERRUPT_ENABLE);
+    REG_SET_BIT(EMAC_DMAINTERRUPT_EN_REG, EMAC_RECEIVE_INTERRUPT_ENABLE);
 }
 
 void inline emac_disable_rx_unavail_intr(void)
 {
-    REG_CLR_BIT(EMAC_DMAINTERRUPT_EN_REG,EMAC_RECEIVE_BUFFER_UNAVAILABLE_ENABLE);
+    REG_CLR_BIT(EMAC_DMAINTERRUPT_EN_REG, EMAC_RECEIVE_BUFFER_UNAVAILABLE_ENABLE);
 }
 
 void inline emac_enable_rx_unavail_intr(void)
 {
-    REG_SET_BIT(EMAC_DMAINTERRUPT_EN_REG,EMAC_RECEIVE_BUFFER_UNAVAILABLE_ENABLE);  
+    REG_SET_BIT(EMAC_DMAINTERRUPT_EN_REG, EMAC_RECEIVE_BUFFER_UNAVAILABLE_ENABLE);
+}
+
+void IRAM_ATTR inline emac_send_pause_frame_enable(void)
+{
+    REG_SET_BIT(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_SBD_FLOWCTRL);
+}
+
+void inline emac_send_pause_zero_frame_enable(void)
+{
+    REG_CLR_BIT(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_SBD_FLOWCTRL);
 }
 
 #ifdef __cplusplus

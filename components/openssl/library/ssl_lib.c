@@ -22,10 +22,48 @@
 #define SSL_SEND_DATA_MAX_LENGTH 1460
 
 /**
+ * @brief create a new SSL session object
+ */
+static SSL_SESSION* SSL_SESSION_new(void)
+{
+    SSL_SESSION *session;
+
+    session = ssl_mem_zalloc(sizeof(SSL_SESSION));
+    if (!session) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "no enough memory > (session)");
+        goto failed1;
+    }
+
+    session->peer = X509_new();
+    if (!session->peer) {
+       SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "X509_new() return NULL");
+       goto failed2;
+    }
+
+    return session;
+
+failed2:
+    ssl_mem_free(session);
+failed1:
+    return NULL;
+}
+
+/**
+ * @brief free a new SSL session object
+ */
+static void SSL_SESSION_free(SSL_SESSION *session)
+{
+    X509_free(session->peer);
+    ssl_mem_free(session);
+}
+
+/**
  * @brief Discover whether the current connection is in the error state
  */
 int ossl_statem_in_error(const SSL *ssl)
 {
+    SSL_ASSERT1(ssl);
+
     if (ssl->statem.state == MSG_FLOW_ERROR)
         return 1;
 
@@ -37,6 +75,8 @@ int ossl_statem_in_error(const SSL *ssl)
  */
 int SSL_want(const SSL *ssl)
 {
+    SSL_ASSERT1(ssl);
+
     return ssl->rwstate;
 }
 
@@ -45,6 +85,8 @@ int SSL_want(const SSL *ssl)
  */
 int SSL_want_nothing(const SSL *ssl)
 {
+    SSL_ASSERT1(ssl);
+
     return (SSL_want(ssl) == SSL_NOTHING);
 }
 
@@ -53,6 +95,8 @@ int SSL_want_nothing(const SSL *ssl)
  */
 int SSL_want_read(const SSL *ssl)
 {
+    SSL_ASSERT1(ssl);
+
     return (SSL_want(ssl) == SSL_READING);
 }
 
@@ -61,6 +105,8 @@ int SSL_want_read(const SSL *ssl)
  */
 int SSL_want_write(const SSL *ssl)
 {
+    SSL_ASSERT1(ssl);
+
     return (SSL_want(ssl) == SSL_WRITING);
 }
 
@@ -69,6 +115,8 @@ int SSL_want_write(const SSL *ssl)
  */
 int SSL_want_x509_lookup(const SSL *ssl)
 {
+    SSL_ASSERT1(ssl);
+
     return (SSL_want(ssl) == SSL_WRITING);
 }
 
@@ -79,7 +127,7 @@ int SSL_get_error(const SSL *ssl, int ret_code)
 {
     int ret = SSL_ERROR_SYSCALL;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     if (ret_code > 0)
         ret = SSL_ERROR_NONE;
@@ -110,43 +158,11 @@ OSSL_HANDSHAKE_STATE SSL_get_state(const SSL *ssl)
 {
     OSSL_HANDSHAKE_STATE state;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     state = SSL_METHOD_CALL(get_state, ssl);
 
     return state;
-}
-
-/**
- * @brief create a new SSL session object
- */
-SSL_SESSION* SSL_SESSION_new(void)
-{
-    SSL_SESSION *session;
-
-    session = ssl_mem_zalloc(sizeof(SSL_SESSION));
-    if (!session)
-        SSL_RET(failed1, "ssl_mem_zalloc\n");
-
-    session->peer = X509_new();
-    if (!session->peer)
-        SSL_RET(failed2, "X509_new\n");
-
-    return session;
-
-failed2:
-    ssl_mem_free(session);
-failed1:
-    return NULL;
-}
-
-/**
- * @brief free a new SSL session object
- */
-void SSL_SESSION_free(SSL_SESSION *session)
-{
-    X509_free(session->peer);
-    ssl_mem_free(session);
 }
 
 /**
@@ -158,19 +174,28 @@ SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
     CERT *cert;
     X509 *client_ca;
 
-    if (!method) SSL_RET(go_failed1, "method:NULL\n");
+    if (!method) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "no no_method");
+        return NULL;
+    }
 
     client_ca = X509_new();
-    if (!client_ca)
-        SSL_RET(go_failed1, "X509_new\n");
+    if (!client_ca) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "X509_new() return NULL");
+        goto failed1;
+    }
 
     cert = ssl_cert_new();
-    if (!cert)
-        SSL_RET(go_failed2, "ssl_cert_new\n");
+    if (!cert) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "ssl_cert_new() return NULL");
+        goto failed2;
+    }
 
     ctx = (SSL_CTX *)ssl_mem_zalloc(sizeof(SSL_CTX));
-    if (!ctx)
-        SSL_RET(go_failed3, "ssl_mem_zalloc:ctx\n");
+    if (!ctx) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "no enough memory > (ctx)");
+        goto failed3;
+    }
 
     ctx->method = method;
     ctx->client_CA = client_ca;
@@ -180,11 +205,11 @@ SSL_CTX* SSL_CTX_new(const SSL_METHOD *method)
 
     return ctx;
 
-go_failed3:
+failed3:
     ssl_cert_free(cert);
-go_failed2:
+failed2:
     X509_free(client_ca);
-go_failed1:
+failed1:
     return NULL;
 }
 
@@ -193,7 +218,7 @@ go_failed1:
  */
 void SSL_CTX_free(SSL_CTX* ctx)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT3(ctx);
 
     ssl_cert_free(ctx->cert);
 
@@ -207,8 +232,8 @@ void SSL_CTX_free(SSL_CTX* ctx)
  */
 int SSL_CTX_set_ssl_version(SSL_CTX *ctx, const SSL_METHOD *meth)
 {
-    SSL_ASSERT(ctx);
-    SSL_ASSERT(meth);
+    SSL_ASSERT1(ctx);
+    SSL_ASSERT1(meth);
 
     ctx->method = meth;
 
@@ -222,7 +247,7 @@ int SSL_CTX_set_ssl_version(SSL_CTX *ctx, const SSL_METHOD *meth)
  */
 const SSL_METHOD *SSL_CTX_get_ssl_method(SSL_CTX *ctx)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT2(ctx);
 
     return ctx->method;
 }
@@ -235,24 +260,34 @@ SSL *SSL_new(SSL_CTX *ctx)
     int ret = 0;
     SSL *ssl;
 
-    if (!ctx)
-        SSL_RET(failed1, "ctx:NULL\n");
+    if (!ctx) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "no ctx");
+        return NULL;
+    }
 
     ssl = (SSL *)ssl_mem_zalloc(sizeof(SSL));
-    if (!ssl)
-        SSL_RET(failed1, "ssl_mem_zalloc\n");
+    if (!ssl) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "no enough memory > (ssl)");
+        goto failed1;
+    }
 
     ssl->session = SSL_SESSION_new();
-    if (!ssl->session)
-        SSL_RET(failed2, "SSL_SESSION_new\n");
+    if (!ssl->session) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "SSL_SESSION_new() return NULL");
+        goto failed2;
+    }
 
     ssl->cert = __ssl_cert_new(ctx->cert);
-    if (!ssl->cert)
-        SSL_RET(failed3, "__ssl_cert_new\n");
+    if (!ssl->cert) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "__ssl_cert_new() return NULL");
+        goto failed3;
+    }
 
     ssl->client_CA = __X509_new(ctx->client_CA);
-    if (!ssl->client_CA)
-        SSL_RET(failed4, "__X509_new\n");
+    if (!ssl->client_CA) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "__X509_new() return NULL");
+        goto failed4;
+    }
 
     ssl->ctx = ctx;
     ssl->method = ctx->method;
@@ -263,8 +298,10 @@ SSL *SSL_new(SSL_CTX *ctx)
     ssl->verify_mode = ctx->verify_mode;
 
     ret = SSL_METHOD_CALL(new, ssl);
-    if (ret)
-        SSL_RET(failed5, "ssl_new\n");
+    if (ret) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "SSL_METHOD_CALL(new) return %d", ret);
+        goto failed5;
+    }
 
     ssl->rwstate = SSL_NOTHING;
 
@@ -287,7 +324,7 @@ failed1:
  */
 void SSL_free(SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT3(ssl);
 
     SSL_METHOD_CALL(free, ssl);
 
@@ -307,7 +344,7 @@ int SSL_do_handshake(SSL *ssl)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     ret = SSL_METHOD_CALL(handshake, ssl);
 
@@ -319,7 +356,7 @@ int SSL_do_handshake(SSL *ssl)
  */
 int SSL_connect(SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return SSL_do_handshake(ssl);
 }
@@ -329,7 +366,7 @@ int SSL_connect(SSL *ssl)
  */
 int SSL_accept(SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return SSL_do_handshake(ssl);
 }
@@ -341,7 +378,7 @@ int SSL_shutdown(SSL *ssl)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     if (SSL_get_state(ssl) != TLS_ST_OK) return 1;
 
@@ -357,21 +394,25 @@ int SSL_clear(SSL *ssl)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     ret = SSL_shutdown(ssl);
-    if (1 != ret)
-        SSL_ERR(0, go_failed1, "SSL_shutdown\n");
+    if (1 != ret) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "SSL_shutdown return %d", ret);
+        goto failed1;
+    }
 
     SSL_METHOD_CALL(free, ssl);
 
     ret = SSL_METHOD_CALL(new, ssl);
-    if (!ret)
-        SSL_ERR(0, go_failed1, "ssl_new\n");
+    if (!ret) {
+        SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "SSL_METHOD_CALL(new) return %d", ret);
+        goto failed1;
+    }
 
     return 1;
 
-go_failed1:
+failed1:
     return ret;
 }
 
@@ -382,9 +423,9 @@ int SSL_read(SSL *ssl, void *buffer, int len)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(buffer);
-    SSL_ASSERT(len);
+    SSL_ASSERT1(ssl);
+    SSL_ASSERT1(buffer);
+    SSL_ASSERT1(len);
 
     ssl->rwstate = SSL_READING;
 
@@ -405,9 +446,9 @@ int SSL_write(SSL *ssl, const void *buffer, int len)
     int send_bytes;
     const unsigned char *pbuf;
 
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(buffer);
-    SSL_ASSERT(len);
+    SSL_ASSERT1(ssl);
+    SSL_ASSERT1(buffer);
+    SSL_ASSERT1(len);
 
     ssl->rwstate = SSL_WRITING;
 
@@ -422,7 +463,7 @@ int SSL_write(SSL *ssl, const void *buffer, int len)
         else
             bytes = send_bytes;
 
-        ret = SSL_METHOD_CALL(send, ssl, buffer, bytes);
+        ret = SSL_METHOD_CALL(send, ssl, pbuf, bytes);
         if (ret > 0) {
             pbuf += ret;
             send_bytes -= ret;
@@ -443,7 +484,7 @@ int SSL_write(SSL *ssl, const void *buffer, int len)
  */
 SSL_CTX *SSL_get_SSL_CTX(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT2(ssl);
 
     return ssl->ctx;
 }
@@ -453,7 +494,7 @@ SSL_CTX *SSL_get_SSL_CTX(const SSL *ssl)
  */
 const SSL_METHOD *SSL_get_ssl_method(SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT2(ssl);
 
     return ssl->method;
 }
@@ -465,22 +506,26 @@ int SSL_set_ssl_method(SSL *ssl, const SSL_METHOD *method)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(method);
+    SSL_ASSERT1(ssl);
+    SSL_ASSERT1(method);
 
     if (ssl->version != method->version) {
 
         ret = SSL_shutdown(ssl);
-        if (1 != ret)
-            SSL_ERR(0, go_failed1, "SSL_shutdown\n");
+        if (1 != ret) {
+            SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "SSL_shutdown return %d", ret);
+            goto failed1;
+        }
 
         SSL_METHOD_CALL(free, ssl);
 
         ssl->method = method;
 
         ret = SSL_METHOD_CALL(new, ssl);
-        if (!ret)
-            SSL_ERR(0, go_failed1, "ssl_new\n");
+        if (!ret) {
+            SSL_DEBUG(SSL_LIB_ERROR_LEVEL, "SSL_METHOD_CALL(new) return %d", ret);
+            goto failed1;
+        }
     } else {
         ssl->method = method;
     }
@@ -488,7 +533,7 @@ int SSL_set_ssl_method(SSL *ssl, const SSL_METHOD *method)
 
     return 1;
 
-go_failed1:
+failed1:
     return ret;
 }
 
@@ -497,7 +542,7 @@ go_failed1:
  */
 int SSL_get_shutdown(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return ssl->shutdown;
 }
@@ -507,7 +552,7 @@ int SSL_get_shutdown(const SSL *ssl)
  */
 void SSL_set_shutdown(SSL *ssl, int mode)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT3(ssl);
 
     ssl->shutdown = mode;
 }
@@ -520,7 +565,7 @@ int SSL_pending(const SSL *ssl)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     ret = SSL_METHOD_CALL(pending, ssl);
 
@@ -534,7 +579,7 @@ int SSL_has_pending(const SSL *ssl)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     if (SSL_pending(ssl))
         ret = 1;
@@ -549,6 +594,8 @@ int SSL_has_pending(const SSL *ssl)
  */
 unsigned long SSL_CTX_clear_options(SSL_CTX *ctx, unsigned long op)
 {
+    SSL_ASSERT1(ctx);
+
     return ctx->options &= ~op;
 }
 
@@ -557,6 +604,8 @@ unsigned long SSL_CTX_clear_options(SSL_CTX *ctx, unsigned long op)
  */
 unsigned long SSL_CTX_get_options(SSL_CTX *ctx)
 {
+    SSL_ASSERT1(ctx);
+
     return ctx->options;
 }
 
@@ -565,6 +614,8 @@ unsigned long SSL_CTX_get_options(SSL_CTX *ctx)
  */
 unsigned long SSL_CTX_set_options(SSL_CTX *ctx, unsigned long opt)
 {
+    SSL_ASSERT1(ctx);
+
     return ctx->options |= opt;
 }
 
@@ -573,7 +624,7 @@ unsigned long SSL_CTX_set_options(SSL_CTX *ctx, unsigned long opt)
  */
 unsigned long SSL_clear_options(SSL *ssl, unsigned long op)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return ssl->options & ~op;
 }
@@ -583,7 +634,7 @@ unsigned long SSL_clear_options(SSL *ssl, unsigned long op)
  */
 unsigned long SSL_get_options(SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return ssl->options;
 }
@@ -593,7 +644,7 @@ unsigned long SSL_get_options(SSL *ssl)
  */
 unsigned long SSL_set_options(SSL *ssl, unsigned long op)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return ssl->options |= op;
 }
@@ -605,7 +656,7 @@ int SSL_get_fd(const SSL *ssl)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     ret = SSL_METHOD_CALL(get_fd, ssl, 0);
 
@@ -619,7 +670,7 @@ int SSL_get_rfd(const SSL *ssl)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     ret = SSL_METHOD_CALL(get_fd, ssl, 0);
 
@@ -633,7 +684,7 @@ int SSL_get_wfd(const SSL *ssl)
 {
     int ret;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     ret = SSL_METHOD_CALL(get_fd, ssl, 0);
 
@@ -645,8 +696,8 @@ int SSL_get_wfd(const SSL *ssl)
  */
 int SSL_set_fd(SSL *ssl, int fd)
 {
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(fd >= 0);
+    SSL_ASSERT1(ssl);
+    SSL_ASSERT1(fd >= 0);
 
     SSL_METHOD_CALL(set_fd, ssl, fd, 0);
 
@@ -658,8 +709,8 @@ int SSL_set_fd(SSL *ssl, int fd)
  */
 int SSL_set_rfd(SSL *ssl, int fd)
 {
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(fd >= 0);
+    SSL_ASSERT1(ssl);
+    SSL_ASSERT1(fd >= 0);
 
     SSL_METHOD_CALL(set_fd, ssl, fd, 0);
 
@@ -671,8 +722,8 @@ int SSL_set_rfd(SSL *ssl, int fd)
  */
 int SSL_set_wfd(SSL *ssl, int fd)
 {
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(fd >= 0);
+    SSL_ASSERT1(ssl);
+    SSL_ASSERT1(fd >= 0);
 
     SSL_METHOD_CALL(set_fd, ssl, fd, 0);
 
@@ -684,7 +735,7 @@ int SSL_set_wfd(SSL *ssl, int fd)
  */
 int SSL_version(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return ssl->version;
 }
@@ -715,7 +766,7 @@ static const char* ssl_protocol_to_string(int version)
  */
 const char *SSL_get_version(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT2(ssl);
 
     return ssl_protocol_to_string(SSL_version(ssl));
 }
@@ -987,7 +1038,7 @@ const char *SSL_rstate_string(SSL *ssl)
 {
     const char *str;
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT2(ssl);
 
     switch (ssl->rlayer.rstate)
     {
@@ -1015,7 +1066,7 @@ const char *SSL_rstate_string_long(SSL *ssl)
 {
     const char *str = "unknown";
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT2(ssl);
 
     switch (ssl->rlayer.rstate)
     {
@@ -1042,7 +1093,7 @@ char *SSL_state_string(const SSL *ssl)
 {
     char *str = "UNKWN ";
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT2(ssl);
 
     if (ossl_statem_in_error(ssl))
         str = "SSLERR";
@@ -1150,7 +1201,7 @@ char *SSL_state_string_long(const SSL *ssl)
 {
     char *str = "UNKWN ";
 
-    SSL_ASSERT(ssl);
+    SSL_ASSERT2(ssl);
 
     if (ossl_statem_in_error(ssl))
         str = "SSLERR";
@@ -1262,8 +1313,7 @@ char *SSL_state_string_long(const SSL *ssl)
  */
 void SSL_CTX_set_default_read_buffer_len(SSL_CTX *ctx, size_t len)
 {
-    SSL_ASSERT(ctx);
-    SSL_ASSERT(len);
+    SSL_ASSERT3(ctx);
 
     ctx->read_buffer_len = len;
 }
@@ -1273,8 +1323,8 @@ void SSL_CTX_set_default_read_buffer_len(SSL_CTX *ctx, size_t len)
  */
 void SSL_set_default_read_buffer_len(SSL *ssl, size_t len)
 {
-    SSL_ASSERT(ssl);
-    SSL_ASSERT(len);
+    SSL_ASSERT3(ssl);
+    SSL_ASSERT3(len);
 
     SSL_METHOD_CALL(set_bufflen, ssl, len);
 }
@@ -1284,7 +1334,7 @@ void SSL_set_default_read_buffer_len(SSL *ssl, size_t len)
  */
 void SSL_set_info_callback(SSL *ssl, void (*cb) (const SSL *ssl, int type, int val))
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT3(ssl);
 
     ssl->info_callback = cb;
 }
@@ -1294,7 +1344,7 @@ void SSL_set_info_callback(SSL *ssl, void (*cb) (const SSL *ssl, int type, int v
  */
 int SSL_CTX_up_ref(SSL_CTX *ctx)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT1(ctx);
 
     /**
      * no support multi-thread SSL here
@@ -1309,7 +1359,7 @@ int SSL_CTX_up_ref(SSL_CTX *ctx)
  */
 void SSL_set_security_level(SSL *ssl, int level)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT3(ssl);
 
     ssl->cert->sec_level = level;
 }
@@ -1319,7 +1369,7 @@ void SSL_set_security_level(SSL *ssl, int level)
  */
 int SSL_get_security_level(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return ssl->cert->sec_level;
 }
@@ -1329,7 +1379,7 @@ int SSL_get_security_level(const SSL *ssl)
  */
 int SSL_CTX_get_verify_mode(const SSL_CTX *ctx)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT1(ctx);
 
     return ctx->verify_mode;
 }
@@ -1341,7 +1391,7 @@ long SSL_CTX_set_timeout(SSL_CTX *ctx, long t)
 {
     long l;
 
-    SSL_ASSERT(ctx);
+    SSL_ASSERT1(ctx);
 
     l = ctx->session_timeout;
     ctx->session_timeout = t;
@@ -1354,7 +1404,7 @@ long SSL_CTX_set_timeout(SSL_CTX *ctx, long t)
  */
 long SSL_CTX_get_timeout(const SSL_CTX *ctx)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT1(ctx);
 
     return ctx->session_timeout;
 }
@@ -1364,7 +1414,7 @@ long SSL_CTX_get_timeout(const SSL_CTX *ctx)
  */
 void SSL_set_read_ahead(SSL *ssl, int yes)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT3(ssl);
 
     ssl->rlayer.read_ahead = yes;
 }
@@ -1374,7 +1424,7 @@ void SSL_set_read_ahead(SSL *ssl, int yes)
  */
 void SSL_CTX_set_read_ahead(SSL_CTX *ctx, int yes)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT3(ctx);
 
     ctx->read_ahead = yes;
 }
@@ -1384,7 +1434,7 @@ void SSL_CTX_set_read_ahead(SSL_CTX *ctx, int yes)
  */
 int SSL_get_read_ahead(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return ssl->rlayer.read_ahead;
 }
@@ -1394,7 +1444,7 @@ int SSL_get_read_ahead(const SSL *ssl)
  */
 long SSL_CTX_get_read_ahead(SSL_CTX *ctx)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT1(ctx);
 
     return ctx->read_ahead;
 }
@@ -1404,7 +1454,7 @@ long SSL_CTX_get_read_ahead(SSL_CTX *ctx)
  */
 long SSL_CTX_get_default_read_ahead(SSL_CTX *ctx)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT1(ctx);
 
     return ctx->read_ahead;
 }
@@ -1414,7 +1464,7 @@ long SSL_CTX_get_default_read_ahead(SSL_CTX *ctx)
  */
 long SSL_set_time(SSL *ssl, long t)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     ssl->session->time = t;
 
@@ -1426,7 +1476,7 @@ long SSL_set_time(SSL *ssl, long t)
  */
 long SSL_set_timeout(SSL *ssl, long t)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     ssl->session->timeout = t;
 
@@ -1438,7 +1488,7 @@ long SSL_set_timeout(SSL *ssl, long t)
  */
 long SSL_get_verify_result(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return SSL_METHOD_CALL(get_verify_result, ssl);
 }
@@ -1448,7 +1498,7 @@ long SSL_get_verify_result(const SSL *ssl)
  */
 int SSL_CTX_get_verify_depth(const SSL_CTX *ctx)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT1(ctx);
 
     return ctx->param.depth;
 }
@@ -1458,7 +1508,7 @@ int SSL_CTX_get_verify_depth(const SSL_CTX *ctx)
  */
 void SSL_CTX_set_verify_depth(SSL_CTX *ctx, int depth)
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT3(ctx);
 
     ctx->param.depth = depth;
 }
@@ -1468,7 +1518,7 @@ void SSL_CTX_set_verify_depth(SSL_CTX *ctx, int depth)
  */
 int SSL_get_verify_depth(const SSL *ssl)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT1(ssl);
 
     return ssl->param.depth;
 }
@@ -1478,7 +1528,7 @@ int SSL_get_verify_depth(const SSL *ssl)
  */
 void SSL_set_verify_depth(SSL *ssl, int depth)
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT3(ssl);
 
     ssl->param.depth = depth;
 }
@@ -1488,7 +1538,7 @@ void SSL_set_verify_depth(SSL *ssl, int depth)
  */
 void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
-    SSL_ASSERT(ctx);
+    SSL_ASSERT3(ctx);
 
     ctx->verify_mode = mode;
     ctx->default_verify_callback = verify_callback;
@@ -1499,7 +1549,7 @@ void SSL_CTX_set_verify(SSL_CTX *ctx, int mode, int (*verify_callback)(int, X509
  */
 void SSL_set_verify(SSL *ssl, int mode, int (*verify_callback)(int, X509_STORE_CTX *))
 {
-    SSL_ASSERT(ssl);
+    SSL_ASSERT3(ssl);
 
     ssl->verify_mode = mode;
     ssl->verify_callback = verify_callback;

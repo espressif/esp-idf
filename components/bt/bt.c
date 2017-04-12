@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -27,13 +28,26 @@
 #include "esp_task.h"
 #include "esp_intr.h"
 #include "esp_attr.h"
+#include "esp_phy_init.h"
 #include "bt.h"
 
 #if CONFIG_BT_ENABLED
 
+/* Bluetooth system and controller config */
+#define BTDM_CFG_BT_EM_RELEASE              (1<<0)
+#define BTDM_CFG_BT_DATA_RELEASE            (1<<1)
+#define BTDM_CFG_HCI_UART                   (1<<2)
+#define BTDM_CFG_CONTROLLER_RUN_APP_CPU     (1<<3)
+/* Other reserved for future */
+
 /* not for user call, so don't put to include file */
 extern void btdm_osi_funcs_register(void *osi_funcs);
-extern void btdm_controller_init(void);
+extern void btdm_controller_init(uint32_t config_mask, esp_bt_controller_config_t *config_opts);
+extern void btdm_controller_schedule(void);
+extern void btdm_controller_deinit(void);
+extern int btdm_controller_enable(esp_bt_mode_t mode);
+extern int btdm_controller_disable(esp_bt_mode_t mode);
+extern void btdm_rf_bb_init(void);
 
 /* VHCI function interface */
 typedef struct vhci_host_callback {
@@ -67,8 +81,16 @@ struct osi_funcs_t {
     void *(*_mutex_create)(void);
     int32_t (*_mutex_lock)(void *mutex);
     int32_t (*_mutex_unlock)(void *mutex);
-    esp_err_t (* _read_efuse_mac)(uint8_t mac[6]);
+    int32_t (* _read_efuse_mac)(uint8_t mac[6]);
+    void (* _srand)(unsigned int seed);
+    int (* _rand)(void);
 };
+
+/* Static variable declare */
+static bool btdm_bb_init_flag = false;
+static esp_bt_controller_status_t btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+static esp_bt_controller_config_t btdm_cfg_opts;
+static xTaskHandle btControllerTaskHandle;
 
 static portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -112,6 +134,21 @@ static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex)
     return (int32_t)xSemaphoreGive(mutex);
 }
 
+static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
+{
+    return esp_read_mac(mac, ESP_MAC_BT);
+}
+
+static void IRAM_ATTR srand_wrapper(unsigned int seed)
+{
+    /* empty function */
+}
+
+static int IRAM_ATTR rand_wrapper(void)
+{
+    return (int)esp_random();
+}
+
 static struct osi_funcs_t osi_funcs = {
     ._set_isr = xt_set_interrupt_handler,
     ._ints_on = xt_ints_on,
@@ -124,7 +161,9 @@ static struct osi_funcs_t osi_funcs = {
     ._mutex_create = mutex_create_wrapper,
     ._mutex_lock = mutex_lock_wrapper,
     ._mutex_unlock = mutex_unlock_wrapper,
-    ._read_efuse_mac = esp_efuse_read_mac,
+    ._read_efuse_mac = read_mac_wrapper,
+    ._srand = srand_wrapper,
+    ._rand = rand_wrapper,
 };
 
 bool esp_vhci_host_check_send_available(void)
@@ -142,17 +181,126 @@ void esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
     API_vhci_host_register_callback((const vhci_host_callback_t *)callback);
 }
 
-static void bt_controller_task(void *pvParam)
+static uint32_t btdm_config_mask_load(void)
 {
-    btdm_osi_funcs_register(&osi_funcs);
-    btdm_controller_init();
+    uint32_t mask = 0x0;
+
+#ifdef CONFIG_BT_DRAM_RELEASE
+    mask |= (BTDM_CFG_BT_EM_RELEASE | BTDM_CFG_BT_DATA_RELEASE);
+#endif
+#ifdef CONFIG_BT_HCI_UART
+    mask |= BTDM_CFG_HCI_UART;
+#endif
+#ifdef CONFIG_BTDM_CONTROLLER_RUN_APP_CPU
+    mask |= BTDM_CFG_CONTROLLER_RUN_APP_CPU;
+#endif
+    return mask;
 }
 
-void esp_bt_controller_init()
+static void bt_controller_task(void *pvParam)
 {
-    xTaskCreatePinnedToCore(bt_controller_task, "btController",
+    uint32_t btdm_cfg_mask = 0;
+
+    btdm_cfg_mask = btdm_config_mask_load();
+
+    btdm_osi_funcs_register(&osi_funcs);
+
+    btdm_controller_init(btdm_cfg_mask, &btdm_cfg_opts);
+
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
+    /* Loop */
+    btdm_controller_schedule();
+}
+
+esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
+{
+    BaseType_t ret;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (cfg == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memcpy(&btdm_cfg_opts, cfg, sizeof(esp_bt_controller_config_t));
+
+    ret = xTaskCreatePinnedToCore(bt_controller_task, "btController",
                             ESP_TASK_BT_CONTROLLER_STACK, NULL,
-                            ESP_TASK_BT_CONTROLLER_PRIO, NULL, 0);
+                            ESP_TASK_BT_CONTROLLER_PRIO, &btControllerTaskHandle, CONFIG_BTDM_CONTROLLER_RUN_CPU);
+
+    if (ret != pdPASS) {
+        memset(&btdm_cfg_opts, 0x0, sizeof(esp_bt_controller_config_t));
+        return ESP_ERR_NO_MEM;
+    }
+
+    return ESP_OK;
+}
+
+void esp_bt_controller_deinit(void)
+{
+    memset(&btdm_cfg_opts, 0x0, sizeof(esp_bt_controller_config_t));
+    vTaskDelete(btControllerTaskHandle);
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+}
+
+esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
+{
+    int ret;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_INITED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (mode != ESP_BT_MODE_BTDM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_phy_load_cal_and_init();
+
+    if (btdm_bb_init_flag == false) {
+        btdm_bb_init_flag = true;
+        btdm_rf_bb_init();  /* only initialise once */
+    }
+
+    ret = btdm_controller_enable(mode);
+    if (ret) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
+
+    return ESP_OK;
+}
+
+esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode)
+{
+    int ret;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (mode != ESP_BT_MODE_BTDM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ret = btdm_controller_disable(mode);
+    if (ret) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_phy_rf_deinit();
+
+    btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
+
+    return ESP_OK;
+}
+
+esp_bt_controller_status_t esp_bt_controller_get_status(void)
+{
+    return btdm_controller_status;
 }
 
 #endif

@@ -220,6 +220,8 @@ protected:
         assert(entry < ENTRY_COUNT);
         return mBaseAddress + ENTRY_DATA_OFFSET + static_cast<uint32_t>(entry) * ENTRY_SIZE;
     }
+    
+    static const char* pageStateToName(PageState ps);
 
 
 protected:

@@ -150,13 +150,10 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 LOG_DEBUG("%s found unfinished packet for handle with start packet. Dropping old.\n", __func__);
                 LOG_DEBUG("partial_packet->len = %x, offset = %x\n", partial_packet->len, partial_packet->len);
 
-                //for (int i = 0; i < partial_packet->len; i++) {
-                //    LOG_ERROR("%x", partial_packet->data[i]);
-                //}
-                //LOG_ERROR("\n");
+               
                 hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
-                //buffer_allocator->free(partial_packet);
-                //LOG_ERROR("+++++++++++++++++++\n");
+               
+              
             }
 
             uint16_t full_length = l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;

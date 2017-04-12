@@ -1080,7 +1080,7 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
         btm_ble_set_topology_mask(BTM_BLE_STATE_HI_DUTY_DIR_ADV_BIT);
     }else if(adv_type == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT){
         btm_ble_set_topology_mask(BTM_BLE_STATE_LO_DUTY_DIR_ADV_BIT);
-    }else if(adv_type == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT){
+    }else if(adv_type == BTM_BLE_NON_CONNECT_EVT){
         btm_ble_set_topology_mask(BTM_BLE_STATE_NON_CONN_ADV_BIT);
     }
 
@@ -1089,7 +1089,6 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
     p_cb->adv_chnl_map = chnl_map;
     p_addr_cb->own_addr_type = own_bda_type;
     p_cb->evt_type = adv_type;
-    p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
     p_cb->afp = afp;
 
     if (p_dir_bda) {
@@ -1301,6 +1300,26 @@ tBTM_STATUS BTM_BleWriteScanRsp(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
 
 /*******************************************************************************
 **
+** Function         BTM_BleWriteScanRspRaw
+**
+** Description      This function is called to write raw scan response data
+**
+** Parameters:      None.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleWriteScanRspRaw(UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len)
+{
+    if (btsnd_hcic_ble_set_scan_rsp_data((UINT8)raw_scan_rsp_len, p_raw_scan_rsp)) {
+        return BTM_SUCCESS;
+    } else {
+        return BTM_NO_RESOURCES;
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         BTM_BleWriteAdvData
 **
 ** Description      This function is called to write advertising data.
@@ -1343,6 +1362,27 @@ tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
         return BTM_NO_RESOURCES;
     }
 
+}
+
+
+/*******************************************************************************
+**
+** Function         BTM_BleWriteAdvDataRaw
+**
+** Description      This function is called to write raw advertising data.
+**
+** Parameters:       None.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleWriteAdvDataRaw(UINT8 *p_raw_adv, UINT32 raw_adv_len)
+{
+    if (btsnd_hcic_ble_set_adv_data((UINT8)raw_adv_len, p_raw_adv)) {
+        return BTM_SUCCESS;
+    } else {
+        return BTM_NO_RESOURCES;
+    }
 }
 
 
@@ -2327,12 +2367,13 @@ void btm_ble_cache_adv_data(tBTM_INQ_RESULTS *p_cur, UINT8 data_len, UINT8 *p, U
     tBTM_BLE_INQ_CB     *p_le_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
     UINT8 *p_cache;
     UINT8 length;
-    UNUSED(p_cur);
 
     /* cache adv report/scan response data */
     if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
         p_le_inq_cb->adv_len = 0;
         memset(p_le_inq_cb->adv_data_cache, 0, BTM_BLE_CACHE_ADV_DATA_MAX);
+        p_cur->adv_data_len = 0;
+        p_cur->scan_rsp_len = 0;
     }
 
     if (data_len > 0) {
@@ -2349,6 +2390,13 @@ void btm_ble_cache_adv_data(tBTM_INQ_RESULTS *p_cur, UINT8 data_len, UINT8 *p, U
             p += length;
             STREAM_TO_UINT8(length, p);
         }
+    }
+
+    if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
+        p_cur->adv_data_len = p_le_inq_cb->adv_len;
+    }
+    else {
+        p_cur->scan_rsp_len = p_le_inq_cb->adv_len - p_cur->adv_data_len;
     }
 
     /* parse service UUID from adv packet and save it in inq db eir_uuid */
@@ -2895,14 +2943,18 @@ tBTM_STATUS btm_ble_start_scan(void)
     tBTM_BLE_INQ_CB *p_inq = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS status = BTM_CMD_STARTED;
 
-    /* start scan, disable duplicate filtering */
-    if (!btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, p_inq->scan_duplicate_filter)) {
+    if (p_inq->adv_mode != BTM_BLE_ADV_DISABLE) {
         status = BTM_NO_RESOURCES;
     } else {
-        if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI) {
-            btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
+        /* start scan, disable duplicate filtering */
+        if (!btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, p_inq->scan_duplicate_filter)) {
+            status = BTM_NO_RESOURCES;
         } else {
-            btm_ble_set_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
+            if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI) {
+                btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
+            } else {
+                btm_ble_set_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
+            }
         }
     }
     return status;
@@ -2921,15 +2973,17 @@ void btm_ble_stop_scan(void)
 {
     BTM_TRACE_EVENT ("btm_ble_stop_scan ");
 
-    /* Clear the inquiry callback if set */
-    btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
+    if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_DISABLE) {
+        /* Clear the inquiry callback if set */
+        btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
 
-    /* stop discovery now */
-    btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
+        /* stop discovery now */
+        btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
 
-    btm_update_scanner_filter_policy(SP_ADV_ALL);
+        btm_update_scanner_filter_policy(SP_ADV_ALL);
 
-    btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_SCAN;
+        btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_SCAN;
+    }
 }
 /*******************************************************************************
 **
@@ -3049,9 +3103,15 @@ static BOOLEAN btm_ble_adv_states_operation(BTM_TOPOLOGY_FUNC_PTR *p_handler, UI
 *******************************************************************************/
 tBTM_STATUS btm_ble_start_adv(void)
 {
+    tBTM_BLE_CB *p_ble_cb = & btm_cb.ble_ctr_cb;
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS     rt = BTM_NO_RESOURCES;
     BTM_TRACE_EVENT ("btm_ble_start_adv\n");
+
+    if (BTM_BLE_IS_OBS_ACTIVE(p_ble_cb->scan_activity)) {
+        return BTM_NO_RESOURCES;
+    }
+
     if (!btm_ble_adv_states_operation (btm_ble_topology_check, p_cb->evt_type)) {
         return BTM_WRONG_MODE;
     }
@@ -3093,10 +3153,12 @@ tBTM_STATUS btm_ble_start_adv(void)
 *******************************************************************************/
 tBTM_STATUS btm_ble_stop_adv(void)
 {
+    tBTM_BLE_CB *p_ble_cb = & btm_cb.ble_ctr_cb;
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS rt = BTM_SUCCESS;
 
-    if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
+    if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE
+            && !BTM_BLE_IS_OBS_ACTIVE(p_ble_cb->scan_activity)) {
         if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
             p_cb->fast_adv_on = FALSE;
             p_cb->adv_mode = BTM_BLE_ADV_DISABLE;

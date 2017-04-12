@@ -17,7 +17,7 @@
 #include "soc/io_mux_reg.h"
 
 
-TEST_CASE("Panic handler", "[freertos]")
+TEST_CASE("Panic handler", "[freertos][ignore]")
 {
     volatile int *i;
     i = (volatile int *)0x0;

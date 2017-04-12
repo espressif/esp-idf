@@ -4028,7 +4028,6 @@ void bta_dm_set_encryption (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 static void bta_dm_observe_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir)
 {
-    ;
     tBTA_DM_SEARCH     result;
     tBTM_INQ_INFO      *p_inq_info;
     APPL_TRACE_DEBUG("bta_dm_observe_results_cb")
@@ -4039,6 +4038,8 @@ static void bta_dm_observe_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir)
     result.inq_res.inq_result_type  = p_inq->inq_result_type;
     result.inq_res.device_type      = p_inq->device_type;
     result.inq_res.flag             = p_inq->flag;
+    result.inq_res.adv_data_len     = p_inq->adv_data_len;
+    result.inq_res.scan_rsp_len     = p_inq->scan_rsp_len;
 
     /* application will parse EIR to find out remote device name */
     result.inq_res.p_eir = p_eir;
@@ -4534,12 +4535,11 @@ void bta_dm_ble_observe (tBTA_DM_MSG *p_data)
         bta_dm_search_cb.p_scan_cback = p_data->ble_observe.p_cback;
         if ((status = BTM_BleObserve(TRUE, p_data->ble_observe.duration,
                                      bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb)) != BTM_CMD_STARTED) {
-            tBTA_DM_SEARCH  data;
             APPL_TRACE_WARNING(" %s BTM_BleObserve  failed. status %d\n", __FUNCTION__, status);
-            data.inq_cmpl.num_resps = 0;
-            if (bta_dm_search_cb.p_scan_cback) {
-                bta_dm_search_cb.p_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
-            }
+        }
+        if (p_data->ble_observe.p_start_scan_cback) {
+            status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
+            p_data->ble_observe.p_start_scan_cback(status);
         }
     } else {
         bta_dm_search_cb.p_scan_cback = NULL;
@@ -4576,13 +4576,21 @@ void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
 {
-    BTM_BleSetAdvParamsStartAdv(p_data->ble_set_adv_params_all.adv_int_min,
+    tBTA_STATUS status = BTA_FAILURE;
+
+    if (BTM_BleSetAdvParamsStartAdv(p_data->ble_set_adv_params_all.adv_int_min,
                                 p_data->ble_set_adv_params_all.adv_int_max,
                                 p_data->ble_set_adv_params_all.adv_type,
                                 p_data->ble_set_adv_params_all.addr_type_own,
                                 p_data->ble_set_adv_params_all.p_dir_bda,
                                 p_data->ble_set_adv_params_all.channel_map,
-                                p_data->ble_set_adv_params_all.adv_filter_policy);
+                                p_data->ble_set_adv_params_all.adv_filter_policy) == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+    }
+
+    if (p_data->ble_set_adv_params_all.p_start_adv_cback) {
+        (*p_data->ble_set_adv_params_all.p_start_adv_cback)(status);
+    }
 }
 
 /*******************************************************************************
@@ -4610,6 +4618,30 @@ void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_ble_set_adv_config_raw
+**
+** Description      This function set the customized ADV data configuration
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data)
+{
+    tBTA_STATUS status = BTA_FAILURE;
+
+    if (BTM_BleWriteAdvDataRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
+                               p_data->ble_set_adv_data_raw.raw_adv_len) == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+    }
+
+    if (p_data->ble_set_adv_data_raw.p_adv_data_cback) {
+        (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
+    }
+}
+
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ble_set_scan_rsp
 **
 ** Description      This function set the customized ADV scan resp. configuration
@@ -4628,6 +4660,29 @@ void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data)
 
     if (p_data->ble_set_adv_data.p_adv_data_cback) {
         (*p_data->ble_set_adv_data.p_adv_data_cback)(status);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_ble_set_scan_rsp_raw
+**
+** Description      This function set the raw scan response data
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data)
+{
+    tBTA_STATUS status = BTA_FAILURE;
+
+    if (BTM_BleWriteScanRspRaw(p_data->ble_set_adv_data_raw.p_raw_adv,
+                               p_data->ble_set_adv_data_raw.raw_adv_len) == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+    }
+
+    if (p_data->ble_set_adv_data_raw.p_adv_data_cback) {
+        (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
     }
 }
 

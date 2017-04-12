@@ -400,6 +400,8 @@ typedef struct {
 
 typedef void (tBTA_SET_ADV_DATA_CMPL_CBACK) (tBTA_STATUS status);
 
+typedef void (tBTA_START_ADV_CMPL_CBACK) (tBTA_STATUS status);
+
 /* advertising channel map */
 #define BTA_BLE_ADV_CHNL_37 BTM_BLE_ADV_CHNL_37
 #define BTA_BLE_ADV_CHNL_38 BTM_BLE_ADV_CHNL_38
@@ -1001,6 +1003,8 @@ typedef struct {
     tBTM_BLE_EVT_TYPE   ble_evt_type;
     tBT_DEVICE_TYPE     device_type;
     UINT8               flag;
+    UINT8               adv_data_len;
+    UINT8               scan_rsp_len;
 #endif
 
 } tBTA_DM_INQ_RES;
@@ -1094,6 +1098,8 @@ typedef void (tBTA_BLE_SCAN_REP_CBACK) (tBTA_DM_BLE_REF_VALUE ref_value, UINT8 r
 typedef void (tBTA_BLE_SCAN_SETUP_CBACK) (tBTA_BLE_BATCH_SCAN_EVT evt,
         tBTA_DM_BLE_REF_VALUE ref_value,
         tBTA_STATUS status);
+
+typedef void (tBTA_START_SCAN_CMPL_CBACK) (tBTA_STATUS status); 
 
 typedef void (tBTA_BLE_TRACK_ADV_CMPL_CBACK)(int action, tBTA_STATUS status,
         tBTA_DM_BLE_PF_AVBL_SPACE avbl_space,
@@ -1891,7 +1897,7 @@ extern void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
 extern void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
                                       UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
                                       tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
-                                      tBLE_BD_ADDR *p_dir_bda);
+                                      tBLE_BD_ADDR *p_dir_bda, tBTA_START_ADV_CMPL_CBACK p_start_adv_cb);
 
 
 /*******************************************************************************
@@ -1997,7 +2003,8 @@ extern void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport,
 **
 *******************************************************************************/
 extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
-                             tBTA_DM_SEARCH_CBACK *p_results_cb);
+                             tBTA_DM_SEARCH_CBACK *p_results_cb,
+                             tBTA_START_SCAN_CMPL_CBACK *p_start_scan_cb);
 
 extern void BTA_DmBleStopAdvertising(void);
 
@@ -2052,6 +2059,22 @@ extern void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask,
 
 /*******************************************************************************
 **
+** Function         BTA_DmBleSetAdvConfigRaw
+**
+** Description      This function is called to set raw Advertising data
+**
+** Parameters       p_raw_adv : raw advertising data.
+**                  raw_adv_len : raw advertising data length.
+**                  p_adv_data_cback : set adv data complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
+                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
+
+/*******************************************************************************
+**
 ** Function         BTA_DmBleSetScanRsp
 **
 ** Description      This function is called to override the BTA scan response.
@@ -2064,6 +2087,22 @@ extern void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask,
 extern void BTA_DmBleSetScanRsp (tBTA_BLE_AD_MASK data_mask,
                                  tBTA_BLE_ADV_DATA *p_adv_cfg,
                                  tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetScanRspRaw
+**
+** Description      This function is called to set raw scan response data
+**
+** Parameters       p_raw_scan_rsp : raw scan_rspertising data.
+**                  raw_scan_rsp_len : raw scan_rspertising data length.
+**                  p_scan_rsp_data_cback : set scan_rsp data complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len,
+                                    tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback);
 
 /*******************************************************************************
 **

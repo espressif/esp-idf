@@ -115,7 +115,7 @@ extern void _xt_coproc_init(void);
 /*-----------------------------------------------------------*/
 
 unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Duplicate of inaccessible xSchedulerRunning; needed at startup to avoid counting nesting
-unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level
+unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
 
 /*-----------------------------------------------------------*/
 
@@ -256,9 +256,24 @@ void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMOR
 #endif
 
 
+/*
+ * Returns true if the current core is in ISR context; low prio ISR, med prio ISR or timer tick ISR. High prio ISRs
+ * aren't detected here, but they normally cannot call C code, so that should not be an issue anyway.
+ */
+BaseType_t xPortInIsrContext()
+{
+	unsigned int irqStatus;
+	BaseType_t ret;
+	irqStatus=portENTER_CRITICAL_NESTED();
+	ret=(port_interruptNesting[xPortGetCoreID()] != 0);
+	portEXIT_CRITICAL_NESTED(irqStatus);
+	return ret;
+}
+
+
 void vPortAssertIfInISR()
 {
-	configASSERT(port_interruptNesting[xPortGetCoreID()]==0)
+	configASSERT(xPortInIsrContext());
 }
 
 /*
@@ -392,5 +407,23 @@ void vPortFirstTaskHook(TaskFunction_t function) {
 	esp_set_breakpoint_if_jtag(function);
 }
 #endif
+
+
+void vPortSetStackWatchpoint( void* pxStackStart ) {
+	//Set watchpoint 1 to watch the last 32 bytes of the stack.
+	//Unfortunately, the Xtensa watchpoints can't set a watchpoint on a random [base - base+n] region because
+	//the size works by masking off the lowest address bits. For that reason, we futz a bit and watch the lowest 32
+	//bytes of the stack we can actually watch. In general, this can cause the watchpoint to be triggered at most
+	//28 bytes early. The value 32 is chosen because it's larger than the stack canary, which in FreeRTOS is 20 bytes.
+	//This way, we make sure we trigger before/when the stack canary is corrupted, not after.
+	int addr=(int)pxStackStart;
+	addr=(addr+31)&(~31);
+	esp_set_watchpoint(1, (char*)addr, 32, ESP_WATCHPOINT_STORE);
+}
+
+uint32_t xPortGetTickRateHz(void) {
+	return (uint32_t)configTICK_RATE_HZ;
+}
+
 
 

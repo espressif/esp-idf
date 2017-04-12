@@ -18,18 +18,101 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief Controller config options, depend on config mask.
+ *        Config mask indicate which functions enabled, this means 
+ *        some options or parameters of some functions enabled by config mask.
+ */
+typedef struct {
+    uint8_t hci_uart_no;            /*!< If use UART1/2 as HCI IO interface, indicate UART number */
+    uint32_t hci_uart_baudrate;     /*!< If use UART1/2 as HCI IO interface, indicate UART baudrate */
+} esp_bt_controller_config_t;
+
+#ifdef CONFIG_BT_ENABLED
+
+#ifdef CONFIG_BT_HCI_UART_NO
+#define BT_HCI_UART_NO_DEFAULT CONFIG_BT_HCI_UART_NO
+#else
+#define BT_HCI_UART_NO_DEFAULT 1
+#endif /* BT_HCI_UART_NO_DEFAULT */
+
+#ifdef CONFIG_BT_HCI_UART_BAUDRATE
+#define BT_HCI_UART_BAUDRATE_DEFAULT CONFIG_BT_HCI_UART_BAUDRATE
+#else
+#define BT_HCI_UART_BAUDRATE_DEFAULT 921600
+#endif /* BT_HCI_UART_BAUDRATE_DEFAULT */
+
+#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() { \
+    .hci_uart_no = BT_HCI_UART_NO_DEFAULT,\
+    .hci_uart_baudrate = BT_HCI_UART_BAUDRATE_DEFAULT,\
+};
+#else
+#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use bt.h");
+#endif
 
 /**
- * @brief  Initialize BT controller
- *
- * This function should be called only once, before any other BT functions are called.
+ * @brief Bluetooth mode for controller enable/disable
  */
-void esp_bt_controller_init(void);
+typedef enum {
+    ESP_BT_MODE_IDLE       = 0x00,   /*!< Bluetooth is not running */
+    ESP_BT_MODE_BLE        = 0x01,   /*!< Run BLE mode */
+    ESP_BT_MODE_CLASSIC_BT = 0x02,   /*!< Run Classic BT mode */
+    ESP_BT_MODE_BTDM       = 0x03,   /*!< Run dual mode */
+} esp_bt_mode_t;
+
+/**
+ * @brief Bluetooth controller enable/disable/initialised/de-initialised status
+ */
+typedef enum {
+    ESP_BT_CONTROLLER_STATUS_IDLE = 0,
+    ESP_BT_CONTROLLER_STATUS_INITED,
+    ESP_BT_CONTROLLER_STATUS_ENABLED,
+    ESP_BT_CONTROLLER_STATUS_NUM,
+} esp_bt_controller_status_t;
+
+/**
+ * @brief  Initialize BT controller to allocate task and other resource.
+ * @param  cfg: Initial configuration of BT controller.
+ * This function should be called only once, before any other BT functions are called.
+ * @return       ESP_OK - success, other - failed
+ */
+esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
+
+/**
+ * @brief  De-initialize BT controller to free resource and delete task.
+ *
+ * This function should be called only once, after any other BT functions are called.
+ * This function is not whole completed, esp_bt_controller_init cannot called after this function.
+ */
+void esp_bt_controller_deinit(void);
+
+/**
+ * @brief Enable BT controller
+ * @param mode : the mode(BLE/BT/BTDM) to enable.
+ *               Now only support BTDM.
+ * @return       ESP_OK - success, other - failed
+ */
+esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode);
+
+/**
+ * @brief  Disable BT controller
+ * @param mode : the mode(BLE/BT/BTDM) to disable.
+ *               Now only support BTDM.
+ * @return       ESP_OK - success, other - failed
+ */
+esp_err_t esp_bt_controller_disable(esp_bt_mode_t mode);
+
+/**
+ * @brief  Get BT controller is initialised/de-initialised/enabled/disabled
+ * @return status value
+ */
+esp_bt_controller_status_t esp_bt_controller_get_status(void);
 
 /** @brief esp_vhci_host_callback
  *  used for vhci call host function to notify what host need to do

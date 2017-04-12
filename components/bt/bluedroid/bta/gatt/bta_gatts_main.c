@@ -104,29 +104,30 @@ BOOLEAN bta_gatts_hdl_event(BT_HDR *p_msg)
     case BTA_GATTS_API_RSP_EVT:
         bta_gatts_send_rsp(p_cb, (tBTA_GATTS_DATA *) p_msg);
         break;
-
+    case BTA_GATTS_API_SET_ATTR_VAL_EVT:{
+        UINT16 attr_id = ((tBTA_GATTS_DATA *) p_msg)->api_set_val.hdr.layer_specific;
+        p_srvc_cb = bta_gatts_find_srvc_cb_by_attr_id(p_cb, attr_id);
+        bta_gatts_set_attr_value(p_srvc_cb, (tBTA_GATTS_DATA *) p_msg);
+        break;
+    }
     case BTA_GATTS_API_LISTEN_EVT:
         bta_gatts_listen(p_cb, (tBTA_GATTS_DATA *) p_msg);
         break;
-
-
     case BTA_GATTS_API_ADD_INCL_SRVC_EVT:
     case BTA_GATTS_API_ADD_CHAR_EVT:
     case BTA_GATTS_API_ADD_DESCR_EVT:
     case BTA_GATTS_API_DEL_SRVC_EVT:
     case BTA_GATTS_API_START_SRVC_EVT:
     case BTA_GATTS_API_STOP_SRVC_EVT:
-
         p_srvc_cb = bta_gatts_find_srvc_cb_by_srvc_id(p_cb,
                     ((tBTA_GATTS_DATA *)p_msg)->api_add_incl_srvc.hdr.layer_specific);
 
         if (p_srvc_cb != NULL) {
             bta_gatts_srvc_build_act[p_msg->event - BTA_GATTS_API_ADD_INCL_SRVC_EVT](p_srvc_cb, (tBTA_GATTS_DATA *) p_msg);
         } else {
-            APPL_TRACE_ERROR("service not created");
+            APPL_TRACE_ERROR("service not created\n");
         }
         break;
-
     default:
         break;
     }

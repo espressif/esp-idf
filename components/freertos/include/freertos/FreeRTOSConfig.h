@@ -90,10 +90,6 @@
 #define XT_TIMER_INDEX 0
 #elif CONFIG_FREERTOS_CORETIMER_1
 #define XT_TIMER_INDEX 1
-#elif CONFIG_FREERTOS_CORETIMER_2
-#define XT_TIMER_INDEX 2
-#elif CONFIG_FREERTOS_CORETIMER_3
-#define XT_TIMER_INDEX 3
 #endif
 
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
@@ -191,7 +187,7 @@
 #define configAPPLICATION_ALLOCATED_HEAP 1
 #define configTOTAL_HEAP_SIZE			(&_heap_end - &_heap_start)//( ( size_t ) (64 * 1024) )
 
-#define configMAX_TASK_NAME_LEN			( 16 )
+#define configMAX_TASK_NAME_LEN			( CONFIG_FREERTOS_MAX_TASK_NAME_LEN )
 #define configUSE_TRACE_FACILITY		0		/* Used by vTaskList in main.c */
 #define configUSE_STATS_FORMATTING_FUNCTIONS	0	/* Used by vTaskList in main.c */
 #define configUSE_TRACE_FACILITY_2      0		/* Provided by Xtensa port patch */
@@ -252,13 +248,21 @@
 #define configUSE_NEWLIB_REENTRANT		1
 
 #define configSUPPORT_DYNAMIC_ALLOCATION    1
+#define configSUPPORT_STATIC_ALLOCATION CONFIG_SUPPORT_STATIC_ALLOCATION
+
+#ifndef __ASSEMBLER__
+#if CONFIG_ENABLE_STATIC_TASK_CLEAN_UP_HOOK
+extern void vPortCleanUpTCB ( void *pxTCB );
+#define portCLEAN_UP_TCB( pxTCB )           vPortCleanUpTCB( pxTCB )
+#endif
+#endif
 
 /* Test FreeRTOS timers (with timer task) and more. */
 /* Some files don't compile if this flag is disabled */
 #define configUSE_TIMERS                    1
-#define configTIMER_TASK_PRIORITY           1
-#define configTIMER_QUEUE_LENGTH            10
-#define configTIMER_TASK_STACK_DEPTH        configMINIMAL_STACK_SIZE
+#define configTIMER_TASK_PRIORITY           CONFIG_TIMER_TASK_PRIORITY
+#define configTIMER_QUEUE_LENGTH            CONFIG_TIMER_QUEUE_LENGTH
+#define configTIMER_TASK_STACK_DEPTH        CONFIG_TIMER_TASK_STACK_DEPTH
 
 #define INCLUDE_xTimerPendFunctionCall      1
 #define INCLUDE_eTaskGetState               1
@@ -268,7 +272,9 @@
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0
 
-
+#if CONFIG_ESP32_ENABLE_COREDUMP
+#define configENABLE_TASK_SNAPSHOT			1
+#endif
 
 
 #endif /* FREERTOS_CONFIG_H */

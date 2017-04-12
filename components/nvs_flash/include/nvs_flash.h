@@ -21,7 +21,11 @@ extern "C" {
 /**
  * @brief Initialize NVS flash storage with layout given in the partition table.
  *
- * @return ESP_OK if storage was successfully initialized.
+ * @return
+ *      - ESP_OK if storage was successfully initialized.
+ *      - ESP_ERR_NVS_NO_FREE_PAGES if the NVS storage contains no empty pages
+ *        (which may happen if NVS partition was truncated)
+ *      - one of the error codes from the underlying flash storage driver
  */
 esp_err_t nvs_flash_init(void);
 

@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "soc/cpu.h"
 
 #define unity_printf ets_printf
 
@@ -39,16 +40,17 @@ void unity_flush()
 
 void unity_testcase_register(struct test_desc_t* desc)
 {
-    if (!s_unity_tests_first) 
+    if (!s_unity_tests_first)
     {
         s_unity_tests_first = desc;
+        s_unity_tests_last = desc;
     }
-    else 
+    else
     {
-        s_unity_tests_last->next = desc;
+        struct test_desc_t* temp = s_unity_tests_first;
+        s_unity_tests_first = desc;
+        s_unity_tests_first->next = temp;
     }
-    s_unity_tests_last = desc;
-    desc->next = NULL;
 }
 
 static void unity_run_single_test(const struct test_desc_t* test)
@@ -166,10 +168,13 @@ void unity_run_menu()
             int test_index = strtol(cmdline, NULL, 10);
             if (test_index >= 1 && test_index <= test_count)
             {
-                uint32_t start = esp_log_timestamp(); /* hacky way to get ms */
+                uint32_t start;
+                RSR(CCOUNT, start);
                 unity_run_single_test_by_index(test_index - 1);
-                uint32_t end = esp_log_timestamp();
-                printf("Test ran in %dms\n", end - start);
+                uint32_t end;
+                RSR(CCOUNT, end);
+                uint32_t ms = (end - start) / (XT_CLOCK_FREQ / 1000);
+                printf("Test ran in %dms\n", ms);
             }
         }
 

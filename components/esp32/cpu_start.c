@@ -23,6 +23,7 @@
 #include "rom/cache.h"
 
 #include "soc/cpu.h"
+#include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc_cntl_reg.h"
@@ -38,7 +39,7 @@
 
 #include "tcpip_adapter.h"
 
-#include "heap_alloc_caps.h"
+#include "esp_heap_alloc_caps.h"
 #include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
@@ -55,6 +56,8 @@
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
 #include "esp_coexist.h"
+#include "esp_panic.h"
+#include "esp_core_dump.h"
 #include "trax.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -70,7 +73,6 @@ static bool app_cpu_started = false;
 #endif //!CONFIG_FREERTOS_UNICORE
 
 static void do_global_ctors(void);
-static void do_phy_init();
 static void main_task(void* args);
 extern void app_main(void);
 
@@ -92,6 +94,11 @@ static const char* TAG = "cpu_start";
 
 void IRAM_ATTR call_start_cpu0()
 {
+#if CONFIG_FREERTOS_UNICORE
+    RESET_REASON rst_reas[1];
+#else
+    RESET_REASON rst_reas[2];
+#endif
     cpu_configure_region_protection();
 
     //Move exception vectors to IRAM
@@ -99,15 +106,28 @@ void IRAM_ATTR call_start_cpu0()
                   "wsr    %0, vecbase\n" \
                   ::"r"(&_init_start));
 
+    rst_reas[0] = rtc_get_reset_reason(0);
+#if !CONFIG_FREERTOS_UNICORE
+    rst_reas[1] = rtc_get_reset_reason(1);
+#endif
+    // from panic handler we can be reset by RWDT or TG0WDT
+    if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET
+#if !CONFIG_FREERTOS_UNICORE
+        || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
+#endif
+        ) {
+        // stop wdt in case of any
+        ESP_EARLY_LOGI(TAG, "Stop panic WDT");
+        esp_panic_wdt_stop();
+    }
+
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
 
     /* Unless waking from deep sleep (implying RTC memory is intact), clear RTC bss */
-    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET) {
+    if (rst_reas[0] != DEEPSLEEP_RESET) {
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
 
-    // Initialize heap allocator
-    heap_alloc_caps_init();
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
@@ -131,6 +151,15 @@ void IRAM_ATTR call_start_cpu0()
     ESP_EARLY_LOGI(TAG, "Single core mode");
     CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
 #endif
+
+    /* Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
+       If the heap allocator is initialized first, it will put free memory linked list items into
+       memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
+       corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
+       works around this problem. */
+    heap_alloc_caps_init();
+
+
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
     start_cpu0();
 }
@@ -172,11 +201,13 @@ void start_cpu0_default(void)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     esp_set_cpu_freq();     // set CPU frequency configured in menuconfig
-    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (APB_CLK_FREQ << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+#ifndef CONFIG_CONSOLE_UART_NONE
+    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (rtc_clk_apb_freq_get() << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+#endif
 #if CONFIG_BROWNOUT_DET
     esp_brownout_init();
 #endif
-    rtc_gpio_unhold_all();
+    rtc_gpio_force_hold_dis_all();
     esp_setup_time_syscalls();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
@@ -197,21 +228,14 @@ void start_cpu0_default(void)
 #if CONFIG_TASK_WDT
     esp_task_wdt_init();
 #endif
-#if !CONFIG_FREERTOS_UNICORE
     esp_crosscore_int_init();
-#endif
     esp_ipc_init();
     spi_flash_init();
+    /* init default OS-aware flash access critical section */
+    spi_flash_guard_set(&g_flash_guard_default_ops);
 
-#if CONFIG_ESP32_PHY_AUTO_INIT
-    nvs_flash_init();
-    do_phy_init();
-#endif
-
-#if CONFIG_SW_COEXIST_ENABLE
-    if (coex_init() == ESP_OK) {
-        coexist_set_enable(true);
-    }
+#if CONFIG_ESP32_ENABLE_COREDUMP
+    esp_core_dump_init();
 #endif
 
     xTaskCreatePinnedToCore(&main_task, "main",
@@ -253,40 +277,9 @@ static void main_task(void* args)
     // Now that the application is about to start, disable boot watchdogs
     REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
     REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
+    //Enable allocation in region where the startup stacks were located.
+    heap_alloc_enable_nonos_stack_tag();
     app_main();
     vTaskDelete(NULL);
 }
 
-static void do_phy_init()
-{
-    esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
-    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
-        calibration_mode = PHY_RF_CAL_NONE;
-    }
-    const esp_phy_init_data_t* init_data = esp_phy_get_init_data();
-    if (init_data == NULL) {
-        ESP_LOGE(TAG, "failed to obtain PHY init data");
-        abort();
-    }
-    esp_phy_calibration_data_t* cal_data =
-            (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
-    if (cal_data == NULL) {
-        ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
-        abort();
-    }
-    esp_err_t err = esp_phy_load_cal_data_from_nvs(cal_data);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "failed to load RF calibration data, falling back to full calibration");
-        calibration_mode = PHY_RF_CAL_FULL;
-    }
-
-    esp_phy_init(init_data, calibration_mode, cal_data);
-
-    if (calibration_mode != PHY_RF_CAL_NONE) {
-        err = esp_phy_store_cal_data_to_nvs(cal_data);
-    } else {
-        err = ESP_OK;
-    }
-    esp_phy_release_init_data(init_data);
-    free(cal_data); // PHY maintains a copy of calibration data, so we can free this
-}

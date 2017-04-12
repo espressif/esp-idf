@@ -85,6 +85,7 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
     assert(it);
     // iterator reached the end of linked list?
     if (it->next_item == NULL) {
+        esp_partition_iterator_release(it);
         return NULL;
     }
     _lock_acquire(&s_partition_list_lock);
@@ -166,10 +167,14 @@ static esp_err_t load_partitions()
         item->info.type = it->type;
         item->info.subtype = it->subtype;
         item->info.encrypted = it->flags & PART_FLAG_ENCRYPTED;
-        if (esp_flash_encryption_enabled() && it->type == PART_TYPE_APP) {
-            /* All app partitions are encrypted if encryption is turned on */
+        if (esp_flash_encryption_enabled() && (
+                it->type == PART_TYPE_APP
+                || (it->type == PART_TYPE_DATA && it->subtype == PART_SUBTYPE_DATA_OTA))) {
+            /* If encryption is turned on, all app partitions and OTA data
+               are always encrypted */
             item->info.encrypted = true;
         }
+
         // it->label may not be zero-terminated
         strncpy(item->info.label, (const char*) it->label, sizeof(it->label));
         item->info.label[sizeof(it->label)] = 0;
@@ -179,6 +184,7 @@ static esp_err_t load_partitions()
         } else {
             SLIST_INSERT_AFTER(last, item, next);
         }
+        last = item;
     }
     spi_flash_munmap(handle);
     return ESP_OK;
@@ -194,6 +200,28 @@ const esp_partition_t* esp_partition_get(esp_partition_iterator_t iterator)
 {
     assert(iterator != NULL);
     return iterator->info;
+}
+
+const esp_partition_t *esp_partition_verify(const esp_partition_t *partition)
+{
+    assert(partition != NULL);
+    const char *label = (strlen(partition->label) > 0) ? partition->label : NULL;
+    esp_partition_iterator_t it = esp_partition_find(partition->type,
+                                                     partition->subtype,
+                                                     label);
+    while (it != NULL) {
+        const esp_partition_t *p = esp_partition_get(it);
+        /* Can't memcmp() whole structure here as padding contents may be different */
+        if (p->address == partition->address
+            && partition->size == p->size
+            && partition->encrypted == p->encrypted) {
+            esp_partition_iterator_release(it);
+            return p;
+        }
+        it = esp_partition_next(it);
+    }
+    esp_partition_iterator_release(it);
+    return NULL;
 }
 
 esp_err_t esp_partition_read(const esp_partition_t* partition,
@@ -230,10 +258,6 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
                              size_t dst_offset, const void* src, size_t size)
 {
     assert(partition != NULL);
-    //todo : need add ecrypt write support ,size must be 32-bytes align 
-    if(partition->encrypted == true) {
-        return ESP_FAIL;
-    }
     if (dst_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }

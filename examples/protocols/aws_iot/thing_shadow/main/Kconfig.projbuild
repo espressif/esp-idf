@@ -1,0 +1,66 @@
+menu "Example Configuration"
+
+config WIFI_SSID
+    string "WiFi SSID"
+    default "myssid"
+    help
+        SSID (network name) for the example to connect to.
+
+config WIFI_PASSWORD
+    string "WiFi Password"
+    default "myssid"
+    help
+        WiFi password (WPA or WPA2) for the example to use.
+
+        Can be left blank if the network has no security set.
+
+config AWS_EXAMPLE_CLIENT_ID
+    string "AWS IoT Client ID"
+    default "myesp32"
+    help
+        AWS IoT Client ID for the example. Should be unique for every device.
+
+config AWS_EXAMPLE_THING_NAME
+    string "AWS IoT Thing Name"
+    default "myesp32"
+    help
+        AWS IoT Thing Name for the example. Should be unique for every device.
+
+choice EXAMPLE_CERT_SOURCE
+    prompt "AWS IoT Certificate Source"
+    default EXAMPLE_EMBEDDED_CERTS
+    help
+        AWS IoT requires loading of a device-specific certificate and private key,
+        and a common Root CA Certificate. These can be compiled into the example
+        app, or they can be loaded via the filesystem from an SD card.
+
+config EXAMPLE_EMBEDDED_CERTS
+    bool "Embed into app"
+config EXAMPLE_SDCARD_CERTS
+    bool "Load from SD card"
+    select EXAMPLE_FILESYSTEM_CERTS
+endchoice
+
+# Currently this is equivalent to EXAMPLE_SDCARD_CERTS,
+# however eventually we want to support more filesystem
+# sources (SPIFFS, etc.) So this hidden config item
+# is selected whenever the item should load from filesystem.
+config EXAMPLE_FILESYSTEM_CERTS
+   bool
+
+config EXAMPLE_CERTIFICATE_PATH
+   string "Device Certificate Path"
+   depends on EXAMPLE_FILESYSTEM_CERTS
+   default "/sdcard/certificate.pem.crt"
+
+config EXAMPLE_PRIVATE_KEY_PATH
+   string "Device Private Key Path"
+   depends on EXAMPLE_FILESYSTEM_CERTS
+   default "/sdcard/private.pem.key"
+
+config EXAMPLE_ROOT_CA_PATH
+   string "Root CA Certificate Path"
+   depends on EXAMPLE_FILESYSTEM_CERTS
+   default "/sdcard/aws-root-ca.pem"
+
+endmenu

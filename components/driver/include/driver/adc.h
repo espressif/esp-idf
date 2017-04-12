@@ -49,11 +49,11 @@ typedef enum {
 } adc1_channel_t;
 
 /**
- * @brief Configuration ADC1 capture width.
+ * @brief Configure ADC1 capture width.
  *
- * The configuration is in effect for all channels of ADC1
+ * The configuration is for all channels of ADC1
  *
- * @param  width_bit ADC1
+ * @param width_bit Bit capture width for ADC1
  *
  * @return
  *     - ESP_OK success
@@ -62,10 +62,29 @@ typedef enum {
 esp_err_t adc1_config_width(adc_bits_width_t width_bit);
 
 /**
- * @brief Configuration ADC1 capture attenuation of channels.
+ * @brief Configure the ADC1 channel, including setting attenuation.
  *
- * @param  channel the ADC1 channel
- * @param  atten attenuation
+ * @note This function also configures the input GPIO pin mux to
+ * connect it to the ADC1 channel. It must be called before calling
+ * adc1_get_voltage() for this channel.
+ *
+ * The default ADC full-scale voltage is 1.1V. To read higher voltages (up to the pin maximum voltage,
+ * usually 3.3V) requires setting >0dB signal attenuation for that ADC channel.
+ *
+ * When VDD_A is 3.3V:
+ *
+ * - 0dB attenuaton (ADC_ATTEN_0db) gives full-scale voltage 1.1V
+ * - 2.5dB attenuation (ADC_ATTEN_2_5db) gives full-scale voltage 1.5V
+ * - 6dB attenuation (ADC_ATTEN_6db) gives full-scale voltage 2.2V
+ * - 11dB attenuation (ADC_ATTEN_11db) gives full-scale voltage 3.9V (see note below)
+ *
+ * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC1 configured
+ * bit width, this value is: 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
+ *
+ * @note At 11dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
+ *
+ * @param channel ADC1 channel to configure
+ * @param atten  Attenuation level
  *
  * @return
  *     - ESP_OK success
@@ -74,45 +93,37 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten);
 
 /**
- * @brief ADC1 get the value of the voltage.
+ * @brief Take an ADC1 reading on a single channel
  *
- * @param  channel the ADC1 channel
+ * @note Call adc1_config_width() before the first time this
+ * function is called.
+ *
+ * @note For a given channel, adc1_config_channel_atten(channel)
+ * must be called before the first time this function is called.
+ *
+ * @param  channel ADC1 channel to read
  *
  * @return
- *     - -1 Parameter error
- *     -  Other the value of ADC1 channel
+ *     - -1: Parameter error
+ *     -  Other: ADC1 channel reading.
  */
 int adc1_get_voltage(adc1_channel_t channel);
 
 /**
- * @brief Hall  Sensor output value.
- *        @note
- *        The Hall Sensor uses Channel_0 and Channel_3 of ADC1.
- *        So, firstly: please configure ADC1 module by calling adc1_config_width before calling hall_sensor_read.
-                 We recommend that the WIDTH ADC1 be configured as 12Bit, because the values of hall_sensor_read are small and almost the same if WIDTH ADC1 is configured as 9Bit, 10Bit or 11Bit.
- *            secondly: when you use the hall sensor, please do not use Channel_0 and Channel_3 of ADC1 as
- *                   ADC channels.
+ * @brief Read Hall Sensor
  *
- * @return the value of hall sensor
+ * @note The Hall Sensor uses channels 0 and 3 of ADC1. Do not configure
+ * these channels for use as ADC channels.
+ *
+ * @note The ADC1 module must be enabled by calling
+ *       adc1_config_width() before calling hall_sensor_read(). ADC1
+ *       should be configured for 12 bit readings, as the hall sensor
+ *       readings are low values and do not cover the full range of the
+ *       ADC.
+ *
+ * @return The hall sensor reading.
  */
 int hall_sensor_read();
-
-/**
- *----------EXAMPLE TO USE ADC1------------ *
- * @code{c}
- *     adc1_config_width(ADC_WIDTH_12Bit);//config adc1 width
- *     adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_0db);//config channel0 attenuation
- *     int val=adc1_get_voltage(ADC1_CHANNEL_0);//get the  val of channel0
- * @endcode
- **/
-
-/**
- *----------EXAMPLE TO USE HALL SENSOR------------ *
- * @code{c}
- *     adc1_config_width(ADC_WIDTH_12Bit);//config adc1 width
- *     int val=hall_sensor_read();
- * @endcode
- **/
 
 #ifdef __cplusplus
 }

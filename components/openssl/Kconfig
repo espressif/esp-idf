@@ -1,0 +1,70 @@
+menu "OpenSSL"
+
+config OPENSSL_DEBUG
+    bool "Enable OpenSSL debugging"
+    default n
+    help
+       Enable OpenSSL debugging function.
+
+       If the option is enabled, "SSL_DEBUG" works.
+
+config OPENSSL_DEBUG_LEVEL
+   int "OpenSSL debugging level"
+   default 0
+   range 0 255
+   depends on OPENSSL_DEBUG
+   help
+       OpenSSL debugging level.
+
+       Only function whose debugging level is higher than "OPENSSL_DEBUG_LEVEL" works.
+
+       For example:
+           If OPENSSL_DEBUG_LEVEL = 2, you use function "SSL_DEBUG(1, "malloc failed")". Because 1 < 2, it will not print.
+
+config OPENSSL_LOWLEVEL_DEBUG
+    bool "Enable OpenSSL low-level module debugging"
+    default n
+    depends on OPENSSL_DEBUG
+    select MBEDTLS_DEBUG
+    help
+       If the option is enabled, low-level module debugging function of OpenSSL is enabled, e.g. mbedtls internal debugging function.
+
+choice OPENSSL_ASSERT
+    prompt "Select OpenSSL assert function"
+    default CONFIG_OPENSSL_ASSERT_EXIT
+    help
+        OpenSSL function needs "assert" function to check if input parameters are valid.
+
+        If you want to use assert debugging function, "OPENSSL_DEBUG" should be enabled.
+
+config OPENSSL_ASSERT_DO_NOTHING
+    bool "Do nothing"
+    help
+        Do nothing and "SSL_ASSERT" does not work.
+
+config OPENSSL_ASSERT_EXIT
+    bool "Check and exit"
+    help
+        Enable assert exiting, it will check and return error code.
+
+config OPENSSL_ASSERT_DEBUG
+    bool "Show debugging message"
+    depends on OPENSSL_DEBUG
+    help
+        Enable assert debugging, it will check and show debugging message.
+
+config OPENSSL_ASSERT_DEBUG_EXIT
+    bool "Show debugging message and exit"
+    depends on OPENSSL_DEBUG
+    help
+        Enable assert debugging and exiting, it will check, show debugging message and return error code.
+
+config OPENSSL_ASSERT_DEBUG_BLOCK
+    bool "Show debugging message and block"
+    depends on OPENSSL_DEBUG
+    help
+        Enable assert debugging and blocking, it will check, show debugging message and block by "while (1);".
+
+endchoice
+
+endmenu

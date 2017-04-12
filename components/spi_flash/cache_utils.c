@@ -41,6 +41,9 @@ static uint32_t s_flash_op_cache_state[2];
 static SemaphoreHandle_t s_flash_op_mutex;
 static volatile bool s_flash_op_can_start = false;
 static volatile bool s_flash_op_complete = false;
+#ifndef NDEBUG
+static volatile int s_flash_op_cpu = -1;
+#endif
 
 void spi_flash_init_lock()
 {
@@ -66,9 +69,12 @@ void IRAM_ATTR spi_flash_op_block_func(void* arg)
     uint32_t cpuid = (uint32_t) arg;
     // Disable cache so that flash operation can start
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
+    // s_flash_op_complete flag is cleared on *this* CPU, otherwise the other
+    // CPU may reset the flag back to false before IPC task has a chance to check it
+    // (if it is preempted by an ISR taking non-trivial amount of time)
+    s_flash_op_complete = false;
     s_flash_op_can_start = true;
     while (!s_flash_op_complete) {
-        // until we have a way to use interrupts for inter-CPU communication,
         // busy loop here and wait for the other CPU to finish flash operation
     }
     // Flash operation is complete, re-enable cache
@@ -85,6 +91,11 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 
     const uint32_t cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
+#ifndef NDEBUG
+    // For sanity check later: record the CPU which has started doing flash operation
+    assert(s_flash_op_cpu == -1);
+    s_flash_op_cpu = cpuid;
+#endif
 
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
         // Scheduler hasn't been started yet, it means that spi_flash API is being
@@ -97,13 +108,13 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
         // Signal to the spi_flash_op_block_task on the other CPU that we need it to
         // disable cache there and block other tasks from executing.
         s_flash_op_can_start = false;
-        s_flash_op_complete = false;
-        esp_ipc_call(other_cpuid, &spi_flash_op_block_func, (void*) other_cpuid);
+        esp_err_t ret = esp_ipc_call(other_cpuid, &spi_flash_op_block_func, (void*) other_cpuid);
+        assert(ret == ESP_OK);
         while (!s_flash_op_can_start) {
             // Busy loop and wait for spi_flash_op_block_func to disable cache
             // on the other CPU
         }
-        // Disable scheduler on CPU cpuid
+        // Disable scheduler on the current CPU
         vTaskSuspendAll();
         // This is guaranteed to run on CPU <cpuid> because the other CPU is now
         // occupied by highest priority task
@@ -119,6 +130,11 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 {
     const uint32_t cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
+#ifndef NDEBUG
+    // Sanity check: flash operation ends on the same CPU as it has started
+    assert(cpuid == s_flash_op_cpu);
+    s_flash_op_cpu = -1;
+#endif
 
     // Re-enable cache on this CPU
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
@@ -132,11 +148,42 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
     } else {
         // Signal to spi_flash_op_block_task that flash operation is complete
         s_flash_op_complete = true;
-        // Resume tasks on the current CPU
+    }
+    // Re-enable non-iram interrupts
+    esp_intr_noniram_enable();
+
+    // Resume tasks on the current CPU, if the scheduler has started.
+    // NOTE: enabling non-IRAM interrupts has to happen before this,
+    // because once the scheduler has started, due to preemption the
+    // current task can end up being moved to the other CPU.
+    // But esp_intr_noniram_enable has to be called on the same CPU which
+    // called esp_intr_noniram_disable
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
         xTaskResumeAll();
     }
     // Release API lock
     spi_flash_op_unlock();
+}
+
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
+{
+    const uint32_t cpuid = xPortGetCoreID();
+    const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
+
+    // do not care about other CPU, it was halted upon entering panic handler
+    spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
+    // Kill interrupts that aren't located in IRAM
+    esp_intr_noniram_disable();
+    // Disable cache on this CPU as well
+    spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
+}
+
+void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os()
+{
+    const uint32_t cpuid = xPortGetCoreID();
+
+    // Re-enable cache on this CPU
+    spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
     // Re-enable non-iram interrupts
     esp_intr_noniram_enable();
 }
@@ -160,15 +207,31 @@ void spi_flash_op_unlock()
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
-    esp_intr_noniram_disable();
     spi_flash_op_lock();
+    esp_intr_noniram_disable();
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
 
 void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
 {
     spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
+    esp_intr_noniram_enable();
     spi_flash_op_unlock();
+}
+
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
+{
+    // Kill interrupts that aren't located in IRAM
+    esp_intr_noniram_disable();
+    // Disable cache on this CPU as well
+    spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
+}
+
+void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os()
+{
+    // Re-enable cache on this CPU
+    spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
+    // Re-enable non-iram interrupts
     esp_intr_noniram_enable();
 }
 
@@ -214,3 +277,9 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
     }
 }
 
+
+IRAM_ATTR bool spi_flash_cache_enabled()
+{
+    return REG_GET_BIT(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_CACHE_ENABLE)
+        && REG_GET_BIT(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_CACHE_ENABLE);
+}

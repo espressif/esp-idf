@@ -14,7 +14,7 @@ Additional third party copyrighted code is included under the following licenses
 
 * Xtensa header files (components/esp32/include/xtensa) are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduce in the individual header files.
 
-* `esptool.py`_ (bin/esptool.py) is Copyright (C) 2014-2016 Fredrik Ahlberg, Angus Gratton and is licensed under the GNU General Public License v2, as described in the file components/esptool_py/LICENSE.
+* `esptool.py`_ (components/esptool_py/esptool) is Copyright (C) 2014-2016 Fredrik Ahlberg, Angus Gratton and is licensed under the GNU General Public License v2, as described in the file components/esptool_py/LICENSE.
 
 * Original parts of FreeRTOS_ (components/freertos) are Copyright (C) 2015 Real Time Engineers Ltd and is licensed under the GNU General Public License V2 with the FreeRTOS Linking Exception, as described in the file components/freertos/license.txt.
 
@@ -25,6 +25,8 @@ Additional third party copyrighted code is included under the following licenses
 * `wpa_supplicant`_ Copyright (c) 2003-2005 Jouni Malinen and licensed under the BSD license.
 
 * `FreeBSD net80211`_ Copyright (c) 2004-2008 Sam Leffler, Errno Consulting and licensed under the BSD license.
+
+* `JSMN`_ JSON Parser (components/jsmn) Copyright (c) 2010 Serge A. Zaitsev and licensed under the MIT license.
 
 Where source code headers specify Copyright & License information, this information takes precedence over the summaries made here.
 
@@ -96,10 +98,11 @@ Copyright (C) 2011, ChaN, all right reserved.
 
 .. _Newlib: https://sourceware.org/newlib/
 .. _FreeRTOS: http://freertos.org/
-.. _esptool.py: https://github.com/themadinventor/esptool
+.. _esptool.py: https://github.com/espressif/esptool
 .. _LWIP: http://savannah.nongnu.org/projects/lwip/
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
 .. _miniz: https://code.google.com/archive/p/miniz/
 .. _wpa_supplicant: http://w1.fi/wpa_supplicant/
 .. _FreeBSD net80211: https://github.com/freebsd/freebsd/tree/master/sys/net80211
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
+.. _JSMN: http://zserge.com/jsmn.html

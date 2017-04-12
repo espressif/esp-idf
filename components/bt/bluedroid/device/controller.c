@@ -221,6 +221,10 @@ static void start_up(void)
         }
 
         if (HCI_LE_DATA_LEN_EXT_SUPPORTED(features_ble.as_array)) {
+            /* set default tx data length to MAX 251 */
+            response = AWAIT_COMMAND(packet_factory->make_ble_write_suggested_default_data_length(BTM_BLE_DATA_SIZE_MAX, BTM_BLE_DATA_TX_TIME_MAX));
+            packet_parser->parse_generic_command_complete(response);
+
             response = AWAIT_COMMAND(packet_factory->make_ble_read_suggested_default_data_length());
             packet_parser->parse_ble_read_suggested_default_data_length_response(
                 response,

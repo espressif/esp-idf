@@ -7,7 +7,7 @@
 
 #define DATASIZE (1024*64)
 
-TEST_CASE("Test miniz compression/decompression", "[miniz]")
+TEST_CASE("Test miniz compression/decompression", "[miniz][ignore]")
 {
     int x;
     char b;

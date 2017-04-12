@@ -21,6 +21,7 @@
 #include <sys/param.h>
 
 #include <unity.h>
+#include <test_utils.h>
 #include <esp_spi_flash.h>
 #include <rom/spi_flash.h>
 #include "../cache_utils.h"
@@ -28,7 +29,16 @@
 #include "soc/timer_group_reg.h"
 
 /* Base offset in flash for tests. */
-#define FLASH_BASE 0x120000
+static size_t start;
+
+static void setup_tests()
+{
+    if (start == 0) {
+        const esp_partition_t *part = get_test_data_partition();
+        start = part->address;
+        printf("Test data partition @ 0x%x\n", start);
+    }
+}
 
 #ifndef CONFIG_SPI_FLASH_MINIMAL_TEST
 #define CONFIG_SPI_FLASH_MINIMAL_TEST 1
@@ -61,24 +71,25 @@ static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
 {
     uint32_t src_buf[16];
     char dst_buf[64], dst_gold[64];
+
     fprintf(stderr, "src=%d dst=%d len=%d\n", src_off, dst_off, len);
     memset(src_buf, 0xAA, sizeof(src_buf));
     fill(((char *) src_buf) + src_off, src_off, len);
-    ESP_ERROR_CHECK(spi_flash_erase_sector((FLASH_BASE + src_off) / SPI_FLASH_SEC_SIZE));
+    ESP_ERROR_CHECK(spi_flash_erase_sector((start + src_off) / SPI_FLASH_SEC_SIZE));
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc = SPIWrite(FLASH_BASE, src_buf, sizeof(src_buf));
+    esp_rom_spiflash_result_t rc = esp_rom_spiflash_write(start, src_buf, sizeof(src_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    TEST_ASSERT_EQUAL_INT(rc, SPI_FLASH_RESULT_OK);
+    TEST_ASSERT_EQUAL_INT(rc, ESP_ROM_SPIFLASH_RESULT_OK);
     memset(dst_buf, 0x55, sizeof(dst_buf));
     memset(dst_gold, 0x55, sizeof(dst_gold));
     fill(dst_gold + dst_off, src_off, len);
-
-    ESP_ERROR_CHECK(spi_flash_read(FLASH_BASE + src_off, dst_buf + dst_off, len));
+    ESP_ERROR_CHECK(spi_flash_read(start + src_off, dst_buf + dst_off, len));
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE("Test spi_flash_read", "[spi_flash_read]")
+TEST_CASE("Test spi_flash_read", "[spi_flash]")
 {
+    setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST
     test_read(0, 0, 0);
     test_read(0, 0, 4);
@@ -135,7 +146,7 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     memset(src_buf, 0x55, sizeof(src_buf));
     fill(src_buf + src_off, src_off, len);
     // Fills with 0xff
-    ESP_ERROR_CHECK(spi_flash_erase_sector((FLASH_BASE + dst_off) / SPI_FLASH_SEC_SIZE));
+    ESP_ERROR_CHECK(spi_flash_erase_sector((start + dst_off) / SPI_FLASH_SEC_SIZE));
     memset(dst_gold, 0xff, sizeof(dst_gold));
     if (len > 0) {
         int pad_left_off = (dst_off & ~3U);
@@ -146,16 +157,17 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
         }
         fill(dst_gold + dst_off, src_off, len);
     }
-    ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE + dst_off, src_buf + src_off, len));
+    ESP_ERROR_CHECK(spi_flash_write(start + dst_off, src_buf + src_off, len));
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    SpiFlashOpResult rc = SPIRead(FLASH_BASE, dst_buf, sizeof(dst_buf));
+    esp_rom_spiflash_result_t rc = esp_rom_spiflash_read(start, dst_buf, sizeof(dst_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    TEST_ASSERT_EQUAL_INT(rc, SPI_FLASH_RESULT_OK);
+    TEST_ASSERT_EQUAL_INT(rc, ESP_ROM_SPIFLASH_RESULT_OK);
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE("Test spi_flash_write", "[spi_flash_write]")
+TEST_CASE("Test spi_flash_write", "[spi_flash]")
 {
+    setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST
     test_write(0, 0, 0);
     test_write(0, 0, 4);
@@ -200,8 +212,8 @@ TEST_CASE("Test spi_flash_write", "[spi_flash_write]")
      * NB: At the moment these only support aligned addresses, because memcpy
      * is not aware of the 32-but load requirements for these regions.
      */
-    ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40000000, 16));
-    ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40070000, 16));
-    ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40078000, 16));
-    ESP_ERROR_CHECK(spi_flash_write(FLASH_BASE, (char *) 0x40080000, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40000000, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40070000, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40078000, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40080000, 16));
 }

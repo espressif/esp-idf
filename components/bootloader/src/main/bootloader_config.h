@@ -23,7 +23,6 @@ extern "C"
 
 #include "esp_flash_data_types.h"
 
-#define BOOT_VERSION "V0.1"
 #define SPI_SEC_SIZE 0x1000
 #define IROM_LOW    0x400D0000
 #define IROM_HIGH   0x40400000

@@ -3,7 +3,7 @@
 	url = https://github.com/espressif/esp32-wifi-lib.git
 [submodule "components/esptool_py/esptool"]
 	path = components/esptool_py/esptool
-	url = https://github.com/themadinventor/esptool.git
+	url = https://github.com/espressif/esptool.git
 [submodule "components/bt/lib"]
 	path = components/bt/lib
 	url = https://github.com/espressif/esp32-bt-lib.git
@@ -13,3 +13,6 @@
 [submodule "components/coap/libcoap"]
 	path = components/coap/libcoap
 	url = https://github.com/obgm/libcoap.git
+[submodule "components/aws_iot/aws-iot-device-sdk-embedded-C"]
+	path = components/aws_iot/aws-iot-device-sdk-embedded-C
+	url = https://github.com/espressif/aws-iot-device-sdk-embedded-C.git

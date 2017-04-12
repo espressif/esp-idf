@@ -21,6 +21,7 @@
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/lock.h>
+#include <rom/rtc.h>
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "soc/soc.h"
@@ -51,16 +52,16 @@ static uint64_t get_rtc_time_us()
     uint64_t low = READ_PERI_REG(RTC_CNTL_TIME0_REG);
     uint64_t high = READ_PERI_REG(RTC_CNTL_TIME1_REG);
     uint64_t ticks = (high << 32) | low;
-    return ticks * 100 / (RTC_CTNL_SLOWCLK_FREQ / 10000);    // scale RTC_CTNL_SLOWCLK_FREQ to avoid overflow
+    return ticks * 100 / (RTC_CNTL_SLOWCLK_FREQ / 10000);    // scale RTC_CNTL_SLOWCLK_FREQ to avoid overflow
 }
 #endif // WITH_RTC
 
 
 // s_boot_time: time from Epoch to the first boot time
 #ifdef WITH_RTC
-static RTC_DATA_ATTR struct timeval s_boot_time;
+// when RTC is used to persist time, two RTC_STORE registers are used to store boot time
 #elif defined(WITH_FRC1)
-static struct timeval s_boot_time;
+static uint64_t s_boot_time;
 #endif
 
 #if defined(WITH_RTC) || defined(WITH_FRC1)
@@ -82,11 +83,42 @@ static volatile uint64_t s_microseconds = 0;
 
 static void IRAM_ATTR frc_timer_isr()
 {
+    // Write to FRC_TIMER_INT_REG may not take effect in some cases (root cause TBD)
+    // This extra write works around this issue.
+    // FRC_TIMER_LOAD_REG(0) is used here, but any other DPORT register address can also be used.
+    WRITE_PERI_REG(FRC_TIMER_LOAD_REG(0), FRC_TIMER_LOAD_VALUE(0));
     WRITE_PERI_REG(FRC_TIMER_INT_REG(0), FRC_TIMER_INT_CLR);
     s_microseconds += FRC1_ISR_PERIOD_US;
 }
 
 #endif // WITH_FRC1
+
+#if defined(WITH_RTC) || defined(WITH_FRC1)
+static void set_boot_time(uint64_t time_us)
+{
+    _lock_acquire(&s_boot_time_lock);
+#ifdef WITH_RTC
+    REG_WRITE(RTC_BOOT_TIME_LOW_REG, (uint32_t) (time_us & 0xffffffff));
+    REG_WRITE(RTC_BOOT_TIME_HIGH_REG, (uint32_t) (time_us >> 32));
+#else
+    s_boot_time = time_us;
+#endif
+    _lock_release(&s_boot_time_lock);
+}
+
+static uint64_t get_boot_time()
+{
+    uint64_t result;
+    _lock_acquire(&s_boot_time_lock);
+#ifdef WITH_RTC
+    result = ((uint64_t) REG_READ(RTC_BOOT_TIME_LOW_REG)) + (((uint64_t) REG_READ(RTC_BOOT_TIME_HIGH_REG)) << 32);
+#else
+    result = s_boot_time;
+#endif
+    _lock_release(&s_boot_time_lock);
+    return result;
+}
+#endif //defined(WITH_RTC) || defined(WITH_FRC1)
 
 void esp_setup_time_syscalls()
 {
@@ -148,13 +180,10 @@ int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
 {
     (void) tz;
 #if defined( WITH_FRC1 ) || defined( WITH_RTC )
-    uint64_t microseconds = get_time_since_boot();
     if (tv) {
-        _lock_acquire(&s_boot_time_lock);
-        microseconds += s_boot_time.tv_usec;
-        tv->tv_sec = s_boot_time.tv_sec + microseconds / 1000000;
+        uint64_t microseconds = get_boot_time() + get_time_since_boot();
+        tv->tv_sec = microseconds / 1000000;
         tv->tv_usec = microseconds % 1000000;
-        _lock_release(&s_boot_time_lock);
     }
     return 0;
 #else
@@ -168,14 +197,9 @@ int settimeofday(const struct timeval *tv, const struct timezone *tz)
     (void) tz;
 #if defined( WITH_FRC1 ) || defined( WITH_RTC )
     if (tv) {
-        _lock_acquire(&s_boot_time_lock);
         uint64_t now = ((uint64_t) tv->tv_sec) * 1000000LL + tv->tv_usec;
         uint64_t since_boot = get_time_since_boot();
-        uint64_t boot_time = now - since_boot;
-
-        s_boot_time.tv_sec = boot_time / 1000000;
-        s_boot_time.tv_usec = boot_time % 1000000;
-        _lock_release(&s_boot_time_lock);
+        set_boot_time(now - since_boot);
     }
     return 0;
 #else

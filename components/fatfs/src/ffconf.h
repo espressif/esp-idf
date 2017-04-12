@@ -1,3 +1,4 @@
+#include "sdkconfig.h"
 /*---------------------------------------------------------------------------/
 /  FatFs - FAT file system module configuration file
 /---------------------------------------------------------------------------*/
@@ -69,7 +70,7 @@
 / Locale and Namespace Configurations
 /---------------------------------------------------------------------------*/
 
-#define _CODE_PAGE	1
+#define _CODE_PAGE	CONFIG_FATFS_CODEPAGE
 /* This option specifies the OEM code page to be used on the target system.
 /  Incorrect setting of the code page can cause a file open failure.
 /
@@ -97,9 +98,17 @@
 /   950 - Traditional Chinese (DBCS)
 */
 
-
+#if defined(CONFIG_FATFS_LFN_STACK)
+#define _USE_LFN    2
+#elif defined(CONFIG_FATFS_LFN_HEAP)
+#define _USE_LFN    3
+#else /* CONFIG_FATFS_LFN_NONE */
 #define	_USE_LFN	0
-#define	_MAX_LFN	255
+#endif
+
+#ifdef CONFIG_FATFS_MAX_LFN
+#define	_MAX_LFN	CONFIG_FATFS_MAX_LFN
+#endif
 /* The _USE_LFN switches the support of long file name (LFN).
 /
 /   0: Disable support of LFN. _MAX_LFN has no effect.

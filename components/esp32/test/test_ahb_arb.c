@@ -269,7 +269,7 @@ static void tskTwo(void *pvParameters)
 }
 
 
-TEST_CASE("S32C1I vs AHB test (needs I2S)", "[hw]")
+TEST_CASE("S32C1I vs AHB test (needs I2S)", "[hw][ignore]")
 {
     int i;
     TaskHandle_t th[3];

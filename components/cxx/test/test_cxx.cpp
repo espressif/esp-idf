@@ -1,6 +1,7 @@
 #include <functional>
 #include <vector>
 #include <algorithm>
+#include <iostream>
 #include "unity.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -200,4 +201,10 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(1, g_static_init_test2.index);
     TEST_ASSERT_EQUAL(1, g_static_init_test3.index);
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
+}
+
+
+TEST_CASE("can use iostreams", "[cxx]")
+{
+    std::cout << "hello world";
 }

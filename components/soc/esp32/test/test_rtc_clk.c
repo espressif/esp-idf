@@ -1,0 +1,84 @@
+#include <stdio.h>
+#include "unity.h"
+#include "rom/ets_sys.h"
+#include "soc/rtc.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_io_reg.h"
+#include "soc/sens_reg.h"
+#include "soc/io_mux_reg.h"
+#include "driver/rtc_io.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+
+#define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
+
+static uint32_t calibrate_one(rtc_cal_sel_t cal_clk, const char* name)
+{
+    const uint32_t cal_count = 1000;
+    const float factor = (1 << 19) * 1000.0f;
+    uint32_t cali_val;
+    printf("%s:\n", name);
+    for (int i = 0; i < 5; ++i) {
+        printf("calibrate (%d): ", i);
+        cali_val = rtc_clk_cal(cal_clk, cal_count);
+        printf("%.3f kHz\n", factor / (float) cali_val);
+    }
+    return cali_val;
+}
+
+TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
+{
+    rtc_clk_32k_enable(true);
+    rtc_clk_8m_enable(true, true);
+
+    CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+    CALIBRATE_ONE(RTC_CAL_8MD256);
+    uint32_t cal_32k = CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+
+    if (cal_32k == 0) {
+        printf("32K XTAL OSC has not started up");
+    } else {
+        printf("switching to RTC_SLOW_FREQ_32K_XTAL: ");
+        rtc_clk_slow_freq_set(RTC_SLOW_FREQ_32K_XTAL);
+        printf("done\n");
+
+        CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+        CALIBRATE_ONE(RTC_CAL_8MD256);
+        CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+    }
+
+    printf("switching to RTC_SLOW_FREQ_8MD256: ");
+    rtc_clk_slow_freq_set(RTC_SLOW_FREQ_8MD256);
+    printf("done\n");
+
+    CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+    CALIBRATE_ONE(RTC_CAL_8MD256);
+    CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+}
+
+/* The following two are not unit tests, but are added here to make it easy to
+ * check the frequency of 150k/32k oscillators. The following two "tests" will
+ * output either 32k or 150k clock to GPIO25.
+ */
+
+static void pull_out_clk(int sel)
+{
+    REG_SET_BIT(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_MUX_SEL_M);
+    REG_CLR_BIT(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_RDE_M | RTC_IO_PDAC1_RUE_M);
+    REG_SET_FIELD(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_FUN_SEL, 1);
+    REG_SET_FIELD(SENS_SAR_DAC_CTRL1_REG, SENS_DEBUG_BIT_SEL, 0);
+    REG_SET_FIELD(RTC_IO_RTC_DEBUG_SEL_REG, RTC_IO_DEBUG_SEL0, sel);
+}
+
+TEST_CASE("Output 150k clock to GPIO25", "[rtc_clk][ignore]")
+{
+    pull_out_clk(RTC_IO_DEBUG_SEL0_150K_OSC);
+}
+
+TEST_CASE("Output 32k XTAL clock to GPIO25", "[rtc_clk][ignore]")
+{
+    rtc_clk_32k_enable(true);
+    pull_out_clk(RTC_IO_DEBUG_SEL0_32K_XTAL);
+}

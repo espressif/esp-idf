@@ -124,6 +124,9 @@ esp_err_t esp_intr_reserve(int intno, int cpu);
  *
  * The interrupt will always be allocated on the core that runs this function.
  *
+ * If ESP_INTR_FLAG_IRAM flag is used, and handler address is not in IRAM or
+ * RTC_FAST_MEM, then ESP_ERR_INVALID_ARG is returned.
+ *
  * @param source The interrupt source. One of the ETS_*_INTR_SOURCE interrupt mux
  *               sources, as defined in soc/soc.h, or one of the internal
  *               ETS_INTERNAL_*_INTR_SOURCE sources as defined in this header.

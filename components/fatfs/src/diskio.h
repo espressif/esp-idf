@@ -58,15 +58,18 @@ typedef struct {
 } ff_diskio_impl_t;
 
 /**
- * Register diskio driver for given drive number.
+ * Register or unregister diskio driver for given drive number.
  *
  * When FATFS library calls one of disk_xxx functions for driver number pdrv,
  * corresponding function in discio_impl for given pdrv will be called.
  *
  * @param pdrv drive number
- * @param discio_impl  pointer to ff_diskio_impl_t structure with diskio functions
+ * @param discio_impl   pointer to ff_diskio_impl_t structure with diskio functions
+ *                      or NULL to unregister and free previously registered drive
  */
 void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl);
+
+#define ff_diskio_unregister(pdrv_) ff_diskio_register(pdrv_, NULL)
 
 /**
  * Register SD/MMC diskio driver
@@ -75,6 +78,16 @@ void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl);
  * @param card  pointer to sdmmc_card_t structure describing a card; card should be initialized before calling f_mount.
  */
 void ff_diskio_register_sdmmc(BYTE pdrv, sdmmc_card_t* card);
+
+/**
+ * Get next available drive number
+ *
+ * @param   out_pdrv            pointer to the byte to set if successful
+ *
+ * @return  ESP_OK              on success
+ *          ESP_ERR_NOT_FOUND   if all drives are attached
+ */
+esp_err_t ff_diskio_get_drive(BYTE* out_pdrv);
 
 /* Disk Status Bits (DSTATUS) */
 

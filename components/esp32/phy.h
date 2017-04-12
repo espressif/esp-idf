@@ -25,8 +25,7 @@ extern "C" {
  */
 
 /**
- * @brief Initialize function pointer table in PHY library.
- * @note This function should be called before register_chipv7_phy.
+ * @brief Return ROM function pointer table from PHY library.
  */
 void phy_get_romfunc_addr(void);
 
@@ -57,6 +56,11 @@ void phy_set_wifi_mode_only(bool wifi_only);
  * @return NULL
  */
 void coex_bt_high_prio(void);
+
+/**
+ * @brief Shutdown PHY and RF.
+ */
+void phy_close_rf(void);
 
 #ifdef __cplusplus
 }

@@ -35,7 +35,10 @@ typedef struct alarm_t {
     void *cb_data;
 } osi_alarm_t;
 
+int osi_alarm_create_mux(void);
+int osi_alarm_delete_mux(void);
 void osi_alarm_init(void);
+void osi_alarm_deinit(void);
 
 // Creates a new alarm object. The returned object must be freed by calling
 // |alarm_free|. Returns NULL on failure.

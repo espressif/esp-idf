@@ -105,6 +105,11 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
         }
     }
 
+    // partition should have at least one free page
+    if (mFreePageList.size() == 0) {
+        return ESP_ERR_NVS_NO_FREE_PAGES;
+    }
+    
     return ESP_OK;
 }
 
@@ -163,8 +168,10 @@ esp_err_t PageManager::requestNewPage()
         return err;
     }
 
+#ifndef NDEBUG
     assert(usedEntries == newPage->getUsedEntryCount());
-
+#endif
+    
     mPageList.erase(maxErasedItemsPageIt);
     mFreePageList.push_back(erasedPage);
 

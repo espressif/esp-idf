@@ -58,6 +58,17 @@ extern "C" {
 
 #define IPSTR "%d.%d.%d.%d"
 
+#define IPV62STR(ipaddr) IP6_ADDR_BLOCK1(&(ipaddr)),     \
+    IP6_ADDR_BLOCK2(&(ipaddr)),     \
+    IP6_ADDR_BLOCK3(&(ipaddr)),     \
+    IP6_ADDR_BLOCK4(&(ipaddr)),     \
+    IP6_ADDR_BLOCK5(&(ipaddr)),     \
+    IP6_ADDR_BLOCK6(&(ipaddr)),     \
+    IP6_ADDR_BLOCK7(&(ipaddr)),     \
+    IP6_ADDR_BLOCK8(&(ipaddr))
+
+#define IPV6STR "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x"
+
 typedef struct {
     ip4_addr_t ip;
     ip4_addr_t netmask;
@@ -98,7 +109,7 @@ typedef struct {
 typedef enum {
     TCPIP_ADAPTER_IF_STA = 0,     /**< ESP32 station interface */
     TCPIP_ADAPTER_IF_AP,          /**< ESP32 soft-AP interface */
-    TCPIP_ADAPTER_IF_ETH,     /**< ESP32 ethernet interface */
+    TCPIP_ADAPTER_IF_ETH,         /**< ESP32 ethernet interface */
     TCPIP_ADAPTER_IF_MAX
 } tcpip_adapter_if_t;
 
@@ -125,8 +136,41 @@ typedef enum{
     TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME         = 52,   /**< request IP address retry counter */
 } tcpip_adapter_option_id_t;
 
+struct tcpip_adapter_api_msg_s;
+typedef int (*tcpip_adapter_api_fn)(struct tcpip_adapter_api_msg_s *msg);
+typedef struct tcpip_adapter_api_msg_s {
+    int type;  /**< The first field MUST be int */
+    int ret;
+    tcpip_adapter_api_fn api_fn;
+    tcpip_adapter_if_t tcpip_if;
+    tcpip_adapter_ip_info_t *ip_info;
+    uint8_t *mac;
+    const char *hostname;
+} tcpip_adapter_api_msg_t;
+
+#define TCPIP_ADAPTER_TRHEAD_SAFE 1
+#define TCPIP_ADAPTER_IPC_LOCAL   0 
+#define TCPIP_ADAPTER_IPC_REMOTE  1
+
+#define TCPIP_ADAPTER_IPC_CALL(_if, _mac, _ip, _hostname, _fn) do {\
+    tcpip_adapter_api_msg_t msg;\
+    memset(&msg, 0, sizeof(msg));\
+    msg.tcpip_if = (_if);\
+    msg.mac      = (_mac);\
+    msg.ip_info  = (_ip);\
+    msg.hostname = (_hostname);\
+    msg.api_fn   = (_fn);\
+    if (TCPIP_ADAPTER_IPC_REMOTE == tcpip_adapter_ipc_check(&msg)) {\
+        ESP_LOGD(TAG, "check: remote, if=%d fn=%p\n", (_if), (_fn));\
+        return msg.ret;\
+    } else {\
+        ESP_LOGD(TAG, "check: local, if=%d fn=%p\n", (_if), (_fn));\
+    }\
+}while(0)
+
+
 /**
- * @brief  Initialize tcpip adpater
+ * @brief  Initialize tcpip adapter
  *
  * This will initialize TCPIP stack inside.
  */
@@ -411,12 +455,12 @@ esp_interface_t tcpip_adapter_get_esp_if(void *dev);
  */
 esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list);
 
-#define TCPIP_HOSTNAME_MAX_SIZE    31
+#define TCPIP_HOSTNAME_MAX_SIZE    32
 /**
  * @brief  Set the hostname to the interface
  *
  * @param[in]   tcpip_if: the interface which we will set the hostname
- * @param[in]   hostname: the host name for set the interfce
+ * @param[in]   hostname: the host name for set the interface, the max length of hostname is 32 bytes
  *
  * @return ESP_OK:success
  *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY:interface status error
@@ -428,7 +472,7 @@ esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *ho
  * @brief  Get the hostname from the interface
  *
  * @param[in]   tcpip_if: the interface which we will get the hostname
- * @param[in]   hostname: the host name from the interfce
+ * @param[in]   hostname: the host name from the interface
  *
  * @return ESP_OK:success
  *         ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY:interface status error

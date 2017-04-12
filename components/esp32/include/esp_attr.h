@@ -26,7 +26,7 @@
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR __attribute__((section(".dram1")))
 
-// Forces a string into DRAM instrad of flash
+// Forces a string into DRAM instead of flash
 // Use as ets_printf(DRAM_STR("Hello world!\n"));
 #define DRAM_STR(str) (__extension__({static const DRAM_ATTR char __c[] = (str); (const char *)&__c;}))
 
