@@ -89,6 +89,46 @@ config LWIP_DHCP_DOES_ARP_CHECK
         Enabling this option allows check if the offered IP address is not already
         in use by another host on the network.
 
+config PPP_SUPPORT
+    bool "Enable PPP support"
+    default 0
+    help
+        Enable PPP stack. Now only PPP over serial is supported
+
+if PPP_SUPPORT
+
+config PPP_PAP_SUPPORT
+   bool "Enable PAP support"
+   default 0
+   help
+       Enable Password Authentication Protocol (PAP) support
+       
+config PPP_CHAP_SUPPORT
+   bool "Enable CHAP support"
+   default 0
+   help
+       Enable Challenge Handshake Authentication Protocol (CHAP) support 
+
+config PPP_MSCHAP_SUPPORT
+   bool "Enable MSCHAP support"
+   default 0
+   help
+       Enable Microsoft version of the Challenge-Handshake Authentication Protocol (MSCHAP) support
+       
+config PPP_MPPE_SUPPORT
+   bool "Enable MPPE support"
+   default 0
+   help
+       Enable Microsoft Point-to-Point Encryption (MPPE) support
+       
+config PPP_DEBUG_ON
+   bool "Enable PPP debug logs"
+   default 0
+   help
+       Enable PPP debug logs
+
+endif
+   
 endmenu
 
 

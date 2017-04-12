@@ -139,6 +139,12 @@ config SYSTEM_EVENT_TASK_STACK_SIZE
     help
         Config system event task stack size in different application.
 
+config TCPIP_TASK_STACK_SIZE
+    int "TCP/IP Task Stack Size"
+    default 2048
+    help
+       Configure TCP/IP task stack size, used by LWIP to process multi-threaded TCP/IP operations.
+       The default is 2048 bytes, setting this stack too small will result in stack overflow crashes.
 
 config MAIN_TASK_STACK_SIZE
     int "Main task stack size"

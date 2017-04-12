@@ -503,6 +503,56 @@
    ---------------------------------
 */
 
+/**
+ * PPP_SUPPORT==1: Enable PPP.
+ */
+#define PPP_SUPPORT                     CONFIG_PPP_SUPPORT
+
+#if PPP_SUPPORT
+
+/**
+ * PAP_SUPPORT==1: Support PAP.
+ */
+#define PAP_SUPPORT                     CONFIG_PPP_PAP_SUPPORT
+
+/**
+ * CHAP_SUPPORT==1: Support CHAP.
+ */
+#define CHAP_SUPPORT                    CONFIG_PPP_CHAP_SUPPORT
+
+/**
+ * MSCHAP_SUPPORT==1: Support MSCHAP.
+ */
+#define MSCHAP_SUPPORT                  CONFIG_PPP_MSCHAP_SUPPORT
+
+/**
+ * CCP_SUPPORT==1: Support CCP.
+ */
+#define MPPE_SUPPORT                    CONFIG_PPP_MPPE_SUPPORT
+
+/**
+ * PPP_MAXIDLEFLAG: Max Xmit idle time (in ms) before resend flag char.
+ * TODO: If PPP_MAXIDLEFLAG > 0 and next package is send during PPP_MAXIDLEFLAG time,
+ *       then 0x7E is not added at the begining of PPP package but 0x7E termination
+ *       is always at the end. This behaviour brokes PPP dial with GSM (PPPoS).
+ *       The PPP package should always start and end with 0x7E.
+ */
+
+#define PPP_MAXIDLEFLAG                 0
+
+/**
+ * PPP_DEBUG: Enable debugging for PPP.
+ */
+#define PPP_DEBUG_ON					CONFIG_PPP_DEBUG_ON
+
+#if PPP_DEBUG_ON
+#define PPP_DEBUG                       LWIP_DBG_ON
+#else
+#define PPP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+#endif
+
 /*
    --------------------------------------
    ---------- Checksum options ----------
