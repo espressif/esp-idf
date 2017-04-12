@@ -29,10 +29,10 @@
 #include "soc/timer_group_reg.h"
 #include "soc/timer_group_struct.h"
 #include "soc/cpu.h"
+#include "soc/rtc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/xtensa_api.h"
-#include "rtc.h"
 
 static const char* TAG = "system_api";
 
@@ -224,7 +224,7 @@ void IRAM_ATTR esp_restart_noos()
     REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
-    rtc_set_cpu_freq(CPU_XTAL);
+    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
 
     // Reset CPUs
     if (core_id == 0) {

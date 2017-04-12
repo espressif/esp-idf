@@ -21,13 +21,14 @@
 #include "rom/rtc.h"
 #include "rom/uart.h"
 #include "soc/cpu.h"
+#include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
 #include "soc/dport_reg.h"
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "rtc.h"
 #include "sdkconfig.h"
 
 /**
@@ -57,6 +58,7 @@ static const char* TAG = "deepsleep";
 static uint32_t get_power_down_flags();
 static void ext0_wakeup_prepare();
 static void ext1_wakeup_prepare();
+static void timer_wakeup_prepare();
 
 /* Wake from deep sleep stub
    See esp_deepsleep.h esp_wake_deep_sleep() comments for details.
@@ -119,19 +121,6 @@ void IRAM_ATTR esp_deep_sleep_start()
 
     SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR_M, 0, SENS_FORCE_XPD_SAR_S);
 
-    // Configure pins for external wakeup
-    if (s_config.wakeup_triggers & EXT_EVENT0_TRIG_EN) {
-        ext0_wakeup_prepare();
-    }
-    if (s_config.wakeup_triggers & EXT_EVENT1_TRIG_EN) {
-        ext1_wakeup_prepare();
-    }
-    if (s_config.wakeup_triggers & SAR_TRIG_EN) {
-        SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_WAKEUP_FORCE_EN);
-    }
-    // TODO: move timer wakeup configuration into a similar function
-    // once rtc_sleep is opensourced.
-
     // Flush UARTs so that output is not lost due to APB frequency change
     uart_tx_wait_idle(0);
     uart_tx_wait_idle(1);
@@ -141,19 +130,27 @@ void IRAM_ATTR esp_deep_sleep_start()
         esp_set_deep_sleep_wake_stub(esp_wake_deep_sleep);
     }
 
-    rtc_set_cpu_freq(CPU_XTAL);
-    uint32_t cycle_h = 0;
-    uint32_t cycle_l = 0;
-    // For timer wakeup, calibrate clock source against main XTAL
-    // This is hardcoded to use 150kHz internal oscillator for now
-    if (s_config.sleep_duration > 0) {
-        uint32_t period = rtc_slowck_cali(CALI_RTC_MUX, 128);
-        rtc_usec2rtc(s_config.sleep_duration >> 32, s_config.sleep_duration & UINT32_MAX,
-                period, &cycle_h, &cycle_l);
+    // Configure pins for external wakeup
+    if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
+        ext0_wakeup_prepare();
     }
+    if (s_config.wakeup_triggers & RTC_EXT1_TRIG_EN) {
+        ext1_wakeup_prepare();
+    }
+    // Enable ULP wakeup
+    if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
+        SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_WAKEUP_FORCE_EN);
+    }
+    // Configure timer wakeup
+    if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) &&
+        s_config.sleep_duration > 0) {
+        timer_wakeup_prepare();
+    }
+
     // Enter deep sleep
-    rtc_slp_prep_lite(pd_flags, 0);
-    rtc_sleep(cycle_h, cycle_l, s_config.wakeup_triggers, 0);
+    rtc_sleep_config_t config = RTC_SLEEP_CONFIG_DEFAULT(pd_flags);
+    rtc_sleep_init(config);
+    rtc_sleep_start(s_config.wakeup_triggers, 0);
     // Because RTC is in a slower clock domain than the CPU, it
     // can take several CPU cycles for the sleep mode to start.
     while (1) {
@@ -166,11 +163,11 @@ void system_deep_sleep(uint64_t) __attribute__((alias("esp_deep_sleep")));
 esp_err_t esp_deep_sleep_enable_ulp_wakeup()
 {
 #ifdef CONFIG_ULP_COPROC_ENABLED
-    if(s_config.wakeup_triggers & RTC_EXT_EVENT0_TRIG_EN) {
+    if(s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
         ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
     }
-    s_config.wakeup_triggers |= RTC_SAR_TRIG_EN;
+    s_config.wakeup_triggers |= RTC_ULP_TRIG_EN;
     return ESP_OK;
 #else
     return ESP_ERR_INVALID_STATE;
@@ -179,14 +176,28 @@ esp_err_t esp_deep_sleep_enable_ulp_wakeup()
 
 esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us)
 {
-    s_config.wakeup_triggers |= RTC_TIMER_EXPIRE_EN;
+    s_config.wakeup_triggers |= RTC_TIMER_TRIG_EN;
     s_config.sleep_duration = time_in_us;
     return ESP_OK;
 }
 
+static void timer_wakeup_prepare()
+{
+    // Do calibration if not using 32k XTAL
+    uint32_t period;
+    if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
+        period = rtc_clk_cal(RTC_CAL_RTC_MUX, 128);
+    } else {
+        period = (uint32_t) ((1000000ULL /* us*Hz */ << RTC_CLK_CAL_FRACT) / 32768 /* Hz */);
+    }
+    uint64_t rtc_count_delta = rtc_time_us_to_slowclk(s_config.sleep_duration, period);
+    uint64_t cur_rtc_count = rtc_time_get();
+    rtc_sleep_set_wakeup_time(cur_rtc_count + rtc_count_delta);
+}
+
 esp_err_t esp_deep_sleep_enable_touchpad_wakeup()
 {
-    if (s_config.wakeup_triggers & (RTC_EXT_EVENT0_TRIG_EN)) {
+    if (s_config.wakeup_triggers & (RTC_EXT0_TRIG_EN)) {
         ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
     }
@@ -212,13 +223,13 @@ esp_err_t esp_deep_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
     if (!RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_SAR_TRIG_EN)) {
+    if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) {
         ESP_LOGE(TAG, "Conflicting wake-up triggers: touch / ULP");
         return ESP_ERR_INVALID_STATE;
     }
     s_config.ext0_rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     s_config.ext0_trigger_level = level;
-    s_config.wakeup_triggers |= RTC_EXT_EVENT0_TRIG_EN;
+    s_config.wakeup_triggers |= RTC_EXT0_TRIG_EN;
     return ESP_OK;
 }
 
@@ -262,7 +273,7 @@ esp_err_t esp_deep_sleep_enable_ext1_wakeup(uint64_t mask, esp_ext1_wakeup_mode_
     }
     s_config.ext1_rtc_gpio_mask = rtc_gpio_mask;
     s_config.ext1_trigger_mode = mode;
-    s_config.wakeup_triggers |= RTC_EXT_EVENT1_TRIG_EN;
+    s_config.wakeup_triggers |= RTC_EXT1_TRIG_EN;
     return ESP_OK;
 }
 
@@ -333,15 +344,15 @@ esp_deep_sleep_wakeup_cause_t esp_deep_sleep_get_wakeup_cause()
     }
 
     uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_CAUSE);
-    if (wakeup_cause & RTC_EXT_EVENT0_TRIG) {
+    if (wakeup_cause & RTC_EXT0_TRIG_EN) {
         return ESP_DEEP_SLEEP_WAKEUP_EXT0;
-    } else if (wakeup_cause & RTC_EXT_EVENT1_TRIG) {
+    } else if (wakeup_cause & RTC_EXT1_TRIG_EN) {
         return ESP_DEEP_SLEEP_WAKEUP_EXT1;
-    } else if (wakeup_cause & RTC_TIMER_EXPIRE) {
+    } else if (wakeup_cause & RTC_TIMER_TRIG_EN) {
         return ESP_DEEP_SLEEP_WAKEUP_TIMER;
-    } else if (wakeup_cause & RTC_TOUCH_TRIG) {
+    } else if (wakeup_cause & RTC_TOUCH_TRIG_EN) {
         return ESP_DEEP_SLEEP_WAKEUP_TOUCHPAD;
-    } else if (wakeup_cause & RTC_SAR_TRIG) {
+    } else if (wakeup_cause & RTC_ULP_TRIG_EN) {
         return ESP_DEEP_SLEEP_WAKEUP_ULP;
     } else {
         return ESP_DEEP_SLEEP_WAKEUP_UNDEFINED;
@@ -388,9 +399,9 @@ static uint32_t get_power_down_flags()
     // RTC_PERIPH is needed for EXT0 wakeup.
     // If RTC_PERIPH is auto, and EXT0 isn't enabled, power down RTC_PERIPH.
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
-        if (s_config.wakeup_triggers & RTC_EXT_EVENT0_TRIG_EN) {
+        if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
-        } else if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_SAR_TRIG_EN)) {
+        } else if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) {
             // In both rev. 0 and rev. 1 of ESP32, forcing power up of RTC_PERIPH
             // prevents ULP timer and touch FSMs from working correctly.
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_OFF;
@@ -404,15 +415,15 @@ static uint32_t get_power_down_flags()
             option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM]]);
 
     // Prepare flags based on the selected options
-    uint32_t pd_flags = DEEP_SLEEP_PD_NORMAL;
+    uint32_t pd_flags = RTC_SLEEP_PD_DIG;
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] != ESP_PD_OPTION_ON) {
-        pd_flags |= DEEP_SLEEP_PD_RTC_FAST_MEM;
+        pd_flags |= RTC_SLEEP_PD_RTC_FAST_MEM;
     }
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] != ESP_PD_OPTION_ON) {
-        pd_flags |= DEEP_SLEEP_PD_RTC_SLOW_MEM;
+        pd_flags |= RTC_SLEEP_PD_RTC_SLOW_MEM;
     }
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] != ESP_PD_OPTION_ON) {
-        pd_flags |= DEEP_SLEEP_PD_RTC_PERIPH;
+        pd_flags |= RTC_SLEEP_PD_RTC_PERIPH;
     }
     return pd_flags;
 }

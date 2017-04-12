@@ -29,6 +29,7 @@
 
 #include "soc/soc.h"
 #include "soc/cpu.h"
+#include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/efuse_reg.h"
@@ -45,7 +46,7 @@
 #include "bootloader_flash.h"
 #include "bootloader_random.h"
 #include "bootloader_config.h"
-#include "rtc.h"
+
 #include "flash_qio_mode.h"
 
 extern int _bss_start;
@@ -234,12 +235,13 @@ static bool ota_select_valid(const esp_ota_select_entry_t *s)
 
 void bootloader_main()
 {
-    /* Set CPU to 80MHz.
-       Start by ensuring it is set to XTAL, as PLL must be off first
-       (may still be on due to soft reset.)
-    */
-    rtc_set_cpu_freq(CPU_XTAL);
-    rtc_set_cpu_freq(CPU_80M);
+    /* Set CPU to 80MHz. Keep other clocks unmodified. */
+    uart_tx_wait_idle(0);
+    rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
+    clk_cfg.cpu_freq = RTC_CPU_FREQ_80M;
+    clk_cfg.slow_freq = rtc_clk_slow_freq_get();
+    clk_cfg.fast_freq = rtc_clk_fast_freq_get();
+    rtc_clk_init(clk_cfg);
 
     uart_console_configure();
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
@@ -722,16 +724,7 @@ static void uart_console_configure(void)
 
     // Set configured UART console baud rate
     const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
-    uart_div_modify(uart_num, (APB_CLK_FREQ << 4) / uart_baud);
+    uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
 
 #endif // CONFIG_CONSOLE_UART_NONE
-}
-
-/* empty rtc_printf implementation, to work with librtc
-   linking. Can be removed once -lrtc is removed from bootloader's
-   main component.mk.
-*/
-int rtc_printf(void)
-{
-    return 0;
 }

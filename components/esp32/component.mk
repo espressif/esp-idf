@@ -3,7 +3,7 @@
 #
 
 COMPONENT_SRCDIRS := . hwcrypto
-LIBS := core rtc rtc_clk rtc_pm
+LIBS := core rtc
 ifdef CONFIG_PHY_ENABLED # BT || WIFI
 LIBS += phy coexist
 endif

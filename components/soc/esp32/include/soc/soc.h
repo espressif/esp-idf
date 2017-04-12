@@ -179,11 +179,14 @@
 #define DR_REG_LEDC_BASE                        0x3ff59000
 #define DR_REG_EFUSE_BASE                       0x3ff5A000
 #define DR_REG_SPI_ENCRYPT_BASE                 0x3ff5B000
+#define DR_REG_NRX_BASE                         0x3ff5CC00
+#define DR_REG_BB_BASE                          0x3ff5D000
 #define DR_REG_PWM_BASE                         0x3ff5E000
 #define DR_REG_TIMERGROUP0_BASE                 0x3ff5F000
 #define DR_REG_TIMERGROUP1_BASE                 0x3ff60000
 #define DR_REG_SPI2_BASE                        0x3ff64000
 #define DR_REG_SPI3_BASE                        0x3ff65000
+#define DR_REG_APB_CTRL_BASE                    0x3ff66000
 #define DR_REG_I2C1_EXT_BASE                    0x3ff67000
 #define DR_REG_SDMMC_BASE                       0x3ff68000
 #define DR_REG_EMAC_BASE                        0x3ff69000
