@@ -185,6 +185,7 @@ typedef struct {
     tGATT_ATTR_UUID_TYPE    uuid_type;
     tGATT_PERM              permission;
     tGATTS_ATTR_CONTROL     control;
+    tGATT_ATTR_MASK         mask;
     UINT16                  handle;
     UINT16                  uuid;
 } tGATT_ATTR16;
@@ -197,6 +198,7 @@ typedef struct {
     tGATT_ATTR_UUID_TYPE    uuid_type;
     tGATT_PERM              permission;
     tGATTS_ATTR_CONTROL     control;
+    tGATT_ATTR_MASK         mask;
     UINT16                  handle;
     UINT32                  uuid;
 } tGATT_ATTR32;
@@ -210,6 +212,7 @@ typedef struct {
     tGATT_ATTR_UUID_TYPE    uuid_type;
     tGATT_PERM              permission;
     tGATTS_ATTR_CONTROL     control;
+    tGATT_ATTR_MASK         mask;
     UINT16                  handle;
     UINT8                   uuid[LEN_UUID_128];
 } tGATT_ATTR128;
@@ -621,6 +624,7 @@ extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_handle(UINT16 handle);
 extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_attr_handle(UINT16 attr_handle);
 extern tGATT_HDL_LIST_ELEM *gatt_alloc_hdl_buffer(void);
 extern void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM *p);
+extern void gatt_free_attr_value_buffer(tGATT_HDL_LIST_ELEM *p);
 extern BOOLEAN gatt_is_last_attribute(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM *p_start, tBT_UUID value);
 extern void gatt_update_last_pri_srv_info(tGATT_SRV_LIST_INFO *p_list);
 extern BOOLEAN gatt_add_a_srv_to_list(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM *p_new);
