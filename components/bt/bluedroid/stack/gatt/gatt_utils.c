@@ -397,11 +397,38 @@ tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_app_id (tBT_UUID *p_app_uuid128,
 }
 /*******************************************************************************
 **
+** Function         gatt_free_attr_value_buffer
+**
+** Description      free characteristic attribute value buffer in a service
+**
+** Returns          None
+**
+*******************************************************************************/
+void gatt_free_attr_value_buffer(tGATT_HDL_LIST_ELEM *p)
+{
+    if (p){
+        tGATT_SVC_DB *p_db = &(p->svc_db);
+        tGATT_ATTR16 *p_attr = p_db->p_attr_list;
+        tGATT_ATTR_VALUE *p_value = NULL;
+
+        while(p_attr){
+            if (p_attr->mask & GATT_ATTR_VALUE_ALLOCATED){
+                p_value = p_attr->p_value;
+                if ((p_value != NULL) && (p_value->attr_val.attr_val != NULL)){
+                    GKI_freebuf(p_value->attr_val.attr_val);
+                }
+            }
+            p_attr = p_attr->p_next;
+        }
+    }
+}
+/*******************************************************************************
+**
 ** Function         gatt_free_hdl_buffer
 **
-** Description     free a handle buffer
+** Description      free a handle buffer
 **
-** Returns       None
+** Returns          None
 **
 *******************************************************************************/
 void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM *p)
