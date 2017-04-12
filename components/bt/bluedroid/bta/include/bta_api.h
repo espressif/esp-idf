@@ -1099,7 +1099,9 @@ typedef void (tBTA_BLE_SCAN_SETUP_CBACK) (tBTA_BLE_BATCH_SCAN_EVT evt,
         tBTA_DM_BLE_REF_VALUE ref_value,
         tBTA_STATUS status);
 
-typedef void (tBTA_START_SCAN_CMPL_CBACK) (tBTA_STATUS status); 
+typedef void (tBTA_START_STOP_SCAN_CMPL_CBACK) (tBTA_STATUS status);
+
+typedef void (tBTA_START_STOP_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef void (tBTA_BLE_TRACK_ADV_CMPL_CBACK)(int action, tBTA_STATUS status,
         tBTA_DM_BLE_PF_AVBL_SPACE avbl_space,
@@ -2004,7 +2006,7 @@ extern void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport,
 *******************************************************************************/
 extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb,
-                             tBTA_START_SCAN_CMPL_CBACK *p_start_scan_cb);
+                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
 
 extern void BTA_DmBleStopAdvertising(void);
 
@@ -2111,11 +2113,12 @@ extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_l
 ** Description      This function starts or stops LE broadcasting.
 **
 ** Parameters       start: start or stop broadcast.
+**                  p_start_stop_adv_cb: stop broadcast completed event
 **
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleBroadcast (BOOLEAN start);
+extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb);
 
 
 /*******************************************************************************
