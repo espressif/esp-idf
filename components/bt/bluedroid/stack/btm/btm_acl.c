@@ -301,8 +301,12 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
 #endif
 
                 if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
-                        || link_role == HCI_ROLE_MASTER) {
+                         && link_role == HCI_ROLE_MASTER) {
+                     
                     btsnd_hcic_ble_read_remote_feat(p->hci_handle);
+                } else if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
+                         && link_role == HCI_ROLE_SLAVE) {
+                    //do nothing in this case for fix the android7.0 cann't sent security request issue
                 } else {
                     btm_establish_continue(p);
                 }

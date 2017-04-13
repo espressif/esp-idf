@@ -283,3 +283,85 @@ esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_d
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
 }
+
+
+esp_err_t esp_ble_gap_set_security_param(esp_ble_sm_param_t param_type,
+        void *value, uint8_t len)
+{
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_SECURITY_PARAM_EVT;
+    arg.set_security_param.param_type = param_type;
+    arg.set_security_param.len = len;
+    arg.set_security_param.value = value;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_set_encryption(esp_bd_addr_t bd_addr, esp_ble_sec_act_t sec_act)
+{
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_ENCRYPTION_EVT;
+    arg.set_encryption.sec_act = sec_act;
+    memcpy(arg.set_encryption.bd_addr, bd_addr, ESP_BD_ADDR_LEN);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_security_rsp(esp_bd_addr_t bd_addr, bool accept)
+{
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SECURITY_RSP_EVT;
+    arg.sec_rsp.accept = accept;
+    memcpy(arg.sec_rsp.bd_addr, bd_addr, ESP_BD_ADDR_LEN);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+
+}
+
+esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t passkey)
+{
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_PASSKEY_REPLY_EVT;
+    arg.enc_passkey_replay.accept = accept;
+    arg.enc_passkey_replay.passkey = passkey;
+    memcpy(arg.enc_passkey_replay.bd_addr, bd_addr, ESP_BD_ADDR_LEN);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
+{
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CONFIRM_REPLY_EVT;
+    arg.enc_comfirm_replay.accept = accept;
+    memcpy(arg.enc_comfirm_replay.bd_addr, bd_addr, ESP_BD_ADDR_LEN);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+
+

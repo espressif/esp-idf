@@ -21,6 +21,8 @@
 #include "bt_trace.h"
 #include "bt_target.h"
 #include "btc_storage.h"
+#include "btc_ble_storage.h"
+#include "esp_gap_ble_api.h"
 #include "bta_api.h"
 
 
@@ -109,6 +111,42 @@ static void btc_disable_bluetooth_evt(void)
     LOG_DEBUG("%s", __FUNCTION__);
 
     future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_SUCCESS);
+}
+
+static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
+{
+    /* Save link key, if not temporary */
+    bt_status_t status = BT_STATUS_FAIL;
+    if (p_auth_cmpl->success) {
+        status = BT_STATUS_SUCCESS;
+        int addr_type;
+        bdcpy(pairing_cb.bd_addr, p_auth_cmpl->bd_addr);
+        if (btc_storage_get_remote_addr_type((bt_bdaddr_t *)pairing_cb.bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
+            btc_storage_set_remote_addr_type((bt_bdaddr_t *)pairing_cb.bd_addr, p_auth_cmpl->addr_type);
+        }
+
+        btc_save_ble_bonding_keys();
+    } else {
+        /*Map the HCI fail reason  to  bt status  */
+        switch (p_auth_cmpl->fail_reason) {
+        case BTA_DM_AUTH_SMP_PAIR_AUTH_FAIL:
+        case BTA_DM_AUTH_SMP_CONFIRM_VALUE_FAIL:
+            btc_dm_remove_ble_bonding_keys();
+            status = BT_STATUS_AUTH_FAILURE;
+            break;
+        case BTA_DM_AUTH_SMP_PAIR_NOT_SUPPORT:
+            status = BT_STATUS_AUTH_REJECTED;
+            break;
+        default:
+            btc_dm_remove_ble_bonding_keys();
+            status =  BT_STATUS_FAIL;
+            break;
+        }
+
+    }
+
+    LOG_DEBUG("%s, authentication status = %x", __func__, status);
+    return;
 }
 
 static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
@@ -252,6 +290,12 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 {
     btc_dm_sec_args_t *arg = (btc_dm_sec_args_t *)(msg->arg);
     tBTA_DM_SEC *p_data = &(arg->sec);
+    esp_ble_gap_cb_param_t param = {0};
+    btc_msg_t ble_msg = {0};
+    bool rsp_app = false;
+    bt_status_t ret = BT_STATUS_SUCCESS;
+    ble_msg.sig = BTC_SIG_API_CB;
+    ble_msg.pid = BTC_PID_GAP_BLE;
     // tBTA_SERVICE_MASK service_mask;
     LOG_DEBUG("btc_dm_upstreams_cback  ev: %d\n", msg->act);
 
@@ -259,6 +303,8 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_ENABLE_EVT: {
         btc_clear_services_mask();
         btc_storage_load_bonded_devices();
+        //load the ble local key whitch has been store in the flash
+        btc_dm_load_ble_local_keys();
         btc_enable_bluetooth_evt(p_data->enable.status);
         break;
     }
@@ -289,17 +335,143 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_HW_ERROR_EVT:
 
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
-    case BTA_DM_BLE_KEY_EVT:
-    case BTA_DM_BLE_SEC_REQ_EVT:
-    case BTA_DM_BLE_PASSKEY_NOTIF_EVT:
-    case BTA_DM_BLE_PASSKEY_REQ_EVT:
-    case BTA_DM_BLE_NC_REQ_EVT:
-    case BTA_DM_BLE_OOB_REQ_EVT:
-    case BTA_DM_BLE_LOCAL_IR_EVT:
-    case BTA_DM_BLE_LOCAL_ER_EVT:
-    case BTA_DM_BLE_AUTH_CMPL_EVT:
-    case BTA_DM_LE_FEATURES_READ:
-    case BTA_DM_ENER_INFO_READ:
+    case BTA_DM_BLE_AUTH_CMPL_EVT: {
+        rsp_app = true;
+        ble_msg.act = ESP_GAP_BLE_AUTH_CMPL_EVT;
+        memcpy(&param.ble_security.auth_cmpl, &p_data->auth_cmpl, sizeof(esp_ble_auth_cmpl_t));
+        btc_dm_ble_auth_cmpl_evt(&p_data->auth_cmpl);
+        break;
+    }
+    case BTA_DM_BLE_KEY_EVT: {
+        rsp_app = true;
+        ble_msg.act = ESP_GAP_BLE_KEY_EVT;
+        param.ble_security.ble_key.key_type = p_data->ble_key.key_type;
+        memcpy(param.ble_security.ble_key.bd_addr, p_data->ble_key.bd_addr, BD_ADDR_LEN);
+        switch (p_data->ble_key.key_type) {
+            case BTM_LE_KEY_PENC: {
+                LOG_DEBUG("Rcv BTA_LE_KEY_PENC");
+                pairing_cb.ble.is_penc_key_rcvd = TRUE;
+                pairing_cb.ble.penc_key = p_data->ble_key.p_key_value->penc_key;
+                memcpy(&pairing_cb.ble.penc_key, &p_data->ble_key.p_key_value->penc_key,
+                             sizeof(tBTM_LE_PENC_KEYS));
+                memcpy(&param.ble_security.ble_key.p_key_value.penc_key,
+                             &p_data->ble_key.p_key_value->penc_key, sizeof(tBTM_LE_PENC_KEYS));
+                break;
+            }
+            case BTM_LE_KEY_PID: {
+                LOG_DEBUG("Rcv BTA_LE_KEY_PID");
+                pairing_cb.ble.is_pid_key_rcvd = TRUE;
+                memcpy(&pairing_cb.ble.pid_key, &p_data->ble_key.p_key_value->pid_key,
+                            sizeof(tBTM_LE_PID_KEYS));
+                memcpy(&param.ble_security.ble_key.p_key_value.pid_key,
+                             &p_data->ble_key.p_key_value->pid_key, sizeof(tBTM_LE_PID_KEYS));
+                break;
+            }
+            case BTM_LE_KEY_PCSRK: {
+                LOG_DEBUG("Rcv BTA_LE_KEY_PCSRK");
+                pairing_cb.ble.is_pcsrk_key_rcvd = TRUE;
+                memcpy(&pairing_cb.ble.pcsrk_key, &p_data->ble_key.p_key_value->pcsrk_key,
+                             sizeof(tBTM_LE_PCSRK_KEYS));
+                memcpy(&param.ble_security.ble_key.p_key_value.pcsrk_key,
+                             &p_data->ble_key.p_key_value->pcsrk_key, sizeof(tBTM_LE_PCSRK_KEYS));
+                break;
+            }
+            case BTM_LE_KEY_LENC: {
+                LOG_DEBUG("Rcv BTA_LE_KEY_LENC");
+                pairing_cb.ble.is_lenc_key_rcvd = TRUE;
+                memcpy(&pairing_cb.ble.lenc_key, &p_data->ble_key.p_key_value->lenc_key,
+                            sizeof(tBTM_LE_LENC_KEYS));
+                memcpy(&param.ble_security.ble_key.p_key_value.lenc_key,
+                             &p_data->ble_key.p_key_value->lenc_key, sizeof(tBTM_LE_LENC_KEYS));
+                break;
+            }
+            case BTM_LE_KEY_LCSRK: {
+                LOG_DEBUG("Rcv BTA_LE_KEY_LCSRK");
+                pairing_cb.ble.is_lcsrk_key_rcvd = TRUE;
+                memcpy(&pairing_cb.ble.lcsrk_key, &p_data->ble_key.p_key_value->lcsrk_key,
+                            sizeof(tBTM_LE_LCSRK_KEYS));
+                memcpy(&param.ble_security.ble_key.p_key_value.lcsrk_key,
+                             &p_data->ble_key.p_key_value->lcsrk_key, sizeof(tBTM_LE_LCSRK_KEYS));
+                break;
+            }
+            case BTM_LE_KEY_LID: {
+                LOG_DEBUG("Rcv BTA_LE_KEY_LID");
+                pairing_cb.ble.is_lidk_key_rcvd =  TRUE;
+                break;
+            }
+            default:
+                break;
+        }
+
+        break;
+    }
+    case BTA_DM_BLE_SEC_REQ_EVT: {
+        rsp_app = true;
+        ble_msg.act = ESP_GAP_BLE_SEC_REQ_EVT;
+        memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
+        break;
+    }
+    case BTA_DM_BLE_PASSKEY_NOTIF_EVT: {
+        rsp_app = true;
+        ble_msg.act = ESP_GAP_BLE_PASSKEY_NOTIF_EVT;
+        param.ble_security.key_notif.passkey = p_data->key_notif.passkey;
+        memcpy(param.ble_security.key_notif.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
+        break;
+    }
+    case BTA_DM_BLE_PASSKEY_REQ_EVT: {
+        rsp_app = true;
+        ble_msg.act = ESP_GAP_BLE_PASSKEY_REQ_EVT;
+        memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
+        break;
+    }
+    case BTA_DM_BLE_OOB_REQ_EVT: {
+        rsp_app = true;
+        ble_msg.act = ESP_GAP_BLE_OOB_REQ_EVT;
+        memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
+        break;
+    }
+    case BTA_DM_BLE_LOCAL_IR_EVT: {
+        rsp_app = true;
+        ble_msg.act = ESP_GAP_BLE_LOCAL_IR_EVT;
+        memcpy(&param.ble_security.ble_id_keys, &p_data->ble_id_keys, sizeof(tBTA_BLE_LOCAL_ID_KEYS));
+        LOG_DEBUG("BTA_DM_BLE_LOCAL_IR_EVT. ");
+        ble_local_key_cb.is_id_keys_rcvd = TRUE;
+        memcpy(&ble_local_key_cb.id_keys.irk[0],
+               &p_data->ble_id_keys.irk[0], sizeof(BT_OCTET16));
+        memcpy(&ble_local_key_cb.id_keys.ir[0],
+               &p_data->ble_id_keys.ir[0], sizeof(BT_OCTET16));
+        memcpy(&ble_local_key_cb.id_keys.dhk[0],
+               &p_data->ble_id_keys.dhk[0], sizeof(BT_OCTET16));
+        btc_storage_add_ble_local_key( (char *)&ble_local_key_cb.id_keys.irk[0],
+                                       BTC_LE_LOCAL_KEY_IRK,
+                                       BT_OCTET16_LEN);
+        btc_storage_add_ble_local_key( (char *)&ble_local_key_cb.id_keys.ir[0],
+                                       BTC_LE_LOCAL_KEY_IR,
+                                       BT_OCTET16_LEN);
+        btc_storage_add_ble_local_key( (char *)&ble_local_key_cb.id_keys.dhk[0],
+                                       BTC_LE_LOCAL_KEY_DHK,
+                                       BT_OCTET16_LEN);
+        break;
+    }
+    case BTA_DM_BLE_LOCAL_ER_EVT: {
+        rsp_app = true;
+        ble_msg.act = ESP_GAP_BLE_LOCAL_ER_EVT;
+        memcpy(&param.ble_security.ble_id_keys, &p_data->ble_id_keys, sizeof(tBTA_BLE_LOCAL_ID_KEYS));
+        LOG_DEBUG("BTA_DM_BLE_LOCAL_ER_EVT. ");
+        ble_local_key_cb.is_er_rcvd = TRUE;
+        memcpy(&ble_local_key_cb.er[0], &p_data->ble_er[0], sizeof(BT_OCTET16));
+        btc_storage_add_ble_local_key( (char *)&ble_local_key_cb.er[0],
+                                       BTC_LE_LOCAL_KEY_ER,
+                                       BT_OCTET16_LEN);
+        break;
+    }
+    case BTA_DM_BLE_NC_REQ_EVT: {
+        rsp_app = true;
+        ble_msg.act = ESP_GAP_BLE_NC_REQ_EVT;
+        memcpy(param.ble_security.key_notif.bd_addr, p_data->key_notif.bd_addr, BD_ADDR_LEN);
+        param.ble_security.key_notif.passkey = p_data->key_notif.passkey;
+        break;
+    }
 #endif
 
     case BTA_DM_AUTHORIZE_EVT:
@@ -313,5 +485,13 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         break;
     }
 
+    if (rsp_app) {
+        ret = btc_transfer_context(&ble_msg, &param,
+                                   sizeof(esp_ble_gap_cb_param_t), NULL);
+
+        if (ret != BT_STATUS_SUCCESS) {
+            LOG_ERROR("%s btc_transfer_context failed\n", __func__);
+        }
+    }
     btc_dm_sec_arg_deep_free(msg);
 }

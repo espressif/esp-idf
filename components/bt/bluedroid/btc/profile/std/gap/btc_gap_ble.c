@@ -15,7 +15,9 @@
 #include <string.h>
 
 #include "bt_types.h"
+#include "bt_defs.h"
 #include "bta_api.h"
+#include "bta_dm_co.h"
 #include "btc_task.h"
 #include "btc_manage.h"
 #include "btc_gap_ble.h"
@@ -566,6 +568,15 @@ static void btc_stop_scan_callback(tBTA_STATUS status)
     }
 }
 
+static void btc_set_encryption_callback(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_STATUS enc_status)
+{
+    UNUSED(bd_addr);
+    UNUSED(transport);
+    LOG_DEBUG("enc_status = %x\n", enc_status);
+    return;
+}
+
+
 static void btc_ble_start_scanning(uint8_t duration,
                                    tBTA_DM_SEARCH_CBACK *results_cb,
                                    tBTA_START_STOP_SCAN_CMPL_CBACK *start_scan_cb)
@@ -662,6 +673,33 @@ void btc_gap_ble_cb_handler(btc_msg_t *msg)
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
         btc_gap_ble_cb_to_app(ESP_GAP_BLE_SCAN_START_COMPLETE_EVT, param);
         break;
+    case ESP_GAP_BLE_AUTH_CMPL_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_AUTH_CMPL_EVT, param);
+        break;
+    case ESP_GAP_BLE_KEY_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_KEY_EVT, param);
+        break;
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_KEY_EVT, param);
+    case ESP_GAP_BLE_SEC_REQ_EVT:
+	    btc_gap_ble_cb_to_app(ESP_GAP_BLE_SEC_REQ_EVT, param);
+	    break;
+    case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_PASSKEY_NOTIF_EVT, param);
+	    break;
+    case ESP_GAP_BLE_PASSKEY_REQ_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_PASSKEY_REQ_EVT, param);
+        break;
+    case ESP_GAP_BLE_OOB_REQ_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_OOB_REQ_EVT, param);
+        break;
+    case ESP_GAP_BLE_LOCAL_IR_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_LOCAL_IR_EVT, param);
+        break;
+    case ESP_GAP_BLE_LOCAL_ER_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_LOCAL_ER_EVT, param);
+        break;
+    case ESP_GAP_BLE_NC_REQ_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_NC_REQ_EVT, param);
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
         btc_gap_ble_cb_to_app(ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT, param);
         break;
@@ -719,6 +757,21 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             dst->cfg_scan_rsp_data_raw.raw_scan_rsp = GKI_getbuf(src->cfg_scan_rsp_data_raw.raw_scan_rsp_len);
             if (dst->cfg_scan_rsp_data_raw.raw_scan_rsp) {
                 memcpy(dst->cfg_scan_rsp_data_raw.raw_scan_rsp, src->cfg_scan_rsp_data_raw.raw_scan_rsp, src->cfg_scan_rsp_data_raw.raw_scan_rsp_len);
+            }
+        }
+          break;
+       }	
+	case BTC_GAP_BLE_SET_SECURITY_PARAM_EVT: {
+        btc_ble_gap_args_t *src = (btc_ble_gap_args_t *)p_src;
+        btc_ble_gap_args_t  *dst = (btc_ble_gap_args_t *) p_dest;
+        uint8_t length = 0;
+        if (src->set_security_param.value) {
+            length = dst->set_security_param.len;
+            dst->set_security_param.value = GKI_getbuf(length);
+            if (dst->set_security_param.value != NULL) {
+                memcpy(dst->set_security_param.value, src->set_security_param.value, length);
+            } else {
+                LOG_ERROR("%s %d no mem\n",__func__, msg->act);
             }
         }
         break;
@@ -813,7 +866,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         break;
     case BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY:
         btc_ble_config_local_privacy(arg->cfg_local_privacy.privacy_enable);
-        break;
+        break;    
     case BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW:
         btc_ble_set_adv_data_raw(arg->cfg_adv_data_raw.raw_adv,
                                  arg->cfg_adv_data_raw.raw_adv_len,
@@ -824,6 +877,63 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                       arg->cfg_scan_rsp_data_raw.raw_scan_rsp_len,
                                       btc_scan_rsp_data_raw_callback);
         break;
+    case BTC_GAP_BLE_SET_ENCRYPTION_EVT: {
+        BD_ADDR bd_addr;
+        memcpy(bd_addr, arg->set_encryption.bd_addr, sizeof(BD_ADDR));
+        BTA_DmSetEncryption(bd_addr, BT_TRANSPORT_LE, btc_set_encryption_callback,
+                                          (tBTA_DM_BLE_SEC_ACT)arg->set_encryption.sec_act);
+        break;
+    }
+
+    case BTC_GAP_BLE_SET_SECURITY_PARAM_EVT: {
+        switch(arg->set_security_param.param_type) {
+	    case ESP_BLE_SM_PASSKEY:
+			
+	        break;
+            case ESP_BLE_SM_AUTHEN_REQ_MODE: {
+                uint8_t authen_req = 0;
+                STREAM_TO_UINT8(authen_req, arg->set_security_param.value);
+                bta_dm_co_ble_set_auth_req(authen_req);
+                break;
+             }
+	     case ESP_BLE_SM_IOCAP_MODE: {
+                uint8_t iocap = 0;
+                STREAM_TO_UINT8(iocap, arg->set_security_param.value);
+                bta_dm_co_ble_set_io_cap(iocap);
+			break;
+	    }
+            case ESP_BLE_SM_SET_INIT_KEY: {
+                uint8_t init_key = 0;
+                STREAM_TO_UINT8(init_key, arg->set_security_param.value);
+                bta_dm_co_ble_set_init_key_req(init_key);
+                break;
+            }
+            case ESP_BLE_SM_SET_RSP_KEK: {
+                uint8_t rsp_key = 0;
+                STREAM_TO_UINT8(rsp_key, arg->set_security_param.value);
+                bta_dm_co_ble_set_rsp_key_req(rsp_key);
+                break;
+            }
+            case ESP_BLE_SM_MAX_KEY_SIZE: {
+                uint8_t key_size = 0;
+                STREAM_TO_UINT8(key_size, arg->set_security_param.value);
+                bta_dm_co_ble_set_max_key_size(key_size);
+                break;
+             }
+                
+	    default:
+	        break;
+	}
+        break;
+    }
+        
+    case BTC_GAP_BLE_SECURITY_RSP_EVT: {
+	BD_ADDR bd_addr;
+	tBTA_DM_BLE_SEC_GRANT res = arg->sec_rsp.accept ? BTA_DM_SEC_GRANTED : BTA_DM_SEC_PAIR_NOT_SPT;
+	memcpy(bd_addr, arg->sec_rsp.bd_addr, sizeof(BD_ADDR));
+	BTA_DmBleSecurityGrant(bd_addr, res);
+	break;		
+    }
     default:
         break;
     }

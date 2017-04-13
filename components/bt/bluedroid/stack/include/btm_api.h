@@ -1383,6 +1383,11 @@ typedef UINT8 tBTM_IO_CAP;
 #define BTM_AUTH_BONDS      6   /* the general/dedicated bonding bits  */
 #define BTM_AUTH_YN_BIT     1   /* this is the Yes or No bit  */
 
+#define BTM_BLE_ENC_KEY_MASK    (1 << 0)
+#define BTM_BLE_ID_KEY_MASK     (1 << 1)
+#define BTM_BLE_CSR_KEY_MASK    (1 << 2)
+#define BTM_BLE_LINK_KEY_MASK   (1 << 3)
+
 #define BTM_BLE_INITIATOR_KEY_SIZE 15
 #define BTM_BLE_RESPONDER_KEY_SIZE 15
 #define BTM_BLE_MAX_KEY_SIZE       16

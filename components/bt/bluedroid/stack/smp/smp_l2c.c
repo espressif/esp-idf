@@ -155,7 +155,8 @@ static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
 
     /* reject the pairing request if there is an on-going SMP pairing */
     if (SMP_OPCODE_PAIRING_REQ == cmd || SMP_OPCODE_SEC_REQ == cmd) {
-        if ((p_cb->state == SMP_STATE_IDLE) && (p_cb->br_state == SMP_BR_STATE_IDLE)) {
+        if ((p_cb->state == SMP_STATE_IDLE) && (p_cb->br_state == SMP_BR_STATE_IDLE) && 
+            !(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)) {
             p_cb->role = L2CA_GetBleConnRole(bd_addr);
             memcpy(&p_cb->pairing_bda[0], bd_addr, BD_ADDR_LEN);
         } else if (memcmp(&bd_addr[0], p_cb->pairing_bda, BD_ADDR_LEN)) {

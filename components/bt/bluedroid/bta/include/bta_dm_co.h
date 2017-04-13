@@ -270,4 +270,13 @@ extern void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
                                  tBTA_LE_KEY_TYPE  *p_resp_key );
 // btla-specific --
 
+extern void bta_dm_co_ble_set_io_cap(UINT8 ble_io_cap);
+
+extern void bta_dm_co_ble_set_auth_req(UINT8 ble_auth_req);
+
+extern void bta_dm_co_ble_set_init_key_req(UINT8 init_key);
+
+extern void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key);
+
+extern void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size);
 #endif

@@ -4200,7 +4200,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
         } else {
             sec_event.auth_cmpl.success = TRUE;
             if (!p_data->complt.smp_over_br) {
-                GATT_ConfigServiceChangeCCC(bda, TRUE, BT_TRANSPORT_LE);
+                
             }
         }
 
@@ -4472,11 +4472,6 @@ void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
 {
-    UINT8 len = sizeof(p_data->set_addr);
-    if (len != BD_ADDR_LEN) {
-        APPL_TRACE_ERROR("Invalid random adress");
-        return;
-    }
     if (p_data->set_addr.addr_type != BLE_ADDR_RANDOM) {
         APPL_TRACE_ERROR("Invalid random adress type = %d\n", p_data->set_addr.addr_type);
         return;
