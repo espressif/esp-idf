@@ -1,3 +1,13 @@
+/* tcp_perf Example
+
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
+
+
 #ifndef __TCP_PERF_H__
 #define __TCP_PERF_H__
 
@@ -7,33 +17,43 @@
 extern "C" {
 #endif
 
-/*AP info and tcp_server info*/
-#define DEFAULT_SSID CONFIG_TCP_PERF_WIFI_SSID
-#define DEFAULT_PWD CONFIG_TCP_PERF_WIFI_PASSWORD
-#define DEFAULT_PORT CONFIG_TCP_PERF_SERVER_PORT
-#define DEFAULT_SERVER_IP CONFIG_TCP_PERF_SERVER_IP
-#define DEFAULT_PKTSIZE CONFIG_TCP_PERF_PKT_SIZE
-#define MAX_STA_CONN 1 //how many sta can be connected(AP mode)
+
 /*test options*/
-#define ESP_WIFI_MODE_AP CONFIG_TCP_PERF_WIFI_MODE_AP //TRUE:AP FALSE:STA
-#define ESP_TCP_MODE_SERVER CONFIG_TCP_PERF_SERVER //TRUE:server FALSE:client
-#define ESP_TCP_PERF_TX CONFIG_TCP_PERF_TX //TRUE:send FALSE:receive
-#define ESP_TCP_DELAY_INFO CONFIG_TCP_PERF_DELAY_DEBUG //TRUE:show delay time info
+#define EXAMPLE_ESP_WIFI_MODE_AP CONFIG_TCP_PERF_WIFI_MODE_AP //TRUE:AP FALSE:STA
+#define EXAMPLE_ESP_TCP_MODE_SERVER CONFIG_TCP_PERF_SERVER //TRUE:server FALSE:client
+#define EXAMPLE_ESP_TCP_PERF_TX CONFIG_TCP_PERF_TX //TRUE:send FALSE:receive
+#define EXAMPLE_ESP_TCP_DELAY_INFO CONFIG_TCP_PERF_DELAY_DEBUG //TRUE:show delay time info
+
+/*AP info and tcp_server info*/
+#define EXAMPLE_DEFAULT_SSID CONFIG_TCP_PERF_WIFI_SSID
+#define EXAMPLE_DEFAULT_PWD CONFIG_TCP_PERF_WIFI_PASSWORD
+#define EXAMPLE_DEFAULT_PORT CONFIG_TCP_PERF_SERVER_PORT
+#define EXAMPLE_DEFAULT_PKTSIZE CONFIG_TCP_PERF_PKT_SIZE
+#define EXAMPLE_MAX_STA_CONN 1 //how many sta can be connected(AP mode)
+
+#ifdef CONFIG_TCP_PERF_SERVER_IP
+#define EXAMPLE_DEFAULT_SERVER_IP CONFIG_TCP_PERF_SERVER_IP
+#else
+#define EXAMPLE_DEFAULT_SERVER_IP "192.168.4.1"
+#endif /*CONFIG_TCP_PERF_SERVER_IP*/
 
 
-#define PACK_BYTE_IS 97 //'a'
+
+#define EXAMPLE_PACK_BYTE_IS 97 //'a'
 #define TAG "tcp_perf:"
 
+/* FreeRTOS event group to signal when we are connected to wifi*/
+extern EventGroupHandle_t tcp_event_group;
+#define WIFI_CONNECTED_BIT BIT0
 
-extern int connectedflag;
 extern int total_data;
 
-#if ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO
+#if EXAMPLE_ESP_TCP_PERF_TX && EXAMPLE_ESP_TCP_DELAY_INFO
 extern int total_pack;
 extern int send_success;
 extern int send_fail;
 extern int delay_classify[5];
-#endif/*ESP_TCP_PERF_TX && ESP_TCP_DELAY_INFO*/
+#endif/*EXAMPLE_ESP_TCP_PERF_TX && EXAMPLE_ESP_TCP_DELAY_INFO*/
 
 
 //using esp as station
@@ -54,11 +74,14 @@ void recv_data(void *pvParameters);
 //close all socket
 void close_socket();
 
+//get socket error code. return: error code
+int get_socket_error_code(int socket);
+
 //show socket error code. return: error code
-int show_socket_error_code(int socket);
+int show_socket_error_reason(int socket);
 
 //check working socket
-int check_socket_error_code();
+int check_working_socket();
 
 
 #ifdef __cplusplus
