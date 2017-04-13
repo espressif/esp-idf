@@ -2851,6 +2851,40 @@
 #define DPORT_PRO_CPU_DISABLED_CACHE_IA_M  ((DPORT_PRO_CPU_DISABLED_CACHE_IA_V)<<(DPORT_PRO_CPU_DISABLED_CACHE_IA_S))
 #define DPORT_PRO_CPU_DISABLED_CACHE_IA_V  0x3F
 #define DPORT_PRO_CPU_DISABLED_CACHE_IA_S  9
+/* This is the contents of DPORT_PRO_CPU_DISABLED_CACHE_IA field expanded */
+/* The following bits will be set upon invalid access for different memory
+ * regions: */
+/* Port of the APP CPU cache when cache is used in high/low or odd/even mode */
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_OPPOSITE   BIT(9)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_OPPOSITE_M BIT(9)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_OPPOSITE_V 1
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_OPPOSITE_S 9
+/* DRAM1: 0x3F80_0000 ~ 0x3FBF_FFFF(R/W) */
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_DRAM1    BIT(10)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_DRAM1_M  BIT(10)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_DRAM1_V  1
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_DRAM1_S  10
+/* IROM0: 0x4080_0000 ~ 0x40BF_FFFF(RO) */
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IROM0    BIT(11)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IROM0_M  BIT(11)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IROM0_V  1
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IROM0_S  11
+/* IRAM1:  0x4040_0000 ~ 0x407F_FFFF(RO) */
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM1    BIT(12)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM1_M  BIT(12)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM1_V  1
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM1_S  12
+/* IRAM0: 0x4080_0000 ~ 0x40BF_FFFF(RO) */
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM0    BIT(13)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM0_M  BIT(13)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM0_V  1
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM0_S  13
+/* DROM0: 0x3F40_0000 ~ 0x3F7F_FFFF (RO) */
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_DROM0    BIT(14)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_DROM0_M  BIT(14)
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_DROM0_V  1
+#define DPORT_PRO_CPU_DISABLED_CACHE_IA_DROM0_S  14
+
 /* DPORT_PRO_MMU_RDATA : RO ;bitpos:[8:0] ;default: 9'h0 ; */
 /*description: */
 #define DPORT_PRO_MMU_RDATA  0x000001FF
@@ -2985,6 +3019,40 @@
 #define DPORT_APP_CPU_DISABLED_CACHE_IA_M  ((DPORT_APP_CPU_DISABLED_CACHE_IA_V)<<(DPORT_APP_CPU_DISABLED_CACHE_IA_S))
 #define DPORT_APP_CPU_DISABLED_CACHE_IA_V  0x3F
 #define DPORT_APP_CPU_DISABLED_CACHE_IA_S  9
+/* This is the contents of DPORT_APP_CPU_DISABLED_CACHE_IA field expanded */
+/* The following bits will be set upon invalid access for different memory
+ * regions: */
+/* Port of the PRO CPU cache when cache is used in high/low or odd/even mode */
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_OPPOSITE   BIT(9)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_OPPOSITE_M BIT(9)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_OPPOSITE_V 1
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_OPPOSITE_S 9
+/* DRAM1: 0x3F80_0000 ~ 0x3FBF_FFFF(R/W) */
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_DRAM1    BIT(10)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_DRAM1_M  BIT(10)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_DRAM1_V  1
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_DRAM1_S  10
+/* IROM0: 0x4080_0000 ~ 0x40BF_FFFF(RO) */
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IROM0    BIT(11)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IROM0_M  BIT(11)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IROM0_V  1
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IROM0_S  11
+/* IRAM1:  0x4040_0000 ~ 0x407F_FFFF(RO) */
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM1    BIT(12)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM1_M  BIT(12)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM1_V  1
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM1_S  12
+/* IRAM0: 0x4080_0000 ~ 0x40BF_FFFF(RO) */
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM0    BIT(13)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM0_M  BIT(13)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM0_V  1
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM0_S  13
+/* DROM0: 0x3F40_0000 ~ 0x3F7F_FFFF (RO) */
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_DROM0    BIT(14)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_DROM0_M  BIT(14)
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_DROM0_V  1
+#define DPORT_APP_CPU_DISABLED_CACHE_IA_DROM0_S  14
+
 /* DPORT_APP_MMU_RDATA : RO ;bitpos:[8:0] ;default: 9'h0 ; */
 /*description: */
 #define DPORT_APP_MMU_RDATA  0x000001FF
@@ -3788,11 +3856,84 @@
 
 #define DPORT_CACHE_IA_INT_EN_REG          (DR_REG_DPORT_BASE + 0x5A0)
 /* DPORT_CACHE_IA_INT_EN : R/W ;bitpos:[27:0] ;default: 28'b0 ; */
-/*description: */
+/*description: Interrupt enable bits for various invalid cache access reasons*/
 #define DPORT_CACHE_IA_INT_EN  0x0FFFFFFF
 #define DPORT_CACHE_IA_INT_EN_M  ((DPORT_CACHE_IA_INT_EN_V)<<(DPORT_CACHE_IA_INT_EN_S))
 #define DPORT_CACHE_IA_INT_EN_V  0xFFFFFFF
 #define DPORT_CACHE_IA_INT_EN_S  0
+/* Contents of DPORT_CACHE_IA_INT_EN field: */
+/* DPORT_CACHE_IA_INT_PRO_OPPOSITE : R/W ;bitpos:[19] ;default: 1'b0 ; */
+/*description: PRO CPU invalid access to APP CPU cache when cache disabled */
+#define DPORT_CACHE_IA_INT_PRO_OPPOSITE    BIT(19)
+#define DPORT_CACHE_IA_INT_PRO_OPPOSITE_M  BIT(19)
+#define DPORT_CACHE_IA_INT_PRO_OPPOSITE_V  (1)
+#define DPORT_CACHE_IA_INT_PRO_OPPOSITE_S  (19)
+/* DPORT_CACHE_IA_INT_PRO_DRAM1 : R/W ;bitpos:[18] ;default: 1'b0 ; */
+/*description: PRO CPU invalid access to DRAM1 when cache is disabled */
+#define DPORT_CACHE_IA_INT_PRO_DRAM1    BIT(18)
+#define DPORT_CACHE_IA_INT_PRO_DRAM1_M  BIT(18)
+#define DPORT_CACHE_IA_INT_PRO_DRAM1_V  (1)
+#define DPORT_CACHE_IA_INT_PRO_DRAM1_S  (18)
+/* DPORT_CACHE_IA_INT_PRO_IROM0 : R/W ;bitpos:[17] ;default: 1'b0 ; */
+/*description: PRO CPU invalid access to IROM0 when cache is disabled */
+#define DPORT_CACHE_IA_INT_PRO_IROM0    BIT(17)
+#define DPORT_CACHE_IA_INT_PRO_IROM0_M  BIT(17)
+#define DPORT_CACHE_IA_INT_PRO_IROM0_V  (1)
+#define DPORT_CACHE_IA_INT_PRO_IROM0_S  (17)
+/* DPORT_CACHE_IA_INT_PRO_IRAM1 : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/*description: PRO CPU invalid access to IRAM1 when cache is disabled */
+#define DPORT_CACHE_IA_INT_PRO_IRAM1    BIT(16)
+#define DPORT_CACHE_IA_INT_PRO_IRAM1_M  BIT(16)
+#define DPORT_CACHE_IA_INT_PRO_IRAM1_V  (1)
+#define DPORT_CACHE_IA_INT_PRO_IRAM1_S  (16)
+/* DPORT_CACHE_IA_INT_PRO_IRAM0 : R/W ;bitpos:[15] ;default: 1'b0 ; */
+/*description: PRO CPU invalid access to IRAM0 when cache is disabled */
+#define DPORT_CACHE_IA_INT_PRO_IRAM0    BIT(15)
+#define DPORT_CACHE_IA_INT_PRO_IRAM0_M  BIT(15)
+#define DPORT_CACHE_IA_INT_PRO_IRAM0_V  (1)
+#define DPORT_CACHE_IA_INT_PRO_IRAM0_S  (15)
+/* DPORT_CACHE_IA_INT_PRO_DROM0 : R/W ;bitpos:[14] ;default: 1'b0 ; */
+/*description: PRO CPU invalid access to DROM0 when cache is disabled */
+#define DPORT_CACHE_IA_INT_PRO_DROM0    BIT(14)
+#define DPORT_CACHE_IA_INT_PRO_DROM0_M  BIT(14)
+#define DPORT_CACHE_IA_INT_PRO_DROM0_V  (1)
+#define DPORT_CACHE_IA_INT_PRO_DROM0_S  (14)
+/* DPORT_CACHE_IA_INT_APP_OPPOSITE : R/W ;bitpos:[5] ;default: 1'b0 ; */
+/*description: APP CPU invalid access to APP CPU cache when cache disabled */
+#define DPORT_CACHE_IA_INT_APP_OPPOSITE    BIT(5)
+#define DPORT_CACHE_IA_INT_APP_OPPOSITE_M  BIT(5)
+#define DPORT_CACHE_IA_INT_APP_OPPOSITE_V  (1)
+#define DPORT_CACHE_IA_INT_APP_OPPOSITE_S  (5)
+/* DPORT_CACHE_IA_INT_APP_DRAM1 : R/W ;bitpos:43] ;default: 1'b0 ; */
+/*description: APP CPU invalid access to DRAM1 when cache is disabled */
+#define DPORT_CACHE_IA_INT_APP_DRAM1    BIT(4)
+#define DPORT_CACHE_IA_INT_APP_DRAM1_M  BIT(4)
+#define DPORT_CACHE_IA_INT_APP_DRAM1_V  (1)
+#define DPORT_CACHE_IA_INT_APP_DRAM1_S  (4)
+/* DPORT_CACHE_IA_INT_APP_IROM0 : R/W ;bitpos:[3] ;default: 1'b0 ; */
+/*description: APP CPU invalid access to IROM0 when cache is disabled */
+#define DPORT_CACHE_IA_INT_APP_IROM0    BIT(3)
+#define DPORT_CACHE_IA_INT_APP_IROM0_M  BIT(3)
+#define DPORT_CACHE_IA_INT_APP_IROM0_V  (1)
+#define DPORT_CACHE_IA_INT_APP_IROM0_S  (3)
+/* DPORT_CACHE_IA_INT_APP_IRAM1 : R/W ;bitpos:[2] ;default: 1'b0 ; */
+/*description: APP CPU invalid access to IRAM1 when cache is disabled */
+#define DPORT_CACHE_IA_INT_APP_IRAM1    BIT(2)
+#define DPORT_CACHE_IA_INT_APP_IRAM1_M  BIT(2)
+#define DPORT_CACHE_IA_INT_APP_IRAM1_V  (1)
+#define DPORT_CACHE_IA_INT_APP_IRAM1_S  (2)
+/* DPORT_CACHE_IA_INT_APP_IRAM0 : R/W ;bitpos:[1] ;default: 1'b0 ; */
+/*description: APP CPU invalid access to IRAM0 when cache is disabled */
+#define DPORT_CACHE_IA_INT_APP_IRAM0    BIT(1)
+#define DPORT_CACHE_IA_INT_APP_IRAM0_M  BIT(1)
+#define DPORT_CACHE_IA_INT_APP_IRAM0_V  (1)
+#define DPORT_CACHE_IA_INT_APP_IRAM0_S  (1)
+/* DPORT_CACHE_IA_INT_APP_DROM0 : R/W ;bitpos:[0] ;default: 1'b0 ; */
+/*description: APP CPU invalid access to DROM0 when cache is disabled */
+#define DPORT_CACHE_IA_INT_APP_DROM0    BIT(0)
+#define DPORT_CACHE_IA_INT_APP_DROM0_M  BIT(0)
+#define DPORT_CACHE_IA_INT_APP_DROM0_V  (1)
+#define DPORT_CACHE_IA_INT_APP_DROM0_S  (0)
 
 #define DPORT_SECURE_BOOT_CTRL_REG          (DR_REG_DPORT_BASE + 0x5A4)
 /* DPORT_SW_BOOTLOADER_SEL : R/W ;bitpos:[0] ;default: 1'b0 ; */

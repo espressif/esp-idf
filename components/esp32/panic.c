@@ -16,6 +16,7 @@
 #include <xtensa/config/core.h>
 
 #include "rom/rtc.h"
+#include "rom/uart.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -28,6 +29,7 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "soc/cpu.h"
+#include "soc/rtc.h"
 
 #include "esp_gdbstub.h"
 #include "esp_panic.h"
@@ -35,6 +37,7 @@
 #include "esp_err.h"
 #include "esp_core_dump.h"
 #include "esp_spi_flash.h"
+#include "esp_cache_err_int.h"
 
 /*
   Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -50,8 +53,8 @@
 //printf may be broken, so we fix our own printing fns...
 static void panicPutChar(char c)
 {
-    while (((READ_PERI_REG(UART_STATUS_REG(0)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
-    WRITE_PERI_REG(UART_FIFO_REG(0), c);
+    while (((READ_PERI_REG(UART_STATUS_REG(CONFIG_CONSOLE_UART_NUM)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
+    WRITE_PERI_REG(UART_FIFO_REG(CONFIG_CONSOLE_UART_NUM), c);
 }
 
 static void panicPutStr(const char *c)
@@ -120,7 +123,7 @@ static __attribute__((noreturn)) inline void invoke_abort()
 void abort()
 {
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
-    ets_printf("abort() was called at PC 0x%08x\n", (intptr_t)__builtin_return_address(0) - 3);
+    ets_printf("abort() was called at PC 0x%08x on core %d\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
 #endif
     invoke_abort();
 }
@@ -149,9 +152,22 @@ static void haltOtherCore()
     esp_cpu_stall( xPortGetCoreID() == 0 ? 1 : 0 );
 }
 
+
+static void setFirstBreakpoint(uint32_t pc)
+{
+    asm(
+        "wsr.ibreaka0 %0\n" \
+        "rsr.ibreakenable a3\n" \
+        "movi a4,1\n" \
+        "or a4, a4, a3\n" \
+        "wsr.ibreakenable a4\n" \
+        ::"r"(pc):"a3", "a4");
+}
+
+
 void panicHandler(XtExcFrame *frame)
 {
-    int *regs = (int *)frame;
+    int core_id = xPortGetCoreID();
     //Please keep in sync with PANIC_RSN_* defines
     const char *reasons[] = {
         "Unknown reason",
@@ -161,20 +177,26 @@ void panicHandler(XtExcFrame *frame)
         "Coprocessor exception",
         "Interrupt wdt timeout on CPU0",
         "Interrupt wdt timeout on CPU1",
+        "Cache disabled but cached memory region accessed",
     };
     const char *reason = reasons[0];
     //The panic reason is stored in the EXCCAUSE register.
-    if (regs[20] <= PANIC_RSN_MAX) {
-        reason = reasons[regs[20]];
+    if (frame->exccause <= PANIC_RSN_MAX) {
+        reason = reasons[frame->exccause];
+    }
+    if (frame->exccause == PANIC_RSN_CACHEERR && esp_cache_err_get_cpuid() != core_id) {
+        // Cache error interrupt will be handled by the panic handler
+        // on the other CPU.
+        return;
     }
     haltOtherCore();
     panicPutStr("Guru Meditation Error: Core ");
-    panicPutDec(xPortGetCoreID());
+    panicPutDec(core_id);
     panicPutStr(" panic'ed (");
     if (!abort_called) {
         panicPutStr(reason);
         panicPutStr(")\r\n");
-            if (regs[20]==PANIC_RSN_DEBUGEXCEPTION) {
+            if (frame->exccause == PANIC_RSN_DEBUGEXCEPTION) {
                 int debugRsn;
                 asm("rsr.debugcause %0":"=r"(debugRsn));
                 panicPutStr("Debug exception reason: ");
@@ -204,32 +226,19 @@ void panicHandler(XtExcFrame *frame)
         }
 
     if (esp_cpu_in_ocd_debug_mode()) {
-        asm("break.n 1");
+        setFirstBreakpoint(frame->pc);
+        return;
     }
     commonErrorHandler(frame);
 }
 
-static void setFirstBreakpoint(uint32_t pc)
-{
-    asm(
-        "wsr.ibreaka0 %0\n" \
-        "rsr.ibreakenable a3\n" \
-        "movi a4,1\n" \
-        "or a4, a4, a3\n" \
-        "wsr.ibreakenable a4\n" \
-        ::"r"(pc):"a3", "a4");
-}
-
 void xt_unhandled_exception(XtExcFrame *frame)
 {
-    int *regs = (int *)frame;
-    int x;
-
     haltOtherCore();
     panicPutStr("Guru Meditation Error of type ");
-    x = regs[20];
-    if (x < 40) {
-        panicPutStr(edesc[x]);
+    int exccause = frame->exccause;
+    if (exccause < 40) {
+        panicPutStr(edesc[exccause]);
     } else {
         panicPutStr("Unknown");
     }
@@ -237,11 +246,11 @@ void xt_unhandled_exception(XtExcFrame *frame)
     panicPutDec(xPortGetCoreID());
     if (esp_cpu_in_ocd_debug_mode()) {
         panicPutStr(" at pc=");
-        panicPutHex(regs[1]);
+        panicPutHex(frame->pc);
         panicPutStr(". Setting bp and returning..\r\n");
         //Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
         //will kick in exactly at the context the error happened.
-        setFirstBreakpoint(regs[1]);
+        setFirstBreakpoint(frame->pc);
         return;
     }
     panicPutStr(". Exception was unhandled.\r\n");
@@ -313,6 +322,22 @@ void esp_panic_wdt_stop()
     REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_OFF);
     REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN);
     WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
+}
+
+static void esp_panic_dig_reset() __attribute__((noreturn));
+
+static void esp_panic_dig_reset()
+{
+    // make sure all the panic handler output is sent from UART FIFO
+    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    // switch to XTAL (otherwise we will keep running from the PLL)
+    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    // reset the digital part
+    esp_cpu_unstall(PRO_CPU_NUM);
+    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+    while (true) {
+        ;
+    }
 }
 
 static inline bool stackPointerIsSane(uint32_t sp)
@@ -416,7 +441,12 @@ static void commonErrorHandler(XtExcFrame *frame)
     esp_panic_wdt_stop();
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
-    esp_restart_noos();
+    if (frame->exccause != PANIC_RSN_CACHEERR) {
+        esp_restart_noos();
+    } else {
+        // The only way to clear invalid cache access interrupt is to reset the digital part
+        esp_panic_dig_reset();
+    }
 #else
     disableAllWdts();
     panicPutStr("CPU halted.\r\n");

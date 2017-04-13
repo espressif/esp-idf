@@ -65,8 +65,9 @@
 #define BIT(nr)                 (1UL << (nr))
 #else
 #define BIT(nr)                 (1 << (nr))
-#endif //__ASSEMBLER__
+#endif
 
+#ifndef __ASSEMBLER__
 //write value to register
 #define REG_WRITE(_r, _v)    (*(volatile uint32_t *)(_r)) = (_v)
 
@@ -133,6 +134,8 @@
 //get field of register
 #define GET_PERI_REG_BITS2(reg, mask,shift)      ((READ_PERI_REG(reg)>>(shift))&(mask))
 //}}
+
+#endif /* !__ASSEMBLER__ */
 
 //Periheral Clock {{
 #define  APB_CLK_FREQ_ROM                            ( 26*1000000 )
@@ -297,7 +300,7 @@
  *      22                      3               extern edge             FRC1 timer
  *      23                      3               extern level
  *      24                      4               extern level            TG1_WDT
- *      25                      4               extern level            Reserved                Reserved
+ *      25                      4               extern level            CACHEERR
  *      26                      5               extern level            Reserved                Reserved
  *      27                      3               extern level            Reserved                Reserved
  *      28                      4               extern edge             
@@ -314,6 +317,7 @@
 #define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
+#define ETS_CACHEERR_INUM                       25
 
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1
