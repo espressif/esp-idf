@@ -1,9 +1,17 @@
 /* Power save Example
- * this example shows how to use power save mode
- * 
- * set a router or a AP using the same SSID&PASSWORD as configuration of this example.
- * start esp32 and when it connected to AP it will enter power save mode
- */
+
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
+
+/*
+   this example shows how to use power save mode
+   set a router or a AP using the same SSID&PASSWORD as configuration of this example.
+   start esp32 and when it connected to AP it will enter power save mode
+*/
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
@@ -16,11 +24,12 @@
 
 #if CONFIG_POWER_SAVE_MODEM
 #define DEFAULT_PS_MODE WIFI_PS_MODEM
-//#elif CONFIG_POWER_SAVE_NONE
-//#define DEFAULT_PS_MODE WIFI_PS_NONE
+#elif CONFIG_POWER_SAVE_NONE
+#define DEFAULT_PS_MODE WIFI_PS_NONE
 #else
 #define DEFAULT_PS_MODE WIFI_PS_NONE
-#endif
+#endif /*CONFIG_POWER_SAVE_MODEM*/
+
 
 static const char *TAG = "power_save";
 
