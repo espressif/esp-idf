@@ -213,6 +213,7 @@ tcp_create_segment(struct tcp_pcb *pcb, struct pbuf *p, u8_t flags, u32_t seqno,
   TCPH_HDRLEN_FLAGS_SET(seg->tcphdr, (5 + optlen / 4), flags);
   /* wnd and chksum are set in tcp_output */
   seg->tcphdr->urgp = 0;
+
   return seg;
 }
 
@@ -1424,6 +1425,7 @@ tcp_rexmit(struct tcp_pcb *pcb)
   }
 #endif /* TCP_OVERSIZE */
 
+  ESP_STATS_TCP_PCB(pcb);
   ++pcb->nrtx;
 
   /* Don't take any rtt measurements after retransmitting. */

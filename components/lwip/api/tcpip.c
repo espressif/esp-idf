@@ -227,7 +227,7 @@ tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
 #endif
 
   if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {
-    ESP_STATS_INC(esp.tcpip_inpkt_post_fail);
+    ESP_STATS_DROP_INC(esp.tcpip_inpkt_post_fail);
     memp_free(MEMP_TCPIP_MSG_INPKT, msg);
     return ERR_MEM;
   }
@@ -284,7 +284,7 @@ tcpip_callback_with_block(tcpip_callback_fn function, void *ctx, u8_t block)
       sys_mbox_post(&mbox, msg);
     } else {
       if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {
-        ESP_STATS_INC(esp.tcpip_cb_post_fail);
+        ESP_STATS_DROP_INC(esp.tcpip_cb_post_fail);
         memp_free(MEMP_TCPIP_MSG_API, msg);
         return ERR_MEM;
       }

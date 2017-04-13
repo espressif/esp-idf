@@ -906,6 +906,8 @@ tcp_slowtmr_start:
                                       " pcb->rto %"S16_F"\n",
                                       pcb->rtime, pcb->rto));
 
+          ESP_STATS_TCP_PCB(pcb);
+
           /* Double retransmission time-out unless we are trying to
            * connect to somebody (i.e., we are in SYN_SENT). */
           if (pcb->state != SYN_SENT) {

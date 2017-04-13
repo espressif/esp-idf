@@ -180,7 +180,7 @@ stats_display(void)
 }
 #endif /* LWIP_STATS_DISPLAY */
 
-#if ESP_STATS
+#if ESP_STATS_DROP
 void stats_display_esp(struct stats_esp *esp)
 {
   LWIP_PLATFORM_DIAG(("\nESP\n\t"));
