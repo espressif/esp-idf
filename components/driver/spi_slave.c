@@ -19,7 +19,6 @@
 #include "soc/spi_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/spi_struct.h"
-#include "soc/rtc_cntl_reg.h"
 #include "rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
@@ -34,9 +33,7 @@
 #include "freertos/ringbuf.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
-#include "soc/uart_struct.h"
 #include "rom/lldesc.h"
-#include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_heap_alloc_caps.h"
@@ -48,7 +45,7 @@ static const char *SPI_TAG = "spi_slave";
         return (ret_val); \
     }
 
-#define VALID_HOST(x) (host>SPI_HOST && host<=VSPI_HOST)
+#define VALID_HOST(x) (x>SPI_HOST && x<=VSPI_HOST)
 
 typedef struct {
     spi_slave_interface_config_t cfg;
@@ -68,7 +65,7 @@ static spi_slave_t *spihost[3];
 
 static void IRAM_ATTR spi_intr(void *arg);
 
-esp_err_t spi_slave_initialize(spi_host_device_t host, spi_bus_config_t *bus_config, spi_slave_interface_config_t *slave_config, int dma_chan)
+esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, int dma_chan)
 {
     bool native, claimed;
     //We only support HSPI/VSPI, period.
@@ -200,7 +197,7 @@ esp_err_t spi_slave_free(spi_host_device_t host)
 }
 
 
-esp_err_t spi_slave_queue_trans(spi_host_device_t host, spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
+esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
 {
     BaseType_t r;
     SPI_CHECK(VALID_HOST(host), "invalid host", ESP_ERR_INVALID_ARG);
@@ -368,7 +365,7 @@ static void IRAM_ATTR spi_intr(void *arg)
             host->hw->user.usr_miso_highpart=0;
             host->hw->user.usr_mosi_highpart=0;
             if (trans->tx_buffer) {
-                uint32_t *data=host->cur_trans->tx_buffer;
+                const uint32_t *data=host->cur_trans->tx_buffer;
                 for (int x=0; x<trans->length; x+=32) {
                     uint32_t word;
                     memcpy(&word, &data[x/32], 4);

@@ -47,7 +47,7 @@ starts sending out clock pulses on the CLK line: every clock pulse causes a data
 the master to the slave on the MOSI line and vice versa on the MISO line. At the end of the transaction,
 the master makes CS high again.
 
-Using the spi_master driver
+Using the spi_slave driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Initialize a SPI peripheral as a slave by calling ``spi_slave_initialize``. Make sure to set the 
@@ -79,9 +79,9 @@ case the length of the transmission is larger than the buffer length, only the s
 will be sent and received. In case the transmission length is shorter than the buffer length, only data up 
 to the length of the buffer will be exchanged.
 
-Warning: Due to a design peculiarity in the V0 and V1 silicon of the ESP32, if the amount of bytes sent 
-by the master or the length of the transmission sent to the slave driver is not both larger than eight and 
-dividable by four, the SPI hardware can fail to write the last one to seven bytes to the receive buffer.
+Warning: Due to a design peculiarity in the ESP32, if the amount of bytes sent by the master or the length 
+of the transmission queues in the slave driver, in bytes, is not both larger than eight and dividable by 
+four, the SPI hardware can fail to write the last one to seven bytes to the receive buffer.
 
 
 Application Example

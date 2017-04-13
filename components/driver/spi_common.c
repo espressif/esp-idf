@@ -19,7 +19,6 @@
 #include "soc/spi_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/spi_struct.h"
-#include "soc/rtc_cntl_reg.h"
 #include "rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
@@ -27,16 +26,9 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
-#include "freertos/task.h"
-#include "freertos/ringbuf.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
-#include "soc/uart_struct.h"
 #include "rom/lldesc.h"
-#include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_heap_alloc_caps.h"
@@ -189,7 +181,7 @@ Do the common stuff to hook up a SPI host to a bus defined by a bunch of GPIO pi
 bus config struct and it'll set up the GPIO matrix and enable the device. It will set is_native to 1 if the bus 
 config can be done using the IOMUX instead of using the GPIO matrix.
 */
-esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, spi_bus_config_t *bus_config, int dma_chan, int flags, bool *is_native)
+esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan, int flags, bool *is_native)
 {
     bool native=true;
     bool is_master=(flags&SPICOMMON_BUSFLAG_MASTER)?true:false;

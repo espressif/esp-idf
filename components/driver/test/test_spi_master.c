@@ -150,14 +150,14 @@ static void spi_test(spi_device_handle_t handle, int num_bytes) {
         int from=x-16;
         if (from<0) from=0;
         printf("Error at %d! Sent vs recved: (starting from %d)\n" , x, from);
-		for (int i=0; i<32; i++) {
-			if (i+from<num_bytes) printf("%02X ", sendbuf[from+i]);
-		}
-		printf("\n");
-		for (int i=0; i<32; i++) {
-			if (i+from<num_bytes) printf("%02X ", recvbuf[from+i]);
-		}
-		printf("\n");
+        for (int i=0; i<32; i++) {
+            if (i+from<num_bytes) printf("%02X ", sendbuf[from+i]);
+        }
+        printf("\n");
+        for (int i=0; i<32; i++) {
+            if (i+from<num_bytes) printf("%02X ", recvbuf[from+i]);
+        }
+        printf("\n");
 //        TEST_ASSERT(0);
     }
 
@@ -231,26 +231,26 @@ TEST_CASE("SPI Master test, interaction of multiple devs", "[spi][ignore]") {
         .queue_size=3,
     };
     spi_device_handle_t handle1=setup_spi_bus(80000, true);
-	spi_device_handle_t handle2;
-	spi_bus_add_device(HSPI_HOST, &devcfg, &handle2);
+    spi_device_handle_t handle2;
+    spi_bus_add_device(HSPI_HOST, &devcfg, &handle2);
 
-	printf("Sending to dev 1\n");
+    printf("Sending to dev 1\n");
     spi_test(handle1, 7);
-	printf("Sending to dev 1\n");
+    printf("Sending to dev 1\n");
     spi_test(handle1, 15);
-	printf("Sending to dev 2\n");
+    printf("Sending to dev 2\n");
     spi_test(handle2, 15);
-	printf("Sending to dev 1\n");
+    printf("Sending to dev 1\n");
     spi_test(handle1, 32);
-	printf("Sending to dev 2\n");
+    printf("Sending to dev 2\n");
     spi_test(handle2, 32);
-	printf("Sending to dev 1\n");
+    printf("Sending to dev 1\n");
     spi_test(handle1, 63);
-	printf("Sending to dev 2\n");
+    printf("Sending to dev 2\n");
     spi_test(handle2, 63);
-	printf("Sending to dev 1\n");
+    printf("Sending to dev 1\n");
     spi_test(handle1, 5000);
-	printf("Sending to dev 2\n");
+    printf("Sending to dev 2\n");
     spi_test(handle2, 5000);
 
 

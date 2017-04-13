@@ -1,4 +1,4 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -78,9 +78,9 @@ bool spicommon_periph_claim(spi_host_device_t host);
 bool spicommon_periph_free(spi_host_device_t host);
 
 
-#define SPICOMMON_BUSFLAG_SLAVE 0    ///< Initialize I/O in slave mode
-#define SPICOMMON_BUSFLAG_MASTER 1   ///< Initialize I/O in master mode
-#define SPICOMMON_BUSFLAG_QUAD 2     ///< Also initialize WP/HD pins, if specified
+#define SPICOMMON_BUSFLAG_SLAVE  0          ///< Initialize I/O in slave mode
+#define SPICOMMON_BUSFLAG_MASTER (1<<0)     ///< Initialize I/O in master mode
+#define SPICOMMON_BUSFLAG_QUAD   (1<<1)     ///< Also initialize WP/HD pins, if specified
 
 /**
  * @brief Connect a SPI peripheral to GPIO pins
@@ -93,13 +93,13 @@ bool spicommon_periph_free(spi_host_device_t host);
  * @param bus_config Pointer to a spi_bus_config struct detailing the GPIO pins
  * @param dma_chan DMA-channel (1 or 2) to use, or 0 for no DMA.
  * @param flags Combination of SPICOMMON_BUSFLAG_* flags
- * @param is_native A value of 'true' will be written to this address if the GPIOs can be
+ * @param[out] is_native A value of 'true' will be written to this address if the GPIOs can be
  *                  routed using the IO_mux, 'false' if the GPIO matrix is used.
  * @return 
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, spi_bus_config_t *bus_config, int dma_chan, int flags, bool *is_native);
+esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan, int flags, bool *is_native);
 
 /**
  * @brief Free the IO used by a SPI peripheral
@@ -170,7 +170,7 @@ int spicommon_irqsource_for_host(spi_host_device_t host);
 
 
 /**
- * @note V0 and V1 of the ESP32 silicon has a bug where in some (well-known) cases a SPI DMA channel will get confused. This can be remedied
+ * @note In some (well-defined) cases in the ESP32 (at least rev v.0 and v.1), a SPI DMA channel will get confused. This can be remedied
  * by resetting the SPI DMA hardware in case this happens. Unfortunately, the reset knob used for thsi will reset _both_ DMA channels, and
  * as such can only done safely when both DMA channels are idle. These functions coordinate this.
  * 
@@ -190,7 +190,7 @@ typedef void(*dmaworkaround_cb_t)(void *arg);
 /**
  * @brief Request a reset for a certain DMA channel
  *
- * @param host The SPI host
+ * @param dmachan DMA channel associated with the SPI host that needs a reset
  * @param cb Callback to call in case DMA channel cannot be reset immediately
  * @param arg Argument to the callback
  *
