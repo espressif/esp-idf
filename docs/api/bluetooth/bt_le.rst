@@ -1,4 +1,4 @@
-BT COMMON
+BT LE
 =========
 
 .. toctree::

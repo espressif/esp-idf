@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <string.h>
-
+#include "esp_bt_device.h"
 #include "esp_bt_main.h"
 #include "esp_gap_ble_api.h"
 #include "bta_api.h"
@@ -217,23 +217,7 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable)
 
 esp_err_t esp_ble_gap_set_device_name(const char *name)
 {
-    btc_msg_t msg;
-    btc_ble_gap_args_t arg;
-
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    
-    if (strlen(name) > ESP_GAP_DEVICE_NAME_MAX) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_GAP_BLE;
-    msg.act = BTC_GAP_BLE_ACT_SET_DEV_NAME;
-    strcpy(arg.set_dev_name.device_name, name);
-
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return esp_bt_dev_set_device_name(name);
 }
 
 uint8_t *esp_ble_resolve_adv_data( uint8_t *adv_data, uint8_t type, uint8_t *length)

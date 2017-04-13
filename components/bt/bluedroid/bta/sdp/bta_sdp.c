@@ -23,11 +23,13 @@
  ******************************************************************************/
 
 #include <stdlib.h>
-
+#include "bt_target.h"
 #include "bta_api.h"
 #include "bta_sys.h"
 #include "bta_sdp_api.h"
 #include "bta_sdp_int.h"
+
+#if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE)
 
 /*****************************************************************************
 ** Constants and types
@@ -75,3 +77,5 @@ BOOLEAN bta_sdp_sm_execute(BT_HDR *p_msg)
 
     return (ret);
 }
+
+#endif /* #if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE) */

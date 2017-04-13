@@ -217,11 +217,8 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         return;
     }
     if (type == DATA_TYPE_ACL) {
-        packet->offset--;
         stream += hdr_size - 2;
         STREAM_TO_UINT16(length, stream);
-        stream = packet->data + 1;
-        memcpy(packet->data, stream, packet->len);
     } else {
         stream += hdr_size - 1;
         STREAM_TO_UINT8(length, stream);

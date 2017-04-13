@@ -34,16 +34,62 @@
 #include "bdroid_buildcfg.h"
 #endif
 
+#include "sdkconfig.h"
 #include "bt_types.h"   /* This must be defined AFTER buildcfg.h */
 
 /* Include common GKI definitions used by this platform */
 #include "gki_target.h"
 #include "dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
+#if CONFIG_CLASSIC_BT_ENABLED
 
-#ifndef CLASSIC_BT_INCLUDED
-#define CLASSIC_BT_INCLUDED TRUE
-#endif  ///CLASSIC_BT_INCLUDED
+#define BTA_SDP_INCLUDED            TRUE
+#define BTA_PAN_INCLUDED            FALSE
+#define BTA_HH_INCLUDED             FALSE
+#define BTA_AR_INCLUDED             TRUE
+#define BTA_AV_INCLUDED             TRUE
+#define BTA_AV_SINK_INCLUDED        TRUE
+#define SDP_INCLUDED                TRUE
+#define RFCOMM_INCLUDED             FALSE
+#define PAN_INCLUDED                FALSE
+#define HID_HOST_INCLUDED           FALSE
+#define AVDT_INCLUDED               TRUE
+#define A2D_INCLUDED                TRUE
+#define AVCT_INCLUDED               TRUE
+#define AVRC_INCLUDED               TRUE
+#define SBC_DEC_INCLUDED            TRUE
+#define SBC_ENC_INCLUDED            FALSE
+#define MCA_INCLUDED                FALSE
+#define BTC_SM_INCLUDED             TRUE
+#define BTC_PRF_QUEUE_INCLUDED      TRUE
+#define BTC_GAP_BT_INCLUDED         TRUE
+#define BTC_AV_INCLUDED             TRUE
+
+#else /* #if CONFIG_CLASSIC_BT_ENABLED */
+
+#define BTA_SDP_INCLUDED            FALSE
+#define BTA_PAN_INCLUDED            FALSE
+#define BTA_HH_INCLUDED             FALSE
+#define BTA_AR_INCLUDED             FALSE
+#define BTA_AV_INCLUDED             FALSE
+#define BTA_AV_SINK_INCLUDED        FALSE
+#define SDP_INCLUDED                FALSE
+#define RFCOMM_INCLUDED             FALSE
+#define PAN_INCLUDED                FALSE
+#define HID_HOST_INCLUDED           FALSE
+#define AVDT_INCLUDED               FALSE
+#define A2D_INCLUDED                FALSE
+#define AVCT_INCLUDED               FALSE
+#define AVRC_INCLUDED               FALSE
+#define SBC_DEC_INCLUDED            FALSE
+#define SBC_ENC_INCLUDED            FALSE
+#define MCA_INCLUDED                FALSE
+#define BTC_SM_INCLUDED             FALSE
+#define BTC_PRF_QUEUE_INCLUDED      FALSE
+#define BTC_GAP_BT_INCLUDED         FALSE
+#define BTC_AV_INCLUDED             FALSE
+
+#endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
@@ -91,15 +137,15 @@
 #endif
 
 #ifndef BTA_AR_INCLUDED
-#define BTA_AR_INCLUDED FALSE//TRUE
+#define BTA_AR_INCLUDED TRUE//TRUE
 #endif
 
 #ifndef BTA_AV_INCLUDED
-#define BTA_AV_INCLUDED FALSE//TRUE
+#define BTA_AV_INCLUDED TRUE//TRUE
 #endif
 
 #ifndef BTA_AV_SINK_INCLUDED
-#define BTA_AV_SINK_INCLUDED FALSE//FALSE
+#define BTA_AV_SINK_INCLUDED TRUE//FALSE
 #endif
 
 #ifndef BTA_DISABLE_DELAY
@@ -466,7 +512,7 @@
 #define BTM_DEFAULT_DISC_INTERVAL   0x0800
 #endif
 
-/* Default class of device
+/* 
 * {SERVICE_CLASS, MAJOR_CLASS, MINOR_CLASS}
 *
 * SERVICE_CLASS:0x5A (Bit17 -Networking,Bit19 - Capturing,Bit20 -Object Transfer,Bit22 -Telephony)
@@ -474,8 +520,20 @@
 * MINOR_CLASS:0x0C - SMART_PHONE
 *
 */
+#define BTA_DM_COD_SMARTPHONE {0x5A, 0x02, 0x0C}
+
+/*
+* {SERVICE_CLASS, MAJOR_CLASS, MINOR_CLASS}
+*
+* SERVICE_CLASS:0x2C (Bit21 - Audio, Bit19 - Capturing)
+* MAJOR_CLASS:0x04 - Audio/Video
+* MINOR_CLASS:0x05 - LoudSpeaker
+*/
+#define BTA_DM_COD_LOUDSPEAKER {0x2C, 0x04, 0x14}
+
+/* Default class of device */
 #ifndef BTA_DM_COD
-#define BTA_DM_COD {0x5A, 0x02, 0x0C}
+#define BTA_DM_COD BTA_DM_COD_LOUDSPEAKER
 #endif
 
 /* The number of SCO links. */
@@ -573,7 +631,7 @@
 
 /* The IO capability of the local device (for Simple Pairing) */
 #ifndef BTM_LOCAL_IO_CAPS
-#define BTM_LOCAL_IO_CAPS               BTM_IO_CAP_IO
+#define BTM_LOCAL_IO_CAPS               BTM_IO_CAP_NONE
 #endif
 
 #ifndef BTM_LOCAL_IO_CAPS_BLE
@@ -978,7 +1036,7 @@
 ******************************************************************************/
 
 #ifndef SDP_INCLUDED
-#define SDP_INCLUDED                FALSE //TRUE
+#define SDP_INCLUDED                TRUE
 #endif
 
 /* This is set to enable SDP server functionality. */
@@ -1001,16 +1059,16 @@
 
 /* The maximum number of SDP records the server can support. */
 #ifndef SDP_MAX_RECORDS
-#define SDP_MAX_RECORDS             15  /*max is 30*/
+#define SDP_MAX_RECORDS             6  /*max is 30*/
 #endif
 
 /* The maximum number of attributes in each record. */
 #ifndef SDP_MAX_REC_ATTR
-#define SDP_MAX_REC_ATTR            25
+#define SDP_MAX_REC_ATTR            8
 #endif
 
 #ifndef SDP_MAX_PAD_LEN
-#define SDP_MAX_PAD_LEN             600
+#define SDP_MAX_PAD_LEN             300
 #endif
 
 /* The maximum length, in bytes, of an attribute. */
@@ -1326,17 +1384,17 @@ Range: 2 octets
 ******************************************************************************/
 
 #ifndef AVDT_INCLUDED
-#define AVDT_INCLUDED               FALSE//TRUE
+#define AVDT_INCLUDED               TRUE
 #endif
 
 /* Include reporting capability in AVDTP */
 #ifndef AVDT_REPORTING
-#define AVDT_REPORTING              FALSE//TRUE
+#define AVDT_REPORTING              TRUE
 #endif
 
 /* Include multiplexing capability in AVDTP */
 #ifndef AVDT_MULTIPLEXING
-#define AVDT_MULTIPLEXING           FALSE//TRUE
+#define AVDT_MULTIPLEXING           TRUE
 #endif
 
 /* Number of simultaneous links to different peer devices. */
@@ -1593,7 +1651,7 @@ Range: 2 octets
 **
 ******************************************************************************/
 #ifndef AVRC_INCLUDED
-#define AVRC_INCLUDED               FALSE
+#define AVRC_INCLUDED               TRUE
 #endif
 
 #ifndef AVRC_METADATA_INCLUDED

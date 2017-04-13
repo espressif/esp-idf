@@ -31,7 +31,6 @@ typedef enum {
     BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN,
     BTC_GAP_BLE_ACT_SET_RAND_ADDRESS,
     BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
-    BTC_GAP_BLE_ACT_SET_DEV_NAME,
     BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
     BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW,
 } btc_gap_ble_act_t;
@@ -73,11 +72,6 @@ typedef union {
     struct cfg_local_privacy_args {
         bool privacy_enable;
     } cfg_local_privacy;
-    //BTC_GAP_BLE_ACT_SET_DEV_NAME,
-    struct set_dev_name_args {
-#define ESP_GAP_DEVICE_NAME_MAX (32)
-        char device_name[ESP_GAP_DEVICE_NAME_MAX + 1];
-    } set_dev_name;
     //BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
     struct config_adv_data_raw_args {
         uint8_t *raw_adv;

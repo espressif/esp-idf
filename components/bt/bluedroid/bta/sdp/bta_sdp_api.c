@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include "bt_target.h"
 #include "bta_api.h"
 #include "bta_sys.h"
 #include "bta_sdp_api.h"
@@ -31,6 +32,7 @@
 // #include "port_api.h"
 #include "sdp_api.h"
 
+#if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE)
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -165,3 +167,4 @@ tBTA_SDP_STATUS BTA_SdpRemoveRecordByUser(void *user_data)
 }
 
 
+#endif /* #if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE) */
