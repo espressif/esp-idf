@@ -20,12 +20,15 @@
  *  This file contains compile-time configurable constants for SDP Search
  ******************************************************************************/
 
+#include "bt_target.h"
 #include "gki.h"
 #include "bta_api.h"
 #include "bta_sdp_api.h"
 
+#if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE)
+
 #ifndef BTA_SDP_DB_SIZE
-#define BTA_SDP_DB_SIZE  4500
+#define BTA_SDP_DB_SIZE  1500
 #endif
 
 static UINT8 __attribute__ ((aligned(4))) bta_sdp_db_data[BTA_SDP_DB_SIZE];
@@ -37,3 +40,5 @@ const tBTA_SDP_CFG bta_sdp_cfg = {
 };
 
 tBTA_SDP_CFG *p_bta_sdp_cfg = (tBTA_SDP_CFG *) &bta_sdp_cfg;
+
+#endif /* #if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE) */

@@ -186,7 +186,7 @@ endif
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 
-IDF_VER := $(shell git -C $(IDF_PATH) describe --always --tags --dirty)
+IDF_VER := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
 
 # Set default LDFLAGS
 

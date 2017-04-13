@@ -564,7 +564,7 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  */
-esp_err_t rmt_config(rmt_config_t* rmt_param);
+esp_err_t rmt_config(const rmt_config_t* rmt_param);
 
 /**
  * @brief   register RMT interrupt handler, the handler is an ISR.
@@ -612,7 +612,7 @@ esp_err_t rmt_isr_deregister(rmt_isr_handle_t handle);
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  */
-esp_err_t rmt_fill_tx_items(rmt_channel_t channel, rmt_item32_t* item, uint16_t item_num, uint16_t mem_offset);
+esp_err_t rmt_fill_tx_items(rmt_channel_t channel, const rmt_item32_t* item, uint16_t item_num, uint16_t mem_offset);
 
 /**
  * @brief Initialize RMT driver
@@ -670,7 +670,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel);
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  */
-esp_err_t rmt_write_items(rmt_channel_t channel, rmt_item32_t* rmt_item, int item_num, bool wait_tx_done);
+esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, int item_num, bool wait_tx_done);
 
 /**
  * @brief Wait RMT TX finished.

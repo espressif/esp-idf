@@ -1333,7 +1333,7 @@ extern void BTA_DmBleTrackAdvertiser(tBTA_DM_BLE_REF_VALUE ref_value,
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleBroadcast (BOOLEAN start)
+extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb)
 {
     tBTA_DM_API_BLE_OBSERVE   *p_msg;
 
@@ -1344,6 +1344,9 @@ extern void BTA_DmBleBroadcast (BOOLEAN start)
 
         p_msg->hdr.event = BTA_DM_API_BLE_BROADCAST_EVT;
         p_msg->start = start;
+        if (start == FALSE){
+            p_msg->p_stop_adv_cback= p_start_stop_adv_cb;
+        }
 
         bta_sys_sendmsg(p_msg);
     }
@@ -2129,7 +2132,7 @@ void BTA_DmCloseACL(BD_ADDR bd_addr, BOOLEAN remove_dev, tBTA_TRANSPORT transpor
 *******************************************************************************/
 extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb,
-                             tBTA_START_SCAN_CMPL_CBACK *p_start_scan_cb)
+                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb)
 {
     tBTA_DM_API_BLE_OBSERVE   *p_msg;
 
@@ -2142,7 +2145,12 @@ extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
         p_msg->start = start;
         p_msg->duration = duration;
         p_msg->p_cback = p_results_cb;
-        p_msg->p_start_scan_cback = p_start_scan_cb;
+        if (start){
+            p_msg->p_start_scan_cback = p_start_stop_scan_cb;
+        }
+        else {
+            p_msg->p_stop_scan_cback = p_start_stop_scan_cb;
+        }
 
         bta_sys_sendmsg(p_msg);
     }

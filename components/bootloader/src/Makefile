@@ -7,7 +7,7 @@ PROJECT_NAME := bootloader
 
 #We cannot include the esp32 component directly but we need its includes.
 #This is fixed by adding CFLAGS from Makefile.projbuild
-COMPONENTS := esptool_py bootloader bootloader_support log spi_flash micro-ecc
+COMPONENTS := esptool_py bootloader bootloader_support log spi_flash micro-ecc soc
 
 # The bootloader pseudo-component is also included in this build, for its Kconfig.projbuild to be included.
 #

@@ -49,4 +49,6 @@ void future_ready(future_t *future, void *value);
 // Frees the future before return. |future| may not be NULL.
 void *future_await(future_t *async_result);
 
+//Free the future if this "future" is not used
+void future_free(future_t *future);
 #endif /* __FUTURE_H__ */

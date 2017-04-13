@@ -45,4 +45,5 @@ Functions
 ^^^^^^^^^
 
 .. doxygenfunction:: esp_bt_dev_get_address
+.. doxygenfunction:: esp_bt_dev_set_device_name
 

@@ -9,6 +9,10 @@ Install some packages
 
 To compile with ESP-IDF you need to get the following packages:
 
+- CentOS 7::
+
+    sudo yum install git wget make ncurses-devel flex bison gperf python pyserial
+
 - Ubuntu and Debian::
 
     sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial
@@ -80,6 +84,10 @@ In any case, here are the steps to compile the toolchain yourself.
 (Note: You will also need the prerequisite packages mentioned in step 0, above.)
 
 - Install dependencies:
+
+  - CentOS 7::
+
+        sudo yum install gawk gperf grep gettext ncurses-devel python python-devel automake bison flex texinfo help2man libtool
 
   - Ubuntu pre-16.04::
 

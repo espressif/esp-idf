@@ -472,7 +472,9 @@ typedef struct {
     BOOLEAN                 start;
     UINT16                  duration;
     tBTA_DM_SEARCH_CBACK    *p_cback;
-    tBTA_START_SCAN_CMPL_CBACK *p_start_scan_cback;
+    tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
+    tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
+    tBTA_START_STOP_ADV_CMPL_CBACK  *p_stop_adv_cback;
 } tBTA_DM_API_BLE_OBSERVE;
 
 typedef struct {

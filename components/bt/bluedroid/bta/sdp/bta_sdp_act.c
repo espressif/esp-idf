@@ -26,7 +26,7 @@
 #include "bt_defs.h"
 #include <stdlib.h>
 #include <string.h>
-
+#include "bt_target.h"
 #include "allocator.h"
 #include "bt_types.h"
 #include "gki.h"
@@ -39,6 +39,7 @@
 #include "btm_int.h"
 #include "sdp_api.h"
 
+#if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE)
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -543,3 +544,5 @@ void bta_sdp_remove_record(tBTA_SDP_MSG *p_data)
         bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, NULL, p_data->record.user_data);
     }
 }
+
+#endif /* #if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE) */

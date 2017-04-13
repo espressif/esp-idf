@@ -124,7 +124,7 @@ typedef struct {
 
 typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
-    uint8_t ssid[32];                     /**< SSID of AP */
+    uint8_t ssid[33];                     /**< SSID of AP */
     uint8_t primary;                      /**< channel of AP */
     wifi_second_chan_t second;            /**< second channel of AP */
     int8_t  rssi;                         /**< signal strength of AP */

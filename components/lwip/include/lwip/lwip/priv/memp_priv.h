@@ -140,7 +140,7 @@ struct memp_desc {
 #endif /* MEMP_MEM_MALLOC */
 };
 
-#if (ESP_CNT_DEBUG == 1)
+#if (ESP_STATS_MEM == 1)
 extern uint32_t g_lwip_mem_cnt[MEMP_MAX][2];
 #define ESP_CNT_MEM_MALLOC_INC(type)  g_lwip_mem_cnt[type][0]++
 #define ESP_CNT_MEM_FREE_INC(type)    g_lwip_mem_cnt[type][1]++

@@ -13,7 +13,8 @@ extern "C"
 #define PANIC_RSN_COPROCEXCEPTION 4
 #define PANIC_RSN_INTWDT_CPU0 5
 #define PANIC_RSN_INTWDT_CPU1 6
-#define PANIC_RSN_MAX 6
+#define PANIC_RSN_CACHEERR 7
+#define PANIC_RSN_MAX 7
 
 
 #ifndef __ASSEMBLER__

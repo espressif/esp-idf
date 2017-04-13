@@ -107,8 +107,13 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
     Cache_Read_Disable(0);
     Cache_Flush(0);
     ESP_LOGD(TAG, "mmu set paddr=%08x count=%d", src_addr_aligned, count );
-    cache_flash_mmu_set( 0, 0, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count );
-    Cache_Read_Enable( 0 );
+    int e = cache_flash_mmu_set(0, 0, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count);
+    if (e != 0) {
+        ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
+        Cache_Read_Enable(0);
+        return NULL;
+    }
+    Cache_Read_Enable(0);
 
     mapped = true;
 

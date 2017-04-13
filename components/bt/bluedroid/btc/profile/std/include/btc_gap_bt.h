@@ -15,8 +15,24 @@
 #ifndef __BTC_GAP_BT_H__
 #define __BTC_GAP_BT_H__
 
+#include "esp_bt_defs.h"
+#include "esp_gap_bt_api.h"
+#include "btc_task.h"
 
+typedef enum {
+    BTC_GAP_BT_ACT_SET_SCAN_MODE = 0,
+} btc_gap_bt_act_t;
 
+/* btc_bt_gap_args_t */
+typedef union {
+    // BTC_BT_GAP_ACT_SET_SCAN_MODE,
+    struct set_bt_scan_mode_args {
+        esp_bt_scan_mode_t mode;
+    } set_scan_mode;
+} btc_gap_bt_args_t;
 
+void btc_gap_bt_call_handler(btc_msg_t *msg);
 
-#define /* __BTC_GAP_BT_H__ */
+void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+
+#endif /* __BTC_GAP_BT_H__ */
