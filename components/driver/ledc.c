@@ -180,7 +180,7 @@ esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags,
     return ret;
 }
 
-esp_err_t ledc_timer_config(ledc_timer_config_t* timer_conf)
+esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
 {
     int freq_hz = timer_conf->freq_hz;
     int bit_num = timer_conf->bit_num;
@@ -245,7 +245,7 @@ esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc
     return ESP_OK;
 }
 
-esp_err_t ledc_channel_config(ledc_channel_config_t* ledc_conf)
+esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
 {
     uint32_t speed_mode = ledc_conf->speed_mode;
     uint32_t gpio_num = ledc_conf->gpio_num;

@@ -373,7 +373,7 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
     return ESP_OK;
 }
 
-esp_err_t rmt_config(rmt_config_t* rmt_param)
+esp_err_t rmt_config(const rmt_config_t* rmt_param)
 {
     uint8_t mode = rmt_param->rmt_mode;
     uint8_t channel = rmt_param->channel;

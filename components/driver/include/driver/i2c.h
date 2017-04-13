@@ -135,7 +135,7 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t i2c_param_config(i2c_port_t i2c_num, i2c_config_t* i2c_conf);
+esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t* i2c_conf);
 
 /**
  * @brief reset I2C tx hardware fifo

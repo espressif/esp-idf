@@ -564,7 +564,7 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_OK Success
  */
-esp_err_t rmt_config(rmt_config_t* rmt_param);
+esp_err_t rmt_config(const rmt_config_t* rmt_param);
 
 /**
  * @brief   register RMT interrupt handler, the handler is an ISR.

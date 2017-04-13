@@ -429,7 +429,7 @@ esp_err_t i2c_get_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t *tx_trans_mode,
     return ESP_OK;
 }
 
-esp_err_t i2c_param_config(i2c_port_t i2c_num, i2c_config_t* i2c_conf)
+esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t* i2c_conf)
 {
     I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(i2c_conf != NULL, I2C_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
