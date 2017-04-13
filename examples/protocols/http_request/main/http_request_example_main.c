@@ -46,10 +46,10 @@ const int CONNECTED_BIT = BIT0;
 
 static const char *TAG = "example";
 
-static const char *REQUEST = "GET " WEB_URL " HTTP/1.1\n"
-    "Host: "WEB_SERVER"\n"
-    "User-Agent: esp-idf/1.0 esp32\n"
-    "\n";
+static const char *REQUEST = "GET " WEB_URL " HTTP/1.0\r\n"
+    "Host: "WEB_SERVER"\r\n"
+    "User-Agent: esp-idf/1.0 esp32\r\n"
+    "\r\n";
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -176,5 +176,5 @@ void app_main()
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
     initialise_wifi();
-    xTaskCreate(&http_get_task, "http_get_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
 }
