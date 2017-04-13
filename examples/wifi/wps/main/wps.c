@@ -1,9 +1,19 @@
 /* WiFi Connection Example using WPS
- * 
- * WPS_TYPE_PBC: Start esp32 and it will enter wps PBC mode. Then push the button of wps on router down. The esp32 will connected to the router.
- *
- * WPS_TYPE_PIN: Start esp32, You'll see PIN code which is a eight-digit number showing on COM. Enter the PIN code in router and then the esp32 will connected to router.
- */
+
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
+
+/*
+   Showing how to use WPS.
+
+   WPS_TYPE_PBC: Start esp32 and it will enter wps PBC mode. Then push the button of wps on router down. The esp32 will connected to the router.
+   WPS_TYPE_PIN: Start esp32, You'll see PIN code which is a eight-digit number showing on COM. Enter the PIN code in router and then the esp32 will connected to router.
+*/
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
@@ -19,7 +29,8 @@
 #define WPS_TEST_MODE WPS_TYPE_PIN
 #else
 #define WPS_TEST_MODE WPS_TYPE_DISABLE
-#endif
+#endif /*CONFIG_EXAMPLE_WPS_TYPE_PBC*/
+
 
 #ifndef PIN2STR
 #define PIN2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5], (a)[6], (a)[7]
@@ -47,7 +58,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
 	/*point: the function esp_wifi_wps_start() only get ssid & password
-	 * and we suggest you call the function esp_wifi_connect() here
+	 * so call the function esp_wifi_connect() here
 	 * */
 	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_WPS_ER_SUCCESS");
 	ESP_ERROR_CHECK(esp_wifi_wps_disable());
@@ -89,7 +100,6 @@ static void start_wps(void)
     ESP_ERROR_CHECK(esp_wifi_start());
     
     ESP_LOGI(TAG, "start wps...");
-    //ESP_ERROR_CHECK(esp_wifi_wps_enable(WPS_TYPE_PBC));
     ESP_ERROR_CHECK(esp_wifi_wps_enable(WPS_TEST_MODE));
     ESP_ERROR_CHECK(esp_wifi_wps_start(0));
 }
