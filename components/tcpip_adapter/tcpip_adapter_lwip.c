@@ -100,8 +100,9 @@ static netif_init_fn tcpip_if_to_netif_init_fn(tcpip_adapter_if_t tcpip_if)
     switch(tcpip_if) {
 #ifdef CONFIG_WIFI_ENABLED
     case TCPIP_ADAPTER_IF_AP:
+        return wlanif_init_ap;
     case TCPIP_ADAPTER_IF_STA:
-        return wlanif_init;
+        return wlanif_init_sta;
 #endif
 #ifdef CONFIG_ETHERNET
         case TCPIP_ADAPTER_IF_ETH:
