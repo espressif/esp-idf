@@ -806,9 +806,9 @@ static int uart_tx_all(uart_port_t uart_num, const char* src, size_t size, bool 
             xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) (src + offset), send_size, portMAX_DELAY);
             size -= send_size;
             offset += send_size;
+            uart_enable_tx_intr(uart_num, 1, UART_EMPTY_THRESH_DEFAULT);
         }
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
-        uart_enable_tx_intr(uart_num, 1, UART_EMPTY_THRESH_DEFAULT);
     } else {
         while(size) {
             //semaphore for tx_fifo available
