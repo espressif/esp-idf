@@ -32,6 +32,16 @@ typedef enum {
     ESP_BT_STATUS_WRONG_MODE       =  5,
 } esp_bt_status_t;
 
+
+/*Define the bt octet 16 bit size*/
+#define ESP_BT_OCTET16_LEN    16
+typedef uint8_t esp_bt_octet16_t[ESP_BT_OCTET16_LEN];   /* octet array: size 16 */
+
+#define ESP_BT_OCTET8_LEN    8
+typedef uint8_t esp_bt_octet8_t[ESP_BT_OCTET8_LEN];   /* octet array: size 8 */
+
+typedef uint8_t esp_link_key[ESP_BT_OCTET16_LEN];      /* Link Key */
+
 /// Default GATT interface id
 #define ESP_DEFAULT_GATT_IF             0xff
 
@@ -90,6 +100,15 @@ typedef enum {
     BLE_ADDR_TYPE_RPA_PUBLIC    = 0x02,
     BLE_ADDR_TYPE_RPA_RANDOM    = 0x03,
 } esp_ble_addr_type_t;
+
+/// Used to exchange the encrytyption key in the init key & response key
+#define ESP_BLE_ENC_KEY_MASK    (1 << 0)
+/// Used to exchange the IRK key in the init key & response key
+#define ESP_BLE_ID_KEY_MASK     (1 << 1)
+/// Used to exchange the CSRK key in the init key & response key
+#define ESP_BLE_CSR_KEY_MASK    (1 << 2)
+/// Used to exchange the link key(this key just used in the BLE & BR/EDR coexist mode) in the init key & response key
+#define ESP_BLE_LINK_KEY_MASK   (1 << 3)
 
 /// Minimum of the application id
 #define ESP_APP_ID_MIN  0x0000

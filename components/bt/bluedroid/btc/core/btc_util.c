@@ -27,7 +27,9 @@
 #include <ctype.h>
 
 #include "btc_util.h"
+#if (BTA_AV_INCLUDED == TRUE)
 #include "bta_av_api.h"
+#endif  ///BTA_AV_INCLUDED == TRUE
 #include "bt_defs.h"
 
 /************************************************************************************
@@ -59,6 +61,7 @@
 /*****************************************************************************
 **   Logging helper functions
 *****************************************************************************/
+#if(BTA_AV_INCLUDED == TRUE)
 const char *dump_rc_event(UINT8 event)
 {
     switch (event) {
@@ -114,6 +117,7 @@ const char  *dump_rc_pdu(UINT8 pdu)
         return "Unknown PDU";
     }
 }
+#endif  ///BTA_AV_INCLUDED == TRUE
 
 UINT32 devclass2uint(DEV_CLASS dev_class)
 {

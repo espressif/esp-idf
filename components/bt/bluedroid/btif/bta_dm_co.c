@@ -30,7 +30,7 @@
 #endif /* #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE) */
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
 #include "bte_appl.h"
-
+#include "btc_ble_storage.h"
 tBTE_APPL_CFG bte_appl_cfg = {
 #if SMP_INCLUDED == TRUE
     BTA_LE_AUTH_REQ_SC_MITM_BOND, // Authentication requirements
@@ -399,6 +399,7 @@ void bta_dm_co_ble_load_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OC
     BTIF_TRACE_DEBUG("##################################");
     btif_dm_get_ble_local_keys( p_key_mask, er, p_id_keys);
 #else
+    btc_dm_get_ble_local_keys( p_key_mask, er, p_id_keys);
     LOG_WARN("bta_dm_co_ble_load_local_keys: func not ported\n");
 #endif
 }
@@ -459,6 +460,39 @@ void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
     }
 }
 
+void bta_dm_co_ble_set_io_cap(UINT8   ble_io_cap)
+{
+    if(ble_io_cap < BTM_IO_CAP_MAX ) {
+        bte_appl_cfg.ble_io_cap = ble_io_cap;
+    } else {
+        APPL_TRACE_ERROR("%s error:Invalid io cap value.",__func__);
+    }
+}
 
+void bta_dm_co_ble_set_auth_req(UINT8   ble_auth_req)
+{
+    bte_appl_cfg.ble_auth_req = ble_auth_req;
+}
+
+void bta_dm_co_ble_set_init_key_req(UINT8 init_key)
+{
+   init_key &= 0x0f;  // 4~7bit reservd, only used the 0~3bit
+   bte_appl_cfg.ble_init_key &= init_key;
+}
+
+void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key)
+{
+   rsp_key &= 0x0f;  // 4~7bit reservd, only used the 0~3bit
+   bte_appl_cfg.ble_init_key &= rsp_key;
+}
+
+void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size)
+{
+    if(ble_key_size > 7 && ble_key_size >= 16) {
+        bte_appl_cfg.ble_max_key_size = ble_key_size;
+    } else {
+        APPL_TRACE_ERROR("%s error:Invalid key size value, key_size =%d",__func__, ble_key_size);
+    }
+}
 #endif
 

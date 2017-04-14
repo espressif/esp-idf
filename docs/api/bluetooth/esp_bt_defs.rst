@@ -26,6 +26,8 @@ Header Files
 Macros
 ^^^^^^
 
+.. doxygendefine:: ESP_BT_OCTET16_LEN
+.. doxygendefine:: ESP_BT_OCTET8_LEN
 .. doxygendefine:: ESP_DEFAULT_GATT_IF
 .. doxygendefine:: ESP_BLE_CONN_PARAM_UNDEF
 .. doxygendefine:: ESP_BLE_IS_VALID_PARAM
@@ -35,10 +37,14 @@ Macros
 .. doxygendefine:: ESP_BD_ADDR_LEN
 .. doxygendefine:: ESP_APP_ID_MIN
 .. doxygendefine:: ESP_APP_ID_MAX
+.. doxygendefine:: ESP_BD_ADDR_STR
+.. doxygendefine:: ESP_BD_ADDR_HEX
 
 Type Definitions
 ^^^^^^^^^^^^^^^^
 
+.. doxygentypedef:: esp_bt_octet16_t
+.. doxygentypedef:: esp_bt_octet8_t
 .. doxygentypedef:: esp_bd_addr_t
 
 Enumerations
