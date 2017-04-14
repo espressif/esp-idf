@@ -861,9 +861,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     case BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN:
         btc_ble_set_pkt_data_len(arg->set_pkt_data_len.remote_device, arg->set_pkt_data_len.tx_data_length);
         break;
-    case BTC_GAP_BLE_ACT_SET_RAND_ADDRESS:
-        btc_ble_set_rand_addr(arg->set_rand_addr.rand_addr);
+    case BTC_GAP_BLE_ACT_SET_RAND_ADDRESS: {
+        BD_ADDR bd_addr;
+        memcpy(bd_addr, arg->set_rand_addr.rand_addr, sizeof(BD_ADDR));
+        btc_ble_set_rand_addr(bd_addr);
         break;
+    }
     case BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY:
         btc_ble_config_local_privacy(arg->cfg_local_privacy.privacy_enable);
         break;    
