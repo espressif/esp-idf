@@ -19,6 +19,7 @@
 #include "esp_log.h"
 
 #include "rom/cache.h"
+#include "rom/efuse.h"
 #include "rom/ets_sys.h"
 #include "rom/spi_flash.h"
 #include "rom/crc.h"
@@ -260,6 +261,15 @@ void bootloader_main()
     /* disable watch dog here */
     REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
+
+#ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+    const uint32_t spiconfig = ets_efuse_get_spiconfig();
+    if(spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
+        ESP_LOGE(TAG, "SPI flash pins are overridden. \"Enable SPI flash ROM driver patched functions\" must be enabled in menuconfig");
+        return;
+    }
+#endif
+
     esp_rom_spiflash_unlock();
 
     ESP_LOGI(TAG, "Enabling RNG early entropy source...");

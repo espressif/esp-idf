@@ -279,25 +279,13 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read_user_cmd(uint32_t *status, uint8
   *
   * @param  esp_rom_spiflash_read_mode_t mode : QIO/QOUT/DIO/DOUT/FastRD/SlowRD.
   *
-  * @param  uint8_t legacy: In legacy mode, more SPI command is used in line.
+  * This function does not try to set the QIO Enable bit in the status register, caller is responsible for this.
   *
   * @return ESP_ROM_SPIFLASH_RESULT_OK : config OK.
   *         ESP_ROM_SPIFLASH_RESULT_ERR : config error.
   *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : config timeout.
   */
-esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read_mode_t mode, bool legacy);
-
-/**
-  * @brief Config SPI Flash read mode when Flash is running in some mode.
-  *        Please do not call this function in SDK.
-  *
-  * @param  esp_rom_spiflash_read_mode_t mode : QIO/QOUT/DIO/DOUT/FastRD/SlowRD.
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : config OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : config error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : config timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_master_config_readmode(esp_rom_spiflash_read_mode_t mode);
+esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read_mode_t mode);
 
 /**
   * @brief Config SPI Flash clock divisor.
@@ -523,6 +511,24 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write_encrypted(uint32_t flash_addr, 
  */
 esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *spi);
 
+
+/** @brief Enable Quad I/O pin functions
+ *
+ * @note Please do not call this function in SDK.
+ *
+ * Sets the HD & WP pin functions for Quad I/O modes, based on the
+ * efuse SPI pin configuration.
+ *
+ * @param wp_gpio_num - Number of the WP pin to reconfigure for quad I/O.
+ *
+ * @param spiconfig - Pin configuration, as returned from ets_efuse_get_spiconfig().
+ * - If this parameter is 0, default SPI pins are used and wp_gpio_num parameter is ignored.
+ * - If this parameter is 1, default HSPI pins are used and wp_gpio_num parameter is ignored.
+ * - For other values, this parameter encodes the HD pin number and also the CLK pin number. CLK pin selection is used
+ *   to determine if HSPI or SPI peripheral will be used (use HSPI if CLK pin is the HSPI clock pin, otherwise use SPI).
+ *   Both HD & WP pins are configured via GPIO matrix to map to the selected peripheral.
+ */
+void esp_rom_spiflash_select_qio_pins(uint8_t wp_gpio_num, uint32_t spiconfig);
 
 /** @brief Global esp_rom_spiflash_chip_t structure used by ROM functions
  *
