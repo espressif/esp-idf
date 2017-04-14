@@ -152,9 +152,9 @@ static void btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bda
 
 
 bt_status_t btc_storage_add_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
-                                                                                     char *key,
-                                                                                     uint8_t key_type,
-                                                                                     uint8_t key_length)
+                                            char *key,
+                                            uint8_t key_type,
+                                            uint8_t key_length)
 {
     char bdstr[6] = {0};
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
@@ -199,9 +199,9 @@ bt_status_t btc_storage_add_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
 **
 *******************************************************************************/
 bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
-                                                                                    uint8_t key_type,
-                                                                                    char *key_value,
-                                                                                    int key_length)
+                                            uint8_t key_type,
+                                            char *key_value,
+                                            int key_length)
 {
     char bdstr[6] = {0};
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
@@ -279,8 +279,8 @@ bt_status_t btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_addr)
 **
 *******************************************************************************/
 bt_status_t btc_storage_add_ble_local_key(char *key,
-                                                                              uint8_t key_type,
-                                                                              uint8_t key_length)
+                                          uint8_t key_type,
+                                          uint8_t key_length)
 {
     const char* name;
     switch (key_type) {
@@ -315,8 +315,8 @@ bt_status_t btc_storage_add_ble_local_key(char *key,
 **
 *******************************************************************************/
 bt_status_t btc_storage_get_ble_local_key(uint8_t key_type,
-                                                                             char *key_value,
-                                                                             int key_length)
+                                          char *key_value,
+                                          int key_length)
 {
     const char* name;
     switch (key_type) {
@@ -371,7 +371,7 @@ bt_status_t btc_storage_remove_ble_local_keys(void)
 
 
 bt_status_t btc_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add, 
-                                                                                 btc_bonded_devices_t *p_bonded_devices)
+                                           btc_bonded_devices_t *p_bonded_devices)
 {
     int device_type;
     int addr_type;
@@ -385,35 +385,36 @@ bt_status_t btc_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add,
         return BT_STATUS_FAIL;
     }
    
-        string_to_bdaddr(remote_bd_addr, &bd_addr);
-        bdcpy(bta_bd_addr, bd_addr.address);
+    string_to_bdaddr(remote_bd_addr, &bd_addr);
+    bdcpy(bta_bd_addr, bd_addr.address);
 
-        if (btc_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
-            addr_type = BLE_ADDR_PUBLIC;
-            btc_storage_set_remote_addr_type(&bd_addr, BLE_ADDR_PUBLIC);
-        }
-
-        btc_read_le_key(BTM_LE_KEY_PENC, sizeof(tBTM_LE_PENC_KEYS),
-                        bd_addr, addr_type, add, &device_added, &key_found);
-
-        btc_read_le_key(BTM_LE_KEY_PID, sizeof(tBTM_LE_PID_KEYS),
-                        bd_addr, addr_type, add, &device_added, &key_found);
-
-        btc_read_le_key(BTM_LE_KEY_LID, sizeof(tBTM_LE_PID_KEYS),
-                        bd_addr, addr_type, add, &device_added, &key_found);
-
-        btc_read_le_key(BTM_LE_KEY_PCSRK, sizeof(tBTM_LE_PCSRK_KEYS),
-                        bd_addr, addr_type, add, &device_added, &key_found);
-
-        btc_read_le_key(BTM_LE_KEY_LENC, sizeof(tBTM_LE_LENC_KEYS),
-                        bd_addr, addr_type, add, &device_added, &key_found);
-
-        btc_read_le_key(BTM_LE_KEY_LCSRK, sizeof(tBTM_LE_LCSRK_KEYS),
-                        bd_addr, addr_type, add, &device_added, &key_found);
-
-        if (key_found) {
-            return BT_STATUS_SUCCESS;
+    if (btc_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
+        addr_type = BLE_ADDR_PUBLIC;
+        btc_storage_set_remote_addr_type(&bd_addr, BLE_ADDR_PUBLIC);
     }
+
+    btc_read_le_key(BTM_LE_KEY_PENC, sizeof(tBTM_LE_PENC_KEYS),
+                    bd_addr, addr_type, add, &device_added, &key_found);
+
+    btc_read_le_key(BTM_LE_KEY_PID, sizeof(tBTM_LE_PID_KEYS),
+                    bd_addr, addr_type, add, &device_added, &key_found);
+
+    btc_read_le_key(BTM_LE_KEY_LID, sizeof(tBTM_LE_PID_KEYS),
+                    bd_addr, addr_type, add, &device_added, &key_found);
+
+    btc_read_le_key(BTM_LE_KEY_PCSRK, sizeof(tBTM_LE_PCSRK_KEYS),
+                    bd_addr, addr_type, add, &device_added, &key_found);
+
+    btc_read_le_key(BTM_LE_KEY_LENC, sizeof(tBTM_LE_LENC_KEYS),
+                    bd_addr, addr_type, add, &device_added, &key_found);
+
+    btc_read_le_key(BTM_LE_KEY_LCSRK, sizeof(tBTM_LE_LCSRK_KEYS),
+                    bd_addr, addr_type, add, &device_added, &key_found);
+
+    if (key_found) {
+        return BT_STATUS_SUCCESS;
+    }
+
     return BT_STATUS_FAIL;
 }
 
@@ -438,7 +439,7 @@ bt_status_t btc_storage_set_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
 **
 *******************************************************************************/
 bt_status_t btc_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
-                                              int*addr_type)
+                                             int*addr_type)
 {
     char bdstr[6] = {0};
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
@@ -469,7 +470,7 @@ void btc_dm_load_ble_local_keys(void)
 
 }
 void btc_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OCTET16 er,
-                                                            tBTA_BLE_LOCAL_ID_KEYS *p_id_keys)
+                               tBTA_BLE_LOCAL_ID_KEYS *p_id_keys)
 {
     if (ble_local_key_cb.is_er_rcvd ) {
         memcpy(&er[0], &ble_local_key_cb.er[0], sizeof(BT_OCTET16));

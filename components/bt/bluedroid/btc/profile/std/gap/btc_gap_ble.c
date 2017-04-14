@@ -760,8 +760,8 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             }
         }
           break;
-       }	
-	case BTC_GAP_BLE_SET_SECURITY_PARAM_EVT: {
+       }
+    case BTC_GAP_BLE_SET_SECURITY_PARAM_EVT: {
         btc_ble_gap_args_t *src = (btc_ble_gap_args_t *)p_src;
         btc_ble_gap_args_t  *dst = (btc_ble_gap_args_t *) p_dest;
         uint8_t length = 0;
@@ -887,21 +887,20 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
 
     case BTC_GAP_BLE_SET_SECURITY_PARAM_EVT: {
         switch(arg->set_security_param.param_type) {
-	    case ESP_BLE_SM_PASSKEY:
-			
-	        break;
+            case ESP_BLE_SM_PASSKEY:
+                break;
             case ESP_BLE_SM_AUTHEN_REQ_MODE: {
                 uint8_t authen_req = 0;
                 STREAM_TO_UINT8(authen_req, arg->set_security_param.value);
                 bta_dm_co_ble_set_auth_req(authen_req);
                 break;
-             }
-	     case ESP_BLE_SM_IOCAP_MODE: {
+            }
+            case ESP_BLE_SM_IOCAP_MODE: {
                 uint8_t iocap = 0;
                 STREAM_TO_UINT8(iocap, arg->set_security_param.value);
                 bta_dm_co_ble_set_io_cap(iocap);
-			break;
-	    }
+                break;
+            }
             case ESP_BLE_SM_SET_INIT_KEY: {
                 uint8_t init_key = 0;
                 STREAM_TO_UINT8(init_key, arg->set_security_param.value);
@@ -919,20 +918,18 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                 STREAM_TO_UINT8(key_size, arg->set_security_param.value);
                 bta_dm_co_ble_set_max_key_size(key_size);
                 break;
-             }
-                
-	    default:
-	        break;
-	}
+            }        
+            default:
+                break;
+        }
         break;
-    }
-        
+    }        
     case BTC_GAP_BLE_SECURITY_RSP_EVT: {
-	BD_ADDR bd_addr;
-	tBTA_DM_BLE_SEC_GRANT res = arg->sec_rsp.accept ? BTA_DM_SEC_GRANTED : BTA_DM_SEC_PAIR_NOT_SPT;
-	memcpy(bd_addr, arg->sec_rsp.bd_addr, sizeof(BD_ADDR));
-	BTA_DmBleSecurityGrant(bd_addr, res);
-	break;		
+        BD_ADDR bd_addr;
+        tBTA_DM_BLE_SEC_GRANT res = arg->sec_rsp.accept ? BTA_DM_SEC_GRANTED : BTA_DM_SEC_PAIR_NOT_SPT;
+        memcpy(bd_addr, arg->sec_rsp.bd_addr, sizeof(BD_ADDR));
+        BTA_DmBleSecurityGrant(bd_addr, res);
+        break;
     }
     default:
         break;
