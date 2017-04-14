@@ -75,8 +75,6 @@ void btc_save_ble_bonding_keys(void)
 {
     bt_bdaddr_t bd_addr;
 
-    LOG_DEBUG("%s\n",__func__ );
-
     bdcpy(bd_addr.address, pairing_cb.bd_addr);
     if (pairing_cb.ble.is_penc_key_rcvd) {
         btc_storage_add_ble_bonding_key(&bd_addr,
