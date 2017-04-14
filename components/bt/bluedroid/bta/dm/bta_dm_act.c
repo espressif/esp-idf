@@ -4479,7 +4479,7 @@ void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
     }
     //send the setting random address to BTM layer
     if ((set_flag = BTM_BleSetRandAddress(p_data->set_addr.address) != TRUE)){
-        APPL_TRACE_ERROR("%s,set random address fail.");
+        APPL_TRACE_ERROR("%s,set random address fail.", __func__);
     }
 
 }
