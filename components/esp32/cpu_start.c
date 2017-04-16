@@ -111,6 +111,7 @@ void IRAM_ATTR call_start_cpu0()
 #if !CONFIG_FREERTOS_UNICORE
     rst_reas[1] = rtc_get_reset_reason(1);
 #endif
+
     // from panic handler we can be reset by RWDT or TG0WDT
     if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET
 #if !CONFIG_FREERTOS_UNICORE
@@ -118,17 +119,16 @@ void IRAM_ATTR call_start_cpu0()
 #endif
         ) {
         // stop wdt in case of any
-        ESP_EARLY_LOGI(TAG, "Stop panic WDT");
         esp_panic_wdt_stop();
     }
 
+    //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
 
     /* Unless waking from deep sleep (implying RTC memory is intact), clear RTC bss */
     if (rst_reas[0] != DEEPSLEEP_RESET) {
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
-
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
