@@ -326,6 +326,10 @@ typedef struct{
     uint8_t auto_rsp;
 }tGATTS_ATTR_CONTROL;
 
+/* Mask for gatt server attribute */
+#define GATT_ATTR_VALUE_ALLOCATED  0x01
+typedef UINT8 tGATT_ATTR_MASK;
+
 /* Union of the event data which is used in the server respond API to carry the server response information
 */
 typedef union {

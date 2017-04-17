@@ -240,7 +240,8 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
 #else
             p->conn_addr_type = BLE_ADDR_PUBLIC;
             memcpy(p->conn_addr, &controller_get_interface()->get_address()->address, BD_ADDR_LEN);
-
+            BTM_TRACE_DEBUG ("conn_addr: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
+                         p->conn_addr[0], p->conn_addr[1], p->conn_addr[2], p->conn_addr[3], p->conn_addr[4], p->conn_addr[5]);
 #endif
 #endif
             p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
@@ -276,17 +277,20 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                     memcpy (p->peer_lmp_features, p_dev_rec->features,
                             (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
                     p->num_read_pages = p_dev_rec->num_read_pages;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
                     const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
                     /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
+#if (SMP_INCLUDED == TRUE)
                     btm_sec_set_peer_sec_caps(p, p_dev_rec);
-
+#endif  ///SMP_INCLUDED == TRUE
+#if (CLASSIC_BT_INCLUDED == TRUE)
                     BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
                     if (req_pend) {
                         /* Request for remaining Security Features (if any) */
                         l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
                     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
                     btm_establish_continue (p);
                     return;
                 }
@@ -300,9 +304,15 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                                              &p->active_remote_addr_type);
 #endif
 
-                if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
-                        || link_role == HCI_ROLE_MASTER) {
+                if (link_role == HCI_ROLE_MASTER) {
                     btsnd_hcic_ble_read_remote_feat(p->hci_handle);
+                } else if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
+                         && link_role == HCI_ROLE_SLAVE) {
+                     /* In the original Bluedroid version, slave need to send LL_SLAVE_FEATURE_REQ(call btsnd_hcic_ble_read_remote_feat)
+                      * to remote device if it has not received ll_feature_req.
+                      * Delete it to resolve Android 7.0 incompatible problem. But it may cause that slave
+                      * can't get remote device's feature if it doesn't receive ll_feature_req.*/
+                    l2cble_notify_le_connection(bda);
                 } else {
                     btm_establish_continue(p);
                 }
@@ -920,14 +930,16 @@ void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages)
     }
 
     const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
-
+#if (SMP_INCLUDED == TRUE)
     /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
     btm_sec_set_peer_sec_caps(p_acl_cb, p_dev_rec);
-
+#endif  ///SMP_INCLUDED == TRUE
     BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
     if (req_pend) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* Request for remaining Security Features (if any) */
         l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     }
 }
 
@@ -1472,12 +1484,11 @@ void btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role)
 ** Returns          Allocated SCN number or 0 if none.
 **
 *******************************************************************************/
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 BTM_AllocateSCN(void)
 {
     UINT8   x;
     BTM_TRACE_DEBUG ("BTM_AllocateSCN\n");
-
     // stack reserves scn 1 for HFP, HSP we still do the correct way
     for (x = 1; x < BTM_MAX_SCN; x++) {
         if (!btm_cb.btm_scn[x]) {
@@ -1485,9 +1496,9 @@ UINT8 BTM_AllocateSCN(void)
             return (x + 1);
         }
     }
-
     return (0);    /* No free ports */
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1498,7 +1509,7 @@ UINT8 BTM_AllocateSCN(void)
 ** Returns          Returns TRUE if server channel was available
 **
 *******************************************************************************/
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 {
     /* Make sure we don't exceed max port range.
@@ -1516,6 +1527,7 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 
     return (FALSE);     /* Port was busy */
 }
+
 
 /*******************************************************************************
 **
@@ -1535,7 +1547,9 @@ BOOLEAN BTM_FreeSCN(UINT8 scn)
     } else {
         return (FALSE);    /* Illegal SCN passed in */
     }
+    return (FALSE);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -2280,6 +2294,7 @@ void btm_cont_rswitch (tACL_CONN *p, tBTM_SEC_DEV_REC *p_dev_rec,
 *******************************************************************************/
 void btm_acl_resubmit_page (void)
 {
+#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec;
     BT_HDR  *p_buf;
     UINT8   *pp;
@@ -2302,6 +2317,7 @@ void btm_acl_resubmit_page (void)
     } else {
         btm_cb.paging = FALSE;
     }
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -2330,6 +2346,7 @@ void  btm_acl_reset_paging (void)
 ** Description      send a paging command or queue it in btm_cb
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
 void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
 {
     tBTM_SEC_DEV_REC *p_dev_rec;
@@ -2364,6 +2381,7 @@ void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
         }
     }
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **

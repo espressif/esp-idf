@@ -3,7 +3,7 @@ menuconfig BT_ENABLED
     help
         Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 
-config BLUEDROID_ENABLED
+menuconfig BLUEDROID_ENABLED
 	bool "Bluedroid Bluetooth stack enabled"
     depends on BT_ENABLED
 	default y
@@ -11,27 +11,106 @@ config BLUEDROID_ENABLED
 		This enables the default Bluedroid Bluetooth stack
 
 config BTC_TASK_STACK_SIZE
-	int "Bluetooth event (callback to application) task stack size"
-    depends on BT_ENABLED
-	default 3072
-	help
-		This select btc task stack size
+    int "Bluetooth event (callback to application) task stack size"
+    depends on BLUEDROID_ENABLED
+    default 3072
+    help
+        This select btc task stack size
 
 config BLUEDROID_MEM_DEBUG
-	bool "Bluedroid memory debug"
-    depends on BT_ENABLED
-	default n
-	help
-		Bluedroid memory debug
+    bool "Bluedroid memory debug"
+    depends on BLUEDROID_ENABLED
+    default n
+    help
+        Bluedroid memory debug
+
+config CLASSIC_BT_ENABLED
+    bool "Classic Bluetooth"
+    depends on BLUEDROID_ENABLED
+    default n
 
 config BT_DRAM_RELEASE
-	bool "Release DRAM from Classic BT controller"
+    bool "Release DRAM from Classic BT controller"
+    depends on BT_ENABLED && (!BLUEDROID_ENABLED || (BLUEDROID_ENABLED && !CLASSIC_BT_ENABLED))
+    default n
+    help
+        This option should only be used when BLE only.
+        Enabling this option will release about 30K DRAM from Classic BT.
+        The released DRAM will be used as system heap memory.
+
+config GATTS_ENABLE
+    bool "Include GATT server module(GATTS)"
+    depends on BLUEDROID_ENABLED
+    default y 
+    help
+        This option can be disabled when the app work only on gatt client mode
+
+config GATTC_ENABLE
+    bool "Include GATT client module(GATTC)"
+    depends on BLUEDROID_ENABLED
+    default y
+    help
+        This option can be close when the app work only on gatt server mode
+
+config SMP_ENABLE
+   bool "Include BT security module(SMP)"
+   depends on BLUEDROID_ENABLED
+   default y
+   help
+       This option can be close when the app not used the ble security connect.
+
+config BT_STACK_NO_LOG
+    bool "Close the bluedroid bt stack log print"
+    depends on BLUEDROID_ENABLED
+    default n
+    help
+        This select can save the rodata code size
+
+config BT_ACL_CONNECTIONS
+    int "BT/BLE MAX ACL CONNECTIONS(1~7)"
+    depends on BLUEDROID_ENABLED
+    range 1 7
+    default 4
+    help 
+        Maximum BT/BLE connection count
+
+#disable now for app cpu due to a known issue
+config BTDM_CONTROLLER_RUN_APP_CPU
+    bool "Run controller on APP CPU"
+    depends on BT_ENABLED && !FREERTOS_UNICORE && 0
+    default n
+    help
+        Run controller on APP CPU.
+
+config BTDM_CONTROLLER_RUN_CPU
+    int
     depends on BT_ENABLED
-	default n
-	help
-		This option should only be used when BLE only.
-		Open this option will release about 30K DRAM from Classic BT.
-		The released DRAM will be used as system heap memory.
+    default 1 if BTDM_CONTROLLER_RUN_APP_CPU
+    default 0
+
+menuconfig BT_HCI_UART
+    bool "HCI use UART as IO"
+    depends on BT_ENABLED && !BLUEDROID_ENABLED
+    default n
+    help
+        Default HCI use VHCI, if this option choose, HCI will use UART(0/1/2) as IO.
+        Besides, it can set uart number and uart baudrate.
+
+config BT_HCI_UART_NO
+    int "UART Number for HCI"
+    depends on BT_HCI_UART
+    range 1 2
+    default 1
+    help
+        Uart number for HCI.
+
+config BT_HCI_UART_BAUDRATE
+    int "UART Baudrate for HCI"
+    depends on BT_HCI_UART
+    range 115200 921600
+    default 921600
+    help
+        UART Baudrate for HCI. Please use standard baudrate.
 
 # Memory reserved at start of DRAM for Bluetooth stack
 config BT_RESERVE_DRAM

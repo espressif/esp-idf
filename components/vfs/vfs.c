@@ -125,6 +125,9 @@ static const vfs_entry_t* get_vfs_for_path(const char* path)
     size_t len = strlen(path);
     for (size_t i = 0; i < s_vfs_count; ++i) {
         const vfs_entry_t* vfs = s_vfs[i];
+        if (!vfs) {
+            continue;
+        }
         if (len < vfs->path_prefix_len + 1) {   // +1 is for the trailing slash after base path
             continue;
         }

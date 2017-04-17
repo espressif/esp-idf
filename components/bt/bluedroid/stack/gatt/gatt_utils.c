@@ -297,6 +297,7 @@ tGATTS_SRV_CHG *gatt_add_srv_chg_clt(tGATTS_SRV_CHG *p_srv_chg)
 ** Returns    Pointer to the allocated buffer, NULL no buffer available
 **
 *******************************************************************************/
+#if (GATTS_INCLUDED == TRUE)
 tGATT_HDL_LIST_ELEM *gatt_alloc_hdl_buffer(void)
 {
     UINT8 i;
@@ -395,13 +396,42 @@ tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_app_id (tBT_UUID *p_app_uuid128,
     }
     return NULL;
 }
+#endif  ///GATTS_INCLUDED == TRUE
+
+/*******************************************************************************
+**
+** Function         gatt_free_attr_value_buffer
+**
+** Description      free characteristic attribute value buffer in a service
+**
+** Returns          None
+**
+*******************************************************************************/
+void gatt_free_attr_value_buffer(tGATT_HDL_LIST_ELEM *p)
+{
+    if (p){
+        tGATT_SVC_DB *p_db = &(p->svc_db);
+        tGATT_ATTR16 *p_attr = p_db->p_attr_list;
+        tGATT_ATTR_VALUE *p_value = NULL;
+
+        while(p_attr){
+            if (p_attr->mask & GATT_ATTR_VALUE_ALLOCATED){
+                p_value = p_attr->p_value;
+                if ((p_value != NULL) && (p_value->attr_val.attr_val != NULL)){
+                    GKI_freebuf(p_value->attr_val.attr_val);
+                }
+            }
+            p_attr = p_attr->p_next;
+        }
+    }
+}
 /*******************************************************************************
 **
 ** Function         gatt_free_hdl_buffer
 **
-** Description     free a handle buffer
+** Description      free a handle buffer
 **
-** Returns       None
+** Returns          None
 **
 *******************************************************************************/
 void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM *p)
@@ -424,6 +454,7 @@ void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM *p)
 ** Returns       None
 **
 *******************************************************************************/
+#if (GATTS_INCLUDED == TRUE)
 void gatt_free_srvc_db_buffer_app_id(tBT_UUID *p_app_id)
 {
     tGATT_HDL_LIST_ELEM *p_elem =  &gatt_cb.hdl_list[0];
@@ -431,6 +462,7 @@ void gatt_free_srvc_db_buffer_app_id(tBT_UUID *p_app_id)
 
     for (i = 0; i < GATT_MAX_SR_PROFILES; i ++, p_elem ++) {
         if (memcmp(p_app_id, &p_elem->asgn_range.app_uuid128, sizeof(tBT_UUID)) == 0) {
+            gatt_free_attr_value_buffer(p_elem);
             while (!GKI_queue_is_empty(&p_elem->svc_db.svc_buffer)) {
                 GKI_freebuf (GKI_dequeue (&p_elem->svc_db.svc_buffer));
             }
@@ -474,7 +506,6 @@ BOOLEAN gatt_is_last_attribute(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM 
     return is_last_attribute;
 
 }
-
 /*******************************************************************************
 **
 ** Function         gatt_update_last_pri_srv_info
@@ -518,6 +549,8 @@ void gatts_update_srv_list_elem(UINT8 i_sreg, UINT16 handle, BOOLEAN is_primary)
 
     return;
 }
+#endif  ///GATTS_INCLUDED == TRUE
+
 /*******************************************************************************
 **
 ** Function  gatt_add_a_srv_to_list
@@ -1207,7 +1240,9 @@ void gatt_rsp_timeout(TIMER_LIST_ENT *p_tle)
             GATT_TRACE_ERROR("gatt_rsp_timeout command queue out of sync, disconnect");
         } else {
             p_clcb->retry_count++;
+#if (GATTC_INCLUDED == TRUE)
             gatt_act_discovery(p_clcb);
+#endif  ///GATTC_INCLUDED == TRUE
             return;
         }
     }
@@ -1269,6 +1304,7 @@ UINT8 gatt_sr_find_i_rcb_by_handle(UINT16 handle)
 ** Returns          0 if not found. Otherwise index of th eservice.
 **
 *******************************************************************************/
+#if (GATTS_INCLUDED == TRUE)
 UINT8 gatt_sr_find_i_rcb_by_app_id(tBT_UUID *p_app_uuid128, tBT_UUID *p_svc_uuid, UINT16 svc_inst)
 {
     UINT8           i_rcb = 0;
@@ -1292,6 +1328,7 @@ UINT8 gatt_sr_find_i_rcb_by_app_id(tBT_UUID *p_app_uuid128, tBT_UUID *p_svc_uuid
     }
     return i_rcb;
 }
+#endif  ///GATTS_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         gatt_sr_find_i_rcb_by_handle
@@ -1344,8 +1381,9 @@ void gatt_sr_get_sec_info(BD_ADDR rem_bda, tBT_TRANSPORT transport, UINT8 *p_sec
     BTM_GetSecurityFlagsByTransport(rem_bda, &sec_flag, transport);
 
     sec_flag &= (GATT_SEC_FLAG_LKEY_UNAUTHED | GATT_SEC_FLAG_LKEY_AUTHED | GATT_SEC_FLAG_ENCRYPTED);
-
+#if (SMP_INCLUDED == TRUE)
     *p_key_size = btm_ble_read_sec_key_size(rem_bda);
+#endif  ///SMP_INCLUDED == TRUE
     *p_sec_flag = sec_flag;
 }
 /*******************************************************************************
@@ -1404,15 +1442,15 @@ tGATT_STATUS gatt_send_error_rsp (tGATT_TCB *p_tcb, UINT8 err_code, UINT8 op_cod
     } else {
         status = GATT_INSUF_RESOURCE;
     }
-
+#if (GATTS_INCLUDED == TRUE)
     if (deq) {
         gatt_dequeue_sr_cmd(p_tcb);
     }
-
+#endif  ///GATTS_INCLUDED == TRUE
     return status;
 }
 
-
+#if (SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_add_sdp_record
@@ -1478,7 +1516,7 @@ UINT32 gatt_add_sdp_record (tBT_UUID *p_uuid, UINT16 start_hdl, UINT16 end_hdl)
 
     return (sdp_handle);
 }
-
+#endif  ///SDP_INCLUDED == TRUE
 
 #if GATT_CONFORMANCE_TESTING == TRUE
 /*******************************************************************************
@@ -1689,6 +1727,7 @@ UINT8 gatt_num_clcb_by_bd_addr(BD_ADDR bda)
 *******************************************************************************/
 void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB *p_tcb )
 {
+#if (GATTS_INCLUDED == TRUE)
     UINT8 i;
 
     if (p_tcb) {
@@ -1698,7 +1737,7 @@ void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB *p_tcb )
             }
         }
     }
-
+#endif  ///GATTS_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1713,6 +1752,7 @@ void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB *p_tcb )
 BOOLEAN gatt_sr_is_cback_cnt_zero(tGATT_TCB *p_tcb )
 {
     BOOLEAN status = TRUE;
+#if (GATTS_INCLUDED == TRUE)
     UINT8   i;
 
     if (p_tcb) {
@@ -1725,6 +1765,7 @@ BOOLEAN gatt_sr_is_cback_cnt_zero(tGATT_TCB *p_tcb )
     } else {
         status = FALSE;
     }
+#endif  ///GATTS_INCLUDED == TRUE
     return status;
 }
 
@@ -1767,6 +1808,7 @@ BOOLEAN gatt_sr_is_prep_cnt_zero(tGATT_TCB *p_tcb)
 *******************************************************************************/
 void gatt_sr_reset_cback_cnt(tGATT_TCB *p_tcb )
 {
+#if (GATTS_INCLUDED == TRUE)
     UINT8 i;
 
     if (p_tcb) {
@@ -1774,6 +1816,7 @@ void gatt_sr_reset_cback_cnt(tGATT_TCB *p_tcb )
             p_tcb->sr_cmd.cback_cnt[i] = 0;
         }
     }
+#endif  ///GATTS_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1807,7 +1850,7 @@ void gatt_sr_reset_prep_cnt(tGATT_TCB *p_tcb )
 *******************************************************************************/
 void gatt_sr_update_cback_cnt(tGATT_TCB *p_tcb, tGATT_IF gatt_if, BOOLEAN is_inc, BOOLEAN is_reset_first)
 {
-
+#if (GATTS_INCLUDED == TRUE)
     UINT8 idx = ((UINT8) gatt_if) - 1 ;
 
     if (p_tcb) {
@@ -1822,6 +1865,7 @@ void gatt_sr_update_cback_cnt(tGATT_TCB *p_tcb, tGATT_IF gatt_if, BOOLEAN is_inc
             }
         }
     }
+#endif  ///GATTS_INCLUDED == TRUE
 }
 
 

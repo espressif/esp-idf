@@ -19,7 +19,8 @@
 #include "btc_manage.h"
 #include "btc_gatts.h"
 #include "btc_gatt_util.h"
-
+#include "bt_target.h"
+#if (GATTS_INCLUDED == TRUE)
 #define COPY_TO_GATTS_ARGS(_gatt_args, _arg, _arg_type) memcpy(_gatt_args, _arg, sizeof(_arg_type))
 
 
@@ -346,6 +347,7 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_SET_ATTR_VALUE;
+    arg.set_attr_val.handle = attr_handle;
     arg.set_attr_val.length = length;
     arg.set_attr_val.value  = (uint8_t *)value;
 
@@ -399,3 +401,5 @@ esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+#endif  ///GATTS_INCLUDED

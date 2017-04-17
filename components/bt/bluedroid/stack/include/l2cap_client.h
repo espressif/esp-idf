@@ -18,6 +18,7 @@
 
 #ifndef _L2CAP_CLIENT_H_
 #define _L2CAP_CLIENT_H_
+#if (defined(L2CAP_CLIENT_INCLUDED) && L2CAP_CLIENT_INCLUDED == TRUE)
 
 //#include <hardware/bluetooth.h>
 #include <stdbool.h>
@@ -73,5 +74,7 @@ bool l2cap_client_is_connected(const l2cap_client_t *client);
 // for the 'write_ready' callback to write additional data to the client. Neither
 // |client| nor |packet| may be NULL.
 bool l2cap_client_write(l2cap_client_t *client, buffer_t *packet);
+
+#endif  ///(defined(L2CAP_CLIENT_INCLUDED) && L2CAP_CLIENT_INCLUDED == TRUE)
 
 #endif /*_L2CAP_CLIENT_H_*/

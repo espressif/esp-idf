@@ -57,7 +57,7 @@ typedef struct {
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t sigmadelta_config(sigmadelta_config_t *config);
+esp_err_t sigmadelta_config(const sigmadelta_config_t *config);
 
 /**
  * @brief Set Sigma-delta channel duty.

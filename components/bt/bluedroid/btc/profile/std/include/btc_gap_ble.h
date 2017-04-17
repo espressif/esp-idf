@@ -34,6 +34,11 @@ typedef enum {
     BTC_GAP_BLE_ACT_SET_DEV_NAME,
     BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
     BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW,
+    BTC_GAP_BLE_SET_ENCRYPTION_EVT,
+    BTC_GAP_BLE_SET_SECURITY_PARAM_EVT,
+    BTC_GAP_BLE_SECURITY_RSP_EVT,
+    BTC_GAP_BLE_PASSKEY_REPLY_EVT,
+    BTC_GAP_BLE_CONFIRM_REPLY_EVT,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -72,12 +77,7 @@ typedef union {
     //BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
     struct cfg_local_privacy_args {
         bool privacy_enable;
-    } cfg_local_privacy;
-    //BTC_GAP_BLE_ACT_SET_DEV_NAME,
-    struct set_dev_name_args {
-#define ESP_GAP_DEVICE_NAME_MAX (32)
-        char device_name[ESP_GAP_DEVICE_NAME_MAX + 1];
-    } set_dev_name;
+    } cfg_local_privacy;    
     //BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
     struct config_adv_data_raw_args {
         uint8_t *raw_adv;
@@ -88,6 +88,33 @@ typedef union {
         uint8_t *raw_scan_rsp;
         uint32_t raw_scan_rsp_len;
     } cfg_scan_rsp_data_raw;
+
+    struct set_encryption_args {
+        esp_bd_addr_t bd_addr;
+        esp_ble_sec_act_t sec_act;
+    } set_encryption;
+
+    struct set_security_param_args {
+        esp_ble_sm_param_t param_type;
+        uint8_t len;
+        uint8_t *value;
+    } set_security_param;
+
+    struct enc_rsp_args {
+        esp_bd_addr_t bd_addr;
+        bool accept;
+    } sec_rsp;
+
+    struct enc_passkey_reply_args {
+        esp_bd_addr_t bd_addr;
+        bool accept;
+        uint32_t passkey;
+    } enc_passkey_replay;
+
+    struct enc_comfirm_reply_args {
+        esp_bd_addr_t bd_addr;
+        bool accept;
+    } enc_comfirm_replay;
 } btc_ble_gap_args_t;
 
 void btc_gap_ble_call_handler(btc_msg_t *msg);

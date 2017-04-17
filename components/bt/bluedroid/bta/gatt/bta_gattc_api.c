@@ -24,7 +24,7 @@
 
 #include "bt_target.h"
 
-#if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
+#if defined(GATTC_INCLUDED) && (GATTC_INCLUDED == TRUE)
 
 #include <string.h>
 #include "gki.h"
@@ -786,6 +786,58 @@ void BTA_GATTC_PrepareWrite  (UINT16 conn_id, tBTA_GATTC_CHAR_ID *p_char_id,
         if (p_value && len > 0) {
             p_buf->p_value = (UINT8 *)(p_buf + 1);
             memcpy(p_buf->p_value, p_value, len);
+        }
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+
+}
+/*******************************************************************************
+**
+** Function         BTA_GATTC_PrepareWriteCharDescr
+**
+** Description      This function is called to prepare write a characteristic descriptor value.
+**
+** Parameters       conn_id - connection ID.
+**                  p_char_descr_id - GATT characteritic descriptor ID of the service.
+**                  offset - offset of the write value.
+**                  len: length of the data to be written.
+**                  p_value - the value to be written.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_GATTC_PrepareWriteCharDescr  (UINT16 conn_id, tBTA_GATTC_CHAR_DESCR_ID *p_char_descr_id,
+                                       UINT16 offset,tBTA_GATT_UNFMT *p_data,
+                                       tBTA_GATT_AUTH_REQ auth_req)
+{
+    tBTA_GATTC_API_WRITE  *p_buf;
+    UINT16  len = sizeof(tBTA_GATTC_API_WRITE) + sizeof(tBTA_GATT_ID);
+
+    if (p_data != NULL) {
+        len += p_data->len;
+    }
+
+    if ((p_buf = (tBTA_GATTC_API_WRITE *) GKI_getbuf(len)) != NULL) {
+        memset(p_buf, 0, len);
+
+        p_buf->hdr.event = BTA_GATTC_API_WRITE_EVT;
+        p_buf->hdr.layer_specific = conn_id;
+        p_buf->auth_req = auth_req;
+
+        memcpy(&p_buf->srvc_id, &p_char_descr_id->char_id.srvc_id, sizeof(tBTA_GATT_SRVC_ID));
+        memcpy(&p_buf->char_id, &p_char_descr_id->char_id.char_id, sizeof(tBTA_GATT_ID));
+        p_buf->p_descr_type = (tBTA_GATT_ID *)(p_buf + 1);
+        memcpy(p_buf->p_descr_type, &p_char_descr_id->descr_id, sizeof(tBTA_GATT_ID));
+        p_buf->write_type = BTA_GATTC_WRITE_PREPARE;
+        p_buf->offset = offset;
+
+        if (p_data && p_data->len != 0) {
+            p_buf->p_value  = (UINT8 *)(p_buf->p_descr_type + 1);
+            p_buf->len      = p_data->len;
+            /* pack the descr data */
+            memcpy(p_buf->p_value, p_data->p_value, p_data->len);
         }
 
         bta_sys_sendmsg(p_buf);

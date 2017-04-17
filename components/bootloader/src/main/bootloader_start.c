@@ -14,11 +14,13 @@
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
+#include <sys/param.h>
 
 #include "esp_attr.h"
 #include "esp_log.h"
 
 #include "rom/cache.h"
+#include "rom/efuse.h"
 #include "rom/ets_sys.h"
 #include "rom/spi_flash.h"
 #include "rom/crc.h"
@@ -29,6 +31,7 @@
 
 #include "soc/soc.h"
 #include "soc/cpu.h"
+#include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/efuse_reg.h"
@@ -45,7 +48,7 @@
 #include "bootloader_flash.h"
 #include "bootloader_random.h"
 #include "bootloader_config.h"
-#include "rtc.h"
+
 #include "flash_qio_mode.h"
 
 extern int _bss_start;
@@ -57,8 +60,6 @@ We arrive here after the bootloader finished loading the program from flash. The
 flash cache is down and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
 */
 
-// TODO: make a nice header file for ROM functions instead of adding externs all over the place
-extern void Cache_Flush(int);
 
 void bootloader_main();
 static void unpack_load_app(const esp_partition_pos_t *app_node);
@@ -71,7 +72,9 @@ static void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t irom_size,
     uint32_t entry_addr);
 static void update_flash_config(const esp_image_header_t* pfhdr);
+static void clock_configure(void);
 static void uart_console_configure(void);
+static void wdt_reset_check(void);
 
 void IRAM_ATTR call_start_cpu0()
 {
@@ -87,9 +90,9 @@ void IRAM_ATTR call_start_cpu0()
     Cache_Flush(0);
     Cache_Flush(1);
     mmu_init(0);
-    REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+    DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
     mmu_init(1);
-    REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+    DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
     /* (above steps probably unnecessary for most serial bootloader
        usage, all that's absolutely needed is that we unmask DROM0
        cache on the following two lines - normal ROM boot exits with
@@ -100,8 +103,8 @@ void IRAM_ATTR call_start_cpu0()
        The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are
        necessary to work around a hardware bug.
     */
-    REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
-    REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
+    DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
+    DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
 
     bootloader_main();
 }
@@ -234,31 +237,37 @@ static bool ota_select_valid(const esp_ota_select_entry_t *s)
 
 void bootloader_main()
 {
-    /* Set CPU to 80MHz.
-       Start by ensuring it is set to XTAL, as PLL must be off first
-       (may still be on due to soft reset.)
-    */
-    rtc_set_cpu_freq(CPU_XTAL);
-    rtc_set_cpu_freq(CPU_80M);
-
+    clock_configure();
     uart_console_configure();
+    wdt_reset_check();
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
 #if defined(CONFIG_SECURE_BOOT_ENABLED) || defined(CONFIG_FLASH_ENCRYPTION_ENABLED)
     esp_err_t err;
 #endif
     esp_image_header_t fhdr;
     bootloader_state_t bs;
-    SpiFlashOpResult spiRet1,spiRet2;
+    esp_rom_spiflash_result_t spiRet1,spiRet2;
     esp_ota_select_entry_t sa,sb;
     const esp_ota_select_entry_t *ota_select_map;
 
     memset(&bs, 0, sizeof(bs));
 
     ESP_LOGI(TAG, "compile time " __TIME__ );
+    ets_set_appcpu_boot_addr(0); 
+
     /* disable watch dog here */
     REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
-    SPIUnlock();
+
+#ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+    const uint32_t spiconfig = ets_efuse_get_spiconfig();
+    if(spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
+        ESP_LOGE(TAG, "SPI flash pins are overridden. \"Enable SPI flash ROM driver patched functions\" must be enabled in menuconfig");
+        return;
+    }
+#endif
+
+    esp_rom_spiflash_unlock();
 
     ESP_LOGI(TAG, "Enabling RNG early entropy source...");
     bootloader_random_enable();
@@ -297,39 +306,46 @@ void bootloader_main()
         memcpy(&sa, ota_select_map, sizeof(esp_ota_select_entry_t));
         memcpy(&sb, (uint8_t *)ota_select_map + SPI_SEC_SIZE, sizeof(esp_ota_select_entry_t));
         bootloader_munmap(ota_select_map);
+        ESP_LOGD(TAG, "OTA sequence values A 0x%08x B 0x%08x", sa.ota_seq, sb.ota_seq);
         if(sa.ota_seq == 0xFFFFFFFF && sb.ota_seq == 0xFFFFFFFF) {
-            // init status flash 
+            ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF");
+            // init status flash
             if (bs.factory.offset != 0) {        // if have factory bin,boot factory bin
+                ESP_LOGD(TAG, "Defaulting to factory image");
                 load_part_pos = bs.factory;
             } else {
+                ESP_LOGD(TAG, "No factory image, defaulting to OTA 0");
                 load_part_pos = bs.ota[0];
                 sa.ota_seq = 0x01;
                 sa.crc = ota_select_crc(&sa);
                 sb.ota_seq = 0x00;
                 sb.crc = ota_select_crc(&sb);
 
-                Cache_Read_Disable(0);  
-                spiRet1 = SPIEraseSector(bs.ota_info.offset/0x1000);
-                spiRet2 = SPIEraseSector(bs.ota_info.offset/0x1000+1);
-                if (spiRet1 != SPI_FLASH_RESULT_OK || spiRet2 != SPI_FLASH_RESULT_OK ) {  
+                Cache_Read_Disable(0);
+                spiRet1 = esp_rom_spiflash_erase_sector(bs.ota_info.offset/0x1000);
+                spiRet2 = esp_rom_spiflash_erase_sector(bs.ota_info.offset/0x1000+1);
+                if (spiRet1 != ESP_ROM_SPIFLASH_RESULT_OK || spiRet2 != ESP_ROM_SPIFLASH_RESULT_OK ) {
                     ESP_LOGE(TAG, SPI_ERROR_LOG);
                     return;
-                } 
-                spiRet1 = SPIWrite(bs.ota_info.offset,(uint32_t *)&sa,sizeof(esp_ota_select_entry_t));
-                spiRet2 = SPIWrite(bs.ota_info.offset + 0x1000,(uint32_t *)&sb,sizeof(esp_ota_select_entry_t));
-                if (spiRet1 != SPI_FLASH_RESULT_OK || spiRet2 != SPI_FLASH_RESULT_OK ) {  
+                }
+                spiRet1 = esp_rom_spiflash_write(bs.ota_info.offset,(uint32_t *)&sa,sizeof(esp_ota_select_entry_t));
+                spiRet2 = esp_rom_spiflash_write(bs.ota_info.offset + 0x1000,(uint32_t *)&sb,sizeof(esp_ota_select_entry_t));
+                if (spiRet1 != ESP_ROM_SPIFLASH_RESULT_OK || spiRet2 != ESP_ROM_SPIFLASH_RESULT_OK ) {
                     ESP_LOGE(TAG, SPI_ERROR_LOG);
                     return;
-                } 
+                }
                 Cache_Read_Enable(0);
             }
             //TODO:write data in ota info
         } else  {
             if(ota_select_valid(&sa) && ota_select_valid(&sb)) {
-                load_part_pos = bs.ota[(((sa.ota_seq > sb.ota_seq)?sa.ota_seq:sb.ota_seq) - 1)%bs.app_count];
+                ESP_LOGD(TAG, "Both OTA sequence valid, using OTA slot %d", MAX(sa.ota_seq, sb.ota_seq)-1);
+                load_part_pos = bs.ota[(MAX(sa.ota_seq, sb.ota_seq) - 1)%bs.app_count];
             } else if(ota_select_valid(&sa)) {
+                ESP_LOGD(TAG, "Only OTA sequence A is valid, using OTA slot %d", sa.ota_seq - 1);
                 load_part_pos = bs.ota[(sa.ota_seq - 1) % bs.app_count];
             } else if(ota_select_valid(&sb)) {
+                ESP_LOGD(TAG, "Only OTA sequence B is valid, using OTA slot %d", sa.ota_seq - 1);
                 load_part_pos = bs.ota[(sb.ota_seq - 1) % bs.app_count];
             } else if (bs.factory.offset != 0) {
                 ESP_LOGE(TAG, "ota data partition invalid, falling back to factory");
@@ -460,7 +476,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             // TODO: actually check md5
         }
 
-        if (address >= DROM_LOW && address < DROM_HIGH) {
+        if (address >= SOC_DROM_LOW && address < SOC_DROM_HIGH) {
             ESP_LOGD(TAG, "found drom segment, map from %08x to %08x", data_offs,
                       segment_header.load_addr);
             drom_addr = data_offs;
@@ -470,7 +486,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             map = true;
         }
 
-        if (address >= IROM_LOW && address < IROM_HIGH) {
+        if (address >= SOC_IROM_LOW && address < SOC_IROM_HIGH) {
             ESP_LOGD(TAG, "found irom segment, map from %08x to %08x", data_offs,
                       segment_header.load_addr);
             irom_addr = data_offs;
@@ -480,12 +496,12 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             map = true;
         }
 
-        if (!load_rtc_memory && address >= RTC_IRAM_LOW && address < RTC_IRAM_HIGH) {
+        if (!load_rtc_memory && address >= SOC_RTC_IRAM_LOW && address < SOC_RTC_IRAM_HIGH) {
             ESP_LOGD(TAG, "Skipping RTC code segment at %08x\n", data_offs);
             load = false;
         }
 
-        if (!load_rtc_memory && address >= RTC_DATA_LOW && address < RTC_DATA_HIGH) {
+        if (!load_rtc_memory && address >= SOC_RTC_DATA_LOW && address < SOC_RTC_DATA_HIGH) {
             ESP_LOGD(TAG, "Skipping RTC data segment at %08x\n", data_offs);
             load = false;
         }
@@ -545,7 +561,7 @@ static void set_cache_and_start_app(
     uint32_t drom_size,
     uint32_t irom_addr,
     uint32_t irom_load_addr,
-    uint32_t irom_size, 
+    uint32_t irom_size,
     uint32_t entry_addr)
 {
     ESP_LOGD(TAG, "configure drom and irom and start");
@@ -568,8 +584,9 @@ static void set_cache_and_start_app(
     cache_sram_mmu_set( 0, 0, 0x3f800000, 0, 32, 128 );
 #endif
 
-    REG_CLR_BIT( DPORT_PRO_CACHE_CTRL1_REG, (DPORT_PRO_CACHE_MASK_IRAM0) | (DPORT_PRO_CACHE_MASK_IRAM1 & 0) | (DPORT_PRO_CACHE_MASK_IROM0 & 0) | DPORT_PRO_CACHE_MASK_DROM0 | DPORT_PRO_CACHE_MASK_DRAM1 );
-    REG_CLR_BIT( DPORT_APP_CACHE_CTRL1_REG, (DPORT_APP_CACHE_MASK_IRAM0) | (DPORT_APP_CACHE_MASK_IRAM1 & 0) | (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 | DPORT_APP_CACHE_MASK_DRAM1 );
+    DPORT_REG_CLR_BIT( DPORT_PRO_CACHE_CTRL1_REG, (DPORT_PRO_CACHE_MASK_IRAM0) | (DPORT_PRO_CACHE_MASK_IRAM1 & 0) | (DPORT_PRO_CACHE_MASK_IROM0 & 0) | DPORT_PRO_CACHE_MASK_DROM0 | DPORT_PRO_CACHE_MASK_DRAM1 );
+    DPORT_REG_CLR_BIT( DPORT_APP_CACHE_CTRL1_REG, (DPORT_APP_CACHE_MASK_IRAM0) | (DPORT_APP_CACHE_MASK_IRAM1 & 0) | (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 | DPORT_APP_CACHE_MASK_DRAM1 );
+
     Cache_Read_Enable( 0 );
 
     // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)
@@ -607,7 +624,7 @@ static void update_flash_config(const esp_image_header_t* pfhdr)
     }
     Cache_Read_Disable( 0 );
     // Set flash chip size
-    SPIParamCfg(g_rom_flashchip.deviceId, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
+    esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
     Cache_Flush(0);
@@ -686,6 +703,29 @@ void print_flash_info(const esp_image_header_t* phdr)
 #endif
 }
 
+
+static void clock_configure(void)
+{
+    /* Set CPU to 80MHz. Keep other clocks unmodified. */
+    uart_tx_wait_idle(0);
+    rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
+    clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
+    clk_cfg.cpu_freq = RTC_CPU_FREQ_80M;
+    clk_cfg.slow_freq = rtc_clk_slow_freq_get();
+    clk_cfg.fast_freq = rtc_clk_fast_freq_get();
+    rtc_clk_init(clk_cfg);
+    /* As a slight optimization, if 32k XTAL was enabled in sdkconfig, we enable
+     * it here. Usually it needs some time to start up, so we amortize at least
+     * part of the start up time by enabling 32k XTAL early.
+     * App startup code will wait until the oscillator has started up.
+     */
+#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+    if (!rtc_clk_32k_enabled()) {
+        rtc_clk_32k_bootstrap();
+    }
+#endif
+}
+
 static void uart_console_configure(void)
 {
 #if CONFIG_CONSOLE_UART_NONE
@@ -727,16 +767,85 @@ static void uart_console_configure(void)
 
     // Set configured UART console baud rate
     const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
-    uart_div_modify(uart_num, (APB_CLK_FREQ << 4) / uart_baud);
+    uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
 
 #endif // CONFIG_CONSOLE_UART_NONE
 }
 
-/* empty rtc_printf implementation, to work with librtc
-   linking. Can be removed once -lrtc is removed from bootloader's
-   main component.mk.
-*/
-int rtc_printf(void)
+static void wdt_reset_info_enable(void)
 {
-    return 0;
+    DPORT_REG_SET_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_PDEBUG_ENABLE | DPORT_PRO_CPU_RECORD_ENABLE);
+    DPORT_REG_CLR_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_RECORD_ENABLE);
+    DPORT_REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
+    DPORT_REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
+}
+
+static void wdt_reset_info_dump(int cpu)
+{
+    uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
+             lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
+    char *cpu_name = cpu ? "APP" : "PRO";
+
+    if (cpu == 0) {
+        stat    = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_STATUS_REG);
+        pid     = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PID_REG);
+        inst    = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGINST_REG);
+        dstat   = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGSTATUS_REG);
+        data    = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGDATA_REG);
+        pc      = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGPC_REG);
+        lsstat  = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0STAT_REG);
+        lsaddr  = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0ADDR_REG);
+        lsdata  = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0DATA_REG);
+
+    } else {
+        stat    = DPORT_REG_READ(DPORT_APP_CPU_RECORD_STATUS_REG);
+        pid     = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PID_REG);
+        inst    = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGINST_REG);
+        dstat   = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGSTATUS_REG);
+        data    = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGDATA_REG);
+        pc      = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGPC_REG);
+        lsstat  = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0STAT_REG);
+        lsaddr  = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0ADDR_REG);
+        lsdata  = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0DATA_REG);
+    }
+    if (DPORT_RECORD_PDEBUGINST_SZ(inst) == 0 &&
+        DPORT_RECORD_PDEBUGSTATUS_BBCAUSE(dstat) == DPORT_RECORD_PDEBUGSTATUS_BBCAUSE_WAITI) {
+        ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%x (waiti mode)", cpu_name, pc);
+    } else {
+        ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%x", cpu_name, pc);
+    }
+    ESP_LOGD(TAG, "WDT reset info: %s CPU STATUS        0x%08x", cpu_name, stat);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PID           0x%08x", cpu_name, pid);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGINST    0x%08x", cpu_name, inst);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGSTATUS  0x%08x", cpu_name, dstat);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGDATA    0x%08x", cpu_name, data);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGPC      0x%08x", cpu_name, pc);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0STAT 0x%08x", cpu_name, lsstat);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0ADDR 0x%08x", cpu_name, lsaddr);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0DATA 0x%08x", cpu_name, lsdata);
+}
+
+static void wdt_reset_check(void)
+{
+    int wdt_rst = 0;
+    RESET_REASON rst_reas[2];
+
+    rst_reas[0] = rtc_get_reset_reason(0);
+    rst_reas[1] = rtc_get_reset_reason(1);
+    if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
+        rst_reas[0] == TGWDT_CPU_RESET  || rst_reas[0] == RTCWDT_CPU_RESET) {
+        ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
+        wdt_rst = 1;
+    }
+    if (rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET || rst_reas[1] == TG1WDT_SYS_RESET ||
+        rst_reas[1] == TGWDT_CPU_RESET  || rst_reas[1] == RTCWDT_CPU_RESET) {
+        ESP_LOGW(TAG, "APP CPU has been reset by WDT.");
+        wdt_rst = 1;
+    }
+    if (wdt_rst) {
+        // if reset by WDT dump info from trace port
+        wdt_reset_info_dump(0);
+        wdt_reset_info_dump(1);
+    }
+    wdt_reset_info_enable();
 }

@@ -37,7 +37,7 @@
 #ifndef _SYS_SYSLIMITS_H_
 #define _SYS_SYSLIMITS_H_
 
-#define	ARG_MAX			65536	/* max bytes for an exec function */
+#define	ARG_MAX			 4096	/* max bytes for an exec function */
 #ifndef CHILD_MAX
 #define	CHILD_MAX		   40	/* max simultaneous processes */
 #endif

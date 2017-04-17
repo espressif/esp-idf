@@ -115,7 +115,7 @@ typedef intr_handle_t ledc_isr_handle_t;
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t ledc_channel_config(ledc_channel_config_t* ledc_conf);
+esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf);
 
 /**
  * @brief LEDC timer configuration
@@ -128,7 +128,7 @@ esp_err_t ledc_channel_config(ledc_channel_config_t* ledc_conf);
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_FAIL Can not find a proper pre-divider number base on the given frequency and the current bit_num.
  */
-esp_err_t ledc_timer_config(ledc_timer_config_t* timer_conf);
+esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf);
 
 /**
  * @brief LEDC update channel parameters

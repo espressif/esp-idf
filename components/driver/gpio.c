@@ -270,7 +270,7 @@ esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode)
     return ret;
 }
 
-esp_err_t gpio_config(gpio_config_t *pGPIOConfig)
+esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
 {
     uint64_t gpio_pin_mask = (pGPIOConfig->pin_bit_mask);
     uint32_t io_reg = 0;

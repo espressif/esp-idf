@@ -97,9 +97,13 @@ void unity_run_all_tests()
 
 void unity_run_tests_with_filter(const char* filter)
 {
+    bool invert = filter[0] == '!';
+    if (invert) {
+        filter++;
+    }
     for (const struct test_desc_t* test = s_unity_tests_first; test != NULL; test = test->next)
     {
-        if (strstr(test->desc, filter) != NULL)
+        if ((strstr(test->desc, filter) != NULL) == !invert)
         {
             unity_run_single_test(test);
         }

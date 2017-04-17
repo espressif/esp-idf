@@ -120,14 +120,8 @@ functions but without including stdio.h here. */
 	/* If the cooperative scheduler is being used then a yield should not be
 	performed just because a higher priority task has been woken. */
 	#define taskYIELD_IF_USING_PREEMPTION()
-	#define queueYIELD_IF_USING_PREEMPTION_MUX(mux)
 #else
 	#define taskYIELD_IF_USING_PREEMPTION() portYIELD_WITHIN_API()
-	#define taskYIELD_IF_USING_PREEMPTION_MUX(mux) { \
-					taskEXIT_CRITICAL(mux); \
-					portYIELD_WITHIN_API(); \
-					taskENTER_CRITICAL(mux); \
-					} while(0)
 #endif
 
 
@@ -494,6 +488,8 @@ extern void esp_vApplicationTickHook( void );
  * Utility task that simply returns pdTRUE if the task referenced by xTask is
  * currently in the Suspended state, or pdFALSE if the task referenced by xTask
  * is in any other state.
+ *
+ * Caller must hold xTaskQueueMutex before calling this function.
  */
 #if ( INCLUDE_vTaskSuspend == 1 )
 	static BaseType_t prvTaskIsTaskSuspended( const TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
@@ -1050,6 +1046,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 {
 	TCB_t *curTCB, *tcb0, *tcb1;
 
+	/* Assure that xCoreID is valid or we'll have an out-of-bounds on pxCurrentTCB 
+	   You will assert here if e.g. you only have one CPU enabled in menuconfig and 
+	   are trying to start a task on core 1. */
+	configASSERT( xCoreID == tskNO_AFFINITY || xCoreID < portNUM_PROCESSORS);
+
     /* Ensure interrupts don't access the task lists while the lists are being
 	updated. */
 	taskENTER_CRITICAL(&xTaskQueueMutex);
@@ -1166,7 +1167,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		{
 			if( xCoreID == xPortGetCoreID() )
 			{
-				taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
+				taskYIELD_IF_USING_PREEMPTION();
 			}
 			else {
 				taskYIELD_OTHER_CORE(xCoreID, pxNewTCB->uxPriority);
@@ -1249,6 +1250,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 				required. */
 				portPRE_TASK_DELETE_HOOK( pxTCB, &xYieldPending[xPortGetCoreID()] );
 				portYIELD_WITHIN_API();
+			}
+			else if ( portNUM_PROCESSORS > 1 && pxTCB == pxCurrentTCB[ !xPortGetCoreID() ] )
+			{
+				/* if task is running on the other CPU, force a yield on that CPU to take it off */
+				vPortYieldOtherCore( !xPortGetCoreID() );
 			}
 			else
 			{
@@ -1703,7 +1709,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 				if( xYieldRequired == pdTRUE )
 				{
-					taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
+					taskYIELD_IF_USING_PREEMPTION();
 				}
 				else
 				{
@@ -1722,13 +1728,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_vTaskSuspend == 1 )
-/* ToDo: Make this multicore-compatible. */
 	void vTaskSuspend( TaskHandle_t xTaskToSuspend )
 	{
 	TCB_t *pxTCB;
         TCB_t *curTCB;
 
-		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* If null is passed in here then it is the running task that is
@@ -1816,15 +1820,13 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_vTaskSuspend == 1 )
-
 	static BaseType_t prvTaskIsTaskSuspended( const TaskHandle_t xTask )
 	{
 	BaseType_t xReturn = pdFALSE;
 	const TCB_t * const pxTCB = ( TCB_t * ) xTask;
 
 		/* Accesses xPendingReadyList so must be called from a critical
-		section. */
-		taskENTER_CRITICAL(&xTaskQueueMutex);
+		   section (caller is required to hold xTaskQueueMutex). */
 
 		/* It does not make sense to check if the calling task is suspended. */
 		configASSERT( xTask );
@@ -1855,7 +1857,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		{
 			mtCOVERAGE_TEST_MARKER();
 		}
-		taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 		return xReturn;
 	} /*lint !e818 xTask cannot be a pointer to const because it is a typedef. */
@@ -1865,12 +1866,10 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 #if ( INCLUDE_vTaskSuspend == 1 )
 
-/* ToDo: Make this multicore-compatible. */
 	void vTaskResume( TaskHandle_t xTaskToResume )
 	{
 	TCB_t * const pxTCB = ( TCB_t * ) xTaskToResume;
 
-		UNTESTED_FUNCTION();
 		/* It does not make sense to resume the calling task. */
 		configASSERT( xTaskToResume );
 
@@ -1895,7 +1894,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 						/* This yield may not cause the task just resumed to run,
 						but will leave the lists in the correct state for the
 						next yield. */
-						taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
+						taskYIELD_IF_USING_PREEMPTION();
 					}
 					else if( pxTCB->xCoreID != xPortGetCoreID() )
 					{
@@ -2206,7 +2205,7 @@ BaseType_t xAlreadyYielded = pdFALSE;
 						xAlreadyYielded = pdTRUE;
 					}
 					#endif
-					taskYIELD_IF_USING_PREEMPTION_MUX(&xTaskQueueMutex);
+					taskYIELD_IF_USING_PREEMPTION();
 				}
 				else
 				{

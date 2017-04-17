@@ -193,7 +193,6 @@ void btm_gen_non_resolvable_private_addr (tBTM_BLE_ADDR_CBACK *p_cback, void *p)
 
 }
 
-#if SMP_INCLUDED == TRUE
 /*******************************************************************************
 **  Utility functions for Random address resolving
 *******************************************************************************/
@@ -207,6 +206,7 @@ void btm_gen_non_resolvable_private_addr (tBTM_BLE_ADDR_CBACK *p_cback, void *p)
 ** Returns          None.
 **
 *******************************************************************************/
+#if SMP_INCLUDED == TRUE
 static void btm_ble_resolve_address_cmpl(void)
 {
     tBTM_LE_RANDOM_CB   *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
@@ -250,8 +250,10 @@ static BOOLEAN btm_ble_proc_resolve_x(tSMP_ENC *p)
             return TRUE;
         }
     }
+
     return FALSE;
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -265,13 +267,14 @@ static BOOLEAN btm_ble_proc_resolve_x(tSMP_ENC *p)
 *******************************************************************************/
 BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr)
 {
+#if (SMP_INCLUDED == TRUE)
     BD_ADDR dummy_bda = {0};
 
     if (memcmp(p_dev_rec->ble.pseudo_addr, dummy_bda, BD_ADDR_LEN) == 0) {
         memcpy(p_dev_rec->ble.pseudo_addr, new_pseudo_addr, BD_ADDR_LEN);
         return TRUE;
     }
-
+#endif  ///SMP_INCLUDED == TRUE
     return FALSE;
 }
 
@@ -287,7 +290,7 @@ BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseud
 BOOLEAN btm_ble_addr_resolvable (BD_ADDR rpa, tBTM_SEC_DEV_REC *p_dev_rec)
 {
     BOOLEAN rt = FALSE;
-
+#if (SMP_INCLUDED == TRUE)
     if (!BTM_BLE_IS_RESOLVE_BDA(rpa)) {
         return rt;
     }
@@ -315,9 +318,11 @@ BOOLEAN btm_ble_addr_resolvable (BD_ADDR rpa, tBTM_SEC_DEV_REC *p_dev_rec)
             rt = TRUE;
         }
     }
+#endif  ///SMP_INCLUDED == TRUE
     return rt;
 }
 
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_match_random_bda
@@ -331,7 +336,6 @@ BOOLEAN btm_ble_addr_resolvable (BD_ADDR rpa, tBTM_SEC_DEV_REC *p_dev_rec)
 *******************************************************************************/
 static BOOLEAN btm_ble_match_random_bda(UINT16 rec_index)
 {
-#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     /* use the 3 MSB of bd address as prand */
 
     tBTM_LE_RANDOM_CB *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
@@ -364,8 +368,8 @@ static BOOLEAN btm_ble_match_random_bda(UINT16 rec_index)
         btm_ble_resolve_address_cmpl();
         return TRUE;
     }
-#endif
 }
+#endif ///BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -379,6 +383,7 @@ static BOOLEAN btm_ble_match_random_bda(UINT16 rec_index)
 *******************************************************************************/
 void btm_ble_resolve_random_addr(BD_ADDR random_bda, tBTM_BLE_RESOLVE_CBACK *p_cback, void *p)
 {
+#if (SMP_INCLUDED == TRUE)
     tBTM_LE_RANDOM_CB   *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
 
     BTM_TRACE_EVENT ("btm_ble_resolve_random_addr");
@@ -400,8 +405,10 @@ void btm_ble_resolve_random_addr(BD_ADDR random_bda, tBTM_BLE_RESOLVE_CBACK *p_c
     } else {
         (*p_cback)(NULL, p);
     }
-}
 #endif
+
+}
+
 
 /*******************************************************************************
 **  address mapping between pseudo address and real connection address

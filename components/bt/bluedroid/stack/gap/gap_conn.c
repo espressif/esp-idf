@@ -1165,9 +1165,10 @@ static void gap_release_ccb (tGAP_CCB *p_ccb)
             return;
         }
     }
-
+#if (SDP_INCLUDED == TRUE)
     /* Free the security record for this PSM */
     BTM_SecClrService(service_id);
+#endif  ///SDP_INCLUDED == TRUE
     L2CA_DEREGISTER (psm);
 }
 

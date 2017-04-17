@@ -345,7 +345,11 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP)
     if (p_tcb->att_lcid == L2CAP_ATT_CID) {
         l2cap_ret = L2CA_SendFixedChnlData (L2CAP_ATT_CID, p_tcb->peer_bda, p_toL2CAP);
     } else {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         l2cap_ret = (UINT16) L2CA_DataWrite (p_tcb->att_lcid, p_toL2CAP);
+#else
+        l2cap_ret = L2CAP_DW_FAILED;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     }
 
     if (l2cap_ret == L2CAP_DW_FAILED) {
@@ -370,6 +374,26 @@ BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg)
 {
     BT_HDR          *p_cmd = NULL;
     UINT16          offset = 0;
+
+    switch (op_code) {
+    case GATT_RSP_READ_BLOB:
+    case GATT_RSP_PREPARE_WRITE:
+    case GATT_RSP_READ_BY_TYPE:
+    case GATT_RSP_READ:
+    case GATT_HANDLE_VALUE_NOTIF:
+    case GATT_HANDLE_VALUE_IND:
+    case GATT_RSP_ERROR:
+    case GATT_RSP_MTU:
+    /* Need to check the validation of parameter p_msg*/
+        if (p_msg == NULL) {
+            GATT_TRACE_ERROR("Invalid parameters in %s, op_code=0x%x, the p_msg should not be NULL.", __func__, op_code);
+            return NULL;
+        }
+        break;
+
+    default:
+        break;
+    }
 
     switch (op_code) {
     case GATT_RSP_READ_BLOB:

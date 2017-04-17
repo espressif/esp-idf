@@ -24,7 +24,7 @@
 
 #include "bt_target.h"
 
-#if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
+#if defined(GATTC_INCLUDED) && (GATTC_INCLUDED == TRUE)
 
 #include <string.h>
 
@@ -133,4 +133,4 @@ void bta_gattc_ci_cache_save(BD_ADDR server_bda, UINT16 evt, tBTA_GATT_STATUS st
         bta_sys_sendmsg(p_evt);
     }
 }
-#endif /* BTA_GATT_INCLUDED */
+#endif /* GATTC_INCLUDED */

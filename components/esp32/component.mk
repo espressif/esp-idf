@@ -2,8 +2,12 @@
 # Component Makefile
 #
 
+#ifdef IS_BOOTLOADER_BUILD
+CFLAGS += -DBOOTLOADER_BUILD
+#endif
+
 COMPONENT_SRCDIRS := . hwcrypto
-LIBS := core rtc rtc_clk rtc_pm
+LIBS := core rtc
 ifdef CONFIG_PHY_ENABLED # BT || WIFI
 LIBS += phy coexist
 endif
@@ -15,6 +19,10 @@ LINKER_SCRIPTS += esp32.common.ld esp32.rom.ld esp32.peripherals.ld
 
 ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")
 LINKER_SCRIPTS += esp32.rom.nanofmt.ld
+endif
+
+ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+LINKER_SCRIPTS += esp32.rom.spiflash.ld
 endif
 
 COMPONENT_ADD_LDFLAGS := -lesp32 \

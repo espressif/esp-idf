@@ -539,6 +539,8 @@ static void
 dhcp_t1_timeout(struct netif *netif)
 {
   struct dhcp *dhcp = netif->dhcp;
+  int half_t2_timeout;
+
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_STATE, ("dhcp_t1_timeout()\n"));
   if ((dhcp->state == DHCP_STATE_REQUESTING) || (dhcp->state == DHCP_STATE_BOUND) ||
       (dhcp->state == DHCP_STATE_RENEWING)) {
@@ -550,15 +552,16 @@ dhcp_t1_timeout(struct netif *netif)
        DHCP_STATE_RENEWING, not DHCP_STATE_BOUND */
     dhcp_renew(netif);
     /* Calculate next timeout */
+    half_t2_timeout = (netif->dhcp->t2_timeout - dhcp->lease_used) / 2;
 #if ESP_DHCP_TIMER
-    if (((netif->dhcp->t2_timeout - dhcp->lease_used) / 2) >= (60 + DHCP_COARSE_TIMER_SECS / 2) )
+    if (half_t2_timeout*DHCP_COARSE_TIMER_SECS >= 3)
     {
-       netif->dhcp->t1_renew_time = (netif->dhcp->t2_timeout - dhcp->lease_used) / 2;
+       netif->dhcp->t1_renew_time = half_t2_timeout;
     }
 #else
-    if (((netif->dhcp->t2_timeout - dhcp->lease_used) / 2) >= ((60 + DHCP_COARSE_TIMER_SECS / 2) / DHCP_COARSE_TIMER_SECS))
+    if (half_t2_timeout >= ((60 + DHCP_COARSE_TIMER_SECS / 2) / DHCP_COARSE_TIMER_SECS))
     {
-       netif->dhcp->t1_renew_time = ((netif->dhcp->t2_timeout - dhcp->lease_used) / 2);
+       netif->dhcp->t1_renew_time = half_t2_timeout;
     }
 #endif
   }
@@ -573,6 +576,7 @@ static void
 dhcp_t2_timeout(struct netif *netif)
 {
   struct dhcp *dhcp = netif->dhcp;
+  int half_t0_timeout;
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_t2_timeout()\n"));
   if ((dhcp->state == DHCP_STATE_REQUESTING) || (dhcp->state == DHCP_STATE_BOUND) ||
       (dhcp->state == DHCP_STATE_RENEWING) || (dhcp->state == DHCP_STATE_REBINDING)) {
@@ -583,15 +587,16 @@ dhcp_t2_timeout(struct netif *netif)
        DHCP_STATE_REBINDING, not DHCP_STATE_BOUND */
     dhcp_rebind(netif);
     /* Calculate next timeout */
+    half_t0_timeout = (netif->dhcp->t0_timeout - dhcp->lease_used) / 2;
 #if ESP_DHCP_TIMER
-    if (((netif->dhcp->t0_timeout - dhcp->lease_used) / 2) >= (60 + DHCP_COARSE_TIMER_SECS / 2))
+    if (half_t0_timeout*DHCP_COARSE_TIMER_SECS >= 3)
     {
-       netif->dhcp->t2_rebind_time = ((netif->dhcp->t0_timeout - dhcp->lease_used) / 2);
+       netif->dhcp->t2_rebind_time = half_t0_timeout;
     }
 #else
-    if (((netif->dhcp->t0_timeout - dhcp->lease_used) / 2) >= ((60 + DHCP_COARSE_TIMER_SECS / 2) / DHCP_COARSE_TIMER_SECS))
+    if (half_t0_timeout >= ((60 + DHCP_COARSE_TIMER_SECS / 2) / DHCP_COARSE_TIMER_SECS))
     {
-       netif->dhcp->t2_rebind_time = ((netif->dhcp->t0_timeout - dhcp->lease_used) / 2);
+       netif->dhcp->t2_rebind_time = half_t0_timeout;
     }
 #endif
   }

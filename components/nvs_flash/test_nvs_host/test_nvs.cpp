@@ -18,6 +18,9 @@
 #include <sstream>
 #include <iostream>
 
+#define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
+#define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
+
 using namespace std;
 using namespace nvs;
 
@@ -209,6 +212,24 @@ TEST_CASE("can write and read variable length data", "[nvs]")
     CHECK(memcmp(buf, str, strlen(str)) == 0);
 }
 
+TEST_CASE("different key names are distinguished even if the pointer is the same", "[nvs]")
+{
+    SpiFlashEmulator emu(1);
+    Page page;
+    TEST_ESP_OK(page.load(0));
+    TEST_ESP_OK(page.writeItem(1, "i1", 1));
+    TEST_ESP_OK(page.writeItem(1, "i2", 2));
+    int32_t value;
+    char keyname[10] = {0};
+    for (int i = 0; i < 2; ++i) {
+        strncpy(keyname, "i1", sizeof(keyname) - 1);
+        TEST_ESP_OK(page.readItem(1, keyname, value));
+        CHECK(value == 1);
+        strncpy(keyname, "i2", sizeof(keyname) - 1);
+        TEST_ESP_OK(page.readItem(1, keyname, value));
+        CHECK(value == 2);
+    }
+}
 
 TEST_CASE("can init PageManager in empty flash", "[nvs]")
 {
@@ -427,9 +448,6 @@ TEST_CASE("can erase items", "[nvs]")
     CHECK(storage.readItem(2, "foo", val) == ESP_ERR_NVS_NOT_FOUND);
     CHECK(storage.readItem(3, "key00222", val) == ESP_ERR_NVS_NOT_FOUND);
 }
-
-#define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
-#define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
 
 TEST_CASE("nvs api tests", "[nvs]")
 {

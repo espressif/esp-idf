@@ -26,7 +26,7 @@
 
 #include "bt_target.h"
 
-#if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
+#if defined(GATTS_INCLUDED) && (GATTS_INCLUDED == TRUE)
 
 #include "utl.h"
 #include "gki.h"
@@ -963,4 +963,4 @@ static void bta_gatts_cong_cback (UINT16 conn_id, BOOLEAN congested)
         }
     }
 }
-#endif /* BTA_GATT_INCLUDED */
+#endif /* GATTS_INCLUDED */

@@ -195,7 +195,7 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     packet->offset++;
     packet->len--;
     if (type == HCI_BLE_EVENT) {
-        uint8_t len;
+        uint8_t len = 0;
         STREAM_TO_UINT8(len, stream);
         LOG_ERROR("Workround stream corrupted during LE SCAN: pkt_len=%d ble_event_len=%d\n",
                   packet->len, len);
@@ -217,11 +217,8 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         return;
     }
     if (type == DATA_TYPE_ACL) {
-        packet->offset--;
         stream += hdr_size - 2;
         STREAM_TO_UINT16(length, stream);
-        stream = packet->data + 1;
-        memcpy(packet->data, stream, packet->len);
     } else {
         stream += hdr_size - 1;
         STREAM_TO_UINT8(length, stream);

@@ -331,6 +331,7 @@ extern "C"
 {
 #endif
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         L2CA_Register
@@ -483,6 +484,8 @@ extern BOOLEAN L2CA_DisconnectReq (UINT16 cid);
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_DisconnectRsp (UINT16 cid);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -496,6 +499,8 @@ extern BOOLEAN L2CA_DisconnectRsp (UINT16 cid);
 **
 *******************************************************************************/
 extern UINT8 L2CA_DataWrite (UINT16 cid, BT_HDR *p_data);
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -519,6 +524,8 @@ extern BOOLEAN L2CA_Ping (BD_ADDR p_bd_addr, tL2CA_ECHO_RSP_CB *p_cb);
 **
 *******************************************************************************/
 extern BOOLEAN  L2CA_Echo (BD_ADDR p_bd_addr, BT_HDR *p_data, tL2CA_ECHO_DATA_CB *p_callback);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 
 // Given a local channel identifier, |lcid|, this function returns the bound remote
 // channel identifier, |rcid|, and the ACL link handle, |handle|. If |lcid| is not
@@ -544,6 +551,7 @@ bool L2CA_GetIdentifiers(uint16_t lcid, uint16_t *rcid, uint16_t *handle);
 extern BOOLEAN L2CA_SetIdleTimeout (UINT16 cid, UINT16 timeout,
                                     BOOLEAN is_global);
 
+
 /*******************************************************************************
 **
 ** Function         L2CA_SetIdleTimeoutByBdAddr
@@ -566,6 +574,7 @@ extern BOOLEAN L2CA_SetIdleTimeout (UINT16 cid, UINT16 timeout,
 extern BOOLEAN L2CA_SetIdleTimeoutByBdAddr(BD_ADDR bd_addr, UINT16 timeout,
         tBT_TRANSPORT transport);
 
+
 /*******************************************************************************
 **
 ** Function         L2CA_SetTraceLevel
@@ -577,6 +586,7 @@ extern BOOLEAN L2CA_SetIdleTimeoutByBdAddr(BD_ADDR bd_addr, UINT16 timeout,
 **
 *******************************************************************************/
 extern UINT8 L2CA_SetTraceLevel (UINT8 trace_level);
+
 
 /*******************************************************************************
 **
@@ -595,7 +605,7 @@ extern UINT8 L2CA_SetTraceLevel (UINT8 trace_level);
 **
 *******************************************************************************/
 extern UINT8 L2CA_SetDesireRole (UINT8 new_role);
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function     L2CA_LocalLoopbackReq
@@ -722,6 +732,7 @@ typedef void (tL2CA_RESERVE_CMPL_CBACK) (void);
 **                  ACL link.
 *******************************************************************************/
 extern BOOLEAN L2CA_SetFlushTimeout (BD_ADDR bd_addr, UINT16 flush_tout);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -780,6 +791,8 @@ extern BOOLEAN L2CA_GetPeerFeatures (BD_ADDR bd_addr, UINT32 *p_ext_feat, UINT8 
 *******************************************************************************/
 extern BOOLEAN L2CA_GetBDAddrbyHandle (UINT16 handle, BD_ADDR bd_addr);
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+
 /*******************************************************************************
 **
 **  Function         L2CA_GetChnlFcrMode
@@ -792,6 +805,7 @@ extern BOOLEAN L2CA_GetBDAddrbyHandle (UINT16 handle, BD_ADDR bd_addr);
 **
 *******************************************************************************/
 extern UINT8 L2CA_GetChnlFcrMode (UINT16 lcid);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -1044,6 +1058,7 @@ extern BOOLEAN L2CA_SetFixedChannelTout (BD_ADDR rem_bda, UINT16 fixed_cid, UINT
 
 #endif /* (L2CAP_NUM_FIXED_CHNLS > 0) */
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function     L2CA_GetCurrentConfig
@@ -1060,6 +1075,8 @@ extern BOOLEAN L2CA_SetFixedChannelTout (BD_ADDR rem_bda, UINT16 fixed_cid, UINT
 extern BOOLEAN L2CA_GetCurrentConfig (UINT16 lcid,
                                       tL2CAP_CFG_INFO **pp_our_cfg,  tL2CAP_CH_CFG_BITS *p_our_cfg_bits,
                                       tL2CAP_CFG_INFO **pp_peer_cfg, tL2CAP_CH_CFG_BITS *p_peer_cfg_bits);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************

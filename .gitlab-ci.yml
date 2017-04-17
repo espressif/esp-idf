@@ -29,7 +29,6 @@ build_template_app:
     - build
 
   variables:
-    SDK_PATH: "$CI_PROJECT_DIR"
     IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
@@ -54,18 +53,17 @@ build_template_app:
     - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
 
 
-.build_gitlab: &build_template
+.build_template: &build_template
   stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
 
   variables:
-    SDK_PATH: "$CI_PROJECT_DIR"
     IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
-
+    V: "0"
 
 build_ssc:
   <<: *build_template
@@ -79,7 +77,6 @@ build_ssc:
     - cd SSC
     - git checkout ${CI_BUILD_REF_NAME} || echo "Using SSC default branch..."
     - make defconfig
-    - chmod +x gen_misc_ng.sh
     - ./gen_misc_ng.sh
 
 build_at:
@@ -98,6 +95,7 @@ build_esp_idf_tests:
       - ./tools/unit-test-app/build/*.bin
       - ./tools/unit-test-app/build/*.elf
       - ./tools/unit-test-app/build/*.map
+      - ./tools/unit-test-app/build/download.config
       - ./tools/unit-test-app/build/bootloader/*.bin
       - ./components/idf_test/unit_test/TestCaseAll.yml
       - ./components/idf_test/unit_test/CIConfigs/*.yml
@@ -105,9 +103,10 @@ build_esp_idf_tests:
 
   script:
     - cd tools/unit-test-app
-    - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
     - make TESTS_ALL=1
-    - python UnitTestParser.py
+    # cut last line in case make V=0/1 is set by default
+    - make print_flash_cmd | tail -n 1 > build/download.config
+    - python tools/UnitTestParser.py
 
 build_examples:
   <<: *build_template
@@ -143,7 +142,6 @@ build_docs:
       - docs/_build/html
     expire_in: 1 mos
 
-
 test_nvs_on_host:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
@@ -151,6 +149,18 @@ test_nvs_on_host:
     - nvs_host_test
   script:
     - cd components/nvs_flash/test_nvs_host
+    - make test
+
+test_wl_on_host:
+  stage: test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - wl_host_test
+  artifacts:
+    paths:
+      - components/wear_levelling/test_wl_host/coverage_report.zip
+  script:
+    - cd components/wear_levelling/test_wl_host
     - make test
 
 test_build_system:
@@ -167,18 +177,18 @@ test_build_system:
 test_report:
   stage: test_report
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - report
   only:
     - master
     - triggers
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
-  tags:
-    - report
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
     REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
   artifacts:
     when: always
     paths:
@@ -219,14 +229,14 @@ push_master_to_github:
   before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - deploy
   only:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
-  tags:
-    - deploy
   when: on_success
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   variables:
     GIT_STRATEGY: clone
     GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
@@ -252,14 +262,14 @@ deploy_docs:
   before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - deploy
   only:
    - master
    - /^release\/v/
    - /^v\d+\.\d+(\.\d+)?($|-)/
    - triggers
-  tags:
-    - deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -294,8 +304,22 @@ check_doc_links:
       - docs/_build/linkcheck
     expire_in: 1 mos
 
+check_commit_msg:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  before_script:
+    - echo "skip update submodule"
+  script:
+    - git checkout ${CI_BUILD_REF_NAME}
+    # commit start with "WIP: " need to be squashed before merge
+    - 'git log --pretty=%s master..${CI_BUILD_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
 
-# AUTO GENERATED PART START, DO NOT MODIFY CONTENT BELOW
 # template for test jobs
 .test_template: &test_template
   stage: test
@@ -315,7 +339,7 @@ check_doc_links:
     # append test level folder to TEST_CASE_FILE_PATH in before_script of test job
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
 
   artifacts:
     when: always
@@ -380,7 +404,7 @@ check_doc_links:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     APP_NAME: "ut"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
   
   dependencies:
     - build_esp_idf_tests

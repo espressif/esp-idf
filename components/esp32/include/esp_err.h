@@ -37,6 +37,8 @@ typedef int32_t esp_err_t;
 #define ESP_ERR_TIMEOUT         0x107
 #define ESP_ERR_INVALID_RESPONSE    0x108
 #define ESP_ERR_INVALID_CRC     0x109
+#define ESP_ERR_INVALID_VERSION     0x10A
+#define ESP_ERR_INVALID_MAC     0x10B
 
 #define ESP_ERR_WIFI_BASE       0x3000 /*!< Starting number of WiFi error codes */
 
@@ -61,7 +63,10 @@ void _esp_error_check_failed(esp_err_t rc, const char *file, int line, const cha
  * Disabled if assertions are disabled.
  */
 #ifdef NDEBUG
-#define ESP_ERROR_CHECK(x) do { (x); } while (0)
+#define ESP_ERROR_CHECK(x) do {                                         \
+        esp_err_t rc = (x);                                             \
+        (void) sizeof(rc);                                              \
+    } while(0);
 #else
 #define ESP_ERROR_CHECK(x) do {                                         \
         esp_err_t rc = (x);                                             \

@@ -136,6 +136,39 @@ typedef enum{
     TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME         = 52,   /**< request IP address retry counter */
 } tcpip_adapter_option_id_t;
 
+struct tcpip_adapter_api_msg_s;
+typedef int (*tcpip_adapter_api_fn)(struct tcpip_adapter_api_msg_s *msg);
+typedef struct tcpip_adapter_api_msg_s {
+    int type;  /**< The first field MUST be int */
+    int ret;
+    tcpip_adapter_api_fn api_fn;
+    tcpip_adapter_if_t tcpip_if;
+    tcpip_adapter_ip_info_t *ip_info;
+    uint8_t *mac;
+    const char *hostname;
+} tcpip_adapter_api_msg_t;
+
+#define TCPIP_ADAPTER_TRHEAD_SAFE 1
+#define TCPIP_ADAPTER_IPC_LOCAL   0 
+#define TCPIP_ADAPTER_IPC_REMOTE  1
+
+#define TCPIP_ADAPTER_IPC_CALL(_if, _mac, _ip, _hostname, _fn) do {\
+    tcpip_adapter_api_msg_t msg;\
+    memset(&msg, 0, sizeof(msg));\
+    msg.tcpip_if = (_if);\
+    msg.mac      = (_mac);\
+    msg.ip_info  = (_ip);\
+    msg.hostname = (_hostname);\
+    msg.api_fn   = (_fn);\
+    if (TCPIP_ADAPTER_IPC_REMOTE == tcpip_adapter_ipc_check(&msg)) {\
+        ESP_LOGD(TAG, "check: remote, if=%d fn=%p\n", (_if), (_fn));\
+        return msg.ret;\
+    } else {\
+        ESP_LOGD(TAG, "check: local, if=%d fn=%p\n", (_if), (_fn));\
+    }\
+}while(0)
+
+
 /**
  * @brief  Initialize tcpip adapter
  *

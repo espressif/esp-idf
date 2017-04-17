@@ -57,6 +57,11 @@ void phy_set_wifi_mode_only(bool wifi_only);
  */
 void coex_bt_high_prio(void);
 
+/**
+ * @brief Shutdown PHY and RF.
+ */
+void phy_close_rf(void);
+
 #ifdef __cplusplus
 }
 #endif

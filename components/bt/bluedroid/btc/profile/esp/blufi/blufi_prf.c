@@ -35,6 +35,8 @@
 
 #include "esp_blufi_api.h"
 
+#if (GATTS_INCLUDED == TRUE)
+
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
@@ -251,6 +253,8 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         msg.pid = BTC_PID_BLUFI;
         msg.act = ESP_BLUFI_EVENT_BLE_CONNECT;
         memcpy(param.connect.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
+        param.connect.conn_id=p_data->conn.conn_id;
+        param.connect.server_if=p_data->conn.server_if;
         btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
         break;
     }
@@ -345,7 +349,7 @@ static void btc_blufi_send_notify(uint8_t *pkt, int pkt_len)
 static void btc_blufi_recv_handler(uint8_t *data, int len)
 {
     struct blufi_hdr *hdr = (struct blufi_hdr *)data;
-    uint16_t checksum;
+    uint16_t checksum, checksum_pkt;
     int ret;
 
     if (hdr->seq != blufi_env.recv_seq) {
@@ -369,8 +373,9 @@ static void btc_blufi_recv_handler(uint8_t *data, int len)
     if (BLUFI_FC_IS_CHECK(hdr->fc)
             && (blufi_env.cbs && blufi_env.cbs->checksum_func)) {
         checksum = blufi_env.cbs->checksum_func(hdr->seq, &hdr->seq, hdr->data_len + 2);
-        if (memcmp(&checksum, &hdr->data[hdr->data_len], 2) != 0) {
-            LOG_ERROR("%s checksum error %04x, pkt %04x\n", __func__, checksum, *(uint16_t *)&hdr->data[hdr->data_len]);
+        checksum_pkt = hdr->data[hdr->data_len] | (((uint16_t) hdr->data[hdr->data_len + 1]) << 8);
+        if (checksum != checksum_pkt) {
+            LOG_ERROR("%s checksum error %04x, pkt %04x\n", __func__, checksum, checksum_pkt);
             return;
         }
     }
@@ -381,7 +386,7 @@ static void btc_blufi_recv_handler(uint8_t *data, int len)
 
     if (BLUFI_FC_IS_FRAG(hdr->fc)) {
         if (blufi_env.offset == 0) {
-            blufi_env.total_len = *(uint16_t *)(hdr->data);
+            blufi_env.total_len = hdr->data[0] | (((uint16_t) hdr->data[1]) << 8);
             blufi_env.aggr_buf = GKI_getbuf(blufi_env.total_len);
             if (blufi_env.aggr_buf == NULL) {
                 LOG_ERROR("%s no mem, len %d\n", __func__, blufi_env.total_len);
@@ -420,7 +425,8 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
             }
             hdr->fc = 0x0;
             hdr->data_len = blufi_env.frag_size + 2;
-            *(uint16_t *)hdr->data = remain_len;
+            hdr->data[0] = remain_len & 0xff;
+            hdr->data[1] = (remain_len >> 8) & 0xff;
             memcpy(hdr->data + 2, &data[total_data_len - remain_len], blufi_env.frag_size); //copy first, easy for check sum
             hdr->fc |= BLUFI_FC_FRAG;
         } else {
@@ -763,6 +769,9 @@ void btc_blufi_cb_handler(btc_msg_t *msg)
     case ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY:
         btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY, param);
         break;
+    case ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE:
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE, param);
+        break;
     default:
         LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);
         break;
@@ -915,3 +924,5 @@ uint16_t btc_blufi_get_version(void)
 {
     return BTC_BLUFI_VERSION;
 }
+
+#endif	///GATTS_INCLUDED == TRUE

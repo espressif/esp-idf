@@ -26,7 +26,7 @@
 typedef uint32_t period_ms_t;
 typedef void (*osi_alarm_callback_t)(void *data);
 
-#define ALARM_CBS_NUM   20
+#define ALARM_CBS_NUM   30
 #define ALARM_ID_BASE   1000
 typedef struct alarm_t {
     /* timer id point to here */
@@ -35,7 +35,10 @@ typedef struct alarm_t {
     void *cb_data;
 } osi_alarm_t;
 
+int osi_alarm_create_mux(void);
+int osi_alarm_delete_mux(void);
 void osi_alarm_init(void);
+void osi_alarm_deinit(void);
 
 // Creates a new alarm object. The returned object must be freed by calling
 // |alarm_free|. Returns NULL on failure.

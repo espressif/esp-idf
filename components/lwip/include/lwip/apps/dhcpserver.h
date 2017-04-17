@@ -166,6 +166,7 @@ enum dhcps_offer_option{
 	OFFER_END
 };
 
+#define DHCPS_COARSE_TIMER_SECS  1
 #define DHCPS_MAX_LEASE 0x64
 #define DHCPS_LEASE_TIME_DEF	(120)
 

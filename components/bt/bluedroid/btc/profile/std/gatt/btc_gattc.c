@@ -22,6 +22,7 @@
 #include "bt_trace.h"
 #include "esp_gattc_api.h"
 
+#if (GATTC_INCLUDED == TRUE)
 static inline void btc_gattc_cb_to_app(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
 {
     esp_gattc_cb_t btc_gattc_cb = (esp_gattc_cb_t )btc_profile_cb_get(BTC_PID_GATTC);
@@ -63,6 +64,15 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         break;
     }
+    case BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR: {
+        dst->prep_write_descr.value = (uint8_t *)GKI_getbuf(src->prep_write_descr.value_len);
+        if (dst->prep_write_descr.value) {
+            memcpy(dst->prep_write_descr.value, src->prep_write_descr.value, src->prep_write_descr.value_len);
+        } else {
+            LOG_ERROR("%s %d no mem\n", __func__, msg->act);
+        }
+        break;
+    }
     default:
         LOG_DEBUG("%s Unhandled deep copy %d\n", __func__, msg->act);
         break;
@@ -89,6 +99,12 @@ void btc_gattc_arg_deep_free(btc_msg_t *msg)
     case BTC_GATTC_ACT_PREPARE_WRITE: {
         if (arg->prep_write.value) {
             GKI_freebuf(arg->prep_write.value);
+        }
+        break;
+    }
+    case BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR: {
+        if (arg->prep_write_descr.value) {
+            GKI_freebuf(arg->prep_write_descr.value);
         }
         break;
     }
@@ -406,6 +422,22 @@ static void btc_gattc_prepare_write(btc_ble_gattc_args_t *arg)
                            arg->prep_write.value,
                            arg->prep_write.auth_req);
 }
+static void btc_gattc_prepare_write_char_descr(btc_ble_gattc_args_t *arg)
+{
+    tBTA_GATTC_CHAR_DESCR_ID in_char_descr_id;
+    tBTA_GATT_UNFMT descr_val;
+    btc_to_bta_srvc_id(&in_char_descr_id.char_id.srvc_id, &arg->prep_write_descr.service_id);
+    btc_to_bta_gatt_id(&in_char_descr_id.char_id.char_id, &arg->prep_write_descr.char_id);
+    btc_to_bta_gatt_id(&in_char_descr_id.descr_id, &arg->prep_write_descr.descr_id);
+
+    descr_val.len = arg->prep_write_descr.value_len;
+    descr_val.p_value = arg->prep_write_descr.value;
+    BTA_GATTC_PrepareWriteCharDescr(arg->prep_write_descr.conn_id,
+                                    &in_char_descr_id,
+                                    arg->prep_write_descr.offset,
+                                    &descr_val,
+                                    arg->prep_write_descr.auth_req);
+}
 
 static void btc_gattc_execute_wrtie(btc_ble_gattc_args_t *arg)
 {
@@ -506,6 +538,9 @@ void btc_gattc_call_handler(btc_msg_t *msg)
         break;
     case BTC_GATTC_ACT_PREPARE_WRITE:
         btc_gattc_prepare_write(arg);
+        break;
+    case BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR:
+        btc_gattc_prepare_write_char_descr(arg);
         break;
     case BTC_GATTC_ACT_EXECUTE_WRITE:
         btc_gattc_execute_wrtie(arg);
@@ -699,3 +734,5 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     // free the deep-copied data
     btc_gattc_free_req_data(msg);
 }
+
+#endif  ///GATTC_INCLUDED == TRUE

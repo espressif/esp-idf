@@ -903,9 +903,11 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
         tBLE_ADDR_TYPE *p_peer_addr_type,
         tBLE_ADDR_TYPE *p_own_addr_type)
 {
-    UINT8 evt_type, i = BTM_SEC_MAX_DEVICE_RECORDS;
+    UINT8 evt_type;
+#if BLE_PRIVACY_SPT == TRUE
+    UINT8 i = BTM_SEC_MAX_DEVICE_RECORDS;
     tBTM_SEC_DEV_REC    *p_dev_rec;
-
+#endif  ///BLE_PRIVACY_SPT == TRUE
     evt_type = (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE) ? \
                ((p_cb->scan_rsp) ? BTM_BLE_DISCOVER_EVT : BTM_BLE_NON_CONNECT_EVT )\
                : BTM_BLE_CONNECT_EVT;
@@ -1080,7 +1082,7 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
         btm_ble_set_topology_mask(BTM_BLE_STATE_HI_DUTY_DIR_ADV_BIT);
     }else if(adv_type == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT){
         btm_ble_set_topology_mask(BTM_BLE_STATE_LO_DUTY_DIR_ADV_BIT);
-    }else if(adv_type == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT){
+    }else if(adv_type == BTM_BLE_NON_CONNECT_EVT){
         btm_ble_set_topology_mask(BTM_BLE_STATE_NON_CONN_ADV_BIT);
     }
 
@@ -1350,7 +1352,7 @@ tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
     p_cb_data->p_pad = p;
 
     if (mask != 0) {
-        BTM_TRACE_ERROR("Partial data write into ADV");
+        BTM_TRACE_DEBUG("Partial data write into ADV");
     }
 
     p_cb_data->data_mask &= ~mask;
@@ -2128,7 +2130,9 @@ void btm_ble_read_remote_name_cmpl(BOOLEAN status, BD_ADDR bda, UINT16 length, c
     }
 
     btm_process_remote_name(bda, bd_name, length + 1, hci_status);
+#if (SMP_INCLUDED == TRUE)
     btm_sec_rmt_name_request_complete (bda, (UINT8 *)p_name, hci_status);
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -2163,7 +2167,7 @@ tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur, t
         return BTM_BUSY;
     }
 
-#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
     if (!GAP_BleReadPeerDevName(remote_bda, btm_ble_read_remote_name_cmpl)) {
         return BTM_BUSY;
     }
@@ -2197,7 +2201,7 @@ BOOLEAN btm_ble_cancel_remote_name(BD_ADDR remote_bda)
     tBTM_INQUIRY_VAR_ST      *p_inq = &btm_cb.btm_inq_vars;
     BOOLEAN     status = TRUE;
 
-#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
     status = GAP_BleCancelReadPeerDevName(remote_bda);
 #endif
 
@@ -2367,12 +2371,13 @@ void btm_ble_cache_adv_data(tBTM_INQ_RESULTS *p_cur, UINT8 data_len, UINT8 *p, U
     tBTM_BLE_INQ_CB     *p_le_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
     UINT8 *p_cache;
     UINT8 length;
-    UNUSED(p_cur);
 
     /* cache adv report/scan response data */
     if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
         p_le_inq_cb->adv_len = 0;
         memset(p_le_inq_cb->adv_data_cache, 0, BTM_BLE_CACHE_ADV_DATA_MAX);
+        p_cur->adv_data_len = 0;
+        p_cur->scan_rsp_len = 0;
     }
 
     if (data_len > 0) {
@@ -2389,6 +2394,13 @@ void btm_ble_cache_adv_data(tBTM_INQ_RESULTS *p_cur, UINT8 data_len, UINT8 *p, U
             p += length;
             STREAM_TO_UINT8(length, p);
         }
+    }
+
+    if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
+        p_cur->adv_data_len = p_le_inq_cb->adv_len;
+    }
+    else {
+        p_cur->scan_rsp_len = p_le_inq_cb->adv_len - p_cur->adv_data_len;
     }
 
     /* parse service UUID from adv packet and save it in inq db eir_uuid */

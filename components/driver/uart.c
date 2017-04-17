@@ -191,7 +191,7 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate)
 esp_err_t uart_set_line_inverse(uart_port_t uart_num, uint32_t inverse_mask)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((((inverse_mask & UART_LINE_INV_MASK) == 0) && (inverse_mask != 0)), "inverse_mask error", ESP_FAIL);
+    UART_CHECK((((inverse_mask & ~UART_LINE_INV_MASK) == 0) && (inverse_mask != 0)), "inverse_mask error", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     CLEAR_PERI_REG_MASK(UART_CONF0_REG(uart_num), UART_LINE_INV_MASK);
     SET_PERI_REG_MASK(UART_CONF0_REG(uart_num), inverse_mask);
@@ -806,9 +806,9 @@ static int uart_tx_all(uart_port_t uart_num, const char* src, size_t size, bool 
             xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void*) (src + offset), send_size, portMAX_DELAY);
             size -= send_size;
             offset += send_size;
+            uart_enable_tx_intr(uart_num, 1, UART_EMPTY_THRESH_DEFAULT);
         }
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
-        uart_enable_tx_intr(uart_num, 1, UART_EMPTY_THRESH_DEFAULT);
     } else {
         while(size) {
             //semaphore for tx_fifo available

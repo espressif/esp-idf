@@ -89,6 +89,54 @@ config LWIP_DHCP_DOES_ARP_CHECK
         Enabling this option allows check if the offered IP address is not already
         in use by another host on the network.
 
+config TCPIP_TASK_STACK_SIZE
+    int "TCP/IP Task Stack Size"
+    default 2560
+    help
+       Configure TCP/IP task stack size, used by LWIP to process multi-threaded TCP/IP operations.
+       The default is 2560 bytes, setting this stack too small will result in stack overflow crashes.
+
+menuconfig PPP_SUPPORT
+    bool "Enable PPP support (new/experimental)"
+    default n
+    help
+        Enable PPP stack. Now only PPP over serial is possible.
+
+        PPP over serial support is experimental and unsupported.
+
+config PPP_PAP_SUPPORT
+   bool "Enable PAP support"
+   depends on PPP_SUPPORT
+   default n
+   help
+       Enable Password Authentication Protocol (PAP) support
+
+config PPP_CHAP_SUPPORT
+   bool "Enable CHAP support"
+   depends on PPP_SUPPORT
+   default n
+   help
+       Enable Challenge Handshake Authentication Protocol (CHAP) support
+
+config PPP_MSCHAP_SUPPORT
+   bool "Enable MSCHAP support"
+   depends on PPP_SUPPORT
+   default n
+   help
+       Enable Microsoft version of the Challenge-Handshake Authentication Protocol (MSCHAP) support
+
+config PPP_MPPE_SUPPORT
+   bool "Enable MPPE support"
+   depends on PPP_SUPPORT
+   default n
+   help
+       Enable Microsoft Point-to-Point Encryption (MPPE) support
+
+config PPP_DEBUG_ON
+   bool "Enable PPP debug log output"
+   depends on PPP_SUPPORT
+   default n
+   help
+       Enable PPP debug log output
+
 endmenu
-
-

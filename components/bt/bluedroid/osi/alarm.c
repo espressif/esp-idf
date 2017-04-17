@@ -27,6 +27,8 @@
 #include "freertos/FreeRTOSConfig.h"
 #include "freertos/xtensa_api.h"
 #include "rom/ets_sys.h"
+#include "btc_task.h"
+#include "btc_alarm.h"
 
 #define RTC_TIMER_TICKS_TO_MS(ticks)            (((ticks/625)<<1) + (ticks-(ticks/625)*625)/312)
 
@@ -36,11 +38,73 @@
 #define BT_ALARM_FREE_WAIT_TICKS    100
 #define BT_ALARM_CHG_PERIOD_WAIT_TICKS  100
 
+enum {
+    ALARM_STATE_IDLE,
+    ALARM_STATE_OPEN,
+};
+
+static osi_mutex_t alarm_mutex;
+static int alarm_state;
+
 static struct alarm_t alarm_cbs[ALARM_CBS_NUM];
 
+static int alarm_free(osi_alarm_t *alarm);
+
+int osi_alarm_create_mux(void)
+{
+    if (alarm_state != ALARM_STATE_IDLE) {
+        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        return -1;
+    }
+    osi_mutex_new(&alarm_mutex);
+    return 0;
+}
+
+int osi_alarm_delete_mux(void)
+{
+    if (alarm_state != ALARM_STATE_IDLE) {
+        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        return -1;
+    }
+    osi_mutex_free(&alarm_mutex);
+    return 0;
+}
+    
 void osi_alarm_init(void)
 {
-    memset(&alarm_cbs[0], 0x00, sizeof(alarm_cbs));
+    assert(alarm_mutex != NULL);
+    
+    osi_mutex_lock(&alarm_mutex);
+    if (alarm_state != ALARM_STATE_IDLE) {
+        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        goto end;
+    }
+    memset(alarm_cbs, 0x00, sizeof(alarm_cbs));
+    alarm_state = ALARM_STATE_OPEN;
+    
+end:
+    osi_mutex_unlock(&alarm_mutex);
+}
+
+void osi_alarm_deinit(void)
+{
+    assert(alarm_mutex != NULL);
+    
+    osi_mutex_lock(&alarm_mutex);
+    if (alarm_state != ALARM_STATE_OPEN) {
+        LOG_WARN("%s, invalid state %d\n", __func__, alarm_state);
+        goto end;
+    }
+    
+    for (int i = 0; i < ALARM_CBS_NUM; i++) {
+        if (alarm_cbs[i].alarm_hdl != NULL) {
+            alarm_free(&alarm_cbs[i]);
+        }
+    }
+    alarm_state = ALARM_STATE_IDLE;
+
+end:
+    osi_mutex_unlock(&alarm_mutex);
 }
 
 static struct alarm_t *alarm_cbs_lookfor_available(void)
@@ -60,103 +124,160 @@ static struct alarm_t *alarm_cbs_lookfor_available(void)
 static void alarm_cb_handler(TimerHandle_t xTimer)
 {
     struct alarm_t *alarm;
-
     if (!xTimer) {
         LOG_ERROR("TimerName: NULL\n");
         return;
     }
-
+    
     alarm = pvTimerGetTimerID(xTimer);
     LOG_DEBUG("TimerID %p, Name %s\n", alarm, pcTimerGetTimerName(xTimer));
-    if (alarm->cb) {
-        alarm->cb(alarm->cb_data);
-    }
+    
+    btc_msg_t msg;
+    btc_alarm_args_t arg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_ALARM;
+    arg.cb = alarm->cb;
+    arg.cb_data = alarm->cb_data;
+    btc_transfer_context(&msg, &arg, sizeof(btc_alarm_args_t), NULL);
 }
 
 osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void *data, period_ms_t timer_expire)
 {
-    struct alarm_t *timer_id;
-    TimerHandle_t t;
+    assert(alarm_mutex != NULL);
+
+    struct alarm_t *timer_id = NULL;
+    
+    osi_mutex_lock(&alarm_mutex);
+    if (alarm_state != ALARM_STATE_OPEN) {
+        LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
+        timer_id = NULL;
+        goto end;
+    }
+    
+    timer_id = alarm_cbs_lookfor_available();
+
+    if (!timer_id) {
+        LOG_ERROR("%s alarm_cbs exhausted\n", __func__);
+        timer_id = NULL;
+        goto end;
+    }
 
     if (timer_expire == 0) {
         timer_expire = 1000;
     }
 
-    /* TODO mutex lock */
-    timer_id = alarm_cbs_lookfor_available();
-    if (!timer_id) {
-        LOG_ERROR("%s full\n", __func__);
-        return NULL;
-    }
-
-    t = xTimerCreate(alarm_name, timer_expire / portTICK_PERIOD_MS, pdFALSE, timer_id, alarm_cb_handler);
+    TimerHandle_t t = xTimerCreate(alarm_name, timer_expire / portTICK_PERIOD_MS, pdFALSE, timer_id, alarm_cb_handler);
     if (!t) {
-        LOG_ERROR("%s error\n", __func__);
-        return NULL;
+        LOG_ERROR("%s failed to create timer\n", __func__);
+        timer_id = NULL;
+        goto end;
     }
 
     timer_id->alarm_hdl = t;
     timer_id->cb = callback;
     timer_id->cb_data = data;
-    /* TODO mutex unlock */
 
+end:
+    osi_mutex_unlock(&alarm_mutex);
     return timer_id;
 }
 
-int osi_alarm_free(osi_alarm_t *alarm)
+static int alarm_free(osi_alarm_t *alarm)
 {
-    if (!alarm) {
+    if (!alarm || alarm->alarm_hdl == NULL) {
         LOG_ERROR("%s null\n", __func__);
         return -1;
     }
 
     if (xTimerDelete(alarm->alarm_hdl, BT_ALARM_FREE_WAIT_TICKS) != pdPASS) {
-        LOG_ERROR("%s error\n", __func__);
+        LOG_ERROR("%s alarm delete error\n", __func__);
         return -2;
     }
-
-    /* TODO mutex lock */
-    memset(alarm, 0x00, sizeof(osi_alarm_t));
-    /* TODO mutex unlock */
-
+    
+    memset(alarm, 0, sizeof(osi_alarm_t));
     return 0;
+}
+
+int osi_alarm_free(osi_alarm_t *alarm)
+{
+    assert(alarm_mutex != NULL);
+    
+    int ret = 0;
+    osi_mutex_lock(&alarm_mutex);
+    if (alarm_state != ALARM_STATE_OPEN) {
+        LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
+        ret = -3;
+        goto end;
+    }
+    alarm_free(alarm);
+
+end:
+    osi_mutex_unlock(&alarm_mutex);
+    return ret;
 }
 
 
 int osi_alarm_set(osi_alarm_t *alarm, period_ms_t timeout)
 {
-    if (!alarm) {
-        LOG_ERROR("%s null\n", __func__);
-        return -1;
+    assert(alarm_mutex != NULL);
+    
+    int ret = 0;
+    osi_mutex_lock(&alarm_mutex);
+    if (alarm_state != ALARM_STATE_OPEN) {
+        LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
+        ret = -3;
+        goto end;
     }
-
+    
+    if (!alarm || alarm->alarm_hdl == NULL) {
+        LOG_ERROR("%s null\n", __func__);
+        ret = -1;
+        goto end;
+    }
+    
     if (xTimerChangePeriod(alarm->alarm_hdl, timeout / portTICK_PERIOD_MS, BT_ALARM_CHG_PERIOD_WAIT_TICKS) != pdPASS) {
         LOG_ERROR("%s chg period error\n", __func__);
-        return -2;
+        ret = -2;
+        goto end;
     }
 
     if (xTimerStart(alarm->alarm_hdl, BT_ALARM_START_WAIT_TICKS) != pdPASS) {
         LOG_ERROR("%s start error\n", __func__);
-        return -3;
+        ret = -2;
+        goto end;
     }
 
-    return 0;
+end:
+    osi_mutex_unlock(&alarm_mutex);
+    return ret;
 }
 
 
 int osi_alarm_cancel(osi_alarm_t *alarm)
 {
-    if (!alarm) {
+    int ret = 0;
+    osi_mutex_lock(&alarm_mutex);
+    if (alarm_state != ALARM_STATE_OPEN) {
+        LOG_ERROR("%s, invalid state %d\n", __func__, alarm_state);
+        ret = -3;
+        goto end;
+    }
+    
+    if (!alarm || alarm->alarm_hdl == NULL) {
         LOG_ERROR("%s null\n", __func__);
-        return -1;
+        ret = -1;
+        goto end;
     }
 
     if (xTimerStop(alarm->alarm_hdl, BT_ALARM_STOP_WAIT_TICKS) != pdPASS) {
-        LOG_ERROR("%s error\n", __func__);
-        return -2;
+        LOG_ERROR("%s failed to stop timer\n", __func__);
+        ret = -2;
+        goto end;
     }
 
-    return 0;
+end:
+    osi_mutex_unlock(&alarm_mutex);
+    return ret;
 }
 
 static uint32_t alarm_current_tick(void)

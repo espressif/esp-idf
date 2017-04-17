@@ -5,7 +5,7 @@ Overview
 --------
 The spi_flash component contains APIs related to reading, writing, erasing,
 memory mapping data in the external SPI flash. It also has higher-level
-APIs which work with partitions defined in the :doc:`partition table </partition-tables>`.
+APIs which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`.
 
 Note that all the functionality is limited to the "main" SPI flash chip,
 the same SPI flash chip from which program runs. For ``spi_flash_*`` functions,
@@ -67,7 +67,7 @@ IRAM-Safe Interrupt Handlers
 If you have an interrupt handler that you want to execute even when a flash
 operation is in progress (for example, for low latency operations), set the
 ``ESP_INTR_FLAG_IRAM`` flag when the :doc:`interrupt handler is registered
-</api/system/intr_alloc>`.
+</api-reference/system/intr_alloc>`.
 
 You must ensure all data and functions accessed by these interrupt handlers are
 located in IRAM or DRAM. This includes any functions that the handler calls.
@@ -104,7 +104,7 @@ Partition table APIs
 
 ESP-IDF projects use a partition table to maintain information about various regions of
 SPI flash memory (bootloader, various application binaries, data, filesystems).
-More information about partition tables can be found :doc:`here </partition-tables>`.
+More information about partition tables can be found :doc:`here </api-guides/partition-tables>`.
 
 This component provides APIs to enumerate partitions found in the partition table
 and perform operations on them. These functions are declared in ``esp_partition.h``:

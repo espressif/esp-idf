@@ -61,7 +61,7 @@ typedef struct {
     int tx_len_rem;
     int tx_sub_len;
     rmt_channel_t channel;
-    rmt_item32_t* tx_data;
+    const rmt_item32_t* tx_data;
     xSemaphoreHandle tx_sem;
     RingbufHandle_t tx_buf;
     RingbufHandle_t rx_buf;
@@ -344,8 +344,8 @@ esp_err_t rmt_set_tx_intr_en(rmt_channel_t channel, bool en)
 esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
-    RMT_CHECK(evt_thresh < 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
     if(en) {
+        RMT_CHECK(evt_thresh < 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
         RMT.tx_lim_ch[channel].limit = evt_thresh;
         rmt_set_tx_wrap_en(channel, true);
         rmt_set_intr_enable_mask(BIT(channel + 24));
@@ -373,7 +373,7 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
     return ESP_OK;
 }
 
-esp_err_t rmt_config(rmt_config_t* rmt_param)
+esp_err_t rmt_config(const rmt_config_t* rmt_param)
 {
     uint8_t mode = rmt_param->rmt_mode;
     uint8_t channel = rmt_param->channel;
@@ -464,7 +464,7 @@ esp_err_t rmt_config(rmt_config_t* rmt_param)
     return ESP_OK;
 }
 
-static void IRAM_ATTR rmt_fill_memory(rmt_channel_t channel, rmt_item32_t* item, uint16_t item_num, uint16_t mem_offset)
+static void IRAM_ATTR rmt_fill_memory(rmt_channel_t channel, const rmt_item32_t* item, uint16_t item_num, uint16_t mem_offset)
 {
     portENTER_CRITICAL(&rmt_spinlock);
     RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;
@@ -475,7 +475,7 @@ static void IRAM_ATTR rmt_fill_memory(rmt_channel_t channel, rmt_item32_t* item,
     }
 }
 
-esp_err_t rmt_fill_tx_items(rmt_channel_t channel, rmt_item32_t* item, uint16_t item_num, uint16_t mem_offset)
+esp_err_t rmt_fill_tx_items(rmt_channel_t channel, const rmt_item32_t* item, uint16_t item_num, uint16_t mem_offset)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, (0));
     RMT_CHECK((item != NULL), RMT_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
@@ -589,7 +589,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                 if(p_rmt->tx_data == NULL) {
                     //skip
                 } else {
-                    rmt_item32_t* pdata = p_rmt->tx_data;
+                    const rmt_item32_t* pdata = p_rmt->tx_data;
                     int len_rem = p_rmt->tx_len_rem;
                     if(len_rem >= p_rmt->tx_sub_len) {
                         rmt_fill_memory(channel, pdata, p_rmt->tx_sub_len, p_rmt->tx_offset);
@@ -678,7 +678,7 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
     return ESP_OK;
 }
 
-esp_err_t rmt_write_items(rmt_channel_t channel, rmt_item32_t* rmt_item, int item_num, bool wait_tx_done)
+esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, int item_num, bool wait_tx_done)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(p_rmt_obj[channel] != NULL, RMT_DRIVER_ERROR_STR, ESP_FAIL);

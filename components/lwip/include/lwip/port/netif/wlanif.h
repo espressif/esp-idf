@@ -26,7 +26,8 @@
 extern "C" {
 #endif
 
-err_t wlanif_init(struct netif *netif);
+err_t wlanif_init_ap(struct netif *netif);
+err_t wlanif_init_sta(struct netif *netif);
 
 void wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb);
 

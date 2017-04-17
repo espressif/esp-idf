@@ -70,7 +70,7 @@ static esp_ble_adv_data_t heart_rate_adv_config = {
     .p_manufacturer_data =  NULL, //&test_manufacturer[0],
     .service_data_len = 0,
     .p_service_data = NULL,
-    .service_uuid_len = 32,
+    .service_uuid_len = sizeof(heart_rate_service_uuid),
     .p_service_uuid = heart_rate_service_uuid,
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
@@ -263,16 +263,21 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     	case ESP_GATTS_CONGEST_EVT:
 		break;
     case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
-		ESP_LOGE(GATTS_TABLE_TAG, "The number handle =%x\n",param->add_attr_tab.num_handle);
-		if(param->add_attr_tab.num_handle == HRS_IDX_NB){			
-			memcpy(heart_rate_handle_table, param->add_attr_tab.handles, 
-					sizeof(heart_rate_handle_table));
-			esp_ble_gatts_start_service(heart_rate_handle_table[HRS_IDX_SVC]);
-		}
+        ESP_LOGI(GATTS_TABLE_TAG, "The number handle =%x\n",param->add_attr_tab.num_handle);
+        if (param->add_attr_tab.status != ESP_GATT_OK){
+            ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table failed, error code=0x%x", param->add_attr_tab.status);
+        }
+        else if (param->add_attr_tab.num_handle != HRS_IDX_NB){
+            ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table abnormally, num_handle (%d) \
+                    doesn't equal to HRS_IDX_NB(%d)", param->add_attr_tab.num_handle, HRS_IDX_NB);
+        }
+        else {
+            memcpy(heart_rate_handle_table, param->add_attr_tab.handles, sizeof(heart_rate_handle_table));
+            esp_ble_gatts_start_service(heart_rate_handle_table[HRS_IDX_SVC]);
+        }
+        break;
+                                      }
 
-		break;
-	}
-		
     default:
         break;
     }
@@ -313,7 +318,12 @@ void app_main()
 {
     esp_err_t ret;
 
-    esp_bt_controller_init();
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    ret = esp_bt_controller_init(&bt_cfg);
+    if (ret) {
+        ESP_LOGE(GATTS_TABLE_TAG, "%s enable controller failed\n", __func__);
+        return;
+    }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
     if (ret) {

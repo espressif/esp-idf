@@ -759,7 +759,9 @@ typedef struct {
     **      ACL Management
     ****************************************************/
     tACL_CONN   acl_db[MAX_L2CAP_LINKS];
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8       btm_scn[BTM_MAX_SCN];        /* current SCNs: TRUE if SCN is in use */
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     UINT16      btm_def_link_policy;
     UINT16      btm_def_link_super_tout;
 
@@ -815,9 +817,11 @@ typedef struct {
     tBTM_APPL_INFO          api;
 
 #define BTM_SEC_MAX_RMT_NAME_CALLBACKS  2
-    tBTM_RMT_NAME_CALLBACK  *p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS];
 
+    tBTM_RMT_NAME_CALLBACK  *p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS];
+#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC        *p_collided_dev_rec;
+#endif  ///SMP_INCLUDED == TRUE
     TIMER_LIST_ENT           sec_collision_tle;
     UINT32                   collision_start_time;
     UINT32                   max_collision_delay;
@@ -828,6 +832,7 @@ typedef struct {
     BOOLEAN                  security_mode_changed;  /* mode changed during bonding */
     BOOLEAN                  pin_type_changed;       /* pin type changed during bonding */
     BOOLEAN                  sec_req_pending;       /*   TRUE if a request is pending */
+#if (SMP_INCLUDED == TRUE)
 // btla-specific ++
 #ifdef PORCHE_PAIRING_CONFLICT
     UINT8                    pin_code_len_saved;     /* for legacy devices */
@@ -843,6 +848,7 @@ typedef struct {
     UINT16                   disc_handle;   /* for legacy devices */
     UINT8                    disc_reason;   /* for legacy devices */
     tBTM_SEC_SERV_REC        sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
+#endif  ///SMP_INCLUDED == TRUE
     tBTM_SEC_DEV_REC         sec_dev_rec[BTM_SEC_MAX_DEVICE_RECORDS];
     tBTM_SEC_SERV_REC       *p_out_serv;
     tBTM_MKEY_CALLBACK      *mkey_cback;
@@ -859,7 +865,6 @@ typedef struct {
     BOOLEAN                 paging;
     BOOLEAN                 discing;
     BUFFER_Q                sec_pending_q;  /* pending sequrity requests in tBTM_SEC_QUEUE_ENTRY format */
-
 #if  (!defined(BT_TRACE_VERBOSE) || (BT_TRACE_VERBOSE == FALSE))
     char state_temp_buffer[BTM_STATE_BUFFER_SIZE];
 #endif

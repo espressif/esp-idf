@@ -41,7 +41,6 @@
 
 // TODO(zachoverflow): find good value for this
 #define NUMBER_OF_BUCKETS 42
-uint16_t data_len = 0;
 
 // Our interface and callbacks
 static const packet_fragmenter_t interface;
@@ -129,7 +128,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
     LOG_DEBUG("reassemble_and_dispatch\n");
 
     if ((packet->event & MSG_EVT_MASK) == MSG_HC_TO_STACK_HCI_ACL) {
-        uint8_t *stream = packet->data;
+        uint8_t *stream = packet->data + packet->offset;
         uint16_t handle;
         uint16_t l2cap_length;
         uint16_t acl_length;
@@ -147,13 +146,9 @@ static void reassemble_and_dispatch(BT_HDR *packet)
 
         if (boundary_flag == START_PACKET_BOUNDARY) {
             if (partial_packet) {
-                LOG_DEBUG("%s found unfinished packet for handle with start packet. Dropping old.\n", __func__);
-                LOG_DEBUG("partial_packet->len = %x, offset = %x\n", partial_packet->len, partial_packet->len);
-
-               
+                LOG_WARN("%s found unfinished packet for handle with start packet. Dropping old.\n", __func__);
                 hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
-               
-              
+                buffer_allocator->free(partial_packet);
             }
 
             uint16_t full_length = l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;
@@ -171,7 +166,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             partial_packet->len = full_length;
             partial_packet->offset = packet->len;
 
-            memcpy(partial_packet->data, packet->data, packet->len);
+            memcpy(partial_packet->data, packet->data + packet->offset, packet->len);
 
             // Update the ACL data size to indicate the full expected length
             stream = partial_packet->data;
@@ -188,8 +183,9 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 return;
             }
 
-            packet->offset = HCI_ACL_PREAMBLE_SIZE;
-            uint16_t projected_offset = partial_packet->offset + (packet->len - HCI_ACL_PREAMBLE_SIZE);
+            packet->offset += HCI_ACL_PREAMBLE_SIZE; // skip ACL preamble
+            packet->len -= HCI_ACL_PREAMBLE_SIZE;
+            uint16_t projected_offset = partial_packet->offset + packet->len;
             if (projected_offset > partial_packet->len) { // len stores the expected length
                 LOG_ERROR("%s got packet which would exceed expected length of %d. Truncating.\n", __func__, partial_packet->len);
                 packet->len = partial_packet->len - partial_packet->offset;
@@ -199,7 +195,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             memcpy(
                 partial_packet->data + partial_packet->offset,
                 packet->data + packet->offset,
-                packet->len - packet->offset
+                packet->len
             );
 
             // Free the old packet buffer, since we don't need it anymore
@@ -207,15 +203,8 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             partial_packet->offset = projected_offset;
 
             if (partial_packet->offset == partial_packet->len) {
-                stream = partial_packet->data;
-                STREAM_TO_UINT16(handle, stream);
-                STREAM_TO_UINT16(acl_length, stream);
-                STREAM_TO_UINT16(l2cap_length, stream);
-                LOG_DEBUG("partial_packet->offset = %x\n", partial_packet->offset);
                 hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
                 partial_packet->offset = 0;
-
-
                 callbacks->reassembled(partial_packet);
             }
         }

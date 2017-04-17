@@ -20,6 +20,7 @@
 #include "btc_gattc.h"
 #include "btc_gatt_util.h"
 
+#if (GATTC_INCLUDED == TRUE)
 esp_err_t esp_ble_gattc_register_callback(esp_gattc_cb_t callback)
 {
     if (esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
@@ -323,15 +324,15 @@ esp_err_t esp_ble_gattc_write_char( esp_gatt_if_t gattc_if,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if, 
-                                        uint16_t conn_id,
-                                        esp_gatt_srvc_id_t *srvc_id,
-                                        esp_gatt_id_t *char_id,
-                                        esp_gatt_id_t *descr_id,
-                                        uint16_t value_len,
-                                        uint8_t *value,
-                                        esp_gatt_write_type_t write_type,
-                                        esp_gatt_auth_req_t auth_req)
+esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
+                                         uint16_t conn_id,
+                                         esp_gatt_srvc_id_t *srvc_id,
+                                         esp_gatt_id_t *char_id,
+                                         esp_gatt_id_t *descr_id,
+                                         uint16_t value_len,
+                                         uint8_t *value,
+                                         esp_gatt_write_type_t write_type,
+                                         esp_gatt_auth_req_t auth_req)
 {
     btc_msg_t msg;
     btc_ble_gattc_args_t arg;
@@ -339,7 +340,7 @@ esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-    
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_WRITE_CHAR_DESCR;
@@ -364,14 +365,13 @@ esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if,
                                       uint8_t *value,
                                       esp_gatt_auth_req_t auth_req)
 {
-    //TODO: Review this function
     btc_msg_t msg;
     btc_ble_gattc_args_t arg;
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-    
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_PREPARE_WRITE;
@@ -382,6 +382,38 @@ esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if,
     arg.prep_write.value_len = value_len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : value_len; // length check ?
     arg.prep_write.value = value;
     arg.prep_write.auth_req = auth_req;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gattc_prepare_write_char_descr(esp_gatt_if_t gattc_if,
+                                                 uint16_t conn_id,
+                                                 esp_gatt_srvc_id_t *srvc_id,
+                                                 esp_gatt_id_t *char_id,
+                                                 esp_gatt_id_t *descr_id,
+                                                 uint16_t offset,
+                                                 uint16_t value_len,
+                                                 uint8_t *value,
+                                                 esp_gatt_auth_req_t auth_req)
+{
+    btc_msg_t msg;
+    btc_ble_gattc_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GATTC;
+    msg.act = BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR;
+    arg.prep_write_descr.conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn_id);
+    memcpy(&arg.prep_write_descr.service_id, srvc_id, sizeof(esp_gatt_srvc_id_t));
+    memcpy(&arg.prep_write_descr.char_id, char_id, sizeof(esp_gatt_id_t));
+    memcpy(&arg.prep_write_descr.descr_id, descr_id, sizeof(esp_gatt_id_t));
+    arg.prep_write_descr.offset = offset;
+    arg.prep_write_descr.value_len = value_len > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : value_len; // length check ?
+    arg.prep_write_descr.value = value;
+    arg.prep_write_descr.auth_req = auth_req;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -449,4 +481,6 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+#endif  ///GATTC_INCLUDED == TRUE
 

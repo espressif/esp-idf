@@ -20,7 +20,6 @@
 #include <stdbool.h>
 #include "rom/queue.h"
 #include "esp_err.h"
-#include "esp_wifi_types.h"
 #include "esp_interface.h"
 
 #ifdef __cplusplus
@@ -96,16 +95,35 @@ typedef enum {
     WIFI_SECOND_CHAN_BELOW,     /**< the channel width is HT40 and the second channel is below the primary channel */
 } wifi_second_chan_t;
 
+typedef enum {
+    WIFI_SCAN_TYPE_ACTIVE = 0,  /**< active scan */
+    WIFI_SCAN_TYPE_PASSIVE,     /**< passive scan */
+} wifi_scan_type_t;
+
 typedef struct {
-    uint8_t *ssid;       /**< SSID of AP */
-    uint8_t *bssid;      /**< MAC address of AP */
-    uint8_t channel;     /**< channel, scan the specific channel */
-    bool show_hidden;    /**< enable to scan AP whose SSID is hidden */
+    uint32_t min;  /**< minimum active scan time per channel, units: millisecond */
+    uint32_t max;  /**< maximum active scan time per channel, units: millisecond, values above 1500ms may
+                                          cause station to disconnect from AP and are not recommended.  */
+} wifi_active_scan_time_t;
+
+typedef union {
+    wifi_active_scan_time_t active;  /**< active scan time per channel */
+    uint32_t passive;                /**< passive scan time per channel, units: millisecond, values above 1500ms may
+                                          cause station to disconnect from AP and are not recommended. */
+} wifi_scan_time_t;
+
+typedef struct {
+    uint8_t *ssid;               /**< SSID of AP */
+    uint8_t *bssid;              /**< MAC address of AP */
+    uint8_t channel;             /**< channel, scan the specific channel */
+    bool show_hidden;            /**< enable to scan AP whose SSID is hidden */
+    wifi_scan_type_t scan_type;  /**< scan type, active or passive */
+    wifi_scan_time_t scan_time;  /**< scan time per channel */
 } wifi_scan_config_t;
 
 typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
-    uint8_t ssid[32];                     /**< SSID of AP */
+    uint8_t ssid[33];                     /**< SSID of AP */
     uint8_t primary;                      /**< channel of AP */
     wifi_second_chan_t second;            /**< second channel of AP */
     int8_t  rssi;                         /**< signal strength of AP */
@@ -145,6 +163,7 @@ typedef struct {
     uint8_t password[64];  /**< password of target AP*/
     bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];     /**< MAC address of target AP*/
+    uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
 } wifi_sta_config_t;
 
 typedef union {

@@ -32,6 +32,7 @@
 #include "bta_dm_int.h"
 #include "btm_api.h"
 
+#if (BTM_SSR_INCLUDED == TRUE)
 
 static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_mode,
@@ -45,6 +46,7 @@ static void bta_dm_pm_hid_check(BOOLEAN bScoActive);
 static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisable);
 static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER *p_timer,
         UINT8 timer_idx);
+#endif///BTM_SSR_INCLUDED == TRUE
 
 #if (BTM_SSR_INCLUDED == TRUE)
 #if (defined BTA_HH_INCLUDED && BTA_HH_INCLUDED == TRUE)
@@ -53,7 +55,6 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER *p_timer,
 #define BTA_DM_PM_SSR_HH      BTA_DM_PM_SSR1
 #endif
 static void bta_dm_pm_ssr(BD_ADDR peer_addr);
-#endif
 
 tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
 
@@ -700,7 +701,9 @@ static BOOLEAN bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE *p_peer_dev, UINT8 index)
 #endif
 
     BTM_ReadPowerMode(p_peer_dev->peer_bdaddr, &mode);
+#if (BTM_SSR_INCLUDED == TRUE)
     p_rem_feat = BTM_ReadRemoteFeatures (p_peer_dev->peer_bdaddr);
+#endif  ///BTM_SSR_INCLUDED == TRUE
 #if (BTM_SSR_INCLUDED == TRUE)
     APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d, info:x%x", mode, index, p_peer_dev->info);
     if (mode != BTM_PM_MD_SNIFF ||
@@ -1013,6 +1016,8 @@ void bta_dm_pm_timer(tBTA_DM_MSG *p_data)
     APPL_TRACE_EVENT("%s", __func__);
     bta_dm_pm_set_mode(p_data->pm_timer.bd_addr, p_data->pm_timer.pm_request, BTA_DM_PM_EXECUTE);
 }
+#endif  ///BTM_SSR_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -1037,6 +1042,7 @@ tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr)
     return p_dev;
 }
 
+#if (BTM_SSR_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_is_sco_active
@@ -1133,8 +1139,9 @@ static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisa
     BTM_SetLinkPolicy(p_dev->peer_bdaddr, &policy_setting);
 
 }
+#endif  ///BTM_SSR_INCLUDED == TRUE
 
-#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
+#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_pm_obtain_controller_state
@@ -1156,3 +1163,4 @@ tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void)
     return cur_state;
 }
 #endif
+

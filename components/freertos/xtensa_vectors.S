@@ -94,6 +94,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "esp_panic.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#include "soc/dport_reg.h"
+
 /*
   Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
   Please change this when the tcb structure is changed

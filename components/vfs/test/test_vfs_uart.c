@@ -50,8 +50,8 @@ TEST_CASE("can read from stdin", "[vfs]")
 
     const size_t count = 12;
     srand(count);
-    char* data = (char*) calloc(1, count * 8 + 1);
-    char* buf = (char*) calloc(1, count * 8 + 1);
+    char* data = (char*) calloc(1, count * 8 + 2);
+    char* buf = (char*) calloc(1, count * 8 + 2);
     char* p = data;
     for (size_t i = 0; i < count; ++i) {
         p += sprintf(p, "%08x", rand());
@@ -62,6 +62,9 @@ TEST_CASE("can read from stdin", "[vfs]")
     size_t cb = fread(buf, 1, len, stdin);
     TEST_ASSERT_EQUAL(len, cb);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(data, buf, len);
+
+    free(data);
+    free(buf);
 }
 
 

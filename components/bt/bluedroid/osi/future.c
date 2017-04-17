@@ -23,7 +23,7 @@
 #include "osi.h"
 #include "osi_arch.h"
 
-static void future_free(future_t *future);
+void future_free(future_t *future);
 
 future_t *future_new(void)
 {
@@ -85,7 +85,7 @@ void *future_await(future_t *future)
     return result;
 }
 
-static void future_free(future_t *future)
+void future_free(future_t *future)
 {
     if (!future) {
         return;

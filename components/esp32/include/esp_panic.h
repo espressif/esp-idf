@@ -62,6 +62,18 @@ esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags);
 void esp_clear_watchpoint(int no);
 
 
+/**
+ * @brief Stops panic WDT
+ */
+void esp_panic_wdt_stop(void);
+
+/**
+ * @brief Checks stack pointer
+ */
+static inline bool esp_stack_ptr_is_sane(uint32_t sp)
+{
+	return !(sp < 0x3ffae010UL || sp > 0x3ffffff0UL || ((sp & 0xf) != 0));
+}
 #endif
 
 #ifdef __cplusplus

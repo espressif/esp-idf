@@ -7,3 +7,5 @@ PROJECT_NAME := unit-test-app
 
 include $(IDF_PATH)/make/project.mk
 
+print_flash_cmd:
+	echo $(ESPTOOL_WRITE_FLASH_OPTIONS) $(ESPTOOL_ALL_FLASH_ARGS) | sed -e 's:'$(PWD)/build/'::g'

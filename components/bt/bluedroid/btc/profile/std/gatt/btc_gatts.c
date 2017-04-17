@@ -24,6 +24,8 @@
 #include "btc_main.h"
 #include "esp_gatts_api.h"
 
+#if (GATTS_INCLUDED == TRUE)
+
 #define A2C_GATTS_EVT(_bta_event) (_bta_event) //BTA TO BTC EVT
 #define C2A_GATTS_EVT(_btc_event) (_btc_event) //BTC TO BTA EVT
 
@@ -166,6 +168,31 @@ void btc_gatts_arg_deep_free(btc_msg_t *msg)
         }
         break;
     }
+    case BTC_GATTS_ACT_ADD_CHAR:{
+        if (arg->add_char.char_val.attr_value != NULL) {
+            GKI_freebuf(arg->add_char.char_val.attr_value);
+        }
+        break;
+    }
+    case BTC_GATTS_ACT_ADD_CHAR_DESCR:{
+        if (arg->add_descr.descr_val.attr_value != NULL){
+            GKI_freebuf(arg->add_descr.descr_val.attr_value);
+        }
+        break;
+    }
+    case BTC_GATTS_ACT_CREATE_ATTR_TAB:{
+        if (arg->create_attr_tab.gatts_attr_db != NULL){
+            GKI_freebuf(arg->create_attr_tab.gatts_attr_db);
+        }
+        break;
+    }
+    case BTC_GATTS_ACT_SET_ATTR_VALUE:{
+        if (arg->set_attr_val.value != NULL){
+            GKI_freebuf(arg->set_attr_val.value);
+        }
+    }
+        break;
+
     default:
         LOG_DEBUG("%s Unhandled deep free %d\n", __func__, msg->act);
         break;
@@ -181,6 +208,19 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
     uint16_t uuid = 0;
     future_t *future_p;
     esp_ble_gatts_cb_param_t param;
+    param.add_attr_tab.status = ESP_GATT_OK;
+    param.add_attr_tab.num_handle = max_nb_attr;
+
+    // To add a large attribute table, need to enlarge BTC_TASK_QUEUE_NUM
+    if (max_nb_attr > BTC_TASK_QUEUE_NUM){
+        param.add_attr_tab.status = ESP_GATT_NO_RESOURCES;
+    }
+
+    if (param.add_attr_tab.status != ESP_GATT_OK){
+        btc_gatts_cb_to_app(ESP_GATTS_CREAT_ATTR_TAB_EVT, gatts_if, &param);
+        return;
+    }
+
 
     //set the attribute table create service flag to true
     btc_creat_tab_env.is_tab_creat_svc = true;
@@ -320,14 +360,13 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                 break;
             }
             default:
+                future_free(future_p);
                 break;
         }
 
         
     }
 
-    param.add_attr_tab.status = ESP_GATT_OK;
-    param.add_attr_tab.num_handle = max_nb_attr;
     param.add_attr_tab.handles = btc_creat_tab_env.handles;
     memcpy(&param.add_attr_tab.svc_uuid, &btc_creat_tab_env.svc_uuid, sizeof(esp_bt_uuid_t));
 
@@ -532,7 +571,8 @@ void btc_gatts_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_GATTS_ACT_SET_ATTR_VALUE:
-    
+        BTA_SetAttributeValue(arg->set_attr_val.handle, arg->set_attr_val.length, 
+                              arg->set_attr_val.value);
     break;
     case BTC_GATTS_ACT_OPEN: {
         // Ensure device is in inquiry database
@@ -753,3 +793,5 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 
     btc_gatts_cb_param_copy_free(msg, p_data);
 }
+
+#endif  ///GATTS_INCLUDED

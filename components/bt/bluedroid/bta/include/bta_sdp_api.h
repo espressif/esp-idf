@@ -30,6 +30,7 @@
 #include "bta_api.h"
 #include "btm_api.h"
 
+#if (SDP_INCLUDED == TRUE)
 /* status values */
 #define BTA_SDP_SUCCESS                  0            /* Successful operation. */
 #define BTA_SDP_FAILURE                  1            /* Generic failure. */
@@ -70,7 +71,9 @@ typedef void (tBTA_SDP_DM_CBACK)(tBTA_SDP_EVT event, tBTA_SDP *p_data, void *use
 /* MCE configuration structure */
 typedef struct {
     UINT16  sdp_db_size;            /* The size of p_sdp_db */
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISCOVERY_DB   *p_sdp_db;  /* The data buffer to keep SDP database */
+#endif  ///SDP_INCLUDED == TRUE
 } tBTA_SDP_CFG;
 
 #ifdef __cplusplus
@@ -138,5 +141,7 @@ extern tBTA_SDP_STATUS BTA_SdpRemoveRecordByUser(void *user_data);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///SDP_INCLUDED == TRUE
 
 #endif /* BTA_SDP_API_H */

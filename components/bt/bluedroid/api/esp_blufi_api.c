@@ -21,6 +21,7 @@
 #include "btc_manage.h"
 #include "btc_main.h"
 #include "future.h"
+#include "btc_gatts.h"
 
 esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
 {
@@ -92,3 +93,17 @@ uint16_t esp_blufi_get_version(void)
     return btc_blufi_get_version();
 }
 
+esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
+{
+    btc_msg_t msg;
+    btc_ble_gatts_args_t arg;
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GATTS;
+    msg.act = BTC_GATTS_ACT_CLOSE;
+    arg.close.conn_id = conn_id;
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}

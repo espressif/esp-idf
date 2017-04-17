@@ -23,6 +23,7 @@
 #include <unity.h>
 #include <test_utils.h>
 #include <esp_partition.h>
+#include <esp_attr.h>
 
 TEST_CASE("Test erase partition", "[spi_flash]")
 {
@@ -40,7 +41,7 @@ TEST_CASE("Test erase partition", "[spi_flash]")
 #endif
 
     // put some dummy data on sector boundaries
-    const char *some_data = "abcdefghijklmn";
+    const static DRAM_ATTR char some_data[] = "abcdefghijklmn";
     for (int i = 0; i < part->size; i+= 4096) {
         ESP_ERROR_CHECK( esp_partition_write(part, i, some_data, strlen(some_data)) );
     }
@@ -64,5 +65,4 @@ TEST_CASE("Test erase partition", "[spi_flash]")
             TEST_ASSERT_EQUAL_HEX8(0xFF, buf[i]);
         }
     }
-
 }

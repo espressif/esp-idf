@@ -59,6 +59,7 @@
 static tcpip_init_done_fn tcpip_init_done;
 static void *tcpip_init_done_arg;
 static sys_mbox_t mbox;
+sys_thread_t g_lwip_task = NULL;
 
 #if LWIP_TCPIP_CORE_LOCKING
 /** The global semaphore to lock the stack. */
@@ -226,7 +227,7 @@ tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
 #endif
 
   if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {
-    ESP_STATS_INC(esp.tcpip_inpkt_post_fail);
+    ESP_STATS_DROP_INC(esp.tcpip_inpkt_post_fail);
     memp_free(MEMP_TCPIP_MSG_INPKT, msg);
     return ERR_MEM;
   }
@@ -283,7 +284,7 @@ tcpip_callback_with_block(tcpip_callback_fn function, void *ctx, u8_t block)
       sys_mbox_post(&mbox, msg);
     } else {
       if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {
-        ESP_STATS_INC(esp.tcpip_cb_post_fail);
+        ESP_STATS_DROP_INC(esp.tcpip_cb_post_fail);
         memp_free(MEMP_TCPIP_MSG_API, msg);
         return ERR_MEM;
       }
@@ -498,11 +499,11 @@ tcpip_init(tcpip_init_done_fn initfunc, void *arg)
 #endif /* LWIP_TCPIP_CORE_LOCKING */
 
 
-  sys_thread_t xLwipTaskHandle = sys_thread_new(TCPIP_THREAD_NAME
+  g_lwip_task = sys_thread_new(TCPIP_THREAD_NAME
                 , tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, TCPIP_THREAD_PRIO);
 
   LWIP_DEBUGF(TCPIP_DEBUG, ("tcpip_task_hdlxxx : %x, prio:%d,stack:%d\n",
-		 (u32_t)xLwipTaskHandle,TCPIP_THREAD_PRIO,TCPIP_THREAD_STACKSIZE));
+		 (u32_t)g_lwip_task,TCPIP_THREAD_PRIO,TCPIP_THREAD_STACKSIZE));
 
 }
 

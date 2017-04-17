@@ -21,6 +21,7 @@
 //#include "bt_utils.h"
 #include "gap_int.h"
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gap_allocate_cb
@@ -136,3 +137,5 @@ UINT16 gap_convert_btm_status (tBTM_STATUS btm_status)
         return (GAP_ERR_PROCESSING);
     }
 }
+
+#endif  ///CLASSIC_BT_INCLUDED == TRUE

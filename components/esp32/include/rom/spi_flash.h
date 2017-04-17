@@ -65,81 +65,81 @@ extern "C" {
  *************************************************************
  */
 
-#define PERIPHS_SPI_FLASH_CMD               SPI_CMD(1)
-#define PERIPHS_SPI_FLASH_ADDR              SPI_ADDR(1)
-#define PERIPHS_SPI_FLASH_CTRL              SPI_CTRL(1)
-#define PERIPHS_SPI_FLASH_CTRL1             SPI_CTRL1(1)
-#define PERIPHS_SPI_FLASH_STATUS            SPI_RD_STATUS(1)
-#define PERIPHS_SPI_FLASH_USRREG            SPI_USER(1)
-#define PERIPHS_SPI_FLASH_USRREG1           SPI_USER1(1)
-#define PERIPHS_SPI_FLASH_USRREG2           SPI_USER2(1)
-#define PERIPHS_SPI_FLASH_C0                SPI_W0(1)
-#define PERIPHS_SPI_FLASH_C1                SPI_W1(1)
-#define PERIPHS_SPI_FLASH_C2                SPI_W2(1)
-#define PERIPHS_SPI_FLASH_C3                SPI_W3(1)
-#define PERIPHS_SPI_FLASH_C4                SPI_W4(1)
-#define PERIPHS_SPI_FLASH_C5                SPI_W5(1)
-#define PERIPHS_SPI_FLASH_C6                SPI_W6(1)
-#define PERIPHS_SPI_FLASH_C7                SPI_W7(1)
-#define PERIPHS_SPI_FLASH_TX_CRC            SPI_TX_CRC(1)
+#define PERIPHS_SPI_FLASH_CMD                 SPI_CMD_REG(1)
+#define PERIPHS_SPI_FLASH_ADDR                SPI_ADDR_REG(1)
+#define PERIPHS_SPI_FLASH_CTRL                SPI_CTRL_REG(1)
+#define PERIPHS_SPI_FLASH_CTRL1               SPI_CTRL1_REG(1)
+#define PERIPHS_SPI_FLASH_STATUS              SPI_RD_STATUS_REG(1)
+#define PERIPHS_SPI_FLASH_USRREG              SPI_USER_REG(1)
+#define PERIPHS_SPI_FLASH_USRREG1             SPI_USER1_REG(1)
+#define PERIPHS_SPI_FLASH_USRREG2             SPI_USER2_REG(1)
+#define PERIPHS_SPI_FLASH_C0                  SPI_W0_REG(1)
+#define PERIPHS_SPI_FLASH_C1                  SPI_W1_REG(1)
+#define PERIPHS_SPI_FLASH_C2                  SPI_W2_REG(1)
+#define PERIPHS_SPI_FLASH_C3                  SPI_W3_REG(1)
+#define PERIPHS_SPI_FLASH_C4                  SPI_W4_REG(1)
+#define PERIPHS_SPI_FLASH_C5                  SPI_W5_REG(1)
+#define PERIPHS_SPI_FLASH_C6                  SPI_W6_REG(1)
+#define PERIPHS_SPI_FLASH_C7                  SPI_W7_REG(1)
+#define PERIPHS_SPI_FLASH_TX_CRC              SPI_TX_CRC_REG(1)
 
-#define SPI0_R_QIO_DUMMY_CYCLELEN           3
-#define SPI0_R_QIO_ADDR_BITSLEN             31
-#define SPI0_R_FAST_DUMMY_CYCLELEN          7
-#define SPI0_R_DIO_DUMMY_CYCLELEN           3
-#define SPI0_R_FAST_ADDR_BITSLEN            23
-#define SPI0_R_SIO_ADDR_BITSLEN             23
+#define SPI0_R_QIO_DUMMY_CYCLELEN             3
+#define SPI0_R_QIO_ADDR_BITSLEN               31
+#define SPI0_R_FAST_DUMMY_CYCLELEN            7
+#define SPI0_R_DIO_DUMMY_CYCLELEN             3
+#define SPI0_R_FAST_ADDR_BITSLEN              23
+#define SPI0_R_SIO_ADDR_BITSLEN               23
 
-#define SPI1_R_QIO_DUMMY_CYCLELEN           3
-#define SPI1_R_QIO_ADDR_BITSLEN             31
-#define SPI1_R_FAST_DUMMY_CYCLELEN          7
-#define SPI1_R_DIO_DUMMY_CYCLELEN           3
-#define SPI1_R_DIO_ADDR_BITSLEN             31
-#define SPI1_R_FAST_ADDR_BITSLEN            23
-#define SPI1_R_SIO_ADDR_BITSLEN             23
+#define SPI1_R_QIO_DUMMY_CYCLELEN             3
+#define SPI1_R_QIO_ADDR_BITSLEN               31
+#define SPI1_R_FAST_DUMMY_CYCLELEN            7
+#define SPI1_R_DIO_DUMMY_CYCLELEN             3
+#define SPI1_R_DIO_ADDR_BITSLEN               31
+#define SPI1_R_FAST_ADDR_BITSLEN              23
+#define SPI1_R_SIO_ADDR_BITSLEN               23
 
-#define SPI_W_SIO_ADDR_BITSLEN              23
+#define ESP_ROM_SPIFLASH_W_SIO_ADDR_BITSLEN   23
 
-#define TWO_BYTE_STATUS_EN                  SPI_WRSR_2B
+#define ESP_ROM_SPIFLASH_TWO_BYTE_STATUS_EN   SPI_WRSR_2B
 
 //SPI address register
-#define SPI_FLASH_BYTES_LEN                 24
-#define SPI_BUFF_BYTE_WRITE_NUM             32
-#define SPI_BUFF_BYTE_READ_NUM              64
-#define SPI_BUFF_BYTE_READ_BITS             0x3f
+#define ESP_ROM_SPIFLASH_BYTES_LEN            24
+#define ESP_ROM_SPIFLASH_BUFF_BYTE_WRITE_NUM  32
+#define ESP_ROM_SPIFLASH_BUFF_BYTE_READ_NUM   64
+#define ESP_ROM_SPIFLASH_BUFF_BYTE_READ_BITS  0x3f
 
 //SPI status register
-#define  SPI_FLASH_BUSY_FLAG                BIT0
-#define  SPI_FLASH_WRENABLE_FLAG            BIT1
-#define  SPI_FLASH_BP0                      BIT2
-#define  SPI_FLASH_BP1                      BIT3
-#define  SPI_FLASH_BP2                      BIT4
-#define  FLASH_WR_PROTECT                   (SPI_FLASH_BP0|SPI_FLASH_BP1|SPI_FLASH_BP2)
-#define  SPI_FLASH_QE                       BIT9
+#define  ESP_ROM_SPIFLASH_BUSY_FLAG           BIT0
+#define  ESP_ROM_SPIFLASH_WRENABLE_FLAG       BIT1
+#define  ESP_ROM_SPIFLASH_BP0                 BIT2
+#define  ESP_ROM_SPIFLASH_BP1                 BIT3
+#define  ESP_ROM_SPIFLASH_BP2                 BIT4
+#define  ESP_ROM_SPIFLASH_WR_PROTECT          (ESP_ROM_SPIFLASH_BP0|ESP_ROM_SPIFLASH_BP1|ESP_ROM_SPIFLASH_BP2)
+#define  ESP_ROM_SPIFLASH_QE                  BIT9
 
 typedef enum {
-    SPI_FLASH_QIO_MODE = 0,
-    SPI_FLASH_QOUT_MODE,
-    SPI_FLASH_DIO_MODE,
-    SPI_FLASH_DOUT_MODE,
-    SPI_FLASH_FASTRD_MODE,
-    SPI_FLASH_SLOWRD_MODE
-} SpiFlashRdMode;
+    ESP_ROM_SPIFLASH_QIO_MODE = 0,
+    ESP_ROM_SPIFLASH_QOUT_MODE,
+    ESP_ROM_SPIFLASH_DIO_MODE,
+    ESP_ROM_SPIFLASH_DOUT_MODE,
+    ESP_ROM_SPIFLASH_FASTRD_MODE,
+    ESP_ROM_SPIFLASH_SLOWRD_MODE
+} esp_rom_spiflash_read_mode_t;
 
 typedef enum {
-    SPI_FLASH_RESULT_OK,
-    SPI_FLASH_RESULT_ERR,
-    SPI_FLASH_RESULT_TIMEOUT
-} SpiFlashOpResult;
+    ESP_ROM_SPIFLASH_RESULT_OK,
+    ESP_ROM_SPIFLASH_RESULT_ERR,
+    ESP_ROM_SPIFLASH_RESULT_TIMEOUT
+} esp_rom_spiflash_result_t;
 
 typedef struct {
-    uint32_t deviceId;
+    uint32_t device_id;
     uint32_t chip_size;    // chip size in bytes
     uint32_t block_size;
     uint32_t sector_size;
     uint32_t page_size;
     uint32_t status_mask;
-} SpiFlashChip;
+} esp_rom_spiflash_chip_t;
 
 typedef struct {
     uint8_t  data_length;
@@ -148,7 +148,7 @@ typedef struct {
     uint8_t  write_cmd;
     uint16_t data_mask;
     uint16_t data;
-} SpiCommonCmd;
+} esp_rom_spiflash_common_cmd_t;
 
 /**
   * @brief Fix the bug in SPI hardware communication with Flash/Ext-SRAM in High Speed.
@@ -160,7 +160,7 @@ typedef struct {
   *
   * @return None
   */
-void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
+void esp_rom_spiflash_fix_dummylen(uint8_t spi, uint8_t freqdiv);
 
 /**
   * @brief Select SPI Flash to QIO mode when WP pad is read from Flash.
@@ -173,7 +173,7 @@ void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
   *
   * @return None
   */
-void SelectSpiQIO(uint8_t wp_gpio_num, uint32_t ishspi);
+void esp_rom_spiflash_select_qiomode(uint8_t wp_gpio_num, uint32_t ishspi);
 
 /**
   * @brief Set SPI Flash pad drivers.
@@ -191,7 +191,7 @@ void SelectSpiQIO(uint8_t wp_gpio_num, uint32_t ishspi);
   *
   * @return None
   */
-void SetSpiDrvs(uint8_t wp_gpio_num, uint32_t ishspi, uint8_t *drvs);
+void esp_rom_spiflash_set_drvs(uint8_t wp_gpio_num, uint32_t ishspi, uint8_t *drvs);
 
 /**
   * @brief Select SPI Flash function for pads.
@@ -202,7 +202,7 @@ void SetSpiDrvs(uint8_t wp_gpio_num, uint32_t ishspi, uint8_t *drvs);
   *
   * @return None
   */
-void SelectSpiFunction(uint32_t ishspi);
+void esp_rom_spiflash_select_padsfunc(uint32_t ishspi);
 
 /**
   * @brief SPI Flash init, clock divisor is 4, use 1 line Slow read mode.
@@ -215,89 +215,77 @@ void SelectSpiFunction(uint32_t ishspi);
   *
   * @return None
   */
-void spi_flash_attach(uint32_t ishspi, bool legacy);
+void esp_rom_spiflash_attach(uint32_t ishspi, bool legacy);
 
 /**
   * @brief SPI Read Flash status register. We use CMD 0x05 (RDSR).
   *    Please do not call this function in SDK.
   *
-  * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
+  * @param  esp_rom_spiflash_chip_t *spi : The information for Flash, which is exported from ld file.
   *
   * @param  uint32_t *status : The pointer to which to return the Flash status value.
   *
-  * @return SPI_FLASH_RESULT_OK : read OK.
-  *         SPI_FLASH_RESULT_ERR : read error.
-  *         SPI_FLASH_RESULT_TIMEOUT : read timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : read OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : read error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : read timeout.
   */
-SpiFlashOpResult SPI_read_status(SpiFlashChip *spi, uint32_t *status);
+esp_rom_spiflash_result_t esp_rom_spiflash_read_status(esp_rom_spiflash_chip_t *spi, uint32_t *status);
 
 /**
   * @brief SPI Read Flash status register bits 8-15. We use CMD 0x35 (RDSR2).
   *        Please do not call this function in SDK.
   *
-  * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
+  * @param  esp_rom_spiflash_chip_t *spi : The information for Flash, which is exported from ld file.
   *
   * @param  uint32_t *status : The pointer to which to return the Flash status value.
   *
-  * @return SPI_FLASH_RESULT_OK : read OK.
-  *         SPI_FLASH_RESULT_ERR : read error.
-  *         SPI_FLASH_RESULT_TIMEOUT : read timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : read OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : read error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : read timeout.
   */
-SpiFlashOpResult SPI_read_status_high(uint32_t *status);
+esp_rom_spiflash_result_t esp_rom_spiflash_read_statushigh(esp_rom_spiflash_chip_t *spi, uint32_t *status);
 
 /**
   * @brief Write status to Falsh status register.
   *        Please do not call this function in SDK.
   *
-  * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
+  * @param  esp_rom_spiflash_chip_t *spi : The information for Flash, which is exported from ld file.
   *
   * @param  uint32_t status_value : Value to .
   *
-  * @return SPI_FLASH_RESULT_OK : write OK.
-  *         SPI_FLASH_RESULT_ERR : write error.
-  *         SPI_FLASH_RESULT_TIMEOUT : write timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : write OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : write error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : write timeout.
   */
-SpiFlashOpResult SPI_write_status(SpiFlashChip *spi, uint32_t status_value);
+esp_rom_spiflash_result_t esp_rom_spiflash_write_status(esp_rom_spiflash_chip_t *spi, uint32_t status_value);
 
 /**
   * @brief Use a command to Read Flash status register.
   *        Please do not call this function in SDK.
   *
-  * @param  SpiFlashChip *spi : The information for Flash, which is exported from ld file.
+  * @param  esp_rom_spiflash_chip_t *spi : The information for Flash, which is exported from ld file.
   *
   * @param  uint32_t*status : The pointer to which to return the Flash status value.
   *
-  * @return SPI_FLASH_RESULT_OK : read OK.
-  *         SPI_FLASH_RESULT_ERR : read error.
-  *         SPI_FLASH_RESULT_TIMEOUT : read timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : read OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : read error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : read timeout.
   */
-SpiFlashOpResult SPI_user_command_read(uint32_t *status, uint8_t cmd);
+esp_rom_spiflash_result_t esp_rom_spiflash_read_user_cmd(uint32_t *status, uint8_t cmd);
 
 /**
   * @brief Config SPI Flash read mode when init.
   *        Please do not call this function in SDK.
   *
-  * @param  SpiFlashRdMode mode : QIO/QOUT/DIO/DOUT/FastRD/SlowRD.
+  * @param  esp_rom_spiflash_read_mode_t mode : QIO/QOUT/DIO/DOUT/FastRD/SlowRD.
   *
-  * @param  uint8_t legacy: In legacy mode, more SPI command is used in line.
+  * This function does not try to set the QIO Enable bit in the status register, caller is responsible for this.
   *
-  * @return SPI_FLASH_RESULT_OK : config OK.
-  *         SPI_FLASH_RESULT_ERR : config error.
-  *         SPI_FLASH_RESULT_TIMEOUT : config timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : config OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : config error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : config timeout.
   */
-SpiFlashOpResult SPIReadModeCnfig(SpiFlashRdMode mode, bool legacy);
-
-/**
-  * @brief Config SPI Flash read mode when Flash is running in some mode.
-  *        Please do not call this function in SDK.
-  *
-  * @param  SpiFlashRdMode mode : QIO/QOUT/DIO/DOUT/FastRD/SlowRD.
-  *
-  * @return SPI_FLASH_RESULT_OK : config OK.
-  *         SPI_FLASH_RESULT_ERR : config error.
-  *         SPI_FLASH_RESULT_TIMEOUT : config timeout.
-  */
-SpiFlashOpResult SPIMasterReadModeCnfig(SpiFlashRdMode mode);
+esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read_mode_t mode);
 
 /**
   * @brief Config SPI Flash clock divisor.
@@ -307,23 +295,23 @@ SpiFlashOpResult SPIMasterReadModeCnfig(SpiFlashRdMode mode);
   *
   * @param  uint8_t spi: 0 for SPI0, 1 for SPI1.
   *
-  * @return SPI_FLASH_RESULT_OK : config OK.
-  *         SPI_FLASH_RESULT_ERR : config error.
-  *         SPI_FLASH_RESULT_TIMEOUT : config timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : config OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : config error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : config timeout.
   */
-SpiFlashOpResult SPIClkConfig(uint8_t freqdiv, uint8_t spi);
+esp_rom_spiflash_result_t esp_rom_spiflash_config_clk(uint8_t freqdiv, uint8_t spi);
 
 /**
   * @brief Send CommonCmd to Flash so that is can go into QIO mode, some Flash use different CMD.
   *        Please do not call this function in SDK.
   *
-  * @param  SpiCommonCmd *cmd : A struct to show the action of a command.
+  * @param  esp_rom_spiflash_common_cmd_t *cmd : A struct to show the action of a command.
   *
   * @return uint16_t  0 : do not send command any more.
   *                   1 : go to the next command.
   *                   n > 1 : skip (n - 1) commands.
   */
-uint16_t SPI_Common_Command(SpiCommonCmd *cmd);
+uint16_t esp_rom_spiflash_common_cmd(esp_rom_spiflash_common_cmd_t *cmd);
 
 /**
   * @brief Unlock SPI write protect.
@@ -331,11 +319,11 @@ uint16_t SPI_Common_Command(SpiCommonCmd *cmd);
   *
   * @param  None.
   *
-  * @return SPI_FLASH_RESULT_OK : Unlock OK.
-  *         SPI_FLASH_RESULT_ERR : Unlock error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Unlock timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Unlock OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Unlock error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Unlock timeout.
   */
-SpiFlashOpResult SPIUnlock(void);
+esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void);
 
 /**
   * @brief SPI write protect.
@@ -343,11 +331,11 @@ SpiFlashOpResult SPIUnlock(void);
   *
   * @param  None.
   *
-  * @return SPI_FLASH_RESULT_OK : Lock OK.
-  *         SPI_FLASH_RESULT_ERR : Lock error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Lock timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Lock OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Lock error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Lock timeout.
   */
-SpiFlashOpResult SPILock(void);
+esp_rom_spiflash_result_t esp_rom_spiflash_lock(void);
 
 /**
   * @brief Update SPI Flash parameter.
@@ -365,11 +353,12 @@ SpiFlashOpResult SPILock(void);
   *
   * @param  uint32_t status_mask : The Mask used when read status from Flash(use single CMD).
   *
-  * @return SPI_FLASH_RESULT_OK : Update OK.
-  *         SPI_FLASH_RESULT_ERR : Update error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Update timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Update OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Update error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Update timeout.
   */
-SpiFlashOpResult SPIParamCfg(uint32_t deviceId, uint32_t chip_size, uint32_t block_size, uint32_t sector_size, uint32_t page_size, uint32_t status_mask);
+esp_rom_spiflash_result_t esp_rom_spiflash_config_param(uint32_t deviceId, uint32_t chip_size, uint32_t block_size, 
+                                                        uint32_t sector_size, uint32_t page_size, uint32_t status_mask);
 
 /**
   * @brief Erase whole flash chip.
@@ -377,11 +366,11 @@ SpiFlashOpResult SPIParamCfg(uint32_t deviceId, uint32_t chip_size, uint32_t blo
   *
   * @param  None
   *
-  * @return SPI_FLASH_RESULT_OK : Erase OK.
-  *         SPI_FLASH_RESULT_ERR : Erase error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Erase timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Erase OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Erase error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Erase timeout.
   */
-SpiFlashOpResult SPIEraseChip(void);
+esp_rom_spiflash_result_t esp_rom_spiflash_erase_chip(void);
 
 /**
   * @brief Erase a 64KB block of flash
@@ -390,11 +379,11 @@ SpiFlashOpResult SPIEraseChip(void);
   *
   * @param  uint32_t block_num : Which block to erase.
   *
-  * @return SPI_FLASH_RESULT_OK : Erase OK.
-  *         SPI_FLASH_RESULT_ERR : Erase error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Erase timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Erase OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Erase error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Erase timeout.
   */
-SpiFlashOpResult SPIEraseBlock(uint32_t block_num);
+esp_rom_spiflash_result_t esp_rom_spiflash_erase_block(uint32_t block_num);
 
 /**
   * @brief Erase a sector of flash.
@@ -403,11 +392,11 @@ SpiFlashOpResult SPIEraseBlock(uint32_t block_num);
   *
   * @param  uint32_t sector_num : Which sector to erase.
   *
-  * @return SPI_FLASH_RESULT_OK : Erase OK.
-  *         SPI_FLASH_RESULT_ERR : Erase error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Erase timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Erase OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Erase error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Erase timeout.
   */
-SpiFlashOpResult SPIEraseSector(uint32_t sector_num);
+esp_rom_spiflash_result_t esp_rom_spiflash_erase_sector(uint32_t sector_num);
 
 /**
   * @brief Erase some sectors.
@@ -417,11 +406,11 @@ SpiFlashOpResult SPIEraseSector(uint32_t sector_num);
   *
   * @param  uint32_t area_len : Length to erase, should be sector aligned.
   *
-  * @return SPI_FLASH_RESULT_OK : Erase OK.
-  *         SPI_FLASH_RESULT_ERR : Erase error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Erase timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Erase OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Erase error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Erase timeout.
   */
-SpiFlashOpResult SPIEraseArea(uint32_t start_addr, uint32_t area_len);
+esp_rom_spiflash_result_t esp_rom_spiflash_erase_area(uint32_t start_addr, uint32_t area_len);
 
 /**
   * @brief Write Data to Flash, you should Erase it yourself if need.
@@ -433,11 +422,11 @@ SpiFlashOpResult SPIEraseArea(uint32_t start_addr, uint32_t area_len);
   *
   * @param  uint32_t len : Length to write, should be 4 bytes aligned.
   *
-  * @return SPI_FLASH_RESULT_OK : Write OK.
-  *         SPI_FLASH_RESULT_ERR : Write error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Write timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Write OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Write error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Write timeout.
   */
-SpiFlashOpResult SPIWrite(uint32_t dest_addr, const uint32_t *src, int32_t len);
+esp_rom_spiflash_result_t esp_rom_spiflash_write(uint32_t dest_addr, const uint32_t *src, int32_t len);
 
 /**
   * @brief Read Data from Flash, you should Erase it yourself if need.
@@ -449,11 +438,11 @@ SpiFlashOpResult SPIWrite(uint32_t dest_addr, const uint32_t *src, int32_t len);
   *
   * @param  uint32_t len : Length to read, should be 4 bytes aligned.
   *
-  * @return SPI_FLASH_RESULT_OK : Read OK.
-  *         SPI_FLASH_RESULT_ERR : Read error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Read timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Read OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Read error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Read timeout.
   */
-SpiFlashOpResult SPIRead(uint32_t src_addr, uint32_t *dest, int32_t len);
+esp_rom_spiflash_result_t esp_rom_spiflash_read(uint32_t src_addr, uint32_t *dest, int32_t len);
 
 /**
   * @brief SPI1 go into encrypto mode.
@@ -463,7 +452,7 @@ SpiFlashOpResult SPIRead(uint32_t src_addr, uint32_t *dest, int32_t len);
   *
   * @return None
   */
-void SPI_Write_Encrypt_Enable(void);
+void esp_rom_spiflash_write_encrypted_enable(void);
 
 /**
   * @brief Prepare 32 Bytes data to encrpto writing, you should Erase it yourself if need.
@@ -473,11 +462,11 @@ void SPI_Write_Encrypt_Enable(void);
   *
   * @param  uint32_t *data : The pointer to data which is to write.
   *
-  * @return SPI_FLASH_RESULT_OK : Prepare OK.
-  *         SPI_FLASH_RESULT_ERR : Prepare error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Prepare timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Prepare OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Prepare error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Prepare timeout.
   */
-SpiFlashOpResult SPI_Prepare_Encrypt_Data(uint32_t flash_addr, uint32_t *data);
+esp_rom_spiflash_result_t esp_rom_spiflash_prepare_encrypted_data(uint32_t flash_addr, uint32_t *data);
 
 /**
   * @brief SPI1 go out of encrypto mode.
@@ -487,7 +476,7 @@ SpiFlashOpResult SPI_Prepare_Encrypt_Data(uint32_t flash_addr, uint32_t *data);
   *
   * @return None
   */
-void SPI_Write_Encrypt_Disable(void);
+void esp_rom_spiflash_write_encrypted_disable(void);
 
 /**
   * @brief Write data to flash with transparent encryption.
@@ -503,11 +492,11 @@ void SPI_Write_Encrypt_Disable(void);
   *
   * @param  uint32_t len : Length to write, should be 32 bytes aligned.
   *
-  * @return SPI_FLASH_RESULT_OK : Data written successfully.
-  *         SPI_FLASH_RESULT_ERR : Encryption write error.
-  *         SPI_FLASH_RESULT_TIMEOUT : Encrypto write timeout.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Data written successfully.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Encryption write error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Encrypto write timeout.
   */
-SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, uint32_t *data, uint32_t len);
+esp_rom_spiflash_result_t esp_rom_spiflash_write_encrypted(uint32_t flash_addr, uint32_t *data, uint32_t len);
 
 
 /** @brief Wait until SPI flash write operation is complete
@@ -517,16 +506,34 @@ SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, uint32_t *data, uint32_t
  * Reads the Write In Progress bit of the SPI flash status register,
  * repeats until this bit is zero (indicating write complete).
  *
- * @return SPI_FLASH_RESULT_OK : Write is complete
- *         SPI_FLASH_RESULT_ERR : Error while reading status.
+ * @return ESP_ROM_SPIFLASH_RESULT_OK : Write is complete
+ *         ESP_ROM_SPIFLASH_RESULT_ERR : Error while reading status.
  */
-SpiFlashOpResult SPI_Wait_Idle(SpiFlashChip *spi);
+esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *spi);
 
 
-/** @brief Global SpiFlashChip structure used by ROM functions
+/** @brief Enable Quad I/O pin functions
+ *
+ * @note Please do not call this function in SDK.
+ *
+ * Sets the HD & WP pin functions for Quad I/O modes, based on the
+ * efuse SPI pin configuration.
+ *
+ * @param wp_gpio_num - Number of the WP pin to reconfigure for quad I/O.
+ *
+ * @param spiconfig - Pin configuration, as returned from ets_efuse_get_spiconfig().
+ * - If this parameter is 0, default SPI pins are used and wp_gpio_num parameter is ignored.
+ * - If this parameter is 1, default HSPI pins are used and wp_gpio_num parameter is ignored.
+ * - For other values, this parameter encodes the HD pin number and also the CLK pin number. CLK pin selection is used
+ *   to determine if HSPI or SPI peripheral will be used (use HSPI if CLK pin is the HSPI clock pin, otherwise use SPI).
+ *   Both HD & WP pins are configured via GPIO matrix to map to the selected peripheral.
+ */
+void esp_rom_spiflash_select_qio_pins(uint8_t wp_gpio_num, uint32_t spiconfig);
+
+/** @brief Global esp_rom_spiflash_chip_t structure used by ROM functions
  *
  */
-extern SpiFlashChip g_rom_flashchip;
+extern esp_rom_spiflash_chip_t g_rom_flashchip;
 
 /**
   * @}

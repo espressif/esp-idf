@@ -63,6 +63,7 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
                           LINK_KEY link_key, UINT8 key_type, tBTM_IO_CAP io_cap,
                           UINT8 pin_length)
 {
+#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC  *p_dev_rec;
     int               i, j;
     BOOLEAN           found = FALSE;
@@ -160,7 +161,7 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
 
     p_dev_rec->rmt_io_caps = io_cap;
     p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
-
+#endif  ///SMP_INCLUDED == TRUE
     return (TRUE);
 }
 
@@ -194,6 +195,26 @@ BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr)
 
     return TRUE;
 }
+
+/*******************************************************************************
+**
+** Function         BTM_SecClearSecurityFlags
+**
+** Description      Reset the security flags (mark as not-paired) for a given
+**                  remove device.
+**
+*******************************************************************************/
+extern void BTM_SecClearSecurityFlags (BD_ADDR bd_addr)
+{
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
+    if (p_dev_rec == NULL)
+        return;
+
+    p_dev_rec->sec_flags = 0;
+    p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+    p_dev_rec->sm4 = BTM_SM4_UNKNOWN;
+}
+
 
 /*******************************************************************************
 **
@@ -459,7 +480,7 @@ tBTM_SEC_DEV_REC *btm_find_dev(BD_ADDR bd_addr)
 *******************************************************************************/
 void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec)
 {
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     tBTM_SEC_DEV_REC *p_dev_rec = &btm_cb.sec_dev_rec[0];
     tBTM_SEC_DEV_REC temp_rec = *p_target_rec;
 

@@ -17,7 +17,7 @@
  ******************************************************************************/
 #include "bt_target.h"
 
-#if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
+#if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
 
 #include "bt_defs.h"
 #include <string.h>
@@ -513,11 +513,12 @@ BOOLEAN gap_ble_send_cl_read_request(tGAP_CLCB *p_clcb)
         param.service.s_handle       = 1;
         param.service.e_handle       = 0xFFFF;
         param.service.auth_req       = 0;
-
+#if (GATTC_INCLUDED == TRUE)
         if (GATTC_Read(p_clcb->conn_id, GATT_READ_BY_TYPE, &param) == GATT_SUCCESS) {
             p_clcb->cl_op_uuid = uuid;
             started = TRUE;
         }
+#endif  ///GATTC_INCLUDED == TRUE
     }
 
     return started;
@@ -784,7 +785,7 @@ BOOLEAN GAP_BleCancelReadPeerDevName (BD_ADDR peer_bda)
     return (TRUE);
 }
 
-#endif  /* BLE_INCLUDED */
+#endif  /* BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE*/
 
 
 

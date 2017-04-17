@@ -16,6 +16,7 @@
 #include <xtensa/config/core.h>
 
 #include "rom/rtc.h"
+#include "rom/uart.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -28,6 +29,7 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "soc/cpu.h"
+#include "soc/rtc.h"
 
 #include "esp_gdbstub.h"
 #include "esp_panic.h"
@@ -35,6 +37,8 @@
 #include "esp_err.h"
 #include "esp_core_dump.h"
 #include "esp_spi_flash.h"
+#include "esp_cache_err_int.h"
+#include "esp_app_trace.h"
 
 /*
   Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -50,8 +54,8 @@
 //printf may be broken, so we fix our own printing fns...
 static void panicPutChar(char c)
 {
-    while (((READ_PERI_REG(UART_STATUS_REG(0)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
-    WRITE_PERI_REG(UART_FIFO_REG(0), c);
+    while (((READ_PERI_REG(UART_STATUS_REG(CONFIG_CONSOLE_UART_NUM)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
+    WRITE_PERI_REG(UART_FIFO_REG(CONFIG_CONSOLE_UART_NUM), c);
 }
 
 static void panicPutStr(const char *c)
@@ -111,6 +115,9 @@ static bool abort_called;
 static __attribute__((noreturn)) inline void invoke_abort()
 {
     abort_called = true;
+#if CONFIG_ESP32_APPTRACE_ENABLE
+    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+#endif
     while(1) {
         __asm__ ("break 0,0");
         *((int*) 0) = 0;
@@ -164,7 +171,7 @@ static void setFirstBreakpoint(uint32_t pc)
 
 void panicHandler(XtExcFrame *frame)
 {
-    int *regs = (int *)frame;
+    int core_id = xPortGetCoreID();
     //Please keep in sync with PANIC_RSN_* defines
     const char *reasons[] = {
         "Unknown reason",
@@ -178,17 +185,22 @@ void panicHandler(XtExcFrame *frame)
     };
     const char *reason = reasons[0];
     //The panic reason is stored in the EXCCAUSE register.
-    if (regs[20] <= PANIC_RSN_MAX) {
-        reason = reasons[regs[20]];
+    if (frame->exccause <= PANIC_RSN_MAX) {
+        reason = reasons[frame->exccause];
+    }
+    if (frame->exccause == PANIC_RSN_CACHEERR && esp_cache_err_get_cpuid() != core_id) {
+        // Cache error interrupt will be handled by the panic handler
+        // on the other CPU.
+        return;
     }
     haltOtherCore();
     panicPutStr("Guru Meditation Error: Core ");
-    panicPutDec(xPortGetCoreID());
+    panicPutDec(core_id);
     panicPutStr(" panic'ed (");
     if (!abort_called) {
         panicPutStr(reason);
         panicPutStr(")\r\n");
-            if (regs[20]==PANIC_RSN_DEBUGEXCEPTION) {
+            if (frame->exccause == PANIC_RSN_DEBUGEXCEPTION) {
                 int debugRsn;
                 asm("rsr.debugcause %0":"=r"(debugRsn));
                 panicPutStr("Debug exception reason: ");
@@ -218,7 +230,10 @@ void panicHandler(XtExcFrame *frame)
         }
 
     if (esp_cpu_in_ocd_debug_mode()) {
-        setFirstBreakpoint(regs[1]);
+#if CONFIG_ESP32_APPTRACE_ENABLE
+        esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+#endif
+        setFirstBreakpoint(frame->pc);
         return;
     }
     commonErrorHandler(frame);
@@ -226,17 +241,14 @@ void panicHandler(XtExcFrame *frame)
 
 void xt_unhandled_exception(XtExcFrame *frame)
 {
-    int *regs = (int *)frame;
-    int x=0;
-
     //Disable all interrupts, so a backtrace isn't interrupted by needless stuff
     asm volatile("wsr %0,INTENABLE\nesync\n"::"r"(x));
 
     haltOtherCore();
     panicPutStr("Guru Meditation Error of type ");
-    x = regs[20];
-    if (x < 40) {
-        panicPutStr(edesc[x]);
+    int exccause = frame->exccause;
+    if (exccause < 40) {
+        panicPutStr(edesc[exccause]);
     } else {
         panicPutStr("Unknown");
     }
@@ -244,11 +256,14 @@ void xt_unhandled_exception(XtExcFrame *frame)
     panicPutDec(xPortGetCoreID());
     if (esp_cpu_in_ocd_debug_mode()) {
         panicPutStr(" at pc=");
-        panicPutHex(regs[1]);
+        panicPutHex(frame->pc);
         panicPutStr(". Setting bp and returning..\r\n");
+#if CONFIG_ESP32_APPTRACE_ENABLE
+        esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+#endif
         //Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
         //will kick in exactly at the context the error happened.
-        setFirstBreakpoint(regs[1]);
+        setFirstBreakpoint(frame->pc);
         return;
     }
     panicPutStr(". Exception was unhandled.\r\n");
@@ -280,25 +295,59 @@ static void reconfigureAllWdts()
     TIMERG1.wdt_wprotect = 0;
 }
 
-#if CONFIG_ESP32_PANIC_GDBSTUB || CONFIG_ESP32_PANIC_PRINT_HALT || CONFIG_ESP32_ENABLE_COREDUMP
 /*
   This disables all the watchdogs for when we call the gdbstub.
 */
-static void disableAllWdts()
+static inline void disableAllWdts()
 {
     TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_config0.en = 0;
     TIMERG0.wdt_wprotect = 0;
     TIMERG1.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
     TIMERG1.wdt_config0.en = 0;
-    TIMERG0.wdt_wprotect = 0;
+    TIMERG1.wdt_wprotect = 0;
 }
 
-#endif
-
-static inline bool stackPointerIsSane(uint32_t sp)
+static void esp_panic_wdt_start()
 {
-    return !(sp < 0x3ffae010 || sp > 0x3ffffff0 || ((sp & 0xf) != 0));
+    if (REG_GET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN)) {
+        return;
+    }
+    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
+    WRITE_PERI_REG(RTC_CNTL_WDTFEED_REG, 1);
+    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_SYS_RESET_LENGTH, 7);
+    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_CPU_RESET_LENGTH, 7);
+    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_RESET_SYSTEM);
+    // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
+    // @ 115200 UART speed it will take more than 6 sec to print them out.
+    WRITE_PERI_REG(RTC_CNTL_WDTCONFIG1_REG, rtc_clk_slow_freq_get_hz() * 7);
+    REG_SET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN);
+    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
+}
+
+void esp_panic_wdt_stop()
+{
+    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
+    WRITE_PERI_REG(RTC_CNTL_WDTFEED_REG, 1);
+    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_OFF);
+    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN);
+    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
+}
+
+static void esp_panic_dig_reset() __attribute__((noreturn));
+
+static void esp_panic_dig_reset()
+{
+    // make sure all the panic handler output is sent from UART FIFO
+    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    // switch to XTAL (otherwise we will keep running from the PLL)
+    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    // reset the digital part
+    esp_cpu_unstall(PRO_CPU_NUM);
+    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+    while (true) {
+        ;
+    }
 }
 
 static void putEntry(uint32_t pc, uint32_t sp)
@@ -321,7 +370,7 @@ static void doBacktrace(XtExcFrame *frame)
     pc = frame->a0;
     while (i++ < 100) {
         uint32_t psp = sp;
-        if (!stackPointerIsSane(sp) || i++ > 100) {
+        if (!esp_stack_ptr_is_sane(sp) || i++ > 100) {
             break;
         }
         sp = *((uint32_t *) (sp - 0x10 + 4));
@@ -350,6 +399,9 @@ static void commonErrorHandler(XtExcFrame *frame)
         "A14     ", "A15     ", "SAR     ", "EXCCAUSE", "EXCVADDR", "LBEG    ", "LEND    ", "LCOUNT  "
     };
 
+    // start panic WDT to restart system if we hang in this handler
+    esp_panic_wdt_start();
+
     //Feed the watchdogs, so they will give us time to print out debug info
     reconfigureAllWdts();
 
@@ -375,8 +427,15 @@ static void commonErrorHandler(XtExcFrame *frame)
     /* With windowed ABI backtracing is easy, let's do it. */
     doBacktrace(frame);
 
+#if CONFIG_ESP32_APPTRACE_ENABLE
+    disableAllWdts();
+    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+    reconfigureAllWdts();
+#endif
+
 #if CONFIG_ESP32_PANIC_GDBSTUB
     disableAllWdts();
+    esp_panic_wdt_stop();
     panicPutStr("Entering gdb stub now.\r\n");
     esp_gdbstub_panic_handler(frame);
 #else
@@ -390,9 +449,15 @@ static void commonErrorHandler(XtExcFrame *frame)
 #endif
     reconfigureAllWdts();
 #endif
+    esp_panic_wdt_stop();
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
-    esp_restart_noos();
+    if (frame->exccause != PANIC_RSN_CACHEERR) {
+        esp_restart_noos();
+    } else {
+        // The only way to clear invalid cache access interrupt is to reset the digital part
+        esp_panic_dig_reset();
+    }
 #else
     disableAllWdts();
     panicPutStr("CPU halted.\r\n");
