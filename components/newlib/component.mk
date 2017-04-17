@@ -1,13 +1,12 @@
 
 
-ifdef CONFIG_SPIRAM_CACHE_WORKAROUND
-
+ifeq ("$(CONFIG_SPIRAM_CACHE_WORKAROUND)","y")
 LIBC_PATH := $(COMPONENT_PATH)/lib/libc-psram-workaround.a
 LIBM_PATH := $(COMPONENT_PATH)/lib/libm-psram-workaround.a
 
 else
 
-ifdef CONFIG_NEWLIB_NANO_FORMAT
+ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")
 LIBC_PATH := $(COMPONENT_PATH)/lib/libc_nano.a
 else
 LIBC_PATH := $(COMPONENT_PATH)/lib/libc.a
