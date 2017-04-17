@@ -153,17 +153,20 @@ config MEMMAP_SPIRAM_ENABLE
         a board containing that module) and want to allocate memory from it using
         pvPortMallocCaps(size, MALLOC_CAP_SPIRAM ); This also enables the code that initializes the
         RAM chip.
-        This only works correctly with v1 (post Feb 2017) silicon.
+        This only works correctly with v1 (post Feb 2017) and later ESP32 revisions.
 
 if MEMMAP_SPIRAM_ENABLE
 
 config SPIRAM_CACHE_WORKAROUND
-    bool "Enable workaround for bug in SPI RAM cache for V1 silicon"
+    bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
     default "y"
     help
-        V1 ESP32 silicon has a bug that can cause a write to PSRAM not to take place in some situations
+        Revision 1 of the ESP32 has a bug that can cause a write to PSRAM not to take place in some situations
         when the cache line needs to be fetched from external RAM and an interrupt occurs. This enables a
         fix in the compiler that makes sure the specific code that is vulnerable to this will not be emitted.
+        
+        This will also not use any bits of newlib that are located in ROM, opting for a version that is compiled
+        with the workaround and located in flash instead.
 
 config SPIRAM_CACHE_ALWAYS_MEMBARRIER
     bool "Heavy-handed workaround for bug: Always do memory barrier"
@@ -329,6 +332,7 @@ config NEWLIB_STDOUT_ADDCR
 config NEWLIB_NANO_FORMAT
     bool "Enable 'nano' formatting options for printf/scanf family"
     default n
+    depends on !SPIRAM_CACHE_WORKAROUND
     help
         ESP32 ROM contains parts of newlib C library, including printf/scanf family
         of functions. These functions have been compiled with so-called "nano"

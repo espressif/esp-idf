@@ -1,4 +1,12 @@
 
+
+ifdef CONFIG_SPIRAM_CACHE_WORKAROUND
+
+LIBC_PATH := $(COMPONENT_PATH)/lib/libc-psram-workaround.a
+LIBM_PATH := $(COMPONENT_PATH)/lib/libm-psram-workaround.a
+
+else
+
 ifdef CONFIG_NEWLIB_NANO_FORMAT
 LIBC_PATH := $(COMPONENT_PATH)/lib/libc_nano.a
 else
@@ -6,6 +14,8 @@ LIBC_PATH := $(COMPONENT_PATH)/lib/libc.a
 endif
 
 LIBM_PATH := $(COMPONENT_PATH)/lib/libm.a
+
+endif
 
 COMPONENT_ADD_LDFLAGS := $(LIBC_PATH) $(LIBM_PATH) -lnewlib
 
