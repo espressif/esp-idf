@@ -242,6 +242,7 @@ void panicHandler(XtExcFrame *frame)
 void xt_unhandled_exception(XtExcFrame *frame)
 {
     //Disable all interrupts, so a backtrace isn't interrupted by needless stuff
+    int x=0;
     asm volatile("wsr %0,INTENABLE\nesync\n"::"r"(x));
 
     haltOtherCore();

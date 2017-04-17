@@ -16,9 +16,9 @@ LIBS += net80211 pp wpa smartconfig coexist wps wpa2
 endif
 
 ifeq ("$(CONFIG_SPIRAM_CACHE_WORKAROUND)","y")
-LINKER_SCRIPTS += esp32.common.ld esp32.rom.ld esp32.peripherals.ld
-else
 LINKER_SCRIPTS += esp32.common.ld esp32.rom.psram_workaround.ld esp32.peripherals.ld
+else
+LINKER_SCRIPTS += esp32.common.ld esp32.rom.ld esp32.peripherals.ld
 endif
 
 ifeq ("$(CONFIG_NEWLIB_NANO_FORMAT)","y")

@@ -327,9 +327,7 @@ PROVIDE ( memccpy = 0x4000c220 );
 PROVIDE ( memchr = 0x4000c244 );
 PROVIDE ( memcmp = 0x4000c260 );
 PROVIDE ( memcpy = 0x4000c2c8 );
-/*
 PROVIDE ( memmove = 0x4000c3c0 );
-*/
 PROVIDE ( memrchr = 0x4000c400 );
 PROVIDE ( memset = 0x4000c44c );
 PROVIDE ( mktime = 0x4005a5e8 );
