@@ -105,6 +105,13 @@ config MEMMAP_SPISRAM
         main memory map. Enable this if you have this hardware and want to use it in the same
         way as on-chip RAM.
 
+config CUSTOMER_MAC_ADDRESS
+    bool "Customer MAC address"
+    default n
+    help
+        Customers can define their own mac address in efuse.
+        Set to 'y' if you decide to use the mac address that you defined in efuse.
+        
 choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
     bool "Number of MAC address generated from the hardware MAC address in efuse"
     default FOUR_MAC_ADDRESS_FROM_EFUSE

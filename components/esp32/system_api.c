@@ -42,10 +42,14 @@ void system_init()
 
 esp_err_t esp_efuse_read_mac(uint8_t* mac)
 {
+    uint32_t mac_low;
+    uint32_t mac_high;
     uint8_t efuse_crc;
     uint8_t calc_crc;
-    uint32_t mac_low = REG_READ(EFUSE_BLK0_RDATA1_REG);
-    uint32_t mac_high = REG_READ(EFUSE_BLK0_RDATA2_REG);
+
+#ifndef CONFIG_CUSTOMER_MAC_ADDRESS
+    mac_low = REG_READ(EFUSE_BLK0_RDATA1_REG);
+    mac_high = REG_READ(EFUSE_BLK0_RDATA2_REG);
 
     mac[0] = mac_high >> 8;
     mac[1] = mac_high;
@@ -55,6 +59,27 @@ esp_err_t esp_efuse_read_mac(uint8_t* mac)
     mac[5] = mac_low;
 
     efuse_crc = mac_high >> 16;
+#else
+    uint8_t version = REG_READ(EFUSE_BLK3_RDATA5_REG) >> 24;
+
+    if (version != 1) {
+        ESP_LOGE(TAG, "Customer efuse MAC address version error, version = %d", version);
+        abort();
+    }
+
+    mac_low = REG_READ(EFUSE_BLK3_RDATA1_REG);
+    mac_high = REG_READ(EFUSE_BLK3_RDATA0_REG);
+
+    mac[0] = mac_high >> 8;
+    mac[1] = mac_high >> 16;
+    mac[2] = mac_high >> 24;
+    mac[3] = mac_low;
+    mac[4] = mac_low >> 8;
+    mac[5] = mac_low >> 16;
+
+    efuse_crc = mac_high;
+#endif //CONFIG_CUSTOMER_DEFINED_MAC_ADDR
+
     calc_crc = esp_crc8(mac, 6);
 
     if (efuse_crc != calc_crc) {
