@@ -70,7 +70,7 @@ static esp_ble_adv_data_t heart_rate_adv_config = {
     .p_manufacturer_data =  NULL, //&test_manufacturer[0],
     .service_data_len = 0,
     .p_service_data = NULL,
-    .service_uuid_len = 32,
+    .service_uuid_len = sizeof(heart_rate_service_uuid),
     .p_service_uuid = heart_rate_service_uuid,
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };

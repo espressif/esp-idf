@@ -458,6 +458,7 @@ void gatt_free_srvc_db_buffer_app_id(tBT_UUID *p_app_id)
 
     for (i = 0; i < GATT_MAX_SR_PROFILES; i ++, p_elem ++) {
         if (memcmp(p_app_id, &p_elem->asgn_range.app_uuid128, sizeof(tBT_UUID)) == 0) {
+            gatt_free_attr_value_buffer(p_elem);
             while (!GKI_queue_is_empty(&p_elem->svc_db.svc_buffer)) {
                 GKI_freebuf (GKI_dequeue (&p_elem->svc_db.svc_buffer));
             }
