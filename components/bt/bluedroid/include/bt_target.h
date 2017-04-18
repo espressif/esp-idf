@@ -42,7 +42,7 @@
 #include "dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
 #if CONFIG_CLASSIC_BT_ENABLED
-
+#define CLASSIC_BT_INCLUDED         TRUE
 #define BTA_SDP_INCLUDED            TRUE
 #define BTA_PAN_INCLUDED            FALSE
 #define BTA_HH_INCLUDED             FALSE
@@ -66,7 +66,7 @@
 #define BTC_AV_INCLUDED             TRUE
 
 #else /* #if CONFIG_CLASSIC_BT_ENABLED */
-
+#define CLASSIC_BT_INCLUDED         FALSE
 #define BTA_SDP_INCLUDED            FALSE
 #define BTA_PAN_INCLUDED            FALSE
 #define BTA_HH_INCLUDED             FALSE
@@ -635,7 +635,11 @@
 #endif
 
 #ifndef BTM_LOCAL_IO_CAPS_BLE
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 #define BTM_LOCAL_IO_CAPS_BLE           BTM_IO_CAP_KBDISP
+#else
+#define BTM_LOCAL_IO_CAPS_BLE           4
+#endif  ///BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 #endif
 
 /* The default MITM Protection Requirement (for Simple Pairing)
@@ -684,6 +688,9 @@
 #define L2CAP_CLIENT_INCLUDED FALSE
 #endif
 
+/* The default connection link number set to 1, 
+** if the user want to support muti connction, should change it in the menuconfig */
+#define MAX_ACL_CONNECTIONS         1   
 
 /* The maximum number of simultaneous links that L2CAP can support. Up to 7*/
 #ifndef MAX_ACL_CONNECTIONS
@@ -694,12 +701,20 @@
 
 /* The maximum number of simultaneous channels that L2CAP can support. Up to 16*/
 #ifndef MAX_L2CAP_CHANNELS
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #define MAX_L2CAP_CHANNELS          8
+#else
+#define MAX_L2CAP_CHANNELS          1  //Not support to create l2cap channels in the BLE only mode in this bluedroid version(6.0)
+#endif   ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
 /* The maximum number of simultaneous applications that can register with L2CAP. */
 #ifndef MAX_L2CAP_CLIENTS
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #define MAX_L2CAP_CLIENTS           8
+#else
+#define MAX_L2CAP_CLIENTS           1  //Not support to allocate a channel control block in BLE only mode
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
 /* The number of seconds of link inactivity before a link is disconnected. */
@@ -785,7 +800,11 @@
 /* Used for features using fixed channels; set to zero if no fixed channels supported (BLE, etc.) */
 /* Excluding L2CAP signaling channel and UCD */
 #ifndef L2CAP_NUM_FIXED_CHNLS
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #define L2CAP_NUM_FIXED_CHNLS               32
+#else
+#define L2CAP_NUM_FIXED_CHNLS               2   //There are just two fix channel in the BLE only mode(gatt,smp)
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
 /* First fixed channel supported */
@@ -853,7 +872,7 @@
  * resolution, local address rotation etc.
  */
 #ifndef BLE_PRIVACY_SPT
-#define BLE_PRIVACY_SPT         TRUE
+#define BLE_PRIVACY_SPT         FALSE
 #endif
 
 /*
@@ -992,7 +1011,7 @@
 ******************************************************************************/
 #ifndef SMP_INCLUDED
 #if BLE_INCLUDED == TRUE
-#define SMP_INCLUDED         TRUE
+#define SMP_INCLUDED         FALSE
 #else
 #define SMP_INCLUDED         FALSE
 #endif
@@ -1036,7 +1055,7 @@
 ******************************************************************************/
 
 #ifndef SDP_INCLUDED
-#define SDP_INCLUDED                TRUE
+#define SDP_INCLUDED                FALSE //TRUE
 #endif
 
 /* This is set to enable SDP server functionality. */
@@ -1535,7 +1554,7 @@ Range: 2 octets
 
 /* This is set to enable use of GAP L2CAP connections. */
 #ifndef GAP_CONN_INCLUDED
-#if GAP_INCLUDED == TRUE
+#if (GAP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
 #define GAP_CONN_INCLUDED           TRUE
 #else
 #define GAP_CONN_INCLUDED           FALSE

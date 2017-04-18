@@ -279,6 +279,7 @@ void BTA_DmSearchCancel(void)
 void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
                     tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search)
 {
+#if (SDP_INCLUDED == TRUE)
     tBTA_DM_API_DISCOVER    *p_msg;
 
     if ((p_msg = (tBTA_DM_API_DISCOVER *) GKI_getbuf(sizeof(tBTA_DM_API_DISCOVER))) != NULL) {
@@ -291,8 +292,10 @@ void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
         p_msg->sdp_search = sdp_search;
         bta_sys_sendmsg(p_msg);
     }
-
+#endif  ///SDP_INCLUDED == TRUE
 }
+
+#if (SDP_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -324,8 +327,8 @@ void BTA_DmDiscoverUUID(BD_ADDR bd_addr, tSDP_UUID *uuid,
         memcpy( &p_msg->uuid, uuid, sizeof(tSDP_UUID) );
         bta_sys_sendmsg(p_msg);
     }
-
 }
+#endif  ///SDP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -613,7 +616,7 @@ UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr )
     return (p_dev && p_dev->conn_state == BTA_DM_CONNECTED);
 }
 
-
+#if (SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **                   Device Identification (DI) Server Functions
 *******************************************************************************/
@@ -645,7 +648,7 @@ tBTA_STATUS BTA_DmSetLocalDiRecord( tBTA_DI_RECORD *p_device_info,
 
     return status;
 }
-
+#endif  ///SDP_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         bta_dmexecutecallback
@@ -1393,7 +1396,7 @@ void BTA_DmBleSetBgConnType(tBTA_DM_BLE_CONN_TYPE bg_conn_type, tBTA_DM_BLE_SEL_
 ** Returns          void
 **
 *******************************************************************************/
-#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE
 static void bta_dm_discover_send_msg(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_services,
                                      tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search,
                                      tBTA_TRANSPORT transport)
@@ -1447,7 +1450,7 @@ void BTA_DmDiscoverByTransport(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_service
                                tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search,
                                tBTA_TRANSPORT transport)
 {
-#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE
     bta_dm_discover_send_msg(bd_addr, p_services, p_cback, sdp_search, transport);
 #endif
 }
@@ -1471,7 +1474,7 @@ void BTA_DmDiscoverByTransport(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_service
 void BTA_DmDiscoverExt(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_services,
                        tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search)
 {
-#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE
     bta_dm_discover_send_msg(bd_addr, p_services, p_cback, sdp_search, BTA_TRANSPORT_UNKNOWN);
 #endif
 

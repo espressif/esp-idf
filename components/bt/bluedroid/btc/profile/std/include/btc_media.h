@@ -28,6 +28,7 @@
 #include "gki.h"
 #include "btc_av_api.h"
 
+#if (BTA_AV_INCLUDED == TRUE)
 
 /*******************************************************************************
  **  Constants
@@ -263,5 +264,5 @@ void btc_reset_decoder(UINT8 *p_av);
 int btc_a2dp_get_track_frequency(UINT8 frequency);
 int btc_a2dp_get_track_channel_count(UINT8 channeltype);
 void btc_a2dp_set_peer_sep(UINT8 sep);
-
+#endif  ///BTA_AV_INCLUDED == TRUE
 #endif

@@ -398,8 +398,9 @@ typedef struct {
 
     tBTA_GATTC_CLCB     clcb[BTA_GATTC_CLCB_MAX];
     tBTA_GATTC_SERV     known_server[BTA_GATTC_KNOWN_SR_MAX];
-
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISCOVERY_DB   *p_sdp_db;
+#endif  ///SDP_INCLUDED == TRUE
     UINT16              sdp_conn_id;
 } tBTA_GATTC_CB;
 

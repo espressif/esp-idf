@@ -113,6 +113,7 @@ static void btc_disable_bluetooth_evt(void)
     future_ready(*btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE), FUTURE_SUCCESS);
 }
 
+#if (SMP_INCLUDED == TRUE)
 static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
     /* Save link key, if not temporary */
@@ -147,7 +148,9 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 
     LOG_DEBUG("%s, authentication status = %x", __func__, status);
     return;
+
 }
+#endif ///SMP_INCLUDED == TRUE
 
 static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
@@ -303,8 +306,10 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_ENABLE_EVT: {
         btc_clear_services_mask();
         btc_storage_load_bonded_devices();
+#if (SMP_INCLUDED == TRUE)
         //load the ble local key whitch has been store in the flash
         btc_dm_load_ble_local_keys();
+#endif  ///SMP_INCLUDED == TRUE
         btc_enable_bluetooth_evt(p_data->enable.status);
         break;
     }
@@ -334,7 +339,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_LINK_DOWN_EVT:
     case BTA_DM_HW_ERROR_EVT:
 
-#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
+#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
     case BTA_DM_BLE_AUTH_CMPL_EVT: {
         rsp_app = true;
         ble_msg.act = ESP_GAP_BLE_AUTH_CMPL_EVT;

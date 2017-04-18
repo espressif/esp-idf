@@ -240,7 +240,8 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
 #else
             p->conn_addr_type = BLE_ADDR_PUBLIC;
             memcpy(p->conn_addr, &controller_get_interface()->get_address()->address, BD_ADDR_LEN);
-
+            BTM_TRACE_DEBUG ("conn_addr: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
+                         p->conn_addr[0], p->conn_addr[1], p->conn_addr[2], p->conn_addr[3], p->conn_addr[4], p->conn_addr[5]);
 #endif
 #endif
             p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
@@ -276,18 +277,19 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                     memcpy (p->peer_lmp_features, p_dev_rec->features,
                             (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
                     p->num_read_pages = p_dev_rec->num_read_pages;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
                     const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
                     /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
                     btm_sec_set_peer_sec_caps(p, p_dev_rec);
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
                     BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
                     if (req_pend) {
                         /* Request for remaining Security Features (if any) */
                         l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
                     }
-                    btm_establish_continue (p);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+                    //btm_establish_continue (p);
                     return;
                 }
             }
@@ -308,7 +310,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                          && link_role == HCI_ROLE_SLAVE) {
                     //do nothing in this case for fix the android7.0 cann't sent security request issue
                 } else {
-                    btm_establish_continue(p);
+                    //btm_establish_continue(p);
                 }
             } else
 #endif
@@ -1479,9 +1481,9 @@ void btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role)
 
 UINT8 BTM_AllocateSCN(void)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8   x;
     BTM_TRACE_DEBUG ("BTM_AllocateSCN\n");
-
     // stack reserves scn 1 for HFP, HSP we still do the correct way
     for (x = 1; x < BTM_MAX_SCN; x++) {
         if (!btm_cb.btm_scn[x]) {
@@ -1489,7 +1491,7 @@ UINT8 BTM_AllocateSCN(void)
             return (x + 1);
         }
     }
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     return (0);    /* No free ports */
 }
 
@@ -1505,6 +1507,7 @@ UINT8 BTM_AllocateSCN(void)
 
 BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* Make sure we don't exceed max port range.
      * Stack reserves scn 1 for HFP, HSP we still do the correct way.
      */
@@ -1517,6 +1520,7 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
         btm_cb.btm_scn[scn - 1] = TRUE;
         return TRUE;
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
     return (FALSE);     /* Port was busy */
 }
@@ -1532,6 +1536,8 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 *******************************************************************************/
 BOOLEAN BTM_FreeSCN(UINT8 scn)
 {
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
     BTM_TRACE_DEBUG ("BTM_FreeSCN \n");
     if (scn <= BTM_MAX_SCN) {
         btm_cb.btm_scn[scn - 1] = FALSE;
@@ -1539,6 +1545,9 @@ BOOLEAN BTM_FreeSCN(UINT8 scn)
     } else {
         return (FALSE);    /* Illegal SCN passed in */
     }
+#else
+    return (FALSE);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 }
 
 /*******************************************************************************

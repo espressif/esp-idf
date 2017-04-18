@@ -39,7 +39,8 @@
 #include "btm_int.h"
 #include "sdp_api.h"
 
-#if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE)
+#if (SDP_INCLUDED == TRUE)
+
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -326,6 +327,7 @@ static void bta_create_sap_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
 
 static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_REC *p_rec)
 {
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISC_ATTR *p_attr;
     tSDP_PROTOCOL_ELEM pe;
 
@@ -348,6 +350,7 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
     }
     record->hdr.user1_ptr_len = p_bta_sdp_cfg->p_sdp_db->raw_size;
     record->hdr.user1_ptr = p_bta_sdp_cfg->p_sdp_db->raw_data;
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 
@@ -362,6 +365,7 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
 *******************************************************************************/
 static void bta_sdp_search_cback(UINT16 result, void *user_data)
 {
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISC_REC *p_rec = NULL;
     tBTA_SDP_SEARCH_COMP evt_data = {0}; // We need to zero-initialize
     tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
@@ -425,6 +429,7 @@ static void bta_sdp_search_cback(UINT16 result, void *user_data)
 
     bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, (tBTA_SDP *) &evt_data, (void *)&uuid->uu.uuid128);
     osi_free(user_data); // We no longer need the user data to track the search
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -455,6 +460,7 @@ void bta_sdp_enable(tBTA_SDP_MSG *p_data)
 *******************************************************************************/
 void bta_sdp_search(tBTA_SDP_MSG *p_data)
 {
+#if (SDP_INCLUDED == TRUE)
     int x = 0;
     // TODO: Leaks!!! but needed as user-data pointer
     tBT_UUID *bta_sdp_search_uuid = osi_malloc(sizeof(tBT_UUID));
@@ -509,6 +515,7 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
     /*
     else report the result when the cback is called
     */
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -545,4 +552,4 @@ void bta_sdp_remove_record(tBTA_SDP_MSG *p_data)
     }
 }
 
-#endif /* #if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE) */
+#endif  ///SDP_INCLUDED == TRUE

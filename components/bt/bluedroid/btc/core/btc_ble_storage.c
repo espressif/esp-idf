@@ -20,6 +20,8 @@
 #include "btc_ble_storage.h"
 #include "bta_gatts_co.h"
 
+#if (SMP_INCLUDED == TRUE)
+
 btc_dm_pairing_cb_t pairing_cb;
 btc_dm_local_key_cb_t ble_local_key_cb;
 
@@ -485,4 +487,6 @@ void btc_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OCTET1
     }
     LOG_DEBUG("%s  *p_key_mask=0x%02x",__func__,   *p_key_mask);
 }
+
+#endif  ///SMP_INCLUDED == TRUE
                                        

@@ -31,6 +31,8 @@
 #include "a2d_api.h"
 #include "bta_api.h"
 
+#if (BTA_AV_INCLUDED == TRUE)
+
 /*****************************************************************************
 **  Constants and data types
 *****************************************************************************/
@@ -804,5 +806,7 @@ void BTA_AvMetaCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CMD cmd_code, BT_HDR *p
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///BTA_AV_INCLUDED == TRUE
 
 #endif /* BTA_AV_API_H */

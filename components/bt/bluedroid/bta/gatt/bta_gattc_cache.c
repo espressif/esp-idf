@@ -788,6 +788,7 @@ static tBTA_GATT_STATUS bta_gattc_add_char_to_list(tBTA_GATTC_SERV *p_srvc_cb,
 *******************************************************************************/
 void bta_gattc_sdp_callback (UINT16 sdp_status)
 {
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISC_REC       *p_sdp_rec = NULL;
     tBT_UUID            service_uuid;
     tSDP_PROTOCOL_ELEM  pe;
@@ -842,6 +843,7 @@ void bta_gattc_sdp_callback (UINT16 sdp_status)
     GKI_freebuf(bta_gattc_cb.p_sdp_db);
     bta_gattc_cb.p_sdp_db  = NULL;
     bta_gattc_cb.sdp_conn_id = 0;
+#endif  ///SDP_INCLUDED == TRUE
 }
 /*******************************************************************************
 **
@@ -854,6 +856,7 @@ void bta_gattc_sdp_callback (UINT16 sdp_status)
 *******************************************************************************/
 static tBTA_GATT_STATUS bta_gattc_sdp_service_disc(UINT16 conn_id, tBTA_GATTC_SERV *p_server_cb)
 {
+#if (SDP_INCLUDED == TRUE)
     tSDP_UUID       uuid;
     UINT16          num_attrs = 2;
     UINT16          attr_list[2];
@@ -881,6 +884,9 @@ static tBTA_GATT_STATUS bta_gattc_sdp_service_disc(UINT16 conn_id, tBTA_GATTC_SE
         }
     }
     return status;
+#else
+    return BTA_GATT_NO_RESOURCES;
+#endif  ///SDP_INCLUDED == TRUE
 }
 /*******************************************************************************
 **

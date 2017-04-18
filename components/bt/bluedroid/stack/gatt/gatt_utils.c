@@ -1439,7 +1439,7 @@ tGATT_STATUS gatt_send_error_rsp (tGATT_TCB *p_tcb, UINT8 err_code, UINT8 op_cod
     return status;
 }
 
-
+#if (SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_add_sdp_record
@@ -1505,7 +1505,7 @@ UINT32 gatt_add_sdp_record (tBT_UUID *p_uuid, UINT16 start_hdl, UINT16 end_hdl)
 
     return (sdp_handle);
 }
-
+#endif  ///SDP_INCLUDED == TRUE
 
 #if GATT_CONFORMANCE_TESTING == TRUE
 /*******************************************************************************

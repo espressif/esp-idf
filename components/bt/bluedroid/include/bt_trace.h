@@ -193,11 +193,11 @@ inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 #endif
 
 #ifndef BTM_INITIAL_TRACE_LEVEL
-#define BTM_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
+#define BTM_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_DEBUG
 #endif
 
 #ifndef L2CAP_INITIAL_TRACE_LEVEL
-#define L2CAP_INITIAL_TRACE_LEVEL           BT_TRACE_LEVEL_WARNING
+#define L2CAP_INITIAL_TRACE_LEVEL           BT_TRACE_LEVEL_DEBUG
 #endif
 
 #ifndef RFCOMM_INITIAL_TRACE_LEVEL
@@ -245,7 +245,7 @@ inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 #endif
 
 #ifndef APPL_INITIAL_TRACE_LEVEL
-#define APPL_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
+#define APPL_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_DEBUG
 #endif
 
 #ifndef BT_TRACE_APPL
@@ -253,7 +253,7 @@ inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 #endif
 
 #ifndef GATT_INITIAL_TRACE_LEVEL
-#define GATT_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
+#define GATT_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_DEBUG
 #endif
 
 #ifndef SMP_INITIAL_TRACE_LEVEL

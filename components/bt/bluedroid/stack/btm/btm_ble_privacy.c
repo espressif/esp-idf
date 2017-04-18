@@ -733,6 +733,7 @@ BOOLEAN btm_ble_disable_resolving_list(UINT8 rl_mask, BOOLEAN to_resume )
 BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
 {
     BOOLEAN rt = FALSE;
+#if (SMP_INCLUDED == TRUE)
     UINT8 rl_mask = btm_cb.ble_ctr_cb.rl_state;
 
     BTM_TRACE_DEBUG("%s btm_cb.ble_ctr_cb.privacy_mode = %d\n", __func__,
@@ -812,6 +813,7 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
     } else {
         BTM_TRACE_DEBUG("Device not a RPA enabled device\n");
     }
+#endif  ///SMP_INCLUDED == TRUE
     return rt;
 }
 

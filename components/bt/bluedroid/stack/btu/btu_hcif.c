@@ -124,9 +124,9 @@ static void btu_ble_data_length_change_evt (UINT8 *p, UINT16 evt_len);
 #if (BLE_LLT_INCLUDED == TRUE)
 static void btu_ble_rc_param_req_evt(UINT8 *p);
 #endif
-#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+//#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
 static void btu_ble_proc_enhanced_conn_cmpl (UINT8 *p, UINT16 evt_len);
-#endif
+//#endif
 
 #endif
 
@@ -304,7 +304,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
     case HCI_BLE_EVENT:
         STREAM_TO_UINT8  (ble_sub_code, p);
 
-        HCI_TRACE_DEBUG("BLE HCI(id=%d) event = 0x%02x)", hci_evt_code,  ble_sub_code);
+        HCI_TRACE_ERROR("BLE HCI(id=%d) event = 0x%02x)", hci_evt_code,  ble_sub_code);
 
         switch (ble_sub_code) {
         case HCI_BLE_ADV_PKT_RPT_EVT: /* result of inquiry */
@@ -322,11 +322,11 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         case HCI_BLE_LTK_REQ_EVT: /* received only at slave device */
             btu_ble_proc_ltk_req(p);
             break;
-#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+//#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
         case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT:
             btu_ble_proc_enhanced_conn_cmpl(p, hci_evt_len);
             break;
-#endif
+//#endif
 #if (BLE_LLT_INCLUDED == TRUE)
         case HCI_BLE_RC_PARAM_REQ_EVT:
             btu_ble_rc_param_req_evt(p);
@@ -1686,12 +1686,12 @@ static void btu_ble_ll_conn_complete_evt ( UINT8 *p, UINT16 evt_len)
 {
     btm_ble_conn_complete(p, evt_len, FALSE);
 }
-#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+//#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
 static void btu_ble_proc_enhanced_conn_cmpl( UINT8 *p, UINT16 evt_len)
 {
     btm_ble_conn_complete(p, evt_len, TRUE);
 }
-#endif
+//#endif
 static void btu_ble_ll_conn_param_upd_evt (UINT8 *p, UINT16 evt_len)
 {
     /* LE connection update has completed successfully as a master. */
@@ -1712,13 +1712,14 @@ static void btu_ble_read_remote_feat_evt (UINT8 *p)
 
 static void btu_ble_proc_ltk_req (UINT8 *p)
 {
+#if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     UINT16 ediv, handle;
     UINT8   *pp;
 
     STREAM_TO_UINT16(handle, p);
     pp = p + 8;
     STREAM_TO_UINT16(ediv, pp);
-#if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
+
     btm_ble_ltk_request(handle, p, ediv);
 #endif
     /* This is empty until an upper layer cares about returning event */

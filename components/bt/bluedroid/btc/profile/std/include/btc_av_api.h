@@ -32,7 +32,7 @@
 #include "a2d_api.h"
 #include "a2d_sbc.h"
 
-
+#if (BTC_AV_INCLUDED == TRUE)
 /*****************************************************************************
  **  Constants and data types
  *****************************************************************************/
@@ -197,5 +197,7 @@ typedef struct {
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///BTC_AV_INCLUDED == TRUE
 
 #endif /* __BTC_AV_API_H__ */

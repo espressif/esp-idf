@@ -26,6 +26,9 @@
 #include "bt_target.h"
 #include "bta_hh_api.h"
 
+#if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
+
+
 /* max number of device types supported by BTA */
 #define BTA_HH_MAX_DEVT_SPT         9
 
@@ -58,3 +61,4 @@ const tBTA_HH_CFG bta_hh_cfg = {
 
 
 tBTA_HH_CFG *p_bta_hh_cfg = (tBTA_HH_CFG *) &bta_hh_cfg;
+#endif  ///defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)

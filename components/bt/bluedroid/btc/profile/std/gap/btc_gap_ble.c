@@ -928,11 +928,13 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         break;
     }        
     case BTC_GAP_BLE_SECURITY_RSP_EVT: {
+#if (SMP_INCLUDED == TRUE)
         BD_ADDR bd_addr;
         tBTA_DM_BLE_SEC_GRANT res = arg->sec_rsp.accept ? BTA_DM_SEC_GRANTED : BTA_DM_SEC_PAIR_NOT_SPT;
         memcpy(bd_addr, arg->sec_rsp.bd_addr, sizeof(BD_ADDR));
         BTA_DmBleSecurityGrant(bd_addr, res);
         break;
+#endif  ///SMP_INCLUDED == TRUE
     }
     default:
         break;

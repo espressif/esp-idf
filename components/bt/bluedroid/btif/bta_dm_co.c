@@ -22,15 +22,15 @@
 #include "bta_sys.h"
 #include "bta_dm_co.h"
 #include "bta_dm_ci.h"
+#include "btc_ble_storage.h"
 #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE)
 #include "bt_utils.h"
 #if (BTM_OOB_INCLUDED == TRUE)
 #include "btif_dm.h"
 #endif
 #endif /* #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE) */
-#if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
+#if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 #include "bte_appl.h"
-#include "btc_ble_storage.h"
 tBTE_APPL_CFG bte_appl_cfg = {
 #if SMP_INCLUDED == TRUE
     BTA_LE_AUTH_REQ_SC_MITM_BOND, // Authentication requirements
@@ -369,12 +369,14 @@ void bta_dm_co_le_io_key_req(BD_ADDR bd_addr, UINT8 *p_max_key_size,
                              tBTA_LE_KEY_TYPE  *p_resp_key )
 {
     UNUSED(bd_addr);
+#if (SMP_INCLUDED == TRUE)
     BTIF_TRACE_ERROR("##################################");
     BTIF_TRACE_ERROR("bta_dm_co_le_io_key_req: only setting max size to 16");
     BTIF_TRACE_ERROR("##################################");
     *p_max_key_size = 16;
     *p_init_key = *p_resp_key =
                       (BTA_LE_KEY_PENC | BTA_LE_KEY_PID | BTA_LE_KEY_PCSRK | BTA_LE_KEY_LENC | BTA_LE_KEY_LID | BTA_LE_KEY_LCSRK);
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 
@@ -398,10 +400,11 @@ void bta_dm_co_ble_load_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OC
     BTIF_TRACE_DEBUG("bta_dm_co_ble_load_local_keys:  Load local keys if any are persisted");
     BTIF_TRACE_DEBUG("##################################");
     btif_dm_get_ble_local_keys( p_key_mask, er, p_id_keys);
-#else
+#endif  ///defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE
+#if (SMP_INCLUDED == TRUE)
     btc_dm_get_ble_local_keys( p_key_mask, er, p_id_keys);
     LOG_WARN("bta_dm_co_ble_load_local_keys: func not ported\n");
-#endif
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -429,6 +432,7 @@ void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
                           tBTA_LE_KEY_TYPE *p_init_key,
                           tBTA_LE_KEY_TYPE  *p_resp_key )
 {
+#if (SMP_INCLUDED == TRUE)
     UNUSED(bd_addr);
     /* if OOB is not supported, this call-out function does not need to do anything
      * otherwise, look for the OOB data associated with the address and set *p_oob_data accordingly
@@ -458,41 +462,52 @@ void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
     if (bte_appl_cfg.ble_max_key_size > 7 && bte_appl_cfg.ble_max_key_size <= 16) {
         *p_max_key_size = bte_appl_cfg.ble_max_key_size;
     }
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 void bta_dm_co_ble_set_io_cap(UINT8   ble_io_cap)
 {
+#if (SMP_INCLUDED == TRUE)
     if(ble_io_cap < BTM_IO_CAP_MAX ) {
         bte_appl_cfg.ble_io_cap = ble_io_cap;
     } else {
         APPL_TRACE_ERROR("%s error:Invalid io cap value.",__func__);
     }
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 void bta_dm_co_ble_set_auth_req(UINT8   ble_auth_req)
 {
+#if (SMP_INCLUDED == TRUE)
     bte_appl_cfg.ble_auth_req = ble_auth_req;
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 void bta_dm_co_ble_set_init_key_req(UINT8 init_key)
 {
+#if (SMP_INCLUDED == TRUE)
    init_key &= 0x0f;  // 4~7bit reservd, only used the 0~3bit
    bte_appl_cfg.ble_init_key &= init_key;
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key)
 {
+#if (SMP_INCLUDED == TRUE)
    rsp_key &= 0x0f;  // 4~7bit reservd, only used the 0~3bit
    bte_appl_cfg.ble_init_key &= rsp_key;
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size)
 {
+#if (SMP_INCLUDED == TRUE)
     if(ble_key_size > 7 && ble_key_size >= 16) {
         bte_appl_cfg.ble_max_key_size = ble_key_size;
     } else {
         APPL_TRACE_ERROR("%s error:Invalid key size value, key_size =%d",__func__, ble_key_size);
     }
+#endif  ///SMP_INCLUDED == TRUE
 }
 #endif
 

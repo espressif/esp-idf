@@ -29,6 +29,7 @@
 #include "avct_defs.h"
 #include "avrc_api.h"
 
+#if (AVRC_INCLUDED == TRUE)
 /*      DEBUG FLAGS
  *
  * #define META_DEBUG_ENABLED
@@ -151,5 +152,7 @@ extern BOOLEAN avrc_is_valid_opcode(UINT8 opcode);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///AVRC_INCLUDED == TRUE
 
 #endif /* AVRC_INT_H */

@@ -41,7 +41,7 @@
 
 #include "btu.h"
 
-
+#if (SDP_INCLUDED == TRUE)
 static const UINT8  sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
                                        0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
                                       };
@@ -1023,3 +1023,5 @@ void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8 *p_uuid128)
     uuid16_bo = ntohs(uuid16);
     memcpy(p_uuid128 + 2, &uuid16_bo, sizeof(uint16_t));
 }
+
+#endif  ///SDP_INCLUDED == TRUE

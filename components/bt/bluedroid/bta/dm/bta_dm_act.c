@@ -52,7 +52,9 @@ static void bta_dm_service_search_remname_cback (BD_ADDR bd_addr, DEV_CLASS dc, 
 static void bta_dm_remname_cback (tBTM_REMOTE_DEV_NAME *p_remote_name);
 static void bta_dm_find_services ( BD_ADDR bd_addr);
 static void bta_dm_discover_next_device(void);
+#if (SDP_INCLUDED == TRUE)
 static void bta_dm_sdp_callback (UINT16 sdp_status);
+#endif  ///SDP_INCLUDED == TRUE
 static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, UINT8 *service_name, UINT8 service_id, BOOLEAN is_originator);
 static UINT8 bta_dm_pin_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, BOOLEAN min_16_digit);
 static UINT8 bta_dm_new_link_key_cback(BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, LINK_KEY key, UINT8 key_type);
@@ -1195,6 +1197,7 @@ void bta_dm_search_cancel (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_discover (tBTA_DM_MSG *p_data)
 {
+#if (SDP_INCLUDED == TRUE)
 #if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
     UINT16 len = (UINT16)(sizeof(tBT_UUID) * p_data->discover.num_uuid);
 #endif
@@ -1231,6 +1234,7 @@ void bta_dm_discover (tBTA_DM_MSG *p_data)
     bta_dm_search_cb.name_discover_done = FALSE;
     memcpy(&bta_dm_search_cb.uuid, &p_data->discover.uuid, sizeof(tSDP_UUID));
     bta_dm_discover_device(p_data->discover.bd_addr);
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1244,6 +1248,7 @@ void bta_dm_discover (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_di_disc_cmpl(tBTA_DM_MSG *p_data)
 {
+#if (SDP_INCLUDED == TRUE)
     tBTA_DM_DI_DISC_CMPL    di_disc;
 
     memset(&di_disc, 0, sizeof(tBTA_DM_DI_DISC_CMPL));
@@ -1258,8 +1263,10 @@ void bta_dm_di_disc_cmpl(tBTA_DM_MSG *p_data)
 
     bta_dm_di_cb.p_di_db = NULL;
     bta_dm_search_cb.p_search_cback(BTA_DM_DI_DISC_CMPL_EVT, (tBTA_DM_SEARCH *) &di_disc);
+#endif  ///SDP_INCLUDED == TRUE
 }
 
+#if (SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_di_disc_callback
@@ -1281,7 +1288,7 @@ static void bta_dm_di_disc_callback(UINT16 result)
         bta_sys_sendmsg(p_msg);
     }
 }
-
+#endif  ///SDP_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         bta_dm_disable_search_and_disc
@@ -1295,12 +1302,13 @@ static void bta_dm_di_disc_callback(UINT16 result)
 *******************************************************************************/
 static void bta_dm_disable_search_and_disc (void)
 {
+#if (SDP_INCLUDED == TRUE)
     tBTA_DM_DI_DISC_CMPL    di_disc;
-
+#endif ///SDP_INCLUDED == TRUE
     if (bta_dm_search_cb.state != BTA_DM_SEARCH_IDLE) {
         bta_dm_search_cancel(NULL);
     }
-
+#if (SDP_INCLUDED == TRUE)
     if (bta_dm_di_cb.p_di_db != NULL) {
         memset(&di_disc, 0, sizeof(tBTA_DM_DI_DISC_CMPL));
         bdcpy(di_disc.bd_addr, bta_dm_search_cb.peer_bdaddr);
@@ -1309,6 +1317,7 @@ static void bta_dm_disable_search_and_disc (void)
         bta_dm_di_cb.p_di_db = NULL;
         bta_dm_search_cb.p_search_cback(BTA_DM_DI_DISC_CMPL_EVT, NULL);
     }
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1323,6 +1332,7 @@ static void bta_dm_disable_search_and_disc (void)
 *******************************************************************************/
 void bta_dm_di_disc (tBTA_DM_MSG *p_data)
 {
+#if (SDP_INCLUDED == TRUE)
     UINT16  result = BTA_FAILURE;
     tBTA_DM_MSG *p_msg;
 
@@ -1346,6 +1356,7 @@ void bta_dm_di_disc (tBTA_DM_MSG *p_data)
         p_data->hdr.offset          = result;
         bta_sys_sendmsg(p_msg);
     }
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1482,7 +1493,7 @@ void bta_dm_disc_rmt_name (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
 {
-
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISC_REC   *p_sdp_rec = NULL;
     tBTA_DM_MSG     *p_msg;
     BOOLEAN          scn_found = FALSE;
@@ -1714,6 +1725,7 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
             bta_sys_sendmsg(p_msg);
         }
     }
+#endif  ///SDP_INCLUDE == TRUE
 }
 
 /*******************************************************************************
@@ -1839,12 +1851,13 @@ static void bta_dm_search_timer_cback (TIMER_LIST_ENT *p_tle)
 *******************************************************************************/
 void bta_dm_free_sdp_db (tBTA_DM_MSG *p_data)
 {
+#if (SDP_INCLUDED == TRUE)
     UNUSED(p_data);
     if (bta_dm_search_cb.p_sdp_db) {
         GKI_freebuf(bta_dm_search_cb.p_sdp_db);
         bta_dm_search_cb.p_sdp_db = NULL;
     }
-
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1878,13 +1891,14 @@ void bta_dm_queue_search (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_queue_disc (tBTA_DM_MSG *p_data)
 {
+#if (SDP_INCLUDED == TRUE)
     if (bta_dm_search_cb.p_search_queue) {
         GKI_freebuf(bta_dm_search_cb.p_search_queue);
     }
 
     bta_dm_search_cb.p_search_queue = (tBTA_DM_MSG *)GKI_getbuf(sizeof(tBTA_DM_API_DISCOVER));
     memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_DISCOVER));
-
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1936,6 +1950,7 @@ void bta_dm_search_cancel_cmpl (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG *p_data)
 {
+#if (SDP_INCLUDED == TRUE)
     UNUSED(p_data);
     if (bta_dm_search_cb.p_sdp_db) {
         GKI_freebuf(bta_dm_search_cb.p_sdp_db);
@@ -1943,6 +1958,7 @@ void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG *p_data)
     }
 
     bta_dm_search_cancel_notify(NULL);
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 
@@ -1983,7 +1999,7 @@ void bta_dm_search_cancel_notify (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 static void bta_dm_find_services ( BD_ADDR bd_addr)
 {
-
+#if (SDP_INCLUDED == TRUE)
     tSDP_UUID    uuid;
     tBTA_DM_MSG *p_msg;
 
@@ -2089,6 +2105,7 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
             bta_sys_sendmsg(p_msg);
         }
     }
+#endif  ///SDP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -2272,6 +2289,7 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
     }
 }
 
+#if (SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_sdp_callback
@@ -2293,7 +2311,7 @@ static void bta_dm_sdp_callback (UINT16 sdp_status)
 
     }
 }
-
+#endif  ///SDP_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         bta_dm_inq_results_cb
@@ -4102,6 +4120,7 @@ static void bta_dm_observe_cmpl_cb (void *p_result)
 static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_DATA *p_data)
 {
     tBTM_STATUS status = BTM_SUCCESS;
+#if (SMP_INCLUDED == TRUE)
     tBTA_DM_SEC sec_event;
     char *p_name = NULL;
 
@@ -4215,6 +4234,7 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
         status = BTM_NOT_AUTHORIZED;
         break;
     }
+#endif  ///SMP_INCLUDED == TRUE
     return status;
 }
 #endif  /* SMP_INCLUDED == TRUE */

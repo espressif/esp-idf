@@ -120,12 +120,12 @@ void gatt_init (void)
     fixed_reg.default_idle_tout  = 0xffff;                  /* 0xffff default idle timeout */
 
     L2CA_RegisterFixedChannel (L2CAP_ATT_CID, &fixed_reg);
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* Now, register with L2CAP for ATT PSM over BR/EDR */
     if (!L2CA_Register (BT_PSM_ATT, (tL2CAP_APPL_INFO *) &dyn_info)) {
         GATT_TRACE_ERROR ("ATT Dynamic Registration failed");
     }
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     BTM_SetSecurityLevel(TRUE, "", BTM_SEC_SERVICE_ATT, BTM_SEC_NONE, BT_PSM_ATT, 0, 0);
     BTM_SetSecurityLevel(FALSE, "", BTM_SEC_SERVICE_ATT, BTM_SEC_NONE, BT_PSM_ATT, 0, 0);
 
@@ -177,10 +177,13 @@ BOOLEAN gatt_connect (BD_ADDR rem_bda, tGATT_TCB *p_tcb, tBT_TRANSPORT transport
     if (transport == BT_TRANSPORT_LE) {
         p_tcb->att_lcid = L2CAP_ATT_CID;
         gatt_ret = L2CA_ConnectFixedChnl (L2CAP_ATT_CID, rem_bda);
+#if (CLASSIC_BT_INCLUDED == TRUE)
     } else {
         if ((p_tcb->att_lcid = L2CA_ConnectReq(BT_PSM_ATT, rem_bda)) != 0) {
             gatt_ret = TRUE;
         }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
     }
 
     return gatt_ret;
@@ -215,8 +218,10 @@ BOOLEAN gatt_disconnect (tGATT_TCB *p_tcb)
                     gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
                     ret = L2CA_CancelBleConnectReq (p_tcb->peer_bda);
                 }
+#if (CLASSIC_BT_INCLUDED == TRUE)
             } else {
                 ret = L2CA_DisconnectReq(p_tcb->att_lcid);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
             }
         } else {
             GATT_TRACE_DEBUG ("gatt_disconnect already in closing state");
@@ -527,6 +532,7 @@ static void gatt_le_data_ind (UINT16 chan, BD_ADDR bd_addr, BT_HDR *p_buf)
 *******************************************************************************/
 static void gatt_l2cif_connect_ind_cback (BD_ADDR  bd_addr, UINT16 lcid, UINT16 psm, UINT8 id)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* do we already have a control channel for this peer? */
     UINT8       result = L2CAP_CONN_OK;
     tL2CAP_CFG_INFO cfg;
@@ -563,6 +569,8 @@ static void gatt_l2cif_connect_ind_cback (BD_ADDR  bd_addr, UINT16 lcid, UINT16 
 
         L2CA_ConfigReq(lcid, &cfg);
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 }
 
 /*******************************************************************************
@@ -577,6 +585,7 @@ static void gatt_l2cif_connect_ind_cback (BD_ADDR  bd_addr, UINT16 lcid, UINT16 
 *******************************************************************************/
 static void gatt_l2cif_connect_cfm_cback(UINT16 lcid, UINT16 result)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tGATT_TCB       *p_tcb;
     tL2CAP_CFG_INFO cfg;
 
@@ -608,6 +617,8 @@ static void gatt_l2cif_connect_cfm_cback(UINT16 lcid, UINT16 result)
             }
         }
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 }
 
 /*******************************************************************************
@@ -622,6 +633,7 @@ static void gatt_l2cif_connect_cfm_cback(UINT16 lcid, UINT16 result)
 *******************************************************************************/
 void gatt_l2cif_config_cfm_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tGATT_TCB       *p_tcb;
     tGATTS_SRV_CHG  *p_srv_chg_clt = NULL;
 
@@ -657,6 +669,8 @@ void gatt_l2cif_config_cfm_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
             }
         }
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 }
 
 /*******************************************************************************
@@ -671,6 +685,7 @@ void gatt_l2cif_config_cfm_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
 *******************************************************************************/
 void gatt_l2cif_config_ind_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tGATT_TCB       *p_tcb;
     tGATTS_SRV_CHG  *p_srv_chg_clt = NULL;
     /* look up clcb for this channel */
@@ -709,6 +724,8 @@ void gatt_l2cif_config_ind_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
             }
         }
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 }
 
 /*******************************************************************************
@@ -723,6 +740,7 @@ void gatt_l2cif_config_ind_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
 *******************************************************************************/
 void gatt_l2cif_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tGATT_TCB       *p_tcb;
     UINT16          reason;
 
@@ -745,6 +763,8 @@ void gatt_l2cif_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
         /* send disconnect callback */
         gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, GATT_TRANSPORT_BR_EDR);
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 }
 
 /*******************************************************************************
@@ -759,6 +779,7 @@ void gatt_l2cif_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
 *******************************************************************************/
 static void gatt_l2cif_disconnect_cfm_cback(UINT16 lcid, UINT16 result)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tGATT_TCB       *p_tcb;
     UINT16          reason;
     UNUSED(result);
@@ -780,6 +801,8 @@ static void gatt_l2cif_disconnect_cfm_cback(UINT16 lcid, UINT16 result)
 
         gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, GATT_TRANSPORT_BR_EDR);
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 }
 
 /*******************************************************************************
@@ -794,6 +817,7 @@ static void gatt_l2cif_disconnect_cfm_cback(UINT16 lcid, UINT16 result)
 *******************************************************************************/
 static void gatt_l2cif_data_ind_cback(UINT16 lcid, BT_HDR *p_buf)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tGATT_TCB       *p_tcb;
 
     /* look up clcb for this channel */
@@ -804,6 +828,8 @@ static void gatt_l2cif_data_ind_cback(UINT16 lcid, BT_HDR *p_buf)
     } else { /* prevent buffer leak */
         GKI_freebuf(p_buf);
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 }
 
 /*******************************************************************************
@@ -817,11 +843,14 @@ static void gatt_l2cif_data_ind_cback(UINT16 lcid, BT_HDR *p_buf)
 *******************************************************************************/
 static void gatt_l2cif_congest_cback (UINT16 lcid, BOOLEAN congested)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tGATT_TCB *p_tcb = gatt_find_tcb_by_cid(lcid);
 
     if (p_tcb != NULL) {
         gatt_channel_congestion(p_tcb, congested);
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 }
 
 /*******************************************************************************

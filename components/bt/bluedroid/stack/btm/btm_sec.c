@@ -221,7 +221,7 @@ static BOOLEAN btm_serv_trusted(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_SEC_SERV_REC *
 *******************************************************************************/
 BOOLEAN BTM_SecRegister(tBTM_APPL_INFO *p_cb_info)
 {
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     BT_OCTET16      temp_value = {0};
 #endif
 

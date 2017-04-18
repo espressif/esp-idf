@@ -700,7 +700,9 @@ static BOOLEAN bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE *p_peer_dev, UINT8 index)
 #endif
 
     BTM_ReadPowerMode(p_peer_dev->peer_bdaddr, &mode);
+#if (BTM_SSR_INCLUDED == TRUE)
     p_rem_feat = BTM_ReadRemoteFeatures (p_peer_dev->peer_bdaddr);
+#endif  ///BTM_SSR_INCLUDED == TRUE
 #if (BTM_SSR_INCLUDED == TRUE)
     APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d, info:x%x", mode, index, p_peer_dev->info);
     if (mode != BTM_PM_MD_SNIFF ||

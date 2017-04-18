@@ -23,6 +23,7 @@
 #include "bt_types.h"
 #include "bta_av_api.h"
 
+#if (BTC_AV_INCLUDED == TRUE)
 #ifndef BTC_AVRC_TGT_INCLUDED
 #define BTC_AVRC_TGT_INCLUDED      FALSE
 #endif
@@ -70,5 +71,7 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr);
 **  BTC AVRC API
 ********************************************************************************/
 void btc_avrc_call_handler(btc_msg_t *msg);
+
+#endif  ///BTC_AV_INCLUDED == TRUE
 
 #endif /* __BTC_AVRC_H__ */

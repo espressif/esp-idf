@@ -37,6 +37,8 @@
 #include "btm_int.h"
 #include "btu.h"
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+
 /* Flag passed to retransmit_i_frames() when all packets should be retransmitted */
 #define L2C_FCR_RETX_ALL_PKTS   0xFF
 
@@ -2189,3 +2191,4 @@ static void l2c_fcr_collect_ack_delay (tL2C_CCB *p_ccb, UINT8 num_bufs_acked)
     }
 }
 #endif
+#endif ///CLASSIC_BT_INCLUDED == TRUE

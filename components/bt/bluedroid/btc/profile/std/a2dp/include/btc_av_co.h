@@ -17,6 +17,7 @@
 
 #include "btc_media.h"
 
+#if (BTA_AV_INCLUDED == TRUE)
 /*******************************************************************************
 **  Constants & Macros
 ********************************************************************************/
@@ -165,5 +166,7 @@ BOOLEAN bta_av_co_peer_cp_supported(tBTA_AV_HNDL hndl);
  **
  *******************************************************************************/
 BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max);
+
+#endif  ///BTA_AV_INCLUDED == TRUE
 
 #endif

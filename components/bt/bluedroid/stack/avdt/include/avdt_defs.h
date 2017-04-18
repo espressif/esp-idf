@@ -24,6 +24,9 @@
  ******************************************************************************/
 #ifndef AVDT_DEFS_H
 #define AVDT_DEFS_H
+#include "bt_target.h"
+
+#if (AVDT_INCLUDED == TRUE)
 
 /*****************************************************************************
 ** constants
@@ -198,6 +201,8 @@
 
 #define AVDT_MSG_BLD_NOSP(p, nosp) \
     *(p)++ = (UINT8) (nosp);
+
+#endif  ///AVRC_INCLUDED == TRUE
 
 #endif /* AVDT_DEFS_H */
 

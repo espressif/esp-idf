@@ -15,7 +15,7 @@
 #include "bt_types.h"
 #include "bt_target.h"
 
-
+#if (SMP_INCLUDED == TRUE)
 #define BTC_LE_LOCAL_KEY_IR       (1<<0)
 #define BTC_LE_LOCAL_KEY_IRK      (1<<1)
 #define BTC_LE_LOCAL_KEY_DHK      (1<<2)
@@ -121,3 +121,4 @@ void btc_dm_load_ble_local_keys(void);
 
 void btc_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OCTET16 er,
                                                             tBTA_BLE_LOCAL_ID_KEYS *p_id_keys);
+#endif  ///SMP_INCLUDED == TRUE

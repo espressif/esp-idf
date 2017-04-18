@@ -24,7 +24,7 @@
 #ifndef  SMP_INT_H
 #define  SMP_INT_H
 
-#if BLE_INCLUDED == TRUE
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 
 #include "btu.h"
 #include "btm_ble_api.h"
@@ -530,6 +530,6 @@ extern BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 len
                                         UINT16 tlen, UINT8 *p_signature);
 extern void print128(BT_OCTET16 x, const UINT8 *key_name);
 
-#endif
+#endif  ///BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 
 #endif /* SMP_INT_H */

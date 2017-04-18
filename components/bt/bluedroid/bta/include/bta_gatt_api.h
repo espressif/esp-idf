@@ -40,7 +40,7 @@
 
 
 #ifndef     BTA_GATT_DEBUG
-#define     BTA_GATT_DEBUG       FALSE
+#define     BTA_GATT_DEBUG       TRUE
 #endif
 
 /*****************************************************************************

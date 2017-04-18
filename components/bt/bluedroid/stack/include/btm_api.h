@@ -1531,6 +1531,7 @@ typedef void (tBTM_BOND_CANCEL_CMPL_CALLBACK) (tBTM_STATUS result);
 
 /* LE related event and data structure
 */
+#if (SMP_INCLUDED == TRUE)
 #define BTM_LE_IO_REQ_EVT       SMP_IO_CAP_REQ_EVT     /* received IO_CAPABILITY_REQUEST event */
 #define BTM_LE_SEC_REQUEST_EVT  SMP_SEC_REQUEST_EVT    /* security request event */
 #define BTM_LE_KEY_NOTIF_EVT    SMP_PASSKEY_NOTIF_EVT  /* received USER_PASSKEY_NOTIFY event */
@@ -1546,8 +1547,10 @@ typedef void (tBTM_BOND_CANCEL_CMPL_CALLBACK) (tBTM_STATUS result);
 #define BTM_LE_COMPLT_EVT       SMP_COMPLT_EVT         /* SMP complete event */
 #define BTM_LE_LAST_FROM_SMP    BTM_LE_BR_KEYS_REQ_EVT
 #define BTM_LE_KEY_EVT          BTM_LE_LAST_FROM_SMP + 1 /* KEY update event */
+#endif  ///SMP_INCLUDED == TRUE
 typedef UINT8 tBTM_LE_EVT;
 
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 #define BTM_LE_KEY_NONE           0
 #define BTM_LE_KEY_PENC      SMP_SEC_KEY_TYPE_ENC        /* encryption information of peer device */
 #define BTM_LE_KEY_PID       SMP_SEC_KEY_TYPE_ID         /* identity key of the peer device */
@@ -1557,12 +1560,15 @@ typedef UINT8 tBTM_LE_EVT;
 #define BTM_LE_KEY_LENC      (SMP_SEC_KEY_TYPE_ENC << 4)  /* master role security information:div */
 #define BTM_LE_KEY_LID       (SMP_SEC_KEY_TYPE_ID << 4)   /* master device ID key */
 #define BTM_LE_KEY_LCSRK     (SMP_SEC_KEY_TYPE_CSRK << 4) /* local CSRK has been deliver to peer */
+#endif  ///BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 typedef UINT8 tBTM_LE_KEY_TYPE;
-
+#if (SMP_INCLUDED == TRUE)
 #define BTM_LE_AUTH_REQ_NO_BOND SMP_AUTH_NO_BOND   /* 0 */
 #define BTM_LE_AUTH_REQ_BOND    SMP_AUTH_GEN_BOND  /* 1 << 0 */
 #define BTM_LE_AUTH_REQ_MITM    SMP_AUTH_YN_BIT    /* 1 << 2 */
+#endif  ///SMP_INCLUDED == TRUE
 typedef UINT8 tBTM_LE_AUTH_REQ;
+#if (SMP_INCLUDED == TRUE)
 #define BTM_LE_SC_SUPPORT_BIT           SMP_SC_SUPPORT_BIT     /* (1 << 3) */
 #define BTM_LE_KP_SUPPORT_BIT           SMP_KP_SUPPORT_BIT     /* (1 << 4) */
 
@@ -1576,6 +1582,7 @@ typedef UINT8 tBTM_LE_AUTH_REQ;
 #define BTM_LE_SEC_NONE             SMP_SEC_NONE
 #define BTM_LE_SEC_UNAUTHENTICATE   SMP_SEC_UNAUTHENTICATE      /* 1 */
 #define BTM_LE_SEC_AUTHENTICATED    SMP_SEC_AUTHENTICATED       /* 4 */
+#endif  ///SMP_INCLUDED == TRUE
 typedef UINT8 tBTM_LE_SEC;
 
 

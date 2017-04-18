@@ -293,18 +293,22 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
     BOOLEAN             is_link_key_known = FALSE;
     BOOLEAN             is_key_mitm = FALSE;
     UINT8               key_type;
+#if (SMP_INCLUDED == TRUE)
     tBTM_BLE_SEC_REQ_ACT    sec_act = BTM_LE_SEC_NONE;
-
+#endif  ///SMP_INCLUDED == TRUE
     if (auth_req == GATT_AUTH_REQ_NONE ) {
         return act;
     }
 
     BTM_GetSecurityFlagsByTransport(p_tcb->peer_bda, &sec_flag, p_clcb->p_tcb->transport);
-
+#if (SMP_INCLUDED == TRUE)
     btm_ble_link_sec_check(p_tcb->peer_bda, auth_req, &sec_act);
-
+#endif  ///SMP_INCLUDED == TRUE
     /* if a encryption is pending, need to wait */
-    if (sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD &&
+    if (
+#if (SMP_INCLUDED == TRUE)
+    sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD &&
+#endif  ///SMP_INCLUDED == TRUE
             auth_req != GATT_AUTH_REQ_NONE) {
         return GATT_SEC_ENC_PENDING;
     }
@@ -350,7 +354,10 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
             if (!is_link_encrypted) {
                 btm_ble_get_enc_key_type(p_tcb->peer_bda, &key_type);
 
-                if ( (key_type & BTM_LE_KEY_LCSRK) &&
+                if (
+#if (SMP_INCLUDED == TRUE)
+                    (key_type & BTM_LE_KEY_LCSRK) &&
+#endif  ///SMP_INCLUDED == TRUE
                         ((auth_req == GATT_AUTH_REQ_SIGNED_NO_MITM) ||
                          (auth_req == GATT_AUTH_REQ_SIGNED_MITM))) {
                     act = GATT_SEC_SIGN_DATA;

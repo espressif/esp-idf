@@ -25,7 +25,7 @@
 #define A2D_INT_H
 
 #include "a2d_api.h"
-
+#if (A2D_INCLUDED == TRUE)
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -77,5 +77,5 @@ extern void a2d_set_avdt_sdp_ver (UINT16 avdt_sdp_ver);
 #ifdef __cplusplus
 }
 #endif
-
+#endif  ///A2D_INCLUDED == TRUE
 #endif /* A2D_INT_H */

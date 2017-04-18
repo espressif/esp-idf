@@ -201,6 +201,7 @@ typedef struct {
 #endif
 } tBTA_DM_API_SEARCH;
 
+#if (SDP_INCLUDED == TRUE)
 /* data type for BTA_DM_API_DISCOVER_EVT */
 typedef struct {
     BT_HDR      hdr;
@@ -215,12 +216,15 @@ typedef struct {
 #endif
     tSDP_UUID    uuid;
 } tBTA_DM_API_DISCOVER;
+#endif  ///SDP_INCLUDED == TRUE
 
 /* data type for BTA_DM_API_DI_DISC_EVT */
 typedef struct {
     BT_HDR              hdr;
     BD_ADDR             bd_addr;
+#if (SDP_INCLUDED == TRUE)
     tBTA_DISCOVERY_DB   *p_sdp_db;
+#endif  ///SDP_INCLUDED == TRUE
     UINT32              len;
     tBTA_DM_SEARCH_CBACK *p_cback;
 } tBTA_DM_API_DI_DISC;
@@ -675,9 +679,9 @@ typedef union {
     tBTA_DM_API_REMOVE_DEVICE remove_dev;
 
     tBTA_DM_API_SEARCH search;
-
+#if (SDP_INCLUDED == TRUE)
     tBTA_DM_API_DISCOVER discover;
-
+#endif  ///SDP_INCLUDED == TRUE
     tBTA_DM_API_BOND bond;
 
     tBTA_DM_API_BOND_CANCEL bond_cancel;
@@ -918,7 +922,9 @@ typedef struct {
     tBTA_SERVICE_MASK      services;
     tBTA_SERVICE_MASK      services_to_search;
     tBTA_SERVICE_MASK      services_found;
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISCOVERY_DB     *p_sdp_db;
+#endif  ///SDP_INCLUDED == TRUE
     UINT16                 state;
     BD_ADDR                peer_bdaddr;
     BOOLEAN                name_discover_done;
@@ -928,7 +934,9 @@ typedef struct {
     tBTA_DM_MSG           *p_search_queue;   /* search or discover commands during search cancel stored here */
     BOOLEAN                wait_disc;
     BOOLEAN                sdp_results;
+#if (SDP_INCLUDED == TRUE)
     tSDP_UUID              uuid;
+#endif  ///SDP_INCLUDED == TRUE
     UINT8                  peer_scn;
     BOOLEAN                sdp_search;
     BOOLEAN                cancel_pending; /* inquiry cancel is pending */
@@ -955,7 +963,9 @@ typedef struct {
 
 /* DI control block */
 typedef struct {
+#if (SDP_INCLUDED == TRUE)
     tSDP_DISCOVERY_DB     *p_di_db;     /* pointer to the DI discovery database */
+#endif  ///SDP_INCLUDED == TRUE
     UINT8               di_num;         /* total local DI record number */
     UINT32              di_handle[BTA_DI_NUM_MAX];  /* local DI record handle, the first one is primary record */
 } tBTA_DM_DI_CB;

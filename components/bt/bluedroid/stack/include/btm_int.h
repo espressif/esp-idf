@@ -759,7 +759,9 @@ typedef struct {
     **      ACL Management
     ****************************************************/
     tACL_CONN   acl_db[MAX_L2CAP_LINKS];
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8       btm_scn[BTM_MAX_SCN];        /* current SCNs: TRUE if SCN is in use */
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     UINT16      btm_def_link_policy;
     UINT16      btm_def_link_super_tout;
 
