@@ -28,24 +28,33 @@ config MEMMAP_SMP
         to save some memory. (ToDo: Make this automatically depend on unicore support)
 
 config MEMMAP_TRACEMEM
-    bool "Use TRAX tracing feature"
-    default "n"
-    help
-        The ESP32 contains a feature which allows you to trace the execution path the processor
-        has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
-        of memory that can't be used for general purposes anymore. Disable this if you do not know
-        what this is.
+	bool
+	default "n"
 
 config MEMMAP_TRACEMEM_TWOBANKS
-    bool "Reserve memory for tracing both pro as well as app cpu execution"
+    bool
     default "n"
-    depends on MEMMAP_TRACEMEM && MEMMAP_SMP
+
+config ESP32_TRAX
+    bool "Use TRAX tracing feature"
+    default "n"
+    select MEMMAP_TRACEMEM
     help
         The ESP32 contains a feature which allows you to trace the execution path the processor
         has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
         of memory that can't be used for general purposes anymore. Disable this if you do not know
         what this is.
 
+config ESP32_TRAX_TWOBANKS
+    bool "Reserve memory for tracing both pro as well as app cpu execution"
+    default "n"
+    depends on ESP32_TRAX && MEMMAP_SMP
+    select MEMMAP_TRACEMEM_TWOBANKS
+    help
+        The ESP32 contains a feature which allows you to trace the execution path the processor
+        has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
+        of memory that can't be used for general purposes anymore. Disable this if you do not know
+        what this is.
 
 # Memory to reverse for trace, used in linker script
 config TRACEMEM_RESERVE_DRAM
@@ -94,6 +103,45 @@ config ESP32_CORE_DUMP_LOG_LEVEL
     default 1
     help
         Config core dump module logging level (0-5).
+
+choice ESP32_APPTRACE_DESTINATION
+    prompt "AppTrace: destination"
+    default ESP32_APPTRACE_DEST_NONE
+    help
+        Select destination for application trace: trace memory, uart or none (to disable).
+
+config ESP32_APPTRACE_DEST_TRAX
+    bool "Trace memory"
+    select ESP32_APPTRACE_ENABLE
+config ESP32_APPTRACE_DEST_UART
+    bool "UART"
+    select ESP32_APPTRACE_ENABLE
+config ESP32_APPTRACE_DEST_NONE
+    bool "None"
+endchoice
+
+config ESP32_APPTRACE_ENABLE
+    bool
+    depends on !ESP32_TRAX
+    select MEMMAP_TRACEMEM
+    select MEMMAP_TRACEMEM_TWOBANKS
+    default F
+    help
+        Enables/disable application tracing module.
+
+config ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO
+    int "AppTrace: Timeout for flushing last trace data to host on panic"
+    depends on ESP32_APPTRACE_ENABLE
+    default 4294967295
+    help
+        Timeout for flushing last trace data to host in case of panic. In us.
+
+config ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH
+    int "AppTrace: Threshold for flushing last trace data to host on panic"
+    depends on ESP32_APPTRACE_DEST_TRAX
+    default 50
+    help
+        Threshold for flushing last trace data to host on panic. In percents of TRAX memory block length.
 
 # Not implemented and/or needs new silicon rev to work
 config MEMMAP_SPISRAM
