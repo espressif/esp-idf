@@ -25,12 +25,17 @@ ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 LINKER_SCRIPTS += esp32.rom.spiflash.ld
 endif
 
+#ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the 
+#linker will ignore panic_highint_hdl.S as it has no other files depending on any
+#symbols in it.
 COMPONENT_ADD_LDFLAGS := -lesp32 \
                          $(COMPONENT_PATH)/libhal.a \
                          -L$(COMPONENT_PATH)/lib \
                          $(addprefix -l,$(LIBS)) \
                          -L $(COMPONENT_PATH)/ld \
                          -T esp32_out.ld \
+                         -u ld_include_panic_highint_hdl \
+                         -u ld_include_dport_highint_hdl \
                          $(addprefix -T ,$(LINKER_SCRIPTS))
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
