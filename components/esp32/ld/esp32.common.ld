@@ -92,6 +92,23 @@ SECTIONS
     *libsoc.a:(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
     *libspi_flash.a:spi_flash_rom_patch.o(.literal .text .literal.* .text.*)
+
+    /* Place a subset of newlib routines usually found in ROM, in iram. */
+    *libc-psram-workaround.a:lib_a-abs.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-bzero.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-div.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-ldiv.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-setjmp.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-memccpy.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-memchr.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-memcmp.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-memcpy.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-memmem.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-memmove.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-mempcpy.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-memrchr.o(.literal .text .literal.* .text.*)
+    *libc-psram-workaround.a:lib_a-memset.o(.literal .text .literal.* .text.*)
+
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 
