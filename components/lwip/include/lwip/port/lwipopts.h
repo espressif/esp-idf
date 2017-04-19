@@ -585,6 +585,18 @@
  */
 #define TCPIP_DEBUG                     LWIP_DBG_OFF
 
+/**
+ * ETHARP_TRUST_IP_MAC==1: Incoming IP packets cause the ARP table to be
+ * updated with the source MAC and IP addresses supplied in the packet.
+ * You may want to disable this if you do not trust LAN peers to have the
+ * correct addresses, or as a limited approach to attempt to handle
+ * spoofing. If disabled, lwIP will need to make a new ARP request if
+ * the peer is not already in the ARP table, adding a little latency.
+ * The peer *is* in the ARP table if it requested our address before.
+ * Also notice that this slows down input processing of every IP packet!
+ */
+#define ETHARP_TRUST_IP_MAC             1
+
 
 /* Enable all Espressif-only options */
 

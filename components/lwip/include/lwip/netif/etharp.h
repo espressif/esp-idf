@@ -134,6 +134,10 @@ err_t etharp_raw(struct netif *netif, const struct eth_addr *ethsrc_addr,
 
 void etharp_arp_input(struct netif *netif, struct eth_addr *ethaddr, struct pbuf *p);
 
+#if ETHARP_TRUST_IP_MAC
+void etharp_ip_input(struct netif *netif, struct pbuf *p);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
