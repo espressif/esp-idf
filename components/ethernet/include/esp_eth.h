@@ -15,6 +15,7 @@
 #ifndef __ESP_ETH_H__
 #define __ESP_ETH_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "esp_err.h"
 
@@ -24,7 +25,7 @@ extern "C" {
 
 typedef enum {
     ETH_MODE_RMII = 0,
-    ETH_MDOE_MII,
+    ETH_MODE_MII,
 } eth_mode_t;
 
 typedef enum {
@@ -34,7 +35,7 @@ typedef enum {
 
 typedef enum {
     ETH_MODE_HALFDUPLEX = 0,
-    ETH_MDOE_FULLDUPLEX,
+    ETH_MODE_FULLDUPLEX,
 } eth_duplex_mode_t;
 
 typedef enum {
@@ -99,8 +100,9 @@ typedef struct {
     bool flow_ctrl_enable;                      /*!< flag of flow ctrl enable */
     eth_phy_get_partner_pause_enable_func  phy_get_partner_pause_enable; /*!< get partner pause enable */
     eth_phy_power_enable_func  phy_power_enable;  /*!< enable or disable phy power */
-    
+
 } eth_config_t;
+
 
 /**
  * @brief  Init ethernet mac

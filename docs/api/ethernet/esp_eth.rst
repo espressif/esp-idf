@@ -13,10 +13,17 @@ Header Files
 ^^^^^^^^^^^^
 
   * :component_file:`ethernet/include/esp_eth.h`
+    * :component_file:`ethernet/include/phy/phy.h`
 
-Macros
-^^^^^^
+PHY Interfaces
+^^^^^^^^^^^^^^
 
+The configured PHY model(s) are set in software by configuring the eth_config_t structure for the given PHY.
+
+Headers include a default configuration structure. These default configurations will need some members overriden or re-set before they can be used for a particular PHY hardware configuration. Consult the Ethernet example to see how this is done.
+
+  * :component_file:`ethernet/include/phy/phy_tlk110.h`
+  * :component_file:`ethernet/include/phy/phy_lan8720.h`
 
 Type Definitions
 ^^^^^^^^^^^^^^^^
@@ -56,3 +63,10 @@ Functions
 .. doxygenfunction:: esp_eth_smi_write
 .. doxygenfunction:: esp_eth_smi_read
 .. doxygenfunction:: esp_eth_free_rx_buf
+
+
+PHY Configuration Constants
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. doxygenvariable:: phy_tlk110_default_ethernet_config
+.. doxygenvariable:: phy_lan8720_default_ethernet_config

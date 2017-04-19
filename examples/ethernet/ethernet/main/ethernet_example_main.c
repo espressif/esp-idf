@@ -34,10 +34,12 @@
 #include "driver/gpio.h"
 
 #ifdef CONFIG_PHY_LAN8720
-#include "lan8720_phy.h"
+#include "eth_phy/phy_lan8720.h"
+#define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
 #endif
 #ifdef CONFIG_PHY_TLK110
-#include "tlk110_phy.h"
+#include "eth_phy/phy_tlk110.h"
+#define DEFAULT_ETHERNET_PHY_CONFIG phy_tlk110_default_ethernet_config
 #endif
 
 static const char *TAG = "eth_example";
@@ -46,57 +48,21 @@ static const char *TAG = "eth_example";
 #define PIN_SMI_MDC   23
 #define PIN_SMI_MDIO  18
 
-void phy_tlk110_check_phy_init(void)
-{
-    while((esp_eth_smi_read(BASIC_MODE_STATUS_REG) & AUTO_NEGOTIATION_COMPLETE ) != AUTO_NEGOTIATION_COMPLETE)
-    {};
-    while((esp_eth_smi_read(PHY_STATUS_REG) & AUTO_NEGOTIATION_STATUS ) != AUTO_NEGOTIATION_STATUS)
-    {};
-    while((esp_eth_smi_read(CABLE_DIAGNOSTIC_CONTROL_REG) & DIAGNOSTIC_DONE ) != DIAGNOSTIC_DONE)
-    {};
-}
+/* This replaces the default PHY power on/off function with one that
+   also uses a GPIO for power on/off.
 
-eth_speed_mode_t phy_tlk110_get_speed_mode(void)
+   If this GPIO is not connected on your device (and PHY is always powered), you can use the default PHY-specific power
+   on/off function rather than overriding with this one.
+*/
+static void phy_device_power_enable_via_gpio(bool enable)
 {
-    if((esp_eth_smi_read(PHY_STATUS_REG) & SPEED_STATUS ) != SPEED_STATUS) {
-        return ETH_SPEED_MODE_100M;
-    } else {
-        return ETH_SPEED_MODE_10M;
+    assert(DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable);
+
+    if (!enable) {
+        /* Do the PHY-specific power_enable(false) function before powering down */
+        DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable(false);
     }
-}
 
-eth_duplex_mode_t phy_tlk110_get_duplex_mode(void)
-{
-    if((esp_eth_smi_read(PHY_STATUS_REG) & DUPLEX_STATUS ) == DUPLEX_STATUS) {
-        return ETH_MDOE_FULLDUPLEX;
-    } else {
-        return ETH_MODE_HALFDUPLEX;
-    }
-}
-
-bool phy_tlk110_check_phy_link_status(void)
-{
-    return ((esp_eth_smi_read(BASIC_MODE_STATUS_REG) & LINK_STATUS) == LINK_STATUS );
-}
-
-bool phy_tlk110_get_partner_pause_enable(void)
-{
-    if((esp_eth_smi_read(PHY_LINK_PARTNER_ABILITY_REG) & PARTNER_PAUSE) == PARTNER_PAUSE) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-void phy_enable_flow_ctrl(void)
-{
-    uint32_t data = 0;
-    data = esp_eth_smi_read(AUTO_NEG_ADVERTISEMENT_REG);
-    esp_eth_smi_write(AUTO_NEG_ADVERTISEMENT_REG,data|ASM_DIR|PAUSE);
-}
-
-void phy_device_power_enable(bool enable)
-{
     gpio_pad_select_gpio(PIN_PHY_POWER);
     gpio_set_direction(PIN_PHY_POWER,GPIO_MODE_OUTPUT);
     if(enable == true) {
@@ -107,37 +73,27 @@ void phy_device_power_enable(bool enable)
         ESP_LOGD(TAG, "power_enable(FALSE)");
     }
 
-    esp_eth_smi_write(SW_STRAP_CONTROL_REG, DEFAULT_PHY_CONFIG | SW_STRAP_CONFIG_DONE);
+    // Allow the power up/down to take effect, min 300us
+    vTaskDelay(1);
 
-    ets_delay_us(300);
-
-    //if config.flow_ctrl_enable == true ,enable this
-    phy_enable_flow_ctrl();
+    if (enable) {
+        /* Run the PHY-specific power on operations now the PHY has power */
+        DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable(true);
+    }
 }
 
-void eth_gpio_config_rmii(void)
+static void eth_gpio_config_rmii(void)
 {
-    //crs_dv to gpio27 ,can not change (default so not needed but physical signal must be connected)
-    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO27_U, FUNC_GPIO27_EMAC_RX_DV);
-
-    //txd0 to gpio19 ,can not change
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO19_U, FUNC_GPIO19_EMAC_TXD0);
-    //tx_en to gpio21 ,can not change
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO21_U, FUNC_GPIO21_EMAC_TX_EN);
-    //txd1 to gpio22 , can not change
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO22_U, FUNC_GPIO22_EMAC_TXD1);
-    //rxd0 to gpio25 , can not change
-    gpio_set_direction(25, GPIO_MODE_INPUT);
-    //rxd1 to gpio26 ,can not change
-    gpio_set_direction(26, GPIO_MODE_INPUT);
-    //rmii clk  ,can not change
-    gpio_set_direction(0, GPIO_MODE_INPUT);
-
-    //mdc to gpio23
-    gpio_matrix_out(PIN_SMI_MDC, EMAC_MDC_O_IDX, 0, 0);
-    //mdio to gpio18
-    gpio_matrix_out(PIN_SMI_MDIO, EMAC_MDO_O_IDX, 0, 0);
-    gpio_matrix_in(PIN_SMI_MDIO, EMAC_MDI_I_IDX, 0);
+    // RMII data pins are fixed:
+    // TXD0 = GPIO19
+    // TXD1 = GPIO22
+    // TX_EN = GPIO21
+    // RXD0 = GPIO25
+    // RXD1 = GPIO26
+    // CLK == GPIO0
+    phy_rmii_configure_data_interface_pins();
+    // MDC is GPIO 23, MDIO is GPIO 18
+    phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
 }
 
 void eth_task(void *pvParameter)
@@ -166,15 +122,15 @@ void app_main()
     tcpip_adapter_init();
     esp_event_loop_init(NULL, NULL);
 
-#ifdef CONFIG_PHY_LAN8720
-    eth_config_t config = lan8720_default_ethernet_phy_config;
-#endif
-#ifdef CONFIG_PHY_TLK110
-    eth_config_t config = tlk110_default_ethernet_phy_config;
-#endif
+    eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
+    /* Set the PHY address in the example configuration */
+    config.phy_addr = CONFIG_PHY_ID;
     config.gpio_config = eth_gpio_config_rmii;
     config.tcpip_input = tcpip_adapter_eth_input;
-    config.phy_power_enable = phy_device_power_enable;
+
+    /* Replace the default 'power enable' function with an example-specific
+       one that toggles a power GPIO. */
+    config.phy_power_enable = phy_device_power_enable_via_gpio;
 
     ret = esp_eth_init(&config);
 

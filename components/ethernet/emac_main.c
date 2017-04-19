@@ -532,7 +532,7 @@ static void emac_set_macaddr_reg(void)
 static void emac_check_phy_init(void)
 {
     emac_config.emac_phy_check_init();
-    if (emac_config.emac_phy_get_duplex_mode() == ETH_MDOE_FULLDUPLEX) {
+    if (emac_config.emac_phy_get_duplex_mode() == ETH_MODE_FULLDUPLEX) {
         REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
     } else {
         REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
@@ -547,7 +547,7 @@ static void emac_check_phy_init(void)
     emac_config.emac_flow_ctrl_partner_support = false;
 #else
     if (emac_config.emac_flow_ctrl_enable == true) {
-        if (emac_config.emac_phy_get_partner_pause_enable() == true && emac_config.emac_phy_get_duplex_mode() == ETH_MDOE_FULLDUPLEX) {
+        if (emac_config.emac_phy_get_partner_pause_enable() == true && emac_config.emac_phy_get_duplex_mode() == ETH_MODE_FULLDUPLEX) {
             emac_enable_flowctrl();
             emac_config.emac_flow_ctrl_partner_support = true;
         } else {
@@ -954,7 +954,7 @@ esp_err_t esp_eth_init(eth_config_t *config)
         goto _exit;
     }
 
-    emac_config.emac_phy_power_enable(true);    
+    emac_config.emac_phy_power_enable(true);
 
     //before set emac reg must enable clk
     emac_enable_clk(true);
