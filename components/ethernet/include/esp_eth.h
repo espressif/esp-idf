@@ -175,7 +175,7 @@ void esp_eth_get_mac(uint8_t mac[6]);
 void esp_eth_smi_write(uint32_t reg_num, uint16_t value);
 
 /**
- * @brief  Write phy reg with smi interface.
+ * @brief  Read phy reg with smi interface.
  *
  * @note  phy base addr must be right.
  *
@@ -184,6 +184,35 @@ void esp_eth_smi_write(uint32_t reg_num, uint16_t value);
  * @return value what read from phy reg
  */
 uint16_t esp_eth_smi_read(uint32_t reg_num);
+
+/**
+ * @brief Continuously read a PHY register over SMI interface, wait until the register has the desired value.
+ *
+ * @note PHY base address must be right.
+ *
+ * @param reg_num: PHY register number
+ * @param value: Value to wait for (masked with value_mask)
+ * @param value_mask: Mask of bits to match in the register.
+ * @param timeout_ms: Timeout to wait for this value (milliseconds). 0 means never timeout.
+ *
+ * @return ESP_OK if desired value matches, ESP_ERR_TIMEOUT if timed out.
+ */
+esp_err_t esp_eth_smi_wait_value(uint32_t reg_num, uint16_t value, uint16_t value_mask, int timeout_ms);
+
+/**
+ * @brief Continuously read a PHY register over SMI interface, wait until the register has all bits in a mask set.
+ *
+ * @note PHY base address must be right.
+ *
+ * @param reg_num: PHY register number
+ * @param value_mask: Value mask to wait for (all bits in this mask must be set)
+ * @param timeout_ms: Timeout to wait for this value (milliseconds). 0 means never timeout.
+ *
+ * @return ESP_OK if desired value matches, ESP_ERR_TIMEOUT if timed out.
+ */
+static inline esp_err_t esp_eth_smi_wait_set(uint32_t reg_num, uint16_t value_mask, int timeout_ms) {
+    return esp_eth_smi_wait_value(reg_num, value_mask, value_mask, timeout_ms);
+}
 
 /**
  * @brief  Free emac rx buf.

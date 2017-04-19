@@ -26,6 +26,7 @@
  */
 #define TLK110_PHY_ID1 0x2000
 #define TLK110_PHY_ID2 0xa210
+#define TLK110_PHY_ID2_MASK 0xFFF0
 
 /* TLK110-specific registers */
 #define SW_STRAP_CONTROL_REG            (0x9)
@@ -56,15 +57,9 @@ void phy_tlk110_check_phy_init(void)
 {
     phy_tlk110_dump_registers();
 
-    while((esp_eth_smi_read(MII_BASIC_MODE_STATUS_REG) & MII_AUTO_NEGOTIATION_COMPLETE ) == 0) {
-        vTaskDelay(1);
-    }
-    while((esp_eth_smi_read(PHY_STATUS_REG) & AUTO_NEGOTIATION_STATUS ) == 0) {
-        vTaskDelay(1);
-    }
-    while((esp_eth_smi_read(CABLE_DIAGNOSTIC_CONTROL_REG) & DIAGNOSTIC_DONE ) == 0) {
-        vTaskDelay(1);
-    }
+    esp_eth_smi_wait_set(MII_BASIC_MODE_STATUS_REG, MII_AUTO_NEGOTIATION_COMPLETE, 0);
+    esp_eth_smi_wait_set(PHY_STATUS_REG, AUTO_NEGOTIATION_STATUS, 0);
+    esp_eth_smi_wait_set(CABLE_DIAGNOSTIC_CONTROL_REG, DIAGNOSTIC_DONE, 0);
 }
 
 eth_speed_mode_t phy_tlk110_get_speed_mode(void)
@@ -106,14 +101,12 @@ void phy_tlk110_init(void)
 
     esp_eth_smi_write(PHY_RESET_CONTROL_REG, SOFTWARE_RESET);
 
-    unsigned phy_id1, phy_id2;
+    esp_err_t res1, res2;
     do {
-        vTaskDelay(1);
-        phy_id1 = esp_eth_smi_read(MII_PHY_IDENTIFIER_1_REG);
-        phy_id2 = esp_eth_smi_read(MII_PHY_IDENTIFIER_2_REG);
-        ESP_LOGD(TAG, "PHY ID 0x%04x 0x%04x", phy_id1, phy_id2);
-        phy_id2 &= 0xFFF0; // Remove model revision code
-    } while (phy_id1 != TLK110_PHY_ID1 && phy_id2 != TLK110_PHY_ID2);
+        // Call esp_eth_smi_wait_value() with a timeout so it prints an error periodically
+        res1 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_1_REG, TLK110_PHY_ID1, UINT16_MAX, 1000);
+        res2 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_2_REG, TLK110_PHY_ID2, TLK110_PHY_ID2_MASK, 1000);
+    } while(res1 != ESP_OK || res2 != ESP_OK);
 
     esp_eth_smi_write(SW_STRAP_CONTROL_REG,
                       DEFAULT_STRAP_CONFIG | SW_STRAP_CONFIG_DONE);

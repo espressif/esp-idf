@@ -62,6 +62,8 @@ Functions
 .. doxygenfunction:: esp_eth_get_mac
 .. doxygenfunction:: esp_eth_smi_write
 .. doxygenfunction:: esp_eth_smi_read
+.. doxygenfunction:: esp_eth_smi_wait_value
+.. doxygenfunction:: esp_eth_smi_wait_set
 .. doxygenfunction:: esp_eth_free_rx_buf
 
 

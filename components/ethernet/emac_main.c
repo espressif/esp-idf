@@ -204,6 +204,25 @@ uint16_t esp_eth_smi_read(uint32_t reg_num)
     return value;
 }
 
+esp_err_t esp_eth_smi_wait_value(uint32_t reg_num, uint16_t value, uint16_t value_mask, int timeout_ms)
+{
+    unsigned start = xTaskGetTickCount();
+    unsigned timeout_ticks = (timeout_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
+    uint16_t current_value = 0;
+
+    while (timeout_ticks == 0 || (xTaskGetTickCount() - start < timeout_ticks)) {
+        current_value = esp_eth_smi_read(reg_num);
+        if ((current_value & value_mask) == (value & value_mask)) {
+            return ESP_OK;
+        }
+        vTaskDelay(1);
+    }
+    ESP_LOGE(TAG, "Timed out waiting for PHY register 0x%x to have value 0x%04x (mask 0x%04x). Current value 0x%04x",
+             reg_num, value, value_mask, current_value);
+    return ESP_ERR_TIMEOUT;
+}
+
+
 static void emac_set_user_config_data(eth_config_t *config )
 {
     emac_config.phy_addr = config->phy_addr;
