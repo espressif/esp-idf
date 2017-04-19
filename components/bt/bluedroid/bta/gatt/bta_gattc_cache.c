@@ -25,7 +25,7 @@
 
 #include "bt_target.h"
 
-#if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
+#if defined(GATTC_INCLUDED) && (GATTC_INCLUDED == TRUE)
 
 #include <string.h>
 #include "utl.h"
@@ -1510,5 +1510,5 @@ BOOLEAN bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
         return FALSE;
     }
 }
-#endif /* BTA_GATT_INCLUDED */
+#endif /* GATTC_INCLUDED */
 

@@ -95,7 +95,7 @@ static void bta_dm_disable_search_and_disc(void);
 static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_DATA *p_data);
 #endif
 static void bta_dm_ble_id_key_cback (UINT8 key_type, tBTM_BLE_LOCAL_KEYS *p_key);
-#if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE))
+#if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 static void bta_dm_gattc_register(void);
 static void btm_dm_start_gatt_discovery(BD_ADDR bd_addr);
 static void bta_dm_cancel_gatt_discovery(BD_ADDR bd_addr);
@@ -343,7 +343,7 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ID) {
             BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ID, (tBTM_BLE_LOCAL_KEYS *)&id_key);
         }
-#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
+#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
         bta_dm_search_cb.conn_id = BTA_GATT_INVALID_CONN_ID;
 #endif
 #endif
@@ -373,7 +373,7 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 
         bta_sys_policy_register((tBTA_SYS_CONN_CBACK *)bta_dm_policy_cback);
 
-#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE)
         bta_dm_gattc_register();
 #endif
 
@@ -592,14 +592,14 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_process_remove_device(BD_ADDR bd_addr)
 {
-#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
     /* need to remove all pending background connection before unpair */
     BTA_GATTC_CancelOpen(0, bd_addr, FALSE);
 #endif
 
     BTM_SecDeleteDevice(bd_addr);
 
-#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
     /* remove all cached GATT information */
     BTA_GATTC_Refresh(bd_addr);
 #endif
@@ -782,7 +782,7 @@ void bta_dm_close_acl(tBTA_DM_MSG *p_data)
         if (!BTM_SecDeleteDevice(p_remove_acl->bd_addr)) {
             APPL_TRACE_ERROR("delete device from security database failed.");
         }
-#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
         /* need to remove all pending background connection if any */
         BTA_GATTC_CancelOpen(0, p_remove_acl->bd_addr, FALSE);
         /* remove all cached GATT information */
@@ -1085,7 +1085,7 @@ void bta_dm_search_start (tBTA_DM_MSG *p_data)
 {
     tBTM_INQUIRY_CMPL result;
 
-#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE)
     UINT16 len = (UINT16)(sizeof(tBT_UUID) * p_data->search.num_uuid);
     bta_dm_gattc_register();
 #endif
@@ -1103,7 +1103,7 @@ void bta_dm_search_start (tBTA_DM_MSG *p_data)
     bta_dm_search_cb.p_search_cback = p_data->search.p_cback;
     bta_dm_search_cb.services = p_data->search.services;
 
-#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE)
     utl_freebuf((void **)&bta_dm_search_cb.p_srvc_uuid);
 
     if ((bta_dm_search_cb.num_uuid = p_data->search.num_uuid) != 0 &&
@@ -1178,7 +1178,7 @@ void bta_dm_search_cancel (tBTA_DM_MSG *p_data)
         }
     }
 
-#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE
     if (bta_dm_search_cb.gatt_disc_active) {
         bta_dm_cancel_gatt_discovery(bta_dm_search_cb.peer_bdaddr);
     }
@@ -1198,7 +1198,7 @@ void bta_dm_search_cancel (tBTA_DM_MSG *p_data)
 void bta_dm_discover (tBTA_DM_MSG *p_data)
 {
 #if (SDP_INCLUDED == TRUE)
-#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE 
     UINT16 len = (UINT16)(sizeof(tBT_UUID) * p_data->discover.num_uuid);
 #endif
     APPL_TRACE_EVENT("%s services_to_search=0x%04X, sdp_search=%d", __func__,
@@ -1741,7 +1741,7 @@ void bta_dm_search_cmpl (tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_EVENT("%s", __func__);
 
-#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE)
     utl_freebuf((void **)&bta_dm_search_cb.p_srvc_uuid);
 #endif
 
@@ -1980,7 +1980,7 @@ void bta_dm_search_cancel_notify (tBTA_DM_MSG *p_data)
     if (!bta_dm_search_cb.name_discover_done) {
         BTM_CancelRemoteDeviceName();
     }
-#if (BLE_INCLUDED == TRUE) && (BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE) && (BTA_GATT_INCLUDED == TRUE) && (SDP_INCLUDED == TRUE)
     if (bta_dm_search_cb.gatt_disc_active) {
         bta_dm_cancel_gatt_discovery(bta_dm_search_cb.peer_bdaddr);
     }
@@ -2216,7 +2216,7 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
         bta_dm_search_cb.service_index      = 0;
         bta_dm_search_cb.services_found     = 0;
         bta_dm_search_cb.services_to_search = bta_dm_search_cb.services;
-#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE
         bta_dm_search_cb.uuid_to_search     = bta_dm_search_cb.num_uuid;
 #endif
         if ((bta_dm_search_cb.p_btm_inq_info != NULL) &&
@@ -2239,7 +2239,7 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
                 bta_dm_search_cb.wait_disc = TRUE;
             }
 
-#if (BLE_INCLUDED == TRUE && (defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
+#if (BLE_INCLUDED == TRUE && (defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
             if ( bta_dm_search_cb.p_btm_inq_info ) {
                 APPL_TRACE_DEBUG("%s p_btm_inq_info %p results.device_type 0x%x services_to_search 0x%x",
                                  __func__,
@@ -3222,7 +3222,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         }
         if (conn.link_down.is_removed) {
             BTM_SecDeleteDevice(p_bda);
-#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
             /* need to remove all pending background connection */
             BTA_GATTC_CancelOpen(0, p_bda, FALSE);
             /* remove all cached GATT information */
@@ -3392,7 +3392,7 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
         }
     } else {
         BTM_SecDeleteDevice (remote_bd_addr);
-#if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
         /* need to remove all pending background connection */
         BTA_GATTC_CancelOpen(0, remote_bd_addr, FALSE);
         /* remove all cached GATT information */
@@ -5207,11 +5207,11 @@ static void bta_ble_energy_info_cmpl(tBTM_BLE_TX_TIME_MS tx_time,
 {
     tBTA_STATUS st = (status == BTM_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
     tBTA_DM_CONTRL_STATE ctrl_state = 0;
-
+#if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
     if (BTA_SUCCESS == st) {
         ctrl_state = bta_dm_pm_obtain_controller_state();
     }
-
+#endif  
     if (bta_dm_cb.p_energy_info_cback) {
         bta_dm_cb.p_energy_info_cback(tx_time, rx_time, idle_time, energy_used, ctrl_state, st);
     }
@@ -5237,7 +5237,7 @@ void bta_dm_ble_get_energy_info(tBTA_DM_MSG *p_data)
     }
 }
 
-#if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE))
+#if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 #ifndef BTA_DM_GATT_CLOSE_DELAY_TOUT
 #define BTA_DM_GATT_CLOSE_DELAY_TOUT    1000
 #endif

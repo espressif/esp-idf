@@ -984,7 +984,7 @@
 ******************************************************************************/
 #ifndef GATTC_INCLUDED
 #if BLE_INCLUDED == TRUE
-#define GATTC_INCLUDED         TRUE
+#define GATTC_INCLUDED         FALSE
 #else
 #define GATTC_INCLUDED         FALSE
 #endif

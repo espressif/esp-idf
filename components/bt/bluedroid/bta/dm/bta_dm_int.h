@@ -943,7 +943,7 @@ typedef struct {
     tBTA_TRANSPORT         transport;
 #if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
     tBTA_DM_SEARCH_CBACK *p_scan_cback;
-#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
+#if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
     tBTA_GATTC_IF          client_if;
     UINT8                  num_uuid;
     tBT_UUID               *p_srvc_uuid;

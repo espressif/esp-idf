@@ -188,7 +188,7 @@ const tBTA_DM_ACTION bta_dm_search_action[] = {
     bta_dm_search_cancel_transac_cmpl,  /* 15 BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL */
     bta_dm_disc_rmt_name,               /* 16 BTA_DM_DISC_RMT_NAME */
     bta_dm_di_disc                      /* 17 BTA_DM_API_DI_DISCOVER */
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && SDP_INCLUDED == TRUE
     , bta_dm_close_gatt_conn
 #endif
 };

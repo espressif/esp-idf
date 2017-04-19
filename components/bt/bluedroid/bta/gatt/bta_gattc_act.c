@@ -43,7 +43,7 @@
 
 // #include "osi/include/log.h"
 
-#if BTA_GATT_INCLUDED && BLE_INCLUDED == TRUE
+#if GATTC_INCLUDED == TRUE && BLE_INCLUDED == TRUE
 
 /*****************************************************************************
 **  Constants
@@ -2199,4 +2199,4 @@ void bta_gattc_broadcast(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
     }
 }
 #endif
-#endif
+#endif  ///GATTC_INCLUDED == TRUE && BLE_INCLUDED == TRUE
