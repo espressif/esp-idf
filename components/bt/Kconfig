@@ -38,6 +38,13 @@ config BT_DRAM_RELEASE
         Enabling this option will release about 30K DRAM from Classic BT.
         The released DRAM will be used as system heap memory.
 
+config BT_STACK_NO_LOG
+    bool "Close the bluedroid bt stack log print"
+    depends on BLUEDROID_ENABLED
+    default n
+    help
+        This select can save the rowdata code size
+
 #disable now for app cpu due to a known issue
 config BTDM_CONTROLLER_RUN_APP_CPU
     bool "Run controller on APP CPU"

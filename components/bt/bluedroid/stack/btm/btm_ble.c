@@ -71,6 +71,7 @@ extern void gatt_notify_enc_cmpl(BD_ADDR bd_addr);
 BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE dev_type,
                              tBLE_ADDR_TYPE addr_type)
 {
+#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC  *p_dev_rec;
     UINT8               i = 0;
     tBTM_INQ_INFO      *p_info = NULL;
@@ -132,7 +133,7 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE d
         BTM_TRACE_DEBUG ("InqDb  device_type =0x%x  addr_type=0x%x",
                          p_info->results.device_type, p_info->results.ble_addr_type);
     }
-
+#endif  ///SMP_INCLUDED == TRUE
     return (TRUE);
 }
 

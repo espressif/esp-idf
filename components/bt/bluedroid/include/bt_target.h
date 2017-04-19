@@ -479,7 +479,7 @@
 
 /* The size in bytes of the BTM inquiry database. 40 As Default */
 #ifndef BTM_INQ_DB_SIZE
-#define BTM_INQ_DB_SIZE             32
+#define BTM_INQ_DB_SIZE             1//32
 #endif
 
 /* The default scan mode */

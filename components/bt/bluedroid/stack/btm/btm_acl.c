@@ -2293,6 +2293,7 @@ void btm_cont_rswitch (tACL_CONN *p, tBTM_SEC_DEV_REC *p_dev_rec,
 *******************************************************************************/
 void btm_acl_resubmit_page (void)
 {
+#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec;
     BT_HDR  *p_buf;
     UINT8   *pp;
@@ -2315,6 +2316,7 @@ void btm_acl_resubmit_page (void)
     } else {
         btm_cb.paging = FALSE;
     }
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -2345,6 +2347,7 @@ void  btm_acl_reset_paging (void)
 *******************************************************************************/
 void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
 {
+#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec;
 
     BTM_TRACE_DEBUG ("btm_acl_paging discing:%d, paging:%d BDA: %06x%06x\n",
@@ -2376,6 +2379,7 @@ void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
             btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
         }
     }
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************

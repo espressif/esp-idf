@@ -143,12 +143,12 @@ static void reset_complete(void)
 
     /* Tell L2CAP that all connections are gone */
     l2cu_device_reset ();
-
+#if (SMP_INCLUDED == TRUE)
     /* Clear current security state */
     for (int devinx = 0; devinx < BTM_SEC_MAX_DEVICE_RECORDS; devinx++) {
         btm_cb.sec_dev_rec[devinx].sec_state = BTM_SEC_STATE_IDLE;
     }
-
+#endif  ///SMP_INCLUDED == TRUE
     /* After the reset controller should restore all parameters to defaults. */
     btm_cb.btm_inq_vars.inq_counter       = 1;
     btm_cb.btm_inq_vars.inq_scan_window   = HCI_DEF_INQUIRYSCAN_WINDOW;
@@ -187,9 +187,9 @@ static void reset_complete(void)
         l2c_link_processs_ble_num_bufs(controller->get_acl_buffer_count_ble());
     }
 #endif
-
+#if (SMP_INCLUDED == TRUE)
     BTM_SetPinType (btm_cb.cfg.pin_type, btm_cb.cfg.pin_code, btm_cb.cfg.pin_code_len);
-
+#endif  ///SMP_INCLUDED == TRUE
     for (int i = 0; i <= controller->get_last_features_classic_index(); i++) {
         btm_decode_ext_features_page(i, controller->get_features_classic(i)->as_array);
     }
