@@ -159,7 +159,7 @@ typedef struct xTASK_PARAMETERS
 {
 	TaskFunction_t pvTaskCode;
 	const char * const pcName;	/*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-	uint16_t usStackDepth;
+	uint32_t usStackDepth;
 	void *pvParameters;
 	UBaseType_t uxPriority;
 	StackType_t *puxStackBuffer;
@@ -178,7 +178,7 @@ typedef struct xTASK_STATUS
 	UBaseType_t uxBasePriority;		/* The priority to which the task will return if the task's current priority has been inherited to avoid unbounded priority inversion when obtaining a mutex.  Only valid if configUSE_MUTEXES is defined as 1 in FreeRTOSConfig.h. */
 	uint32_t ulRunTimeCounter;		/* The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
 	StackType_t *pxStackBase;		/* Points to the lowest address of the task's stack area. */
-	uint16_t usStackHighWaterMark;	/* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
+	uint32_t usStackHighWaterMark;	/* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
 } TaskStatus_t;
 
 /*
@@ -287,7 +287,7 @@ is used in assert() statements. */
  BaseType_t xTaskCreate(
 							  TaskFunction_t pvTaskCode,
 							  const char * const pcName,
-							  uint16_t usStackDepth,
+							  uint32_t usStackDepth,
 							  void *pvParameters,
 							  UBaseType_t uxPriority,
 							  TaskHandle_t *pvCreatedTask
@@ -377,7 +377,7 @@ is used in assert() statements. */
 #if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
     BaseType_t xTaskCreatePinnedToCore(	TaskFunction_t pxTaskCode,
 							            const char * const pcName,
-							            const uint16_t usStackDepth,
+							            const uint32_t usStackDepth,
 							            void * const pvParameters,
 							            UBaseType_t uxPriority,
 							            TaskHandle_t * const pxCreatedTask,
@@ -1250,7 +1250,7 @@ TickType_t xTaskGetTickCountFromISR( void ) PRIVILEGED_FUNCTION;
 
 /**
  * task. h
- * <PRE>uint16_t uxTaskGetNumberOfTasks( void );</PRE>
+ * <PRE>UBaseType_t uxTaskGetNumberOfTasks( void );</PRE>
  *
  * @return The number of tasks that the real time kernel is currently managing.
  * This includes all ready, blocked and suspended tasks.  A task that
