@@ -202,6 +202,17 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     SDMMC.clkena.cclk_enable |= BIT(slot);
     SDMMC.clkena.cclk_low_power |= BIT(slot);
     sdmmc_host_clock_update_command(slot);
+
+    // set data timeout
+    const uint32_t data_timeout_ms = 100;
+    uint32_t data_timeout_cycles = data_timeout_ms * freq_khz;
+    const uint32_t data_timeout_cycles_max = 0xffffff;
+    if (data_timeout_cycles > data_timeout_cycles_max) {
+        data_timeout_cycles = data_timeout_cycles_max;
+    }
+    SDMMC.tmout.data = data_timeout_cycles;
+    // always set response timeout to highest value, it's small enough anyway
+    SDMMC.tmout.response = 255;
     return ESP_OK;
 }
 
@@ -419,9 +430,6 @@ void sdmmc_host_dma_stop()
 
 void sdmmc_host_dma_prepare(sdmmc_desc_t* desc, size_t block_size, size_t data_size)
 {
-    // TODO: set timeout depending on data size
-    SDMMC.tmout.val = 0xffffffff;
-
     // Set size of data and DMA descriptor pointer
     SDMMC.bytcnt = data_size;
     SDMMC.blksiz = block_size;
