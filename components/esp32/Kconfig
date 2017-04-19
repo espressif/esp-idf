@@ -105,23 +105,37 @@ config MEMMAP_SPISRAM
         main memory map. Enable this if you have this hardware and want to use it in the same
         way as on-chip RAM.
 
-config CUSTOMER_MAC_ADDRESS
-    bool "Customer MAC address"
-    default n
+choice BASE_MAC_ADDRESS_STORAGE
+    prompt "Storage of the base MAC address"
+    default BASE_MAC_STORED_DEFAULT_EFUSE
     help
-        Customers can define their own mac address in efuse.
-        Set to 'y' if you decide to use the mac address that you defined in efuse.
+        Select storage of the base MAC address which is used for all network interfaces when networking is initialized. 
+        If "Default place in EFUSE" is selected, esp32 will use the base MAC address which is written into default
+        place in EFUSE when the chip is manufactured. 
+        If "Customer-defined place in EFUSE" is selected, ESP32 will use customer-defined base MAC address which
+        is written into EFUSE Block 3 words 0, 1.
+        If "Other customer-defined place" is selected, esp32 will use customer-defined base MAC address from other
+        place(flash, EEPROM, etc). User code must call esp_base_mac_addr_set_external to set the base MAC address 
+        before network features are initialised.
+
+config BASE_MAC_STORED_DEFAULT_EFUSE
+    bool "Default place in EFUSE"
+config BASE_MAC_STORED_CUSTOMER_DEFINED_EFUSE
+    bool "Customer-defined place in EFUSE"
+config BASE_MAC_STORED_OTHER_CUSTOMER_DEFINED_PLACE
+    bool "Other customer-defined place"
+endchoice
         
 choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
     bool "Number of MAC address generated from the hardware MAC address in efuse"
     default FOUR_MAC_ADDRESS_FROM_EFUSE
     help
-        Config the number of MAC address which is generated from the hardware MAC address in efuse.
+        Config the number of MAC address which is generated from the base MAC address in efuse.
         If the number is two, the MAC addresses of WiFi station and bluetooth are generated from
-        the hardware MAC address in efuse. The MAC addresses of WiFi softap and ethernet are derived
+        the base MAC address in efuse. The MAC addresses of WiFi softap and ethernet are derived
         from that of WiFi station and bluetooth respectively. 
         If the number is four, the MAC addresses of WiFi station, WiFi softap, bluetooth and ethernet
-        are all generated from the hardware MAC address in efuse.
+        are all generated from the base MAC address in efuse.
 
 config TWO_MAC_ADDRESS_FROM_EFUSE
     bool "Two"
