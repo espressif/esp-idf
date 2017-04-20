@@ -882,6 +882,23 @@ esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t* program_binary, siz
  */
 esp_err_t ulp_run(uint32_t entry_point);
 
+/**
+ * @brief Set one of ULP wakeup period values
+ *
+ * ULP coprocessor starts running the program when the wakeup timer counts up
+ * to a given value (called period). There are 5 period values which can be
+ * programmed into SENS_ULP_CP_SLEEP_CYCx_REG registers, x = 0..4.
+ * By default, wakeup timer will use the period set into SENS_ULP_CP_SLEEP_CYC0_REG,
+ * i.e. period number 0. ULP program code can use SLEEP instruction to select
+ * which of the SENS_ULP_CP_SLEEP_CYCx_REG should be used for subsequent wakeups.
+ *
+ * @param period_index wakeup period setting number (0 - 4)
+ * @param period_us wakeup period, us
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if period_index is out of range
+ */
+esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us);
 
 #ifdef __cplusplus
 }
