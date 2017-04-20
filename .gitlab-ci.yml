@@ -65,7 +65,7 @@ build_template_app:
     IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
-
+    V: "0"
 
 build_ssc:
   <<: *build_template
@@ -79,7 +79,6 @@ build_ssc:
     - cd SSC
     - git checkout ${CI_BUILD_REF_NAME} || echo "Using SSC default branch..."
     - make defconfig
-    - chmod +x gen_misc_ng.sh
     - ./gen_misc_ng.sh
 
 build_at:
