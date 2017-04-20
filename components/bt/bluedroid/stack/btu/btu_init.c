@@ -133,7 +133,7 @@ void btu_free_core(void)
     l2c_free();
 
 #if BLE_INCLUDED == TRUE
-#if (defined(GATT_INCLUDED) && GATT_INCLUDED == true)
+#if (defined(GATTS_INCLUDED) && GATTS_INCLUDED == true)
     gatt_free();
 #endif
 #endif

@@ -24,6 +24,8 @@
 #include "btc_main.h"
 #include "esp_gatts_api.h"
 
+#if (GATTS_INCLUDED == TRUE)
+
 #define A2C_GATTS_EVT(_bta_event) (_bta_event) //BTA TO BTC EVT
 #define C2A_GATTS_EVT(_btc_event) (_btc_event) //BTC TO BTA EVT
 
@@ -779,3 +781,5 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 
     btc_gatts_cb_param_copy_free(msg, p_data);
 }
+
+#endif  ///GATTS_INCLUDED

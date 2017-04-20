@@ -91,6 +91,27 @@
 
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
+#if (CONFIG_GATTS_ENABLE)
+#define GATTS_INCLUDED              TRUE
+#else
+#define GATTS_INCLUDED              FALSE
+#endif /* CONFIG_GATTS_ENABLE */
+
+#if (CONFIG_GATTC_ENABLE)
+#define GATTC_INCLUDED              TRUE
+#else
+#define GATTC_INCLUDED              FALSE
+#endif  /* CONFIG_GATTC_ENABLE */
+
+#if (CONFIG_SMP_ENABLE)
+#define SMP_INCLUDED              TRUE
+#define BLE_PRIVACY_SPT           TRUE
+#else
+#define SMP_INCLUDED              FALSE
+#define BLE_PRIVACY_SPT           FALSE
+#endif  /* CONFIG_GATTC_ENABLE */
+
+
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
 #define L2CAP_EXTFEA_SUPPORTED_MASK (L2CAP_EXTFEA_ENH_RETRANS | L2CAP_EXTFEA_STREAM_MODE | L2CAP_EXTFEA_NO_CRC | L2CAP_EXTFEA_FIXED_CHNLS)
@@ -479,7 +500,7 @@
 
 /* The size in bytes of the BTM inquiry database. 40 As Default */
 #ifndef BTM_INQ_DB_SIZE
-#define BTM_INQ_DB_SIZE             1//32
+#define BTM_INQ_DB_SIZE             5//32
 #endif
 
 /* The default scan mode */
@@ -803,7 +824,7 @@
 #if (CLASSIC_BT_INCLUDED == TRUE)
 #define L2CAP_NUM_FIXED_CHNLS               32
 #else
-#define L2CAP_NUM_FIXED_CHNLS               2   //There are just two fix channel in the BLE only mode(gatt,smp)
+#define L2CAP_NUM_FIXED_CHNLS               3   //There are just three fix channel in the BLE only mode(gatt,signal,smp)
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 

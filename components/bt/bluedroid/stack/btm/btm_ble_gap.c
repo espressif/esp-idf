@@ -2165,7 +2165,7 @@ tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur, t
         return BTM_BUSY;
     }
 
-#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
     if (!GAP_BleReadPeerDevName(remote_bda, btm_ble_read_remote_name_cmpl)) {
         return BTM_BUSY;
     }
@@ -2199,7 +2199,7 @@ BOOLEAN btm_ble_cancel_remote_name(BD_ADDR remote_bda)
     tBTM_INQUIRY_VAR_ST      *p_inq = &btm_cb.btm_inq_vars;
     BOOLEAN     status = TRUE;
 
-#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
     status = GAP_BleCancelReadPeerDevName(remote_bda);
 #endif
 

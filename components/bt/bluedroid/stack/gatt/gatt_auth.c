@@ -72,7 +72,9 @@ static BOOLEAN gatt_sign_data (tGATT_CLCB *p_clcb)
                                  p_signature)) {
             p_attr->len += BTM_BLE_AUTH_SIGN_LEN;
             gatt_set_ch_state(p_clcb->p_tcb, GATT_CH_OPEN);
+#if (GATTC_INCLUDED == TRUE)
             gatt_act_write(p_clcb, GATT_SEC_SIGN_DATA);
+#endif  ///GATTC_INCLUDED == TRUE
         } else {
             gatt_end_operation(p_clcb, GATT_INTERNAL_ERROR, NULL);
         }
@@ -96,7 +98,9 @@ static BOOLEAN gatt_sign_data (tGATT_CLCB *p_clcb)
 void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
 {
     UINT16  cmd_len;
+#if (GATTS_INCLUDED == TRUE)
     UINT8   op_code;
+#endif  ///GATTS_INCLUDED == TRUE
     UINT8   *p, *p_orig = (UINT8 *)(p_buf + 1) + p_buf->offset;
     UINT32  counter;
 
@@ -110,8 +114,10 @@ void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
     STREAM_TO_UINT32(counter, p);
 
     if (BTM_BleVerifySignature(p_tcb->peer_bda, p_orig, cmd_len, counter, p)) {
+#if (GATTS_INCLUDED == TRUE)
         STREAM_TO_UINT8(op_code, p_orig);
         gatt_server_handle_client_req (p_tcb, op_code, (UINT16)(p_buf->len - 1), p_orig);
+#endif  ///GATTS_INCLUDED == TRUE
     } else {
         /* if this is a bad signature, assume from attacker, ignore it  */
         GATT_TRACE_ERROR("Signature Verification Failed, data ignored");
@@ -133,7 +139,7 @@ void gatt_sec_check_complete(BOOLEAN sec_check_ok, tGATT_CLCB   *p_clcb, UINT8 s
     if (p_clcb && p_clcb->p_tcb && GKI_queue_is_empty(&p_clcb->p_tcb->pending_enc_clcb)) {
         gatt_set_sec_act(p_clcb->p_tcb, GATT_SEC_NONE);
     }
-
+#if (GATTC_INCLUDED == TRUE)
     if (!sec_check_ok) {
         gatt_end_operation(p_clcb, GATT_AUTH_FAIL, NULL);
     } else if (p_clcb->operation == GATTC_OPTYPE_WRITE) {
@@ -141,6 +147,7 @@ void gatt_sec_check_complete(BOOLEAN sec_check_ok, tGATT_CLCB   *p_clcb, UINT8 s
     } else if (p_clcb->operation == GATTC_OPTYPE_READ) {
         gatt_act_read(p_clcb, p_clcb->counter);
     }
+#endif  ///GATTC_INCLUDED == TRUE
 }
 /*******************************************************************************
 **

@@ -38,6 +38,34 @@ config BT_DRAM_RELEASE
         Enabling this option will release about 30K DRAM from Classic BT.
         The released DRAM will be used as system heap memory.
 
+config GATTS_ENABLE
+    bool "Set if enable the gatt server module(GATTS) in the stack or not"
+    depends on BLUEDROID_ENABLED
+    default y 
+    help
+        This option can be close when the app work only on gatt client mode
+
+config GATTC_ENABLE
+    bool "Set if enable the gatt server module(GATTC) in the stack or not"
+    depends on BLUEDROID_ENABLED
+    default y
+    help
+        This option can be close when the app work only on gatt server mode
+
+config SMP_ENABLE
+   bool "Set if enable the ble security module (SMP module) or not"
+   depends on BLUEDROID_ENABLED
+   default y
+   help
+       This option can be close when the app not used the ble security connect.
+
+config BT_ACL_CONNECTIONS
+    int "Set the max connection number for the bt/ble device can accept, up to 7."
+    depends on BLUEDROID_ENABLED
+    default 4
+    help 
+        This setting is used for the max connection link for the bt/ble device
+
 config BT_STACK_NO_LOG
     bool "Close the bluedroid bt stack log print"
     depends on BLUEDROID_ENABLED

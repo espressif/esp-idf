@@ -2530,7 +2530,6 @@ BOOLEAN l2cu_initialize_fixed_ccb (tL2C_LCB *p_lcb, UINT16 fixed_cid, tL2CAP_FCR
 {
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
     tL2C_CCB    *p_ccb;
-    L2CAP_TRACE_ERROR("%s,fixed_cid=%d,p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL] = %p",__func__,fixed_cid,p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]);
     /* If we already have a CCB, then simply return */
     if (p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL] != NULL) {
         return (TRUE);
@@ -2918,7 +2917,7 @@ tL2C_CCB *l2cu_find_ccb_by_cid (tL2C_LCB *p_lcb, UINT16 local_cid)
     return (p_ccb);
 }
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
+#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE && CLASSIC_BT_INCLUDED == TRUE)
 
 /******************************************************************************
 **

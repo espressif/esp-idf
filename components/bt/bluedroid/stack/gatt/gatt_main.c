@@ -132,7 +132,9 @@ void gatt_init (void)
     gatt_cb.hdl_cfg.gatt_start_hdl = GATT_GATT_START_HANDLE;
     gatt_cb.hdl_cfg.gap_start_hdl  = GATT_GAP_START_HANDLE;
     gatt_cb.hdl_cfg.app_start_hdl  = GATT_APP_START_HANDLE;
+#if (GATTS_INCLUDED == TRUE)
     gatt_profile_db_init();
+#endif  ///GATTS_INCLUDED == TRUE
 
 }
 
@@ -146,6 +148,7 @@ void gatt_init (void)
 ** Returns          void
 **
 *******************************************************************************/
+#if (GATTS_INCLUDED == TRUE)
 void gatt_free(void)
 {
     int i;
@@ -154,6 +157,7 @@ void gatt_free(void)
         gatt_free_hdl_buffer(&gatt_cb.hdl_list[i]);
     }
 }
+#endif  ///GATTS_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -450,11 +454,12 @@ static void gatt_channel_congestion(tGATT_TCB *p_tcb, BOOLEAN congested)
     UINT8 i = 0;
     tGATT_REG *p_reg = NULL;
     UINT16 conn_id;
-
+#if (GATTC_INCLUDED == TRUE)
     /* if uncongested, check to see if there is any more pending data */
     if (p_tcb != NULL && congested == FALSE) {
         gatt_cl_send_next_cmd_inq(p_tcb);
     }
+#endif  ///GATTC_INCLUDED == TRUE
     /* notifying all applications for the connection up event */
     for (i = 0, p_reg = gatt_cb.cl_rcb ; i < GATT_MAX_APPS; i++, p_reg++) {
         if (p_reg->in_use) {
@@ -929,9 +934,13 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
             } else {
                 /* message from client */
                 if ((op_code % 2) == 0) {
+#if (GATTS_INCLUDED == TRUE)
                     gatt_server_handle_client_req (p_tcb, op_code, msg_len, p);
+#endif  ///GATTS_INCLUDED == TRUE
                 } else {
+#if (GATTC_INCLUDED == TRUE)
                     gatt_client_handle_server_rsp (p_tcb, op_code, msg_len, p);
+#endif  ///GATTC_INCLUDED == TRUE
                 }
             }
         } else {
@@ -981,6 +990,7 @@ void gatt_add_a_bonded_dev_for_srv_chg (BD_ADDR bda)
 *******************************************************************************/
 void gatt_send_srv_chg_ind (BD_ADDR peer_bda)
 {
+#if (GATTS_INCLUDED == TRUE)
     UINT8   handle_range[GATT_SIZE_OF_SRV_CHG_HNDL_RANGE];
     UINT8   *p = handle_range;
     UINT16  conn_id;
@@ -1001,6 +1011,7 @@ void gatt_send_srv_chg_ind (BD_ADDR peer_bda)
                              (peer_bda[4] << 8) + peer_bda[5] );
         }
     }
+#endif  ///GATTS_INCLUDED == TRUE
 }
 
 /*******************************************************************************

@@ -24,7 +24,7 @@
 
 #include "bt_target.h"
 
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
 
 #include "bt_trace.h"
 //#include "bt_utils.h"
@@ -1465,4 +1465,4 @@ static BOOLEAN gatts_db_add_service_declaration(tGATT_SVC_DB *p_db, tBT_UUID *p_
     return rt;
 }
 
-#endif /* BLE_INCLUDED */
+#endif /* BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */

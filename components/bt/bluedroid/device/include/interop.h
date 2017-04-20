@@ -21,6 +21,7 @@
 
 #include <stdbool.h>
 #include "bt_defs.h"
+#include "bt_target.h"
 
 typedef enum {
     // Disable secure connections

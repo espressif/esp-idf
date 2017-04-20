@@ -1041,7 +1041,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 {
     int         xx;
     BOOLEAN     single_write = FALSE;
-    L2CAP_TRACE_ERROR("%s",__func__);
+    L2CAP_TRACE_DEBUG("%s",__func__);
     /* Save the channel ID for faster counting */
     if (p_buf) {
         if (p_ccb != NULL) {

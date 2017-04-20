@@ -35,6 +35,7 @@
 
 #include "esp_wifi.h"
 
+#if (GATTS_INCLUDED == TRUE)
 extern tBLUFI_ENV blufi_env;
 
 void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
@@ -247,3 +248,5 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
         break;
     }
 }
+
+#endif	///(GATTS_INCLUDED == TRUE)

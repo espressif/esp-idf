@@ -81,7 +81,9 @@ static void bta_dm_search_timer_cback (TIMER_LIST_ENT *p_tle);
 static void bta_dm_disable_conn_down_timer_cback (TIMER_LIST_ENT *p_tle);
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 static void bta_dm_adjust_roles(BOOLEAN delay_role_switch);
+#if (SDP_INCLUDED == TRUE || SMP_INCLUDED == TRUE)
 static char *bta_dm_get_remname(void);
+#endif  ///SDP_INCLUDED == TRUE || SMP_INCLUDED == TRUE
 static void bta_dm_bond_cancel_complete_cback(tBTM_STATUS result);
 
 static BOOLEAN bta_dm_read_remote_device_name (BD_ADDR bd_addr, tBT_TRANSPORT transport);
@@ -2473,7 +2475,7 @@ static void bta_dm_remname_cback (tBTM_REMOTE_DEV_NAME *p_remote_name)
 
     BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
 
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
     if (bta_dm_search_cb.transport == BT_TRANSPORT_LE ) {
         GAP_BleReadPeerPrefConnParams (bta_dm_search_cb.peer_bdaddr);
     }
@@ -3492,6 +3494,7 @@ static void bta_dm_adjust_roles(BOOLEAN delay_role_switch)
 **
 ** Returns          char * - Pointer to the remote device name
 *******************************************************************************/
+#if (SDP_INCLUDED == TRUE || SMP_INCLUDED == TRUE)
 static char *bta_dm_get_remname(void)
 {
     char *p_name = (char *)bta_dm_search_cb.peer_name;
@@ -3505,6 +3508,7 @@ static char *bta_dm_get_remname(void)
 
     return p_name;
 }
+#endif  ///SDP_INCLUDED == TRUE || SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **

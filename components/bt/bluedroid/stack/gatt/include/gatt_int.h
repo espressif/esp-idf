@@ -385,7 +385,9 @@ typedef struct {
 
     /* server needs */
     /* server response data */
+#if (GATTS_INCLUDED == TRUE)
     tGATT_SR_CMD    sr_cmd;
+#endif  ///GATTS_INCLUDED == TRUE
     UINT16          indicate_handle;
     BUFFER_Q        pending_ind_q;
 
@@ -502,11 +504,12 @@ typedef struct {
     UINT16              next_handle;    /* next available handle */
     tGATT_SVC_CHG       gattp_attr;     /* GATT profile attribute service change */
     tGATT_IF            gatt_if;
+#if (GATTS_INCLUDED == TRUE)    
     tGATT_HDL_LIST_INFO hdl_list_info;
     tGATT_HDL_LIST_ELEM hdl_list[GATT_MAX_SR_PROFILES];
     tGATT_SRV_LIST_INFO srv_list_info;
     tGATT_SRV_LIST_ELEM srv_list[GATT_MAX_SR_PROFILES];
-
+#endif  ///GATTS_INCLUDED == TRUE
     BUFFER_Q            srv_chg_clt_q;   /* service change clients queue */
     BUFFER_Q            pending_new_srv_start_q; /* pending new service start queue */
     tGATT_REG           cl_rcb[GATT_MAX_APPS];
@@ -521,8 +524,9 @@ typedef struct {
     UINT8               err_status;
     UINT16              handle;
 #endif
-
+#if (GATTS_INCLUDED == TRUE)
     tGATT_PROFILE_CLCB  profile_clcb[GATT_MAX_APPS];
+#endif  ///GATTS_INCLUDED == TRUE
     UINT16              handle_of_h_r;          /* Handle of the handles reused characteristic value */
 
     tGATT_APPL_INFO       cb_info;
