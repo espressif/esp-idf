@@ -118,9 +118,9 @@ INPUT = \
     ../components/esp32/include/esp_task_wdt.h \
     ## Over The Air Updates (OTA)
     ../components/app_update/include/esp_ota_ops.h \
-    ## Deep Sleep
+    ## Sleep
     ## NOTE: for line below header_file.inc is not used
-    ../components/esp32/include/esp_deep_sleep.h \
+    ../components/esp32/include/esp_sleep.h \
     ## Logging
     ../components/log/include/esp_log.h \
     ## Base MAC address
