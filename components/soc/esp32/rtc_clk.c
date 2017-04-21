@@ -488,10 +488,16 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     /* Estimate XTAL frequency if requested */
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
-        xtal_freq = rtc_clk_xtal_freq_estimate();
-        if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
-            SOC_LOGW(TAG, "Can't estimate XTAL frequency, assuming 26MHz");
-            xtal_freq = RTC_XTAL_FREQ_26M;
+        if (clk_val_is_valid(READ_PERI_REG(RTC_XTAL_FREQ_REG))) {
+            /* XTAL frequency has already been set, use existing value */
+            xtal_freq = rtc_clk_xtal_freq_get();
+        } else {
+            /* Not set yet, estimate XTAL frequency based on RTC_FAST_CLK */
+            xtal_freq = rtc_clk_xtal_freq_estimate();
+            if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
+                SOC_LOGW(TAG, "Can't estimate XTAL frequency, assuming 26MHz");
+                xtal_freq = RTC_XTAL_FREQ_26M;
+            }
         }
     }
     rtc_clk_xtal_freq_update(xtal_freq);
