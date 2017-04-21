@@ -25,7 +25,7 @@ static const char* SIGMADELTA_TAG = "SIGMADELTA";
 		return (ret_val); \
         }
 
-esp_err_t sigmadelta_config(sigmadelta_config_t *config)
+esp_err_t sigmadelta_config(const sigmadelta_config_t *config)
 {
     SIGMADELTA_CHECK(config->channel < SIGMADELTA_CHANNEL_MAX, SIGMADELTA_CHANNEL_ERR_STR, ESP_ERR_INVALID_ARG);
     SIGMADELTA_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(config->sigmadelta_gpio), SIGMADELTA_IO_ERR_STR, ESP_ERR_INVALID_ARG);

@@ -191,7 +191,7 @@ static const spi_signal_conn_t io_signal[3]={
 static void spi_intr(void *arg);
 
 
-esp_err_t spi_bus_initialize(spi_host_device_t host, spi_bus_config_t *bus_config, int dma_chan)
+esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan)
 {
     bool native=true;
     /* ToDo: remove this when we have flash operations cooperating with this */

@@ -131,7 +131,7 @@ typedef struct spi_device_t* spi_device_handle_t;  ///< Handle for a device on a
  *         - ESP_ERR_NO_MEM        if out of memory
  *         - ESP_OK                on success
  */
-esp_err_t spi_bus_initialize(spi_host_device_t host, spi_bus_config_t *bus_config, int dma_chan);
+esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan);
 
 /**
  * @brief Free a SPI bus

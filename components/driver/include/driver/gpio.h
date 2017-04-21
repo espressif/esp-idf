@@ -221,7 +221,7 @@ typedef intr_handle_t gpio_isr_handle_t;
  *     - ESP_ERR_INVALID_ARG Parameter error
  *
  */
-esp_err_t gpio_config(gpio_config_t *pGPIOConfig);
+esp_err_t gpio_config(const gpio_config_t *pGPIOConfig);
 
 
 /**
