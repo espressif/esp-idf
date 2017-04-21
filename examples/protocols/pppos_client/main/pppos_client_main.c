@@ -36,6 +36,12 @@ const char *PPP_ApnATReq = "AT+CGDCONT=1,\"IP\",\"" \
                            CONFIG_GSM_APN \
                            "\"";
 
+/* Pins used for serial communication with GSM module */
+#define UART1_TX_PIN CONFIG_UART1_TX_PIN
+#define UART1_RX_PIN CONFIG_UART1_RX_PIN
+#define UART1_RTS_PIN CONFIG_UART1_RTS_PIN
+#define UART1_CTS_PIN CONFIG_UART1_CTS_PIN
+
 /* UART */
 int uart_num = UART_NUM_1;
 
@@ -208,8 +214,10 @@ static void pppos_client_task()
     //Configure UART1 parameters
     uart_param_config(uart_num, &uart_config);
 
-    //Set UART1 pins(TX: IO17, RX: IO16, RTS: IO18, CTS: IO23)
-    uart_set_pin(uart_num, 17, 16, 18, 23);
+    // Configure UART1 pins (as set in example's menuconfig)
+    ESP_LOGI(TAG, "Configuring UART1 GPIOs: TX:%d RX:%d RTS:%d CTS: %d",
+             UART1_TX_PIN, UART1_RX_PIN, UART1_RTS_PIN, UART1_CTS_PIN);
+    uart_set_pin(uart_num, UART1_TX_PIN, UART1_RX_PIN, UART1_RTS_PIN, UART1_CTS_PIN);
     uart_driver_install(uart_num, BUF_SIZE * 2, BUF_SIZE * 2, 0, NULL, 0);
 
     while (1) {
@@ -285,8 +293,4 @@ void app_main()
 {
     tcpip_adapter_init();
     xTaskCreate(&pppos_client_task, "pppos_client_task", 2048, NULL, 5, NULL);
-
-    while (1) {
-        vTaskDelay(1000 / portTICK_RATE_MS);
-    }
 }
