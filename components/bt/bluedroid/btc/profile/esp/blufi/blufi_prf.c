@@ -253,6 +253,8 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         msg.pid = BTC_PID_BLUFI;
         msg.act = ESP_BLUFI_EVENT_BLE_CONNECT;
         memcpy(param.connect.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
+        param.connect.conn_id=p_data->conn.conn_id;
+        param.connect.server_if=p_data->conn.server_if;
         btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
         break;
     }
@@ -766,6 +768,9 @@ void btc_blufi_cb_handler(btc_msg_t *msg)
         break;
     case ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY:
         btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY, param);
+        break;
+    case ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE:
+        btc_blufi_cb_to_app(ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE, param);
         break;
     default:
         LOG_ERROR("%s UNKNOWN %d\n", __func__, msg->act);

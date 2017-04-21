@@ -88,6 +88,9 @@ static uint8_t gl_sta_bssid[6];
 static uint8_t gl_sta_ssid[32];
 static int gl_sta_ssid_len;
 
+/* connect infor*/
+static uint8_t server_if;
+static uint16_t conn_id;
 static esp_err_t example_net_event_handler(void *ctx, system_event_t *event)
 {
     wifi_mode_t mode;
@@ -178,6 +181,8 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         break;
     case ESP_BLUFI_EVENT_BLE_CONNECT:
         BLUFI_INFO("BLUFI ble connect\n");
+        server_if=param->connect.server_if;
+        conn_id=param->connect.conn_id;
         esp_ble_gap_stop_advertising();
         blufi_security_deinit();
         blufi_security_init();
@@ -218,6 +223,10 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
 
         break;
     }
+    case ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE:
+        BLUFI_INFO("blufi close a gatt connection");
+        esp_blufi_close(server_if,conn_id);
+        break;
     case ESP_BLUFI_EVENT_DEAUTHENTICATE_STA:
         /* TODO */
         break;

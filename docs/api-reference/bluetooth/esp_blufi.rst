@@ -125,4 +125,5 @@ Functions
 .. doxygenfunction:: esp_blufi_profile_deinit
 .. doxygenfunction:: esp_blufi_send_wifi_conn_report
 .. doxygenfunction:: esp_blufi_get_version
+.. doxygenfunction:: esp_blufi_close
 
