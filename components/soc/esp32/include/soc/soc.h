@@ -1,9 +1,9 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -89,8 +89,8 @@
 //get field from register, uses field _S & _V to determine mask
 #define REG_GET_FIELD(_r, _f) ((REG_READ(_r) >> (_f##_S)) & (_f##_V))
 
-//set field to register, used when _f is not left shifted by _f##_S
-#define REG_SET_FIELD(_r, _f, _v) (REG_WRITE((_r),((REG_READ(_r) & ~((_f) << (_f##_S)))|(((_v) & (_f))<<(_f##_S)))))
+//set field of a register from variable, uses field _S & _V to determine mask
+#define REG_SET_FIELD(_r, _f, _v) (REG_WRITE((_r),((REG_READ(_r) & ~((_f##_V) << (_f##_S)))|(((_v) & (_f##_V))<<(_f##_S)))))
 
 //get field value from a variable, used when _f is not left shifted by _f##_S
 #define VALUE_GET_FIELD(_r, _f) (((_r) >> (_f##_S)) & (_f))
