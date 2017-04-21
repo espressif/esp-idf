@@ -223,8 +223,11 @@ static void btu_hci_msg_process(BT_HDR *p_msg)
     /* Determine the input message type. */
     switch (p_msg->event & BT_EVT_MASK) {
     case BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK: // TODO(zachoverflow): remove this
-        ((post_to_task_hack_t *)(&p_msg->data[0]))->callback(p_msg);
+      {
+        post_to_task_hack_t *ph = (post_to_task_hack_t *) &p_msg->data[0];
+        ph->callback(p_msg);
         break;
+      }
     case BT_EVT_TO_BTU_HCI_ACL:
         /* All Acl Data goes to L2CAP */
         l2c_rcv_acl_data (p_msg);
