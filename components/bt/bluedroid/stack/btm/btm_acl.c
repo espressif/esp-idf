@@ -289,7 +289,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                         l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
                     }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-                    //btm_establish_continue (p);
+                    btm_establish_continue (p);
                     return;
                 }
             }
@@ -310,7 +310,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                          && link_role == HCI_ROLE_SLAVE) {
                     //do nothing in this case for fix the android7.0 cann't sent security request issue
                 } else {
-                    //btm_establish_continue(p);
+                    btm_establish_continue(p);
                 }
             } else
 #endif

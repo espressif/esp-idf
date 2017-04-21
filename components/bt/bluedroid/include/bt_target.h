@@ -111,6 +111,9 @@
 #define BLE_PRIVACY_SPT           FALSE
 #endif  /* CONFIG_GATTC_ENABLE */
 
+#if (CONFIG_BT_ACL_CONNECTIONS)
+#define MAX_ACL_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
+#endif  /* CONFIG_BT_ACL_CONNECTIONS */
 
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
@@ -709,10 +712,6 @@
 #define L2CAP_CLIENT_INCLUDED FALSE
 #endif
 
-/* The default connection link number set to 1, 
-** if the user want to support muti connction, should change it in the menuconfig */
-#define MAX_ACL_CONNECTIONS         1   
-
 /* The maximum number of simultaneous links that L2CAP can support. Up to 7*/
 #ifndef MAX_ACL_CONNECTIONS
 #define MAX_L2CAP_LINKS             3
@@ -984,7 +983,7 @@
 #endif
 
 #ifndef GATT_MAX_PHY_CHANNEL
-#define GATT_MAX_PHY_CHANNEL        7
+#define GATT_MAX_PHY_CHANNEL        1
 #endif
 
 /* Used for conformance testing ONLY */
