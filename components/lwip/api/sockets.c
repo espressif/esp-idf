@@ -864,9 +864,7 @@ lwip_close(int s)
     return -1;
   }
 
-#if !ESP_THREAD_SAFE
   free_socket(sock, is_tcp);
-#endif
 
   set_errno(0);
   return 0;
