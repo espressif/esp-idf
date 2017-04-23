@@ -2654,7 +2654,7 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
 *******************************************************************************/
 void l2cu_process_fixed_chnl_resp (tL2C_LCB *p_lcb)
 {
-    L2CAP_TRACE_ERROR("%s",__func__);
+    L2CAP_TRACE_DEBUG("%s",__func__);
 #if (BLE_INCLUDED == TRUE)
     if (p_lcb->transport == BT_TRANSPORT_BR_EDR) {
         /* ignore all not assigned BR/EDR channels */

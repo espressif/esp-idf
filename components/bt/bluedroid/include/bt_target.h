@@ -112,7 +112,8 @@
 #endif  /* CONFIG_GATTC_ENABLE */
 
 #if (CONFIG_BT_ACL_CONNECTIONS)
-#define MAX_ACL_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
+#define MAX_ACL_CONNECTIONS  CONFIG_BT_ACL_CONNECTIONS
+#define GATT_MAX_PHY_CHANNEL CONFIG_BT_ACL_CONNECTIONS
 #endif  /* CONFIG_BT_ACL_CONNECTIONS */
 
 //------------------Added from bdroid_buildcfg.h---------------------
@@ -724,7 +725,7 @@
 #if (CLASSIC_BT_INCLUDED == TRUE)
 #define MAX_L2CAP_CHANNELS          8
 #else
-#define MAX_L2CAP_CHANNELS          1  //Not support to create l2cap channels in the BLE only mode in this bluedroid version(6.0)
+#define MAX_L2CAP_CHANNELS          2  //Not support to create l2cap channels in the BLE only mode in this bluedroid version(6.0)
 #endif   ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
@@ -983,7 +984,7 @@
 #endif
 
 #ifndef GATT_MAX_PHY_CHANNEL
-#define GATT_MAX_PHY_CHANNEL        1
+#define GATT_MAX_PHY_CHANNEL        7
 #endif
 
 /* Used for conformance testing ONLY */
