@@ -1451,9 +1451,9 @@ extern void BTA_DmSearchCancel(void);
 ** Returns          void
 **
 *******************************************************************************/
+#if (SDP_INCLUDED == TRUE)
 extern void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
                            tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search);
-#if (SDP_INCLUDED == TRUE)
 // btla-specific ++
 /*******************************************************************************
 **

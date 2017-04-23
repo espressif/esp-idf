@@ -1162,10 +1162,14 @@ extern UINT8 bta_dm_get_av_count(void);
 extern void bta_dm_search_start (tBTA_DM_MSG *p_data);
 extern void bta_dm_search_cancel (tBTA_DM_MSG *p_data);
 extern void bta_dm_discover (tBTA_DM_MSG *p_data);
+#if (SDP_INCLUDED == TRUE)
 extern void bta_dm_di_disc (tBTA_DM_MSG *p_data);
+#endif  ///SDP_INCLUDED == TRUE
 extern void bta_dm_inq_cmpl (tBTA_DM_MSG *p_data);
 extern void bta_dm_rmt_name (tBTA_DM_MSG *p_data);
+#if (SDP_INCLUDED == TRUE)
 extern void bta_dm_sdp_result (tBTA_DM_MSG *p_data);
+#endif  ///SDP_INCLUDED == TRUE
 extern void bta_dm_search_cmpl (tBTA_DM_MSG *p_data);
 extern void bta_dm_free_sdp_db (tBTA_DM_MSG *p_data);
 extern void bta_dm_disc_result (tBTA_DM_MSG *p_data);

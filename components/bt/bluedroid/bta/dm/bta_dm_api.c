@@ -276,10 +276,10 @@ void BTA_DmSearchCancel(void)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SDP_INCLUDED == TRUE)
 void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
                     tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search)
 {
-#if (SDP_INCLUDED == TRUE)
     tBTA_DM_API_DISCOVER    *p_msg;
 
     if ((p_msg = (tBTA_DM_API_DISCOVER *) GKI_getbuf(sizeof(tBTA_DM_API_DISCOVER))) != NULL) {
@@ -292,10 +292,7 @@ void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
         p_msg->sdp_search = sdp_search;
         bta_sys_sendmsg(p_msg);
     }
-#endif  ///SDP_INCLUDED == TRUE
 }
-
-#if (SDP_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
