@@ -551,8 +551,8 @@ static void IRAM_ATTR spi_intr(void *arg)
         } else {
             host->hw->addr=trans->address & 0xffffffff;
         }
-        host->hw->user.usr_mosi=(trans->tx_buffer==NULL)?0:1;
-        host->hw->user.usr_miso=(trans->rx_buffer==NULL)?0:1;
+        host->hw->user.usr_mosi=(trans->tx_buffer!=NULL || (trans->flags & SPI_TRANS_USE_TXDATA))?1:0;
+        host->hw->user.usr_miso=(trans->rx_buffer!=NULL || (trans->flags & SPI_TRANS_USE_RXDATA))?1:0;
 
         //Call pre-transmission callback, if any
         if (dev->cfg.pre_cb) dev->cfg.pre_cb(trans);
