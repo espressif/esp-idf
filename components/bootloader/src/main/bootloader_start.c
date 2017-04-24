@@ -240,6 +240,7 @@ void bootloader_main()
     /* Set CPU to 80MHz. Keep other clocks unmodified. */
     uart_tx_wait_idle(0);
     rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
+    clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
     clk_cfg.cpu_freq = RTC_CPU_FREQ_80M;
     clk_cfg.slow_freq = rtc_clk_slow_freq_get();
     clk_cfg.fast_freq = rtc_clk_fast_freq_get();

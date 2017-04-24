@@ -561,6 +561,34 @@ config ESP32_DEEP_SLEEP_WAKEUP_DELAY
         If you are seeing "flash read err, 1000" message printed to the
         console after deep sleep reset, try increasing this value.
 
+choice ESP32_XTAL_FREQ_SEL
+    prompt "Main XTAL frequency"
+    default ESP32_XTAL_FREQ_AUTO
+    help
+        ESP32 currently supports the following XTAL frequencies:
+            - 26 MHz
+            - 40 MHz
+        Startup code can automatically estimate XTAL frequency. This feature
+        uses the internal 8MHz oscillator as a reference. Because the internal
+        oscillator frequency is temperature dependent, it is not recommended
+        to use automatic XTAL frequency detection in applications which need
+        to work at high ambient temperatures and use high-temperature
+        qualified chips and modules.
+config ESP32_XTAL_FREQ_40
+    bool "40 MHz"
+config ESP32_XTAL_FREQ_26
+    bool "26 MHz"
+config ESP32_XTAL_FREQ_AUTO
+    bool "Autodetect"
+endchoice
+
+# Keep these values in sync with rtc_xtal_freq_t enum in soc/rtc.h
+config ESP32_XTAL_FREQ
+    int
+    default 0 if ESP32_XTAL_FREQ_AUTO
+    default 40 if ESP32_XTAL_FREQ_40
+    default 26 if ESP32_XTAL_FREQ_26
+
 endmenu
 
 menuconfig WIFI_ENABLED
