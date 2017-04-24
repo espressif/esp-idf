@@ -300,7 +300,7 @@ static int spi_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle) {
         int bestpre=-1;
         int besterr=0;
         int errval;
-        for (n=1; n<=64; n++) {
+        for (n=2; n<=64; n++) { //Start at 2: we need to be able to set h/l so we have at least one high and one low pulse.
             //Effectively, this does pre=round((fapb/n)/hz).
             pre=((fapb/n)+(hz/2))/hz;
             if (pre<=0) pre=1;
