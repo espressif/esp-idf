@@ -67,6 +67,11 @@ static const char* TAG = "rtc_clk";
 #define DELAY_SLOW_CLK_SWITCH           300
 #define DELAY_8M_ENABLE                 50
 
+/* Number of 8M/256 clock cycles to use for XTAL frequency estimation.
+ * 10 cycles will take approximately 300 microseconds.
+ */
+#define XTAL_FREQ_EST_CYCLES            10
+
 
 void rtc_clk_32k_enable(bool enable)
 {
@@ -422,19 +427,12 @@ void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
 
 static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate()
 {
-    /* ROM startup code estimates XTAL frequency using an 8MD256 clock and stores
-     * the value into RTC_APB_FREQ_REG. The value is in Hz, right shifted by 12.
-     * Use this value to guess the real XTAL frequency.
-     *
-     * TODO: make this more robust by calibrating again after setting
-     * RTC_CNTL_CK8M_DFREQ.
+    uint64_t cal_val = rtc_clk_cal_ratio(RTC_CAL_8MD256, XTAL_FREQ_EST_CYCLES);
+    /* cal_val contains period of 8M/256 clock in XTAL clock cycles
+     * (shifted by RTC_CLK_CAL_FRACT bits).
+     * Xtal frequency will be (cal_val * 8M / 256) / 2^19
      */
-    uint32_t apb_freq_reg = READ_PERI_REG(RTC_APB_FREQ_REG);
-    if (!clk_val_is_valid(apb_freq_reg)) {
-        SOC_LOGW(TAG, "invalid RTC_APB_FREQ_REG value: 0x%08x", apb_freq_reg);
-        return RTC_XTAL_FREQ_AUTO;
-    }
-    uint32_t freq_mhz = (reg_val_to_clk_val(apb_freq_reg) << 12) / MHZ;
+    uint32_t freq_mhz = (cal_val * (RTC_FAST_CLK_FREQ_APPROX / MHZ) / 256 ) >> RTC_CLK_CAL_FRACT;
     /* Guess the XTAL type. For now, only 40 and 26MHz are supported.
      */
     switch (freq_mhz) {
@@ -467,6 +465,19 @@ uint32_t rtc_clk_apb_freq_get()
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
+    /* If we get a TG WDT system reset while running at 240MHz,
+     * DPORT_CPUPERIOD_SEL register will be reset to 0 resulting in 120MHz
+     * APB and CPU frequencies after reset. This will cause issues with XTAL
+     * frequency estimation, so we switch to XTAL frequency first.
+     *
+     * Ideally we would only do this if RTC_CNTL_SOC_CLK_SEL == PLL and
+     * PLL is configured for 480M, but it takes less time to switch to 40M and
+     * run the following code than querying the PLL does.
+     */
+    if (REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL) == RTC_CNTL_SOC_CLK_SEL_PLL) {
+        rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    }
+
     /* Set tuning parameters for 8M and 150k clocks.
      * Note: this doesn't attempt to set the clocks to precise frequencies.
      * Instead, we calibrate these clocks against XTAL frequency later, when necessary.
@@ -521,20 +532,3 @@ void rtc_clk_init(rtc_clk_config_t cfg)
  * TODO: update the library to use rtc_clk_xtal_freq_get
  */
 rtc_xtal_freq_t rtc_get_xtal() __attribute__((alias("rtc_clk_xtal_freq_get")));
-
-
-/* Referenced in librtc.a:rtc.o.
- * TODO: remove
- */
-void rtc_uart_div_modify(int latch)
-{
-
-}
-
-/* Referenced in librtc.a:rtc.o.
- * TODO: remove
- */
-void rtc_uart_tx_wait_idle(int uart)
-{
-
-}
