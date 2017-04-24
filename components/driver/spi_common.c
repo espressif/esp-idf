@@ -184,7 +184,6 @@ config can be done using the IOMUX instead of using the GPIO matrix.
 esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan, int flags, bool *is_native)
 {
     bool native=true;
-    bool is_master=(flags&SPICOMMON_BUSFLAG_MASTER)?true:false;
     bool use_quad=(flags&SPICOMMON_BUSFLAG_QUAD)?true:false;
 
     SPI_CHECK(bus_config->mosi_io_num<0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num), "spid pin invalid", ESP_ERR_INVALID_ARG);
@@ -218,31 +217,31 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         //Use GPIO 
         if (bus_config->mosi_io_num>0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->mosi_io_num, is_master?GPIO_MODE_OUTPUT:GPIO_MODE_INPUT);
+            gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->mosi_io_num, io_signal[host].spid_out, false, false);
             gpio_matrix_in(bus_config->mosi_io_num, io_signal[host].spid_in, false);
         }
         if (bus_config->miso_io_num>0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->miso_io_num, is_master?GPIO_MODE_INPUT:GPIO_MODE_OUTPUT);
+            gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->miso_io_num, io_signal[host].spiq_out, false, false);
             gpio_matrix_in(bus_config->miso_io_num, io_signal[host].spiq_in, false);
         }
         if (use_quad && bus_config->quadwp_io_num>0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->quadwp_io_num, is_master?GPIO_MODE_OUTPUT:GPIO_MODE_INPUT);
+            gpio_set_direction(bus_config->quadwp_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->quadwp_io_num, io_signal[host].spiwp_out, false, false);
             gpio_matrix_in(bus_config->quadwp_io_num, io_signal[host].spiwp_in, false);
         }
         if (use_quad && bus_config->quadhd_io_num>0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->quadhd_io_num, is_master?GPIO_MODE_OUTPUT:GPIO_MODE_INPUT);
+            gpio_set_direction(bus_config->quadhd_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->quadhd_io_num, io_signal[host].spihd_out, false, false);
             gpio_matrix_in(bus_config->quadhd_io_num, io_signal[host].spihd_in, false);
         }
         if (bus_config->sclk_io_num>0) {
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(bus_config->sclk_io_num, is_master?GPIO_MODE_OUTPUT:GPIO_MODE_INPUT);
+            gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->sclk_io_num, io_signal[host].spiclk_out, false, false);
             gpio_matrix_in(bus_config->sclk_io_num, io_signal[host].spiclk_in, false);
         }
