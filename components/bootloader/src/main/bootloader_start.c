@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
+#include <sys/param.h>
 
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -312,11 +313,15 @@ void bootloader_main()
         memcpy(&sa, ota_select_map, sizeof(esp_ota_select_entry_t));
         memcpy(&sb, (uint8_t *)ota_select_map + SPI_SEC_SIZE, sizeof(esp_ota_select_entry_t));
         bootloader_munmap(ota_select_map);
+        ESP_LOGD(TAG, "OTA sequence values A 0x%08x B 0x%08x", sa.ota_seq, sb.ota_seq);
         if(sa.ota_seq == 0xFFFFFFFF && sb.ota_seq == 0xFFFFFFFF) {
+            ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF");
             // init status flash
             if (bs.factory.offset != 0) {        // if have factory bin,boot factory bin
+                ESP_LOGD(TAG, "Defaulting to factory image");
                 load_part_pos = bs.factory;
             } else {
+                ESP_LOGD(TAG, "No factory image, defaulting to OTA 0");
                 load_part_pos = bs.ota[0];
                 sa.ota_seq = 0x01;
                 sa.crc = ota_select_crc(&sa);
@@ -341,10 +346,13 @@ void bootloader_main()
             //TODO:write data in ota info
         } else  {
             if(ota_select_valid(&sa) && ota_select_valid(&sb)) {
-                load_part_pos = bs.ota[(((sa.ota_seq > sb.ota_seq)?sa.ota_seq:sb.ota_seq) - 1)%bs.app_count];
+                ESP_LOGD(TAG, "Both OTA sequence valid, using OTA slot %d", MAX(sa.ota_seq, sb.ota_seq)-1);
+                load_part_pos = bs.ota[(MAX(sa.ota_seq, sb.ota_seq) - 1)%bs.app_count];
             } else if(ota_select_valid(&sa)) {
+                ESP_LOGD(TAG, "Only OTA sequence A is valid, using OTA slot %d", sa.ota_seq - 1);
                 load_part_pos = bs.ota[(sa.ota_seq - 1) % bs.app_count];
             } else if(ota_select_valid(&sb)) {
+                ESP_LOGD(TAG, "Only OTA sequence B is valid, using OTA slot %d", sa.ota_seq - 1);
                 load_part_pos = bs.ota[(sb.ota_seq - 1) % bs.app_count];
             } else if (bs.factory.offset != 0) {
                 ESP_LOGE(TAG, "ota data partition invalid, falling back to factory");
