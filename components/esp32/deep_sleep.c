@@ -17,6 +17,7 @@
 #include "esp_attr.h"
 #include "esp_deep_sleep.h"
 #include "esp_log.h"
+#include "esp_clk.h"
 #include "rom/cache.h"
 #include "rom/rtc.h"
 #include "rom/uart.h"
@@ -183,13 +184,7 @@ esp_err_t esp_deep_sleep_enable_timer_wakeup(uint64_t time_in_us)
 
 static void timer_wakeup_prepare()
 {
-    // Do calibration if not using 32k XTAL
-    uint32_t period;
-    if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
-        period = rtc_clk_cal(RTC_CAL_RTC_MUX, 128);
-    } else {
-        period = (uint32_t) ((1000000ULL /* us*Hz */ << RTC_CLK_CAL_FRACT) / 32768 /* Hz */);
-    }
+    uint32_t period = esp_clk_slowclk_cal_get();
     uint64_t rtc_count_delta = rtc_time_us_to_slowclk(s_config.sleep_duration, period);
     uint64_t cur_rtc_count = rtc_time_get();
     rtc_sleep_set_wakeup_time(cur_rtc_count + rtc_count_delta);

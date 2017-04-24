@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,9 @@
 #include <rom/rtc.h>
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
+#include "esp_clk.h"
 #include "soc/soc.h"
+#include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/frc_timer_reg.h"
 #include "rom/ets_sys.h"
@@ -44,15 +46,8 @@
 #ifdef WITH_RTC
 static uint64_t get_rtc_time_us()
 {
-    SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE_M);
-    while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID_M) == 0) {
-        ;
-    }
-    CLEAR_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE_M);
-    uint64_t low = READ_PERI_REG(RTC_CNTL_TIME0_REG);
-    uint64_t high = READ_PERI_REG(RTC_CNTL_TIME1_REG);
-    uint64_t ticks = (high << 32) | low;
-    return ticks * 100 / (RTC_CNTL_SLOWCLK_FREQ / 10000);    // scale RTC_CNTL_SLOWCLK_FREQ to avoid overflow
+    uint64_t ticks = rtc_time_get();
+    return (uint32_t) ((ticks * esp_clk_slowclk_cal_get()) >> RTC_CLK_CAL_FRACT);
 }
 #endif // WITH_RTC
 

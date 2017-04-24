@@ -32,6 +32,12 @@
 
 #define MHZ (1000000)
 
+/* Frequency of the 8M oscillator is 8.5MHz +/- 5%, at the default DCAP setting */
+#define RTC_FAST_CLK_FREQ_8M        8500000
+#define RTC_SLOW_CLK_FREQ_150K      150000
+#define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_8M / 256)
+#define RTC_SLOW_CLK_FREQ_32K       32768
+
 static const char* TAG = "rtc_clk";
 
 /* Various constants related to the analog internals of the chip.
@@ -55,14 +61,21 @@ static const char* TAG = "rtc_clk";
 #define XTAL_32K_DRES_VAL   3
 #define XTAL_32K_DBIAS_VAL  0
 
+#define XTAL_32K_BOOTSTRAP_DAC_VAL      3
+#define XTAL_32K_BOOTSTRAP_DRES_VAL     3
+#define XTAL_32K_BOOTSTRAP_DBIAS_VAL    0
+#define XTAL_32K_BOOTSTRAP_TIME_US      7
+
 /* Delays for various clock sources to be enabled/switched.
  * All values are in microseconds.
  * TODO: some of these are excessive, and should be reduced.
  */
-#define DELAY_CPU_FREQ_SWITCH_TO_XTAL   80
+#define DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_150K  80
+#define DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_32K   160
 #define DELAY_CPU_FREQ_SWITCH_TO_PLL    10
 #define DELAY_PLL_DBIAS_RAISE           3
-#define DELAY_PLL_ENABLE                80
+#define DELAY_PLL_ENABLE_WITH_150K      80
+#define DELAY_PLL_ENABLE_WITH_32K       160
 #define DELAY_FAST_CLK_SWITCH           3
 #define DELAY_SLOW_CLK_SWITCH           300
 #define DELAY_8M_ENABLE                 50
@@ -73,20 +86,34 @@ static const char* TAG = "rtc_clk";
 #define XTAL_FREQ_EST_CYCLES            10
 
 
+static void rtc_clk_32k_enable_internal(int dac, int dres, int dbias)
+{
+    SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
+    CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG,
+            RTC_IO_X32P_RDE | RTC_IO_X32P_RUE | RTC_IO_X32N_RUE |
+            RTC_IO_X32N_RDE | RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
+    REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DAC_XTAL_32K, dac);
+    REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DRES_XTAL_32K, dres);
+    REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DBIAS_XTAL_32K, dbias);
+    SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K);
+}
+
 void rtc_clk_32k_enable(bool enable)
 {
     if (enable) {
-        SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
-        CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG,
-                RTC_IO_X32P_RDE | RTC_IO_X32P_RUE | RTC_IO_X32N_RUE |
-                RTC_IO_X32N_RDE | RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
-        REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DAC_XTAL_32K, XTAL_32K_DAC_VAL);
-        REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DRES_XTAL_32K, XTAL_32K_DRES_VAL);
-        REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DBIAS_XTAL_32K, XTAL_32K_DBIAS_VAL);
-        SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K);
+        rtc_clk_32k_enable_internal(XTAL_32K_DAC_VAL, XTAL_32K_DRES_VAL, XTAL_32K_DBIAS_VAL);
     } else {
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K);
     }
+}
+
+void rtc_clk_32k_bootstrap()
+{
+    CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K);
+    SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32P_RUE | RTC_IO_X32N_RDE);
+    ets_delay_us(XTAL_32K_BOOTSTRAP_TIME_US);
+    rtc_clk_32k_enable_internal(XTAL_32K_BOOTSTRAP_DAC_VAL,
+            XTAL_32K_BOOTSTRAP_DRES_VAL, XTAL_32K_BOOTSTRAP_DBIAS_VAL);
 }
 
 bool rtc_clk_32k_enabled()
@@ -172,6 +199,15 @@ rtc_slow_freq_t rtc_clk_slow_freq_get()
     return REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL);
 }
 
+uint32_t rtc_clk_slow_freq_get_hz()
+{
+    switch(rtc_clk_slow_freq_get()) {
+        case RTC_SLOW_FREQ_RTC: return RTC_SLOW_CLK_FREQ_150K;
+        case RTC_SLOW_FREQ_32K_XTAL: return RTC_SLOW_CLK_FREQ_32K;
+        case RTC_SLOW_FREQ_8MD256: return RTC_SLOW_CLK_FREQ_8MD256;
+    }
+    return 0;
+}
 
 void rtc_clk_fast_freq_set(rtc_fast_freq_t fast_freq)
 {
@@ -280,7 +316,9 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_cpu_freq_t cpu_freq)
     I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_LREF, i2c_bbpll_lref);
     I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_DIV_7_0, i2c_bbpll_div_7_0);
     I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_DCUR, i2c_bbpll_dcur);
-    ets_delay_us(DELAY_PLL_ENABLE);
+    uint32_t delay_pll_en = (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) ?
+            DELAY_PLL_ENABLE_WITH_150K : DELAY_PLL_ENABLE_WITH_32K;
+    ets_delay_us(delay_pll_en);
 }
 
 void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
@@ -291,7 +329,9 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
     REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, 0);
     ets_update_cpu_frequency(xtal_freq);
-    ets_delay_us(DELAY_CPU_FREQ_SWITCH_TO_XTAL);
+    uint32_t delay_xtal_switch = (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) ?
+            DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_150K : DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_32K;
+    ets_delay_us(delay_xtal_switch);
     REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
             RTC_CNTL_BB_I2C_FORCE_PD | RTC_CNTL_BBPLL_FORCE_PD |
@@ -518,7 +558,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     /* Slow & fast clocks setup */
     if (cfg.slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
-        rtc_clk_32k_enable(false);
+        rtc_clk_32k_enable(true);
     }
     if (cfg.fast_freq == RTC_FAST_FREQ_8M) {
         bool need_8md256 = cfg.slow_freq == RTC_SLOW_FREQ_8MD256;

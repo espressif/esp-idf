@@ -317,7 +317,7 @@ static void esp_panic_wdt_start()
     REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_RESET_SYSTEM);
     // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
     // @ 115200 UART speed it will take more than 6 sec to print them out.
-    WRITE_PERI_REG(RTC_CNTL_WDTCONFIG1_REG, RTC_CNTL_SLOWCLK_FREQ*7);
+    WRITE_PERI_REG(RTC_CNTL_WDTCONFIG1_REG, rtc_clk_slow_freq_get_hz() * 7);
     REG_SET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN);
     WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
 }

@@ -169,6 +169,15 @@ void rtc_clk_32k_enable(bool en);
 bool rtc_clk_32k_enabled();
 
 /**
+ * @brief Enable 32k oscillator, configuring it for fast startup time.
+ * Note: to achieve higher frequency stability, rtc_clk_32k_enable function
+ * must be called one the 32k XTAL oscillator has started up. This function
+ * will initially disable the 32k XTAL oscillator, so it should not be called
+ * when the system is using 32k XTAL as RTC_SLOW_CLK.
+ */
+void rtc_clk_32k_bootstrap();
+
+/**
  * @brief Enable or disable 8 MHz internal oscillator
  *
  * Output from 8 MHz internal oscillator is passed into a configurable
@@ -228,6 +237,20 @@ void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq);
  * @return currently selected clock source (one of rtc_slow_freq_t values)
  */
 rtc_slow_freq_t rtc_clk_slow_freq_get();
+
+/**
+ * @brief Get the approximate frequency of RTC_SLOW_CLK, in Hz
+ *
+ * - if RTC_SLOW_FREQ_RTC is selected, returns ~150000
+ * - if RTC_SLOW_FREQ_32K_XTAL is selected, returns 32768
+ * - if RTC_SLOW_FREQ_8MD256 is selected, returns ~33000
+ *
+ * rtc_clk_cal function can be used to get more precise value by comparing
+ * RTC_SLOW_CLK frequency to the frequency of main XTAL.
+ *
+ * @return RTC_SLOW_CLK frequency, in Hz
+ */
+uint32_t rtc_clk_slow_freq_get_hz();
 
 /**
  * @brief Select source for RTC_FAST_CLK
