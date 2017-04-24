@@ -475,7 +475,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             // TODO: actually check md5
         }
 
-        if (address >= DROM_LOW && address < DROM_HIGH) {
+        if (address >= SOC_DROM_LOW && address < SOC_DROM_HIGH) {
             ESP_LOGD(TAG, "found drom segment, map from %08x to %08x", data_offs,
                       segment_header.load_addr);
             drom_addr = data_offs;
@@ -485,7 +485,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             map = true;
         }
 
-        if (address >= IROM_LOW && address < IROM_HIGH) {
+        if (address >= SOC_IROM_LOW && address < SOC_IROM_HIGH) {
             ESP_LOGD(TAG, "found irom segment, map from %08x to %08x", data_offs,
                       segment_header.load_addr);
             irom_addr = data_offs;
@@ -495,12 +495,12 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             map = true;
         }
 
-        if (!load_rtc_memory && address >= RTC_IRAM_LOW && address < RTC_IRAM_HIGH) {
+        if (!load_rtc_memory && address >= SOC_RTC_IRAM_LOW && address < SOC_RTC_IRAM_HIGH) {
             ESP_LOGD(TAG, "Skipping RTC code segment at %08x\n", data_offs);
             load = false;
         }
 
-        if (!load_rtc_memory && address >= RTC_DATA_LOW && address < RTC_DATA_HIGH) {
+        if (!load_rtc_memory && address >= SOC_RTC_DATA_LOW && address < SOC_RTC_DATA_HIGH) {
             ESP_LOGD(TAG, "Skipping RTC data segment at %08x\n", data_offs);
             load = false;
         }
