@@ -1,3 +1,13 @@
+/* udp_perf Example
+
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
+
+
 
 
 /*
@@ -20,8 +30,10 @@ step3:
 */
 
 
+#include <errno.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 #include "esp_log.h"
 #include "esp_err.h"
 
@@ -33,26 +45,24 @@ static void udp_conn(void *pvParameters)
 {
     ESP_LOGI(TAG, "task udp_conn start.");
     /*wating for connecting to AP*/
-    do
-    {
-	vTaskDelay(100);
-    }
-    while (!connectedflag);
+    xEventGroupWaitBits(udp_event_group, WIFI_CONNECTED_BIT,false, true, portMAX_DELAY);
     ESP_LOGI(TAG, "sta has connected to ap.");
     
     /*create udp socket*/
     int socket_ret;
     
-#if ESP_UDP_MODE_SERVER
+#if EXAMPLE_ESP_UDP_MODE_SERVER
+    ESP_LOGI(TAG, "create udp server after 3s...");
     vTaskDelay(3000 / portTICK_RATE_MS);
     ESP_LOGI(TAG, "create_udp_server.");
     socket_ret=create_udp_server();
-#else /*ESP_UDP_MODE_SERVER*/
+#else /*EXAMPLE_ESP_UDP_MODE_SERVER*/
+    ESP_LOGI(TAG, "create udp client after 20s...");
     vTaskDelay(20000 / portTICK_RATE_MS);
     ESP_LOGI(TAG, "create_udp_client.");
     socket_ret = create_udp_client();
 #endif
-    if(ESP_FAIL == socket_ret) {
+    if(socket_ret == ESP_FAIL) {
 	ESP_LOGI(TAG, "create udp socket error,stop.");
 	vTaskDelete(NULL);
     }
@@ -61,17 +71,27 @@ static void udp_conn(void *pvParameters)
     TaskHandle_t tx_rx_task;
     xTaskCreate(&send_recv_data, "send_recv_data", 4096, NULL, 4, &tx_rx_task);
 
-    int pps;
+    /*waiting udp connected success*/
+    xEventGroupWaitBits(udp_event_group, UDP_CONNCETED_SUCCESS,false, true, portMAX_DELAY);
+    int bps;
     while (1) {
 	total_data = 0;
 	vTaskDelay(3000 / portTICK_RATE_MS);//every 3s
-	pps = total_data / 3;
+	bps = total_data / 3;
 
-#if ESP_UDP_PERF_TX
-	ESP_LOGI(TAG, "udp send %d byte per sec! total pack: %d \n", pps, success_pack);
+	if (total_data <= 0) {
+	    int err_ret = check_connected_socket();
+	    if (err_ret == -1) {  //-1 reason: low level netif error
+		ESP_LOGW(TAG, "udp send & recv stop.\n");
+		break;
+	    }
+	}
+
+#if EXAMPLE_ESP_UDP_PERF_TX
+	ESP_LOGI(TAG, "udp send %d byte per sec! total pack: %d \n", bps, success_pack);
 #else
-	ESP_LOGI(TAG, "udp recv %d byte per sec! total pack: %d \n", pps, success_pack);
-#endif /*ESP_UDP_PERF_TX*/
+	ESP_LOGI(TAG, "udp recv %d byte per sec! total pack: %d \n", bps, success_pack);
+#endif /*EXAMPLE_ESP_UDP_PERF_TX*/
     }
     close_socket();
     vTaskDelete(tx_rx_task);
@@ -82,11 +102,11 @@ static void udp_conn(void *pvParameters)
 
 void app_main(void)
 {
-#if ESP_WIFI_MODE_AP
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_AP\n");
+#if EXAMPLE_ESP_WIFI_MODE_AP
+    ESP_LOGI(TAG, "EXAMPLE_ESP_WIFI_MODE_AP");
     wifi_init_softap();
-#else /*ESP_WIFI_MODE_AP*/
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA\n");
+#else /*EXAMPLE_ESP_WIFI_MODE_AP*/
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
 #endif
     xTaskCreate(&udp_conn, "udp_conn", 4096, NULL, 5, NULL);
