@@ -112,6 +112,7 @@ SECTIONS
     *(.dram1 .dram1.*)
     *libesp32.a:panic.o(.rodata .rodata.*)
     *libesp32.a:app_trace.o(.rodata .rodata.*)
+    *libphy.a:(.rodata .rodata.*)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >dram0_0_seg
