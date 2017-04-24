@@ -109,6 +109,7 @@ void IRAM_ATTR call_start_cpu0()
                   ::"r"(&_init_start));
 
     rst_reas[0] = rtc_get_reset_reason(0);
+
 #if !CONFIG_FREERTOS_UNICORE
     rst_reas[1] = rtc_get_reset_reason(1);
 #endif
@@ -118,8 +119,7 @@ void IRAM_ATTR call_start_cpu0()
 #if !CONFIG_FREERTOS_UNICORE
         || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
 #endif
-        ) {
-        // stop wdt in case of any
+    ) {
         esp_panic_wdt_stop();
     }
 
