@@ -1044,6 +1044,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 {
 	TCB_t *curTCB, *tcb0, *tcb1;
 
+	/* Assure that xCoreID is valid or we'll have an out-of-bounds on pxCurrentTCB 
+	   You will assert here if e.g. you only have one CPU enabled in menuconfig and 
+	   are trying to start a task on core 1. */
+	configASSERT( xCoreID == tskNO_AFFINITY || xCoreID < portNUM_PROCESSORS);
+
     /* Ensure interrupts don't access the task lists while the lists are being
 	updated. */
 	taskENTER_CRITICAL(&xTaskQueueMutex);
