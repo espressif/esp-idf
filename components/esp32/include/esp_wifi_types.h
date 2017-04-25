@@ -20,7 +20,6 @@
 #include <stdbool.h>
 #include "rom/queue.h"
 #include "esp_err.h"
-#include "esp_wifi_types.h"
 #include "esp_interface.h"
 
 #ifdef __cplusplus

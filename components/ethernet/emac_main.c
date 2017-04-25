@@ -204,6 +204,25 @@ uint16_t esp_eth_smi_read(uint32_t reg_num)
     return value;
 }
 
+esp_err_t esp_eth_smi_wait_value(uint32_t reg_num, uint16_t value, uint16_t value_mask, int timeout_ms)
+{
+    unsigned start = xTaskGetTickCount();
+    unsigned timeout_ticks = (timeout_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
+    uint16_t current_value = 0;
+
+    while (timeout_ticks == 0 || (xTaskGetTickCount() - start < timeout_ticks)) {
+        current_value = esp_eth_smi_read(reg_num);
+        if ((current_value & value_mask) == (value & value_mask)) {
+            return ESP_OK;
+        }
+        vTaskDelay(1);
+    }
+    ESP_LOGE(TAG, "Timed out waiting for PHY register 0x%x to have value 0x%04x (mask 0x%04x). Current value 0x%04x",
+             reg_num, value, value_mask, current_value);
+    return ESP_ERR_TIMEOUT;
+}
+
+
 static void emac_set_user_config_data(eth_config_t *config )
 {
     emac_config.phy_addr = config->phy_addr;
@@ -532,7 +551,7 @@ static void emac_set_macaddr_reg(void)
 static void emac_check_phy_init(void)
 {
     emac_config.emac_phy_check_init();
-    if (emac_config.emac_phy_get_duplex_mode() == ETH_MDOE_FULLDUPLEX) {
+    if (emac_config.emac_phy_get_duplex_mode() == ETH_MODE_FULLDUPLEX) {
         REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
     } else {
         REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
@@ -547,7 +566,7 @@ static void emac_check_phy_init(void)
     emac_config.emac_flow_ctrl_partner_support = false;
 #else
     if (emac_config.emac_flow_ctrl_enable == true) {
-        if (emac_config.emac_phy_get_partner_pause_enable() == true && emac_config.emac_phy_get_duplex_mode() == ETH_MDOE_FULLDUPLEX) {
+        if (emac_config.emac_phy_get_partner_pause_enable() == true && emac_config.emac_phy_get_duplex_mode() == ETH_MODE_FULLDUPLEX) {
             emac_enable_flowctrl();
             emac_config.emac_flow_ctrl_partner_support = true;
         } else {
@@ -954,7 +973,7 @@ esp_err_t esp_eth_init(eth_config_t *config)
         goto _exit;
     }
 
-    emac_config.emac_phy_power_enable(true);    
+    emac_config.emac_phy_power_enable(true);
 
     //before set emac reg must enable clk
     emac_enable_clk(true);

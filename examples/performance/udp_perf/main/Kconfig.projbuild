@@ -78,34 +78,35 @@ config UDP_PERF_TX
 
 config UDP_PERF_WIFI_SSID
     string "WiFi SSID"
-	default "esp_wifi_test1"
-	help
-	    SSID (network name) for the example to connect to.
+    default "esp_wifi_test1"
+    help
+	SSID (network name) for the example to connect to.
 
 config UDP_PERF_WIFI_PASSWORD
     string "WiFi Password"
-	default "1234567890"
-	help
-	    WiFi password (WPA or WPA2) for the example to use.
+    default "1234567890"
+    help
+	WiFi password (WPA or WPA2) for the example to use.
 		
 config UDP_PERF_SERVER_PORT
     int "UDP server port"
-	default 4567
-	help 
-	    Which will the udp server use.
+    default 4567
+    help
+	Which will the udp server use.
 				
 config UDP_PERF_SERVER_IP
     string "UDP server ip"
-	default "192.168.4.1" 
-	help
-	    IP of UDP server.
+    depends on UDP_PERF_ESP_IS_CLIENT
+    default "192.168.4.1" 
+    help
+	IP of UDP server.
 		
-	    Ignore in UDP server.
+	Ignore in UDP server.
 	
 config UDP_PERF_PKT_SIZE
     int "Size of UDP packet"
-	default 1460
-	help
-	    the data send&recv packet size. 
+    default 1460
+    help
+	the data send&recv packet size. 
 		
 endmenu

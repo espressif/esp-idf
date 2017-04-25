@@ -287,7 +287,6 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     uint8_t *adv_name = NULL;
-    char adv_name_char[31] = {0};
     uint8_t adv_name_len = 0;
     switch (event) {
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
@@ -317,10 +316,9 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             for (int j = 0; j < adv_name_len; j++) {
                 ESP_LOGI(GATTC_TAG, "%c", adv_name[j]);
             }
-            memcpy(adv_name_char, adv_name, adv_name_len);
             if (adv_name != NULL) {
-                if (strcmp(adv_name_char, device_name) == 0) {
-                    ESP_LOGI(GATTC_TAG, "Searched device %s", device_name);
+                if (strlen(device_name) == adv_name_len && strncmp((char *)adv_name, device_name, adv_name_len) == 0) {
+                    ESP_LOGI(GATTC_TAG, "Searched device %s\n", device_name);
                     if (connect == false) {
                         connect = true;
                         ESP_LOGI(GATTC_TAG, "Connect to the remote device.");

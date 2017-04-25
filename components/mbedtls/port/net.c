@@ -201,9 +201,13 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
  *
  * Note: on a blocking socket this function always returns 0!
  */
-static int net_would_block( const mbedtls_net_context *ctx )
+static int net_would_block( const mbedtls_net_context *ctx, int *errout )
 {
     int error = mbedtls_net_errno(ctx->fd);
+
+    if ( errout ) {
+        *errout = error;
+    }
 
     /*
      * Never return 'WOULD BLOCK' on a non-blocking socket
@@ -260,7 +264,7 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
     }
 
     if ( ret < 0 ) {
-        if ( net_would_block( bind_ctx ) != 0 ) {
+        if ( net_would_block( bind_ctx, NULL ) != 0 ) {
             return ( MBEDTLS_ERR_SSL_WANT_READ );
         }
 
@@ -349,11 +353,10 @@ int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
     ret = (int) read( fd, buf, len );
 
     if ( ret < 0 ) {
-        if ( net_would_block( ctx ) != 0 ) {
+        if ( net_would_block( ctx, &error ) != 0 ) {
             return ( MBEDTLS_ERR_SSL_WANT_READ );
         }
 
-        error = mbedtls_net_errno(fd);
         if ( error == EPIPE || error == ECONNRESET ) {
             return ( MBEDTLS_ERR_NET_CONN_RESET );
         }
@@ -425,11 +428,10 @@ int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
     ret = (int) write( fd, buf, len );
 
     if ( ret < 0 ) {
-        if ( net_would_block( ctx ) != 0 ) {
+        if ( net_would_block( ctx, &error ) != 0 ) {
             return ( MBEDTLS_ERR_SSL_WANT_WRITE );
         }
 
-        error = mbedtls_net_errno(fd);
         if ( error == EPIPE || error == ECONNRESET ) {
             return ( MBEDTLS_ERR_NET_CONN_RESET );
         }

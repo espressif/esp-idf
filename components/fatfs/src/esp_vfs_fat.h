@@ -19,6 +19,7 @@
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_host.h"
 #include "ff.h"
+#include "wear_levelling.h"
 
 /**
  * @brief Register FATFS with VFS component
@@ -77,13 +78,17 @@ esp_err_t esp_vfs_fat_unregister() __attribute__((deprecated));
  */
 esp_err_t esp_vfs_fat_unregister_path(const char* base_path);
 
+
 /**
- * @brief Configuration arguments for esp_vfs_fat_sdmmc_mount function
+ * @brief Configuration arguments for esp_vfs_fat_sdmmc_mount and esp_vfs_fat_spiflash_mount functions
  */
 typedef struct {
-	bool format_if_mount_failed;    ///< If FAT partition can not be mounted, and this parameter is true, create partition table and format the filesystem
-	int max_files;                  ///< Max number of open files
-} esp_vfs_fat_sdmmc_mount_config_t;
+    bool format_if_mount_failed;    ///< If FAT partition can not be mounted, and this parameter is true, create partition table and format the filesystem
+    int max_files;                  ///< Max number of open files
+} esp_vfs_fat_mount_config_t;
+
+// Compatibility definition
+typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
 
 /**
  * @brief Convenience function to get FAT filesystem on SD card registered in VFS
@@ -114,7 +119,7 @@ typedef struct {
 esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     const sdmmc_host_t* host_config,
     const sdmmc_slot_config_t* slot_config,
-    const esp_vfs_fat_sdmmc_mount_config_t* mount_config,
+    const esp_vfs_fat_mount_config_t* mount_config,
     sdmmc_card_t** out_card);
 
 /**
@@ -125,3 +130,46 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount hasn't been called
  */
 esp_err_t esp_vfs_fat_sdmmc_unmount();
+
+/**
+ * @brief Convenience function to initialize FAT filesystem in SPI flash and register it in VFS
+ *
+ * This is an all-in-one function which does the following:
+ *
+ * - finds the partition with defined partition_label. Partition label should be
+ *   configured in the partition table.
+ * - initializes flash wear levelling library on top of the given partition
+ * - mounts FAT partition using FATFS library on top of flash wear levelling
+ *   library
+ * - registers FATFS library with VFS, with prefix given by base_prefix variable
+ *
+ * This function is intended to make example code more compact.
+ *
+ * @param base_path        path where FATFS partition should be mounted (e.g. "/spiflash")
+ * @param partition_label  label of the partition which should be used
+ * @param mount_config     pointer to structure with extra parameters for mounting FATFS
+ * @param[out] wl_handle   wear levelling driver handle
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_FOUND if the partition table does not contain FATFS partition with given label
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount was already called
+ *      - ESP_ERR_NO_MEM if memory can not be allocated
+ *      - ESP_FAIL if partition can not be mounted
+ *      - other error codes from wear levelling library, SPI flash driver, or FATFS drivers
+ */
+esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config,
+    wl_handle_t* wl_handle);
+
+/**
+ * @brief Unmount FAT filesystem and release resources acquired using esp_vfs_fat_spiflash_mount
+ *
+ * @param base_path  path where partition should be registered (e.g. "/spiflash")
+ * @param wl_handle  wear levelling driver handle returned by esp_vfs_fat_spiflash_mount
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount hasn't been called
+ */
+ esp_err_t esp_vfs_fat_spiflash_unmount(const char* base_path, wl_handle_t wl_handle);

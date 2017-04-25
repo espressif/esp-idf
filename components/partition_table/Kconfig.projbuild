@@ -57,6 +57,7 @@ config APP_OFFSET
        default 0x10000 # this is the factory app offset used by the default tables
 
 config PHY_DATA_OFFSET
+       depends on ESP32_PHY_INIT_DATA_IN_PARTITION
        hex
        default PARTITION_TABLE_CUSTOM_PHY_DATA_OFFSET if PARTITION_TABLE_CUSTOM
        default 0xf000 # this is the factory app offset used by the default tables

@@ -103,7 +103,33 @@ uint32_t system_get_free_heap_size(void)  __attribute__ ((deprecated));
 uint32_t esp_random(void);
 
 /**
-  * @brief  Read hardware MAC address.
+  * @brief  Set base MAC address from external storage e.g. flash and EEPROM.
+  *
+  * Base MAC address is used to generate the MAC addresses used by the networking interfaces.
+  * If using base MAC address stored in external storage, call this API to set base MAC
+  * address from external storage before initializing WiFi/BT/Ethernet.
+  *
+  * @param  mac  base MAC address, length: 6 bytes.
+  *
+  * @return ESP_OK on success
+  */
+esp_err_t esp_base_mac_addr_set_external(uint8_t *mac);
+
+/**
+  * @brief  Return base MAC address set using esp_mac_addr_set_external.
+  *
+  * @param  mac  base MAC address, length: 6 bytes.
+  *
+  * Base MAC address is used to generate the MAC addresses used by the networking interfaces.
+  * If using base MAC address stored in external storage, call this API to set base MAC
+  * address from external storage before initializing WiFi/BT/Ethernet.
+  *
+  * @return ESP_OK on success
+  */
+esp_err_t esp_base_mac_addr_get_external(uint8_t *mac);
+
+/**
+  * @brief  Read hardware MAC address from efuse.
   *
   * In WiFi MAC, only ESP32 station MAC is the hardware MAC, ESP32 softAP MAC is a software MAC 
   * calculated from ESP32 station MAC. 

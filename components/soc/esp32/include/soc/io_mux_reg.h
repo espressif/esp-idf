@@ -1,9 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -16,19 +16,61 @@
 
 #include "soc.h"
 
+/* The following are the bit fields for PERIPHS_IO_MUX_x_U registers */
+/* Output enable in sleep mode */
 #define SLP_OE (BIT(0))
+#define SLP_OE_M (BIT(0))
+#define SLP_OE_V 1
+#define SLP_OE_S 0
+/* Pin used for wakeup from sleep */
 #define SLP_SEL (BIT(1))
+#define SLP_SEL_M (BIT(1))
+#define SLP_SEL_V 1
+#define SLP_SEL_S 1
+/* Pulldown enable in sleep mode */
 #define SLP_PD (BIT(2))
+#define SLP_PD_M (BIT(2))
+#define SLP_PD_V 1
+#define SLP_PD_S 2
+/* Pullup enable in sleep mode */
 #define SLP_PU (BIT(3))
+#define SLP_PU_M (BIT(3))
+#define SLP_PU_V 1
+#define SLP_PU_S 3
+/* Input enable in sleep mode */
 #define SLP_IE (BIT(4))
+#define SLP_IE_M (BIT(4))
+#define SLP_IE_V 1
+#define SLP_IE_S 4
+/* Drive strength in sleep mode */
 #define SLP_DRV 0x3
+#define SLP_DRV_M (SLP_DRV_V << SLP_DRV_S)
+#define SLP_DRV_V 0x3
 #define SLP_DRV_S 5
+/* Pulldown enable */
 #define FUN_PD (BIT(7))
+#define FUN_PD_M (BIT(7))
+#define FUN_PD_V 1
+#define FUN_PD_S 7
+/* Pullup enable */
 #define FUN_PU (BIT(8))
+#define FUN_PU_M (BIT(8))
+#define FUN_PU_V 1
+#define FUN_PU_S 8
+/* Input enable */
 #define FUN_IE (BIT(9))
+#define FUN_IE_M (FUN_IE_V << FUN_IE_S)
+#define FUN_IE_V 1
+#define FUN_IE_S 9
+/* Drive strength */
 #define FUN_DRV 0x3
+#define FUN_DRV_M (FUN_DRV_V << FUN_DRV_S)
+#define FUN_DRV_V 0x3
 #define FUN_DRV_S 10
+/* Function select (possible values are defined for each pin as FUNC_pinname_function below) */
 #define MCU_SEL 0x7
+#define MCU_SEL_M (MCU_SEL_V << MCU_SEL_S)
+#define MCU_SEL_V 0x7
 #define MCU_SEL_S 12
 
 #define PIN_INPUT_ENABLE(PIN_NAME)               SET_PERI_REG_MASK(PIN_NAME,FUN_IE)

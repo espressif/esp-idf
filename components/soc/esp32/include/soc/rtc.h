@@ -92,6 +92,9 @@ typedef enum {
     RTC_FAST_FREQ_8M = 1,       //!< Internal 8 MHz RC oscillator
 } rtc_fast_freq_t;
 
+/* With the default value of CK8M_DFREQ, 8M clock frequency is 8.5 MHz +/- 7% */
+#define RTC_FAST_CLK_FREQ_APPROX 8500000
+
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
  */
@@ -306,6 +309,15 @@ uint32_t rtc_clk_apb_freq_get();
  *         or 0 if calibration has timed out
  */
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
+
+/**
+ * @brief Measure ratio between XTAL frequency and RTC slow clock frequency
+ * @param cal_clk slow clock to be measured
+ * @param slow_clk_cycles number of slow clock cycles to average
+ * @return average ratio between XTAL frequency and slow clock frequency,
+ *         Q13.19 fixed point format, or 0 if calibration has timed out.
+ */
+uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
 
 /**
  * @brief Convert time interval from microseconds to RTC_SLOW_CLK cycles

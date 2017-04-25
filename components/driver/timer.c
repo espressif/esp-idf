@@ -204,7 +204,7 @@ esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
     return esp_intr_alloc_intrstatus(intr_source, intr_alloc_flags, status_reg, mask, fn, arg, handle);
 }
 
-esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, timer_config_t *config)
+esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer_config_t *config)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);

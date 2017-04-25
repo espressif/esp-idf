@@ -27,6 +27,8 @@
 #include "freertos/FreeRTOSConfig.h"
 #include "freertos/xtensa_api.h"
 #include "rom/ets_sys.h"
+#include "btc_task.h"
+#include "btc_alarm.h"
 
 #define RTC_TIMER_TICKS_TO_MS(ticks)            (((ticks/625)<<1) + (ticks-(ticks/625)*625)/312)
 
@@ -122,17 +124,21 @@ static struct alarm_t *alarm_cbs_lookfor_available(void)
 static void alarm_cb_handler(TimerHandle_t xTimer)
 {
     struct alarm_t *alarm;
-
     if (!xTimer) {
         LOG_ERROR("TimerName: NULL\n");
         return;
     }
-
+    
     alarm = pvTimerGetTimerID(xTimer);
     LOG_DEBUG("TimerID %p, Name %s\n", alarm, pcTimerGetTimerName(xTimer));
-    if (alarm->cb) {
-        alarm->cb(alarm->cb_data);
-    }
+    
+    btc_msg_t msg;
+    btc_alarm_args_t arg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_ALARM;
+    arg.cb = alarm->cb;
+    arg.cb_data = alarm->cb_data;
+    btc_transfer_context(&msg, &arg, sizeof(btc_alarm_args_t), NULL);
 }
 
 osi_alarm_t *osi_alarm_new(char *alarm_name, osi_alarm_callback_t callback, void *data, period_ms_t timer_expire)

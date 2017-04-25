@@ -28,24 +28,33 @@ config MEMMAP_SMP
         to save some memory. (ToDo: Make this automatically depend on unicore support)
 
 config MEMMAP_TRACEMEM
-    bool "Use TRAX tracing feature"
-    default "n"
-    help
-        The ESP32 contains a feature which allows you to trace the execution path the processor
-        has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
-        of memory that can't be used for general purposes anymore. Disable this if you do not know
-        what this is.
+	bool
+	default "n"
 
 config MEMMAP_TRACEMEM_TWOBANKS
-    bool "Reserve memory for tracing both pro as well as app cpu execution"
+    bool
     default "n"
-    depends on MEMMAP_TRACEMEM && MEMMAP_SMP
+
+config ESP32_TRAX
+    bool "Use TRAX tracing feature"
+    default "n"
+    select MEMMAP_TRACEMEM
     help
         The ESP32 contains a feature which allows you to trace the execution path the processor
         has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
         of memory that can't be used for general purposes anymore. Disable this if you do not know
         what this is.
 
+config ESP32_TRAX_TWOBANKS
+    bool "Reserve memory for tracing both pro as well as app cpu execution"
+    default "n"
+    depends on ESP32_TRAX && MEMMAP_SMP
+    select MEMMAP_TRACEMEM_TWOBANKS
+    help
+        The ESP32 contains a feature which allows you to trace the execution path the processor
+        has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
+        of memory that can't be used for general purposes anymore. Disable this if you do not know
+        what this is.
 
 # Memory to reverse for trace, used in linker script
 config TRACEMEM_RESERVE_DRAM
@@ -95,6 +104,45 @@ config ESP32_CORE_DUMP_LOG_LEVEL
     help
         Config core dump module logging level (0-5).
 
+choice ESP32_APPTRACE_DESTINATION
+    prompt "AppTrace: destination"
+    default ESP32_APPTRACE_DEST_NONE
+    help
+        Select destination for application trace: trace memory, uart or none (to disable).
+
+config ESP32_APPTRACE_DEST_TRAX
+    bool "Trace memory"
+    select ESP32_APPTRACE_ENABLE
+config ESP32_APPTRACE_DEST_UART
+    bool "UART"
+    select ESP32_APPTRACE_ENABLE
+config ESP32_APPTRACE_DEST_NONE
+    bool "None"
+endchoice
+
+config ESP32_APPTRACE_ENABLE
+    bool
+    depends on !ESP32_TRAX
+    select MEMMAP_TRACEMEM
+    select MEMMAP_TRACEMEM_TWOBANKS
+    default F
+    help
+        Enables/disable application tracing module.
+
+config ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO
+    int "AppTrace: Timeout for flushing last trace data to host on panic"
+    depends on ESP32_APPTRACE_ENABLE
+    default 4294967295
+    help
+        Timeout for flushing last trace data to host in case of panic. In us.
+
+config ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH
+    int "AppTrace: Threshold for flushing last trace data to host on panic"
+    depends on ESP32_APPTRACE_DEST_TRAX
+    default 50
+    help
+        Threshold for flushing last trace data to host on panic. In percents of TRAX memory block length.
+
 # Not implemented and/or needs new silicon rev to work
 config MEMMAP_SPISRAM
     bool "Use external SPI SRAM chip as main memory"
@@ -105,16 +153,37 @@ config MEMMAP_SPISRAM
         main memory map. Enable this if you have this hardware and want to use it in the same
         way as on-chip RAM.
 
+choice BASE_MAC_ADDRESS_STORAGE
+    prompt "Storage of the base MAC address"
+    default BASE_MAC_STORED_DEFAULT_EFUSE
+    help
+        Select storage of the base MAC address which is used for all network interfaces when networking is initialized. 
+        If "Default place in EFUSE" is selected, esp32 will use the base MAC address which is written into default
+        place in EFUSE when the chip is manufactured. 
+        If "Customer-defined place in EFUSE" is selected, ESP32 will use customer-defined base MAC address which
+        is written into EFUSE Block 3 words 0, 1.
+        If "Other customer-defined place" is selected, esp32 will use customer-defined base MAC address from other
+        place(flash, EEPROM, etc). User code must call esp_base_mac_addr_set_external to set the base MAC address 
+        before network features are initialised.
+
+config BASE_MAC_STORED_DEFAULT_EFUSE
+    bool "Default place in EFUSE"
+config BASE_MAC_STORED_CUSTOMER_DEFINED_EFUSE
+    bool "Customer-defined place in EFUSE"
+config BASE_MAC_STORED_OTHER_CUSTOMER_DEFINED_PLACE
+    bool "Other customer-defined place"
+endchoice
+        
 choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
     bool "Number of MAC address generated from the hardware MAC address in efuse"
     default FOUR_MAC_ADDRESS_FROM_EFUSE
     help
-        Config the number of MAC address which is generated from the hardware MAC address in efuse.
+        Config the number of MAC address which is generated from the base MAC address in efuse.
         If the number is two, the MAC addresses of WiFi station and bluetooth are generated from
-        the hardware MAC address in efuse. The MAC addresses of WiFi softap and ethernet are derived
+        the base MAC address in efuse. The MAC addresses of WiFi softap and ethernet are derived
         from that of WiFi station and bluetooth respectively. 
         If the number is four, the MAC addresses of WiFi station, WiFi softap, bluetooth and ethernet
-        are all generated from the hardware MAC address in efuse.
+        are all generated from the base MAC address in efuse.
 
 config TWO_MAC_ADDRESS_FROM_EFUSE
     bool "Two"
@@ -138,7 +207,6 @@ config SYSTEM_EVENT_TASK_STACK_SIZE
     default 4096
     help
         Config system event task stack size in different application.
-
 
 config MAIN_TASK_STACK_SIZE
     int "Main task stack size"
@@ -492,6 +560,34 @@ config ESP32_DEEP_SLEEP_WAKEUP_DELAY
         If you are seeing "flash read err, 1000" message printed to the
         console after deep sleep reset, try increasing this value.
 
+choice ESP32_XTAL_FREQ_SEL
+    prompt "Main XTAL frequency"
+    default ESP32_XTAL_FREQ_AUTO
+    help
+        ESP32 currently supports the following XTAL frequencies:
+            - 26 MHz
+            - 40 MHz
+        Startup code can automatically estimate XTAL frequency. This feature
+        uses the internal 8MHz oscillator as a reference. Because the internal
+        oscillator frequency is temperature dependent, it is not recommended
+        to use automatic XTAL frequency detection in applications which need
+        to work at high ambient temperatures and use high-temperature
+        qualified chips and modules.
+config ESP32_XTAL_FREQ_40
+    bool "40 MHz"
+config ESP32_XTAL_FREQ_26
+    bool "26 MHz"
+config ESP32_XTAL_FREQ_AUTO
+    bool "Autodetect"
+endchoice
+
+# Keep these values in sync with rtc_xtal_freq_t enum in soc/rtc.h
+config ESP32_XTAL_FREQ
+    int
+    default 0 if ESP32_XTAL_FREQ_AUTO
+    default 40 if ESP32_XTAL_FREQ_40
+    default 26 if ESP32_XTAL_FREQ_26
+
 endmenu
 
 menuconfig WIFI_ENABLED
@@ -525,8 +621,8 @@ config ESP32_WIFI_STATIC_RX_BUFFER_NUM
 config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
     int "Max number of WiFi dynamic RX buffers"
     depends on WIFI_ENABLED
-    range 0 64
-    default 0
+    range 0 128
+    default 64
     help
         Set the number of WiFi dynamic rx buffers, 0 means no limitation for dynamic rx buffer
         allocation. The size of dynamic rx buffers is not fixed.

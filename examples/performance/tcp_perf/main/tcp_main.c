@@ -1,3 +1,11 @@
+/* tcp_perf Example
+
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
 
 
 /*
@@ -22,6 +30,7 @@ step3:
 #include <errno.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 #include "esp_log.h"
 #include "esp_err.h"
 
@@ -32,63 +41,62 @@ step3:
 //this task establish a TCP connection and receive data from TCP
 static void tcp_conn(void *pvParameters)
 {
-    ESP_LOGI(TAG, "task tcp_conn start.");
+    ESP_LOGI(TAG, "task tcp_conn.");
     /*wating for connecting to AP*/
-    do
-    {
-	vTaskDelay(100);
-    }
-    while (!connectedflag);
+    xEventGroupWaitBits(tcp_event_group, WIFI_CONNECTED_BIT,false, true, portMAX_DELAY);
+
     ESP_LOGI(TAG, "sta has connected to ap.");
     
     /*create tcp socket*/
     int socket_ret;
     
-#if ESP_TCP_MODE_SERVER
+#if EXAMPLE_ESP_TCP_MODE_SERVER
+    ESP_LOGI(TAG, "tcp_server will start after 3s...");
     vTaskDelay(3000 / portTICK_RATE_MS);
     ESP_LOGI(TAG, "create_tcp_server.");
     socket_ret=create_tcp_server();
-#else /*ESP_TCP_MODE_SERVER*/
+#else /*EXAMPLE_ESP_TCP_MODE_SERVER*/
+    ESP_LOGI(TAG, "tcp_client will start after 20s...");
     vTaskDelay(20000 / portTICK_RATE_MS);
     ESP_LOGI(TAG, "create_tcp_client.");
     socket_ret = create_tcp_client();
 #endif
-    if(ESP_FAIL == socket_ret) {
+    if(socket_ret == ESP_FAIL) {
 	ESP_LOGI(TAG, "create tcp socket error,stop.");
 	vTaskDelete(NULL);
     }
     
     /*create a task to tx/rx data*/
     TaskHandle_t tx_rx_task;
-#if ESP_TCP_PERF_TX
+#if EXAMPLE_ESP_TCP_PERF_TX
     xTaskCreate(&send_data, "send_data", 4096, NULL, 4, &tx_rx_task);
-#else /*ESP_TCP_PERF_TX*/
+#else /*EXAMPLE_ESP_TCP_PERF_TX*/
     xTaskCreate(&recv_data, "recv_data", 4096, NULL, 4, &tx_rx_task);
 #endif
-    int pps;
+    int bps;
     while (1) {
 	total_data = 0;
 	vTaskDelay(3000 / portTICK_RATE_MS);//every 3s
-	pps = total_data / 3;
+	bps = total_data / 3;
 	if (total_data <= 0) {
-	    int err_ret = check_socket_error_code();
-	    if (err_ret == ECONNRESET) {
-		ESP_LOGI(TAG, "disconnected... stop.");
+	    int err_ret = check_working_socket();
+	    if (err_ret == ECONNRESET || ECONNABORTED) {
+		ESP_LOGW(TAG, "tcp disconnected... stop.\n");
 		break;
 	    }
 	}
 
-#if ESP_TCP_PERF_TX
-	ESP_LOGI(TAG, "tcp send %d byte per sec!", pps);
-#if ESP_TCP_DELAY_INFO
+#if EXAMPLE_ESP_TCP_PERF_TX
+	ESP_LOGI(TAG, "tcp send %d byte per sec!", bps);
+#if EXAMPLE_ESP_TCP_DELAY_INFO
 	ESP_LOGI(TAG, "tcp send packet total:%d  succeed:%d  failed:%d\n"
 		"time(ms):0-30:%d 30-100:%d 100-300:%d 300-1000:%d 1000+:%d\n",
 		total_pack, send_success, send_fail, delay_classify[0],
 		delay_classify[1], delay_classify[2], delay_classify[3], delay_classify[4]);
-#endif /*ESP_TCP_DELAY_INFO*/
+#endif /*EXAMPLE_ESP_TCP_DELAY_INFO*/
 #else
-	ESP_LOGI(TAG, "tcp recv %d byte per sec!\n", pps);
-#endif /*ESP_TCP_PERF_TX*/
+	ESP_LOGI(TAG, "tcp recv %d byte per sec!\n", bps);
+#endif /*EXAMPLE_ESP_TCP_PERF_TX*/
     }
     close_socket();
     vTaskDelete(tx_rx_task);
@@ -99,12 +107,12 @@ static void tcp_conn(void *pvParameters)
 
 void app_main(void)
 {
-#if ESP_WIFI_MODE_AP
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_AP\n");
+#if EXAMPLE_ESP_WIFI_MODE_AP
+    ESP_LOGI(TAG, "EXAMPLE_ESP_WIFI_MODE_AP");
     wifi_init_softap();
-#else /*ESP_WIFI_MODE_AP*/
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA\n");
+#else
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
-#endif
+#endif /*EXAMPLE_ESP_WIFI_MODE_AP*/
     xTaskCreate(&tcp_conn, "tcp_conn", 4096, NULL, 5, NULL);
 }

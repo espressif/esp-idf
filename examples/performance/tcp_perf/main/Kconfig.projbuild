@@ -103,6 +103,7 @@ config TCP_PERF_SERVER_PORT
 				
 config TCP_PERF_SERVER_IP
     string "TCP server ip"
+    depends on TCP_PERF_ESP_IS_CLIENT
     default "192.168.4.1" 
     help
 	IP of TCP server.
