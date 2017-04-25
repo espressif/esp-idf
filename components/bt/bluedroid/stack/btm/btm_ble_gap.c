@@ -2130,7 +2130,9 @@ void btm_ble_read_remote_name_cmpl(BOOLEAN status, BD_ADDR bda, UINT16 length, c
     }
 
     btm_process_remote_name(bda, bd_name, length + 1, hci_status);
+#if (SMP_INCLUDED == TRUE)
     btm_sec_rmt_name_request_complete (bda, (UINT8 *)p_name, hci_status);
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************

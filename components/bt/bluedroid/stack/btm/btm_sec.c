@@ -79,9 +79,7 @@ static void     btm_sec_check_pending_reqs(void);
 static BOOLEAN  btm_sec_queue_mx_request (BD_ADDR bd_addr,  UINT16 psm,  BOOLEAN is_orig,
         UINT32 mx_proto_id, UINT32 mx_chan_id,
         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
-#endif  ///SMP_INCLUDED == TRUE
 static void     btm_sec_bond_cancel_complete (void);
-#if (SMP_INCLUDED == TRUE)
 static void     btm_send_link_key_notif (tBTM_SEC_DEV_REC *p_dev_rec);
 static BOOLEAN  btm_sec_check_prefetch_pin (tBTM_SEC_DEV_REC  *p_dev_rec);
 static UINT8    btm_sec_start_authorization (tBTM_SEC_DEV_REC *p_dev_rec);
@@ -830,10 +828,10 @@ void btm_sec_clr_temp_auth_service (BD_ADDR bda)
 void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, UINT32 trusted_mask[])
 {
     tBTM_SEC_DEV_REC *p_dev_rec;
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_API ("BTM_PINCodeReply(): PairState: %s   PairFlags: 0x%02x  PinLen:%d  Result:%d\n",
                    btm_pair_state_descr(btm_cb.pairing_state), btm_cb.pairing_flags, pin_len, res);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     /* If timeout already expired or has been canceled, ignore the reply */
     if (btm_cb.pairing_state != BTM_PAIR_STATE_WAIT_LOCAL_PIN) {
         BTM_TRACE_WARNING ("BTM_PINCodeReply() - Wrong State: %d\n", btm_cb.pairing_state);
@@ -946,10 +944,10 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
 **
 **  Note: After 2.1 parameters are not used and preserved here not to change API
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
                                        UINT8 pin_len, UINT8 *p_pin, UINT32 trusted_mask[])
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec;
     tBTM_STATUS      status;
     UINT8            *p_features;
@@ -963,7 +961,9 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
 
     /* Other security process is in progress */
     if (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
         BTM_TRACE_ERROR ("BTM_SecBond: already busy in state: %s\n", btm_pair_state_descr(btm_cb.pairing_state));
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
         return (BTM_WRONG_MODE);
     }
 
@@ -1091,8 +1091,10 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
             /* We are accepting connection request from peer */
             btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_PIN_REQ);
         }
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
         BTM_TRACE_DEBUG ("State:%s sm4: 0x%x sec_state:%d\n",
                          btm_pair_state_descr (btm_cb.pairing_state), p_dev_rec->sm4, p_dev_rec->sec_state);
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
         return BTM_CMD_STARTED;
     }
 
@@ -1104,9 +1106,6 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
     }
 
     return status;
-#else 
-    return BTM_MODE_UNSUPPORTED;
-#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1128,7 +1127,6 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
 tBTM_STATUS BTM_SecBondByTransport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
                                     UINT8 pin_len, UINT8 *p_pin, UINT32 trusted_mask[])
 {
-#if SMP_INCLUDED == TRUE
     tBT_DEVICE_TYPE     dev_type;
     tBLE_ADDR_TYPE      addr_type;
 
@@ -1138,9 +1136,9 @@ tBTM_STATUS BTM_SecBondByTransport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
             (transport == BT_TRANSPORT_BR_EDR && (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
         return BTM_ILLEGAL_ACTION;
     }
-#endif
     return btm_sec_bond_by_transport(bd_addr, transport, pin_len, p_pin, trusted_mask);
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1180,10 +1178,10 @@ tBTM_STATUS BTM_SecBond (BD_ADDR bd_addr, UINT8 pin_len, UINT8 *p_pin, UINT32 tr
 tBTM_STATUS BTM_SecBondCancel (BD_ADDR bd_addr)
 {
     tBTM_SEC_DEV_REC *p_dev_rec;
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_API ("BTM_SecBondCancel()  State: %s flags:0x%x\n",
                    btm_pair_state_descr (btm_cb.pairing_state), btm_cb.pairing_flags);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     if (((p_dev_rec = btm_find_dev (bd_addr)) == NULL)
             ||  (memcmp (btm_cb.pairing_bda, bd_addr, BD_ADDR_LEN) != 0) ) {
         return BTM_UNKNOWN_ADDR;
@@ -1479,14 +1477,14 @@ static tBTM_STATUS btm_sec_send_hci_disconnect (tBTM_SEC_DEV_REC *p_dev_rec, UIN
 **                  bd_addr       - Address of the peer device
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void BTM_ConfirmReqReply(tBTM_STATUS res, BD_ADDR bd_addr)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec;
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT ("BTM_ConfirmReqReply() State: %s  Res: %u",
                      btm_pair_state_descr(btm_cb.pairing_state), res);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     /* If timeout already expired or has been canceled, ignore the reply */
     if ( (btm_cb.pairing_state != BTM_PAIR_STATE_WAIT_NUMERIC_CONFIRM)
             ||  (memcmp (btm_cb.pairing_bda, bd_addr, BD_ADDR_LEN) != 0) ) {
@@ -1511,8 +1509,8 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, BD_ADDR bd_addr)
         btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
         btsnd_hcic_user_conf_reply (bd_addr, FALSE);
     }
-#endif  ///SMP_INCLUDED == TRUE
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1530,9 +1528,10 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, BD_ADDR bd_addr)
 #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE && SMP_INCLUDED == TRUE)
 void BTM_PasskeyReqReply(tBTM_STATUS res, BD_ADDR bd_addr, UINT32 passkey)
 {
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_API ("BTM_PasskeyReqReply: State: %s  res:%d\n",
                    btm_pair_state_descr(btm_cb.pairing_state), res);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     if ( (btm_cb.pairing_state == BTM_PAIR_STATE_IDLE)
             ||  (memcmp (btm_cb.pairing_bda, bd_addr, BD_ADDR_LEN) != 0) ) {
         return;
@@ -1618,9 +1617,10 @@ void BTM_SendKeypressNotif(BD_ADDR bd_addr, tBTM_SP_KEY_TYPE type)
 *******************************************************************************/
 void BTM_IoCapRsp(BD_ADDR bd_addr, tBTM_IO_CAP io_cap, tBTM_OOB_DATA oob, tBTM_AUTH_REQ auth_req)
 {
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT ("BTM_IoCapRsp: state: %s  oob: %d io_cap: %d\n",
                      btm_pair_state_descr(btm_cb.pairing_state), oob, io_cap);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     if ( (btm_cb.pairing_state != BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS)
             ||  (memcmp (btm_cb.pairing_bda, bd_addr, BD_ADDR_LEN) != 0) ) {
         return;
@@ -1671,9 +1671,10 @@ tBTM_STATUS BTM_ReadLocalOobData(void)
 *******************************************************************************/
 void BTM_RemoteOobDataReply(tBTM_STATUS res, BD_ADDR bd_addr, BT_OCTET16 c, BT_OCTET16 r)
 {
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT ("%s() - State: %s res: %d\n", __func__,
                      btm_pair_state_descr(btm_cb.pairing_state), res);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     /* If timeout already expired or has been canceled, ignore the reply */
     if (btm_cb.pairing_state != BTM_PAIR_STATE_WAIT_LOCAL_OOB_RSP) {
         return;
@@ -2183,8 +2184,10 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
     /* there are some devices (moto KRZR) which connects to several services at the same time */
     /* we will process one after another */
     if ( (p_dev_rec->p_callback) || (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) ) {
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
         BTM_TRACE_EVENT ("%s() - busy - PSM:%d delayed  state: %s mode:%d, sm4:0x%x\n", __func__,
                          psm, btm_pair_state_descr(btm_cb.pairing_state), btm_cb.security_mode, p_dev_rec->sm4);
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
         BTM_TRACE_EVENT ("security_flags:x%x, sec_flags:x%x\n", security_required, p_dev_rec->sec_flags);
         rc = BTM_CMD_STARTED;
         if ((btm_cb.security_mode == BTM_SEC_MODE_UNDEFINED ||
@@ -2446,9 +2449,10 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
     /* there are some devices (moto phone) which connects to several services at the same time */
     /* we will process one after another */
     if ( (p_dev_rec->p_callback) || (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) ) {
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
         BTM_TRACE_EVENT ("%s() service PSM:%d Proto:%d SCN:%d delayed  state: %s\n", __func__,
                          psm, mx_proto_id, mx_chan_id, btm_pair_state_descr(btm_cb.pairing_state));
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
         rc = BTM_CMD_STARTED;
 
         if ((btm_cb.security_mode == BTM_SEC_MODE_UNDEFINED ||
@@ -2514,9 +2518,10 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
                 (*p_callback) (bd_addr, transport, p_ref_data, (UINT8)rc);
             }
         }
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
         BTM_TRACE_EVENT("%s: return with rc = 0x%02x in delayed state %s\n", __FUNCTION__, rc,
                         btm_pair_state_descr(btm_cb.pairing_state));
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
         return rc;
     }
 
@@ -2599,9 +2604,9 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (bda);
     BTM_TRACE_ERROR ("%s\n", __func__);
     /* Some device may request a connection before we are done with the HCI_Reset sequence */
@@ -2658,8 +2663,8 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
             p_dev_rec->sm4 |= BTM_SM4_CONN_PEND;
         }
     }
-#endif  ///SMP_INCLUDED == TRUE
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -2671,9 +2676,9 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 static void btm_sec_bond_cancel_complete (void)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec;
 
     if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_DISC_WHEN_DONE) ||
@@ -2697,8 +2702,9 @@ static void btm_sec_bond_cancel_complete (void)
             btm_cb.api.p_bond_cancel_cmpl_callback(BTM_SUCCESS);
         }
     }
-#endif  ///SMP_INCLUDED == TRUE
 }
+#endif  ///SMP_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -2724,7 +2730,9 @@ void btm_create_conn_cancel_complete (UINT8 *p)
     */
     switch (status) {
     case HCI_SUCCESS:
+#if (SMP_INCLUDED == TRUE)
         btm_sec_bond_cancel_complete();
+#endif  ///SMP_INCLUDED == TRUE
         break;
     case HCI_ERR_CONNECTION_EXISTS:
     case HCI_ERR_NO_CONNECTION:
@@ -2757,7 +2765,9 @@ void btm_sec_check_pending_reqs (void)
         /* First, resubmit L2CAP requests */
         if (btm_cb.sec_req_pending) {
             btm_cb.sec_req_pending = FALSE;
+#if (CLASSIC_BT_INCLUDED == TRUE)
             l2cu_resubmit_pending_sec_req (NULL);
+#endif  ///SMP_INCLUDED == TRUE
         }
 
         /* Now, re-submit anything in the mux queue */
@@ -2798,14 +2808,14 @@ void btm_sec_check_pending_reqs (void)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void btm_sec_init (UINT8 sec_mode)
 {
-#if (SMP_INCLUDED == TRUE)
     btm_cb.security_mode = sec_mode;
     memset (btm_cb.pairing_bda, 0xff, BD_ADDR_LEN);
     btm_cb.max_collision_delay = BTM_SEC_MAX_COLLISION_DELAY;
-#endif  ///SMP_INCLUDED == TRUE
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -2817,13 +2827,16 @@ void btm_sec_init (UINT8 sec_mode)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void btm_sec_device_down (void)
 {
-#if (SMP_INCLUDED == TRUE)
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT ("%s() State: %s\n", __func__, btm_pair_state_descr(btm_cb.pairing_state));
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
-#endif  ///SMP_INCLUDED == TRUE
 }
+#endif  ///SMP_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -2939,9 +2952,9 @@ static tBTM_STATUS btm_sec_dd_create_conn (tBTM_SEC_DEV_REC *p_dev_rec)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT8 status)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec;
     int              i;
     DEV_CLASS        dev_class;
@@ -2976,7 +2989,7 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
 
     /* Commenting out trace due to obf/compilation problems.
     */
-#if (BT_USE_TRACES == TRUE)
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     if (!p_bd_name) {
         p_bd_name = (UINT8 *)"";
     }
@@ -3166,8 +3179,9 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
 
     /* There is no next procedure or start of procedure failed, notify the waiting layer */
     btm_sec_dev_rec_cback_event  (p_dev_rec, status, FALSE);
-#endif  ///SMP_INCLUDED == TRUE
 }
+#endif  ///SMP_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -3228,9 +3242,9 @@ void btm_io_capabilities_req (UINT8 *p)
     evt_data.io_cap = btm_cb.devcb.loc_io_caps;
     evt_data.oob_data = BTM_OOB_NONE;
     evt_data.auth_req = BTM_DEFAULT_AUTH_REQ;
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT("%s: State: %s\n", __FUNCTION__, btm_pair_state_descr(btm_cb.pairing_state));
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     p_dev_rec = btm_find_or_alloc_dev (evt_data.bd_addr);
 
     BTM_TRACE_DEBUG("%s:Security mode: %d, Num Read Remote Feat pages: %d\n", __FUNCTION__,
@@ -3245,11 +3259,11 @@ void btm_io_capabilities_req (UINT8 *p)
     }
 
     p_dev_rec->sm4 |= BTM_SM4_TRUE;
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT("%s: State: %s  Flags: 0x%04x  p_cur_service: %p\n",
                     __FUNCTION__, btm_pair_state_descr(btm_cb.pairing_state),
                     btm_cb.pairing_flags, p_dev_rec->p_cur_service);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     if (p_dev_rec->p_cur_service) {
         BTM_TRACE_EVENT("%s: cur_service psm: 0x%04x, security_flags: 0x%04x\n",
                         __FUNCTION__, p_dev_rec->p_cur_service->psm,
@@ -3381,11 +3395,11 @@ void btm_io_capabilities_req (UINT8 *p)
         /* send the response right now. Save the current IO capability in the control block */
         btm_cb.devcb.loc_auth_req   = evt_data.auth_req;
         btm_cb.devcb.loc_io_caps    = evt_data.io_cap;
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
         BTM_TRACE_EVENT("%s: State: %s  IO_CAP:%d oob_data:%d auth_req:%d",
                         __FUNCTION__, btm_pair_state_descr(btm_cb.pairing_state), evt_data.io_cap,
                         evt_data.oob_data, evt_data.auth_req);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
         btsnd_hcic_io_cap_req_reply(evt_data.bd_addr, evt_data.io_cap,
                                     evt_data.oob_data, evt_data.auth_req);
     }
@@ -3476,11 +3490,11 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
 
     /* All events start with bd_addr */
     STREAM_TO_BDADDR (p_bda, p);
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT ("btm_proc_sp_req_evt() BDA: %08x%04x event: 0x%x, State: %s\n",
                      (p_bda[0] << 24) + (p_bda[1] << 16) + (p_bda[2] << 8) + p_bda[3], (p_bda[4] << 8) + p_bda[5],
                      event, btm_pair_state_descr(btm_cb.pairing_state));
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     if ( ((p_dev_rec = btm_find_dev (p_bda)) != NULL)
             &&  (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)
             &&  (memcmp (btm_cb.pairing_bda, p_bda, BD_ADDR_LEN) == 0) ) {
@@ -3635,10 +3649,10 @@ void btm_simple_pair_complete (UINT8 *p)
                          (evt_data.bd_addr[4] << 8) + evt_data.bd_addr[5]);
         return;
     }
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT ("btm_simple_pair_complete()  Pair State: %s  Status:%d  sec_state: %u\n",
                      btm_pair_state_descr(btm_cb.pairing_state),  status, p_dev_rec->sec_state);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     evt_data.status = BTM_ERR_PROCESSING;
     if (status == HCI_SUCCESS) {
         evt_data.status = BTM_SUCCESS;
@@ -3820,7 +3834,7 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
 
     /* Commenting out trace due to obf/compilation problems.
     */
-#if (BT_USE_TRACES == TRUE)
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     if (p_dev_rec) {
         BTM_TRACE_EVENT ("Security Manager: auth_complete PairState: %s  handle:%u  status:%d  dev->sec_state: %u  Bda:%08x, RName:%s\n",
                          btm_pair_state_descr (btm_cb.pairing_state),
@@ -4126,7 +4140,9 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
         if (BTM_SEC_STATE_DELAY_FOR_ENC == p_dev_rec->sec_state) {
             p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
             p_dev_rec->p_callback = NULL;
+#if (CLASSIC_BT_INCLUDED == TRUE)
             l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
         }
         return;
     }
@@ -4189,9 +4205,9 @@ static void btm_sec_connect_after_reject_timeout (TIMER_LIST_ENT *p_tle)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bda);
     UINT8            res;
     BOOLEAN          is_pairing_device = FALSE;
@@ -4203,7 +4219,7 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
     BTM_TRACE_ERROR ("%s\n", __func__);
     /* Commenting out trace due to obf/compilation problems.
     */
-#if (BT_USE_TRACES == TRUE)
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     if (p_dev_rec) {
         BTM_TRACE_EVENT ("Security Manager: btm_sec_connected in state: %s  handle:%d status:%d enc_mode:%d  bda:%x RName:%s\n",
                          btm_pair_state_descr(btm_cb.pairing_state), handle, status, enc_mode,
@@ -4468,7 +4484,6 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
         }
     }
     return;
-#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -4482,7 +4497,6 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 *******************************************************************************/
 tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
 
     /* In some weird race condition we may not have a record */
@@ -4501,9 +4515,6 @@ tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason)
     }
 
     return (btm_sec_send_hci_disconnect(p_dev_rec, reason, handle));
-#else
-    return BTM_MODE_UNSUPPORTED;
-#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -4518,7 +4529,6 @@ tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason)
 *******************************************************************************/
 void btm_sec_disconnected (UINT16 handle, UINT8 reason)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
     UINT8             old_pairing_flags = btm_cb.pairing_flags;
     int               result = HCI_ERR_AUTH_FAILURE;
@@ -4545,12 +4555,12 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
 
     /* clear unused flags */
     p_dev_rec->sm4 &= BTM_SM4_TRUE;
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     uint8_t *bd_addr = (uint8_t *)p_dev_rec->bd_addr;
     BTM_TRACE_EVENT("%s sec_req:x%x state:%s reason:%d bd_addr:%02x:%02x:%02x:%02x:%02x:%02x"
                     "  remote_name:%s\n", __func__, p_dev_rec->security_required, btm_pair_state_descr(btm_cb.pairing_state),
                     reason, bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5], p_dev_rec->sec_bd_name);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     BTM_TRACE_EVENT("%s before update sec_flags=0x%x\n", __func__, p_dev_rec->sec_flags);
 
     /* If we are in the process of bonding we need to tell client that auth failed */
@@ -4609,7 +4619,6 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
     }
 
     BTM_TRACE_EVENT("%s after update sec_flags=0x%x\n", __func__, p_dev_rec->sec_flags);
-#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -4624,7 +4633,6 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
 *******************************************************************************/
 void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_type)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec = btm_find_or_alloc_dev (p_bda);
     BOOLEAN         we_are_bonding = FALSE;
     BOOLEAN         ltk_derived_lk  = FALSE;
@@ -4739,7 +4747,6 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
             }
         }
     }
-#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -4753,7 +4760,6 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
 *******************************************************************************/
 void btm_sec_link_key_request (UINT8 *p_bda)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec = btm_find_or_alloc_dev (p_bda);
 
     BTM_TRACE_EVENT ("btm_sec_link_key_request()  BDA: %02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -4778,8 +4784,8 @@ void btm_sec_link_key_request (UINT8 *p_bda)
 
     /* The link key is not in the database and it is not known to the manager */
     btsnd_hcic_link_key_neg_reply (p_bda);
-#endif  ///SMP_INCLUDED == TRUE
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -4811,10 +4817,10 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
     /* coverity[UNUSED_VALUE] pointer p_dev_rec is actually used several times... This is a Coverity false-positive, i.e. a fake issue.
     */
     p_dev_rec = btm_find_dev (p_cb->pairing_bda);
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT ("btm_sec_pairing_timeout()  State: %s   Flags: %u\n",
                      btm_pair_state_descr(p_cb->pairing_state), p_cb->pairing_flags);
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     switch (p_cb->pairing_state) {
     case BTM_PAIR_STATE_WAIT_PIN_REQ:
         btm_sec_bond_cancel_complete();
@@ -4899,12 +4905,13 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
         break;
 
     default:
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
         BTM_TRACE_WARNING ("btm_sec_pairing_timeout() not processed state: %s\n", btm_pair_state_descr(btm_cb.pairing_state));
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
         btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
         break;
     }
 }
-#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -4917,8 +4924,6 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
 *******************************************************************************/
 void btm_sec_pin_code_request (UINT8 *p_bda)
 {
-#if (SMP_INCLUDED == TRUE)
-
     tBTM_SEC_DEV_REC *p_dev_rec;
     tBTM_CB          *p_cb = &btm_cb;
 
@@ -4926,10 +4931,11 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
     UINT8 default_pin_code_len = 4;
     PIN_CODE default_pin_code = {0x30, 0x30, 0x30, 0x30};
 #endif
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT ("btm_sec_pin_code_request()  State: %s, BDA:%04x%08x\n",
                      btm_pair_state_descr(btm_cb.pairing_state),
                      (p_bda[0] << 8) + p_bda[1], (p_bda[2] << 24) + (p_bda[3] << 16) + (p_bda[4] << 8) + p_bda[5] );
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     if (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
         if ( (memcmp (p_bda, btm_cb.pairing_bda, BD_ADDR_LEN) == 0)  &&
                 (btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_AUTH_COMPLETE) ) {
@@ -4944,9 +4950,10 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
             }
         } else if ((btm_cb.pairing_state != BTM_PAIR_STATE_WAIT_PIN_REQ)
                    || memcmp (p_bda, btm_cb.pairing_bda, BD_ADDR_LEN) != 0) {
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
             BTM_TRACE_WARNING ("btm_sec_pin_code_request() rejected - state: %s\n",
                                btm_pair_state_descr(btm_cb.pairing_state));
-
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
 #ifdef PORCHE_PAIRING_CONFLICT
             /* reply pin code again due to counter in_rand when local initiates pairing */
             BTM_TRACE_EVENT ("btm_sec_pin_code_request from remote dev. for local initiated pairing\n");
@@ -5070,9 +5077,10 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
             }
         }
     }
-#endif  ///SMP_INCLUDED == TRUE
     return;
 }
+#endif  ///SMP_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -5541,7 +5549,7 @@ static void btm_sec_collision_timeout (TIMER_LIST_ENT *p_tle)
 
 /*******************************************************************************
 **
-** Function         btm_sec_link_key_request
+** Function         btm_send_link_key_notif
 **
 ** Description      This function is called when controller requests link key
 **
@@ -5641,10 +5649,11 @@ tBTM_SEC_DEV_REC *btm_sec_find_dev_by_sec_state (UINT8 state)
 static void btm_sec_change_pairing_state (tBTM_PAIRING_STATE new_state)
 {
     tBTM_PAIRING_STATE  old_state = btm_cb.pairing_state;
-
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     BTM_TRACE_EVENT ("%s()  Old: %s\n", __func__, btm_pair_state_descr(btm_cb.pairing_state));
     BTM_TRACE_EVENT ("%s()  New: %s pairing_flags:0x%x\n\n", __func__,
                      btm_pair_state_descr(new_state), btm_cb.pairing_flags);
+#endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
 
     btm_cb.pairing_state = new_state;
 

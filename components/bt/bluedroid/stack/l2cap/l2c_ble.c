@@ -272,13 +272,17 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
     if (!p_lcb) {
         p_lcb = l2cu_allocate_lcb (bda, FALSE, BT_TRANSPORT_LE);
         if (!p_lcb) {
+#if (SMP_INCLUDED == TRUE)
             btm_sec_disconnect (handle, HCI_ERR_NO_CONNECTION);
             L2CAP_TRACE_ERROR ("l2cble_scanner_conn_comp - failed to allocate LCB");
+#endif  ///SMP_INCLUDED == TRUE
             return;
         } else {
             if (!l2cu_initialize_fixed_ccb (p_lcb, L2CAP_ATT_CID, &l2cb.fixed_reg[L2CAP_ATT_CID - L2CAP_FIRST_FIXED_CHNL].fixed_chnl_opts)) {
+#if (SMP_INCLUDED == TRUE)
                 btm_sec_disconnect (handle, HCI_ERR_NO_CONNECTION);
                 L2CAP_TRACE_WARNING ("l2cble_scanner_conn_comp - LCB but no CCB");
+#endif  ///SMP_INCLUDED == TRUE
                 return ;
             }
         }
@@ -371,12 +375,16 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
     if (!p_lcb) {
         p_lcb = l2cu_allocate_lcb (bda, FALSE, BT_TRANSPORT_LE);
         if (!p_lcb) {
+#if (SMP_INCLUDED == TRUE)
             btm_sec_disconnect (handle, HCI_ERR_NO_CONNECTION);
+#endif  ///SMP_INCLUDED == TRUE
             L2CAP_TRACE_ERROR ("l2cble_advertiser_conn_comp - failed to allocate LCB");
             return;
         } else {
             if (!l2cu_initialize_fixed_ccb (p_lcb, L2CAP_ATT_CID, &l2cb.fixed_reg[L2CAP_ATT_CID - L2CAP_FIRST_FIXED_CHNL].fixed_chnl_opts)) {
+#if (SMP_INCLUDED == TRUE)
                 btm_sec_disconnect (handle, HCI_ERR_NO_CONNECTION);
+#endif  ///SMP_INCLUDED == TRUE
                 L2CAP_TRACE_WARNING ("l2cble_scanner_conn_comp - LCB but no CCB");
                 return ;
             }

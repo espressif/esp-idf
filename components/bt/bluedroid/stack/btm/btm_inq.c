@@ -2353,8 +2353,9 @@ void btm_inq_rmt_name_failed (void)
     } else {
         btm_process_remote_name (NULL, NULL, 0, HCI_ERR_UNSPECIFIED);
     }
-
+#if (SMP_INCLUDED == TRUE)
     btm_sec_rmt_name_request_complete (NULL, NULL, HCI_ERR_UNSPECIFIED);
+#endif  ///SMP_INCLUDED == TRUE
 }
 /*******************************************************************************
 **

@@ -934,8 +934,10 @@ void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages)
 #endif  ///SMP_INCLUDED == TRUE
     BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
     if (req_pend) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* Request for remaining Security Features (if any) */
         l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     }
 }
 

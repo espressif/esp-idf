@@ -218,7 +218,7 @@ const tBTM_APPL_INFO bta_security = {
 #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
     &bta_dm_sp_cback,
 #else
-    NULL
+    NULL,
 #endif
 #if BLE_INCLUDED == TRUE
     &bta_dm_ble_smp_cback,

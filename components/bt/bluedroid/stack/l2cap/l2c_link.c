@@ -519,9 +519,10 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
 #if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CCB   *p_ccb;
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
+#if (SMP_INCLUDED == TRUE)
     UINT16      timeout;
     tBTM_STATUS rc;
-
+#endif  ///SMP_INCLUDED == TRUE
     L2CAP_TRACE_EVENT ("L2CAP - l2c_link_timeout() link state %d first CCB %p is_bonding:%d",
                        p_lcb->link_state, p_lcb->ccb_queue.p_first_ccb, p_lcb->is_bonding);
 
@@ -577,6 +578,7 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
         }
 
+#if (SMP_INCLUDED == TRUE)
         /* If no channels in use, drop the link. */
         if (!p_lcb->ccb_queue.p_first_ccb) {
             rc = btm_sec_disconnect (p_lcb->handle, HCI_ERR_PEER_USER);
@@ -612,6 +614,7 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
             /* Check in case we were flow controlled */
             l2c_link_check_send_pkts (p_lcb, NULL, NULL);
         }
+#endif  ///SMP_INCLUDED == TRUE
     }
 }
 

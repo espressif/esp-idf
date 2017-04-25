@@ -1754,11 +1754,13 @@ BOOLEAN L2CA_RegForNoCPEvt(tL2CA_NOCP_CB *p_cb, BD_ADDR p_bda)
 **                  L2CAP_DW_FAILED, if error
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 L2CA_DataWrite (UINT16 cid, BT_HDR *p_data)
 {
     L2CAP_TRACE_API ("L2CA_DataWrite()  CID: 0x%04x  Len: %d", cid, p_data->len);
     return l2c_data_write (cid, p_data, L2CAP_FLUSHABLE_CH_BASED);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1806,12 +1808,14 @@ BOOLEAN L2CA_SetChnlFlushability (UINT16 cid, BOOLEAN is_flushable)
 **                  L2CAP_DW_FAILED, if error
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 L2CA_DataWriteEx (UINT16 cid, BT_HDR *p_data, UINT16 flags)
 {
     L2CAP_TRACE_API ("L2CA_DataWriteEx()  CID: 0x%04x  Len: %d Flags:0x%04X",
                      cid, p_data->len, flags);
     return l2c_data_write (cid, p_data, flags);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **

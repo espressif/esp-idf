@@ -81,9 +81,11 @@ static void btu_hcif_flush_occured_evt (void);
 static void btu_hcif_role_change_evt (UINT8 *p);
 static void btu_hcif_num_compl_data_pkts_evt (UINT8 *p);
 static void btu_hcif_mode_change_evt (UINT8 *p);
+#if (SMP_INCLUDED == TRUE)
 static void btu_hcif_pin_code_request_evt (UINT8 *p);
 static void btu_hcif_link_key_request_evt (UINT8 *p);
 static void btu_hcif_link_key_notification_evt (UINT8 *p);
+#endif  ///SMP_INCLUDED == TRUE
 static void btu_hcif_loopback_command_evt (void);
 static void btu_hcif_data_buf_overflow_evt (void);
 static void btu_hcif_max_slots_changed_evt (void);
@@ -235,6 +237,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
     case HCI_MODE_CHANGE_EVT:
         btu_hcif_mode_change_evt (p);
         break;
+#if (SMP_INCLUDED == TRUE)
     case HCI_PIN_CODE_REQUEST_EVT:
         btu_hcif_pin_code_request_evt (p);
         break;
@@ -244,6 +247,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
     case HCI_LINK_KEY_NOTIFICATION_EVT:
         btu_hcif_link_key_notification_evt (p);
         break;
+#endif  ///SMP_INCLUDED == TRUE
     case HCI_LOOPBACK_COMMAND_EVT:
         btu_hcif_loopback_command_evt ();
         break;
@@ -517,7 +521,9 @@ static void btu_hcif_connection_comp_evt (UINT8 *p)
     UINT16      handle;
     BD_ADDR     bda;
     UINT8       link_type;
+#if SMP_INCLUDED == TRUE
     UINT8       enc_mode;
+#endif  ///SMP_INCLUDED == TRUE
 #if BTM_SCO_INCLUDED == TRUE
     tBTM_ESCO_DATA  esco_data;
 #endif
@@ -526,13 +532,15 @@ static void btu_hcif_connection_comp_evt (UINT8 *p)
     STREAM_TO_UINT16   (handle, p);
     STREAM_TO_BDADDR   (bda, p);
     STREAM_TO_UINT8    (link_type, p);
+#if (SMP_INCLUDED == TRUE)
     STREAM_TO_UINT8    (enc_mode, p);
-
+#endif  ///SMP_INCLUDED == TRUE
     handle = HCID_GET_HANDLE (handle);
 
     if (link_type == HCI_LINK_TYPE_ACL) {
+#if (SMP_INCLUDED == TRUE)
         btm_sec_connected (bda, handle, status, enc_mode);
-
+#endif  ///SMP_INCLUDED == TRUE
         l2c_link_hci_conn_comp (status, handle, bda);
     }
 #if BTM_SCO_INCLUDED == TRUE
@@ -564,11 +572,12 @@ static void btu_hcif_connection_request_evt (UINT8 *p)
     STREAM_TO_BDADDR   (bda, p);
     STREAM_TO_DEVCLASS (dc, p);
     STREAM_TO_UINT8    (link_type, p);
-
     /* Pass request to security manager to check connect filters before */
     /* passing request to l2cap */
     if (link_type == HCI_LINK_TYPE_ACL) {
+#if (SMP_INCLUDED == TRUE)
         btm_sec_conn_req (bda, dc);
+#endif  ///SMP_INCLUDED == TRUE
     }
 #if BTM_SCO_INCLUDED == TRUE
     else {
@@ -606,9 +615,10 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 #else
     l2c_link_hci_disc_comp (handle, reason);
 #endif /* BTM_SCO_INCLUDED */
-
+#if (SMP_INCLUDED == TRUE)
     /* Notify security manager */
     btm_sec_disconnected (handle, reason);
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -653,8 +663,9 @@ static void btu_hcif_rmt_name_request_comp_evt (UINT8 *p, UINT16 evt_len)
     evt_len -= (1 + BD_ADDR_LEN);
 
     btm_process_remote_name (bd_addr, p, evt_len, status);
-
+#if (SMP_INCLUDED == TRUE)
     btm_sec_rmt_name_request_complete (bd_addr, p, status);
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 
@@ -1055,8 +1066,9 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
             case HCI_RMT_NAME_REQUEST:
                 /* Tell inquiry processing that we are done */
                 btm_process_remote_name (NULL, NULL, 0, status);
-
+#if (SMP_INCLUDED == TRUE)
                 btm_sec_rmt_name_request_complete (NULL, NULL, status);
+#endif  ///SMP_INCLUDED == TRUE
                 break;
 
             case HCI_QOS_SETUP_COMP_EVT:
@@ -1082,7 +1094,9 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                 if (p_cmd != NULL) {
                     p_cmd++;
                     STREAM_TO_BDADDR (bd_addr, p_cmd);
+#if (SMP_INCLUDED == TRUE)
                     btm_sec_connected (bd_addr, HCI_INVALID_HANDLE, status, 0);
+#endif  ///SMP_INCLUDED == TRUE
                     l2c_link_hci_conn_comp (status, HCI_INVALID_HANDLE, bd_addr);
                 }
                 break;
@@ -1337,6 +1351,7 @@ static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 static void btu_hcif_pin_code_request_evt (UINT8 *p)
 {
     BD_ADDR  bda;
@@ -1368,7 +1383,6 @@ static void btu_hcif_link_key_request_evt (UINT8 *p)
     btm_sec_link_key_request (bda);
 }
 
-
 /*******************************************************************************
 **
 ** Function         btu_hcif_link_key_notification_evt
@@ -1390,6 +1404,7 @@ static void btu_hcif_link_key_notification_evt (UINT8 *p)
 
     btm_sec_link_key_notification (bda, key, key_type);
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 
 /*******************************************************************************

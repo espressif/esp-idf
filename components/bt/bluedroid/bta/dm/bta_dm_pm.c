@@ -1139,8 +1139,9 @@ static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisa
     BTM_SetLinkPolicy(p_dev->peer_bdaddr, &policy_setting);
 
 }
+#endif  ///BTM_SSR_INCLUDED == TRUE
 
-#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
+#if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_pm_obtain_controller_state
@@ -1162,6 +1163,4 @@ tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void)
     return cur_state;
 }
 #endif
-
-#endif  ///BTM_SSR_INCLUDED == TRUE
 

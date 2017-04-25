@@ -2048,9 +2048,9 @@ void l2cu_process_our_cfg_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 ** Returns          void
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void l2cu_process_our_cfg_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 {
-#if (CLASSIC_BT_INCLUDED == TRUE)
     /* If peer wants QoS, we are allowed to change the values in a positive response */
     if ( (p_cfg->qos_present) && (p_ccb->peer_cfg.qos_present) ) {
         p_ccb->peer_cfg.qos = p_cfg->qos;
@@ -2059,8 +2059,8 @@ void l2cu_process_our_cfg_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
     }
 
     l2c_fcr_adj_our_rsp_options (p_ccb, p_cfg);
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -2420,9 +2420,9 @@ void l2cu_set_non_flushable_pbf (BOOLEAN is_supported)
 ** Returns          void
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void l2cu_resubmit_pending_sec_req (BD_ADDR p_bda)
 {
-#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_LCB        *p_lcb;
     tL2C_CCB        *p_ccb;
     tL2C_CCB        *p_next_ccb;
@@ -2454,8 +2454,8 @@ void l2cu_resubmit_pending_sec_req (BD_ADDR p_bda)
             }
         }       
     }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE 
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE 
 
 #if L2CAP_CONFORMANCE_TESTING == TRUE
 /*******************************************************************************
@@ -2592,7 +2592,9 @@ BOOLEAN l2cu_initialize_fixed_ccb (tL2C_LCB *p_lcb, UINT16 fixed_cid, tL2CAP_FCR
 *******************************************************************************/
 void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
 {
+#if (SMP_INCLUDED == TRUE)
     tBTM_STATUS     rc;
+#endif  ///SMP_INCLUDED == TRUE
     UINT16          timeout = p_lcb->idle_timeout;
 
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
@@ -2612,7 +2614,7 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
 
     if (timeout == 0) {
         L2CAP_TRACE_DEBUG ("l2cu_no_dynamic_ccbs() IDLE timer 0, disconnecting link");
-
+#if (SMP_INCLUDED == TRUE)
         rc = btm_sec_disconnect (p_lcb->handle, HCI_ERR_PEER_USER);
         if (rc == BTM_CMD_STARTED) {
             l2cu_process_fixed_disc_cback(p_lcb);
@@ -2632,6 +2634,7 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
             /* probably no buffer to send disconnect */
             timeout = BT_1SEC_TIMEOUT;
         }
+#endif  ///SMP_INCLUDED == TRUE
     }
 
     if (timeout != 0xFFFF) {

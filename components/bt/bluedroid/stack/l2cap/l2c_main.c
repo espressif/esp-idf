@@ -41,8 +41,9 @@
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len);
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 /********************************************************************************/
 /*                 G L O B A L      L 2 C A P       D A T A                     */
 /********************************************************************************/
@@ -217,7 +218,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     if (rcv_cid == L2CAP_SIGNALLING_CID) {
         //counter_add("l2cap.sig.rx.bytes", l2cap_len);
         //counter_add("l2cap.sig.rx.pkts", 1);
+#if (CLASSIC_BT_INCLUDED == TRUE)
         process_l2cap_cmd (p_lcb, p, l2cap_len);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
         GKI_freebuf (p_msg);
     } else if (rcv_cid == L2CAP_CONNECTIONLESS_CID) {
         //counter_add("l2cap.ch2.rx.bytes", l2cap_len);
@@ -302,9 +305,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
 ** Returns          void
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
 {
-#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8           *p_pkt_end, *p_next_cmd, *p_cfg_end, *p_cfg_start;
     UINT8           cmd_code, cfg_code, cfg_len, id;
     tL2C_CONN_INFO  con_info;
@@ -739,8 +742,9 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         }
     }
 
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -904,9 +908,9 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
 **                  L2CAP_DW_FAILED, if error
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 l2c_data_write (UINT16 cid, BT_HDR *p_data, UINT16 flags)
 {
-#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CCB        *p_ccb;
 
     /* Find the channel control block. We don't know the link it is on. */
@@ -945,7 +949,8 @@ UINT8 l2c_data_write (UINT16 cid, BT_HDR *p_data, UINT16 flags)
     if (p_ccb->cong_sent) {
         return (L2CAP_DW_CONGESTED);
     }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
     return (L2CAP_DW_SUCCESS);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 
