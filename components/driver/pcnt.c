@@ -39,7 +39,7 @@ static portMUX_TYPE pcnt_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #define PCNT_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
 #define PCNT_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
 
-esp_err_t pcnt_unit_config(pcnt_config_t *pcnt_config)
+esp_err_t pcnt_unit_config(const pcnt_config_t *pcnt_config)
 {
     uint8_t unit = pcnt_config->unit;
     uint8_t channel = pcnt_config->channel;

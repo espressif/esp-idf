@@ -34,6 +34,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
 {
     const size_t workbuf_size = 4096;
     void* workbuf = NULL;
+    FATFS* fs = NULL;
 
     if (s_card != NULL) {
         return ESP_ERR_INVALID_STATE;
@@ -82,7 +83,6 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     char drv[3] = {(char)('0' + pdrv), ':', 0};
 
     // connect FATFS to VFS
-    FATFS* fs;
     err = esp_vfs_fat_register(base_path, drv, mount_config->max_files, &fs);
     if (err == ESP_ERR_INVALID_STATE) {
         // it's okay, already registered with VFS
@@ -129,6 +129,9 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
 fail:
     sdmmc_host_deinit();
     free(workbuf);
+    if (fs) {
+        f_mount(NULL, drv, 0);
+    }
     esp_vfs_fat_unregister_path(base_path);
     ff_diskio_unregister(pdrv);
     free(s_card);

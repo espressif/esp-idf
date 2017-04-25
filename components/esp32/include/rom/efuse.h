@@ -60,14 +60,19 @@ void ets_efuse_program_op(void);
 uint32_t ets_efuse_get_8M_clock(void);
 
 /**
-  * @brief  Read spi pad configuration, show gpio number of flash pad, includes 5 pads.
+  * @brief  Read spi flash pin configuration from Efuse
   *
-  * @param  null
-  *
-  * @return uint32_t: 0, invalid, flash pad decided by strapping
-  *      else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
+  * @return
+  * - 0 for default SPI pins.
+  * - 1 for default HSPI pins.
+  * - Other values define a custom pin configuration mask. Pins are encoded as per the EFUSE_SPICONFIG_RET_SPICLK,
+  *   EFUSE_SPICONFIG_RET_SPIQ, EFUSE_SPICONFIG_RET_SPID, EFUSE_SPICONFIG_RET_SPICS0, EFUSE_SPICONFIG_RET_SPIHD macros.
+  *   WP pin (for quad I/O modes) is not saved in efuse and not returned by this function.
   */
 uint32_t ets_efuse_get_spiconfig(void);
+
+#define EFUSE_SPICONFIG_SPI_DEFAULTS 0
+#define EFUSE_SPICONFIG_HSPI_DEFAULTS 1
 
 #define EFUSE_SPICONFIG_RET_SPICLK_MASK         0x3f
 #define EFUSE_SPICONFIG_RET_SPICLK_SHIFT        0

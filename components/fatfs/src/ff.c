@@ -5665,6 +5665,9 @@ FRESULT f_mkfs (
 /* Create partition table on the physical drive                          */
 /*-----------------------------------------------------------------------*/
 
+#define CLUSTER_SIZE	63
+#define SUPPORTED_FLASH_SIZE 0x1000
+
 FRESULT f_fdisk (
 	BYTE pdrv,			/* Physical drive number */
 	const DWORD* szt,	/* Pointer to the size table for each partitions */
@@ -5675,18 +5678,21 @@ FRESULT f_fdisk (
 	BYTE s_hd, e_hd, *p, *buf = (BYTE*)work;
 	DSTATUS stat;
 	DWORD sz_disk, sz_part, s_part;
-
+	DWORD cluster_size = CLUSTER_SIZE;
 
 	stat = disk_initialize(pdrv);
 	if (stat & STA_NOINIT) return FR_NOT_READY;
 	if (stat & STA_PROTECT) return FR_WRITE_PROTECTED;
 	if (disk_ioctl(pdrv, GET_SECTOR_COUNT, &sz_disk)) return FR_DISK_ERR;
-
 	/* Determine the CHS without any care of the drive geometry */
-	for (n = 16; n < 256 && sz_disk / n / 63 > 1024; n *= 2) ;
+	for (n = 16; n < 256 && sz_disk / n / cluster_size > 1024; n *= 2) ;
 	if (n == 256) n--;
+	if (sz_disk < SUPPORTED_FLASH_SIZE) {
+		cluster_size = 1;
+		n = sz_disk;
+	}
 	e_hd = n - 1;
-	sz_cyl = 63 * n;
+	sz_cyl = cluster_size * n;
 	tot_cyl = sz_disk / sz_cyl;
 
 	/* Create partition table */
@@ -5699,7 +5705,7 @@ FRESULT f_fdisk (
 		sz_part = (DWORD)sz_cyl * p_cyl;
 		if (i == 0) {	/* Exclude first track of cylinder 0 */
 			s_hd = 1;
-			s_part += 63; sz_part -= 63;
+			s_part += cluster_size; sz_part -= cluster_size;
 		} else {
 			s_hd = 0;
 		}
@@ -5712,7 +5718,7 @@ FRESULT f_fdisk (
 		p[3] = (BYTE)b_cyl;					/* Start cylinder */
 		p[4] = 0x06;						/* System type (temporary setting) */
 		p[5] = e_hd;						/* End head */
-		p[6] = (BYTE)((e_cyl >> 2) + 63);	/* End sector */
+		p[6] = (BYTE)((e_cyl >> 2) + cluster_size);	/* End sector */
 		p[7] = (BYTE)e_cyl;					/* End cylinder */
 		st_dword(p + 8, s_part);			/* Start sector in LBA */
 		st_dword(p + 12, sz_part);			/* Partition size */

@@ -38,6 +38,7 @@
 #include "esp_core_dump.h"
 #include "esp_spi_flash.h"
 #include "esp_cache_err_int.h"
+#include "esp_app_trace.h"
 
 /*
   Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -114,6 +115,9 @@ static bool abort_called;
 static __attribute__((noreturn)) inline void invoke_abort()
 {
     abort_called = true;
+#if CONFIG_ESP32_APPTRACE_ENABLE
+    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+#endif
     while(1) {
         __asm__ ("break 0,0");
         *((int*) 0) = 0;
@@ -226,6 +230,9 @@ void panicHandler(XtExcFrame *frame)
         }
 
     if (esp_cpu_in_ocd_debug_mode()) {
+#if CONFIG_ESP32_APPTRACE_ENABLE
+        esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+#endif
         setFirstBreakpoint(frame->pc);
         return;
     }
@@ -248,6 +255,9 @@ void xt_unhandled_exception(XtExcFrame *frame)
         panicPutStr(" at pc=");
         panicPutHex(frame->pc);
         panicPutStr(". Setting bp and returning..\r\n");
+#if CONFIG_ESP32_APPTRACE_ENABLE
+        esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+#endif
         //Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
         //will kick in exactly at the context the error happened.
         setFirstBreakpoint(frame->pc);
@@ -282,11 +292,10 @@ static void reconfigureAllWdts()
     TIMERG1.wdt_wprotect = 0;
 }
 
-#if CONFIG_ESP32_PANIC_GDBSTUB || CONFIG_ESP32_PANIC_PRINT_HALT || CONFIG_ESP32_ENABLE_COREDUMP
 /*
   This disables all the watchdogs for when we call the gdbstub.
 */
-static void disableAllWdts()
+static inline void disableAllWdts()
 {
     TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_config0.en = 0;
@@ -295,8 +304,6 @@ static void disableAllWdts()
     TIMERG1.wdt_config0.en = 0;
     TIMERG1.wdt_wprotect = 0;
 }
-
-#endif
 
 static void esp_panic_wdt_start()
 {
@@ -421,6 +428,12 @@ static void commonErrorHandler(XtExcFrame *frame)
 
     /* With windowed ABI backtracing is easy, let's do it. */
     doBacktrace(frame);
+
+#if CONFIG_ESP32_APPTRACE_ENABLE
+    disableAllWdts();
+    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+    reconfigureAllWdts();
+#endif
 
 #if CONFIG_ESP32_PANIC_GDBSTUB
     disableAllWdts();

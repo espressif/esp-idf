@@ -19,6 +19,7 @@
 #include "esp_log.h"
 
 #include "rom/cache.h"
+#include "rom/efuse.h"
 #include "rom/ets_sys.h"
 #include "rom/spi_flash.h"
 #include "rom/crc.h"
@@ -73,6 +74,7 @@ static void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t entry_addr);
 static void update_flash_config(const esp_image_header_t* pfhdr);
 static void uart_console_configure(void);
+static void wdt_reset_check(void);
 
 void IRAM_ATTR call_start_cpu0()
 {
@@ -238,12 +240,14 @@ void bootloader_main()
     /* Set CPU to 80MHz. Keep other clocks unmodified. */
     uart_tx_wait_idle(0);
     rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
+    clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
     clk_cfg.cpu_freq = RTC_CPU_FREQ_80M;
     clk_cfg.slow_freq = rtc_clk_slow_freq_get();
     clk_cfg.fast_freq = rtc_clk_fast_freq_get();
     rtc_clk_init(clk_cfg);
 
     uart_console_configure();
+    wdt_reset_check();
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
 #if defined(CONFIG_SECURE_BOOT_ENABLED) || defined(CONFIG_FLASH_ENCRYPTION_ENABLED)
     esp_err_t err;
@@ -260,6 +264,15 @@ void bootloader_main()
     /* disable watch dog here */
     REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
+
+#ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+    const uint32_t spiconfig = ets_efuse_get_spiconfig();
+    if(spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
+        ESP_LOGE(TAG, "SPI flash pins are overridden. \"Enable SPI flash ROM driver patched functions\" must be enabled in menuconfig");
+        return;
+    }
+#endif
+
     esp_rom_spiflash_unlock();
 
     ESP_LOGI(TAG, "Enabling RNG early entropy source...");
@@ -727,4 +740,82 @@ static void uart_console_configure(void)
     uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
 
 #endif // CONFIG_CONSOLE_UART_NONE
+}
+
+static void wdt_reset_info_enable(void)
+{
+    REG_SET_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_PDEBUG_ENABLE | DPORT_PRO_CPU_RECORD_ENABLE);
+    REG_CLR_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_RECORD_ENABLE);
+    REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
+    REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
+}
+
+static void wdt_reset_info_dump(int cpu)
+{
+    uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
+             lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
+    char *cpu_name = cpu ? "APP" : "PRO";
+
+    if (cpu == 0) {
+        stat    = REG_READ(DPORT_PRO_CPU_RECORD_STATUS_REG);
+        pid     = REG_READ(DPORT_PRO_CPU_RECORD_PID_REG);
+        inst    = REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGINST_REG);
+        dstat   = REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGSTATUS_REG);
+        data    = REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGDATA_REG);
+        pc      = REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGPC_REG);
+        lsstat  = REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0STAT_REG);
+        lsaddr  = REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0ADDR_REG);
+        lsdata  = REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0DATA_REG);
+
+    } else {
+        stat    = REG_READ(DPORT_APP_CPU_RECORD_STATUS_REG);
+        pid     = REG_READ(DPORT_APP_CPU_RECORD_PID_REG);
+        inst    = REG_READ(DPORT_APP_CPU_RECORD_PDEBUGINST_REG);
+        dstat   = REG_READ(DPORT_APP_CPU_RECORD_PDEBUGSTATUS_REG);
+        data    = REG_READ(DPORT_APP_CPU_RECORD_PDEBUGDATA_REG);
+        pc      = REG_READ(DPORT_APP_CPU_RECORD_PDEBUGPC_REG);
+        lsstat  = REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0STAT_REG);
+        lsaddr  = REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0ADDR_REG);
+        lsdata  = REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0DATA_REG);
+    }
+    if (DPORT_RECORD_PDEBUGINST_SZ(inst) == 0 &&
+        DPORT_RECORD_PDEBUGSTATUS_BBCAUSE(dstat) == DPORT_RECORD_PDEBUGSTATUS_BBCAUSE_WAITI) {
+        ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%x (waiti mode)", cpu_name, pc);
+    } else {
+        ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%x", cpu_name, pc);
+    }
+    ESP_LOGD(TAG, "WDT reset info: %s CPU STATUS        0x%08x", cpu_name, stat);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PID           0x%08x", cpu_name, pid);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGINST    0x%08x", cpu_name, inst);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGSTATUS  0x%08x", cpu_name, dstat);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGDATA    0x%08x", cpu_name, data);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGPC      0x%08x", cpu_name, pc);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0STAT 0x%08x", cpu_name, lsstat);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0ADDR 0x%08x", cpu_name, lsaddr);
+    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0DATA 0x%08x", cpu_name, lsdata);
+}
+
+static void wdt_reset_check(void)
+{
+    int wdt_rst = 0;
+    RESET_REASON rst_reas[2];
+
+    rst_reas[0] = rtc_get_reset_reason(0);
+    rst_reas[1] = rtc_get_reset_reason(1);
+    if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
+        rst_reas[0] == TGWDT_CPU_RESET  || rst_reas[0] == RTCWDT_CPU_RESET) {
+        ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
+        wdt_rst = 1;
+    }
+    if (rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET || rst_reas[1] == TG1WDT_SYS_RESET ||
+        rst_reas[1] == TGWDT_CPU_RESET  || rst_reas[1] == RTCWDT_CPU_RESET) {
+        ESP_LOGW(TAG, "APP CPU has been reset by WDT.");
+        wdt_rst = 1;
+    }
+    if (wdt_rst) {
+        // if reset by WDT dump info from trace port
+        wdt_reset_info_dump(0);
+        wdt_reset_info_dump(1);
+    }
+    wdt_reset_info_enable();
 }

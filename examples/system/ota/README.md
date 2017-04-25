@@ -16,7 +16,7 @@ In this example, the ESP32 has 3 images in flash: factory, OTA_0, OTA_1. Each of
 Flashing the example over serial with "make flash" updates the factory app image. On first boot, the bootloader loads this factory app image which then performs an OTA update (triggered in the example code). The update downloads a new image from an http server and saves it into the OTA_0 partition. At this point the example code updates the ota_data partition to indicate the new app partition, and resets. The bootloader reads ota_data, determines the new OTA image has been selected, and runs it.
 
 
-# Worflow
+# Workflow
 
 The OTA_workflow.png diagram demonstrates the overall workflow:
 

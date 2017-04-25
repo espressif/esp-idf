@@ -287,7 +287,7 @@ esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, voi
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, timer_config_t* config);
+esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer_config_t* config);
 
 /** @brief Get timer configure value.
  *

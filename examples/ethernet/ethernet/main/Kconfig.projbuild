@@ -1,0 +1,54 @@
+menu "Example Configuration"
+
+choice PHY_MODEL
+    prompt "Ethernet PHY"
+    default CONFIG_PHY_TLK110
+    help
+        Select the PHY driver to use for the example.
+
+config PHY_TLK110
+    bool "TI TLK110 PHY"
+    help
+        Select this to use the TI TLK110 PHY
+
+config PHY_LAN8720
+    bool "Microchip LAN8720 PHY"
+    help
+        Select this to use the Microchip LAN8720 PHY
+
+endchoice
+
+config PHY_ADDRESS
+    int "PHY Address (0-31)"
+    default 31
+    range 0 31
+    help
+        Select the PHY Address (0-31) for the hardware configuration and PHY model.
+
+config PHY_USE_POWER_PIN
+    bool "Use PHY Power (enable/disable) pin"
+    default y
+    help
+        Use a GPIO "power pin" to power the PHY on/off during operation.
+        Consult the example README for more details
+
+config PHY_POWER_PIN
+    int "PHY Power GPIO"
+    default 17
+    depends on PHY_USE_POWER_PIN
+    help
+        GPIO number to use for powering on/off the PHY.
+
+config PHY_SMI_MDC_PIN
+    int "SMI MDC Pin"
+    default 23
+    help
+        GPIO number to use for SMI clock output MDC to PHY.
+
+config PHY_SMI_MDIO_PIN
+    int "SMI MDIO Pin"
+    default 18
+    help
+       GPIO number to use for SMI data pin MDIO to/from PHY.
+
+endmenu

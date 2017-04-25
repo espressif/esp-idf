@@ -719,6 +719,8 @@ static u8_t parse_options(u8_t *optptr, s16_t len)
 *******************************************************************************/
 static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
 {
+    u32_t lease_timer = (dhcps_lease_time * 60)/DHCPS_COARSE_TIMER_SECS;
+    
     if (memcmp((char *)m->options, &magic_cookie, sizeof(magic_cookie)) == 0) {
 #if DHCPS_DEBUG
         DHCPS_LOG("dhcps: len = %d\n", len);
@@ -745,7 +747,7 @@ static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
                     }
 
                     client_address.addr = pdhcps_pool->ip.addr;
-                    pdhcps_pool->lease_timer = dhcps_lease_time;
+                    pdhcps_pool->lease_timer = lease_timer;
                     pnode = pback_node;
                     goto POOL_CHECK;
                 } else if (pdhcps_pool->ip.addr == client_address_plus.addr) {
@@ -783,7 +785,7 @@ static s16_t parse_msg(struct dhcps_msg *m, u16_t len)
 
             pdhcps_pool->ip.addr = client_address.addr;
             memcpy(pdhcps_pool->mac, m->chaddr, sizeof(pdhcps_pool->mac));
-            pdhcps_pool->lease_timer = dhcps_lease_time;
+            pdhcps_pool->lease_timer = lease_timer;
             pnode = (list_node *)malloc(sizeof(list_node));
             memset(pnode , 0x00 , sizeof(list_node));
 

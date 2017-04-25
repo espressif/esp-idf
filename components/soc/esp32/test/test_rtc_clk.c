@@ -82,3 +82,10 @@ TEST_CASE("Output 32k XTAL clock to GPIO25", "[rtc_clk][ignore]")
     rtc_clk_32k_enable(true);
     pull_out_clk(RTC_IO_DEBUG_SEL0_32K_XTAL);
 }
+
+TEST_CASE("Output 8M XTAL clock to GPIO25", "[rtc_clk][ignore]")
+{
+    rtc_clk_8m_enable(true, true);
+    SET_PERI_REG_MASK(RTC_IO_RTC_DEBUG_SEL_REG, RTC_IO_DEBUG_12M_NO_GATING);
+    pull_out_clk(RTC_IO_DEBUG_SEL0_8M);
+}
