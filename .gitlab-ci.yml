@@ -185,7 +185,7 @@ test_report:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
     REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
   artifacts:
     when: always
     paths:
@@ -336,7 +336,7 @@ check_commit_msg:
     # append test level folder to TEST_CASE_FILE_PATH in before_script of test job
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
 
   artifacts:
     when: always
