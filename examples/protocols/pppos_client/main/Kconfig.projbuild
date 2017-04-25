@@ -1,0 +1,49 @@
+menu "Example Configuration"
+
+config GSM_INTERNET_USER
+    string "GSM Internet User"
+	default ""
+	help
+		Network provider internet user.
+
+config GSM_INTERNET_PASSWORD
+    string "GSM Internet password"
+	default ""
+	help
+		Network provider internet password
+
+config GSM_APN
+    string "GSM Internet APN"
+    default "playmetric"
+    help
+       APN from network provider for internet access
+
+config UART1_TX_PIN
+    int "PPP serial TX GPIO"
+    default 17
+    range 0 31
+    help
+       Pin to configure for UART1 TX
+
+config UART1_RX_PIN
+    int "PPP serial RX GPIO"
+    default 16
+    range 0 31
+    help
+       Pin to configure for UART1 RX
+
+config UART1_RTS_PIN
+    int "PPP serial RTS GPIO"
+    default 18
+    range 0 31
+    help
+       Pin to configure for UART1 RTS
+
+config UART1_CTS_PIN
+    int "PPP serial CTS GPIO"
+    default 23
+    range 0 31
+    help
+       Pin to configure for UART1 CTS
+
+endmenu

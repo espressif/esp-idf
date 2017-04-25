@@ -208,7 +208,6 @@ config SYSTEM_EVENT_TASK_STACK_SIZE
     help
         Config system event task stack size in different application.
 
-
 config MAIN_TASK_STACK_SIZE
     int "Main task stack size"
     default 4096
