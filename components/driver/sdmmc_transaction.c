@@ -32,6 +32,13 @@
  */
 #define SDMMC_DMA_DESC_CNT  4
 
+/* Max delay value is mostly useful for cases when CD pin is not used, and
+ * the card is removed. In this case, SDMMC peripheral may not always return
+ * CMD_DONE / DATA_DONE interrupts after signaling the error. This delay works
+ * as a safety net in such cases.
+ */
+#define SDMMC_MAX_EVT_WAIT_DELAY_MS 1000
+
 static const char* TAG = "sdmmc_req";
 
 typedef enum {
@@ -188,9 +195,12 @@ static esp_err_t handle_idle_state_events()
 static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state)
 {
     sdmmc_event_t evt;
-    esp_err_t err = sdmmc_host_wait_for_event(portMAX_DELAY, &evt);
+    esp_err_t err = sdmmc_host_wait_for_event(SDMMC_MAX_EVT_WAIT_DELAY_MS / portTICK_PERIOD_MS, &evt);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "sdmmc_host_wait_for_event returned %d", err);
+        ESP_LOGE(TAG, "sdmmc_host_wait_for_event returned 0x%x", err);
+        if (err == ESP_ERR_TIMEOUT) {
+            sdmmc_host_dma_stop();
+        }
         return err;
     }
     ESP_LOGV(TAG, "sdmmc_handle_event: evt %08x %08x", evt.sdmmc_status, evt.dma_status);
@@ -268,7 +278,7 @@ static void process_command_response(uint32_t status, sdmmc_command_t* cmd)
         if (cmd->data) {
             sdmmc_host_dma_stop();
         }
-        ESP_LOGD(TAG, "%s: error %d", __func__, cmd->error);
+        ESP_LOGD(TAG, "%s: error 0x%x  (status=%08x)", __func__, cmd->error, status);
     }
 }
 
@@ -291,7 +301,7 @@ static void process_data_status(uint32_t status, sdmmc_command_t* cmd)
         if (cmd->data) {
             sdmmc_host_dma_stop();
         }
-        ESP_LOGD(TAG, "%s: error %d", __func__, cmd->error);
+        ESP_LOGD(TAG, "%s: error 0x%x (status=%08x)", __func__, cmd->error, status);
     }
 
 }
@@ -323,9 +333,14 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd, sdmmc_r
             case SDMMC_SENDING_CMD:
                 if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_CMD_ERR_MASK)) {
                     process_command_response(orig_evt.sdmmc_status, cmd);
-                    break;
+                    if (cmd->error != ESP_ERR_TIMEOUT) {
+                        // Unless this is a timeout error, we need to wait for the
+                        // CMD_DONE interrupt
+                        break;
+                    }
                 }
-                if (!mask_check_and_clear(&evt.sdmmc_status, SDMMC_INTMASK_CMD_DONE)) {
+                if (!mask_check_and_clear(&evt.sdmmc_status, SDMMC_INTMASK_CMD_DONE) &&
+                        cmd->error != ESP_ERR_TIMEOUT) {
                     break;
                 }
                 process_command_response(orig_evt.sdmmc_status, cmd);
@@ -351,6 +366,11 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd, sdmmc_r
                     if (s_cur_transfer.desc_remaining == 0) {
                         next_state = SDMMC_BUSY;
                     }
+                }
+                if (orig_evt.sdmmc_status & (SDMMC_INTMASK_SBE | SDMMC_INTMASK_DATA_OVER)) {
+                    // On start bit error, DATA_DONE interrupt will not be generated
+                    next_state = SDMMC_IDLE;
+                    break;
                 }
                 break;
 
