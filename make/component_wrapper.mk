@@ -46,6 +46,23 @@ COMPONENT_EMBED_TXTFILES ?=
 COMPONENT_ADD_INCLUDEDIRS = include
 COMPONENT_ADD_LDFLAGS = -l$(COMPONENT_NAME)
 
+# Define optional compiling macros
+define compile_exclude 
+COMPONENT_OBJEXCLUDE += $(1)
+endef
+
+define compile_include
+COMPONENT_OBJINCLUDE += $(1)
+endef
+
+define compile_only_if
+$(eval $(if $(1), $(call compile_include, $(2)), $(call compile_exclude, $(2))))
+endef
+
+define compile_only_if_not 
+$(eval $(if $(1), $(call compile_exclude, $(2)), $(call compile_include, $(2))))
+endef
+
 
 ################################################################################
 # 2) Include the component.mk for the specific component (COMPONENT_MAKEFILE) to
@@ -68,7 +85,16 @@ COMPONENT_OBJS += $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.cpp,%.o
 COMPONENT_OBJS += $(foreach compsrcdir,$(COMPONENT_SRCDIRS),$(patsubst %.S,%.o,$(wildcard $(COMPONENT_PATH)/$(compsrcdir)/*.S)))
 # Make relative by removing COMPONENT_PATH from all found object paths
 COMPONENT_OBJS := $(patsubst $(COMPONENT_PATH)/%,%,$(COMPONENT_OBJS))
+else
+# Add in components defined by conditional compiling macros
+COMPONENT_OBJS += $(COMPONENT_OBJINCLUDE)
 endif
+# Remove items disabled by optional compilation
+COMPONENT_OBJS := $(foreach obj,$(COMPONENT_OBJS),$(if $(filter $(realpath $(obj)),$(realpath $(COMPONENT_OBJEXCLUDE))), ,$(obj)))
+
+# Remove duplicates
+COMPONENT_OBJS := $(call uniq,$(COMPONENT_OBJS))
+
 
 # Object files with embedded binaries to add to the component library
 # Correspond to the files named in COMPONENT_EMBED_FILES & COMPONENT_EMBED_TXTFILES
@@ -142,7 +168,7 @@ endif
 
 # If COMPONENT_OWNCLEANTARGET is not set, define a phony clean target
 ifndef COMPONENT_OWNCLEANTARGET
-CLEAN_FILES = $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_EMBED_OBJS) $(COMPONENT_EXTRA_CLEAN) component_project_vars.mk
+CLEAN_FILES := $(COMPONENT_LIBRARY) $(COMPONENT_OBJS) $(COMPONENT_OBJS:.o=.d) $(COMPONENT_OBJEXCLUDE) $(COMPONENT_OBJEXCLUDE:.o=.d) $(COMPONENT_EMBED_OBJS) $(COMPONENT_EXTRA_CLEAN) component_project_vars.mk
 .PHONY: clean
 clean:
 	$(summary) RM $(CLEAN_FILES)
