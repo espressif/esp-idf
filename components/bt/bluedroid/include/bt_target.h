@@ -228,7 +228,7 @@
 #endif
 
 #ifndef BT_USE_TRACES
-#define BT_USE_TRACES  TRUE
+#define BT_USE_TRACES  FALSE
 #endif
 
 #ifndef BT_TRACE_BTIF
@@ -563,7 +563,11 @@
 
 /* The number of SCO links. */
 #ifndef BTM_MAX_SCO_LINKS
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #define BTM_MAX_SCO_LINKS           1	//3
+#else   ///CLASSIC_BT_INCLUDED == TRUE
+#define BTM_MAX_SCO_LINKS           0
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
 /* The preferred type of SCO links (2-eSCO, 0-SCO). */
@@ -686,7 +690,7 @@
 
 /* TRUE to include Sniff Subrating */
 #ifndef BTM_SSR_INCLUDED
-#define BTM_SSR_INCLUDED                TRUE
+#define BTM_SSR_INCLUDED                FALSE
 #endif
 
 /*************************

@@ -57,22 +57,24 @@ enum {
     BTA_DM_ACL_CHANGE_EVT,
     BTA_DM_API_ADD_DEVICE_EVT,
     BTA_DM_API_REMOVE_ACL_EVT,
-
+#if (SMP_INCLUDED == TRUE)
     /* security API events */
     BTA_DM_API_BOND_EVT,
     BTA_DM_API_BOND_CANCEL_EVT,
     BTA_DM_API_PIN_REPLY_EVT,
-
+#endif  ///SMP_INCLUDED == TRUE
+#if (BTM_SSR_INCLUDED == TRUE)
     /* power manger events */
     BTA_DM_PM_BTM_STATUS_EVT,
     BTA_DM_PM_TIMER_EVT,
-
+#endif  ///BTM_SSR_INCLUDED == TRUE
+#if (SMP_INCLUDED == TRUE)
     /* simple pairing events */
     BTA_DM_API_CONFIRM_EVT,
 
     BTA_DM_API_SET_ENCRYPTION_EVT,
-
-#if (BTM_OOB_INCLUDED == TRUE)
+#endif  ///SMP_INCLUDED == TRUE
+#if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     BTA_DM_API_LOC_OOB_EVT,
     BTA_DM_CI_IO_REQ_EVT,
     BTA_DM_CI_RMT_OOB_EVT,
@@ -80,11 +82,13 @@ enum {
 
 
 #if BLE_INCLUDED == TRUE
+#if SMP_INCLUDED == TRUE
     BTA_DM_API_ADD_BLEKEY_EVT,
     BTA_DM_API_ADD_BLEDEVICE_EVT,
     BTA_DM_API_BLE_PASSKEY_REPLY_EVT,
     BTA_DM_API_BLE_CONFIRM_REPLY_EVT,
     BTA_DM_API_BLE_SEC_GRANT_EVT,
+#endif  ///SMP_INCLUDED == TRUE
     BTA_DM_API_BLE_SET_BG_CONN_TYPE,
     BTA_DM_API_BLE_CONN_PARAM_EVT,
     BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT,
@@ -874,8 +878,10 @@ typedef struct {
     UINT32                      wbt_sdp_handle;          /* WIDCOMM Extensions SDP record handle */
     UINT8                       wbt_scn;                 /* WIDCOMM Extensions SCN */
     UINT8                       num_master_only;
+#if BTM_SSR_INCLUDED == TRUE
     UINT8                       pm_id;
     tBTA_PM_TIMER               pm_timer[BTA_DM_NUM_PM_TIMER];
+#endif  ///BTM_SSR_INCLUDED == TRUE
     UINT32                      role_policy_mask;   /* the bits set indicates the modules that wants to remove role switch from the default link policy */
     UINT16                      cur_policy;         /* current default link policy */
     UINT16                      rs_event;           /* the event waiting for role switch */

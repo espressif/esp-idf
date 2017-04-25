@@ -1594,11 +1594,11 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
     if (!p_ccb->in_use) {
         return;
     }
-
+#if (SDP_INCLUDED == TRUE)
     if (p_rcb && (p_rcb->psm != p_rcb->real_psm)) {
         btm_sec_clr_service_by_psm(p_rcb->psm);
     }
-
+#endif  ///SMP_INCLUDED == TRUE
     if (p_ccb->should_free_rcb) {
         osi_free(p_rcb);
         p_ccb->p_rcb = NULL;

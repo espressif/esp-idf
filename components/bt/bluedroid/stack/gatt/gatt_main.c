@@ -930,7 +930,9 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
 
         if (pseudo_op_code < GATT_OP_CODE_MAX) {
             if (op_code == GATT_SIGN_CMD_WRITE) {
+#if (SMP_INCLUDED == TRUE)
                 gatt_verify_signature(p_tcb, p_buf);
+#endif  ///SMP_INCLUDED == TRUE
             } else {
                 /* message from client */
                 if ((op_code % 2) == 0) {

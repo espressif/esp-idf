@@ -90,8 +90,10 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
                         uint2devclass((UINT32)cod, dev_class);
                     }
                     btc_config_get_int(name, "PinLength", &pin_length);
+#if (SMP_INCLUDED == TRUE)
                     BTA_DmAddDevice(bd_addr.address, dev_class, link_key, 0, 0,
                                     (UINT8)linkkey_type, 0, pin_length);
+#endif  ///SMP_INCLUDED == TRUE
                 }
                 bt_linkkey_file_found = TRUE;
             } else {

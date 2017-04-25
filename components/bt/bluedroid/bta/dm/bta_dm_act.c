@@ -57,10 +57,12 @@ static void bta_dm_discover_next_device(void);
 #if (SDP_INCLUDED == TRUE)
 static void bta_dm_sdp_callback (UINT16 sdp_status);
 #endif  ///SDP_INCLUDED == TRUE
+#if (SMP_INCLUDED == TRUE)
 static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, UINT8 *service_name, UINT8 service_id, BOOLEAN is_originator);
 static UINT8 bta_dm_pin_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, BOOLEAN min_16_digit);
 static UINT8 bta_dm_new_link_key_cback(BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, LINK_KEY key, UINT8 key_type);
 static UINT8 bta_dm_authentication_complete_cback(BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, int result);
+#endif  ///SMP_INCLUDED == TRUE
 static void bta_dm_local_name_cback(BD_ADDR bd_addr);
 static BOOLEAN bta_dm_check_av(UINT16 event);
 static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
@@ -69,7 +71,7 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 /* Extended Inquiry Response */
-#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
+#if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE && SMP_INCLUDED == TRUE)
 static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data);
 #endif /* (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE) */
 
@@ -86,7 +88,9 @@ static void bta_dm_adjust_roles(BOOLEAN delay_role_switch);
 #if (SDP_INCLUDED == TRUE || SMP_INCLUDED == TRUE)
 static char *bta_dm_get_remname(void);
 #endif  ///SDP_INCLUDED == TRUE || SMP_INCLUDED == TRUE
+#if (SMP_INCLUDED == TRUE)
 static void bta_dm_bond_cancel_complete_cback(tBTM_STATUS result);
+#endif  ///SMP_INCLUDED == TRUE
 #if (SDP_INCLUDED == TRUE)
 static BOOLEAN bta_dm_read_remote_device_name (BD_ADDR bd_addr, tBT_TRANSPORT transport);
 static void bta_dm_discover_device(BD_ADDR remote_bd_addr);
@@ -97,8 +101,8 @@ static void bta_dm_disable_search_and_disc(void);
 #if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
 #if ((defined SMP_INCLUDED) && (SMP_INCLUDED == TRUE))
 static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_DATA *p_data);
-#endif
 static void bta_dm_ble_id_key_cback (UINT8 key_type, tBTM_BLE_LOCAL_KEYS *p_key);
+#endif  ///SMP_INCLUDED == TRUE
 #if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 static void bta_dm_gattc_register(void);
 static void btm_dm_start_gatt_discovery(BD_ADDR bd_addr);
@@ -115,8 +119,9 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result);
 #define BTA_DM_BLE_ADV_CHNL_MAP (BTM_BLE_ADV_CHNL_37|BTM_BLE_ADV_CHNL_38|BTM_BLE_ADV_CHNL_39)
 #endif
 #endif
-
+#if (SMP_INCLUDED == TRUE)
 static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr);
+#endif  ///SMP_INCLUDED == TRUE
 static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
 static void bta_dm_observe_cmpl_cb(void *p_result);
 static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle);
@@ -203,6 +208,7 @@ const UINT32 bta_service_id_to_btm_srv_id_lkup_tbl [BTA_MAX_SERVICE_ID] = {
 };
 
 /* bta security callback */
+#if (SMP_INCLUDED == TRUE)
 const tBTM_APPL_INFO bta_security = {
     &bta_dm_authorize_cback,
     &bta_dm_pin_cback,
@@ -210,22 +216,22 @@ const tBTM_APPL_INFO bta_security = {
     &bta_dm_authentication_complete_cback,
     &bta_dm_bond_cancel_complete_cback,
 #if (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE)
-    &bta_dm_sp_cback
+    &bta_dm_sp_cback,
 #else
     NULL
 #endif
 #if BLE_INCLUDED == TRUE
-#if SMP_INCLUDED == TRUE
-    , &bta_dm_ble_smp_cback
-#endif
-    , &bta_dm_ble_id_key_cback
-#endif
+    &bta_dm_ble_smp_cback,
+    &bta_dm_ble_id_key_cback,
+#endif  ///BLE_INCLUDED == TRUE
 
 };
+#endif  ///SMP_INCLUDED == TRUE
 
+#if (SDP_INCLUDED == TRUE)
 #define MAX_DISC_RAW_DATA_BUF       (1024)
 UINT8 g_disc_raw_data_buf[MAX_DISC_RAW_DATA_BUF];
-
+#endif  ///SDP_INCLUDED == TRUE
 extern DEV_CLASS local_device_default_class;
 
 /*******************************************************************************
@@ -331,7 +337,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 
         /* hw is ready, go on with BTA DM initialization */
         memset(&bta_dm_search_cb, 0x00, sizeof(bta_dm_search_cb));
+#if (BTM_SSR_INCLUDED == TRUE)
         memset(&bta_dm_conn_srvcs, 0x00, sizeof(bta_dm_conn_srvcs));
+#endif  ///BTM_SSR_INCLUDED == TRUE
         memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
 
         memcpy(dev_class, p_bta_dm_cfg->dev_class, sizeof(dev_class));
@@ -351,8 +359,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         bta_dm_search_cb.conn_id = BTA_GATT_INVALID_CONN_ID;
 #endif
 #endif
-
+#if (SMP_INCLUDED == TRUE)
         BTM_SecRegister((tBTM_APPL_INFO *)&bta_security);
+#endif  ///SMP_INCLUDED == TRUE
         BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);
         BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
         bta_dm_cb.cur_policy = p_bta_dm_cfg->policy_settings;
@@ -371,10 +380,10 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         BTM_ReadLocalDeviceNameFromController((tBTM_CMPL_CB *)bta_dm_local_name_cback);
 
         bta_sys_rm_register((tBTA_SYS_CONN_CBACK *)bta_dm_rm_cback);
-
+#if (BTM_SSR_INCLUDED == TRUE)
         /* initialize bluetooth low power manager */
         bta_dm_init_pm();
-
+#endif  ///BTM_SSR_INCLUDED == TRUE
         bta_sys_policy_register((tBTA_SYS_CONN_CBACK *)bta_dm_policy_cback);
 
 #if (BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE)
@@ -411,8 +420,9 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
 
     BTM_SetDiscoverability(BTM_NON_DISCOVERABLE, 0, 0);
     BTM_SetConnectability(BTM_NON_CONNECTABLE, 0, 0);
-
+#if (BTM_SSR_INCLUDED == TRUE)
     bta_dm_disable_pm();
+#endif  ///BTM_SSR_INCLUDED == TRUE
     bta_dm_disable_search_and_disc();
     bta_dm_cb.disabling = TRUE;
 
@@ -837,6 +847,7 @@ void bta_dm_remove_all_acl(tBTA_DM_MSG *p_data)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void bta_dm_bond (tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status;
@@ -933,6 +944,7 @@ void bta_dm_pin_reply (tBTA_DM_MSG *p_data)
     }
 
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -975,7 +987,9 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app
 
         if (policy & (HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE)) {
             /* if clearing sniff/park, wake the link */
+#if (BTM_SSR_INCLUDED == TRUE)
             bta_dm_pm_active(p_dev->peer_bdaddr);
+#endif  ///BTM_SSR_INCLUDED == TRUE
         }
         break;
 
@@ -1008,6 +1022,7 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void bta_dm_confirm(tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS res = BTM_NOT_AUTHORIZED;
@@ -1017,6 +1032,7 @@ void bta_dm_confirm(tBTA_DM_MSG *p_data)
     }
     BTM_ConfirmReqReply(res, p_data->confirm.bd_addr);
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1027,7 +1043,7 @@ void bta_dm_confirm(tBTA_DM_MSG *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-#if (BTM_OOB_INCLUDED == TRUE)
+#if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 void bta_dm_loc_oob(tBTA_DM_MSG *p_data)
 {
     UNUSED(p_data);
@@ -1073,7 +1089,7 @@ void bta_dm_ci_rmt_oob_act(tBTA_DM_MSG *p_data)
     BTM_RemoteOobDataReply(res, p_data->ci_rmt_oob.bd_addr,
                            p_data->ci_rmt_oob.c, p_data->ci_rmt_oob.r );
 }
-#endif /* BTM_OOB_INCLUDED */
+#endif /* BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE */
 
 /*******************************************************************************
 **
@@ -1857,16 +1873,16 @@ static void bta_dm_search_timer_cback (TIMER_LIST_ENT *p_tle)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SDP_INCLUDED == TRUE)
 void bta_dm_free_sdp_db (tBTA_DM_MSG *p_data)
 {
-#if (SDP_INCLUDED == TRUE)
     UNUSED(p_data);
     if (bta_dm_search_cb.p_sdp_db) {
         GKI_freebuf(bta_dm_search_cb.p_sdp_db);
         bta_dm_search_cb.p_sdp_db = NULL;
     }
-#endif  ///SDP_INCLUDED == TRUE
 }
+#endif  ///SDP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -2511,6 +2527,7 @@ static void bta_dm_remname_cback (tBTM_REMOTE_DEV_NAME *p_remote_name)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
                                      UINT8 *service_name, UINT8 service_id, BOOLEAN is_originator)
 {
@@ -2554,8 +2571,7 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
         return BTM_NOT_AUTHORIZED;
     }
 }
-
-
+ 
 
 
 
@@ -2568,7 +2584,7 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_dm_pinname_cback (void *p_data)
+ static void bta_dm_pinname_cback (void *p_data)
 {
     tBTM_REMOTE_DEV_NAME *p_result = (tBTM_REMOTE_DEV_NAME *)p_data;
     tBTA_DM_SEC           sec_event;
@@ -2900,6 +2916,9 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
     return status;
 }
 #endif /* (BTM_LOCAL_IO_CAPS != BTM_IO_CAP_NONE) */
+
+#endif  ///SMP_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -3267,10 +3286,10 @@ static void bta_dm_disable_conn_down_timer_cback (TIMER_LIST_ENT *p_tle)
 {
     UNUSED(p_tle);
     tBTA_SYS_HW_MSG *sys_enable_event;
-
+#if (BTM_SSR_INCLUDED == TRUE)
     /* disable the power managment module */
     bta_dm_disable_pm();
-
+#endif  ///BTM_SSR_INCLUDED == TRUE
     /* register our callback to SYS HW manager */
     bta_sys_hw_register( BTA_SYS_HW_BLUETOOTH, bta_dm_sys_hw_cback );
 
@@ -3333,7 +3352,9 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
             }
             /* AV calls bta_sys_conn_open with the A2DP stream count as app_id */
             if (BTA_ID_AV == id) {
+#if (BTM_SSR_INCLUDED == TRUE)
                 bta_dm_cb.cur_av_count = bta_dm_get_av_count();
+#endif  ///BTM_SSR_INCLUDED == TRUE
             }
         } else if ( status == BTA_SYS_CONN_IDLE) {
             if (p_dev) {
@@ -3342,7 +3363,9 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 
             /* get cur_av_count from connected services */
             if (BTA_ID_AV == id) {
+#if (BTM_SSR_INCLUDED == TRUE)
                 bta_dm_cb.cur_av_count = bta_dm_get_av_count();
+#endif  ///BTM_SSR_INCLUDED == TRUE
             }
         }
         APPL_TRACE_WARNING("bta_dm_rm_cback:%d, status:%d", bta_dm_cb.cur_av_count, status);
@@ -3383,6 +3406,7 @@ static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
 {
     UINT16 index = 0;
@@ -3410,6 +3434,7 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
 #endif
     }
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -3527,6 +3552,7 @@ static char *bta_dm_get_remname(void)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 static void bta_dm_bond_cancel_complete_cback(tBTM_STATUS result)
 {
 
@@ -3542,6 +3568,7 @@ static void bta_dm_bond_cancel_complete_cback(tBTM_STATUS result)
         bta_dm_cb.p_sec_cback(BTA_DM_BOND_CANCEL_CMPL_EVT, &sec_event);
     }
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -4019,6 +4046,7 @@ void bta_dm_encrypt_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_
 ** Returns          None
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void bta_dm_set_encryption (tBTA_DM_MSG *p_data)
 {
     UINT8 i ;
@@ -4050,6 +4078,7 @@ void bta_dm_set_encryption (tBTA_DM_MSG *p_data)
         }
     }
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
@@ -4249,7 +4278,6 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
     }
     return status;
 }
-#endif  /* SMP_INCLUDED == TRUE */
 
 /*******************************************************************************
 **
@@ -4386,6 +4414,7 @@ void bta_dm_security_grant (tBTA_DM_MSG *p_data)
 {
     BTM_SecurityGrant(p_data->ble_sec_grant.bd_addr, p_data->ble_sec_grant.res);
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **

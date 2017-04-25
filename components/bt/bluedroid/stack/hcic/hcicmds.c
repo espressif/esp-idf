@@ -164,7 +164,9 @@ BOOLEAN btsnd_hcic_create_conn(BD_ADDR dest, UINT16 packet_types,
 #if !defined (BT_10A)
     UINT8_TO_STREAM  (pp, allow_switch);
 #endif
+#if (SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_paging (p, dest);
+#endif  ///SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE
     return (TRUE);
 }
 
@@ -489,8 +491,9 @@ BOOLEAN btsnd_hcic_rmt_name_req (BD_ADDR bd_addr, UINT8 page_scan_rep_mode,
     UINT8_TO_STREAM  (pp, page_scan_rep_mode);
     UINT8_TO_STREAM  (pp, page_scan_mode);
     UINT16_TO_STREAM (pp, clock_offset);
-
+#if (SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
     btm_acl_paging (p, bd_addr);
+#endif  ///SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE
     return (TRUE);
 }
 

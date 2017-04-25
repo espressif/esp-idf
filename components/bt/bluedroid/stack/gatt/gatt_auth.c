@@ -41,6 +41,7 @@
 ** Returns          TRUE if encrypted, otherwise FALSE.
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 static BOOLEAN gatt_sign_data (tGATT_CLCB *p_clcb)
 {
     tGATT_VALUE         *p_attr = (tGATT_VALUE *)p_clcb->p_attr_buf;
@@ -84,6 +85,7 @@ static BOOLEAN gatt_sign_data (tGATT_CLCB *p_clcb)
 
     return status;
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -95,6 +97,7 @@ static BOOLEAN gatt_sign_data (tGATT_CLCB *p_clcb)
 ** Returns
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
 {
     UINT16  cmd_len;
@@ -125,6 +128,8 @@ void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
 
     return;
 }
+#endif  ///SMP_INCLUDED == TRUE
+
 /*******************************************************************************
 **
 ** Function         gatt_sec_check_complete
@@ -299,8 +304,8 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
     BOOLEAN             is_link_encrypted = FALSE;
     BOOLEAN             is_link_key_known = FALSE;
     BOOLEAN             is_key_mitm = FALSE;
-    UINT8               key_type;
 #if (SMP_INCLUDED == TRUE)
+    UINT8               key_type;
     tBTM_BLE_SEC_REQ_ACT    sec_act = BTM_LE_SEC_NONE;
 #endif  ///SMP_INCLUDED == TRUE
     if (auth_req == GATT_AUTH_REQ_NONE ) {
@@ -359,8 +364,9 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
             /* this is a write command request
                check data signing required or not */
             if (!is_link_encrypted) {
+#if (SMP_INCLUDED == TRUE)
                 btm_ble_get_enc_key_type(p_tcb->peer_bda, &key_type);
-
+#endif  ///SMP_INCLUDED == TRUE
                 if (
 #if (SMP_INCLUDED == TRUE)
                     (key_type & BTM_LE_KEY_LCSRK) &&
@@ -459,7 +465,9 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
     tGATT_SEC_ACTION    gatt_sec_act;
     tBTM_BLE_SEC_ACT    btm_ble_sec_act;
     BOOLEAN             status = TRUE;
+#if (SMP_INCLUDED == TRUE)
     tBTM_STATUS         btm_status;
+#endif  ///SMP_INCLUDED == TRUE
     tGATT_SEC_ACTION    sec_act_old =  gatt_get_sec_act(p_tcb);
 
     gatt_sec_act = gatt_determine_sec_act(p_clcb);
@@ -470,8 +478,10 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
 
     switch (gatt_sec_act ) {
     case GATT_SEC_SIGN_DATA:
+#if (SMP_INCLUDED == TRUE)
         GATT_TRACE_DEBUG("gatt_security_check_start: Do data signing");
         gatt_sign_data(p_clcb);
+#endif  ///SMP_INCLUDED == TRUE
         break;
     case GATT_SEC_ENCRYPT:
     case GATT_SEC_ENCRYPT_NO_MITM:
@@ -479,11 +489,13 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
         if (sec_act_old < GATT_SEC_ENCRYPT) {
             GATT_TRACE_DEBUG("gatt_security_check_start: Encrypt now or key upgreade first");
             gatt_convert_sec_action(gatt_sec_act, &btm_ble_sec_act);
+#if (SMP_INCLUDED == TRUE)
             btm_status = BTM_SetEncryption(p_tcb->peer_bda, p_tcb->transport , gatt_enc_cmpl_cback, &btm_ble_sec_act);
             if ( (btm_status != BTM_SUCCESS) && (btm_status != BTM_CMD_STARTED)) {
                 GATT_TRACE_ERROR("gatt_security_check_start BTM_SetEncryption failed btm_status=%d", btm_status);
                 status = FALSE;
             }
+#endif  ///SMP_INCLUDED == TRUE
         }
         if (status) {
             gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);

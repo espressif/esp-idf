@@ -281,7 +281,9 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                     const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
                     /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
+#if (SMP_INCLUDED == TRUE)
                     btm_sec_set_peer_sec_caps(p, p_dev_rec);
+#endif  ///SMP_INCLUDED == TRUE
 #if (CLASSIC_BT_INCLUDED == TRUE)
                     BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
                     if (req_pend) {
@@ -926,10 +928,10 @@ void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages)
     }
 
     const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
-
+#if (SMP_INCLUDED == TRUE)
     /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
     btm_sec_set_peer_sec_caps(p_acl_cb, p_dev_rec);
-
+#endif  ///SMP_INCLUDED == TRUE
     BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
     if (req_pend) {
         /* Request for remaining Security Features (if any) */
@@ -1478,10 +1480,9 @@ void btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role)
 ** Returns          Allocated SCN number or 0 if none.
 **
 *******************************************************************************/
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 BTM_AllocateSCN(void)
 {
-#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8   x;
     BTM_TRACE_DEBUG ("BTM_AllocateSCN\n");
     // stack reserves scn 1 for HFP, HSP we still do the correct way
@@ -1491,9 +1492,9 @@ UINT8 BTM_AllocateSCN(void)
             return (x + 1);
         }
     }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
     return (0);    /* No free ports */
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1504,10 +1505,9 @@ UINT8 BTM_AllocateSCN(void)
 ** Returns          Returns TRUE if server channel was available
 **
 *******************************************************************************/
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 {
-#if (CLASSIC_BT_INCLUDED == TRUE)
     /* Make sure we don't exceed max port range.
      * Stack reserves scn 1 for HFP, HSP we still do the correct way.
      */
@@ -1520,10 +1520,10 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
         btm_cb.btm_scn[scn - 1] = TRUE;
         return TRUE;
     }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
     return (FALSE);     /* Port was busy */
 }
+
 
 /*******************************************************************************
 **
@@ -1536,8 +1536,6 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 *******************************************************************************/
 BOOLEAN BTM_FreeSCN(UINT8 scn)
 {
-
-#if (CLASSIC_BT_INCLUDED == TRUE)
     BTM_TRACE_DEBUG ("BTM_FreeSCN \n");
     if (scn <= BTM_MAX_SCN) {
         btm_cb.btm_scn[scn - 1] = FALSE;
@@ -1545,10 +1543,9 @@ BOOLEAN BTM_FreeSCN(UINT8 scn)
     } else {
         return (FALSE);    /* Illegal SCN passed in */
     }
-#else
     return (FALSE);
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -2345,9 +2342,9 @@ void  btm_acl_reset_paging (void)
 ** Description      send a paging command or queue it in btm_cb
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
 void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec;
 
     BTM_TRACE_DEBUG ("btm_acl_paging discing:%d, paging:%d BDA: %06x%06x\n",
@@ -2379,8 +2376,8 @@ void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
             btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
         }
     }
-#endif  ///SMP_INCLUDED == TRUE
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **

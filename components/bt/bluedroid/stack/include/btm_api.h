@@ -2032,6 +2032,7 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode,
 **
 *******************************************************************************/
 //extern
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 BTM_AllocateSCN(void);
 
 // btla-specific ++
@@ -2060,6 +2061,7 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn);
 *******************************************************************************/
 //extern
 BOOLEAN BTM_FreeSCN(UINT8 scn);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 
 /*******************************************************************************

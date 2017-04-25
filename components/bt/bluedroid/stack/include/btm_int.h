@@ -847,8 +847,8 @@ typedef struct {
     TIMER_LIST_ENT           pairing_tle;   /* Timer for pairing process    */
     UINT16                   disc_handle;   /* for legacy devices */
     UINT8                    disc_reason;   /* for legacy devices */
-#endif  ///SMP_INCLUDED == TRUE
     tBTM_SEC_SERV_REC        sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
+#endif  ///SMP_INCLUDED == TRUE
     tBTM_SEC_DEV_REC         sec_dev_rec[BTM_SEC_MAX_DEVICE_RECORDS];
     tBTM_SEC_SERV_REC       *p_out_serv;
     tBTM_MKEY_CALLBACK      *mkey_cback;
