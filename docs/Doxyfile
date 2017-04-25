@@ -38,7 +38,9 @@ INPUT = ../components/esp32/include/esp_wifi.h \
 	../components/fatfs/src/diskio.h \
 	../components/esp32/include/esp_core_dump.h \
 	../components/mdns/include/mdns.h \
-	../components/bootloader_support/include/esp_flash_encrypt.h
+	../components/bootloader_support/include/esp_flash_encrypt.h \
+    ../components/wear_levelling/include/wear_levelling.h
+
 
 ## Get warnings for functions that have no documentation for their parameters or return value 
 ##

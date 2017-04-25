@@ -12,7 +12,7 @@ Using FatFs with VFS
 
 Most applications will use the following flow when working with ``esp_vfs_fat_`` functions:
 
-1. Call ``esp_vfs_fat_register``, specifying path prefix where the filesystem has to be mounted (e.g. ``"/sdcard"``), FatFs drive number, and a variable which will receive a pointer to ``FATFS`` structure.
+1. Call ``esp_vfs_fat_register``, specifying path prefix where the filesystem has to be mounted (e.g. ``"/sdcard"``, ``"/spiflash"``), FatFs drive number, and a variable which will receive a pointer to ``FATFS`` structure.
 
 2. Call ``ff_diskio_register`` function to register disk IO driver for the drive number used in step 1.
 
@@ -43,7 +43,7 @@ Using FatFs with VFS and SD cards
 
 .. doxygenfunction:: esp_vfs_fat_sdmmc_mount
 
-.. doxygenstruct:: esp_vfs_fat_sdmmc_mount_config_t
+.. doxygenstruct:: esp_vfs_fat_mount_config_t
     :members:
 
 .. doxygenfunction:: esp_vfs_fat_sdmmc_unmount
