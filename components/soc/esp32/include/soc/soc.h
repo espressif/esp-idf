@@ -149,6 +149,16 @@
 #define  TICKS_PER_US_ROM                            26              // CPU is 80MHz
 //}}
 
+/* Overall memory map */
+#define SOC_IROM_LOW    0x400D0000
+#define SOC_IROM_HIGH   0x40400000
+#define SOC_DROM_LOW    0x3F400000
+#define SOC_DROM_HIGH   0x3F800000
+#define SOC_RTC_IRAM_LOW  0x400C0000
+#define SOC_RTC_IRAM_HIGH 0x400C2000
+#define SOC_RTC_DATA_LOW  0x50000000
+#define SOC_RTC_DATA_HIGH 0x50002000
+
 #define DR_REG_DPORT_BASE                       0x3ff00000
 #define DR_REG_RSA_BASE                         0x3ff02000
 #define DR_REG_SHA_BASE                         0x3ff03000

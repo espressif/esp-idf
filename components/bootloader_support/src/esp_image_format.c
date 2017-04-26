@@ -108,16 +108,6 @@ esp_err_t esp_image_basic_verify(uint32_t src_addr, bool log_errors, uint32_t *p
         *p_length = 0;
     }
 
-    if (src_addr % SPI_FLASH_MMU_PAGE_SIZE != 0) {
-        /* Image must start on a 64KB boundary
-
-           (This is not a technical limitation, only the flash mapped regions need to be 64KB aligned.  But the most
-           consistent way to do this is to have all the offsets internal to the image correctly 64KB aligned, and then
-           start the image on a 64KB boundary also.)
-         */
-        return ESP_ERR_INVALID_ARG;
-    }
-
     err = esp_image_load_header(src_addr, log_errors, &image_header);
     if (err != ESP_OK) {
         return err;
@@ -131,6 +121,21 @@ esp_err_t esp_image_basic_verify(uint32_t src_addr, bool log_errors, uint32_t *p
                                       &segment_header, &segment_data_offs);
         if (err != ESP_OK) {
             return err;
+        }
+
+        uint32_t load_addr = segment_header.load_addr;
+        bool map_segment = (load_addr >= SOC_DROM_LOW && load_addr < SOC_DROM_HIGH)
+            || (load_addr >= SOC_IROM_LOW && load_addr < SOC_IROM_HIGH);
+
+
+        /* Check that flash cache mapped segment aligns correctly from flash it's mapped address,
+           relative to the 64KB page mapping size.
+        */
+        ESP_LOGV(TAG, "segment %d map_segment %d segment_data_offs 0x%x load_addr 0x%x",
+                 i, map_segment, segment_data_offs, load_addr);
+        if (map_segment && ((segment_data_offs % SPI_FLASH_MMU_PAGE_SIZE) != (load_addr % SPI_FLASH_MMU_PAGE_SIZE))) {
+            ESP_LOGE(TAG, "Segment %d has load address 0x%08x, conflict with segment data at 0x%08x",
+                     i, load_addr, segment_data_offs);
         }
 
         for (int i = 0; i < segment_header.data_len; i += sizeof(buf)) {

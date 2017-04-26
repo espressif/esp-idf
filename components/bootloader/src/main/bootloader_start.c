@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
+#include <sys/param.h>
 
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -312,11 +313,15 @@ void bootloader_main()
         memcpy(&sa, ota_select_map, sizeof(esp_ota_select_entry_t));
         memcpy(&sb, (uint8_t *)ota_select_map + SPI_SEC_SIZE, sizeof(esp_ota_select_entry_t));
         bootloader_munmap(ota_select_map);
+        ESP_LOGD(TAG, "OTA sequence values A 0x%08x B 0x%08x", sa.ota_seq, sb.ota_seq);
         if(sa.ota_seq == 0xFFFFFFFF && sb.ota_seq == 0xFFFFFFFF) {
+            ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF");
             // init status flash
             if (bs.factory.offset != 0) {        // if have factory bin,boot factory bin
+                ESP_LOGD(TAG, "Defaulting to factory image");
                 load_part_pos = bs.factory;
             } else {
+                ESP_LOGD(TAG, "No factory image, defaulting to OTA 0");
                 load_part_pos = bs.ota[0];
                 sa.ota_seq = 0x01;
                 sa.crc = ota_select_crc(&sa);
@@ -341,10 +346,13 @@ void bootloader_main()
             //TODO:write data in ota info
         } else  {
             if(ota_select_valid(&sa) && ota_select_valid(&sb)) {
-                load_part_pos = bs.ota[(((sa.ota_seq > sb.ota_seq)?sa.ota_seq:sb.ota_seq) - 1)%bs.app_count];
+                ESP_LOGD(TAG, "Both OTA sequence valid, using OTA slot %d", MAX(sa.ota_seq, sb.ota_seq)-1);
+                load_part_pos = bs.ota[(MAX(sa.ota_seq, sb.ota_seq) - 1)%bs.app_count];
             } else if(ota_select_valid(&sa)) {
+                ESP_LOGD(TAG, "Only OTA sequence A is valid, using OTA slot %d", sa.ota_seq - 1);
                 load_part_pos = bs.ota[(sa.ota_seq - 1) % bs.app_count];
             } else if(ota_select_valid(&sb)) {
+                ESP_LOGD(TAG, "Only OTA sequence B is valid, using OTA slot %d", sa.ota_seq - 1);
                 load_part_pos = bs.ota[(sb.ota_seq - 1) % bs.app_count];
             } else if (bs.factory.offset != 0) {
                 ESP_LOGE(TAG, "ota data partition invalid, falling back to factory");
@@ -475,7 +483,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             // TODO: actually check md5
         }
 
-        if (address >= DROM_LOW && address < DROM_HIGH) {
+        if (address >= SOC_DROM_LOW && address < SOC_DROM_HIGH) {
             ESP_LOGD(TAG, "found drom segment, map from %08x to %08x", data_offs,
                       segment_header.load_addr);
             drom_addr = data_offs;
@@ -485,7 +493,7 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             map = true;
         }
 
-        if (address >= IROM_LOW && address < IROM_HIGH) {
+        if (address >= SOC_IROM_LOW && address < SOC_IROM_HIGH) {
             ESP_LOGD(TAG, "found irom segment, map from %08x to %08x", data_offs,
                       segment_header.load_addr);
             irom_addr = data_offs;
@@ -495,12 +503,12 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
             map = true;
         }
 
-        if (!load_rtc_memory && address >= RTC_IRAM_LOW && address < RTC_IRAM_HIGH) {
+        if (!load_rtc_memory && address >= SOC_RTC_IRAM_LOW && address < SOC_RTC_IRAM_HIGH) {
             ESP_LOGD(TAG, "Skipping RTC code segment at %08x\n", data_offs);
             load = false;
         }
 
-        if (!load_rtc_memory && address >= RTC_DATA_LOW && address < RTC_DATA_HIGH) {
+        if (!load_rtc_memory && address >= SOC_RTC_DATA_LOW && address < SOC_RTC_DATA_HIGH) {
             ESP_LOGD(TAG, "Skipping RTC data segment at %08x\n", data_offs);
             load = false;
         }
