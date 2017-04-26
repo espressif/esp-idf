@@ -54,11 +54,11 @@ build_template_app:
     - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
 
 
-.build_gitlab: &build_template
+.build_template: &build_template
   stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
 
   variables:
     SDK_PATH: "$CI_PROJECT_DIR"
@@ -176,13 +176,13 @@ test_build_system:
 test_report:
   stage: test_report
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - report
   only:
     - master
     - triggers
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
-  tags:
-    - report
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
@@ -228,14 +228,14 @@ push_master_to_github:
   before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - deploy
   only:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
-  tags:
-    - deploy
   when: on_success
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   variables:
     GIT_STRATEGY: clone
     GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
@@ -261,14 +261,14 @@ deploy_docs:
   before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - deploy
   only:
    - master
    - /^release\/v/
    - /^v\d+\.\d+(\.\d+)?($|-)/
    - triggers
-  tags:
-    - deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
