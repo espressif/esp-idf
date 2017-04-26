@@ -396,7 +396,6 @@ BOOLEAN btm_dev_support_switch (BD_ADDR bd_addr)
 *******************************************************************************/
 tBTM_SEC_DEV_REC *btm_find_dev_by_handle (UINT16 handle)
 {
-#if (SMP_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC *p_dev_rec = &btm_cb.sec_dev_rec[0];
     int i;
 
@@ -410,7 +409,6 @@ tBTM_SEC_DEV_REC *btm_find_dev_by_handle (UINT16 handle)
             return (p_dev_rec);
         }
     }
-#endif  ///SMP_INCLUDED == TRUE
     return (NULL);
 }
 
