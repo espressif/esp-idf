@@ -502,9 +502,9 @@
 #define BTM_SCO_DATA_SIZE_MAX       240
 #endif
 
-/* The size in bytes of the BTM inquiry database. 40 As Default */
+/* The size in bytes of the BTM inquiry database. 5 As Default */
 #ifndef BTM_INQ_DB_SIZE
-#define BTM_INQ_DB_SIZE             5//32
+#define BTM_INQ_DB_SIZE             5
 #endif
 
 /* The default scan mode */
