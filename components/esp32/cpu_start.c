@@ -173,7 +173,6 @@ void IRAM_ATTR call_start_cpu1()
                   "wsr    %0, vecbase\n" \
                   ::"r"(&_init_start));
 
-    ESP_EARLY_LOGI(TAG, "Set ets_set_appcpu_boot_addr.");
     ets_set_appcpu_boot_addr(0); 
     cpu_configure_region_protection();
 
