@@ -29,7 +29,6 @@ build_template_app:
     - build
 
   variables:
-    SDK_PATH: "$CI_PROJECT_DIR"
     IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
@@ -61,7 +60,6 @@ build_template_app:
     - build
 
   variables:
-    SDK_PATH: "$CI_PROJECT_DIR"
     IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
