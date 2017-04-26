@@ -317,7 +317,6 @@ check_commit_msg:
     # commit start with "WIP: " need to be squashed before merge
     - 'git log --pretty=%s master..${CI_BUILD_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
 
-# AUTO GENERATED PART START, DO NOT MODIFY CONTENT BELOW
 # template for test jobs
 .test_template: &test_template
   stage: test
