@@ -66,38 +66,13 @@ config BT_STACK_NO_LOG
     help
         This select can save the rodata code size
 
-choice BT_ACL_CONNECTIONS
-    prompt "BT/BLE MAX ACL CONNECTIONS"
+config BT_ACL_CONNECTIONS
+    int "BT/BLE MAX ACL CONNECTIONS(1~7)"
     depends on BLUEDROID_ENABLED
-    default BT_ACL_CONNECTION_4
+    range 1 7
+    default 4
     help 
         Maximum BT/BLE connection count
-
-config BT_ACL_CONNECTION_1
-    bool "1 ACL CONNECT"
-config BT_ACL_CONNECTION_2
-    bool "2 ACL CONNECT"
-config BT_ACL_CONNECTION_3
-    bool "3 ACL CONNECT"
-config BT_ACL_CONNECTION_4
-    bool "4 ACL CONNECT"
-config BT_ACL_CONNECTION_5
-    bool "5 ACL CONNECT"
-config BT_ACL_CONNECTION_6
-    bool "6 ACL CONNECT"
-config BT_ACL_CONNECTION_7
-    bool "7 ACL CONNECT"
-endchoice
-
-config BT_ACL_CONNECTIONS
-    int
-    default 1 if BT_ACL_CONNECTION_1
-    default 2 if BT_ACL_CONNECTION_2
-    default 3 if BT_ACL_CONNECTION_3
-    default 4 if BT_ACL_CONNECTION_4
-    default 5 if BT_ACL_CONNECTION_5
-    default 6 if BT_ACL_CONNECTION_6
-    default 7 if BT_ACL_CONNECTION_7
 
 #disable now for app cpu due to a known issue
 config BTDM_CONTROLLER_RUN_APP_CPU
