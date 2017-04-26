@@ -1716,6 +1716,7 @@ PROVIDE ( ets_set_user_start = 0x4000687c );
 PROVIDE ( ets_unpack_flash_code = 0x40007018 );
 PROVIDE ( ets_unpack_flash_code_legacy = 0x4000694c );
 PROVIDE ( rom_main = 0x400076c4 );
+PROVIDE ( ets_write_char_uart = 0x40007cf8 );
 PROVIDE ( ets_install_putc1 = 0x40007d18 );
 PROVIDE ( ets_install_putc2 = 0x40007d38 );
 PROVIDE ( ets_install_uart_printf = 0x40007d28 );
