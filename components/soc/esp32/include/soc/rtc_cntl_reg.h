@@ -239,9 +239,6 @@
 #define RTC_CNTL_TIME_VALID_V  0x1
 #define RTC_CNTL_TIME_VALID_S  30
 
-/* frequency of RTC slow clock, Hz */
-#define RTC_CNTL_SLOWCLK_FREQ   150000
-
 #define RTC_CNTL_TIME0_REG          (DR_REG_RTCCNTL_BASE + 0x10)
 /* RTC_CNTL_TIME_LO : RO ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: RTC timer low 32 bits*/

@@ -27,6 +27,7 @@
 #include "esp32/ulp.h"
 
 #include "soc/soc.h"
+#include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
 #include "driver/rtc_io.h"
@@ -321,15 +322,11 @@ TEST_CASE("ulp timer setting", "[ulp]")
         uint32_t counter = RTC_SLOW_MEM[offset] & 0xffff;
         CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
         // compare the actual and expected numbers of iterations of ULP program
-        float expected_period = (cycles_to_test[i] + 16) / (float) RTC_CNTL_SLOWCLK_FREQ + 5 / 8e6f;
+        float expected_period = (cycles_to_test[i] + 16) / (float) rtc_clk_slow_freq_get_hz() + 5 / 8e6f;
         float error = 1.0f - counter * expected_period;
         printf("%u\t%u\t%.01f\t%.04f\n", cycles_to_test[i], counter, 1.0f / expected_period, error);
         // Should be within 15%
         TEST_ASSERT_INT_WITHIN(15, 0, (int) error * 100);
-        // Note: currently RTC_CNTL_SLOWCLK_FREQ is ballpark value — we need to determine it
-        // Precisely by running calibration similar to the one done in deep sleep.
-        // This may cause the test to fail on some chips which have the slow clock frequency
-        // way off.
     }
 }
 

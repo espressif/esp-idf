@@ -60,8 +60,6 @@ We arrive here after the bootloader finished loading the program from flash. The
 flash cache is down and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
 */
 
-// TODO: make a nice header file for ROM functions instead of adding externs all over the place
-extern void Cache_Flush(int);
 
 void bootloader_main();
 static void unpack_load_app(const esp_partition_pos_t *app_node);
@@ -74,6 +72,7 @@ static void set_cache_and_start_app(uint32_t drom_addr,
     uint32_t irom_size,
     uint32_t entry_addr);
 static void update_flash_config(const esp_image_header_t* pfhdr);
+static void clock_configure(void);
 static void uart_console_configure(void);
 static void wdt_reset_check(void);
 
@@ -238,15 +237,7 @@ static bool ota_select_valid(const esp_ota_select_entry_t *s)
 
 void bootloader_main()
 {
-    /* Set CPU to 80MHz. Keep other clocks unmodified. */
-    uart_tx_wait_idle(0);
-    rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
-    clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
-    clk_cfg.cpu_freq = RTC_CPU_FREQ_80M;
-    clk_cfg.slow_freq = rtc_clk_slow_freq_get();
-    clk_cfg.fast_freq = rtc_clk_fast_freq_get();
-    rtc_clk_init(clk_cfg);
-
+    clock_configure();
     uart_console_configure();
     wdt_reset_check();
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
@@ -701,6 +692,29 @@ void print_flash_info(const esp_image_header_t* phdr)
         break;
     }
     ESP_LOGI(TAG, "SPI Flash Size : %s", str );
+#endif
+}
+
+
+static void clock_configure(void)
+{
+    /* Set CPU to 80MHz. Keep other clocks unmodified. */
+    uart_tx_wait_idle(0);
+    rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
+    clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
+    clk_cfg.cpu_freq = RTC_CPU_FREQ_80M;
+    clk_cfg.slow_freq = rtc_clk_slow_freq_get();
+    clk_cfg.fast_freq = rtc_clk_fast_freq_get();
+    rtc_clk_init(clk_cfg);
+    /* As a slight optimization, if 32k XTAL was enabled in sdkconfig, we enable
+     * it here. Usually it needs some time to start up, so we amortize at least
+     * part of the start up time by enabling 32k XTAL early.
+     * App startup code will wait until the oscillator has started up.
+     */
+#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+    if (!rtc_clk_32k_enabled()) {
+        rtc_clk_32k_bootstrap();
+    }
 #endif
 }
 

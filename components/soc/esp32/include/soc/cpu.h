@@ -74,15 +74,6 @@ static inline void cpu_configure_region_protection()
 }
 
 /**
- * @brief Set CPU frequency to the value defined in menuconfig
- *
- * Called from cpu_start.c, not intended to be called from other places.
- * This is a temporary function which will be replaced once dynamic
- * CPU frequency changing is implemented.
- */
-void esp_set_cpu_freq(void);
-
-/**
  * @brief Stall CPU using RTC controller
  * @param cpu_id ID of the CPU to stall (0 = PRO, 1 = APP)
  */
