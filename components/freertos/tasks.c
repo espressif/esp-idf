@@ -488,6 +488,8 @@ extern void esp_vApplicationTickHook( void );
  * Utility task that simply returns pdTRUE if the task referenced by xTask is
  * currently in the Suspended state, or pdFALSE if the task referenced by xTask
  * is in any other state.
+ *
+ * Caller must hold xTaskQueueMutex before calling this function.
  */
 #if ( INCLUDE_vTaskSuspend == 1 )
 	static BaseType_t prvTaskIsTaskSuspended( const TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
@@ -1716,13 +1718,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_vTaskSuspend == 1 )
-/* ToDo: Make this multicore-compatible. */
 	void vTaskSuspend( TaskHandle_t xTaskToSuspend )
 	{
 	TCB_t *pxTCB;
         TCB_t *curTCB;
 
-		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* If null is passed in here then it is the running task that is
@@ -1810,15 +1810,13 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_vTaskSuspend == 1 )
-
 	static BaseType_t prvTaskIsTaskSuspended( const TaskHandle_t xTask )
 	{
 	BaseType_t xReturn = pdFALSE;
 	const TCB_t * const pxTCB = ( TCB_t * ) xTask;
 
 		/* Accesses xPendingReadyList so must be called from a critical
-		section. */
-		taskENTER_CRITICAL(&xTaskQueueMutex);
+		   section (caller is required to hold xTaskQueueMutex). */
 
 		/* It does not make sense to check if the calling task is suspended. */
 		configASSERT( xTask );
@@ -1849,7 +1847,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		{
 			mtCOVERAGE_TEST_MARKER();
 		}
-		taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 		return xReturn;
 	} /*lint !e818 xTask cannot be a pointer to const because it is a typedef. */
@@ -1859,12 +1856,10 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 #if ( INCLUDE_vTaskSuspend == 1 )
 
-/* ToDo: Make this multicore-compatible. */
 	void vTaskResume( TaskHandle_t xTaskToResume )
 	{
 	TCB_t * const pxTCB = ( TCB_t * ) xTaskToResume;
 
-		UNTESTED_FUNCTION();
 		/* It does not make sense to resume the calling task. */
 		configASSERT( xTaskToResume );
 
