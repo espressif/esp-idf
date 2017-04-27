@@ -8,8 +8,6 @@ COMPONENT_ADD_LDFLAGS = -Wl,--whole-archive -l$(COMPONENT_NAME) -Wl,--no-whole-a
 
 COMPONENT_SRCDIRS := . test_vectors
 
-include $(IDF_PATH)/make/component_common.mk
-
 test_tjpgd.o: test_tjpgd_logo.h
 
 test_tjpgd_logo.h: $(COMPONENT_PATH)/logo.jpg
