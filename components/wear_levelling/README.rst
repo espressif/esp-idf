@@ -12,7 +12,7 @@ memory without user interaction.
 The wear_levelling component contains APIs related to reading, writing, erasing,
 memory mapping data in the external SPI flash through the partition component. It 
 also has higher-level APIs which work with FAT filesystem defined in 
-the :doc:`FAT filesystem </api/storage/fatfs>`.
+the :doc:`FAT filesystem </api-reference/storage/fatfs>`.
 
 The wear levelling component does not cache data in RAM. Write and erase functions 
 modify flash directly, and flash contents is consistent when the function returns.
