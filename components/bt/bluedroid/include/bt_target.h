@@ -719,7 +719,7 @@
 
 /* The maximum number of simultaneous links that L2CAP can support. Up to 7*/
 #ifndef MAX_ACL_CONNECTIONS
-#define MAX_L2CAP_LINKS             3
+#define MAX_L2CAP_LINKS             5
 #else
 #define MAX_L2CAP_LINKS             MAX_ACL_CONNECTIONS
 #endif

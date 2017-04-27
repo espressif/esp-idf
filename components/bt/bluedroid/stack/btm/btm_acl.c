@@ -304,13 +304,15 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                                              &p->active_remote_addr_type);
 #endif
 
-                if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
-                         && link_role == HCI_ROLE_MASTER) {
-                     
+                if (link_role == HCI_ROLE_MASTER) {
                     btsnd_hcic_ble_read_remote_feat(p->hci_handle);
                 } else if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
                          && link_role == HCI_ROLE_SLAVE) {
-                    //do nothing in this case for fix the android7.0 cann't sent security request issue
+                     /* In the original Bluedroid version, slave need to send LL_SLAVE_FEATURE_REQ(call btsnd_hcic_ble_read_remote_feat)
+                      * to remote device if it has not received ll_feature_req.
+                      * Delete it to resolve Android 7.0 incompatible problem. But it may cause that slave
+                      * can't get remote device's feature if it doesn't receive ll_feature_req.*/
+                    l2cble_notify_le_connection(bda);
                 } else {
                     btm_establish_continue(p);
                 }
