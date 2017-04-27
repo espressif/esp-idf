@@ -147,6 +147,9 @@ ip4_route(const ip4_addr_t *dest)
 {
 #if ESP_LWIP
   struct netif *non_default_netif = NULL;
+#if LWIP_HAVE_LOOPIF
+  struct netif *loop_default_netif = netif_find("lo0");
+#endif
 #endif
   struct netif *netif;
 
@@ -173,7 +176,11 @@ ip4_route(const ip4_addr_t *dest)
       }
 
       if (netif != netif_default){
+#if LWIP_HAVE_LOOPIF
+          non_default_netif = (netif == loop_default_netif) ? NULL : netif;
+#else
           non_default_netif = netif;
+#endif
       }
     }
   }
