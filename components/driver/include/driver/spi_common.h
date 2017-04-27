@@ -169,16 +169,6 @@ spi_dev_t *spicommon_hw_for_host(spi_host_device_t host);
 int spicommon_irqsource_for_host(spi_host_device_t host);
 
 
-/**
- * @note In some (well-defined) cases in the ESP32 (at least rev v.0 and v.1), a SPI DMA channel will get confused. This can be remedied
- * by resetting the SPI DMA hardware in case this happens. Unfortunately, the reset knob used for thsi will reset _both_ DMA channels, and
- * as such can only done safely when both DMA channels are idle. These functions coordinate this.
- * 
- * Essentially, when a reset is needed, a driver can request this using spicommon_dmaworkaround_req_reset. This is supposed to be called
- * with an user-supplied function as an argument. If both DMA channels are idle, this call will reset the DMA subsystem and return true. 
- * If the other DMA channel is still busy, it will return false; as soon as the other DMA channel is done, however, it will reset the 
- * DMA subsystem and call the callback. The callback is then supposed to be used to continue the SPI drivers activity.
-*/
 
 
 /**
@@ -189,6 +179,15 @@ typedef void(*dmaworkaround_cb_t)(void *arg);
 
 /**
  * @brief Request a reset for a certain DMA channel
+ *
+ * @note In some (well-defined) cases in the ESP32 (at least rev v.0 and v.1), a SPI DMA channel will get confused. This can be remedied
+ * by resetting the SPI DMA hardware in case this happens. Unfortunately, the reset knob used for thsi will reset _both_ DMA channels, and
+ * as such can only done safely when both DMA channels are idle. These functions coordinate this.
+ * 
+ * Essentially, when a reset is needed, a driver can request this using spicommon_dmaworkaround_req_reset. This is supposed to be called
+ * with an user-supplied function as an argument. If both DMA channels are idle, this call will reset the DMA subsystem and return true. 
+ * If the other DMA channel is still busy, it will return false; as soon as the other DMA channel is done, however, it will reset the 
+ * DMA subsystem and call the callback. The callback is then supposed to be used to continue the SPI drivers activity.
  *
  * @param dmachan DMA channel associated with the SPI host that needs a reset
  * @param cb Callback to call in case DMA channel cannot be reset immediately

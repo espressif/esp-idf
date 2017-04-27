@@ -59,7 +59,7 @@ struct spi_slave_transaction_t {
 };
 
 /**
- * @brief Initialize a SPI bus
+ * @brief Initialize a SPI bus as a slave interface
  *
  * @warning For now, only supports HSPI and VSPI.
  *
@@ -92,10 +92,13 @@ esp_err_t spi_slave_free(spi_host_device_t host);
 /**
  * @brief Queue a SPI transaction for execution
  *
- * This will queue a transaction for the master to pick it up. If the queue (specified in ``spi_slave_initialize``)
- * is not full, this function will return directly; the actual transaction will be done if there aren't any
- * unhandled transactions before it and the master initiates a SPI transaction by pulling down CS and sending out
- * clock signals.
+ * Queues a SPI transaction to be executed by this slave device. (The transaction queue size was specified when the slave
+ * device was initialised via spi_slave_initialize.) This function may block if the queue is full (depending on the
+ * ticks_to_wait parameter). No SPI operation is directly initiated by this function, the next queued transaction
+ * will happen when the master initiates a SPI transaction by pulling down CS and sending out clock signals.
+ *
+ * This function hands over ownership of the buffers in ``trans_desc`` to the SPI slave driver; the application is
+ * not to access this memory until ``spi_slave_queue_trans`` is called to hand ownership back to the application.
  *
  * @param host SPI peripheral that is acting as a slave
  * @param trans_desc Description of transaction to execute. Not const because we may want to write status back
@@ -117,8 +120,10 @@ esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transact
  * completed transaction so software can inspect the result and e.g. free the memory or 
  * re-use the buffers.
  *
+ * It is mandatory to eventually use this function for any transaction queued by ``spi_slave_queue_trans``.
+ *
  * @param host SPI peripheral to that is acting as a slave
- * @param trans_desc Pointer to variable able to contain a pointer to the description of the 
+ * @param[out] trans_desc Pointer to variable able to contain a pointer to the description of the 
  *                   transaction that is executed
  * @param ticks_to_wait Ticks to wait until there's a returned item; use portMAX_DELAY to never time
  *                      out.
