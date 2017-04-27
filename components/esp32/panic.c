@@ -347,11 +347,6 @@ static void esp_panic_dig_reset()
     }
 }
 
-static inline bool stackPointerIsSane(uint32_t sp)
-{
-    return !(sp < 0x3ffae010 || sp > 0x3ffffff0 || ((sp & 0xf) != 0));
-}
-
 static void putEntry(uint32_t pc, uint32_t sp)
 {
     if (pc & 0x80000000) {
@@ -372,7 +367,7 @@ static void doBacktrace(XtExcFrame *frame)
     pc = frame->a0;
     while (i++ < 100) {
         uint32_t psp = sp;
-        if (!stackPointerIsSane(sp) || i++ > 100) {
+        if (!esp_stack_ptr_is_sane(sp) || i++ > 100) {
             break;
         }
         sp = *((uint32_t *) (sp - 0x10 + 4));
