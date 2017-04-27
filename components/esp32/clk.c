@@ -43,6 +43,7 @@ void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
+    rtc_clk_fast_freq_set(RTC_FAST_FREQ_8M);
 
 #ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
     select_rtc_slow_clk(RTC_SLOW_FREQ_32K_XTAL);
