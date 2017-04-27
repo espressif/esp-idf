@@ -568,6 +568,7 @@ static void btc_stop_scan_callback(tBTA_STATUS status)
     }
 }
 
+#if (SMP_INCLUDED == TRUE)
 static void btc_set_encryption_callback(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_STATUS enc_status)
 {
     UNUSED(bd_addr);
@@ -575,7 +576,7 @@ static void btc_set_encryption_callback(BD_ADDR bd_addr, tBTA_TRANSPORT transpor
     LOG_DEBUG("enc_status = %x\n", enc_status);
     return;
 }
-
+#endif  ///SMP_INCLUDED == TRUE
 
 static void btc_ble_start_scanning(uint8_t duration,
                                    tBTA_DM_SEARCH_CBACK *results_cb,
@@ -881,10 +882,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                       btc_scan_rsp_data_raw_callback);
         break;
     case BTC_GAP_BLE_SET_ENCRYPTION_EVT: {
+#if (SMP_INCLUDED == TRUE)
         BD_ADDR bd_addr;
         memcpy(bd_addr, arg->set_encryption.bd_addr, sizeof(BD_ADDR));
         BTA_DmSetEncryption(bd_addr, BT_TRANSPORT_LE, btc_set_encryption_callback,
                                           (tBTA_DM_BLE_SEC_ACT)arg->set_encryption.sec_act);
+#endif  ///SMP_INCLUDED == TRUE
         break;
     }
 
@@ -928,11 +931,13 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         break;
     }        
     case BTC_GAP_BLE_SECURITY_RSP_EVT: {
+#if (SMP_INCLUDED == TRUE)
         BD_ADDR bd_addr;
         tBTA_DM_BLE_SEC_GRANT res = arg->sec_rsp.accept ? BTA_DM_SEC_GRANTED : BTA_DM_SEC_PAIR_NOT_SPT;
         memcpy(bd_addr, arg->sec_rsp.bd_addr, sizeof(BD_ADDR));
         BTA_DmBleSecurityGrant(bd_addr, res);
         break;
+#endif  ///SMP_INCLUDED == TRUE
     }
     default:
         break;

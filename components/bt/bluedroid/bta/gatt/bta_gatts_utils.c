@@ -24,7 +24,7 @@
 
 #include "bt_target.h"
 
-#if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
+#if defined(GATTS_INCLUDED) && (GATTS_INCLUDED == TRUE)
 
 #include <string.h>
 #include "utl.h"
@@ -222,4 +222,4 @@ BOOLEAN bta_gatts_uuid_compare(tBT_UUID tar, tBT_UUID src)
 
 
 
-#endif
+#endif  /* GATTS_INCLUDED */

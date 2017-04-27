@@ -30,7 +30,7 @@
 #include "gatt_int.h"
 #include "sdpdefs.h"
 
-#if BLE_INCLUDED == TRUE
+#if (BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
 
 #define GATTP_MAX_NUM_INC_SVR       0
 #define GATTP_MAX_CHAR_NUM          2
@@ -71,13 +71,14 @@ static tGATT_CBACK gatt_profile_cback = {
 ** Returns          Connection ID
 **
 *******************************************************************************/
+#if (GATTS_INCLUDED == TRUE)
 UINT16 gatt_profile_find_conn_id_by_bd_addr(BD_ADDR remote_bda)
 {
     UINT16 conn_id = GATT_INVALID_CONN_ID;
     GATT_GetConnIdIfConnected (gatt_cb.gatt_if, remote_bda, &conn_id, BT_TRANSPORT_LE);
     return conn_id;
 }
-
+#endif  ///GATTS_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         gatt_profile_find_clcb_by_conn_id
@@ -431,10 +432,12 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB *p_clcb)
         srvc_disc_param.e_handle = 0xffff;
         srvc_disc_param.service.len = 2;
         srvc_disc_param.service.uu.uuid16 = UUID_SERVCLASS_GATT_SERVER;
+#if (GATTC_INCLUDED == TRUE)
         if (GATTC_Discover (p_clcb->conn_id, GATT_DISC_SRVC_BY_UUID, &srvc_disc_param) != GATT_SUCCESS) {
             GATT_TRACE_ERROR("%s() - ccc service error", __FUNCTION__);
             gatt_config_ccc_complete(p_clcb);
         }
+#endif  ///GATTC_INCLUDED == TRUE
         break;
 
     case GATT_SVC_CHANGED_CHARACTERISTIC: /* discover service change char */
@@ -442,29 +445,35 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB *p_clcb)
         srvc_disc_param.e_handle = p_clcb->e_handle;
         srvc_disc_param.service.len = 2;
         srvc_disc_param.service.uu.uuid16 = GATT_UUID_GATT_SRV_CHGD;
+#if (GATTC_INCLUDED == TRUE)
         if (GATTC_Discover (p_clcb->conn_id, GATT_DISC_CHAR, &srvc_disc_param) != GATT_SUCCESS) {
             GATT_TRACE_ERROR("%s() - ccc char error", __FUNCTION__);
             gatt_config_ccc_complete(p_clcb);
         }
+#endif  ///GATTC_INCLUDED == TRUE
         break;
 
     case GATT_SVC_CHANGED_DESCRIPTOR: /* discover service change ccc */
         srvc_disc_param.s_handle = p_clcb->s_handle;
         srvc_disc_param.e_handle = p_clcb->e_handle;
+#if (GATTC_INCLUDED == TRUE)
         if (GATTC_Discover (p_clcb->conn_id, GATT_DISC_CHAR_DSCPT, &srvc_disc_param) != GATT_SUCCESS) {
             GATT_TRACE_ERROR("%s() - ccc char descriptor error", __FUNCTION__);
             gatt_config_ccc_complete(p_clcb);
         }
+#endif  ///GATTC_INCLUDED == TRUE
         break;
 
     case GATT_SVC_CHANGED_CONFIGURE_CCCD: /* write ccc */
         ccc_value.handle = p_clcb->s_handle;
         ccc_value.len = 2;
         ccc_value.value[0] = GATT_CLT_CONFIG_INDICATION;
+#if (GATTC_INCLUDED == TRUE)
         if (GATTC_Write (p_clcb->conn_id, GATT_WRITE, &ccc_value) != GATT_SUCCESS) {
             GATT_TRACE_ERROR("%s() - write ccc error", __FUNCTION__);
             gatt_config_ccc_complete(p_clcb);
         }
+#endif  ///GATTC_INCLUDED == TRUE
         break;
     }
 }
@@ -506,4 +515,4 @@ void GATT_ConfigServiceChangeCCC (BD_ADDR remote_bda, BOOLEAN enable, tBT_TRANSP
     gatt_cl_start_config_ccc(p_clcb);
 }
 
-#endif  /* BLE_INCLUDED */
+#endif  /* BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */

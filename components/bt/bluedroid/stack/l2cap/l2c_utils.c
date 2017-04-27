@@ -1479,9 +1479,9 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
         btu_stop_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
     }
 // btla-specific --
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     l2c_fcr_stop_timer (p_ccb);
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     p_ccb->ertm_info.preferred_mode  = L2CAP_FCR_BASIC_MODE;        /* Default mode for channel is basic mode */
     p_ccb->ertm_info.allowed_modes   = L2CAP_FCR_CHAN_OPT_BASIC;    /* Default mode for channel is basic mode */
     p_ccb->ertm_info.fcr_rx_pool_id  = L2CAP_FCR_RX_POOL_ID;
@@ -1594,11 +1594,11 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
     if (!p_ccb->in_use) {
         return;
     }
-
+#if (SDP_INCLUDED == TRUE)
     if (p_rcb && (p_rcb->psm != p_rcb->real_psm)) {
         btm_sec_clr_service_by_psm(p_rcb->psm);
     }
-
+#endif  ///SMP_INCLUDED == TRUE
     if (p_ccb->should_free_rcb) {
         osi_free(p_rcb);
         p_ccb->p_rcb = NULL;
@@ -1613,9 +1613,9 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
     while (!GKI_queue_is_empty(&p_ccb->xmit_hold_q)) {
         GKI_freebuf (GKI_dequeue (&p_ccb->xmit_hold_q));
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     l2c_fcr_cleanup (p_ccb);
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     /* Channel may not be assigned to any LCB if it was just pre-reserved */
     if ( (p_lcb) &&
             ( (p_ccb->local_cid >= L2CAP_BASE_APPL_CID)
@@ -1812,8 +1812,9 @@ UINT8 l2cu_process_peer_cfg_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
     BOOLEAN  qos_type_ok = TRUE;
     BOOLEAN  flush_to_ok = TRUE;
     BOOLEAN  fcr_ok      = TRUE;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8    fcr_status;
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     /* Ignore FCR parameters for basic mode */
     if (!p_cfg->fcr_present) {
         p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
@@ -1879,7 +1880,7 @@ UINT8 l2cu_process_peer_cfg_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
         p_cfg->qos_present = TRUE;
         p_cfg->qos         = p_ccb->peer_cfg.qos;
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if ((fcr_status = l2c_fcr_process_peer_cfg_req (p_ccb, p_cfg)) == L2CAP_PEER_CFG_DISCONNECT) {
         /* Notify caller to disconnect the channel (incompatible modes) */
         p_cfg->result = L2CAP_CFG_FAILED_NO_REASON;
@@ -1889,6 +1890,7 @@ UINT8 l2cu_process_peer_cfg_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
     }
 
     fcr_ok = (fcr_status == L2CAP_PEER_CFG_OK);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
     /* Return any unacceptable parameters */
     if (mtu_ok && flush_to_ok && qos_type_ok && fcr_ok) {
@@ -2046,6 +2048,7 @@ void l2cu_process_our_cfg_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 ** Returns          void
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void l2cu_process_our_cfg_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 {
     /* If peer wants QoS, we are allowed to change the values in a positive response */
@@ -2057,6 +2060,7 @@ void l2cu_process_our_cfg_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 
     l2c_fcr_adj_our_rsp_options (p_ccb, p_cfg);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -2416,19 +2420,18 @@ void l2cu_set_non_flushable_pbf (BOOLEAN is_supported)
 ** Returns          void
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void l2cu_resubmit_pending_sec_req (BD_ADDR p_bda)
 {
     tL2C_LCB        *p_lcb;
     tL2C_CCB        *p_ccb;
     tL2C_CCB        *p_next_ccb;
     int             xx;
-
     L2CAP_TRACE_DEBUG ("l2cu_resubmit_pending_sec_req  p_bda: %p", p_bda);
 
     /* If we are called with a BDA, only resubmit for that BDA */
     if (p_bda) {
         p_lcb = l2cu_find_lcb_by_bd_addr (p_bda, BT_TRANSPORT_BR_EDR);
-
         /* If we don't have one, this is an error */
         if (p_lcb) {
             /* For all channels, send the event through their FSMs */
@@ -2449,9 +2452,10 @@ void l2cu_resubmit_pending_sec_req (BD_ADDR p_bda)
                     l2c_csm_execute (p_ccb, L2CEVT_SEC_RE_SEND_CMD, NULL);
                 }
             }
-        }
+        }       
     }
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE 
 
 #if L2CAP_CONFORMANCE_TESTING == TRUE
 /*******************************************************************************
@@ -2526,7 +2530,6 @@ BOOLEAN l2cu_initialize_fixed_ccb (tL2C_LCB *p_lcb, UINT16 fixed_cid, tL2CAP_FCR
 {
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
     tL2C_CCB    *p_ccb;
-
     /* If we already have a CCB, then simply return */
     if (p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL] != NULL) {
         return (TRUE);
@@ -2589,7 +2592,9 @@ BOOLEAN l2cu_initialize_fixed_ccb (tL2C_LCB *p_lcb, UINT16 fixed_cid, tL2CAP_FCR
 *******************************************************************************/
 void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
 {
+#if (SMP_INCLUDED == TRUE)
     tBTM_STATUS     rc;
+#endif  ///SMP_INCLUDED == TRUE
     UINT16          timeout = p_lcb->idle_timeout;
 
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
@@ -2609,7 +2614,7 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
 
     if (timeout == 0) {
         L2CAP_TRACE_DEBUG ("l2cu_no_dynamic_ccbs() IDLE timer 0, disconnecting link");
-
+#if (SMP_INCLUDED == TRUE)
         rc = btm_sec_disconnect (p_lcb->handle, HCI_ERR_PEER_USER);
         if (rc == BTM_CMD_STARTED) {
             l2cu_process_fixed_disc_cback(p_lcb);
@@ -2629,6 +2634,7 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
             /* probably no buffer to send disconnect */
             timeout = BT_1SEC_TIMEOUT;
         }
+#endif  ///SMP_INCLUDED == TRUE
     }
 
     if (timeout != 0xFFFF) {
@@ -2651,6 +2657,7 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
 *******************************************************************************/
 void l2cu_process_fixed_chnl_resp (tL2C_LCB *p_lcb)
 {
+    L2CAP_TRACE_DEBUG("%s",__func__);
 #if (BLE_INCLUDED == TRUE)
     if (p_lcb->transport == BT_TRANSPORT_BR_EDR) {
         /* ignore all not assigned BR/EDR channels */
@@ -2913,7 +2920,7 @@ tL2C_CCB *l2cu_find_ccb_by_cid (tL2C_LCB *p_lcb, UINT16 local_cid)
     return (p_ccb);
 }
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
+#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE && CLASSIC_BT_INCLUDED == TRUE)
 
 /******************************************************************************
 **
@@ -2977,11 +2984,12 @@ static tL2C_CCB *l2cu_get_next_channel_in_rr(tL2C_LCB *p_lcb)
                     if ( (p_ccb->ertm_info.fcr_tx_pool_id == HCI_ACL_POOL_ID) && (GKI_poolutilization (HCI_ACL_POOL_ID) > 90) ) {
                         continue;
                     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
                     /* If in eRTM mode, check for window closure */
                     if ( (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) && (l2c_fcr_is_flow_controlled (p_ccb)) ) {
                         continue;
                     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
                 }
             } else {
                 if (GKI_queue_is_empty(&p_ccb->xmit_hold_q)) {
@@ -3026,6 +3034,7 @@ static tL2C_CCB *l2cu_get_next_channel_in_rr(tL2C_LCB *p_lcb)
 ** Returns          pointer to CCB or NULL
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static tL2C_CCB *l2cu_get_next_channel(tL2C_LCB *p_lcb)
 {
     tL2C_CCB    *p_ccb;
@@ -3065,6 +3074,8 @@ static tL2C_CCB *l2cu_get_next_channel(tL2C_LCB *p_lcb)
 
     return NULL;
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 #endif /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
 
 /******************************************************************************
@@ -3080,7 +3091,7 @@ static tL2C_CCB *l2cu_get_next_channel(tL2C_LCB *p_lcb)
 BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
 {
     tL2C_CCB    *p_ccb;
-    BT_HDR      *p_buf;
+    BT_HDR      *p_buf = NULL;
 
     /* Highest priority are fixed channels */
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
@@ -3093,6 +3104,7 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
 
         /* eL2CAP option in use */
         if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
             if (p_ccb->fcrb.wait_ack || p_ccb->fcrb.remote_busy) {
                 continue;
             }
@@ -3107,18 +3119,20 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
                 if ( (p_ccb->ertm_info.fcr_tx_pool_id == HCI_ACL_POOL_ID) && (GKI_poolutilization (HCI_ACL_POOL_ID) > 90) ) {
                     continue;
                 }
-
                 /* If in eRTM mode, check for window closure */
                 if ( (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) && (l2c_fcr_is_flow_controlled (p_ccb)) ) {
                     continue;
                 }
             }
-
             if ((p_buf = l2c_fcr_get_next_xmit_sdu_seg(p_ccb, 0)) != NULL) {
                 l2cu_check_channel_congestion (p_ccb);
                 l2cu_set_acl_hci_header (p_buf, p_ccb);
                 return (p_buf);
             }
+#else
+            continue;          
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
         } else {
             if (!GKI_queue_is_empty(&p_ccb->xmit_hold_q)) {
                 p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->xmit_hold_q);
@@ -3138,7 +3152,7 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
         }
     }
 #endif
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
     /* get next serving channel in round-robin */
     p_ccb  = l2cu_get_next_channel_in_rr( p_lcb );
@@ -3152,9 +3166,11 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
     }
 
     if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
+
         if ((p_buf = l2c_fcr_get_next_xmit_sdu_seg(p_ccb, 0)) == NULL) {
             return (NULL);
         }
+
     } else {
         p_buf = (BT_HDR *)GKI_dequeue (&p_ccb->xmit_hold_q);
         if (NULL == p_buf) {
@@ -3171,6 +3187,7 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
     l2cu_check_channel_congestion (p_ccb);
 
     l2cu_set_acl_hci_header (p_buf, p_ccb);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
     return (p_buf);
 }

@@ -27,6 +27,7 @@
 
 #include "bta_av_api.h"
 
+#if (BTA_AR_INCLUDED == TRUE)
 
 #ifndef BTA_AR_DEBUG
 #define BTA_AR_DEBUG    FALSE
@@ -59,5 +60,7 @@ extern tBTA_AR_CB bta_ar_cb;
 extern tBTA_AR_CB *bta_ar_cb_ptr;
 #define bta_ar_cb (*bta_ar_cb_ptr)
 #endif
+
+#endif  ///BTA_AR_INCLUDED == TRUE
 
 #endif /* BTA_AR_INT_H */

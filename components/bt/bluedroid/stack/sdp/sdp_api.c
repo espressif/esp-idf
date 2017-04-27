@@ -37,6 +37,7 @@
 #include "sdpint.h"
 #include "btu.h"
 
+#if (SDP_INCLUDED == TRUE)
 /**********************************************************************
 **   C L I E N T    F U N C T I O N    P R O T O T Y P E S            *
 ***********************************************************************/
@@ -1239,3 +1240,5 @@ UINT8 SDP_SetTraceLevel (UINT8 new_level)
 
     return (sdp_cb.trace_level);
 }
+
+#endif  ///SDP_INCLUDED == TRUE

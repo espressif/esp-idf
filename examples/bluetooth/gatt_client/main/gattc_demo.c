@@ -291,7 +291,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     switch (event) {
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
         //the unit of the duration is second
-        uint32_t duration = 10;
+        uint32_t duration = 30;
         esp_ble_gap_start_scanning(duration);
         break;
     }
@@ -316,7 +316,6 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             for (int j = 0; j < adv_name_len; j++) {
                 ESP_LOGI(GATTC_TAG, "%c", adv_name[j]);
             }
-
             if (adv_name != NULL) {
                 if (strlen(device_name) == adv_name_len && strncmp((char *)adv_name, device_name, adv_name_len) == 0) {
                     ESP_LOGI(GATTC_TAG, "Searched device %s\n", device_name);

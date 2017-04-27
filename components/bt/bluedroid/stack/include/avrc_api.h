@@ -27,7 +27,7 @@
 #include "avct_api.h"
 #include "sdp_api.h"
 #include "avrc_defs.h"
-
+#if (AVRC_INCLUDED == TRUE)
 /*****************************************************************************
 **  constants
 *****************************************************************************/
@@ -633,5 +633,8 @@ extern BOOLEAN AVRC_IsValidPlayerAttr(UINT8 attr);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///AVRC_INCLUDED == TRUE
+
 
 #endif /* AVRC_API_H */

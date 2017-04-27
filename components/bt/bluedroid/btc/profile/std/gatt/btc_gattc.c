@@ -22,6 +22,7 @@
 #include "bt_trace.h"
 #include "esp_gattc_api.h"
 
+#if (GATTC_INCLUDED == TRUE)
 static inline void btc_gattc_cb_to_app(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
 {
     esp_gattc_cb_t btc_gattc_cb = (esp_gattc_cb_t )btc_profile_cb_get(BTC_PID_GATTC);
@@ -699,3 +700,5 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     // free the deep-copied data
     btc_gattc_free_req_data(msg);
 }
+
+#endif  ///GATTC_INCLUDED == TRUE

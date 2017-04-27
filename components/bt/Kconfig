@@ -38,6 +38,42 @@ config BT_DRAM_RELEASE
         Enabling this option will release about 30K DRAM from Classic BT.
         The released DRAM will be used as system heap memory.
 
+config GATTS_ENABLE
+    bool "Include GATT server module(GATTS)"
+    depends on BLUEDROID_ENABLED
+    default y 
+    help
+        This option can be disabled when the app work only on gatt client mode
+
+config GATTC_ENABLE
+    bool "Include GATT client module(GATTC)"
+    depends on BLUEDROID_ENABLED
+    default y
+    help
+        This option can be close when the app work only on gatt server mode
+
+config SMP_ENABLE
+   bool "Include BT security module(SMP)"
+   depends on BLUEDROID_ENABLED
+   default y
+   help
+       This option can be close when the app not used the ble security connect.
+
+config BT_STACK_NO_LOG
+    bool "Close the bluedroid bt stack log print"
+    depends on BLUEDROID_ENABLED
+    default n
+    help
+        This select can save the rodata code size
+
+config BT_ACL_CONNECTIONS
+    int "BT/BLE MAX ACL CONNECTIONS(1~7)"
+    depends on BLUEDROID_ENABLED
+    range 1 7
+    default 4
+    help 
+        Maximum BT/BLE connection count
+
 #disable now for app cpu due to a known issue
 config BTDM_CONTROLLER_RUN_APP_CPU
     bool "Run controller on APP CPU"

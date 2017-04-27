@@ -31,6 +31,8 @@
 #include "l2c_api.h"
 #include "btm_api.h"
 
+#if (AVRC_INCLUDED == TRUE)
+
 #ifndef AVDT_DEBUG
 #define AVDT_DEBUG  FALSE
 #endif
@@ -740,5 +742,7 @@ extern const UINT8 avdt_msg_rej_2_evt[];
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///AVRC_INCLUDED == TRUE
 
 #endif /* AVDT_INT_H */

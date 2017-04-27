@@ -26,6 +26,8 @@
 
 #include "bta_av_api.h"
 
+#if (BTA_AV_INCLUDED == TRUE)
+
 /*****************************************************************************
 **  Function Declarations
 *****************************************************************************/
@@ -69,5 +71,7 @@ extern void bta_av_ci_setconfig(tBTA_AV_HNDL hndl, UINT8 err_code,
 #ifdef __cplusplus
 }
 #endif
+
+#endif  ///BTA_AV_INCLUDED == TRUE
 
 #endif /* BTA_AV_CI_H */

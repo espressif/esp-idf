@@ -24,7 +24,7 @@
 
 #include "bt_target.h"
 
-#if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
+#if (GATTC_INCLUDED == TRUE && BLE_INCLUDED == TRUE)
 
 #include <string.h>
 
@@ -522,4 +522,4 @@ static char *gattc_state_code(tBTA_GATTC_STATE state_code)
 }
 
 #endif  /* Debug Functions */
-#endif /* BTA_GATT_INCLUDED */
+#endif /* GATTC_INCLUDED == TRUE && BLE_INCLUDED == TRUE */

@@ -54,22 +54,23 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_acl_change,                      /* 8  BTA_DM_ACL_CHANGE_EVT */
     bta_dm_add_device,                      /* 9  BTA_DM_API_ADD_DEVICE_EVT */
     bta_dm_close_acl,                       /* 10  BTA_DM_API_ADD_DEVICE_EVT */
-
+#if (SMP_INCLUDED == TRUE)
     /* security API events */
     bta_dm_bond,                            /* 11  BTA_DM_API_BOND_EVT */
     bta_dm_bond_cancel,                     /* 12  BTA_DM_API_BOND_CANCEL_EVT */
     bta_dm_pin_reply,                       /* 13 BTA_DM_API_PIN_REPLY_EVT */
-
+#endif  ///SMP_INCLUDED == TRUE
+#if (BTM_SSR_INCLUDED == TRUE)
     /* power manger events */
     bta_dm_pm_btm_status,                   /* 16 BTA_DM_PM_BTM_STATUS_EVT */
     bta_dm_pm_timer,                        /* 17 BTA_DM_PM_TIMER_EVT*/
-
+#endif  ///BTM_SSR_INCLUDED == TRUE
     /* simple pairing events */
+#if (SMP_INCLUDED == TRUE)
     bta_dm_confirm,                         /* 18 BTA_DM_API_CONFIRM_EVT */
-
     bta_dm_set_encryption,                  /* BTA_DM_API_SET_ENCRYPTION_EVT */
-
-#if (BTM_OOB_INCLUDED == TRUE)
+#endif  ///SMP_INCLUDED == TRUE
+#if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     bta_dm_loc_oob,                         /* 20 BTA_DM_API_LOC_OOB_EVT */
     bta_dm_ci_io_req_act,                   /* 21 BTA_DM_CI_IO_REQ_EVT */
     bta_dm_ci_rmt_oob_act,                  /* 22 BTA_DM_CI_RMT_OOB_EVT */
@@ -77,11 +78,13 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 
 
 #if BLE_INCLUDED == TRUE
+#if SMP_INCLUDED == TRUE
     bta_dm_add_blekey,                      /*  BTA_DM_API_ADD_BLEKEY_EVT           */
     bta_dm_add_ble_device,                  /*  BTA_DM_API_ADD_BLEDEVICE_EVT        */
     bta_dm_ble_passkey_reply,               /*  BTA_DM_API_BLE_PASSKEY_REPLY_EVT    */
     bta_dm_ble_confirm_reply,               /*  BTA_DM_API_BLE_CONFIRM_REPLY_EVT    */
     bta_dm_security_grant,
+#endif  ///SMP_INCLUDED == TRUE
     bta_dm_ble_set_bg_conn_type,
     bta_dm_ble_set_conn_params,             /* BTA_DM_API_BLE_CONN_PARAM_EVT */
     bta_dm_ble_set_conn_scan_params,        /* BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT */
@@ -144,22 +147,34 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 enum {
     BTA_DM_API_SEARCH,                  /* 0 bta_dm_search_start */
     BTA_DM_API_SEARCH_CANCEL,           /* 1 bta_dm_search_cancel */
+#if (SDP_INCLUDED == TRUE)
     BTA_DM_API_DISCOVER,                /* 2 bta_dm_discover */
+#endif  ///SDP_INCLUDED == TRUE
     BTA_DM_INQUIRY_CMPL,                /* 3 bta_dm_inq_cmpl */
     BTA_DM_REMT_NAME,                   /* 4 bta_dm_rmt_name */
+#if (SDP_INCLUDED == TRUE)
     BTA_DM_SDP_RESULT,                  /* 5 bta_dm_sdp_result */
+#endif  ///SDP_INCLUDED == TRUE
     BTA_DM_SEARCH_CMPL,                 /* 6 bta_dm_search_cmpl*/
+#if (SDP_INCLUDED == TRUE)
     BTA_DM_FREE_SDP_DB,                 /* 7 bta_dm_free_sdp_db */
+#endif  ///SDP_INCLUDED == TRUE
     BTA_DM_DISC_RESULT,                 /* 8 bta_dm_disc_result */
     BTA_DM_SEARCH_RESULT,               /* 9 bta_dm_search_result */
     BTA_DM_QUEUE_SEARCH,                /* 10 bta_dm_queue_search */
+#if (SDP_INCLUDED == TRUE)
     BTA_DM_QUEUE_DISC,                  /* 11 bta_dm_queue_disc */
+#endif  ///SDP_INCLUDED == TRUE
     BTA_DM_SEARCH_CLEAR_QUEUE,          /* 12 bta_dm_search_clear_queue */
     BTA_DM_SEARCH_CANCEL_CMPL,          /* 13 bta_dm_search_cancel_cmpl */
     BTA_DM_SEARCH_CANCEL_NOTIFY,        /* 14 bta_dm_search_cancel_notify */
+#if (SDP_INCLUDED == TRUE)
     BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL,  /* 15 bta_dm_search_cancel_transac_cmpl */
+#endif  ///SDP_INCLUDED == TRUE
     BTA_DM_DISC_RMT_NAME,               /* 16 bta_dm_disc_rmt_name */
+#if (SDP_INCLUDED == TRUE)
     BTA_DM_API_DI_DISCOVER,             /* 17 bta_dm_di_disc */
+#endif  ///SDP_INCLUDED == TRUE
 #if BLE_INCLUDED == TRUE
     BTA_DM_CLOSE_GATT_CONN,             /* 18 bta_dm_close_gatt_conn */
 #endif
@@ -172,23 +187,35 @@ const tBTA_DM_ACTION bta_dm_search_action[] = {
 
     bta_dm_search_start,                /* 0 BTA_DM_API_SEARCH */
     bta_dm_search_cancel,               /* 1 BTA_DM_API_SEARCH_CANCEL */
+#if (SDP_INCLUDED == TRUE)
     bta_dm_discover,                    /* 2 BTA_DM_API_DISCOVER */
+#endif  ///SDP_INCLUDED == TRUE
     bta_dm_inq_cmpl,                    /* 3 BTA_DM_INQUIRY_CMPL */
     bta_dm_rmt_name,                    /* 4 BTA_DM_REMT_NAME */
+#if (SDP_INCLUDED == TRUE)
     bta_dm_sdp_result,                  /* 5 BTA_DM_SDP_RESULT */
+#endif  ///SDP_INCLUDED == TRUE
     bta_dm_search_cmpl,                 /* 6 BTA_DM_SEARCH_CMPL */
+#if (SDP_INCLUDED == TRUE)
     bta_dm_free_sdp_db,                 /* 7 BTA_DM_FREE_SDP_DB */
+#endif  ///SDP_INCLUDED == TRUE
     bta_dm_disc_result,                 /* 8 BTA_DM_DISC_RESULT */
     bta_dm_search_result,               /* 9 BTA_DM_SEARCH_RESULT */
     bta_dm_queue_search,                /* 10 BTA_DM_QUEUE_SEARCH */
+#if (SDP_INCLUDED == TRUE)
     bta_dm_queue_disc,                  /* 11 BTA_DM_QUEUE_DISC */
+#endif  ///SDP_INCLUDED == TRUE
     bta_dm_search_clear_queue,          /* 12 BTA_DM_SEARCH_CLEAR_QUEUE */
     bta_dm_search_cancel_cmpl,          /* 13 BTA_DM_SEARCH_CANCEL_CMPL */
     bta_dm_search_cancel_notify,        /* 14 BTA_DM_SEARCH_CANCEL_NOTIFY */
+#if (SDP_INCLUDED == TRUE)
     bta_dm_search_cancel_transac_cmpl,  /* 15 BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL */
+#endif  ///SDP_INCLUDED == TRUE
     bta_dm_disc_rmt_name,               /* 16 BTA_DM_DISC_RMT_NAME */
+#if (SDP_INCLUDED == TRUE)
     bta_dm_di_disc                      /* 17 BTA_DM_API_DI_DISCOVER */
-#if BLE_INCLUDED == TRUE
+#endif  ///SDP_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && SDP_INCLUDED == TRUE
     , bta_dm_close_gatt_conn
 #endif
 };
@@ -207,15 +234,21 @@ const UINT8 bta_dm_search_idle_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
     /* Event                        Action 1                            Action 2                    Next State */
     /* API_SEARCH */            {BTA_DM_API_SEARCH,                BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
     /* API_SEARCH_CANCEL */     {BTA_DM_SEARCH_CANCEL_NOTIFY,      BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+#if (SDP_INCLUDED == TRUE)
     /* API_SEARCH_DISC */       {BTA_DM_API_DISCOVER,              BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+#endif  ///SDP_INCLUDED == TRUE
     /* INQUIRY_CMPL */          {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
     /* REMT_NAME_EVT */         {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+#if (SDP_INCLUDED == TRUE)
     /* SDP_RESULT_EVT */        {BTA_DM_FREE_SDP_DB,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+#endif  ///SDP_INCLUDED == TRUE
     /* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
     /* DISCV_RES_EVT */         {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
-    /* API_DI_DISCOVER_EVT */   {BTA_DM_API_DI_DISCOVER,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
+#if (SDP_INCLUDED == TRUE)
+    /* API_DI_DISCOVER_EVT */   {BTA_DM_API_DI_DISCOVER,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+#endif  ///SDP_INCLUDED == TRUE
 #if BLE_INCLUDED == TRUE
-    /* DISC_CLOSE_TOUT_EVT */   , {BTA_DM_CLOSE_GATT_CONN,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE}
+    /* DISC_CLOSE_TOUT_EVT */   {BTA_DM_CLOSE_GATT_CONN,           BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
 #endif
 };
 const UINT8 bta_dm_search_search_active_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
@@ -226,7 +259,9 @@ const UINT8 bta_dm_search_search_active_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
     /* API_SEARCH_DISC */       {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
     /* INQUIRY_CMPL */          {BTA_DM_INQUIRY_CMPL,              BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
     /* REMT_NAME_EVT */         {BTA_DM_REMT_NAME,                 BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+#if (SDP_INCLUDED == TRUE)
     /* SDP_RESULT_EVT */        {BTA_DM_SDP_RESULT,                BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
+#endif  ///SDP_INCLUDED == TRUE
     /* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CMPL,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
     /* DISCV_RES_EVT */         {BTA_DM_SEARCH_RESULT,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE},
     /* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_ACTIVE}
@@ -241,12 +276,16 @@ const UINT8 bta_dm_search_search_cancelling_st_table[][BTA_DM_SEARCH_NUM_COLS] =
     /* Event                        Action 1                            Action 2                    Next State */
     /* API_SEARCH */            {BTA_DM_QUEUE_SEARCH,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
     /* API_SEARCH_CANCEL */     {BTA_DM_SEARCH_CLEAR_QUEUE,         BTA_DM_SEARCH_CANCEL_NOTIFY,   BTA_DM_SEARCH_CANCELLING},
+#if (SDP_INCLUDED == TRUE)
     /* API_SEARCH_DISC */       {BTA_DM_QUEUE_DISC,                 BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING},
+#endif  ///SDP_INCLUDED == TRUE
     /* INQUIRY_CMPL */          {BTA_DM_SEARCH_CANCEL_CMPL,         BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
+#if (SDP_INCLUDED == TRUE)
     /* REMT_NAME_EVT */         {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
     /* SDP_RESULT_EVT */        {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
     /* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
     /* DISCV_RES_EVT */         {BTA_DM_SEARCH_CANCEL_TRANSAC_CMPL, BTA_DM_SEARCH_CANCEL_CMPL,     BTA_DM_SEARCH_IDLE},
+#endif  ///SDP_INCLUDED == TRUE
     /* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,              BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING}
 #if BLE_INCLUDED == TRUE
     /* DISC_CLOSE_TOUT_EVT */   , {BTA_DM_SEARCH_IGNORE,              BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_CANCELLING}
@@ -262,7 +301,9 @@ const UINT8 bta_dm_search_disc_active_st_table[][BTA_DM_SEARCH_NUM_COLS] = {
     /* API_SEARCH_DISC */       {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
     /* INQUIRY_CMPL */          {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
     /* REMT_NAME_EVT */         {BTA_DM_DISC_RMT_NAME,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+#if (SDP_INCLUDED == TRUE)
     /* SDP_RESULT_EVT */        {BTA_DM_SDP_RESULT,                BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
+#endif  ///SDP_INCLUDED == TRUE
     /* SEARCH_CMPL_EVT */       {BTA_DM_SEARCH_CMPL,               BTA_DM_SEARCH_IGNORE,          BTA_DM_SEARCH_IDLE},
     /* DISCV_RES_EVT */         {BTA_DM_DISC_RESULT,               BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE},
     /* API_DI_DISCOVER_EVT */   {BTA_DM_SEARCH_IGNORE,             BTA_DM_SEARCH_IGNORE,          BTA_DM_DISCOVER_ACTIVE}

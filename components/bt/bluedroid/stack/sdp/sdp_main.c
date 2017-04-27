@@ -42,7 +42,7 @@
 #include "sdp_api.h"
 #include "sdpint.h"
 
-
+#if (SDP_INCLUDED == TRUE)
 /********************************************************************************/
 /*                       G L O B A L      S D P       D A T A                   */
 /********************************************************************************/
@@ -688,6 +688,7 @@ void sdp_conn_timeout (tCONN_CB *p_ccb)
     sdpu_release_ccb (p_ccb);
 }
 
+#endif  ///SDP_INCLUDED == TRUE
 
 
 

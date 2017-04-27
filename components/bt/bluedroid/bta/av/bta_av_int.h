@@ -31,6 +31,8 @@
 #include "bta_av_co.h"
 #include "list.h"
 
+#if (BTA_AV_INCLUDED == TRUE)
+
 #define BTA_AV_DEBUG TRUE
 /*****************************************************************************
 **  Constants
@@ -700,5 +702,7 @@ extern void bta_av_open_at_inc (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 extern void bta_av_do_disc_vdp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 extern void bta_av_vdp_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 extern void bta_av_reg_vdp (tAVDT_CS *p_cs, char *p_service_name, void *p_data);
+
+#endif  ///BTA_AV_INCLUDED == TRUE
 
 #endif /* BTA_AV_INT_H */

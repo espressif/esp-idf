@@ -19,7 +19,7 @@
 #include "bta_api.h"
 
 #if( defined BLE_INCLUDED ) && (BLE_INCLUDED == TRUE)
-#if( defined BTA_GATT_INCLUDED ) && (BTA_GATT_INCLUDED == TRUE)
+#if( defined GATTS_INCLUDED ) && (GATTS_INCLUDED == TRUE)
 
 #include <stdlib.h>
 #include <string.h>

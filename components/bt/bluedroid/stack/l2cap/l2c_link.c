@@ -150,7 +150,9 @@ BOOLEAN l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_bda)
 {
     tL2C_CONN_INFO       ci;
     tL2C_LCB            *p_lcb;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CCB            *p_ccb;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     tBTM_SEC_DEV_REC    *p_dev_info = NULL;
 
     btm_acl_update_busy_level (BTM_BLI_PAGE_DONE_EVT);
@@ -211,12 +213,12 @@ BOOLEAN l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_bda)
         l2c_process_held_packets(FALSE);
 
         btu_stop_timer (&p_lcb->timer_entry);
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* For all channels, send the event through their FSMs */
         for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb) {
             l2c_csm_execute (p_ccb, L2CEVT_LP_CONNECT_CFM, &ci);
         }
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
         if (p_lcb->p_echo_rsp_cb) {
             l2cu_send_peer_echo_req (p_lcb, NULL, 0);
             btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, L2CAP_ECHO_RSP_TOUT);
@@ -232,7 +234,7 @@ BOOLEAN l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_bda)
     } else {
         /* Just in case app decides to try again in the callback context */
         p_lcb->link_state = LST_DISCONNECTING;
-
+#if(CLASSIC_BT_INCLUDED == TRUE)
         /* Connection failed. For all channels, send the event through */
         /* their FSMs. The CCBs should remove themselves from the LCB  */
         for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; ) {
@@ -242,7 +244,7 @@ BOOLEAN l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_bda)
 
             p_ccb = pn;
         }
-
+#endif ///CLASSIC_BT_INCLUDED == TRUE
         p_lcb->disc_reason = status;
         /* Release the LCB */
         if (p_lcb->ccb_queue.p_first_ccb == NULL) {
@@ -276,8 +278,9 @@ void l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data
     tL2C_LCB        *p_lcb;
     tL2C_CCB        *p_ccb;
     tL2C_CCB        *p_next_ccb;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8           event;
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     UNUSED(transport);
 
     L2CAP_TRACE_DEBUG ("l2c_link_sec_comp: %d, %p", status, p_ref_data);
@@ -306,7 +309,9 @@ void l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data
             switch (status) {
             case BTM_SUCCESS:
                 L2CAP_TRACE_DEBUG ("ccb timer ticks: %u", p_ccb->timer_entry.ticks);
+#if (CLASSIC_BT_INCLUDED == TRUE)
                 event = L2CEVT_SEC_COMP;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
                 break;
 
             case BTM_DELAY_CHECK:
@@ -315,9 +320,14 @@ void l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data
                 return;
 
             default:
+#if (CLASSIC_BT_INCLUDED == TRUE)
                 event = L2CEVT_SEC_COMP_NEG;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+                break;
             }
+#if (CLASSIC_BT_INCLUDED == TRUE)
             l2c_csm_execute (p_ccb, event, &ci);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
             break;
         }
     }
@@ -337,7 +347,9 @@ void l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data
 BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
 {
     tL2C_LCB    *p_lcb;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CCB    *p_ccb;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     BOOLEAN     status = TRUE;
     BOOLEAN     lcb_is_free = TRUE;
     tBT_TRANSPORT   transport = BT_TRANSPORT_BR_EDR;
@@ -366,6 +378,7 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
             btm_ble_update_link_topology_mask(p_lcb->link_role, FALSE);
         }
 #endif
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* Link is disconnected. For all channels, send the event through */
         /* their FSMs. The CCBs should remove themselves from the LCB     */
         for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; ) {
@@ -382,7 +395,7 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
             }
             p_ccb = pn;
         }
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 #if (BTM_SCO_INCLUDED == TRUE)
 #if (BLE_INCLUDED == TRUE)
         if (p_lcb->transport == BT_TRANSPORT_BR_EDR)
@@ -469,8 +482,9 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
 BOOLEAN l2c_link_hci_qos_violation (UINT16 handle)
 {
     tL2C_LCB        *p_lcb;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CCB        *p_ccb;
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     /* See if we have a link control block for the connection */
     p_lcb = l2cu_find_lcb_by_handle (handle);
 
@@ -478,14 +492,14 @@ BOOLEAN l2c_link_hci_qos_violation (UINT16 handle)
     if (!p_lcb) {
         return (FALSE);
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* For all channels, tell the upper layer about it */
     for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb) {
         if (p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb) {
             l2c_csm_execute (p_ccb, L2CEVT_LP_QOS_VIOLATION_IND, NULL);
         }
     }
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     return (TRUE);
 }
 
@@ -502,10 +516,13 @@ BOOLEAN l2c_link_hci_qos_violation (UINT16 handle)
 *******************************************************************************/
 void l2c_link_timeout (tL2C_LCB *p_lcb)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CCB   *p_ccb;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#if (SMP_INCLUDED == TRUE)
     UINT16      timeout;
     tBTM_STATUS rc;
-
+#endif  ///SMP_INCLUDED == TRUE
     L2CAP_TRACE_EVENT ("L2CAP - l2c_link_timeout() link state %d first CCB %p is_bonding:%d",
                        p_lcb->link_state, p_lcb->ccb_queue.p_first_ccb, p_lcb->is_bonding);
 
@@ -515,7 +532,7 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
             (p_lcb->link_state == LST_CONNECT_HOLDING) ||
             (p_lcb->link_state == LST_DISCONNECTING)) {
         p_lcb->p_pending_ccb = NULL;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* For all channels, send a disconnect indication event through */
         /* their FSMs. The CCBs should remove themselves from the LCB   */
         for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; ) {
@@ -525,6 +542,7 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
 
             p_ccb = pn;
         }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 #if (BLE_INCLUDED == TRUE)
         if (p_lcb->link_state == LST_CONNECTING &&
                 l2cb.is_ble_connecting == TRUE) {
@@ -547,7 +565,7 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
             (*p_cb) (L2CAP_PING_RESULT_NO_RESP);
 
             L2CAP_TRACE_WARNING ("L2CAP - ping timeout");
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
             /* For all channels, send a disconnect indication event through */
             /* their FSMs. The CCBs should remove themselves from the LCB   */
             for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; ) {
@@ -557,8 +575,10 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
 
                 p_ccb = pn;
             }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
         }
 
+#if (SMP_INCLUDED == TRUE)
         /* If no channels in use, drop the link. */
         if (!p_lcb->ccb_queue.p_first_ccb) {
             rc = btm_sec_disconnect (p_lcb->handle, HCI_ERR_PEER_USER);
@@ -594,6 +614,7 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
             /* Check in case we were flow controlled */
             l2c_link_check_send_pkts (p_lcb, NULL, NULL);
         }
+#endif  ///SMP_INCLUDED == TRUE
     }
 }
 
@@ -609,8 +630,9 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
 void l2c_info_timeout (tL2C_LCB *p_lcb)
 {
     tL2C_CCB   *p_ccb;
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_CONN_INFO  ci;
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     /* If we timed out waiting for info response, just continue using basic if allowed */
     if (p_lcb->w4_info_rsp) {
         /* If waiting for security complete, restart the info response timer */
@@ -622,7 +644,7 @@ void l2c_info_timeout (tL2C_LCB *p_lcb)
         }
 
         p_lcb->w4_info_rsp = FALSE;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
         /* If link is in process of being brought up */
         if ((p_lcb->link_state != LST_DISCONNECTED) &&
                 (p_lcb->link_state != LST_DISCONNECTING)) {
@@ -636,6 +658,7 @@ void l2c_info_timeout (tL2C_LCB *p_lcb)
                 }
             }
         }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE        
     }
 }
 
@@ -1021,7 +1044,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 {
     int         xx;
     BOOLEAN     single_write = FALSE;
-
+    L2CAP_TRACE_DEBUG("%s",__func__);
     /* Save the channel ID for faster counting */
     if (p_buf) {
         if (p_ccb != NULL) {
@@ -1048,6 +1071,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
     ** This LCB will be served when receiving number of completed packet event.
     */
     if (l2cb.is_cong_cback_context) {
+        L2CAP_TRACE_ERROR("l2cab is_cong_cback_context");
         return;
     }
 
@@ -1064,6 +1088,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
         /* Loop through, starting at the next */
         for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
             /* If controller window is full, nothing to do */
+            L2CAP_TRACE_DEBUG("window = %d,robin_unacked = %d,robin_quota=%d",l2cb.controller_le_xmit_window,l2cb.ble_round_robin_unacked,l2cb.ble_round_robin_quota);
             if (((l2cb.controller_xmit_window == 0 ||
                     (l2cb.round_robin_unacked >= l2cb.round_robin_quota))
 #if (BLE_INCLUDED == TRUE)
@@ -1082,7 +1107,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
             if (p_lcb == &l2cb.lcb_pool[MAX_L2CAP_LINKS]) {
                 p_lcb = &l2cb.lcb_pool[0];
             }
-
+            L2CAP_TRACE_DEBUG("in_use=%d,segment_being_sent=%d,link_state=%d,link_xmit_quota=%d",p_lcb->in_use,p_lcb->partial_segment_being_sent,p_lcb->link_state,p_lcb->link_xmit_quota);
             if ( (!p_lcb->in_use)
                     || (p_lcb->partial_segment_being_sent)
                     || (p_lcb->link_state != LST_CONNECTED)
@@ -1125,6 +1150,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 #endif
     } else { /* if this is not round-robin service */
         /* If a partial segment is being sent, can't send anything else */
+        L2CAP_TRACE_DEBUG("partial_segment_being_sent=%d,link_state=%d,power_mode=%d",p_lcb->partial_segment_being_sent,p_lcb->link_state,L2C_LINK_CHECK_POWER_MODE (p_lcb));
         if ( (p_lcb->partial_segment_being_sent)
                 || (p_lcb->link_state != LST_CONNECTED)
                 || (L2C_LINK_CHECK_POWER_MODE (p_lcb)) ) {
@@ -1162,6 +1188,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
             while ((l2cb.controller_xmit_window != 0) && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota))
 #endif
             {
+                //L2CAP_TRACE_DEBUG("l2cu_get_next_buffer_to_send = %p",l2cu_get_next_buffer_to_send(p_lcb));
                 if ((p_buf = l2cu_get_next_buffer_to_send (p_lcb)) == NULL) {
                     break;
                 }
@@ -1196,7 +1223,7 @@ static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf)
     UINT16      num_segs;
     UINT16      xmit_window, acl_data_size;
     const controller_t *controller = controller_get_interface();
-
+    L2CAP_TRACE_DEBUG("%s",__func__);
     if ((p_buf->len <= controller->get_acl_packet_size_classic()
 #if (BLE_INCLUDED == TRUE)
             && (p_lcb->transport == BT_TRANSPORT_BR_EDR)) ||

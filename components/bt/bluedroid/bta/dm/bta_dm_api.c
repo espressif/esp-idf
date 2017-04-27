@@ -276,6 +276,7 @@ void BTA_DmSearchCancel(void)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SDP_INCLUDED == TRUE)
 void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
                     tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search)
 {
@@ -291,7 +292,6 @@ void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
         p_msg->sdp_search = sdp_search;
         bta_sys_sendmsg(p_msg);
     }
-
 }
 
 /*******************************************************************************
@@ -324,8 +324,8 @@ void BTA_DmDiscoverUUID(BD_ADDR bd_addr, tSDP_UUID *uuid,
         memcpy( &p_msg->uuid, uuid, sizeof(tSDP_UUID) );
         bta_sys_sendmsg(p_msg);
     }
-
 }
+#endif  ///SDP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -338,6 +338,7 @@ void BTA_DmDiscoverUUID(BD_ADDR bd_addr, tSDP_UUID *uuid,
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void BTA_DmBond(BD_ADDR bd_addr)
 {
     tBTA_DM_API_BOND    *p_msg;
@@ -429,7 +430,7 @@ void BTA_DmPinReply(BD_ADDR bd_addr, BOOLEAN accept, UINT8 pin_len, UINT8 *p_pin
 
 }
 
-#if (BTM_OOB_INCLUDED == TRUE)
+#if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmLocalOob
@@ -550,6 +551,7 @@ tBTA_STATUS BTA_DmRemoveDevice(BD_ADDR bd_addr)
 
     return BTA_SUCCESS;
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -613,7 +615,7 @@ UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr )
     return (p_dev && p_dev->conn_state == BTA_DM_CONNECTED);
 }
 
-
+#if (SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **                   Device Identification (DI) Server Functions
 *******************************************************************************/
@@ -645,7 +647,7 @@ tBTA_STATUS BTA_DmSetLocalDiRecord( tBTA_DI_RECORD *p_device_info,
 
     return status;
 }
-
+#endif  ///SDP_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         bta_dmexecutecallback
@@ -685,10 +687,10 @@ void bta_dmexecutecallback (tBTA_DM_EXEC_CBACK *p_callback, void *p_param)
 **                  BTA_FAIL if operation failed.
 **
 *******************************************************************************/
+#if BLE_INCLUDED == TRUE
+#if SMP_INCLUDED == TRUE
 void BTA_DmAddBleKey (BD_ADDR bd_addr, tBTA_LE_KEY_VALUE *p_le_key, tBTA_LE_KEY_TYPE key_type)
 {
-#if BLE_INCLUDED == TRUE
-
     tBTA_DM_API_ADD_BLEKEY *p_msg;
 
     if ((p_msg = (tBTA_DM_API_ADD_BLEKEY *) GKI_getbuf(sizeof(tBTA_DM_API_ADD_BLEKEY))) != NULL) {
@@ -702,7 +704,6 @@ void BTA_DmAddBleKey (BD_ADDR bd_addr, tBTA_LE_KEY_VALUE *p_le_key, tBTA_LE_KEY_
         bta_sys_sendmsg(p_msg);
     }
 
-#endif
 }
 
 /*******************************************************************************
@@ -722,7 +723,6 @@ void BTA_DmAddBleKey (BD_ADDR bd_addr, tBTA_LE_KEY_VALUE *p_le_key, tBTA_LE_KEY_
 *******************************************************************************/
 void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TYPE dev_type)
 {
-#if BLE_INCLUDED == TRUE
     tBTA_DM_API_ADD_BLE_DEVICE *p_msg;
 
     if ((p_msg = (tBTA_DM_API_ADD_BLE_DEVICE *) GKI_getbuf(sizeof(tBTA_DM_API_ADD_BLE_DEVICE))) != NULL) {
@@ -735,7 +735,6 @@ void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TY
 
         bta_sys_sendmsg(p_msg);
     }
-#endif
 }
 /*******************************************************************************
 **
@@ -753,7 +752,6 @@ void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TY
 *******************************************************************************/
 void BTA_DmBlePasskeyReply(BD_ADDR bd_addr, BOOLEAN accept, UINT32 passkey)
 {
-#if BLE_INCLUDED == TRUE
     tBTA_DM_API_PASSKEY_REPLY    *p_msg;
 
     if ((p_msg = (tBTA_DM_API_PASSKEY_REPLY *) GKI_getbuf(sizeof(tBTA_DM_API_PASSKEY_REPLY))) != NULL) {
@@ -768,7 +766,6 @@ void BTA_DmBlePasskeyReply(BD_ADDR bd_addr, BOOLEAN accept, UINT32 passkey)
         }
         bta_sys_sendmsg(p_msg);
     }
-#endif
 }
 /*******************************************************************************
 **
@@ -784,7 +781,6 @@ void BTA_DmBlePasskeyReply(BD_ADDR bd_addr, BOOLEAN accept, UINT32 passkey)
 *******************************************************************************/
 void BTA_DmBleConfirmReply(BD_ADDR bd_addr, BOOLEAN accept)
 {
-#if BLE_INCLUDED == TRUE
     tBTA_DM_API_CONFIRM *p_msg = (tBTA_DM_API_CONFIRM *)GKI_getbuf(sizeof(tBTA_DM_API_CONFIRM));
     if (p_msg != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_CONFIRM));
@@ -793,7 +789,6 @@ void BTA_DmBleConfirmReply(BD_ADDR bd_addr, BOOLEAN accept)
         p_msg->accept = accept;
         bta_sys_sendmsg(p_msg);
     }
-#endif
 }
 
 /*******************************************************************************
@@ -810,7 +805,6 @@ void BTA_DmBleConfirmReply(BD_ADDR bd_addr, BOOLEAN accept)
 *******************************************************************************/
 void BTA_DmBleSecurityGrant(BD_ADDR bd_addr, tBTA_DM_BLE_SEC_GRANT res)
 {
-#if BLE_INCLUDED == TRUE
     tBTA_DM_API_BLE_SEC_GRANT    *p_msg;
 
     if ((p_msg = (tBTA_DM_API_BLE_SEC_GRANT *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_SEC_GRANT))) != NULL) {
@@ -822,8 +816,9 @@ void BTA_DmBleSecurityGrant(BD_ADDR bd_addr, tBTA_DM_BLE_SEC_GRANT res)
 
         bta_sys_sendmsg(p_msg);
     }
-#endif
 }
+#endif  ///SMP_INCLUDED == TRUE
+#endif  ///BLE_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -1393,7 +1388,7 @@ void BTA_DmBleSetBgConnType(tBTA_DM_BLE_CONN_TYPE bg_conn_type, tBTA_DM_BLE_SEL_
 ** Returns          void
 **
 *******************************************************************************/
-#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE
 static void bta_dm_discover_send_msg(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_services,
                                      tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search,
                                      tBTA_TRANSPORT transport)
@@ -1447,7 +1442,7 @@ void BTA_DmDiscoverByTransport(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_service
                                tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search,
                                tBTA_TRANSPORT transport)
 {
-#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE
     bta_dm_discover_send_msg(bd_addr, p_services, p_cback, sdp_search, transport);
 #endif
 }
@@ -1471,7 +1466,7 @@ void BTA_DmDiscoverByTransport(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_service
 void BTA_DmDiscoverExt(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_services,
                        tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search)
 {
-#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE && SDP_INCLUDED == TRUE
     bta_dm_discover_send_msg(bd_addr, p_services, p_cback, sdp_search, BTA_TRANSPORT_UNKNOWN);
 #endif
 
@@ -2062,6 +2057,7 @@ void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_DM_ENCRYPT_CBACK *p_callback,
                          tBTA_DM_BLE_SEC_ACT sec_act)
 {
@@ -2081,6 +2077,7 @@ void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_DM_ENCR
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **

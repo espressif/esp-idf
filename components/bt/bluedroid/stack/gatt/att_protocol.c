@@ -345,7 +345,11 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP)
     if (p_tcb->att_lcid == L2CAP_ATT_CID) {
         l2cap_ret = L2CA_SendFixedChnlData (L2CAP_ATT_CID, p_tcb->peer_bda, p_toL2CAP);
     } else {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         l2cap_ret = (UINT16) L2CA_DataWrite (p_tcb->att_lcid, p_toL2CAP);
+#else
+        l2cap_ret = L2CAP_DW_FAILED;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     }
 
     if (l2cap_ret == L2CAP_DW_FAILED) {

@@ -59,7 +59,9 @@ void btm_init (void)
     /* Initialize BTM component structures */
     btm_inq_db_init();                  /* Inquiry Database and Structures */
     btm_acl_init();                     /* ACL Database and Structures */
+#if (SMP_INCLUDED == TRUE)
     btm_sec_init(BTM_SEC_MODE_SP);      /* Security Manager Database and Structures */
+#endif  ///SMP_INCLUDED == TRUE
 #if BTM_SCO_INCLUDED == TRUE
     btm_sco_init();                     /* SCO Database and Structures (If included) */
 #endif

@@ -42,7 +42,7 @@
 #include "dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
 #if CONFIG_CLASSIC_BT_ENABLED
-
+#define CLASSIC_BT_INCLUDED         TRUE
 #define BTA_SDP_INCLUDED            TRUE
 #define BTA_PAN_INCLUDED            FALSE
 #define BTA_HH_INCLUDED             FALSE
@@ -66,7 +66,7 @@
 #define BTC_AV_INCLUDED             TRUE
 
 #else /* #if CONFIG_CLASSIC_BT_ENABLED */
-
+#define CLASSIC_BT_INCLUDED         FALSE
 #define BTA_SDP_INCLUDED            FALSE
 #define BTA_PAN_INCLUDED            FALSE
 #define BTA_HH_INCLUDED             FALSE
@@ -90,6 +90,31 @@
 #define BTC_AV_INCLUDED             FALSE
 
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
+
+#if (CONFIG_GATTS_ENABLE)
+#define GATTS_INCLUDED              TRUE
+#else
+#define GATTS_INCLUDED              FALSE
+#endif /* CONFIG_GATTS_ENABLE */
+
+#if (CONFIG_GATTC_ENABLE)
+#define GATTC_INCLUDED              TRUE
+#else
+#define GATTC_INCLUDED              FALSE
+#endif  /* CONFIG_GATTC_ENABLE */
+
+#if (CONFIG_SMP_ENABLE)
+#define SMP_INCLUDED              TRUE
+#define BLE_PRIVACY_SPT           TRUE
+#else
+#define SMP_INCLUDED              FALSE
+#define BLE_PRIVACY_SPT           FALSE
+#endif  /* CONFIG_GATTC_ENABLE */
+
+#if (CONFIG_BT_ACL_CONNECTIONS)
+#define MAX_ACL_CONNECTIONS  CONFIG_BT_ACL_CONNECTIONS
+#define GATT_MAX_PHY_CHANNEL CONFIG_BT_ACL_CONNECTIONS
+#endif  /* CONFIG_BT_ACL_CONNECTIONS */
 
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
@@ -203,7 +228,7 @@
 #endif
 
 #ifndef BT_USE_TRACES
-#define BT_USE_TRACES  TRUE
+#define BT_USE_TRACES  FALSE
 #endif
 
 #ifndef BT_TRACE_BTIF
@@ -477,9 +502,9 @@
 #define BTM_SCO_DATA_SIZE_MAX       240
 #endif
 
-/* The size in bytes of the BTM inquiry database. 40 As Default */
+/* The size in bytes of the BTM inquiry database. 5 As Default */
 #ifndef BTM_INQ_DB_SIZE
-#define BTM_INQ_DB_SIZE             32
+#define BTM_INQ_DB_SIZE             5
 #endif
 
 /* The default scan mode */
@@ -538,7 +563,11 @@
 
 /* The number of SCO links. */
 #ifndef BTM_MAX_SCO_LINKS
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #define BTM_MAX_SCO_LINKS           1	//3
+#else   ///CLASSIC_BT_INCLUDED == TRUE
+#define BTM_MAX_SCO_LINKS           0
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
 /* The preferred type of SCO links (2-eSCO, 0-SCO). */
@@ -635,7 +664,11 @@
 #endif
 
 #ifndef BTM_LOCAL_IO_CAPS_BLE
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 #define BTM_LOCAL_IO_CAPS_BLE           BTM_IO_CAP_KBDISP
+#else
+#define BTM_LOCAL_IO_CAPS_BLE           4
+#endif  ///BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 #endif
 
 /* The default MITM Protection Requirement (for Simple Pairing)
@@ -657,7 +690,7 @@
 
 /* TRUE to include Sniff Subrating */
 #ifndef BTM_SSR_INCLUDED
-#define BTM_SSR_INCLUDED                TRUE
+#define BTM_SSR_INCLUDED                FALSE
 #endif
 
 /*************************
@@ -684,7 +717,6 @@
 #define L2CAP_CLIENT_INCLUDED FALSE
 #endif
 
-
 /* The maximum number of simultaneous links that L2CAP can support. Up to 7*/
 #ifndef MAX_ACL_CONNECTIONS
 #define MAX_L2CAP_LINKS             3
@@ -694,12 +726,20 @@
 
 /* The maximum number of simultaneous channels that L2CAP can support. Up to 16*/
 #ifndef MAX_L2CAP_CHANNELS
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #define MAX_L2CAP_CHANNELS          8
+#else
+#define MAX_L2CAP_CHANNELS          2  //Not support to create l2cap channels in the BLE only mode in this bluedroid version(6.0)
+#endif   ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
 /* The maximum number of simultaneous applications that can register with L2CAP. */
 #ifndef MAX_L2CAP_CLIENTS
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #define MAX_L2CAP_CLIENTS           8
+#else
+#define MAX_L2CAP_CLIENTS           1  //Not support to allocate a channel control block in BLE only mode
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
 /* The number of seconds of link inactivity before a link is disconnected. */
@@ -785,7 +825,11 @@
 /* Used for features using fixed channels; set to zero if no fixed channels supported (BLE, etc.) */
 /* Excluding L2CAP signaling channel and UCD */
 #ifndef L2CAP_NUM_FIXED_CHNLS
+#if (CLASSIC_BT_INCLUDED == TRUE)
 #define L2CAP_NUM_FIXED_CHNLS               32
+#else
+#define L2CAP_NUM_FIXED_CHNLS               3   //There are just three fix channel in the BLE only mode(gatt,signal,smp)
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
 /* First fixed channel supported */
@@ -853,7 +897,7 @@
  * resolution, local address rotation etc.
  */
 #ifndef BLE_PRIVACY_SPT
-#define BLE_PRIVACY_SPT         TRUE
+#define BLE_PRIVACY_SPT         FALSE
 #endif
 
 /*
@@ -965,7 +1009,7 @@
 ******************************************************************************/
 #ifndef GATTC_INCLUDED
 #if BLE_INCLUDED == TRUE
-#define GATTC_INCLUDED         TRUE
+#define GATTC_INCLUDED         FALSE
 #else
 #define GATTC_INCLUDED         FALSE
 #endif
@@ -992,7 +1036,7 @@
 ******************************************************************************/
 #ifndef SMP_INCLUDED
 #if BLE_INCLUDED == TRUE
-#define SMP_INCLUDED         TRUE
+#define SMP_INCLUDED         FALSE
 #else
 #define SMP_INCLUDED         FALSE
 #endif
@@ -1036,7 +1080,7 @@
 ******************************************************************************/
 
 #ifndef SDP_INCLUDED
-#define SDP_INCLUDED                TRUE
+#define SDP_INCLUDED                FALSE //TRUE
 #endif
 
 /* This is set to enable SDP server functionality. */
@@ -1535,7 +1579,7 @@ Range: 2 octets
 
 /* This is set to enable use of GAP L2CAP connections. */
 #ifndef GAP_CONN_INCLUDED
-#if GAP_INCLUDED == TRUE
+#if (GAP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
 #define GAP_CONN_INCLUDED           TRUE
 #else
 #define GAP_CONN_INCLUDED           FALSE

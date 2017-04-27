@@ -31,7 +31,7 @@
 #include "btc_sm.h"
 #include "bta_av_api.h"
 
-
+#if (BTA_AV_INCLUDED == TRUE)
 /*******************************************************************************
 **  Type definitions for callback functions
 ********************************************************************************/
@@ -170,5 +170,7 @@ BOOLEAN btc_av_is_peer_edr(void);
 ** Returns          Void
 ********************************************************************************/
 void btc_av_clear_remote_suspend_flag(void);
+
+#endif  ///BTA_AV_INCLUDED == TRUE
 
 #endif /* __BTC_AV_H__ */

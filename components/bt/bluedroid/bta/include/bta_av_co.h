@@ -27,6 +27,8 @@
 #include "l2c_api.h"
 #include "bta_av_api.h"
 
+#if (BTA_AV_INCLUDED == TRUE)
+
 /*****************************************************************************
 **  Constants and data types
 *****************************************************************************/
@@ -385,5 +387,7 @@ extern void bta_av_co_audio_delay(tBTA_AV_HNDL hndl, UINT16 delay);
 **
 *******************************************************************************/
 extern void bta_av_co_video_delay(tBTA_AV_HNDL hndl, UINT16 delay);
+
+#endif  ///BTA_AV_INCLUDED == TRUE
 
 #endif /* BTA_AV_CO_H */

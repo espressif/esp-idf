@@ -903,9 +903,11 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
         tBLE_ADDR_TYPE *p_peer_addr_type,
         tBLE_ADDR_TYPE *p_own_addr_type)
 {
-    UINT8 evt_type, i = BTM_SEC_MAX_DEVICE_RECORDS;
+    UINT8 evt_type;
+#if BLE_PRIVACY_SPT == TRUE
+    UINT8 i = BTM_SEC_MAX_DEVICE_RECORDS;
     tBTM_SEC_DEV_REC    *p_dev_rec;
-
+#endif  ///BLE_PRIVACY_SPT == TRUE
     evt_type = (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE) ? \
                ((p_cb->scan_rsp) ? BTM_BLE_DISCOVER_EVT : BTM_BLE_NON_CONNECT_EVT )\
                : BTM_BLE_CONNECT_EVT;
@@ -2128,7 +2130,9 @@ void btm_ble_read_remote_name_cmpl(BOOLEAN status, BD_ADDR bda, UINT16 length, c
     }
 
     btm_process_remote_name(bda, bd_name, length + 1, hci_status);
+#if (SMP_INCLUDED == TRUE)
     btm_sec_rmt_name_request_complete (bda, (UINT8 *)p_name, hci_status);
+#endif  ///SMP_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -2163,7 +2167,7 @@ tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur, t
         return BTM_BUSY;
     }
 
-#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
     if (!GAP_BleReadPeerDevName(remote_bda, btm_ble_read_remote_name_cmpl)) {
         return BTM_BUSY;
     }
@@ -2197,7 +2201,7 @@ BOOLEAN btm_ble_cancel_remote_name(BD_ADDR remote_bda)
     tBTM_INQUIRY_VAR_ST      *p_inq = &btm_cb.btm_inq_vars;
     BOOLEAN     status = TRUE;
 
-#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
     status = GAP_BleCancelReadPeerDevName(remote_bda);
 #endif
 

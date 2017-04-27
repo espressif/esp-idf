@@ -127,15 +127,15 @@ typedef struct {
     tGAP_INFO        blk[GAP_MAX_BLOCKS];
     tBTM_CMPL_CB    *btm_cback[GAP_MAX_BLOCKS];
     UINT8            trace_level;
-    tGAP_FINDADDR_CB findaddr_cb;   /* Contains the control block for finding a device addr */
-    tBTM_INQ_INFO   *cur_inqptr;
+    //tGAP_FINDADDR_CB findaddr_cb;   /* Contains the control block for finding a device addr */
+    //tBTM_INQ_INFO   *cur_inqptr;
 
 #if GAP_CONN_INCLUDED == TRUE
     tGAP_CONN        conn;
 #endif
 
     /* LE GAP attribute database */
-#if BLE_INCLUDED == TRUE
+#if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
     tGAP_ATTR               gatt_attr[GAP_MAX_CHAR_NUM];
     tGAP_CLCB               clcb[GAP_MAX_CL]; /* connection link*/
     tGATT_IF                gatt_if;
@@ -147,7 +147,7 @@ extern tGAP_CB  gap_cb;
 #if (GAP_CONN_INCLUDED == TRUE)
 extern void gap_conn_init(void);
 #endif
-#if (BLE_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
 extern void gap_attr_db_init(void);
 #endif
 

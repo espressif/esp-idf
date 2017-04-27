@@ -39,7 +39,8 @@
 #include "btm_int.h"
 #include "sdp_api.h"
 
-#if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE)
+#if (SDP_INCLUDED == TRUE)
+
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -545,4 +546,4 @@ void bta_sdp_remove_record(tBTA_SDP_MSG *p_data)
     }
 }
 
-#endif /* #if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE) */
+#endif  ///SDP_INCLUDED == TRUE

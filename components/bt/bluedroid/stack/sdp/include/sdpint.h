@@ -29,7 +29,7 @@
 #include "sdp_api.h"
 #include "l2c_api.h"
 
-
+#if (SDP_INCLUDED == TRUE)
 /* Continuation length - we use a 2-byte offset */
 #define SDP_CONTINUATION_LEN        2
 #define SDP_MAX_CONTINUATION_LEN    16          /* As per the spec */
@@ -309,6 +309,6 @@ extern void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg);
 #define sdp_disc_server_rsp(p_ccb, p_msg)
 #endif
 
-
+#endif  ///SDP_INCLUDED == TRUE
 
 #endif

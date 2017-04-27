@@ -27,7 +27,7 @@
 #include "btm_int.h"
 
 #if( defined BLE_INCLUDED ) && (BLE_INCLUDED == TRUE)
-#if( defined BTA_GATT_INCLUDED ) && (BTA_GATT_INCLUDED == TRUE)
+#if( defined BTA_GATT_INCLUDED ) && (GATTC_INCLUDED == TRUE)
 
 #define GATT_CACHE_PREFIX "/data/misc/bluedroid/gatt_cache_"
 

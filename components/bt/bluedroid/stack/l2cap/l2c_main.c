@@ -41,8 +41,9 @@
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len);
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 /********************************************************************************/
 /*                 G L O B A L      L 2 C A P       D A T A                     */
 /********************************************************************************/
@@ -217,7 +218,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     if (rcv_cid == L2CAP_SIGNALLING_CID) {
         //counter_add("l2cap.sig.rx.bytes", l2cap_len);
         //counter_add("l2cap.sig.rx.pkts", 1);
+#if (CLASSIC_BT_INCLUDED == TRUE)
         process_l2cap_cmd (p_lcb, p, l2cap_len);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
         GKI_freebuf (p_msg);
     } else if (rcv_cid == L2CAP_CONNECTIONLESS_CID) {
         //counter_add("l2cap.ch2.rx.bytes", l2cap_len);
@@ -255,7 +258,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
             p_ccb = p_lcb->p_fixed_ccbs[rcv_cid - L2CAP_FIRST_FIXED_CHNL];
 
             if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
                 l2c_fcr_proc_pdu (p_ccb, p_msg);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
             } else
                 (*l2cb.fixed_reg[rcv_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb)
                 (rcv_cid, p_lcb->remote_bd_addr, p_msg);
@@ -273,11 +278,15 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
         } else {
             /* Basic mode packets go straight to the state machine */
             if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
                 l2c_csm_execute (p_ccb, L2CEVT_L2CAP_DATA, p_msg);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
             } else {
                 /* eRTM or streaming mode, so we need to validate states first */
                 if ((p_ccb->chnl_state == CST_OPEN) || (p_ccb->chnl_state == CST_CONFIG)) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
                     l2c_fcr_proc_pdu (p_ccb, p_msg);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
                 } else {
                     GKI_freebuf (p_msg);
                 }
@@ -296,6 +305,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
 ** Returns          void
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
 {
     UINT8           *p_pkt_end, *p_next_cmd, *p_cfg_end, *p_cfg_start;
@@ -731,7 +741,10 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             return;
         }
     }
+
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 
 /*******************************************************************************
 **
@@ -864,7 +877,7 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
     case BTU_TTYPE_L2CAP_LINK:
         l2c_link_timeout ((tL2C_LCB *)p_tle->param);
         break;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     case BTU_TTYPE_L2CAP_CHNL:
         l2c_csm_execute (((tL2C_CCB *)p_tle->param), L2CEVT_TIMEOUT, NULL);
         break;
@@ -872,7 +885,7 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
     case BTU_TTYPE_L2CAP_FCR_ACK:
         l2c_csm_execute (((tL2C_CCB *)p_tle->param), L2CEVT_ACK_TIMEOUT, NULL);
         break;
-
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     case BTU_TTYPE_L2CAP_HOLD:
         /* Update the timeouts in the hold queue */
         l2c_process_held_packets(TRUE);
@@ -895,6 +908,7 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
 **                  L2CAP_DW_FAILED, if error
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 UINT8 l2c_data_write (UINT16 cid, BT_HDR *p_data, UINT16 flags)
 {
     tL2C_CCB        *p_ccb;
@@ -935,7 +949,8 @@ UINT8 l2c_data_write (UINT16 cid, BT_HDR *p_data, UINT16 flags)
     if (p_ccb->cong_sent) {
         return (L2CAP_DW_CONGESTED);
     }
-
     return (L2CAP_DW_SUCCESS);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+
 

@@ -26,6 +26,7 @@
 
 #define CASE_RETURN_STR(const) case const: return #const;
 
+#if (SMP_INCLUDED == TRUE)
 static const char *interop_feature_string(const interop_feature_t feature)
 {
     switch (feature) {
@@ -37,7 +38,6 @@ static const char *interop_feature_string(const interop_feature_t feature)
 }
 
 // Interface functions
-
 bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr)
 {
     assert(addr);
@@ -56,3 +56,4 @@ bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr)
 
     return false;
 }
+#endif  ///SMP_INCLUDED == TRUE

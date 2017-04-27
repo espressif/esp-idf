@@ -20,6 +20,7 @@
 #include "btc_gattc.h"
 #include "btc_gatt_util.h"
 
+#if (GATTC_INCLUDED == TRUE)
 esp_err_t esp_ble_gattc_register_callback(esp_gattc_cb_t callback)
 {
     if (esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
@@ -449,4 +450,6 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+#endif  ///GATTC_INCLUDED == TRUE
 
