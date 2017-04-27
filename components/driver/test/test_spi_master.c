@@ -76,8 +76,8 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
     check_spi_pre_n_for(800000, 2, 50);
     check_spi_pre_n_for(100000, 16, 50);
     check_spi_pre_n_for(333333, 4, 60);
-    check_spi_pre_n_for(900000, 4, 60);
-//    check_spi_pre_n_for(1, 8192, 64); //Actually should generate the minimum clock speed, 152Hz
+    check_spi_pre_n_for(900000, 2, 44);
+    check_spi_pre_n_for(1, 8192, 64); //Actually should generate the minimum clock speed, 152Hz
     check_spi_pre_n_for(26000000, 1, 3);
 
     ret=spi_bus_free(HSPI_HOST);
@@ -255,7 +255,7 @@ TEST_CASE("SPI Master test, interaction of multiple devs", "[spi][ignore]") {
 
 
     ret=spi_bus_remove_device(handle2);
+    TEST_ASSERT(ret==ESP_OK);
     destroy_spi_bus(handle1);
-
 }
 
