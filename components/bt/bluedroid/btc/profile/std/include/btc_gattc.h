@@ -38,6 +38,7 @@ typedef enum {
     BTC_GATTC_ACT_WRITE_CHAR,
     BTC_GATTC_ACT_WRITE_CHAR_DESCR,
     BTC_GATTC_ACT_PREPARE_WRITE,
+    BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR,
     BTC_GATTC_ACT_EXECUTE_WRITE,
     BTC_GATTC_ACT_REG_FOR_NOTIFY,
     BTC_GATTC_ACT_UNREG_FOR_NOTIFY
@@ -155,6 +156,17 @@ typedef union {
         uint8_t *value;
         esp_gatt_auth_req_t auth_req;
     } prep_write;
+    //BTC_GATTC_ACT_PREPARE_WRITE_CHAR_DESCR,
+    struct prep_write_descr_arg {
+        uint16_t conn_id;
+        esp_gatt_srvc_id_t service_id;
+        esp_gatt_id_t char_id;
+        esp_gatt_id_t descr_id;
+        uint16_t offset;
+        uint16_t value_len;
+        uint8_t *value;
+        esp_gatt_auth_req_t auth_req;
+    } prep_write_descr;
     //BTC_GATTC_ACT_EXECUTE_WRITE,
     struct exec_write_arg {
         uint16_t conn_id;

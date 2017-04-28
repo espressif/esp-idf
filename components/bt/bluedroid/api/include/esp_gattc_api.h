@@ -510,15 +510,15 @@ esp_err_t esp_ble_gattc_write_char( esp_gatt_if_t gattc_if,
  *                  - other: failed
  *
  */
-esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if, 
-                                        uint16_t conn_id,
-                                        esp_gatt_srvc_id_t *srvc_id,
-                                        esp_gatt_id_t *char_id,
-                                        esp_gatt_id_t *descr_id,
-                                        uint16_t value_len,
-                                        uint8_t *value,
-                                		esp_gatt_write_type_t write_type,
-                                        esp_gatt_auth_req_t auth_req);
+esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
+                                         uint16_t conn_id,
+                                         esp_gatt_srvc_id_t *srvc_id,
+                                         esp_gatt_id_t *char_id,
+                                         esp_gatt_id_t *descr_id,
+                                         uint16_t value_len,
+                                         uint8_t *value,
+                                         esp_gatt_write_type_t write_type,
+                                         esp_gatt_auth_req_t auth_req);
 
 
 /**
@@ -546,6 +546,35 @@ esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if,
                                       uint16_t value_len,
                                       uint8_t *value,
                                       esp_gatt_auth_req_t auth_req);
+
+
+/**
+ * @brief           This function is called to prepare write a characteristic descriptor value.
+ *
+ * @param[in]       gattc_if: Gatt client access interface.
+ * @param[in]       conn_id : connection ID.
+ * @param[in]       srvc_id : service ID.
+ * @param[in]       char_id : GATT characteristic ID of the service.
+ * @param[in]       descr_id : characteristic descriptor ID to write.
+ * @param[in]       offset : offset of the write value.
+ * @param[in]       value_len: length of the value to be written.
+ * @param[in]       value : the value to be written.
+ * @param[in]       auth_req : authentication request.
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - other: failed
+ *
+ */
+esp_err_t esp_ble_gattc_prepare_write_char_descr(esp_gatt_if_t gattc_if,
+                                                 uint16_t conn_id,
+                                                 esp_gatt_srvc_id_t *srvc_id,
+                                                 esp_gatt_id_t *char_id,
+                                                 esp_gatt_id_t *descr_id,
+                                                 uint16_t offset,
+                                                 uint16_t value_len,
+                                                 uint8_t *value,
+                                                 esp_gatt_auth_req_t auth_req);
 
 
 /**
