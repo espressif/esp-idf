@@ -41,8 +41,6 @@ static const char* I2S_TAG = "I2S";
 #define I2S_EXIT_CRITICAL_ISR()      portEXIT_CRITICAL_ISR(&i2s_spinlock[i2s_num])
 #define I2S_ENTER_CRITICAL()         portENTER_CRITICAL(&i2s_spinlock[i2s_num])
 #define I2S_EXIT_CRITICAL()          portEXIT_CRITICAL(&i2s_spinlock[i2s_num])
-#define gpio_matrix_out_check(a, b, c, d) if(a != -1) gpio_matrix_out(a, b, c, d) //if pin = -1, do not need to configure
-#define gpio_matrix_in_check(a, b, c) if(a != -1) gpio_matrix_in(a, b, c)
 
 
 /**
@@ -74,15 +72,19 @@ typedef struct {
     i2s_isr_handle_t i2s_isr_handle; /*!< I2S Interrupt handle*/
     int channel_num;            /*!< Number of channels*/
     int bytes_per_sample;        /*!< Bytes per sample*/
+    int bits_per_sample;        /*!< Bits per sample*/
     i2s_mode_t mode;            /*!< I2S Working mode*/
 } i2s_obj_t;
 
 static i2s_obj_t *p_i2s_obj[I2S_NUM_MAX] = {0};
 static i2s_dev_t* I2S[I2S_NUM_MAX] = {&I2S0, &I2S1};
 static portMUX_TYPE i2s_spinlock[I2S_NUM_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
+
+static i2s_dma_t *i2s_create_dma_queue(i2s_port_t i2s_num, int dma_buf_count, int dma_buf_len);
+static esp_err_t i2s_destroy_dma_queue(i2s_port_t i2s_num, i2s_dma_t *dma);
 static esp_err_t i2s_reset_fifo(i2s_port_t i2s_num)
 {
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     I2S_ENTER_CRITICAL();
     I2S[i2s_num]->conf.rx_fifo_reset = 1;
     I2S[i2s_num]->conf.rx_fifo_reset = 0;
@@ -92,9 +94,26 @@ static esp_err_t i2s_reset_fifo(i2s_port_t i2s_num)
     return ESP_OK;
 }
 
+inline static void gpio_matrix_out_check(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_inv) 
+{
+    //if pin = -1, do not need to configure
+    if (gpio != -1) {
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        gpio_matrix_out(gpio, signal_idx, out_inv, oen_inv);
+    } 
+} 
+inline static void gpio_matrix_in_check(uint32_t gpio, uint32_t signal_idx, bool inv) 
+{
+    if (gpio != -1) {
+        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        gpio_matrix_in(gpio, signal_idx, inv);
+    }
+}
+
+
 esp_err_t i2s_clear_intr_status(i2s_port_t i2s_num, uint32_t clr_mask)
 {
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     I2S[i2s_num]->int_clr.val = clr_mask;
     return ESP_OK;
 }
@@ -141,21 +160,127 @@ static esp_err_t i2s_isr_register(i2s_port_t i2s_num, uint8_t intr_alloc_flags, 
     return esp_intr_alloc(ETS_I2S0_INTR_SOURCE + i2s_num, intr_alloc_flags, fn, arg, handle);
 }
 
-static esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint8_t bits, bool fuzzy)
+esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t bits, i2s_channel_t ch)
 {
     int factor = (256%bits)? 384 : 256; // According to hardware codec requirement(supported 256fs or 384fs)
     int clkmInteger, clkmDecimals, bck = 0;
-    float denom = (float)1 / 64;
+    double denom = (double)1 / 64;
     int channel = 2;
+    i2s_dma_t *save_tx = NULL, *save_rx = NULL;
 
-    float clkmdiv = (float)I2S_BASE_CLK / (rate * factor);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+
+    if (bits % 8 != 0 || bits > I2S_BITS_PER_SAMPLE_32BIT || bits < I2S_BITS_PER_SAMPLE_16BIT) {
+        ESP_LOGE(I2S_TAG, "Invalid bits per sample");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+
+    if (p_i2s_obj[i2s_num] == NULL) {
+        ESP_LOGE(I2S_TAG, "Not initialized yet");
+        return ESP_FAIL;
+    }
+
+    if (p_i2s_obj[i2s_num]->mode & I2S_MODE_DAC_BUILT_IN) {
+        //DAC uses bclk as sample clock, not WS. WS can be something arbitrary.
+        //Rate as given to this function is the intended BCLK rate; divided by bits it will
+        //give the real sample rate. For DAC mode, use the real sample rate as BCLK rate instead.
+        rate = rate / bits;
+    }
+
+    double clkmdiv = (double)I2S_BASE_CLK / (rate * factor);
+
     if (clkmdiv > 256) {
         ESP_LOGE(I2S_TAG, "clkmdiv is too large\r\n");
         return ESP_FAIL;
     }
+
+    // wait all on-going writing finish
+    if ((p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) && p_i2s_obj[i2s_num]->tx) {
+        xSemaphoreTake(p_i2s_obj[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+    }
+    if ((p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) && p_i2s_obj[i2s_num]->rx) {
+        xSemaphoreTake(p_i2s_obj[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
+    }
+
+    i2s_stop(i2s_num);
+
+    p_i2s_obj[i2s_num]->channel_num = (ch == 2) ? 2 : 1;
+    I2S[i2s_num]->conf_chan.tx_chan_mod =  (ch == 2) ? 0 : 1; // 0-two channel;1-right;2-left;3-righ;4-left
+    I2S[i2s_num]->fifo_conf.tx_fifo_mod =  (ch == 2) ? 0 : 1; // 0-right&left channel;1-one channel
+    I2S[i2s_num]->conf.tx_mono = 0;
+
+    I2S[i2s_num]->conf_chan.rx_chan_mod = (ch == 2) ? 0 : 1; 
+    I2S[i2s_num]->fifo_conf.rx_fifo_mod =  (ch == 2) ? 0 : 1;
+    I2S[i2s_num]->conf.rx_mono = 0;
+
+    
+    if (bits != p_i2s_obj[i2s_num]->bits_per_sample) {
+
+        //change fifo mode
+        if (p_i2s_obj[i2s_num]->bits_per_sample <= 16 && bits > 16) {
+            I2S[i2s_num]->fifo_conf.tx_fifo_mod += 2;
+            I2S[i2s_num]->fifo_conf.rx_fifo_mod += 2;
+        } else if (p_i2s_obj[i2s_num]->bits_per_sample > 16 && bits <= 16) {
+            I2S[i2s_num]->fifo_conf.tx_fifo_mod -= 2;
+            I2S[i2s_num]->fifo_conf.rx_fifo_mod -= 2;
+        }
+
+        p_i2s_obj[i2s_num]->bits_per_sample = bits;
+        p_i2s_obj[i2s_num]->bytes_per_sample = p_i2s_obj[i2s_num]->bits_per_sample / 8;
+
+        // Round bytes_per_sample up to next multiple of 16 bits
+        int halfwords_per_sample = (p_i2s_obj[i2s_num]->bits_per_sample + 15) / 16;
+        p_i2s_obj[i2s_num]->bytes_per_sample = halfwords_per_sample * 2;
+
+        // Because limited of DMA buffer is 4092 bytes
+        if (p_i2s_obj[i2s_num]->dma_buf_len * p_i2s_obj[i2s_num]->bytes_per_sample * p_i2s_obj[i2s_num]->channel_num > 4092) {
+            p_i2s_obj[i2s_num]->dma_buf_len = 4092 / p_i2s_obj[i2s_num]->bytes_per_sample / p_i2s_obj[i2s_num]->channel_num;
+        }
+        // Re-create TX DMA buffer
+        if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
+
+            save_tx = p_i2s_obj[i2s_num]->tx;
+
+            p_i2s_obj[i2s_num]->tx = i2s_create_dma_queue(i2s_num, p_i2s_obj[i2s_num]->dma_buf_count, p_i2s_obj[i2s_num]->dma_buf_len);
+            if (p_i2s_obj[i2s_num]->tx == NULL) {
+                ESP_LOGE(I2S_TAG, "Failed to create tx dma buffer");
+                i2s_driver_uninstall(i2s_num);
+                return ESP_FAIL;
+            }
+            I2S[i2s_num]->out_link.addr = (uint32_t) p_i2s_obj[i2s_num]->tx->desc[0];
+
+            //destroy old tx dma if exist
+            if (save_tx) {
+                i2s_destroy_dma_queue(i2s_num, save_tx);
+            }
+        }
+        // Re-create RX DMA buffer
+        if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
+
+            save_rx = p_i2s_obj[i2s_num]->rx;
+            
+            p_i2s_obj[i2s_num]->rx = i2s_create_dma_queue(i2s_num, p_i2s_obj[i2s_num]->dma_buf_count, p_i2s_obj[i2s_num]->dma_buf_len);
+            if (p_i2s_obj[i2s_num]->rx == NULL){
+                ESP_LOGE(I2S_TAG, "Failed to create rx dma buffer");
+                i2s_driver_uninstall(i2s_num);
+                return ESP_FAIL;
+            }
+            I2S[i2s_num]->rx_eof_num = (p_i2s_obj[i2s_num]->dma_buf_len * p_i2s_obj[i2s_num]->channel_num * p_i2s_obj[i2s_num]->bytes_per_sample)/4;
+            I2S[i2s_num]->in_link.addr = (uint32_t) p_i2s_obj[i2s_num]->rx->desc[0];
+
+            //destroy old rx dma if exist
+            if (save_rx) {
+                i2s_destroy_dma_queue(i2s_num, save_rx);
+            }
+
+        }
+        
+    }
+
     clkmInteger = clkmdiv;
     clkmDecimals = (clkmdiv - clkmInteger) / denom;
-    float mclk = clkmInteger + denom * clkmDecimals;
+    double mclk = clkmInteger + denom * clkmDecimals;
     bck = factor/(bits * channel);
 
     I2S[i2s_num]->clkm_conf.clka_en = 0;
@@ -166,9 +291,18 @@ static esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint8_t bits, bo
     I2S[i2s_num]->sample_rate_conf.rx_bck_div_num = bck;
     I2S[i2s_num]->sample_rate_conf.tx_bits_mod = bits;
     I2S[i2s_num]->sample_rate_conf.rx_bits_mod = bits;
-    float real_rate = (float)(I2S_BASE_CLK / (bck * bits * clkmInteger)/2);
+    double real_rate = (double)(I2S_BASE_CLK / (bck * bits * clkmInteger)/2);
     ESP_LOGI(I2S_TAG, "Req RATE: %d, real rate: %0.3f, BITS: %u, CLKM: %u, BCK: %u, MCLK: %0.3f, SCLK: %f, diva: %d, divb: %d",
-        rate, real_rate, bits, clkmInteger, bck, (float)I2S_BASE_CLK / mclk, real_rate *16*2, 64, clkmDecimals);
+        rate, real_rate, bits, clkmInteger, bck, (double)I2S_BASE_CLK / mclk, real_rate*bits*channel, 64, clkmDecimals);
+
+    // wait all writing on-going finish
+    if ((p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) && p_i2s_obj[i2s_num]->tx) {
+        xSemaphoreGive(p_i2s_obj[i2s_num]->tx->mux);
+    }
+    if ((p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) && p_i2s_obj[i2s_num]->rx) {
+        xSemaphoreGive(p_i2s_obj[i2s_num]->rx->mux);
+    }
+    i2s_start(i2s_num);
     return ESP_OK;
 }
 
@@ -185,7 +319,6 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
     lldesc_t *finish_desc;
 
     if (i2s_reg->int_st.out_dscr_err || i2s_reg->int_st.in_dscr_err) {
-        ESP_LOGE(I2S_TAG, "out_dscr_err: %d or in_dscr_err:%d", i2s_reg->int_st.out_dscr_err == 1, i2s_reg->int_st.in_dscr_err == 1);
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_DMA_ERROR;
             if (xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
@@ -256,6 +389,7 @@ static esp_err_t i2s_destroy_dma_queue(i2s_port_t i2s_num, i2s_dma_t *dma)
         free(dma->desc);
     vQueueDelete(dma->queue);
     vSemaphoreDelete(dma->mux);
+    free(dma);
     return ESP_OK;
 }
 
@@ -331,13 +465,11 @@ esp_err_t i2s_start(i2s_port_t i2s_num)
     esp_intr_disable(p_i2s_obj[i2s_num]->i2s_isr_handle);
     I2S[i2s_num]->int_clr.val = 0xFFFFFFFF;
     if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
-        ESP_LOGD(I2S_TAG, "I2S_MODE_TX");
         i2s_enable_tx_intr(i2s_num);
         I2S[i2s_num]->out_link.start = 1;
         I2S[i2s_num]->conf.tx_start = 1;
     }
     if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
-        ESP_LOGD(I2S_TAG, "I2S_MODE_RX");
         i2s_enable_rx_intr(i2s_num);
         I2S[i2s_num]->in_link.start = 1;
         I2S[i2s_num]->conf.rx_start = 1;
@@ -361,6 +493,13 @@ esp_err_t i2s_stop(i2s_port_t i2s_num)
         I2S[i2s_num]->conf.rx_start = 0;
         i2s_disable_rx_intr(i2s_num);
     }
+    I2S[i2s_num]->int_clr.val = I2S[i2s_num]->int_st.val; //clear pending interrupt
+    i2s_reset_fifo(i2s_num);
+    //reset dma
+    I2S[i2s_num]->lc_conf.in_rst = 1;
+    I2S[i2s_num]->lc_conf.in_rst = 0;
+    I2S[i2s_num]->lc_conf.out_rst = 1;
+    I2S[i2s_num]->lc_conf.out_rst = 0;
     I2S_EXIT_CRITICAL();
     return 0;
 }
@@ -386,7 +525,7 @@ static esp_err_t configure_dac_pin(void)
 
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
 {
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     if (pin == NULL) {
         return configure_dac_pin();
     }
@@ -409,26 +548,46 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
 
     int bck_sig = -1, ws_sig = -1, data_out_sig = -1, data_in_sig = -1;
     //TX & RX
-    if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
-        bck_sig = I2S0I_BCK_OUT_IDX;
-        ws_sig = I2S0I_WS_OUT_IDX;
-        data_in_sig = I2S0I_DATA_IN15_IDX;
-        if (i2s_num == I2S_NUM_1) {
-            bck_sig = I2S1I_BCK_OUT_IDX;
-            ws_sig = I2S1I_WS_OUT_IDX;
-            data_in_sig = I2S1I_DATA_IN15_IDX;
-        }
-    }
     if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
-        bck_sig = I2S0O_BCK_OUT_IDX;
-        ws_sig = I2S0O_WS_OUT_IDX;
-        data_out_sig = I2S0O_DATA_OUT23_IDX;
-        if (i2s_num == I2S_NUM_1) {
-            bck_sig = I2S1O_BCK_OUT_IDX;
-            ws_sig = I2S1O_WS_OUT_IDX;
-            data_out_sig = I2S1O_DATA_OUT23_IDX;
+        if (p_i2s_obj[i2s_num]->mode & I2S_MODE_MASTER) {
+            bck_sig = I2S0O_BCK_OUT_IDX;
+            ws_sig = I2S0O_WS_OUT_IDX;
+            data_out_sig = I2S0O_DATA_OUT23_IDX;
+            if (i2s_num == I2S_NUM_1) {
+                bck_sig = I2S1O_BCK_OUT_IDX;
+                ws_sig = I2S1O_WS_OUT_IDX;
+                data_out_sig = I2S1O_DATA_OUT23_IDX;
+            }
+        } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_SLAVE) {
+            bck_sig = I2S0O_BCK_IN_IDX;
+            ws_sig = I2S0O_WS_IN_IDX;
+            data_out_sig = I2S0O_DATA_OUT23_IDX;
+            if (i2s_num == I2S_NUM_1) {
+                bck_sig = I2S1O_BCK_IN_IDX;
+                ws_sig = I2S1O_WS_IN_IDX;
+                data_out_sig = I2S1O_DATA_OUT23_IDX;
+            }
         }
     }
+    if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
+            if (p_i2s_obj[i2s_num]->mode & I2S_MODE_MASTER) {
+                data_in_sig = I2S0I_DATA_IN15_IDX;
+                if (i2s_num == I2S_NUM_1) {
+                    bck_sig = I2S1O_BCK_OUT_IDX;
+                    ws_sig = I2S1O_WS_OUT_IDX;
+                    data_in_sig = I2S1I_DATA_IN15_IDX;
+                }
+            } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_SLAVE) {
+                bck_sig = I2S0I_BCK_IN_IDX;
+                ws_sig = I2S0I_WS_IN_IDX;
+                data_in_sig = I2S0I_DATA_IN15_IDX;
+                if (i2s_num == I2S_NUM_1) {
+                    bck_sig = I2S1I_BCK_IN_IDX;
+                    ws_sig = I2S1I_WS_IN_IDX;
+                    data_in_sig = I2S1I_DATA_IN15_IDX;
+                }
+            }
+        }
 
     gpio_matrix_out_check(pin->data_out_num, data_out_sig, 0, 0);
     gpio_matrix_in_check(pin->data_in_num, data_in_sig, 0);
@@ -439,20 +598,21 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
         gpio_matrix_in_check(pin->ws_io_num, ws_sig, 0);
         gpio_matrix_in_check(pin->bck_io_num, bck_sig, 0);
     }
-    ESP_LOGE(I2S_TAG, "data: out %d, in: %d, ws: %d, bck: %d", data_out_sig, data_in_sig, ws_sig, bck_sig);
+    ESP_LOGD(I2S_TAG, "data: out %d, in: %d, ws: %d, bck: %d", data_out_sig, data_in_sig, ws_sig, bck_sig);
+
     return ESP_OK;
 }
 
 esp_err_t i2s_set_sample_rates(i2s_port_t i2s_num, uint32_t rate)
 {
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
-    I2S_CHECK((p_i2s_obj[i2s_num]->bytes_per_sample > 0), "bits_per_sample not set", ESP_FAIL);
-    return i2s_set_clk(i2s_num, rate, p_i2s_obj[i2s_num]->bytes_per_sample*8, 0);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+    I2S_CHECK((p_i2s_obj[i2s_num]->bytes_per_sample > 0), "bits_per_sample not set", ESP_ERR_INVALID_ARG);
+    return i2s_set_clk(i2s_num, rate, p_i2s_obj[i2s_num]->bits_per_sample, p_i2s_obj[i2s_num]->channel_num);
 }
 static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_config)
 {
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
-    I2S_CHECK((i2s_config), "param null", ESP_FAIL);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+    I2S_CHECK((i2s_config), "param null", ESP_ERR_INVALID_ARG);
     if (i2s_num == I2S_NUM_1) {
         periph_module_enable(PERIPH_I2S1_MODULE);
     } else {
@@ -492,15 +652,15 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     I2S[i2s_num]->pdm_conf.pdm2pcm_conv_en = 0;
 
     I2S[i2s_num]->fifo_conf.dscr_en = 0;
-    p_i2s_obj[i2s_num]->channel_num = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 2 : 1;
 
     I2S[i2s_num]->conf_chan.tx_chan_mod = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? i2s_config->channel_format : (i2s_config->channel_format >> 1); // 0-two channel;1-right;2-left;3-righ;4-left
     I2S[i2s_num]->fifo_conf.tx_fifo_mod = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 0 : 1; // 0-right&left channel;1-one channel
-    I2S[i2s_num]->conf.tx_mono = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 0 : 1; // 0-right&left channel;1-one channel
+    I2S[i2s_num]->conf.tx_mono = 0;
 
     I2S[i2s_num]->conf_chan.rx_chan_mod = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? i2s_config->channel_format : (i2s_config->channel_format >> 1); // 0-two channel;1-right;2-left;3-righ;4-left
     I2S[i2s_num]->fifo_conf.rx_fifo_mod = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 0 : 1; // 0-right&left channel;1-one channel
-    I2S[i2s_num]->conf.rx_mono = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 0 : 1; // 0-right&left channel;1-one channel
+    I2S[i2s_num]->conf.rx_mono = 0;
+
     I2S[i2s_num]->fifo_conf.dscr_en = 1;//connect dma to fifo
 
     I2S[i2s_num]->conf.tx_start = 0;
@@ -523,7 +683,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         I2S[i2s_num]->conf.rx_right_first = 0;
         I2S[i2s_num]->conf.rx_slave_mod = 0; // Master
         I2S[i2s_num]->fifo_conf.rx_fifo_mod_force_en = 1;//?
-        I2S[i2s_num]->rx_eof_num = (i2s_config->dma_buf_len);
+        
         if (i2s_config->mode & I2S_MODE_SLAVE) {
             I2S[i2s_num]->conf.rx_slave_mod = 1;//RX Slave
         }
@@ -566,72 +726,67 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     }
     if ((p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) &&  (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX)) {
         I2S[i2s_num]->conf.sig_loopback = 1;
+        if (p_i2s_obj[i2s_num]->mode & I2S_MODE_MASTER) {
+            I2S[i2s_num]->conf.tx_slave_mod = 0;    //MASTER Slave
+            I2S[i2s_num]->conf.rx_slave_mod = 1;    //RX Slave
+        } else {
+            I2S[i2s_num]->conf.tx_slave_mod = 1;    //RX Slave
+            I2S[i2s_num]->conf.rx_slave_mod = 1;    //RX Slave
+        }
     }
-    i2s_set_clk(i2s_num, i2s_config->sample_rate, p_i2s_obj[i2s_num]->bytes_per_sample*8, 0);
     return ESP_OK;
 }
 
 esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num)
 {
-    int total_buffer_in_bytes = p_i2s_obj[i2s_num]->dma_buf_count * p_i2s_obj[i2s_num]->dma_buf_len * p_i2s_obj[i2s_num]->bytes_per_sample * p_i2s_obj[i2s_num]->channel_num;
-    const uint32_t zero_sample[2] = { 0 };
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
-    while (total_buffer_in_bytes > 0) {
-        i2s_push_sample(i2s_num, (const char*) zero_sample, 10);
-        total_buffer_in_bytes -= p_i2s_obj[i2s_num]->bytes_per_sample * p_i2s_obj[i2s_num]->channel_num;
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+    if (p_i2s_obj[i2s_num]->rx && p_i2s_obj[i2s_num]->rx->buf != NULL && p_i2s_obj[i2s_num]->rx->buf_size != 0) {
+        for (int i = 0; i < p_i2s_obj[i2s_num]->dma_buf_count; i++) {
+            memset(p_i2s_obj[i2s_num]->rx->buf[i], 0, p_i2s_obj[i2s_num]->rx->buf_size);
+        }
+    }
+    if (p_i2s_obj[i2s_num]->tx && p_i2s_obj[i2s_num]->tx->buf != NULL && p_i2s_obj[i2s_num]->tx->buf_size != 0) {
+        for (int i = 0; i < p_i2s_obj[i2s_num]->dma_buf_count; i++) {
+            memset(p_i2s_obj[i2s_num]->tx->buf[i], 0, p_i2s_obj[i2s_num]->tx->buf_size);
+        }
     }
     return ESP_OK;
 }
 
 esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config, int queue_size, void* i2s_queue)
 {
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
-    I2S_CHECK((i2s_config != NULL), "I2S configuration must not NULL", ESP_FAIL);
-    I2S_CHECK((i2s_config->dma_buf_count >= 2 && i2s_config->dma_buf_count <= 128), "I2S buffer count less than 128 and more than 2", ESP_FAIL);
-    I2S_CHECK((i2s_config->dma_buf_len >= 8 && i2s_config->dma_buf_len <= 2048), "I2S buffer length at most 2048 and more than 8", ESP_FAIL);
+    esp_err_t err;
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+    I2S_CHECK((i2s_config != NULL), "I2S configuration must not NULL", ESP_ERR_INVALID_ARG);
+    I2S_CHECK((i2s_config->dma_buf_count >= 2 && i2s_config->dma_buf_count <= 128), "I2S buffer count less than 128 and more than 2", ESP_ERR_INVALID_ARG);
+    I2S_CHECK((i2s_config->dma_buf_len >= 8 && i2s_config->dma_buf_len <= 1024), "I2S buffer length at most 1024 and more than 8", ESP_ERR_INVALID_ARG);
     if (p_i2s_obj[i2s_num] == NULL) {
         p_i2s_obj[i2s_num] = (i2s_obj_t*) malloc(sizeof(i2s_obj_t));
         if (p_i2s_obj[i2s_num] == NULL) {
             ESP_LOGE(I2S_TAG, "Malloc I2S driver error");
             return ESP_FAIL;
         }
+        memset(p_i2s_obj[i2s_num], 0, sizeof(i2s_obj_t));
 
         p_i2s_obj[i2s_num]->i2s_num = i2s_num;
         p_i2s_obj[i2s_num]->dma_buf_count = i2s_config->dma_buf_count;
         p_i2s_obj[i2s_num]->dma_buf_len = i2s_config->dma_buf_len;
         p_i2s_obj[i2s_num]->i2s_queue = i2s_queue;
         p_i2s_obj[i2s_num]->mode = i2s_config->mode;
-        p_i2s_obj[i2s_num]->bytes_per_sample = i2s_config->bits_per_sample/8;
 
-        //initial dma
-        if (ESP_FAIL == i2s_isr_register(i2s_num, i2s_config->intr_alloc_flags, i2s_intr_handler_default, p_i2s_obj[i2s_num], &p_i2s_obj[i2s_num]->i2s_isr_handle)) {
+        p_i2s_obj[i2s_num]->bits_per_sample = 0;
+        p_i2s_obj[i2s_num]->bytes_per_sample = 0; // Not initialized yet
+        p_i2s_obj[i2s_num]->channel_num = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 2 : 1;
+
+        //initial interrupt
+        err = i2s_isr_register(i2s_num, i2s_config->intr_alloc_flags, i2s_intr_handler_default, p_i2s_obj[i2s_num], &p_i2s_obj[i2s_num]->i2s_isr_handle);
+        if (err != ESP_OK) {
             free(p_i2s_obj[i2s_num]);
             ESP_LOGE(I2S_TAG, "Register I2S Interrupt error");
             return ESP_FAIL;
         }
         i2s_stop(i2s_num);
         i2s_param_config(i2s_num, i2s_config);
-
-        if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
-            p_i2s_obj[i2s_num]->tx = i2s_create_dma_queue(i2s_num, i2s_config->dma_buf_count, i2s_config->dma_buf_len);
-            if (p_i2s_obj[i2s_num]->tx == NULL) {
-                ESP_LOGE(I2S_TAG, "Failed to create tx dma buffer");
-                i2s_driver_uninstall(i2s_num);
-                return ESP_FAIL;
-            }
-            I2S[i2s_num]->out_link.addr = (uint32_t) p_i2s_obj[i2s_num]->tx->desc[0];
-        }
-
-        if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
-            p_i2s_obj[i2s_num]->rx = i2s_create_dma_queue(i2s_num, i2s_config->dma_buf_count, i2s_config->dma_buf_len);
-            if (p_i2s_obj[i2s_num]->rx == NULL){
-                ESP_LOGE(I2S_TAG, "Failed to create rx dma buffer");
-                i2s_driver_uninstall(i2s_num);
-                return ESP_FAIL;
-            }
-            I2S[i2s_num]->in_link.addr = (uint32_t) p_i2s_obj[i2s_num]->rx->desc[0];
-        }
-
 
         if (i2s_queue) {
             p_i2s_obj[i2s_num]->i2s_queue = xQueueCreate(queue_size, sizeof(i2s_event_t));
@@ -640,19 +795,17 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
         } else {
             p_i2s_obj[i2s_num]->i2s_queue = NULL;
         }
-
-        i2s_start(i2s_num);
-    } else {
-        ESP_LOGE(I2S_TAG, "I2S driver already installed");
-        return ESP_FAIL;
+        //set clock and start
+        return i2s_set_clk(i2s_num, i2s_config->sample_rate, i2s_config->bits_per_sample, p_i2s_obj[i2s_num]->channel_num);
     }
 
-    return ESP_OK;
+    ESP_LOGE(I2S_TAG, "I2S driver already installed");
+    return ESP_ERR_INVALID_STATE;
 }
 
 esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
 {
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     if (p_i2s_obj[i2s_num] == NULL) {
         ESP_LOGI(I2S_TAG, "ALREADY NULL");
         return ESP_OK;
@@ -689,7 +842,7 @@ int i2s_write_bytes(i2s_port_t i2s_num, const char *src, size_t size, TickType_t
 {
     char *data_ptr;
     int bytes_can_write, bytes_writen = 0;
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     if (p_i2s_obj[i2s_num]->tx == NULL) {
         return 0;
     }
@@ -722,7 +875,7 @@ int i2s_read_bytes(i2s_port_t i2s_num, char* dest, size_t size, TickType_t ticks
 {
     char *data_ptr;
     int bytes_can_read, byte_read = 0;
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     if (p_i2s_obj[i2s_num]->rx == NULL) {
         return 0;
     }
@@ -753,7 +906,7 @@ int i2s_push_sample(i2s_port_t i2s_num, const char *sample, TickType_t ticks_to_
 {
     int i, bytes_to_push = 0;
     char *data_ptr;
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     if (p_i2s_obj[i2s_num]->tx->rw_pos == p_i2s_obj[i2s_num]->tx->buf_size || p_i2s_obj[i2s_num]->tx->curr_ptr == NULL) {
         if (xQueueReceive(p_i2s_obj[i2s_num]->tx->queue, &p_i2s_obj[i2s_num]->tx->curr_ptr, ticks_to_wait) == pdFALSE) {
             return 0;
@@ -763,18 +916,11 @@ int i2s_push_sample(i2s_port_t i2s_num, const char *sample, TickType_t ticks_to_
     }
     data_ptr = (char*)p_i2s_obj[i2s_num]->tx->curr_ptr;
     data_ptr += p_i2s_obj[i2s_num]->tx->rw_pos;
-    for (i = 0; i < p_i2s_obj[i2s_num]->bytes_per_sample; i++) {
+    for (i = 0; i < p_i2s_obj[i2s_num]->bytes_per_sample * p_i2s_obj[i2s_num]->channel_num; i++) {
         *data_ptr++ = *sample++;
         bytes_to_push ++;
     }
-    if (p_i2s_obj[i2s_num]->channel_num == 2) {
-        for (i = 0; i < p_i2s_obj[i2s_num]->bytes_per_sample; i++) {
-            *data_ptr++ = *sample++;
-            bytes_to_push ++;
-        }
-    }
-
-    p_i2s_obj[i2s_num]->tx->rw_pos += p_i2s_obj[i2s_num]->bytes_per_sample * p_i2s_obj[i2s_num]->channel_num;
+    p_i2s_obj[i2s_num]->tx->rw_pos += bytes_to_push;
     return bytes_to_push;
 }
 
@@ -782,7 +928,7 @@ int i2s_pop_sample(i2s_port_t i2s_num, char *sample, TickType_t ticks_to_wait)
 {
     int  i, bytes_to_pop = 0;
     char *data_ptr;
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     if (p_i2s_obj[i2s_num]->rx->rw_pos == p_i2s_obj[i2s_num]->rx->buf_size || p_i2s_obj[i2s_num]->rx->curr_ptr == NULL) {
         if (xQueueReceive(p_i2s_obj[i2s_num]->rx->queue, &p_i2s_obj[i2s_num]->rx->curr_ptr, ticks_to_wait) == pdFALSE) {
             return 0;

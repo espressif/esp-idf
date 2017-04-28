@@ -44,6 +44,15 @@ typedef enum {
 } i2s_bits_per_sample_t;
 
 /**
+ * @brief I2S channel.
+ *
+ */
+typedef enum {
+    I2S_CHANNEL_MONO        = 1,            /*!< I2S 1 channel (mono)*/
+    I2S_CHANNEL_STEREO      = 2             /*!< I2S 2 channel (stereo)*/
+} i2s_channel_t;
+
+/**
  * @brief I2S communication standard format
  *
  */
@@ -337,6 +346,25 @@ esp_err_t i2s_start(i2s_port_t i2s_num);
  *     - ESP_FAIL Parameter error
  */
 esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
+
+/**
+ * @brief Set clock & bit width used for I2S RX and TX.
+ * 
+ * Similar to i2s_set_sample_rates(), but also sets bit width.
+ *
+ * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ *
+ * @param rate I2S sample rate (ex: 8000, 44100...)
+ *
+ * @param bits I2S bit width (I2S_BITS_PER_SAMPLE_16BIT, I2S_BITS_PER_SAMPLE_24BIT, I2S_BITS_PER_SAMPLE_32BIT)
+ *
+ * @param ch I2S channel, (I2S_CHANNEL_MONO, I2S_CHANNEL_STEREO)
+ * 
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t bits, i2s_channel_t ch);
 
 #ifdef __cplusplus
 }
