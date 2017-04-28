@@ -560,7 +560,8 @@ void btc_gatts_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_GATTS_ACT_SET_ATTR_VALUE:
-    
+        BTA_SetAttributeValue(arg->set_attr_val.handle, arg->set_attr_val.length, 
+                              arg->set_attr_val.value);
     break;
     case BTC_GATTS_ACT_OPEN: {
         // Ensure device is in inquiry database
