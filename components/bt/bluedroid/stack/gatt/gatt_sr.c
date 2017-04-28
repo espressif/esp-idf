@@ -1183,6 +1183,11 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
     tGATT_PREPARE_WRITE_RECORD *prepare_record = NULL;
     memset(&sr_data, 0, sizeof(tGATTS_DATA));
 
+    if (len < 2) {
+        GATT_TRACE_ERROR("%s: Prepare write request was invalid - missing offset, sending error response", __func__);
+        gatt_send_error_rsp(p_tcb, GATT_INVALID_PDU, op_code, handle, FALSE);
+        return;
+    }
     //get offset from p_data
     STREAM_TO_UINT16(offset, p);
     len -= 2;

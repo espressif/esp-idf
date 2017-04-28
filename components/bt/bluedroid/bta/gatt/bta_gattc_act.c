@@ -32,6 +32,7 @@
 
 #include "bta_gattc_int.h"
 #include "l2c_api.h"
+#include "l2c_int.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -978,8 +979,11 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     /* get any queued command to proceed */
     else if (p_q_cmd != NULL) {
         p_clcb->p_q_cmd = NULL;
-
-        bta_gattc_sm_execute(p_clcb, p_q_cmd->hdr.event, p_q_cmd);
+         /* execute pending operation of link block still present */
+        if (l2cu_find_lcb_by_bd_addr(p_clcb->p_srcb->server_bda, 
+            BT_TRANSPORT_LE) != NULL) {
+            bta_gattc_sm_execute(p_clcb, p_q_cmd->hdr.event, p_q_cmd);
+        }
         /* if the command executed requeued the cmd, we don't
          * want to free the underlying buffer that's being
          * referenced by p_clcb->p_q_cmd

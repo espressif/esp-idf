@@ -3691,6 +3691,17 @@ UINT8 *BTM_ReadOobData(UINT8 *p_data, UINT8 eir_tag, UINT8 *p_len);
 //extern
 char *BTM_SecReadDevName (BD_ADDR bd_addr);
 
+/*******************************************************************************
+**
+** Function         BTM_SecClearSecurityFlags
+**
+** Description      Reset the security flags (mark as not-paired) for a given
+**                  remove device.
+**
+*******************************************************************************/
+extern void BTM_SecClearSecurityFlags (BD_ADDR bd_addr);
+
+
 
 /*****************************************************************************
 **  POWER MANAGEMENT FUNCTIONS
