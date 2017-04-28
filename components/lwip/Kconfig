@@ -91,10 +91,10 @@ config LWIP_DHCP_DOES_ARP_CHECK
 
 config TCPIP_TASK_STACK_SIZE
     int "TCP/IP Task Stack Size"
-    default 2048
+    default 2560
     help
        Configure TCP/IP task stack size, used by LWIP to process multi-threaded TCP/IP operations.
-       The default is 2048 bytes, setting this stack too small will result in stack overflow crashes.
+       The default is 2560 bytes, setting this stack too small will result in stack overflow crashes.
 
 menuconfig PPP_SUPPORT
     bool "Enable PPP support (new/experimental)"
