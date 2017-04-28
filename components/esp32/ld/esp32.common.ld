@@ -83,6 +83,7 @@ SECTIONS
     _iram_text_start = ABSOLUTE(.);
     *(.iram1 .iram1.*)
     *libfreertos.a:(.literal .text .literal.* .text.*)
+    *libheap.a:(.literal .text .literal.* .text.*)
     *libesp32.a:panic.o(.literal .text .literal.* .text.*)
     *libesp32.a:core_dump.o(.literal .text .literal.* .text.*)
     *libesp32.a:heap_alloc_caps.o(.literal .text .literal.* .text.*)

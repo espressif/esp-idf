@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+#include <stdlib.h>
+
 /**
  * @brief Flags to indicate the capabilities of the various memory systems
  */

@@ -15,9 +15,7 @@
 #define _HEAP_REGIONS_H
 
 #include "freertos/FreeRTOS.h"
-
-/* The maximum amount of tags in use */
-#define HEAPREGIONS_MAX_TAGCOUNT 16
+#include <mumm_malloc.h>
 
 /**
  * @brief Structure to define a memory region
@@ -28,6 +26,7 @@ typedef struct HeapRegionTagged
     size_t xSizeInBytes;            ///< Size of the region
     BaseType_t xTag;                ///< Tag for the region
     uint32_t xExecAddr;             ///< If non-zero, indicates the region also has an alias in IRAM.
+	mumm_heap_handle heap;
 } HeapRegionTagged_t;
 
 /**

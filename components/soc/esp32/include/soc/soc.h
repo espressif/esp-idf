@@ -269,6 +269,18 @@
 #define  TICKS_PER_US_ROM                            26              // CPU is 80MHz
 //}}
 
+/* Overall memory map */
+#define SOC_IROM_LOW    0x400D0000
+#define SOC_IROM_HIGH   0x40400000
+#define SOC_IRAM_LOW    0x40080000
+#define SOC_IRAM_HIGH   0x400A0000
+#define SOC_DROM_LOW    0x3F400000
+#define SOC_DROM_HIGH   0x3F800000
+#define SOC_RTC_IRAM_LOW  0x400C0000
+#define SOC_RTC_IRAM_HIGH 0x400C2000
+#define SOC_RTC_DATA_LOW  0x50000000
+#define SOC_RTC_DATA_HIGH 0x50002000
+
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.
 #define ETS_WIFI_MAC_INTR_SOURCE                0/**< interrupt of WiFi MAC, level*/

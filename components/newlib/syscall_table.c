@@ -86,12 +86,14 @@ static struct syscall_stub_table s_stub_table = {
 #endif
 };
 
+void *pvPortMalloc(size_t);
+
 void esp_setup_syscall_table()
 {
     syscall_table_ptr_pro = &s_stub_table;
     syscall_table_ptr_app = &s_stub_table;
     _GLOBAL_REENT = &s_reent;
-    environ = malloc(sizeof(char*));
+    environ = pvPortMalloc(sizeof(char*));
     environ[0] = NULL;
 }
 

@@ -11,25 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <rom/ets_sys.h>
-
-#include <freertos/heap_regions.h>
-
-#include "esp_heap_alloc_caps.h"
-#include "spiram.h"
-#include "esp_log.h"
 #include <stdbool.h>
+#include <assert.h>
+#include "esp_heap_alloc_caps.h"
+#include "esp_log.h"
+#include "multi_heap.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/heap_regions.h> /* TODO remove this */
+
+/* The maximum amount of tags in use */
+#define HEAPREGIONS_MAX_TAGCOUNT 16
 
 static const char* TAG = "heap_alloc_caps";
 
 /*
-This file, combined with a region allocator that supports tags, solves the problem that the ESP32 has RAM that's 
-slightly heterogeneous. Some RAM can be byte-accessed, some allows only 32-bit accesses, some can execute memory,
-some can be remapped by the MMU to only be accessed by a certain PID etc. In order to allow the most flexible
-memory allocation possible, this code makes it possible to request memory that has certain capabilities. The
-code will then use its knowledge of how the memory is configured along with a priority scheme to allocate that
-memory in the most sane way possible. This should optimize the amount of RAM accessible to the code without
-hardwiring addresses.
+This file, combined with a region allocator that supports multiple heaps, solves the problem that the ESP32 has RAM
+that's slightly heterogeneous. Some RAM can be byte-accessed, some allows only 32-bit accesses, some can execute memory,
+some can be remapped by the MMU to only be accessed by a certain PID etc. In order to allow the most flexible memory
+allocation possible, this code makes it possible to request memory that has certain capabilities. The code will then use
+its knowledge of how the memory is configured along with a priority scheme to allocate that memory in the most sane way
+possible. This should optimize the amount of RAM accessible to the code without hardwiring addresses.
 */
 
 
@@ -71,6 +72,16 @@ static const tag_desc_t tag_desc[]={
     { "", { MALLOC_CAP_INVALID, MALLOC_CAP_INVALID, MALLOC_CAP_INVALID }, false} //End
 };
 
+typedef struct
+{
+    uint8_t *pucStartAddress;  ///< Start address of the region
+    size_t xSizeInBytes;            ///< Size of the region
+    size_t xTag;             ///< Tag for the region
+    uint32_t xExecAddr;     ///< If non-zero, indicates the region also has an alias in IRAM.
+    multi_heap_handle heap;
+    portMUX_TYPE heap_mux;
+} heap_t;
+
 /*
 Region descriptors. These describe all regions of memory available, and tag them according to the
 capabilities the hardware has. This array is not marked constant; the initialization code may want to
@@ -90,63 +101,74 @@ be sorted from low to high start address.
 
 This array is *NOT* const because it gets modified depending on what pools are/aren't available.
 */
-static HeapRegionTagged_t regions[]={
-    { (uint8_t *)0x3F800000, 0x20000, 15, 0}, //SPI SRAM, if available
-    { (uint8_t *)0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
-    { (uint8_t *)0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- if BT is enabled, used as BT HW shared memory
-    { (uint8_t *)0x3FFB8000, 0x8000, 0, 0}, //pool 14 <- if BT is enabled, used data memory for BT ROM functions.
-    { (uint8_t *)0x3FFC0000, 0x2000, 0, 0}, //pool 10-13, mmu page 0
-    { (uint8_t *)0x3FFC2000, 0x2000, 0, 0}, //pool 10-13, mmu page 1
-    { (uint8_t *)0x3FFC4000, 0x2000, 0, 0}, //pool 10-13, mmu page 2
-    { (uint8_t *)0x3FFC6000, 0x2000, 0, 0}, //pool 10-13, mmu page 3
-    { (uint8_t *)0x3FFC8000, 0x2000, 0, 0}, //pool 10-13, mmu page 4
-    { (uint8_t *)0x3FFCA000, 0x2000, 0, 0}, //pool 10-13, mmu page 5
-    { (uint8_t *)0x3FFCC000, 0x2000, 0, 0}, //pool 10-13, mmu page 6
-    { (uint8_t *)0x3FFCE000, 0x2000, 0, 0}, //pool 10-13, mmu page 7
-    { (uint8_t *)0x3FFD0000, 0x2000, 0, 0}, //pool 10-13, mmu page 8
-    { (uint8_t *)0x3FFD2000, 0x2000, 0, 0}, //pool 10-13, mmu page 9
-    { (uint8_t *)0x3FFD4000, 0x2000, 0, 0}, //pool 10-13, mmu page 10
-    { (uint8_t *)0x3FFD6000, 0x2000, 0, 0}, //pool 10-13, mmu page 11
-    { (uint8_t *)0x3FFD8000, 0x2000, 0, 0}, //pool 10-13, mmu page 12
-    { (uint8_t *)0x3FFDA000, 0x2000, 0, 0}, //pool 10-13, mmu page 13
-    { (uint8_t *)0x3FFDC000, 0x2000, 0, 0}, //pool 10-13, mmu page 14
-    { (uint8_t *)0x3FFDE000, 0x2000, 0, 0}, //pool 10-13, mmu page 15
-    { (uint8_t *)0x3FFE0000, 0x4000, 1, 0x400BC000}, //pool 9 blk 1
-    { (uint8_t *)0x3FFE4000, 0x4000, 1, 0x400B8000}, //pool 9 blk 0
-    { (uint8_t *)0x3FFE8000, 0x8000, 1, 0x400B0000}, //pool 8 <- can be remapped to ROM, used for MAC dump
-    { (uint8_t *)0x3FFF0000, 0x8000, 1, 0x400A8000}, //pool 7 <- can be used for MAC dump
-    { (uint8_t *)0x3FFF8000, 0x4000, 1, 0x400A4000}, //pool 6 blk 1 <- can be used as trace memory
-    { (uint8_t *)0x3FFFC000, 0x4000, 1, 0x400A0000}, //pool 6 blk 0 <- can be used as trace memory
-    { (uint8_t *)0x40070000, 0x8000, 2, 0}, //pool 0
-    { (uint8_t *)0x40078000, 0x8000, 2, 0}, //pool 1
-    { (uint8_t *)0x40080000, 0x2000, 2, 0}, //pool 2-5, mmu page 0
-    { (uint8_t *)0x40082000, 0x2000, 2, 0}, //pool 2-5, mmu page 1
-    { (uint8_t *)0x40084000, 0x2000, 2, 0}, //pool 2-5, mmu page 2
-    { (uint8_t *)0x40086000, 0x2000, 2, 0}, //pool 2-5, mmu page 3
-    { (uint8_t *)0x40088000, 0x2000, 2, 0}, //pool 2-5, mmu page 4
-    { (uint8_t *)0x4008A000, 0x2000, 2, 0}, //pool 2-5, mmu page 5
-    { (uint8_t *)0x4008C000, 0x2000, 2, 0}, //pool 2-5, mmu page 6
-    { (uint8_t *)0x4008E000, 0x2000, 2, 0}, //pool 2-5, mmu page 7
-    { (uint8_t *)0x40090000, 0x2000, 2, 0}, //pool 2-5, mmu page 8
-    { (uint8_t *)0x40092000, 0x2000, 2, 0}, //pool 2-5, mmu page 9
-    { (uint8_t *)0x40094000, 0x2000, 2, 0}, //pool 2-5, mmu page 10
-    { (uint8_t *)0x40096000, 0x2000, 2, 0}, //pool 2-5, mmu page 11
-    { (uint8_t *)0x40098000, 0x2000, 2, 0}, //pool 2-5, mmu page 12
-    { (uint8_t *)0x4009A000, 0x2000, 2, 0}, //pool 2-5, mmu page 13
-    { (uint8_t *)0x4009C000, 0x2000, 2, 0}, //pool 2-5, mmu page 14
-    { (uint8_t *)0x4009E000, 0x2000, 2, 0}, //pool 2-5, mmu page 15
-    { NULL, 0, 0, 0} //end
+static heap_t regions[]={
+    { (uint8_t *)0x3F800000, 0x20000, 15, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //SPI SRAM, if available
+    { (uint8_t *)0x3FFAE000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 16 <- used for rom code
+    { (uint8_t *)0x3FFB0000, 0x8000, 0, 0,  0, portMUX_INITIALIZER_UNLOCKED}, //pool 15 <- if BT is enabled, used as BT HW shared memory
+    { (uint8_t *)0x3FFB8000, 0x8000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 14 <- if BT is enabled, used data memory for BT ROM functions.
+    { (uint8_t *)0x3FFC0000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 0
+    { (uint8_t *)0x3FFC2000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 1
+    { (uint8_t *)0x3FFC4000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 2
+    { (uint8_t *)0x3FFC6000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 3
+    { (uint8_t *)0x3FFC8000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 4
+    { (uint8_t *)0x3FFCA000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 5
+    { (uint8_t *)0x3FFCC000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 6
+    { (uint8_t *)0x3FFCE000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 7
+    { (uint8_t *)0x3FFD0000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 8
+    { (uint8_t *)0x3FFD2000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 9
+    { (uint8_t *)0x3FFD4000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 10
+    { (uint8_t *)0x3FFD6000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 11
+    { (uint8_t *)0x3FFD8000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 12
+    { (uint8_t *)0x3FFDA000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 13
+    { (uint8_t *)0x3FFDC000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 14
+    { (uint8_t *)0x3FFDE000, 0x2000, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 10-13, mmu page 15
+    { (uint8_t *)0x3FFE0000, 0x4000, 1, 0x400BC000, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 9 blk 1
+    { (uint8_t *)0x3FFE4000, 0x4000, 1, 0x400B8000, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 9 blk 0
+    { (uint8_t *)0x3FFE8000, 0x8000, 1, 0x400B0000, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 8 <- can be remapped to ROM, used for MAC dump
+    { (uint8_t *)0x3FFF0000, 0x8000, 1, 0x400A8000, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 7 <- can be used for MAC dump
+    { (uint8_t *)0x3FFF8000, 0x4000, 1, 0x400A4000, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 6 blk 1 <- can be used as trace memory
+    { (uint8_t *)0x3FFFC000, 0x4000, 1, 0x400A0000, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 6 blk 0 <- can be used as trace memory
+    { (uint8_t *)0x40070000, 0x8000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 0
+    { (uint8_t *)0x40078000, 0x8000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 1
+    { (uint8_t *)0x40080000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 0
+    { (uint8_t *)0x40082000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 1
+    { (uint8_t *)0x40084000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 2
+    { (uint8_t *)0x40086000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 3
+    { (uint8_t *)0x40088000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 4
+    { (uint8_t *)0x4008A000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 5
+    { (uint8_t *)0x4008C000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 6
+    { (uint8_t *)0x4008E000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 7
+    { (uint8_t *)0x40090000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 8
+    { (uint8_t *)0x40092000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 9
+    { (uint8_t *)0x40094000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 10
+    { (uint8_t *)0x40096000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 11
+    { (uint8_t *)0x40098000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 12
+    { (uint8_t *)0x4009A000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 13
+    { (uint8_t *)0x4009C000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 14
+    { (uint8_t *)0x4009E000, 0x2000, 2, 0, 0, portMUX_INITIALIZER_UNLOCKED}, //pool 2-5, mmu page 15
+    { NULL, 0, 0, 0, 0, portMUX_INITIALIZER_UNLOCKED} //end
 };
 
-/* For the startup code, the stacks live in memory tagged by this tag. Hence, we only enable allocating from this tag 
+#define NUM_REGIONS (sizeof(regions)/sizeof(heap_t))
+
+/* For the startup code, the stacks live in memory tagged by this tag. Hence, we only enable allocating from this tag
    once FreeRTOS has started up completely. */
 #define NONOS_STACK_TAG 1
 
-static bool nonos_stack_in_use=true;
+static void register_heap_region(heap_t *region)
+{
+        region->heap = multi_heap_register(region->pucStartAddress, region->xSizeInBytes, &(region->heap_mux));
+        ESP_EARLY_LOGI(TAG, "new heap @ %p", region->heap);
+        assert(region->heap);
+}
 
 void heap_alloc_enable_nonos_stack_tag()
 {
-    nonos_stack_in_use=false;
+    for (int i = 0; regions[i].xSizeInBytes!=0; i++) {
+        if (regions[i].xTag == NONOS_STACK_TAG) {
+            register_heap_region(&regions[i]);
+        }
+    }
 }
 
 //Modify regions array to disable the given range of memory.
@@ -259,13 +281,19 @@ void heap_alloc_caps_init() {
 
     ESP_EARLY_LOGI(TAG, "Initializing. RAM available for dynamic allocation:");
     for (i=0; regions[i].xSizeInBytes!=0; i++) {
-        if (regions[i].xTag != -1) {
-            ESP_EARLY_LOGI(TAG, "At %08X len %08X (%d KiB): %s", 
-                    (int)regions[i].pucStartAddress, regions[i].xSizeInBytes, regions[i].xSizeInBytes/1024, tag_desc[regions[i].xTag].name);
+        if (regions[i].xTag == -1) {
+            continue;
         }
+
+        ESP_EARLY_LOGI(TAG, "At %08X len %08X (%d KiB): %s",
+                       (int)regions[i].pucStartAddress, regions[i].xSizeInBytes, regions[i].xSizeInBytes/1024, tag_desc[regions[i].xTag].name);
+
+        if (regions[i].xTag == NONOS_STACK_TAG) {
+            continue; /* Will be registered when OS scheduler starts */
+        }
+
+        register_heap_region(&regions[i]);
     }
-    //Initialize the malloc implementation.
-    vPortDefineHeapRegionsTagged( regions );
 }
 
 //First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
@@ -306,6 +334,25 @@ void *pvPortMalloc( size_t xWantedSize )
     return pvPortMallocCaps( xWantedSize, MALLOC_CAP_8BIT );
 }
 
+void vPortFreeTagged( void *pv )
+{
+    intptr_t p = (intptr_t)pv;
+    if (pv == NULL) {
+        return;
+    }
+    for (size_t i = 0; regions[i].xSizeInBytes!=0; i++) {
+        if (regions[i].xTag == -1) {
+            continue;
+        }
+        intptr_t start = (intptr_t)regions[i].pucStartAddress;
+        if(p >= start && p < start + regions[i].xSizeInBytes) {
+            multi_free(regions[i].heap, pv);
+            return;
+        }
+    }
+    assert(false && "free() target pointer is outside heap areas");
+}
+
 /*
  Standard free() implementation. Will pass memory on to the allocator unless it's an IRAM address where the
  actual meory is allocated in DRAM, it will convert to the DRAM address then.
@@ -321,6 +368,22 @@ void vPortFree( void *pv )
     }
 
     return vPortFreeTagged(pv);
+}
+
+void *pvPortMallocTagged( size_t xWantedSize, BaseType_t tag )
+{
+    if (tag == -1) {
+        return NULL;
+    }
+    for (size_t i = 0; i < NUM_REGIONS; i++) {
+        if (regions[i].xTag == tag && regions[i].heap != NULL) {
+            void * r = multi_malloc(regions[i].heap, xWantedSize);
+            if (r != NULL) {
+                return r;
+            }
+        }
+    }
+    return NULL;
 }
 
 /*
@@ -346,10 +409,6 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
     for (prio=0; prio<NO_PRIOS; prio++) {
         //Iterate over tag descriptors for this priority
         for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
-            if (nonos_stack_in_use && tag == NONOS_STACK_TAG) {
-                //Non-os stack lives here and is still in use. Don't alloc here.
-                continue;
-            }
             if ((tag_desc[tag].prio[prio]&caps)!=0) {
                 //Tag has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.
@@ -381,6 +440,29 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
 }
 
 
+size_t xPortGetFreeHeapSizeTagged(BaseType_t tag)
+{
+    size_t ret = 0;
+    for (size_t i = 0; regions[i].xSizeInBytes!=0; i++) {
+        if (regions[i].xTag == tag && regions[i].heap != NULL) {
+            ret += multi_free_heap_size(regions[i].heap);
+        }
+    }
+    return ret;
+}
+
+size_t xPortGetMinimumEverFreeHeapSizeTagged(BaseType_t tag)
+{
+    size_t ret = 0;
+    for (size_t i = 0; regions[i].xSizeInBytes!=0; i++) {
+        if (regions[i].xTag == tag && regions[i].heap != NULL) {
+            ret += multi_minimum_free_heap_size(regions[i].heap);
+        }
+    }
+    return ret;
+}
+
+
 size_t xPortGetFreeHeapSizeCaps( uint32_t caps )
 {
     int prio;
@@ -402,6 +484,7 @@ size_t xPortGetMinimumEverFreeHeapSizeCaps( uint32_t caps )
     int prio;
     int tag;
     size_t ret=0;
+
     for (prio=0; prio<NO_PRIOS; prio++) {
         //Iterate over tag descriptors for this priority
         for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
