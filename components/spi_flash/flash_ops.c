@@ -334,6 +334,7 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
         }
         bzero(encrypt_buf, sizeof(encrypt_buf));
     }
+    spi_flash_enable_interrupts_caches_and_other_cpu();
     COUNTER_ADD_BYTES(write, size);
     COUNTER_STOP(write);
 
