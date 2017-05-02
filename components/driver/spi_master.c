@@ -177,6 +177,8 @@ esp_err_t spi_bus_free(spi_host_device_t host)
     spihost[host]->hw->slave.trans_done=0;
     esp_intr_free(spihost[host]->intr);
     spicommon_periph_free(host);
+    free(spihost[host]->dmadesc_tx);
+    free(spihost[host]->dmadesc_rx);
     free(spihost[host]);
     spihost[host]=NULL;
     return ESP_OK;
