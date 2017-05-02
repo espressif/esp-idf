@@ -13,7 +13,13 @@ For example, one can register a FAT filesystem driver with ``/fat`` prefix, and 
 FS registration
 ---------------
 
-To register an FS driver, application needs to define in instance of esp_vfs_t structure and populate it with function pointers to FS APIs::
+
+
+To register an FS driver, application needs to define in instance of esp_vfs_t structure and populate it with function pointers to FS APIs:
+
+.. highlight:: c
+
+::
 
     esp_vfs_t myfs = {
         .fd_offset = 0,
@@ -97,6 +103,8 @@ Lower ``CONFIG_MAX_FD_BITS`` bits are used to store zero-based file descriptor. 
 
 When VFS component receives a call from newlib which has a file descriptor, this file descriptor is translated back to the FS-specific file descriptor. First, higher bits of FD are used to identify the FS. Then ``fd_offset`` field of the FS is added to the lower ``CONFIG_MAX_FD_BITS`` bits of the fd, and resulting FD is passed to the FS driver.
 
+.. highlight:: none
+
 ::
 
        FD as seen by newlib                                    FD as seen by FS driver
@@ -132,15 +140,19 @@ Note that while writing to ``stdout`` or ``stderr`` will block until all charact
 Standard streams and FreeRTOS tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``FILE`` objects for ``stdin``, ``stdout``, and ``stderr`` are shared between all FreeRTOS tasks, but the pointers to these objects are are stored in per-task ``struct _reent``. The following code::
+``FILE`` objects for ``stdin``, ``stdout``, and ``stderr`` are shared between all FreeRTOS tasks, but the pointers to these objects are are stored in per-task ``struct _reent``. The following code:
+
+.. highlight:: c
+
+::
 
     fprintf(stderr, "42\n");
 
-actually is translated to to this (by the preprocessor):
+actually is translated to to this (by the preprocessor)::
 
     fprintf(__getreent()->_stderr, "42\n");
 
-where the ``__getreent()`` function returns a per-task pointer to ``struct _reent`` (:component_file:`newlib/include/sys/reent.h#L370-L417>`). This structure is allocated on the TCB of each task. When a task is initialized, ``_stdin``, ``_stdout`` and ``_stderr`` members of ``struct _reent`` are set to the values of ``_stdin``, ``_stdout`` and ``_stderr`` of ``_GLOBAL_REENT`` (i.e. the structure which is used before FreeRTOS is started).
+where the ``__getreent()`` function returns a per-task pointer to ``struct _reent`` (:component_file:`newlib/include/sys/reent.h#L370-L417`). This structure is allocated on the TCB of each task. When a task is initialized, ``_stdin``, ``_stdout`` and ``_stderr`` members of ``struct _reent`` are set to the values of ``_stdin``, ``_stdout`` and ``_stderr`` of ``_GLOBAL_REENT`` (i.e. the structure which is used before FreeRTOS is started).
 
 Such a design has the following consequences:
 

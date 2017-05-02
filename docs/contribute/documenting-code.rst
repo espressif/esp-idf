@@ -95,7 +95,7 @@ There is couple of tips, how you can make your documentation even better and mor
     * @endcode
     *
 
-    The code snippet should be enclosed in a comment block of the function that it illustrates.
+   The code snippet should be enclosed in a comment block of the function that it illustrates.
 
 2. To highlight some important information use command ``@attention`` or ``@note``. ::
 
@@ -105,9 +105,24 @@ There is couple of tips, how you can make your documentation even better and mor
     *     2. If the ESP32 is connected to an AP, call esp_wifi_disconnect to disconnect.
     *
 
-  Above example also shows how to use a numbered list.
+   Above example also shows how to use a numbered list.
 
-3. Use markdown to make your documentation even more readable. You will add headers, links, tables and more. ::
+3. To provide common description to a group of similar functions, enclose them using ``/**@{*/`` and ``/**@}*/`` markup commands::
+
+    /**@{*/
+    /**
+     * @brief common description of similar functions
+     *
+     */
+    void  first_similar_function (void);
+    void second_similar_function (void);
+    /**@}*/ 
+
+   For practical example see :component_file:`nvs_flash/include/nvs.h`.
+
+4. You may want to go even further and skip some code like e.g. repetitive defines or enumerations. In such case enclose the code within ``/** @cond */`` and ``/** @endcond */`` commands. Example of such implementation is provided in :component_file:`driver/include/driver/gpio.h`.
+
+5. Use markdown to make your documentation even more readable. You will add headers, links, tables and more. ::
 
     *
     * [ESP32 Technical Reference](http://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf)
@@ -117,8 +132,9 @@ There is couple of tips, how you can make your documentation even better and mor
 
     Code snippets, notes, links, etc. will not make it to the documentation, if not enclosed in a comment block associated with one of documented objects.
 
-4. Prepare one or more complete code examples together with description. Place description in a separate file ``README.md`` in specific folder of :idf:`examples` directory. 
+6. Prepare one or more complete code examples together with description. Place description in a separate file ``README.md`` in specific folder of :idf:`examples` directory. 
 
+.. _link-custom-roles:
 
 Linking Examples
 ----------------
@@ -128,13 +144,13 @@ When linking to examples on GitHub do not use absolute / hadcoded URLs. Instead,
 The following roles are provided:
 
 - ``:idf:`path``` - points to directory inside ESP-IDF
-- ``:idf_blob:`path``` - points to file inside ESP-IDF
+- ``:idf_file:`path``` - points to file inside ESP-IDF
 - ``:idf_raw:`path``` - points to raw view of the file inside ESP-IDF
 - ``:component:`path``` - points to directory inside ESP-IDF components dir
-- ``:component_blob:`path``` - points to file inside ESP-IDF components dir
+- ``:component_file:`path``` - points to file inside ESP-IDF components dir
 - ``:component_raw:`path``` - points to raw view of the file inside ESP-IDF components dir
 - ``:example:`path``` - points to directory inside ESP-IDF examples dir
-- ``:example_blob:`path``` - points to file inside ESP-IDF examples dir
+- ``:example_file:`path``` - points to file inside ESP-IDF examples dir
 - ``:example_raw:`path``` - points to raw view of the file inside ESP-IDF examples dir
 
 A check is added to the CI build script, which searches RST files for presence of hard-coded links (identified by tree/master, blob/master, or raw/master part of the URL). This check can be run manually: ``cd docs`` and then ``make gh-linkcheck``.
@@ -170,4 +186,12 @@ We love it even better, if it is well documented, so we can quickly make it run 
 
 Go ahead, contribute your code and documentation!
 
+
+Related Documents
+-----------------
+
+* :doc:`../api-reference/template`
+
+
 .. _espressif/esp-idf: https://github.com/espressif/esp-idf/
+

@@ -1,5 +1,5 @@
 Memory allocation
-====================
+=================
 
 Overview
 --------
@@ -30,48 +30,13 @@ If a certain memory structure is only addressed in 32-bit units, for example an 
 useful to allocate it with the MALLOC_CAP_32BIT flag. This also allows the allocator to give out IRAM memory; something
 which it can't do for a normal malloc() call. This can help to use all the available memory in the ESP32.
 
+API Reference - Heap Allocation
+-------------------------------
 
-API Reference
--------------
+.. include:: /_build/inc/esp_heap_alloc_caps.inc
 
-Header Files
-^^^^^^^^^^^^
+API Reference - Heap Regions
+----------------------------
 
-  * :component_file:`esp32/include/esp_heap_alloc_caps.h`
-  * :component_file:`freertos/include/freertos/heap_regions.h`
+.. include:: /_build/inc/heap_regions.inc
 
-
-Macros
-^^^^^^
-
-.. doxygendefine:: MALLOC_CAP_EXEC
-.. doxygendefine:: MALLOC_CAP_32BIT
-.. doxygendefine:: MALLOC_CAP_8BIT
-.. doxygendefine:: MALLOC_CAP_DMA
-.. doxygendefine:: MALLOC_CAP_PID2
-.. doxygendefine:: MALLOC_CAP_PID3
-.. doxygendefine:: MALLOC_CAP_PID4
-.. doxygendefine:: MALLOC_CAP_PID5
-.. doxygendefine:: MALLOC_CAP_PID6
-.. doxygendefine:: MALLOC_CAP_PID7
-.. doxygendefine:: MALLOC_CAP_SPISRAM
-.. doxygendefine:: MALLOC_CAP_INVALID
-
-Type Definitions
-^^^^^^^^^^^^^^^^
-
-.. doxygentypedef:: HeapRegionTagged_t
-
-
-Functions
-^^^^^^^^^
-
-.. doxygenfunction:: heap_alloc_caps_init
-.. doxygenfunction:: pvPortMallocCaps
-.. doxygenfunction:: xPortGetFreeHeapSizeCaps
-.. doxygenfunction:: xPortGetMinimumEverFreeHeapSizeCaps
-.. doxygenfunction:: vPortDefineHeapRegionsTagged
-.. doxygenfunction:: pvPortMallocTagged
-.. doxygenfunction:: vPortFreeTagged
-.. doxygenfunction:: xPortGetMinimumEverFreeHeapSizeTagged
-.. doxygenfunction:: xPortGetFreeHeapSizeTagged

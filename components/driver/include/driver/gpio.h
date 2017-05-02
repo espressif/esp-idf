@@ -31,7 +31,13 @@ extern "C" {
 
 #define GPIO_SEL_0              (BIT(0))                         /*!< Pin 0 selected */
 #define GPIO_SEL_1              (BIT(1))                         /*!< Pin 1 selected */
-#define GPIO_SEL_2              (BIT(2))                         /*!< Pin 2 selected */
+#define GPIO_SEL_2              (BIT(2))                         /*!< Pin 2 selected 
+                                                                      @note There are more macros
+                                                                      like that up to pin 39,
+                                                                      excluding pins 20, 24 and 28..31.
+                                                                      They are not shown here 
+                                                                      to reduce redundant information. */
+/** @cond */
 #define GPIO_SEL_3              (BIT(3))                         /*!< Pin 3 selected */
 #define GPIO_SEL_4              (BIT(4))                         /*!< Pin 4 selected */
 #define GPIO_SEL_5              (BIT(5))                         /*!< Pin 5 selected */
@@ -114,14 +120,21 @@ extern "C" {
 #define GPIO_MODE_DEF_OD              (BIT2)
 
 #define GPIO_PIN_COUNT              40
+/** @endcond */
+
 extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
-#define GPIO_IS_VALID_GPIO(gpio_num)      ((gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0))   //to decide whether it is a valid GPIO number
-#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 34))         //to decide whether it can be a valid GPIO number of output mode
+#define GPIO_IS_VALID_GPIO(gpio_num)      ((gpio_num < GPIO_PIN_COUNT && GPIO_PIN_MUX_REG[gpio_num] != 0))   /*!< Check whether it is a valid GPIO number */
+#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 34))         /*!< Check whether it can be a valid GPIO number of output mode */
 
 typedef enum {
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
     GPIO_NUM_1 = 1,     /*!< GPIO1, input and output */
-    GPIO_NUM_2 = 2,     /*!< GPIO2, input and output */
+    GPIO_NUM_2 = 2,     /*!< GPIO2, input and output
+		                     @note There are more enumerations like that
+                             up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+		                     They are not shown here to reduce redundant information.
+                             @note GPIO34..29 are input mode only. */
+/** @cond */
     GPIO_NUM_3 = 3,     /*!< GPIO3, input and output */
     GPIO_NUM_4 = 4,     /*!< GPIO4, input and output */
     GPIO_NUM_5 = 5,     /*!< GPIO5, input and output */
@@ -157,6 +170,7 @@ typedef enum {
     GPIO_NUM_38 = 38,   /*!< GPIO38, input mode only */
     GPIO_NUM_39 = 39,   /*!< GPIO39, input mode only */
     GPIO_NUM_MAX = 40,
+/** @endcond */    
 } gpio_num_t;
 
 typedef enum {
