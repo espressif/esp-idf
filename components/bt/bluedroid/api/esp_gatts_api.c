@@ -347,6 +347,7 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_SET_ATTR_VALUE;
+    arg.set_attr_val.handle = attr_handle;
     arg.set_attr_val.length = length;
     arg.set_attr_val.value  = (uint8_t *)value;
 
