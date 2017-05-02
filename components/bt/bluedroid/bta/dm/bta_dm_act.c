@@ -3414,6 +3414,7 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr)
             BTM_IsAclConnectionUp(remote_bd_addr, BT_TRANSPORT_BR_EDR)) {
         APPL_TRACE_DEBUG("%s ACL is not down. Schedule for  Dev Removal when ACL closes",
                          __FUNCTION__);
+        BTM_SecClearSecurityFlags (remote_bd_addr);
         for (index = 0; index < bta_dm_cb.device_list.count; index ++) {
             if (!bdcmp( bta_dm_cb.device_list.peer_device[index].peer_bdaddr, remote_bd_addr)) {
                 break;

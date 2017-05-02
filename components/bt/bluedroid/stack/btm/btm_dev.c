@@ -198,6 +198,26 @@ BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr)
 
 /*******************************************************************************
 **
+** Function         BTM_SecClearSecurityFlags
+**
+** Description      Reset the security flags (mark as not-paired) for a given
+**                  remove device.
+**
+*******************************************************************************/
+extern void BTM_SecClearSecurityFlags (BD_ADDR bd_addr)
+{
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
+    if (p_dev_rec == NULL)
+        return;
+
+    p_dev_rec->sec_flags = 0;
+    p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+    p_dev_rec->sm4 = BTM_SM4_UNKNOWN;
+}
+
+
+/*******************************************************************************
+**
 ** Function         BTM_SecReadDevName
 **
 ** Description      Looks for the device name in the security database for the
