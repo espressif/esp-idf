@@ -22,10 +22,12 @@ static ff_diskio_impl_t * s_impls[_VOLUMES];
 static sdmmc_card_t* s_cards[_VOLUMES] = { NULL };
 static bool s_impls_initialized = false;
 
+#if _MULTI_PARTITION		/* Multiple partition configuration */
 PARTITION VolToPart[] = {
-    {0, 1},    /* Logical drive 0 ==> Physical drive 0, 1st partition */
+    {0, 0},    /* Logical drive 0 ==> Physical drive 0, auto detection */
     {1, 0}     /* Logical drive 1 ==> Physical drive 1, auto detection */
 };
+#endif
 
 esp_err_t ff_diskio_get_drive(BYTE* out_pdrv)
 {
