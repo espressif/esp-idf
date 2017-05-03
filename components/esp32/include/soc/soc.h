@@ -170,7 +170,7 @@
 #define DR_REG_I2S_BASE                         0x3ff4F000
 #define DR_REG_UART1_BASE                       0x3ff50000
 #define DR_REG_BT_BASE                          0x3ff51000
-#define DR_REG_I2C_EXT_BASE                     0x3ff53000
+#define DR_REG_I2C_EXT_BASE                     0x60013000//0x3ff53000
 #define DR_REG_UHCI0_BASE                       0x3ff54000
 #define DR_REG_SLCHOST_BASE                     0x3ff55000
 #define DR_REG_RMT_BASE                         0x3ff56000
@@ -184,7 +184,7 @@
 #define DR_REG_TIMERGROUP1_BASE                 0x3ff60000
 #define DR_REG_SPI2_BASE                        0x3ff64000
 #define DR_REG_SPI3_BASE                        0x3ff65000
-#define DR_REG_I2C1_EXT_BASE                    0x3ff67000
+#define DR_REG_I2C1_EXT_BASE                    0x60027000//0x3ff67000
 #define DR_REG_SDMMC_BASE                       0x3ff68000
 #define DR_REG_EMAC_BASE                        0x3ff69000
 #define DR_REG_PWM1_BASE                        0x3ff6C000
