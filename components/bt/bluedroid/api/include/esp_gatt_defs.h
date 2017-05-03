@@ -297,13 +297,17 @@ typedef enum {
 
 
 /**
- * @brief attribute auto respose flag
+ * @brief attribute auto response flag
  */
 typedef struct
 {
 #define ESP_GATT_RSP_BY_APP             0
 #define ESP_GATT_AUTO_RSP               1
-    uint8_t auto_rsp;           /*!< need the app response to the client if need_rsp set to 1*/  
+    /**
+     * @brief if auto_rsp set to ESP_GATT_RSP_BY_APP, means the response of Write/Read operation will by replied by application.
+              if auto_rsp set to ESP_GATT_AUTO_RSP, means the response of Write/Read operation will be replied by GATT stack automatically.
+     */  
+    uint8_t auto_rsp;                   
 } esp_attr_control_t;
 
 
@@ -312,8 +316,8 @@ typedef struct
  */
 typedef struct
 {
-    esp_attr_control_t      attr_control;       /*!< The attribue control type*/
-    esp_attr_desc_t         att_desc;           /*!< The attribue type*/
+    esp_attr_control_t      attr_control;       /*!< The attribute control type*/
+    esp_attr_desc_t         att_desc;           /*!< The attribute type*/
 } esp_gatts_attr_db_t;
 
 
