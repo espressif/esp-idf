@@ -189,6 +189,13 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
     case ESP_GATTC_WRITE_DESCR_EVT:
         ESP_LOGI(GATTC_TAG, "WRITE: status %d", p_data->write.status);
         break;
+    case ESP_GATTC_SRVC_CHG_EVT: {
+        esp_bd_addr_t bda;
+        memcpy(bda, p_data->srvc_chg.remote_bda, sizeof(esp_bd_addr_t));
+        ESP_LOGI(GATTC_TAG, "ESP_GATTC_SRVC_CHG_EVT, bd_addr:%08x%04x",(bda[0] << 24) + (bda[1] << 16) + (bda[2] << 8) + bda[3],
+                 (bda[4] << 8) + bda[5]);
+        break;
+    }
     default:
         break;
     }

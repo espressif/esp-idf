@@ -186,7 +186,7 @@ static void gatt_request_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYPE
     UINT8       status = GATT_INVALID_PDU;
     tGATTS_RSP   rsp_msg ;
     BOOLEAN     ignore = FALSE;
-
+    GATT_TRACE_DEBUG("%s",__func__);
     memset(&rsp_msg, 0, sizeof(tGATTS_RSP));
 
     switch (type) {
@@ -235,12 +235,28 @@ static void gatt_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
 {
     UNUSED(gatt_if);
 
-    GATT_TRACE_EVENT ("%s: from %08x%04x connected:%d conn_id=%d reason = 0x%04x", __FUNCTION__,
+    GATT_TRACE_DEBUG ("%s: from %08x%04x connected:%d conn_id=%d reason = 0x%04x", __FUNCTION__,
                       (bda[0] << 24) + (bda[1] << 16) + (bda[2] << 8) + bda[3],
                       (bda[4] << 8) + bda[5], connected, conn_id, reason);
 
     tGATT_PROFILE_CLCB *p_clcb = gatt_profile_find_clcb_by_bd_addr(bda, transport);
     if (p_clcb == NULL) {
+        p_clcb = gatt_profile_clcb_alloc (conn_id, bda, transport);
+    }
+
+    if (p_clcb == NULL) {
+        return;
+    }
+
+    if (GATT_GetConnIdIfConnected (gatt_cb.gatt_if, bda, &p_clcb->conn_id, transport)) {
+        p_clcb->connected = TRUE;
+        p_clcb->conn_id = conn_id;
+    }
+    
+    p_clcb->ccc_stage = GATT_SVC_CHANGED_CONNECTING;
+
+    if (!p_clcb->connected) {
+        /* wait for connection */
         return;
     }
 
@@ -303,21 +319,6 @@ void gatt_profile_db_init (void)
 
 /*******************************************************************************
 **
-** Function         gatt_config_ccc_complete
-**
-** Description      The function finish the service change ccc configuration
-**
-** Returns          void
-**
-*******************************************************************************/
-static void gatt_config_ccc_complete(tGATT_PROFILE_CLCB *p_clcb)
-{
-    GATT_Disconnect(p_clcb->conn_id);
-    gatt_profile_clcb_dealloc(p_clcb);
-}
-
-/*******************************************************************************
-**
 ** Function         gatt_disc_res_cback
 **
 ** Description      Gatt profile discovery result callback
@@ -327,6 +328,7 @@ static void gatt_config_ccc_complete(tGATT_PROFILE_CLCB *p_clcb)
 *******************************************************************************/
 static void gatt_disc_res_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGATT_DISC_RES *p_data)
 {
+    GATT_TRACE_DEBUG("%s, disc_type = %d",__func__, disc_type);
     tGATT_PROFILE_CLCB *p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
 
     if (p_clcb == NULL) {
@@ -364,6 +366,7 @@ static void gatt_disc_res_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGAT
 *******************************************************************************/
 static void gatt_disc_cmpl_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGATT_STATUS status)
 {
+    GATT_TRACE_DEBUG("%s",__func__);
     tGATT_PROFILE_CLCB *p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
 
     if (p_clcb == NULL) {
@@ -376,8 +379,6 @@ static void gatt_disc_cmpl_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGA
         gatt_cl_start_config_ccc(p_clcb);
     } else {
         GATT_TRACE_ERROR("%s() - Register for service changed indication failure", __FUNCTION__);
-        /* free the connection */
-        gatt_config_ccc_complete (p_clcb);
     }
 }
 
@@ -393,6 +394,7 @@ static void gatt_disc_cmpl_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGA
 static void gatt_cl_op_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op,
                                    tGATT_STATUS status, tGATT_CL_COMPLETE *p_data)
 {
+    GATT_TRACE_DEBUG("%s",__func__);
     tGATT_PROFILE_CLCB *p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
 
     if (p_clcb == NULL) {
@@ -403,8 +405,6 @@ static void gatt_cl_op_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op,
         GATT_TRACE_DEBUG("%s() - ccc write status : %d", __FUNCTION__, status);
     }
 
-    /* free the connection */
-    gatt_config_ccc_complete (p_clcb);
 }
 
 /*******************************************************************************
@@ -435,7 +435,6 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB *p_clcb)
 #if (GATTC_INCLUDED == TRUE)
         if (GATTC_Discover (p_clcb->conn_id, GATT_DISC_SRVC_BY_UUID, &srvc_disc_param) != GATT_SUCCESS) {
             GATT_TRACE_ERROR("%s() - ccc service error", __FUNCTION__);
-            gatt_config_ccc_complete(p_clcb);
         }
 #endif  ///GATTC_INCLUDED == TRUE
         break;
@@ -448,7 +447,6 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB *p_clcb)
 #if (GATTC_INCLUDED == TRUE)
         if (GATTC_Discover (p_clcb->conn_id, GATT_DISC_CHAR, &srvc_disc_param) != GATT_SUCCESS) {
             GATT_TRACE_ERROR("%s() - ccc char error", __FUNCTION__);
-            gatt_config_ccc_complete(p_clcb);
         }
 #endif  ///GATTC_INCLUDED == TRUE
         break;
@@ -459,7 +457,6 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB *p_clcb)
 #if (GATTC_INCLUDED == TRUE)
         if (GATTC_Discover (p_clcb->conn_id, GATT_DISC_CHAR_DSCPT, &srvc_disc_param) != GATT_SUCCESS) {
             GATT_TRACE_ERROR("%s() - ccc char descriptor error", __FUNCTION__);
-            gatt_config_ccc_complete(p_clcb);
         }
 #endif  ///GATTC_INCLUDED == TRUE
         break;
@@ -471,7 +468,6 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB *p_clcb)
 #if (GATTC_INCLUDED == TRUE)
         if (GATTC_Write (p_clcb->conn_id, GATT_WRITE, &ccc_value) != GATT_SUCCESS) {
             GATT_TRACE_ERROR("%s() - write ccc error", __FUNCTION__);
-            gatt_config_ccc_complete(p_clcb);
         }
 #endif  ///GATTC_INCLUDED == TRUE
         break;
