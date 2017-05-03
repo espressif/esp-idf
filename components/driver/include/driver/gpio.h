@@ -412,7 +412,7 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 /**
   * @brief Install the driver's GPIO ISR handler service, which allows per-pin GPIO interrupt handlers.
   *
-  * This function is incompatible with gpio_isr_register() - if that function is used, a single global ISR is registered for all GPIO interrupts. If this function is used, the ISR service provides a global GPIO ISR and individual pin handlers are registered via the gpio_isr_register() function.
+  * This function is incompatible with gpio_isr_register() - if that function is used, a single global ISR is registered for all GPIO interrupts. If this function is used, the ISR service provides a global GPIO ISR and individual pin handlers are registered via the gpio_isr_handler_add() function.
   *
   * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
   *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
