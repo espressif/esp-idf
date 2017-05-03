@@ -11,7 +11,7 @@ INCLUDE_FLAGS = -I../include -I../../../tools/catch
 
 GCOV ?= gcov
 
-CPPFLAGS += $(INCLUDE_FLAGS) -D CONFIG_LOG_DEFAULT_LEVEL -m32
+CPPFLAGS += $(INCLUDE_FLAGS) -D CONFIG_LOG_DEFAULT_LEVEL -g -fstack-protector-all -m32
 CFLAGS += -fprofile-arcs -ftest-coverage
 CXXFLAGS += -std=c++11 -Wall -Werror  -fprofile-arcs -ftest-coverage
 LDFLAGS += -lstdc++ -fprofile-arcs -ftest-coverage -m32

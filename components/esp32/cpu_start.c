@@ -40,7 +40,7 @@
 
 #include "tcpip_adapter.h"
 
-#include "esp_heap_alloc_caps.h"
+#include "esp_heap_caps.h"
 #include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
@@ -167,8 +167,7 @@ void IRAM_ATTR call_start_cpu0()
        memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
        corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
        works around this problem. */
-    heap_alloc_caps_init();
-
+    heap_caps_init();
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
     start_cpu0();
@@ -336,7 +335,7 @@ static void main_task(void* args)
     }
 #endif
     //Enable allocation in region where the startup stacks were located.
-    heap_alloc_enable_nonos_stack_tag();
+    heap_caps_enable_nonos_stack_heaps();
     app_main();
     vTaskDelete(NULL);
 }

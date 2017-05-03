@@ -96,6 +96,13 @@ uint32_t esp_get_free_heap_size(void);
 uint32_t system_get_free_heap_size(void)  __attribute__ ((deprecated));
 
 /**
+  * @brief Get the minimum heap that has ever been available
+  *
+  * @return Minimum free heap ever available
+  */
+uint32_t esp_get_minimum_free_heap_size( void );
+
+/**
  * @brief  Get one random 32-bit word from hardware RNG
  *
  * @return random value between 0 and UINT32_MAX

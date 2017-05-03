@@ -17,7 +17,7 @@
 
 #include <string.h>
 #include "esp_log.h"
-#include "esp_heap_alloc_caps.h"
+#include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/sdmmc_defs.h"
@@ -413,7 +413,7 @@ static esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr)
 static esp_err_t sdmmc_send_cmd_send_scr(sdmmc_card_t* card, sdmmc_scr_t *out_scr)
 {
     size_t datalen = 8;
-    uint32_t* buf = (uint32_t*) pvPortMallocCaps(datalen, MALLOC_CAP_DMA);
+    uint32_t* buf = (uint32_t*) heap_caps_malloc(datalen, MALLOC_CAP_DMA);
     if (buf == NULL) {
         return ESP_ERR_NO_MEM;
     }

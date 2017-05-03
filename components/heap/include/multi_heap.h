@@ -104,7 +104,7 @@ void multi_heap_set_lock(multi_heap_handle_t heap, void* lock);
  *
  * @param heap Handle to a registered heap.
  */
-void multi_heap_dump(multi_heap_handle_t handle);
+void multi_heap_dump(multi_heap_handle_t heap);
 
 /** @brief Check heap integrity
  *
@@ -144,6 +144,7 @@ size_t multi_heap_free_size(multi_heap_handle_t heap);
  */
 size_t multi_heap_minimum_free_size(multi_heap_handle_t heap);
 
+/** @brief Structure to access heap metadata via multi_get_heap_info */
 typedef struct {
     size_t total_free_bytes;      ///<  Total free bytes in the heap. Equivalent to multi_free_heap_size().
     size_t total_allocated_bytes; ///<  Total bytes allocated to data in the heap.

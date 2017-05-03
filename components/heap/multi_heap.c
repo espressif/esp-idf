@@ -433,10 +433,11 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
         }
 
         // Can grow into previous block?
-        // (do this even if we're already big enough from growing into 'next', as it reduces fragmentation)
+        // (try this even if we're already big enough from growing into 'next', as it reduces fragmentation)
         if (prev_grow_size > 0 && (block_data_size(pb) + prev_grow_size >= size)) {
             pb = merge_adjacent(heap, prev, pb);
-            assert(block_data_size(pb) >= size);
+            // this doesn't guarantee we'll be left with a big enough block, as it's
+            // possible for the merge to fail if prev == heap->first_block
         }
 
         if (block_data_size(pb) >= size) {
@@ -546,7 +547,7 @@ void multi_heap_dump(multi_heap_handle_t heap)
     MULTI_HEAP_UNLOCK(heap->lock);
 }
 
-size_t multi_heap_free_heap_size(multi_heap_handle_t heap)
+size_t multi_heap_free_size(multi_heap_handle_t heap)
 {
     if (heap == NULL) {
         return 0;
@@ -554,7 +555,7 @@ size_t multi_heap_free_heap_size(multi_heap_handle_t heap)
     return heap->free_bytes;
 }
 
-size_t multi_heap_minimum_free_heap_size(multi_heap_handle_t heap)
+size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
 {
     if (heap == NULL) {
         return 0;
@@ -562,7 +563,7 @@ size_t multi_heap_minimum_free_heap_size(multi_heap_handle_t heap)
     return heap->minimum_free_bytes;
 }
 
-void multi_heap_get_heap_info(multi_heap_handle_t heap, multi_heap_info_t *info)
+void multi_heap_get_info(multi_heap_handle_t heap, multi_heap_info_t *info)
 {
     memset(info, 0, sizeof(multi_heap_info_t));
 

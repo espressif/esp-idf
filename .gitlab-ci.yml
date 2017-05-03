@@ -221,6 +221,15 @@ test_wl_on_host:
     - cd components/wear_levelling/test_wl_host
     - make test
 
+test_multi_heap_on_host:
+  stage: test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - wl_host_test
+  script:
+    - cd components/heap/test_multi_heap_host
+    - make test
+
 test_build_system:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env

@@ -104,8 +104,8 @@ INPUT = \
     ## System - API Reference
     ##
     ## Memory Allocation    #
-    ../components/esp32/include/esp_heap_alloc_caps.h \
-    ../components/freertos/include/freertos/heap_regions.h \
+    ../components/heap/include/esp_heap_caps.h \
+    ../components/heap/include/multi_heap.h \
     ## Interrupt Allocation
     ../components/esp32/include/esp_intr_alloc.h \
     ## Watchdogs

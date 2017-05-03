@@ -33,6 +33,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/xtensa_api.h"
+#include "esp_heap_caps.h"
 
 static const char* TAG = "system_api";
 
@@ -330,9 +331,19 @@ void IRAM_ATTR esp_restart_noos()
 
 void system_restart(void) __attribute__((alias("esp_restart")));
 
-uint32_t esp_get_free_heap_size(void)
+void system_restore(void)
 {
-    return xPortGetFreeHeapSize();
+    esp_wifi_restore();
+}
+
+uint32_t esp_get_free_heap_size( void )
+{
+    return heap_caps_get_free_size( MALLOC_CAP_8BIT );
+}
+
+uint32_t esp_get_minimum_free_heap_size( void )
+{
+    return heap_caps_get_minimum_free_size( MALLOC_CAP_8BIT );
 }
 
 uint32_t system_get_free_heap_size(void) __attribute__((alias("esp_get_free_heap_size")));

@@ -281,6 +281,12 @@
 #define SOC_RTC_DATA_LOW  0x50000000
 #define SOC_RTC_DATA_HIGH 0x50002000
 
+//First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
+#define SOC_DIRAM_IRAM_LOW    0x400A0000
+#define SOC_DIRAM_IRAM_HIGH   0x400BFFFC
+#define SOC_DIRAM_DRAM_LOW    0x3FFE0000
+#define SOC_DIRAM_DRAM_HIGH   0x3FFFFFFC
+
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.
 #define ETS_WIFI_MAC_INTR_SOURCE                0/**< interrupt of WiFi MAC, level*/
