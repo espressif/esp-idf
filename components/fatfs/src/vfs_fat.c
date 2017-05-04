@@ -22,17 +22,17 @@
 #include "esp_vfs.h"
 #include "esp_log.h"
 #include "ff.h"
-
 #include "diskio.h"
 
-
 typedef struct {
-    char fat_drive[8];
-    char base_path[ESP_VFS_PATH_MAX];
-    size_t max_files;
-    FATFS fs;
-    FIL files[0];
-    _lock_t lock;
+    char fat_drive[8];  /* FAT drive name */
+    char base_path[ESP_VFS_PATH_MAX];   /* base path in VFS where partition is registered */
+    size_t max_files;   /* max number of simultaneously open files; size of files[] array */
+    _lock_t lock;       /* guard for access to this structure */
+    FATFS fs;           /* fatfs library FS structure */
+    char tmp_path_buf[FILENAME_MAX+3];  /* temporary buffer used to prepend drive name to the path */
+    char tmp_path_buf2[FILENAME_MAX+3]; /* as above; used in functions which take two path arguments */
+    FIL files[0];   /* array with max_files entries; must be the final member of the structure */
 } vfs_fat_ctx_t;
 
 typedef struct {
@@ -245,23 +245,31 @@ static void file_cleanup(vfs_fat_ctx_t* ctx, int fd)
     memset(&ctx->files[fd], 0, sizeof(FIL));
 }
 
-static void prepend_drive_to_path(void * ctx, const char * path, const char * path2){
-    static char buf[FILENAME_MAX+3];
-    static char buf2[FILENAME_MAX+3];
-    sprintf(buf, "%s%s", ((vfs_fat_ctx_t*)ctx)->fat_drive, path);
-    path = (const char *)buf;
+/**
+ * @brief Prepend drive letters to path names
+ * This function returns new path path pointers, pointing to a temporary buffer
+ * inside ctx.
+ * @note Call this function with ctx->lock acquired. Paths are valid while the
+ *       lock is held.
+ * @param ctx vfs_fat_ctx_t context
+ * @param[inout] path as input, pointer to the path; as output, pointer to the new path
+ * @param[inout] path2 as input, pointer to the path; as output, pointer to the new path
+ */
+static void prepend_drive_to_path(vfs_fat_ctx_t * ctx, const char ** path, const char ** path2){
+    snprintf(ctx->tmp_path_buf, sizeof(ctx->tmp_path_buf), "%s%s", ctx->fat_drive, *path);
+    *path = ctx->tmp_path_buf;
     if(path2){
-        sprintf(buf2, "%s%s", ((vfs_fat_ctx_t*)ctx)->fat_drive, path2);
-        path2 = (const char *)buf;
+        snprintf(ctx->tmp_path_buf2, sizeof(ctx->tmp_path_buf2), "%s%s", ((vfs_fat_ctx_t*)ctx)->fat_drive, *path2);
+        *path2 = ctx->tmp_path_buf2;
     }
 }
 
 static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
 {
-    prepend_drive_to_path(ctx, path, NULL);
     ESP_LOGV(TAG, "%s: path=\"%s\", flags=%x, mode=%x", __func__, path, flags, mode);
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &path, NULL);
     int fd = get_next_fd(fat_ctx);
     if (fd < 0) {
         ESP_LOGE(TAG, "open: no free file descriptors");
@@ -368,9 +376,12 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
 
 static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
 {
-    prepend_drive_to_path(ctx, path, NULL);
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &path, NULL);
     FILINFO info;
     FRESULT res = f_stat(path, &info);
+    _lock_release(&fat_ctx->lock);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
@@ -398,8 +409,11 @@ static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
 
 static int vfs_fat_unlink(void* ctx, const char *path)
 {
-    prepend_drive_to_path(ctx, path, NULL);
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &path, NULL);
     FRESULT res = f_unlink(path);
+    _lock_release(&fat_ctx->lock);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
@@ -465,8 +479,11 @@ fail1:
 
 static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
 {
-    prepend_drive_to_path(ctx, src, dst);
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &src, &dst);
     FRESULT res = f_rename(src, dst);
+    _lock_release(&fat_ctx->lock);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
@@ -477,13 +494,17 @@ static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
 
 static DIR* vfs_fat_opendir(void* ctx, const char* name)
 {
-    prepend_drive_to_path(ctx, name, NULL);
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &name, NULL);
     vfs_fat_dir_t* fat_dir = calloc(1, sizeof(vfs_fat_dir_t));
     if (!fat_dir) {
+        _lock_release(&fat_ctx->lock);
         errno = ENOMEM;
         return NULL;
     }
     FRESULT res = f_opendir(&fat_dir->ffdir, name);
+    _lock_release(&fat_ctx->lock);
     if (res != FR_OK) {
         free(fat_dir);
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
@@ -582,8 +603,11 @@ static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset)
 static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode)
 {
     (void) mode;
-    prepend_drive_to_path(ctx, name, NULL);
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &name, NULL);
     FRESULT res = f_mkdir(name);
+    _lock_release(&fat_ctx->lock);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
@@ -594,8 +618,11 @@ static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode)
 
 static int vfs_fat_rmdir(void* ctx, const char* name)
 {
-    prepend_drive_to_path(ctx, name, NULL);
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &name, NULL);
     FRESULT res = f_unlink(name);
+    _lock_release(&fat_ctx->lock);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
