@@ -17,9 +17,9 @@
 
 const esp_partition_t *get_test_data_partition()
 {
-    /* This user type/subtype (0x55) is set in
-       partition_table_unit_test_app.csv */
-    const esp_partition_t *result = esp_partition_find_first(0x55, 0x55, NULL);
+    /* This finds "flash_test" partition defined in partition_table_unit_test_app.csv */
+    const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+            ESP_PARTITION_SUBTYPE_ANY, "flash_test");
     TEST_ASSERT_NOT_NULL(result); /* means partition table set wrong */
     return result;
 }
