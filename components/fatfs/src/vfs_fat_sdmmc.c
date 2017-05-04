@@ -80,6 +80,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
 
     ff_diskio_register_sdmmc(pdrv, s_card);
     s_pdrv = pdrv;
+    ESP_LOGD(TAG, "using pdrv=%i", pdrv);
     char drv[3] = {(char)('0' + pdrv), ':', 0};
 
     // connect FATFS to VFS
@@ -109,7 +110,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
             goto fail;
         }
         ESP_LOGW(TAG, "formatting card");
-        res = f_mkfs("", FM_ANY, s_card->csd.sector_size, workbuf, workbuf_size);
+        res = f_mkfs(drv, FM_ANY, s_card->csd.sector_size, workbuf, workbuf_size);
         if (res != FR_OK) {
             err = ESP_FAIL;
             ESP_LOGD(TAG, "f_mkfs failed (%d)", res);

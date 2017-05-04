@@ -187,3 +187,47 @@ static void speed_test(void* buf, size_t buf_size, size_t file_size, bool write)
     TEST_ESP_OK(esp_vfs_fat_sdmmc_unmount());
 }
 
+TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fatfs][sdcard][ignore]")
+{
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = true,
+        .max_files = 5
+    };
+
+    const char* filename_sd = "/sdcard/sd.txt";
+    const char* filename_wl = "/spiflash/wl.txt";
+    const char* str_sd = "this is sd\n";
+    const char* str_wl = "this is spiflash\n";
+
+    /* Mount FATFS in SD can WL at the same time. Create a file on each FS */
+    wl_handle_t wl_handle = WL_INVALID_HANDLE;
+    test_setup();
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &wl_handle));
+    unlink(filename_sd);
+    unlink(filename_wl);
+    test_fatfs_create_file_with_text(filename_sd, str_sd);
+    test_fatfs_create_file_with_text(filename_wl, str_wl);
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", wl_handle));
+    test_teardown();
+
+    /* Check that the file "sd.txt" was created on FS in SD, and has the right data */
+    test_setup();
+    TEST_ASSERT_NULL(fopen(filename_wl, "r"));
+    FILE* f = fopen(filename_sd, "r");
+    TEST_ASSERT_NOT_NULL(f);
+    char buf[64];
+    TEST_ASSERT_NOT_NULL(fgets(buf, sizeof(buf) - 1, f));
+    TEST_ASSERT_EQUAL(0, strcmp(buf, str_sd));
+    fclose(f);
+    test_teardown();
+
+    /* Check that the file "wl.txt" was created on FS in WL, and has the right data */
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &wl_handle));
+    TEST_ASSERT_NULL(fopen(filename_sd, "r"));
+    f = fopen(filename_wl, "r");
+    TEST_ASSERT_NOT_NULL(f);
+    TEST_ASSERT_NOT_NULL(fgets(buf, sizeof(buf) - 1, f));
+    TEST_ASSERT_EQUAL(0, strcmp(buf, str_wl));
+    fclose(f);
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", wl_handle));
+}

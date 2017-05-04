@@ -45,12 +45,11 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
     }
     // connect driver to FATFS
     BYTE pdrv = 0xFF;
-    if (ff_diskio_get_drive(&pdrv) != ESP_OK || pdrv == 0xFF) {
+    if (ff_diskio_get_drive(&pdrv) != ESP_OK) {
         ESP_LOGD(TAG, "the maximum count of volumes is already mounted");
         return ESP_ERR_NO_MEM;
     }
-    ESP_LOGD(TAG, "pdrv=%i\n", pdrv);
-
+    ESP_LOGD(TAG, "using pdrv=%i", pdrv);
     char drv[3] = {(char)('0' + pdrv), ':', 0};
 
     result = ff_diskio_register_wl_partition(pdrv, *wl_handle);
@@ -77,7 +76,7 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
         }
         workbuf = malloc(workbuf_size);
         ESP_LOGI(TAG, "Formatting FATFS partition");
-        fresult = f_mkfs("", FM_ANY | FM_SFD, workbuf_size, workbuf, workbuf_size);
+        fresult = f_mkfs(drv, FM_ANY | FM_SFD, workbuf_size, workbuf, workbuf_size);
         if (fresult != FR_OK) {
             result = ESP_FAIL;
             ESP_LOGE(TAG, "f_mkfs failed (%d)", fresult);
@@ -103,11 +102,14 @@ fail:
 
 esp_err_t esp_vfs_fat_spiflash_unmount(const char *base_path, wl_handle_t wl_handle)
 {
-    BYTE s_pdrv = ff_diskio_get_pdrv_wl(wl_handle);
-    char drv[3] = {(char)('0' + s_pdrv), ':', 0};
+    BYTE pdrv = ff_diskio_get_pdrv_wl(wl_handle);
+    if (pdrv == 0xff) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    char drv[3] = {(char)('0' + pdrv), ':', 0};
 
     f_mount(0, drv, 0);
-    ff_diskio_unregister(s_pdrv);
+    ff_diskio_unregister(pdrv);
     // release partition driver
     esp_err_t err_drv = wl_unmount(wl_handle);
     esp_err_t err = esp_vfs_fat_unregister_path(base_path);
