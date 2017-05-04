@@ -424,28 +424,39 @@ static int vfs_fat_unlink(void* ctx, const char *path)
 
 static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
 {
-    prepend_drive_to_path(ctx, n1, n2);
-    const size_t copy_buf_size = 4096;
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &n1, &n2);
+    const size_t copy_buf_size = fat_ctx->fs.csize;
+    FRESULT res;
+    FIL* pf1 = calloc(1, sizeof(FIL));
+    FIL* pf2 = calloc(1, sizeof(FIL));
     void* buf = malloc(copy_buf_size);
-    if (buf == NULL) {
+    if (buf == NULL || pf1 == NULL || pf2 == NULL) {
+        ESP_LOGD(TAG, "alloc failed, pf1=%p, pf2=%p, buf=%p", pf1, pf2, buf);
+        free(pf1);
+        free(pf2);
+        free(buf);
         errno = ENOMEM;
+        _lock_release(&fat_ctx->lock);
         return -1;
     }
-    FIL f1;
-    FRESULT res = f_open(&f1, n1, FA_READ | FA_OPEN_EXISTING);
+    res = f_open(pf1, n1, FA_READ | FA_OPEN_EXISTING);
     if (res != FR_OK) {
+        _lock_release(&fat_ctx->lock);
         goto fail1;
     }
-    FIL f2;
-    res = f_open(&f2, n2, FA_WRITE | FA_CREATE_NEW);
+    res = f_open(pf2, n2, FA_WRITE | FA_CREATE_NEW);
     if (res != FR_OK) {
+        _lock_release(&fat_ctx->lock);
         goto fail2;
     }
-    size_t size_left = f_size(&f1);
+    _lock_release(&fat_ctx->lock);
+    size_t size_left = f_size(pf1);
     while (size_left > 0) {
         size_t will_copy = (size_left < copy_buf_size) ? size_left : copy_buf_size;
         size_t read;
-        res = f_read(&f1, buf, will_copy, &read);
+        res = f_read(pf1, buf, will_copy, &read);
         if (res != FR_OK) {
             goto fail3;
         } else if (read != will_copy) {
@@ -453,7 +464,7 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
             goto fail3;
         }
         size_t written;
-        res = f_write(&f2, buf, will_copy, &written);
+        res = f_write(pf2, buf, will_copy, &written);
         if (res != FR_OK) {
             goto fail3;
         } else if (written != will_copy) {
@@ -462,11 +473,12 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
         }
         size_left -= will_copy;
     }
-
 fail3:
-    f_close(&f2);
+    f_close(pf2);
+    free(pf2);
 fail2:
-    f_close(&f1);
+    f_close(pf1);
+    free(pf1);
 fail1:
     free(buf);
     if (res != FR_OK) {
