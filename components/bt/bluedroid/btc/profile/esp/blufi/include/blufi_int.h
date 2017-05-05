@@ -92,6 +92,7 @@ typedef struct blufi_frag_hdr blufi_frag_hdr_t;
 #define BLUFI_TYPE_CTRL_SUBTYPE_GET_WIFI_STATUS         0x05
 #define BLUFI_TYPE_CTRL_SUBTYPE_DEAUTHENTICATE_STA      0x06
 #define BLUFI_TYPE_CTRL_SUBTYPE_GET_VERSION             0x07
+#define BLUFI_TYPE_CTRL_SUBTYPE_DISCONNECT_BLE          0x08
 
 #define BLUFI_TYPE_DATA                                 0x1
 #define BLUFI_TYPE_DATA_SUBTYPE_NEG                     0x00
