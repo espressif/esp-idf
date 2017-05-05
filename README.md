@@ -10,9 +10,9 @@ ESP-IDF is the official development framework for the [ESP32](https://espressif.
 
 See setup guides for detailed instructions to set up the ESP-IDF:
 
-* [Windows Setup Guide](http://esp-idf.readthedocs.io/en/latest/windows-setup.html)
-* [Mac OS Setup Guide](http://esp-idf.readthedocs.io/en/latest/macos-setup.html)
-* [Linux Setup Guide](http://esp-idf.readthedocs.io/en/latest/linux-setup.html)
+* [Windows Setup Guide](http://esp-idf.readthedocs.io/en/latest/get-started/windows-setup.html)
+* [Mac OS Setup Guide](http://esp-idf.readthedocs.io/en/latest/get-started/macos-setup.html)
+* [Linux Setup Guide](http://esp-idf.readthedocs.io/en/latest/get-started/linux-setup.html)
 
 ## Finding a Project
 
