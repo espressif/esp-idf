@@ -1,7 +1,0 @@
-Config: {execute count: 1, execute order: in order}
-DUT: [SSC1]
-Filter:
-- Add:
-    ID:
-      - WIFI_CONN_0903  # test wifi disconnect reason REASON_AUTH_EXPIRE
-      - ^WIFI_CONN_0903  # test wifi disconnect reason REASON_AUTH_EXPIRE

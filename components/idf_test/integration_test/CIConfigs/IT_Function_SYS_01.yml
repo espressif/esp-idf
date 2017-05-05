@@ -1,7 +1,0 @@
-Config: {execute count: 1, execute order: in order}
-DUT: [SSC1]
-Filter:
-- Add:
-    ID:
-      - SYS_MISC_0101  # test reboot function
-      - SYS_MISC_0201  # get heap size test
