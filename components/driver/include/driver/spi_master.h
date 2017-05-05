@@ -100,6 +100,10 @@ typedef struct spi_device_t* spi_device_handle_t;  ///< Handle for a device on a
  *                 for a SPI bus allows transfers on the bus to have sizes only limited by the amount of 
  *                 internal memory. Selecting no DMA channel (by passing the value 0) limits the amount of
  *                 bytes transfered to a maximum of 32.
+ *
+ * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in 
+ *          DMA-capable memory.
+ *
  * @return 
  *         - ESP_ERR_INVALID_ARG   if configuration is invalid
  *         - ESP_ERR_INVALID_STATE if host already is in use
