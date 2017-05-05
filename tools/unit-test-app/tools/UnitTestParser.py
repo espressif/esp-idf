@@ -161,57 +161,10 @@ class Parser(object):
         with open(os.path.join(self.idf_path, "components", "idf_test", "unit_test", "TestCaseAll.yml"), "wb+") as f:
             yaml.dump({"test cases": test_cases}, f, allow_unicode=True, default_flow_style=False)
 
-    def dump_ci_config(self):
-        """ assign test cases and dump to config file to test bench """
-        test_cases_by_jobs = self.assign_test_cases()
-
-        ci_config_folder = os.path.join(self.idf_path, "components", "idf_test", "unit_test", "CIConfigs")
-
-        if not os.path.exists(ci_config_folder):
-            os.makedirs(os.path.join(ci_config_folder, "CIConfigs"))
-
-        for unit_job in self.unit_jobs:
-            job = deepcopy(CONFIG_FILE_PATTERN)
-            job.update({"DUT": ["UT1"]})
-            job.update({"Filter": [{"Add": {"ID": test_cases_by_jobs[unit_job]}}]})
-
-            with open(os.path.join(ci_config_folder, unit_job + ".yml"), "wb+") as f:
-                yaml.dump(job, f, allow_unicode=True, default_flow_style=False)
-
-    def assign_test_cases(self):
-        """ assign test cases to jobs  """
-        test_cases_by_jobs = {}
-
-        for job in self.unit_jobs:
-            test_cases_by_jobs.update({job: list()})
-        for test_env in self.test_env_tags:
-            available_jobs = list()
-            for job in self.unit_jobs:
-                if test_env in self.unit_jobs[job]:
-                    available_jobs.append(job)
-            for idx, job in enumerate(available_jobs):
-                test_cases_by_jobs[job] += (self.test_env_tags[test_env]
-                                            [idx*len(self.test_env_tags[test_env])/len(available_jobs):
-                                            (idx+1)*len(self.test_env_tags[test_env])/len(available_jobs)])
-        return test_cases_by_jobs
-
-    def parse_gitlab_ci(self):
-        """ parse gitlab ci config file to get pre-defined unit test jobs """
-        with open(os.path.join(self.idf_path, ".gitlab-ci.yml"), "r") as f:
-            gitlab_ci = yaml.load(f)
-            keys = gitlab_ci.keys()
-            for key in keys:
-                if re.match("UT_", key):
-                    test_env = gitlab_ci[key]["tags"]
-                    unit_job = key
-                    key = {}
-                    key.update({unit_job: test_env})
-                    self.unit_jobs.update(key)
-
     def copy_module_def_file(self):
         """ copy module def file to artifact path """
         src = os.path.join(self.idf_path, "tools", "unit-test-app", "tools", "ModuleDefinition.yml")
-        dst = os.path.join(self.idf_path, "components", "idf_test", "unit_test")
+        dst = os.path.join(self.idf_path, "components", "idf_test")
         shutil.copy(src, dst)
 
 
@@ -253,8 +206,6 @@ def main():
 
     parser = Parser(idf_path)
     parser.parse_test_cases_from_elf(elf_path)
-    parser.parse_gitlab_ci()
-    parser.dump_ci_config()
     parser.copy_module_def_file()
 
 
