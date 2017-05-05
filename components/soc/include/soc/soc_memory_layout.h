@@ -58,4 +58,7 @@ typedef struct
 extern const soc_reserved_region_t soc_reserved_regions[];
 extern const size_t soc_reserved_region_count;
 
-
+inline bool esp_ptr_dma_capable(const void *p)
+{
+    return (intptr_t)p >= SOC_DMA_LOW && (intptr_t)p < SOC_DMA_HIGH;
+}

@@ -53,6 +53,7 @@ queue and re-enabling the interrupt will trigger the interrupt again, which can 
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "soc/soc.h"
+#include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
 #include "rom/lldesc.h"
 #include "driver/gpio.h"

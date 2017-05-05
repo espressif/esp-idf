@@ -287,6 +287,10 @@
 #define SOC_DIRAM_DRAM_LOW    0x3FFE0000
 #define SOC_DIRAM_DRAM_HIGH   0x3FFFFFFC
 
+// Region of memory accessible via DMA. See esp_ptr_dma_capable().
+#define SOC_DMA_LOW  0x3FFAE000
+#define SOC_DMA_HIGH 0x40000000
+
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.
 #define ETS_WIFI_MAC_INTR_SOURCE                0/**< interrupt of WiFi MAC, level*/
