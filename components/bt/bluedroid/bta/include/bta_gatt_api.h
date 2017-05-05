@@ -984,7 +984,7 @@ extern tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications (tBTA_GATTC_IF     
 ** Description      This function is called to prepare write a characteristic value.
 **
 ** Parameters       conn_id - connection ID.
-**                    p_char_id - GATT characteritic ID of the service.
+**                  p_char_id - GATT characteritic ID of the service.
 **                  offset - offset of the write value.
 **                  len: length of the data to be written.
 **                  p_value - the value to be written.
@@ -999,6 +999,26 @@ extern void BTA_GATTC_PrepareWrite  (UINT16 conn_id,
                                      UINT8 *p_value,
                                      tBTA_GATT_AUTH_REQ auth_req);
 
+/*******************************************************************************
+**
+** Function         BTA_GATTC_PrepareWriteCharDescr
+**
+** Description      This function is called to prepare write a characteristic descriptor value.
+**
+** Parameters       conn_id - connection ID.
+**                  p_char_descr_id - GATT characteritic descriptor ID of the service.
+**                  offset - offset of the write value.
+**                  len: length of the data to be written.
+**                  p_value - the value to be written.
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_GATTC_PrepareWriteCharDescr  (UINT16 conn_id,
+                                              tBTA_GATTC_CHAR_DESCR_ID *p_char_descr_id,
+                                              UINT16 offset,
+                                              tBTA_GATT_UNFMT   *p_data,
+                                              tBTA_GATT_AUTH_REQ auth_req);
 /*******************************************************************************
 **
 ** Function         BTA_GATTC_ExecuteWrite

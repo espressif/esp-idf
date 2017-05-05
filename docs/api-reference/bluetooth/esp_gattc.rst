@@ -118,6 +118,7 @@ Functions
 .. doxygenfunction:: esp_ble_gattc_write_char
 .. doxygenfunction:: esp_ble_gattc_write_char_descr
 .. doxygenfunction:: esp_ble_gattc_prepare_write
+.. doxygenfunction:: esp_ble_gattc_prepare_write_char_descr
 .. doxygenfunction:: esp_ble_gattc_execute_write
 .. doxygenfunction:: esp_ble_gattc_register_for_notify
 .. doxygenfunction:: esp_ble_gattc_unregister_for_notify
