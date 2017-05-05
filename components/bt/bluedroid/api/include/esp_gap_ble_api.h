@@ -204,22 +204,6 @@ typedef struct {
     uint8_t                 flag;                   /*!< Advertising flag of discovery mode, see BLE_ADV_DATA_FLAG detail */
 } esp_ble_adv_data_t;
 
-/// Own BD address source of the device
-typedef enum {
-    /// Public Address
-    ESP_PUBLIC_ADDR,
-    /// Provided random address
-    ESP_PROVIDED_RND_ADDR,
-    /// Provided static random address
-    ESP_GEN_STATIC_RND_ADDR,
-    /// Generated resolvable private random address
-    ESP_GEN_RSLV_ADDR,
-    /// Generated non-resolvable private random address
-    ESP_GEN_NON_RSLV_ADDR,
-    /// Provided Reconnection address
-    ESP_PROVIDED_RECON_ADDR,
-} esp_ble_own_addr_src_t;
-
 /// Ble scan type 
 typedef enum {
     BLE_SCAN_TYPE_PASSIVE   =   0x0,            /*!< Passive scan */
@@ -299,7 +283,7 @@ typedef struct
 typedef struct
 {
     esp_bt_octet16_t          irk;           /*!< The irk value */
-    esp_bd_addr_type_t        addr_type;     /*!< The address type */
+    esp_ble_addr_type_t       addr_type;     /*!< The address type */
     esp_bd_addr_t             static_addr;   /*!< The static address */
 }esp_ble_pid_keys_t;                         /*!< The pid key type */
 
@@ -351,7 +335,7 @@ typedef union
     esp_ble_pcsrk_keys_t  pcsrk_key;      /*!< received peer device SRK */
     esp_ble_pid_keys_t    pid_key;        /*!< peer device ID key */
     esp_ble_lenc_keys_t   lenc_key;       /*!< local encryption reproduction keys LTK = = d1(ER,DIV,0)*/
-    esp_ble_lcsrk_keys   lcsrk_key;       /*!< local device CSRK = d1(ER,DIV,1)*/
+    esp_ble_lcsrk_keys    lcsrk_key;      /*!< local device CSRK = d1(ER,DIV,1)*/
 }esp_ble_key_value_t;                     /*!< ble key value type*/
 
 
@@ -386,7 +370,7 @@ typedef struct
     uint8_t               key_type;              /*!< The type of Link Key */
     bool                  success;               /*!< TRUE of authentication succeeded, FALSE if failed. */
     uint8_t               fail_reason;           /*!< The HCI reason/error code for when success=FALSE */
-    esp_bd_addr_type_t    addr_type;             /*!< Peer device address type */
+    esp_ble_addr_type_t   addr_type;             /*!< Peer device address type */
     esp_bt_dev_type_t     dev_type;              /*!< Device type */
 }esp_ble_auth_cmpl_t;                            /*!< The ble authentication complite cb type */
 
