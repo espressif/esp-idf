@@ -77,22 +77,6 @@ typedef enum {
 /// Bluetooth device address
 typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN];
 
-/// Own BD address source of the device
-typedef enum {
-    /// Public Address
-    BD_ADDR_PUBLIC,
-    /// Provided random address
-    BD_ADDR_PROVIDED_RND,
-    /// Provided static random address
-    BD_ADDR_GEN_STATIC_RND,
-    /// Generated resolvable private random address
-    BD_ADDR_GEN_RSLV,
-    /// Generated non-resolvable private random address
-    BD_ADDR_GEN_NON_RSLV,
-    /// Provided Reconnection address
-    BD_ADDR_PROVIDED_RECON,
-} esp_bd_addr_type_t;
-
 /// BLE device address type
 typedef enum {
     BLE_ADDR_TYPE_PUBLIC        = 0x00,
