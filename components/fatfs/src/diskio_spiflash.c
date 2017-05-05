@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -13,31 +13,18 @@
 // limitations under the License.
 
 #include <string.h>
-#include "diskio.h"		/* FatFs lower layer API */
+#include "diskio.h"
 #include "ffconf.h"
 #include "ff.h"
-#include "sdmmc_cmd.h"
 #include "esp_log.h"
-#include <time.h>
-#include <sys/time.h>
-
 #include "diskio_spiflash.h"
 #include "wear_levelling.h"
 
 static const char* TAG = "ff_diskio_spiflash";
-#ifndef MAX_FF_WL_DRIVES
-#define MAX_FF_WL_DRIVES 8
-#endif // MAX_FF_WL_DRIVES
 
-wl_handle_t ff_wl_handles[MAX_FF_WL_DRIVES] = {
+wl_handle_t ff_wl_handles[_VOLUMES] = {
         WL_INVALID_HANDLE,
         WL_INVALID_HANDLE,
-        WL_INVALID_HANDLE,
-        WL_INVALID_HANDLE,
-        WL_INVALID_HANDLE,
-        WL_INVALID_HANDLE,
-        WL_INVALID_HANDLE,
-        WL_INVALID_HANDLE
 };
 
 DSTATUS ff_wl_initialize (BYTE pdrv)
@@ -104,7 +91,9 @@ DRESULT ff_wl_ioctl (BYTE pdrv, BYTE cmd, void *buff)
 
 esp_err_t ff_diskio_register_wl_partition(BYTE pdrv, wl_handle_t flash_handle)
 {
-    if (pdrv >= MAX_FF_WL_DRIVES) return ESP_FAIL; 
+    if (pdrv >= _VOLUMES) {
+        return ESP_ERR_INVALID_ARG;
+    }
     static const ff_diskio_impl_t wl_impl = {
         .init = &ff_wl_initialize,
         .status = &ff_wl_status,
@@ -119,12 +108,10 @@ esp_err_t ff_diskio_register_wl_partition(BYTE pdrv, wl_handle_t flash_handle)
 
 BYTE ff_diskio_get_pdrv_wl(wl_handle_t flash_handle)
 {
-    for (int i=0 ; i< MAX_FF_WL_DRIVES ; i++)
-    {
-        if (flash_handle == ff_wl_handles[i])
-        {
+    for (int i = 0; i < _VOLUMES; i++) {
+        if (flash_handle == ff_wl_handles[i]) {
             return i;
         }
     }
-    return -1;
+    return 0xff;
 }

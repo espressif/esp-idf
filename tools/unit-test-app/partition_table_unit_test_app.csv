@@ -10,5 +10,7 @@ factory,    0,    0,       0x10000, 1M
 # (done this way so tests can run in 2MB of flash.)
 ota_0,      0,    ota_0,   ,        128K
 ota_1,      0,    ota_1,   ,        128K
-# flash_test partition used for SPI flash tests
-flash_test, 0x55, 0x55,  ,        512K
+# flash_test partition used for SPI flash tests and WL FAT partition
+# 528K is the minimal size needed to create a FAT partition
+# (128 sectors for FAT + 4 sectors for WL)
+flash_test, data, fat,     ,        528K
