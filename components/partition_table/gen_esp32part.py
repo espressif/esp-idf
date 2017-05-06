@@ -80,7 +80,7 @@ class PartitionTable(list):
             p.verify()
         # check for overlaps
         last = None
-        for p in sorted(self):
+        for p in sorted(self, key=lambda x:x.offset):
             if p.offset < 0x5000:
                 raise InputError("Partition offset 0x%x is below 0x5000" % p.offset)
             if last is not None and p.offset < last.offset + last.size:
@@ -100,10 +100,10 @@ class PartitionTable(list):
         raise InputError("Partition table is missing an end-of-table marker")
 
     def to_binary(self):
-        result = "".join(e.to_binary() for e in self)
+        result = b"".join(e.to_binary() for e in self)
         if len(result )>= MAX_PARTITION_LENGTH:
             raise InputError("Binary partition table length (%d) longer than max" % len(result))
-        result += "\xFF" * (MAX_PARTITION_LENGTH - len(result))  # pad the sector, for signing
+        result += b"\xFF" * (MAX_PARTITION_LENGTH - len(result))  # pad the sector, for signing
         return result
 
     def to_csv(self, simple_formatting=False):
@@ -137,7 +137,7 @@ class PartitionDefinition(object):
             },
     }
 
-    MAGIC_BYTES = "\xAA\x50"
+    MAGIC_BYTES = b"\xAA\x50"
 
     ALIGNMENT = {
         APP_TYPE : 0x1000,
@@ -267,7 +267,7 @@ class PartitionDefinition(object):
                            self.MAGIC_BYTES,
                            self.type, self.subtype,
                            self.offset, self.size,
-                           self.name,
+                           self.name.encode(),
                            flags)
 
     def to_csv(self, simple_formatting=False):
@@ -346,10 +346,12 @@ def main():
 
     if input_is_binary:
         output = table.to_csv()
+        with sys.stdout if args.output == '-' else open(args.output, 'w') as f:
+            f.write(output)
     else:
         output = table.to_binary()
-    with sys.stdout if args.output == '-' else open(args.output, 'w') as f:
-        f.write(output)
+        with sys.stdout.buffer if args.output == '-' else open(args.output, 'wb') as f:
+            f.write(output)
 
 if __name__ == '__main__':
     try:
