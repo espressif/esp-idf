@@ -326,7 +326,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
     case HCI_BLE_EVENT:
         STREAM_TO_UINT8  (ble_sub_code, p);
 
-        HCI_TRACE_ERROR("BLE HCI(id=%d) event = 0x%02x)", hci_evt_code,  ble_sub_code);
+        HCI_TRACE_DEBUG("BLE HCI(id=%d) event = 0x%02x)", hci_evt_code,  ble_sub_code);
 
         switch (ble_sub_code) {
         case HCI_BLE_ADV_PKT_RPT_EVT: /* result of inquiry */

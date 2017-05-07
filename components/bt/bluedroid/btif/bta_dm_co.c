@@ -90,7 +90,7 @@ void bta_dm_co_io_req(BD_ADDR bd_addr, tBTA_IO_CAP *p_io_cap, tBTA_OOB_DATA *p_o
 #endif
     btif_dm_proc_io_req(bd_addr, p_io_cap, p_oob_data, p_auth_req, is_orig);
 #else
-    LOG_ERROR("bta_dm_co_io_req: func not ported\n");
+    BTIF_TRACE_DEBUG("bta_dm_co_io_req: func not ported\n");
 #endif /* #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE) */
     BTIF_TRACE_DEBUG("bta_dm_co_io_req *p_oob_data = %d", *p_oob_data);
     BTIF_TRACE_DEBUG("bta_dm_co_io_req *p_io_cap = %d", *p_io_cap);
@@ -119,7 +119,7 @@ void bta_dm_co_io_rsp(BD_ADDR bd_addr, tBTA_IO_CAP io_cap,
 #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE)
     btif_dm_proc_io_rsp(bd_addr, io_cap, oob_data, auth_req);
 #else
-    LOG_ERROR("bta_dm_co_io_rsp: func not ported\n");
+    BTIF_TRACE_DEBUG("bta_dm_co_io_rsp: func not ported\n");
 #endif /* #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE) */
 }
 
@@ -165,7 +165,7 @@ void bta_dm_co_loc_oob(BOOLEAN valid, BT_OCTET16 c, BT_OCTET16 r)
     btif_dm_proc_loc_oob(valid, c, r);
 #endif
 #else
-    LOG_ERROR("bta_dm_co_loc_oob: func not ported\n");
+    BTIF_TRACE_DEBUG("bta_dm_co_loc_oob: func not ported\n");
 #endif /* #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE) */
 }
 
@@ -192,7 +192,7 @@ void bta_dm_co_rmt_oob(BD_ADDR bd_addr)
 #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE)
     result = btif_dm_proc_rmt_oob(bd_addr, p_c, p_r);
 #else
-    LOG_ERROR("bta_dm_rmt_oob: func not ported\n");
+    BTIF_TRACE_DEBUG("bta_dm_rmt_oob: func not ported\n");
 #endif /* #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE) */
 #endif
 
@@ -370,9 +370,9 @@ void bta_dm_co_le_io_key_req(BD_ADDR bd_addr, UINT8 *p_max_key_size,
 {
     UNUSED(bd_addr);
 #if (SMP_INCLUDED == TRUE)
-    BTIF_TRACE_ERROR("##################################");
-    BTIF_TRACE_ERROR("bta_dm_co_le_io_key_req: only setting max size to 16");
-    BTIF_TRACE_ERROR("##################################");
+    BTIF_TRACE_DEBUG("##################################");
+    BTIF_TRACE_DEBUG("bta_dm_co_le_io_key_req: only setting max size to 16");
+    BTIF_TRACE_DEBUG("##################################");
     *p_max_key_size = 16;
     *p_init_key = *p_resp_key =
                       (BTA_LE_KEY_PENC | BTA_LE_KEY_PID | BTA_LE_KEY_PCSRK | BTA_LE_KEY_LENC | BTA_LE_KEY_LID | BTA_LE_KEY_LCSRK);
@@ -403,7 +403,7 @@ void bta_dm_co_ble_load_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK *p_key_mask, BT_OC
 #endif  ///defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE
 #if (SMP_INCLUDED == TRUE)
     btc_dm_get_ble_local_keys( p_key_mask, er, p_id_keys);
-    LOG_WARN("bta_dm_co_ble_load_local_keys: func not ported\n");
+    BTIF_TRACE_DEBUG("bta_dm_co_ble_load_local_keys: func not ported\n");
 #endif  ///SMP_INCLUDED == TRUE
 }
 

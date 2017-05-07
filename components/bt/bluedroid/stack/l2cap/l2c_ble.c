@@ -767,7 +767,7 @@ void l2c_link_processs_ble_num_bufs (UINT16 num_lm_ble_bufs)
         num_lm_ble_bufs = L2C_DEF_NUM_BLE_BUF_SHARED;
         l2cb.num_lm_acl_bufs -= L2C_DEF_NUM_BLE_BUF_SHARED;
     }
-    L2CAP_TRACE_ERROR("#####################################num_lm_ble_bufs = %d",num_lm_ble_bufs);
+    L2CAP_TRACE_DEBUG("#####################################num_lm_ble_bufs = %d",num_lm_ble_bufs);
     l2cb.num_lm_ble_bufs = l2cb.controller_le_xmit_window = num_lm_ble_bufs;
 }
 
