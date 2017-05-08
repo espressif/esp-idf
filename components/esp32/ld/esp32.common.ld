@@ -84,6 +84,7 @@ SECTIONS
     *(.iram1 .iram1.*)
     *libfreertos.a:(.literal .text .literal.* .text.*)
     *libheap.a:multi_heap.o(.literal .text .literal.* .text.*)
+    *libheap.a:multi_heap_poisoning.o(.literal .text .literal.* .text.*)
     *libesp32.a:panic.o(.literal .text .literal.* .text.*)
     *libesp32.a:core_dump.o(.literal .text .literal.* .text.*)
     *libapp_trace.a:(.literal .text .literal.* .text.*)
@@ -116,6 +117,7 @@ SECTIONS
     *libphy.a:(.rodata .rodata.*)
     *libapp_trace.a:(.rodata .rodata.*)
     *libheap.a:multi_heap.o(.rodata .rodata.*)
+    *libheap.a:multi_heap_poisoning.o(.rodata .rodata.*)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >dram0_0_seg

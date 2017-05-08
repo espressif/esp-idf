@@ -1,0 +1,30 @@
+menu "Heap memory debugging"
+
+choice HEAP_CORRUPTION_DETECTION
+    prompt "Heap corruption detection"
+    default HEAP_POISONING_DISABLED
+    help
+        Enable heap poisoning features to detect heap corruption caused by out-of-bounds access to heap memory.
+
+        "Basic" heap corruption detection disables poisoning, but in Debug mode an assertion will trigger if an
+        application overwrites the heap's internal block headers and corrupts the heap structure.
+
+        "Light impact" detection "poisons" memory allocated from the heap with 4-byte head and tail "canaries". If an
+        application overruns its bounds at all, these canaries will be compromised. This option increases memory usage,
+        each allocated buffer will use an extra 9-12 bytes from the heap.
+
+        "Comprehensive" detection incorporates the "light impact" detection features plus additional checks for
+        uinitialised-access and use-after-free bugs. All freshly allocated memory is set to the pattern 0xce, and all
+        freed memory is set to the pattern 0xfe. These options have a noticeable additional performance impact.
+
+        To check the integrity of all heap memory at runtime, see the function heap_caps_check_integrity().
+
+config HEAP_POISONING_DISABLED
+    bool "Basic (no poisoning)"
+config HEAP_POISONING_LIGHT
+    bool "Light impact"
+config HEAP_POISONING_COMPREHENSIVE
+    bool "Comprehensive"
+endchoice
+
+endmenu
