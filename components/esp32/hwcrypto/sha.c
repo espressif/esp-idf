@@ -35,6 +35,7 @@
 #include "rom/ets_sys.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
+#include "esp_dport_access.h"
 
 inline static uint32_t SHA_LOAD_REG(esp_sha_type sha_type) {
     return SHA_1_LOAD_REG + sha_type * 0x10;
@@ -160,9 +161,9 @@ static void esp_sha_lock_engine_inner(sha_engine_state *engine)
 
     if (sha_engines_all_idle()) {
         /* Enable SHA hardware */
-        REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
+        DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
         /* also clear reset on secure boot, otherwise SHA is held in reset */
-        REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
+        DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
                     DPORT_PERI_EN_SHA
                     | DPORT_PERI_EN_SECUREBOOT);
         ets_sha_enable();
@@ -187,8 +188,8 @@ void esp_sha_unlock_engine(esp_sha_type sha_type)
     if (sha_engines_all_idle()) {
         /* Disable SHA hardware */
         /* Don't assert reset on secure boot, otherwise AES is held in reset */
-        REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_SHA);
-        REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
+        DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_SHA);
+        DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
     }
 
     _lock_release(&state_change_lock);

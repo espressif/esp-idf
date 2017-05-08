@@ -18,6 +18,7 @@
 #include "esp_err.h"
 #include "esp_intr.h"
 #include "esp_intr_alloc.h"
+#include "esp_dport_access.h"
 
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
@@ -51,9 +52,9 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
 
     //Clear the interrupt first.
     if (xPortGetCoreID()==0) {
-        WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
+        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
     } else {
-        WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
+        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
     }
     //Grab the reason and clear it.
     portENTER_CRITICAL(&reasonSpinlock);
@@ -90,9 +91,9 @@ void IRAM_ATTR esp_crosscore_int_send_yield(int coreId) {
     portEXIT_CRITICAL(&reasonSpinlock);
     //Poke the other CPU.
     if (coreId==0) {
-        WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
+        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
     } else {
-        WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
+        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
     }
 }
 

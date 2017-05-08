@@ -29,6 +29,7 @@
 #include "hwcrypto/aes.h"
 #include "rom/aes.h"
 #include "soc/dport_reg.h"
+#include "esp_dport_access.h"
 #include <sys/lock.h>
 
 static _lock_t aes_lock;
@@ -38,10 +39,10 @@ void esp_aes_acquire_hardware( void )
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&aes_lock);
     /* Enable AES hardware */
-    REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
+    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
     /* Clear reset on digital signature & secure boot units,
        otherwise AES unit is held in reset also. */
-    REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
+    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
                 DPORT_PERI_EN_AES
                 | DPORT_PERI_EN_DIGITAL_SIGNATURE
                 | DPORT_PERI_EN_SECUREBOOT);
@@ -50,10 +51,10 @@ void esp_aes_acquire_hardware( void )
 void esp_aes_release_hardware( void )
 {
     /* Disable AES hardware */
-    REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES);
+    DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES);
     /* Don't return other units to reset, as this pulls
        reset on RSA & SHA units, respectively. */
-    REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
+    DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
     _lock_release(&aes_lock);
 }
 

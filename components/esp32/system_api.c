@@ -19,6 +19,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_internal.h"
 #include "esp_log.h"
+#include "esp_dport_access.h"
 #include "sdkconfig.h"
 #include "rom/efuse.h"
 #include "rom/cache.h"
@@ -270,17 +271,17 @@ void IRAM_ATTR esp_restart_noos()
     uart_tx_wait_idle(2);
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
          DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
          DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
          DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST | 
          DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
-    REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
+    DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart
-    SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
             DPORT_TIMERS_RST | DPORT_SPI_RST_1 | DPORT_UART_RST);
-    REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
+    DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
     rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
