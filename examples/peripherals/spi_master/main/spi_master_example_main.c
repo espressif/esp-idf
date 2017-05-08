@@ -50,7 +50,8 @@ typedef struct {
     uint8_t databytes; //No of data in data; bit 7 = delay after set; 0xFF = end of cmds.
 } ili_init_cmd_t;
 
-static const ili_init_cmd_t ili_init_cmds[]={
+//Place data into DRAM. Constant data gets placed into DROM by default, which is not accessible by DMA.
+DRAM_ATTR static const ili_init_cmd_t ili_init_cmds[]={
     {0xCF, {0x00, 0x83, 0X30}, 3},
     {0xED, {0x64, 0x03, 0X12, 0X81}, 4},
     {0xE8, {0x85, 0x01, 0x79}, 3},

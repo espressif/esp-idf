@@ -87,4 +87,17 @@ size_t xPortGetMinimumEverFreeHeapSizeCaps( uint32_t caps );
 
 
 
+/**
+ * @brief Convenience function to check if a pointer is DMA-capable.
+ *
+ * @param ptr         Pointer to check
+ *
+ * @return True if DMA-capable, false if not.
+ */
+static inline bool  esp_ptr_dma_capable( const void *ptr ) 
+{
+    return ( (int)ptr >= 0x3FFAE000 && (int)ptr < 0x40000000 );
+}
+
+
 #endif

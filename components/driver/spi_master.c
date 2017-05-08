@@ -177,6 +177,8 @@ esp_err_t spi_bus_free(spi_host_device_t host)
     spihost[host]->hw->slave.trans_done=0;
     esp_intr_free(spihost[host]->intr);
     spicommon_periph_free(host);
+    free(spihost[host]->dmadesc_tx);
+    free(spihost[host]->dmadesc_rx);
     free(spihost[host]);
     spihost[host]=NULL;
     return ESP_OK;
@@ -573,6 +575,10 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
     SPI_CHECK(trans_desc->length <= handle->host->max_transfer_sz*8, "txdata transfer > host maximum", ESP_ERR_INVALID_ARG);
     SPI_CHECK(trans_desc->rxlength <= handle->host->max_transfer_sz*8, "rxdata transfer > host maximum", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(handle->host->dma_chan == 0 || (trans_desc->flags & SPI_TRANS_USE_TXDATA) || 
+                trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer), "txdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(handle->host->dma_chan == 0 || (trans_desc->flags & SPI_TRANS_USE_RXDATA) || 
+                trans_desc->rx_buffer==NULL || esp_ptr_dma_capable(trans_desc->rx_buffer), "rxdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
     r=xQueueSend(handle->trans_queue, (void*)&trans_desc, ticks_to_wait);
     if (!r) return ESP_ERR_TIMEOUT;
     esp_intr_enable(handle->host->intr);
