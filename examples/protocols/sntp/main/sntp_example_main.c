@@ -80,7 +80,7 @@ void app_main()
     ESP_LOGI(TAG, "The current date/time in New York is: %s", strftime_buf);
 
     // Set timezone to China Standard Time
-    setenv("TZ", "CST-8CDT-9,M4.2.0/2,M9.2.0/3", 1);
+    setenv("TZ", "CST-8", 1);
     tzset();
     localtime_r(&now, &timeinfo);
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
