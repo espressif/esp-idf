@@ -201,7 +201,6 @@ static void bte_main_enable(void)
     }
 
     //Now Test Case Not Supported BTU
-    LOG_ERROR("Startup BTU\n");
     BTU_StartUp();
 }
 

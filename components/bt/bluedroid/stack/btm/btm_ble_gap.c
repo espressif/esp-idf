@@ -1352,7 +1352,7 @@ tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
     p_cb_data->p_pad = p;
 
     if (mask != 0) {
-        BTM_TRACE_ERROR("Partial data write into ADV");
+        BTM_TRACE_DEBUG("Partial data write into ADV");
     }
 
     p_cb_data->data_mask &= ~mask;

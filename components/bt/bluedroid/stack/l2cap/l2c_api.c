@@ -1315,7 +1315,7 @@ UINT8 L2CA_GetChnlFcrMode (UINT16 lcid)
 *******************************************************************************/
 BOOLEAN  L2CA_RegisterFixedChannel (UINT16 fixed_cid, tL2CAP_FIXED_CHNL_REG *p_freg)
 {
-    L2CAP_TRACE_ERROR ("L2CA_RegisterFixedChannel()  CID: 0x%04x, %p", fixed_cid,p_freg);
+    L2CAP_TRACE_DEBUG ("L2CA_RegisterFixedChannel()  CID: 0x%04x, %p", fixed_cid,p_freg);
     if ( (fixed_cid < L2CAP_FIRST_FIXED_CHNL) || (fixed_cid > L2CAP_LAST_FIXED_CHNL) ) {
         L2CAP_TRACE_ERROR ("L2CA_RegisterFixedChannel()  Invalid CID: 0x%04x", fixed_cid);
 
