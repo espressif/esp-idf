@@ -19,7 +19,6 @@
 #include "esp_wifi.h"
 #include "esp_wifi_internal.h"
 #include "esp_log.h"
-#include "esp_dport_access.h"
 #include "sdkconfig.h"
 #include "rom/efuse.h"
 #include "rom/cache.h"

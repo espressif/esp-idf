@@ -21,7 +21,6 @@
 #include "soc/gpio_reg.h"
 #include "soc/i2s_reg.h"
 
-#include "esp_dport_access.h"
 
 #define DPORT_I2S0_CLK_EN   (BIT(4))
 #define DPORT_I2S0_RST   (BIT(4))

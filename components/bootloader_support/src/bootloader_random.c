@@ -20,7 +20,6 @@
 #include "soc/dport_reg.h"
 #include "soc/i2s_reg.h"
 #include "esp_log.h"
-#include "esp_dport_access.h"
 
 #ifndef BOOTLOADER_BUILD
 #include "esp_system.h"

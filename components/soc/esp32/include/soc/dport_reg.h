@@ -16,6 +16,14 @@
 
 #include "soc.h"
 
+#ifndef __ASSEMBLER__
+#include "dport_access.h"
+#endif
+   
+/* Registers defined in this header file must be accessed using special macros,
+ * prefixed with DPORT_. See soc/dport_access.h file for details.
+ */
+
 #define DPORT_PRO_BOOT_REMAP_CTRL_REG          (DR_REG_DPORT_BASE + 0x000)
 /* DPORT_PRO_BOOT_REMAP : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: */

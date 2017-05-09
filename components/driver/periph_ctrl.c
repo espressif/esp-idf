@@ -13,7 +13,6 @@
 // limitations under the License.
 #include <esp_types.h>
 #include "esp_intr.h"
-#include "esp_dport_access.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"

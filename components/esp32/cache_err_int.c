@@ -27,7 +27,6 @@
 #include "esp_err.h"
 #include "esp_intr.h"
 #include "esp_attr.h"
-#include "esp_dport_access.h"
 #include "soc/dport_reg.h"
 #include "sdkconfig.h"
 

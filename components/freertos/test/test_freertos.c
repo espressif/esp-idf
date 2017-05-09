@@ -15,7 +15,6 @@
 #include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
-#include "esp_dport_access.h"
 
 
 void ets_isr_unmask(uint32_t unmask);

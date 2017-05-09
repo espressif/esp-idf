@@ -18,7 +18,6 @@
 #include "esp_err.h"
 #include "esp_intr.h"
 #include "esp_intr_alloc.h"
-#include "esp_dport_access.h"
 
 #include "rom/ets_sys.h"
 #include "rom/uart.h"

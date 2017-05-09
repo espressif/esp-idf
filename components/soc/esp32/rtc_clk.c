@@ -30,7 +30,6 @@
 #include "soc_log.h"
 #include "sdkconfig.h"
 
-#include "esp_dport_access.h"
 
 #define MHZ (1000000)
 

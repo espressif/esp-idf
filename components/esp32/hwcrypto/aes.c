@@ -29,7 +29,6 @@
 #include "hwcrypto/aes.h"
 #include "rom/aes.h"
 #include "soc/dport_reg.h"
-#include "esp_dport_access.h"
 #include <sys/lock.h>
 
 static _lock_t aes_lock;

@@ -149,7 +149,6 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "esp_app_trace.h"
-#include "esp_dport_access.h"
 
 #if CONFIG_ESP32_APPTRACE_ENABLE
 #define ESP_APPTRACE_DEBUG_STATS_ENABLE         0

@@ -35,7 +35,6 @@
 #include "rom/ets_sys.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
-#include "esp_dport_access.h"
 
 inline static uint32_t SHA_LOAD_REG(esp_sha_type sha_type) {
     return SHA_1_LOAD_REG + sha_type * 0x10;

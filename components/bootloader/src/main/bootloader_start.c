@@ -18,7 +18,6 @@
 
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "esp_dport_access.h"
 
 #include "rom/cache.h"
 #include "rom/efuse.h"

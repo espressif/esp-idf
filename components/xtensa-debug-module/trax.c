@@ -16,7 +16,6 @@
 #include "soc/dport_reg.h"
 #include "sdkconfig.h"
 #include "esp_err.h"
-#include "esp_dport_access.h"
 #include "eri.h"
 #include "xtensa-debug-module.h"
 #include "trax.h"

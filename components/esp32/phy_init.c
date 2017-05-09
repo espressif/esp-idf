@@ -26,7 +26,6 @@
 
 #include "esp_err.h"
 #include "esp_phy_init.h"
-#include "esp_dport_access.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs.h"

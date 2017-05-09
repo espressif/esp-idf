@@ -25,7 +25,6 @@
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
 #include "rom/ets_sys.h"
-#include "esp_dport_access.h"
 
 #define MHZ (1000000)
 

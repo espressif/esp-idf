@@ -19,7 +19,6 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
 
-#include "esp_dport_access.h"
 
 void rtc_init(rtc_config_t cfg)
 {
