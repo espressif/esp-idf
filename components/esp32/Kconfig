@@ -639,7 +639,7 @@ config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
     int "Max number of WiFi dynamic RX buffers"
     depends on WIFI_ENABLED
     range 0 128
-    default 64
+    default 32
     help
         Set the number of WiFi dynamic rx buffers, 0 means no limitation for dynamic rx buffer
         allocation. The size of dynamic rx buffers is not fixed.
