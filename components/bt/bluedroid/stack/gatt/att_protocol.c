@@ -378,6 +378,10 @@ BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg)
     switch (op_code) {
     case GATT_RSP_READ_BLOB:
     case GATT_RSP_PREPARE_WRITE:
+        if (p_msg == NULL) {
+            GATT_TRACE_ERROR("Invalid prepare write response or read blob response, the rsp_msg can't be NULL.");
+            return NULL;
+        }
         GATT_TRACE_EVENT ("ATT_RSP_READ_BLOB/GATT_RSP_PREPARE_WRITE: len = %d offset = %d",
                           p_msg->attr_value.len, p_msg->attr_value.offset);
         offset = p_msg->attr_value.offset;
