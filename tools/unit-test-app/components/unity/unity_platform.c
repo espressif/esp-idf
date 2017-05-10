@@ -9,6 +9,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "soc/cpu.h"
+#include "esp_heap_caps.h"
 
 #define unity_printf ets_printf
 
@@ -18,6 +19,63 @@ static struct test_desc_t* s_unity_tests_last = NULL;
 
 // Inverse of the filter
 static bool s_invert = false;
+
+
+static size_t before_free_8bit;
+static size_t before_free_32bit;
+
+/* Each unit test is allowed to "leak" this many bytes.
+
+   TODO: Make this value editable by the test.
+
+   Will always need to be some value here, as fragmentation can reduce free space even when no leak is occuring.
+*/
+const size_t WARN_LEAK_THRESHOLD = 256;
+const size_t CRITICAL_LEAK_THRESHOLD = 4096;
+
+/* setUp runs before every test */
+void setUp(void)
+{
+    printf("%s", ""); /* sneakily lazy-allocate the reent structure for this test task */
+
+    before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+}
+
+static void check_leak(size_t before_free, size_t after_free, const char *type)
+{
+    if (before_free <= after_free) {
+        return;
+    }
+    size_t leaked = before_free - after_free;
+    if (leaked < WARN_LEAK_THRESHOLD) {
+        return;
+    }
+
+    printf("MALLOC_CAP_%s %s leak: Before %u bytes free, After %u bytes free (delta %u)\n",
+           type,
+           leaked < CRITICAL_LEAK_THRESHOLD ? "potential" : "critical",
+           before_free, after_free, leaked);
+    fflush(stdout);
+    TEST_ASSERT(leaked < CRITICAL_LEAK_THRESHOLD); /* fail the test if it leaks too much */
+}
+
+/* tearDown runs after every test */
+void tearDown(void)
+{
+    /* some FreeRTOS stuff is cleaned up by idle task */
+    vTaskDelay(5);
+
+    /* check if unit test has caused heap corruption in any heap */
+    TEST_ASSERT( heap_caps_check_integrity(MALLOC_CAP_INVALID, true) );
+
+    /* check for leaks */
+    size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+
+    check_leak(before_free_8bit, after_free_8bit, "8BIT");
+    check_leak(before_free_32bit, after_free_32bit, "32BIT");
+}
 
 void unity_putc(int c)
 {
