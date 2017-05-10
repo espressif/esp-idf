@@ -76,13 +76,13 @@ void esp_mpi_acquire_hardware( void )
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
 
-    REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
     /* also clear reset on digital signature, otherwise RSA is held in reset */
-    REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
+    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
                 DPORT_PERI_EN_RSA
                 | DPORT_PERI_EN_DIGITAL_SIGNATURE);
 
-    REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+    DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
     while(REG_READ(RSA_CLEAN_REG) != 1);
 
@@ -95,11 +95,11 @@ void esp_mpi_acquire_hardware( void )
 
 void esp_mpi_release_hardware( void )
 {
-    REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
+    DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
     /* don't reset digital signature unit, as this resets AES also */
-    REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
-    REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+    DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
+    DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
 
     _lock_release(&mpi_lock);
 }

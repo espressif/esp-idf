@@ -594,7 +594,7 @@ static esp_err_t esp_apptrace_trax_block_switch()
     // switch to new block
     s_trace_buf.trax.state.in_block++;
 
-    WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, new_block_num ? TRACEMEM_MUX_BLK0_ONLY : TRACEMEM_MUX_BLK1_ONLY);
+    DPORT_WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, new_block_num ? TRACEMEM_MUX_BLK0_ONLY : TRACEMEM_MUX_BLK1_ONLY);
     eri_write(ESP_APPTRACE_TRAX_CTRL_REG, ESP_APPTRACE_TRAX_BLOCK_ID(s_trace_buf.trax.state.in_block) |
               host_connected | ESP_APPTRACE_TRAX_BLOCK_LEN(s_trace_buf.trax.state.markers[prev_block_num]));
 
@@ -736,12 +736,12 @@ static esp_err_t esp_apptrace_trax_dest_init()
     }
     s_trace_buf.trax.state.in_block = ESP_APPTRACE_TRAX_INBLOCK_START;
 
-    WRITE_PERI_REG(DPORT_PRO_TRACEMEM_ENA_REG, DPORT_PRO_TRACEMEM_ENA_M);
+    DPORT_WRITE_PERI_REG(DPORT_PRO_TRACEMEM_ENA_REG, DPORT_PRO_TRACEMEM_ENA_M);
 #if CONFIG_FREERTOS_UNICORE == 0
-    WRITE_PERI_REG(DPORT_APP_TRACEMEM_ENA_REG, DPORT_APP_TRACEMEM_ENA_M);
+    DPORT_WRITE_PERI_REG(DPORT_APP_TRACEMEM_ENA_REG, DPORT_APP_TRACEMEM_ENA_M);
 #endif
     // Expose block 1 to host, block 0 is current trace input buffer
-    WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, TRACEMEM_MUX_BLK1_ONLY);
+    DPORT_WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, TRACEMEM_MUX_BLK1_ONLY);
 
     return ESP_OK;
 }

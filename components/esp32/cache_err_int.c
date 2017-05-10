@@ -51,7 +51,7 @@ void esp_cache_err_int_init()
     // CPU.
 
     if (core_id == PRO_CPU_NUM) {
-        SET_PERI_REG_MASK(DPORT_CACHE_IA_INT_EN_REG,
+        DPORT_SET_PERI_REG_MASK(DPORT_CACHE_IA_INT_EN_REG,
             DPORT_CACHE_IA_INT_PRO_OPPOSITE |
             DPORT_CACHE_IA_INT_PRO_DRAM1 |
             DPORT_CACHE_IA_INT_PRO_DROM0 |
@@ -59,7 +59,7 @@ void esp_cache_err_int_init()
             DPORT_CACHE_IA_INT_PRO_IRAM0 |
             DPORT_CACHE_IA_INT_PRO_IRAM1);
     } else {
-        SET_PERI_REG_MASK(DPORT_CACHE_IA_INT_EN_REG,
+        DPORT_SET_PERI_REG_MASK(DPORT_CACHE_IA_INT_EN_REG,
             DPORT_CACHE_IA_INT_APP_OPPOSITE |
             DPORT_CACHE_IA_INT_APP_DRAM1 |
             DPORT_CACHE_IA_INT_APP_DROM0 |
@@ -80,7 +80,7 @@ int IRAM_ATTR esp_cache_err_get_cpuid()
             DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM1 |
             DPORT_APP_CPU_DISABLED_CACHE_IA_OPPOSITE;
 
-    if (GET_PERI_REG_MASK(DPORT_PRO_DCACHE_DBUG3_REG, pro_mask)) {
+    if (DPORT_GET_PERI_REG_MASK(DPORT_PRO_DCACHE_DBUG3_REG, pro_mask)) {
         return PRO_CPU_NUM;
     }
 
@@ -92,7 +92,7 @@ int IRAM_ATTR esp_cache_err_get_cpuid()
             DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM1 |
             DPORT_PRO_CPU_DISABLED_CACHE_IA_OPPOSITE;
 
-    if (GET_PERI_REG_MASK(DPORT_APP_DCACHE_DBUG3_REG, app_mask)) {
+    if (DPORT_GET_PERI_REG_MASK(DPORT_APP_DCACHE_DBUG3_REG, app_mask)) {
         return APP_CPU_NUM;
     }
     return -1;

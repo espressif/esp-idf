@@ -30,6 +30,7 @@
 #include "soc_log.h"
 #include "sdkconfig.h"
 
+
 #define MHZ (1000000)
 
 /* Frequency of the 8M oscillator is 8.5MHz +/- 5%, at the default DCAP setting */
@@ -332,7 +333,7 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
     uint32_t delay_xtal_switch = (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) ?
             DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_150K : DELAY_CPU_FREQ_SWITCH_TO_XTAL_WITH_32K;
     ets_delay_us(delay_xtal_switch);
-    REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
+    DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
             RTC_CNTL_BB_I2C_FORCE_PD | RTC_CNTL_BBPLL_FORCE_PD |
             RTC_CNTL_BBPLL_I2C_FORCE_PD);
@@ -361,13 +362,13 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
                 RTC_CNTL_BBPLL_FORCE_PD | RTC_CNTL_BBPLL_I2C_FORCE_PD);
         rtc_clk_bbpll_set(xtal_freq, cpu_freq);
         if (cpu_freq == RTC_CPU_FREQ_80M) {
-            REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
+            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
             ets_update_cpu_frequency(80);
         } else if (cpu_freq == RTC_CPU_FREQ_160M) {
-            REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 1);
+            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 1);
             ets_update_cpu_frequency(160);
         } else if (cpu_freq == RTC_CPU_FREQ_240M) {
-            REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 2);
+            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 2);
             ets_update_cpu_frequency(240);
         }
         REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_PLL);
@@ -392,7 +393,7 @@ rtc_cpu_freq_t rtc_clk_cpu_freq_get()
             break;
         }
         case RTC_CNTL_SOC_CLK_SEL_PLL: {
-            uint32_t cpuperiod_sel = REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL);
+            uint32_t cpuperiod_sel = DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL);
             if (cpuperiod_sel == 0) {
                 return RTC_CPU_FREQ_80M;
             } else if (cpuperiod_sel == 1) {
