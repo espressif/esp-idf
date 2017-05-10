@@ -288,3 +288,18 @@ void heap_caps_print_heap_info( uint32_t caps )
     printf("    free %d allocated %d min_free %d largest_free_block %d\n", info.total_free_bytes, info.total_allocated_bytes, info.minimum_free_bytes, info.largest_free_block);
 }
 
+bool heap_caps_check_integrity(uint32_t caps, bool print_errors)
+{
+    bool all_heaps = caps & MALLOC_CAP_INVALID;
+    bool valid = true;
+
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if (heap->heap != NULL
+            && (all_heaps || (get_all_caps(heap) & caps) == caps)) {
+            valid = multi_heap_check(heap->heap, print_errors) && valid;
+        }
+    }
+
+    return valid;
+}

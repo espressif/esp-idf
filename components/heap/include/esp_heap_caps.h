@@ -154,3 +154,18 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps );
  */
 void heap_caps_print_heap_info( uint32_t caps );
 
+/**
+ * @brief Check integrity of all heaps with the given capabilities.
+ *
+ * Calls multi_heap_check() on all heaps which share the given capabilities. Optionally
+ * print errors if the heaps are corrupt.
+ *
+ * Pass caps == MALLOC_CAP_INVALID to test all registered heaps.
+ *
+ * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
+ *                    of memory
+ * @param print_errors Print specific errors if heap corruption is found.
+ *
+ * @return True if all heaps are valid, False if at least one heap is corrupt.
+ */
+bool heap_caps_check_integrity(uint32_t caps, bool print_errors);
