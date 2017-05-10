@@ -15,6 +15,8 @@
 #ifndef _ROM_CACHE_H_
 #define _ROM_CACHE_H_
 
+#include "soc/dport_access.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,7 +66,18 @@ void mmu_init(int cpu_no);
   *                   4 : mmu table to be written is out of range
   *                   5 : vaddr is out of range
   */
-unsigned int cache_flash_mmu_set(int cpu_no, int pid, unsigned int vaddr, unsigned int paddr,  int psize, int num);
+static inline unsigned int IRAM_ATTR cache_flash_mmu_set(int cpu_no, int pid, unsigned int vaddr, unsigned int paddr,  int psize, int num)
+{
+    extern unsigned int cache_flash_mmu_set_rom(int cpu_no, int pid, unsigned int vaddr, unsigned int paddr,  int psize, int num);
+
+    unsigned int ret;
+
+    DPORT_STALL_OTHER_CPU_START();
+    ret = cache_flash_mmu_set_rom(cpu_no, pid, vaddr, paddr, psize, num);
+    DPORT_STALL_OTHER_CPU_END();
+
+    return ret;
+}
 
 /**
   * @brief Set Ext-SRAM-Cache mmu mapping.
@@ -93,7 +106,18 @@ unsigned int cache_flash_mmu_set(int cpu_no, int pid, unsigned int vaddr, unsign
   *                   4 : mmu table to be written is out of range
   *                   5 : vaddr is out of range
   */
-unsigned int cache_sram_mmu_set(int cpu_no, int pid, unsigned int vaddr, unsigned int paddr, int psize, int num);
+static inline unsigned int IRAM_ATTR cache_sram_mmu_set(int cpu_no, int pid, unsigned int vaddr, unsigned int paddr, int psize, int num)
+{
+    extern unsigned int cache_sram_mmu_set_rom(int cpu_no, int pid, unsigned int vaddr, unsigned int paddr, int psize, int num);
+
+    unsigned int ret;
+
+    DPORT_STALL_OTHER_CPU_START();
+    ret = cache_sram_mmu_set_rom(cpu_no, pid, vaddr, paddr, psize, num);
+    DPORT_STALL_OTHER_CPU_END();
+
+    return ret;
+}
 
 /**
   * @brief Initialise cache access for the cpu.
@@ -103,7 +127,13 @@ unsigned int cache_sram_mmu_set(int cpu_no, int pid, unsigned int vaddr, unsigne
   *
   * @return None
   */
-void Cache_Read_Init(int cpu_no);
+static inline void IRAM_ATTR Cache_Read_Init(int cpu_no)
+{
+    extern void Cache_Read_Init_rom(int cpu_no);
+    DPORT_STALL_OTHER_CPU_START();
+    Cache_Read_Init_rom(cpu_no);
+    DPORT_STALL_OTHER_CPU_END();
+}
 
 /**
   * @brief Flush the cache value for the cpu.
@@ -113,7 +143,13 @@ void Cache_Read_Init(int cpu_no);
   *
   * @return None
   */
-void Cache_Flush(int cpu_no);
+static inline void IRAM_ATTR Cache_Flush(int cpu_no)
+{
+    extern void Cache_Flush_rom(int cpu_no);
+    DPORT_STALL_OTHER_CPU_START();
+    Cache_Flush_rom(cpu_no);
+    DPORT_STALL_OTHER_CPU_END();
+}
 
 /**
   * @brief Disable Cache access for the cpu.
@@ -123,7 +159,13 @@ void Cache_Flush(int cpu_no);
   *
   * @return None
   */
-void Cache_Read_Disable(int cpu_no);
+static inline void IRAM_ATTR Cache_Read_Disable(int cpu_no)
+{
+    extern void Cache_Read_Disable_rom(int cpu_no);
+    DPORT_STALL_OTHER_CPU_START();
+    Cache_Read_Disable_rom(cpu_no);
+    DPORT_STALL_OTHER_CPU_END();
+}
 
 /**
   * @brief Enable Cache access for the cpu.
@@ -133,7 +175,13 @@ void Cache_Read_Disable(int cpu_no);
   *
   * @return None
   */
-void Cache_Read_Enable(int cpu_no);
+static inline void IRAM_ATTR Cache_Read_Enable(int cpu_no)
+{
+    extern void Cache_Read_Enable_rom(int cpu_no);
+    DPORT_STALL_OTHER_CPU_START();
+    Cache_Read_Enable_rom(cpu_no);
+    DPORT_STALL_OTHER_CPU_END();
+}
 
 /**
   * @}

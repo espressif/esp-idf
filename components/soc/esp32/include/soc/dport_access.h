@@ -22,30 +22,29 @@ void esp_dport_access_stall_other_cpu_start(void);
 void esp_dport_access_stall_other_cpu_end(void);
 
 #if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
-#define DPORT_STAL_OTHER_CPU_START()
-#define DPORT_STAL_OTHER_CPU_END()
+#define DPORT_STALL_OTHER_CPU_START()
+#define DPORT_STALL_OTHER_CPU_END()
 #else
-#define DPORT_STAL_OTHER_CPU_START()   esp_dport_access_stall_other_cpu_start()
-#define DPORT_STAL_OTHER_CPU_END()     esp_dport_access_stall_other_cpu_end()
+#define DPORT_STALL_OTHER_CPU_START()   esp_dport_access_stall_other_cpu_start()
+#define DPORT_STALL_OTHER_CPU_END()     esp_dport_access_stall_other_cpu_end()
 #endif
 
-#define IS_DPORT_REG(_r) (((_r) >= DR_REG_DPORT_BASE) && (_r) <= DPORT_DATE_REG)
-
 //Registers Operation {{
-#define _REG_READ(_r)        (*(volatile uint32_t *)(_r))
-#define _REG_WRITE(_r, _v)   (*(volatile uint32_t *)(_r)) = (_v)
+//Origin access operation for the base and some special scene
+#define _DPORT_REG_READ(_r)        (*(volatile uint32_t *)(_r))
+#define _DPORT_REG_WRITE(_r, _v)   (*(volatile uint32_t *)(_r)) = (_v)
 
 //write value to register
-#define DPORT_REG_WRITE(_r, _v)   _REG_WRITE(_r, _v)
+#define DPORT_REG_WRITE(_r, _v)   _DPORT_REG_WRITE(_r, _v)
 
 //read value from register
-inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
+static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
 {
     uint32_t val;
 
-    DPORT_STAL_OTHER_CPU_START();
-    val = _REG_READ(reg);
-    DPORT_STAL_OTHER_CPU_END();
+    DPORT_STALL_OTHER_CPU_START();
+    val = _DPORT_REG_READ(reg);
+    DPORT_STALL_OTHER_CPU_END();
     
     return val;
 }
@@ -54,19 +53,19 @@ inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
 #define DPORT_REG_GET_BIT(_r, _b)  (DPORT_REG_READ(_r) & (_b))
 
 //set bit or set bits to register
-#define DPORT_REG_SET_BIT(_r, _b)  (*(volatile uint32_t*)(_r) |= (_b))
+#define DPORT_REG_SET_BIT(_r, _b)  DPORT_REG_WRITE((_r), (DPORT_REG_READ(_r)|(_b)))
 
 //clear bit or clear bits of register
-#define DPORT_REG_CLR_BIT(_r, _b)  (*(volatile uint32_t*)(_r) &= ~(_b))
+#define DPORT_REG_CLR_BIT(_r, _b)  DPORT_REG_WRITE((_r), (DPORT_REG_READ(_r) & (~(_b))))
 
 //set bits of register controlled by mask
-#define DPORT_REG_SET_BITS(_r, _b, _m) (*(volatile uint32_t*)(_r) = (DPORT_REG_READ(_r) & ~(_m)) | ((_b) & (_m)))
+#define DPORT_REG_SET_BITS(_r, _b, _m) DPORT_REG_WRITE((_r), ((DPORT_REG_READ(_r) & (~(_m))) | ((_b) & (_m))))
 
 //get field from register, uses field _S & _V to determine mask
 #define DPORT_REG_GET_FIELD(_r, _f) ((DPORT_REG_READ(_r) >> (_f##_S)) & (_f##_V))
 
 //set field to register, used when _f is not left shifted by _f##_S
-#define DPORT_REG_SET_FIELD(_r, _f, _v) (DPORT_REG_WRITE((_r),((DPORT_REG_READ(_r) & ~((_f) << (_f##_S)))|(((_v) & (_f))<<(_f##_S)))))
+#define DPORT_REG_SET_FIELD(_r, _f, _v) DPORT_REG_WRITE((_r), ((DPORT_REG_READ(_r) & (~((_f) << (_f##_S))))|(((_v) & (_f))<<(_f##_S))))
 
 //get field value from a variable, used when _f is not left shifted by _f##_S
 #define DPORT_VALUE_GET_FIELD(_r, _f) (((_r) >> (_f##_S)) & (_f))
@@ -90,13 +89,13 @@ inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
 #define _WRITE_PERI_REG(addr, val) (*((volatile uint32_t *)(addr))) = (uint32_t)(val) 
 
 //read value from register
-inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t addr) 
+static inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t addr) 
 {
     uint32_t val;
 
-    DPORT_STAL_OTHER_CPU_START();
+    DPORT_STALL_OTHER_CPU_START();
     val = _READ_PERI_REG(addr);
-    DPORT_STAL_OTHER_CPU_END();
+    DPORT_STALL_OTHER_CPU_END();
     
     return val;
 }

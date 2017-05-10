@@ -84,9 +84,9 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_start(void)
         dport_access_end[cpu_id] = 0;
 
         if (cpu_id == 0) {
-            WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_3_REG, DPORT_CPU_INTR_FROM_CPU_3); //interrupt on cpu1
+            _DPORT_REG_WRITE(DPORT_CPU_INTR_FROM_CPU_3_REG, DPORT_CPU_INTR_FROM_CPU_3); //interrupt on cpu1
         } else {
-            WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_2_REG, DPORT_CPU_INTR_FROM_CPU_2); //interrupt on cpu0
+            _DPORT_REG_WRITE(DPORT_CPU_INTR_FROM_CPU_2_REG, DPORT_CPU_INTR_FROM_CPU_2); //interrupt on cpu0
         }
 
         while (!dport_access_start[cpu_id]) {};
