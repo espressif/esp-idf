@@ -337,3 +337,31 @@ const char* esp_get_idf_version(void)
     return IDF_VER;
 }
 
+static void get_chip_info_esp32(esp_chip_info_t* out_info)
+{
+    uint32_t reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
+    memset(out_info, 0, sizeof(*out_info));
+    if ((reg & EFUSE_RD_CHIP_VER_REV1_M) != 0) {
+        out_info->revision = 1;
+    }
+    if ((reg & EFUSE_RD_CHIP_VER_DIS_APP_CPU_M) == 0) {
+        out_info->cores = 2;
+    } else {
+        out_info->cores = 1;
+    }
+    out_info->features = CHIP_FEATURE_WIFI_BGN;
+    if ((reg & EFUSE_RD_CHIP_VER_DIS_BT_M) == 0) {
+        out_info->features |= CHIP_FEATURE_BT | CHIP_FEATURE_BLE;
+    }
+    if (((reg & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S) ==
+            EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
+        out_info->features |= CHIP_FEATURE_EMB_FLASH;
+    }
+}
+
+void esp_chip_info(esp_chip_info_t* out_info)
+{
+    // Only ESP32 is supported now, in the future call one of the
+    // chip-specific functions based on sdkconfig choice
+    return get_chip_info_esp32(out_info);
+}
