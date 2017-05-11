@@ -382,30 +382,3 @@ void vPortSetStackWatchpoint( void* pxStackStart ) {
 uint32_t xPortGetTickRateHz(void) {
 	return (uint32_t)configTICK_RATE_HZ;
 }
-
-/* Heap functions, wrappers around heap_caps_xxx functions
-
-   NB: libc malloc() & free() are also defined & available
-   for this purpose.
- */
-
-void *pvPortMalloc( size_t xWantedSize )
-{
-	return heap_caps_malloc(xWantedSize, MALLOC_CAP_8BIT);
-}
-
-void vPortFree( void *pv )
-{
-	return heap_caps_free(pv);
-}
-
-size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION
-{
-	return heap_caps_get_free_size( MALLOC_CAP_8BIT );
-}
-
-size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION
-{
-	return heap_caps_get_minimum_free_size( MALLOC_CAP_8BIT );
-}
-
