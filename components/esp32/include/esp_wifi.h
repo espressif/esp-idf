@@ -295,7 +295,7 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   * @brief     Scan all available APs.
   *
   * @attention If this API is called, the found APs are stored in WiFi driver dynamic allocated memory and the
-  *            will be freed in esp_wifi_get_ap_list, so generally, call esp_wifi_get_ap_list to cause
+  *            will be freed in esp_wifi_scan_get_ap_records, so generally, call esp_wifi_scan_get_ap_records to cause
   *            the memory to be freed once the scan is done
   *
   * @param     config  configuration of scanning
