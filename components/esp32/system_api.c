@@ -36,63 +36,50 @@
 
 static const char* TAG = "system_api";
 
-static uint8_t ext_base_mac_addr[6] = {0};
+static uint8_t base_mac_addr[6] = { 0 };
 
 void system_init()
 {
 }
 
-esp_err_t esp_base_mac_addr_set_external(uint8_t *mac)
+esp_err_t esp_base_mac_addr_set(uint8_t *mac)
 {
     if (mac == NULL) {
-        ESP_LOGE(TAG, "External base MAC address is NULL");
+        ESP_LOGE(TAG, "Base MAC address is NULL");
         abort();
     }
 
-    memcpy(ext_base_mac_addr, mac, 6);
+    memcpy(base_mac_addr, mac, 6);
 
     return ESP_OK;
 }
 
-esp_err_t esp_base_mac_addr_get_external(uint8_t *mac)
+esp_err_t esp_base_mac_addr_get(uint8_t *mac)
 {
     uint8_t null_mac[6] = {0};
 
-    if (memcmp(ext_base_mac_addr, null_mac, 6) == 0) {
-    	ESP_LOGE(TAG, "External MAC address is not set");
-    	abort();
+    if (memcmp(base_mac_addr, null_mac, 6) == 0) {
+        ESP_LOGI(TAG, "Base MAC address is not set, read default base MAC address from BLK0 of EFUSE");
+        return ESP_ERR_INVALID_MAC;
     }
 
-    memcpy(mac, ext_base_mac_addr, 6);
+    memcpy(mac, base_mac_addr, 6);
 
     return ESP_OK;
 }
 
-esp_err_t esp_efuse_read_mac(uint8_t* mac)
+esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 {
     uint32_t mac_low;
     uint32_t mac_high;
     uint8_t efuse_crc;
     uint8_t calc_crc;
 
-#ifdef CONFIG_BASE_MAC_STORED_DEFAULT_EFUSE
-    mac_low = REG_READ(EFUSE_BLK0_RDATA1_REG);
-    mac_high = REG_READ(EFUSE_BLK0_RDATA2_REG);
-
-    mac[0] = mac_high >> 8;
-    mac[1] = mac_high;
-    mac[2] = mac_low >> 24;
-    mac[3] = mac_low >> 16;
-    mac[4] = mac_low >> 8;
-    mac[5] = mac_low;
-
-    efuse_crc = mac_high >> 16;
-#else
     uint8_t version = REG_READ(EFUSE_BLK3_RDATA5_REG) >> 24;
 
     if (version != 1) {
-        ESP_LOGE(TAG, "Customer efuse MAC address version error, version = %d", version);
-        abort();
+        ESP_LOGE(TAG, "Base MAC address from BLK3 of EFUSE version error, version = %d", version);
+        return ESP_ERR_INVALID_VERSION;
     }
 
     mac_low = REG_READ(EFUSE_BLK3_RDATA1_REG);
@@ -106,7 +93,34 @@ esp_err_t esp_efuse_read_mac(uint8_t* mac)
     mac[5] = mac_low >> 16;
 
     efuse_crc = mac_high;
-#endif //CONFIG_BASE_MAC_STORED_DEFAULT_EFUSE
+
+    calc_crc = esp_crc8(mac, 6);
+
+    if (efuse_crc != calc_crc) {
+        ESP_LOGE(TAG, "Base MAC address from BLK3 of EFUSE CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
+        return ESP_ERR_INVALID_CRC;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
+{
+    uint32_t mac_low;
+    uint32_t mac_high;
+    uint8_t efuse_crc;
+    uint8_t calc_crc;
+
+    mac_low = REG_READ(EFUSE_BLK0_RDATA1_REG);
+    mac_high = REG_READ(EFUSE_BLK0_RDATA2_REG);
+
+    mac[0] = mac_high >> 8;
+    mac[1] = mac_high;
+    mac[2] = mac_low >> 24;
+    mac[3] = mac_low >> 16;
+    mac[4] = mac_low >> 8;
+    mac[5] = mac_low;
+
+    efuse_crc = mac_high >> 16;
 
     calc_crc = esp_crc8(mac, 6);
 
@@ -118,30 +132,31 @@ esp_err_t esp_efuse_read_mac(uint8_t* mac)
                 return ESP_OK;
             }
         } else {
-            ESP_LOGE(TAG, "MAC address CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
+            ESP_LOGE(TAG, "Base MAC address from BLK0 of EFUSE CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
             abort();
         }
     }
     return ESP_OK;
 }
 
-esp_err_t system_efuse_read_mac(uint8_t mac[6]) __attribute__((alias("esp_efuse_read_mac")));
+esp_err_t system_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
+esp_err_t esp_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
 
-esp_err_t esp_derive_mac(uint8_t* dst_mac, const uint8_t* src_mac)
+esp_err_t esp_derive_mac(uint8_t* local_mac, const uint8_t* universal_mac)
 {
     uint8_t idx;
 
-    if (dst_mac == NULL || src_mac == NULL) {
+    if (local_mac == NULL || universal_mac == NULL) {
         ESP_LOGE(TAG, "mac address param is NULL");
         return ESP_ERR_INVALID_ARG;
     }
 
-    memcpy(dst_mac, src_mac, 6);
+    memcpy(local_mac, universal_mac, 6);
     for (idx = 0; idx < 64; idx++) {
-        dst_mac[0] = src_mac[0] | 0x02;
-        dst_mac[0] ^= idx << 2;
+        local_mac[0] = universal_mac[0] | 0x02;
+        local_mac[0] ^= idx << 2;
 
-        if (memcmp(dst_mac, src_mac, 6)) {
+        if (memcmp(local_mac, universal_mac, 6)) {
             break;
         }
     }
@@ -159,50 +174,46 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
     }
 
     if (type < ESP_MAC_WIFI_STA || type > ESP_MAC_ETH) {
-    	ESP_LOGE(TAG, "mac type is incorrect");
+        ESP_LOGE(TAG, "mac type is incorrect");
         return ESP_ERR_INVALID_ARG;
     }
 
-    _Static_assert(NUM_MAC_ADDRESS_FROM_EFUSE == FOUR_MAC_ADDRESS_FROM_EFUSE \
-            || NUM_MAC_ADDRESS_FROM_EFUSE == TWO_MAC_ADDRESS_FROM_EFUSE, \
+    _Static_assert(UNIVERSAL_MAC_ADDR_NUM == FOUR_UNIVERSAL_MAC_ADDR \
+            || UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR, \
             "incorrect NUM_MAC_ADDRESS_FROM_EFUSE value");
 
-#if defined(CONFIG_BASE_MAC_STORED_DEFAULT_EFUSE) || defined(CONFIG_BASE_MAC_STORED_CUSTOMER_DEFINED_EFUSE)
-    esp_efuse_read_mac(efuse_mac);
-#endif
-
-#if defined(CONFIG_BASE_MAC_STORED_OTHER_CUSTOMER_DEFINED_PLACE)
-    esp_base_mac_addr_get_external(efuse_mac);
-#endif
+    if (esp_base_mac_addr_get(efuse_mac) != ESP_OK) {
+        esp_efuse_mac_get_default(efuse_mac);
+    }
 
     switch (type) {
     case ESP_MAC_WIFI_STA:
         memcpy(mac, efuse_mac, 6);
         break;
     case ESP_MAC_WIFI_SOFTAP:
-        if (NUM_MAC_ADDRESS_FROM_EFUSE == FOUR_MAC_ADDRESS_FROM_EFUSE) {
+        if (UNIVERSAL_MAC_ADDR_NUM == FOUR_UNIVERSAL_MAC_ADDR) {
             memcpy(mac, efuse_mac, 6);
             mac[5] += 1;
         }
-        else if (NUM_MAC_ADDRESS_FROM_EFUSE == TWO_MAC_ADDRESS_FROM_EFUSE) {
+        else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
             esp_derive_mac(mac, efuse_mac);
         }
         break;
     case ESP_MAC_BT:
         memcpy(mac, efuse_mac, 6);
-        if (NUM_MAC_ADDRESS_FROM_EFUSE == FOUR_MAC_ADDRESS_FROM_EFUSE) {
+        if (UNIVERSAL_MAC_ADDR_NUM == FOUR_UNIVERSAL_MAC_ADDR) {
             mac[5] += 2;
         }
-        else if (NUM_MAC_ADDRESS_FROM_EFUSE == TWO_MAC_ADDRESS_FROM_EFUSE) {
+        else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
             mac[5] += 1;
         }
         break;
     case ESP_MAC_ETH:
-        if (NUM_MAC_ADDRESS_FROM_EFUSE == FOUR_MAC_ADDRESS_FROM_EFUSE) {
+        if (UNIVERSAL_MAC_ADDR_NUM == FOUR_UNIVERSAL_MAC_ADDR) {
             memcpy(mac, efuse_mac, 6);
             mac[5] += 3;
         }
-        else if (NUM_MAC_ADDRESS_FROM_EFUSE == TWO_MAC_ADDRESS_FROM_EFUSE) {
+        else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
             efuse_mac[5] += 1;
             esp_derive_mac(mac, efuse_mac);
         }
@@ -270,17 +281,17 @@ void IRAM_ATTR esp_restart_noos()
     uart_tx_wait_idle(2);
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
          DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
          DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
          DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST | 
          DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
-    REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
+    DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart
-    SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
             DPORT_TIMERS_RST | DPORT_SPI_RST_1 | DPORT_UART_RST);
-    REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
+    DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
     rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
@@ -326,3 +337,31 @@ const char* esp_get_idf_version(void)
     return IDF_VER;
 }
 
+static void get_chip_info_esp32(esp_chip_info_t* out_info)
+{
+    uint32_t reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
+    memset(out_info, 0, sizeof(*out_info));
+    if ((reg & EFUSE_RD_CHIP_VER_REV1_M) != 0) {
+        out_info->revision = 1;
+    }
+    if ((reg & EFUSE_RD_CHIP_VER_DIS_APP_CPU_M) == 0) {
+        out_info->cores = 2;
+    } else {
+        out_info->cores = 1;
+    }
+    out_info->features = CHIP_FEATURE_WIFI_BGN;
+    if ((reg & EFUSE_RD_CHIP_VER_DIS_BT_M) == 0) {
+        out_info->features |= CHIP_FEATURE_BT | CHIP_FEATURE_BLE;
+    }
+    if (((reg & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S) ==
+            EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
+        out_info->features |= CHIP_FEATURE_EMB_FLASH;
+    }
+}
+
+void esp_chip_info(esp_chip_info_t* out_info)
+{
+    // Only ESP32 is supported now, in the future call one of the
+    // chip-specific functions based on sdkconfig choice
+    return get_chip_info_esp32(out_info);
+}

@@ -1720,7 +1720,7 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
     STREAM_TO_UINT8    (role, p);
     STREAM_TO_UINT8    (bda_type, p);
     STREAM_TO_BDADDR   (bda, p);
-    BTM_TRACE_ERROR("status = %d, handle = %d, role = %d, bda_type = %d",status,handle,role,bda_type);
+    BTM_TRACE_DEBUG("status = %d, handle = %d, role = %d, bda_type = %d",status,handle,role,bda_type);
     if (status == 0) {
 #if (BLE_PRIVACY_SPT == TRUE )
         peer_addr_type = bda_type;

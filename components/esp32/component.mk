@@ -2,6 +2,10 @@
 # Component Makefile
 #
 
+#ifdef IS_BOOTLOADER_BUILD
+CFLAGS += -DBOOTLOADER_BUILD
+#endif
+
 COMPONENT_SRCDIRS := . hwcrypto
 LIBS := core rtc
 ifdef CONFIG_PHY_ENABLED # BT || WIFI

@@ -152,49 +152,36 @@ config MEMMAP_SPISRAM
         The ESP32 can control an external SPI SRAM chip, adding the memory it contains to the
         main memory map. Enable this if you have this hardware and want to use it in the same
         way as on-chip RAM.
-
-choice BASE_MAC_ADDRESS_STORAGE
-    prompt "Storage of the base MAC address"
-    default BASE_MAC_STORED_DEFAULT_EFUSE
-    help
-        Select storage of the base MAC address which is used for all network interfaces when networking is initialized. 
-        If "Default place in EFUSE" is selected, esp32 will use the base MAC address which is written into default
-        place in EFUSE when the chip is manufactured. 
-        If "Customer-defined place in EFUSE" is selected, ESP32 will use customer-defined base MAC address which
-        is written into EFUSE Block 3 words 0, 1.
-        If "Other customer-defined place" is selected, esp32 will use customer-defined base MAC address from other
-        place(flash, EEPROM, etc). User code must call esp_base_mac_addr_set_external to set the base MAC address 
-        before network features are initialised.
-
-config BASE_MAC_STORED_DEFAULT_EFUSE
-    bool "Default place in EFUSE"
-config BASE_MAC_STORED_CUSTOMER_DEFINED_EFUSE
-    bool "Customer-defined place in EFUSE"
-config BASE_MAC_STORED_OTHER_CUSTOMER_DEFINED_PLACE
-    bool "Other customer-defined place"
-endchoice
         
-choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
-    bool "Number of MAC address generated from the hardware MAC address in efuse"
-    default FOUR_MAC_ADDRESS_FROM_EFUSE
+choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
+    bool "Number of universally administered (by IEEE) MAC address"
+    default FOUR_UNIVERSAL_MAC_ADDRESS
     help
-        Config the number of MAC address which is generated from the base MAC address in efuse.
-        If the number is two, the MAC addresses of WiFi station and bluetooth are generated from
-        the base MAC address in efuse. The MAC addresses of WiFi softap and ethernet are derived
-        from that of WiFi station and bluetooth respectively. 
-        If the number is four, the MAC addresses of WiFi station, WiFi softap, bluetooth and ethernet
-        are all generated from the base MAC address in efuse.
+        Configure the number of universally administered (by IEEE) MAC addresses.
+        During initialisation, MAC addresses for each network interface are generated or derived from a 
+        single base MAC address.
+        If the number of universal MAC addresses is four, all four interfaces (WiFi station, WiFi softap, 
+        Bluetooth and Ethernet) receive a universally administered MAC address. These are generated 
+        sequentially by adding 0, 1, 2 and 3 (respectively) to the final octet of the base MAC address.
+        If the number of universal MAC addresses is two, only two interfaces (WiFi station and Bluetooth) 
+        receive a universally administered MAC address. These are generated sequentially by adding 0 
+        and 1 (respectively) to the base MAC address. The remaining two interfaces (WiFi softap and Ethernet) 
+        receive local MAC addresses. These are derived from the universal WiFi station and Bluetooth MAC 
+        addresses, respectively.
+        When using the default (Espressif-assigned) base MAC address, either setting can be used. When using 
+        a custom universal MAC address range, the correct setting will depend on the allocation of MAC 
+        addresses in this range (either 2 or 4 per device.)
 
-config TWO_MAC_ADDRESS_FROM_EFUSE
+config TWO_UNIVERSAL_MAC_ADDRESS
     bool "Two"
-config FOUR_MAC_ADDRESS_FROM_EFUSE
+config FOUR_UNIVERSAL_MAC_ADDRESS
     bool "Four"
 endchoice
 
-config NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
+config NUMBER_OF_UNIVERSAL_MAC_ADDRESS
     int 
-    default 2 if TWO_MAC_ADDRESS_FROM_EFUSE 
-    default 4 if FOUR_MAC_ADDRESS_FROM_EFUSE 
+    default 2 if TWO_UNIVERSAL_MAC_ADDRESS
+    default 4 if FOUR_UNIVERSAL_MAC_ADDRESS
 
 config SYSTEM_EVENT_QUEUE_SIZE
     int "System event queue size"
@@ -639,7 +626,7 @@ config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
     int "Max number of WiFi dynamic RX buffers"
     depends on WIFI_ENABLED
     range 0 128
-    default 64
+    default 32
     help
         Set the number of WiFi dynamic rx buffers, 0 means no limitation for dynamic rx buffer
         allocation. The size of dynamic rx buffers is not fixed.

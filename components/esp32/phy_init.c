@@ -52,7 +52,7 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data,
     _lock_acquire(&s_phy_rf_init_lock);
     if (s_phy_rf_init_count == 0) {
         // Enable WiFi peripheral clock
-        SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN | DPORT_WIFI_CLK_RNG_EN);
+        DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN | DPORT_WIFI_CLK_RNG_EN);
         ESP_LOGV(TAG, "register_chipv7_phy, init_data=%p, cal_data=%p, mode=%d",
                 init_data, calibration_data, mode);
         phy_set_wifi_mode_only(0);
@@ -77,7 +77,7 @@ esp_err_t esp_phy_rf_deinit(void)
         // Disable PHY and RF.
         phy_close_rf();
         // Disable WiFi peripheral clock. Do not disable clock for hardware RNG
-        CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN);
     } else {
 #if CONFIG_SW_COEXIST_ENABLE
         coex_deinit();
@@ -221,7 +221,7 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
         return ESP_ERR_INVALID_SIZE;
     }
     uint8_t sta_mac[6];
-    esp_efuse_read_mac(sta_mac);
+    esp_efuse_mac_get_default(sta_mac);
     if (memcmp(sta_mac, cal_data_mac, sizeof(sta_mac)) != 0) {
         ESP_LOGE(TAG, "%s: calibration data MAC check failed: expected " \
                 MACSTR ", found " MACSTR,
@@ -252,7 +252,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
         return err;
     }
     uint8_t sta_mac[6];
-    esp_efuse_read_mac(sta_mac);
+    esp_efuse_mac_get_default(sta_mac);
     err = nvs_set_blob(handle, PHY_CAL_MAC_KEY, sta_mac, sizeof(sta_mac));
     if (err != ESP_OK) {
         return err;
