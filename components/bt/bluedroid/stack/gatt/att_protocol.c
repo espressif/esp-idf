@@ -378,6 +378,26 @@ BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg)
     switch (op_code) {
     case GATT_RSP_READ_BLOB:
     case GATT_RSP_PREPARE_WRITE:
+    case GATT_RSP_READ_BY_TYPE:
+    case GATT_RSP_READ:
+    case GATT_HANDLE_VALUE_NOTIF:
+    case GATT_HANDLE_VALUE_IND:
+    case GATT_RSP_ERROR:
+    case GATT_RSP_MTU:
+    /* Need to check the validation of parameter p_msg*/
+        if (p_msg == NULL) {
+            GATT_TRACE_ERROR("Invalid parameters in %s, op_code=0x%x, the p_msg should not be NULL.", __func__, op_code);
+            return NULL;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    switch (op_code) {
+    case GATT_RSP_READ_BLOB:
+    case GATT_RSP_PREPARE_WRITE:
         GATT_TRACE_EVENT ("ATT_RSP_READ_BLOB/GATT_RSP_PREPARE_WRITE: len = %d offset = %d",
                           p_msg->attr_value.len, p_msg->attr_value.offset);
         offset = p_msg->attr_value.offset;
