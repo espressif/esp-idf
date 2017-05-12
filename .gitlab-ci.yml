@@ -151,6 +151,15 @@ test_nvs_on_host:
     - cd components/nvs_flash/test_nvs_host
     - make test
 
+test_partition_table_on_host:
+  stage: test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - build
+  script:
+    - cd components/partition_table/test_gen_esp32part_host
+    - ./gen_esp32part_tests.py
+
 test_wl_on_host:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
