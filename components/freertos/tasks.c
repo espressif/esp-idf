@@ -1251,6 +1251,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 				portPRE_TASK_DELETE_HOOK( pxTCB, &xYieldPending[xPortGetCoreID()] );
 				portYIELD_WITHIN_API();
 			}
+			else if ( portNUM_PROCESSORS > 1 && pxTCB == pxCurrentTCB[ !xPortGetCoreID() ] )
+			{
+				/* if task is running on the other CPU, force a yield on that CPU to take it off */
+				vPortYieldOtherCore( !xPortGetCoreID() );
+			}
 			else
 			{
 				/* Reset the next expected unblock time in case it referred to
