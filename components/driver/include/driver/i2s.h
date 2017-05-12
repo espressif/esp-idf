@@ -109,13 +109,17 @@ typedef enum {
 /**
  * @brief I2S Mode, defaut is I2S_MODE_MASTER | I2S_MODE_TX
  *
+ * @note PDM and built-in DAC functions are only supported on I2S0 for current ESP32 chip.
+ *
  */
 typedef enum {
     I2S_MODE_MASTER = 1,
     I2S_MODE_SLAVE = 2,
     I2S_MODE_TX = 4,
     I2S_MODE_RX = 8,
-    I2S_MODE_DAC_BUILT_IN = 16
+    I2S_MODE_DAC_BUILT_IN = 16,       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
+    //I2S_MODE_ADC_BUILT_IN = 32,     /*!< Currently not supported yet, will be added for the next version*/
+    I2S_MODE_PDM = 64,
 } i2s_mode_t;
 
 /**
@@ -145,6 +149,19 @@ typedef enum {
 } i2s_event_type_t;
 
 /**
+ * @brief I2S DAC mode for i2s_set_dac_mode.
+ *
+ * @note PDM and built-in DAC functions are only supported on I2S0 for current ESP32 chip.
+ */
+typedef enum {
+    I2S_DAC_CHANNEL_DISABLE  = 0,    /*!< Disable I2S built-in DAC signals*/
+    I2S_DAC_CHANNEL_RIGHT_EN = 1,    /*!< Enable I2S built-in DAC right channel, maps to DAC channel 1 on GPIO25*/
+    I2S_DAC_CHANNEL_LEFT_EN  = 2,    /*!< Enable I2S built-in DAC left  channel, maps to DAC channel 2 on GPIO26*/
+    I2S_DAC_CHANNEL_BOTH_EN  = 0x3,  /*!< Enable both of the I2S built-in DAC channels.*/
+    I2S_DAC_CHANNEL_MAX      = 0x4,  /*!< I2S built-in DAC mode max index*/
+} i2s_dac_mode_t;
+
+/**
  * @brief Event structure used in I2S event queue
  *
  */
@@ -166,6 +183,7 @@ typedef struct {
     int data_in_num;    /*!< DATA in pin*/
 } i2s_pin_config_t;
 
+
 typedef intr_handle_t i2s_isr_handle_t;
 /**
  * @brief Set I2S pin number
@@ -181,11 +199,29 @@ typedef intr_handle_t i2s_isr_handle_t;
  * Inside the pin configuration structure, set I2S_PIN_NO_CHANGE for any pin where
  * the current configuration should not be changed.
  *
+ * @note if *pin is set as NULL, this function will initialize both of the built-in DAC channels by default.
+ *       if you don't want this to happen and you want to initialize only one of the DAC channels, you can call i2s_set_dac_mode instead.
+ *
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
+
+/**
+ * @brief Set I2S dac mode, I2S built-in DAC is disabled by default
+ *
+ * @param dac_mode DAC mode configurations - see i2s_dac_mode_t
+ *
+ * @note Built-in DAC functions are only supported on I2S0 for current ESP32 chip.
+ *       If either of the built-in DAC channel are enabled, the other one can not
+ *       be used as RTC DAC function at the same time.
+ *
+ * @return
+ *     - ESP_OK  Success
+ *     - ESP_ERR_INVALID_ARG  Parameter error
+ */
+esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode);
 
 /**
  * @brief Install and start I2S driver.

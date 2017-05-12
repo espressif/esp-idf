@@ -22,7 +22,8 @@ Setting DAC channel 1 (GPIO 25) voltage to approx 0.78 of VDD_A voltage (VDD * 2
 
   ...
 
-      dac_out_voltage(DAC_CHANNEL_1, 200);
+      dac_output_enable(DAC_CHANNEL_1);
+      dac_output_voltage(DAC_CHANNEL_1, 200);
 
 API Reference
 -------------
@@ -40,6 +41,9 @@ Enumerations
 Functions
 ^^^^^^^^^
 
-  .. doxygenfunction:: dac_out_voltage
-
-
+  .. doxygenfunction:: dac_output_voltage
+  .. doxygenfunction:: dac_output_enable
+  .. doxygenfunction:: dac_output_disable
+  .. doxygenfunction:: dac_i2s_enable
+  .. doxygenfunction:: dac_i2s_disable
+  

@@ -60,7 +60,7 @@ Short example configuring I2S to use internal DAC for analog output::
     static const i2s_config_t i2s_config = {
          .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
          .sample_rate = 44100,
-         .bits_per_sample = 8, /* must be 8 for built-in DAC */
+         .bits_per_sample = 16, /* the DAC module will only take the 8bits from MSB */
          .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
          .communication_format = I2S_COMM_FORMAT_I2S_MSB,
          .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1, // high interrupt priority
@@ -72,7 +72,10 @@ Short example configuring I2S to use internal DAC for analog output::
 
         i2s_driver_install(i2s_num, &i2s_config, 0, NULL);   //install and start i2s driver
 
-        i2s_set_pin(i2s_num, NULL); //for internal DAC
+        i2s_set_pin(i2s_num, NULL); //for internal DAC, this will enable both of the internal channels
+        
+        //You can call i2s_set_dac_mode to set built-in DAC output mode.
+        //i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN); 
 
         i2s_set_sample_rates(i2s_num, 22050); //set sample rates
 
@@ -112,11 +115,13 @@ Enumerations
   .. doxygenenum:: i2s_port_t
   .. doxygenenum:: i2s_mode_t
   .. doxygenenum:: i2s_event_type_t
+  .. doxygenenum:: i2s_dac_mode_t
 
 Functions
 ^^^^^^^^^
 
   .. doxygenfunction:: i2s_set_pin
+  .. doxygenfunction:: i2s_set_dac_mode
   .. doxygenfunction:: i2s_driver_install
   .. doxygenfunction:: i2s_driver_uninstall
   .. doxygenfunction:: i2s_write_bytes
