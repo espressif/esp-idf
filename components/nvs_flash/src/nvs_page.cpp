@@ -296,9 +296,6 @@ esp_err_t Page::eraseItem(uint8_t nsIndex, ItemType datatype, const char* key)
     if (rc != ESP_OK) {
         return rc;
     }
-    if (CachedFindInfo(nsIndex, datatype, key) == mFindInfo) {
-        invalidateCache();
-    }
     return eraseEntryAndSpan(index);
 }
 
@@ -384,10 +381,6 @@ esp_err_t Page::moveItem(Page& other)
 {
     if (mFirstUsedEntry == INVALID_ENTRY) {
         return ESP_ERR_NVS_NOT_FOUND;
-    }
-
-    if (mFindInfo.itemIndex() == mFirstUsedEntry) {
-        invalidateCache();
     }
 
     if (other.mState == PageState::UNINITIALIZED) {
@@ -608,7 +601,6 @@ esp_err_t Page::initialize()
 
     mNextFreeEntry = 0;
     std::fill_n(mEntryTable.data(), mEntryTable.byteSize() / sizeof(uint32_t), 0xffffffff);
-    invalidateCache();
     return ESP_OK;
 }
 
@@ -685,11 +677,6 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
         return ESP_ERR_NVS_NOT_FOUND;
     }
 
-    CachedFindInfo findInfo(nsIndex, datatype, key);
-    if (mFindInfo == findInfo) {
-        findBeginIndex = mFindInfo.itemIndex();
-    }
-
     size_t start = mFirstUsedEntry;
     if (findBeginIndex > mFirstUsedEntry && findBeginIndex < ENTRY_COUNT) {
         start = findBeginIndex;
@@ -745,8 +732,6 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
         }
 
         itemIndex = i;
-        findInfo.setItemIndex(static_cast<uint32_t>(itemIndex));
-        mFindInfo = findInfo;
 
         return ESP_OK;
     }
@@ -804,12 +789,6 @@ esp_err_t Page::markFull()
         return ESP_ERR_NVS_INVALID_STATE;
     }
     return alterPageState(PageState::FULL);
-}
-
-
-void Page::invalidateCache()
-{
-    mFindInfo = CachedFindInfo();
 }
     
 const char* Page::pageStateToName(PageState ps)
