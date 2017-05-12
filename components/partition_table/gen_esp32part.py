@@ -6,6 +6,7 @@
 #
 # See http://esp-idf.readthedocs.io/en/latest/partition-tables.html for explanation of
 # partition table structure and uses.
+from __future__ import print_function, division
 import argparse
 import os
 import re
@@ -94,7 +95,7 @@ class PartitionTable(list):
             data = b[o:o+32]
             if len(data) != 32:
                 raise InputError("Partition table length must be a multiple of 32 bytes")
-            if data == '\xFF'*32:
+            if data == b'\xFF'*32:
                 return result  # got end marker
             result.append(PartitionDefinition.from_binary(data))
         raise InputError("Partition table is missing an end-of-table marker")
@@ -246,8 +247,9 @@ class PartitionDefinition(object):
         res = cls()
         (magic, res.type, res.subtype, res.offset,
          res.size, res.name, flags) = struct.unpack(cls.STRUCT_FORMAT, b)
-        if "\x00" in res.name: # strip null byte padding from name string
-            res.name = res.name[:res.name.index("\x00")]
+        if b"\x00" in res.name: # strip null byte padding from name string
+            res.name = res.name[:res.name.index(b"\x00")]
+        res.name = res.name.decode()
         if magic != cls.MAGIC_BYTES:
             raise InputError("Invalid magic bytes (%r) for partition definition" % magic)
         for flag,bit in cls.FLAGS.items():
@@ -275,7 +277,7 @@ class PartitionDefinition(object):
             if not simple_formatting and include_sizes:
                 for (val, suffix) in [ (0x100000, "M"), (0x400, "K") ]:
                     if a % val == 0:
-                        return "%d%s" % (a / val, suffix)
+                        return "%d%s" % (a // val, suffix)
             return "0x%x" % a
 
         def lookup_keyword(t, keywords):
@@ -323,7 +325,7 @@ def main():
     parser.add_argument('--verify', '-v', help='Verify partition table fields', default=True, action='store_false')
     parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
 
-    parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.', type=argparse.FileType('r'), default=sys.stdin)
+    parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.', type=argparse.FileType('rb'), default=sys.stdin)
     parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted, unless the --display argument is also passed (in which case only the summary is printed.)',
                         nargs='?',
                         default='-')
@@ -337,6 +339,7 @@ def main():
         status("Parsing binary partition input...")
         table = PartitionTable.from_binary(input)
     else:
+        input = input.decode()
         status("Parsing CSV input...")
         table = PartitionTable.from_csv(input)
 
@@ -357,5 +360,5 @@ if __name__ == '__main__':
     try:
         main()
     except InputError as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         sys.exit(2)
