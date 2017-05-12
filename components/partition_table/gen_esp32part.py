@@ -155,7 +155,7 @@ class PartitionDefinition(object):
     MAGIC_BYTES = b"\xAA\x50"
 
     ALIGNMENT = {
-        APP_TYPE : 0x1000,
+        APP_TYPE : 0x10000,
         DATA_TYPE : 0x04,
     }
 
@@ -241,16 +241,16 @@ class PartitionDefinition(object):
 
     def verify(self):
         if self.type is None:
-            raise ValidationError("Type field is not set")
+            raise ValidationError(self, "Type field is not set")
         if self.subtype is None:
-            raise ValidationError("Subtype field is not set")
+            raise ValidationError(self, "Subtype field is not set")
         if self.offset is None:
-            raise ValidationError("Offset field is not set")
+            raise ValidationError(self, "Offset field is not set")
         align = self.ALIGNMENT.get(self.type, 4)
         if self.offset % align:
-            raise ValidationError("%s offset 0x%x is not aligned to 0x%x" % (self.name, self.offset, align))
+            raise ValidationError(self, "Offset 0x%x is not aligned to 0x%x" % (self.offset, align))
         if self.size is None:
-            raise ValidationError("Size field is not set")
+            raise ValidationError(self, "Size field is not set")
 
     STRUCT_FORMAT = "<2sBBLL16sL"
 
@@ -311,9 +311,6 @@ class PartitionDefinition(object):
                           addr_format(self.size, True),
                           generate_text_flags()])
 
-class InputError(RuntimeError):
-    def __init__(self, e):
-        super(InputError, self).__init__(e)
 
 def parse_int(v, keywords={}):
     """Generic parser for integer fields - int(x,0) with provision for
@@ -369,6 +366,18 @@ def main():
         output = table.to_binary()
         with sys.stdout.buffer if args.output == '-' else open(args.output, 'wb') as f:
             f.write(output)
+
+
+class InputError(RuntimeError):
+    def __init__(self, e):
+        super(InputError, self).__init__(e)
+
+
+class ValidationError(InputError):
+    def __init__(self, partition, message):
+        super(ValidationError, self).__init__(
+            "Partition %s invalid: %s" % (partition.name, message))
+
 
 if __name__ == '__main__':
     try:

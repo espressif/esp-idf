@@ -111,11 +111,11 @@ myota_status, data, ota,, 0x100000
     def test_unit_suffixes(self):
         csv = """
 # Name, Type, Subtype, Offset, Size
-one_megabyte, app, factory, 32k, 1M
+one_megabyte, app, factory, 64k, 1M
 """
         t = PartitionTable.from_csv(csv)
         t.verify()
-        self.assertEqual(t[0].offset, 32*1024)
+        self.assertEqual(t[0].offset, 64*1024)
         self.assertEqual(t[0].size, 1*1024*1024)
 
     def test_default_offsets(self):
@@ -335,6 +335,19 @@ class CommandLineTests(unittest.TestCase):
                     os.remove(path)
                 except OSError:
                     pass
+
+
+class VerificationTests(unittest.TestCase):
+
+    def test_bad_alignment(self):
+        csv = """
+# Name,Type, SubType,Offset,Size
+app,app, factory, 32K, 1M
+"""
+        with self.assertRaisesRegexp(ValidationError,
+                                     r"Offset.+not aligned"):
+            t = PartitionTable.from_csv(csv)
+            t.verify()
 
 
 if __name__ =="__main__":
