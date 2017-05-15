@@ -27,6 +27,7 @@
 #include <stdio.h>
 
 #include "nghttp2_helper.h"
+#include "nghttp2_debug.h"
 
 void nghttp2_buf_init(nghttp2_buf *buf) {
   buf->begin = NULL;
@@ -223,13 +224,54 @@ int nghttp2_bufs_wrap_init(nghttp2_bufs *bufs, uint8_t *begin, size_t len,
   return 0;
 }
 
+int nghttp2_bufs_wrap_init2(nghttp2_bufs *bufs, const nghttp2_vec *vec,
+                            size_t veclen, nghttp2_mem *mem) {
+  size_t i = 0;
+  nghttp2_buf_chain *cur_chain;
+  nghttp2_buf_chain *head_chain;
+  nghttp2_buf_chain **dst_chain = &head_chain;
+
+  if (veclen == 0) {
+    return nghttp2_bufs_wrap_init(bufs, NULL, 0, mem);
+  }
+
+  head_chain = nghttp2_mem_malloc(mem, sizeof(nghttp2_buf_chain) * veclen);
+  if (head_chain == NULL) {
+    return NGHTTP2_ERR_NOMEM;
+  }
+
+  for (i = 0; i < veclen; ++i) {
+    cur_chain = &head_chain[i];
+    cur_chain->next = NULL;
+    nghttp2_buf_wrap_init(&cur_chain->buf, vec[i].base, vec[i].len);
+
+    *dst_chain = cur_chain;
+    dst_chain = &cur_chain->next;
+  }
+
+  bufs->mem = mem;
+  bufs->offset = 0;
+
+  bufs->head = head_chain;
+  bufs->cur = bufs->head;
+
+  /* We don't use chunk_length since no allocation is expected. */
+  bufs->chunk_length = 0;
+  bufs->chunk_used = veclen;
+  bufs->max_chunk = veclen;
+  bufs->chunk_keep = veclen;
+
+  return 0;
+}
+
 void nghttp2_bufs_wrap_free(nghttp2_bufs *bufs) {
   if (bufs == NULL) {
     return;
   }
 
-  nghttp2_mem_free(bufs->mem, bufs->head);
-  bufs->head = NULL;
+  if (bufs->head) {
+    nghttp2_mem_free(bufs->mem, bufs->head);
+  }
 }
 
 void nghttp2_bufs_seek_last_present(nghttp2_bufs *bufs) {
@@ -256,12 +298,6 @@ size_t nghttp2_bufs_len(nghttp2_bufs *bufs) {
   return len;
 }
 
-static size_t bufs_avail(nghttp2_bufs *bufs) {
-  return nghttp2_buf_avail(&bufs->cur->buf) +
-         (bufs->chunk_length - bufs->offset) *
-             (bufs->max_chunk - bufs->chunk_used);
-}
-
 static int bufs_alloc_chain(nghttp2_bufs *bufs) {
   int rv;
   nghttp2_buf_chain *chain;
@@ -281,9 +317,8 @@ static int bufs_alloc_chain(nghttp2_bufs *bufs) {
     return rv;
   }
 
-  DEBUGF(fprintf(stderr,
-                 "new buffer %zu bytes allocated for bufs %p, used %zu\n",
-                 bufs->chunk_length, bufs, bufs->chunk_used));
+  DEBUGF("new buffer %zu bytes allocated for bufs %p, used %zu\n",
+         bufs->chunk_length, bufs, bufs->chunk_used);
 
   ++bufs->chunk_used;
 
@@ -300,10 +335,6 @@ int nghttp2_bufs_add(nghttp2_bufs *bufs, const void *data, size_t len) {
   size_t nwrite;
   nghttp2_buf *buf;
   const uint8_t *p;
-
-  if (bufs_avail(bufs) < len) {
-    return NGHTTP2_ERR_BUFFER_ERROR;
-  }
 
   p = data;
 

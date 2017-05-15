@@ -64,6 +64,8 @@ typedef enum {
   NGHTTP2_OPT_NO_AUTO_PING_ACK = 1 << 6,
   NGHTTP2_OPT_BUILTIN_RECV_EXT_TYPES = 1 << 7,
   NGHTTP2_OPT_MAX_SEND_HEADER_BLOCK_LENGTH = 1 << 8,
+  NGHTTP2_OPT_MAX_DEFLATE_DYNAMIC_TABLE_SIZE = 1 << 9,
+  NGHTTP2_OPT_NO_CLOSED_STREAMS = 1 << 10,
 } nghttp2_option_flag;
 
 /**
@@ -74,6 +76,10 @@ struct nghttp2_option {
    * NGHTTP2_OPT_MAX_SEND_HEADER_BLOCK_LENGTH
    */
   size_t max_send_header_block_length;
+  /**
+   * NGHTTP2_OPT_MAX_DEFLATE_DYNAMIC_TABLE_SIZE
+   */
+  size_t max_deflate_dynamic_table_size;
   /**
    * Bitwise OR of nghttp2_option_flag to determine that which fields
    * are specified.
@@ -107,6 +113,10 @@ struct nghttp2_option {
    * NGHTTP2_OPT_NO_AUTO_PING_ACK
    */
   int no_auto_ping_ack;
+  /**
+   * NGHTTP2_OPT_NO_CLOSED_STREAMS
+   */
+  int no_closed_streams;
   /**
    * NGHTTP2_OPT_USER_RECV_EXT_TYPES
    */

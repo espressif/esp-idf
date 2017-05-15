@@ -1366,12 +1366,7 @@ reexecute:
                   || c != CONTENT_LENGTH[parser->index]) {
                 parser->header_state = h_general;
               } else if (parser->index == sizeof(CONTENT_LENGTH)-2) {
-                if (parser->flags & F_CONTENTLENGTH) {
-                  SET_ERRNO(HPE_UNEXPECTED_CONTENT_LENGTH);
-                  goto error;
-                }
                 parser->header_state = h_content_length;
-                parser->flags |= F_CONTENTLENGTH;
               }
               break;
 
@@ -1474,6 +1469,12 @@ reexecute:
               goto error;
             }
 
+            if (parser->flags & F_CONTENTLENGTH) {
+              SET_ERRNO(HPE_UNEXPECTED_CONTENT_LENGTH);
+              goto error;
+            }
+
+            parser->flags |= F_CONTENTLENGTH;
             parser->content_length = ch - '0';
             break;
 
