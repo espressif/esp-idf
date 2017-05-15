@@ -26,6 +26,8 @@
 
 #include "driver/gpio.h"
 #include "driver/i2s.h"
+#include "driver/rtc_io.h"
+#include "driver/dac.h"
 
 #include "esp_intr.h"
 #include "esp_err.h"
@@ -41,7 +43,8 @@ static const char* I2S_TAG = "I2S";
 #define I2S_EXIT_CRITICAL_ISR()      portEXIT_CRITICAL_ISR(&i2s_spinlock[i2s_num])
 #define I2S_ENTER_CRITICAL()         portENTER_CRITICAL(&i2s_spinlock[i2s_num])
 #define I2S_EXIT_CRITICAL()          portEXIT_CRITICAL(&i2s_spinlock[i2s_num])
-
+#define I2S_FULL_DUPLEX_SLAVE_MODE_MASK   (I2S_MODE_TX | I2S_MODE_RX | I2S_MODE_SLAVE)
+#define I2S_FULL_DUPLEX_MASTER_MODE_MASK  (I2S_MODE_TX | I2S_MODE_RX | I2S_MODE_MASTER)
 
 /**
  * @brief DMA buffer object
@@ -99,6 +102,7 @@ inline static void gpio_matrix_out_check(uint32_t gpio, uint32_t signal_idx, boo
     //if pin = -1, do not need to configure
     if (gpio != -1) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        gpio_set_direction(gpio, GPIO_MODE_DEF_OUTPUT);
         gpio_matrix_out(gpio, signal_idx, out_inv, oen_inv);
     } 
 } 
@@ -106,6 +110,8 @@ inline static void gpio_matrix_in_check(uint32_t gpio, uint32_t signal_idx, bool
 {
     if (gpio != -1) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        //Set direction, for some GPIOs, the input function are not enabled as default.
+        gpio_set_direction(gpio, GPIO_MODE_DEF_INPUT);
         gpio_matrix_in(gpio, signal_idx, inv);
     }
 }
@@ -181,13 +187,6 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         return ESP_FAIL;
     }
 
-    if (p_i2s_obj[i2s_num]->mode & I2S_MODE_DAC_BUILT_IN) {
-        //DAC uses bclk as sample clock, not WS. WS can be something arbitrary.
-        //Rate as given to this function is the intended BCLK rate; divided by bits it will
-        //give the real sample rate. For DAC mode, use the real sample rate as BCLK rate instead.
-        rate = rate / bits;
-    }
-
     double clkmdiv = (double)I2S_BASE_CLK / (rate * factor);
 
     if (clkmdiv > 256) {
@@ -206,15 +205,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
     i2s_stop(i2s_num);
 
     p_i2s_obj[i2s_num]->channel_num = (ch == 2) ? 2 : 1;
-    I2S[i2s_num]->conf_chan.tx_chan_mod =  (ch == 2) ? 0 : 1; // 0-two channel;1-right;2-left;3-righ;4-left
-    I2S[i2s_num]->fifo_conf.tx_fifo_mod =  (ch == 2) ? 0 : 1; // 0-right&left channel;1-one channel
-    I2S[i2s_num]->conf.tx_mono = 0;
 
-    I2S[i2s_num]->conf_chan.rx_chan_mod = (ch == 2) ? 0 : 1; 
-    I2S[i2s_num]->fifo_conf.rx_fifo_mod =  (ch == 2) ? 0 : 1;
-    I2S[i2s_num]->conf.rx_mono = 0;
-
-    
     if (bits != p_i2s_obj[i2s_num]->bits_per_sample) {
 
         //change fifo mode
@@ -273,15 +264,43 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
             if (save_rx) {
                 i2s_destroy_dma_queue(i2s_num, save_rx);
             }
-
         }
         
     }
 
-    clkmInteger = clkmdiv;
-    clkmDecimals = (clkmdiv - clkmInteger) / denom;
-    double mclk = clkmInteger + denom * clkmDecimals;
-    bck = factor/(bits * channel);
+    double mclk;
+    if (p_i2s_obj[i2s_num]->mode & I2S_MODE_DAC_BUILT_IN) {
+        //DAC uses bclk as sample clock, not WS. WS can be something arbitrary.
+        //Rate as given to this function is the intended sample rate;
+        //According to the TRM, WS clk equals to the sample rate, and bclk is double the speed of WS
+        uint32_t b_clk = rate * 2;
+        int factor2 = 60;
+        mclk = b_clk * factor2;
+        clkmdiv = ((double) I2S_BASE_CLK) / mclk;
+        clkmInteger = clkmdiv;
+        clkmDecimals = (clkmdiv - clkmInteger) / denom;
+        bck = mclk / b_clk;
+    } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_PDM) {
+        uint32_t b_clk = 0;
+        if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
+            int fp = I2S[i2s_num]->pdm_freq_conf.tx_pdm_fp;
+            int fs = I2S[i2s_num]->pdm_freq_conf.tx_pdm_fs;
+            b_clk = rate * 64 * (fp / fs);
+        } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
+            b_clk = rate * 64 * (I2S[i2s_num]->pdm_conf.rx_sinc_dsr_16_en + 1);
+        }
+        int factor2 = 5 ;
+        mclk = b_clk * factor2;
+        clkmdiv = ((double) I2S_BASE_CLK) / mclk;
+        clkmInteger = clkmdiv;
+        clkmDecimals = (clkmdiv - clkmInteger) / denom;
+        bck = mclk / b_clk;
+    } else {
+        clkmInteger = clkmdiv;
+        clkmDecimals = (clkmdiv - clkmInteger) / denom;
+        mclk = clkmInteger + denom * clkmDecimals;
+        bck = factor/(bits * channel);
+    }
 
     I2S[i2s_num]->clkm_conf.clka_en = 0;
     I2S[i2s_num]->clkm_conf.clkm_div_a = 63;
@@ -291,7 +310,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
     I2S[i2s_num]->sample_rate_conf.rx_bck_div_num = bck;
     I2S[i2s_num]->sample_rate_conf.tx_bits_mod = bits;
     I2S[i2s_num]->sample_rate_conf.rx_bits_mod = bits;
-    double real_rate = (double)(I2S_BASE_CLK / (bck * bits * clkmInteger)/2);
+    double real_rate = (double) (I2S_BASE_CLK / (bck * bits * clkmInteger) / 2);
     ESP_LOGI(I2S_TAG, "Req RATE: %d, real rate: %0.3f, BITS: %u, CLKM: %u, BCK: %u, MCLK: %0.3f, SCLK: %f, diva: %d, divb: %d",
         rate, real_rate, bits, clkmInteger, bck, (double)I2S_BASE_CLK / mclk, real_rate*bits*channel, 64, clkmDecimals);
 
@@ -504,22 +523,25 @@ esp_err_t i2s_stop(i2s_port_t i2s_num)
     return 0;
 }
 
-static esp_err_t configure_dac_pin(void)
+esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
 {
-    SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_DAC_DIG_FORCE_M);
-    SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_DAC_CLK_INV_M);
+    I2S_CHECK((dac_mode < I2S_DAC_CHANNEL_MAX), "i2s dac mode error", ESP_ERR_INVALID_ARG);
+    if(dac_mode == I2S_DAC_CHANNEL_DISABLE) {
+        dac_output_disable(DAC_CHANNEL_1);
+        dac_output_disable(DAC_CHANNEL_1);
+        dac_i2s_disable();
+    } else {
+        dac_i2s_enable();
+    }
 
-    SET_PERI_REG_MASK(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_DAC_XPD_FORCE_M);
-    SET_PERI_REG_MASK(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_XPD_DAC_M);
-
-    CLEAR_PERI_REG_MASK(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_RUE_M);
-    CLEAR_PERI_REG_MASK(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_RDE_M);
-
-    SET_PERI_REG_MASK(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_DAC_XPD_FORCE_M);
-    SET_PERI_REG_MASK(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_XPD_DAC_M);
-
-    CLEAR_PERI_REG_MASK(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_RUE_M);
-    CLEAR_PERI_REG_MASK(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_RDE_M);
+    if (dac_mode & I2S_DAC_CHANNEL_RIGHT_EN) {
+        //DAC1, right channel, GPIO25
+        dac_output_enable(DAC_CHANNEL_1);
+    }
+    if (dac_mode & I2S_DAC_CHANNEL_LEFT_EN) {
+        //DAC2, left channel, GPIO26
+        dac_output_enable(DAC_CHANNEL_2);
+    }
     return ESP_OK;
 }
 
@@ -527,7 +549,7 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
 {
     I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     if (pin == NULL) {
-        return configure_dac_pin();
+        return i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
     }
     if (pin->bck_io_num != -1 && !GPIO_IS_VALID_GPIO(pin->bck_io_num)) {
         ESP_LOGE(I2S_TAG, "bck_io_num error");
@@ -547,47 +569,76 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
     }
 
     int bck_sig = -1, ws_sig = -1, data_out_sig = -1, data_in_sig = -1;
-    //TX & RX
+    //Each IIS hw module has a RX and TX unit.
+    //For TX unit, the output signal index should be I2SnO_xxx_OUT_IDX
+    //For TX unit, the input signal index should be I2SnO_xxx_IN_IDX
     if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
         if (p_i2s_obj[i2s_num]->mode & I2S_MODE_MASTER) {
-            bck_sig = I2S0O_BCK_OUT_IDX;
-            ws_sig = I2S0O_WS_OUT_IDX;
-            data_out_sig = I2S0O_DATA_OUT23_IDX;
-            if (i2s_num == I2S_NUM_1) {
+            if (i2s_num == I2S_NUM_0) {
+                bck_sig = I2S0O_BCK_OUT_IDX;
+                ws_sig = I2S0O_WS_OUT_IDX;
+                data_out_sig = I2S0O_DATA_OUT23_IDX;
+            } else {
                 bck_sig = I2S1O_BCK_OUT_IDX;
                 ws_sig = I2S1O_WS_OUT_IDX;
                 data_out_sig = I2S1O_DATA_OUT23_IDX;
             }
         } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_SLAVE) {
-            bck_sig = I2S0O_BCK_IN_IDX;
-            ws_sig = I2S0O_WS_IN_IDX;
-            data_out_sig = I2S0O_DATA_OUT23_IDX;
-            if (i2s_num == I2S_NUM_1) {
+            if (i2s_num == I2S_NUM_0) {
+                bck_sig = I2S0O_BCK_IN_IDX;
+                ws_sig = I2S0O_WS_IN_IDX;
+                data_out_sig = I2S0O_DATA_OUT23_IDX;
+            } else {
                 bck_sig = I2S1O_BCK_IN_IDX;
                 ws_sig = I2S1O_WS_IN_IDX;
                 data_out_sig = I2S1O_DATA_OUT23_IDX;
             }
         }
     }
+    //For RX unit, the output signal index should be I2SnI_xxx_OUT_IDX
+    //For RX unit, the input signal index shuld be I2SnI_xxx_IN_IDX
     if (p_i2s_obj[i2s_num]->mode & I2S_MODE_RX) {
-            if (p_i2s_obj[i2s_num]->mode & I2S_MODE_MASTER) {
+        if (p_i2s_obj[i2s_num]->mode & I2S_MODE_MASTER) {
+            if (i2s_num == I2S_NUM_0) {
+                bck_sig = I2S0I_BCK_OUT_IDX;
+                ws_sig = I2S0I_WS_OUT_IDX;
                 data_in_sig = I2S0I_DATA_IN15_IDX;
-                if (i2s_num == I2S_NUM_1) {
-                    bck_sig = I2S1O_BCK_OUT_IDX;
-                    ws_sig = I2S1O_WS_OUT_IDX;
-                    data_in_sig = I2S1I_DATA_IN15_IDX;
-                }
-            } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_SLAVE) {
+            } else {
+                bck_sig = I2S1I_BCK_OUT_IDX;
+                ws_sig = I2S1I_WS_OUT_IDX;
+                data_in_sig = I2S1I_DATA_IN15_IDX;
+            }
+        } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_SLAVE) {
+            if (i2s_num == I2S_NUM_0) {
                 bck_sig = I2S0I_BCK_IN_IDX;
                 ws_sig = I2S0I_WS_IN_IDX;
                 data_in_sig = I2S0I_DATA_IN15_IDX;
-                if (i2s_num == I2S_NUM_1) {
-                    bck_sig = I2S1I_BCK_IN_IDX;
-                    ws_sig = I2S1I_WS_IN_IDX;
-                    data_in_sig = I2S1I_DATA_IN15_IDX;
-                }
+            } else {
+                bck_sig = I2S1I_BCK_IN_IDX;
+                ws_sig = I2S1I_WS_IN_IDX;
+                data_in_sig = I2S1I_DATA_IN15_IDX;
             }
         }
+    }
+    //For "full-duplex + slave" mode, we should select RX signal index for ws and bck.
+    //For "full-duplex + master" mode, we should select TX signal index for ws and bck.
+    if ((p_i2s_obj[i2s_num]->mode & I2S_FULL_DUPLEX_SLAVE_MODE_MASK) == I2S_FULL_DUPLEX_SLAVE_MODE_MASK) {
+        if (i2s_num == I2S_NUM_0) {
+            bck_sig = I2S0I_BCK_IN_IDX;
+            ws_sig = I2S0I_WS_IN_IDX;
+        } else {
+            bck_sig = I2S1I_BCK_IN_IDX;
+            ws_sig = I2S1I_WS_IN_IDX;
+        }
+    } else if ((p_i2s_obj[i2s_num]->mode & I2S_FULL_DUPLEX_MASTER_MODE_MASK) == I2S_FULL_DUPLEX_MASTER_MODE_MASK) {
+        if (i2s_num == I2S_NUM_0) {
+            bck_sig = I2S0O_BCK_OUT_IDX;
+            ws_sig = I2S0O_WS_OUT_IDX;
+        } else {
+            bck_sig = I2S1O_BCK_OUT_IDX;
+            ws_sig = I2S1O_WS_OUT_IDX;
+        }
+    }
 
     gpio_matrix_out_check(pin->data_out_num, data_out_sig, 0, 0);
     gpio_matrix_in_check(pin->data_in_num, data_in_sig, 0);
@@ -613,11 +664,13 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
 {
     I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
     I2S_CHECK((i2s_config), "param null", ESP_ERR_INVALID_ARG);
+
     if (i2s_num == I2S_NUM_1) {
         periph_module_enable(PERIPH_I2S1_MODULE);
     } else {
         periph_module_enable(PERIPH_I2S0_MODULE);
     }
+
     // configure I2S data port interface.
     i2s_reset_fifo(i2s_num);
 
@@ -671,7 +724,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         I2S[i2s_num]->conf.tx_right_first = 0;
 
         I2S[i2s_num]->conf.tx_slave_mod = 0; // Master
-        I2S[i2s_num]->fifo_conf.tx_fifo_mod_force_en = 1;//?
+        I2S[i2s_num]->fifo_conf.tx_fifo_mod_force_en = 1;
 
         if (i2s_config->mode & I2S_MODE_SLAVE) {
             I2S[i2s_num]->conf.tx_slave_mod = 1;//TX Slave
@@ -682,7 +735,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
         I2S[i2s_num]->conf.rx_msb_right = 0;
         I2S[i2s_num]->conf.rx_right_first = 0;
         I2S[i2s_num]->conf.rx_slave_mod = 0; // Master
-        I2S[i2s_num]->fifo_conf.rx_fifo_mod_force_en = 1;//?
+        I2S[i2s_num]->fifo_conf.rx_fifo_mod_force_en = 1;
         
         if (i2s_config->mode & I2S_MODE_SLAVE) {
             I2S[i2s_num]->conf.rx_slave_mod = 1;//RX Slave
@@ -692,9 +745,26 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     if (i2s_config->mode & I2S_MODE_DAC_BUILT_IN) {
         I2S[i2s_num]->conf2.lcd_en = 1;
         I2S[i2s_num]->conf.tx_right_first = 1;
-        I2S[i2s_num]->fifo_conf.tx_fifo_mod = 3;
     }
 
+    if (i2s_config->mode & I2S_MODE_PDM) {
+        I2S[i2s_num]->fifo_conf.rx_fifo_mod_force_en = 1;
+        I2S[i2s_num]->fifo_conf.tx_fifo_mod_force_en = 1;
+
+        I2S[i2s_num]->pdm_freq_conf.tx_pdm_fp = 960;
+        I2S[i2s_num]->pdm_freq_conf.tx_pdm_fs = i2s_config->sample_rate / 1000 * 10;
+        I2S[i2s_num]->pdm_conf.tx_sinc_osr2 = I2S[i2s_num]->pdm_freq_conf.tx_pdm_fp / I2S[i2s_num]->pdm_freq_conf.tx_pdm_fs;
+
+        I2S[i2s_num]->pdm_conf.rx_sinc_dsr_16_en = 0;
+        I2S[i2s_num]->pdm_conf.rx_pdm_en = 1;
+        I2S[i2s_num]->pdm_conf.tx_pdm_en = 1;
+
+        I2S[i2s_num]->pdm_conf.pcm2pdm_conv_en = 1;
+        I2S[i2s_num]->pdm_conf.pdm2pcm_conv_en = 1;
+    } else {
+        I2S[i2s_num]->pdm_conf.rx_pdm_en = 0;
+        I2S[i2s_num]->pdm_conf.tx_pdm_en = 0;
+    }
     if (i2s_config->communication_format & I2S_COMM_FORMAT_I2S) {
         I2S[i2s_num]->conf.tx_short_sync = 0;
         I2S[i2s_num]->conf.rx_short_sync = 0;
@@ -777,6 +847,13 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
         p_i2s_obj[i2s_num]->bits_per_sample = 0;
         p_i2s_obj[i2s_num]->bytes_per_sample = 0; // Not initialized yet
         p_i2s_obj[i2s_num]->channel_num = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 2 : 1;
+
+        //To make sure hardware is enabled before any hardware register operations.
+        if (i2s_num == I2S_NUM_1) {
+            periph_module_enable(PERIPH_I2S1_MODULE);
+        } else {
+            periph_module_enable(PERIPH_I2S0_MODULE);
+        }
 
         //initial interrupt
         err = i2s_isr_register(i2s_num, i2s_config->intr_alloc_flags, i2s_intr_handler_default, p_i2s_obj[i2s_num], &p_i2s_obj[i2s_num]->i2s_isr_handle);
