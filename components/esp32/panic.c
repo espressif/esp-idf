@@ -212,7 +212,10 @@ void panicHandler(XtExcFrame *frame)
                     //debugcause if the cause is watchdog 1 and clearing it if it's watchdog 0.
                     if (debugRsn&(1<<8)) {
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-                        panicPutStr("Stack canary watchpoint triggered ");
+                        const char *name = pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(core_id));
+                        panicPutStr("Stack canary watchpoint triggered (");
+                        panicPutStr(name);
+                        panicPutStr(") ");
 #else
                         panicPutStr("Watchpoint 1 triggered ");
 #endif
