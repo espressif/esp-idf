@@ -4,8 +4,23 @@
 #
 # Converts partition tables to/from CSV and binary formats.
 #
-# See http://esp-idf.readthedocs.io/en/latest/partition-tables.html for explanation of
-# partition table structure and uses.
+# See http://esp-idf.readthedocs.io/en/latest/api-guides/partition-tables.html
+# for explanation of partition table structure and uses.
+#
+# Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from __future__ import print_function, division
 import argparse
 import os
 import re
@@ -80,7 +95,7 @@ class PartitionTable(list):
             p.verify()
         # check for overlaps
         last = None
-        for p in sorted(self):
+        for p in sorted(self, key=lambda x:x.offset):
             if p.offset < 0x5000:
                 raise InputError("Partition offset 0x%x is below 0x5000" % p.offset)
             if last is not None and p.offset < last.offset + last.size:
@@ -94,16 +109,16 @@ class PartitionTable(list):
             data = b[o:o+32]
             if len(data) != 32:
                 raise InputError("Partition table length must be a multiple of 32 bytes")
-            if data == '\xFF'*32:
+            if data == b'\xFF'*32:
                 return result  # got end marker
             result.append(PartitionDefinition.from_binary(data))
         raise InputError("Partition table is missing an end-of-table marker")
 
     def to_binary(self):
-        result = "".join(e.to_binary() for e in self)
+        result = b"".join(e.to_binary() for e in self)
         if len(result )>= MAX_PARTITION_LENGTH:
             raise InputError("Binary partition table length (%d) longer than max" % len(result))
-        result += "\xFF" * (MAX_PARTITION_LENGTH - len(result))  # pad the sector, for signing
+        result += b"\xFF" * (MAX_PARTITION_LENGTH - len(result))  # pad the sector, for signing
         return result
 
     def to_csv(self, simple_formatting=False):
@@ -137,10 +152,10 @@ class PartitionDefinition(object):
             },
     }
 
-    MAGIC_BYTES = "\xAA\x50"
+    MAGIC_BYTES = b"\xAA\x50"
 
     ALIGNMENT = {
-        APP_TYPE : 0x1000,
+        APP_TYPE : 0x10000,
         DATA_TYPE : 0x04,
     }
 
@@ -226,16 +241,16 @@ class PartitionDefinition(object):
 
     def verify(self):
         if self.type is None:
-            raise ValidationError("Type field is not set")
+            raise ValidationError(self, "Type field is not set")
         if self.subtype is None:
-            raise ValidationError("Subtype field is not set")
+            raise ValidationError(self, "Subtype field is not set")
         if self.offset is None:
-            raise ValidationError("Offset field is not set")
+            raise ValidationError(self, "Offset field is not set")
         align = self.ALIGNMENT.get(self.type, 4)
         if self.offset % align:
-            raise ValidationError("%s offset 0x%x is not aligned to 0x%x" % (self.name, self.offset, align))
+            raise ValidationError(self, "Offset 0x%x is not aligned to 0x%x" % (self.offset, align))
         if self.size is None:
-            raise ValidationError("Size field is not set")
+            raise ValidationError(self, "Size field is not set")
 
     STRUCT_FORMAT = "<2sBBLL16sL"
 
@@ -246,8 +261,9 @@ class PartitionDefinition(object):
         res = cls()
         (magic, res.type, res.subtype, res.offset,
          res.size, res.name, flags) = struct.unpack(cls.STRUCT_FORMAT, b)
-        if "\x00" in res.name: # strip null byte padding from name string
-            res.name = res.name[:res.name.index("\x00")]
+        if b"\x00" in res.name: # strip null byte padding from name string
+            res.name = res.name[:res.name.index(b"\x00")]
+        res.name = res.name.decode()
         if magic != cls.MAGIC_BYTES:
             raise InputError("Invalid magic bytes (%r) for partition definition" % magic)
         for flag,bit in cls.FLAGS.items():
@@ -267,7 +283,7 @@ class PartitionDefinition(object):
                            self.MAGIC_BYTES,
                            self.type, self.subtype,
                            self.offset, self.size,
-                           self.name,
+                           self.name.encode(),
                            flags)
 
     def to_csv(self, simple_formatting=False):
@@ -275,7 +291,7 @@ class PartitionDefinition(object):
             if not simple_formatting and include_sizes:
                 for (val, suffix) in [ (0x100000, "M"), (0x400, "K") ]:
                     if a % val == 0:
-                        return "%d%s" % (a / val, suffix)
+                        return "%d%s" % (a // val, suffix)
             return "0x%x" % a
 
         def lookup_keyword(t, keywords):
@@ -295,9 +311,6 @@ class PartitionDefinition(object):
                           addr_format(self.size, True),
                           generate_text_flags()])
 
-class InputError(RuntimeError):
-    def __init__(self, e):
-        super(InputError, self).__init__(e)
 
 def parse_int(v, keywords={}):
     """Generic parser for integer fields - int(x,0) with provision for
@@ -323,7 +336,7 @@ def main():
     parser.add_argument('--verify', '-v', help='Verify partition table fields', default=True, action='store_false')
     parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
 
-    parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.', type=argparse.FileType('r'), default=sys.stdin)
+    parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.', type=argparse.FileType('rb'), default=sys.stdin)
     parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted, unless the --display argument is also passed (in which case only the summary is printed.)',
                         nargs='?',
                         default='-')
@@ -337,6 +350,7 @@ def main():
         status("Parsing binary partition input...")
         table = PartitionTable.from_binary(input)
     else:
+        input = input.decode()
         status("Parsing CSV input...")
         table = PartitionTable.from_csv(input)
 
@@ -346,14 +360,28 @@ def main():
 
     if input_is_binary:
         output = table.to_csv()
+        with sys.stdout if args.output == '-' else open(args.output, 'w') as f:
+            f.write(output)
     else:
         output = table.to_binary()
-    with sys.stdout if args.output == '-' else open(args.output, 'w') as f:
-        f.write(output)
+        with sys.stdout.buffer if args.output == '-' else open(args.output, 'wb') as f:
+            f.write(output)
+
+
+class InputError(RuntimeError):
+    def __init__(self, e):
+        super(InputError, self).__init__(e)
+
+
+class ValidationError(InputError):
+    def __init__(self, partition, message):
+        super(ValidationError, self).__init__(
+            "Partition %s invalid: %s" % (partition.name, message))
+
 
 if __name__ == '__main__':
     try:
         main()
     except InputError as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         sys.exit(2)
