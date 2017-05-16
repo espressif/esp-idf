@@ -110,6 +110,17 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten);
 int adc1_get_voltage(adc1_channel_t channel);
 
 /**
+ * @brief Configure ADC1 to be usable by the ULP
+ *
+ * This function reconfigures ADC1 to be controlled by the ULP.
+ * Effect of this function can be reverted using adc1_get_voltage function.
+ *
+ * Note that adc1_config_channel_atten, adc1_config_width functions need
+ * to be called to configure ADC1 channels, before ADC1 is used by the ULP.
+ */
+void adc1_ulp_enable();
+
+/**
  * @brief Read Hall Sensor
  *
  * @note The Hall Sensor uses channels 0 and 3 of ADC1. Do not configure

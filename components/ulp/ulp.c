@@ -19,9 +19,11 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_clk.h"
 #include "esp32/ulp.h"
 
 #include "soc/soc.h"
+#include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
 
@@ -46,9 +48,11 @@ esp_err_t ulp_run(uint32_t entry_point)
     // wait for at least 1 RTC_SLOW_CLK cycle
     ets_delay_us(10);
     // set entry point
-    SET_PERI_REG_BITS(SENS_SAR_START_FORCE_REG, SENS_PC_INIT_V, entry_point, SENS_PC_INIT_S);
+    REG_SET_FIELD(SENS_SAR_START_FORCE_REG, SENS_PC_INIT, entry_point);
     // disable force start
     CLEAR_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_FORCE_START_TOP_M);
+    // set time until wakeup is allowed to the smallest possible
+    REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_MIN_SLP_VAL, RTC_CNTL_MIN_SLP_VAL_MIN);
     // make sure voltage is raised when RTC 8MCLK is enabled
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FOLW_8M);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_CORE_FOLW_8M);
@@ -98,5 +102,17 @@ esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t* program_binary, siz
     memcpy(base + load_addr_bytes, program_binary + header.text_offset, text_data_size);
     memset(base + load_addr_bytes + text_data_size, 0, header.bss_size);
 
+    return ESP_OK;
+}
+
+esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
+{
+    if (period_index > 4) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint64_t period_us_64 = period_us;
+    uint64_t period_cycles = (period_us_64 << RTC_CLK_CAL_FRACT) / esp_clk_slowclk_cal_get();
+    REG_SET_FIELD(SENS_ULP_CP_SLEEP_CYC0_REG + period_index * sizeof(uint32_t),
+            SENS_SLEEP_CYCLES_S0, (uint32_t) period_cycles);
     return ESP_OK;
 }
