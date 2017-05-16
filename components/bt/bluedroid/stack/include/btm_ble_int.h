@@ -101,6 +101,15 @@ typedef UINT8   tBTM_BLE_SEC_REQ_ACT;
 #define BTM_VSC_CHIP_CAPABILITY_L_VERSION 55
 #define BTM_VSC_CHIP_CAPABILITY_M_VERSION 95
 
+typedef enum {
+    BTM_BLE_SCANNING,
+    BTM_BLE_SCAN_PENDING,
+    BTM_BLE_STOP_SCAN,
+    BTM_BLE_ADVERTISING,
+    BTM_BLE_ADV_PENDING,
+    BTM_BLE_STOP_ADV,
+}tBTM_BLE_GAP_STATE;
+
 typedef struct {
     UINT16              data_mask;
     UINT8               *p_flags;
@@ -155,7 +164,7 @@ typedef struct {
 
     TIMER_LIST_ENT inq_timer_ent;
     BOOLEAN scan_rsp;
-    UINT8 state; /* Current state that the inquiry process is in */
+    tBTM_BLE_GAP_STATE state; /* Current state that the inquiry process is in */
     INT8 tx_power;
 } tBTM_BLE_INQ_CB;
 

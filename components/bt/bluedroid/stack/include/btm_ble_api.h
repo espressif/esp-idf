@@ -1532,6 +1532,8 @@ UINT16 BTM_BleReadDiscoverability();
 //extern
 UINT16 BTM_BleReadConnectability ();
 
+void BTM_Recovery_Pre_State(void);
+
 /*******************************************************************************
 **
 ** Function         BTM_ReadDevInfo
