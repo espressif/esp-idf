@@ -250,6 +250,9 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
         res.send_auto_stop = 1;
         res.data_expected = 1;
     }
+    if (cmd->opcode == MMC_GO_IDLE_STATE) {
+        res.send_init = 1;
+    }
     if (cmd->flags & SCF_RSP_PRESENT) {
         res.response_expect = 1;
         if (cmd->flags & SCF_RSP_136) {
