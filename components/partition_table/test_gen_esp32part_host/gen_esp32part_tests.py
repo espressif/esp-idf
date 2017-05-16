@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function, division
 import unittest
 import struct
 import csv
@@ -14,37 +15,39 @@ SIMPLE_CSV = """
 factory,0,2,65536,1048576,
 """
 
-LONGER_BINARY_TABLE = ""
+LONGER_BINARY_TABLE = b""
 # type 0x00, subtype 0x00,
 # offset 64KB, size 1MB
-LONGER_BINARY_TABLE += "\xAA\x50\x00\x00" + \
-                       "\x00\x00\x01\x00" + \
-                       "\x00\x00\x10\x00" + \
-                       "factory\0" + ("\0"*8) + \
-                       "\x00\x00\x00\x00"
+LONGER_BINARY_TABLE += b"\xAA\x50\x00\x00" + \
+                       b"\x00\x00\x01\x00" + \
+                       b"\x00\x00\x10\x00" + \
+                       b"factory\0" + (b"\0"*8) + \
+                       b"\x00\x00\x00\x00"
 # type 0x01, subtype 0x20,
 # offset 0x110000, size 128KB
-LONGER_BINARY_TABLE += "\xAA\x50\x01\x20" + \
-                       "\x00\x00\x11\x00" + \
-                       "\x00\x02\x00\x00" + \
-                       "data" + ("\0"*12) + \
-                       "\x00\x00\x00\x00"
+LONGER_BINARY_TABLE += b"\xAA\x50\x01\x20" + \
+                       b"\x00\x00\x11\x00" + \
+                       b"\x00\x02\x00\x00" + \
+                       b"data" + (b"\0"*12) + \
+                       b"\x00\x00\x00\x00"
 # type 0x10, subtype 0x00,
 # offset 0x150000, size 1MB
-LONGER_BINARY_TABLE += "\xAA\x50\x10\x00" + \
-                       "\x00\x00\x15\x00" + \
-                       "\x00\x10\x00\x00" + \
-                       "second" + ("\0"*10) + \
-                       "\x00\x00\x00\x00"
-LONGER_BINARY_TABLE += "\xFF" * 32
+LONGER_BINARY_TABLE += b"\xAA\x50\x10\x00" + \
+                       b"\x00\x00\x15\x00" + \
+                       b"\x00\x10\x00\x00" + \
+                       b"second" + (b"\0"*10) + \
+                       b"\x00\x00\x00\x00"
+LONGER_BINARY_TABLE += b"\xFF" * 32
+
 
 def _strip_trailing_ffs(binary_table):
     """
     Strip all FFs down to the last 32 bytes (terminating entry)
     """
-    while binary_table.endswith("\xFF"*64):
+    while binary_table.endswith(b"\xFF"*64):
         binary_table = binary_table[0:len(binary_table)-32]
     return binary_table
+
 
 class CSVParserTests(unittest.TestCase):
 
@@ -108,11 +111,11 @@ myota_status, data, ota,, 0x100000
     def test_unit_suffixes(self):
         csv = """
 # Name, Type, Subtype, Offset, Size
-one_megabyte, app, factory, 32k, 1M
+one_megabyte, app, factory, 64k, 1M
 """
         t = PartitionTable.from_csv(csv)
         t.verify()
-        self.assertEqual(t[0].offset, 32*1024)
+        self.assertEqual(t[0].offset, 64*1024)
         self.assertEqual(t[0].size, 1*1024*1024)
 
     def test_default_offsets(self):
@@ -166,8 +169,8 @@ first, 0x30, 0xEE, 0x100400, 0x300000
         t = PartitionTable.from_csv(csv)
         tb = _strip_trailing_ffs(t.to_binary())
         self.assertEqual(len(tb), 64)
-        self.assertEqual('\xAA\x50', tb[0:2]) # magic
-        self.assertEqual('\x30\xee', tb[2:4]) # type, subtype
+        self.assertEqual(b'\xAA\x50', tb[0:2]) # magic
+        self.assertEqual(b'\x30\xee', tb[2:4]) # type, subtype
         eo, es = struct.unpack("<LL", tb[4:12])
         self.assertEqual(eo, 0x100400) # offset
         self.assertEqual(es, 0x300000) # size
@@ -180,8 +183,8 @@ second,0x31, 0xEF,         , 0x100000
         t = PartitionTable.from_csv(csv)
         tb = _strip_trailing_ffs(t.to_binary())
         self.assertEqual(len(tb), 96)
-        self.assertEqual('\xAA\x50', tb[0:2])
-        self.assertEqual('\xAA\x50', tb[32:34])
+        self.assertEqual(b'\xAA\x50', tb[0:2])
+        self.assertEqual(b'\xAA\x50', tb[32:34])
 
 
     def test_encrypted_flag(self):
@@ -200,12 +203,12 @@ class BinaryParserTests(unittest.TestCase):
     def test_parse_one_entry(self):
         # type 0x30, subtype 0xee,
         # offset 1MB, size 2MB
-        entry = "\xAA\x50\x30\xee" + \
-                "\x00\x00\x10\x00" + \
-                "\x00\x00\x20\x00" + \
-                "0123456789abc\0\0\0" + \
-                "\x00\x00\x00\x00" + \
-                "\xFF" * 32
+        entry = b"\xAA\x50\x30\xee" + \
+                b"\x00\x00\x10\x00" + \
+                b"\x00\x00\x20\x00" + \
+                b"0123456789abc\0\0\0" + \
+                b"\x00\x00\x00\x00" + \
+                b"\xFF" * 32
         # verify that parsing 32 bytes as a table
         # or as a single Definition are the same thing
         t = PartitionTable.from_binary(entry)
@@ -240,33 +243,36 @@ class BinaryParserTests(unittest.TestCase):
         self.assertEqual(round_trip, LONGER_BINARY_TABLE)
 
     def test_bad_magic(self):
-        bad_magic = "OHAI" + \
-                    "\x00\x00\x10\x00" + \
-                    "\x00\x00\x20\x00" + \
-                    "0123456789abc\0\0\0" + \
-                    "\x00\x00\x00\x00"
+        bad_magic = b"OHAI" + \
+                    b"\x00\x00\x10\x00" + \
+                    b"\x00\x00\x20\x00" + \
+                    b"0123456789abc\0\0\0" + \
+                    b"\x00\x00\x00\x00"
         with self.assertRaisesRegexp(InputError, "Invalid magic bytes"):
             PartitionTable.from_binary(bad_magic)
 
     def test_bad_length(self):
-        bad_length = "OHAI" + \
-                    "\x00\x00\x10\x00" + \
-                    "\x00\x00\x20\x00" + \
-                    "0123456789"
+        bad_length = b"OHAI" + \
+                    b"\x00\x00\x10\x00" + \
+                    b"\x00\x00\x20\x00" + \
+                    b"0123456789"
         with self.assertRaisesRegexp(InputError, "32 bytes"):
             PartitionTable.from_binary(bad_length)
 
 
 class CSVOutputTests(unittest.TestCase):
 
+    def _readcsv(self, source_str):
+        return list(csv.reader(source_str.split("\n")))
+
     def test_output_simple_formatting(self):
         table = PartitionTable.from_csv(SIMPLE_CSV)
         as_csv = table.to_csv(True)
-        c = csv.reader(as_csv.split("\n"))
+        c = self._readcsv(as_csv)
         # first two lines should start with comments
-        self.assertEqual(c.next()[0][0], "#")
-        self.assertEqual(c.next()[0][0], "#")
-        row = c.next()
+        self.assertEqual(c[0][0][0], "#")
+        self.assertEqual(c[1][0][0], "#")
+        row = c[2]
         self.assertEqual(row[0], "factory")
         self.assertEqual(row[1], "0")
         self.assertEqual(row[2], "2")
@@ -280,11 +286,11 @@ class CSVOutputTests(unittest.TestCase):
     def test_output_smart_formatting(self):
         table = PartitionTable.from_csv(SIMPLE_CSV)
         as_csv = table.to_csv(False)
-        c = csv.reader(as_csv.split("\n"))
+        c = self._readcsv(as_csv)
         # first two lines should start with comments
-        self.assertEqual(c.next()[0][0], "#")
-        self.assertEqual(c.next()[0][0], "#")
-        row = c.next()
+        self.assertEqual(c[0][0][0], "#")
+        self.assertEqual(c[1][0][0], "#")
+        row = c[2]
         self.assertEqual(row[0], "factory")
         self.assertEqual(row[1], "app")
         self.assertEqual(row[2], "2")
@@ -303,7 +309,7 @@ class CommandLineTests(unittest.TestCase):
             csvpath = tempfile.mktemp()
 
             # copy binary contents to temp file
-            with open(binpath, 'w') as f:
+            with open(binpath, 'wb') as f:
                 f.write(LONGER_BINARY_TABLE)
 
             # run gen_esp32part.py to convert binary file to CSV
@@ -329,6 +335,19 @@ class CommandLineTests(unittest.TestCase):
                     os.remove(path)
                 except OSError:
                     pass
+
+
+class VerificationTests(unittest.TestCase):
+
+    def test_bad_alignment(self):
+        csv = """
+# Name,Type, SubType,Offset,Size
+app,app, factory, 32K, 1M
+"""
+        with self.assertRaisesRegexp(ValidationError,
+                                     r"Offset.+not aligned"):
+            t = PartitionTable.from_csv(csv)
+            t.verify()
 
 
 if __name__ =="__main__":
