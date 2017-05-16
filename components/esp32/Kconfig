@@ -254,17 +254,6 @@ config MEMMAP_SPIRAM_ALLOC_LIMIT_INTERNAL
 
 endif
 
-choice NUMBER_OF_MAC_ADDRESS_GENERATED_FROM_EFUSE
-    bool "Number of MAC address generated from the hardware MAC address in efuse"
-    default FOUR_MAC_ADDRESS_FROM_EFUSE
-    help
-        Config the number of MAC address which is generated from the hardware MAC address in efuse.
-        If the number is two, the MAC addresses of WiFi station and bluetooth are generated from
-        the hardware MAC address in efuse. The MAC addresses of WiFi softap and ethernet are derived
-        from that of WiFi station and bluetooth respectively. 
-        If the number is four, the MAC addresses of WiFi station, WiFi softap, bluetooth and ethernet
-        are all generated from the hardware MAC address in efuse.
-        
 choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
     bool "Number of universally administered (by IEEE) MAC address"
     default FOUR_UNIVERSAL_MAC_ADDRESS

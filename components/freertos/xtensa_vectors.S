@@ -116,7 +116,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define XIE_ARG         4
 #define XIE_SIZE        8
 
-
 /*
   Macro get_percpu_entry_for - convert a per-core ID into a multicore entry.
   Basically does reg=reg*portNUM_PROCESSORS+current_core_id
@@ -137,6 +136,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     add \reg,\scratch,\reg
 #endif
    .endm
+
 /*
 --------------------------------------------------------------------------------
   Macro extract_msb - return the input with only the highest bit set.
