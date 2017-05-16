@@ -14,6 +14,7 @@ PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
 ESPTOOLPY_SRC := $(COMPONENT_PATH)/esptool/esptool.py
 ESPTOOLPY := $(PYTHON) $(ESPTOOLPY_SRC) --chip esp32
 ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD) --before $(CONFIG_ESPTOOLPY_BEFORE) --after $(CONFIG_ESPTOOLPY_AFTER)
+CHECK_ESP32PART := $(COMPONENT_PATH)/../partition_table/check_esp32part.py
 
 # Supporting esptool command line tools
 ESPEFUSEPY := $(PYTHON) $(COMPONENT_PATH)/esptool/espefuse.py
@@ -49,6 +50,7 @@ $(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC)
 	$(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
 
 flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash)
+	$(PYTHON) $(CHECK_ESP32PART) $(PARTITION_TABLE_CSV_PATH) $(ESPTOOL_ALL_FLASH_ARGS)
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(CONFIG_APP_OFFSET))..."
 ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
