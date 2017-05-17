@@ -3550,9 +3550,16 @@ static void prvCheckTasksWaitingTermination( void )
 
 				{
 					pxTCB = ( TCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( ( &xTasksWaitingTermination ) );
-					( void ) uxListRemove( &( pxTCB->xGenericListItem ) );
-					--uxCurrentNumberOfTasks;
-					--uxTasksDeleted;
+					/* We only want to kill tasks that ran on this core because e.g. _xt_coproc_release needs to
+					   be called on the core the process is pinned on, if any */
+					if( pxTCB->xCoreID == tskNO_AFFINITY || pxTCB->xCoreID == xPortGetCoreID()) {
+						( void ) uxListRemove( &( pxTCB->xGenericListItem ) );
+						--uxCurrentNumberOfTasks;
+						--uxTasksDeleted;
+					} else {
+						/* Need to wait until the idle task on the other processor kills that task first. */
+						break;
+					}
 				}
 				
 				#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
@@ -3769,6 +3776,10 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 			_reclaim_reent( &( pxTCB->xNewLib_reent ) );
 		}
 		#endif /* configUSE_NEWLIB_REENTRANT */
+
+		#if ( portUSING_MPU_WRAPPERS == 1 )
+			vPortReleaseTaskMPUSettings( &( pxTCB->xMPUSettings) );
+		#endif
 
 		#if( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 0 ) && ( portUSING_MPU_WRAPPERS == 0 ) )
 		{
