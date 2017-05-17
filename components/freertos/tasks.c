@@ -561,7 +561,7 @@ static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const T
  */
 #if ( ( configUSE_TRACE_FACILITY == 1 ) || ( INCLUDE_uxTaskGetStackHighWaterMark == 1 ) )
 
-	static uint16_t prvTaskCheckFreeStackSpace( const uint8_t * pucStackByte ) PRIVILEGED_FUNCTION;
+	static uint32_t prvTaskCheckFreeStackSpace( const uint8_t * pucStackByte ) PRIVILEGED_FUNCTION;
 
 #endif
 
@@ -724,7 +724,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 
 				prvInitialiseNewTask(	pxTaskDefinition->pvTaskCode,
 										pxTaskDefinition->pcName,
-										( uint32_t ) pxTaskDefinition->usStackDepth,
+										pxTaskDefinition->usStackDepth,
 										pxTaskDefinition->pvParameters,
 										pxTaskDefinition->uxPriority,
 										pxCreatedTask, pxNewTCB,
@@ -746,7 +746,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 
 	BaseType_t xTaskCreatePinnedToCore(	TaskFunction_t pxTaskCode,
 							const char * const pcName,
-							const uint16_t usStackDepth,
+							const uint32_t usStackDepth,
 							void * const pvParameters,
 							UBaseType_t uxPriority,
 							TaskHandle_t * const pxCreatedTask,
@@ -821,7 +821,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 			}
 			#endif /* configSUPPORT_STATIC_ALLOCATION */
 
-			prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, xCoreID );
+			prvInitialiseNewTask( pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, xCoreID );
 			prvAddNewTaskToReadyList( pxNewTCB, pxTaskCode, xCoreID );
 			xReturn = pdPASS;
 		}
@@ -3710,7 +3710,7 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 
 #if ( ( configUSE_TRACE_FACILITY == 1 ) || ( INCLUDE_uxTaskGetStackHighWaterMark == 1 ) )
 
-	static uint16_t prvTaskCheckFreeStackSpace( const uint8_t * pucStackByte )
+	static uint32_t prvTaskCheckFreeStackSpace( const uint8_t * pucStackByte )
 	{
 	uint32_t ulCount = 0U;
 
@@ -3722,7 +3722,7 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 
 		ulCount /= ( uint32_t ) sizeof( StackType_t ); /*lint !e961 Casting is not redundant on smaller architectures. */
 
-		return ( uint16_t ) ulCount;
+		return ( uint32_t ) ulCount;
 	}
 
 #endif /* ( ( configUSE_TRACE_FACILITY == 1 ) || ( INCLUDE_uxTaskGetStackHighWaterMark == 1 ) ) */
