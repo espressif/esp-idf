@@ -226,7 +226,7 @@ class Monitor(object):
         self.serial_reader = SerialReader(self.serial, self.event_queue)
         self.elf_file = elf_file
         self.make = make
-        self.toolchain_prefix = DEFAULT_TOOLCHAIN_PREFIX
+        self.toolchain_prefix = toolchain_prefix
         self.menu_key = CTRL_T
         self.exit_key = CTRL_RBRACKET
 
@@ -473,7 +473,7 @@ def main():
     except KeyError:
         pass  # not running a make jobserver
 
-    monitor = Monitor(serial_instance, args.elf_file.name, args.make, args.eol)
+    monitor = Monitor(serial_instance, args.elf_file.name, args.make, args.toolchain_prefix, args.eol)
 
     yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(
         p=serial_instance))
