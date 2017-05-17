@@ -568,7 +568,7 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
         ESP_LOGE(I2S_TAG, "ws_io_num error");
         return ESP_FAIL;
     }
-    if (pin->data_out_num != -1 && !GPIO_IS_VALID_GPIO(pin->data_out_num)) {
+    if (pin->data_out_num != -1 && !GPIO_IS_VALID_OUTPUT_GPIO(pin->data_out_num)) {
         ESP_LOGE(I2S_TAG, "data_out_num error");
         return ESP_FAIL;
     }
