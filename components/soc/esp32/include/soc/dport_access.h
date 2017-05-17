@@ -20,7 +20,8 @@
 #include "esp_dport_access.h"
 
 //Registers Operation {{
-//Origin access operation for the base and some special scene
+
+//Register read macros with an underscore prefix access DPORT memory directly. In IDF apps, use the non-underscore versions to be SMP-safe.
 #define _DPORT_REG_READ(_r)        (*(volatile uint32_t *)(_r))
 #define _DPORT_REG_WRITE(_r, _v)   (*(volatile uint32_t *)(_r)) = (_v)
 
@@ -75,7 +76,7 @@ static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
 //generate a value from a field value, used when _f is left shifted by _f##_S
 #define DPORT_FIELD_TO_VALUE2(_f, _v) (((_v)<<_f##_S) & (_f))
 
-//Origin access operation for the base and some special scene
+//Register read macros with an underscore prefix access DPORT memory directly. In IDF apps, use the non-underscore versions to be SMP-safe.
 #define _DPORT_READ_PERI_REG(addr) (*((volatile uint32_t *)(addr))) 
 #define _DPORT_WRITE_PERI_REG(addr, val) (*((volatile uint32_t *)(addr))) = (uint32_t)(val) 
 
