@@ -551,6 +551,9 @@ void btc_gattc_call_handler(btc_msg_t *msg)
     case BTC_GATTC_ACT_UNREG_FOR_NOTIFY:
         btc_gattc_unreg_for_notify(arg);
         break;
+    case BTC_GATTC_ACT_CACHE_REFRESH:
+        BTA_GATTC_Refresh(arg->cache_refresh.remote_bda);
+        break;
     default:
         LOG_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;
