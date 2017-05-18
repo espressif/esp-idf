@@ -129,6 +129,9 @@ esp_err_t esp_ota_set_boot_partition(const esp_partition_t* partition);
  * If esp_ota_set_boot_partition() has not been called, the result is
  * equivalent to esp_ota_get_running_partition().
  *
+ * Note that there is no guarantee the returned partition is a valid app. Use esp_image_load(ESP_IMAGE_VERIFY, ...) to verify if the
+ * partition contains a bootable image.
+ *
  * @return Pointer to info for partition structure, or NULL if no partition is found or flash read operation failed. Returned pointer is valid for the lifetime of the application.
  */
 const esp_partition_t* esp_ota_get_boot_partition(void);
@@ -141,6 +144,9 @@ const esp_partition_t* esp_ota_get_boot_partition(void);
  * it ignores any change of selected boot partition caused by
  * esp_ota_set_boot_partition(). Only the app whose code is currently
  * running will have its partition information returned.
+ *
+ * The partition returned by this function may also differ from esp_ota_get_boot_partition() if the configured boot
+ * partition is somehow invalid, and the bootloader fell back to a different app partition at boot.
  *
  * @return Pointer to info for partition structure, or NULL if no partition is found or flash read operation failed. Returned pointer is valid for the lifetime of the application.
  */
