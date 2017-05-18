@@ -315,7 +315,7 @@ typedef struct {
 #endif
 
 
-void _xt_coproc_release(void * coproc_sa_base);
+void _xt_coproc_release(volatile void * coproc_sa_base);
 
 
 // porttrace
