@@ -52,7 +52,7 @@ WARNING: The current code assumes the ROM stacks are located in tag 1; no alloca
 the FreeRTOS scheduler has started.
 */
 static const tag_desc_t tag_desc[]={
-    { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, MALLOC_CAP_INTERNAL }, false},                        //Tag 0: Plain ole D-port RAM
+    { "DRAM", { MALLOC_CAP_8BIT, MALLOC_CAP_DMA|MALLOC_CAP_32BIT, MALLOC_CAP_INTERNAL }, false},                        //Tag 0: Plain ole D-port RAM
     { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC|MALLOC_CAP_INTERNAL }, true},         //Tag 1: Plain ole D-port RAM which has an alias on the I-port
     { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, MALLOC_CAP_INTERNAL }, false},                                     //Tag 2: IRAM
     { "PID2IRAM", { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                   //Tag 3-8: PID 2-7 IRAM
@@ -67,9 +67,20 @@ static const tag_desc_t tag_desc[]={
     { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
     { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
     { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL }, false},                     //
-    { "SPIRAM", { MALLOC_CAP_SPIRAM, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false},                         //Tag 15: SPI SRAM data
+    { "SPIRAM", { MALLOC_CAP_SPIRAM, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false},                                        //Tag 15: SPI SRAM data
+    { "DMAONLY", {MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL|MALLOC_CAP_DMAONLY, MALLOC_CAP_32BIT, 0}, false},    //Tag 16: Reserved for DMA/internal
     { "", { MALLOC_CAP_INVALID, MALLOC_CAP_INVALID, MALLOC_CAP_INVALID }, false} //End
 };
+
+#if CONFIG_MEMMAP_RESERVE_DMA
+//DMAONLY_TAG is the tag for the DMAONLY region. Initially, a fair few selected regions are marked with this. The
+//logic underneath will change the tag to DMAONLY_UNTAG for all but the configured regions.
+#define DMAONLY_TAG 16
+#define DMAONLY_UNTAG 0
+#else
+//DMA reserved memory regions can be ignored and tagged as normal memory.
+#define DMAONLY_TAG 0
+#endif
 
 /*
 Region descriptors. These describe all regions of memory available, and tag them according to the
@@ -95,22 +106,22 @@ static HeapRegionTagged_t regions[]={
     { (uint8_t *)0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
     { (uint8_t *)0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- if BT is enabled, used as BT HW shared memory
     { (uint8_t *)0x3FFB8000, 0x8000, 0, 0}, //pool 14 <- if BT is enabled, used data memory for BT ROM functions.
-    { (uint8_t *)0x3FFC0000, 0x2000, 0, 0}, //pool 10-13, mmu page 0
-    { (uint8_t *)0x3FFC2000, 0x2000, 0, 0}, //pool 10-13, mmu page 1
-    { (uint8_t *)0x3FFC4000, 0x2000, 0, 0}, //pool 10-13, mmu page 2
-    { (uint8_t *)0x3FFC6000, 0x2000, 0, 0}, //pool 10-13, mmu page 3
-    { (uint8_t *)0x3FFC8000, 0x2000, 0, 0}, //pool 10-13, mmu page 4
-    { (uint8_t *)0x3FFCA000, 0x2000, 0, 0}, //pool 10-13, mmu page 5
-    { (uint8_t *)0x3FFCC000, 0x2000, 0, 0}, //pool 10-13, mmu page 6
-    { (uint8_t *)0x3FFCE000, 0x2000, 0, 0}, //pool 10-13, mmu page 7
-    { (uint8_t *)0x3FFD0000, 0x2000, 0, 0}, //pool 10-13, mmu page 8
-    { (uint8_t *)0x3FFD2000, 0x2000, 0, 0}, //pool 10-13, mmu page 9
-    { (uint8_t *)0x3FFD4000, 0x2000, 0, 0}, //pool 10-13, mmu page 10
-    { (uint8_t *)0x3FFD6000, 0x2000, 0, 0}, //pool 10-13, mmu page 11
-    { (uint8_t *)0x3FFD8000, 0x2000, 0, 0}, //pool 10-13, mmu page 12
-    { (uint8_t *)0x3FFDA000, 0x2000, 0, 0}, //pool 10-13, mmu page 13
-    { (uint8_t *)0x3FFDC000, 0x2000, 0, 0}, //pool 10-13, mmu page 14
-    { (uint8_t *)0x3FFDE000, 0x2000, 0, 0}, //pool 10-13, mmu page 15
+    { (uint8_t *)0x3FFC0000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 0
+    { (uint8_t *)0x3FFC2000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 1
+    { (uint8_t *)0x3FFC4000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 2
+    { (uint8_t *)0x3FFC6000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 3
+    { (uint8_t *)0x3FFC8000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 4
+    { (uint8_t *)0x3FFCA000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 5
+    { (uint8_t *)0x3FFCC000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 6
+    { (uint8_t *)0x3FFCE000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 7
+    { (uint8_t *)0x3FFD0000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 8
+    { (uint8_t *)0x3FFD2000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 9
+    { (uint8_t *)0x3FFD4000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 10
+    { (uint8_t *)0x3FFD6000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 11
+    { (uint8_t *)0x3FFD8000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 12
+    { (uint8_t *)0x3FFDA000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 13
+    { (uint8_t *)0x3FFDC000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 14
+    { (uint8_t *)0x3FFDE000, 0x2000, DMAONLY_TAG, 0}, //pool 10-13, mmu page 15
     { (uint8_t *)0x3FFE0000, 0x4000, 1, 0x400BC000}, //pool 9 blk 1
     { (uint8_t *)0x3FFE4000, 0x4000, 1, 0x400B8000}, //pool 9 blk 0
     { (uint8_t *)0x3FFE8000, 0x8000, 1, 0x400B0000}, //pool 8 <- can be remapped to ROM, used for MAC dump
@@ -307,6 +318,21 @@ void heap_alloc_caps_init() {
     disable_mem_region((void*)0x3f800000, (void*)0x3fc00000); //SPI SRAM not installed
 #endif
 
+
+#if CONFIG_MEMMAP_RESERVE_DMA
+    int resv=CONFIG_MEMMAP_RESERVE_DMA_BYTES;
+    for (int i=0; regions[i].xSizeInBytes!=0; i++) {
+        if (regions[i].xTag==DMAONLY_TAG) {
+            if (resv>0) {
+                resv-=regions[i].xSizeInBytes;
+            } else {
+                //We have all the reserved memory we need. Un-tag this region as reserved.
+                regions[i].xTag=DMAONLY_UNTAG;
+            }
+        }
+    }
+#endif
+
     //The heap allocator will treat every region given to it as separate. In order to get bigger ranges of contiguous memory,
     //it's useful to coalesce adjacent regions that have the same tag.
 
@@ -428,6 +454,12 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
                 //Non-os stack lives here and is still in use. Don't alloc here.
                 continue;
             }
+#if CONFIG_MEMMAP_RESERVE_DMA
+            if (tag==DMAONLY_TAG && (!(caps & (MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL)))) {
+                //Never allocate memory that doesn't specifically ask for it in DMA-reserved region.
+                continue;
+            }
+#endif
             if ((tag_desc[tag].prio[prio]&caps)!=0) {
                 //Tag has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.

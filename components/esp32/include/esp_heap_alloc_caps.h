@@ -29,6 +29,7 @@
 #define MALLOC_CAP_PID7             (1<<9)  ///< Memory must be mapped to PID7 memory space
 #define MALLOC_CAP_SPIRAM           (1<<10) ///< Memory must be in SPI-attached RAM
 #define MALLOC_CAP_INTERNAL         (1<<11) ///< Memory must be internal to the chip
+#define MALLOC_CAP_DMAONLY          (1<<12) ///< Memory is in DMAONLY reserved region. Used to query free memory there.
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
 

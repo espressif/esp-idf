@@ -17,7 +17,7 @@
 #include "freertos/FreeRTOS.h"
 
 /* The maximum amount of tags in use */
-#define HEAPREGIONS_MAX_TAGCOUNT 16
+#define HEAPREGIONS_MAX_TAGCOUNT 17
 
 /**
  * @brief Structure to define a memory region
