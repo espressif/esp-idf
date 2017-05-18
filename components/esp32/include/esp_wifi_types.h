@@ -246,7 +246,7 @@ typedef struct {
   *
   */
 typedef enum {
-    WIFI_PKT_CTRL,  /**< control type, receive packet buf is wifi_pkt_rx_ctrl_t */
+    WIFI_PKT_CTRL,  /**< control type, receive packet buf is wifi_promiscuous_pkt_t */
     WIFI_PKT_MGMT,  /**< management type, receive packet buf is wifi_promiscuous_pkt_t */
     WIFI_PKT_DATA,  /**< data type, receive packet buf is wifi_promiscuous_pkt_t */
     WIFI_PKT_MISC,  /**< other type, receive packet buf is wifi_promiscuous_pkt_t */
