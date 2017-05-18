@@ -1487,6 +1487,20 @@ UINT16 BTM_BleReadConnectability()
     return (btm_cb.ble_ctr_cb.inq_var.connectable_mode);
 }
 
+void BTM_Recovery_Pre_State(void)
+{
+    tBTM_BLE_INQ_CB *ble_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
+
+    if (ble_inq_cb->state == BTM_BLE_ADVERTISING) {
+        btm_ble_stop_adv();
+        btm_ble_start_adv();
+    } else if (ble_inq_cb->state == BTM_BLE_SCANNING) {
+        btm_ble_start_scan();
+    }
+
+    return;
+}
+
 /*******************************************************************************
 **
 ** Function         btm_ble_build_adv_data
@@ -2957,6 +2971,7 @@ tBTM_STATUS btm_ble_start_scan(void)
         if (!btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, p_inq->scan_duplicate_filter)) {
             status = BTM_NO_RESOURCES;
         } else {
+            btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_SCANNING;
             if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI) {
                 btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
             } else {
@@ -2983,7 +2998,7 @@ void btm_ble_stop_scan(void)
     if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_DISABLE) {
         /* Clear the inquiry callback if set */
         btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
-
+        btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_STOP_SCAN;
         /* stop discovery now */
         btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
 
@@ -3139,6 +3154,7 @@ tBTM_STATUS btm_ble_start_adv(void)
 
     if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE)) {
         p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
+        p_cb->state = BTM_BLE_ADVERTISING;
         btm_ble_adv_states_operation(btm_ble_set_topology_mask, p_cb->evt_type);
         rt = BTM_SUCCESS;
         BTM_TRACE_EVENT ("BTM_SUCCESS\n");
@@ -3169,6 +3185,7 @@ tBTM_STATUS btm_ble_stop_adv(void)
         if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
             p_cb->fast_adv_on = FALSE;
             p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
+            p_cb->state = BTM_BLE_STOP_ADV;
             btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
 
             /* clear all adv states */
