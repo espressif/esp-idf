@@ -651,8 +651,9 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
     if (!controller_get_interface()->supports_ble()) {
         return FALSE;
     }
-
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
     uint8_t addr_resolution = 0;
+#endif  /* defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */
     if (!privacy_mode) { /* if privacy disabled, always use public address */
         p_cb->addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
         p_cb->privacy_mode = BTM_PRIVACY_NONE;
@@ -667,7 +668,9 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
 
         /* 4.2 controller only allow privacy 1.2 or mixed mode, resolvable private address in controller */
         if (controller_get_interface()->supports_ble_privacy()) {
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
             addr_resolution = 1;
+#endif  /* defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */
             /* check vendor specific capability */
             p_cb->privacy_mode = btm_cb.ble_ctr_cb.mixed_mode ? BTM_PRIVACY_MIXED : BTM_PRIVACY_1_2;
         } else { /* 4.1/4.0 controller */
@@ -675,7 +678,7 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
         }
     }
 
-#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
+#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
     GAP_BleAttrDBUpdate (GATT_UUID_GAP_CENTRAL_ADDR_RESOL, (tGAP_BLE_ATTR_VALUE *)&addr_resolution);
 #endif
 
