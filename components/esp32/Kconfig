@@ -266,7 +266,7 @@ config MEMMAP_RESERVE_DMA
 
 
 config MEMMAP_RESERVE_DMA_BYTES
-    int "Number of bytes in reserved DMA region
+    int "Number of bytes in reserved internal/DMA region"
     depends on MEMMAP_RESERVE_DMA
     default 32768
     range 4096 131072
