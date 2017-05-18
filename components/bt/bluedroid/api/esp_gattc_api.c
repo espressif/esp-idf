@@ -482,7 +482,7 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_gatt_status_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda)
+esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda)
 {
     btc_msg_t msg;
     btc_ble_gattc_args_t arg;

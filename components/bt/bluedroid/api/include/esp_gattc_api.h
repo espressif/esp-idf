@@ -636,11 +636,11 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
 * @param[in]       remote_bda: remote device BD address.
 *
 * @return
-*                  - ESP_OK: unregister succeeds
+*                  - ESP_OK: success
 *                  - other: failed
 *
 */
-esp_gatt_status_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda);
+esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda);
 
 #ifdef __cplusplus
 }
