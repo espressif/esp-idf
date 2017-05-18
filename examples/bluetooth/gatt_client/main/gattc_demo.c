@@ -404,7 +404,7 @@ void ble_client_appRegister(void)
 
     ESP_LOGI(GATTC_TAG, "register callback");
 
-    //register the scan callback function to the gap moudule
+    //register the scan callback function to the gap module
     if ((status = esp_ble_gap_register_callback(esp_gap_cb)) != ESP_OK) {
         ESP_LOGE(GATTC_TAG, "gap register error, error code = %x", status);
         return;
