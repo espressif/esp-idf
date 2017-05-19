@@ -87,6 +87,7 @@ typedef enum {
     ESP_GAP_BLE_NC_REQ_EVT,                                 /* Numeric Comparison request event */
     ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT,                      /*!< When stop adv complete, the event comes */
     ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT,                     /*!< When stop scan complete, the event comes */
+    ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT,                   /*!< When set the static rand address complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
 /// Advertising data maximum length
@@ -485,6 +486,12 @@ typedef union {
     struct ble_adv_stop_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate adv stop operation success status */
     } adv_stop_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT
+     */
+    struct ble_set_rand_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate set static rand address operation success status */
+    } set_rand_addr_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
