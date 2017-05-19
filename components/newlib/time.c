@@ -46,8 +46,23 @@
 #ifdef WITH_RTC
 static uint64_t get_rtc_time_us()
 {
-    uint64_t ticks = rtc_time_get();
-    return (uint32_t) ((ticks * esp_clk_slowclk_cal_get()) >> RTC_CLK_CAL_FRACT);
+    const uint64_t ticks = rtc_time_get();
+    const uint32_t cal = esp_clk_slowclk_cal_get();
+    /* RTC counter result is up to 2^48, calibration factor is up to 2^24,
+     * for a 32kHz clock. We need to calculate (assuming no overflow):
+     *   (ticks * cal) >> RTC_CLK_CAL_FRACT
+     *
+     * An overflow in the (ticks * cal) multiplication would cause time to
+     * wrap around after approximately 13 days, which is probably not enough
+     * for some applications.
+     * Therefore multiplication is split into two terms, for the lower 32-bit
+     * and the upper 16-bit parts of "ticks", i.e.:
+     *   ((ticks_low + 2^32 * ticks_high) * cal) >> RTC_CLK_CAL_FRACT
+     */
+    const uint64_t ticks_low = ticks & UINT32_MAX;
+    const uint64_t ticks_high = ticks >> 32;
+    return ((ticks_low * cal) >> RTC_CLK_CAL_FRACT) +
+           ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
 }
 #endif // WITH_RTC
 
