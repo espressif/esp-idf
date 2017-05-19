@@ -1,5 +1,6 @@
 stages:
   - build
+  - assign_test
   - unit_test
   - test
   - test_report
@@ -73,10 +74,9 @@ build_ssc:
     expire_in: 6 mos
 
   script:
-    - git clone $GITLAB_SSH_SERVER/yinling/SSC.git
+    - git clone $SSC_REPOSITORY
     - cd SSC
     - git checkout ${CI_BUILD_REF_NAME} || echo "Using SSC default branch..."
-    - make defconfig
     - ./gen_misc_ng.sh
 
 build_at:
@@ -329,7 +329,30 @@ check_commit_msg:
     # commit start with "WIP: " need to be squashed before merge
     - 'git log --pretty=%s master..${CI_BUILD_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
 
-# template for test jobs
+assign_test:
+  <<: *build_template
+  stage: assign_test
+  artifacts:
+    paths:
+      - test_bins
+      - components/idf_test/*/CIConfigs
+      - components/idf_test/*/TC.sqlite
+    expire_in: 1 mos
+
+  script:
+    # first move test bins together: test_bins/CHIP_SDK/TestApp/bin_files
+    - mkdir -p test_bins/ESP32_IDF/UT
+    - cp -r tools/unit-test-app/build/* test_bins/ESP32_IDF/UT
+    - cp -r SSC/ssc_bin/* test_bins/ESP32_IDF
+    # clone test script to assign tests
+    - git clone $TEST_SCRIPT_REPOSITORY
+    - cd auto_test_script
+    - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
+    # assign unit test cases
+    - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/unit_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
+    # assgin integration test cases
+    - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
+
 .test_template: &test_template
   stage: test
   when: on_success
@@ -339,16 +362,19 @@ check_commit_msg:
     - /^v\d+\.\d+(\.\d+)?($|-)/
     - triggers
   allow_failure: true
+  
+  dependencies:
+    - assign_test
 
   variables:
-    LOCAL_ENV_CONFIG_PATH: $CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF
-    BIN_PATH: "$CI_PROJECT_DIR/SSC/ssc_bin/SSC"
-    APP_NAME: "ssc"
+    # set git strategy to fetch so we can get esptool without update submodule
+    GIT_STRATEGY: fetch
+    LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
-    # append test level folder to TEST_CASE_FILE_PATH in before_script of test job
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
-    # jobs MUST set CONFIG_FILE in before_script, and overwrite the variables above if necessary
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
+    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/integration_test/CIConfigs/$CI_BUILD_NAME.yml"
+    IDF_PATH: "$CI_PROJECT_DIR"
 
   artifacts:
     when: always
@@ -356,7 +382,12 @@ check_commit_msg:
       - $LOG_PATH
     expire_in: 6 mos
 
+  before_script:
+    - echo "Skip cloning submodule here"
+
   script:
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
     # remove artifacts from last stage (UT logs)
     - rm -rf $LOG_PATH
     # add gitlab ssh key
@@ -367,39 +398,13 @@ check_commit_msg:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     # clone local test env configs
-    - git clone $GITLAB_SSH_SERVER/qa/ci-test-runner-configs.git
+    - git clone $TEST_ENV_CONFIG_REPOSITORY
     # clone test bench
-    - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
+    - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
+    - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
     # run test
-    - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE bin_path $APP_NAME $BIN_PATH
-
-
-# template for overnight test jobs
-.test_template_night: &test_template_night
-  <<: *test_template
-  only:
-    # can only be triggered
-    - triggers
-  script:
-    # remove artifacts from last stage (UT logs)
-    - rm -rf $LOG_PATH
-    # must be night build triggers, otherwise exit without test
-    - test $NIGHT_BUILD = "Yes" || exit 0
-    # add gitlab ssh key
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    # clone local test env configs
-    - git clone $GITLAB_SSH_SERVER/qa/ci-test-runner-configs.git
-    # clone test bench
-    - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
-    - cd auto_test_script
-    # run test
-    - python CIRunner.py -l $LOG_PATH -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE bin_path $APP_NAME $BIN_PATH
+    - python CIRunner.py -l "$LOG_PATH/$CI_BUILD_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
 
 # template for unit test jobs
 .unit_test_template: &unit_test_template
@@ -408,254 +413,186 @@ check_commit_msg:
   stage: unit_test
 
   variables:
-    LOCAL_ENV_CONFIG_PATH: $CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF
-    BIN_PATH: "$CI_PROJECT_DIR/tools/unit-test-app/build/"
+    GIT_STRATEGY: fetch
+    LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
-    APP_NAME: "ut"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
-  
-  dependencies:
-    - build_esp_idf_tests
+    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
+    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/$CI_BUILD_NAME.yml"
+    IDF_PATH: "$CI_PROJECT_DIR"
 
-UT_Function_SYS_01:
+UT_001_01:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/UT_Function_SYS_01.yml
 
-UT_Function_SYS_02:
+UT_001_02:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/UT_Function_SYS_02.yml
 
-IT_Function_SYS_01:
+UT_001_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+IT_001_01:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_SYS_01.yml
 
-IT_Function_WIFI_01:
+IT_001_02:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T2_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_01.yml
-
-IT_Function_WIFI_02:
+    
+IT_001_03:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T2_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_02.yml
-
-IT_Function_TCPIP_01:
+    
+IT_001_04:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T2_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_01.yml
-
-IT_Function_TCPIP_02:
+    
+IT_001_05:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_02.yml
-
-IT_Function_TCPIP_03:
+    
+IT_001_06:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T2_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_03.yml
-
-IT_Function_TCPIP_04:
+    
+IT_001_07:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T2_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_04.yml
-
-IT_Function_TCPIP_05:
+    
+IT_001_08:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_05.yml
-
-IT_Stress_WIFI_01:
-  <<: *test_template_night
+    
+IT_002_01:
+  <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T5_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_WIFI_01.yml
+    - SSC_T1_2
 
-IT_Stress_TCPIP_01:
-  <<: *test_template_night
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_TCPIP_01.yml
-
-IT_Stress_TCPIP_02:
-  <<: *test_template_night
+IT_003_01:
+  <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T2_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_TCPIP_02.yml
 
-IT_Stress_TCPIP_03:
-  <<: *test_template_night
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_TCPIP_03.yml
-
-IT_Stress_TCPIP_04:
-  <<: *test_template_night
+IT_003_02:
+  <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T2_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stress_TCPIP_04.yml
 
-IT_Stable_TCPIP_01:
-  <<: *test_template_night
+IT_003_03:
+  <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T5_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stable_TCPIP_01.yml
+    - SSC_T2_1
 
-IT_Stable_TCPIP_02:
-  <<: *test_template_night
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stable_TCPIP_02.yml
-
-IT_Stable_TCPIP_03:
-  <<: *test_template_night
-  tags:
-    - ESP32_IDF
-    - SSC_T5_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Stable_TCPIP_03.yml
-
-IT_Function_TCPIP_06:
-  <<: *test_template_night
-  tags:
-    - ESP32_IDF
-    - SSC_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_06.yml
-
-IT_Function_WIFI_03:
+IT_004_01:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_APC
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_03.yml
 
-IT_Function_WIFI_04:
-  <<: *test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T3_PhyMode
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_04.yml
-
-IT_Function_WIFI_05:
+IT_005_01:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_WEP
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_05.yml
 
-IT_Function_WIFI_06:
+IT_006_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T3_PhyMode
+
+IT_007_01:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T2_PhyMode
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_WIFI_06.yml
 
-IT_Function_TCPIP_07:
+IT_008_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_PhyMode
+
+IT_501_01:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    - SSC_T1_2
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_07.yml
+    - stress_test
 
-IT_Function_TCPIP_08:
+IT_501_02:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
+    - stress_test
+
+IT_501_03:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+    - stress_test
+
+IT_502_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
     - SSC_T2_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_08.yml
+    - stress_test
 
-IT_Function_TCPIP_09:
+IT_502_02:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-    - SSC_T1_2
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_09.yml
+    - SSC_T2_1
+    - stress_test
 
-IT_Function_TCPIP_10:
+IT_503_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-    - SSC_T1_2
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_10.yml
+    - SSC_T5_1
+    - stress_test
 
-IT_Function_TCPIP_11:
+IT_503_02:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_11.yml
+    - SSC_T5_1
+    - stress_test
 
-IT_Function_TCPIP_12:
+IT_503_03:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T1_1
-  before_script:
-    - CONFIG_FILE=$TEST_CASE_FILE_PATH/CIConfigs/IT_Function_TCPIP_12.yml
-
+    - SSC_T5_1
+    - stress_test
