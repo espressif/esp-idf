@@ -24,12 +24,13 @@ extern "C" {
 
 /// Status Return Value
 typedef enum {
-    ESP_BT_STATUS_SUCCESS          =  0,          /* Successful operation. */
-    ESP_BT_STATUS_FAILURE          =  1,          /* Generic failure. */
-    ESP_BT_STATUS_PENDING          =  2,          /* API cannot be completed right now */
-    ESP_BT_STATUS_BUSY             =  3,
-    ESP_BT_STATUS_NO_RESOURCES     =  4,
-    ESP_BT_STATUS_WRONG_MODE       =  5,
+    ESP_BT_STATUS_SUCCESS                  =  0,          /* Successful operation. */
+    ESP_BT_STATUS_FAILURE                  =  1,          /* Generic failure. */
+    ESP_BT_STATUS_PENDING                  =  2,          /* API cannot be completed right now */
+    ESP_BT_STATUS_BUSY                     =  3,
+    ESP_BT_STATUS_NO_RESOURCES             =  4,
+    ESP_BT_STATUS_WRONG_MODE               =  5,
+    ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR =  6,
 } esp_bt_status_t;
 
 
