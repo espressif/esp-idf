@@ -12,7 +12,7 @@ touch .gitmodules  # dummy file
 function assert_branch_public()
 {
     (
-        CI_BUILD_REF=$1
+        CI_COMMIT_REF_NAME=$1
         set -e
         source ./configure_ci_environment.sh
         [[ $IS_PUBLIC = $2 ]] || exit 1
