@@ -356,9 +356,9 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
 
     /* See if we have a link control block for the connection */
     p_lcb = l2cu_find_lcb_by_handle (handle);
-
     /* If we don't have one, maybe an SCO link. Send to MM */
     if (!p_lcb) {
+        BTM_Recovery_Pre_State();
         status = FALSE;
     } else {
         /* There can be a case when we rejected PIN code authentication */

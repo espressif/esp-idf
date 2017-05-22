@@ -60,6 +60,10 @@ static uint32_t ccount_margin[portNUM_PROCESSORS][DPORT_ACCESS_BENCHMARK_STORE_N
 static uint32_t ccount_margin_cnt;
 #endif
 
+#ifndef CONFIG_FREERTOS_UNICORE
+static BaseType_t oldInterruptLevel[2];
+#endif
+
 /* stall other cpu that this cpu is pending to access dport register start */
 void IRAM_ATTR esp_dport_access_stall_other_cpu_start(void)
 {
@@ -74,8 +78,8 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_start(void)
 #ifdef DPORT_ACCESS_BENCHMARK
     ccount_start[cpu_id] = XTHAL_GET_CCOUNT();
 #endif
-
-    portDISABLE_INTERRUPTS();
+    BaseType_t intLvl=portENTER_CRITICAL_NESTED();
+    oldInterruptLevel[cpu_id]=intLvl;
 
     if (dport_access_ref[cpu_id] == 0) {
         portENTER_CRITICAL_ISR(&g_dport_mux); 
@@ -121,7 +125,7 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end(void)
         portEXIT_CRITICAL_ISR(&g_dport_mux);
     }
         
-    portENABLE_INTERRUPTS();
+    portEXIT_CRITICAL_NESTED(oldInterruptLevel[cpu_id]);
 
 #ifdef DPORT_ACCESS_BENCHMARK
     ccount_end[cpu_id] = XTHAL_GET_CCOUNT();
@@ -129,6 +133,16 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end(void)
     ccount_margin_cnt = (ccount_margin_cnt + 1)&(DPORT_ACCESS_BENCHMARK_STORE_NUM - 1);
 #endif
 #endif /* CONFIG_FREERTOS_UNICORE */
+}
+
+void IRAM_ATTR esp_dport_access_stall_other_cpu_start_wrap(void)
+{
+    DPORT_STALL_OTHER_CPU_START();
+}
+
+void IRAM_ATTR esp_dport_access_stall_other_cpu_end_wrap(void)
+{
+    DPORT_STALL_OTHER_CPU_END();
 }
 
 static void dport_access_init_core0(void *arg)

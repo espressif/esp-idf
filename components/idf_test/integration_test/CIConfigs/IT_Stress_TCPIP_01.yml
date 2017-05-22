@@ -1,6 +1,0 @@
-Config: {execute count: 1, execute order: in order}
-DUT: [SSC1]
-Filter:
-- Add:
-    ID:
-      - TCPIP_TCP_5001  # test possible TCP connect/disconnect method

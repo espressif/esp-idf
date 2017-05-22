@@ -2184,8 +2184,10 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
         }
         memset(p_tcb, 0, sizeof(tGATT_TCB));
 
+    } else {
+        GATT_TRACE_DEBUG ("exit gatt_cleanup_upon_disc ");
+        BTM_Recovery_Pre_State();
     }
-    GATT_TRACE_DEBUG ("exit gatt_cleanup_upon_disc ");
 }
 /*******************************************************************************
 **

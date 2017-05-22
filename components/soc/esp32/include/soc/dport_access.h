@@ -17,20 +17,11 @@
 
 #include <stdint.h>
 #include "esp_attr.h"
-
-void esp_dport_access_stall_other_cpu_start(void);
-void esp_dport_access_stall_other_cpu_end(void);
-
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
-#define DPORT_STALL_OTHER_CPU_START()
-#define DPORT_STALL_OTHER_CPU_END()
-#else
-#define DPORT_STALL_OTHER_CPU_START()   esp_dport_access_stall_other_cpu_start()
-#define DPORT_STALL_OTHER_CPU_END()     esp_dport_access_stall_other_cpu_end()
-#endif
+#include "esp_dport_access.h"
 
 //Registers Operation {{
-//Origin access operation for the base and some special scene
+
+//Register read macros with an underscore prefix access DPORT memory directly. In IDF apps, use the non-underscore versions to be SMP-safe.
 #define _DPORT_REG_READ(_r)        (*(volatile uint32_t *)(_r))
 #define _DPORT_REG_WRITE(_r, _v)   (*(volatile uint32_t *)(_r)) = (_v)
 
@@ -65,7 +56,7 @@ static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
 #define DPORT_REG_GET_FIELD(_r, _f) ((DPORT_REG_READ(_r) >> (_f##_S)) & (_f##_V))
 
 //set field to register, used when _f is not left shifted by _f##_S
-#define DPORT_REG_SET_FIELD(_r, _f, _v) DPORT_REG_WRITE((_r), ((DPORT_REG_READ(_r) & (~((_f) << (_f##_S))))|(((_v) & (_f))<<(_f##_S))))
+#define DPORT_REG_SET_FIELD(_r, _f, _v) DPORT_REG_WRITE((_r), ((DPORT_REG_READ(_r) & (~((_f##_V) << (_f##_S))))|(((_v) & (_f##_V))<<(_f##_S))))
 
 //get field value from a variable, used when _f is not left shifted by _f##_S
 #define DPORT_VALUE_GET_FIELD(_r, _f) (((_r) >> (_f##_S)) & (_f))
@@ -85,8 +76,9 @@ static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
 //generate a value from a field value, used when _f is left shifted by _f##_S
 #define DPORT_FIELD_TO_VALUE2(_f, _v) (((_v)<<_f##_S) & (_f))
 
-#define _READ_PERI_REG(addr) (*((volatile uint32_t *)(addr))) 
-#define _WRITE_PERI_REG(addr, val) (*((volatile uint32_t *)(addr))) = (uint32_t)(val) 
+//Register read macros with an underscore prefix access DPORT memory directly. In IDF apps, use the non-underscore versions to be SMP-safe.
+#define _DPORT_READ_PERI_REG(addr) (*((volatile uint32_t *)(addr))) 
+#define _DPORT_WRITE_PERI_REG(addr, val) (*((volatile uint32_t *)(addr))) = (uint32_t)(val) 
 
 //read value from register
 static inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t addr) 
@@ -94,14 +86,14 @@ static inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t addr)
     uint32_t val;
 
     DPORT_STALL_OTHER_CPU_START();
-    val = _READ_PERI_REG(addr);
+    val = _DPORT_READ_PERI_REG(addr);
     DPORT_STALL_OTHER_CPU_END();
     
     return val;
 }
 
 //write value to register
-#define DPORT_WRITE_PERI_REG(addr, val) _WRITE_PERI_REG(addr, val)  
+#define DPORT_WRITE_PERI_REG(addr, val) _DPORT_WRITE_PERI_REG(addr, val)  
 
 //clear bits of register controlled by mask
 #define DPORT_CLEAR_PERI_REG_MASK(reg, mask) DPORT_WRITE_PERI_REG((reg), (DPORT_READ_PERI_REG(reg)&(~(mask))))

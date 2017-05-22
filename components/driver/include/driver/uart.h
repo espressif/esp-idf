@@ -129,8 +129,8 @@ typedef enum {
     UART_FRAME_ERR,         /*!< UART RX frame error event*/
     UART_PARITY_ERR,        /*!< UART RX parity event*/
     UART_DATA_BREAK,        /*!< UART TX data and break event*/
+    UART_PATTERN_DET,       /*!< UART pattern detected */
     UART_EVENT_MAX,         /*!< UART event max index*/
-    UART_PATTERN_DET,        /*!< UART pattern detected */
 } uart_event_type_t;
 
 /**

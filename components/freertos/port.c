@@ -242,7 +242,7 @@ void vPortYieldOtherCore( BaseType_t coreid ) {
  * Used to set coprocessor area in stack. Current hack is to reuse MPU pointer for coprocessor area.
  */
 #if portUSING_MPU_WRAPPERS
-void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION * const xRegions, StackType_t *pxBottomOfStack, uint16_t usStackDepth )
+void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION * const xRegions, StackType_t *pxBottomOfStack, uint32_t usStackDepth )
 {
 	#if XCHAL_CP_NUM > 0
 	xMPUSettings->coproc_area = (StackType_t*)((((uint32_t)(pxBottomOfStack + usStackDepth - 1)) - XT_CP_SIZE ) & ~0xf);
@@ -253,6 +253,13 @@ void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMOR
 	 */
 	#endif
 }
+
+void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings )
+{
+	/* If task has live floating point registers somewhere, release them */
+	_xt_coproc_release( xMPUSettings->coproc_area );
+}
+
 #endif
 
 /*

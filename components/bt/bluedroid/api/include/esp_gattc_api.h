@@ -629,6 +629,19 @@ esp_gatt_status_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
                                                       esp_gatt_srvc_id_t *srvc_id,
                                                       esp_gatt_id_t *char_id);
 
+
+/**
+* @brief           Refresh the server cache store in the gattc stack of the remote device
+*
+* @param[in]       remote_bda: remote device BD address.
+*
+* @return
+*                  - ESP_OK: success
+*                  - other: failed
+*
+*/
+esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda);
+
 #ifdef __cplusplus
 }
 #endif

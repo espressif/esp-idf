@@ -1,7 +1,0 @@
-Config: {execute count: 1, execute order: in order}
-DUT: [SSC1]
-Filter:
-- Add:
-    ID:
-      - TCPIP_TCP_0405  # do TCP send after PC NIC disabled
-      - ^TCPIP_TCP_0405  # do TCP send after PC NIC disabled
