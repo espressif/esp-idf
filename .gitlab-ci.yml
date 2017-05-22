@@ -41,7 +41,7 @@ build_template_app:
     # Try to use the same branch name for esp-idf-template that we're
     # using on esp-idf. If it doesn't exist then just stick to the default
     # branch
-    - git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
+    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using esp-idf-template default branch..."
     # Test debug build (default)
     - make all V=1
     # Now test release build
@@ -76,7 +76,7 @@ build_ssc:
   script:
     - git clone $SSC_REPOSITORY
     - cd SSC
-    - git checkout ${CI_BUILD_REF_NAME} || echo "Using SSC default branch..."
+    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using SSC default branch..."
     - ./gen_misc_ng.sh
 
 build_at:
@@ -84,7 +84,7 @@ build_at:
   script:
     - git clone $GITLAB_SSH_SERVER/application/esp-at.git
     - cd esp-at
-    - git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-at default branch..."
+    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using esp-at default branch..."
     - make defconfig
     - make
 
@@ -123,7 +123,7 @@ build_examples:
     # mechanism work, but this is the next best thing
     - mkdir build_examples
     - cd build_examples
-    - ${IDF_PATH}/make/build_examples.sh
+    - ${IDF_PATH}/make/build_examples.sh -j5
 
 build_docs:
   stage: build
@@ -194,7 +194,7 @@ test_report:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   variables:
-    LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
+    LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
     REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
@@ -207,13 +207,13 @@ test_report:
   script:
     # calc log path
     - VER_NUM=`git rev-list HEAD | wc -l | awk '{print $1}'`
-    - SHA_ID=`echo $CI_BUILD_REF | cut -c 1-7`
+    - SHA_ID=`echo $CI_COMMIT_SHA | cut -c 1-7`
     - REVISION="${VER_NUM}_${SHA_ID}"
     # replace / to _ in branch name
-    - ESCAPED_BRANCH_NAME=`echo $CI_BUILD_REF_NAME | sed 's/\//___/g'`
+    - ESCAPED_BRANCH_NAME=`echo $CI_COMMIT_REF_NAME | sed 's/\//___/g'`
     # result path and artifacts path
     - RESULT_PATH="$CI_PROJECT_NAME/$ESCAPED_BRANCH_NAME/$REVISION"
-    - ARTIFACTS_PATH="$GITLAB_HTTP_SERVER/idf/esp-idf/builds/$CI_BUILD_ID/artifacts/browse/$CI_BUILD_REF"
+    - ARTIFACTS_PATH="$GITLAB_HTTP_SERVER/idf/esp-idf/builds/$CI_JOB_ID/artifacts/browse/$CI_COMMIT_SHA"
     # clone test bench
     - git clone $GITLAB_SSH_SERVER/yinling/auto_test_script.git
     - cd auto_test_script
@@ -230,7 +230,7 @@ test_report:
     - git config --global user.name "ci-test-result"
     # commit test result
     - git add .
-    - git commit . -m "update test result for $CI_PROJECT_NAME/$CI_BUILD_REF_NAME/$CI_BUILD_REF, pipeline ID $CI_PIPELINE_ID" || exit 0
+    - git commit . -m "update test result for $CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_COMMIT_SHA, pipeline ID $CI_PIPELINE_ID" || exit 0
     - git push origin master
     - test "${TEST_RESULT}" = "Pass" || exit 1
 
@@ -258,13 +258,10 @@ push_master_to_github:
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git remote add github git@github.com:espressif/esp-idf.git
     # What the next line of script does: goes through the list of refs for all branches we push to github,
-    # generates a snippet of shell which is evaluated. The snippet checks CI_BUILD_REF against the SHA
+    # generates a snippet of shell which is evaluated. The snippet checks CI_COMMIT_SHA against the SHA
     # (aka objectname) at tip of each branch, and if any SHAs match then it checks out the local branch
     # and then pushes that ref to a corresponding github branch
-    #
-    # NB: In gitlab 9.x, CI_BUILD_REF was deprecated. New name is CI_COMMIT_REF. If below command suddenly
-    # generates bash syntax errors, this is probably why.
-    - eval $(git for-each-ref --shell bash --format 'if [ $CI_BUILD_REF == %(objectname) ]; then git checkout -B %(refname:strip=3); git push --follow-tags github %(refname:strip=3); fi;' $GITHUB_PUSH_REFS)
+    - eval $(git for-each-ref --shell bash --format 'if [ $CI_COMMIT_SHA == %(objectname) ]; then git checkout -B %(refname:strip=3); git push --follow-tags github %(refname:strip=3); fi;' $GITHUB_PUSH_REFS)
 
 
 deploy_docs:
@@ -305,7 +302,7 @@ check_doc_links:
     # must be triggered with CHECK_LINKS=Yes, otherwise exit without test
     - test "$CHECK_LINKS" = "Yes" || exit 0
     # can only run on master branch (otherwise the commit is not on Github yet)
-    - test "${CI_BUILD_REF_NAME}" = "master" || exit 0
+    - test "${CI_COMMIT_REF_NAME}" = "master" || exit 0
     - cd docs
     - make linkcheck
   artifacts:
@@ -325,9 +322,9 @@ check_commit_msg:
   before_script:
     - echo "skip update submodule"
   script:
-    - git checkout ${CI_BUILD_REF_NAME}
+    - git checkout ${CI_COMMIT_REF_NAME}
     # commit start with "WIP: " need to be squashed before merge
-    - 'git log --pretty=%s master..${CI_BUILD_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
+    - 'git log --pretty=%s master..${CI_COMMIT_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
 
 assign_test:
   <<: *build_template
@@ -347,7 +344,7 @@ assign_test:
     # clone test script to assign tests
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
-    - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
+    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
     # assign unit test cases
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/unit_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
     # assgin integration test cases
@@ -370,10 +367,10 @@ assign_test:
     # set git strategy to fetch so we can get esptool without update submodule
     GIT_STRATEGY: fetch
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
-    LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
+    LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
-    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/integration_test/CIConfigs/$CI_BUILD_NAME.yml"
+    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/integration_test/CIConfigs/$CI_JOB_NAME.yml"
     IDF_PATH: "$CI_PROJECT_DIR"
 
   artifacts:
@@ -402,9 +399,9 @@ assign_test:
     # clone test bench
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
-    - git checkout ${CI_BUILD_REF_NAME} || echo "Using default branch..."
+    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
     # run test
-    - python CIRunner.py -l "$LOG_PATH/$CI_BUILD_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
+    - python CIRunner.py -l "$LOG_PATH/$CI_JOB_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
 
 # template for unit test jobs
 .unit_test_template: &unit_test_template
@@ -415,10 +412,10 @@ assign_test:
   variables:
     GIT_STRATEGY: fetch
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
-    LOG_PATH: "$CI_PROJECT_DIR/$CI_BUILD_REF"
+    LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
-    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/$CI_BUILD_NAME.yml"
+    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/$CI_JOB_NAME.yml"
     IDF_PATH: "$CI_PROJECT_DIR"
 
 UT_001_01:
