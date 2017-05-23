@@ -380,9 +380,7 @@ void *pvPortMallocCaps( size_t xWantedSize, uint32_t caps )
     return NULL;
 }
 
-
-size_t xPortGetFreeHeapSizeCaps( uint32_t caps )
-{
+static size_t sum_regions_with_caps( uint32_t caps, size_t (*func)(BaseType_t tag)) {
     int prio;
     int tag;
     size_t ret=0;
@@ -390,27 +388,31 @@ size_t xPortGetFreeHeapSizeCaps( uint32_t caps )
         //Iterate over tag descriptors for this priority
         for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
             if ((tag_desc[tag].prio[prio]&caps)!=0) {
-                ret+=xPortGetFreeHeapSizeTagged(tag);
+                ret+=func(tag);
             }
         }
     }
     return ret;
 }
 
+size_t xPortGetHeapSizeCaps( uint32_t caps )
+{
+    return sum_regions_with_caps(caps, xPortGetHeapSizeTagged);
+}
+
+size_t xPortGetFreeHeapSizeCaps( uint32_t caps )
+{
+    return sum_regions_with_caps(caps, xPortGetFreeHeapSizeTagged);
+}
+
 size_t xPortGetMinimumEverFreeHeapSizeCaps( uint32_t caps )
 {
-    int prio;
-    int tag;
-    size_t ret=0;
-    for (prio=0; prio<NO_PRIOS; prio++) {
-        //Iterate over tag descriptors for this priority
-        for (tag=0; tag_desc[tag].prio[prio]!=MALLOC_CAP_INVALID; tag++) {
-            if ((tag_desc[tag].prio[prio]&caps)!=0) {
-                ret+=xPortGetMinimumEverFreeHeapSizeTagged(tag);
-            }
-        }
-    }
-    return ret;
+    return sum_regions_with_caps(caps, xPortGetMinimumEverFreeHeapSizeTagged);
+}
+
+size_t xPortGetHeapSize( void )
+{
+    return xPortGetHeapSizeCaps( MALLOC_CAP_8BIT );
 }
 
 size_t xPortGetFreeHeapSize( void )
