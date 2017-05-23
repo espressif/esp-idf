@@ -204,7 +204,16 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
 
     i2s_stop(i2s_num);
 
-    p_i2s_obj[i2s_num]->channel_num = (ch == 2) ? 2 : 1;
+    uint32_t cur_mode = 0;
+    if (p_i2s_obj[i2s_num]->channel_num != ch) {
+        p_i2s_obj[i2s_num]->channel_num = (ch == 2) ? 2 : 1;
+        cur_mode = I2S[i2s_num]->fifo_conf.tx_fifo_mod;
+        I2S[i2s_num]->fifo_conf.tx_fifo_mod = (ch == 2) ? cur_mode - 1 : cur_mode + 1;
+        cur_mode = I2S[i2s_num]->fifo_conf.rx_fifo_mod;
+        I2S[i2s_num]->fifo_conf.rx_fifo_mod = (ch == 2) ? cur_mode -1  : cur_mode + 1;
+        I2S[i2s_num]->conf_chan.tx_chan_mod = (ch == 2) ? 0 : 1;
+        I2S[i2s_num]->conf_chan.rx_chan_mod = (ch == 2) ? 0 : 1;
+    }
 
     if (bits != p_i2s_obj[i2s_num]->bits_per_sample) {
 
