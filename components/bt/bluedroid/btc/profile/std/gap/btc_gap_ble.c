@@ -640,7 +640,8 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr)
     param.set_rand_addr_cmpl.status = ESP_BT_STATUS_SUCCESS;
 
     if (rand_addr != NULL) {
-        if(rand_addr[BD_ADDR_LEN - 1] & BT_STATIC_RAND_ADDR_MASK) {
+        if((rand_addr[BD_ADDR_LEN - 1] & BT_STATIC_RAND_ADDR_MASK)
+            == BT_STATIC_RAND_ADDR_MASK) {
             BTA_DmSetRandAddress(rand_addr);
         } else {
             param.set_rand_addr_cmpl.status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
