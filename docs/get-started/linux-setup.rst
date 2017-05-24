@@ -1,4 +1,4 @@
-*************************************
+﻿*************************************
 Standard Setup of Toolchain for Linux
 *************************************
 
@@ -34,25 +34,36 @@ ESP32 toolchain for Linux is available for download from Espressif website:
 
   https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-61-gab8375a-5.2.0.tar.gz
 
-Download this file, then extract it in ``~/esp`` directory::
+1.  Download this file, then extract it in ``~/esp`` directory::
 
-    mkdir -p ~/esp
-    cd ~/esp
-    tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
+        mkdir -p ~/esp
+        cd ~/esp
+        tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
 
 .. _setup-linux-toolchain-add-it-to-path:
 
-The toolchain will be extracted into ``~/esp/xtensa-esp32-elf/`` directory.
+2.  The toolchain will be extracted into ``~/esp/xtensa-esp32-elf/`` directory.
 
-To use it, you will need to update your ``PATH`` environment variable in ``~/.bash_profile`` file. To make ``xtensa-esp32-elf`` available for all terminal sessions, add the following line to your ``~/.bash_profile`` file::
+    To use it, you will need to update your ``PATH`` environment variable in ``~/.bash_profile`` file. To make ``xtensa-esp32-elf`` available for all terminal sessions, add the following line to your ``~/.bash_profile`` file::
 
-    export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin
+        export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin
 
-Alternatively, you may create an alias for the above command. This way you can get the toolchain only when you need it. To do this, add different line to your ``~/.bash_profile`` file::
+    Alternatively, you may create an alias for the above command. This way you can get the toolchain only when you need it. To do this, add different line to your ``~/.bash_profile`` file::
 
-    alias get_esp32="export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin"
+        alias get_esp32="export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin"
 
-Then when you need the toolchain you can type ``get_esp32`` on the command line and the toolchain will be added to your ``PATH``.
+    Then when you need the toolchain you can type ``get_esp32`` on the command line and the toolchain will be added to your ``PATH``.
+
+3.  Finally, run the following command to verify if ``PATH`` is correctly set::
+
+        printenv PATH
+
+    You are looking for similar result containing toolchain's path at the end of displayed string::
+
+        $ printenv PATH
+        /home/user-name/bin:/home/user-name/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/user-name/esp/xtensa-esp32-elf/bin
+
+    Instead of ``/home/user-name`` there should be a home path specific to your installation.
 
 
 Arch Linux Users
