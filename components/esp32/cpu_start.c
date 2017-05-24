@@ -43,6 +43,7 @@
 #include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
+#include "spi_flash_lowlevel.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_spi_flash.h"
@@ -388,6 +389,9 @@ void start_cpu0_default(void)
     spi_flash_init();
     /* init default OS-aware flash access critical section */
     spi_flash_guard_set(&g_flash_guard_default_ops);
+    /* Todo the following needs to be properly integrated */
+    esp_flash_low_level_app_init();
+    esp_flash_init_default_chip();
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_init();
 #ifdef CONFIG_PM_DFS_INIT_AUTO
@@ -399,7 +403,6 @@ void start_cpu0_default(void)
     esp_pm_configure(&cfg);
 #endif //CONFIG_PM_DFS_INIT_AUTO
 #endif //CONFIG_PM_ENABLE
-
 #if CONFIG_ESP32_ENABLE_COREDUMP
     esp_core_dump_init();
     size_t core_data_sz = 0;
