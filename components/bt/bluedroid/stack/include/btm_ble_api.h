@@ -310,6 +310,7 @@ typedef void (tBTM_RAND_ENC_CB) (tBTM_RAND_ENC *p1);
 
 typedef  UINT32  tBTM_BLE_AD_MASK;
 
+/* relate to ESP_BLE_AD_TYPE_xxx in esp_gap_ble_api.h */
 #define BTM_BLE_AD_TYPE_FLAG                HCI_EIR_FLAGS_TYPE                  /* 0x01 */
 #define BTM_BLE_AD_TYPE_16SRV_PART          HCI_EIR_MORE_16BITS_UUID_TYPE       /* 0x02 */
 #define BTM_BLE_AD_TYPE_16SRV_CMPL          HCI_EIR_COMPLETE_16BITS_UUID_TYPE   /* 0x03 */
