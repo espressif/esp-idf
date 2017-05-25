@@ -125,13 +125,21 @@ These variables all have default values that can be overridden for custom behavi
 - ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the COMPONENT_DIRS directories.
 - ``SRCDIRS``: Directories under the main project directory which contain project-specific "pseudo-components". Defaults to 'main'. The difference between specifying a directory here and specifying it under ``EXTRA_COMPONENT_DIRS`` is that a directory in ``SRCDIRS`` is a component itself (contains a file "component.mk"), whereas a directory in ``EXTRA_COMPONENT_DIRS`` contains component directories which contain a file "component.mk". See the `Example Project` for a concrete case of this.
 
-
 Component Makefiles
 -------------------
 
 Each project contains one or more components, which can either be part of esp-idf or added from other component directories.
 
 A component is any sub-directory that contains a `component.mk` file [#f1]_.
+
+Multiple components with the same name
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When esp-idf is collecting all the components to compile, it will do this in the order specified by ``COMPONENT_DIRS``; by default, this means the 
+idf components first, the project components second and optionally the components in ``EXTRA_COMPONENT_DIRS`` last. If two or more of these directories
+contain component subdirectories with the same name, the component in the last place searched is used. This allows, for example, overriding esp-idf components 
+with a modified version by simply copying the component from the esp-idf component directory to the project component tree and then modifying it there. 
+If used in this way, the esp-idf directory itself can remain untouched.
 
 Minimal Component Makefile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
