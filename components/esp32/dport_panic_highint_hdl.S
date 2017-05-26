@@ -21,14 +21,23 @@
 #include "esp_panic.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
-
-
+#include "soc/dport_reg.h"
 
 /*
-In some situations, the panic handler needs to be invoked even when (low/medium priority) interrupts
-are disabled. In that case, we use a high interrupt to panic anyway. This is the high-level interrupt
-handler for such a situation. We use interrupt level 4 for this.
+
+Interrupt , a high-priority interrupt, is used for several things:
+- Dport access mediation
+- Cache error panic handler
+- Interrupt watchdog panic handler
+
 */
+
+#define L4_INTR_STACK_SIZE  8
+#define L4_INTR_A2_OFFSET   0
+#define L4_INTR_A3_OFFSET   4
+    .data
+_l4_intr_stack:
+    .space      L4_INTR_STACK_SIZE
 
     .section .iram1,"ax"
     .global     xt_highint4
@@ -36,10 +45,10 @@ handler for such a situation. We use interrupt level 4 for this.
     .align      4
 xt_highint4:
 
-
-    /* On the ESP32, this level is used for panic events that are detected by hardware and should 
-       also panic when interrupts are disabled. At the moment, these are the interrupt watchdog
-       as well as the cache invalid access interrupt. (24 and 25) */
+    /* See if we're here for the dport access interrupt */
+    rsr     a0, INTERRUPT
+    extui   a0, a0, ETS_DPORT_INUM, 1
+    bnez    a0, .handle_dport_access_int
 
     /* Allocate exception frame and save minimal context. */
     mov     a0, sp
@@ -119,10 +128,73 @@ xt_highint4:
 
 
 
+
+
+    .align      4
+.handle_dport_access_int:
+    /* This section is for dport access register protection */
+    /* Allocate exception frame and save minimal context. */
+    /* Because the interrupt cause code has protection that only
+       allows one cpu to enter in the dport section of the L4 
+       interrupt at one time, there's no need to have two 
+       _l4_intr_stack for each cpu */
+
+    /* This int is edge-triggered and needs clearing. */
+    movi    a0, (1<<ETS_DPORT_INUM)
+    wsr     a0, INTCLEAR
+
+    /* Save A2, A3 so we can use those registers */
+    movi    a0, _l4_intr_stack
+    s32i    a2, a0, L4_INTR_A2_OFFSET
+    s32i    a3, a0, L4_INTR_A3_OFFSET
+
+    /* handle dport interrupt */
+    /* get CORE_ID */
+    getcoreid   a0
+    beqz    a0, 2f
+
+    /* current cpu is 1 */
+    movi    a0, DPORT_CPU_INTR_FROM_CPU_3_REG
+    movi    a2, 0
+    s32i    a2, a0, 0   /* clear intr */
+    movi    a0, 0       /* other cpu id */
+    j       3f
+2:
+    /* current cpu is 0 */
+    movi    a0, DPORT_CPU_INTR_FROM_CPU_2_REG
+    movi    a2, 0
+    s32i    a2, a0, 0   /* clear intr */
+    movi    a0, 1       /* other cpu id */
+3:
+    /* set and wait flag */
+    movi    a2, dport_access_start
+    addx4   a2, a0, a2
+    movi    a3, 1
+    s32i    a3, a2, 0
+    memw
+    movi    a2, dport_access_end
+    addx4   a2, a0, a2
+.check_dport_access_end:
+    l32i    a3, a2, 0
+    beqz    a3, .check_dport_access_end
+
+    /* Done. Restore registers and return. */
+    movi    a0, _l4_intr_stack
+    l32i    a2, a0, L4_INTR_A2_OFFSET
+    l32i    a3, a0, L4_INTR_A3_OFFSET
+    rsync                                   /* ensure register restored */
+
+    rsr     a0, EXCSAVE_4                   /* restore a0 */
+    rfi     4
+
+
 /* The linker has no reason to link in this file; all symbols it exports are already defined
    (weakly!) in the default int handler. Define a symbol here so we can use it to have the 
    linker inspect this anyway. */
 
     .global ld_include_panic_highint_hdl
 ld_include_panic_highint_hdl:
+
+
+
 

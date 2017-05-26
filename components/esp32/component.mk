@@ -35,7 +35,6 @@ COMPONENT_ADD_LDFLAGS := -lesp32 \
                          -L $(COMPONENT_PATH)/ld \
                          -T esp32_out.ld \
                          -u ld_include_panic_highint_hdl \
-                         -u ld_include_dport_highint_hdl \
                          $(addprefix -T ,$(LINKER_SCRIPTS))
 
 ALL_LIB_FILES := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
