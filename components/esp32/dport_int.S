@@ -20,7 +20,7 @@ _l5_intr_stack:
     .global     xt_highint5
     .type       _xt_highint5,@function
     .align      4
-_xt_highint5:
+xt_highint5:
 
     #ifdef XT_INTEXC_HOOKS
     /* Call interrupt hook if present to (pre)handle interrupts. */

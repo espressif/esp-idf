@@ -15,6 +15,7 @@ handler for such a situation.
 */
 
     .section .iram1,"ax"
+    .global     xt_highint4
     .type       xt_highint4,@function
     .align      4
 xt_highint4:
