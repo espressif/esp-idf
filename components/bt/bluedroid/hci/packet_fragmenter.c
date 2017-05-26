@@ -93,7 +93,7 @@ static void fragment_and_dispatch(BT_HDR *packet)
     remaining_length = packet->len;
     STREAM_TO_UINT16(continuation_handle, stream);
     continuation_handle = APPLY_CONTINUATION_FLAG(continuation_handle);
-    if (remaining_length > max_data_size) {
+    if (remaining_length > max_packet_size) {
         current_fragment_packet = packet;
         UINT16_TO_STREAM(stream, max_data_size);
         packet->len = max_packet_size;
