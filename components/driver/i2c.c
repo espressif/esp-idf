@@ -1000,7 +1000,7 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, portBASE
 static int i2c_slave_read(i2c_port_t i2c_num, uint8_t* data, size_t max_size, portBASE_TYPE ticks_to_wait)
 {
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
-    size_t size;
+    size_t size = 0;
     uint8_t* pdata = (uint8_t*) xRingbufferReceiveUpTo(p_i2c->rx_ring_buf, &size, ticks_to_wait, max_size);
     if (pdata && size > 0) {
         memcpy(data, pdata, size);
