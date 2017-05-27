@@ -55,10 +55,7 @@ Functions
 .. doxygenfunction:: esp_log_level_set
 .. doxygenfunction:: esp_log_set_vprintf
 .. doxygenfunction:: esp_log_timestamp
-.. doxygenfunction:: esp_log_early_timestamp
 .. doxygenfunction:: esp_log_write
-.. doxygenfunction:: esp_log_buffer_hex
-.. doxygenfunction:: esp_log_buffer_char
 
 
 

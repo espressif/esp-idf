@@ -75,9 +75,8 @@ typedef struct {
 /** Bluetooth Error Status */
 /** We need to build on this */
 
-/* relate to ESP_BT_STATUS_xxx in esp_bt_defs.h */
 typedef enum {
-    BT_STATUS_SUCCESS = 0,
+    BT_STATUS_SUCCESS,
     BT_STATUS_FAIL,
     BT_STATUS_NOT_READY,
     BT_STATUS_NOMEM,
@@ -88,7 +87,7 @@ typedef enum {
     BT_STATUS_UNHANDLED,
     BT_STATUS_AUTH_FAILURE,
     BT_STATUS_RMT_DEV_DOWN,
-    BT_STATUS_AUTH_REJECTED
+    BT_STATUS_AUTH_REJECTED,
 } bt_status_t;
 
 #ifndef CPU_LITTLE_ENDIAN

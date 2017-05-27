@@ -25,18 +25,19 @@ extern "C" {
 /* relate to BT_STATUS_xxx in bt_def.h */
 /// Status Return Value
 typedef enum {
-    ESP_BT_STATUS_SUCCESS = 0,                  /* relate to BT_STATUS_SUCCESS in bt_def.h */
+    ESP_BT_STATUS_SUCCESS       = 0,            /* relate to BT_STATUS_SUCCESS in bt_def.h */
     ESP_BT_STATUS_FAIL,                         /* relate to BT_STATUS_FAIL in bt_def.h */
     ESP_BT_STATUS_NOT_READY,                    /* relate to BT_STATUS_NOT_READY in bt_def.h */
     ESP_BT_STATUS_NOMEM,                        /* relate to BT_STATUS_NOMEM in bt_def.h */
     ESP_BT_STATUS_BUSY,                         /* relate to BT_STATUS_BUSY in bt_def.h */
-    ESP_BT_STATUS_DONE,                         /* relate to BT_STATUS_DONE in bt_def.h */
+    ESP_BT_STATUS_DONE          = 5,            /* relate to BT_STATUS_DONE in bt_def.h */
     ESP_BT_STATUS_UNSUPPORTED,                  /* relate to BT_STATUS_UNSUPPORTED in bt_def.h */
     ESP_BT_STATUS_PARM_INVALID,                 /* relate to BT_STATUS_PARM_INVALID in bt_def.h */
     ESP_BT_STATUS_UNHANDLED,                    /* relate to BT_STATUS_UNHANDLED in bt_def.h */
     ESP_BT_STATUS_AUTH_FAILURE,                 /* relate to BT_STATUS_AUTH_FAILURE in bt_def.h */
-    ESP_BT_STATUS_RMT_DEV_DOWN,                 /* relate to BT_STATUS_RMT_DEV_DOWN in bt_def.h */
+    ESP_BT_STATUS_RMT_DEV_DOWN  = 10,           /* relate to BT_STATUS_RMT_DEV_DOWN in bt_def.h */
     ESP_BT_STATUS_AUTH_REJECTED,                /* relate to BT_STATUS_AUTH_REJECTED in bt_def.h */
+    ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR,
 } esp_bt_status_t;
 
 

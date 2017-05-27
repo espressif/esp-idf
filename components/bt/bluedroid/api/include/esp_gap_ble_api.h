@@ -38,34 +38,31 @@ extern "C" {
  * @}
  */
 
-/* relate to BTM_LE_KEY_xxx in btm_api.h */
-#define ESP_LE_KEY_NONE                    0                                                                         /* relate to BTM_LE_KEY_NONE in btm_api.h */
-#define ESP_LE_KEY_PENC                    (1 << 0)   /*!< encryption key, encryption information of peer device */  /* relate to BTM_LE_KEY_PENC in btm_api.h */
-#define ESP_LE_KEY_PID                     (1 << 1)   /*!< identity key of the peer device */                        /* relate to BTM_LE_KEY_PID in btm_api.h */
-#define ESP_LE_KEY_PCSRK                   (1 << 2)   /*!< peer SRK */                                               /* relate to BTM_LE_KEY_PCSRK in btm_api.h */
-#define ESP_LE_KEY_PLK                     (1 << 3)   /*!< Link key*/                                                /* relate to BTM_LE_KEY_PLK in btm_api.h */
-#define ESP_LE_KEY_LLK                     (ESP_LE_KEY_PLK << 4)                                                     /* relate to BTM_LE_KEY_LLK in btm_api.h */
-#define ESP_LE_KEY_LENC                    (ESP_LE_KEY_PENC << 4)   /*!< master role security information:div */     /* relate to BTM_LE_KEY_LENC in btm_api.h */
-#define ESP_LE_KEY_LID                     (ESP_LE_KEY_PID << 4)    /*!< master device ID key */                     /* relate to BTM_LE_KEY_LID in btm_api.h */
-#define ESP_LE_KEY_LCSRK                   (ESP_LE_KEY_PCSRK << 4)  /*!< local CSRK has been deliver to peer */      /* relate to BTM_LE_KEY_LCSRK in btm_api.h */
-typedef uint8_t esp_ble_key_type_t;
+#define ESP_LE_KEY_NONE                    0
+#define ESP_LE_KEY_PENC                    (1 << 0)                     /*!< encryption key, encryption information of peer device */
+#define ESP_LE_KEY_PID                     (1 << 1)                     /*!< identity key of the peer device */
+#define ESP_LE_KEY_PCSRK                   (1 << 2)                     /*!< peer SRK */
+#define ESP_LE_KEY_PLK                     (1 << 3)                     /*!< Link key*/	
+#define ESP_LE_KEY_LLK                     (ESP_LE_KEY_PLK << 4)
+#define ESP_LE_KEY_LENC                    (ESP_LE_KEY_PENC << 4)                   /*!< master role security information:div */
+#define ESP_LE_KEY_LID                     (ESP_LE_KEY_PID << 4)                    /*!< master device ID key */
+#define ESP_LE_KEY_LCSRK                   (ESP_LE_KEY_PCSRK << 4)                  /*!< local CSRK has been deliver to peer */
+typedef uint8_t	esp_ble_key_type_t;
 
-/* relate to BTM_LE_AUTH_xxx in btm_api.h */
-#define ESP_LE_AUTH_NO_BOND                 0x00                                     /*!< 0*/                     /* relate to BTM_LE_AUTH_NO_BOND in btm_api.h */
-#define ESP_LE_AUTH_BOND                    0x01                                     /*!< 1 << 0 */               /* relate to BTM_LE_AUTH_BOND in btm_api.h */
-#define ESP_LE_AUTH_REQ_MITM                (1 << 2)                                 /*!< 1 << 2 */               /* relate to BTM_LE_AUTH_REQ_MITM in btm_api.h */
-#define ESP_LE_AUTH_REQ_SC_ONLY             (1 << 3)                                 /*!< 1 << 3 */               /* relate to BTM_LE_AUTH_REQ_SC_ONLY in btm_api.h */
-#define ESP_LE_AUTH_REQ_SC_BOND             (ESP_LE_AUTH_BOND | ESP_LE_AUTH_REQ_SC_ONLY)            /*!< 1001 */  /* relate to BTM_LE_AUTH_REQ_SC_BOND in btm_api.h */
-#define ESP_LE_AUTH_REQ_SC_MITM             (ESP_LE_AUTH_REQ_MITM | ESP_LE_AUTH_REQ_SC_ONLY)        /*!< 1100 */  /* relate to BTM_LE_AUTH_REQ_SC_MITM in btm_api.h */
-#define ESP_LE_AUTH_REQ_SC_MITM_BOND        (ESP_LE_AUTH_REQ_MITM | ESP_LE_AUTH_REQ_SC_ONLY | ESP_LE_AUTH_BOND)   /*!< 1101 */  /* relate to BTM_LE_AUTH_REQ_SC_MITM_BOND in btm_api.h */
+#define ESP_LE_AUTH_NO_BOND                 0x00                                     /*!< 0*/
+#define ESP_LE_AUTH_BOND                    0x01                                     /*!< 1 << 0 */
+#define ESP_LE_AUTH_REQ_MITM                (1 << 2)                                 /*!< 1 << 2 */
+#define ESP_LE_AUTH_REQ_SC_ONLY             (1 << 3)                                 /*!< 1 << 3 */
+#define ESP_LE_AUTH_REQ_SC_BOND             (ESP_LE_AUTH_BOND | ESP_LE_AUTH_REQ_SC_ONLY)            /*!< 1001 */
+#define ESP_LE_AUTH_REQ_SC_MITM             (ESP_LE_AUTH_REQ_MITM | ESP_LE_AUTH_REQ_SC_ONLY)        /*!< 1100 */
+#define ESP_LE_AUTH_REQ_SC_MITM_BOND        (ESP_LE_AUTH_REQ_MITM | ESP_LE_AUTH_REQ_SC_ONLY | ESP_LE_AUTH_BOND)   /*!< 1101 */
 typedef uint8_t   esp_ble_auth_req_t;         /*!< combination of the above bit pattern */
 
-/* relate to BTM_IO_CAP_xxx in btm_api.h */
-#define ESP_IO_CAP_OUT                      0   /*!< DisplayOnly */         /* relate to BTM_IO_CAP_OUT in btm_api.h */
-#define ESP_IO_CAP_IO                       1   /*!< DisplayYesNo */        /* relate to BTM_IO_CAP_IO in btm_api.h */
-#define ESP_IO_CAP_IN                       2   /*!< KeyboardOnly */        /* relate to BTM_IO_CAP_IN in btm_api.h */
-#define ESP_IO_CAP_NONE                     3   /*!< NoInputNoOutput */     /* relate to BTM_IO_CAP_NONE in btm_api.h */
-#define ESP_IO_CAP_KBDISP                   4   /*!< Keyboard display */    /* relate to BTM_IO_CAP_KBDISP in btm_api.h */
+#define ESP_IO_CAP_OUT                      0   /*!< DisplayOnly */
+#define ESP_IO_CAP_IO                       1   /*!< DisplayYesNo */
+#define ESP_IO_CAP_IN                       2   /*!< KeyboardOnly */
+#define ESP_IO_CAP_NONE                     3   /*!< NoInputNoOutput */
+#define ESP_IO_CAP_KBDISP                   4   /*!< Keyboard display */
 typedef uint8_t esp_ble_io_cap_t;               /*!< combination of the io capability */
 
 
@@ -90,6 +87,7 @@ typedef enum {
     ESP_GAP_BLE_NC_REQ_EVT,                                 /* Numeric Comparison request event */
     ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT,                      /*!< When stop adv complete, the event comes */
     ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT,                     /*!< When stop scan complete, the event comes */
+    ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT,                   /*!< When set the static rand address complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
 /// Advertising data maximum length
@@ -97,45 +95,33 @@ typedef enum {
 /// Scan response data maximum length
 #define ESP_BLE_SCAN_RSP_DATA_LEN_MAX          31
 
-/* relate to BTM_BLE_AD_TYPE_xxx in btm_ble_api.h */
 /// The type of advertising data(not adv_type)
 typedef enum {
-    ESP_BLE_AD_TYPE_FLAG                     = 0x01,    /* relate to BTM_BLE_AD_TYPE_FLAG in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_16SRV_PART               = 0x02,    /* relate to BTM_BLE_AD_TYPE_16SRV_PART in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_16SRV_CMPL               = 0x03,    /* relate to BTM_BLE_AD_TYPE_16SRV_CMPL in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_32SRV_PART               = 0x04,    /* relate to BTM_BLE_AD_TYPE_32SRV_PART in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_32SRV_CMPL               = 0x05,    /* relate to BTM_BLE_AD_TYPE_32SRV_CMPL in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_128SRV_PART              = 0x06,    /* relate to BTM_BLE_AD_TYPE_128SRV_PART in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_128SRV_CMPL              = 0x07,    /* relate to BTM_BLE_AD_TYPE_128SRV_CMPL in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_NAME_SHORT               = 0x08,    /* relate to BTM_BLE_AD_TYPE_NAME_SHORT in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_NAME_CMPL                = 0x09,    /* relate to BTM_BLE_AD_TYPE_NAME_CMPL in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_TX_PWR                   = 0x0A,    /* relate to BTM_BLE_AD_TYPE_TX_PWR in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_DEV_CLASS                = 0x0D,    /* relate to BTM_BLE_AD_TYPE_DEV_CLASS in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_SM_TK                    = 0x10,    /* relate to BTM_BLE_AD_TYPE_SM_TK in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_SM_OOB_FLAG              = 0x11,    /* relate to BTM_BLE_AD_TYPE_SM_OOB_FLAG in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_INT_RANGE                = 0x12,    /* relate to BTM_BLE_AD_TYPE_INT_RANGE in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_SOL_SRV_UUID             = 0x14,    /* relate to BTM_BLE_AD_TYPE_SOL_SRV_UUID in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_128SOL_SRV_UUID          = 0x15,    /* relate to BTM_BLE_AD_TYPE_128SOL_SRV_UUID in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_SERVICE_DATA             = 0x16,    /* relate to BTM_BLE_AD_TYPE_SERVICE_DATA in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_PUBLIC_TARGET            = 0x17,    /* relate to BTM_BLE_AD_TYPE_PUBLIC_TARGET in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_RANDOM_TARGET            = 0x18,    /* relate to BTM_BLE_AD_TYPE_RANDOM_TARGET in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_APPEARANCE               = 0x19,    /* relate to BTM_BLE_AD_TYPE_APPEARANCE in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_ADV_INT                  = 0x1A,    /* relate to BTM_BLE_AD_TYPE_ADV_INT in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_LE_DEV_ADDR              = 0x1b,    /* relate to BTM_BLE_AD_TYPE_LE_DEV_ADDR in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_LE_ROLE                  = 0x1c,    /* relate to BTM_BLE_AD_TYPE_LE_ROLE in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_SPAIR_C256               = 0x1d,    /* relate to BTM_BLE_AD_TYPE_SPAIR_C256 in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_SPAIR_R256               = 0x1e,    /* relate to BTM_BLE_AD_TYPE_SPAIR_R256 in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_32SOL_SRV_UUID           = 0x1f,    /* relate to BTM_BLE_AD_TYPE_32SOL_SRV_UUID in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_32SERVICE_DATA           = 0x20,    /* relate to BTM_BLE_AD_TYPE_32SERVICE_DATA in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_128SERVICE_DATA          = 0x21,    /* relate to BTM_BLE_AD_TYPE_128SERVICE_DATA in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_LE_SECURE_CONFIRM        = 0x22,    /* relate to BTM_BLE_AD_TYPE_LE_SECURE_CONFIRM in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_LE_SECURE_RANDOM         = 0x23,    /* relate to BTM_BLE_AD_TYPE_LE_SECURE_RANDOM in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_URI                      = 0x24,    /* relate to BTM_BLE_AD_TYPE_URI in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_INDOOR_POSITION          = 0x25,    /* relate to BTM_BLE_AD_TYPE_INDOOR_POSITION in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_TRANS_DISC_DATA          = 0x26,    /* relate to BTM_BLE_AD_TYPE_TRANS_DISC_DATA in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_LE_SUPPORT_FEATURE       = 0x27,    /* relate to BTM_BLE_AD_TYPE_LE_SUPPORT_FEATURE in btm_ble_api.h */
-    ESP_BLE_AD_TYPE_CHAN_MAP_UPDATE          = 0x28,    /* relate to BTM_BLE_AD_TYPE_CHAN_MAP_UPDATE in btm_ble_api.h */
-    ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE    = 0xFF,    /* relate to BTM_BLE_AD_MANUFACTURER_SPECIFIC_TYPE in btm_ble_api.h */
+    ESP_BLE_AD_TYPE_FLAG                     = 0x01,
+    ESP_BLE_AD_TYPE_16SRV_PART               = 0x02,
+    ESP_BLE_AD_TYPE_16SRV_CMPL               = 0x03,
+    ESP_BLE_AD_TYPE_32SRV_PART               = 0x04,
+    ESP_BLE_AD_TYPE_32SRV_CMPL               = 0x05,
+    ESP_BLE_AD_TYPE_128SRV_PART              = 0x06,
+    ESP_BLE_AD_TYPE_128SRV_CMPL              = 0x07,
+    ESP_BLE_AD_TYPE_NAME_SHORT               = 0x08,
+    ESP_BLE_AD_TYPE_NAME_CMPL                = 0x09,
+    ESP_BLE_AD_TYPE_TX_PWR                   = 0x0A,
+    ESP_BLE_AD_TYPE_DEV_CLASS                = 0x0D,
+    ESP_BLE_AD_TYPE_SM_TK                    = 0x10,
+    ESP_BLE_AD_TYPE_SM_OOB_FLAG              = 0x11,
+    ESP_BLE_AD_TYPE_INT_RANGE                = 0x12,
+    ESP_BLE_AD_TYPE_SOL_SRV_UUID             = 0x14,
+    ESP_BLE_AD_TYPE_128SOL_SRV_UUID          = 0x15,
+    ESP_BLE_AD_TYPE_SERVICE_DATA             = 0x16,
+    ESP_BLE_AD_TYPE_PUBLIC_TARGET            = 0x17,
+    ESP_BLE_AD_TYPE_RANDOM_TARGET            = 0x18,
+    ESP_BLE_AD_TYPE_APPEARANCE               = 0x19,
+    ESP_BLE_AD_TYPE_ADV_INT                  = 0x1A,
+    ESP_BLE_AD_TYPE_32SOL_SRV_UUID           = 0x1B,
+    ESP_BLE_AD_TYPE_32SERVICE_DATA           = 0x1C,
+    ESP_BLE_AD_TYPE_128SERVICE_DATA          = 0x1D,
+    ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE    = 0xFF,
 } esp_ble_adv_data_type;
 
 /// Advertising mode
@@ -168,16 +154,15 @@ typedef enum {
 } esp_ble_adv_filter_t;
 
 
-/* relate to BTA_DM_BLE_SEC_xxx in bta_api.h */
 typedef enum {
-    ESP_BLE_SEC_NONE = 0,               /* relate to BTA_DM_BLE_SEC_NONE in bta_api.h */
-    ESP_BLE_SEC_ENCRYPT,                /* relate to BTA_DM_BLE_SEC_ENCRYPT in bta_api.h */
-    ESP_BLE_SEC_ENCRYPT_NO_MITM,        /* relate to BTA_DM_BLE_SEC_ENCRYPT_NO_MITM in bta_api.h */
-    ESP_BLE_SEC_ENCRYPT_MITM,           /* relate to BTA_DM_BLE_SEC_ENCRYPT_MITM in bta_api.h */
+    ESP_BLE_SEC_NONE,                
+    ESP_BLE_SEC_ENCRYPT,             
+    ESP_BLE_SEC_ENCRYPT_NO_MITM,     
+    ESP_BLE_SEC_ENCRYPT_MITM,        
 }esp_ble_sec_act_t;
 
 typedef enum {
-    ESP_BLE_SM_PASSKEY = 0,
+    ESP_BLE_SM_PASSKEY,
     ESP_BLE_SM_AUTHEN_REQ_MODE,
     ESP_BLE_SM_IOCAP_MODE,
     ESP_BLE_SM_SET_INIT_KEY,
@@ -380,7 +365,7 @@ typedef struct {
   */
 typedef struct
 {
-    esp_bd_addr_t         bd_addr;               /*!< BD address peer device. */
+    esp_bd_addr_t         bd_addr;               /*!< BD address peer device. */	
     bool                  key_present;           /*!< Valid link key value in key element */
     esp_link_key          key;                   /*!< Link key associated with peer device. */
     uint8_t               key_type;              /*!< The type of Link Key */
@@ -501,6 +486,12 @@ typedef union {
     struct ble_adv_stop_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate adv stop operation success status */
     } adv_stop_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT
+     */
+    struct ble_set_rand_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate set static rand address operation success status */
+    } set_rand_addr_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -715,7 +706,7 @@ esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_d
 * @param[out]     len : the length of the param value
 *
 * @return            - ESP_OK : success
-*                       - other  : failed
+*                  		- other  : failed
 *
 */
 esp_err_t esp_ble_gap_set_security_param(esp_ble_sm_param_t param_type,
@@ -740,8 +731,8 @@ esp_err_t esp_ble_gap_security_rsp(esp_bd_addr_t bd_addr,  bool accept);
 *
 * @param[in]       bd_addr : the address of the peer device need to encryption
 * @param[in]       sec_act  : This is the security action to indicate
-*                                   what kind of BLE security level is required for
-*                                   the BLE link if the BLE is supported
+*                                  	what kind of BLE security level is required for
+*                                  	the BLE link if the BLE is supported
 *
 * @return            - ESP_OK : success
 *                       - other  : failed

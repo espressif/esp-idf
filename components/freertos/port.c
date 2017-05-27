@@ -253,13 +253,6 @@ void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMOR
 	 */
 	#endif
 }
-
-void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings )
-{
-	/* If task has live floating point registers somewhere, release them */
-	_xt_coproc_release( xMPUSettings->coproc_area );
-}
-
 #endif
 
 /*
