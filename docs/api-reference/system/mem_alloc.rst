@@ -68,10 +68,12 @@ Functions
 
 .. doxygenfunction:: heap_alloc_caps_init
 .. doxygenfunction:: pvPortMallocCaps
+.. doxygenfunction:: xPortGetHeapSizeCaps
 .. doxygenfunction:: xPortGetFreeHeapSizeCaps
 .. doxygenfunction:: xPortGetMinimumEverFreeHeapSizeCaps
 .. doxygenfunction:: vPortDefineHeapRegionsTagged
 .. doxygenfunction:: pvPortMallocTagged
 .. doxygenfunction:: vPortFreeTagged
-.. doxygenfunction:: xPortGetMinimumEverFreeHeapSizeTagged
+.. doxygenfunction:: xPortGetHeapSizeTagged
 .. doxygenfunction:: xPortGetFreeHeapSizeTagged
+.. doxygenfunction:: xPortGetMinimumEverFreeHeapSizeTagged

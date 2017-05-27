@@ -68,11 +68,11 @@ void *pvPortMallocTagged( size_t xWantedSize, BaseType_t tag );
 void vPortFreeTagged( void *pv );
 
 /**
- * @brief Get the lowest amount of memory free for a certain tag
+ * @brief Get the lowest number of memory free for a certain tag
  *
  * This function allows the user to see what the least amount of
  * free memory for a certain tag is.
- * 
+ *
  * @param  tag Tag of the memory region
  *
  * @return Minimum amount of free bytes available in the runtime of
@@ -81,16 +81,24 @@ void vPortFreeTagged( void *pv );
 size_t xPortGetMinimumEverFreeHeapSizeTagged( BaseType_t tag );
 
 /**
- * @brief Get the amount of free bytes in a certain tagged region
+ * @brief Get the number of free bytes in a certain tagged region
  *
  * Works like xPortGetFreeHeapSize but allows the user to specify
  * a specific tag
- * 
+ *
  * @param  tag Tag of the memory region
  *
  * @return Remaining amount of free bytes in region
  */
 size_t xPortGetFreeHeapSizeTagged( BaseType_t tag );
 
+/**
+ * @brief Get the total number of bytes in a certain tagged region
+ *
+ * @param  tag Tag of the memory region
+ *
+ * @return Remaining amount of free bytes in region
+ */
+size_t xPortGetHeapSizeTagged( BaseType_t tag );
 
 #endif

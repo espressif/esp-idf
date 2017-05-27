@@ -180,8 +180,8 @@ static const uint32_t uxHeapStructSize  = ( ( sizeof ( BlockLink_t ) + BLOCK_HEA
 /* Create a couple of list links to mark the start and end of the list. */
 static BlockLink_t xStart, *pxEnd = NULL;
 
-/* Keeps track of the number of free bytes remaining, but says nothing about
-fragmentation. */
+static size_t xRegionSize[HEAPREGIONS_MAX_TAGCOUNT] = {0};
+/* Keeps track of the number of free bytes remaining, but says nothing about fragmentation. */
 static size_t xFreeBytesRemaining[HEAPREGIONS_MAX_TAGCOUNT] = {0};
 static size_t xMinimumEverFreeBytesRemaining[HEAPREGIONS_MAX_TAGCOUNT] = {0};
 
@@ -398,6 +398,12 @@ BlockLink_t *pxLink;
 }
 /*-----------------------------------------------------------*/
 
+size_t xPortGetHeapSizeTagged( BaseType_t tag )
+{
+    return xRegionSize[ tag ];
+}
+/*-----------------------------------------------------------*/
+
 size_t xPortGetFreeHeapSizeTagged( BaseType_t tag )
 {
     return xFreeBytesRemaining[ tag ];
@@ -561,8 +567,9 @@ const HeapRegionTagged_t *pxHeapRegion;
         }
 
         xTotalHeapSize += pxFirstFreeBlockInRegion->xBlockSize;
-        xMinimumEverFreeBytesRemaining[ pxHeapRegion->xTag ] += pxFirstFreeBlockInRegion->xBlockSize;
+        xRegionSize[ pxHeapRegion->xTag ] += pxFirstFreeBlockInRegion->xBlockSize;
         xFreeBytesRemaining[ pxHeapRegion->xTag ] += pxFirstFreeBlockInRegion->xBlockSize;
+        xMinimumEverFreeBytesRemaining[ pxHeapRegion->xTag ] += pxFirstFreeBlockInRegion->xBlockSize;
 
         /* Move onto the next HeapRegionTagged_t structure. */
         xDefinedRegions++;
