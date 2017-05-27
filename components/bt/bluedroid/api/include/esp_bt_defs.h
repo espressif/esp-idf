@@ -22,15 +22,22 @@
 extern "C" {
 #endif
 
+/* relate to BT_STATUS_xxx in bt_def.h */
 /// Status Return Value
 typedef enum {
-    ESP_BT_STATUS_SUCCESS                  =  0,          /* Successful operation. */
-    ESP_BT_STATUS_FAILURE                  =  1,          /* Generic failure. */
-    ESP_BT_STATUS_PENDING                  =  2,          /* API cannot be completed right now */
-    ESP_BT_STATUS_BUSY                     =  3,
-    ESP_BT_STATUS_NO_RESOURCES             =  4,
-    ESP_BT_STATUS_WRONG_MODE               =  5,
-    ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR =  6,
+    ESP_BT_STATUS_SUCCESS       = 0,            /* relate to BT_STATUS_SUCCESS in bt_def.h */
+    ESP_BT_STATUS_FAIL,                         /* relate to BT_STATUS_FAIL in bt_def.h */
+    ESP_BT_STATUS_NOT_READY,                    /* relate to BT_STATUS_NOT_READY in bt_def.h */
+    ESP_BT_STATUS_NOMEM,                        /* relate to BT_STATUS_NOMEM in bt_def.h */
+    ESP_BT_STATUS_BUSY,                         /* relate to BT_STATUS_BUSY in bt_def.h */
+    ESP_BT_STATUS_DONE          = 5,            /* relate to BT_STATUS_DONE in bt_def.h */
+    ESP_BT_STATUS_UNSUPPORTED,                  /* relate to BT_STATUS_UNSUPPORTED in bt_def.h */
+    ESP_BT_STATUS_PARM_INVALID,                 /* relate to BT_STATUS_PARM_INVALID in bt_def.h */
+    ESP_BT_STATUS_UNHANDLED,                    /* relate to BT_STATUS_UNHANDLED in bt_def.h */
+    ESP_BT_STATUS_AUTH_FAILURE,                 /* relate to BT_STATUS_AUTH_FAILURE in bt_def.h */
+    ESP_BT_STATUS_RMT_DEV_DOWN  = 10,           /* relate to BT_STATUS_RMT_DEV_DOWN in bt_def.h */
+    ESP_BT_STATUS_AUTH_REJECTED,                /* relate to BT_STATUS_AUTH_REJECTED in bt_def.h */
+    ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR,
 } esp_bt_status_t;
 
 
@@ -87,13 +94,13 @@ typedef enum {
 } esp_ble_addr_type_t;
 
 /// Used to exchange the encrytyption key in the init key & response key
-#define ESP_BLE_ENC_KEY_MASK    (1 << 0)
+#define ESP_BLE_ENC_KEY_MASK    (1 << 0)            /* relate to BTM_BLE_ENC_KEY_MASK in btm_api.h */
 /// Used to exchange the IRK key in the init key & response key
-#define ESP_BLE_ID_KEY_MASK     (1 << 1)
+#define ESP_BLE_ID_KEY_MASK     (1 << 1)            /* relate to BTM_BLE_ID_KEY_MASK in btm_api.h */
 /// Used to exchange the CSRK key in the init key & response key
-#define ESP_BLE_CSR_KEY_MASK    (1 << 2)
+#define ESP_BLE_CSR_KEY_MASK    (1 << 2)            /* relate to BTM_BLE_CSR_KEY_MASK in btm_api.h */
 /// Used to exchange the link key(this key just used in the BLE & BR/EDR coexist mode) in the init key & response key
-#define ESP_BLE_LINK_KEY_MASK   (1 << 3)
+#define ESP_BLE_LINK_KEY_MASK   (1 << 3)            /* relate to BTM_BLE_LINK_KEY_MASK in btm_api.h */
 
 /// Minimum of the application id
 #define ESP_APP_ID_MIN  0x0000
