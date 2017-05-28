@@ -15,36 +15,130 @@
 
 PROJECT_NAME = "ESP32 Programming Guide"
 
-INPUT = ../components/esp32/include/esp_wifi.h \
-	../components/driver/include/driver \
-	../components/bt/include \
-	../components/bt/bluedroid/api/include \
-	../components/nvs_flash/include \
-	../components/log/include \
-	../components/vfs/include \
-	../components/spi_flash/include \
-	../components/esp32/include/esp_int_wdt.h \
-	../components/esp32/include/esp_task_wdt.h \
-	../components/app_update/include/esp_ota_ops.h \
-	../components/ethernet/include/esp_eth.h \
-	../components/ulp/include/esp32/ulp.h \
-	../components/esp32/include/esp_intr_alloc.h \
-	../components/esp32/include/esp_heap_alloc_caps.h \
-	../components/freertos/include/freertos/heap_regions.h \
-	../components/esp32/include/esp_smartconfig.h \
-	../components/esp32/include/esp_deep_sleep.h \
-	../components/sdmmc/include/sdmmc_cmd.h \
-	../components/fatfs/src/esp_vfs_fat.h \
-	../components/fatfs/src/diskio.h \
-	../components/esp32/include/esp_core_dump.h \
-	../components/mdns/include/mdns.h \
-	../components/bootloader_support/include/esp_flash_encrypt.h \
-    ../components/wear_levelling/include/wear_levelling.h
+## The 'INPUT' statement below is used as input by script 'gen-df-input.py'
+## to automatically generate API reference list files heder_file.inc
+## These files are placed in '_inc' directory 
+## and used to include in API reference documentation
+
+INPUT = \
+    ##
+    ## Wi-Fi - API Reference
+    ##
+    ../components/esp32/include/esp_wifi.h \
+    ../components/esp32/include/esp_smartconfig.h \
+    ## Bluetooth - API Reference
+    ## Controller && VHCI
+    ../components/bt/include/bt.h \
+    ## Bluetooth COMMON
+    ## Issue with __attribute__
+    ../components/bt/bluedroid/api/include/esp_bt_defs.h \
+    ../components/bt/bluedroid/api/include/esp_bt_main.h \
+    ../components/bt/bluedroid/api/include/esp_bt_device.h \
+    ## Bluetooth LE
+    ../components/bt/bluedroid/api/include/esp_gap_ble_api.h \
+    ## Issue with __attribute__
+    ../components/bt/bluedroid/api/include/esp_gatt_defs.h \
+    ../components/bt/bluedroid/api/include/esp_gatts_api.h \
+    ../components/bt/bluedroid/api/include/esp_gattc_api.h \
+    ../components/bt/bluedroid/api/include/esp_blufi_api.h \
+    ## Bluetooth Classic
+    ../components/bt/bluedroid/api/include/esp_gap_bt_api.h \
+    ## Issue with __attribute__
+    ../components/bt/bluedroid/api/include/esp_a2dp_api.h \
+    ../components/bt/bluedroid/api/include/esp_avrc_api.h \
+    ##
+    ## Ethernet - API Reference
+    ##
+    ../components/ethernet/include/esp_eth.h \
+    ../components/ethernet/include/eth_phy/phy.h \
+    ../components/ethernet/include/eth_phy/phy_tlk110.h \
+    ../components/ethernet/include/eth_phy/phy_lan8720.h \
+    ##
+    ## Peripherals - API Reference
+    ##
+    ../components/driver/include/driver/adc.h \
+    ../components/driver/include/driver/dac.h \
+    ../components/driver/include/driver/gpio.h \
+    ../components/driver/include/driver/rtc_io.h \
+    ../components/driver/include/driver/i2c.h \
+    ../components/driver/include/driver/i2s.h \
+    ../components/driver/include/driver/ledc.h \
+    ../components/driver/include/driver/mcpwm.h \
+    ../components/driver/include/driver/pcnt.h \
+    ../components/driver/include/driver/rmt.h \
+    ../components/driver/include/driver/sigmadelta.h \
+    ../components/driver/include/driver/spi_common.h \
+    ../components/driver/include/driver/spi_master.h \
+    ../components/driver/include/driver/spi_slave.h \
+    ../components/driver/include/driver/timer.h \
+    ../components/driver/include/driver/uart.h \
+    ##
+    ## Protocols - API Reference
+    ##
+    ../components/mdns/include/mdns.h \
+    ##
+    ## Storage - API Reference
+    ##
+    ## SPI Flash and Partition APIs
+    ../components/spi_flash/include/esp_spi_flash.h \
+    ../components/spi_flash/include/esp_partition.h \
+    ../components/bootloader_support/include/esp_flash_encrypt.h \
+    ## SD/MMC Card Host
+    ## NOTE: for three lines below header_file.inc is not used
+    ../components/sdmmc/include/sdmmc_cmd.h \
+    ../components/driver/include/driver/sdmmc_host.h \
+    ../components/driver/include/driver/sdmmc_types.h \
+    ## Non-Volatile Storage
+    ../components/nvs_flash/include/nvs.h \
+    ../components/nvs_flash/include/nvs_flash.h \
+    ## Virtual Filesystem
+    ../components/vfs/include/esp_vfs.h \
+    ../components/vfs/include/esp_vfs_dev.h \
+    ## FAT Filesystem
+    ## NOTE: for two lines below header_file.inc is not used
+    ../components/fatfs/src/esp_vfs_fat.h \
+    ../components/fatfs/src/diskio.h \
+    ## Wear Levelling
+    ../components/wear_levelling/include/wear_levelling.h \
+    ##
+    ## System - API Reference
+    ##
+    ## Memory Allocation    #
+    ../components/esp32/include/esp_heap_alloc_caps.h \
+    ../components/freertos/include/freertos/heap_regions.h \
+    ## Interrupt Allocation
+    ../components/esp32/include/esp_intr_alloc.h \
+    ## Watchdogs
+    ## NOTE: for two lines below header_file.inc is not used
+    ../components/esp32/include/esp_int_wdt.h \
+    ../components/esp32/include/esp_task_wdt.h \
+    ## Over The Air Updates (OTA)
+    ../components/app_update/include/esp_ota_ops.h \
+    ## Deep Sleep
+    ## NOTE: for line below header_file.inc is not used
+    ../components/esp32/include/esp_deep_sleep.h \
+    ## Logging
+    ../components/log/include/esp_log.h \
+    ## Base MAC address
+    ## NOTE: for line below header_file.inc is not used
+    ../components/esp32/include/esp_system.h \
+    ##
+    ## ULP Coprocessor - API Guides
+    ##
+    ## NOTE: for line below header_file.inc is not used
+    ../components/ulp/include/esp32/ulp.h
 
 
 ## Get warnings for functions that have no documentation for their parameters or return value 
 ##
 WARN_NO_PARAMDOC = YES
+
+## Enable preprocessing and remove __attribute__(...) expressions from the INPUT files
+##
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = __attribute__(x)=
 
 ## Do not complain about not having dot
 ##
@@ -52,14 +146,14 @@ HAVE_DOT = NO
 
 ## Generate XML that is required for Breathe
 ##
-GENERATE_XML = YES
-XML_OUTPUT = xml
+GENERATE_XML    = YES
+XML_OUTPUT      = xml
 
-GENERATE_HTML		= NO
-HAVE_DOT		= NO
-GENERATE_LATEX		= NO
-GENERATE_MAN		= YES
-GENERATE_RTF		= NO
+GENERATE_HTML   = NO
+HAVE_DOT        = NO
+GENERATE_LATEX  = NO
+GENERATE_MAN    = YES
+GENERATE_RTF    = NO
 
 ## Skip distracting progress messages
 ##
@@ -67,3 +161,4 @@ QUIET = YES
 ## Log warnings in a file for further review
 ##
 WARN_LOGFILE = "doxygen-warning-log.txt"
+

@@ -28,7 +28,7 @@ typedef enum {
     DAC_CHANNEL_MAX,
 } dac_channel_t;
 
-
+/** @cond */
 /**
   * @brief  Set DAC output voltage.
   *
@@ -45,6 +45,7 @@ typedef enum {
   *     - ESP_ERR_INVALID_ARG Parameter error
   */
 esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value) __attribute__ ((deprecated));
+/** @endcond */
 
 /**
  * @brief Set DAC output voltage.

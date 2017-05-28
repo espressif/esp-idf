@@ -83,46 +83,9 @@ It can also be useful to keep an interrupt handler in IRAM if it is called very 
 
 Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
 
-Application Example
--------------------
-
 API Reference
 -------------
 
-Header Files
-^^^^^^^^^^^^
-
-  * :component_file:`esp32/include/esp_intr_alloc.h`
+.. include:: /_build/inc/esp_intr_alloc.inc
 
 
-Macros
-^^^^^^
-
-.. doxygendefine:: ESP_INTR_FLAG_LEVEL1
-.. doxygendefine:: ESP_INTR_FLAG_LEVEL2
-.. doxygendefine:: ESP_INTR_FLAG_LEVEL3
-.. doxygendefine:: ESP_INTR_FLAG_LEVEL4
-.. doxygendefine:: ESP_INTR_FLAG_LEVEL5
-.. doxygendefine:: ESP_INTR_FLAG_LEVEL6
-.. doxygendefine:: ESP_INTR_FLAG_NMI
-.. doxygendefine:: ESP_INTR_FLAG_LOWMED
-.. doxygendefine:: ESP_INTR_FLAG_HIGH
-.. doxygendefine:: ESP_INTR_FLAG_SHARED
-.. doxygendefine:: ESP_INTR_FLAG_EDGE
-.. doxygendefine:: ESP_INTR_FLAG_IRAM
-.. doxygendefine:: ESP_INTR_FLAG_INTRDISABLED
-
-Functions
-^^^^^^^^^
-
-.. doxygenfunction:: esp_intr_mark_shared
-.. doxygenfunction:: esp_intr_reserve
-.. doxygenfunction:: esp_intr_alloc
-.. doxygenfunction:: esp_intr_alloc_intrstatus
-.. doxygenfunction:: esp_intr_free
-.. doxygenfunction:: esp_intr_get_cpu
-.. doxygenfunction:: esp_intr_get_intno
-.. doxygenfunction:: esp_intr_disable
-.. doxygenfunction:: esp_intr_enable
-.. doxygenfunction:: esp_intr_noniram_disable
-.. doxygenfunction:: esp_intr_noniram_enable

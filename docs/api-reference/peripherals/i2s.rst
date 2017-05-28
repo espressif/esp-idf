@@ -15,7 +15,11 @@ Application Example
 
 A full I2S example is available in esp-idf: :example:`peripherals/i2s`.
 
-Short example of I2S configuration::
+Short example of I2S configuration:
+
+.. highlight:: c
+
+::
 
     #include "driver/i2s.h"
     #include "freertos/queue.h"
@@ -84,53 +88,5 @@ Short example configuring I2S to use internal DAC for analog output::
 API Reference
 -------------
 
-Header Files
-^^^^^^^^^^^^
-
-  * `components/driver/include/driver/i2s.h`
-
-Data Structures
-^^^^^^^^^^^^^^^
-
-  .. doxygenstruct:: i2s_config_t
-     :members:
-  .. doxygenstruct:: i2s_event_t
-     :members:
-  .. doxygenstruct:: i2s_pin_config_t
-     :members:
-
-Macros
-^^^^^^
-
-  .. doxygendefine:: I2S_PIN_NO_CHANGE
-
-Enumerations
-^^^^^^^^^^^^
-
-  .. doxygenenum:: i2s_bits_per_sample_t
-  .. doxygenenum:: i2s_comm_format_t
-  .. doxygenenum:: i2s_channel_fmt_t
-  .. doxygenenum:: pdm_sample_rate_ratio_t
-  .. doxygenenum:: pdm_pcm_conv_t
-  .. doxygenenum:: i2s_port_t
-  .. doxygenenum:: i2s_mode_t
-  .. doxygenenum:: i2s_event_type_t
-  .. doxygenenum:: i2s_dac_mode_t
-
-Functions
-^^^^^^^^^
-
-  .. doxygenfunction:: i2s_set_pin
-  .. doxygenfunction:: i2s_set_dac_mode
-  .. doxygenfunction:: i2s_driver_install
-  .. doxygenfunction:: i2s_driver_uninstall
-  .. doxygenfunction:: i2s_write_bytes
-  .. doxygenfunction:: i2s_read_bytes
-  .. doxygenfunction:: i2s_push_sample
-  .. doxygenfunction:: i2s_pop_sample
-  .. doxygenfunction:: i2s_set_sample_rates
-  .. doxygenfunction:: i2s_start
-  .. doxygenfunction:: i2s_stop
-  .. doxygenfunction:: i2s_zero_dma_buffer
-
+.. include:: /_build/inc/i2s.inc
 
