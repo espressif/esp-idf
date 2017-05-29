@@ -1515,13 +1515,11 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_uxTaskPriorityGet == 1 )
-/* ToDo: Make this multicore-compatible. */
 	UBaseType_t uxTaskPriorityGet( TaskHandle_t xTask )
 	{
 	TCB_t *pxTCB;
 	UBaseType_t uxReturn;
 
-		UNTESTED_FUNCTION();
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* If null is passed in here then we are changing the
@@ -1538,7 +1536,6 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_uxTaskPriorityGet == 1 )
-/* ToDo: Make this multicore-compatible. */
 	UBaseType_t uxTaskPriorityGetFromISR( TaskHandle_t xTask )
 	{
 	TCB_t *pxTCB;
