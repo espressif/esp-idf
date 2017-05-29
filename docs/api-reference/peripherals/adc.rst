@@ -40,23 +40,6 @@ The value read in both these examples is 12 bits wide (range 0-4095).
 API Reference
 -------------
 
-Header Files
-^^^^^^^^^^^^
+.. include:: /_build/inc/adc.inc
 
-  * `components/driver/include/driver/adc.h`
-
-Enumerations
-^^^^^^^^^^^^
-
-  .. doxygenenum:: adc1_channel_t
-  .. doxygenenum:: adc_atten_t
-  .. doxygenenum:: adc_bits_width_t
-
-Functions
-^^^^^^^^^
-
-  .. doxygenfunction:: adc1_config_width
-  .. doxygenfunction:: adc1_config_channel_atten
-  .. doxygenfunction:: adc1_get_voltage
-  .. doxygenfunction:: hall_sensor_read
 

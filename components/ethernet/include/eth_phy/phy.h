@@ -20,13 +20,13 @@ extern "C" {
 
 #include "esp_eth.h"
 
-/* Common PHY-management functions.
+/** Common PHY-management functions.
 
    These are not enough to drive any particular Ethernet PHY, but they provide a common configuration structure and
    management functions.
 */
 
-/* Configure fixed pins for RMII data interface.
+/** Configure fixed pins for RMII data interface.
 
    This configures GPIOs 0, 19, 22, 25, 26, 27 for use with RMII
    data interface. These pins cannot be changed, and must be wired to
@@ -38,7 +38,7 @@ extern "C" {
 */
 void phy_rmii_configure_data_interface_pins(void);
 
-/* Configure variable pins for SMI (MDIO) ethernet functions.
+/** Configure variable pins for SMI (MDIO) ethernet functions.
 
    Calling this function along with mii_configure_default_pins() will
    fully configure the GPIOs for the ethernet PHY.
@@ -46,7 +46,7 @@ void phy_rmii_configure_data_interface_pins(void);
 void phy_rmii_smi_configure_pins(uint8_t mdc_gpio, uint8_t mdio_gpio);
 
 
-/* Enable flow control in standard PHY MII register.
+/** Enable flow control in standard PHY MII register.
  */
 void phy_mii_enable_flow_ctrl(void);
 

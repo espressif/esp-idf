@@ -42,10 +42,8 @@ Using FatFs with VFS and SD cards
 ``esp_vfs_fat.h`` header file also provides a convenience function to perform steps 1–3 and 7–9, and also handle SD card initialization: ``esp_vfs_fat_sdmmc_mount``. This function does only limited error handling. Developers are encouraged to look at its source code and incorporate more advanced versions into production applications. ``esp_vfs_fat_sdmmc_unmount`` function unmounts the filesystem and releases resources acquired by ``esp_vfs_fat_sdmmc_mount``.
 
 .. doxygenfunction:: esp_vfs_fat_sdmmc_mount
-
 .. doxygenstruct:: esp_vfs_fat_mount_config_t
     :members:
-
 .. doxygenfunction:: esp_vfs_fat_sdmmc_unmount
 
 FatFS disk IO layer
@@ -56,9 +54,7 @@ FatFs has been extended with an API to register disk IO driver at runtime.
 Implementation of disk IO functions for SD/MMC cards is provided. It can be registered for the given FatFs drive number using ``ff_diskio_register_sdmmc`` function.
 
 .. doxygenfunction:: ff_diskio_register
-
 .. doxygenstruct:: ff_diskio_impl_t
     :members:
-
 .. doxygenfunction:: ff_diskio_register_sdmmc
 

@@ -21,14 +21,14 @@ Unzip the zip file to ``C:\`` (or some other location, but this guide assumes ``
 Check it Out
 ============
 
-Open an MSYS2 terminal window by running ``C:\msys32\mingw32.exe``. The environment in this window is a bash shell. 
+Open a MSYS2 MINGW32 terminal window by running ``C:\msys32\mingw32.exe``. The environment in this window is a bash shell. 
 
 .. figure:: ../_static/msys2-terminal-window.png
     :align: center
-    :alt: MSYS2 terminal window
+    :alt: MSYS2 MINGW32 shell window
     :figclass: align-center
 
-    MSYS2 terminal window
+    MSYS2 MINGW32 shell window
 
 Use this window in the following steps setting up development environment for ESP32.
 

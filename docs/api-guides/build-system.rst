@@ -396,8 +396,7 @@ Adding conditional configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The configuration system can be used to conditionally compile some files
-depending on the options selected in ``make menuconfig``. For this, ESP-IDF
-has the compile_only_if and compile_only_if_not macros:
+depending on the options selected in ``make menuconfig``:
 
 ``Kconfig``::
 
@@ -408,56 +407,14 @@ has the compile_only_if and compile_only_if_not macros:
 
 ``component.mk``::
 
-    $(call compile_only_if,$(CONFIG_FOO_ENABLE_BAR),bar.o)
+    COMPONENT_OBJS := foo_a.o foo_b.o
 
+    ifdef CONFIG_FOO_BAR
+    COMPONENT_OBJS += foo_bar.o foo_bar_interface.o
+    endif
 
-As can be seen in the example, the ``compile_only_if`` macro takes a condition and a 
-list of object files as parameters. If the condition is true (in this case: if the
-BAR feature is enabled in menuconfig) the object files (in this case: bar.o) will
-always be compiled. The opposite goes as well: if the condition is not true, bar.o 
-will never be compiled. ``compile_only_if_not`` does the opposite: compile if the 
-condition is false, not compile if the condition is true.
+See the `GNU Make Manual` for conditional syntax that can be used use in makefiles.
 
-This can also be used to select or stub out an implementation, as such:
-
-``Kconfig``::
-
-    config ENABLE_LCD_OUTPUT
-        bool "Enable LCD output."
-        help
-            Select this if your board has a LCD.
-
-    config ENABLE_LCD_CONSOLE
-        bool "Output console text to LCD"
-        depends on ENABLE_LCD_OUTPUT
-        help
-            Select this to output debugging output to the lcd
-
-    config ENABLE_LCD_PLOT
-        bool "Output temperature plots to LCD"
-        depends on ENABLE_LCD_OUTPUT
-        help
-            Select this to output temperature plots
-
-
-``component.mk``::
-
-    # If LCD is enabled, compile interface to it, otherwise compile dummy interface
-    $(call compile_only_if,$(CONFIG_ENABLE_LCD_OUTPUT),lcd-real.o lcd-spi.o)
-    $(call compile_only_if_not,$(CONFIG_ENABLE_LCD_OUTPUT),lcd-dummy.o)
-
-    #We need font if either console or plot is enabled
-    $(call compile_only_if,$(or $(CONFIG_ENABLE_LCD_CONSOLE),$(CONFIG_ENABLE_LCD_PLOT)), font.o)
-
-Note the use of the Make 'or' function to include the font file. Other substitution functions,
-like 'and' and 'if' will also work here. Variables that do not come from menuconfig can also 
-be used: ESP-IDF uses the default Make policy of judging a variable which is empty or contains 
-only whitespace to be false while a variable with any non-whitespace in it is true.
-
-(Note: Older versions of this document advised conditionally adding object file names to
-``COMPONENT_OBJS``. While this still is possible, this will only work when all object 
-files for a component are named explicitely, and will not clean up deselected object files
-in a ``make clean`` pass.)
 
 Source Code Generation
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -551,20 +508,20 @@ To override the name of this file, set the ``SDKCONFIG_DEFAULTS`` environment va
 
 
 Save flash arguments
--------------------------
+--------------------
 
-There're some scenarios that we want to flash the target board without IDF. For this case we want to save the built binaries, esptool.py and esptool write_flash arguments. It's simple to write a script to save binaries and esptool.py. For flash arguments, we can add the following code to application project makefile:
-::
+There're some scenarios that we want to flash the target board without IDF. For this case we want to save the built binaries, esptool.py and esptool write_flash arguments. It's simple to write a script to save binaries and esptool.py. For flash arguments, we can add the following code to application project makefile::
+
     print_flash_cmd:
         echo $(ESPTOOL_WRITE_FLASH_OPTIONS) $(ESPTOOL_ALL_FLASH_ARGS) | sed -e 's:'$(PWD)/build/'::g'
     
 the original ESPTOOL_ALL_FLASH_ARGS are absolute file name. Usually we want to save relative file name so we can move the bin folder to somewhere else. For this case we can use ``sed`` to convert to relative file name, like what we did in the example above.
 
-When running ``make print_flash_cmd``, it will print the flash arguments:
-::
+When running ``make print_flash_cmd``, it will print the flash arguments::
+
     --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader/bootloader.bin 0x10000 example_app.bin 0x8000 partition_table_unit_test_app.bin
 
-Then use flash arguments as the arguemnts for esptool write_flash arguments:
-::
+Then use flash arguments as the arguemnts for esptool write_flash arguments::
+
     python esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader/bootloader.bin 0x10000 example_app.bin 0x8000 partition_table_unit_test_app.bin
 

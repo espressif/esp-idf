@@ -20,26 +20,26 @@ extern "C" {
 
 #include "phy.h"
 
-/* @brief Dump all TLK110 PHY SMI configuration registers
+/** @brief Dump all TLK110 PHY SMI configuration registers
  *
  * @note These registers are dumped at 'debug' level, so output
  * may not be visible depending on default log levels.
  */
 void phy_tlk110_dump_registers();
 
-/* @brief Default TLK110 phy_check_init function.
+/** @brief Default TLK110 phy_check_init function.
  */
 void phy_tlk110_check_phy_init(void);
 
-/* @brief Default TLK110 phy_get_speed_mode function.
+/** @brief Default TLK110 phy_get_speed_mode function.
  */
 eth_speed_mode_t phy_tlk110_get_speed_mode(void);
 
-/* @brief Default TLK110 phy_get_duplex_mode function.
+/** @brief Default TLK110 phy_get_duplex_mode function.
  */
 eth_duplex_mode_t phy_tlk110_get_duplex_mode(void);
 
-/* @brief Default TLK110 phy_power_enable function.
+/** @brief Default TLK110 phy_power_enable function.
  *
  * @note This function may need to be replaced with a custom function
  * if the PHY has a GPIO to enable power or start a clock.
@@ -48,11 +48,11 @@ eth_duplex_mode_t phy_tlk110_get_duplex_mode(void);
  */
 void phy_tlk110_power_enable(bool);
 
-/* @brief Default TLK110 phy_init function.
+/** @brief Default TLK110 phy_init function.
  */
 void phy_tlk110_init(void);
 
-/* @brief Default TLK110 PHY configuration
+/** @brief Default TLK110 PHY configuration
  *
  * This configuration is not suitable for use as-is, it will need
  * to be modified for your particular PHY hardware setup.

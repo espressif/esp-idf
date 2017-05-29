@@ -109,63 +109,15 @@ Application Example
  
 Display graphics on the ILI9341-based 320x240 LCD: :example:`peripherals/spi_master`.
 
-API Reference
--------------
 
-Header Files
-^^^^^^^^^^^^
+API Reference - SPI Common
+--------------------------
 
-  * :component_file:`driver/include/driver/spi_master.h`
-
-Macros
-^^^^^^
-
-.. doxygendefine:: SPI_DEVICE_TXBIT_LSBFIRST
-.. doxygendefine:: SPI_DEVICE_RXBIT_LSBFIRST
-.. doxygendefine:: SPI_DEVICE_BIT_LSBFIRST
-.. doxygendefine:: SPI_DEVICE_3WIRE
-.. doxygendefine:: SPI_DEVICE_POSITIVE_CS
-.. doxygendefine:: SPI_DEVICE_HALFDUPLEX
-.. doxygendefine:: SPI_DEVICE_CLK_AS_CS
-
-.. doxygendefine:: SPI_TRANS_MODE_DIO
-.. doxygendefine:: SPI_TRANS_MODE_QIO
-.. doxygendefine:: SPI_TRANS_MODE_DIOQIO_ADDR
-.. doxygendefine:: SPI_TRANS_USE_RXDATA
-.. doxygendefine:: SPI_TRANS_USE_TXDATA
-
-Type Definitions
-^^^^^^^^^^^^^^^^
-
-.. doxygentypedef:: spi_device_handle_t
-
-Enumerations
-^^^^^^^^^^^^
-
-.. doxygenenum:: spi_host_device_t
-
-Structures
-^^^^^^^^^^
-
-.. doxygenstruct:: spi_transaction_t
-  :members:
-
-.. doxygenstruct:: spi_bus_config_t
-  :members:
-
-.. doxygenstruct:: spi_device_interface_config_t
-  :members:
+.. include:: /_build/inc/spi_common.inc
 
 
+API Reference - SPI Master
+--------------------------
 
-Functions
----------
-
-.. doxygenfunction:: spi_bus_initialize
-.. doxygenfunction:: spi_bus_free
-.. doxygenfunction:: spi_bus_add_device
-.. doxygenfunction:: spi_bus_remove_device
-.. doxygenfunction:: spi_device_queue_trans
-.. doxygenfunction:: spi_device_get_trans_result
-.. doxygenfunction:: spi_device_transmit
+.. include:: /_build/inc/spi_master.inc
 

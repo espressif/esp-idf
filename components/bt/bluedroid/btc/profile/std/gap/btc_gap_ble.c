@@ -634,10 +634,32 @@ static void btc_ble_set_pkt_data_len(BD_ADDR remote_device, uint16_t tx_data_len
 
 static void btc_ble_set_rand_addr (BD_ADDR rand_addr)
 {
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    param.set_rand_addr_cmpl.status = ESP_BT_STATUS_SUCCESS;
+
     if (rand_addr != NULL) {
-        BTA_DmSetRandAddress(rand_addr);
+        if((rand_addr[BD_ADDR_LEN - 1] & BT_STATIC_RAND_ADDR_MASK)
+            == BT_STATIC_RAND_ADDR_MASK) {
+            BTA_DmSetRandAddress(rand_addr);
+        } else {
+            param.set_rand_addr_cmpl.status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
+            LOG_ERROR("Invalid randrom address, the high bit should be 0x11xx");
+        }
     } else {
-        LOG_ERROR("Invalid randrom address.\n");
+        param.set_rand_addr_cmpl.status = ESP_BT_STATUS_INVALID_STATIC_RAND_ADDR;
+        LOG_ERROR("Invalid randrom addressm, the address value is NULL");
+    }
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT;
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_ble_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed\n", __func__);
     }
 }
 
@@ -709,6 +731,8 @@ void btc_gap_ble_cb_handler(btc_msg_t *msg)
     case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
         btc_gap_ble_cb_to_app(ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT, param);
         break;
+    case ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT, param);
     default:
         break;
 
@@ -883,16 +907,14 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                       arg->cfg_scan_rsp_data_raw.raw_scan_rsp_len,
                                       btc_scan_rsp_data_raw_callback);
         break;
-    case BTC_GAP_BLE_SET_ENCRYPTION_EVT: {
 #if (SMP_INCLUDED == TRUE)
+    case BTC_GAP_BLE_SET_ENCRYPTION_EVT: {
         BD_ADDR bd_addr;
         memcpy(bd_addr, arg->set_encryption.bd_addr, sizeof(BD_ADDR));
         BTA_DmSetEncryption(bd_addr, BT_TRANSPORT_LE, btc_set_encryption_callback,
                                           (tBTA_DM_BLE_SEC_ACT)arg->set_encryption.sec_act);
-#endif  ///SMP_INCLUDED == TRUE
         break;
     }
-
     case BTC_GAP_BLE_SET_SECURITY_PARAM_EVT: {
         switch(arg->set_security_param.param_type) {
             case ESP_BLE_SM_PASSKEY:
@@ -933,14 +955,25 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         break;
     }        
     case BTC_GAP_BLE_SECURITY_RSP_EVT: {
-#if (SMP_INCLUDED == TRUE)
         BD_ADDR bd_addr;
         tBTA_DM_BLE_SEC_GRANT res = arg->sec_rsp.accept ? BTA_DM_SEC_GRANTED : BTA_DM_SEC_PAIR_NOT_SPT;
         memcpy(bd_addr, arg->sec_rsp.bd_addr, sizeof(BD_ADDR));
         BTA_DmBleSecurityGrant(bd_addr, res);
         break;
-#endif  ///SMP_INCLUDED == TRUE
     }
+    case BTC_GAP_BLE_PASSKEY_REPLY_EVT: {
+        BD_ADDR bd_addr;
+        memcpy(bd_addr, arg->enc_passkey_replay.bd_addr, sizeof(BD_ADDR));
+        BTA_DmBlePasskeyReply(bd_addr, arg->enc_passkey_replay.accept, arg->enc_passkey_replay.passkey);
+        break;
+    }
+    case BTC_GAP_BLE_CONFIRM_REPLY_EVT: {
+        BD_ADDR bd_addr;
+        memcpy(bd_addr, arg->enc_comfirm_replay.bd_addr, sizeof(BD_ADDR));
+        BTA_DmBleConfirmReply(bd_addr, arg->enc_comfirm_replay.accept);
+        break;
+    }
+#endif  ///SMP_INCLUDED == TRUE
     default:
         break;
     }

@@ -16,7 +16,9 @@ mDNS Properties
 
 Example method to start mDNS for the STA interface and set ``hostname`` and ``default_instance``:
 
-  ::
+.. highlight:: c
+
+::
 
     mdns_server_t * mdns = NULL;
     
@@ -46,9 +48,7 @@ mDNS can advertise information about network services that your device offers. E
     * ``instance``: friendly name for your service, like ``Jhon's ESP32 Web Server``. If not defined, ``default_instance`` will be used.
     * ``txt``: ``var=val`` array of strings, used to define properties for your service
 
-Example method to add a few services and different properties:
-
-  ::
+Example method to add a few services and different properties::
 
     void add_mdns_services()
     {
@@ -78,13 +78,10 @@ mDNS Query
 ^^^^^^^^^^
 
 mDNS provides methods for browsing for services and resolving host's IP/IPv6 addresses.
-    Results are returned as a linked list of ``mdns_result_t`` objects. If the result is from host query, 
-    it will contain only ``addr`` and ``addrv6`` if found. Service queries will populate all fields 
-    in a result that were found.
 
-Example method to resolve host IPs:
+Results are returned as a linked list of ``mdns_result_t`` objects. If the result is from host query, it will contain only ``addr`` and ``addrv6`` if found. Service queries will populate all fields in a result that were found.
 
-  ::
+Example method to resolve host IPs::
 
     void resolve_mdns_host(const char * hostname)
     {
@@ -110,9 +107,7 @@ Example method to resolve host IPs:
         }
     }
 
-Example method to resolve local services:
-
-  ::
+Example method to resolve local services::
 
     void find_mdns_service(const char * service, const char * proto)
     {
@@ -140,9 +135,7 @@ Example method to resolve local services:
         }
     }
 
-Example of using the methods above:
-
-  ::
+Example of using the methods above::
 
     void my_app_some_method(){
         //search for esp32-mdns.local
@@ -168,48 +161,6 @@ mDNS server/scanner example: :example:`protocols/mdns`.
 API Reference
 -------------
 
-Header Files
-^^^^^^^^^^^^
+.. include:: /_build/inc/mdns.inc
 
-  * :component_file:`mdns/include/mdns.h`
-
-Macros
-^^^^^^
-
-
-Type Definitions
-^^^^^^^^^^^^^^^^
-
-.. doxygentypedef:: mdns_server_t
-.. doxygentypedef:: mdns_result_t
-
-Enumerations
-^^^^^^^^^^^^
-
-
-Structures
-^^^^^^^^^^
-
-.. doxygenstruct:: mdns_result_s
-    :members:
-
-
-Functions
-^^^^^^^^^
-
-.. doxygenfunction:: mdns_init
-.. doxygenfunction:: mdns_free
-.. doxygenfunction:: mdns_set_hostname
-.. doxygenfunction:: mdns_set_instance
-.. doxygenfunction:: mdns_service_add
-.. doxygenfunction:: mdns_service_remove
-.. doxygenfunction:: mdns_service_instance_set
-.. doxygenfunction:: mdns_service_txt_set
-.. doxygenfunction:: mdns_service_port_set
-.. doxygenfunction:: mdns_service_remove_all
-.. doxygenfunction:: mdns_query
-.. doxygenfunction:: mdns_query_end
-.. doxygenfunction:: mdns_result_get_count
-.. doxygenfunction:: mdns_result_get
-.. doxygenfunction:: mdns_result_free
 

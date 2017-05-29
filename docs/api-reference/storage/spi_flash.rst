@@ -7,72 +7,6 @@ See also
 - :doc:`Over The Air Update (OTA) API <../system/ota>` provides high-level API for updating app firmware stored in flash.
 - :doc:`Non-Volatile Storage (NVS) API <nvs_flash>` provides a structured API for storing small items of data in SPI flash.
 
-API Reference
--------------
-
-Header Files
-^^^^^^^^^^^^
-
-  * :component_file:`spi_flash/include/esp_spi_flash.h`
-  * :component_file:`spi_flash/include/esp_partition.h`
-  * :component_file:`bootloader_support/include/esp_flash_encrypt.h`
-
-Macros
-^^^^^^
-
-.. doxygendefine:: ESP_ERR_FLASH_BASE
-.. doxygendefine:: ESP_ERR_FLASH_OP_FAIL
-.. doxygendefine:: ESP_ERR_FLASH_OP_TIMEOUT
-.. doxygendefine:: SPI_FLASH_SEC_SIZE
-.. doxygendefine:: SPI_FLASH_MMU_PAGE_SIZE
-.. doxygendefine:: ESP_PARTITION_SUBTYPE_OTA
-.. doxygendefine:: SPI_FLASH_CACHE2PHYS_FAIL
-
-Type Definitions
-^^^^^^^^^^^^^^^^
-
-.. doxygentypedef:: spi_flash_mmap_handle_t
-.. doxygentypedef:: esp_partition_iterator_t
-
-Enumerations
-^^^^^^^^^^^^
-
-.. doxygenenum:: spi_flash_mmap_memory_t
-.. doxygenenum:: esp_partition_type_t
-.. doxygenenum:: esp_partition_subtype_t
-
-Structures
-^^^^^^^^^^
-
-.. doxygenstruct:: esp_partition_t
-
-Functions
-^^^^^^^^^
-
-.. doxygenfunction:: spi_flash_init
-.. doxygenfunction:: spi_flash_get_chip_size
-.. doxygenfunction:: spi_flash_erase_sector
-.. doxygenfunction:: spi_flash_erase_range
-.. doxygenfunction:: spi_flash_write
-.. doxygenfunction:: spi_flash_write_encrypted
-.. doxygenfunction:: spi_flash_read
-.. doxygenfunction:: spi_flash_read_encrypted
-.. doxygenfunction:: spi_flash_mmap
-.. doxygenfunction:: spi_flash_munmap
-.. doxygenfunction:: spi_flash_mmap_dump
-.. doxygenfunction:: spi_flash_cache2phys
-.. doxygenfunction:: spi_flash_phys2cache
-.. doxygenfunction:: spi_flash_cache_enabled
-.. doxygenfunction:: esp_partition_find
-.. doxygenfunction:: esp_partition_find_first
-.. doxygenfunction:: esp_partition_get
-.. doxygenfunction:: esp_partition_next
-.. doxygenfunction:: esp_partition_iterator_release
-.. doxygenfunction:: esp_partition_read
-.. doxygenfunction:: esp_partition_write
-.. doxygenfunction:: esp_partition_erase_range
-.. doxygenfunction:: esp_partition_mmap
-.. doxygenfunction:: esp_flash_encryption_enabled
 
 .. _spi-flash-implementation-details:
 
@@ -108,3 +42,20 @@ Additionally, all API functions are protected with a mutex (s_flash_op_mutex).
 
 In a single core environment (CONFIG_FREERTOS_UNICORE enabled), we simply
 disable both caches, no inter-CPU communication takes place.
+
+API Reference - SPI Flash
+-------------------------
+
+.. include:: /_build/inc/esp_spi_flash.inc
+
+API Reference - Partition Table
+-------------------------------
+
+.. include:: /_build/inc/esp_partition.inc
+
+API Reference - Flash Encrypt
+-----------------------------
+
+.. include:: /_build/inc/esp_flash_encrypt.inc
+
+

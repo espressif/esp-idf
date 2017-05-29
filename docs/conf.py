@@ -12,8 +12,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
-import os
+import sys, os
 import re
 from subprocess import call, Popen, PIPE
 import shlex
@@ -24,10 +23,16 @@ import shlex
 sys.path.insert(0, os.path.abspath('.'))
 
 from repo_util import run_cmd_get_output
-# -- Run DoxyGen to prepare XML for Sphinx---------------------------------
-# ref. https://github.com/rtfd/readthedocs.org/issues/388
 
+# Call Doxygen to get XML files from the header files
+print "Calling Doxygen to generate latest XML files"
 call('doxygen')
+# Generate 'api_name.inc' files using the XML files by Doxygen
+os.system("python gen-dxd.py")
+
+# http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
+# 
+suppress_warnings = ['image.nonlocal_uri']
 
 # -- General configuration ------------------------------------------------
 
@@ -290,3 +295,4 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # otherwise, readthedocs.org uses their theme by default, so no need to specify it
+
