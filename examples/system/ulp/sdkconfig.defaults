@@ -1,9 +1,6 @@
 # Enable ULP
 CONFIG_ULP_COPROC_ENABLED=y
 CONFIG_ULP_COPROC_RESERVE_MEM=1024
-# Some flash chips need extra time to wake up
-# Set this a bit higher to improve out-of-the-box experience
-CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY=500
 # Set log level to Warning to produce clean output
 CONFIG_LOG_BOOTLOADER_LEVEL_WARN=y
 CONFIG_LOG_BOOTLOADER_LEVEL=2
