@@ -347,6 +347,12 @@ const spi_flash_counters_t* spi_flash_get_counters();
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
+/**
+ * @brief test spi send cmd for UID
+ 
+*/
+void spi_flash_send_cmd(uint32_t len, uint8_t *cmd, uint8_t *res);    
+    
 #ifdef __cplusplus
 }
 #endif
