@@ -366,6 +366,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 
     int tx_sig, rx_sig, rts_sig, cts_sig;
     switch(uart_num) {
+        default:
         case UART_NUM_0:
             tx_sig = U0TXD_OUT_IDX;
             rx_sig = U0RXD_IN_IDX;
@@ -383,13 +384,6 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
             rx_sig = U2RXD_IN_IDX;
             rts_sig = U2RTS_OUT_IDX;
             cts_sig = U2CTS_IN_IDX;
-            break;
-        case UART_NUM_MAX:
-            default:
-            tx_sig = U0TXD_OUT_IDX;
-            rx_sig = U0RXD_IN_IDX;
-            rts_sig = U0RTS_OUT_IDX;
-            cts_sig = U0CTS_IN_IDX;
             break;
     }
     if(tx_io_num >= 0) {
@@ -616,7 +610,6 @@ static void uart_rx_intr_handler_default(void *param)
                 uart_reg->int_clr.rxfifo_tout = 1;
                 uart_reg->int_clr.rxfifo_full = 1;
                 UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
-                uart_event.type = UART_DATA;
                 uart_event.size = rx_fifo_len;
                 //If we fail to push data to ring buffer, we will have to stash the data, and send next time.
                 //Mainly for applications that uses flow control or small ring buffer.
