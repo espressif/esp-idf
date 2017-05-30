@@ -424,7 +424,7 @@ esp_err_t uart_set_rts(uart_port_t uart_num, int level)
     UART_CHECK((UART[uart_num]->conf1.rx_flow_en != 1), "disable hw flowctrl before using sw control", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->conf0.sw_rts = level & 0x1;
-    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
 
@@ -433,7 +433,7 @@ esp_err_t uart_set_dtr(uart_port_t uart_num, int level)
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->conf0.sw_dtr = level & 0x1;
-    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
 
