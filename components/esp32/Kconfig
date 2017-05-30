@@ -548,18 +548,18 @@ config ESP32_RTC_CLK_CAL_CYCLES
 
 config ESP32_DEEP_SLEEP_WAKEUP_DELAY
     int "Extra delay in deep sleep wake stub (in us)"
-    default 0
+    default 2000
     range 0 5000
     help
         When ESP32 exits deep sleep, the CPU and the flash chip are powered on
         at the same time. CPU will run deep sleep stub first, and then
         proceed to load code from flash. Some flash chips need sufficient
         time to pass between power on and first read operation. By default,
-        without any extra delay, this time is approximately 900us.
-
-        If you are using a flash chip which needs more than 900us to become
-        ready after power on, set this parameter to add extra delay
-        to the default deep sleep stub.
+        without any extra delay, this time is approximately 900us, although
+        some flash chip types need more than that.
+        
+        By default extra delay is set to 2000us. When optimizing startup time
+        for applications which require it, this value may be reduced. 
 
         If you are seeing "flash read err, 1000" message printed to the
         console after deep sleep reset, try increasing this value.
