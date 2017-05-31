@@ -73,3 +73,11 @@ endef
 define prereq_if_explicit
 $(filter $(1),$(MAKECMDGOALS))
 endef
+
+# macro to kill duplicate items in a list without messing up the sort order of the list.
+# Will only keep the unique items; if there are non-unique items in the list, it will remove
+# the later recurring ones so only the first one remains.
+# Copied from http://stackoverflow.com/questions/16144115/makefile-remove-duplicate-words-without-sorting
+define uniq
+$(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+endef

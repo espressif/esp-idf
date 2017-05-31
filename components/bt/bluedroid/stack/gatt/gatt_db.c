@@ -270,7 +270,7 @@ static tGATT_STATUS read_attr_value (void *p_attr,
     } else { /* characteristic description or characteristic value */
         if (p_attr16->control.auto_rsp == GATT_RSP_BY_STACK) {
             if (p_attr16->p_value == NULL || p_attr16->p_value->attr_val.attr_val == NULL) {
-                status = GATT_ESP_ERROR;
+                status = GATT_UNKNOWN_ERROR;
             }
             else if (offset > p_attr16->p_value->attr_val.attr_len){
 			/*if offset equal to max_len, should respond with zero byte value
@@ -953,7 +953,7 @@ tGATT_STATUS gatts_write_attr_value_by_handle(tGATT_SVC_DB *p_db,
                 } else if ((p_attr->p_value == NULL) || (p_attr->p_value->attr_val.attr_val == NULL)){
                     GATT_TRACE_ERROR("Error in %s, line=%d, %s should not be NULL here\n", __func__, __LINE__, \
                                     (p_attr->p_value == NULL) ? "p_value" : "attr_val.attr_val");
-                    return GATT_ESP_ERROR;
+                    return GATT_UNKNOWN_ERROR;
                 }
             }
 

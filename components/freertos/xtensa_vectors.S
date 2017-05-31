@@ -931,7 +931,6 @@ _xt_coproc_exc:
     addx4   a0, a5, a0                      /* a0 = &_xt_coproc_mask[n] */
     l32i    a0, a0, 0                       /* a0 = (n << 16) | (1 << n) */
 
-    /* TODO: Remove this as soon as coprocessor state moving works across cores - JD */
     /* FPU operations are incompatible with non-pinned tasks. If we have a FPU operation
        here, to keep the entire thing from crashing, it's better to pin the task to whatever
        core we're running on now. */
@@ -944,13 +943,20 @@ _xt_coproc_exc:
 
     /* Grab correct xt_coproc_owner_sa for this core */
     movi    a2, XCHAL_CP_MAX << 2
-    mull    a2, a2, a3
+    mull    a2, a2, a3                      /* multiply by current processor id */
     movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
-    add     a3, a3, a2
+    add     a3, a3, a2                      /* a3 = owner area needed for this processor */
 
     extui   a2, a0, 0, 16                   /* coprocessor bitmask portion */
     or      a4, a4, a2                      /* a4 = CPENABLE | (1 << n) */
     wsr     a4, CPENABLE
+
+/* 
+Keep loading _xt_coproc_owner_sa[n] atomic (=load once, then use that value
+everywhere): _xt_coproc_release assumes it works like this in order not to need
+locking.
+*/
+
 
     /* Get old coprocessor owner thread (save area ptr) and assign new one.  */
     addx4   a3,  a5, a3                      /* a3 = &_xt_coproc_owner_sa[n] */

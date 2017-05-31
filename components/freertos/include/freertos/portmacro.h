@@ -172,6 +172,7 @@ typedef struct {
 #define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
 void vPortAssertIfInISR();
 
+
 #define portCRITICAL_NESTING_IN_TCB 1 
 
 /*
@@ -312,6 +313,10 @@ typedef struct {
 	#define PRIVILEGED_FUNCTION
 	#define PRIVILEGED_DATA
 #endif
+
+
+void _xt_coproc_release(volatile void * coproc_sa_base);
+
 
 // porttrace
 #if configUSE_TRACE_FACILITY_2

@@ -1233,7 +1233,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                         } else if (p_attr->p_value == NULL) {
                             LOG_ERROR("Error in %s, attribute of handle 0x%x not allocate value buffer\n",
                                         __func__, handle);
-                            status = GATT_ESP_ERROR;
+                            status = GATT_UNKNOWN_ERROR;
                         } else {
                              //valid prepare write request, need to send response and queue the data
                              //status: GATT_SUCCESS
@@ -1245,7 +1245,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                 }
             }
         } else{
-            status = GATT_ESP_ERROR;
+            status = GATT_UNKNOWN_ERROR;
             GATT_TRACE_ERROR("Error in %s, Line %d: GATT BUSY\n", __func__, __LINE__);
         }
     }
