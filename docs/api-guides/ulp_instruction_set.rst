@@ -740,7 +740,7 @@ READ_RTC_FIELD(rtc_reg, field)
     #include "soc/sens_reg.h"
 
     /* Read 8-bit SENS_TSENS_OUT field of SENS_SAR_SLAVE_ADDR3_REG into R0 */
-    READ_RTC_REG(SENS_SAR_SLAVE_ADDR3_REG, SENS_TSENS_OUT)
+    READ_RTC_FIELD(SENS_SAR_SLAVE_ADDR3_REG, SENS_TSENS_OUT)
 
 WRITE_RTC_REG(rtc_reg, low_bit, bit_width, value)
   Write immediate value into rtc_reg[low_bit + bit_width - 1 : low_bit], bit_width <= 8. For example::
@@ -759,7 +759,7 @@ WRITE_RTC_FIELD(rtc_reg, field, value)
     #include "soc/rtc_cntl_reg.h"
 
     /* Set RTC_CNTL_ULP_CP_SLP_TIMER_EN field of RTC_CNTL_STATE0_REG to 0 */
-    READ_RTC_REG(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN, 0)
+    WRITE_RTC_FIELD(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN, 0)
 
 
 
