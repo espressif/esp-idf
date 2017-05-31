@@ -15,6 +15,8 @@ Future versions of this library may add other storage backends to keep data in a
 
 .. note:: if an NVS partition is truncated (for example, when the partition table layout is changed), its contents should be erased. ESP-IDF build system provides a ``make erase_flash`` target to erase all contents of the flash chip.
 
+.. note:: NVS works best for storing many small values, rather than a few large values of type 'string' and 'blob'. If storing large blobs or strings is required, consider using the facilities provided by the FAT filesystem on top of the wear levelling library.
+
 Keys and values
 ^^^^^^^^^^^^^^^
 
@@ -23,6 +25,9 @@ NVS operates on key-value pairs. Keys are ASCII strings, maximum key length is c
 -  integer types: ``uint8_t``, ``int8_t``, ``uint16_t``, ``int16_t``, ``uint32_t``, ``int32_t``, ``uint64_t``, ``int64_t``
 -  zero-terminated string
 -  variable length binary data (blob)
+
+.. note::
+   String and blob values are currently limited to 1984 bytes. For strings, this includes the null terminator.
 
 Additional types, such as ``float`` and ``double`` may be added later.
 
