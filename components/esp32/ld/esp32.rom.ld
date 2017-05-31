@@ -1633,6 +1633,8 @@ PROVIDE ( esp_rom_spiflash_write_encrypted_disable = 0x40062e60 );
 PROVIDE ( esp_rom_spiflash_write_encrypted_enable = 0x40062df4 );
 PROVIDE ( esp_rom_spiflash_prepare_encrypted_data = 0x40062e1c );
 PROVIDE ( esp_rom_spiflash_select_qio_pins = 0x40061ddc );
+PROVIDE ( esp_rom_spiflash_attach = 0x40062a6c );
+PROVIDE ( esp_rom_spiflash_config_clk = 0x40062bc8 );
 PROVIDE ( g_rom_spiflash_chip = 0x3ffae270 );
 
 /* 
