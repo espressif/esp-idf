@@ -901,6 +901,7 @@ UINT8 btc_media_sink_enque_buf(BT_HDR *p_pkt)
 
     if (GKI_queue_length(&btc_media_cb.RxSbcQ) >= MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ) {
         APPL_TRACE_WARNING("Pkt dropped\n");
+        return GKI_queue_length(&btc_media_cb.RxSbcQ);
     }
 
     APPL_TRACE_DEBUG("btc_media_sink_enque_buf + ");

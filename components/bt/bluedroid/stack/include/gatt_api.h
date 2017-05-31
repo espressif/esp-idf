@@ -46,7 +46,6 @@
 #define  GATT_INSUF_RESOURCE                 0x11
 
 
-#define  GATT_ILLEGAL_PARAMETER              0x87
 #define  GATT_NO_RESOURCES                   0x80
 #define  GATT_INTERNAL_ERROR                 0x81
 #define  GATT_WRONG_STATE                    0x82
@@ -54,6 +53,7 @@
 #define  GATT_BUSY                           0x84
 #define  GATT_ERROR                          0x85
 #define  GATT_CMD_STARTED                    0x86
+#define  GATT_ILLEGAL_PARAMETER              0x87
 #define  GATT_PENDING                        0x88
 #define  GATT_AUTH_FAIL                      0x89
 #define  GATT_MORE                           0x8a
@@ -63,15 +63,21 @@
 #define  GATT_ENCRYPED_NO_MITM               0x8d
 #define  GATT_NOT_ENCRYPTED                  0x8e
 #define  GATT_CONGESTED                      0x8f
-#define  GATT_STACK_RSP                      0x90
-#define  GATT_APP_RSP                        0x91
-//Error caused by customer application or stack bug
-#define  GATT_ESP_ERROR                      0X9f
+
+#define  GATT_DUP_REG                        0x90 
+#define  GATT_ALREADY_OPEN                   0x91
+#define  GATT_CANCEL                         0x92
 
 /* 0xE0 ~ 0xFC reserved for future use */
+#define  GATT_STACK_RSP                      0xE0
+#define  GATT_APP_RSP                        0xE1
+//Error caused by customer application or stack bug
+#define  GATT_UNKNOWN_ERROR                  0XEF
+
 #define  GATT_CCC_CFG_ERR                    0xFD /* Client Characteristic Configuration Descriptor Improperly Configured */
 #define  GATT_PRC_IN_PROGRESS                0xFE /* Procedure Already in progress */
 #define  GATT_OUT_OF_RANGE                   0xFF /* Attribute value out of range */
+
 typedef UINT8 tGATT_STATUS;
 
 

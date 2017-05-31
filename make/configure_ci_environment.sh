@@ -7,9 +7,9 @@
 #
 # Tweaks .gitmodules file for private builds
 
-[ -z $CI_BUILD_REF ] && echo "This internal script should only be run by a Gitlab CI runner." && exit 1
+[ -z $CI_COMMIT_REF_NAME ] && echo "This internal script should only be run by a Gitlab CI runner." && exit 1
 
-REF=$CI_BUILD_REF
+REF=$CI_COMMIT_REF_NAME
 
 # Public branches are:
 # release branches - start with release/

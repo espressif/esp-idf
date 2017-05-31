@@ -95,6 +95,29 @@ uint32_t esp_log_early_timestamp(void);
  */
 void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
 
+/**
+ * @brief Log a buffer of hex bytes at Info level
+ *
+ * @param  tag      description tag
+ *
+ * @param  buffer   Pointer to the buffer array
+ *
+ * @param  buff_len length of buffer
+ *
+ */
+void esp_log_buffer_hex(const char *tag, const char *buffer, uint16_t buff_len);
+
+/**
+ * @brief Log a buffer of characters at Info level. Buffer should contain only printable characters.
+ *
+ * @param  tag      description tag
+ *
+ * @param  buffer   Pointer to the buffer array
+ *
+ * @param  buff_len length of buffer
+ *
+ */
+void esp_log_buffer_char(const char *tag, const char *buffer, uint16_t buff_len);
 
 #if CONFIG_LOG_COLORS
 #define LOG_COLOR_BLACK   "30"
