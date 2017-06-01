@@ -276,6 +276,10 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #define configENABLE_TASK_SNAPSHOT			1
 #endif
 
+#if defined(FREERTOSPORTCONFIG_H)
+#include FREERTOSPORTCONFIG_H
+#endif
+
 
 #endif /* FREERTOS_CONFIG_H */
 
