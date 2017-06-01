@@ -363,5 +363,23 @@ esp_err_t esp_ble_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)
+{
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_DISCONNECT_EVT;
+    memcpy(arg.disconnect.remote_device, remote_device, ESP_BD_ADDR_LEN);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+
 
 

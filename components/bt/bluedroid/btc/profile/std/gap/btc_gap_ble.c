@@ -668,6 +668,10 @@ static void btc_ble_config_local_privacy(bool privacy_enable)
     BTA_DmBleConfigLocalPrivacy(privacy_enable);
 }
 
+static void btc_ble_disconnect(BD_ADDR bd_addr)
+{
+    BTA_DmBleDisconnect(bd_addr);
+}
 
 void btc_gap_ble_cb_handler(btc_msg_t *msg)
 {
@@ -974,6 +978,9 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         break;
     }
 #endif  ///SMP_INCLUDED == TRUE
+    case BTC_GAP_BLE_DISCONNECT_EVT:
+        btc_ble_disconnect(arg->disconnect.remote_device);
+        break;
     default:
         break;
     }

@@ -2008,7 +2008,30 @@ void BTA_DmBleUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int, UINT16 max
         bta_sys_sendmsg(p_msg);
     }
 }
+/*******************************************************************************
+**
+** Function         BTA_DmBleDisconnect
+**
+** Description      Disconnect the ble connection, can only be used when connection is up.
+**
+** Parameters:      bd_addr   - BD address of the peer
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmBleDisconnect(BD_ADDR bd_addr)
+{
+    tBTA_DM_API_BLE_DISCONNECT *p_msg;
 
+    if ((p_msg = (tBTA_DM_API_BLE_DISCONNECT *) GKI_getbuf(sizeof(tBTA_DM_API_BLE_DISCONNECT))) != NULL) {
+        memset (p_msg, 0, sizeof(tBTA_DM_API_BLE_DISCONNECT));
+
+        p_msg->hdr.event = BTA_DM_API_BLE_DISCONNECT_EVT;
+        bdcpy(p_msg->remote_bda, bd_addr);
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
 /*******************************************************************************
 **
 ** Function         BTA_DmBleSetDataLength

@@ -25,45 +25,47 @@ extern "C" {
 
 /// GATT Client callback function events
 typedef enum {
-	ESP_GATTC_REG_EVT                 = 0,        /*!< When GATT client is registered, the event comes */
-	ESP_GATTC_UNREG_EVT               = 1,        /*!< When GATT client is unregistered, the event comes */
-	ESP_GATTC_OPEN_EVT                = 2,        /*!< When GATT connection is set up, the event comes */
-	ESP_GATTC_READ_CHAR_EVT           = 3,        /*!< When GATT characteristic is read, the event comes */
-	ESP_GATTC_WRITE_CHAR_EVT          = 4,        /*!< When GATT characteristic write operation completes, the event comes */
-	ESP_GATTC_CLOSE_EVT               = 5,        /*!< When GATT connection is closed, the event comes */
-	ESP_GATTC_SEARCH_CMPL_EVT         = 6,        /*!< When GATT service discovery is completed, the event comes */
-	ESP_GATTC_SEARCH_RES_EVT          = 7,        /*!< When GATT service discovery result is got, the event comes */
-	ESP_GATTC_READ_DESCR_EVT          = 8,        /*!< When GATT characteristic descriptor read completes, the event comes */
-	ESP_GATTC_WRITE_DESCR_EVT         = 9,        /*!< When GATT characteristic descriptor write completes, the event comes */
-	ESP_GATTC_NOTIFY_EVT              = 10,       /*!< When GATT notification or indication arrives, the event comes */
-	ESP_GATTC_PREP_WRITE_EVT          = 11,       /*!< When GATT prepare-write operation completes, the event comes */
-	ESP_GATTC_EXEC_EVT                = 12,       /*!< When write execution completes, the event comes */
-	ESP_GATTC_ACL_EVT                 = 13,       /*!< When ACL connection is up, the event comes */
-	ESP_GATTC_CANCEL_OPEN_EVT         = 14,       /*!< When GATT client ongoing connection is cancelled, the event comes */
-	ESP_GATTC_SRVC_CHG_EVT            = 15,       /*!< When "service changed" occurs, the event comes */
-	ESP_GATTC_ENC_CMPL_CB_EVT         = 17,       /*!< When encryption procedure completes, the event comes */
-	ESP_GATTC_CFG_MTU_EVT             = 18,       /*!< When configuration of MTU completes, the event comes */
-	ESP_GATTC_ADV_DATA_EVT            = 19,       /*!< When advertising of data, the event comes */
-	ESP_GATTC_MULT_ADV_ENB_EVT        = 20,       /*!< When multi-advertising is enabled, the event comes */
-	ESP_GATTC_MULT_ADV_UPD_EVT        = 21,       /*!< When multi-advertising parameters are updated, the event comes */
-	ESP_GATTC_MULT_ADV_DATA_EVT       = 22,       /*!< When multi-advertising data arrives, the event comes */
-	ESP_GATTC_MULT_ADV_DIS_EVT        = 23,       /*!< When multi-advertising is disabled, the event comes */
-	ESP_GATTC_CONGEST_EVT             = 24,       /*!< When GATT connection congestion comes, the event comes */
-	ESP_GATTC_BTH_SCAN_ENB_EVT        = 25,       /*!< When batch scan is enabled, the event comes */
-	ESP_GATTC_BTH_SCAN_CFG_EVT        = 26,       /*!< When batch scan storage is configured, the event comes */
-	ESP_GATTC_BTH_SCAN_RD_EVT         = 27,       /*!< When Batch scan read event is reported, the event comes */
-	ESP_GATTC_BTH_SCAN_THR_EVT        = 28,       /*!< When Batch scan threshold is set, the event comes */
-	ESP_GATTC_BTH_SCAN_PARAM_EVT      = 29,       /*!< When Batch scan parameters are set, the event comes */
-	ESP_GATTC_BTH_SCAN_DIS_EVT        = 30,       /*!< When Batch scan is disabled, the event comes */
-	ESP_GATTC_SCAN_FLT_CFG_EVT        = 31,       /*!< When Scan filter configuration completes, the event comes */
-	ESP_GATTC_SCAN_FLT_PARAM_EVT      = 32,       /*!< When Scan filter parameters are set, the event comes */
-	ESP_GATTC_SCAN_FLT_STATUS_EVT     = 33,       /*!< When Scan filter status is reported, the event comes */
-	ESP_GATTC_ADV_VSC_EVT             = 34,       /*!< When advertising vendor spec content event is reported, the event comes */
-	ESP_GATTC_GET_CHAR_EVT            = 35,       /*!< When characteristic is got from GATT server, the event comes */
-	ESP_GATTC_GET_DESCR_EVT           = 36,       /*!< When characteristic descriptor is got from GATT server, the event comes */
-	ESP_GATTC_GET_INCL_SRVC_EVT       = 37,       /*!< When included service is got from GATT server, the event comes */
-	ESP_GATTC_REG_FOR_NOTIFY_EVT      = 38,       /*!< When register for notification of a service completes, the event comes */
-	ESP_GATTC_UNREG_FOR_NOTIFY_EVT    = 39,       /*!< When unregister for notification of a service completes, the event comes */
+    ESP_GATTC_REG_EVT                 = 0,        /*!< When GATT client is registered, the event comes */
+    ESP_GATTC_UNREG_EVT               = 1,        /*!< When GATT client is unregistered, the event comes */
+    ESP_GATTC_OPEN_EVT                = 2,        /*!< When GATT virtual connection is set up, the event comes */
+    ESP_GATTC_READ_CHAR_EVT           = 3,        /*!< When GATT characteristic is read, the event comes */
+    ESP_GATTC_WRITE_CHAR_EVT          = 4,        /*!< When GATT characteristic write operation completes, the event comes */
+    ESP_GATTC_CLOSE_EVT               = 5,        /*!< When GATT virtual connection is closed, the event comes */
+    ESP_GATTC_SEARCH_CMPL_EVT         = 6,        /*!< When GATT service discovery is completed, the event comes */
+    ESP_GATTC_SEARCH_RES_EVT          = 7,        /*!< When GATT service discovery result is got, the event comes */
+    ESP_GATTC_READ_DESCR_EVT          = 8,        /*!< When GATT characteristic descriptor read completes, the event comes */
+    ESP_GATTC_WRITE_DESCR_EVT         = 9,        /*!< When GATT characteristic descriptor write completes, the event comes */
+    ESP_GATTC_NOTIFY_EVT              = 10,       /*!< When GATT notification or indication arrives, the event comes */
+    ESP_GATTC_PREP_WRITE_EVT          = 11,       /*!< When GATT prepare-write operation completes, the event comes */
+    ESP_GATTC_EXEC_EVT                = 12,       /*!< When write execution completes, the event comes */
+    ESP_GATTC_ACL_EVT                 = 13,       /*!< When ACL connection is up, the event comes */
+    ESP_GATTC_CANCEL_OPEN_EVT         = 14,       /*!< When GATT client ongoing connection is cancelled, the event comes */
+    ESP_GATTC_SRVC_CHG_EVT            = 15,       /*!< When "service changed" occurs, the event comes */
+    ESP_GATTC_ENC_CMPL_CB_EVT         = 17,       /*!< When encryption procedure completes, the event comes */
+    ESP_GATTC_CFG_MTU_EVT             = 18,       /*!< When configuration of MTU completes, the event comes */
+    ESP_GATTC_ADV_DATA_EVT            = 19,       /*!< When advertising of data, the event comes */
+    ESP_GATTC_MULT_ADV_ENB_EVT        = 20,       /*!< When multi-advertising is enabled, the event comes */
+    ESP_GATTC_MULT_ADV_UPD_EVT        = 21,       /*!< When multi-advertising parameters are updated, the event comes */
+    ESP_GATTC_MULT_ADV_DATA_EVT       = 22,       /*!< When multi-advertising data arrives, the event comes */
+    ESP_GATTC_MULT_ADV_DIS_EVT        = 23,       /*!< When multi-advertising is disabled, the event comes */
+    ESP_GATTC_CONGEST_EVT             = 24,       /*!< When GATT connection congestion comes, the event comes */
+    ESP_GATTC_BTH_SCAN_ENB_EVT        = 25,       /*!< When batch scan is enabled, the event comes */
+    ESP_GATTC_BTH_SCAN_CFG_EVT        = 26,       /*!< When batch scan storage is configured, the event comes */
+    ESP_GATTC_BTH_SCAN_RD_EVT         = 27,       /*!< When Batch scan read event is reported, the event comes */
+    ESP_GATTC_BTH_SCAN_THR_EVT        = 28,       /*!< When Batch scan threshold is set, the event comes */
+    ESP_GATTC_BTH_SCAN_PARAM_EVT      = 29,       /*!< When Batch scan parameters are set, the event comes */
+    ESP_GATTC_BTH_SCAN_DIS_EVT        = 30,       /*!< When Batch scan is disabled, the event comes */
+    ESP_GATTC_SCAN_FLT_CFG_EVT        = 31,       /*!< When Scan filter configuration completes, the event comes */
+    ESP_GATTC_SCAN_FLT_PARAM_EVT      = 32,       /*!< When Scan filter parameters are set, the event comes */
+    ESP_GATTC_SCAN_FLT_STATUS_EVT     = 33,       /*!< When Scan filter status is reported, the event comes */
+    ESP_GATTC_ADV_VSC_EVT             = 34,       /*!< When advertising vendor spec content event is reported, the event comes */
+    ESP_GATTC_GET_CHAR_EVT            = 35,       /*!< When characteristic is got from GATT server, the event comes */
+    ESP_GATTC_GET_DESCR_EVT           = 36,       /*!< When characteristic descriptor is got from GATT server, the event comes */
+    ESP_GATTC_GET_INCL_SRVC_EVT       = 37,       /*!< When included service is got from GATT server, the event comes */
+    ESP_GATTC_REG_FOR_NOTIFY_EVT      = 38,       /*!< When register for notification of a service completes, the event comes */
+    ESP_GATTC_UNREG_FOR_NOTIFY_EVT    = 39,       /*!< When unregister for notification of a service completes, the event comes */
+    ESP_GATTC_CONNECT_EVT             = 40,       /*!< When the ble physical connection is set up, the event comes */
+    ESP_GATTC_DISCONNECT_EVT          = 41,       /*!< When the ble physical connection disconnected, the event comes */
 } esp_gattc_cb_event_t;
 
 /// Maximum Transmission Unit used in GATT
@@ -241,6 +243,23 @@ typedef union {
         esp_gatt_id_t char_id;			/*!< Characteristic id, include characteristic uuid and other information */
     } unreg_for_notify;					/*!< Gatt client callback param of ESP_GATTC_UNREG_FOR_NOTIFY_EVT */
 
+    /**
+     * @brief ESP_GATTC_CONNECT_EVT
+     */
+    struct gattc_connect_evt_param {
+        esp_gatt_status_t status;       /*!< Operation status */
+        uint16_t conn_id;               /*!< Connection id */
+        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
+    } connect;                          /*!< Gatt client callback param of ESP_GATTC_CONNECT_EVT */
+
+    /**
+     * @brief ESP_GATTC_DISCONNECT_EVT
+     */
+    struct gattc_disconnect_evt_param {
+        esp_gatt_status_t status;       /*!< Operation status */
+        uint16_t conn_id;               /*!< Connection id */
+        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
+    } disconnect;                       /*!< Gatt client callback param of ESP_GATTC_DISCONNECT_EVT */
 
 } esp_ble_gattc_cb_param_t;				/*!< GATT client callback parameter union type */
 
@@ -311,7 +330,10 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, b
 
 
 /**
- * @brief           Close a connection to a GATT server.
+ * @brief           Close a virtual connection to a GATT server. gattc maybe have multiple virtual GATT server connections when multiple app_id registed,
+ *                  this API only close one virtual GATT server connection. if there exist other virtual GATT server connections,
+ *                  it does not disconnect the physical connection.
+ *                  if you want to disconnect the physical connection directly, you can use esp_ble_gap_disconnect(esp_bd_addr_t remote_device).
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID to be closed.

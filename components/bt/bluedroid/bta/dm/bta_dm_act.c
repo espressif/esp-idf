@@ -4522,6 +4522,19 @@ void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data)
         APPL_TRACE_ERROR("Update connection parameters failed!");
     }
 }
+/*******************************************************************************
+**
+** Function         bta_dm_ble_disconnect
+**
+** Description      This function disconnect the ble connection.
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data)
+{
+    L2CA_RemoveFixedChnl(L2CAP_ATT_CID, p_data->ble_disconnect.remote_bda);
+}
 
 /*******************************************************************************
 **

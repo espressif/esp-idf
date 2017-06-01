@@ -783,6 +783,17 @@ esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t pas
 */
 esp_err_t esp_ble_confirm_reply(esp_bd_addr_t bd_addr, bool accept);
 
+/**
+* @brief           This function is to disconnect the physical connection of the peer device
+*
+* @param[in]       remote_device : BD address of the peer device
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device);
+
 #ifdef __cplusplus
 }
 #endif

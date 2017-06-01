@@ -2206,6 +2206,17 @@ extern void BTA_DmBleUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int,
 
 /*******************************************************************************
 **
+** Function         BTA_DmBleDisconnect
+**
+** Description      This function is to disconnect the ble connection
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmBleDisconnect(BD_ADDR bd_addr);
+
+/*******************************************************************************
+**
 ** Function         BTA_DmBleSetDataLength
 **
 ** Description      This function is to set maximum LE data packet size

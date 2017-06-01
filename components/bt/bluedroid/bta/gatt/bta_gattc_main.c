@@ -400,7 +400,16 @@ BOOLEAN bta_gattc_hdl_event(BT_HDR *p_msg)
     default:
         if (p_msg->event == BTA_GATTC_INT_CONN_EVT) {
             p_clcb = bta_gattc_find_int_conn_clcb((tBTA_GATTC_DATA *) p_msg);
+            p_clreg = bta_gattc_cl_get_regcb(((tBTA_GATTC_DATA *)p_msg)->int_conn.client_if);
+            if (p_clreg != NULL){
+                bta_gattc_conncback(p_clreg, (tBTA_GATTC_DATA *) p_msg);
+            }
+
         } else if (p_msg->event == BTA_GATTC_INT_DISCONN_EVT) {
+            p_clreg = bta_gattc_cl_get_regcb(((tBTA_GATTC_DATA *)p_msg)->int_conn.client_if);
+            if (p_clreg != NULL){
+                bta_gattc_disconncback(p_clreg, (tBTA_GATTC_DATA *) p_msg);
+            }
             p_clcb = bta_gattc_find_int_disconn_clcb((tBTA_GATTC_DATA *) p_msg);
         } else {
             p_clcb = bta_gattc_find_clcb_by_conn_id(p_msg->layer_specific);
