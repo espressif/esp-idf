@@ -24,6 +24,16 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/semphr.h"
+#include "esp_intr_alloc.h"
+#include "sys/lock.h"
+#include "driver/rtc_cntl.h"
+
+#ifndef NDEBUG
+// Enable built-in checks in queue.h in debug builds
+#define INVARIANTS
+#endif
+#include "rom/queue.h"
+
 
 static const char *RTC_MODULE_TAG = "RTC_MODULE";
 
@@ -791,4 +801,100 @@ int hall_sensor_read()
     adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_0db);
     adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_0db);
     return hall_sensor_get_value();
+}
+
+/*---------------------------------------------------------------
+                        INTERRUPT HANDLER
+---------------------------------------------------------------*/
+
+
+typedef struct rtc_isr_handler_ {
+    uint32_t mask;
+    intr_handler_t handler;
+    void* handler_arg;
+    SLIST_ENTRY(rtc_isr_handler_) next;
+} rtc_isr_handler_t;
+
+static SLIST_HEAD(rtc_isr_handler_list_, rtc_isr_handler_) s_rtc_isr_handler_list =
+        SLIST_HEAD_INITIALIZER(s_rtc_isr_handler_list);
+portMUX_TYPE s_rtc_isr_handler_list_lock = portMUX_INITIALIZER_UNLOCKED;
+static intr_handle_t s_rtc_isr_handle;
+
+static void rtc_isr(void* arg)
+{
+    uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
+    rtc_isr_handler_t* it;
+    portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    SLIST_FOREACH(it, &s_rtc_isr_handler_list, next) {
+        if (it->mask & status) {
+            portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+            (*it->handler)(it->handler_arg);
+            portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+        }
+    }
+    portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+    REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
+}
+
+static esp_err_t rtc_isr_ensure_installed()
+{
+    esp_err_t err = ESP_OK;
+    portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    if (s_rtc_isr_handle) {
+        goto out;
+    }
+
+    REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
+    REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
+    err = esp_intr_alloc(ETS_RTC_CORE_INTR_SOURCE, 0, &rtc_isr, NULL, &s_rtc_isr_handle);
+    if (err != ESP_OK) {
+        goto out;
+    }
+
+out:
+    portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+    return err;
+}
+
+
+esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t rtc_intr_mask)
+{
+    esp_err_t err = rtc_isr_ensure_installed();
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    rtc_isr_handler_t* item = malloc(sizeof(*item));
+    if (item == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    item->handler = handler;
+    item->handler_arg = handler_arg;
+    item->mask = rtc_intr_mask;
+    portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    SLIST_INSERT_HEAD(&s_rtc_isr_handler_list, item, next);
+    portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+    return ESP_OK;
+}
+
+esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
+{
+    rtc_isr_handler_t* it;
+    rtc_isr_handler_t* prev = NULL;
+    bool found = false;
+    portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    SLIST_FOREACH(it, &s_rtc_isr_handler_list, next) {
+        if (it->handler == handler && it->handler_arg == handler_arg) {
+            if (it == SLIST_FIRST(&s_rtc_isr_handler_list)) {
+                SLIST_REMOVE_HEAD(&s_rtc_isr_handler_list, next);
+            } else {
+                SLIST_REMOVE_AFTER(prev, next);
+            }
+            found = true;
+            break;
+        }
+        prev = it;
+    }
+    portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+    return found ? ESP_OK : ESP_ERR_INVALID_STATE;
 }
