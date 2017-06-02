@@ -13,5 +13,6 @@ API Guides
    Secure Boot <../security/secure-boot>
    Deep Sleep Wake Stubs <deep-sleep-stub>
    ULP Coprocessor <ulp>
+   External RAM <external-ram>
    Unit Testing <unit-tests>
 
