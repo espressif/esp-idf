@@ -418,6 +418,38 @@ assign_test:
     CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/$CI_JOB_NAME.yml"
     IDF_PATH: "$CI_PROJECT_DIR"
 
+nvs_compatible_test:
+  <<: *test_template
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+      - $IDF_PATH/nvs_wifi.bin
+    expire_in: 6 mos
+  tags:
+    - ESP32_IDF
+    - NVS_Compatible
+  script:
+    # remove artifacts from last stage (UT logs)
+    - rm -rf $LOG_PATH
+    # add gitlab ssh key
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    # clone local test env configs
+    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    # clone test bench
+    - git clone $TEST_SCRIPT_REPOSITORY
+    - cd auto_test_script
+    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
+    # prepare nvs bins
+    - ./Tools/prepare_nvs_bin.sh
+    # run test
+    - python CIRunner.py -l "$LOG_PATH/$CI_JOB_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
+
 UT_001_01:
   <<: *unit_test_template
   tags:
