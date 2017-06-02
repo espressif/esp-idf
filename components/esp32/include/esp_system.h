@@ -60,6 +60,17 @@ void system_restore(void) __attribute__ ((deprecated));
 void esp_restart(void) __attribute__ ((noreturn));
 
 /**
+  * @brief  Internal function to restart PRO and APP CPUs.
+  *
+  * @note This function should not be called from FreeRTOS applications.
+  *       Use esp_restart instead.
+  *
+  * This is an internal function called by esp_restart. It is called directly
+  * by the panic handler and brownout detector interrupt.
+  */
+void esp_restart_noos() __attribute__ ((noreturn));
+
+/**
   * @brief  Restart system.
   *
   * Function has been renamed to esp_restart.
