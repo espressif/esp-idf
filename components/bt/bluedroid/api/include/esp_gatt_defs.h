@@ -263,29 +263,27 @@ typedef enum {
 /**
  * @brief Attribute permissions
  */
-typedef enum {
-    ESP_GATT_PERM_READ                  =   (1 << 0),   /* bit 0 -  0x0001 */    /* relate to BTA_GATT_PERM_READ in bta_gatt_api.h */
-    ESP_GATT_PERM_READ_ENCRYPTED        =   (1 << 1),   /* bit 1 -  0x0002 */    /* relate to BTA_GATT_PERM_READ_ENCRYPTED in bta_gatt_api.h */
-    ESP_GATT_PERM_READ_ENC_MITM         =   (1 << 2),   /* bit 2 -  0x0004 */    /* relate to BTA_GATT_PERM_READ_ENC_MITM in bta_gatt_api.h */
-    ESP_GATT_PERM_WRITE                 =   (1 << 4),   /* bit 4 -  0x0010 */    /* relate to BTA_GATT_PERM_WRITE in bta_gatt_api.h */
-    ESP_GATT_PERM_WRITE_ENCRYPTED       =   (1 << 5),   /* bit 5 -  0x0020 */    /* relate to BTA_GATT_PERM_WRITE_ENCRYPTED in bta_gatt_api.h */
-    ESP_GATT_PERM_WRITE_ENC_MITM        =   (1 << 6),   /* bit 6 -  0x0040 */    /* relate to BTA_GATT_PERM_WRITE_ENC_MITM in bta_gatt_api.h */
-    ESP_GATT_PERM_WRITE_SIGNED          =   (1 << 7),   /* bit 7 -  0x0080 */    /* relate to BTA_GATT_PERM_WRITE_SIGNED in bta_gatt_api.h */
-    ESP_GATT_PERM_WRITE_SIGNED_MITM     =   (1 << 8),   /* bit 8 -  0x0100 */    /* relate to BTA_GATT_PERM_WRITE_SIGNED_MITM in bta_gatt_api.h */
-} esp_gatt_perm_t;
+#define    ESP_GATT_PERM_READ                  (1 << 0)   /* bit 0 -  0x0001 */    /* relate to BTA_GATT_PERM_READ in bta_gatt_api.h */
+#define    ESP_GATT_PERM_READ_ENCRYPTED        (1 << 1)   /* bit 1 -  0x0002 */    /* relate to BTA_GATT_PERM_READ_ENCRYPTED in bta_gatt_api.h */
+#define    ESP_GATT_PERM_READ_ENC_MITM         (1 << 2)   /* bit 2 -  0x0004 */    /* relate to BTA_GATT_PERM_READ_ENC_MITM in bta_gatt_api.h */
+#define    ESP_GATT_PERM_WRITE                 (1 << 4)   /* bit 4 -  0x0010 */    /* relate to BTA_GATT_PERM_WRITE in bta_gatt_api.h */
+#define    ESP_GATT_PERM_WRITE_ENCRYPTED       (1 << 5)   /* bit 5 -  0x0020 */    /* relate to BTA_GATT_PERM_WRITE_ENCRYPTED in bta_gatt_api.h */
+#define    ESP_GATT_PERM_WRITE_ENC_MITM        (1 << 6)   /* bit 6 -  0x0040 */    /* relate to BTA_GATT_PERM_WRITE_ENC_MITM in bta_gatt_api.h */
+#define    ESP_GATT_PERM_WRITE_SIGNED          (1 << 7)   /* bit 7 -  0x0080 */    /* relate to BTA_GATT_PERM_WRITE_SIGNED in bta_gatt_api.h */
+#define    ESP_GATT_PERM_WRITE_SIGNED_MITM     (1 << 8)   /* bit 8 -  0x0100 */    /* relate to BTA_GATT_PERM_WRITE_SIGNED_MITM in bta_gatt_api.h */
+typedef uint16_t esp_gatt_perm_t;
 
 /* relate to BTA_GATT_CHAR_PROP_BIT_xxx in bta_gatt_api.h */
 /* definition of characteristic properties */
-typedef enum {
-    ESP_GATT_CHAR_PROP_BIT_BROADCAST    =   (1 << 0),       /* 0x01 */    /* relate to BTA_GATT_CHAR_PROP_BIT_BROADCAST in bta_gatt_api.h */
-    ESP_GATT_CHAR_PROP_BIT_READ         =   (1 << 1),       /* 0x02 */    /* relate to BTA_GATT_CHAR_PROP_BIT_READ in bta_gatt_api.h */
-    ESP_GATT_CHAR_PROP_BIT_WRITE_NR     =   (1 << 2),       /* 0x04 */    /* relate to BTA_GATT_CHAR_PROP_BIT_WRITE_NR in bta_gatt_api.h */
-    ESP_GATT_CHAR_PROP_BIT_WRITE        =   (1 << 3),       /* 0x08 */    /* relate to BTA_GATT_CHAR_PROP_BIT_WRITE in bta_gatt_api.h */
-    ESP_GATT_CHAR_PROP_BIT_NOTIFY       =   (1 << 4),       /* 0x10 */    /* relate to BTA_GATT_CHAR_PROP_BIT_NOTIFY in bta_gatt_api.h */
-    ESP_GATT_CHAR_PROP_BIT_INDICATE     =   (1 << 5),       /* 0x20 */    /* relate to BTA_GATT_CHAR_PROP_BIT_INDICATE in bta_gatt_api.h */
-    ESP_GATT_CHAR_PROP_BIT_AUTH         =   (1 << 6),       /* 0x40 */    /* relate to BTA_GATT_CHAR_PROP_BIT_AUTH in bta_gatt_api.h */
-    ESP_GATT_CHAR_PROP_BIT_EXT_PROP     =   (1 << 7),       /* 0x80 */    /* relate to BTA_GATT_CHAR_PROP_BIT_EXT_PROP in bta_gatt_api.h */
-} esp_gatt_char_prop_t;
+#define    ESP_GATT_CHAR_PROP_BIT_BROADCAST    (1 << 0)       /* 0x01 */    /* relate to BTA_GATT_CHAR_PROP_BIT_BROADCAST in bta_gatt_api.h */
+#define    ESP_GATT_CHAR_PROP_BIT_READ         (1 << 1)       /* 0x02 */    /* relate to BTA_GATT_CHAR_PROP_BIT_READ in bta_gatt_api.h */
+#define    ESP_GATT_CHAR_PROP_BIT_WRITE_NR     (1 << 2)       /* 0x04 */    /* relate to BTA_GATT_CHAR_PROP_BIT_WRITE_NR in bta_gatt_api.h */
+#define    ESP_GATT_CHAR_PROP_BIT_WRITE        (1 << 3)       /* 0x08 */    /* relate to BTA_GATT_CHAR_PROP_BIT_WRITE in bta_gatt_api.h */
+#define    ESP_GATT_CHAR_PROP_BIT_NOTIFY       (1 << 4)       /* 0x10 */    /* relate to BTA_GATT_CHAR_PROP_BIT_NOTIFY in bta_gatt_api.h */
+#define    ESP_GATT_CHAR_PROP_BIT_INDICATE     (1 << 5)       /* 0x20 */    /* relate to BTA_GATT_CHAR_PROP_BIT_INDICATE in bta_gatt_api.h */
+#define    ESP_GATT_CHAR_PROP_BIT_AUTH         (1 << 6)       /* 0x40 */    /* relate to BTA_GATT_CHAR_PROP_BIT_AUTH in bta_gatt_api.h */
+#define    ESP_GATT_CHAR_PROP_BIT_EXT_PROP     (1 << 7)       /* 0x80 */    /* relate to BTA_GATT_CHAR_PROP_BIT_EXT_PROP in bta_gatt_api.h */
+typedef uint8_t esp_gatt_char_prop_t;
 
 /// GATT maximum attribute length
 #define ESP_GATT_MAX_ATTR_LEN   600 //as same as GATT_MAX_ATTR_LEN
