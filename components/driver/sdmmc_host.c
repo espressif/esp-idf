@@ -462,7 +462,7 @@ void sdmmc_host_dma_resume()
  * full and some card detect events may be dropped. We ignore this problem for now, since
  * the there are no other interesting events which can get lost due to this.
  */
-static void sdmmc_isr(void* arg) {
+IRAM_ATTR static void sdmmc_isr(void* arg) {
     QueueHandle_t queue = (QueueHandle_t) arg;
     sdmmc_event_t event;
     uint32_t pending = SDMMC.mintsts.val;
