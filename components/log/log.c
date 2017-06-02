@@ -335,10 +335,10 @@ void esp_log_buffer_hex(const char *tag, const char *buffer, uint16_t buff_len)
 
 void esp_log_buffer_char(const char *tag, const char *buffer, uint16_t buff_len)
 {
-    char temp_buffer[2*BYTES_PER_LINE + 1] = {0};
+    char temp_buffer[BYTES_PER_LINE + 1] = {0};
     int line_len = 0;
     for (int i = 0; i < buff_len; i++) {
-        line_len += sprintf(temp_buffer+line_len, "%c ", buffer[i]);
+        line_len += sprintf(temp_buffer+line_len, "%c", buffer[i]);
         if (((i + 1) % BYTES_PER_LINE == 0) || (i == buff_len - 1)) {
             ESP_LOGI(tag, "%s", temp_buffer);
             line_len = 0;

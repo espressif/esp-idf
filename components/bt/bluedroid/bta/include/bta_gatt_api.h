@@ -582,6 +582,21 @@ typedef struct {
     tBTA_GATT_STATUS status; /* notification/indication status */
 } tBTA_GATTS_CONF;
 
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    UINT16              conn_id;    /* connection ID */
+} tBTA_GATTS_CLOSE;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTS_IF       server_if;
+} tBTA_GATTS_OPEN;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTS_IF       server_if;
+} tBTA_GATTS_CANCEL_OPEN;
+
 /* GATTS callback data */
 typedef union {
     tBTA_GATTS_REG_OPER         reg_oper;
@@ -596,6 +611,10 @@ typedef union {
     tBTA_GATTS_CONN             conn;           /* BTA_GATTS_CONN_EVT */
     tBTA_GATTS_CONGEST          congest;        /* BTA_GATTS_CONGEST_EVT callback data */
     tBTA_GATTS_CONF             confirm;        /* BTA_GATTS_CONF_EVT callback data */
+    tBTA_GATTS_CLOSE            close;          /* BTA_GATTS_CLOSE_EVT callback data */
+    tBTA_GATTS_OPEN             open;           /* BTA_GATTS_OPEN_EVT callback data */
+    tBTA_GATTS_CANCEL_OPEN      cancel_open;    /* tBTA_GATTS_CANCEL_OPEN callback data */
+
 } tBTA_GATTS;
 
 /* GATTS enable callback function */
