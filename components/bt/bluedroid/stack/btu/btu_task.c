@@ -418,6 +418,7 @@ static void btu_general_alarm_process(TIMER_LIST_ENT *p_tle)
     case BTU_TTYPE_L2CAP_HOLD:
     case BTU_TTYPE_L2CAP_INFO:
     case BTU_TTYPE_L2CAP_FCR_ACK:
+    case BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS:
         l2c_process_timeout (p_tle);
         break;
 #if (defined(SDP_INCLUDED) && SDP_INCLUDED == TRUE)

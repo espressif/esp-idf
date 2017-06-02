@@ -105,6 +105,33 @@ static void btc_cleanup_adv_data(tBTA_BLE_ADV_DATA *bta_adv_data)
 }
 
 
+static esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status)
+{
+    esp_bt_status_t esp_status = ESP_BT_STATUS_FAIL;
+    switch(hci_status) {
+        case HCI_SUCCESS:
+            esp_status = ESP_BT_STATUS_SUCCESS;
+            break;
+        case HCI_ERR_HOST_TIMEOUT:
+            esp_status = ESP_BT_STATUS_TIMEOUT;
+            break;
+        case HCI_ERR_ILLEGAL_COMMAND:
+            esp_status = ESP_BT_STATUS_PENDING;
+            break;
+        case HCI_ERR_UNACCEPT_CONN_INTERVAL:
+            esp_status = ESP_BT_STATUS_UNACCEPT_CONN_INTERVAL;
+            break;
+        case HCI_ERR_PARAM_OUT_OF_RANGE:
+            esp_status = ESP_BT_STATUS_PARAM_OUT_OF_RANGE;
+            break;
+        default:
+            esp_status = ESP_BT_STATUS_FAIL;
+            break;
+    }
+
+    return esp_status;
+}
+
 static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DATA *bta_adv_data, uint32_t *data_mask)
 {
     uint32_t mask;
@@ -570,6 +597,31 @@ static void btc_stop_scan_callback(tBTA_STATUS status)
     }
 }
 
+void btc_update_conn_param_callback (UINT8 status, BD_ADDR bd_addr, 
+                                                       tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params)
+{
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT;
+    param.update_conn_params.status = btc_hci_to_esp_status(status);
+    param.update_conn_params.min_int = update_conn_params->min_conn_int;
+    param.update_conn_params.max_int = update_conn_params->max_conn_int;
+    param.update_conn_params.conn_int = update_conn_params->conn_int;
+    param.update_conn_params.latency = update_conn_params->slave_latency;
+    param.update_conn_params.timeout = update_conn_params->supervision_tout;
+    memcpy(param.update_conn_params.bda, bd_addr, sizeof(esp_bd_addr_t));
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_ble_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
+
 #if (SMP_INCLUDED == TRUE)
 static void btc_set_encryption_callback(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_STATUS enc_status)
 {
@@ -607,7 +659,8 @@ static void btc_ble_stop_advertising(tBTA_START_STOP_ADV_CMPL_CBACK *stop_adv_cb
 }
 
 static void btc_ble_update_conn_params(BD_ADDR bd_addr, uint16_t min_int,
-                                       uint16_t max_int, uint16_t latency, uint16_t timeout)
+                                       uint16_t max_int, uint16_t latency, uint16_t timeout,
+                                       tBTA_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb)
 {
     if (min_int > max_int) {
         min_int = max_int;
@@ -618,7 +671,7 @@ static void btc_ble_update_conn_params(BD_ADDR bd_addr, uint16_t min_int,
     }
 
     BTA_DmBleUpdateConnectionParams(bd_addr, min_int, max_int,
-                                    latency, timeout);
+                                    latency, timeout, update_conn_param_cb);
 }
 
 static void btc_ble_set_pkt_data_len(BD_ADDR remote_device, uint16_t tx_data_length)
@@ -733,6 +786,10 @@ void btc_gap_ble_cb_handler(btc_msg_t *msg)
         break;
     case ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT:
         btc_gap_ble_cb_to_app(ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT, param);
+        break;
+    case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+        btc_gap_ble_cb_to_app(ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT, param);
+        break;
     default:
         break;
 
@@ -883,7 +940,8 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                    arg->conn_update_params.conn_params.min_int,
                                    arg->conn_update_params.conn_params.max_int,
                                    arg->conn_update_params.conn_params.latency,
-                                   arg->conn_update_params.conn_params.timeout);
+                                   arg->conn_update_params.conn_params.timeout,
+                                   btc_update_conn_param_callback);
         break;
     case BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN:
         btc_ble_set_pkt_data_len(arg->set_pkt_data_len.remote_device, arg->set_pkt_data_len.tx_data_length);

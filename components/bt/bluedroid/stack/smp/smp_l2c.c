@@ -239,7 +239,7 @@ static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN con
     SMP_TRACE_EVENT ("%s", __func__);
 
     if (transport != BT_TRANSPORT_BR_EDR) {
-        SMP_TRACE_WARNING("%s is called on unexpected transport %d\n",
+        SMP_TRACE_EVENT ("%s is called on unexpected transport %d\n",
                           __func__, transport);
         return;
     }

@@ -503,7 +503,7 @@ void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
 void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
 {
     tBTA_GATTS_RCB  *p_rcb = &bta_gatts_cb.rcb[p_srvc_cb->rcb_idx];
-    UINT16          attr_id = 0;
+    UINT16          service_id = p_srvc_cb->service_id;
     tBTA_GATTS      cb_data;
     tBTA_GATT_STATUS gatts_status;
     gatts_status = GATTS_SetAttributeValue(p_msg->api_add_char_descr.hdr.layer_specific,
@@ -511,8 +511,8 @@ void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
                                            p_msg->api_set_val.value);
 
     cb_data.attr_val.server_if = p_rcb->gatt_if;
-    cb_data.attr_val.service_id = p_msg->api_set_val.hdr.layer_specific;
-    cb_data.attr_val.attr_id = attr_id;
+    cb_data.attr_val.service_id = service_id;
+    cb_data.attr_val.attr_id = p_msg->api_set_val.hdr.layer_specific;
     cb_data.attr_val.status = gatts_status;
 
     if (p_rcb->p_cback) {
