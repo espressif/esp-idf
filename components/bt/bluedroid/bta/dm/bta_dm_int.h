@@ -1120,7 +1120,9 @@ extern void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data);
+#if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
+#endif /* ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE) */
 extern void bta_dm_ble_observe (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data);
