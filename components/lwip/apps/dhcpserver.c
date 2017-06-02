@@ -385,13 +385,27 @@ static void create_msg(struct dhcps_msg *m)
     memcpy((char *) m->options, &magic_cookie_temp, sizeof(magic_cookie_temp));
 }
 
+struct pbuf * dhcps_pbuf_alloc(u16_t len)
+{
+    u16_t mlen = sizeof(struct dhcps_msg);
+
+    if (len > mlen) {
+#if DHCPS_DEBUG
+        DHCPS_LOG("dhcps: len=%d mlen=%d", len, mlen);
+#endif
+        mlen = len;
+    }
+
+    return pbuf_alloc(PBUF_TRANSPORT, mlen, PBUF_RAM);
+}
+
 /******************************************************************************
  * FunctionName : send_offer
  * Description  : DHCP message OFFER Response
  * Parameters   : m -- DHCP message info
  * Returns      : none
 *******************************************************************************/
-static void send_offer(struct dhcps_msg *m)
+static void send_offer(struct dhcps_msg *m, u16_t len)
 {
     u8_t *end;
     struct pbuf *p, *q;
@@ -405,7 +419,7 @@ static void send_offer(struct dhcps_msg *m)
     end = add_offer_options(end);
     end = add_end(end);
 
-    p = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct dhcps_msg), PBUF_RAM);
+    p = dhcps_pbuf_alloc(len);
 #if DHCPS_DEBUG
     DHCPS_LOG("udhcp: send_offer>>p->ref = %d\n", p->ref);
 #endif
@@ -465,7 +479,7 @@ static void send_offer(struct dhcps_msg *m)
  * Parameters   : m -- DHCP message info
  * Returns      : none
 *******************************************************************************/
-static void send_nak(struct dhcps_msg *m)
+static void send_nak(struct dhcps_msg *m, u16_t len)
 {
     u8_t *end;
     struct pbuf *p, *q;
@@ -478,7 +492,7 @@ static void send_nak(struct dhcps_msg *m)
     end = add_msg_type(&m->options[4], DHCPNAK);
     end = add_end(end);
 
-    p = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct dhcps_msg), PBUF_RAM);
+    p = dhcps_pbuf_alloc(len);
 #if DHCPS_DEBUG
     DHCPS_LOG("udhcp: send_nak>>p->ref = %d\n", p->ref);
 #endif
@@ -538,7 +552,7 @@ static void send_nak(struct dhcps_msg *m)
  * Parameters   : m -- DHCP message info
  * Returns      : none
 *******************************************************************************/
-static void send_ack(struct dhcps_msg *m)
+static void send_ack(struct dhcps_msg *m, u16_t len)
 {
     u8_t *end;
     struct pbuf *p, *q;
@@ -552,7 +566,7 @@ static void send_ack(struct dhcps_msg *m)
     end = add_offer_options(end);
     end = add_end(end);
 
-    p = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct dhcps_msg), PBUF_RAM);
+    p = dhcps_pbuf_alloc(len);
 #if DHCPS_DEBUG
     DHCPS_LOG("udhcp: send_ack>>p->ref = %d\n", p->ref);
 #endif
@@ -863,7 +877,7 @@ static void handle_dhcp(void *arg,
                         u16_t port)
 {
     struct dhcps_msg *pmsg_dhcps = NULL;
-    s16_t tlen;
+    s16_t tlen, malloc_len;
     u16_t i;
     u16_t dhcps_msg_cnt = 0;
     u8_t *p_dhcps_msg = NULL;
@@ -877,14 +891,21 @@ static void handle_dhcp(void *arg,
         return;
     }
 
-    pmsg_dhcps = (struct dhcps_msg *)malloc(sizeof(struct dhcps_msg));
-    memset(pmsg_dhcps , 0x00 , sizeof(struct dhcps_msg));
+    malloc_len = sizeof(struct dhcps_msg);
+#if DHCPS_DEBUG
+    DHCPS_LOG("dhcps: handle_dhcp malloc_len=%d rx_len=%d", malloc_len, p->tot_len);
+#endif
+    if (malloc_len < p->tot_len) {
+        malloc_len = p->tot_len;
+    }
 
+    pmsg_dhcps = (struct dhcps_msg *)malloc(malloc_len);
     if (NULL == pmsg_dhcps) {
         pbuf_free(p);
         return;
     }
 
+    memset(pmsg_dhcps , 0x00 , malloc_len);
     p_dhcps_msg = (u8_t *)pmsg_dhcps;
     tlen = p->tot_len;
     data = p->payload;
@@ -937,21 +958,21 @@ static void handle_dhcp(void *arg,
 #if DHCPS_DEBUG
             DHCPS_LOG("dhcps: handle_dhcp-> DHCPD_STATE_OFFER\n");
 #endif
-            send_offer(pmsg_dhcps);
+            send_offer(pmsg_dhcps, malloc_len);
             break;
 
         case DHCPS_STATE_ACK://3
 #if DHCPS_DEBUG
             DHCPS_LOG("dhcps: handle_dhcp-> DHCPD_STATE_ACK\n");
 #endif
-            send_ack(pmsg_dhcps);
+            send_ack(pmsg_dhcps, malloc_len);
             break;
 
         case DHCPS_STATE_NAK://4
 #if DHCPS_DEBUG
             DHCPS_LOG("dhcps: handle_dhcp-> DHCPD_STATE_NAK\n");
 #endif
-            send_nak(pmsg_dhcps);
+            send_nak(pmsg_dhcps, malloc_len);
             break;
 
         default :
