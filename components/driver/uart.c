@@ -424,7 +424,7 @@ esp_err_t uart_set_rts(uart_port_t uart_num, int level)
     UART_CHECK((UART[uart_num]->conf1.rx_flow_en != 1), "disable hw flowctrl before using sw control", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->conf0.sw_rts = level & 0x1;
-    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
 
@@ -433,7 +433,7 @@ esp_err_t uart_set_dtr(uart_port_t uart_num, int level)
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->conf0.sw_dtr = level & 0x1;
-    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
 
@@ -559,6 +559,12 @@ static void uart_rx_intr_handler_default(void *param)
                     if(p_uart->tx_len_tot > 0 && p_uart->tx_ptr && p_uart->tx_len_cur > 0) {
                         //To fill the TX FIFO.
                         int send_len = p_uart->tx_len_cur > tx_fifo_rem ? tx_fifo_rem : p_uart->tx_len_cur;
+                        UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
+                        if(uart_reg->rs485_conf.en) {
+                            uart_reg->conf0.sw_rts = 1;
+                            uart_reg->int_ena.tx_done = 1;
+                        }
+                        UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
                         for(buf_idx = 0; buf_idx < send_len; buf_idx++) {
                             WRITE_PERI_REG(UART_FIFO_AHB_REG(uart_num), *(p_uart->tx_ptr++) & 0xff);
                         }
@@ -690,6 +696,8 @@ static void uart_rx_intr_handler_default(void *param)
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_reg->int_ena.tx_done = 0;
             uart_reg->int_clr.tx_done = 1;
+            if(uart_reg->rs485_conf.en)
+                uart_reg->conf0.sw_rts = 0;                     
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
             if(HPTaskAwoken == pdTRUE) {
@@ -760,6 +768,10 @@ static int uart_fill_fifo(uart_port_t uart_num, const char* buffer, uint32_t len
     uint8_t tx_fifo_cnt = UART[uart_num]->status.txfifo_cnt;
     uint8_t tx_remain_fifo_cnt = (UART_FIFO_LEN - tx_fifo_cnt);
     uint8_t copy_cnt = (len >= tx_remain_fifo_cnt ? tx_remain_fifo_cnt : len);
+    if(UART[uart_num]->rs485_conf.en) {
+        UART[uart_num]->conf0.sw_rts = 1;
+        UART[uart_num]->int_ena.tx_done = 1;
+    }
     for(i = 0; i < copy_cnt; i++) {
         WRITE_PERI_REG(UART_FIFO_AHB_REG(uart_num), buffer[i]);
     }
@@ -1084,3 +1096,17 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     p_uart_obj[uart_num] = NULL;
     return ESP_OK;
 }
+
+esp_err_t uart_set_rs485_hd_mode(uart_port_t uart_num, bool enable)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    if(enable) {
+        UART[uart_num]->rs485_conf.en = 1;
+    } else {
+        UART[uart_num]->rs485_conf.en = 0;
+    }
+    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    return ESP_OK;
+}
+
