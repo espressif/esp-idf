@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import subprocess
+import hashlib
 
 from copy import deepcopy
 import CreateSectionTable
@@ -131,16 +132,23 @@ class Parser(object):
         :return: parsed test case
         """
         prop = self.parse_case_properities(description)
+        
+        idf_path = os.getenv("IDF_PATH")
+        
+        # use relative file path to IDF_PATH, to make sure file path is consist
+        relative_file_path = os.path.relpath(file_name, idf_path)
+        
+        file_name_hash = int(hashlib.sha256(relative_file_path).hexdigest(), base=16) % 1000
 
-        if file_name in self.file_name_cache:
-            self.file_name_cache[file_name] += 1
+        if file_name_hash in self.file_name_cache:
+            self.file_name_cache[file_name_hash] += 1
         else:
-            self.file_name_cache[file_name] = 1
+            self.file_name_cache[file_name_hash] = 1
 
         tc_id = "UT_%s_%s_%03d%02d" % (self.module_map[prop["module"]]['module abbr'],
                                        self.module_map[prop["module"]]['sub module abbr'],
-                                       hash(file_name) % 1000,
-                                       self.file_name_cache[file_name])
+                                       file_name_hash,
+                                       self.file_name_cache[file_name_hash])
         test_case = deepcopy(TEST_CASE_PATTERN)
         test_case.update({"module": self.module_map[prop["module"]]['module'],
                           "CI ready": "No" if prop["ignore"] == "Yes" else "Yes",
