@@ -580,7 +580,7 @@ static void btc_set_encryption_callback(BD_ADDR bd_addr, tBTA_TRANSPORT transpor
 }
 #endif  ///SMP_INCLUDED == TRUE
 
-static void btc_ble_start_scanning(uint8_t duration,
+static void btc_ble_start_scanning(uint32_t duration,
                                    tBTA_DM_SEARCH_CBACK *results_cb,
                                    tBTA_START_STOP_SCAN_CMPL_CBACK *start_scan_cb)
 {

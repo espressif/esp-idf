@@ -2127,7 +2127,7 @@ void BTA_DmCloseACL(BD_ADDR bd_addr, BOOLEAN remove_dev, tBTA_TRANSPORT transpor
 ** Returns          void.
 **
 *******************************************************************************/
-extern void BTA_DmBleObserve(BOOLEAN start, UINT8 duration,
+extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb,
                              tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb)
 {

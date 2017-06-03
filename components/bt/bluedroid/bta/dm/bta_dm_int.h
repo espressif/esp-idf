@@ -478,7 +478,7 @@ typedef struct {
 typedef struct {
     BT_HDR                  hdr;
     BOOLEAN                 start;
-    UINT16                  duration;
+    UINT32                  duration;
     tBTA_DM_SEARCH_CBACK    *p_cback;
     tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
     tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
