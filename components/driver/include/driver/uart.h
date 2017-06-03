@@ -636,6 +636,19 @@ esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num);
  *     - ESP_FAIL Parameter error
  */
 esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle);
+
+/**
+ * @brief   UART enable RS-485 mode and RS-485 hald-duplex line driver control using the RTS control line
+ *
+ * @param uart_num UART port number.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_set_rs485_hd_mode(uart_port_t uart_num, bool enable);
+
+
 /***************************EXAMPLE**********************************
  *
  *
