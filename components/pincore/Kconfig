@@ -1,0 +1,18 @@
+if FREERTOS_UNICORE
+
+comment "FreeRTOS set to run unicore, PinCore module disabled"
+
+endif
+
+if !FREERTOS_UNICORE
+
+config PINCORE_MODULE_ENABLED
+	bool "Enable functions pinning thread to specific or current core"
+    default "y"
+    help
+    	Enable if you use functions that don't feel good when they
+    	swap to a different core, and want to secure them to stay
+    	on current or dedicated core for a specific code area.
+
+
+endif

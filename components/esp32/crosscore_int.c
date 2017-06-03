@@ -95,4 +95,3 @@ void IRAM_ATTR esp_crosscore_int_send_yield(int coreId) {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
     }
 }
-
