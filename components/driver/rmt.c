@@ -635,8 +635,19 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     }
     free(p_rmt_obj[channel]);
     p_rmt_obj[channel] = NULL;
-    s_rmt_driver_installed = false;
-    return rmt_isr_deregister(s_rmt_driver_intr_handle);
+
+    rmt_channel_t idx;
+    for (idx = 0; idx < RMT_CHANNEL_MAX; idx++) {
+        if (p_rmt_obj[idx]) {
+            break;
+        }
+    }
+    if (idx == RMT_CHANNEL_MAX) {
+        s_rmt_driver_installed = false;
+        return rmt_isr_deregister(s_rmt_driver_intr_handle);
+    } else {
+        return ESP_OK;
+    }
 }
 
 esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr_alloc_flags)
