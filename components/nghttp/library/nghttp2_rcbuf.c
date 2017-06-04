@@ -28,6 +28,7 @@
 #include <assert.h>
 
 #include "nghttp2_mem.h"
+#include "nghttp2_helper.h"
 
 int nghttp2_rcbuf_new(nghttp2_rcbuf **rcbuf_ptr, size_t size,
                       nghttp2_mem *mem) {
@@ -58,10 +59,8 @@ int nghttp2_rcbuf_new2(nghttp2_rcbuf **rcbuf_ptr, const uint8_t *src,
     return rv;
   }
 
-  memcpy((*rcbuf_ptr)->base, src, srclen);
-
   (*rcbuf_ptr)->len = srclen;
-  (*rcbuf_ptr)->base[srclen] = '\0';
+  *nghttp2_cpymem((*rcbuf_ptr)->base, src, srclen) = '\0';
 
   return 0;
 }

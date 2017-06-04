@@ -1,7 +1,7 @@
 /*
  * nghttp2 - HTTP/2 C Library
  *
- * Copyright (c) 2012 Tatsuhiro Tsujikawa
+ * Copyright (c) 2016 Tatsuhiro Tsujikawa
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -22,37 +22,39 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef NGHTTP2_INT_H
-#define NGHTTP2_INT_H
+#include "nghttp2_debug.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif /* HAVE_CONFIG_H */
+#include <stdio.h>
 
-#include <nghttp2/nghttp2.h>
+#ifdef DEBUGBUILD
 
-/* Macros, types and constants for internal use */
+static void nghttp2_default_debug_vfprintf_callback(const char *fmt,
+                                                    va_list args) {
+  vfprintf(stderr, fmt, args);
+}
 
-/* "less" function, return nonzero if |lhs| is less than |rhs|. */
-typedef int (*nghttp2_less)(const void *lhs, const void *rhs);
+static nghttp2_debug_vprintf_callback static_debug_vprintf_callback =
+    nghttp2_default_debug_vfprintf_callback;
 
-/* Internal error code. They must be in the range [-499, -100],
-   inclusive. */
-typedef enum {
-  NGHTTP2_ERR_CREDENTIAL_PENDING = -101,
-  NGHTTP2_ERR_IGN_HEADER_BLOCK = -103,
-  NGHTTP2_ERR_IGN_PAYLOAD = -104,
-  /*
-   * Invalid HTTP header field was received but it can be treated as
-   * if it was not received because of compatibility reasons.
-   */
-  NGHTTP2_ERR_IGN_HTTP_HEADER = -105,
-  /*
-   * Invalid HTTP header field was received, and it is ignored.
-   * Unlike NGHTTP2_ERR_IGN_HTTP_HEADER, this does not invoke
-   * nghttp2_on_invalid_header_callback.
-   */
-  NGHTTP2_ERR_REMOVE_HTTP_HEADER = -106
-} nghttp2_internal_error;
+void nghttp2_debug_vprintf(const char *format, ...) {
+  if (static_debug_vprintf_callback) {
+    va_list args;
+    va_start(args, format);
+    static_debug_vprintf_callback(format, args);
+    va_end(args);
+  }
+}
 
-#endif /* NGHTTP2_INT_H */
+void nghttp2_set_debug_vprintf_callback(
+    nghttp2_debug_vprintf_callback debug_vprintf_callback) {
+  static_debug_vprintf_callback = debug_vprintf_callback;
+}
+
+#else /* !DEBUGBUILD */
+
+void nghttp2_set_debug_vprintf_callback(
+    nghttp2_debug_vprintf_callback debug_vprintf_callback) {
+  (void)debug_vprintf_callback;
+}
+
+#endif /* !DEBUGBUILD */

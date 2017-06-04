@@ -217,7 +217,7 @@ int nghttp2_submit_ping(nghttp2_session *session, uint8_t flags,
   return nghttp2_session_add_ping(session, flags, opaque_data);
 }
 
-int nghttp2_submit_priority(nghttp2_session *session, uint8_t flags _U_,
+int nghttp2_submit_priority(nghttp2_session *session, uint8_t flags,
                             int32_t stream_id,
                             const nghttp2_priority_spec *pri_spec) {
   int rv;
@@ -225,6 +225,7 @@ int nghttp2_submit_priority(nghttp2_session *session, uint8_t flags _U_,
   nghttp2_frame *frame;
   nghttp2_priority_spec copy_pri_spec;
   nghttp2_mem *mem;
+  (void)flags;
 
   mem = &session->mem;
 
@@ -264,8 +265,10 @@ int nghttp2_submit_priority(nghttp2_session *session, uint8_t flags _U_,
   return 0;
 }
 
-int nghttp2_submit_rst_stream(nghttp2_session *session, uint8_t flags _U_,
+int nghttp2_submit_rst_stream(nghttp2_session *session, uint8_t flags,
                               int32_t stream_id, uint32_t error_code) {
+  (void)flags;
+
   if (stream_id == 0) {
     return NGHTTP2_ERR_INVALID_ARGUMENT;
   }
@@ -273,9 +276,11 @@ int nghttp2_submit_rst_stream(nghttp2_session *session, uint8_t flags _U_,
   return nghttp2_session_add_rst_stream(session, stream_id, error_code);
 }
 
-int nghttp2_submit_goaway(nghttp2_session *session, uint8_t flags _U_,
+int nghttp2_submit_goaway(nghttp2_session *session, uint8_t flags,
                           int32_t last_stream_id, uint32_t error_code,
                           const uint8_t *opaque_data, size_t opaque_data_len) {
+  (void)flags;
+
   if (session->goaway_flags & NGHTTP2_GOAWAY_TERM_ON_SEND) {
     return 0;
   }
@@ -296,12 +301,13 @@ int nghttp2_submit_shutdown_notice(nghttp2_session *session) {
                                     NGHTTP2_GOAWAY_AUX_SHUTDOWN_NOTICE);
 }
 
-int nghttp2_submit_settings(nghttp2_session *session, uint8_t flags _U_,
+int nghttp2_submit_settings(nghttp2_session *session, uint8_t flags,
                             const nghttp2_settings_entry *iv, size_t niv) {
+  (void)flags;
   return nghttp2_session_add_settings(session, NGHTTP2_FLAG_NONE, iv, niv);
 }
 
-int32_t nghttp2_submit_push_promise(nghttp2_session *session, uint8_t flags _U_,
+int32_t nghttp2_submit_push_promise(nghttp2_session *session, uint8_t flags,
                                     int32_t stream_id, const nghttp2_nv *nva,
                                     size_t nvlen,
                                     void *promised_stream_user_data) {
@@ -312,6 +318,7 @@ int32_t nghttp2_submit_push_promise(nghttp2_session *session, uint8_t flags _U_,
   int32_t promised_stream_id;
   int rv;
   nghttp2_mem *mem;
+  (void)flags;
 
   mem = &session->mem;
 
@@ -370,10 +377,11 @@ int nghttp2_submit_window_update(nghttp2_session *session, uint8_t flags,
                                  int32_t window_size_increment) {
   int rv;
   nghttp2_stream *stream = 0;
+  (void)flags;
+
   if (window_size_increment == 0) {
     return 0;
   }
-  flags = 0;
   if (stream_id == 0) {
     rv = nghttp2_adjust_local_window_size(
         &session->local_window_size, &session->recv_window_size,
@@ -404,7 +412,7 @@ int nghttp2_submit_window_update(nghttp2_session *session, uint8_t flags,
           nghttp2_max(0, stream->consumed_size - window_size_increment);
     }
 
-    return nghttp2_session_add_window_update(session, flags, stream_id,
+    return nghttp2_session_add_window_update(session, 0, stream_id,
                                              window_size_increment);
   }
   return 0;
@@ -416,12 +424,11 @@ int nghttp2_session_set_local_window_size(nghttp2_session *session,
   int32_t window_size_increment;
   nghttp2_stream *stream;
   int rv;
+  (void)flags;
 
   if (window_size < 0) {
     return NGHTTP2_ERR_INVALID_ARGUMENT;
   }
-
-  flags = 0;
 
   if (stream_id == 0) {
     window_size_increment = window_size - session->local_window_size;
@@ -472,14 +479,14 @@ int nghttp2_session_set_local_window_size(nghttp2_session *session,
   }
 
   if (window_size_increment > 0) {
-    return nghttp2_session_add_window_update(session, flags, stream_id,
+    return nghttp2_session_add_window_update(session, 0, stream_id,
                                              window_size_increment);
   }
 
   return 0;
 }
 
-int nghttp2_submit_altsvc(nghttp2_session *session, uint8_t flags _U_,
+int nghttp2_submit_altsvc(nghttp2_session *session, uint8_t flags,
                           int32_t stream_id, const uint8_t *origin,
                           size_t origin_len, const uint8_t *field_value,
                           size_t field_value_len) {
@@ -491,6 +498,7 @@ int nghttp2_submit_altsvc(nghttp2_session *session, uint8_t flags _U_,
   nghttp2_frame *frame;
   nghttp2_ext_altsvc *altsvc;
   int rv;
+  (void)flags;
 
   mem = &session->mem;
 

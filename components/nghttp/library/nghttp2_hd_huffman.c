@@ -64,15 +64,44 @@ static ssize_t huff_encode_sym(nghttp2_bufs *bufs, size_t *avail_ptr,
     code <<= 8 - (nbits & 0x7);
   }
 
-  /* we lose at most 3 bytes, but it is not critical in practice */
   if (*avail_ptr < (nbits + 7) / 8) {
-    rv = nghttp2_bufs_advance(bufs);
+    /* slow path */
+    if (nbits > 24) {
+      rv = nghttp2_bufs_addb(bufs, (uint8_t)(code >> 24));
+      if (rv != 0) {
+        return rv;
+      }
+      nbits -= 8;
+    }
+    if (nbits > 16) {
+      rv = nghttp2_bufs_addb(bufs, (uint8_t)(code >> 16));
+      if (rv != 0) {
+        return rv;
+      }
+      nbits -= 8;
+    }
+    if (nbits > 8) {
+      rv = nghttp2_bufs_addb(bufs, (uint8_t)(code >> 8));
+      if (rv != 0) {
+        return rv;
+      }
+      nbits -= 8;
+    }
+    if (nbits == 8) {
+      rv = nghttp2_bufs_addb(bufs, (uint8_t)code);
+      if (rv != 0) {
+        return rv;
+      }
+      *avail_ptr = nghttp2_bufs_cur_avail(bufs);
+      return 8;
+    }
+
+    rv = nghttp2_bufs_addb_hold(bufs, (uint8_t)code);
     if (rv != 0) {
       return rv;
     }
     *avail_ptr = nghttp2_bufs_cur_avail(bufs);
-    /* we assume that we at least 3 buffer space available */
-    assert(*avail_ptr >= 3);
+    return (ssize_t)(8 - nbits);
   }
 
   /* fast path, since most code is less than 8 */

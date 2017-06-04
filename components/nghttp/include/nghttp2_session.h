@@ -51,7 +51,8 @@ typedef enum {
   NGHTTP2_OPTMASK_NO_AUTO_WINDOW_UPDATE = 1 << 0,
   NGHTTP2_OPTMASK_NO_RECV_CLIENT_MAGIC = 1 << 1,
   NGHTTP2_OPTMASK_NO_HTTP_MESSAGING = 1 << 2,
-  NGHTTP2_OPTMASK_NO_AUTO_PING_ACK = 1 << 3
+  NGHTTP2_OPTMASK_NO_AUTO_PING_ACK = 1 << 3,
+  NGHTTP2_OPTMASK_NO_CLOSED_STREAMS = 1 << 4
 } nghttp2_optmask;
 
 /*
@@ -78,7 +79,7 @@ typedef struct {
 
 /* Buffer length for inbound raw byte stream used in
    nghttp2_session_recv(). */
-#define NGHTTP2_INBOUND_BUFFER_LENGTH 3072//16384--LiuHan/08.12
+#define NGHTTP2_INBOUND_BUFFER_LENGTH 16384
 
 /* The default maximum number of incoming reserved streams */
 #define NGHTTP2_MAX_INCOMING_RESERVED_STREAMS 200
