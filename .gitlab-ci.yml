@@ -112,10 +112,10 @@ build_examples:
   <<: *build_template
   artifacts:
     paths:
-      - build_examples/*/*/build/*.bin
-      - build_examples/*/*/build/*.elf
-      - build_examples/*/*/build/*.map
-      - build_examples/*/*/build/bootloader/*.bin
+      - build_examples/*/*/*/build/*.bin
+      - build_examples/*/*/*/build/*.elf
+      - build_examples/*/*/*/build/*.map
+      - build_examples/*/*/*/build/bootloader/*.bin
     expire_in: 6 mos
 
   script:
