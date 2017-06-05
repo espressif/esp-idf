@@ -67,17 +67,20 @@ Development board that has dual port USB to serial converter for programming and
 * `FTDI Virtual COM Port Drivers`_
 
 
-ESP32 WROVER KIT V2
--------------------
+ESP32 WROVER KIT V2/V3
+----------------------
 
-This is an updated version of ESP32 DevKitJ V1 described above with design improvements identified when DevKitJ was in use. Both V1 and V2 versions of this board are ready to accommodate existing ESP-WROOM-32 or the new ESP32-WROVER module.
+These are updated versions of ESP32 DevKitJ V1 described above with design improvements identified when DevKitJ was in use. All versions of this board are ready to accommodate an ESP-WROOM-32 or ESP32-WROVER module.
 
 .. image:: http://dl.espressif.com/dl/schematics/pictures/esp-wrover-kit-v2.jpg
    :align: center
    :width: 90%
    :alt: ESP32 WROVER KIT V2 board
 
-* `Schematic <http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf>`__ (PDF)
+V2 boards have a shiny black finish and a male camera header, while V3 boards have a matte black finish and a female camera header. Pictured above is a V2 board.
+
+* `Schematic V2 <http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf>`__ (PDF)
+* `Schematic V3 <http://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-3.pdf>`__ (PDF)
 * :doc:`../get-started/get-started-wrover-kit`
 * `JTAG Debugging for ESP32`_ (PDF)
 * `FTDI Virtual COM Port Drivers`_
