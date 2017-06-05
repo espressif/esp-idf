@@ -72,6 +72,10 @@ system_event_cb_t esp_event_loop_set_cb(system_event_cb_t cb, void *ctx)
 
 esp_err_t esp_event_send(system_event_t *event)
 {
+    if (s_event_queue == NULL) {
+        ESP_LOGE(TAG, "Event loop not initialized via esp_event_loop_init, but esp_event_send called");
+        return ESP_ERR_INVALID_STATE;
+    }
     portBASE_TYPE ret = xQueueSendToBack(s_event_queue, event, 0);
     if (ret != pdPASS) {
         if (event) {
