@@ -23,8 +23,8 @@ void unity_putc(int c)
 {
     if (c == '\n') 
     {
-        uart_tx_one_char('\n');
         uart_tx_one_char('\r');
+        uart_tx_one_char('\n');
     }
     else if (c == '\r') 
     {
