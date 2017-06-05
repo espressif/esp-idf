@@ -766,12 +766,11 @@ static void uart_console_configure(void)
 #endif // CONFIG_CONSOLE_UART_NONE
 }
 
-static void wdt_reset_info_enable(void)
+static void wdt_reset_cpu0_info_enable(void)
 {
+    //We do not reset core1 info here because it didn't work before cpu1 was up. So we put it into call_start_cpu1.
     DPORT_REG_SET_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_PDEBUG_ENABLE | DPORT_PRO_CPU_RECORD_ENABLE);
     DPORT_REG_CLR_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_RECORD_ENABLE);
-    DPORT_REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
-    DPORT_REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
 }
 
 static void wdt_reset_info_dump(int cpu)
@@ -841,5 +840,5 @@ static void wdt_reset_check(void)
         wdt_reset_info_dump(0);
         wdt_reset_info_dump(1);
     }
-    wdt_reset_info_enable();
+    wdt_reset_cpu0_info_enable();
 }
