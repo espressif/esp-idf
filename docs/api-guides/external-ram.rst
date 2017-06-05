@@ -21,13 +21,16 @@ The ESP-PSRAM32 chip is an 1.8V device, and can only be used in parallel with an
 pin to a high signal level on bootup, or program the fuses in the ESP32 to always use a VDD_SIO level of 1.8V. Not doing this risks
 damaging the PSRAM and/or flash chip.
 
-To connect the ESP-PSRAM chip to the ESP32, connect the following signals:
- * PSRAM /CE (pin 1) - ESP32 GPIO 17
+To connect the ESP-PSRAM chip to the ESP32D0W*, connect the following signals:
+ * PSRAM /CE (pin 1) - ESP32 GPIO 16
  * PSRAM SO (pin 2) - flash DO
  * PSRAM SIO[2] (pin 3) - flash WP
  * PSRAM SI (pin 5) - flash DI
- * PSRAM SCLK (pin 6) - ESP32 GPIO 16
+ * PSRAM SCLK (pin 6) - ESP32 GPIO 17
+ * PSRAM SIO[3] (pin 7) - flash HOLD
  * PSRAM Vcc (pin 8) - ESP32 VCC_SDIO
+
+Connections for the ESP32D2W* chips are TBD.
 
 .. NOTE::
    Espressif sells a ESP-WROVER module which contains an ESP32, 1.8V flash and the ESP-PSRAM32 integrated in a module, ready for inclusion
