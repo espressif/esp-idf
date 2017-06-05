@@ -3508,7 +3508,10 @@ UBaseType_t uxPriority;
 
 	vListInitialise( &xDelayedTaskList1 );
 	vListInitialise( &xDelayedTaskList2 );
-	vListInitialise( &xPendingReadyList[ xPortGetCoreID() ] );
+	vListInitialise( &xPendingReadyList[ 0 ] );
+	if (portNUM_PROCESSORS == 2) {
+		vListInitialise( &xPendingReadyList[ 1 ] );
+	}
 
 	#if ( INCLUDE_vTaskDelete == 1 )
 	{
