@@ -210,6 +210,7 @@ BaseType_t xPortInIsrContext();
 #if( portUSING_MPU_WRAPPERS == 1 )
 	struct xMEMORY_REGION;
 	void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION * const xRegions, StackType_t *pxBottomOfStack, uint32_t usStackDepth ) PRIVILEGED_FUNCTION;
+	void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings );
 #endif
 
 /* Multi-core: get current core ID */

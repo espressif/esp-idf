@@ -765,11 +765,26 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         btc_gatts_cb_to_app(ESP_GATTS_DISCONNECT_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_OPEN_EVT:
-        // do nothing
+        gatts_if = p_data->open.server_if;
+        param.open.status = p_data->open.status;
+
+        btc_gatts_cb_to_app(BTA_GATTS_OPEN_EVT, gatts_if, &param);
+        break;
     case BTA_GATTS_CANCEL_OPEN_EVT:
-        // do nothing
+        gatts_if = p_data->cancel_open.server_if;
+        param.cancel_open.status = p_data->cancel_open.status;
+
+        btc_gatts_cb_to_app(BTA_GATTS_CANCEL_OPEN_EVT, gatts_if, &param);
+        break;
+
     case BTA_GATTS_CLOSE_EVT:
-        // do nothing
+        gatts_if = BTC_GATT_GET_GATT_IF(p_data->close.conn_id);
+        param.close.status = p_data->close.status;
+        param.close.conn_id = BTC_GATT_GET_CONN_ID(p_data->close.conn_id);
+
+        btc_gatts_cb_to_app(BTA_GATTS_CLOSE_EVT, gatts_if, &param);
+        break;
+
     case BTA_GATTS_LISTEN_EVT:
         // do nothing
         break;

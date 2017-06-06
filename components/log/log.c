@@ -54,6 +54,8 @@
 #include <assert.h>
 #include "esp_log.h"
 
+//print number of bytes per line for esp_log_buffer_char and esp_log_buffer_hex
+#define BYTES_PER_LINE 16
 
 #ifndef BOOTLOADER_BUILD
 
@@ -316,3 +318,31 @@ uint32_t IRAM_ATTR esp_log_timestamp()
 uint32_t esp_log_timestamp() __attribute__((alias("esp_log_early_timestamp")));
 
 #endif //BOOTLOADER_BUILD
+
+void esp_log_buffer_hex(const char *tag, const char *buffer, uint16_t buff_len)
+{
+    char temp_buffer[3*BYTES_PER_LINE + 1]= {0};
+    int line_len = 0;
+    for (int i = 0; i < buff_len; i++) {
+        line_len += sprintf(temp_buffer+line_len, "%02x ", buffer[i]);
+        if (((i + 1) % BYTES_PER_LINE == 0) || (i == buff_len - 1)) {
+            ESP_LOGI(tag, "%s", temp_buffer);
+            line_len = 0;
+            temp_buffer[0] = 0;
+        }
+    }
+}
+
+void esp_log_buffer_char(const char *tag, const char *buffer, uint16_t buff_len)
+{
+    char temp_buffer[BYTES_PER_LINE + 1] = {0};
+    int line_len = 0;
+    for (int i = 0; i < buff_len; i++) {
+        line_len += sprintf(temp_buffer+line_len, "%c", buffer[i]);
+        if (((i + 1) % BYTES_PER_LINE == 0) || (i == buff_len - 1)) {
+            ESP_LOGI(tag, "%s", temp_buffer);
+            line_len = 0;
+            temp_buffer[0] = 0;
+        }
+    }
+}

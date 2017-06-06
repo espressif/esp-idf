@@ -208,12 +208,25 @@ typedef union {
     /**
      * @brief ESP_GATTS_OPEN_EVT
      */
+    struct gatts_open_evt_param {
+        esp_gatt_status_t status;       /*!< Operation status */
+    } open;                             /*!< Gatt server callback param of ESP_GATTS_OPEN_EVT */
+
     /**
      * @brief ESP_GATTS_CANCEL_OPEN_EVT
      */
+    struct gatts_cancel_open_evt_param {
+        esp_gatt_status_t status;       /*!< Operation status */
+    } cancel_open;                      /*!< Gatt server callback param of ESP_GATTS_CANCEL_OPEN_EVT */
+
     /**
      * @brief ESP_GATTS_CLOSE_EVT
      */
+    struct gatts_close_evt_param {
+        esp_gatt_status_t status;       /*!< Operation status */
+        uint16_t conn_id;               /*!< Connection id */
+    } close;                            /*!< Gatt server callback param of ESP_GATTS_CLOSE_EVT */
+
     /**
      * @brief ESP_GATTS_LISTEN_EVT
      */

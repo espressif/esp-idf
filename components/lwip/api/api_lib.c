@@ -484,8 +484,6 @@ netconn_recv_data(struct netconn *conn, void **new_buf)
     /* If we are closed, we indicate that we no longer wish to use the socket */
     if (buf == NULL) {
       API_EVENT(conn, NETCONN_EVT_RCVMINUS, 0);
-      /* RX side is closed, so deallocate the recvmbox */
-      netconn_close_shutdown(conn, NETCONN_SHUT_RD);
       /* Don' store ERR_CLSD as conn->err since we are only half-closed */
       return ERR_CLSD;
     }

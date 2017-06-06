@@ -55,6 +55,7 @@ typedef struct {
     UINT8       inst_id;        /* instance ID */
 } __attribute__((packed)) tBTA_GATT_ID;
 
+/* relate to ESP_GATT_xxx in esp_gatt_def.h */
 /* Success code and error codes */
 #define  BTA_GATT_OK                        GATT_SUCCESS
 #define  BTA_GATT_INVALID_HANDLE            GATT_INVALID_HANDLE                /* 0x0001 */
@@ -94,14 +95,19 @@ typedef struct {
 #define  BTA_GATT_NOT_ENCRYPTED             GATT_NOT_ENCRYPTED                 /* 0x8e */
 #define  BTA_GATT_CONGESTED                 GATT_CONGESTED                     /* 0x8f */
 
-#define  BTA_GATT_DUP_REG                   0x90                               /* 0x90 */
-#define  BTA_GATT_ALREADY_OPEN              0x91                               /* 0x91 */
-#define  BTA_GATT_CANCEL                    0x92                               /* 0x92 */
+#define  BTA_GATT_DUP_REG                   GATT_DUP_REG                       /* 0x90 */
+#define  BTA_GATT_ALREADY_OPEN              GATT_ALREADY_OPEN                  /* 0x91 */
+#define  BTA_GATT_CANCEL                    GATT_CANCEL                        /* 0x92 */
 
 /* 0xE0 ~ 0xFC reserved for future use */
-#define  BTA_GATT_CCC_CFG_ERR                GATT_CCC_CFG_ERR     /* 0xFD Client Characteristic Configuration Descriptor Improperly Configured */
-#define  BTA_GATT_PRC_IN_PROGRESS            GATT_PRC_IN_PROGRESS /* 0xFE Procedure Already in progress */
-#define  BTA_GATT_OUT_OF_RANGE               GATT_OUT_OF_RANGE    /* 0xFFAttribute value out of range */
+#define  BTA_GATT_STACK_RSP                 GATT_STACK_RSP                    /* 0xE0 */
+#define  BTA_GATT_APP_RSP                   GATT_APP_RSP                      /* 0xE1 */
+//Error caused by customer application or stack bug
+#define  BTA_GATT_UNKNOWN_ERROR             GATT_UNKNOWN_ERROR                /* 0XEF */
+
+#define  BTA_GATT_CCC_CFG_ERR               GATT_CCC_CFG_ERR     /* 0xFD Client Characteristic Configuration Descriptor Improperly Configured */
+#define  BTA_GATT_PRC_IN_PROGRESS           GATT_PRC_IN_PROGRESS /* 0xFE Procedure Already in progress */
+#define  BTA_GATT_OUT_OF_RANGE              GATT_OUT_OF_RANGE    /* 0xFFAttribute value out of range */
 
 typedef UINT8 tBTA_GATT_STATUS;
 
@@ -188,6 +194,7 @@ typedef struct {
 #define BTA_GATTC_TYPE_WRITE_NO_RSP      GATT_WRITE_NO_RSP
 typedef UINT8 tBTA_GATTC_WRITE_TYPE;
 
+/* relate to ESP_GATT_CONN_xxx in esp_gatt_defs.h */
 #define BTA_GATT_CONN_UNKNOWN                   0
 #define BTA_GATT_CONN_L2C_FAILURE               GATT_CONN_L2C_FAILURE         /* general l2cap resource failure */
 #define BTA_GATT_CONN_TIMEOUT                   GATT_CONN_TIMEOUT             /* 0x08 connection timeout  */
@@ -240,6 +247,7 @@ typedef struct {
 
 } tBTA_GATTC_MULTI;
 
+/* relate to ESP_GATT_xxx in esp_gatt_def.h */
 #define BTA_GATT_AUTH_REQ_NONE           GATT_AUTH_REQ_NONE
 #define BTA_GATT_AUTH_REQ_NO_MITM        GATT_AUTH_REQ_NO_MITM            /* unauthenticated encryption */
 #define BTA_GATT_AUTH_REQ_MITM           GATT_AUTH_REQ_MITM               /* authenticated encryption */
@@ -418,7 +426,7 @@ typedef void (tBTA_GATTC_CBACK)(tBTA_GATTC_EVT event, tBTA_GATTC *p_data);
 #define BTA_GATTS_CLOSE_EVT                             18
 #define BTA_GATTS_LISTEN_EVT                            19
 #define BTA_GATTS_CONGEST_EVT                           20
-#define BTA_GATTS_SET_ATTR_VAL_EVT                      21
+#define BTA_GATTS_SET_ATTR_VAL_EVT                      23
 
 typedef UINT8  tBTA_GATTS_EVT;
 typedef tGATT_IF tBTA_GATTS_IF;
@@ -489,6 +497,7 @@ typedef tGATT_VALUE tBTA_GATT_VALUE;
 /* attribute response data */
 typedef tGATTS_RSP tBTA_GATTS_RSP;
 
+/* relate to ESP_GATT_PREP_WRITE_xxx in esp_gatt_defs.h */
 /* attribute request data from the client */
 #define BTA_GATT_PREP_WRITE_CANCEL   0x00
 #define BTA_GATT_PREP_WRITE_EXEC     0x01
@@ -573,6 +582,21 @@ typedef struct {
     tBTA_GATT_STATUS status; /* notification/indication status */
 } tBTA_GATTS_CONF;
 
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    UINT16              conn_id;    /* connection ID */
+} tBTA_GATTS_CLOSE;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTS_IF       server_if;
+} tBTA_GATTS_OPEN;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTS_IF       server_if;
+} tBTA_GATTS_CANCEL_OPEN;
+
 /* GATTS callback data */
 typedef union {
     tBTA_GATTS_REG_OPER         reg_oper;
@@ -587,6 +611,10 @@ typedef union {
     tBTA_GATTS_CONN             conn;           /* BTA_GATTS_CONN_EVT */
     tBTA_GATTS_CONGEST          congest;        /* BTA_GATTS_CONGEST_EVT callback data */
     tBTA_GATTS_CONF             confirm;        /* BTA_GATTS_CONF_EVT callback data */
+    tBTA_GATTS_CLOSE            close;          /* BTA_GATTS_CLOSE_EVT callback data */
+    tBTA_GATTS_OPEN             open;           /* BTA_GATTS_OPEN_EVT callback data */
+    tBTA_GATTS_CANCEL_OPEN      cancel_open;    /* tBTA_GATTS_CANCEL_OPEN callback data */
+
 } tBTA_GATTS;
 
 /* GATTS enable callback function */

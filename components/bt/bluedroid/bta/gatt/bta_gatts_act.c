@@ -710,6 +710,7 @@ void bta_gatts_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     tBTA_GATTS_RCB      *p_rcb = NULL;
     tBTA_GATT_STATUS    status = BTA_GATT_ERROR;
     UINT16              conn_id;
+    tBTA_GATTS_OPEN    open;
     UNUSED(p_cb);
 
     if ((p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_open.server_if)) != NULL) {
@@ -728,7 +729,9 @@ void bta_gatts_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     }
 
     if (p_rcb && p_rcb->p_cback) {
-        (*p_rcb->p_cback)(BTA_GATTS_OPEN_EVT,  (tBTA_GATTS *)&status);
+        open.status = status;
+        open.server_if = p_msg->api_open.server_if;
+        (*p_rcb->p_cback)(BTA_GATTS_OPEN_EVT,  (tBTA_GATTS *)&open);
     }
 
 }
@@ -745,6 +748,7 @@ void bta_gatts_cancel_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 {
     tBTA_GATTS_RCB      *p_rcb;
     tBTA_GATT_STATUS    status = BTA_GATT_ERROR;
+    tBTA_GATTS_CANCEL_OPEN   cancel_open;
     UNUSED(p_cb);
 
     if ((p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_cancel_open.server_if)) != NULL) {
@@ -759,7 +763,10 @@ void bta_gatts_cancel_open (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     }
 
     if (p_rcb && p_rcb->p_cback) {
-        (*p_rcb->p_cback)(BTA_GATTS_CANCEL_OPEN_EVT,  (tBTA_GATTS *)&status);
+        cancel_open.status = status;
+        cancel_open.server_if = p_msg->api_cancel_open.server_if;
+        (*p_rcb->p_cback)(BTA_GATTS_CANCEL_OPEN_EVT,  (tBTA_GATTS *)&cancel_open);
+
     }
 }
 /*******************************************************************************
@@ -778,7 +785,7 @@ void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     tGATT_IF            gatt_if;
     BD_ADDR             remote_bda;
     tBTA_GATT_TRANSPORT transport;
-
+    tBTA_GATTS_CLOSE    close;
     UNUSED(p_cb);
 
     if (GATT_GetConnectionInfor(p_msg->hdr.layer_specific, &gatt_if, remote_bda, &transport)) {
@@ -795,7 +802,9 @@ void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                 bta_sys_conn_close( BTA_ID_GATTS , BTA_ALL_APP_ID, remote_bda);
             }
 
-            (*p_rcb->p_cback)(BTA_GATTS_CLOSE_EVT,  (tBTA_GATTS *)&status);
+            close.status = status;
+            close.conn_id = p_msg->hdr.layer_specific;
+            (*p_rcb->p_cback)(BTA_GATTS_CLOSE_EVT,  (tBTA_GATTS *)&close);
         }
     } else {
         APPL_TRACE_ERROR("Unknown connection ID: %d", p_msg->hdr.layer_specific);
