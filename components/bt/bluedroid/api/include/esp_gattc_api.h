@@ -133,15 +133,22 @@ typedef union {
      * @brief ESP_GATTC_READ_CHAR_EVT,  ESP_GATTC_READ_DESCR_EVT
      */
     struct gattc_read_char_evt_param {
-        esp_gatt_status_t status;		/*!< Operation status */
-        uint16_t conn_id;				/*!< Connection id */
-        esp_gatt_srvc_id_t srvc_id; 	/*!< Service id, include service uuid and other information */
-        esp_gatt_id_t char_id;			/*!< Characteristic id, include characteristic uuid and other information */
-        esp_gatt_id_t descr_id;			/*!< Descriptor id, include descriptor uuid and other information */
-        uint8_t *value;					/*!< Characteristic value */
-        uint16_t value_type;			/*!< Characteristic value type */
-        uint16_t value_len;				/*!< Characteristic value length */
-    } read; 							/*!< Gatt client callback param of ESP_GATTC_READ_CHAR_EVT */
+
+        esp_gatt_status_t status;       /*!< Operation status */
+        uint16_t conn_id;               /*!< Connection id */
+        esp_gatt_srvc_id_t srvc_id;     /*!< Service id, include service uuid and other information */
+        esp_gatt_id_t char_id;          /*!< Characteristic id, include characteristic uuid and other information */
+        esp_gatt_id_t descr_id;         /*!< Descriptor id, include descriptor uuid and other information */
+        uint8_t *value;                 /*!< Characteristic value */
+        uint16_t value_type;            /*!< Characteristic value type, there is two value for this type:
+                                             ESP_GATTC_READ_VALUE_TYPE_VALUE(0x0000) and 
+                                             ESP_GATTC_READ_VALUE_TYPE_AGG_FORMAT(0x2905).
+                                             If the value is ESP_GATTC_READ_VALUE_TYPE_VALUE means it is a generally
+                                             value type, and if is the type of ESP_GATTC_READ_VALUE_TYPE_AGG_FORMAT,
+                                             the unit of the value will indicate in the Characteristic 
+                                             aggregate format descriptor */
+        uint16_t value_len;             /*!< Characteristic value length */
+    } read;                             /*!< Gatt client callback param of ESP_GATTC_READ_CHAR_EVT */
 
     /**
      * @brief ESP_GATTC_WRITE_CHAR_EVT, ESP_GATTC_PREP_WRITE_EVT, ESP_GATTC_WRITE_DESCR_EVT
