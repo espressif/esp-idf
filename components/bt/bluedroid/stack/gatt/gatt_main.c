@@ -909,11 +909,15 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
 {
     UINT8   *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     UINT8   op_code, pseudo_op_code;
+#if (GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
     UINT16  msg_len;
+#endif ///(GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
 
 
     if (p_buf->len > 0) {
+#if (GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
         msg_len = p_buf->len - 1;
+#endif ///(GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
         STREAM_TO_UINT8(op_code, p);
 
         /* remove the two MSBs associated with sign write and write cmd */
