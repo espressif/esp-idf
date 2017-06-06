@@ -180,22 +180,30 @@ endif
 
 # This pattern is generated for each COMPONENT_SRCDIR to compile the files in it.
 define GenerateCompileTargets
-# $(1) - directory containing source files, relative to $(COMPONENT_PATH)
-$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(1)
+# $(1) - directory containing source files, relative to $(COMPONENT_PATH) - one of $(COMPONENT_SRCDIRS)
+#
+$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.c $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CC $$@
 	$$(CC) $$(CFLAGS) $$(CPPFLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
-$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(1)
+$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.cpp $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) CXX $$@
 	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(addprefix -I,$$(COMPONENT_INCLUDES)) $$(addprefix -I,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
-$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(1)
+$(1)/%.o: $$(COMPONENT_PATH)/$(1)/%.S $(COMMON_MAKEFILES) $(COMPONENT_MAKEFILE) | $(COMPONENT_SRCDIRS)
 	$$(summary) AS $$@
 	$$(CC) $$(CPPFLAGS) $$(DEBUG_FLAGS) $$(addprefix -I ,$$(COMPONENT_INCLUDES)) $$(addprefix -I ,$$(COMPONENT_EXTRA_INCLUDES)) -I$(1) -c $$< -o $$@
 
 # CWD is build dir, create the build subdirectory if it doesn't exist
+#
+# (NB: Each .o file depends on all relative component build dirs $(COMPONENT_SRCDIRS), rather than just $(1), to work
+# around a behaviour make 3.81 where the first pattern (randomly) seems to be matched rather than the best fit. ie if
+# you have objects a/y.o and a/b/c.o then c.o can be matched with $(1)=a & %=b/c, meaning that subdir 'a/b' needs to be
+# created but wouldn't be created if $(1)=a. Make 4.x doesn't have this problem, it seems to preferentially
+# choose the better match ie $(1)=a/b and %=c )
+#
 $(1):
-	@mkdir -p $(1)
+	mkdir -p $(1)
 endef
 
 # Generate all the compile target patterns
