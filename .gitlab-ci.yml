@@ -117,7 +117,9 @@ build_examples:
       - build_examples/*/*/*/build/*.map
       - build_examples/*/*/*/build/bootloader/*.bin
     expire_in: 6 mos
-
+  variables:
+    IDF_PATH: "$CI_PROJECT_DIR"
+    IDF_CI_BUILD: "1"
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
