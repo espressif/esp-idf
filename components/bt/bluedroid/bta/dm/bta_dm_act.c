@@ -4514,6 +4514,13 @@ void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data)
 {
+    tACL_CONN *p_acl_cb = btm_bda_to_acl(p_data->ble_update_conn_params.bd_addr, BT_TRANSPORT_LE);
+    if (p_acl_cb == NULL) {
+        APPL_TRACE_ERROR("%s error: Invalid connection bd_addr.", __func__);
+        return;
+    } else {
+        p_acl_cb->update_conn_param_cb = p_data->ble_update_conn_params.update_conn_param_cb;
+    }
     if (!L2CA_UpdateBleConnParams(p_data->ble_update_conn_params.bd_addr,
                                   p_data->ble_update_conn_params.min_int,
                                   p_data->ble_update_conn_params.max_int,

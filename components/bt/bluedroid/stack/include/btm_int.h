@@ -115,7 +115,7 @@ UINT8           conn_addr_type;         /* local device address type for this co
 BD_ADDR         active_remote_addr;     /* remote address used on this connection */
 UINT8           active_remote_addr_type;         /* local device address type for this connection */
 BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
-
+tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
 #endif
 
 } tACL_CONN;

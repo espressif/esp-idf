@@ -1991,7 +1991,7 @@ void BTA_DmEnableScanFilter(UINT8 action, tBTA_DM_BLE_PF_STATUS_CBACK *p_cmpl_cb
 **
 *******************************************************************************/
 void BTA_DmBleUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int, UINT16 max_int,
-                                     UINT16 latency, UINT16 timeout)
+                                     UINT16 latency, UINT16 timeout, tBTA_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb)
 {
     tBTA_DM_API_UPDATE_CONN_PARAM *p_msg;
 
@@ -2004,7 +2004,7 @@ void BTA_DmBleUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int, UINT16 max
         p_msg->max_int   = max_int;
         p_msg->latency   = latency;
         p_msg->timeout   = timeout;
-
+        p_msg->update_conn_param_cb = update_conn_param_cb;
         bta_sys_sendmsg(p_msg);
     }
 }

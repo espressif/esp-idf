@@ -637,6 +637,7 @@ typedef struct {
     UINT16      max_int;
     UINT16      latency;
     UINT16      timeout;
+    tBTA_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
 } tBTA_DM_API_UPDATE_CONN_PARAM;
 
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE

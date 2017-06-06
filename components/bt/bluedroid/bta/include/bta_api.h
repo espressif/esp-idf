@@ -718,6 +718,10 @@ typedef UINT8 tBTA_DM_BLE_CONN_TYPE;
 
 typedef BOOLEAN (tBTA_DM_BLE_SEL_CBACK)(BD_ADDR random_bda, UINT8 *p_remote_name);
 
+typedef tBTM_LE_UPDATE_CONN_PRAMS tBTA_LE_UPDATE_CONN_PRAMS;
+typedef tBTM_UPDATE_CONN_PARAM_CBACK tBTA_UPDATE_CONN_PARAM_CBACK;
+
+
 /* Structure associated with BTA_DM_BLE_SEC_REQ_EVT */
 typedef struct {
     BD_ADDR         bd_addr;        /* peer address */
@@ -2202,7 +2206,7 @@ extern void BTA_BleDisableAdvInstance(UINT8 inst_id);
 **
 *******************************************************************************/
 extern void BTA_DmBleUpdateConnectionParams(BD_ADDR bd_addr, UINT16 min_int,
-        UINT16 max_int, UINT16 latency, UINT16 timeout);
+        UINT16 max_int, UINT16 latency, UINT16 timeout, tBTA_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb);
 
 /*******************************************************************************
 **

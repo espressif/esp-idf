@@ -65,6 +65,7 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
             p_lcb->link_flush_tout = 0xFFFF;
             p_lcb->timer_entry.param = (TIMER_PARAM_TYPE)p_lcb;
             p_lcb->info_timer_entry.param = (TIMER_PARAM_TYPE)p_lcb;
+            p_lcb->upda_con_timer.param = (TIMER_PARAM_TYPE)p_lcb;
             p_lcb->idle_timeout    = l2cb.idle_timeout;
             p_lcb->id              = 1;                     /* spec does not allow '0' */
             p_lcb->is_bonding      = is_bonding;
