@@ -37,6 +37,8 @@
 #endif
 #include <errno.h>
 
+#include "lwip/sockets.h"
+
 #ifdef WITH_CONTIKI
 # include "uip.h"
 #endif
@@ -159,14 +161,14 @@ coap_new_endpoint(const coap_address_t *addr, int flags) {
 
   if (bind(sockfd, &addr->addr.sa, addr->size) < 0) {
     coap_log(LOG_WARNING, "coap_new_endpoint: bind");
-    close (sockfd);
+    lwip_close_r(sockfd);
     return NULL;
   }
 
   ep = coap_malloc_posix_endpoint();
   if (!ep) {
     coap_log(LOG_WARNING, "coap_new_endpoint: malloc");
-    close(sockfd);
+    lwip_close_r(sockfd);
     return NULL;
   }
 
@@ -177,7 +179,7 @@ coap_new_endpoint(const coap_address_t *addr, int flags) {
   ep->addr.size = addr->size;
   if (getsockname(sockfd, &ep->addr.addr.sa, &ep->addr.size) < 0) {
     coap_log(LOG_WARNING, "coap_new_endpoint: cannot determine local address");
-    close (sockfd);
+    lwip_close_r(sockfd);
     return NULL;
   }
 
@@ -203,7 +205,7 @@ void
 coap_free_endpoint(coap_endpoint_t *ep) {
   if(ep) {
     if (ep->handle.fd >= 0)
-      close(ep->handle.fd);
+      lwip_close_r(ep->handle.fd);
     coap_free_posix_endpoint((struct coap_endpoint_t *)ep);
   }
 }
