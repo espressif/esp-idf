@@ -441,7 +441,8 @@ extern void bta_gattc_cancel_open_ok(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p
 extern void bta_gattc_cancel_open_error(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 
 extern void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
-
+extern void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data);
+extern void bta_gattc_disconncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_close(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_close_fail(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 extern void bta_gattc_disc_close(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
@@ -468,6 +469,10 @@ extern void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN *p_data, tBTA_GATTC_RCB *
 extern void bta_gattc_cancel_bk_conn(tBTA_GATTC_API_CANCEL_OPEN *p_data);
 extern void bta_gattc_send_open_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status,
                                        BD_ADDR remote_bda, UINT16 conn_id, tBTA_TRANSPORT transport,  UINT16 mtu);
+extern void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status,
+                                BD_ADDR remote_bda, UINT16 conn_id);
+extern void bta_gattc_send_disconnect_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status,
+                                BD_ADDR remote_bda, UINT16 conn_id);
 extern void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 extern void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
 #if BLE_INCLUDED == TRUE

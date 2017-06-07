@@ -681,6 +681,45 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                                   p_clcb->bta_conn_id,
                                   p_clcb->transport,
                                   p_clcb->p_srcb->mtu);
+
+    }
+}
+/*******************************************************************************
+**
+** Function         bta_gattc_conncback
+**
+** Description      receive connection callback from stack
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
+{
+    if (p_rcb) {
+        bta_gattc_send_connect_cback(p_rcb,
+                                     BTA_GATT_OK,
+                                     p_data->int_conn.remote_bda,
+                                     p_data->int_conn.hdr.layer_specific);
+
+    }
+}
+/*******************************************************************************
+**
+** Function         bta_gattc_disconncback
+**
+** Description      receive disconnection callback from stack
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_gattc_disconncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
+{
+    if (p_rcb) {
+        bta_gattc_send_disconnect_cback(p_rcb,
+                                     BTA_GATT_OK,
+                                     p_data->int_conn.remote_bda,
+                                     p_data->int_conn.hdr.layer_specific);
+
     }
 }
 /*******************************************************************************

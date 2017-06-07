@@ -684,6 +684,16 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         btc_gattc_cb_to_app(ESP_GATTC_OPEN_EVT, gattc_if, &param);
         break;
     }
+    case BTA_GATTC_CONNECT_EVT: {
+        tBTA_GATTC_CONNECT *connect = &arg->connect;
+
+        gattc_if = connect->client_if;
+        param.connect.status = connect->status;
+        param.connect.conn_id = BTC_GATT_GET_CONN_ID(connect->conn_id);
+        memcpy(param.connect.remote_bda, connect->remote_bda, sizeof(esp_bd_addr_t));
+        btc_gattc_cb_to_app(ESP_GATTC_CONNECT_EVT, gattc_if, &param);
+        break;
+    }
     case BTA_GATTC_CLOSE_EVT: {
         tBTA_GATTC_CLOSE *close = &arg->close;
 
@@ -695,7 +705,16 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         btc_gattc_cb_to_app(ESP_GATTC_CLOSE_EVT, gattc_if, &param);
         break;
     }
+    case BTA_GATTC_DISCONNECT_EVT: {
+        tBTA_GATTC_DISCONNECT *disconnect = &arg->disconnect;
 
+        gattc_if = disconnect->client_if;
+        param.disconnect.status = disconnect->status;
+        param.disconnect.conn_id = BTC_GATT_GET_CONN_ID(disconnect->conn_id);
+        memcpy(param.disconnect.remote_bda, disconnect->remote_bda, sizeof(esp_bd_addr_t));
+        btc_gattc_cb_to_app(ESP_GATTC_DISCONNECT_EVT, gattc_if, &param);
+        break;
+    }
     case BTA_GATTC_CFG_MTU_EVT: {
         tBTA_GATTC_CFG_MTU *cfg_mtu = &arg->cfg_mtu;
 
