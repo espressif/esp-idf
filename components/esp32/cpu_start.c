@@ -170,6 +170,13 @@ void IRAM_ATTR call_start_cpu0()
 }
 
 #if !CONFIG_FREERTOS_UNICORE
+
+static void wdt_reset_cpu1_info_enable(void)
+{
+    DPORT_REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
+    DPORT_REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
+}
+
 void IRAM_ATTR call_start_cpu1()
 {
     asm volatile (\
@@ -188,6 +195,7 @@ void IRAM_ATTR call_start_cpu1()
     uart_tx_switch(CONFIG_CONSOLE_UART_NUM);
 #endif
 
+    wdt_reset_cpu1_info_enable();
     ESP_EARLY_LOGI(TAG, "App cpu up.");
     app_cpu_started = 1;
     start_cpu1();

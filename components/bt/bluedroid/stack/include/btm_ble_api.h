@@ -1191,7 +1191,7 @@ tBTM_STATUS BTM_BleWriteScanRspRaw(UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_le
 **
 *******************************************************************************/
 //extern
-tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT8 duration,
+tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT32 duration,
                            tBTM_INQ_RESULTS_CB *p_results_cb, tBTM_CMPL_CB *p_cmpl_cb);
 
 

@@ -14,8 +14,8 @@ endif
 
 COMPONENT_SRCDIRS := \
 	api \
-	apps/sntp apps/ping apps \
-	core/ipv4 core/ipv6 core \
+	apps apps/sntp apps/ping \
+	core core/ipv4 core/ipv6 \
 	$(LWIP_PPP_DIRS) netif \
 	port/freertos port/netif port/debug port
 

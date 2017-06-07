@@ -1747,11 +1747,15 @@ static void btu_ble_ll_conn_param_upd_evt (UINT8 *p, UINT16 evt_len)
     /* We can enable the update request if the result is a success. */
     /* extract the HCI handle first */
     UINT8   status;
-    UINT16  handle;
-
+    UINT16  handle, conn_interval, conn_latency, conn_timeout;
     STREAM_TO_UINT8  (status, p);
     STREAM_TO_UINT16 (handle, p);
-    l2cble_process_conn_update_evt(handle, status);
+    STREAM_TO_UINT16 (conn_interval, p);
+    STREAM_TO_UINT16 (conn_latency, p);
+    STREAM_TO_UINT16 (conn_timeout, p);
+
+    l2cble_process_conn_update_evt(handle, status, conn_interval,
+                                   conn_latency, conn_timeout);
 }
 
 static void btu_ble_read_remote_feat_evt (UINT8 *p)

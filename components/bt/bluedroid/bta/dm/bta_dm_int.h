@@ -478,7 +478,7 @@ typedef struct {
 typedef struct {
     BT_HDR                  hdr;
     BOOLEAN                 start;
-    UINT16                  duration;
+    UINT32                  duration;
     tBTA_DM_SEARCH_CBACK    *p_cback;
     tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_scan_cback;
     tBTA_START_STOP_SCAN_CMPL_CBACK *p_stop_scan_cback;
@@ -637,6 +637,7 @@ typedef struct {
     UINT16      max_int;
     UINT16      latency;
     UINT16      timeout;
+    tBTA_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
 } tBTA_DM_API_UPDATE_CONN_PARAM;
 
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
@@ -1120,7 +1121,9 @@ extern void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data);
+#if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
 extern void bta_dm_close_gatt_conn(tBTA_DM_MSG *p_data);
+#endif /* ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE) */
 extern void bta_dm_ble_observe (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data);

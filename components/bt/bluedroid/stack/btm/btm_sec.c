@@ -280,7 +280,7 @@ BOOLEAN BTM_SecRegisterLinkKeyNotificationCallback (tBTM_LINK_KEY_CALLBACK *p_ca
 ** Returns          TRUE if registered OK, else FALSE
 **
 *******************************************************************************/
-#if (SMP_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE) || (CLASSIC_BT_INCLUDED == TRUE)
 BOOLEAN  BTM_SecAddRmtNameNotifyCallback (tBTM_RMT_NAME_CALLBACK *p_callback)
 {
     int i;
@@ -306,7 +306,7 @@ BOOLEAN  BTM_SecAddRmtNameNotifyCallback (tBTM_RMT_NAME_CALLBACK *p_callback)
 ** Returns          TRUE if OK, else FALSE
 **
 *******************************************************************************/
-#if (SMP_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE) || (CLASSIC_BT_INCLUDED == TRUE)
 BOOLEAN  BTM_SecDeleteRmtNameNotifyCallback (tBTM_RMT_NAME_CALLBACK *p_callback)
 {
     int i;

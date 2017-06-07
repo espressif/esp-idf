@@ -115,7 +115,7 @@ UINT8           conn_addr_type;         /* local device address type for this co
 BD_ADDR         active_remote_addr;     /* remote address used on this connection */
 UINT8           active_remote_addr_type;         /* local device address type for this connection */
 BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
-
+tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
 #endif
 
 } tACL_CONN;
@@ -847,8 +847,10 @@ typedef struct {
     TIMER_LIST_ENT           pairing_tle;   /* Timer for pairing process    */
     UINT16                   disc_handle;   /* for legacy devices */
     UINT8                    disc_reason;   /* for legacy devices */
-    tBTM_SEC_SERV_REC        sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
 #endif  ///SMP_INCLUDED == TRUE
+#if SMP_INCLUDED == TRUE || CLASSIC_BT_INCLUDED == TRUE
+    tBTM_SEC_SERV_REC        sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
+#endif // SMP_INCLUDED == TRUE || CLASSIC_BT_ENABLED == TRUE
     tBTM_SEC_DEV_REC         sec_dev_rec[BTM_SEC_MAX_DEVICE_RECORDS];
     tBTM_SEC_SERV_REC       *p_out_serv;
     tBTM_MKEY_CALLBACK      *mkey_cback;

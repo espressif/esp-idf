@@ -129,6 +129,14 @@ enum {
 
 typedef UINT8 tBTM_DEV_STATUS;
 
+typedef struct {
+    UINT16              min_conn_int;
+    UINT16              max_conn_int;
+    UINT16              conn_int;
+    UINT16              slave_latency;
+    UINT16              supervision_tout;
+}tBTM_LE_UPDATE_CONN_PRAMS;
+
 
 typedef void (tBTM_DEV_STATUS_CB) (tBTM_DEV_STATUS status);
 
@@ -155,6 +163,9 @@ typedef void (tBTM_VSC_CMPL_CB) (tBTM_VSC_CMPL *p1);
 ** If the app returns none zero, the connection or inquiry result will be dropped.
 */
 typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
+
+typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params);
+
 
 /*****************************************************************************
 **  DEVICE DISCOVERY - Inquiry, Remote Name, Discovery, Class of Device
