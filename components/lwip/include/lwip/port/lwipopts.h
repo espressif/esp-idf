@@ -272,6 +272,9 @@
  */
 #define LWIP_DNS                        1
 
+#define DNS_MAX_SERVERS                 3
+#define DNS_FALLBACK_SERVER_INDEX        (DNS_MAX_SERVERS - 1)
+
 /*
    ---------------------------------
    ---------- UDP options ----------
