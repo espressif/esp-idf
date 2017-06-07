@@ -184,6 +184,10 @@
    ----------------------------------
 */
 
+#define LWIP_BROADCAST_PING CONFIG_LWIP_BROADCAST_PING
+
+#define LWIP_MULTICAST_PING CONFIG_LWIP_MULTICAST_PING
+
 /*
    ---------------------------------
    ---------- RAW options ----------

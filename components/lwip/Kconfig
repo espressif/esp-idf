@@ -139,4 +139,16 @@ config PPP_DEBUG_ON
    help
        Enable PPP debug log output
 
+menu "ICMP"
+
+config LWIP_MULTICAST_PING
+   bool "Respond to multicast pings"
+   default n
+
+config LWIP_BROADCAST_PING
+   bool "Respond to broadcast pings"
+   default n
+
+endmenu # ICMP
+
 endmenu
