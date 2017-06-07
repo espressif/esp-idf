@@ -7,6 +7,11 @@ stages:
   - deploy
 
 variables:
+# system environment
+  # Common parameters for the 'make' during CI tests
+  MAKEFLAGS: "-j5 --no-keep-going"
+
+# IDF environment
   IDF_PATH: "$CI_PROJECT_DIR"
 
 before_script:
@@ -125,7 +130,7 @@ build_examples:
     # mechanism work, but this is the next best thing
     - mkdir build_examples
     - cd build_examples
-    - ${IDF_PATH}/make/build_examples.sh -j5
+    - ${IDF_PATH}/make/build_examples.sh
 
 build_docs:
   stage: build
