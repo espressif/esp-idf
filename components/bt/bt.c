@@ -75,6 +75,7 @@ struct osi_funcs_t {
     void (*_interrupt_disable)(void);
     void (*_interrupt_restore)(void);
     void (*_task_yield)(void);
+    void (*_task_yield_from_isr)(void);
     void *(*_semphr_create)(uint32_t max, uint32_t init);
     int32_t (*_semphr_give_from_isr)(void *semphr, void *hptw);
     int32_t (*_semphr_take)(void *semphr, uint32_t block_time_ms);
@@ -102,6 +103,11 @@ static void IRAM_ATTR interrupt_disable(void)
 static void IRAM_ATTR interrupt_restore(void)
 {
     portEXIT_CRITICAL(&global_int_mux);
+}
+
+static void IRAM_ATTR task_yield_from_isr(void)
+{
+    portYIELD_FROM_ISR();
 }
 
 static void *IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init)
@@ -155,6 +161,7 @@ static struct osi_funcs_t osi_funcs = {
     ._interrupt_disable = interrupt_disable,
     ._interrupt_restore = interrupt_restore,
     ._task_yield = vPortYield,
+    ._task_yield_from_isr = task_yield_from_isr,
     ._semphr_create = semphr_create_wrapper,
     ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
     ._semphr_take = semphr_take_wrapper,
