@@ -573,12 +573,26 @@ static int eap_ttls_phase2_request_mschap(struct eap_sm *sm,
 	os_memset(pos, 0, 24); /* LM-Response */
 	pos += 24;
 	if (pwhash) {
-		challenge_response(challenge, password, pos); /* NT-Response */
+		/* NT-Response */
+		if (challenge_response(challenge, password, pos)) {
+			wpa_printf(MSG_ERROR,
+				   "EAP-TTLS/MSCHAP: Failed derive password hash");
+			wpabuf_free(msg);
+			return -1;
+		}
+
 		wpa_hexdump_key(MSG_DEBUG, "EAP-TTLS: MSCHAP password hash",
 				password, 16);
 	} else {
-		nt_challenge_response(challenge, password, password_len,
-				      pos); /* NT-Response */
+		/* NT-Response */
+		if (nt_challenge_response(challenge, password, password_len,
+					  pos)) {
+			wpa_printf(MSG_ERROR,
+				   "EAP-TTLS/MSCHAP: Failed derive password");
+			wpabuf_free(msg);
+			return -1;
+		}
+
 		wpa_hexdump_ascii_key(MSG_DEBUG, "EAP-TTLS: MSCHAP password",
 				      password, password_len);
 	}
