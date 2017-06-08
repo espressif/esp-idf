@@ -1355,6 +1355,20 @@ void mdns_parse_packet(mdns_server_t * server, const uint8_t * data, size_t len)
                 }
                 continue;
             }
+            
+            //is this a dns-sd service discovery meta query?
+            if (!strcmp(name->host, "_services") && !strcmp(name->service, "_dns-sd") && !strcmp(name->proto, "_udp") && !strcmp(name->domain, MDNS_DEFAULT_DOMAIN) && type == MDNS_TYPE_PTR)
+            {
+                //add answers for all services
+                mdns_srv_item_t * s = server->services;
+                while(s) {
+                    if (s->service->service && s->service->proto) {
+                        answers = _mdns_add_answer(answers, s->service, MDNS_ANSWER_SDPTR);
+                    }
+                    s = s->next;
+                }
+                continue;
+            }
 
             if (name->sub) {
                 continue;
