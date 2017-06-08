@@ -45,7 +45,7 @@ typedef struct {
 
 static const char* TAG = "vfs_fat";
 
-static size_t vfs_fat_write(void* p, int fd, const void * data, size_t size);
+static ssize_t vfs_fat_write(void* p, int fd, const void * data, size_t size);
 static off_t vfs_fat_lseek(void* p, int fd, off_t size, int mode);
 static ssize_t vfs_fat_read(void* ctx, int fd, void * dst, size_t size);
 static int vfs_fat_open(void* ctx, const char * path, int flags, int mode);
@@ -290,7 +290,7 @@ out:
     return fd;
 }
 
-static size_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
+static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];

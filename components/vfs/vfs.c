@@ -213,7 +213,7 @@ ssize_t esp_vfs_write(struct _reent *r, int fd, const void * data, size_t size)
         return -1;
     }
     int local_fd = translate_fd(vfs, fd);
-    int ret;
+    ssize_t ret;
     CHECK_AND_CALL(ret, r, vfs, write, local_fd, data, size);
     return ret;
 }
@@ -226,7 +226,7 @@ off_t esp_vfs_lseek(struct _reent *r, int fd, off_t size, int mode)
         return -1;
     }
     int local_fd = translate_fd(vfs, fd);
-    int ret;
+    off_t ret;
     CHECK_AND_CALL(ret, r, vfs, lseek, local_fd, size, mode);
     return ret;
 }
@@ -239,7 +239,7 @@ ssize_t esp_vfs_read(struct _reent *r, int fd, void * dst, size_t size)
         return -1;
     }
     int local_fd = translate_fd(vfs, fd);
-    int ret;
+    ssize_t ret;
     CHECK_AND_CALL(ret, r, vfs, read, local_fd, dst, size);
     return ret;
 }
