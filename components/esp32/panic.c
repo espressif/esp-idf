@@ -375,7 +375,7 @@ static void doBacktrace(XtExcFrame *frame)
             break;
         }
         sp = *((uint32_t *) (sp - 0x10 + 4));
-        putEntry(pc, sp);
+        putEntry(pc - 3, sp); // stack frame addresses are return addresses, so subtract 3 to get the CALL address
         pc = *((uint32_t *) (psp - 0x10));
         if (pc < 0x40000000) {
             break;
