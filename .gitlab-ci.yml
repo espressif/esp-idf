@@ -348,6 +348,21 @@ check_commit_msg:
     # commit start with "WIP: " need to be squashed before merge
     - 'git log --pretty=%s master..${CI_COMMIT_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
 
+check_submodule_sync:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  before_script:
+    - echo "do not use gitlab submodule repository"
+  script:
+    # check if all submodules are correctly synced to public repostory
+    - git submodule update --init --recursive
+
 assign_test:
   <<: *build_template
   stage: assign_test
