@@ -616,11 +616,17 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
 
 esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
 {
+    esp_err_t err;
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     if(p_rmt_obj[channel] == NULL) {
         return ESP_OK;
     }
     xSemaphoreTake(p_rmt_obj[channel]->tx_sem, portMAX_DELAY);
+
+    err = rmt_isr_deregister(s_rmt_driver_intr_handle);
+    if (err != ESP_OK) {
+        return err;
+    }
     rmt_set_rx_intr_en(channel, 0);
     rmt_set_err_intr_en(channel, 0);
     rmt_set_tx_intr_en(channel, 0);
@@ -633,10 +639,11 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
         vRingbufferDelete(p_rmt_obj[channel]->rx_buf);
         p_rmt_obj[channel]->rx_buf = NULL;
     }
+
     free(p_rmt_obj[channel]);
     p_rmt_obj[channel] = NULL;
     s_rmt_driver_installed = false;
-    return rmt_isr_deregister(s_rmt_driver_intr_handle);
+    return ESP_OK;
 }
 
 esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr_alloc_flags)
