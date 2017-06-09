@@ -171,6 +171,7 @@ test_nvs_on_host:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - nvs_host_test
+  dependencies: []
   script:
     - cd components/nvs_flash/test_nvs_host
     - make test
@@ -180,6 +181,7 @@ test_partition_table_on_host:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build
+  dependencies: []
   script:
     - cd components/partition_table/test_gen_esp32part_host
     - ./gen_esp32part_tests.py
@@ -192,6 +194,7 @@ test_wl_on_host:
   artifacts:
     paths:
       - components/wear_levelling/test_wl_host/coverage_report.zip
+  dependencies: []
   script:
     - cd components/wear_levelling/test_wl_host
     - make test
@@ -201,6 +204,7 @@ test_build_system:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build_test
+  dependencies: []
   script:
     - ./make/test_configure_ci_environment.sh
     - ./make/test_build_system.sh
@@ -220,6 +224,8 @@ test_report:
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
     REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
+  #dependencies:
+  #We need all UT* and IT* artifacts except for only a few other
   artifacts:
     when: always
     paths:
@@ -268,6 +274,7 @@ push_master_to_github:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   when: on_success
+  dependencies: []
   variables:
     GIT_STRATEGY: clone
     GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
@@ -298,6 +305,8 @@ deploy_docs:
    - /^release\/v/
    - /^v\d+\.\d+(\.\d+)?($|-)/
    - triggers
+  dependencies:
+    - build_docs
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -341,6 +350,7 @@ check_commit_msg:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
+  dependencies: []
   before_script:
     - echo "skip update submodule"
   script:
@@ -357,6 +367,7 @@ check_submodule_sync:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
+  dependencies: []
   before_script:
     - echo "do not use gitlab submodule repository"
   script:
@@ -366,6 +377,9 @@ check_submodule_sync:
 assign_test:
   <<: *build_template
   stage: assign_test
+  dependencies:
+    - build_esp_idf_tests
+    - build_ssc
   artifacts:
     paths:
       - test_bins
