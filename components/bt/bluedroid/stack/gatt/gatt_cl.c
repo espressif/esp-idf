@@ -554,6 +554,9 @@ void gatt_process_error_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_code,
                 (opcode == GATT_REQ_PREPARE_WRITE) &&
                 (p_attr) &&
                 (handle == p_attr->handle)  ) {
+            if (reason == GATT_SUCCESS){
+               reason = GATT_ERROR;
+            }
             p_clcb->status = reason;
             gatt_send_queue_write_cancel(p_tcb, p_clcb, GATT_PREP_WRITE_CANCEL);
         } else if ((p_clcb->operation == GATTC_OPTYPE_READ) &&
