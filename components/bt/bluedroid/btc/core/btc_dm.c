@@ -118,7 +118,6 @@ static void btc_disable_bluetooth_evt(void)
 static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
     /* Save link key, if not temporary */
-    bt_bdaddr_t bd_addr;
     bt_status_t status = BT_STATUS_FAIL;
     if (p_auth_cmpl->success) {
         status = BT_STATUS_SUCCESS;
