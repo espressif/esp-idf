@@ -999,7 +999,7 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                 bta_dm_co_ble_set_init_key_req(init_key);
                 break;
             }
-            case ESP_BLE_SM_SET_RSP_KEK: {
+            case ESP_BLE_SM_SET_RSP_KEY: {
                 uint8_t rsp_key = 0;
                 STREAM_TO_UINT8(rsp_key, arg->set_security_param.value);
                 bta_dm_co_ble_set_rsp_key_req(rsp_key);
