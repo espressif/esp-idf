@@ -197,7 +197,7 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
 
     esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
     COUNTER_START();
-    const char *srcc = (const char *) srcv;
+    const uint8_t *srcc = (const uint8_t *) srcv;
     /*
      * Large operations are split into (up to) 3 parts:
      * - Left padding: 4 bytes up to the first 4-byte aligned destination offset.
@@ -210,6 +210,7 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
     size_t mid_size = (size - left_size) & ~3U;
     size_t right_off = left_size + mid_size;
     size_t right_size = size - mid_size - left_size;
+
     rc = spi_flash_unlock();
     if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
         goto out;
@@ -237,17 +238,15 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
 #endif
         while(mid_size > 0 && rc == ESP_ROM_SPIFLASH_RESULT_OK) {
             uint32_t write_buf[8];
-            uint32_t write_size;
-            const uint32_t *write_src = (const uint32_t *) (srcc + mid_off);
-            if (direct_write) {
-                write_size = MIN(mid_size, MAX_WRITE_CHUNK); /* Write in chunks, to avoid starving other CPU/tasks */
-            } else {
-                write_size = MIN(mid_size, sizeof(write_buf));
+            uint32_t write_size = MIN(mid_size, MAX_WRITE_CHUNK);
+            const uint8_t *write_src = srcc + mid_off;
+            if (!direct_write) {
+                write_size = MIN(write_size, sizeof(write_buf));
                 memcpy(write_buf, write_src, write_size);
-                write_src = write_buf;
+                write_src = (const uint8_t *)write_buf;
             }
             spi_flash_guard_start();
-            rc = esp_rom_spiflash_write(dst + mid_off, (const uint32_t *) (srcc + mid_off), mid_size);
+            rc = esp_rom_spiflash_write(dst + mid_off, (const uint32_t *) write_src, write_size);
             spi_flash_guard_end();
             COUNTER_ADD_BYTES(write, write_size);
             mid_size -= write_size;
@@ -369,10 +368,10 @@ esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
             goto out;
         }
         COUNTER_ADD_BYTES(read, read_size);
-        memcpy(dstv, ((char *) t) + left_off, size);
+        memcpy(dstv, ((uint8_t *) t) + left_off, size);
         goto out;
     }
-    char *dstc = (char *) dstv;
+    uint8_t *dstc = (uint8_t *) dstv;
     intptr_t dsti = (intptr_t) dstc;
     /*
      * Large operations are split into (up to) 3 parts:
