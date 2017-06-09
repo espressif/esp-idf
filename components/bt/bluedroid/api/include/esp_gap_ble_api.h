@@ -183,7 +183,7 @@ typedef enum {
     ESP_BLE_SM_AUTHEN_REQ_MODE,
     ESP_BLE_SM_IOCAP_MODE,
     ESP_BLE_SM_SET_INIT_KEY,
-    ESP_BLE_SM_SET_RSP_KEK,
+    ESP_BLE_SM_SET_RSP_KEY,
     ESP_BLE_SM_MAX_KEY_SIZE,
 } esp_ble_sm_param_t;
 
