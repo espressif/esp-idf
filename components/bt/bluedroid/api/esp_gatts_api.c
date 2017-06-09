@@ -23,6 +23,8 @@
 #if (GATTS_INCLUDED == TRUE)
 #define COPY_TO_GATTS_ARGS(_gatt_args, _arg, _arg_type) memcpy(_gatt_args, _arg, sizeof(_arg_type))
 
+static esp_err_t esp_ble_gatts_add_char_desc_param_check(esp_attr_value_t *char_val, esp_attr_control_t *control);
+
 
 esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback)
 {
@@ -138,30 +140,16 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
 {
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
+    esp_err_t status;
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
     /* parameter validation check */
-    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
-        if (char_val == NULL){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_val should not be NULL here\n",\
-                            __func__, __LINE__);
-            return ESP_ERR_INVALID_ARG;
-        } else if (char_val->attr_max_len == 0){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
-                            __func__, __LINE__);
-            return ESP_ERR_INVALID_ARG;
-        }
-    }
-
-    if (char_val != NULL){
-        if (char_val->attr_len > char_val->attr_max_len){
-            LOG_ERROR("Error in %s, line=%d,attribute actual length (%d)  should not be larger than max length (%d)\n",\
-                            __func__, __LINE__, char_val->attr_len, char_val->attr_max_len);
-            return ESP_ERR_INVALID_ARG;
-        }
+    status = esp_ble_gatts_add_char_desc_param_check(char_val, control);
+    if (status != ESP_OK){
+        return status;
     }
 
     memset(&arg, 0, sizeof(btc_ble_gatts_args_t));
@@ -193,33 +181,17 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
 {
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
+    esp_err_t status;
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
     /* parameter validation check */
-    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
-        if (char_descr_val == NULL){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_descr_val should not be NULL here\n",\
-                            __func__, __LINE__);
-            return ESP_ERR_INVALID_ARG;
-        }
-        else if (char_descr_val->attr_max_len == 0){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
-                            __func__, __LINE__);
-            return ESP_ERR_INVALID_ARG;
-        }
+    status = esp_ble_gatts_add_char_desc_param_check(char_descr_val, control);
+    if (status != ESP_OK){
+        return status;
     }
-
-    if (char_descr_val != NULL){
-        if (char_descr_val->attr_len > char_descr_val->attr_max_len){
-            LOG_ERROR("Error in %s, line=%d,attribute actual length (%d) should not be larger than max length (%d)\n",\
-                            __func__, __LINE__, char_descr_val->attr_len, char_descr_val->attr_max_len);
-            return ESP_ERR_INVALID_ARG;
-        }
-    }
-
     
     memset(&arg, 0, sizeof(btc_ble_gatts_args_t));
     msg.sig = BTC_SIG_API_CALL;
@@ -400,6 +372,30 @@ esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+
+static esp_err_t esp_ble_gatts_add_char_desc_param_check(esp_attr_value_t *char_val, esp_attr_control_t *control)
+{
+    if ((control != NULL) && ((control->auto_rsp != ESP_GATT_AUTO_RSP) && (control->auto_rsp != ESP_GATT_RSP_BY_APP))){
+            LOG_ERROR("Error in %s, line=%d, control->auto_rsp should be set to ESP_GATT_AUTO_RSP or ESP_GATT_RSP_BY_APP\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+    }
+
+    if ((control != NULL) && (control->auto_rsp == ESP_GATT_AUTO_RSP)){
+        if (char_val == NULL){
+            LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_val should not be NULL here\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+        } else if (char_val->attr_max_len == 0){
+            LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
+                            __func__, __LINE__);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    return ESP_OK;
 }
 
 #endif  ///GATTS_INCLUDED
