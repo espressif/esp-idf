@@ -39,6 +39,7 @@ typedef enum {
     BTC_GAP_BLE_SECURITY_RSP_EVT,
     BTC_GAP_BLE_PASSKEY_REPLY_EVT,
     BTC_GAP_BLE_CONFIRM_REPLY_EVT,
+    BTC_GAP_BLE_DISCONNECT_EVT,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -115,6 +116,12 @@ typedef union {
         esp_bd_addr_t bd_addr;
         bool accept;
     } enc_comfirm_replay;
+
+    //BTC_GAP_BLE_DISCONNECT_EVT
+    struct disconnect_args {
+        esp_bd_addr_t remote_device;
+    } disconnect;
+
 } btc_ble_gap_args_t;
 
 void btc_gap_ble_call_handler(btc_msg_t *msg);

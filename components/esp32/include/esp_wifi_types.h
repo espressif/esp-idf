@@ -246,11 +246,22 @@ typedef struct {
   *
   */
 typedef enum {
-    WIFI_PKT_CTRL,  /**< control type, receive packet buf is wifi_promiscuous_pkt_t */
     WIFI_PKT_MGMT,  /**< management type, receive packet buf is wifi_promiscuous_pkt_t */
     WIFI_PKT_DATA,  /**< data type, receive packet buf is wifi_promiscuous_pkt_t */
-    WIFI_PKT_MISC,  /**< other type, receive packet buf is wifi_promiscuous_pkt_t */
+    WIFI_PKT_MISC,  /**< other type, such as MIMO etc, receive packet buf is wifi_promiscuous_pkt_t but the payload is NULL!!! */
 } wifi_promiscuous_pkt_type_t;
+
+
+#define WIFI_PROMIS_FILTER_MASK_ALL         (0xFFFFFFFF)  /**< filter all packets */
+#define WIFI_PROMIS_FILTER_MASK_MGMT        (1)           /**< filter the packets with type of WIFI_PKT_MGMT */
+#define WIFI_PROMIS_FILTER_MASK_DATA        (1<<1)        /**< filter the packets with type of WIFI_PKT_DATA */
+#define WIFI_PROMIS_FILTER_MASK_MISC        (1<<2)        /**< filter the packets with type of WIFI_PKT_MISC */
+#define WIFI_PROMIS_FILTER_MASK_DATA_MPDU   (1<<3)        /**< filter the MPDU which is a kind of WIFI_PKT_DATA */
+#define WIFI_PROMIS_FILTER_MASK_DATA_AMPDU  (1<<4)        /**< filter the AMPDU which is a kind of WIFI_PKT_DATA */
+
+typedef struct {
+    uint32_t filter_mask;
+} wifi_promiscuous_filter_t;
 
 #ifdef __cplusplus
 }

@@ -150,6 +150,8 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_SCAN_FLT_PARAM_EVT    32 /* Param filter event */
 #define BTA_GATTC_SCAN_FLT_STATUS_EVT   33 /* Filter status event */
 #define BTA_GATTC_ADV_VSC_EVT           34 /* ADV VSC event */
+#define BTA_GATTC_CONNECT_EVT           35 /* GATTC CONNECT  event */
+#define BTA_GATTC_DISCONNECT_EVT        36 /* GATTC DISCONNECT  event */
 
 typedef UINT8 tBTA_GATTC_EVT;
 
@@ -379,6 +381,20 @@ typedef struct {
     BD_ADDR                 remote_bda;
 } tBTA_GATTC_ENC_CMPL_CB;
 
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    UINT16              conn_id;
+    tBTA_GATTC_IF       client_if;
+    BD_ADDR             remote_bda;
+} tBTA_GATTC_CONNECT;
+
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    UINT16              conn_id;
+    tBTA_GATTC_IF       client_if;
+    BD_ADDR             remote_bda;
+} tBTA_GATTC_DISCONNECT;
+
 typedef union {
     tBTA_GATT_STATUS        status;
 
@@ -386,7 +402,9 @@ typedef union {
     tBTA_GATTC_SRVC_RES     srvc_res;          /* discovery result */
     tBTA_GATTC_REG          reg_oper;              /* registration data */
     tBTA_GATTC_OPEN         open;
+    tBTA_GATTC_CONNECT      connect;
     tBTA_GATTC_CLOSE        close;
+    tBTA_GATTC_DISCONNECT   disconnect;
     tBTA_GATTC_READ         read;             /* read attribute/descriptor data */
     tBTA_GATTC_WRITE        write;            /* write complete data */
     tBTA_GATTC_EXEC_CMPL    exec_cmpl;       /*  execute complete */

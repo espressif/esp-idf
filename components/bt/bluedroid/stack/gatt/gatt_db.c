@@ -46,6 +46,7 @@ static BOOLEAN copy_extra_byte_in_db(tGATT_SVC_DB *p_db, void **p_dst, UINT16 le
 static BOOLEAN gatts_db_add_service_declaration(tGATT_SVC_DB *p_db, tBT_UUID *p_service, BOOLEAN is_pri);
 static tGATT_STATUS gatts_send_app_read_request(tGATT_TCB *p_tcb, UINT8 op_code,
         UINT16 handle, UINT16 offset, UINT32 trans_id, BOOLEAN need_rsp);
+static BOOLEAN gatts_add_char_desc_value_check (tGATT_ATTR_VAL *attr_val, tGATTS_ATTR_CONTROL *control);
 
 /*******************************************************************************
 **
@@ -468,27 +469,13 @@ UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
 {
     tGATT_ATTR16     *p_char_decl, *p_char_val;
     tBT_UUID        uuid = {LEN_UUID_16, {GATT_UUID_CHAR_DECLARE}};
+    BOOLEAN status;
 
     GATT_TRACE_DEBUG("gatts_add_characteristic perm=0x%0x property=0x%0x\n", perm, property);
     /* parameter validation check */
-    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
-        if (attr_val == NULL){
-            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute, attr_val should not be NULL here\n",\
-                            __func__, __LINE__);
-            return 0;
-        } else if (attr_val->attr_max_len == 0){
-            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
-                            __func__, __LINE__);
-            return 0;
-        }
-    }
-
-    if (attr_val != NULL){
-        if (attr_val->attr_len > attr_val->attr_max_len){
-            GATT_TRACE_ERROR("Error in %s, line=%d,attribute actual length should not be larger than max length\n",\
-                            __func__, __LINE__);
-            return 0;
-        }
+    status = gatts_add_char_desc_value_check(attr_val, control);
+    if (status == FALSE){
+        return 0;
     }
 
 
@@ -621,30 +608,15 @@ UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
                              tBT_UUID  *p_descr_uuid,  tGATT_ATTR_VAL *attr_val, tGATTS_ATTR_CONTROL *control)
 {
     tGATT_ATTR16    *p_char_dscptr;
+    BOOLEAN status;
 
     GATT_TRACE_DEBUG("gatts_add_char_descr uuid=0x%04x\n", p_descr_uuid->uu.uuid16);
 
     /* parameter validation check */
-    if ((control != NULL) && (control->auto_rsp == GATT_STACK_RSP)){
-        if (attr_val == NULL){
-            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute, attr_val should not be NULL here\n",\
-                    __func__, __LINE__);
-            return 0;
-        } else if (attr_val->attr_max_len == 0){
-            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
-                    __func__, __LINE__);
-            return 0;
-        }
+    status = gatts_add_char_desc_value_check(attr_val, control);
+    if (status == FALSE){
+        return 0;
     }
-
-    if (attr_val != NULL){
-        if (attr_val->attr_len > attr_val->attr_max_len){
-            GATT_TRACE_ERROR("Error in %s, line=%d,attribute actual length (%d) should not be larger than max length (%d)\n",\
-                    __func__, __LINE__, attr_val->attr_len, attr_val->attr_max_len);
-            return 0;
-        }
-    }
-
 
     /* Add characteristic descriptors */
     if ((p_char_dscptr = (tGATT_ATTR16 *)allocate_attr_in_db(p_db, p_descr_uuid, perm)) == NULL) {
@@ -1463,6 +1435,49 @@ static BOOLEAN gatts_db_add_service_declaration(tGATT_SVC_DB *p_db, tBT_UUID *p_
 
     }
     return rt;
+}
+
+/*******************************************************************************
+**
+** Function         gatts_add_char_desc_value_check
+**
+** Description      parameters validation check for gatts add char/descriptor functions
+**
+** Parameter        attr_val: attribute value for char/descriptor.
+**                  control: control variable for char/descriptor.
+**
+** Returns          void
+**
+*******************************************************************************/
+static BOOLEAN gatts_add_char_desc_value_check (tGATT_ATTR_VAL *attr_val, tGATTS_ATTR_CONTROL *control)
+{
+    if ((control != NULL) && ((control->auto_rsp != GATT_RSP_BY_APP) && (control->auto_rsp != GATT_RSP_BY_STACK))){
+            GATT_TRACE_ERROR("Error in %s, line=%d, control->auto_rsp should be set to GATT_RSP_BY_APP or GATT_RSP_BY_STACK here\n",\
+                    __func__, __LINE__);
+            return FALSE;
+    }
+
+    if ((control != NULL) && (control->auto_rsp == GATT_RSP_BY_STACK)){
+        if (attr_val == NULL){
+            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute, attr_val should not be NULL here\n",\
+                            __func__, __LINE__);
+            return FALSE;
+        } else if (attr_val->attr_max_len == 0){
+            GATT_TRACE_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
+                            __func__, __LINE__);
+            return FALSE;
+        }
+    }
+
+    if (attr_val != NULL){
+        if (attr_val->attr_len > attr_val->attr_max_len){
+            GATT_TRACE_ERROR("Error in %s, line=%d,attribute actual length should not be larger than max length\n",\
+                            __func__, __LINE__);
+            return FALSE;
+        }
+    }
+
+    return TRUE ;
 }
 
 #endif /* BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */

@@ -770,6 +770,58 @@ void bta_gattc_send_open_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status
         (*p_clreg->p_cback)(BTA_GATTC_OPEN_EVT, &cb_data);
     }
 }
+
+/*******************************************************************************
+**
+** Function         bta_gattc_send_connect_cback
+**
+** Description      send connect callback
+**
+** Returns
+**
+*******************************************************************************/
+void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status,
+                                BD_ADDR remote_bda, UINT16 conn_id)
+{
+    tBTA_GATTC      cb_data;
+
+    if (p_clreg->p_cback) {
+        memset(&cb_data, 0, sizeof(tBTA_GATTC));
+
+        cb_data.connect.status = status;
+        cb_data.connect.client_if = p_clreg->client_if;
+        cb_data.connect.conn_id = conn_id;
+        bdcpy(cb_data.connect.remote_bda, remote_bda);
+
+        (*p_clreg->p_cback)(BTA_GATTC_CONNECT_EVT, &cb_data);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_gattc_send_disconnect_cback
+**
+** Description      send disconnect callback
+**
+** Returns
+**
+*******************************************************************************/
+void bta_gattc_send_disconnect_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status,
+                                BD_ADDR remote_bda, UINT16 conn_id)
+{
+    tBTA_GATTC      cb_data;
+
+    if (p_clreg->p_cback) {
+        memset(&cb_data, 0, sizeof(tBTA_GATTC));
+
+        cb_data.disconnect.status = status;
+        cb_data.disconnect.client_if = p_clreg->client_if;
+        cb_data.disconnect.conn_id = conn_id;
+        bdcpy(cb_data.disconnect.remote_bda, remote_bda);
+
+        (*p_clreg->p_cback)(BTA_GATTC_DISCONNECT_EVT, &cb_data);
+    }
+}
 /*******************************************************************************
 **
 ** Function         bta_gattc_conn_alloc

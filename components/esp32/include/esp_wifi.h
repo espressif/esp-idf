@@ -611,6 +611,31 @@ esp_err_t esp_wifi_set_promiscuous(bool en);
 esp_err_t esp_wifi_get_promiscuous(bool *en);
 
 /**
+  * @brief     Enable the promiscuous filter.
+  *
+  * @attention 1. The default filter is to filter all packets except WIFI_PKT_MISC
+  *
+  * @param     filter the packet type filtered by promisucous
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
+  */
+esp_err_t esp_wifi_set_promiscuous_filter(const wifi_promiscuous_filter_t *filter);
+
+/**
+  * @brief     Get the promiscuous filter.
+  *
+  * @param[out] filter  store the current status of promiscuous filter
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_promiscuous_filter(wifi_promiscuous_filter_t *filter);
+
+/**
   * @brief     Set the configuration of the ESP32 STA or AP
   *
   * @attention 1. This API can be called only when specified interface is enabled, otherwise, API fail

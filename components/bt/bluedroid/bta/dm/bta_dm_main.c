@@ -131,6 +131,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_read_scan_reports,           /* BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT */
     bta_dm_ble_track_advertiser,            /* BTA_DM_API_BLE_TRACK_ADVERTISER_EVT */
     bta_dm_ble_get_energy_info,             /* BTA_DM_API_BLE_ENERGY_INFO_EVT */
+    bta_dm_ble_disconnect,                  /* BTA_DM_API_BLE_DISCONNECT_EVT */
 #endif
 
     bta_dm_enable_test_mode,                /*  BTA_DM_API_ENABLE_TEST_MODE_EVT     */
