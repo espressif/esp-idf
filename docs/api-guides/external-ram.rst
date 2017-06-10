@@ -25,7 +25,7 @@ To connect the ESP-PSRAM chip to the ESP32D0W*, connect the following signals:
  * PSRAM #CE (pin 1) - ESP32 GPIO 16
  * PSRAM SIO[1]/SO (pin 2) - flash DO
  * PSRAM SIO[2] (pin 3) - flash WP
- * PSRAM VSS (pin 4 ) - ESP32 GND 
+ * PSRAM VSS (pin 4 ) - GND 
  * PSRAM SIO[0]/SI (pin 5) - flash DI
  * PSRAM SCLK (pin 6) - ESP32 GPIO 17
  * PSRAM SIO[3] (pin 7) - flash HOLD
