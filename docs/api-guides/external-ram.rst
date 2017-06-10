@@ -22,13 +22,14 @@ pin to a high signal level on bootup, or program the fuses in the ESP32 to alway
 damaging the PSRAM and/or flash chip.
 
 To connect the ESP-PSRAM chip to the ESP32D0W*, connect the following signals:
- * PSRAM /CE (pin 1) - ESP32 GPIO 16
- * PSRAM SO (pin 2) - flash DO
+ * PSRAM #CE (pin 1) - ESP32 GPIO 16
+ * PSRAM SIO[1]/SO (pin 2) - flash DO
  * PSRAM SIO[2] (pin 3) - flash WP
- * PSRAM SI (pin 5) - flash DI
+ * PSRAM VSS (pin 4 ) - GND 
+ * PSRAM SIO[0]/SI (pin 5) - flash DI
  * PSRAM SCLK (pin 6) - ESP32 GPIO 17
  * PSRAM SIO[3] (pin 7) - flash HOLD
- * PSRAM Vcc (pin 8) - ESP32 VCC_SDIO
+ * PSRAM VDD (pin 8) - ESP32 VCC_SDIO
 
 Connections for the ESP32D2W* chips are TBD.
 
