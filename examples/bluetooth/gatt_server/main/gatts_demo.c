@@ -238,7 +238,7 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
 
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC){
-        esp_log_buffer_hex(GATTS_TAG, (char *)prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        esp_log_buffer_hex(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
     }else{
         ESP_LOGI(GATTS_TAG,"ESP_GATT_PREP_WRITE_CANCEL");
     }

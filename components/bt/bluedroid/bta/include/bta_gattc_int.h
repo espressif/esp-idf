@@ -29,7 +29,6 @@
 #include "bta_gatt_api.h"
 #include "bta_gattc_ci.h"
 #include "bta_gattc_co.h"
-
 #include "gki.h"
 
 /*****************************************************************************
@@ -380,6 +379,9 @@ typedef struct {
 typedef struct {
     BOOLEAN             in_use;
     BD_ADDR             remote_bda;
+    TIMER_LIST_ENT      service_change_ccc_timer;           /* wait for discovering remote device's service change ccc handle */
+    BOOLEAN             ccc_timer_used;                     /* service_change_ccc_timer started */
+    BOOLEAN             service_change_ccc_written;         /* has written remote device's service change ccc */
 } tBTA_GATTC_CONN;
 
 enum {
@@ -403,6 +405,16 @@ typedef struct {
 #endif  ///SDP_INCLUDED == TRUE
     UINT16              sdp_conn_id;
 } tBTA_GATTC_CB;
+
+typedef enum {
+    SERVICE_CHANGE_CCC_WRITTEN_SUCCESS = 0,
+    SERVICE_CHANGE_CACHE_NOT_FOUND,
+    SERVICE_CHANGE_SERVICE_NOT_FOUND,
+    SERVICE_CHANGE_CHAR_NOT_FOUND,
+    SERVICE_CHANGE_CCC_NOT_FOUND,
+    SERVICE_CHANGE_WRITE_CCC_FAILED
+}tBTA_GATTC_FIND_SERVICE_CB;
+
 
 /*****************************************************************************
 **  Global data

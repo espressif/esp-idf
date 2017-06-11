@@ -62,6 +62,10 @@ static void bta_gattc_cmpl_sendmsg(UINT16 conn_id, tGATTC_OPTYPE op,
 static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB *p_clreg);
 static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda);
 static void bta_gattc_cong_cback (UINT16 conn_id, BOOLEAN congested);
+static tBTA_GATTC_FIND_SERVICE_CB bta_gattc_register_service_change_notify(UINT16 conn_id, BD_ADDR remote_bda, BOOLEAN *need_timer);
+static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle);
+static void bta_gattc_start_service_change_ccc_timer(UINT16 conn_id, BD_ADDR bda,UINT32 timeout_ms,
+                                              UINT8 timer_cnt, UINT8 last_status, TIMER_LIST_ENT *ccc_timer);
 
 static tGATT_CBACK bta_gattc_cl_cback = {
     bta_gattc_conn_cback,
@@ -1019,7 +1023,7 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     else if (p_q_cmd != NULL) {
         p_clcb->p_q_cmd = NULL;
          /* execute pending operation of link block still present */
-        if (l2cu_find_lcb_by_bd_addr(p_clcb->p_srcb->server_bda, 
+        if (l2cu_find_lcb_by_bd_addr(p_clcb->p_srcb->server_bda,
             BT_TRANSPORT_LE) != NULL) {
             bta_gattc_sm_execute(p_clcb, p_q_cmd->hdr.event, p_q_cmd);
         }
@@ -1696,6 +1700,7 @@ static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB *p_clreg)
         p_cb->state = BTA_GATTC_STATE_DISABLED;
     }
 }
+
 /*******************************************************************************
 **
 ** Function         bta_gattc_conn_cback
@@ -1710,20 +1715,54 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
                                  tBT_TRANSPORT transport)
 {
     tBTA_GATTC_DATA *p_buf;
+    BOOLEAN start_ccc_timer = FALSE;
+    tBTA_GATTC_CONN *p_conn = NULL;
+    tBTA_GATTC_FIND_SERVICE_CB    result;
 
     if (reason != 0) {
         APPL_TRACE_WARNING("%s() - cif=%d connected=%d conn_id=%d reason=0x%04x",
                            __FUNCTION__, gattc_if, connected, conn_id, reason);
     }
 
+    if (connected == TRUE){
+        p_conn = bta_gattc_conn_find_alloc(bda);
+    }
+    else if (connected == FALSE){
+        p_conn = bta_gattc_conn_find(bda);
+    }
+
+    if (p_conn == NULL){
+        APPL_TRACE_ERROR("p_conn is NULL in %s\n", __func__);
+    }
+
+    if ((transport == BT_TRANSPORT_LE) && (connected == TRUE) && (p_conn != NULL) \
+         && (p_conn->service_change_ccc_written == FALSE) && (p_conn->ccc_timer_used == FALSE)){
+        result = bta_gattc_register_service_change_notify(conn_id, bda, &start_ccc_timer);
+        if (start_ccc_timer == TRUE){
+            TIMER_LIST_ENT *ccc_timer = &(p_conn->service_change_ccc_timer);
+            /* start a 1000ms timer to wait for service discovery finished */
+            bta_gattc_start_service_change_ccc_timer(conn_id, bda, 1000, 0, result, ccc_timer);
+            p_conn->ccc_timer_used = TRUE;
+        }
+        else {
+            /* Has written service change ccc; or service change ccc doesn't exist in remote device's gatt database */
+            p_conn->service_change_ccc_written = TRUE;
+            p_conn->ccc_timer_used = FALSE;
+        }
+
+    }
+    else if ((transport == BT_TRANSPORT_LE) && (connected == FALSE) && (p_conn != NULL)){
+            p_conn->service_change_ccc_written = FALSE;
+            if (p_conn->ccc_timer_used == TRUE){
+                GKI_freebuf((void *)p_conn->service_change_ccc_timer.param);
+                bta_sys_stop_timer(&(p_conn->service_change_ccc_timer));
+                p_conn->ccc_timer_used = FALSE;
+            }
+    }
+
     bt_bdaddr_t bdaddr;
     bdcpy(bdaddr.address, bda);
-    /*
-    if (connected)
-        btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, GATT_CONN_UNKNOWN);
-    else
-        btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, reason);
-    */
+
     if ((p_buf = (tBTA_GATTC_DATA *) GKI_getbuf(sizeof(tBTA_GATTC_DATA))) != NULL) {
         memset(p_buf, 0, sizeof(tBTA_GATTC_DATA));
 
@@ -2241,5 +2280,219 @@ void bta_gattc_broadcast(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
         (*p_clreg->p_cback)(BTA_GATTC_LISTEN_EVT, &cb_data);
     }
 }
+
+/*******************************************************************************
+**
+** Function         bta_gattc_start_service_change_ccc_timer
+**
+** Description      start a timer to wait for service change ccc discovered
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_gattc_start_service_change_ccc_timer(UINT16 conn_id, BD_ADDR bda,UINT32 timeout_ms,
+                                              UINT8 timer_cnt, UINT8 last_status, TIMER_LIST_ENT *ccc_timer)
+{
+    tBTA_GATTC_WAIT_CCC_TIMER *p_timer_param = (tBTA_GATTC_WAIT_CCC_TIMER*) GKI_getbuf(sizeof(tBTA_GATTC_WAIT_CCC_TIMER));
+    if (p_timer_param != NULL){
+        p_timer_param->conn_id = conn_id;
+        memcpy(p_timer_param->remote_bda, bda, sizeof(BD_ADDR));
+        p_timer_param->count = timer_cnt;
+        p_timer_param->last_status = last_status;
+        ccc_timer->param = (UINT32)p_timer_param;
+        ccc_timer->p_cback = (TIMER_CBACK *)&bta_gattc_wait4_service_change_ccc_cback;
+        bta_sys_start_timer(ccc_timer, 0, timeout_ms);
+    }
+    else {
+        APPL_TRACE_ERROR("%s, allocate p_timer_param failed\n", __func__);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_gattc_register_service_change_notify
+**
+** Description      Find remote device's gatt service change characteristic ccc's handle and write 2 to this
+**                  this ccc. If not found, start a timer to wait for service discovery finished.
+**
+** Returns          Return result of service change ccc service discovery result result and written operate result
+**
+*******************************************************************************/
+tBTA_GATTC_FIND_SERVICE_CB bta_gattc_register_service_change_notify(UINT16 conn_id, BD_ADDR remote_bda, BOOLEAN *need_timer){
+    tBTA_GATTC_SERV     *p_srcb = NULL;
+    tBTA_GATTC_CACHE    *p_cache = NULL;
+    tBTA_GATT_ID        result_id;
+    tBTA_GATT_ID        *p_result = &result_id;
+    tBTA_GATTC_CACHE_ATTR   *p_attr = NULL;
+    tGATT_STATUS        write_status;
+    tGATT_VALUE         ccc_value;
+    tBTA_GATTC_FIND_SERVICE_CB    result;
+    BOOLEAN             gatt_cache_found = FALSE;
+    BOOLEAN             gatt_service_found = FALSE;
+    BOOLEAN             gatt_service_change_found = FALSE;
+    BOOLEAN             gatt_ccc_found = FALSE;
+    BOOLEAN             start_find_ccc_timer = FALSE;
+
+    tBT_UUID gatt_service_uuid = {LEN_UUID_16, {UUID_SERVCLASS_GATT_SERVER}};
+    tBT_UUID gatt_service_change_uuid = {LEN_UUID_16, {GATT_UUID_GATT_SRV_CHGD}};
+    tBT_UUID gatt_ccc_uuid = {LEN_UUID_16, {GATT_UUID_CHAR_CLIENT_CONFIG}};
+
+    p_srcb = bta_gattc_find_srcb(remote_bda);
+    if ((p_srcb != NULL) && (p_srcb->p_srvc_cache != NULL)){
+        p_cache = p_srcb->p_srvc_cache;
+        gatt_cache_found = TRUE;
+    }
+    else {
+        start_find_ccc_timer = TRUE;
+        result = SERVICE_CHANGE_CACHE_NOT_FOUND;
+    }
+
+    /* start to find gatt service */
+    if (gatt_cache_found == TRUE){
+        while (p_cache) {
+            if (bta_gattc_uuid_compare(&gatt_service_uuid, &p_cache->service_uuid.id.uuid, TRUE)) {
+                gatt_service_found = TRUE;
+                break;
+            }
+            p_cache = p_cache->p_next;
+        }
+    }
+    else {
+        start_find_ccc_timer = TRUE;
+        result = SERVICE_CHANGE_CACHE_NOT_FOUND;
+    }
+
+    /* start to find gatt service change characteristic */
+    if (gatt_service_found == TRUE){
+        p_attr = p_cache->p_attr;
+
+        while(p_attr){
+            bta_gattc_pack_attr_uuid(p_attr, &p_result->uuid);
+            if (bta_gattc_uuid_compare(&gatt_service_change_uuid, &p_result->uuid, TRUE)){
+                gatt_service_change_found = TRUE;
+                break;
+            }
+            p_attr = p_attr->p_next;
+        }
+    }
+    else if (gatt_cache_found == TRUE){
+        /* Gatt service not found, start a timer to wait for service discovery */
+        start_find_ccc_timer = TRUE;
+        result = SERVICE_CHANGE_SERVICE_NOT_FOUND;
+    }
+
+    /* start to find gatt service change characteristic ccc */
+    if (gatt_service_change_found == TRUE){
+        p_attr = p_attr->p_next;
+
+        while(p_attr && p_attr->attr_type != BTA_GATTC_ATTR_TYPE_CHAR){
+            bta_gattc_pack_attr_uuid(p_attr, &p_result->uuid);
+            if (bta_gattc_uuid_compare(&gatt_ccc_uuid, &p_result->uuid, TRUE)){
+                gatt_ccc_found = TRUE;
+                break;
+            }
+            p_attr = p_attr->p_next;
+        }
+    }
+    else if (gatt_service_found ==TRUE){
+        /* Gatt service found, but service change char not found,
+         * Case1: remote device doesn't have service change char, we don't need to start a timer here to
+         * wait for service discovery
+         * Case2: remote device exist service change char, we have found gatt service, but have not found
+         * service change char, we need to start a timer here*/
+        start_find_ccc_timer = TRUE;
+        result = SERVICE_CHANGE_CHAR_NOT_FOUND;
+    }
+
+    if (gatt_ccc_found == TRUE){
+        ccc_value.handle = p_attr->attr_handle;
+        ccc_value.len = 2;
+        ccc_value.value[0] = GATT_CLT_CONFIG_INDICATION;
+        ccc_value.auth_req = GATT_AUTH_REQ_NONE;
+        write_status = GATTC_Write (conn_id, GATT_WRITE, &ccc_value);
+        if (write_status != GATT_SUCCESS) {
+            start_find_ccc_timer = TRUE;
+            result = SERVICE_CHANGE_WRITE_CCC_FAILED;
+        }
+        else {
+            start_find_ccc_timer = FALSE;
+            result = SERVICE_CHANGE_CCC_WRITTEN_SUCCESS;
+        }
+    }
+    else if (gatt_service_change_found == TRUE){
+        /* Gatt service char found, but service change char ccc not found,
+         * Case1: remote device doesn't have service change char ccc, we don't need to start a timer here to
+         * wait for service discovery
+         * Case2: remote device exist service change char ccc, we have found gatt service change char, but have not found
+         * service change char ccc, we need to start a timer here*/
+        start_find_ccc_timer = TRUE;
+        result = SERVICE_CHANGE_CCC_NOT_FOUND;
+    }
+
+    if (need_timer != NULL){
+        *need_timer = start_find_ccc_timer;
+    }
+
+    return result;
+}
+
+/*******************************************************************************
+**
+** Function         bta_gattc_wait4_service_change_ccc_cback
+**
+** Description      callback function of service_change_ccc_timer
+**
+** Returns          None
+**
+*******************************************************************************/
+static void bta_gattc_wait4_service_change_ccc_cback (TIMER_LIST_ENT *p_tle)
+{
+    tBTA_GATTC_FIND_SERVICE_CB result;
+    BOOLEAN start_ccc_timer = FALSE;
+    UINT32 new_timeout;
+
+    tBTA_GATTC_WAIT_CCC_TIMER *p_timer_param = (tBTA_GATTC_WAIT_CCC_TIMER*) p_tle->param;
+    if (p_timer_param == NULL){
+        APPL_TRACE_ERROR("p_timer_param is NULL in %s\n", __func__);
+        return;
+    }
+
+    tBTA_GATTC_CONN *p_conn = bta_gattc_conn_find(p_timer_param->remote_bda);
+    if (p_conn == NULL){
+        APPL_TRACE_ERROR("p_conn is NULL in %s\n", __func__);
+        GKI_freebuf(p_timer_param);
+        return;
+    }
+
+    result = bta_gattc_register_service_change_notify(p_timer_param->conn_id, p_timer_param->remote_bda, &start_ccc_timer);
+    /* If return SERVICE_CHANGE_CHAR_NOT_FOUND or SERVICE_CHANGE_CCC_NOT_FOUND twice, means remote device doesn't have
+     * service change char or ccc, stop timer */
+    if ((result == p_timer_param->last_status) \
+            && ((result == SERVICE_CHANGE_CHAR_NOT_FOUND) || (result == SERVICE_CHANGE_CCC_NOT_FOUND))){
+        start_ccc_timer = FALSE;
+    }
+
+    if ((start_ccc_timer == TRUE) && (p_timer_param->count < 10)){
+        TIMER_LIST_ENT *ccc_timer = &(p_conn->service_change_ccc_timer);
+        if (result == SERVICE_CHANGE_WRITE_CCC_FAILED){
+            /* retry to write service change ccc, needn't to add counter */
+            new_timeout = 200;
+        }
+        else {
+            /* retry to find service change ccc */
+            new_timeout = 1000;
+            p_timer_param->count ++;
+        }
+        bta_gattc_start_service_change_ccc_timer(p_timer_param->conn_id, p_timer_param->remote_bda, \
+                                                 new_timeout, p_timer_param->count, result, ccc_timer);
+    }
+    else {
+        p_conn->ccc_timer_used = FALSE;
+        p_conn->service_change_ccc_written = TRUE;
+    }
+
+    GKI_freebuf(p_timer_param);
+}
+
 #endif
 #endif  ///GATTC_INCLUDED == TRUE && BLE_INCLUDED == TRUE

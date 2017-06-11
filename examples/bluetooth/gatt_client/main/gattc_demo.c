@@ -120,7 +120,7 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_OPEN_EVT conn_id %d, if %d, status %d, mtu %d", conn_id, gattc_if, p_data->open.status, p_data->open.mtu);
 
         ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-        esp_log_buffer_hex(GATTC_TAG, (char *)gl_profile_tab[PROFILE_A_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
+        esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
 
         esp_ble_gattc_search_service(gattc_if, conn_id, NULL);
         break;
@@ -134,7 +134,7 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
             ESP_LOGI(GATTC_TAG, "UUID32: %x", srvc_id->id.uuid.uuid.uuid32);
         } else if (srvc_id->id.uuid.len == ESP_UUID_LEN_128) {
             ESP_LOGI(GATTC_TAG, "UUID128:");
-            esp_log_buffer_hex(GATTC_TAG, (char *)srvc_id->id.uuid.uuid.uuid128, ESP_UUID_LEN_128);
+            esp_log_buffer_hex(GATTC_TAG, srvc_id->id.uuid.uuid.uuid128, ESP_UUID_LEN_128);
         } else {
             ESP_LOGE(GATTC_TAG, "UNKNOWN LEN %d", srvc_id->id.uuid.len);
         }
@@ -210,7 +210,7 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_OPEN_EVT conn_id %d, if %d, status %d, mtu %d", conn_id, gattc_if, p_data->open.status, p_data->open.mtu);
 
         ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-        esp_log_buffer_hex(GATTC_TAG, (char *)gl_profile_tab[PROFILE_B_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
+        esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_B_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
         esp_ble_gattc_search_service(gattc_if, conn_id, NULL);
         break;
     case ESP_GATTC_SEARCH_RES_EVT: {
@@ -223,7 +223,7 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
             ESP_LOGI(GATTC_TAG, "UUID32: %x", srvc_id->id.uuid.uuid.uuid32);
         } else if (srvc_id->id.uuid.len == ESP_UUID_LEN_128) {
             ESP_LOGI(GATTC_TAG, "UUID128:");
-            esp_log_buffer_hex(GATTC_TAG, (char *)srvc_id->id.uuid.uuid.uuid128, ESP_UUID_LEN_128);
+            esp_log_buffer_hex(GATTC_TAG, srvc_id->id.uuid.uuid.uuid128, ESP_UUID_LEN_128);
         } else {
             ESP_LOGE(GATTC_TAG, "UNKNOWN LEN %d", srvc_id->id.uuid.len);
         }
@@ -297,12 +297,12 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
         switch (scan_result->scan_rst.search_evt) {
         case ESP_GAP_SEARCH_INQ_RES_EVT:
-            esp_log_buffer_hex(GATTC_TAG, (char *)scan_result->scan_rst.bda, 6);
+            esp_log_buffer_hex(GATTC_TAG, scan_result->scan_rst.bda, 6);
             ESP_LOGI(GATTC_TAG, "Searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
             adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv,
                                                 ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
             ESP_LOGI(GATTC_TAG, "Searched Device Name Len %d", adv_name_len);
-            esp_log_buffer_char(GATTC_TAG, (char *)adv_name, adv_name_len);
+            esp_log_buffer_char(GATTC_TAG, adv_name, adv_name_len);
             ESP_LOGI(GATTC_TAG, "\n");
             if (adv_name != NULL) {
                 if (strlen(device_name) == adv_name_len && strncmp((char *)adv_name, device_name, adv_name_len) == 0) {
