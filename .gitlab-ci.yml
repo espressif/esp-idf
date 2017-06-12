@@ -7,11 +7,19 @@ stages:
   - deploy
 
 variables:
-# system environment
+# System environment
+
   # Common parameters for the 'make' during CI tests
   MAKEFLAGS: "-j5 --no-keep-going"
 
+# GitLab-CI environment
+
+  # more attempts for more robust
+  GET_SOURCES_ATTEMPTS: "10"
+  ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
+
 # IDF environment
+
   IDF_PATH: "$CI_PROJECT_DIR"
 
 before_script:
