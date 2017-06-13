@@ -578,7 +578,7 @@ void bta_sys_sendmsg(void *p_msg)
     if (btu_bta_msg_queue) {
         fixed_queue_enqueue(btu_bta_msg_queue, p_msg);
         //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-        btu_task_post(SIG_BTU_WORK);
+        btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
     }
 }
 
@@ -599,7 +599,7 @@ void bta_alarm_cb(void *data)
 
     fixed_queue_enqueue(btu_bta_alarm_queue, p_tle);
 
-    btu_task_post(SIG_BTU_WORK);
+    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
 }
 
 void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)

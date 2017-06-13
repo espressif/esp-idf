@@ -33,6 +33,8 @@
 
 #if CONFIG_BT_ENABLED
 
+#define BTDM_INIT_PERIOD                    (5000)    /* ms */
+
 /* Bluetooth system and controller config */
 #define BTDM_CFG_BT_EM_RELEASE              (1<<0)
 #define BTDM_CFG_BT_DATA_RELEASE            (1<<1)
@@ -89,6 +91,7 @@ struct osi_funcs_t {
 
 /* Static variable declare */
 static bool btdm_bb_init_flag = false;
+static xSemaphoreHandle btdm_init_sem;
 static esp_bt_controller_status_t btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 static esp_bt_controller_config_t btdm_cfg_opts;
 static xTaskHandle btControllerTaskHandle;
@@ -215,8 +218,13 @@ static void bt_controller_task(void *pvParam)
     btdm_controller_init(btdm_cfg_mask, &btdm_cfg_opts);
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
+
+    xSemaphoreGive(btdm_init_sem);
+
     /* Loop */
     btdm_controller_schedule();
+
+    /* never run here */
 }
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
@@ -231,6 +239,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
+    btdm_init_sem = xSemaphoreCreateBinary();
+    if (btdm_init_sem == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
     memcpy(&btdm_cfg_opts, cfg, sizeof(esp_bt_controller_config_t));
 
     ret = xTaskCreatePinnedToCore(bt_controller_task, "btController",
@@ -239,8 +252,12 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     if (ret != pdPASS) {
         memset(&btdm_cfg_opts, 0x0, sizeof(esp_bt_controller_config_t));
+        vSemaphoreDelete(btdm_init_sem);
         return ESP_ERR_NO_MEM;
     }
+
+    xSemaphoreTake(btdm_init_sem, BTDM_INIT_PERIOD/portTICK_PERIOD_MS);
+    vSemaphoreDelete(btdm_init_sem);
 
     return ESP_OK;
 }
