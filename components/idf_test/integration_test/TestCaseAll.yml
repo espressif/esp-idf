@@ -8433,3 +8433,34 @@ test cases:
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
+- ID: SYS_NVS_01001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: compatiable test
+  test point 2: test if latest SDK work with pervious version of NVS data
+  summary: use old NVS data WIFI function test
+  steps: |
+    1. get NVS data from earlier released branches and last master
+    2. download each NVS data to target
+    3. check if auto connected to the same AP
+    4. check if SoftAP config is correct
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  initial condition: None
+  test environment: SSC_T1_1
+  execution time: 0
+  module: System
+  sub module: NVS
+  version: v1 (2017-06-01)
+  CI ready: 'SpecialJob'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - "NVSTest/NVSCompatibleWiFi"
+  - - nvs_path = "nvs_bin_folder"
+    - ['']
