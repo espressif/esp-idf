@@ -117,10 +117,6 @@ extern void osi_mem_dbg_init(void);
 ******************************************************************************/
 int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 {
-#ifdef CONFIG_BLUEDROID_MEM_DEBUG
-    osi_mem_dbg_init();
-#endif
-
     if (gki_init()) {
         LOG_ERROR("%s: Init GKI Module Failure.\n", __func__);
         return -1;
