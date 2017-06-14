@@ -6,6 +6,14 @@ stages:
   - test_report
   - deploy
 
+variables:
+# system environment
+  # Common parameters for the 'make' during CI tests
+  MAKEFLAGS: "-j5 --no-keep-going"
+
+# IDF environment
+  IDF_PATH: "$CI_PROJECT_DIR"
+
 before_script:
   # add gitlab ssh key
   - mkdir -p ~/.ssh
@@ -30,7 +38,6 @@ build_template_app:
     - build
 
   variables:
-    IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
     IDF_CI_BUILD: "1"
@@ -61,7 +68,6 @@ build_template_app:
     - build
 
   variables:
-    IDF_PATH: "$CI_PROJECT_DIR"
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
     V: "0"
@@ -108,22 +114,40 @@ build_esp_idf_tests:
     - make print_flash_cmd | tail -n 1 > build/download.config
     - python tools/UnitTestParser.py
 
-build_examples:
+.build_examples_template: &build_examples_template
   <<: *build_template
   artifacts:
     paths:
-      - build_examples/*/*/build/*.bin
-      - build_examples/*/*/build/*.elf
-      - build_examples/*/*/build/*.map
-      - build_examples/*/*/build/bootloader/*.bin
-    expire_in: 6 mos
-
+      - build_examples/*/*/*/build/*.bin
+      - build_examples/*/*/*/build/*.elf
+      - build_examples/*/*/*/build/*.map
+      - build_examples/*/*/*/build/bootloader/*.bin
+    expire_in: 1 week
+  variables:
+    IDF_CI_BUILD: "1"
+    GIT_STRATEGY: fetch
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
     - mkdir build_examples
     - cd build_examples
-    - ${IDF_PATH}/make/build_examples.sh -j5
+    # build some of examples
+    - ${IDF_PATH}/make/build_examples.sh "${CI_JOB_NAME}"
+
+build_examples_00:
+  <<: *build_examples_template
+
+build_examples_01:
+  <<: *build_examples_template
+
+build_examples_02:
+  <<: *build_examples_template
+
+build_examples_03:
+  <<: *build_examples_template
+
+build_examples_04:
+  <<: *build_examples_template
 
 build_docs:
   stage: build
@@ -177,8 +201,6 @@ test_build_system:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build_test
-  variables:
-    IDF_PATH: "$CI_PROJECT_DIR"
   script:
     - ./make/test_configure_ci_environment.sh
     - ./make/test_build_system.sh
@@ -371,7 +393,6 @@ assign_test:
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
     CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/integration_test/CIConfigs/$CI_JOB_NAME.yml"
-    IDF_PATH: "$CI_PROJECT_DIR"
 
   artifacts:
     when: always
@@ -416,7 +437,38 @@ assign_test:
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
     CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/$CI_JOB_NAME.yml"
-    IDF_PATH: "$CI_PROJECT_DIR"
+
+nvs_compatible_test:
+  <<: *test_template
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+      - $IDF_PATH/nvs_wifi.bin
+    expire_in: 6 mos
+  tags:
+    - ESP32_IDF
+    - NVS_Compatible
+  script:
+    # remove artifacts from last stage (UT logs)
+    - rm -rf $LOG_PATH
+    # add gitlab ssh key
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    # clone local test env configs
+    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    # clone test bench
+    - git clone $TEST_SCRIPT_REPOSITORY
+    - cd auto_test_script
+    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
+    # prepare nvs bins
+    - ./Tools/prepare_nvs_bin.sh
+    # run test
+    - python CIRunner.py -l "$LOG_PATH/$CI_JOB_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH -m $MODULE_UPDATE_FILE
 
 UT_001_01:
   <<: *unit_test_template
