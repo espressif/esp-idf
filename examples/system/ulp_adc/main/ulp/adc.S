@@ -72,7 +72,7 @@ entry:
 	stage_rst
 measure:
 	/* measure and add value to accumulator */
-	adc r1, 0, adc_channel + 1, 0
+	adc r1, 0, adc_channel + 1
 	add r0, r0, r1
 	/* increment loop counter and check exit condition */
 	stage_inc 1
