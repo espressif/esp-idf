@@ -135,7 +135,7 @@ void hci_shut_down(void)
 }
 
 
-void hci_host_task_post(void)
+void hci_host_task_post(task_post_t timeout)
 {
     BtTaskEvt_t evt;
 
@@ -146,7 +146,7 @@ void hci_host_task_post(void)
     evt.sig = 0xff;
     evt.par = 0;
 
-    if (xQueueSend(xHciHostQueue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
+    if (xQueueSend(xHciHostQueue, &evt, timeout) != pdTRUE) {
         LOG_ERROR("xHciHostQueue failed\n");
     }
 }
@@ -279,7 +279,7 @@ static void transmit_command(
     BTTRC_DUMP_BUFFER(NULL, command->data + command->offset, command->len);
 
     fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
-    hci_host_task_post();
+    hci_host_task_post(TASK_POST_BLOCKING);
 }
 
 static future_t *transmit_command_futured(BT_HDR *command)
@@ -299,7 +299,7 @@ static future_t *transmit_command_futured(BT_HDR *command)
     command->event = MSG_STACK_TO_HC_HCI_CMD;
 
     fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
-    hci_host_task_post();
+    hci_host_task_post(TASK_POST_BLOCKING);
     return future;
 }
 
@@ -312,7 +312,7 @@ static void transmit_downward(uint16_t type, void *data)
         fixed_queue_enqueue(hci_host_env.packet_queue, data);
     }
     //ke_event_set(KE_EVENT_HCI_HOST_THREAD);
-    hci_host_task_post();
+    hci_host_task_post(TASK_POST_BLOCKING);
 }
 
 
@@ -493,7 +493,7 @@ intercepted:
     /*Tell HCI Host Task to continue TX Pending commands*/
     if (hci_host_env.command_credits &&
             !fixed_queue_is_empty(hci_host_env.command_queue)) {
-        hci_host_task_post();
+        hci_host_task_post(TASK_POST_BLOCKING);
     }
     //ke_event_set(KE_EVENT_HCI_HOST_THREAD);
 
@@ -524,7 +524,7 @@ static void dispatch_reassembled(BT_HDR *packet)
 
     if (hci_host_env.upwards_data_queue) {
         fixed_queue_enqueue(hci_host_env.upwards_data_queue, packet);
-        btu_task_post(SIG_BTU_WORK);
+        btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
         //Tell Up-layer received packet.
     } else {
         LOG_DEBUG("%s had no queue to place upwards data packet in. Dropping it on the floor.", __func__);

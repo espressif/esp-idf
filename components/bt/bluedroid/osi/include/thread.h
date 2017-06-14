@@ -62,11 +62,14 @@ enum {
 #define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 6)
 #define BTC_TASK_QUEUE_NUM              60
 
-void btu_task_post(uint32_t sig);
-void hci_host_task_post(void);
-void hci_hal_h4_task_post(void);
-void hci_drv_task_post(void);
-void bt_alarm_task_post(void);
+
+#define TASK_POST_NON_BLOCKING          (0)
+#define TASK_POST_BLOCKING              (portMAX_DELAY)
+typedef uint32_t task_post_t;           /* Timeout of task post return, unit TICK */
+
+void btu_task_post(uint32_t sig, task_post_t timeout);
+void hci_host_task_post(task_post_t timeout);
+void hci_hal_h4_task_post(task_post_t timeout);
 
 
 #endif /* __THREAD_H__ */

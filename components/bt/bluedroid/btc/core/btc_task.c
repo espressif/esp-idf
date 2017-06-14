@@ -94,13 +94,13 @@ static void btc_task(void *arg)
     }
 }
 
-static bt_status_t btc_task_post(btc_msg_t *msg)
+static bt_status_t btc_task_post(btc_msg_t *msg, task_post_t timeout)
 {
     if (msg == NULL) {
         return BT_STATUS_PARM_INVALID;
     }
 
-    if (xQueueSend(xBtcQueue, msg, 10 / portTICK_PERIOD_MS) != pdTRUE) {
+    if (xQueueSend(xBtcQueue, msg, timeout) != pdTRUE) {
         LOG_ERROR("Btc Post failed\n");
         return BT_STATUS_BUSY;
     }
@@ -133,7 +133,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
         lmsg.arg = NULL;
     }
 
-    return btc_task_post(&lmsg);
+    return btc_task_post(&lmsg, TASK_POST_BLOCKING);
 }
 
 
