@@ -635,6 +635,14 @@ typedef union {
 
 } tBTA_GATTS;
 
+/* GATTC wait for service change ccc timer callback data */
+typedef struct {
+    UINT16 conn_id;
+    BD_ADDR remote_bda;
+    UINT8 count;
+    UINT8 last_status;
+}tBTA_GATTC_WAIT_CCC_TIMER;
+
 /* GATTS enable callback function */
 typedef void (tBTA_GATTS_ENB_CBACK)(tBTA_GATT_STATUS status);
 
