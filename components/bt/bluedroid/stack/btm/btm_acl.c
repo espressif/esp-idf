@@ -308,11 +308,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                     btsnd_hcic_ble_read_remote_feat(p->hci_handle);
                 } else if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
                          && link_role == HCI_ROLE_SLAVE) {
-                     /* In the original Bluedroid version, slave need to send LL_SLAVE_FEATURE_REQ(call btsnd_hcic_ble_read_remote_feat)
-                      * to remote device if it has not received ll_feature_req.
-                      * Delete it to resolve Android 7.0 incompatible problem. But it may cause that slave
-                      * can't get remote device's feature if it doesn't receive ll_feature_req.*/
-                    l2cble_notify_le_connection(bda);
+                    btsnd_hcic_ble_read_remote_feat(p->hci_handle);
                 } else {
                     btm_establish_continue(p);
                 }

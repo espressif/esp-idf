@@ -473,6 +473,7 @@ static void btu_general_alarm_process(TIMER_LIST_ENT *p_tle)
     case BTU_TTYPE_ATT_WAIT_FOR_IND_ACK:
         gatt_ind_ack_timeout(p_tle);
         break;
+
 #if (defined(SMP_INCLUDED) && SMP_INCLUDED == TRUE)
     case BTU_TTYPE_SMP_PAIRING_CMD:
         smp_rsp_timeout(p_tle);
@@ -546,6 +547,7 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
     p_tle->in_use = TRUE;
     osi_alarm_set(alarm, (period_ms_t)(timeout_sec * 1000));
 }
+
 
 /*******************************************************************************
 **

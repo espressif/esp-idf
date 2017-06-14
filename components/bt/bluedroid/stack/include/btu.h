@@ -163,6 +163,8 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 
 #define BTU_TTYPE_UCD_TO                            108
 
+
+
 /* This is the inquiry response information held by BTU, and available
 ** to applications.
 */
