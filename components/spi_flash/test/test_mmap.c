@@ -184,6 +184,49 @@ TEST_CASE("Can mmap into instruction address space", "[mmap]")
 
 }
 
+TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash]")
+{
+    int nopages;
+    int *pages;
+    int startpage;
+
+    setup_mmap_tests();
+    nopages=(end-start)/SPI_FLASH_MMU_PAGE_SIZE;
+    pages=alloca(sizeof(int)*nopages);
+
+    startpage=start/SPI_FLASH_MMU_PAGE_SIZE;
+
+    //make inverse mapping: virt 0 -> page (nopages-1), virt 1 -> page (nopages-2), ...
+    for (int i=0; i<nopages; i++) {
+        pages[i]=startpage+(nopages-1)-i;
+        printf("Offset %x page %d\n", i*0x10000, pages[i]);
+    }
+    
+    printf("Attempting mapping of unordered pages to contiguous memory area\n");
+
+    spi_flash_mmap_handle_t handle1;
+    const void *ptr1;
+    ESP_ERROR_CHECK( spi_flash_mmap_pages(pages, nopages, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
+    printf("mmap_res: handle=%d ptr=%p\n", handle1, ptr1);
+
+    spi_flash_mmap_dump();
+
+    srand(0);
+    const uint32_t *data = (const uint32_t *) ptr1;
+    for (int block = 0; block < nopages; ++block) {
+        for (int sector = 0; sector < 16; ++sector) {
+            for (uint32_t word = 0; word < 1024; ++word) {
+                TEST_ASSERT_EQUAL_UINT32(rand(), data[(((nopages-1)-block) * 16 + sector) * 1024 + word]);
+            }
+        }
+    }
+
+    printf("Unmapping handle1\n");
+    spi_flash_munmap(handle1);
+    spi_flash_mmap_dump();
+}
+
+
 TEST_CASE("flash_mmap invalidates just-written data", "[spi_flash]")
 {
     const void *ptr1;
