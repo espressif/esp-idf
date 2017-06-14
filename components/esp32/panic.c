@@ -119,7 +119,9 @@ static __attribute__((noreturn)) inline void invoke_abort()
     esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
     while(1) {
-        __asm__ ("break 0,0");
+        if (esp_cpu_in_ocd_debug_mode()) {
+            __asm__ ("break 0,0");
+        }
         *((int*) 0) = 0;
     }
 }
@@ -127,7 +129,7 @@ static __attribute__((noreturn)) inline void invoke_abort()
 void abort()
 {
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
-    ets_printf("abort() was called at PC 0x%08x on core %d\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
+    ets_printf("abort() was called at PC 0x%08x on core %d\r\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
 #endif
     invoke_abort();
 }
@@ -146,6 +148,7 @@ static const char *edesc[] = {
     "Cp4Dis", "Cp5Dis", "Cp6Dis", "Cp7Dis"
 };
 
+#define NUM_EDESCS (sizeof(edesc) / sizeof(char *))
 
 static void commonErrorHandler(XtExcFrame *frame);
 
@@ -197,40 +200,36 @@ void panicHandler(XtExcFrame *frame)
     panicPutStr("Guru Meditation Error: Core ");
     panicPutDec(core_id);
     panicPutStr(" panic'ed (");
-    if (!abort_called) {
-        panicPutStr(reason);
-        panicPutStr(")\r\n");
-            if (frame->exccause == PANIC_RSN_DEBUGEXCEPTION) {
-                int debugRsn;
-                asm("rsr.debugcause %0":"=r"(debugRsn));
-                panicPutStr("Debug exception reason: ");
-                if (debugRsn&XCHAL_DEBUGCAUSE_ICOUNT_MASK) panicPutStr("SingleStep ");
-                if (debugRsn&XCHAL_DEBUGCAUSE_IBREAK_MASK) panicPutStr("HwBreakpoint ");
-                if (debugRsn&XCHAL_DEBUGCAUSE_DBREAK_MASK) {
-                    //Unlike what the ISA manual says, this core seemingly distinguishes from a DBREAK
-                    //reason caused by watchdog 0 and one caused by watchdog 1 by setting bit 8 of the
-                    //debugcause if the cause is watchdog 1 and clearing it if it's watchdog 0.
-                    if (debugRsn&(1<<8)) {
+    panicPutStr(reason);
+    panicPutStr(")\r\n");
+    if (frame->exccause == PANIC_RSN_DEBUGEXCEPTION) {
+        int debugRsn;
+        asm("rsr.debugcause %0":"=r"(debugRsn));
+        panicPutStr("Debug exception reason: ");
+        if (debugRsn&XCHAL_DEBUGCAUSE_ICOUNT_MASK) panicPutStr("SingleStep ");
+        if (debugRsn&XCHAL_DEBUGCAUSE_IBREAK_MASK) panicPutStr("HwBreakpoint ");
+        if (debugRsn&XCHAL_DEBUGCAUSE_DBREAK_MASK) {
+            //Unlike what the ISA manual says, this core seemingly distinguishes from a DBREAK
+            //reason caused by watchdog 0 and one caused by watchdog 1 by setting bit 8 of the
+            //debugcause if the cause is watchdog 1 and clearing it if it's watchdog 0.
+            if (debugRsn&(1<<8)) {
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-                        const char *name = pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(core_id));
-                        panicPutStr("Stack canary watchpoint triggered (");
-                        panicPutStr(name);
-                        panicPutStr(") ");
+                const char *name = pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(core_id));
+                panicPutStr("Stack canary watchpoint triggered (");
+                panicPutStr(name);
+                panicPutStr(") ");
 #else
-                        panicPutStr("Watchpoint 1 triggered ");
+                panicPutStr("Watchpoint 1 triggered ");
 #endif
-                    } else {
-                        panicPutStr("Watchpoint 0 triggered ");
-                    }
-                }
-                if (debugRsn&XCHAL_DEBUGCAUSE_BREAK_MASK) panicPutStr("BREAK instr ");
-                if (debugRsn&XCHAL_DEBUGCAUSE_BREAKN_MASK) panicPutStr("BREAKN instr ");
-                if (debugRsn&XCHAL_DEBUGCAUSE_DEBUGINT_MASK) panicPutStr("DebugIntr ");
-                panicPutStr("\r\n");
+            } else {
+                panicPutStr("Watchpoint 0 triggered ");
             }
-        } else {
-            panicPutStr("abort)\r\n");
-        }
+                }
+        if (debugRsn&XCHAL_DEBUGCAUSE_BREAK_MASK) panicPutStr("BREAK instr ");
+        if (debugRsn&XCHAL_DEBUGCAUSE_BREAKN_MASK) panicPutStr("BREAKN instr ");
+        if (debugRsn&XCHAL_DEBUGCAUSE_DEBUGINT_MASK) panicPutStr("DebugIntr ");
+        panicPutStr("\r\n");
+    }
 
     if (esp_cpu_in_ocd_debug_mode()) {
 #if CONFIG_ESP32_APPTRACE_ENABLE
@@ -245,28 +244,30 @@ void panicHandler(XtExcFrame *frame)
 void xt_unhandled_exception(XtExcFrame *frame)
 {
     haltOtherCore();
-    panicPutStr("Guru Meditation Error of type ");
-    int exccause = frame->exccause;
-    if (exccause < 40) {
-        panicPutStr(edesc[exccause]);
-    } else {
-        panicPutStr("Unknown");
-    }
-    panicPutStr(" occurred on core ");
-    panicPutDec(xPortGetCoreID());
-    if (esp_cpu_in_ocd_debug_mode()) {
-        panicPutStr(" at pc=");
-        panicPutHex(frame->pc);
-        panicPutStr(". Setting bp and returning..\r\n");
+    if (!abort_called) {
+        panicPutStr("Guru Meditation Error of type ");
+        int exccause = frame->exccause;
+        if (exccause < NUM_EDESCS) {
+            panicPutStr(edesc[exccause]);
+        } else {
+            panicPutStr("Unknown");
+        }
+        panicPutStr(" occurred on core ");
+        panicPutDec(xPortGetCoreID());
+        if (esp_cpu_in_ocd_debug_mode()) {
+            panicPutStr(" at pc=");
+            panicPutHex(frame->pc);
+            panicPutStr(". Setting bp and returning..\r\n");
 #if CONFIG_ESP32_APPTRACE_ENABLE
-        esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+            esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, ESP_APPTRACE_TRAX_BLOCK_SIZE*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TRAX_THRESH/100, CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
-        //Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
-        //will kick in exactly at the context the error happened.
-        setFirstBreakpoint(frame->pc);
-        return;
+            //Stick a hardware breakpoint on the address the handler returns to. This way, the OCD debugger
+            //will kick in exactly at the context the error happened.
+            setFirstBreakpoint(frame->pc);
+            return;
+        }
+        panicPutStr(". Exception was unhandled.\r\n");
     }
-    panicPutStr(". Exception was unhandled.\r\n");
     commonErrorHandler(frame);
 }
 
@@ -374,7 +375,7 @@ static void doBacktrace(XtExcFrame *frame)
             break;
         }
         sp = *((uint32_t *) (sp - 0x10 + 4));
-        putEntry(pc, sp);
+        putEntry(pc - 3, sp); // stack frame addresses are return addresses, so subtract 3 to get the CALL address
         pc = *((uint32_t *) (psp - 0x10));
         if (pc < 0x40000000) {
             break;
@@ -389,7 +390,7 @@ void esp_restart_noos() __attribute__ ((noreturn));
   We arrive here after a panic or unhandled exception, when no OCD is detected. Dump the registers to the
   serial port and either jump to the gdb stub, halt the CPU or reboot.
 */
-static void commonErrorHandler(XtExcFrame *frame)
+static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
 {
     int *regs = (int *)frame;
     int x, y;
