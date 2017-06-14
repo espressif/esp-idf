@@ -175,6 +175,10 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
     if (keySize > Item::MAX_KEY_LENGTH) {
         return ESP_ERR_NVS_KEY_TOO_LONG;
     }
+    
+    if (dataSize > Page::BLOB_MAX_SIZE) {
+        return ESP_ERR_NVS_VALUE_TOO_LONG;
+    }
 
     size_t totalSize = ENTRY_SIZE;
     size_t entriesCount = 1;
