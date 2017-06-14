@@ -246,10 +246,12 @@ void IRAM_ATTR esp_restart(void)
 */
 void IRAM_ATTR esp_restart_noos()
 {
-
     const uint32_t core_id = xPortGetCoreID();
     const uint32_t other_core_id = core_id == 0 ? 1 : 0;
     esp_cpu_stall(other_core_id);
+
+    // other core is now stalled, can access DPORT registers directly
+    esp_dport_access_int_deinit();
 
     // We need to disable TG0/TG1 watchdogs
     // First enable RTC watchdog to be on the safe side
