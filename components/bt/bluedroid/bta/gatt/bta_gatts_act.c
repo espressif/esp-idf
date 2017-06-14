@@ -606,7 +606,7 @@ void bta_gatts_stop_service(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_ms
     cb_data.srvc_oper.server_if = p_rcb->gatt_if;
     cb_data.srvc_oper.service_id = p_srvc_cb->service_id;
     cb_data.srvc_oper.status = BTA_GATT_OK;
-    APPL_TRACE_ERROR("bta_gatts_stop_service service_id= %d", p_srvc_cb->service_id);
+    APPL_TRACE_DEBUG("bta_gatts_stop_service service_id= %d", p_srvc_cb->service_id);
 
     if (p_rcb->p_cback) {
         (*p_rcb->p_cback)(BTA_GATTS_STOP_EVT, &cb_data);
