@@ -127,6 +127,10 @@ esp_err_t esp_bluedroid_init(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+#ifdef CONFIG_BLUEDROID_MEM_DEBUG
+    osi_mem_dbg_init();
+#endif
+
     future_p = btc_main_get_future_p(BTC_MAIN_INIT_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
