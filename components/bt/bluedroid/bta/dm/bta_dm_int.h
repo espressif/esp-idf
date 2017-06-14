@@ -490,6 +490,7 @@ typedef struct {
     BT_HDR      hdr;
     BD_ADDR     remote_bda;
     UINT16      tx_data_length;
+    tBTA_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback;
 } tBTA_DM_API_BLE_SET_DATA_LENGTH;
 
 /* set the address for BLE device

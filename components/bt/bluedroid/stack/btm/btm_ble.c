@@ -802,12 +802,12 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
 
     if (!controller_get_interface()->supports_ble_packet_extension()) {
         BTM_TRACE_ERROR("%s failed, request not supported", __FUNCTION__);
-        return BTM_ILLEGAL_VALUE;
+        return BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED;
     }
 
     if (!HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features)) {
         BTM_TRACE_ERROR("%s failed, peer does not support request", __FUNCTION__);
-        return BTM_ILLEGAL_VALUE;
+        return BTM_PEER_LE_DATA_LEN_UNSUPPORTED;
     }
 
     if (p_acl != NULL) {

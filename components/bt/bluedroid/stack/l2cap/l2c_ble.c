@@ -1024,7 +1024,14 @@ void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len, 
         p_lcb->tx_data_len = tx_data_len;
     }
 
-    /* ignore rx_data len for now */
+    tACL_CONN *p_acl = btm_handle_to_acl(handle);
+    if (p_acl != NULL && p_acl->p_set_pkt_data_cback){
+       tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
+       data_length_params.rx_len = tx_data_len;
+       data_length_params.tx_len = rx_data_len;
+       p_acl->data_length_params = data_length_params;
+       (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &data_length_params);
+    }
 }
 
 /*******************************************************************************

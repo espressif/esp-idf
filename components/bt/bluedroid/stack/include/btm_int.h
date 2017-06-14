@@ -116,6 +116,8 @@ BD_ADDR         active_remote_addr;     /* remote address used on this connectio
 UINT8           active_remote_addr_type;         /* local device address type for this connection */
 BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
 tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
+tBTM_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback;
+tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
 #endif
 
 } tACL_CONN;
@@ -932,6 +934,7 @@ void         btm_cont_rswitch (tACL_CONN *p,
                                UINT8 hci_status);
 
 UINT8        btm_handle_to_acl_index (UINT16 hci_handle);
+tACL_CONN    *btm_handle_to_acl (UINT16 hci_handle);
 void         btm_read_link_policy_complete (UINT8 *p);
 void         btm_read_rssi_complete (UINT8 *p);
 void         btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble);
