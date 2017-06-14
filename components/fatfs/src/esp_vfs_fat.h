@@ -21,6 +21,10 @@
 #include "ff.h"
 #include "wear_levelling.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Register FATFS with VFS component
  *
@@ -173,3 +177,7 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount hasn't been called
  */
  esp_err_t esp_vfs_fat_spiflash_unmount(const char* base_path, wl_handle_t wl_handle);
+
+#ifdef __cplusplus
+}
+#endif

@@ -14,6 +14,10 @@
 #ifndef HEAP_ALLOC_CAPS_H
 #define HEAP_ALLOC_CAPS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Flags to indicate the capabilities of the various memory systems
  */
@@ -99,5 +103,8 @@ static inline bool  esp_ptr_dma_capable( const void *ptr )
     return ( (int)ptr >= 0x3FFAE000 && (int)ptr < 0x40000000 );
 }
 
-
+#ifdef __cplusplus
+}
 #endif
+
+#endif //HEAP_ALLOC_CAPS_H

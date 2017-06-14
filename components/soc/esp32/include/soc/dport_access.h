@@ -19,6 +19,10 @@
 #include "esp_attr.h"
 #include "esp_dport_access.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //Registers Operation {{
 
 //Register read macros with an underscore prefix access DPORT memory directly. In IDF apps, use the non-underscore versions to be SMP-safe.
@@ -114,5 +118,8 @@ static inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t addr)
 #define DPORT_GET_PERI_REG_BITS2(reg, mask,shift)      ((DPORT_READ_PERI_REG(reg)>>(shift))&(mask))
 //}}
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _DPORT_ACCESS_H_ */
