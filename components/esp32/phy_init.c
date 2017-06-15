@@ -263,6 +263,13 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
 
 void esp_phy_load_cal_and_init(void)
 {
+    esp_phy_calibration_data_t* cal_data =
+            (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
+    if (cal_data == NULL) {
+        ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
+        abort();
+    }
+
 #ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
     if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
@@ -273,12 +280,7 @@ void esp_phy_load_cal_and_init(void)
         ESP_LOGE(TAG, "failed to obtain PHY init data");
         abort();
     }
-    esp_phy_calibration_data_t* cal_data =
-            (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
-    if (cal_data == NULL) {
-        ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
-        abort();
-    }
+
     esp_err_t err = esp_phy_load_cal_data_from_nvs(cal_data);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "failed to load RF calibration data (0x%x), falling back to full calibration", err);
@@ -293,10 +295,11 @@ void esp_phy_load_cal_and_init(void)
         err = ESP_OK;
     }
     esp_phy_release_init_data(init_data);
-    free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 #else
-    esp_phy_rf_init(NULL, PHY_RF_CAL_NONE, NULL);
+    esp_phy_rf_init(NULL, PHY_RF_CAL_FULL, cal_data);
 #endif
+
+    free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 }
 
 #endif // CONFIG_PHY_ENABLED
