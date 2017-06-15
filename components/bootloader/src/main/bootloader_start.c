@@ -701,10 +701,23 @@ void print_flash_info(const esp_image_header_t* phdr)
 static void clock_configure(void)
 {
     /* Set CPU to 80MHz. Keep other clocks unmodified. */
+    rtc_cpu_freq_t cpu_freq = RTC_CPU_FREQ_80M;
+
+    /* On ESP32 rev 0, switching to 80MHz if clock was previously set to
+     * 240 MHz may cause the chip to lock up (see section 3.5 of the errata
+     * document). For rev. 0, switch to 240 instead if it was chosen in
+     * menuconfig.
+     */
+    uint32_t chip_ver_reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
+    if ((chip_ver_reg & EFUSE_RD_CHIP_VER_REV1_M) == 0 &&
+            CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ == 240) {
+        cpu_freq = RTC_CPU_FREQ_240M;
+    }
+
     uart_tx_wait_idle(0);
     rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
     clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
-    clk_cfg.cpu_freq = RTC_CPU_FREQ_80M;
+    clk_cfg.cpu_freq = cpu_freq;
     clk_cfg.slow_freq = rtc_clk_slow_freq_get();
     clk_cfg.fast_freq = rtc_clk_fast_freq_get();
     rtc_clk_init(clk_cfg);

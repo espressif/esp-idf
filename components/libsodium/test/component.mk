@@ -4,7 +4,11 @@
 
 LS_TESTDIR := ../libsodium/test/default
 
+ifdef TESTS_ALL
+$(info not linking libsodium tests, use 'TEST_COMPONENTS=libsodium' to test it)
+else
 COMPONENT_ADD_LDFLAGS = -Wl,--whole-archive -l$(COMPONENT_NAME) -Wl,--no-whole-archive
+endif # TESTS_ALL
 
 COMPONENT_SRCDIRS := . $(LS_TESTDIR)
 
