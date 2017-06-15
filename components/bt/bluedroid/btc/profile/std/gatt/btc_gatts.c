@@ -414,17 +414,15 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
     uint16_t uuid = 0;
 
     for(int i = 0; i < max_nb_attr; i++) {
-        if(gatts_attr_db[i].att_desc.uuid_length== ESP_UUID_LEN_16) {
-            uuid = (gatts_attr_db[i].att_desc.uuid_p[1] << 8) + (gatts_attr_db[i].att_desc.uuid_p[0]);
-        } else {
+        if(gatts_attr_db[i].att_desc.uuid_length != ESP_UUID_LEN_16) {
             continue;
         }
 
+        uuid = (gatts_attr_db[i].att_desc.uuid_p[1] << 8) + (gatts_attr_db[i].att_desc.uuid_p[0]);
         switch(uuid) {
             case ESP_GATT_UUID_PRI_SERVICE:
             case ESP_GATT_UUID_SEC_SERVICE:
-                ++svc_num;
-                if (svc_num > 1) {
+                if (++svc_num > 1) {
                     LOG_ERROR("Each service table can only created one primary service or secondly service.");
                     return ESP_GATT_ERROR;
                 }
@@ -542,9 +540,9 @@ static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GATTS;
     msg.act = event;
-    if(btc_creat_tab_env.is_tab_creat_svc && btc_creat_tab_env.complete_future){
-        switch(event){
-            case BTA_GATTS_CREATE_EVT:{
+    if(btc_creat_tab_env.is_tab_creat_svc && btc_creat_tab_env.complete_future) {
+        switch(event) {
+            case BTA_GATTS_CREATE_EVT: {
                 //save the service handle to the btc module after used 
                 //the attribute table method to creat a service
                 bta_to_btc_uuid(&btc_creat_tab_env.svc_uuid, &p_data->create.uuid);
@@ -553,29 +551,28 @@ static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 btc_creat_tab_env.handles[index] = p_data->create.service_id;
                 break;
             }
-            case BTA_GATTS_ADD_INCL_SRVC_EVT:{
+            case BTA_GATTS_ADD_INCL_SRVC_EVT: {
                 uint8_t index = btc_creat_tab_env.handle_idx;
                 btc_creat_tab_env.handles[index] = p_data->add_result.attr_id;
                 break;
             }
-            case BTA_GATTS_ADD_CHAR_EVT:{
+            case BTA_GATTS_ADD_CHAR_EVT: {
                 uint8_t index = btc_creat_tab_env.handle_idx;
                 btc_creat_tab_env.handles[index] = p_data->add_result.attr_id - 1;
                 btc_creat_tab_env.handles[index+1] = p_data->add_result.attr_id;
                 break;
             }
-            case BTA_GATTS_ADD_CHAR_DESCR_EVT:{
+            case BTA_GATTS_ADD_CHAR_DESCR_EVT: {
                 uint8_t index = btc_creat_tab_env.handle_idx;
                 btc_creat_tab_env.handles[index] = p_data->add_result.attr_id;
                 break;
             }
             default:
                 break;
-
-          return;
-
         }
+
         future_ready(btc_creat_tab_env.complete_future, FUTURE_SUCCESS);
+        return;
     }
     status = btc_transfer_context(&msg, p_data,
                                   sizeof(tBTA_GATTS), btc_gatts_cb_param_copy_req);
