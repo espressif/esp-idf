@@ -28,6 +28,8 @@ config CLASSIC_BT_ENABLED
     bool "Classic Bluetooth"
     depends on BLUEDROID_ENABLED
     default n
+    help
+        For now this option needs "SMP_ENABLE" to be set to yes
 
 config BT_DRAM_RELEASE
     bool "Release DRAM from Classic BT controller"
@@ -52,8 +54,8 @@ config GATTC_ENABLE
     help
         This option can be close when the app work only on gatt server mode
 
-config SMP_ENABLE
-   bool "Include BT security module(SMP)"
+config BLE_SMP_ENABLE
+   bool "Include BLE security module(SMP)"
    depends on BLUEDROID_ENABLED
    default y
    help
@@ -112,6 +114,11 @@ config BT_HCI_UART_BAUDRATE
     help
         UART Baudrate for HCI. Please use standard baudrate.
 
+config SMP_ENABLE
+   bool
+   depends on BLUEDROID_ENABLED
+   default CLASSIC_BT_ENABLED || BLE_SMP_ENABLE
+   
 # Memory reserved at start of DRAM for Bluetooth stack
 config BT_RESERVE_DRAM
     hex
