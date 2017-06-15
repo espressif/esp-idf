@@ -3315,7 +3315,21 @@ void btm_ble_read_remote_features_complete(UINT8 *p)
         for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl_cb++) {
             if ((p_acl_cb->in_use) && (p_acl_cb->hci_handle == handle)) {
                 STREAM_TO_ARRAY(p_acl_cb->peer_le_features, p, BD_FEATURES_LEN);
-                btsnd_hcic_rmt_ver_req (p_acl_cb->hci_handle);
+#if BLE_INCLUDED == TRUE
+                /* In the original Bluedroid version, slave need to send LL_VERSION_IND(call btsnd_hcic_rmt_ver_req)
+                 * to remote device if it has not received ll_version_ind.
+                 * Delete it to resolve Android 7.0 incompatible problem. But it may cause that slave host
+                 * can't get remote device's version.*/
+                if (p_acl_cb->link_role == HCI_ROLE_MASTER){
+                    btsnd_hcic_rmt_ver_req (p_acl_cb->hci_handle);
+                }
+
+                else{
+                    if (p_acl_cb->transport == BT_TRANSPORT_LE) {
+                        l2cble_notify_le_connection (p_acl_cb->remote_addr);
+                    }
+                }
+#endif
                 break;
             }
         }
