@@ -230,7 +230,10 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
             p->link_role         = link_role;
             p->link_up_issued    = FALSE;
             memcpy (p->remote_addr, bda, BD_ADDR_LEN);
-
+            /* Set the default version of the peer device to version4.0 before exchange the version with it.
+               If the peer device act as a master and don't exchange the version with us, then it can only use the
+               legacy connect instead of secure connection in the pairing step. */
+            p->lmp_version = HCI_PROTO_VERSION_4_0;
 #if BLE_INCLUDED == TRUE
             p->transport = transport;
 #if BLE_PRIVACY_SPT == TRUE
