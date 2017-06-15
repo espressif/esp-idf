@@ -207,6 +207,17 @@ void IRAM_ATTR call_start_cpu1()
 }
 #endif //!CONFIG_FREERTOS_UNICORE
 
+static void intr_matrix_clear(void)
+{
+    //Clear all the interrupt matrix register
+    for (int i = ETS_WIFI_MAC_INTR_SOURCE; i <= ETS_CACHE_IA_INTR_SOURCE; i++) {
+        intr_matrix_set(0, i, ETS_INVALID_INUM);
+#if !CONFIG_FREERTOS_UNICORE
+        intr_matrix_set(1, i, ETS_INVALID_INUM);
+#endif
+    }
+}
+
 void start_cpu0_default(void)
 {
     esp_setup_syscall_table();
@@ -220,6 +231,7 @@ void start_cpu0_default(void)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     esp_clk_init();
+    intr_matrix_clear();
 #ifndef CONFIG_CONSOLE_UART_NONE
     uart_div_modify(CONFIG_CONSOLE_UART_NUM, (rtc_clk_apb_freq_get() << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
 #endif
