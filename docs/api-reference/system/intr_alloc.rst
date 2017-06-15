@@ -15,7 +15,7 @@ install the given interrupt handler and ISR to it.
 
 This code has two different types of interrupts it handles differently: Shared interrupts and non-shared interrupts. The simplest
 of the two are non-shared interrupts: a separate interrupt is allocated per esp_intr_alloc call and this interrupt is solely used for
-the peripheral attached to it, with only one ISR that will get called. Non-shared interrupts can have multiple peripherals triggering 
+the peripheral attached to it, with only one ISR that will get called. Shared interrupts can have multiple peripherals triggering 
 it, with multiple ISRs being called when one of the peripherals attached signals an interrupt. Thus, ISRs that are intended for shared
 interrupts should check the interrupt status of the peripheral they service in order to see if any action is required.
 
