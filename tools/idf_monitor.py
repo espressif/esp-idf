@@ -446,7 +446,7 @@ def main():
 
     parser.add_argument(
         'elf_file', help='ELF file of application',
-        type=argparse.FileType('r'))
+        type=argparse.FileType('rb'))
 
     args = parser.parse_args()
 
