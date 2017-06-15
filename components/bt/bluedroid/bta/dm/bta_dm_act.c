@@ -38,6 +38,7 @@
 #include "utl.h"
 #include "gap_api.h"    /* For GAP_BleReadPeerPrefConnParams */
 #include <string.h>
+#include "controller.h"
 
 #define LOG_TAG "bt_bta_dm"
 // #include "osi/include/log.h"
@@ -4794,9 +4795,25 @@ void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
 {
-    if (BTM_SetBleDataLength(p_data->ble_set_data_length.remote_bda,
-                             p_data->ble_set_data_length.tx_data_length) != BTM_SUCCESS) {
+    tACL_CONN *p_acl_cb = btm_bda_to_acl(p_data->ble_set_data_length.remote_bda, BT_TRANSPORT_LE);
+     if (p_acl_cb == NULL) {
+         APPL_TRACE_ERROR("%s error: Invalid connection remote_bda.", __func__);
+         return;
+     } else {
+         p_acl_cb->p_set_pkt_data_cback = p_data->ble_set_data_length.p_set_pkt_data_cback;
+     }
+     UINT8 status = BTM_SetBleDataLength(p_data->ble_set_data_length.remote_bda,
+                                         p_data->ble_set_data_length.tx_data_length);
+     if (status != BTM_SUCCESS) {
         APPL_TRACE_ERROR("%s failed\n", __FUNCTION__);
+        if (p_data->ble_set_data_length.p_set_pkt_data_cback) {
+            if (p_acl_cb->data_length_params.tx_len == 0){
+                uint16_t length = controller_get_interface()->get_acl_data_size_ble();
+                p_acl_cb->data_length_params.rx_len = length;
+                p_acl_cb->data_length_params.tx_len = length;
+            }
+            (*p_data->ble_set_data_length.p_set_pkt_data_cback)(status, &p_acl_cb->data_length_params);
+        }
     }
 }
 

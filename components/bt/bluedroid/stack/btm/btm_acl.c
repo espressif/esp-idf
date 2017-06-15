@@ -136,6 +136,31 @@ UINT8 btm_handle_to_acl_index (UINT16 hci_handle)
     return (xx);
 }
 
+/*******************************************************************************
+**
+** Function         btm_handle_to_acl
+**
+** Description      This function returns the FIRST acl_db entry for the passed hci_handle.
+**
+** Returns          Returns pointer to the ACL DB for the requested BDA if found.
+**                  NULL if not found.
+**
+*******************************************************************************/
+tACL_CONN *btm_handle_to_acl (UINT16 hci_handle)
+{
+    tACL_CONN   *p = &btm_cb.acl_db[0];
+    UINT8       xx;
+    BTM_TRACE_DEBUG ("btm_handle_to_acl_index\n");
+    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
+        if ((p->in_use) && (p->hci_handle == hci_handle)) {
+            return(p);
+        }
+    }
+
+    /* If here, no BD Addr found */
+    return ((tACL_CONN *)NULL);
+}
+
 #if BLE_PRIVACY_SPT == TRUE
 /*******************************************************************************
 **

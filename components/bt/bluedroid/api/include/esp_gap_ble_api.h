@@ -92,6 +92,7 @@ typedef enum {
     ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT,                     /*!< When stop scan complete, the event comes */
     ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT,                   /*!< When set the static rand address complete, the event comes */
     ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT,                     /*!< When update connection parameters complete, the event comes */
+    ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When set pkt lenght complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
 /// Advertising data maximum length
@@ -272,6 +273,15 @@ typedef struct {
                                                       Mandatory Range: 0x000A to 0x0C80 Time = N * 10 msec
                                                       Time Range: 100 msec to 32 seconds */
 } esp_ble_conn_update_params_t;
+
+/**
+* @brief BLE pkt date length keys
+*/
+typedef struct
+{
+    uint16_t rx_len;                   /*!< pkt rx data length value */
+    uint16_t tx_len;                   /*!< pkt tx data length value */
+}esp_ble_pkt_data_length_params_t;
 
 /**
 * @brief BLE encryption keys
@@ -522,6 +532,13 @@ typedef union {
         uint16_t timeout;                          /*!< Supervision timeout for the LE Link. Range: 0x000A to 0x0C80.
                                                      Mandatory Range: 0x000A to 0x0C80 Time = N * 10 msec */
     }update_conn_params;                           /*!< Event parameter of ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT
+     */
+    struct ble_pkt_data_length_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the set pkt data length operation success status */
+        esp_ble_pkt_data_length_params_t params;    /*!<  pkt data length value */
+    } pkt_data_lenth_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**

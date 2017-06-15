@@ -402,6 +402,8 @@ typedef void (tBTA_SET_ADV_DATA_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef void (tBTA_START_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
+typedef tBTM_SET_PKT_DATA_LENGTH_CBACK tBTA_SET_PKT_DATA_LENGTH_CBACK;
+
 /* advertising channel map */
 #define BTA_BLE_ADV_CHNL_37 BTM_BLE_ADV_CHNL_37
 #define BTA_BLE_ADV_CHNL_38 BTM_BLE_ADV_CHNL_38
@@ -2228,7 +2230,7 @@ extern void BTA_DmBleDisconnect(BD_ADDR bd_addr);
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length);
+extern void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback);
 
 /*******************************************************************************
 **

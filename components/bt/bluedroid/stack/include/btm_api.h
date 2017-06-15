@@ -67,7 +67,9 @@ enum {
     BTM_SUCCESS_NO_SECURITY,            /* 17 security passed, no security set  */
     BTM_FAILED_ON_SECURITY,             /* 18 security failed                   */
     BTM_REPEATED_ATTEMPTS,              /* 19 repeated attempts for LE security requests */
-    BTM_MODE4_LEVEL4_NOT_SUPPORTED      /* 20 Secure Connections Only Mode can't be supported */
+    BTM_MODE4_LEVEL4_NOT_SUPPORTED,     /* 20 Secure Connections Only Mode can't be supported */
+    BTM_PEER_LE_DATA_LEN_UNSUPPORTED,   /* 21 peer setting data length is unsupported*/
+    BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED /* 22 controller setting data length is unsupported*/
 };
 
 typedef uint8_t tBTM_STATUS;
@@ -130,6 +132,11 @@ enum {
 typedef UINT8 tBTM_DEV_STATUS;
 
 typedef struct {
+    UINT16 rx_len;
+    UINT16 tx_len;
+}tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS;
+
+typedef struct {
     UINT16              min_conn_int;
     UINT16              max_conn_int;
     UINT16              conn_int;
@@ -165,6 +172,8 @@ typedef void (tBTM_VSC_CMPL_CB) (tBTM_VSC_CMPL *p1);
 typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
 
 typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params);
+
+typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
 
 
 /*****************************************************************************
