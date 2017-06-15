@@ -228,6 +228,16 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 
 void esp_restart_noos() __attribute__ ((noreturn));
 
+/* Dummy function to be used instead of esp_wifi_stop if WiFi stack is not
+ * linked in (even though CONFIG_WIFI_ENABLED is set).
+ */
+esp_err_t wifi_stop_noop()
+{
+    return ESP_OK;
+}
+
+esp_err_t esp_wifi_stop(void) __attribute((weak, alias("wifi_stop_noop")));
+
 void IRAM_ATTR esp_restart(void)
 {
 #ifdef CONFIG_WIFI_ENABLED
@@ -319,11 +329,6 @@ void IRAM_ATTR esp_restart_noos()
 }
 
 void system_restart(void) __attribute__((alias("esp_restart")));
-
-void system_restore(void)
-{
-    esp_wifi_restore();
-}
 
 uint32_t esp_get_free_heap_size(void)
 {
