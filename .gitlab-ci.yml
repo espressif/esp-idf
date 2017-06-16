@@ -34,7 +34,7 @@ before_script:
   # Set IS_PRIVATE or IS_PUBLIC depending on if our branch is public or not
   #
   # (the same regular expressions are used to set these are used in 'only:' sections below
-  - source make/configure_ci_environment.sh
+  - source tools/ci/configure_ci_environment.sh
 
   # fetch all submodules
   - git submodule update --init --recursive
@@ -135,7 +135,7 @@ build_esp_idf_tests:
     - mkdir build_examples
     - cd build_examples
     # build some of examples
-    - ${IDF_PATH}/make/build_examples.sh "${CI_JOB_NAME}"
+    - ${IDF_PATH}/tools/ci/build_examples.sh "${CI_JOB_NAME}"
 
 build_examples_00:
   <<: *build_examples_template
@@ -209,8 +209,8 @@ test_build_system:
     - build_test
   dependencies: []
   script:
-    - ./make/test_configure_ci_environment.sh
-    - ./make/test_build_system.sh
+    - ./tools/ci/test_configure_ci_environment.sh
+    - ./tools/ci/test_build_system.sh
 
 test_report:
   stage: test_report
@@ -433,8 +433,6 @@ assign_test:
   script:
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
-    # remove artifacts from the 'unit_test' stage
-    - rm -rf "$LOG_PATH"
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -476,8 +474,6 @@ nvs_compatible_test:
     - ESP32_IDF
     - NVS_Compatible
   script:
-    # remove artifacts from the 'unit_test' stage
-    - rm -rf "$LOG_PATH"
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
