@@ -729,7 +729,7 @@
 #if (CLASSIC_BT_INCLUDED == TRUE)
 #define MAX_L2CAP_CHANNELS          8
 #else
-#define MAX_L2CAP_CHANNELS          2  //Not support to create l2cap channels in the BLE only mode in this bluedroid version(6.0)
+#define MAX_L2CAP_CHANNELS          MAX_ACL_CONNECTIONS  //This is used in the BLE client when start connected with the peer device
 #endif   ///CLASSIC_BT_INCLUDED == TRUE
 #endif
 
