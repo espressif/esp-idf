@@ -696,8 +696,11 @@ static void uart_rx_intr_handler_default(void *param)
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_reg->int_ena.tx_done = 0;
             uart_reg->int_clr.tx_done = 1;
-            if(uart_reg->rs485_conf.en)
-                uart_reg->conf0.sw_rts = 1;
+            if(uart_reg->rs485_conf.en) {
+                uart_reg->conf0.rxfifo_rst = 1; // Workaround to clear phantom 00 characters
+                uart_reg->conf0.rxfifo_rst = 0; // received after TX.
+                uart_reg->conf0.sw_rts = 1;                
+            }
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
             if(HPTaskAwoken == pdTRUE) {
