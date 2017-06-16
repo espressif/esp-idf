@@ -43,6 +43,8 @@
 //#include "osi/include/log.h"
 
 #if SMP_INCLUDED == TRUE
+// The temp variable to pass parameter between functions when in the connected event comeback.
+static BOOLEAN temp_enhanced = FALSE;
 extern BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
                                         UINT16 tlen, UINT8 *p_signature);
 extern void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable);
@@ -1581,7 +1583,7 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
     tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
     UINT8       role, bda_type;
     UINT16      handle;
-    BD_ADDR     bda;
+    BD_ADDR     bda, local_rpa, peer_rpa;
     UINT16      conn_interval, conn_latency, conn_timeout;
     BOOLEAN     match = FALSE;
 
@@ -1590,12 +1592,17 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
     STREAM_TO_UINT8    (role, p);
     STREAM_TO_UINT8    (bda_type, p);
     STREAM_TO_BDADDR   (bda, p);
+    // if the enhanced is true, means the connection is enhanced connect,
+    // so the packet should include the local Resolvable Private Address and Peer Resolvable Private Address
+    if(temp_enhanced) {
+        STREAM_TO_BDADDR(local_rpa, p);
+        STREAM_TO_BDADDR(peer_rpa, p);
+    }
     STREAM_TO_UINT16   (conn_interval, p);
     STREAM_TO_UINT16   (conn_latency, p);
     STREAM_TO_UINT16   (conn_timeout, p);
 
     handle = HCID_GET_HANDLE (handle);
-
     BTM_TRACE_EVENT ("%s\n", __func__);
 
     if (match_rec) {
@@ -1714,7 +1721,6 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
     UINT16      conn_interval, conn_latency, conn_timeout;
     BOOLEAN     match = FALSE;
     UNUSED(evt_len);
-
     STREAM_TO_UINT8   (status, p);
     STREAM_TO_UINT16   (handle, p);
     STREAM_TO_UINT8    (role, p);
@@ -1734,7 +1740,11 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
         /* possiblly receive connection complete with resolvable random on
            slave role while the device has been paired */
         if (!match && role == HCI_ROLE_SLAVE && BTM_BLE_IS_RESOLVE_BDA(bda)) {
+            // save the enhanced value to used in btm_ble_resolve_random_addr_on_conn_cmpl func.
+            temp_enhanced = enhanced;
             btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_on_conn_cmpl, p_data);
+            // set back the temp enhanced to default after used.
+            temp_enhanced = FALSE;
         } else
 #endif
         {
