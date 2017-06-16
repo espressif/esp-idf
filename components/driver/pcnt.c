@@ -143,7 +143,9 @@ esp_err_t pcnt_counter_clear(pcnt_unit_t pcnt_unit)
 {
     PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    PCNT.ctrl.val &= (~(BIT(PCNT_PLUS_CNT_RST_U0_S + (pcnt_unit * 2))));
+    uint32_t reset_bit = BIT(PCNT_PLUS_CNT_RST_U0_S + (pcnt_unit * 2));
+    PCNT.ctrl.val |= reset_bit;
+    PCNT.ctrl.val &= ~reset_bit;
     PCNT_EXIT_CRITICAL(&pcnt_spinlock);
     return ESP_OK;
 }
