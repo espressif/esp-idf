@@ -210,8 +210,8 @@ static esp_err_t encrypt_bootloader()
 {
     esp_err_t err;
     uint32_t image_length;
-    /* Check for plaintext bootloader */
-    if (esp_image_basic_verify(ESP_BOOTLOADER_OFFSET, false, &image_length) == ESP_OK) {
+    /* Check for plaintext bootloader (verification will fail if it's already encrypted) */
+    if (esp_image_verify_bootloader(&image_length) == ESP_OK) {
         ESP_LOGD(TAG, "bootloader is plaintext. Encrypting...");
         err = esp_flash_encrypt_region(ESP_BOOTLOADER_OFFSET, image_length);
         if (err != ESP_OK) {
@@ -270,21 +270,15 @@ static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partitio
 static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partition)
 {
     esp_err_t err;
-    uint32_t image_len = partition->pos.size;
     bool should_encrypt = (partition->flags & PART_FLAG_ENCRYPTED);
 
     if (partition->type == PART_TYPE_APP) {
-        /* check if the partition holds an unencrypted app */
-        if (esp_image_basic_verify(partition->pos.offset, false, &image_len) == ESP_OK) {
-            if(image_len > partition->pos.size) {
-                ESP_LOGE(TAG, "partition entry %d has image longer than partition (%d vs %d)", index, image_len, partition->pos.size);
-                should_encrypt = false;
-            } else {
-                should_encrypt = true;
-            }
-        } else {
-            should_encrypt = false;
-        }
+      /* check if the partition holds a valid unencrypted app */
+      esp_image_metadata_t data_ignored;
+      err = esp_image_load(ESP_IMAGE_VERIFY,
+                           &partition->pos,
+                           &data_ignored);
+      should_encrypt = (err == ESP_OK);
     } else if (partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_OTA) {
         /* check if we have ota data partition and the partition should be encrypted unconditionally */
         should_encrypt = true;

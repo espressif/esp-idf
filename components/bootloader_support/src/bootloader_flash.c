@@ -88,6 +88,7 @@ static const char *TAG = "bootloader_flash";
 
 static bool mapped;
 
+// Current bootloader mapping (ab)used for bootloader_read()
 static uint32_t current_read_mapping = UINT32_MAX;
 
 const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
