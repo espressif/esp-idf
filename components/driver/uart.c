@@ -1103,7 +1103,7 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
 esp_err_t uart_set_rs485_hd_mode(uart_port_t uart_num, bool enable)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_CHECK((UART[uart_num]->conf1.rx_flow_en != 1), "disable hw flowctrl before using 485 half-duplex mode", ESP_FAIL);
+    UART_CHECK((!enable || !UART[uart_num]->conf1.rx_flow_en), "disable hw flowctrl before using 485 half-duplex mode", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     if(enable) {
         UART[uart_num]->conf0.sw_rts = 1; // RTS = 1 generates a logic level of 0, which means DE starts as off
