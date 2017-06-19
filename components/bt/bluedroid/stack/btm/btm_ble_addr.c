@@ -494,7 +494,7 @@ BOOLEAN btm_random_pseudo_to_identity_addr(BD_ADDR random_pseudo, UINT8 *p_stati
         if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
             * p_static_addr_type = p_dev_rec->ble.static_addr_type;
             memcpy(random_pseudo, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
-            if (controller_get_interface()->supports_ble_privacy()) {
+            if (controller_get_interface()->supports_ble_privacy() && p_dev_rec->ble.ble_addr_type != BLE_ADDR_PUBLIC) {
                 *p_static_addr_type |= BLE_ADDR_TYPE_ID_BIT;
             }
             return TRUE;

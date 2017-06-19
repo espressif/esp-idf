@@ -2042,7 +2042,7 @@ void BTA_DmBleDisconnect(BD_ADDR bd_addr)
 **
 **
 *******************************************************************************/
-void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length)
+void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback)
 {
     tBTA_DM_API_BLE_SET_DATA_LENGTH *p_msg;
 
@@ -2051,6 +2051,7 @@ void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length)
         bdcpy(p_msg->remote_bda, remote_device);
         p_msg->hdr.event = BTA_DM_API_SET_DATA_LENGTH_EVT;
         p_msg->tx_data_length = tx_data_length;
+        p_msg->p_set_pkt_data_cback = p_set_pkt_data_cback;
 
         bta_sys_sendmsg(p_msg);
     }

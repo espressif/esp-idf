@@ -118,7 +118,7 @@ void osi_mem_dbg_show(void)
 char *osi_strdup(const char *str)
 {
     size_t size = strlen(str) + 1;  // + 1 for the null terminator
-    char *new_string = (char *)calloc(1, size);
+    char *new_string = (char *)osi_calloc(size);
 
     if (!new_string) {
         return NULL;

@@ -1011,7 +1011,7 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
 
     fixed_queue_enqueue(btu_hci_msg_queue, event);
     // ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK);
+    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
 }
 
 
@@ -1211,7 +1211,7 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR *command, void *c
 
     fixed_queue_enqueue(btu_hci_msg_queue, event);
     //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK);
+    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
 }
 
 /*******************************************************************************

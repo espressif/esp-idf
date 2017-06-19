@@ -27,6 +27,8 @@
 #include "driver/periph_ctrl.h"
 #include "driver/rmt.h"
 
+#include <sys/lock.h>
+
 #define RMT_SOUCCE_CLK_APB (APB_CLK_FREQ) /*!< RMT source clock is APB_CLK */
 #define RMT_SOURCE_CLK_REF (1 * 1000000)  /*!< not used yet */
 #define RMT_SOURCE_CLK(select) ((select == RMT_BASECLK_REF) ? (RMT_SOURCE_CLK_REF) : (RMT_SOUCCE_CLK_APB)) /*! RMT source clock frequency */
@@ -45,7 +47,7 @@
 #define RMT_DRIVER_LENGTH_ERROR_STR  "RMT PARAM LEN ERROR"
 
 static const char* RMT_TAG = "rmt";
-static bool s_rmt_driver_installed = false;
+static uint8_t s_rmt_driver_channels; // Bitmask (bits 0-7) of installed drivers' channels
 static rmt_isr_handle_t s_rmt_driver_intr_handle;
 
 #define RMT_CHECK(a, str, ret_val) \
@@ -54,7 +56,11 @@ static rmt_isr_handle_t s_rmt_driver_intr_handle;
         return (ret_val); \
     }
 
+// Spinlock for protecting concurrent register-level access only
 static portMUX_TYPE rmt_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+// Mutex lock for protecting concurrent register/unregister of RMT channels' ISR
+static _lock_t rmt_driver_isr_lock;
 
 typedef struct {
     int tx_offset;
@@ -490,13 +496,10 @@ esp_err_t rmt_fill_tx_items(rmt_channel_t channel, const rmt_item32_t* item, uin
 
 esp_err_t rmt_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, rmt_isr_handle_t *handle)
 {
-    esp_err_t ret;
     RMT_CHECK((fn != NULL), RMT_ADDR_ERROR_STR, ESP_ERR_INVALID_ARG);
-    RMT_CHECK(s_rmt_driver_installed == false, "RMT DRIVER INSTALLED, CAN NOT REG ISR HANDLER", ESP_FAIL);
-    portENTER_CRITICAL(&rmt_spinlock);
-    ret=esp_intr_alloc(ETS_RMT_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
-    portEXIT_CRITICAL(&rmt_spinlock);
-    return ret;
+    RMT_CHECK(s_rmt_driver_channels == 0, "RMT driver installed, can not install generic ISR handler", ESP_FAIL);
+
+    return esp_intr_alloc(ETS_RMT_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
 }
 
 
@@ -529,7 +532,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
     portBASE_TYPE HPTaskAwoken = 0;
     for(i = 0; i < 32; i++) {
         if(i < 24) {
-            if(intr_st & (BIT(i))) {
+            if(intr_st & BIT(i)) {
                 channel = i / 3;
                 rmt_obj_t* p_rmt = p_rmt_obj[channel];
                 switch(i % 3) {
@@ -616,15 +619,33 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
 
 esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
 {
+    esp_err_t err = ESP_OK;
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
+    RMT_CHECK((s_rmt_driver_channels & BIT(channel)) != 0, "No RMT driver for this channel", ESP_ERR_INVALID_STATE);
     if(p_rmt_obj[channel] == NULL) {
         return ESP_OK;
     }
     xSemaphoreTake(p_rmt_obj[channel]->tx_sem, portMAX_DELAY);
+
     rmt_set_rx_intr_en(channel, 0);
     rmt_set_err_intr_en(channel, 0);
     rmt_set_tx_intr_en(channel, 0);
     rmt_set_tx_thr_intr_en(channel, 0, 0xffff);
+
+    _lock_acquire_recursive(&rmt_driver_isr_lock);
+
+    s_rmt_driver_channels &= ~BIT(channel);
+    if (s_rmt_driver_channels == 0) { // all channels have driver disabled
+        err = rmt_isr_deregister(s_rmt_driver_intr_handle);
+        s_rmt_driver_intr_handle = NULL;
+    }
+
+    _lock_release_recursive(&rmt_driver_isr_lock);
+
+    if (err != ESP_OK) {
+        return err;
+    }
+
     if(p_rmt_obj[channel]->tx_sem) {
         vSemaphoreDelete(p_rmt_obj[channel]->tx_sem);
         p_rmt_obj[channel]->tx_sem = NULL;
@@ -633,15 +654,19 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
         vRingbufferDelete(p_rmt_obj[channel]->rx_buf);
         p_rmt_obj[channel]->rx_buf = NULL;
     }
+
     free(p_rmt_obj[channel]);
     p_rmt_obj[channel] = NULL;
-    s_rmt_driver_installed = false;
-    return rmt_isr_deregister(s_rmt_driver_intr_handle);
+    return ESP_OK;
 }
 
 esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr_alloc_flags)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
+    RMT_CHECK((s_rmt_driver_channels & BIT(channel)) == 0, "RMT driver already installed for channel", ESP_ERR_INVALID_STATE);
+
+    esp_err_t err = ESP_OK;
+
     if(p_rmt_obj[channel] != NULL) {
         ESP_LOGD(RMT_TAG, "RMT driver already installed");
         return ESP_ERR_INVALID_STATE;
@@ -670,12 +695,20 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
         rmt_set_rx_intr_en(channel, 1);
         rmt_set_err_intr_en(channel, 1);
     }
-    if(s_rmt_driver_installed == false) {
-        rmt_isr_register(rmt_driver_isr_default, NULL, intr_alloc_flags, &s_rmt_driver_intr_handle);
-        s_rmt_driver_installed = true;
+
+    _lock_acquire_recursive(&rmt_driver_isr_lock);
+
+    if(s_rmt_driver_channels == 0) { // first RMT channel using driver
+        err = rmt_isr_register(rmt_driver_isr_default, NULL, intr_alloc_flags, &s_rmt_driver_intr_handle);
     }
-    rmt_set_tx_intr_en(channel, 1);
-    return ESP_OK;
+    if (err == ESP_OK) {
+        s_rmt_driver_channels |= BIT(channel);
+        rmt_set_tx_intr_en(channel, 1);
+    }
+
+    _lock_release_recursive(&rmt_driver_isr_lock);
+
+    return err;
 }
 
 esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, int item_num, bool wait_tx_done)

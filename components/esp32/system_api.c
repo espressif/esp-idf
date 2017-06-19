@@ -228,6 +228,16 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 
 void esp_restart_noos() __attribute__ ((noreturn));
 
+/* Dummy function to be used instead of esp_wifi_stop if WiFi stack is not
+ * linked in (even though CONFIG_WIFI_ENABLED is set).
+ */
+esp_err_t wifi_stop_noop()
+{
+    return ESP_OK;
+}
+
+esp_err_t esp_wifi_stop(void) __attribute((weak, alias("wifi_stop_noop")));
+
 void IRAM_ATTR esp_restart(void)
 {
 #ifdef CONFIG_WIFI_ENABLED
@@ -246,10 +256,12 @@ void IRAM_ATTR esp_restart(void)
 */
 void IRAM_ATTR esp_restart_noos()
 {
-
     const uint32_t core_id = xPortGetCoreID();
     const uint32_t other_core_id = core_id == 0 ? 1 : 0;
     esp_cpu_stall(other_core_id);
+
+    // other core is now stalled, can access DPORT registers directly
+    esp_dport_access_int_deinit();
 
     // We need to disable TG0/TG1 watchdogs
     // First enable RTC watchdog to be on the safe side
@@ -296,6 +308,9 @@ void IRAM_ATTR esp_restart_noos()
     // Set CPU back to XTAL source, no PLL, same as hard reset
     rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
 
+    // Clear entry point for APP CPU
+    DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);
+
     // Reset CPUs
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
@@ -303,10 +318,10 @@ void IRAM_ATTR esp_restart_noos()
                 RTC_CNTL_SW_PROCPU_RST_M | RTC_CNTL_SW_APPCPU_RST_M);
     } else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
-        // then stall APP CPU
+        // then reset APP CPU
         SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_PROCPU_RST_M);
         esp_cpu_unstall(0);
-        esp_cpu_stall(1);
+        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_APPCPU_RST_M);
     }
     while(true) {
         ;
@@ -314,11 +329,6 @@ void IRAM_ATTR esp_restart_noos()
 }
 
 void system_restart(void) __attribute__((alias("esp_restart")));
-
-void system_restore(void)
-{
-    esp_wifi_restore();
-}
 
 uint32_t esp_get_free_heap_size(void)
 {

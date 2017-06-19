@@ -255,6 +255,21 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     I2C_CHECK(p_i2c_obj[i2c_num] != NULL, I2C_DRIVER_ERR_STR, ESP_FAIL);
 
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
+
+    uint32_t intr_mask = I2C_MASTER_TRAN_COMP_INT_ENA_M |
+                         I2C_TIME_OUT_INT_ENA_M |
+                         I2C_TRANS_COMPLETE_INT_ENA_M |
+                         I2C_TRANS_START_INT_ENA_M |
+                         I2C_TX_SEND_EMPTY_INT_ENA_M |
+                         I2C_ARBITRATION_LOST_INT_ENA_M |
+                         I2C_ACK_ERR_INT_ENA_M |
+                         I2C_RXFIFO_OVF_INT_ENA_M |
+                         I2C_RX_REC_FULL_INT_ENA_M |
+                         I2C_SLAVE_TRAN_COMP_INT_ENA_M;
+    CLEAR_PERI_REG_MASK(I2C_INT_ENA_REG(i2c_num), intr_mask);
+    esp_intr_free(p_i2c->intr_handle);
+    p_i2c->intr_handle = NULL;
+
     if (p_i2c->cmd_mux) {
         xSemaphoreTake(p_i2c->cmd_mux, portMAX_DELAY);
         vSemaphoreDelete(p_i2c->cmd_mux);
@@ -279,19 +294,7 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
         p_i2c->tx_ring_buf = NULL;
         p_i2c->tx_buf_length = 0;
     }
-    uint32_t intr_mask = I2C_MASTER_TRAN_COMP_INT_ENA_M |
-                         I2C_TIME_OUT_INT_ENA_M |
-                         I2C_TRANS_COMPLETE_INT_ENA_M |
-                         I2C_TRANS_START_INT_ENA_M |
-                         I2C_TX_SEND_EMPTY_INT_ENA_M |
-                         I2C_ARBITRATION_LOST_INT_ENA_M |
-                         I2C_ACK_ERR_INT_ENA_M |
-                         I2C_RXFIFO_OVF_INT_ENA_M |
-                         I2C_RX_REC_FULL_INT_ENA_M |
-                         I2C_SLAVE_TRAN_COMP_INT_ENA_M;
-    CLEAR_PERI_REG_MASK(I2C_INT_ENA_REG(i2c_num), intr_mask);
-    esp_intr_free(p_i2c->intr_handle);
-    p_i2c->intr_handle = NULL;
+
     free(p_i2c_obj[i2c_num]);
     p_i2c_obj[i2c_num] = NULL;
     return ESP_OK;

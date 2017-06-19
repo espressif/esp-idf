@@ -651,21 +651,21 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
 ---------------------------------
 
 **Syntax**
-  **ADC**   *Rdst, Sar_sel, Mux, Cycles*
+  - **ADC**   *Rdst, Sar_sel, Mux*
+
+  - **ADC**   *Rdst, Sar_sel, Mux, 0* — deprecated form
 
 **Operands**
-  - *Rdst* –      Destination Register R[0..3], result will be stored to this register
-  - *Sar_sel* – selected ADC : 0=SARADC0, 1=SARADC1
+  - *Rdst* – Destination Register R[0..3], result will be stored to this register
+  - *Sar_sel* – Select ADC: 0 = SARADC1, 1 = SARADC2
   - *Mux*  -  selected PAD, SARADC Pad[Mux+1] is enabled
-  - *Cycle* – number of cycles used to perform measurement
 
 **Description**
   The instruction makes measurements from ADC.
 
 **Examples**::
 
-   1:        ADC      R1, 0, 1, 100 // Measure value using ADC1 pad 2,
-                                    // for 100 cycles and move result to R1
+   1:        ADC      R1, 0, 1      // Measure value using ADC1 pad 2 and store result into R1
 
 
 **REG_RD** – read from peripheral register
@@ -740,7 +740,7 @@ READ_RTC_FIELD(rtc_reg, field)
     #include "soc/sens_reg.h"
 
     /* Read 8-bit SENS_TSENS_OUT field of SENS_SAR_SLAVE_ADDR3_REG into R0 */
-    READ_RTC_REG(SENS_SAR_SLAVE_ADDR3_REG, SENS_TSENS_OUT)
+    READ_RTC_FIELD(SENS_SAR_SLAVE_ADDR3_REG, SENS_TSENS_OUT)
 
 WRITE_RTC_REG(rtc_reg, low_bit, bit_width, value)
   Write immediate value into rtc_reg[low_bit + bit_width - 1 : low_bit], bit_width <= 8. For example::
@@ -759,7 +759,7 @@ WRITE_RTC_FIELD(rtc_reg, field, value)
     #include "soc/rtc_cntl_reg.h"
 
     /* Set RTC_CNTL_ULP_CP_SLP_TIMER_EN field of RTC_CNTL_STATE0_REG to 0 */
-    READ_RTC_REG(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN, 0)
+    WRITE_RTC_FIELD(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN, 0)
 
 
 

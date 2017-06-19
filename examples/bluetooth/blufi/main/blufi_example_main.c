@@ -177,7 +177,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         esp_ble_gap_config_adv_data(&example_adv_data);
         break;
     case ESP_BLUFI_EVENT_DEINIT_FINISH:
-        BLUFI_INFO("BLUFI init finish\n");
+        BLUFI_INFO("BLUFI deinit finish\n");
         break;
     case ESP_BLUFI_EVENT_BLE_CONNECT:
         BLUFI_INFO("BLUFI ble connect\n");

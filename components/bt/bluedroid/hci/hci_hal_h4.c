@@ -170,14 +170,14 @@ static void hci_hal_h4_rx_handler(void *arg)
     }
 }
 
-void hci_hal_h4_task_post(void)
+void hci_hal_h4_task_post(task_post_t timeout)
 {
     BtTaskEvt_t evt;
 
     evt.sig = 0xff;
     evt.par = 0;
 
-    if (xQueueSend(xHciH4Queue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
+    if (xQueueSend(xHciH4Queue, &evt, timeout) != pdTRUE) {
         LOG_ERROR("xHciH4Queue failed\n");
     }
 }
@@ -248,7 +248,7 @@ static void host_send_pkt_available_cb(void)
 {
     //Controller rx cache buffer is ready for receiving new host packet
     //Just Call Host main thread task to process pending packets.
-    hci_host_task_post();
+    hci_host_task_post(TASK_POST_BLOCKING);
 }
 
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
@@ -268,7 +268,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     pkt->layer_specific = 0;
     memcpy(pkt->data, data, len);
     fixed_queue_enqueue(hci_hal_env.rx_q, pkt);
-    hci_hal_h4_task_post();
+    hci_hal_h4_task_post(TASK_POST_BLOCKING);
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
 

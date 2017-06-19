@@ -13,11 +13,15 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include <sys/cdefs.h>
+#include <sys/time.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_clk.h"
 #include "rom/ets_sys.h"
 #include "rom/uart.h"
+#include "rom/rtc.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -82,12 +86,6 @@ void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
     g_ticks_per_us_app = ticks_per_us;
 }
 
-/* This is a cached value of RTC slow clock period; it is updated by
- * the select_rtc_slow_clk function at start up. This cached value is used in
- * other places, like time syscalls and deep sleep.
- */
-static uint32_t s_rtc_slow_clk_cal = 0;
-
 static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
 {
     if (slow_clk == RTC_SLOW_FREQ_32K_XTAL) {
@@ -114,19 +112,16 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
         ESP_EARLY_LOGD(TAG, "32k oscillator ready, wait=%d", wait);
     }
     rtc_clk_slow_freq_set(slow_clk);
+    uint32_t cal_val;
     if (SLOW_CLK_CAL_CYCLES > 0) {
         /* TODO: 32k XTAL oscillator has some frequency drift at startup.
          * Improve calibration routine to wait until the frequency is stable.
          */
-        s_rtc_slow_clk_cal = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
+        cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
     } else {
         const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
-        s_rtc_slow_clk_cal = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
+        cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
     }
-    ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", s_rtc_slow_clk_cal);
-}
-
-uint32_t esp_clk_slowclk_cal_get()
-{
-    return s_rtc_slow_clk_cal;
+    ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
+    esp_clk_slowclk_cal_set(cal_val);
 }

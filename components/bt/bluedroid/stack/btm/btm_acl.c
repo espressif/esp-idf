@@ -136,6 +136,31 @@ UINT8 btm_handle_to_acl_index (UINT16 hci_handle)
     return (xx);
 }
 
+/*******************************************************************************
+**
+** Function         btm_handle_to_acl
+**
+** Description      This function returns the FIRST acl_db entry for the passed hci_handle.
+**
+** Returns          Returns pointer to the ACL DB for the requested BDA if found.
+**                  NULL if not found.
+**
+*******************************************************************************/
+tACL_CONN *btm_handle_to_acl (UINT16 hci_handle)
+{
+    tACL_CONN   *p = &btm_cb.acl_db[0];
+    UINT8       xx;
+    BTM_TRACE_DEBUG ("btm_handle_to_acl_index\n");
+    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
+        if ((p->in_use) && (p->hci_handle == hci_handle)) {
+            return(p);
+        }
+    }
+
+    /* If here, no BD Addr found */
+    return ((tACL_CONN *)NULL);
+}
+
 #if BLE_PRIVACY_SPT == TRUE
 /*******************************************************************************
 **
@@ -230,7 +255,10 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
             p->link_role         = link_role;
             p->link_up_issued    = FALSE;
             memcpy (p->remote_addr, bda, BD_ADDR_LEN);
-
+            /* Set the default version of the peer device to version4.0 before exchange the version with it.
+               If the peer device act as a master and don't exchange the version with us, then it can only use the
+               legacy connect instead of secure connection in the pairing step. */
+            p->lmp_version = HCI_PROTO_VERSION_4_0;
 #if BLE_INCLUDED == TRUE
             p->transport = transport;
 #if BLE_PRIVACY_SPT == TRUE
@@ -308,11 +336,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
                     btsnd_hcic_ble_read_remote_feat(p->hci_handle);
                 } else if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
                          && link_role == HCI_ROLE_SLAVE) {
-                     /* In the original Bluedroid version, slave need to send LL_SLAVE_FEATURE_REQ(call btsnd_hcic_ble_read_remote_feat)
-                      * to remote device if it has not received ll_feature_req.
-                      * Delete it to resolve Android 7.0 incompatible problem. But it may cause that slave
-                      * can't get remote device's feature if it doesn't receive ll_feature_req.*/
-                    l2cble_notify_le_connection(bda);
+                    btsnd_hcic_ble_read_remote_feat(p->hci_handle);
                 } else {
                     btm_establish_continue(p);
                 }

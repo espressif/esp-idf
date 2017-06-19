@@ -102,10 +102,10 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  *
  * @param  buffer   Pointer to the buffer array
  *
- * @param  buff_len length of buffer
+ * @param  buff_len length of buffer in bytes
  *
  */
-void esp_log_buffer_hex(const char *tag, const char *buffer, uint16_t buff_len);
+void esp_log_buffer_hex(const char *tag, const void *buffer, uint16_t buff_len);
 
 /**
  * @brief Log a buffer of characters at Info level. Buffer should contain only printable characters.
@@ -114,10 +114,10 @@ void esp_log_buffer_hex(const char *tag, const char *buffer, uint16_t buff_len);
  *
  * @param  buffer   Pointer to the buffer array
  *
- * @param  buff_len length of buffer
+ * @param  buff_len length of buffer in bytes
  *
  */
-void esp_log_buffer_char(const char *tag, const char *buffer, uint16_t buff_len);
+void esp_log_buffer_char(const char *tag, const void *buffer, uint16_t buff_len);
 
 #if CONFIG_LOG_COLORS
 #define LOG_COLOR_BLACK   "30"

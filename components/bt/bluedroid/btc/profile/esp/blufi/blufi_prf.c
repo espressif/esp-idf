@@ -109,6 +109,28 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             blufi_create_service();
         }
         break;
+    case BTA_GATTS_DEREG_EVT: {
+        esp_blufi_cb_param_t param;
+        btc_msg_t msg;
+
+        LOG_DEBUG("DEREG: status %d, gatt_if %d\n", p_data->reg_oper.status, p_data->reg_oper.server_if);
+
+        if (p_data->reg_oper.status != BTA_GATT_OK) {
+            LOG_ERROR("BLUFI profile unregister failed\n");
+            return;
+        }
+
+        blufi_env.enabled = false;
+
+        msg.sig = BTC_SIG_API_CB;
+        msg.pid = BTC_PID_BLUFI;
+        msg.act = ESP_BLUFI_EVENT_DEINIT_FINISH;
+        param.deinit_finish.state = ESP_BLUFI_DEINIT_OK;
+
+        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+
+        break;
+    }
     case BTA_GATTS_READ_EVT:
         memset(&rsp, 0, sizeof(tBTA_GATTS_API_RSP));
         rsp.attr_value.handle = p_data->req_data.p_data->read_req.handle;
@@ -313,11 +335,8 @@ static tGATT_STATUS btc_blufi_profile_init(void)
 
 static tGATT_STATUS btc_blufi_profile_deinit(void)
 {
-    esp_blufi_cb_param_t param;
-    btc_msg_t msg;
-
     if (!blufi_env.enabled) {
-        LOG_ERROR("BLUFI already initialized");
+        LOG_ERROR("BLUFI already de-initialized");
         return GATT_ERROR;
     }
 
@@ -325,13 +344,6 @@ static tGATT_STATUS btc_blufi_profile_deinit(void)
     BTA_GATTS_DeleteService(blufi_env.handle_srvc);
     /* register the BLUFI profile to the BTA_GATTS module*/
     BTA_GATTS_AppDeregister(blufi_env.gatt_if);
-
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_BLUFI;
-    msg.act = ESP_BLUFI_EVENT_DEINIT_FINISH;
-    param.deinit_finish.state = ESP_BLUFI_DEINIT_OK;
-
-    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
 
     return GATT_SUCCESS;
 }

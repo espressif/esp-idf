@@ -15,9 +15,14 @@
 #ifndef _ESP_DPORT_ACCESS_H_
 #define _ESP_DPORT_ACCESS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void esp_dport_access_stall_other_cpu_start(void);
 void esp_dport_access_stall_other_cpu_end(void);
 void esp_dport_access_int_init(void);
+void esp_dport_access_int_deinit(void);
 
 #if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
 #define DPORT_STALL_OTHER_CPU_START()
@@ -25,6 +30,10 @@ void esp_dport_access_int_init(void);
 #else
 #define DPORT_STALL_OTHER_CPU_START()   esp_dport_access_stall_other_cpu_start()
 #define DPORT_STALL_OTHER_CPU_END()     esp_dport_access_stall_other_cpu_end()
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _ESP_DPORT_ACCESS_H_ */

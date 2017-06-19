@@ -193,3 +193,13 @@ void esp_dport_access_int_init(void)
         xTaskCreatePinnedToCore(&dport_access_init_core1, "dport1", 512, NULL, 5, NULL, 1);
     }
 }
+
+void esp_dport_access_int_deinit(void)
+{
+    portENTER_CRITICAL_ISR(&g_dport_mux);
+    dport_core_state[0] = DPORT_CORE_STATE_IDLE;
+#ifndef CONFIG_FREERTOS_UNICORE
+    dport_core_state[1] = DPORT_CORE_STATE_IDLE;
+#endif
+    portEXIT_CRITICAL_ISR(&g_dport_mux);
+}

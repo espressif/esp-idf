@@ -33,7 +33,7 @@ void esp_clk_init(void);
 
 
 /**
- * @brief Get the cached calibration value of RTC slow clock
+ * @brief Get the calibration value of RTC slow clock
  *
  * The value is in the same format as returned by rtc_clk_cal (microseconds,
  * in Q13.19 fixed-point format).
@@ -41,4 +41,16 @@ void esp_clk_init(void);
  * @return the calibration value obtained using rtc_clk_cal, at startup time
  */
 uint32_t esp_clk_slowclk_cal_get();
+
+
+/**
+ * @brief Update the calibration value of RTC slow clock
+ *
+ * The value has to be in the same format as returned by rtc_clk_cal (microseconds,
+ * in Q13.19 fixed-point format).
+ * This value is used by timekeeping functions (such as gettimeofday) to
+ * calculate current time based on RTC counter value.
+ * @param value calibration value obtained using rtc_clk_cal
+ */
+void esp_clk_slowclk_cal_set(uint32_t value);
 

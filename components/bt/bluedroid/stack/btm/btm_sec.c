@@ -4549,7 +4549,6 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
     p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
 
 #if BTM_DISC_DURING_RS == TRUE
-    LOG_INFO("%s clearing pending flag handle:%d reason:%d\n", __func__, handle, reason);
     p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
 #endif
 

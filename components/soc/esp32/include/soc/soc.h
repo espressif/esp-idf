@@ -395,5 +395,7 @@
 #define ETS_UART1_INUM                          5
 //Other interrupt number should be managed by the user
 
+//Invalid interrupt for number interrupt matrix
+#define ETS_INVALID_INUM                        6
 
 #endif /* _ESP32_SOC_H_ */

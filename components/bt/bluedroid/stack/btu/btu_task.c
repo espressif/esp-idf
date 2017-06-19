@@ -334,14 +334,14 @@ void btu_task_thread_handler(void *arg)
 }
 
 
-void btu_task_post(uint32_t sig)
+void btu_task_post(uint32_t sig, task_post_t timeout)
 {
     BtTaskEvt_t evt;
 
     evt.sig = sig;
     evt.par = 0;
 
-    if (xQueueSend(xBtuQueue, &evt, 10 / portTICK_PERIOD_MS) != pdTRUE) {
+    if (xQueueSend(xBtuQueue, &evt, timeout) != pdTRUE) {
         LOG_ERROR("xBtuQueue failed\n");
     }
 }
@@ -473,6 +473,7 @@ static void btu_general_alarm_process(TIMER_LIST_ENT *p_tle)
     case BTU_TTYPE_ATT_WAIT_FOR_IND_ACK:
         gatt_ind_ack_timeout(p_tle);
         break;
+
 #if (defined(SMP_INCLUDED) && SMP_INCLUDED == TRUE)
     case BTU_TTYPE_SMP_PAIRING_CMD:
         smp_rsp_timeout(p_tle);
@@ -516,7 +517,7 @@ void btu_general_alarm_cb(void *data)
 
     fixed_queue_enqueue(btu_general_alarm_queue, p_tle);
     //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK);
+    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
 }
 
 void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
@@ -546,6 +547,7 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
     p_tle->in_use = TRUE;
     osi_alarm_set(alarm, (period_ms_t)(timeout_sec * 1000));
 }
+
 
 /*******************************************************************************
 **
@@ -606,7 +608,7 @@ static void btu_l2cap_alarm_cb(void *data)
 
     fixed_queue_enqueue(btu_l2cap_alarm_queue, p_tle);
     //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK);
+    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
 }
 
 void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ticks)
@@ -674,7 +676,7 @@ void btu_oneshot_alarm_cb(void *data)
 
     fixed_queue_enqueue(btu_oneshot_alarm_queue, p_tle);
     //ke_event_set(KE_EVENT_BTU_TASK_THREAD);
-    btu_task_post(SIG_BTU_WORK);
+    btu_task_post(SIG_BTU_WORK, TASK_POST_BLOCKING);
 }
 
 /*
