@@ -298,7 +298,7 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
                     bta_adv_data->p_services_128b =
                         osi_malloc(sizeof(tBTA_BLE_128SERVICE));
                     if (NULL != bta_adv_data->p_services_128b) {
-                        LOG_ERROR("%s - In 128-UUID_data", __FUNCTION__);
+                        LOG_DEBUG("%s - In 128-UUID_data", __FUNCTION__);
                         mask |= BTM_BLE_AD_BIT_SERVICE_128;
                         memcpy(bta_adv_data->p_services_128b->uuid128,
                                bt_uuid.uu.uuid128, LEN_UUID_128);
