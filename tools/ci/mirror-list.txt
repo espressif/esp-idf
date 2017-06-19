@@ -1,0 +1,10 @@
+components/esp32/lib                                @GENERAL_MIRROR_SERVER@/idf/esp32-wifi-lib.git
+components/bt/lib                                   @GENERAL_MIRROR_SERVER@/idf/esp32-bt-lib.git
+components/aws_iot/aws-iot-device-sdk-embedded-C    @GENERAL_MIRROR_SERVER@/idf/aws-iot-device-sdk-embedded-C.git
+components/coap/libcoap                             @GENERAL_MIRROR_SERVER@/idf/libcoap.git
+components/esptool_py/esptool                       @GENERAL_MIRROR_SERVER@/idf/esptool.git
+components/libsodium/libsodium                      @GENERAL_MIRROR_SERVER@/idf/libsodium.git
+components/micro-ecc/micro-ecc                      @GENERAL_MIRROR_SERVER@/idf/micro-ecc.git
+components/nghttp/nghttp2                           @GENERAL_MIRROR_SERVER@/idf/nghttp2.git
+third-party/mruby                                   @GENERAL_MIRROR_SERVER@/idf/mruby.git
+third-party/neverbleed                              @GENERAL_MIRROR_SERVER@/idf/neverbleed.git

@@ -16,6 +16,18 @@ die() {
 }
 
 [ -z ${CI_PROJECT_DIR} ] && die "This internal script should only be run by a Gitlab CI runner."
+[[ ( -z ${IS_PRIVATE} ) && ( -z ${IS_PUBLIC} ) ]] && die "IS_PRIVATE or IS_PUBLIC should be defined in the CI environment."
+
+SCRIPT_DIR=$(dirname -- "${0}")
+update_submodules() {
+    if [ "${IS_PRIVATE}" ]; then
+        ${SCRIPT_DIR}/mirror-submodule-update.sh
+    else
+        git submodule foreach "git submodule deinit --force ."
+        git submodule deinit --force .
+        git submodule update --init --recursive
+    fi
+}
 
 DELETED_FILES=$(mktemp --tmpdir -d tmp_XXXX)
 del_files() {
@@ -32,7 +44,7 @@ RETRIES=10
 # For the first time, we try the fastest way.
 for try in `seq $RETRIES`; do
     echo "Trying to add submodules to existing repo..."
-    git submodule update --init --recursive &&
+    update_submodules &&
         echo "Fetch strategy submodules succeeded" &&
         exit 0
 done
@@ -44,7 +56,7 @@ for try in `seq $RETRIES`; do
     del_files
     git clone ${CI_REPOSITORY_URL} . &&
         git checkout ${CI_COMMIT_SHA} &&
-        git submodule update --init --recursive &&
+        update_submodules &&
         echo "Clone strategy succeeded" &&
         del_files_confirm &&
         exit 0
@@ -52,6 +64,4 @@ for try in `seq $RETRIES`; do
     echo "Clean clone failed..."
 done
 
-echo "Failed to clone repo & submodules together"
-
-exit 1
+die "Failed to clone repo & submodules together"

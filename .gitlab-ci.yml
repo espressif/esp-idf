@@ -37,7 +37,6 @@ before_script:
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
   # Set IS_PRIVATE or IS_PUBLIC depending on if our branch is public or not
-  # and adjust "our" submodule URLs if IS_PRIVATE
   #
   # (the same regular expressions are used to set these are used in 'only:' sections below
   - source tools/ci/configure_ci_environment.sh
@@ -374,6 +373,8 @@ check_submodule_sync:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
+  variables:
+    GIT_STRATEGY: clone
   before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
   script:
