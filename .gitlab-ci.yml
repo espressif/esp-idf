@@ -83,7 +83,7 @@ build_ssc:
     - git clone $SSC_REPOSITORY
     - cd SSC
     - git checkout ${CI_COMMIT_REF_NAME} || echo "Using SSC default branch..."
-    - ./gen_misc_ng.sh
+    - MAKEFLAGS= ./gen_misc_ng.sh
 
 build_at:
   <<: *build_template
