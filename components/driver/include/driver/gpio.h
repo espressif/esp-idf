@@ -130,10 +130,10 @@ typedef enum {
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
     GPIO_NUM_1 = 1,     /*!< GPIO1, input and output */
     GPIO_NUM_2 = 2,     /*!< GPIO2, input and output
-		                     @note There are more enumerations like that
+                             @note There are more enumerations like that
                              up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-		                     They are not shown here to reduce redundant information.
-                             @note GPIO34..29 are input mode only. */
+                             They are not shown here to reduce redundant information.
+                             @note GPIO34..39 are input mode only. */
 /** @cond */
     GPIO_NUM_3 = 3,     /*!< GPIO3, input and output */
     GPIO_NUM_4 = 4,     /*!< GPIO4, input and output */
