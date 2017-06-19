@@ -7,11 +7,19 @@ stages:
   - deploy
 
 variables:
-# system environment
+# System environment
+
   # Common parameters for the 'make' during CI tests
   MAKEFLAGS: "-j5 --no-keep-going"
 
+# GitLab-CI environment
+
+  # more attempts for more robust
+  GET_SOURCES_ATTEMPTS: "10"
+  ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
+
 # IDF environment
+
   IDF_PATH: "$CI_PROJECT_DIR"
 
 before_script:
@@ -36,12 +44,10 @@ build_template_app:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build
-
   variables:
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
     IDF_CI_BUILD: "1"
-
   script:
     - git clone https://github.com/espressif/esp-idf-template.git
     - cd esp-idf-template
@@ -66,7 +72,6 @@ build_template_app:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build
-
   variables:
     GIT_STRATEGY: clone
     BATCH_BUILD: "1"
@@ -76,9 +81,8 @@ build_ssc:
   <<: *build_template
   artifacts:
     paths:
-      - ./SSC/ssc_bin
+      - SSC/ssc_bin
     expire_in: 6 mos
-
   script:
     - git clone $SSC_REPOSITORY
     - cd SSC
@@ -98,15 +102,14 @@ build_esp_idf_tests:
   <<: *build_template
   artifacts:
     paths:
-      - ./tools/unit-test-app/build/*.bin
-      - ./tools/unit-test-app/build/*.elf
-      - ./tools/unit-test-app/build/*.map
-      - ./tools/unit-test-app/build/download.config
-      - ./tools/unit-test-app/build/bootloader/*.bin
-      - ./components/idf_test/unit_test/TestCaseAll.yml
-      - ./components/idf_test/unit_test/CIConfigs/*.yml
+      - tools/unit-test-app/build/*.bin
+      - tools/unit-test-app/build/*.elf
+      - tools/unit-test-app/build/*.map
+      - tools/unit-test-app/build/download.config
+      - tools/unit-test-app/build/bootloader/*.bin
+      - components/idf_test/unit_test/TestCaseAll.yml
+      - components/idf_test/unit_test/CIConfigs/*.yml
     expire_in: 6 mos
-
   script:
     - cd tools/unit-test-app
     - make TESTS_ALL=1
@@ -154,6 +157,10 @@ build_docs:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build_docs
+  artifacts:
+    paths:
+      - docs/_build/html
+    expire_in: 1 mos
   script:
     - cd docs
     - doxygen
@@ -161,16 +168,13 @@ build_docs:
     - test -n $IS_PRIVATE && test $(cat doxygen-warning-log.txt | wc -l) -eq 0 || ( echo "Doxygen pass had some warnings:" && cat doxygen-warning-log.txt && false )
     - make gh-linkcheck
     - make html
-  artifacts:
-    paths:
-      - docs/_build/html
-    expire_in: 1 mos
 
 test_nvs_on_host:
   stage: test
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - nvs_host_test
+  dependencies: []
   script:
     - cd components/nvs_flash/test_nvs_host
     - make test
@@ -180,6 +184,7 @@ test_partition_table_on_host:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build
+  dependencies: []
   script:
     - cd components/partition_table/test_gen_esp32part_host
     - ./gen_esp32part_tests.py
@@ -192,6 +197,7 @@ test_wl_on_host:
   artifacts:
     paths:
       - components/wear_levelling/test_wl_host/coverage_report.zip
+  dependencies: []
   script:
     - cd components/wear_levelling/test_wl_host
     - make test
@@ -201,6 +207,7 @@ test_build_system:
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - build_test
+  dependencies: []
   script:
     - ./make/test_configure_ci_environment.sh
     - ./make/test_build_system.sh
@@ -220,6 +227,8 @@ test_report:
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test"
     REPORT_PATH: "$CI_PROJECT_DIR/CI_Test_Report"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/tools/unit-test-app/tools/ModuleDefinition.yml"
+  #dependencies:
+  #We need all UT* and IT* artifacts except for only a few other
   artifacts:
     when: always
     paths:
@@ -244,7 +253,7 @@ test_report:
     - python CITestReport.py -l $LOG_PATH -t $TEST_CASE_FILE_PATH -p $REPORT_PATH -r $RESULT_PATH -a $ARTIFACTS_PATH -m $MODULE_UPDATE_FILE || TEST_RESULT=Fail
     # commit to CI-test-result project
     - git clone $GITLAB_SSH_SERVER/qa/CI-test-result.git
-    - rm -rf CI-test-result/RawData/$RESULT_PATH
+    - rm -rf "CI-test-result/RawData/$RESULT_PATH"
     - cp -R $CI_PROJECT_NAME CI-test-result/RawData
     - cd CI-test-result
     # config git user
@@ -268,6 +277,7 @@ push_master_to_github:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   when: on_success
+  dependencies: []
   variables:
     GIT_STRATEGY: clone
     GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
@@ -298,6 +308,8 @@ deploy_docs:
    - /^release\/v/
    - /^v\d+\.\d+(\.\d+)?($|-)/
    - triggers
+  dependencies:
+    - build_docs
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -320,6 +332,10 @@ check_doc_links:
   only:
     # can only be triggered
     - triggers
+  artifacts:
+    paths:
+      - docs/_build/linkcheck
+    expire_in: 1 mos
   script:
     # must be triggered with CHECK_LINKS=Yes, otherwise exit without test
     - test "$CHECK_LINKS" = "Yes" || exit 0
@@ -327,10 +343,6 @@ check_doc_links:
     - test "${CI_COMMIT_REF_NAME}" = "master" || exit 0
     - cd docs
     - make linkcheck
-  artifacts:
-    paths:
-      - docs/_build/linkcheck
-    expire_in: 1 mos
 
 check_commit_msg:
   stage: deploy
@@ -341,6 +353,7 @@ check_commit_msg:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
+  dependencies: []
   before_script:
     - echo "skip update submodule"
   script:
@@ -348,16 +361,34 @@ check_commit_msg:
     # commit start with "WIP: " need to be squashed before merge
     - 'git log --pretty=%s master..${CI_COMMIT_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
 
+check_submodule_sync:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  dependencies: []
+  before_script:
+    - echo "do not use gitlab submodule repository"
+  script:
+    # check if all submodules are correctly synced to public repostory
+    - git submodule update --init --recursive
+
 assign_test:
   <<: *build_template
   stage: assign_test
+  dependencies:
+    - build_esp_idf_tests
+    - build_ssc
   artifacts:
     paths:
       - test_bins
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
     expire_in: 1 mos
-
   script:
     # first move test bins together: test_bins/CHIP_SDK/TestApp/bin_files
     - mkdir -p test_bins/ESP32_IDF/UT
@@ -373,6 +404,8 @@ assign_test:
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
 
 .test_template: &test_template
+  before_script:
+    - echo "Skip cloning submodule here"
   stage: test
   when: on_success
   only:
@@ -381,10 +414,13 @@ assign_test:
     - /^v\d+\.\d+(\.\d+)?($|-)/
     - triggers
   allow_failure: true
-  
   dependencies:
     - assign_test
-
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+    expire_in: 6 mos
   variables:
     # set git strategy to fetch so we can get esptool without update submodule
     GIT_STRATEGY: fetch
@@ -393,21 +429,11 @@ assign_test:
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
     CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/integration_test/CIConfigs/$CI_JOB_NAME.yml"
-
-  artifacts:
-    when: always
-    paths:
-      - $LOG_PATH
-    expire_in: 6 mos
-
-  before_script:
-    - echo "Skip cloning submodule here"
-
   script:
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
-    # remove artifacts from last stage (UT logs)
-    - rm -rf $LOG_PATH
+    # remove artifacts from the 'unit_test' stage
+    - rm -rf "$LOG_PATH"
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -429,7 +455,6 @@ assign_test:
   <<: *test_template
   allow_failure: false
   stage: unit_test
-
   variables:
     GIT_STRATEGY: fetch
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
@@ -444,14 +469,14 @@ nvs_compatible_test:
     when: always
     paths:
       - $LOG_PATH
-      - $IDF_PATH/nvs_wifi.bin
+      - nvs_wifi.bin
     expire_in: 6 mos
   tags:
     - ESP32_IDF
     - NVS_Compatible
   script:
-    # remove artifacts from last stage (UT logs)
-    - rm -rf $LOG_PATH
+    # remove artifacts from the 'unit_test' stage
+    - rm -rf "$LOG_PATH"
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -505,43 +530,43 @@ IT_001_02:
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    
+
 IT_001_03:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    
+
 IT_001_04:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    
+
 IT_001_05:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    
+
 IT_001_06:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    
+
 IT_001_07:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    
+
 IT_001_08:
   <<: *test_template
   tags:
     - ESP32_IDF
     - SSC_T1_1
-    
+
 IT_002_01:
   <<: *test_template
   tags:
