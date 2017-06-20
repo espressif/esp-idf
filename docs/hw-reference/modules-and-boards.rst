@@ -86,6 +86,6 @@ V2 boards have a shiny black finish and a male camera header, while V3 boards ha
 * `FTDI Virtual COM Port Drivers`_
 
 
-.. _JTAG Debugging for ESP32: https://github.com/espressif/esp-idf/
+.. _JTAG Debugging for ESP32: http://espressif.com/sites/default/files/documentation/jtag_debugging_for_esp32_en.pdf
 .. _FTDI Virtual COM Port Drivers: http://www.ftdichip.com/Drivers/D2XX.htm
 
