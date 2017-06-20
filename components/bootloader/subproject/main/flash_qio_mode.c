@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include "flash_qio_mode.h"
 #include "esp_log.h"
+#include "esp_err.h"
 #include "rom/spi_flash.h"
 #include "rom/efuse.h"
 #include "soc/spi_struct.h"
@@ -99,7 +100,7 @@ const static qio_info_t chip_data[] = {
 
 #define NUM_CHIPS (sizeof(chip_data) / sizeof(qio_info_t))
 
-static void enable_qio_mode(read_status_fn_t read_status_fn,
+static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
                             write_status_fn_t write_status_fn,
                             uint8_t status_qio_bit);
 
@@ -115,6 +116,7 @@ extern uint8_t g_rom_spiflash_dummy_len_plus[];
 
 void bootloader_enable_qio_mode(void)
 {
+    uint32_t old_ctrl_reg;
     uint32_t raw_flash_id;
     uint8_t mfg_id;
     uint16_t flash_id;
@@ -125,7 +127,8 @@ void bootloader_enable_qio_mode(void)
 
     /* Set up some of the SPIFLASH user/ctrl variables which don't change
        while we're probing using execute_flash_command() */
-    SPIFLASH.ctrl.val = 0;
+    old_ctrl_reg = SPIFLASH.ctrl.val;
+    SPIFLASH.ctrl.val = SPI_WP_REG; // keep WP high while idle, otherwise leave DIO mode
     SPIFLASH.user.usr_dummy = 0;
     SPIFLASH.user.usr_addr = 0;
     SPIFLASH.user.usr_command = 1;
@@ -150,12 +153,16 @@ void bootloader_enable_qio_mode(void)
         ESP_LOGI(TAG, "Enabling default flash chip QIO");
     }
 
-    enable_qio_mode(chip_data[i].read_status_fn,
-                    chip_data[i].write_status_fn,
-                    chip_data[i].status_qio_bit);
+    esp_err_t res = enable_qio_mode(chip_data[i].read_status_fn,
+                                    chip_data[i].write_status_fn,
+                                    chip_data[i].status_qio_bit);
+    if (res != ESP_OK) {
+        // Restore SPI flash CTRL setting, to keep us in DIO/DOUT mode
+        SPIFLASH.ctrl.val = old_ctrl_reg;
+    }
 }
 
-static void enable_qio_mode(read_status_fn_t read_status_fn,
+static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
                             write_status_fn_t write_status_fn,
                             uint8_t status_qio_bit)
 {
@@ -191,7 +198,7 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
         ESP_LOGD(TAG, "Updated flash chip status 0x%x", status);
         if ((status & (1<<status_qio_bit)) == 0) {
             ESP_LOGE(TAG, "Failed to set QIE bit, not enabling QIO mode");
-            return;
+            return ESP_FAIL;
         }
 
     } else {
@@ -210,6 +217,8 @@ static void enable_qio_mode(read_status_fn_t read_status_fn,
     esp_rom_spiflash_config_readmode(mode);
 
     esp_rom_spiflash_select_qio_pins(CONFIG_BOOTLOADER_SPI_WP_PIN, spiconfig);
+
+    return ESP_OK;
 }
 
 static unsigned read_status_8b_rdsr()
