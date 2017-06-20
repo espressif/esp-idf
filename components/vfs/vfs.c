@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -117,6 +117,10 @@ static int translate_fd(const vfs_entry_t* vfs, int fd)
 static const char* translate_path(const vfs_entry_t* vfs, const char* src_path)
 {
     assert(strncmp(src_path, vfs->path_prefix, vfs->path_prefix_len) == 0);
+    if (strlen(src_path) == vfs->path_prefix_len) {
+        // special case when src_path matches the path prefix exactly
+        return "/";
+    }
     return src_path + vfs->path_prefix_len;
 }
 
@@ -128,13 +132,15 @@ static const vfs_entry_t* get_vfs_for_path(const char* path)
         if (!vfs) {
             continue;
         }
-        if (len < vfs->path_prefix_len + 1) {   // +1 is for the trailing slash after base path
+        // match path prefix
+        if (len < vfs->path_prefix_len ||
+            memcmp(path, vfs->path_prefix, vfs->path_prefix_len) != 0) {
             continue;
         }
-        if (memcmp(path, vfs->path_prefix, vfs->path_prefix_len) != 0) {  // match prefix
-            continue;
-        }
-        if (path[vfs->path_prefix_len] != '/') {   // don't match "/data" prefix for "/data1/foo.txt"
+        // if path is not equal to the prefix, expect to see a path separator
+        // i.e. don't match "/data" prefix for "/data1/foo.txt" path
+        if (len > vfs->path_prefix_len &&
+                path[vfs->path_prefix_len] != '/') {
             continue;
         }
         return vfs;
