@@ -808,7 +808,7 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
     }
 
     if (!HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features)) {
-        BTM_TRACE_ERROR("%s failed, peer does not support request", __FUNCTION__);
+        BTM_TRACE_DEBUG("%s failed, peer does not support request", __FUNCTION__);
         return BTM_PEER_LE_DATA_LEN_UNSUPPORTED;
     }
 
@@ -1444,7 +1444,7 @@ void btm_ble_ltk_request_reply(BD_ADDR bda,  BOOLEAN use_stk, BT_OCTET16 stk)
     p_cb->enc_handle = p_rec->ble_hci_handle;
     p_cb->key_size = p_rec->ble.keys.key_size;
 
-    BTM_TRACE_ERROR("key size = %d", p_rec->ble.keys.key_size);
+    BTM_TRACE_DEBUG("key size = %d", p_rec->ble.keys.key_size);
     if (use_stk) {
         btsnd_hcic_ble_ltk_req_reply(btm_cb.enc_handle, stk);
     } else { /* calculate LTK using peer device  */
@@ -1606,7 +1606,7 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
     BTM_TRACE_EVENT ("%s\n", __func__);
 
     if (match_rec) {
-        LOG_INFO("%s matched and resolved random address", __func__);
+        BTM_TRACE_DEBUG("%s matched and resolved random address", __func__);
         match = TRUE;
         match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
         memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
@@ -1617,7 +1617,7 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
             memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
         }
     } else {
-        LOG_INFO("%s unable to match and resolve random address", __func__);
+        BTM_TRACE_DEBUG("%s unable to match and resolve random address", __func__);
     }
 
     btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type, match);

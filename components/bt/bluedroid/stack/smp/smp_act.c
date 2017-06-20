@@ -114,7 +114,7 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             cb_data.io_req.max_key_size = SMP_MAX_ENC_KEY_SIZE;
             cb_data.io_req.init_keys = p_cb->local_i_key ;
             cb_data.io_req.resp_keys = p_cb->local_r_key ;
-            SMP_TRACE_WARNING ( "io_cap = %d", cb_data.io_req.io_cap);
+            SMP_TRACE_DEBUG ( "io_cap = %d", cb_data.io_req.io_cap);
             break;
 
         case SMP_NC_REQ_EVT:
@@ -160,7 +160,7 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                     p_cb->local_r_key = 0;
                 }
 
-                SMP_TRACE_WARNING ( "rcvd auth_req: 0x%02x, io_cap: %d \
+                SMP_TRACE_DEBUG ("rcvd auth_req: 0x%02x, io_cap: %d \
                         loc_oob_flag: %d loc_enc_size: %d,"
                                     "local_i_key: 0x%02x, local_r_key: 0x%02x\n",
                                     p_cb->loc_auth_req, p_cb->local_io_capability, p_cb->loc_oob_flag,
@@ -182,7 +182,7 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                     p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
                 }
 
-                SMP_TRACE_WARNING("set auth_req: 0x%02x, local_i_key: 0x%02x, local_r_key: 0x%02x\n",
+                SMP_TRACE_DEBUG("set auth_req: 0x%02x, local_i_key: 0x%02x, local_r_key: 0x%02x\n",
                                   p_cb->loc_auth_req, p_cb->local_i_key, p_cb->local_r_key);
 
                 smp_sm_event(p_cb, SMP_IO_RSP_EVT, NULL);
@@ -363,7 +363,7 @@ void smp_send_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC,
                             (tBTM_LE_KEY_VALUE *)&le_key, TRUE);
 
-    SMP_TRACE_WARNING ("%s\n", __func__);
+    SMP_TRACE_DEBUG ("%s\n", __func__);
 
     smp_key_distribution(p_cb, NULL);
 }
@@ -385,7 +385,6 @@ void smp_send_id_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LID,
                             &le_key, TRUE);
 
-    SMP_TRACE_WARNING ("%s\n", __func__);
     smp_key_distribution_by_transport(p_cb, NULL);
 }
 
