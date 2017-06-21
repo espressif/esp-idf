@@ -84,7 +84,7 @@ This example "myProject" contains the following elements:
 
 - Optional "components" directory contains components that are part of the project. A project does not have to contain custom components of this kind, but it can be useful for structuring reusable code or including third party components that aren't part of ESP-IDF.
 
-- "main" directory is a special "pseudo-component" that contains source code for the project itself. "main" is a default name, the Makefile variable ``SRCDIRS`` defaults to this but can be set to look for pseudo-components in other directories.
+- "main" directory is a special "pseudo-component" that contains source code for the project itself. "main" is a default name, the Makefile variable ``COMPONENT_DIRS`` includes this component but you can modify this variable (or set ``EXTRA_COMPONENT_DIRS``) to look for components in other places.
 
 - "build" directory is where build output is created. After the make process is run, this directory will contain interim object files and libraries as well as final binary output files. This directory is usually not added to source control or distributed with the project source code.
 
@@ -120,19 +120,23 @@ These variables all have default values that can be overridden for custom behavi
 
 - ``PROJECT_PATH``: Top-level project directory. Defaults to the directory containing the Makefile. Many other project variables are based on this variable. The project path cannot contain spaces.
 - ``BUILD_DIR_BASE``: The build directory for all objects/libraries/binaries. Defaults to ``$(PROJECT_PATH)/build``.
-- ``COMPONENT_DIRS``: Directories to search for components. Defaults to `$(IDF_PATH)/components`, `$(PROJECT_PATH)/components` and ``EXTRA_COMPONENT_DIRS``. Override this variable if you don't want to search for components in the esp-idf & project ``components`` directories.
-- ``EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components. Components themselves are in sub-directories of these directories, this is a top-level directory containing the component directories.
+- ``COMPONENT_DIRS``: Directories to search for components. Defaults to `$(IDF_PATH)/components`, `$(PROJECT_PATH)/components`, ``$(PROJECT_PATH)/main`` and ``EXTRA_COMPONENT_DIRS``. Override this variable if you don't want to search for components in these places.
+- ``EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components.
 - ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the COMPONENT_DIRS directories.
-- ``SRCDIRS``: Directories under the main project directory which contain project-specific "pseudo-components". Defaults to 'main'. The difference between specifying a directory here and specifying it under ``EXTRA_COMPONENT_DIRS`` is that a directory in ``SRCDIRS`` is a component itself (contains a file "component.mk"), whereas a directory in ``EXTRA_COMPONENT_DIRS`` contains component directories which contain a file "component.mk". See the `Example Project` for a concrete case of this.
-
-Running the ``make list-components`` target dumps many of these variables and can help debug the discovery of component directories.
 
 Component Makefiles
 -------------------
 
 Each project contains one or more components, which can either be part of esp-idf or added from other component directories.
 
-A component is any sub-directory that contains a `component.mk` file [#f1]_.
+A component is any directory that contains a `component.mk` file [#f1]_.
+
+Searching for Components
+------------------------
+
+The list of directories in ``COMPONENT_DIRS`` is searched for the project's components. Directories in this list can either be components themselves (ie they contain a `component.mk` file), or they can be top-level directories whose subdirectories are components.
+
+Running the ``make list-components`` target dumps many of these variables and can help debug the discovery of component directories.
 
 Multiple components with the same name
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -549,7 +553,7 @@ is set then the component can instruct the linker to link other binaries instead
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _GNU Make Manual: https://www.gnu.org/software/make/manual/make.html
-.. [#f1] Actually, some components in esp-idf are "pure configuration" components that don't have a component.mk file, only a Makefile.projbuild and/or Kconfig.projbuild file. However, these components are unusual and most components have a component.mk file.
+.. [#f1] Actually, some components in esp-idf are "pure configuration" components that don't have a component.mk file, only a Makefile.projbuild and/or Kconfig.projbuild file. However, these components are unusual and most components have a component.mk file. A component must have at least one of these three files.
 
 
 Custom sdkconfig defaults

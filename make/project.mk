@@ -99,21 +99,31 @@ export COMMON_MAKEFILES
 BUILD_DIR_BASE ?= $(PROJECT_PATH)/build
 export BUILD_DIR_BASE
 
-# Component directories. These directories are searched for components.
-# The project Makefile can override these component dirs, or define extra component directories.
-COMPONENT_DIRS ?= $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components
+# Component directories. These directories are searched for components (either the directory is a component,
+# or the directory contains subdirectories which are components.)
+# The project Makefile can override these component dirs, or add extras via EXTRA_COMPONENT_DIRS
+COMPONENT_DIRS ?= $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components $(PROJECT_PATH)/main
 export COMPONENT_DIRS
 
-# Source directories of the project itself (a special, project-specific component.) Defaults to only "main".
-SRCDIRS ?= main
+ifdef SRCDIRS
+$(warning SRCDIRS variable is deprecated. These paths can be added to EXTRA_COMPONENT_DIRS or COMPONENT_DIRS instead.)
+COMPONENT_DIRS += $(abspath $(SRCDIRS))
+endif
 
 # The project Makefile can define a list of components, but if it does not do this we just take
-# all available components in the component dirs.
+# all available components in the component dirs. A component is any subdirectory of a COMPONENT_DIRS
+# directory where the subdirectory contains component.mk, Kconfig.projbuild or Makefile.projbuild.
+#
+# Use the "make list-components" target to debug this step.
 ifndef COMPONENTS
+COMPONENT_MARKER_FILES := component.mk Kconfig.projbuild Makefile.projbuild
+
 # Find all component names. The component names are the same as the
-# directories they're in, so /bla/components/mycomponent/ -> mycomponent. We then use
-# COMPONENT_DIRS to build COMPONENT_PATHS with the full path to each component.
-COMPONENTS := $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/*))
+# directories they're in, so /bla/components/mycomponent/component.mk -> mycomponent.
+COMPONENTS := $(dir $(foreach cd,$(COMPONENT_DIRS),                           \
+				$(foreach marker,$(COMPONENT_MARKER_FILES),                   \
+					$(wildcard $(cd)/*/$(marker)) $(wildcard $(cd)/$(marker)) \
+				)))
 COMPONENTS := $(sort $(foreach comp,$(COMPONENTS),$(lastword $(subst /, ,$(comp)))))
 endif
 export COMPONENTS
@@ -124,8 +134,7 @@ export COMPONENTS
 #
 # NOTE: These paths must be generated WITHOUT a trailing / so we
 # can use $(notdir x) to get the component name.
-COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)))))
-COMPONENT_PATHS += $(abspath $(SRCDIRS))
+COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPONENT_DIRS),$(wildcard $(dir $(cd))$(comp) $(cd)/$(comp)))))
 
 # A component is buildable if it has a component.mk makefile in it
 COMPONENT_PATHS_BUILDABLE := $(foreach cp,$(COMPONENT_PATHS),$(if $(wildcard $(cp)/component.mk),$(cp)))
@@ -191,9 +200,8 @@ endif
 IDF_VER := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
 
 # Set default LDFLAGS
-SRCDIRS_COMPONENT_NAMES := $(sort $(foreach comp,$(SRCDIRS),$(lastword $(subst /, ,$(comp)))))
 LDFLAGS ?= -nostdlib \
-	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(TEST_COMPONENT_NAMES) $(SRCDIRS_COMPONENT_NAMES) ) \
+	$(addprefix -L$(BUILD_DIR_BASE)/,$(COMPONENTS) $(TEST_COMPONENT_NAMES)) \
 	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
 	-Wl,--gc-sections	\
@@ -444,9 +452,6 @@ $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUB
 list-components:
 	$(info COMPONENT_DIRS (top-level, subdirectories of these are components))
 	$(foreach cd,$(COMPONENT_DIRS),$(info $(cd)))
-	$(info $(call dequote,$(SEPARATOR)))
-	$(info SRCDIRS (extra standalone component directories))
-	$(foreach sd,$(SRCDIRS),$(info $(sd)))
 	$(info $(call dequote,$(SEPARATOR)))
 	$(info COMPONENTS (list of component names))
 	$(info $(COMPONENTS))
