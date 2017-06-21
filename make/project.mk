@@ -10,7 +10,7 @@
 # where this file is located.
 #
 
-.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size size-components size-files
+.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size size-components size-files list-components
 all: all_binaries
 # see below for recipe of 'all' target
 #
@@ -33,6 +33,7 @@ help:
 	@echo "make erase_flash - Erase entire flash contents"
 	@echo "make monitor - Run idf_monitor tool to monitor serial output from app"
 	@echo "make simple_monitor - Monitor serial output on terminal console"
+	@echo "make list-components - List all components in the project"
 	@echo ""
 	@echo "make app - Build just the app"
 	@echo "make app-flash - Flash just the app"
@@ -438,6 +439,20 @@ endef
 # so the argument is suitable for use with 'git submodule' commands
 $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))
 
+
+# PHONY target to list components in the build and their paths
+list-components:
+	$(info COMPONENT_DIRS (top-level, subdirectories of these are components))
+	$(foreach cd,$(COMPONENT_DIRS),$(info $(cd)))
+	$(info $(call dequote,$(SEPARATOR)))
+	$(info SRCDIRS (extra standalone component directories))
+	$(foreach sd,$(SRCDIRS),$(info $(sd)))
+	$(info $(call dequote,$(SEPARATOR)))
+	$(info COMPONENTS (list of component names))
+	$(info $(COMPONENTS))
+	$(info $(call dequote,$(SEPARATOR)))
+	$(info COMPONENT_PATHS (paths to all components):)
+	$(foreach cp,$(COMPONENT_PATHS),$(info $(cp)))
 
 # Check toolchain version using the output of xtensa-esp32-elf-gcc --version command.
 # The output normally looks as follows

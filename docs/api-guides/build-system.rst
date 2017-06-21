@@ -125,6 +125,8 @@ These variables all have default values that can be overridden for custom behavi
 - ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the COMPONENT_DIRS directories.
 - ``SRCDIRS``: Directories under the main project directory which contain project-specific "pseudo-components". Defaults to 'main'. The difference between specifying a directory here and specifying it under ``EXTRA_COMPONENT_DIRS`` is that a directory in ``SRCDIRS`` is a component itself (contains a file "component.mk"), whereas a directory in ``EXTRA_COMPONENT_DIRS`` contains component directories which contain a file "component.mk". See the `Example Project` for a concrete case of this.
 
+Running the ``make list-components`` target dumps many of these variables and can help debug the discovery of component directories.
+
 Component Makefiles
 -------------------
 
