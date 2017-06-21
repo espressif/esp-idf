@@ -124,6 +124,10 @@ These variables all have default values that can be overridden for custom behavi
 - ``EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components.
 - ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the COMPONENT_DIRS directories.
 
+Any paths in these Makefile variables should be absolute paths. You can convert relative paths using ``$(PROJECT_PATH)/xxx``, ``$(IDF_PATH)/xxx``, or use the Make function ``$(abspath xxx)``.
+
+These variables should all be set before the line ``include $(IDF_PATH)/make/project.mk`` in the Makefile.
+
 Component Makefiles
 -------------------
 
