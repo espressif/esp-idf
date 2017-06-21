@@ -52,7 +52,7 @@ You don't need to run `make all` before running `make flash`, `make flash` will 
 
 ## Viewing Serial Output
 
-The `make monitor` target uses the [idf_monitor tool](http://esp-idf.readthedocs.io/en/latest/idf-monitor.html) to display serial output from the ESP32. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](http://esp-idf.readthedocs.io/en/latest/idf-monitor.html).
+The `make monitor` target uses the [idf_monitor tool](http://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html) to display serial output from the ESP32. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](http://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html).
 
 Exit the monitor by typing Ctrl-].
 
@@ -112,5 +112,5 @@ This can be combined with other targets, ie `make erase_flash flash` will erase 
 
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
 
-* If you're interested in contributing to ESP-IDF, please check the [Contributions Guide](http://esp-idf.readthedocs.io/en/latest/contributing.html>).
+* If you're interested in contributing to ESP-IDF, please check the [Contributions Guide](http://esp-idf.readthedocs.io/en/latest/contribute/index.html).
 

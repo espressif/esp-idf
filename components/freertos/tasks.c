@@ -2280,7 +2280,7 @@ UBaseType_t uxTaskGetNumberOfTasks( void )
 	UBaseType_t uxTask = 0, uxQueue = configMAX_PRIORITIES;
 
 		UNTESTED_FUNCTION();
-		vTaskSuspendAll(); //WARNING: This only suspends one CPU. ToDo: suspend others as well. Mux using taskQueueMutex maybe?
+		taskENTER_CRITICAL(&xTaskQueueMutex);
 		{
 			/* Is there a space in the array for each task in the system? */
 			if( uxArraySize >= uxCurrentNumberOfTasks )
@@ -2340,8 +2340,7 @@ UBaseType_t uxTaskGetNumberOfTasks( void )
 				mtCOVERAGE_TEST_MARKER();
 			}
 		}
-		( void ) xTaskResumeAll();
-
+		taskEXIT_CRITICAL(&xTaskQueueMutex);
 		return uxTask;
 	}
 
