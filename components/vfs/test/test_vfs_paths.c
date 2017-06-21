@@ -173,6 +173,69 @@ TEST_CASE("vfs parses paths correctly", "[vfs]")
     test_not_called(&inst_foo1, "/foo/file1");
     test_opened(&inst_foo1, "/foo1/file1");
     test_not_opened(&inst_foo1, "/foo1/file");
+
+    // Test nested VFS entries
+    dummy_vfs_t inst_foobar = {
+        .match_path = "",
+        .called = false
+    };
+    esp_vfs_t desc_foobar = DUMMY_VFS();
+    TEST_ESP_OK( esp_vfs_register("/foo/bar", &desc_foobar, &inst_foobar) );
+
+    dummy_vfs_t inst_toplevel = {
+        .match_path = "",
+        .called = false
+    };
+    esp_vfs_t desc_toplevel = DUMMY_VFS();
+    TEST_ESP_OK( esp_vfs_register("", &desc_toplevel, &inst_toplevel) );
+
+    inst_foo.match_path = "/bar/file";
+    inst_foobar.match_path = "/file";
+    test_not_called(&inst_foo, "/foo/bar/file");
+    test_opened(&inst_foobar, "/foo/bar/file");
+    test_dir_not_called(&inst_foo, "/foo/bar/file");
+    test_dir_opened(&inst_foobar, "/foo/bar/file");
+    inst_toplevel.match_path = "/tmp/foo";
+    test_opened(&inst_toplevel, "/tmp/foo");
+
     TEST_ESP_OK( esp_vfs_unregister("/foo") );
     TEST_ESP_OK( esp_vfs_unregister("/foo1") );
+    TEST_ESP_OK( esp_vfs_unregister("/foo/bar") );
+    TEST_ESP_OK( esp_vfs_unregister("") );
+}
+
+
+void test_vfs_register(const char* prefix, bool expect_success, int line)
+{
+    dummy_vfs_t inst;
+    esp_vfs_t desc = DUMMY_VFS();
+    esp_err_t err = esp_vfs_register(prefix, &desc, &inst);
+    if (expect_success) {
+        UNITY_TEST_ASSERT_EQUAL_INT(ESP_OK, err, line, "esp_vfs_register should succeed");
+    } else {
+        UNITY_TEST_ASSERT_EQUAL_INT(ESP_ERR_INVALID_ARG,
+                err, line, "esp_vfs_register should fail");
+    }
+    if (err == ESP_OK) {
+        TEST_ESP_OK( esp_vfs_unregister(prefix) );
+    }
+}
+
+#define test_register_ok(prefix) test_vfs_register(prefix, true, __LINE__)
+#define test_register_fail(prefix) test_vfs_register(prefix, false, __LINE__)
+
+TEST_CASE("vfs checks mount point path", "[vfs]")
+{
+    test_register_ok("");
+    test_register_fail("/");
+    test_register_fail("a");
+    test_register_fail("aa");
+    test_register_fail("aaa");
+    test_register_ok("/a");
+    test_register_ok("/aa");
+    test_register_ok("/aaa/bbb");
+    test_register_fail("/aaa/");
+    test_register_fail("/aaa/bbb/");
+    test_register_ok("/23456789012345");
+    test_register_fail("/234567890123456");
 }

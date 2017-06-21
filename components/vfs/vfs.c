@@ -55,10 +55,10 @@ static size_t s_vfs_count = 0;
 esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx)
 {
     size_t len = strlen(base_path);
-    if (len < 2 || len > ESP_VFS_PATH_MAX) {
+    if ((len != 0 && len < 2)|| len > ESP_VFS_PATH_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (base_path[0] != '/' || base_path[len - 1] == '/') {
+    if ((len > 0 && base_path[0] != '/') || base_path[len - 1] == '/') {
         return ESP_ERR_INVALID_ARG;
     }
     vfs_entry_t *entry = (vfs_entry_t*) malloc(sizeof(vfs_entry_t));
@@ -129,6 +129,8 @@ static const char* translate_path(const vfs_entry_t* vfs, const char* src_path)
 
 static const vfs_entry_t* get_vfs_for_path(const char* path)
 {
+    const vfs_entry_t* best_match = NULL;
+    ssize_t best_match_prefix_len = -1;
     size_t len = strlen(path);
     for (size_t i = 0; i < s_vfs_count; ++i) {
         const vfs_entry_t* vfs = s_vfs[i];
@@ -146,9 +148,18 @@ static const vfs_entry_t* get_vfs_for_path(const char* path)
                 path[vfs->path_prefix_len] != '/') {
             continue;
         }
-        return vfs;
+        // Out of all matching path prefixes, select the longest one;
+        // i.e. if "/dev" and "/dev/uart" both match, for "/dev/uart/1" path,
+        // choose "/dev/uart",
+        // This causes all s_vfs_count VFS entries to be scanned when opening
+        // a file by name. This can be optimized by introducing a table for
+        // FS search order, sorted so that longer prefixes are checked first.
+        if (best_match_prefix_len < (ssize_t) vfs->path_prefix_len) {
+            best_match_prefix_len = (ssize_t) vfs->path_prefix_len;
+            best_match = vfs;
+        }
     }
-    return NULL;
+    return best_match;
 }
 
 /*
