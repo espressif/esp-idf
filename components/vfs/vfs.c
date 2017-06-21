@@ -91,6 +91,9 @@ esp_err_t esp_vfs_unregister(const char* base_path)
 {
     for (size_t i = 0; i < s_vfs_count; ++i) {
         vfs_entry_t* vfs = s_vfs[i];
+        if (vfs == NULL) {
+            continue;
+        }
         if (memcmp(base_path, vfs->path_prefix, vfs->path_prefix_len) == 0) {
             free(vfs);
             s_vfs[i] = NULL;

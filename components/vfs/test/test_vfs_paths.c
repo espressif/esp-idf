@@ -23,8 +23,6 @@
 #include "unity.h"
 #include "esp_log.h"
 
-static const char* TAG = "test_vfs_paths";
-
 /* Dummy VFS implementation to check if VFS is called or not with expected path
  */
 typedef struct {
@@ -175,4 +173,6 @@ TEST_CASE("vfs parses paths correctly", "[vfs]")
     test_not_called(&inst_foo1, "/foo/file1");
     test_opened(&inst_foo1, "/foo1/file1");
     test_not_opened(&inst_foo1, "/foo1/file");
+    TEST_ESP_OK( esp_vfs_unregister("/foo") );
+    TEST_ESP_OK( esp_vfs_unregister("/foo1") );
 }
