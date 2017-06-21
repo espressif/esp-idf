@@ -18,6 +18,7 @@
 #include <esp_image_format.h>
 #include <esp_log.h>
 #include <bootloader_flash.h>
+#include <bootloader_random.h>
 
 static const char *TAG = "esp_image";
 
@@ -26,6 +27,13 @@ static const char *TAG = "esp_image";
 
 /* Headroom to ensure between stack SP (at time of checking) and data loaded from flash */
 #define STACK_LOAD_HEADROOM 4096
+
+#ifdef BOOTLOADER_BUILD
+/* 64 bits of random data to obfuscate loaded RAM with, until verification is complete
+   (Means loaded code isn't executable until after the secure boot check.)
+*/
+static uint32_t ram_obfs_value[2];
+#endif
 
 /* Return true if load_addr is an address the bootloader should load into */
 static bool should_load(uint32_t load_addr);
@@ -98,7 +106,7 @@ goto err;
     }
 
     uint32_t next_addr = data->start_addr + sizeof(esp_image_header_t);
-    for(int i = 0; i < data->image.segment_count && err == ESP_OK; i++) {
+    for(int i = 0; i < data->image.segment_count; i++) {
         esp_image_segment_header_t *header = &data->segments[i];
         ESP_LOGV(TAG, "loading segment header %d at offset 0x%x", i, next_addr);
         err = process_segment(i, next_addr, header, silent, do_load, &checksum_word);
@@ -137,6 +145,20 @@ goto err;
     }
 
     data->image_length = length;
+
+#ifdef BOOTLOADER_BUILD
+    if (do_load) { // Need to deobfuscate RAM
+        for (int i = 0; i < data->image.segment_count; i++) {
+            uint32_t load_addr = data->segments[i].load_addr;
+            if (should_load(load_addr)) {
+                uint32_t *loaded = (uint32_t *)load_addr;
+                for (int j = 0; j < data->segments[i].data_len/sizeof(uint32_t); j++) {
+                    loaded[j] ^= (j & 1) ? ram_obfs_value[0] : ram_obfs_value[1];
+                }
+            }
+        }
+    }
+#endif
 
     // Success!
     return ESP_OK;
@@ -222,24 +244,31 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
         }
     }
 
-    const void *data = bootloader_mmap(data_addr, data_len);
+    const uint32_t *data = (const uint32_t *)bootloader_mmap(data_addr, data_len);
     if(!data) {
         ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed",
                  data_addr, data_len);
         return ESP_FAIL;
     }
-    const uint32_t *checksum_from;
-    if (do_load) {
-        memcpy((void *)load_addr, data, data_len);
-        checksum_from = (const uint32_t *)load_addr;
-    } else {
-        checksum_from = (const uint32_t *)data;
+
+#ifdef BOOTLOADER_BUILD
+    // Set up the obfuscation value to use for loading
+    while (ram_obfs_value[0] == 0 || ram_obfs_value[1] == 0) {
+        bootloader_fill_random(ram_obfs_value, sizeof(ram_obfs_value));
     }
-    // Update checksum, either from RAM we just loaded or from flash
-    for (const uint32_t *c = checksum_from;
-         c < checksum_from + (data_len/sizeof(uint32_t));
-         c++) {
-        *checksum ^= *c;
+    uint32_t *dest = (uint32_t *)load_addr;
+#endif
+
+    const uint32_t *src = data;
+
+    for (int i = 0; i < data_len/sizeof(uint32_t); i++) {
+        uint32_t w = src[i];
+        *checksum ^= w;
+#ifdef BOOTLOADER_BUILD
+        if (do_load) {
+            dest[i] = w ^ ((i & 1) ? ram_obfs_value[0] : ram_obfs_value[1]);
+        }
+#endif
     }
 
     bootloader_munmap(data);
@@ -264,13 +293,14 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     }
 
     uint32_t load_addr = segment->load_addr;
+    bool map_segment = should_map(load_addr);
 
     /* Check that flash cache mapped segment aligns correctly from flash to its mapped address,
        relative to the 64KB page mapping size.
     */
     ESP_LOGV(TAG, "segment %d map_segment %d segment_data_offs 0x%x load_addr 0x%x",
              index, map_segment, segment_data_offs, load_addr);
-    if (should_map(load_addr)
+    if (map_segment
         && ((segment_data_offs % SPI_FLASH_MMU_PAGE_SIZE) != (load_addr % SPI_FLASH_MMU_PAGE_SIZE))) {
         if (!silent) {
             ESP_LOGE(TAG, "Segment %d has load address 0x%08x, doesn't match segment data at 0x%08x",
