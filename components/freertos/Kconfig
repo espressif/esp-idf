@@ -35,7 +35,8 @@ endchoice
 config FREERTOS_HZ
     int "Tick rate (Hz)"
     range 1 1000
-    default 100
+    default 1000 if PLATFORM_UPDATE < 2
+    default 100 if PLATFORM_UPDATE >= 2
     help
         Select the tick rate at which FreeRTOS does pre-emptive context switching.
 
