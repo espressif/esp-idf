@@ -69,8 +69,8 @@ typedef struct
     int fd_offset;  /*!< file descriptor offset, determined by the FS driver */
     int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR or ESP_VFS_FLAG_DEFAULT */
     union {
-        size_t (*write_p)(void* p, int fd, const void * data, size_t size);
-        size_t (*write)(int fd, const void * data, size_t size);
+        ssize_t (*write_p)(void* p, int fd, const void * data, size_t size);
+        ssize_t (*write)(int fd, const void * data, size_t size);
     };
     union {
         off_t (*lseek_p)(void* p, int fd, off_t size, int mode);

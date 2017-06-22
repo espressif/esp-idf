@@ -37,7 +37,7 @@ Depending on the way FS driver declares its APIs, either ``read``, ``write``, et
 
 Case 1: API functions are declared without an extra context pointer (FS driver is a singleton)::
 
-    size_t myfs_write(int fd, const void * data, size_t size);
+    ssize_t myfs_write(int fd, const void * data, size_t size);
 
     // In definition of esp_vfs_t:
         .flags = ESP_VFS_FLAG_DEFAULT,
@@ -49,7 +49,7 @@ Case 1: API functions are declared without an extra context pointer (FS driver i
 
 Case 2: API functions are declared with an extra context pointer (FS driver supports multiple instances)::
 
-    size_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
+    ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
     // In definition of esp_vfs_t:
         .flags = ESP_VFS_FLAG_CONTEXT_PTR,

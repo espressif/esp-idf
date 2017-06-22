@@ -47,7 +47,7 @@ static void IRAM_ATTR uart_tx_char(uart_dev_t* uart, int c)
 }
 
 
-static size_t IRAM_ATTR uart_write(int fd, const void * data, size_t size)
+static ssize_t IRAM_ATTR uart_write(int fd, const void * data, size_t size)
 {
     assert(fd >=0 && fd < 3);
     const char *data_c = (const char *)data;
