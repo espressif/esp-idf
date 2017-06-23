@@ -133,7 +133,7 @@ Component Makefiles
 
 Each project contains one or more components, which can either be part of esp-idf or added from other component directories.
 
-A component is any directory that contains a `component.mk` file [#f1]_.
+A component is any directory that contains a ``component.mk`` file.
 
 Searching for Components
 ------------------------
@@ -248,10 +248,15 @@ The following variables can be set inside ``component.mk`` to control the build 
   directory, of any files that are generated using custom make rules
   in the component.mk file and which need to be removed as part of
   ``make clean``. See `Source Code Generation` for an example.
-- ``COMPONENT_OWNBUILDTARGET`` & `COMPONENT_OWNCLEANTARGET`: These
+- ``COMPONENT_OWNBUILDTARGET`` & ``COMPONENT_OWNCLEANTARGET``: These
   targets allow you to fully override the default build behaviour for
   the component. See `Fully Overriding The Component Makefile` for
   more details.
+- ``COMPONENT_CONFIG_ONLY``: If set, this flag indicates that the component
+  produces no built output at all (ie ``COMPONENT_LIBRARY`` is not built),
+  and most other component variables are ignored. This flag is used for IDF
+  internal components which contain only ``KConfig.projbuild`` and/or
+  ``Makefile.projbuild`` files to configure the project, but no source files.
 - ``CFLAGS``: Flags passed to the C compiler. A default set of
   ``CFLAGS`` is defined based on project settings. Component-specific
   additions can be made via ``CFLAGS +=``. It is also possible
@@ -369,11 +374,15 @@ Take care when setting variables or targets in this file. As the values are incl
 KConfig.projbuild
 ^^^^^^^^^^^^^^^^^
 
-This is an equivalent to `Makefile.projbuild` for `component configuration` KConfig files. If you want to include
+This is an equivalent to ``Makefile.projbuild`` for `component configuration` KConfig files. If you want to include
 configuration options at the top-level of menuconfig, rather than inside the "Component Configuration" sub-menu, then these can be defined in the KConfig.projbuild file alongside the ``component.mk`` file.
 
 Take care when adding configuration values in this file, as they will be included across the entire project configuration. Where possible, it's generally better to create a KConfig file for `component configuration`.
 
+Configuration-Only Components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some special components which contain no source files, only ``Kconfig.projbuild`` and ``Makefile.projbuild``, may set the flag ``COMPONENT_CONFIG_ONLY`` in the component.mk file. If this flag is set, most other component variables are ignored and no build step is run for the component.
 
 Example Component Makefiles
 ---------------------------
@@ -552,12 +561,11 @@ target. The build target can do anything as long as it creates
 $(COMPONENT_LIBRARY) for the project make process to link into the app binary.
 
 (Actually, even this is not strictly necessary - if the COMPONENT_ADD_LDFLAGS variable
-is set then the component can instruct the linker to link other binaries instead.)
+is overridden then the component can instruct the linker to link other binaries instead.)
 
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _GNU Make Manual: https://www.gnu.org/software/make/manual/make.html
-.. [#f1] Actually, some components in esp-idf are "pure configuration" components that don't have a component.mk file, only a Makefile.projbuild and/or Kconfig.projbuild file. However, these components are unusual and most components have a component.mk file. A component must have at least one of these three files.
 
 
 Custom sdkconfig defaults
@@ -575,7 +583,7 @@ There're some scenarios that we want to flash the target board without IDF. For 
 
     print_flash_cmd:
         echo $(ESPTOOL_WRITE_FLASH_OPTIONS) $(ESPTOOL_ALL_FLASH_ARGS) | sed -e 's:'$(PWD)/build/'::g'
-    
+
 the original ESPTOOL_ALL_FLASH_ARGS are absolute file name. Usually we want to save relative file name so we can move the bin folder to somewhere else. For this case we can use ``sed`` to convert to relative file name, like what we did in the example above.
 
 When running ``make print_flash_cmd``, it will print the flash arguments::
@@ -586,3 +594,11 @@ Then use flash arguments as the arguemnts for esptool write_flash arguments::
 
     python esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader/bootloader.bin 0x10000 example_app.bin 0x8000 partition_table_unit_test_app.bin
 
+Building the Bootloader
+=======================
+
+The bootloader is built by default as part of "make all", or can be built standalone via "make bootloader-clean". There is also "make bootloader-list-components" to see the components included in the bootloader build.
+
+The component in IDF components/bootloader is special, as the second stage bootloader is a separate .ELF and .BIN file to the main project. However it shares its configuration and build directory with the main project.
+
+This is accomplished by adding a subproject under components/bootloader/subproject. This subproject has its own Makefile, but it expects to be called from the project's own Makefile via some glue in the components/bootloader/Makefile.projectbuild file. See these files for more details.
