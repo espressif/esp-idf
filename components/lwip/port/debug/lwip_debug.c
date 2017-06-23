@@ -111,7 +111,7 @@ static void dbg_lwip_tcp_pcb_one_show(struct tcp_pcb* pcb)
     DBG_LWIP_SEG_SHOW(seg);
 
 #if TCP_QUEUE_OOSEQ
-    ESP_LWIP_LOGI("ooseq semengts:");
+    ESP_LWIP_LOGI("ooseq segments:");
     seg = pcb->ooseq;
     DBG_LWIP_SEG_SHOW(seg);
 #endif
