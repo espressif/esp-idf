@@ -34,7 +34,6 @@ typedef struct {
     uint16_t svc_start_hdl;
     esp_bt_uuid_t svc_uuid;
     bool        is_tab_creat_svc;
-    bool      is_use_svc;
     uint8_t   num_handle;
     uint8_t   handle_idx;
     uint16_t handles[ESP_GATT_ATTR_HANDLE_MAX];
@@ -257,26 +256,15 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                 esp_srvc_id.id.inst_id = srvc_inst_id;
                 btc_gatts_uuid_format_convert(&esp_srvc_id.id.uuid,gatts_attr_db[i].att_desc.length,
                                               gatts_attr_db[i].att_desc.value);
-    
+
                 btc_to_bta_srvc_id(&srvc_id, &esp_srvc_id);
-                if (btc_creat_tab_env.is_use_svc != true) {
-                    BTA_GATTS_CreateService(gatts_if, &srvc_id.id.uuid,
-                                            srvc_inst_id, max_nb_attr, true);
-                    btc_creat_tab_env.is_use_svc = true;
-                } else {
-                    LOG_ERROR("Each service table can only created one primary service.");
-                    param.add_attr_tab.status = ESP_GATT_ERROR;
-                    btc_gatts_cb_to_app(ESP_GATTS_CREAT_ATTR_TAB_EVT, gatts_if, &param);
-                    //reset the env after sent the data to app
-                    memset(&btc_creat_tab_env, 0, sizeof(esp_btc_creat_tab_t));
+                BTA_GATTS_CreateService(gatts_if, &srvc_id.id.uuid,
+                                        srvc_inst_id, max_nb_attr, true);
+                if (future_await(future_p) == FUTURE_FAIL) {
+                    LOG_ERROR("%s failed\n", __func__);
                     return;
                 }
-                
-                 if (future_await(future_p) == FUTURE_FAIL) {
-                        LOG_ERROR("%s failed\n", __func__);
-                        return;
-                        }
-                    break;
+                break;
             }
             case ESP_GATT_UUID_SEC_SERVICE:{
                 tBTA_GATT_SRVC_ID srvc_id;
@@ -286,22 +274,12 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                 btc_gatts_uuid_format_convert(&esp_srvc_id.id.uuid,gatts_attr_db[i].att_desc.uuid_length,
                                               gatts_attr_db[i].att_desc.uuid_p);
                 btc_to_bta_srvc_id(&srvc_id, &esp_srvc_id);
-                if (btc_creat_tab_env.is_use_svc != true) {
                     BTA_GATTS_CreateService(gatts_if, &srvc_id.id.uuid,
                                             srvc_inst_id, max_nb_attr, false);
-                    btc_creat_tab_env.is_use_svc = true;
-                } else {
-                    LOG_ERROR("Each service table can only created one secondary service.");
-                    param.add_attr_tab.status = ESP_GATT_ERROR;
-                    btc_gatts_cb_to_app(ESP_GATTS_CREAT_ATTR_TAB_EVT, gatts_if, &param);
-                    //reset the env after sent the data to app
-                    memset(&btc_creat_tab_env, 0, sizeof(esp_btc_creat_tab_t));
+                if (future_await(future_p) == FUTURE_FAIL) {
+                    LOG_ERROR("%s failed\n", __func__);
                     return;
                 }
-                if (future_await(future_p) == FUTURE_FAIL) {
-                        LOG_ERROR("%s failed\n", __func__);
-                        return;
-                        }
                 break;
             }
             case ESP_GATT_UUID_INCLUDE_SERVICE:{
@@ -572,7 +550,6 @@ static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         }
 
         future_ready(btc_creat_tab_env.complete_future, FUTURE_SUCCESS);
-        return;
     }
     status = btc_transfer_context(&msg, p_data,
                                   sizeof(tBTA_GATTS), btc_gatts_cb_param_copy_req);
