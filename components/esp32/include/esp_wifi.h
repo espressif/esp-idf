@@ -104,6 +104,8 @@ typedef struct {
     int                    ampdu_enable;           /**< WiFi AMPDU feature enable flag */
     int                    nvs_enable;             /**< WiFi NVS flash enable flag */
     int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
+    int                    tx_ba_win;              /**< WiFi Block Ack TX window size */
+    int                    rx_ba_win;              /**< WiFi Block Ack RX window size */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -149,6 +151,8 @@ typedef struct {
     .ampdu_enable = WIFI_AMPDU_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
+    .tx_ba_win = CONFIG_ESP32_WIFI_TX_BA_WIN,\
+    .rx_ba_win = CONFIG_ESP32_WIFI_RX_BA_WIN,\
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 #else
