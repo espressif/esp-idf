@@ -227,6 +227,31 @@ void test_fatfs_mkdir_rmdir(const char* filename_prefix)
     TEST_ASSERT_EQUAL(0, rmdir(name_dir2));
 }
 
+void test_fatfs_can_opendir(const char* path)
+{
+    char name_dir_file[64];
+    const char * file_name = "test_opd.txt";
+    snprintf(name_dir_file, sizeof(name_dir_file), "%s/%s", path, file_name);
+    unlink(name_dir_file);
+    test_fatfs_create_file_with_text(name_dir_file, "test_opendir\n");
+    DIR* dir = opendir(path);
+    TEST_ASSERT_NOT_NULL(dir);
+    bool found = false;
+    while (true) {
+        struct dirent* de = readdir(dir);
+        if (!de) {
+            break;
+        }
+        if (strcasecmp(de->d_name, file_name) == 0) {
+            found = true;
+            break;
+        }
+    }
+    TEST_ASSERT_TRUE(found);
+    TEST_ASSERT_EQUAL(0, closedir(dir));
+    unlink(name_dir_file);
+}
+
 void test_fatfs_opendir_readdir_rewinddir(const char* dir_prefix)
 {
     char name_dir_inner_file[64];
