@@ -1,0 +1,1780 @@
+test cases:
+- ID: BTSTK_GAP_01001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP param device name test
+  summary: ble set ascii device name
+  steps: |
+    1. DUT1 set ascii device name
+    2. stop advertising
+    3. config scan response and start advertising
+    4. DUT2 do active scan
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. device name in scan result
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 3"
+    - ["R SSC2 P <dut1_ble_name>"]
+- ID: BTSTK_GAP_01002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP param device name test
+  summary: ble set non-ascii device name
+  steps: |
+    1. DUT1 set non-ascii device name
+    2. stop advertising
+    3. config scan response and start advertising
+    4. DUT2 do active scan
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. device name in scan result
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name_hex>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 3"
+    - ["R SSC2 P <dut1_ble_name_hex>"]
+- ID: BTSTK_GAP_01003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP param device name test
+  summary: ble set long device name
+  steps: |
+    1. DUT1 set 32 byte device name A
+    2. stop advertising
+    3. config scan response and start advertising
+    4. DUT2 do active scan
+    5. DUT1 set 33 bytes device name
+    6. stop advertising
+    7. config scan response and start advertising
+    8. DUT2 do active scan
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. DUT1 mac in scan result (device name is too long)
+    5. failed
+    6. succeed
+    7. succeed
+    8. DUT1 mac in scan result (device name is too long)
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name_32>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0 -s 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 3"
+    - ["R SSC2 P <dut1_bt_mac>"]
+  - - "SSC SSC1 ble -S -z name -n 123456789012345678901234567890123"
+    - ["R SSC1 C +BLE:ERROR"]
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0 -s 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 3"
+    - ["R SSC2 P <dut1_bt_mac>"]
+- ID: BTSTK_GAP_02001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP config advertising data
+  summary: ble set advertising data / scan response include name
+  steps: |
+    1. DUT1 stop advertise and set short device name
+    2. DUT1 set include device name for adv data and scan response
+    3. DUT1 start advertising
+    4. PC do active scan and capture advertising report
+    5. DUT1 stop advertising
+    6. DUT1 set not include device name for adv data and scan response
+    7. DUT1 start advertising
+    8. PC do active scan and capture advertising report
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. get complete device name in ADV_IND and SCAN_RSP
+    5. succeed
+    6. succeed
+    7. succeed
+    8. do not have complete device name in ADV_IND and SCAN_RSP
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v2 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -n 1 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.NameComplete=<dut1_ble_name>)'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.NameComplete=<dut1_ble_name>)'
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -n 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(!HCIEvent.data_0.NameComplete)'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(!HCIEvent.data_0.NameComplete)'
+- ID: BTSTK_GAP_02002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP config advertising data
+  summary: ble set advertising data / scan response include Tx power
+  steps: |
+    1. DUT1 stop advertise and set short device name
+    2. DUT1 set include Tx power for adv data and scan response
+    3. DUT1 start advertising
+    4. PC do active scan and capture advertising report
+    5. DUT1 stop advertising
+    6. DUT1 set not include Tx power for adv data and scan response
+    7. DUT1 start advertising
+    8. PC do active scan and capture advertising report
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. get Tx power in ADV_IND and SCAN_RSP
+    5. succeed
+    6. succeed
+    7. succeed
+    8. do not have Tx power in ADV_IND and SCAN_RSP
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v2 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -x 1 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.TxPower="")'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.TxPower="")'
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -x 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(!HCIEvent.data_0.TxPower)'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(!HCIEvent.data_0.TxPower)'
+- ID: BTSTK_GAP_02003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP config advertising data
+  summary: ble set advertising data / scan response adv interval
+  steps: |
+    1. DUT1 stop advertise and set short device name
+    2. DUT1 set max interval 0x40 min interval 0x20 for adv data and scan response
+    3. DUT1 start advertising
+    4. PC do active scan and capture advertising report
+    5. DUT1 stop advertising
+    6. DUT1 set max interval 0x400 min interval 0x200 for adv data and scan response
+    7. DUT1 start advertising
+    8. PC do active scan and capture advertising report
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. get interval 0x40 0x20 in ADV_IND and SCAN_RSP
+    5. succeed
+    6. succeed
+    7. succeed
+    8. get interval 0x400 0x200 in ADV_IND and SCAN_RSP
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v2 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -i 0x20-0x40 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.SlaveConnIntervalRange="0x0020-0x0040")'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.SlaveConnIntervalRange="0x0020-0x0040")'
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -i 0x200-0x400 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.SlaveConnIntervalRange="0x0200-0x0400")'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.SlaveConnIntervalRange="0x0200-0x0400")'
+- ID: BTSTK_GAP_02004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP config advertising data
+  summary: ble set advertising data / scan response appearance
+  steps: |
+    1. DUT1 stop advertise and set short device name
+    2. DUT1 set appearance to 0 for adv data and scan response
+    3. DUT1 start advertising
+    4. PC do active scan and capture advertising report
+    5. DUT1 stop advertising
+    6. DUT1 set appearance to 1 for adv data and scan response
+    7. DUT1 start advertising
+    8. PC do active scan and capture advertising report
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. do not have appearance in ADV_IND and SCAN_RSP
+    5. succeed
+    6. succeed
+    7. succeed
+    8. get appearance 1 in ADV_IND and SCAN_RSP
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v2 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -a 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(!HCIEvent.data_0.Appearance)'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(!HCIEvent.data_0.Appearance)'
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -a 1 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.Appearance="0x01")'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.Appearance="0x01")'
+- ID: BTSTK_GAP_02005
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP config advertising data
+  summary: ble set advertising data / scan response manufacturer data
+  steps: |
+    1. DUT1 stop advertise and set short device name
+    2. DUT1 set manufacturer to 0x12345678 for adv data and scan response
+    3. DUT1 start advertising
+    4. PC do active scan and capture advertising report
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. get manufacturer data 0x12345678 in ADV_IND and SCAN_RSP
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v2 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -m 0x12345678 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.ManufacturerSpecificData="0x12345678")'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.ManufacturerSpecificData="0x12345678")'
+- ID: BTSTK_GAP_02006
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP config advertising data
+  summary: ble set advertising data / scan response service data
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 set advertising data and scan response service data 0x1234123456 and not include device name
+    3. DUT1 start advertising
+    4. PC do active scan and capture advertising report
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. get ServiceData16BitUUID 0x1234123456 in ADV_IND and SCAN_RSP
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v2 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -n 0 -d 0x1234123456 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.ServiceData16BitUUID="1234123456")'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.ServiceData16BitUUID="1234123456")'
+- ID: BTSTK_GAP_02007
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP config advertising data
+  summary: ble set advertising data / scan response service uuid list
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 set advertising data and scan response not include name, service uuid list 0xABCD,ABCDDCBA,12349B5F8000008000100000ABCD0000
+    3. DUT1 start advertising
+    4. PC do active scan and capture advertising report
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. get Complete16BitServiceUUID 0xABCD Complete32BitServiceUUID 0xABCDDCBA
+    and Complete128BitServiceUUID 0x12349B5F8000008000100000ABCD0000 in ADV_IND and SCAN_RSP
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v2 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -n 0 -x 0 -i 0x00-0x00 -s ABCD,ABCDDCBA,12349B5F8000008000100000ABCD0000 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.Complete16BitServiceUUID="ABCD")(HCIEvent.data_0.Complete32BitServiceUUID="ABCDDCBA")(HCIEvent.data_0.Complete128BitServiceUUID="12349B5F8000008000100000ABCD0000")'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.Complete16BitServiceUUID="ABCD")(HCIEvent.data_0.Complete32BitServiceUUID="ABCDDCBA")(HCIEvent.data_0.Complete128BitServiceUUID="12349B5F8000008000100000ABCD0000")'
+- ID: BTSTK_GAP_03001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set advertise param
+  summary: ble set adv parameter adv_type
+  steps: |
+    1. DUT1 stop advertise and set short device name
+    2. DUT1 start adv with adv_type ADV_IND
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with adv_type ADV_TYPE_DIRECT_IND_HIGH
+    5. repeat step 1-3 with adv_type ADV_TYPE_SCAN_IND
+    6. repeat step 1-3 with adv_type ADV_TYPE_NONCONN_IND
+    7. repeat step 1-3 with adv_type ADV_TYPE_DIRECT_IND_LOW
+  expected result: |
+    1. succeed
+    2. succeed
+    3. get ADV_IND with DUT1 BT MAC
+    4. get ADV_DIRECT_IND with DUT1 BT MAC
+    5. get ADV_SCAN_IND with DUT1 BT MAC
+    6. get ADV_NONCONN_IND with DUT1 BT MAC
+    7. can not get ADV_DIRECT_IND with DUT1 BT MAC
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -D -z start -t 0"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+  - - "SSC SSC1 bleadv -D -z start -t 1 -y 0 -b <hci_nic_mac>"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_DIRECT_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+  - - "SSC SSC1 bleadv -L -c 0 -i 0x00B0-0x0200 -t 3"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z start -t 2 -i 0x00B0-0x0200"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_SCAN_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+  - - "SSC SSC1 bleadv -D -z start -t 3 -i 0x00B0-0x0200"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_NONCONN_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -i 0x0640-0x0780 -t 3"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z start -t 4 -i 0x0640-0x0780 -y 0 -b <hci_nic_mac>"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 3 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.address_0!=<dut1_bt_mac>)'
+- ID: BTSTK_GAP_03002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set advertise param
+  summary: ble set adv parameter channel map
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 start adv on channel 37
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with channel map 38, 39, all
+    4. repeat step 1-3 with channel map not valid
+  expected result: |
+    1. succeed
+    2. succeed
+    3. get ADV_IND with DUT1 BT MAC
+    4. get ADV_IND with DUT1 BT MAC
+    5. can not get ADV_IND with DUT1 BT MAC
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - LOOP 6 3 "[1,2,4,7,8,9]" "['=']*4+['!=']*2"
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -D -z start -t 0 -h {%d}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0{%s}<dut1_bt_mac>)'
+- ID: BTSTK_GAP_03003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set advertise param
+  summary: ble set adv parameter own address type
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 start adv with own address type public
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with own address type random, rpa_public, rpa_random
+    5. repeat step 1-3 with channel map not valid
+  expected result: |
+    1. succeed
+    2. succeed
+    3. get ADV_IND with DUT1 BT MAC
+    4. get ADV_IND with DUT1 BT MAC
+    5. can not get ADV_IND with DUT1 BT MAC
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - LOOP 4 3 "[0,2,1,3]" "['PDU','PDU','NPDU','NPDU']"
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -D -z start -t 0 -o {%d}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.data_0.NameComplete=<dut1_ble_name>)(HCIEvent.address_0=<dut1_bt_mac>)'
+- ID: BTSTK_GAP_03004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set advertise param
+  summary: ble set adv parameter peer address and peer address type
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 start adv with adv type DIRECT_IND_HIGH, peer address type public and peer address as <hci_nic_mac>
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with adv type DIRECT_IND_HIGH, peer address type random and peer address as <hci_nic_mac>
+  expected result: |
+    1. succeed
+    2. succeed
+    3. get ADV_IND with DUT1 name DUT1 BT MAC
+    4. get ADV_IND with DUT1 name and DUT1 BT MAC
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - LOOP 2 2 "[0,1]" "['=','!=']"
+    - [""]
+  - - "SSC SSC1 bleadv -D -z start -t 1 -y {%d} -b <hci_nic_mac>"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.address_0{%s}<dut1_bt_mac>)'
+- ID: BTSTK_GAP_03005
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set advertise param
+  summary: ble set adv parameter adv interval
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 start adv with adv interval 0x20-0x20 on channel 1
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with adv interval 0x40-0x40, 0x60-0x60
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate adv intervals, within the interval range in adv param
+    4. calculate adv intervals, within the interval range in adv param
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - "BLEFunction/AdvInterval"
+  - - interval_list = ["0x0020-0x0020", "0x0040-0x0040", "0x0060-0x0060"]
+    - ['']
+  - - deviation = 0.3
+    - ['']
+- ID: BTSTK_GAP_03006
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set advertise param
+  summary: ble set paramters for SCAN_IND
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 set incorrect adv interval for SCAN_IND
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with correct adv interval
+  expected result: |
+    1. succeed
+    2. succeed
+    3. can not get SCAN_IND with DUT1 BT MAC
+    4. get SCAN_IND with DUT1 BT MAC
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['NPDU','PDU']"
+    - [""]
+  - - "SSC SSC1 bleadv -D -z start -t 2 -i {%s}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+- ID: BTSTK_GAP_03007
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set advertise param
+  summary: ble set paramters for NONCONN_IND
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 set incorrect adv interval for NONCONN_IND
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with correct adv interval
+  expected result: |
+    1. succeed
+    2. succeed
+    3. can not get SCAN_IND with DUT1 BT MAC
+    4. get SCAN_IND with DUT1 BT MAC
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-03-01)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+    - ['R PC_COM C +NIC_START:OK']
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['NPDU','PDU']"
+    - [""]
+  - - "SSC SSC1 bleadv -D -z start -t 3 -i {%s}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="NONCONN_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+- ID: BTSTK_GAP_04001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set scan param
+  summary: ble set scan type
+  steps: |
+    1. stop advertise and set short device name
+    2. DUT1 set adv data with manufacturer data A
+    3. DUT1 set scan response data with manufacturer data B
+    4. DUT2 do passive scan
+    5. DUT2 do active scan
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. get manufacturer data A
+    5. get manufacturer data B
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -R -t 1 -r 0x15FF1011121314151617181910111213141516171819"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - - "SSC SSC1 bleadv -R -t 2 -r 0x020AEB"
+    - ["R SSC1 C +BLEADV:SetScanRes,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0 -s 0"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 3 -e 2"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1011121314151617181910111213141516171819"%%(<dut1_bt_mac>)'
+      - 'R SSC2 NRE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>) C Complete'
+  - - "SSC SSC2 blescan -D -z stop"
+    - ['R SSC2 C +BLESCAN']
+  - - "SSC SSC2 blescan -L -c 0 -s 1"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 3 -e 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1011121314151617181910111213141516171819"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+- ID: BTSTK_GAP_04002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set scan param
+  summary: ble set scan own address type (not test if own address work as expected)
+  steps: |
+    1. DUT1 start advertising
+    2. DUT2 set own addr type (public, random, rpa_public, rpa_random)
+    3. DUT2 do active scan
+    4. DUT2 set invalid own addr type
+  expected result: |
+    1. succeed
+    2. succeed
+    3. able to scan DUT1
+    4. error
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetScanRes,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - LOOP 4 2 "[0,1,2,3]"
+    - ['']
+  - - "SSC SSC2 blescan -L -c 0 -s 1 -o {%d}"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 1"
+    - ['R SSC2 P <dut1_bt_mac> C Complete']
+  - - "SSC SSC2 blescan -L -c 0 -o 4"
+    - ["R SSC2 C +BLESCAN:SetScanParam,ERROR"]
+- ID: BTSTK_GAP_04003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set scan param
+  summary: ble set scan interval (will not test if scan interval work as expected)
+  steps: |
+    1. DUT2 start advertising
+    2. DUT1 set scan interval 0x0004
+    3. DUT1 set scan interval 0x4000
+    4. DUT1 set invalid scan interval
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. error
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleadv -D -z start"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0004"
+    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4000"
+    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0003"
+    - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4001"
+    - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
+- ID: BTSTK_GAP_04004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP set scan param
+  summary: ble set scan window (will not test if scan window work as excepted)
+  steps: |
+    1. DUT2 set scan interval 0x0004
+    2. DUT2 set scan interval 0x4000
+    3. DUT2 set scan interval 0x0003
+    4. DUT2 set scan interval 0x4001
+  expected result: |
+    1. succeed
+    2. succeed
+    3. fail
+    4. fail
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 blescan -L -c 0 -w 0x0004"
+    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC1 blescan -L -c 0 -w 0x4000"
+    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC1 blescan -L -c 0 -w 0x0003"
+    - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
+  - - "SSC SSC1 blescan -L -c 0 -w 0x4001"
+    - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
+- ID: BTSTK_GAP_05001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP start stop adv / scan
+  summary: stop and start adv in wrong state
+  steps: |
+    1. DUT1 stop adv
+    2. DUT1 stop adv
+    3. DUT2 do passive scan
+    4. DUT1 start adv
+    5. DUT1 start adv
+    6. DUT2 do passive scan
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 not in scan result
+    4. succeed
+    5. succeed
+    6. DUT1 in scan result
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 1"
+    - ["R SSC2 NP <dut1_bt_mac> C Complete"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 1"
+    - ["R SSC2 P <dut1_bt_mac> C Complete"]
+- ID: BTSTK_GAP_05002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP start stop adv / scan
+  summary: cancel scan when scanning or not scanning
+  steps: |
+    1. DUT1 start scanning for 3 seconds
+    2. DUT1 stop scanning
+    3. DUT1 stop scanning
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 blescan -L -c 0"
+    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC1 blescan -D -z start -t 3"
+    - ["R SSC1 C +BLESCAN:OK"]
+  - - "SSC SSC1 blescan -D -z stop"
+    - ["R SSC1 C +BLESCAN:OK"]
+  - - "SSC SSC1 blescan -D -z stop"
+    - ["R SSC1 C +BLESCAN:OK"]
+- ID: BTSTK_GAP_06001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP connect / disconnect
+  summary: ble connect as "client" and "server"
+  steps: |
+    1. DUT1 connect to DUT2 as "client"
+    2. DUT1 disconnected with DUT2
+    3. DUT1 start gatt server app
+    4. DUT1 connect to DUT2 as "server"
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - "SSC SSC1 bleconn -D -p 0x10"
+    - ['R SSC1 C +BLE:CLOSE,OK']
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ['R SSC1 C +GATTS:LoadProfile,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC1 bleconn -C -p 0xA0 -a <dut2_bt_mac> -z server"
+    - ['R SSC1 C +BLE:GattsConnect']
+- ID: BTSTK_GAP_06002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP connect / disconnect
+  summary: ble disconnect as "client" and "server"
+  steps: |
+    1. DUT1 connect to DUT2 as "client"
+    2. DUT1 disconnected with DUT2 as "client"
+    3. DUT1 start gatt server app
+    4. DUT1 connect to DUT2 as client
+    5. DUT1 disconnect with DUT2 as "server"
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - "SSC SSC1 bleconn -D -p 0x10"
+    - ['R SSC1 C +BLE:CLOSE,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ['R SSC1 C +GATTS:LoadProfile,OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - "SSC SSC1 bleconn -D -p 0x10"
+    - ['R SSC1 C +BLE:CLOSE,OK']
+- ID: BTSTK_GAP_06003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP connect / disconnect
+  summary: ble connect/disconnect to same connection multiple times
+  steps: |
+    1. DUT1 connect to DUT2 as "client"
+    2. DUT1 start gatt server app
+    3. DUT1 connect to DUT2 as "client" again
+    4. DUT1 connect to DUT2 as "server"
+    5. DUT1 disconnected with DUT2 as "client"
+    6. DUT1 disconnected with DUT2 as "server"
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. succeed
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ['R SSC1 C +GATTS:LoadProfile,OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLE:GattcOpen,OK']
+  - - "SSC SSC1 bleconn -C -p 0xA0 -a <dut2_bt_mac> -z server"
+    - ['R SSC1 C +BLE:GattsConnect']
+  - - "SSC SSC1 bleconn -D -p 0x10"
+    - ['R SSC1 C +BLE:CLOSE,OK']
+  - - "SSC SSC1 bleconn -D -p 0xA0 -z server"
+    - ['R SSC1 RE +BLE:GattsClose,OK']
+- ID: BTSTK_GAP_06004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP connect / disconnect
+  summary: ble connect to invalid address
+  steps: |
+    1. DUT1 connect to invalid address
+    2. DUT1 connect to DUT2
+  expected result: |
+    1. failed
+    2. succeed
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -C -p 0x10 -a 24:0a:c4:04:26:50"
+    - ['R SSC1 C +BLECONN:OK']
+  - - DELAY 30
+    - ['R SSC1 C +BLE:GattcOpen,ERROR']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+- ID: BTSTK_GAP_06005
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP connect / disconnect
+  summary: ble connect/disconnect event to active app
+  steps: |
+    1. DUT1, DUT2 create gatts app
+    2. DUT1 connect to DUT2 as "client"
+    3. DUT1 do disconnect as "server"
+  expected result: |
+    1. succeed
+    2. succeed, DUT1 and DUT2 gatts get connect event
+    3. DUT1 and DUT2 gatts get disconnect event
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] gatts -S -z load -p 0xA0"
+    - ['R SSC[1-2] C +GATTS:LoadProfile,OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect C +BLE:GattsConnect', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC1 bleconn -D -p 0xA0 -z server"
+    - ['P SSC1 C +BLE:GattsClose']
+- ID: BTSTK_GAP_07001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters by master
+  steps: |
+    1. DUT1 update connection parameters
+  expected result: |
+    1. succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLECONN:OK']
+- ID: BTSTK_GAP_07002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters by slave
+  steps: |
+    1. DUT2 update connection parameters
+  expected result: |
+    1. succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleconn -S -a <dut1_bt_mac>"
+    - ['R SSC2 C +BLECONN:OK']
+- ID: BTSTK_GAP_07003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP update connect parameters
+  summary: update invalid connect parameters
+  steps: |
+    1. DUT1 update invalid interval
+    2. DUT1 update invalid latency
+    3. DUT1 update invalid timeout
+  expected result: |
+    1. fail
+    2. fail
+    3. fail
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac> -i 0-0xFFFF"
+    - ['R SSC1 C +BLECONN:ERROR']
+  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac> -l 0x1F4"
+    - ['R SSC1 C +BLECONN:ERROR']
+  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac> -t 0x08"
+    - ['R SSC1 C +BLECONN:ERROR']
+  - - "SSC SSC1 bleconn -S -a <dut2_bt_mac> -t 0xC81"
+    - ['R SSC1 C +BLECONN:ERROR']
+- ID: BTSTK_GAP_08001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP operation without init/enable BT or register callback
+  summary: do adv, scan, set name when BT is deinit
+  steps: |
+    1. DUT1 do adv
+    2. DUT1 do scan
+    3. DUT2 do set name
+  expected result: |
+    1. fail
+    2. fail
+    3. fail
+  initial condition: BLE_DEINIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -L -c 0"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 blescan -L -c 0"
+    - ["R SSC1 C +BLESCAN"]
+  - - "SSC SSC1 blescan -D -z start"
+    - ["R SSC1 C +BLESCAN"]
+  - - "SSC SSC1 ble -S -z name -n abcde"
+    - ["R SSC1 C +BLE"]
+- ID: BTSTK_GAP_08002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP operation without init/enable BT or register callback
+  summary: do adv, scan, set name, conn when BT is disable
+  steps: |
+    1. DUT1 do init
+    2. DUT1 do adv
+    3. DUT1 do scan
+    4. DUT2 do set name
+  expected result: |
+    1. succeed
+    2. fail
+    3. fail
+    4. fail
+  initial condition: BLE_DEINIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bt -D -z init"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bleadv -L -c 0"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 blescan -L -c 0"
+    - ["R SSC1 C +BLESCAN"]
+  - - "SSC SSC1 blescan -D -z start"
+    - ["R SSC1 C +BLESCAN"]
+  - - "SSC SSC1 ble -S -z name -n abcde"
+    - ["R SSC1 C +BLE"]
+- ID: BTSTK_GAP_08003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP operation without init/enable BT or register callback
+  summary: do adv, scan, set name, conn when BT is enable but no callback registered
+  steps: |
+    1. DUT1 do init and enable
+    2. DUT1 do adv
+    3. DUT1 do scan
+    4. DUT2 do set name
+  expected result: |
+    1. succeed
+    2. fail
+    3. fail
+    4. fail
+  initial condition: BLE_DEINIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bt -D -z start"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bleadv -L -c 0"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 blescan -L -c 0"
+    - ["R SSC1 C +BLESCAN"]
+  - - "SSC SSC1 blescan -D -z start"
+    - ["R SSC1 C +BLESCAN"]
+  - - "SSC SSC1 ble -S -z name -n abcde"
+    - ["R SSC1 C +BLE"]
+- ID: BTSTK_GAP_09001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP processing scan data
+  summary: process scan data txp, manufacturer data, interval range, appearence, flag
+  steps: |
+    1. DUT1 set raw adv data tx power, manufacturer data, interval range, apperaence, flag
+    2. DUT1 start adv
+    3. DUT2 do active scan with extended scan data 19
+  expected result: |
+    1. succeed
+    2. succeed
+    3. scan with the correct adv data
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -R -t 1 -r 0x020AEB06FF1112131415051220004000021901020106"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1112131415"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x20004000"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,app,0x01"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,flag,0x06"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+- ID: BTSTK_GAP_09002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP processing scan data
+  summary: process scan data service UUIDs
+  steps: |
+    1. DUT1 set raw adv 16 bit Complete UUID list
+    2. DUT1 start adv
+    3. DUT2 do active scan with extended scan data
+    4. repeat step 1-3 with 16 bit incomplete UUID, 32 bit complete/incomplete UUID, 128 bit complete/incomplete UUID
+  expected result: |
+    1. succeed
+    2. succeed
+    3. scan with the correct adv data
+    4. scan with the correct adv data
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - LOOP 4 3 "['0302ABCD','0303ABCD','0504ABCDABCD','0505ABCDABCD',]" "['insrv16,0xABCD','srv16,0xABCD','insrv32,0xABCDABCD','srv32,0xABCDABCD']"
+  - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,{%s}"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+  - - LOOP 2 3 "['1106ABCDABCDABCDABCDABCDABCDABCDABCD','1107ABCDABCDABCDABCDABCDABCDABCDABCD']" "['insrv128,0xABCDABCDABCDABCDABCDABCDABCDABCD','srv128,0xABCDABCDABCDABCDABCDABCDABCDABCD']"
+  - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,{%s}"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+- ID: BTSTK_GAP_09003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP processing scan data
+  summary: process scan data service data
+  steps: |
+    1. DUT1 set raw adv 16 bit service data
+    2. DUT1 start adv
+    3. DUT2 do active scan with extended scan data
+    4. repeat step 1-3 with 32 bit service data, 128 bit service data
+  expected result: |
+    1. succeed
+    2. succeed
+    3. scan with the correct adv data
+    4. scan with the correct adv data
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - LOOP 3 3 "['0416ABCDEF','0620ABCDABCDEF','1221ABCDABCDABCDABCDABCDABCDABCDABCDEF',]" "['srvdata,0xABCDEF','srvdata32,0xABCDABCDEF','srvdata128,0xABCDABCDABCDABCDABCDABCDABCDABCDEF']"
+  - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,{%s}"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+- ID: BTSTK_GAP_09004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GAP processing scan data
+  summary: process combined adv data and scan response data
+  steps: |
+    1. DUT1 set raw adv data manufacturer data
+    2. DUT1 set scan response data tx power, interval range, apperaence, flag
+    2. DUT1 start adv
+    3. DUT2 do active scan with extended scan data 19
+  expected result: |
+    1. succeed
+    2. succeed
+    3. scan with the correct adv data
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -R -t 1 -r 0x15FF1011121314151617181910111213141516171819"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -R -t 2 -r 0x020AEB051220004000021901020106"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1011121314151617181910111213141516171819"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x20004000"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,app,0x01"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,flag,0x06"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+- ID: BTSTK_GAP_40001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'No'
+  category: Function
+  test point 1: function
+  test point 2: test if BLE work after switch off some sub modules
+  summary: GAP only test
+  steps: |
+    1. download GAP only SSC bin on both DUT
+    2. DUT1 set ascii device name
+    3. stop advertising
+    4. config scan response and start advertising
+    5. DUT2 do active scan
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. device name in scan result
+  initial condition: None
+  test environment: SSC_T2_1
+  execution time: 5
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2017-05-19)
+  CI ready: 'No'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] reboot"
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - "SSC SSC[1-2] ble -R"
+    - ["R SSC[1-2] C +BLE:OK"]
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC1 C +BLE:OK"]
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 blescan -L -c 0"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 3"
+    - ["R SSC2 P <dut1_ble_name>"]
+- ID: BTSTK_GAP_50001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'No'
+  category: Stress
+  test point 1: stress
+  test point 2: BLE GAP stress test
+  summary: BLE Connect and disconnect stress test
+  steps: |
+    1. DUT1 disconnect with DUT2
+    2. DUT2 start advertising
+    3. DUT1 connect to DUT2
+    4. do service discovery
+    5. loop step 1-4
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 5
+  module: BT Stack
+  sub module: GAP
+  version: v1 (2017-05-19)
+  CI ready: 'No'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "LOOP 1000 5"
+    - ['']
+  - - "SSC SSC1 ram"
+    - ['R SSC1 A <heap_size>:(\d+)']
+  - - "SSC SSC1 bleconn -D -z all"
+    - ['P SSC1 C +BLE:CLOSE', 'P SSC2 C +BLE:GattsDisconnect']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A000"]

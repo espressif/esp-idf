@@ -1,0 +1,302 @@
+test cases:
+- ID: BTSTK_COEXIST_0101
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE advertise co-exist with WIFI
+  summary: BLE advertise co-exist with wifi scan
+  steps: '1. DUT2 BLE do advertise in range (0x20 - 0x40)
+    2. DUT2 do wifi scan and DUT1 do BLE scan
+    3. DUT2 BLE do advertise in range (0x400 - 0x800)
+    4. DUT2 do wifi scan and DUT1 do BLE scan'
+  expected result: '1. succeed
+    2. external AP in wifi scan result,  and DUT2 in BLE scan result
+    3. succeed
+    4. external AP in wifi scan result,  and DUT2 in BLE scan result'
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: Coexist
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -L -c 0 -t 3"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z start -c 0 -i 0x20-0x40"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 op -S -o 1"
+    - ["R SSC2 C +MODE:OK"]
+  - - "SSC SSC1 blescan -L -c 0"
+    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC1 blescan -D -z start -t 2"
+    - [""]
+  - - "SSC SSC2 sta -S"
+    - ["P SSC2 P <ap_ssid>", "P SSC1 P <dut2_bt_mac> C Complete"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z start -c 0 -i 0x400-0x800"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC1 blescan -D -z start -t 2"
+    - [""]
+  - - "SSC SSC2 sta -S"
+    - ["P SSC2 P <ap_ssid>", "P SSC1 P <dut2_bt_mac>"]
+- ID: BTSTK_COEXIST_0102
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE advertise co-exist with WIFI
+  summary: BLE advertise co-exist with wifi join AP
+  steps: '1. DUT2 BLE do advertise in range (0x20 - 0x40)
+    2. DUT2 do wifi JAP and DUT1 do BLE scan
+    3. DUT2 BLE do advertise in range (0x400 - 0x800)
+    4. DUT2 do wifi JAP and DUT1 do BLE scan'
+  expected result: '1. succeed
+    2. JAP succeed,  and DUT2 in BLE scan result
+    3. succeed
+    4. JAP succeed,  and DUT2 in BLE scan result'
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: Coexist
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleadv -L -c 0 -t 3"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z start -c 0"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 op -S -o 1"
+    - ["R SSC2 C +MODE:OK"]
+  - - "SSC SSC1 blescan -L -c 0"
+    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 sta -C -s <ap_ssid> -p <ap_password>"
+    - [""]
+  - - "SSC SSC1 blescan -D -z start -t 5"
+    - ["P SSC2 C +JAP:CONNECTED", "P SSC1 P <dut2_bt_mac> C Complete"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z start -c 0 -i 0x400-0x800"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 sta -C -s <ap_ssid> -p <ap_password>"
+    - [""]
+  - - "SSC SSC1 blescan -D -z start -t 5"
+    - ["P SSC2 C +JAP:CONNECTED", "P SSC1 P <dut2_bt_mac> C Complete"]
+- ID: BTSTK_COEXIST_0103
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE advertise co-exist with WIFI
+  summary: BLE advertise co-exist with wifi connected with AP
+  steps: '1. DUT2 BLE do advertise in range (0x20 - 0x40)
+    2. DUT2 do wifi JAP
+    3. DUT1 do BLE scan
+    4. DUT2 BLE do advertise in range (0x400 - 0x800)
+    5. DUT2 do wifi JAP
+    6. DUT1 do BLE scan'
+  expected result: '1. succeed
+    2. JAP succeed
+    3. STA not disconnected with AP and DUT2 in BLE scan result
+    4. succeed
+    5. JAP succeed
+    6. STA not disconnected with AP and DUT2 in BLE scan result'
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: Coexist
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleadv -L -c 0 -t 3"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z start -c 0"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 op -S -o 1"
+    - ["R SSC2 C +MODE:OK"]
+  - - "SSC SSC1 blescan -L -c 0"
+    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 sta -C -s <ap_ssid> -p <ap_password>"
+    - ["P SSC2 C +JAP:CONNECTED"]
+  - - "SSC SSC1 blescan -D -z start -t 10"
+    - ["P SSC2 NC DISCONNECT", "P SSC1 P <dut2_bt_mac> C Complete"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 bleadv -D -z start -c 0 -i 0x400-0x800"
+    - ["R SSC2 C +BLEADV:OK"]
+  - - "SSC SSC2 sta -C -s <ap_ssid> -p <ap_password>"
+    - ["P SSC2 C +JAP:CONNECTED"]
+  - - "SSC SSC1 blescan -D -z start -t 10"
+    - ["P SSC2 NC DISCONNECT", "P SSC1 P <dut2_bt_mac> C Complete"]
+- ID: BTSTK_COEXIST_0201
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE send recv co-exist with WIFI
+  summary: BLE send recv co-exist with wifi scan
+  steps: '1. DUT1 BLE read long with interval 50 ms
+    2. DUT1 do wifi scan
+    3. DUT1 BLE read long with interval 5 ms
+    4. DUT1 do wifi scan'
+  expected result: '1. succeed
+    2. external AP in wifi scan result, read succeed
+    3. succeed
+    4. external AP in wifi scan result, read succeed'
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: Coexist
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 op -S -o 1"
+    - ["R SSC1 C +MODE:OK"]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101 -n 20 -j 50"
+    - ["P SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 sta -S"
+    - ["P SSC1 P <ap_ssid>", "P SSC1 C +GATTC:Read,OK,0010,A000,C101"]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101 -n 20 -j 5"
+    - ["P SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 sta -S"
+    - ["P SSC1 P <ap_ssid>", "P SSC1 C +GATTC:Read,OK,0010,A000,C101"]
+- ID: BTSTK_COEXIST_0202
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE send recv co-exist with WIFI
+  summary: BLE send recv co-exist with wifi join AP
+  steps: '1. DUT1 BLE read long with interval 50 ms
+    2. DUT1 do wifi JAP
+    3. DUT1 BLE read long with interval 5 ms
+    4. DUT1 do wifi JAP'
+  expected result: '1. succeed
+    2. JAP succeed, read succeed
+    3. succeed
+    4. JAP succeed, read succeed'
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: Coexist
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 op -S -o 1"
+    - ["R SSC1 C +MODE:OK"]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101 -n 20"
+    - ["P SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>"
+    - ["P SSC1 C +JAP:CONNECTED", "P SSC1 C +GATTC:Read,OK,0010,A000,C101"]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101 -n 20"
+    - ["P SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>"
+    - ["P SSC1 C +JAP:CONNECTED", "P SSC1 C +GATTC:Read,OK,0010,A000,C101"]
+- ID: BTSTK_COEXIST_0203
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE send recv co-exist with WIFI
+  summary: BLE send recv co-exist with wifi join AP
+  steps: '1. DUT1 do wifi JAP
+    2. DUT1 BLE read long with interval 50 ms
+    3. DUT1 do wifi JAP
+    4. DUT1 BLE read long with interval 5 ms'
+  expected result: '1. succeed
+    2. JAP succeed, read succeed
+    3. succeed
+    4. JAP succeed, read succeed'
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: Coexist
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 op -S -o 1"
+    - ["R SSC1 C +MODE:OK"]
+  - - "SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>"
+    - ["P SSC1 C +JAP:CONNECTED", ""]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101 -n 20"
+    - ["P SSC1 C +GATTC:Read,OK,0010,A000,C101"]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101 -n 20"
+    - ["P SSC1 C +GATTC:Read,OK,0010,A000,C101"]
+- ID: BTSTK_COEXIST_0301
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE co-exist with WIFI on all channels
+  summary: BLE co-exist with wifi when join AP on different channels
+  steps: '1. DUT1 set to AP mode, DUT2 set to STA mode, config AP on a specific channel
+    2. DUT1 starts read long char
+    3. DUT2 join DUT1 soft AP
+    4. Loop step 1-3 for all 13 channels'
+  expected result: '1. succeed
+    2. succeed
+    3. succeed
+    4. succeed'
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0.3
+  module: BT Stack
+  sub module: Coexist
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC[1-2] op -S -o [2,1]"
+    - ["P SSC[1-2] C +MODE:OK"]
+  - - 'LOOP 13 3 "range(1,14)"'
+    - [""]
+  - - "SSC SSC1 ap -S -s <target_ssid> -p <target_password> -n {%d}"
+    - ["P SSC1 C +SAP:OK"]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101 -n 20"
+    - [""]
+  - - "SSC SSC2 sta -C -s <target_ssid> -c <target_password>"
+    - ["P SSC1 C +GATTC:Read,OK,0010,A000,C101", "P SSC2 C +JAP:CONNECTED"]
