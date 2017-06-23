@@ -567,6 +567,12 @@ IT_001_08:
     - ESP32_IDF
     - SSC_T1_1
 
+IT_001_09:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_1
+
 IT_002_01:
   <<: *test_template
   tags:
@@ -586,6 +592,30 @@ IT_003_02:
     - SSC_T2_1
 
 IT_003_03:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_04:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_05:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_06:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_1
+
+IT_003_07:
   <<: *test_template
   tags:
     - ESP32_IDF
@@ -620,6 +650,12 @@ IT_008_01:
   tags:
     - ESP32_IDF
     - SSC_T2_PhyMode
+
+IT_009_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_3
 
 IT_501_01:
   <<: *test_template
