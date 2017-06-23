@@ -953,6 +953,13 @@
 #define BLE_LLT_INCLUDED    TRUE
 #endif
 
+/* Added this marco to fixed the android 7.0 will lead to update connection parameters
+   collision when the slave sent the HCI_BLE_UPD_LL_CONN_PARAMS comment to the controller
+   request the master to update connection parameters directly. */
+#ifndef BLE_SLAVE_UPD_CONN_PARAMS
+#define BLE_SLAVE_UPD_CONN_PARAMS FALSE
+#endif
+
 #ifndef ATT_INCLUDED
 #define ATT_INCLUDED         TRUE
 #endif

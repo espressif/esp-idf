@@ -215,6 +215,8 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
     res.cmd_index = cmd->opcode;
     if (cmd->opcode == MMC_STOP_TRANSMISSION) {
         res.stop_abort_cmd = 1;
+    } else if (cmd->opcode == MMC_GO_IDLE_STATE) {
+        res.send_init = 1;
     } else {
         res.wait_complete = 1;
     }

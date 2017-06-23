@@ -341,7 +341,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_LINK_UP_EVT:
     case BTA_DM_LINK_DOWN_EVT:
     case BTA_DM_HW_ERROR_EVT:
-        LOG_WARN( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
+        LOG_DEBUG( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
         break;
 #if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
     case BTA_DM_BLE_AUTH_CMPL_EVT: {
@@ -495,10 +495,10 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_SP_RMT_OOB_EVT:
     case BTA_DM_SP_KEYPRESS_EVT:
     case BTA_DM_ROLE_CHG_EVT:
-        LOG_WARN( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
+        LOG_DEBUG( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
         break;
     default:
-        LOG_WARN( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
+        LOG_DEBUG( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
         break;
     }
 

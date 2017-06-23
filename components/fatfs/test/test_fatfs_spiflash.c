@@ -125,6 +125,13 @@ TEST_CASE("(WL) can create and remove directories", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
+TEST_CASE("(WL) can opendir root directory of FS", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_can_opendir("/spiflash");
+    test_teardown();
+}
+
 TEST_CASE("(WL) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs][wear_levelling]")
 {
     test_setup();

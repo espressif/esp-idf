@@ -37,7 +37,7 @@ Depending on the way FS driver declares its APIs, either ``read``, ``write``, et
 
 Case 1: API functions are declared without an extra context pointer (FS driver is a singleton)::
 
-    size_t myfs_write(int fd, const void * data, size_t size);
+    ssize_t myfs_write(int fd, const void * data, size_t size);
 
     // In definition of esp_vfs_t:
         .flags = ESP_VFS_FLAG_DEFAULT,
@@ -49,7 +49,7 @@ Case 1: API functions are declared without an extra context pointer (FS driver i
 
 Case 2: API functions are declared with an extra context pointer (FS driver supports multiple instances)::
 
-    size_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
+    ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
     // In definition of esp_vfs_t:
         .flags = ESP_VFS_FLAG_CONTEXT_PTR,
@@ -70,15 +70,20 @@ Paths
 
 Each registered FS has a path prefix associated with it. This prefix may be considered a "mount point" of this partition.
 
-Registering mount points which have another mount point as a prefix is not supported and results in undefined behavior. For instance, the following is correct and supported:
-
-- FS 1 on /data/fs1
-- FS 2 on /data/fs2
-
-This **will not work** as expected:
+In case when mount points are nested, the mount point with the longest matching path prefix is used when opening the file. For instance, suppose that the following filesystems are registered in VFS:
 
 - FS 1 on /data
-- FS 2 on /data/fs2
+- FS 2 on /data/static
+
+Then:
+
+- FS 1 will be used when opening a file called ``/data/log.txt``
+- FS 2 will be used when opening a file called ``/data/static/index.html``
+- Even if ``/index.html"`` doesn't exist in FS 2, FS 1 will *not* be searched for ``/static/index.html``.
+
+As a general rule, mount point names must start with the path separator (``/``) and must contain at least one character after path separator. However an empty mount point name is also supported, and may be used in cases when application needs to provide "fallback" filesystem, or override VFS functionality altogether. Such filesystem will be used if no prefix matches the path given.
+
+VFS does not handle dots (``.``) in path names in any special way. VFS does not treat ``..`` as a reference to the parent directory. I.e. in the above example, using a path ``/data/static/../log.txt`` will not result in a call to FS 1 to open ``/log.txt``. Specific FS drivers (such as FATFS) may handle dots in file names differently.
 
 When opening files, FS driver will only be given relative path to files. For example:
 
