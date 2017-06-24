@@ -157,6 +157,24 @@ config MEMMAP_SPIRAM_ENABLE
 
 if MEMMAP_SPIRAM_ENABLE
 
+choice SPIRAM_CACHE_MODE
+    bool "Set FLASH and SRAM cache mode"
+    default SRAM_CACHE_SPEED_40M
+    help
+        The ESP32 can access both of the flash and sram chip by CACHE.
+        If SPI SRAM is enabled, we only support three combinations of SPI speed mode we supported now:
+        1. Flash SPI running at 40Mhz and SRAM SPI running at 40Mhz
+        2. Flash SPI running at 80Mhz and SRAM SPI running at 40Mhz
+        3. Flash SPI running at 80Mhz and SRAM SPI running at 80Mhz
+           note: If the third mode(80Mhz+80Mhz) is enabled, VSPI port will be occupied by the system, 
+                 Application code should never touch VSPI hardware in this case.
+      
+config SRAM_CACHE_SPEED_40M
+    bool "SRAM cache speed 40M"
+config SRAM_CACHE_SPEED_80M
+    bool "SRAM cache speed 80M"
+endchoice
+    
 config SPIRAM_CACHE_WORKAROUND
     bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
     default "y"

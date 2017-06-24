@@ -149,10 +149,24 @@ void IRAM_ATTR call_start_cpu0()
     }
 
 #if CONFIG_MEMMAP_SPIRAM_ENABLE
-    if ( psram_enable(PSRAM_CACHE_F40M_S40M, PSRAM_MODE) != ESP_OK) {
+    int sram_mode = 0;
+#if CONFIG_SRAM_CACHE_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_40M
+    sram_mode = PSRAM_CACHE_F40M_S40M;
+#elif CONFIG_SRAM_CACHE_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    sram_mode = PSRAM_CACHE_F80M_S40M;
+#elif CONFIG_SRAM_CACHE_SPEED_80M && CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    sram_mode = PSRAM_CACHE_F80M_S80M;
+#else
+    ESP_EARLY_LOGE(TAG, "FLASH speed can only be equal to or higher than SRAM speed while SRAM is enabled!");
+    abort();
+#endif
+    if ( psram_enable(sram_mode, PSRAM_MODE) != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "PSRAM enabled but initialization failed. Bailing out.");
         abort();
     } else {
+        ESP_EARLY_LOGI(TAG, "PSRAM mode: %s", sram_mode == PSRAM_CACHE_F40M_S40M ? "flash 40m sram 40m" : \
+                                              sram_mode == PSRAM_CACHE_F80M_S40M ? "flash 80m sram 40m" : \
+                                              sram_mode == PSRAM_CACHE_F80M_S80M ? "flash 80m sram 80m" : "ERROR");
         ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", (PSRAM_MODE==PSRAM_VADDR_MODE_EVENODD)?"even/odd (2-core)":"normal (1-core");
     }
 #endif
