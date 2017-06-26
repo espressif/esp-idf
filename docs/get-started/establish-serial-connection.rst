@@ -9,17 +9,18 @@ Connect ESP32 to PC
 
 Connect the ESP32 board to the PC using the USB cable. If device driver does not install automatically, identify USB to serial converter chip on your ESP32 board (or external converter dongle), search for drivers in internet and install them.
 
-Below are the links to drivers for ESP32 boards produced by Espressif:
+Below are the links to Windows and MacOS drivers for ESP32 boards produced by Espressif:
 
 * ESP32 Core Board - `CP210x USB to UART Bridge VCP Drivers <http://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
 * ESP32 WROVER KIT and ESP32 Demo Board - `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/D2XX.htm>`_
 
+For Linux, suitable drivers should already be bundled with the operating system.
 
 Check port on Windows
 ---------------------
 
-Check the list of identified COM ports in the Windows Device Manager. Disconnect ESP32 and connect it back, to verify which port disappears from the list and then shows back again. 
+Check the list of identified COM ports in the Windows Device Manager. Disconnect ESP32 and connect it back, to verify which port disappears from the list and then shows back again.
 
 Figures below show serial port for ESP32 DevKitC and ESP32 WROVER KIT
 
@@ -49,15 +50,15 @@ Linux ::
 
 MacOS ::
 
-    ls /dev/tty.*
+    ls /dev/cu.*
 
 
 Verify serial connection
 ------------------------
 
-Now verify is serial connection is operational. You can do it using a serial terminal program. In this example we will use `PuTTY SSH Client <http://www.putty.org/>`_ that is avilable for both Windows and Linux. You can use other serial program and set communication parameters like below.
+Now verify that the serial connection is operational. You can do this using a serial terminal program. In this example we will use `PuTTY SSH Client <http://www.putty.org/>`_ that is avilable for both Windows and Linux. You can use other serial program and set communication parameters like below.
 
-Run terminal, set identified serial port, baud rate = 115200, data bits = 8, stop bits = 1, and parity = N. Below are example screen shoots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
+Run terminal, set identified serial port, baud rate = 115200, data bits = 8, stop bits = 1, and parity = N. Below are example screen shots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
 
 .. figure:: ../_static/putty-settings-windows.png
     :align: center
@@ -99,10 +100,17 @@ Then open serial port in terminal and check, if you see any log printed out by E
 
     ...
 
-If you see some legible log, it means serial connection is working and you are ready to proceed with installation and finally upload of application to ESP32. 
+If you see some legible log, it means serial connection is working and you are ready to proceed with installation and finally upload of application to ESP32.
 
 .. note::
 
-    Close serial terminal after verification that communication is working. In next step we are going to use another application to upload ESP32. This application will not be able to access serial port while it is open in terminal.
+   For some serial port wiring configurations, the serial RTS & DTR pins need to be disabled in the terminal program before the ESP32 will boot and produce serial output. This depends on the hardware itself, most development boards (including all Espressif boards) *do not* have this issue. The issue is present if RTS & DTR are wired directly to the EN & GPIO0 pins. See the `esptool documentation`_ for more details.
+
+.. note::
+
+   Close serial terminal after verification that communication is working. In next step we are going to use another application to upload ESP32. This application will not be able to access serial port while it is open in terminal.
 
 If you got here from section :ref:`get-started-connect` when installing s/w for ESP32 development, then go back to section :ref:`get-started-configure`.
+
+
+.. _esptool documentation: https://github.com/espressif/esptool/wiki/ESP32-Boot-Mode-Selection#automatic-bootloader
