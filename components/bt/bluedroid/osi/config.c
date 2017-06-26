@@ -28,7 +28,7 @@
 #include "list.h"
 #include "bt_trace.h"
 
-#define CONFIG_FILE_MAX_SIZE      (1024)
+#define CONFIG_FILE_MAX_SIZE      (2048)
 #define CONFIG_KEY                "bt_cfg_key"
 typedef struct {
     char *key;
@@ -126,6 +126,26 @@ bool config_has_key(const config_t *config, const char *section, const char *key
     assert(key != NULL);
 
     return (entry_find(config, section, key) != NULL);
+}
+
+bool config_has_key_in_section(config_t *config, char *key, char *key_value)
+{
+    LOG_DEBUG("key = %s, value = %s", key, key_value);
+    for (const list_node_t *node = list_begin(config->sections); node != list_end(config->sections); node = list_next(node)) {
+        const section_t *section = (const section_t *)list_node(node);
+
+        for (const list_node_t *node = list_begin(section->entries); node != list_end(section->entries); node = list_next(node)) {
+            entry_t *entry = list_node(node);
+            LOG_DEBUG("entry->key = %s, entry->value = %s", entry->key, entry->value);
+            if (!strcmp(entry->key, key) && !strcmp(entry->value, key_value)) {
+                LOG_DEBUG("%s, the irk aready in the flash.", __func__);
+                section_free((void *)section);
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 int config_get_int(const config_t *config, const char *section, const char *key, int def_value)
@@ -303,8 +323,8 @@ bool config_save(const config_t *config, const char *filename)
     int w_cnt, w_cnt_total = 0;
     for (const list_node_t *node = list_begin(config->sections); node != list_end(config->sections); node = list_next(node)) {
         const section_t *section = (const section_t *)list_node(node);
-        LOG_DEBUG("section name: %s\n", section->name);
         w_cnt = snprintf(line, 1024, "[%s]\n", section->name);
+        LOG_DEBUG("section name: %s, w_cnt + w_cnt_total = %d\n", section->name, w_cnt + w_cnt_total);
         if (w_cnt + w_cnt_total < CONFIG_FILE_MAX_SIZE) {
             memcpy(buf + w_cnt_total, line, w_cnt);
             w_cnt_total += w_cnt;
@@ -316,6 +336,7 @@ bool config_save(const config_t *config, const char *filename)
             const entry_t *entry = (const entry_t *)list_node(enode);
             LOG_DEBUG("(key, val): (%s, %s)\n", entry->key, entry->value);
             w_cnt = snprintf(line, 1024, "%s = %s\n", entry->key, entry->value);
+            LOG_DEBUG("%s, w_cnt + w_cnt_total = %d", __func__, w_cnt + w_cnt_total);
             if (w_cnt + w_cnt_total < CONFIG_FILE_MAX_SIZE) {
                 memcpy(buf + w_cnt_total, line, w_cnt);
                 w_cnt_total += w_cnt;
