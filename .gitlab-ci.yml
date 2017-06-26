@@ -44,6 +44,23 @@ before_script:
   # fetch the submodules (& if necessary re-fetch repo) from gitlab
   - time ./tools/ci/get-full-sources.sh
 
+.do_nothing_before:
+  before_script: &do_nothing_before
+    - echo "Not setting up GitLab key, not fetching submodules"
+    - source tools/ci/configure_ci_environment.sh
+
+.add_gitlab_key_before:
+  before_script: &add_gitlab_key_before
+    - echo "Not fetching submodules"
+    - source tools/ci/configure_ci_environment.sh
+    # add gitlab ssh key
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
 build_template_app:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
@@ -268,8 +285,6 @@ test_report:
     - test "${TEST_RESULT}" = "Pass" || exit 1
 
 push_master_to_github:
-  before_script:
-    - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
@@ -282,6 +297,7 @@ push_master_to_github:
   dependencies: []
   variables:
     GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
+  before_script: *do_nothing_before
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -298,8 +314,6 @@ push_master_to_github:
 
 
 deploy_docs:
-  before_script:
-    - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
@@ -311,6 +325,7 @@ deploy_docs:
    - triggers
   dependencies:
     - build_docs
+  before_script: *do_nothing_before
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -355,8 +370,7 @@ check_commit_msg:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
-  before_script:
-    - echo "Not setting up GitLab key, not fetching submodules"
+  before_script: *do_nothing_before
   script:
     - git status
     - git log -n10 --oneline
@@ -375,8 +389,7 @@ check_submodule_sync:
   dependencies: []
   variables:
     GIT_STRATEGY: clone
-  before_script:
-    - echo "Not setting up GitLab key, not fetching submodules"
+  before_script: *do_nothing_before
   script:
     # check if all submodules are correctly synced to public repostory
     - git submodule update --init --recursive
@@ -393,15 +406,7 @@ assign_test:
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
     expire_in: 1 mos
-  before_script:
-    - echo "Not fetching submodules"
-    # add gitlab ssh key
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  before_script: *add_gitlab_key_before
   script:
     # first move test bins together: test_bins/CHIP_SDK/TestApp/bin_files
     - mkdir -p test_bins/ESP32_IDF/UT
@@ -438,15 +443,7 @@ assign_test:
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
     CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/integration_test/CIConfigs/$CI_JOB_NAME.yml"
-  before_script:
-    - echo "Not fetching submodules"
-    # add gitlab ssh key
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  before_script: *add_gitlab_key_before
   script:
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
