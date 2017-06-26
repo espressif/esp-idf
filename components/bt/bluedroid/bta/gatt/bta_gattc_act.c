@@ -33,6 +33,7 @@
 #include "bta_gattc_int.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
+#include "gatt_int.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -2410,7 +2411,12 @@ tBTA_GATTC_FIND_SERVICE_CB bta_gattc_register_service_change_notify(UINT16 conn_
         ccc_value.len = 2;
         ccc_value.value[0] = GATT_CLT_CONFIG_INDICATION;
         ccc_value.auth_req = GATT_AUTH_REQ_NONE;
-        write_status = GATTC_Write (conn_id, GATT_WRITE, &ccc_value);
+        if (gatt_is_clcb_allocated(conn_id)) {
+            APPL_TRACE_DEBUG("%s, GATTC_Write GATT_BUSY conn_id = %d", __func__, conn_id);
+            write_status = GATT_BUSY;
+        } else {
+            write_status = GATTC_Write (conn_id, GATT_WRITE, &ccc_value);
+        }
         if (write_status != GATT_SUCCESS) {
             start_find_ccc_timer = TRUE;
             result = SERVICE_CHANGE_WRITE_CCC_FAILED;

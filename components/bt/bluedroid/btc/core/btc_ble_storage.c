@@ -238,7 +238,7 @@ bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
 
 bool btc_storage_compare_address_key_value(uint8_t key_type, void *key_value, int key_length)
 {
-    const char *key_type_str;
+    char *key_type_str;
     switch (key_type) {
     case BTM_LE_KEY_PENC:
         key_type_str = "LE_KEY_PENC";
