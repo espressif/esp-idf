@@ -197,6 +197,8 @@ TEST_CASE("vfs parses paths correctly", "[vfs]")
     test_dir_opened(&inst_foobar, "/foo/bar/file");
     inst_toplevel.match_path = "/tmp/foo";
     test_opened(&inst_toplevel, "/tmp/foo");
+    inst_toplevel.match_path = "foo";
+    test_opened(&inst_toplevel, "foo");
 
     TEST_ESP_OK( esp_vfs_unregister("/foo") );
     TEST_ESP_OK( esp_vfs_unregister("/foo1") );
