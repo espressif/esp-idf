@@ -37,6 +37,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "arch/sys_arch.h"
 
@@ -73,7 +74,21 @@ typedef int sys_prot_t;
 
 #ifdef NDEBUG
 #define LWIP_NOASSERT
-#endif
-//#define LWIP_ERROR
+#else // Assertions enabled
+
+// If assertions are on, the default LWIP_ERROR handler behaviour is to
+// abort w/ an assertion failure. Don't do this, instead just print the error (if LWIP_DEBUG is set)
+// and run the handler (same as the LWIP_ERROR behaviour if LWIP_NOASSERT is set).
+#ifdef LWIP_DEBUG
+#define LWIP_ERROR(message, expression, handler) do { if (!(expression)) { \
+  puts(message); handler;}} while(0)
+#else
+// If LWIP_DEBUG is not set, return the error silently (default LWIP behaviour, also.)
+#define LWIP_ERROR(message, expression, handler) do { if (!(expression)) { \
+  handler;}} while(0)
+#endif // LWIP_DEBUG
+
+#endif /* NDEBUG */
+
 
 #endif /* __ARCH_CC_H__ */
