@@ -1,0 +1,2609 @@
+test cases:
+- ID: BTSTK_GATT_01001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT server create service
+  summary: create service, add char and descriptor and start service
+  steps: |
+    1. create preset service 0xA000
+  expected result: |
+    1. succeed
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ["R SSC1 C +GATTS:StartService,OK,A000"]
+- ID: BTSTK_GATT_01002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT server create service
+  summary: create service and include another service
+  steps: |
+    1. create preset service 0xA000
+    2. create preset service 0xA001
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ["R SSC1 C +GATTS:StartService,OK,A000"]
+  - - "SSC SSC1 gatts -S -z load -p 0xA1"
+    - ["R SSC1 C +GATTS:StartService,OK,A001"]
+- ID: BTSTK_GATT_20001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client discover primary service
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. found service 0xA000 and 0xA001
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ["R SSC2 C +GATTS:StartService,OK,A000"]
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010"]
+  - - "SSC SSC1 gattc -F -r <dut2_bt_mac>"
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A000 C +GATTC:DiscoverService,A001"]
+- ID: BTSTK_GATT_20002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client get included service
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 get included service 0xA000 from service 0xA001
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. get included service 0xA000 from service 0xA001
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ["R SSC2 C +GATTS:StartService,OK,A000"]
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010"]
+  - - "SSC SSC1 gattc -F -r <dut2_bt_mac>"
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A000 C +GATTC:DiscoverService,A001"]
+  - - "SSC SSC1 gattc -D -z includedService -p 0x10 -s 0xA001"
+    - ["R SSC1 C +GATTC:IncludedService,0010,A001,A000"]
+- ID: BTSTK_GATT_21001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read short char
+  steps: |
+    1. DUT1 do discover
+    2. GATT client read 1 byte short char
+  expected result: |
+    1. succeed
+    2. read succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC100 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,1", "R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
+- ID: BTSTK_GATT_21002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read long char
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 GATT client read 256 bytes long char
+  expected result: |
+    1. succeed
+    2. read succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC101 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C101,256", "R SSC1 C +GATTC:Read,OK,0010,A000,C101"]
+- ID: BTSTK_GATT_21003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read short descriptor
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client read short descriptor
+  expected result: |
+    1. succeed
+    2. read succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C107,2902,2", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C107,2902"]
+- ID: BTSTK_GATT_21004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read long descriptor
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client read long descriptor
+  expected result: |
+    1. succeed
+    2. read succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,2901,2", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C100,2901"]
+- ID: BTSTK_GATT_21005
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read short char of an included service
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do discover
+    5. GATT client read 1 byte short char
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ["R SSC2 C +GATTS:StartService,OK,A000"]
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC100 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,1", "R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
+- ID: BTSTK_GATT_21006
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read short descriptor or an included service
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do discover
+    5. GATT client read 1 byte short descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ["R SSC2 C +GATTS:StartService,OK,A000"]
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C107,2902,2", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C107,2902"]
+- ID: BTSTK_GATT_21007
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read auto reply short char created by table
+  steps: |
+    1. DUT1 do discover
+    2. DUT1 read auto reply short char
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA002 -c 0xC300 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A002,C300,1", "R SSC1 C +GATTC:Read,OK,0010,A002,C300"]
+- ID: BTSTK_GATT_21008
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read auto reply long char created by table
+  steps: |
+    1. DUT1 do discover
+    2. DUT1 read auto reply long char
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA002 -c 0xC301 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A002,C301,256", "R SSC1 C +GATTC:Read,OK,0010,A002,C301"]
+- ID: BTSTK_GATT_21009
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read app reply short char created by table
+  steps: |
+    1. DUT1 do discover
+    2. DUT1 read app reply short char
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA002 -c 0xC310 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A002,C310,1", "R SSC1 C +GATTC:Read,OK,0010,A002,C310"]
+- ID: BTSTK_GATT_21010
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read app reply long char created by table
+  steps: |
+    1. DUT1 do discover
+    2. DUT1 read app reply long char
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA002 -c 0xC311 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A002,C311,256", "R SSC1 C +GATTC:Read,OK,0010,A002,C311"]
+- ID: BTSTK_GATT_21011
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read auto reply short descriptor created by table
+  steps: |
+    1. DUT1 do discover
+    2. DUT1 read auto reply short descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA002 -c 0xC300 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A002,C300,2901,1", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A002,C300,2901"]
+- ID: BTSTK_GATT_21012
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read auto reply long descriptor created by table
+  steps: |
+    1. DUT1 do discover
+    2. DUT1 read auto reply long descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA002 -c 0xC301 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A002,C301,2901,256", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A002,C301,2901"]
+- ID: BTSTK_GATT_21013
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read app reply short descriptor created by table
+  steps: |
+    1. DUT1 do discover
+    2. DUT1 read app reply short descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA002 -c 0xC310 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A002,C310,2901,1", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A002,C310,2901"]
+- ID: BTSTK_GATT_21014
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read app reply long descriptor created by table
+  steps: |
+    1. DUT1 do discover
+    2. DUT1 read app reply long descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA002 -c 0xC311 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A002,C311,2901,256", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A002,C311,2901"]
+- ID: BTSTK_GATT_22001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write with response to a short char with response
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write with response to short char with response
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C102", "R SSC1 C +GATTC:Write,OK,0010,A000,C102"]
+- ID: BTSTK_GATT_22002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write without response to a short char without response
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write without response to short char without response
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC103 -p 0x10 -v 0x01 -w 1"
+    - - "P SSC1 C +GATTC:WriteOnce,0010,A000,C103"
+      - "P SSC2 C +GATTS:Write,OK,A000,C103"
+      - "P SSC1 C +GATTC:Write,OK,0010,A000,C103"
+- ID: BTSTK_GATT_22003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client prepare write and do execute
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client prepare write and do execute
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA000 -c 0xC110 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A000,C110"]
+- ID: BTSTK_GATT_22004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client prepare write and do cancel
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client prepare write and do cancel
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA000 -c 0xC110 -p 0x10 -l 256 -e 0"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A000,C110"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC110 -p 0x10 -l 256 -e 0"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A000,C110"]
+- ID: BTSTK_GATT_22005
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to a short descriptor
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to short descriptor
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+- ID: BTSTK_GATT_22006
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to long descriptor and execute
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to long descriptor and execute
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C100,2901"]
+- ID: BTSTK_GATT_22007
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to long descriptor using write API
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to long descriptor and execute
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C100,2901"]
+- ID: BTSTK_GATT_22008
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to an included char
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do discover
+    5. GATT client write with response to short char with response
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ["R SSC2 C +GATTS:StartService,OK,A000"]
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C102", "R SSC1 C +GATTC:Write,OK,0010,A000,C102"]
+- ID: BTSTK_GATT_22009
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to an included descriptor
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do discover
+    5. GATT client write to short descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA0"
+    - ["R SSC2 C +GATTS:StartService,OK,A000"]
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:StartService,OK,A001"]
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLE:GattcConnect,OK,0010"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+- ID: BTSTK_GATT_22010
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write with response to auto reply short char with response created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write with response to auto reply short char with response created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A002,C302", "R SSC1 C +GATTC:Write,OK,0010,A002,C302"]
+- ID: BTSTK_GATT_22011
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write without response to auto reply short char without response created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write without response to auto reply short char without response created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC303 -p 0x10 -v 0x01 -w 1"
+    - - "P SSC1 C +GATTC:WriteOnce,0010,A002,C303"
+      - "P SSC2 C +GATTS:Write,OK,A002,C303"
+      - "P SSC1 C +GATTC:Write,OK,0010,A002,C303"
+- ID: BTSTK_GATT_22012
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client prepare write and do execute to auto reply char created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client prepare write and do execute to auto reply char created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA002 -c 0xC304 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A002,C304"]
+- ID: BTSTK_GATT_22013
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client prepare write and do cancel to auto reply char created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client prepare write and do cancel to auto reply char created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA002 -c 0xC304 -p 0x10 -l 256 -e 0"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A002,C304"]
+- ID: BTSTK_GATT_22014
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to auto reply short descriptor created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to auto reply short descriptor created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA002 -c 0xC300 -d 0x2901 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A002,C300,2901", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C300,2901"]
+- ID: BTSTK_GATT_22015
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to auto reply long descriptor created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to auto reply long descriptor created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA002 -c 0xC301 -d 0x2901 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C301,2901"]
+- ID: BTSTK_GATT_22016
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to auto reply long descriptor created by table and cancel
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to auto reply long descriptor created by table and cancel
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA002 -c 0xC301 -d 0x2901 -p 0x10 -l 256 -e 0"
+    - ["P SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C301,2901"]
+- ID: BTSTK_GATT_22017
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write with response to app reply short char with response created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write with response to app reply short char with response created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC312 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A002,C312", "R SSC1 C +GATTC:Write,OK,0010,A002,C312"]
+- ID: BTSTK_GATT_22018
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write without response to app reply short char without response created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write without response to app reply short char without response created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC313 -p 0x10 -v 0x01 -w 1"
+    - - "P SSC1 C +GATTC:WriteOnce,0010,A002,C313"
+      - "P SSC2 C +GATTS:Write,OK,A002,C313"
+      - "P SSC1 C +GATTC:Write,OK,0010,A002,C313"
+- ID: BTSTK_GATT_22019
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client prepare write and do execute to app reply char created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client prepare write and do execute to app reply char created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA002 -c 0xC314 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A002,C314"]
+- ID: BTSTK_GATT_22020
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client prepare write and do cancel to app reply char created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client prepare write and do cancel to app reply char created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA002 -c 0xC314 -p 0x10 -l 256 -e 0"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A002,C314"]
+- ID: BTSTK_GATT_22021
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to app reply short descriptor created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to app reply short descriptor created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA002 -c 0xC310 -d 0x2901 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A002,C310,2901", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C310,2901"]
+- ID: BTSTK_GATT_22022
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to app reply long descriptor created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to app reply long descriptor created by table
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA002 -c 0xC311 -d 0x2901 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C311,2901"]
+- ID: BTSTK_GATT_22023
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to app reply long descriptor created by table and cancel
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to app reply long descriptor created by table and cancel
+  expected result: |
+    1. succeed
+    2. write succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA002 -c 0xC311 -d 0x2901 -p 0x10 -l 256 -e 0"
+    - ["P SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C311,2901"]
+- ID: BTSTK_GATT_23001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client register/unregister notify
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on notification char
+    3. DUT1 register notify on indication char
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC107 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C107"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC108 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C108"]
+  - - "SSC SSC1 gattc -N -z unregister -s 0xA000 -c 0xC107 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:UnRegNotify,OK,0010,A000,C107"]
+  - - "SSC SSC1 gattc -N -z unregister -s 0xA000 -c 0xC108 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:UnRegNotify,OK,0010,A000,C108"]
+- ID: BTSTK_GATT_23002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client receive notify
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on notification char and write to CCC
+    3. DUT2 do notify
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 recv notify
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC107 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C107"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC107 -p 0xA0 -v 0x01"
+    - ["R SSC1 C +GATTC:Notification,0010,A000,C107,1"]
+- ID: BTSTK_GATT_23003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client receive indication
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on inidcation char and write to CCC
+    3. DUT2 do indication
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 recv indication
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC108 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C108"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC108 -d 0x2902 -p 0x10 -v 0x0002"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C108,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C108,2902"]
+  - - "SSC SSC2 gatts -I -c 0xC108 -p 0xA0 -v 0x01"
+    - ["R SSC1 C +GATTC:Indication,0010,A000,C108,1"]
+- ID: BTSTK_GATT_23004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client can't receive notification/indication without write to CCC
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on notify and inidcation char
+    3. DUT2 do notify and indication
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 can recv notify and indication (this is aganist Spec, but a reasonable behavior in bluedroid)
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC107 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C107"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC108 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C108"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0000"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC107 -p 0xA0 -v 0x01"
+    - ["P SSC1 C +GATTC:Notification,0010,A000,C107,1"]
+  - - "SSC SSC2 gatts -I -c 0xC108 -p 0xA0 -v 0x01"
+    - ["P SSC1 C +GATTC:Indication,0010,A000,C108,1"]
+- ID: BTSTK_GATT_23005
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client receive notify on auto reply notify char created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on auto reply notification char and write to CCC
+    3. DUT2 do notify
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 recv notify
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA002 -c 0xC305 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A002,C305"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA002 -c 0xC305 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A002,C305,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C305,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC305 -p 0xA2 -v 0x01"
+    - ["R SSC1 C +GATTC:Notification,0010,A002,C305,1"]
+- ID: BTSTK_GATT_23006
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client receive indication on auto reply indication char created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on auto reply inidcation char and write to CCC
+    3. DUT2 do indication
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 recv indication
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA002 -c 0xC306 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A002,C306"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA002 -c 0xC306 -d 0x2902 -p 0x10 -v 0x0002"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A002,C306,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C306,2902"]
+  - - "SSC SSC2 gatts -I -c 0xC306 -p 0xA2 -v 0x01"
+    - ["R SSC1 C +GATTC:Indication,0010,A002,C306,1"]
+- ID: BTSTK_GATT_23007
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client can't receive notification/indication without write to CCC
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on notify and inidcation char
+    3. DUT2 do notify and indication
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 can recv notify and indication (this is aganist Spec, but a reasonable behavior in bluedroid)
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA002 -c 0xC305 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A002,C305"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA002 -c 0xC306 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A002,C306"]
+  - - "SSC SSC2 gatts -N -c 0xC305 -p 0xA2 -v 0x01"
+    - ["P SSC1 C +GATTC:Notification,0010,A002,C305,1"]
+  - - "SSC SSC2 gatts -I -c 0xC306 -p 0xA2 -v 0x01"
+    - ["P SSC1 C +GATTC:Indication,0010,A002,C306,1"]
+- ID: BTSTK_GATT_23008
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client receive notify on app reply notify char created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on app reply notification char and write to CCC
+    3. DUT2 do notify
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 recv notify
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA002 -c 0xC315 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A002,C315"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA002 -c 0xC315 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A002,C315,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C315,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC315 -p 0xA2 -v 0x01"
+    - ["R SSC1 C +GATTC:Notification,0010,A002,C315,1"]
+- ID: BTSTK_GATT_23009
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client receive indication on app reply indication char created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on app reply inidcation char and write to CCC
+    3. DUT2 do indication
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 recv indication
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA002 -c 0xC316 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A002,C316"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA002 -c 0xC316 -d 0x2902 -p 0x10 -v 0x0002"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A002,C316,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A002,C316,2902"]
+  - - "SSC SSC2 gatts -I -c 0xC316 -p 0xA2 -v 0x01"
+    - ["R SSC1 C +GATTC:Indication,0010,A002,C316,1"]
+- ID: BTSTK_GATT_23010
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client can't receive notification/indication without write to CCC
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on notify and inidcation char
+    3. DUT2 do notify and indication
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 can recv notify and indication (this is aganist Spec, but a reasonable behavior in bluedroid)
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA002 -c 0xC315 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A002,C315"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA002 -c 0xC316 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A002,C316"]
+  - - "SSC SSC2 gatts -N -c 0xC315 -p 0xA2 -v 0x01"
+    - ["P SSC1 C +GATTC:Notification,0010,A002,C315,1"]
+  - - "SSC SSC2 gatts -I -c 0xC316 -p 0xA2 -v 0x01"
+    - ["P SSC1 C +GATTC:Indication,0010,A002,C316,1"]
+- ID: BTSTK_GATT_24001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid read
+  summary: GATT client read to a char without read property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 read to a char without read property
+  expected result: |
+    1. succeed
+    2. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC103 -p 0x10"
+    - ["P SSC1 C +GATTC:Read,ERROR"]
+- ID: BTSTK_GATT_24002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid read
+  summary: GATT client read to a descriptor without read property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 read to a descriptor without read property
+  expected result: |
+    1. succeed
+    2. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC102 -d 0x2901 -p 0x10"
+    - ["P SSC1 C +GATTC:Read,ERROR"]
+- ID: BTSTK_GATT_24003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid read
+  summary: GATT client read to a char without read property created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 read to auto reply char without read property create by table
+    3. DUT1 read to app reply char without read property create by table
+  expected result: |
+    1. succeed
+    2. failed
+    3. failed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA002 -c 0xC302 -p 0x10"
+    - ["P SSC1 C +GATTC:Read,ERROR"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA002 -c 0xC312 -p 0x10"
+    - ["P SSC1 C +GATTC:Read,ERROR"]
+- ID: BTSTK_GATT_24004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid read
+  summary: GATT client read to a descriptor without read property created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 read to auto reply descriptor without read property created by table
+    3. DUT1 read to app reply descriptor without read property created by table
+  expected result: |
+    1. succeed
+    2. failed
+    3. failed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA002 -c 0xC303 -d 0x2901 -p 0x10"
+    - ["P SSC1 C +GATTC:Read,ERROR"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA002 -c 0xC313 -d 0x2901 -p 0x10"
+    - ["P SSC1 C +GATTC:Read,ERROR"]
+- ID: BTSTK_GATT_25001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write with response to a char without write property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write with response to a char without write property
+  expected result: |
+    1. succeed
+    2. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC100 -p 0x10 -l 1"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write without response to a char without write property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write without response to a char without write property
+  expected result: |
+    1. succeed
+    2. succeed (write without response always succeed)
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC100 -p 0x10 -l 1 -w 1"
+    - ["R SSC1 C +GATTC:Write,OK"]
+- ID: BTSTK_GATT_25003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write to a descriptor without write property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write to a descriptor without write property
+  expected result: |
+    1. succeed
+    2. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC101 -d 0x2901 -p 0x10 -l 1"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25004
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client prepare write to a char without write property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 prepare write to a char without write property
+  expected result: |
+    1. succeed
+    2. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA000 -c 0xC100 -p 0x10 -l 256"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25005
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client prepare write to a descriptor without write property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 prepare write to a descriptor without write property
+  expected result: |
+    1. succeed
+    2. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA000 -c 0xC101 -d 0x2901 -p 0x10 -l 256"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25006
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write with response to a char not send response
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write with response to a char not send response
+  expected result: |
+    1. succeed
+    2. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC103 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25007
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write without response to a char will send response
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write without response to a char will send response
+  expected result: |
+    1. succeed
+    2. succeed (write without response always succeed)
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v -x01 -w 1"
+    - ["P SSC1 C +GATTC:WriteOnce"]
+- ID: BTSTK_GATT_25008
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write with response to a char without write property created by table
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write with response to auto reply char without write property
+    3. DUT1 write with response to manual reply char without write property
+  expected result: |
+    1. succeed
+    2. failed
+    3. failed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC300 -p 0x10 -l 1"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC310 -p 0x10 -l 1"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25009
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write without response to a char created by table without write property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write without response to auto reply char created by table without write property
+    3. DUT1 write without response to app reply char created by table without write property
+  expected result: |
+    1. succeed
+    2. succeed (write without response always succeed)
+    3. succeed (write without response always succeed)
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC300 -p 0x10 -l 1 -w 1"
+    - ["R SSC1 C +GATTC:Write,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC300 -p 0x10 -l 1 -w 1"
+    - ["R SSC1 C +GATTC:Write,OK"]
+- ID: BTSTK_GATT_25010
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write to a descriptor created by table without write property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write to auto reply descriptor create by table without write property
+    3. DUT1 write to app reply descriptor create by table without write property
+  expected result: |
+    1. succeed
+    2. failed
+    3. failed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA002 -c 0xC302 -d 0x2901 -p 0x10 -l 1"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA002 -c 0xC312 -d 0x2901 -p 0x10 -l 1"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25011
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client prepare write to a char created by table without write property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 prepare write to auto reply char created by table without write property
+    3. DUT1 prepare write to app reply char created by table without write property
+  expected result: |
+    1. succeed
+    2. failed
+    3. failed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA002 -c 0xC300 -p 0x10 -l 256"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA002 -c 0xC310 -p 0x10 -l 256"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25012
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client prepare write to a descriptor created by table without write property
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 prepare write to auto reply descriptor created by table without write property
+    3. DUT1 prepare write to app reply descriptor created by table without write property
+  expected result: |
+    1. succeed
+    2. failed
+    3. failed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA002 -c 0xC302 -d 0x2901 -p 0x10 -l 256"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA002 -c 0xC312 -d 0x2901 -p 0x10 -l 256"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25013
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write with response to a char created by table not send response
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write with response to auto reply char created by table not send response
+    3. DUT1 write with response to app reply char created by table not send response
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC303 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC313 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_25014
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write without response to a char created by table will send response
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write without response to auto reply char created by table will send response
+    3. DUT1 write without response to app reply char created by table will send response
+  expected result: |
+    1. succeed
+    2. succeed (write without response always succeed)
+    3. succeed (write without response always succeed)
+  initial condition: BLE_CONN3
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-02-09)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v -x01 -w 1"
+    - ["R SSC1 C +GATTC:Write,OK"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v -x01 -w 1"
+    - ["R SSC1 C +GATTC:Write,OK"]
+- ID: BTSTK_GATT_25015
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client use write API write to a char won't reply prepare write event
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 use write API write to a char reply NULL for prepare write event
+  expected result: |
+    1. succeed
+    2. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-06-07)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 256"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BTSTK_GATT_26001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client config mtu
+  summary: GATT client config different mtu size
+  steps: |
+    1. config mtu size 22
+    2. config mtu size 23
+    3. config mtu size 517
+    4. config mtu size 518
+  expected result: |
+    1. failed
+    2. succeed
+    3. succeed
+    4. failed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -C -m 22 "
+    - ["R SSC1 C +GATTC:ERROR"]
+  - - "SSC SSC1 gattc -C -m 23"
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 gattc -C -m 517"
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 gattc -C -m 518"
+    - ["R SSC1 C +GATTC:ERROR"]
+- ID: BTSTK_GATT_26002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client config mtu
+  summary: GATT read write on mtu size 261
+  steps: |
+    1. config mtu size 261
+    2. do read
+    3. do write
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -C -m 261"
+    - ["P SSC1 C +GATTC:OK", "P SSC[1-2] C ConfigMTU,OK,261"]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C101,256"]
+  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 256"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
+  - - "SSC SSC1 gattc -W -z longChar -p 0x10 -s 0xA000 -c 0xC110 -l 512"
+    - ["R SSC1 C +GATTC:Write,OK,0010,A000,C110", "P SSC2 C +GATTS:ReliableWrite,OK"]
+- ID: BTSTK_GATT_26003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: BLE GATT client config mtu
+  summary: GATT read write on mtu size 517
+  steps: |
+    1. config mtu size 517
+    2. do read
+    3. do write
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 0
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -C -m 517"
+    - ["P SSC1 C +GATTC:OK", "P SSC[1-2] C ConfigMTU,OK,517"]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C101,256"]
+  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 256"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
+  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 512"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
+- ID: BTSTK_GATT_50001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Stress
+  test point 1: stress
+  test point 2: BLE GATT stress test
+  summary: GATT read char stress test
+  steps: |
+    1. update connection parameter for better performance
+    2. do primary service discovery
+    3. do read short char 500 times
+    4. do read long char 500 times
+    5. loop step 3-4
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. no error detected
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 6
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac> -i 0x10-0x20 -l 0x10 -t 0x40"
+    - ["R SSC1 C OK"]
+  - - "DELAY 1"
+    - [""]
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "LOOP 1000 4"
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC100 -n 100"
+    - ["R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101 -n 100"
+    - ["R SSC1 C +GATTC:Read,OK,0010,A000,C101"]
+- ID: BTSTK_GATT_50002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Stress
+  test point 1: stress
+  test point 2: BLE GATT stress test
+  summary: GATT write char stress test
+  steps: |
+    1. update connection parameter for better performance
+    2. do primary service discovery
+    3. do write short char 500 times
+    4. do prepare write char 500 times
+    5. loop step 3-5
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. no error detected
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 6
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac> -i 0x10-0x20 -l 0x10 -t 0x40"
+    - ["R SSC1 C OK"]
+  - - "DELAY 1"
+    - [""]
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "LOOP 1000 4"
+  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 1 -n 200"
+    - ["R SSC1 C +GATTC:Write,OK,0010,A000,C109"]
+  - - "SSC SSC1 gattc -W -z longChar -p 0x10 -s 0xA000 -c 0xC110 -l 256 -n 100"
+    - ["R SSC1 C +GATTC:Write,OK,0010,A000,C110"]
+- ID: BTSTK_GATT_50003
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Stress
+  test point 1: stress
+  test point 2: BLE GATT stress test
+  summary: GATT notify stress test
+  steps: |
+    1. update connection parameter for better performance
+    2. do primary service discovery
+    3. register notify
+    4. write to CCC
+    5. do notify
+    6. loop step 5
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. receive at least once
+    6. no error detected
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_1
+  execution time: 5
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac> -i 0x10-0x20 -l 0x10 -t 0x40"
+    - ["R SSC1 C OK"]
+  - - "DELAY 1"
+    - [""]
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC107 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C107"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100 -n 1"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "LOOP 5000 1"
+    - [""]
+  - - "SSC SSC2 gatts -N -c 0xC107 -p 0xA0 -v 0x01 -n 100"
+    - ["P SSC2 C +GATTS:OK", "P SSC2 C +GATTS:Done,Notify,A000,C107"]
+- ID: BTSTK_GATT_40001
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'No'
+  category: Function
+  test point 1: function
+  test point 2: test if BLE work after switch off some sub modules
+  summary: GATTC only and GATTS only test
+  steps: |
+    1. download GATTC only bin to DUT1 and GATTS only bin to DUT2
+    2. DUT2 start adv, enable service 0xA000, DUT1 connect to DUT2
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 do read
+    6. DUT1 do read descriptor
+    7. DUT1 do write
+    8. DUT1 do write descriptor
+    9. DUT1 register for notify and indication
+    10. DUT2 do notify
+    11. DUT2 do indicate
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. succeed
+    9. succeed
+    10. succeed
+    11. succeed
+  initial condition: None
+  test environment: SSC_T2_1
+  execution time: 5
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-05-19)
+  CI ready: 'No'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - SSC SSC[1-2] reboot
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - SSC SSC[1-2] ble -R
+    - ['R SSC[1-2] C +BLE:OK']
+  - - SSC SSC2 bleadv -D -z start
+    - ['R SSC2 C +BLEADV:OK']
+  - - SSC SSC2 gatts -S -z load -p 0xA0
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC100 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,1", "R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C102", "R SSC1 C +GATTC:Write,OK,0010,A000,C102"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,2901,256", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C100,2901"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC107 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C107"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC108 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C108"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0300 -n 1"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC107 -p 0xA0 -v 0x01"
+    - ["P SSC2 C +GATTS:Done,Notify,A000,C107", "P SSC1 C +GATTC:Notification,0010,A000,C107,1"]
+  - - "SSC SSC2 gatts -I -c 0xC108 -p 0xA0 -v 0x01"
+    - ["P SSC2 C +GATTS:Done,Indicate,A000,C108", "P SSC1 C +GATTC:Indication,0010,A000,C108,1"]
+- ID: BTSTK_GATT_40002
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'No'
+  category: Function
+  test point 1: function
+  test point 2: test if BLE work after switch off some sub modules
+  summary: GATTC_SMP only and GATTS_SMP only test
+  steps: |
+    1. download GATTC_SMP bin to DUT1 and GATTS_SMP bin to DUT2
+    2. DUT2 start adv, start service 0xA000, DUT1 connect to DUT2
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 do read
+    6. DUT1 do read descriptor
+    7. DUT1 do write
+    8. DUT1 do write descriptor
+    9. DUT1 register for notify and indication
+    10. DUT2 do notify
+    11. DUT2 do indicate
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. succeed
+    9. succeed
+    10. succeed
+    11. succeed
+  initial condition: None
+  test environment: SSC_T2_1
+  execution time: 5
+  module: BT Stack
+  sub module: GATT
+  version: v1 (2017-05-19)
+  CI ready: 'No'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - SSC SSC[1-2] reboot
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - SSC SSC[1-2] ble -R
+    - ['R SSC[1-2] C +BLE:OK']
+  - - SSC SSC2 bleadv -D -z start
+    - ['R SSC2 C +BLEADV:OK']
+  - - SSC SSC2 gatts -S -z load -p 0xA0
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
+    - ['R SSC1 C +BLE:GattcConnect,OK']
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC100 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,1", "R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C102", "R SSC1 C +GATTC:Write,OK,0010,A000,C102"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,2901,256", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C100,2901"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC107 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C107"]
+  - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC108 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C108"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0300 -n 1"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC107 -p 0xA0 -v 0x01"
+    - ["P SSC2 C +GATTS:Done,Notify,A000,C107", "P SSC1 C +GATTC:Notification,0010,A000,C107,1"]
+  - - "SSC SSC2 gatts -I -c 0xC108 -p 0xA0 -v 0x01"
+    - ["P SSC2 C +GATTS:Done,Indicate,A000,C108", "P SSC1 C +GATTC:Indication,0010,A000,C108,1"]
