@@ -69,7 +69,7 @@
 #include "lwip/memp.h"
 #include "lwip/pbuf.h"
 #include "lwip/sys.h"
-#if LWIP_TCP && TCP_QUEUE_OOSEQ
+#if LWIP_TCP && (TCP_QUEUE_OOSEQ || ESP_LWIP)
 #include "lwip/priv/tcp_priv.h"
 #endif
 #if LWIP_CHECKSUM_ON_COPY

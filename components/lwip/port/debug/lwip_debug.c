@@ -110,9 +110,11 @@ static void dbg_lwip_tcp_pcb_one_show(struct tcp_pcb* pcb)
     seg = pcb->unacked;
     DBG_LWIP_SEG_SHOW(seg);
 
-    ESP_LWIP_LOGI("ooseg semengts:");
+#if TCP_QUEUE_OOSEQ
+    ESP_LWIP_LOGI("ooseq segments:");
     seg = pcb->ooseq;
     DBG_LWIP_SEG_SHOW(seg);
+#endif
 
     ESP_LWIP_LOGI("refused data=%p", pcb->refused_data);
 

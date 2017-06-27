@@ -69,8 +69,9 @@ typedef int sys_prot_t;
 #define LWIP_PLATFORM_DIAG(x)   do {printf x;} while(0)
 #define LWIP_PLATFORM_ASSERT(x) do {printf(x); sys_arch_assert(__FILE__, __LINE__);} while(0)
 
-//#define LWIP_DEBUG
+#ifdef NDEBUG
 #define LWIP_NOASSERT
+#endif
 //#define LWIP_ERROR
 
 #endif /* __ARCH_CC_H__ */

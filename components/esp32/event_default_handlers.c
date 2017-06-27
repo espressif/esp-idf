@@ -345,6 +345,19 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
                    MAC2STR(ap_probereqrecved->mac));
         break;
     }
+    case SYSTEM_EVENT_AP_STA_GOT_IP6: {
+        ip6_addr_t *addr = &event->event_info.got_ip6.ip6_info.ip;
+        ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STA_GOT_IP6 address %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
+                 IP6_ADDR_BLOCK1(addr),
+                 IP6_ADDR_BLOCK2(addr),
+                 IP6_ADDR_BLOCK3(addr),
+                 IP6_ADDR_BLOCK4(addr),
+                 IP6_ADDR_BLOCK5(addr),
+                 IP6_ADDR_BLOCK6(addr),
+                 IP6_ADDR_BLOCK7(addr),
+                 IP6_ADDR_BLOCK8(addr));
+        break;
+    }
     case SYSTEM_EVENT_ETH_START: {
         ESP_LOGD(TAG, "SYSTEM_EVENT_ETH_START");
         break;
@@ -367,7 +380,7 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     }
 
     default: {
-        ESP_LOGW(TAG, "no such kind of event!");
+        ESP_LOGW(TAG, "unexpected system event %d!", event->event_id);
         break;
     }
     }
