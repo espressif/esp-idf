@@ -125,10 +125,21 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
         bt_bdaddr_t bdaddr;
         bdcpy(bdaddr.address, p_auth_cmpl->bd_addr);
         bdcpy(pairing_cb.bd_addr, p_auth_cmpl->bd_addr);
+        LOG_DEBUG ("%s, -  p_auth_cmpl->bd_addr: %08x%04x", __func__,
+                             (p_auth_cmpl->bd_addr[0] << 24) + (p_auth_cmpl->bd_addr[1] << 16) + (p_auth_cmpl->bd_addr[2] << 8) + p_auth_cmpl->bd_addr[3],
+                             (p_auth_cmpl->bd_addr[4] << 8) + p_auth_cmpl->bd_addr[5]);
+        LOG_DEBUG ("%s, -  pairing_cb.bd_addr: %08x%04x", __func__,
+                             (pairing_cb.bd_addr[0] << 24) + (pairing_cb.bd_addr[1] << 16) + (pairing_cb.bd_addr[2] << 8) + pairing_cb.bd_addr[3],
+                             (pairing_cb.bd_addr[4] << 8) + pairing_cb.bd_addr[5]);
          if (btc_storage_get_remote_addr_type(&bdaddr, &addr_type) != BT_STATUS_SUCCESS) {
             btc_storage_set_remote_addr_type(&bdaddr, p_auth_cmpl->addr_type);
         }
-
+        /* check the irk has been save in the flash or not, if the irk has already save, means that the peer device has bonding
+           before. */
+        if(pairing_cb.ble.is_pid_key_rcvd) {
+            btc_storage_compare_address_key_value(BTM_LE_KEY_PID,
+                                                  (void *)&pairing_cb.ble.pid_key, sizeof(tBTM_LE_PID_KEYS));
+        }
         btc_save_ble_bonding_keys();
     } else {
         /*Map the HCI fail reason  to  bt status  */
@@ -312,6 +323,8 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 #if (SMP_INCLUDED == TRUE)
         //load the ble local key whitch has been store in the flash
         btc_dm_load_ble_local_keys();
+        //load the bonding device to the btm layer
+        btc_storage_load_bonded_ble_devices();
 #endif  ///SMP_INCLUDED == TRUE
         btc_enable_bluetooth_evt(p_data->enable.status);
         break;

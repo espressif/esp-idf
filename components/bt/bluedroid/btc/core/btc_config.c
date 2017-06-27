@@ -31,7 +31,7 @@
 static const char *CONFIG_FILE_PATH = "bt_config.conf";
 static const period_ms_t CONFIG_SETTLE_PERIOD_MS = 3000;
 
-static void timer_config_save(void *data);
+static void btc_key_value_to_string(uint8_t *key_vaule, char *value_str, int key_length);
 
 // TODO(zachoverflow): Move these two functions out, because they are too specific for this file
 // {grumpy-cat/no, monty-python/you-make-me-sad}
@@ -77,7 +77,36 @@ bool btc_get_address_type(const BD_ADDR bd_addr, int *p_addr_type)
 
 static pthread_mutex_t lock;  // protects operations on |config|.
 static config_t *config;
-static osi_alarm_t *alarm_timer;
+
+bool btc_compare_address_key_value(char *key_type, void *key_value, int key_length)
+{
+    assert(key_value != NULL);
+    bool status = false;
+    char value_str[100] = {0};
+    if(key_length > sizeof(value_str)/2) {
+        return false;
+    }
+    btc_key_value_to_string((uint8_t *)key_value, value_str, key_length);
+    pthread_mutex_lock(&lock);
+    status = config_has_key_in_section(config, key_type, value_str);
+    pthread_mutex_unlock(&lock);
+    return status;
+}
+
+static void btc_key_value_to_string(uint8_t *key_vaule, char *value_str, int key_length)
+{
+    const char *lookup = "0123456789abcdef";
+
+    assert(key_vaule != NULL);
+    assert(value_str != NULL);
+
+    for (size_t i = 0; i < key_length; ++i) {
+        value_str[(i * 2) + 0] = lookup[(key_vaule[i] >> 4) & 0x0F];
+        value_str[(i * 2) + 1] = lookup[key_vaule[i] & 0x0F];
+    }
+
+    return;
+}
 
 // Module lifecycle functions
 
@@ -93,27 +122,15 @@ bool btc_config_init(void)
             goto error;
         }
     }
-
     if (config_save(config, CONFIG_FILE_PATH)) {
         // unlink(LEGACY_CONFIG_FILE_PATH);
-    }
-
-    // TODO(sharvil): use a non-wake alarm for this once we have
-    // API support for it. There's no need to wake the system to
-    // write back to disk.
-    alarm_timer = osi_alarm_new("btc_config", timer_config_save, NULL, CONFIG_SETTLE_PERIOD_MS);
-    if (!alarm_timer) {
-        LOG_ERROR("%s unable to create alarm.\n", __func__);
-        goto error;
     }
 
     return true;
 
 error:;
-    osi_alarm_free(alarm_timer);
     config_free(config);
     pthread_mutex_destroy(&lock);
-    alarm_timer = NULL;
     config = NULL;
     LOG_ERROR("%s failed\n", __func__);
     return false;
@@ -129,10 +146,8 @@ bool btc_config_clean_up(void)
 {
     btc_config_flush();
 
-    osi_alarm_free(alarm_timer);
     config_free(config);
     pthread_mutex_destroy(&lock);
-    alarm_timer = NULL;
     config = NULL;
     return true;
 }
@@ -352,49 +367,7 @@ bool btc_config_remove(const char *section, const char *key)
 
 void btc_config_save(void)
 {
-    assert(alarm_timer != NULL);
-    assert(config != NULL);
-
-    osi_alarm_set(alarm_timer, CONFIG_SETTLE_PERIOD_MS);
-}
-
-void btc_config_flush(void)
-{
-    assert(config != NULL);
-    assert(alarm_timer != NULL);
-    osi_alarm_cancel(alarm_timer);
-
-    pthread_mutex_lock(&lock);
-    config_save(config, CONFIG_FILE_PATH);
-    pthread_mutex_unlock(&lock);
-}
-
-int btc_config_clear(void)
-{
-    assert(config != NULL);
-    assert(alarm_timer != NULL);
-
-    osi_alarm_cancel(alarm_timer);
-
-    pthread_mutex_lock(&lock);
-    config_free(config);
-
-    config = config_new_empty();
-    if (config == NULL) {
-        pthread_mutex_unlock(&lock);
-        return false;
-    }
-
-    int ret = config_save(config, CONFIG_FILE_PATH);
-    pthread_mutex_unlock(&lock);
-    return ret;
-}
-
-static void timer_config_save(UNUSED_ATTR void *data)
-{
-    assert(config != NULL);
-    assert(alarm_timer != NULL);
-
+       assert(config != NULL);
     // Garbage collection process: the config file accumulates
     // cached information about remote devices during regular
     // inquiry scans. We remove some of these junk entries
@@ -433,7 +406,33 @@ static void timer_config_save(UNUSED_ATTR void *data)
         while (num_keys > 0) {
             config_remove_section(config, keys[--num_keys]);
         }
-
     config_save(config, CONFIG_FILE_PATH);
     pthread_mutex_unlock(&lock);
 }
+
+void btc_config_flush(void)
+{
+    assert(config != NULL);
+    pthread_mutex_lock(&lock);
+    config_save(config, CONFIG_FILE_PATH);
+    pthread_mutex_unlock(&lock);
+}
+
+int btc_config_clear(void)
+{
+    assert(config != NULL);
+
+
+    pthread_mutex_lock(&lock);
+    config_free(config);
+
+    config = config_new_empty();
+    if (config == NULL) {
+        pthread_mutex_unlock(&lock);
+        return false;
+    }
+    int ret = config_save(config, CONFIG_FILE_PATH);
+    pthread_mutex_unlock(&lock);
+    return ret;
+}
+

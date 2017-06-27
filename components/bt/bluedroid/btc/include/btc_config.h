@@ -49,6 +49,7 @@ int btc_config_clear(void);
 
 // TODO(zachoverflow): Eww...we need to move these out. These are peer specific, not config general.
 bool btc_get_address_type(const BD_ADDR bd_addr, int *p_addr_type);
+bool btc_compare_address_key_value(char *key_type, void *key_value, int key_length);
 bool btc_get_device_type(const BD_ADDR bd_addr, int *p_device_type);
 
 #endif
