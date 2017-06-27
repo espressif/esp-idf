@@ -209,6 +209,11 @@ If previous steps have been done correctly, the following menu will be displayed
 
 In the menu, navigate to ``Serial flasher config`` > ``Default serial port`` to configure the serial port, where project will be loaded to. Confirm selection by pressing enter, save configuration by selecting ``< Save >`` and then exit application by selecting ``< Exit >``.
 
+.. note::
+
+   On Windows, serial ports have names like COM1. On MacOS, they start with ``/dev/cu.``. On Linux, they start with ``/dev/tty``.
+   (See :doc:`establish-serial-connection` for full details.)
+
 Here are couple of tips on navigation and use of ``menuconfig``:
 
 * Use up & down arrow keys to navigate the menu.
