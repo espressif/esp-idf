@@ -63,8 +63,7 @@ typedef struct {
     uint8_t spi_speed: 4;  /* flash frequency (esp_image_spi_freq_t as uint8_t) */
     uint8_t spi_size: 4;   /* flash chip size (esp_image_flash_size_t as uint8_t) */
     uint32_t entry_addr;
-    uint8_t encrypt_flag;    /* encrypt flag */
-    uint8_t extra_header[15]; /* ESP32 additional header, unused by second bootloader */
+    uint8_t extra_header[16]; /* ESP32 additional header, unused by second bootloader */
 }  esp_image_header_t;
 
 /* Header of binary image segment */
