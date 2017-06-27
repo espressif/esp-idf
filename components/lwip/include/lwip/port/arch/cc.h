@@ -36,6 +36,7 @@
 
 #include <stdint.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "arch/sys_arch.h"
 
@@ -67,7 +68,8 @@ typedef int sys_prot_t;
 #include <stdio.h>
 
 #define LWIP_PLATFORM_DIAG(x)   do {printf x;} while(0)
-#define LWIP_PLATFORM_ASSERT(x) do {printf(x); sys_arch_assert(__FILE__, __LINE__);} while(0)
+// __assert_func is the assertion failure handler from newlib, defined in assert.h
+#define LWIP_PLATFORM_ASSERT(message) __assert_func(__FILE__, __LINE__, __ASSERT_FUNC, message)
 
 #ifdef NDEBUG
 #define LWIP_NOASSERT

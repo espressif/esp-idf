@@ -67,7 +67,6 @@ typedef struct sys_mbox_s {
 #define sys_sem_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
 #define sys_sem_set_invalid( x ) ( ( *x ) = NULL )
 
-void sys_arch_assert(const char *file, int line);
 uint32_t system_get_time(void);
 void sys_delay_ms(uint32_t ms);
 sys_sem_t* sys_thread_sem_init(void);

@@ -482,19 +482,6 @@ sys_arch_unprotect(sys_prot_t pval)
   sys_mutex_unlock(&g_lwip_protect_mutex);
 }
 
-/*-----------------------------------------------------------------------------------*/
-/*
- * Prints an assertion messages and aborts execution.
- */
-void
-sys_arch_assert(const char *file, int line)
-{
-  ESP_LOGE(TAG, "\nAssertion: %d in %s\n", line, file);
-
-//  vTaskEnterCritical();
-  while(1);
-}
-
 #define SYS_TLS_INDEX CONFIG_LWIP_THREAD_LOCAL_STORAGE_INDEX
 /* 
  * get per thread semphore
