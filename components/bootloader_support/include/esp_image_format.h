@@ -81,8 +81,7 @@ typedef struct {
   esp_image_header_t image; /* Header for entire image */
   esp_image_segment_header_t segments[ESP_IMAGE_MAX_SEGMENTS]; /* Per-segment header data */
   uint32_t segment_data[ESP_IMAGE_MAX_SEGMENTS]; /* Data offsets for each segment */
-  uint32_t image_length;
-
+  uint32_t image_len; /* Length of image on flash, in bytes */
 } esp_image_metadata_t;
 
 /* Mode selection for esp_image_load() */

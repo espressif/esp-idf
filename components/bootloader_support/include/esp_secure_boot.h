@@ -11,12 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef __ESP32_SECUREBOOT_H
-#define __ESP32_SECUREBOOT_H
+#pragma once
 
 #include <stdbool.h>
 #include <esp_err.h>
 #include "soc/efuse_reg.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Support functions for secure boot features.
 
@@ -88,4 +91,7 @@ typedef struct {
     uint8_t digest[64];
 } esp_secure_boot_iv_digest_t;
 
+
+#ifdef __cplusplus
+}
 #endif

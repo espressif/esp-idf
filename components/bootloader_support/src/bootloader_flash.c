@@ -32,11 +32,13 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
         return NULL; /* existing mapping in use... */
     }
     const void *result = NULL;
-    esp_err_t err = spi_flash_mmap(src_addr, size, SPI_FLASH_MMAP_DATA, &result, &map);
+    uint32_t src_page = src_addr & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
+    size += (src_addr - src_page);
+    esp_err_t err = spi_flash_mmap(src_page, size, SPI_FLASH_MMAP_DATA, &result, &map);
     if (err != ESP_OK) {
         result = NULL;
     }
-    return result;
+    return (void *)((intptr_t)result + (src_addr - src_page));
 }
 
 void bootloader_munmap(const void *mapping)

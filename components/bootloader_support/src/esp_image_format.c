@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <string.h>
+#include <sys/param.h>
 
 #include <rom/rtc.h>
 #include <soc/cpu.h>
@@ -19,6 +20,7 @@
 #include <esp_log.h>
 #include <bootloader_flash.h>
 #include <bootloader_random.h>
+#include <bootloader_sha.h>
 
 static const char *TAG = "esp_image";
 
@@ -41,7 +43,7 @@ static bool should_load(uint32_t load_addr);
 static bool should_map(uint32_t load_addr);
 
 /* Load or verify a segment */
-static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, uint32_t *checksum);
+static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
 
 /* Verify the main image header */
 static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent);
@@ -69,6 +71,8 @@ esp_err_t esp_image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *
     esp_err_t err = ESP_OK;
     // checksum the image a word at a time. This shaves 30-40ms per MB of image size
     uint32_t checksum_word = ESP_ROM_CHECKSUM_INITIAL;
+    bootloader_sha256_handle_t sha_handle = NULL;
+    uint8_t image_digest[32] = { 0 };
 
     if (data == NULL || part == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -82,11 +86,17 @@ esp_err_t esp_image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *
     bzero(data, sizeof(esp_image_metadata_t));
     data->start_addr = part->offset;
 
+    sha_handle = bootloader_sha256_start();
+    if (sha_handle == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
     ESP_LOGD(TAG, "reading image header @ 0x%x", data->start_addr);
     err = bootloader_flash_read(data->start_addr, &data->image, sizeof(esp_image_header_t), true);
     if (err != ESP_OK) {
         goto err;
     }
+    bootloader_sha256_data(sha_handle, &data->image, sizeof(esp_image_header_t));
 
     ESP_LOGD(TAG, "image header: 0x%02x 0x%02x 0x%02x 0x%02x %08x",
              data->image.magic,
@@ -109,7 +119,7 @@ goto err;
     for(int i = 0; i < data->image.segment_count; i++) {
         esp_image_segment_header_t *header = &data->segments[i];
         ESP_LOGV(TAG, "loading segment header %d at offset 0x%x", i, next_addr);
-        err = process_segment(i, next_addr, header, silent, do_load, &checksum_word);
+        err = process_segment(i, next_addr, header, silent, do_load, sha_handle, &checksum_word);
         if (err != ESP_OK) {
             goto err;
         }
@@ -124,8 +134,8 @@ goto err;
         FAIL_LOAD("image offset has wrapped");
     }
 
-    uint32_t length = end_addr - data->start_addr;
-    length = length + 1; // Add a byte for the checksum
+    uint32_t unpadded_length = end_addr - data->start_addr;
+    uint32_t length = unpadded_length + 1; // Add a byte for the checksum
     length = (length + 15) & ~15; // Pad to next full 16 byte block
     if (length > part->size) {
         FAIL_LOAD("Image length %d doesn't fit in partition length %d", length, part->size);
@@ -133,8 +143,8 @@ goto err;
 
     // Verify checksum
     uint32_t buf[16/sizeof(uint32_t)];
-    err = bootloader_flash_read(data->start_addr + length - 16, buf, 16, true);
-    uint8_t calc = ((uint8_t *)buf)[15];
+    err = bootloader_flash_read(end_addr, buf, length - unpadded_length, true);
+    uint8_t calc = ((uint8_t *)buf)[length - unpadded_length - 1];
     uint8_t checksum = (checksum_word >> 24)
         ^ (checksum_word >> 16)
         ^ (checksum_word >> 8)
@@ -143,6 +153,27 @@ goto err;
         FAIL_LOAD("Checksum failed. Calculated 0x%x read 0x%x",
                   checksum, calc);
     }
+
+    bootloader_sha256_data(sha_handle, buf, length - unpadded_length);
+    bootloader_sha256_finish(sha_handle, image_digest);
+
+#if BOOT_LOG_LEVEL >= LOG_LEVEL_DEBUG
+    char digest_print[sizeof(image_digest)*2 + 1];
+    digest_print[sizeof(image_digest)*2] = 0;
+    for (int i = 0; i < sizeof(image_digest); i++) {
+        for (int shift = 0; shift < 2; shift++) {
+            uint8_t nibble = (image_digest[i] >> (shift ? 0 : 4)) & 0x0F;
+            if (nibble < 10) {
+                digest_print[i*2+shift] = '0' + nibble;
+            } else {
+                digest_print[i*2+shift] = 'a' + nibble - 10;
+            }
+        }
+    }
+    ESP_LOGD(TAG, "Total image length %d bytes (unpagged %d)", length, unpadded_length);
+    ESP_LOGD(TAG, "Image SHA256 digest: %s", digest_print);
+#endif
+    // Verify digest here
 
     data->image_length = length;
 
@@ -166,6 +197,10 @@ goto err;
  err:
     if (err == ESP_OK) {
       err = ESP_ERR_IMAGE_INVALID;
+    }
+    if (sha_handle != NULL) {
+        // Need to finish the digest process to free the handle
+        bootloader_sha256_finish(sha_handle, image_digest);
     }
     // Prevent invalid/incomplete data leaking out
     bzero(data, sizeof(esp_image_metadata_t));
@@ -196,7 +231,7 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
     return err;
 }
 
-static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, uint32_t *checksum)
+static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
 {
     esp_err_t err;
 
@@ -205,6 +240,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
     if (err != ESP_OK) {
         return err;
     }
+    bootloader_sha256_data(sha_handle, header, sizeof(esp_image_segment_header_t));
 
     intptr_t load_addr = header->load_addr;
     uint32_t data_len = header->data_len;
@@ -261,14 +297,24 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 
     const uint32_t *src = data;
 
-    for (int i = 0; i < data_len/sizeof(uint32_t); i++) {
-        uint32_t w = src[i];
+    for (int i = 0; i < data_len; i += 4) {
+        int w_i = i/4; // Word index
+        uint32_t w = src[w_i];
         *checksum ^= w;
 #ifdef BOOTLOADER_BUILD
         if (do_load) {
-            dest[i] = w ^ ((i & 1) ? ram_obfs_value[0] : ram_obfs_value[1]);
+            dest[w_i] = w ^ ((w_i & 1) ? ram_obfs_value[0] : ram_obfs_value[1]);
         }
 #endif
+        // SHA_CHUNK determined experimentally as the optimum size
+        // to call bootloader_sha256_data() with. This is a bit
+        // counter-intuitive, but it's ~3ms better than using the
+        // SHA256 block size.
+        const size_t SHA_CHUNK = 1024;
+        if (i % SHA_CHUNK == 0) {
+            bootloader_sha256_data(sha_handle, &src[w_i],
+                                   MIN(SHA_CHUNK, data_len - i));
+        }
     }
 
     bootloader_munmap(data);
@@ -361,7 +407,7 @@ esp_err_t esp_image_verify_bootloader(uint32_t *length)
                                    &bootloader_part,
                                    &data);
     if (length != NULL) {
-        *length = (err == ESP_OK) ? data.image_length : 0;
+        *length = (err == ESP_OK) ? data.image_len : 0;
     }
     return err;
 }
