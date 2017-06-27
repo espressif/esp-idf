@@ -164,6 +164,11 @@ static esp_err_t gpio_output_disable(gpio_num_t gpio_num)
     } else {
         GPIO.enable1_w1tc.data = (0x1 << (gpio_num - 32));
     }
+
+    // Ensure no other output signal is routed via GPIO matrix to this pin
+    REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4),
+              SIG_GPIO_OUT_IDX);
+
     return ESP_OK;
 }
 
@@ -175,6 +180,7 @@ static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
     } else {
         GPIO.enable1_w1ts.data = (0x1 << (gpio_num - 32));
     }
+    gpio_matrix_out(gpio_num, SIG_GPIO_OUT_IDX, false, false);
     return ESP_OK;
 }
 
@@ -250,17 +256,9 @@ esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode)
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[gpio_num]);
     }
     if (mode & GPIO_MODE_DEF_OUTPUT) {
-        if (gpio_num < 32) {
-            GPIO.enable_w1ts = (0x1 << gpio_num);
-        } else {
-            GPIO.enable1_w1ts.data = (0x1 << (gpio_num - 32));
-        }
+        gpio_output_enable(gpio_num);
     } else {
-        if (gpio_num < 32) {
-            GPIO.enable_w1tc = (0x1 << gpio_num);
-        } else {
-            GPIO.enable1_w1tc.data = (0x1 << (gpio_num - 32));
-        }
+        gpio_output_disable(gpio_num);
     }
     if (mode & GPIO_MODE_DEF_OD) {
         GPIO.pin[gpio_num].pad_driver = 1;
@@ -311,7 +309,6 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
             }
             if ((pGPIOConfig->mode) & GPIO_MODE_DEF_OUTPUT) {
                 output_en = 1;
-                gpio_matrix_out(io_num, SIG_GPIO_OUT_IDX, 0, 0);
                 gpio_output_enable(io_num);
             } else {
                 gpio_output_disable(io_num);
