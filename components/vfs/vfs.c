@@ -142,6 +142,11 @@ static const vfs_entry_t* get_vfs_for_path(const char* path)
             memcmp(path, vfs->path_prefix, vfs->path_prefix_len) != 0) {
             continue;
         }
+        // this is the default VFS and we don't have a better match yet.
+        if (vfs->path_prefix_len == 0 && !best_match) {
+            best_match = vfs;
+            continue;
+        }
         // if path is not equal to the prefix, expect to see a path separator
         // i.e. don't match "/data" prefix for "/data1/foo.txt" path
         if (len > vfs->path_prefix_len &&
