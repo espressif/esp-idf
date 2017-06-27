@@ -522,6 +522,14 @@ TEST_CASE("nvs api tests", "[nvs]")
     char buf[strlen(str) + 1];
     size_t buf_len = sizeof(buf);
 
+    size_t buf_len_needed;
+    TEST_ESP_OK(nvs_get_str(handle_2, "key", NULL, &buf_len_needed));
+    CHECK(buf_len_needed == buf_len);
+    
+    size_t buf_len_short = buf_len - 1;
+    TEST_ESP_ERR(ESP_ERR_NVS_INVALID_LENGTH, nvs_get_str(handle_2, "key", buf, &buf_len_short));
+    CHECK(buf_len_short == buf_len);
+    
     TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len));
 
     CHECK(0 == strcmp(buf, str));
