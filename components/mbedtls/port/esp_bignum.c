@@ -52,7 +52,7 @@ static SemaphoreHandle_t op_complete_sem;
 static IRAM_ATTR void rsa_complete_isr(void *arg)
 {
     BaseType_t higher_woken;
-    REG_WRITE(RSA_INTERRUPT_REG, 1);
+    DPORT_REG_WRITE(RSA_INTERRUPT_REG, 1);
     xSemaphoreGiveFromISR(op_complete_sem, &higher_woken);
     if (higher_woken) {
         portYIELD_FROM_ISR();
@@ -84,7 +84,7 @@ void esp_mpi_acquire_hardware( void )
 
     DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
-    while(REG_READ(RSA_CLEAN_REG) != 1);
+    while(DPORT_REG_READ(RSA_CLEAN_REG) != 1);
 
     // Note: from enabling RSA clock to here takes about 1.3us
 
@@ -167,7 +167,9 @@ static inline int mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, int num_wo
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(x, num_words) );
 
     /* Copy data from memory block registers */
-    memcpy(x->p, (uint32_t *)mem_base, num_words * 4);
+    for (size_t i = 0; i < num_words; ++i) {
+        x->p[i] = DPORT_REG_READ(mem_base + i * 4);
+    }
 
     /* Zero any remaining limbs in the bignum, if the buffer is bigger
        than num_words */
@@ -242,17 +244,17 @@ static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words
 static inline void execute_op(uint32_t op_reg)
 {
     /* Clear interrupt status */
-    REG_WRITE(RSA_INTERRUPT_REG, 1);
+    DPORT_REG_WRITE(RSA_INTERRUPT_REG, 1);
 
     /* Note: above REG_WRITE includes a memw, so we know any writes
        to the memory blocks are also complete. */
 
-    REG_WRITE(op_reg, 1);
+    DPORT_REG_WRITE(op_reg, 1);
 
 #ifdef CONFIG_MBEDTLS_MPI_USE_INTERRUPT
     if (!xSemaphoreTake(op_complete_sem, 2000 / portTICK_PERIOD_MS)) {
         ESP_LOGE(TAG, "Timed out waiting for RSA operation (op_reg 0x%x int_reg 0x%x)",
-                 op_reg, REG_READ(RSA_INTERRUPT_REG));
+                 op_reg, DPORT_REG_READ(RSA_INTERRUPT_REG));
         abort(); /* indicates a fundamental problem with driver */
     }
 #else
@@ -261,7 +263,7 @@ static inline void execute_op(uint32_t op_reg)
 #endif
 
     /* clear the interrupt */
-    REG_WRITE(RSA_INTERRUPT_REG, 1);
+    DPORT_REG_WRITE(RSA_INTERRUPT_REG, 1);
 }
 
 /* Sub-stages of modulo multiplication/exponentiation operations */
@@ -289,10 +291,10 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
     mpi_to_mem_block(RSA_MEM_M_BLOCK_BASE, M, num_words);
     mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, X, num_words);
     mpi_to_mem_block(RSA_MEM_RB_BLOCK_BASE, &Rinv, num_words);
-    REG_WRITE(RSA_M_DASH_REG, (uint32_t)Mprime);
+    DPORT_REG_WRITE(RSA_M_DASH_REG, (uint32_t)Mprime);
 
     /* "mode" register loaded with number of 512-bit blocks, minus 1 */
-    REG_WRITE(RSA_MULT_MODE_REG, (num_words / 16) - 1);
+    DPORT_REG_WRITE(RSA_MULT_MODE_REG, (num_words / 16) - 1);
 
     /* Execute first stage montgomery multiplication */
     execute_op(RSA_MULT_START_REG);
@@ -365,14 +367,14 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
     esp_mpi_acquire_hardware();
 
     /* "mode" register loaded with number of 512-bit blocks, minus 1 */
-    REG_WRITE(RSA_MODEXP_MODE_REG, (num_words / 16) - 1);
+    DPORT_REG_WRITE(RSA_MODEXP_MODE_REG, (num_words / 16) - 1);
 
     /* Load M, X, Rinv, M-prime (M-prime is mod 2^32) */
     mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, X, num_words);
     mpi_to_mem_block(RSA_MEM_Y_BLOCK_BASE, Y, num_words);
     mpi_to_mem_block(RSA_MEM_M_BLOCK_BASE, M, num_words);
     mpi_to_mem_block(RSA_MEM_RB_BLOCK_BASE, Rinv, num_words);
-    REG_WRITE(RSA_M_DASH_REG, Mprime);
+    DPORT_REG_WRITE(RSA_M_DASH_REG, Mprime);
 
     execute_op(RSA_START_MODEXP_REG);
 
@@ -502,12 +504,12 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
        This is OK for now because zeroing is done by hardware when we do esp_mpi_acquire_hardware().
     */
 
-    REG_WRITE(RSA_M_DASH_REG, 0);
+    DPORT_REG_WRITE(RSA_M_DASH_REG, 0);
 
     /* "mode" register loaded with number of 512-bit blocks in result,
        plus 7 (for range 9-12). (this is ((N~ / 32) - 1) + 8))
     */
-    REG_WRITE(RSA_MULT_MODE_REG, (words_z / 16) + 7);
+    DPORT_REG_WRITE(RSA_MULT_MODE_REG, (words_z / 16) + 7);
 
     execute_op(RSA_MULT_START_REG);
 
@@ -547,21 +549,21 @@ static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, 
 
     /* M = 2^num_words - 1, so block is entirely FF */
     for(int i = 0; i < num_words; i++) {
-        REG_WRITE(RSA_MEM_M_BLOCK_BASE + i * 4, UINT32_MAX);
+        DPORT_REG_WRITE(RSA_MEM_M_BLOCK_BASE + i * 4, UINT32_MAX);
     }
     /* Mprime = 1 */
-    REG_WRITE(RSA_M_DASH_REG, 1);
+    DPORT_REG_WRITE(RSA_M_DASH_REG, 1);
 
     /* "mode" register loaded with number of 512-bit blocks, minus 1 */
-    REG_WRITE(RSA_MULT_MODE_REG, (num_words / 16) - 1);
+    DPORT_REG_WRITE(RSA_MULT_MODE_REG, (num_words / 16) - 1);
 
     /* Load X */
     mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, X, num_words);
 
     /* Rinv = 1 */
-    REG_WRITE(RSA_MEM_RB_BLOCK_BASE, 1);
+    DPORT_REG_WRITE(RSA_MEM_RB_BLOCK_BASE, 1);
     for(int i = 1; i < num_words; i++) {
-        REG_WRITE(RSA_MEM_RB_BLOCK_BASE + i * 4, 0);
+        DPORT_REG_WRITE(RSA_MEM_RB_BLOCK_BASE + i * 4, 0);
     }
 
     execute_op(RSA_MULT_START_REG);
