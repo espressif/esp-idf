@@ -108,7 +108,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
     if (src_addr + size > g_rom_flashchip.chip_size) {
         return ESP_ERR_INVALID_ARG;
     }
-    mmap_entry_t* new_entry = (mmap_entry_t*) malloc(sizeof(mmap_entry_t));
+    mmap_entry_t* new_entry = (mmap_entry_t*) pvPortMallocCaps(sizeof(mmap_entry_t), MALLOC_CAP_INTERNAL);
     if (new_entry == 0) {
         return ESP_ERR_NO_MEM;
     }
