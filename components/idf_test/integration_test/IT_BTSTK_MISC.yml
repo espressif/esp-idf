@@ -1,0 +1,138 @@
+test cases:
+- ID: BTSTK_MISC_0101
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: bt init and enable
+  summary: correct init and deinit flow
+  steps: '1. disable and deinit bt
+    2. init bt
+    3. deinit bt
+    4. init and enable bt
+    5. disable and deinit bt'
+  expected result: '1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed'
+  initial condition: BLE_DEINIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: Misc
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bt -D -z stop"
+    - ["R SSC1 C +BT"]
+  - - "SSC SSC1 bt -D -z init"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bt -D -z deinit"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bt -D -z start"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bt -D -z stop"
+    - ["R SSC1 C +BT:OK"]
+- ID: BTSTK_MISC_0102
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: bt init and enable
+  summary: incorrect deinit disable flow
+  steps: '1. disable and deinit bt
+    2. init and enable bt
+    3. deinit bt
+    4. disable bt
+    5. disable bt
+    6. deinit bt
+    7. deinit bt
+    8. disable bt'
+  expected result: '1. succeed
+    2. succeed
+    3. fail
+    4. succeed
+    5. fail
+    6. succeed
+    7. fail
+    8. fail'
+  initial condition: BLE_DEINIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: Misc
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bt -D -z stop"
+    - ["R SSC1 C +BT"]
+  - - "SSC SSC1 bt -D -z start"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bt -D -z deinit"
+    - ["R SSC1 C +BT:ERROR"]
+  - - "SSC SSC1 bt -D -z disable"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bt -D -z disable"
+    - ["R SSC1 C +BT:ERROR"]
+  - - "SSC SSC1 bt -D -z deinit"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bt -D -z deinit"
+    - ["R SSC1 C +BT:ERROR"]
+  - - "SSC SSC1 bt -D -z disable"
+    - ["R SSC1 C +BT:ERROR"]
+- ID: BTSTK_MISC_0103
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  test point 2: bt init and enable
+  summary: incorrect init enable flow
+  steps: '1. disable and deinit bt
+    2. enable bt
+    3. init bt
+    4. init bt
+    5. enable bt
+    6. enable bt
+    7. init bt'
+  expected result: '1. succeed
+    2. fail
+    3. succeed
+    4. fail
+    5. succeed
+    6. fail
+    7. fail'
+  initial condition: BLE_DEINIT1
+  test environment: SSC_T1_1
+  execution time: 0
+  module: BT Stack
+  sub module: Misc
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+  cmd set:
+  - ""
+  - - "SSC SSC1 bt -D -z stop"
+    - ["R SSC1 C +BT"]
+  - - "SSC SSC1 bt -D -z enable"
+    - ["R SSC1 C +BT:ERROR"]
+  - - "SSC SSC1 bt -D -z init"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bt -D -z init"
+    - ["R SSC1 C +BT:ERROR"]
+  - - "SSC SSC1 bt -D -z enable"
+    - ["R SSC1 C +BT:OK"]
+  - - "SSC SSC1 bt -D -z enable"
+    - ["R SSC1 C +BT:ERROR"]
+  - - "SSC SSC1 bt -D -z init"
+    - ["R SSC1 C +BT:ERROR"]

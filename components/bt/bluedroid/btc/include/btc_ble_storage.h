@@ -89,6 +89,9 @@ bt_status_t btc_storage_add_ble_bonding_key( bt_bdaddr_t *remote_bd_addr,
                                                                                       uint8_t key_type,
                                                                                       uint8_t key_length);
 
+bool btc_compare_le_key_value(const uint8_t key_type, const size_t key_len, const tBTA_LE_KEY_VALUE *key_vaule,
+                    bt_bdaddr_t bd_addr);
+
 void btc_save_ble_bonding_keys(void);
 
 bt_status_t btc_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add, 
@@ -98,6 +101,8 @@ bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
                                                                 uint8_t key_type,
                                                                 char *key_value,
                                                                 int key_length);
+
+bool btc_storage_compare_address_key_value(uint8_t key_type, void *key_value, int key_length);
 
 bt_status_t btc_storage_add_ble_local_key(char *key,
                                                                               uint8_t key_type,

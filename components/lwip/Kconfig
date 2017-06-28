@@ -68,6 +68,8 @@ config LWIP_IP_REASSEMBLY
     help
         Enabling this option allows reassemblying incoming fragmented IP packets.
 
+menu "TCP"
+
 config TCP_MAXRTX
     int "Maximum number of retransmissions of data segments"
     default 12
@@ -81,6 +83,79 @@ config TCP_SYNMAXRTX
     range 3 12
     help
         Set maximum number of retransmissions of SYN segments.
+
+config TCP_MSS
+    int "Maximum Segment Size (MSS)"
+    default 1436
+    range 1220 1436
+    help
+        Set maximum segment size for TCP transmission.
+
+        Can be set lower to save RAM, the default value 1436 will give best throughput.
+
+config TCP_SND_BUF_DEFAULT
+    int "Default send buffer size"
+    default 5744  # 4 * default MSS
+    range 2440 65535
+    help
+        Set default send buffer size for new TCP sockets.
+
+        Per-socket send buffer size can be changed at runtime
+        with lwip_setsockopt(s, TCP_SNDBUF, ...).
+
+        This value must be at least 2x the MSS size, and the default
+        is 4x the default MSS size.
+
+        Setting a smaller default SNDBUF size can save some RAM, but
+        will decrease performance.
+
+config TCP_WND_DEFAULT
+    int "Default receive window size"
+    default 5744 # 4 * default MSS
+    range 2440 65535
+    help
+        Set default TCP receive window size for new TCP sockets.
+
+        Per-socket receive window size can be changed at runtime
+        with lwip_setsockopt(s, TCP_WINDOW, ...).
+
+        Setting a smaller default receive window size can save some RAM,
+        but will significantly decrease performance.
+
+config TCP_QUEUE_OOSEQ
+    bool "Queue incoming out-of-order segments"
+    default y
+    help
+        Queue incoming out-of-order segments for later use.
+
+        Disable this option to save some RAM during TCP sessions, at the expense
+        of increased retransmissions if segments arrive out of order.
+
+choice TCP_OVERSIZE
+    prompt "Pre-allocate transmit PBUF size"
+    default TCP_OVERSIZE_MSS
+    help
+        Allows enabling "oversize" allocation of TCP transmission pbufs ahead of time,
+        which can reduce the length of pbuf chains used for transmission.
+
+        This will not make a difference to sockets where Nagle's algorithm
+        is disabled.
+
+        Default value of MSS is fine for most applications, 25% MSS may save
+        some RAM when only transmitting small amounts of data. Disabled will
+        have worst performance and fragmentation characteristics, but uses
+        least RAM overall.
+
+config TCP_OVERSIZE_MSS
+     bool "MSS"
+config TCP_OVERSIZE_QUARTER_MSS
+     bool "25% MSS"
+config TCP_OVERSIZE_DISABLE
+     bool "Disabled"
+
+endchoice
+
+endmenu # TCP
 
 config LWIP_DHCP_DOES_ARP_CHECK
     bool "Enable an ARP check on the offered address"
@@ -138,5 +213,17 @@ config PPP_DEBUG_ON
    default n
    help
        Enable PPP debug log output
+
+menu "ICMP"
+
+config LWIP_MULTICAST_PING
+   bool "Respond to multicast pings"
+   default n
+
+config LWIP_BROADCAST_PING
+   bool "Respond to broadcast pings"
+   default n
+
+endmenu # ICMP
 
 endmenu

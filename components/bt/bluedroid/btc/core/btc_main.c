@@ -54,8 +54,8 @@ static void btc_init_bluetooth(void)
 {
     osi_alarm_create_mux();
     osi_alarm_init();
-    btc_config_init();
     bte_main_boot_entry(btc_init_callback);
+    btc_config_init();
 }
 
 

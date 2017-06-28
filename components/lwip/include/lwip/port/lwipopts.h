@@ -184,6 +184,10 @@
    ----------------------------------
 */
 
+#define LWIP_BROADCAST_PING CONFIG_LWIP_BROADCAST_PING
+
+#define LWIP_MULTICAST_PING CONFIG_LWIP_MULTICAST_PING
+
 /*
    ---------------------------------
    ---------- RAW options ----------
@@ -280,7 +284,7 @@
  * TCP_QUEUE_OOSEQ==1: TCP will queue segments that arrive out of order.
  * Define to 0 if your device is low on memory.
  */
-#define TCP_QUEUE_OOSEQ                 1
+#define TCP_QUEUE_OOSEQ                 CONFIG_TCP_QUEUE_OOSEQ
 
 /*
  *     LWIP_EVENT_API==1: The user defines lwip_tcp_event() to receive all
@@ -288,7 +292,7 @@
  *     LWIP_CALLBACK_API==1: The PCB callback function is called directly
  *         for the event. This is the default.
 */
-#define TCP_MSS                         1460
+#define TCP_MSS                         CONFIG_TCP_MSS
 
 /**
  * TCP_MAXRTX: Maximum number of retransmissions of data segments.
@@ -304,6 +308,24 @@
  * TCP_LISTEN_BACKLOG: Enable the backlog option for tcp listen pcb.
  */
 #define TCP_LISTEN_BACKLOG              1
+
+
+/**
+ * TCP_OVERSIZE: The maximum number of bytes that tcp_write may
+ * allocate ahead of time
+ */
+#ifdef CONFIG_TCP_OVERSIZE_MSS
+#define TCP_OVERSIZE                    TCP_MSS
+#endif
+#ifdef CONFIG_TCP_OVERSIZE_QUARTER_MSS
+#define TCP_OVERSIZE                    (TCP_MSS/4)
+#endif
+#ifdef CONFIG_TCP_OVERSIZE_DISABLE
+#define TCP_OVERSIZE                    0
+#endif
+#ifndef TCP_OVERSIZE
+#error "One of CONFIG_TCP_OVERSIZE_xxx options should be set by sdkconfig"
+#endif
 
 /*
    ----------------------------------
@@ -669,8 +691,8 @@
 #define ESP_DHCP_TIMER                  1
 #define ESP_LWIP_LOGI(...)              ESP_LOGI("lwip", __VA_ARGS__)
 
-#define TCP_WND_DEFAULT                 (4*TCP_MSS)
-#define TCP_SND_BUF_DEFAULT             (4*TCP_MSS)
+#define TCP_WND_DEFAULT                 CONFIG_TCP_WND_DEFAULT
+#define TCP_SND_BUF_DEFAULT             CONFIG_TCP_SND_BUF_DEFAULT
 
 #if ESP_PERF
 #define DBG_PERF_PATH_SET(dir, point)

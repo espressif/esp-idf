@@ -10,7 +10,7 @@
 # where this file is located.
 #
 
-.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size
+.PHONY: build-components menuconfig defconfig all build clean all_binaries check-submodules size size-components size-files
 all: all_binaries
 # see below for recipe of 'all' target
 #
@@ -28,7 +28,8 @@ help:
 	@echo "make all - Build app, bootloader, partition table"
 	@echo "make flash - Flash app, bootloader, partition table to a chip"
 	@echo "make clean - Remove all build output"
-	@echo "make size - Display the memory footprint of the app"
+	@echo "make size - Display the static memory footprint of the app"
+	@echo "make size-components, size-files - Finer-grained memory footprints"
 	@echo "make erase_flash - Erase entire flash contents"
 	@echo "make monitor - Run idf_monitor tool to monitor serial output from app"
 	@echo "make simple_monitor - Monitor serial output on terminal console"
@@ -391,7 +392,13 @@ app-clean: $(addsuffix -clean,$(notdir $(COMPONENT_PATHS_BUILDABLE)))
 	rm -f $(APP_ELF) $(APP_BIN) $(APP_MAP)
 
 size: $(APP_ELF)
-	$(SIZE) $(APP_ELF)
+	$(PYTHON) $(IDF_PATH)/tools/idf_size.py $(APP_MAP)
+
+size-files: $(APP_ELF)
+	$(PYTHON) $(IDF_PATH)/tools/idf_size.py --files $(APP_MAP)
+
+size-components: $(APP_ELF)
+	$(PYTHON) $(IDF_PATH)/tools/idf_size.py --archives $(APP_MAP)
 
 # NB: this ordering is deliberate (app-clean before config-clean),
 # so config remains valid during all component clean targets

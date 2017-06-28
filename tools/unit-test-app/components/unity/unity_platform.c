@@ -57,6 +57,7 @@ void unity_testcase_register(struct test_desc_t* desc)
 
 static void unity_run_single_test(const struct test_desc_t* test)
 {
+    printf("Running %s...\n", test->name);
     Unity.TestFile = test->file;
     Unity.CurrentDetail1 = test->desc;
     UnityDefaultTestRun(test->fn, test->name, test->line);
@@ -72,7 +73,6 @@ static void unity_run_single_test_by_index(int index)
     {
         unity_run_single_test(test);
     }
-    
 }
 
 static void unity_run_single_test_by_index_parse(const char* filter, int index_max)
@@ -133,6 +133,7 @@ void unity_run_tests_with_filter(const char* filter)
     {
         ++filter;
     }
+    printf("Running tests %smatching '%s'...\n", s_invert ? "NOT " : "", filter);
 
     for (const struct test_desc_t* test = s_unity_tests_first; test != NULL; test = test->next)
     {
