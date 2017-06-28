@@ -87,11 +87,15 @@ void call_start_cpu0()
     cpu_configure_region_protection();
 
     /* Sanity check that static RAM is after the stack */
-    int *sp = get_sp();
-    assert(&_bss_start <= &_bss_end);
-    assert(&_data_start <= &_data_end);
-    assert(sp < &_bss_start);
-    assert(sp < &_data_start);
+#ifndef NDEBUG
+    {
+        int *sp = get_sp();
+        assert(&_bss_start <= &_bss_end);
+        assert(&_data_start <= &_data_end);
+        assert(sp < &_bss_start);
+        assert(sp < &_data_start);
+    }
+#endif
 
     //Clear bss
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
@@ -425,23 +429,12 @@ static void unpack_load_app(const esp_partition_pos_t* partition)
     esp_image_metadata_t data;
 
     /* TODO: load the app image as part of OTA boot decision, so can fallback if loading fails */
+    /* Loading the image here also includes secure boot verification */
     err = esp_image_load(ESP_IMAGE_LOAD, partition, &data);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to verify app image @ 0x%x (%d)", partition->offset, err);
         return;
     }
-
-#ifdef CONFIG_SECURE_BOOT_ENABLED
-    if (esp_secure_boot_enabled()) {
-        ESP_LOGI(TAG, "Verifying app signature @ 0x%x (length 0x%x)", partition->offset, data.image_length);
-        err = esp_secure_boot_verify_signature(partition->offset, data.image_length);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "App image @ 0x%x failed signature verification (%d)", partition->offset, err);
-            return;
-        }
-        ESP_LOGD(TAG, "App signature is valid");
-    }
-#endif
 
     uint32_t drom_addr = 0;
     uint32_t drom_load_addr = 0;
@@ -497,6 +490,14 @@ static void set_cache_and_start_app(
     ESP_LOGD(TAG, "configure drom and irom and start");
     Cache_Read_Disable( 0 );
     Cache_Flush( 0 );
+
+    /* Clear the MMU entries that are already set up,
+       so the new app only has the mappings it creates.
+    */
+    for (int i = 0; i < DPORT_FLASH_MMU_TABLE_SIZE; i++) {
+        DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
+    }
+
     uint32_t drom_page_count = (drom_size + 64*1024 - 1) / (64*1024); // round up to 64k
     ESP_LOGV(TAG, "d mmu set paddr=%08x vaddr=%08x size=%d n=%d", drom_addr & 0xffff0000, drom_load_addr & 0xffff0000, drom_size, drom_page_count );
     int rc = cache_flash_mmu_set( 0, 0, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count );

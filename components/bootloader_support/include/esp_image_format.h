@@ -59,12 +59,27 @@ typedef enum {
 typedef struct {
     uint8_t magic;
     uint8_t segment_count;
-    uint8_t spi_mode;      /* flash read mode (esp_image_spi_mode_t as uint8_t) */
-    uint8_t spi_speed: 4;  /* flash frequency (esp_image_spi_freq_t as uint8_t) */
-    uint8_t spi_size: 4;   /* flash chip size (esp_image_flash_size_t as uint8_t) */
+    /* flash read mode (esp_image_spi_mode_t as uint8_t) */
+    uint8_t spi_mode;
+    /* flash frequency (esp_image_spi_freq_t as uint8_t) */
+    uint8_t spi_speed: 4;
+    /* flash chip size (esp_image_flash_size_t as uint8_t) */
+    uint8_t spi_size: 4;
     uint32_t entry_addr;
-    uint8_t extra_header[16]; /* ESP32 additional header, unused by second bootloader */
-}  esp_image_header_t;
+    /* WP pin when SPI pins set via efuse (read by ROM bootloader, the IDF bootloader uses software to configure the WP
+     * pin and sets this field to 0xEE=disabled) */
+    uint8_t wp_pin;
+    /* Drive settings for the SPI flash pins (read by ROM bootloader) */
+    uint8_t spi_pin_drv[3];
+    /* Reserved bytes in ESP32 additional header space, currently unused */
+    uint8_t reserved[11];
+    /* If 1, a SHA256 digest "simple hash" (of the entire image) is appended after the checksum. Included in image length. This digest
+     * is separate to secure boot and only used for detecting corruption. For secure boot signed images, the signature
+     * is appended after this (and the simple hash is included in the signed data). */
+    uint8_t hash_appended;
+} __attribute__((packed))  esp_image_header_t;
+
+_Static_assert(sizeof(esp_image_header_t) == 24, "binary image header should be 24 bytes");
 
 /* Header of binary image segment */
 typedef struct {
@@ -97,18 +112,23 @@ typedef enum {
  *
  * If encryption is enabled, data will be transparently decrypted.
  *
+ * @param mode Mode of operation (verify, silent verify, or load).
  * @param part Partition to load the app from.
- * @param[out] data Pointer to the metadata structure to be filled in by this function. 'start_addr' member should be set (to the start address of the image.) Other fields will all be initialised by this function.
- * @param log_errors Log errors reading the image.
+ * @param[inout] data Pointer to the image metadata structure which is be filled in by this function. 'start_addr' member should be set (to the start address of the image.) Other fields will all be initialised by this function.
  *
  * Image validation checks:
- * - Magic byte
- * - Partition smaller than 16MB
- * - All segments & image fit in partition
- * - 8 bit image checksum is valid
- * - (Signature) if signature verification is enabled
+ * - Magic byte.
+ * - Partition smaller than 16MB.
+ * - All segments & image fit in partition.
+ * - 8 bit image checksum is valid.
+ * - SHA-256 of image is valid (if image has this appended).
+ * - (Signature) if signature verification is enabled.
  *
- * @return ESP_OK if image metadata was loaded successfully, ESP_ERR_IMAGE_FLASH_FAIL if a SPI flash error occurs, ESP_ERR_IMAGE_INVALID if the image appears invalid, ESP_ERR_INVALID_ARG if the data pointer is invalid.
+ * @return
+ * - ESP_OK if verify or load was successful
+ * - ESP_ERR_IMAGE_FLASH_FAIL if a SPI flash error occurs
+ * - ESP_ERR_IMAGE_INVALID if the image appears invalid.
+ * - ESP_ERR_INVALID_ARG if the partition or data pointers are invalid.
  */
 esp_err_t esp_image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data);
 

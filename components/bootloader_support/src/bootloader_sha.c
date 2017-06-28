@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,11 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 {
     assert(handle != NULL);
     mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
-    mbedtls_sha256_finish(ctx, digest);
+    if (digest != NULL) {
+        mbedtls_sha256_finish(ctx, digest);
+    }
+    mbedtls_sha256_free(ctx);
+    free(handle);
 }
 
 #else // Bootloader version
@@ -58,6 +62,8 @@ static uint32_t words_hashed;
 
 // Words per SHA256 block
 static const size_t BLOCK_WORDS = (64/sizeof(uint32_t));
+// Words in final SHA256 digest
+static const size_t DIGEST_WORDS = (32/sizeof(uint32_t));
 
 bootloader_sha256_handle_t bootloader_sha256_start()
 {
@@ -116,22 +122,28 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 {
     assert(handle != NULL);
 
-    uint32_t data_words = words_hashed;
-    ets_printf("Padding from %d bytes\n", data_words * 4);
+    if (digest == NULL) {
+        return; // We'd free resources here, but there are none to free
+    }
 
-    // Pad to a 60 byte long block loaded in the engine
-    // (normally end of block is a 64-bit length, but we know
-    // the upper 32 bits will be zeroes.)
+    uint32_t data_words = words_hashed;
+
+    // Pad to a 55 byte long block loaded in the engine
+    // (leaving 1 byte 0x80 plus variable padding plus 8 bytes of length,
+    // to fill a 64 byte block.)
     int block_bytes = (words_hashed % BLOCK_WORDS) * 4;
-    int pad_bytes = 60 - block_bytes;
+    int pad_bytes = 55 - block_bytes;
     if (pad_bytes < 0) {
         pad_bytes += 64;
     }
     static const uint8_t padding[64] = { 0x80, 0, };
 
+    pad_bytes += 5; // 1 byte for 0x80 plus first 4 bytes of the 64-bit length
+    assert(pad_bytes % 4 == 0); // should be, as (block_bytes % 4 == 0)
+
     bootloader_sha256_data(handle, padding, pad_bytes);
 
-    assert(words_hashed % BLOCK_WORDS == 56/4);
+    assert(words_hashed % BLOCK_WORDS == 60/4); // 32-bits left in block
 
     // Calculate 32-bit length for final 32 bits of data
     uint32_t bit_count = __builtin_bswap32( data_words * 32 );
@@ -139,15 +151,13 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 
     assert(words_hashed % BLOCK_WORDS == 0);
 
-    ets_printf("Padded to %d bytes\n", words_hashed * 4);
-
     while(REG_READ(SHA_256_BUSY_REG) == 1) { }
     REG_WRITE(SHA_256_LOAD_REG, 1);
     while(REG_READ(SHA_256_BUSY_REG) == 1) { }
 
     uint32_t *digest_words = (uint32_t *)digest;
     uint32_t *sha_text_reg = (uint32_t *)(SHA_TEXT_BASE);
-    for (int i = 0; i < BLOCK_WORDS; i++) {
+    for (int i = 0; i < DIGEST_WORDS; i++) {
         digest_words[i] = __builtin_bswap32(sha_text_reg[i]);
     }
     asm volatile ("memw");

@@ -4261,7 +4261,9 @@
 /* Flash MMU table for APP CPU */
 #define DPORT_APP_FLASH_MMU_TABLE ((volatile uint32_t*) 0x3FF12000)
 
+#define DPORT_FLASH_MMU_TABLE_SIZE 0x100
 
+#define DPORT_FLASH_MMU_TABLE_INVALID_VAL 0x100
 
 #endif /*_SOC_DPORT_REG_H_ */
 

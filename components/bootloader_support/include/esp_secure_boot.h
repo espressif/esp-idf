@@ -77,11 +77,21 @@ esp_err_t esp_secure_boot_permanently_enable(void);
  */
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length);
 
+/** @brief Verify the secure boot signature block (deterministic ECDSA w/ SHA256) based on the SHA256 hash of some data.
+ *
+ * Similar to esp_secure_boot_verify_signature(), but can be used when the digest is precalculated.
+ * @param sig_block Pointer to signature block data
+ * @param image_digest Pointer to 32 byte buffer holding SHA-256 hash.
+ *
+ */
+
 /** @brief Secure boot verification block, on-flash data format. */
 typedef struct {
     uint32_t version;
     uint8_t signature[64];
 } esp_secure_boot_sig_block_t;
+
+esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest);
 
 #define FLASH_OFFS_SECURE_BOOT_IV_DIGEST 0
 

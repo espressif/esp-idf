@@ -83,14 +83,14 @@ static void IRAM_ATTR spi_flash_mmap_init()
         uint32_t entry_app = DPORT_APP_FLASH_MMU_TABLE[i];
         if (entry_pro != entry_app) {
             // clean up entries used by boot loader
-            entry_pro = INVALID_ENTRY_VAL;
-            DPORT_PRO_FLASH_MMU_TABLE[i] = INVALID_ENTRY_VAL;
+            entry_pro = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
+            DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
         }
         if ((entry_pro & INVALID_ENTRY_VAL) == 0 && (i == 0 || i == PRO_IRAM0_FIRST_USABLE_PAGE || entry_pro != 0)) {
             s_mmap_page_refcnt[i] = 1;
         } else {
-            DPORT_PRO_FLASH_MMU_TABLE[i] = INVALID_ENTRY_VAL;
-            DPORT_APP_FLASH_MMU_TABLE[i] = INVALID_ENTRY_VAL;
+            DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
+            DPORT_APP_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
         }
     }
 }

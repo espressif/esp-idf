@@ -14,6 +14,7 @@
 #include "sdkconfig.h"
 
 #include "bootloader_flash.h"
+#include "bootloader_sha.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
@@ -34,20 +35,13 @@ extern const uint8_t signature_verification_key_end[] asm("_binary_signature_ver
 
 #define SIGNATURE_VERIFICATION_KEYLEN 64
 
+#define DIGEST_LEN 32
+
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
-#ifdef BOOTLOADER_BUILD
-    SHA_CTX sha;
-#endif
-    uint8_t digest[32];
-    ptrdiff_t keylen;
+    uint8_t digest[DIGEST_LEN];
     const uint8_t *data;
     const esp_secure_boot_sig_block_t *sigblock;
-    bool is_valid;
-#ifdef BOOTLOADER_BUILD
-    const uint8_t *digest_data;
-    uint32_t digest_len;
-#endif
 
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
 
@@ -57,46 +51,43 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         return ESP_FAIL;
     }
 
-    sigblock = (const esp_secure_boot_sig_block_t *)(data + length);
-
-    if (sigblock->version != 0) {
-        ESP_LOGE(TAG, "src 0x%x has invalid signature version field 0x%08x", src_addr, sigblock->version);
-        goto unmap_and_fail;
-    }
-
+    // Calculate digest of main image
 #ifdef BOOTLOADER_BUILD
-    /* Use ROM SHA functions directly */
-    ets_sha_enable();
-    ets_sha_init(&sha);
-    digest_len = length * 8;
-    digest_data = data;
-    while (digest_len > 0) {
-        uint32_t chunk_len = (digest_len > 64) ? 64 : digest_len;
-        ets_sha_update(&sha, SHA2_256, digest_data, chunk_len);
-        digest_len -= chunk_len;
-        digest_data += chunk_len / 8;
-    }
-    ets_sha_finish(&sha, SHA2_256, digest);
-    ets_sha_disable();
+    bootloader_sha256_handle_t handle = bootloader_sha256_start();
+    bootloader_sha256_data(handle, data, length);
+    bootloader_sha256_finish(handle, digest);
 #else
     /* Use thread-safe esp-idf SHA function */
     esp_sha(SHA2_256, data, length, digest);
 #endif
 
+    // Map the signature block and verify the signature
+    sigblock = (const esp_secure_boot_sig_block_t *)(data + length);
+    esp_err_t err = esp_secure_boot_verify_signature_block(sigblock, digest);
+    bootloader_munmap(data);
+    return err;
+}
+
+esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest)
+{
+    ptrdiff_t keylen;
+    bool is_valid;
+
     keylen = signature_verification_key_end - signature_verification_key_start;
     if(keylen != SIGNATURE_VERIFICATION_KEYLEN) {
         ESP_LOGE(TAG, "Embedded public verification key has wrong length %d", keylen);
-        goto unmap_and_fail;
+        return ESP_FAIL;
+    }
+
+    if (sig_block->version != 0) {
+        ESP_LOGE(TAG, "image has invalid signature version field 0x%08x", sig_block->version);
+        return ESP_FAIL;
     }
 
     is_valid = uECC_verify(signature_verification_key_start,
-                           digest, sizeof(digest), sigblock->signature,
-                           uECC_secp256r1());
-
-    bootloader_munmap(data);
+                                image_digest,
+                                DIGEST_LEN,
+                                sig_block->signature,
+                                uECC_secp256r1());
     return is_valid ? ESP_OK : ESP_ERR_IMAGE_INVALID;
-
- unmap_and_fail:
-    bootloader_munmap(data);
-    return ESP_FAIL;
 }
