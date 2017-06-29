@@ -730,37 +730,38 @@ esp_err_t esp_wifi_set_auto_connect(bool en);
 esp_err_t esp_wifi_get_auto_connect(bool *en);
 
 /**
-  * @brief     Set vendor specific element
+  * @brief     Set 802.11 Vendor-Specific Information Element
   *
-  * @param     enable  enable or not
-  * @param     type  information element type
-  * @param     idx  information element index
-  * @param     vnd_ie  pointer to a vendor specific element
+  * @param     enable If true, specified IE is enabled. If false, specified IE is removed.
+  * @param     type Information Element type. Determines the frame type to associate with the IE.
+  * @param     idx  Index to set or clear. Each IE type can be associated with up to two elements (indices 0 & 1).
+  * @param     vnd_ie Pointer to vendor specific element data. First 6 bytes should be a header with fields matching vendor_ie_data_t.
+  *            If enable is false, this argument is ignored and can be NULL. Data does not need to remain valid after the function returns.
   *
   * @return
   *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by eps_wifi_init
-  *    - ESP_ERR_WIFI_ARG: invalid argument
-  *    - ESP_ERR_WIFI_NO_MEM: out of memory
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init()
+  *    - ESP_ERR_WIFI_ARG: Invalid argument, including if first byte of vnd_ie is not WIFI_VENDOR_IE_ELEMENT_ID (0xDD)
+  *      or second byte is an invalid length.
+  *    - ESP_ERR_WIFI_NO_MEM: Out of memory
   */
-esp_err_t esp_wifi_set_vendor_ie(bool enable, wifi_vendor_ie_type_t type, wifi_vendor_ie_id_t idx, uint8_t *vnd_ie);
+esp_err_t esp_wifi_set_vendor_ie(bool enable, wifi_vendor_ie_type_t type, wifi_vendor_ie_id_t idx, const void *vnd_ie);
 
 /**
-  * @brief     Define function pointer for vendor specific element callback
-  * @param     ctx  reserved
-  * @param     type  information element type 
-  * @param     sa  source address
-  * @param     vnd_ie  pointer to a vendor specific element
-  * @param     rssi  received signal strength indication
+  * @brief     Function signature for received Vendor-Specific Information Element callback.
+  * @param     ctx Context argument, as passed to esp_wifi_set_vendor_ie_cb() when registering callback.
+  * @param     type Information element type, based on frame type received.
+  * @param     sa Source 802.11 address.
+  * @param     vnd_ie Pointer to the vendor specific element data received.
+  * @param     rssi Received signal strength indication.
   */
-typedef void (*esp_vendor_ie_cb_t) (void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const uint8_t *vnd_ie, int rssi);
+typedef void (*esp_vendor_ie_cb_t) (void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const vendor_ie_data_t *vnd_ie, int rssi);
 
 /**
-  * @brief     Set vendor specific element callback
+  * @brief     Register Vendor-Specific Information Element monitoring callback.
   *
-  * @param     cb   callback function
-  * @param     ctx  reserved
+  * @param     cb   Callback function
+  * @param     ctx  Context argument, passed to callback function.
   *
   * @return
   *    - ESP_OK: succeed

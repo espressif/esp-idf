@@ -188,8 +188,9 @@ typedef enum {
 } wifi_storage_t;
 
 /**
-  * @brief     Vendor IE type
+  * @brief     Vendor Information Element type
   *
+  * Determines the frame type that the IE will be associated with.
   */
 typedef enum {
     WIFI_VND_IE_TYPE_BEACON,
@@ -200,13 +201,29 @@ typedef enum {
 } wifi_vendor_ie_type_t;
 
 /**
-  * @brief     Vendor IE index
+  * @brief     Vendor Information Element index
   *
+  * Each IE type can have up to two associated vendor ID elements.
   */
 typedef enum {
     WIFI_VND_IE_ID_0,
     WIFI_VND_IE_ID_1,
 } wifi_vendor_ie_id_t;
+
+#define WIFI_VENDOR_IE_ELEMENT_ID 0xDD
+
+/**
+ * @brief Vendor Information Element header
+ *
+ * The first bytes of the Information Element will match this header. Payload follows.
+ */
+typedef struct {
+    uint8_t element_id;      /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
+    uint8_t length;          /**< Length of all bytes in the element data following this field. Minimum 4. */
+    uint8_t vendor_oui[3];   /**< Vendor identifier (OUI). */
+    uint8_t vendor_oui_type; /**< Vendor-specific OUI type. */
+    uint8_t payload[0];      /**< Payload. Length is equal to value in 'length' field, minus 4. */
+} vendor_ie_data_t;
 
 typedef struct {
     signed rssi:8;            /**< signal intensity of packet */
