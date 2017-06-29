@@ -15,3 +15,4 @@ API Guides
    ULP Coprocessor <ulp>
    Unit Testing <unit-tests>
    Application Level Tracing <app_trace>
+   ROM debug console <romconsole>
