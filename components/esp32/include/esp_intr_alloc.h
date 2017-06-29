@@ -77,6 +77,9 @@ extern "C" {
 
 /**@}*/
 
+// This is used to provide SystemView with positive IRQ IDs, otherwise sheduler events are not shown properly
+#define ETS_INTERNAL_INTR_SOURCE_OFF		(-ETS_INTERNAL_PROFILING_INTR_SOURCE)
+
 typedef void (*intr_handler_t)(void *arg); 
 
 
@@ -220,7 +223,6 @@ int esp_intr_get_cpu(intr_handle_t handle);
  * @return The interrupt number
  */
 int esp_intr_get_intno(intr_handle_t handle);
-
 
 /**
  * @brief Disable the interrupt associated with the handle

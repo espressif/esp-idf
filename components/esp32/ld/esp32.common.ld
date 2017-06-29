@@ -86,7 +86,8 @@ SECTIONS
     *libesp32.a:panic.o(.literal .text .literal.* .text.*)
     *libesp32.a:core_dump.o(.literal .text .literal.* .text.*)
     *libesp32.a:heap_alloc_caps.o(.literal .text .literal.* .text.*)
-    *libesp32.a:app_trace.o(.literal .text .literal.* .text.*)
+    *libapp_trace.a:(.literal .text .literal.* .text.*)
+    *libxtensa-debug-module.a:eri.o(.literal .text .literal.* .text.*)
     *libphy.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
     *libsoc.a:(.literal .text .literal.* .text.*)
@@ -111,8 +112,8 @@ SECTIONS
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
     *libesp32.a:panic.o(.rodata .rodata.*)
-    *libesp32.a:app_trace.o(.rodata .rodata.*)
     *libphy.a:(.rodata .rodata.*)
+    *libapp_trace.a:(.rodata .rodata.*)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >dram0_0_seg

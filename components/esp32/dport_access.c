@@ -188,9 +188,9 @@ static void dport_access_init_core1(void *arg)
 void esp_dport_access_int_init(void)
 {
     if (xPortGetCoreID() == 0) {
-        xTaskCreatePinnedToCore(&dport_access_init_core0, "dport0", 512, NULL, 5, NULL, 0);
+        xTaskCreatePinnedToCore(&dport_access_init_core0, "dport0", 2048, NULL, 5, NULL, 0);
     } else {
-        xTaskCreatePinnedToCore(&dport_access_init_core1, "dport1", 512, NULL, 5, NULL, 1);
+        xTaskCreatePinnedToCore(&dport_access_init_core1, "dport1", 2048, NULL, 5, NULL, 1);
     }
 }
 

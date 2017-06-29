@@ -5,11 +5,13 @@
 #include <stdarg.h>
 #include "unity.h"
 #include "driver/timer.h"
+#include "soc/cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #if CONFIG_ESP32_APPTRACE_ENABLE == 1
 #include "esp_app_trace.h"
+#include "esp_app_trace_util.h"
 
 #define ESP_APPTRACE_TEST_USE_PRINT_LOCK        0
 #define ESP_APPTRACE_TEST_PRN_WRERR_MAX         5
@@ -57,8 +59,32 @@ const static char *TAG = "esp_apptrace_test";
 #define ESP_APPTRACE_TEST_LOGV( format, ... )  ESP_APPTRACE_TEST_LOG_LEVEL(V, ESP_LOG_VERBOSE, format, ##__VA_ARGS__)
 #define ESP_APPTRACE_TEST_LOGO( format, ... )  ESP_APPTRACE_TEST_LOG_LEVEL(E, ESP_LOG_NONE, format, ##__VA_ARGS__)
 
+static void esp_apptrace_test_timer_init(int timer_group, int timer_idx, uint32_t period)
+{
+    timer_config_t config;
+    uint64_t alarm_val = (period * (TIMER_BASE_CLK / 1000000UL)) / 2;
+
+    config.alarm_en = 1;
+    config.auto_reload = 1;
+    config.counter_dir = TIMER_COUNT_UP;
+    config.divider = 1;
+    config.intr_type = TIMER_INTR_LEVEL;
+    config.counter_en = TIMER_PAUSE;
+    /*Configure timer*/
+    timer_init(timer_group, timer_idx, &config);
+    /*Stop timer counter*/
+    timer_pause(timer_group, timer_idx);
+    /*Load counter value */
+    timer_set_counter_value(timer_group, timer_idx, 0x00000000ULL);
+    /*Set alarm value*/
+    timer_set_alarm_value(timer_group, timer_idx, alarm_val);
+    /*Enable timer interrupt*/
+    timer_enable_intr(timer_group, timer_idx);
+}
+
+#if CONFIG_SYSVIEW_ENABLE == 0
 #define ESP_APPTRACE_TEST_WRITE(_b_, _s_)            esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, ESP_APPTRACE_TMO_INFINITE)
-#define ESP_APPTRACE_TEST_WRITE_FROM_ISR(_b_, _s_)   esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, 100UL)
+#define ESP_APPTRACE_TEST_WRITE_FROM_ISR(_b_, _s_)   esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, 0UL)
 #define ESP_APPTRACE_TEST_WRITE_NOWAIT(_b_, _s_)     esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, _b_, _s_, 0)
 
 #define ESP_APPTRACE_TEST_CPUTICKS2US(_t_)       ((_t_)/(XT_CLOCK_FREQ/1000000))
@@ -102,29 +128,6 @@ static SemaphoreHandle_t s_print_lock;
 #endif
 
 static uint64_t esp_apptrace_test_ts_get();
-
-static void esp_apptrace_test_timer_init(int timer_group, int timer_idx, uint32_t period)
-{
-    timer_config_t config;
-    uint64_t alarm_val = (period * (TIMER_BASE_CLK / 1000000UL)) / 2;
-
-    config.alarm_en = 1;
-    config.auto_reload = 1;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 1;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.counter_en = TIMER_PAUSE;
-    /*Configure timer*/
-    timer_init(timer_group, timer_idx, &config);
-    /*Stop timer counter*/
-    timer_pause(timer_group, timer_idx);
-    /*Load counter value */
-    timer_set_counter_value(timer_group, timer_idx, 0x00000000ULL);
-    /*Set alarm value*/
-    timer_set_alarm_value(timer_group, timer_idx, alarm_val);
-    /*Enable timer interrupt*/
-    timer_enable_intr(timer_group, timer_idx);
-}
 
 static void esp_apptrace_test_timer_isr(void *arg)
 {
@@ -309,13 +312,14 @@ static void esp_apptrace_test_task(void *p)
         uint32_t *ts = (uint32_t *)(arg->data.buf + sizeof(uint32_t));
         *ts = (uint32_t)esp_apptrace_test_ts_get();
         memset(arg->data.buf + 2 * sizeof(uint32_t), arg->data.wr_cnt & arg->data.mask, arg->data.buf_sz - 2 * sizeof(uint32_t));
+        // ESP_APPTRACE_TEST_LOGD("%x:%x: Write chunk%d %d bytes, %x", xTaskGetCurrentTaskHandle(), *ts, arg->data.wr_cnt, arg->data.buf_sz, arg->data.wr_cnt & arg->data.mask);
         if (arg->nowait) {
             res = ESP_APPTRACE_TEST_WRITE_NOWAIT(arg->data.buf, arg->data.buf_sz);
         } else {
             res = ESP_APPTRACE_TEST_WRITE(arg->data.buf, arg->data.buf_sz);
         }
         if (res) {
-            if (arg->data.wr_err++ < ESP_APPTRACE_TEST_PRN_WRERR_MAX) {
+            if (1){//arg->data.wr_err++ < ESP_APPTRACE_TEST_PRN_WRERR_MAX) {
                 ESP_APPTRACE_TEST_LOGE("%x: Failed to write trace %d %x!", xTaskGetCurrentTaskHandle(), res, arg->data.wr_cnt & arg->data.mask);
                 if (arg->data.wr_err == ESP_APPTRACE_TEST_PRN_WRERR_MAX) {
                     ESP_APPTRACE_TEST_LOGE("\n");
@@ -490,8 +494,9 @@ static void esp_apptrace_test(esp_apptrace_test_cfg_t *test_cfg)
         ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
     }
     xTaskCreatePinnedToCore(esp_apptrace_dummy_task, "dummy0", 2048, &dummy_task_arg[0], dummy_task_arg[0].prio, NULL, 0);
+#if CONFIG_FREERTOS_UNICORE == 0
     xTaskCreatePinnedToCore(esp_apptrace_dummy_task, "dummy1", 2048, &dummy_task_arg[0], dummy_task_arg[0].prio, NULL, 1);
-
+#endif
     for (int i = 0; i < test_cfg->tasks_num; i++) {
         //arg1.stop = 1;
         xSemaphoreTake(test_cfg->tasks[i].done, portMAX_DELAY);
@@ -567,6 +572,7 @@ TEST_CASE("App trace test (1 crashed task)", "[trace][ignore]")
     esp_apptrace_test(&test_cfg);
 }
 
+#if CONFIG_FREERTOS_UNICORE == 0
 TEST_CASE("App trace test (2 tasks + 1 timer @ each core", "[trace][ignore]")
 {
     int ntask = 0;
@@ -628,9 +634,9 @@ TEST_CASE("App trace test (2 tasks + 1 timer @ each core", "[trace][ignore]")
     s_test_tasks[ntask].timers_num = 0;
     s_test_tasks[ntask].timers = NULL;
     ntask++;
-
     esp_apptrace_test(&test_cfg);
 }
+#endif
 
 TEST_CASE("App trace test (1 task + 1 timer @ 1 core)", "[trace][ignore]")
 {
@@ -661,6 +667,7 @@ TEST_CASE("App trace test (1 task + 1 timer @ 1 core)", "[trace][ignore]")
     esp_apptrace_test(&test_cfg);
 }
 
+#if CONFIG_FREERTOS_UNICORE == 0
 TEST_CASE("App trace test (2 tasks (nowait): 1 @ each core)", "[trace][ignore]")
 {
     esp_apptrace_test_cfg_t test_cfg = {
@@ -722,6 +729,7 @@ TEST_CASE("App trace test (2 tasks: 1 @ each core)", "[trace][ignore]")
 
     esp_apptrace_test(&test_cfg);
 }
+#endif
 
 TEST_CASE("App trace test (1 task)", "[trace][ignore]")
 {
@@ -732,7 +740,7 @@ TEST_CASE("App trace test (1 task)", "[trace][ignore]")
 
     memset(s_test_tasks, 0, sizeof(s_test_tasks));
 
-    s_test_tasks[0].core = 1;
+    s_test_tasks[0].core = 0;
     s_test_tasks[0].prio = 3;
     s_test_tasks[0].task_func = esp_apptrace_test_task;
     s_test_tasks[0].data.buf = s_bufs[0];
@@ -759,6 +767,7 @@ static int esp_logtrace_printf(const char *fmt, ...)
 
 typedef struct {
     SemaphoreHandle_t done;
+    uint32_t work_count;
 } esp_logtrace_task_t;
 
 static void esp_logtrace_task(void *p)
@@ -793,7 +802,7 @@ static void esp_logtrace_task(void *p)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Log trace test (1 task)", "[trace][ignore]")
+TEST_CASE("Log trace test (2 tasks)", "[trace][ignore]")
 {
     TaskHandle_t thnd;
 
@@ -806,7 +815,11 @@ TEST_CASE("Log trace test (1 task)", "[trace][ignore]")
 
     xTaskCreatePinnedToCore(esp_logtrace_task, "logtrace0", 2048, &arg1, 3, &thnd, 0);
     ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
+#if CONFIG_FREERTOS_UNICORE == 0
     xTaskCreatePinnedToCore(esp_logtrace_task, "logtrace1", 2048, &arg2, 3, &thnd, 1);
+#else
+    xTaskCreatePinnedToCore(esp_logtrace_task, "logtrace1", 2048, &arg2, 3, &thnd, 0);
+#endif
     ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
 
     xSemaphoreTake(arg1.done, portMAX_DELAY);
@@ -814,4 +827,234 @@ TEST_CASE("Log trace test (1 task)", "[trace][ignore]")
     xSemaphoreTake(arg2.done, portMAX_DELAY);
     vSemaphoreDelete(arg2.done);
 }
+
+#else
+
+typedef struct {
+    int group;
+    int timer;
+    int flags;
+    uint32_t id;
+} esp_sysviewtrace_timer_arg_t;
+
+typedef struct {
+    SemaphoreHandle_t done;
+    SemaphoreHandle_t *sync;
+    esp_sysviewtrace_timer_arg_t *timer;
+    uint32_t work_count;
+    uint32_t sleep_tmo;
+    uint32_t id;
+} esp_sysviewtrace_task_arg_t;
+
+static void esp_sysview_test_timer_isr(void *arg)
+{
+    esp_sysviewtrace_timer_arg_t *tim_arg = (esp_sysviewtrace_timer_arg_t *)arg;
+
+    //ESP_APPTRACE_TEST_LOGI("tim-%d: IRQ %d/%d\n", tim_arg->id, tim_arg->group, tim_arg->timer);
+
+    if (tim_arg->group == 0) {
+        if (tim_arg->timer == 0) {
+            TIMERG0.int_clr_timers.t0 = 1;
+            TIMERG0.hw_timer[0].update = 1;
+            TIMERG0.hw_timer[0].config.alarm_en = 1;
+        } else {
+            TIMERG0.int_clr_timers.t1 = 1;
+            TIMERG0.hw_timer[1].update = 1;
+            TIMERG0.hw_timer[1].config.alarm_en = 1;
+        }
+    }
+    if (tim_arg->group == 1) {
+        if (tim_arg->timer == 0) {
+            TIMERG1.int_clr_timers.t0 = 1;
+            TIMERG1.hw_timer[0].update = 1;
+            TIMERG1.hw_timer[0].config.alarm_en = 1;
+        } else {
+            TIMERG1.int_clr_timers.t1 = 1;
+            TIMERG1.hw_timer[1].update = 1;
+            TIMERG1.hw_timer[1].config.alarm_en = 1;
+        }
+    }
+}
+
+static void esp_sysviewtrace_test_task(void *p)
+{
+    esp_sysviewtrace_task_arg_t *arg = (esp_sysviewtrace_task_arg_t *) p;
+    volatile uint32_t tmp = 0;
+    timer_isr_handle_t inth;
+
+    printf("%x: run sysview task\n", (uint32_t)xTaskGetCurrentTaskHandle());
+
+    if (arg->timer) {
+        esp_err_t res = timer_isr_register(arg->timer->group, arg->timer->timer, esp_sysview_test_timer_isr, arg->timer, arg->timer->flags, &inth);
+        if (res != ESP_OK) {
+            printf("%x: failed to register timer ISR\n", (uint32_t)xTaskGetCurrentTaskHandle());
+        }
+        else {
+            res = timer_start(arg->timer->group, arg->timer->timer);
+            if (res != ESP_OK) {
+                printf("%x: failed to start timer\n", (uint32_t)xTaskGetCurrentTaskHandle());
+            }
+        }
+    }
+
+    int i = 0;
+    while (1) {
+        static uint32_t count;
+        printf("%d", arg->id);
+        if((++count % 80) == 0)
+            printf("\n");
+        if (arg->sync) {
+            xSemaphoreTake(*arg->sync, portMAX_DELAY);
+        }
+        for (uint32_t k = 0; k < arg->work_count; k++) {
+            tmp++;
+        }
+        vTaskDelay(arg->sleep_tmo/portTICK_PERIOD_MS);
+        i++;
+        if (arg->sync) {
+            xSemaphoreGive(*arg->sync);
+        }
+    }
+    ESP_APPTRACE_TEST_LOGI("%x: finished", xTaskGetCurrentTaskHandle());
+
+    xSemaphoreGive(arg->done);
+    vTaskDelay(1);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("SysView trace test 1", "[trace][ignore]")
+{
+    TaskHandle_t thnd;
+
+    esp_sysviewtrace_timer_arg_t tim_arg1 = {
+        .group = TIMER_GROUP_1,
+        .timer = TIMER_1,
+        .flags = ESP_INTR_FLAG_SHARED,
+        .id = 0,
+    };
+    esp_sysviewtrace_task_arg_t arg1 = {
+        .done = xSemaphoreCreateBinary(),
+        .sync = NULL,
+        .work_count = 10000,
+        .sleep_tmo = 1,
+        .timer = &tim_arg1,
+        .id = 0,
+    };
+    esp_sysviewtrace_timer_arg_t tim_arg2 = {
+        .group = TIMER_GROUP_1,
+        .timer = TIMER_0,
+        .flags = 0,
+        .id = 1,
+    };
+    esp_sysviewtrace_task_arg_t arg2 = {
+        .done = xSemaphoreCreateBinary(),
+        .sync = NULL,
+        .work_count = 10000,
+        .sleep_tmo = 1,
+        .timer = &tim_arg2,
+        .id = 1,
+    };
+
+    esp_apptrace_test_timer_init(TIMER_GROUP_1, TIMER_1, 500);
+    esp_apptrace_test_timer_init(TIMER_GROUP_1, TIMER_0, 100);
+
+    xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace0", 2048, &arg1, 3, &thnd, 0);
+    ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
+#if CONFIG_FREERTOS_UNICORE == 0
+    xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace1", 2048, &arg2, 5, &thnd, 1);
+#else
+    xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace1", 2048, &arg2, 5, &thnd, 0);
+#endif
+    ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
+
+    xSemaphoreTake(arg1.done, portMAX_DELAY);
+    vSemaphoreDelete(arg1.done);
+    xSemaphoreTake(arg2.done, portMAX_DELAY);
+    vSemaphoreDelete(arg2.done);
+}
+
+TEST_CASE("SysView trace test 2", "[trace][ignore]")
+{
+    TaskHandle_t thnd;
+
+    esp_sysviewtrace_timer_arg_t tim_arg1 = {
+        .group = TIMER_GROUP_1,
+        .timer = TIMER_1,
+        .flags = ESP_INTR_FLAG_SHARED,
+        .id = 0,
+    };
+    esp_sysviewtrace_task_arg_t arg1 = {
+        .done = xSemaphoreCreateBinary(),
+        .sync = NULL,
+        .work_count = 10000,
+        .sleep_tmo = 1,
+        .timer = &tim_arg1,
+        .id = 0,
+    };
+    esp_sysviewtrace_timer_arg_t tim_arg2 = {
+        .group = TIMER_GROUP_1,
+        .timer = TIMER_0,
+        .flags = 0,
+        .id = 1,
+    };
+    esp_sysviewtrace_task_arg_t arg2 = {
+        .done = xSemaphoreCreateBinary(),
+        .sync = NULL,
+        .work_count = 10000,
+        .sleep_tmo = 1,
+        .timer = &tim_arg2,
+        .id = 1,
+    };
+
+    SemaphoreHandle_t test_sync = xSemaphoreCreateBinary();
+    xSemaphoreGive(test_sync);
+    esp_sysviewtrace_task_arg_t arg3 = {
+        .done = xSemaphoreCreateBinary(),
+        .sync = &test_sync,
+        .work_count = 1000,
+        .sleep_tmo = 1,
+        .timer = NULL,
+        .id = 2,
+    };
+    esp_sysviewtrace_task_arg_t arg4 = {
+        .done = xSemaphoreCreateBinary(),
+        .sync = &test_sync,
+        .work_count = 10000,
+        .sleep_tmo = 1,
+        .timer = NULL,
+        .id = 3,
+    };
+
+    esp_apptrace_test_timer_init(TIMER_GROUP_1, TIMER_1, 500);
+    esp_apptrace_test_timer_init(TIMER_GROUP_1, TIMER_0, 100);
+
+    xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace0", 2048, &arg1, 3, &thnd, 0);
+    printf("Created task %x\n", (uint32_t)thnd);
+#if CONFIG_FREERTOS_UNICORE == 0
+    xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace1", 2048, &arg2, 4, &thnd, 1);
+#else
+    xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace1", 2048, &arg2, 4, &thnd, 0);
+#endif
+    printf("Created task %x\n", (uint32_t)thnd);
+
+    xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svsync0", 2048, &arg3, 3, &thnd, 0);
+    printf("Created task %x\n", (uint32_t)thnd);
+#if CONFIG_FREERTOS_UNICORE == 0
+    xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svsync1", 2048, &arg4, 5, &thnd, 1);
+#else
+    xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svsync1", 2048, &arg4, 5, &thnd, 0);
+#endif
+    printf("Created task %x\n", (uint32_t)thnd);
+
+    xSemaphoreTake(arg1.done, portMAX_DELAY);
+    vSemaphoreDelete(arg1.done);
+    xSemaphoreTake(arg2.done, portMAX_DELAY);
+    vSemaphoreDelete(arg2.done);
+    xSemaphoreTake(arg3.done, portMAX_DELAY);
+    vSemaphoreDelete(arg3.done);
+    xSemaphoreTake(arg4.done, portMAX_DELAY);
+    vSemaphoreDelete(arg4.done);
+    vSemaphoreDelete(test_sync);
+}
+#endif
 #endif
