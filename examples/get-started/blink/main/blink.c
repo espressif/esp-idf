@@ -40,5 +40,5 @@ void blink_task(void *pvParameter)
 
 void app_main()
 {
-    xTaskCreate(&blink_task, "blink_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }

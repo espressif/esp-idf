@@ -173,7 +173,7 @@ static void dport_access_init_core(void *arg)
 /*  Defer initialisation until after scheduler is running */
 void esp_dport_access_int_init(void)
 {
-    xTaskCreatePinnedToCore(&dport_access_init_core, "dport", 512, NULL, 5, NULL, xPortGetCoreID());
+    xTaskCreatePinnedToCore(&dport_access_init_core, "dport", configMINIMAL_STACK_SIZE, NULL, 5, NULL, xPortGetCoreID());
 }
 
 void esp_dport_access_int_deinit(void)
