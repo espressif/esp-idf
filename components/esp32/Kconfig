@@ -160,8 +160,24 @@ config MAIN_TASK_STACK_SIZE
     int "Main task stack size"
     default 4096
     help
-        Config system event task stack size in different application.
+        Configure the "main task" stack size. This is the stack of the task
+        which calls app_main(). If app_main() returns then this task is deleted
+        and its stack memory is freed.
 
+config IPC_TASK_STACK_SIZE
+    int "Inter-Processor Call (IPC) task stack size"
+    default 1024
+    range 512 65536 if !ESP32_APPTRACE_ENABLE
+    range 2048 65536 if ESP32_APPTRACE_ENABLE
+    help
+        Configure the IPC tasks stack size. One IPC task runs on each core
+        (in dual core mode), and allows for cross-core function calls.
+
+        See IPC documentation for more details.
+
+        The default stack size should be enough for most common use cases.
+        It can be shrunk if you are sure that you do not use any custom
+        IPC functionality.
 
 config NEWLIB_STDOUT_ADDCR
     bool "Standard-out output adds carriage return before newline"
