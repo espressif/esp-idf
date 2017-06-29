@@ -2642,7 +2642,9 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
             /* probably no buffer to send disconnect */
             timeout = BT_1SEC_TIMEOUT;
         }
-#endif  ///SMP_INCLUDED == TRUE
+#else ///SMP_INCLUDED == FALSE
+        timeout = BT_1SEC_TIMEOUT;
+#endif  ///SMP_INCLUDED
     }
 
     if (timeout != 0xFFFF) {
