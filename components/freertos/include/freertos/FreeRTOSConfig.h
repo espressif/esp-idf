@@ -163,14 +163,12 @@
 #define configMAX_PRIORITIES			( 25 )
 #endif
 
-/* Minimal stack size. This may need to be increased for your application */
-/* NOTE: The FreeRTOS demos may not work reliably with stack size < 4KB.  */
-/* The Xtensa-specific examples should be fine with XT_STACK_MIN_SIZE.    */
-#if !(defined XT_STACK_MIN_SIZE)
-#error XT_STACK_MIN_SIZE not defined, did you include xtensa_config.h ?
+#ifndef CONFIG_ESP32_APPTRACE_ENABLE
+#define configMINIMAL_STACK_SIZE		512
+#else
+/* apptrace module requires at least 2KB of stack per task */
+#define configMINIMAL_STACK_SIZE		2048
 #endif
-
-#define configMINIMAL_STACK_SIZE		(XT_STACK_MIN_SIZE > 1024 ? XT_STACK_MIN_SIZE : 1024)
 
 /* The Xtensa port uses a separate interrupt stack. Adjust the stack size */
 /* to suit the needs of your specific application.                        */
