@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <sdkconfig.h>
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_intr.h"
@@ -145,16 +146,20 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end_wrap(void)
     DPORT_STALL_OTHER_CPU_END();
 }
 
-static void dport_access_init_core0(void *arg)
+static void dport_access_init_core(void *arg)
 {
-    int core_id = xPortGetCoreID();
+    int core_id = 0;
+    uint32_t intr_source = ETS_FROM_CPU_INTR2_SOURCE;
 
-    assert(core_id == 0);
-
-    vPortCPUInitializeMutex(&g_dport_mux);
+#ifndef CONFIG_FREERTOS_UNICORE
+    core_id = xPortGetCoreID();
+    if (core_id == 1) {
+        intr_source = ETS_FROM_CPU_INTR3_SOURCE;
+    }
+#endif
 
     ESP_INTR_DISABLE(ETS_DPORT_INUM);
-    intr_matrix_set(core_id, ETS_FROM_CPU_INTR2_SOURCE, ETS_DPORT_INUM);
+    intr_matrix_set(core_id, intr_source, ETS_DPORT_INUM);
     ESP_INTR_ENABLE(ETS_DPORT_INUM);
 
     dport_access_ref[core_id] = 0;
@@ -165,33 +170,10 @@ static void dport_access_init_core0(void *arg)
     vTaskDelete(NULL);
 }
 
-static void dport_access_init_core1(void *arg)
-{
-    int core_id = xPortGetCoreID();
-
-    assert(core_id == 1);
-
-    ESP_INTR_DISABLE(ETS_DPORT_INUM);
-    intr_matrix_set(core_id, ETS_FROM_CPU_INTR3_SOURCE, ETS_DPORT_INUM);
-    ESP_INTR_ENABLE(ETS_DPORT_INUM);
-
-    dport_access_ref[core_id] = 0;
-    dport_access_start[core_id] = 0;
-    dport_access_end[core_id] = 0;
-    dport_core_state[core_id] = DPORT_CORE_STATE_RUNNING;
-
-    vTaskDelete(NULL);
-}
-
-
-/*  This initialise should be really effective after vTaskStartScheduler */
+/*  Defer initialisation until after scheduler is running */
 void esp_dport_access_int_init(void)
 {
-    if (xPortGetCoreID() == 0) {
-        xTaskCreatePinnedToCore(&dport_access_init_core0, "dport0", 2048, NULL, 5, NULL, 0);
-    } else {
-        xTaskCreatePinnedToCore(&dport_access_init_core1, "dport1", 2048, NULL, 5, NULL, 1);
-    }
+    xTaskCreatePinnedToCore(&dport_access_init_core, "dport", configMINIMAL_STACK_SIZE, NULL, 5, NULL, xPortGetCoreID());
 }
 
 void esp_dport_access_int_deinit(void)
