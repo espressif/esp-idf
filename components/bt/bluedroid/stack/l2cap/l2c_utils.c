@@ -2642,7 +2642,16 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
             /* probably no buffer to send disconnect */
             timeout = BT_1SEC_TIMEOUT;
         }
+#else
+        if (btsnd_hcic_disconnect (p_lcb->handle, HCI_ERR_PEER_USER)) {
+            l2cu_process_fixed_disc_cback(p_lcb);
+            p_lcb->link_state = LST_DISCONNECTING;
+            timeout = L2CAP_LINK_DISCONNECT_TOUT;
+        } else {
+            timeout = BT_1SEC_TIMEOUT;
+        }
 #endif  ///SMP_INCLUDED == TRUE
+
     }
 
     if (timeout != 0xFFFF) {
