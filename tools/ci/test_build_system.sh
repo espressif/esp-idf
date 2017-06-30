@@ -49,7 +49,7 @@ function run_tests()
     make defconfig || exit $?
 
     print_status "Try to clean fresh directory..."
-    make clean || exit $?
+    MAKEFLAGS= make clean || exit $?
 
     BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
     APP_BINS="app-template.elf app-template.bin"

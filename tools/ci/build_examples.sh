@@ -114,11 +114,11 @@ build_example () {
         # build non-verbose first
         local BUILDLOG=$(mktemp -t examplebuild.XXXX.log)
         (
-            make clean defconfig &> >(tee -a "${BUILDLOG}") &&
+            MAKEFLAGS= make clean defconfig &> >(tee -a "${BUILDLOG}") &&
             make all &> >(tee -a "${BUILDLOG}")
         ) || {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}"
-            make V=1 clean defconfig && make V=1 # verbose output for errors
+            make MAKEFLAGS= V=1 clean defconfig && make V=1 # verbose output for errors
         }
     popd
 
