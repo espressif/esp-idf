@@ -1,0 +1,184 @@
+menu "Application Level Tracing"
+
+choice ESP32_APPTRACE_DESTINATION
+    prompt "Data Destination"
+    default ESP32_APPTRACE_DEST_NONE
+    help
+        Select destination for application trace: trace memory or none (to disable).
+
+config ESP32_APPTRACE_DEST_TRAX
+    bool "Trace memory"
+    select ESP32_APPTRACE_ENABLE
+config ESP32_APPTRACE_DEST_NONE
+    bool "None"
+endchoice
+
+config ESP32_APPTRACE_ENABLE
+    bool
+    depends on !ESP32_TRAX
+    select MEMMAP_TRACEMEM
+    select MEMMAP_TRACEMEM_TWOBANKS
+    default n
+    help
+        Enables/disable application tracing module.
+
+config ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO
+    int "Timeout for flushing last trace data to host on panic"
+    depends on ESP32_APPTRACE_ENABLE
+    range -1 5000
+    default -1
+    help
+        Timeout for flushing last trace data to host in case of panic. In ms.
+        Use -1 to disable timeout and wait forever.
+
+config ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH
+    int "Threshold for flushing last trace data to host on panic"
+    depends on ESP32_APPTRACE_DEST_TRAX
+    range 0 16384
+    default 0
+    help
+        Threshold for flushing last trace data to host on panic in post-mortem mode.
+        This is minimal amount of data needed to perform flush. In bytes.
+
+config ESP32_APPTRACE_PENDING_DATA_SIZE_MAX
+    int "Size of the pending data buffer"
+    depends on ESP32_APPTRACE_DEST_TRAX
+    default 0
+    help
+        Size of the buffer for events in bytes. It is useful for buffering events from
+        the time critical code (scheduler, ISRs etc). If this parameter is 0 then
+        events will be discarded when main HW buffer is full.
+
+menu "FreeRTOS SystemView Tracing"
+config SYSVIEW_ENABLE
+    bool "SystemView Tracing Enable"
+    depends on ESP32_APPTRACE_ENABLE
+    default n
+    help
+        Enables supporrt for SEGGER SystemView tracing functionality.
+
+if !FREERTOS_UNICORE
+choice SYSVIEW_TS_SOURCE
+    prompt "ESP32 timer to use as SystemView timestamp source"
+    depends on SYSVIEW_ENABLE
+    default SYSVIEW_TS_SOURCE_TIMER_00
+    help
+        SystemView needs one source for timestamps when tracing events from both cores.
+        This option selects HW timer for it.
+
+config SYSVIEW_TS_SOURCE_TIMER_00
+    bool "Timer 0, Group 0"
+    help
+        Select this to use timer 0 of group 0
+
+config SYSVIEW_TS_SOURCE_TIMER_01
+    bool "Timer 1, Group 0"
+    help
+        Select this to use timer 1 of group 0
+
+config SYSVIEW_TS_SOURCE_TIMER_10
+    bool "Timer 0, Group 1"
+    help
+        Select this to use timer 0 of group 1
+
+config SYSVIEW_TS_SOURCE_TIMER_11
+    bool "Timer 1, Group 1"
+    help
+        Select this to use timer 1 of group 1
+
+endchoice
+endif #FREERTOS_UNICORE
+
+config SYSVIEW_EVT_OVERFLOW_ENABLE
+    bool "Trace Buffer Overflow Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "Trace Buffer Overflow" event.
+
+config SYSVIEW_EVT_ISR_ENTER_ENABLE
+    bool "ISR Enter Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "ISR Enter" event.
+
+config SYSVIEW_EVT_ISR_EXIT_ENABLE
+    bool "ISR Exit Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "ISR Exit" event.
+
+config SYSVIEW_EVT_ISR_TO_SCHEDULER_ENABLE
+    bool "ISR Exit to Scheduler Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "ISR to Scheduler" event.
+
+config SYSVIEW_EVT_TASK_START_EXEC_ENABLE
+    bool "Task Start Execution Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "Task Start Execution" event.
+
+config SYSVIEW_EVT_TASK_STOP_EXEC_ENABLE
+    bool "Task Stop Execution Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "Task Stop Execution" event.
+
+config SYSVIEW_EVT_TASK_START_READY_ENABLE
+    bool "Task Start Ready State Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "Task Start Ready State" event.
+
+config SYSVIEW_EVT_TASK_STOP_READY_ENABLE
+    bool "Task Stop Ready State Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "Task Stop Ready State" event.
+
+config SYSVIEW_EVT_TASK_CREATE_ENABLE
+    bool "Task Create Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "Task Create" event.
+
+config SYSVIEW_EVT_TASK_TERMINATE_ENABLE
+    bool "Task Terminate Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "Task Terminate" event.
+
+config SYSVIEW_EVT_IDLE_ENABLE
+    bool "System Idle Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "System Idle" event.
+
+config SYSVIEW_EVT_TIMER_ENTER_ENABLE
+    bool "Timer Enter Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "Timer Enter" event.
+
+config SYSVIEW_EVT_TIMER_EXIT_ENABLE
+    bool "Timer Exit Event"
+    depends on SYSVIEW_ENABLE
+    default y
+    help
+        Enables "Timer Exit" event.
+
+endmenu
+endmenu

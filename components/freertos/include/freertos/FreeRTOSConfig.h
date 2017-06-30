@@ -227,6 +227,7 @@
 #define INCLUDE_vTaskDelay					1
 #define INCLUDE_uxTaskGetStackHighWaterMark	1
 #define INCLUDE_pcTaskGetTaskName			1
+#define INCLUDE_xTaskGetIdleTaskHandle      1
 
 #if CONFIG_ENABLE_MEMORY_DEBUG
 #define configENABLE_MEMORY_DEBUG 1
@@ -276,6 +277,12 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #define configENABLE_TASK_SNAPSHOT			1
 #endif
 
+#if CONFIG_SYSVIEW_ENABLE
+#ifndef __ASSEMBLER__
+#include "SEGGER_SYSVIEW_FreeRTOS.h"
+#undef INLINE // to avoid redefinition
+#endif /* def __ASSEMBLER__ */
+#endif
 
 #endif /* FREERTOS_CONFIG_H */
 

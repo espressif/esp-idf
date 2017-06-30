@@ -30,7 +30,6 @@
 
 .extern pxCurrentTCB
 
-
 /*
 *******************************************************************************
 * Interrupt stack. The size of the interrupt stack is determined by the config
@@ -42,6 +41,7 @@
     .align      16
     .global     port_IntStack
     .global     port_IntStackTop
+    .global     port_switch_flag
 port_IntStack:
     .space      configISR_STACK_SIZE*portNUM_PROCESSORS		/* This allocates stacks for each individual CPU. */
 port_IntStackTop:
