@@ -18,6 +18,11 @@ variables:
   GET_SOURCES_ATTEMPTS: "10"
   ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
 
+  # We use get_sources.sh script to fetch the submodules and/or re-fetch the repo
+  # if it was corrupted (if submodule update fails this can happen)
+  GIT_STRATEGY: fetch
+  GIT_SUBMODULE_STRATEGY: none
+
 # IDF environment
 
   IDF_PATH: "$CI_PROJECT_DIR"
@@ -34,10 +39,27 @@ before_script:
   # Set IS_PRIVATE or IS_PUBLIC depending on if our branch is public or not
   #
   # (the same regular expressions are used to set these are used in 'only:' sections below
-  - source make/configure_ci_environment.sh
+  - source tools/ci/configure_ci_environment.sh
 
-  # fetch all submodules
-  - git submodule update --init --recursive
+  # fetch the submodules (& if necessary re-fetch repo) from gitlab
+  - time ./tools/ci/get-full-sources.sh
+
+.do_nothing_before:
+  before_script: &do_nothing_before
+    - echo "Not setting up GitLab key, not fetching submodules"
+    - source tools/ci/configure_ci_environment.sh
+
+.add_gitlab_key_before:
+  before_script: &add_gitlab_key_before
+    - echo "Not fetching submodules"
+    - source tools/ci/configure_ci_environment.sh
+    # add gitlab ssh key
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
 build_template_app:
   stage: build
@@ -45,7 +67,6 @@ build_template_app:
   tags:
     - build
   variables:
-    GIT_STRATEGY: clone
     BATCH_BUILD: "1"
     IDF_CI_BUILD: "1"
   script:
@@ -73,7 +94,6 @@ build_template_app:
   tags:
     - build
   variables:
-    GIT_STRATEGY: clone
     BATCH_BUILD: "1"
     V: "0"
 
@@ -128,14 +148,13 @@ build_esp_idf_tests:
     expire_in: 1 week
   variables:
     IDF_CI_BUILD: "1"
-    GIT_STRATEGY: fetch
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
     - mkdir build_examples
     - cd build_examples
     # build some of examples
-    - ${IDF_PATH}/make/build_examples.sh "${CI_JOB_NAME}"
+    - ${IDF_PATH}/tools/ci/build_examples.sh "${CI_JOB_NAME}"
 
 build_examples_00:
   <<: *build_examples_template
@@ -209,8 +228,8 @@ test_build_system:
     - build_test
   dependencies: []
   script:
-    - ./make/test_configure_ci_environment.sh
-    - ./make/test_build_system.sh
+    - ./tools/ci/test_configure_ci_environment.sh
+    - ./tools/ci/test_build_system.sh
 
 test_report:
   stage: test_report
@@ -266,8 +285,6 @@ test_report:
     - test "${TEST_RESULT}" = "Pass" || exit 1
 
 push_master_to_github:
-  before_script:
-    - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
@@ -279,8 +296,8 @@ push_master_to_github:
   when: on_success
   dependencies: []
   variables:
-    GIT_STRATEGY: clone
     GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
+  before_script: *do_nothing_before
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -297,8 +314,6 @@ push_master_to_github:
 
 
 deploy_docs:
-  before_script:
-    - echo "Not setting up GitLab key, not fetching submodules"
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
@@ -310,6 +325,7 @@ deploy_docs:
    - triggers
   dependencies:
     - build_docs
+  before_script: *do_nothing_before
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -354,12 +370,12 @@ check_commit_msg:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
-  before_script:
-    - echo "skip update submodule"
+  before_script: *do_nothing_before
   script:
-    - git checkout ${CI_COMMIT_REF_NAME}
+    - git status
+    - git log -n10 --oneline
     # commit start with "WIP: " need to be squashed before merge
-    - 'git log --pretty=%s master..${CI_COMMIT_REF_NAME} | grep "^WIP: " || exit 0 && exit 1'
+    - 'git log --pretty=%s master.. -- | grep "^WIP: " && exit 1 || exit 0'
 
 check_submodule_sync:
   stage: deploy
@@ -371,8 +387,9 @@ check_submodule_sync:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
-  before_script:
-    - echo "do not use gitlab submodule repository"
+  variables:
+    GIT_STRATEGY: clone
+  before_script: *do_nothing_before
   script:
     # check if all submodules are correctly synced to public repostory
     - git submodule update --init --recursive
@@ -389,6 +406,7 @@ assign_test:
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
     expire_in: 1 mos
+  before_script: *add_gitlab_key_before
   script:
     # first move test bins together: test_bins/CHIP_SDK/TestApp/bin_files
     - mkdir -p test_bins/ESP32_IDF/UT
@@ -404,8 +422,6 @@ assign_test:
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
 
 .test_template: &test_template
-  before_script:
-    - echo "Skip cloning submodule here"
   stage: test
   when: on_success
   only:
@@ -422,25 +438,15 @@ assign_test:
       - $LOG_PATH
     expire_in: 6 mos
   variables:
-    # set git strategy to fetch so we can get esptool without update submodule
-    GIT_STRATEGY: fetch
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
     CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/integration_test/CIConfigs/$CI_JOB_NAME.yml"
+  before_script: *add_gitlab_key_before
   script:
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
-    # remove artifacts from the 'unit_test' stage
-    - rm -rf "$LOG_PATH"
-    # add gitlab ssh key
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     # clone local test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
     # clone test bench
@@ -456,7 +462,6 @@ assign_test:
   allow_failure: false
   stage: unit_test
   variables:
-    GIT_STRATEGY: fetch
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
@@ -475,15 +480,6 @@ nvs_compatible_test:
     - ESP32_IDF
     - NVS_Compatible
   script:
-    # remove artifacts from the 'unit_test' stage
-    - rm -rf "$LOG_PATH"
-    # add gitlab ssh key
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     # clone local test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
     # clone test bench
