@@ -659,10 +659,14 @@ static esp_err_t sdmmc_send_cmd_send_scr(sdmmc_card_t* card, sdmmc_scr_t *out_sc
 
 static esp_err_t sdmmc_send_cmd_set_bus_width(sdmmc_card_t* card, int width)
 {
+    uint8_t ignored[8];
     sdmmc_command_t cmd = {
             .opcode = SD_APP_SET_BUS_WIDTH,
             .flags = SCF_RSP_R1 | SCF_CMD_AC,
-            .arg = (width == 4) ? SD_ARG_BUS_WIDTH_4 : SD_ARG_BUS_WIDTH_1
+            .arg = (width == 4) ? SD_ARG_BUS_WIDTH_4 : SD_ARG_BUS_WIDTH_1,
+            .data = ignored,
+            .datalen = 8,
+            .blklen = 4,
     };
 
     return sdmmc_send_app_cmd(card, &cmd);
