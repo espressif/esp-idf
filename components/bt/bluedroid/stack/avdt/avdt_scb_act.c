@@ -956,7 +956,11 @@ void avdt_scb_hdl_tc_close(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 
     /* set up hdr */
     avdt_ctrl.hdr.err_code = p_scb->close_code;
-    avdt_ctrl.hdr.err_param = p_data->close.disc_rsn;
+    if (p_data) {
+        avdt_ctrl.hdr.err_param = p_data->close.disc_rsn;
+    } else {
+        avdt_ctrl.hdr.err_param = AVDT_DISC_RSN_NORMAL;
+    }
 
     /* clear sep variables */
     avdt_scb_clr_vars(p_scb, p_data);
