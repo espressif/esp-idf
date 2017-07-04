@@ -24,53 +24,53 @@
 /* Memory layout for ESP32 SoC */
 
 /*
-Tag descriptors. These describe the capabilities of a bit of memory that's tagged with the index into this table.
-Each tag contains NO_PRIOS entries; later entries are only taken if earlier ones can't fulfill the memory request.
-*/
-const soc_memory_tag_desc_t soc_memory_tags[] = {
-    //Tag 0: Plain ole D-port RAM
-    { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }, false, false},
-    //Tag 1: Plain ole D-port RAM which has an alias on the I-port
-    //(This DRAM is also the region used by ROM during startup)
-    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true, true},
-    //Tag 2: IRAM
-    { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 }, false, false},
-    //Tag 3-8: PID 2-7 IRAM
-    { "PID2IRAM", { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID3IRAM", { MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID4IRAM", { MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID5IRAM", { MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID6IRAM", { MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    { "PID7IRAM", { MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
-    //Tag 9-14: PID 2-7 DRAM
-    { "PID2DRAM", { MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID3DRAM", { MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID4DRAM", { MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
-    //Tag 15: SPI SRAM data
-    { "SPISRAM", { MALLOC_CAP_SPISRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
-};
+Memory type descriptors. These describe the capabilities of a type of memory in the SoC. Each type of memory
+map consist of one or more regions in the address space.
 
-const size_t soc_memory_tag_count = sizeof(soc_memory_tags)/sizeof(soc_memory_tag_desc_t);
+Each type contains an array of prioritised capabilities; types with later entries are only taken if earlier
+ones can't fulfill the memory request.
 
-/*
-Region descriptors. These describe all regions of memory available, and tag them according to the
-capabilities the hardware has. This array is not marked constant; the initialization code may want to
-change the tags of some regions because eg BT is detected, applications are loaded etc.
-
-The priorities here roughly work like this:
+The prioritised capabilities work roughly like this:
 - For a normal malloc (MALLOC_CAP_8BIT), give away the DRAM-only memory first, then pass off any dual-use IRAM regions,
   finally eat into the application memory.
 - For a malloc where 32-bit-aligned-only access is okay, first allocate IRAM, then DRAM, finally application IRAM.
 - Application mallocs (PIDx) will allocate IRAM first, if possible, then DRAM.
 - Most other malloc caps only fit in one region anyway.
 
-These region descriptors are very ESP32 specific, because they describe the memory pools available there.
+*/
+const soc_memory_type_desc_t soc_memory_types[] = {
+    //Type 0: Plain ole D-port RAM
+    { "DRAM", { MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT, 0 }, false, false},
+    //Type 1: Plain ole D-port RAM which has an alias on the I-port
+    //(This DRAM is also the region used by ROM during startup)
+    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true, true},
+    //Type 2: IRAM
+    { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT, 0, 0 }, false, false},
+    //Type 3-8: PID 2-7 IRAM
+    { "PID2IRAM", { MALLOC_CAP_PID2, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID3IRAM", { MALLOC_CAP_PID3, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID4IRAM", { MALLOC_CAP_PID4, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID5IRAM", { MALLOC_CAP_PID5, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID6IRAM", { MALLOC_CAP_PID6, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    { "PID7IRAM", { MALLOC_CAP_PID7, 0, MALLOC_CAP_EXEC|MALLOC_CAP_32BIT }, false, false},
+    //Type 9-14: PID 2-7 DRAM
+    { "PID2DRAM", { MALLOC_CAP_PID2, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
+    { "PID3DRAM", { MALLOC_CAP_PID3, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
+    { "PID4DRAM", { MALLOC_CAP_PID4, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
+    { "PID5DRAM", { MALLOC_CAP_PID5, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
+    { "PID6DRAM", { MALLOC_CAP_PID6, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
+    { "PID7DRAM", { MALLOC_CAP_PID7, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT }, false, false},
+    //Type 15: SPI SRAM data
+    { "SPISRAM", { MALLOC_CAP_SPISRAM, 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
+};
 
-Because of requirements in the coalescing code as well as the heap allocator itself, this list should always
-be sorted from low to high start address.
+const size_t soc_memory_type_count = sizeof(soc_memory_types)/sizeof(soc_memory_type_desc_t);
+
+/*
+Region descriptors. These describe all regions of memory available, and map them to a type in the above type.
+
+Because of requirements in the coalescing code which merges adjacent regions, this list should always be sorted
+from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
     { 0x3F800000, 0x20000, 15, 0}, //SPI SRAM, if available
@@ -122,14 +122,18 @@ const soc_memory_region_t soc_memory_regions[] = {
 const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_memory_region_t);
 
 
-/* Reserved memory regions */
+/* Reserved memory regions
+
+   These are removed from the soc_memory_regions array when heaps are created.
+ */
 const soc_reserved_region_t soc_reserved_regions[] = {
     { 0x40070000, 0x40078000 }, //CPU0 cache region
     { 0x40078000, 0x40080000 }, //CPU1 cache region
 
     /* Warning: The ROM stack is located in the 0x3ffe0000 area. We do not specifically disable that area here because
        after the scheduler has started, the ROM stack is not used anymore by anything. We handle it instead by not allowing
-       any mallocs from tag 1 (the IRAM/DRAM region) until the scheduler has started.
+       any mallocs memory regions with the startup_stack flag set (these are the IRAM/DRAM region) until the
+       scheduler has started.
 
        The 0x3ffe0000 region also contains static RAM for various ROM functions. The following lines
        reserve the regions for UART and ETSC, so these functions are usable. Libraries like xtos, which are
@@ -138,8 +142,10 @@ const soc_reserved_region_t soc_reserved_regions[] = {
 
        Enabling the heap allocator for this region but disabling allocation here until FreeRTOS is started up
        is a somewhat risky action in theory, because on initializing the allocator, the multi_heap implementation
-        will go and write metadata at the start and end of all regions. For the ESP32, these linked
-       list entries happen to end up in a region that is not touched by the stack; they can be placed safely there.*/
+       will go and write metadata at the start and end of all regions. For the ESP32, these linked
+       list entries happen to end up in a region that is not touched by the stack; they can be placed safely there.
+    */
+
     { 0x3ffe0000, 0x3ffe0440 }, //Reserve ROM PRO data region
     { 0x3ffe4000, 0x3ffe4350 }, //Reserve ROM APP data region
 

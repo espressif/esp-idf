@@ -57,7 +57,7 @@ static void disable_mem_region(soc_memory_region_t *regions, intptr_t from, intp
         intptr_t regEnd = region->start + region->size;
         if (regStart >= from && regEnd <= to) {
             //Entire region falls in the range. Disable entirely.
-            regions[i].tag = -1;
+            regions[i].type = -1;
         } else if (regStart >= from && regEnd > to && regStart < to) {
             //Start of the region falls in the range. Modify address/len.
             intptr_t overlap = to - regStart;
@@ -72,7 +72,7 @@ static void disable_mem_region(soc_memory_region_t *regions, intptr_t from, intp
         } else if (regStart < from && regEnd > to) {
             //Range punches a hole in the region! We do not support this.
             ESP_EARLY_LOGE(TAG, "region %d: hole punching is not supported!", i);
-            regions->tag = -1; //Just disable memory region. That'll teach them!
+            regions->type = -1; //Just disable memory region. That'll teach them!
         }
     }
 }
@@ -108,13 +108,13 @@ void heap_caps_init()
     }
 
     //The heap allocator will treat every region given to it as separate. In order to get bigger ranges of contiguous memory,
-    //it's useful to coalesce adjacent regions that have the same tag.
+    //it's useful to coalesce adjacent regions that have the same type.
 
     for (int i = 1; i < soc_memory_region_count; i++) {
         soc_memory_region_t *a = &regions[i - 1];
         soc_memory_region_t *b = &regions[i];
-        if (b->start == a->start + a->size && b->tag == a->tag ) {
-            a->tag = -1;
+        if (b->start == a->start + a->size && b->type == a->type ) {
+            a->type = -1;
             b->start = a->start;
             b->size += a->size;
         }
@@ -123,7 +123,7 @@ void heap_caps_init()
     /* Count the heaps left after merging */
     num_registered_heaps = 0;
     for (int i = 0; i < soc_memory_region_count; i++) {
-        if (regions[i].tag != -1) {
+        if (regions[i].type != -1) {
             num_registered_heaps++;
         }
     }
@@ -139,24 +139,24 @@ void heap_caps_init()
     ESP_EARLY_LOGI(TAG, "Initializing. RAM available for dynamic allocation:");
     for (int i = 0; i < soc_memory_region_count; i++) {
         soc_memory_region_t *region = &regions[i];
-        const soc_memory_tag_desc_t *tag = &soc_memory_tags[region->tag];
+        const soc_memory_type_desc_t *type = &soc_memory_types[region->type];
         heap_t *heap = &temp_heaps[heap_idx];
-        if (region->tag == -1) {
+        if (region->type == -1) {
             continue;
         }
         heap_idx++;
         assert(heap_idx <= num_registered_heaps);
 
-        heap->tag = region->tag;
+        heap->type = region->type;
         heap->start = region->start;
         heap->end = region->start + region->size;
-        memcpy(heap->caps, tag->caps, sizeof(heap->caps));
+        memcpy(heap->caps, type->caps, sizeof(heap->caps));
         vPortCPUInitializeMutex(&heap->heap_mux);
 
         ESP_EARLY_LOGI(TAG, "At %08X len %08X (%d KiB): %s",
-                       region->start, region->size, region->size / 1024, tag->name);
+                       region->start, region->size, region->size / 1024, type->name);
 
-        if (tag->startup_stack) {
+        if (type->startup_stack) {
             /* Will be registered when OS scheduler starts */
             heap->heap = NULL;
         } else {

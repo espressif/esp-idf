@@ -25,8 +25,8 @@
 
 /* Type for describing each registered heap */
 typedef struct {
-    size_t tag;
-    uint32_t caps[SOC_HEAP_TAG_NO_PRIOS]; ///< Capabilities for this tag (as a prioritised set). Copied from soc_memory_tags so it's in RAM not flash.
+    size_t type;
+    uint32_t caps[SOC_MEMORY_TYPE_NO_PRIOS]; ///< Capabilities for the type of memory in this healp (as a prioritised set). Copied from soc_memory_types so it's in RAM not flash.
     intptr_t start;
     intptr_t end;
     portMUX_TYPE heap_mux;

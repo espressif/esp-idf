@@ -62,7 +62,7 @@ inline static uint32_t get_all_caps(const heap_t *heap)
         return 0;
     }
     uint32_t all_caps = 0;
-    for (int prio = 0; prio < SOC_HEAP_TAG_NO_PRIOS; prio++) {
+    for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         all_caps |= heap->caps[prio];
     }
     return all_caps;
@@ -87,7 +87,7 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
         //If any, EXEC memory should be 32-bit aligned, so round up to the next multiple of 4.
         size = (size + 3) & (~3);
     }
-    for (int prio = 0; prio < SOC_HEAP_TAG_NO_PRIOS; prio++) {
+    for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         //Iterate over heaps and check capabilities at this priority
         for (int heap_idx = 0; heap_idx < num_registered_heaps; heap_idx++) {
             heap_t *heap = &registered_heaps[heap_idx];
@@ -96,7 +96,7 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
                 //doesn't cover, see if they're available in other prios.
                 remCaps = caps & (~heap->caps[prio]); //Remaining caps to be fulfilled
                 int j = prio + 1;
-                while (remCaps != 0 && j < SOC_HEAP_TAG_NO_PRIOS) {
+                while (remCaps != 0 && j < SOC_MEMORY_TYPE_NO_PRIOS) {
                     remCaps = remCaps & (~heap->caps[j]);
                     j++;
                 }

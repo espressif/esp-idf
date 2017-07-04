@@ -18,20 +18,20 @@
 
 #include "soc/soc.h"
 
-#define SOC_HEAP_TAG_NO_PRIOS 3
+#define SOC_MEMORY_TYPE_NO_PRIOS 3
 
-/* Tag descriptor holds a description for a particular 'tagged' type of memory on a particular SoC.
+/* Type descriptor holds a description for a particular type of memory on a particular SoC.
  */
 typedef struct {
-    const char *name;  ///< Name of this tag
-    uint32_t caps[SOC_HEAP_TAG_NO_PRIOS]; ///< Capabilities for this tag (as a prioritised set)
-    bool aliased_iram;   ///< If true, this tag is also mapped in IRAM
-    bool startup_stack; ///< If true, this tag is used for ROM stack during startup
-} soc_memory_tag_desc_t;
+    const char *name;  ///< Name of this memory type
+    uint32_t caps[SOC_MEMORY_TYPE_NO_PRIOS]; ///< Capabilities for this memory type (as a prioritised set)
+    bool aliased_iram;   ///< If true, this is data memory that is is also mapped in IRAM
+    bool startup_stack; ///< If true, memory of this type is used for ROM stack during startup
+} soc_memory_type_desc_t;
 
 /* Constant table of tag descriptors for all this SoC's tags */
-extern const soc_memory_tag_desc_t soc_memory_tags[];
-extern const size_t soc_memory_tag_count;
+extern const soc_memory_type_desc_t soc_memory_types[];
+extern const size_t soc_memory_type_count;
 
 /* Region descriptor holds a description for a particular region of memory on a particular SoC.
  */
@@ -39,7 +39,7 @@ typedef struct
 {
     intptr_t start;  ///< Start address of the region
     size_t size;            ///< Size of the region in bytes
-    size_t tag;             ///< Tag for the region (index into soc_memory_tag_descriptors)
+    size_t type;             ///< Type of the region (index into soc_memory_types array)
     intptr_t iram_address; ///< If non-zero, is equivalent address in IRAM
 } soc_memory_region_t;
 
