@@ -305,6 +305,7 @@ push_master_to_github:
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    - git remote remove github &>/dev/null || true
     - git remote add github git@github.com:espressif/esp-idf.git
     # What the next line of script does: goes through the list of refs for all branches we push to github,
     # generates a snippet of shell which is evaluated. The snippet checks CI_COMMIT_SHA against the SHA
