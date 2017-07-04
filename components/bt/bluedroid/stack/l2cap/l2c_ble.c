@@ -554,7 +554,6 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status, UINT16 conn_in
     tL2C_LCB *p_lcb;
 
     L2CAP_TRACE_DEBUG("l2cble_process_conn_update_evt");
-    L2CAP_TRACE_WARNING("l2cble_process_conn_update_evt: status: %d", status);
     /* See if we have a link control block for the remote device */
     p_lcb = l2cu_find_lcb_by_handle(handle);
     if (!p_lcb) {

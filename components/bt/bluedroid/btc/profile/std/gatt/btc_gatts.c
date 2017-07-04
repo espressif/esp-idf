@@ -138,7 +138,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     }
    case BTC_GATTS_ACT_SET_ATTR_VALUE:{
-        uint8_t len = src->set_attr_val.length;
+        uint16_t len = src->set_attr_val.length;
         if(src->set_attr_val.value){
             dst->set_attr_val.value = (uint8_t *)GKI_getbuf(len);
             if(dst->set_attr_val.value != NULL){
