@@ -119,7 +119,7 @@ const esp_phy_init_data_t* esp_phy_get_init_data()
         ESP_LOGE(TAG, "failed to validate PHY data partition");
         return NULL;
     }
-    ESP_LOGE(TAG, "PHY data partition validated");
+    ESP_LOGD(TAG, "PHY data partition validated");
     return (const esp_phy_init_data_t*) (init_data_store + sizeof(phy_init_magic_pre));
 }
 
