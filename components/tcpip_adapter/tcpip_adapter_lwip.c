@@ -436,6 +436,11 @@ static void tcpip_adapter_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
 {
     tcpip_adapter_ip6_info_t *ip6_info;
 
+    system_event_t evt;
+    //notify event
+
+    evt.event_id = SYSTEM_EVENT_GOT_IP6;
+
     if (!p_netif) {
         ESP_LOGD(TAG, "null p_netif=%p", p_netif);
         return;
@@ -443,18 +448,19 @@ static void tcpip_adapter_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
 
     if (p_netif == esp_netif[TCPIP_ADAPTER_IF_STA]) {
         ip6_info = &esp_ip6[TCPIP_ADAPTER_IF_STA];
+        evt.event_info.got_ip6.if_index = TCPIP_ADAPTER_IF_STA;
     } else if (p_netif == esp_netif[TCPIP_ADAPTER_IF_AP]) {
         ip6_info = &esp_ip6[TCPIP_ADAPTER_IF_AP];
+        evt.event_info.got_ip6.if_index = TCPIP_ADAPTER_IF_AP;
+    } else if (p_netif == esp_netif[TCPIP_ADAPTER_IF_ETH]) {
+        ip6_info = &esp_ip6[TCPIP_ADAPTER_IF_ETH];
+        evt.event_info.got_ip6.if_index = TCPIP_ADAPTER_IF_ETH;
     } else {
         return;
     }
 
-    system_event_t evt;
-
     ip6_addr_set(&ip6_info->ip, ip_2_ip6(&p_netif->ip6_addr[ip_idex]));
 
-    //notify event
-    evt.event_id = SYSTEM_EVENT_AP_STA_GOT_IP6;
     memcpy(&evt.event_info.got_ip6.ip6_info, ip6_info, sizeof(tcpip_adapter_ip6_info_t));
     esp_event_send(&evt);
 }
