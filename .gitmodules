@@ -28,4 +28,4 @@
 
 [submodule "components/libsodium/libsodium"]
 	path = components/libsodium/libsodium
-	url = ../..//jedisct1/libsodium.git
+	url = ../../jedisct1/libsodium.git
